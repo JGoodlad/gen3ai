@@ -23368,3 +23368,17 @@ Tag: **BUILT · one side reader (4 front ends) · obs-stream old vs new 1,200 / 
 - **FINDINGS.** (1) The harness reads 10.2 % where the live probe read 17.5 % (a random p2, a different ecology), so the live composition is **UNVERIFIED** beyond the dumped weights' 154 of 209. (2) The remaining pinned static seeds carry the same per-probe hazard: on this seed, 1 probe in 37. As a rough Poisson guess from that one observation (λ ≈ 1 per 15M run), about a third of seed-runs see no stop, a third one, and under 10 % three or more. Each stop resumes, and the next probe lands on new weights. (3) Proposed, NOT built (it changes K9(b)'s semantics, so it is the orchestrator's call): a FLIP-JUDGE. A tied row whose near ties sit at ONE call is judged against BOTH resolutions and passes iff either is within the bar. It is deterministic, a planted mismatch fails both resolutions, and the ceiling and margin stay as they are. (4) Also measured at u1480: the 38 bit-equal typed-HP floor ties (the `k9_early_probe` "not claimed" class) are flip-identical here, but still with no proof.
 
 Tag: **FINDING · static K9(b) stop = one species' genuine cut-pair tie repeated by `static`'s species-only hypothesis posterior · flip moves log π ≤ 1.25e-2 ⇒ exclusion correct, no clearance · neighbours 0.9–2.0 % · site unchanged at HEAD · flip-judge proposed** · meas: [`measurements/k9_static_tie_2026-10-08/`](measurements/k9_static_tie_2026-10-08/README.md)
+### 2026-10-08 · BUILT · **POKE-ENV RETIREMENT P6 slice 6b: the Rust core OWNS the obs golden (its 6 battles banked as input logs while core rows == Python rows == the 991 committed hashes) and the MANDATORY observation benchmark is the Rust encoder's; the four checks that replace the Python oracle are recorded**
+
+- **Built.** `src/agents/training/golden_obs_battles.json` (the golden's battles as input logs, banked from the Python
+  capture at `cf82d885`); `agents.training.golden_obs_core` (`--check` / `--write`: replay the logs through `core_events
+  --obs`, hash p1's rows against `golden_obs_fixture.json`, whose bytes are unchanged — `policy_spectrum`'s encoder
+  identity fingerprints them) and `golden_obs_core_test.py` (`sim`: all 991 hashes; a changed battle moves them).
+  `python -m agents.observation.rust_encoder_benchmark` (`core_events --obs-bench` at a seeded sample of the golden's
+  decisions; encode median ~6.5 µs, cold ~10 µs on a contended box) is the mandatory before / after benchmark of an obs
+  change (root and observation `CLAUDE.md`). `designs/rust_sim/encoder.md` §6a names the four checks that replace the
+  Python oracle (engine-truth audit, round-trip chain, two roads one row, frozen goldens) and the named loss.
+- **Measured.** At banking: the core's rows from the banked logs == the Python capture's vectors byte for byte == the
+  committed hashes (991 decisions, 6 battles).
+
+Tag: **BUILT · obs golden Rust-owned (991 / 991) · Rust encoder benchmark mandatory · oracle replacement recorded**

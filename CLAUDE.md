@@ -226,7 +226,8 @@ export PYTHONPATH=$PYTHONPATH:src
 # Tests + fuzz scripts run the EMISSION SELF-CHECK build (target/selfcheck/; designs/rust_sim/emission_selfcheck.md)
 cargo build --profile selfcheck --features emission-selfcheck --bin sim_bridge --bin search_driver --bin core_events --manifest-path src/rust_sim/Cargo.toml
 python3 src/agents/action/fuzz_test.py [n_battles]            # + many more: see designs/ops/testing.md
-python3 src/agents/training/obs_build_benchmark.py            # 🚨 MANDATORY before/after any obs change
+python -m agents.observation.rust_encoder_benchmark           # 🚨 MANDATORY before/after any obs change (the Rust encoder every run reads)
+python -m agents.training.golden_obs_core --check             # the obs GOLDEN, owned by the Rust core (P6)
 python3 src/agents/training/trainer_turn_benchmark.py --pin-battles  # 🚨 --pin-battles for ANY A/B claim
 python3 src/agents/training/live_view_build_benchmark.py      # the only one that can A/B LiveView.from_battle
 ```

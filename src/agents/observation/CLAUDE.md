@@ -39,18 +39,28 @@ have **different** gates:
 
 ---
 
-## MANDATORY: run the obs-build benchmark on every change to this directory
+## MANDATORY: run the ENCODER benchmark on every observation change — it is the RUST encoder's now
 
-**Any change to a file under `src/agents/observation/` — even a "pure refactor" or a
-value-neutral one — MUST run the performance benchmark before and after the change and
-confirm no meaningful regression.** This is not optional and applies to every edit, however
-small. A one-line change to a hot loop (e.g. `reactive.py`, `pokemon.py`, `moves.py`,
-`state_encoder.py`) can silently halve FPS.
+🚨 **Every training run reads the RUST encoder's row** (`src/rust_sim/src/encoder/`, served by the env core), so
+since P6 of the poke-env retirement (2026-10-08) the mandatory before / after benchmark of ANY observation change —
+here, in `constants.py`, or in the Rust encoder — is:
 
-The benchmark is `src/agents/training/obs_build_benchmark.py` (it lives in `training/` rather
-than here only because a directly-run script puts its own dir on `sys.path[0]`, and
-`observation/types.py` would shadow the stdlib `types` module — see the root `CLAUDE.md`
-Benchmarks section).
+```bash
+python -m agents.observation.rust_encoder_benchmark --decisions 40 --reps 300 | tee /tmp/enc_before.txt
+# … the change …
+python -m agents.observation.rust_encoder_benchmark --decisions 40 --reps 300 | tee /tmp/enc_after.txt
+```
+
+It times the release `core_events` encoder (`--obs-bench`: the memoized-view encode and the cold `present()` +
+encode, byte-asserted equal) at a seeded sample of the obs golden's banked decisions
+(`agents.training.golden_obs_core`). Measured 2026-10-08, contended box: encode median ~6.5 µs, cold ~10 µs per
+decision. A same-session before / after on the same load is the comparison; it warns on a busy box and never
+rescales. The obs GOLDEN (`python -m agents.training.golden_obs_core --check`, `golden_obs_core_test.py`) is the
+value gate beside it.
+
+**The Python encoder below is being RETIRED** (T27 P6 slice 6): nothing trains on its rows, and the rest of this
+section is the history of its own benchmark, `src/agents/training/obs_build_benchmark.py`, kept until that slice
+deletes it.
 
 ### The workflow — do this for every change
 

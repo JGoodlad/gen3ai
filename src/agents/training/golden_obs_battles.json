@@ -1,0 +1,8040 @@
+{
+ "_comment": "The obs golden's battles as INPUT LOGS (format, seed, both players, every command), banked ONCE on 2026-10-08 (P6 of the poke-env retirement) from the Python capture (golden_obs_capture: the deterministic rotation policy, the cycling teambuilders, bridge seed 4) while both stacks still agreed: the core's rows from these logs equalled the Python rows AND golden_obs_fixture.json's 991 hashes. The core owns the golden from here: python -m agents.training.golden_obs_core --check | --write.",
+ "n_battles": 6,
+ "logs": [
+  {
+   "label": "golden_0",
+   "format_id": "gen3ou",
+   "seed": "1,2,3,4",
+   "p1": {
+    "name": "GoldCap",
+    "team": "Skarmory||leftovers|keeneye|spikes,protect,roar,toxic|Careful|252,,8,,248,|F|,0,,,,|||]Blissey||leftovers|naturalcure|softboiled,icebeam,toxic,fireblast|Modest|,,252,252,,4||,0,,,,|S||]Tyranitar||leftovers|sandstream|focuspunch,rockslide,hiddenpowerbug,earthquake|Adamant|248,196,12,,52,|F|,30,30,,30,|||]Swampert||leftovers|torrent|earthquake,icebeam,hydropump,protect|Relaxed|240,,136,40,48,44|F||||]Gengar||leftovers|levitate|willowisp,thunderbolt,icepunch,explosion|Timid|168,,,,164,176|F||||]Starmie||leftovers|naturalcure|hydropump,icebeam,thunderbolt,rapidspin|Timid|4,,,252,,252||,0,,,,|||"
+   },
+   "p2": {
+    "name": "GoldOpp",
+    "team": "Tyranitar||leftovers|sandstream|crunch,flamethrower,pursuit,roar|Modest|184,,40,200,,84|M|,0,,,,|||]Forretress||leftovers|sturdy|earthquake,explosion,rapidspin,spikes|Sassy|252,,12,,244,|M||||]Dugtrio||choiceband|arenatrap|earthquake,rockslide,aerialace,hiddenpowerbug|Adamant|8,252,,,20,228||,30,30,,30,|||]Gengar||leftovers|levitate|thunderbolt,icepunch,willowisp,explosion|Timid|248,,52,,112,96|||||]Swampert||leftovers|torrent|earthquake,icebeam,protect,refresh|Relaxed|248,,128,84,,48|M||||]Blissey||leftovers|naturalcure|seismictoss,thunderwave,wish,softboiled|Bold|232,,252,,,24||,0,,30,,|||"
+   },
+   "commands": [
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Dugtrio"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move hiddenpowerbug"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Starmie"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move rapidspin"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Dugtrio"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Starmie"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move rapidspin"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Dugtrio"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move focuspunch"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Starmie"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move willowisp"
+    ],
+    [
+     "p2",
+     "switch Dugtrio"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move icepunch"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move explosion"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Dugtrio"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move hydropump"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move rapidspin"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move explosion"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move refresh"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Forretress"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move explosion"
+    ]
+   ],
+   "init_seed": false,
+   "quick_claw": false
+  },
+  {
+   "label": "golden_1",
+   "format_id": "gen3ou",
+   "seed": "1,2,3,4",
+   "p1": {
+    "name": "GoldCap",
+    "team": "Tyranitar||leftovers|sandstream|crunch,flamethrower,pursuit,roar|Modest|184,,40,200,,84|M|,0,,,,|||]Forretress||leftovers|sturdy|earthquake,explosion,rapidspin,spikes|Sassy|252,,12,,244,|M||||]Dugtrio||choiceband|arenatrap|earthquake,rockslide,aerialace,hiddenpowerbug|Adamant|8,252,,,20,228||,30,30,,30,|||]Gengar||leftovers|levitate|thunderbolt,icepunch,willowisp,explosion|Timid|248,,52,,112,96|||||]Swampert||leftovers|torrent|earthquake,icebeam,protect,refresh|Relaxed|248,,128,84,,48|M||||]Blissey||leftovers|naturalcure|seismictoss,thunderwave,wish,softboiled|Bold|232,,252,,,24||,0,,30,,|||"
+   },
+   "p2": {
+    "name": "GoldOpp",
+    "team": "Tyranitar||leftovers|sandstream|pursuit,crunch,fireblast,hiddenpowergrass|Modest|252,,,244,,12||30,,,30,,|||]Skarmory||leftovers|keeneye|spikes,drillpeck,roar,protect|Careful|252,,4,,252,|M||||]Flygon||leftovers|levitate|earthquake,rockslide,toxic,protect|Impish|248,,216,,12,32|M||||]Zapdos||leftovers|pressure|thunderbolt,roar,rest,toxic|Calm|224,,,,252,32||,0,,,,|||]Gengar||leftovers|levitate|destinybond,taunt,willowisp,thunderbolt|Timid|168,,,,164,176||,0,,,,|||]Jirachi||leftovers|serenegrace|wish,protect,toxic,firepunch|Calm|252,,76,,148,32||,0,,,,|||"
+   },
+   "commands": [
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Forretress"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Forretress"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move fireblast"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p1",
+     "switch Forretress"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Forretress"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move explosion"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move flamethrower"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "move icepunch"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move willowisp"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move explosion"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move rest"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "move fireblast"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move rest"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move flamethrower"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move hiddenpowerbug"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "switch Zapdos"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move rest"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Dugtrio"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move hiddenpowerbug"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move seismictoss"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move thunderwave"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move refresh"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move struggle"
+    ],
+    [
+     "p2",
+     "move roar"
+    ]
+   ],
+   "init_seed": false,
+   "quick_claw": false
+  },
+  {
+   "label": "golden_2",
+   "format_id": "gen3ou",
+   "seed": "1,2,3,4",
+   "p1": {
+    "name": "GoldCap",
+    "team": "Tyranitar||leftovers|sandstream|pursuit,crunch,fireblast,hiddenpowergrass|Modest|252,,,244,,12||30,,,30,,|||]Skarmory||leftovers|keeneye|spikes,drillpeck,roar,protect|Careful|252,,4,,252,|M||||]Flygon||leftovers|levitate|earthquake,rockslide,toxic,protect|Impish|248,,216,,12,32|M||||]Zapdos||leftovers|pressure|thunderbolt,roar,rest,toxic|Calm|224,,,,252,32||,0,,,,|||]Gengar||leftovers|levitate|destinybond,taunt,willowisp,thunderbolt|Timid|168,,,,164,176||,0,,,,|||]Jirachi||leftovers|serenegrace|wish,protect,toxic,firepunch|Calm|252,,76,,148,32||,0,,,,|||"
+   },
+   "p2": {
+    "name": "GoldOpp",
+    "team": "Tyranitar||leftovers|sandstream|crunch,earthquake,icebeam,pursuit|Modest|252,,,252,4,|||||]Skarmory||leftovers|keeneye|spikes,roar,toxic,protect|Careful|252,,4,,252,||,0,,,,|||]Moltres||leftovers|pressure|willowisp,flamethrower,hiddenpowergrass,protect|Timid|,,,252,4,252||,2,,30,,|||]Jirachi||leftovers|serenegrace|toxic,firepunch,wish,protect|Calm|248,,92,,132,36||,0,,,,|||]Gengar||leftovers|levitate|destinybond,taunt,willowisp,thunderbolt|Hasty|168,,,,164,176||,0,,,,|||]Flygon||leftovers|levitate|earthquake,toxic,protect,rockslide|Impish|252,,224,,,32|||||"
+   },
+   "commands": [
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Flygon"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move taunt"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move destinybond"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move rest"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Moltres"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move flamethrower"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move wish"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move destinybond"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "move taunt"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "move willowisp"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move destinybond"
+    ],
+    [
+     "p2",
+     "move firepunch"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move fireblast"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move crunch"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move rest"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move crunch"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move crunch"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move rest"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move rest"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move rest"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move rest"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "switch Zapdos"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ]
+   ],
+   "init_seed": false,
+   "quick_claw": false
+  },
+  {
+   "label": "golden_3",
+   "format_id": "gen3ou",
+   "seed": "1,2,3,4",
+   "p1": {
+    "name": "GoldCap",
+    "team": "Tyranitar||leftovers|sandstream|crunch,earthquake,icebeam,pursuit|Modest|252,,,252,4,|||||]Skarmory||leftovers|keeneye|spikes,roar,toxic,protect|Careful|252,,4,,252,||,0,,,,|||]Moltres||leftovers|pressure|willowisp,flamethrower,hiddenpowergrass,protect|Timid|,,,252,4,252||,2,,30,,|||]Jirachi||leftovers|serenegrace|toxic,firepunch,wish,protect|Calm|248,,92,,132,36||,0,,,,|||]Gengar||leftovers|levitate|destinybond,taunt,willowisp,thunderbolt|Hasty|168,,,,164,176||,0,,,,|||]Flygon||leftovers|levitate|earthquake,toxic,protect,rockslide|Impish|252,,224,,,32|||||"
+   },
+   "p2": {
+    "name": "GoldOpp",
+    "team": "Skarmory||leftovers|keeneye|spikes,drillpeck,roar,protect|Careful|252,,4,,252,|M||||]Magneton||magnet|magnetpull|substitute,thunderbolt,hiddenpowerfire,toxic|Modest|48,,,252,,208||,30,,30,,30|||]Blissey||leftovers|naturalcure|thunderwave,seismictoss,aromatherapy,softboiled|Bold|208,,252,,,48|F||||]Swampert||leftovers|torrent|curse,rest,earthquake,icebeam|Relaxed|252,,168,,88,|||||]Celebi||leftovers|naturalcure|leechseed,hiddenpowergrass,perishsong,recover|Bold|252,,192,,64,||,30,,30,,|||]Aerodactyl||choiceband|rockhead|rockslide,doubleedge,earthquake,hiddenpowerbug|Adamant|,252,,,4,252|M|,,,,30,30|||"
+   },
+   "commands": [
+    [
+     "p1",
+     "switch Moltres"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Aerodactyl"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Magneton"
+    ],
+    [
+     "p1",
+     "switch Moltres"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Aerodactyl"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Moltres"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "switch Flygon"
+    ],
+    [
+     "p2",
+     "switch Aerodactyl"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Moltres"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "switch Moltres"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Magneton"
+    ],
+    [
+     "p1",
+     "move destinybond"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move taunt"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move willowisp"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "switch Aerodactyl"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Moltres"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move destinybond"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move taunt"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move willowisp"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Aerodactyl"
+    ],
+    [
+     "p1",
+     "switch Moltres"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move destinybond"
+    ],
+    [
+     "p2",
+     "switch Magneton"
+    ],
+    [
+     "p1",
+     "move taunt"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move willowisp"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Aerodactyl"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move destinybond"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move taunt"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move willowisp"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "switch Magneton"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "switch Gengar"
+    ],
+    [
+     "p2",
+     "switch Aerodactyl"
+    ],
+    [
+     "p1",
+     "move destinybond"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Magneton"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Aerodactyl"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move leechseed"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move perishsong"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move recover"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move leechseed"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move perishsong"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move recover"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "move leechseed"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move perishsong"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move recover"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "move leechseed"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move perishsong"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move recover"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move leechseed"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p1",
+     "switch Jirachi"
+    ],
+    [
+     "p2",
+     "move perishsong"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "move recover"
+    ],
+    [
+     "p1",
+     "move firepunch"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move wish"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move leechseed"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move perishsong"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move recover"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move toxic"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Celebi"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move aromatherapy"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move aromatherapy"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move aromatherapy"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move aromatherapy"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move aromatherapy"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move aromatherapy"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move aromatherapy"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move aromatherapy"
+    ],
+    [
+     "p1",
+     "move pursuit"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move crunch"
+    ],
+    [
+     "p2",
+     "move thunderwave"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move seismictoss"
+    ]
+   ],
+   "init_seed": false,
+   "quick_claw": false
+  },
+  {
+   "label": "golden_4",
+   "format_id": "gen3ou",
+   "seed": "1,2,3,4",
+   "p1": {
+    "name": "GoldCap",
+    "team": "Skarmory||leftovers|keeneye|spikes,drillpeck,roar,protect|Careful|252,,4,,252,|M||||]Magneton||magnet|magnetpull|substitute,thunderbolt,hiddenpowerfire,toxic|Modest|48,,,252,,208||,30,,30,,30|||]Blissey||leftovers|naturalcure|thunderwave,seismictoss,aromatherapy,softboiled|Bold|208,,252,,,48|F||||]Swampert||leftovers|torrent|curse,rest,earthquake,icebeam|Relaxed|252,,168,,88,|||||]Celebi||leftovers|naturalcure|leechseed,hiddenpowergrass,perishsong,recover|Bold|252,,192,,64,||,30,,30,,|||]Aerodactyl||choiceband|rockhead|rockslide,doubleedge,earthquake,hiddenpowerbug|Adamant|,252,,,4,252|M|,,,,30,30|||"
+   },
+   "p2": {
+    "name": "GoldOpp",
+    "team": "Tyranitar||leftovers|sandstream|dragondance,rockslide,earthquake,hiddenpowerbug|Adamant|184,116,20,,,188||,30,30,,30,|||]Skarmory||leftovers|keeneye|spikes,roar,protect,drillpeck|Careful|252,,,,252,4|||||]Blissey||leftovers|naturalcure|thunderbolt,calmmind,icebeam,softboiled|Modest|,,252,228,,28|F|,0,,,,|||]Metagross||leftovers|clearbody|explosion,protect,meteormash,earthquake|Adamant|252,56,140,,,60|||||]Salamence||leftovers|intimidate|dragonclaw,brickbreak,hiddenpowergrass,flamethrower|Mild|,4,,252,,252||30,,,30,,|||]Claydol||leftovers|levitate|earthquake,psychic,explosion,rapidspin|Adamant|252,196,,,,60|||||"
+   },
+   "commands": [
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Metagross"
+    ],
+    [
+     "p1",
+     "switch Celebi"
+    ],
+    [
+     "p2",
+     "switch Salamence"
+    ],
+    [
+     "p1",
+     "switch Aerodactyl"
+    ],
+    [
+     "p2",
+     "switch Claydol"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move psychic"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move explosion"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Magneton"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Metagross"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Salamence"
+    ],
+    [
+     "p1",
+     "switch Celebi"
+    ],
+    [
+     "p2",
+     "move dragonclaw"
+    ],
+    [
+     "p1",
+     "switch Aerodactyl"
+    ],
+    [
+     "p2",
+     "move brickbreak"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Swampert"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "switch Metagross"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move explosion"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Celebi"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Aerodactyl"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Magneton"
+    ],
+    [
+     "p2",
+     "move calmmind"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "switch Celebi"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move leechseed"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move perishsong"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "move recover"
+    ],
+    [
+     "p2",
+     "move calmmind"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Celebi"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move leechseed"
+    ],
+    [
+     "p2",
+     "move dragondance"
+    ],
+    [
+     "p1",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move perishsong"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move drillpeck"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ]
+   ],
+   "init_seed": false,
+   "quick_claw": false
+  },
+  {
+   "label": "golden_5",
+   "format_id": "gen3ou",
+   "seed": "1,2,3,4",
+   "p1": {
+    "name": "GoldCap",
+    "team": "Tyranitar||leftovers|sandstream|dragondance,rockslide,earthquake,hiddenpowerbug|Adamant|184,116,20,,,188||,30,30,,30,|||]Skarmory||leftovers|keeneye|spikes,roar,protect,drillpeck|Careful|252,,,,252,4|||||]Blissey||leftovers|naturalcure|thunderbolt,calmmind,icebeam,softboiled|Modest|,,252,228,,28|F|,0,,,,|||]Metagross||leftovers|clearbody|explosion,protect,meteormash,earthquake|Adamant|252,56,140,,,60|||||]Salamence||leftovers|intimidate|dragonclaw,brickbreak,hiddenpowergrass,flamethrower|Mild|,4,,252,,252||30,,,30,,|||]Claydol||leftovers|levitate|earthquake,psychic,explosion,rapidspin|Adamant|252,196,,,,60|||||"
+   },
+   "p2": {
+    "name": "GoldOpp",
+    "team": "Skarmory||leftovers|keeneye|spikes,protect,roar,toxic|Careful|252,,8,,248,|F|,0,,,,|||]Blissey||leftovers|naturalcure|softboiled,icebeam,toxic,fireblast|Modest|,,252,252,,4||,0,,,,|S||]Tyranitar||leftovers|sandstream|focuspunch,rockslide,hiddenpowerbug,earthquake|Adamant|248,196,12,,52,|F|,30,30,,30,|||]Swampert||leftovers|torrent|earthquake,icebeam,hydropump,protect|Relaxed|240,,136,40,48,44|F||||]Gengar||leftovers|levitate|willowisp,thunderbolt,icepunch,explosion|Timid|168,,,,164,176|F||||]Starmie||leftovers|naturalcure|hydropump,icebeam,thunderbolt,rapidspin|Timid|4,,,252,,252||,0,,,,|||"
+   },
+   "commands": [
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Metagross"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Salamence"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "switch Claydol"
+    ],
+    [
+     "p2",
+     "switch Starmie"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move hydropump"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move hiddenpowerbug"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "switch Metagross"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Salamence"
+    ],
+    [
+     "p2",
+     "switch Gengar"
+    ],
+    [
+     "p1",
+     "move dragonclaw"
+    ],
+    [
+     "p2",
+     "move willowisp"
+    ],
+    [
+     "p1",
+     "move brickbreak"
+    ],
+    [
+     "p2",
+     "move thunderbolt"
+    ],
+    [
+     "p1",
+     "move hiddenpowergrass"
+    ],
+    [
+     "p2",
+     "move icepunch"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p2",
+     "move explosion"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "switch Metagross"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move explosion"
+    ],
+    [
+     "p2",
+     "move focuspunch"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "move rockslide"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "move hiddenpowerbug"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move calmmind"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Blissey"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move fireblast"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move calmmind"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move icebeam"
+    ],
+    [
+     "p2",
+     "move hydropump"
+    ],
+    [
+     "p1",
+     "move softboiled"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "switch Blissey"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move thunderbolt"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "switch Tyranitar"
+    ],
+    [
+     "p1",
+     "move earthquake"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move hiddenpowerbug"
+    ],
+    [
+     "p2",
+     "move hydropump"
+    ],
+    [
+     "p1",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move spikes"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "move protect"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move roar"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move earthquake"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "move fireblast"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "switch Skarmory"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "switch Swampert"
+    ],
+    [
+     "p1",
+     "move protect"
+    ],
+    [
+     "p2",
+     "move softboiled"
+    ],
+    [
+     "p1",
+     "move drillpeck"
+    ],
+    [
+     "p2",
+     "move icebeam"
+    ],
+    [
+     "p1",
+     "move spikes"
+    ],
+    [
+     "p2",
+     "move toxic"
+    ],
+    [
+     "p1",
+     "move roar"
+    ],
+    [
+     "p2",
+     "move fireblast"
+    ]
+   ],
+   "init_seed": false,
+   "quick_claw": false
+  }
+ ]
+}

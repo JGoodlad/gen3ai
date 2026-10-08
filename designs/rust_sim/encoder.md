@@ -205,14 +205,34 @@ NaN cells, and which blocks were ever nonzero (a tier that never saw a block non
 | MILESTONE | `… -m slow -q -n 2` — slice O on every played battle (pool, policy, LADDER), the verdict in `designs/ops/slow_tier_status.json` |
 | FRESH | `python src/agents/battle/rust_core_trackers_fuzz_test.py [--minutes N] [--procedural P]` — slice O (with E / V / T) on new battles every run, pool + mechanic-dense + PROCEDURAL teams |
 
-**The obs golden.** `test_the_obs_golden_is_reproduced_by_the_core` plays `golden_obs_capture`'s
-fixed battle set, replays the recorded input logs through `core_events --obs`, and requires the
-trainee's rows to hash EXACTLY to `training/golden_obs_fixture.json` and to equal the Python capture's
-vectors byte for byte.
+**The obs golden is the CORE's** (P6 of the poke-env retirement, 2026-10-08). Its battles are BANKED as
+input logs (`training/golden_obs_battles.json`, recorded once while the core's rows, the Python capture's and
+the committed hashes all agreed), and `agents.training.golden_obs_core` replays them through `core_events --obs`
+and hashes the trainee's rows against `training/golden_obs_fixture.json`: `golden_obs_core_test.py` (`sim`) in the
+routine gate, `python -m agents.training.golden_obs_core --check | --write` by hand (a `--write` names the first
+moved decision and the count — review it). `test_the_obs_golden_is_reproduced_by_the_core` still plays
+`golden_obs_capture`'s battles through both stacks until slice O retires.
 
 **Teeth** (`rust_core_parity_test.py`): a Python encoder change the core does not mirror (the move PP
 normaliser) fails on `our_team moves+` / `opp_team moves+`; a NaN cell and a `-0.0` in the core row
 each fail.
+
+## 6a. What replaces the Python oracle (P6 of the poke-env retirement)
+
+Slice O held the core's row to a SECOND implementation (the Python encoder), which was never a truth — `present.md`
+§3 already says parity with poke-env is not the goal. With the Python stack retired (T27 P6, 2026-10-08) the
+row is held by four checks, none of which needs Python:
+
+| check | proves | where |
+|---|---|---|
+| ENGINE-TRUTH audit | the reading's sim-fact fields equal the omniscient engine at every decision | `present/audit.rs` (`check_view`), `tests/obs_facts_truth_test.rs` |
+| ROUND-TRIP chain | our emitted text is Node Showdown's; `parse(emit) == step`; the PARSE chain decides and encodes byte-identically to the step chain at every decision | the protocol / writeline / byte-fuzz gates, `tests/core_events_test.rs`, `core_events --obs`'s parse-chain gate (`gen3_core_parse_obs_gate_v1`) |
+| TWO ROADS, ONE ROW | the live reader (a foreign stream through `SideReader`) writes the training row | P4 gate (a) (2,224 battles, 0 differences), `src/main/live/live_integration_test.py` in miniature, `sim_bridge_core_obs_test.rs` (the bridge, `core_events --obs` and `--obs-stream` agree) |
+| FROZEN GOLDENS | a banked battle set's rows do not move unless deliberately re-recorded | the obs golden above (`golden_obs_core`), the K9 learner golden |
+
+**The named loss** (survey §A4.2): an independent second reading of facts the engine cannot audit (beliefs,
+inferred items, HP-percentage folds). Those are checked against the engine where a truth exists; the rest is now
+read once.
 
 ## 7. Search takes rows
 
@@ -228,7 +248,12 @@ event fold, no Python tracker, no Python encoder and no Python prefix fork run o
 Slice O compares the tokens against the real mapper at every decision (12,677 at COMMIT);
 `core_row_parity_fuzz_test` compares each arm's row to the poke-env replay's, byte for byte.
 
-## 8. The benchmark's core row
+## 8. The encoder benchmark
+
+🚨 **`python -m agents.observation.rust_encoder_benchmark` is the MANDATORY before / after benchmark of an
+observation change** (P6): `core_events --obs --obs-bench` at a seeded sample of the obs golden's banked decisions,
+both shapes below, median / p90 / max over decisions; release build; it warns on a contended box and never
+rescales. The retired Python benchmark below printed the same core timing beside the Python encoder's.
 
 `src/agents/training/obs_build_benchmark.py` prints a CORE row: the profiled battle's recorded input
 log is replayed through `core_events --obs --obs-bench SIDE K REPS` (the release build unless
