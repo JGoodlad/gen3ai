@@ -36,8 +36,21 @@ from .constants import (
     EVENT_TOKEN_DIM,
     EVENT_WINDOW_DIM,
     ACTIVE_CONTEXT_DIM,
-    GLOBAL_ENV_DIM
+    GLOBAL_ENV_DIM,
+    OFFSET_OBS_FACTS,
+    OBS_FACTS_DIM,
+    FACTS_SEEN_OFFSET,
+    FACTS_SEEN_ROW_DIM,
+    FACTS_CHOICE_OFFSET,
+    FACTS_CHOICE_DIM,
+    FACTS_VOL_OFFSET,
+    FACTS_VOL_SIDE_DIM,
+    FACTS_VOL_CELL_DIM,
+    FACTS_VOL_EFFECTS,
+    FACTS_SCREENS_OFFSET,
+    FACTS_SCREENS,
 )
+from .obs_facts import encode_obs_facts, describe as _describe_obs_facts, our_species_list
 from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from poke_env.battle.abstract_battle import AbstractBattle
@@ -145,8 +158,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
     @property
     def base_dimension(self) -> int:
         """Raw encoder output dimension, before the previous-turn mask is appended."""
-        # gen3_event_window_v1: the H-B event window sits after the H-A2 block, closing base.
-        return OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM
+        # gen3_obs_facts_v1: the OBS-FACTS block follows the H-B event window and closes base.
+        return OFFSET_OBS_FACTS + OBS_FACTS_DIM
 
     @property
     def dimension(self) -> int:
@@ -423,6 +436,13 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 if asm is not None:
                     asm.seed_window(_rows, _cur)
 
+        # 8. gen3_obs_facts_v1 — the OBS-FACTS block (`obs_facts.py`): what the opponent has seen of
+        # our team, the opponent active's Choice-lock evidence, the actives' Encore / Taunt / Disable
+        # / Uproar / partial-trap turns, and each side's screen turns. Cheap and fully rewritten
+        # every decision on BOTH scheduler paths (never cached: its inputs are the view and the
+        # event window's fold, and it zeroes its own span first).
+        encode_obs_facts(vec, OFFSET_OBS_FACTS, live, our_species_list(our_team_list), event_window)
+
         # gen3_move_legality_by_id_v1: the THROWING move-order guard (`ordering_integrity`) — our active's
         # request-order block must map one-to-one onto its sorted per-mon move slots. Only with a real
         # `legal` (the trainee / play path); the legal-is-None fallback is the plain-Battle unit path.
@@ -537,6 +557,20 @@ class Gen3ObservationEncoder(ObservationEncoder):
             "event_window_dim": EVENT_WINDOW_DIM,
             "event_window_n": EVENT_WINDOW_N,
             "event_token_dim": EVENT_TOKEN_DIM,
+            # gen3_obs_facts_v1: the OBS-FACTS block and its four sub-blocks (offsets INSIDE it).
+            "obs_facts_offset": OFFSET_OBS_FACTS,
+            "obs_facts_dim": OBS_FACTS_DIM,
+            "obs_facts": {
+                "seen": {"offset": FACTS_SEEN_OFFSET, "dim": TEAM_SIZE * FACTS_SEEN_ROW_DIM,
+                         "rows": TEAM_SIZE, "row_dim": FACTS_SEEN_ROW_DIM},
+                "choice": {"offset": FACTS_CHOICE_OFFSET, "dim": FACTS_CHOICE_DIM},
+                "vol": {"offset": FACTS_VOL_OFFSET, "dim": 2 * FACTS_VOL_SIDE_DIM, "sides": 2,
+                        "side_dim": FACTS_VOL_SIDE_DIM, "cell_dim": FACTS_VOL_CELL_DIM,
+                        "effects": list(FACTS_VOL_EFFECTS)},
+                "screens": {"offset": FACTS_SCREENS_OFFSET, "dim": 2 * len(FACTS_SCREENS),
+                            "sides": 2, "side_dim": len(FACTS_SCREENS),
+                            "conditions": list(FACTS_SCREENS)},
+            },
             "reactive_layout": _ReactiveEncoder().get_layout(),
             "global_layout": self.global_env_encoder.get_layout(),
             "max_species": 400,
@@ -591,6 +625,9 @@ class Gen3ObservationEncoder(ObservationEncoder):
         # 4. Reactive
         reactive_vec = vector[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM]
         desc["momentum"] = self.reactive_encoder.describe_vector(reactive_vec)
+
+        # 5. gen3_obs_facts_v1
+        desc["facts"] = _describe_obs_facts(vector[OFFSET_OBS_FACTS:OFFSET_OBS_FACTS + OBS_FACTS_DIM])
 
         # gen3_frame_deletion_v1: there is no TurnDelta tail to describe — the obs ends at base.
         # What HAPPENED last turn is read from the H-B event window instead (`event_window`),

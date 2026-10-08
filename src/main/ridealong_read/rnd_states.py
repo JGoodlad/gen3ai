@@ -5,7 +5,7 @@
 eval cycles, positives = held-out rows whose team never occurs in train). This module asks the
 state-level questions, for BOTH variants, with the heads' own ``RndNovelty`` shapes:
 
-* **obs-RND** over the 2761-dim observation;
+* **obs-RND** over the 2845-dim observation;
 * **feature-RND** over the 128-dim detached ``value_pooled`` of ONE fixed checkpoint (N0 final,
   :data:`FEATURE_CKPT_REL`), so there is no representation drift inside this read.
 

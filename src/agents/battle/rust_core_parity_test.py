@@ -322,7 +322,7 @@ def test_the_information_boundary_holds_on_the_core_record_and_the_check_has_tee
 # ---------------------------------------------------------------------------
 
 #: The obs blocks every tier must see NONZERO somewhere (the gate cannot be green on zeros).
-_OBS_BLOCKS = ("our_team", "opp_team", "context", "global", "board", "pair_history", "event_window")
+_OBS_BLOCKS = ("our_team", "opp_team", "context", "global", "board", "pair_history", "event_window", "obs_facts")
 
 
 def _assert_obs_clean(o: O.ObsCensus, min_decisions: int) -> None:

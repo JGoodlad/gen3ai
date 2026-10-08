@@ -394,7 +394,9 @@ def test_the_small_predictor_is_the_declared_capacity():
     pol, _ = _policy()
     n = sum(p.numel() for p in pol.ridealong.rnd_variants["small"].parameters())
     base = sum(p.numel() for p in pol.ridealong.rnd.predictor.parameters())
-    assert (n, base) == (90_496, 789_312)
+    # gen3_obs_facts_v1 (the X5 version break's part 3): the obs-RND predictors read the whole observation, so
+    # the 84-dim OBS-FACTS append widened each first layer by 84 inputs (+84 x 32 small, +84 x 256 base).
+    assert (n, base) == (93_184, 810_816)
 
 
 def test_DECAY_pulls_toward_init_with_the_declared_half_life():

@@ -4,7 +4,8 @@ Each test feeds one side's protocol text to a ``Gen3Battle`` (the live player's 
 ``offline_feed``), folds the decision window through the ``EventWindowTracker`` the encoder reads,
 and asserts the encoded fact. Every assertion FAILS on revert of the code it names (the reading's
 public flags, the residual phase, the stint fold, the Encore / Disable adjustment, the encoder).
-The Rust twin is held byte-equal by slice O and to the ENGINE by
+The block is the observation's LAST block (the X5 version break's part 3; the encoder writes it every
+decision). The Rust twin is held byte-equal by slice O (the whole row) and to the ENGINE by
 ``src/rust_sim/tests/obs_facts_truth_test.rs``.
 """
 from __future__ import annotations
@@ -92,16 +93,47 @@ def _num(move: str) -> float:
 
 
 # ----------------------------------------------------------------------------- the layout
-def test_the_sub_blocks_tile_the_block_and_it_is_NOT_yet_in_the_observation():
+def test_the_block_closes_the_observation_and_the_sub_blocks_tile_it():
+    """gen3_obs_facts_v1 (the X5 version break's part 3): the block is APPENDED after the event window as
+    the observation's last block, 2761 -> 2845. Fails on revert of the append (the dim, the offset, the
+    layout keys the model's slicer reads)."""
     from agents.observation.state_encoder import load_mappings
     enc = Gen3ObservationEncoder(load_mappings())
-    # the append lands at the X5 adoption version break (`obs-facts-append`): the row is unchanged
-    assert enc.dimension == C.OFFSET_EVENT_WINDOW + C.EVENT_WINDOW_DIM
-    assert "obs_facts" not in enc.get_layout()
+    assert C.OFFSET_OBS_FACTS == C.OFFSET_EVENT_WINDOW + C.EVENT_WINDOW_DIM == 2761
+    assert enc.dimension == C.OFFSET_OBS_FACTS + C.OBS_FACTS_DIM == 2845
+    lay = enc.get_layout()
+    assert (lay["obs_facts_offset"], lay["obs_facts_dim"]) == (C.OFFSET_OBS_FACTS, C.OBS_FACTS_DIM)
+    assert {k: (v["offset"], v["dim"]) for k, v in lay["obs_facts"].items()} == {
+        "seen": (C.FACTS_SEEN_OFFSET, C.FACTS_SEEN_DIM), "choice": (C.FACTS_CHOICE_OFFSET, C.FACTS_CHOICE_DIM),
+        "vol": (C.FACTS_VOL_OFFSET, C.FACTS_VOL_DIM), "screens": (C.FACTS_SCREENS_OFFSET, C.FACTS_SCREENS_DIM)}
     assert C.FACTS_SEEN_OFFSET == 0 and C.FACTS_CHOICE_OFFSET == C.FACTS_SEEN_DIM
     assert C.FACTS_VOL_OFFSET == C.FACTS_CHOICE_OFFSET + C.FACTS_CHOICE_DIM
     assert C.FACTS_SCREENS_OFFSET == C.FACTS_VOL_OFFSET + C.FACTS_VOL_DIM
     assert C.OBS_FACTS_DIM == C.FACTS_SCREENS_OFFSET + C.FACTS_SCREENS_DIM
+
+
+_ROW_LINES = BASE + ["|move|p1a: Metagross|Meteor Mash|p2a: Snorlax", "|move|p2a: Snorlax|Reflect|p2a: Snorlax",
+                     "|-sidestart|p2: foe|Reflect", "|-start|p2a: Snorlax|Encore", "|", "|upkeep", "|turn|2"]
+
+
+@pytest.mark.parametrize("assembled", [False, True], ids=["full", "assembler"])
+def test_the_encoder_writes_the_block_into_the_row(assembled):
+    """`Gen3ObservationEncoder.encode` writes the block at `OFFSET_OBS_FACTS`, equal to `encode_obs_facts` on
+    the same decision, through BOTH schedulers (the assembler's persistent buffer included: the block is never
+    cached). Fails on revert of the encoder's write (the tail reads zero) or a cached tail."""
+    from agents.observation.assembler import ObsAssembler
+    from agents.observation.state_encoder import load_mappings
+    b = _battle(_ROW_LINES)
+    window = EventWindowTracker()
+    window.update(b.live_view().turn, b.events, None, None)
+    want = _facts(_ROW_LINES)
+    assert np.count_nonzero(want) >= 4, "PRECONDITION: seen + choice + encore + reflect cells"
+    enc = Gen3ObservationEncoder(load_mappings())
+    asm = ObsAssembler(enc.dimension) if assembled else None
+    for _ in range(2 if assembled else 1):            # the second pass is the assembler's WARM path
+        row = enc.encode(b, event_window=window, assembler=asm)
+        assert row.shape == (enc.dimension,)
+        assert np.array_equal(row[C.OFFSET_OBS_FACTS:], want)
 
 
 # ----------------------------------------------------------------------------- 1. SEEN (E1)

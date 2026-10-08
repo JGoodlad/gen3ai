@@ -180,6 +180,12 @@ every one runs PINNED. `model_version/version_break.py` is the one home of the c
   Retired modules leave a plain `None` (`extractor_api.drop_child`), so a strict load REPORTS a retired module's
   keys as unexpected instead of swallowing them.
 
+* **Part 3 (the OBS-FACTS append, `gen3_obs_facts_v1`)** adds NO bump: the observation grows 2761 → 2845 (the
+  OBS-FACTS block, its last block) and the new STRUCTURAL field `obs_facts` (`--obs-facts {off,v1}`) is born AT
+  v144, so it has no migration branch (every pre-144 config is refused at the floor; `total_dim`, a weight field,
+  would refuse a 2761-wide one anyway). `check_compatible` compares `obs_facts` (`v1` builds `ObsFactsInject`, the
+  state_dict delta); `pre_break_fixed_mass_reason` names the observation change.
+
 Every post-floor `if version < N` branch in `_migrate_config` (v122–v143) is now UNREACHABLE and is left in place;
 moving their history into the archive block and deleting them is legacy-manifest unit R1 / L1, not the break's.
 

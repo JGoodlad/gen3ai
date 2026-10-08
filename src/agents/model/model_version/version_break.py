@@ -5,8 +5,9 @@ WHAT IT MEANS FOR A CHECKPOINT. The break raised ``MIGRATION_FLOOR`` to 144, so 
 refused by ``_migrate_config``'s pre-floor gate — the blob arm because its belief path is DELETED (part 1),
 and a pre-break ``fixed_mass`` one because the break reshapes its weights (part 2 deleted the dead value tower
 and the flat pointer's dead scorer bias; part 4 tied the op's per-slot ``out_gain`` to one scalar per (block
-region, channel)) and changes its forward (part 5: ``intent_conditional`` reads the op's PRE-gain values). Neither
-can be reproduced at HEAD; both RUN PINNED to their own commit.
+region, channel)) and changes its forward (part 5: ``intent_conditional`` reads the op's PRE-gain values), and part 3
+appended the OBS-FACTS block to the observation (2761 -> 2845, the ``total_dim`` break). Neither can be reproduced
+at HEAD; both RUN PINNED to their own commit.
 
 This module is the ONE home of:
 
@@ -66,7 +67,8 @@ def pre_break_fixed_mass_reason() -> str:
             "and the flat opponent pointer's shared scorer bias (flat_intent_head.out.bias), so its state_dict "
             "holds keys this code refuses — and parts 4 and 5 re-wired the op (its per-slot out_gain tied to one "
             "scalar per block region and channel, 138 -> 99 on the production op, so damage_op.out_gain changed "
-            "shape; intent_conditional reads the op's PRE-gain values), so it cannot be reproduced at HEAD. Run it "
+            "shape; intent_conditional reads the op's PRE-gain values) — and part 3 APPENDED the OBS-FACTS block to the "
+            "observation (2761 -> 2845, so its total_dim no longer matches) — so it cannot be reproduced at HEAD. Run it "
             f"PINNED to its own commit (the git_hash in its metadata.json; at the latest {LAST_BLOB_COMMIT[:12]}, "
             "the last pre-break commit), or start a fresh run.")
 

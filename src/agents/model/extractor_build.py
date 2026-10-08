@@ -118,6 +118,7 @@ class ExtractorBuild(torch.nn.Module):
                  token_encoding: str = "legacy",
                  move_resolution: str = "off",
                  speed_physics: str = "off",
+                 obs_facts: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -1043,6 +1044,23 @@ class ExtractorBuild(torch.nn.Module):
             self.damage_op.stash_pair_type_mult = True
             self.damage_op.stash_species_post = True
             self.move_resolution_cell = MoveResolutionCell(self.damage_op)
+
+        # gen3_obs_facts_v1 (`--obs-facts`, the X5 version break's part 3, config v144): the OBS-FACTS block's
+        # consumer. The observation ALWAYS carries the block (its last 84 dims); `off` (production) builds
+        # nothing and reads none of it, so its forward is the one it was. `v1` builds the zero-init T0
+        # `ObsFactsInject` (the facts as token content; under `--token-encoding static` the SIDE-class facts go
+        # to the side board tokens) LAST, so no existing parameter position moves, out of `IsolatedLinear`s that
+        # draw no RNG (SB3's orthogonal re-init skips them). A layout without the block is refused here.
+        from agents.model.obs_facts_inject import OBS_FACTS_MODES, ObsFactsInject
+        if obs_facts not in OBS_FACTS_MODES:
+            raise ValueError(f"obs_facts must be one of {OBS_FACTS_MODES}, got {obs_facts!r}")
+        self.obs_facts = obs_facts
+        self.obs_facts_inject: Optional[ObsFactsInject] = None
+        if obs_facts == "v1":
+            if "obs_facts" not in layout:
+                raise ValueError("obs_facts=v1 needs an observation layout that carries the OBS-FACTS "
+                                 "block (gen3_obs_facts_v1): this layout predates it")
+            self.obs_facts_inject = ObsFactsInject(layout, token_encoding=token_encoding)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

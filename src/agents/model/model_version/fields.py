@@ -423,6 +423,11 @@ class ModelVersionFields:
     # parameters: 'on' prices the op's P(we act first) from the speed belief + the exact gen-3 order rules, 'off'
     # the fixed logistic. The string compare in check_compatible is the only gate (no shape changes).
     speed_physics: str = "off"
+    # gen3_obs_facts_v1 (config v144, the X5 version break's part 3): `--obs-facts {off,v1}`. STRUCTURAL: `v1`
+    # builds the zero-init T0 `ObsFactsInject` (the OBS-FACTS block as token content — the state_dict delta);
+    # `off` (production) builds nothing. The observation carries the block either way (obs 2761 -> 2845, the
+    # `total_dim` break).
+    obs_facts: str = "off"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

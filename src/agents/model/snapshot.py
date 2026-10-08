@@ -1478,6 +1478,7 @@ def current_model_version(
     token_encoding: str = "legacy",
     move_resolution: str = "off",
     speed_physics: str = "off",
+    obs_facts: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1541,6 +1542,8 @@ def current_model_version(
     ext_kwargs["token_encoding"] = str(token_encoding)
     ext_kwargs["move_resolution"] = str(move_resolution)
     ext_kwargs["speed_physics"] = str(speed_physics)
+    # gen3_obs_facts_v1 (v144, part 3): the OBS-FACTS consumer — structural (`v1` builds a module).
+    ext_kwargs["obs_facts"] = str(obs_facts)
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1636,6 +1639,8 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_speed_physics_v1 (v143): the op's P(act first) physics — no parameters, so a frozen opponent's
         # gate must see it (nothing shape-based would).
         "speed_physics": str(getattr(fe, "speed_physics", "off") or "off"),
+        # gen3_obs_facts_v1 (v144, part 3): `v1` builds `ObsFactsInject` (a state_dict delta).
+        "obs_facts": str(getattr(fe, "obs_facts", "off") or "off"),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

@@ -24,6 +24,11 @@ pytestmark = [pytest.mark.sim, pytest.mark.integration]
 N_BATTLES = 12
 
 
+def B_DIR() -> Path:
+    from main.ridealong_read.reader import bank_dir
+    return bank_dir()
+
+
 @pytest.fixture(scope="module")
 def ckpt(tmp_path_factory) -> Path:
     """A fresh production (X5) checkpoint + its run-level ``model_config.json``."""
@@ -55,7 +60,14 @@ def test_reader_smoke_end_to_end(ckpt, tmp_path):
     r = json.loads((out / "K2final.json").read_text())
     assert r["schema"] == "gen3_ridealong_read_v1"
     assert r["heads"] in ("trained", "fresh-untrained")
-    assert r["reencode"]["obs_as_recorded"] is True
+    # Gate ①'s byte check belongs to the bank's recording encoder (`policy_spectrum_integration_test`'s rule): while
+    # this checkout's encoder identity equals the bank's, every re-encoded row must be the recorded one; after a
+    # deliberate encoder change (the X5 version break's OBS-FACTS append grew the row 2761 -> 2845) the read must
+    # STATE that it ran on a drifted re-encoding, never claim the recorded observations.
+    from main.policy_spectrum import bank as B
+    same_encoder = B.encoder_identity() == B.load_bank(B_DIR()).manifest["encoder_identity"]
+    assert r["reencode"]["recorded_rows_checked"] > 0
+    assert r["reencode"]["obs_as_recorded"] is same_encoder
     # a fresh checkpoint is no truth continuation's greedy policy: meter (iv) has no own truth
     assert r["own_truth_continuation"] is None
     assert r["bank"]["battles"] == N_BATTLES

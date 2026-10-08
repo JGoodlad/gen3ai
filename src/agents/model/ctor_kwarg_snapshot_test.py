@@ -69,6 +69,7 @@ CTOR_KWARGS_V96 = frozenset({
     "policy_readout",
     "move_resolution",
     "speed_physics",
+    "obs_facts",
 })
 
 # The five names MEASURED as uncovered on 2026-08-17, with the run counts that made the case. Pinned

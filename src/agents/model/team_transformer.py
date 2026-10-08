@@ -369,14 +369,18 @@ class TeamTransformer(torch.nn.Module):
         self.last_global_out: Optional[torch.Tensor] = None   # legacy: [B, D_MODEL]
         self.last_board_out: Optional[torch.Tensor] = None    # static: [B, 3, D_MODEL] (our side, their side, field)
 
-    def board_tokens(self, ctx: ExtractorContext) -> torch.Tensor:
+    def board_tokens(self, ctx: ExtractorContext, side_extra: Optional[torch.Tensor] = None) -> torch.Tensor:
         """[B, 3, D_MODEL] the static board tokens BEFORE the trunk (OUR SIDE, THEIR SIDE, FIELD), type
-        embeddings included. The two sides share `side_proj`; only the type differs."""
+        embeddings included. The two sides share `side_proj`; only the type differs. ``side_extra`` [B, 2, D]
+        (gen3_obs_facts_v1, `--obs-facts v1`): extra side-relative CONTENT added to the two side tokens (the
+        OBS-FACTS block's SIDE-class facts, `ObsFactsInject.side_rows`); None adds nothing."""
         # The three board types are CONSECUTIVE ids (asserted at import), so one on-device arange reads them
         # (no host-built index tensor: an H2D copy per forward would break CUDA-graph capture, M5 T2).
         types = self.token_type_emb(torch.arange(TOKEN_TYPE_OUR_SIDE, TOKEN_TYPE_FIELD + 1, dtype=torch.long,
                                                  device=ctx.device))                        # [3,D]
         side = self.side_proj(side_features(ctx, self._board_offsets)) + types[:2]         # [B,2,D]
+        if side_extra is not None:
+            side = side + side_extra
         field = self.field_proj(field_features(ctx, self._board_offsets)) + types[2]       # [B,D]
         return torch.cat([side, field.unsqueeze(1)], dim=1)
 
@@ -395,6 +399,7 @@ class TeamTransformer(torch.nn.Module):
                 extra: "Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]" = None,
                 edge_bias_fn: "Optional[Callable[[torch.Tensor], torch.Tensor]]" = None,
                 key_log_presence: Optional[torch.Tensor] = None,
+                board_side_extra: Optional[torch.Tensor] = None,
                 ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
         """`extra` (gen3_entity_move_seats_v1): optional `(tokens [B,n,d_model], types [n] long,
         pad [B,n] bool)` — additional entity seats appended AFTER the global token, so every
@@ -422,8 +427,11 @@ class TeamTransformer(torch.nn.Module):
         their_team_tokens = their_team_tokens + tt(torch.full((1,), TOKEN_TYPE_THEIR_TEAM, dtype=torch.long, device=device))
         if self.static_board:
             # gen3_static_board_v1: OUR SIDE / THEIR SIDE / FIELD (side-relative content, one side_proj).
-            global_token = self.board_tokens(ctx)
+            global_token = self.board_tokens(ctx, side_extra=board_side_extra)
         else:
+            if board_side_extra is not None:
+                raise ValueError("board_side_extra is the static board's side content; legacy has no side token "
+                                 "(the OBS-FACTS block's SIDE facts ride the per-mon tokens there)")
             # Global token — active contexts + non-matchup scalars projected into d_model.
             global_token_input = torch.cat([ctx.our_ctx_raw, ctx.opp_ctx_raw, ctx.non_matchup_rest], dim=1)
             global_token = self.global_proj(global_token_input).unsqueeze(1)

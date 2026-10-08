@@ -10,7 +10,7 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **144** in the mirror this file is gated against (the X5 VERSION BREAK's follow-the-code window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — the shaped-reward deletion's field removal and X5's hypothesis tokens as the only belief representation are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_x5_version_break_v1`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
+| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **144** in the mirror this file is gated against (the X5 VERSION BREAK's follow-the-code window, row 3: the mirror follows the code, so the obs-architecture batch's surface — the reshaped event rows, the 2845-dim obs since the break's OBS-FACTS append — the shaped-reward deletion's field removal and X5's hypothesis tokens as the only belief representation are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_x5_version_break_v1`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
 | Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 144 / `gen3_x5_version_break_v1`) |
 | `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). A **signature-bump window is OPEN** (opened 2026-09-26 by the observation-architecture batch, `gen3_event_record_v2`; moved forward 2026-10-07 by the X5 version break, `gen3_x5_version_break_v1`, config 144): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_x5_version_break_v1`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
@@ -50,7 +50,7 @@ python -m agents.model.delivery_graph \
 
 ## 1. Observation
 
-One flat `float32` vector of **2761** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
+One flat `float32` vector of **2845** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
@@ -65,10 +65,14 @@ Every number below comes from `agents/observation/constants.py` and
 | Board (reactive) | 1604 | 1621 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
 | Pair history — 6×6×5 h[i,j] | 1621 | 1801 | 180 | `OFFSET_PAIR_HISTORY`, `PAIR_HISTORY_DIM` (`gen3_pair_history_v1`) |
 | Event window — 32 × 30 event records | 1801 | 2761 | 960 | `OFFSET_EVENT_WINDOW`, `EVENT_WINDOW_DIM` (`gen3_event_record_v2`) |
-| **Total** *(= `base_dim`)* | | **2761** | | `Gen3ObservationEncoder.dimension` |
+| OBS-FACTS — seen 6×7 · choice 4 · vol 2×5×3 · screens 2×4 | 2761 | 2845 | 84 | `OFFSET_OBS_FACTS`, `OBS_FACTS_DIM` (`gen3_obs_facts_v1`, §1.7) |
+| **Total** *(= `base_dim`)* | | **2845** | | `Gen3ObservationEncoder.dimension` |
 
-The event window is the LAST block: `total_dim == base_dim`, and the encoder's output IS the
+The OBS-FACTS block is the LAST block: `total_dim == base_dim`, and the encoder's output IS the
 observation. There is no appended tail — the row the Rust core builds IS `encode(...)`, unchanged.
+The first 2761 dims are byte-identical to the layout before the block was appended (measured at the
+append, the X5 version break's part 3, 2026-10-07: all 991 obs-golden vectors' prefixes hash to their
+pre-append values), and production (`--obs-facts off`) reads none of the block (§1.7).
 
 **The event window** (Tier H-B, `gen3_event_window_v1`, reshaped by `gen3_event_record_v2`): the
 last 32 decision-relevant EVENTS as typed 30-column records — type id · actor/target species +
@@ -337,6 +341,32 @@ no-op.
 Per-slot layout of the event record, and the embedded-ID manifest that routes raw ids to
 embedding tables, live in `src/agents/observation/CLAUDE.md`.
 
+### 1.7 The OBS-FACTS block — 84 dims (`gen3_obs_facts_v1`)
+
+Four facts the entity-coverage audit found the model never sees
+([`endstate/design_entity_coverage_audit.md`](endstate/design_entity_coverage_audit.md) §5 ranks 4-7,
+owner scope 2026-10-06), appended as the observation's last block at the X5 version break (config v144,
+part 3). Built by `agents/observation/obs_facts.py` and its Rust twin `src/rust_sim/src/encoder/facts.rs`
+(slice O compares the whole row byte for byte); each sub-block is laid out for an entity encoder to ROUTE
+(`get_layout()["obs_facts"]`; the schema names `obs_facts.{seen,choice,vol,screens}`). Written every
+decision on both encoder schedulers (never cached). **Production reads none of it** (`--obs-facts off`);
+`--obs-facts v1` is the lever (§2 step 2b).
+
+| sub-block | dims | content (every mechanic verified in the pinned `deps/pokemon-showdown`) |
+|---|---|---|
+| `seen` | 6 × 7 | per OUR mon, row i = our team slot i: what the OPPONENT has seen of it (backlog E1) — `[on the field once, move seen ×4 (the per-mon slot's sorted move order), item public, ability public]`. The reading's own reveal rules pointed at our side: `Move.seen` is set by a public `\|move\|` (a Metronome / Assist call and a `lockedmove` continuation are not reveals), `item_public` / `ability_public` by a protocol line — never by a `\|request\|` (`LivePokemon` / `LiveMove` carry them; slice V rule V18) |
+| `choice` | 4 | the OPPONENT ACTIVE's Choice-lock EVIDENCE, never a lock state: `[NOT-locked by item (a revealed non-Choice item, or a known empty hand), NOT-locked by moves (two DISTINCT freely selected moves this stint), the stint's first move (a move EMBEDDING id, the dex num), the trailing run of one move (log-saturated)]`. A stint ends at a switch / drag / faint; a called move and Struggle are not a selection (`choicelock` ignores Struggle; gen 3/4 lock to `lastMove` at `onAfterMove`, `data/mods/gen4/items.ts`) |
+| `vol` | 2 × 5 × 3 | per side (ours, theirs), the ACTIVE's Encore / Taunt / Disable / Uproar / partial trap: `[elapsed, min left, max left]` in turns / 8. Durations in RESIDUALS (`sim/battle.ts` decrements `duration` at `Residual`): Encore 3–6, Taunt 2, Disable 2–5, Uproar 2–5, partial trap 3–6; Encore and Disable +1 when the target had already acted that turn (`!willMove`, folded at the `-start` by `EventWindowTracker.facts`) |
+| `screens` | 2 × 4 | per side: turns left / 5 on Reflect / Light Screen / Safeguard / Mist (all 5 residuals in gen 3) |
+
+Elapsed counts the residuals since the start: poke-env's `\|turn\|`-counted value plus one when this
+turn's residual has already run (`LiveView.residual_done` — an `\|upkeep\|` read since the last
+`\|turn\|`: a forced replacement after a faint; slice V rule V19). Held to the ENGINE at every decision
+of 60 seeded random-legal battles built around these mechanics (`src/rust_sim/tests/obs_facts_truth_test.rs`:
+screens equal the engine's remaining duration, the engine's volatile duration inside `[min, max]`, no
+NOT-locked proof while the engine holds `choicelock` and the first move IS the locked move; 2,879
+decisions, 0 failures, 2026-10-06).
+
 ---
 
 ## 2. Feature extractor — the production chain
@@ -501,7 +531,7 @@ op's amounts. Nothing has been trained on `static`; it is the screen's arm (desi
 
 The concrete steps:
 
-1. **`ObsUnpack`** — slices the 2761-dim vector into `ExtractorContext` (~30 named tensors:
+1. **`ObsUnpack`** — slices the 2845-dim vector into `ExtractorContext` (~30 named tensors:
    per-mon blocks, categorical ids, active-slot indices, fainted key-masks,
    `our_active_req_move_{ids,type_ids,legal}`).
 2. **`PokemonEncoder`** — per-move network (`MOVE_NET_HIDDEN` `[96,32]`, with the `MoveLatentEncoder`
@@ -513,6 +543,16 @@ The concrete steps:
    per-slot validity bit is our active's CURRENT legality matched onto its sorted slots by move-num
    identity (`active_move_legality_sorted`; 1 on every other mon). Stashes
    `last_move_tokens` `[B,12,4,32]` (sorted-by-id) for the seats and the pointer head.
+   **2b. `ObsFactsInject`** (T0, `--obs-facts v1` ONLY — production `off` builds nothing,
+   `gen3_obs_facts_v1`): the OBS-FACTS block (§1.7) added to the tokens of the entities it describes,
+   before the hypothesis splice and the belief stack — `seen` row i to our token i, each side's `vol` to
+   its ACTIVE token, `choice` (the first move through the shared move embedding) to THEIR active token;
+   each side's `screens` (a SIDE fact, `obs_facts_inject.FACTS_TOKEN_CLASS`) to every token of that side
+   under `--token-encoding legacy`, and to that side's BOARD token (OUR SIDE / THEIR SIDE) under `static`,
+   never a per-mon token there. Four zero-init `IsolatedLinear`s, built LAST (identity at init; no RNG
+   draw, skipped by SB3's orthogonal re-init, so every other initial weight equals the `off` build's at
+   the same seed, pinned by `obs_facts_inject_test.py`). A hidden opponent slot's hypothesis token is
+   spliced in after it and carries none of the block.
 3. **`MoveBelief`** (T0, `move_belief_mode` = `"both"` — every opp slot, revealed and hidden)
    — reads the opp **role** tokens, predicts each opp slot's moveset,
    fuses the Smogon log-odds prior, pins revealed moves, and reinjects the soft-embedded moveset
@@ -1174,7 +1214,7 @@ error z-score, fail-closed switch and `ridealong/rndv_<name>_*` series. The `--r
 |---|---|---|---|
 | `fast` | base's normalised observation | 10× base's predictor rate (3e-3) | base's predictor, started from base's exact weights; the same ReLU-MLP family as the target, one layer deeper |
 | `decay` | base's normalised observation | pulled toward its own init once per PPO update, half-life 10 updates (≈ half an eval cycle) | as `fast` |
-| `small` | base's normalised observation | cannot memorise: obs→32→64, 90,496 parameters (11.5 % of base's) | deliberately LESS expressive than the 256-wide target, so it cannot identify the target exactly |
+| `small` | base's normalised observation | cannot memorise: obs→32→64, 93,184 parameters on the 2845-dim observation (11.5 % of base's 810,816) | deliberately LESS expressive than the 256-wide target, so it cannot identify the target exactly |
 | `feat` | the detached `value_pooled` (D_MODEL), with its own feature normalisation | — (it measures representation drift live) | base's shapes over the features, with its own frozen target |
 
 The three observation variants share base's frozen target and observation normalisation. The same
@@ -1590,6 +1630,7 @@ does nothing given another setting.
 | `move_latent` | `true` | ACTIVE |
 | `move_prior_fusion` | `true` | ACTIVE |
 | `move_resolution` | `"off"` | OFF |
+| `obs_facts` | `"off"` | OFF |
 | `op_believed_lean` | `true` | ACTIVE |
 | `op_drop_renders` | `true` | ACTIVE |
 | `opp_belief_cls_k` | `6` | ACTIVE |
@@ -1793,7 +1834,7 @@ not re-derive them.
    was **2925**; since `gen3_entity_rehome_v1` it was **2667**, and since
    `gen3_deadline_clock_v1` it was **2669** (the
    per-mon recency block added 12 × 3). ⚠️ **Every obs dim in this section is AS-FOUND in 2026-08;
-   live is 2761** — see §1. Its per-block reference section then describes the
+   live is 2845** — see §1. Its per-block reference section then describes the
    pre-deletion 414-dim reactive layout and the 51-dim incoming-damage / 44-dim move-effect blocks
    as if present. Its own inline banner says to treat the deletion note as authoritative — i.e. the
    file tells you not to trust the rest of the file.
@@ -1807,7 +1848,7 @@ not re-derive them.
    speed-stat GIGO stamp, 59 = `consequence_topk`; now 60 = the re-home stamp). Neither v58 nor
    v59 was described anywhere in the root file.
 5. **`src/agents/model/CLAUDE.md` describes `ObsUnpack` as peeling "the flat 3390-dim
-   observation"** — obs-layout generations out of date (2669 at audit time; **2761 live**).
+   observation"** — obs-layout generations out of date (2669 at audit time; **2845 live**).
 6. **`PointerNativeActionHead`'s docstring says the move cell is `[low,high,crit,pko,p_land,known,
    sec×10]`.** It is `sec×7` (`_PTR_MOVE_CELL` = 13, not 16) since the outgoing slp/psn/tox columns
    were dropped. `pointer_cells`' own docstring, 900 lines away, says 7 correctly.

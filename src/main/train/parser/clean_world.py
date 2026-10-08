@@ -207,6 +207,16 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "stat stages, our exact stat arithmetic; Quick Claw format-gated, banned in gen3ou), "
                              "at every op site. No parameters. STRUCTURAL, version-checked, fresh-only. Requires "
                              "--damage-op.")
+    from agents.model.obs_facts_inject import OBS_FACTS_MODES
+    parser.add_argument("--obs-facts", "--obs_facts", dest="obs_facts",
+                        choices=OBS_FACTS_MODES, default=None,
+                        help="gen3_obs_facts_v1 (v144, the X5 version break's part 3): whether the model READS the "
+                             "observation's OBS-FACTS block (always in the observation, its last 84 dims) — what "
+                             "the opponent has seen of our team, the opponent active's Choice-lock evidence, the "
+                             "actives' Encore / Taunt / Disable / Uproar / partial-trap turns, each side's screen "
+                             "turns. 'off' (default; production): builds nothing. 'v1': the zero-init "
+                             "ObsFactsInject adds each fact to its entity's token (under --token-encoding static "
+                             "the screens go to the side board tokens). STRUCTURAL, version-checked, fresh-only.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

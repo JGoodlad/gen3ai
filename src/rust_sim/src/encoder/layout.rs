@@ -6,10 +6,10 @@
 #![allow(dead_code)]
 
 /// `Gen3ObservationEncoder.dimension` — the flat row's length.
-pub const OBS_DIM: usize = 2761;
+pub const OBS_DIM: usize = 2845;
 /// The `<f4` wire frame's head, which spells the row's shape (`wire.rs`); generated so a
 /// layout change moves it with `OBS_DIM` instead of failing a hand-written assert.
-pub const FRAME_HEAD: &str = "{\"dtype\":\"<f4\",\"shape\":[2761],\"b64\":\"";
+pub const FRAME_HEAD: &str = "{\"dtype\":\"<f4\",\"shape\":[2845],\"b64\":\"";
 pub const POKEMON_SPECIES_OFFSET: usize = 0;
 pub const POKEMON_ITEMS_OFFSET: usize = 7;
 pub const POKEMON_TYPES_OFFSET: usize = 10;
@@ -74,6 +74,7 @@ pub const OFFSET_GLOBAL: usize = 1584;
 pub const OFFSET_REACTIVE: usize = 1604;
 pub const OFFSET_PAIR_HISTORY: usize = 1621;
 pub const OFFSET_EVENT_WINDOW: usize = 1801;
+pub const OFFSET_OBS_FACTS: usize = 2761;
 pub const FACTS_SEEN_ROW_DIM: usize = 7;
 pub const FACTS_SEEN_DIM: usize = 42;
 pub const FACTS_CHOICE_DIM: usize = 4;

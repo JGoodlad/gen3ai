@@ -76,6 +76,9 @@ TIER_OF: Dict[str, int] = {
     # and write the hidden opponent slots' tokens pre-trunk. (`belief_slots`, the blob path's T0 token, is
     # DELETED — the X5 version break, config v144, part 2.)
     "hypothesis_builder": 0,
+    # gen3_obs_facts_v1 (v144, `--obs-facts v1`): the OBS-FACTS block added to the tokens right after the
+    # per-mon encoder — what is on the board, T0 RESOLVE.
+    "obs_facts_inject": 0,
     # T1 REASON — physics over the resolved state, then attention over tokens that carry it.
     "damage_op": 1,
     "entity_seats": 1,

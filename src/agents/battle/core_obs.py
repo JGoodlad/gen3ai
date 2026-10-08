@@ -31,7 +31,7 @@ class RowRefused(ValueError):
 def obs_dim() -> int:
     from agents.observation import constants as C
 
-    return int(C.OFFSET_EVENT_WINDOW + C.EVENT_WINDOW_DIM)
+    return int(C.OFFSET_OBS_FACTS + C.OBS_FACTS_DIM)
 
 
 def wrap_row(frame: Mapping[str, Any], dim: int | None = None) -> np.ndarray:

@@ -444,6 +444,17 @@ class ExtractorForward(ExtractorApi):
         self.stash.opp_believed_mask = ctx.opp_believed_mask
         self.stash.opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
+        # gen3_obs_facts_v1 (`--obs-facts v1` only; `off` builds nothing): the OBS-FACTS block as T0 content on
+        # the tokens of the entities it describes, before the belief stack reads them (a hidden opponent slot's
+        # hypothesis token is spliced in after, and carries none of it). Under `--token-encoding static` the
+        # SIDE-class facts go to the side board tokens instead (`_board_side_extra`, read by the trunk).
+        _board_side_extra: Optional[torch.Tensor] = None
+        if self.obs_facts_inject is not None:
+            assert ctx.obs_facts is not None, "obs_facts=v1 on a layout without the OBS-FACTS block"
+            role_tokens = self.obs_facts_inject(ctx.obs_facts, role_tokens, ctx.our_active_idx,
+                                                ctx.opp_active_local, self.embeddings)
+            if self.obs_facts_inject.side_to_board:
+                _board_side_extra = self.obs_facts_inject.side_rows(ctx.obs_facts)
         # gen3_x5_belief_tokens_v1 (X5 U3; built with the belief family): the hypothesis set's SPECIES
         # half (δ_θ reads the PRE-belief opponent role tokens — the revealed ones), then the hypothesis
         # TOKENS: THE `pokemon_encoder` on the hypothesis context (hidden slots' rows = their dex rows;
@@ -715,7 +726,7 @@ class ExtractorForward(ExtractorApi):
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),
-            edge_bias_fn=_edge_fn, key_log_presence=_klp)
+            edge_bias_fn=_edge_fn, key_log_presence=_klp, board_side_extra=_board_side_extra)
         _presence: Optional[OppPresence] = None
         if _hs is not None:
             assert _seat_out is not None

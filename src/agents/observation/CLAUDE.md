@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **2761-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
+This directory builds the **2845-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
 the live value is `Gen3ObservationEncoder.dimension` — read it there, and see
 `designs/ARCHITECTURE.md` § Observation for the full block table).
 It runs once per agent decision across every training env, so it sits directly on the
@@ -379,6 +379,7 @@ team list grows as mons are revealed), and the encoded event-window rows.
 | per-mon recency triplets | same — turn-anchored, so they move under a mon that did nothing |
 | `trapped` / `maybe_trapped` / `active` | request-sourced; a cached request bit that survives one decision too long is the `gen3_op_move_align_v1` misalignment class |
 | BOTH actives' whole slots | unconditionally dirty — it costs ~2 slot encodes and shrinks the event→dirty map to the families that touch a BENCHED mon |
+| the 84-dim OBS-FACTS block (`gen3_obs_facts_v1`) | cheap, and turn-anchored like the recency triplets (elapsed / turns-left tick every residual); its inputs are the view and the event window's `facts` fold. `encode_obs_facts` zeroes its own span, so the persistent buffer cannot serve a stale cell |
 
 ⚠️ **Recomputing the active context correctly is necessary but not sufficient, and this tree learned
 that the expensive way.** Until 2026-08-23 the *source* was wrong: poke-env cleared the passer's
@@ -731,14 +732,15 @@ gen3ou has no team preview, so `apply_teambuilder_team` never attaches the sprea
 matches the declared teambuilder team to the request-built team by species and fills in
 IVs/EVs/nature (spread only, never re-running `_update_from_teambuilder`). Without it this block
 emitted a constant fallback (all-31 IVs, 0 EVs, neutral nature) for every own mon.
-**OBS-FACTS block — 84 dims, COMPUTED but NOT YET IN THE OBSERVATION (`gen3_obs_facts_v1`,
+**OBS-FACTS block — 84 dims, the observation's LAST block at `OFFSET_OBS_FACTS` = 2761 (`gen3_obs_facts_v1`,
 `obs_facts.py`; Rust twin `src/rust_sim/src/encoder/facts.rs`; layout `constants.FACTS_*`).**
-`encode_obs_facts(vec, off, live, our_species, event_window)` writes it into a caller's buffer;
-`Gen3ObservationEncoder.encode` does NOT call it. The append (2761 → 2845, the new last block) and
-the model's `obs_facts` consumer (`off` / `v1`) land at the ONE planned checkpoint break, the X5 adoption
-version break (orchestrator decision 2026-10-06; branch `obs-facts-append`;
-`designs/endstate/design_entity_coverage_audit.md` §8). Four sub-blocks, each laid out to be ROUTED to
-an entity:
+`Gen3ObservationEncoder.encode` writes it every decision through `encode_obs_facts(vec, OFFSET_OBS_FACTS,
+live, our_species, event_window)` (appended at the X5 version break, config v144, part 3: obs 2761 → 2845,
+the 2761-dim prefix byte-identical). The model reads it only under `--obs-facts v1`
+(`agents/model/obs_facts_inject.py`; production `off` reads none of it;
+`designs/endstate/design_entity_coverage_audit.md` §8). Four sub-blocks (offsets INSIDE the block; the
+layout's `obs_facts` key and the schema's `obs_facts.{seen,choice,vol,screens}` children), each laid out to
+be ROUTED to an entity:
 
 | sub-block | offset | dims | content |
 |---|---|---|---|
@@ -753,9 +755,9 @@ Sources: the view (`LiveMove.seen`, `item_public`, `ability_public`, `residual_d
 `event_window=` threads it). **Elapsed is RESIDUALS**: the counter (or `turn − start`) plus one when
 `residual_done`. With no window the stint reads zero and the Encore / Disable bounds take the union of
 both adjustments. Gates: `obs_facts_test.py` (constructed protocol, every fact; each FAILS on revert of
-the code it names), slice O's `[FACTS]` comparison (the core ships the block beside the row; byte
-equality at every COMMIT decision), slice V rules V18 / V19, and the ENGINE truth test
-`src/rust_sim/tests/obs_facts_truth_test.rs`.
+the code it names; the block's offset and the encoder's write on both schedulers), slice O (the core's row
+carries the block, so the whole-row byte comparison covers it; `obs_facts` is one of its non-vacuity
+blocks), slice V rules V18 / V19, and the ENGINE truth test `src/rust_sim/tests/obs_facts_truth_test.rs`.
 
 **Board (reactive) block — 17 dims, layout in `reactive.py`.** `REACTIVE_SCALAR_DIM` (5) raw
 board scalars, then the 12-dim active-req-moves block. Offsets are `reactive_layout` entries —

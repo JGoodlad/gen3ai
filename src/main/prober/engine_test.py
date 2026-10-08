@@ -679,8 +679,9 @@ def test_offsets_resolve_matches_layout():
     # this is the tripwire that makes an UNINTENDED obs-width change fail loudly, so it moves
     # only when someone decided it should. gen3_event_record_v2 (the observation-architecture
     # batch) took it -> 2761: +4 (the field sports, 2 per active context) and +256 (event rows
-    # 22 -> 30 columns x 32).
-    assert off.total_dim == 2761
+    # 22 -> 30 columns x 32). gen3_obs_facts_v1 (the X5 version break, config v144) took it -> 2845:
+    # the 84-dim OBS-FACTS block appended after the event window.
+    assert off.total_dim == 2845
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()

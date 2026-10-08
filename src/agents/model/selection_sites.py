@@ -46,7 +46,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "aux_value_heads", "belief_heads", "board_tokens", "conditional_threat", "damage_kinds", "dense_attn_bias", "damage_op", "damage_op_blocks", "damage_op_speed",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens", "index_max",
-    "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "opp_intent",
+    "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "obs_facts_inject", "opp_intent",
     "move_order", "move_resolution", "move_resolution_rules", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
     "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
 )
@@ -431,6 +431,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # fraction (a fainted mon is exactly 0 — no near-tie).
     "board_tokens": {
         "OBS": ("hp[:, :TEAM_SIZE] > 0",),
+    },
+    # gen3_obs_facts_v1 (`--obs-facts v1`): the stint's first move is a float-coded move id in the observation.
+    "obs_facts_inject": {
+        "OBS": ("choice[:, 2].long()",),
+        "PYTHON": ("token_encoding == 'static'",),
     },
     "value_readouts": {
         "OBS": ("op_alive.clamp(max=1.0) < 0.5",),

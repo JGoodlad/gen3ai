@@ -540,6 +540,19 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "(`move_order.p_first_same_priority`) at every op site that prices who moves first. Quick Claw "
                    "is format-gated (banned in gen3ou). The string compare in check_compatible is the only gate.",
               requires=("damage_op",)),
+    ModelFlag("obs_facts", "off", Tier.CLI, Klass.STRUCTURAL, 144,
+              "whether the model READS the observation's OBS-FACTS block ('off' = production, builds nothing; "
+              "'v1' = the zero-init ObsFactsInject: what the opponent has seen of our team, the opponent "
+              "active's Choice-lock evidence, the actives' Encore / Taunt / Disable / Uproar / partial-trap "
+              "turns and each side's screen turns, added to the tokens of the entities they describe)",
+              note="gen3_obs_facts_v1 (designs/endstate/design_entity_coverage_audit.md §8 + Decision record; "
+                   "owner scope 2026-10-06), the X5 version break's part 3 (config v144). The observation carries "
+                   "the block whatever this flag says (obs 2761 -> 2845, the `total_dim` break; the 2761-dim prefix "
+                   "is byte-identical), so the lever is screened as its OWN arm. 'v1' is zero-init "
+                   "(identity-at-init), built LAST (no existing parameter position moves) out of IsolatedLinears "
+                   "(no RNG draw); under --token-encoding static the SIDE-class facts (screens) go to the side board "
+                   "tokens, never a per-mon token (`obs_facts_inject.FACTS_TOKEN_CLASS`). STRUCTURAL: the module is "
+                   "the state_dict delta, so check_compatible compares the value. OFF on the production surface."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

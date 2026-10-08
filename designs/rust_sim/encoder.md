@@ -79,7 +79,7 @@ A species / item / ability / move row with no numeric `num` is a LOAD ERROR on b
 
 ## 5. The row on the wire
 
-`wire::frame(row)` = `{"dtype":"<f4","shape":[OBS_DIM],"b64":…}` (the head is GENERATED into `layout.rs` as `FRAME_HEAD`; 2761 since `gen3_event_record_v2`) — the row's little-endian float32 bytes,
+`wire::frame(row)` = `{"dtype":"<f4","shape":[OBS_DIM],"b64":…}` (the head is GENERATED into `layout.rs` as `FRAME_HEAD`; 2845 since `gen3_obs_facts_v1`, the X5 version break) — the row's little-endian float32 bytes,
 in the reply of a pipe that already exists (`core_events --obs`; the process and the pipe protocol
 are kept, program M4 "Transport"). Python wraps it with `np.frombuffer` (`core_obs.wrap_row`, a
 read-only view, no copy) and REFUSES — never converts — a wrong dtype, shape or byte length;
@@ -117,7 +117,7 @@ took a DECISION at the write's boundary gets ONE frame, written **BEFORE that wr
 when the request chunk is dispatched.
 
 ```text
-__OBS__ p1 {"frame":{"dtype":"<f4","shape":[2761],"b64":…},"mask":[11 ints],
+__OBS__ p1 {"frame":{"dtype":"<f4","shape":[2845],"b64":…},"mask":[11 ints],
             "tokens":{"<idx>":"<choice>",…},"turn":<int>,"line":<int>,"rqid":<int>|null,"n":<int>}
 ```
 
@@ -323,17 +323,19 @@ through a forme change at both levels);
 `encoder::oracle::tests` (the cells tile the slot, the guard's teeth per block); `label_lookup_guard_test.rs` (the
 labels' consumer guard); `src/utils/rust_env/oracle_reveal_integration_test.py` (the real core from Python).
 
-## 12. The OBS-FACTS block — computed BESIDE the row (`gen3_obs_facts_v1`)
+## 12. The OBS-FACTS block — the row's LAST block (`gen3_obs_facts_v1`)
 
 `encoder::facts::obs_facts(inputs, tables, out)` is `agents/observation/obs_facts.py`'s
 `encode_obs_facts`, cell for cell (f64, one round at the write): what the opponent has seen of our team,
 the opponent active's Choice-lock evidence, the actives' Encore / Taunt / Disable / Uproar / partial-trap
 turns and each side's screen turns (`ARCHITECTURE`-level detail: `src/agents/observation/CLAUDE.md`).
-`BattleVersion::encode_facts(side, &mut [f32; OBS_FACTS_DIM])` computes it from the row's own inputs;
-it is NOT part of the row (`OBS_DIM` unchanged) until the X5 adoption version break appends it (branch
-`obs-facts-append`). `core_events --obs` ships it as `"facts"` (base64 little-endian f32) beside each
-row, and slice O compares it BYTE for byte with the Python block (`[FACTS]`; a broken Python cell reads
-2,081 divergences on the COMMIT tier). The reading half is `present/` (V18 / V19) and the fold is
+`encode_into` writes it at `OFFSET_OBS_FACTS` (2761) as step 8, the row's last block (appended at the X5
+version break, config v144, part 3: `OBS_DIM` 2761 → 2845, the prefix byte-identical; `cell_name` names a
+cell `obs_facts+k`). `BattleVersion::encode_facts(side, &mut [f32; OBS_FACTS_DIM])` computes the block
+alone from the same inputs (the engine-truth test reads it). Slice O covers it through the whole-row byte
+comparison (`obs_facts` is one of its non-vacuity blocks); the separate `"facts"` field `core_events
+--obs` shipped beside the row while the block was outside it, and slice O's `[FACTS]` comparison of it,
+are DELETED as redundant with the row compare. The reading half is `present/` (V18 / V19) and the fold is
 `trackers::facts` (`trackers.md`). The ENGINE truth test is `tests/obs_facts_truth_test.rs`: 60 seeded
 random-legal battles, every decision, the encoded screens equal the engine's remaining duration, the
 engine's volatile durations inside the encoded bounds, no NOT-locked proof while the engine holds

@@ -233,6 +233,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_speed_physics_v1 (v143): the op's P(we act first) physics.
             speed_physics=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("speed_physics", "off")),
+            # gen3_obs_facts_v1 (v144, part 3): the OBS-FACTS consumer (structural).
+            obs_facts=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("obs_facts", "off")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

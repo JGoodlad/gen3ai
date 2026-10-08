@@ -12641,3 +12641,63 @@ pre-break checkpoint; `version_break.pre_break_fixed_mass_reason` now names the 
   test_the_normal_path_passes_the_behaviour_probe`, `update_fit_test::test_the_probe_releases_its_graph` (the K9(b)
   probe on the pre-break buffer), `learner_lifecycle_test::test_a_production_surface_update_acquires_nothing_and_
   leaves_the_golden_unchanged`. Parts 4 / 5 move the K9 init hash further (the `out_gain` shape) and the update.
+
+### Part 3 — the OBS-FACTS APPEND (`gen3_obs_facts_v1`; `designs/endstate/design_entity_coverage_audit.md` §8)
+
+NO further bump: still v144 / `gen3_x5_version_break_v1` / `MIGRATION_FLOOR` 144. Ported from branch
+`obs-facts-append` (`60ebf659`, which predated the slice `98be0958` and used config v138) — the append-specific changes
+only, re-based onto the break's tree.
+
+- **The observation.** The 84-dim OBS-FACTS block (what the opponent has seen of our team 6 × 7, the opponent active's
+  Choice-lock evidence 4, the actives' Encore / Taunt / Disable / Uproar / partial-trap turns 2 × 5 × 3, each side's
+  screen turns 2 × 4) is APPENDED as the observation's LAST block: `constants.OFFSET_OBS_FACTS` = 2761, obs 2761 → 2845.
+  `Gen3ObservationEncoder.encode` writes it every decision on both schedulers (never cached; `encode_obs_facts` zeroes
+  its own span), `get_layout()` carries `obs_facts_offset` / `obs_facts_dim` / `obs_facts.{seen,choice,vol,screens}`, the
+  schema names the block and its four children, `describe_offset` / `describe_vector` / `core_obs.obs_dim()` /
+  `rust_core_parity_obs.block_of` know it. The Rust encoder writes it in `encode_into` (step 8; `cell_name`), the
+  generated `layout.rs` carries `OFFSET_OBS_FACTS` and `OBS_DIM` 2845 (`FRAME_HEAD` with it).
+- **The prefix is byte-identical.** All 991 obs-golden vectors' first 2761 dims hash to their pre-append values; the
+  Rust env core's oracle-reveal pins (27k decisions at each of `off` / `species` / `full`, obs + mask + every label
+  column), re-run hashing only each row's 2761-dim prefix, reproduce their previous digests exactly.
+- **Slice O's separate `[FACTS]` compare is DELETED, deliberately.** With the block in the row, slice O's whole-row byte
+  compare holds it (and `obs_facts` joined its non-vacuity block list); the `"facts"` field `core_events --obs` shipped
+  beside the row, `rust_core_parity_obs.python_facts` and `compare_row`'s `py_facts` are gone. `BattleVersion::
+  encode_facts` stays (the engine-truth test reads the block alone).
+- **The model flag** `--obs-facts {off,v1}` (`obs_facts`, a STRUCTURAL `ModelFlag`, `since` 144) on all five surfaces
+  (argparse `default=None`, `_resolve("obs_facts", "off")`, the generated arch keys, `current_model_version`'s keyword
+  and `arch_toggles_from_model`, the `ModelVersion` field + `construct` + `check_compatible`), `tier_contract` T0, the
+  delivery graph, `ctor_kwarg_snapshot_test`. No migration branch: the field is born AT v144 and every pre-144 config is
+  refused at the floor; `version_break.pre_break_fixed_mass_reason` names the observation change. **Production `off`**
+  (`designs/production_config.json`: `obs_facts "off"`, `total_dim` 2845; `designs/baselines.json`'s `production`
+  `total_dim` override 2845) — the handoff and audit §8 both state `off` as production: the lever is screened as its
+  own arm.
+- **`v1`** builds `agents/model/obs_facts_inject.py`'s `ObsFactsInject` LAST: four zero-init `IsolatedLinear`s (no RNG
+  draw; SB3's orthogonal re-init skips them) adding `seen` row i to our token i, each side's `vol` to its active,
+  `choice` (the first move through the shared move embedding) to their active, right after the per-mon encoder and
+  before the hypothesis splice. **Under `--token-encoding static`** the sub-blocks are CLASSIFIED
+  (`FACTS_TOKEN_CLASS`): `seen` / `choice` / `vol` are D (the mon's own state, added after the encoder; S never reads
+  them) and `screens` is SIDE — it goes to the side BOARD tokens (`TeamTransformer.board_tokens`' new `side_extra`,
+  through `ObsFactsInject.side_rows`), never a per-mon token; under `legacy` it rides every token of its side (legacy's
+  per-mon board context). An unclassified sub-block is refused at build.
+- **Tests (fail on revert)** — `obs_facts_test.py`: the dim is 2845 with the block at 2761 and the layout's sub-block
+  offsets (fails on a reverted append); the encoder writes the block into the row equal to `encode_obs_facts` on the
+  same decision, on the full rebuild AND through the assembler's warm path (fails on a reverted write or a cached tail).
+  `obs_facts_inject_test.py` (real SB3-built policies, the compile-parity rows): `off` builds nothing and its forward is
+  BIT-identical under a perturbation of the whole block; `v1` at init is the `off` network (every shared parameter
+  byte-equal at the same seed, the injector all zero, the outputs equal) and its gradient reaches all four projections;
+  with planted weights `v1` reads the block; every sub-block is classified and an unclassified one is refused; under
+  `static` a screens perturbation moves the side rows and NO per-mon token while a `seen` one moves the tokens and not
+  the side rows, and the planted screens move the whole forward (the side route is wired); under `legacy` the screens
+  reach every token and the trunk refuses a side extra. `selection_sites` declares the module (its move-id cast EXACT
+  `OBS`, the config compare `PYTHON`). A CPU `--debug --steps 10000 --obs-facts v1` smoke completes under both
+  `--token-encoding legacy` and `static` (exit 0, the learner freeze's 10 checks passed). Updated: `schema_test`, `assembler_test`,
+  `state_encoder_test`, `rust_core_parity_test` (`obs_facts` non-vacuity), `encoder/tests.rs` (the tiling),
+  `ridealong_heads_test` (the obs-RND predictors read the observation: 90,496 / 789,312 → 93,184 / 810,816 parameters),
+  `prober/engine_test` (the 2845 tripwire), `move_legality_alignment_test` (its misaligned real rows now come from the
+  compile-parity rows: the re-recorded learner-golden buffer holds none, the compile-parity rows hold 3).
+- **Obs-build benchmark** (`obs_build_benchmark.py --turn 25 --reps 400 --top 22`, same-session, quiet box):
+  calls per encode (the load-stable signal) 4,325 → 4,392 cold (+1.5 %) and 1,377 → 1,447 on the assembler's warm
+  path (+5.1 %), `encode_obs_facts` 0.02 ms per encode cumulative and outside the tottime top; wall cold full build 0.339 →
+  0.371 ms, production shape (cache WARM + view memo WARM) 0.109 → 0.126 ms — the ms are NOT a clean same-load pair
+  (load1 0.38 before, ~3.0 after; no BUSY banner on either), so judge by the call counts.
+

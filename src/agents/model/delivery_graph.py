@@ -125,6 +125,7 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "history_events": ("EventSeats",),
     "cls_pool": ("CLSPool",),
     "prefuse_proj": ("prefuse_proj",),
+    "obs_facts_inject": ("ObsFactsInject",),
     "assembler": ("ProjectionAssembler",),
     "value_entity_pool": ("UnifiedValueReadout",),
     "intent_move_cell": ("IntentMoveCell",),
@@ -527,6 +528,27 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                 "scalar), never a lag-indexed weight. PAD rows are key-masked"))
 
     # Residual injections onto existing seats.
+    # gen3_obs_facts_v1 (`--obs-facts v1` only): the OBS-FACTS block as zero-init token content. Under
+    # `--token-encoding static` the screens go to the side board tokens (drawn here as the board seat).
+    ofi = getattr(fe, "obs_facts_inject", None)
+    if ofi is not None:
+        _side = bool(ofi.side_to_board)
+        for i in range(T):
+            edges.append(_edge("obs_unpack", f"our_mon[{i}]", "content", D, "D_MODEL",
+                               via="ObsFactsInject (seen row i; the active: its volatile turns"
+                                   + ("" if _side else "; our screens") + ")", zero_init=True,
+                               note="what the opponent has seen of this mon"
+                                    + ("" if _side else ", our screen turns")))
+            edges.append(_edge("obs_unpack", f"opp_mon[{i}]", "content", D, "D_MODEL",
+                               via="ObsFactsInject (the active: its volatile turns + the Choice-lock evidence"
+                                   + ("" if _side else "; their screens") + ")", zero_init=True,
+                               note=("" if _side else "their screen turns; ")
+                                    + "on the active its Encore / Taunt / Disable / Uproar / trap turns and the "
+                                      "lock evidence"))
+        if _side:
+            edges.append(_edge("obs_unpack", "global", "content", D, "D_MODEL",
+                               via="ObsFactsInject.side_rows (each side's screen turns -> its side board token)",
+                               zero_init=True, note="static: the SIDE-class facts reach the side tokens only"))
     if fe.prefuse_proj is not None:
         for i in range(T):
             edges.append(_edge("damage_op", f"our_mon[{i}]", "content", dop._DMG_PER_MON,

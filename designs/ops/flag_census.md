@@ -14,8 +14,8 @@
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
 | DELETED by P11 (the whole census: B1-B5, P11b, P11c, P11d) | 37 | 0 | 37 |
-| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`) | 166 | 9 | 175 |
-| verdicts NOW | KEEP 165 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
+| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`; +1, `--obs-facts`, the X5 version break's part 3 2026-10-07) | 167 | 9 | 176 |
+| verdicts NOW | KEEP 166 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -165,6 +165,7 @@
 | `--policy-readout` | — | 0 / 0 | `--arch production`: `production_config.json` `policy_readout` = `"tower"`; the architecture audit F2 screen's `trunk` arm (`designs/endstate/design_arch_audit.md` F2, config v138) | **KEEP** |
 | `--move-resolution` | — | 0 / 0 | `--arch production`: `production_config.json` `move_resolution` = `"off"`; the architecture audit F11 screen's `on` arm (the move-resolution family, `designs/endstate/design_arch_audit.md` §9, config v141) | **KEEP** |
 | `--speed-physics` | — | 0 / 0 | `--arch production`: `production_config.json` `speed_physics` = `"off"`; the architecture audit F7b `on` arm (P(we act first) from the speed belief + the exact gen-3 order rules, `designs/endstate/design_arch_audit.md` F7, config v143) | **KEEP** |
+| `--obs-facts` | — | 0 / 0 | `--arch production`: `production_config.json` `obs_facts` = `"off"`; the OBS-FACTS screen's `v1` arm (the entity-coverage audit's B5 / B7 / B8 / B9 lever, `designs/endstate/design_entity_coverage_audit.md` §8, config v144) | **KEEP** |
 | `--fork-fraction` | — | 1 / 0 | the Rust fork arm (declared, OFF; `designs/training/forks.md` section 14 checklist gates enabling it; `designs/endstate/`) | **KEEP** |
 | `--fork-branches` | — | 1 / 0 | the Rust fork arm's branch count | **KEEP** |
 | `--fork-contested-gap` | — | 0 / 0 | the Rust fork arm's selector quantile | **KEEP** |

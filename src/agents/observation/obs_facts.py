@@ -2,11 +2,12 @@
 never sees (`designs/endstate/design_entity_coverage_audit.md` §5, ranks 4-7; owner scope
 2026-10-06). Layout: `constants.FACTS_*` (never a literal).
 
-🚨 **COMPUTED, NOT YET IN THE OBSERVATION.** The block is built and gated (slice O compares it byte for
-byte with the Rust core's `encoder::facts`, beside the row; the engine-truth test holds it to the
-referee), but `Gen3ObservationEncoder.encode` does not write it: the append (2761 → 2845) and the
-model's `--obs-facts {off,v1}` consumer land at the ONE planned checkpoint break, the X5 adoption
-version break (orchestrator decision 2026-10-06; branch `obs-facts-append`).
+🚨 **APPENDED AS THE OBSERVATION'S LAST BLOCK** (`constants.OFFSET_OBS_FACTS`; obs 2761 → 2845 at the X5
+version break, config v144). `Gen3ObservationEncoder.encode` writes it every decision (never cached: its
+inputs are the view and the event window's fold); the Rust core's `encoder::facts` writes the same cells
+into its row (slice O compares the whole row byte for byte; the engine-truth test holds the block to the
+referee). The model READS it only under `--obs-facts v1` (`agents/model/obs_facts_inject.py`); `off`
+(production) builds nothing.
 
 1. **SEEN** (backlog E1) — per OUR mon: what the OPPONENT has seen of it. Read off the reading's
    own reveal rules pointed at our side: ``LivePokemon.revealed`` (on the field at least once),

@@ -12,9 +12,10 @@ fn the_generated_layout_tiles_the_row() {
     assert_eq!(OFFSET_REACTIVE, OFFSET_GLOBAL + GLOBAL_ENV_DIM);
     assert_eq!(OFFSET_PAIR_HISTORY, OFFSET_REACTIVE + REACTIVE_DIM);
     assert_eq!(OFFSET_EVENT_WINDOW, OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM);
-    assert_eq!(OBS_DIM, OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM);
+    assert_eq!(OFFSET_OBS_FACTS, OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM);
+    assert_eq!(OBS_DIM, OFFSET_OBS_FACTS + OBS_FACTS_DIM);
     assert_eq!(VOLATILE_SLOTS.len(), VOLATILES_DIM);
-    // gen3_obs_facts_v1: the OBS-FACTS block's four sub-blocks tile it (computed beside the row)
+    // gen3_obs_facts_v1: the OBS-FACTS block's four sub-blocks tile it (the row's last block)
     assert_eq!(FACTS_CHOICE_OFFSET, FACTS_SEEN_OFFSET + FACTS_SEEN_DIM);
     assert_eq!(FACTS_VOL_OFFSET, FACTS_CHOICE_OFFSET + FACTS_CHOICE_DIM);
     assert_eq!(FACTS_SCREENS_OFFSET, FACTS_VOL_OFFSET + FACTS_VOL_DIM);

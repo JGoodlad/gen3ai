@@ -188,9 +188,9 @@ struct TrackCap {
     trackers: String,
     window: String,
     reward: f64,
-    /// `--obs`: the encoded row's wire frame, the 11-dim mask, the choice tokens (JSON) and the
-    /// OBS-FACTS block (`gen3_obs_facts_v1`, base64 little-endian f32; computed beside the row).
-    obs: Option<(String, [u8; 11], String, String)>,
+    /// `--obs`: the encoded row's wire frame (the OBS-FACTS block, `gen3_obs_facts_v1`, is its last
+    /// block), the 11-dim mask and the choice tokens (JSON).
+    obs: Option<(String, [u8; 11], String)>,
     /// The choice token this side sent AT this decision (the next `note_choice`), so the Python
     /// half of slice T can replay the real action (E4's refused-switch target reads it).
     choice: Option<String>,
@@ -304,13 +304,7 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
             let legal = v.legal(side).ok_or("a decision with no legality")?;
             let reading = &v.stream(side).ok_or("no stream")?.board_reading;
             let tokens = pokesim::present::choice_tokens(reading, &legal).map_err(|e| e.message().to_string())?;
-            // gen3_obs_facts_v1: the OBS-FACTS block, computed beside the row (not yet in it) — slice O
-            // holds it byte-equal to `obs_facts.encode_obs_facts`.
-            let mut facts = [0.0f32; pokesim::encoder::layout::OBS_FACTS_DIM];
-            v.encode_facts(side, &mut facts).map_err(|e| format!("encode_facts p{}: {}", side + 1, e.message()))?;
-            let fbytes: Vec<u8> = facts.iter().flat_map(|x| x.to_le_bytes()).collect();
-            Some((pokesim::encoder::wire::frame(&row), pokesim::present::mask(&legal), pokesim::present::tokens_json(&tokens),
-                  pokesim::encoder::wire::base64(&fbytes)))
+            Some((pokesim::encoder::wire::frame(&row), pokesim::present::mask(&legal), pokesim::present::tokens_json(&tokens)))
         } else {
             None
         };
@@ -558,8 +552,8 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                         } else {
                             o.push_str(&format!("{{\"after\":{},\"reward\":{:?},\"trackers\":{},\"window\":{}",
                                                 c.after, c.reward, c.trackers, c.window));
-                            if let Some((frame, mask, tokens, facts)) = &c.obs {
-                                o.push_str(&format!(",\"obs\":{frame},\"mask\":{mask:?},\"tokens\":{tokens},\"facts\":\"{facts}\""));
+                            if let Some((frame, mask, tokens)) = &c.obs {
+                                o.push_str(&format!(",\"obs\":{frame},\"mask\":{mask:?},\"tokens\":{tokens}"));
                             }
                             if let Some(ch) = &c.choice {
                                 o.push_str(",\"choice\":");

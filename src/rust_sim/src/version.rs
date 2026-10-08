@@ -525,8 +525,9 @@ impl BattleVersion {
         };
         crate::encoder::encode(&inputs, out)
     }
-    /// The OBS-FACTS block of `side` (`gen3_obs_facts_v1`, `encoder::facts`): computed from the same
-    /// inputs as the row, but NOT part of it yet — the append lands at the X5 adoption version break.
+    /// The OBS-FACTS block of `side` alone (`gen3_obs_facts_v1`, `encoder::facts`): the same cells
+    /// [`Self::encode`] writes at `OFFSET_OBS_FACTS` (the row's last block), from the same inputs — for
+    /// a reader that wants only the block (the engine-truth test).
     pub fn encode_facts(&self, side: usize, out: &mut [f32; crate::encoder::layout::OBS_FACTS_DIM]) -> R<()> {
         let s = self.streams[side].as_ref().ok_or_else(|| fault(format!("no stream for p{}", side + 1)))?;
         let trackers = s.trk.as_ref().ok_or_else(|| fault("encode_facts: this stream folds no trackers (with_trackers)"))?;

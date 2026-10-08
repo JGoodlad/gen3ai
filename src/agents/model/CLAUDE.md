@@ -178,6 +178,7 @@ Rules to preserve:
 | X5's hypothesis-token ENCODING (`PokemonEncoder` split exactly at its two first Linears: the species half once over the dex table, gathered; the row-level half per row; the rest per opponent slot — the per-row pass on `hypothesis_ctx` stays the definition its test compares against) | `hypothesis_encode.py` |
 | the STATIC per-mon encoder (`--token-encoding static`: S = the static identity from the set fields, D = the mon's own state, added, no board input; the X5 hypothesis tokens as the dex table encoded once and gathered) | `static_tokens.py` |
 | the STATIC arm's BOARD (`--token-encoding static`, stage 2: the side-relative SIDE / FIELD content the three board tokens project, the seat tuples, the per-mon op content `OpContent`) | `board_tokens.py` |
+| the OBS-FACTS block's consumer (`--obs-facts v1`: the zero-init `ObsFactsInject` — the facts as token content; `FACTS_TOKEN_CLASS` routes each sub-block, a SIDE fact to the static board's side tokens) | `obs_facts_inject.py` |
 | X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks, the op's opponent-MON roster `OpRoster` + OTHER's averaged `other_roster`) | `hypothesis_tokens.py` |
 
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
@@ -341,7 +342,10 @@ fact goes to either** (`designs/endstate/design_static_tokens.md` §1 is the fie
 pure function of the mon's own SET fields (that is what makes an X5 hypothesis token a table gather); D reads
 only the mon's own state. `static_tokens_test.py` fails when a board or dynamic field reaches S, when a board
 field reaches the encoder at all, and when the move SET stops being permutation-invariant. A new per-mon
-observation column must be classified there in the same pass, or `static` silently drops it.
+observation column must be classified there in the same pass, or `static` silently drops it. **A new sub-block of
+the OBS-FACTS block** (the observation's last block, read only under `--obs-facts v1`) **is classified in
+`obs_facts_inject.FACTS_TOKEN_CLASS`** (D: added to the mon's token after the encoder; SIDE: the static side board
+token, never a mon) — `ObsFactsInject` refuses an unclassified one and `obs_facts_inject_test.py` fails on it.
 **Under `static` the board's home is the three BOARD tokens** (`board_tokens.py`, `gen3_static_board_v1`): OUR
 SIDE / THEIR SIDE through ONE `side_proj` over the SAME side-relative columns (`SIDE_FACTS`), FIELD, and the
 per-mon `op_content` (the `x` ⊕ `g` amounts on every mon, our `d1` cells on theirs). A new board fact goes into

@@ -13,7 +13,7 @@ module measures both halves of that argument offline, on CPU, with fixed seeds:
   held-out only). The two labels are confounded (most exploiter rows are unseen teams), so each is
   also read inside the other's complement.
 * **Predictors.** The heads' own ``RndNovelty`` class — the same frozen target and predictor shapes,
-  the same per-dimension normalisation (fitted on TRAIN only) and ±5 clip — once over the 2761-dim
+  the same per-dimension normalisation (fitted on TRAIN only) and ±5 clip — once over the 2845-dim
   observation (obs-RND) and once over the 128-dim ``value_pooled`` of a checkpoint (feature-RND). Adam
   at the ride-along learner's rate, minibatch 256, shuffles from a fixed NumPy seed; read after each
   epoch count in :data:`EPOCHS_READ` (one training run).

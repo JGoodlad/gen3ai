@@ -408,7 +408,7 @@ a screen.
 
 ---
 
-## 8. As built: the OBS-FACTS block — COMPUTED; its append deferred to the version break (`gen3_obs_facts_v1`, 2026-10-06)
+## 8. As built: the OBS-FACTS block — APPENDED to the observation at the X5 version break (`gen3_obs_facts_v1`, 2026-10-06 / 2026-10-07)
 
 The owner put four of §5's gaps IN SCOPE on 2026-10-06 as ONE observation-enrichment lever, screened
 on its own and NOT bundled into the static-token rebuild's arm: rank 4 (B7, backlog E1), rank 5 (B9's
@@ -416,17 +416,17 @@ Choice-lock half), rank 6 (B5) and rank 7 (B8's Encore / Taunt, plus Disable, Up
 trap). Layout and sources: [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §1.7 and
 `src/agents/observation/CLAUDE.md` (the OBS-FACTS block).
 
-**Status (orchestrator decision under the owner's delegation, 2026-10-06, option A).** The block is
-BUILT and gated in both languages (the reading flags, the fold, the Python and Rust encoders, slice O's
-byte comparison beside the row, the engine truth test) but it is **not in the observation**: appending
-it (obs 2761 → 2845) changes `total_dim`, a weight field, so HEAD would refuse EVERY existing
-checkpoint — the X5 arms mid-A/B (the look-3 cross), the untaught meter's opponent, the Lane S readers.
-The append and its `--obs-facts {off,v1}` consumer therefore land at the ONE planned checkpoint break:
-the X5 adoption version break (after the look-3 read), together with the exact-refactor bundle (F1 /
-F6a / F7a / F16b), with the baselines re-pointed or era-marked in the same unit. That half is built and
-committed on branch `obs-facts-append` (`60ebf659`): the append, the flag (config v138), the goldens
-re-recorded, `obs_facts_inject.py`. Rejected: prefix-compatible loading of 2761-wide checkpoints (a
-compatibility shim, which root `CLAUDE.md` rules out); taking the break now.
+**Status: IN THE OBSERVATION since the X5 version break (config v144, part 3, 2026-10-07).** The block is
+the observation's LAST block (`OFFSET_OBS_FACTS` = 2761, obs 2761 → 2845; the 2761-dim prefix byte-identical:
+all 991 obs-golden vectors' prefixes hash to their pre-append values), written every decision by both
+encoders and gated in both languages (the reading flags, the fold, slice O's whole-row byte comparison, the
+engine truth test). The model reads it only under `--obs-facts v1`; production is `off`
+(`designs/production_config.json`). History: the block was first COMPUTED but held OUT of the observation
+(orchestrator decision under the owner's delegation, 2026-10-06, option A), because appending it changes
+`total_dim`, a weight field, and HEAD would have refused every existing checkpoint mid-X5-A/B; the append
+and its consumer were kept ready on branch `obs-facts-append` (`60ebf659`, config v138 there) and landed at
+the ONE planned checkpoint break, re-based onto that tree (config v144, no bump of its own). Rejected:
+prefix-compatible loading of 2761-wide checkpoints (a compatibility shim, which root `CLAUDE.md` rules out).
 
 **What the block carries (84 dims; laid out to be appended after the event window).**
 
@@ -467,20 +467,23 @@ engine's Encore / Taunt / Disable / Uproar / trap durations inside the encoded b
 no NOT-locked proof fired and the stint's first move was the locked move. 0 failures. Teeth: ignoring
 the residual phase fails it 26 times, ignoring the Encore / Disable adjustment 154 times.
 
-**The lever, as built on `obs-facts-append`.** `--obs-facts {off,v1}` (config v138, a STRUCTURAL
-`ModelFlag`): `off` (production) builds nothing and reads none of the block; `v1` builds
-`agents/model/obs_facts_inject.py`, four zero-init `IsolatedLinear`s adding each fact to its entity's
-role token. Identity at init and no RNG draw: a `v1` arm's every other initial weight equals the `off`
-arm's at the same seed (pinned on a real SB3-built policy). The static-token rebuild can re-route the
-block (SIDE tokens for `screens`, the DYN input for the rest) at the same break.
+**The lever, as built.** `--obs-facts {off,v1}` (config v144, a STRUCTURAL `ModelFlag`): `off` (production)
+builds nothing and reads none of the block (the forward is bitwise invariant to its contents); `v1` builds
+`agents/model/obs_facts_inject.py`, four zero-init `IsolatedLinear`s adding each fact to its entity's token,
+built LAST. Identity at init and no RNG draw: a `v1` arm's every other initial weight equals the `off` arm's at
+the same seed (pinned on a real SB3-built policy, `obs_facts_inject_test.py`). Each sub-block is CLASSIFIED for
+`--token-encoding static` (`FACTS_TOKEN_CLASS`): `seen` / `choice` / `vol` are the mon's own dynamic state (D:
+added to the mon's token after the encoder, never into the static identity S), `screens` is a SIDE fact —
+under `legacy` it rides every token of its side, under `static` it goes to that side's BOARD token (OUR SIDE /
+THEIR SIDE, `TeamTransformer.board_tokens`' `side_extra`) and never to a per-mon token.
 
-**Version consequence (of the append).** No `ARCH_SIGNATURE` bump (the H-A / H-B precedent for an
-appended block): `total_dim` 2761 → 2845 carries the break. Measured on the branch: the 2761-dim prefix
-is byte-identical (all 991 obs-golden vectors, the 64 compile-parity rows, the learner golden's buffer)
-and with `off` one real PPO update is byte-identical (the learner golden's post-update hash unchanged,
-`092224261d81c5b8`). The routine gate on that branch failed exactly the tests that load a 2761-wide
-checkpoint (≈12: the untaught meter's opponent, the Lane S / policy-spectrum / ride-along readers, the
-baselines registry) plus the generated artifacts it had not yet regenerated.
+**Version consequence (of the append).** It rode the X5 version break's ONE bump (v144, `ARCH_SIGNATURE`
+`gen3_x5_version_break_v1`); `total_dim` 2761 → 2845 refuses a 2761-wide checkpoint on its own. Measured at the
+break: the 2761-dim prefix of all 991 obs-golden vectors and of every row the Rust env core's oracle-reveal
+corpus pins (27k decisions at each of `off` / `species` / `full`) is byte-identical. Measured on the pre-break
+branch (the model unchanged there): with `off` one real PPO update was byte-identical. At the break the
+learner golden was re-recorded once for the whole break, so the append's own effect on it is not separately
+measured there.
 
 **Not built (still open):** confusion's elapsed count (its counter is decremented per move attempt, not per
 residual, and poke-env keeps no count); the Yawn stage; the opponent's disabled move id and the two-turn
@@ -499,4 +502,5 @@ move revealed by a `|cant|` line naming it (poke-env does not read one for eithe
 | 2026-10-06 | New facts | B5–B9 as one separately-flagged enrichment lever screened after L1; B4 (status-landing physics) as a GIGO fix, not held for a screen | Folding them into L1 (two levers in one arm) | §6.3 |
 | 2026-10-06 | **As built (owner scope):** B7 (what the opponent has seen of us), B9's Choice-lock EVIDENCE, B5 (screen turns) and B8's Encore / Taunt / Disable / Uproar / partial trap | One 84-dim OBS-FACTS block, COMPUTED and gated in both languages; Choice-lock as evidence only (two NOT-locked proofs, the first move, the run), never a claimed lock state (owner) | A lock-state bit or P(locked) (the owner: "we can never 100 % know"); bundling into the rebuild's arm | §8; `gen3_obs_facts_v1` |
 | 2026-10-06 | **The append waits for the version break (orchestrator, owner's delegation, option A):** block computed, append deferred to the X5 adoption version break, with the exact-refactor bundle and the baselines re-pointed / era-marked in the same unit; the append + `--obs-facts {off,v1}` (v138) consumer kept ready on branch `obs-facts-append` | (B) prefix-compatible loading of 2761-wide checkpoints (a shim; root `CLAUDE.md` rules it out); (C) the break now (it breaks every checkpoint mid-X5 read, the look-3 cross and the untaught-meter opponent included); a flag that forks the obs width | §8 |
+| 2026-10-07 | **The append LANDED at the X5 version break (part 3, config v144, no bump of its own):** obs 2761 → 2845; `--obs-facts {off,v1}` born at v144 (no migration branch: every pre-144 config is refused at the floor); production `off`; under `--token-encoding static` the `screens` sub-block (a SIDE fact) goes to the side BOARD tokens, the rest to the per-mon tokens as D content (`FACTS_TOKEN_CLASS`); slice O's separate `[FACTS]` comparison and `core_events`' `facts` field DELETED (redundant with the whole-row compare) | Refusing `v1` × `static` (the static rebuild then could not screen the lever); screens on every per-mon token under static (breaks the static encoder's "no board fact in a token" rule); keeping the `[FACTS]` compare (a second check of bytes the row compare already holds) | §8; CHANGELOG v144 part 3 |
 | 2026-10-06 | Disable's adjustment | +1 when the target had ALREADY acted this turn (`!willMove`), for Encore and Disable alike | §3.3 row 28's "+1 if the target had not moved" (inverted) | `data/mods/gen4/moves.ts` `disable.condition.onStart`; §8 |

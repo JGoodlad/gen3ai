@@ -1,9 +1,10 @@
 //! The OBS-FACTS block (`gen3_obs_facts_v1`) — `agents/observation/obs_facts.py`'s
 //! `encode_obs_facts`, cell for cell, in the same f64 arithmetic rounded once at the write.
 //!
-//! COMPUTED but NOT YET IN THE ROW ([`crate::version::BattleVersion::encode_facts`]; `core_events
-//! --obs` ships it beside the row and slice O holds it byte-equal to Python): the append lands at the
-//! X5 adoption version break (branch `obs-facts-append`).
+//! The row's LAST block (`OFFSET_OBS_FACTS`, written by `encode_into` as step 8; appended at the X5
+//! version break, config v144, part 3): slice O holds the whole row byte-equal to Python, the block
+//! with it. [`crate::version::BattleVersion::encode_facts`] computes the block alone (the engine-truth
+//! test reads it).
 //!
 //! SEEN (what the opponent has seen of our team), CHOICE (the opponent active's Choice-lock
 //! evidence), VOL (each active's Encore / Taunt / Disable / Uproar / partial-trap turns) and SCREENS

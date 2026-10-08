@@ -502,6 +502,14 @@ from typing import Any, Dict
 #     op's live `last_raw_tensors` view — `intent_conditional` (high roll, P(first), flinch) in BOTH speed modes
 #     (the `--speed-physics on`-only special case deleted) and the move-resolution family (P(first), was the detached
 #     `last_raw_block`). F7a completed: the X5 OTHER roster's dead `spe_std` / `with_spe_std` deleted.
+#   Part 3 — the OBS-FACTS APPEND (gen3_obs_facts_v1; designs/endstate/design_entity_coverage_audit.md §8): the
+#     84-dim OBS-FACTS block (what the opponent has seen of our team, the opponent active's Choice-lock evidence,
+#     the actives' Encore / Taunt / Disable / Uproar / partial-trap turns, each side's screen turns) is APPENDED as
+#     the observation's last block (2761 -> 2845; the 2761-dim prefix byte-identical), and `obs_facts` —
+#     `--obs-facts {off,v1}` — records whether the model READS it. STRUCTURAL: `v1` builds the zero-init
+#     `ObsFactsInject` (`agents/model/obs_facts_inject.py`); `off` (production) builds nothing. `total_dim` (a
+#     `_WEIGHT_FIELDS` entry) carries the observation break too. No migration branch: the field is new AT v144,
+#     and every pre-144 config is refused at the floor.
 MODEL_CONFIG_VERSION = 144
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings

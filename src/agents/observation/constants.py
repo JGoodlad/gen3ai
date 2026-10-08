@@ -257,10 +257,10 @@ EVENT_WINDOW_N = 32
 EVENT_TOKEN_DIM = 30
 EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 960 (32*30)
 
-# gen3_obs_facts_v1 — the OBS-FACTS block. COMPUTED (`obs_facts.encode_obs_facts`, the Rust twin
-# `encoder::facts`) but NOT YET IN THE OBSERVATION: its append (2761 -> 2845 + `--obs-facts {off,v1}`)
-# lands at the ONE planned checkpoint break, the X5 adoption version break (orchestrator decision
-# 2026-10-06, `designs/endstate/design_entity_coverage_audit.md` §8; branch `obs-facts-append`).
+# gen3_obs_facts_v1 — the OBS-FACTS block (`obs_facts.encode_obs_facts`, the Rust twin `encoder::facts`),
+# APPENDED after the event window as the observation's LAST block (`OFFSET_OBS_FACTS`; obs 2761 -> 2845 at
+# the X5 version break, config v144). The model reads it only under `--obs-facts v1`
+# (`agents/model/obs_facts_inject.py`); `designs/endstate/design_entity_coverage_audit.md` §8.
 # Four facts the entity-coverage audit found the model never sees (`designs/endstate/
 # design_entity_coverage_audit.md` §5 ranks 4-7, owner scope 2026-10-06). Every mechanic is verified
 # in the pinned `deps/pokemon-showdown` (the block's encoder, `obs_facts.py`, cites each line).
@@ -510,7 +510,8 @@ OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM
 OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)
 OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM
 OFFSET_PAIR_HISTORY = OFFSET_REACTIVE + REACTIVE_DIM     # the H-A2 block sits after reactive
-OFFSET_EVENT_WINDOW = OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM  # the H-B block closes base
+OFFSET_EVENT_WINDOW = OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM  # the H-B block
+OFFSET_OBS_FACTS = OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM     # gen3_obs_facts_v1 — closes base
 
 # Max values for normalization.
 # MAX_TURNS is ALSO the forfeit deadline: `StallConfig.threshold` defaults to it (training/stall.py
