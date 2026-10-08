@@ -537,6 +537,19 @@ the standalone worker, and it is NOT unreachable:
 It goes with the survey's **P2** (meters and `eval_trace_gen` onto the Rust eval engine), as the survey's plan already says
 (§A4.5), not before.
 
+> ✅ **RESOLVED — DELETED in P6 slice 6c-EVAL (T27, 2026-10-08).** `main.ops.eval_trace_gen` was ported onto the Rust
+> eval core (`agents/training/rust_eval/offline.py` holds the offline engine — the Rust half of the deleted `parity.py`:
+> `run_rust`, `build_models`, `build_fixed_models`, `plan_items`, `declared_torch_state`; `eval_trace_gen_integration_test.py`
+> proves the readers accept a generated cycle and a same-seed rerun is byte-identical), and then deleted: `main/eval_worker.py`
+> (+ `eval_worker_test`, `eval_worker_compile_test`), `agents/training/eval_player.py` (`EvalRLPlayer`) and its facade entry,
+> `rust_eval/{parity,parity_gate_kit,eval_benchmark}.py` (+ `parity_test`, `parity_fixed_test`, `parity_sampled_test`),
+> `eval_launch.spawn_eval_workers` / `kill_eval_workers`, `eval_roster.build_eval_players`, `seeds.bot_stream_seeds`,
+> `server_port_threading_test`, `eval_sharding_fuzz_test`, `selfplay_eval_worker_fuzz_test`, `td_residual_parity_fuzz_test`
+> and the worker halves of `eval_sentinel_greedy_test` (rewritten on the Rust executor), `reward_registry_test`,
+> `mirrored_pairs_test`, `paths_test`; the `EvalRLPlayer` draw-bucket tests moved to `rust_eval/capture_quota_test.py`.
+> Finding 12(c)'s callback branch and knobs were already gone. `eval_roster` and `agents/opponents.py` stay until
+> `main.search_dividend` (their last user) goes (slice 6d).
+
 ### 8.3 P6 slice 6c (T27), 2026-10-08 — the Python parity ORACLES, the Python-path benchmarks, the bot calibration, the BC reader
 
 The poke-env retirement's slice 6c (coordinator-owned WHAT-to-delete list; executed by a written manifest). Each group's

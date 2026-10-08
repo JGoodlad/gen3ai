@@ -50,8 +50,8 @@ pytestmark = [pytest.mark.static,   # the `static` budget tier (conftest._STATIC
 #: these two lines (it matches them by a strict regex — keep each on its own line, in this exact form).
 #: Frozen 2026-10-06 at 74 non-test + 97 test importers (+ the permanent peer-process script); every shrink since
 #: has lowered them (the two lines below are the CURRENT ceiling).
-FROZEN_NON_TEST_COUNT = 40
-FROZEN_TEST_COUNT = 85
+FROZEN_NON_TEST_COUNT = 27
+FROZEN_TEST_COUNT = 80
 
 #: A floor under the scan itself, so a wrong root or a broken walk cannot make every check below vacuous.
 MIN_FILES_SCANNED = 1000

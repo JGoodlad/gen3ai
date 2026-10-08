@@ -1274,7 +1274,7 @@ carry-forward), so it needs the `SequentialRatingModel` sibling sketched in the 
 batch `fit`. Data fidelity is already in place: `eval_results.jsonl` now carries exact per-opponent
 `counts` (additive, backward-compatible), so a future Glicko backfill has an exact ladder even under
 partial shard coverage (where `win_rate × n_games` would be ambiguous).
-## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
+## ELO / skill rating (`elo.py`, `main.elo`; the bot anchor `data/gen3_bot_elo_anchors.json`)
 
 Once training is mostly self-play **pool play**, win-rate stops being legible: the promotion
 gate only promotes when `win_rate_vs_pool > promote_threshold` and the pool is a *sliding window
@@ -1298,7 +1298,11 @@ fixed bots.
   volatility models skill drift, but snapshots are *frozen* — the drift is the *sequence* of
   snapshots (the ELO-vs-step curve); the per-player uncertainty (Glicko's valuable part) is the
   Hessian SE.
-- **Anchor = a precomputed bot-vs-bot round-robin.** `python -m agents.training.bot_elo_calibration`
+- **Anchor = a precomputed bot-vs-bot round-robin.** 🚨 **The Python calibration that produced it
+  (`bot_elo_calibration`, and `bot_matchup_matrix` below) was DELETED in P6 of the poke-env retirement (slice 6c,
+  2026-10-08)**: it played the Python roster bots through poke-env. The committed anchor
+  `data/gen3_bot_elo_anchors.json` and its provenance (`designs/ai_v5/elo_calibration/`) stay as they are; a
+  re-calibration is backlog T15's RUST bot-vs-bot port. As it was: `python -m agents.training.bot_elo_calibration`
   plays all 36 bot pairs toward `--target-games` (default 5000) **in-process via the bridge — no
   server** (safe alongside a live run; it does use CPU — throttle with `--concurrency`), fits BT
   (`elo.fit_pairwise`, `random` pinned at `base`=1000), and writes the anchor. **Artifact split:**
@@ -1315,8 +1319,8 @@ fixed bots.
   Bots build once and are reused across pairs (`reset_battles` between) — building warms the data
   singletons (~4.5 s each), so per-pair rebuilds dominated cost; the full 5000-game job is a
   many-hour, run-overnight one-time cost.
-- **The RAW matrix, at higher resolution.** `python -m agents.training.bot_matchup_matrix`
-  accumulates the same round-robin (same bots, same team sampling, same bridge driver — it calls
+- **The RAW matrix, at higher resolution** (DELETED with the calibration, P6 slice 6c; `data/gen3_bot_matchups.json`
+  stays). `python -m agents.training.bot_matchup_matrix` accumulated the same round-robin (same bots, same team sampling, same bridge driver — it calls
   the calibration's own `_build_bot`/`_play_chunk`) as **raw per-pair `wins_a`/`wins_b`/`draws`/`n`**
   toward 10 000 games/pair in resumable chunks → `data/gen3_bot_matchups.json`. Draws stay
   separate and it **never writes the anchor** (regenerating that is an owner decision).

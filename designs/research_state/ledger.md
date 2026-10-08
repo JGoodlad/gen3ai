@@ -23432,3 +23432,28 @@ Tag: **BUILT · obs golden Rust-owned (991 / 991) · Rust encoder benchmark mand
     run only at a commit that carries it.
 
 Tag: **FIX · K9(b) flip-judge: one-tie rows judged under both resolutions · u1480 dump 10.2 % → 2.6 % (HEAD reproduction 10.4 % → 3.3 %) · planted mismatch on a tied row FATAL · ceiling / eps / bar unchanged · learner golden unchanged** · meas: [`measurements/k9_flip_judge_2026-10-08/`](measurements/k9_flip_judge_2026-10-08/README.md)
+
+### 2026-10-08 · BUILT · **POKE-ENV RETIREMENT P6 slice 6c: the Python parity ORACLES, the Python-path benchmarks, the Python bot calibration, the BC reader and the Python EVAL oracle are DELETED; `main.ops.eval_trace_gen` runs on the Rust eval core; the core-only halves are kept as `core_corpus_test` and a CORE PRESENT GOLDEN**
+
+- **Built / kept.** `agents/battle/core_corpus_test.py` (the commit corpus — 12 battles, 1,807 decisions — replays clean
+  through `core_events --views --trackers --obs`, its recorded per-side bytes digest-pinned; rows fully written, no NaN /
+  `-0.0`; tokens == the mask's legal set; the information boundary and the golden records' round trip, each with a tooth).
+  `agents/battle/core_present_golden_test.py` + `core_present_golden.json`: the 44 constructed `present()` scenarios of
+  the deleted present-parity test (V1–V19, R1–R3, the PE pins, called moves, refusals — V17–V19 / R2 / R3 / Mimic / Leppa /
+  Trick / Conversion / Forecast had no cargo twin) frozen as the core's whole answer, recorded with the core binary
+  unchanged since the commit where both readings agreed; a perturbed entry fails. `main.ops.eval_trace_gen` plays on the
+  Rust eval core (`rust_eval/offline.py`); a same-seed rerun is byte-identical and the prober / `critic_read`'s pick gates
+  / `cf_audit`'s identity half read the cycle.
+- **Deleted** (`designs/ops/deletion_pass_manifest.md` §8.2 resolved, §8.3): the `rust_core_parity*` harness and its
+  tests, `poke_env_findings`, the Python obs-golden capture, five Python-path benchmarks, three poke-env harness drivers,
+  `bot_elo_calibration` / `bot_matchup_matrix` / `bot_elo_store` (T15's Rust port replaces them; the anchor data stays),
+  `agents/bc/` + `main.human_agreement`, `main.eval_worker`, `EvalRLPlayer`, `rust_eval.parity` + gate kit + benchmark,
+  `spawn_eval_workers`. Allowlist 125 → 107.
+- **Findings.** (1) `cf_audit.build_frame` refuses every Rust-core trace (no win-prob head recorded, F-LH-4), so
+  `critic_read`'s identity read cannot read a newly generated cycle — pre-existing for live Rust traces. (2) The specialist
+  team pin is still not read by `eval_trace_gen` (TECH_DEBT P1, unchanged). (3) `proc_integration_test::test_gate_3_no_leak`
+  is order-dependent under xdist (a memfd from an earlier test). (4) Schema equality `schema.rs` ↔ `battle_event.py` is
+  ungated until 6d deletes `battle_event`. (5) The node-vs-rust search parity harnesses have no golden source (the
+  gitignored `tmp/search_golden_node.json` was never committed).
+
+Tag: **BUILT · oracles + Python eval + benchmarks + calibration + BC deleted · core corpus + present golden kept · eval_trace_gen on Rust · allowlist 125 → 107**

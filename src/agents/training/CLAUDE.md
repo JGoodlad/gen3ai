@@ -540,7 +540,7 @@ across workers and RAISES on disagreement. Both are training-only, not version-l
 tracker takes an `env_method` PULL rather than an info-dict thread.
 **Full detail — in [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md).**
 
-## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
+## ELO / skill rating (`elo.py`, `main.elo`; the bot anchor `data/gen3_bot_elo_anchors.json`)
 
 Once training is mostly self-play pool play, win rate stops being legible — `win_rate_vs_pool` is a
 treadmill pinned near 0.50 **by construction** and `win_rate_vs_bots` saturates. The ELO subsystem
