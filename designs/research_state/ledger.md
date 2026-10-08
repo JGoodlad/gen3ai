@@ -23082,3 +23082,54 @@ main's `data/`). Detail: `designs/CHANGELOG.md` v144 (one subsection per part).
   short real launch (the first two minutes are the only test of the compile / warm-start layer).
 
 Tag: **BUILD · the X5 version break · config v144 / `gen3_x5_version_break_v1` · obs 2845 · identity bitwise (F16b 2.4e-7) · every pre-break checkpoint pinned** · design: [`design_x5_belief_tokens.md`](../endstate/design_x5_belief_tokens.md) §3.8, [`design_arch_audit.md`](../endstate/design_arch_audit.md) · meas: [`measurements/version_break_identity_2026-10-07/`](measurements/version_break_identity_2026-10-07/README.md)
+
+### 2026-10-07 · BUILD + GATE · **Poke-env retirement P4: live websocket play reads through the TRAINING chain (`live_reader` / `side_reader`), and T28's parse-panic halt is built. Gates (a)–(d) PASS: 318,465 live decisions byte-equal to training rows; 376,410 public replays with 0 unclassified refusals; 315 games on a master-built Node with 0 halts; 16,523 shadow decisions with 0 differences**
+
+- **What was built** (`25ea2cc6`).
+  - `pokesim::side_reader::SideReader` is the per-side chain `sim_bridge`'s core_obs kept inline, now one type that
+    both use. The new `live_reader` binary takes a foreign stream in and writes `__OBS__` frames out.
+  - `main.live` is the client stack: the reader pipe (a DECLARED room-line skip list; every other line fed, and an
+    unknown keyword is the reader's refusal), the thin client (one server message = one write,
+    `/choose <token>|<rqid>`, the trainer's stall forfeit, a declared outgoing command set with no chat, no PM, no
+    `/search`) and CPU policies. `main.play --client rust` is the default.
+  - T28 is `main.live.halt`: `FATAL_LIVE_PARSE` = 7, the durable marker, the refusals in `main.play` / `main.anchors`,
+    and a clear that names a commit.
+- **Two code points.** The X5 version break (v144, `OBS_DIM` 2761 → 2845) landed mid-unit. Gates (a), (c) and (d) ran
+  on both sides of it. The post-break model cells used a fresh v144 `--debug` checkpoint, since every archived one is
+  behind the floor.
+- **(a) Two roads, one row.** Live frames came over a real websocket from our `--server rust` front end. They were
+  compared with the replayed battle's `sim_bridge` core_obs frames: 2,000 random-policy battles and 224 greedy-model
+  battles, 2,224 in all with 318,465 decisions.
+  - Every row was byte-equal; every mask, token, turn, line and `n` equal; every frame count equal.
+  - Every replay was the same battle (the chunks byte-equal, `rqid` stripped). **0 differences.**
+- **(b) The public corpus.** 376,410 gen3ou replays (2026-05-18 … 09-23), both seats, 128.4 M lines, 19.8 M per-turn
+  encoder probes, 63 keywords: **0 unclassified refusals, 0 probe failures**.
+  - ONE refusal, root-caused and classified: reading AS a seat renamed mid-battle (a guest logging in,
+    `|player|p2|<new name>|`) flips the reading's role, because the role's identity is the NAME (poke-env's
+    `_player_role`).
+  - It is unreachable live: our name never changes in a battle, and an opponent's rename leaves the role alone (the
+    same replay reads as p1).
+- **(c) Master.** Showdown master `51ad80fa`, built locally: never the pinned `deps/`, never the public server.
+  - 315 games: the 7 scripted bots (105), Metamon `SmallRL` greedy (30), self-vs-self (60) and the shadow peer (120).
+  - 36,290 of our decisions, **0 T28 halts**. All 719 pool teams pass master's validator.
+- **(d) Shadow.** The poke-env `RLPlayer` ran with a Rust reader tapping its websocket frames in arrival order:
+  120 games, 16,523 decisions, **0 row / mask / action / token differences**.
+- **FINDINGS.**
+  1. The spectator rename refusal above (root-caused, classified, pinned).
+  2. The drift probe cannot see `|cant|` reasons outside decisions (the event window). Live, an unknown reason is a
+     T28 halt.
+  3. The vendored poke-env client CONCATENATES websocket frames after a request ("SMART FLUSH") and handles each
+     message in its own task, so its handler's view of the write boundary is not the server's. The shadow taps the
+     socket instead.
+  4. A shadow harness artifact: poke-env's stall forfeit happens BEFORE it encodes, so an open reader frame was never
+     consumed. That produced 125 false "race" records in the first post-break shadow run. Fixed (`stall_forfeit`) and
+     pinned; the re-run was clean.
+  5. `main.anchors`' our side is still the poke-env client (P3's unit), so its live parse panics are not yet T28 raises.
+     It only refuses to START past a marker.
+  6. Gate-local markers: `master_series` writes its own marker file, so a halt found by local validation never blocks
+     another agent's live tool.
+  7. The official login is built but never run, and a proxy-capable login client is not built.
+- **For P6:** the live READ no longer needs poke-env or the Python encoder. What still imports poke-env for live play
+  is `main.play --client poke-env` (until P3) and `main.live.gate_peer`'s shadow.
+
+Tag: **BUILD + GATE · P4 DONE: (a) 318,465 decisions byte-equal · (b) 376,410 replays, 0 unclassified refusals (1 spectator-only, root-caused) · (c) 315 master-Node games, 0 T28 halts · (d) 16,523 shadow decisions, 0 diffs** · meas: [`measurements/pokeenv_p4_live_2026-10-07/`](measurements/pokeenv_p4_live_2026-10-07/)

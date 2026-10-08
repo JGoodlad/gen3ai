@@ -1,0 +1,752 @@
+{
+ "compared_per_decision": [
+  "row bytes",
+  "mask",
+  "model argmax on each row",
+  "token sent vs reader token"
+ ],
+ "run1": {
+  "battles": 60,
+  "decisions": 3053,
+  "differences": 0,
+  "other_events": 0,
+  "per_battle": {
+   "battle-gen3ou-93": {
+    "decisions": 37,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-94": {
+    "decisions": 30,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-95": {
+    "decisions": 26,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-96": {
+    "decisions": 120,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-97": {
+    "decisions": 40,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-98": {
+    "decisions": 23,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-99": {
+    "decisions": 55,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-100": {
+    "decisions": 43,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-101": {
+    "decisions": 43,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-102": {
+    "decisions": 52,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-103": {
+    "decisions": 40,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-104": {
+    "decisions": 26,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-105": {
+    "decisions": 43,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-106": {
+    "decisions": 53,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-107": {
+    "decisions": 36,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-108": {
+    "decisions": 56,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-109": {
+    "decisions": 51,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-110": {
+    "decisions": 42,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-111": {
+    "decisions": 31,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-112": {
+    "decisions": 44,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-113": {
+    "decisions": 33,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-114": {
+    "decisions": 48,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-115": {
+    "decisions": 48,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-116": {
+    "decisions": 30,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-117": {
+    "decisions": 52,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-118": {
+    "decisions": 101,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-119": {
+    "decisions": 47,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-120": {
+    "decisions": 36,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-121": {
+    "decisions": 31,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-122": {
+    "decisions": 51,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-123": {
+    "decisions": 38,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-124": {
+    "decisions": 45,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-125": {
+    "decisions": 72,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-126": {
+    "decisions": 30,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-127": {
+    "decisions": 43,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-128": {
+    "decisions": 65,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-129": {
+    "decisions": 47,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-130": {
+    "decisions": 41,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-131": {
+    "decisions": 40,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-132": {
+    "decisions": 27,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-133": {
+    "decisions": 87,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-134": {
+    "decisions": 34,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-135": {
+    "decisions": 48,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-136": {
+    "decisions": 30,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-137": {
+    "decisions": 44,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-138": {
+    "decisions": 50,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-139": {
+    "decisions": 54,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-140": {
+    "decisions": 54,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-141": {
+    "decisions": 68,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-142": {
+    "decisions": 102,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-143": {
+    "decisions": 101,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-144": {
+    "decisions": 81,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-145": {
+    "decisions": 43,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-146": {
+    "decisions": 66,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-147": {
+    "decisions": 161,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-148": {
+    "decisions": 43,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-149": {
+    "decisions": 36,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-150": {
+    "decisions": 53,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-151": {
+    "decisions": 53,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-152": {
+    "decisions": 29,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   }
+  }
+ },
+ "run2_v144": {
+  "battles": 30,
+  "decisions": 6817,
+  "differences": 0,
+  "other_events": 125,
+  "per_battle": {
+   "battle-gen3ou-260": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-261": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-262": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-263": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 4
+   },
+   "battle-gen3ou-264": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 4
+   },
+   "battle-gen3ou-265": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-266": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-267": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-268": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-269": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-270": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-271": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 4
+   },
+   "battle-gen3ou-272": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 4
+   },
+   "battle-gen3ou-273": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-274": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-275": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-276": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-277": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-278": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-279": {
+    "decisions": 104,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-280": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-281": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 4
+   },
+   "battle-gen3ou-282": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-283": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-284": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-285": {
+    "decisions": 74,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-286": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-287": {
+    "decisions": 84,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-288": {
+    "decisions": 249,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 5
+   },
+   "battle-gen3ou-289": {
+    "decisions": 81,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   }
+  }
+ },
+ "run3_v144_shadow": {
+  "battles": 30,
+  "decisions": 6653,
+  "differences": 0,
+  "other_events": 0,
+  "per_battle": {
+   "battle-gen3ou-316": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-317": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-318": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-319": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-320": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-321": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-322": {
+    "decisions": 77,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-323": {
+    "decisions": 82,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-324": {
+    "decisions": 62,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-325": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-326": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-327": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-328": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-329": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-330": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-331": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-332": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-333": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-334": {
+    "decisions": 82,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-335": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-336": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-337": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-338": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-339": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-340": {
+    "decisions": 100,
+    "diffs": 0,
+    "forfeits": 0,
+    "other": 0
+   },
+   "battle-gen3ou-341": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-342": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-343": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-344": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   },
+   "battle-gen3ou-345": {
+    "decisions": 250,
+    "diffs": 0,
+    "forfeits": 1,
+    "other": 0
+   }
+  }
+ }
+}

@@ -1,0 +1,480 @@
+{
+ "gate": "P4 (c) master Node series + (d) shadow",
+ "showdown_master": "51ad80fa5b264a28416b0d78667519a97ba2d2ee",
+ "model": "/home/goodlad/.cache/gen3ai/p4/models/p4_shadow_v144/final_model.zip",
+ "pool_teams": 719,
+ "master_valid_teams": 719,
+ "master_rejected_teams": 0,
+ "cells": {
+  "bot:Gen3HeuristicV2Player": {
+   "played": 5,
+   "team_rejections": 0,
+   "seconds": 4.4
+  },
+  "bot:Gen3StallerV2Player": {
+   "played": 5,
+   "team_rejections": 0,
+   "seconds": 3.9
+  },
+  "bot:Gen3AggressiveV2Player": {
+   "played": 5,
+   "team_rejections": 0,
+   "seconds": 7.3
+  },
+  "bot:Gen3SetupSweepV2Player": {
+   "played": 5,
+   "team_rejections": 0,
+   "seconds": 9.1
+  },
+  "bot:Gen3StallerPlayer": {
+   "played": 5,
+   "team_rejections": 0,
+   "seconds": 9.5
+  },
+  "bot:Gen3AggressivePlayer": {
+   "played": 5,
+   "team_rejections": 0,
+   "seconds": 4.2
+  },
+  "bot:Gen3SetupSweepPlayer": {
+   "played": 5,
+   "team_rejections": 0,
+   "seconds": 4.8
+  },
+  "metamon:SmallRL": {
+   "played": 10,
+   "team_rejections": 0,
+   "seconds": 15.5
+  },
+  "shadow:RLPlayer": {
+   "played": 30,
+   "team_rejections": 0,
+   "seconds": 83.6
+  },
+  "self:self": {
+   "played": 20,
+   "seconds": 53.3
+  }
+ },
+ "our_decisions": 20658,
+ "t28_halts": [],
+ "marker": null,
+ "shadow": {
+  "decisions": 6817,
+  "diff_counts": {},
+  "other_events": [
+   {
+    "battle": "battle-gen3ou-260",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-260",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4peer8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-260",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-260",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-260",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-261",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-261",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-261",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-261",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|player|p1|"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-261",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-262",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-262",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4peer8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-262",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-262",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-262",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-263",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-263",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-263",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-263",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-264",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-264",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-264",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-264",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-265",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-265",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-265",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-265",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|player|p1|"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-265",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-266",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-266",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-266",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-266",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|player|p1|"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-266",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-267",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-267",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-267",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-267",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|player|p1|"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-267",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-268",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-268",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-268",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-268",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|player|p1|"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-268",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-269",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-269",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|",
+     "|win|p4peer8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-269",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|l|\u2606p4ours8"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-269",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|player|p1|"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-269",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|deinit"
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-270",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4ours8 forfeited."
+    ]
+   },
+   {
+    "battle": "battle-gen3ou-270",
+    "kind": "race",
+    "reason": "a frame arrived before poke-env answered the open decision (the shadow's choice note would land late)",
+    "lines": [
+     "|-message|p4peer8 forfeited."
+    ]
+   }
+  ]
+ },
+ "verdict_c": "PASS",
+ "verdict_d": "FAIL"
+}

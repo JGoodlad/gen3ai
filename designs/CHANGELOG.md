@@ -12799,3 +12799,14 @@ obs-facts appended (2845)`.
   set), `gate_peer_test.py` (the shadow comparator's teeth), `live_integration_test.py` (the binary's sticky refusal,
   gate (a) in miniature with a one-byte perturbation SEEN, a planted bad line halting `main.play` with exit 7 and the
   next start refused before any connection, the spectator-rename root cause).
+
+## 2026-10-07 — P4's gate results; the shadow comparator closes a stall-forfeit frame
+
+- **Results** (`designs/research_state/measurements/pokeenv_p4_live_2026-10-07/`): (a) 2,224 battles / 318,465
+  decisions byte-equal to the training rows; (b) 376,410 public replays, 0 unclassified refusals (1 spectator-only
+  rename, root-caused and classified), 0 encoder-probe failures; (c) 315 games on a local master-built Node, 0 T28
+  halts; (d) 16,523 shadow decisions, 0 differences — (a), (c), (d) on both sides of the v144 version break.
+- **`main.live.gate_peer`.** poke-env's stall forfeit happens BEFORE it encodes, so the shadow's open reader frame was
+  never consumed and every later frame of that battle read as a "race" (125 false records in one run). A stall forfeit
+  now closes the frame (`stall_forfeit`), and the forfeit notices and the end are not a race. Pinned by
+  `gate_peer_test.py::test_a_stall_forfeit_closes_the_open_frame_and_the_end_is_not_a_race`.

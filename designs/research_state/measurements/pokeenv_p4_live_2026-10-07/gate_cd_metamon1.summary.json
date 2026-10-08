@@ -1,0 +1,25 @@
+{
+ "gate": "P4 (c) master Node series + (d) shadow",
+ "showdown_master": "51ad80fa5b264a28416b0d78667519a97ba2d2ee",
+ "model": "/home/goodlad/dev/gen3ai/models/rb_x5ab_blob_s1008/final_model.zip",
+ "pool_teams": 719,
+ "master_valid_teams": 719,
+ "master_rejected_teams": 0,
+ "cells": {
+  "metamon:SmallRL": {
+   "played": 20,
+   "team_rejections": 0,
+   "seconds": 115.2
+  }
+ },
+ "our_decisions": 913,
+ "t28_halts": [],
+ "marker": null,
+ "shadow": {
+  "decisions": 0,
+  "diff_counts": {},
+  "other_events": []
+ },
+ "verdict_c": "PASS",
+ "verdict_d": "FAIL"
+}

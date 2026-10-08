@@ -1,0 +1,11 @@
+{
+ "gate": "P4 (a) two roads, one row",
+ "battles": 1000,
+ "decisions": 144347,
+ "failing_battles": 0,
+ "policy": "random",
+ "seed": 14,
+ "play_seconds": 110.3,
+ "sim_bridge": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-aa327cea445885af4/src/rust_sim/target/selfcheck/sim_bridge",
+ "verdict": "PASS"
+}

@@ -61,3 +61,23 @@ def test_each_disagreement_is_reported(tmp_path):
     (rec,) = _records(tmp_path)
     assert set(rec["diff"]) == {"row", "mask", "action", "token"}
     assert rec["row_cells"] == [5]
+
+
+def test_a_stall_forfeit_closes_the_open_frame_and_the_end_is_not_a_race(tmp_path):
+    """poke-env forfeits at the turn limit BEFORE it encodes: the reader's open frame is closed as a recorded
+    stall forfeit (no row to compare), and the forfeit notices / win that follow are not a "race" (P4 run2: every
+    one of 125 race records sat in a turn-250 battle, after the forfeit)."""
+    f = _frame()
+    s = _shadow(tmp_path, f)
+    s.on_send("battle-x", "/forfeit")
+    s.on_message("battle-x", ["|-message|Them forfeited."])
+    s.on_message("battle-x", ["|", "|win|Us"])
+    recs = _records(tmp_path)
+    assert [r["kind"] for r in recs] == ["decision"]
+    assert recs[0]["stall_forfeit"] is True and recs[0]["sent"] == "/forfeit" and recs[0]["diff"] == []
+
+
+def test_a_frame_before_poke_env_answered_is_a_race(tmp_path):
+    s = _shadow(tmp_path, _frame())
+    s.on_message("battle-x", ["|move|p2a: X|Tackle|p1a: Y"])
+    assert [r["kind"] for r in _records(tmp_path)] == ["race"]

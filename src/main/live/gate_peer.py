@@ -64,7 +64,11 @@ class Shadow:
             self.battles[room] = b
         if getattr(b, "dead", None):
             return
-        if room in self.last_pe or room in self.pending:
+        # A forfeit ends the battle while a decision may still be open on either side (the server announces it at
+        # once): from the first `forfeited.` notice on, a frame arriving before poke-env answered is not a race.
+        if any(ln.startswith("|-message|") and ln.endswith(" forfeited.") for ln in lines):
+            b.forfeit_seen = True
+        if not b.ended and not getattr(b, "forfeit_seen", False) and (room in self.last_pe or room in self.pending):
             self.write({"battle": room, "kind": "race", "reason": "a frame arrived before poke-env answered the "
                         "open decision (the shadow's choice note would land late)", "lines": lines[:5]})
         try:
@@ -112,6 +116,14 @@ class Shadow:
     def on_send(self, room: str, message: str) -> None:
         if message.startswith("/utm "):
             self.team = message[len("/utm "):] if message != "/utm null" else None
+            return
+        if message.startswith("/forfeit") and room not in self.last_pe:
+            # The trainer's STALL forfeit: poke-env forfeits at the turn limit BEFORE it encodes (`_handle_stall`),
+            # so there is no poke-env row to compare — the reader's open frame is closed here, recorded as such.
+            frame = self.pending.pop(room, None)
+            if frame is not None:
+                self.write({"battle": room, "kind": "decision", "turn": frame.turn, "n": frame.n, "diff": [],
+                            "sent": "/forfeit", "stall_forfeit": True})
             return
         st = self.last_pe.pop(room, None)
         if st is None:

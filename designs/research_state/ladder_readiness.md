@@ -14,6 +14,35 @@ would win it.
 
 ---
 
+## 2026-10-07 — live play moved onto the Rust stack (poke-env retirement P4) and the T28 halt
+
+**Read this before the 2026-08-23 audit below: it changes what "the client" is.** `main.play` now plays through
+`main.live` (`--client rust`, the default): a thin websocket client over the `live_reader` session, which reads the
+server's stream through the SAME parse chain training's rows come from (`pokesim::side_reader`;
+[`designs/rust_sim/live_reader.md`](../rust_sim/live_reader.md)). poke-env's parse, its state tracker and the Python
+encoder are no longer on our live path (`--client poke-env` keeps the legacy `RLPlayer` for `main.anchors` until P3).
+
+- **The gates** ([`designs/research_state/measurements/pokeenv_p4_live_2026-10-07/`](measurements/pokeenv_p4_live_2026-10-07/)): (a) live rows == training rows on 2,224 battles /
+  318,465 decisions, 0 differences; (b) the 376,410-replay corpus reads from both seats through the Rust reader with
+  0 unclassified refusals and 0 encoder failures (1 spectator-only refusal, root-caused: a seat renamed mid-battle);
+  (c) 315 games against a LOCAL Node Showdown built from MASTER (`51ad80fa`) — scripted bots, Metamon `SmallRL`,
+  self-vs-self, the shadow peer — with 0 T28 halts; (d) 16,523 shadow decisions against the poke-env client, 0
+  differences. (a), (c) and (d) ran on both sides of the X5 version break (2761- and 2845-dim rows).
+- **T28 (owner 2026-10-07): a parse panic HALTS ALL PLAY.** Exit `FATAL_LIVE_PARSE` (7), a durable marker
+  (`python -m main.live.halt status`), every live entry point refuses to start past it, cleared only by
+  `python -m main.live.halt clear --fixed-by <commit>` (an ancestor of HEAD that touches a test file).
+- **Respect, in code:** `--mode ladder` is REFUSED (the campaign is deferred); `--server official` is refused unless
+  `--public-acceptance` names two accounts in `$PS_OWN_ACCOUNTS` and `--proxy` is set; the client's outgoing traffic
+  is a declared command set with no chat, no PM and no `/search`; accept mode IGNORES (never rejects) a challenge
+  from anyone but the named opponent.
+- **What this changes below:** the drift risk is now the RUST reader's (`main.live.replay_scan` is its drift scan; an
+  unknown keyword or an unclassified effect is a T28 halt, never a lost game on the timer). The no-reconnect gap is
+  now deliberate inside a battle: a rejoined room replays its log without our own choice notes, so its tracker rows
+  could not be the training rows — the client ends the run instead. The public login (`action.php` assertion) is
+  built but NEVER run, and a proxy-capable login client is not built (the gated acceptance needs it).
+
+---
+
 ## Verdict
 
 **~2–3 days of work from a first rated game, and none of it is architectural.** The model
