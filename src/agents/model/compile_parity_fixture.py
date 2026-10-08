@@ -8,11 +8,15 @@ off by up to 7.65 on pi_features, 70.9% argmax agreement, gradient cosine 0.778 
 codegen defect on torch 2.5.1, worked around there by the since-deleted gen3_inductor_trunk_split_v1). A probe
 that cannot see the failure is not a gate. So the gate runs on rows a real battle produced.
 
-WHERE THE ROWS COME FROM. Reproducible in-process bridge battles (`record_fixture_battle`: pinned
-teams, per-player RNG, fixed sim seed — the same battle every run), so the fixture can be
+WHERE THE ROWS COME FROM. Reproducible battles on the Rust env core — training's own row path
+(`utils.rust_env.fixture_battles`: fixed teams, a fixed battle seed per game, a seeded uniform policy for
+p1 and an episode-seeded Rust bot for p2, one thread — the same battles every run), so the fixture can be
 REGENERATED at any time, on any box, for any observation layout — including a layout no training run
 has produced traces for yet. Rows are taken evenly across each battle so early, mid and late-game
-states are all present.
+states are all present. (Until P6 of the poke-env retirement, 2026-10-08, the battles were poke-env
+bridge battles through the Python encoder — `obs_roundtrip_fuzz_test.record_fixture_battle`; the
+committed rows were written that way and stay valid: the gate needs real rows of the right width, and
+the Python rows were byte-equal to the core's by slice O.)
 
 WHEN IT GOES STALE. The observation width is recorded in the file; `load_parity_rows` REFUSES a
 width that does not match the extractor (a stale fixture must never silently degrade the gate to a
@@ -24,7 +28,6 @@ layout changes. Regenerate with:
 from __future__ import annotations
 
 import argparse
-import tempfile
 from pathlib import Path
 from typing import Tuple
 
@@ -35,8 +38,9 @@ FIXTURE_PATH = Path(__file__).with_name("compile_parity_obs.npz")
 
 # How many rows the fixture holds (a larger batch tiles them, `compile_trainer.fixture_index`).
 N_ROWS = 64
-# The reproducible battles the rows come from (`record_fixture_battle` keys).
-BATTLE_KEYS = (0, 1, 2, 3, 4, 5, 6, 7)
+# The reproducible battles the rows come from: this many seeded Rust-core games (`fixture_battles.play_rows`).
+N_BATTLES = 8
+FIXTURE_SEED = 20261008
 
 
 class ParityFixtureError(RuntimeError):
@@ -69,29 +73,15 @@ def load_parity_rows(obs_dim: int) -> Tuple[np.ndarray, np.ndarray]:
     return obs, mask
 
 
-def build_rows(n_rows: int = N_ROWS, keys: Tuple[int, ...] = BATTLE_KEYS
+def build_rows(n_rows: int = N_ROWS, n_battles: int = N_BATTLES, seed: int = FIXTURE_SEED
                ) -> Tuple[np.ndarray, np.ndarray]:
-    """Play the reproducible battles and take ``n_rows`` decision rows spread across them."""
-    from agents.training.obs_roundtrip_fuzz_test import record_fixture_battle
+    """Play the reproducible Rust-core battles and take ``n_rows`` decision rows spread across them."""
+    from utils.rust_env.fixture_battles import spread_rows
 
-    per = int(np.ceil(n_rows / len(keys)))
-    obs_rows, mask_rows = [], []
-    with tempfile.TemporaryDirectory(prefix="gen3_parity_fixture_") as tmp:
-        for key in keys:
-            _, _, npz = record_fixture_battle(tmp, key=key, tag=f"Pf{key}", impl="node")
-            keep = np.flatnonzero(np.asarray(npz["has_state"]).astype(bool)) \
-                if "has_state" in npz else np.arange(len(npz["obs"]))
-            if len(keep) == 0:
-                continue
-            pick = keep[np.unique(np.linspace(0, len(keep) - 1, num=min(per, len(keep))).round()
-                                  .astype(int))]
-            obs_rows.append(np.asarray(npz["obs"], dtype=np.float32)[pick])
-            mask_rows.append(np.asarray(npz["action_mask"], dtype=bool)[pick])
-    obs = np.concatenate(obs_rows)[:n_rows]
-    mask = np.concatenate(mask_rows)[:n_rows]
+    obs, mask = spread_rows(n_rows, n_battles=n_battles, seed=seed)
     if len(obs) < n_rows:
-        raise ParityFixtureError(f"only {len(obs)} decision rows from {len(keys)} battles; "
-                                 f"need {n_rows} — add battle keys")
+        raise ParityFixtureError(f"only {len(obs)} decision rows from {n_battles} battles; "
+                                 f"need {n_rows} — add battles")
     return obs, mask
 
 
@@ -109,7 +99,7 @@ def main(argv: "list[str] | None" = None) -> int:
         return 0
     obs, mask = build_rows()
     np.savez_compressed(FIXTURE_PATH, obs=obs, action_mask=mask,
-                        battle_keys=np.asarray(BATTLE_KEYS, dtype=np.int64))
+                        source=np.asarray(f"rust_core:fixture_battles seed={FIXTURE_SEED} n_battles={N_BATTLES}"))
     print(f"wrote {FIXTURE_PATH}: obs {obs.shape}, action_mask {mask.shape}, "
           f"legal/row {mask.sum(1).mean():.2f}")
     return 0

@@ -831,8 +831,9 @@ takes no region route and compiles nothing after the lock.
 > measurements below are that gate's, with their provenance.
 
 The extractor-only gate validated on **REAL observation rows, never zeros**. The rows are a
-committed fixture, `src/agents/model/compile_parity_obs.npz`: 64 decision rows from 8 reproducible
-in-process bridge battles, made by `python -m agents.model.compile_parity_fixture --write`. It can be
+committed fixture, `src/agents/model/compile_parity_obs.npz`: 64 decision rows (committed from 8 reproducible
+poke-env bridge battles; since P6 of the poke-env retirement the regenerator plays 8 seeded Rust-core battles,
+`utils.rust_env.fixture_battles`), made by `python -m agents.model.compile_parity_fixture --write`. It can be
 regenerated on any box for any layout. A missing fixture, or one of the wrong width, **REFUSES**
 (`FATAL_CONFIG`) rather than falling back to zeros, and
 `compile_trainer_test::test_the_committed_real_obs_fixture_matches_the_live_layout` fails the

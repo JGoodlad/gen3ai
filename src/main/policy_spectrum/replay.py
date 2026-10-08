@@ -94,7 +94,7 @@ def _viewer_decisions(res: dict, viewer: int) -> List[ReplayDecision]:
 
 
 def _run_chunk(battles) -> List[dict]:
-    from agents.battle.rust_core_parity import run_core
+    from agents.battle.core_replay import run_core
 
     return run_core(battles, trackers=True, obs=True)
 

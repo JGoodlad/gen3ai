@@ -13,7 +13,7 @@ read is the policy KL between two checkpoints on a FIXED probe-state set:
     conditioning still being (re)written — the noise-fitting signature if it never settles.
 
 Two modes (CLI):
-  collect  — play bridge battles (ckpt vs itself on the pool) ONCE and save obs+mask to an npz;
+  collect  — play Rust-core battles (ckpt vs itself, greedy, on the pool; P6) ONCE and save obs+mask to an npz;
              the set is then FROZEN so every later comparison is apples-to-apples.
   compare  — KL between two checkpoints on the frozen set, overall + per-roster-group.
 
@@ -123,42 +123,29 @@ def churn(ckpt_a: str, ckpt_b: str, config_path: str, probe_npz: str, top_groups
 
 async def collect_probe_states(ckpt: str, config_path, out_npz: str, battles: int = 40,
                                seed_base=None) -> int:
-    """Play bridge battles (ckpt vs itself, both on the full pool) and freeze obs+mask to npz.
-    ``config_path=None`` finds the ``model_config.json`` beside the zip or in its parent;
-    ``seed_base`` fixes the per-battle sim dice (see ``run_local_battles``)."""
-    from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
-    from agents.inference.player import RLPlayer
-    from agents.observation.state_encoder import load_mappings
+    """Play ``battles`` games of ``ckpt`` against ITSELF (greedy, both sides, the whole team pool) on the Rust env
+    core — the training row path — and freeze p1's obs + mask to npz. ``config_path=None`` finds the
+    ``model_config.json`` beside the zip or in its parent; ``seed_base`` seeds the team draw and every battle's dice
+    (``utils.rust_env.fixture_battles``: the same set every call).
+
+    Until P6 of the poke-env retirement (2026-10-08) the games were poke-env bridge battles (two ``RLPlayer`` s
+    over ``run_local_battles``, the Python encoder): a probe set frozen before then is a different SAMPLE of the
+    same distribution (ckpt self-play on the pool), and a frozen set is never recollected silently (``main.policy_drift``
+    refuses an existing ``--out``)."""
     from agents.model.snapshot import current_model_version, load_foreign_opponent
-    from utils.team_loader import TeamLoader
-    from utils.teambuilder import Gen3Teambuilder
-    from utils.bridge.local_battle_runner import run_local_battles
+    from agents.observation.state_encoder import load_mappings
+    from utils.rust_env.fixture_battles import play_rows
 
     mappings = load_mappings()
     model, _ = load_foreign_opponent(ckpt, current_version=current_model_version(mappings),
                                      device="cpu", config_path=config_path)
-    pool_tb = Gen3Teambuilder(TeamLoader().get_all_teams())
 
-    class _Coll(RLPlayer):
-        def __init__(self, *a, **k):
-            super().__init__(*a, **k)
-            self.O, self.M = [], []
+    def greedy(obs: np.ndarray, mask: np.ndarray) -> np.ndarray:
+        return masked_action_probs(model, obs, mask.astype(np.float32)).argmax(axis=1)
 
-        def embed_battle(self, b):
-            d = super().embed_battle(b)
-            self.O.append(np.asarray(d["observation"], np.float32).copy())
-            self.M.append(np.asarray(d["action_mask"], np.float32).copy())
-            return d
-
-    _acct = lambda tag: AccountConfiguration(tag, "pw")
-    c = _Coll(model=model, team=pool_tb, battle_format="gen3ou",
-              server_configuration=LocalhostServerConfiguration, mappings=mappings,
-              account_configuration=_acct("ChA"), stochastic=False, start_listening=False)
-    o = RLPlayer(model=model, team=pool_tb, battle_format="gen3ou",
-                 server_configuration=LocalhostServerConfiguration, mappings=mappings,
-                 account_configuration=_acct("ChB"), stochastic=False, start_listening=False)
-    await run_local_battles(c, o, battles, concurrency=2, seed_base=seed_base)
-    obs, mask = np.stack(c.O), np.stack(c.M)
+    games = play_rows(battles, seed=int(seed_base or 0), n_teams=None, policy=greedy, self_play=True)
+    obs = np.concatenate([g[0] for g in games]).astype(np.float32)
+    mask = np.concatenate([g[1] for g in games]).astype(np.float32)
     np.savez_compressed(out_npz, obs=obs, mask=mask)
     print(f"[churn] froze {obs.shape[0]} probe states from {battles} battles -> {out_npz}", flush=True)
     return obs.shape[0]

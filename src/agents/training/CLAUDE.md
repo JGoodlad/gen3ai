@@ -1111,7 +1111,9 @@ terminal-only run, which has no scaffolding to measure.
 ## The POLICY DRIFT meter — refining or adopting a new strategy? (`policy_drift.py`, `python -m main.policy_drift`)
 
 🚨 **A DESCRIPTOR, not a test.** It extends the churn probe (`churn_probe.py`: masked KL between two
-checkpoints on a FROZEN probe-state set) into a per-snapshot SERIES. Each snapshot is compared with
+checkpoints on a FROZEN probe-state set — collected since P6 of the poke-env retirement by the checkpoint's greedy
+self-play on the RUST env core, `utils.rust_env.fixture_battles`; a set frozen before then came from poke-env
+bridge battles, a different sample of the same distribution) into a per-snapshot SERIES. Each snapshot is compared with
 (a) the PREVIOUS one, (b) the latest one at least `--back-steps` (10M) earlier, (c) a fixed ANCHOR (the
 first snapshot recorded — pool snapshots exist only once self-play is seeded — or `--anchor <zip>`).
 Per reference it records the masked KL (mean and median), the greedy FLIP RATE bucketed by the OLDER

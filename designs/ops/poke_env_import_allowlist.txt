@@ -31,7 +31,6 @@ src/agents/opponents.py
 src/agents/training/battle_snapshot.py
 src/agents/training/bot_elo_calibration.py
 src/agents/training/cf_producer_snapshot.py
-src/agents/training/churn_probe.py
 src/agents/training/episode_tracker.py
 src/agents/training/eval_roster.py
 src/agents/training/golden_obs_capture.py
@@ -39,7 +38,6 @@ src/agents/training/live_view_build_benchmark.py
 src/agents/training/obs_build_benchmark.py
 src/agents/training/obs_materializer.py
 src/agents/training/trainer_turn_benchmark.py
-src/agents/training/turn_delta.py
 src/main/eval_worker.py
 src/main/search_dividend/battery.py
 src/main/search_dividend/determinize.py

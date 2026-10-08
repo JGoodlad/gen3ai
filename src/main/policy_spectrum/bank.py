@@ -100,7 +100,7 @@ class BankBattle:
     outcome: str                  # banked side's result: win / loss / draw
 
     def recorded(self):
-        from agents.battle.rust_core_parity import RecordedBattle
+        from agents.battle.core_replay import RecordedBattle
 
         return RecordedBattle(label=self.battle_id, format_id=self.format_id, seed=self.seed,
                               p1=self.p1, p2=self.p2, commands=[list(c) for c in self.commands])

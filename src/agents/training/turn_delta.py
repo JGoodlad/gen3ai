@@ -20,17 +20,26 @@ the ORACLE for the label until the cutover, then joins the deletion manifest
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Optional, TYPE_CHECKING
+from typing import NamedTuple, Optional, TYPE_CHECKING
 import numpy as np
 
 from agents.gen3_mechanics import BOOST_DIM
 
 if TYPE_CHECKING:
-    # annotation-only (`from __future__ import annotations`): importing this module never loads
-    # poke-env (P5 of the retirement — the prober's forensics reads SELF_KO_MOVES from here)
-    from poke_env.battle.abstract_battle import DamagingMoveEvent
     from agents.enums import Status
     from agents.training.battle_snapshot import BattleContext
+
+
+class DamagingMoveEvent(NamedTuple):
+    """Per-side snapshot of the last damaging move resolved in a window — OWNED here since P6 of the poke-env
+    retirement (it was poke-env's ``abstract_battle.DamagingMoveEvent``, the same five fields in the same order, so
+    a fold's values and equality are unchanged; nothing ``isinstance``-checks it). ``target_status`` is the
+    defender's status AT MOVE-FIRE TIME (Flash Fire vs a frozen holder thaws in the same hit)."""
+    user_species: str
+    target_species: str
+    target_status: "Optional[Status]"
+    move_id: str
+    effectiveness: float
 
 
 # Moves whose user always faints and which always connect when used (a neutral
@@ -494,9 +503,6 @@ class TurnDelta:
         def _to_dme(dm):
             if dm is None:
                 return None
-            from poke_env.battle.abstract_battle import DamagingMoveEvent  # the fold's one run-time read
-
-
             ts_str = dm.target_status
             target_status = Status.__members__.get(ts_str) if ts_str else None
             return DamagingMoveEvent(
