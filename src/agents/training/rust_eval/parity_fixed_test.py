@@ -34,6 +34,7 @@ def test_commit_fixed_opponents_play_the_same_games_on_both_paths(fixed_run):
     assert not any(fixed_run["rust_stats"]["lifecycle"].values())
 
 
+@pytest.mark.slow  # 40 s on a quiet box (2026-10-08): the tier budget enforces 30 s
 def test_teeth_a_fixed_opponent_playing_the_trainees_weights_is_fatal(fixed_run):
     """The Python path's ext_fixed1 plays the TRAINEE's zip — what the Rust slot played before
     ``build_eval_core`` loaded it: its games must be FATAL (the Rust games are the fixed row's own)."""

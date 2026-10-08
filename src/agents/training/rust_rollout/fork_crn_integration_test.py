@@ -186,6 +186,7 @@ def test_a_sibling_action_shares_the_prefix_and_the_frame_keys(played):
     _release(col, f)
 
 
+@pytest.mark.slow  # 43 s on a quiet box (2026-10-08): the tier budget enforces 30 s
 def test_the_fork_phase_runs_inside_collect_and_the_lifecycle_stays_clean():
     """Gate (d) at the collector level: ``collect`` = play -> FORK -> fill with the arm ON, across
     updates (a weight move + ``after_update``): branch rows reach the learner's buffer (``fork_pg_m`` 0

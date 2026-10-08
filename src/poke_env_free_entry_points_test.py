@@ -318,6 +318,7 @@ def prober_run(tmp_path_factory):
     pytest.fail("no core trace with a usable move_selection decision")
 
 
+@pytest.mark.slow  # 127 s on a quiet box (2026-10-08, P6 slice 1 ship): run per P6 slice explicitly
 @pytest.mark.sim
 @pytest.mark.integration
 def test_every_prober_command_and_the_web_app_run_with_poke_env_blocked(prober_run):

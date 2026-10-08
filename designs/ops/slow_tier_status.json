@@ -370,6 +370,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/training/rust_eval/parity_fixed_test.py::test_teeth_a_fixed_opponent_playing_the_trainees_weights_is_fatal": {
+   "status": "pass",
+   "commit": "8be78b329a1dc9a3faa957355c9dd6142d461c19",
+   "at": "2026-10-08T07:10:58Z",
+   "duration_s": 38.51,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/training/rust_eval/parity_test.py::test_milestone_fixed_opponents_and_the_sampled_regime_on_cpu": {
    "status": "pass",
    "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
@@ -392,6 +400,14 @@
    "at": "2026-10-03T23:25:24Z",
    "duration_s": 1093.71,
    "contention": 1.11,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_the_fork_phase_runs_inside_collect_and_the_lifecycle_stays_clean": {
+   "status": "pass",
+   "commit": "8be78b329a1dc9a3faa957355c9dd6142d461c19",
+   "at": "2026-10-08T07:10:58Z",
+   "duration_s": 31.43,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/tb_relevance_test.py::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag": {
@@ -887,10 +903,18 @@
   },
   "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "95511248cfb6430ee92457959bb01877b90b46e4",
-   "at": "2026-10-08T06:33:21Z",
-   "duration_s": 324.38,
+   "commit": "8be78b329a1dc9a3faa957355c9dd6142d461c19",
+   "at": "2026-10-08T07:10:58Z",
+   "duration_s": 321.72,
    "contention": 1.01,
+   "detail": ""
+  },
+  "src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked": {
+   "status": "pass",
+   "commit": "8be78b329a1dc9a3faa957355c9dd6142d461c19",
+   "at": "2026-10-08T07:10:58Z",
+   "duration_s": 103.42,
+   "contention": 1.0,
    "detail": ""
   },
   "src/utils/bridge/bridge_impl_parity_test.py::test_a_forfeited_battles_record_logs_the_forcelose_command[node]": {
@@ -1126,5 +1150,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-08T06:33:21Z"
+ "last_written": "2026-10-08T07:10:58Z"
 }

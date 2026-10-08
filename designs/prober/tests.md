@@ -36,7 +36,7 @@ field and the obs byte-equal — the poke-env ORACLE the core reading is held to
 equal the stored rows and its choice maps equal the poke-env materializer's; a tampered record line and
 misaligned states rows REFUSED; `query summary|scan|turns` exit 0 on the core-trace run) +
 `src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`
-(`@sim @integration`: every JSON-CLI command — `replay-counterfactual` included since P6, with a model
+(`@slow @sim @integration` — 127 s on a quiet box, so it left the routine gate 2026-10-08; run it explicitly after a prober change: every JSON-CLI command — `replay-counterfactual` included since P6, with a model
 and a self-model opponent and `--narrate` — and the web app's views RUN with poke-env blocked on real core
 traces + a current-arch checkpoint; the exception list `PROBER_POKE_ENV_COMMANDS` is pinned EMPTY), `forensics_test.py` (pure `move_category` + `build_decision_table`/`decision_table_digest` over a
 hand-written tmp trace via a fake session — no torch, no bridge),
