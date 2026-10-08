@@ -37,8 +37,8 @@ from agents.observation.turn_delta_encoder import (
     OFFSET_OPP_SWITCH_TO_SPEC,
 )
 from agents.training.turn_delta import TurnDelta
-from poke_env.battle.abstract_battle import DamagingMoveEvent
-from poke_env.battle.status import Status
+from agents.training.turn_delta import DamagingMoveEvent
+from agents.enums import Status
 
 # Minimal move mapping covering the test cases.
 _MOVES = {

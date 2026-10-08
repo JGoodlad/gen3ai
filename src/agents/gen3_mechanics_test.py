@@ -2,9 +2,19 @@ import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from poke_env.battle.effect import Effect
-from poke_env.battle.pokemon_type import PokemonType
-from poke_env.battle.status import Status
+from enum import Enum
+
+from agents.enums import PokemonType, Status
+
+
+class Effect(Enum):
+    """A stand-in for the fork's ``Effect`` (T27 P6 slice 6d-2: this test no longer reads the fork). The helpers
+    under test match an effect by its NAME (``has_effect`` / ``mon_status_str``), so a local enum with the fork's
+    member names exercises the same code; ``FOCUS_ENERGY`` is the non-notable member."""
+    TAUNT = 1
+    CONFUSION = 2
+    SUBSTITUTE = 3
+    FOCUS_ENERGY = 4
 
 from agents.gen3_mechanics import (
     ABILITY_TYPE_MULTIPLIER,

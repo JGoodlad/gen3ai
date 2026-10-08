@@ -185,10 +185,11 @@ DEFAULT_BOOTSTRAP_SEED = 20260906
 TIMEOUT_INCONCLUSIVE_FRACTION = 0.25
 
 #: THE PYTHON-BRIDGE SEED CONVENTION (pre-boundary, ``transport = "python_bridge"``). The meter no longer
-#: plays through it; it is kept, unchanged, for the committed measurement drivers that replay the
-#: pre-boundary series (``n0_endofrun_2026-09-27/scripts/gu_unit.py``, pinned by
-#: ``src/main/untaught_unit_script_test.py``). At ``--seed 0`` the sim dice, pool draw and per-battle
-#: policy seeds reproduce ``exploiter_competence/compete.py`` exactly.
+#: plays through it; it is kept, unchanged, as the record of the committed measurement drivers that replayed
+#: the pre-boundary series (``n0_endofrun_2026-09-27/scripts/gu_unit.py``). Those drivers can no longer RUN:
+#: the Python runtime they played through (``RLPlayer``, ``run_local_battles``) was deleted in T27 P6 slice 6d-2,
+#: and their pin (``untaught_unit_script_test.py``) with it. At ``--seed 0`` the sim dice, pool draw and
+#: per-battle policy seeds reproduced ``exploiter_competence/compete.py`` exactly.
 _ENV_SEED_OFFSETS = {
     "GEN3AI_PLAYER_SEED": 10000,
     "GEN3AI_TEAM_SEED": 20000,

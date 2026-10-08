@@ -208,26 +208,20 @@ appended active flag.
 **Recency block** at `POKEMON_RECENCY_OFFSET` (109) — [turns_since_seen, turns_since_acted,
 turns_since_was_hit], TURN-ANCHORED (`cur_turn − event_turn`, clamped; on-field mon reads 0;
 never-tracked reads 1.0 max staleness), log-saturated over a 10-turn cap, BOTH sides (public —
-every reset derives from observed protocol events), sourced from the EpisodeTracker-owned
-`RecencyTracker` (the same per-decision event window the TurnDelta fold reads) and threaded
-into `encode(recency=…)` like the progress clock. Fuzz gate:
-the deleted `recency_fuzz_test.py` (encoded scalars == an independent full-log recount +
-decision-time active log, per mon per decision). **Protect-odds field** at
+every reset derives from observed protocol events), folded by the Rust trackers over the
+per-decision event window. **Protect-odds field** at
 `POKEMON_PROTECT_OFFSET` (112, gen3_entity_rehome_v1): P(a Protect/Detect/Endure by THIS mon
 succeeds now) under the gen3 floored-doubling stall rule (100/50/25/12.5, floor 1/8), from the
 LiveView `protect_counter` — EVERY mon owns its stall state (a benched mon truthfully reads 1.0;
-the counter resets on switch). Pinned by the deleted `protect_success_prob_fuzz_test.py`. **Last-action block** at
+the counter resets on switch). **Last-action block** at
 `POKEMON_LAST_ACTION_OFFSET` (113, `gen3_pair_history_v1` — Tier H-A1 of
 `designs/ai_v9/design_history_entity.md`): the SIDE's most recent executed action on its
 ACTIVE mon's slot — `[last_move_id, was_switch, hit, miss, fail, crit]`, bench rows zero.
 The move id is an EMBEDDING id (the model's `slice_pokemon_categoricals` routes it to the
 move table and ZEROES its raw column — a dex num never reaches a Linear); outcome order
 matches the turn-delta `_OUTCOME_ORDER`; CANT windows leave the previous action standing;
-leads don't count (a placement, not an action). Folded by the EpisodeTracker-owned
-`PairHistoryTracker` (same decision window as recency), threaded via
-`encode(pair_history=…)`. Fuzz gate: the deleted `pair_history_fuzz_test.py` (independent
-full-log oracle; it caught a fainted-active-resurrection resync bug pre-ship). The SAME
-tracker also feeds the **180-dim pair-history block** after reactive
+leads don't count (a placement, not an action). Folded by the Rust trackers (the same decision
+window as recency). The SAME tracker also feeds the **180-dim pair-history block** after reactive
 (`OFFSET_PAIR_HISTORY`, 6×6×5 `h[i,j]` tendency counters — switch-ins/attacks/status-clicks
 by their mon i while our mon j was active, shared-field turns, pairing recency; log-saturated
 over the 10 cap; consumed by the opt-in `h` edge family). **Tier H-B follows it**
@@ -236,46 +230,27 @@ over the 10 cap; consumed by the opt-in `h` edge family). **Tier H-B follows it*
 **`gen3_frame_deletion_v1` made it the LAST block**, and **`gen3_event_record_v2` (E12) reshaped
 its row to 30 columns** — entry reason / REL mon / denial / caller / boost stat / Spikes layers /
 Pursuit-on-switch, a DENIED row type (fainted first; the gen-3 TURN CUT), the refused-switch TARGET
-(E4) — with the schema in `designs/ARCHITECTURE.md` §1.6 and the fold moved to its own module,
-`agents/training/event_window_tracker.py` (`episode_tracker` re-exports it). One constructed battle
+(E4) — with the schema in `designs/ARCHITECTURE.md` §1.6 and the fold in the Rust core
+(`trackers::history::EventWindow`). One constructed battle
 per mechanic, replayed through the core: the cargo `src/rust_sim/tests/window_record_test.rs`
 (`agents/battle/event_record_v2_fixture_test.py`, its Python-vs-core twin, was deleted in P6 slice 6c). With the frame deletion,
 the 11-dim prev-turn action mask and the 7 × 159 TurnDelta lag frames that used to follow are
-DELETED, so `total_dim == base_dim` and `encode`'s output IS the observation. The window grew a
+DELETED, so `total_dim == base_dim`. The window grew a
 `cant_id` column in the same pass — the one lag-frame fact with no substitute. What that
 deletion cost, and the three facts that ship WITHOUT a substitute, is
-`designs/ai_v9/design_frame_deletion_coverage_gaps.md`. Folded by the EpisodeTracker-owned
-`EventWindowTracker` (same window, same alive-filtered resync), threaded via
-`encode(event_window=…)`; rows most-recent-LAST, front zero-padding; ids are embedding ids and
+`designs/ai_v9/design_frame_deletion_coverage_gaps.md`. Folded by the Rust core's `EventWindow`
+(same window, same alive-filtered resync); rows most-recent-LAST, front zero-padding; ids are embedding ids and
 NO Linear reads the block raw (its only consumer is the opt-in `--history-events` event seats).
 MAGNITUDE is stage-scaled (`/ 6`) on a BOOST row ONLY — signed, a drop negative — and a HAZARD row
 writes its ±1 (condition started / ended) as is (`gen3_event_window_semantics_fixes_v1`; the rest of
 that fix — the Protect OUT_FAIL, the current-mover damage rule, the no-lethal-line faint, Trick
 SWAPPED — lives in the fold, `designs/ARCHITECTURE.md` §1.1).
 
-> ⚠️ **Feeding it takes the FULL three-step decision protocol** — `record` →
-> `update_progress_clock` → `encode(event_window=…)`, in that order. `update_progress_clock` is
-> the ONLY caller of `EventWindowTracker.update`, and `encode`'s `event_window=` is optional
-> (`None` leaves the block zero), so a harness that skips either reads a structurally-ZERO
-> block — which a presence check on any single row type reports as "the signal never reached
-> the model", indistinguishable from a real miss. That is exactly how the trapping fuzz read
-> FAIL 4/4 on a signal production delivers; `event_window_test::
-> test_the_window_block_is_ZERO_without_update_progress_clock` pins the trap by name.
->
-> An OUT-OF-BAND event is covered by the same window: `CHOICE_REJECTED` is the one kind
-> recorded outside the parse pass (poke-env intercepts `|error|[Unavailable choice]` before
-> `parse_message` and calls `Gen3Battle.record_choice_rejected`), and it still lands inside the
-> NEXT decision's `[cursor, now)` slice, because the cursor is captured at `record()` time
-> against the same log `_record` appends to. Pinned end to end by `event_window_test::
-> test_an_out_of_band_choice_rejection_reaches_the_NEXT_decisions_obs` (and its CANT sibling,
-> which asserts the ordinary parse-pass path has no such exposure).
-
 > **The per-row COLUMN CONTRACT is `constants.EventCol`** (`gen3_event_col_names_v1`) — an
-> `IntEnum`, ONE declaration that BOTH ends import: the producer (`state_encoder.encode`) and
-> the consumer (`team_transformer.EventSeats.forward` + `_event_reference_cells`), plus the
-> feature-coverage probe helper (`feature_coverage/_support.py::obs_with_event_row`) and every
-> oracle that reads the block (`event_window_fuzz_test`, `trapping_signals_fuzz_test`,
-> `hidden_power_typed_obs_fuzz_test`). It replaced a comment plus ~30 bare integer literals
+> `IntEnum`, ONE declaration the MODEL reads, held equal to the PRODUCER (the Rust encoder's `layout.rs`
+> `EV_*` columns) by `rust_core_obs_layout_test.py`; its Python consumers are
+> `team_transformer.EventSeats.forward` + `_event_reference_cells` and the feature-coverage probe helper
+> (`feature_coverage/_support.py::obs_with_event_row`). It replaced a comment plus ~30 bare integer literals
 > spread across five files — a producer/consumer pair bound by POSITION with nothing relating
 > them, the class the 2026-08-18 positional-binding sweep convicted five times. **Never write a
 > bare column index**; the members ARE ints, so `vec[_o + EventCol.CRIT]` is the same arithmetic
@@ -284,35 +259,14 @@ SWAPPED — lives in the fold, `designs/ARCHITECTURE.md` §1.1).
 > `EVENT_EFF_GROUP`) because both are written by INDEXING (`EFF_NEUTRAL + eff`), so their order
 > is load-bearing: reordering a member relabels every historical row with no shape change.
 > `event_window_test.py` pins all of it — the members TILE `range(EVENT_TOKEN_DIM)` with no gaps
-> or overlaps, the groups are contiguous and in the TurnDelta effectiveness-code order, the two
-> ends resolve to the SAME object, and `EventSeats._N_SCALARS` (a weight shape) agrees with the
+> or overlaps, the groups are contiguous and in the TurnDelta effectiveness-code order, the consumer
+> imports the SAME object, and `EventSeats._N_SCALARS` (a weight shape) agrees with the
 > map's id/scalar classification.
->
-> **The event-window fuzz oracle models ALL 30 columns** (the E12 columns and the DENIED rows too,
-> since `gen3_event_record_v2`: 2 × 25 fresh battles, 3,964 decisions, 0 mismatches; the
-> destinybond / perishsong branches did not occur there and are covered by the constructed
-> fixtures) — `_ORACLE_UNMODELED_COLS` is EMPTY,
-> and the coverage assert keeps it that way (a new `EventCol` member must be modelled or
-> declared, never silently unchecked). Two rounds got it here. First the three id columns were
-> found UNCHECKED with nothing saying so (`_want_vec` returned a 19-tuple compared with `zip`
-> against a 22-wide row, and `zip` stops at the shorter) and were declared unmodelled. Then the
-> modelling landed: the oracle emits its own CANT row and derives the faint CAUSE and item
-> TRANSITION — the semantic input independently (which event, which mon, and its own ledger of
-> what last damaged each side / whether that side self-KO'd, cleared when a mon leaves the
-> field), the label→id step through the declared vocabulary both sides must share.
->
-> ⚠️ **The missing CANT ROW was the expensive half, and the failure shape is worth knowing.**
-> One fewer record per `|cant|` than the tracker is invisible until the 32-row window
-> SATURATES — after that the oracle's last-32 starts earlier in the timeline than the
-> tracker's, so EVERY row compares against its neighbour: 8209 failures over 5 battles, one
-> root. An independent fold must match the producer's row COUNT, not just its column values.
 
-Unit gate: `training/event_window_test.py`; the event-fold FUZZ (the pair-history pattern) is
-the pre-enable gate. **Appended tail**
-(state_encoder): `POKEMON_TRAPPED_OFFSET` (119) + `POKEMON_MAYBE_TRAPPED_OFFSET` (120) — the
+Unit gate: `training/event_window_test.py` (the contract); the fold's gates are the Rust core's
+(`tracker_semantics_test.rs`, `window_record_test.rs`). **Appended tail**: `POKEMON_TRAPPED_OFFSET` (119) + `POKEMON_MAYBE_TRAPPED_OFFSET` (120) — the
 OUR-side LegalActions trapping bits, nonzero ONLY at our active slot (`maybe_trapped` is the
-high-value trap-risk bit; fuzz gate the deleted `trapping_signals_fuzz_test.py`, which also asserts
-bench slots stay zero) — then the ACTIVE flag at `POKEMON_ACTIVE_OFFSET` (121), deliberately
+high-value trap-risk bit; bench slots stay zero) — then the ACTIVE flag at `POKEMON_ACTIVE_OFFSET` (121), deliberately
 LAST in the slot (the model's `hp_and_active[:, :, -1]` convention is load-bearing).
 Original 110: species ID + 6 base stats, item ID + known + consumed, 2 type
 IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 11-dim move slots, HP fraction,
@@ -409,9 +363,8 @@ protect/trapped/maybe_trapped moved to the per-mon slots (above).
 The 5 scalars sit BEFORE `active_req_moves`, so the extractor picks them up in
 `non_matchup_rest` automatically (it stops at the req-moves offset). Sources:
 
-- `turns_since_progress` — the log-saturated no-progress clock (`log(1+min(n,10))/log(11)`), owned by
-  the **EpisodeTracker's `ProgressClock`** (NOT LiveView — it is cross-turn state) and threaded into
-  `encode()` like the HP tracker. (The reward's `no_progress_tax` keyed on the same clock until the
+- `turns_since_progress` — the log-saturated no-progress clock (`log(1+min(n,10))/log(11)`), kept by
+  the Rust trackers (NOT the view — it is cross-turn state). (The reward's `no_progress_tax` keyed on the same clock until the
   shaped reward path was deleted, 2026-09-26; the clock is now an obs-only counter.)
 **Do not confuse `turns_since_progress` with the DEADLINE clock** — they answer different
 questions and live in different blocks. `turns_since_progress` (board block, above) is a
@@ -433,7 +386,7 @@ the model.
 - `wish_floating` — the pending-Wish heal: a flat `WISH_HEAL_FRACTION` (≈0.5; gen3 Wish heals the
   RECIPIENT's maxhp/2, so the fraction is constant and GIGO-proof) when a Wish cast last turn
   resolves at the end of this turn, else 0. Slot-keyed, so it survives faint / Roar-phaze / switch.
-  poke-env tracks none of it → reconstructed from the event log (`wish_belief.py`).
+  reconstructed from the event record (the Rust trackers; the Python `wish_belief.py` fold is deleted).
 
 **`active_req_moves` (12 dims):** OUR active mon's 4 moves in **REQUEST order** (slot *k* ↔ action
 logit 6+*k*) — `[move_num ×4, resolved_type_id ×4, legal_now ×4]`, sourced from `legal.move_slots`,
@@ -464,22 +417,12 @@ Their long descriptions moved verbatim to `designs/CHANGELOG.md` §5. Where the 
 | per-our-mon incoming-damage / OHKO belief | 51 | the `DamageOperator`'s incoming block, off the LEARNED move belief instead of this block's FIXED usage prior — that substitution was the whole point of `--damage-op` |
 | active-move scalars (base power ×4, type mult ×4) | 8 | the op's OUTGOING per-move block, request-ordered, with real gen3 physics rather than `bp/200` and `mult/4` |
 
-**`agents/observation/incoming_damage.py` STAYS** — the prober imports its math core, and its fuzz
-test targets `encode_block` directly. Only the obs write was removed. (The reward's Φ_belief, its
-other reader, was deleted with the shaped reward path on 2026-09-26.)
+**`agents/observation/incoming_damage.py` STAYS** — pure damage / KO / outspeed math (no poke-env), which the prober's
+engine imports (`main/prober/engine/{switch_in,util}.py`); `incoming_damage_test.py` pins it. Its encoder half
+(`incoming_damage_encoder.py`: `encode_block` over a `LiveView`, the content-keyed `IncomingBeliefMemo`) is DELETED
+(T27 P6 slice 6d-2) — its last callers (the deleted reward PBRS, then nothing) were gone; the record is
+`designs/training/reward.md` → *The belief-block memo*.
 
-> ⚠️ **`reward_manager.py` WAS the only per-decision caller of `encode_block`** (60.0% of
-> `process_turn_reward`) until the shaped reward path was deleted (2026-09-26); the **content-keyed
-> memo** it motivated survives with NO production caller passing it (a follow-up deletion candidate)
-> (`IncomingBeliefMemo` + `attacker_state_key` in `incoming_damage_encoder.py`;
-> `inc.compute_mon_row` + the optional `row_cache`/`attacker_key` in `incoming_damage.py`). It is
-> exact by construction — identical inputs ⇒ identical outputs, cached or not — and the key's
-> completeness is gated STRUCTURALLY (an AST walk over `_attacker_threat`'s board reads,
-> `incoming_damage_memo_test.py`); its differential leg on real battles went with the reward's
-> skip-parity fuzz. **If you add a board read to
-> `_attacker_threat`, add it to `attacker_state_key` in the same edit** — the AST gate will tell
-> you, but an under-key is a silently wrong reward, not a crash. Rationale + measurements:
-> `designs/training/reward.md` → *The belief-block memo*.
 > **Downstream reader:** the prober engine (`src/main/prober/engine/`) resolves its obs
 > offsets at runtime from `get_layout()` (`ObsOffsets`), with `0 = absent` for deleted blocks
 > (`mm_off`, and since gen3_entity_rehome_v1 also `om_off`/`tm_off` — ThreatView/saliency
@@ -487,9 +430,10 @@ other reader, was deleted with the shaped reward path on 2026-09-26.)
 > test_offsets_resolve_matches_layout`) fails on any layout move; update the pins there.
 
 **TurnDelta slot (159 dims, layout in `turn_delta_encoder.py`):** all offsets computed from
-named `OFFSET_*` / `*_DIM` constants — never hardcode indices. TurnDelta is **folded from the
-event log** (`Gen3Battle.events_since(cursor)` per decision window; see
-`src/agents/battle/CLAUDE.md`) rather than diff-heuristics.
+named `OFFSET_*` / `*_DIM` constants — never hardcode indices. These are the ARCHIVED lag frames
+(`gen3_frame_deletion_v1` removed them from the live row); `TurnDeltaEncoder` survives as the prober's
+decoder for archived runs and the feature-coverage probes' encoder. The `TurnDelta` record is folded from
+the event record by the Rust core (`trackers/delta.rs`; the Python fold is deleted, T27 P6 slice 6d-2).
 
 - **Base block (53 dims, indices 0–52)** — our/opp move features (5 each: raw move_id int,
   power_norm, has_secondary, has_recoil, raw type_id int — **our OWN Hidden Power carries its DISTINCT
