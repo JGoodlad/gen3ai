@@ -35,7 +35,7 @@ import re
 import sys
 import time
 from pathlib import Path
-from typing import Callable, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Callable, Iterator, List, Optional, Set, Tuple
 from zoneinfo import ZoneInfo
 
 BASE = "https://replay.pokemonshowdown.com"
