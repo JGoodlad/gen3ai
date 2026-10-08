@@ -42,7 +42,7 @@ THE TABLE (`REGIONS`):
                            diagnostic probe, logging.
 
 TORCH. Regions are a torch 2.8 feature, and HEAD runs torch >= 2.8 only (`utils.torch_floor`): on
-2.5.1 `forward_guard`'s weakref lookup and other constructs break `fullgraph=True`. The regions are
+2.5.1 the (since deleted) `forward_guard`'s weakref lookup and other constructs break `fullgraph=True`. The regions are
 the ONLY compiled learner surface (the 2.5.1 extractor-only compile was deleted 2026-10-02); a run
 trained on 2.5.1 resumes pinned to its own commit, which still carries that compile.
 

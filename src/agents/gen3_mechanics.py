@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import functools
 
-import numpy as np
 
 from agents.enums import PokemonType, Status
 from agents.gen3_data import type_chart as _type_chart_data
@@ -110,56 +109,6 @@ def effective_multiplier_by_types(
     )
 
 
-def effective_multiplier(move_type: PokemonType, mon) -> float:
-    """Damage-type multiplier of move_type vs mon, including Gen 3 ability modifiers.
-
-    Returns the *raw* multiplier — 0×, 0.25×, 0.5×, 1×, 2×, 4× are all possible.
-    Multiplies the raw type-chart value by the mon's ability modifier from
-    ABILITY_TYPE_MULTIPLIER (default 1.0 = no effect).
-
-    Callers comparing against `battle.*_last_effectiveness` (which poke-env
-    bucketizes to {0.0, 0.5, 1.0, 2.0}) must pipe this through
-    `bucket_effectiveness()` first — otherwise 4× HP Grass on Water/Ground
-    won't equal the 2.0 the protocol reports.
-
-    Gen 3 quirk: Flash Fire does NOT activate when the target is frozen — the
-    incoming Fire move falls through and is resisted normally (0.5× from Fire-type).
-    See pokemon-showdown/data/mods/gen3/abilities.ts.
-
-    Wonder Guard (Shedinja): only super-effective moves do damage; everything else
-    is fully absorbed. Returns the raw type-chart product for SE hits, else 0.
-
-    Thin object-based wrapper over `effective_multiplier_by_types`: reads the four
-    attributes the result depends on off `mon`, then defers to the memoized primitive.
-    """
-    return effective_multiplier_by_types(
-        move_type,
-        mon.type_1,
-        mon.type_2,
-        getattr(mon, "ability", None),
-        getattr(mon, "status", None),
-    )
-
-
-def bucket_effectiveness(mult: float) -> float:
-    """Bucket a raw type multiplier into Showdown's reported effectiveness.
-
-    Showdown emits one of |-immune| / |-resisted| / nothing-for-neutral /
-    |-supereffective| per damaging hit, which poke-env stores as
-    {0.0, 0.5, 1.0, 2.0}. Raw multipliers like 0.25× or 4× collapse into the
-    resisted / super-effective buckets. Use this when comparing against
-    `battle.*_last_effectiveness` so 4× SE hits match 2.0 and 0.25× double-
-    resisted hits match 0.5.
-    """
-    if mult == 0.0:
-        return 0.0
-    if mult < 1.0:
-        return 0.5
-    if mult == 1.0:
-        return 1.0
-    return 2.0
-
-
 # ---------------------------------------------------------------------------
 # Status conditions
 # ---------------------------------------------------------------------------
@@ -176,25 +125,6 @@ STATUS_MOVE_IMMUNITY: dict[str, frozenset] = {
     "willowisp":    frozenset({PokemonType.FIRE}),
 }
 
-# Volatile effects worth surfacing in logs and reward signals (Gen 3 relevant subset), by the NAME of the poke-env
-# ``Effect`` member that keys a mon's ``effects`` dict. Spelled as names so this module imports no poke-env (P1 of
-# the retirement): ``mon.effects`` is only ever handed in by the poke-env battle layer, whose keys carry ``.name``.
-NOTABLE_EFFECT_NAMES: tuple[str, ...] = ("TAUNT", "CONFUSION", "ENCORE", "ATTRACT", "DISABLE", "SUBSTITUTE")
-
-
-def has_effect(effects, name: str) -> bool:
-    """Is the poke-env ``Effect`` called ``name`` among ``effects``' keys? (``Effect.X in effects`` by NAME.)"""
-    return any(getattr(k, "name", None) == name for k in effects)
-
-
-def is_status_move_immune(move_id: str, mon) -> bool:
-    """True if mon's types make it immune to the status inflicted by move_id,
-    or if the mon already has a status condition (can't be double-statused)."""
-    immune_types = STATUS_MOVE_IMMUNITY.get(move_id, frozenset())
-    mon_types = {getattr(mon, "type_1", None), getattr(mon, "type_2", None)} - {None}
-    return bool(immune_types & mon_types) or getattr(mon, "status", None) is not None
-
-
 # Gen-3 abilities that grant FULL immunity to a specific major status. Keyed by the
 # Showdown ability id → the status ids it blocks. Only abilities that *prevent the
 # status from applying* are listed — abilities that merely cure faster (Shed Skin) or
@@ -210,91 +140,6 @@ ABILITY_STATUS_IMMUNITY: dict[str, frozenset[str]] = {
 }
 
 
-def _ability_revealed(mon) -> bool:
-    """Is ``mon``'s ability confirmed? The SAME predicate the per-Pokémon ability block uses
-    for its ``known`` flag (``AbilitiesEncoder``) and ``_resolve_ability_distribution``: a set
-    ability whose normalized id isn't poke-env's ``"unknownability"`` sentinel. Keeping one
-    predicate is what makes the reactive ``status_will_land_known`` bit consistent with the
-    ability block's ``known`` bit for the same opponent."""
-    ability = getattr(mon, "ability", None)
-    if not ability:
-        return False
-    return ability.lower().replace(" ", "").replace("_", "") != "unknownability"
-
-
-def status_land_estimate(
-    move_id: str, status_id: str | None, mon, ability_dist
-) -> tuple[float, bool]:
-    """``(probability, known)`` that a dedicated status move applies ``status_id`` to ``mon``.
-
-    ``probability`` ∈ [0,1] is the "priors first, confirmation collapses it" estimate — the same
-    spirit as the matchup encoder's ability-expectation (``_expected_multiplier``).
-    ``ability_dist`` is ``[(ability_id_or_None, prob), …]``: a singleton for a REVEALED ability,
-    the Smogon prior for an UNREVEALED opponent, or ``[(None, 1.0)]`` when we have no info.
-    Ability-INDEPENDENT certain blocks → 0.0 regardless of the distribution: type immunity
-    (``STATUS_MOVE_IMMUNITY``), already carrying a status (both via :func:`is_status_move_immune`),
-    and an active Substitute. Otherwise the result is ``1 − P(ability blocks it)`` — e.g. an
-    unrevealed Snorlax (Immunity 0.86 / Thick Fat 0.14) reads ≈0.14 for Toxic.
-
-    ``known`` is the prior-vs-confirmed flag, ROUTED CONSISTENTLY WITH THE ABILITY BLOCK: True
-    when the value rests on confirmed information — a type-certain hard block (immune / already
-    statused / Substitute, all always visible) OR the opponent's ability is revealed
-    (:func:`_ability_revealed`, the same predicate the ability ``known`` bit uses). False when
-    the value is a Smogon-prior estimate that a future ability reveal could move. So a fractional
-    probability always has ``known=False``; the 0.0/1.0 endpoints are disambiguated by this bit
-    exactly the way the ability block disambiguates a confirmed ability from a prior."""
-    if status_id is None or mon is None:
-        return 0.0, False
-    if is_status_move_immune(move_id, mon):  # type immunity OR already statused — certain
-        return 0.0, True
-    effects = getattr(mon, "effects", None) or {}
-    if has_effect(effects, "SUBSTITUTE"):  # Sub blocks status — certain
-        return 0.0, True
-    block_mass = 0.0
-    for ability, p in (ability_dist or [(None, 1.0)]):
-        if ability is None:
-            continue
-        aid = ability.lower().replace(" ", "").replace("_", "")
-        if status_id in ABILITY_STATUS_IMMUNITY.get(aid, frozenset()):
-            block_mass += p
-    return max(0.0, 1.0 - block_mass), _ability_revealed(mon)
-
-
-def status_land_probability(move_id: str, status_id: str | None, mon, ability_dist) -> float:
-    """The probability half of :func:`status_land_estimate` (see it for the full contract)."""
-    return status_land_estimate(move_id, status_id, mon, ability_dist)[0]
-
-
-def status_move_lands(move_id: str, status_id: str | None, mon) -> bool:
-    """Server-truth bool: does this status land given ``mon``'s CURRENT (revealed) ability?
-    Equivalent to :func:`status_land_probability` with a singleton distribution drawn from
-    the live ``mon.ability`` (no priors) — the "confirmation" half of the priors-then-confirm
-    pattern. ``None`` status (a non-status move) → False; an unrevealed/unknown ability
-    contributes nothing (treated as non-immune)."""
-    ability = getattr(mon, "ability", None)
-    dist = [(ability, 1.0)] if ability else [(None, 1.0)]
-    return status_land_probability(move_id, status_id, mon, dist) > 0.0
-
-
-def mon_status_str(mon) -> str | None:
-    """Permanent status + notable volatile effects as a compact string, or None.
-
-    Examples: "BRN", "taunt", "PAR, confusion"
-    """
-    if mon is None:
-        return None
-    parts = []
-    status = getattr(mon, "status", None)
-    if status is not None:
-        parts.append(status.name)
-    effects = getattr(mon, "effects", {})
-    present = {getattr(k, "name", None) for k in effects}
-    for name in NOTABLE_EFFECT_NAMES:
-        if name in present:
-            parts.append(name.lower())
-    return ", ".join(parts) if parts else None
-
-
 # ---------------------------------------------------------------------------
 # Move category sets
 # ---------------------------------------------------------------------------
@@ -302,27 +147,6 @@ def mon_status_str(mon) -> str | None:
 PHAZING_MOVES: frozenset[str] = frozenset({"roar", "whirlwind"})
 
 INVULNERABLE_MOVES: frozenset[str] = frozenset({"protect", "detect", "endure"})
-
-# Gen3 Protect/Detect/Endure consecutive-use success probability (gen3_protect_odds_v1).
-# Showdown's gen3 format inherits the stall condition through gen4 → gen5 (NOT the base
-# `data/conditions.ts` *3 rule): gen5 starts the counter at 2 and DOUBLES it each consecutive
-# successful stall move, and gen4 caps it (`counterMax: 8`, "the chance does not fall below
-# 1/8"). So the per-attempt success odds are 100% / 50% / 25% / 12.5% (then a 12.5% floor) —
-# NOT the cartridge's unbounded halving and NOT the base *3. poke-env tracks the live counter
-# as `Pokemon.protect_counter` (consecutive successful stall moves; reset to 0 on a switch,
-# faint, non-stall move, or a failed roll), so k=0 is the fresh 100% case. Verified against the
-# compiled sim + a 14.8k-attempt bridge measurement (protect_success_prob_fuzz_test.py).
-_PROTECT_COUNTER_MAX = 8  # gen4 counterMax → the 1/8 (12.5%) floor
-
-
-def protect_success_probability(protect_counter: int) -> float:
-    """P(the next Protect/Detect/Endure succeeds) given a mon's current consecutive-stall
-    counter ``k`` (poke-env ``protect_counter``). ``k<=0`` → 1.0 (fresh, post-reset); else
-    ``1 / min(2**k, 8)`` — floored doubling (1.0 / 0.5 / 0.25 / 0.125 / 0.125 / …)."""
-    k = int(protect_counter)
-    if k <= 0:
-        return 1.0
-    return 1.0 / min(2 ** k, _PROTECT_COUNTER_MAX)
 
 STATUS_MOVES: frozenset[str] = frozenset({
     "toxic", "willowisp", "thunderwave", "stunspore",
@@ -358,18 +182,6 @@ BOOST_DIM: int = len(BOOST_STATS)  # 7
 # runtime (the obs encoder's `is_boost` convention; the C1 consequence-edge kernel's
 # `CURSE_BOOSTS` buffer sources these stages). One source: this constant.
 CURSE_NON_GHOST_BOOSTS: dict[str, int] = {"atk": 1, "def": 1, "spe": -1}
-
-
-def boosts_array(mon) -> np.ndarray:
-    """Return a (7,) int8 array of stat stages in BOOST_STATS order.
-
-    Returns all zeros if mon is None or has no boosts.  Stat stages are clamped
-    to [-6, +6] by the game engine; we trust poke-env to reflect that.
-    """
-    if mon is None:
-        return np.zeros(BOOST_DIM, dtype=np.int8)
-    boosts = getattr(mon, "boosts", {})
-    return np.array([boosts.get(s, 0) for s in BOOST_STATS], dtype=np.int8)
 
 
 def boosts_str(mon) -> str | None:

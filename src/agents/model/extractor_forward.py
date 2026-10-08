@@ -1040,7 +1040,7 @@ class ExtractorForward(ExtractorApi):
             # the state query's read of EVERY refined trunk token, in the trunk's own order and under its
             # own key mask (+ its per-key log-presence under fixed_mass), plus the hidden-opponent belief
             # pool's K outputs when built (never masked). No assembler concat, no projection, no tower:
-            # `pi_features` IS this [B, D_MODEL] vector (`_forward_unguarded`). The value half is
+            # `pi_features` IS this [B, D_MODEL] vector (`forward`). The value half is
             # `value_pooled`, exactly what the assembler returns as `vf_combined`.
             assert _seat_out is not None, "the entity seats always join the trunk (E3 is unconditional)"
             # The board: the global token (legacy) or the three board tokens (static, gen3_static_board_v1) —

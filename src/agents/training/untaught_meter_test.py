@@ -266,34 +266,6 @@ def test_the_rust_cycle_seed_depends_on_the_seed_and_the_team_never_the_ref():
 
 
 # ---------------------------------------------------------------------------------------------
-# Seeds — the PRE-BOUNDARY python-bridge convention (kept for the committed replay drivers)
-# ---------------------------------------------------------------------------------------------
-
-def test_seed_zero_reproduces_the_banked_probe_conventions():
-    """At ``--seed 0`` the dice, pool draw and policy seeds ARE ``exploiter_competence``'s."""
-    assert um.sim_seed(0, 3, 7) == [4, 8, 3, 4]                     # [ti+1, j+1, 3, 4]
-    assert um.policy_seeds(0, 3, 7) == (71000 + 3007, 72000 + 3007)
-    import random
-    rng = random.Random(61000 + 3)
-    assert um.pool_sequence(0, 3, 5, 719) == [rng.randrange(719) for _ in range(5)]
-
-
-def test_the_pool_sequence_is_prefix_consistent_across_game_counts():
-    """A ref measured at 12 games/team plays the FIRST 12 of another ref's 200 — the CRN join."""
-    long = um.pool_sequence(0, 2, 200, 719)
-    short = um.pool_sequence(0, 2, 12, 719)
-    assert long[:12] == short
-
-
-def test_every_one_of_the_five_global_random_seams_is_seeded():
-    seeds = um.team_env_seeds(3, 5)
-    assert set(seeds) == {"GEN3AI_PLAYER_SEED", "GEN3AI_TEAM_SEED", "GEN3AI_POLICY_SEED",
-                          "GEN3AI_POOL_SEED", "GEN3AI_STALLER_SEED"}
-    assert len(set(seeds.values())) == 5           # distinct streams, not one shared value
-    assert seeds != um.team_env_seeds(3, 6)        # …and the team index moves them
-
-
-# ---------------------------------------------------------------------------------------------
 # Ingesting committed artifacts
 # ---------------------------------------------------------------------------------------------
 

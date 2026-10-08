@@ -225,7 +225,7 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
    T3) is one learned query, 4 heads, over every refined trunk token (our 6, their 6, the global token,
    the entity and event seats) plus `HiddenOppBeliefPool`'s K outputs, under the trunk's own key mask
    (+ its per-key log π under `fixed_mass`) → LayerNorm → `[B, D_MODEL]`, and that IS `pi_features`
-   (`forward_internal` returns it in place of `pi_combined`; `_forward_unguarded` applies no projection).
+   (`forward_internal` returns it in place of `pi_combined`; `forward` applies no projection).
    `pre_proj_norm` / `projection` and `mlp_extractor.policy_net` are still BUILT and see the policy's orthogonal
    re-init (SB3's order) (so no surviving module's initial bytes move), then `Gen3DualHeadMaskablePolicy._build` drops
    them (`ExtractorApi.retire_policy_tower`; `policy_net` becomes the empty `Sequential`, the identity)

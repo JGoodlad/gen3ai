@@ -246,21 +246,16 @@ never a bare `self.last_x = …`; each producer owns its own stash surface and a
 into its parent's. Gate: `extractor_stashes_test.py`. Detail:
 [`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md).
 
-🚨 **THAT CONTRACT IS SINGLE-THREADED, AND `forward` IS NOT RE-ENTRANT** (`gen3_extractor_forward_guard_v1`).
+🚨 **THAT CONTRACT IS SINGLE-THREADED, AND `forward` IS NOT RE-ENTRANT.**
 "The forward replaces the stash at ENTRY" makes a stale read unrepresentable only while ONE forward
 is in flight per extractor — true of training (each env worker is its own process) and false the
-moment two threads share a model object, which `main.search_dividend`'s mirror did by design (the
-searched side ran off POKE_LOOP; the other side, and every playoff rollout player, decided on it) — that battery was
-deleted in P6 slice 6d-1 (2026-10-08), so the guard is now an opt-in seam with no declared caller.
-Measured 2026-09-22: two threads, one real extractor, 2,400 interleaved forwards ⇒ **1,063 failures
-in seven classes**, including `ValueThreatInject shape mismatch: tokens (1, 6) vs rows (9, 6)`. ⚠️
-**The crash is the lucky case** — same-batch-size forwards corrupt each other silently. A
-thread-sharing caller installs `agents.model.forward_guard.install_forward_guard(extractor)` (or
-`install_model_forward_guard(model)`) and holds the returned RE-ENTRANT lock across the forward
-**and** the `last_*` reads that belong to it. The guard is **OPT-IN and absent by default** — kept
-in a weak-keyed registry, never as a module attribute (an `RLock` there breaks
-`copy.deepcopy(policy)`), and the unguarded path contains no context manager at all so the compiled
-graph is unchanged. Gate: `forward_guard_test.py`.
+moment two threads share a model object, which `main.search_dividend`'s mirror did by design (deleted
+in P6 slice 6d-1, 2026-10-08). Measured 2026-09-22: two threads, one real extractor, 2,400 interleaved
+forwards ⇒ **1,063 failures in seven classes**, including `ValueThreatInject shape mismatch: tokens (1, 6)
+vs rows (9, 6)`. ⚠️ **The crash is the lucky case** — same-batch-size forwards corrupt each other
+silently. **There is NO guard any more** (`forward_guard.py`, the opt-in lock, had no caller after that
+deletion and was removed in the 2026-10-08 cleanup bundle): a thread-sharing caller gives each thread
+its OWN extractor (a deepcopy of the policy) or serializes the whole forward + its `last_*` reads itself.
 
 ## 🚨 Our active's moves live in TWO orders — cross them by IDENTITY only (`gen3_move_legality_by_id_v1`)
 

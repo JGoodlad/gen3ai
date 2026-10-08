@@ -51,7 +51,6 @@ from agents.observation.constants import (
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
                                               value_threat_inject_dim)
-from agents.model.forward_guard import forward_guard_for  # noqa: F401  (re-exported by name)
 from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
 # The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
 # unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
@@ -275,19 +274,11 @@ class Gen3FeaturesExtractor(ExtractorForward):
 
         🚨 **This method is NOT re-entrant across threads** — the whole phase chain below it keeps
         its per-forward state on `self` (`self.stash`, `damage_op.stash`) and reads it back later
-        in the same forward. A caller that shares one extractor between threads must install a
-        guard (`gen3_extractor_forward_guard_v1`, `forward_guard.install_forward_guard`); the
-        default is no guard at all, so training and the compiled graph are untouched. See
-        `forward_guard.py` for the measurement that made this explicit.
+        in the same forward. There is NO guard: the one threaded caller (`main.search_dividend`'s mirror)
+        and `forward_guard.py` (the opt-in per-extractor lock) were deleted in T27 P6 slice 6d-1 /
+        the cleanup bundle. A thread-sharing caller must give each thread its OWN extractor (a deepcopy of
+        the policy), or serialize the whole forward + its `last_*` reads itself.
         """
-        guard = forward_guard_for(self)
-        if guard is None:
-            return self._forward_unguarded(obs)
-        with guard:
-            return self._forward_unguarded(obs)
-
-    def _forward_unguarded(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor,
-                                                                       torch.Tensor]:
         pi_combined, value_pooled = self.forward_internal(obs)
         if self.policy_query is not None:
             # gen3_policy_readout_trunk_v1 (`--policy-readout trunk`, audit F2): `forward_internal`

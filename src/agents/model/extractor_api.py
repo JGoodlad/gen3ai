@@ -93,7 +93,7 @@ class ExtractorApi(ExtractorBuild):
         if self.policy_query is None or self.projection is None:
             return False
         # Typed as the modules for every `tower` reader; under `trunk` no forward path reads them (the
-        # trunk branch of `forward_internal` / `_forward_unguarded` returns before), so None is safe.
+        # trunk branch of `forward_internal` / `forward` returns before), so None is safe.
         drop_child(self, "pre_proj_norm")
         drop_child(self, "projection")
         return True

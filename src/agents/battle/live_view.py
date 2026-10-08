@@ -95,7 +95,7 @@ class LivePokemon:
     # success odds), NOT history: poke-env resets it to 0 on a switch, faint, non-stall move, or
     # a failed roll. Exposed exactly like ``status_counter`` (a current in-battle counter); the
     # obs encoder turns it into the gen3 floored-doubling success probability
-    # (``gen3_mechanics.protect_success_probability``) — keeping the gen3 mechanic in the encoder,
+    # (the Rust encoder's ``protect_success_probability``, ``encoder/slot.rs``) — keeping the gen3 mechanic in the encoder,
     # the same split as ``stats`` feeding the incoming-damage belief.
     protect_counter: int = 0
 

@@ -57,7 +57,7 @@ def _provenance(res: Dict[str, Any], src: Path) -> str:
 #: torches (a stack-based component is not: 2.8 logs frames above the compiled frame, 2.5.1 not).
 AREAS = (
     ("extractor", ("agents/model/features_extractor.py", "agents/model/encoders.py",
-                   "agents/model/forward_guard.py", "agents/model/extractor_forward.py",
+                   "agents/model/extractor_forward.py",
                    "agents/model/team_transformer.py", "agents/model/damage_op")),
     ("heads", ("agents/model/policy.py", "agents/model/pointer_head.py",
                "sb3_contrib/common/maskable/policies.py", "stable_baselines3/common/policies.py")),

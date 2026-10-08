@@ -237,8 +237,8 @@ a rounding error of a tie can flip with `--n-envs` (the batch shape), so the com
 TEAMS (`--workers N`, each its own CPU engine) and cannot move a number — gated by
 `src/main/untaught_meter_reproducibility_integration_test.py`.
 
-**Pre-boundary (the poke-env bridge path, every artifact before 2026-10-06), kept as the record and for the
-committed replay driver `gu_unit.py`:** per team, all five global-RNG seams above were set from `--seed` + the team
+**Pre-boundary (the poke-env bridge path, every artifact before 2026-10-06), kept as the record only (its seed
+helpers and the replay driver `gu_unit.py` were deleted 2026-10-08, deletion manifest §8.7):** per team, all five global-RNG seams above were set from `--seed` + the team
 index, both players' sampling generators re-seeded **per battle**, and the sim took a per-battle dice seed; **at
 `--seed 0` they reproduced `arch_transfer_2026-09-05/exploiter_competence/compete.py` exactly.**
 

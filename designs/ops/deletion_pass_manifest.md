@@ -646,3 +646,15 @@ updated); the `src/poke_env` excludes left `ruff.toml`, the ruff / file-size / f
 and `conftest.py`'s src-first list; `scripts/bootstrap.sh` checks three packages and runs the absent gate; the importer
 scanner no longer prunes a `poke_env` directory (a re-vendored copy reads as new importers). The launcher's pinned-argv
 archive keeps `src/poke_env` in its path list on purpose: a pin at an older commit still imports it.
+
+### 8.7 Cleanup bundle after T27 (2026-10-08) — the dead code P6 left
+
+Each item below was grep- and import-graph-checked for a caller in `src/`, `tools/`, `scripts/` before deletion.
+
+| group | what | lines | evidence (no caller) | tests |
+|---|---|---|---|---|
+| the opt-in forward lock | `agents/model/forward_guard.py` (`forward_guard_for`, `install_forward_guard`, `install_model_forward_guard`); the extractor's `forward` lost its registry lookup and its `_forward_unguarded` split (one `forward` now) | ~90 + test | only caller of the install side was `main.search_dividend` (deleted 6d-1); `forward_guard_for` always returned `None` | `forward_guard_test.py` |
+| python-bridge replay seeds | `untaught_meter._teambuilders`, `_reseed_player`, `team_env_seeds`, `sim_seed`, `pool_sequence`, `policy_seeds` and their constants; `designs/research_state/measurements/n0_endofrun_2026-09-27/scripts/gu_unit.py` | ~130 + 28 test | callers were `gu_unit.py` / the historical `gu_driver.py` drivers, all of which play through `RLPlayer` / `run_local_battles` (deleted 6d-2) | three `untaught_meter_test` tests |
+| mon-reading mechanics | `gen3_mechanics.{has_effect, is_status_move_immune, _ability_revealed, status_land_estimate, status_land_probability, status_move_lands, mon_status_str, protect_success_probability, boosts_array, effective_multiplier, bucket_effectiveness, NOTABLE_EFFECT_NAMES}` | ~190 + ~350 test | only caller was the deleted Python battle layer / encoder; the Rust encoder owns the protect odds (`encoder/slot.rs`) | their `gen3_mechanics_test` classes, `enums_test::test_the_notable_effect_names` |
+
+Kept: `boosts_str` (`main.prober.core_recorder`), `effective_multiplier_by_types`, the chart, `STATUS_MOVE_IMMUNITY` / `ABILITY_STATUS_IMMUNITY` / the move sets (`damage_tables`, `damage_op_test`, `moves_test`). `n0_endofrun_2026-09-27/scripts/n0_queue.py` (the queue that drove `gu_unit.py`) is left as history.

@@ -64,7 +64,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import random
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -183,24 +182,6 @@ DEFAULT_BOOTSTRAP_SEED = 20260906
 #: A timeout is never a semantic outcome. Above this fraction of attempted battles the run reports
 #: INCONCLUSIVE instead of a level.
 TIMEOUT_INCONCLUSIVE_FRACTION = 0.25
-
-#: THE PYTHON-BRIDGE SEED CONVENTION (pre-boundary, ``transport = "python_bridge"``). The meter no longer
-#: plays through it; it is kept, unchanged, as the record of the committed measurement drivers that replayed
-#: the pre-boundary series (``n0_endofrun_2026-09-27/scripts/gu_unit.py``). Those drivers can no longer RUN:
-#: the Python runtime they played through (``RLPlayer``, ``run_local_battles``) was deleted in T27 P6 slice 6d-2,
-#: and their pin (``untaught_unit_script_test.py``) with it. At ``--seed 0`` the sim dice, pool draw and
-#: per-battle policy seeds reproduced ``exploiter_competence/compete.py`` exactly.
-_ENV_SEED_OFFSETS = {
-    "GEN3AI_PLAYER_SEED": 10000,
-    "GEN3AI_TEAM_SEED": 20000,
-    "GEN3AI_POLICY_SEED": 30000,
-    "GEN3AI_POOL_SEED": 40000,
-    "GEN3AI_STALLER_SEED": 50000,
-}
-_POOL_SEED_BASE = 61000
-_PILOT_POLICY_BASE = 71000
-_OPP_POLICY_BASE = 72000
-_SEED_STRIDE = 1000000
 
 #: The two TRANSPORTS a cell can have been played on — a regime boundary (module docs).
 TRANSPORT_RUST = "rust_eval"
@@ -389,40 +370,6 @@ def _default_label(ref: str) -> str:
     return os.path.basename(base)
 
 
-# --------------------------------------------------------------------------------------------
-# Seeds — every stream this meter can reach, derived from --seed and the team index
-# --------------------------------------------------------------------------------------------
-
-def team_env_seeds(seed: int, team_index: int) -> Dict[str, str]:
-    """The five global-RNG env seeds for one team's cell (``src/agents/training/CLAUDE.md``)."""
-    return {k: str(off + _SEED_STRIDE * seed + team_index)
-            for k, off in _ENV_SEED_OFFSETS.items()}
-
-
-def sim_seed(seed: int, team_index: int, battle_index: int) -> List[int]:
-    """The gen-5 PRNG seed for one battle. At ``seed=0`` this is ``compete.py``'s ``[ti+1,j+1,3,4]``."""
-    return [seed + team_index + 1, battle_index + 1, 3, 4]
-
-
-def pool_sequence(seed: int, team_index: int, n_games: int, n_pool: int) -> List[int]:
-    """The opponent's team draw for one team's cell — ONE ``Random`` drawn sequentially.
-
-    Prefix-consistent by construction: the first ``k`` entries of a 200-game sequence are the
-    200-game sequence's first ``k``, so a cheap ref and an expensive one still play paired games.
-    (Re-instantiating the ``Random`` inside a comprehension yields the SAME index every time; that
-    bug was written once and caught by the per-battle ``opp_team`` column, which is why it is
-    recorded.)
-    """
-    rng = random.Random(_POOL_SEED_BASE + _SEED_STRIDE * seed + team_index)
-    return [rng.randrange(n_pool) for _ in range(n_games)]
-
-
-def policy_seeds(seed: int, team_index: int, battle_index: int) -> Tuple[int, int]:
-    """``(pilot, opponent)`` sampling seeds, re-set per battle so cell (ti, j) starts identically."""
-    off = _SEED_STRIDE * seed + team_index * 1000 + battle_index
-    return _PILOT_POLICY_BASE + off, _OPP_POLICY_BASE + off
-
-
 def check_concurrency(concurrency: int) -> None:
     """The ``concurrency`` knob is RETIRED (P2): REFUSE any value but 1, with the reason.
 
@@ -532,57 +479,6 @@ def cells_from_rows_artifact(path: str) -> Dict[str, Cell]:
 # --------------------------------------------------------------------------------------------
 # Playing — on the Rust eval core (`untaught_rust`, imported lazily so the maths half stays cheap)
 # --------------------------------------------------------------------------------------------
-
-def _teambuilders():
-    """Build the two teambuilder subclasses lazily. LEGACY: the python-bridge path only (``gu_unit.py``
-    replays the pre-boundary series through it); the meter's own games draw on the Rust eval core.
-
-    They are defined INSIDE a function on purpose: importing ``utils.teambuilder`` at module scope
-    would drag poke-env into every consumer of the pure aggregation half, which is torch-free and
-    battle-free by design (the unit tests run in 0.1 s because of it).
-    """
-    from utils.teambuilder import Gen3Teambuilder
-
-    class PinnedTeam(Gen3Teambuilder):
-        """MUST subclass Gen3Teambuilder — ``yield_team`` has to return a PACKED team."""
-
-        def __init__(self, path: str):
-            super().__init__([open(path).read()])
-
-        def yield_team(self):
-            return self.packed_teams[0]
-
-    class PairedPool(Gen3Teambuilder):
-        """Indices are into ``packed_teams``, NOT the raw list — the builder SKIPS invalid teams."""
-
-        def __init__(self, teams):
-            super().__init__(teams)
-            self._seq: List[int] = []
-            self._i = 0
-
-        def set_sequence(self, seq: Sequence[int]) -> "PairedPool":
-            self._seq, self._i = list(seq), 0
-            return self
-
-        def at(self, i: int) -> "PairedPool":
-            self._i = i
-            return self
-
-        def yield_team(self):
-            t = self.packed_teams[self._seq[self._i % len(self._seq)]]
-            self._i += 1
-            return t
-
-    return PinnedTeam, PairedPool
-
-
-def _reseed_player(player, seed: int) -> None:
-    """Reset a player's private sampling generator (the documented per-instance cache,
-    ``gen3_policy_sample_rng_v1``) so battle (ti, j) starts identically for every ref. LEGACY: the
-    python-bridge path only (``gu_unit.py``); the meter no longer plays through it."""
-    player._policy_seed = int(seed)
-    player._policy_gens = {}
-
 
 def default_compute() -> Any:
     """The meter's default CPU compute (``main.h2h.play.Compute``): 32 envs, 2 core threads, 4 torch threads,

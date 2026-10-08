@@ -76,14 +76,6 @@ def test_the_global_env_screen_ids():
     assert _SCREEN_CONDITIONS == ["reflect", "light_screen", "safeguard", "mist"]
 
 
-def test_the_notable_effect_names():
-    """`gen3_mechanics.NOTABLE_EFFECT_NAMES` / `has_effect` compare by NAME (the fork's ``Effect`` member names)."""
-    from agents.gen3_mechanics import NOTABLE_EFFECT_NAMES, has_effect
-
-    assert sorted(NOTABLE_EFFECT_NAMES) == ["ATTRACT", "CONFUSION", "DISABLE", "ENCORE", "SUBSTITUTE", "TAUNT"]
-    assert not has_effect({}, "SUBSTITUTE")
-
-
 #: The fork's ``Move._MOVE_CATEGORY_PER_TYPE_PRE_SPLIT`` SPECIAL types (gen <= 3: the category is the TYPE's).
 _FORK_SPECIAL_TYPES_PRE_SPLIT = ["DARK", "DRAGON", "ELECTRIC", "FIRE", "GRASS", "ICE", "PSYCHIC",
                                  "THREE_QUESTION_MARKS", "WATER"]
