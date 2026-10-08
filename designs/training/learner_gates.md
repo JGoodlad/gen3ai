@@ -317,6 +317,17 @@ Oracle-full's live run read 4.98–8.11 % over its updates 1–11 under the rule
   only its fp64 reference's rule-8 exclusion moved (1 → 0 rows).
   The ceiling stays 0.15, and a judged row's mismatch stays FATAL in every phase (no early-phase leniency).
 
+- **Known limit, `--token-encoding static` (2026-10-08, NOT cleared).** Under static, a hypothesis row's token
+  and its composed move posterior are a function of (weights, species) only. A near tie at a per-mon CUT pair
+  therefore recurs in EVERY row where that species is a hypothesis, and the excluded share is lumpy.
+  `rb_st_static_s1001` (pin `6c6d2e09`) stopped at update 1480 on the ceiling alone: 0.175, judged max 8.6e-6.
+  The CPU replay at the dumped weights gave 154 of 209 excluded rows on ONE pair: a Salamence hypothesis's Hydro
+  Pump vs Hidden Power Grass at the top-six cut, relative gap 8.3e-5. The flip moves log π by up to 1.25e-2, so
+  the exclusion is CORRECT, and no identity or consumption rule may clear it. The neighbouring checkpoints read
+  0.9 % / 1.7 %
+  ([`measurements/k9_static_tie_2026-10-08/`](../research_state/measurements/k9_static_tie_2026-10-08/README.md)).
+  A stop on this class is a resume, not a fault.
+
 *On the GPU, fixed_mass regime A (F-XC-5, 2026-10-05, at `e8008c2d`;
 [`measurements/x5_fxc4_compile_gate_2026-10-05/`](../research_state/measurements/x5_fxc4_compile_gate_2026-10-05/README.md)
 "F-XC-5"):* a seeded 20-snapshot self-play pool, the X26 heads, a fresh trainee — 0 at update 1 (selection-free),

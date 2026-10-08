@@ -620,6 +620,24 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 - **F-ST-7 (the screen, §8.1):** three seeds per arm give an ESTIMATED power of only 0.27 (σ = 3.43 pp, δ = 3.5 pp)
   to show non-inferiority when `static` is truly equal; the registration must choose a harm screen, a wider δ or
   X5's sequential extension.
+- **F-ST-10 (the screen, K9(b), MEASURED on CPU at the pin, 2026-10-08; NOT fixed):** `rb_st_static_s1001`
+  (`static` × `fixed_mass`, P_st `6c6d2e09`) stopped at update 1480 on K9(b)'s excluded-share CEILING alone.
+  It read 0.175 against 0.15, with judged max |Δ log π| 8.6e-6. Its other 36 probes read a median of 0.033.
+  - **The cause is a property of `static`.** A hypothesis row reads no board fact, so its token and its
+    composed move posterior depend only on (weights, species). A near tie in one species' per-mon move order sits
+    in EVERY row where that species is a hypothesis, not in a thin per-row slice as under legacy.
+  - **The replay.** At the dumped weights (2,048 CPU rows), 154 of the 209 excluded rows are one pair. It is a
+    Salamence hypothesis's Hydro Pump vs Hidden Power Grass at the top-six CUT (`build_op_roster` →
+    `stable_order`), π 0.22290 vs 0.22288, the same two values in all 16 envs.
+  - **The tie moves log π.** Swapping the pair moves log π by up to 1.25e-2, so the exclusion is correct and no
+    `gen3_behaviour_tie_consumed_v1`-style clearance applies.
+  - **It passes.** The run's 13M / 14M / 15M checkpoints read 2.0 / 0.9 / 1.7 % in the same harness, and the
+    resumed run finished with 22 checks passed.
+  - **Still at HEAD.** The site is unchanged.
+
+  Each static seed carries a per-probe chance of such a coincidence: about 1 in 37 probes on this seed, one
+  observation. A stop on it is a resume, never a reason to relax the ceiling.
+  [`measurements/k9_static_tie_2026-10-08/`](../research_state/measurements/k9_static_tie_2026-10-08/README.md).
 
 ---
 
@@ -647,3 +665,4 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 | 2026-10-07 | **The screen REGISTERED (§8.2)** | fixed_mass + tower in both arms; δ 3.5 pp; X5's sequential looks 3 / 5 / 8 (OBF 5.761 / 2.683 / 1.874) instead of one under-powered look; P_st = the registration commit; GPU preconditions first | the single-look draft (≈ 0.27 power) | orchestrator (owner delegation; "keep spawning agents. Experiments.", 10-07) |
 | 2026-10-07 | **The screen RE-REGISTERED at a new P_st (§8.2 otherwise unchanged)** | The first P_st (`26131c0c`) failed step 0: static × fixed_mass died at T2 startup on CUDA (F-ST-8, an Inductor-chosen head-innermost attention-bias layout at 64 keys, refused by the efficient-attention kernel), and then F-ST-9 (a compile-lock recompile on a layout-dict identity guard). Both are fixed in `1b578ea6`. The GPU check table there shows the screen arm passing T2, R1 and the update-10 canary, with 2,144 MiB headroom. **The new P_st = THIS commit.** No seed of the old P_st ran; nothing else changes. Step 0 re-runs (the compile smoke is already shown by the fix table, but re-run at P_st; plus the cost read). | Running at `1b578ea6` without a registration commit | orchestrator (owner delegation) |
 | 2026-10-07 | The OBS-FACTS block under `static` (`gen3_obs_facts_v1`, the X5 version break's part 3) | `--obs-facts v1` composes with `static`: `seen` / `choice` / `vol` (the mon's own dynamic state) are added to the mon's token after the encoder (D content; S never reads them), `screens` (a SIDE fact) to the side BOARD token through `TeamTransformer.board_tokens`' `side_extra` — never a per-mon token (`obs_facts_inject.FACTS_TOKEN_CLASS`; a new sub-block is classified there) | `v1` refused under `static`; screens on every per-mon token (the legacy route, a board fact in a token); the facts as new `SIDE_FACTS` columns of `side_proj` (moves `side_proj`'s shape for an `off` arm too) | `obs_facts_inject_test.py`; `design_entity_coverage_audit.md` §8 |
+| 2026-10-08 | The K9(b) ceiling stop at `rb_st_static_s1001` update 1480 (F-ST-10) | NO clearance. The dominant excluded class is a genuine near tie: one hypothesis species' cut pair, which `static` repeats in every row of that species, and whose flip moves log π by up to 1.25e-2. The run is RESUMED (as it was), and the remaining pinned static seeds are expected to stop on such a coincidence occasionally. The ceiling (0.15), the margin (2e-4) and judged-row FATAL are unchanged | a `fe237eac`-style clearance (it does not apply: the tie can move log π); relaxing the ceiling, or an early-phase or k-of-n rule (owner: deterministic checks); a per-species dedup of the share (a statistical rule); a FLIP-JUDGE (a single-site tied row judged against BOTH resolutions, passing iff either is within the bar) — deterministic, but it changes K9(b)'s semantics, so it is proposed to the orchestrator and not built here | §11 F-ST-10; `measurements/k9_static_tie_2026-10-08/` |

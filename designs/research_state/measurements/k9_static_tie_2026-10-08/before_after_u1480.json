@@ -1,0 +1,127 @@
+{
+ "arm": "static_fm",
+ "weights": "fresh",
+ "seed": 1001,
+ "run_seed": 1001,
+ "rows": 2048,
+ "eps": 0.0002,
+ "excluded_before": 314,
+ "excluded_frac_before": 0.1533203125,
+ "cleared_identical": 147,
+ "excluded_after": 167,
+ "excluded_frac_after": 0.08154296875,
+ "rows_multi_call": 30,
+ "joint_identical_but_single_distinct": 0,
+ "determinism_failures_untouched_rows": 0,
+ "flip_noop_rows": 0,
+ "max_abs_dlogp_vs_stored": 1.7881393432617188e-06,
+ "by_site": [
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "verdict": "distinct",
+   "rows": 157
+  },
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "verdict": "identical",
+   "rows": 123
+  },
+  {
+   "sites": "damage_op.py:989 argmax + damage_op.py:995 argmax",
+   "verdict": "identical",
+   "rows": 15
+  },
+  {
+   "sites": "damage_op.py:989 argmax + damage_op.py:995 argmax",
+   "verdict": "distinct",
+   "rows": 10
+  },
+  {
+   "sites": "damage_op.py:989 argmax",
+   "verdict": "identical",
+   "rows": 5
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "verdict": "identical",
+   "rows": 3
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + hypothesis_set.py:214 argsort",
+   "verdict": "identical",
+   "rows": 1
+  }
+ ],
+ "by_site_class": [
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "class": "near",
+   "verdict": "distinct",
+   "rows": 157
+  },
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "class": "near",
+   "verdict": "identical",
+   "rows": 85
+  },
+  {
+   "sites": "hypothesis_set.py:214 argsort",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 38
+  },
+  {
+   "sites": "damage_op.py:989 argmax + damage_op.py:995 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 15
+  },
+  {
+   "sites": "damage_op.py:989 argmax + damage_op.py:995 argmax",
+   "class": "exact",
+   "verdict": "distinct",
+   "rows": 10
+  },
+  {
+   "sites": "damage_op.py:989 argmax",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 4
+  },
+  {
+   "sites": "damage_kinds.py:130 ge",
+   "class": "exact",
+   "verdict": "identical",
+   "rows": 3
+  },
+  {
+   "sites": "damage_kinds.py:130 ge + hypothesis_set.py:214 argsort",
+   "class": "exact/near",
+   "verdict": "identical",
+   "rows": 1
+  },
+  {
+   "sites": "damage_op.py:989 argmax",
+   "class": "near",
+   "verdict": "identical",
+   "rows": 1
+  }
+ ],
+ "new_rule": {
+  "excluded_payload_only": 209,
+  "excluded_frac_payload_only": 0.10205078125,
+  "excluded": 209,
+  "excluded_frac": 0.10205078125,
+  "payload_only_rows_by_flip_verdict": {
+   "distinct": 167,
+   "identical": 42
+  },
+  "payload_only_rows_by_min_site": {
+   "hypothesis_set.py:214 argsort": 195,
+   "damage_op.py:989 argmax": 10,
+   "damage_kinds.py:130 ge": 4
+  }
+ },
+ "torch": "2.8.0+cu126"
+}
