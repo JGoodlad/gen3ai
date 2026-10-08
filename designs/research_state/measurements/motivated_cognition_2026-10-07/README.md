@@ -329,3 +329,37 @@ every registered array byte-for-byte (D0: 16 of 16).
 6. **T1's Θ drops Levitate only.** Other ability immunities (Flash Fire, Volt / Water Absorb, Thick
    Fat, Wonder Guard) stay in. The same Θ serves the arm and the prior column, so this blurs both and
    cannot create Δ_delta or the blob-only gap.
+
+## 6. FOLLOW-UP T4: the fixed_mass intent head (§0.7; `alpha_t4.py` → `alpha_t4.md` / `alpha_t4.json`)
+
+This is not part of the registered T1–T3 verdict. All 8 fixed_mass finals ran at the pin
+(`alpha_t4.sh`, CPU, peak 5.2 GB, about 2 min). There are about 7,400–8,400 STAY and 2,300–3,300
+SWITCH rows per seed. The opponent's base switch rate on these rows is 0.176.
+
+| quantity | across-seed mean [t95] |
+|---|---|
+| **Δ4_arm** (the declared verdict quantity; boot95 [−0.077, −0.035]) | **−0.057 [−0.075, −0.039]** |
+| Δ4 of the constant base rate (= −Δy) | −0.135 [−0.145, −0.126] |
+| arm − base rate (= the head's own swing in P_sw) | +0.079 [+0.057, +0.100] |
+| ATTACK − SWITCH (descriptive) | −0.075 [−0.096, −0.054] |
+| split by another fm seed's policy | −0.060 [−0.081, −0.039] |
+| P_sw vs truth when we STAY | 0.317 vs 0.212 |
+| P_sw vs truth when we SWITCH | 0.238 vs 0.077 |
+
+**Declared verdict: BENDS.** Δ4_arm is −0.057; both CIs are below 0, and |Δ| exceeds 0.02.
+
+**What the numbers say it is: an UNDER-REACTING head, not a motivated one.**
+
+- **The opposite of T1's shape.** The head OVER-predicts opponent switches in BOTH conditions
+  (+0.105 when we stay, +0.162 when we switch). So P(stay) is never inflated in absolute terms
+  (0.683 vs a true 0.788 when we stay). It is only less under-stated on stay rows than on switch rows.
+- **The swing is too small, not too large.** Between our stay and switch rows the truth moves by
+  0.135. The head moves by only 0.079, about 58 % of it. A head shrunk toward the mean produces this
+  sign under ANY policy (the cross-seed split gives the same −0.060). The constant base rate, which
+  cannot bend at all, scores −0.135, more than twice as "self-serving" on this metric.
+- **The contrast with T1 is the point.** Motivated cognition EXAGGERATES the evidence for the chosen
+  action, as blob's move head does in T1, at 1.5× the truth's swing. This head UNDER-states it.
+- **A design flaw in §0.7.** Putting the verdict on Δ4_arm alone cannot separate bending from
+  shrinkage. Taking the base rate's gap as the control (arm − prior = +0.079, the honest direction)
+  reads NO bending. The registered word stands as written; the reading is that α is under-dispersed,
+  not bent.

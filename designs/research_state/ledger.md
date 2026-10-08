@@ -23008,3 +23008,29 @@ Tag: **FIX · F-ST-8 attention-bias layout (n % 8 == 0 under Inductor) · F-ST-9
      blob-only gap.
 
 Tag: **READ · motivated cognition BITES: T1 blob (move belief, Δ_delta −0.136, BITING) · T1 fixed_mass, T2, T3 NOT DETECTED · blob more exposed (p < 0.001) · not own-noise selection (D1), route C vs weak label UNRESOLVED · blob's move head worse than its prior; item / nature / HP / EV heads ≫ prior** · meas: [`measurements/motivated_cognition_2026-10-07/`](measurements/motivated_cognition_2026-10-07/README.md)
+
+### 2026-10-07 · READ (addendum) · **X20's bending detector on fixed_mass's OPPONENT-INTENT head (follow-up T4): the declared rule reads BENDS (Δ4 −0.057 [−0.075, −0.039]), but the head UNDER-reacts rather than bends. It over-predicts opponent switches whether we stay (0.317 vs 0.212) or switch (0.238 vs 0.077), and swings only 58 % as far as the truth; against the base-rate control it is the honest side (+0.079)**
+
+- **What ran.** The follow-up was pre-declared at `71b1ff9d` (README §0.7), AFTER the T1–T3 results. It is kept
+  apart from their registered verdict. The data: the 8 fixed_mass finals at the `706fa536` pin, CPU, the Lane S
+  bank, the rows eligible under T1, with a labelled opponent action. The head's quantity is P_sw, the flat
+  pointer's mass on the switch columns. The statistic is Δ4 = mean(P_sw − 1[opp switched]) when our argmax stays,
+  minus the same when it switches. Δ4 < 0 means P(stay) is inflated when we stay in.
+- **The read.**
+  - **Δ4_arm = −0.057, t95 [−0.075, −0.039], boot [−0.077, −0.035].** That is BENDS by the declared rule (< 0,
+    both CIs below 0, |Δ| > 0.02).
+  - Attack-only: −0.075.
+  - Split by another seed's policy: −0.060, the same as the own-policy split.
+  - The constant base rate (0.176) scores −0.135. Arm − base rate = +0.079 [+0.057, +0.100].
+- **The reading.**
+  - **This is shrinkage, not motivated cognition.** P(stay) is UNDER-stated in both conditions (0.683 vs a true
+    0.788 when we stay). Between our stay and switch rows the head moves by 0.079, against the truth's 0.135.
+  - **It is the opposite of T1-blob's shape.** There, the head exaggerated the evidence at 1.5× the truth's
+    swing. A head that swings less than the truth shows this sign under any policy.
+  - **The §0.7 rule could not separate the two.** It put the verdict on Δ4_arm alone. The registered word stands;
+    the finding is that fixed_mass's intent head is UNDER-DISPERSED in its switch prediction and over-predicts
+    opponent switches by about 0.1–0.16 absolute.
+- **For X20:** this read gives no evidence that PPO bends the fixed_mass intent head. Its calibration problem is
+  under-dispersion.
+
+Tag: **READ (addendum) · T4 fixed_mass α: declared BENDS (Δ4 −0.057), read as UNDER-DISPERSION (head swing 0.079 vs truth 0.135; base-rate control +0.079), not motivated cognition** · meas: [`measurements/motivated_cognition_2026-10-07/`](measurements/motivated_cognition_2026-10-07/README.md) §0.7, §6
