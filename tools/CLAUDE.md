@@ -17,6 +17,7 @@ split.
 | `smogon_stats_downloader/compute_priors.py` | the aggregated stats + pokedex | `data/pokemon/gen3_{ability,hidden_power,move,item,spread,teammate}_priors.json` |
 | `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |
 | `others_team_downloader/sync.py` | PokePaste dumps | `data/teams/others/` |
+| `replay_corpus_downloader/sync.py` | the PUBLIC replay archive (`replay.pokemonshowdown.com`) | `<main>/replays/showdown/<format>/<date>/battle-<id>.log` — NOT `data/`; a RE-WRITE of a lost script, never run against the live server (`replay_corpus_downloader/README.md`) |
 
 🚨 **A Smogon chaos record mixes ONE unweighted field with rating-WEIGHTED ones — never divide across
 them** (`gen3_smogon_prior_denominator_v1`, F-X5-41). `Raw count` is the UNWEIGHTED set count;
