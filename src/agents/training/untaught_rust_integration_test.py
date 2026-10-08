@@ -129,19 +129,15 @@ def test_a_cell_replays_bit_for_bit_at_one_compute(stochastic):
 
 
 def test_a_fresh_process_plays_a_cell_without_a_poke_env_player_or_the_bridge(setup):
-    """No poke-env ``Player`` is CONSTRUCTED (the old path built two ``RLPlayer`` s per cell) and the bridge's battle
-    runner is never imported. (Whether ``agents.inference.player`` is IMPORTED is no signal here — the test plants
-    a hook on poke-env's ``Player`` itself, which imports the package.)"""
+    """The cell plays with ``import poke_env`` IMPOSSIBLE (``utils.poke_env_blocker``, installed first in the fresh
+    interpreter) and the bridge's battle runner is never imported. (Retargeted 2026-10-08: the test used to plant a
+    counting hook on poke-env's ``Player`` to prove no ``RLPlayer`` was built — the package is deleted, so the proof
+    is now that no ATTEMPT to import it was made, swallowed or not.)"""
     ref_a, _rb, opp, teams = setup
     code = f"""
 import json, sys
-import poke_env.player.player as PP
-built = []
-_init = PP.Player.__init__
-def _counting(self, *a, **k):
-    built.append(type(self).__name__)
-    return _init(self, *a, **k)
-PP.Player.__init__ = _counting
+from utils import poke_env_blocker
+poke_env_blocker.install()
 from agents.training import untaught_meter as um
 from main.h2h.play import Compute
 ref = um.resolve_ref({ref_a.zip_path!r}, label="A")
@@ -152,12 +148,12 @@ cells = um.play_cells([ref], teams, opp, games_per_team=2, seed=0, info=info,
                       compute=Compute(device="cpu", backend="eager", n_envs=2, threads=1, torch_threads=1,
                                       front="ffi", profile="selfcheck"))
 print(json.dumps({{"transport": cells["A"][teams[0].key].transport, "stamp": info["core_stamp"],
-                  "players_built": built,
+                  "poke_env_attempts": [m for m, _ in poke_env_blocker.ATTEMPTS],
                   "bridge": "utils.bridge.local_battle_runner" in sys.modules}}))
 """
     proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=900)
     assert proc.returncode == 0, proc.stderr[-4000:]
     got = json.loads(proc.stdout.strip().splitlines()[-1])
     assert got["transport"] == "rust_eval" and got["stamp"]
-    assert got["players_built"] == [], f"a Rust-core play built poke-env players: {got['players_built']}"
+    assert got["poke_env_attempts"] == [], f"a Rust-core play tried to import poke-env: {got['poke_env_attempts']}"
     assert not got["bridge"], "the poke-env bridge battle runner was imported by a Rust-core play"
