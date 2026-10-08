@@ -38,9 +38,12 @@ OPTIONS
                          --no-pid-check is given.
     --no-pid-check       do not watch a launcher pid (progress + failure words only).
     --status-file PATH   where to append ticks (default: <run-dir>/watch_status.txt).
-    --launcher-log PATH  the LAUNCHER's own log, scanned for the arm-INVALIDATING
-                         `--sync-to-main` line. Optional; its absence is reported once and
-                         then the check CANNOT fire — an absent file is not a clean one.
+    --launcher-log PATH  the LAUNCHER's own log. Scanned for the arm-INVALIDATING
+                         `--sync-to-main` line, AND it is the AUTHORITY on crashes and the
+                         run's end (below). Optional; its absence is reported once, the
+                         sync-to-main check CANNOT fire, and the watcher falls back to the
+                         old rule (the first child-log error text ends it) — an absent file
+                         is not a clean one.
     --wedge-seconds N    no step progress for this long = WEDGED (default 2100 = 35 min).
     --interval N         seconds between ticks (default 300).
     --dir-wait-seconds N with --pid-file and a bare run NAME: if the run directory does not
@@ -51,14 +54,29 @@ OPTIONS
 
 WHAT IT WRITES
     one line per tick:  [<timestamp>] ok step=<n> ckpt=<n> marginal_fps=<n> ep_len=<n>
-    and on the way out: FAILURE: <reason>  then  WATCHER EXIT
+                        (+ crashes=<n> when a launcher log is readable)
+    and on the way out: FAILURE: <reason>  or  DONE: <reason>,  then  WATCHER EXIT
+
+RESUME-AWARE (with --launcher-log)
+    The launcher RESTARTS a crashed child from its checkpoint by itself, and the child log
+    RESTARTS with it (a new incarnation, its old traceback gone). So the watcher does NOT
+    exit on a child-log error line; it reports it (`ERROR: ...`) and lets the LAUNCHER LOG
+    decide. Crash counts come from the launcher log, never the child log:
+        CRASH: ...    a `Child crashed (exit N) ... crash #K` line - an event, watching goes on
+        RESUMED: ...  an `Auto-restart #N after crash` line - the wedge clock restarts
+        DONE: ...     the launcher printed `Training complete`, or a final_model.zip newer than
+                      the watcher appeared, or the launcher pid is gone after `Training complete`
+        FAILURE: ...  the launcher will NOT restart (`will NOT restart`, `giving up`,
+                      `cannot restart`), the launcher pid is gone without a completion line,
+                      the arm is voided (`--sync-to-main`), or the run is WEDGED
+    A Monitor filter wants all of CRASH|RESUMED|DONE|FAILURE|WATCHER EXIT.
 
 ENVIRONMENT
     GEN3AI_MODELS_DIR  the run archive, if it is not the main checkout's models/
     GEN3AI_PYTHON      interpreter for the marginal-fps helper
 
 EXIT
-    0  the watcher exited after reporting a terminal condition     2  bad usage
+    0  the watcher exited after reporting a terminal condition (DONE or FAILURE)     2  bad usage
 EOF
 }
 
@@ -127,6 +145,49 @@ FAIL_RE='^[[:space:]]*Traceback \(most recent call last\)|\] FATAL|FATAL ERROR D
 
 say() { echo "[$(date '+%F %T')] $*" >> "$STATUS"; }
 
+# --- the LAUNCHER-LOG half (resume-aware) ---------------------------------------------------
+# Patterns are the launcher's own event text (src/main/launcher/run.py), emoji-free so a
+# change of glyph does not blind them. Pinned by src/main/ops/watch_run_resume_test.py.
+CRASH_RE='Child crashed \(exit'
+RESUME_RE='Auto-restart #[0-9]+ after crash'
+DONE_RE='Training complete — all steps done'
+GIVEUP_RE='will NOT restart|rapid crashes in a row|cannot restart'
+lcount() { local c; c=$(grep -cE "$1" "$LAUNCHER_LOG" 2>/dev/null); echo "${c:-0}"; }
+have_launcher() { [ -n "$LAUNCHER_LOG" ] && [ -f "$LAUNCHER_LOG" ]; }
+START_EPOCH=$(date +%s)
+seen_crash=0; seen_resume=0; first_pass=1; first_pass_err=0; err_seen=0; n_crash=0
+
+# Emit each NEW launcher-log crash / resume line; return 0 (and set TERMINAL=DONE|FAILURE and
+# TERMINAL_MSG) when the log says the run has ended.
+TERMINAL=""; TERMINAL_MSG=""
+launcher_events() {
+    have_launcher || return 0
+    local n line note=""
+    [ "$first_pass" -eq 1 ] && note=" (already in the launcher log when the watcher started)"
+    n=$(lcount "$CRASH_RE")
+    if [ "$n" -gt "$seen_crash" ]; then
+        while IFS= read -r line; do
+            say "CRASH: launcher log: ${line:0:200} — crashes in the launcher log: ${n};${note} the launcher handles a crash itself, still watching"
+        done < <(grep -E "$CRASH_RE" "$LAUNCHER_LOG" | tail -n +$((seen_crash + 1)))
+        seen_crash=$n; last_move=$(date +%s)
+    fi
+    n_crash=$n
+    n=$(lcount "$RESUME_RE")
+    if [ "$n" -gt "$seen_resume" ]; then
+        while IFS= read -r line; do
+            say "RESUMED: launcher log: ${line:0:200}${note}"
+        done < <(grep -E "$RESUME_RE" "$LAUNCHER_LOG" | tail -n +$((seen_resume + 1)))
+        seen_resume=$n; last_move=$(date +%s); last_step=-1; err_seen=0   # a new child incarnation
+    fi
+    if [ "$(lcount "$GIVEUP_RE")" -gt 0 ]; then
+        TERMINAL=FAILURE
+        TERMINAL_MSG="the launcher will not restart — $(grep -E "$GIVEUP_RE" "$LAUNCHER_LOG" | tail -1 | cut -c1-200)"
+    elif [ "$(lcount "$DONE_RE")" -gt 0 ]; then
+        TERMINAL=DONE; TERMINAL_MSG="the launcher reports training complete (${n_crash} crash(es) auto-resumed)"
+    fi
+    first_pass=0
+}
+
 last_step=-1; last_move=$(date +%s)
 say "WATCHER START (pid $$) run=$D — wedge limit ${WEDGE}s, interval ${INTERVAL}s"
 # An ABSENT launcher log is not a clean one: `grep -q ... 2>/dev/null` on a missing file returns
@@ -139,14 +200,37 @@ elif [ -z "$LAUNCHER_LOG" ]; then
 fi
 
 while true; do
+    TERMINAL=""; TERMINAL_MSG=""
+    launcher_events
+    if [ -z "$TERMINAL" ] && [ -f "$D/final_model.zip" ] \
+            && [ "$(stat -c %Y "$D/final_model.zip" 2>/dev/null || echo 0)" -ge "$START_EPOCH" ]; then
+        TERMINAL=DONE; TERMINAL_MSG="final_model.zip written since the watcher started"
+    fi
+    if [ "$TERMINAL" = DONE ]; then say "DONE: $TERMINAL_MSG"; break; fi
+    if [ "$TERMINAL" = FAILURE ]; then say "FAILURE: $TERMINAL_MSG"; break; fi
     if [ "$NO_PID" -eq 0 ]; then
         pid=$(cat "$PIDF" 2>/dev/null || echo 0)
         if ! kill -0 "$pid" 2>/dev/null; then
-            say "FAILURE: launcher pid $pid GONE"; break
+            say "FAILURE: launcher pid $pid GONE (no completion line in the launcher log)"; break
         fi
     fi
-    # FAILURE words, not just progress
-    if grep -qE "$FAIL_RE" "$CLOG" 2>/dev/null; then
+    # FAILURE words, not just progress. With a readable launcher log the LAUNCHER decides: it
+    # restarts a crashed child from its checkpoint and the child log restarts with it, so a
+    # traceback here is an EVENT, not the end (2026-10-08: the first FAILURE line ended the
+    # watcher and a launcher crash-resume then ran unwatched). Without one, the old rule holds.
+    if have_launcher; then
+        nerr=$(grep -cE "$FAIL_RE" "$CLOG" 2>/dev/null || true); nerr=${nerr:-0}
+        if [ "$first_pass_err" != 1 ]; then
+            first_pass_err=1
+            [ "$nerr" -gt 0 ] && say "WARN: ${nerr} error line(s) already in the child log at watcher start - ignored (the launcher log decides)"
+            err_seen=$nerr
+        elif [ "$nerr" -gt "$err_seen" ]; then
+            say "ERROR: error text in child log (${nerr} this incarnation, crashes in the launcher log: ${n_crash}) — $(grep -oE "$FAIL_RE" "$CLOG" | tail -1); the launcher log decides, still watching"
+            err_seen=$nerr
+        elif [ "$nerr" -lt "$err_seen" ]; then
+            err_seen=$nerr          # the child log restarted
+        fi
+    elif grep -qE "$FAIL_RE" "$CLOG" 2>/dev/null; then
         say "FAILURE: error text in child log — $(grep -oE "$FAIL_RE" "$CLOG" | tail -1)"
         break
     fi
@@ -180,7 +264,8 @@ PY
     fi
     el=$(grep -oE 'ep_len_mean *\| *[0-9.]+' "$CLOG" 2>/dev/null | tail -1 | grep -oE '[0-9.]+$')
     ck=$(ls "$D"/checkpoints/*.zip 2>/dev/null | wc -l)
-    say "ok step=${s:-?} ckpt=${ck} marginal_fps=${marg} ep_len=${el:-?}"
+    cr=""; have_launcher && cr=" crashes=${n_crash}"
+    say "ok step=${s:-?} ckpt=${ck} marginal_fps=${marg} ep_len=${el:-?}${cr}"
     sleep "$INTERVAL"
 done
 say "WATCHER EXIT"

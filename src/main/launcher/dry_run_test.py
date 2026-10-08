@@ -504,3 +504,63 @@ def test_h_nvml_unavailable_refuses_a_cuda_dry_run(isolated, monkeypatch, capsys
     _dry_run(["--steps", "1000", "--device", "cuda", *_ARCH_OK], monkeypatch,
              expect=int(TrainExitCode.FATAL_CONFIG))
     assert "NVML is unavailable" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------------------
+# (i) 2026-10-08: the recipe value a same-run RESTART will use is what the dry run SHOWS
+# ---------------------------------------------------------------------------------------
+# `rb_st_static_s1002`'s dry-run printed `--grad-accum-steps 1 (from the argv)` while every real
+# resume kept K=32: the run is PINNED to an older commit, so HEAD's `ModelVersion` cannot read its
+# model_config.json, `resolve_against_parent` returned before the restart restoration, and the
+# display fell back to the parser default. The restoration reads metadata.json:cli_args, not the
+# config, and the label named the model_config.json sweep only.
+
+def _production_restart_run(work, first, *, readable_config):
+    from main.train.recipe_surface_test import _LAUNCH_CLI
+    run_dir, ckpt = _make_run(work, first)
+    meta_path = os.path.join(run_dir, "metadata.json")
+    with open(meta_path) as fh:
+        meta = json.load(fh)
+    meta.update({"original_command": "launcher --restart-interval-hours 6 --arch production --steps 9",
+                 "cli_args": dict(_LAUNCH_CLI)})
+    with open(meta_path, "w") as fh:
+        json.dump(meta, fh)
+    if readable_config:
+        from agents.training import baselines
+        with open(os.path.join(run_dir, "model_config.json"), "w") as fh:
+            json.dump(baselines.production_config(), fh)
+    return run_dir, ckpt
+
+
+def _grad_accum_line(out):
+    lines = [ln for ln in out.splitlines() if "--grad-accum-steps" in ln and "(" in ln]
+    assert lines, out
+    return lines[0]
+
+
+@pytest.mark.parametrize("readable_config", [False, True],
+                         ids=["config_unreadable_pinned_run", "config_readable"])
+def test_i_a_restart_dry_run_shows_the_restored_recipe_value_and_its_source(
+        isolated, monkeypatch, capsys, readable_config):
+    _root, (first, _second), work = isolated
+    run_dir, ckpt = _production_restart_run(work, first, readable_config=readable_config)
+    before = _snapshot_tree(run_dir)
+    _dry_run(["--model", ckpt, "--steps", "30000000"], monkeypatch)
+    out = capsys.readouterr().out
+    line = _grad_accum_line(out)
+    assert " 32 " in line, line                       # the checkpoint's K, not the parser default 1
+    assert "RESTORED at restart from metadata.json:cli_args" in line, line
+    assert "from the argv" not in line, line
+    if not readable_config:
+        assert "could NOT be read under THIS tree" in out
+    assert _snapshot_tree(run_dir) == before
+
+
+def test_i_a_fork_dry_run_still_labels_an_untyped_value_from_the_argv(isolated, monkeypatch, capsys):
+    """The label changes only for a value a same-run restart restored; a FORK keeps the old one."""
+    _root, (first, _second), work = isolated
+    _run_dir, ckpt = _production_restart_run(work, first, readable_config=False)
+    _dry_run(["--model", ckpt, "--run-name", "a_fork_of_it", "--steps", "30000000", *_ARCH_OK],
+             monkeypatch)
+    line = _grad_accum_line(capsys.readouterr().out)
+    assert " 1 " in line and "(from the argv)" in line, line

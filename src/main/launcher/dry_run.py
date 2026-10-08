@@ -132,6 +132,17 @@ def _pool_line(run_dir: str, child_args: List[str]) -> Optional[str]:
     return f"{len(zips)} snapshot(s) in {pool_dir}, win_rate_vs_bots {wr_txt}"
 
 
+def _value_source(ns, dest: str, inherited: dict) -> str:
+    """Where the value the child WILL use comes from. A same-run restart of an `--arch production`
+    run restores its untyped recipe rows (`recipe_surface.inherit_on_restart`) from the run's own
+    record, which `inherited` (the model_config.json sweep) does not list - labelling those
+    "from the argv" read as if the resume would train at the parser default."""
+    for d, _v, source in getattr(ns, "_recipe_restart_inherited", ()) or ():
+        if d == dest:
+            return f"RESTORED at restart from {source} - the argv leaves it unset"
+    return "INHERITED" if dest in inherited else "from the argv"
+
+
 def _effective_namespace(child_args: List[str]) -> dict:
     """The effective config a launch would build, via ``main.checkargs`` — never re-implemented.
 
@@ -316,12 +327,17 @@ def dry_run(
             out(f"                  tried: {path}")
     else:
         out("  effective   : the argv IS the config (no --model, nothing to inherit)")
+    if resolution.get("read_error"):
+        out(f"  ⚠️  effective : the parent's model_config.json could NOT be read under THIS tree "
+            f"({resolution['read_error'].splitlines()[0][:110]}...) — the INHERITED count above is "
+            f"0 by construction; the child (pinned to the run's own commit) reads it itself. A "
+            f"same-run restart's RECIPE values are still restored below from metadata.json.")
     if ns is not None:
         for dest in REPORTED_DESTS:
             if not hasattr(ns, dest):
                 continue
-            where = "INHERITED" if dest in inherited else "from the argv"
-            out(f"      --{dest.replace('_', '-'):<20} {getattr(ns, dest)!r:<12} ({where})")
+            out(f"      --{dest.replace('_', '-'):<20} {getattr(ns, dest)!r:<12} "
+                f"({_value_source(ns, dest, inherited)})")
 
     # 6b. The ENV CORE: the Rust core is the only one (no `--env-core` flag since deletion pass P11b); what a
     # `--model` launch can add is a CORE SWITCH — a python-era checkpoint moving onto it, keyed on the record.

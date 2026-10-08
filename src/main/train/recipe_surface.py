@@ -332,14 +332,22 @@ def restart_route(dest: str, parser_default: Any, fields: FrozenSet[str]) -> str
 
 def inherit_on_restart(ns: Any, run_dir: Optional[str], saved_ver: Any = None,
                        parser_defaults: Optional[Dict[str, Any]] = None,
-                       *, model: Optional[str] = None) -> List[Tuple[str, Any, str]]:
+                       *, model: Optional[str] = None,
+                       partial: bool = False) -> List[Tuple[str, Any, str]]:
     """On a SAME-RUN restart of an `--arch production` run, resolve every untyped row by its one
     route (`restart_route`), ANNOUNCED through the return value `[(dest, value, source), …]`.
 
     `[]` unless `--model` is a checkpoint INSIDE `run_dir` (`fork_lr.is_same_run_checkpoint`) and
     the run's immutable `original_command` carried `--arch production`. A value MISSING from its
     route raises `RecipeRestartError` naming the flag — never a default. `model` overrides
-    `ns.model` for a caller (`main.checkargs`) that resolved a relative `models/…` path."""
+    `ns.model` for a caller (`main.checkargs`) that resolved a relative `models/…` path.
+
+    `partial=True` is for an OFFLINE reader that could not parse the checkpoint's `model_config.json`
+    under THIS tree (a run pinned to an older commit: `ModelVersion` refuses its config version, so
+    `saved_ver` is `None`): the `model_config`-route rows are SKIPPED rather than reported missing,
+    and every other row is still restored from `metadata.json:cli_args`, so the dry run / `checkargs`
+    show `--grad-accum-steps 32 (restored at restart)` instead of the parser default 1. The child,
+    which runs the pinned commit, reads the config itself and resolves the full set."""
     from main.train.fork_lr import is_same_run_checkpoint
     model = model or getattr(ns, "model", None)
     if not model or not run_dir or not is_same_run_checkpoint(model, run_dir):
@@ -368,6 +376,8 @@ def inherit_on_restart(ns: Any, run_dir: Optional[str], saved_ver: Any = None,
         if route in ("inert", "resume"):
             continue
         if route == "model_config":
+            if saved_ver is None and partial:
+                continue
             if saved_ver is None or not hasattr(saved_ver, r.dest):
                 missing.append(f"{r.flag} (the checkpoint's model_config.json)")
                 continue

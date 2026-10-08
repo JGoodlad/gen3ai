@@ -147,7 +147,15 @@ half explicit ("set fallback cron (make this standard sop)"):
 1. **OS-level watcher** — [`scripts/ops/watch_run.sh`](../../scripts/ops/watch_run.sh) under
    `nohup`: polls progress, ~35 min wedge limit, matches FAILURE words as well as progress,
    checks the arm-INVALIDATING `--sync-to-main` line, writes a status file. Survives a dead
-   session.
+   session. **It is RESUME-AWARE (2026-10-08):** the launcher restarts a crashed child by itself
+   and the child log RESTARTS with it, so the watcher takes the crash COUNT and the run's end from
+   the LAUNCHER log (`--launcher-log` is therefore required reading, not optional): each
+   `Child crashed (exit N) ... crash #K` is a `CRASH:` event, an `Auto-restart` is `RESUMED:`, a
+   child-log traceback is an `ERROR:` event, and it keeps watching. It exits only on `DONE:` (the
+   launcher's `Training complete`, or a newer `final_model.zip`) or `FAILURE:` (the launcher will
+   not restart, its pid gone with no completion line, `--sync-to-main`, wedged). Point the layer-3
+   Monitor at `CRASH|RESUMED|DONE|FAILURE|WATCHER EXIT`; a `CRASH:` is information, not a page.
+   Never hand-build a variant that counts child-log errors.
 2. **OS-level chain** for multi-stage work, so stage N+1 starts without a session. Survives too.
 3. **`Monitor`** on the status file, filtered to terminal + failure lines only — owned by the
    Training Run session. The orchestrator does NOT watch the run **(owner, 2026-09-02)**; it is

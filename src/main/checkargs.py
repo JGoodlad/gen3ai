@@ -349,9 +349,23 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
             saved = ModelVersion.from_json_file(config_path)
         except Exception as e:                       # noqa: BLE001 — unreadable is not a crash
             ns._saved_config_present = False
+            # The config is unreadable under THIS tree (typically a run PINNED to an older commit),
+            # but a same-run restart's recipe values live in metadata.json:cli_args, not in the
+            # config: restore those (partial=True) so the display shows what the resume will use,
+            # not the parser default (2026-10-08: `--grad-accum-steps 1 (from the argv)` for a run
+            # whose real resumes kept K=32).
+            from main.train.recipe_surface import RecipeRestartError, inherit_on_restart
+            recipe_refusal = None
+            if same_run:
+                try:
+                    with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
+                        inherit_on_restart(ns, run_dir, None, model=model, partial=True)
+                except RecipeRestartError as re_:
+                    recipe_refusal = str(re_)
             _critic()
             return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
-                    "inherited": {}, "same_run": same_run, "read_error": str(e)}
+                    "inherited": {}, "same_run": same_run, "read_error": str(e),
+                    "recipe_refusal": recipe_refusal}
 
     ns._saved_config_present = saved is not None
     inherited: Dict[str, Any] = {}

@@ -12962,3 +12962,31 @@ obs-facts appended (2845)`.
 
   `tie_margins_test`, on the real sort site: only an isolated one-element tie is flippable; the flip swaps exactly
   that pair; a non-reproducing flip forward is refused; a threshold flip inverts its one element.
+
+## Ops tooling, 2026-10-08: the layer-1 run watcher is resume-aware; a restart dry-run shows the value the resume will use
+
+No model, config or training-arithmetic change.
+
+1. **`scripts/ops/watch_run.sh`.**
+   - Why: it ended on the first child-log failure line, including a crash the launcher restarts itself, so the run
+     went unwatched after every crash-resume (the static-token screen, 2026-10-08).
+   - With `--launcher-log` the launcher log is now the authority. The child log restarts at a resume, so crash counts
+     cannot come from it.
+   - New events: `CRASH:` (a launcher `Child crashed (exit N)` line), `RESUMED:` (an `Auto-restart #N after crash`
+     line, which restarts the wedge clock), `ERROR:` (child-log error text, report-only) and `DONE:`.
+   - `DONE:` fires on the launcher's `Training complete`, on a `final_model.zip` newer than the watcher, or on the
+     launcher pid going away after the completion line.
+   - It ends as `FAILURE:` on `will NOT restart`, `giving up` or `cannot restart`, on a launcher pid gone with no
+     completion line, on `--sync-to-main`, or when wedged.
+   - The tick gains `crashes=N`. Without a readable launcher log the old rule holds.
+   - Test: `src/main/ops/watch_run_resume_test.py`, a synthetic launcher + child log pair driven through
+     crash, resume, final.
+2. **`--dry-run` / `main.checkargs`.**
+   - Symptom: a `--model` same-run resume of a PINNED production run printed `--grad-accum-steps 1 (from the argv)`
+     while the real resumes kept K=32.
+   - Cause: HEAD's `ModelVersion` cannot read the pinned run's `model_config.json`, so `resolve_against_parent` returned
+     before the restart restoration. The restoration reads `metadata.json:cli_args`, not the config.
+   - Fix: `recipe_surface.inherit_on_restart(..., partial=True)` restores the `cli_args`-route rows with no readable
+     config. The display labels such a value `RESTORED at restart from metadata.json:cli_args`, says when the config
+     could not be read under this tree, and the RECIPE SURFACE no longer reads it as an untyped default.
+   - Test: `src/main/launcher/dry_run_test.py::test_i_*`.
