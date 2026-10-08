@@ -303,7 +303,7 @@ def _rows_from_tensorboard(run_dir: str, n_games: int = 100) -> list[EvalRow]:
         from agents.training.eval_callback import eval_opponent_names
         bot_names = set(eval_opponent_names())
     except Exception:  # noqa: BLE001 — fall back to a static roster if the import chain fails
-        # Last-resort mirror of _EVAL_OPPONENT_SPECS — keep in sync if the roster changes (the
+        # Last-resort mirror of eval_schedule._EVAL_ROSTER — keep in sync if the roster changes (the
         # tb backfill is best-effort; a stale name here just drops that bot's edges).
         bot_names = {"random", "heuristic", "heuristic2", "staller", "staller_v2",
                      "aggressive", "aggressive_v2", "setup_sweep", "setup_sweep_v2"}

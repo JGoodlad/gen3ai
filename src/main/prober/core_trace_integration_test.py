@@ -1,29 +1,28 @@
-"""A Rust-eval CORE TRACE through the prober: expansion, EQUALITY with the live Python recorder,
-refusal of a tampered record, and the JSON CLI on a core-trace run (`main.prober.core_trace`).
+"""A Rust-eval CORE TRACE through the prober: expansion, refusal of a tampered record, the core's own
+stream reading and the JSON CLI on a core-trace run (`main.prober.core_trace`).
 
 The traces are REAL: games played by the Rust env core behind the FFI (p1 a seeded random-legal
 scripted policy, p2 the in-core `heuristic` bot) and written by `write_core_trace` — the same
 writer the Rust eval executor calls. One game runs the core at a short `turn_limit`, so the
 trainee's STALL FORFEIT (`forcelose p1`) is exercised end to end.
 
-The equality test is the point. The same game is played LIVE on the rust bridge (same seed, same
-teams): p1 is an `EvalRLPlayer`-shaped scripted player that plays the stored actions and records
-with a real `BattleRecorder` exactly as `EvalRLPlayer.choose_move` does, p2 replays the stored p2
-tokens, and the trace is written by `write_battle_record`. The expanded core summary must equal
-that summary field for field (bar `meta.battle_id` / `meta.trace_source`), and the live encoder's
-obs must equal the core's stored obs row for row.
-
-Since P5 of the poke-env retirement the expansion is the RUST CORE's walk (`core_events --walk`,
-`main.prober.core_walk` + `core_recorder`), so the live poke-env recorder here is the ORACLE the core
-reading is held to — and so is the poke-env materializer, for the counterfactual views' rows and choice
-maps. This file imports poke-env for exactly that (it is on the import allowlist until P6).
+CORE-ONLY since P6 slice 6d-1 (2026-10-08): this file used to hold the poke-env ORACLE the core's walk
+was held to (P5) — the same game played LIVE on the rust bridge by a scripted `Gen3Player` recording with
+a real `BattleRecorder` (the expanded summary equal field for field, the live encoder's obs row for row,
+the stand-in protocol log equal to the live `_replay.html`), the poke-env materializer's rows and choice
+maps, and the fork's `Player.MESSAGES_TO_IGNORE`. Those three tests went with the road they compared
+(`RLPlayer`, `run_local_battles`, `obs_materializer`); what the oracle established is now held by the
+banked evidence (`designs/rust_sim/`, the P6 6b engine-truth record) and by the checks below, each of
+which reads the core and the STORED rows only: the expansion lines up with the stored rows, the stall
+forfeit, the protocol-log stand-in, the walk's stream rows equal the STORED rows byte for byte, the
+walk's choice maps equal the stream reading's and name exactly the stored row's legal actions, and every
+tampered record is refused.
 
 Needs the rust env cdylib (built here, selfcheck profile) and the rust `core_events` (resolved by
 `main.prober.core_walk`) — `sim`. Seconds, not minutes.
 """
 from __future__ import annotations
 
-import asyncio
 import gzip
 import json
 import os
@@ -205,139 +204,13 @@ def test_the_protocol_log_stands_in_for_the_missing_replay_html(run):
 
 
 # ---------------------------------------------------------------------------
-# (b) EQUALITY with the live Python recorder on the same game
+# (b) the core's own readings agree with each other and with the STORED rows
 # ---------------------------------------------------------------------------
 
-def _live_summary(sp: str, out_dir: str) -> "tuple[dict, list]":
-    """Play the stored game LIVE on the rust bridge and record it as `EvalRLPlayer` does."""
-    import functools
-
-    import torch
-    from poke_env import AccountConfiguration
-    from poke_env.player import Player
-    from poke_env.player.battle_order import BattleOrder, ForfeitBattleOrder
-    from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
-
-    from agents.battle.gen3_battle import Gen3Battle
-    from agents.inference.player import Gen3Player
-    from agents.training.battle_recorder import BattleRecorder, write_battle_record
-    from agents.training.reward_config import RewardConfig
-    from agents.training.reward_manager import Gen3RewardManager
-    from agents.training.stall import StallConfig
-    from utils.bridge.local_battle_runner import run_local_battles
-    from utils.bridge.reconstruction import ReconstructionRecord
-
-    rec = ReconstructionRecord.from_dict(_recon(sp))
-    npz, stored = _npz(sp), _stored(sp)
-    limit = int(stored["meta"]["trace_source"].get("turn_limit") or StallConfig().threshold)
-    factory = functools.partial(Gen3RewardManager, config=RewardConfig.from_dict({}))
-
-    class _RawOrder(BattleOrder):
-        def __init__(self, token: str):
-            self._token = token
-
-        @property
-        def message(self) -> str:
-            return f"/choose {self._token}"
-
-    class _ScriptedEvalPlayer(Gen3Player):
-        """`EvalRLPlayer.choose_move` with the forward replaced by the stored row."""
-
-        def __init__(self, **kw):
-            super().__init__(battle_class=Gen3Battle, **kw)
-            self.i, self.obs_rows, self.prefix, self.rec = 0, [], None, None
-
-        def choose_move(self, battle):
-            forfeit = self._handle_stall(battle, "CORE_TEST_STALL")
-            if forfeit:
-                return forfeit
-            obs_dict = self.embed_battle(battle)
-            mask = obs_dict["action_mask"]
-            if int(mask.sum()) == 0:
-                return self.choose_default_move()
-            i, self.i = self.i, self.i + 1
-            idx = int(npz["actions"][i])
-            logits = torch.as_tensor(npz["logits"][i][None])
-            probs = torch.softmax(logits + (torch.as_tensor(mask[None]) - 1.0) * 1e9, dim=1)[0].numpy()
-            obs = np.asarray(obs_dict["observation"], dtype=np.float32)
-            self.obs_rows.append(obs)
-            if self.rec is None:
-                self.rec = BattleRecorder(battle.battle_tag, factory)
-            self.rec.record(battle, idx, probs, mask, state={
-                "obs": obs, "logits": npz["logits"][i], "value": float(npz["values"][i])})
-            self._get_tracker(battle).advance(idx)
-            return self.action_to_order(idx, battle)
-
-        def _battle_finished_callback(self, battle) -> None:
-            super()._battle_finished_callback(battle)
-            self.prefix = os.path.join(out_dir, "live")
-            write_battle_record(self.prefix, self.rec, battle, STEP)
-
-    class _TokenReplayPlayer(Player):
-        def __init__(self, tokens, **kw):
-            super().__init__(**kw)
-            self._tokens = list(tokens)
-
-        def choose_move(self, battle):
-            tok = self._tokens.pop(0) if self._tokens else "default"
-            return ForfeitBattleOrder() if tok == "forcelose" else _RawOrder(tok)
-
-    common = dict(battle_format="gen3ou", server_configuration=LocalhostServerConfiguration,
-                  start_listening=False, max_concurrent_battles=1)
-    p1 = _ScriptedEvalPlayer(team=rec.packed_team("p1"), stall_config=StallConfig(threshold=limit),
-                             account_configuration=AccountConfiguration(rec.username("p1"), None),
-                             **common)
-    p2 = _TokenReplayPlayer([t for side, t in rec.commands if side == "p2"], team=rec.packed_team("p2"),
-                            account_configuration=AccountConfiguration(rec.username("p2"), None), **common)
-    seed = [int(x) for x in rec.prng_seed.split(",")]
-    asyncio.run(run_local_battles(p1, p2, 1, seed=seed, impl="rust"))
-    assert p1.prefix is not None, "the live battle never finished"
-    with open(f"{p1.prefix}_summary.json") as f:
-        return json.load(f), p1.obs_rows
-
-
-def test_the_expansion_equals_the_live_python_recorder_field_for_field(run, tmp_path):
-    from main.prober.core_trace import load_summary
-
-    _run_dir, normal, stall = run
-    for k, sp in enumerate(normal + stall):
-        live, live_obs = _live_summary(sp, str(tmp_path / f"g{k}"))
-        core = json.loads(json.dumps(load_summary(sp)))            # the on-disk JSON shape
-        for d in (live, core):
-            d["meta"].pop("battle_id")
-            d["meta"].pop("trace_source", None)
-        assert core["meta"] == live["meta"], sp
-        assert core["teams"] == live["teams"], sp
-        assert len(core["invocations"]) == len(live["invocations"]), sp
-        for i, (a, b) in enumerate(zip(core["invocations"], live["invocations"])):
-            assert a == b, (sp, i, a, b)
-        obs = _npz(sp)["obs"]
-        assert len(live_obs) == len(obs)
-        bad = [i for i, o in enumerate(live_obs) if not np.array_equal(o, obs[i])]
-        assert not bad, f"{sp}: the live encoder's obs differs from the core's at rows {bad[:10]}"
-        # the stand-in protocol log == the live `_replay.html` poke-env rendered (`core_walk.replay_log`)
-        from main.prober.core_trace import protocol_log
-        from main.prober.engine.protocol import parse_protocol_log
-
-        with open(str(tmp_path / f"g{k}" / "live_replay.html")) as f:
-            live_log = parse_protocol_log(f.read())
-        assert tuple(protocol_log(sp, load_summary(sp))) == tuple(live_log), sp
-
-
-def test_the_replay_log_ignores_exactly_the_players_ignore_set():
-    """`core_walk.PLAYER_IGNORED` is the fork's `Player.MESSAGES_TO_IGNORE` (the dispatch it mirrors)."""
-    from poke_env.player.player import Player
-
-    from main.prober.core_walk import PLAYER_IGNORED
-
-    assert PLAYER_IGNORED == frozenset(Player.MESSAGES_TO_IGNORE)
-
-
-def test_the_core_stream_rows_and_choice_maps_equal_the_poke_env_materializer(run):
-    """P5's counterfactual readers against the poke-env ORACLE they replaced: `core_walk.read_streams` over the
-    trainee's walked stream (our actions replayed by index) reproduces the STORED rows byte for byte, and
-    `core_walk.decision_choices` equals the poke-env materializer's `map_actions_at` at every decision."""
-    from agents.training.obs_materializer import materialize_from_record
+def test_the_core_stream_rows_equal_the_stored_rows_and_the_choice_maps_name_the_legal_actions(run):
+    """`core_walk.read_streams` over the trainee's walked stream (our actions replayed by index) reproduces the
+    STORED rows byte for byte, and `core_walk.decision_choices` (the walk's reading) equals the stream's reading
+    of the same decision and names exactly the actions the stored row's mask marks legal."""
     from main.prober import core_walk
     from utils.bridge.reconstruction import ReconstructionRecord
 
@@ -356,11 +229,10 @@ def test_the_core_stream_rows_and_choice_maps_equal_the_poke_env_materializer(ru
         bad = [k for k in range(n) if not np.array_equal(decs[k].obs, npz["obs"][k])]
         assert not bad, f"{sp}: the core stream's rows differ from the stored rows at {bad[:10]}"
         for k in sorted({0, n // 2, n - 1}):
-            mt = materialize_from_record(rec, actions=npz["actions"], map_actions_at=k,
-                                         stop_after_decision=k, impl="rust")
             choices, turn = core_walk.decision_choices(rec, side, k)
-            assert choices == (mt.action_choices or {}), (sp, k, choices, mt.action_choices)
-            assert turn == mt.decisions[-1].turn, (sp, k)
+            assert choices == decs[k].choices, (sp, k, choices, decs[k].choices)
+            assert sorted(choices) == np.flatnonzero(npz["action_mask"][k]).tolist(), (sp, k)
+            assert turn == decs[k].turn, (sp, k)
             n_checked += 1
     assert n_checked >= 6
 

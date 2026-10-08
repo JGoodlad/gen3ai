@@ -38,7 +38,7 @@ already stamp the terminal onto every step. This pipeline manufactures the missi
 ### The label schema is a CONTRACT (`agents/training/harvest_schema.py`)
 
 Gzipped JSONL, eleven pinned fields plus an obs locator triple; `validate_row` runs on every write
-AND every read. It is deliberately **separate from `cf_audit`'s v1 schema**, which is a single-run
+AND every read. It is deliberately **separate from `cf_audit`'s v1 schema** (`cf_audit` itself was deleted in P6 slice 6d-1), which was a single-run
 bias-map contract with a live consumer (the trainer's label ring): the harvest spans many runs'
 traces scored by ONE subject, carries the selection `priority` that drew each row, and pays a
 binomial likelihood over `k`/`n`. Widening `cf_audit`'s schema in place would make every existing

@@ -112,8 +112,8 @@ roster is the full set of eight archetype bots — both the v1 and v2 of each
 (`heuristic`/`heuristic2`, `staller`/`staller_v2`, `aggressive`/`aggressive_v2`,
 `setup_sweep`/`setup_sweep_v2`) — plus `random` as the eval-only "is-the-model-broken"
 floor (excluded from `win_rate_vs_bots`). All nine are the single source of truth in
-`eval_schedule._EVAL_ROSTER` / `eval_opponent_names()` (poke-env-free; `eval_roster._EVAL_OPPONENT_SPECS` binds the
-same names to their poke-env classes), shared by the bot path, the self-play path, the offline Rust eval harness
+`eval_schedule._EVAL_ROSTER` / `eval_opponent_names()` (poke-env-free; the poke-env class table `eval_roster._EVAL_OPPONENT_SPECS`
+that once bound the same names to Python classes was deleted in P6 slice 6d-1), shared by the bot path, the self-play path, the offline Rust eval harness
 (`rust_eval.offline`, `main.ops.eval_trace_gen`) and the Rust eval core's bot routes. There is no roster flag — every bot always plays,
 because they play differently and the playstyle diversity is the point. 🚨 **The cycle is BLOCKING**:
 it plays in the trainer's own process between two host steps of the collector and is collected in the
@@ -171,7 +171,7 @@ been exonerated by it.
 | the **team draw** (`Gen3Teambuilder`) | per battle | `rng_seed=` | **`$GEN3AI_TEAM_SEED`** |
 | the **policy's action sample** (`RLPlayer`, torch's default generator) | per decision, when `stochastic` | `policy_seed=` | **`$GEN3AI_POLICY_SEED`** |
 | the **self-play pool draw** (`SnapshotPool.sample`) | per episode | `rng_seed=` | **`$GEN3AI_POOL_SEED`** |
-| the two stallers' **Protect coin** (`agents/opponents.py`) | conditional | `protect_seed=` | **`$GEN3AI_STALLER_SEED`** |
+| the two stallers' **Protect coin** (`agents/opponents.py`, deleted in P6 slice 6d-1 — the Rust bots draw the same stream, `bots::rng`) | conditional | `protect_seed=` | **`$GEN3AI_STALLER_SEED`** |
 
 The first is the widest: `choose_random_move` is `RandomPlayer`'s *entire policy*, the fallback of
 all sixteen scripted bots, and `DEFAULT_CHOICE_CHANCE` fires inside the RL players too — so even an
@@ -1211,9 +1211,9 @@ output goes. Until P6 slice 6c it spawned `python -m main.eval_worker` processes
    which was used. Full capture is why the low-variance rows gain power and not merely precision.
 3. **Nothing is written under `models/`.** The output is a self-contained SHADOW RUN DIR: the run's
    `model_config.json` and `metadata.json` copied (with `latest_eval.pool.sentinels` REWRITTEN to
-   this cycle's sentinels, so `cf_audit.sentinel_snapshots` pins the right networks), `snapshots/`
+   this cycle's sentinels, so a reader of the pins — the deleted `cf_audit.sentinel_snapshots` was one — resolves the right networks), `snapshots/`
    symlinked back read-only, and the checkpoint copied to `eval_traces/step_<N>/snapshot.zip` —
-   which is where `cf_audit` and the prober's `resolve_model_for_step` look for the network that
+   which is where the offline readers and the prober's `resolve_model_for_step` look for the network that
    played the traces. `--out` inside the run archive is refused.
 4. 🚨 **The manifest carries a `generated_by` block, and a reader may not ignore it.** It records
    the tool, schema, source run, checkpoint sha, games, the bot list, `sentinels_requested` beside
@@ -1232,12 +1232,13 @@ output goes. Until P6 slice 6c it spawned `python -m main.eval_worker` processes
    all four workers died with `failed to make path absolute` and the cycle landed at 71%. Run a
    long generation from the MAIN checkout. On the Rust core a cycle cut short — `--timeout-min` — keeps the shard
    units that finished and is recorded INCOMPLETE the same way.)
-5. 🚨 **A generated cycle is CORE traces, so `cf_audit`'s sampling frame (and with it `critic_read`'s identity
-   read) REFUSES it** — the frame samples by the RECORDED win-prob head, and a core trace records none (`win_probs`
-   NaN, F-LH-4), exactly as on every live Rust-core cycle. The cycle pick, the refusal gates, the prober's views and
-   `cf_audit`'s identity half (the step dir's `snapshot.zip`, the sentinel pins) read it
-   (`main/ops/eval_trace_gen_integration_test.py`); a critic read on a Rust-core cycle waits on the win-prob head
-   being recorded at eval.
+5. 🚨 **A generated cycle is CORE traces, so every reader that samples or scores by the RECORDED win-prob head
+   REFUSES it** — a core trace records none (`win_probs` NaN, F-LH-4), exactly as on every live Rust-core cycle.
+   That was `cf_audit`'s sampling frame (and with it `critic_read`'s identity read; both deleted, P6 slice 6d-1) and
+   is still `critic_read`'s gate and conditioning blocks (`scaffolding_gauge`, `conditioning_meters`). The cycle pick,
+   the refusal gates, the prober's views and the shadow run's layout (the step dir's `snapshot.zip`, the sentinel
+   pins) read it (`main/ops/eval_trace_gen_integration_test.py`); a critic read on a Rust-core cycle waits on the
+   win-prob head being recorded at eval.
 
 **Sentinels are CLAMPED, never padded.** `--sentinels K` draws from the run's own `snapshots/`,
 evenly spaced across the step range (hence the rating range, both endpoints kept), excluding any

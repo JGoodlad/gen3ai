@@ -8,6 +8,12 @@ it read, the action, the token and the RNG stream offset — and the banked batt
   the fresh-corpus MILESTONE.
 * TEETH (routine): a moved action, a moved view hash, a moved stream offset, and a bot relabelled
   as another bot each FAIL, on the counter they should.
+
+Since P6 slice 6d-1 (2026-10-08) the Python bots (`agents/opponents.py`) and the bot VIEW renderer
+(`utils/rust_env/bot_view.py`) are deleted: this gate holds the Rust bots to the BANK alone. The bank-content
+check that decided "is this banked token a setup move" through the fork's `Move`/`Target` is retired with them
+(the F-LF-1 setup-site coverage stays pinned by `test_commit_tier_every_banked_decision_is_equal`'s branch
+counters, and the Curse check below needs no fork).
 """
 from __future__ import annotations
 
@@ -105,31 +111,6 @@ def _setup_sites() -> dict:
     return dict(zip(SETUP_BOTS, found))
 
 
-def _is_setup_token(tok) -> bool:
-    """A chosen move that the setup steps select: ``target is Target.SELF`` raising >= 2 stages,
-    or Curse (a non-Ghost's +1 Atk / +1 Def; no bot picks it any other way)."""
-    from poke_env.battle.move import Move
-    from poke_env.battle.target import Target
-
-    if not tok or not tok.startswith("move "):
-        return False
-    if tok == "move curse":
-        return True
-    m = Move(tok.split()[1], 3)
-    return m.target is Target.SELF and bool(m.boosts) and sum(m.boosts.values()) >= 2
-
-
-def test_the_setup_bots_actually_set_up(bank):
-    """F-LF-1 (fixed): before the fix, `move.target == "self"` compared a ``Target`` ENUM to a str,
-    so the four setup steps never fired — the bank then held ZERO setup-move choices for these bots.
-    Reverting only the Rust port fails the COMMIT gate's action counter and its setup-site coverage."""
-    counts = {b: 0 for b in SETUP_BOTS}
-    for ep in bank["episodes"]:
-        if ep["bot"] in counts:
-            counts[ep["bot"]] += sum(_is_setup_token(d["tok"]) for d in ep["p2"])
-    assert all(n >= 1 for n in counts.values()), counts
-
-
 def test_every_setup_bot_sets_up_with_curse(bank):
     """Owner 2026-09-29, "allow Curse": a non-Ghost's Curse is a setup move for all four setup bots
     (``baselines.self_setup_boosts``). Before, poke-env's Curse (target NORMAL, no boosts) could not
@@ -140,6 +121,7 @@ def test_every_setup_bot_sets_up_with_curse(bank):
         if ep["bot"] in counts:
             counts[ep["bot"]] += sum(d["tok"] == "move curse" for d in ep["p2"])
     assert all(n >= 1 for n in counts.values()), counts
+
 
 def test_the_bank_holds_exactly_the_commit_tier_plan(bank):
     assert sum(n for _, _, n, _ in BC.commit_tier_plan()) == len(bank["episodes"])

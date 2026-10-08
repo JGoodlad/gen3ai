@@ -249,8 +249,9 @@ into its parent's. Gate: `extractor_stashes_test.py`. Detail:
 🚨 **THAT CONTRACT IS SINGLE-THREADED, AND `forward` IS NOT RE-ENTRANT** (`gen3_extractor_forward_guard_v1`).
 "The forward replaces the stash at ENTRY" makes a stale read unrepresentable only while ONE forward
 is in flight per extractor — true of training (each env worker is its own process) and false the
-moment two threads share a model object, which `main.search_dividend`'s mirror does by design (the
-searched side runs off POKE_LOOP; the other side, and every playoff rollout player, decides on it).
+moment two threads share a model object, which `main.search_dividend`'s mirror did by design (the
+searched side ran off POKE_LOOP; the other side, and every playoff rollout player, decided on it) — that battery was
+deleted in P6 slice 6d-1 (2026-10-08), so the guard is now an opt-in seam with no declared caller.
 Measured 2026-09-22: two threads, one real extractor, 2,400 interleaved forwards ⇒ **1,063 failures
 in seven classes**, including `ValueThreatInject shape mismatch: tokens (1, 6) vs rows (9, 6)`. ⚠️
 **The crash is the lucky case** — same-batch-size forwards corrupt each other silently. A
@@ -605,7 +606,7 @@ over ONE softmax: a bias is a common shift, audit F16b) — unlike the POLICY po
 scorer biases, which are not common to every logit and stay. The blob path's `AlphaIntentHead` /
 `BetaSwitchHead` are DELETED, and with them the `alpha_logits` / `beta_logits` / `alpha_seat_nums` stashes and the
 `last_alpha_logits` / `last_beta_logits` properties; the trace reader (`agents/inference/player.py`'s
-`_opp_intent`) and `main/search_dividend/alpha.py` read the flat pointer (`last_flat_intent_logits` /
+`_opp_intent`) and the deleted `main/search_dividend/alpha.py` (P6 slice 6d-1) read the flat pointer (`last_flat_intent_logits` /
 `last_flat_intent`). Why pointers, matching by canonical id, and why the label is shifted back
 one row before `get()` shuffles: [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md).
 

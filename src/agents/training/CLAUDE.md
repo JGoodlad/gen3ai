@@ -1217,14 +1217,13 @@ NaN-refusal pair in `scaffolding.py` and `winprob_finetune.label_noise_variance`
 [`designs/training/offline_meters.md`](../../../designs/training/offline_meters.md), so nobody
 "de-duplicates" a shipped instrument's output by accident.
 
-## `cf_audit` — the counterfactual audit instrument (`cf_audit.py`)
+## `cf_audit` — DELETED (P6 slice 6d-1, owner decision 2026-10-08)
 
-**Three modules, one instrument**: `cf_audit.py` owns the frame, the sampler, the label schema, the
-bias map and the CLI; `cf_audit_render.py` turns a finished bias map into markdown (its two
-formatting rules are the ABSENT-vs-ZERO ones — a row of zeros makes "no head" and "no uncertainty"
-read identically); `cf_audit_twin.py` holds the twin-head paired read and the shadow read.
-`cf_audit` re-imports every name, so the historic import paths still resolve.
-**Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
+`cf_audit.py`, `cf_audit_render.py` and `cf_audit_twin.py` (the counterfactual audit instrument: the frame, the sampler, the
+label schema, the bias map and the CLI; the markdown render; the twin-head paired read) are gone with the rest of the
+offline cf stack (see "Counterfactual win-prob grounding — DELETED" below). The instrument already REFUSED every
+Rust-core trace (F-LH-4: a core trace records no win-prob head), so it read nothing of any current run. The record of
+what it was and measured is [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
 
 ## Offline replay (`obs_materializer`) — the prefix-sharing materializer is DELETED
 
@@ -1238,13 +1237,13 @@ deleted machinery and its measurements is [`designs/training/cf_grounding.md`](.
 🚨 **AN OFFLINE REPLAY'S BATTLE TAG IS ALWAYS UNIQUE, AND THAT IS A CORRECTNESS PROPERTY**
 (`gen3_recon_tag_collision_v1`, 2026-09-19). `_next_tag` used to hand the caller's `battle_tag`
 back verbatim, and the search passes the LIVE record's tag — so an offline replay ran in the LIVE
-BATTLE'S ROOM, and `search_dividend.record.install_choice_tap` (a process-wide patch whose only
-discriminator is that room) recorded every `/choose default` the replay player emits when its
-action list runs out as a choice the LIVE player had made. Measured: ~1 per materialized ARM, so
-the `playoff` arm's nested rollouts replayed a prefix that was not the battle and 64 of 66
-playoffs died. It was filed as a rust defect and was not one — node's bridge re-requests where
-rust fails loud, so the node cell ran the same wrong rollouts and reported a clean number. Pinned
-by `main/search_dividend/recon_tag_isolation_test.py`.
+BATTLE'S ROOM, and the search-dividend live recorder's choice tap (`main.search_dividend.record`, a
+process-wide patch whose only discriminator was that room) recorded every `/choose default` the replay player
+emitted when its action list ran out as a choice the LIVE player had made. Measured: ~1 per materialized ARM,
+so the `playoff` arm's nested rollouts replayed a prefix that was not the battle and 64 of 66 playoffs died.
+It was filed as a rust defect and was not one — node's bridge re-requests where rust fails loud, so the node
+cell ran the same wrong rollouts and reported a clean number. The tap, its battery and its pinning test
+(`recon_tag_isolation_test`) were deleted with `main.search_dividend` (P6 slice 6d-1); `_next_tag` stays unique.
 **Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
 🚨 **The SEARCH does not materialize anything in Python** — its successors are Rust-core versions whose
@@ -1269,13 +1268,16 @@ search driver, not this ring. A checkpoint that recorded a structural head ON is
 and one that recorded a live cf coefficient refuses resume / fork
 (`model_version/retired_levers.py`, pin `LAST_COMMIT_L4`); `designs/deleted_flags.md` has every flag.
 
-**KEPT (design decision D6 — the OFFLINE stack that reads OLD runs' `cf_records/` rings):**
-`cf_producer*` (the label producer — its single-instance lock is `cf_producer_lock.py`; nothing in
-training spawns it any more), `cf_audit*`, `cf_q_labels.py`, `cf_mc_return.py`, `harvest*`,
-`winprob_finetune`, `main/ops/critic_read.py`, `utils/bridge/counterfactual.py` and the prober's
-counterfactual views. They read finished artifacts; none needs a trainer. The prober's twin / evidential
-readers degrade to "no head" on any checkpoint at HEAD (those heads cannot be built).
-`cf_records.py` (the `record_key` / `index_records` join of the Python fork arm) is DELETED with that arm (L5). History: [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
+**The OFFLINE stack that read OLD runs' `cf_records/` rings is DELETED too** (P6 slice 6d-1, 2026-10-08; owner:
+"LGTM for deleting both cf label and search, they need poke-env" — this supersedes design decision D6, which had
+KEPT it): `cf_producer*` (the label producer and its single-instance lock), `cf_audit*`, `cf_q_labels.py`,
+`cf_mc_return.py` and `utils/bridge/counterfactual.py`. What stays: `harvest*` and `winprob_finetune` (the
+stall-tail pipeline below — they only cite `cf_audit` as the source of the schema they were modelled on),
+`main/ops/critic_read.py` WITHOUT its identity half (it ran `cf_audit`; the gate, conditioning and quota-matched
+halves read recorded `V` and stay), the shared `stats.py`, and the prober's counterfactual views (which play on the
+Rust core, `utils/rust_env/counterfactual.py`). The prober's twin / evidential readers degrade to "no head" on any
+checkpoint at HEAD (those heads cannot be built). `cf_records.py` (the `record_key` / `index_records` join of the
+Python fork arm) is DELETED with that arm (L5). History: [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).
 
 ## The STALL-TAIL HARVEST + head-repair pipeline (`main.harvest` → `winprob_finetune` → `main.harvest_meter`)
 

@@ -9,7 +9,7 @@ obligation as the leaf — update it in the same pass as the code.
 > `fork_worker.py`, `fork_crn.py`, the `ForkRolloutBuffer` and the branch-row builder in `fork_buffer.py`,
 > `cf_records.py`, the decision-time handle capture in the wrapper / env factory / async collector /
 > `WinProbLabelCallback`, and `compile_trainer.eager_extractor`; the callable-substitute seam in
-> `utils/bridge/counterfactual.py` went with it). What the Rust port imports is KEPT: `fork_arm.py`
+> `utils/bridge/counterfactual.py` went with it — and the file itself was deleted in P6 slice 6d-1). What the Rust port imports is KEPT: `fork_arm.py`
 > (selector, branch actions, meters) and `fork_buffer.FILL` / `unfillable_keys` / `refusal_text`. The
 > `--fork-fraction > 0` on the python core refusal row (`fork_python_core_unavailable`) went with the Python core itself (U3; the Rust core is the only core). Before L5 the arm was
 > **UNREACHABLE**: it replayed its episode from the `<run>/cf_records/` ring, the ring and its flag
@@ -82,8 +82,8 @@ climbs is buying less, whatever its fork count says.
 |---|---|
 | `win_mask == 1` — the episode TERMINATED in this buffer (which is also what makes the state replayable: the `__RECON__` record is written at episode END) | `fork_arm.eligible_mask` |
 | a per-decision reconstruction HANDLE was captured (`turns >= 0`) | the per-decision handle capture the (deleted) `WinProbLabelCallback` performed for the Python fork arm |
-| `MIN_LABELABLE_TURN <= turn <= 40` | `cf_producer` / the offline builder's `--max-turn` |
-| a MOVE ROUND with `>= 3` legal actions | `cf_producer_sampler.is_move_round`, `--min-legal 3` |
+| `MIN_LABELABLE_TURN <= turn <= 40` | `fork_arm.MIN_LABELABLE_TURN` (= 2; it MOVED there from the deleted `cf_producer_sampler` in P6 slice 6d-1, same value, with its rationale) / the offline builder's `--max-turn` |
+| a MOVE ROUND with `>= 3` legal actions | `fork_arm.is_move_round_mask` (the rule the deleted `cf_producer_sampler.is_move_round` spelled), `--min-legal 3` |
 
 and then the CONTESTED test: the policy's **top-2 masked-logit gap** is at or below the
 `--fork-contested-gap` **QUANTILE of this rollout's own candidate pool** (0.40 — the offline
@@ -122,8 +122,8 @@ branch on what the policy already covers.
 
 ## 4. COMMON RANDOM NUMBERS — `--fork-crn` (default `dice_and_draws`)
 
-🚨 **A concrete, testable account of the `cf_q_labels` null.** That factory pairs the sim **dice**
-and leaves both sides sampling at temperature 1.0 (its own recorded caveat); the offline forks were
+🚨 **A concrete, testable account of the `cf_q_labels` null.** That factory (deleted, P6 slice 6d-1) paired the sim **dice**
+and left both sides sampling at temperature 1.0 (its own recorded caveat); the offline forks were
 **greedy on both sides**, which is the only reason 104 determinism re-runs came back identical. *A
 label factory that pairs the dice but not the policy draws may be teaching the head noise.*
 

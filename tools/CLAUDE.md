@@ -285,8 +285,10 @@ even reproducible across machines).
 `teams.json` by `sha256(team_text)` — so "fixing" a nickname re-ids the team, orphans its archetype
 label and breaks every provenance record that named it. A nickname is cosmetic to the model (the
 obs never reads one), so the correction belongs at the next deliberate pool boundary, not as a
-tidy-up. `src/main/search_dividend/depth2_replay_integration_test.py` pins the current bytes so a
-re-sync that changes them is a visible event rather than a silent re-id.
+tidy-up. `src/utils/team_loader/committed_team_bytes_test.py` pins the current bytes so a
+re-sync that changes them is a visible event rather than a silent re-id. (The pin was the pure
+file-I/O half of the depth-2 search battery's integration test, deleted with `main.search_dividend`
+in P6 slice 6d-1, 2026-10-08; it moved here.)
 
 ## Reproducibility is tested
 

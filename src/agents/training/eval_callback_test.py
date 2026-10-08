@@ -5,12 +5,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
-from agents.opponents import Gen3StallerPlayer
 import agents.training.eval_callback as eval_callback
 import agents.training.eval_record as eval_record
 from agents.training.eval_callback import (
-    PerOpponentEvalCallback, bot_mean, opponent_name, RANDOM_OPPONENT_NAME,
+    PerOpponentEvalCallback, bot_mean, RANDOM_OPPONENT_NAME,
     external_elo, record_external_elos, request_forced_eval, consume_forced_eval_request,
 )
 
@@ -109,28 +107,12 @@ def test_bot_mean_no_random_averages_all():
     assert bot_mean({"heuristic": 0.4, "staller": 0.6}) == pytest.approx(0.5)
 
 
-# ── opponent_name ─────────────────────────────────────────────────────────────
+# ── the random opponent's name ────────────────────────────────────────────────
 
-def test_opponent_name_random():
-    assert opponent_name(RandomPlayer) == "random"
+def test_random_opponent_name_constant_is_the_rosters_first_name():
+    from agents.training.eval_schedule import eval_opponent_names
 
-
-def test_opponent_name_heuristic():
-    assert opponent_name(SimpleHeuristicsPlayer) == "heuristic"
-
-
-def test_opponent_name_staller():
-    assert opponent_name(Gen3StallerPlayer) == "staller"
-
-
-def test_opponent_name_unknown_falls_back_to_class_name():
-    class MyCustomPlayer:
-        pass
-    assert opponent_name(MyCustomPlayer) == "MyCustomPlayer"
-
-
-def test_random_opponent_name_constant_matches_function():
-    assert RANDOM_OPPONENT_NAME == opponent_name(RandomPlayer)
+    assert RANDOM_OPPONENT_NAME == "random" == eval_opponent_names()[0]
 
 
 def _make_callback(best_model_save_path=None, model_dir=None):
@@ -291,7 +273,7 @@ from agents.training.eval_callback import (
 
 def test_eval_opponent_names_is_full_roster():
     # All eight archetype bots (both v1 and v2 of each) + Random as the eval-only floor.
-    # snake_case names match _EVAL_OPPONENT_SPECS keys + the metric-key convention (1e50634).
+    # snake_case names match the eval roster's names (`eval_schedule._EVAL_ROSTER`) + the metric-key convention (1e50634).
     assert eval_opponent_names() == [
         "random",
         "heuristic", "heuristic2",

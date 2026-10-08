@@ -4,12 +4,14 @@ pass U3 (R10, owner D3 2026-10-02): the bank is READ here and replayed by the Ru
 (`rust_env/tests/bots_gate_test.rs`); the Python RE-RECORD — a `Gen3Env` over the rust bridge with every
 bot RNG stream counted — was the Python env core's oracle and was deleted with it, so nothing re-derives
 the bank from the Python bots any more.** A Python bot change is now caught by the bots' own unit tests;
-the bank pins the Rust port to the Python bots as they were when it was last recorded (git history of
-this file holds the recorder).
+the bank pins the Rust port to the Python bots as they were when it was last recorded (the history of
+this file holds the recorder). The Python bots themselves (`agents/opponents.py`) were deleted in P6
+slice 6d-1 (2026-10-08): the bank is now the ONLY statement of what they decided.
 
 An episode is ``{"seed", "names", "teams", "p1": [idx | -1 forfeit], "p2": [decision…], "end",
 "phantom"}`` — the env core's input log in index form (`search::game::Log` + `Game::feed`). Every
-decision holds the bot view's hash (`bot_view.fnv64(view_json(battle2))`), the order the bot returned,
+decision holds the bot view's hash (`bot_view.fnv64(view_json(battle2))` — the renderer was deleted in P6
+slice 6d-1; the hash is now a banked value the Rust gate compares), the order the bot returned,
 the order the env SENT as a choice token, that order's 11-dim action index, and the bot RNG stream's
 MT19937 word offsets before and after it (the Rust bot draws the same stream from the same offset,
 `bots::rng::PyRandom`).

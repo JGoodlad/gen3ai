@@ -97,7 +97,7 @@ disagree, **the ledger wins and the view is wrong** — fix the view.
   tree that persists across turns, a PUCT policy prior inside selection, and **visit-count argmax
   chosen explicitly over Q-argmax for the variance reason we then walked into**. Carries the diff
   table, the noise/margin ladder, and the one experiment that separates variance from a critic-bias
-  floor. Instrument: `python -m main.search_dividend` (the R-ladder is flags only, zero code).
+  floor. Instrument: `python -m main.search_dividend` (the R-ladder was flags only, zero code; the battery was DELETED in P6 slice 6d-1, 2026-10-08 — its measured verdicts stay in the ledger and `measurements/`).
   ⚠️ **Every search-dividend cell measured before 2026-08-29 carries the allocator-noise caveat**
   (`d2a0212`): at the battery's own 1 s budget the grid agrees with its own large-budget argmax on
   only **86.1%** of decisions, so ~1 in 7 "searched" decisions was allocator noise. Re-read any

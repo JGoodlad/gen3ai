@@ -7,21 +7,15 @@ lived as three loose session scripts
 measurement must remain reproducible from the artifacts beside it — and this module is the
 version the ladder's read imports, so every arm is read by identical code.
 
-**Three selections stack on the identity sample, and they are different corrections.**
-
-1. ``cf_audit`` draws a STRATIFIED sample (confidence decile x outcome x turn tercile, with a 4x
-   boost on high-confidence-from-lost-battles). :func:`pop_weights` recombines it at the frame's
-   own (decile, outcome) mass. This corrects the SAMPLER against the trace tree.
-2. The trace tree is itself LOSS-ENRICHED by the eval quota (first 10 losses / 5 draws / 5 wins
-   per opponent per cycle). :func:`capture_weights` reads each cycle's ``eval_manifest.json`` and
-   returns ``1 / capture_rate(opponent, outcome)``. This corrects the TREE against the eval
-   population, and it is RULE OF EVIDENCE 17 (ledger 2026-09-08): *any statistic on the
-   eval-trace tree is reweighted by each cycle's recorded capture rate, or it is not a
-   measurement.*
-3. The ANCHOR arm is neither. Its estimand — "does the offline driver reproduce the recorded
-   outcome under recorded dice?" — is a property of the REPLAY DRIVER, not of the eval
-   population, and its frame is a census of the bot battles it draws from. Reweighting it would
-   answer a question nobody asked. It is reported raw, and :func:`anchor_note` says so in print.
+**What is left (P6 slice 6d-1, 2026-10-08).** The IDENTITY statistics — the join of ``cf_audit``'s
+Monte-Carlo labels to the eval traces and everything computed on that sample (the sampler / capture-rate
+reweightings of RULE OF EVIDENCE 17, the bias ``V - p_hat``, Murphy at the rollout level, the clock-tracking
+contrast, the reliability cells) — were deleted with ``cf_audit`` (owner decision 2026-10-08), which already
+refused every Rust-core trace (F-LH-4: no win-prob head recorded). What the ladder's read still imports
+from here is the machinery both remaining halves share: the battle-clustered bootstrap over GROUPS, the
+DELTA of two independent bootstraps and its three-way label, :func:`murphy_arrays` (the reference the
+conditioning meters are held to), and the scaffolding gauge's arrays and metrics (the capture-rate weights
+the gauge applies itself).
 
 **Every interval resamples BATTLES**, never states: outcome labels are per-battle and broadcast,
 so an i.i.d. bootstrap over decisions reports an interval roughly ``sqrt(states-per-battle)``
@@ -31,162 +25,16 @@ draws — the difference of independent bootstraps, which is the only interval a
 """
 from __future__ import annotations
 
-import json
 import math
-import os
-from collections import Counter, defaultdict
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
 N_BOOT = 4000
 BOOT_SEED = 20260908
-TURN_BUCKETS = ("early (turn<=10)", "mid (11-24)", "late (turn>=25)")
 GATE_METRICS = ("resolution", "reliability", "ece", "skill")
 #: strata the gate gates on, in the order the report prints them (`all` is context, never gated)
 GATE_STRATA = ("all", "bot", "pool")
-
-
-def anchor_note() -> str:
-    return ("the anchor (label-trust) arm is a CENSUS of the bot battles it draws from and its "
-            "estimand is the REPLAY DRIVER's fidelity, not a property of the eval population — "
-            "capture-rate reweighting does NOT apply to it and none is applied.")
-
-
-def turn_bucket(turn: int) -> str:
-    return TURN_BUCKETS[0] if turn <= 10 else (TURN_BUCKETS[1] if turn <= 24 else TURN_BUCKETS[2])
-
-
-def wilson(k: int, n: int, z: float = 1.96) -> Tuple[float, float]:
-    if n <= 0:
-        return (float("nan"), float("nan"))
-    p = k / n
-    d = 1 + z * z / n
-    c = p + z * z / (2 * n)
-    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
-    return ((c - h) / d, (c + h) / d)
-
-
-# --------------------------------------------------------------------------- selection weights
-
-def capture_weights(run_dir: str, step: int) -> Optional[Dict[Tuple[str, int], float]]:
-    """``{(opponent, outcome): 1 / capture_rate}`` from the cycle's ``eval_manifest.json``.
-
-    ``outcome`` is 1 for a win and 0 for a loss, matching the frame's own coding. Returns
-    ``None`` when the manifest records no selection block — a tree without one is SELECTION
-    UNKNOWN and the caller must SAY so rather than silently read raw (rule 17).
-
-    An opponent whose quota captured only one outcome class carries no usable rate on the empty
-    side; that pair is omitted, and :func:`apply_capture` reports the rows it could not weight
-    instead of leaving them at 1.0 beside corrected ones.
-    """
-    path = os.path.join(run_dir, "eval_traces", f"step_{int(step)}", "eval_manifest.json")
-    if not os.path.exists(path):
-        return None
-    with open(path) as fh:
-        man = json.load(fh)
-    sel = man.get("selection")
-    if not isinstance(sel, dict):
-        return None
-    per = sel.get("opponents") or sel.get("per_opponent") or {}
-    out: Dict[Tuple[str, int], float] = {}
-    for name, rec in per.items():
-        for key, y in (("capture_rate_win", 1), ("capture_rate_loss", 0)):
-            rate = rec.get(key)
-            if isinstance(rate, (int, float)) and rate > 0:
-                out[(str(name), y)] = 1.0 / float(rate)
-    return out or None
-
-
-def apply_capture(rows: Sequence[dict], w: np.ndarray,
-                  cap: Optional[Dict[Tuple[str, int], float]]) -> Tuple[np.ndarray, float]:
-    """Multiply per-row weights by the capture-rate IPW factor. Returns ``(w, covered)``.
-
-    ``covered`` is the share of rows for which a capture rate existed. Rows with no rate get
-    weight 0 — never 1 — because mixing corrected rows with uncorrected ones and calling the
-    result corrected is the exact failure rule 17 was written against.
-    """
-    if cap is None:
-        return np.asarray(w, dtype=float), 0.0
-    f = np.array([cap.get((str(r["opponent"]), 1 if str(r["outcome"]) == "win" else 0), 0.0)
-                  for r in rows], dtype=float)
-    covered = float((f > 0).mean()) if len(rows) else 0.0
-    out = np.asarray(w, dtype=float) * f
-    m = out.mean()
-    return (out / m if m else out), covered
-
-
-def cell_of(r: dict) -> tuple:
-    return (min(9, int(r["v"] * 10)), r["outcome"], r["opp_class"], turn_bucket(r["turn"]))
-
-
-def pop_weights(rows: Sequence[dict], frame_cells: Dict[str, int]) -> Tuple[np.ndarray, float]:
-    """``cf_audit``'s own recombination, restricted to the stratum being reported.
-
-    ``w_i`` = (the stratum's frame mass in the row's (decile, outcome) cell) / (how many of that
-    cell the sampler drew INSIDE the stratum). Returns the weights (mean 1) and the share of the
-    stratum's frame mass the draw actually covers — a cell with zero draws is mass this readout
-    cannot speak for, and it is reported rather than dropped in silence.
-    """
-    mass: Counter = Counter()
-    keep = {(c[1], c[2], c[3]) for c in (cell_of(r) for r in rows)}
-    for key, m in frame_cells.items():
-        dec, oc, cls, tb = key.split("|")
-        if (oc, cls, tb) in keep:
-            mass[(int(dec), oc)] += m
-    drawn: Counter = Counter((c[0], c[1]) for c in (cell_of(r) for r in rows))
-    w = np.array([mass.get((c[0], c[1]), 0) / drawn[(c[0], c[1])]
-                  for c in (cell_of(r) for r in rows)], dtype=float)
-    covered = sum(m for k, m in mass.items() if drawn.get(k))
-    total = sum(mass.values()) or 1
-    return (w / w.mean() if w.mean() else w), covered / total
-
-
-# --------------------------------------------------------------------------- bootstraps
-
-def _by_battle(rows: Sequence[dict]) -> Tuple[List[str], Dict[str, List[int]]]:
-    idx: Dict[str, List[int]] = defaultdict(list)
-    for i, r in enumerate(rows):
-        idx[r["battle_key"]].append(i)
-    return sorted(idx), idx
-
-
-def cluster_boot(rows: Sequence[dict], stat: Callable[[np.ndarray, np.ndarray], float], *,
-                 w: np.ndarray, draws: int = N_BOOT,
-                 seed: int = BOOT_SEED) -> Tuple[float, float, float]:
-    """``(point, lo, hi)`` — resampling BATTLES with replacement, weights carried per row."""
-    keys, idx_by_battle = _by_battle(rows)
-    point = stat(np.arange(len(rows)), w)
-    if len(keys) < 2:
-        return float(point), float("nan"), float("nan")
-    rng = np.random.default_rng(seed)
-    out: List[float] = []
-    for _ in range(draws):
-        pick = rng.integers(0, len(keys), len(keys))
-        val = stat(np.concatenate([idx_by_battle[keys[j]] for j in pick]), w)
-        if val is not None and np.isfinite(val):
-            out.append(float(val))
-    if len(out) < 20:
-        return float(point), float("nan"), float("nan")
-    lo, hi = np.percentile(np.asarray(out), [2.5, 97.5])
-    return float(point), float(lo), float(hi)
-
-
-def boot_draws(rows: Sequence[dict], stat: Callable[[np.ndarray, np.ndarray], float], *,
-               w: np.ndarray, draws: int, seed: int) -> Tuple[float, np.ndarray]:
-    """``(point, the bootstrap draws)`` — the raw draws, so a DELTA can difference two of them."""
-    keys, idx_by_battle = _by_battle(rows)
-    point = float(stat(np.arange(len(rows)), w))
-    if len(keys) < 2:
-        return point, np.empty(0)
-    rng = np.random.default_rng(seed)
-    out: List[float] = []
-    for _ in range(draws):
-        val = stat(np.concatenate([idx_by_battle[keys[j]] for j in rng.integers(
-            0, len(keys), len(keys))]), w)
-        if val is not None and np.isfinite(val):
-            out.append(float(val))
-    return point, np.asarray(out, dtype=float)
 
 
 def independent_delta(a_point: float, a_draws: np.ndarray, b_point: float, b_draws: np.ndarray,
@@ -250,97 +98,7 @@ def label_delta(delta: float, ci: Sequence[float], floor: Optional[float]) -> Di
             "floor": f, "clears_zero": clears_zero, "clears_floor": False}
 
 
-# --------------------------------------------------------------------------- identity statistics
-
-def build_identity_payload(labels_path: str, traces: str) -> dict:
-    """Join a ``cf_audit`` label file to the eval traces it came from.
-
-    Same join, field for field, as the 75M read's ``identity_readout.py --build`` — it returns
-    the payload instead of writing it, so the caller owns the path.
-    """
-    from agents.training.cf_audit import build_frame
-
-    frame, skipped = build_frame(traces)
-    by_key = {(d.battle, d.inv): d for d in frame}
-    frame_mass: Counter = Counter()
-    frame_cells: Counter = Counter()
-    for d in frame:
-        frame_mass[(min(9, int(d.win_prob * 10)), d.outcome)] += 1
-        frame_cells[(min(9, int(d.win_prob * 10)), d.outcome, d.opp_class,
-                     turn_bucket(d.turn))] += 1
-    rows: List[dict] = []
-    with open(labels_path) as fh:
-        for line in fh:
-            if not line.strip():
-                continue
-            r = json.loads(line)
-            base = r["battle"][: -len("_reconstruction.json")]
-            d = by_key[(base, r["decision_idx"])]
-            rows.append({
-                "battle": d.short, "battle_key": d.short, "inv": d.inv, "turn": d.turn,
-                "opponent": d.opponent, "opp_class": d.opp_class, "outcome": d.outcome,
-                "v": d.win_prob, "value": d.value,
-                "wins": int(round(r["label"] * r["n_rollouts"])),
-                "n": int(r["n_rollouts"]), "mc": r["label"],
-                "wilson_lo": r["wilson_lo"], "wilson_hi": r["wilson_hi"],
-            })
-    return {
-        "schema": 1, "source_labels": os.path.abspath(labels_path),
-        "traces": os.path.abspath(traces),
-        "frame_decisions": len(frame), "frame_battles": len({d.battle for d in frame}),
-        "frame_skipped": dict(skipped),
-        "frame_mass": {f"{k[0]}/{k[1]}": v for k, v in sorted(frame_mass.items())},
-        "frame_cells": {"|".join(map(str, k)): v for k, v in sorted(frame_cells.items())},
-        "rows": rows,
-    }
-
-
-def bias_stat(rows: Sequence[dict]) -> Callable[[np.ndarray, np.ndarray], float]:
-    v = np.array([r["v"] for r in rows], dtype=float)
-    mc = np.array([r["mc"] for r in rows], dtype=float)
-
-    def f(idx, w):
-        ww = w[idx]
-        return float(np.average((v - mc)[idx], weights=ww)) if ww.sum() > 0 else float("nan")
-    return f
-
-
-def _wcorr(a: np.ndarray, b: np.ndarray, w: np.ndarray) -> float:
-    if w.sum() <= 0:
-        return float("nan")
-    ma, mb = np.average(a, weights=w), np.average(b, weights=w)
-    va = np.average((a - ma) ** 2, weights=w)
-    vb = np.average((b - mb) ** 2, weights=w)
-    if va <= 0 or vb <= 0:
-        return float("nan")
-    return float(np.average((a - ma) * (b - mb), weights=w) / math.sqrt(va * vb))
-
-
-def turn_contrast_stat(rows: Sequence[dict]) -> Callable[[np.ndarray, np.ndarray], float]:
-    """``corr(turn, V) - corr(turn, MC)`` — the registered clock-tracking contrast.
-
-    Arm A's committed value (+0.3089 [+0.0828, +0.5101], design note
-    ``winprob_critic_ladder_2026-09-08.md`` §L2) is the POOLED, UNWEIGHTED Pearson pair; that is
-    the estimand every ladder arm is compared against, so the registered call passes ``w = 1``.
-    The population-weighted variant is computed beside it and reported as a SEPARATE row, never
-    substituted for the registered one.
-    """
-    t = np.array([r["turn"] for r in rows], dtype=float)
-    v = np.array([r["v"] for r in rows], dtype=float)
-    mc = np.array([r["mc"] for r in rows], dtype=float)
-
-    def f(idx, w):
-        ww = w[idx]
-        return _wcorr(t[idx], v[idx], ww) - _wcorr(t[idx], mc[idx], ww)
-    return f
-
-
-def turn_corr_parts(rows: Sequence[dict], w: np.ndarray) -> Dict[str, float]:
-    t = np.array([r["turn"] for r in rows], dtype=float)
-    v = np.array([r["v"] for r in rows], dtype=float)
-    mc = np.array([r["mc"] for r in rows], dtype=float)
-    return {"corr_turn_v": _wcorr(t, v, w), "corr_turn_mc": _wcorr(t, mc, w)}
-
+# --------------------------------------------------------------------------- Murphy's decomposition
 
 def murphy_arrays(v: np.ndarray, k: np.ndarray, n: np.ndarray, w: np.ndarray,
                   nbins: int = 10) -> Dict[str, float]:
@@ -383,51 +141,6 @@ def murphy_arrays(v: np.ndarray, k: np.ndarray, n: np.ndarray, w: np.ndarray,
             "residual": bs - (rel - res + unc + wbv),
             "skill_score": 1 - bs / unc if unc else nan,
             "resolution_cap_share": res / unc if unc else nan}
-
-
-def _mc_cols(rows: Sequence[dict]) -> "Tuple[np.ndarray, np.ndarray, np.ndarray]":
-    return (np.array([r["v"] for r in rows], dtype=float),
-            np.array([r["wins"] for r in rows], dtype=float),
-            np.array([r["n"] for r in rows], dtype=float))
-
-
-def murphy(rows: Sequence[dict], w: np.ndarray, nbins: int = 10) -> Dict[str, float]:
-    v, k, n = _mc_cols(rows)
-    return murphy_arrays(v, k, n, np.asarray(w, dtype=float), nbins)
-
-
-def murphy_stat(rows: Sequence[dict], term: str,
-                nbins: int = 10) -> Callable[[np.ndarray, np.ndarray], float]:
-    v, k, n = _mc_cols(rows)
-
-    def f(idx, w):
-        return murphy_arrays(v[idx], k[idx], n[idx], w[idx], nbins)[term]
-    return f
-
-
-def reliability_cells(rows: Sequence[dict], w: np.ndarray, nbins: int = 10) -> List[dict]:
-    """Per-bin reliability rows. Wilson is on the UNWEIGHTED rollout counts of the cell — the
-    weights change the estimand, not the number of coin flips behind it."""
-    v = np.array([r["v"] for r in rows], dtype=float)
-    k = np.array([r["wins"] for r in rows], dtype=float)
-    n = np.array([r["n"] for r in rows], dtype=float)
-    b = np.minimum(nbins - 1, (v * nbins).astype(int))
-    cells: List[dict] = []
-    for j in range(nbins):
-        m = b == j
-        if not m.any():
-            continue
-        wn = float((w[m] * n[m]).sum())
-        if wn <= 0:
-            continue
-        vbar = float((w[m] * n[m] * v[m]).sum() / wn)
-        obar = float((w[m] * k[m]).sum() / wn)
-        lo, hi = wilson(int(k[m].sum()), int(n[m].sum()))
-        cells.append({"bin": f"[{j / nbins:.1f},{(j + 1) / nbins:.1f})",
-                      "n_states": int(m.sum()), "n_rollouts": int(n[m].sum()),
-                      "mean_v_pop": vbar, "mc_pop": obar,
-                      "wilson_lo": lo, "wilson_hi": hi, "gap_pop": vbar - obar})
-    return cells
 
 
 # --------------------------------------------------------------------------- gate statistics

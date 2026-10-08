@@ -1,10 +1,19 @@
-# Training — cf grounding (the TRAINING half DELETED; the OFFLINE stack stays)
+# Training — cf grounding (the TRAINING half DELETED 2026-10-02; the OFFLINE stack DELETED 2026-10-08)
+
+> **P6 slice 6d-1 (2026-10-08): the OFFLINE stack below is DELETED too.** Owner decision 2026-10-08 ("LGTM for deleting both
+> cf label and search, they need poke-env"): `cf_producer*` (with `cf_producer_snapshot`), `cf_audit*`, `cf_q_labels.py`, `cf_mc_return.py`,
+> `utils/bridge/counterfactual.py` and `main/ops/critic_read`'s identity half are gone (`designs/ops/deletion_pass_manifest.md` §8.4); this supersedes decision D6, which had kept them.
+> They ran on the poke-env road (`RLPlayer`, `run_local_battles`, the Python encoder) and `cf_audit.build_frame` already REFUSED every
+> Rust-core trace (F-LH-4). **Everything from the "What stays" table down is now the RECORD of what the stack was and measured — no
+> module, command or test named there exists any more** (the prober's counterfactual views are the one live descendant: they play
+> on the Rust core, `utils/rust_env/counterfactual.py`). `MIN_LABELABLE_TURN` — the sampler's lower turn bound — lives on in
+> `agents/training/fork_arm.py` (the declared, OFF fork arm), and `stats.py` kept the shared statistics.
 
 **The counterfactual (cf) TRAINING half was deleted 2026-10-02, deletion pass L4** (owner-approved,
 decision D1 "delete, port none"; config v134, stamp-only — no `ARCH_SIGNATURE` bump). This file used
 to hold its operating detail; the training half is now this one paragraph of history, and what
-remains below is the OFFLINE cf stack, which reads OLD runs' `cf_records/` rings and is kept
-(design decision D6).
+remains below is the record of the OFFLINE cf stack, which read OLD runs' `cf_records/` rings and was kept
+(design decision D6) until P6 slice 6d-1 deleted it (see the banner above).
 
 **What the deleted half was.** The record TAP (a count-capped ring of reconstruction records,
 `cf_records` / `cf_records_keep`, written by every env worker), the LABEL BUFFER (`cf_label_buffer.py`,
@@ -48,7 +57,7 @@ resume / fork (`agents/model/model_version/retired_levers.py`). Flag-by-flag cit
 (the `safe_tag` / `record_key` / `index_records` join helpers) went with the arm and the wrapper's
 decision-time handle capture; the python-core refusal row went with the Python core (U3). The Rust fork port needs no ring ([`forks.md`](forks.md) §14).
 
-**What stays — the OFFLINE cf stack (design decision D6; nothing in training spawns or consumes it):**
+**What stayed until 2026-10-08 — the OFFLINE cf stack (design decision D6; nothing in training spawned or consumed it); ALL DELETED, see the banner:**
 
 | piece | where | described below |
 |---|---|---|
@@ -63,7 +72,7 @@ decision-time handle capture; the python-core refusal row went with the Python c
 
 ---
 
-## `cf_audit` — the counterfactual audit instrument (`cf_audit.py`)
+## `cf_audit` — the counterfactual audit instrument (`cf_audit.py`) — DELETED, history
 
 **Three modules, one instrument.** `cf_audit.py` owns the frame, the sampler, the label
 schema, the bias map and the CLI; two readouts live beside it because they are the parts that
@@ -186,7 +195,7 @@ emits), `stats_test.py` (the estimators themselves — `sd_true_excess`
 validated at ZERO true effect AND at a known nonzero one, the clustered bootstrap and its
 difference-of-means sibling, Wilson, Spearman) and `cf_audit_integration_test.py` (`sim`: a real
 
-## The label PRODUCER DRIVER (`cf_producer.py`) — the loop from an old run's ring to label files
+## The label PRODUCER DRIVER (`cf_producer.py`) — the loop from an old run's ring to label files — DELETED, history
 
 ```bash
 nohup nice -n 10 python -m agents.training.cf_producer \

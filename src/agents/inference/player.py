@@ -361,7 +361,7 @@ class RLPlayer(Gen3Player):
         # from torch's process-wide DEFAULT generator, which every RLPlayer in the process shares
         # — and self-play puts TWO of them in one battle, interleaved by the bridge, while a
         # paired eval puts two ARMS in one process. Same genre as the staller's Protect coin
-        # (`agents/opponents.py`, 4437c85) and it bites harder: this is not a conditional coin,
+        # (`agents/opponents.py`, 4437c85 — deleted with the Python bot roster, P6 slice 6d-1) and it bites harder: this is not a conditional coin,
         # it is EVERY stochastic decision, and `stochastic=True` is the default for the pool
         # opponents and the stable cross-run opponents.
         # DEFAULT IS UNCHANGED: with no seed, `_policy_generator` returns None and the sampling

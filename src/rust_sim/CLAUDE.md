@@ -296,7 +296,7 @@ parses stdout; anything else runs the persistent `{id, cmd}` search loop (`open_
 `expand_many` / `close`).
 
 **It already replaces node in `better_line`** — `search_session.py` has the `impl` switch and
-`search_clone_parity_fuzz_test` takes `--impl rust`. (The trainer-side composition that once ran the
+`search_clone_parity_fuzz_test` took `--impl rust` (deleted in P6 slice 6d-1 with the poke-env materializer it compared against). (The trainer-side composition that once ran the
 search teacher on it was deleted with the search teacher, deletion pass L3.) The node driver (`--impl node`) remains the fallback.
 
 | gate | needs node? | what it proves |
@@ -350,7 +350,7 @@ omits it — **30,326 → 17,330 B/arm**, with the surviving side byte-identical
 rendering the historical body byte-for-byte. Python's elided slot is a sentinel that is falsy but
 RAISES on read, never an empty dict (an empty dict ENCODES). Gates:
 `tests/search_side_elision_test.rs` (the byte diff, both ways, in one process) and
-`src/main/search_dividend/side_elision_test.py` (the sentinel's contract). Measured (on the since-deleted view / protocol roads), interleaved, load-matched, one road per
+`src/utils/bridge/search_session_test.py` (the sentinel's contract; it moved there from `main/search_dividend/side_elision_test.py`, P6 slice 6d-1). Measured (on the since-deleted view / protocol roads), interleaved, load-matched, one road per
 process: **1.10x / 1.11x at wide B**, not resolved at B = 1. 🚨 **Two candidates that LOOKED certain were rejected on measurement**: a
 compact fixed-order payload (0.024 ms/arm of parse, all of it given back re-keying for the
 existing adapter) and holding Python's cyclic collector off for the reply parse (**2.3x on a

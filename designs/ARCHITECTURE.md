@@ -1138,8 +1138,8 @@ effective policy learning rate by the fork rate. The carrier is the `fork_pg_m` 
 only when the flag is on. **The shared PREFIX is counted ONCE** — a branch's rows begin AT the fork
 step; the fork STATE appears once per branch with a DIFFERENT action, which is the exploring start.
 🚨 **`--fork-crn dice_and_draws` (the default) pairs the sim dice AND both sides' policy sampling
-streams**, so branches differ in exactly the action at the fork; `dice` alone is the `cf_q_labels`
-regime and is kept as the control. ⚠️ A branch is played against the parent's REAL policy opponent
+streams**, so branches differ in exactly the action at the fork; `dice` alone is the regime the (deleted,
+P6 slice 6d-1) offline label factory `cf_q_labels` used, and is kept as the control. ⚠️ A branch is played against the parent's REAL policy opponent
 where that slot still serves the parent's model, else against a SELF-LIKE one (a bot parent, an
 external route, a reloaded slot) — labelled on the row (`opp_class = POOL`) and priced by
 `fork/opp_substituted` / `fork/branch_share` / `fork/bot_share`. 🚨 **Cost is

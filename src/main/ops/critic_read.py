@@ -11,15 +11,10 @@ comparable by construction.
 
 **What it composes** — it invents no statistic:
 
-1. **IDENTITY** — ``agents.training.cf_audit`` on the arm's last COMPLETE eval cycle with NO
-   ``--checkpoint`` (ledger ``1a1ad063``: the anchor and the label rollouts both use the trace
-   dir's own ``snapshot.zip``), then the 75M read's readout, promoted into
-   :mod:`main.ops.critic_readouts`: reproduction rate, bias ``V - p_hat`` overall / by turn
-   bucket / by stratum, Murphy with the base-rate cap, and the ``corr(turn,V) - corr(turn,MC)``
-   clock-tracking contrast.
-2. **RESOLUTION** — ``python -m main.critic_gate`` for the registered G1-G4 rows against the
-   committed calibration baseline.
-3. **CONDITIONING** (added 2026-09-09) — :mod:`main.ops.conditioning_meters`, promoted from the
+1. **RESOLUTION** — ``python -m main.critic_gate`` for the registered G1-G4 rows against the
+   committed calibration baseline, plus the per-stratum calibration metrics of the chosen cycle
+   (the scaffolding gauge's own capture-rate-weighted arrays, with their raw bootstrap draws).
+2. **CONDITIONING** (added 2026-09-09) — :mod:`main.ops.conditioning_meters`, promoted from the
    mixture diagnostic and the probe read: the between-opponent SPREAD IDENTITY of ``V`` against
    the outcome (target 1.0), the bias-on-opponent-Elo slope, the own-team leave-one-battle-out
    win-rate R² of ``V`` and the opponent-class AUC of ``V``. Computed on the RECORDED ``V`` of
@@ -32,9 +27,9 @@ comparable by construction.
    ``cond.spread_ratio_optimal.*`` family prints the ratio the best RECALIBRATION of each side's
    own ``V`` would reach, so a reader sees position relative to ATTAINABLE and not only relative
    to the control.
-4. **THE DELTA** — every quantity recomputed as ARM - CONTROL with a battle-clustered
+3. **THE DELTA** — every quantity recomputed as ARM - CONTROL with a battle-clustered
    **difference of independent bootstraps**, labelled DETECTED / WITHIN FLOOR / NOT DETECTED.
-5. **QUOTA MATCHING** (added 2026-09-09, ON by default) — :mod:`main.ops.quota_match`. The ladder's
+4. **QUOTA MATCHING** (added 2026-09-09, ON by default) — :mod:`main.ops.quota_match`. The ladder's
    arms are traced at different outcome quotas, and a conditioning row whose estimator is a FIT on
    the frame (or an uncorrected second moment) has an expectation that moves with the frame's
    SIZE — which Horvitz-Thompson reweighting does not touch. Those rows are recomputed on the
@@ -45,10 +40,25 @@ comparable by construction.
    label: the 2026-09-09 RETRACTION withdrew a DETECTED that was entirely this artefact, and the
    tool does not print that label again on an unequal frame.
 
+**The IDENTITY half is GONE (P6 slice 6d-1, owner decision 2026-10-08, "LGTM for deleting both cf
+label and search, they need poke-env").** It ran ``agents.training.cf_audit`` on the arm's last
+complete cycle (Monte-Carlo continuation labels, an anchor reproduction gate) and read ``V - p_hat``,
+Murphy at the rollout level and the clock-tracking contrast from them. ``cf_audit`` already REFUSED every
+Rust-core trace (F-LH-4: a core trace records no win-prob head), so the half was dead for every current
+run — and with it the whole command, which began there. What is left is the part that reads the RECORDED
+``V`` of the cycle and needs no model and no rollout.
+
+🚨 **Removing the identity half did NOT make this command work on a Rust-core cycle.** The two halves that
+remain need the recorded win-prob head too: ``scaffolding_gauge.collect_slices`` (the gate block) and
+``conditioning_meters`` (the conditioning block) each REFUSE a core trace for the same reason, F-LH-4
+(``CoreTraceUnsupported``, a typed refusal, not an empty read). The command therefore still refuses on every
+current run — one step later than before — until the win-prob head is recorded at eval. A Python-era cycle
+reads.
+
 **REFUSALS OVER SILENCE.** A missing manifest, a cycle that has not collected, a trace dir whose
 npz carries no ``win_probs`` (the privileged arm's channel must be present AT EVAL — that is what
-this check is for), an anchor reproduction rate under the label-trust gate, or a draw/timeout
-share over the cap each print a REFUSAL naming the cause and exit 2. A partial table is never
+this check is for), or a draw/timeout share over the cap each print a REFUSAL naming the cause
+and exit 2. A partial table is never
 emitted as if it were complete.
 
 **THE FLOOR.** DETECTED requires the delta's CI to clear the replicate floor, and the ladder's
@@ -80,9 +90,8 @@ from main.ops.run_ref import interpreter, refuse, resolve_run_dir
 
 # The report's own constants live with the report; re-exported here so `main.ops.critic_read`
 # stays the one name a caller has to know.
-from main.ops.critic_read_render import (HEADLINES, IDENTITY_STRATA,  # noqa: E402
-                                         TOOL, TOOL_VERSION, WEIGHTING_NOTE, WEIGHTINGS,
-                                         ledger_line, render_md)
+from main.ops.critic_read_render import (HEADLINES, TOOL,  # noqa: E402
+                                         TOOL_VERSION, ledger_line, render_md)
 
 
 # --------------------------------------------------------------------------- read roots
@@ -96,16 +105,15 @@ def resolve_read_root(run_dir: Path, override: Optional[str], *, role: str) -> P
     An override may be spelled either way, because both are natural: the SHADOW RUN DIR that
     ``main.ops.eval_trace_gen --out`` produced, or the ``eval_traces/step_<N>`` cycle inside it.
     Both normalise to the run-shaped root, because that is what every consumer downstream wants:
-    ``cf_audit`` takes a run dir positionally and has no ``--traces`` flag, and the generated dir
-    is laid out to satisfy it (its own ``model_config.json``, ``metadata.json``, a read-only
+    the offline readers take a run dir and have no ``--traces`` flag, and the generated dir is
+    laid out to satisfy them (its own ``model_config.json``, ``metadata.json``, a read-only
     ``snapshots/`` symlink, and the cycle's own ``snapshot.zip``).
 
     🚨 The override does NOT redirect ``main.critic_gate``. That reads the run's LADDER,
     ``eval_results.jsonl`` and TensorBoard — run-level history that an offline cycle neither has
     nor could have — so the registered G1-G4 rows keep coming from the real run and the report
-    says so. Everything that is a function of the CYCLE (cf_audit's identity labels, the capture
-    weights, the gauge's calibration arrays, the conditioning meters, the quota match) follows
-    the override.
+    says so. Everything that is a function of the CYCLE (the capture weights, the gauge's
+    calibration arrays, the conditioning meters, the quota match) follows the override.
     """
     if not override:
         return run_dir
@@ -352,12 +360,12 @@ def _tail(path: str, n: int = 25) -> str:
 
 # --------------------------------------------------------------------------- per-run read
 
-#: the IDENTITY + GATE readout's cache-key version. 🚨 DELIBERATELY DECOUPLED from
-#: ``TOOL_VERSION``: the identity half costs a ~25-minute ``cf_audit`` run, and folding the
-#: REPORT's version into its key throws every readout on disk away whenever a new SECTION is
-#: added — which is not a change to any number this key covers. Bump this one only when something
-#: that changes the identity or gate NUMBERS changes.
-READOUT_FINGERPRINT_VERSION = 1
+#: the GATE readout's cache-key version. 🚨 DELIBERATELY DECOUPLED from ``TOOL_VERSION``:
+#: folding the REPORT's version into its key throws every readout on disk away whenever a new
+#: SECTION is added — which is not a change to any number this key covers. Bump this one only
+#: when something that changes the gate NUMBERS (or the key's own shape) changes. 2 = the
+#: identity half (the ``cf_audit`` parameters) left the key (P6 slice 6d-1).
+READOUT_FINGERPRINT_VERSION = 2
 
 
 def _fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
@@ -368,9 +376,7 @@ def _fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
             # under a 100-game readout, with nothing in the output saying so.
             "read_root": str(cycle.get("read_root") or cycle["run_dir"]),
             "step": cycle["step"],
-            "states": args.states, "anchors": args.anchors, "rollouts": args.rollouts,
-            "impl": args.impl, "seed": args.seed,
-            "anchor_tolerance": args.anchor_tolerance, "bins": args.bins,
+            "seed": args.seed, "bins": args.bins,
             "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
             "tool_version": READOUT_FINGERPRINT_VERSION}
 
@@ -378,9 +384,9 @@ def _fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
 def _cond_fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
     """The CONDITIONING block's own cache key.
 
-    Deliberately SEPARATE from :func:`_fingerprint`. The identity half costs a `cf_audit` run
-    (~25 min); folding a new parameter into its key would invalidate every readout already on
-    disk and re-pay that for a statistic that costs seconds. Two keys, two caches.
+    Deliberately SEPARATE from :func:`_fingerprint`. The gate half runs a ``main.critic_gate``
+    subprocess; folding a new conditioning parameter into its key would invalidate every readout
+    already on disk and re-pay that for a statistic that costs seconds. Two keys, two caches.
     """
     return {"run_dir": str(cycle["run_dir"]),
             "read_root": str(cycle.get("read_root") or cycle["run_dir"]),
@@ -389,73 +395,6 @@ def _cond_fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
             "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
             "v_column": CM.v_column_of(args),
             "meters": list(CM.METER_KEYS), "block_version": 3}
-
-
-def identity_block(rows: List[dict], payload: dict, cap, *, boot: int,
-                   seed: int, bins: int) -> Dict[str, Any]:
-    """Every identity statistic, under all three weightings, with its raw bootstrap draws."""
-    import numpy as np
-
-    def weights(sub: Sequence[dict]) -> Dict[str, Any]:
-        w_pop, cover = R.pop_weights(sub, payload["frame_cells"])
-        w_ipw, ipw_cover = R.apply_capture(sub, w_pop, cap)
-        return {"raw": (np.ones(len(sub)), 1.0), "pop": (w_pop, cover),
-                "ipw": (w_ipw, ipw_cover)}
-
-    out: Dict[str, Any] = {"strata": {}, "n_labels": len(rows),
-                           "n_battles": len({r["battle_key"] for r in rows}),
-                           "n_rollouts": int(sum(r["n"] for r in rows))}
-    for name in IDENTITY_STRATA:
-        if name == "ALL":
-            sub = list(rows)
-        elif name in R.TURN_BUCKETS:
-            sub = [r for r in rows if R.turn_bucket(r["turn"]) == name]
-        else:
-            sub = [r for r in rows if (r["opp_class"] == "bot" if name == "bot"
-                                       else r["opp_class"] != "bot")]
-        if not sub:
-            out["strata"][name] = {"n": 0}
-            continue
-        wt = weights(sub)
-        entry: Dict[str, Any] = {"n": len(sub),
-                                 "n_battles": len({r["battle_key"] for r in sub}),
-                                 "mean_v": float(np.mean([r["v"] for r in sub])),
-                                 "mean_mc": float(np.mean([r["mc"] for r in sub])),
-                                 "coverage": {k: v[1] for k, v in wt.items()},
-                                 "bias": {}}
-        f = R.bias_stat(sub)
-        for wname in WEIGHTINGS:
-            w, _ = wt[wname]
-            pt, draws = R.boot_draws(sub, f, w=w, draws=boot, seed=seed)
-            entry["bias"][wname] = {"point": pt, "ci": R.ci_of(pt, draws),
-                                    "n_draws": int(draws.size)}
-            entry.setdefault("_draws", {})[f"bias.{wname}"] = draws
-        out["strata"][name] = entry
-
-    wt_all = weights(rows)
-    out["murphy"] = {}
-    for wname in WEIGHTINGS:
-        w, _ = wt_all[wname]
-        out["murphy"][wname] = R.murphy(rows, w, bins)
-    for term in ("resolution", "skill_score", "resolution_cap_share", "reliability"):
-        st = R.murphy_stat(rows, term, bins)
-        for wname in WEIGHTINGS:
-            w, _ = wt_all[wname]
-            pt, draws = R.boot_draws(rows, st, w=w, draws=boot, seed=seed + 11)
-            out["murphy"].setdefault("ci", {})[f"{term}.{wname}"] = {
-                "point": pt, "ci": R.ci_of(pt, draws)}
-            out.setdefault("_draws", {})[f"murphy.{term}.{wname}"] = draws
-
-    tc = R.turn_contrast_stat(rows)
-    out["turn"] = {}
-    for wname in WEIGHTINGS:
-        w, _ = wt_all[wname]
-        pt, draws = R.boot_draws(rows, tc, w=w, draws=boot, seed=seed + 22)
-        out["turn"][wname] = dict(R.turn_corr_parts(rows, w),
-                                  contrast=pt, ci=R.ci_of(pt, draws))
-        out.setdefault("_draws", {})[f"turn_contrast.{wname}"] = draws
-    out["reliability_cells"] = R.reliability_cells(rows, wt_all["ipw"][0], bins)
-    return out
 
 
 def gate_block(run_dir: Path, step: int, *, boot: int, bins: int, seed: int,
@@ -485,19 +424,6 @@ def gate_block(run_dir: Path, step: int, *, boot: int, bins: int, seed: int,
     return out
 
 
-def _serialisable(identity: Dict[str, Any]) -> Dict[str, Any]:
-    """The identity block minus every raw bootstrap draw — what goes into the cached JSON.
-
-    The draws are recomputed in seconds from the cached label join; carrying tens of thousands of
-    floats through a cache file would make it unreadable and would fix a bootstrap SEED into an
-    artifact that outlives the run that produced it.
-    """
-    out = {k: v for k, v in identity.items() if k != "_draws"}
-    out["strata"] = {name: {k: v for k, v in entry.items() if k != "_draws"}
-                     for name, entry in identity["strata"].items()}
-    return out
-
-
 def cache_hit(dirs: Sequence[Path], fp: Dict[str, Any]) -> Optional[Path]:
     """The ARTIFACT directory of a previous readout with an identical fingerprint, or ``None``.
 
@@ -517,7 +443,7 @@ def cache_hit(dirs: Sequence[Path], fp: Dict[str, Any]) -> Optional[Path]:
             continue
         if prior.get("fingerprint") == fp:
             art = Path(prior.get("artifact_dir") or d)
-            if (art / "identity" / "bias_map.json").exists():
+            if (art / "run_readout.json").exists():
                 return art
     return None
 
@@ -549,9 +475,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
         say(f"REUSING {run_dir.name}'s readout at step_{cycle['step']} from {work} "
             "(same run, same cycle, same parameters)")
 
-    identity_dir = work / "identity"
     gate_dir = work / "gate"
-    payload_path = work / "identity_payload.json"
 
     # ---- refusal gates that are cheap and must run on EVERY invocation, cache or not
     cov = winprob_coverage(cycle["trace_dir"])
@@ -573,67 +497,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
                "  A TIMEOUT IS NEVER A SEMANTIC OUTCOME. Above the cap this cycle is "
                "INCONCLUSIVE, not a measurement.")
 
-    # ---- (1) identity: cf_audit + the readout
-    if not reused:
-        argv = [interpreter(), "-m", "agents.training.cf_audit", str(source),
-                "--step", str(cycle["step"]), "--impl", args.impl,
-                "--rollouts", str(args.rollouts), "--states", str(args.states),
-                "--anchors", str(args.anchors), "--seed", str(args.seed),
-                "--anchor-tolerance", str(args.anchor_tolerance),
-                "--out", str(identity_dir)]
-        if args.deadline_min:
-            argv += ["--deadline-min", str(args.deadline_min)]
-        commands.append(" ".join(argv))
-        say(f"cf_audit on {source.name} step_{cycle['step']} "
-            f"({args.states} states / {args.anchors} anchors) -> {identity_dir}")
-        log = str(identity_dir / "cf_audit.log")
-        rc = _run(argv, log, nice=args.nice)
-        if rc != 0:
-            refuse(f"REFUSING: cf_audit exited {rc} on {run_dir.name} step_{cycle['step']}.",
-                   f"  log: {log}", *[f"  | {ln}" for ln in _tail(log).splitlines()[-12:]])
-
-    bias_map_path = identity_dir / "bias_map.json"
-    if not bias_map_path.exists():
-        refuse(f"REFUSING: cf_audit wrote no bias_map.json under {identity_dir}.")
-    bias_map = json.loads(bias_map_path.read_text())
-    # cf_audit files the anchor arm under `accounting`; a flat file (an older producer) is read
-    # too, because falling back to 0.0 would turn a schema change into a fabricated REFUSAL.
-    acct = bias_map.get("accounting") if isinstance(bias_map.get("accounting"), dict) else bias_map
-    if "anchor_rate" not in acct:
-        refuse(f"REFUSING: {bias_map_path} records no `anchor_rate` — the label-trust arm cannot "
-               "be read, so no bias may be reported from these labels.")
-    anchor_rate = float(acct.get("anchor_rate", 0.0))
-    if anchor_rate < args.anchor_tolerance:
-        refuse(f"REFUSING: label trust — {acct.get('anchors_reproduced')}/"
-               f"{acct.get('anchors_issued')} anchors reproduced the recorded outcome "
-               f"({anchor_rate * 100:.1f}% < {args.anchor_tolerance * 100:.0f}%) on "
-               f"{run_dir.name} step_{cycle['step']}.",
-               "  Below the gate the MC labels do not describe the recorded battles, so no bias "
-               "number may be reported from them.")
-
-    if payload_path.exists() and reused:
-        payload = json.loads(payload_path.read_text())
-    else:
-        labels = sorted(glob.glob(str(identity_dir / "cf_labels" / "labels_*.jsonl")))
-        pinned = [p for p in labels if p.endswith(f"_{cycle['step']}.jsonl")]
-        if not (pinned or labels):
-            refuse(f"REFUSING: no cf_audit label file under {identity_dir / 'cf_labels'}.")
-        payload = R.build_identity_payload((pinned or labels)[-1], cycle["trace_dir"])
-        payload_path.write_text(json.dumps(payload, indent=1))
-    rows = payload["rows"]
-    if not rows:
-        refuse(f"REFUSING: the cf_audit label join produced 0 rows for {run_dir.name}.")
-
-    cap = R.capture_weights(str(source), cycle["step"])
-    identity = identity_block(rows, payload, cap, boot=args.boot, seed=args.seed, bins=args.bins)
-    identity["anchor"] = {"issued": acct.get("anchors_issued"),
-                          "reproduced": acct.get("anchors_reproduced"),
-                          "errors": acct.get("anchor_errors"),
-                          "rate": anchor_rate, "tolerance": args.anchor_tolerance,
-                          "note": R.anchor_note()}
-    identity["capture_weights_available"] = cap is not None
-
-    # ---- (2) main.critic_gate, for the registered G1-G4 rows
+    # ---- (1) main.critic_gate, for the registered G1-G4 rows
     gate_json = gate_dir / "critic_gate.json"
     if not reused or not gate_json.exists():
         gate_dir.mkdir(parents=True, exist_ok=True)
@@ -681,8 +545,8 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
     gate["baseline_artifact"] = gate_doc.get("calibration", {}).get("artifact")
     gate["critic_gate_refusal"] = gate_refusal
 
-    # ---- (3) CONDITIONING, on the RECORDED V of this cycle. Its own cache file, so a new meter
-    # never invalidates the cf_audit half.
+    # ---- (2) CONDITIONING, on the RECORDED V of this cycle. Its own cache file, so a new meter
+    # never invalidates the gate half.
     cond: Optional[Dict[str, Any]] = None
     cond_refusal: Optional[str] = None
     if not args.no_conditioning:
@@ -763,25 +627,18 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
            "step": cycle["step"], "trace_dir": cycle["trace_dir"],
            "cycle": {k: v for k, v in cycle.items() if k != "manifest"},
            "npz_coverage": cov, "draw_share": ds,
-           "identity": _serialisable(identity),
            "gate": {k: v for k, v in gate.items() if k != "_draws"},
            "conditioning": (None if cond is None else
                             {k: v for k, v in cond.items() if not k.startswith("_")}),
            "commands": commands, "reused": reused,
-           "paths": {"identity": str(identity_dir), "gate": str(gate_dir),
-                     "identity_payload": str(payload_path)}}
+           "paths": {"gate": str(gate_dir)}}
     (work / "run_readout.json").write_text(json.dumps(doc, indent=1, default=float))
     if work != cache_dir:
         cache_dir.mkdir(parents=True, exist_ok=True)
         (cache_dir / "run_readout.json").write_text(json.dumps(doc, indent=1, default=float))
-    doc["_identity_draws"] = identity.get("_draws", {})
-    for name, entry in identity["strata"].items():
-        for k, v in (entry.get("_draws") or {}).items():
-            doc["_identity_draws"][f"{name}|{k}"] = v
     doc["_gate_draws"] = gate["_draws"]
     doc["_cond_draws"] = (cond or {}).get("_draws", {})
     doc["_calib"] = (cond or {}).get("_calib")
-    doc["_identity_points"] = identity
     doc["_gate_points"] = gate
     return doc
 
@@ -935,33 +792,6 @@ def compute_deltas(arm: Dict[str, Any], ctl: Dict[str, Any],
                 ctl["_gate_points"]["strata"][stratum][metric]["point"],
                 ctl["_gate_draws"][k], registered=(metric in ("resolution", "skill")))
 
-    for stratum in IDENTITY_STRATA:
-        a_s = arm["_identity_points"]["strata"].get(stratum, {})
-        c_s = ctl["_identity_points"]["strata"].get(stratum, {})
-        if not a_s.get("n") or not c_s.get("n"):
-            continue
-        for wname in WEIGHTINGS:
-            ak, ck = f"{stratum}|bias.{wname}", f"{stratum}|bias.{wname}"
-            if ak not in arm["_identity_draws"] or ck not in ctl["_identity_draws"]:
-                continue
-            add(f"identity.bias.{stratum}" + ("" if wname == "ipw" else f".{wname}"),
-                "identity", "bias V - p_hat", stratum, wname,
-                a_s["bias"][wname]["point"], arm["_identity_draws"][ak],
-                c_s["bias"][wname]["point"], ctl["_identity_draws"][ck],
-                registered=(wname == "ipw"))
-
-    for term in ("resolution", "skill_score", "resolution_cap_share", "reliability"):
-        for wname in WEIGHTINGS:
-            k = f"murphy.{term}.{wname}"
-            if k not in arm["_identity_draws"] or k not in ctl["_identity_draws"]:
-                continue
-            add(f"identity.{term}" + ("" if wname == "ipw" else f".{wname}"),
-                "identity", f"Murphy {term}", "ALL", wname,
-                arm["_identity_points"]["murphy"]["ci"][f"{term}.{wname}"]["point"],
-                arm["_identity_draws"][k],
-                ctl["_identity_points"]["murphy"]["ci"][f"{term}.{wname}"]["point"],
-                ctl["_identity_draws"][k], registered=(wname == "ipw"))
-
     a_cond = (arm.get("conditioning") or {}).get("points") or {}
     c_cond = (ctl.get("conditioning") or {}).get("points") or {}
     qm_plan = (qm or {}).get("plan") or {}
@@ -1070,15 +900,6 @@ def compute_deltas(arm: Dict[str, Any], ctl: Dict[str, Any],
             v["floor"] = None
             v["clears_floor"] = False
 
-    for wname in WEIGHTINGS:
-        k = f"turn_contrast.{wname}"
-        if k not in arm["_identity_draws"] or k not in ctl["_identity_draws"]:
-            continue
-        add("identity.turn_contrast" + ("" if wname == "raw" else f".{wname}"),
-            "identity", "corr(turn,V) - corr(turn,MC)", "ALL", wname,
-            arm["_identity_points"]["turn"][wname]["contrast"], arm["_identity_draws"][k],
-            ctl["_identity_points"]["turn"][wname]["contrast"], ctl["_identity_draws"][k],
-            registered=(wname == "raw"))
     return rows
 
 
@@ -1108,14 +929,15 @@ def load_floors(path: Optional[str]) -> Dict[str, Any]:
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog=f"python -m main.ops.{TOOL}",
-        description="The critic ladder's registered read as ONE command: identity (cf_audit) + "
-                    "G1-G4 (main.critic_gate) + the clock-tracking contrast, every quantity as "
-                    "ARM - CONTROL with the delta's CI and the registered label.",
+        description="The critic ladder's registered read as ONE command: G1-G4 "
+                    "(main.critic_gate) + the gate's per-stratum calibration metrics + the "
+                    "CONDITIONING meters, every quantity as ARM - CONTROL with the delta's CI and "
+                    "the registered label. (The IDENTITY half, cf_audit, was deleted in P6 "
+                    "slice 6d-1, 2026-10-08.)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Refusals over silence: a missing manifest, a cycle that has not collected, npz "
-               "without `win_probs`, an anchor rate under the label-trust gate, or a "
-               "draw/timeout share over the cap exits 2 with the cause named. Nothing is ever "
-               "written under models/.")
+               "without `win_probs`, or a draw/timeout share over the cap exits 2 with the "
+               "cause named. Nothing is ever written under models/.")
     ap.add_argument("arm", help="the ladder arm — a run NAME under models/ or a run DIRECTORY")
     ap.add_argument("--control", required=True,
                     help="the control arm every delta is taken against "
@@ -1155,19 +977,6 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--famine-comparator", default="off",
                     help="passed through to main.critic_gate (default `off`: the famine "
                          "pre-test is a STRENGTH read and the ladder does not read strength)")
-    ap.add_argument("--states", type=int, default=800, help="cf_audit --states (default 800, "
-                                                            "the 75M read's)")
-    ap.add_argument("--anchors", type=int, default=150, help="cf_audit --anchors (default 150)")
-    ap.add_argument("--rollouts", type=int, default=8, help="cf_audit --rollouts (default 8)")
-    ap.add_argument("--impl", choices=("rust", "node"), default="rust",
-                    help="cf_audit offline driver (default rust)")
-    ap.add_argument("--anchor-tolerance", type=float, default=0.90,
-                    help="label-trust gate: below this anchor reproduction rate the read "
-                         "REFUSES rather than report a bias (default 0.90)")
-    ap.add_argument("--deadline-min", type=float, default=0,
-                    help="cf_audit --deadline-min (0 = no bound)")
-    ap.add_argument("--boot", type=int, default=R.N_BOOT,
-                    help=f"identity cluster-bootstrap draws over BATTLES (default {R.N_BOOT})")
     ap.add_argument("--gate-boot", type=int, default=400,
                     help="gate cluster-bootstrap draws (default 400, main.critic_gate's own)")
     ap.add_argument("--bins", type=int, default=10, help="reliability bins (default 10)")
@@ -1302,7 +1111,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     # report header — the tdaux read silently took the previous cycle because the launcher
     # process was still alive, and nothing in the output said so until the artifacts were read.
     # 🚨 THE POPULATION CHECK RUNS BEFORE ANYTHING EXPENSIVE. A cross-population pair is refused
-    # here, not after a ~25-minute cf_audit has already been paid for on each side.
+    # here, not after a main.critic_gate subprocess has already been paid for on each side.
     picked = {}
     for role, d, root, st in (("arm", arm_dir, arm_root, args.step),
                               ("control", ctl_dir, ctl_root, ctl_step)):
@@ -1329,8 +1138,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "invocation": " ".join([f"python -m main.ops.{TOOL}"] + list(argv or sys.argv[1:])),
         "out": str(out), "floor": floor,
         "params": {k: getattr(args, k) for k in
-                   ("states", "anchors", "rollouts", "impl", "anchor_tolerance", "boot",
-                    "gate_boot", "bins", "seed", "on_live", "max_draw_share",
+                   ("gate_boot", "bins", "seed", "on_live", "max_draw_share",
                     "allow_missing_winprob", "parent", "famine_comparator", "baseline_arm",
                     "step", "control_step", "cond_boot", "cond_ladder", "no_conditioning",
                     "no_quota_match", "quota_match_seeds", "quota_match_boot",
@@ -1343,8 +1151,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "control": {k: v for k, v in ctl.items() if not k.startswith("_")},
         "deltas": deltas,
         "headlines": list(HEADLINES),
-        "notes": {"weightings": WEIGHTING_NOTE, "anchor": R.anchor_note(),
-                  "no_floor": R.NO_FLOOR_NOTE},
+        "notes": {"no_floor": R.NO_FLOOR_NOTE},
     }
     doc["ledger_line"] = ledger_line(doc)
     (out / "critic_read.json").write_text(json.dumps(doc, indent=1, default=float))

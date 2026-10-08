@@ -212,7 +212,7 @@ choices at interior plies, `branchable` for ours).
 | **the elided slot, in Python** | `search_session.ElidedSide` — falsy, so the existing `payload or {}` guards take their COUNTED fallback, but RAISING on every way of reading a value out. An empty dict would have ENCODED: into a well-formed observation of a battle nobody played |
 | **under `impl="node"`** | nothing is elided. `search_driver.js` ignores the key and returns both sides, and the sentinel keys on the field being ABSENT, never on the request |
 | **wall gate** | `tests/search_side_elision_test.rs` — the same arm from the same root in the same process, with and without `side`, asserting the surviving payload is **byte-identical**, the other is gone, a `side`-less arm keeps the historical field order, and an unknown side is refused without killing the session |
-| **decision gate** | `src/main/search_dividend/side_elision_parity_integration_test.py` — the real `SearchEngine` over one seeded decision, elision on vs off, comparing every successor's obs BYTES in order, the scores, the chosen action, the widths **and both fallback counters** (an elided payload read as empty would quietly move arms to the protocol road and still score plausibly) |
+| **decision gate** | `src/main/search_dividend/side_elision_parity_integration_test.py` (deleted with the battery, P6 slice 6d-1; the sentinel's contract now lives in `utils/bridge/search_session_test.py`) — the real `SearchEngine` over one seeded decision, elision on vs off, comparing every successor's obs BYTES in order, the scores, the chosen action, the widths **and both fallback counters** (an elided payload read as empty would quietly move arms to the protocol road and still score plausibly) |
 
 🚨 **The driver can also report its OWN per-phase wall** — `POKESIM_SEARCH_TIMING=1` adds a
 `timing_us` object (`sim` / `view` / `chunks` / `render` / `total`, micros summed over the batch)
@@ -226,7 +226,7 @@ class this file polices elsewhere (corrected 2026-09-07, verified against the co
 
 - `utils/bridge/search_session.py` **has** the impl switch — `SearchSession(..., impl="node")`
   selects the child through `search_driver_spawn_argv(impl)`, and `"rust"` spawns this binary.
-- `search_clone_parity_fuzz_test` **takes** `--impl rust`, documented in its own header, plus an
+- `search_clone_parity_fuzz_test` **took** `--impl rust`, documented in its own header (deleted in P6 slice 6d-1), plus an
   independent `--record-impl` so a record made by one engine is replayed on the other.
 - The search-teacher `input_log` blocker was **gone, and its stated reason was FALSE** — nothing reads
   the record's committed-choice lines; the only readers (`replay_kernels.js::writeStart`,

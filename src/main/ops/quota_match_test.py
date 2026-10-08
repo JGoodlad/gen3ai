@@ -202,9 +202,8 @@ def _delta_rows(arm_block, ctl_block, qm) -> Dict[str, dict]:
     """``compute_deltas``' conditioning rows, from two conditioning blocks."""
     def side(blk):
         return {"conditioning": {"points": blk["points"]}, "_cond_draws": blk["_draws"],
-                "_gate_draws": {}, "_identity_draws": {},
-                "_gate_points": {"strata": {}},
-                "_identity_points": {"strata": {}, "murphy": {"ci": {}}, "turn": {}}}
+                "_gate_draws": {},
+                "_gate_points": {"strata": {}}}
     rows = CR.compute_deltas(side(arm_block), side(ctl_block), None, seed=0, qm=qm)
     return {r["key"]: r for r in rows}
 
@@ -462,13 +461,11 @@ def test_the_report_renders_the_profiles_and_the_matched_detail(artefact) -> Non
     qm = _qm(artefact)
     rows = CR.compute_deltas(
         {"conditioning": {"points": artefact["rich"]["points"]},
-         "_cond_draws": artefact["rich"]["_draws"], "_gate_draws": {}, "_identity_draws": {},
-         "_gate_points": {"strata": {}},
-         "_identity_points": {"strata": {}, "murphy": {"ci": {}}, "turn": {}}},
+         "_cond_draws": artefact["rich"]["_draws"], "_gate_draws": {},
+         "_gate_points": {"strata": {}}},
         {"conditioning": {"points": artefact["poor"]["points"]},
-         "_cond_draws": artefact["poor"]["_draws"], "_gate_draws": {}, "_identity_draws": {},
-         "_gate_points": {"strata": {}},
-         "_identity_points": {"strata": {}, "murphy": {"ci": {}}, "turn": {}}},
+         "_cond_draws": artefact["poor"]["_draws"], "_gate_draws": {},
+         "_gate_points": {"strata": {}}},
         None, seed=0, qm=qm)
     doc = {"deltas": rows, "quota_match": QM.serialisable(qm)}
     head = RENDER._profiles_block(doc)
@@ -533,13 +530,11 @@ def test_a_floor_is_applied_to_the_MATCHED_delta_not_the_as_traced_one(artefact,
 
     with_floor = CR.compute_deltas(
         {"conditioning": {"points": artefact["rich"]["points"]},
-         "_cond_draws": artefact["rich"]["_draws"], "_gate_draws": {}, "_identity_draws": {},
-         "_gate_points": {"strata": {}},
-         "_identity_points": {"strata": {}, "murphy": {"ci": {}}, "turn": {}}},
+         "_cond_draws": artefact["rich"]["_draws"], "_gate_draws": {},
+         "_gate_points": {"strata": {}}},
         {"conditioning": {"points": artefact["poor"]["points"]},
-         "_cond_draws": artefact["poor"]["_draws"], "_gate_draws": {}, "_identity_draws": {},
-         "_gate_points": {"strata": {}},
-         "_identity_points": {"strata": {}, "murphy": {"ci": {}}, "turn": {}}},
+         "_cond_draws": artefact["poor"]["_draws"], "_gate_draws": {},
+         "_gate_points": {"strata": {}}},
         floors, seed=0, qm=qm)
     row = {r["key"]: r for r in with_floor}[key]
     assert row["floor"] == pytest.approx(floor)

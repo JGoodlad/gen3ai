@@ -53,7 +53,7 @@ masks are structural; the input is detached under `--opp-intent-grad-mode detach
 * **Rendering / readers**: `render_flat` names the options. The two readers read the flat pointer
   (`last_flat_intent_logits` / `last_flat_intent`): the inference player's `_opp_intent` trace block
   (`agents/inference/player.py`; α = the named seats + `"OTHER move"` + `"SWITCH"`, β = P(slot | switch))
-  and `search_dividend.alpha.alpha_publication` (seats → `move_p`, α_SWITCH, β per live slot; OTHER_move's
+  and `search_dividend.alpha.alpha_publication` (deleted with `main.search_dividend`, P6 slice 6d-1; seats → `move_p`, α_SWITCH, β per live slot; OTHER_move's
   mass REPORTED as `other_move_mass` in the diagnostics, never spent on a named move). Both return None only
   when the flat pointer is not built (the belief-off ablation) and RAISE when it is built but stashed nothing.
 

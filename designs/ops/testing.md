@@ -349,7 +349,7 @@ session teardown ~5-10 s, so the gate is test bodies. An attribution run over th
 put **45 %** of their time in waits on CHILD processes (rust binaries, node bridges, python
 eval/replay children), 6 % in production-size policy construction and 4 % in fixed sleeps; the
 heavy hitters are the M5 parity gates (`rust_eval/parity*`,
-`rust_core_parity` — deleted in P6 slice 6c, `core_corpus_test` replaces it —, `bots_gate`), the `cf_producer`/`cf_audit` integration paths, the anchors smoke,
+`rust_core_parity` — deleted in P6 slice 6c, `core_corpus_test` replaces it —, `bots_gate`), the (deleted, P6 slice 6d-1) `cf_producer`/`cf_audit` integration paths, the anchors smoke,
 `extractor_compiles` (compile) and the two mypy-backed static gates on a COLD cache (~45 s on a fresh
 worktree's first gate; since 2026-10-02 they sit in the `static` budget tier above, so that cost is
 declared, not a flake). The fixes that shipped with this table: `3e766294` (a VACUOUS 30 s watchdog
@@ -536,8 +536,8 @@ owned seams that made it possible are `agents/enums.py` (the four value-enums, D
 file (5) builds a real Rust-eval core-trace run plus a current-architecture checkpoint and RUNS every JSON-CLI command and
 the web app's views (FastAPI `TestClient`) with the blocker installed (`sim`); `PROBER_POKE_ENV_COMMANDS` is the closed
 list of commands still on poke-env (`replay-counterfactual`, P6-blocking), and the test pins that exactly those are
-blocked. The prober's poke-env ORACLE (the live recorder, the materializer) lives in the already-listed
-`src/main/prober/core_trace_integration_test.py`. **P6 slice 1 (2026-10-07): the list is EMPTY** — `replay-counterfactual`
+blocked. The prober's poke-env ORACLE (the live recorder, the materializer) lived in the already-listed
+`src/main/prober/core_trace_integration_test.py` until P6 slice 6d-1 (2026-10-08) deleted it; that file is core-only now. **P6 slice 1 (2026-10-07): the list is EMPTY** — `replay-counterfactual`
 plays out on the Rust core (`gen3_cf_core_playout_v1`) and the test RUNS it with the blocker installed; the allowlist
 went 135 -> 133 (`src/main/prober/replay.py`, `src/main/prober/session/counterfactual.py`).
 
@@ -737,7 +737,7 @@ of serial time.
    variable after touching thread handling**: it is how the masked sites surface. For example:
    `GEN3AI_TEST_ALLOW_THREADS=1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 pytest src/ -m "not slow and not
    e2e" -n 2`. Its first run (2026-09-30) found two things the 1-thread default had hidden:
-   - one more `cf_audit.main` leak
+   - one more `cf_audit.main` leak (that module is deleted, P6 slice 6d-1)
    - `forward_guard_test`, which compared a control forward taken at the default thread count
      against forwards run at 1 thread, and so passed only while the default was 1
 3. **An in-place mutation nested more than one container deep** in a config value.
@@ -869,10 +869,10 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch2
 #                                      stats, zero measurement confounds; one modifier per scenario [type/STAB/SE/resist/4×/immunity/Thick Fat
 #                                      Choice Band/item/boosts/burn/screens/weather]) + poke_env_gaps/damage_op_fuzz_test.py (looser random-game net)
 #                                  training/hidden_power_tracker_fuzz_test.py
-#                                  utils/bridge/reconstruction_fuzz_test.py (battle replay/re-roll invariants)
-#                                  utils/bridge/reroll_many_parity_fuzz_test.py (batched reroll_many == per-call reroll_turn, bit-for-bit obs)
-#                                  utils/bridge/search_clone_parity_fuzz_test.py (serializeBattle clone == reroll_many, bit-for-bit obs + value_crn anchor + depth-2)
 #                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
+#                                  (utils/bridge/{reconstruction,reroll_many_parity,search_clone_parity}_fuzz_test.py — battle replay/re-roll
+#                                      invariants, batched reroll_many == per-call reroll_turn, serializeBattle clone == reroll_many — were
+#                                      DELETED in P6 slice 6d-1 with the poke-env materializer oracle they compared against)
 #                                  (battle/rust_core_trackers_fuzz_test.py — slice T/V/O on FRESH battles against the Python
 #                                      reading — was DELETED in P6 slice 6c with the Python-vs-core comparisons)
 ```
@@ -952,10 +952,9 @@ export PYTHONPATH=$PYTHONPATH:src
 python -m agents.observation.rust_encoder_benchmark [--decisions 40] [--reps 300]
 # (the Python-path profilers `obs_build_benchmark.py`, `trainer_turn_benchmark.py` and `live_view_build_benchmark.py`
 #  were DELETED in P6 slice 6c with the Python encode path they profiled)
-# WHERE ONE SEARCHED DECISION's wall goes — the real SearchEngine (the Rust-core road) over BANKED
-#   eval traces, in stack-accounted phases (port open_root / expand_many / row wrap / glue)
-python3 src/main/search_dividend/search_decision_benchmark.py --traces models/<run>/eval_traces \
-    [--decisions 12] [--m-opp 3] [--n-actions N] [--arm honest] [--k-worlds 4] [--rust-timing] [--cprofile out.prof]
+# (the searched-decision profiler `main/search_dividend/search_decision_benchmark.py` was DELETED with the whole
+#  `main.search_dividend` battery in P6 slice 6d-1; the in-process search tree's own benchmark is
+#  `python3 src/utils/rust_env/successors_benchmark.py`)
 # WHERE ONE PPO UPDATE's wall goes — the REAL train() of arm C on ONE real rollout buffer (collected by
 #   the trainer in-process as a fork into ~/gen3ai_archive/learner_bench/, never models/), K repeats
 #   from identical state; phases (sync-bracketed), ablations (incl. `diag_skipped`: an update the
@@ -1086,7 +1085,7 @@ NOT enough**: two players share the global `random` and the bridge interleaves t
 `choose_move` calls, so the draw order still diverges (`golden_obs_capture`, deleted in P6 slice 6c, measured the
 decision count swinging by hundreds). Reproducibility needs every randomness source *removed* —
 fixed teams, a per-player RNG, a fixed sim seed, **and `concurrency=1`**. Where a test needs a
-*qualifying* battle (cf_audit's non-tie, an ending branch arm), redraw over a bounded FIXED
+*qualifying* battle (the deleted cf_audit's non-tie, an ending branch arm), redraw over a bounded FIXED
 sequence of keys.
 
 🚨 **The concurrency clause is the one that gets missed, because the seeds look sufficient.** They

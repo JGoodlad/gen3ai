@@ -6,10 +6,11 @@ sharing a file with them. Everything here is pure — it takes the finished docu
 text, reads nothing and writes nothing.
 
 **The report's shape is load-bearing.** The headline deltas come FIRST, each with its interval
-and its registered label; then the full tables under all three selection weightings with the
-registered one starred; then the CONDITIONING section (added 2026-09-09 — the spread identity and
-the two decodes-from-`V`); then each run on its own; then the ledger QUOTE; then every command and
-every path. A reader who stops after the summary has the answer, and a reader who does not stop
+and its registered label; then the gate's full table; then the CONDITIONING section (added
+2026-09-09 — the spread identity and the two decodes-from-`V`); then each run on its own; then the
+ledger QUOTE; then every command and every path. (Section 2, the IDENTITY section — `V` against
+`cf_audit`'s Monte-Carlo continuation — was retired with `cf_audit` in P6 slice 6d-1, 2026-10-08;
+the numbering is kept so a ledger quote that cites a section still points at the same thing.) A reader who stops after the summary has the answer, and a reader who does not stop
 can check it.
 """
 from __future__ import annotations
@@ -24,32 +25,20 @@ from main.ops import team_conditioning as TC
 from main.ops import quota_match as QM
 
 TOOL = "critic_read"
-TOOL_VERSION = 6
+TOOL_VERSION = 7
 
-#: the summary table's headline quantities. The first four are the 2026-09-08 registration's;
-#: the last two are the CONDITIONING primaries added 2026-09-09, after three offline reads
-#: established that the critic's defect is a conditioning failure in the win head — it emits one
-#: near-marginal win probability regardless of opponent AND of its own team. An arm built against
-#: that defect has to be read on the meters that measure it.
-#: The seventh (added 2026-09-10, tool v5) is the CALIBRATION SLOPE: the ladder's first arm to
+#: the summary table's headline quantities. The first two are the 2026-09-08 registration's gate
+#: rows (its two identity headlines, `identity.bias.late (turn>=25)` and `identity.turn_contrast`,
+#: went with `cf_audit`, P6 slice 6d-1); the next two are the CONDITIONING primaries added
+#: 2026-09-09, after three offline reads established that the critic's defect is a conditioning
+#: failure in the win head — it emits one near-marginal win probability regardless of opponent AND
+#: of its own team. An arm built against that defect has to be read on the meters that measure it.
+#: The last (added 2026-09-10, tool v5) is the CALIBRATION SLOPE: the ladder's first arm to
 #: move the own-team decode moved it while EMITTING A SMALLER SPREAD, and the slope is the row that
 #: says whether that is SHRINKAGE (a compressed target fitted as a shrinkage estimator) rather
 #: than an unexplained pairing of "alignment up, amplitude down".
-HEADLINES = ("gate.resolution.bot", "identity.bias.late (turn>=25)", "identity.turn_contrast",
-             "gate.skill.bot", "cond.spread_ratio.t1_3", "cond.own_team_r2.t1",
-             CM.CALIB_SLOPE_ALL)
-#: identity strata, in report order. `ALL` first, then the turn buckets, then the opponent split.
-IDENTITY_STRATA = ("ALL",) + R.TURN_BUCKETS + ("bot", "pool")
-#: the three selection corrections every identity quantity is reported under.
-WEIGHTINGS = ("raw", "pop", "ipw")
-WEIGHTING_NOTE = {
-    "raw": "unweighted over the cf_audit draw — the estimand arm A's committed +0.3089 was "
-           "computed under, kept for comparability",
-    "pop": "cf_audit's stratified draw recombined at the frame's own (decile, outcome) mass — "
-           "corrects the SAMPLER against the trace tree",
-    "ipw": "`pop` times 1/capture_rate(opponent, outcome) from the cycle's eval_manifest — "
-           "RULE OF EVIDENCE 17, correcting the loss-enriched TREE against the eval population",
-}
+HEADLINES = ("gate.resolution.bot", "gate.skill.bot", "cond.spread_ratio.t1_3",
+             "cond.own_team_r2.t1", CM.CALIB_SLOPE_ALL)
 
 
 # --------------------------------------------------------------------------- rendering
@@ -109,8 +98,6 @@ def ledger_line(doc: Dict[str, Any]) -> str:
                f"{'full capture' if gen.get('capture') == 'ALL' else gen.get('capture')}]")
     return (f"{doc['arm']['run']} vs {doc['control']['run']} at {at}: " +
             " · ".join([part("gate.resolution.bot", "G1 bot"),
-                        part("identity.bias.late (turn>=25)", "identity bias late"),
-                        part("identity.turn_contrast", "turn-contrast"),
                         part("cond.spread_ratio.t1_3", "spread ratio t1-3"),
                         part("cond.own_team_r2.t1", "own-team R2 t1"),
                         part(CM.CALIB_SLOPE_ALL, "calib slope")]))
@@ -614,7 +601,7 @@ def _population_block(doc: Dict[str, Any]) -> str:
     which, and says out loud that the two kinds of report are not rows of one table.
     """
     arm, ctl = doc["arm"], doc["control"]
-    lines = ["**The POPULATION these numbers describe** — every conditioning and identity row "
+    lines = ["**The POPULATION these numbers describe** — every conditioning row "
              "is a statistic OF the traced frame, so the frame is part of the reading.", ""]
     lines.append("| role | population |")
     lines.append("|---|---|")
@@ -654,17 +641,15 @@ def render_md(doc: Dict[str, Any]) -> str:
       "of the two runs' independent battle-clustered bootstraps. Strength is NOT read.")
     A("")
     A(_crossing_line(doc))
-    A("| role | run | cycle | battles | draw/timeout share | anchors | live |")
-    A("|---|---|---|---|---|---|---|")
+    A("| role | run | cycle | battles | draw/timeout share | live |")
+    A("|---|---|---|---|---|---|")
     for role, d in (("arm", arm), ("control", ctl)):
-        an = d["identity"]["anchor"]
         share = ("NOT RECORDED" if d["draw_share"] is None
                  else f"{d['draw_share'] * 100:.1f}%")
         live = (f"yes pid {','.join(map(str, d['cycle']['live_pids']))}"
                 if d["cycle"]["live_pids"] else "no")
         nb = d["gate"]["strata"].get("all", {}).get("n_battles", "—")
-        A(f"| {role} | `{d['run']}` | `step_{d['step']}` | {nb} | {share} | "
-          f"{an['reproduced']}/{an['issued']} ({an['rate'] * 100:.1f}%) | {live} |")
+        A(f"| {role} | `{d['run']}` | `step_{d['step']}` | {nb} | {share} | {live} |")
     A("")
     A(_population_block(doc))
     A("")
@@ -701,10 +686,7 @@ def render_md(doc: Dict[str, Any]) -> str:
           f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {_label(r)} |")
     A("")
     A("Direction, stated so a sign cannot be misread: **resolution** and **skill** are HIGHER "
-      "is better; **identity bias** is `V − p̂`, so POSITIVE means the head is OPTIMISTIC "
-      "against its own Monte-Carlo continuation and a NEGATIVE delta is an improvement; the "
-      "**turn-contrast** is `corr(turn,V) − corr(turn,MC)` and its target is ZERO, so a "
-      "negative delta from a positive control moves toward the clock. The **spread ratio**'s "
+      "is better. The **spread ratio**'s "
       "target is ONE (for any calibrated critic the between-opponent spread of `V` equals that "
       "of the outcome), so a POSITIVE delta from a control below 1.0 is an improvement; the "
       "**own-team R²** and the **opponent-class AUC** are decodes FROM `V`, higher is better, "
@@ -715,35 +697,30 @@ def render_md(doc: Dict[str, Any]) -> str:
       "TOGETHER, in the (A)/(B) table of section 3.")
     A("")
 
-    for family, title in (("gate", "## 1. RESOLUTION — the calibration gate's metrics, per stratum"),
-                          ("identity", "## 2. IDENTITY — V against the Monte-Carlo continuation")):
-        A(title)
-        A("")
-        A("| quantity | stratum | weighting | arm | control | **Δ** | 95% CI | n draws | verdict |")
-        A("|---|---|---|---|---|---|---|---|---|")
-        for r in doc["deltas"]:
-            if r["family"] != family:
-                continue
-            star = " ⭐" if r["registered"] else ""
-            A(f"| {r['quantity']}{star} | `{r['stratum']}` | "
-              f"`{r['weighting'] or 'capture-rate (gauge)'}` | {_f(r['arm'])} | "
-              f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {r['n_draws']} | "
-              f"{_label(r)} |")
-        A("")
-    A("⭐ = the REGISTERED estimand for that quantity. The others are the same statistic under a "
-      "different selection correction, printed so the registered number is never the only one on "
-      "the page.")
+    A("## 1. RESOLUTION — the calibration gate's metrics, per stratum")
     A("")
-    A("### the three weightings")
+    A("| quantity | stratum | weighting | arm | control | **Δ** | 95% CI | n draws | verdict |")
+    A("|---|---|---|---|---|---|---|---|---|")
+    for r in doc["deltas"]:
+        if r["family"] != "gate":
+            continue
+        star = " ⭐" if r["registered"] else ""
+        A(f"| {r['quantity']}{star} | `{r['stratum']}` | "
+          f"`{r['weighting'] or 'capture-rate (gauge)'}` | {_f(r['arm'])} | "
+          f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {r['n_draws']} | "
+          f"{_label(r)} |")
     A("")
-    A("| name | what it corrects |")
-    A("|---|---|")
-    for k in WEIGHTINGS:
-        A(f"| `{k}` | {WEIGHTING_NOTE[k]} |")
+    A("⭐ = the REGISTERED estimand for that quantity. The gate rows carry no weighting column "
+      "because the scaffolding gauge applies the capture-rate correction itself, from the same "
+      "`eval_manifest.json` rates (RULE OF EVIDENCE 17) — there is no unweighted variant of a "
+      "gate row.")
     A("")
-    A(f"The gate rows carry no weighting column because the scaffolding gauge applies the "
-      f"capture-rate correction itself, from the same `eval_manifest.json` rates — there is no "
-      f"unweighted variant of a gate row. And {R.anchor_note()}")
+    A("## 2. IDENTITY — RETIRED")
+    A("")
+    A("`V` against the Monte-Carlo continuation (bias `V − p̂`, Murphy at the rollout level, the "
+      "clock-tracking contrast) came from `agents.training.cf_audit`, deleted in P6 slice 6d-1 "
+      "(owner decision 2026-10-08); it already refused every Rust-core trace (F-LH-4: no recorded "
+      "win-prob head). Nothing is read here.")
     A("")
 
     A("## 3. CONDITIONING — does the head know WHO it is playing and WHOSE TEAM it holds?")
@@ -838,8 +815,8 @@ def render_md(doc: Dict[str, Any]) -> str:
     A(f"⚠️ **Recorded `V`, one cycle.** {CM.recorded_v_note()}")
     A("")
     A("⚠️ **The rows above that are NOT frame-sensitive are read AS TRACED, and that is not an "
-      "oversight.** The noise-corrected spread ratio, the spread delta, the Elo slope, every gate "
-      "row and every identity row are weighted MEANS, differences of noise-corrected spreads, or "
+      "oversight.** The noise-corrected spread ratio, the spread delta, the Elo slope and every gate "
+      "row are weighted MEANS, differences of noise-corrected spreads, or "
       "an OLS over the pinned opponent roster. A weighted mean's expectation does not depend on "
       "how many states entered it given correct weights — which rule 17's capture-rate IPW "
       "supplies — so frame SIZE moves their variance and not their expectation, and equalising "
@@ -881,16 +858,6 @@ def render_md(doc: Dict[str, Any]) -> str:
                            for g in ("G1_resolution", "G2_reliability", "G3_ece", "G4_skill"))
               + " |")
         A("")
-        m = d["identity"]["murphy"]["ipw"]
-        A(f"Identity, capture-rate reweighted: {d['identity']['n_labels']} labels / "
-          f"{d['identity']['n_battles']} battles / {d['identity']['n_rollouts']} rollouts · "
-          f"Brier {m['brier']:.4f} = REL {m['reliability']:.4f} − RES {m['resolution']:.4f} + "
-          f"UNC {m['uncertainty']:.4f} + WBV {m['within_bin_forecast_var']:.4f} "
-          f"(resid {m['residual']:+.2e}) · base rate {m['base_rate']:.4f} · "
-          f"**resolution is {m['resolution_cap_share'] * 100:.1f}% of the base-rate cap** · "
-          f"corr(turn,V) {d['identity']['turn']['raw']['corr_turn_v']:+.4f} vs corr(turn,MC) "
-          f"{d['identity']['turn']['raw']['corr_turn_mc']:+.4f}")
-        A("")
 
     A("## 5. THE LEDGER LINE")
     A("")
@@ -920,7 +887,7 @@ def render_md(doc: Dict[str, Any]) -> str:
     A(f"| this report | `{doc['out']}/critic_read.md` |")
     A(f"| machine-readable | `{doc['out']}/critic_read.json` |")
     A("")
-    A(f"Bootstraps: identity {doc['params']['boot']} draws, gate {doc['params']['gate_boot']} "
-      f"draws, seed {doc['params']['seed']}, unit = BATTLE, deltas = difference of INDEPENDENT "
-      "bootstraps. Nothing was written under `models/`.")
+    A(f"Bootstraps: gate {doc['params']['gate_boot']} draws, seed {doc['params']['seed']}, "
+      "unit = BATTLE, deltas = difference of INDEPENDENT bootstraps. Nothing was written under "
+      "`models/`.")
     return "\n".join(L) + "\n"

@@ -7,17 +7,24 @@ The table of record for porting the scripted bots into the Rust env core (`src/r
 * a bot NAME appears in a roster (the training pool, the eval roster — both name lists, the names the Rust
   core plays its bots by) with no row here — a new bot must be inventoried before it plays;
 * a row's ``used_by`` disagrees with the rosters (a bot dropped from a pool reads as dropped here);
-* a ``Player`` subclass is defined in one of the bot modules with no row (defined-but-unused bots
-  are listed with ``used_by=()`` so "not in any pool" is a stated fact, not an omission);
+* (a ``Player`` subclass defined in a bot module with no row, and the display names agreeing with the
+  poke-env bot table, were checked here until P6 slice 6d-1 deleted the Python bot classes and that table);
 * (the exploiter keep-bots mix == the training roster check read the Python env core's `env_factory` /
   `MaskableAgentWrapper`, deleted in deletion pass U3; the Rust plan builds the floor from the same
   roster, `rust_env_setup._bot_names`);
 * a row marked PORTED names a Rust bot the crate does not define.
 
-THE STATE a bot reads is ONE object: the opponent side's poke-env ``Battle`` (in training
+THE STATE a bot read was ONE object: the opponent side's poke-env ``Battle`` (in training
 ``env.battle2``, agent2's own battle; in eval / anchors the bot player's own battle).
-The Rust port reads the env core's ``BoardReading`` for that side — the port of that object — through
-the bot VIEW (`utils.rust_env.bot_view`), whose equality is checked at every banked decision.
+The Rust port reads the env core's ``BoardReading`` for that side — the port of that object — and its
+equality with the Python bots' view was checked at every banked decision (the corpus
+`src/rust_env/tests/fixtures/bots/commit_corpus.json.gz`, a FROZEN FIXTURE; the renderer that wrote the
+view hash, `utils.rust_env.bot_view`, was deleted in P6 slice 6d-1).
+
+🚨 **The ``cls`` strings below are HISTORICAL** (P6 slice 6d-1, 2026-10-08): `agents/opponents.py` and the
+`eval_roster` that bound each name to its class are deleted, and `poke_env.player.baselines` is the vendored
+fork's. They are kept as the record of which Python class each Rust bot was ported from (and what the
+corpus was banked against) — nothing resolves them any more, and a name here binds to no class.
 
 THE RANDOMNESS, per stream (the seed route is the PRODUCTION one; every stream is the process-wide
 ``random`` module unless a seed arrives):
@@ -36,15 +43,14 @@ from dataclasses import dataclass
 SITES = {
     "train": "the training floor roster — `main/train/matchup_setup.py` TRAIN_BOT_NAMES (also the "
              "exploiter --exploiter-keep-bots mix, mapped to the core's bots by `rust_env_setup._bot_names`)",
-    "eval": "the eval roster — `agents/training/eval_schedule.py` _EVAL_ROSTER (the Rust eval core's bot routes; "
-            "`eval_roster._EVAL_OPPONENT_SPECS` binds the same names to their poke-env classes)",
+    "eval": "the eval roster — `agents/training/eval_schedule.py` _EVAL_ROSTER (the Rust eval core's bot routes)",
 }
 
 
 @dataclass(frozen=True)
 class BotRow:
-    name: str            # display name (`eval_callback.opponent_name`)
-    cls: str             # dotted class path
+    name: str            # display name (the roster name the Rust core plays the bot by)
+    cls: str             # dotted class path of the Python class it was ported from — HISTORICAL (see the docstring)
     used_by: tuple       # keys of SITES
     rng: tuple           # streams the bot can draw from ("choice", "protect")
     reads: str           # what it reads off the Battle (beyond what every bot reads)

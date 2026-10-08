@@ -88,10 +88,10 @@ under an unrelated name is its blind spot. Opt out with `GEN3AI_SKIP_SUMMARY_REA
 
 | reader | entry point | on a core trace |
 |---|---|---|
-| `ProbeSession._summary` / `_meta` (every prober view), `forensics`, `probe_replay`, `mechanic_usage_baseline`, `audit_states` (mask fallback), `search_dividend.search_decision_benchmark` / `ab_racing`, `rust_sim/harness/better_line_bench` / `gen_search_golden` | `load_summary` | expanded — reads every decision (`ab_racing` re-raises a `CoreTraceError` rather than log it as a skip) |
+| `ProbeSession._summary` / `_meta` (every prober view), `forensics`, `probe_replay`, `mechanic_usage_baseline`, `audit_states` (mask fallback), `rust_sim/harness/better_line_bench` / `gen_search_golden` (the `search_dividend.search_decision_benchmark` / `ab_racing` readers of this row were deleted, P6 slice 6d-1) | `load_summary` | expanded — reads every decision (`ab_racing` re-raises a `CoreTraceError` rather than log it as a skip) |
 | `ops.conditioning_meters.extract_cycle` | `load_summary` | expanded under `--v-column values`; REFUSED under the `win_probs` column (NaN head) |
 | `critic_gate._trace_turns` (G7), `ops.quota_match.classify_on_disk`, `harvest_meter._load_tail` / `control_battles` | `load_summary_meta` | stored meta; `harvest_meter`'s `recorded_phi_T` is `None` (not NaN) on a NaN head |
-| `cf_audit.build_frame`, `harvest.build_candidates` | `refuse_core_trace` | REFUSED — both sample by the recorded win-prob head; the refusal escapes their counted-skip `except` |
+| `harvest.build_candidates` (and the deleted `cf_audit.build_frame`) | `refuse_core_trace` | REFUSED — both sampled by the recorded win-prob head; the refusal escapes their counted-skip `except` |
 | `scaffolding_gauge.collect_slices` (and every meter over it: `critic_gate`, `ops.critic_readouts`, `ops.perbot_*`, `ops.negskill_null`) | `is_core_trace` on the NaN head | REFUSED — contestedness / the V-vs-P(win) gauge have no P(win); the gauge's old refusal blamed `--win-prob-mode none` |
 
 **The expansion** (`core_trace.expand` / `load_summary`; `ProbeSession._summary` calls it, as does
@@ -137,14 +137,17 @@ in HASH order — a forensic summary that varied with `PYTHONHASHSEED` (P5 findi
 `sizing_C_n256_e5_s1001` `step_8000030/sentinel_0/win_s1_001`: two before-captures of the same
 `turns` disagreed on exactly that line).
 
-**Pinned equal to the live recorder.** `core_trace_integration_test.py` plays each core game again
-LIVE on the rust bridge (same seed and teams, p1 an `EvalRLPlayer`-shaped scripted player
-recording with `BattleRecorder`, p2 replaying the stored tokens, written by `write_battle_record`):
-the expanded summary equals that summary field for field (bar `meta.battle_id` /
-`meta.trace_source`), including a stall-forfeit game, and the live encoder's obs equal the core's
-stored obs row for row — the poke-env ORACLE the Rust reading is held to while poke-env exists. On
-banked traces the P5 identity read (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`)
-held every invocation of 16 core battles equal to the poke-env expansion.
+**Was pinned equal to the live recorder — the oracle is retired.** Until P6 slice 6d-1 (2026-10-08)
+`core_trace_integration_test.py` played each core game again LIVE on the rust bridge (same seed and teams, p1 an
+`EvalRLPlayer`-shaped scripted player recording with `BattleRecorder`, p2 replaying the stored tokens, written by
+`write_battle_record`): the expanded summary equalled that summary field for field (bar `meta.battle_id` /
+`meta.trace_source`), including a stall-forfeit game, and the live encoder's obs equalled the core's stored obs
+row for row. That test was the poke-env ORACLE the Rust reading was held to; it went with the road it compared
+(`RLPlayer`, `run_local_battles`, `obs_materializer`) and the file is now CORE-ONLY (the expansion against the
+stored rows, the stall forfeit, the walk's stream rows against the stored rows, the tamper refusals, the JSON CLI).
+What the oracle established is banked: on real traces the P5 identity read
+(`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`) held every invocation of 16 core battles
+equal to the poke-env expansion.
 
 **What a core trace does NOT carry:**
 

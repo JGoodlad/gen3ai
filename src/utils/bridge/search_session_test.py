@@ -153,3 +153,45 @@ def test_close_reap_timeout_stretches_with_contention(monkeypatch):
     """The whole point: a loaded box gets proportionally longer to reap the child."""
     monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "6")
     assert ss_mod._close_reap_timeout() == 30.0
+
+
+# --------------------------------------------------------------------------- side elision
+# Moved here from `main/search_dividend/side_elision_test.py` (P6 slice 6d-1, 2026-10-08, with the battery that
+# held it): the subject is this module's `ElidedSide` sentinel and `expand_many`'s `side` argument, both KEPT.
+# `gen3_expand_many_side_elision_v1`: `expand_many` takes a `side` and omits the other side's payload (the
+# discarded copy measured 43.0% of the reply bytes on 864 banked arms,
+# `designs/research_state/measurements/expand_many_2026-09-22/README.md`); the wire-level byte identity is pinned
+# in rust (`tests/search_side_elision_test.rs`). What these pin is the sentinel: an elided side is falsy but RAISES
+# on every read, so nothing downstream can encode a board nobody played.
+
+def test_an_elided_side_refuses_to_be_read_rather_than_reading_empty():
+    """The sentinel's contract, which is the whole reason elision is safe to default ON.
+
+    Falsy — so the existing ``payload or {}`` guards take their COUNTED fallback — but raising on
+    every way of actually getting a value out. An empty dict would ENCODE, into a well-formed
+    observation of a battle nobody played."""
+    el = ss_mod.ElidedSide("p2_chunks")
+
+    assert not el, "an elided side must be FALSY so `payload or {}` still works"
+    assert len(el) == 0
+
+    for read in (lambda: el["species"],
+                 lambda: el.get("species"),
+                 lambda: list(el),
+                 lambda: dict(el.items()),
+                 lambda: list(el.keys()),
+                 lambda: list(el.values()),
+                 lambda: "species" in el):
+        with pytest.raises(ss_mod.SearchError, match="ELIDED"):
+            read()
+    assert "p2_chunks" in repr(el)
+
+
+def test_an_unknown_side_is_refused_in_python_before_the_driver_sees_it():
+    """A typo must fail HERE, not become a driver error two layers away — and never both sides."""
+    class _Never:
+        def _call(self, payload):
+            raise AssertionError("the driver must not be reached")
+
+    with pytest.raises(ss_mod.SearchError, match="side must be"):
+        SearchSession.expand_many(_Never(), [], side="p3")

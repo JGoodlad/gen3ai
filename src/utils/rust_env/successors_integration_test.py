@@ -1,9 +1,11 @@
 """M5 Lane I's GATES on a real build — search on ``successors()`` in process
 (``designs/endstate/program_rust_core.md`` §2 M5; progress: ``designs/research_state/measurements/m5_laneI/``).
 
-THE THREE SEARCH GATES for the in-process road (the M2 trio — ``materializer_parity``,
+THE SEARCH GATES for the in-process road (the M2 trio — ``materializer_parity``,
 ``fork_sharing_parity``, ``one_sided_view_parity`` — was deleted with the roads they compared in
-``43712881``; these are their in-process successors):
+``43712881``; these are their in-process successors; the third of the M5 Lane I trio, DECISION
+EQUALITY — the real ``main.search_dividend`` ``SearchEngine`` deciding identically on both impls — was
+deleted with that engine, P6 slice 6d-1, 2026-10-08):
 
 1. **The depth-3 successor slice** (:mod:`utils.rust_env.successors_parity`): the in-process tree ==
    the ``search_driver`` binary, every arm field and every leaf row BYTE for byte, to depth 3.
@@ -14,10 +16,6 @@ THE THREE SEARCH GATES for the in-process road (the M2 trio — ``materializer_p
 2. **Clone independence / determinism** (the fork-sharing gate's claim): re-expanding the same arm
    after its siblings reproduces it byte for byte; a stale node id (a previous root) is refused;
    the playout is a function of its inputs and siblings sharing a seed share their dice.
-3. **Decision equality** (the materializer gate's claim): the real ``SearchEngine`` decides the same
-   seeded decisions identically on ``search_impl="rust"`` (the child) and ``"inproc"`` — every
-   per-action score, the chosen action, the fallback and the realized widths — under a scorer that
-   is a pure function of the row (a sum hides no changed dimension), with deepening on.
 
 Plus the error / lifecycle contract of the handle.
 """
@@ -99,10 +97,8 @@ def test_gate_1_has_teeth(lib, logs):
     with S.Successors(lib=lib) as a, S.Successors(lib=lib) as b:
         ra = a.open_root(2, record=rec, side="p1")
         b.open_root(2, record=rec, side="p1")  # the twin handle, in lockstep (same node ids)
-        from main.search_dividend.alpha import legal_choices_from_request
-
-        ours = [c["token"] for c in legal_choices_from_request(ra.requests["p1"])]
-        opp = [c["token"] for c in legal_choices_from_request(ra.requests["p2"])]
+        ours = [c["token"] for c in SP.legal_choices_from_request(ra.requests["p1"])]
+        opp = [c["token"] for c in SP.legal_choices_from_request(ra.requests["p2"])]
         arm = {"node_id": ra.node_id, "p1_action": ours[0], "p2_action": opp[0], "seed": "sodium," + "0" * 31 + "5", "label": 0}
         xa, xb = a.expand_many([arm], side="p1")[0], b.expand_many([arm], side="p1")[0]
         cen = SP.Census()
@@ -133,12 +129,10 @@ def test_gate_1_has_teeth(lib, logs):
 
 def test_gate_2_clone_independence_and_stale_ids(lib, logs):
     rec = S.log_to_record(logs[1], battle_tag="clone")
-    from main.search_dividend.alpha import legal_choices_from_request
-
     with S.Successors(lib=lib) as ss:
         root = ss.open_root(3, record=rec, side="p2")
-        ours = [c["token"] for c in legal_choices_from_request(root.requests["p2"])]
-        opp = [c["token"] for c in legal_choices_from_request(root.requests["p1"])]
+        ours = [c["token"] for c in SP.legal_choices_from_request(root.requests["p2"])]
+        opp = [c["token"] for c in SP.legal_choices_from_request(root.requests["p1"])]
         sd = "sodium," + "0" * 30 + "77"
         first = ss.expand_many([{"node_id": root.node_id, "p2_action": ours[0], "p1_action": opp[0], "seed": sd, "label": 0}], side="p2")[0]
         sibs = [{"node_id": root.node_id, "p2_action": a, "p1_action": o, "seed": s, "label": i}
@@ -240,61 +234,6 @@ def test_the_counterfactual_keys_through_the_ffi(lib, logs):
     assert [r.outcome for r in out["rollouts"]] == [
         {0: "win", 1: "loss", None: "tie"}[br["end"]["winner"]] for br in want]
     assert out["rollouts"][0].text == a.prefix_text + want[0]["text"]
-
-
-def _decide(impl: str, record, side, turn, tokens, observed, opp_true):
-    from main.search_dividend.search import SearchConfig, SearchEngine, WidthCaps
-
-    cfg = SearchConfig(arm="oracle", budget_s=1e9, seed=7, max_depth=2, search_impl=impl,
-                       caps=WidthCaps(m_opp=2, k_worlds=1, r_dice=2))
-    eng = SearchEngine(model=None, mappings=None, cfg=cfg, pool_packed=[])
-    eng._score_batch = lambda obs, masks: (np.asarray(obs, dtype=np.float64).sum(axis=1), "fake")  # type: ignore
-    try:
-        res = eng.choose(record=record, side=side, turn=turn, our_history=[], our_tokens=dict(tokens),
-                         observed_our_lines=list(observed), pub=None, policy_action=next(iter(tokens)),
-                         opp_true_packed=opp_true)
-        return dict(res.scores or {}), int(res.action), str(res.fallback), res.widths
-    finally:
-        eng.close()
-
-
-def test_gate_3_search_decides_identically_in_process(lib, logs):
-    from main.search_dividend import determinize as dz
-    from main.search_dividend.alpha import legal_choices_from_request
-    from utils.bridge.search_session import SearchSession
-
-    compared = deep = 0
-    for li, log in enumerate(logs[:3]):
-        rec = S.log_to_record(log, battle_tag=f"d{li}")
-        last = SP._last_turn(rec)
-        for frac in (0.25, 0.6):
-            turn = max(2, int(last * frac))
-            side = "p1" if (li + int(frac * 4)) % 2 == 0 else "p2"
-            other = "p2" if side == "p1" else "p1"
-            with SearchSession(rec, impl="rust") as ss:
-                try:
-                    root = ss.open_root(turn)
-                except Exception:  # noqa: BLE001 — past the end
-                    continue
-            legal = legal_choices_from_request((root.requests or {}).get(side))
-            if not legal:
-                continue
-            tokens = {i: c["token"] for i, c in enumerate(legal)}
-            pfx = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks
-            observed = dz.chunks_to_lines(pfx)
-            opp_true = rec.packed_team(other)
-            a = _decide("rust", rec, side, turn, tokens, observed, opp_true)
-            b = _decide("inproc", rec, side, turn, tokens, observed, opp_true)
-            assert a[2] == b[2], f"{li} T{turn}: fallback {a[2]!r} vs {b[2]!r}"
-            assert a[0] == b[0], f"{li} T{turn}: per-action scores differ:\n{a[0]}\n{b[0]}"
-            assert a[1] == b[1]
-            for f in ("arms_expanded", "arms_scored", "arms_terminal", "deep_arms_expanded", "core_arms",
-                      "core_arms_intermediate", "depth_realized", "worlds_gated_ok"):
-                assert getattr(a[3], f) == getattr(b[3], f), f"{li} T{turn}: widths.{f}"
-            compared += 1
-            deep += int(b[3].deep_arms_scored)
-    assert compared >= 3, f"only {compared} decisions compared — the gate is vacuous"
-    assert deep > 0, "no decision deepened — the depth-2 half of the gate is vacuous"
 
 
 # ------------------------------------------------------------------ the handle's contract

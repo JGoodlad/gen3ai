@@ -21,8 +21,8 @@ The GIL is released during every foreign call (``ctypes``). One handle is single
 that wants parallelism holds one :class:`SearchCore` per thread.
 
 Errors: a refused request, an unknown node or a battle the port refuses raises
-:class:`SuccessorsError` (a :class:`SearchError`, so :mod:`main.search_dividend.search`'s handlers
-catch it as they catch the JSON road's) and does NOT poison the handle; a Rust panic raises
+:class:`SuccessorsError` (a :class:`SearchError`, so a caller's handler catches it as it catches the
+JSON road's) and does NOT poison the handle; a Rust panic raises
 :class:`protocol.CorePanic` and poisons it (every later call: :class:`protocol.LifecycleViolation`).
 """
 from __future__ import annotations

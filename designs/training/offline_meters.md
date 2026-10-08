@@ -22,8 +22,9 @@ concept. The floors are the one pair of CONSTANTS admitted, and for the estimato
 must refuse at the same n, and two copies of a floor is two thresholds that drift.
 They were lifted out of `cf_audit.py` on 2026-09-06 (the file-size ratchet's first cut of
 the 1,000–2,000 band, 1439 → 1279 lines), which imports them straight back, so
-`from agents.training.cf_audit import wilson_ci` — which `cf_producer` and the tests do — still
-resolves. The arithmetic is unchanged, and that is EVIDENCE rather than a promise: the parity golden
+`from agents.training.cf_audit import wilson_ci` — which `cf_producer` and the tests did — still
+resolved (both modules, and `cf_audit_twin`, were deleted in P6 slice 6d-1; the functions live on here for
+`best_response_gap` and `value_sidecar_read`). The arithmetic is unchanged, and that is EVIDENCE rather than a promise: the parity golden
 above was captured before the move and reproduced byte-for-byte after it.
 
 ⚠️ **Three near-siblings elsewhere in the tree are deliberately NOT merged into it**, and the module

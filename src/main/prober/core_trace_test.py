@@ -1,8 +1,8 @@
 """`main.prober.core_trace` without a bridge: the cross-check's refusal, the live masked softmax, and
 the session's meta-only read (a core trace is never expanded to answer `run_summary`).
 
-The end-to-end expansion — the Rust core's walk (`gen3_core_walk_v1`) — and its equality with the
-live Python recorder is `core_trace_integration_test.py` (`sim`); the walk's own pure helpers are
+The end-to-end expansion — the Rust core's walk (`gen3_core_walk_v1`) — against the stored rows
+is `core_trace_integration_test.py` (`sim`; its equality with the live Python recorder was retired, P6 slice 6d-1); the walk's own pure helpers are
 `core_walk_test.py`. Milliseconds; unmarked.
 """
 from __future__ import annotations

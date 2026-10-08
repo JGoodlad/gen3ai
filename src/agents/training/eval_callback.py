@@ -3,7 +3,6 @@
 Split along its seams on 2026-10-01 (TECH_DEBT §1, the file was 1,907 lines against the 2,000-line
 bar). The shared machinery BOTH eval callbacks use now lives beside it:
 
-* ``eval_roster``  — the bot roster's player CLASSES and the bot builder (poke-env);
 * ``eval_schedule`` — the schedule constants and the roster's NAMES (poke-env-free);
 * ``eval_quota``   — the forensic capture quota and the trace-filename contract (poke-env-free);
 * ``eval_launch``  — the cycle manifest, the Rust-core cycle;
@@ -11,8 +10,10 @@ bar). The shared machinery BOTH eval callbacks use now lives beside it:
 * ``eval_record``  — per-opponent records, eval blocks, the live ELO, the resume republish.
 
 Every public name of those modules is RE-EXPORTED here, so ``from agents.training.eval_callback import X``
-keeps resolving — the poke-env half LAZILY (module ``__getattr__``), so importing this module loads no poke-env. 🚨 A test that STUBS a name must patch the module that READS it — re-exporting a name
+keeps resolving. 🚨 A test that STUBS a name must patch the module that READS it — re-exporting a name
 here does NOT route another module's call through this namespace (``src/test_stub_vacuity_gate_test.py``).
+(``eval_roster`` — the poke-env player CLASSES behind each roster name and the poke-env bot builder — and its
+lazy ``__getattr__`` re-export were deleted with the Python bot roster, P6 slice 6d-1; the Rust core plays the bots.)
 """
 import os
 import time
@@ -35,10 +36,8 @@ from agents.training.artifact_retention import (
 from main.launcher.ipc import emit, send_metrics, send_event
 
 # ---- the re-exported surface (see the module docstring) -------------------------------------------
-# The poke-env-FREE half is imported eagerly: the schedule + the roster's names (`eval_schedule`) and the forensic quota
-# (`eval_quota`). The poke-env half (the player classes, the bot builder) is re-exported LAZILY through
-# the module `__getattr__` below — importing this module (the trainer's argument parser does, and so does `main.h2h`
-# at run time) must not import the whole poke-env package. P1 of the poke-env retirement, `T27`.
+# The schedule + the roster's names (`eval_schedule`) and the forensic quota (`eval_quota`). Importing this module
+# (the trainer's argument parser does, and so does `main.h2h` at run time) imports no poke-env.
 from agents.training.eval_schedule import (  # noqa: F401
     BATTLE_FORMAT, _EVAL_CONCURRENCY, EVAL_FREQ_STEPS, EVAL_GAMES, EVAL_SHARD_GAMES,
     RANDOM_OPPONENT_NAME, _EVAL_ROSTER, eval_opponent_names,
@@ -48,33 +47,6 @@ from agents.training.eval_quota import (  # noqa: F401
     ForensicQuota, forensic_selection_rule, _rule_for, episode_length_sum,
 )
 
-#: Re-exported names that need poke-env, and the module each lives in (resolved on first access).
-_LAZY_POKE_ENV_EXPORTS = {
-    "_OPPONENT_NAMES": "agents.training.eval_roster",
-    "opponent_name": "agents.training.eval_roster",
-    "_EVAL_OPPONENT_SPECS": "agents.training.eval_roster",
-    "eval_opponent_class": "agents.training.eval_roster",
-    "build_eval_opponents": "agents.training.eval_roster",
-}
-
-
-def __getattr__(name: str):
-    """PEP 562: resolve a poke-env-dependent re-export on first access (and cache it as a module attribute)."""
-    module = _LAZY_POKE_ENV_EXPORTS.get(name)
-    if module is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-
-    value = getattr(importlib.import_module(module), name)
-    globals()[name] = value
-    return value
-
-
-if TYPE_CHECKING:  # for static analysers / IDEs only — not executed at runtime
-    from agents.training.eval_roster import (  # noqa: F401
-        _EVAL_OPPONENT_SPECS, _OPPONENT_NAMES, build_eval_opponents, eval_opponent_class,
-        opponent_name,
-    )
 from agents.training.eval_launch import (  # noqa: F401
     EVAL_MANIFEST_NAME, EVAL_SNAPSHOT_NAME, _read_run_identity, opponent_pins_of,
     write_eval_manifest, launch_rust_eval_cycle, mirrored_eval_games,

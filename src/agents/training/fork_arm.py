@@ -97,7 +97,14 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from agents.action.constants import MOVE_START
-from agents.training.cf_producer_sampler import MIN_LABELABLE_TURN
+
+#: The lowest turn a row may fork from. A SAMPLER choice, not a capability limit: the offline
+#: counterfactual-label producer that first declared it (``cf_producer``, deleted P6 slice 6d-1)
+#: skipped turn 1 for a driver defect long since fixed (``gen3_search_turn1_open_v1``, 2026-08-23),
+#: and an empty prefix is trivially faithful, so turn 1 is not excluded for a reason. It stays at 2
+#: deliberately: lowering it widens the candidate distribution by ~3.35% of move decisions, and
+#: silently re-weighting a declared sampler is its own change, with its own before/after, not a rider.
+MIN_LABELABLE_TURN = 2
 
 #: ``--fork-fraction 0.0`` is OFF, and OFF is bit-identical by SKIPPING the whole path rather than
 #: by computing an identity. At 0.0 no module below is imported, no obs key is declared, no
@@ -204,8 +211,8 @@ def _sha(*parts) -> int:
 def is_move_round_mask(mask: Sequence[float]) -> bool:
     """A start-of-turn MOVE round, read off the buffer's own ``action_mask``.
 
-    The same predicate `cf_producer_sampler.is_move_round` spells, and for the same reason: a mid-turn FORCED SWITCH cannot be the divergence point of a
-    counterfactual replay, which cuts at a TURN boundary.
+    A mid-turn FORCED SWITCH cannot be the divergence point of a counterfactual replay, which cuts at a
+    TURN boundary (the rule the deleted ``cf_producer_sampler.is_move_round`` spelled, for the same reason).
     """
     return bool(np.asarray(mask)[MOVE_START:].sum() > 0)
 
@@ -219,8 +226,8 @@ def eligible_mask(win_mask, turns, action_mask) -> np.ndarray:
       state replayable: the ``__RECON__`` record is written at episode END, so a trailing
       in-progress episode has no record on disk yet.
     * a reconstruction HANDLE was captured for the row (``turns >= 0``).
-    * ``MIN_LABELABLE_TURN <= turn <= MAX_FORKABLE_TURN`` — `cf_producer`'s lower bound and
-      `forks.py`'s upper one.
+    * ``MIN_LABELABLE_TURN <= turn <= MAX_FORKABLE_TURN`` — the lower bound is this module's own
+      (above), `forks.py`'s the upper one.
     * a MOVE ROUND with at least :data:`MIN_LEGAL_ACTIONS` legal actions.
     """
     wm = np.asarray(win_mask, dtype=np.float64) >= 0.5

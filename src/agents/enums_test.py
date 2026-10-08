@@ -144,17 +144,6 @@ def test_the_notable_effect_names_are_members_of_the_forks_effect_enum():
     assert not has_effect({}, "SUBSTITUTE")
 
 
-def test_the_eval_roster_names_agree_between_the_poke_env_free_and_the_player_table():
-    """`eval_schedule._EVAL_ROSTER` (poke-env-free) and `eval_roster._EVAL_OPPONENT_SPECS` (the player classes) are two
-    statements of one roster; `eval_roster` asserts it at import, and this pins the names it re-serves."""
-    from agents.training import eval_roster as ER
-    from agents.training import eval_schedule as ES
-
-    assert ES.eval_opponent_names() == [n for n, _c, _p in ER._EVAL_OPPONENT_SPECS] == ER.eval_opponent_names()
-    assert ES.RANDOM_OPPONENT_NAME == ER.RANDOM_OPPONENT_NAME == ER.opponent_name(ER._EVAL_OPPONENT_SPECS[0][1])
-    assert ER.BATTLE_FORMAT == ES.BATTLE_FORMAT and ER.EVAL_SHARD_GAMES == ES.EVAL_SHARD_GAMES
-
-
 def test_the_frozen_special_types_equal_the_forks_table():
     """`rust_core_obs_layout._SPECIAL_TYPES_PRE_SPLIT` is the fork's ``Move._MOVE_CATEGORY_PER_TYPE_PRE_SPLIT`` SPECIAL
     names, spelled out so the layout generator imports no poke-env (P1 of the retirement). The fork is the oracle

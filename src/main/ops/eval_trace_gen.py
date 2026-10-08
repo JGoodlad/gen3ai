@@ -39,9 +39,9 @@ NOTHING IS EVER WRITTEN UNDER ``models/``. The generated cycle is a self-contain
 DIR under ``--out``: the run's ``model_config.json`` and ``metadata.json`` are copied (with the
 sentinel block rewritten to the sentinels this cycle actually used), ``snapshots/`` is symlinked
 back to the real run read-only, and the checkpoint is copied to
-``<out>/eval_traces/step_<N>/snapshot.zip`` — which is exactly where ``cf_audit`` looks for the
-network that played the traces, so the identity half resolves against the generated cycle with no
-special-casing.
+``<out>/eval_traces/step_<N>/snapshot.zip`` — where the offline readers look for the network that
+played the traces, so they resolve against the generated cycle with no special-casing. (The offline
+identity reader, ``cf_audit``, that first set this layout was deleted in P6 slice 6d-1; the layout stays.)
 
 REPRODUCIBILITY. Every game on the Rust eval core is seeded by the GAME (``gen3_eval_game_seed_v1``,
 ``rust_eval.seeds``): its two teams, its battle seed, the bots' streams and a sampled sentinel's draws are
@@ -417,14 +417,14 @@ def build_shadow_run(out_dir: Path, run_dir: Path, step: int, ckpt: Path,
     Four things have to be there, because four different readers look for them:
       * ``model_config.json`` — the eval core's TERMINAL is built from it, and
         ``write_eval_manifest`` reads the arch identity out of it.
-      * ``metadata.json`` — ``cf_audit.sentinel_snapshots`` reads ``latest_eval.pool.sentinels``
-        to pin which network each sentinel cell was. It is copied and then REWRITTEN to this
+      * ``metadata.json`` — a reader of ``latest_eval.pool.sentinels`` pins which network each
+        sentinel cell was (the deleted ``cf_audit.sentinel_snapshots`` was the one that did). It is copied and then REWRITTEN to this
         cycle's sentinels; leaving the source run's block would pin the wrong networks under the
         right labels, which is worse than none.
       * ``snapshots/`` — where those pins resolve. A SYMLINK back to the real run: read-only, and
         nothing is ever written under ``models/``.
       * ``eval_traces/step_<N>/snapshot.zip`` — the network that played the traces, which is where
-        ``cf_audit`` looks. Copied, not linked, so the cycle survives the source being groomed.
+        the offline readers look. Copied, not linked, so the cycle survives the source being groomed.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     step_dir = out_dir / "eval_traces" / f"step_{step}"
@@ -548,7 +548,7 @@ def generate(args) -> Dict[str, Any]:
                            sentinel_steps=[s["step"] for s in sentinels])
     names = [it.key for it in items]
     expected_labels = [*bots, *[s["label"] for s in sentinels]]
-    if names != expected_labels:    # the plan's sentinel keys ARE the shadow metadata's labels (cf_audit pins them)
+    if names != expected_labels:    # the plan's sentinel keys ARE the shadow metadata's labels (the sentinel pins read them)
         raise AssertionError(f"plan keys {names} != the shadow run's labels {expected_labels}")
 
     write_eval_manifest(str(out_dir), step, opponents=names, n_games=args.games,

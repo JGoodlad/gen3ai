@@ -216,7 +216,7 @@ only **`adv_kurtosis`** — scale-free by construction — compares directly.
 `signal/` tells you *when* to go and measure; it does not do the measurement. The gold standard for
 how much of an outcome was actually action-reducible remains the **offline counterfactual
 decomposition** — `python -m main.prober.query falsify-scan` (the luck / unattributed /
-proven-`policy_reducible` crater bracket) and `cf_audit.py`. Those re-roll the real dice and sweep
+proven-`policy_reducible` crater bracket) and, until P6 slice 6d-1 deleted it, `cf_audit.py`. Those re-roll the real dice and sweep
 alternative actions; `signal/` only reports the critic's own opinion of its rollout.
 
 ### Where each half is measured, and why there

@@ -326,7 +326,7 @@ much of the objective is now branch rows played against a SELF-LIKE opponent —
 caveat), **`fork/tie_rate`**, **`fork/random_wins`** (the blind-spot rate) and **`fork/pairwise_acc`**
 with `fork/pairwise_pairs` beside it (IN-SAMPLE; the registered endpoint is a HELD-OUT read on fresh
 forks whose bar is a CI clearing 0.60). `--fork-crn` defaults to `dice_and_draws` and should stay
-there; `dice` is the `cf_q_labels` control. Full chapter:
+there; `dice` is the control (the regime of the since-deleted `cf_q_labels` factory). Full chapter:
 [`designs/training/forks.md`](../training/forks.md).
 
 Design of record:

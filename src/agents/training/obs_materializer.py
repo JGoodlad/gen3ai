@@ -52,7 +52,8 @@ ships neither: only the seed, both packed teams and the committed choice strings
 route to a training decision's observation is to replay the one-sided protocol AND recover the
 action history by inverting those choices through the real mapper. :func:`scan_record` does both
 in one replay and returns :class:`RecordDecision` rows (obs, mask, action index, choice string).
-It is what ``agents.training.cf_producer`` reads a ring record with.
+It was what ``agents.training.cf_producer`` read a ring record with (that offline cf stack and
+``main.search_dividend``, which the names below also cite, were deleted in P6 slice 6d-1).
 
 Known limit: a battle containing a true ``[Invalid choice]`` error round cannot
 be mirrored exactly (poke-env answers those with a coin-flip default); the

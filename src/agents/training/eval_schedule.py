@@ -1,18 +1,16 @@
-"""The eval SCHEDULE and the roster's NAMES — poke-env-free, split out of ``eval_roster.py`` (P1 of the poke-env
-retirement, ``T27``).
+"""The eval SCHEDULE and the roster's NAMES — poke-env-free (split out of the former ``eval_roster.py`` in P1 of the
+poke-env retirement, ``T27``).
 
 The flat eval schedule (``EVAL_FREQ_STEPS`` / ``EVAL_GAMES`` / ``EVAL_SHARD_GAMES``), the battle format, the
 per-player concurrency ceiling and the ORDERED roster of bot display names (``eval_opponent_names``). None of it
-touches a poke-env object, but it lived beside the player classes (``RandomPlayer``, ``Gen3StallerPlayer``, …) in
-``eval_roster``, so reading the schedule from the trainer's argument parser, ``main.h2h`` or ``main.plateau`` imported
-the whole poke-env package. ``eval_roster`` (and through it ``eval_callback``) re-exports every name here, so every
-historical import site still resolves.
+touches a poke-env object. ``eval_callback`` re-exports every name here, so every historical import site still
+resolves.
 
-**The roster is stated TWICE, deliberately.** ``eval_roster._EVAL_OPPONENT_SPECS`` pairs each name with its poke-env
-player CLASS (and ``utils/rust_env/bot_inventory.py`` reads that literal list); :data:`_EVAL_ROSTER` here is the
-poke-env-free list of the same names, in the same order. ``eval_roster`` asserts at import that the two agree and
-``eval_schedule_test.py`` pins it, so a bot added to one and not the other fails at once rather than measuring a
-different roster than the one named.
+**The roster used to be stated TWICE.** ``eval_roster._EVAL_OPPONENT_SPECS`` paired each name with its poke-env
+player CLASS and asserted at import that the two agreed; ``eval_roster`` and the Python bot classes behind it were
+deleted in P6 slice 6d-1 (2026-10-08), so :data:`_EVAL_ROSTER` here is the roster's ONE statement. The Rust core plays
+the bots by these names (``rust_eval.build`` declares the eval core's bot routes from them), and
+``utils/rust_env/bot_inventory.py`` holds the ported-bot rows beside them.
 """
 
 BATTLE_FORMAT = "gen3ou"
@@ -43,7 +41,7 @@ EVAL_SHARD_GAMES = 25
 RANDOM_OPPONENT_NAME = "random"
 
 # Full roster display names, in spec order. Random first (the broken-model floor). The SAME names, in the SAME order,
-# as ``eval_roster._EVAL_OPPONENT_SPECS`` (which adds each one's player class and account prefix).
+# as the deleted ``eval_roster._EVAL_OPPONENT_SPECS`` (which added each one's poke-env player class and account prefix).
 _EVAL_ROSTER = [
     "random", "heuristic", "heuristic2", "staller", "staller_v2",
     "aggressive", "aggressive_v2", "setup_sweep", "setup_sweep_v2",

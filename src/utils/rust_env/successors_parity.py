@@ -6,7 +6,7 @@ the in-process search tree (:class:`utils.rust_env.successors.Successors`) again
 Per battle, per sampled turn, per searched side: ``open_root`` on both (every root field equal —
 node id, requests, recorded choices, ``pre_state``, both prefixes), then THREE plies: every legal
 action of ours (the core's tokens below the root) x up to ``m_opp`` opponent choices (read off the
-request, :func:`main.search_dividend.alpha.legal_choices_from_request`) x the ply's dice seeds
+request, :func:`legal_choices_from_request` below) x the ply's dice seeds
 (freshly minted, SHARED across the ply — search's CRN shape — plus the battle's own ``"original"``
 stream on one arm per root). Every arm is compared field by field: label, node id, ``ended``,
 ``stuck``, ``outcome``, ``requests``, ``choices_used``, both ``pN_chunks`` (or the elided
@@ -32,8 +32,50 @@ from typing import List, Optional, Sequence
 
 import numpy as np
 
-from main.search_dividend.alpha import legal_choices_from_request
 from utils.rust_env import successors as S
+
+
+def legal_choices_from_request(request: Optional[dict]) -> List[dict]:
+    """A side's legal choices at a move-selection request, as sim choice strings.
+
+    Reads Showdown's own request JSON — the SERVER's answer to "what may this side do" — rather
+    than re-deriving legality from a board model. Switch targets are addressed by 1-based INDEX
+    into ``side.pokemon`` (canonical and unambiguous; a species name collides on a mirror match).
+
+    Returns ``[]`` for anything that is not an open move request (``forceSwitch``, ``teamPreview``,
+    ``wait``), which is the caller's signal that there is nothing to marginalize over.
+
+    Owned here since P6 slice 6d-1 (2026-10-08), where it moved from the deleted
+    ``main.search_dividend.alpha``: the in-process search tree's gates and its benchmark are its users.
+    """
+    if not request or request.get("wait") or request.get("teamPreview"):
+        return []
+    if request.get("forceSwitch"):
+        return []
+    out: List[dict] = []
+    active = (request.get("active") or [None])[0] or {}
+    trapped = bool(active.get("trapped") or active.get("maybeTrapped"))
+    for slot in active.get("moves") or []:
+        if slot.get("disabled"):
+            continue
+        if slot.get("pp") is not None and int(slot["pp"]) <= 0:
+            continue
+        mid = slot.get("id") or slot.get("move") or ""
+        if not mid:
+            continue
+        out.append({"kind": "move", "token": f"move {mid}",
+                    "label": slot.get("move") or mid, "move_id": mid})
+    if not trapped:
+        for i, mon in enumerate(((request.get("side") or {}).get("pokemon") or [])):
+            if mon.get("active"):
+                continue
+            cond = mon.get("condition") or ""
+            if cond.endswith(" fnt") or cond == "0 fnt":
+                continue
+            species = (mon.get("details") or mon.get("ident") or "").split(",")[0]
+            out.append({"kind": "switch", "token": f"switch {i + 1}",
+                        "label": species or f"slot{i + 1}", "slot": i})
+    return out
 
 
 @dataclass

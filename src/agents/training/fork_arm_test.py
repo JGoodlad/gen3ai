@@ -15,9 +15,8 @@ import numpy as np
 import pytest
 
 from agents.action.constants import MOVE_START
-from agents.training.cf_producer_sampler import MIN_LABELABLE_TURN
 from agents.training.fork_arm import (
-    BRANCH_NAMES, MAX_FORKABLE_TURN, MIN_LEGAL_ACTIONS, branch_actions, candidate_pool,
+    BRANCH_NAMES, MAX_FORKABLE_TURN, MIN_LABELABLE_TURN, MIN_LEGAL_ACTIONS, branch_actions, candidate_pool,
     contested_select, contested_threshold, eligible_mask, fork_metrics,
     is_move_round_mask, n_forks_for, pairwise_accuracy, pairwise_rows, pool_size_for,
     random_wins_rate, sim_steps_share, slice_ids, tie_rate, top2_gaps,
@@ -50,7 +49,7 @@ def test_eligible_needs_all_four_conditions():
     # no handle
     t2 = turns.copy(); t2[0, 1] = -1
     assert not eligible_mask(wm, t2, am)[0, 1]
-    # below cf_producer's floor / above forks.py's ceiling
+    # below the fork arm's MIN_LABELABLE_TURN floor / above forks.py's ceiling
     t3 = turns.copy(); t3[0, 2] = MIN_LABELABLE_TURN - 1; t3[0, 3] = MAX_FORKABLE_TURN + 1
     el = eligible_mask(wm, t3, am)
     assert not el[0, 2] and not el[0, 3]
@@ -61,7 +60,7 @@ def test_eligible_needs_all_four_conditions():
 
 def test_a_mid_turn_forced_switch_is_never_forkable():
     """A counterfactual replay cuts at a TURN boundary, so a forced-switch round has no divergence
-    point — `cf_producer_sampler.is_move_round`'s rule, inherited."""
+    point (the rule the deleted `cf_producer_sampler.is_move_round` spelled, inherited)."""
     switch_only = _mask(0, 1, 2)                       # three legal SWITCHES, no move
     assert not is_move_round_mask(switch_only)
     wm = np.ones((1, 1), dtype=np.float32)

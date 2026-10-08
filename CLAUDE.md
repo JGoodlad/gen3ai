@@ -380,7 +380,6 @@ src/
                      #   the shell half is scripts/ops/ — see scripts/ops/README.md
     prober/          # Forensic-replay inspector (+ web/) — has CLAUDE.md
     train/           # The training entry point's phases (parser/, config, combination_checks)
-    search_dividend/ # Search-around-the-policy probe + its 4-arm battery
     tui/             # Shared Textual base — has CLAUDE.md
     *.py             # The offline CLIs: elo, dose, lineage, baselines, critic_gate,
                      #   untaught_meter, exploitability, scaffolding_gauge, capacity,

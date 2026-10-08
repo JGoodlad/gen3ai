@@ -233,7 +233,9 @@ The prober reads a battle from the core, never from poke-env (`src/main/prober/c
   the delta of the window that ended the battle (`TrackerState::terminal_delta` —
   `RewardTracker.finalize`'s `TurnDelta`, read-only: the registries are cloned). The prober's
   core-trace expansion is built from it (`main.prober.core_recorder`), held field for field to the
-  live poke-env recorder by `src/main/prober/core_trace_integration_test.py`.
+  live poke-env recorder by `src/main/prober/core_trace_integration_test.py` until P6 slice 6d-1 (2026-10-08) deleted
+  that oracle half with the road it played on; the banked identity read is in
+  `designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`, and the file now holds the core-only checks.
 - **`core_events --obs-stream`** (`gen3_core_obs_stream_v1`): one side's protocol TEXT (`STREAM
   {viewer, username, team, actions, encode_at}` … `END`, many per process) through THE side reader
   (`pokesim::side_reader::SideReader::advance_fold`, since P6 of the poke-env retirement — the one

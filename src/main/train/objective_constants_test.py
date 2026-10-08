@@ -39,7 +39,7 @@ def test_no_constant_is_an_option_and_each_names_a_deleted_flag_row():
         flag = _FLAG[dest]
         assert flag not in options, f"{flag} is an option again — a constant must not be typeable"
         # section 1 (`| `--flag` |`), or section 1c for a trainer flag another tool's parser still declares
-        # (`| trainer --flag |`, e.g. `--gamma` in `cf_producer`)
+        # (`| trainer --flag |`; `--gamma` sat there until P6 slice 6d-1 deleted the `cf_producer` parser that still declared it)
         assert f"| `{flag}` |" in text or f"| trainer {flag} |" in text, f"{flag} has no designs/deleted_flags.md row"
     assert set(_FLAG) == set(OBJECTIVE_CONSTANTS), "a constant with no declared deleted flag"
 

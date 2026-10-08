@@ -384,7 +384,7 @@ def test_a_manifest_that_cannot_answer_is_UNKNOWN_not_complete():
 
 def test_read_root_accepts_both_spellings(tmp_path):
     """The shadow RUN dir and the eval_traces/step_<N> inside it are both natural things to
-    paste, and both normalise to the run-shaped root cf_audit needs."""
+    paste, and both normalise to the run-shaped root the offline readers need."""
     from main.ops.critic_read import resolve_read_root
     run = tmp_path / "real_run"
     run.mkdir()
@@ -411,8 +411,7 @@ def test_the_read_root_is_part_of_the_cache_key():
     artifacts — a 400-game cycle reported under a 100-game readout."""
     from main.ops.critic_read import _fingerprint, _cond_fingerprint
     import argparse
-    args = argparse.Namespace(states=1, anchors=1, rollouts=1, impl="rust", seed=0,
-                              anchor_tolerance=0.9, bins=10, cond_boot=10, cond_ladder="off")
+    args = argparse.Namespace(seed=0, bins=10, cond_boot=10, cond_ladder="off")
     live = {"run_dir": "/models/r", "step": 10, "read_root": "/models/r", "manifest": {}}
     off = {"run_dir": "/models/r", "step": 10, "read_root": "/tmp/gen/r", "manifest": {}}
     assert _fingerprint(live, args) != _fingerprint(off, args)

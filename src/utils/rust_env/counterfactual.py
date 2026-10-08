@@ -3,7 +3,7 @@
 Pick up a recorded battle at turn ``T``, substitute a different action for OUR side, and play the rest
 to a win / loss — the prober's ``replay-counterfactual`` ("could it have won if it hadn't choked this
 turn?") and the shape any Monte-Carlo continuation label wants. It replaces the poke-env road
-(``utils/bridge/counterfactual.py``: two scripted poke-env players over the in-process bridge) with ONE
+(``utils/bridge/counterfactual.py``, deleted in P6 slice 6d-1: two scripted poke-env players over the in-process bridge) with ONE
 in-process play-out (:func:`utils.rust_env.successors.play_out`): no player objects, no protocol
 re-parse — the rows are the TRAINING observation path's (program §6c), the choices the core mapper's.
 

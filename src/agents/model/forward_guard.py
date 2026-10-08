@@ -9,7 +9,8 @@ forward (`CLSPool` reads `damage_op.last_reduced_extra`; `RLPlayer` reads
 reads assumes no other forward ran in between — true of training, where each env worker is its
 own PROCESS, and false the moment two threads share one model object.
 
-**They do share one.** `main.search_dividend`'s mirror runs the searched side's
+**They did share one** (`main.search_dividend` was deleted in P6 slice 6d-1, 2026-10-08; the guard stays as the
+extractor's opt-in seam for any threaded caller, and this is the measurement that made it explicit): `main.search_dividend`'s mirror ran the searched side's
 `SearchEngine.choose` in a `run_in_executor` worker — it must, because the materializer drives a
 replay through POKE_LOOP and would deadlock against itself — while the UNSEARCHED side commits
 its own live choice on POKE_LOOP, on the same `model`. `PlayoffRunner._live_rollout` says so in

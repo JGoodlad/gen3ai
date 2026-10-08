@@ -35,7 +35,7 @@ its one-sided SUFFIX, not the view from the root.** The materializer wants
 ``our_suffixes``. This docstring used to promise "the COMPLETE one-sided view (root → that
 node)" and the search-dividend deepener believed it, which is how a depth-2 replay came to be
 fed a protocol with plies 1..d-1 missing (``gen3_search_depth2_chunk_gap_v1`` — see
-:class:`main.search_dividend.deepen.TreeNode`'s ``chunks``). At depth 1 the two readings
+:class:`main.search_dividend.deepen.TreeNode`'s ``chunks`` — deleted in P6 slice 6d-1). At depth 1 the two readings
 coincide, so nothing caught it for as long as depth 1 was all that ran.
 
 ``pre_state`` / ``outcome`` are OMNISCIENT (referee view): they drive only the opponent model

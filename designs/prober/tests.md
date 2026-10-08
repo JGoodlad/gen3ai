@@ -24,17 +24,17 @@ one-decision stall-forfeit rule) +
 `core_trace_readers_test.py` (pure, `core_trace.expand` stubbed: each reader family OUTSIDE the
 prober on a core trace — `mechanic_usage_baseline` counts the expanded decisions, the meta readers
 (`critic_gate._trace_turns`, `quota_match`, `harvest_meter`) never expand and never report a NaN phi,
-and `cf_audit`, `harvest`, `scaffolding_gauge` and the win-prob teacher REFUSE with
+and `harvest`, `scaffolding_gauge` and the win-prob teacher REFUSE (so did `cf_audit`, deleted P6 slice 6d-1) with
 `CoreTraceUnsupported`; each fails on revert) + `src/trace_summary_reader_gate_test.py` (the static
 gate: no module but `core_trace.py` opens a `*_summary.json`; EMPTY allowlist; its scanner's shapes
 pinned both ways) +
-`core_trace_integration_test.py` (`@sim @integration`, builds the rust env cdylib: REAL core games —
-two normal, one at a short `turn_limit` ending in the trainee's stall forfeit — expanded FROM THE
-RUST CORE'S WALK (P5) and matched against the `states.npz` rows; each game replayed LIVE on the rust
-bridge through a `BattleRecorder` exactly as `EvalRLPlayer` records, the two summaries equal field for
-field and the obs byte-equal — the poke-env ORACLE the core reading is held to; the core's stream rows
-equal the stored rows and its choice maps equal the poke-env materializer's; a tampered record line and
-misaligned states rows REFUSED; `query summary|scan|turns` exit 0 on the core-trace run) +
+`core_trace_integration_test.py` (`@sim @integration`, builds the rust env cdylib, CORE-ONLY since P6 slice 6d-1: REAL core
+games — two normal, one at a short `turn_limit` ending in the trainee's stall forfeit — expanded FROM THE
+RUST CORE'S WALK (P5) and matched against the `states.npz` rows; the core's stream rows equal the stored rows
+byte for byte and its choice maps equal the stream reading's and name exactly the stored row's legal actions;
+a tampered record line and misaligned states rows REFUSED; `query summary|scan|turns` exit 0 on the core-trace
+run. The poke-env ORACLE half — each game replayed LIVE through a `BattleRecorder` and the choice maps held to
+the poke-env materializer — was deleted with the road it compared) +
 `src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked`
 (`@slow @sim @integration` — 127 s on a quiet box, so it left the routine gate 2026-10-08; run it explicitly after a prober change: every JSON-CLI command — `replay-counterfactual` included since P6, with a model
 and a self-model opponent and `--narrate` — and the web app's views RUN with poke-env blocked on real core

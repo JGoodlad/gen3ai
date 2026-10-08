@@ -105,12 +105,12 @@ SAMPLER_VERSION = "harvest_stall_tail_v1"
 #: comparable across harvests at the same version.
 W_GAP, W_UNCERTAINTY, W_DRAG = 0.5, 0.3, 0.2
 
-#: The lowest turn the offline replay driver will anchor at. Matches ``cf_audit``'s sampler bound:
+#: The lowest turn the offline replay driver will anchor at. Matched ``cf_audit``'s sampler bound (deleted P6 slice 6d-1):
 #: turn 1 became openable on both impls in 2026-08, but lowering the two independently would change
 #: the audited population, so they move together or not at all.
 MIN_LABELABLE_TURN = 2
 
-#: A handful of very long games must not carry a whole harvest. Same value ``cf_audit`` uses.
+#: A handful of very long games must not carry a whole harvest. Same value ``cf_audit`` used.
 MAX_PER_BATTLE = 12
 
 #: Probe O's classes, verbatim, so a harvest and the probe that motivated it partition the corpus

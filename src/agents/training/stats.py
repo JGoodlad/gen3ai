@@ -6,9 +6,12 @@ admission rule for this module — a helper that needs to know what a *decision*
 belongs beside the instrument that owns the concept, not here.
 
 Extracted from ``cf_audit.py`` (2026-09-06) as the file-size ratchet's first cut of the 1,000–2,000
-band; every function keeps the docstring it was written with, and each notes where it came from.
-The arithmetic is unchanged — ``cf_audit_test.py`` pins the whole audit's JSON-serialised readouts
-against a golden captured BEFORE the move.
+band (🚨 ``cf_audit`` and the whole offline cf stack — ``cf_producer*``, ``cf_audit_twin``, ``cf_audit_render``,
+``cf_q_labels``, ``cf_mc_return`` — were DELETED in P6 slice 6d-1, 2026-10-08; every ``cf_*`` name below is
+provenance, and the functions here stay for their live readers: ``best_response_gap``, ``value_sidecar_read``);
+every function keeps the docstring it was written with, and each notes where it came from.
+The arithmetic is unchanged — ``cf_audit_test.py`` (deleted with it) pinned the whole audit's JSON-serialised
+readouts against a golden captured BEFORE the move; ``stats_test.py`` pins the functions now.
 
 What lives here
 ---------------

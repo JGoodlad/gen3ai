@@ -131,14 +131,6 @@ def test_harvest_meter_tail_reads_meta_and_never_reports_a_nan_phi(core_run, no_
 # readers that CANNOT be sound (they rank or gate on the recorded win-prob head) — REFUSE
 # ---------------------------------------------------------------------------
 
-def test_cf_audit_frame_refuses_instead_of_returning_an_empty_frame(core_run, no_expand):
-    from agents.training.cf_audit import build_frame
-
-    run_dir, _paths = core_run
-    with pytest.raises(CoreTraceUnsupported, match="cf_audit.build_frame"):
-        build_frame(os.path.join(run_dir, "eval_traces", f"step_{STEP}"))
-
-
 def test_harvest_candidates_refuse_instead_of_an_empty_harvest(core_run, no_expand):
     from main.harvest import build_candidates
 

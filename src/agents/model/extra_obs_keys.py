@@ -35,8 +35,8 @@ builds through this module — the forkserver preload, the round-trip smoke and 
 observation SPACE, ``compile_trainer._prewarm_obs``); so does ``churn_probe.masked_action_probs``. The OFFLINE audit / probe CLIs still hand-build a one-key
 dict (``critic_route_audit``, ``edge_ablation_audit``, ``op_block_split_audit``,
 ``capacity_probes``, ``concat_readout_probe``, ``feature_coverage/_support``,
-``cf_producer_snapshot``, ``capacity_telemetry``, ``instrumented_ppo/rollout_probes``,
-``teacher/buffer``, ``search_dividend/{perf,search,ab_racing}``, ``harvest``,
+``capacity_telemetry``, ``instrumented_ppo/rollout_probes``,
+``teacher/buffer``, ``harvest``,
 ``visualize_arch``, ``rust_sim/harness/g1_bakeoff``). Those fail in the first second at a terminal
 with the seam's own message naming the fix, which costs a retype rather than a GPU-hour — a
 different severity, tracked in ``designs/ops/TECH_DEBT_BACKLOG.md``. When you touch one, route it

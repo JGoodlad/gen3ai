@@ -502,7 +502,7 @@ is a FORWARD-PASS budget, not a sim budget. The sim side stays at a few cores ev
 4 cores**; full coverage would have needed **~230 cores**, because **91% of its time was PREFIX
 REPLAY** — each arm re-played the battle from turn 1 (arm ≈ 4.78 + 0.853·turn ms, ~26 ms at the mean
 turn, before prefix sharing's measured 2.91×) (ledger 2026-08-21 · the counterfactual cost model; the
-`cf_audit` command it produced). The M5 core holds the LIVE in-memory state, so a branch is a clone of
+`cf_audit` command it produced — deleted, P6 slice 6d-1). The M5 core holds the LIVE in-memory state, so a branch is a clone of
 the state the loop is already at — no replay — and one successor costs ~133 µs.
 
 **Conclusion.** Playout labels are DEFERRED (owner, 2026-09-30, §5.0); this is their price for when

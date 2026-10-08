@@ -1,6 +1,7 @@
 """`main.prober.core_walk` without the binary: the core_events script, the replay-log dispatch, the
 result parser's refusals and the stall rule. The walk itself — and its equality with the live
-Python recorder and the poke-env materializer — is `core_trace_integration_test.py` (`sim`).
+Python recorder and the poke-env materializer, until P6 slice 6d-1 retired that oracle — is now
+`core_trace_integration_test.py` (`sim`, core-only).
 Milliseconds; unmarked.
 """
 from __future__ import annotations

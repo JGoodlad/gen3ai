@@ -529,7 +529,7 @@ truncates the message, the prober's drift diagnosis, still sees which keys diffe
 `OwnedLoop` inherits it (so `InstrumentedMaskablePPO` and `InferenceMaskablePPO` carry it), and
 `StrictMaskablePPO` is a plain `MaskablePPO` plus it. P10-B closed the learner and the opponents; the
 READERS — `play.py`'s ladder session, the prober (`ProbeModel.load` and the counterfactual rollout
-players), the eval worker, `eval_trace_gen`, `cf_producer_snapshot`, `search_dividend`, the Rust eval
+players), the eval worker, `eval_trace_gen`, `cf_producer_snapshot`, `search_dividend` (the last two deleted in P6 slice 6d-1), the Rust eval
 parity / benchmark harnesses and `winprob_finetune` — still called sb3's `MaskablePPO.load` and kept the
 retry. They load through ONE function, `snapshot.load_checkpoint_strict(path, device=, custom_objects=)`.
 It is deliberately a `StrictMaskablePPO` and not an `InferenceMaskablePPO`: an inference class also

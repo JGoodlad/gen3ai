@@ -2,6 +2,16 @@
 
 This directory contains the bridge logic used to access the Pokémon Showdown simulation library directly from Python, without requiring a running server.
 
+> **P6 slice 6d-1 of the poke-env retirement (2026-10-08) — what this directory no longer holds.** DELETED: `counterfactual.py`
+> (the poke-env two-player counterfactual replay — the Rust core's is `utils/rust_env/counterfactual.py`) and the tests whose
+> battles it or `run_local_battles` played for their subject: `counterfactual_test`, `counterfactual_fuzz_test`,
+> `bridge_impl_parity_test`, `reconstruction_fuzz_test`, `reroll_many_parity_fuzz_test`, `search_clone_parity_fuzz_test`,
+> `search_driver_turn1_integration_test` and `local_sim_bridge_integration_test` — together with the whole
+> `main/search_dividend/` battery and the offline cf stack (`agents/training/cf_*`) that were this road's callers. **Every
+> passage below that names one of them as a gate, a caller or a section is RECORDED HISTORY.** `battle_stream_client.py`,
+> `local_battle_runner.py` and `reconstruction.py` still exist: the poke-env fuzz tests of the Python battle layer still play on
+> them and go with it (a later slice). The search INFRA stays: `search_session.py`, `sim_bridge_bin.py`, `ws_frontend*`.
+
 ## Overview
 By bridging Python to Node.js, we can utilize the actual `pokemon-showdown` codebase (located in `deps/`) as a library. This allows us to perform complex operations like **Team Validation** using the official Smogon rules and logic, but with the performance of a local function call.
 
@@ -504,7 +514,7 @@ unbuilt battle (the other source of `turn() == 0`) has no boundary and is alread
 the real binary) and `search_driver_turn1_integration_test.py` (`sim`: turn 1 opens on node AND
 rust, with turn 2 as the identity control).
 
-### Counterfactual replay-to-end (`counterfactual.py`)
+### Counterfactual replay-to-end (`counterfactual.py`) — DELETED in P6 slice 6d-1; history
 
 Where `reroll_turn` re-rolls a SINGLE turn, **`replay_counterfactual`** picks up a recorded battle at
 turn T, substitutes a different move for one side, and **plays the rest LIVE to a win/loss** — the
@@ -573,10 +583,11 @@ coincide**, which is why no gate saw it. A hole is a different battle, not a coa
 keeps applying lines to the board it last saw, so a switch in the gap logs `"Message thinks p1: X
 is active, but it's not"` and an opponent reveal in the gap makes a later reference construct a
 Pokémon whose *species* is the NICKNAME (`KeyError: 'ptãra'` — reported as an encoding bug, but the
-mojibake is in the committed team file and any nickname raises). Gate:
-`main/search_dividend/depth2_replay_integration_test.py`, over both impls.
+mojibake is in the committed team file and any nickname raises). The gate was
+`main/search_dividend/depth2_replay_integration_test.py` (deleted with that battery, P6 slice 6d-1); the bytes pin
+survives as `src/utils/team_loader/committed_team_bytes_test.py`.
 🚨 **AN OFFLINE REPLAY MUST NOT SHARE A ROOM WITH A LIVE BATTLE.** `BattleStreamClient` writes
-`CHOOSE <side> <choice>` keyed on the ROOM, and `search_dividend.record.install_choice_tap` is a
+`CHOOSE <side> <choice>` keyed on the ROOM, and `search_dividend.record.install_choice_tap` (deleted, P6 slice 6d-1) was a
 process-wide patch on that method whose only filter is the room — so a replay player running under
 the live battle's tag had its `/choose default` orders recorded into the LIVE reconstruction
 record. `obs_materializer._next_tag` now always mints a unique tag

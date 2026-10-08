@@ -35,8 +35,8 @@ from agents.battle.live_view import LegalActions, LiveView
 WALK_SCHEMA = "gen3_core_walk_v1"
 
 #: ``Player.MESSAGES_TO_IGNORE`` — the keywords poke-env's player drops before its battle sees them
-#: (so they never reach the replay log). Pinned to the fork's own set by
-#: ``core_trace_integration_test.py`` while the fork exists.
+#: (so they never reach the replay log). Pinned to this literal by ``core_walk_test.py`` (it was pinned to the fork's
+#: own set by the poke-env oracle test in ``core_trace_integration_test.py`` until P6 slice 6d-1 deleted it).
 PLAYER_IGNORED = frozenset({"t:", "expire", "uhtmlchange"})
 
 

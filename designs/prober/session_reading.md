@@ -126,7 +126,7 @@ the tier that works on every run, forever.
 - `probe_model(battle_id)` — `(ProbeModel, ModelChoice)`, the **public face of the exact→nearest→recent
   resolution ladder** (the same cached `_model_for` every analysis uses). For out-of-package readers
   that need the loaded network rather than one of the analyses over it —
-  `agents.training.cf_audit` loads the audited checkpoint this way (its evidential-head read, `ProbeModel.cf_evidential_batch`,
+  `agents.training.cf_audit` (deleted, P6 slice 6d-1) loaded the audited checkpoint this way (its evidential-head read, `ProbeModel.cf_evidential_batch`,
   returns `None` on every loadable checkpoint now that the head is deleted, deletion pass L4).
   Every battle in one `step_N` trace dir resolves to the same checkpoint, so a caller that resolves
   once and reuses pays for one load.

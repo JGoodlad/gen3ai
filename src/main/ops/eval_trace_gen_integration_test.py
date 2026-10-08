@@ -7,9 +7,8 @@ pointer head's uniform tie). The cycle is generated TWICE at one seed and once a
 each; a MODULE fixture: the tier budget is per test call), and the tests read the result:
 
 (a) the READERS accept it — ``main.ops.critic_read``'s cycle pick and refusal gates, the prober's ``summary`` /
-    ``scan``, ``cf_audit``'s identity half (the snapshot and the sentinel pins resolve against the shadow run) — and
-    ``cf_audit``'s sampling FRAME refuses it, loudly, as it refuses every Rust-eval core trace (F-LH-4: no recorded
-    win-prob head);
+    ``scan``, and the shadow run's layout (the step's ``snapshot.zip`` and the pinned sentinel's snapshot resolve
+    against it; the offline ``cf_audit`` identity half that read it was deleted, P6 slice 6d-1);
 (b) a rerun at the same ``--seed`` is IDENTICAL, file for file and byte for byte; another seed is another cycle;
 (c) the manifest's regime and sentinel blocks are the RUN's.
 """
@@ -94,7 +93,7 @@ def test_the_manifest_records_the_RUNs_regime_and_the_sentinels_it_played(cycles
     assert (gen["seed"], gen["seed_source"], gen["reproducible"]) == (13, "given", True)
     assert gen["sentinel_steps"] == [SENTINEL_STEP] and gen["sentinels_used"] == 1 and gen["bots"] == list(BOTS)
     assert (gen["battles_expected"], gen["battles_played"], gen["complete"]) == (6, 6, True)
-    # the shadow metadata pins the sentinel the cycle PLAYED (cf_audit reads it)
+    # the shadow metadata pins the sentinel the cycle PLAYED (the offline readers resolve it)
     meta = json.loads((cycles["a"] / "metadata.json").read_text())
     assert meta["latest_eval"]["pool"]["sentinels"] == [
         {"step": SENTINEL_STEP, "snapshot": f"snapshot_{SENTINEL_STEP:012d}.zip"}]
@@ -168,19 +167,13 @@ def test_the_prober_summary_and_scan_read_the_generated_cycle(cycles):
     assert len(rows) == 6
 
 
-def test_cf_audit_resolves_the_identity_against_the_shadow_run_and_its_frame_refuses_core_traces(cycles):
-    """The identity half: the traces dir, the network that played it (``snapshot.zip`` in the step dir) and the
-    pinned sentinel resolve inside the shadow run. The FRAME refuses: the sampling frame needs a recorded win-prob
-    head, and a Rust-eval core trace records none (F-LH-4) — the same refusal every live Rust-core cycle meets."""
-    from agents.training import cf_audit as CF
-    from main.prober.core_trace import CoreTraceUnsupported
-
+def test_the_shadow_run_resolves_the_step_snapshot_and_the_pinned_sentinel(cycles):
+    """The traces dir, the network that played it (``snapshot.zip`` in the step dir) and the pinned sentinel resolve
+    inside the shadow run — the layout the offline identity half (``cf_audit``, deleted P6 slice 6d-1) read."""
     out = cycles["a"]
-    traces = CF._resolve_traces(str(out), None)
-    assert Path(traces) == _step_dir(out) and (Path(traces) / "snapshot.zip").exists()
-    snaps = CF.sentinel_snapshots(str(out))
-    assert set(snaps) == {"sentinel_0"} and Path(snaps["sentinel_0"]).name == f"snapshot_{SENTINEL_STEP:012d}.zip"
-    assert Path(snaps["sentinel_0"]).resolve() == (cycles["run"] / "snapshots" /
-                                                    f"snapshot_{SENTINEL_STEP:012d}.zip").resolve()
-    with pytest.raises(CoreTraceUnsupported, match="cf_audit.build_frame"):
-        CF.build_frame(traces)
+    assert (_step_dir(out) / "snapshot.zip").exists()
+    meta = json.loads((out / "metadata.json").read_text())
+    (sent,) = meta["latest_eval"]["pool"]["sentinels"]
+    name = f"snapshot_{SENTINEL_STEP:012d}.zip"
+    assert sent["snapshot"] == name and (out / "snapshots" / name).exists()
+    assert (out / "snapshots" / name).resolve() == (cycles["run"] / "snapshots" / name).resolve()

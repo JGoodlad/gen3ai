@@ -52,11 +52,9 @@ def _build_release() -> None:
 
 
 def _arms(root, side: str, rng) -> List[dict]:
-    from main.search_dividend.alpha import legal_choices_from_request
-
     other = "p2" if side == "p1" else "p1"
-    ours = [c["token"] for c in legal_choices_from_request(root.requests[side])]
-    opp = [c["token"] for c in legal_choices_from_request(root.requests[other])][:3] or ["random"]
+    ours = [c["token"] for c in SP.legal_choices_from_request(root.requests[side])]
+    opp = [c["token"] for c in SP.legal_choices_from_request(root.requests[other])][:3] or ["random"]
     seeds = [f"sodium,{int(x):032x}" for x in rng.integers(0, 2**63, 2)]
     return [{"node_id": root.node_id, f"{side}_action": a, f"{other}_action": o, "seed": s, "label": i}
             for i, (a, o, s) in enumerate([(a, o, s) for a in ours for o in opp for s in seeds])]
