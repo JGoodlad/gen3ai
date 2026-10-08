@@ -1,23 +1,23 @@
-"""Guards on the ladder entry point (`main.play`).
+"""Guards on the live-play entry point (`main.play`).
 
-The two that matter are SAFETY RAILS, not conveniences:
+The ones that matter are SAFETY RAILS, not conveniences:
 
-* the reserved-port refusal — a laddering process that connects to :8001 drops every
-  poke-env websocket on the live training run at once (root CLAUDE.md § Showdown
-  Server), so the refusal lives in code rather than in a warning;
-* the guest refusal on `--server official` — the public ladder does not rate a guest,
-  so a run without credentials would play unrated games and report nothing.
+* the reserved-port refusal — a client that connects to :8001 / :8000 has no business on the live training
+  server or the shared dev server (root CLAUDE.md § Showdown Server), so the refusal lives in code rather than in a
+  warning;
+* `--server official` never reachable through a local port typo;
+* the flags DELETED with the legacy poke-env client (P6) are refused with their reason, never silently ignored.
 """
 
 import pytest
 
-from main.play import RESERVED_PORTS, build_account, build_parser, resolve_server
+from main.play import DELETED_FLAGS, RESERVED_PORTS, build_parser, refuse_deleted_flags, resolve_uri, run
 
 
 @pytest.mark.parametrize("port", sorted(RESERVED_PORTS))
 def test_reserved_local_ports_are_refused(port):
     with pytest.raises(SystemExit) as exc:
-        resolve_server("local", port)
+        resolve_uri("local", port)
     assert str(port) in str(exc.value)
 
 
@@ -26,24 +26,30 @@ def test_the_reserved_set_is_exactly_dev_and_training():
 
 
 def test_a_9xxx_port_is_allowed_and_points_at_localhost():
-    cfg = resolve_server("local", 9017)
-    assert cfg.websocket_url == "ws://localhost:9017/showdown/websocket"
+    assert resolve_uri("local", 9017) == "ws://127.0.0.1:9017/showdown/websocket"
 
 
 def test_official_ignores_the_port_and_uses_wss():
     """`--server official` must never be reachable via a local port typo."""
-    cfg = resolve_server("official", 8001)
-    assert cfg.websocket_url.startswith("wss://")
-    assert "localhost" not in cfg.websocket_url
+    uri = resolve_uri("official", 8001)
+    assert uri.startswith("wss://")
+    assert "127.0.0.1" not in uri and "localhost" not in uri
 
 
-def test_official_without_a_username_is_refused():
-    with pytest.raises(SystemExit, match="username"):
-        build_account(None, None, "official")
+@pytest.mark.parametrize("flag", sorted(DELETED_FLAGS))
+def test_a_deleted_flag_is_refused_with_its_reason(flag):
+    """P6: `--client poke-env` (and the poke-env client's own `--avatar` / `--concurrency`) is refused before any
+    connection, naming why — in both spellings."""
+    for argv in ([flag, "x"], [f"{flag}=x"]):
+        with pytest.raises(SystemExit, match=f"{flag} was DELETED"):
+            refuse_deleted_flags(argv)
+        with pytest.raises(SystemExit, match=f"{flag} was DELETED"):
+            run(["--mode", "selfplay", "--port", "9", *argv])
 
 
-def test_local_without_a_username_is_a_guest():
-    assert build_account(None, None, "local") is None
+def test_the_deleted_flags_are_gone_from_the_parser():
+    opts = {o for a in build_parser()._actions for o in a.option_strings}
+    assert not opts & set(DELETED_FLAGS)
 
 
 def test_default_port_is_not_reserved():

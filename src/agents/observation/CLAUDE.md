@@ -487,8 +487,10 @@ rule-gated lines (`RULE_GATED_LINES`), and non-obtainable items.
 - `gen3_effects_bridge_integration_test.py` (`sim`). A scripted node-bridge battle uses Heal Bell,
   Aromatherapy, Beat Up, Magnitude, Mind Reader, Spite and Conversion, and fully encodes both sides
   at every decision.
-- `main/ladder_drift_scan.py` runs the same derivation against Showdown **master** (the public
-  server), and pushes every replayed effect and `|cant|` reason through the encoder.
+- `main/ladder_drift_scan.py` runs the same TEXT derivation against Showdown **master** (the public
+  server) and, since P6 of the poke-env retirement, EXECUTES each derived line on the RUST reader
+  (`main.live.effect_scan`: a spectator chain + an encode) instead of on `Gen3Battle`; every replay
+  is read and encoded per turn by the same reader (`main.live.replay_scan.scan_one`).
 
 This change is **value-neutral on every state that encoded before**: a newly classified id only
 touches encodes that used to RAISE. Proof: 400 pool battles (30,943 decisions) were byte-identical

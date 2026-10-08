@@ -1,0 +1,33 @@
+{
+ "gate": "P4 (c) master Node series",
+ "showdown_master": "51ad80fa5b264a28416b0d78667519a97ba2d2ee",
+ "model": "/tmp/p6coord/smoke_models/rb_run_20261008_004514/final_model.zip",
+ "pool_teams": 719,
+ "master_valid_teams": 719,
+ "master_rejected_teams": 0,
+ "cells": {
+  "bot:heuristic2": {
+   "played": 3,
+   "team_rejections": 0,
+   "seconds": 3.2
+  },
+  "bot:aggressive_v2": {
+   "played": 3,
+   "team_rejections": 0,
+   "seconds": 1.4
+  },
+  "bot:staller": {
+   "played": 3,
+   "team_rejections": 0,
+   "seconds": 1.8
+  },
+  "self:self": {
+   "played": 2,
+   "seconds": 2.0
+  }
+ },
+ "our_decisions": 788,
+ "t28_halts": [],
+ "marker": null,
+ "verdict_c": "PASS"
+}

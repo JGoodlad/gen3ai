@@ -1,19 +1,21 @@
-"""P4 gates (c) and (d) — the Rust client against a LOCAL Node Showdown built from CURRENT MASTER.
+"""P4 gate (c) — the Rust client against a LOCAL Node Showdown built from CURRENT MASTER.
 
 (c) Real framing, real ``rqid``, the server's own room lines, the master simulator's protocol: our checkpoint on the
-    Rust client (``main.live``) challenges scripted bots (``agents.opponents``, poke-env clients in their own process,
-    ``main.live.gate_peer --role bot``) and itself (two Rust clients — the self-vs-self acceptance's shape). The
-    verdict is the T28 count: every halt is a finding to root-cause.
-(d) SHADOW: our checkpoint on the LEGACY poke-env client (``gate_peer --role shadow``) with a Rust reader shadowing
-    every frame it receives; the Rust client plays the other seat. Row / mask / action / token compared decision by
-    decision; every difference is a registered finding or a poke-env misreading.
+    Rust client (``main.live``) challenges scripted bots (the RUST ports of the roster bots, each a Rust-stack client
+    in its own process, ``main.live.gate_peer``; poke-env clients until P6) and itself (two Rust clients — the
+    self-vs-self acceptance's shape), and optionally a Metamon agent. The verdict is the T28 count: every halt is a
+    finding to root-cause.
+
+Gate (d) — the SHADOW (our checkpoint on the legacy poke-env client with a Rust reader beside it) — is BANKED (16,523
+decisions, 0 differences, ``designs/research_state/measurements/pokeenv_p4_live_2026-10-07/``) and was retired with
+that client in P6 of the poke-env retirement (2026-10-08).
 
 The server is never the pinned ``deps/``: it is a master checkout (``--showdown``, default
 ``~/.cache/gen3ai/p4/showdown-master``) started with ``--no-security`` on a 9XXX port and stopped BY PID. The halt
 marker of THIS harness is gate-local (``<out>/live_halt.json``): a halt here is the gate's finding, root-caused before
 P6, and never blocks another agent's live tool (stated in the measurement README).
 
-    python -m main.live.master_series --model <ckpt.zip> --games-per-bot 10 --self-games 20 --shadow-games 20 --out <dir>
+    python -m main.live.master_series --model <ckpt.zip> --games-per-bot 10 --self-games 20 --out <dir>
 """
 from __future__ import annotations
 
@@ -202,7 +204,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--bots", default=",".join(BOTS))
     ap.add_argument("--games-per-bot", type=int, default=5)
     ap.add_argument("--self-games", type=int, default=10)
-    ap.add_argument("--shadow-games", type=int, default=10)
     ap.add_argument("--metamon", default="", help="Metamon agent(s), comma-separated (e.g. SmallRL)")
     ap.add_argument("--metamon-games", type=int, default=0)
     ap.add_argument("--seed", type=int, default=1)
@@ -237,8 +238,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         jobs = [("bot", b) for b in a.bots.split(",") if b and a.games_per_bot > 0]
         jobs += [("metamon", m) for m in a.metamon.split(",") if m and a.metamon_games > 0]
-        if a.shadow_games > 0:
-            jobs.append(("shadow", "RLPlayer"))
         if a.self_games > 0:
             jobs.append(("self", "self"))
         for k, (kind, what) in enumerate(jobs):
@@ -255,10 +254,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                                                         a.seed * 100 + k, rec, cell))
                 else:
                     peer_name, our_name = f"p4peer{k}", f"p4ours{k}"
-                    n = a.games_per_bot if kind == "bot" else a.shadow_games
-                    pargs = ["--role", kind, "--port", str(a.port), "--username", peer_name, "--opponent", our_name,
-                             "--n", str(n), "--out", str(out)]
-                    pargs += ["--bot", what] if kind == "bot" else ["--model", a.model]
+                    n = a.games_per_bot
+                    pargs = ["--bot", what, "--seed", str(a.seed * 100 + k), "--port", str(a.port),
+                             "--username", peer_name, "--opponent", our_name, "--n", str(n)]
                     peer = start_peer(pargs, out / f"peer_{k}_{what}.log")
                     cells[cell] = asyncio.run(our_games(uri, our_name, peer_name, n, policy, teams,
                                                         a.seed * 100 + k, rec, cell))
@@ -276,29 +274,17 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"[master] {cell}: {cells[cell]}", flush=True)
     finally:
         stop(srv)
-    shadow = []
-    sp = out / "shadow.jsonl"
-    if sp.exists():
-        shadow = [json.loads(line) for line in sp.read_text().splitlines() if line.strip()]
-    decisions = [r for r in shadow if r.get("kind") == "decision"]
-    diffs: Dict[str, int] = {}
-    for r in decisions:
-        for d in r.get("diff", []):
-            diffs[d] = diffs.get(d, 0) + 1
-    other = [r for r in shadow if r.get("kind") != "decision"]
     summary = {
-        "gate": "P4 (c) master Node series + (d) shadow", "showdown_master": sha, "model": a.model,
+        "gate": "P4 (c) master Node series", "showdown_master": sha, "model": a.model,
         "pool_teams": len(pool), "master_valid_teams": len(teams), "master_rejected_teams": len(val["rejected"]),
         "cells": cells, "our_decisions": rec.decisions, "t28_halts": halts,
         "marker": read_halt(),
-        "shadow": {"decisions": len(decisions), "diff_counts": diffs, "other_events": other[:50]},
         "verdict_c": "PASS" if not halts and all("error" not in v for v in cells.values()) else "FAIL",
-        "verdict_d": "PASS" if decisions and not diffs and not other else "FAIL",
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=1, default=str) + "\n")
-    print(json.dumps({k: summary[k] for k in ("cells", "our_decisions", "t28_halts", "shadow", "verdict_c",
-                                              "verdict_d")}, indent=1, default=str)[:6000])
-    return 0 if summary["verdict_c"] == "PASS" and summary["verdict_d"] == "PASS" else 1
+    print(json.dumps({k: summary[k] for k in ("cells", "our_decisions", "t28_halts", "verdict_c")},
+                     indent=1, default=str)[:6000])
+    return 0 if summary["verdict_c"] == "PASS" else 1
 
 
 if __name__ == "__main__":

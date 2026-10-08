@@ -42,7 +42,6 @@ src/agents/training/obs_materializer.py
 src/agents/training/trainer_turn_benchmark.py
 src/agents/training/turn_delta.py
 src/main/eval_worker.py
-src/main/play.py
 src/main/search_dividend/battery.py
 src/main/search_dividend/determinize.py
 src/main/search_dividend/playoff.py

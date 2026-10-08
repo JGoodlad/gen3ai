@@ -23315,3 +23315,27 @@ Tag: **BUILT · P6 slice 1 · replay-counterfactual on the core · identity 336/
   `main.live.gate_peer` (anchors no longer use either).
 
 Tag: **BUILT · anchors 100% off poke-env (core slot + Rust-stack live client + Rust bots) · bots 108 / 108 byte-identical, teeth 0 / 12 · checkpoint live client 19 / 20 (1 = peer H5) · Node shadow 0 / 1,349 diffs · allowlist 135 → 133**
+
+### 2026-10-08 · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 3: live play and the pre-session drift gate on the Rust stack only — `main.play --client poke-env` DELETED, gate (c)'s bot peers are the Rust ports, gate (d)'s shadow retired (banked), and both reader checks of `ladder_drift_scan` run on the live reader. Effect-source lines judged alike 93 / 93 (pinned and master); 200 public replays: old 198 / 200 (2 = the old scan's own rejoin misread), new 200 / 200**
+
+- **Built.** `main.play`: the legacy `RLPlayer` client and its helpers (`main_poke_env`, `resolve_server`,
+  `build_account`, `build_teambuilder`, `build_model_player`) deleted; `--client`, `--avatar`, `--concurrency` refused
+  with their reason (`main.play.DELETED_FLAGS`, `designs/deleted_flags.md`). `main.live.gate_peer`: a Rust-stack client
+  playing the RUST port of a roster bot (`BotReader` / `BotPolicy`, `--bot <bots::Kind>`, `--seed`); the shadow role and
+  `master_series --shadow-games` deleted. `ladder_drift_scan`: the read + encoder (replayed) checks through
+  `main.live.replay_scan.scan_one` (both seats, an encode every turn); the encoder (source) check through the new
+  `main.live.effect_scan` (each source-derived line read + encoded after a fixed preamble); format spec unchanged.
+  Allowlist 131 → 130 (`main/play.py`).
+- **Measured** (`designs/research_state/measurements/pokeenv_p6_live_drift_2026-10-08/`). Effect-source lines, Python
+  `Gen3Battle` + `gen3_effects` vs the Rust probe at one commit: **93 / 93 alike** on the pinned Showdown and on a
+  master checkout (51ad80fa); a fabricated effect is an `UnknownVolatileError`. The retired vs the new drift scan on
+  the same 200 public replays + master's source: old **198 / 200** clean (exit 1), new **200 / 200** (exit 0); the 2
+  old failures are a player disconnect / rejoin the old spectator `Gen3Battle` misread (`team already has 6
+  pokemons`), now a committed fixture. Gate (c) on a master-built Node with the Rust bot peers, under the poke-env
+  blocker: 3 bots × 3 + 2 self-games, **788 decisions, 0 T28 halts, PASS**.
+- **Findings.** (1) Any past drift read reporting `team already has 6 pokemons` was the scan, not the server. (2) The
+  effect-source check now proves "reads and encodes" (the reader's crash-don't-drop rule), not "classified into the
+  expected slot" — **UNVERIFIED** for lines outside the encoder's corpus gates. (3) Gate (c)'s bots are now the Rust
+  ports (action-equal per decision by `bots_gate_test.rs`); a P4-era gate-(c) number is not re-measured on them.
+
+Tag: **BUILT · live play + drift gate Rust-only · effect lines 93 / 93 alike · drift 200 / 200 (old 198, both old failures its own misread) · gate (c) PASS on Rust bots, poke-env blocked · allowlist 131 → 130**

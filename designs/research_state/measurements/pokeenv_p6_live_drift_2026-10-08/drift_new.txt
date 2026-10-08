@@ -1,0 +1,7 @@
+[drift] encoder (source): 94 effect lines derived from /home/goodlad/.cache/gen3ai/p4/showdown-master, each read + encoded by the Rust reader
+[drift] ✓ encoder (source): every derived effect line reads and encodes clean.
+[format] ✓ Showdown at /home/goodlad/.cache/gen3ai/p4/showdown-master: gen3ou's rules, banlist, Standard, Uber tier and clause bodies match the spec.
+[drift] replays=200  protocol_lines=72600  distinct_keywords=51
+[drift] read clean (both seats): 200/200
+[drift] encoder (replayed): 11226 per-turn encodes checked
+[drift] ✓ no drift: every replay read clean from both seats, every turn encoded.

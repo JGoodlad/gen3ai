@@ -372,9 +372,9 @@
   },
   "src/agents/training/rust_eval/parity_fixed_test.py::test_teeth_a_fixed_opponent_playing_the_trainees_weights_is_fatal": {
    "status": "pass",
-   "commit": "d1497c690fcad1da0b2ea00006413d60def1d9ce",
-   "at": "2026-10-08T07:45:10Z",
-   "duration_s": 36.66,
+   "commit": "1f1bba9513e4b1486e49b6b5784fe460f12afe29",
+   "at": "2026-10-08T08:28:44Z",
+   "duration_s": 37.84,
    "contention": 1.0,
    "detail": ""
   },
@@ -404,9 +404,9 @@
   },
   "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_the_fork_phase_runs_inside_collect_and_the_lifecycle_stays_clean": {
    "status": "pass",
-   "commit": "d1497c690fcad1da0b2ea00006413d60def1d9ce",
-   "at": "2026-10-08T07:45:10Z",
-   "duration_s": 31.45,
+   "commit": "1f1bba9513e4b1486e49b6b5784fe460f12afe29",
+   "at": "2026-10-08T08:28:44Z",
+   "duration_s": 31.79,
    "contention": 1.0,
    "detail": ""
   },
@@ -927,17 +927,17 @@
   },
   "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "d1497c690fcad1da0b2ea00006413d60def1d9ce",
-   "at": "2026-10-08T07:45:10Z",
-   "duration_s": 316.59,
-   "contention": 1.01,
+   "commit": "1f1bba9513e4b1486e49b6b5784fe460f12afe29",
+   "at": "2026-10-08T08:28:44Z",
+   "duration_s": 316.43,
+   "contention": 1.0,
    "detail": ""
   },
   "src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "d1497c690fcad1da0b2ea00006413d60def1d9ce",
-   "at": "2026-10-08T07:45:10Z",
-   "duration_s": 101.76,
+   "commit": "1f1bba9513e4b1486e49b6b5784fe460f12afe29",
+   "at": "2026-10-08T08:28:44Z",
+   "duration_s": 105.33,
    "contention": 1.0,
    "detail": ""
   },
@@ -1174,5 +1174,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-08T07:45:10Z"
+ "last_written": "2026-10-08T08:28:44Z"
 }

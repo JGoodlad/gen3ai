@@ -1,0 +1,7 @@
+[drift] encoder (source): 68 effect ids derived from /home/goodlad/.cache/gen3ai/p4/showdown-master
+[drift] ✓ encoder (source): every derived effect id is classified.
+[format] ✓ Showdown at /home/goodlad/.cache/gen3ai/p4/showdown-master: gen3ou's rules, banlist, Standard, Uber tier and clause bodies match the spec.
+[drift] replays=200  protocol_lines=66822  distinct_keywords=56
+[drift] structurally clean: 198/200
+[drift] encoder (replayed): 2729 volatile/cant encodes checked
+[drift] ✗ structural parse failures:

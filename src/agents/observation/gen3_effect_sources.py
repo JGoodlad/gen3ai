@@ -36,8 +36,10 @@ Two halves, deliberately different in kind:
    Berry, Trick, Mimic never start an effect; everything else does) is therefore MEASURED, not
    restated, and an ``Effect.UNKNOWN`` surfaces as the id ``unknown`` exactly as it would live.
 
-Consumers: ``gen3_effects_test.py`` (fails on drift) and ``main/ladder_drift_scan.py``
-(``--effects`` re-runs this against the Showdown tree the public server runs).
+Consumers: ``gen3_effects_test.py`` (fails on drift, step 2 on ``Gen3Battle``) and
+``main/ladder_drift_scan.py``, which since P6 of the poke-env retirement takes ONLY step 1 from here (the text scan,
+:func:`scan_emissions` + :func:`concrete_lines`) and executes each concrete line on the RUST reader the live client
+runs (``main.live.effect_scan``) against the Showdown tree the public server runs.
 """
 
 from __future__ import annotations
@@ -489,8 +491,8 @@ def derive_encoder_ids(showdown_root: Path) -> Dict[str, List[Tuple[str, str, st
 
 def unclassified(derived: Dict[str, List[Tuple[str, str, str]]]) -> Dict[str, List[str]]:
     """The derived ids the encoder would RAISE on, minus the owner-pending ``unknown`` lines —
-    empty means every effect the gen3 sim can announce is classified. Shared by the test and
-    ``ladder_drift_scan --effects``."""
+    empty means every effect the gen3 sim can announce is classified. The test's (the drift scan
+    executes the lines on the Rust reader since P6, ``main.live.effect_scan``)."""
     from agents.observation.gen3_effects import GEN3_VOLATILE_TO_SLOT, NOT_A_VOLATILE
     bad: Dict[str, List[str]] = {}
     for vid, srcs in derived.items():

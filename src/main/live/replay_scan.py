@@ -1,8 +1,8 @@
 """P4 gate (b) — the PUBLIC REPLAY corpus through the RUST reader (the Rust drift scan).
 
-``main.ladder_drift_scan`` feeds public replays through the PYTHON layer (``battle_event.classify``, ``Gen3Battle``,
-``gen3_effects``) — a client nobody will run after P6. This scan feeds them through the reader the live client
-runs (``main.live.reader`` → ``live_reader`` → ``pokesim::side_reader``), with the SAME line filter the live client
+``main.ladder_drift_scan`` fed public replays through the PYTHON layer (``battle_event.classify``, ``Gen3Battle``,
+``gen3_effects``) until P6, which moved it onto this module's :func:`scan_one` (its pre-session check on a fresh
+download). This scan is the bulk corpus read: it feeds every replay through the reader the live client runs (``main.live.reader`` → ``live_reader`` → ``pokesim::side_reader``), with the SAME line filter the live client
 applies (``""`` and the declared :data:`main.live.reader.ROOM_SKIP` dropped, everything else fed — an unknown
 keyword is a REFUSAL, never a skip):
 

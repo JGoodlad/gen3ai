@@ -279,4 +279,4 @@ and never dials the port. Measured 2026-09-20.
 **H7 ⚠️ The clients' postures on an unknown protocol keyword are OPPOSITE.** Our
 `battle_event.classify` raises by design; Foul Play silently ignores. A front end that relays the
 pinned submodule's bytes exercises neither, exactly as a pinned local server does not —
-`ladder_drift_scan` remains the instrument for live drift.
+`ladder_drift_scan` (on the Rust reader since P6) remains the instrument for live drift.

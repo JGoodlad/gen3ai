@@ -69,6 +69,15 @@ ENTRY_POINTS = (
     "main.live.bot_reader",
     "utils.rust_env.bot_reader_bin",
     "utils.bridge.ws_frontend",
+    # P6 slice 3: live play (the Rust client is the only client), P4's gate (c) harness and its bot peer, and the
+    # pre-session drift gate (both reader checks on the Rust reader)
+    "main.play",
+    "main.live.client",
+    "main.live.gate_peer",
+    "main.live.master_series",
+    "main.live.replay_scan",
+    "main.live.effect_scan",
+    "main.ladder_drift_scan",
     "main.launcher",
     "main.checkargs",
     "main.elo",

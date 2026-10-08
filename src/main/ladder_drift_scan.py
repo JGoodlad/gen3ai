@@ -1,53 +1,41 @@
-"""Protocol-drift gate for LIVE-LADDER play: parse real gen3ou replays from the public
-replay archive through our own ``Gen3Battle``.
+"""Protocol-drift gate for LIVE play: parse real gen3ou replays from the public replay archive through the reader
+the live client runs.
 
 Why this exists
 ---------------
-Every battle we have ever parsed came from a Showdown pinned in ``deps/pokemon-showdown``
-(currently a 2026-05 commit). The public server runs current master, and
-``agents.battle.battle_event.classify`` raises on any keyword it does not know BY DESIGN
-— a tripwire that is correct for a closed local sim and fatal on an open one: the raise
-kills the parse task, no choice is ever sent, and the battle is lost on the timer.
+Every battle we have ever parsed came from a Showdown pinned in ``deps/pokemon-showdown``. The public server runs
+current master, and the live reader REFUSES any keyword it does not know BY DESIGN (``core_events::LineError::
+UnknownKeyword``) — a tripwire that is correct for a closed local sim and fatal on an open one: the refusal is a T28
+halt (``main.live.halt``), and the game is lost on the timer.
 
-So before a first rated game, MEASURE the drift instead of arguing about it. The replay
-archive is a public read-only HTTP endpoint — no account, no websocket, no rules
-exposure — and its logs are the same protocol stream a live battle room carries, minus
-the ``|request|`` frames (which the Player layer consumes before a battle ever sees them,
-and which this scan therefore skips exactly as the Player does).
+So before a live session, MEASURE the drift instead of arguing about it. The replay archive is a public read-only HTTP
+endpoint — no account, no websocket, no rules exposure — and its logs are the same protocol stream a live battle room
+carries, minus the ``|request|`` frames.
 
-Five checks, all run:
+Since P6 of the poke-env retirement (2026-10-08) every check runs on the RUST stack (the Python battle layer it used
+to replay through — ``battle_event.classify``, ``Gen3Battle``, ``gen3_effects`` — is the client nobody runs). Four
+checks, all run:
 
-* **keyword** — every ``|<kw>|`` classified; an unclassified or ``UNSUPPORTED`` one is
-  the fatal case;
-* **structural** — the whole log replayed into a real ``Gen3Battle``, which catches an
-  argument-SHAPE change that a keyword census cannot see (a new positional field, a
-  ``[from]`` form we do not strip);
-* **encoder (replayed)** — a known keyword can still carry an effect the OBSERVATION
-  ENCODER has never classified (``-activate|…|move: Heal Bell`` crashed the encode on
-  2026-09-24 with every keyword known). After every line that can put an effect on a mon
-  (``-start`` / ``-activate`` / ``-singleturn`` / ``-singlemove`` / ``move`` / ``-prepare``)
-  each mon's volatiles go through ``gen3_effects.encode_volatiles``, and every ``|cant|``
-  reason through ``normalize_cant_reason`` — the two crash-don't-drop tables;
-* **encoder (source)** — replays only show what a day's games happened to do, so the
-  effect-id class is ALSO derived from the Showdown source the public server runs
-  (``gen3_effect_sources``: every ``add('-start'|'-activate'|'-singleturn'|'-singlemove', …)``
-  the gen3 format executes, each executed on a real ``Gen3Battle``) and every id is required
-  to be classified. ``--showdown DIR`` names a checkout; by default a sparse shallow clone of
-  master is kept under ``--cache``. ``--no-effects`` skips it (offline);
-* **format spec** — the same master checkout's gen3ou entry, gen-3 ``Standard``, Uber tier and
-  clause bodies against ``agents.gen3_data.format_spec`` (``main.format_drift``): a ban or clause
-  the ladder added or dropped since the spec was written FAILS (``--no-format-spec`` skips it).
+* **read** (keyword + structural) — each replay is read from BOTH seats by the live reader (``main.live.replay_scan``'s
+  ``scan_one``: ``live_reader`` → ``pokesim::side_reader``, the live client's own line filter): an unknown keyword or
+  an argument SHAPE the chain cannot fold is a refusal, named with the line;
+* **encoder (replayed)** — after every turn the seat's reading is ENCODED (``PROBE``): an effect, volatile or status
+  the encoder cannot classify surfaces here rather than mid-battle;
+* **encoder (source)** — replays only show what a day's games happened to do, so the effect lines are ALSO derived
+  from the Showdown source the public server runs (``agents.observation.gen3_effect_sources``' text scan) and each is
+  read + encoded by the same reader (``main.live.effect_scan``). ``--showdown DIR`` names a checkout; by default a
+  sparse shallow clone of master is kept under ``--cache``. ``--no-effects`` skips it (offline);
+* **format spec** — the same master checkout's gen3ou entry, gen-3 ``Standard``, Uber tier and clause bodies against
+  ``agents.gen3_data.format_spec`` (``main.format_drift``): a ban or clause the ladder added or dropped since the
+  spec was written FAILS (``--no-format-spec`` skips it).
 
 Run::
 
     python src/main/ladder_drift_scan.py --n 60
     python src/main/ladder_drift_scan.py --n 200 --format gen3ou --cache /tmp/psreplays
 
-Exit 0 = clean, exit 1 = drift found (with the offending keywords / tracebacks named).
-
-Measured 2026-08-23: **59 replays, 22 794 protocol lines, 56 distinct keywords, ZERO
-unknown, ZERO unsupported, 59/59 structurally clean.** Re-run it before going live —
-that is a reading of one day's ladder, not a proof about every future one.
+Exit 0 = clean, exit 1 = drift found (with the offending lines named). The bulk corpus read (P4 gate (b), 376,410
+replays) is ``python -m main.live.replay_scan``; this script is the pre-session check on a fresh download.
 
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
@@ -55,24 +43,15 @@ that is a reading of one day's ladder, not a proof about every future one.
 import argparse
 import collections
 import json
-import logging
 import os
 import subprocess
 import sys
 import time
-import traceback
 from typing import List
 
 SEARCH_URL = "https://replay.pokemonshowdown.com/search.json"
 LOG_URL = "https://replay.pokemonshowdown.com/{id}.log"
 USER_AGENT = "gen3ai-ladder-drift-scan"
-
-# Consumed by `Player._handle_battle_message` BEFORE the battle sees them, so a battle
-# parser is never asked about them and this scan must not ask either.
-HANDLED_BY_PLAYER = frozenset(
-    {"t:", "expire", "uhtmlchange", "request", "showteam", "win", "tie", "error", "bigerror"}
-)
-
 
 def _fetch(url: str, timeout: int = 30) -> str:
     """GET via curl. Deliberately not `requests`/`urllib`: the archive 403s a bare
@@ -119,21 +98,7 @@ def download_logs(ids: List[str], cache_dir: str, pause: float = 0.25) -> List[s
     return paths
 
 
-def split_lines(path: str):
-    """Yield the split protocol lines a Player would hand to `battle.parse_message`."""
-    with open(path, encoding="utf-8", errors="replace") as fh:
-        for raw in fh.read().split("\n"):
-            if not raw:
-                continue
-            parts = (raw if raw.startswith("|") else "|" + raw).split("|")
-            if len(parts) < 2 or parts[1] in HANDLED_BY_PLAYER:
-                continue
-            yield parts
-
-
 SHOWDOWN_GIT = "https://github.com/smogon/pokemon-showdown.git"
-#: The lines after which a mon's effects can have GROWN (poke-env's start_effect call sites).
-EFFECT_KEYWORDS = frozenset({"-start", "-activate", "-singleturn", "-singlemove", "move", "-prepare"})
 
 
 def fetch_showdown_master(dest: str) -> str:
@@ -151,140 +116,76 @@ def fetch_showdown_master(dest: str) -> str:
 
 
 def effects_source_check(showdown_root: str) -> int:
-    """The ENCODER (source) check: derive every effect id the gen3 sim at ``showdown_root``
-    can announce onto a mon, and require each to be classified by ``gen3_effects``."""
-    from pathlib import Path
+    """The ENCODER (source) check, on the Rust reader (``main.live.effect_scan``)."""
+    from main.live import effect_scan
 
-    from agents.observation import gen3_effect_sources as S
-
-    root = Path(showdown_root)
-    try:
-        chain = S.mod_chain(root)
-        if chain != S.GEN3_MOD_CHAIN:
-            print(f"[drift] ✗ gen3's mod chain changed: {chain} (the scan walks "
-                  f"{S.GEN3_MOD_CHAIN}) — update gen3_effect_sources.GEN3_MOD_CHAIN")
-            return 1
-        derived = S.derive_encoder_ids(root)
-    except S.UnresolvedDynamicEffect as exc:
-        print(f"[drift] ✗ encoder (source): {exc}")
-        return 1
-    bad = S.unclassified(derived)
-    pending = sorted({eff for kw, eff, _ in derived.get("unknown", [])
-                      if (kw, eff) in S.PENDING_OWNER_LINES})
-    print(f"[drift] encoder (source): {len(derived)} effect ids derived from {root}"
-          + (f"; owner-pending (still RAISE): {pending}" if pending else ""))
-    if bad:
-        print("[drift] ✗ UNCLASSIFIED effect ids (encode_volatiles would RAISE mid-battle):")
-        for vid, srcs in sorted(bad.items()):
-            print(f"     {vid}: {srcs[:3]}")
-        print("[drift]   fix: classify each in agents/observation/gen3_effects.py (a slot, or "
-              "NOT_A_VOLATILE with where its information lives).")
-        return 1
-    print("[drift] ✓ encoder (source): every derived effect id is classified.")
-    return 0
+    return effect_scan.check(showdown_root)
 
 
 def scan(paths: List[str]) -> int:
-    from agents.battle.battle_event import (
-        UnknownMessageType,
-        UnsupportedMessageType,
-        classify,
-    )
-    from agents.battle.gen3_battle import Gen3Battle
-    from agents.battle.live_view import _id
-    from agents.observation.gen3_effects import (
-        UnknownCantReasonError,
-        UnknownVolatileError,
-        encode_volatiles,
-        normalize_cant_reason,
-    )
-
-    logging.disable(logging.CRITICAL)  # replays are noisy; we only care about raises
-    quiet = logging.getLogger("ladder_drift_scan")
+    """The READ + ENCODER (replayed) checks: every replay, both seats, through the live reader (refusals and
+    per-turn encode failures are findings)."""
+    from main.live.reader import LiveReader, ReaderRefusal
+    from main.live.replay_scan import norm, scan_one
 
     kinds: collections.Counter = collections.Counter()
-    unknown: collections.Counter = collections.Counter()
-    unsupported: collections.Counter = collections.Counter()
-    structural: collections.Counter = collections.Counter()
+    refusals: collections.Counter = collections.Counter()
+    classified: collections.Counter = collections.Counter()
     encoder: collections.Counter = collections.Counter()
-    encoder_checks = 0
     example: dict = {}
-    clean = 0
-    total_lines = 0
-
-    for path in paths:
-        for parts in split_lines(path):
-            kw = parts[1]
-            kinds[kw] += 1
-            total_lines += 1
+    clean = probes = total_lines = 0
+    reader = LiveReader()
+    try:
+        for path in paths:
             try:
-                classify(kw)
-            except UnknownMessageType:
-                unknown[kw] += 1
-            except UnsupportedMessageType:
-                unsupported[kw] += 1
+                r = scan_one(reader, path, ("p1", "p2"), True)
+            except ReaderRefusal as exc:  # the reader process itself died: a finding, and a fresh reader
+                r = {"lines": 0, "kw": collections.Counter(), "probes": 0, "probe_failures": [],
+                     "refusals": [{"seat": "?", "kind": exc.kind, "message": str(exc)}]}
+                reader.close()
+                reader = LiveReader()
+            total_lines += r["lines"]
+            probes += r["probes"]
+            kinds.update(r["kw"])
+            for x in r["refusals"]:
+                if x.get("class"):  # the one spectator-only refusal class (replay_scan.VIEWER_SEAT_RENAMED)
+                    classified[x["class"]] += 1
+                    continue
+                key = f"{x['kind']}: {norm(x['message'])}"
+                refusals[key] += 1
+                example.setdefault(key, (path, x["seat"], x["message"]))
+            for x in r["probe_failures"]:
+                key = norm(x["message"])
+                encoder[key] += 1
+                example.setdefault(key, (path, x["seat"], f"turn {x['turn']}: {x['message']}"))
+            if not r["refusals"] and not r["probe_failures"]:
+                clean += 1
+    finally:
+        reader.close()
 
-        tag = "battle-drift-" + os.path.basename(path).rsplit(".", 1)[0]
-        battle = Gen3Battle(tag, "p1", quiet, gen=3)
-        battle._player_role = "p1"
-        try:
-            for parts in split_lines(path):
-                battle.parse_message(parts)
-                # the ENCODER (replayed) check — separate from the structural one, so an encode
-                # failure is named as such and does not stop the replay
-                try:
-                    if parts[1] == "cant" and len(parts) > 3:
-                        encoder_checks += 1
-                        normalize_cant_reason(parts[3])
-                    elif parts[1] in EFFECT_KEYWORDS:
-                        for mon in (*battle.team.values(), *battle.opponent_team.values()):
-                            if mon.effects:
-                                encoder_checks += 1
-                                encode_volatiles([_id(e) for e in mon.effects])
-                except (UnknownVolatileError, UnknownCantReasonError) as exc:
-                    key = f"{type(exc).__name__}: {str(exc)[:100]}"
-                    encoder[key] += 1
-                    example.setdefault(key, (path, "|".join(parts)))
-            clean += 1
-        except Exception as exc:  # noqa: BLE001 — every failure is a finding, not a crash
-            key = f"{type(exc).__name__}: {str(exc)[:100]}"
-            structural[key] += 1
-            example.setdefault(key, (path, traceback.format_exc()))
-
-    print(f"[drift] replays={len(paths)}  protocol_lines={total_lines}  "
-          f"distinct_keywords={len(kinds)}")
+    print(f"[drift] replays={len(paths)}  protocol_lines={total_lines}  distinct_keywords={len(kinds)}")
     print(f"[drift] keyword census: {dict(kinds.most_common())}")
-    print(f"[drift] structurally clean: {clean}/{len(paths)}")
-    print(f"[drift] encoder (replayed): {encoder_checks} volatile/cant encodes checked")
-
+    print(f"[drift] read clean (both seats): {clean}/{len(paths)}"
+          + (f"; spectator-only refusals (classified): {dict(classified)}" if classified else ""))
+    print(f"[drift] encoder (replayed): {probes} per-turn encodes checked")
     bad = False
-    if unknown:
+    if refusals:
         bad = True
-        print(f"\n[drift] ✗ UNCLASSIFIED keywords (would raise UnknownMessageType and "
-              f"WEDGE the battle): {dict(unknown)}")
-        print("[drift]   fix: classify each in agents/battle/battle_event.MESSAGE_POLICY, "
-              "and — if it is not battle content — add it to "
-              "poke_env.battle.abstract_battle.AbstractBattle.MESSAGES_TO_IGNORE too.")
-    if unsupported:
-        bad = True
-        print(f"\n[drift] ✗ UNSUPPORTED keywords seen in a gen3 game: {dict(unsupported)}")
-    if structural:
-        bad = True
-        print("\n[drift] ✗ structural parse failures:")
-        for key, count in structural.most_common(10):
-            path, tb = example[key]
-            print(f"  [{count}x] {key}\n     first: {path}")
-            for line in tb.splitlines()[-4:]:
-                print("     ", line.strip()[:160])
+        print("\n[drift] ✗ the live reader REFUSED (an unknown keyword or an argument shape it cannot fold — the live "
+              "client would halt):")
+        for key, count in refusals.most_common(10):
+            path, seat, msg = example[key]
+            print(f"  [{count}x] {key}\n     first: {path} ({seat}): {msg[:200]}")
+        print("[drift]   fix: classify the keyword in src/rust_sim/src/core_events/schema.rs (Rust-owned, P1) / fold "
+              "the shape, with a revert-failing test.")
     if encoder:
         bad = True
-        print("\n[drift] ✗ encoder (replayed) failures — the obs encode would RAISE here:")
+        print("\n[drift] ✗ encoder (replayed) failures — the live encode would RAISE here:")
         for key, count in encoder.most_common(10):
-            path, line = example[key]
-            print(f"  [{count}x] {key}\n     first: {path}  at  {line[:160]}")
+            path, seat, msg = example[key]
+            print(f"  [{count}x] {key}\n     first: {path} ({seat}): {msg[:200]}")
     if not bad:
-        print("\n[drift] ✓ no drift: every keyword classified, every replay parsed clean, "
-              "every replayed effect and cant reason encoded.")
+        print("\n[drift] ✓ no drift: every replay read clean from both seats, every turn encoded.")
     return 1 if bad else 0
 
 

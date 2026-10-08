@@ -132,8 +132,8 @@ _SAME_STATE_ALIASES: Dict[str, str] = {"mindreader": "lockon"}
 # ``Gen3Battle`` and reads back the id that lands in ``LiveView.volatiles``;
 # ``gen3_effects_test.py`` fails when that set is not covered by GEN3_VOLATILE_TO_SLOT ∪ this map,
 # when an entry here is no longer derived (dead), or when a line lands as ``unknown`` (a poke-env
-# ``Effect`` enum gap no encoder can classify). ``ladder_drift_scan --effects`` re-runs the same
-# derivation against the Showdown the PUBLIC server runs. The whack-a-mole this ends:
+# ``Effect`` enum gap no encoder can classify). ``ladder_drift_scan`` re-runs the same
+# text derivation against the Showdown the PUBLIC server runs (on the Rust reader since P6). The whack-a-mole this ends:
 # doomdesire → immunity → magmaarmor → waterveil → healbell (belief-calibration read, 2026-09-24).
 #
 # Skipping these is a documented classification, never a catch-all: an id in neither map still

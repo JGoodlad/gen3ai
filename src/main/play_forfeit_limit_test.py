@@ -26,52 +26,36 @@ def test_flag_overrides():
     assert args.forfeit_turn_limit == 120
 
 
-def test_the_flag_reaches_the_players_stall_config(monkeypatch):
-    """The plumbing, not just the parse — a flag that never reaches `RLPlayer` is a no-op, and a
-    no-op here reads exactly like a limit that fired."""
-    captured = {}
+def test_the_flag_reaches_the_rust_clients_config(monkeypatch):
+    """The plumbing, not just the parse — a flag that never reaches the client is a no-op, and a no-op here reads
+    exactly like a limit that fired. The Rust client (`main.live.client`, the only client since P6) forfeits at
+    `ClientConfig.forfeit_turn_limit`; `main_rust` must build every config from the flag."""
+    import asyncio
 
-    class _FakeModel:
-        class policy:
-            @staticmethod
-            def modules():
-                return []
-
+    import main.live.client as live_client
     import main.play as play
 
-    def _fake_rl_player(**kwargs):
-        captured.update(kwargs)
-        return object()
+    captured = []
 
-    def _fake_load(*a, **k):
-        return _FakeModel()
+    class _Stop(Exception):
+        pass
 
-    # `build_model_player` loads through `load_policy` (the one seam; strict since P10 follow-up F1)
-    monkeypatch.setattr(play, "load_policy", _fake_load)
+    class _FakeClient:
+        def __init__(self, cfg, **kw):
+            captured.append(cfg)
 
-    import sys
-    import types
+        async def connect(self):
+            raise _Stop()
 
-    # `build_model_player` imports these lazily INSIDE the function, so a stub module in
-    # sys.modules is what the import actually resolves to.
-    inference_player = types.ModuleType("agents.inference.player")
-    inference_player.RLPlayer = _fake_rl_player
-    state_encoder = types.ModuleType("agents.observation.state_encoder")
-    state_encoder.load_mappings = lambda: None
+        async def close(self):
+            pass
 
-    saved = {k: sys.modules.get(k) for k in
-             ("agents.inference.player", "agents.observation.state_encoder")}
-    sys.modules["agents.inference.player"] = inference_player
-    sys.modules["agents.observation.state_encoder"] = state_encoder
+    monkeypatch.setattr(live_client, "LiveClient", _FakeClient)
+    monkeypatch.setattr(play, "rust_policy", lambda args, seed_offset=0: object())
+    args = build_parser().parse_args(
+        ["--mode", "challenge", "--model", "x.zip", "--opponent", "y", "--forfeit-turn-limit", "77"])
     try:
-        args = build_parser().parse_args(
-            ["--mode", "challenge", "--model", "x.zip", "--forfeit-turn-limit", "77"])
-        play.build_model_player(args, teambuilder=None, server_config=None, account=None)
-    finally:
-        for k, v in saved.items():
-            if v is None:
-                sys.modules.pop(k, None)
-            else:
-                sys.modules[k] = v
-
-    assert captured["stall_config"].threshold == 77
+        asyncio.run(play.main_rust(args))
+    except _Stop:
+        pass
+    assert [c.forfeit_turn_limit for c in captured] == [77]

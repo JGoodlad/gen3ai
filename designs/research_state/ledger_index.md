@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,318-line file. **The ledger itself is append-only and is never edited by this**;
+23,342-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**813 headings · 758 dated · 2026-08-01 → 2026-10-07 · ledger 23,318 lines.**
+**814 headings · 759 dated · 2026-08-01 → 2026-10-08 · ledger 23,342 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -833,3 +833,4 @@ rename.
   - `L23204` · `2026-10-07` · BUILD · **v145 (`gen3_mon_tied_gain_v1`, `MIGRATION_FLOOR` 145): the op's learned `out_gain` tied across OUR TEAM SLOTS and their mons — one gain per channel, no lead-mon special case (production 99 → 29 gains, 2,519,007 → 2,518,937 parameters). Identity at equal gains BITWISE (forward, every non-gain gradient, a K9 update with the gains frozen); trained X5 arms' per-slot gains had spread up to 1.26× on one channel. The sweep: the only other ARBITRARY position-indexed weight in production is F14's sorted-by-id move concat**
   - `L23247` · `2026-10-07` · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 1: the prober's `replay-counterfactual` plays out on the Rust core (`gen3_cf_core_playout_v1`); old vs new IDENTICAL on every rollout of the P5 identity set; no prober command needs poke-env**
   - `L23274` · `2026-10-07` · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 2: `main.anchors` fully off poke-env — a `bot:` our-side is the RUST port of that bot on our side's own reading, `--server node` / `--server-uri` play the checkpoint on P4's live client; the legacy `RLPlayer` client is DELETED. Identity before deletion: 108 / 108 seeded bot battle pairs byte-identical (teeth 0 / 12), the checkpoint on the live client 19 / 20 (the 20th a peer-side H5 desync), 0 differences on 1,349 shadowed Node decisions**
+  - `L23319` · `2026-10-08` · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 3: live play and the pre-session drift gate on the Rust stack only — `main.play --client poke-env` DELETED, gate (c)'s bot peers are the Rust ports, gate (d)'s shadow retired (banked), and both reader checks of `ladder_drift_scan` run on the live reader. Effect-source lines judged alike 93 / 93 (pinned and master); 200 public replays: old 198 / 200 (2 = the old scan's own rejoin misread), new 200 / 200**
