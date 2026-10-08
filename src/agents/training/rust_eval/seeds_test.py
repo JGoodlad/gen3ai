@@ -55,6 +55,4 @@ def test_the_bot_stream_seeds_are_the_cores_rule():
     assert pack_seed_words([1, 2, 3, 4]) == 1 | (2 << 16) | (3 << 32) | (4 << 48)
     assert episode_bot_stream_seed(5, [1, 2, 3, 4], 0) == 14338025463950524205
     assert episode_bot_stream_seed(9, [65535, 0, 0, 0], 1) == 12882590778465766730
-    s = SD.bot_stream_seeds("staller", [1, 2, 3, 4])
-    assert set(s) == {"choice", "protect"} and len(set(s.values())) == 2
     assert SD.bot_route_seed("random") == SD.BOT_ROUTE_SEED   # the roster's first bot

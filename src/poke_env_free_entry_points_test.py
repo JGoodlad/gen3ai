@@ -179,7 +179,7 @@ _EDGE = """
     B.install()
     from agents.training.rust_rollout.testkit import build_selfcheck
     build_selfcheck()
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
     from main.h2h import play as PL
     tmp = Path(tempfile.mkdtemp(prefix="p1_h2h_"))
     with PAR.declared_torch_state(1):
@@ -358,7 +358,7 @@ def prober_run(tmp_path_factory):
     the model-loading commands load a model at the CURRENT architecture."""
     import shutil
 
-    from agents.training.rust_eval.parity import build_models, declared_torch_state
+    from agents.training.rust_eval.offline import build_models, declared_torch_state
     from main.prober.core_trace_integration_test import FEATURES, _cargo, _play_core_games
     from utils.rust_env import ffi
 

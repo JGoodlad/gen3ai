@@ -54,31 +54,20 @@ def _list_assign(tree, target: str) -> list:
     return found
 
 
-def _eval_name_to_class() -> dict:
-    """``display name -> dotted class`` from the eval roster's own table (the one place a name meets its class)."""
-    t = _tree("agents/training/eval_roster.py")
-    (lst,) = _list_assign(t, "_EVAL_OPPONENT_SPECS")
-    imports = _imports(t)
-    return {tup.elts[0].value: _canonical(_resolve(imports[tup.elts[1].id])) for tup in lst.elts}
-
-
 def train_roster() -> set:
-    """The classes of the training floor roster: ``main/train/matchup_setup.py``'s ``TRAIN_BOT_NAMES`` (display names,
-    poke-env-free since P1 of the retirement) resolved through the eval roster's name -> class table, so a bot named
-    there that no table knows fails HERE and a class with no inventory row fails ``test_every_roster_bot_has_a_row``."""
+    """The NAMES of the training floor roster: ``main/train/matchup_setup.py``'s ``TRAIN_BOT_NAMES`` (display names,
+    poke-env-free since P1 of the retirement — the names the Rust core plays its bots by)."""
     t = _tree("main/train/matchup_setup.py")
     (lst,) = _list_assign(t, "TRAIN_BOT_NAMES")
-    names = [e.value for e in lst.elts]
-    by_name = _eval_name_to_class()
-    unknown = [n for n in names if n not in by_name]
-    assert not unknown, f"{unknown} are in TRAIN_BOT_NAMES but not in eval_roster._EVAL_OPPONENT_SPECS"
-    return {by_name[n] for n in names}
+    return {e.value for e in lst.elts}
 
 
 def eval_roster() -> set:
-    t = _tree("agents/training/eval_roster.py")
-    (lst,) = _list_assign(t, "_EVAL_OPPONENT_SPECS")
-    return _classes([tup.elts[1].id for tup in lst.elts], _imports(t))
+    """The NAMES of the eval roster: ``agents/training/eval_schedule.py``'s ``_EVAL_ROSTER`` (poke-env-free — the
+    names ``rust_eval.build`` declares the eval core's bot routes from)."""
+    t = _tree("agents/training/eval_schedule.py")
+    (lst,) = _list_assign(t, "_EVAL_ROSTER")
+    return {e.value for e in lst.elts}
 
 
 def rosters() -> dict:
@@ -86,9 +75,9 @@ def rosters() -> dict:
 
 
 def test_every_roster_bot_has_a_row():
-    rows = BI.by_class()
-    for site, classes in rosters().items():
-        missing = classes - set(rows)
+    rows = BI.by_name()
+    for site, names in rosters().items():
+        missing = names - set(rows)
         assert not missing, (f"{sorted(missing)} play in the {site!r} pool ({BI.SITES[site]}) with no row in "
                              "utils/rust_env/bot_inventory.py — inventory a bot before it plays")
 
@@ -96,7 +85,7 @@ def test_every_roster_bot_has_a_row():
 def test_used_by_matches_the_rosters():
     rs = rosters()
     for row in BI.ROWS:
-        actual = {site for site, classes in rs.items() if row.cls in classes}
+        actual = {site for site, names in rs.items() if row.name in names}
         assert set(row.used_by) == actual, f"{row.name}: the table says {sorted(row.used_by)}, the code says {sorted(actual)}"
         assert set(row.used_by) <= set(BI.SITES), row
 
@@ -113,6 +102,8 @@ def test_every_player_class_in_the_bot_modules_has_a_row():
 
 
 def test_display_names_agree_with_the_eval_table():
+    """The poke-env bot table (``eval_roster._EVAL_OPPONENT_SPECS``: name -> player class, still built by
+    ``main.search_dividend`` and the bot calibration) names each class as the inventory does."""
     t = _tree("agents/training/eval_roster.py")
     (lst,) = _list_assign(t, "_EVAL_OPPONENT_SPECS")
     imports = _imports(t)
@@ -141,7 +132,7 @@ def test_the_inventory_has_teeth(monkeypatch):
     import pytest
 
     monkeypatch.setattr(BI, "ROWS", tuple(r for r in BI.ROWS if r.name != "staller_v2"))
-    with pytest.raises(AssertionError, match="Gen3StallerV2Player"):
+    with pytest.raises(AssertionError, match="staller_v2"):
         test_every_roster_bot_has_a_row()
     monkeypatch.undo()
 

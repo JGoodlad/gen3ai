@@ -60,7 +60,7 @@ from __future__ import annotations
 
 import os
 
-# Cap torch/BLAS intra-op threads BEFORE any (transitive) torch import — mirrors eval_worker.
+# Cap torch/BLAS intra-op threads BEFORE any (transitive) torch import (as the deleted Python eval worker did).
 # Each shard runs on a shared box; without this every process defaults torch to all cores, so N
 # parallel shards spawn N×cores threads → oversubscription thrash → battles blow the 180s bridge
 # timeout (the 2026-07-22 4-shard-on-16-cores failure). One thread/process + event-loop concurrency
@@ -681,7 +681,7 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
     # `elo._rows_to_results` yields both families off an eval row: trainee-vs-bot (`bot:`) and
     # trainee-vs-sentinel (`snap:`). The sentinel edges are a DIFFERENT MEASUREMENT of the same
     # frozen pair the dense matrix above already measures: an eval cycle plays the GREEDY trainee
-    # against a STOCHASTIC sentinel (`eval_worker`: `stochastic=not sentinel_greedy`,
+    # against a STOCHASTIC sentinel (the eval cycle's sampled regime: `stochastic=not sentinel_greedy`,
     # `temperature=self_play_temp`) with an ASYMMETRIC teambuilder (the trainee gets the
     # sample-team bias, the sentinel does not), while `_play_pair` above plays greedy-vs-greedy
     # with the SAME biased builder on both sides. Measured 2026-09-07 on

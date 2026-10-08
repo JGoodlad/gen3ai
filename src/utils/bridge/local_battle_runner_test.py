@@ -226,3 +226,43 @@ def test_the_runner_feeds_the_CLIENTS_frame_into_the_deadlines_verdict():
         asyncio.run(lbr._await_battle(_chatter(), (c,), "battle 0",
                                       1.5, 99.0))
     assert "LIVELOCK CONFIRMED" in str(ei.value) and "t9:error" in str(ei.value)
+
+
+# ── the derived per-battle seed (`seed_base`) — moved here from `main/ops/eval_trace_gen_test.py` when that tool
+#    moved onto the Rust eval core (poke-env retirement P6 slice 6c); the runner's own contract ─────────────────────
+
+def test_per_battle_sim_seeds_are_varied_and_reproducible():
+    """A single fixed `seed` runs N copies of ONE battle, which is not a sample of N. `seed_base`
+    keeps the dice varied within a call and identical across calls."""
+    from utils.bridge.local_battle_runner import _LocalBattleRunner
+    r = _LocalBattleRunner.__new__(_LocalBattleRunner)
+    r.seed, r.seed_base = None, 4242
+    seeds = [r._seed_for(i) for i in range(20)]
+    assert len({tuple(s) for s in seeds}) == 20, "every battle gets its own dice"
+    assert seeds == [r._seed_for(i) for i in range(20)], "and the same ones next time"
+    assert all(len(s) == 4 and all(0 <= w <= 0xFFFF for w in s) for s in seeds), \
+        "the [m,n,o,p] form utils.bridge.seed_spec validates"
+
+    # Adjacent seed_base values must not give adjacent streams — an LCG seeded with n and n+1 is
+    # not two independent battles, and adjacent shards of one cycle differ by exactly that.
+    r2 = _LocalBattleRunner.__new__(_LocalBattleRunner)
+    r2.seed, r2.seed_base = None, 4243
+    assert r2._seed_for(0) != seeds[0]
+
+    r3 = _LocalBattleRunner.__new__(_LocalBattleRunner)
+    r3.seed, r3.seed_base = [1, 2, 3, 4], None
+    assert r3._seed_for(7) == [1, 2, 3, 4], "no seed_base → the fixed seed, unchanged"
+    r4 = _LocalBattleRunner.__new__(_LocalBattleRunner)
+    r4.seed, r4.seed_base = None, None
+    assert r4._seed_for(7) is None, "neither → the child mints and reports its own"
+
+
+def test_seed_and_seed_base_together_are_refused():
+    """Two different dice regimes — one stream for every battle, or a derived stream per battle.
+    Silently preferring one would make the label a lie."""
+    from utils.bridge.local_battle_runner import _LocalBattleRunner
+    with pytest.raises(ValueError, match="seed_base"):
+        _LocalBattleRunner(object(), object(), "gen3ou", [1, 2, 3, 4], seed_base=9)
+    # either alone is fine
+    _LocalBattleRunner(object(), object(), "gen3ou", [1, 2, 3, 4])
+    _LocalBattleRunner(object(), object(), "gen3ou", None, seed_base=9)

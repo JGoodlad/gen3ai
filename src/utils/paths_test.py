@@ -146,16 +146,6 @@ def test_audit_states_real_trace_gate_skips_on_an_empty_archive(monkeypatch, tmp
     assert m._REAL_TRACE_RUN in str(ei.value)
 
 
-def test_eval_sharding_fuzz_finds_no_checkpoint_on_an_empty_archive(monkeypatch, tmp_path):
-    import importlib.util
-    _empty_archive(monkeypatch, tmp_path)
-    spec = importlib.util.spec_from_file_location(
-        "_esf_for_paths_test", str(src_path("agents", "training", "eval_sharding_fuzz_test.py")))
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    assert mod._find_checkpoint() is None
-
-
 # ------------------------------------------------------------------- 3. the class, closed
 #: Scope mirrors the ruff and file-size gates. `src/poke_env` is a vendored fork and
 #: `src/rust_sim` is a Rust crate whose Python is harness scratch — neither is ours to shape.

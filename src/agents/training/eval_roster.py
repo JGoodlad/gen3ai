@@ -1,10 +1,12 @@
 """The eval ROSTER — the bot opponents, the schedule constants and the player builders, split out of
 ``eval_callback.py`` (2026-10-01).
 
-The single source of truth for which bots an eval cycle plays (``_EVAL_OPPONENT_SPECS``), their display
-names, the flat schedule (``EVAL_FREQ_STEPS`` / ``EVAL_GAMES`` / ``EVAL_SHARD_GAMES``) and the per-player
-concurrency ceilings, plus ``build_eval_opponents`` / ``build_eval_players``. ``eval_callback``
-re-exports every public name here.
+The single source of truth for which bot CLASS stands behind each roster name (``_EVAL_OPPONENT_SPECS``),
+their display names, the flat schedule (``EVAL_FREQ_STEPS`` / ``EVAL_GAMES`` / ``EVAL_SHARD_GAMES``, re-exported
+from ``eval_schedule``) and the per-player concurrency ceiling, plus ``build_eval_opponents`` (the poke-env bot
+players ``main.search_dividend`` and the bot calibration still build). ``eval_callback`` re-exports every public
+name here. (``build_eval_players`` — the poke-env ``EvalRLPlayer`` trainee — was deleted with the Python eval
+worker, poke-env retirement P6 slice 6c; eval plays on the Rust eval core.)
 """
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client import AccountConfiguration
@@ -14,7 +16,6 @@ from agents.opponents import (
     Gen3StallerV2Player, Gen3AggressiveV2Player, Gen3SetupSweepV2Player,
     Gen3HeuristicV2Player,
 )
-from agents.training.eval_player import EvalRLPlayer
 
 # The schedule constants, the battle format and the roster's NAMES are poke-env-free and live in `eval_schedule`
 # (P1 of the retirement); re-exported here so every historical import site resolves.
@@ -108,22 +109,3 @@ def build_eval_opponents(server_config, teambuilder, names, tag="", *, start_lis
             start_listening=start_listening,
         )))
     return out
-
-
-def build_eval_players(model, names, teambuilder, mappings, server_config, concurrency,
-                       tag="", *, start_listening=True, gamma: float = 0.99, reward_fn_factory):
-    """One EvalRLPlayer per opponent name, sharing the (frozen) model + teambuilder. ``reward_fn_factory``
-    is REQUIRED — pass ``functools.partial(Gen3RewardManager, config=RewardConfig.from_dict(...))`` so
-    eval measures the run's actual reward, not a default one."""
-    return {
-        name: EvalRLPlayer(
-            model=model, team=teambuilder, battle_format=BATTLE_FORMAT,
-            server_configuration=server_config, mappings=mappings,
-            account_configuration=AccountConfiguration(f"RLEv{tag}{i}", "password"),
-            max_concurrent_battles=concurrency,
-            stochastic=False,  # bot-eval measures the GREEDY policy
-            start_listening=start_listening,
-            gamma=gamma, reward_fn_factory=reward_fn_factory,
-        )
-        for i, name in enumerate(names)
-    }

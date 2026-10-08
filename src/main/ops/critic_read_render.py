@@ -635,9 +635,10 @@ def _population_block(doc: Dict[str, Any]) -> str:
         note = gen.get("reproducibility_note")
         if note:
             lines.append("")
-            lines.append(f"> Reproducibility: {note}"
-                         f" (seed {gen.get('seed')}, {gen.get('workers')} worker(s), "
-                         f"concurrency {gen.get('concurrency')}).")
+            core = gen.get("eval_core")
+            how = (f"the Rust eval core, {core.get('n_envs')} envs" if isinstance(core, dict) else
+                   f"{gen.get('workers')} worker(s), concurrency {gen.get('concurrency')}")
+            lines.append(f"> Reproducibility: {note} (seed {gen.get('seed')}, {how}).")
     return "\n".join(lines)
 
 

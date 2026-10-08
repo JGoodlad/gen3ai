@@ -398,7 +398,8 @@ and takes reliability from 0.32 to 0.
 across three CPU smokes (a plain run, a `--win-prob-mode read_only` run, and a `--use-popart` run — PopArt has since been deleted).
 The two do not match and should not: one site can emit a whole dict (`f"reward/{k}"`), and many
 sites are flag-gated off in any one run. **Recount before quoting** — `tmp_census.py`'s recipe is
-`grep -rn "logger.record(" src/agents/training src/main/train src/main/eval_worker.py` for the
+`grep -rn "logger.record(" src/agents/training src/main/train` (`src/main/eval_worker.py`, counted in 2026-09-06's
+census, was deleted in poke-env retirement P6 slice 6c) for the
 sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 
 | group | sites | tags seen | cadence | currency | **era** (the win-prob critic (the only critic)) | computed in |

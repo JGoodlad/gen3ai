@@ -7,7 +7,7 @@ against the same plan replayed with the executor's FULL game log and against the
   are the full log's for its opponent (the row is the games, game for game);
 * the ledger changes no game: the cycle's published shard results are identical with and without it.
 
-Seeded perturbed fresh policies (``rust_eval.parity.build_models``), CPU eager, the emission self-check build —
+Seeded perturbed fresh policies (``rust_eval.offline.build_models``), CPU eager, the emission self-check build —
 the harness of ``designs/research_state/measurements/eval_ledger_u2_2026-10-04/digest_proof.py`` (loaded by path),
 whose before/after run is the cross-commit half of the proof. FAILS on a revert of the producer (no rows)."""
 from __future__ import annotations

@@ -12,7 +12,7 @@ from typing import List
 
 import pytest
 
-from agents.training.rust_eval import parity as PAR
+from agents.training.rust_eval import offline as PAR
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
@@ -26,7 +26,7 @@ def test_the_eval_core_calls_the_safe_point_at_every_host_step(built, tmp_path):
     md.joinpath("model_config.json").write_text(open(mcfg).read())
     calls: List[str] = []
     out = PAR.run_rust(run_dir=md / ".eval_runs" / "step_1000", model_dir=md, trainee=trainee, sentinels=sentinels,
-                       items=PAR._items(list(eval_opponent_names())[:1], [], 2), shard_games=2, step=1000,
+                       items=PAR.plan_items(list(eval_opponent_names())[:1], [], 2), shard_games=2, step=1000,
                        cycle_seed=20261003, quota={"win": 0, "loss": 0, "draw": 0}, device="cpu",
                        backend="eager", n_envs=2, safe_point=calls.append)
     host_steps = int(out["stats"]["host_steps"])

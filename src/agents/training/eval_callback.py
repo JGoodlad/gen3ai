@@ -3,11 +3,10 @@
 Split along its seams on 2026-10-01 (TECH_DEBT §1, the file was 1,907 lines against the 2,000-line
 bar). The shared machinery BOTH eval callbacks use now lives beside it:
 
-* ``eval_roster``  — the bot roster's player CLASSES and the player builders (poke-env);
+* ``eval_roster``  — the bot roster's player CLASSES and the bot builder (poke-env);
 * ``eval_schedule`` — the schedule constants and the roster's NAMES (poke-env-free);
-* ``eval_player``  — ``EvalRLPlayer`` (poke-env);
 * ``eval_quota``   — the forensic capture quota and the trace-filename contract (poke-env-free);
-* ``eval_launch``  — the cycle manifest, the Rust-core cycle, the standalone worker spawn/kill (parity / benchmark tools);
+* ``eval_launch``  — the cycle manifest, the Rust-core cycle;
 * ``eval_collect`` — shard merge, trace selection, snapshot / trace retention, best-model copies, wall;
 * ``eval_record``  — per-opponent records, eval blocks, the live ELO, the resume republish.
 
@@ -37,7 +36,7 @@ from main.launcher.ipc import emit, send_metrics, send_event
 
 # ---- the re-exported surface (see the module docstring) -------------------------------------------
 # The poke-env-FREE half is imported eagerly: the schedule + the roster's names (`eval_schedule`) and the forensic quota
-# (`eval_quota`). The poke-env half (the player classes, `EvalRLPlayer`, the builders) is re-exported LAZILY through
+# (`eval_quota`). The poke-env half (the player classes, the bot builder) is re-exported LAZILY through
 # the module `__getattr__` below — importing this module (the trainer's argument parser does, and so does `main.h2h`
 # at run time) must not import the whole poke-env package. P1 of the poke-env retirement, `T27`.
 from agents.training.eval_schedule import (  # noqa: F401
@@ -56,8 +55,6 @@ _LAZY_POKE_ENV_EXPORTS = {
     "_EVAL_OPPONENT_SPECS": "agents.training.eval_roster",
     "eval_opponent_class": "agents.training.eval_roster",
     "build_eval_opponents": "agents.training.eval_roster",
-    "build_eval_players": "agents.training.eval_roster",
-    "EvalRLPlayer": "agents.training.eval_player",
 }
 
 
@@ -74,15 +71,13 @@ def __getattr__(name: str):
 
 
 if TYPE_CHECKING:  # for static analysers / IDEs only — not executed at runtime
-    from agents.training.eval_player import EvalRLPlayer  # noqa: F401
     from agents.training.eval_roster import (  # noqa: F401
-        _EVAL_OPPONENT_SPECS, _OPPONENT_NAMES, build_eval_opponents, build_eval_players, eval_opponent_class,
+        _EVAL_OPPONENT_SPECS, _OPPONENT_NAMES, build_eval_opponents, eval_opponent_class,
         opponent_name,
     )
 from agents.training.eval_launch import (  # noqa: F401
     EVAL_MANIFEST_NAME, EVAL_SNAPSHOT_NAME, _read_run_identity, opponent_pins_of,
-    write_eval_manifest, launch_rust_eval_cycle, kill_eval_workers, spawn_eval_workers,
-    mirrored_eval_games,
+    write_eval_manifest, launch_rust_eval_cycle, mirrored_eval_games,
 )
 from agents.training.eval_collect import (  # noqa: F401
     merge_eval_results, prune_eval_traces, prune_eval_snapshots, record_eval_selection,

@@ -304,9 +304,9 @@ Every finished arm still has its 10M checkpoint, so the fix costs CPU and no GPU
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && export CUDA_VISIBLE_DEVICES=""
-# per side — OFFLINE, CPU, niced; a training arm normally shares the box, so cap the workers
+# per side — OFFLINE, CPU, niced; a training arm normally shares the box, so cap the eval core
 nice -n 15 python -m main.ops.eval_trace_gen <run>@10000032 --games 400 --sentinels 6 \
-    --out <tmp>/hp_eval/<run> --workers 4 --concurrency 1 --seed 20260909
+    --out <tmp>/hp_eval/<run> --n-envs 32 --threads 4 --torch-threads 4 --seed 20260909
 # then the read, with BOTH sides pointed at generated cycles
 python -m main.ops.critic_read <arm> --control <control> --step 10000032 \
     --arm-traces <tmp>/hp_eval/<arm> --control-traces <tmp>/hp_eval/<control> --out <dir>
@@ -314,11 +314,15 @@ python -m main.ops.critic_read <arm> --control <control> --step 10000032 \
 
 **The four things that make this a measurement and not just a bigger number.**
 
-1. **It is not a re-implementation of eval.** It drives the same `main.eval_worker` over a
-   `ShardedEvalPool` plan, so the same LocalBattleRunner / EvalRLPlayer / BattleRecorder path
-   writes the same npz keys and the same `selection_schema` 2 manifest. The eval REGIME is READ
-   from the run's `eval_sentinel_greedy`, never assumed — that key names an opponent-regime
-   boundary worth ~8.9 pp to the trainee, and a run that recorded none is REFUSED.
+1. **It is not a re-implementation of eval.** It plays a `ShardedEvalPool` plan on the Rust eval
+   core — the executor a live cycle plays on — so it writes the same CORE traces and the same
+   `selection_schema` 2 manifest. The eval REGIME is READ from the run's `eval_sentinel_greedy`,
+   never assumed — that key names an opponent-regime boundary worth ~8.9 pp to the trainee, and a
+   run that recorded none is REFUSED. 🚨 **Since poke-env retirement P6 slice 6c (the Python eval
+   worker is deleted) the cycle is CORE traces, and `cf_audit`'s frame — the identity half of the
+   `critic_read` below — REFUSES core traces** (no recorded win-prob head, F-LH-4). The read below
+   therefore stops at the identity step until the win-prob head is recorded at eval; a cycle
+   generated before the port (Python traces) still reads.
 2. **Capture is ALL by default.** The live quota exists to bound a training run's disk; here the
    traces ARE the measurement, and a loss-enriched subsample is exactly what costs the
    low-variance rows their power. 400 games × 12 opponents fully captured is ~4,800 traced

@@ -66,7 +66,7 @@ def build_host(workdir: Path) -> Dict[str, Any]:
     from agents.observation.state_encoder import load_mappings
     from agents.training.fixed_opponent_pool import FixedOpponentEntry
     from agents.training.reward_config import RewardConfig
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR  # re-homed from the deleted `parity` (P6 slice 6c)
     from agents.training.rust_eval.build import EvalDecl, build_eval_core, eval_builders, eval_extra_slots
     from agents.training.rust_rollout.build import RustEnvDecl
     from utils.rust_env import episode as EP
@@ -113,7 +113,7 @@ def plan_items(host: Dict[str, Any], *, games: int = GAMES, bots: int = BOTS, se
 
 
 def cb_for(host: Dict[str, Any], *, sentinel_greedy: bool, ledger: Any = None) -> Any:
-    from agents.training.eval_player import ForensicQuota
+    from agents.training.eval_quota import ForensicQuota
 
     return SimpleNamespace(model=host["model"], _model_dir=None, _forensic_quota=ForensicQuota(0, 0, 0),
                            _eval_sentinel_greedy=sentinel_greedy, _self_play_temp=1.0, safe_point_fn=None,

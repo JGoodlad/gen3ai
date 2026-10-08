@@ -85,7 +85,7 @@ class TestTheResolverContract:
 
     def test_the_env_hook_seeds_every_instance_in_the_process(self, mod, resolve, env_var):
         """The hook a paired-arm harness needs when it does not own the construction site — the
-        players are built deep inside `env_factory` / `eval_worker`, the teambuilders inside
+        players were built deep inside `env_factory` / the Python eval worker, the teambuilders inside
         `matchup_spec`, the pool inside the env worker."""
         with patch.dict(os.environ, {env_var: "7"}):
             rng = resolve(None)

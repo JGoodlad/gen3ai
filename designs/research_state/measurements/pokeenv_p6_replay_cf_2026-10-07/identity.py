@@ -63,7 +63,7 @@ def _threads(n: int) -> None:
 
 
 def build_models(dst: Path) -> None:
-    from agents.training.rust_eval.parity import build_models as bm
+    from agents.training.rust_eval.offline import build_models as bm  # re-homed from the deleted `parity` (P6 slice 6c)
 
     trainee, sentinels, cfg = bm(dst, n_sentinels=1)
     (dst / "models.json").write_text(json.dumps({"trainee": trainee, "opponent": sentinels[0], "config": cfg}))

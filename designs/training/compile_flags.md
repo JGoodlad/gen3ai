@@ -1558,11 +1558,12 @@ inference-only), and the prober backprops through this same extractor for gradie
 | consumer | what is compiled | gate |
 |---|---|---|
 | training env workers | — (none since U3: policy opponents forward through the T2 inference service) | — |
-| `eval_worker` | **the trainee** (plays every eval game) + sentinel + fixed opponents | `compile_extractor` cfg key, threaded from both eval callbacks |
+| `eval_worker` — **DELETED** (poke-env retirement P6 slice 6c; every eval cycle plays on the Rust eval core, whose policies T2 serves) | — | — |
 | `snapshot_ladder` | both frozen ladder players | **default ON** — offline tool, nothing races it |
 | prober (`session._load`) | the no-grad replay / rollout models | `--compile` (off by default) |
 | `play.py` | nothing — the websocket/LADDER client loads a plain `MaskablePPO` and stays eager: one process, one battle at a time, and eager already measures **18 ms/decision** against a 150 s ladder timer, so a compile would buy latency nobody is waiting on | n/a |
 
+**HISTORY — the Python eval worker (deleted in P6 slice 6c), kept for the record of how its compile was verified.**
 Eval workers are fresh `Popen` processes, so they hit the shared on-disk Inductor cache the trainer
 already warmed rather than inheriting anything; one worker plays hundreds of games, so the compile
 repays many times over.
@@ -1578,7 +1579,7 @@ spawns an `eval_worker`, so it shows zero compile lines and proves nothing about
 ⚠️ **A bots-only plan does not exercise the OPPONENT half.** Scripted bots have no extractor, so
 `_get_opponent_model` never runs — `--neural-opponent` adds a FIXED (frozen neural) opponent, which
 is the only kind that reaches it. That gap is why the opponent path went unverified at first, and
-`src/main/eval_worker_compile_test.py` now pins the wiring in the fast unit suite.
+`src/main/eval_worker_compile_test.py` pinned the wiring in the fast unit suite (deleted with the worker).
 
 **Validation is paid once per process** (`_COMPILE_VALIDATED`), and the reuse path STILL LOGS
 (`ON (reused this process's validated compile)`) — it used to return silently, which made the eval

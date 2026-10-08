@@ -321,8 +321,11 @@ collector and is collected in the same step** (`eval_callback._launch_eval` →
 (`designs/research_state/measurements/m5_sizing/PROGRESS.md` O9). There is no worker pool, no skipped
 cycle, no hung-cycle watchdog and no drain (the Python worker branch, `--eval-workers` and
 `PerOpponentEvalCallback.drain` were deleted in P10-F2); a stop signal is honoured INSIDE the cycle at its
-safe points (`safe_point_fn`). `eval_launch.spawn_eval_workers` survives only for the standalone Python
-oracle (`rust_eval.parity`, `eval_benchmark`, `main.ops.eval_trace_gen`).
+safe points (`safe_point_fn`). The standalone Python eval oracle that outlived it (`main.eval_worker`,
+`eval_launch.spawn_eval_workers`, `EvalRLPlayer`, `rust_eval.parity`, `eval_benchmark`) was deleted in poke-env
+retirement P6 slice 6c: every eval cycle, the offline ones included, plays on the Rust eval executor. An OFFLINE
+caller declares its own eval core + T2 slots through `rust_eval.offline` (`run_rust`; `build_models` for seeded
+perturbed checkpoints) — `main.ops.eval_trace_gen` generates a cycle for a saved checkpoint that way.
 
 🚨 **THE FORENSIC TRACE'S RESULT VOCABULARY is `WIN` | `LOSS` | `DRAW`** (`gen3_trace_result_v2`,
 `trace_result.py`); a `DRAW` carries `meta.draw_kind` (`timeout` vs `tie`), and an unknown result is
@@ -689,7 +692,7 @@ Detail: [`designs/training/rust_collector.md`](../../../designs/training/rust_co
 
 ## The compile flag (`--compile-trainer`, DEFAULT ON)
 
-**`--compile-trainer`** is the GPU/LEARNER compile (auto-on for cuda) — the CUDA forward **and backward** the PPO step runs. The CPU/ROLLOUT half (the compile-opponents flag, its preload and strict variants, the forkserver preload, the cache prewarm and the cross-process revert quorum) was deleted in the deletion pass (U3): under the Rust env core every policy opponent forwards through the inference service, so the trainer compiles no opponent. What is left of the opponent compile is `agents.model.compile_opponents.maybe_compile_extractor(model, enabled, label, hide_cuda)`, used by the OFFLINE readers (the prober's counterfactual view, the snapshot ladder, the eval worker, the cf producer, the search-dividend perf probe).
+**`--compile-trainer`** is the GPU/LEARNER compile (auto-on for cuda) — the CUDA forward **and backward** the PPO step runs. The CPU/ROLLOUT half (the compile-opponents flag, its preload and strict variants, the forkserver preload, the cache prewarm and the cross-process revert quorum) was deleted in the deletion pass (U3): under the Rust env core every policy opponent forwards through the inference service, so the trainer compiles no opponent. What is left of the opponent compile is `agents.model.compile_opponents.maybe_compile_extractor(model, enabled, label, hide_cuda)`, used by the OFFLINE readers (the prober's counterfactual view, the cf producer, the search-dividend perf probe).
 **fp32 matmul precision `highest` is the ONLY precision** (TF32 retired, deletion pass K2; `--matmul-precision`
 is DELETED — `designs/deleted_flags.md`). Nothing in the trainer sets it; `metadata.json` still records the
 realized value as `matmul_precision`, and every parity gate (the region gate, the canary, T2's judge, K9(b))
@@ -904,7 +907,7 @@ keys** (`gen3_strict_checkpoint_load_v1`): `StrictCheckpointLoad.set_parameters`
 (`instrumented_ppo/strict_load.py`; `OwnedLoop` inherits it, so the learner and the opponent classes
 carry it) refuses sb3's non-strict "SB3 < 1.7.0" retry (`StrictLoadError`), which used to load a
 checkpoint missing an extractor submodule with that submodule at fresh init. The READERS (the ladder
-session `play.py`, the prober, the eval worker, the offline meters, `winprob_finetune`) load through
+session `play.py`, the prober, the offline meters, `winprob_finetune`) load through
 `agents.model.snapshot.load_checkpoint_strict` — a `StrictMaskablePPO`, a plain `MaskablePPO` with only
 that `set_parameters` — and `src/strict_checkpoint_load_gate_test.py` fails a bare `MaskablePPO.load` /
 `PPO.load`, an `exact_match=False`, or an sb3-algorithm subclass without the mixin (EMPTY allowlist).

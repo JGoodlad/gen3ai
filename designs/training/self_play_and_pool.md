@@ -504,8 +504,8 @@ a stable opponent rides the *existing* pool-vs-heuristic split in the opponent s
   **uniform** with the rest (`eval/win_rate_vs_ext_<run>`, like `eval/win_rate_vs_sentinel_0`), no
   colons in TensorBoard. `is_external` (`startswith("ext_")`) keeps them out of the bot aggregates.
   Both eval callbacks (`PerOpponentEvalCallback` + `SelfPlayCallback`) add the `ext_` labels as
-  `FIXED` `EvalItem`s (so they shard + ride the same plan); the worker's `_play_unit` FIXED branch
-  (`eval_worker.py`) plays the **greedy trainee vs the greedy stable opponent** (a clean yardstick).
+  `FIXED` `EvalItem`s (so they shard + ride the same plan); the Rust eval executor's fixed route plays the
+  **greedy trainee vs the greedy stable opponent** (a clean yardstick).
 - **Metric set (deliberate, uniform across both callbacks):** per opponent —
   `eval/win_rate_vs_ext_<run>`, `eval/mean_reward_vs_ext_<run>`, `eval/mean_ep_len_vs_ext_<run>`;
   plus `eval/win_rate_vs_external` ONLY for a mini-league (2+ — with one it duplicates its row; it's
@@ -537,8 +537,8 @@ a stable opponent rides the *existing* pool-vs-heuristic split in the opponent s
   cli_args.trainee_team` (`_read_trainee_pin`) into `FixedOpponentEntry.team_str` — **fail-loud**:
   a recorded pin whose file is missing raises, and a pin that no longer matches the run's recorded
   MatchupSpec `pin_sha` raises (never a silent pool fallback). TRAINING: the Rust env core's opponent team plumbing (`rust_rollout/teams.py`; the deleted Python wrapper's `_apply_opponent_team` switched `env.agent2._team` **per episode** — the mirror lesson: the opponent's real team is the one its agent holds) plays each pinned entry on its own pin; unpinned episodes use the pool teams. EVAL:
-  `team_str` rides `to_cfg()` → the `EvalItem` → `eval_worker._fixed_opponent_tb`, so the FIXED
-  branch measures the opponent piloting its pin (eval matches training, same rule as the trainee's
+  `team_str` rides `to_cfg()` → the `EvalItem` → `rust_eval.build.eval_builders` (the fixed opponent's pinned
+  builder), so the FIXED route measures the opponent piloting its pin (eval matches training, same rule as the trainee's
   own pin). The `[STABLE]`/`[EXPLOITER]` startup lines annotate `[pilots ITS OWN pin: <file>]`.
   (The guard `poke_env_gaps/opponent_pin_fuzz_test.py` — bridge, real battles — was deleted with the Python env core in U3.)
 - **Tests:** `fixed_opponent_pool_test.py` (parse + resolve + the arch FATAL gate + the pin

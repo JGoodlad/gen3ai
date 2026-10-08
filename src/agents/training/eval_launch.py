@@ -2,18 +2,13 @@
 
 Shared by BOTH eval callbacks (``PerOpponentEvalCallback``, ``SelfPlayCallback``): the per-cycle
 manifest (``write_eval_manifest`` — which model, which regime, which selection rule), the mirrored-pair
-game count and the Rust eval core's in-process cycle (``launch_rust_eval_cycle``). ``spawn_eval_workers``
-/ ``kill_eval_workers`` are NOT the callbacks' any more (they play in process); they stay for the
-standalone callers that run ``main.eval_worker`` directly — the Python oracle of the Rust eval
-(``rust_eval.parity`` / ``eval_benchmark``) and ``main.ops.eval_trace_gen``. ``eval_callback``
-re-exports every public name here; a test that STUBS ``subprocess.Popen`` for the workers reaches it
-through THIS module's ``subprocess``.
+game count and the Rust eval core's in-process cycle (``launch_rust_eval_cycle``). ``eval_callback``
+re-exports every public name here. (The Python eval-worker spawn / kill — ``spawn_eval_workers`` /
+``kill_eval_workers`` — was deleted with ``main.eval_worker``, poke-env retirement P6 slice 6c.)
 """
 import hashlib
 import json
 import os
-import subprocess
-import sys
 import time
 from datetime import datetime, timezone
 
@@ -186,43 +181,6 @@ def launch_rust_eval_cycle(cb, pool, run_dir: str, step: int, snapshot: "str | N
                                    "cycle_wall_s": round(float(st["seconds"]["total"]), 3)})
         print(f"📒 [EVAL LEDGER] step {step:,}: {len(rows)} cycle row(s) appended under {led.root}")
 
-
-
-def kill_eval_workers(procs: list[dict], wait_timeout: float = 5.0) -> None:
-    """Kill any still-running eval workers and reap them (so none linger as zombies)."""
-    for w in procs:
-        if w["proc"].poll() is None:
-            w["proc"].kill()
-        try:
-            w["proc"].wait(timeout=wait_timeout)
-        except subprocess.TimeoutExpired:
-            pass
-
-
-def spawn_eval_workers(run_dir: str, base_cfg: dict, n_workers: int) -> list[dict]:
-    """Write one config_<wid>.json per worker and Popen ``python -m main.eval_worker`` on it.
-
-    ``base_cfg`` carries everything common to the workers (snapshot, port, opponent pool,
-    claim/result dirs, concurrency, device, cycle_tag, and — for self-play — the sentinel
-    specs); this only adds ``worker_id``. The launcher's metrics pipe FD is stripped from
-    the child env (only the parent publishes to the TUI; that FD number is invalid in the
-    child). Returns a list of ``{proc, log, log_path}``.
-    """
-    worker_env = {k: v for k, v in os.environ.items() if k != "LAUNCHER_METRICS_FD"}
-    procs = []
-    for wid in range(n_workers):
-        cfg = {**base_cfg, "worker_id": wid}
-        cfg_path = os.path.join(run_dir, f"config_{wid}.json")
-        with open(cfg_path, "w") as f:
-            json.dump(cfg, f)
-        log_path = os.path.join(run_dir, f"worker_{wid}.log")
-        logf = open(log_path, "w")
-        proc = subprocess.Popen(
-            [sys.executable, "-m", "main.eval_worker", cfg_path],
-            stdout=logf, stderr=subprocess.STDOUT, env=worker_env,
-        )
-        procs.append({"proc": proc, "log": logf, "log_path": log_path})
-    return procs
 
 
 # ── MIRRORED TEAM PAIRS (`gen3_mirrored_pairs_v1`, `--eval-mirrored-pairs`) — the launch side ─────────

@@ -112,8 +112,9 @@ roster is the full set of eight archetype bots — both the v1 and v2 of each
 (`heuristic`/`heuristic2`, `staller`/`staller_v2`, `aggressive`/`aggressive_v2`,
 `setup_sweep`/`setup_sweep_v2`) — plus `random` as the eval-only "is-the-model-broken"
 floor (excluded from `win_rate_vs_bots`). All nine are the single source of truth in
-`_EVAL_OPPONENT_SPECS` / `eval_opponent_names()`, shared by the bot path, the self-play
-path, and the standalone `main.eval_worker` tools. There is no roster flag — every bot always plays,
+`eval_schedule._EVAL_ROSTER` / `eval_opponent_names()` (poke-env-free; `eval_roster._EVAL_OPPONENT_SPECS` binds the
+same names to their poke-env classes), shared by the bot path, the self-play path, the offline Rust eval harness
+(`rust_eval.offline`, `main.ops.eval_trace_gen`) and the Rust eval core's bot routes. There is no roster flag — every bot always plays,
 because they play differently and the playstyle diversity is the point. 🚨 **The cycle is BLOCKING**:
 it plays in the trainer's own process between two host steps of the collector and is collected in the
 same step (`eval_callback._launch_eval` → `eval_launch.launch_rust_eval_cycle` → `_collect_pending`),
@@ -359,17 +360,18 @@ was decided against. G1 and G4 are unchanged.
 `PerOpponentEvalCallback` (non-self-play path) evals IN PROCESS on the Rust eval core, blocking (see
 the section heading; until P10-F2 (2026-10-03) it also had a Python branch that spawned `main.eval_worker`
 subprocesses which **work-steal at battle granularity** and played beside training — that branch, its
-`--eval-workers` / `--eval-device` / `--eval-concurrency-per-worker` knobs (deleted in P11) and the
-paragraphs below that still describe a "worker" now describe the STANDALONE `main.eval_worker` — the Python oracle
-of the Rust eval, run by `rust_eval.parity`, `eval_benchmark` and `main.ops.eval_trace_gen` — and the shard
-mechanics both cores share). On each scheduled step it snapshots the live weights (`model.save`) and the
+`--eval-workers` / `--eval-device` / `--eval-concurrency-per-worker` knobs (deleted in P11); the standalone
+`main.eval_worker` that survived it as the Python oracle of the Rust eval was DELETED in poke-env retirement P6
+slice 6c, with `rust_eval.parity`, `eval_benchmark` and `EvalRLPlayer`. A paragraph below that still says "worker" is
+HISTORY of that path; the shard mechanics it describes are the Rust executor's — one unit on one env, in plan
+order). On each scheduled step it snapshots the live weights (`model.save`) and the
 cycle plays against the **frozen** snapshot. **The trainee's eval teambuilder follows the
-run's `--trainee-team` pin** (`trainee_team_str` → `agents.training.eval_teams.build_trainee_tb`, shared by the Python eval worker and the Rust eval core;
+run's `--trainee-team` pin** (`trainee_team_str` → `agents.training.eval_teams.build_trainee_tb`, the Rust eval core's trainee builder;
 threaded by BOTH callbacks): a specialist run is measured piloting ITS OWN team. The worker used to
 hardcode the default full-pool builder, so every specialist eval (win rates / ELO / `vs_ext`
 verdicts) measured the model piloting random teams it never trained on — pure OOD; the
-"ai_v7_05–08 plateau" was this instrumentation gap, not the training (see `eval_worker_test.py`,
-the fix's pin). No pin → the default pool builder, byte-identical. **The companion TRAINING-side bug
+"ai_v7_05–08 plateau" was this instrumentation gap, not the training (the fix's pin was
+`eval_worker_test.py`, deleted with the worker in P6 slice 6c). No pin → the default pool builder, byte-identical. **The companion TRAINING-side bug
 (the mirror):** PokeEnv feeds its single `team=` kwarg to BOTH internal env agents, and the
 per-episode opponent Players are decision-functions over `battle2` (agent2 does the networking), so
 agent2's `_team` decides the opponent's REAL team — a `--trainee-team` pin therefore also pinned the
@@ -450,7 +452,7 @@ result outside the vocabulary (`UnknownTraceResult`) rather than coercing it. �
 `ai_v12_02_winprob_critic` is PINNED and keeps writing `gen3_trace_result_v1` until it ends.
 
 🚨 **THE CAPTURE QUOTA IS OUTCOME-CONDITIONAL, and the manifest now RECORDS it**
-(`gen3_trace_selection_manifest_v1`): `EvalRLPlayer` persists at most `_FORENSIC_WIN_QUOTA` (5) wins,
+(`gen3_trace_selection_manifest_v1`): the eval executor (`RustEvalCore._finish`; `EvalRLPlayer` until P6 slice 6c) persists at most `_FORENSIC_WIN_QUOTA` (5) wins,
 `_FORENSIC_LOSS_QUOTA` (10) losses and `_FORENSIC_DRAW_QUOTA` (5) draws per opponent per cycle
 (scaled per shard unit), so the traces are a LOSS-ENRICHED sample by design — and every consumer that averages over them (`calibration`,
 `falsify_scan`, `main.scaffolding_gauge`) used to inherit that skew with nothing on disk saying so.
@@ -469,8 +471,8 @@ the rule in words; the counts ride the existing shard plumbing (`ShardResult.tra
 LOSSES, NOT ADDED TO THE PLAYED COUNT** — poke-env's `n_finished_battles` already contains every
 draw (a tie is neither a win nor a loss to it, a timeout is our forfeit), so
 `lost = played − won − drawn` is what keeps `capture_rate_loss` a statement about DECISIVE losses.
-The drawn-battles-played denominator comes from `EvalRLPlayer.draws_seen` because **no other layer
-counts it**. The `selection` block is **schema 2**, purely additive: `read_selection` accepts
+The drawn-battles-played denominator comes from the unit's `draws_seen` (`rust_eval.executor._Unit`; pinned by
+`rust_eval/capture_quota_test.py`) because **no other layer counts it**. The `selection` block is **schema 2**, purely additive: `read_selection` accepts
 schema 1 as well, so every cycle recorded before today stays READ rather than being demoted to
 SELECTION UNKNOWN — its draw keys are simply ABSENT, which is not the same as zero.
 **Absent reads as SELECTION UNKNOWN, never as uniform** — a legacy tree, or a cycle that crashed
@@ -596,7 +598,7 @@ truth). `BattleRecorder`
 accumulates δ live (one-step delayed backfill, closing each transition at the next `record()` when
 the reward is finalized and V(s′) is known; the last decision has no δ). It costs **zero extra GPU**:
 δ is computed only over the battles eval already captures forensically (where `need_aux=True` already
-paid for V(s)), pooled per opponent (one `EvalRLPlayer` per matchup → `td_tail()`), and folded as a
+paid for V(s)), pooled per opponent (the executor's per-unit δ list → `td_tail()`), and folded as a
 **CVaR@5%** (mean of the worst 5%, `TD_TAIL_FRAC`; single min below `TD_TAIL_MIN_SAMPLES`=20). It
 rides the exact win-rate plumbing — worker `shard__<unit_id>.json` (raw δ pooled across shards) → `merge_eval_results` →
 `eval/td_resid_tail_vs_<opponent>` + `eval/td_resid_tail_mean` (TB + TUI), the `metadata.json`
@@ -636,7 +638,7 @@ unit with a narrow interface (4 focused files, no mega-file):
   list — never a reduced ratio) + `aggregate`, which pools an opponent's shards back **exactly**:
   win_rate=Σwon/Σfinished, reward/ep_len count-weighted, and the TD tail by **pooling raw δ then one
   `td_tail`** (a CVaR can't be averaged). `td_tail` + its constants live here (the single source of
-  truth; `eval_callback` and `eval_player` re-export them, so the dependency is one-way `eval_* → eval_sharding`).
+  truth; `eval_callback` re-exports them, so the dependency is one-way `eval_* → eval_sharding`).
 - **`pool.py`** — `ShardedEvalPool`, the deep coordinator. Parent: `write_plan(run_dir)` →
   `collect(result_dir)`. Worker: `from_plan(run_dir)` → `claim_next(claim_dir)` / `publish(...)`. It
   hides every filesystem mechanic; the worker never touches a lock file, the parent never touches a
@@ -656,10 +658,10 @@ the split. It's a sampled diagnostic either way. Forensic trace files are namesp
 shared `eval_traces/step_<N>/<opponent>/` dir. Per-cycle `run_dir` is wiped at cleanup (and cleared
 at launch), so no lock/shard/plan ever leaks across cycles. Sentinel/fixed opponent models are cached
 per worker by path (immutable within a cycle → safe; the version check rides the first load) so a
-fine split doesn't pay an N× 27MB deserialize. Worker rewrite: `eval_worker._play_unit` (one fresh
-trainee + opponent per unit → independent measurement) + a per-worker model cache; tests:
-`eval_sharding_test.py` (partition + aggregation-exactness property + claim-once + coverage),
-`eval_sharding_fuzz_test.py` (real bridge battles through the real worker → exact pooled result).
+fine split doesn't pay an N× 27MB deserialize. (That was the Python worker's `_play_unit`, deleted in P6 slice 6c;
+the Rust executor plays a unit on one env and publishes the same `ShardResult`.) Tests: `eval_sharding_test.py`
+(partition + aggregation-exactness property + claim-once + coverage); the real-battle half,
+`eval_sharding_fuzz_test.py`, went with the worker.
 
 ### Mirrored team pairs (`--eval-mirrored-pairs`, T17 — `gen3_mirrored_pairs_v1`, DEFAULT OFF)
 
@@ -673,11 +675,8 @@ yours") cancels inside the pair instead of riding the win rate as noise. Trainin
 
 **One rule, both eval paths** (`rust_eval.seeds.pair_game`): unmirrored, a game's key is its own
 `(cycle seed, opponent, game)`; mirrored, games `2k` and `2k+1` both take the key of game `2k` and the
-second is `swapped`. The Rust eval core (`executor._make_game`) and the Python worker's per-GAME seed
-rule (`eval_worker._per_game_teams` / `_play_per_game`) both call it. The standalone Python worker plays a mirrored
-plan only under `seed_rule = "per_game"` (its cfg key; the callbacks' `eval_launch.mirrored_worker_cfg`, which wrote it,
-was deleted in P10-F2), which needs one game in flight per worker; a
-worker handed a mirrored plan without the per-game rule raises. (The `mirrored_pairs_need_*` combination rows, which refused `--use-bridge off` and a concurrency other than 1, were removed in U3 — the bridge is the only transport.)
+second is `swapped`. The Rust eval core (`executor._make_game`) calls it (the Python worker's per-GAME seed rule did
+too, until the worker was deleted in P6 slice 6c). (The `mirrored_pairs_need_*` combination rows, which refused `--use-bridge off` and a concurrency other than 1, were removed in U3 — the bridge is the only transport.)
 
 **Counts are even by construction.** An odd `--eval-games` is rounded UP (`mirrored_eval_games`; the
 `--debug` cadence's 3 becomes 4), and the shard split is in PAIRS (`units._split_games(paired=True)`), so
@@ -1112,8 +1111,8 @@ python -m main.eval_ledger verify <decision_id>       # re-derives a check's ver
 
 ### Eval on the Rust env core (the only trainer core, M5 Lane H — `agents/training/rust_eval/`)
 
-An eval cycle is played on the M5 Rust env core, not on `main.eval_worker`
-processes. **What it keeps, exactly:** the plan (`ShardedEvalPool`: the nine roster bots, the pool
+An eval cycle is played on the M5 Rust env core (the `main.eval_worker` processes it replaced were deleted in
+poke-env retirement P6 slice 6c). **What it keeps, exactly:** the plan (`ShardedEvalPool`: the nine roster bots, the pool
 sentinels, the fixed / stable opponents, the same shard units), the regime (the trainee GREEDY; the
 sentinels greedy on the trainee's own teams under `eval_sentinel_greedy`, else a sample at
 `--self-play-temp`; fixed opponents greedy on their own pinned teams), the forensic quota per unit and
@@ -1143,11 +1142,11 @@ declared:**
   until the cycle ends.
 - **Every game is seeded by the game** (`gen3_eval_game_seed_v1`, `rust_eval/seeds.py`): key =
   (cycle seed, opponent, game index in plan order) → the two teams (one `yield_team` of the eval
-  builders — `eval_worker`'s own — re-seeded per game), the battle seed, and a scripted bot's streams,
+  builders, `rust_eval.build.eval_builders`, re-seeded per game), the battle seed, and a scripted bot's streams,
   which the core re-seeds at the game's start from the route seed and the battle seed (the bot route's
   `"streams": "episode"`). A game's result is therefore a function of the game and the weights, not of
   the env, N, the threads or the schedule. The cycle seed is a hash of the collector's run seed and the
-  step. Today's live Python eval is unseeded — a declared change of STREAM, not of distribution.
+  step. (The live Python eval it replaced was unseeded — a declared change of STREAM, not of distribution.)
 - **Traces are core traces** (`gen3_core_trace_v1`, `rust_eval/traces.py`): per kept game, both sides'
   `gen3_core_event_v1` records (`.p1/.p2.jsonl.gz`, written by the core's record writer from the game's
   input log), the reconstruction record, the states npz (the core's obs rows, T2's legal log-probs as
@@ -1157,8 +1156,9 @@ declared:**
   model on the stored obs.
 - `rust_eval/*` TensorBoard tags: the cycle's wall-clock, games, trainee decisions/s, traces, near-ties.
 
-**The gate** (`rust_eval/parity.py`; the lane's PROGRESS has the numbers): one plan and one cycle seed
-played by the Rust executor AND by today's eval worker in its per-game-seeded mode
+**The gate — HISTORY** (`rust_eval/parity.py`, deleted with the Python eval worker in poke-env retirement P6 slice
+6c; its seeded-checkpoint and Rust-cycle helpers live on in `rust_eval/offline.py`; the lane's PROGRESS has the
+numbers): one plan and one cycle seed played by the Rust executor AND by the eval worker in its per-game-seeded mode
 (`eval_worker` `seed_rule = "per_game"`: each game alone on the rust bridge with the same teams, battle
 seed and bot streams) — every game's winner, end turn and trainee action equal (a first differing
 action excused only as a TIE under Lane E's margin rule), the pooled metrics equal, the kept traces the
@@ -1188,17 +1188,22 @@ that frame. When a read's binding constraint turns out to be POWER rather than e
 again from the saved checkpoint, offline and on CPU, at whatever size is worth paying for.
 
 **It reuses this chapter's machinery rather than restating it.** The generator builds the same
-`EvalItem` list, the same `ShardedEvalPool` plan, and spawns the same `python -m main.eval_worker`
-processes — so the sentinel construction, the `_sentinel_tb` regime, the reward built from
-`model_config.json`, the forensic quota, the shard-namespaced `trace_tag` and the
-`record_eval_selection` collect are all the code documented above, not a parallel copy. What it
-supplies is the WHAT: which checkpoint, how many games, which pool snapshots, and where the output
-goes.
+`EvalItem` list and the same `ShardedEvalPool` plan, and plays it on the same executor a live cycle plays on
+(`RustEvalCore.run_cycle`), over an eval core and T2 slots it declares the way the trainer does
+(`rust_eval.offline.run_rust`: one slot group of the trainee's architecture — its eval slot and one per sentinel —
+the eval builders, the core's terminal from `model_config.json`) — so the sentinel regime and teams, the forensic
+quota, the shard-namespaced `trace_tag`, the CORE traces and the `record_eval_selection` collect are all the code
+documented above, not a parallel copy. What it supplies is the WHAT: which checkpoint, how many games, which pool
+snapshots, the compute (`--n-envs`, `--threads`, `--torch-threads`, `--front`, `--profile`; CPU, eager) and where the
+output goes. Until P6 slice 6c it spawned `python -m main.eval_worker` processes on the poke-env path; such a cycle's
+`generated_by` carries no `transport`, and the spec keeps it apart from a Rust-core one (`spec_of`'s `transport`).
 
 **Four contracts are worth stating here, because they are what make a generated cycle safe to read.**
 
 1. **The REGIME is read, never assumed.** `eval_sentinel_greedy` is taken from the run's
-   `model_config.json`; a run that recorded none is REFUSED. That key names the 2026-09-07
+   `model_config.json`; a run that recorded none is REFUSED. The mirrored-pair regime
+   (`eval_mirrored_pairs`; an odd `--games` is then refused) and the observation mode (`oracle_reveal`) are read the
+   same way. That key names the 2026-09-07
    opponent-regime boundary worth **+8.9 pp** to the trainee, and generating a cycle under the
    other regime would produce numbers that look exactly like a result.
 2. **Capture defaults to ALL.** `--quota` restores a live-shaped outcome quota for parity work, but
@@ -1212,8 +1217,9 @@ goes.
    played the traces. `--out` inside the run archive is refused.
 4. 🚨 **The manifest carries a `generated_by` block, and a reader may not ignore it.** It records
    the tool, schema, source run, checkpoint sha, games, the bot list, `sentinels_requested` beside
-   `sentinels_used`, the capture rule, the seed, the worker count, the concurrency, whether the
-   cycle is REPRODUCIBLE, and the POPULATION in words. `main.ops.critic_read` **REFUSES** to form a
+   `sentinels_used`, the capture rule, the regime fields, the `transport` (`rust_eval`) and the eval core's compute
+   flags, the seed and whether it was given or drawn, the cycle's near-tie count, whether the cycle is
+   REPRODUCIBLE, and the POPULATION in words. `main.ops.critic_read` **REFUSES** to form a
    delta between a generated frame and a live one — they are different populations, and the v3
    quota match corrects a difference in capture RATE between two frames of the same shape, not a
    difference in the shape itself. Two generated frames must further agree on games / opponent set
@@ -1224,7 +1230,14 @@ goes.
    nominal games, same opponents, same `selection`, same capture rates — while being a smaller
    frame. (2026-09-09: `scripts/land.sh` removed the worktree a generation was running out of;
    all four workers died with `failed to make path absolute` and the cycle landed at 71%. Run a
-   long generation from the MAIN checkout.)
+   long generation from the MAIN checkout. On the Rust core a cycle cut short — `--timeout-min` — keeps the shard
+   units that finished and is recorded INCOMPLETE the same way.)
+5. 🚨 **A generated cycle is CORE traces, so `cf_audit`'s sampling frame (and with it `critic_read`'s identity
+   read) REFUSES it** — the frame samples by the RECORDED win-prob head, and a core trace records none (`win_probs`
+   NaN, F-LH-4), exactly as on every live Rust-core cycle. The cycle pick, the refusal gates, the prober's views and
+   `cf_audit`'s identity half (the step dir's `snapshot.zip`, the sentinel pins) read it
+   (`main/ops/eval_trace_gen_integration_test.py`); a critic read on a Rust-core cycle waits on the win-prob head
+   being recorded at eval.
 
 **Sentinels are CLAMPED, never padded.** `--sentinels K` draws from the run's own `snapshots/`,
 evenly spaced across the step range (hence the rating range, both endpoints kept), excluding any
@@ -1235,16 +1248,17 @@ would inflate the between-opponent SPREAD with a duplicated cell, which is the q
 measured. Unlike a live cycle, the chosen snapshot steps ARE recorded (a live cycle leaves
 `opponent_pins` empty for pool sentinels).
 
-**Reproducibility, and its honest limit.** `--seed S` pins every stream a shard unit draws from —
-the process-global `random` the scripted bots use, both teambuilders' draw RNGs, and the sim PRNG
-per battle via `run_local_battles(seed_base=…)`, which derives battle *i*'s own `[m,n,o,p]` from a
-hash so the dice stay VARIED within a call and IDENTICAL across calls (one fixed `seed` would run N
-copies of one battle, which is not a sample of N). The unit seed is keyed on
-`(seed, opponent, shard index)` and **deliberately not on the worker id**, which work-stealing
-decides in a race — so `--workers 1` and `--workers 8` give the same cycle. `--concurrency > 1`
-does not: several battles of one unit then share the bots' global `random` stream and the order
-they draw in is a timing race. The tool prints the caveat, records both numbers, and marks the
-cycle NOT reproducible rather than emitting a number that wanders silently.
+**Reproducibility, and its honest limit.** On the Rust eval core every game is seeded by the GAME
+(`gen3_eval_game_seed_v1`): its two teams, its battle seed, the bots' streams and a sampled sentinel's draws are a
+pure function of (`--seed`, opponent, game index) — never of the env that played it, the schedule or a thread count.
+The same seed, checkpoint, plan and compute flags therefore give the IDENTICAL cycle, file for file
+(`eval_trace_gen_integration_test.py`); a run with no `--seed` draws one and RECORDS it (`seed_source: drawn`), since
+the core has no unseeded mode. What the seed does NOT pin is the float rounding of the batched forward, whose batch
+composition follows `--n-envs` and the schedule: a greedy decision within a rounding error of a tie can resolve the
+other way under other compute flags, another env-core build or another torch. The manifest records the compute flags
+and the near-tie count beside the seed, and states this in `reproducibility_note`. (The Python-path tool keyed a
+UNIT seed on `(seed, opponent, shard index)` and was not reproducible above `--concurrency 1`; its `--workers`,
+`--concurrency` and `--impl` flags went with it.)
 
 ### Rating-model seam (`rating.py`) — extensibility for Glicko-2 / TrueSkill
 
@@ -1425,8 +1439,8 @@ registered bar): a mean shift of a few pp (≈ ±25–35 Elo per edge) is not ex
 `elo._rows_to_results` yields TWO families off one eval row — trainee-vs-bot (`bot:`) and
 trainee-vs-**sentinel** (`snap:` vs `snap:`) — and `fit_ladder` used to fold in both. The second
 is a **different measurement of the same frozen pair** the dense matrix already holds: an eval
-cycle plays the GREEDY trainee against a **STOCHASTIC** sentinel (`eval_worker`:
-`stochastic=not sentinel_greedy`, `temperature=self_play_temp`) with an **asymmetric teambuilder**
+cycle plays the GREEDY trainee against a **STOCHASTIC** sentinel (the sampled regime then — the Python eval
+worker's `stochastic=not sentinel_greedy`, `temperature=self_play_temp`) with an **asymmetric teambuilder**
 (the trainee gets the sample-team bias, the sentinel does not), while the ladder plays
 greedy-vs-greedy with the same biased builder on both sides. Measured on
 `ai_v12_02_winprob_critic` over the **60 pairs both sources cover**: the eval edge favours the

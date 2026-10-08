@@ -482,12 +482,13 @@ stream is bit-identical before and after the load ("No global reseed after the f
 
 **The routes:**
 - **`snapshot.load_opponent_snapshot`** — the self-play pool (`SnapshotPool.load_model`, and through it
-  every T2 pool refresh) and the eval sentinels (`rust_eval/launch.load_sentinels`, `eval_worker`).
+  every T2 pool refresh) and the eval sentinels (`rust_eval/launch.load_sentinels`; the Python eval worker until
+  it was deleted in poke-env retirement P6 slice 6c).
 - **`snapshot.load_foreign_opponent`** — inference-only by default. That covers stable opponents,
   exploiter targets, `main.anchors`, `baselines.load` and
   the offline readers. `inference_only=False` is for an offline tool that FITS the loaded model: the
   consensus warm-start's student is the one caller.
-- **Not this class, and not affected:** the prober, `play.py`, the eval worker, the search workers and
+- **Not this class, and not affected:** the prober, `play.py`, the search workers and
   the offline tools load through `snapshot.load_checkpoint_strict` — a `StrictMaskablePPO`, a plain
   `MaskablePPO` plus the strict `set_parameters` (below), which has no ride-along acquisition. None of
   them runs inside a frozen learner.

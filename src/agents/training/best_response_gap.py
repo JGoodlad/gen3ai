@@ -41,10 +41,12 @@ Per exploiter run — an ``--exploiter <target>`` run — it reads, never re-der
 * the pinned TEAMS, through ``matchup_spec.read_recorded_trainee_teams`` — the one provenance
   reader, which RAISES rather than answering ``[]`` for a path that is not a run directory.
 
-🚨 **THE SERIES IS GREEDY-VS-GREEDY, WHICH IS NOT THE TRAINING REGIME.** ``main.eval_worker``'s
-FIXED branch builds the cross-run opponent ``stochastic=False, temperature=1.0`` ("eval = greedy
-yardstick") against a greedy ``EvalRLPlayer`` trainee. ``eval_sentinel_greedy`` does NOT govern it
-— that flag moves the ``sentinel_*`` branch, and an exploiter run has no sentinels at all. So the
+🚨 **THE SERIES IS GREEDY-VS-GREEDY, WHICH IS NOT THE TRAINING REGIME.** An eval cycle plays a FIXED
+(cross-run, ``ext_``) opponent GREEDY against a greedy trainee ("eval = greedy yardstick") — the Python eval
+worker's FIXED branch did, which recorded every series this meter has read (it was deleted in poke-env retirement
+P6 slice 6c), and the Rust eval executor's fixed route does (``RustEvalCore``: a fixed opponent plays its argmax).
+``eval_sentinel_greedy`` does NOT govern it — that flag moves the ``sentinel_*`` branch, and an exploiter run has
+no sentinels at all. So the
 series is the EVAL regime; ``--play`` defaults to the TRAINING regime (stochastic@1 both sides) and
 ``--play --greedy`` reproduces the series' own. The two are different populations, every row states
 which it is, and the gap table is built from ONE of them — never a mixture.
@@ -114,6 +116,9 @@ DEFAULT_DRAWS = 20000
 DEFAULT_BOOTSTRAP_SEED = 20260922
 
 #: The two regimes a rate can be measured in, spelled out wherever a number is printed.
+#: (A RECORDED label — it rides every row this meter has written, so its text never changes. "main.eval_worker FIXED
+#: branch" names the path that recorded the series; that worker was deleted in P6 slice 6c, and the Rust executor's
+#: fixed route plays the same greedy-vs-greedy regime.)
 SERIES_REGIME = "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)"
 PLAY_REGIME_STOCHASTIC = "stochastic@1 both sides (TRAINING regime)"
 PLAY_REGIME_GREEDY = "greedy both sides (EVAL regime — matches the series)"
@@ -457,7 +462,7 @@ def _regime(meta: Dict[str, Any], series: Sequence[SeriesPoint],
     """The properties the vs-target number depends on, as one comparable tuple.
 
     🚨 ``eval_sentinel_greedy`` is in here for the RECORD, not because it moves this number: the
-    ``ext_`` branch is hard-coded greedy either way (`eval_worker.py`, "eval = greedy yardstick")
+    ``ext_`` branch is greedy either way (the eval executor's fixed route; "eval = greedy yardstick")
     and an exploiter run has no sentinels at all. What DOES move it is the exploiter's own
     training opponent mix (a run that spends half its episodes on bots is best-responding at half
     rate), the per-cycle sample size, and whether the target pilots its own pinned team or draws

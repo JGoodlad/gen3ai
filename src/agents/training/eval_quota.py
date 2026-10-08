@@ -6,8 +6,8 @@
 ``trace_filename_stem`` (the filename contract the prober inverts) and ``episode_length_sum``. None of it touches a
 poke-env object, but it lived beside ``EvalRLPlayer`` (an ``RLPlayer`` subclass), so importing the quota imported the
 whole poke-env package — onto the import path of the trainer's argument parser, ``main.h2h`` and ``main.plateau``.
-``eval_player`` (and through it ``eval_callback``) re-exports every public name here, so every historical import
-site still resolves.
+``eval_callback`` re-exports every public name here, so every historical import site still resolves (``eval_player``
+— ``EvalRLPlayer`` — was deleted with the Python eval worker, poke-env retirement P6 slice 6c).
 """
 import math
 from typing import NamedTuple
@@ -25,7 +25,7 @@ def trace_filename_stem(outcome: str, trace_tag: str, idx: int) -> str:
 
     THE single source of the naming contract the prober's `discovery._FNAME_RE`
     must invert. ``trace_tag`` is the work-stealing eval's per-shard namespace
-    (``""`` un-sharded, or ``f"s{shard}_"`` from `eval_worker`). When sharding was
+    (``""`` un-sharded, or ``f"s{shard}_"`` per shard unit — the Rust eval executor's). When sharding was
     added this stem grew an ``s<shard>_`` infix the prober's regex didn't match, so
     every sharded-eval trace parsed as outcome ``"?"`` and the WHOLE prober went
     blind — `eval_callback_test.test_trace_naming_contract` now pins that

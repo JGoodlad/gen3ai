@@ -39,7 +39,7 @@ COMPUTE = ["--n-envs", "4", "--threads", "1", "--torch-threads", "1", "--front",
 
 
 def _models(tmp_path) -> dict:
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
     from agents.training.rust_rollout.testkit import build_selfcheck
 
     build_selfcheck()

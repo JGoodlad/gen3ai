@@ -2,9 +2,9 @@
 
 The eval callbacks write the cycle's PLAN exactly as today (``ShardedEvalPool.write_plan``: the bot
 roster, the pool sentinels, the fixed / stable opponents, split into shard UNITS) and the manifest;
-on the Rust env core they hand the plan to :meth:`RustEvalCore.run_cycle` instead of spawning
-``main.eval_worker`` processes. It publishes one ``ShardResult`` per unit into the cycle's run dir —
-the SAME raw additive record a Python worker publishes — so the collect, the aggregation, every
+they hand the plan to :meth:`RustEvalCore.run_cycle` (an offline caller declares the same pieces itself —
+``rust_eval.offline``). It publishes one ``ShardResult`` per unit into the cycle's run dir — the raw additive
+record the Python eval worker published before it was deleted (poke-env retirement P6 slice 6c) — so the collect, the aggregation, every
 metric, the manifest's trace selection and the ELO inputs are the unchanged Python code.
 
 HOW A CYCLE PLAYS (every resource DECLARED at startup — ``rust_eval.build``; nothing acquired here):
@@ -16,7 +16,7 @@ HOW A CYCLE PLAYS (every resource DECLARED at startup — ``rust_eval.build``; n
   matches, so eval rides the rollout's compiled buckets). A cycle LOADS the trainee's current weights
   and each sentinel's snapshot into their slots (T2 ``load``: an in-place copy, parity-verified).
 * UNITS → ENVS: a unit is played on ONE env, its games in plan order, one after another — exactly a
-  Python worker's ``_play_unit`` at concurrency 1 — so the forensic QUOTA (per unit, ``per_shard``)
+  (deleted) Python worker's ``_play_unit`` at concurrency 1 — so the forensic QUOTA (per unit, ``per_shard``)
   is decided game by game in the same order: a game is CAPTURED iff the unit's quota is open when it
   starts, and its trace is KEPT iff its outcome's bucket is not yet full. An env with no unit left
   plays FILLER games (the filler route, p1 its highest legal action; nothing recorded) until the
@@ -25,13 +25,13 @@ HOW A CYCLE PLAYS (every resource DECLARED at startup — ``rust_eval.build``; n
   (``rust_eval.seeds``), so a game's result is a function of (cycle seed, opponent, game index,
   weights) — not of the env, N, the thread count or the schedule.
 * One host step: the trainee's rows (every real game with a p1 decision below the stall threshold —
-  ``EvalRLPlayer`` forfeits BEFORE the forward at the threshold, so that decision is no row) and the
+  the deleted ``EvalRLPlayer`` forfeited BEFORE the forward at the threshold, so that decision is no row) and the
   policy opponents' rows go to T2 at ``Priority.EVAL``; ``drain()``; the trainee plays GREEDY
   (``argmax`` of the served log-probs — ``stochastic=False``), a sentinel greedy under
   ``eval_sentinel_greedy`` (the default regime) else a keyed sample at ``--self-play-temp``, a fixed
   opponent greedy; ``step()``; every ended game is read from ``Core::finished`` (winner, end turn,
   forfeit, the input log).
-* A game's metrics are the Python worker's: WIN / LOSS / DRAW by ``classify_result`` (a tie and the
+* A game's metrics are the ones the Python worker computed: WIN / LOSS / DRAW by ``classify_result`` (a tie and the
   250-turn timeout are DRAWs), the core's terminal reward, the end turn (``battle.turn``), and — for a
   CAPTURED game — the critic residuals ``δ = γ·V(s_t+1) − V(s_t)`` over its decisions (the recorder's
   formula; the per-decision reward is 0 before the terminal). A KEPT game is written as a CORE TRACE

@@ -119,20 +119,6 @@ class _SeededBuilder:
         return f"{self.prefix}{self._rng.randrange(10_000)}"
 
 
-def test_the_python_worker_swaps_the_teams_of_the_second_game():
-    from main.eval_worker import _per_game_teams
-
-    pool = ShardedEvalPool([EvalItem("heuristic", BOT, 4)], 4, step=0, mirrored=True)
-    unit = pool.units[0]
-    ours, theirs = _per_game_teams(unit, pool, unit.item, 99, _SeededBuilder("T"), _SeededBuilder("O"))
-    o = [ours.yield_team() for _ in range(4)]
-    t = [theirs.yield_team() for _ in range(4)]
-    assert o[0].startswith("T") and t[0].startswith("O")
-    assert (o[1], t[1]) == (t[0], o[0])                          # pair 0, from the other side
-    assert (o[3], t[3]) == (t[2], o[2])
-    assert o[2] != o[0]                                          # the next pair is a new pairing
-
-
 def test_the_rust_core_swaps_the_teams_and_keeps_the_seed():
     from agents.training.rust_eval.executor import EvalTable, RustEvalCore, _Unit
 

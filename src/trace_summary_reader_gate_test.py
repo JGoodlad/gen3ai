@@ -308,7 +308,7 @@ def test_the_loader_module_exists_and_exports_the_three_entry_points():
     'import json, glob\nfiles = glob.glob("x/**/*_summary.json")\nfor f in files:\n    doc = json.load(open(f))\n',
     'import json, os\ndef _load(path):\n    with open(path) as fh:\n        return json.load(fh)\ndef g(d, b):\n    return _load(os.path.join(d, b + "_summary.json"))\n',
     'import json, sys\nsumm_path = sys.argv[1]\nsumm = json.load(open(summ_path))\n',
-    # a nested helper RETURNING a dict of summary paths (rust_eval.parity.compare_traces' shape)
+    # a nested helper RETURNING a dict of summary paths (the shape of the deleted Lane H gate's compare_traces)
     'import json\ndef f(a, b):\n    def names(r):\n        return {str(p): p for p in r.rglob("*_summary.json")}\n'
     '    pn = names(b)\n    for rel in pn:\n        json.loads(pn[rel].read_text())\n',
     'import json, glob\ndef paths(d):\n    return sorted(glob.glob(d + "/*_summary.json"))\n'

@@ -70,9 +70,9 @@ def eval_table(decl: EvalDecl, extra_ids: Sequence[int], bots: Sequence[str]) ->
 
 
 def eval_builders(trainee_team_str: Any, fixed_entries: Sequence[Any]) -> Tuple[Any, Any, Dict[str, Any]]:
-    """``(trainee builder, flat pool builder, {fixed label: pinned builder})`` — the eval WORKER's own
-    construction (``agents.training.eval_teams``, shared with ``main.eval_worker``), so both eval paths
-    draw from the same distributions."""
+    """``(trainee builder, flat pool builder, {fixed label: pinned builder})`` — the trainee's from
+    ``agents.training.eval_teams`` (the specialist pin, else the pool builder with its 10 % sample-team bias), the
+    flat pool, each fixed opponent's pinned teams."""
     from agents.training.eval_teams import build_trainee_tb as _build_trainee_tb
     from utils.team_loader import TeamLoader
     from utils.teambuilder import Gen3Teambuilder

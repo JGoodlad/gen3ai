@@ -20,7 +20,7 @@ def _save(dst, seed: int, perturb: bool):
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     from agents.observation.state_encoder import load_mappings
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
     from main.train.production_args import production_args
 

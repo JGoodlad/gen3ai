@@ -19,7 +19,7 @@ ENGINE = dict(n_envs=8, threads=2, torch_threads=2, front="ffi", profile="selfch
 
 @pytest.fixture(scope="module")
 def played(tmp_path_factory):
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
     from agents.training.rust_rollout.testkit import build_selfcheck
 
     build_selfcheck()

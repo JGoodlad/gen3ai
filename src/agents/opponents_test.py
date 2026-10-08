@@ -443,7 +443,7 @@ class TestStallerProtectRng:
 
     def test_an_env_hook_seeds_every_staller_in_the_process(self):
         """The hook a paired-arm harness needs when it does not own the construction site (the bots
-        are built deep inside `env_factory` / `eval_worker`)."""
+        were built deep inside `env_factory` / the Python eval worker)."""
         with patch.dict(os.environ, {"GEN3AI_STALLER_SEED": "7"}):
             rng = _opponents._resolve_protect_rng(None)
         assert isinstance(rng, random.Random)

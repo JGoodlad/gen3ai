@@ -474,7 +474,7 @@ Python worker branch were deleted in P11 / P10-F2), no skipped cycle and no hung
 signal is honoured inside the cycle at its safe points. Results merge into TensorBoard + TUI + best-model
 and land in `metadata.json` as a top-level `latest_eval` block. Each opponent's `EVAL_GAMES` are split into
 **shard units** (`--eval-shard-games`, default 25 → 4 shards/opponent; per-opponent game count
-overridable with `--eval-games`); the same exact aggregation serves the standalone `main.eval_worker` tools. The mechanism lives in the well-encapsulated **`eval_sharding/` package**
+overridable with `--eval-games`); the same exact aggregation serves the offline Rust eval harness (`rust_eval.offline`, `main.ops.eval_trace_gen`). The mechanism lives in the well-encapsulated **`eval_sharding/` package**
 (deep `ShardedEvalPool` interface; aggregation is **exact** — Σwon/Σfinished etc., raw δ pooled then
 one CVaR), with a documented **`rating.py` seam** (`MatchRecord` / `RatingModel` / `BradleyTerryRating`)
 ready for a future Glicko-2/TrueSkill without touching the live ELO path. **`--self-play` eval shares

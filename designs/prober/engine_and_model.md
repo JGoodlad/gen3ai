@@ -88,7 +88,7 @@ under an unrelated name is its blind spot. Opt out with `GEN3AI_SKIP_SUMMARY_REA
 
 | reader | entry point | on a core trace |
 |---|---|---|
-| `ProbeSession._summary` / `_meta` (every prober view), `forensics`, `rust_eval.parity.compare_traces` (both sides), `probe_replay`, `mechanic_usage_baseline`, `audit_states` (mask fallback), `search_dividend.search_decision_benchmark` / `ab_racing`, `rust_sim/harness/better_line_bench` / `gen_search_golden` | `load_summary` | expanded — reads every decision (`ab_racing` re-raises a `CoreTraceError` rather than log it as a skip) |
+| `ProbeSession._summary` / `_meta` (every prober view), `forensics`, `probe_replay`, `mechanic_usage_baseline`, `audit_states` (mask fallback), `search_dividend.search_decision_benchmark` / `ab_racing`, `rust_sim/harness/better_line_bench` / `gen_search_golden` | `load_summary` | expanded — reads every decision (`ab_racing` re-raises a `CoreTraceError` rather than log it as a skip) |
 | `ops.conditioning_meters.extract_cycle` | `load_summary` | expanded under `--v-column values`; REFUSED under the `win_probs` column (NaN head) |
 | `critic_gate._trace_turns` (G7), `ops.quota_match.classify_on_disk`, `harvest_meter._load_tail` / `control_battles` | `load_summary_meta` | stored meta; `harvest_meter`'s `recorded_phi_T` is `None` (not NaN) on a NaN head |
 | `cf_audit.build_frame`, `harvest.build_candidates` | `refuse_core_trace` | REFUSED — both sample by the recorded win-prob head; the refusal escapes their counted-skip `except` |

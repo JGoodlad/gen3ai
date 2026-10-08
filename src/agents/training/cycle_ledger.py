@@ -65,7 +65,7 @@ from agents.training import mirrored_pairs as MP
 PROTOCOL = "gen3_eval_protocol_v1_inloop"
 PRODUCER = "inloop"
 #: A decision whose top-2 margin is below this is "within a rounding error of a tie" for the OUTCOME DIGEST: the
-#: GPU bar (``main.h2h.play.DIGEST_MARGIN`` / ``rust_eval.parity.BAR_GPU`` x 2) — the in-loop cycle plays on the
+#: GPU bar (``main.h2h.play.DIGEST_MARGIN`` / ``rust_eval.offline.BAR_GPU`` x 2) — the in-loop cycle plays on the
 #: training card, so a game that could flip between devices is listed by index, not hashed.
 DIGEST_MARGIN = 2e-3
 #: The executor's own narrow near-tie bar (``rust_eval.executor.NEAR_TIE``), counted per row as a diagnostic.

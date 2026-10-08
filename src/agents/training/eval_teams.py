@@ -1,8 +1,8 @@
-"""The eval TRAINEE's teambuilder — one rule for both eval paths, free of either eval worker.
+"""The eval TRAINEE's teambuilder — the rule the Rust eval core's team table draws from.
 
 Deletion pass U2: the Rust env core's eval table (``rust_eval.build.eval_builders``) imported this from
-the Python-path eval worker (``main.eval_worker``, which loads poke-env players and the local battle
-runner). It lives here now; ``main.eval_worker`` imports it from here.
+the Python-path eval worker (``main.eval_worker``, which loaded poke-env players and the local battle
+runner). It moved here then; the worker was deleted in poke-env retirement P6 slice 6c.
 """
 from typing import Any
 

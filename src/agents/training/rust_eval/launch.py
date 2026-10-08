@@ -1,8 +1,8 @@
 """The eval callbacks' seam onto the Rust eval core (M5 Lane H).
 
 On the Rust env core both eval callbacks (``PerOpponentEvalCallback``, ``SelfPlayCallback``) write
-the cycle's plan and manifest exactly as today and then call :func:`run_rust_eval_cycle` INSTEAD of
-spawning ``main.eval_worker`` processes. The cycle runs IN THE TRAINER'S PROCESS, BLOCKING, on the
+the cycle's plan and manifest and then call :func:`run_rust_eval_cycle` (the Python eval-worker processes it
+replaced were deleted in poke-env retirement P6 slice 6c). The cycle runs IN THE TRAINER'S PROCESS, BLOCKING, on the
 eval core and the T2 slots declared at startup (``rust_eval.build``); it publishes one
 ``ShardResult`` per unit into the run dir, so the callback's collect / record / promotion code is
 unchanged. It runs between two host steps of the collector (the callbacks' ``on_step``), when no

@@ -8,24 +8,23 @@ played the game, on the thread count, or on how many games ran before it. From t
 * the TRAINEE's team — one ``yield_team()`` of the trainee builder with its draw RNG re-seeded
   ``random.Random(team_seed(key, TRAINEE))``;
 * the OPPONENT's team — likewise, from the builder the opponent pilots (a bot's and a sampled
-  sentinel's: the flat pool builder; a greedy sentinel's: the trainee's own builder —
-  ``eval_worker._sentinel_tb``; a fixed opponent's: its pinned builder, else the flat pool);
+  sentinel's: the flat pool builder; a greedy sentinel's: the trainee's own builder
+  (``RustEvalCore.opponent_builder``); a fixed opponent's: its pinned builder, else the flat pool);
 * the BATTLE SEED — four 16-bit words, the core's ``ep_seed`` and the bridge's ``seed=``;
 * a scripted bot's streams — re-seeded by the CORE at the game's start from the route seed and the
-  battle seed (a ``"streams": "episode"`` route, ``rust_env_opponents.episode_bot_stream_seed``), so
-  the Python path sets the SAME ``random.Random`` on the bot's ``_choice_rng`` / ``_protect_rng``;
+  battle seed (a ``"streams": "episode"`` route, ``rust_env_opponents.episode_bot_stream_seed``);
 * a SAMPLED policy opponent's (``--no-eval-sentinel-greedy``) draws — the keyed draw keyed by the
   game (not by env / episode), stream ``KD.STREAM_OPPONENT``.
 
-Both eval paths call these functions — the Rust executor and the Python worker's per-game mode
-(``eval_worker`` ``seed_rule = "per_game"``) — so "the same seed set on both paths" is one table.
-A live Python eval passes no seed and keeps today's unseeded streams (byte-identical).
+The Rust eval executor calls these functions (the trainer's in-loop cycle, the SPRT promotion, ``main.h2h``, the
+untaught meter, ``main.ops.eval_trace_gen``). The Python eval worker's per-game mode called the same table until it
+was deleted (poke-env retirement P6 slice 6c), which is how the two paths were compared game for game (Lane H).
 """
 from __future__ import annotations
 
 import hashlib
 import random
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 SCHEMA = "gen3_eval_game_seed_v1"
 
@@ -42,15 +41,6 @@ def bot_route_seed(bot: str) -> int:
     from agents.training.eval_callback import eval_opponent_names
 
     return BOT_ROUTE_SEED + eval_opponent_names().index(bot)
-
-
-def bot_stream_seeds(bot: str, words: List[int]) -> Dict[str, int]:
-    """The seeds of bot ``bot``'s streams in the game staged with battle seed ``words`` — what the core
-    re-seeds at the game's start (``opponents::episode_stream_seed``), for the Python path's bot."""
-    from agents.training.rust_env_opponents import episode_bot_stream_seed
-
-    s = bot_route_seed(bot)
-    return {name: episode_bot_stream_seed(s, words, k) for k, name in enumerate(("choice", "protect"))}
 
 
 def _h(*parts: Any) -> int:

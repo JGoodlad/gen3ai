@@ -212,7 +212,7 @@ def sentinel_snapshots(run_dir: str) -> Dict[str, str]:
     """``sentinel_<i>`` → the snapshot path the eval manifest says it was. Pinning the real
     weights is strictly better than the ``self_model_approx`` fallback; the REGIME is handled
     separately (``prober.replay.build_opponent`` now plays a ckpt opponent stochastic, the
-    regime ``eval_worker`` recorded)."""
+    regime the Python eval worker recorded for a pool sentinel)."""
     try:
         with open(os.path.join(run_dir, "metadata.json")) as f:
             md = json.load(f)

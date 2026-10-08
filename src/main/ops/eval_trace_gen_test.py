@@ -1,21 +1,14 @@
-"""Tests for the OFFLINE eval-cycle generator and the read-side provenance gate.
+"""Tests for the OFFLINE eval-cycle generator and the read-side provenance gate — the PURE half.
 
-Two tiers, deliberately. The PURE half (the provenance vocabulary, the refusals, the seed
-derivation, the read-root spellings) is unmarked and runs in every gate — it is where the rules
-that stop a wrong number from being reported live, and a rule that only runs in the slow tier is a
-rule that rides main RED. The one test that actually PLAYS battles is marked ``slow`` + ``sim``
-and plays a run BUILT in ``tmp_path``: a freshly built, seeded, untrained current-architecture
-checkpoint (``main.fresh_checkpoint``) laid out as a live run lays one out. It used to take
-a real saved run out of the archive; the observation-architecture batch (v121, MIGRATION_FLOOR 121)
-put every archived run behind the pre-generation wall, and this test is about the cycle's SHAPE,
-not any network's strength. It returns to an archived run once v121 runs with eval cycles exist
-(the ``ai_v14_01_base`` lineage).
+The provenance vocabulary, the refusals, the seed rule's statement and the read-root spellings are unmarked
+and run in every gate — they are where the rules that stop a wrong number from being reported live, and a
+rule that only runs in the slow tier is a rule that rides main RED. The cycle itself (played on the Rust eval
+core: the readers accept it, a rerun at the same seed is identical, the manifest's regime is the run's) is
+``eval_trace_gen_integration_test.py``.
 """
 from __future__ import annotations
 
-import glob
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -232,54 +225,39 @@ def test_spacing_keeps_both_endpoints(tmp_path):
 
 # --------------------------------------------------------------------------- seeding
 
-def test_the_unit_seed_does_not_depend_on_the_worker():
-    """🚨 Work-stealing decides WHICH worker plays a shard, and that is a race. Keying the dice
-    off the worker would make a seeded cycle depend on the worker count, which is the one thing a
-    seed exists to remove."""
-    from main.eval_worker import unit_seed
-    a = unit_seed(20260909, "sentinel_0", 3)
-    assert a == unit_seed(20260909, "sentinel_0", 3)
-    assert a != unit_seed(20260909, "sentinel_0", 4)
-    assert a != unit_seed(20260909, "sentinel_1", 3)
-    assert a != unit_seed(20260910, "sentinel_0", 3)
-    assert 0 <= a < (1 << 62)
+def test_a_drawn_seed_is_a_62_bit_integer_and_varies():
+    """A run with no --seed DRAWS one and records it; the Rust core has no unseeded mode."""
+    seeds = {ETG.draw_seed() for _ in range(8)}
+    assert len(seeds) == 8 and all(0 <= x < (1 << 62) for x in seeds)
 
 
-def test_per_battle_sim_seeds_are_varied_and_reproducible():
-    """A single fixed `seed` runs N copies of ONE battle, which is not a sample of N. `seed_base`
-    keeps the dice varied within a call and identical across calls."""
-    from utils.bridge.local_battle_runner import _LocalBattleRunner
-    r = _LocalBattleRunner.__new__(_LocalBattleRunner)
-    r.seed, r.seed_base = None, 4242
-    seeds = [r._seed_for(i) for i in range(20)]
-    assert len({tuple(s) for s in seeds}) == 20, "every battle gets its own dice"
-    assert seeds == [r._seed_for(i) for i in range(20)], "and the same ones next time"
-    assert all(len(s) == 4 and all(0 <= w <= 0xFFFF for w in s) for s in seeds), \
-        "the [m,n,o,p] form utils.bridge.seed_spec validates"
-
-    # Adjacent seed_base values must not give adjacent streams — an LCG seeded with n and n+1 is
-    # not two independent battles, and adjacent shards of one cycle differ by exactly that.
-    r2 = _LocalBattleRunner.__new__(_LocalBattleRunner)
-    r2.seed, r2.seed_base = None, 4243
-    assert r2._seed_for(0) != seeds[0]
-
-    r3 = _LocalBattleRunner.__new__(_LocalBattleRunner)
-    r3.seed, r3.seed_base = [1, 2, 3, 4], None
-    assert r3._seed_for(7) == [1, 2, 3, 4], "no seed_base → the fixed seed, unchanged"
-    r4 = _LocalBattleRunner.__new__(_LocalBattleRunner)
-    r4.seed, r4.seed_base = None, None
-    assert r4._seed_for(7) is None, "neither → the child mints and reports its own"
+def test_the_reproducibility_note_says_what_the_seed_does_and_does_not_pin():
+    note = ETG.REPRODUCIBILITY_NOTE
+    assert "gen3_eval_game_seed_v1" in note and "NOT pinned by the seed" in note and "near_ties" in note
 
 
-def test_seed_and_seed_base_together_are_refused():
-    """Two different dice regimes — one stream for every battle, or a derived stream per battle.
-    Silently preferring one would make the label a lie."""
-    from utils.bridge.local_battle_runner import _LocalBattleRunner
-    with pytest.raises(ValueError, match="seed_base"):
-        _LocalBattleRunner(object(), object(), "gen3ou", [1, 2, 3, 4], seed_base=9)
-    # either alone is fine
-    _LocalBattleRunner(object(), object(), "gen3ou", [1, 2, 3, 4])
-    _LocalBattleRunner(object(), object(), "gen3ou", None, seed_base=9)
+def test_the_spec_keeps_the_two_ENGINES_apart():
+    """🚨 A cycle generated on the poke-env eval worker (before the Rust port: no `transport`) and one generated on the
+    Rust eval core are different engines and encoders — two populations, never differenced."""
+    old = _gen_manifest()
+    new = _gen_manifest()
+    new[ETG.GENERATED_KEY] = {**new[ETG.GENERATED_KEY], "transport": ETG.TRANSPORT}
+    assert ETG.spec_of(old)["transport"] == "python_bridge"
+    assert ETG.spec_of(new)["transport"] == "rust_eval"
+    assert ETG.spec_of(old) != ETG.spec_of(new)
+    assert ETG.spec_of(_live_manifest())["transport"] is None
+
+
+def test_an_odd_game_count_is_refused_under_the_mirrored_pair_regime(tmp_path):
+    run = _fake_run(tmp_path)
+    cfg = json.loads((run / "model_config.json").read_text())
+    (run / "model_config.json").write_text(json.dumps({**cfg, "eval_mirrored_pairs": True}))
+    (run / "eval_traces" / "step_9000000").mkdir(parents=True)
+    (run / "eval_traces" / "step_9000000" / "snapshot.zip").write_bytes(b"x")
+    with pytest.raises(SystemExit) as exc:
+        ETG.main([f"{run}@9000000", "--games", "3", "--out", str(tmp_path / "out")])
+    assert exc.value.code == 2
+    assert not (tmp_path / "out").exists(), "refused before anything was written"
 
 
 # --------------------------------------------------------------------------- the read-side gate
@@ -473,104 +451,3 @@ def test_the_ledger_quote_marks_an_offline_read():
     assert "OFFLINE-GENERATED" not in ledger_line(doc)
 
 
-# --------------------------------------------------------------------------- the real thing
-
-#: The read step and the one pool snapshot below it (the sentinel) of the built run.
-_FRESH_STEP = 8_192
-_FRESH_SENTINEL_STEP = 4_096
-
-
-def _a_fresh_run(root: Path) -> "tuple[Path, int]":
-    """A run directory shaped like a live one: ``model_config.json`` with a RECORDED eval regime,
-    ``eval_traces/step_<N>/snapshot.zip``, and one pool snapshot BELOW that step for the sentinel —
-    every checkpoint a freshly built, seeded, current-architecture model."""
-    import shutil
-
-    from main.fresh_checkpoint import save_fresh_checkpoint
-
-    run = root / "ai_vX_fresh_v121"
-    save_fresh_checkpoint(run, 13, num_timesteps=_FRESH_STEP,
-                          config_extra={"eval_sentinel_greedy": True})
-    step_dir = run / "eval_traces" / f"step_{_FRESH_STEP}"
-    step_dir.mkdir(parents=True)
-    shutil.copy2(run / "final_model.zip", step_dir / "snapshot.zip")
-    snap = save_fresh_checkpoint(root / "sentinel_build", 14, num_timesteps=_FRESH_SENTINEL_STEP)
-    (run / "snapshots").mkdir()
-    shutil.copy2(snap, run / "snapshots" / f"snapshot_{_FRESH_SENTINEL_STEP:012d}.zip")
-    return run, _FRESH_STEP
-
-
-@pytest.mark.slow
-@pytest.mark.sim
-def test_a_generated_cycle_is_shaped_like_a_live_one(tmp_path):
-    """The contract, on a real (tiny) cycle: the npz keys a live recorder writes, a manifest at
-    selection_schema 2 with per-opponent capture rates so rule 17 holds, and the provenance block.
-
-    Two games against two opponents — the smallest thing that still exercises the whole worker
-    path, since the point of the tool is that it is NOT a re-implementation.
-    """
-    run, step = _a_fresh_run(tmp_path / "archive")
-    out = tmp_path / "cycle"
-    os.environ["CUDA_VISIBLE_DEVICES"] = ""
-    rc = ETG.main([f"{run}@{step}", "--games", "2", "--sentinels", "1",
-                   "--opponents", "random,heuristic", "--out", str(out),
-                   "--workers", "1", "--concurrency", "1", "--seed", "13",
-                   "--shard-games", "2", "--nice", "15", "--force"])
-    assert rc == 0
-
-    step_dir = out / "eval_traces" / f"step_{step}"
-    man = json.loads((step_dir / "eval_manifest.json").read_text())
-
-    # --- the provenance block
-    assert ETG.is_generated(man), "a generated cycle MUST be self-identifying"
-    gen = man[ETG.GENERATED_KEY]
-    assert gen["tool"] == ETG.GENERATOR_TAG
-    assert gen["games_per_opponent"] == 2 and gen["sentinels_used"] == 1
-    assert gen["capture"] == "ALL" and gen["reproducible"] is True
-    assert gen["battles_expected"] == 2 * 3 and gen["battles_played"] == 6
-    assert gen["complete"] is True and gen["shortfall"] == 0
-    assert gen["checkpoint_sha"] and gen["source_run"] == run.name
-    assert gen["eval_sentinel_greedy"] == json.loads(
-        (run / "model_config.json").read_text())["eval_sentinel_greedy"], \
-        "the regime is READ from the run, never assumed"
-
-    # --- rule 17: the selection block, with per-opponent capture rates
-    assert man["selection_schema"] == 2
-    per = man["selection"]["opponents"]
-    assert set(per) == {"random", "heuristic", "sentinel_0"}
-    for key, rec in per.items():
-        assert rec["battles_played"] == 2, key
-        for field in ("battles_won", "battles_drawn", "traces_written", "traces_won",
-                      "traces_drawn"):
-            assert field in rec, f"{key} is missing {field}"
-        # FULL capture is the whole reason to generate a read cycle: every battle traced.
-        assert rec["traces_written"] == rec["battles_played"], key
-        decided = [rec[f"capture_rate_{k}"] for k in ("win", "loss", "draw")
-                   if rec[f"capture_rate_{k}"] is not None]
-        assert decided and all(abs(r - 1.0) < 1e-9 for r in decided), \
-            f"{key}: full capture must read as a capture rate of 1.0, got {rec}"
-
-    # --- the sentinel is PINNED, which a live cycle leaves empty
-    assert gen["sentinel_steps"] and gen["sentinel_steps"][0] < step
-
-    # --- the npz keys a live BattleRecorder writes (opp_true_team is NOT among them, same as live)
-    import numpy as np
-    npzs = sorted(glob.glob(str(step_dir / "*" / "*_states.npz")))
-    assert len(npzs) == 6, f"2 games x 3 opponents, all traced; got {len(npzs)}"
-    expected = {"obs", "logits", "values", "win_probs", "has_state", "actions", "action_mask",
-                "move_logits", "spread_belief"}
-    for path in npzs:
-        with np.load(path) as d:
-            keys = set(d.keys())
-        assert expected <= keys, f"{path} missing {expected - keys}"
-        assert "opp_true_team" not in keys, "not recorded live, and must not appear here"
-        assert Path(path.replace("_states.npz", "_summary.json")).exists()
-
-    # --- the checkpoint is where cf_audit looks for it, and the manifest points at it
-    assert (step_dir / "snapshot.zip").exists()
-    assert man["snapshot"] == "snapshot.zip"
-    assert (out / "model_config.json").exists() and (out / "metadata.json").exists()
-    assert (out / "snapshots").is_symlink(), "read-only reach back into models/, never a copy"
-
-    # --- and nothing was written under models/
-    assert not str(out.resolve()).startswith(str(run.resolve()))

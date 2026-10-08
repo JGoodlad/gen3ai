@@ -13,20 +13,25 @@ battle-level CI width. More eval per read buys real power on exactly the rows th
 Every finished arm still has its 10M checkpoint, so that read is possible without retraining
 anything. This tool plays the cycle again, offline, as large as you are willing to pay for.
 
-WHAT IT IS NOT. It is not a re-implementation of eval. It drives the SAME entry point a live
-cycle drives — ``python -m main.eval_worker`` over a ``ShardedEvalPool`` plan, hence the same
-``LocalBattleRunner`` / ``EvalRLPlayer`` / ``BattleRecorder`` path — and writes the same npz keys,
-the same ``*_summary.json``, and an ``eval_manifest.json`` at ``selection_schema`` 2 with the
-per-opponent capture rates rule 17 asks for. The regime is READ from the run's recorded config
-(``eval_sentinel_greedy``, the reward, the trainee's team pin), never assumed; a run that recorded
-no regime is REFUSED rather than measured under a guess.
+WHAT IT IS NOT. It is not a re-implementation of eval. It plays the cycle on the SAME executor a
+live cycle plays on — ``RustEvalCore.run_cycle`` over a ``ShardedEvalPool`` plan, on an eval core and
+T2 slots this tool declares the way the trainer does (``agents.training.rust_eval.offline``) — and the
+executor writes the same CORE traces (``rust_eval.traces``: records + reconstruction + states + a
+``meta``-only ``*_summary.json``, which the prober expands), the same shard results the collect merges,
+and an ``eval_manifest.json`` at ``selection_schema`` 2 with the per-opponent capture rates rule 17 asks
+for. The regime is READ from the run's recorded config (``eval_sentinel_greedy``, the mirrored-pair
+regime, the observation mode, the reward's terminal, the trainee's team pin), never assumed; a run that
+recorded no sentinel regime is REFUSED rather than measured under a guess. (Until poke-env retirement
+P6 slice 6c it drove ``python -m main.eval_worker`` processes on the poke-env eval path; a cycle
+generated then carries no ``transport`` in its provenance block, and ``spec_of`` keeps the two engines'
+cycles apart.)
 
 🚨 THE OUTPUT IS A DIFFERENT POPULATION FROM A LIVE CYCLE, and that is the point of generating it.
 More games, possibly more sentinels, and — by default — NO capture quota at all, so every battle
 played is a battle traced. A delta between an offline frame and a live frame is therefore a delta
 between two different samples of two different populations, and ``main.ops.critic_read`` REFUSES
 to form one. The manifest carries a ``generated_by`` block naming the tool, the games, the
-sentinel spec, the seed, the worker count and the checkpoint sha so no reader can mistake this
+sentinel spec, the seed, the eval core's compute flags and the checkpoint sha so no reader can mistake this
 cycle for a live one, and so two offline frames can be checked for the SAME spec before they are
 differenced.
 
@@ -38,13 +43,15 @@ back to the real run read-only, and the checkpoint is copied to
 network that played the traces, so the identity half resolves against the generated cycle with no
 special-casing.
 
-REPRODUCIBILITY. ``--seed S`` pins every stream a shard unit draws from, keyed on
-``(seed, opponent, shard index)`` — never on the worker id, which work-stealing decides in a race.
-The worker count is therefore FREE: ``--workers 1`` and ``--workers 8`` generate the identical
-cycle. ``--concurrency`` is NOT free: above 1, several battles of one unit share the process-global
-`random` stream that the scripted bots draw from, and the order they draw in is a timing race. The
-tool prints the caveat and records both numbers in the manifest, because this project would rather
-refuse an unreproducible configuration than emit a number that wanders without saying so.
+REPRODUCIBILITY. Every game on the Rust eval core is seeded by the GAME (``gen3_eval_game_seed_v1``,
+``rust_eval.seeds``): its two teams, its battle seed, the bots' streams and a sampled sentinel's draws are
+a pure function of (``--seed``, opponent, game index) — never of the env that played it, the schedule or
+a thread count. So the same seed, checkpoint, plan and compute flags give the IDENTICAL cycle; a run with
+no ``--seed`` draws one and RECORDS it (there is no unseeded mode). What the seed does NOT pin is the
+float rounding of the batched forward, whose batch composition follows ``--n-envs`` and the schedule: a
+greedy decision whose top-2 log-prob margin sits within a rounding error of a tie can resolve the other
+way under different compute flags, another env-core build or another torch. The manifest records the
+compute flags and the cycle's near-tie count beside the seed, and says all of this in words.
 """
 from __future__ import annotations
 
@@ -185,6 +192,9 @@ def spec_of(manifest: Optional[dict]) -> Dict[str, Any]:
         # a single timed-out battle. An incomplete side is refused outright by `check_comparable`,
         # which is the stronger statement.
         "complete": (gen or {}).get("complete", True),
+        # THE ENGINE: a cycle generated on the poke-env eval worker (before the Rust port; no `transport` recorded)
+        # and one generated on the Rust eval core are different engines and encoders, never one population.
+        "transport": ((gen or {}).get("transport", "python_bridge") if is_generated(man) else None),
     }
 
 
@@ -325,6 +335,10 @@ def read_regime(run_dir: Path, declared: Optional[bool] = None) -> Dict[str, Any
         "self_play_temp": float(cfg.get("self_play_temp", 1.0) or 1.0),
         "gamma": float(cfg.get("gamma") or 0.99),
         "trainee_team_str": cfg.get("trainee_team_str"),
+        # the other two recorded eval-regime fields the in-loop cycle plays at (absent = their defaults: a run
+        # that predates the field never ran the other value)
+        "eval_mirrored_pairs": bool(cfg.get("eval_mirrored_pairs", False)),
+        "oracle_reveal": str(cfg.get("oracle_reveal") or "off"),
         "config": cfg,
     }
 
@@ -401,7 +415,7 @@ def build_shadow_run(out_dir: Path, run_dir: Path, step: int, ckpt: Path,
     """Lay out ``out_dir`` so every reader that takes a RUN DIR resolves against this cycle.
 
     Four things have to be there, because four different readers look for them:
-      * ``model_config.json`` — the eval worker builds the run's REWARD from it, and
+      * ``model_config.json`` — the eval core's TERMINAL is built from it, and
         ``write_eval_manifest`` reads the arch identity out of it.
       * ``metadata.json`` — ``cf_audit.sentinel_snapshots`` reads ``latest_eval.pool.sentinels``
         to pin which network each sentinel cell was. It is copied and then REWRITTEN to this
@@ -455,15 +469,30 @@ def _log(msg: str) -> None:
     print(f"[eval_trace_gen] {msg}", flush=True)
 
 
+class CycleTimeout(RuntimeError):
+    """``--timeout-min`` ran out: raised from the cycle's safe point, between two host steps."""
+
+
+def draw_seed() -> int:
+    """A fresh cycle seed for a run that named none. It is RECORDED (``seed`` + ``seed_source: drawn``), so the
+    cycle is replayable from its own manifest — the Rust core has no unseeded mode: every game is seeded by the GAME."""
+    import secrets
+
+    return secrets.randbits(62)
+
+
 def generate(args) -> Dict[str, Any]:
     """Play the cycle and return its manifest. The whole tool, in one readable pass."""
     # Imports deferred: they pull torch and the whole training package, which a --help or a
     # spec-comparison caller has no reason to pay for.
-    from agents.training.eval_callback import (
-        ForensicQuota, eval_opponent_names, merge_eval_results, record_eval_selection,
-        spawn_eval_workers, write_eval_manifest,
-    )
-    from agents.training.eval_sharding import BOT, SENTINEL, EvalItem, ShardedEvalPool
+    from agents.training.eval_collect import merge_eval_results, record_eval_selection
+    from agents.training.eval_launch import write_eval_manifest
+    from agents.training.eval_quota import ForensicQuota
+    from agents.training.eval_schedule import eval_opponent_names
+    from agents.training.rust_eval import offline as OFF
+    from agents.training.rust_eval import seeds as SD
+    from main.h2h.play import check_team_pool
+    from utils.rust_env.build import ensure_built
 
     run_dir, pinned = parse_run_ref(args.run)
     ckpt, step = resolve_checkpoint(run_dir, pinned)
@@ -480,6 +509,15 @@ def generate(args) -> Dict[str, Any]:
             refuse(f"REFUSING: --out {out_dir} is inside the run archive ({forbidden}).",
                    "  models/ is the RECORD of what training did. A generated cycle placed in it "
                    "would be indistinguishable from one a run played, forever.")
+    mirrored = bool(regime["eval_mirrored_pairs"])
+    if mirrored and args.games % 2:
+        refuse(f"REFUSING: --games {args.games} is odd, and {run_dir.name} recorded the MIRRORED-PAIR eval regime "
+               "(`eval_mirrored_pairs`): a pair is two games, and half a pair is not a measurement.",
+               f"  Pass --games {args.games + 1} (or {args.games - 1}).")
+    try:
+        check_team_pool()
+    except Exception as exc:  # noqa: BLE001 — a typed H2HError; restated as this tool's refusal
+        refuse(f"REFUSING: {exc}")
     if args.force and out_dir.exists():
         shutil.rmtree(out_dir)
 
@@ -496,8 +534,6 @@ def generate(args) -> Dict[str, Any]:
         refuse(f"REFUSING: unknown bot(s) {unknown}. The roster is: {', '.join(sorted(known))}.")
 
     step_dir = build_shadow_run(out_dir, run_dir, step, ckpt, sentinels)
-    claim_dir = step_dir / "claims"
-    claim_dir.mkdir(parents=True, exist_ok=True)
 
     # THE READ CYCLE CAPTURES EVERYTHING. A live cycle's outcome quota exists to bound a training
     # run's disk; here the traces ARE the measurement, and a loss-enriched subsample is precisely
@@ -508,94 +544,88 @@ def generate(args) -> Dict[str, Any]:
              ForensicQuota(win=args.quota, loss=args.quota, draw=args.quota))
     capture = "ALL" if args.quota is None else f"quota={args.quota}"
 
-    items = [EvalItem(name, BOT, args.games) for name in bots]
-    items += [EvalItem(s["label"], SENTINEL, args.games, path=s["path"], step=s["step"])
-              for s in sentinels]
+    items = OFF.plan_items(list(bots), [s["path"] for s in sentinels], args.games,
+                           sentinel_steps=[s["step"] for s in sentinels])
     names = [it.key for it in items]
-    pool = ShardedEvalPool(items, args.shard_games, step=step)
-    pool.write_plan(str(step_dir))
+    expected_labels = [*bots, *[s["label"] for s in sentinels]]
+    if names != expected_labels:    # the plan's sentinel keys ARE the shadow metadata's labels (cf_audit pins them)
+        raise AssertionError(f"plan keys {names} != the shadow run's labels {expected_labels}")
 
     write_eval_manifest(str(out_dir), step, opponents=names, n_games=args.games,
                         snapshot="snapshot.zip",
                         trainee_team_str=regime["trainee_team_str"],
-                        opponent_pins={}, quota=quota)
+                        opponent_pins={}, quota=quota, mirrored_pairs=mirrored)
 
-    reproducible = args.seed is not None and args.concurrency == 1
+    seed_source = "given" if args.seed is not None else "drawn"
+    seed = int(args.seed) if args.seed is not None else draw_seed()
     traced = ("ALL battles traced (no capture quota)" if args.quota is None
               else f"traced under a per-opponent outcome quota of {args.quota}")
     sent_regime = ("sentinels GREEDY, drawing the trainee's own team distribution"
                    if regime["eval_sentinel_greedy"] else
-                   "sentinels ASYMMETRIC (stochastic, flat pool builder — the pre-2026-09-07 "
-                   "regime, worth ~+8.9 pp to the trainee)")
+                   "sentinels SAMPLED at the run's self-play temperature, drawing the flat pool "
+                   "(the pre-2026-09-07 asymmetric regime, worth ~+8.9 pp to the trainee)")
     if regime["eval_sentinel_greedy_source"] == "declared":
         sent_regime += " [regime DECLARED on the command line — the run recorded none]"
+    if mirrored:
+        sent_regime += "; MIRRORED team pairs"
     population = (
-        f"OFFLINE-GENERATED cycle: {len(names)} opponents ({len(bots)} scripted bots + "
+        f"OFFLINE-GENERATED cycle on the Rust eval core: {len(names)} opponents ({len(bots)} scripted bots + "
         f"{len(sentinels)} pool sentinels) x {args.games} games, {traced}; {sent_regime}")
 
-    n_workers = max(1, min(args.workers, pool.n_units))
-    base_cfg = {
-        "snapshot": str(step_dir / "snapshot.zip"),
-        "port": None,
-        "use_showdown_bridge": True,       # serverless: no Showdown server is touched
-        "bridge_impl": args.impl,
-        "compile_extractor": False,        # a one-shot offline cycle never amortises the compile
-        "model_dir": str(out_dir),         # traces land under the SHADOW dir, never models/
-        "step": step,
-        "self_play_temp": regime["self_play_temp"],
-        "eval_sentinel_greedy": regime["eval_sentinel_greedy"],
-        "claim_dir": str(claim_dir),
-        "result_dir": str(step_dir),
-        "concurrency": args.concurrency,
-        "device": "cpu",
-        "cycle_tag": f"g{int(time.time()) % 100000:05d}",
-        "gamma": regime["gamma"],
-        "forensic_quota": quota._asdict(),
-        "arch_toggles": _arch_toggles(str(step_dir / "snapshot.zip")),
-        "trainee_team_str": regime["trainee_team_str"],
-        "seed_base": args.seed,
-    }
-
+    n_battles_plan = len(names) * args.games
     _log(f"{run_dir.name} @ {step:,}: {len(names)} opponents x {args.games} games "
-         f"= {len(names) * args.games:,} battles, {pool.n_units} shard units, "
-         f"{n_workers} worker(s), concurrency {args.concurrency}, capture {capture}")
+         f"= {n_battles_plan:,} battles on the Rust eval core ({args.n_envs} envs, {args.threads} core thread(s), "
+         f"{args.torch_threads} torch thread(s), front {args.front}, build {args.profile}), capture {capture}")
     _log(f"checkpoint: {ckpt}  (sha {sha256_of(ckpt)})")
     _src = regime["eval_sentinel_greedy_source"]
     _log(f"regime: eval_sentinel_greedy={regime['eval_sentinel_greedy']} "
          + ("(RECORDED, not assumed)" if _src == "recorded" else
             "(DECLARED on the command line — this run's model_config.json records none; the "
-            "declaration is written into the manifest and bounds every delta this cycle enters)"))
-    if not reproducible:
-        _log("⚠️  NOT REPRODUCIBLE: " + (
-            "no --seed was given, so every stream is unseeded."
-            if args.seed is None else
-            f"--concurrency {args.concurrency} > 1 interleaves several battles of one shard over "
-            "the process-global `random` stream the scripted bots draw from, and the order they "
-            "draw in is a timing race. The seed pins the teams and the sim dice; it cannot pin "
-            "that interleave. Re-run at --concurrency 1 for a reproducible cycle."))
-    else:
-        _log(f"reproducible: seed {args.seed} at concurrency 1 (the worker count is free — a "
-             "shard's streams are keyed on the PLAN, not on which worker claimed it)")
+            "declaration is written into the manifest and bounds every delta this cycle enters)")
+         + f", eval_mirrored_pairs={mirrored}, oracle_reveal={regime['oracle_reveal']}")
+    _log(f"seed {seed} ({seed_source}) — every game is a pure function of (seed, opponent, game index): "
+         "re-run with this --seed and the same compute flags for the identical cycle")
 
     env_note = _cpu_env(args)
+    ensure_built(args.profile, emit=_log)
+    deadline = time.time() + args.timeout_min * 60 if args.timeout_min else None
+
+    def safe_point(_where: str) -> None:
+        if deadline is not None and time.time() > deadline:
+            raise CycleTimeout(f"--timeout-min {args.timeout_min} ran out")
+
+    timed_out = False
+    stats: Dict[str, Any] = {}
     started = time.time()
-    procs = spawn_eval_workers(str(step_dir), base_cfg, n_workers)
-    _wait(procs, args)
+    try:
+        played = OFF.run_rust(
+            run_dir=step_dir, model_dir=out_dir, trainee=str(step_dir / "snapshot.zip"),
+            sentinels=[s["path"] for s in sentinels], items=items, shard_games=args.shard_games, step=step,
+            cycle_seed=seed, quota=quota._asdict(), device="cpu", backend="eager", n_envs=args.n_envs,
+            buckets=_cpu_buckets(args.n_envs), front=args.front, profile=args.profile,
+            sentinel_greedy=bool(regime["eval_sentinel_greedy"]), self_play_temp=float(regime["self_play_temp"]),
+            safe_point=safe_point, trainee_team_str=regime["trainee_team_str"], mirrored=mirrored,
+            core_threads=args.threads, torch_threads=args.torch_threads, forensic_root=step_dir, keep_games=False,
+            oracle_reveal=regime["oracle_reveal"], emit=_log)
+        stats = played["stats"]
+    except CycleTimeout:
+        timed_out = True
+        _log(f"⚠️  TIMEOUT after {args.timeout_min} min — the cycle was abandoned at a host step; collecting the "
+             "shard units that finished. A timed-out cycle is INCOMPLETE, not a result.")
     elapsed = time.time() - started
 
     merged, missing = merge_eval_results(str(step_dir), names)
     if missing:
-        _log(f"⚠️  no results at all for {missing} — a worker died holding every one of its "
-             f"claims. See {step_dir}/worker_*.log")
+        _log(f"⚠️  no results at all for {missing} — the cycle ended before any of their shard units finished")
     selection = record_eval_selection(str(out_dir), step, merged, quota=quota)
     if selection is None:
         refuse("REFUSING: the cycle collected no per-opponent counts, so no `selection` block "
                "could be recorded — every consumer would read this tree as SELECTION UNKNOWN.",
-               f"  worker logs: {step_dir}/worker_*.log")
+               f"  cycle dir: {step_dir}")
 
     n_battles = sum(v.get("battles_played", 0)
                     for v in (selection.get("opponents") or {}).values())
-    expected_battles = len(names) * args.games
+    expected_battles = n_battles_plan
     manifest_path = step_dir / "eval_manifest.json"
     manifest = json.loads(manifest_path.read_text())
     manifest[GENERATED_KEY] = {
@@ -616,25 +646,29 @@ def generate(args) -> Dict[str, Any]:
         "quota": quota._asdict(),
         "eval_sentinel_greedy": regime["eval_sentinel_greedy"],
         "eval_sentinel_greedy_source": regime["eval_sentinel_greedy_source"],
-        "seed": args.seed,
-        "workers": n_workers,
-        "concurrency": args.concurrency,
+        "eval_mirrored_pairs": mirrored,
+        "oracle_reveal": regime["oracle_reveal"],
+        "self_play_temp": regime["self_play_temp"],
+        # THE ENGINE. A cycle generated before the Rust port (no `transport`) played on the poke-env eval worker:
+        # a different engine and encoder, so `spec_of` keeps the two apart.
+        "transport": TRANSPORT,
+        "eval_core": {"n_envs": args.n_envs, "threads": args.threads, "torch_threads": args.torch_threads,
+                      "front": args.front, "profile": args.profile, "device": "cpu", "backend": "eager"},
+        "seed": seed,
+        "seed_source": seed_source,
+        "seed_rule": SD.SCHEMA,
         "shard_games": args.shard_games,
-        "impl": args.impl,
-        "reproducible": reproducible,
-        "reproducibility_note": (
-            "seeded, concurrency 1 — the whole cycle is a pure function of (seed, plan); the "
-            "worker count does not enter it" if reproducible else
-            "NOT reproducible: " + ("no seed" if args.seed is None else
-                                    f"concurrency {args.concurrency} > 1 races the scripted bots' "
-                                    "shared `random` stream within a shard")),
+        "reproducible": not timed_out,
+        "reproducibility_note": REPRODUCIBILITY_NOTE if not timed_out else
+        "NOT reproducible as a whole: the cycle hit --timeout-min, and where it stopped is wall-clock",
+        "near_ties": stats.get("near_ties"),
+        "trainee_decisions": stats.get("trainee_decisions"),
         "battles_played": n_battles,
         "battles_expected": expected_battles,
         # 🚨 The frame's own completeness, recorded rather than left to be inferred from two other
         # numbers. A cycle can end short for reasons that have nothing to do with the model — a
-        # worker crash, a kill for overrunning, or (2026-09-09) the WORKTREE the generation was
-        # running out of being removed under it — and a short frame is a different population from
-        # the one `n_games` advertises.
+        # timeout, a kill, or (2026-09-09) the WORKTREE the generation was running out of being
+        # removed under it — and a short frame is a different population from the one `n_games` advertises.
         "complete": n_battles >= expected_battles,
         "shortfall": max(0, expected_battles - n_battles),
         "wall_seconds": round(elapsed, 1),
@@ -644,38 +678,43 @@ def generate(args) -> Dict[str, Any]:
     }
     manifest_path.write_text(json.dumps(manifest, indent=2))
 
-    shutil.rmtree(claim_dir, ignore_errors=True)
     for shard in glob.glob(str(step_dir / "shard__*.json")):
         os.remove(shard)
 
     _log(f"DONE in {elapsed / 60:.1f} min — {n_battles:,} battles, "
-         f"{n_battles / elapsed:.2f} games/sec, "
+         f"{n_battles / max(elapsed, 1e-9):.2f} games/sec, "
          f"{sum(1 for _ in glob.glob(str(step_dir / '*' / '*_states.npz'))):,} traces")
     if n_battles < expected_battles:
         _log(f"🚨 INCOMPLETE: {n_battles:,} of {expected_battles:,} battles "
              f"({n_battles / expected_battles * 100:.0f}%). This cycle is a SMALLER FRAME than "
              f"its {args.games}-game spec advertises, and frame size moves every fitted "
              f"conditioning row on its own — `main.ops.critic_read` will REFUSE to read it "
-             f"against a complete one. Re-generate before reading. Worker logs: "
-             f"{step_dir}/worker_*.log")
+             f"against a complete one. Re-generate before reading.")
     _log(f"cycle: {step_dir}")
     return manifest
 
 
-def _arch_toggles(snapshot: str) -> dict:
-    """This checkpoint's arch toggles, for the workers' sentinel version gate.
+#: The engine stamp of a cycle this tool generates (the ladder's / the untaught meter's vocabulary).
+TRANSPORT = "rust_eval"
 
-    Read by LOADING the snapshot once here rather than guessing from the config, because that is
-    what a live cycle does (``arch_toggles_from_model`` on the live policy) and a toggle-OFF
-    default FATALs on the run's own belief-ON sentinels.
-    """
-    from agents.model.snapshot import arch_toggles_from_model, load_checkpoint_strict
-    model = load_checkpoint_strict(snapshot, device="cpu")
-    return arch_toggles_from_model(model)
+#: What a seed pins on the Rust eval core, said once and written into every manifest.
+REPRODUCIBILITY_NOTE = (
+    "seeded by the GAME (gen3_eval_game_seed_v1): each game's two teams, battle seed, bot streams and a sampled "
+    "sentinel's draws are a pure function of (seed, opponent, game index), never of the env, the schedule or the "
+    "thread count — so the same seed, checkpoint, plan (--games/--sentinels/--opponents/--shard-games) and compute "
+    "flags give the identical cycle. NOT pinned by the seed: the float rounding of the batched forward, whose batch "
+    "composition follows --n-envs and the schedule — a greedy decision whose top-2 log-prob margin is within a "
+    "rounding error of a tie (`near_ties` counts those under 2e-5) can resolve differently under other compute "
+    "flags or another core build / torch")
+
+
+def _cpu_buckets(n_envs: int) -> Tuple[int, ...]:
+    """The served batch buckets for an eager CPU forward of ``n_envs`` rows (one small, one covering every env)."""
+    return tuple(sorted({min(8, int(n_envs)), int(n_envs)}))
 
 
 def _cpu_env(args) -> dict:
-    """Pin this process (and hence its children) to CPU and a polite niceness."""
+    """Pin this process to CPU and a polite niceness."""
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     os.environ.setdefault("OMP_NUM_THREADS", "1")
     os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -687,38 +726,12 @@ def _cpu_env(args) -> dict:
             "OMP_NUM_THREADS": os.environ.get("OMP_NUM_THREADS")}
 
 
-def _wait(procs: List[dict], args) -> None:
-    """Block until every worker exits, reporting progress on a slow cadence."""
-    deadline = time.time() + args.timeout_min * 60 if args.timeout_min else None
-    last = 0.0
-    while True:
-        if all(w["proc"].poll() is not None for w in procs):
-            break
-        if deadline and time.time() > deadline:
-            _log(f"⚠️  TIMEOUT after {args.timeout_min} min — killing workers by explicit PID and "
-                 "collecting whatever landed. A timed-out cycle is INCONCLUSIVE, not a result.")
-            for w in procs:
-                if w["proc"].poll() is None:
-                    w["proc"].kill()
-            break
-        if time.time() - last > 300:
-            alive = sum(1 for w in procs if w["proc"].poll() is None)
-            _log(f"... {alive}/{len(procs)} worker(s) alive")
-            last = time.time()
-        time.sleep(5)
-    for w in procs:
-        w["log"].close()
-    bad = [w for w in procs if w["proc"].returncode not in (0, None)]
-    for w in bad:
-        _log(f"⚠️  worker exited {w['proc'].returncode}; see {w['log_path']}")
-
-
 # --------------------------------------------------------------------------- CLI
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="python -m main.ops.eval_trace_gen",
-        description="Generate an eval-traces cycle for a saved checkpoint, OFFLINE, on CPU.",
+        description="Generate an eval-traces cycle for a saved checkpoint, OFFLINE, on CPU, on the Rust eval core.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__)
     p.add_argument("run", help="a run NAME or DIRECTORY, optionally @<step> (default: last "
@@ -734,20 +747,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--opponents", default=None,
                    help="comma-separated bot subset (default: the full 9-bot roster)")
     p.add_argument("--seed", type=int, default=None,
-                   help="pin every stream a shard draws from. Reproducible at --concurrency 1, "
-                        "for ANY --workers. Omit for an unseeded cycle (and the manifest says so).")
-    p.add_argument("--workers", type=int, default=4,
-                   help="eval worker processes (default 4 — a training arm normally shares this "
-                        "box)")
-    p.add_argument("--concurrency", type=int, default=1,
-                   help="battles in flight per worker (default 1). Above 1 the cycle is NOT "
-                        "reproducible; see the module docstring.")
+                   help="the cycle seed (every game is seeded by the GAME from it). Omitted: one is drawn and "
+                        "RECORDED in the manifest (`seed_source: drawn`), so the cycle is still replayable.")
+    p.add_argument("--n-envs", type=int, default=32,
+                   help="envs of the eval core (default 32 — a training arm normally shares this box)")
+    p.add_argument("--threads", type=int, default=4, help="the Rust eval core's worker threads (default 4)")
+    p.add_argument("--torch-threads", type=int, default=4, help="intra-op threads of the CPU forward (default 4)")
+    p.add_argument("--front", default="proc", choices=("proc", "ffi"),
+                   help="the eval core's front end (default proc, as the trainer)")
+    p.add_argument("--profile", default="release", choices=("release", "selfcheck"),
+                   help="the env core build (default release; selfcheck = the emission self-check build)")
     p.add_argument("--nice", type=int, default=15,
-                   help="niceness for this process and its workers (default 15)")
+                   help="niceness for this process (default 15)")
     p.add_argument("--shard-games", type=int, default=25,
-                   help="games per work-steal shard unit (default 25)")
-    p.add_argument("--impl", default="rust", choices=["node", "rust"],
-                   help="which in-process sim bridge (default rust — serverless)")
+                   help="games per shard unit — the unit the capture quota is split over (default 25)")
     p.add_argument("--quota", type=int, default=None,
                    help="per-outcome trace quota per opponent. DEFAULT IS NO QUOTA: every battle "
                         "is traced, because here the traces ARE the measurement.")
@@ -766,7 +779,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="the same declaration, for the PRE-2026-09-07 asymmetric regime "
                              "(stochastic sentinels, the flat pool teambuilder).")
     p.add_argument("--timeout-min", type=float, default=0.0,
-                   help="kill the workers after this many minutes (0 = no bound)")
+                   help="abandon the cycle after this many minutes at its next host step and keep the shard units "
+                        "that finished — recorded INCOMPLETE (0 = no bound)")
     p.add_argument("--force", action="store_true", help="replace a non-empty --out")
     p.add_argument("--json", default=None, help="also write the manifest to this path")
     return p
@@ -776,6 +790,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     if args.games < 1:
         refuse("REFUSING: --games must be >= 1.")
+    if args.n_envs < 1 or args.threads < 1 or args.torch_threads < 1:
+        refuse("REFUSING: --n-envs, --threads and --torch-threads must be >= 1.")
     manifest = generate(args)
     if args.json:
         Path(args.json).parent.mkdir(parents=True, exist_ok=True)

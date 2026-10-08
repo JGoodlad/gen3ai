@@ -419,13 +419,13 @@ stale-HP, no overkill caps that plague scraping damage from random games).
 
 ### RL-training transport — DELETED (deletion pass U3)
 
-The Python gym-env transport (`bridge_session.py`: `BridgeSession`, `attach_bridge_transport`, persistent / spawn-per-battle child modes, `recycle_every`) is gone with the Python env core it fed; the RL rollout runs on the Rust env core (`src/rust_env/`, `src/utils/rust_env/`, `designs/training/rust_collector.md`). Its recorded measurements (persistent bridge ~2.1x over websocket per step, a node child's flat RSS) are history, not a current surface. What remains of the bridge on the Python side is the SYNCHRONOUS driver `run_local_battles` (eval opponents, the fuzz scripts), the offline search / replay children and the websocket front end below.
+The Python gym-env transport (`bridge_session.py`: `BridgeSession`, `attach_bridge_transport`, persistent / spawn-per-battle child modes, `recycle_every`) is gone with the Python env core it fed; the RL rollout runs on the Rust env core (`src/rust_env/`, `src/utils/rust_env/`, `designs/training/rust_collector.md`). Its recorded measurements (persistent bridge ~2.1x over websocket per step, a node child's flat RSS) are history, not a current surface. What remains of the bridge on the Python side is the SYNCHRONOUS driver `run_local_battles` (the fuzz scripts and the offline tools that still play poke-env players), the offline search / replay children and the websocket front end below.
 
 **The synchronous driver, `run_local_battles`.** Eval is a pure
-synchronous-decision matchup (a greedy trainee vs a bot/sentinel — no SB3-supplied action): the eval worker's `_play_unit` calls
-`run_local_battles` instead of `battle_against` when `use_showdown_bridge` is set (players built
-`start_listening=False`). The config KEY `use_showdown_bridge` is a cross-process
-worker-config contract, not a flag.
+synchronous-decision matchup (a greedy trainee vs a bot/sentinel — no SB3-supplied action): the Python eval worker's
+`_play_unit` called `run_local_battles` instead of `battle_against` (players built `start_listening=False`) until the
+worker was deleted in poke-env retirement P6 slice 6c — eval plays on the Rust eval core now. The driver's other
+callers are the fuzz scripts and the offline poke-env tools.
 
 ### Battle reconstruction (capture + offline replay / re-roll)
 

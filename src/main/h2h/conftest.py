@@ -1,5 +1,5 @@
 """Fixtures of the head-to-head tests: the emission self-check build (once per worker) and two seeded
-PERTURBED-fresh production-architecture checkpoints (the Lane H gate's own recipe, ``rust_eval.parity``)."""
+PERTURBED-fresh production-architecture checkpoints (``rust_eval.offline.build_models``)."""
 from __future__ import annotations
 
 import pytest
@@ -17,7 +17,7 @@ def built():
 def checkpoints(tmp_path_factory):
     """``(zip A, zip B)`` in ``run_h2h_test/`` beside their ``model_config.json`` — two different weight sets
     of ONE architecture (the id of a bare zip is ``<dir>:<stem>``)."""
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
 
     dst = tmp_path_factory.mktemp("h2h") / "run_h2h_test"
     with PAR.declared_torch_state(1):
@@ -34,7 +34,7 @@ def foreign(tmp_path_factory):
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     from agents.observation.state_encoder import load_mappings
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
     from main.train.production_args import production_args
 
@@ -61,7 +61,7 @@ def third(tmp_path_factory):
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     from agents.observation.state_encoder import load_mappings
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
     from main.train.production_args import production_args
 

@@ -4,8 +4,8 @@
 The table of record for porting the scripted bots into the Rust env core (`src/rust_env/src/bots/`).
 `bot_inventory_test.py` (routine) derives every roster FROM THE CODE and fails when:
 
-* a class appears in a roster (the training pool, the eval roster)
-  with no row here — a new bot must be inventoried before it plays;
+* a bot NAME appears in a roster (the training pool, the eval roster — both name lists, the names the Rust
+  core plays its bots by) with no row here — a new bot must be inventoried before it plays;
 * a row's ``used_by`` disagrees with the rosters (a bot dropped from a pool reads as dropped here);
 * a ``Player`` subclass is defined in one of the bot modules with no row (defined-but-unused bots
   are listed with ``used_by=()`` so "not in any pool" is a stated fact, not an omission);
@@ -36,8 +36,8 @@ from dataclasses import dataclass
 SITES = {
     "train": "the training floor roster — `main/train/matchup_setup.py` TRAIN_BOT_NAMES (also the "
              "exploiter --exploiter-keep-bots mix, mapped to the core's bots by `rust_env_setup._bot_names`)",
-    "eval": "the eval roster — `agents/training/eval_roster.py` _EVAL_OPPONENT_SPECS (also "
-            "`main.anchors` `bot:<name>` and the prober's replay, both through that table)",
+    "eval": "the eval roster — `agents/training/eval_schedule.py` _EVAL_ROSTER (the Rust eval core's bot routes; "
+            "`eval_roster._EVAL_OPPONENT_SPECS` binds the same names to their poke-env classes)",
 }
 
 

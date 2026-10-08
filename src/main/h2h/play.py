@@ -82,9 +82,9 @@ SCHEDULE_TAG = "gen3_h2h_schedule_v1"
 
 #: A decision whose top-2 log-prob margin is below this is "within a rounding error of a tie" — the
 #: executor's own constant (``rust_eval.executor.NEAR_TIE``): twice the CPU eager-vs-eager |Δ log-prob| bar
-#: of the Lane H gate (``rust_eval.parity.BAR_CPU``).
+#: of the Lane H gate (``rust_eval.offline.BAR_CPU``).
 NEAR_TIE = 2e-5
-#: The same census at the GPU bar (``rust_eval.parity.BAR_GPU`` 1e-3, T2 ``graph`` on CUDA vs the Python path,
+#: The same census at the GPU bar (``rust_eval.offline.BAR_GPU`` 1e-3, T2 ``graph`` on CUDA vs the Python path,
 #: x 2): a decision this close can flip with the device or the batch shape on the card.
 NEAR_TIE_WIDE = 2e-3
 

@@ -95,7 +95,7 @@ def test_the_reader_is_deterministic_on_an_x5_checkpoint(tmp_path, restore_torch
     recording policies in the archive predate the X5 version break, so the reader cannot load them at HEAD)."""
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     from agents.observation.state_encoder import load_mappings
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
     from main.policy_spectrum.reader import load_probs, read_checkpoint, reencode
     from main.train.production_args import production_args

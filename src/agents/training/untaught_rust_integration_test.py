@@ -12,7 +12,7 @@ What the move off the poke-env bridge must keep, each a test that FAILS on rever
 * a cell replays bit for bit at one compute;
 * a game at the turn limit is a DRAW, never a timeout: ``attempted == finished``.
 
-Seeded PERTURBED-fresh checkpoints (the Lane H gate's recipe, ``rust_eval.parity``), T2 eager, the in-process
+Seeded PERTURBED-fresh checkpoints (``rust_eval.offline.build_models``), T2 eager, the in-process
 (ffi) core, the emission self-check build. The heavy plays are MODULE fixtures (the tier budget is per test call).
 """
 from __future__ import annotations
@@ -48,7 +48,7 @@ def built():
 
 @pytest.fixture(scope="module")
 def setup(built, tmp_path_factory):
-    from agents.training.rust_eval import parity as PAR
+    from agents.training.rust_eval import offline as PAR
 
     dst = tmp_path_factory.mktemp("untaught_rust") / "run_untaught_rust"
     with PAR.declared_torch_state(1):
@@ -130,8 +130,8 @@ def test_a_cell_replays_bit_for_bit_at_one_compute(stochastic):
 
 def test_a_fresh_process_plays_a_cell_without_a_poke_env_player_or_the_bridge(setup):
     """No poke-env ``Player`` is CONSTRUCTED (the old path built two ``RLPlayer`` s per cell) and the bridge's battle
-    runner is never imported. (``agents.inference.player`` itself IS imported — by the eval core's own imports,
-    ``eval_callback`` -> ``eval_roster`` -> ``eval_player``, module level — so its import is no signal here.)"""
+    runner is never imported. (Whether ``agents.inference.player`` is IMPORTED is no signal here — the test plants
+    a hook on poke-env's ``Player`` itself, which imports the package.)"""
     ref_a, _rb, opp, teams = setup
     code = f"""
 import json, sys

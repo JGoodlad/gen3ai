@@ -77,17 +77,6 @@ class TestRewardConfigSingleSource(unittest.TestCase):
         self.assertEqual(rc.draw_penalty, RewardConfig().draw_penalty)   # absent → default
         self.assertEqual(RewardConfig.from_dict(None), RewardConfig())   # None → all defaults
 
-    def test_eval_player_and_builder_require_reward_factory(self):
-        """No silent default: a missing reward factory must be a loud TypeError, not a default reward
-        config — that default is exactly what mismeasured eval. (Signature guard; no heavy construction.)"""
-        import inspect
-        from agents.training.eval_callback import EvalRLPlayer, build_eval_players
-        for fn, pname in ((EvalRLPlayer.__init__, "reward_fn_factory"),
-                          (build_eval_players, "reward_fn_factory")):
-            p = inspect.signature(fn).parameters[pname]
-            self.assertIs(p.default, inspect.Parameter.empty,
-                          f"{fn.__qualname__}.{pname} must be REQUIRED (no silent default)")
-
 
 if __name__ == "__main__":
     unittest.main()

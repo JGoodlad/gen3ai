@@ -294,10 +294,10 @@
   },
   "src/agents/training/cycle_ledger_integration_test.py::test_the_cycles_ledger_rows_are_its_games_and_the_ledger_changes_no_game": {
    "status": "pass",
-   "commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
-   "at": "2026-10-08T01:38:44Z",
-   "duration_s": 75.31,
-   "contention": 1.21,
+   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
+   "at": "2026-10-08T11:55:47Z",
+   "duration_s": 73.56,
+   "contention": 1.27,
    "detail": ""
   },
   "src/agents/training/instrumented_ppo_device_batches_test.py::test_on_cuda_staged_updates_strand_no_cache_on_a_new_stream": {
@@ -368,38 +368,6 @@
    "at": "2026-10-04T06:43:39Z",
    "duration_s": 0.0,
    "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/training/rust_eval/parity_fixed_test.py::test_teeth_a_fixed_opponent_playing_the_trainees_weights_is_fatal": {
-   "status": "pass",
-   "commit": "854dd05f5da28f04e737bcaccefa70b5459e5e15",
-   "at": "2026-10-08T10:59:55Z",
-   "duration_s": 57.89,
-   "contention": 1.66,
-   "detail": ""
-  },
-  "src/agents/training/rust_eval/parity_test.py::test_milestone_fixed_opponents_and_the_sampled_regime_on_cpu": {
-   "status": "pass",
-   "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
-   "at": "2026-10-07T06:09:04Z",
-   "duration_s": 631.54,
-   "contention": 1.76,
-   "detail": ""
-  },
-  "src/agents/training/rust_eval/parity_test.py::test_milestone_gpu_graph_backend_vs_the_compiled_python_worker_on_a_real_pool": {
-   "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 350.46,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/training/rust_eval/parity_test.py::test_milestone_the_production_eval_shape_on_cpu": {
-   "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 1093.71,
-   "contention": 1.11,
    "detail": ""
   },
   "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_the_fork_phase_runs_inside_collect_and_the_lifecycle_stays_clean": {
@@ -482,14 +450,6 @@
    "contention": 1.02,
    "detail": ""
   },
-  "src/main/ops/eval_trace_gen_test.py::test_a_generated_cycle_is_shaped_like_a_live_one": {
-   "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 48.44,
-   "contention": 1.19,
-   "detail": ""
-  },
   "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_the_whole_committed_bank": {
    "status": "pass",
    "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
@@ -497,8 +457,8 @@
    "duration_s": 38.96,
    "contention": 1.0,
    "detail": "",
-   "last_skipped_at": "2026-10-08T09:42:56Z",
-   "last_skipped_commit": "e11cc04c7160c6886faf5bf174243bea2d263133",
+   "last_skipped_at": "2026-10-08T11:54:06Z",
+   "last_skipped_commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
    "last_skip_detail": ""
   },
   "src/main/prober/web/render_integration_test.py::test_a_404_page_still_renders_the_shell": {
@@ -903,42 +863,42 @@
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_the_artifact_carries_the_rust_eval_transport_stamp": {
    "status": "pass",
-   "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
-   "at": "2026-10-07T05:20:39Z",
+   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
+   "at": "2026-10-08T11:54:06Z",
    "duration_s": 0.0,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_the_shard_split_cannot_move_a_number": {
    "status": "pass",
-   "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
-   "at": "2026-10-07T05:20:39Z",
+   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
+   "at": "2026-10-08T11:54:06Z",
    "duration_s": 0.0,
-   "contention": 1.0,
+   "contention": 1.19,
    "detail": ""
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_two_sharded_runs_of_the_meter_are_byte_identical": {
    "status": "pass",
-   "commit": "11d2757480d05833dde0d9c75ed5f8e63696cbfa",
-   "at": "2026-10-07T05:20:39Z",
-   "duration_s": 100.88,
-   "contention": 1.0,
+   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
+   "at": "2026-10-08T11:54:06Z",
+   "duration_s": 213.44,
+   "contention": 1.15,
    "detail": ""
   },
   "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "854dd05f5da28f04e737bcaccefa70b5459e5e15",
-   "at": "2026-10-08T10:59:55Z",
-   "duration_s": 499.91,
-   "contention": 1.65,
+   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
+   "at": "2026-10-08T11:54:06Z",
+   "duration_s": 571.91,
+   "contention": 1.9,
    "detail": ""
   },
   "src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "854dd05f5da28f04e737bcaccefa70b5459e5e15",
-   "at": "2026-10-08T10:59:55Z",
-   "duration_s": 157.44,
-   "contention": 1.53,
+   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
+   "at": "2026-10-08T11:54:06Z",
+   "duration_s": 194.17,
+   "contention": 1.75,
    "detail": ""
   },
   "src/utils/bridge/bridge_impl_parity_test.py::test_a_forfeited_battles_record_logs_the_forcelose_command[node]": {
@@ -1174,5 +1134,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-08T10:59:55Z"
+ "last_written": "2026-10-08T11:55:47Z"
 }
