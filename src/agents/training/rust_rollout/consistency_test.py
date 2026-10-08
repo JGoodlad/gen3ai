@@ -424,3 +424,94 @@ def test_the_warn_scan_is_a_bounded_sample_and_the_fatal_scan_reads_every_row(tm
         sc = rec["scan"]
         assert sc["rows_current"] == buf.log_probs.size
         assert (sc["rows"], sc["sampled"]) == ((16, True) if mode == "warn" else (buf.log_probs.size, False))
+
+
+# ---------------------------- the FLIP-JUDGE (gen3_behaviour_tie_flip_judge_v1, 2026-10-08)
+#: The tie the flip-judge tests plant: epsilon widened to 1e-3 puts two of the fixture's real rows at ONE
+#: isolated near pair of X5's sort (the op's per-mon cut), whose other resolution moves log pi by ~0.02.
+FLIP_EPS = 1e-3
+
+
+def _flip_fixture(monkeypatch):
+    """`_model` probed on EVERY row (unpermuted, so probe row i is buffer row i) at `FLIP_EPS`, with each
+    row's recorded resolution (``new``) and its OTHER resolution (``alt``, `TieFlip` on every flippable row)."""
+    from agents.training.rust_rollout.tie_margins import TieFlip, TieMargins
+
+    m = _with_provenance(_model())
+    b = m.rollout_buffer
+    n = b.log_probs.size
+    m.batch_size = n
+    m.behaviour_check = "fatal"
+    monkeypatch.setattr(K, "BEHAVIOUR_GATE", _gate(FLIP_EPS, ceiling=0.5))
+    t, e = np.arange(n) // b.n_envs, np.arange(n) % b.n_envs
+    obs = {k: v[t, e] for k, v in b.observations.items()}
+    acts = th.as_tensor(b.actions[t, e].reshape(-1)).long()
+    masks = th.as_tensor(b.action_masks[t, e])
+    rec = TieMargins(n, near_eps=FLIP_EPS)
+    new, _f = K.probe_forward(m, obs, acts, masks, rec)
+    flippable = np.flatnonzero(rec.flippable())
+    mode = TieFlip(n, rec.flip_plan(flippable), rec.call_sites)
+    alt, _f = K.probe_forward(m, obs, acts, masks, mode)
+    mode.check_applied()
+    moves = flippable[np.abs(alt - new)[flippable] > 10 * K.BEHAVIOUR_BAR]
+    excluded = int((rec.margin < FLIP_EPS).sum())
+    assert moves.size >= 1 and excluded > flippable.size, \
+        "the fixture needs a flippable tie that moves log pi, beside excluded rows the flip cannot judge"
+    return m, t, e, new, alt, int(moves[0]), flippable.size, excluded
+
+
+def test_a_tied_row_whose_behaviour_took_the_OTHER_resolution_is_judged_by_the_flip_and_passes(monkeypatch):
+    """The static-screen class (F-ST-10): T2 resolved a near-tied cut pair the other way, so the stored log mu
+    is the OTHER resolution's. The row is JUDGED (not excluded) and passes on that resolution; the excluded
+    share is reported AFTER the flip-judge, the share before it beside it."""
+    m, t, e, new, alt, r, n_flip, n_ex = _flip_fixture(monkeypatch)
+    n = new.size
+    m.rollout_buffer.log_probs[t[r], e[r]] = alt[r]
+    out = K.behaviour_probe(m)                                   # no raise
+    assert out["behaviour/rows_judged_by_flip"] == float(n_flip)
+    assert out["behaviour/rows_flip_forward"] == 1.0 and out["behaviour/rows_flip_resolved"] == 1.0
+    assert out["behaviour/excluded_frac_before_flip"] == pytest.approx(n_ex / n)
+    assert out["behaviour/rows_excluded"] == float(n_ex - n_flip)
+    assert out["behaviour/excluded_frac"] == pytest.approx((n_ex - n_flip) / n)
+    assert out["behaviour/max_abs_dlogp_judged"] < K.BEHAVIOUR_BAR
+    assert out["behaviour/max_abs_dlogp_current"] > 10 * K.BEHAVIOUR_BAR      # the recorded resolution misses
+    assert out["behaviour/flip_forward_ms"] > 0
+
+
+def test_a_planted_mismatch_on_a_tied_row_fails_under_BOTH_resolutions_and_is_FATAL(monkeypatch, tmp_path):
+    """A real fault on a row at one tie: neither resolution reproduces log mu, so it is a mismatch like any
+    judged row — FATAL at once, and the dump says the row was judged by the flip. (Before the flip-judge the
+    row was EXCLUDED and the fault passed.)"""
+    import json
+
+    m, t, e, new, alt, r, _nf, _ne = _flip_fixture(monkeypatch)
+    m.behaviour_dump_dir = str(tmp_path)
+    m.rollout_buffer.log_probs[t[r], e[r]] = min(new[r], alt[r]) - 3e-3
+    with pytest.raises(K.BehaviourMismatch, match=r"judged under BOTH its resolutions \(1 over the bar under both\)"):
+        K.behaviour_probe(m)
+    row = json.loads((tmp_path / K.VIOLATION_DUMP).read_text().splitlines()[-1])["rows"][0]
+    assert row["index"] == r and row["judged_by_flip"] and not row["excluded"]
+    assert row["abs_dlogp_flipped"] >= 3e-3 and row["abs_dlogp_as_is"] >= 3e-3
+
+
+def test_a_row_with_near_ties_at_two_calls_stays_EXCLUDED(monkeypatch):
+    """Out of the flip's scope (more than two resolutions): a fault on such a row is excluded, as before."""
+    from agents.training.rust_rollout.tie_margins import TieMargins
+
+    m = _with_provenance(_model())
+    b = m.rollout_buffer
+    n = b.log_probs.size
+    m.batch_size = n
+    m.behaviour_check = "fatal"
+    eps = 3e-2                                                   # wide enough for rows at two near calls
+    monkeypatch.setattr(K, "BEHAVIOUR_GATE", _gate(eps, ceiling=0.95))
+    t, e = np.arange(n) // b.n_envs, np.arange(n) % b.n_envs
+    rec = TieMargins(n, near_eps=eps)
+    K.probe_forward(m, {k: v[t, e] for k, v in b.observations.items()},
+                    th.as_tensor(b.actions[t, e].reshape(-1)).long(), th.as_tensor(b.action_masks[t, e]), rec)
+    multi = np.flatnonzero(rec.near_calls > 1)
+    assert multi.size and not rec.flippable()[multi].any()
+    b.log_probs[t[multi[0]], e[multi[0]]] += 0.0389
+    out = K.behaviour_probe(m)                                   # excluded: no raise
+    assert out["behaviour/max_abs_dlogp_excluded"] == pytest.approx(0.0389, rel=1e-2)
+    assert out["behaviour/max_abs_dlogp_judged"] < K.BEHAVIOUR_BAR

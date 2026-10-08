@@ -12931,3 +12931,34 @@ obs-facts appended (2845)`.
   145 / `gen3_mon_tied_gain_v1`, the learner freeze's 10 checks passed.
 - **Deferred to a GPU lease** (queued with the break's own): compile parity and compiled gradients on the new graph,
   T2 throughput and memory, `extractor_compiles_test`'s CUDA cells, a short real launch.
+
+## 2026-10-08 — K9(b) FLIP-JUDGE: a row at ONE tie is judged under both resolutions (`gen3_behaviour_tie_flip_judge_v1`; no config / ARCH bump, training arithmetic untouched)
+
+- **Why.** `rb_st_static_s1001` (`--token-encoding static`, pin `6c6d2e09`) stopped at update 1480 on K9(b)'s
+  excluded-share ceiling alone (0.175). Static repeats one hypothesis species' near-tied cut pair in every row of
+  that species, and that tie moves log π, so no clearance applied (F-ST-10, `measurements/k9_static_tie_2026-10-08/`).
+- **What changed.** A current row whose ONLY near tie is ONE element of ONE selection call is JUDGED instead of
+  excluded: one isolated X5 sort pair (both neighbouring sorted pairs at least epsilon away), or one threshold element.
+  - It passes if either resolution's |log π − log μ| is under the bar, and it is FATAL if neither is.
+  - The other resolution comes from one extra probe forward under `tie_margins.TieFlip`, run only on an update
+    where such a row fails as is.
+  - Out of scope, still excluded: ties at two or more calls or elements, `argmax` / `topk` / `threshold_self` ties,
+    and non-isolated pairs.
+  - Unchanged: epsilon (2e-4), the bar (1e-4) and the ceiling (0.15).
+  - The excluded share is reported after the judge, with `behaviour/excluded_frac_before_flip`,
+    `rows_judged_by_flip`, `rows_flip_forward`, `rows_flip_resolved` and `flip_forward_ms` beside it. The dump marks
+    a flip-judged row (`judged_by_flip`, both |Δ|).
+  - Code: `consistency.probe_forward` / `flip_judge`, `tie_margins.TieMargins(near_eps=…)` / `flippable` /
+    `flip_plan` / `TieFlip`.
+- **Measured** (`measurements/k9_flip_judge_2026-10-08/`, CPU). The u1480 dump replay goes 10.2 % → 2.6 %, with 156
+  rows judged by the flip and all passing. A constructed HEAD reproduction (the dump mapped onto v145's tied gains)
+  reads 10.4 % → 3.3 %. The near tracking costs nothing measurable. The flip forward is at most one probe forward
+  per update.
+- **Tests (fail on revert).** `consistency_test`:
+  - a tie whose behaviour took the OTHER resolution passes, judged by the flip;
+  - a planted mismatch fails both resolutions and is FATAL (with the judge disabled, the first has no flip metrics
+    and the second does not raise);
+  - a row at two calls stays excluded.
+
+  `tie_margins_test`, on the real sort site: only an isolated one-element tie is flippable; the flip swaps exactly
+  that pair; a non-reproducing flip forward is refused; a threshold flip inverts its one element.

@@ -23382,3 +23382,53 @@ Tag: **FINDING · static K9(b) stop = one species' genuine cut-pair tie repeated
   committed hashes (991 decisions, 6 battles).
 
 Tag: **BUILT · obs golden Rust-owned (991 / 991) · Rust encoder benchmark mandatory · oracle replacement recorded**
+
+### 2026-10-08 · FIX + MEASURED · **K9(b) FLIP-JUDGE (`gen3_behaviour_tie_flip_judge_v1`): a current row whose ONLY near tie is ONE element of ONE selection call (an isolated X5 sort pair, or one threshold element) is JUDGED under BOTH resolutions instead of excluded — it passes if either is within the bar and is FATAL if neither is; the u1480 static-screen dump's excluded share falls 10.2 % → 2.6 % (156 rows judged by the flip, all passing); epsilon, the bar and the ceiling unchanged**
+
+- **Why.** The root cause above (F-ST-10): `--token-encoding static` repeats one hypothesis species' near-tied cut pair
+  in every row of that species, so one update's excluded share can cross the 0.15 ceiling with nothing wrong. That
+  tie can move log π, so a clearance cannot apply. Judging the row under both of its resolutions does. This was
+  the root-cause agent's proposal, approved by the orchestrator.
+- **Built.** The recorder notes each row's near elements per MARGIN call (`TieMargins(near_eps=…)`; `flippable` = one
+  call, one element, a kind the flip can express, and for a sort pair both neighbouring sorted pairs at least
+  epsilon away).
+  - `consistency.flip_judge` judges every flippable excluded current row. The first resolution is the probe
+    forward's own. When that fails the bar, ONE extra probe forward under `TieFlip` gives the other (the pair's
+    candidates swapped against the recorded order, or the bool inverted). The row's judged |Δ| is the smaller of
+    the two.
+  - The flip forward must reproduce the recording: the same call sequence up to its last flip, the same tied
+    candidates, and rows at no tie within the bar. Otherwise `TieMarginError` (FATAL under `fatal`).
+  - Out of scope, still excluded: ties at two or more calls or elements, `argmax` / `topk` / `threshold_self` ties,
+    and non-isolated pairs.
+  - The excluded share is reported AFTER the judge; new tags `behaviour/excluded_frac_before_flip`,
+    `rows_judged_by_flip`, `rows_flip_forward`, `rows_flip_resolved`, `flip_forward_ms`.
+- **Measured** (CPU, no GPU lease; `measurements/k9_flip_judge_2026-10-08/`; the `k9_static_tie` harness, 2,048
+  seeded random-opponent rows, the real probe on every row).
+  - **The dump, at the pin** (a scratch `6c6d2e09` worktree with this commit's two recorder files, byte-identical
+    bases): 209 excluded (10.2 %, matching the root cause row for row) → **53 (2.6 %)**. 156 rows were judged by
+    the flip (the 154 Salamence cut-pair rows plus 2 cut pairs), and all passed as is, because the harness's T2 is
+    the learner's eager CPU forward.
+  - **What stays excluded:** 38 typed-HP floor ties (three-way clusters), 10 dominant-move argmax, 4
+    fixed-damage ≥ HP at two elements, 1 at two calls.
+  - **Forced** (every flippable row resolved the other way): log π(a|s) moved on 155 of 156 rows, max 4.3e-3,
+    median 7.3e-5. Untouched rows moved by exactly 0.
+  - **HEAD** (a CONSTRUCTED reproduction: v145 cannot load the v143 dump, so the 138 per-position `out_gain`s were
+    mapped to their 29 ties' means and the dead value tower dropped): 212 (10.4 %) → 68 (3.3 %), the same mix.
+  - **Cost:** near tracking is within CPU noise (bare 2.28 s, old recorder 2.88 s, new 2.27 s per 2,048 rows). The
+    flip forward is ONE probe forward, at most once per update and only when a flip-judged row fails as is. That
+    is ≈ 0.1 s on the GPU by the `k9_behaviour_exclusion` timing, **UNVERIFIED** there.
+- **Tests (fail on revert).** `consistency_test`: a tie whose behaviour took the other resolution passes, judged; a
+  planted mismatch fails both resolutions and is FATAL. With the judge disabled, both fail (no flip metrics / DID NOT
+  RAISE). A row at two calls stays excluded. `tie_margins_test` (the real sort site): the scope, the swap, the
+  refusals, the threshold flip. The K9 learner golden is unchanged (`learner_golden{,_fixed_mass,_threads}_test`
+  green); training arithmetic is untouched.
+- **FINDINGS.**
+  - (1) The live composition at u1480 (17.5 % live vs 10.2 % in the harness) is **UNVERIFIED**, so what the judge
+    would have left live is a projection.
+  - (2) How often the flip forward fires on the GPU (where T2 is compiled and can take the other resolution) is
+    **UNVERIFIED**.
+  - (3) The violation scan (`scan_current`) still reports the pre-judge exclusion; it is diagnostics only.
+  - (4) A run PINNED at or before `6c6d2e09` (the remaining static seeds) keeps the old rule. The judge reaches a
+    run only at a commit that carries it.
+
+Tag: **FIX · K9(b) flip-judge: one-tie rows judged under both resolutions · u1480 dump 10.2 % → 2.6 % (HEAD reproduction 10.4 % → 3.3 %) · planted mismatch on a tied row FATAL · ceiling / eps / bar unchanged · learner golden unchanged** · meas: [`measurements/k9_flip_judge_2026-10-08/`](measurements/k9_flip_judge_2026-10-08/README.md)

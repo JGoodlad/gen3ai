@@ -620,7 +620,8 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 - **F-ST-7 (the screen, §8.1):** three seeds per arm give an ESTIMATED power of only 0.27 (σ = 3.43 pp, δ = 3.5 pp)
   to show non-inferiority when `static` is truly equal; the registration must choose a harm screen, a wider δ or
   X5's sequential extension.
-- **F-ST-10 (the screen, K9(b), MEASURED on CPU at the pin, 2026-10-08; NOT fixed):** `rb_st_static_s1001`
+- **F-ST-10 (the screen, K9(b), MEASURED on CPU at the pin, 2026-10-08; FIXED by the K9(b) FLIP-JUDGE the same
+  day, below):** `rb_st_static_s1001`
   (`static` × `fixed_mass`, P_st `6c6d2e09`) stopped at update 1480 on K9(b)'s excluded-share CEILING alone.
   It read 0.175 against 0.15, with judged max |Δ log π| 8.6e-6. Its other 36 probes read a median of 0.033.
   - **The cause is a property of `static`.** A hypothesis row reads no board fact, so its token and its
@@ -635,9 +636,16 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
     resumed run finished with 22 checks passed.
   - **Still at HEAD.** The site is unchanged.
 
-  Each static seed carries a per-probe chance of such a coincidence: about 1 in 37 probes on this seed, one
+  Each static seed carried a per-probe chance of such a coincidence: about 1 in 37 probes on this seed, one
   observation. A stop on it is a resume, never a reason to relax the ceiling.
   [`measurements/k9_static_tie_2026-10-08/`](../research_state/measurements/k9_static_tie_2026-10-08/README.md).
+  - **The fix: the K9(b) FLIP-JUDGE** (`gen3_behaviour_tie_flip_judge_v1`, `designs/training/learner_gates.md`). A
+    row whose only near tie is ONE element of ONE selection call (here: the isolated cut pair) is no longer
+    excluded. It is JUDGED under both resolutions of that tie: it passes if either is within the bar, and it is FATAL
+    if neither is. At the dumped weights the excluded share falls **10.2 % → 2.6 %** (156 rows judged by the flip,
+    all passing; CPU, at the pin with HEAD's flip-judge code). A constructed HEAD reproduction reads 10.4 % → 3.3 %
+    ([`measurements/k9_flip_judge_2026-10-08/`](../research_state/measurements/k9_flip_judge_2026-10-08/README.md)).
+    The ceiling, the margin and the bar are unchanged. A pinned static seed (≤ `6c6d2e09`) still runs the old rule.
 
 ---
 
@@ -666,3 +674,4 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 | 2026-10-07 | **The screen RE-REGISTERED at a new P_st (§8.2 otherwise unchanged)** | The first P_st (`26131c0c`) failed step 0: static × fixed_mass died at T2 startup on CUDA (F-ST-8, an Inductor-chosen head-innermost attention-bias layout at 64 keys, refused by the efficient-attention kernel), and then F-ST-9 (a compile-lock recompile on a layout-dict identity guard). Both are fixed in `1b578ea6`. The GPU check table there shows the screen arm passing T2, R1 and the update-10 canary, with 2,144 MiB headroom. **The new P_st = THIS commit.** No seed of the old P_st ran; nothing else changes. Step 0 re-runs (the compile smoke is already shown by the fix table, but re-run at P_st; plus the cost read). | Running at `1b578ea6` without a registration commit | orchestrator (owner delegation) |
 | 2026-10-07 | The OBS-FACTS block under `static` (`gen3_obs_facts_v1`, the X5 version break's part 3) | `--obs-facts v1` composes with `static`: `seen` / `choice` / `vol` (the mon's own dynamic state) are added to the mon's token after the encoder (D content; S never reads them), `screens` (a SIDE fact) to the side BOARD token through `TeamTransformer.board_tokens`' `side_extra` — never a per-mon token (`obs_facts_inject.FACTS_TOKEN_CLASS`; a new sub-block is classified there) | `v1` refused under `static`; screens on every per-mon token (the legacy route, a board fact in a token); the facts as new `SIDE_FACTS` columns of `side_proj` (moves `side_proj`'s shape for an `off` arm too) | `obs_facts_inject_test.py`; `design_entity_coverage_audit.md` §8 |
 | 2026-10-08 | The K9(b) ceiling stop at `rb_st_static_s1001` update 1480 (F-ST-10) | NO clearance. The dominant excluded class is a genuine near tie: one hypothesis species' cut pair, which `static` repeats in every row of that species, and whose flip moves log π by up to 1.25e-2. The run is RESUMED (as it was), and the remaining pinned static seeds are expected to stop on such a coincidence occasionally. The ceiling (0.15), the margin (2e-4) and judged-row FATAL are unchanged | a `fe237eac`-style clearance (it does not apply: the tie can move log π); relaxing the ceiling, or an early-phase or k-of-n rule (owner: deterministic checks); a per-species dedup of the share (a statistical rule); a FLIP-JUDGE (a single-site tied row judged against BOTH resolutions, passing iff either is within the bar) — deterministic, but it changes K9(b)'s semantics, so it is proposed to the orchestrator and not built here | §11 F-ST-10; `measurements/k9_static_tie_2026-10-08/` |
+| 2026-10-08 | F-ST-10's fix: the K9(b) FLIP-JUDGE (`gen3_behaviour_tie_flip_judge_v1`; orchestrator-approved, the root-cause agent's proposal) | A current row whose ONLY near tie is ONE element of ONE selection call (an isolated X5 sort pair, or one threshold element) is JUDGED under both resolutions of that tie: it passes if either \|Δ log π\| is under the bar, and it is FATAL if neither is. The other resolution costs one extra probe forward, run only when such a row fails as is. Rows at two or more calls or elements, or with an `argmax` / `topk` tie, stay excluded. The ceiling (0.15), the margin (2e-4) and the bar (1e-4) are unchanged, and the share is reported after the judge. The u1480 dump replay: 10.2 % → 2.6 % | (see the row above) relaxing the ceiling, an early-phase or k-of-n rule, a per-species dedup; expressing the `argmax` / three-way-cluster ties too (not needed for this class; they stay excluded) | `designs/training/learner_gates.md` "THE FLIP-JUDGE"; `measurements/k9_flip_judge_2026-10-08/` |

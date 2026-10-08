@@ -144,7 +144,8 @@ It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `r
 `rows_probed`, one `behaviour/bar_<statistic>` per condition and
 `behaviour/excluded_frac`, `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged`,
 `max_abs_dlogp_excluded`, `tie_eps` and `selection_free` (and the Rust probe `probe_forward_ms`; on a
-violation `scan_ms` / `scan_rows`).
+violation `scan_ms` / `scan_rows`), plus the FLIP-JUDGE's `rows_judged_by_flip`, `rows_flip_forward`,
+`rows_flip_resolved`, `excluded_frac_before_flip` and `flip_forward_ms` (below).
 
 **The gate is ONE table, at fp32 matmul precision `highest` — the only precision** (`consistency.BEHAVIOUR_GATE`,
 read by Lane G's probe through `judge_behaviour`; TF32 was retired, deletion pass
@@ -227,12 +228,16 @@ it; the flipped gaps were 5e-8 to 1.7e-7 in fp64 (`TECH_DEBT_BACKLOG.md` §2(b))
    move's belief weight) takes its margin to the nearest candidate whose payload DIFFERS.
 3. **A row whose margin is below `FP32_TIE_EPS` = 2e-4 is EXCLUDED**; exact ties always — except while the
    forward is SELECTION-FREE (`consistency.selection_free`: every action-head scorer weight exactly zero,
-   a fresh run's first update), when no row is excluded.
+   a fresh run's first update), when no row is excluded, and except a row the FLIP-JUDGE can judge
+   (`gen3_behaviour_tie_flip_judge_v1`, below): its ONLY near tie is one element of one selection call,
+   so it has exactly two resolutions, and it is judged under both.
 4. **Every other current row is JUDGED: any |Δ| ≥ 1e-4 is FATAL on the first update.** No persistence,
    no count. A judged row resolves every selection identically in both forwards, so its |Δ| is
    continuous fp32 noise.
 5. **The excluded share must stay under `FP32_EXCLUDED_CEILING` = 0.15** (FATAL otherwise): a fault that
-   pushed many rows onto ties would otherwise hide from the judgement.
+   pushed many rows onto ties would otherwise hide from the judgement. The share is counted AFTER the
+   flip-judge (a flip-judged row is judged, not excluded); `behaviour/excluded_frac_before_flip` is the
+   share before it.
 
 *The measurement* (`k9_behaviour_exclusion/`, `sweep.py` + `derive.py`, criteria declared before the
 numbers were read): the tail sweep's setup re-run with margins — A2's 4.0M checkpoint and its 2
@@ -317,16 +322,41 @@ Oracle-full's live run read 4.98–8.11 % over its updates 1–11 under the rule
   only its fp64 reference's rule-8 exclusion moved (1 → 0 rows).
   The ceiling stays 0.15, and a judged row's mismatch stays FATAL in every phase (no early-phase leniency).
 
-- **Known limit, `--token-encoding static` (2026-10-08, NOT cleared).** Under static, a hypothesis row's token
-  and its composed move posterior are a function of (weights, species) only. A near tie at a per-mon CUT pair
-  therefore recurs in EVERY row where that species is a hypothesis, and the excluded share is lumpy.
-  `rb_st_static_s1001` (pin `6c6d2e09`) stopped at update 1480 on the ceiling alone: 0.175, judged max 8.6e-6.
-  The CPU replay at the dumped weights gave 154 of 209 excluded rows on ONE pair: a Salamence hypothesis's Hydro
-  Pump vs Hidden Power Grass at the top-six cut, relative gap 8.3e-5. The flip moves log π by up to 1.25e-2, so
-  the exclusion is CORRECT, and no identity or consumption rule may clear it. The neighbouring checkpoints read
-  0.9 % / 1.7 %
-  ([`measurements/k9_static_tie_2026-10-08/`](../research_state/measurements/k9_static_tie_2026-10-08/README.md)).
-  A stop on this class is a resume, not a fault.
+- **THE FLIP-JUDGE** (`gen3_behaviour_tie_flip_judge_v1`, 2026-10-08; `consistency.flip_judge`,
+  `tie_margins.TieMargins(near_eps=…)` / `TieFlip`). Unlike the three rules above it clears nothing: it JUDGES a
+  tied row instead of excluding it.
+  - **Which rows.** A current row whose ONLY near tie is ONE element of ONE recorded selection call: one ISOLATED
+    pair of X5's sort, or one threshold element. An isolated pair has both neighbouring sorted pairs at least
+    epsilon away. Such a row has exactly two resolutions. The recorder notes each row's near elements as it reads
+    the margins.
+  - **The verdict.** The row PASSES if either resolution's |log π − log μ| is under the bar. It is a mismatch,
+    FATAL like any judged row, if neither is. The first resolution is the probe forward's own. The second comes from
+    ONE extra probe forward of the same rows under `TieFlip`, with that element resolved the other way (the pair
+    swapped against its recorded order, the bool inverted). That forward runs only on an update where such a row
+    fails as is, so it costs at most one probe forward per update.
+  - **Out of scope, still EXCLUDED:** near ties at two or more calls or elements, an `argmax` / `topk` /
+    `threshold_self` tie, a NaN margin, and a pair with a third key near it.
+  - **Unchanged:** epsilon, the bar and the ceiling. The excluded share is counted AFTER the judge.
+  - **The flip forward must reproduce the recording one:** the same MARGIN call sequence up to its last flip, the
+    same tied candidates, and every row at no tie within the bar of its first value. Otherwise `TieMarginError`:
+    FATAL under `fatal`; under `warn` those rows stay excluded for the update.
+  - **Why.** Under `--token-encoding static` a hypothesis row's token and its composed move posterior are a
+    function of (weights, species) only. A near tie at one species' per-mon CUT pair therefore recurs in EVERY row
+    where that species is a hypothesis, and the excluded share is lumpy. `rb_st_static_s1001` (pin `6c6d2e09`)
+    stopped at update 1480 on the ceiling alone: 0.175, judged max 8.6e-6. 154 of the 209 excluded replay rows were
+    ONE pair: a Salamence hypothesis's Hydro Pump vs Hidden Power Grass, relative gap 8.3e-5
+    ([`k9_static_tie_2026-10-08/`](../research_state/measurements/k9_static_tie_2026-10-08/README.md)). The tie
+    moves log π, so no clearance applies; judging it under both resolutions does.
+  - **Measured** ([`k9_flip_judge_2026-10-08/`](../research_state/measurements/k9_flip_judge_2026-10-08/README.md);
+    CPU, 2,048 rows): at the dumped u1480 weights the excluded share falls **10.2 % → 2.6 %**, with 156 rows judged
+    by the flip and every one passing. A constructed HEAD reproduction reads 10.4 % → 3.3 %. What stays excluded is
+    the typed-HP floor ties (a three-way cluster), the dominant-move `argmax` ties and the multi-element thresholds.
+  - **Pinned by** `consistency_test`'s flip-judge block (a tie whose behaviour took the other resolution PASSES,
+    judged; a planted mismatch fails BOTH resolutions and is FATAL; a row at two calls stays excluded) and
+    `tie_margins_test`'s on the real sort site (only an isolated one-element tie is flippable; the flip swaps that
+    pair and nothing else; a non-reproducing flip forward is refused).
+  - The violation scan (`scan_current`) reports the exclusion BEFORE the flip-judge: it is diagnostics, and the
+    verdict never reads it.
 
 *On the GPU, fixed_mass regime A (F-XC-5, 2026-10-05, at `e8008c2d`;
 [`measurements/x5_fxc4_compile_gate_2026-10-05/`](../research_state/measurements/x5_fxc4_compile_gate_2026-10-05/README.md)

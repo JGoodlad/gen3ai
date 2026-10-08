@@ -1,0 +1,77 @@
+{
+ "commit": "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01",
+ "weights": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1001/behaviour_violation_u1480_policy.pt",
+ "rows": 2048,
+ "eps": 0.0002,
+ "bar": 0.0001,
+ "ceiling": 0.15,
+ "probe_wall_s": 2.929872039996553,
+ "metrics": {
+  "behaviour/rows_current": 2048.0,
+  "behaviour/rows_probed": 2048.0,
+  "behaviour/probe_forward_ms": 2927.404418005608,
+  "behaviour/selection_free": 0.0,
+  "behaviour/rows_judged_by_flip": 156.0,
+  "behaviour/rows_flip_forward": 0.0,
+  "behaviour/rows_flip_resolved": 0.0,
+  "behaviour/excluded_frac_before_flip": 0.10205078125,
+  "behaviour/flip_forward_ms": 0.0,
+  "behaviour/max_abs_dlogp_current": 5.4836273193359375e-06,
+  "behaviour/p99_abs_dlogp_current": 1.6689300537109375e-06,
+  "behaviour/tie_eps": 0.0002,
+  "behaviour/excluded_frac": 0.02587890625,
+  "behaviour/rows_excluded": 53.0,
+  "behaviour/rows_judged": 1995.0,
+  "behaviour/max_abs_dlogp_judged": 5.4836273193359375e-06,
+  "behaviour/max_abs_dlogp_excluded": 1.430511474609375e-06,
+  "behaviour/bar_max": 0.0001,
+  "behaviour/violations_total_max": 0.0,
+  "behaviour/bar_excluded_frac": 0.15,
+  "behaviour/violations_total_excluded_frac": 0.0
+ },
+ "cost": {
+  "bare_ms_median3": 2284.747742000036,
+  "recorder_plain_ms_median3": 2875.1217420212924,
+  "recorder_near_ms_median3": 2273.608495015651
+ },
+ "excluded_by_site": [
+  {
+   "site": "hypothesis_set.py:214 argsort",
+   "class": "flippable",
+   "rows": 156
+  },
+  {
+   "site": "hypothesis_set.py:214 argsort",
+   "class": "not_expressed",
+   "rows": 38
+  },
+  {
+   "site": "damage_op.py:989 argmax",
+   "class": "not_expressed",
+   "rows": 10
+  },
+  {
+   "site": "damage_kinds.py:130 ge",
+   "class": "multi",
+   "rows": 4
+  },
+  {
+   "site": "hypothesis_set.py:214 argsort",
+   "class": "multi",
+   "rows": 1
+  }
+ ],
+ "forced": {
+  "rows": 156,
+  "flip_forward_ms": 2065.679436956998,
+  "recording_forward_ms": 2066.8887769570574,
+  "flip_moves_logpi": 155,
+  "max_abs_logpi_move": 0.004289507865905762,
+  "median_abs_logpi_move": 7.306039333343506e-05,
+  "pass_as_is": 156,
+  "pass_flipped_only": 0,
+  "fail_both": 0,
+  "max_abs_dlogp_as_is": 2.384185791015625e-06,
+  "untouched_rows_max_move": 0.0
+ }
+}

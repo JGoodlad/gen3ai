@@ -18,12 +18,20 @@ margin is the minimum over every MARGIN site, with the site that attained it.
 It never changes what the forward computes: it reads each op's arguments after the op ran, on
 detached float64 copies. Training forwards never run under it — only the K9(b) probe's own forward
 (Rust core) and one no-grad forward of the judged micro-batch (python core).
+
+THE FLIP-JUDGE (`gen3_behaviour_tie_flip_judge_v1`, 2026-10-08). With ``near_eps`` set (the probe's
+epsilon) the recorder also notes, per row, every NEAR element (margin below it, or NaN) of every MARGIN
+call. A row whose ONLY near element is one pair of a ``sort_head`` (an ISOLATED pair: its neighbours in
+the sorted order sit at least epsilon away) or one element of a ``threshold`` has exactly TWO resolutions,
+the one this forward took and the other, and `TieMargins.flippable` names it. `TieFlip` re-runs the
+forward with that element resolved the OTHER way (the pair's two candidates swapped, the bool inverted),
+so the probe judges the row under both resolutions instead of excluding it (`consistency.behaviour_probe`).
 """
 from __future__ import annotations
 
 import os
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import torch as th
@@ -227,12 +235,82 @@ def _caller() -> Optional[Tuple[str, int]]:
     return os.path.basename(fn)[:-3], int(f.f_lineno)
 
 
-class TieMargins(TorchFunctionMode):
-    """Per row: the smallest margin over every MARGIN site the forward executed (module docs)."""
+#: The MARGIN rule kinds whose ONE near element the flip-judge can resolve the other way
+#: (`gen3_behaviour_tie_flip_judge_v1`): a sort pair (its two candidates swapped) and a threshold (its bool
+#: inverted). A ``topk`` / ``argmax`` / ``threshold_self`` tie is not expressed: its row stays EXCLUDED.
+FLIP_KINDS: Tuple[str, ...] = ("sort_head", "threshold")
 
-    def __init__(self, rows: int, keep_calls: bool = False) -> None:
+
+class FlipStep(NamedTuple):
+    """One row's one near element, as the recording forward resolved it (`TieMargins.flip_plan`)."""
+    call: int                   # the MARGIN call index, in the forward's call order
+    site: str
+    kind: str                   # a `FLIP_KINDS` entry
+    pos: Tuple[int, ...]        # flat positions in the op's output row (a sort pair: two; a threshold: one)
+    witness: Tuple[int, ...]    # the output's values there (the pair's candidate indices; the bool as 0 / 1)
+
+
+def _isolated_pair(v: th.Tensor, i: int, eps: float, zero_exact: bool) -> bool:
+    """A sorted pair (i, i + 1) of ``v`` (one slot's FULL ascending keys) is ISOLATED when each neighbouring
+    genuine pair, (i − 1, i) and (i + 1, i + 2), sits at a relative margin of at least ``eps``: then the only
+    other resolution is the pair swapped (three near-tied keys have more than two). A neighbour pair that
+    touches a structural key (outside ``[−1, 0]``) or is two exact zeros under ``zero_exact`` cannot tie."""
+    n = int(v.shape[-1])
+    for p in (i - 1, i + 1):
+        q = p + 1
+        if p < 0 or q >= n:
+            continue
+        a, b = v[p], v[q]
+        genuine = bool((a >= -1.0) & (a <= 0.0) & (b >= -1.0) & (b <= 0.0))
+        if zero_exact and bool((a == 0) & (b == 0)):
+            genuine = False
+        if genuine and not bool(_rel(a, b) >= eps):
+            return False
+    return True
+
+
+def _flip_step(rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[str, Any], out: Any,
+               g: th.Tensor, row: int, elem: int, rows: int, eps: float, call: int, site: str) -> Optional[FlipStep]:
+    """The `FlipStep` of row ``row``'s one near element ``elem`` (a flat index into its margin tensor), or None
+    when the flip cannot express it (a kind outside `FLIP_KINDS`, a NaN margin, a pair that is not isolated)."""
+    if not bool(th.isfinite(g.reshape(rows, -1)[row, elem])):
+        return None
+    if rule.kind == "sort_head":
+        x = args[0]
+        dim = int(_arg(args, kwargs, 1, "dim", -1))
+        if (name != "argsort" or not isinstance(out, th.Tensor) or tuple(out.shape) != tuple(x.shape)
+                or dim not in (-1, x.dim() - 1)):
+            return None
+        n = int(x.shape[-1])
+        h = min(int(rule.head), n)
+        slot, i = divmod(int(elem), h - 1)
+        xs = x.detach().double().reshape(rows, -1, n)[row, slot]
+        if not _isolated_pair(th.sort(xs).values, i, eps, bool(rule.zero_exact)):
+            return None
+        o = out.reshape(rows, -1)
+        pos = (slot * n + i, slot * n + i + 1)
+        return FlipStep(call, site, "sort_head", pos, (int(o[row, pos[0]]), int(o[row, pos[1]])))
+    if rule.kind == "threshold":
+        if not (isinstance(out, th.Tensor) and out.dtype == th.bool and tuple(out.shape) == tuple(g.shape)):
+            return None
+        return FlipStep(call, site, "threshold", (int(elem),), (int(bool(out.reshape(rows, -1)[row, elem])),))
+    return None
+
+
+class TieMargins(TorchFunctionMode):
+    """Per row: the smallest margin over every MARGIN site the forward executed (module docs). With
+    ``near_eps`` > 0 it also records each row's NEAR elements for the flip-judge (`flippable`)."""
+
+    def __init__(self, rows: int, keep_calls: bool = False, near_eps: float = 0.0) -> None:
         super().__init__()
         self.rows = int(rows)
+        self.near_eps = float(near_eps)
+        #: the site of every MARGIN call, in call order (a flip forward must reproduce it)
+        self.call_sites: List[str] = []
+        #: per row: how many MARGIN calls hold a near element, and how many near elements in all
+        self.near_calls = np.zeros(self.rows, dtype=np.int64)
+        self.near_elems = np.zeros(self.rows, dtype=np.int64)
+        self._steps: Dict[int, FlipStep] = {}
         #: a measurement driver's switch: every MARGIN call's per-row margin, in call order (site, array)
         self.calls: Optional[List[Tuple[str, np.ndarray]]] = [] if keep_calls else None
         self.margin = np.full(self.rows, np.inf)
@@ -284,6 +362,11 @@ class TieMargins(TorchFunctionMode):
         if g.dim() == 0 or g.shape[0] != self.rows:
             raise TieMarginError(f"[K9(b)] the MARGIN site {site} ({res.src!r}) is not row-major: its operand has "
                                  f"shape {tuple(args[0].shape)} for {self.rows} rows — its margin cannot be attributed")
+        call = len(self.call_sites)
+        self.call_sites.append(site)
+        if self.near_eps > 0:
+            self._note_near(rule, name, args, kwargs, out, g, call, site)
+        out = self._resolve(call, site, out)
         per = g.reshape(self.rows, -1).amin(dim=1)
         per = th.where(th.isnan(per), th.zeros_like(per), per).cpu().numpy()   # a NaN operand is no margin
         if self.calls is not None:
@@ -305,6 +388,95 @@ class TieMargins(TorchFunctionMode):
             raise TieMarginError(
                 "[K9(b)] the tie-margin recorder saw NO torch op in the forward: it ran opaque to it (compiled?) "
                 "— the margins would read 'no tie' on every row")
+
+    def _note_near(self, rule: SS.Rule, name: str, args: Tuple[Any, ...], kwargs: Dict[str, Any], out: Any,
+                   g: th.Tensor, call: int, site: str) -> None:
+        near = ~(g.reshape(self.rows, -1) >= self.near_eps)        # a NaN margin is near (and never flippable)
+        cnt = near.sum(dim=1).cpu().numpy()
+        hit = np.flatnonzero(cnt > 0)
+        if not hit.size:
+            return
+        self.near_calls[hit] += 1
+        self.near_elems[hit] += cnt[hit]
+        one = np.flatnonzero(cnt == 1)
+        if not one.size or rule.kind not in FLIP_KINDS:
+            return
+        first = near[th.as_tensor(one, device=near.device)].to(th.uint8).argmax(dim=1).cpu().numpy()
+        for r, el in zip(one.tolist(), first.tolist()):
+            st = _flip_step(rule, name, args, kwargs, out, g, int(r), int(el), self.rows, self.near_eps, call, site)
+            if st is not None:
+                self._steps[int(r)] = st
+
+    def _resolve(self, call: int, site: str, out: Any) -> Any:
+        """The op's output as the forward continues with it: unchanged here (`TieFlip` overrides it)."""
+        return out
+
+    def flippable(self) -> np.ndarray:
+        """[rows] bool: the row's ONLY near element (one MARGIN call, one element) is one the flip can resolve
+        the other way (`FLIP_KINDS`, an isolated sort pair), so the row has exactly two resolutions."""
+        ok = np.zeros(self.rows, dtype=bool)
+        if self._steps:
+            ok[np.fromiter(self._steps, dtype=np.int64)] = True
+        return ok & (self.near_calls == 1) & (self.near_elems == 1)
+
+    def flip_plan(self, rows: Any) -> Dict[int, List[Tuple[int, FlipStep]]]:
+        """{MARGIN call index: [(row, its step), ...]} for ``rows`` (each must be `flippable`)."""
+        ok = self.flippable()
+        plan: Dict[int, List[Tuple[int, FlipStep]]] = {}
+        for r in np.asarray(rows, dtype=np.int64).reshape(-1).tolist():
+            if not ok[r]:
+                raise TieMarginError(f"[K9(b)] row {r} is not flippable: its near ties are not ONE element "
+                                     "the flip can resolve")
+            st = self._steps[r]
+            plan.setdefault(st.call, []).append((r, st))
+        return plan
+
+
+class TieFlip(TieMargins):
+    """Re-run the forward with each planned row's ONE near element resolved the OTHER way than the recording
+    forward resolved it (`gen3_behaviour_tie_flip_judge_v1`): a sort pair's two candidates put in the order
+    opposite to the recorded one, a threshold's bool the opposite of the recorded one. Every MARGIN call up
+    to the last planned one must issue from the recorded site, and a planned pair must hold the recorded two
+    candidates, else `TieMarginError` (this forward did not reproduce the one the plan was read from). Call
+    `check_applied` after the forward."""
+
+    def __init__(self, rows: int, plan: Dict[int, List[Tuple[int, FlipStep]]], call_sites: List[str]) -> None:
+        super().__init__(rows)
+        self.plan = plan
+        self.expect = list(call_sites)
+        self.last = max(plan) if plan else -1
+        self.applied = 0
+        self.flipped = np.zeros(self.rows, dtype=bool)
+
+    def _resolve(self, call: int, site: str, out: Any) -> Any:
+        if call <= self.last and (call >= len(self.expect) or self.expect[call] != site):
+            raise TieMarginError(f"[K9(b)] the flip forward diverged at MARGIN call {call}: {site}, where the "
+                                 f"recording forward ran {self.expect[call] if call < len(self.expect) else 'nothing'}")
+        steps = self.plan.get(call)
+        if not steps:
+            return out
+        o = out.clone(memory_format=th.contiguous_format)
+        flat = o.reshape(self.rows, -1)
+        for r, st in steps:
+            if st.kind == "sort_head":
+                a, b = st.pos
+                have = sorted((int(flat[r, a]), int(flat[r, b])))
+                if have != sorted(st.witness):
+                    raise TieMarginError(f"[K9(b)] the flip forward's pair at {site}, row {r}, holds candidates "
+                                         f"{have}; the recording forward's held {sorted(st.witness)}")
+                flat[r, a], flat[r, b] = st.witness[1], st.witness[0]
+            else:
+                flat[r, st.pos[0]] = not bool(st.witness[0])
+            self.applied += 1
+            self.flipped[r] = True
+        return o
+
+    def check_applied(self) -> None:
+        """Raise `TieMarginError` unless every planned flip was applied."""
+        want = sum(len(v) for v in self.plan.values())
+        if self.applied != want:
+            raise TieMarginError(f"[K9(b)] the flip forward applied {self.applied} of {want} planned flips "
+                                 "(it never reached a planned MARGIN call)")
 
 
 def selection_gaps(policy: Any, obs: Dict[str, np.ndarray], actions: Any, masks: Any, device: Any

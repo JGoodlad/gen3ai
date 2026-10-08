@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,385-line file. **The ledger itself is append-only and is never edited by this**;
+23,435-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**817 headings · 762 dated · 2026-08-01 → 2026-10-08 · ledger 23,385 lines.**
+**818 headings · 763 dated · 2026-08-01 → 2026-10-08 · ledger 23,435 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -837,3 +837,4 @@ rename.
   - `L23343` · `2026-10-08` · BUILT + MEASURED · **POKE-ENV RETIREMENT P6 slice 4: ONE Rust side reader — `core_events --obs-stream` (the prober's batch reader, P5) now folds through `pokesim::side_reader::SideReader` (P4's, behind `sim_bridge`'s core observation mode, `live_reader` and `bot_reader`); old vs new BYTE-IDENTICAL on 1,200 banked streams (43,432 decisions, 18,839 rows) of 240 core-trace battles (F-P5-8 closed)**
   - `L23361` · `2026-10-08` · FINDING (no fix) · **K9(b) static-screen stop root-caused: `rb_st_static_s1001` (pin `6c6d2e09`) update 1480 sat over the ceiling (0.175) because ONE hypothesis species' per-mon move order had a genuine near tie at the top-six CUT (Salamence: Hydro Pump vs Hidden Power Grass, relative gap 8.3e-5), and `--token-encoding static` repeats a hypothesis row's posterior in every row of that species; the flip moves log π by up to 1.25e-2, so the exclusion is CORRECT and no `gen3_behaviour_tie_consumed_v1`-style clearance applies; neighbouring weights read 0.9–2.0 %**
   - `L23371` · `2026-10-08` · BUILT · **POKE-ENV RETIREMENT P6 slice 6b: the Rust core OWNS the obs golden (its 6 battles banked as input logs while core rows == Python rows == the 991 committed hashes) and the MANDATORY observation benchmark is the Rust encoder's; the four checks that replace the Python oracle are recorded**
+  - `L23386` · `2026-10-08` · FIX + MEASURED · **K9(b) FLIP-JUDGE (`gen3_behaviour_tie_flip_judge_v1`): a current row whose ONLY near tie is ONE element of ONE selection call (an isolated X5 sort pair, or one threshold element) is JUDGED under BOTH resolutions instead of excluded — it passes if either is within the bar and is FATAL if neither is; the u1480 static-screen dump's excluded share falls 10.2 % → 2.6 % (156 rows judged by the flip, all passing); epsilon, the bar and the ceiling unchanged**

@@ -188,7 +188,8 @@ def _describe(judged: Tuple[Judged, ...]) -> str:
 def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], where: str,
           actions: Any, masks: Any,
           details: Optional[Dict[str, Any]] = None,
-          margins: Optional[np.ndarray] = None, sites: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+          margins: Optional[np.ndarray] = None, sites: Optional[List[str]] = None,
+          flip: Optional[Dict[str, np.ndarray]] = None) -> List[Dict[str, Any]]:
     """The offending rows — the largest |Δ| first — to the log (``_DUMP_ROWS_LOG``) and, when the model
     knows its run dir, appended to ``<run_dir>/behaviour_violations.jsonl`` (``_DUMP_ROWS_FILE``).
     ``details`` (the Rust probe's, `_violation_details`) adds per row both log-probs, both full masked
@@ -211,6 +212,9 @@ def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], where: str,
              **({} if margins is None else {"tie_margin": float(np.asarray(margins).reshape(-1)[i]),
                                             "tie_site": None if sites is None else sites[int(i)],
                                             "excluded": bool(ex[i])}),
+             **({} if flip is None or not bool(flip["judged"][i]) else
+                {"judged_by_flip": True, "abs_dlogp_as_is": float(flip["as_is"][i]),
+                 "abs_dlogp_flipped": (None if np.isnan(flip["flipped"][i]) else float(flip["flipped"][i]))}),
              **({} if details is None else row_detail(details, int(i)))} for i in order]
     record = {"where": where, "num_timesteps": int(getattr(model, "num_timesteps", 0) or 0),
               "n_updates": int(getattr(model, "_n_updates", 0) or 0), "precision": "highest",
@@ -346,8 +350,13 @@ def _host(x: Any) -> Any:
 
 def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any = None,
                       masks: Any = None, details: Optional[Dict[str, Any]] = None,
-                      margins: Optional[np.ndarray] = None, sites: Optional[List[str]] = None) -> Dict[str, float]:
+                      margins: Optional[np.ndarray] = None, sites: Optional[List[str]] = None,
+                      flip: Optional[Dict[str, np.ndarray]] = None) -> Dict[str, float]:
     """Judge, dump, and act — the ONE enforcement both implementations call.
+
+    ``flip`` (the FLIP-JUDGE's per-row ``judged`` / ``as_is`` / ``flipped``, aligned to ``abs_d``;
+    `flip_judge`): ``abs_d`` and ``margins`` already carry its verdict (a flip-judged row is judged on the
+    nearer of its two resolutions); it only labels the dumped rows and the message.
 
     ``margins`` (aligned to ``abs_d``; `tie_margins`) are REQUIRED: the gate excludes rows at a selection
     tie, so the judged rows are those at or above ``tie_eps``. DETERMINISTIC: ANY violated condition (or
@@ -383,6 +392,11 @@ def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any
                  f"; judged {int(metrics['behaviour/rows_judged'])} of {a.size} rows — "
                  f"{int(metrics['behaviour/rows_excluded'])} excluded within a relative margin {eps:g} of a "
                  "selection / threshold cutoff")
+    if flip is not None and eps > 0:
+        fj = np.asarray(flip["judged"], dtype=bool)
+        bar = min(j.condition.bar for j in judged if j.condition.statistic != "excluded_frac")
+        exclusion += (f"; {int(fj.sum())} of the judged rows sit at ONE tie and were judged under BOTH its "
+                      f"resolutions ({int((fj & ~(a < bar)).sum())} over the bar under both)")
     msg = (f"[K9(b)] BEHAVIOUR-POLICY MISMATCH: on {where}, the learner's log pi(a|s) differs from the stored "
            f"behaviour log-prob ({_describe(judged)}{exclusion}; largest |d log pi| over every current "
            f"row {worst:.3g}) before any optimizer step — stale rollout weights, an eval-vs-train-mode difference, "
@@ -399,7 +413,7 @@ def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any
     mode = str(getattr(model, "behaviour_check", "off") or "off")
     head = "🛑 " if mode == "fatal" else "🚨 "
     print(f"{head}{msg} [{rule}]", flush=True)
-    _dump(model, abs_d, judged, where, actions, masks, details, margins, sites)
+    _dump(model, abs_d, judged, where, actions, masks, details, margins, sites, flip)
     if mode == "fatal":
         raise BehaviourMismatch(f"{msg} [{rule}]")
     return metrics
@@ -623,17 +637,110 @@ def release_autograd_stashes(policy: Any) -> int:
     return n
 
 
+def probe_forward(model: Any, obs: Dict[str, np.ndarray], acts: Any, masks: Any,
+                  mode: Any = None) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """The probe's ONE learner forward on these rows, under ``mode`` (a `TieMargins` / `TieFlip`, or None):
+    ``(log π of the taken actions, the full masked log-probs [n, A] or None)``, both float64.
+
+    Train mode, grad mode ON (the learner's own forward), but NOTHING SAVED for a backward that never runs
+    (gen3_probe_releases_graph_v1): `saved_tensors_hooks` only changes what autograd keeps, never a kernel or
+    a value, so the log-probs are bit-identical (`update_fit_test`), while an eager forward's saved
+    activations at the micro size were the first update's PEAK (learner_lifecycle.md "The update fit
+    check"). The stashes the forward leaves are released (`release_autograd_stashes`)."""
+    import contextlib
+
+    import torch as th
+    from stable_baselines3.common.utils import obs_as_tensor
+
+    was_training = model.policy.training
+    model.policy.set_training_mode(True)
+    try:
+        with th.enable_grad(), th.autograd.graph.saved_tensors_hooks(_drop_saved, _never_unpacked), \
+                (mode if mode is not None else contextlib.nullcontext()):
+            _v, logp, _ent = model.policy.evaluate_actions(obs_as_tensor(obs, model.device), acts,
+                                                           action_masks=masks)
+        new = logp.detach().float().cpu().numpy().astype(np.float64)
+    finally:
+        model.policy.set_training_mode(was_training)
+    full_new = _stashed_logp(model.policy)        # the SAME forward's full masked log-probs [B, A]
+    del _v, logp, _ent
+    release_autograd_stashes(model.policy)        # gen3_probe_releases_graph_v1 (function docs)
+    return new, full_new
+
+
+def flip_judge(model: Any, rec: Any, obs: Dict[str, np.ndarray], acts: Any, masks: Any, old: np.ndarray,
+               new: np.ndarray, cur: np.ndarray) -> Dict[str, Any]:
+    """THE FLIP-JUDGE (`gen3_behaviour_tie_flip_judge_v1`, 2026-10-08): a current row EXCLUDED only because its
+    near ties sit at ONE element of ONE recorded selection call that the flip can express
+    (`TieMargins.flippable`: an isolated sort pair, or one threshold element) has exactly two resolutions, so
+    it is JUDGED instead of excluded — it PASSES if EITHER resolution's |log π − log μ| is under the bar, and is
+    a mismatch (FATAL as any judged row) if NEITHER is. The resolution this forward took is ``new``; the other
+    is computed only for the rows that need it (the first fails the bar), by ONE extra probe forward of the
+    same rows under `TieFlip`. Rows with near ties at two or more calls (or elements), or a tie the flip
+    cannot express, stay EXCLUDED; epsilon, the bar and the ceiling are unchanged.
+
+    The flip forward must reproduce the recording one: the same MARGIN call sequence up to the last flip, the
+    same tied candidates, and every row at no tie within the bar of its first value (rows are independent),
+    else `TieMarginError` — FATAL under ``fatal``; under ``warn`` it is printed and the rows stay excluded.
+
+    Returns ``margins`` (the rows' margins, +inf for a flip-judged row), per row ``absd`` (the |Δ| the row is
+    judged on: the nearer of its resolutions for a flip-judged row), ``judged``, ``as_is`` and ``flipped``
+    (|Δ| of the other resolution, NaN where it was not run), and the ``behaviour/*`` flip ``metrics``."""
+    import time
+
+    from agents.training.rust_rollout.tie_margins import TieFlip, TieMarginError
+
+    eps = tie_eps()
+    bar = min(c.bar for c in behaviour_gate() if c.statistic != "excluded_frac")
+    margins = np.asarray(rec.margin, dtype=np.float64).copy()
+    excluded = excluded_rows(margins, eps, margins.size)
+    as_is = np.abs(new - old)
+    judged = rec.flippable() & excluded & np.asarray(cur, dtype=bool)
+    need = judged & ~(as_is < bar)
+    flipped = np.full(as_is.shape, np.nan)
+    ms = 0.0
+    if need.any():
+        t0 = time.perf_counter()
+        try:
+            mode = TieFlip(rec.rows, rec.flip_plan(np.flatnonzero(need)), rec.call_sites)
+            alt, _full = probe_forward(model, obs, acts, masks, mode)
+            mode.check()
+            mode.check_applied()
+            moved = ~excluded & ~(np.abs(alt - new) < bar)            # a row at no tie resolves alike
+            if moved.any():
+                raise TieMarginError(f"[K9(b)] the flip forward moved {int(moved.sum())} row(s) it did not flip "
+                                     f"by |d log pi| >= {bar:g}: the rows are not independent, so a flip cannot be "
+                                     "judged on its own row")
+            flipped[need] = np.abs(alt - old)[need]
+        except TieMarginError as exc:
+            if str(getattr(model, "behaviour_check", "off") or "off") == "fatal":
+                raise
+            print(f"🚨 {exc} — the flip-judge's rows stay EXCLUDED this update", flush=True)
+            judged = judged & ~need
+            need = np.zeros_like(need)
+        ms = 1e3 * (time.perf_counter() - t0)
+    absd = as_is.copy()
+    absd[need] = np.minimum(as_is[need], flipped[need])          # NaN in either stays NaN (never rounding)
+    margins[judged] = np.inf
+    n_cur = max(1, int(np.asarray(cur, dtype=bool).sum()))
+    metrics = {"behaviour/rows_judged_by_flip": float(judged.sum()),
+               "behaviour/rows_flip_forward": float(need.sum()),
+               "behaviour/rows_flip_resolved": float((need & (flipped < bar) & ~(as_is < bar)).sum()),
+               "behaviour/excluded_frac_before_flip": float((excluded & cur).sum()) / n_cur,
+               "behaviour/flip_forward_ms": ms}
+    return {"margins": margins, "absd": absd, "judged": judged, "as_is": as_is, "flipped": flipped,
+            "metrics": metrics}
+
+
 def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
     """Run the probe on ``model.rollout_buffer`` (module docs); record ``behaviour/*`` and ``staleness/*``;
     raise `BehaviourMismatch` under ``fatal``. Returns the metrics (None when off)."""
     mode = str(getattr(model, "behaviour_check", "off") or "off")
     if mode == "off":
         return None
-    import contextlib
     import time
 
     import torch as th
-    from stable_baselines3.common.utils import obs_as_tensor
 
     from agents.training.rust_rollout.tie_margins import TieMargins
 
@@ -653,28 +760,12 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
     masks = th.as_tensor(buf.action_masks[t_idx, e_idx]).to(model.device)
     old = buf.log_probs[t_idx, e_idx].astype(np.float64)
     age = ages[t_idx, e_idx]
-    was_training = model.policy.training
-    model.policy.set_training_mode(True)
     # The TIE MARGINS are auxiliary outputs of THIS forward (`tie_margins.TieMargins`: the recorder reads
-    # each declared selection / threshold's operands after the op ran; the forward is unchanged).
-    rec = TieMargins(int(flat.size)) if tie_eps() > 0 else None
+    # each declared selection / threshold's operands after the op ran; the forward is unchanged). It also
+    # notes each row's near elements for the FLIP-JUDGE (gen3_behaviour_tie_flip_judge_v1).
+    rec = TieMargins(int(flat.size), near_eps=tie_eps()) if tie_eps() > 0 else None
     t_rec = time.perf_counter()
-    try:
-        # Grad mode ON (the learner's own forward), but NOTHING SAVED for a backward that never runs
-        # (gen3_probe_releases_graph_v1): `saved_tensors_hooks` only changes what autograd keeps, never a
-        # kernel or a value, so the log-probs are bit-identical (`update_fit_test`), while an eager
-        # forward's saved activations at the micro size were the first update's PEAK
-        # (learner_lifecycle.md "The update fit check").
-        with th.enable_grad(), th.autograd.graph.saved_tensors_hooks(_drop_saved, _never_unpacked), \
-                (rec if rec is not None else contextlib.nullcontext()):
-            _v, logp, _ent = model.policy.evaluate_actions(obs_as_tensor(obs, model.device), acts,
-                                                           action_masks=masks)
-        new = logp.detach().float().cpu().numpy().astype(np.float64)
-    finally:
-        model.policy.set_training_mode(was_training)
-    full_new = _stashed_logp(model.policy)        # the SAME forward's full masked log-probs [B, A]
-    del _v, logp, _ent
-    release_autograd_stashes(model.policy)        # gen3_probe_releases_graph_v1 (function docs)
+    new, full_new = probe_forward(model, obs, acts, masks, rec)
     margins = sites = None
     free = selection_free(model.policy)
     if rec is not None:
@@ -685,9 +776,18 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
             sites = ["" for _ in rec.site]
     d = new - old
     cur = age == 0
+    probe_ms = 1e3 * (time.perf_counter() - t_rec)
+    flip = None
+    if rec is not None and not free:
+        flip = flip_judge(model, rec, obs, acts, masks, old, new, cur)
+        margins = flip["margins"]
     out: Dict[str, float] = {"behaviour/rows_current": float(cur.sum()), "behaviour/rows_probed": float(flat.size),
-                             "behaviour/probe_forward_ms": 1e3 * (time.perf_counter() - t_rec),
+                             "behaviour/probe_forward_ms": probe_ms,
                              "behaviour/selection_free": float(free)}
+    if flip is not None:
+        out.update(flip["metrics"])
+    # the |Δ| each current row is JUDGED on: a flip-judged row's is the nearer of its two resolutions
+    absd = np.abs(d) if flip is None else flip["absd"]
     worst = float(np.abs(d[cur]).max()) if cur.any() else float("nan")
     out["behaviour/max_abs_dlogp_current"] = worst
     clip = model.clip_range(model._current_progress_remaining) if callable(model.clip_range) else float(model.clip_range)
@@ -726,7 +826,7 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
             ci = np.flatnonzero(cur)
             details = None
             mc = None if margins is None else margins[ci]
-            violated = not all(j.ok for j in judge_behaviour(np.abs(d[cur]), margins=mc))
+            violated = not all(j.ok for j in judge_behaviour(absd[cur], margins=mc))
             if violated or bool(getattr(model, "behaviour_scan_all", False)):
                 details = _violation_details(model, buf, t_idx[ci], e_idx[ci], old[ci], new[ci],
                                              None if full_new is None else full_new[ci],
@@ -740,9 +840,10 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
                 out["behaviour/scan_rows_over_bar"] = float(details["scan"]["over_bar"])
                 out["behaviour/scan_max_abs_dlogp"] = float(details["scan"]["max"])
             out.update(enforce_behaviour(
-                model, np.abs(d[cur]), where=f"{int(cur.sum())} rows played at the CURRENT policy version",
+                model, absd[cur], where=f"{int(cur.sum())} rows played at the CURRENT policy version",
                 actions=acts[ci], masks=masks[ci], details=details, margins=mc,
-                sites=None if sites is None else [sites[int(i)] for i in ci]))
+                sites=None if sites is None else [sites[int(i)] for i in ci],
+                flip=None if flip is None else {k: flip[k][ci] for k in ("judged", "as_is", "flipped")}))
     finally:
         if logger is not None:
             for k, v in out.items():

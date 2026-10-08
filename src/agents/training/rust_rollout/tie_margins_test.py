@@ -195,3 +195,80 @@ def test_a_margin_site_whose_tensor_is_not_row_major_is_refused(production):
     with pytest.raises(T.TieMarginError, match="not row-major"):
         with th.no_grad(), rec:
             model.policy.evaluate_actions(obs, th.as_tensor(acts).long(), action_masks=th.as_tensor(masks))
+
+
+# ---------------------------- the FLIP-JUDGE's recorder half (gen3_behaviour_tie_flip_judge_v1, 2026-10-08)
+#: Four rows of 8 descending presences through X5's ONE sort site, read as a SET at cut 6 (the op's per-mon
+#: move order): row 0 an ISOLATED near pair across the cut; row 1 the same pair with a third key near-tied
+#: INSIDE the set (three resolutions, not two); row 2 no tie; row 3 (cuts 3 and 6) a near pair at BOTH cuts.
+_FLIP_KEYS = [[0.9, 0.8, 0.7, 0.6, 0.5, 0.40001, 0.4, 0.1],
+              [0.9, 0.8, 0.7, 0.6, 0.400015, 0.40001, 0.4, 0.1],
+              [0.9, 0.8, 0.7, 0.6, 0.5, 0.45, 0.4, 0.1],
+              [0.9, 0.8, 0.60001, 0.6, 0.5, 0.40001, 0.4, 0.1]]
+
+
+def _sorted_under(mode, keys, cuts):
+    from agents.model.hypothesis_set import SetCuts, stable_order
+
+    key = th.tensor(keys, dtype=th.float32)
+    with mode:
+        return stable_order(key, th.ones_like(key, dtype=th.bool), consumed=SetCuts(cuts))
+
+
+def test_only_a_row_whose_one_near_element_has_exactly_two_resolutions_is_flippable():
+    """The rule's scope, on the real declared sort site: an isolated cut pair is flippable; a pair with a
+    third near key beside it, a row with near pairs at two cuts, and a row at no tie are not."""
+    rec = T.TieMargins(3, near_eps=2e-4)
+    _sorted_under(rec, _FLIP_KEYS[:3], (6,))
+    rec.check()
+    assert (rec.margin[:2] < 2e-4).all() and rec.margin[2] > 2e-4
+    assert rec.flippable().tolist() == [True, False, False]
+    assert rec.near_elems.tolist() == [1, 1, 0]                 # row 1's in-set near pair is not counted
+    rec2 = T.TieMargins(1, near_eps=2e-4)
+    _sorted_under(rec2, [_FLIP_KEYS[3]], (3, 6))
+    assert rec2.near_elems[0] == 2 and not rec2.flippable()[0]
+    with pytest.raises(T.TieMarginError, match="not flippable"):
+        rec.flip_plan([1])
+
+
+def test_the_flip_forward_resolves_the_pair_the_other_way_and_touches_nothing_else():
+    rec = T.TieMargins(3, near_eps=2e-4)
+    order = _sorted_under(rec, _FLIP_KEYS[:3], (6,))
+    flip = T.TieFlip(3, rec.flip_plan([0]), rec.call_sites)
+    got = _sorted_under(flip, _FLIP_KEYS[:3], (6,))
+    flip.check_applied()
+    want = order.clone()
+    want[0, 5], want[0, 6] = order[0, 6], order[0, 5]
+    assert th.equal(got, want) and flip.flipped.tolist() == [True, False, False]
+    # which candidate sits inside the six moved: what the op reads
+    assert set(got[0, :6].tolist()) != set(order[0, :6].tolist())
+
+
+def test_a_flip_forward_that_does_not_reproduce_the_recording_is_refused():
+    rec = T.TieMargins(3, near_eps=2e-4)
+    _sorted_under(rec, _FLIP_KEYS[:3], (6,))
+    other = [list(r) for r in _FLIP_KEYS[:3]]
+    other[0] = [0.9, 0.8, 0.7, 0.6, 0.40001, 0.5, 0.1, 0.4]                # the tied pair is two other candidates
+    with pytest.raises(T.TieMarginError, match="holds candidates"):
+        _sorted_under(T.TieFlip(3, rec.flip_plan([0]), rec.call_sites), other, (6,))
+    with pytest.raises(T.TieMarginError, match="diverged at MARGIN call 0"):
+        _sorted_under(T.TieFlip(3, rec.flip_plan([0]), ["damage_op.py:1 argmax"]), _FLIP_KEYS[:3], (6,))
+    never = T.TieFlip(3, {5: rec.flip_plan([0])[0]}, rec.call_sites + ["x"] * 5)
+    _sorted_under(never, _FLIP_KEYS[:3], (6,))
+    with pytest.raises(T.TieMarginError, match="applied 0 of 1"):
+        never.check_applied()
+
+
+def test_a_threshold_flip_inverts_its_one_element_and_other_kinds_are_not_expressed():
+    rule = SS.Rule("threshold", zero_exact=True)
+    x = th.tensor([[0.5, 0.30001], [0.5, 0.9]], dtype=th.float64)
+    out = x > 0.3
+    g = T.site_margin(rule, "gt", (x, 0.3), {})
+    st = T._flip_step(rule, "gt", (x, 0.3), {}, out, g, 0, 1, 2, 2e-4, 0, "s")
+    assert st is not None and st.pos == (1,) and st.witness == (1,)
+    flip = T.TieFlip(2, {0: [(0, st)]}, ["s"])
+    assert flip._resolve(0, "s", out).tolist() == [[True, False], [True, True]]
+    topk = SS.Rule("topk")
+    xk = th.tensor([[0.9, 0.5, 0.5 * (1 - 3e-6), 0.1]], dtype=th.float64)
+    gk = T.site_margin(topk, "topk", (xk, 2, -1), {})
+    assert T._flip_step(topk, "topk", (xk, 2, -1), {}, th.topk(xk, 2), gk, 0, 0, 1, 2e-4, 0, "s") is None
