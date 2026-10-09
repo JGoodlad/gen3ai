@@ -1,0 +1,31 @@
+{# `/game`'s shared fragments. Every abbreviation carries a `title` (the glossary the session serves). #}
+
+{% macro hpbar(pct) %}{% if pct is none %}<span class="hpbar" title="HP not seen yet"><span class="hpfill unk" style="width:100%"></span></span>{% else %}<span class="hpbar" title="{{ '%.0f' | format(pct) }}% HP"><span class="hpfill {{ 'low' if pct < 25 else ('mid' if pct < 50 else '') }}" style="width:{{ '%.0f' | format(pct) }}%"></span></span>{% endif %}{% endmacro %}
+
+{% macro bar(p, cls="") %}<span class="bar {{ cls }}"><span style="width:{{ '%.1f' | format((p or 0) * 100) }}%"></span></span>{% endmacro %}
+
+{% macro pc(p, digits=0) %}{% if p is none %}<span class="muted" title="not available">—</span>{% else %}{{ ("%." ~ digits ~ "f") | format(p * 100) }}%{% endif %}{% endmacro %}
+
+{% macro side_board(side, label, cls) %}
+<div class="gside {{ cls }}">
+  <div class="gside-head"><span class="who">{{ label }}</span>
+    {% for k, v in (side.conditions or {}).items() %}<span class="badge hazard" title="{{ 'Spikes layers' if k == 'spikes' else 'a screen / side effect' }}">{{ {'spikes': 'Spikes', 'reflect': 'Reflect', 'lightscreen': 'Light Screen', 'safeguard': 'Safeguard', 'mist': 'Mist'}.get(k, k) }}{% if k == 'spikes' %} ×{{ v }}{% endif %}</span>{% endfor %}
+    {% for st, n in (side.boosts or {}).items() %}<span class="badge boost" title="stat stage of the mon in battle">{{ st }} {{ '%+d' | format(n) }}</span>{% endfor %}
+    {% for v in (side.volatiles or []) %}<span class="badge status" title="a temporary effect on the mon in battle">{{ v }}</span>{% endfor %}
+  </div>
+  <ul class="gmons">
+    {% for mon in side.mons %}
+    <li class="{{ 'active' if mon.active else '' }} {{ 'fainted' if mon.fainted else '' }}">
+      <span class="species">{{ mon.species }}</span>
+      {{ hpbar(mon.hp_pct) }}
+      <span class="hp">{% if mon.fainted %}fainted{% elif mon.hp_pct is none %}?{% else %}{{ '%g' | format(mon.hp_pct) }}%{% endif %}</span>
+      {% if mon.status and not mon.fainted %}<span class="badge status" title="status condition">{{ mon.status }}</span>{% endif %}
+      {% if mon.active %}<span class="badge flag switch" title="the mon in battle">in</span>{% endif %}
+    </li>
+    {% endfor %}
+    {% if side.team_size and side.mons | length < side.team_size %}
+    <li class="unseen muted">{{ side.team_size - side.mons | length }} not seen yet</li>
+    {% endif %}
+  </ul>
+</div>
+{% endmacro %}

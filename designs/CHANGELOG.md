@@ -13111,3 +13111,30 @@ The 2026-10-03 bottleneck profile counted ~764 device→host reads per productio
   `learner_gates_test.py`.
 - **Deferred to a GPU lease:** update wall, host-blocked time, GPU busy % (`designs/training/learner_gates.md` "The
   deferred reads").
+
+## 2026-10-08 — PROBER: `/game`, the battle viewer (turn story · opponent intent · attention heat maps · operator facts; no model change)
+
+Owner request: "The prober seems very outdated … make it better, especially now that we have the full
+Rust protocol parsing so each turn has its details. Improve the battle prober including opponent intent,
+and show where the model spent its attention, like a heat map." Scope ruling (owner, same day): the
+prober supports only the CURRENT architecture — the pinned-checkout forward worker that was designed for
+archived runs was DROPPED before it was built. Design note: `designs/prober/battle_view_v2.md`.
+
+- **The turn story (model-free):** `engine/turn_events.py` folds the battle's whole protocol (the Rust
+  core's, for a core trace) into typed per-turn events — moves, damage / heal with their `[from]` source
+  (recoil, Leftovers, sand, Spikes), crits, effectiveness, statuses, boosts, switches, faints, weather,
+  hazards, screens — and the board after each turn. `ProbeSession.battle_story`.
+- **The model panels:** `ProbeModel.capture_battle` (`model_capture.py`) runs ONE batched eager CPU forward
+  over a battle's stored observations with read-only hooks; `engine/readout.py` turns it into the flat
+  opponent pointer (every candidate, the opponent's actual action mapped by the training rule, the
+  battle's calibration), the hypothesis tokens and their evolution, the pointer head's per-action scores,
+  the trunk's attention (recomputed from each layer's own `in_proj` + bias; pinned against the layer's
+  output) and the operator facts (the move-resolution columns greyed when that family is not built).
+  `ProbeSession.battle_readout` / `decision_attention`; measured ~0.12 s for a 65-decision battle on the
+  production arch, CPU.
+- **The page:** `/game` (+ `/partials/game/model`, `/partials/game/attention`, `/api/game/story|readout|attention`),
+  a turn list beside the selected decision, keyboard navigation, links in from `/battles`, `/scan`,
+  `/battle` and `/analyze`. It takes the nav tab `/battle` held (the phone header's budget).
+- **Bug fixed:** `ProbeModel.damage_op_view` decoded the DamageOperator's matrices on a production
+  checkpoint, where `op_drop_renders` computes but does not serialize them — it read past the row's end
+  and `/analyze`'s operator panel was silently ABSENT on every production-arch checkpoint.

@@ -175,7 +175,8 @@ def test_probe_session_carries_every_command_family():
     for method in ("run_summary", "battles", "decision_table", "battle_overview", "battle_turns",
                    "scan", "triage", "awareness_scan", "loops", "analyze", "find", "falsify",
                    "lookahead", "better_line", "replay_counterfactual", "falsify_scan",
-                   "calibration", "probe", "switch_vs_info", "history_saliency", "probe_model"):
+                   "calibration", "probe", "switch_vs_info", "history_saliency", "probe_model",
+                   "battle_story", "battle_readout", "decision_attention"):
         assert callable(getattr(ProbeSession, method, None)), (
             f"`ProbeSession.{method}` is gone — a mixin dropped out of the base list in "
             f"`session/core.py`, and nothing else in the tree would fail at import time.")

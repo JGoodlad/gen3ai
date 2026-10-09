@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% import "_game_macros.html" as g %}
+{% block title %}game{% endblock %}
+
+{% block content %}
+<h1>Battle viewer</h1>
+<p class="lede">
+  One battle, decision by decision. On the left every turn; on the right what happened in it, the
+  board, what we chose and — from the model itself — what it expected the opponent to do, who it
+  thinks is on their team, where its attention went and what its damage physics said.
+  <span class="muted">Keys: <kbd title="previous decision">←</kbd> <kbd title="next decision">→</kbd>
+  (or <kbd>j</kbd>/<kbd>k</kbd>) step decisions, <kbd title="previous battle">[</kbd>
+  <kbd title="next battle">]</kbd> step battles.</span>
+</p>
+
+{% if empty %}
+<section class="card empty-state">
+  <h2>no battles captured yet</h2>
+  <p>{{ empty }}</p>
+  <p class="muted">Forensic traces are written per eval cycle. Until the first one,
+    <a class="rowlink" href="/?run={{ run | urlencode }}">the run summary</a> is the view with
+    something to show.</p>
+</section>
+{% elif story %}
+{% set base = "/game?run=" ~ ((run or '') | urlencode) ~ "&battle=" ~ (story.short_id | urlencode) %}
+<section class="card gamehead">
+  <form class="filters" method="get" action="/game">
+    <input type="hidden" name="run" value="{{ run or '' }}">
+    <label>battle
+      <select name="battle" onchange="this.form.submit()">
+        {% for b in battles %}
+        <option value="{{ b.short_id }}" {% if b.short_id == selected.short_id %}selected{% endif %}>
+          {{ b.short_id }} — {{ b.outcome }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <noscript><button type="submit">open</button></noscript>
+  </form>
+  <p class="battlehead">
+    {% if prev_battle %}<a class="pagelink" data-nav="prev-battle" href="/game?run={{ (run or '') | urlencode }}&battle={{ prev_battle | urlencode }}" title="previous battle ([)">‹ battle</a>{% endif %}
+    <span class="mono strong">{{ story.short_id }}</span>
+    <span class="{{ story.outcome }}">{{ story.outcome | upper }}</span>
+    <span class="muted">vs {{ story.opponent }} · step {{ "{:,}".format(story.step) }} ·
+      {{ story.n_turns }} turns / {{ story.n_decisions }} decisions</span>
+    {% if next_battle %}<a class="pagelink" data-nav="next-battle" href="/game?run={{ (run or '') | urlencode }}&battle={{ next_battle | urlencode }}" title="next battle (])">battle ›</a>{% endif %}
+  </p>
+</section>
+
+<div class="gamegrid">
+  <nav class="turnlist card" aria-label="turns">
+    <h2>Turns</h2>
+    <ol>
+    {% for t in story.turns %}
+      {% set first = t.decisions[0] if t.decisions else none %}
+      {% set cur = dec and t.turn == dec.turn %}
+      {% set faint = t.events | selectattr("kind", "equalto", "faint") | list %}
+      <li class="{{ 'current' if cur else '' }}">
+        {% if first is not none %}<a href="{{ base }}&inv={{ first }}#decision" {% if cur %}aria-current="true"{% endif %}>{% else %}<span class="nolink">{% endif %}
+          <span class="tn">T{{ t.turn }}</span>
+          {% for e in t.events if e.kind in ('move', 'switch', 'drag') %}{% if loop.index <= 2 %}<span class="tev {{ e.side }}">{{ e.move or ('→ ' ~ (e.mon or '')) }}</span>{% endif %}{% endfor %}
+          {% for e in faint %}<span class="badge flag faint" title="{{ e.text }}">✕ {{ e.mon }}</span>{% endfor %}
+        {% if first is not none %}</a>{% else %}</span>{% endif %}
+      </li>
+    {% endfor %}
+    </ol>
+  </nav>
+
+  <div class="gamemain" id="decision">
+  {% if dec %}
+    <section class="card">
+      <p class="decnav">
+        {% if inv > 0 %}<a class="pagelink" data-nav="prev" href="{{ base }}&inv={{ inv - 1 }}#decision" title="previous decision (←)">‹ previous</a>{% endif %}
+        <span class="strong">Turn {{ dec.turn }} · decision {{ inv + 1 }} of {{ story.n_decisions }}</span>
+        <span class="muted">{{ dec.phase | replace('_', ' ') }}</span>
+        {% if inv + 1 < story.n_decisions %}<a class="pagelink" data-nav="next" href="{{ base }}&inv={{ inv + 1 }}#decision" title="next decision (→)">next ›</a>{% endif %}
+        <a class="small" href="/analyze?run={{ (run or '') | urlencode }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}">deep analysis</a>
+        <a class="small" href="/battle?run={{ (run or '') | urlencode }}&battle={{ story.short_id | urlencode }}&start={{ dec.turn }}#inv-{{ inv }}">classic replay</a>
+      </p>
+
+      {% if board_before %}
+      <h2>The board at the start of turn {{ dec.turn }}</h2>
+      <div class="gboard">
+        {{ g.side_board(board_before.we, "us", "our") }}
+        {{ g.side_board(board_before.opp, "them", "opp") }}
+      </div>
+      <p class="muted small">weather: {{ board_before.weather or 'none' }}</p>
+      {% endif %}
+
+      <h2>What we chose <span class="muted small" title="the recorded policy distribution over the legal actions">(the policy's probabilities)</span></h2>
+      <ul class="dist">
+        {% for a in dec.actions if a.label %}
+        <li class="{{ 'chosen' if a.chosen else '' }} {{ '' if a.valid else 'invalid' }}" title="{{ 'not legal this turn' if not a.valid else '' }}">
+          <span class="p">{{ g.pc(a.prob) }}</span>{{ g.bar(a.prob) }}<span class="lbl">{{ a.display or a.label }}{% if a.chosen %} ✔{% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    {% if turn %}
+    <section class="card">
+      <h2>What happened in turn {{ turn.turn }}</h2>
+      <ol class="gevents">
+        {% for e in turn.events %}
+        <li class="ev {{ e.kind }} {{ e.side or 'field' }}" title="{{ e.raw or '' }}">
+          <span class="evk">{{ e.kind }}</span> {{ e.text }}
+        </li>
+        {% else %}
+        <li class="muted">no events recorded for this turn</li>
+        {% endfor %}
+      </ol>
+      {% if turn.board %}
+      <details class="small"><summary>the board after the turn</summary>
+        <div class="gboard">
+          {{ g.side_board(turn.board.we, "us", "our") }}
+          {{ g.side_board(turn.board.opp, "them", "opp") }}
+        </div>
+      </details>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <div id="game-model"
+         hx-get="/partials/game/model?run={{ (run or '') | urlencode }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}"
+         hx-trigger="load" hx-swap="innerHTML">
+      <section class="card"><p class="muted"><span class="spinner"></span>
+        loading the checkpoint and re-running the model on this battle's stored observations…</p></section>
+    </div>
+  {% else %}
+    <section class="card"><p class="muted">this battle has no recorded decisions.</p></section>
+  {% endif %}
+  </div>
+</div>
+
+<details class="card gloss"><summary>what the terms mean</summary>
+  <dl>{% for k, v in story.glossary.items() %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}</dl>
+</details>
+{% endif %}
+{% endblock %}

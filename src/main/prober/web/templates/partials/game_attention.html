@@ -1,0 +1,30 @@
+{% import "_macros.html" as m %}
+{# One decision's attention heat map (`ProbeSession.decision_attention`, verbatim) + its layer/head
+   picker, which re-fetches this fragment in place. #}
+{% if error %}
+<p class="{{ 'warnline' if error.kind == 'arch_drift' else 'err' }} small">{{ error.text }}</p>
+{% elif att %}
+<form class="filters attnpick" hx-get="/partials/game/attention" hx-target="#game-attn" hx-swap="innerHTML" hx-trigger="change">
+  <input type="hidden" name="run" value="{{ run or '' }}">
+  <input type="hidden" name="battle" value="{{ battle }}">
+  <input type="hidden" name="inv" value="{{ inv }}">
+  <label>layer
+    <select name="layer">
+      <option value="" {% if att.layer is none %}selected{% endif %}>average</option>
+      {% for l in range(att.n_layers) %}<option value="{{ l }}" {% if att.layer == l %}selected{% endif %}>{{ l + 1 }}</option>{% endfor %}
+    </select></label>
+  <label>head
+    <select name="head">
+      <option value="" {% if att.head is none %}selected{% endif %}>average</option>
+      {% for h in range(att.n_heads) %}<option value="{{ h }}" {% if att.head == h %}selected{% endif %}>{{ h + 1 }}</option>{% endfor %}
+    </select></label>
+  <noscript><button type="submit">draw</button></noscript>
+</form>
+{{ m.chart("game-attention", spec) }}
+{% if att.query %}
+<details class="small"><summary>what the decision summary (the policy's state query) looked at</summary>
+  <ul class="dist attn">{% for w in att.query %}{% if w > 0.01 %}<li><span class="p">{{ '%.0f' | format(w * 100) }}%</span><span class="bar"><span style="width:{{ '%.1f' | format(w * 100) }}%"></span></span><span class="lbl">{{ att.labels[loop.index0].label if loop.index0 < att.labels | length else 'belief summary ' ~ (loop.index0 - att.labels | length + 1) }}</span></li>{% endif %}{% endfor %}</ul>
+</details>
+{% endif %}
+<p class="muted small">{{ att.note }}.</p>
+{% endif %}

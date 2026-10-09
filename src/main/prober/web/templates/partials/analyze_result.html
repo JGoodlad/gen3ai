@@ -939,6 +939,7 @@
   <a class="pagelink" href="/analyze?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;inv={{ a.inv_index + 1 }}">next decision →</a>
   {% endif %}
   <a class="pagelink" href="/battle?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;start={{ a.turn }}#inv-{{ a.inv_index }}">read the game around turn {{ a.turn }}</a>
+  <a class="pagelink" href="/game?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;inv={{ a.inv_index }}#decision">open in the battle viewer</a>
   <button class="linky copybtn" type="button"
           data-copy="python -m main.prober.query analyze {{ battle_path }} {{ a.inv_index }}"
           title="Copy the equivalent CLI invocation">copy cmd</button>

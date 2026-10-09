@@ -868,8 +868,12 @@ class ProbeModel:
         # block that used to share the `topk_k` knob was deleted — gen3_op_block_trim_v1). Likewise pass
         # `matrices_outgoing` for the outgoing matrix. (Missing decode flags were the cause of the nonsense
         # "acc-580" render on matrix runs.)
-        matrices_in_k = int(getattr(op, "matrices_incoming_k", 0))
-        matrices_out = bool(getattr(op, "matrices_outgoing", False))
+        # `op_drop_renders` (gen3_op_lean_forward_v1, ON in production) COMPUTES both matrices but does
+        # not SERIALIZE them into the row, so decoding them read past its end and the whole view came
+        # back None on every production-arch checkpoint (found 2026-10-08 by `/game`'s operator panel).
+        dropped = bool(getattr(op, "drop_renders", False))
+        matrices_in_k = 0 if dropped else int(getattr(op, "matrices_incoming_k", 0))
+        matrices_out = False if dropped else bool(getattr(op, "matrices_outgoing", False))
         view = decode_damage_block(
             raw[0].detach().cpu().numpy(), outgoing=bool(op.outgoing),
             matrices_outgoing=matrices_out, matrices_incoming_k=matrices_in_k)
@@ -959,6 +963,44 @@ class ProbeModel:
         return {"opp_probs": probs,
                 "opp_slots": _slots(self._opp_team_off),
                 "our_slots": _slots(self._our_team_off)}
+
+    def team_species(self, obs: np.ndarray) -> "dict[str, list[str]]":
+        """Per OBS TEAM SLOT, both sides: the species the obs carries (``""`` for an opponent slot not yet
+        revealed — the AUTHORITATIVE revealed bit is ``species_known``, as in :meth:`move_belief`). Slot i
+        of ``our`` is action i (a switch) and trunk token i; slot j of ``opp`` is trunk token 6 + j."""
+        import agents.observation.constants as C
+
+        arr = np.asarray(obs)
+        stride = self.offsets.pokemon_full_dim
+        out: "dict[str, list[str]]" = {}
+        for side, base in (("our", self._our_team_off), ("opp", self._opp_team_off)):
+            names = []
+            for i in range(6):
+                block = arr[base + i * stride: base + (i + 1) * stride]
+                known = block.shape[0] >= stride and bool(block[C.POKEMON_SPECIES_KNOWN_OFFSET] > 0.5)
+                d = (self._pokemon_encoder.describe_vector(block)
+                     if (known and self._pokemon_encoder is not None) else {})
+                names.append((d.get("species") or "").strip() if known else "")
+            out[side] = names
+        return out
+
+    def capture_battle(self, obs: np.ndarray, masks: np.ndarray) -> dict:
+        """ONE batched EAGER forward over a battle's recorded decisions with read-only hooks
+        (`model_capture.capture`): the action distribution, the pointer head's raw scores, the win
+        probability, the flat opponent pointer + hypothesis set, the trunk's attention, the operator's
+        stash. Plus each row's obs team species (for labelling the trunk's seats). Absent heads are
+        absent keys. `/game`'s model panels read this through `ProbeSession.battle_readout`."""
+        from main.prober.model_capture import capture
+
+        obs = np.asarray(obs, dtype=np.float32)
+        self._check_obs_dim(obs)
+        fe = getattr(self._policy, "features_extractor", None)
+        eager = getattr(fe, "_orig_mod", None) if fe is not None else None
+        if eager is not None:                      # a compiled extractor skips module hooks
+            raise RuntimeError("capture_battle needs the EAGER extractor (the prober was started with --compile)")
+        res = capture(self._policy, obs, np.asarray(masks))
+        res["teams"] = [self.team_species(row) for row in obs]
+        return res
 
     def spread_belief_view(self, obs: np.ndarray, mask: np.ndarray):
         """The SpreadBelief's predicted opp DERIVED stats for THIS obs — per opp slot

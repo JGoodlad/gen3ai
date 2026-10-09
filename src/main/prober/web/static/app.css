@@ -672,3 +672,76 @@ details.traj ul.events li { font-family: var(--mono); font-size: 12px; line-heig
   form.filters.cf select, form.filters.cf input { width: 100%; font-size: 16px; }
   form.filters.cf label.check input { width: auto; }
 }
+
+/* ---------------------------------------------------------------------------------------- /game
+   The battle viewer: a turn list beside the selected decision. The turn list scrolls INSIDE itself
+   (never the page); on a phone it collapses to a short strip above the decision. */
+.gamegrid { display: grid; grid-template-columns: minmax(180px, 250px) minmax(0, 1fr); gap: 14px;
+            align-items: start; }
+.gamemain { min-width: 0; }
+.turnlist { position: sticky; top: 56px; max-height: calc(100vh - 80px); overflow-y: auto; padding: 10px; }
+.turnlist h2 { margin-top: 0; }
+.turnlist ol { list-style: none; margin: 0; padding: 0; }
+.turnlist li a, .turnlist li .nolink { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline;
+                                       padding: 3px 6px; border-radius: 6px; text-decoration: none;
+                                       color: var(--text); font-size: 12px; }
+.turnlist li .nolink { color: var(--dim); }
+.turnlist li a:hover { background: var(--surface-2); }
+.turnlist li.current a { background: var(--surface-2); outline: 1px solid var(--accent); }
+.turnlist .tn { font-family: var(--mono); color: var(--dim); min-width: 2.6em; }
+.turnlist .tev { font-size: 11px; overflow-wrap: anywhere; }
+.turnlist .tev.we { color: var(--good); }
+.turnlist .tev.opp { color: var(--bad); }
+p.decnav { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin-top: 0; }
+kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-radius: 4px;
+      padding: 0 4px; background: var(--surface-2); }
+.gboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gside { min-width: 0; }
+.gside-head { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
+.gside .who { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.gside.our .who { color: var(--good); }
+.gside.opp .who { color: var(--bad); }
+.badge.hazard { color: var(--warn); }
+ul.gmons { list-style: none; margin: 0; padding: 0; }
+ul.gmons li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; padding: 1px 0; }
+ul.gmons li.active .species { font-weight: 700; }
+ul.gmons li.fainted { opacity: 0.45; }
+ul.gmons li .species { min-width: 6.5em; }
+ul.gmons .hp { font-family: var(--mono); color: var(--dim); }
+.hpfill.unk { background: var(--line); }
+ol.gevents { list-style: none; margin: 0; padding: 0 0 0 10px; border-left: 2px solid var(--line); }
+ol.gevents li { font-size: 13px; padding: 2px 0; overflow-wrap: anywhere; }
+ol.gevents li.we { color: var(--good); }
+ol.gevents li.opp { color: var(--bad); }
+ol.gevents li.field { color: var(--dim); }
+ol.gevents li.move { font-weight: 600; }
+ol.gevents li.faint { font-weight: 700; }
+ol.gevents li.supereffective, ol.gevents li.crit { color: var(--warn); }
+ol.gevents .evk { display: inline-block; min-width: 6.5em; font-family: var(--mono); font-size: 10px;
+                  text-transform: uppercase; color: var(--dim); font-weight: 400; }
+ul.dist.intent li.actual .lbl { font-weight: 700; color: var(--text); }
+ul.dist .bar.opp > span { background: var(--bad); }
+ul.dist.intent li.actual .bar > span { background: var(--warn); }
+/* On /game the label FOLLOWS its bar (a fixed-width bar column), so a long list reads row by row. */
+.gamemain ul.dist li { grid-template-columns: 46px minmax(70px, 160px) 1fr; }
+.gamemain ul.dist .lbl { font-family: inherit; }
+ul.dist.one { min-width: 160px; }
+.gamemain ul.dist.one li { grid-template-columns: 46px 1fr 0; }
+.gamemain ul.dist.attn li { grid-template-columns: 40px 90px 1fr; }
+ul.dist.attn li.history .lbl { color: var(--dim); }
+table.gpolicy tr.chosen td, table.gop tr.chosen td { font-weight: 700; }
+table.gpolicy tr.invalid { opacity: 0.45; }
+th.absent, td.absent { opacity: 0.4; }
+.gattn-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.gattn h3 { font-size: 13px; margin: 6px 0; }
+.warnline { color: var(--warn); }
+details.gloss dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; font-size: 13px; }
+details.gloss dt { font-family: var(--mono); color: var(--accent); }
+details.gloss dd { margin: 0; }
+
+@media (max-width: 720px) {
+  .gamegrid { grid-template-columns: 1fr; }
+  .turnlist { position: static; max-height: 170px; }
+  .gboard, .gattn-rows { grid-template-columns: 1fr; }
+  details.gloss dl { grid-template-columns: 1fr; }
+}

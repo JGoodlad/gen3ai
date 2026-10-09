@@ -375,6 +375,36 @@
     metricHelp(el);
   });
 
+  /* `/game`'s keyboard: ←/→ (or j/k) step decisions, [ / ] step battles — by FOLLOWING the page's own
+     links (data-nav), so the keys can never reach a position the links cannot, and every position stays
+     a plain URL. Ignored while typing in a control. */
+  (function centreCurrentTurn() {
+    /* Keep the selected turn in view inside the turn list's OWN scroller (never the page). */
+    var li = document.querySelector(".turnlist li.current");
+    var box = li && li.closest(".turnlist");
+    /* Rect-relative, not offsetTop: on a phone the list is `position: static`, so its rows' offsetParent
+       is the page and offsetTop would scroll it to the wrong turn. */
+    if (li && box) {
+      var dy = li.getBoundingClientRect().top - box.getBoundingClientRect().top;
+      box.scrollTop = Math.max(0, box.scrollTop + dy - box.clientHeight / 2);
+    }
+  })();
+
+  document.addEventListener("keydown", function (evt) {
+    if (document.body.dataset.pageName !== "game") { return; }
+    if (evt.altKey || evt.ctrlKey || evt.metaKey) { return; }
+    var t = evt.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA")) { return; }
+    var nav = {"ArrowLeft": "prev", "j": "prev", "ArrowRight": "next", "k": "next",
+               "[": "prev-battle", "]": "next-battle"}[evt.key];
+    if (!nav) { return; }
+    var a = document.querySelector('a[data-nav="' + nav + '"]');
+    if (!a) { return; }
+    evt.preventDefault();
+    document.body.dataset.navkey = nav;
+    window.location.href = a.href;
+  });
+
   /* A failed fetch must be visible on the page, not only in the console. */
   document.body.addEventListener("htmx:responseError", function (evt) {
     var t = evt.detail && evt.detail.target;

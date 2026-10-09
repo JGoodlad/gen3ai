@@ -1050,6 +1050,14 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                                narrate=params["narrate"]))
         return fragment(request, "partials/job.html", job=job.as_dict(), **_job_view(job.kind, None))
 
+    # `/game` — the battle viewer (designs/prober/battle_view_v2.md). Its routes live in `game.py`;
+    # they reuse this app's plumbing (run confinement, battle membership, the session LRU).
+    from main.prober.web.game import GameHelpers, register_game_routes
+    register_game_routes(app, GameHelpers(
+        pick=pick, session=session, guarded=guarded, battle_row=battle_row, page=page,
+        fragment=fragment, load=lambda run, fn: _load(pick, session, guarded, run, store, fn),
+        no_battles=_NoBattles), _newest_first)
+
     # Registered on STARLETTE's HTTPException, not FastAPI's. Starlette dispatches by walking
     # `type(exc).__mro__`, and an unmatched route raises the starlette class — which is the PARENT
     # of `fastapi.HTTPException`, not a subclass. Handling only the FastAPI one therefore misses
@@ -1075,8 +1083,11 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
 # Ordered by the investigation recipe in src/main/prober/CLAUDE.md — "triage: start here for
 # 'what next'" — not by when each view happened to be written. Six equal tabs in an arbitrary
 # order is exactly the "information doesn't flow" complaint the TUI earned.
+# `/game` (the battle viewer, 2026-10-08) took the classic `/battle` replay's tab: a ninth tab wraps the
+# phone header past its 160px budget (render test), and `/battle` stays one link away — from `/game`'s
+# "classic replay" link and every `battles` / `scan` row.
 _NAV = [("/", "run"), ("/triage", "triage"), ("/scan", "scan"), ("/battles", "battles"),
-        ("/battle", "battle"), ("/analyze", "analyze"),
+        ("/game", "game"), ("/analyze", "analyze"),
         ("/falsify", "falsify"), ("/calibration", "calibration")]
 
 # What each view ANSWERS, in recipe order. Rendered as the "where to start" card on `/` and as the
@@ -1088,6 +1099,10 @@ VIEW_QUESTIONS = [
      "The single worst decision in every matching battle, ranked globally. Model-free."),
     ("/battles", "battles", "Which battles were captured?",
      "The raw trace list, filterable — the ids you hand to the CLI or the TUI."),
+    ("/game", "game", "What was the model thinking, turn by turn?",
+     "The battle viewer: every turn's events and board (model-free), then what the model expected the "
+     "opponent to do, who it thinks is on their team, where its attention went and what its damage "
+     "physics said — re-run on a current-architecture checkpoint."),
     ("/battle", "battle", "How did one game actually go?",
      "Turn by turn: the board, what each side did, and what the critic made of it. Model-free."),
     ("/analyze", "analyze", "Why did it choose that, and what did it believe?",

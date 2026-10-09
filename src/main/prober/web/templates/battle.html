@@ -58,6 +58,8 @@
     <span class="muted">vs {{ turns.opponent }}</span>
     <span class="muted">· step {{ "{:,}".format(turns.step) }}</span>
     <span class="muted">· {{ turns.n_turns }} turns / {{ turns.n_decisions }} decisions</span>
+    <a class="linky" href="/game?run={{ (run or '') | urlencode }}&battle={{ turns.short_id | urlencode }}"
+       title="The battle viewer: every protocol event per turn, and what the MODEL expected, where it looked, its damage physics">open in the battle viewer</a>
   </p>
 
   {# DID IT KNOW? — the battle-level verdict from the distributional head, before the replay itself,

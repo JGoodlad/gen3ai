@@ -259,3 +259,102 @@ def scan_drop_spec(rows: "list[dict]", *, metric: str = "value_drop") -> dict:
                         {"field": "drop", "type": "quantitative"}],
         },
     )
+
+
+# ------------------------------------------------------------------------------------- /game
+# The categorical order (identity), fixed and never cycled: a species keeps its colour across every
+# decision of the battle because `belief_evolution` fixes the species list once per battle.
+_SERIES = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300"]
+_ACCENT = "#3987e5"
+_MARK = "#d95926"
+
+
+def game_win_prob_spec(series: "list[dict]", *, selected: "int | None" = None) -> dict:
+    """The critic's P(win), decision by decision, re-run on the stored observations — one line on
+    [0, 1] with the even line at 0.5 and the selected decision marked."""
+    values = [{"decision": r["inv"], "turn": r.get("turn"), "p": r["p"]} for r in series if r.get("p") is not None]
+    layers: list = [
+        {"mark": {"type": "rule", "strokeDash": [4, 4], "opacity": 0.5},
+         "encoding": {"y": {"datum": 0.5}}},
+        {"mark": {"type": "line", "strokeWidth": 2, "color": _ACCENT, "interpolate": "monotone"},
+         "encoding": {"x": {"field": "decision", "type": "quantitative", "title": "decision"},
+                      "y": {"field": "p", "type": "quantitative", "title": "P(win)",
+                            "scale": {"domain": [0, 1]}, "axis": {"format": "%"}}}},
+        {"mark": {"type": "point", "size": 80, "filled": True, "color": _ACCENT},
+         "params": [{"name": "hover", "select": {"type": "point", "on": "pointerover", "nearest": True,
+                                                 "clear": "pointerout"}}],
+         "encoding": {"x": {"field": "decision", "type": "quantitative"},
+                      "y": {"field": "p", "type": "quantitative"},
+                      "opacity": {"condition": {"param": "hover", "empty": False, "value": 1}, "value": 0},
+                      "tooltip": [{"field": "decision", "type": "quantitative"},
+                                  {"field": "turn", "type": "quantitative"},
+                                  {"field": "p", "type": "quantitative", "format": ".1%", "title": "P(win)"}]}},
+    ]
+    if selected is not None:
+        layers.append({"mark": {"type": "rule", "color": _MARK, "strokeWidth": 2},
+                       "encoding": {"x": {"datum": int(selected)}}})
+    return _spec(title=_title("Win probability over the battle",
+                              "the critic re-run on each stored decision; dashed = even, orange = this decision"),
+                 data={"values": values}, width="container", height=150, layer=layers)
+
+
+def game_belief_spec(evo: "dict | None", *, selected: "int | None" = None,
+                     max_species: int = 6) -> "dict | None":
+    """Presence π of the likeliest guessed species, decision by decision (100% once seen). Capped at
+    six series with a fixed colour order, a legend and a tooltip, so identity is never colour alone."""
+    if not evo or not evo.get("points"):
+        return None
+    keep = list(evo.get("species") or [])[:max_species]
+    values = [p for p in evo["points"] if p["species"] in keep and p.get("presence") is not None]
+    layers: list = [{"mark": {"type": "line", "strokeWidth": 2, "interpolate": "step-after"},
+                     "encoding": {"x": {"field": "decision", "type": "quantitative", "title": "decision"},
+                                  "y": {"field": "presence", "type": "quantitative", "title": "presence π",
+                                        "scale": {"domain": [0, 1]}, "axis": {"format": "%"}},
+                                  "color": {"field": "species", "type": "nominal", "sort": keep,
+                                            "scale": {"domain": keep, "range": _SERIES[:len(keep)]},
+                                            "legend": {"orient": "bottom", "title": None}},
+                                  "tooltip": [{"field": "species", "type": "nominal"},
+                                              {"field": "decision", "type": "quantitative"},
+                                              {"field": "presence", "type": "quantitative", "format": ".0%"}]}}]
+    if selected is not None:
+        layers.append({"mark": {"type": "rule", "color": _MARK, "strokeWidth": 2},
+                       "encoding": {"x": {"datum": int(selected)}}})
+    return _spec(title=_title("Who the model thinks is on their team",
+                              "presence of each guessed species over the battle (100% = seen)"),
+                 data={"values": values}, width="container", height=170, layer=layers)
+
+
+def game_attention_spec(att: dict) -> dict:
+    """One decision's attention as a heat map: query seat (row) × key seat (column), opacity =
+    weight (one hue, so it fades into the page in either theme). Padded seats are dropped. Seat
+    names ride a `labels` param so each cell's datum stays three numbers."""
+    labels = [f"{i:02d} {t['label']}" for i, t in enumerate(att["labels"])]
+    masked = att.get("masked") or [False] * len(labels)
+    vals = [{"q": q, "k": k, "w": w} for q, row in enumerate(att["matrix"]) if not masked[q]
+            for k, w in enumerate(row) if not masked[k]]
+    lay, head = att.get("layer"), att.get("head")
+    which = ("average of every layer and head" if lay is None and head is None else
+             f"layer {'avg' if lay is None else lay + 1} · head {'avg' if head is None else head + 1}")
+    live = [i for i in range(len(labels)) if not masked[i]]       # padded seats get no row/column
+    return _spec(
+        title=_title("Where each token looked", f"{which}; rows look FROM, columns are looked AT"),
+        params=[{"name": "labels", "value": labels}],
+        data={"values": vals},
+        transform=[{"calculate": "labels[datum.q]", "as": "from"},
+                   {"calculate": "labels[datum.k]", "as": "to"}],
+        width={"step": 11}, height={"step": 11},
+        mark={"type": "rect", "color": _ACCENT, "tooltip": True},
+        encoding={
+            "x": {"field": "k", "type": "ordinal", "scale": {"domain": live},
+                  "axis": {"labelExpr": "labels[datum.value]", "labelAngle": -60, "labelFontSize": 9,
+                           "title": "looked at", "orient": "top", "labelLimit": 170}},
+            "y": {"field": "q", "type": "ordinal", "scale": {"domain": live},
+                  "axis": {"labelExpr": "labels[datum.value]", "labelFontSize": 9, "title": "looking",
+                           "labelLimit": 170}},
+            "opacity": {"field": "w", "type": "quantitative", "scale": {"type": "sqrt", "zero": True},
+                        "legend": {"title": "weight", "format": ".2f"}},
+            "tooltip": [{"field": "from", "type": "nominal", "title": "looking"},
+                        {"field": "to", "type": "nominal", "title": "looked at"},
+                        {"field": "w", "type": "quantitative", "format": ".3f", "title": "weight"}],
+        },
+    )

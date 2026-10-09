@@ -1,5 +1,8 @@
 # `/battle` — the turn-by-turn replay, field by field
 
+> The battle VIEWER (`/game`: the full turn story, opponent intent, attention heat maps, operator
+> facts) has its own doc: [`battle_view_v2.md`](battle_view_v2.md). This one is the classic replay.
+
 Owned by this tree (always current, updated in the same pass as the code). The rules the page rests
 on — it is not HTMX, a run with no traces is an EMPTY STATE and not a 404, a battle is named by its
 `short_id` and that name is checked for MEMBERSHIP, every number comes back from a `ProbeSession`

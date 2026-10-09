@@ -32,6 +32,8 @@ THE MODULE MAP — a strict DAG, leaves first:
     analyze.py     `analyze_invocation` — the top-level entry — plus `build_meta` / value-dist
     taxonomy.py    loss attribution: the turning-point category table
     probes.py      representation probing (`fit_probe`)
+    turn_events.py `/game`'s turn story: the protocol folded into typed events + the board per turn
+    readout.py     `/game`'s model panels from one battle capture (intent, hypotheses, attention, op facts)
 """
 
 from __future__ import annotations
@@ -107,4 +109,12 @@ from main.prober.engine.taxonomy import (   # noqa: F401 — re-export hub
 from main.prober.engine.probes import (   # noqa: F401 — re-export hub
     _L2_GRID, _auc, _kfold_indices, _logistic_fit, _oof_predict, _ridge_fit, _selection_score,
     _sigmoid, _standardize, fit_probe,
+)
+from main.prober.engine.turn_events import (   # noqa: F401 — re-export hub
+    CANT_WORDS, SIDE_CONDITIONS, STATUS_WORDS, TurnFold, fold_turns,
+)
+from main.prober.engine.readout import (   # noqa: F401 — re-export hub
+    CALIBRATION_BINS, attention_matrix, attention_summary, belief_evolution, chosen_token,
+    hypotheses_view, intent_calibration, intent_view, move_name, operator_view, opp_actual_action,
+    species_name, token_labels, top_keys,
 )

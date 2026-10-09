@@ -35,6 +35,7 @@ THE MODULE MAP:
     counterfactual.py  falsify · lookahead · better_line · replay_counterfactual
     aggregate.py       falsify_scan · calibration — the two run-level counterfactual folds
     probes.py          probe · switch_vs_info · history_saliency
+    game.py            `/game`: battle_story (model-free) · battle_readout · decision_attention
     serialize.py       the JSON-shaping leaves
     stats.py           the pure statistics (loop aggregation, discounted returns, reliability)
     probe_targets.py   the representation-probe target table

@@ -178,6 +178,8 @@
       <span class="cmd">
         <a class="linky" href="/analyze?run={{ run | urlencode }}&amp;battle={{ turns.short_id | urlencode }}&amp;inv={{ d.inv }}"
            title="Open this decision in /analyze — the full forensic read (faithfulness · beliefs · threat tables · intervention · saliency). It loads the checkpoint, so it works on a run at the CURRENT architecture and diagnoses the drift on any other.">analyze #{{ d.inv }}</a>
+        <a class="linky" href="/game?run={{ run | urlencode }}&amp;battle={{ turns.short_id | urlencode }}&amp;inv={{ d.inv }}#decision"
+           title="Open this decision in the battle viewer — what the model expected them to do, its attention heat map, its damage physics">game</a>
         <button class="linky copybtn" type="button"
                 data-copy="python -m main.prober.query analyze {{ turns.id }} {{ d.inv }}"
                 title="Copy the equivalent CLI command for this decision.">copy cmd</button>

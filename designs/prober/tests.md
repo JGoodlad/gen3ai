@@ -3,6 +3,17 @@
 Owned by this tree. The command (`python3 -m pytest src/main/prober -q`) and the tiering rules stay
 in `src/main/prober/CLAUDE.md`.
 
+**`/game`** (2026-10-08): `game_turn_events_test.py` (pure: typed events, sides from the trainee's
+seat, the recoil / Leftovers sources, the board fold), `game_readout_test.py` (pure: the label →
+column rule incl. OTHER_move / OTHER_species and the Hidden Power direction, calibration, seat labels,
+the attention summary, the greyed move-resolution columns), `model_capture_test.py` (the recomputed
+attention reproduces `BiasedEncoderLayer`'s own output; dropping the bias does not),
+`web/game_test.py` (the degraded paths on the synthetic fixture: the story renders, a model view on an
+older architecture is one sentence with the diagnosis folded, every battle surface links in) and
+`game_integration_test.py` (`sim`: real Rust-core battles + a fresh current-architecture checkpoint —
+the readout's probabilities equal the policy's, every panel present, no hook left behind, the web
+views populated, and `damage_op_view` decoding on the production surface).
+
 `engine_test.py` (pure, FakeProbeModel + offset regression, + the loss-attribution
 taxonomy and the `fit_probe` stats as pure cases — decodable-vs-noise,
 regression, too-few-graceful), `session_test.py` (tmp_path traces for the agent

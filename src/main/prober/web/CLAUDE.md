@@ -181,6 +181,11 @@ some CPU", not "may read private data".
 
 ## Information flow (why the pages are shaped the way they are)
 
+**`/game` holds the nav tab the classic `/battle` replay used to** (2026-10-08): a ninth tab wraps the
+phone header past the render test's 160px budget, and `/battle` stays one link away — `/game`'s
+"classic replay" link and every `battles` / `scan` row. Every battle surface links INTO `/game`
+anchored on the decision (`game_test.py` pins it).
+
 The TUI's standing complaint was that *the information didn't flow*. These are the deliberate
 answers, each pinned by a test in `app_test.py` → "usability / information flow":
 
@@ -325,6 +330,7 @@ produced it.
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
 | `/battle` | `battle_turns()` | **one game, turn by turn** — board · expected opponent intent (α/β) · battle log · critic · **P(win) and the P(loss) strip** (model-free) |
+| `/game` | `battle_story()` + `battle_readout()` + `decision_attention()` | **the battle viewer** — a turn list beside the selected decision: every protocol event of the turn, the board, our choice vs the legal set (model-free); then, as an HTMX fragment that LOADS the checkpoint, what the model expected the opponent to do (the flat pointer, the actual action marked, α's calibration over the battle), the hypothesis tokens and their evolution, the pointer head's scores, the attention heat map (layer × head picker) and the operator facts. ←/→ (j/k) step decisions, [ / ] step battles. Field map: `designs/prober/battle_view_v2.md`. Routes live in `game.py` |
 | `/analyze` | `analyze()` | **one decision, all the way down** — faithfulness · beliefs · threats · intervention · saliency. **LOADS THE CHECKPOINT** (see below) |
 | `/falsify` | `falsify_scan()` | the crater bracket — **a background job** |
 | `/calibration` | `calibration()` | the reliability curve — **a background job** |

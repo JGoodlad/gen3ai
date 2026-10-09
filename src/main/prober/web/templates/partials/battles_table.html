@@ -32,6 +32,8 @@
       <td>{% if r.has_npz %}<span class="pos">obs</span>{% else %}<span class="muted">no npz</span>{% endif %}</td>
       <td class="mono"><a class="rowlink" href="{{ href }}">{{ r.short_id }}</a></td>
       <td class="nowrap">
+        <a class="linky" href="/game?run={{ (run or '') | urlencode }}&battle={{ r.short_id | urlencode }}"
+           title="Open this battle in the battle viewer (what the model expected, its attention, its damage physics)">viewer</a>
         <button class="linky copybtn" type="button"
           data-copy="{{ r.id }}" title="Copy the battle id for the CLI">copy id</button></td>
     </tr>
