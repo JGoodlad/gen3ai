@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,717-line file. **The ledger itself is append-only and is never edited by this**;
+23,740-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**827 headings · 772 dated · 2026-08-01 → 2026-10-09 · ledger 23,717 lines.**
+**828 headings · 773 dated · 2026-08-01 → 2026-10-09 · ledger 23,740 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -847,3 +847,4 @@ rename.
   - `L23629` · `2026-10-08` · BUILT · **F6b PRINCIPLED OPERATOR REDUCTIONS behind `--op-reduction principled` (v146, OFF): 31 per-channel maxima over THEIR believed moves → the α-weighted expectation (α = presence / total presence) + the noisy-OR KO worst case (+256 params, FLOPs +0.005 %); `max` byte-identical; K9(b) excluded share 3.3 % → 2.1 % at the u1480 weights (the argmax sites gone)**
   - `L23686` · `2026-10-09` · READ · **STATIC-TOKEN SCREEN LOOK 2 (n = 5 per arm): CONTINUE — static vs legacy Δ̂ −2.70 pp, look-2 interval [−5.19, −0.20] (straddles −δ), fixed-sample 90 % [−4.43, −0.97]; t_NI 0.864 < 2.683; t_SUP −2.901 (past the boundary on the WRONG side: no row of the table reads it); no futility; in-arm speed s −2.7 % (≤ 5 %); bots panel +0.12 pp, no HARM flag; L4 / L5 / S4 / S5 no deviation**
 - `L23709` · `2026-10-09` · OPS: models/ PRE-RUSTBORO SKELETON applied (owner-approved disk cleanup)
+  - `L23717` · `2026-10-09` · DESCRIPTIVE · **WHERE IS STATIC WORSE? (CPU diagnostic, not the screen): H1 "attention slow to learn" NOT SUPPORTED (paired-seed Δ −2.6 / −3.2 / −2.1 pp at 5M / 10M / 15M; static's layer-1 attention starts SHARPER); H2 SUPPORTED for board facts (our side's Spikes after the trunk R² 0.33 vs 0.46, the one gap that GROWS with training; our active's HP in its move token 0.59 vs 0.80; per-mon facts within 0.05); H3 SUPPORTED (board facts reach static's tokens mostly at layer 2); the game deficit concentrates on SLOW teams (stall −10.7 pp, hyper-offense −1.2 pp)**

@@ -1,0 +1,16 @@
+{
+ "recorded_rows_checked": 19964,
+ "byte_equal": 19332,
+ "obs_as_recorded": false,
+ "first_drifted": [
+  "ai_v14_01_base/step_36000000/staller_v2/loss_s1_003#p1#4",
+  "ai_v14_01_base/step_36000000/staller_v2/loss_s1_003#p1#5",
+  "ai_v14_01_base/step_36000000/staller_v2/loss_s1_003#p1#6",
+  "ai_v14_01_base/step_36000000/staller_v2/loss_s1_003#p1#7",
+  "ai_v14_01_base/step_36000000/staller_v2/loss_s1_003#p1#8"
+ ],
+ "encoder": {
+  "core_events": "/home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09/src/rust_sim/target/release/core_events",
+  "core_events_sha256": "b74b2f267158dfd3db6080e1dce4c0d24e99807ec10efe7db2bbfd866de50ff0"
+ }
+}

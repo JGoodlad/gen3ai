@@ -1,0 +1,8992 @@
+{
+ "schema": "static_diag_analysis_v1",
+ "tag": "DESCRIPTIVE",
+ "seeds": {
+  "legacy/10M": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "legacy/2M": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "legacy/5M": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "legacy/final": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "static/10M": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "static/2M": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "static/5M": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "static/final": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ]
+ },
+ "probes": {
+  "2M": {
+   "M0:clock_elapsed": {
+    "in": {
+     "legacy": 0.221,
+     "legacy_sd": 0.035,
+     "static": 0.147,
+     "static_sd": 0.023,
+     "delta": -0.074,
+     "welch_t": -4.15
+    },
+    "L1": {
+     "legacy": 0.728,
+     "legacy_sd": 0.026,
+     "static": 0.709,
+     "static_sd": 0.056,
+     "delta": -0.019,
+     "welch_t": -0.68
+    },
+    "L2": {
+     "legacy": 0.774,
+     "legacy_sd": 0.023,
+     "static": 0.772,
+     "static_sd": 0.006,
+     "delta": -0.002,
+     "welch_t": -0.19
+    },
+    "kind": "c"
+   },
+   "M0:our_active_hp": {
+    "in": {
+     "legacy": 0.595,
+     "legacy_sd": 0.086,
+     "static": 0.324,
+     "static_sd": 0.012,
+     "delta": -0.27,
+     "welch_t": -7.56
+    },
+    "L1": {
+     "legacy": 0.621,
+     "legacy_sd": 0.036,
+     "static": 0.377,
+     "static_sd": 0.011,
+     "delta": -0.244,
+     "welch_t": -15.94
+    },
+    "L2": {
+     "legacy": 0.575,
+     "legacy_sd": 0.021,
+     "static": 0.369,
+     "static_sd": 0.02,
+     "delta": -0.206,
+     "welch_t": -16.45
+    },
+    "kind": "c"
+   },
+   "M0:weather_any": {
+    "in": {
+     "legacy": 0.9,
+     "legacy_sd": 0.016,
+     "static": 0.683,
+     "static_sd": 0.018,
+     "delta": -0.216,
+     "welch_t": -20.63
+    },
+    "L1": {
+     "legacy": 0.968,
+     "legacy_sd": 0.012,
+     "static": 0.871,
+     "static_sd": 0.038,
+     "delta": -0.097,
+     "welch_t": -5.5
+    },
+    "L2": {
+     "legacy": 0.956,
+     "legacy_sd": 0.016,
+     "static": 0.88,
+     "static_sd": 0.021,
+     "delta": -0.075,
+     "welch_t": -6.5
+    },
+    "kind": "b"
+   },
+   "OA:clock_elapsed": {
+    "in": {
+     "legacy": 0.495,
+     "legacy_sd": 0.031,
+     "static": 0.254,
+     "static_sd": 0.022,
+     "delta": -0.24,
+     "welch_t": -14.94
+    },
+    "L1": {
+     "legacy": 0.643,
+     "legacy_sd": 0.042,
+     "static": 0.428,
+     "static_sd": 0.037,
+     "delta": -0.215,
+     "welch_t": -9.03
+    },
+    "L2": {
+     "legacy": 0.762,
+     "legacy_sd": 0.016,
+     "static": 0.719,
+     "static_sd": 0.03,
+     "delta": -0.044,
+     "welch_t": -2.91
+    },
+    "kind": "c"
+   },
+   "OA:fainted_ours": {
+    "in": {
+     "legacy": 0.37,
+     "legacy_sd": 0.066,
+     "static": 0.148,
+     "static_sd": 0.023,
+     "delta": -0.222,
+     "welch_t": -7.68
+    },
+    "L1": {
+     "legacy": 0.554,
+     "legacy_sd": 0.087,
+     "static": 0.43,
+     "static_sd": 0.054,
+     "delta": -0.124,
+     "welch_t": -2.88
+    },
+    "L2": {
+     "legacy": 0.726,
+     "legacy_sd": 0.065,
+     "static": 0.736,
+     "static_sd": 0.046,
+     "delta": 0.01,
+     "welch_t": 0.3
+    },
+    "kind": "c"
+   },
+   "OA:fainted_theirs": {
+    "in": {
+     "legacy": 0.403,
+     "legacy_sd": 0.059,
+     "static": 0.072,
+     "static_sd": 0.02,
+     "delta": -0.332,
+     "welch_t": -12.95
+    },
+    "L1": {
+     "legacy": 0.58,
+     "legacy_sd": 0.051,
+     "static": 0.28,
+     "static_sd": 0.103,
+     "delta": -0.3,
+     "welch_t": -5.94
+    },
+    "L2": {
+     "legacy": 0.788,
+     "legacy_sd": 0.054,
+     "static": 0.728,
+     "static_sd": 0.052,
+     "delta": -0.061,
+     "welch_t": -1.89
+    },
+    "kind": "c"
+   },
+   "OA:hp_self_OA": {
+    "in": {
+     "legacy": 0.821,
+     "legacy_sd": 0.031,
+     "static": 0.736,
+     "static_sd": 0.078,
+     "delta": -0.084,
+     "welch_t": -2.28
+    },
+    "L1": {
+     "legacy": 0.732,
+     "legacy_sd": 0.035,
+     "static": 0.435,
+     "static_sd": 0.088,
+     "delta": -0.298,
+     "welch_t": -7.11
+    },
+    "L2": {
+     "legacy": 0.681,
+     "legacy_sd": 0.023,
+     "static": 0.368,
+     "static_sd": 0.062,
+     "delta": -0.313,
+     "welch_t": -10.76
+    },
+    "kind": "c"
+   },
+   "OA:our_active_boosted": {
+    "in": {
+     "legacy": 0.875,
+     "legacy_sd": 0.008,
+     "static": 0.887,
+     "static_sd": 0.007,
+     "delta": 0.012,
+     "welch_t": 2.64
+    },
+    "L1": {
+     "legacy": 0.87,
+     "legacy_sd": 0.005,
+     "static": 0.881,
+     "static_sd": 0.008,
+     "delta": 0.011,
+     "welch_t": 2.53
+    },
+    "L2": {
+     "legacy": 0.877,
+     "legacy_sd": 0.02,
+     "static": 0.879,
+     "static_sd": 0.011,
+     "delta": 0.002,
+     "welch_t": 0.16
+    },
+    "kind": "b"
+   },
+   "OA:spikes_our_side": {
+    "in": {
+     "legacy": 0.416,
+     "legacy_sd": 0.043,
+     "static": 0.182,
+     "static_sd": 0.01,
+     "delta": -0.234,
+     "welch_t": -12.83
+    },
+    "L1": {
+     "legacy": 0.366,
+     "legacy_sd": 0.025,
+     "static": 0.242,
+     "static_sd": 0.033,
+     "delta": -0.124,
+     "welch_t": -6.89
+    },
+    "L2": {
+     "legacy": 0.341,
+     "legacy_sd": 0.029,
+     "static": 0.299,
+     "static_sd": 0.03,
+     "delta": -0.042,
+     "welch_t": -2.33
+    },
+    "kind": "c"
+   },
+   "OA:status_self_OA": {
+    "in": {
+     "legacy": 0.839,
+     "legacy_sd": 0.025,
+     "static": 0.905,
+     "static_sd": 0.048,
+     "delta": 0.065,
+     "welch_t": 2.76
+    },
+    "L1": {
+     "legacy": 0.779,
+     "legacy_sd": 0.032,
+     "static": 0.785,
+     "static_sd": 0.039,
+     "delta": 0.005,
+     "welch_t": 0.24
+    },
+    "L2": {
+     "legacy": 0.778,
+     "legacy_sd": 0.013,
+     "static": 0.736,
+     "static_sd": 0.039,
+     "delta": -0.042,
+     "welch_t": -2.32
+    },
+    "kind": "b"
+   },
+   "OA:their_active_hp": {
+    "in": {
+     "legacy": 0.087,
+     "legacy_sd": 0.006,
+     "static": 0.098,
+     "static_sd": 0.011,
+     "delta": 0.011,
+     "welch_t": 1.9
+    },
+    "L1": {
+     "legacy": 0.105,
+     "legacy_sd": 0.022,
+     "static": 0.084,
+     "static_sd": 0.013,
+     "delta": -0.021,
+     "welch_t": -2.0
+    },
+    "L2": {
+     "legacy": 0.146,
+     "legacy_sd": 0.042,
+     "static": 0.09,
+     "static_sd": 0.025,
+     "delta": -0.056,
+     "welch_t": -2.71
+    },
+    "kind": "c"
+   },
+   "OA:weather_any": {
+    "in": {
+     "legacy": 0.988,
+     "legacy_sd": 0.004,
+     "static": 0.823,
+     "static_sd": 0.013,
+     "delta": -0.164,
+     "welch_t": -26.73
+    },
+    "L1": {
+     "legacy": 0.971,
+     "legacy_sd": 0.006,
+     "static": 0.846,
+     "static_sd": 0.024,
+     "delta": -0.125,
+     "welch_t": -11.27
+    },
+    "L2": {
+     "legacy": 0.96,
+     "legacy_sd": 0.011,
+     "static": 0.874,
+     "static_sd": 0.017,
+     "delta": -0.086,
+     "welch_t": -10.03
+    },
+    "kind": "b"
+   },
+   "OB:clock_elapsed": {
+    "in": {
+     "legacy": 0.533,
+     "legacy_sd": 0.045,
+     "static": 0.177,
+     "static_sd": 0.088,
+     "delta": -0.356,
+     "welch_t": -8.16
+    },
+    "L1": {
+     "legacy": 0.669,
+     "legacy_sd": 0.016,
+     "static": 0.419,
+     "static_sd": 0.072,
+     "delta": -0.25,
+     "welch_t": -7.64
+    },
+    "L2": {
+     "legacy": 0.77,
+     "legacy_sd": 0.019,
+     "static": 0.726,
+     "static_sd": 0.016,
+     "delta": -0.044,
+     "welch_t": -4.12
+    },
+    "kind": "c"
+   },
+   "OB:fainted_ours": {
+    "in": {
+     "legacy": 0.37,
+     "legacy_sd": 0.159,
+     "static": 0.15,
+     "static_sd": 0.044,
+     "delta": -0.22,
+     "welch_t": -3.24
+    },
+    "L1": {
+     "legacy": 0.567,
+     "legacy_sd": 0.039,
+     "static": 0.384,
+     "static_sd": 0.057,
+     "delta": -0.184,
+     "welch_t": -6.13
+    },
+    "L2": {
+     "legacy": 0.704,
+     "legacy_sd": 0.061,
+     "static": 0.708,
+     "static_sd": 0.036,
+     "delta": 0.005,
+     "welch_t": 0.16
+    },
+    "kind": "c"
+   },
+   "OB:hp_self_OB": {
+    "in": {
+     "legacy": 0.815,
+     "legacy_sd": 0.029,
+     "static": 0.727,
+     "static_sd": 0.076,
+     "delta": -0.088,
+     "welch_t": -2.43
+    },
+    "L1": {
+     "legacy": 0.66,
+     "legacy_sd": 0.068,
+     "static": 0.361,
+     "static_sd": 0.129,
+     "delta": -0.299,
+     "welch_t": -4.65
+    },
+    "L2": {
+     "legacy": 0.576,
+     "legacy_sd": 0.065,
+     "static": 0.216,
+     "static_sd": 0.064,
+     "delta": -0.36,
+     "welch_t": -9.22
+    },
+    "kind": "c"
+   },
+   "OB:our_active_boosted": {
+    "in": {
+     "legacy": 0.64,
+     "legacy_sd": 0.017,
+     "static": 0.632,
+     "static_sd": 0.008,
+     "delta": -0.008,
+     "welch_t": -0.99
+    },
+    "L1": {
+     "legacy": 0.743,
+     "legacy_sd": 0.022,
+     "static": 0.736,
+     "static_sd": 0.023,
+     "delta": -0.006,
+     "welch_t": -0.46
+    },
+    "L2": {
+     "legacy": 0.797,
+     "legacy_sd": 0.019,
+     "static": 0.792,
+     "static_sd": 0.016,
+     "delta": -0.005,
+     "welch_t": -0.45
+    },
+    "kind": "b"
+   },
+   "OB:spikes_our_side": {
+    "in": {
+     "legacy": 0.528,
+     "legacy_sd": 0.08,
+     "static": 0.187,
+     "static_sd": 0.025,
+     "delta": -0.342,
+     "welch_t": -9.87
+    },
+    "L1": {
+     "legacy": 0.415,
+     "legacy_sd": 0.036,
+     "static": 0.257,
+     "static_sd": 0.042,
+     "delta": -0.157,
+     "welch_t": -6.62
+    },
+    "L2": {
+     "legacy": 0.373,
+     "legacy_sd": 0.054,
+     "static": 0.305,
+     "static_sd": 0.041,
+     "delta": -0.067,
+     "welch_t": -2.34
+    },
+    "kind": "c"
+   },
+   "OB:weather_any": {
+    "in": {
+     "legacy": 0.985,
+     "legacy_sd": 0.021,
+     "static": 0.831,
+     "static_sd": 0.026,
+     "delta": -0.154,
+     "welch_t": -10.66
+    },
+    "L1": {
+     "legacy": 0.966,
+     "legacy_sd": 0.024,
+     "static": 0.877,
+     "static_sd": 0.018,
+     "delta": -0.089,
+     "welch_t": -7.03
+    },
+    "L2": {
+     "legacy": 0.965,
+     "legacy_sd": 0.007,
+     "static": 0.881,
+     "static_sd": 0.027,
+     "delta": -0.083,
+     "welch_t": -6.63
+    },
+    "kind": "b"
+   },
+   "TA:hp_self_TA": {
+    "in": {
+     "legacy": 0.813,
+     "legacy_sd": 0.039,
+     "static": 0.635,
+     "static_sd": 0.03,
+     "delta": -0.177,
+     "welch_t": -8.53
+    },
+    "L1": {
+     "legacy": 0.714,
+     "legacy_sd": 0.05,
+     "static": 0.392,
+     "static_sd": 0.036,
+     "delta": -0.322,
+     "welch_t": -12.46
+    },
+    "L2": {
+     "legacy": 0.654,
+     "legacy_sd": 0.048,
+     "static": 0.332,
+     "static_sd": 0.052,
+     "delta": -0.321,
+     "welch_t": -10.6
+    },
+    "kind": "c"
+   },
+   "TA:our_active_hp": {
+    "in": {
+     "legacy": 0.156,
+     "legacy_sd": 0.009,
+     "static": 0.258,
+     "static_sd": 0.031,
+     "delta": 0.102,
+     "welch_t": 7.19
+    },
+    "L1": {
+     "legacy": 0.244,
+     "legacy_sd": 0.062,
+     "static": 0.227,
+     "static_sd": 0.039,
+     "delta": -0.017,
+     "welch_t": -0.54
+    },
+    "L2": {
+     "legacy": 0.346,
+     "legacy_sd": 0.026,
+     "static": 0.257,
+     "static_sd": 0.05,
+     "delta": -0.089,
+     "welch_t": -3.61
+    },
+    "kind": "c"
+   },
+   "TA:spikes_their_side": {
+    "in": {
+     "legacy": 0.471,
+     "legacy_sd": 0.048,
+     "static": 0.251,
+     "static_sd": 0.019,
+     "delta": -0.22,
+     "welch_t": -10.22
+    },
+    "L1": {
+     "legacy": 0.428,
+     "legacy_sd": 0.031,
+     "static": 0.34,
+     "static_sd": 0.046,
+     "delta": -0.088,
+     "welch_t": -3.65
+    },
+    "L2": {
+     "legacy": 0.41,
+     "legacy_sd": 0.043,
+     "static": 0.359,
+     "static_sd": 0.026,
+     "delta": -0.051,
+     "welch_t": -2.43
+    },
+    "kind": "c"
+   },
+   "TA:status_self_TA": {
+    "in": {
+     "legacy": 0.887,
+     "legacy_sd": 0.018,
+     "static": 0.929,
+     "static_sd": 0.012,
+     "delta": 0.042,
+     "welch_t": 4.58
+    },
+    "L1": {
+     "legacy": 0.838,
+     "legacy_sd": 0.017,
+     "static": 0.85,
+     "static_sd": 0.016,
+     "delta": 0.012,
+     "welch_t": 1.22
+    },
+    "L2": {
+     "legacy": 0.833,
+     "legacy_sd": 0.009,
+     "static": 0.823,
+     "static_sd": 0.006,
+     "delta": -0.01,
+     "welch_t": -2.25
+    },
+    "kind": "b"
+   },
+   "TA:their_active_boosted": {
+    "in": {
+     "legacy": 0.876,
+     "legacy_sd": 0.01,
+     "static": 0.885,
+     "static_sd": 0.007,
+     "delta": 0.008,
+     "welch_t": 1.68
+    },
+    "L1": {
+     "legacy": 0.865,
+     "legacy_sd": 0.006,
+     "static": 0.864,
+     "static_sd": 0.011,
+     "delta": -0.001,
+     "welch_t": -0.14
+    },
+    "L2": {
+     "legacy": 0.864,
+     "legacy_sd": 0.012,
+     "static": 0.851,
+     "static_sd": 0.021,
+     "delta": -0.013,
+     "welch_t": -1.23
+    },
+    "kind": "b"
+   },
+   "TA:weather_any": {
+    "in": {
+     "legacy": 0.982,
+     "legacy_sd": 0.015,
+     "static": 0.818,
+     "static_sd": 0.017,
+     "delta": -0.164,
+     "welch_t": -16.93
+    },
+    "L1": {
+     "legacy": 0.954,
+     "legacy_sd": 0.012,
+     "static": 0.859,
+     "static_sd": 0.026,
+     "delta": -0.095,
+     "welch_t": -7.37
+    },
+    "L2": {
+     "legacy": 0.943,
+     "legacy_sd": 0.015,
+     "static": 0.861,
+     "static_sd": 0.015,
+     "delta": -0.082,
+     "welch_t": -9.23
+    },
+    "kind": "b"
+   }
+  },
+  "5M": {
+   "M0:clock_elapsed": {
+    "in": {
+     "legacy": 0.218,
+     "legacy_sd": 0.05,
+     "static": 0.139,
+     "static_sd": 0.028,
+     "delta": -0.078,
+     "welch_t": -3.24
+    },
+    "L1": {
+     "legacy": 0.7,
+     "legacy_sd": 0.048,
+     "static": 0.708,
+     "static_sd": 0.018,
+     "delta": 0.008,
+     "welch_t": 0.37
+    },
+    "L2": {
+     "legacy": 0.733,
+     "legacy_sd": 0.047,
+     "static": 0.737,
+     "static_sd": 0.024,
+     "delta": 0.004,
+     "welch_t": 0.18
+    },
+    "kind": "c"
+   },
+   "M0:our_active_hp": {
+    "in": {
+     "legacy": 0.727,
+     "legacy_sd": 0.014,
+     "static": 0.334,
+     "static_sd": 0.01,
+     "delta": -0.393,
+     "welch_t": -54.17
+    },
+    "L1": {
+     "legacy": 0.76,
+     "legacy_sd": 0.01,
+     "static": 0.463,
+     "static_sd": 0.05,
+     "delta": -0.297,
+     "welch_t": -13.05
+    },
+    "L2": {
+     "legacy": 0.698,
+     "legacy_sd": 0.03,
+     "static": 0.442,
+     "static_sd": 0.058,
+     "delta": -0.255,
+     "welch_t": -8.96
+    },
+    "kind": "c"
+   },
+   "M0:weather_any": {
+    "in": {
+     "legacy": 0.892,
+     "legacy_sd": 0.018,
+     "static": 0.668,
+     "static_sd": 0.026,
+     "delta": -0.223,
+     "welch_t": -16.35
+    },
+    "L1": {
+     "legacy": 0.962,
+     "legacy_sd": 0.011,
+     "static": 0.89,
+     "static_sd": 0.017,
+     "delta": -0.072,
+     "welch_t": -8.12
+    },
+    "L2": {
+     "legacy": 0.941,
+     "legacy_sd": 0.016,
+     "static": 0.868,
+     "static_sd": 0.027,
+     "delta": -0.073,
+     "welch_t": -5.29
+    },
+    "kind": "b"
+   },
+   "OA:clock_elapsed": {
+    "in": {
+     "legacy": 0.49,
+     "legacy_sd": 0.064,
+     "static": 0.28,
+     "static_sd": 0.025,
+     "delta": -0.21,
+     "welch_t": -7.37
+    },
+    "L1": {
+     "legacy": 0.621,
+     "legacy_sd": 0.04,
+     "static": 0.475,
+     "static_sd": 0.033,
+     "delta": -0.146,
+     "welch_t": -6.67
+    },
+    "L2": {
+     "legacy": 0.73,
+     "legacy_sd": 0.016,
+     "static": 0.714,
+     "static_sd": 0.022,
+     "delta": -0.016,
+     "welch_t": -1.35
+    },
+    "kind": "c"
+   },
+   "OA:fainted_ours": {
+    "in": {
+     "legacy": 0.363,
+     "legacy_sd": 0.09,
+     "static": 0.147,
+     "static_sd": 0.019,
+     "delta": -0.216,
+     "welch_t": -5.74
+    },
+    "L1": {
+     "legacy": 0.495,
+     "legacy_sd": 0.111,
+     "static": 0.419,
+     "static_sd": 0.06,
+     "delta": -0.076,
+     "welch_t": -1.43
+    },
+    "L2": {
+     "legacy": 0.672,
+     "legacy_sd": 0.048,
+     "static": 0.672,
+     "static_sd": 0.041,
+     "delta": -0.0,
+     "welch_t": -0.02
+    },
+    "kind": "c"
+   },
+   "OA:fainted_theirs": {
+    "in": {
+     "legacy": 0.387,
+     "legacy_sd": 0.098,
+     "static": 0.072,
+     "static_sd": 0.008,
+     "delta": -0.315,
+     "welch_t": -7.79
+    },
+    "L1": {
+     "legacy": 0.543,
+     "legacy_sd": 0.037,
+     "static": 0.36,
+     "static_sd": 0.054,
+     "delta": -0.184,
+     "welch_t": -6.5
+    },
+    "L2": {
+     "legacy": 0.719,
+     "legacy_sd": 0.035,
+     "static": 0.701,
+     "static_sd": 0.04,
+     "delta": -0.018,
+     "welch_t": -0.79
+    },
+    "kind": "c"
+   },
+   "OA:hp_self_OA": {
+    "in": {
+     "legacy": 0.893,
+     "legacy_sd": 0.017,
+     "static": 0.834,
+     "static_sd": 0.02,
+     "delta": -0.058,
+     "welch_t": -5.11
+    },
+    "L1": {
+     "legacy": 0.832,
+     "legacy_sd": 0.014,
+     "static": 0.697,
+     "static_sd": 0.038,
+     "delta": -0.135,
+     "welch_t": -7.48
+    },
+    "L2": {
+     "legacy": 0.798,
+     "legacy_sd": 0.014,
+     "static": 0.64,
+     "static_sd": 0.07,
+     "delta": -0.158,
+     "welch_t": -4.95
+    },
+    "kind": "c"
+   },
+   "OA:our_active_boosted": {
+    "in": {
+     "legacy": 0.879,
+     "legacy_sd": 0.008,
+     "static": 0.895,
+     "static_sd": 0.01,
+     "delta": 0.015,
+     "welch_t": 2.67
+    },
+    "L1": {
+     "legacy": 0.876,
+     "legacy_sd": 0.007,
+     "static": 0.887,
+     "static_sd": 0.004,
+     "delta": 0.011,
+     "welch_t": 3.22
+    },
+    "L2": {
+     "legacy": 0.878,
+     "legacy_sd": 0.009,
+     "static": 0.884,
+     "static_sd": 0.012,
+     "delta": 0.006,
+     "welch_t": 0.9
+    },
+    "kind": "b"
+   },
+   "OA:spikes_our_side": {
+    "in": {
+     "legacy": 0.457,
+     "legacy_sd": 0.029,
+     "static": 0.17,
+     "static_sd": 0.014,
+     "delta": -0.288,
+     "welch_t": -21.25
+    },
+    "L1": {
+     "legacy": 0.366,
+     "legacy_sd": 0.033,
+     "static": 0.224,
+     "static_sd": 0.014,
+     "delta": -0.142,
+     "welch_t": -9.44
+    },
+    "L2": {
+     "legacy": 0.37,
+     "legacy_sd": 0.058,
+     "static": 0.283,
+     "static_sd": 0.036,
+     "delta": -0.087,
+     "welch_t": -3.04
+    },
+    "kind": "c"
+   },
+   "OA:status_self_OA": {
+    "in": {
+     "legacy": 0.905,
+     "legacy_sd": 0.019,
+     "static": 0.961,
+     "static_sd": 0.013,
+     "delta": 0.056,
+     "welch_t": 5.83
+    },
+    "L1": {
+     "legacy": 0.843,
+     "legacy_sd": 0.012,
+     "static": 0.891,
+     "static_sd": 0.021,
+     "delta": 0.048,
+     "welch_t": 4.58
+    },
+    "L2": {
+     "legacy": 0.828,
+     "legacy_sd": 0.007,
+     "static": 0.864,
+     "static_sd": 0.024,
+     "delta": 0.036,
+     "welch_t": 3.24
+    },
+    "kind": "b"
+   },
+   "OA:their_active_hp": {
+    "in": {
+     "legacy": 0.096,
+     "legacy_sd": 0.006,
+     "static": 0.104,
+     "static_sd": 0.011,
+     "delta": 0.009,
+     "welch_t": 1.51
+    },
+    "L1": {
+     "legacy": 0.157,
+     "legacy_sd": 0.023,
+     "static": 0.104,
+     "static_sd": 0.015,
+     "delta": -0.053,
+     "welch_t": -4.66
+    },
+    "L2": {
+     "legacy": 0.255,
+     "legacy_sd": 0.073,
+     "static": 0.263,
+     "static_sd": 0.069,
+     "delta": 0.008,
+     "welch_t": 0.19
+    },
+    "kind": "c"
+   },
+   "OA:weather_any": {
+    "in": {
+     "legacy": 0.984,
+     "legacy_sd": 0.004,
+     "static": 0.822,
+     "static_sd": 0.006,
+     "delta": -0.161,
+     "welch_t": -48.25
+    },
+    "L1": {
+     "legacy": 0.954,
+     "legacy_sd": 0.009,
+     "static": 0.837,
+     "static_sd": 0.01,
+     "delta": -0.118,
+     "welch_t": -20.06
+    },
+    "L2": {
+     "legacy": 0.933,
+     "legacy_sd": 0.013,
+     "static": 0.852,
+     "static_sd": 0.013,
+     "delta": -0.081,
+     "welch_t": -10.38
+    },
+    "kind": "b"
+   },
+   "OB:clock_elapsed": {
+    "in": {
+     "legacy": 0.548,
+     "legacy_sd": 0.034,
+     "static": 0.167,
+     "static_sd": 0.049,
+     "delta": -0.382,
+     "welch_t": -14.73
+    },
+    "L1": {
+     "legacy": 0.63,
+     "legacy_sd": 0.038,
+     "static": 0.533,
+     "static_sd": 0.026,
+     "delta": -0.097,
+     "welch_t": -5.0
+    },
+    "L2": {
+     "legacy": 0.727,
+     "legacy_sd": 0.03,
+     "static": 0.702,
+     "static_sd": 0.017,
+     "delta": -0.025,
+     "welch_t": -1.76
+    },
+    "kind": "c"
+   },
+   "OB:fainted_ours": {
+    "in": {
+     "legacy": 0.447,
+     "legacy_sd": 0.047,
+     "static": 0.166,
+     "static_sd": 0.04,
+     "delta": -0.282,
+     "welch_t": -10.76
+    },
+    "L1": {
+     "legacy": 0.528,
+     "legacy_sd": 0.063,
+     "static": 0.442,
+     "static_sd": 0.047,
+     "delta": -0.086,
+     "welch_t": -2.59
+    },
+    "L2": {
+     "legacy": 0.65,
+     "legacy_sd": 0.046,
+     "static": 0.646,
+     "static_sd": 0.018,
+     "delta": -0.005,
+     "welch_t": -0.23
+    },
+    "kind": "c"
+   },
+   "OB:hp_self_OB": {
+    "in": {
+     "legacy": 0.87,
+     "legacy_sd": 0.024,
+     "static": 0.795,
+     "static_sd": 0.113,
+     "delta": -0.074,
+     "welch_t": -1.44
+    },
+    "L1": {
+     "legacy": 0.755,
+     "legacy_sd": 0.043,
+     "static": 0.666,
+     "static_sd": 0.042,
+     "delta": -0.089,
+     "welch_t": -3.42
+    },
+    "L2": {
+     "legacy": 0.679,
+     "legacy_sd": 0.023,
+     "static": 0.555,
+     "static_sd": 0.044,
+     "delta": -0.125,
+     "welch_t": -5.7
+    },
+    "kind": "c"
+   },
+   "OB:our_active_boosted": {
+    "in": {
+     "legacy": 0.626,
+     "legacy_sd": 0.031,
+     "static": 0.641,
+     "static_sd": 0.016,
+     "delta": 0.015,
+     "welch_t": 1.01
+    },
+    "L1": {
+     "legacy": 0.718,
+     "legacy_sd": 0.031,
+     "static": 0.732,
+     "static_sd": 0.025,
+     "delta": 0.014,
+     "welch_t": 0.84
+    },
+    "L2": {
+     "legacy": 0.787,
+     "legacy_sd": 0.027,
+     "static": 0.798,
+     "static_sd": 0.024,
+     "delta": 0.012,
+     "welch_t": 0.76
+    },
+    "kind": "b"
+   },
+   "OB:spikes_our_side": {
+    "in": {
+     "legacy": 0.595,
+     "legacy_sd": 0.042,
+     "static": 0.196,
+     "static_sd": 0.016,
+     "delta": -0.399,
+     "welch_t": -21.29
+    },
+    "L1": {
+     "legacy": 0.444,
+     "legacy_sd": 0.054,
+     "static": 0.252,
+     "static_sd": 0.029,
+     "delta": -0.192,
+     "welch_t": -7.59
+    },
+    "L2": {
+     "legacy": 0.436,
+     "legacy_sd": 0.066,
+     "static": 0.304,
+     "static_sd": 0.02,
+     "delta": -0.132,
+     "welch_t": -4.64
+    },
+    "kind": "c"
+   },
+   "OB:weather_any": {
+    "in": {
+     "legacy": 0.981,
+     "legacy_sd": 0.024,
+     "static": 0.835,
+     "static_sd": 0.015,
+     "delta": -0.146,
+     "welch_t": -12.29
+    },
+    "L1": {
+     "legacy": 0.949,
+     "legacy_sd": 0.016,
+     "static": 0.847,
+     "static_sd": 0.023,
+     "delta": -0.101,
+     "welch_t": -8.19
+    },
+    "L2": {
+     "legacy": 0.937,
+     "legacy_sd": 0.012,
+     "static": 0.866,
+     "static_sd": 0.013,
+     "delta": -0.071,
+     "welch_t": -9.57
+    },
+    "kind": "b"
+   },
+   "TA:hp_self_TA": {
+    "in": {
+     "legacy": 0.843,
+     "legacy_sd": 0.013,
+     "static": 0.767,
+     "static_sd": 0.012,
+     "delta": -0.076,
+     "welch_t": -10.17
+    },
+    "L1": {
+     "legacy": 0.765,
+     "legacy_sd": 0.013,
+     "static": 0.653,
+     "static_sd": 0.031,
+     "delta": -0.112,
+     "welch_t": -7.57
+    },
+    "L2": {
+     "legacy": 0.705,
+     "legacy_sd": 0.028,
+     "static": 0.589,
+     "static_sd": 0.038,
+     "delta": -0.115,
+     "welch_t": -5.61
+    },
+    "kind": "c"
+   },
+   "TA:our_active_hp": {
+    "in": {
+     "legacy": 0.159,
+     "legacy_sd": 0.013,
+     "static": 0.319,
+     "static_sd": 0.024,
+     "delta": 0.16,
+     "welch_t": 13.39
+    },
+    "L1": {
+     "legacy": 0.28,
+     "legacy_sd": 0.069,
+     "static": 0.299,
+     "static_sd": 0.048,
+     "delta": 0.019,
+     "welch_t": 0.54
+    },
+    "L2": {
+     "legacy": 0.385,
+     "legacy_sd": 0.025,
+     "static": 0.297,
+     "static_sd": 0.035,
+     "delta": -0.087,
+     "welch_t": -4.65
+    },
+    "kind": "c"
+   },
+   "TA:spikes_their_side": {
+    "in": {
+     "legacy": 0.486,
+     "legacy_sd": 0.044,
+     "static": 0.255,
+     "static_sd": 0.03,
+     "delta": -0.231,
+     "welch_t": -10.32
+    },
+    "L1": {
+     "legacy": 0.437,
+     "legacy_sd": 0.027,
+     "static": 0.335,
+     "static_sd": 0.043,
+     "delta": -0.102,
+     "welch_t": -4.57
+    },
+    "L2": {
+     "legacy": 0.435,
+     "legacy_sd": 0.03,
+     "static": 0.351,
+     "static_sd": 0.028,
+     "delta": -0.084,
+     "welch_t": -4.84
+    },
+    "kind": "c"
+   },
+   "TA:status_self_TA": {
+    "in": {
+     "legacy": 0.932,
+     "legacy_sd": 0.013,
+     "static": 0.974,
+     "static_sd": 0.008,
+     "delta": 0.042,
+     "welch_t": 6.74
+    },
+    "L1": {
+     "legacy": 0.883,
+     "legacy_sd": 0.016,
+     "static": 0.91,
+     "static_sd": 0.006,
+     "delta": 0.028,
+     "welch_t": 3.94
+    },
+    "L2": {
+     "legacy": 0.856,
+     "legacy_sd": 0.018,
+     "static": 0.883,
+     "static_sd": 0.019,
+     "delta": 0.026,
+     "welch_t": 2.35
+    },
+    "kind": "b"
+   },
+   "TA:their_active_boosted": {
+    "in": {
+     "legacy": 0.875,
+     "legacy_sd": 0.012,
+     "static": 0.884,
+     "static_sd": 0.007,
+     "delta": 0.009,
+     "welch_t": 1.62
+    },
+    "L1": {
+     "legacy": 0.871,
+     "legacy_sd": 0.008,
+     "static": 0.873,
+     "static_sd": 0.008,
+     "delta": 0.002,
+     "welch_t": 0.42
+    },
+    "L2": {
+     "legacy": 0.86,
+     "legacy_sd": 0.012,
+     "static": 0.86,
+     "static_sd": 0.013,
+     "delta": 0.0,
+     "welch_t": 0.06
+    },
+    "kind": "b"
+   },
+   "TA:weather_any": {
+    "in": {
+     "legacy": 0.974,
+     "legacy_sd": 0.017,
+     "static": 0.814,
+     "static_sd": 0.01,
+     "delta": -0.16,
+     "welch_t": -19.78
+    },
+    "L1": {
+     "legacy": 0.931,
+     "legacy_sd": 0.018,
+     "static": 0.852,
+     "static_sd": 0.018,
+     "delta": -0.079,
+     "welch_t": -7.19
+    },
+    "L2": {
+     "legacy": 0.913,
+     "legacy_sd": 0.021,
+     "static": 0.866,
+     "static_sd": 0.023,
+     "delta": -0.047,
+     "welch_t": -3.53
+    },
+    "kind": "b"
+   }
+  },
+  "10M": {
+   "M0:clock_elapsed": {
+    "in": {
+     "legacy": 0.24,
+     "legacy_sd": 0.063,
+     "static": 0.132,
+     "static_sd": 0.026,
+     "delta": -0.108,
+     "welch_t": -3.82
+    },
+    "L1": {
+     "legacy": 0.703,
+     "legacy_sd": 0.047,
+     "static": 0.681,
+     "static_sd": 0.026,
+     "delta": -0.022,
+     "welch_t": -0.98
+    },
+    "L2": {
+     "legacy": 0.726,
+     "legacy_sd": 0.055,
+     "static": 0.706,
+     "static_sd": 0.023,
+     "delta": -0.02,
+     "welch_t": -0.8
+    },
+    "kind": "c"
+   },
+   "M0:our_active_hp": {
+    "in": {
+     "legacy": 0.806,
+     "legacy_sd": 0.014,
+     "static": 0.339,
+     "static_sd": 0.009,
+     "delta": -0.467,
+     "welch_t": -66.39
+    },
+    "L1": {
+     "legacy": 0.833,
+     "legacy_sd": 0.018,
+     "static": 0.586,
+     "static_sd": 0.072,
+     "delta": -0.246,
+     "welch_t": -7.44
+    },
+    "L2": {
+     "legacy": 0.767,
+     "legacy_sd": 0.014,
+     "static": 0.54,
+     "static_sd": 0.083,
+     "delta": -0.227,
+     "welch_t": -6.06
+    },
+    "kind": "c"
+   },
+   "M0:weather_any": {
+    "in": {
+     "legacy": 0.888,
+     "legacy_sd": 0.024,
+     "static": 0.671,
+     "static_sd": 0.027,
+     "delta": -0.217,
+     "welch_t": -14.07
+    },
+    "L1": {
+     "legacy": 0.958,
+     "legacy_sd": 0.008,
+     "static": 0.875,
+     "static_sd": 0.013,
+     "delta": -0.083,
+     "welch_t": -12.24
+    },
+    "L2": {
+     "legacy": 0.936,
+     "legacy_sd": 0.018,
+     "static": 0.874,
+     "static_sd": 0.018,
+     "delta": -0.062,
+     "welch_t": -5.55
+    },
+    "kind": "b"
+   },
+   "OA:clock_elapsed": {
+    "in": {
+     "legacy": 0.537,
+     "legacy_sd": 0.069,
+     "static": 0.293,
+     "static_sd": 0.02,
+     "delta": -0.244,
+     "welch_t": -8.2
+    },
+    "L1": {
+     "legacy": 0.629,
+     "legacy_sd": 0.038,
+     "static": 0.496,
+     "static_sd": 0.035,
+     "delta": -0.133,
+     "welch_t": -6.09
+    },
+    "L2": {
+     "legacy": 0.724,
+     "legacy_sd": 0.037,
+     "static": 0.714,
+     "static_sd": 0.02,
+     "delta": -0.01,
+     "welch_t": -0.56
+    },
+    "kind": "c"
+   },
+   "OA:fainted_ours": {
+    "in": {
+     "legacy": 0.364,
+     "legacy_sd": 0.062,
+     "static": 0.151,
+     "static_sd": 0.015,
+     "delta": -0.213,
+     "welch_t": -8.15
+    },
+    "L1": {
+     "legacy": 0.499,
+     "legacy_sd": 0.07,
+     "static": 0.42,
+     "static_sd": 0.053,
+     "delta": -0.079,
+     "welch_t": -2.14
+    },
+    "L2": {
+     "legacy": 0.68,
+     "legacy_sd": 0.036,
+     "static": 0.662,
+     "static_sd": 0.056,
+     "delta": -0.018,
+     "welch_t": -0.62
+    },
+    "kind": "c"
+   },
+   "OA:fainted_theirs": {
+    "in": {
+     "legacy": 0.385,
+     "legacy_sd": 0.084,
+     "static": 0.077,
+     "static_sd": 0.012,
+     "delta": -0.309,
+     "welch_t": -8.94
+    },
+    "L1": {
+     "legacy": 0.526,
+     "legacy_sd": 0.046,
+     "static": 0.348,
+     "static_sd": 0.031,
+     "delta": -0.177,
+     "welch_t": -7.61
+    },
+    "L2": {
+     "legacy": 0.725,
+     "legacy_sd": 0.045,
+     "static": 0.68,
+     "static_sd": 0.035,
+     "delta": -0.045,
+     "welch_t": -1.9
+    },
+    "kind": "c"
+   },
+   "OA:hp_self_OA": {
+    "in": {
+     "legacy": 0.901,
+     "legacy_sd": 0.018,
+     "static": 0.867,
+     "static_sd": 0.013,
+     "delta": -0.034,
+     "welch_t": -3.6
+    },
+    "L1": {
+     "legacy": 0.857,
+     "legacy_sd": 0.021,
+     "static": 0.78,
+     "static_sd": 0.012,
+     "delta": -0.077,
+     "welch_t": -7.39
+    },
+    "L2": {
+     "legacy": 0.827,
+     "legacy_sd": 0.021,
+     "static": 0.746,
+     "static_sd": 0.018,
+     "delta": -0.081,
+     "welch_t": -6.99
+    },
+    "kind": "c"
+   },
+   "OA:our_active_boosted": {
+    "in": {
+     "legacy": 0.883,
+     "legacy_sd": 0.003,
+     "static": 0.898,
+     "static_sd": 0.008,
+     "delta": 0.015,
+     "welch_t": 3.95
+    },
+    "L1": {
+     "legacy": 0.886,
+     "legacy_sd": 0.008,
+     "static": 0.888,
+     "static_sd": 0.008,
+     "delta": 0.002,
+     "welch_t": 0.4
+    },
+    "L2": {
+     "legacy": 0.88,
+     "legacy_sd": 0.014,
+     "static": 0.882,
+     "static_sd": 0.01,
+     "delta": 0.002,
+     "welch_t": 0.3
+    },
+    "kind": "b"
+   },
+   "OA:spikes_our_side": {
+    "in": {
+     "legacy": 0.552,
+     "legacy_sd": 0.029,
+     "static": 0.18,
+     "static_sd": 0.02,
+     "delta": -0.372,
+     "welch_t": -25.3
+    },
+    "L1": {
+     "legacy": 0.409,
+     "legacy_sd": 0.047,
+     "static": 0.237,
+     "static_sd": 0.006,
+     "delta": -0.173,
+     "welch_t": -8.85
+    },
+    "L2": {
+     "legacy": 0.408,
+     "legacy_sd": 0.037,
+     "static": 0.294,
+     "static_sd": 0.037,
+     "delta": -0.114,
+     "welch_t": -5.06
+    },
+    "kind": "c"
+   },
+   "OA:status_self_OA": {
+    "in": {
+     "legacy": 0.961,
+     "legacy_sd": 0.011,
+     "static": 0.977,
+     "static_sd": 0.006,
+     "delta": 0.016,
+     "welch_t": 3.12
+    },
+    "L1": {
+     "legacy": 0.902,
+     "legacy_sd": 0.016,
+     "static": 0.905,
+     "static_sd": 0.019,
+     "delta": 0.003,
+     "welch_t": 0.3
+    },
+    "L2": {
+     "legacy": 0.878,
+     "legacy_sd": 0.018,
+     "static": 0.876,
+     "static_sd": 0.013,
+     "delta": -0.002,
+     "welch_t": -0.17
+    },
+    "kind": "b"
+   },
+   "OA:their_active_hp": {
+    "in": {
+     "legacy": 0.095,
+     "legacy_sd": 0.006,
+     "static": 0.107,
+     "static_sd": 0.008,
+     "delta": 0.012,
+     "welch_t": 2.81
+    },
+    "L1": {
+     "legacy": 0.183,
+     "legacy_sd": 0.029,
+     "static": 0.13,
+     "static_sd": 0.031,
+     "delta": -0.053,
+     "welch_t": -2.91
+    },
+    "L2": {
+     "legacy": 0.309,
+     "legacy_sd": 0.041,
+     "static": 0.387,
+     "static_sd": 0.037,
+     "delta": 0.077,
+     "welch_t": 3.29
+    },
+    "kind": "c"
+   },
+   "OA:weather_any": {
+    "in": {
+     "legacy": 0.984,
+     "legacy_sd": 0.004,
+     "static": 0.822,
+     "static_sd": 0.015,
+     "delta": -0.162,
+     "welch_t": -23.92
+    },
+    "L1": {
+     "legacy": 0.951,
+     "legacy_sd": 0.012,
+     "static": 0.862,
+     "static_sd": 0.018,
+     "delta": -0.089,
+     "welch_t": -9.46
+    },
+    "L2": {
+     "legacy": 0.922,
+     "legacy_sd": 0.014,
+     "static": 0.869,
+     "static_sd": 0.027,
+     "delta": -0.054,
+     "welch_t": -4.01
+    },
+    "kind": "b"
+   },
+   "OB:clock_elapsed": {
+    "in": {
+     "legacy": 0.601,
+     "legacy_sd": 0.051,
+     "static": 0.189,
+     "static_sd": 0.099,
+     "delta": -0.413,
+     "welch_t": -8.39
+    },
+    "L1": {
+     "legacy": 0.621,
+     "legacy_sd": 0.077,
+     "static": 0.539,
+     "static_sd": 0.021,
+     "delta": -0.083,
+     "welch_t": -2.53
+    },
+    "L2": {
+     "legacy": 0.725,
+     "legacy_sd": 0.073,
+     "static": 0.721,
+     "static_sd": 0.035,
+     "delta": -0.004,
+     "welch_t": -0.13
+    },
+    "kind": "c"
+   },
+   "OB:fainted_ours": {
+    "in": {
+     "legacy": 0.444,
+     "legacy_sd": 0.061,
+     "static": 0.171,
+     "static_sd": 0.029,
+     "delta": -0.273,
+     "welch_t": -9.78
+    },
+    "L1": {
+     "legacy": 0.534,
+     "legacy_sd": 0.053,
+     "static": 0.446,
+     "static_sd": 0.023,
+     "delta": -0.088,
+     "welch_t": -3.65
+    },
+    "L2": {
+     "legacy": 0.662,
+     "legacy_sd": 0.042,
+     "static": 0.648,
+     "static_sd": 0.046,
+     "delta": -0.014,
+     "welch_t": -0.52
+    },
+    "kind": "c"
+   },
+   "OB:hp_self_OB": {
+    "in": {
+     "legacy": 0.899,
+     "legacy_sd": 0.034,
+     "static": 0.892,
+     "static_sd": 0.014,
+     "delta": -0.007,
+     "welch_t": -0.48
+    },
+    "L1": {
+     "legacy": 0.815,
+     "legacy_sd": 0.039,
+     "static": 0.762,
+     "static_sd": 0.022,
+     "delta": -0.053,
+     "welch_t": -2.87
+    },
+    "L2": {
+     "legacy": 0.753,
+     "legacy_sd": 0.033,
+     "static": 0.674,
+     "static_sd": 0.019,
+     "delta": -0.079,
+     "welch_t": -5.03
+    },
+    "kind": "c"
+   },
+   "OB:our_active_boosted": {
+    "in": {
+     "legacy": 0.635,
+     "legacy_sd": 0.019,
+     "static": 0.627,
+     "static_sd": 0.02,
+     "delta": -0.007,
+     "welch_t": -0.62
+    },
+    "L1": {
+     "legacy": 0.736,
+     "legacy_sd": 0.01,
+     "static": 0.723,
+     "static_sd": 0.017,
+     "delta": -0.013,
+     "welch_t": -1.45
+    },
+    "L2": {
+     "legacy": 0.781,
+     "legacy_sd": 0.038,
+     "static": 0.817,
+     "static_sd": 0.029,
+     "delta": 0.036,
+     "welch_t": 1.79
+    },
+    "kind": "b"
+   },
+   "OB:spikes_our_side": {
+    "in": {
+     "legacy": 0.675,
+     "legacy_sd": 0.044,
+     "static": 0.212,
+     "static_sd": 0.055,
+     "delta": -0.463,
+     "welch_t": -15.24
+    },
+    "L1": {
+     "legacy": 0.487,
+     "legacy_sd": 0.053,
+     "static": 0.263,
+     "static_sd": 0.014,
+     "delta": -0.223,
+     "welch_t": -9.94
+    },
+    "L2": {
+     "legacy": 0.451,
+     "legacy_sd": 0.048,
+     "static": 0.294,
+     "static_sd": 0.056,
+     "delta": -0.157,
+     "welch_t": -4.95
+    },
+    "kind": "c"
+   },
+   "OB:weather_any": {
+    "in": {
+     "legacy": 0.972,
+     "legacy_sd": 0.028,
+     "static": 0.836,
+     "static_sd": 0.024,
+     "delta": -0.136,
+     "welch_t": -8.83
+    },
+    "L1": {
+     "legacy": 0.954,
+     "legacy_sd": 0.014,
+     "static": 0.864,
+     "static_sd": 0.024,
+     "delta": -0.09,
+     "welch_t": -7.48
+    },
+    "L2": {
+     "legacy": 0.921,
+     "legacy_sd": 0.019,
+     "static": 0.884,
+     "static_sd": 0.021,
+     "delta": -0.037,
+     "welch_t": -2.99
+    },
+    "kind": "b"
+   },
+   "TA:hp_self_TA": {
+    "in": {
+     "legacy": 0.852,
+     "legacy_sd": 0.018,
+     "static": 0.815,
+     "static_sd": 0.012,
+     "delta": -0.036,
+     "welch_t": -4.09
+    },
+    "L1": {
+     "legacy": 0.767,
+     "legacy_sd": 0.034,
+     "static": 0.713,
+     "static_sd": 0.032,
+     "delta": -0.053,
+     "welch_t": -2.67
+    },
+    "L2": {
+     "legacy": 0.707,
+     "legacy_sd": 0.037,
+     "static": 0.657,
+     "static_sd": 0.033,
+     "delta": -0.051,
+     "welch_t": -2.41
+    },
+    "kind": "c"
+   },
+   "TA:our_active_hp": {
+    "in": {
+     "legacy": 0.164,
+     "legacy_sd": 0.014,
+     "static": 0.337,
+     "static_sd": 0.033,
+     "delta": 0.173,
+     "welch_t": 10.86
+    },
+    "L1": {
+     "legacy": 0.277,
+     "legacy_sd": 0.046,
+     "static": 0.319,
+     "static_sd": 0.072,
+     "delta": 0.042,
+     "welch_t": 1.14
+    },
+    "L2": {
+     "legacy": 0.372,
+     "legacy_sd": 0.054,
+     "static": 0.32,
+     "static_sd": 0.043,
+     "delta": -0.052,
+     "welch_t": -1.76
+    },
+    "kind": "c"
+   },
+   "TA:spikes_their_side": {
+    "in": {
+     "legacy": 0.474,
+     "legacy_sd": 0.026,
+     "static": 0.314,
+     "static_sd": 0.029,
+     "delta": -0.16,
+     "welch_t": -9.52
+    },
+    "L1": {
+     "legacy": 0.418,
+     "legacy_sd": 0.017,
+     "static": 0.362,
+     "static_sd": 0.021,
+     "delta": -0.056,
+     "welch_t": -4.85
+    },
+    "L2": {
+     "legacy": 0.414,
+     "legacy_sd": 0.038,
+     "static": 0.362,
+     "static_sd": 0.011,
+     "delta": -0.053,
+     "welch_t": -3.24
+    },
+    "kind": "c"
+   },
+   "TA:status_self_TA": {
+    "in": {
+     "legacy": 0.97,
+     "legacy_sd": 0.013,
+     "static": 0.982,
+     "static_sd": 0.006,
+     "delta": 0.012,
+     "welch_t": 2.07
+    },
+    "L1": {
+     "legacy": 0.924,
+     "legacy_sd": 0.024,
+     "static": 0.931,
+     "static_sd": 0.004,
+     "delta": 0.008,
+     "welch_t": 0.75
+    },
+    "L2": {
+     "legacy": 0.892,
+     "legacy_sd": 0.021,
+     "static": 0.897,
+     "static_sd": 0.013,
+     "delta": 0.005,
+     "welch_t": 0.5
+    },
+    "kind": "b"
+   },
+   "TA:their_active_boosted": {
+    "in": {
+     "legacy": 0.874,
+     "legacy_sd": 0.01,
+     "static": 0.886,
+     "static_sd": 0.011,
+     "delta": 0.012,
+     "welch_t": 1.85
+    },
+    "L1": {
+     "legacy": 0.872,
+     "legacy_sd": 0.017,
+     "static": 0.88,
+     "static_sd": 0.017,
+     "delta": 0.008,
+     "welch_t": 0.79
+    },
+    "L2": {
+     "legacy": 0.871,
+     "legacy_sd": 0.012,
+     "static": 0.858,
+     "static_sd": 0.012,
+     "delta": -0.014,
+     "welch_t": -1.88
+    },
+    "kind": "b"
+   },
+   "TA:weather_any": {
+    "in": {
+     "legacy": 0.963,
+     "legacy_sd": 0.014,
+     "static": 0.83,
+     "static_sd": 0.004,
+     "delta": -0.133,
+     "welch_t": -22.43
+    },
+    "L1": {
+     "legacy": 0.921,
+     "legacy_sd": 0.027,
+     "static": 0.862,
+     "static_sd": 0.022,
+     "delta": -0.059,
+     "welch_t": -3.99
+    },
+    "L2": {
+     "legacy": 0.923,
+     "legacy_sd": 0.013,
+     "static": 0.884,
+     "static_sd": 0.017,
+     "delta": -0.039,
+     "welch_t": -4.16
+    },
+    "kind": "b"
+   }
+  },
+  "final": {
+   "M0:clock_elapsed": {
+    "in": {
+     "legacy": 0.255,
+     "legacy_sd": 0.075,
+     "static": 0.134,
+     "static_sd": 0.033,
+     "delta": -0.12,
+     "welch_t": -3.54
+    },
+    "L1": {
+     "legacy": 0.711,
+     "legacy_sd": 0.036,
+     "static": 0.689,
+     "static_sd": 0.023,
+     "delta": -0.022,
+     "welch_t": -1.2
+    },
+    "L2": {
+     "legacy": 0.722,
+     "legacy_sd": 0.054,
+     "static": 0.701,
+     "static_sd": 0.026,
+     "delta": -0.021,
+     "welch_t": -0.84
+    },
+    "kind": "c"
+   },
+   "M0:our_active_hp": {
+    "in": {
+     "legacy": 0.83,
+     "legacy_sd": 0.014,
+     "static": 0.338,
+     "static_sd": 0.009,
+     "delta": -0.492,
+     "welch_t": -71.25
+    },
+    "L1": {
+     "legacy": 0.857,
+     "legacy_sd": 0.021,
+     "static": 0.647,
+     "static_sd": 0.064,
+     "delta": -0.21,
+     "welch_t": -7.01
+    },
+    "L2": {
+     "legacy": 0.803,
+     "legacy_sd": 0.02,
+     "static": 0.59,
+     "static_sd": 0.063,
+     "delta": -0.212,
+     "welch_t": -7.28
+    },
+    "kind": "c"
+   },
+   "M0:weather_any": {
+    "in": {
+     "legacy": 0.885,
+     "legacy_sd": 0.028,
+     "static": 0.671,
+     "static_sd": 0.021,
+     "delta": -0.213,
+     "welch_t": -14.5
+    },
+    "L1": {
+     "legacy": 0.959,
+     "legacy_sd": 0.009,
+     "static": 0.88,
+     "static_sd": 0.022,
+     "delta": -0.079,
+     "welch_t": -7.43
+    },
+    "L2": {
+     "legacy": 0.92,
+     "legacy_sd": 0.019,
+     "static": 0.888,
+     "static_sd": 0.017,
+     "delta": -0.032,
+     "welch_t": -2.91
+    },
+    "kind": "b"
+   },
+   "OA:clock_elapsed": {
+    "in": {
+     "legacy": 0.553,
+     "legacy_sd": 0.074,
+     "static": 0.31,
+     "static_sd": 0.019,
+     "delta": -0.243,
+     "welch_t": -7.76
+    },
+    "L1": {
+     "legacy": 0.642,
+     "legacy_sd": 0.021,
+     "static": 0.502,
+     "static_sd": 0.047,
+     "delta": -0.14,
+     "welch_t": -6.14
+    },
+    "L2": {
+     "legacy": 0.736,
+     "legacy_sd": 0.02,
+     "static": 0.705,
+     "static_sd": 0.043,
+     "delta": -0.032,
+     "welch_t": -1.5
+    },
+    "kind": "c"
+   },
+   "OA:fainted_ours": {
+    "in": {
+     "legacy": 0.375,
+     "legacy_sd": 0.052,
+     "static": 0.147,
+     "static_sd": 0.009,
+     "delta": -0.228,
+     "welch_t": -10.64
+    },
+    "L1": {
+     "legacy": 0.505,
+     "legacy_sd": 0.074,
+     "static": 0.419,
+     "static_sd": 0.044,
+     "delta": -0.085,
+     "welch_t": -2.37
+    },
+    "L2": {
+     "legacy": 0.686,
+     "legacy_sd": 0.045,
+     "static": 0.672,
+     "static_sd": 0.054,
+     "delta": -0.014,
+     "welch_t": -0.47
+    },
+    "kind": "c"
+   },
+   "OA:fainted_theirs": {
+    "in": {
+     "legacy": 0.4,
+     "legacy_sd": 0.077,
+     "static": 0.079,
+     "static_sd": 0.018,
+     "delta": -0.321,
+     "welch_t": -9.89
+    },
+    "L1": {
+     "legacy": 0.56,
+     "legacy_sd": 0.046,
+     "static": 0.36,
+     "static_sd": 0.04,
+     "delta": -0.2,
+     "welch_t": -7.72
+    },
+    "L2": {
+     "legacy": 0.73,
+     "legacy_sd": 0.035,
+     "static": 0.692,
+     "static_sd": 0.035,
+     "delta": -0.038,
+     "welch_t": -1.77
+    },
+    "kind": "c"
+   },
+   "OA:hp_self_OA": {
+    "in": {
+     "legacy": 0.913,
+     "legacy_sd": 0.01,
+     "static": 0.905,
+     "static_sd": 0.023,
+     "delta": -0.008,
+     "welch_t": -0.73
+    },
+    "L1": {
+     "legacy": 0.866,
+     "legacy_sd": 0.011,
+     "static": 0.828,
+     "static_sd": 0.02,
+     "delta": -0.039,
+     "welch_t": -3.82
+    },
+    "L2": {
+     "legacy": 0.835,
+     "legacy_sd": 0.018,
+     "static": 0.788,
+     "static_sd": 0.019,
+     "delta": -0.047,
+     "welch_t": -4.15
+    },
+    "kind": "c"
+   },
+   "OA:our_active_boosted": {
+    "in": {
+     "legacy": 0.885,
+     "legacy_sd": 0.005,
+     "static": 0.9,
+     "static_sd": 0.01,
+     "delta": 0.016,
+     "welch_t": 3.35
+    },
+    "L1": {
+     "legacy": 0.893,
+     "legacy_sd": 0.007,
+     "static": 0.892,
+     "static_sd": 0.013,
+     "delta": -0.001,
+     "welch_t": -0.17
+    },
+    "L2": {
+     "legacy": 0.889,
+     "legacy_sd": 0.012,
+     "static": 0.888,
+     "static_sd": 0.008,
+     "delta": -0.001,
+     "welch_t": -0.09
+    },
+    "kind": "b"
+   },
+   "OA:spikes_our_side": {
+    "in": {
+     "legacy": 0.644,
+     "legacy_sd": 0.027,
+     "static": 0.189,
+     "static_sd": 0.02,
+     "delta": -0.455,
+     "welch_t": -31.85
+    },
+    "L1": {
+     "legacy": 0.481,
+     "legacy_sd": 0.022,
+     "static": 0.235,
+     "static_sd": 0.023,
+     "delta": -0.246,
+     "welch_t": -18.08
+    },
+    "L2": {
+     "legacy": 0.461,
+     "legacy_sd": 0.024,
+     "static": 0.33,
+     "static_sd": 0.052,
+     "delta": -0.131,
+     "welch_t": -5.16
+    },
+    "kind": "c"
+   },
+   "OA:status_self_OA": {
+    "in": {
+     "legacy": 0.974,
+     "legacy_sd": 0.008,
+     "static": 0.98,
+     "static_sd": 0.012,
+     "delta": 0.006,
+     "welch_t": 1.0
+    },
+    "L1": {
+     "legacy": 0.93,
+     "legacy_sd": 0.01,
+     "static": 0.915,
+     "static_sd": 0.015,
+     "delta": -0.015,
+     "welch_t": -2.02
+    },
+    "L2": {
+     "legacy": 0.902,
+     "legacy_sd": 0.017,
+     "static": 0.884,
+     "static_sd": 0.011,
+     "delta": -0.017,
+     "welch_t": -2.04
+    },
+    "kind": "b"
+   },
+   "OA:their_active_hp": {
+    "in": {
+     "legacy": 0.096,
+     "legacy_sd": 0.006,
+     "static": 0.11,
+     "static_sd": 0.009,
+     "delta": 0.014,
+     "welch_t": 3.07
+    },
+    "L1": {
+     "legacy": 0.187,
+     "legacy_sd": 0.032,
+     "static": 0.144,
+     "static_sd": 0.056,
+     "delta": -0.043,
+     "welch_t": -1.52
+    },
+    "L2": {
+     "legacy": 0.316,
+     "legacy_sd": 0.032,
+     "static": 0.384,
+     "static_sd": 0.056,
+     "delta": 0.068,
+     "welch_t": 2.42
+    },
+    "kind": "c"
+   },
+   "OA:weather_any": {
+    "in": {
+     "legacy": 0.981,
+     "legacy_sd": 0.002,
+     "static": 0.82,
+     "static_sd": 0.011,
+     "delta": -0.161,
+     "welch_t": -30.96
+    },
+    "L1": {
+     "legacy": 0.947,
+     "legacy_sd": 0.01,
+     "static": 0.874,
+     "static_sd": 0.033,
+     "delta": -0.073,
+     "welch_t": -4.74
+    },
+    "L2": {
+     "legacy": 0.917,
+     "legacy_sd": 0.025,
+     "static": 0.892,
+     "static_sd": 0.012,
+     "delta": -0.025,
+     "welch_t": -2.18
+    },
+    "kind": "b"
+   },
+   "OB:clock_elapsed": {
+    "in": {
+     "legacy": 0.629,
+     "legacy_sd": 0.07,
+     "static": 0.189,
+     "static_sd": 0.076,
+     "delta": -0.44,
+     "welch_t": -9.9
+    },
+    "L1": {
+     "legacy": 0.638,
+     "legacy_sd": 0.05,
+     "static": 0.528,
+     "static_sd": 0.077,
+     "delta": -0.11,
+     "welch_t": -2.75
+    },
+    "L2": {
+     "legacy": 0.722,
+     "legacy_sd": 0.061,
+     "static": 0.703,
+     "static_sd": 0.063,
+     "delta": -0.019,
+     "welch_t": -0.49
+    },
+    "kind": "c"
+   },
+   "OB:fainted_ours": {
+    "in": {
+     "legacy": 0.459,
+     "legacy_sd": 0.084,
+     "static": 0.167,
+     "static_sd": 0.02,
+     "delta": -0.292,
+     "welch_t": -8.25
+    },
+    "L1": {
+     "legacy": 0.543,
+     "legacy_sd": 0.044,
+     "static": 0.456,
+     "static_sd": 0.043,
+     "delta": -0.087,
+     "welch_t": -3.27
+    },
+    "L2": {
+     "legacy": 0.671,
+     "legacy_sd": 0.03,
+     "static": 0.665,
+     "static_sd": 0.043,
+     "delta": -0.006,
+     "welch_t": -0.28
+    },
+    "kind": "c"
+   },
+   "OB:hp_self_OB": {
+    "in": {
+     "legacy": 0.915,
+     "legacy_sd": 0.012,
+     "static": 0.92,
+     "static_sd": 0.013,
+     "delta": 0.005,
+     "welch_t": 0.69
+    },
+    "L1": {
+     "legacy": 0.835,
+     "legacy_sd": 0.025,
+     "static": 0.798,
+     "static_sd": 0.021,
+     "delta": -0.037,
+     "welch_t": -2.66
+    },
+    "L2": {
+     "legacy": 0.765,
+     "legacy_sd": 0.03,
+     "static": 0.716,
+     "static_sd": 0.023,
+     "delta": -0.049,
+     "welch_t": -3.06
+    },
+    "kind": "c"
+   },
+   "OB:our_active_boosted": {
+    "in": {
+     "legacy": 0.629,
+     "legacy_sd": 0.019,
+     "static": 0.63,
+     "static_sd": 0.017,
+     "delta": 0.001,
+     "welch_t": 0.13
+    },
+    "L1": {
+     "legacy": 0.735,
+     "legacy_sd": 0.022,
+     "static": 0.72,
+     "static_sd": 0.033,
+     "delta": -0.015,
+     "welch_t": -0.88
+    },
+    "L2": {
+     "legacy": 0.775,
+     "legacy_sd": 0.018,
+     "static": 0.8,
+     "static_sd": 0.035,
+     "delta": 0.025,
+     "welch_t": 1.47
+    },
+    "kind": "b"
+   },
+   "OB:spikes_our_side": {
+    "in": {
+     "legacy": 0.743,
+     "legacy_sd": 0.045,
+     "static": 0.187,
+     "static_sd": 0.071,
+     "delta": -0.556,
+     "welch_t": -15.19
+    },
+    "L1": {
+     "legacy": 0.559,
+     "legacy_sd": 0.016,
+     "static": 0.281,
+     "static_sd": 0.029,
+     "delta": -0.278,
+     "welch_t": -19.15
+    },
+    "L2": {
+     "legacy": 0.5,
+     "legacy_sd": 0.033,
+     "static": 0.311,
+     "static_sd": 0.07,
+     "delta": -0.19,
+     "welch_t": -5.56
+    },
+    "kind": "c"
+   },
+   "OB:weather_any": {
+    "in": {
+     "legacy": 0.972,
+     "legacy_sd": 0.024,
+     "static": 0.825,
+     "static_sd": 0.022,
+     "delta": -0.148,
+     "welch_t": -10.57
+    },
+    "L1": {
+     "legacy": 0.953,
+     "legacy_sd": 0.016,
+     "static": 0.855,
+     "static_sd": 0.028,
+     "delta": -0.098,
+     "welch_t": -7.01
+    },
+    "L2": {
+     "legacy": 0.914,
+     "legacy_sd": 0.035,
+     "static": 0.876,
+     "static_sd": 0.026,
+     "delta": -0.038,
+     "welch_t": -2.07
+    },
+    "kind": "b"
+   },
+   "TA:hp_self_TA": {
+    "in": {
+     "legacy": 0.869,
+     "legacy_sd": 0.014,
+     "static": 0.857,
+     "static_sd": 0.02,
+     "delta": -0.013,
+     "welch_t": -1.17
+    },
+    "L1": {
+     "legacy": 0.775,
+     "legacy_sd": 0.023,
+     "static": 0.757,
+     "static_sd": 0.027,
+     "delta": -0.018,
+     "welch_t": -1.18
+    },
+    "L2": {
+     "legacy": 0.707,
+     "legacy_sd": 0.021,
+     "static": 0.689,
+     "static_sd": 0.018,
+     "delta": -0.018,
+     "welch_t": -1.51
+    },
+    "kind": "c"
+   },
+   "TA:our_active_hp": {
+    "in": {
+     "legacy": 0.167,
+     "legacy_sd": 0.009,
+     "static": 0.355,
+     "static_sd": 0.052,
+     "delta": 0.188,
+     "welch_t": 8.06
+    },
+    "L1": {
+     "legacy": 0.266,
+     "legacy_sd": 0.04,
+     "static": 0.359,
+     "static_sd": 0.101,
+     "delta": 0.093,
+     "welch_t": 1.92
+    },
+    "L2": {
+     "legacy": 0.384,
+     "legacy_sd": 0.064,
+     "static": 0.342,
+     "static_sd": 0.068,
+     "delta": -0.042,
+     "welch_t": -1.06
+    },
+    "kind": "c"
+   },
+   "TA:spikes_their_side": {
+    "in": {
+     "legacy": 0.476,
+     "legacy_sd": 0.048,
+     "static": 0.377,
+     "static_sd": 0.046,
+     "delta": -0.099,
+     "welch_t": -3.5
+    },
+    "L1": {
+     "legacy": 0.417,
+     "legacy_sd": 0.016,
+     "static": 0.39,
+     "static_sd": 0.036,
+     "delta": -0.027,
+     "welch_t": -1.56
+    },
+    "L2": {
+     "legacy": 0.412,
+     "legacy_sd": 0.029,
+     "static": 0.393,
+     "static_sd": 0.028,
+     "delta": -0.019,
+     "welch_t": -1.13
+    },
+    "kind": "c"
+   },
+   "TA:status_self_TA": {
+    "in": {
+     "legacy": 0.98,
+     "legacy_sd": 0.01,
+     "static": 0.987,
+     "static_sd": 0.006,
+     "delta": 0.006,
+     "welch_t": 1.33
+    },
+    "L1": {
+     "legacy": 0.947,
+     "legacy_sd": 0.023,
+     "static": 0.932,
+     "static_sd": 0.017,
+     "delta": -0.015,
+     "welch_t": -1.26
+    },
+    "L2": {
+     "legacy": 0.918,
+     "legacy_sd": 0.018,
+     "static": 0.896,
+     "static_sd": 0.019,
+     "delta": -0.022,
+     "welch_t": -1.94
+    },
+    "kind": "b"
+   },
+   "TA:their_active_boosted": {
+    "in": {
+     "legacy": 0.879,
+     "legacy_sd": 0.009,
+     "static": 0.891,
+     "static_sd": 0.006,
+     "delta": 0.012,
+     "welch_t": 2.47
+    },
+    "L1": {
+     "legacy": 0.873,
+     "legacy_sd": 0.017,
+     "static": 0.885,
+     "static_sd": 0.016,
+     "delta": 0.012,
+     "welch_t": 1.19
+    },
+    "L2": {
+     "legacy": 0.872,
+     "legacy_sd": 0.016,
+     "static": 0.868,
+     "static_sd": 0.024,
+     "delta": -0.004,
+     "welch_t": -0.29
+    },
+    "kind": "b"
+   },
+   "TA:weather_any": {
+    "in": {
+     "legacy": 0.961,
+     "legacy_sd": 0.015,
+     "static": 0.83,
+     "static_sd": 0.012,
+     "delta": -0.131,
+     "welch_t": -15.94
+    },
+    "L1": {
+     "legacy": 0.928,
+     "legacy_sd": 0.024,
+     "static": 0.872,
+     "static_sd": 0.015,
+     "delta": -0.057,
+     "welch_t": -4.73
+    },
+    "L2": {
+     "legacy": 0.919,
+     "legacy_sd": 0.013,
+     "static": 0.896,
+     "static_sd": 0.032,
+     "delta": -0.023,
+     "welch_t": -1.52
+    },
+    "kind": "b"
+   }
+  }
+ },
+ "attention": {
+  "2M": {
+   "entropy L1 our_active (head mean)": {
+    "legacy": 2.763,
+    "legacy_sd": 0.151,
+    "static": 1.939,
+    "static_sd": 0.411,
+    "delta": -0.824,
+    "welch_t": -4.25
+   },
+   "entropy L1 our_active h0": {
+    "legacy": 2.832,
+    "legacy_sd": 0.253,
+    "static": 1.982,
+    "static_sd": 0.876,
+    "delta": -0.849,
+    "welch_t": -2.1
+   },
+   "entropy L1 our_active h1": {
+    "legacy": 2.458,
+    "legacy_sd": 0.47,
+    "static": 1.783,
+    "static_sd": 0.978,
+    "delta": -0.675,
+    "welch_t": -1.41
+   },
+   "entropy L1 our_active h2": {
+    "legacy": 3.055,
+    "legacy_sd": 0.261,
+    "static": 2.124,
+    "static_sd": 0.813,
+    "delta": -0.931,
+    "welch_t": -2.46
+   },
+   "entropy L1 our_active h3": {
+    "legacy": 2.708,
+    "legacy_sd": 0.374,
+    "static": 1.867,
+    "static_sd": 0.396,
+    "delta": -0.84,
+    "welch_t": -3.59
+   },
+   "entropy L1 their_active (head mean)": {
+    "legacy": 2.604,
+    "legacy_sd": 0.2,
+    "static": 2.689,
+    "static_sd": 0.253,
+    "delta": 0.086,
+    "welch_t": 0.61
+   },
+   "entropy L1 their_active h0": {
+    "legacy": 2.772,
+    "legacy_sd": 0.594,
+    "static": 2.918,
+    "static_sd": 0.337,
+    "delta": 0.146,
+    "welch_t": 0.51
+   },
+   "entropy L1 their_active h1": {
+    "legacy": 2.724,
+    "legacy_sd": 0.528,
+    "static": 2.621,
+    "static_sd": 0.869,
+    "delta": -0.103,
+    "welch_t": -0.23
+   },
+   "entropy L1 their_active h2": {
+    "legacy": 2.625,
+    "legacy_sd": 0.432,
+    "static": 2.49,
+    "static_sd": 0.541,
+    "delta": -0.135,
+    "welch_t": -0.45
+   },
+   "entropy L1 their_active h3": {
+    "legacy": 2.293,
+    "legacy_sd": 0.575,
+    "static": 2.728,
+    "static_sd": 0.304,
+    "delta": 0.435,
+    "welch_t": 1.6
+   },
+   "entropy L1 our_bench (head mean)": {
+    "legacy": 2.61,
+    "legacy_sd": 0.128,
+    "static": 1.835,
+    "static_sd": 0.454,
+    "delta": -0.775,
+    "welch_t": -3.7
+   },
+   "entropy L1 our_bench h0": {
+    "legacy": 2.581,
+    "legacy_sd": 0.242,
+    "static": 1.917,
+    "static_sd": 0.835,
+    "delta": -0.664,
+    "welch_t": -1.72
+   },
+   "entropy L1 our_bench h1": {
+    "legacy": 2.36,
+    "legacy_sd": 0.438,
+    "static": 1.655,
+    "static_sd": 1.006,
+    "delta": -0.706,
+    "welch_t": -1.46
+   },
+   "entropy L1 our_bench h2": {
+    "legacy": 2.854,
+    "legacy_sd": 0.262,
+    "static": 1.974,
+    "static_sd": 0.782,
+    "delta": -0.88,
+    "welch_t": -2.4
+   },
+   "entropy L1 our_bench h3": {
+    "legacy": 2.643,
+    "legacy_sd": 0.328,
+    "static": 1.793,
+    "static_sd": 0.352,
+    "delta": -0.85,
+    "welch_t": -4.11
+   },
+   "entropy L1 E3 (head mean)": {
+    "legacy": 3.2,
+    "legacy_sd": 0.128,
+    "static": 3.063,
+    "static_sd": 0.101,
+    "delta": -0.137,
+    "welch_t": -1.99
+   },
+   "entropy L1 E3 h0": {
+    "legacy": 3.161,
+    "legacy_sd": 0.235,
+    "static": 2.803,
+    "static_sd": 0.277,
+    "delta": -0.359,
+    "welch_t": -2.29
+   },
+   "entropy L1 E3 h1": {
+    "legacy": 3.084,
+    "legacy_sd": 0.263,
+    "static": 3.26,
+    "static_sd": 0.117,
+    "delta": 0.176,
+    "welch_t": 1.47
+   },
+   "entropy L1 E3 h2": {
+    "legacy": 3.277,
+    "legacy_sd": 0.193,
+    "static": 3.128,
+    "static_sd": 0.296,
+    "delta": -0.149,
+    "welch_t": -0.97
+   },
+   "entropy L1 E3 h3": {
+    "legacy": 3.278,
+    "legacy_sd": 0.15,
+    "static": 3.062,
+    "static_sd": 0.409,
+    "delta": -0.217,
+    "welch_t": -1.12
+   },
+   "entropy L1 board (head mean)": {
+    "legacy": 3.487,
+    "legacy_sd": 0.072,
+    "static": 3.352,
+    "static_sd": 0.109,
+    "delta": -0.135,
+    "welch_t": -2.37
+   },
+   "entropy L1 board h0": {
+    "legacy": 3.443,
+    "legacy_sd": 0.241,
+    "static": 3.326,
+    "static_sd": 0.197,
+    "delta": -0.116,
+    "welch_t": -0.88
+   },
+   "entropy L1 board h1": {
+    "legacy": 3.487,
+    "legacy_sd": 0.176,
+    "static": 3.244,
+    "static_sd": 0.278,
+    "delta": -0.243,
+    "welch_t": -1.69
+   },
+   "entropy L1 board h2": {
+    "legacy": 3.451,
+    "legacy_sd": 0.264,
+    "static": 3.281,
+    "static_sd": 0.304,
+    "delta": -0.17,
+    "welch_t": -0.98
+   },
+   "entropy L1 board h3": {
+    "legacy": 3.567,
+    "legacy_sd": 0.097,
+    "static": 3.555,
+    "static_sd": 0.141,
+    "delta": -0.012,
+    "welch_t": -0.16
+   },
+   "mass L1 our_active->our_mons (head mean)": {
+    "legacy": 0.199,
+    "legacy_sd": 0.122,
+    "static": 0.326,
+    "static_sd": 0.139,
+    "delta": 0.127,
+    "welch_t": 1.6
+   },
+   "mass L1 our_active->their_mons (head mean)": {
+    "legacy": 0.154,
+    "legacy_sd": 0.083,
+    "static": 0.07,
+    "static_sd": 0.063,
+    "delta": -0.084,
+    "welch_t": -1.92
+   },
+   "mass L1 our_active->board (head mean)": {
+    "legacy": 0.053,
+    "legacy_sd": 0.049,
+    "static": 0.047,
+    "static_sd": 0.063,
+    "delta": -0.006,
+    "welch_t": -0.18
+   },
+   "mass L1 our_active->E3 (head mean)": {
+    "legacy": 0.099,
+    "legacy_sd": 0.031,
+    "static": 0.03,
+    "static_sd": 0.017,
+    "delta": -0.069,
+    "welch_t": -4.65
+   },
+   "mass L1 our_active->E4_E5_other (head mean)": {
+    "legacy": 0.222,
+    "legacy_sd": 0.036,
+    "static": 0.173,
+    "static_sd": 0.135,
+    "delta": -0.049,
+    "welch_t": -0.8
+   },
+   "mass L1 our_active->events (head mean)": {
+    "legacy": 0.273,
+    "legacy_sd": 0.08,
+    "static": 0.355,
+    "static_sd": 0.15,
+    "delta": 0.082,
+    "welch_t": 1.1
+   },
+   "mass L1 their_active->our_mons (head mean)": {
+    "legacy": 0.243,
+    "legacy_sd": 0.124,
+    "static": 0.273,
+    "static_sd": 0.114,
+    "delta": 0.03,
+    "welch_t": 0.42
+   },
+   "mass L1 their_active->their_mons (head mean)": {
+    "legacy": 0.217,
+    "legacy_sd": 0.116,
+    "static": 0.138,
+    "static_sd": 0.069,
+    "delta": -0.079,
+    "welch_t": -1.4
+   },
+   "mass L1 their_active->board (head mean)": {
+    "legacy": 0.05,
+    "legacy_sd": 0.051,
+    "static": 0.078,
+    "static_sd": 0.016,
+    "delta": 0.028,
+    "welch_t": 1.27
+   },
+   "mass L1 their_active->E3 (head mean)": {
+    "legacy": 0.085,
+    "legacy_sd": 0.033,
+    "static": 0.094,
+    "static_sd": 0.03,
+    "delta": 0.009,
+    "welch_t": 0.48
+   },
+   "mass L1 their_active->E4_E5_other (head mean)": {
+    "legacy": 0.157,
+    "legacy_sd": 0.035,
+    "static": 0.192,
+    "static_sd": 0.063,
+    "delta": 0.035,
+    "welch_t": 1.11
+   },
+   "mass L1 their_active->events (head mean)": {
+    "legacy": 0.248,
+    "legacy_sd": 0.093,
+    "static": 0.225,
+    "static_sd": 0.08,
+    "delta": -0.023,
+    "welch_t": -0.45
+   },
+   "entropy L2 our_active (head mean)": {
+    "legacy": 3.253,
+    "legacy_sd": 0.127,
+    "static": 3.382,
+    "static_sd": 0.095,
+    "delta": 0.129,
+    "welch_t": 1.93
+   },
+   "entropy L2 our_active h0": {
+    "legacy": 3.049,
+    "legacy_sd": 0.391,
+    "static": 3.281,
+    "static_sd": 0.467,
+    "delta": 0.232,
+    "welch_t": 0.88
+   },
+   "entropy L2 our_active h1": {
+    "legacy": 3.291,
+    "legacy_sd": 0.283,
+    "static": 3.473,
+    "static_sd": 0.282,
+    "delta": 0.182,
+    "welch_t": 1.06
+   },
+   "entropy L2 our_active h2": {
+    "legacy": 3.399,
+    "legacy_sd": 0.276,
+    "static": 3.626,
+    "static_sd": 0.069,
+    "delta": 0.228,
+    "welch_t": 1.95
+   },
+   "entropy L2 our_active h3": {
+    "legacy": 3.275,
+    "legacy_sd": 0.353,
+    "static": 3.149,
+    "static_sd": 0.461,
+    "delta": -0.125,
+    "welch_t": -0.5
+   },
+   "entropy L2 their_active (head mean)": {
+    "legacy": 3.389,
+    "legacy_sd": 0.113,
+    "static": 3.452,
+    "static_sd": 0.059,
+    "delta": 0.063,
+    "welch_t": 1.18
+   },
+   "entropy L2 their_active h0": {
+    "legacy": 3.471,
+    "legacy_sd": 0.137,
+    "static": 3.624,
+    "static_sd": 0.151,
+    "delta": 0.154,
+    "welch_t": 1.75
+   },
+   "entropy L2 their_active h1": {
+    "legacy": 3.428,
+    "legacy_sd": 0.226,
+    "static": 3.398,
+    "static_sd": 0.18,
+    "delta": -0.029,
+    "welch_t": -0.24
+   },
+   "entropy L2 their_active h2": {
+    "legacy": 3.228,
+    "legacy_sd": 0.318,
+    "static": 3.324,
+    "static_sd": 0.288,
+    "delta": 0.097,
+    "welch_t": 0.53
+   },
+   "entropy L2 their_active h3": {
+    "legacy": 3.431,
+    "legacy_sd": 0.23,
+    "static": 3.461,
+    "static_sd": 0.169,
+    "delta": 0.029,
+    "welch_t": 0.24
+   },
+   "entropy L2 our_bench (head mean)": {
+    "legacy": 3.095,
+    "legacy_sd": 0.105,
+    "static": 3.201,
+    "static_sd": 0.089,
+    "delta": 0.106,
+    "welch_t": 1.81
+   },
+   "entropy L2 our_bench h0": {
+    "legacy": 2.909,
+    "legacy_sd": 0.364,
+    "static": 3.132,
+    "static_sd": 0.422,
+    "delta": 0.223,
+    "welch_t": 0.93
+   },
+   "entropy L2 our_bench h1": {
+    "legacy": 3.105,
+    "legacy_sd": 0.276,
+    "static": 3.284,
+    "static_sd": 0.288,
+    "delta": 0.179,
+    "welch_t": 1.05
+   },
+   "entropy L2 our_bench h2": {
+    "legacy": 3.249,
+    "legacy_sd": 0.245,
+    "static": 3.425,
+    "static_sd": 0.079,
+    "delta": 0.176,
+    "welch_t": 1.66
+   },
+   "entropy L2 our_bench h3": {
+    "legacy": 3.115,
+    "legacy_sd": 0.324,
+    "static": 2.962,
+    "static_sd": 0.455,
+    "delta": -0.154,
+    "welch_t": -0.63
+   },
+   "entropy L2 E3 (head mean)": {
+    "legacy": 3.327,
+    "legacy_sd": 0.19,
+    "static": 3.478,
+    "static_sd": 0.103,
+    "delta": 0.151,
+    "welch_t": 1.68
+   },
+   "entropy L2 E3 h0": {
+    "legacy": 3.406,
+    "legacy_sd": 0.218,
+    "static": 3.668,
+    "static_sd": 0.114,
+    "delta": 0.261,
+    "welch_t": 2.55
+   },
+   "entropy L2 E3 h1": {
+    "legacy": 3.167,
+    "legacy_sd": 0.475,
+    "static": 3.343,
+    "static_sd": 0.328,
+    "delta": 0.177,
+    "welch_t": 0.73
+   },
+   "entropy L2 E3 h2": {
+    "legacy": 3.455,
+    "legacy_sd": 0.156,
+    "static": 3.495,
+    "static_sd": 0.423,
+    "delta": 0.04,
+    "welch_t": 0.2
+   },
+   "entropy L2 E3 h3": {
+    "legacy": 3.281,
+    "legacy_sd": 0.452,
+    "static": 3.407,
+    "static_sd": 0.289,
+    "delta": 0.126,
+    "welch_t": 0.56
+   },
+   "entropy L2 board (head mean)": {
+    "legacy": 3.602,
+    "legacy_sd": 0.116,
+    "static": 3.585,
+    "static_sd": 0.074,
+    "delta": -0.017,
+    "welch_t": -0.3
+   },
+   "entropy L2 board h0": {
+    "legacy": 3.544,
+    "legacy_sd": 0.263,
+    "static": 3.599,
+    "static_sd": 0.076,
+    "delta": 0.055,
+    "welch_t": 0.49
+   },
+   "entropy L2 board h1": {
+    "legacy": 3.532,
+    "legacy_sd": 0.262,
+    "static": 3.541,
+    "static_sd": 0.215,
+    "delta": 0.009,
+    "welch_t": 0.07
+   },
+   "entropy L2 board h2": {
+    "legacy": 3.698,
+    "legacy_sd": 0.085,
+    "static": 3.607,
+    "static_sd": 0.063,
+    "delta": -0.091,
+    "welch_t": -2.03
+   },
+   "entropy L2 board h3": {
+    "legacy": 3.633,
+    "legacy_sd": 0.116,
+    "static": 3.591,
+    "static_sd": 0.199,
+    "delta": -0.042,
+    "welch_t": -0.42
+   },
+   "mass L2 our_active->our_mons (head mean)": {
+    "legacy": 0.128,
+    "legacy_sd": 0.068,
+    "static": 0.154,
+    "static_sd": 0.113,
+    "delta": 0.026,
+    "welch_t": 0.46
+   },
+   "mass L2 our_active->their_mons (head mean)": {
+    "legacy": 0.161,
+    "legacy_sd": 0.032,
+    "static": 0.099,
+    "static_sd": 0.049,
+    "delta": -0.062,
+    "welch_t": -2.44
+   },
+   "mass L2 our_active->board (head mean)": {
+    "legacy": 0.031,
+    "legacy_sd": 0.009,
+    "static": 0.063,
+    "static_sd": 0.01,
+    "delta": 0.032,
+    "welch_t": 5.53
+   },
+   "mass L2 our_active->E3 (head mean)": {
+    "legacy": 0.131,
+    "legacy_sd": 0.059,
+    "static": 0.065,
+    "static_sd": 0.014,
+    "delta": -0.067,
+    "welch_t": -2.67
+   },
+   "mass L2 our_active->E4_E5_other (head mean)": {
+    "legacy": 0.312,
+    "legacy_sd": 0.075,
+    "static": 0.265,
+    "static_sd": 0.139,
+    "delta": -0.047,
+    "welch_t": -0.68
+   },
+   "mass L2 our_active->events (head mean)": {
+    "legacy": 0.236,
+    "legacy_sd": 0.102,
+    "static": 0.354,
+    "static_sd": 0.086,
+    "delta": 0.118,
+    "welch_t": 2.07
+   },
+   "mass L2 their_active->our_mons (head mean)": {
+    "legacy": 0.136,
+    "legacy_sd": 0.061,
+    "static": 0.124,
+    "static_sd": 0.045,
+    "delta": -0.012,
+    "welch_t": -0.38
+   },
+   "mass L2 their_active->their_mons (head mean)": {
+    "legacy": 0.167,
+    "legacy_sd": 0.049,
+    "static": 0.147,
+    "static_sd": 0.059,
+    "delta": -0.021,
+    "welch_t": -0.62
+   },
+   "mass L2 their_active->board (head mean)": {
+    "legacy": 0.041,
+    "legacy_sd": 0.026,
+    "static": 0.074,
+    "static_sd": 0.026,
+    "delta": 0.032,
+    "welch_t": 2.04
+   },
+   "mass L2 their_active->E3 (head mean)": {
+    "legacy": 0.086,
+    "legacy_sd": 0.03,
+    "static": 0.092,
+    "static_sd": 0.02,
+    "delta": 0.007,
+    "welch_t": 0.44
+   },
+   "mass L2 their_active->E4_E5_other (head mean)": {
+    "legacy": 0.263,
+    "legacy_sd": 0.044,
+    "static": 0.261,
+    "static_sd": 0.045,
+    "delta": -0.002,
+    "welch_t": -0.09
+   },
+   "mass L2 their_active->events (head mean)": {
+    "legacy": 0.307,
+    "legacy_sd": 0.059,
+    "static": 0.303,
+    "static_sd": 0.044,
+    "delta": -0.004,
+    "welch_t": -0.12
+   }
+  },
+  "5M": {
+   "entropy L1 our_active (head mean)": {
+    "legacy": 2.72,
+    "legacy_sd": 0.1,
+    "static": 2.225,
+    "static_sd": 0.336,
+    "delta": -0.495,
+    "welch_t": -3.18
+   },
+   "entropy L1 our_active h0": {
+    "legacy": 2.789,
+    "legacy_sd": 0.28,
+    "static": 2.239,
+    "static_sd": 0.68,
+    "delta": -0.55,
+    "welch_t": -1.69
+   },
+   "entropy L1 our_active h1": {
+    "legacy": 2.597,
+    "legacy_sd": 0.28,
+    "static": 2.164,
+    "static_sd": 0.773,
+    "delta": -0.433,
+    "welch_t": -1.19
+   },
+   "entropy L1 our_active h2": {
+    "legacy": 2.972,
+    "legacy_sd": 0.266,
+    "static": 2.376,
+    "static_sd": 0.732,
+    "delta": -0.596,
+    "welch_t": -1.73
+   },
+   "entropy L1 our_active h3": {
+    "legacy": 2.523,
+    "legacy_sd": 0.223,
+    "static": 2.122,
+    "static_sd": 0.544,
+    "delta": -0.401,
+    "welch_t": -1.54
+   },
+   "entropy L1 their_active (head mean)": {
+    "legacy": 2.712,
+    "legacy_sd": 0.208,
+    "static": 2.789,
+    "static_sd": 0.26,
+    "delta": 0.077,
+    "welch_t": 0.53
+   },
+   "entropy L1 their_active h0": {
+    "legacy": 2.825,
+    "legacy_sd": 0.504,
+    "static": 2.96,
+    "static_sd": 0.31,
+    "delta": 0.135,
+    "welch_t": 0.54
+   },
+   "entropy L1 their_active h1": {
+    "legacy": 2.873,
+    "legacy_sd": 0.346,
+    "static": 2.636,
+    "static_sd": 0.689,
+    "delta": -0.237,
+    "welch_t": -0.7
+   },
+   "entropy L1 their_active h2": {
+    "legacy": 2.623,
+    "legacy_sd": 0.279,
+    "static": 2.713,
+    "static_sd": 0.542,
+    "delta": 0.09,
+    "welch_t": 0.34
+   },
+   "entropy L1 their_active h3": {
+    "legacy": 2.527,
+    "legacy_sd": 0.324,
+    "static": 2.845,
+    "static_sd": 0.269,
+    "delta": 0.319,
+    "welch_t": 1.78
+   },
+   "entropy L1 our_bench (head mean)": {
+    "legacy": 2.567,
+    "legacy_sd": 0.107,
+    "static": 2.163,
+    "static_sd": 0.32,
+    "delta": -0.404,
+    "welch_t": -2.7
+   },
+   "entropy L1 our_bench h0": {
+    "legacy": 2.565,
+    "legacy_sd": 0.257,
+    "static": 2.159,
+    "static_sd": 0.652,
+    "delta": -0.406,
+    "welch_t": -1.31
+   },
+   "entropy L1 our_bench h1": {
+    "legacy": 2.449,
+    "legacy_sd": 0.275,
+    "static": 2.109,
+    "static_sd": 0.671,
+    "delta": -0.34,
+    "welch_t": -1.06
+   },
+   "entropy L1 our_bench h2": {
+    "legacy": 2.721,
+    "legacy_sd": 0.278,
+    "static": 2.294,
+    "static_sd": 0.553,
+    "delta": -0.427,
+    "welch_t": -1.57
+   },
+   "entropy L1 our_bench h3": {
+    "legacy": 2.535,
+    "legacy_sd": 0.263,
+    "static": 2.091,
+    "static_sd": 0.534,
+    "delta": -0.444,
+    "welch_t": -1.7
+   },
+   "entropy L1 E3 (head mean)": {
+    "legacy": 3.087,
+    "legacy_sd": 0.122,
+    "static": 2.971,
+    "static_sd": 0.139,
+    "delta": -0.115,
+    "welch_t": -1.45
+   },
+   "entropy L1 E3 h0": {
+    "legacy": 3.113,
+    "legacy_sd": 0.202,
+    "static": 2.721,
+    "static_sd": 0.406,
+    "delta": -0.391,
+    "welch_t": -1.96
+   },
+   "entropy L1 E3 h1": {
+    "legacy": 3.006,
+    "legacy_sd": 0.312,
+    "static": 3.182,
+    "static_sd": 0.201,
+    "delta": 0.175,
+    "welch_t": 1.12
+   },
+   "entropy L1 E3 h2": {
+    "legacy": 3.086,
+    "legacy_sd": 0.172,
+    "static": 3.069,
+    "static_sd": 0.196,
+    "delta": -0.017,
+    "welch_t": -0.15
+   },
+   "entropy L1 E3 h3": {
+    "legacy": 3.142,
+    "legacy_sd": 0.145,
+    "static": 2.913,
+    "static_sd": 0.449,
+    "delta": -0.229,
+    "welch_t": -1.09
+   },
+   "entropy L1 board (head mean)": {
+    "legacy": 3.463,
+    "legacy_sd": 0.114,
+    "static": 3.354,
+    "static_sd": 0.094,
+    "delta": -0.109,
+    "welch_t": -1.74
+   },
+   "entropy L1 board h0": {
+    "legacy": 3.379,
+    "legacy_sd": 0.322,
+    "static": 3.347,
+    "static_sd": 0.314,
+    "delta": -0.032,
+    "welch_t": -0.17
+   },
+   "entropy L1 board h1": {
+    "legacy": 3.509,
+    "legacy_sd": 0.159,
+    "static": 3.229,
+    "static_sd": 0.298,
+    "delta": -0.28,
+    "welch_t": -1.89
+   },
+   "entropy L1 board h2": {
+    "legacy": 3.468,
+    "legacy_sd": 0.3,
+    "static": 3.407,
+    "static_sd": 0.187,
+    "delta": -0.062,
+    "welch_t": -0.42
+   },
+   "entropy L1 board h3": {
+    "legacy": 3.495,
+    "legacy_sd": 0.246,
+    "static": 3.431,
+    "static_sd": 0.167,
+    "delta": -0.064,
+    "welch_t": -0.51
+   },
+   "mass L1 our_active->our_mons (head mean)": {
+    "legacy": 0.167,
+    "legacy_sd": 0.122,
+    "static": 0.273,
+    "static_sd": 0.139,
+    "delta": 0.106,
+    "welch_t": 1.33
+   },
+   "mass L1 our_active->their_mons (head mean)": {
+    "legacy": 0.207,
+    "legacy_sd": 0.047,
+    "static": 0.088,
+    "static_sd": 0.04,
+    "delta": -0.119,
+    "welch_t": -4.51
+   },
+   "mass L1 our_active->board (head mean)": {
+    "legacy": 0.042,
+    "legacy_sd": 0.031,
+    "static": 0.046,
+    "static_sd": 0.032,
+    "delta": 0.004,
+    "welch_t": 0.2
+   },
+   "mass L1 our_active->E3 (head mean)": {
+    "legacy": 0.096,
+    "legacy_sd": 0.039,
+    "static": 0.05,
+    "static_sd": 0.022,
+    "delta": -0.045,
+    "welch_t": -2.42
+   },
+   "mass L1 our_active->E4_E5_other (head mean)": {
+    "legacy": 0.277,
+    "legacy_sd": 0.042,
+    "static": 0.221,
+    "static_sd": 0.095,
+    "delta": -0.056,
+    "welch_t": -1.23
+   },
+   "mass L1 our_active->events (head mean)": {
+    "legacy": 0.211,
+    "legacy_sd": 0.064,
+    "static": 0.321,
+    "static_sd": 0.109,
+    "delta": 0.11,
+    "welch_t": 1.99
+   },
+   "mass L1 their_active->our_mons (head mean)": {
+    "legacy": 0.228,
+    "legacy_sd": 0.108,
+    "static": 0.224,
+    "static_sd": 0.09,
+    "delta": -0.003,
+    "welch_t": -0.06
+   },
+   "mass L1 their_active->their_mons (head mean)": {
+    "legacy": 0.207,
+    "legacy_sd": 0.089,
+    "static": 0.165,
+    "static_sd": 0.083,
+    "delta": -0.042,
+    "welch_t": -0.81
+   },
+   "mass L1 their_active->board (head mean)": {
+    "legacy": 0.053,
+    "legacy_sd": 0.05,
+    "static": 0.112,
+    "static_sd": 0.018,
+    "delta": 0.059,
+    "welch_t": 2.69
+   },
+   "mass L1 their_active->E3 (head mean)": {
+    "legacy": 0.075,
+    "legacy_sd": 0.023,
+    "static": 0.084,
+    "static_sd": 0.033,
+    "delta": 0.01,
+    "welch_t": 0.56
+   },
+   "mass L1 their_active->E4_E5_other (head mean)": {
+    "legacy": 0.195,
+    "legacy_sd": 0.027,
+    "static": 0.19,
+    "static_sd": 0.052,
+    "delta": -0.006,
+    "welch_t": -0.23
+   },
+   "mass L1 their_active->events (head mean)": {
+    "legacy": 0.242,
+    "legacy_sd": 0.082,
+    "static": 0.225,
+    "static_sd": 0.077,
+    "delta": -0.017,
+    "welch_t": -0.35
+   },
+   "entropy L2 our_active (head mean)": {
+    "legacy": 2.996,
+    "legacy_sd": 0.197,
+    "static": 3.086,
+    "static_sd": 0.236,
+    "delta": 0.09,
+    "welch_t": 0.68
+   },
+   "entropy L2 our_active h0": {
+    "legacy": 2.762,
+    "legacy_sd": 0.218,
+    "static": 3.004,
+    "static_sd": 0.397,
+    "delta": 0.242,
+    "welch_t": 1.22
+   },
+   "entropy L2 our_active h1": {
+    "legacy": 3.034,
+    "legacy_sd": 0.322,
+    "static": 2.957,
+    "static_sd": 0.355,
+    "delta": -0.077,
+    "welch_t": -0.37
+   },
+   "entropy L2 our_active h2": {
+    "legacy": 2.991,
+    "legacy_sd": 0.453,
+    "static": 3.26,
+    "static_sd": 0.35,
+    "delta": 0.27,
+    "welch_t": 1.11
+   },
+   "entropy L2 our_active h3": {
+    "legacy": 3.196,
+    "legacy_sd": 0.339,
+    "static": 3.122,
+    "static_sd": 0.269,
+    "delta": -0.074,
+    "welch_t": -0.4
+   },
+   "entropy L2 their_active (head mean)": {
+    "legacy": 3.166,
+    "legacy_sd": 0.195,
+    "static": 3.168,
+    "static_sd": 0.18,
+    "delta": 0.002,
+    "welch_t": 0.02
+   },
+   "entropy L2 their_active h0": {
+    "legacy": 3.398,
+    "legacy_sd": 0.206,
+    "static": 3.444,
+    "static_sd": 0.11,
+    "delta": 0.046,
+    "welch_t": 0.48
+   },
+   "entropy L2 their_active h1": {
+    "legacy": 3.154,
+    "legacy_sd": 0.38,
+    "static": 3.156,
+    "static_sd": 0.15,
+    "delta": 0.001,
+    "welch_t": 0.01
+   },
+   "entropy L2 their_active h2": {
+    "legacy": 2.87,
+    "legacy_sd": 0.377,
+    "static": 2.794,
+    "static_sd": 0.551,
+    "delta": -0.077,
+    "welch_t": -0.26
+   },
+   "entropy L2 their_active h3": {
+    "legacy": 3.24,
+    "legacy_sd": 0.377,
+    "static": 3.279,
+    "static_sd": 0.184,
+    "delta": 0.039,
+    "welch_t": 0.22
+   },
+   "entropy L2 our_bench (head mean)": {
+    "legacy": 2.84,
+    "legacy_sd": 0.211,
+    "static": 2.925,
+    "static_sd": 0.182,
+    "delta": 0.085,
+    "welch_t": 0.72
+   },
+   "entropy L2 our_bench h0": {
+    "legacy": 2.643,
+    "legacy_sd": 0.177,
+    "static": 2.891,
+    "static_sd": 0.392,
+    "delta": 0.248,
+    "welch_t": 1.31
+   },
+   "entropy L2 our_bench h1": {
+    "legacy": 2.853,
+    "legacy_sd": 0.37,
+    "static": 2.838,
+    "static_sd": 0.315,
+    "delta": -0.016,
+    "welch_t": -0.08
+   },
+   "entropy L2 our_bench h2": {
+    "legacy": 2.86,
+    "legacy_sd": 0.406,
+    "static": 3.076,
+    "static_sd": 0.292,
+    "delta": 0.216,
+    "welch_t": 1.02
+   },
+   "entropy L2 our_bench h3": {
+    "legacy": 3.004,
+    "legacy_sd": 0.335,
+    "static": 2.895,
+    "static_sd": 0.255,
+    "delta": -0.109,
+    "welch_t": -0.61
+   },
+   "entropy L2 E3 (head mean)": {
+    "legacy": 3.008,
+    "legacy_sd": 0.221,
+    "static": 3.161,
+    "static_sd": 0.071,
+    "delta": 0.152,
+    "welch_t": 1.59
+   },
+   "entropy L2 E3 h0": {
+    "legacy": 2.966,
+    "legacy_sd": 0.378,
+    "static": 3.272,
+    "static_sd": 0.272,
+    "delta": 0.307,
+    "welch_t": 1.56
+   },
+   "entropy L2 E3 h1": {
+    "legacy": 2.931,
+    "legacy_sd": 0.398,
+    "static": 2.851,
+    "static_sd": 0.507,
+    "delta": -0.08,
+    "welch_t": -0.29
+   },
+   "entropy L2 E3 h2": {
+    "legacy": 3.133,
+    "legacy_sd": 0.235,
+    "static": 3.293,
+    "static_sd": 0.316,
+    "delta": 0.159,
+    "welch_t": 0.93
+   },
+   "entropy L2 E3 h3": {
+    "legacy": 3.002,
+    "legacy_sd": 0.55,
+    "static": 3.226,
+    "static_sd": 0.276,
+    "delta": 0.224,
+    "welch_t": 0.87
+   },
+   "entropy L2 board (head mean)": {
+    "legacy": 3.53,
+    "legacy_sd": 0.118,
+    "static": 3.397,
+    "static_sd": 0.152,
+    "delta": -0.133,
+    "welch_t": -1.59
+   },
+   "entropy L2 board h0": {
+    "legacy": 3.413,
+    "legacy_sd": 0.271,
+    "static": 3.438,
+    "static_sd": 0.338,
+    "delta": 0.025,
+    "welch_t": 0.13
+   },
+   "entropy L2 board h1": {
+    "legacy": 3.456,
+    "legacy_sd": 0.338,
+    "static": 3.269,
+    "static_sd": 0.416,
+    "delta": -0.187,
+    "welch_t": -0.81
+   },
+   "entropy L2 board h2": {
+    "legacy": 3.62,
+    "legacy_sd": 0.095,
+    "static": 3.342,
+    "static_sd": 0.307,
+    "delta": -0.278,
+    "welch_t": -1.95
+   },
+   "entropy L2 board h3": {
+    "legacy": 3.631,
+    "legacy_sd": 0.116,
+    "static": 3.538,
+    "static_sd": 0.122,
+    "delta": -0.093,
+    "welch_t": -1.28
+   },
+   "mass L2 our_active->our_mons (head mean)": {
+    "legacy": 0.17,
+    "legacy_sd": 0.088,
+    "static": 0.129,
+    "static_sd": 0.082,
+    "delta": -0.041,
+    "welch_t": -0.8
+   },
+   "mass L2 our_active->their_mons (head mean)": {
+    "legacy": 0.217,
+    "legacy_sd": 0.034,
+    "static": 0.193,
+    "static_sd": 0.093,
+    "delta": -0.025,
+    "welch_t": -0.56
+   },
+   "mass L2 our_active->board (head mean)": {
+    "legacy": 0.029,
+    "legacy_sd": 0.009,
+    "static": 0.067,
+    "static_sd": 0.02,
+    "delta": 0.038,
+    "welch_t": 3.97
+   },
+   "mass L2 our_active->E3 (head mean)": {
+    "legacy": 0.146,
+    "legacy_sd": 0.048,
+    "static": 0.144,
+    "static_sd": 0.026,
+    "delta": -0.002,
+    "welch_t": -0.1
+   },
+   "mass L2 our_active->E4_E5_other (head mean)": {
+    "legacy": 0.25,
+    "legacy_sd": 0.073,
+    "static": 0.199,
+    "static_sd": 0.085,
+    "delta": -0.051,
+    "welch_t": -1.06
+   },
+   "mass L2 our_active->events (head mean)": {
+    "legacy": 0.187,
+    "legacy_sd": 0.109,
+    "static": 0.268,
+    "static_sd": 0.125,
+    "delta": 0.081,
+    "welch_t": 1.13
+   },
+   "mass L2 their_active->our_mons (head mean)": {
+    "legacy": 0.143,
+    "legacy_sd": 0.038,
+    "static": 0.106,
+    "static_sd": 0.047,
+    "delta": -0.037,
+    "welch_t": -1.43
+   },
+   "mass L2 their_active->their_mons (head mean)": {
+    "legacy": 0.213,
+    "legacy_sd": 0.043,
+    "static": 0.227,
+    "static_sd": 0.101,
+    "delta": 0.014,
+    "welch_t": 0.29
+   },
+   "mass L2 their_active->board (head mean)": {
+    "legacy": 0.045,
+    "legacy_sd": 0.033,
+    "static": 0.083,
+    "static_sd": 0.024,
+    "delta": 0.037,
+    "welch_t": 2.16
+   },
+   "mass L2 their_active->E3 (head mean)": {
+    "legacy": 0.077,
+    "legacy_sd": 0.014,
+    "static": 0.089,
+    "static_sd": 0.028,
+    "delta": 0.012,
+    "welch_t": 0.88
+   },
+   "mass L2 their_active->E4_E5_other (head mean)": {
+    "legacy": 0.238,
+    "legacy_sd": 0.022,
+    "static": 0.259,
+    "static_sd": 0.054,
+    "delta": 0.02,
+    "welch_t": 0.79
+   },
+   "mass L2 their_active->events (head mean)": {
+    "legacy": 0.283,
+    "legacy_sd": 0.082,
+    "static": 0.236,
+    "static_sd": 0.063,
+    "delta": -0.047,
+    "welch_t": -1.07
+   }
+  },
+  "10M": {
+   "entropy L1 our_active (head mean)": {
+    "legacy": 2.736,
+    "legacy_sd": 0.131,
+    "static": 2.482,
+    "static_sd": 0.26,
+    "delta": -0.254,
+    "welch_t": -1.99
+   },
+   "entropy L1 our_active h0": {
+    "legacy": 2.811,
+    "legacy_sd": 0.292,
+    "static": 2.589,
+    "static_sd": 0.353,
+    "delta": -0.222,
+    "welch_t": -1.12
+   },
+   "entropy L1 our_active h1": {
+    "legacy": 2.632,
+    "legacy_sd": 0.393,
+    "static": 2.364,
+    "static_sd": 0.716,
+    "delta": -0.268,
+    "welch_t": -0.75
+   },
+   "entropy L1 our_active h2": {
+    "legacy": 2.912,
+    "legacy_sd": 0.244,
+    "static": 2.555,
+    "static_sd": 0.435,
+    "delta": -0.357,
+    "welch_t": -1.63
+   },
+   "entropy L1 our_active h3": {
+    "legacy": 2.591,
+    "legacy_sd": 0.28,
+    "static": 2.42,
+    "static_sd": 0.471,
+    "delta": -0.171,
+    "welch_t": -0.71
+   },
+   "entropy L1 their_active (head mean)": {
+    "legacy": 2.769,
+    "legacy_sd": 0.225,
+    "static": 2.798,
+    "static_sd": 0.201,
+    "delta": 0.028,
+    "welch_t": 0.22
+   },
+   "entropy L1 their_active h0": {
+    "legacy": 2.881,
+    "legacy_sd": 0.454,
+    "static": 3.031,
+    "static_sd": 0.27,
+    "delta": 0.15,
+    "welch_t": 0.68
+   },
+   "entropy L1 their_active h1": {
+    "legacy": 2.938,
+    "legacy_sd": 0.215,
+    "static": 2.536,
+    "static_sd": 0.44,
+    "delta": -0.402,
+    "welch_t": -1.86
+   },
+   "entropy L1 their_active h2": {
+    "legacy": 2.62,
+    "legacy_sd": 0.278,
+    "static": 2.753,
+    "static_sd": 0.48,
+    "delta": 0.133,
+    "welch_t": 0.55
+   },
+   "entropy L1 their_active h3": {
+    "legacy": 2.639,
+    "legacy_sd": 0.304,
+    "static": 2.87,
+    "static_sd": 0.148,
+    "delta": 0.23,
+    "welch_t": 1.64
+   },
+   "entropy L1 our_bench (head mean)": {
+    "legacy": 2.581,
+    "legacy_sd": 0.145,
+    "static": 2.382,
+    "static_sd": 0.225,
+    "delta": -0.199,
+    "welch_t": -1.7
+   },
+   "entropy L1 our_bench h0": {
+    "legacy": 2.636,
+    "legacy_sd": 0.246,
+    "static": 2.497,
+    "static_sd": 0.311,
+    "delta": -0.139,
+    "welch_t": -0.81
+   },
+   "entropy L1 our_bench h1": {
+    "legacy": 2.423,
+    "legacy_sd": 0.429,
+    "static": 2.263,
+    "static_sd": 0.602,
+    "delta": -0.16,
+    "welch_t": -0.5
+   },
+   "entropy L1 our_bench h2": {
+    "legacy": 2.7,
+    "legacy_sd": 0.258,
+    "static": 2.498,
+    "static_sd": 0.215,
+    "delta": -0.201,
+    "welch_t": -1.41
+   },
+   "entropy L1 our_bench h3": {
+    "legacy": 2.564,
+    "legacy_sd": 0.258,
+    "static": 2.269,
+    "static_sd": 0.592,
+    "delta": -0.295,
+    "welch_t": -1.04
+   },
+   "entropy L1 E3 (head mean)": {
+    "legacy": 3.07,
+    "legacy_sd": 0.184,
+    "static": 2.943,
+    "static_sd": 0.131,
+    "delta": -0.127,
+    "welch_t": -1.34
+   },
+   "entropy L1 E3 h0": {
+    "legacy": 3.092,
+    "legacy_sd": 0.186,
+    "static": 2.743,
+    "static_sd": 0.544,
+    "delta": -0.349,
+    "welch_t": -1.37
+   },
+   "entropy L1 E3 h1": {
+    "legacy": 2.949,
+    "legacy_sd": 0.342,
+    "static": 3.144,
+    "static_sd": 0.313,
+    "delta": 0.196,
+    "welch_t": 0.99
+   },
+   "entropy L1 E3 h2": {
+    "legacy": 3.063,
+    "legacy_sd": 0.237,
+    "static": 2.957,
+    "static_sd": 0.224,
+    "delta": -0.106,
+    "welch_t": -0.76
+   },
+   "entropy L1 E3 h3": {
+    "legacy": 3.177,
+    "legacy_sd": 0.173,
+    "static": 2.928,
+    "static_sd": 0.416,
+    "delta": -0.249,
+    "welch_t": -1.25
+   },
+   "entropy L1 board (head mean)": {
+    "legacy": 3.432,
+    "legacy_sd": 0.079,
+    "static": 3.377,
+    "static_sd": 0.075,
+    "delta": -0.055,
+    "welch_t": -1.17
+   },
+   "entropy L1 board h0": {
+    "legacy": 3.329,
+    "legacy_sd": 0.28,
+    "static": 3.348,
+    "static_sd": 0.235,
+    "delta": 0.019,
+    "welch_t": 0.13
+   },
+   "entropy L1 board h1": {
+    "legacy": 3.477,
+    "legacy_sd": 0.126,
+    "static": 3.334,
+    "static_sd": 0.158,
+    "delta": -0.143,
+    "welch_t": -1.64
+   },
+   "entropy L1 board h2": {
+    "legacy": 3.429,
+    "legacy_sd": 0.249,
+    "static": 3.389,
+    "static_sd": 0.192,
+    "delta": -0.04,
+    "welch_t": -0.3
+   },
+   "entropy L1 board h3": {
+    "legacy": 3.493,
+    "legacy_sd": 0.156,
+    "static": 3.438,
+    "static_sd": 0.162,
+    "delta": -0.055,
+    "welch_t": -0.57
+   },
+   "mass L1 our_active->our_mons (head mean)": {
+    "legacy": 0.161,
+    "legacy_sd": 0.094,
+    "static": 0.238,
+    "static_sd": 0.13,
+    "delta": 0.077,
+    "welch_t": 1.11
+   },
+   "mass L1 our_active->their_mons (head mean)": {
+    "legacy": 0.219,
+    "legacy_sd": 0.033,
+    "static": 0.094,
+    "static_sd": 0.038,
+    "delta": -0.125,
+    "welch_t": -5.77
+   },
+   "mass L1 our_active->board (head mean)": {
+    "legacy": 0.065,
+    "legacy_sd": 0.04,
+    "static": 0.068,
+    "static_sd": 0.034,
+    "delta": 0.003,
+    "welch_t": 0.15
+   },
+   "mass L1 our_active->E3 (head mean)": {
+    "legacy": 0.101,
+    "legacy_sd": 0.029,
+    "static": 0.055,
+    "static_sd": 0.015,
+    "delta": -0.046,
+    "welch_t": -3.37
+   },
+   "mass L1 our_active->E4_E5_other (head mean)": {
+    "legacy": 0.281,
+    "legacy_sd": 0.033,
+    "static": 0.235,
+    "static_sd": 0.075,
+    "delta": -0.046,
+    "welch_t": -1.27
+   },
+   "mass L1 our_active->events (head mean)": {
+    "legacy": 0.173,
+    "legacy_sd": 0.066,
+    "static": 0.31,
+    "static_sd": 0.069,
+    "delta": 0.137,
+    "welch_t": 3.34
+   },
+   "mass L1 their_active->our_mons (head mean)": {
+    "legacy": 0.194,
+    "legacy_sd": 0.104,
+    "static": 0.194,
+    "static_sd": 0.078,
+    "delta": -0.001,
+    "welch_t": -0.01
+   },
+   "mass L1 their_active->their_mons (head mean)": {
+    "legacy": 0.207,
+    "legacy_sd": 0.079,
+    "static": 0.174,
+    "static_sd": 0.065,
+    "delta": -0.032,
+    "welch_t": -0.75
+   },
+   "mass L1 their_active->board (head mean)": {
+    "legacy": 0.069,
+    "legacy_sd": 0.052,
+    "static": 0.164,
+    "static_sd": 0.028,
+    "delta": 0.095,
+    "welch_t": 3.86
+   },
+   "mass L1 their_active->E3 (head mean)": {
+    "legacy": 0.057,
+    "legacy_sd": 0.012,
+    "static": 0.079,
+    "static_sd": 0.027,
+    "delta": 0.022,
+    "welch_t": 1.69
+   },
+   "mass L1 their_active->E4_E5_other (head mean)": {
+    "legacy": 0.267,
+    "legacy_sd": 0.034,
+    "static": 0.216,
+    "static_sd": 0.069,
+    "delta": -0.052,
+    "welch_t": -1.53
+   },
+   "mass L1 their_active->events (head mean)": {
+    "legacy": 0.205,
+    "legacy_sd": 0.081,
+    "static": 0.173,
+    "static_sd": 0.031,
+    "delta": -0.032,
+    "welch_t": -0.89
+   },
+   "entropy L2 our_active (head mean)": {
+    "legacy": 3.016,
+    "legacy_sd": 0.164,
+    "static": 2.906,
+    "static_sd": 0.268,
+    "delta": -0.11,
+    "welch_t": -0.8
+   },
+   "entropy L2 our_active h0": {
+    "legacy": 2.855,
+    "legacy_sd": 0.28,
+    "static": 2.867,
+    "static_sd": 0.327,
+    "delta": 0.013,
+    "welch_t": 0.07
+   },
+   "entropy L2 our_active h1": {
+    "legacy": 2.895,
+    "legacy_sd": 0.264,
+    "static": 2.875,
+    "static_sd": 0.432,
+    "delta": -0.02,
+    "welch_t": -0.09
+   },
+   "entropy L2 our_active h2": {
+    "legacy": 3.108,
+    "legacy_sd": 0.241,
+    "static": 2.943,
+    "static_sd": 0.28,
+    "delta": -0.164,
+    "welch_t": -1.03
+   },
+   "entropy L2 our_active h3": {
+    "legacy": 3.207,
+    "legacy_sd": 0.226,
+    "static": 2.939,
+    "static_sd": 0.213,
+    "delta": -0.269,
+    "welch_t": -2.03
+   },
+   "entropy L2 their_active (head mean)": {
+    "legacy": 3.009,
+    "legacy_sd": 0.237,
+    "static": 2.956,
+    "static_sd": 0.211,
+    "delta": -0.052,
+    "welch_t": -0.39
+   },
+   "entropy L2 their_active h0": {
+    "legacy": 3.332,
+    "legacy_sd": 0.316,
+    "static": 3.298,
+    "static_sd": 0.246,
+    "delta": -0.034,
+    "welch_t": -0.2
+   },
+   "entropy L2 their_active h1": {
+    "legacy": 2.926,
+    "legacy_sd": 0.419,
+    "static": 2.967,
+    "static_sd": 0.142,
+    "delta": 0.04,
+    "welch_t": 0.22
+   },
+   "entropy L2 their_active h2": {
+    "legacy": 2.793,
+    "legacy_sd": 0.355,
+    "static": 2.438,
+    "static_sd": 0.506,
+    "delta": -0.356,
+    "welch_t": -1.32
+   },
+   "entropy L2 their_active h3": {
+    "legacy": 2.983,
+    "legacy_sd": 0.528,
+    "static": 3.122,
+    "static_sd": 0.316,
+    "delta": 0.139,
+    "welch_t": 0.54
+   },
+   "entropy L2 our_bench (head mean)": {
+    "legacy": 2.851,
+    "legacy_sd": 0.167,
+    "static": 2.765,
+    "static_sd": 0.225,
+    "delta": -0.086,
+    "welch_t": -0.71
+   },
+   "entropy L2 our_bench h0": {
+    "legacy": 2.665,
+    "legacy_sd": 0.335,
+    "static": 2.709,
+    "static_sd": 0.286,
+    "delta": 0.043,
+    "welch_t": 0.23
+   },
+   "entropy L2 our_bench h1": {
+    "legacy": 2.75,
+    "legacy_sd": 0.258,
+    "static": 2.77,
+    "static_sd": 0.379,
+    "delta": 0.019,
+    "welch_t": 0.1
+   },
+   "entropy L2 our_bench h2": {
+    "legacy": 2.953,
+    "legacy_sd": 0.241,
+    "static": 2.805,
+    "static_sd": 0.315,
+    "delta": -0.148,
+    "welch_t": -0.86
+   },
+   "entropy L2 our_bench h3": {
+    "legacy": 3.034,
+    "legacy_sd": 0.245,
+    "static": 2.774,
+    "static_sd": 0.218,
+    "delta": -0.26,
+    "welch_t": -1.86
+   },
+   "entropy L2 E3 (head mean)": {
+    "legacy": 2.961,
+    "legacy_sd": 0.132,
+    "static": 2.968,
+    "static_sd": 0.059,
+    "delta": 0.007,
+    "welch_t": 0.12
+   },
+   "entropy L2 E3 h0": {
+    "legacy": 2.988,
+    "legacy_sd": 0.319,
+    "static": 2.99,
+    "static_sd": 0.179,
+    "delta": 0.002,
+    "welch_t": 0.01
+   },
+   "entropy L2 E3 h1": {
+    "legacy": 2.831,
+    "legacy_sd": 0.274,
+    "static": 2.79,
+    "static_sd": 0.372,
+    "delta": -0.041,
+    "welch_t": -0.2
+   },
+   "entropy L2 E3 h2": {
+    "legacy": 3.053,
+    "legacy_sd": 0.276,
+    "static": 3.057,
+    "static_sd": 0.322,
+    "delta": 0.004,
+    "welch_t": 0.02
+   },
+   "entropy L2 E3 h3": {
+    "legacy": 2.97,
+    "legacy_sd": 0.466,
+    "static": 3.034,
+    "static_sd": 0.207,
+    "delta": 0.064,
+    "welch_t": 0.3
+   },
+   "entropy L2 board (head mean)": {
+    "legacy": 3.555,
+    "legacy_sd": 0.137,
+    "static": 3.213,
+    "static_sd": 0.278,
+    "delta": -0.343,
+    "welch_t": -2.51
+   },
+   "entropy L2 board h0": {
+    "legacy": 3.558,
+    "legacy_sd": 0.114,
+    "static": 3.261,
+    "static_sd": 0.611,
+    "delta": -0.297,
+    "welch_t": -1.07
+   },
+   "entropy L2 board h1": {
+    "legacy": 3.432,
+    "legacy_sd": 0.412,
+    "static": 3.104,
+    "static_sd": 0.537,
+    "delta": -0.328,
+    "welch_t": -1.12
+   },
+   "entropy L2 board h2": {
+    "legacy": 3.652,
+    "legacy_sd": 0.134,
+    "static": 3.153,
+    "static_sd": 0.323,
+    "delta": -0.499,
+    "welch_t": -3.23
+   },
+   "entropy L2 board h3": {
+    "legacy": 3.579,
+    "legacy_sd": 0.184,
+    "static": 3.332,
+    "static_sd": 0.163,
+    "delta": -0.247,
+    "welch_t": -2.36
+   },
+   "mass L2 our_active->our_mons (head mean)": {
+    "legacy": 0.187,
+    "legacy_sd": 0.071,
+    "static": 0.143,
+    "static_sd": 0.098,
+    "delta": -0.044,
+    "welch_t": -0.83
+   },
+   "mass L2 our_active->their_mons (head mean)": {
+    "legacy": 0.234,
+    "legacy_sd": 0.052,
+    "static": 0.236,
+    "static_sd": 0.072,
+    "delta": 0.001,
+    "welch_t": 0.04
+   },
+   "mass L2 our_active->board (head mean)": {
+    "legacy": 0.033,
+    "legacy_sd": 0.011,
+    "static": 0.083,
+    "static_sd": 0.024,
+    "delta": 0.05,
+    "welch_t": 4.35
+   },
+   "mass L2 our_active->E3 (head mean)": {
+    "legacy": 0.14,
+    "legacy_sd": 0.038,
+    "static": 0.152,
+    "static_sd": 0.034,
+    "delta": 0.012,
+    "welch_t": 0.53
+   },
+   "mass L2 our_active->E4_E5_other (head mean)": {
+    "legacy": 0.232,
+    "legacy_sd": 0.075,
+    "static": 0.199,
+    "static_sd": 0.078,
+    "delta": -0.033,
+    "welch_t": -0.7
+   },
+   "mass L2 our_active->events (head mean)": {
+    "legacy": 0.174,
+    "legacy_sd": 0.071,
+    "static": 0.187,
+    "static_sd": 0.097,
+    "delta": 0.013,
+    "welch_t": 0.26
+   },
+   "mass L2 their_active->our_mons (head mean)": {
+    "legacy": 0.165,
+    "legacy_sd": 0.052,
+    "static": 0.129,
+    "static_sd": 0.076,
+    "delta": -0.036,
+    "welch_t": -0.88
+   },
+   "mass L2 their_active->their_mons (head mean)": {
+    "legacy": 0.203,
+    "legacy_sd": 0.037,
+    "static": 0.232,
+    "static_sd": 0.074,
+    "delta": 0.03,
+    "welch_t": 0.81
+   },
+   "mass L2 their_active->board (head mean)": {
+    "legacy": 0.052,
+    "legacy_sd": 0.043,
+    "static": 0.094,
+    "static_sd": 0.023,
+    "delta": 0.042,
+    "welch_t": 2.1
+   },
+   "mass L2 their_active->E3 (head mean)": {
+    "legacy": 0.063,
+    "legacy_sd": 0.017,
+    "static": 0.062,
+    "static_sd": 0.018,
+    "delta": -0.001,
+    "welch_t": -0.11
+   },
+   "mass L2 their_active->E4_E5_other (head mean)": {
+    "legacy": 0.276,
+    "legacy_sd": 0.049,
+    "static": 0.27,
+    "static_sd": 0.062,
+    "delta": -0.006,
+    "welch_t": -0.18
+   },
+   "mass L2 their_active->events (head mean)": {
+    "legacy": 0.242,
+    "legacy_sd": 0.079,
+    "static": 0.213,
+    "static_sd": 0.102,
+    "delta": -0.029,
+    "welch_t": -0.52
+   }
+  },
+  "final": {
+   "entropy L1 our_active (head mean)": {
+    "legacy": 2.772,
+    "legacy_sd": 0.123,
+    "static": 2.523,
+    "static_sd": 0.173,
+    "delta": -0.248,
+    "welch_t": -2.7
+   },
+   "entropy L1 our_active h0": {
+    "legacy": 2.817,
+    "legacy_sd": 0.373,
+    "static": 2.558,
+    "static_sd": 0.472,
+    "delta": -0.259,
+    "welch_t": -0.99
+   },
+   "entropy L1 our_active h1": {
+    "legacy": 2.624,
+    "legacy_sd": 0.346,
+    "static": 2.295,
+    "static_sd": 0.665,
+    "delta": -0.329,
+    "welch_t": -1.0
+   },
+   "entropy L1 our_active h2": {
+    "legacy": 2.946,
+    "legacy_sd": 0.248,
+    "static": 2.735,
+    "static_sd": 0.262,
+    "delta": -0.211,
+    "welch_t": -1.36
+   },
+   "entropy L1 our_active h3": {
+    "legacy": 2.701,
+    "legacy_sd": 0.191,
+    "static": 2.506,
+    "static_sd": 0.277,
+    "delta": -0.194,
+    "welch_t": -1.33
+   },
+   "entropy L1 their_active (head mean)": {
+    "legacy": 2.811,
+    "legacy_sd": 0.214,
+    "static": 2.781,
+    "static_sd": 0.178,
+    "delta": -0.03,
+    "welch_t": -0.25
+   },
+   "entropy L1 their_active h0": {
+    "legacy": 2.914,
+    "legacy_sd": 0.4,
+    "static": 3.072,
+    "static_sd": 0.141,
+    "delta": 0.158,
+    "welch_t": 0.9
+   },
+   "entropy L1 their_active h1": {
+    "legacy": 2.989,
+    "legacy_sd": 0.2,
+    "static": 2.438,
+    "static_sd": 0.467,
+    "delta": -0.551,
+    "welch_t": -2.46
+   },
+   "entropy L1 their_active h2": {
+    "legacy": 2.649,
+    "legacy_sd": 0.349,
+    "static": 2.807,
+    "static_sd": 0.455,
+    "delta": 0.158,
+    "welch_t": 0.63
+   },
+   "entropy L1 their_active h3": {
+    "legacy": 2.69,
+    "legacy_sd": 0.322,
+    "static": 2.807,
+    "static_sd": 0.22,
+    "delta": 0.116,
+    "welch_t": 0.71
+   },
+   "entropy L1 our_bench (head mean)": {
+    "legacy": 2.584,
+    "legacy_sd": 0.144,
+    "static": 2.406,
+    "static_sd": 0.155,
+    "delta": -0.177,
+    "welch_t": -1.95
+   },
+   "entropy L1 our_bench h0": {
+    "legacy": 2.63,
+    "legacy_sd": 0.37,
+    "static": 2.501,
+    "static_sd": 0.406,
+    "delta": -0.129,
+    "welch_t": -0.55
+   },
+   "entropy L1 our_bench h1": {
+    "legacy": 2.395,
+    "legacy_sd": 0.375,
+    "static": 2.141,
+    "static_sd": 0.612,
+    "delta": -0.254,
+    "welch_t": -0.81
+   },
+   "entropy L1 our_bench h2": {
+    "legacy": 2.666,
+    "legacy_sd": 0.319,
+    "static": 2.615,
+    "static_sd": 0.113,
+    "delta": -0.052,
+    "welch_t": -0.37
+   },
+   "entropy L1 our_bench h3": {
+    "legacy": 2.644,
+    "legacy_sd": 0.207,
+    "static": 2.369,
+    "static_sd": 0.405,
+    "delta": -0.275,
+    "welch_t": -1.38
+   },
+   "entropy L1 E3 (head mean)": {
+    "legacy": 3.064,
+    "legacy_sd": 0.196,
+    "static": 2.924,
+    "static_sd": 0.123,
+    "delta": -0.141,
+    "welch_t": -1.45
+   },
+   "entropy L1 E3 h0": {
+    "legacy": 3.068,
+    "legacy_sd": 0.214,
+    "static": 2.734,
+    "static_sd": 0.554,
+    "delta": -0.334,
+    "welch_t": -1.27
+   },
+   "entropy L1 E3 h1": {
+    "legacy": 2.964,
+    "legacy_sd": 0.358,
+    "static": 3.089,
+    "static_sd": 0.303,
+    "delta": 0.125,
+    "welch_t": 0.63
+   },
+   "entropy L1 E3 h2": {
+    "legacy": 3.033,
+    "legacy_sd": 0.213,
+    "static": 2.941,
+    "static_sd": 0.152,
+    "delta": -0.092,
+    "welch_t": -0.83
+   },
+   "entropy L1 E3 h3": {
+    "legacy": 3.193,
+    "legacy_sd": 0.238,
+    "static": 2.93,
+    "static_sd": 0.375,
+    "delta": -0.263,
+    "welch_t": -1.36
+   },
+   "entropy L1 board (head mean)": {
+    "legacy": 3.413,
+    "legacy_sd": 0.15,
+    "static": 3.38,
+    "static_sd": 0.083,
+    "delta": -0.034,
+    "welch_t": -0.47
+   },
+   "entropy L1 board h0": {
+    "legacy": 3.239,
+    "legacy_sd": 0.323,
+    "static": 3.366,
+    "static_sd": 0.198,
+    "delta": 0.127,
+    "welch_t": 0.8
+   },
+   "entropy L1 board h1": {
+    "legacy": 3.566,
+    "legacy_sd": 0.075,
+    "static": 3.292,
+    "static_sd": 0.279,
+    "delta": -0.275,
+    "welch_t": -2.14
+   },
+   "entropy L1 board h2": {
+    "legacy": 3.42,
+    "legacy_sd": 0.312,
+    "static": 3.449,
+    "static_sd": 0.21,
+    "delta": 0.03,
+    "welch_t": 0.19
+   },
+   "entropy L1 board h3": {
+    "legacy": 3.429,
+    "legacy_sd": 0.254,
+    "static": 3.413,
+    "static_sd": 0.099,
+    "delta": -0.016,
+    "welch_t": -0.14
+   },
+   "mass L1 our_active->our_mons (head mean)": {
+    "legacy": 0.16,
+    "legacy_sd": 0.078,
+    "static": 0.216,
+    "static_sd": 0.119,
+    "delta": 0.056,
+    "welch_t": 0.9
+   },
+   "mass L1 our_active->their_mons (head mean)": {
+    "legacy": 0.223,
+    "legacy_sd": 0.027,
+    "static": 0.101,
+    "static_sd": 0.058,
+    "delta": -0.122,
+    "welch_t": -4.35
+   },
+   "mass L1 our_active->board (head mean)": {
+    "legacy": 0.073,
+    "legacy_sd": 0.042,
+    "static": 0.093,
+    "static_sd": 0.049,
+    "delta": 0.019,
+    "welch_t": 0.69
+   },
+   "mass L1 our_active->E3 (head mean)": {
+    "legacy": 0.089,
+    "legacy_sd": 0.028,
+    "static": 0.07,
+    "static_sd": 0.026,
+    "delta": -0.019,
+    "welch_t": -1.16
+   },
+   "mass L1 our_active->E4_E5_other (head mean)": {
+    "legacy": 0.276,
+    "legacy_sd": 0.036,
+    "static": 0.22,
+    "static_sd": 0.068,
+    "delta": -0.057,
+    "welch_t": -1.68
+   },
+   "mass L1 our_active->events (head mean)": {
+    "legacy": 0.179,
+    "legacy_sd": 0.064,
+    "static": 0.301,
+    "static_sd": 0.082,
+    "delta": 0.123,
+    "welch_t": 2.72
+   },
+   "mass L1 their_active->our_mons (head mean)": {
+    "legacy": 0.189,
+    "legacy_sd": 0.093,
+    "static": 0.194,
+    "static_sd": 0.082,
+    "delta": 0.005,
+    "welch_t": 0.09
+   },
+   "mass L1 their_active->their_mons (head mean)": {
+    "legacy": 0.196,
+    "legacy_sd": 0.064,
+    "static": 0.161,
+    "static_sd": 0.06,
+    "delta": -0.035,
+    "welch_t": -0.93
+   },
+   "mass L1 their_active->board (head mean)": {
+    "legacy": 0.08,
+    "legacy_sd": 0.052,
+    "static": 0.2,
+    "static_sd": 0.055,
+    "delta": 0.12,
+    "welch_t": 3.67
+   },
+   "mass L1 their_active->E3 (head mean)": {
+    "legacy": 0.055,
+    "legacy_sd": 0.015,
+    "static": 0.067,
+    "static_sd": 0.026,
+    "delta": 0.012,
+    "welch_t": 0.91
+   },
+   "mass L1 their_active->E4_E5_other (head mean)": {
+    "legacy": 0.272,
+    "legacy_sd": 0.043,
+    "static": 0.21,
+    "static_sd": 0.064,
+    "delta": -0.062,
+    "welch_t": -1.85
+   },
+   "mass L1 their_active->events (head mean)": {
+    "legacy": 0.208,
+    "legacy_sd": 0.079,
+    "static": 0.168,
+    "static_sd": 0.017,
+    "delta": -0.039,
+    "welch_t": -1.18
+   },
+   "entropy L2 our_active (head mean)": {
+    "legacy": 2.957,
+    "legacy_sd": 0.119,
+    "static": 2.95,
+    "static_sd": 0.28,
+    "delta": -0.007,
+    "welch_t": -0.05
+   },
+   "entropy L2 our_active h0": {
+    "legacy": 2.854,
+    "legacy_sd": 0.274,
+    "static": 2.979,
+    "static_sd": 0.302,
+    "delta": 0.125,
+    "welch_t": 0.71
+   },
+   "entropy L2 our_active h1": {
+    "legacy": 2.901,
+    "legacy_sd": 0.252,
+    "static": 2.896,
+    "static_sd": 0.375,
+    "delta": -0.006,
+    "welch_t": -0.03
+   },
+   "entropy L2 our_active h2": {
+    "legacy": 3.012,
+    "legacy_sd": 0.267,
+    "static": 2.928,
+    "static_sd": 0.385,
+    "delta": -0.085,
+    "welch_t": -0.41
+   },
+   "entropy L2 our_active h3": {
+    "legacy": 3.06,
+    "legacy_sd": 0.244,
+    "static": 2.999,
+    "static_sd": 0.243,
+    "delta": -0.061,
+    "welch_t": -0.41
+   },
+   "entropy L2 their_active (head mean)": {
+    "legacy": 3.025,
+    "legacy_sd": 0.275,
+    "static": 2.971,
+    "static_sd": 0.247,
+    "delta": -0.053,
+    "welch_t": -0.34
+   },
+   "entropy L2 their_active h0": {
+    "legacy": 3.178,
+    "legacy_sd": 0.389,
+    "static": 3.22,
+    "static_sd": 0.168,
+    "delta": 0.042,
+    "welch_t": 0.24
+   },
+   "entropy L2 their_active h1": {
+    "legacy": 2.993,
+    "legacy_sd": 0.359,
+    "static": 2.932,
+    "static_sd": 0.214,
+    "delta": -0.061,
+    "welch_t": -0.35
+   },
+   "entropy L2 their_active h2": {
+    "legacy": 2.926,
+    "legacy_sd": 0.349,
+    "static": 2.709,
+    "static_sd": 0.473,
+    "delta": -0.217,
+    "welch_t": -0.85
+   },
+   "entropy L2 their_active h3": {
+    "legacy": 3.002,
+    "legacy_sd": 0.473,
+    "static": 3.025,
+    "static_sd": 0.359,
+    "delta": 0.023,
+    "welch_t": 0.09
+   },
+   "entropy L2 our_bench (head mean)": {
+    "legacy": 2.806,
+    "legacy_sd": 0.095,
+    "static": 2.8,
+    "static_sd": 0.259,
+    "delta": -0.007,
+    "welch_t": -0.06
+   },
+   "entropy L2 our_bench h0": {
+    "legacy": 2.653,
+    "legacy_sd": 0.236,
+    "static": 2.762,
+    "static_sd": 0.357,
+    "delta": 0.11,
+    "welch_t": 0.59
+   },
+   "entropy L2 our_bench h1": {
+    "legacy": 2.74,
+    "legacy_sd": 0.227,
+    "static": 2.838,
+    "static_sd": 0.319,
+    "delta": 0.098,
+    "welch_t": 0.58
+   },
+   "entropy L2 our_bench h2": {
+    "legacy": 2.914,
+    "legacy_sd": 0.24,
+    "static": 2.738,
+    "static_sd": 0.409,
+    "delta": -0.176,
+    "welch_t": -0.85
+   },
+   "entropy L2 our_bench h3": {
+    "legacy": 2.92,
+    "legacy_sd": 0.21,
+    "static": 2.861,
+    "static_sd": 0.179,
+    "delta": -0.059,
+    "welch_t": -0.5
+   },
+   "entropy L2 E3 (head mean)": {
+    "legacy": 2.913,
+    "legacy_sd": 0.102,
+    "static": 2.893,
+    "static_sd": 0.09,
+    "delta": -0.02,
+    "welch_t": -0.34
+   },
+   "entropy L2 E3 h0": {
+    "legacy": 2.998,
+    "legacy_sd": 0.221,
+    "static": 2.926,
+    "static_sd": 0.224,
+    "delta": -0.072,
+    "welch_t": -0.53
+   },
+   "entropy L2 E3 h1": {
+    "legacy": 2.847,
+    "legacy_sd": 0.263,
+    "static": 2.714,
+    "static_sd": 0.436,
+    "delta": -0.133,
+    "welch_t": -0.59
+   },
+   "entropy L2 E3 h2": {
+    "legacy": 2.882,
+    "legacy_sd": 0.321,
+    "static": 2.916,
+    "static_sd": 0.399,
+    "delta": 0.034,
+    "welch_t": 0.16
+   },
+   "entropy L2 E3 h3": {
+    "legacy": 2.926,
+    "legacy_sd": 0.373,
+    "static": 3.016,
+    "static_sd": 0.175,
+    "delta": 0.09,
+    "welch_t": 0.53
+   },
+   "entropy L2 board (head mean)": {
+    "legacy": 3.533,
+    "legacy_sd": 0.123,
+    "static": 3.173,
+    "static_sd": 0.19,
+    "delta": -0.361,
+    "welch_t": -3.66
+   },
+   "entropy L2 board h0": {
+    "legacy": 3.522,
+    "legacy_sd": 0.171,
+    "static": 3.226,
+    "static_sd": 0.44,
+    "delta": -0.296,
+    "welch_t": -1.42
+   },
+   "entropy L2 board h1": {
+    "legacy": 3.456,
+    "legacy_sd": 0.241,
+    "static": 2.99,
+    "static_sd": 0.592,
+    "delta": -0.466,
+    "welch_t": -1.65
+   },
+   "entropy L2 board h2": {
+    "legacy": 3.559,
+    "legacy_sd": 0.236,
+    "static": 3.15,
+    "static_sd": 0.341,
+    "delta": -0.41,
+    "welch_t": -2.27
+   },
+   "entropy L2 board h3": {
+    "legacy": 3.596,
+    "legacy_sd": 0.163,
+    "static": 3.326,
+    "static_sd": 0.171,
+    "delta": -0.271,
+    "welch_t": -2.67
+   },
+   "mass L2 our_active->our_mons (head mean)": {
+    "legacy": 0.194,
+    "legacy_sd": 0.065,
+    "static": 0.131,
+    "static_sd": 0.076,
+    "delta": -0.063,
+    "welch_t": -1.45
+   },
+   "mass L2 our_active->their_mons (head mean)": {
+    "legacy": 0.239,
+    "legacy_sd": 0.037,
+    "static": 0.237,
+    "static_sd": 0.066,
+    "delta": -0.001,
+    "welch_t": -0.04
+   },
+   "mass L2 our_active->board (head mean)": {
+    "legacy": 0.035,
+    "legacy_sd": 0.015,
+    "static": 0.099,
+    "static_sd": 0.03,
+    "delta": 0.064,
+    "welch_t": 4.35
+   },
+   "mass L2 our_active->E3 (head mean)": {
+    "legacy": 0.144,
+    "legacy_sd": 0.047,
+    "static": 0.137,
+    "static_sd": 0.047,
+    "delta": -0.007,
+    "welch_t": -0.25
+   },
+   "mass L2 our_active->E4_E5_other (head mean)": {
+    "legacy": 0.231,
+    "legacy_sd": 0.071,
+    "static": 0.202,
+    "static_sd": 0.07,
+    "delta": -0.029,
+    "welch_t": -0.69
+   },
+   "mass L2 our_active->events (head mean)": {
+    "legacy": 0.157,
+    "legacy_sd": 0.062,
+    "static": 0.194,
+    "static_sd": 0.102,
+    "delta": 0.036,
+    "welch_t": 0.7
+   },
+   "mass L2 their_active->our_mons (head mean)": {
+    "legacy": 0.196,
+    "legacy_sd": 0.077,
+    "static": 0.164,
+    "static_sd": 0.083,
+    "delta": -0.032,
+    "welch_t": -0.66
+   },
+   "mass L2 their_active->their_mons (head mean)": {
+    "legacy": 0.2,
+    "legacy_sd": 0.05,
+    "static": 0.238,
+    "static_sd": 0.069,
+    "delta": 0.038,
+    "welch_t": 1.03
+   },
+   "mass L2 their_active->board (head mean)": {
+    "legacy": 0.051,
+    "legacy_sd": 0.048,
+    "static": 0.105,
+    "static_sd": 0.03,
+    "delta": 0.054,
+    "welch_t": 2.29
+   },
+   "mass L2 their_active->E3 (head mean)": {
+    "legacy": 0.067,
+    "legacy_sd": 0.017,
+    "static": 0.058,
+    "static_sd": 0.014,
+    "delta": -0.009,
+    "welch_t": -1.0
+   },
+   "mass L2 their_active->E4_E5_other (head mean)": {
+    "legacy": 0.252,
+    "legacy_sd": 0.069,
+    "static": 0.246,
+    "static_sd": 0.08,
+    "delta": -0.005,
+    "welch_t": -0.12
+   },
+   "mass L2 their_active->events (head mean)": {
+    "legacy": 0.234,
+    "legacy_sd": 0.063,
+    "static": 0.189,
+    "static_sd": 0.097,
+    "delta": -0.045,
+    "welch_t": -0.89
+   }
+  }
+ },
+ "policy": {
+  "10M": {
+   "all": {
+    "n": 20712,
+    "entropy": {
+     "legacy": 1.135,
+     "legacy_sd": 0.0452,
+     "static": 1.1652,
+     "static_sd": 0.035,
+     "delta": 0.0302,
+     "welch_t": 1.25
+    },
+    "top1_mass": {
+     "legacy": 0.5751,
+     "legacy_sd": 0.0176,
+     "static": 0.5637,
+     "static_sd": 0.012,
+     "delta": -0.0114,
+     "welch_t": -1.27
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7269,
+     "legacy_sd": 0.025,
+     "static": 0.712,
+     "static_sd": 0.0196,
+     "delta": -0.0148,
+     "welch_t": -1.1
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5118,
+     "legacy_sd": 0.0179,
+     "static": 0.4971,
+     "static_sd": 0.0153,
+     "delta": -0.0147,
+     "welch_t": -1.47
+    },
+    "critic_brier": {
+     "legacy": 0.1949,
+     "legacy_sd": 0.0085,
+     "static": 0.1941,
+     "static_sd": 0.0063,
+     "delta": -0.0007,
+     "welch_t": -0.16
+    },
+    "critic_logloss": {
+     "legacy": 0.569,
+     "legacy_sd": 0.0235,
+     "static": 0.5667,
+     "static_sd": 0.0168,
+     "delta": -0.0023,
+     "welch_t": -0.19
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5324,
+      "legacy_sd": 0.0366,
+      "static": 0.5221,
+      "static_sd": 0.0367,
+      "delta": -0.0103,
+      "welch_t": -0.47
+     },
+     "switch": {
+      "legacy": 0.261,
+      "legacy_sd": 0.0373,
+      "static": 0.2764,
+      "static_sd": 0.0463,
+      "delta": 0.0155,
+      "welch_t": 0.6
+     },
+     "status": {
+      "legacy": 0.1144,
+      "legacy_sd": 0.0048,
+      "static": 0.1187,
+      "static_sd": 0.0153,
+      "delta": 0.0042,
+      "welch_t": 0.59
+     },
+     "setup": {
+      "legacy": 0.0211,
+      "legacy_sd": 0.0046,
+      "static": 0.0257,
+      "static_sd": 0.0034,
+      "delta": 0.0046,
+      "welch_t": 1.92
+     },
+     "hazard": {
+      "legacy": 0.0215,
+      "legacy_sd": 0.0033,
+      "static": 0.0156,
+      "static_sd": 0.0061,
+      "delta": -0.0059,
+      "welch_t": -1.95
+     },
+     "recovery": {
+      "legacy": 0.0496,
+      "legacy_sd": 0.0095,
+      "static": 0.0415,
+      "static_sd": 0.0074,
+      "delta": -0.0081,
+      "welch_t": -1.59
+     }
+    }
+   },
+   "phase=endgame": {
+    "n": 5644,
+    "entropy": {
+     "legacy": 1.06,
+     "legacy_sd": 0.0358,
+     "static": 1.0717,
+     "static_sd": 0.0211,
+     "delta": 0.0117,
+     "welch_t": 0.67
+    },
+    "top1_mass": {
+     "legacy": 0.5816,
+     "legacy_sd": 0.0163,
+     "static": 0.5739,
+     "static_sd": 0.0077,
+     "delta": -0.0076,
+     "welch_t": -1.02
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7428,
+     "legacy_sd": 0.0261,
+     "static": 0.7337,
+     "static_sd": 0.0118,
+     "delta": -0.0091,
+     "welch_t": -0.76
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5246,
+     "legacy_sd": 0.0126,
+     "static": 0.5179,
+     "static_sd": 0.0067,
+     "delta": -0.0067,
+     "welch_t": -1.12
+    },
+    "critic_brier": {
+     "legacy": 0.1562,
+     "legacy_sd": 0.0068,
+     "static": 0.1506,
+     "static_sd": 0.0097,
+     "delta": -0.0057,
+     "welch_t": -1.1
+    },
+    "critic_logloss": {
+     "legacy": 0.4804,
+     "legacy_sd": 0.0215,
+     "static": 0.4633,
+     "static_sd": 0.0281,
+     "delta": -0.0171,
+     "welch_t": -1.12
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.59,
+      "legacy_sd": 0.0258,
+      "static": 0.5877,
+      "static_sd": 0.0215,
+      "delta": -0.0022,
+      "welch_t": -0.16
+     },
+     "switch": {
+      "legacy": 0.1776,
+      "legacy_sd": 0.0186,
+      "static": 0.1798,
+      "static_sd": 0.0225,
+      "delta": 0.0022,
+      "welch_t": 0.18
+     },
+     "status": {
+      "legacy": 0.1408,
+      "legacy_sd": 0.0078,
+      "static": 0.1448,
+      "static_sd": 0.009,
+      "delta": 0.004,
+      "welch_t": 0.79
+     },
+     "setup": {
+      "legacy": 0.0269,
+      "legacy_sd": 0.005,
+      "static": 0.0329,
+      "static_sd": 0.003,
+      "delta": 0.0059,
+      "welch_t": 2.42
+     },
+     "hazard": {
+      "legacy": 0.0126,
+      "legacy_sd": 0.0045,
+      "static": 0.0118,
+      "static_sd": 0.0035,
+      "delta": -0.0008,
+      "welch_t": -0.33
+     },
+     "recovery": {
+      "legacy": 0.0521,
+      "legacy_sd": 0.0107,
+      "static": 0.043,
+      "static_sd": 0.0075,
+      "delta": -0.0091,
+      "welch_t": -1.66
+     }
+    }
+   },
+   "phase=midgame": {
+    "n": 13125,
+    "entropy": {
+     "legacy": 1.1513,
+     "legacy_sd": 0.0494,
+     "static": 1.1891,
+     "static_sd": 0.0422,
+     "delta": 0.0377,
+     "welch_t": 1.36
+    },
+    "top1_mass": {
+     "legacy": 0.5755,
+     "legacy_sd": 0.0185,
+     "static": 0.5624,
+     "static_sd": 0.0144,
+     "delta": -0.0131,
+     "welch_t": -1.32
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7228,
+     "legacy_sd": 0.0299,
+     "static": 0.7068,
+     "static_sd": 0.0203,
+     "delta": -0.016,
+     "welch_t": -1.05
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5099,
+     "legacy_sd": 0.02,
+     "static": 0.4918,
+     "static_sd": 0.0159,
+     "delta": -0.0181,
+     "welch_t": -1.68
+    },
+    "critic_brier": {
+     "legacy": 0.1986,
+     "legacy_sd": 0.0101,
+     "static": 0.2,
+     "static_sd": 0.0058,
+     "delta": 0.0014,
+     "welch_t": 0.29
+    },
+    "critic_logloss": {
+     "legacy": 0.5777,
+     "legacy_sd": 0.0278,
+     "static": 0.5821,
+     "static_sd": 0.0159,
+     "delta": 0.0043,
+     "welch_t": 0.32
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5177,
+      "legacy_sd": 0.0391,
+      "static": 0.504,
+      "static_sd": 0.0396,
+      "delta": -0.0137,
+      "welch_t": -0.57
+     },
+     "switch": {
+      "legacy": 0.2772,
+      "legacy_sd": 0.0403,
+      "static": 0.2976,
+      "static_sd": 0.0511,
+      "delta": 0.0203,
+      "welch_t": 0.72
+     },
+     "status": {
+      "legacy": 0.1079,
+      "legacy_sd": 0.0062,
+      "static": 0.1112,
+      "static_sd": 0.0178,
+      "delta": 0.0033,
+      "welch_t": 0.4
+     },
+     "setup": {
+      "legacy": 0.0204,
+      "legacy_sd": 0.005,
+      "static": 0.0247,
+      "static_sd": 0.004,
+      "delta": 0.0043,
+      "welch_t": 1.58
+     },
+     "hazard": {
+      "legacy": 0.0224,
+      "legacy_sd": 0.0032,
+      "static": 0.0167,
+      "static_sd": 0.0067,
+      "delta": -0.0057,
+      "welch_t": -1.75
+     },
+     "recovery": {
+      "legacy": 0.0544,
+      "legacy_sd": 0.0104,
+      "static": 0.0458,
+      "static_sd": 0.0084,
+      "delta": -0.0085,
+      "welch_t": -1.5
+     }
+    }
+   },
+   "phase=opening": {
+    "n": 1943,
+    "entropy": {
+     "legacy": 1.2424,
+     "legacy_sd": 0.0697,
+     "static": 1.2756,
+     "static_sd": 0.0956,
+     "delta": 0.0332,
+     "welch_t": 0.65
+    },
+    "top1_mass": {
+     "legacy": 0.5536,
+     "legacy_sd": 0.0285,
+     "static": 0.5426,
+     "static_sd": 0.0389,
+     "delta": -0.0111,
+     "welch_t": -0.53
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7078,
+     "legacy_sd": 0.0426,
+     "static": 0.6844,
+     "static_sd": 0.0502,
+     "delta": -0.0234,
+     "welch_t": -0.82
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4881,
+     "legacy_sd": 0.0365,
+     "static": 0.4731,
+     "static_sd": 0.0445,
+     "delta": -0.015,
+     "welch_t": -0.6
+    },
+    "critic_brier": {
+     "legacy": 0.2819,
+     "legacy_sd": 0.0158,
+     "static": 0.2815,
+     "static_sd": 0.0131,
+     "delta": -0.0004,
+     "welch_t": -0.05
+    },
+    "critic_logloss": {
+     "legacy": 0.767,
+     "legacy_sd": 0.038,
+     "static": 0.7644,
+     "static_sd": 0.0306,
+     "delta": -0.0027,
+     "welch_t": -0.13
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4677,
+      "legacy_sd": 0.0676,
+      "static": 0.4572,
+      "static_sd": 0.0741,
+      "delta": -0.0105,
+      "welch_t": -0.24
+     },
+     "switch": {
+      "legacy": 0.3899,
+      "legacy_sd": 0.0851,
+      "static": 0.4101,
+      "static_sd": 0.0916,
+      "delta": 0.0202,
+      "welch_t": 0.38
+     },
+     "status": {
+      "legacy": 0.0834,
+      "legacy_sd": 0.0231,
+      "static": 0.0944,
+      "static_sd": 0.0204,
+      "delta": 0.011,
+      "welch_t": 0.84
+     },
+     "setup": {
+      "legacy": 0.0091,
+      "legacy_sd": 0.003,
+      "static": 0.0122,
+      "static_sd": 0.0027,
+      "delta": 0.0032,
+      "welch_t": 1.82
+     },
+     "hazard": {
+      "legacy": 0.0406,
+      "legacy_sd": 0.0075,
+      "static": 0.019,
+      "static_sd": 0.0112,
+      "delta": -0.0216,
+      "welch_t": -3.66
+     },
+     "recovery": {
+      "legacy": 0.0093,
+      "legacy_sd": 0.0016,
+      "static": 0.007,
+      "static_sd": 0.001,
+      "delta": -0.0023,
+      "welch_t": -2.9
+     }
+    }
+   },
+   "kind=forced_switch": {
+    "n": 1805,
+    "entropy": {
+     "legacy": 0.7785,
+     "legacy_sd": 0.0429,
+     "static": 0.7691,
+     "static_sd": 0.0203,
+     "delta": -0.0093,
+     "welch_t": -0.47
+    },
+    "top1_mass": {
+     "legacy": 0.6695,
+     "legacy_sd": 0.0211,
+     "static": 0.6718,
+     "static_sd": 0.0105,
+     "delta": 0.0023,
+     "welch_t": 0.24
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7226,
+     "legacy_sd": 0.0157,
+     "static": 0.7238,
+     "static_sd": 0.0157,
+     "delta": 0.0011,
+     "welch_t": 0.12
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5848,
+     "legacy_sd": 0.0112,
+     "static": 0.5909,
+     "static_sd": 0.0115,
+     "delta": 0.0061,
+     "welch_t": 0.89
+    },
+    "critic_brier": {
+     "legacy": 0.228,
+     "legacy_sd": 0.0084,
+     "static": 0.2264,
+     "static_sd": 0.0126,
+     "delta": -0.0016,
+     "welch_t": -0.24
+    },
+    "critic_logloss": {
+     "legacy": 0.6549,
+     "legacy_sd": 0.0223,
+     "static": 0.649,
+     "static_sd": 0.0353,
+     "delta": -0.0059,
+     "welch_t": -0.33
+    }
+   },
+   "kind=free": {
+    "n": 18907,
+    "entropy": {
+     "legacy": 1.169,
+     "legacy_sd": 0.0484,
+     "static": 1.203,
+     "static_sd": 0.0374,
+     "delta": 0.034,
+     "welch_t": 1.31
+    },
+    "top1_mass": {
+     "legacy": 0.5661,
+     "legacy_sd": 0.0189,
+     "static": 0.5534,
+     "static_sd": 0.0126,
+     "delta": -0.0128,
+     "welch_t": -1.33
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7273,
+     "legacy_sd": 0.0265,
+     "static": 0.7109,
+     "static_sd": 0.0208,
+     "delta": -0.0163,
+     "welch_t": -1.15
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5049,
+     "legacy_sd": 0.0196,
+     "static": 0.4882,
+     "static_sd": 0.0161,
+     "delta": -0.0167,
+     "welch_t": -1.55
+    },
+    "critic_brier": {
+     "legacy": 0.1917,
+     "legacy_sd": 0.0087,
+     "static": 0.191,
+     "static_sd": 0.0059,
+     "delta": -0.0007,
+     "welch_t": -0.15
+    },
+    "critic_logloss": {
+     "legacy": 0.5607,
+     "legacy_sd": 0.0238,
+     "static": 0.5587,
+     "static_sd": 0.0154,
+     "delta": -0.0019,
+     "welch_t": -0.16
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5324,
+      "legacy_sd": 0.0366,
+      "static": 0.5221,
+      "static_sd": 0.0367,
+      "delta": -0.0103,
+      "welch_t": -0.47
+     },
+     "switch": {
+      "legacy": 0.261,
+      "legacy_sd": 0.0373,
+      "static": 0.2764,
+      "static_sd": 0.0463,
+      "delta": 0.0155,
+      "welch_t": 0.6
+     },
+     "status": {
+      "legacy": 0.1144,
+      "legacy_sd": 0.0048,
+      "static": 0.1187,
+      "static_sd": 0.0153,
+      "delta": 0.0042,
+      "welch_t": 0.59
+     },
+     "setup": {
+      "legacy": 0.0211,
+      "legacy_sd": 0.0046,
+      "static": 0.0257,
+      "static_sd": 0.0034,
+      "delta": 0.0046,
+      "welch_t": 1.92
+     },
+     "hazard": {
+      "legacy": 0.0215,
+      "legacy_sd": 0.0033,
+      "static": 0.0156,
+      "static_sd": 0.0061,
+      "delta": -0.0059,
+      "welch_t": -1.95
+     },
+     "recovery": {
+      "legacy": 0.0496,
+      "legacy_sd": 0.0095,
+      "static": 0.0415,
+      "static_sd": 0.0074,
+      "delta": -0.0081,
+      "welch_t": -1.59
+     }
+    }
+   },
+   "legal=2-3": {
+    "n": 1154,
+    "entropy": {
+     "legacy": 0.5622,
+     "legacy_sd": 0.0252,
+     "static": 0.5546,
+     "static_sd": 0.023,
+     "delta": -0.0076,
+     "welch_t": -0.52
+    },
+    "top1_mass": {
+     "legacy": 0.7435,
+     "legacy_sd": 0.0148,
+     "static": 0.7458,
+     "static_sd": 0.0131,
+     "delta": 0.0023,
+     "welch_t": 0.27
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7981,
+     "legacy_sd": 0.0303,
+     "static": 0.7775,
+     "static_sd": 0.0269,
+     "delta": -0.0206,
+     "welch_t": -1.19
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.678,
+     "legacy_sd": 0.0181,
+     "static": 0.6742,
+     "static_sd": 0.0066,
+     "delta": -0.0037,
+     "welch_t": -0.47
+    },
+    "critic_brier": {
+     "legacy": 0.2136,
+     "legacy_sd": 0.0166,
+     "static": 0.1969,
+     "static_sd": 0.0156,
+     "delta": -0.0167,
+     "welch_t": -1.72
+    },
+    "critic_logloss": {
+     "legacy": 0.6338,
+     "legacy_sd": 0.0527,
+     "static": 0.5816,
+     "static_sd": 0.0454,
+     "delta": -0.0521,
+     "welch_t": -1.76
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4527,
+      "legacy_sd": 0.0485,
+      "static": 0.4339,
+      "static_sd": 0.0463,
+      "delta": -0.0189,
+      "welch_t": -0.66
+     },
+     "switch": {
+      "legacy": 0.2946,
+      "legacy_sd": 0.0342,
+      "static": 0.3108,
+      "static_sd": 0.0337,
+      "delta": 0.0161,
+      "welch_t": 0.79
+     },
+     "status": {
+      "legacy": 0.1976,
+      "legacy_sd": 0.039,
+      "static": 0.202,
+      "static_sd": 0.0081,
+      "delta": 0.0044,
+      "welch_t": 0.27
+     },
+     "setup": {
+      "legacy": 0.0008,
+      "legacy_sd": 0.0003,
+      "static": 0.001,
+      "static_sd": 0.0002,
+      "delta": 0.0003,
+      "welch_t": 2.14
+     },
+     "hazard": {
+      "legacy": 0.0006,
+      "legacy_sd": 0.0005,
+      "static": 0.001,
+      "static_sd": 0.0007,
+      "delta": 0.0005,
+      "welch_t": 1.29
+     },
+     "recovery": {
+      "legacy": 0.0537,
+      "legacy_sd": 0.0042,
+      "static": 0.0513,
+      "static_sd": 0.0079,
+      "delta": -0.0024,
+      "welch_t": -0.61
+     }
+    }
+   },
+   "legal=4-6": {
+    "n": 6335,
+    "entropy": {
+     "legacy": 0.9003,
+     "legacy_sd": 0.037,
+     "static": 0.9062,
+     "static_sd": 0.0203,
+     "delta": 0.0059,
+     "welch_t": 0.33
+    },
+    "top1_mass": {
+     "legacy": 0.643,
+     "legacy_sd": 0.0155,
+     "static": 0.6393,
+     "static_sd": 0.0081,
+     "delta": -0.0037,
+     "welch_t": -0.51
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.737,
+     "legacy_sd": 0.0099,
+     "static": 0.7235,
+     "static_sd": 0.0145,
+     "delta": -0.0135,
+     "welch_t": -1.78
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5703,
+     "legacy_sd": 0.0098,
+     "static": 0.5629,
+     "static_sd": 0.012,
+     "delta": -0.0074,
+     "welch_t": -1.1
+    },
+    "critic_brier": {
+     "legacy": 0.2045,
+     "legacy_sd": 0.0077,
+     "static": 0.203,
+     "static_sd": 0.0095,
+     "delta": -0.0015,
+     "welch_t": -0.28
+    },
+    "critic_logloss": {
+     "legacy": 0.5978,
+     "legacy_sd": 0.0237,
+     "static": 0.5978,
+     "static_sd": 0.0255,
+     "delta": -0.0001,
+     "welch_t": -0.0
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.6073,
+      "legacy_sd": 0.0309,
+      "static": 0.6038,
+      "static_sd": 0.0301,
+      "delta": -0.0034,
+      "welch_t": -0.19
+     },
+     "switch": {
+      "legacy": 0.1758,
+      "legacy_sd": 0.0259,
+      "static": 0.1839,
+      "static_sd": 0.0268,
+      "delta": 0.008,
+      "welch_t": 0.5
+     },
+     "status": {
+      "legacy": 0.1069,
+      "legacy_sd": 0.0026,
+      "static": 0.1091,
+      "static_sd": 0.0078,
+      "delta": 0.0022,
+      "welch_t": 0.59
+     },
+     "setup": {
+      "legacy": 0.0321,
+      "legacy_sd": 0.0077,
+      "static": 0.0405,
+      "static_sd": 0.0043,
+      "delta": 0.0083,
+      "welch_t": 2.25
+     },
+     "hazard": {
+      "legacy": 0.0074,
+      "legacy_sd": 0.0017,
+      "static": 0.0063,
+      "static_sd": 0.002,
+      "delta": -0.0012,
+      "welch_t": -1.03
+     },
+     "recovery": {
+      "legacy": 0.0704,
+      "legacy_sd": 0.0148,
+      "static": 0.0565,
+      "static_sd": 0.0116,
+      "delta": -0.0139,
+      "welch_t": -1.75
+     }
+    }
+   },
+   "legal=7+": {
+    "n": 13223,
+    "entropy": {
+     "legacy": 1.2974,
+     "legacy_sd": 0.0533,
+     "static": 1.3426,
+     "static_sd": 0.0491,
+     "delta": 0.0452,
+     "welch_t": 1.46
+    },
+    "top1_mass": {
+     "legacy": 0.5279,
+     "legacy_sd": 0.0204,
+     "static": 0.5115,
+     "static_sd": 0.0167,
+     "delta": -0.0163,
+     "welch_t": -1.46
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7158,
+     "legacy_sd": 0.0331,
+     "static": 0.7009,
+     "static_sd": 0.0257,
+     "delta": -0.0149,
+     "welch_t": -0.84
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4693,
+     "legacy_sd": 0.0234,
+     "static": 0.4502,
+     "static_sd": 0.0186,
+     "delta": -0.0192,
+     "welch_t": -1.51
+    },
+    "critic_brier": {
+     "legacy": 0.1889,
+     "legacy_sd": 0.0097,
+     "static": 0.1898,
+     "static_sd": 0.006,
+     "delta": 0.0009,
+     "welch_t": 0.19
+    },
+    "critic_logloss": {
+     "legacy": 0.5503,
+     "legacy_sd": 0.0247,
+     "static": 0.551,
+     "static_sd": 0.0154,
+     "delta": 0.0007,
+     "welch_t": 0.06
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5045,
+      "legacy_sd": 0.0401,
+      "static": 0.4916,
+      "static_sd": 0.04,
+      "delta": -0.0129,
+      "welch_t": -0.53
+     },
+     "switch": {
+      "legacy": 0.2943,
+      "legacy_sd": 0.0425,
+      "static": 0.3127,
+      "static_sd": 0.0552,
+      "delta": 0.0184,
+      "welch_t": 0.61
+     },
+     "status": {
+      "legacy": 0.1151,
+      "legacy_sd": 0.0073,
+      "static": 0.1202,
+      "static_sd": 0.019,
+      "delta": 0.0051,
+      "welch_t": 0.56
+     },
+     "setup": {
+      "legacy": 0.0172,
+      "legacy_sd": 0.0039,
+      "static": 0.0205,
+      "static_sd": 0.0034,
+      "delta": 0.0033,
+      "welch_t": 1.48
+     },
+     "hazard": {
+      "legacy": 0.0277,
+      "legacy_sd": 0.0042,
+      "static": 0.0198,
+      "static_sd": 0.008,
+      "delta": -0.0079,
+      "welch_t": -2.01
+     },
+     "recovery": {
+      "legacy": 0.0411,
+      "legacy_sd": 0.0077,
+      "static": 0.0352,
+      "static_sd": 0.006,
+      "delta": -0.0059,
+      "welch_t": -1.44
+     }
+    }
+   },
+   "opp_class=bot": {
+    "n": 11109,
+    "entropy": {
+     "legacy": 1.1873,
+     "legacy_sd": 0.0473,
+     "static": 1.2092,
+     "static_sd": 0.0374,
+     "delta": 0.0219,
+     "welch_t": 0.86
+    },
+    "top1_mass": {
+     "legacy": 0.5539,
+     "legacy_sd": 0.0189,
+     "static": 0.546,
+     "static_sd": 0.0131,
+     "delta": -0.0079,
+     "welch_t": -0.82
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7296,
+     "legacy_sd": 0.0272,
+     "static": 0.7169,
+     "static_sd": 0.0115,
+     "delta": -0.0127,
+     "welch_t": -1.04
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4965,
+     "legacy_sd": 0.0188,
+     "static": 0.4859,
+     "static_sd": 0.0145,
+     "delta": -0.0106,
+     "welch_t": -1.06
+    },
+    "critic_brier": {
+     "legacy": 0.2004,
+     "legacy_sd": 0.0057,
+     "static": 0.1967,
+     "static_sd": 0.0121,
+     "delta": -0.0038,
+     "welch_t": -0.64
+    },
+    "critic_logloss": {
+     "legacy": 0.5845,
+     "legacy_sd": 0.0155,
+     "static": 0.5729,
+     "static_sd": 0.0339,
+     "delta": -0.0116,
+     "welch_t": -0.7
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5203,
+      "legacy_sd": 0.0378,
+      "static": 0.5151,
+      "static_sd": 0.0352,
+      "delta": -0.0052,
+      "welch_t": -0.24
+     },
+     "switch": {
+      "legacy": 0.2635,
+      "legacy_sd": 0.0367,
+      "static": 0.2706,
+      "static_sd": 0.0439,
+      "delta": 0.0071,
+      "welch_t": 0.29
+     },
+     "status": {
+      "legacy": 0.1264,
+      "legacy_sd": 0.0064,
+      "static": 0.1317,
+      "static_sd": 0.0147,
+      "delta": 0.0053,
+      "welch_t": 0.75
+     },
+     "setup": {
+      "legacy": 0.0197,
+      "legacy_sd": 0.0044,
+      "static": 0.0234,
+      "static_sd": 0.0042,
+      "delta": 0.0037,
+      "welch_t": 1.43
+     },
+     "hazard": {
+      "legacy": 0.0243,
+      "legacy_sd": 0.0043,
+      "static": 0.0175,
+      "static_sd": 0.006,
+      "delta": -0.0068,
+      "welch_t": -2.13
+     },
+     "recovery": {
+      "legacy": 0.0458,
+      "legacy_sd": 0.0075,
+      "static": 0.0418,
+      "static_sd": 0.0073,
+      "delta": -0.004,
+      "welch_t": -0.89
+     }
+    }
+   },
+   "opp_class=exploiter": {
+    "n": 748,
+    "entropy": {
+     "legacy": 0.9363,
+     "legacy_sd": 0.0396,
+     "static": 0.9407,
+     "static_sd": 0.0604,
+     "delta": 0.0044,
+     "welch_t": 0.14
+    },
+    "top1_mass": {
+     "legacy": 0.6507,
+     "legacy_sd": 0.018,
+     "static": 0.6529,
+     "static_sd": 0.0256,
+     "delta": 0.0022,
+     "welch_t": 0.16
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7502,
+     "legacy_sd": 0.0377,
+     "static": 0.7174,
+     "static_sd": 0.0552,
+     "delta": -0.0328,
+     "welch_t": -1.13
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5827,
+     "legacy_sd": 0.0218,
+     "static": 0.5651,
+     "static_sd": 0.0361,
+     "delta": -0.0176,
+     "welch_t": -0.95
+    },
+    "critic_brier": {
+     "legacy": 0.1869,
+     "legacy_sd": 0.0162,
+     "static": 0.1846,
+     "static_sd": 0.0289,
+     "delta": -0.0023,
+     "welch_t": -0.16
+    },
+    "critic_logloss": {
+     "legacy": 0.5613,
+     "legacy_sd": 0.0442,
+     "static": 0.5529,
+     "static_sd": 0.0694,
+     "delta": -0.0084,
+     "welch_t": -0.23
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.557,
+      "legacy_sd": 0.0356,
+      "static": 0.5543,
+      "static_sd": 0.0491,
+      "delta": -0.0027,
+      "welch_t": -0.1
+     },
+     "switch": {
+      "legacy": 0.2111,
+      "legacy_sd": 0.0372,
+      "static": 0.2257,
+      "static_sd": 0.0427,
+      "delta": 0.0146,
+      "welch_t": 0.6
+     },
+     "status": {
+      "legacy": 0.0901,
+      "legacy_sd": 0.0081,
+      "static": 0.0877,
+      "static_sd": 0.0184,
+      "delta": -0.0025,
+      "welch_t": -0.28
+     },
+     "setup": {
+      "legacy": 0.0461,
+      "legacy_sd": 0.0135,
+      "static": 0.0628,
+      "static_sd": 0.0246,
+      "delta": 0.0167,
+      "welch_t": 1.36
+     },
+     "hazard": {
+      "legacy": 0.0173,
+      "legacy_sd": 0.0027,
+      "static": 0.0102,
+      "static_sd": 0.0031,
+      "delta": -0.007,
+      "welch_t": -3.99
+     },
+     "recovery": {
+      "legacy": 0.0785,
+      "legacy_sd": 0.0247,
+      "static": 0.0593,
+      "static_sd": 0.0142,
+      "delta": -0.0192,
+      "welch_t": -1.61
+     }
+    }
+   },
+   "opp_class=pool_snapshot": {
+    "n": 8855,
+    "entropy": {
+     "legacy": 1.0862,
+     "legacy_sd": 0.0443,
+     "static": 1.1289,
+     "static_sd": 0.0377,
+     "delta": 0.0428,
+     "welch_t": 1.73
+    },
+    "top1_mass": {
+     "legacy": 0.5953,
+     "legacy_sd": 0.0169,
+     "static": 0.5783,
+     "static_sd": 0.0135,
+     "delta": -0.017,
+     "welch_t": -1.85
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7215,
+     "legacy_sd": 0.0237,
+     "static": 0.7055,
+     "static_sd": 0.0285,
+     "delta": -0.0159,
+     "welch_t": -1.0
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5251,
+     "legacy_sd": 0.0174,
+     "static": 0.5055,
+     "static_sd": 0.0166,
+     "delta": -0.0196,
+     "welch_t": -1.91
+    },
+    "critic_brier": {
+     "legacy": 0.189,
+     "legacy_sd": 0.0153,
+     "static": 0.192,
+     "static_sd": 0.0086,
+     "delta": 0.003,
+     "welch_t": 0.41
+    },
+    "critic_logloss": {
+     "legacy": 0.5514,
+     "legacy_sd": 0.0425,
+     "static": 0.5605,
+     "static_sd": 0.0212,
+     "delta": 0.0091,
+     "welch_t": 0.46
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5453,
+      "legacy_sd": 0.0371,
+      "static": 0.528,
+      "static_sd": 0.0385,
+      "delta": -0.0173,
+      "welch_t": -0.75
+     },
+     "switch": {
+      "legacy": 0.262,
+      "legacy_sd": 0.0392,
+      "static": 0.2879,
+      "static_sd": 0.05,
+      "delta": 0.0259,
+      "welch_t": 0.94
+     },
+     "status": {
+      "legacy": 0.1017,
+      "legacy_sd": 0.006,
+      "static": 0.1052,
+      "static_sd": 0.0163,
+      "delta": 0.0035,
+      "welch_t": 0.46
+     },
+     "setup": {
+      "legacy": 0.0208,
+      "legacy_sd": 0.0051,
+      "static": 0.0255,
+      "static_sd": 0.0036,
+      "delta": 0.0048,
+      "welch_t": 1.79
+     },
+     "hazard": {
+      "legacy": 0.0183,
+      "legacy_sd": 0.0032,
+      "static": 0.0137,
+      "static_sd": 0.0064,
+      "delta": -0.0046,
+      "welch_t": -1.46
+     },
+     "recovery": {
+      "legacy": 0.052,
+      "legacy_sd": 0.0111,
+      "static": 0.0397,
+      "static_sd": 0.0075,
+      "delta": -0.0123,
+      "welch_t": -2.18
+     }
+    }
+   },
+   "outcome=draw": {
+    "n": 1865,
+    "entropy": {
+     "legacy": 1.0979,
+     "legacy_sd": 0.0594,
+     "static": 1.0989,
+     "static_sd": 0.0327,
+     "delta": 0.001,
+     "welch_t": 0.03
+    },
+    "top1_mass": {
+     "legacy": 0.5766,
+     "legacy_sd": 0.0251,
+     "static": 0.5791,
+     "static_sd": 0.007,
+     "delta": 0.0025,
+     "welch_t": 0.23
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.6738,
+     "legacy_sd": 0.0526,
+     "static": 0.6944,
+     "static_sd": 0.035,
+     "delta": 0.0206,
+     "welch_t": 0.77
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4979,
+     "legacy_sd": 0.0236,
+     "static": 0.5001,
+     "static_sd": 0.0214,
+     "delta": 0.0022,
+     "welch_t": 0.16
+    },
+    "critic_brier": {
+     "legacy": NaN,
+     "legacy_sd": NaN,
+     "static": NaN,
+     "static_sd": NaN,
+     "delta": NaN,
+     "welch_t": null
+    },
+    "critic_logloss": {
+     "legacy": NaN,
+     "legacy_sd": NaN,
+     "static": NaN,
+     "static_sd": NaN,
+     "delta": NaN,
+     "welch_t": null
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4654,
+      "legacy_sd": 0.0448,
+      "static": 0.461,
+      "static_sd": 0.0321,
+      "delta": -0.0043,
+      "welch_t": -0.19
+     },
+     "switch": {
+      "legacy": 0.2781,
+      "legacy_sd": 0.0463,
+      "static": 0.2827,
+      "static_sd": 0.0438,
+      "delta": 0.0046,
+      "welch_t": 0.17
+     },
+     "status": {
+      "legacy": 0.1054,
+      "legacy_sd": 0.0111,
+      "static": 0.1083,
+      "static_sd": 0.0102,
+      "delta": 0.0029,
+      "welch_t": 0.46
+     },
+     "setup": {
+      "legacy": 0.0398,
+      "legacy_sd": 0.0059,
+      "static": 0.0439,
+      "static_sd": 0.0082,
+      "delta": 0.0041,
+      "welch_t": 0.93
+     },
+     "hazard": {
+      "legacy": 0.0095,
+      "legacy_sd": 0.0017,
+      "static": 0.0053,
+      "static_sd": 0.0028,
+      "delta": -0.0043,
+      "welch_t": -3.0
+     },
+     "recovery": {
+      "legacy": 0.1017,
+      "legacy_sd": 0.0152,
+      "static": 0.0987,
+      "static_sd": 0.0214,
+      "delta": -0.003,
+      "welch_t": -0.26
+     }
+    }
+   },
+   "outcome=loss": {
+    "n": 9147,
+    "entropy": {
+     "legacy": 0.9482,
+     "legacy_sd": 0.0535,
+     "static": 0.9593,
+     "static_sd": 0.0392,
+     "delta": 0.0112,
+     "welch_t": 0.4
+    },
+    "top1_mass": {
+     "legacy": 0.6415,
+     "legacy_sd": 0.0206,
+     "static": 0.6371,
+     "static_sd": 0.0141,
+     "delta": -0.0044,
+     "welch_t": -0.42
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7425,
+     "legacy_sd": 0.0141,
+     "static": 0.7232,
+     "static_sd": 0.0196,
+     "delta": -0.0192,
+     "welch_t": -1.83
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5713,
+     "legacy_sd": 0.0175,
+     "static": 0.5612,
+     "static_sd": 0.0182,
+     "delta": -0.0101,
+     "welch_t": -0.93
+    },
+    "critic_brier": {
+     "legacy": 0.3255,
+     "legacy_sd": 0.0158,
+     "static": 0.3136,
+     "static_sd": 0.0279,
+     "delta": -0.012,
+     "welch_t": -0.85
+    },
+    "critic_logloss": {
+     "legacy": 0.898,
+     "legacy_sd": 0.0381,
+     "static": 0.8653,
+     "static_sd": 0.0748,
+     "delta": -0.0327,
+     "welch_t": -0.89
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5982,
+      "legacy_sd": 0.0367,
+      "static": 0.5952,
+      "static_sd": 0.0439,
+      "delta": -0.0031,
+      "welch_t": -0.12
+     },
+     "switch": {
+      "legacy": 0.2178,
+      "legacy_sd": 0.0382,
+      "static": 0.2248,
+      "static_sd": 0.0486,
+      "delta": 0.007,
+      "welch_t": 0.26
+     },
+     "status": {
+      "legacy": 0.0904,
+      "legacy_sd": 0.0049,
+      "static": 0.0949,
+      "static_sd": 0.0116,
+      "delta": 0.0045,
+      "welch_t": 0.81
+     },
+     "setup": {
+      "legacy": 0.0262,
+      "legacy_sd": 0.0073,
+      "static": 0.0337,
+      "static_sd": 0.0039,
+      "delta": 0.0075,
+      "welch_t": 2.16
+     },
+     "hazard": {
+      "legacy": 0.0147,
+      "legacy_sd": 0.0024,
+      "static": 0.0105,
+      "static_sd": 0.0055,
+      "delta": -0.0042,
+      "welch_t": -1.58
+     },
+     "recovery": {
+      "legacy": 0.0528,
+      "legacy_sd": 0.0121,
+      "static": 0.041,
+      "static_sd": 0.0091,
+      "delta": -0.0118,
+      "welch_t": -1.85
+     }
+    }
+   },
+   "outcome=win": {
+    "n": 9700,
+    "entropy": {
+     "legacy": 1.3183,
+     "legacy_sd": 0.0407,
+     "static": 1.3721,
+     "static_sd": 0.0328,
+     "delta": 0.0538,
+     "welch_t": 2.42
+    },
+    "top1_mass": {
+     "legacy": 0.5122,
+     "legacy_sd": 0.0154,
+     "static": 0.4915,
+     "static_sd": 0.0118,
+     "delta": -0.0207,
+     "welch_t": -2.52
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7223,
+     "legacy_sd": 0.0328,
+     "static": 0.7049,
+     "static_sd": 0.0276,
+     "delta": -0.0175,
+     "welch_t": -0.96
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4584,
+     "legacy_sd": 0.0187,
+     "static": 0.4361,
+     "static_sd": 0.014,
+     "delta": -0.0223,
+     "welch_t": -2.26
+    },
+    "critic_brier": {
+     "legacy": 0.0716,
+     "legacy_sd": 0.0095,
+     "static": 0.0815,
+     "static_sd": 0.0222,
+     "delta": 0.0099,
+     "welch_t": 0.92
+    },
+    "critic_logloss": {
+     "legacy": 0.2587,
+     "legacy_sd": 0.0266,
+     "static": 0.285,
+     "static_sd": 0.0561,
+     "delta": 0.0263,
+     "welch_t": 0.96
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4872,
+      "legacy_sd": 0.036,
+      "static": 0.4693,
+      "static_sd": 0.0327,
+      "delta": -0.0179,
+      "welch_t": -0.86
+     },
+     "switch": {
+      "legacy": 0.2957,
+      "legacy_sd": 0.036,
+      "static": 0.3206,
+      "static_sd": 0.0475,
+      "delta": 0.0249,
+      "welch_t": 0.96
+     },
+     "status": {
+      "legacy": 0.1372,
+      "legacy_sd": 0.0053,
+      "static": 0.1414,
+      "static_sd": 0.0199,
+      "delta": 0.0042,
+      "welch_t": 0.46
+     },
+     "setup": {
+      "legacy": 0.0131,
+      "legacy_sd": 0.0027,
+      "static": 0.0154,
+      "static_sd": 0.0024,
+      "delta": 0.0022,
+      "welch_t": 1.42
+     },
+     "hazard": {
+      "legacy": 0.0297,
+      "legacy_sd": 0.0047,
+      "static": 0.022,
+      "static_sd": 0.0074,
+      "delta": -0.0077,
+      "welch_t": -2.0
+     },
+     "recovery": {
+      "legacy": 0.037,
+      "legacy_sd": 0.0069,
+      "static": 0.0312,
+      "static_sd": 0.0041,
+      "delta": -0.0058,
+      "welch_t": -1.72
+     }
+    }
+   },
+   "free & switch legal": {
+    "n": 17728,
+    "entropy": {
+     "legacy": 1.1933,
+     "legacy_sd": 0.0506,
+     "static": 1.2286,
+     "static_sd": 0.0389,
+     "delta": 0.0353,
+     "welch_t": 1.31
+    },
+    "top1_mass": {
+     "legacy": 0.5602,
+     "legacy_sd": 0.0196,
+     "static": 0.5472,
+     "static_sd": 0.013,
+     "delta": -0.013,
+     "welch_t": -1.31
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7238,
+     "legacy_sd": 0.0283,
+     "static": 0.7094,
+     "static_sd": 0.0213,
+     "delta": -0.0144,
+     "welch_t": -0.96
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4987,
+     "legacy_sd": 0.0205,
+     "static": 0.482,
+     "static_sd": 0.0163,
+     "delta": -0.0167,
+     "welch_t": -1.5
+    },
+    "critic_brier": {
+     "legacy": 0.195,
+     "legacy_sd": 0.0092,
+     "static": 0.1956,
+     "static_sd": 0.0053,
+     "delta": 0.0006,
+     "welch_t": 0.14
+    },
+    "critic_logloss": {
+     "legacy": 0.5683,
+     "legacy_sd": 0.0249,
+     "static": 0.5705,
+     "static_sd": 0.0138,
+     "delta": 0.0022,
+     "welch_t": 0.19
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5235,
+      "legacy_sd": 0.0383,
+      "static": 0.5124,
+      "static_sd": 0.0376,
+      "delta": -0.0111,
+      "welch_t": -0.48
+     },
+     "switch": {
+      "legacy": 0.2783,
+      "legacy_sd": 0.0398,
+      "static": 0.2948,
+      "static_sd": 0.0493,
+      "delta": 0.0165,
+      "welch_t": 0.6
+     },
+     "status": {
+      "legacy": 0.1109,
+      "legacy_sd": 0.0053,
+      "static": 0.1147,
+      "static_sd": 0.0164,
+      "delta": 0.0038,
+      "welch_t": 0.5
+     },
+     "setup": {
+      "legacy": 0.0197,
+      "legacy_sd": 0.0044,
+      "static": 0.0238,
+      "static_sd": 0.0035,
+      "delta": 0.0041,
+      "welch_t": 1.71
+     },
+     "hazard": {
+      "legacy": 0.0216,
+      "legacy_sd": 0.0033,
+      "static": 0.0157,
+      "static_sd": 0.0063,
+      "delta": -0.0059,
+      "welch_t": -1.91
+     },
+     "recovery": {
+      "legacy": 0.0459,
+      "legacy_sd": 0.0088,
+      "static": 0.0386,
+      "static_sd": 0.0066,
+      "delta": -0.0073,
+      "welch_t": -1.58
+     }
+    }
+   },
+   "free & status legal": {
+    "n": 11669,
+    "entropy": {
+     "legacy": 1.2427,
+     "legacy_sd": 0.0471,
+     "static": 1.2787,
+     "static_sd": 0.0364,
+     "delta": 0.036,
+     "welch_t": 1.43
+    },
+    "top1_mass": {
+     "legacy": 0.5391,
+     "legacy_sd": 0.0182,
+     "static": 0.5252,
+     "static_sd": 0.0123,
+     "delta": -0.014,
+     "welch_t": -1.51
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7105,
+     "legacy_sd": 0.0316,
+     "static": 0.6979,
+     "static_sd": 0.028,
+     "delta": -0.0126,
+     "welch_t": -0.7
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4754,
+     "legacy_sd": 0.0199,
+     "static": 0.461,
+     "static_sd": 0.0137,
+     "delta": -0.0143,
+     "welch_t": -1.41
+    },
+    "critic_brier": {
+     "legacy": 0.1819,
+     "legacy_sd": 0.0092,
+     "static": 0.1801,
+     "static_sd": 0.0056,
+     "delta": -0.0018,
+     "welch_t": -0.4
+    },
+    "critic_logloss": {
+     "legacy": 0.5411,
+     "legacy_sd": 0.0265,
+     "static": 0.5368,
+     "static_sd": 0.0128,
+     "delta": -0.0043,
+     "welch_t": -0.35
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.448,
+      "legacy_sd": 0.0356,
+      "static": 0.4404,
+      "static_sd": 0.033,
+      "delta": -0.0077,
+      "welch_t": -0.37
+     },
+     "switch": {
+      "legacy": 0.2538,
+      "legacy_sd": 0.0348,
+      "static": 0.2713,
+      "static_sd": 0.0487,
+      "delta": 0.0175,
+      "welch_t": 0.67
+     },
+     "status": {
+      "legacy": 0.1854,
+      "legacy_sd": 0.0079,
+      "static": 0.1922,
+      "static_sd": 0.0248,
+      "delta": 0.0069,
+      "welch_t": 0.59
+     },
+     "setup": {
+      "legacy": 0.0179,
+      "legacy_sd": 0.0033,
+      "static": 0.0195,
+      "static_sd": 0.0027,
+      "delta": 0.0015,
+      "welch_t": 0.86
+     },
+     "hazard": {
+      "legacy": 0.0284,
+      "legacy_sd": 0.0045,
+      "static": 0.021,
+      "static_sd": 0.0071,
+      "delta": -0.0074,
+      "welch_t": -2.02
+     },
+     "recovery": {
+      "legacy": 0.0665,
+      "legacy_sd": 0.0129,
+      "static": 0.0557,
+      "static_sd": 0.0095,
+      "delta": -0.0108,
+      "welch_t": -1.6
+     }
+    }
+   },
+   "free & setup legal": {
+    "n": 3984,
+    "entropy": {
+     "legacy": 0.9933,
+     "legacy_sd": 0.0636,
+     "static": 1.0352,
+     "static_sd": 0.0329,
+     "delta": 0.0419,
+     "welch_t": 1.4
+    },
+    "top1_mass": {
+     "legacy": 0.6325,
+     "legacy_sd": 0.0249,
+     "static": 0.6159,
+     "static_sd": 0.011,
+     "delta": -0.0165,
+     "welch_t": -1.46
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7779,
+     "legacy_sd": 0.0214,
+     "static": 0.77,
+     "static_sd": 0.015,
+     "delta": -0.008,
+     "welch_t": -0.72
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5738,
+     "legacy_sd": 0.0244,
+     "static": 0.5576,
+     "static_sd": 0.0128,
+     "delta": -0.0162,
+     "welch_t": -1.41
+    },
+    "critic_brier": {
+     "legacy": 0.2133,
+     "legacy_sd": 0.0069,
+     "static": 0.2144,
+     "static_sd": 0.0153,
+     "delta": 0.0012,
+     "welch_t": 0.16
+    },
+    "critic_logloss": {
+     "legacy": 0.613,
+     "legacy_sd": 0.017,
+     "static": 0.6153,
+     "static_sd": 0.0412,
+     "delta": 0.0023,
+     "welch_t": 0.12
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.6338,
+      "legacy_sd": 0.0344,
+      "static": 0.619,
+      "static_sd": 0.0317,
+      "delta": -0.0148,
+      "welch_t": -0.74
+     },
+     "switch": {
+      "legacy": 0.2005,
+      "legacy_sd": 0.0399,
+      "static": 0.1991,
+      "static_sd": 0.0269,
+      "delta": -0.0014,
+      "welch_t": -0.07
+     },
+     "status": {
+      "legacy": 0.0266,
+      "legacy_sd": 0.002,
+      "static": 0.0255,
+      "static_sd": 0.0042,
+      "delta": -0.0011,
+      "welch_t": -0.54
+     },
+     "setup": {
+      "legacy": 0.1002,
+      "legacy_sd": 0.0219,
+      "static": 0.1221,
+      "static_sd": 0.0159,
+      "delta": 0.0219,
+      "welch_t": 1.92
+     },
+     "hazard": {
+      "legacy": 0.0,
+      "legacy_sd": 0.0,
+      "static": 0.0,
+      "static_sd": 0.0,
+      "delta": 0.0,
+      "welch_t": null
+     },
+     "recovery": {
+      "legacy": 0.0389,
+      "legacy_sd": 0.0093,
+      "static": 0.0343,
+      "static_sd": 0.005,
+      "delta": -0.0046,
+      "welch_t": -1.06
+     }
+    }
+   },
+   "free & hazard legal": {
+    "n": 1642,
+    "entropy": {
+     "legacy": 1.5272,
+     "legacy_sd": 0.0449,
+     "static": 1.5912,
+     "static_sd": 0.0556,
+     "delta": 0.064,
+     "welch_t": 2.07
+    },
+    "top1_mass": {
+     "legacy": 0.4249,
+     "legacy_sd": 0.0201,
+     "static": 0.3995,
+     "static_sd": 0.0207,
+     "delta": -0.0255,
+     "welch_t": -2.06
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.6252,
+     "legacy_sd": 0.0644,
+     "static": 0.5197,
+     "static_sd": 0.1086,
+     "delta": -0.1054,
+     "welch_t": -1.91
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.3651,
+     "legacy_sd": 0.0204,
+     "static": 0.3089,
+     "static_sd": 0.035,
+     "delta": -0.0562,
+     "welch_t": -3.17
+    },
+    "critic_brier": {
+     "legacy": 0.1655,
+     "legacy_sd": 0.0121,
+     "static": 0.1659,
+     "static_sd": 0.0144,
+     "delta": 0.0004,
+     "welch_t": 0.05
+    },
+    "critic_logloss": {
+     "legacy": 0.5006,
+     "legacy_sd": 0.0299,
+     "static": 0.5022,
+     "static_sd": 0.0292,
+     "delta": 0.0016,
+     "welch_t": 0.09
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.1593,
+      "legacy_sd": 0.0144,
+      "static": 0.1646,
+      "static_sd": 0.0358,
+      "delta": 0.0053,
+      "welch_t": 0.31
+     },
+     "switch": {
+      "legacy": 0.2535,
+      "legacy_sd": 0.0276,
+      "static": 0.3064,
+      "static_sd": 0.1098,
+      "delta": 0.0529,
+      "welch_t": 1.05
+     },
+     "status": {
+      "legacy": 0.3399,
+      "legacy_sd": 0.0366,
+      "static": 0.3494,
+      "static_sd": 0.0667,
+      "delta": 0.0095,
+      "welch_t": 0.28
+     },
+     "setup": {
+      "legacy": 0.0,
+      "legacy_sd": 0.0,
+      "static": 0.0,
+      "static_sd": 0.0,
+      "delta": 0.0,
+      "welch_t": null
+     },
+     "hazard": {
+      "legacy": 0.2472,
+      "legacy_sd": 0.0377,
+      "static": 0.1796,
+      "static_sd": 0.0697,
+      "delta": -0.0676,
+      "welch_t": -1.95
+     },
+     "recovery": {
+      "legacy": 0.0,
+      "legacy_sd": 0.0,
+      "static": 0.0,
+      "static_sd": 0.0,
+      "delta": 0.0,
+      "welch_t": null
+     }
+    }
+   },
+   "free & recovery legal": {
+    "n": 5258,
+    "entropy": {
+     "legacy": 1.2832,
+     "legacy_sd": 0.057,
+     "static": 1.3126,
+     "static_sd": 0.0461,
+     "delta": 0.0294,
+     "welch_t": 0.95
+    },
+    "top1_mass": {
+     "legacy": 0.5216,
+     "legacy_sd": 0.0231,
+     "static": 0.5111,
+     "static_sd": 0.0167,
+     "delta": -0.0105,
+     "welch_t": -0.87
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.6951,
+     "legacy_sd": 0.0343,
+     "static": 0.6874,
+     "static_sd": 0.0284,
+     "delta": -0.0077,
+     "welch_t": -0.41
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4533,
+     "legacy_sd": 0.0228,
+     "static": 0.4392,
+     "static_sd": 0.0194,
+     "delta": -0.0142,
+     "welch_t": -1.11
+    },
+    "critic_brier": {
+     "legacy": 0.1844,
+     "legacy_sd": 0.0103,
+     "static": 0.1749,
+     "static_sd": 0.0127,
+     "delta": -0.0096,
+     "welch_t": -1.35
+    },
+    "critic_logloss": {
+     "legacy": 0.5473,
+     "legacy_sd": 0.0273,
+     "static": 0.5215,
+     "static_sd": 0.0344,
+     "delta": -0.0259,
+     "welch_t": -1.36
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4163,
+      "legacy_sd": 0.0552,
+      "static": 0.4183,
+      "static_sd": 0.0478,
+      "delta": 0.0021,
+      "welch_t": 0.07
+     },
+     "switch": {
+      "legacy": 0.2424,
+      "legacy_sd": 0.0398,
+      "static": 0.2584,
+      "static_sd": 0.0493,
+      "delta": 0.016,
+      "welch_t": 0.58
+     },
+     "status": {
+      "legacy": 0.1364,
+      "legacy_sd": 0.0088,
+      "static": 0.144,
+      "static_sd": 0.0152,
+      "delta": 0.0076,
+      "welch_t": 0.99
+     },
+     "setup": {
+      "legacy": 0.0265,
+      "legacy_sd": 0.0055,
+      "static": 0.03,
+      "static_sd": 0.0051,
+      "delta": 0.0035,
+      "welch_t": 1.09
+     },
+     "hazard": {
+      "legacy": 0.0,
+      "legacy_sd": 0.0,
+      "static": 0.0,
+      "static_sd": 0.0,
+      "delta": 0.0,
+      "welch_t": null
+     },
+     "recovery": {
+      "legacy": 0.1784,
+      "legacy_sd": 0.0341,
+      "static": 0.1492,
+      "static_sd": 0.0265,
+      "delta": -0.0292,
+      "welch_t": -1.59
+     }
+    }
+   }
+  },
+  "final": {
+   "all": {
+    "n": 20712,
+    "entropy": {
+     "legacy": 1.1253,
+     "legacy_sd": 0.0396,
+     "static": 1.1648,
+     "static_sd": 0.0491,
+     "delta": 0.0396,
+     "welch_t": 1.45
+    },
+    "top1_mass": {
+     "legacy": 0.5768,
+     "legacy_sd": 0.0157,
+     "static": 0.5633,
+     "static_sd": 0.0187,
+     "delta": -0.0135,
+     "welch_t": -1.28
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7227,
+     "legacy_sd": 0.0162,
+     "static": 0.7153,
+     "static_sd": 0.0182,
+     "delta": -0.0074,
+     "welch_t": -0.71
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5116,
+     "legacy_sd": 0.0147,
+     "static": 0.4967,
+     "static_sd": 0.0186,
+     "delta": -0.0149,
+     "welch_t": -1.45
+    },
+    "critic_brier": {
+     "legacy": 0.1971,
+     "legacy_sd": 0.0083,
+     "static": 0.1931,
+     "static_sd": 0.0087,
+     "delta": -0.0041,
+     "welch_t": -0.79
+    },
+    "critic_logloss": {
+     "legacy": 0.5744,
+     "legacy_sd": 0.0235,
+     "static": 0.5643,
+     "static_sd": 0.0207,
+     "delta": -0.0101,
+     "welch_t": -0.75
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5155,
+      "legacy_sd": 0.0152,
+      "static": 0.5085,
+      "static_sd": 0.0241,
+      "delta": -0.007,
+      "welch_t": -0.57
+     },
+     "switch": {
+      "legacy": 0.2669,
+      "legacy_sd": 0.0144,
+      "static": 0.27,
+      "static_sd": 0.0495,
+      "delta": 0.0031,
+      "welch_t": 0.13
+     },
+     "status": {
+      "legacy": 0.1162,
+      "legacy_sd": 0.0091,
+      "static": 0.1186,
+      "static_sd": 0.0107,
+      "delta": 0.0024,
+      "welch_t": 0.4
+     },
+     "setup": {
+      "legacy": 0.0315,
+      "legacy_sd": 0.0069,
+      "static": 0.0365,
+      "static_sd": 0.0101,
+      "delta": 0.005,
+      "welch_t": 0.94
+     },
+     "hazard": {
+      "legacy": 0.0193,
+      "legacy_sd": 0.0022,
+      "static": 0.0204,
+      "static_sd": 0.005,
+      "delta": 0.0011,
+      "welch_t": 0.47
+     },
+     "recovery": {
+      "legacy": 0.0506,
+      "legacy_sd": 0.0098,
+      "static": 0.046,
+      "static_sd": 0.0082,
+      "delta": -0.0046,
+      "welch_t": -0.84
+     }
+    }
+   },
+   "phase=endgame": {
+    "n": 5644,
+    "entropy": {
+     "legacy": 1.0781,
+     "legacy_sd": 0.0376,
+     "static": 1.0866,
+     "static_sd": 0.0347,
+     "delta": 0.0085,
+     "welch_t": 0.39
+    },
+    "top1_mass": {
+     "legacy": 0.571,
+     "legacy_sd": 0.0152,
+     "static": 0.5687,
+     "static_sd": 0.0152,
+     "delta": -0.0023,
+     "welch_t": -0.25
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7413,
+     "legacy_sd": 0.0326,
+     "static": 0.7438,
+     "static_sd": 0.0154,
+     "delta": 0.0025,
+     "welch_t": 0.17
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5129,
+     "legacy_sd": 0.0201,
+     "static": 0.5117,
+     "static_sd": 0.0152,
+     "delta": -0.0012,
+     "welch_t": -0.11
+    },
+    "critic_brier": {
+     "legacy": 0.1528,
+     "legacy_sd": 0.0086,
+     "static": 0.1551,
+     "static_sd": 0.0119,
+     "delta": 0.0023,
+     "welch_t": 0.37
+    },
+    "critic_logloss": {
+     "legacy": 0.4728,
+     "legacy_sd": 0.0346,
+     "static": 0.4794,
+     "static_sd": 0.0325,
+     "delta": 0.0066,
+     "welch_t": 0.33
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5638,
+      "legacy_sd": 0.0174,
+      "static": 0.565,
+      "static_sd": 0.0142,
+      "delta": 0.0012,
+      "welch_t": 0.12
+     },
+     "switch": {
+      "legacy": 0.1886,
+      "legacy_sd": 0.0184,
+      "static": 0.1885,
+      "static_sd": 0.0289,
+      "delta": -0.0001,
+      "welch_t": -0.01
+     },
+     "status": {
+      "legacy": 0.1454,
+      "legacy_sd": 0.0105,
+      "static": 0.1435,
+      "static_sd": 0.008,
+      "delta": -0.0019,
+      "welch_t": -0.33
+     },
+     "setup": {
+      "legacy": 0.0394,
+      "legacy_sd": 0.0076,
+      "static": 0.0428,
+      "static_sd": 0.0081,
+      "delta": 0.0034,
+      "welch_t": 0.71
+     },
+     "hazard": {
+      "legacy": 0.0088,
+      "legacy_sd": 0.0027,
+      "static": 0.0104,
+      "static_sd": 0.002,
+      "delta": 0.0016,
+      "welch_t": 1.14
+     },
+     "recovery": {
+      "legacy": 0.054,
+      "legacy_sd": 0.0077,
+      "static": 0.0499,
+      "static_sd": 0.0081,
+      "delta": -0.0042,
+      "welch_t": -0.87
+     }
+    }
+   },
+   "phase=midgame": {
+    "n": 13125,
+    "entropy": {
+     "legacy": 1.1333,
+     "legacy_sd": 0.0456,
+     "static": 1.1866,
+     "static_sd": 0.0524,
+     "delta": 0.0533,
+     "welch_t": 1.78
+    },
+    "top1_mass": {
+     "legacy": 0.5813,
+     "legacy_sd": 0.0193,
+     "static": 0.562,
+     "static_sd": 0.0192,
+     "delta": -0.0193,
+     "welch_t": -1.65
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7147,
+     "legacy_sd": 0.0147,
+     "static": 0.7035,
+     "static_sd": 0.0179,
+     "delta": -0.0112,
+     "welch_t": -1.12
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5118,
+     "legacy_sd": 0.0171,
+     "static": 0.4916,
+     "static_sd": 0.0185,
+     "delta": -0.0203,
+     "welch_t": -1.87
+    },
+    "critic_brier": {
+     "legacy": 0.2045,
+     "legacy_sd": 0.0086,
+     "static": 0.1979,
+     "static_sd": 0.0125,
+     "delta": -0.0065,
+     "welch_t": -0.99
+    },
+    "critic_logloss": {
+     "legacy": 0.5914,
+     "legacy_sd": 0.0214,
+     "static": 0.575,
+     "static_sd": 0.0299,
+     "delta": -0.0164,
+     "welch_t": -1.03
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5012,
+      "legacy_sd": 0.0173,
+      "static": 0.4884,
+      "static_sd": 0.0248,
+      "delta": -0.0128,
+      "welch_t": -0.97
+     },
+     "switch": {
+      "legacy": 0.2861,
+      "legacy_sd": 0.0162,
+      "static": 0.2926,
+      "static_sd": 0.0552,
+      "delta": 0.0065,
+      "welch_t": 0.26
+     },
+     "status": {
+      "legacy": 0.1077,
+      "legacy_sd": 0.0108,
+      "static": 0.1114,
+      "static_sd": 0.013,
+      "delta": 0.0037,
+      "welch_t": 0.5
+     },
+     "setup": {
+      "legacy": 0.0301,
+      "legacy_sd": 0.0068,
+      "static": 0.036,
+      "static_sd": 0.0111,
+      "delta": 0.0059,
+      "welch_t": 1.04
+     },
+     "hazard": {
+      "legacy": 0.0198,
+      "legacy_sd": 0.0022,
+      "static": 0.0217,
+      "static_sd": 0.0058,
+      "delta": 0.0019,
+      "welch_t": 0.68
+     },
+     "recovery": {
+      "legacy": 0.0552,
+      "legacy_sd": 0.0125,
+      "static": 0.05,
+      "static_sd": 0.0104,
+      "delta": -0.0052,
+      "welch_t": -0.75
+     }
+    }
+   },
+   "phase=opening": {
+    "n": 1943,
+    "entropy": {
+     "legacy": 1.2082,
+     "legacy_sd": 0.0562,
+     "static": 1.2453,
+     "static_sd": 0.1207,
+     "delta": 0.037,
+     "welch_t": 0.63
+    },
+    "top1_mass": {
+     "legacy": 0.5637,
+     "legacy_sd": 0.0199,
+     "static": 0.5562,
+     "static_sd": 0.0436,
+     "delta": -0.0075,
+     "welch_t": -0.36
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7231,
+     "legacy_sd": 0.0377,
+     "static": 0.7125,
+     "static_sd": 0.0385,
+     "delta": -0.0106,
+     "welch_t": -0.46
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5061,
+     "legacy_sd": 0.0244,
+     "static": 0.4877,
+     "static_sd": 0.0422,
+     "delta": -0.0185,
+     "welch_t": -0.87
+    },
+    "critic_brier": {
+     "legacy": 0.2773,
+     "legacy_sd": 0.0121,
+     "static": 0.2708,
+     "static_sd": 0.0128,
+     "delta": -0.0066,
+     "welch_t": -0.87
+    },
+    "critic_logloss": {
+     "legacy": 0.7561,
+     "legacy_sd": 0.0288,
+     "static": 0.7395,
+     "static_sd": 0.0298,
+     "delta": -0.0166,
+     "welch_t": -0.94
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4749,
+      "legacy_sd": 0.0264,
+      "static": 0.484,
+      "static_sd": 0.0611,
+      "delta": 0.0091,
+      "welch_t": 0.31
+     },
+     "switch": {
+      "legacy": 0.3609,
+      "legacy_sd": 0.0295,
+      "static": 0.3493,
+      "static_sd": 0.0856,
+      "delta": -0.0116,
+      "welch_t": -0.29
+     },
+     "status": {
+      "legacy": 0.0908,
+      "legacy_sd": 0.0061,
+      "static": 0.0968,
+      "static_sd": 0.0128,
+      "delta": 0.006,
+      "welch_t": 0.96
+     },
+     "setup": {
+      "legacy": 0.0181,
+      "legacy_sd": 0.0071,
+      "static": 0.0216,
+      "static_sd": 0.0101,
+      "delta": 0.0035,
+      "welch_t": 0.65
+     },
+     "hazard": {
+      "legacy": 0.0462,
+      "legacy_sd": 0.005,
+      "static": 0.0408,
+      "static_sd": 0.0129,
+      "delta": -0.0054,
+      "welch_t": -0.89
+     },
+     "recovery": {
+      "legacy": 0.0091,
+      "legacy_sd": 0.0012,
+      "static": 0.0075,
+      "static_sd": 0.0018,
+      "delta": -0.0016,
+      "welch_t": -1.69
+     }
+    }
+   },
+   "kind=forced_switch": {
+    "n": 1805,
+    "entropy": {
+     "legacy": 0.7346,
+     "legacy_sd": 0.0261,
+     "static": 0.7603,
+     "static_sd": 0.0322,
+     "delta": 0.0257,
+     "welch_t": 1.44
+    },
+    "top1_mass": {
+     "legacy": 0.6923,
+     "legacy_sd": 0.013,
+     "static": 0.6778,
+     "static_sd": 0.0172,
+     "delta": -0.0146,
+     "welch_t": -1.56
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7419,
+     "legacy_sd": 0.0083,
+     "static": 0.7289,
+     "static_sd": 0.0179,
+     "delta": -0.0131,
+     "welch_t": -1.5
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.6111,
+     "legacy_sd": 0.0093,
+     "static": 0.5996,
+     "static_sd": 0.0063,
+     "delta": -0.0116,
+     "welch_t": -2.44
+    },
+    "critic_brier": {
+     "legacy": 0.2338,
+     "legacy_sd": 0.0135,
+     "static": 0.2223,
+     "static_sd": 0.0139,
+     "delta": -0.0116,
+     "welch_t": -1.39
+    },
+    "critic_logloss": {
+     "legacy": 0.6675,
+     "legacy_sd": 0.0389,
+     "static": 0.6373,
+     "static_sd": 0.0312,
+     "delta": -0.0301,
+     "welch_t": -1.42
+    }
+   },
+   "kind=free": {
+    "n": 18907,
+    "entropy": {
+     "legacy": 1.1626,
+     "legacy_sd": 0.0416,
+     "static": 1.2034,
+     "static_sd": 0.052,
+     "delta": 0.0409,
+     "welch_t": 1.42
+    },
+    "top1_mass": {
+     "legacy": 0.5658,
+     "legacy_sd": 0.0163,
+     "static": 0.5524,
+     "static_sd": 0.0195,
+     "delta": -0.0134,
+     "welch_t": -1.22
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7209,
+     "legacy_sd": 0.0173,
+     "static": 0.714,
+     "static_sd": 0.02,
+     "delta": -0.0069,
+     "welch_t": -0.6
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5021,
+     "legacy_sd": 0.0153,
+     "static": 0.4869,
+     "static_sd": 0.0202,
+     "delta": -0.0152,
+     "welch_t": -1.39
+    },
+    "critic_brier": {
+     "legacy": 0.1936,
+     "legacy_sd": 0.0081,
+     "static": 0.1902,
+     "static_sd": 0.0086,
+     "delta": -0.0034,
+     "welch_t": -0.66
+    },
+    "critic_logloss": {
+     "legacy": 0.5654,
+     "legacy_sd": 0.0227,
+     "static": 0.5573,
+     "static_sd": 0.0215,
+     "delta": -0.0081,
+     "welch_t": -0.61
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5155,
+      "legacy_sd": 0.0152,
+      "static": 0.5085,
+      "static_sd": 0.0241,
+      "delta": -0.007,
+      "welch_t": -0.57
+     },
+     "switch": {
+      "legacy": 0.2669,
+      "legacy_sd": 0.0144,
+      "static": 0.27,
+      "static_sd": 0.0495,
+      "delta": 0.0031,
+      "welch_t": 0.13
+     },
+     "status": {
+      "legacy": 0.1162,
+      "legacy_sd": 0.0091,
+      "static": 0.1186,
+      "static_sd": 0.0107,
+      "delta": 0.0024,
+      "welch_t": 0.4
+     },
+     "setup": {
+      "legacy": 0.0315,
+      "legacy_sd": 0.0069,
+      "static": 0.0365,
+      "static_sd": 0.0101,
+      "delta": 0.005,
+      "welch_t": 0.94
+     },
+     "hazard": {
+      "legacy": 0.0193,
+      "legacy_sd": 0.0022,
+      "static": 0.0204,
+      "static_sd": 0.005,
+      "delta": 0.0011,
+      "welch_t": 0.47
+     },
+     "recovery": {
+      "legacy": 0.0506,
+      "legacy_sd": 0.0098,
+      "static": 0.046,
+      "static_sd": 0.0082,
+      "delta": -0.0046,
+      "welch_t": -0.84
+     }
+    }
+   },
+   "legal=2-3": {
+    "n": 1154,
+    "entropy": {
+     "legacy": 0.538,
+     "legacy_sd": 0.0265,
+     "static": 0.5351,
+     "static_sd": 0.0318,
+     "delta": -0.0028,
+     "welch_t": -0.16
+    },
+    "top1_mass": {
+     "legacy": 0.7535,
+     "legacy_sd": 0.0199,
+     "static": 0.7547,
+     "static_sd": 0.0186,
+     "delta": 0.0013,
+     "welch_t": 0.11
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7909,
+     "legacy_sd": 0.0322,
+     "static": 0.7789,
+     "static_sd": 0.0201,
+     "delta": -0.012,
+     "welch_t": -0.75
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.6854,
+     "legacy_sd": 0.0166,
+     "static": 0.6743,
+     "static_sd": 0.0099,
+     "delta": -0.011,
+     "welch_t": -1.36
+    },
+    "critic_brier": {
+     "legacy": 0.22,
+     "legacy_sd": 0.0096,
+     "static": 0.2082,
+     "static_sd": 0.0148,
+     "delta": -0.0117,
+     "welch_t": -1.53
+    },
+    "critic_logloss": {
+     "legacy": 0.6512,
+     "legacy_sd": 0.0336,
+     "static": 0.6193,
+     "static_sd": 0.0405,
+     "delta": -0.032,
+     "welch_t": -1.41
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4447,
+      "legacy_sd": 0.0415,
+      "static": 0.4263,
+      "static_sd": 0.0351,
+      "delta": -0.0184,
+      "welch_t": -0.8
+     },
+     "switch": {
+      "legacy": 0.3086,
+      "legacy_sd": 0.0248,
+      "static": 0.3275,
+      "static_sd": 0.0451,
+      "delta": 0.0189,
+      "welch_t": 0.84
+     },
+     "status": {
+      "legacy": 0.1968,
+      "legacy_sd": 0.0315,
+      "static": 0.197,
+      "static_sd": 0.0183,
+      "delta": 0.0002,
+      "welch_t": 0.01
+     },
+     "setup": {
+      "legacy": 0.0009,
+      "legacy_sd": 0.0002,
+      "static": 0.001,
+      "static_sd": 0.0002,
+      "delta": 0.0001,
+      "welch_t": 1.05
+     },
+     "hazard": {
+      "legacy": 0.0005,
+      "legacy_sd": 0.0006,
+      "static": 0.0013,
+      "static_sd": 0.0009,
+      "delta": 0.0008,
+      "welch_t": 1.81
+     },
+     "recovery": {
+      "legacy": 0.0485,
+      "legacy_sd": 0.0052,
+      "static": 0.0469,
+      "static_sd": 0.0056,
+      "delta": -0.0016,
+      "welch_t": -0.49
+     }
+    }
+   },
+   "legal=4-6": {
+    "n": 6335,
+    "entropy": {
+     "legacy": 0.8886,
+     "legacy_sd": 0.0344,
+     "static": 0.9163,
+     "static_sd": 0.029,
+     "delta": 0.0276,
+     "welch_t": 1.45
+    },
+    "top1_mass": {
+     "legacy": 0.6473,
+     "legacy_sd": 0.0156,
+     "static": 0.6355,
+     "static_sd": 0.0131,
+     "delta": -0.0118,
+     "welch_t": -1.37
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7238,
+     "legacy_sd": 0.0259,
+     "static": 0.719,
+     "static_sd": 0.0111,
+     "delta": -0.0048,
+     "welch_t": -0.41
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5661,
+     "legacy_sd": 0.0165,
+     "static": 0.555,
+     "static_sd": 0.0095,
+     "delta": -0.0112,
+     "welch_t": -1.4
+    },
+    "critic_brier": {
+     "legacy": 0.2054,
+     "legacy_sd": 0.0126,
+     "static": 0.204,
+     "static_sd": 0.0091,
+     "delta": -0.0014,
+     "welch_t": -0.21
+    },
+    "critic_logloss": {
+     "legacy": 0.5984,
+     "legacy_sd": 0.0349,
+     "static": 0.5997,
+     "static_sd": 0.0239,
+     "delta": 0.0013,
+     "welch_t": 0.07
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5729,
+      "legacy_sd": 0.0161,
+      "static": 0.5681,
+      "static_sd": 0.0152,
+      "delta": -0.0048,
+      "welch_t": -0.51
+     },
+     "switch": {
+      "legacy": 0.1905,
+      "legacy_sd": 0.0172,
+      "static": 0.1975,
+      "static_sd": 0.0299,
+      "delta": 0.007,
+      "welch_t": 0.46
+     },
+     "status": {
+      "legacy": 0.1108,
+      "legacy_sd": 0.0086,
+      "static": 0.1109,
+      "static_sd": 0.0061,
+      "delta": 0.0001,
+      "welch_t": 0.02
+     },
+     "setup": {
+      "legacy": 0.0507,
+      "legacy_sd": 0.0112,
+      "static": 0.0546,
+      "static_sd": 0.0123,
+      "delta": 0.0039,
+      "welch_t": 0.55
+     },
+     "hazard": {
+      "legacy": 0.0057,
+      "legacy_sd": 0.001,
+      "static": 0.0064,
+      "static_sd": 0.0007,
+      "delta": 0.0007,
+      "welch_t": 1.35
+     },
+     "recovery": {
+      "legacy": 0.0695,
+      "legacy_sd": 0.0119,
+      "static": 0.0625,
+      "static_sd": 0.0109,
+      "delta": -0.007,
+      "welch_t": -1.01
+     }
+    }
+   },
+   "legal=7+": {
+    "n": 13223,
+    "entropy": {
+     "legacy": 1.2899,
+     "legacy_sd": 0.0455,
+     "static": 1.3389,
+     "static_sd": 0.0624,
+     "delta": 0.049,
+     "welch_t": 1.46
+    },
+    "top1_mass": {
+     "legacy": 0.5277,
+     "legacy_sd": 0.0168,
+     "static": 0.512,
+     "static_sd": 0.0224,
+     "delta": -0.0157,
+     "welch_t": -1.29
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7163,
+     "legacy_sd": 0.0131,
+     "static": 0.708,
+     "static_sd": 0.0234,
+     "delta": -0.0083,
+     "welch_t": -0.7
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4703,
+     "legacy_sd": 0.0154,
+     "static": 0.4533,
+     "static_sd": 0.0248,
+     "delta": -0.017,
+     "welch_t": -1.34
+    },
+    "critic_brier": {
+     "legacy": 0.1914,
+     "legacy_sd": 0.0071,
+     "static": 0.1867,
+     "static_sd": 0.0094,
+     "delta": -0.0047,
+     "welch_t": -0.92
+    },
+    "critic_logloss": {
+     "legacy": 0.5569,
+     "legacy_sd": 0.0197,
+     "static": 0.5434,
+     "static_sd": 0.0223,
+     "delta": -0.0135,
+     "welch_t": -1.06
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4943,
+      "legacy_sd": 0.0158,
+      "static": 0.4867,
+      "static_sd": 0.0286,
+      "delta": -0.0076,
+      "welch_t": -0.53
+     },
+     "switch": {
+      "legacy": 0.2965,
+      "legacy_sd": 0.014,
+      "static": 0.2976,
+      "static_sd": 0.0581,
+      "delta": 0.0011,
+      "welch_t": 0.04
+     },
+     "status": {
+      "legacy": 0.1162,
+      "legacy_sd": 0.0092,
+      "static": 0.1196,
+      "static_sd": 0.0135,
+      "delta": 0.0034,
+      "welch_t": 0.48
+     },
+     "setup": {
+      "legacy": 0.0246,
+      "legacy_sd": 0.0057,
+      "static": 0.0302,
+      "static_sd": 0.0097,
+      "delta": 0.0056,
+      "welch_t": 1.14
+     },
+     "hazard": {
+      "legacy": 0.0253,
+      "legacy_sd": 0.0027,
+      "static": 0.0266,
+      "static_sd": 0.0069,
+      "delta": 0.0013,
+      "welch_t": 0.39
+     },
+     "recovery": {
+      "legacy": 0.0431,
+      "legacy_sd": 0.0098,
+      "static": 0.0394,
+      "static_sd": 0.008,
+      "delta": -0.0037,
+      "welch_t": -0.69
+     }
+    }
+   },
+   "opp_class=bot": {
+    "n": 11109,
+    "entropy": {
+     "legacy": 1.1921,
+     "legacy_sd": 0.0305,
+     "static": 1.2243,
+     "static_sd": 0.0515,
+     "delta": 0.0322,
+     "welch_t": 1.23
+    },
+    "top1_mass": {
+     "legacy": 0.5496,
+     "legacy_sd": 0.0119,
+     "static": 0.5393,
+     "static_sd": 0.0194,
+     "delta": -0.0103,
+     "welch_t": -1.03
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7247,
+     "legacy_sd": 0.0087,
+     "static": 0.7247,
+     "static_sd": 0.0157,
+     "delta": -0.0,
+     "welch_t": -0.01
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4915,
+     "legacy_sd": 0.0108,
+     "static": 0.4819,
+     "static_sd": 0.0167,
+     "delta": -0.0096,
+     "welch_t": -1.1
+    },
+    "critic_brier": {
+     "legacy": 0.2018,
+     "legacy_sd": 0.0107,
+     "static": 0.1939,
+     "static_sd": 0.011,
+     "delta": -0.0078,
+     "welch_t": -1.19
+    },
+    "critic_logloss": {
+     "legacy": 0.5877,
+     "legacy_sd": 0.0351,
+     "static": 0.5677,
+     "static_sd": 0.0248,
+     "delta": -0.02,
+     "welch_t": -1.1
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5046,
+      "legacy_sd": 0.0153,
+      "static": 0.4998,
+      "static_sd": 0.0199,
+      "delta": -0.0048,
+      "welch_t": -0.44
+     },
+     "switch": {
+      "legacy": 0.2647,
+      "legacy_sd": 0.0118,
+      "static": 0.2646,
+      "static_sd": 0.0453,
+      "delta": -0.0001,
+      "welch_t": -0.0
+     },
+     "status": {
+      "legacy": 0.1313,
+      "legacy_sd": 0.0083,
+      "static": 0.133,
+      "static_sd": 0.0114,
+      "delta": 0.0016,
+      "welch_t": 0.27
+     },
+     "setup": {
+      "legacy": 0.0292,
+      "legacy_sd": 0.0062,
+      "static": 0.0333,
+      "static_sd": 0.0094,
+      "delta": 0.0041,
+      "welch_t": 0.82
+     },
+     "hazard": {
+      "legacy": 0.0232,
+      "legacy_sd": 0.0028,
+      "static": 0.0237,
+      "static_sd": 0.005,
+      "delta": 0.0005,
+      "welch_t": 0.21
+     },
+     "recovery": {
+      "legacy": 0.0471,
+      "legacy_sd": 0.0078,
+      "static": 0.0457,
+      "static_sd": 0.0072,
+      "delta": -0.0014,
+      "welch_t": -0.3
+     }
+    }
+   },
+   "opp_class=exploiter": {
+    "n": 748,
+    "entropy": {
+     "legacy": 0.9379,
+     "legacy_sd": 0.0431,
+     "static": 0.9699,
+     "static_sd": 0.0478,
+     "delta": 0.032,
+     "welch_t": 1.16
+    },
+    "top1_mass": {
+     "legacy": 0.6481,
+     "legacy_sd": 0.0206,
+     "static": 0.6383,
+     "static_sd": 0.017,
+     "delta": -0.0098,
+     "welch_t": -0.86
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7591,
+     "legacy_sd": 0.0218,
+     "static": 0.7476,
+     "static_sd": 0.015,
+     "delta": -0.0115,
+     "welch_t": -1.04
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5822,
+     "legacy_sd": 0.0153,
+     "static": 0.5647,
+     "static_sd": 0.013,
+     "delta": -0.0175,
+     "welch_t": -2.05
+    },
+    "critic_brier": {
+     "legacy": 0.1756,
+     "legacy_sd": 0.0135,
+     "static": 0.1901,
+     "static_sd": 0.0172,
+     "delta": 0.0145,
+     "welch_t": 1.53
+    },
+    "critic_logloss": {
+     "legacy": 0.5312,
+     "legacy_sd": 0.0304,
+     "static": 0.5618,
+     "static_sd": 0.0403,
+     "delta": 0.0305,
+     "welch_t": 1.4
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5254,
+      "legacy_sd": 0.0323,
+      "static": 0.5028,
+      "static_sd": 0.0179,
+      "delta": -0.0226,
+      "welch_t": -1.47
+     },
+     "switch": {
+      "legacy": 0.2058,
+      "legacy_sd": 0.0122,
+      "static": 0.2196,
+      "static_sd": 0.0401,
+      "delta": 0.0138,
+      "welch_t": 0.74
+     },
+     "status": {
+      "legacy": 0.0959,
+      "legacy_sd": 0.0057,
+      "static": 0.0955,
+      "static_sd": 0.0118,
+      "delta": -0.0004,
+      "welch_t": -0.07
+     },
+     "setup": {
+      "legacy": 0.0716,
+      "legacy_sd": 0.0258,
+      "static": 0.0852,
+      "static_sd": 0.0219,
+      "delta": 0.0136,
+      "welch_t": 0.94
+     },
+     "hazard": {
+      "legacy": 0.0176,
+      "legacy_sd": 0.0007,
+      "static": 0.0166,
+      "static_sd": 0.0045,
+      "delta": -0.001,
+      "welch_t": -0.52
+     },
+     "recovery": {
+      "legacy": 0.0837,
+      "legacy_sd": 0.0222,
+      "static": 0.0804,
+      "static_sd": 0.0267,
+      "delta": -0.0033,
+      "welch_t": -0.22
+     }
+    }
+   },
+   "opp_class=pool_snapshot": {
+    "n": 8855,
+    "entropy": {
+     "legacy": 1.0572,
+     "legacy_sd": 0.0539,
+     "static": 1.1066,
+     "static_sd": 0.0469,
+     "delta": 0.0494,
+     "welch_t": 1.62
+    },
+    "top1_mass": {
+     "legacy": 0.6049,
+     "legacy_sd": 0.0211,
+     "static": 0.587,
+     "static_sd": 0.0183,
+     "delta": -0.0179,
+     "welch_t": -1.51
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7172,
+     "legacy_sd": 0.0281,
+     "static": 0.7009,
+     "static_sd": 0.0286,
+     "delta": -0.0163,
+     "welch_t": -0.95
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5308,
+     "legacy_sd": 0.0211,
+     "static": 0.5094,
+     "static_sd": 0.0218,
+     "delta": -0.0214,
+     "welch_t": -1.64
+    },
+    "critic_brier": {
+     "legacy": 0.1937,
+     "legacy_sd": 0.0119,
+     "static": 0.1923,
+     "static_sd": 0.0163,
+     "delta": -0.0013,
+     "welch_t": -0.15
+    },
+    "critic_logloss": {
+     "legacy": 0.5626,
+     "legacy_sd": 0.0297,
+     "static": 0.5605,
+     "static_sd": 0.0442,
+     "delta": -0.0021,
+     "welch_t": -0.09
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5281,
+      "legacy_sd": 0.0183,
+      "static": 0.5196,
+      "static_sd": 0.0311,
+      "delta": -0.0085,
+      "welch_t": -0.54
+     },
+     "switch": {
+      "legacy": 0.2747,
+      "legacy_sd": 0.0205,
+      "static": 0.2808,
+      "static_sd": 0.0557,
+      "delta": 0.0061,
+      "welch_t": 0.23
+     },
+     "status": {
+      "legacy": 0.0993,
+      "legacy_sd": 0.0139,
+      "static": 0.1029,
+      "static_sd": 0.0111,
+      "delta": 0.0036,
+      "welch_t": 0.47
+     },
+     "setup": {
+      "legacy": 0.0309,
+      "legacy_sd": 0.0067,
+      "static": 0.0364,
+      "static_sd": 0.0111,
+      "delta": 0.0055,
+      "welch_t": 0.97
+     },
+     "hazard": {
+      "legacy": 0.0147,
+      "legacy_sd": 0.0021,
+      "static": 0.0167,
+      "static_sd": 0.005,
+      "delta": 0.002,
+      "welch_t": 0.84
+     },
+     "recovery": {
+      "legacy": 0.0522,
+      "legacy_sd": 0.0125,
+      "static": 0.0436,
+      "static_sd": 0.0097,
+      "delta": -0.0086,
+      "welch_t": -1.29
+     }
+    }
+   },
+   "outcome=draw": {
+    "n": 1865,
+    "entropy": {
+     "legacy": 1.0711,
+     "legacy_sd": 0.0245,
+     "static": 1.1051,
+     "static_sd": 0.0612,
+     "delta": 0.034,
+     "welch_t": 1.17
+    },
+    "top1_mass": {
+     "legacy": 0.5858,
+     "legacy_sd": 0.0161,
+     "static": 0.5744,
+     "static_sd": 0.0269,
+     "delta": -0.0115,
+     "welch_t": -0.84
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.673,
+     "legacy_sd": 0.0258,
+     "static": 0.7152,
+     "static_sd": 0.0535,
+     "delta": 0.0422,
+     "welch_t": 1.61
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5065,
+     "legacy_sd": 0.0124,
+     "static": 0.5037,
+     "static_sd": 0.0156,
+     "delta": -0.0028,
+     "welch_t": -0.32
+    },
+    "critic_brier": {
+     "legacy": NaN,
+     "legacy_sd": NaN,
+     "static": NaN,
+     "static_sd": NaN,
+     "delta": NaN,
+     "welch_t": null
+    },
+    "critic_logloss": {
+     "legacy": NaN,
+     "legacy_sd": NaN,
+     "static": NaN,
+     "static_sd": NaN,
+     "delta": NaN,
+     "welch_t": null
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4563,
+      "legacy_sd": 0.0294,
+      "static": 0.4422,
+      "static_sd": 0.0219,
+      "delta": -0.0142,
+      "welch_t": -0.91
+     },
+     "switch": {
+      "legacy": 0.2823,
+      "legacy_sd": 0.0307,
+      "static": 0.2923,
+      "static_sd": 0.0463,
+      "delta": 0.01,
+      "welch_t": 0.41
+     },
+     "status": {
+      "legacy": 0.1065,
+      "legacy_sd": 0.0078,
+      "static": 0.1094,
+      "static_sd": 0.0102,
+      "delta": 0.0029,
+      "welch_t": 0.53
+     },
+     "setup": {
+      "legacy": 0.05,
+      "legacy_sd": 0.0088,
+      "static": 0.0552,
+      "static_sd": 0.0121,
+      "delta": 0.0052,
+      "welch_t": 0.8
+     },
+     "hazard": {
+      "legacy": 0.0107,
+      "legacy_sd": 0.0007,
+      "static": 0.0104,
+      "static_sd": 0.0029,
+      "delta": -0.0004,
+      "welch_t": -0.28
+     },
+     "recovery": {
+      "legacy": 0.0941,
+      "legacy_sd": 0.0177,
+      "static": 0.0905,
+      "static_sd": 0.0122,
+      "delta": -0.0036,
+      "welch_t": -0.4
+     }
+    }
+   },
+   "outcome=loss": {
+    "n": 9147,
+    "entropy": {
+     "legacy": 0.9372,
+     "legacy_sd": 0.0391,
+     "static": 0.9731,
+     "static_sd": 0.056,
+     "delta": 0.0359,
+     "welch_t": 1.21
+    },
+    "top1_mass": {
+     "legacy": 0.6445,
+     "legacy_sd": 0.0169,
+     "static": 0.6303,
+     "static_sd": 0.0208,
+     "delta": -0.0142,
+     "welch_t": -1.23
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7355,
+     "legacy_sd": 0.0202,
+     "static": 0.7219,
+     "static_sd": 0.0149,
+     "delta": -0.0135,
+     "welch_t": -1.28
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5693,
+     "legacy_sd": 0.0168,
+     "static": 0.5533,
+     "static_sd": 0.0192,
+     "delta": -0.0159,
+     "welch_t": -1.45
+    },
+    "critic_brier": {
+     "legacy": 0.3191,
+     "legacy_sd": 0.0203,
+     "static": 0.3044,
+     "static_sd": 0.0353,
+     "delta": -0.0147,
+     "welch_t": -0.82
+    },
+    "critic_logloss": {
+     "legacy": 0.8822,
+     "legacy_sd": 0.0576,
+     "static": 0.844,
+     "static_sd": 0.0846,
+     "delta": -0.0383,
+     "welch_t": -0.86
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5674,
+      "legacy_sd": 0.0127,
+      "static": 0.5618,
+      "static_sd": 0.0278,
+      "delta": -0.0056,
+      "welch_t": -0.42
+     },
+     "switch": {
+      "legacy": 0.224,
+      "legacy_sd": 0.0136,
+      "static": 0.2264,
+      "static_sd": 0.0473,
+      "delta": 0.0024,
+      "welch_t": 0.11
+     },
+     "status": {
+      "legacy": 0.0964,
+      "legacy_sd": 0.0051,
+      "static": 0.0995,
+      "static_sd": 0.0081,
+      "delta": 0.0031,
+      "welch_t": 0.74
+     },
+     "setup": {
+      "legacy": 0.042,
+      "legacy_sd": 0.0101,
+      "static": 0.0482,
+      "static_sd": 0.0141,
+      "delta": 0.0061,
+      "welch_t": 0.81
+     },
+     "hazard": {
+      "legacy": 0.0146,
+      "legacy_sd": 0.0019,
+      "static": 0.0158,
+      "static_sd": 0.0043,
+      "delta": 0.0012,
+      "welch_t": 0.57
+     },
+     "recovery": {
+      "legacy": 0.0555,
+      "legacy_sd": 0.0103,
+      "static": 0.0484,
+      "static_sd": 0.009,
+      "delta": -0.0072,
+      "welch_t": -1.23
+     }
+    }
+   },
+   "outcome=win": {
+    "n": 9700,
+    "entropy": {
+     "legacy": 1.313,
+     "legacy_sd": 0.0473,
+     "static": 1.3571,
+     "static_sd": 0.0495,
+     "delta": 0.0441,
+     "welch_t": 1.5
+    },
+    "top1_mass": {
+     "legacy": 0.5112,
+     "legacy_sd": 0.0172,
+     "static": 0.498,
+     "static_sd": 0.0197,
+     "delta": -0.0133,
+     "welch_t": -1.18
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7203,
+     "legacy_sd": 0.0171,
+     "static": 0.7091,
+     "static_sd": 0.0234,
+     "delta": -0.0112,
+     "welch_t": -0.89
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4581,
+     "legacy_sd": 0.0167,
+     "static": 0.4419,
+     "static_sd": 0.0233,
+     "delta": -0.0162,
+     "welch_t": -1.31
+    },
+    "critic_brier": {
+     "legacy": 0.0822,
+     "legacy_sd": 0.0111,
+     "static": 0.0881,
+     "static_sd": 0.0236,
+     "delta": 0.0059,
+     "welch_t": 0.52
+    },
+    "critic_logloss": {
+     "legacy": 0.2841,
+     "legacy_sd": 0.0288,
+     "static": 0.3006,
+     "static_sd": 0.0673,
+     "delta": 0.0165,
+     "welch_t": 0.51
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4811,
+      "legacy_sd": 0.0185,
+      "static": 0.4741,
+      "static_sd": 0.0256,
+      "delta": -0.007,
+      "welch_t": -0.51
+     },
+     "switch": {
+      "legacy": 0.3017,
+      "legacy_sd": 0.0172,
+      "static": 0.3041,
+      "static_sd": 0.0535,
+      "delta": 0.0024,
+      "welch_t": 0.09
+     },
+     "status": {
+      "legacy": 0.1354,
+      "legacy_sd": 0.0142,
+      "static": 0.1371,
+      "static_sd": 0.0146,
+      "delta": 0.0017,
+      "welch_t": 0.2
+     },
+     "setup": {
+      "legacy": 0.0187,
+      "legacy_sd": 0.0044,
+      "static": 0.0227,
+      "static_sd": 0.0062,
+      "delta": 0.004,
+      "welch_t": 1.22
+     },
+     "hazard": {
+      "legacy": 0.025,
+      "legacy_sd": 0.0028,
+      "static": 0.0263,
+      "static_sd": 0.0061,
+      "delta": 0.0013,
+      "welch_t": 0.46
+     },
+     "recovery": {
+      "legacy": 0.0381,
+      "legacy_sd": 0.0097,
+      "static": 0.0356,
+      "static_sd": 0.0083,
+      "delta": -0.0025,
+      "welch_t": -0.46
+     }
+    }
+   },
+   "free & switch legal": {
+    "n": 17728,
+    "entropy": {
+     "legacy": 1.1848,
+     "legacy_sd": 0.0435,
+     "static": 1.2278,
+     "static_sd": 0.055,
+     "delta": 0.043,
+     "welch_t": 1.42
+    },
+    "top1_mass": {
+     "legacy": 0.5609,
+     "legacy_sd": 0.0169,
+     "static": 0.5468,
+     "static_sd": 0.0204,
+     "delta": -0.0142,
+     "welch_t": -1.24
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7182,
+     "legacy_sd": 0.0162,
+     "static": 0.7107,
+     "static_sd": 0.023,
+     "delta": -0.0075,
+     "welch_t": -0.62
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4969,
+     "legacy_sd": 0.0155,
+     "static": 0.481,
+     "static_sd": 0.0213,
+     "delta": -0.0159,
+     "welch_t": -1.4
+    },
+    "critic_brier": {
+     "legacy": 0.1982,
+     "legacy_sd": 0.0089,
+     "static": 0.194,
+     "static_sd": 0.0095,
+     "delta": -0.0042,
+     "welch_t": -0.75
+    },
+    "critic_logloss": {
+     "legacy": 0.5767,
+     "legacy_sd": 0.0251,
+     "static": 0.5669,
+     "static_sd": 0.0238,
+     "delta": -0.0099,
+     "welch_t": -0.67
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5079,
+      "legacy_sd": 0.0155,
+      "static": 0.5002,
+      "static_sd": 0.0258,
+      "delta": -0.0076,
+      "welch_t": -0.58
+     },
+     "switch": {
+      "legacy": 0.2847,
+      "legacy_sd": 0.0153,
+      "static": 0.2879,
+      "static_sd": 0.0528,
+      "delta": 0.0033,
+      "welch_t": 0.13
+     },
+     "status": {
+      "legacy": 0.1119,
+      "legacy_sd": 0.0094,
+      "static": 0.1143,
+      "static_sd": 0.0117,
+      "delta": 0.0023,
+      "welch_t": 0.36
+     },
+     "setup": {
+      "legacy": 0.0294,
+      "legacy_sd": 0.0064,
+      "static": 0.0345,
+      "static_sd": 0.0102,
+      "delta": 0.0051,
+      "welch_t": 0.97
+     },
+     "hazard": {
+      "legacy": 0.0195,
+      "legacy_sd": 0.0022,
+      "static": 0.0207,
+      "static_sd": 0.0053,
+      "delta": 0.0012,
+      "welch_t": 0.47
+     },
+     "recovery": {
+      "legacy": 0.0466,
+      "legacy_sd": 0.0097,
+      "static": 0.0423,
+      "static_sd": 0.008,
+      "delta": -0.0043,
+      "welch_t": -0.8
+     }
+    }
+   },
+   "free & status legal": {
+    "n": 11669,
+    "entropy": {
+     "legacy": 1.2321,
+     "legacy_sd": 0.0438,
+     "static": 1.2772,
+     "static_sd": 0.0458,
+     "delta": 0.0451,
+     "welch_t": 1.66
+    },
+    "top1_mass": {
+     "legacy": 0.5398,
+     "legacy_sd": 0.0173,
+     "static": 0.526,
+     "static_sd": 0.0176,
+     "delta": -0.0138,
+     "welch_t": -1.31
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.6997,
+     "legacy_sd": 0.0195,
+     "static": 0.7031,
+     "static_sd": 0.0309,
+     "delta": 0.0034,
+     "welch_t": 0.21
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4732,
+     "legacy_sd": 0.0161,
+     "static": 0.46,
+     "static_sd": 0.0207,
+     "delta": -0.0132,
+     "welch_t": -1.16
+    },
+    "critic_brier": {
+     "legacy": 0.1844,
+     "legacy_sd": 0.0089,
+     "static": 0.1828,
+     "static_sd": 0.0104,
+     "delta": -0.0016,
+     "welch_t": -0.27
+    },
+    "critic_logloss": {
+     "legacy": 0.5474,
+     "legacy_sd": 0.0261,
+     "static": 0.545,
+     "static_sd": 0.0334,
+     "delta": -0.0025,
+     "welch_t": -0.13
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4327,
+      "legacy_sd": 0.0151,
+      "static": 0.426,
+      "static_sd": 0.0212,
+      "delta": -0.0066,
+      "welch_t": -0.59
+     },
+     "switch": {
+      "legacy": 0.2631,
+      "legacy_sd": 0.0184,
+      "static": 0.2691,
+      "static_sd": 0.0537,
+      "delta": 0.006,
+      "welch_t": 0.24
+     },
+     "status": {
+      "legacy": 0.1883,
+      "legacy_sd": 0.0147,
+      "static": 0.1922,
+      "static_sd": 0.0173,
+      "delta": 0.0039,
+      "welch_t": 0.4
+     },
+     "setup": {
+      "legacy": 0.0248,
+      "legacy_sd": 0.0053,
+      "static": 0.0274,
+      "static_sd": 0.0074,
+      "delta": 0.0027,
+      "welch_t": 0.67
+     },
+     "hazard": {
+      "legacy": 0.0244,
+      "legacy_sd": 0.003,
+      "static": 0.0254,
+      "static_sd": 0.0055,
+      "delta": 0.001,
+      "welch_t": 0.34
+     },
+     "recovery": {
+      "legacy": 0.0667,
+      "legacy_sd": 0.0134,
+      "static": 0.0598,
+      "static_sd": 0.0107,
+      "delta": -0.0069,
+      "welch_t": -0.95
+     }
+    }
+   },
+   "free & setup legal": {
+    "n": 3984,
+    "entropy": {
+     "legacy": 1.0048,
+     "legacy_sd": 0.052,
+     "static": 1.0409,
+     "static_sd": 0.0661,
+     "delta": 0.036,
+     "welch_t": 0.99
+    },
+    "top1_mass": {
+     "legacy": 0.6224,
+     "legacy_sd": 0.0242,
+     "static": 0.6094,
+     "static_sd": 0.0253,
+     "delta": -0.013,
+     "welch_t": -0.86
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.7688,
+     "legacy_sd": 0.0211,
+     "static": 0.7412,
+     "static_sd": 0.0281,
+     "delta": -0.0276,
+     "welch_t": -1.81
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.5615,
+     "legacy_sd": 0.0237,
+     "static": 0.5392,
+     "static_sd": 0.0236,
+     "delta": -0.0223,
+     "welch_t": -1.56
+    },
+    "critic_brier": {
+     "legacy": 0.2108,
+     "legacy_sd": 0.014,
+     "static": 0.2087,
+     "static_sd": 0.0187,
+     "delta": -0.0022,
+     "welch_t": -0.21
+    },
+    "critic_logloss": {
+     "legacy": 0.6042,
+     "legacy_sd": 0.037,
+     "static": 0.5986,
+     "static_sd": 0.0453,
+     "delta": -0.0056,
+     "welch_t": -0.22
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.5816,
+      "legacy_sd": 0.0376,
+      "static": 0.5613,
+      "static_sd": 0.0328,
+      "delta": -0.0203,
+      "welch_t": -0.95
+     },
+     "switch": {
+      "legacy": 0.1962,
+      "legacy_sd": 0.0154,
+      "static": 0.1926,
+      "static_sd": 0.042,
+      "delta": -0.0036,
+      "welch_t": -0.18
+     },
+     "status": {
+      "legacy": 0.0301,
+      "legacy_sd": 0.0025,
+      "static": 0.0318,
+      "static_sd": 0.0056,
+      "delta": 0.0016,
+      "welch_t": 0.61
+     },
+     "setup": {
+      "legacy": 0.1494,
+      "legacy_sd": 0.0328,
+      "static": 0.1732,
+      "static_sd": 0.048,
+      "delta": 0.0238,
+      "welch_t": 0.94
+     },
+     "hazard": {
+      "legacy": 0.0,
+      "legacy_sd": 0.0,
+      "static": 0.0,
+      "static_sd": 0.0,
+      "delta": 0.0,
+      "welch_t": null
+     },
+     "recovery": {
+      "legacy": 0.0428,
+      "legacy_sd": 0.0086,
+      "static": 0.0411,
+      "static_sd": 0.0051,
+      "delta": -0.0017,
+      "welch_t": -0.39
+     }
+    }
+   },
+   "free & hazard legal": {
+    "n": 1642,
+    "entropy": {
+     "legacy": 1.4797,
+     "legacy_sd": 0.0687,
+     "static": 1.5707,
+     "static_sd": 0.0768,
+     "delta": 0.091,
+     "welch_t": 2.05
+    },
+    "top1_mass": {
+     "legacy": 0.4415,
+     "legacy_sd": 0.0302,
+     "static": 0.4104,
+     "static_sd": 0.0354,
+     "delta": -0.0311,
+     "welch_t": -1.55
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.5623,
+     "legacy_sd": 0.0323,
+     "static": 0.5788,
+     "static_sd": 0.108,
+     "delta": 0.0165,
+     "welch_t": 0.33
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.3667,
+     "legacy_sd": 0.0193,
+     "static": 0.3405,
+     "static_sd": 0.0447,
+     "delta": -0.0262,
+     "welch_t": -1.22
+    },
+    "critic_brier": {
+     "legacy": 0.1764,
+     "legacy_sd": 0.0109,
+     "static": 0.1699,
+     "static_sd": 0.0106,
+     "delta": -0.0066,
+     "welch_t": -1.01
+    },
+    "critic_logloss": {
+     "legacy": 0.5388,
+     "legacy_sd": 0.0522,
+     "static": 0.5238,
+     "static_sd": 0.0446,
+     "delta": -0.015,
+     "welch_t": -0.51
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.1518,
+      "legacy_sd": 0.0079,
+      "static": 0.1403,
+      "static_sd": 0.0161,
+      "delta": -0.0116,
+      "welch_t": -1.47
+     },
+     "switch": {
+      "legacy": 0.3,
+      "legacy_sd": 0.0403,
+      "static": 0.2953,
+      "static_sd": 0.0949,
+      "delta": -0.0047,
+      "welch_t": -0.1
+     },
+     "status": {
+      "legacy": 0.3261,
+      "legacy_sd": 0.0327,
+      "static": 0.3295,
+      "static_sd": 0.044,
+      "delta": 0.0034,
+      "welch_t": 0.14
+     },
+     "setup": {
+      "legacy": 0.0,
+      "legacy_sd": 0.0,
+      "static": 0.0,
+      "static_sd": 0.0,
+      "delta": 0.0,
+      "welch_t": null
+     },
+     "hazard": {
+      "legacy": 0.2221,
+      "legacy_sd": 0.0249,
+      "static": 0.235,
+      "static_sd": 0.057,
+      "delta": 0.0129,
+      "welch_t": 0.47
+     },
+     "recovery": {
+      "legacy": 0.0,
+      "legacy_sd": 0.0,
+      "static": 0.0,
+      "static_sd": 0.0,
+      "delta": 0.0,
+      "welch_t": null
+     }
+    }
+   },
+   "free & recovery legal": {
+    "n": 5258,
+    "entropy": {
+     "legacy": 1.2473,
+     "legacy_sd": 0.0395,
+     "static": 1.3107,
+     "static_sd": 0.0529,
+     "delta": 0.0634,
+     "welch_t": 2.21
+    },
+    "top1_mass": {
+     "legacy": 0.5332,
+     "legacy_sd": 0.0172,
+     "static": 0.5107,
+     "static_sd": 0.0187,
+     "delta": -0.0224,
+     "welch_t": -2.06
+    },
+    "agree_legacy_consensus": {
+     "legacy": 0.6917,
+     "legacy_sd": 0.0191,
+     "static": 0.6977,
+     "static_sd": 0.04,
+     "delta": 0.006,
+     "welch_t": 0.31
+    },
+    "mass_on_legacy_consensus": {
+     "legacy": 0.4592,
+     "legacy_sd": 0.0128,
+     "static": 0.4418,
+     "static_sd": 0.0259,
+     "delta": -0.0175,
+     "welch_t": -1.37
+    },
+    "critic_brier": {
+     "legacy": 0.1792,
+     "legacy_sd": 0.0107,
+     "static": 0.1808,
+     "static_sd": 0.0114,
+     "delta": 0.0016,
+     "welch_t": 0.24
+    },
+    "critic_logloss": {
+     "legacy": 0.5327,
+     "legacy_sd": 0.0272,
+     "static": 0.5356,
+     "static_sd": 0.028,
+     "delta": 0.0029,
+     "welch_t": 0.17
+    },
+    "free_cat_mass": {
+     "attack": {
+      "legacy": 0.4024,
+      "legacy_sd": 0.0207,
+      "static": 0.3916,
+      "static_sd": 0.0241,
+      "delta": -0.0108,
+      "welch_t": -0.79
+     },
+     "switch": {
+      "legacy": 0.2409,
+      "legacy_sd": 0.0203,
+      "static": 0.262,
+      "static_sd": 0.057,
+      "delta": 0.0211,
+      "welch_t": 0.79
+     },
+     "status": {
+      "legacy": 0.142,
+      "legacy_sd": 0.0114,
+      "static": 0.1423,
+      "static_sd": 0.0095,
+      "delta": 0.0003,
+      "welch_t": 0.05
+     },
+     "setup": {
+      "legacy": 0.0327,
+      "legacy_sd": 0.0069,
+      "static": 0.0385,
+      "static_sd": 0.0075,
+      "delta": 0.0059,
+      "welch_t": 1.35
+     },
+     "hazard": {
+      "legacy": 0.0,
+      "legacy_sd": 0.0,
+      "static": 0.0,
+      "static_sd": 0.0,
+      "delta": 0.0,
+      "welch_t": null
+     },
+     "recovery": {
+      "legacy": 0.182,
+      "legacy_sd": 0.0353,
+      "static": 0.1655,
+      "static_sd": 0.0294,
+      "delta": -0.0165,
+      "welch_t": -0.84
+     }
+    }
+   }
+  }
+ }
+}

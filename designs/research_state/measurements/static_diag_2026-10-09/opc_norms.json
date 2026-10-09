@@ -1,0 +1,81 @@
+{
+ "schema": "static_diag_opc_norms_v1",
+ "tag": "DESCRIPTIVE",
+ "columns": [
+  "entry_chip",
+  "pursuit_p",
+  "pursuit_eff",
+  "grounded",
+  "leftovers",
+  "weather_chip",
+  "status_tick",
+  "leech"
+ ],
+ "runs": {
+  "1001": {
+   "amount_proj_col_norm": {
+    "entry_chip": 3.3001999855041504,
+    "pursuit_p": 0.35850000381469727,
+    "pursuit_eff": 0.2361000031232834,
+    "grounded": 0.2393999993801117,
+    "leftovers": 0.19840000569820404,
+    "weather_chip": 1.0017999410629272,
+    "status_tick": 1.516800045967102,
+    "leech": 0.704200029373169
+   },
+   "d_net_first_layer_median_col_norm": 1.3845207691192627
+  },
+  "1002": {
+   "amount_proj_col_norm": {
+    "entry_chip": 3.1484999656677246,
+    "pursuit_p": 0.4277999997138977,
+    "pursuit_eff": 0.22040000557899475,
+    "grounded": 0.23029999434947968,
+    "leftovers": 0.17399999499320984,
+    "weather_chip": 1.0642000436782837,
+    "status_tick": 1.6856000423431396,
+    "leech": 0.788100004196167
+   },
+   "d_net_first_layer_median_col_norm": 1.3854869604110718
+  },
+  "1003": {
+   "amount_proj_col_norm": {
+    "entry_chip": 2.656599998474121,
+    "pursuit_p": 0.3172000050544739,
+    "pursuit_eff": 0.17599999904632568,
+    "grounded": 0.21289999783039093,
+    "leftovers": 0.155799999833107,
+    "weather_chip": 1.1376999616622925,
+    "status_tick": 1.538699984550476,
+    "leech": 0.7806000113487244
+   },
+   "d_net_first_layer_median_col_norm": 1.384415864944458
+  },
+  "1004": {
+   "amount_proj_col_norm": {
+    "entry_chip": 3.601900100708008,
+    "pursuit_p": 0.3635999858379364,
+    "pursuit_eff": 0.18809999525547028,
+    "grounded": 0.22439999878406525,
+    "leftovers": 0.17100000381469727,
+    "weather_chip": 0.9524000287055969,
+    "status_tick": 1.610200047492981,
+    "leech": 0.7462000250816345
+   },
+   "d_net_first_layer_median_col_norm": 1.387414813041687
+  },
+  "1005": {
+   "amount_proj_col_norm": {
+    "entry_chip": 3.5457000732421875,
+    "pursuit_p": 0.4092000126838684,
+    "pursuit_eff": 0.23260000348091125,
+    "grounded": 0.2847000062465668,
+    "leftovers": 0.20960000157356262,
+    "weather_chip": 1.1272000074386597,
+    "status_tick": 1.4127999544143677,
+    "leech": 0.6347000002861023
+   },
+   "d_net_first_layer_median_col_norm": 1.3911895751953125
+  }
+ }
+}

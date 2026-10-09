@@ -1,0 +1,244 @@
+{
+ "schema": "static_diag_h2h_teams_v1",
+ "tag": "DESCRIPTIVE",
+ "family": "st_screen_strength_steps",
+ "requests": [
+  "st_look1_steps",
+  "st_look2_steps"
+ ],
+ "regime_id": "adfdbee824c9eb0a",
+ "rows_used": 50,
+ "row_keys": [
+  "commit",
+  "compute",
+  "counts",
+  "flags",
+  "opponent",
+  "pairs",
+  "player",
+  "provenance",
+  "purpose",
+  "regime",
+  "request",
+  "row_id",
+  "run",
+  "schema",
+  "seed",
+  "supersedes",
+  "t_end",
+  "t_start",
+  "teams",
+  "ts"
+ ],
+ "teams_seen": 717,
+ "teams_unmapped": 0,
+ "note": "HOLDING rate = static wins / games (a draw is a non-win); FACING rate = games legacy did not win / games (a draw counts FOR static: the row keeps only per-team wins). Draws are ~0.65 % of games.",
+ "overall": {
+  "static_wins": 23489,
+  "games": 50000
+ },
+ "by_archetype": {
+  "balance": {
+   "teams": 205,
+   "games_hold": 13948,
+   "static_win_rate_holding": 0.4685,
+   "games_face": 13948,
+   "static_win_rate_facing": 0.4756
+  },
+  "hyper_offense": {
+   "teams": 139,
+   "games_hold": 9414,
+   "static_win_rate_holding": 0.5022,
+   "games_face": 9414,
+   "static_win_rate_facing": 0.4852
+  },
+  "offense": {
+   "teams": 154,
+   "games_hold": 10997,
+   "static_win_rate_holding": 0.4776,
+   "games_face": 10997,
+   "static_win_rate_facing": 0.4905
+  },
+  "semi_stall": {
+   "teams": 129,
+   "games_hold": 8984,
+   "static_win_rate_holding": 0.4549,
+   "games_face": 8984,
+   "static_win_rate_facing": 0.4636
+  },
+  "stall": {
+   "teams": 90,
+   "games_hold": 6657,
+   "static_win_rate_holding": 0.4338,
+   "games_face": 6657,
+   "static_win_rate_facing": 0.4586
+  }
+ },
+ "by_tag": {
+  "boom": {
+   "teams": 224,
+   "games_hold": 15857,
+   "static_win_rate_holding": 0.4646,
+   "games_face": 15857,
+   "static_win_rate_facing": 0.4932
+  },
+  "choice": {
+   "teams": 304,
+   "games_hold": 21278,
+   "static_win_rate_holding": 0.4938,
+   "games_face": 21278,
+   "static_win_rate_facing": 0.4528
+  },
+  "phaze": {
+   "teams": 354,
+   "games_hold": 25206,
+   "static_win_rate_holding": 0.4602,
+   "games_face": 25206,
+   "static_win_rate_facing": 0.4594
+  },
+  "rain": {
+   "teams": 32,
+   "games_hold": 2307,
+   "static_win_rate_holding": 0.4872,
+   "games_face": 2307,
+   "static_win_rate_facing": 0.4842
+  },
+  "sand": {
+   "teams": 455,
+   "games_hold": 31658,
+   "static_win_rate_holding": 0.4777,
+   "games_face": 31658,
+   "static_win_rate_facing": 0.4648
+  },
+  "screens": {
+   "teams": 5,
+   "games_hold": 324,
+   "static_win_rate_holding": 0.4784,
+   "games_face": 324,
+   "static_win_rate_facing": 0.3981
+  },
+  "setup_heavy": {
+   "teams": 155,
+   "games_hold": 10618,
+   "static_win_rate_holding": 0.4941,
+   "games_face": 10618,
+   "static_win_rate_facing": 0.494
+  },
+  "spikes": {
+   "teams": 338,
+   "games_hold": 23957,
+   "static_win_rate_holding": 0.4607,
+   "games_face": 23957,
+   "static_win_rate_facing": 0.4554
+  },
+  "spin": {
+   "teams": 296,
+   "games_hold": 21163,
+   "static_win_rate_holding": 0.4507,
+   "games_face": 21163,
+   "static_win_rate_facing": 0.4613
+  },
+  "spinblock": {
+   "teams": 107,
+   "games_hold": 7952,
+   "static_win_rate_holding": 0.4562,
+   "games_face": 7952,
+   "static_win_rate_facing": 0.4703
+  },
+  "status_heavy": {
+   "teams": 313,
+   "games_hold": 21869,
+   "static_win_rate_holding": 0.4655,
+   "games_face": 21869,
+   "static_win_rate_facing": 0.469
+  },
+  "trap": {
+   "teams": 243,
+   "games_hold": 17219,
+   "static_win_rate_holding": 0.4619,
+   "games_face": 17219,
+   "static_win_rate_facing": 0.4873
+  },
+  "trap_core": {
+   "teams": 15,
+   "games_hold": 900,
+   "static_win_rate_holding": 0.4689,
+   "games_face": 900,
+   "static_win_rate_facing": 0.4844
+  },
+  "wish": {
+   "teams": 212,
+   "games_hold": 14866,
+   "static_win_rate_holding": 0.45,
+   "games_face": 14866,
+   "static_win_rate_facing": 0.4775
+  }
+ },
+ "by_archetype_cells": {
+  "balance": {
+   "cells": 25,
+   "mean": 0.4685,
+   "sd": 0.025
+  },
+  "hyper_offense": {
+   "cells": 25,
+   "mean": 0.5024,
+   "sd": 0.0362
+  },
+  "offense": {
+   "cells": 25,
+   "mean": 0.4776,
+   "sd": 0.0278
+  },
+  "semi_stall": {
+   "cells": 25,
+   "mean": 0.4546,
+   "sd": 0.0385
+  },
+  "stall": {
+   "cells": 25,
+   "mean": 0.4343,
+   "sd": 0.0344
+  }
+ },
+ "skill_gap_by_archetype_cells": {
+  "balance": {
+   "cells": 25,
+   "mean": -0.0559,
+   "sd": 0.0505,
+   "cells_negative": 20
+  },
+  "hyper_offense": {
+   "cells": 25,
+   "mean": -0.0122,
+   "sd": 0.0499,
+   "cells_negative": 17
+  },
+  "offense": {
+   "cells": 25,
+   "mean": -0.0318,
+   "sd": 0.0439,
+   "cells_negative": 18
+  },
+  "semi_stall": {
+   "cells": 25,
+   "mean": -0.0817,
+   "sd": 0.0595,
+   "cells_negative": 23
+  },
+  "stall": {
+   "cells": 25,
+   "mean": -0.1065,
+   "sd": 0.0646,
+   "cells_negative": 24
+  }
+ },
+ "skill_gap_note": "per cell: static's win rate HOLDING an archetype's teams minus legacy's win rate HOLDING the same archetype's teams (draws are non-wins for both); 0 = equal skill with that archetype",
+ "slow_minus_fast_holding_per_cell": {
+  "cells": 25,
+  "mean": -0.043,
+  "sd": 0.0341,
+  "cells_negative": 23,
+  "note": "static's win rate holding a stall/semi-stall team minus holding a hyper-offense/offense team, per cell"
+ }
+}

@@ -1,0 +1,94 @@
+{
+ "schema": "static_diag_early_h2h_v1",
+ "tag": "DESCRIPTIVE",
+ "note": "score = static seed i's score vs legacy seed i (pp, a draw \u00bd); 5M/10M: 400 mirrored pairs per cell, CPU eager at P_st, regime adfdbee824c9eb0a; 15M: the registered cross's diagonal (1,000 pairs per cell, CUDA graph, same regime id)",
+ "cells": {
+  "5M": {
+   "1": 53.62,
+   "2": 49.94,
+   "3": 48.81,
+   "4": 49.19,
+   "5": 35.44
+  },
+  "10M": {
+   "1": 49.19,
+   "2": 46.44,
+   "3": 46.81,
+   "4": 47.88,
+   "5": 43.62
+  },
+  "15M": {
+   "1": 47.33,
+   "2": 50.52,
+   "3": 48.15,
+   "4": 48.95,
+   "5": 44.4
+  }
+ },
+ "summary": {
+  "5M": {
+   "mean_pp": 47.4,
+   "delta_pp": -2.6,
+   "sd_pp": 6.95,
+   "n": 5,
+   "se_pp": 3.11
+  },
+  "10M": {
+   "mean_pp": 46.79,
+   "delta_pp": -3.21,
+   "sd_pp": 2.07,
+   "n": 5,
+   "se_pp": 0.93
+  },
+  "15M": {
+   "mean_pp": 47.87,
+   "delta_pp": -2.13,
+   "sd_pp": 2.27,
+   "n": 5,
+   "se_pp": 1.01
+  }
+ },
+ "summary_without_seed5": {
+  "5M": {
+   "mean_pp": 50.39,
+   "delta_pp": 0.39,
+   "sd_pp": 2.2,
+   "n": 4,
+   "se_pp": 1.1
+  },
+  "10M": {
+   "mean_pp": 47.58,
+   "delta_pp": -2.42,
+   "sd_pp": 1.23,
+   "n": 4,
+   "se_pp": 0.62
+  },
+  "15M": {
+   "mean_pp": 48.74,
+   "delta_pp": -1.26,
+   "sd_pp": 1.36,
+   "n": 4,
+   "se_pp": 0.68
+  }
+ },
+ "paired_change_pp": {
+  "5M->15M": {
+   "mean_pp": 0.47,
+   "sd_pp": 5.47,
+   "n": 5,
+   "se_pp": 2.45
+  },
+  "10M->15M": {
+   "mean_pp": 1.08,
+   "sd_pp": 2.11,
+   "n": 5,
+   "se_pp": 0.94
+  },
+  "5M->10M": {
+   "mean_pp": -0.61,
+   "sd_pp": 5.07,
+   "n": 5,
+   "se_pp": 2.27
+  }
+ }
+}
