@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,708-line file. **The ledger itself is append-only and is never edited by this**;
+23,717-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**826 headings · 771 dated · 2026-08-01 → 2026-10-09 · ledger 23,708 lines.**
+**827 headings · 772 dated · 2026-08-01 → 2026-10-09 · ledger 23,717 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -846,3 +846,4 @@ rename.
   - `L23558` · `2026-10-08` · BUILT · **PERF PHASE item 1 — the learner update's host↔device syncs batched: plain production update ~716 → 22 learner syncs by count (one per optimizer step + 2), every logged value bit-identical; GPU effect NOT measured**
   - `L23629` · `2026-10-08` · BUILT · **F6b PRINCIPLED OPERATOR REDUCTIONS behind `--op-reduction principled` (v146, OFF): 31 per-channel maxima over THEIR believed moves → the α-weighted expectation (α = presence / total presence) + the noisy-OR KO worst case (+256 params, FLOPs +0.005 %); `max` byte-identical; K9(b) excluded share 3.3 % → 2.1 % at the u1480 weights (the argmax sites gone)**
   - `L23686` · `2026-10-09` · READ · **STATIC-TOKEN SCREEN LOOK 2 (n = 5 per arm): CONTINUE — static vs legacy Δ̂ −2.70 pp, look-2 interval [−5.19, −0.20] (straddles −δ), fixed-sample 90 % [−4.43, −0.97]; t_NI 0.864 < 2.683; t_SUP −2.901 (past the boundary on the WRONG side: no row of the table reads it); no futility; in-arm speed s −2.7 % (≤ 5 %); bots panel +0.12 pp, no HARM flag; L4 / L5 / S4 / S5 no deviation**
+- `L23709` · `2026-10-09` · OPS: models/ PRE-RUSTBORO SKELETON applied (owner-approved disk cleanup)

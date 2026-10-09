@@ -1,6 +1,6 @@
 # `models/` retention policy
 
-*Written 2026-09-06. **Nothing has been applied.** Both policies below have been run as dry runs
+*Written 2026-09-06. ⚠️ **SUPERSEDED IN PRACTICE 2026-10-09:** the owner approved, and the orchestrator applied, a coarser PRE-RUSTBORO SKELETON (root `CLAUDE.md` § The Model states what each pre-`rb_` run keeps; per-path plan `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`; ~386 GB freed with the finished `rb_` compile caches). The tiers below were NOT applied as written.* *(Original:) **Nothing has been applied.** Both policies below have been run as dry runs
 and their reports are committed beside them; the `--apply` commands are in §7.*
 
 The run archive is the one thing in this project that is never reproducible. A checkpoint is a

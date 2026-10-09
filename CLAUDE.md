@@ -430,7 +430,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 🚨 **BASELINES are NAMED, and read by name** — `designs/baselines.json` + `agents.training.baselines` (`production`, `v9_long_baseline`, `v9_fold_parent`, `famine_comparator`, `untaught_meter_opponent`, …). Never copy a path. Every entry pins an EXPLICIT checkpoint so the last-snapshot rule cannot move it; a registry name survives every retention tier; `python -m main.baselines set … --reason` is the only way to change one, and it prints the ledger line to append.
 
-**`models/` retention** is policy, not habit: [`designs/research_state/models_retention_policy.md`](designs/research_state/models_retention_policy.md) plus its dry-run tool. Nothing has been deleted.
+**`models/` retention** is policy, not habit: [`designs/research_state/models_retention_policy.md`](designs/research_state/models_retention_policy.md) plus its dry-run tool. 🚨 **The PRE-RUSTBORO SKELETON was APPLIED 2026-10-09 (owner):** every pre-`rb_` run keeps only `metadata.json`, `model_config.json`, TensorBoard, every jsonl (incl. `value_sidecar/`), small json/md/png, its `final_model*.zip` (or its newest checkpoint when it has none) and every file the baseline registry names — intermediate checkpoints, snapshot pools, eval traces, compile caches and `best_model/` are GONE (~322 GB); finished `rb_` runs lost only their `compile_cache/` (~64 GB; a resume recompiles). The per-path plan is `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`.
 
 When you land an architecture change: update `ARCHITECTURE.md` in the same pass, and append to `CHANGELOG.md`.
 

@@ -23705,3 +23705,12 @@ The registered look-2 read of `design_static_tokens.md` §8.1 + §8.2 (P_st `6c6
 5. **The panel is the bots component only**, from in-loop evals at 14.0M, not a fresh common panel; frozen pool and SmallRL unread (as at look 1).
 
 Tag: **READ · static-token screen look 2 · CONTINUE (t_NI 0.864 < 2.683; t_SUP −2.901) · s −2.7 % · L4/L5/S4/S5 clean · no HARM flag**
+
+## 2026-10-09 — OPS: models/ PRE-RUSTBORO SKELETON applied (owner-approved disk cleanup)
+The root filesystem hit 100 % (2.2 GB free) at ~07:00 while the static screen's look 3 was writing checkpoints. With the owner's approval (2026-10-09, "Go with the clean up"), the orchestrator:
+- **Pre-`rb_` runs (282):** kept `metadata.json`, `model_config.json`, TensorBoard events, every jsonl (incl. `value_sidecar/rows.jsonl`, irreplaceable), small json/md/png (ladder / Elo files), `final_model*.zip` (else the newest checkpoint) and every baseline-registry-named file. Deleted intermediate checkpoints, snapshot pools, eval traces, compile caches and `best_model/`: ~322 GB.
+- **Finished `rb_` runs (33):** deleted `compile_cache/` only (~64 GB).
+- **Also:** 42 finished agent worktrees (every commit verified on main with `git cherry` / by subject), the pip / conda caches, agent scratch run archives under `~/.cache/gen3ai`, and four old `~/gen3ai_archive` bulk dumps.
+- **Result:** disk 100 % → 39 % (586 GB free). The per-path plan is `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`.
+
+A follow-up class fix (launcher disk-space preflight + in-run guard) is in flight.
