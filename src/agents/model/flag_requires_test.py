@@ -56,6 +56,8 @@ _ON_OVERRIDE: Dict[str, object] = {
     "move_resolution": "on",
     # gen3_speed_physics_v1 (v143): a two-value mode string; 'off' is OFF.
     "speed_physics": "on",
+    # gen3_op_reduction_principled_v1 (v146): a two-value mode string; 'max' is OFF.
+    "op_reduction": "principled",
 }
 
 

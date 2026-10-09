@@ -23625,3 +23625,60 @@ untouched), a deferred NaN gradient, the deferred reader's KL / loss verdicts. `
    tagger on the device would remove them, at 1 update in 10.
 
 Tag: **BUILT · T25 item 1 · learner syncs ~716 → 22 per plain production update (count) · bit-identical (11 configs + K9 golden) · GPU measurement DEFERRED**
+
+### 2026-10-08 · BUILT · **F6b PRINCIPLED OPERATOR REDUCTIONS behind `--op-reduction principled` (v146, OFF): 31 per-channel maxima over THEIR believed moves → the α-weighted expectation (α = presence / total presence) + the noisy-OR KO worst case (+256 params, FLOPs +0.005 %); `max` byte-identical; K9(b) excluded share 3.3 % → 2.1 % at the u1480 weights (the argmax sites gone)**
+
+Architecture audit F6b (owner 2026-10-08: "compute the FACTS exactly; the trunk's attention does the judgment"),
+built as a NON-INFERIORITY screen arm for the bundle with `--token-encoding static`, `--move-resolution on` and
+`--speed-physics on` (split on failure). Evidence: `designs/research_state/measurements/op_reduction_f6b_2026-10-08/`.
+
+**What it is.** `agents/model/op_reduction.py`. Two facts per site, each from ONE mixture: the α-weighted
+EXPECTATION (one α per attacker for every channel and every defender — Contract W, so D2 / D3 fall at the op) and,
+for a binary event, the noisy-OR `1 − Π(1 − w·P(X|m))` (presence read as the max read it, detached under X5). 31 sites
+replaced (the incoming row's ten channel maxima + the three argmax-picked fields + the gate; C1b / C2 / C3 / D4; the
+E5 tail; Pursuit presence); 13 kept (maxima over OUR moves, the per-move secondary-column max, dead / inert sites).
+The noisy-OR KO row `[phys, spec]` per our mon reaches the tokens through a zero-init, bias-free `op_worst_proj`
+(+256); the flat block, `out_gain` and every slicer are unchanged.
+
+**A design deviation, reported:** the dispatch named α = the FLAT opponent pointer's distribution. That α is scored
+at T2 from the trunk, and the op's rows are T1 trunk INPUT (`prefuse_proj`), so the tier contract forbids it (the
+model leaf's "T1 produces, T2 consumes"). The op therefore uses the presence belief normalised (R1 `belief_mean`):
+the expected outcome of a uniformly-random click from their believed set. The flat α's own expectation rows already
+reach the pointer cells (`pair_outcome`; the move-resolution family under the bundle).
+
+**Identity.** `max`: the production extractor's dynamo graph (`8b376785…`), state_dict and outputs equal the parent
+`957d4dbd`'s, the bundle's (`75d9482c…`) too; the K9 learner golden passes unchanged. One-lever init: a `principled`
+SB3 build's shared parameters byte-equal `max`'s (test). Found on the way: dynamo names graph nodes after LOCAL
+VARIABLES — a renamed temporary over identical ops moved the hash — so the `max` expressions stay verbatim.
+
+**Cost (CPU, measured).** Extractor matmul FLOPs +3,072 / row (+0.005 %), other element ops +867 / row (+0.03 %),
+eager wall within noise; the same deltas on the bundle. Expected ~0–3 %: it is ~0.
+
+**Ties.** The K9(b) flip-judge harness at the u1480 static-screen HEAD reconstruction (each mode plays its own seeded
+2,048-row rollout from the same weights): `max` reproduces the harness's HEAD row (212 → 68 excluded, 10.4 % → 3.3 %);
+`principled` 162 → 42 (7.9 % → 2.1 %), judged max |Δlog π| 3.3e-6, 0 violations. The dominant-move `argmax` exclusions
+(6 + 1 rows under `max`) cannot occur: the site is gone. The rest is the X5 sort ties and `fixed >= hp`.
+
+**Tests (each fails on revert).** `op_reduction_test.py`: the hand-computed α-weighted sum; α over the whole axis not
+the slice; the noisy-OR at presence 0 (no contribution) and 1 (exactly 1, finite gradient); COHERENCE on a planted row
+whose maxima pick three different moves (every channel equals ONE α's Contract-W contraction); permutation invariance;
+a swapped tie leaves every output unchanged and splits the gradient evenly (the max does not); `believed_reduce`
+without a total IS `max_by_index`. `op_reduction_extractor_test.py`: one-lever init; every replaced kernel reads the
+mode, every kept one (D1, D2, P(first), the outgoing block) does not; the E5 tail; C1b on a planted Amnesia row; the
+worst row is a gated probability and reaches the policy. CPU `--debug` smokes pass (`principled`, and the bundle).
+
+**FINDINGS.**
+1. **α is the PRESENCE rung, not the flat pointer's usage α** (above) — a deliberate, reported deviation; the T1/T2
+   split makes the dispatch's α unbuildable at the op.
+2. **Deferred GPU checks (no lease):** compile parity of the `principled` forward AND backward (the noisy-OR's
+   `torch.prod` backward under Inductor is UNVERIFIED), the T2 inference service's CUDA graph build, a real launch's
+   first two minutes, the GPU cost read.
+3. **Not built:** a crit-KO noisy-OR (the op carries only the no-crit KO ramp), noisy-OR columns at the edge kernels
+   (they take the width-neutral expectation), the optional learned E5 bench pool (skipped: a sub-flag + versioning
+   for one token per mon).
+4. **Approximation declared:** the noisy-OR treats moves as independent; X5's fixed-mass presence is a conditional
+   Bernoulli (Σπ = 4), whose indicators are negatively associated (one move present makes another less likely), so
+   P(none KOs) ≤ Π(1 − p) and the noisy-OR slightly UNDER-states P(some move KOs) when several unrevealed candidates
+   compete for a slot (exact when the set is revealed).
+
+Tag: **BUILT · F6b · `--op-reduction principled` (v146, OFF) · `max` byte-identical · +256 params · K9(b) excluded 3.3 % → 2.1 % (u1480 weights) · GPU checks DEFERRED**

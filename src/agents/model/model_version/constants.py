@@ -518,7 +518,14 @@ from typing import Any, Dict
 #   super strategic"). Landed before any v144 checkpoint was trained; ARCH_SIGNATURE -> "gen3_mon_tied_gain_v1" and
 #   MIGRATION_FLOOR -> 145, so a v144 config is refused with `version_break.v144_reason()` and runs PINNED
 #   (`version_break.LAST_V144_COMMIT`). Init forward bitwise equal (each tied channel's init was equal per slot).
-MODEL_CONFIG_VERSION = 145
+# v146 (gen3_op_reduction_principled_v1): `op_reduction` — architecture audit F6b (owner 2026-10-08): the op's
+#   per-channel hard maxima over the opponent's believed moves (the incoming per-mon row, its argmax-picked accuracy /
+#   provenance, the C1b / C2 / C3 / D4 kernels, the E5 tail's worst-phys/spec, the Pursuit presence) replaced by the
+#   alpha-weighted EXPECTATION (alpha = presence / total presence, one mixture per attacker) and the noisy-OR worst
+#   case (P(some move KOs), delivered by the zero-init `op_worst_proj`; P(some mon holds Pursuit)). A STRUCTURAL
+#   string {max,principled}, gated in check_compatible; a v145 config migrates to "max" (the only possible past). No
+#   ARCH_SIGNATURE bump ('max' is byte-identical), no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 146
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

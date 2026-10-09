@@ -10,7 +10,8 @@ two disagree, ARCHITECTURE.md wins.
 ## The op's SIDE VALUES have ONE container (`gen3_op_stashes_v1`)
 
 Every per-forward stash the op exposes (`last_topk_idx`, `last_pair_cells`, `last_w_all`,
-`last_out_pko`, `last_raw_block`, `last_raw_tensors`, `last_tensors`, …) lives in ONE `OpStashes` dataclass that the
+`last_out_pko`, `last_raw_block`, `last_raw_tensors`, `last_tensors`, `last_worst_rows` (`--op-reduction
+principled` only), …) lives in ONE `OpStashes` dataclass that the
 forward replaces at ENTRY — so no stash can carry a previous batch, uniformly (three different
 clearing conventions used to coexist, and the top-K trio had none). **Reads** use the `last_*`
 properties (the documented surface); **writes** go through `op.stash.<field>` — writing a
@@ -69,6 +70,27 @@ candidates on a gradient path uses it. `amax` / `amin` are legal only OFF any gr
 gate operand (a comparison), a TABLE lookup (cure / cleric), a constant (the cheapest-undo minimum), an
 observation indicator (`we_have_pur`), a `no_grad` bracket (`fixed_size_tau`) or a diagnostic (the move-tie
 gaps). `selection_sites` declares the one `MAX_VALUE` EXACT site at `index_max`.
+
+## The op's reductions over THEIR believed moves have ONE switch (`--op-reduction`, audit F6b)
+
+`gen3_op_reduction_principled_v1` (config v146; ARCHITECTURE §4 states the facts). `agents/model/op_reduction.py` is
+the one home of the principled forms — `presence_alpha` (α = presence / the attacker's TOTAL presence over the whole
+move axis), `expectation`, `noisy_or` (`1 − Π(1 − p)`, a product, exact and finite at p = 1),
+`believed_reduce(wv, w_total)` (the per-attacker kernels' ONE reduction: `w_total` None → `max_by_index(wv)`, the
+legacy expression bit for bit; given → `Σ wv / w_total`) and `incoming_principled` (the incoming per-mon row). Four
+rules:
+
+* **A NEW reduction over an opponent's believed candidates goes through `believed_reduce` (or `incoming_principled`'s
+  pattern), never a bare `max_by_index`** — so both modes reach it. The attacker's total comes from
+  `DamageOperator._attacker_total` (None under `max`).
+* **A reduction over OUR moves stays a max** (we choose: C1's `d_best_*`, D2's `best_*`, the outgoing status
+  landing). `op_reduction_extractor_test.py` fails if one of those moves with the mode.
+* **`max` must stay byte-identical, and dynamo names graph nodes after LOCAL VARIABLES.** A new local on the `max`
+  path (even `tw = torch.where(...)` then `tw * x` for the same ops) renames nodes and changes the production graph's
+  hash; keep the `max` expression verbatim and put the `principled` arithmetic in its own branch or helper.
+* **The noisy-OR row never enters the flat block** (`op.stash.worst_rows`, read by the extractor's zero-init
+  `op_worst_proj`): the block's layout, `out_gain` and every slicer are mode-independent. Its one discrete op (`high
+  > 0`, "this candidate damages this mon") is a declared MARGIN threshold (`selection_sites`, `zero_exact`).
 
 ## The op's READ contracts: an opponent's ability, and the status rules (`gen3_op_ability_status_gigo_v1`)
 

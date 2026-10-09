@@ -1,0 +1,82 @@
+{
+ "commit": "957d4dbd827461fec4a0413fe93417ba98e813b9",
+ "weights": "tmp/f6b/u1480_head.pt",
+ "rows": 2048,
+ "eps": 0.0002,
+ "bar": 0.0001,
+ "ceiling": 0.15,
+ "probe_wall_s": 2.486686791991815,
+ "metrics": {
+  "behaviour/rows_current": 2048.0,
+  "behaviour/rows_probed": 2048.0,
+  "behaviour/probe_forward_ms": 2484.695916005876,
+  "behaviour/selection_free": 0.0,
+  "behaviour/rows_judged_by_flip": 144.0,
+  "behaviour/rows_flip_forward": 0.0,
+  "behaviour/rows_flip_resolved": 0.0,
+  "behaviour/excluded_frac_before_flip": 0.103515625,
+  "behaviour/flip_forward_ms": 0.0,
+  "behaviour/max_abs_dlogp_current": 4.291534423828125e-06,
+  "behaviour/p99_abs_dlogp_current": 1.9073486328125e-06,
+  "behaviour/tie_eps": 0.0002,
+  "behaviour/excluded_frac": 0.033203125,
+  "behaviour/rows_excluded": 68.0,
+  "behaviour/rows_judged": 1980.0,
+  "behaviour/max_abs_dlogp_judged": 4.291534423828125e-06,
+  "behaviour/max_abs_dlogp_excluded": 9.5367431640625e-07,
+  "behaviour/bar_max": 0.0001,
+  "behaviour/violations_total_max": 0.0,
+  "behaviour/bar_excluded_frac": 0.15,
+  "behaviour/violations_total_excluded_frac": 0.0
+ },
+ "cost": {
+  "bare_ms_median3": 1394.2597749992274,
+  "recorder_plain_ms_median3": 1660.6567130074836,
+  "recorder_near_ms_median3": 1686.0298549872823
+ },
+ "excluded_by_site": [
+  {
+   "site": "hypothesis_set.py:210 argsort",
+   "class": "flippable",
+   "rows": 144
+  },
+  {
+   "site": "hypothesis_set.py:210 argsort",
+   "class": "not_expressed",
+   "rows": 45
+  },
+  {
+   "site": "damage_kinds.py:130 ge",
+   "class": "multi",
+   "rows": 15
+  },
+  {
+   "site": "damage_op.py:1034 argmax",
+   "class": "not_expressed",
+   "rows": 6
+  },
+  {
+   "site": "hypothesis_set.py:210 argsort",
+   "class": "multi",
+   "rows": 1
+  },
+  {
+   "site": "damage_op.py:1040 argmax",
+   "class": "not_expressed",
+   "rows": 1
+  }
+ ],
+ "forced": {
+  "rows": 144,
+  "flip_forward_ms": 1670.885942003224,
+  "recording_forward_ms": 1723.844287043903,
+  "flip_moves_logpi": 143,
+  "max_abs_logpi_move": 0.004116058349609375,
+  "median_abs_logpi_move": 6.464263424277306e-05,
+  "pass_as_is": 144,
+  "pass_flipped_only": 0,
+  "fail_both": 0,
+  "max_abs_dlogp_as_is": 3.0994415283203125e-06,
+  "untouched_rows_max_move": 0.0
+ }
+}

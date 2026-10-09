@@ -47,7 +47,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens", "index_max",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "obs_facts_inject", "opp_intent",
-    "move_order", "move_resolution", "move_resolution_rules", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
+    "move_order", "move_resolution", "move_resolution_rules", "op_reduction", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
     "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
 )
 
@@ -145,6 +145,10 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
         "threshold", zero_exact=True, why="learned reducer"),
     ("intent_conditional", "high_k > 0"): Rule(
         "threshold", zero_exact=True, why="damaging seat (0 exactly for a status / immune move)"),
+    # gen3_op_reduction_principled_v1 (`--op-reduction principled` only): the incoming row's "this candidate
+    # damages this mon" test, which its α-weighted accuracy / provenance read (0 exactly for a status / immune move)
+    ("op_reduction", "high > 0"): Rule(
+        "threshold", zero_exact=True, why="a damaging candidate on this mon (0 exactly for a status / immune move)"),
     ("intent_threshold", "high_k > 0"): Rule(
         "threshold", zero_exact=True, why="landing damage breaks Focus Punch (0 exactly for status / immune)"),
     # --- THRESHOLDS on weight-free float arithmetic (the current HP is a product of an observed fraction
@@ -202,6 +206,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("hp_frac > 0", "opp_burn > 0.5", "opp_para > 0.5", "our_para > 0.5", "s >= 0"),
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
+        "PYTHON": ("op_reduction == 'principled'",),   # gen3_op_reduction_principled_v1: the constructor's mode
         "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",

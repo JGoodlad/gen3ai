@@ -428,6 +428,10 @@ class ModelVersionFields:
     # `off` (production) builds nothing. The observation carries the block either way (obs 2761 -> 2845, the
     # `total_dim` break).
     obs_facts: str = "off"
+    # gen3_op_reduction_principled_v1 (config v146): `--op-reduction {max,principled}` — architecture audit F6b.
+    # STRUCTURAL: 'principled' replaces the op's per-channel hard maxima over the opponent's believed moves with the
+    # alpha-weighted expectation and builds the zero-init `op_worst_proj` (the noisy-OR KO row; a state_dict delta).
+    op_reduction: str = "max"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

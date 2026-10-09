@@ -217,7 +217,8 @@ def test_every_team_slot_copy_of_a_channel_accumulates_into_one_parameter(
 def test_the_live_stamps_are_the_mon_tie() -> None:
     from agents.model.model_version import ARCH_SIGNATURE, MIGRATION_FLOOR, MODEL_CONFIG_VERSION, SIGNATURE_FIRST_VERSION
     from agents.model.model_version.version_break import MON_TIE_CONFIG, MON_TIE_SIGNATURE
-    assert MODEL_CONFIG_VERSION == MIGRATION_FLOOR == MON_TIE_CONFIG == 145
+    assert MIGRATION_FLOOR == MON_TIE_CONFIG == 145
+    assert MODEL_CONFIG_VERSION >= 145      # v146 (gen3_op_reduction_principled_v1) bumped past the floor
     assert ARCH_SIGNATURE == MON_TIE_SIGNATURE == "gen3_mon_tied_gain_v1"
     assert SIGNATURE_FIRST_VERSION[ARCH_SIGNATURE] == 145
     cfg = json.load(open(repo_path("designs", "production_config.json")))

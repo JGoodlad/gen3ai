@@ -11,6 +11,7 @@ from agents.observation.constants import (
     TEAM_SIZE,
 )
 from agents.model.index_max import max_by_index
+from agents.model.op_reduction import believed_reduce
 from agents.model.arch_constants import (MOVE_NET_HIDDEN,
     MOVE_LATENT_DIM,
     POINTER_HIDDEN,
@@ -181,13 +182,19 @@ class EntityMoveSeats(torch.nn.Module):
                 p_tail = tail_w.sum(-1).clamp(max=1.0)                                # [B,6]
                 score = tail_w * (damage_op.MOVE_BP[None, None, :] / 150.0)                     * damage_op.MOVE_ACCURACY[None, None, :]
                 phys = damage_op.MOVE_PHYS[None, None, :]
-                worst_phys = max_by_index(score * phys)                               # [B,6]
-                worst_spec = max_by_index(score * (1.0 - phys))
+                if damage_op.op_principled:   # gen3_op_reduction_principled_v1: the tail's α-weighted expectation
+                    w_tot = tail_w.sum(-1)
+                    worst_phys = believed_reduce(score * phys, w_tot)                 # [B,6]
+                    worst_spec = believed_reduce(score * (1.0 - phys), w_tot)
+                else:
+                    worst_phys = max_by_index(score * phys)                           # [B,6]
+                    worst_spec = max_by_index(score * (1.0 - phys))
             else:
                 # X5 (U3 part 3): every mon's tail beyond rank K of ITS one order, presence-aware.
                 from agents.model.hypothesis_tokens import bench_tail_cells
                 bt = bench_tail_cells(x5_roster, K, damage_op.MOVE_BP, damage_op.MOVE_ACCURACY,
-                                      damage_op.MOVE_PHYS)                                  # [B,6,3]
+                                      damage_op.MOVE_PHYS,
+                                      principled=damage_op.op_principled)                   # [B,6,3]
                 p_tail, worst_phys, worst_spec = bt.unbind(-1)
             revealed = 1.0 - ctx.opp_believed_mask.float()                        # [B,6]
             has_opp_t = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1)
@@ -199,7 +206,8 @@ class EntityMoveSeats(torch.nn.Module):
                 from agents.model.hypothesis_tokens import other_move_cells
                 act = torch.nn.functional.one_hot(ctx.opp_active_local, TEAM_SIZE).bool()   # [B,6]
                 om = other_move_cells(fixed_moves, damage_op.MOVE_BP, damage_op.MOVE_ACCURACY,
-                                      damage_op.MOVE_PHYS).to(cells.dtype)                  # [B,4]
+                                      damage_op.MOVE_PHYS,
+                                      principled=damage_op.op_principled).to(cells.dtype)   # [B,4]
                 cells = torch.where(act.unsqueeze(-1), om.unsqueeze(1), cells)
                 e5_pad = e5_pad | (act & ~fixed_moves.other_live.unsqueeze(-1))
             e5 = (self.tail_proj(cells) + self.tail_marker) * has_opp_t[:, None, None].float()  # type: ignore[misc]

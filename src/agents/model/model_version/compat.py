@@ -551,6 +551,17 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "The OBS-FACTS consumer is fixed for a run's lifetime: `v1` builds ObsFactsInject.\n"
                 "Resume with the matching --obs-facts setting (a flagless resume inherits it), or start "
                 "a fresh training run.")
+        # gen3_op_reduction_principled_v1 (v146, architecture audit F6b): 'principled' changes what every op
+        # reduction over the opponent's believed moves MEANS (expectation vs hard max — same widths) and adds
+        # `op_worst_proj`; a frozen-opponent gate must name the cause, so this compare is the gate.
+        if self.op_reduction != saved.op_reduction:
+            raise ModelVersionError(
+                f"op_reduction mismatch: saved={saved.op_reduction!r}, current={self.op_reduction!r}.\n"
+                "The op's reductions over the opponent's believed moves are fixed for a run's lifetime: 'max' is the "
+                "per-channel hard maximum, 'principled' the alpha-weighted expectation + the noisy-OR KO worst case "
+                "(the same widths read a different quantity).\n"
+                "Resume with the matching --op-reduction setting (a flagless resume inherits it), or start a fresh "
+                "training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

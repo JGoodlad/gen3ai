@@ -236,6 +236,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_obs_facts_v1 (v144, part 3): the OBS-FACTS consumer (structural).
             obs_facts=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("obs_facts", "off")),
+            # gen3_op_reduction_principled_v1 (v146): the op's reductions over their believed moves (audit F6b).
+            op_reduction=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("op_reduction", "max")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

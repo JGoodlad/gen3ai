@@ -132,6 +132,10 @@ class OpStashes:
     # paralysed)) against their active per our mon, which the pair outcome's paralysis severity reads. None when off.
     item_qc_prob: Optional[torch.Tensor] = None      # [B,6]
     speed_fast_pair: Optional[Tuple[torch.Tensor, torch.Tensor]] = None   # ([B,6], [B,6])
+    # gen3_op_reduction_principled_v1 (`--op-reduction principled` only): the incoming WORST-CASE row per our mon —
+    # `[P(some physical move KOs), P(some special move KOs)]`, the noisy-OR over their believed moves (presence ×
+    # the accuracy-folded KO), alive x has_opp gated. NOT in the flat block; the extractor's `op_worst_proj` reads it.
+    worst_rows: Optional[torch.Tensor] = None        # [B,6,OP_WORST_DIM]
     raw_block: Optional[torch.Tensor] = None         # [B,out_dim] PRE-gain block, DETACHED (prober decode)
     # gen3_x5_version_break_v1 part 5: the pre-gain typed views, LIVE (gradient-carrying) — THE read of an op value
     # used as physics (P(first), a damage fraction, a probability) by a consumer outside the op (`last_raw_tensors`).
@@ -146,6 +150,7 @@ from agents.model.damage_op_speed import DamageOperatorSpeed
 # gen3_fm_index_max_v1 / audit F6a: THE hard-max spelling (a leaf module, re-exported here as
 # `damage_op.max_by_index`, the name this module's own maxima resolve at call time).
 from agents.model.index_max import max_by_index
+from agents.model.op_reduction import incoming_principled
 from agents.model.pair_outcome import GHOST_TYPE_IDX as _GHOST_TIDX, PAIR_OUTCOME_IDX
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
@@ -210,7 +215,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                  reduce_how: str = "hard_max",
                  drop_renders: bool = False,
                  believed_lean: bool = False,
-                 speed_physics: bool = False):
+                 speed_physics: bool = False,
+                 op_reduction: str = "max"):
         super().__init__()
         # gen3_op_lean_forward_v1 (v86, design_op_tensors step 3): `drop_renders` removes the three
         # RENDER regions (outgoing matrix / incoming matrix / OAX) from the flat forward block — they
@@ -297,6 +303,15 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # gen-3 order rules (`move_order`, `damage_op_speed`) instead of `_DMG_SPEED_SCALE`'s logistic. Off (the
         # production default) registers nothing and runs nothing new: byte-identical.
         self.speed_physics = bool(speed_physics)
+        # gen3_op_reduction_principled_v1 (`--op-reduction`, architecture audit F6b): `max` (production) keeps every
+        # per-channel hard maximum over THEIR believed moves; `principled` replaces each with the α-weighted
+        # EXPECTATION (one mixture per attacker, every channel) and adds the noisy-OR KO worst case
+        # (`op_reduction.py`). No parameter here; `max` runs nothing new (byte-identical).
+        from agents.model.op_reduction import OP_REDUCTION_MODES
+        if op_reduction not in OP_REDUCTION_MODES:
+            raise ValueError(f"DamageOperator op_reduction={op_reduction!r} — one of {OP_REDUCTION_MODES}")
+        self.op_reduction = op_reduction
+        self.op_principled = op_reduction == "principled"
         self.qc_item_num = QUICK_CLAW_ITEM_NUM
         # Quick Claw is BANNED in gen3ou (`move_order.quick_claw_live` reads the format spec; owner + master 2026-10-07):
         # the rule stays implemented, and is OFF for the format the model plays.
@@ -474,6 +489,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
     def last_tensors(self) -> Optional['OpTensors']: return self.stash.tensors
     @property
     def last_raw_tensors(self) -> Optional['OpTensors']: return self.stash.raw_tensors
+    @property
+    def last_worst_rows(self) -> Optional[torch.Tensor]: return self.stash.worst_rows
 
     def _opp_candidate_weights(self, ctx: 'ExtractorContext',
                                move_belief_logits: torch.Tensor) -> torch.Tensor:
@@ -914,6 +931,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         w_all = (self._opp_candidate_weights(ctx, move_belief_logits) if fixed_moves is None
                  else fixed_moves.w_all * self.HP_CAND_MASK[None, :])                           # [B, n_moves]
         self.stash.w_all = w_all                     # gen3_op_candidate_dedup_v1: same-forward reuse
+        # gen3_op_reduction_principled_v1: the attacker's TOTAL presence over the WHOLE move axis, taken before any
+        # top-K cut (a cut candidate is unpriced mass, never renormalised away). None under `max`.
+        w_total = w_all.sum(dim=-1, keepdim=True) if self.op_principled else None              # [B,1]
 
         # gen3_topk_candidates_v1: TRUNCATE the candidate axis to the top-K of the MOVE BELIEF, no
         # tail bound. The op used to price ALL ~400 move-nums per defender even though the opponent
@@ -973,40 +993,53 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # [B,6,C] multiplies per forward. Keeping the per-channel MASKED tensors additionally lets
         # `_chan_acc` reuse the exact tensor its channel max was taken from. Same operands, same order,
         # same masks ⇒ bit-identical.
-        wl, wh, wc, wk = wb * low_frac, wb * high_frac, wb * crit_frac, wb * ko_ramp   # [B,6,C] each
-        wh_p, wh_s = wh * phys_mask, wh * spec_mask
-        # gen3_fm_index_max_v1 (X5) + audit F6a (every configuration since the version break, config v144, part 2):
-        # the ten channel maxima, each selected BY INDEX (`max_by_index`: the value is bit-identical to `amax`,
-        # the backward is a scatter at the argmax, never an equality with a recomputed tensor — the compiled
-        # backward of the `amax` spelling was NaN, F-XC-4). gen3_unified_choice_band_v1: the CB-CONDITIONAL
-        # physical tail — the PHYSICAL-channel high-roll + P(OHKO) computed with the opp Atk ×1.5 (special is
-        # CB-invariant, so only the physical max is exposed, paired with p_cb below).
-        phys_low, spec_low = max_by_index(wl * phys_mask), max_by_index(wl * spec_mask)
-        phys_high, spec_high = max_by_index(wh_p), max_by_index(wh_s)
-        phys_crit, spec_crit = max_by_index(wc * phys_mask), max_by_index(wc * spec_mask)
-        phys_pko, spec_pko = max_by_index(wk * phys_mask), max_by_index(wk * spec_mask)
-        phys_high_cb = max_by_index((wb * high_cb) * phys_mask)                                  # [B,6]
-        phys_pko_cb = max_by_index((wb * ko_cb) * phys_mask)                                     # [B,6]
-        # PER-CHANNEL accuracy + PROVENANCE of the dominant (max belief-weighted high-roll) believed move.
-        # accuracy is gathered COHERENTLY at the channel's dominant-damage move (the one the rolls describe),
-        # so {pko, accuracy} parameterize that threat's full outcome distribution. provenance is the dominant
-        # move's belief weight (1.0 ≈ a REVEALED/pinned move, <1.0 = a usage-prior GUESS). argmax detached;
-        # the gathered (acc fixed-buffer / belief weight) values carry the right gradient.
-        acc_exp = acc_all[:, None, :].expand(-1, TEAM_SIZE, -1)                                  # [B,6,C]
+        if self.op_principled:
+            # gen3_op_reduction_principled_v1 (architecture audit F6b): ONE mixture per channel family — the
+            # α-weighted EXPECTATION (α = w / the attacker's total presence) in every channel, the α-weighted
+            # accuracy and provenance of the DAMAGING moves where max read them at another channel's argmax, and
+            # the noisy-OR P(some move KOs) per channel as the worst case (stashed, delivered by the extractor's
+            # `op_worst_proj`). No argmax, no max: a tie between candidates is no tie here.
+            (phys_low, phys_high, phys_crit, phys_pko, phys_acc, spec_low, spec_high, spec_crit, spec_pko,
+             spec_acc, provenance, phys_high_cb, phys_pko_cb, worst_rows) = incoming_principled(
+                w_all, w_total, low_frac, high_frac, crit_frac, ko_ramp, acc_all, phys_all, high_cb, ko_cb)
+            self.stash.worst_rows = (worst_rows * defender_alive[:, :, None]
+                                     * has_opp[:, None, None])                                     # [B,6,2]
+            acc_exp = acc_all[:, None, :].expand(-1, TEAM_SIZE, -1)                              # [B,6,C]
+        else:
+            wl, wh, wc, wk = wb * low_frac, wb * high_frac, wb * crit_frac, wb * ko_ramp   # [B,6,C] each
+            wh_p, wh_s = wh * phys_mask, wh * spec_mask
+            # gen3_fm_index_max_v1 (X5) + audit F6a (every configuration since the version break, config v144, part 2):
+            # the ten channel maxima, each selected BY INDEX (`max_by_index`: the value is bit-identical to `amax`,
+            # the backward is a scatter at the argmax, never an equality with a recomputed tensor — the compiled
+            # backward of the `amax` spelling was NaN, F-XC-4). gen3_unified_choice_band_v1: the CB-CONDITIONAL
+            # physical tail — the PHYSICAL-channel high-roll + P(OHKO) computed with the opp Atk ×1.5 (special is
+            # CB-invariant, so only the physical max is exposed, paired with p_cb below).
+            phys_low, spec_low = max_by_index(wl * phys_mask), max_by_index(wl * spec_mask)
+            phys_high, spec_high = max_by_index(wh_p), max_by_index(wh_s)
+            phys_crit, spec_crit = max_by_index(wc * phys_mask), max_by_index(wc * spec_mask)
+            phys_pko, spec_pko = max_by_index(wk * phys_mask), max_by_index(wk * spec_mask)
+            phys_high_cb = max_by_index((wb * high_cb) * phys_mask)                                  # [B,6]
+            phys_pko_cb = max_by_index((wb * ko_cb) * phys_mask)                                     # [B,6]
+            # PER-CHANNEL accuracy + PROVENANCE of the dominant (max belief-weighted high-roll) believed move.
+            # accuracy is gathered COHERENTLY at the channel's dominant-damage move (the one the rolls describe),
+            # so {pko, accuracy} parameterize that threat's full outcome distribution. provenance is the dominant
+            # move's belief weight (1.0 ≈ a REVEALED/pinned move, <1.0 = a usage-prior GUESS). argmax detached;
+            # the gathered (acc fixed-buffer / belief weight) values carry the right gradient.
+            acc_exp = acc_all[:, None, :].expand(-1, TEAM_SIZE, -1)                                  # [B,6,C]
 
-        # `wfc` is the SAME masked tensor whose amax already produced this channel's `phys_high`/
-        # `spec_high` above, so both are passed in rather than recomputed (the old form rebuilt the
-        # product AND re-ran the amax per channel).
-        def _chan_acc(wfc: torch.Tensor, chan_max: torch.Tensor) -> torch.Tensor:
-            dom = wfc.argmax(dim=-1, keepdim=True)                                               # [B,6,1]
-            acc = torch.gather(acc_exp, -1, dom).squeeze(-1)                                     # [B,6]
-            return torch.where(chan_max > eps, acc, torch.zeros_like(acc))                       # 0 if no threat
-        phys_acc = _chan_acc(wh_p, phys_high)
-        spec_acc = _chan_acc(wh_s, spec_high)
+            # `wfc` is the SAME masked tensor whose amax already produced this channel's `phys_high`/
+            # `spec_high` above, so both are passed in rather than recomputed (the old form rebuilt the
+            # product AND re-ran the amax per channel).
+            def _chan_acc(wfc: torch.Tensor, chan_max: torch.Tensor) -> torch.Tensor:
+                dom = wfc.argmax(dim=-1, keepdim=True)                                               # [B,6,1]
+                acc = torch.gather(acc_exp, -1, dom).squeeze(-1)                                     # [B,6]
+                return torch.where(chan_max > eps, acc, torch.zeros_like(acc))                       # 0 if no threat
+            phys_acc = _chan_acc(wh_p, phys_high)
+            spec_acc = _chan_acc(wh_s, spec_high)
 
-        dom_idx = wh.argmax(dim=-1, keepdim=True)                                                # [B,6,1] (overall)
-        provenance = torch.gather(w_all[:, None, :].expand(-1, TEAM_SIZE, -1), -1, dom_idx).squeeze(-1)
-        provenance = torch.where(wh.amax(dim=-1) > eps, provenance, torch.zeros_like(provenance))
+            dom_idx = wh.argmax(dim=-1, keepdim=True)                                                # [B,6,1] (overall)
+            provenance = torch.gather(w_all[:, None, :].expand(-1, TEAM_SIZE, -1), -1, dom_idx).squeeze(-1)
+            provenance = torch.where(wh.amax(dim=-1) > eps, provenance, torch.zeros_like(provenance))
         # P(outspeed): our mon's REAL speed vs the opp active's fast-tail speed (252/+nat) — a per-mon
         # point estimate (paralysis/boosts not modelled in v1). Logistic over the stat difference.
         our_spe = (2.0 * d_base[..., 5] + iv[..., 5] + ev[..., 5] / 4.0 + 5.0) * nat[..., 4]     # [B,6]

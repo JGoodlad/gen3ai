@@ -167,7 +167,7 @@ Rules to preserve:
 | the architecture constants | `arch_constants.py` |
 | the extractor: `__init__` · the `last_*` surface · `forward_internal` · the class + `forward` | `extractor_build.py` · `extractor_api.py` · `extractor_forward.py` · `features_extractor.py` (the re-export HUB) |
 | the phases | `extractor_ctx.py` · `encoders.py` · `team_transformer.py` · `pools.py` · `belief_heads.py` · `projection.py` |
-| the op | `damage_op.py` · `index_max.py` (`max_by_index`, every gradient-path max — a leaf) · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` · `damage_op_speed.py` (`--speed-physics on`'s inputs) · `move_order.py` (THE move-order rule: priority bracket + speed physics) · `damage_kinds.py` (the non-formula damage + Beat Up's exact party terms every kernel applies) · `status_rules.py` (the incoming side / clause status rule the op and the move-resolution family share; whether a clause is in force is `agents.gen3_data.format_spec`'s call, never a constant) |
+| the op | `damage_op.py` · `index_max.py` (`max_by_index`, every gradient-path max — a leaf) · `op_reduction.py` (`--op-reduction principled`: the α-weighted expectation + the noisy-OR worst case that replace the maxima over THEIR believed moves — a leaf) · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` · `damage_op_speed.py` (`--speed-physics on`'s inputs) · `move_order.py` (THE move-order rule: priority bracket + speed physics) · `damage_kinds.py` (the non-formula damage + Beat Up's exact party terms every kernel applies) · `status_rules.py` (the incoming side / clause status rule the op and the move-resolution family share; whether a clause is in force is `agents.gen3_data.format_spec`'s call, never a constant) |
 | the lookup tables, in LAYER order | `damage_tables.py` → `belief_tables.py` → `dex_ids.py` |
 | the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` |
 | the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` · the move-resolution family that replaces them under `--move-resolution on` (`move_resolution.py` · `move_resolution_rules.py` · `move_resolution_tables.py`) |
@@ -387,6 +387,12 @@ lookup, a constant, an observation indicator, a `no_grad` bracket, a diagnostic)
 [`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md) "The op's MAXIMA". Its argmax is
 K9(b)'s one `MAX_VALUE` EXACT site (`selection_sites`; the index may only gather its own operand —
 `selection_sites_test` pins it). Detail: `designs/training/compile_flags.md`.
+**A max over THEIR believed candidates is a `--op-reduction` site** (`gen3_op_reduction_principled_v1`, audit F6b):
+spell it `op_reduction.believed_reduce(w · v, w_total)` (`max` → this same `max_by_index`, bit for bit;
+`principled` → the α-weighted expectation), never a bare `max_by_index`, or the `principled` arm silently keeps
+your max. A max over OUR moves stays a max. Keep the `max` expression VERBATIM — dynamo names graph nodes after
+local variables, so a renamed temporary changes the production graph hash
+([`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md) "ONE switch").
 
 🚨 **A third: every FLOAT attention bias reaches SDPA through `dense_attn_bias`** (`gen3_dense_attn_bias_v1`,
 F-ST-8). Under Inductor, a bias built by in-place slice writes (`EdgeBias._write_block`'s head-innermost

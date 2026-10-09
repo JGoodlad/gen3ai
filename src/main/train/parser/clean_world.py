@@ -217,6 +217,17 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "turns. 'off' (default; production): builds nothing. 'v1': the zero-init "
                              "ObsFactsInject adds each fact to its entity's token (under --token-encoding static "
                              "the screens go to the side board tokens). STRUCTURAL, version-checked, fresh-only.")
+    from agents.model.op_reduction import OP_REDUCTION_MODES
+    parser.add_argument("--op-reduction", "--op_reduction", dest="op_reduction",
+                        choices=OP_REDUCTION_MODES, default=None,
+                        help="Architecture audit F6b's PRINCIPLED OPERATOR REDUCTIONS (gen3_op_reduction_principled_v1, "
+                             "v146; designs/endstate/design_arch_audit.md F6). 'max' (default; production): the damage "
+                             "operator collapses the opponent's believed moves with a hard maximum taken separately per "
+                             "channel (each channel may describe a different move), byte-identical. 'principled': every "
+                             "such maximum becomes the alpha-weighted EXPECTATION (alpha = each attacker's move "
+                             "presence normalised; one mixture for every channel), and the noisy-OR P(some move of "
+                             "theirs KOs this mon) is added to our mon tokens through a zero-init projection. "
+                             "STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

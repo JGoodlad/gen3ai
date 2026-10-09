@@ -69,6 +69,7 @@ CTOR_KWARGS_V96 = frozenset({
     "policy_readout",
     "move_resolution",
     "speed_physics",
+    "op_reduction",
     "obs_facts",
 })
 

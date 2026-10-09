@@ -125,6 +125,7 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "history_events": ("EventSeats",),
     "cls_pool": ("CLSPool",),
     "prefuse_proj": ("prefuse_proj",),
+    "op_worst_proj": ("op_worst_proj",),
     "obs_facts_inject": ("ObsFactsInject",),
     "assembler": ("ProjectionAssembler",),
     "value_entity_pool": ("UnifiedValueReadout",),
@@ -555,6 +556,14 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                "_DMG_PER_MON", via="prefuse_proj", zero_init=True,
                                note="per-our-mon incoming row; the ONE absolute-magnitude route "
                                     "into the trunk"))
+    # gen3_op_reduction_principled_v1 (`--op-reduction principled` only): the noisy-OR KO worst case per our mon.
+    if getattr(fe, "op_worst_proj", None) is not None:
+        from agents.model.op_reduction import OP_WORST_DIM
+        for i in range(T):
+            edges.append(_edge("damage_op", f"our_mon[{i}]", "content", OP_WORST_DIM, "OP_WORST_DIM",
+                               via="op_worst_proj", zero_init=True,
+                               note="P(some physical / special move of theirs KOs this mon) — the noisy-OR "
+                                    "worst case beside the incoming row's expectation"))
     if fe.move_belief is not None:
         for j in range(T):
             edges.append(_edge("move_belief", f"opp_mon[{j}]", "content", D,

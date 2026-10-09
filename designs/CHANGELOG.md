@@ -13138,3 +13138,41 @@ archived runs was DROPPED before it was built. Design note: `designs/prober/batt
 - **Bug fixed:** `ProbeModel.damage_op_view` decoded the DamageOperator's matrices on a production
   checkpoint, where `op_drop_renders` computes but does not serialize them — it read past the row's end
   and `/analyze`'s operator panel was silently ABSENT on every production-arch checkpoint.
+## 2026-10-08 — v146: the op's PRINCIPLED REDUCTIONS behind `--op-reduction` (`gen3_op_reduction_principled_v1`, architecture audit F6b; OFF in production, `max` byte-identical)
+
+Owner, 2026-10-08: "compute the FACTS exactly; the trunk's attention does the judgment" — screened with
+`--token-encoding static`, `--move-resolution on` and `--speed-physics on` as ONE bundle vs production,
+NON-INFERIORITY, split on failure.
+
+- **`agents/model/op_reduction.py` (new, a leaf):** `presence_alpha`, `expectation`, `noisy_or`, `believed_reduce`,
+  `incoming_principled`. Under `--op-reduction principled` every per-channel hard maximum over the opponent's
+  believed moves becomes the α-weighted EXPECTATION with ONE α per attacker (`α = w / Σ_m w_m`, the presence over the
+  WHOLE move axis — top-K-cut mass unpriced, never renormalised away) — no channel taken from a different move than
+  its neighbours — and the noisy-OR P(some move KOs) is added as the worst case. α is the presence belief (R1
+  `belief_mean`): the flat pointer's α is T2 and the op T1 (the tier contract), and the flat α's rows already reach
+  the pointer cells.
+- **Sites (31 replaced):** the incoming per-mon row's ten channel maxima, its argmax-picked `acc` ×2 / `provenance`
+  and the provenance gate (now `Σ α·acc·chan·1[damages j]` and `Σ α·w·1[damages j]`); C1b ×2, C2 ×1, C3 ×1, D4 ×4
+  (`believed_reduce`); the E5 tail's worst-phys/spec ×6 (the tail's expectation); `p_pur_vs_us` ×2 + OTHER's
+  `torch.maximum` (the noisy-OR over the mons). Kept (13): maxima over OUR moves (C1 ×4, D2 ×2, the outgoing status
+  landing ×2), the per-move secondary-column max, the uncalled belief-off `discrete_incoming_status` pair, the dead
+  `_chan_max`, `pair_reduce`'s inert pool.
+- **Width:** the flat op block unchanged (138, `out_gain` 29). The noisy-OR row `[P(phys KO), P(spec KO)]` per our mon
+  (`op.last_worst_rows`, `[B,6,2]`) rides ONE zero-init, bias-free `IsolatedLinear` `op_worst_proj` (2 → 128, +256
+  parameters) beside `prefuse_proj`, built LAST with no RNG draw — every other initial byte equals `max`'s.
+- **Plumbing:** registry row (structural, cli, v146, requires `damage_op`; `'max'` joins `OFF_STRINGS`), parser +
+  `_resolve`, `ModelVersion` field / `check_compatible` / construct / migration (v145 → `"max"`), snapshot surfaces,
+  production mirror `"max"`, `selection_sites` (the `high > 0` damaging-candidate threshold, MARGIN `zero_exact`; the
+  constructor's mode compare), tier contract + delivery graph, flag census. No `ARCH_SIGNATURE` / floor change.
+- **Identity:** `max`'s production extractor dynamo graph (`8b376785…`, 20,162 lines), state_dict and outputs equal
+  the parent's, and the bundle's too; the K9 learner golden unchanged.
+- **Measured (CPU):** +256 parameters; extractor matmul FLOPs +0.005 % / row, element ops +0.03 %; eager wall within
+  noise. K9(b) at the u1480 static-screen weights: excluded 10.4 % → 7.9 % before the flip-judge, 3.3 % → 2.1 % after;
+  the dominant-move `argmax` exclusions (7 rows) are gone. CPU `--debug` smokes pass (principled; the bundle).
+- **Tests:** `op_reduction_test.py` (the hand-computed expectation, the noisy-OR at presence 0 / 1 with a finite
+  gradient, COHERENCE on a planted row whose maxima pick three different moves, permutation invariance, a swapped tie
+  leaves everything unchanged and splits the gradient, `believed_reduce`'s `max` identity),
+  `op_reduction_extractor_test.py` (the one-lever init on a real SB3 build, every replaced kernel reads the mode and
+  every kept one does not, the E5 tail, C1b on a planted Amnesia row, the worst row's gating and route).
+- **Not built:** a crit-KO noisy-OR; noisy-OR columns at the edge kernels; the optional learned E5 bench pool.
+  `designs/research_state/measurements/op_reduction_f6b_2026-10-08/`.

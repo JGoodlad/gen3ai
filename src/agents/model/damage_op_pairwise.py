@@ -58,6 +58,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
 )
 
 from agents.model.index_max import max_by_index
+from agents.model.op_reduction import believed_reduce, noisy_or
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, beatup_swap, gather_beatup,
                                        gather_bp, gather_nonformula, nonformula_rolls, override_rolls)
 
@@ -352,6 +353,20 @@ class DamageOperatorPairwise:
         bu_k = gather_beatup(self, topk_idx)                                         # [B,6,K]
         return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate, nf_k, atk_cur_j, bu_k
 
+    def _attacker_total(self, ctx: 'ExtractorContext',
+                        move_belief_logits: torch.Tensor) -> Optional[torch.Tensor]:
+        """gen3_op_reduction_principled_v1: each opp mon's TOTAL move presence over the whole move axis `[B,6]`
+        — the denominator of its α (`op_reduction.believed_reduce`), so a candidate cut off the kernels' top-K is
+        unpriced mass, never renormalised away. None under `--op-reduction max` (the legacy hard max needs none).
+        X5: the roster's fixed-mass presence (Σ = 4 on a full set); else the sigmoid posterior the kernels gather."""
+        if not self.op_principled:
+            return None
+        _x5 = self.stash.x5
+        if _x5 is not None:
+            tot: torch.Tensor = _x5.move_w.sum(dim=-1)                                   # [B,6]
+            return tot
+        return (torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]).sum(dim=-1)
+
     def _active_defender(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, ...]:
         """Consequence-kernel defender block (C2; C1b/C3 keep inline variants — C1b needs the
         UNFOLDED stats to fold per-world stages itself): OUR ACTIVE's real-spread stats with
@@ -449,6 +464,7 @@ class DamageOperatorPairwise:
         # --- burn: mon j's worst believed PHYSICAL hit on our active, Atk halved ---
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
          att_gate, nf_k, atk_cur_j, bu_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+        w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6] | None (max)
         def_c, spd_c, maxhp, cur_hp, at1, at2, amul = self._active_defender(ctx)
         # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count vs OUR active's BASE Def.
         bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                      # [B], [B]
@@ -478,7 +494,7 @@ class DamageOperatorPairwise:
             dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()
             high, _l, _c, _k = override_rolls(self._rolls(dmg_ns, screen, maxhp[:, None, None],
                                                           cur_hp[:, None, None], acc_k, eps), nf)  # [B,6,K]
-            return max_by_index(w_k * high * mask)                                  # [B,6]
+            return believed_reduce(w_k * high * mask, w_tot)                        # [B,6]
 
         d_in_phys = ((_worst(0.5, phys_mask) - _worst(1.0, phys_mask))[:, None, :]
                      * is_brn[:, :, None])                                           # [B,4,6] ≤0
@@ -715,8 +731,10 @@ class DamageOperatorPairwise:
                               maxhp[:, None, None, None], atk_cur_j[:, None, :, None],
                               eff[:, None], acc_k[:, None], eps)
         high, _low, _crit, ko = override_rolls((high, _low, _crit, ko), nf)
-        worst_high = max_by_index(w_k[:, None] * high)                              # [B,W,6]
-        worst_pko = max_by_index(w_k[:, None] * ko)
+        w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6] | None (max)
+        w_tot = None if w_tot is None else w_tot[:, None]                            # [B,1,6]
+        worst_high = believed_reduce(w_k[:, None] * high, w_tot)                    # [B,W,6]
+        worst_pko = believed_reduce(w_k[:, None] * ko, w_tot)
         d_high = worst_high[:, 1:] - worst_high[:, 0:1]                              # [B,4,6]
         d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]
         our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()       # [B]
@@ -806,7 +824,9 @@ class DamageOperatorPairwise:
                               maxhp[:, None, None, None], atk_cur_j[:, None, :, None],
                               eff[:, None], acc_k[:, None], eps)
         _h, _l, _c, ko_w = override_rolls((_h, _l, _c, ko_w), nf)
-        worst_pko = max_by_index(w_k[:, None] * ko_w)                               # [B,W,6]
+        w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6] | None (max)
+        worst_pko = believed_reduce(w_k[:, None] * ko_w,
+                                    None if w_tot is None else w_tot[:, None])      # [B,W,6]
         d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]                                 # [B,4,6]
         # --- Rest's deterministic self-sleep cost (our OWN ability → exact, never a prior) ---
         own_eb = self.ABILITY_IS_EARLYBIRD[ctx.ability1_ids[ar, ctx.our_active_idx]]  # [B]
@@ -1020,9 +1040,11 @@ class DamageOperatorPairwise:
         high, _low, _crit, ko = override_rolls((high, _low, _crit, ko), nf)
         wb = w_k[:, None, :, :]
         pm = phys_k[:, None, :, :]
+        w_tot = self._attacker_total(ctx, move_belief_logits)                          # [B,6j] | None (max)
+        w_tot = None if w_tot is None else w_tot[:, None, :]                           # [B,1,6j]
         cells = torch.stack([
-            max_by_index(wb * high * pm), max_by_index(wb * high * (1.0 - pm)),
-            max_by_index(wb * ko * pm), max_by_index(wb * ko * (1.0 - pm)),
+            believed_reduce(wb * high * pm, w_tot), believed_reduce(wb * high * (1.0 - pm), w_tot),
+            believed_reduce(wb * ko * pm, w_tot), believed_reduce(wb * ko * (1.0 - pm), w_tot),
         ], dim=-1)                                                                     # [B,6i,6j,4]
         return cells * def_alive[:, :, None, None] * att_gate[:, None, :, None]
 
@@ -1159,15 +1181,23 @@ class DamageOperatorPairwise:
         _x5 = self.stash.x5
         if _x5 is None:
             w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
-            p_pur_vs_us = max_by_index(w_all[:, :, pur] * alive_j, keepdim=True)     # [B,1]
+            p_pur_vs_us = (noisy_or(w_all[:, :, pur] * alive_j, keepdim=True) if self.op_principled
+                           else max_by_index(w_all[:, :, pur] * alive_j, keepdim=True))     # [B,1]
         else:
             # X5 (U3 part 3): a class-M max over the opponent MONS (§9 M2 = C) — each live mon's Pursuit
             # presence (its fixed-mass move presence; 1 revealed) scaled by the MON's presence (1 revealed,
             # π a hypothesis).
             alive_j = _x5.alive
-            p_pur_vs_us = max_by_index(_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j, keepdim=True)
-            if _x5.other_any is not None:   # OTHER enters the max with presence 1 − Π(1 − π) (F4 (b))
-                p_pur_vs_us = torch.maximum(p_pur_vs_us, (_x5.other_any * _x5.other_pursuit)[:, None])
+            if self.op_principled:
+                # gen3_op_reduction_principled_v1: P(SOME mon of theirs holds Pursuit) — the noisy-OR over the
+                # mons (and OTHER) of the same presence products the max read; max kept the likeliest holder's.
+                p_pur_vs_us = noisy_or(_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j, keepdim=True)
+                if _x5.other_any is not None:
+                    p_pur_vs_us = 1.0 - (1.0 - p_pur_vs_us) * (1.0 - (_x5.other_any * _x5.other_pursuit)[:, None])
+            else:
+                p_pur_vs_us = max_by_index(_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j, keepdim=True)
+                if _x5.other_any is not None:   # OTHER enters the max with presence 1 − Π(1 − π) (F4 (b))
+                    p_pur_vs_us = torch.maximum(p_pur_vs_us, (_x5.other_any * _x5.other_pursuit)[:, None])
         we_have_pur = ((ctx.all_move_ids[:, :TEAM_SIZE] == pur).any(-1).float()
                        * alive_i).amax(dim=-1, keepdim=True)                      # [B,1]
         eff_i = self.CHART[ctx.type1_ids[:, :TEAM_SIZE]][..., dark]                 * self.CHART[ctx.type2_ids[:, :TEAM_SIZE]][..., dark]             # [B,6]

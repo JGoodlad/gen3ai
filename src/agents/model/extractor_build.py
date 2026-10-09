@@ -118,6 +118,7 @@ class ExtractorBuild(torch.nn.Module):
                  token_encoding: str = "legacy",
                  move_resolution: str = "off",
                  speed_physics: str = "off",
+                 op_reduction: str = "max",
                  obs_facts: str = "off",
                  ):
         super().__init__()
@@ -342,6 +343,17 @@ class ExtractorBuild(torch.nn.Module):
             raise ValueError("speed_physics='on' requires damage_op=True — it is the damage operator's "
                              "P(outspeed) that it replaces; without the op there is nothing to price.")
         self.speed_physics = speed_physics
+        # gen3_op_reduction_principled_v1 (`--op-reduction`; architecture audit F6b): the op's reductions over THEIR
+        # believed moves. 'max' (production) is the legacy per-channel hard maximum, byte-identical; 'principled'
+        # replaces each with the α-weighted expectation and adds the noisy-OR KO worst case (`op_reduction.py`),
+        # delivered to our mon tokens by the zero-init `op_worst_proj` built LAST below.
+        from agents.model.op_reduction import OP_REDUCTION_MODES
+        if op_reduction not in OP_REDUCTION_MODES:
+            raise ValueError(f"op_reduction must be one of {OP_REDUCTION_MODES}, got {op_reduction!r}")
+        if op_reduction == "principled" and not damage_op:
+            raise ValueError("op_reduction='principled' requires damage_op=True — it is the damage operator's "
+                             "reductions over the opponent's believed moves that it replaces.")
+        self.op_reduction = op_reduction
         self.intent_conditional = None
         if intent_conditional:
             self.intent_conditional = IntentConditionalMoveCell(INTENT_COND_MOVE_DIM)
@@ -653,7 +665,8 @@ class ExtractorBuild(torch.nn.Module):
                                          reduce_how=_reduce_how,
                                          drop_renders=op_drop_renders,
                                          believed_lean=op_believed_lean,
-                                         speed_physics=(speed_physics == "on"))
+                                         speed_physics=(speed_physics == "on"),
+                                         op_reduction=op_reduction)
                           if damage_op else None)
         # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
         # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the
@@ -1061,6 +1074,16 @@ class ExtractorBuild(torch.nn.Module):
                 raise ValueError("obs_facts=v1 needs an observation layout that carries the OBS-FACTS "
                                  "block (gen3_obs_facts_v1): this layout predates it")
             self.obs_facts_inject = ObsFactsInject(layout, token_encoding=token_encoding)
+
+        # gen3_op_reduction_principled_v1 (`--op-reduction principled`, architecture audit F6b): the noisy-OR
+        # WORST-CASE row per our mon (`op.last_worst_rows`, [B,6,OP_WORST_DIM]: P(some physical / special move of
+        # theirs KOs it)) joins `prefuse_proj`'s incoming row on our mon tokens through ONE zero-init, bias-free
+        # `IsolatedLinear` — built LAST and drawing no RNG (SB3's orthogonal re-init skips it), so every other
+        # parameter's initial bytes equal the 'max' build's and ON-at-init adds exactly 0. 'max' builds nothing.
+        from agents.model.hypothesis_set import IsolatedLinear as _IsoLin
+        from agents.model.op_reduction import OP_WORST_DIM
+        self.op_worst_proj: Optional[_IsoLin] = (_IsoLin(OP_WORST_DIM, D_MODEL, zero=True, bias=False)
+                                                 if op_reduction == "principled" else None)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

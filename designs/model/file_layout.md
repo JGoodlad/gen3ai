@@ -50,6 +50,7 @@ table exists to prevent:
 | `damage_op_layout.py` | every `_DMG_*` offset/width constant, `OpTensors`, `decode_damage_block` — the block's shape contract |
 | `damage_op.py` | `DamageOperator` (ctor, core roll math, pointer surface, forward) + `OpStashes`; re-exports `max_by_index` |
 | `index_max.py` | LEAF module: `max_by_index(x, dim=-1, keepdim=False)` — THE spelling of every gradient-path value-reduction max in the forward (audit F6a): `amax`'s value bit for bit, gathered at `x.detach().argmax`, so an exact tie sends the whole gradient to the FIRST maximum (declared convention). `selection_sites`' one `MAX_VALUE` EXACT site |
+| `op_reduction.py` | LEAF module (`--op-reduction`, gen3_op_reduction_principled_v1, audit F6b): `presence_alpha`, `expectation`, `noisy_or`, `believed_reduce` (the per-attacker kernels' one reduction: `max_by_index` under `max`, the α-weighted expectation under `principled`) and `incoming_principled` (the incoming per-mon row + the noisy-OR KO worst case `op_worst_proj` delivers) |
 | `damage_op_pairwise.py` | `DamageOperatorPairwise` MIXIN — the 17 `pairwise_*` edge-family cell producers |
 | `selection_sites.py` | K9(b)'s DECLARED inventory of every discrete op in the forward (topk / argmax / comparisons / float→int casts): MARGIN rule or EXACT reason, keyed by source; the AST scan behind it (`gen3_behaviour_tie_exclusion_v1`) |
 | `damage_op_blocks.py` | `DamageOperatorBlocks` MIXIN — the outgoing/incoming/status flat-block builders (incl. the OAX kernel = d2's engine) |

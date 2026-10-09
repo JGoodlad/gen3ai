@@ -530,8 +530,14 @@ class ExtractorForward(ExtractorApi):
             # gen3_op_tensors_views_v1: the op's typed views (set by the forward that just ran)
             # replace every flat-offset slice on the consumer side.
             inc = self.damage_op.last_tensors.incoming_rows  # type: ignore[union-attr]  # per-OUR-mon incoming rows
-            role_tokens = torch.cat(
-                [role_tokens[:, :TEAM_SIZE] + self.prefuse_proj(inc), opp_role], dim=1)  # type: ignore[misc]  # residual (0 at init)
+            if self.op_worst_proj is None:
+                role_tokens = torch.cat(
+                    [role_tokens[:, :TEAM_SIZE] + self.prefuse_proj(inc), opp_role], dim=1)  # type: ignore[misc]  # residual (0 at init)
+            else:
+                # gen3_op_reduction_principled_v1: + the noisy-OR KO worst case per our mon (zero-init, 0 at init).
+                role_tokens = torch.cat(
+                    [role_tokens[:, :TEAM_SIZE] + self.prefuse_proj(inc)  # type: ignore[misc]
+                     + self.op_worst_proj(self.damage_op.last_worst_rows), opp_role], dim=1)  # type: ignore[union-attr]
         else:
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
         # gen3_entity_move_seats_v1 (v54, Stage 1): build the move ENTITY seats and enter them into

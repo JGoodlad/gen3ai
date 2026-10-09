@@ -1,5 +1,19 @@
 # design — the PAIR REDUCTION: replacing the hard max with a typed, learned, swappable operator
 
+> **[STATE 2026-10-08] The R1 rung is BUILT AS THE OP'S OWN REDUCTION behind `--op-reduction principled`**
+> (`gen3_op_reduction_principled_v1`, config v146, architecture audit F6b; OFF in production, byte-identical
+> `max`): every per-channel hard maximum over THEIR believed moves — the incoming per-mon row (§2's D2: the ten
+> channel maxima, and `acc` / `provenance` read at another channel's argmax), C1b / C2 / C3 / D4, the E5 tail and the
+> Pursuit presence — becomes the α-weighted EXPECTATION with ONE α per attacker (`α = w / Σ_m w_m` over the WHOLE
+> move axis: the R1 `belief_mean` of §4, Contract W — no channel axis, no defender axis), plus the noisy-OR WORST CASE
+> `1 − Π_m(1 − w_m · P(KO | m))` per our mon on a new zero-init `op_worst_proj`. So D2 and D3 fall at the op, and
+> D1 is answered with the two quantities D1 names (the expectation and a worst case) instead of `w·d`. The flat
+> opponent pointer's α — the USAGE belief this doc wanted (`α ≠ w`) — is T2 and cannot weight the T1 op (the
+> tier contract; the model leaf's "T1 produces, T2 consumes" rule), so the op carries the PRESENCE rung and the pointer cells keep
+> the usage-weighted rows (`pair_outcome` / the move-resolution family). The `pair_reduce.py` rungs stay inert.
+> Screened in the bundle (static tokens + move resolution + speed physics) as NON-INFERIORITY, split on failure.
+> `designs/endstate/design_arch_audit.md` F6 (as built (b)) is the record; ARCHITECTURE §4 states the facts.
+
 > **[STATE 2026-08-14]** The R1 `belief_mean` rung is LIVE in production, earlier than the
 > window below expected — via `--value-threat-inject` (v64, on in gen-8/9), which forces R1 for
 > its α-weighted row; the op's own reduction stays R0 `hard_max`. The named prerequisite chain

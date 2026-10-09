@@ -553,6 +553,19 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "(no RNG draw); under --token-encoding static the SIDE-class facts (screens) go to the side board "
                    "tokens, never a per-mon token (`obs_facts_inject.FACTS_TOKEN_CLASS`). STRUCTURAL: the module is "
                    "the state_dict delta, so check_compatible compares the value. OFF on the production surface."),
+    ModelFlag("op_reduction", "max", Tier.CLI, Klass.STRUCTURAL, 146,
+              "Architecture audit F6b's PRINCIPLED OPERATOR REDUCTIONS ('max' = the op's per-channel hard maxima over "
+              "the opponent's believed moves, production; 'principled' = the alpha-weighted EXPECTATION in every "
+              "channel (one mixture per attacker, no channel from another move) + the noisy-OR P(some move KOs) "
+              "worst case)",
+              note="Owner 2026-10-08 ('compute the FACTS exactly; the trunk's attention does the judgment'). "
+                   "`op_reduction.py`. alpha = the attacker's presence / its total presence (R1 belief_mean: the "
+                   "flat pointer's alpha is T2 and cannot weight the T1 op). Width-neutral flat block; 'principled' "
+                   "adds ONE zero-init bias-free IsolatedLinear `op_worst_proj` (2 -> 128, built LAST, no RNG draw) "
+                   "carrying the noisy-OR KO row onto our mon tokens, so every other initial byte equals 'max''s. "
+                   "'max' is byte-identical (graph, state_dict, outputs). Screened in the bundle with "
+                   "--token-encoding static, --move-resolution on, --speed-physics on as NON-INFERIORITY.",
+              requires=("damage_op",)),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}
@@ -579,8 +592,9 @@ OFF_VALUES = (False, 0, "off", "none")
 
 #: The OFF spellings of a MODE string. ``'tower'`` is `policy_readout`'s (audit F2, v138): today's flat
 #: policy tower, nothing new built. ``'legacy'`` is `token_encoding`'s OFF state (v139): today's
-#: `PokemonEncoder`. (``'blob'``, `belief_tokens`' OFF state, left with the flag at the X5 version break.)
-OFF_STRINGS: Tuple[str, ...] = ("off", "none", "tower", "legacy")
+#: `PokemonEncoder`. ``'max'`` is `op_reduction`'s (v146, audit F6b): the op's legacy per-channel hard maxima.
+#: (``'blob'``, `belief_tokens`' OFF state, left with the flag at the X5 version break.)
+OFF_STRINGS: Tuple[str, ...] = ("off", "none", "tower", "legacy", "max")
 
 
 def is_enabled(value: Any) -> bool:

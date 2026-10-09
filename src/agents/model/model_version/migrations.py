@@ -486,6 +486,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 143:
         data.setdefault("speed_physics", "off")
         data["config_version"] = 143
+    # v146 (gen3_op_reduction_principled_v1, audit F6b) — `op_reduction`, defaulted: "max" is the only possible
+    # past (reachable: a v145 config sits at the floor).
+    if version < 146:
+        data.setdefault("op_reduction", "max")
+        data["config_version"] = 146
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

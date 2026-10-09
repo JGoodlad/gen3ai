@@ -153,6 +153,7 @@ UNTIERED_CHILDREN = frozenset({
     "embeddings",           # shared tables — a resource, not a phase
     "unpack",               # ObsUnpack: produces the tier-0 INPUT, ahead of every tier
     "prefuse_proj",         # the T1->trunk residual, owned by the root rather than by a phase
+    "op_worst_proj",        # `--op-reduction principled`: its noisy-OR twin beside `prefuse_proj` (same seam)
     "pre_proj_norm", "projection", "activation",
     "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths
 })

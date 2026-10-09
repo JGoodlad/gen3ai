@@ -449,7 +449,8 @@ adds log π of each opponent key (detached; FLOAT key masks in the three `nn` po
 active's MOVE axis reads the move group (`FixedMassMoves`): ONE order (revealed first, then the top
 unrevealed by π_m) gives the E4 seats, the op's top-K seat axis (pair cells, α's seats), the D3 / S3
 cells and the intent operands (no `torch.topk`); the op's incoming maxes weight each candidate by its
-DETACHED fixed-mass presence (the presence-scaled max); a revealed Hidden Power's seat is priced as its
+DETACHED fixed-mass presence (the presence-scaled max; under `--op-reduction principled` that presence
+normalised is the α of an expectation instead, §4); a revealed Hidden Power's seat is priced as its
 typed mixture; the active's E5 seat is OTHER_move — and the active's move REINJECTION soft-embeds its
 row by that detached presence (the other slots keep sigmoid weights). The op's opponent-MON axis reads an
 `OpRoster` (`hypothesis_tokens.py`): the op runs on the HYPOTHESIS context, so a hidden slot is priced as
@@ -657,7 +658,7 @@ species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
 | global | 12 | `TOKEN_TYPE_GLOBAL` | `[our_ctx, opp_ctx, non_matchup_rest]` → `global_proj` |
 | **E3** our active's moves | 13–16 | `TOKEN_TYPE_OUR_MOVE` | move token in **request order**, `move_seat_proj` 32→128 |
 | **E4** opp threat moves | 17–22 | `TOKEN_TYPE_THEIR_THREAT` | `threat_seat_proj([latent(32), w, acc, is_phys])`, K = `entity_topk_seats` = 6 |
-| **E5** tail threats | 23–28 | `TOKEN_TYPE_THEIR_THREAT` + `tail_marker` | per-opp-mon beyond-top-K residual `tail_proj([p_tail, worst_phys, worst_spec, revealed])`; the opponent ACTIVE's E5 seat is X5's OTHER_move token |
+| **E5** tail threats | 23–28 | `TOKEN_TYPE_THEIR_THREAT` + `tail_marker` | per-opp-mon beyond-top-K residual `tail_proj([p_tail, worst_phys, worst_spec, revealed])`; the opponent ACTIVE's E5 seat is X5's OTHER_move token. `p_tail` = the tail's summed presence; `worst_phys` / `worst_spec` = a presence-scaled max over the tail of `π·BP/150·acc` per category (production, `--op-reduction max`), or under `principled` the tail's α-weighted EXPECTATION `Σ u_m·BP/150·acc` (`u` = the tail presence renormalised; §4) |
 | **OTHER_species** (X5) | 29 | `TOKEN_TYPE_THEIR_TEAM` | the hypothesis set's tail beyond the hypotheses, one seat (keyed by its log-mass) |
 | **event seats** (`history_events`, ON) | 30–61 | `TOKEN_TYPE_HISTORY` + `event_marker` | the event window's `EVENT_WINDOW_N` = 32 records, one seat each, most-recent LAST (`EventSeats`, `team_transformer.py`: per-column embeddings + scalars → `LayerNorm(proj(row))`); PAD rows are key-masked |
 
@@ -1414,10 +1415,49 @@ re-exports it; architecture audit F6a): `max_by_index(x, dim, keepdim)` gathers 
 to the FIRST maximum (the declared convention; `amax` splits it). It is the spelling of the op's ten incoming
 channel maxima in every configuration (belief on or off), the pairwise kernels (setup deltas, worst/best
 cells, the four channel maxima, `p_pur_vs_us`), the status-landing maxima, the E5 tail's worst-phys/spec and
-`pair_reduce`'s inert deepsets pool. `amax` / `amin` remain only off any gradient path: the provenance gate
+`pair_reduce`'s inert deepsets pool — under `--op-reduction max`; `principled` replaces every one of them that reduces
+THEIR believed moves with an expectation / noisy-OR (no index, no tie) and keeps the rest. `amax` / `amin` remain only off any gradient path: the provenance gate
 operand (a comparison), the cure/cleric table lookups, the cheapest-undo path minimum (constants), the
 `we_have_pur` observation indicator, `fixed_size_tau`'s `no_grad` bracket and the move-tie-gap diagnostics.
 `selection_sites` declares the one `MAX_VALUE` EXACT site at `index_max`.
+
+**`--op-reduction` — the op's reductions over THEIR believed moves** (`gen3_op_reduction_principled_v1`, config
+v146, architecture audit F6b, `agents/model/op_reduction.py`; production `max`). Under `max` every reduction of the
+opponent's believed-move axis is the presence-scaled hard maximum `max_c(w_c · v_c)`, taken separately per channel
+and per defender, with `acc` and `provenance` read at the argmax of the high roll — so one row can describe several
+moves at once (`design_pair_reduction.md` defect D2). Under `principled` each such site reads TWO coherent facts:
+
+* the **α-weighted EXPECTATION** `Σ_c α_c · v_c` with ONE α per attacker, shared by every channel and every
+  defender: `α = w / Σ_m w_m`, the attacker's presence normalised by its presence over the WHOLE move axis (the R1
+  `belief_mean` rung; a candidate cut off a kernel's top-K is unpriced mass, never renormalised away). It is the
+  presence belief, not a click distribution: the flat opponent pointer's α is a T2 quantity scored off the trunk,
+  and the op is T1 (its rows feed the trunk), so it cannot be read here (`tier_contract`); the flat α's own
+  expectation rows reach the pointer cells downstream (`pair_outcome` / the move-resolution family). Width-neutral:
+  the incoming per-mon row's `low` / `high` / `crit` / `pko` per channel become `Σ_c α_c · x_jc · chan_c`; `acc`
+  becomes `Σ_c α_c · acc_c · chan_c · 1[c damages j]` (P(their α-mixed click is a damaging move of that channel that
+  hits mon j)); `provenance` becomes `Σ_c α_c · w_c · 1[c damages j]`; the Choice-Band tail the same expectation of
+  the CB-conditional roll / KO; C1b's `d_high` / `d_pko`, C2's burn and sleep deltas, C3's `d_pko` and D4's four
+  cells the expectation over each attacker's top-K (`op_reduction.believed_reduce`); the E5 tail's `worst_phys` /
+  `worst_spec` the tail's expectation (§2.3).
+* the **noisy-OR WORST CASE** `1 − Π_c (1 − w_c · P(X | c))` for a BINARY event, reading presence exactly as the
+  max did (detached under X5; independence across moves is the declared approximation, exact at presence 0 / 1):
+  per our mon `[P(some physical move of theirs KOs it), P(some special move KOs it)]` (`op.last_worst_rows`
+  `[B,6,2]`, NOT in the flat block — the block, its 29 `out_gain` entries and every slicer are unchanged), carried
+  onto our mon tokens beside `prefuse_proj` by ONE zero-init, bias-free `IsolatedLinear` `op_worst_proj` (2 → 128,
+  256 parameters, built LAST with no RNG draw, so every other initial byte equals `max`'s); and `p_pur_vs_us`
+  becomes P(SOME mon of theirs holds Pursuit) = the noisy-OR over the mons (and OTHER) of the same presence products.
+
+Kept as maxima under both modes (not a reduction over THEIR moves): the reductions over OUR moves (C1's
+`d_best_*`, D2's `best_*`, the outgoing status-landing's `p_major` / `p_immob` — we choose, so the max is our best
+response) and the per-move maximum over a move's own secondary-status columns. Not built: a crit-KO noisy-OR, a
+noisy-OR at the edge kernels, a learned E5 pool. `max` is byte-identical (the production extractor's dynamo graph,
+state_dict and outputs equal the parent's; the K9 learner golden unchanged); the arm is screened with
+`--token-encoding static`, `--move-resolution on` and `--speed-physics on` as ONE bundle, NON-INFERIORITY, split on
+failure. Cost (MEASURED, CPU, 64 real rows, 2026-10-08): +256 parameters (production learner 2,518,937 → 2,519,193 —
+DERIVED: the state_dict delta is exactly `op_worst_proj`), extractor matmul FLOPs +3,072 / row (+0.005 %), other
+element ops +867 / row (+0.03 %), eager CPU forward within noise; K9(b)'s excluded share at the u1480 static-screen
+weights 10.4 % → 7.9 % before the flip-judge and 3.3 % → 2.1 % after it (the dominant-move `argmax` sites are gone;
+`designs/research_state/measurements/op_reduction_f6b_2026-10-08/`).
 
 **The pair-reduction rungs exist but are INERT in production** (`agents/model/pair_reduce.py`,
 `design_pair_reduction.md` §8.1 steps 3–4): `DamageOperator(reduce_how=…)` — constructor-only, no
@@ -1643,6 +1683,7 @@ does nothing given another setting.
 | `obs_facts` | `"off"` | OFF |
 | `op_believed_lean` | `true` | ACTIVE |
 | `op_drop_renders` | `true` | ACTIVE |
+| `op_reduction` | `"max"` | ACTIVE |
 | `opp_belief_cls_k` | `6` | ACTIVE |
 | `opp_belief_slots` | `true` | ACTIVE |
 | `opp_intent` | `true` | ACTIVE |

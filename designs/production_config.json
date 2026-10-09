@@ -56,6 +56,7 @@
   "obs_facts": "off",
   "op_believed_lean": true,
   "op_drop_renders": true,
+  "op_reduction": "max",
   "opp_belief_aux_coef": 0.05,
   "opp_belief_cls_k": 6,
   "opp_belief_slots": true,
