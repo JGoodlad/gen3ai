@@ -115,7 +115,7 @@ class Lease:
 
     def describe(self) -> str:
         since = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(self.started_epoch))
-        exp = (" expires " + time.strftime("%H:%M:%S%z", time.localtime(self.expires_epoch))) if self.expires_epoch else ""
+        exp = (" expires " + time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(self.expires_epoch))) if self.expires_epoch else ""
         note = f" note {self.note!r}" if self.note else ""
         return (f"lease owner {self.owner!r}, holder pid {self.pid}, since {since}{exp}{note}; "
                 f"taken by {self.acquirer_cmd[:120]!r}")
