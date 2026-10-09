@@ -26,6 +26,7 @@ update the topic doc in the same pass as the code.**
 | the opponent-intent readout (X5's flat pointer re-expressed as α / β), its metrics, or a new α consumer | [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md) |
 | the delivery graph, the architecture viewer, where the canonical architecture lives | [`designs/model/architecture_artifacts.md`](../../../designs/model/architecture_artifacts.md) |
 | a type annotation, or the mypy gate's scope | [`designs/model/typing.md`](../../../designs/model/typing.md) |
+| adding, removing or changing a HAND-COMPUTED feature (a quantity our code derives and the model reads: an op row or kernel, a pointer-cell block, a prior table, a board-token fact, a reduction, a critic route, a derived obs column) | update its row in [`designs/endstate/design_hand_computed_features.md`](../../../designs/endstate/design_hand_computed_features.md) in the same commit |
 
 Closed history — **do not update it, do not re-derive a plan from it**:
 [`designs/research_state/claude_md_archive/model_leaf_history.md`](../../../designs/research_state/claude_md_archive/model_leaf_history.md).
