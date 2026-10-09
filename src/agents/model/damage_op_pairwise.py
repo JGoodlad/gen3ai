@@ -140,6 +140,7 @@ class DamageOperatorPairwise:
         SPECIES_EARLYBIRD_PRIOR: torch.Tensor
         SPECIES_SPREAD_PRIOR: torch.Tensor
         SPECIES_TRAP_PRIOR: torch.Tensor
+        SPECIES_TYPE: torch.Tensor
         TYPE_IS_FLYING: torch.Tensor
         TYPE_IS_GHOST: torch.Tensor
         TYPE_IS_PHYS: torch.Tensor
@@ -1156,16 +1157,25 @@ class DamageOperatorPairwise:
         flag, `opp_ability_view`), and otherwise its species' Smogon P(Levitate) (`SPECIES_TRAP_PRIOR[:, 3]`),
         the belief. The fraction is the nominal one (Showdown floors the HP lost).
 
-        Under X5 the caller passes the HYPOTHESIS context: a hidden slot's types / species are its hypothesis'."""
+        The Flying check reads the mon's BASE (species) types, never the obs type columns: a switch-IN happens
+        after the mon left the field and `clearVolatile` reverted its Color Change / Transform / Conversion /
+        Forecast types, so an active Kecleon that turned Flying still pays on its next entry (GIGO fix 2026-10-09).
+
+        Under X5 the caller passes the HYPOTHESIS context: a hidden slot's species is its hypothesis'."""
         chip_table = torch.tensor([0.0, 1.0 / 8, 1.0 / 6, 1.0 / 4], device=ctx.device)
         # --- grounded (the T-family recipe) ---
         our_ab = ctx.ability1_ids[:, :TEAM_SIZE]
         # gen3_op_ability_known_v1: revealed = the `known` flag (an unrevealed id1 is the top-1 PRIOR).
         opp_ab, ab_rev_j, opp_sp = self.opp_ability_view(ctx)                     # [B,6] ×3
-        fly_i = (self.TYPE_IS_FLYING[ctx.type1_ids[:, :TEAM_SIZE]]
-                 + self.TYPE_IS_FLYING[ctx.type2_ids[:, :TEAM_SIZE]]).clamp(max=1.0)
-        fly_j = (self.TYPE_IS_FLYING[ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]]
-                 + self.TYPE_IS_FLYING[ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]]).clamp(max=1.0)
+        # BASE types, from the species (`SPECIES_TYPE`), NOT the obs type columns: those hold a mon's CURRENT types
+        # (Color Change, Transform, Conversion/Conversion 2, Castform's Forecast forme change), and a switch-IN runs
+        # on the mon after `clearVolatile` -> `setSpecies(baseSpecies)` has reverted all of them. A benched mon's
+        # columns already read base; the ACTIVE mon's do not. Under X5 `ctx` is the hypothesis context, whose
+        # `species_ids` are the hypothesis' species.
+        sp_i = ctx.species_ids[:, :TEAM_SIZE]
+        sp_j = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
+        fly_i = (self.TYPE_IS_FLYING[self.SPECIES_TYPE[sp_i]].sum(-1)).clamp(max=1.0)   # [B,6]
+        fly_j = (self.TYPE_IS_FLYING[self.SPECIES_TYPE[sp_j]].sum(-1)).clamp(max=1.0)
         gr_i = (1.0 - fly_i) * (1.0 - self.ABILITY_IS_LEVITATE[our_ab])
         gr_j = (1.0 - fly_j) * (1.0 - (ab_rev_j * self.ABILITY_IS_LEVITATE[opp_ab]
                                        + (1.0 - ab_rev_j) * self.SPECIES_TRAP_PRIOR[opp_sp, 3]))

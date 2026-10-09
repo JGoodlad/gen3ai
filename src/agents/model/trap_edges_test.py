@@ -94,6 +94,9 @@ def test_entry_edge_kernel_invariants():
     ctx.all_move_ids[:, 0, 0] = _pursuit_num()              # our mon 0 carries Pursuit
     ctx.type1_ids[:, 1] = _T2I["FLYING"]                    # our mon 1 is Flying
     ctx.type2_ids[:, 1] = _T2I["FLYING"]
+    # The Spikes rule reads the SPECIES' base types (a switch-in reverts any current-type change), so the
+    # Flying victim must BE a Flying species, not just carry Flying type columns (v148).
+    ctx.species_ids[:, 1] = gen3_data.species.get("skarmory").num
     with torch.no_grad():
         our_c, opp_c = fe.damage_op.pairwise_entry(ctx, fe.last_move_belief_logits)
     assert our_c.shape == (2, TEAM_SIZE, 4) and opp_c.shape == (2, TEAM_SIZE, 4)

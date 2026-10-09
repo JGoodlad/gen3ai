@@ -13254,3 +13254,22 @@ archive read failed.
   build; the versioning. Updated: `static_board_tokens_test.py` (the outgoing route's new shape).
 - **Deferred to a GPU lease (the screen holds it):** compile parity forward + backward on CUDA, T2's CUDA-graph build
   on the new graph, a real two-minute launch, the cost read.
+
+## 2026-10-09 — v148 / `gen3_spikes_entry_base_types_v1`: the Spikes entry rule reads BASE types (GIGO fix; no field, no weight shape)
+
+- **The bug.** `DamageOperator.spikes_entry` (the `x` edge cell's chip + grounded bit, and `--mon-hazard-cost`'s
+  fraction since v147) took Flying immunity from the obs `type1_ids` / `type2_ids` columns, which hold a mon's
+  CURRENT types. Color Change (Kecleon), Transform (Ditto), Conversion / Conversion 2 and Castform's Forecast change
+  them while the mon is active; a switch-IN follows `clearVolatile` -> `setSpecies(baseSpecies)`
+  (`deps/pokemon-showdown` `sim/pokemon.ts`, `sim/battle-actions.ts` `switchIn`: `oldActive.clearVolatile()`), which
+  reverts types and ability. So an active Kecleon that turned Flying read "immune on its next entry".
+- **What was affected.** Only the ACTIVE mon's own cell: a benched mon's columns already read base (the Rust
+  `PMon::switch_out` clears the temporary types). Both the `x` cell and N1. Production's `x` cell changes for such a
+  mon; every other input is byte-identical.
+- **The fix.** The Flying check reads `SPECIES_TYPE[ctx.species_ids]` (the dex table); an X5 hidden slot's species is
+  its hypothesis'. Levitate unchanged (known ability, else the Smogon prior). `MODEL_CONFIG_VERSION` 147 -> 148, a
+  no-field migration branch; no `ARCH_SIGNATURE` or floor change; the state_dict is unchanged.
+- **Open, same shape:** Levitate is read from the CURRENT ability column (Trace / Role Play / Skill Swap / Transform
+  change it while active; a switch-in resets it); no base-ability column exists.
+- **Test (fails on revert):** `static_port_test.py::test_the_spikes_entry_reads_base_types_not_the_current_ones`.
+

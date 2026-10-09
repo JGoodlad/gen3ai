@@ -256,12 +256,17 @@ N1 is added after the op runs (beside OPC, not inside D's MLP), so it reads the 
 within the tier contract. `static_port_test.py` plants a value into `spikes_entry` and sees both move, and checks the
 two agree on constructed boards (Flying, Levitate known, an opponent's Levitate unknown under its prior, a top-1
 prior id that is not a reveal, 0–3 layers). Overlap that stays: N1's fraction column restates the `x` cell's
-`entry_chip`, which OPC (T7) already carries onto every mon, alive-gated; N1's new fact is the layers column. **A
-typechange is NOT handled, by either:** the observation's type columns are the CURRENT types (the Rust `PMon::types`
-returns the temporary types: Color Change, Transform), while a switch-in uses the base types (types reset on
-switching out). So an active Kecleon turned Flying reads "immune on re-entry", wrongly, in both the `x` cell and N1.
-The fix is to read the species' base types (`SPECIES_TYPE`) for the grounded check in `spikes_entry`; it changes the
-production `x` cell (retrain-class), so it is not taken here.
+`entry_chip`, which OPC (T7) already carries onto every mon, alive-gated; N1's new fact is the layers column. **The typechange finding is RESOLVED (v148,
+`gen3_spikes_entry_base_types_v1`, 2026-10-09).** The observation's type columns are a mon's CURRENT types (the Rust
+`PMon::types` returns the temporary types: Color Change, Transform, Conversion, Castform's Forecast), while a
+switch-in follows `clearVolatile` -> `setSpecies(baseSpecies)` (verified in `deps/pokemon-showdown`
+`sim/pokemon.ts` / `sim/battle-actions.ts`), so an active Kecleon turned Flying read "immune on re-entry" in both the
+`x` cell and N1. `spikes_entry` now reads the species' BASE types (`SPECIES_TYPE`, from `ctx.species_ids`; an X5
+hidden slot's species is its hypothesis'). A BENCHED mon's columns were already base (`PMon::switch_out` clears the
+temporary types), so only the ACTIVE mon's own cell was wrong. This changed the production `x` cell for an active
+mon whose current types differ from its species'. **Still open (same shape, ability):** Levitate is read from the
+ability column, which holds the CURRENT ability (Trace, Role Play, Skill Swap, Transform), while a switch-in resets
+it to the base ability; no base-ability column exists in the obs.
 
 ---
 
@@ -349,8 +354,9 @@ the bug.
    the bundle adopts move resolution (P2, P3, P6, P8). This is by design (one-lever screening), but it is stated
    nowhere as a standing exposure.
 4. ~~The in-flight entry-hazard input (N1) duplicates the `x` cell's rule~~ RESOLVED as built (2026-10-09): one
-   rule, `DamageOperator.spikes_entry`, read by both (§3). A typechange (Color Change, Transform) is still read from
-   the current types by both (§3).
+   rule, `DamageOperator.spikes_entry`, read by both (§3). ~~A typechange (Color Change, Transform) is read from the
+   current types~~ RESOLVED (v148, 2026-10-09): the rule reads base types. The current-ABILITY read of Levitate
+   (Trace, Role Play, Skill Swap) remains.
 5. **The evidence base for KEEP is mostly stale or absent.** Of the 88 rows, the ones with a strength reading tied to
    the feature itself are the gen-3 9.6M audits (§4.1, §5.4: STALE per F22), two critic-route dV reads (gen-14), and
    the X5 / static screens (which test bundles, not single rows). Every other row is a correctness gate or
@@ -366,3 +372,4 @@ the bug.
 |---|---|---|---|---|
 | 2026-10-09 | **The doc is created** (owner request: "put an end state doc where we list what we are hand computing instead, so we know what we would add next or attempt to remove") | One always-current ledger of every hand-computed feature the model reads, grouped by where it lives, each with its kind (a exact physics / b narrow-channel fact / c Smogon prior, or J a judgment), status, evidence and candidate action; in-flight work marked; ranked add / remove lists; `src/agents/model/CLAUDE.md` points here | Folding it into ARCHITECTURE.md (which states what IS, not why or what next); one row per tensor (too fine to rank) | owner 2026-10-09; this doc §2 verified against the code at `2e357971` |
 | 2026-10-09 | **N1 / N2 BUILT, OFF; the N1 hazard resolved by ONE rule** (the static port, `gen3_static_port_v1`) | N1 (`--mon-hazard-cost`) and N2 (`--move-actor-state`) built behind their own flags; the Spikes entry rule factored into `DamageOperator.spikes_entry`, read by both the `x` cell and N1 (option (a) of the orchestrator's hazard note); N1 covers BOTH sides (the brief) and is token content after the op; T7's outgoing route is now a set function | a test-only agreement check with two implementations (option (b)); N1 inside D's MLP (ends the X5 dex-table gather) | `design_static_tokens.md` §12; `static_port_test.py` |
+| 2026-10-09 | **The Spikes entry rule reads BASE types** (`gen3_spikes_entry_base_types_v1`, v148; GIGO fix) | `spikes_entry` takes Flying immunity from `SPECIES_TYPE[species_ids]`, not the obs type columns (current types after Color Change / Transform / Conversion / Forecast); changes the production `x` cell for an active mon with changed types | keeping the current-type read (wrong: a switch-in reverts to base); a new base-type obs column (a layout change for a derivable fact) | `deps/pokemon-showdown` `sim/pokemon.ts` `clearVolatile` / `setSpecies`; `static_port_test.py::test_the_spikes_entry_reads_base_types_not_the_current_ones` |

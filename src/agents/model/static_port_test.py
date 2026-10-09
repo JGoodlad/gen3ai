@@ -155,6 +155,36 @@ def test_the_spikes_entry_cost_on_constructed_boards(rows: torch.Tensor) -> None
             assert float(f[b, slot, 1]) == pytest.approx(want_chip, abs=1e-7), (b, slot, "chip column")
 
 
+def test_the_spikes_entry_reads_base_types_not_the_current_ones(rows: torch.Tensor) -> None:
+    """GIGO fix 2026-10-09: the obs type columns hold a mon's CURRENT types (Color Change, Transform, ...), but a
+    switch-IN runs after `clearVolatile` reverted them to the species' (`deps/pokemon-showdown` `sim/pokemon.ts`:
+    `setSpecies(baseSpecies)`). Planted: a Kecleon whose CURRENT type is Flying (base Normal) PAYS the chip, on both
+    sides; a Ditto Transformed into Skarmory (current Steel/Flying, base Normal) PAYS; a real Flying-base Skarmory does
+    NOT even when its current columns read Normal -- the species decides. Fails on a revert to the `type1_ids` /
+    `type2_ids` read."""
+    fe = _policy(mon_hazard_cost="on")[0].policy.features_extractor
+    ctx = _ctx(fe, rows[:1])
+    plan = [  # (slot, species, CURRENT types, expected: pays the chip)
+        (0, "kecleon", ("FLYING",), True),
+        (1, "ditto", ("STEEL", "FLYING"), True),
+        (2, "skarmory", ("NORMAL",), False),
+        (3, "skarmory", ("STEEL", "FLYING"), False),
+        (4, "snorlax", ("NORMAL",), True),
+        (6, "kecleon", ("FLYING",), True),
+        (7, "skarmory", ("NORMAL",), False),
+        (8, "skarmory", ("STEEL", "FLYING"), False),
+    ]
+    for slot, sp, ty, _pays in plan:
+        ctx = _plant(ctx, slot, sp, ty, ability=0, known=True)
+    layers = torch.tensor([[2, 3]], dtype=ctx.spikes_feature.dtype)
+    ctx = dataclasses.replace(ctx, spikes_feature=layers / 3.0)
+    with torch.no_grad():
+        f = mon_hazard_features(fe.damage_op, ctx)
+    for slot, sp, ty, pays in plan:
+        want = (_CHIP[2] if slot < TEAM_SIZE else _CHIP[3]) if pays else 0.0
+        assert float(f[0, slot, 1]) == pytest.approx(want, abs=1e-7), (slot, sp, ty)
+
+
 def test_the_x_cell_and_the_per_mon_fact_read_one_entry_rule(rows: torch.Tensor) -> None:
     """Agreement on the constructed boards (the `x` cell gates by alive / revealed, the fact does not), and the
     single SOURCE: a planted `spikes_entry` reaches both."""

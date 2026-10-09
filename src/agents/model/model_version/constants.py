@@ -533,7 +533,13 @@ from typing import Any, Dict
 #   v145 / v146 `static` record is REFUSED (its weights have no home: no such checkpoint exists, archive scan
 #   2026-10-09); `legacy` stamps through and both new fields migrate to "off". No ARCH_SIGNATURE bump (production is
 #   `legacy`, byte-identical), no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 147
+# v148 (gen3_spikes_entry_base_types_v1; GIGO fix 2026-10-09): no field, no weight shape. `DamageOperator.spikes_entry`
+#   (the `x` edge cell's chip + grounded bit, and `--mon-hazard-cost`'s fraction) decides Flying immunity from the
+#   mon's BASE (species) types, not the obs type columns, which hold CURRENT types (Color Change, Transform,
+#   Conversion, Castform's Forecast): a switch-IN follows `clearVolatile` -> `setSpecies(baseSpecies)`. Production's
+#   `x` cell changes for an ACTIVE mon whose current types differ from its species'; the state_dict is unchanged and
+#   every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 148
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

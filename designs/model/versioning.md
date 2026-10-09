@@ -206,6 +206,12 @@ content's outgoing route a set function) and added two STRUCTURAL fields, `mon_h
 none: every static run is the pinned screen's v143); `legacy` stamps through and both fields default `off`. No
 `ARCH_SIGNATURE` or floor change (production is `legacy`, byte-identical).
 
+**v148 (`gen3_spikes_entry_base_types_v1`, 2026-10-09)** — a forward fix with NO field and no weight shape:
+`DamageOperator.spikes_entry` reads the mon's BASE (species) types for the Flying check, not the obs type columns
+(current types). `_migrate_config` stamps every past config through (`if version < 148`); no `ARCH_SIGNATURE` or floor
+change. Production's `x` cell differs for an ACTIVE mon whose current types differ from its species'. Test:
+`static_port_test.py`.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

@@ -541,7 +541,7 @@ op's amounts — plus two NARROW facts, each a flag of its own, OFF by default (
 v147, from the static diagnostic's H2 / H3): **`--mon-hazard-cost on`** adds to every mon's token (both sides),
 through a zero-init bias-free `IsolatedLinear(2, 128)`, its own side's Spikes layers /3 and the HP fraction it would
 lose switching in, computed by the op's ONE Spikes entry rule `DamageOperator.spikes_entry` (the same function the `x`
-cell reads; on the context the op prices with, so an X5 hidden slot is priced as its hypothesis), after the op content
+cell reads, on the mon's BASE types; on the context the op prices with, so an X5 hidden slot is priced as its hypothesis), after the op content
 and before the trunk; **`--move-actor-state on`** adds our active's HP fraction and status one-hot to its four VALID E3
 seats through a zero-init bias-free `IsolatedLinear(8, 128)` (equivalently zero-init input columns of
 `move_seat_proj`). Both are built LAST with no RNG draw, so each flag's ON build starts byte-equal to its OFF build
@@ -1584,7 +1584,7 @@ E4 `[17:23]`, E5 `[23:29]`, OTHER_species `29`, event seats `[30:62]`.
 | **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; folded by the Rust trackers, log-saturated; **IN the production families string** since gen-12 — the one family whose cell the GPU cannot recompute, since it IS compiled battle history) |
 | **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 3 | `[is_actor, is_target, is_rel]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C; `is_rel` added by `gen3_event_record_v2`): event *e*'s recorded actor/target/REL mon IS mon *m* (species-num equality, side-gated against mirror false-links — actor on the row's side, target on the other, REL on its own `REL_SIDE`; `_event_reference_cells`, pure). **IN the production string** — requires `--history-events`, which is ON (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
-| **x** | each mon × **global** (both sides; its OWN side token 12 / 13 under `static`) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` — `entry_chip` and `grounded` from `DamageOperator.spikes_entry`, the ONE gen-3 Spikes entry rule (1/8, 1/6, 1/4; Flying / Levitate immune, an unrevealed opponent's Levitate its Smogon prior) |
+| **x** | each mon × **global** (both sides; its OWN side token 12 / 13 under `static`) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` — `entry_chip` and `grounded` from `DamageOperator.spikes_entry`, the ONE gen-3 Spikes entry rule (1/8, 1/6, 1/4; Flying / Levitate immune, an unrevealed opponent's Levitate its Smogon prior; Flying is read from the mon's BASE (species) types, not its current ones, because a switch-in reverts Color Change / Transform / Conversion) |
 | **g** | each mon × **global** (both sides; FIELD 14 under `static`) | 4 | `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |
 
 **No family targets the E5 tail seats** — they are token content only.
