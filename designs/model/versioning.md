@@ -212,6 +212,11 @@ none: every static run is the pinned screen's v143); `legacy` stamps through and
 change. Production's `x` cell differs for an ACTIVE mon whose current types differ from its species'. Test:
 `static_port_test.py`.
 
+**v149 (`gen3_spikes_entry_species_levitate_v1`, 2026-10-09)** — the same fix's ability half, again NO field and no
+weight shape: `spikes_entry` reads Levitate from the SPECIES (`SPECIES_TRAP_PRIOR[:, 3]`, exactly 0 or 1 in gen 3) instead
+of the current-ability column. `_migrate_config` stamps every past config through (`if version < 149`); no
+`ARCH_SIGNATURE` or floor change.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

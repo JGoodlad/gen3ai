@@ -8,8 +8,9 @@ move tokens, R² 0.59 vs 0.80). Each fact is a flag of its own, OFF by default:
 * **`--mon-hazard-cost on`** — every mon's token (BOTH sides) gets, as D content (`mon_hazard_features`, [B,12,2]):
   its OWN side's Spikes layers (/3) and the fraction of max HP it would lose switching in. The fraction is the damage
   operator's ONE Spikes entry rule (`DamageOperator.spikes_entry`, which the `x` edge cell reads too): 1/8, 1/6, 1/4
-  for 1–3 layers, 0 for a Flying type or Levitate (our ability exact; an opponent's exact where revealed, else its
-  species' Smogon P(Levitate) — the belief). Under X5 a hidden slot is priced as its HYPOTHESIS (the op's context).
+  for 1–3 layers, 0 for a Flying type or Levitate (both read from the SPECIES: base types, and the species' Smogon
+  P(Levitate), exactly 0 or 1 in gen 3 — never the current type / ability columns, which Color Change, Transform, Trace,
+  Role Play and Skill Swap change while a switch-in reverts them). Under X5 a hidden slot is priced as its HYPOTHESIS (the op's context).
   An opponent slot with no species (the belief-off ablation only: X5 always holds a hypothesis) reads fraction 0 —
   its Spikes column still says the layers are there.
 * **`--move-actor-state on`** — our active's 4 E3 move seats get its CURRENT HP fraction and its status one-hot

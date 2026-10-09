@@ -715,9 +715,10 @@ Mechanics VERIFIED in `deps/pokemon-showdown`: gen 3 inherits gen 4's `runSwitch
 switch-in; `spikes`' `onEntryHazard` (gen-4 mod) deals `[0, 3, 4, 6][layers] · maxhp / 24` = 1/8, 1/6, 1/4 iff
 `isGrounded()`; in gen 3 only a FLYING type or LEVITATE is ungrounded (Gravity, Ingrain grounding, Iron Ball, Magnet
 Rise, Air Balloon, Roost and Smack Down are gen 4+; Magic Guard is num 98, a gen-4 ability; Heavy-Duty Boots is gen 8);
-gen 3's mod overrides none of it. Our abilities are exact; an opponent's Levitate is exact where REVEALED (the `known`
-flag: a top-1 prior id is not a reveal) and otherwise its species' Smogon P(Levitate). In gen 3 every species that can
-have Levitate has it as its only ability, so that prior is 0 or 1 once the species is known. Under X5 the fact reads the
+gen 3's mod overrides none of it. Both Flying and Levitate are read from the SPECIES (v148 / v149: a switch-in reverts types and ability to the base ones,
+so the current columns are wrong after Color Change, Transform, Trace, Role Play, Skill Swap). In gen 3 every species that
+can have Levitate has it as its only ability (17 species, verified against Showdown's gen-3 pokedex), so the species'
+Smogon P(Levitate) is exactly 0 or 1 for every mon on both sides, revealed or not. Under X5 the fact reads the
 context the op prices with, so a hidden slot is priced as its HYPOTHESIS species (and counts as known); with the belief
 family off an unrevealed slot's fraction is 0 (unknown types), its layers column still set. The fraction is nominal
 (Showdown floors the HP lost).

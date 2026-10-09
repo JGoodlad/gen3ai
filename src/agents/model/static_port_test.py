@@ -185,6 +185,50 @@ def test_the_spikes_entry_reads_base_types_not_the_current_ones(rows: torch.Tens
         assert float(f[0, slot, 1]) == pytest.approx(want, abs=1e-7), (slot, sp, ty)
 
 
+def test_the_spikes_entry_reads_the_species_levitate_not_the_current_ability(rows: torch.Tensor) -> None:
+    """GIGO fix 2026-10-09 (Levitate half): a switch-in resets the ability to the BASE one (`clearVolatile`), while
+    Trace / Role Play / Skill Swap / Transform change only the CURRENT one -- which is what the ability column holds.
+    A Gardevoir that Traced a Levitate user (column reads Levitate) PAYS; a real Levitate SPECIES (Gengar, Latias,
+    Flygon, Weezing, Misdreavus) does NOT, whatever its column reads, revealed or not, on both sides. Fails on a
+    revert to the `ability1_ids` / revealed-ability read."""
+    fe = _policy(mon_hazard_cost="on")[0].policy.features_extractor
+    ctx = _ctx(fe, rows[:1])
+    lev, other = _levitate(), 0
+    plan = [  # (slot, species, types, ability column, known flag, revealed, expected: pays the chip)
+        (0, "gardevoir", ("PSYCHIC",), lev, True, True, True),                 # Traced Levitate: pays
+        (1, "gengar", ("GHOST", "POISON"), other, True, True, False),
+        (2, "latias", ("DRAGON", "PSYCHIC"), other, True, True, False),
+        (3, "flygon", ("DRAGON", "GROUND"), other, True, True, False),
+        (4, "weezing", ("POISON",), other, True, True, False),
+        (5, "misdreavus", ("GHOST",), other, True, True, False),
+        (6, "gardevoir", ("PSYCHIC",), lev, True, True, True),                 # revealed Traced Levitate: pays
+        (7, "gengar", ("GHOST", "POISON"), other, True, True, False),          # revealed non-Levitate column: immune
+        (8, "weezing", ("POISON",), other, False, True, False),                # unrevealed: the species decides
+        (9, "gardevoir", ("PSYCHIC",), lev, False, True, True),                # unrevealed id1 = a prior, not a reveal
+    ]
+    for slot, sp, ty, ab, known, revealed, _pays in plan:
+        ctx = _plant(ctx, slot, sp, ty, ab, known, revealed)
+    ctx = dataclasses.replace(ctx, spikes_feature=torch.tensor([[2, 3]], dtype=ctx.spikes_feature.dtype) / 3.0)
+    with torch.no_grad():
+        f = mon_hazard_features(fe.damage_op, ctx)
+    for slot, sp, _ty, ab, known, _rev, pays in plan:
+        want = (_CHIP[2] if slot < TEAM_SIZE else _CHIP[3]) if pays else 0.0
+        assert float(f[0, slot, 1]) == pytest.approx(want, abs=1e-7), (slot, sp, ab, known)
+
+
+def test_every_gen3_species_levitate_prior_is_zero_or_one() -> None:
+    """The premise of the species read: in gen 3 Levitate is the SOLE ability of its species, so the species'
+    Smogon P(Levitate) is exactly 0 or 1 (17 species). A species holding Levitate beside another ability would make the
+    species read inexact for a revealed mon and need the known-ability fallback (fails here if the data ever gives one)."""
+    from agents.model.damage_tables import build_trap_tables
+    from agents import gen3_data
+    t = build_trap_tables(1024, 512)["SPECIES_TRAP_PRIOR"][:, 3]
+    assert set(t.tolist()) <= {0.0, 1.0}, sorted(set(t.tolist()))
+    for sid in ("gengar", "latias", "flygon", "weezing", "misdreavus"):
+        assert float(t[gen3_data.species.get(sid).num]) == 1.0, sid
+    assert float(t[gen3_data.species.get("gardevoir").num]) == 0.0
+
+
 def test_the_x_cell_and_the_per_mon_fact_read_one_entry_rule(rows: torch.Tensor) -> None:
     """Agreement on the constructed boards (the `x` cell gates by alive / revealed, the fact does not), and the
     single SOURCE: a planted `spikes_entry` reaches both."""

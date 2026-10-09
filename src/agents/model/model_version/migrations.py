@@ -509,6 +509,10 @@ def _migrate_config(data: dict) -> dict:
     # state_dict is unchanged), so every past config stamps through.
     if version < 148:
         data["config_version"] = 148
+    # v149 (gen3_spikes_entry_species_levitate_v1) — no field: the Spikes entry rule reads the SPECIES' Levitate (a
+    # forward fix; the state_dict is unchanged), so every past config stamps through.
+    if version < 149:
+        data["config_version"] = 149
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

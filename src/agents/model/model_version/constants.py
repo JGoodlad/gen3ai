@@ -539,7 +539,12 @@ from typing import Any, Dict
 #   Conversion, Castform's Forecast): a switch-IN follows `clearVolatile` -> `setSpecies(baseSpecies)`. Production's
 #   `x` cell changes for an ACTIVE mon whose current types differ from its species'; the state_dict is unchanged and
 #   every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 148
+# v149 (gen3_spikes_entry_species_levitate_v1): no field, no weight shape. The same rule's Levitate half: `spikes_entry`
+#   reads Levitate from the SPECIES (`SPECIES_TRAP_PRIOR[:, 3]`, exactly 0 or 1 in gen 3 -- Levitate is the sole ability
+#   of its 17 species) instead of the CURRENT-ability column, which Trace / Role Play / Skill Swap / Transform change
+#   while a switch-in reverts them. Production's `x` cell changes for an active mon whose current ability differs from
+#   its species'; every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 149
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

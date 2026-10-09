@@ -13273,3 +13273,20 @@ archive read failed.
   change it while active; a switch-in resets it); no base-ability column exists.
 - **Test (fails on revert):** `static_port_test.py::test_the_spikes_entry_reads_base_types_not_the_current_ones`.
 
+## 2026-10-09 — v149 / `gen3_spikes_entry_species_levitate_v1`: the Spikes entry rule reads the SPECIES' Levitate (GIGO fix; no field, no weight shape)
+
+- **The bug (v148's open finding).** `spikes_entry` read Levitate from the CURRENT-ability column (own: `ability1_ids`;
+  opponent: the revealed-ability view, else the prior). Trace, Role Play, Skill Swap and Transform change the current
+  ability while the mon is active; a switch-in follows `clearVolatile` (`this.ability = this.baseAbility`). A Gardevoir
+  that Traced Levitate read "immune on its next entry".
+- **The premise, verified.** Showdown's gen-3 pokedex (`Dex.mod('gen3')`, num <= 386) and `data/` agree: Levitate is the
+  SOLE ability of its 17 species (Gastly, Haunter, Gengar, Koffing, Weezing, Misdreavus, Unown, Duskull, Lunatone,
+  Solrock, Baltoy, Claydol, Chimecho, Vibrava, Flygon, Latias, Latios), so `SPECIES_TRAP_PRIOR[:, 3]` is exactly 0 or 1.
+- **The fix.** Levitate comes from that column at the mon's species, for every mon on both sides, revealed or not (a
+  hidden X5 slot: its hypothesis species). Exact; no base-ability obs column needed. `MODEL_CONFIG_VERSION` 148 -> 149,
+  a no-field migration branch, no `ARCH_SIGNATURE` / floor change, state_dict unchanged. Production's `x` cell changes
+  only for an active mon whose current ability differs from its species' Levitate status.
+- **Tests (fail on revert):** `static_port_test.py::test_the_spikes_entry_reads_the_species_levitate_not_the_current_ability`
+  (Gardevoir with a Levitate column pays; Gengar / Latias / Flygon / Weezing / Misdreavus do not, revealed or not) and
+  `::test_every_gen3_species_levitate_prior_is_zero_or_one` (the premise).
+

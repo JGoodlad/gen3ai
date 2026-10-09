@@ -1153,20 +1153,17 @@ class DamageOperatorPairwise:
         `[0, 3, 4, 6][layers] * maxhp / 24` = 1/8, 1/6, 1/4 of max HP iff `pokemon.isGrounded()`; in gen 3
         `isGrounded` is false only for a FLYING type or LEVITATE (Gravity, Ingrain-grounding, Iron Ball, Magnet
         Rise, Air Balloon, Roost, Smack Down are gen 4+; Magic Guard, num 98, is a gen-4 ability; Heavy-Duty
-        Boots is gen 8). Our abilities are KNOWN exactly; an opponent's is exact where REVEALED (the `known`
-        flag, `opp_ability_view`), and otherwise its species' Smogon P(Levitate) (`SPECIES_TRAP_PRIOR[:, 3]`),
-        the belief. The fraction is the nominal one (Showdown floors the HP lost).
+        Boots is gen 8). Levitate is read from the SPECIES (`SPECIES_TRAP_PRIOR[:, 3]`, exactly 0 or 1 in gen 3), never
+        the current-ability column. The fraction is the nominal one (Showdown floors the HP lost).
 
         The Flying check reads the mon's BASE (species) types, never the obs type columns: a switch-IN happens
         after the mon left the field and `clearVolatile` reverted its Color Change / Transform / Conversion /
-        Forecast types, so an active Kecleon that turned Flying still pays on its next entry (GIGO fix 2026-10-09).
+        Forecast types AND its Trace / Role Play / Skill Swap / Transform ability, so an active Kecleon that turned
+        Flying, or a Gardevoir that Traced Levitate, still pays on its next entry (GIGO fix 2026-10-09).
 
         Under X5 the caller passes the HYPOTHESIS context: a hidden slot's species is its hypothesis'."""
         chip_table = torch.tensor([0.0, 1.0 / 8, 1.0 / 6, 1.0 / 4], device=ctx.device)
-        # --- grounded (the T-family recipe) ---
-        our_ab = ctx.ability1_ids[:, :TEAM_SIZE]
-        # gen3_op_ability_known_v1: revealed = the `known` flag (an unrevealed id1 is the top-1 PRIOR).
-        opp_ab, ab_rev_j, opp_sp = self.opp_ability_view(ctx)                     # [B,6] ×3
+        # --- grounded: BOTH the Flying and the Levitate checks read the SPECIES, never a current column ---
         # BASE types, from the species (`SPECIES_TYPE`), NOT the obs type columns: those hold a mon's CURRENT types
         # (Color Change, Transform, Conversion/Conversion 2, Castform's Forecast forme change), and a switch-IN runs
         # on the mon after `clearVolatile` -> `setSpecies(baseSpecies)` has reverted all of them. A benched mon's
@@ -1176,9 +1173,16 @@ class DamageOperatorPairwise:
         sp_j = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
         fly_i = (self.TYPE_IS_FLYING[self.SPECIES_TYPE[sp_i]].sum(-1)).clamp(max=1.0)   # [B,6]
         fly_j = (self.TYPE_IS_FLYING[self.SPECIES_TYPE[sp_j]].sum(-1)).clamp(max=1.0)
-        gr_i = (1.0 - fly_i) * (1.0 - self.ABILITY_IS_LEVITATE[our_ab])
-        gr_j = (1.0 - fly_j) * (1.0 - (ab_rev_j * self.ABILITY_IS_LEVITATE[opp_ab]
-                                       + (1.0 - ab_rev_j) * self.SPECIES_TRAP_PRIOR[opp_sp, 3]))
+        # Levitate: a switch-in resets the ability to the BASE one (`clearVolatile`: `this.ability = baseAbility`), and
+        # Trace / Role Play / Skill Swap / Transform change only the CURRENT one, so the current-ability column
+        # (`ability1_ids`) is the wrong read. In gen 3 Levitate is the SOLE ability of its 17 species (Gastly, Haunter,
+        # Gengar, Koffing, Weezing, Misdreavus, Unown, Duskull, Lunatone, Solrock, Baltoy, Claydol, Chimecho, Vibrava,
+        # Flygon, Latias, Latios; verified against Showdown's gen-3 pokedex and `data/`), so the species' Smogon
+        # P(Levitate) (`SPECIES_TRAP_PRIOR[:, 3]`) is exactly 0 or 1 -- EXACT for every mon on both sides, revealed
+        # or not. (If a species ever held Levitate beside another ability this would have to fall back to the known
+        # ability for a revealed mon: `test_every_gen3_species_levitate_prior_is_zero_or_one` pins the premise.)
+        gr_i = (1.0 - fly_i) * (1.0 - self.SPECIES_TRAP_PRIOR[sp_i, 3])
+        gr_j = (1.0 - fly_j) * (1.0 - self.SPECIES_TRAP_PRIOR[sp_j, 3])
         # --- entry chip from each side's OWN hazards (spikes_feature = [our_side, opp_side] / 3) ---
         layers = (ctx.spikes_feature * 3.0).round().long().clamp(0, 3)           # [B,2]
         chip_our = chip_table[layers[:, 0]][:, None] * gr_i                       # [B,6]

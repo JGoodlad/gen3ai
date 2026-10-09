@@ -264,9 +264,12 @@ switch-in follows `clearVolatile` -> `setSpecies(baseSpecies)` (verified in `dep
 `x` cell and N1. `spikes_entry` now reads the species' BASE types (`SPECIES_TYPE`, from `ctx.species_ids`; an X5
 hidden slot's species is its hypothesis'). A BENCHED mon's columns were already base (`PMon::switch_out` clears the
 temporary types), so only the ACTIVE mon's own cell was wrong. This changed the production `x` cell for an active
-mon whose current types differ from its species'. **Still open (same shape, ability):** Levitate is read from the
-ability column, which holds the CURRENT ability (Trace, Role Play, Skill Swap, Transform), while a switch-in resets
-it to the base ability; no base-ability column exists in the obs.
+mon whose current types differ from its species'. **The ability half is RESOLVED too (v149,
+`gen3_spikes_entry_species_levitate_v1`):** Levitate was read from the ability column (the CURRENT ability: Trace,
+Role Play, Skill Swap, Transform), while a switch-in resets it to the base ability. In gen 3 Levitate is the SOLE
+ability of its 17 species (Showdown's gen-3 pokedex and `data/` agree), so the species' Smogon P(Levitate) is exactly
+0 or 1 and `spikes_entry` reads it for every mon on both sides, revealed or not: a Gardevoir that Traced Levitate pays
+on its next entry; no base-ability column is needed.
 
 ---
 
@@ -356,7 +359,7 @@ the bug.
 4. ~~The in-flight entry-hazard input (N1) duplicates the `x` cell's rule~~ RESOLVED as built (2026-10-09): one
    rule, `DamageOperator.spikes_entry`, read by both (§3). ~~A typechange (Color Change, Transform) is read from the
    current types~~ RESOLVED (v148, 2026-10-09): the rule reads base types. The current-ABILITY read of Levitate
-   (Trace, Role Play, Skill Swap) remains.
+   (Trace, Role Play, Skill Swap) is RESOLVED too (v149): the species decides.
 5. **The evidence base for KEEP is mostly stale or absent.** Of the 88 rows, the ones with a strength reading tied to
    the feature itself are the gen-3 9.6M audits (§4.1, §5.4: STALE per F22), two critic-route dV reads (gen-14), and
    the X5 / static screens (which test bundles, not single rows). Every other row is a correctness gate or
@@ -373,3 +376,4 @@ the bug.
 | 2026-10-09 | **The doc is created** (owner request: "put an end state doc where we list what we are hand computing instead, so we know what we would add next or attempt to remove") | One always-current ledger of every hand-computed feature the model reads, grouped by where it lives, each with its kind (a exact physics / b narrow-channel fact / c Smogon prior, or J a judgment), status, evidence and candidate action; in-flight work marked; ranked add / remove lists; `src/agents/model/CLAUDE.md` points here | Folding it into ARCHITECTURE.md (which states what IS, not why or what next); one row per tensor (too fine to rank) | owner 2026-10-09; this doc §2 verified against the code at `2e357971` |
 | 2026-10-09 | **N1 / N2 BUILT, OFF; the N1 hazard resolved by ONE rule** (the static port, `gen3_static_port_v1`) | N1 (`--mon-hazard-cost`) and N2 (`--move-actor-state`) built behind their own flags; the Spikes entry rule factored into `DamageOperator.spikes_entry`, read by both the `x` cell and N1 (option (a) of the orchestrator's hazard note); N1 covers BOTH sides (the brief) and is token content after the op; T7's outgoing route is now a set function | a test-only agreement check with two implementations (option (b)); N1 inside D's MLP (ends the X5 dex-table gather) | `design_static_tokens.md` §12; `static_port_test.py` |
 | 2026-10-09 | **The Spikes entry rule reads BASE types** (`gen3_spikes_entry_base_types_v1`, v148; GIGO fix) | `spikes_entry` takes Flying immunity from `SPECIES_TYPE[species_ids]`, not the obs type columns (current types after Color Change / Transform / Conversion / Forecast); changes the production `x` cell for an active mon with changed types | keeping the current-type read (wrong: a switch-in reverts to base); a new base-type obs column (a layout change for a derivable fact) | `deps/pokemon-showdown` `sim/pokemon.ts` `clearVolatile` / `setSpecies`; `static_port_test.py::test_the_spikes_entry_reads_base_types_not_the_current_ones` |
+| 2026-10-09 | **The Spikes entry rule reads the SPECIES' Levitate** (`gen3_spikes_entry_species_levitate_v1`, v149; GIGO fix) | Levitate from `SPECIES_TRAP_PRIOR[species, 3]` (exactly 0 or 1 in gen 3: Levitate is the sole ability of its 17 species), not the current-ability column or the revealed-ability view; changes the production `x` cell for a Traced / Role-Played / Skill-Swapped / Transformed active mon | a base-ability obs column (unneeded: the premise holds); a known-ability fallback for revealed mons (needed only if a species held Levitate beside another ability) | Showdown gen-3 pokedex (node `Dex.mod('gen3')`, num <= 386); `static_port_test.py::test_the_spikes_entry_reads_the_species_levitate_not_the_current_ability`, `::test_every_gen3_species_levitate_prior_is_zero_or_one` |

@@ -569,7 +569,7 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("mon_hazard_cost", "off", Tier.CLI, Klass.STRUCTURAL, 147,
               "a NARROW per-mon fact for --token-encoding static ('off' = nothing built, production; 'on' = every "
               "mon's token, both sides, gets its own side's Spikes layers and the fraction of max HP it would lose "
-              "switching in: 1/8, 1/6, 1/4, 0 for Flying / Levitate, the opponent's Levitate from its belief)",
+              "switching in: 1/8, 1/6, 1/4, 0 for Flying / Levitate, Levitate read from the species)",
               note="gen3_static_port_v1 (`static_facts.py`; the static diagnostic's H2 / H3: our side's Spikes the "
                    "one fact whose gap to legacy GREW). The fraction is the damage operator's ONE entry rule "
                    "(`DamageOperator.spikes_entry`, which the `x` edge cell also reads). Zero-init bias-free "
