@@ -15,6 +15,7 @@ from agents.model.snapshot import record_checkpoint
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
 from main.train.constants import checkpoint_due
+from utils import disk_guard
 from utils.torch_state_guard import INIT_NUM_THREADS_ATTR
 
 
@@ -302,6 +303,10 @@ class _TrackingCheckpointCallback(BaseCallback):
         self.interval_env_steps = max(1, int(interval_env_steps))
         # The `num_timesteps` the last boundary test saw; set at `learn()` start (a resume's step).
         self._last_step: Optional[int] = None
+        # THE DISK GUARD (`utils.disk_guard`): ONE `shutil.disk_usage` per save. `disk_stop_fn` is the run's
+        # `DeferredAbort.disk_stop` (wired in model_build with the signal handlers); None = warn only.
+        self.disk_guard: Optional[disk_guard.InRunGuard] = None
+        self.disk_stop_fn = None
         self._current_lr_fn = None
         self._current_epochs_fn = None
         # Optional: returns the current TwoPhaseLR handoff_lr (or None).
@@ -335,7 +340,23 @@ class _TrackingCheckpointCallback(BaseCallback):
         now = int(self.model.num_timesteps)
         if self._due(now):
             ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{now}_steps.zip")
-            self.model.save(ckpt_path)
+            try:
+                self.model.save(ckpt_path)
+            except OSError as e:
+                # A write that dies on a full disk leaves a TORN zip; latest.txt still names the previous
+                # checkpoint, so remove the fragment and stop cleanly instead of crash-looping.
+                if not (disk_guard.is_disk_full(e) and self.disk_stop_fn is not None):
+                    raise
+                for frag in (ckpt_path, ckpt_path + ".tmp"):
+                    try:
+                        os.remove(frag)
+                    except OSError:
+                        pass
+                self.disk_stop_fn(f"[DiskGuard] 🛑 the checkpoint write at step {now:,} FAILED with a full "
+                                  f"disk ({e}); the torn file was removed and the previous checkpoint "
+                                  "stands — exit FATAL_DISK 8, no restart. Free disk space, then resume with "
+                                  "--model.")
+                raise
             if self.verbose >= 2:
                 print(f"Saving model checkpoint to {ckpt_path}")
             # The .zip is in self.save_path (<run>/checkpoints/). latest.txt
@@ -353,4 +374,21 @@ class _TrackingCheckpointCallback(BaseCallback):
                     hparams=_model_hparams(self.model),
                     handoff_lr=handoff_lr,
                 )
+            self._disk_check(ckpt_path)
         return True
+
+    def _disk_check(self, ckpt_path: str) -> None:
+        """After a save: warn at free < 2 x the next save, stop cleanly at free < 1 x (zero cost between
+        saves; a failure to MEASURE never ends a run)."""
+        if self.disk_guard is None:
+            return
+        try:
+            saved = os.path.getsize(ckpt_path)
+            d = self.disk_guard.after_save(saved)
+        except OSError:
+            return
+        if d.level == disk_guard.OK:
+            return
+        print(d.message, flush=True)
+        if d.level == disk_guard.STOP and self.disk_stop_fn is not None:
+            self.disk_stop_fn(d.message)        # does not return

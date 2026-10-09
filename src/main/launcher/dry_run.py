@@ -253,6 +253,9 @@ def dry_run(
                    "model_config.json); " if stripped else "")
         out(f"  on restart  : RESUME role — {dropped}--model → the run's latest checkpoint")
 
+    from utils.disk_guard import OPT_OUT_FLAG as _DISK_OPT_OUT
+    _disk_allow = _DISK_OPT_OUT in child_args       # read BEFORE a pinned launch may consume it (3b)
+
     # 3. The pin decision — the real `resolve_pin`, so every refusal it makes, this makes.
     pinned: Optional[ParseReport] = None
     if pin:
@@ -281,6 +284,15 @@ def dry_run(
         #     how `--pin-commit b13b30b2` came to be refused for a flag that b13b30b2 accepts.
         if differs_from_head(decision.sha, get_repo_root()):
             pinned = pinned_parser_check(decision.sha, child_args, get_repo_root())
+            # `--allow-low-disk` is the launcher's to honour when the pinned trainer lacks the flag.
+            from main.launcher.disk_gate import consume_if_absent_at_pin
+            from main.launcher.disk_gate import strip_opt_out as _strip_disk_opt_out
+            _argv2, _consumed = consume_if_absent_at_pin(child_args, pinned)
+            if _consumed:
+                out("  ℹ️  --allow-low-disk is consumed by the launcher (the pinned trainer predates "
+                    "the disk guard; the launcher's preflight below is its guard)")
+                child_args = _strip_disk_opt_out(child_args)
+                pinned = pinned_parser_check(decision.sha, child_args, get_repo_root())
             for line in report_lines(pinned, child_args):
                 out(f"  {line}")
     else:
@@ -426,6 +438,14 @@ def dry_run(
             line = line.replace("✗ REFUSED", "ℹ️  advisory (CURRENT tree, NOT the pinned one)", 1)
         out(f"  {line}")
 
+    # 7e. THE DISK-SPACE PREFLIGHT — `utils.disk_guard`, the verdict the launcher's `_prepare_session`
+    #     and the trainer's startup reach. The arithmetic is printed. Never advisory: the LAUNCHER
+    #     enforces it even for a pinned child (whose trainer may predate the guard).
+    from main.launcher.disk_gate import verdict_for_launch as _disk_for_launch
+    disk = _disk_for_launch(child_args, run_dir, ns=ns, allow=_disk_allow)
+    for line in disk.lines():
+        out(f"  {line}")
+
     # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
     #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
     #    ask that commit's parser (3b), these are ADVISORY: they describe rules the child will not
@@ -466,6 +486,8 @@ def dry_run(
     if torch_res.refusal:                 # printed with the interpreter line above
         failed = True
     if desktop.refused and not _dg_advisory:      # printed at 7d
+        failed = True
+    if disk.refused:                              # printed at 7e
         failed = True
 
     if failed:

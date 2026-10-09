@@ -543,6 +543,12 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
    looping on a finished target; **(3) progress** — the log advanced since the last check, and
    idle CPU means a deadlock, so `py-spy dump` it; **(4) a one-line status + revised ETA**.
    **Every finding gets a CLASS fix** (a hook, a helper, a gate), not just the instance killed.
+   **The disk line (2026-10-09):** the check also reads `df -h /` (the run archive's filesystem) and treats
+   free space below 2 x ONE run's need as a FINDING (one 15M-step run fills ~4.2 GB on disk; `utils.disk_guard`'s
+   REQUIRED for it is ~9.7 GiB with margin and reserve — `python -m main.launcher --dry-run …` prints the
+   arithmetic). The 2026-10-09 ~07:00 near-miss had the root at 100 % (2.2 GB free) under a screen chain's checkpoint
+   writes; the launcher and trainer now refuse a launch that does not fit and stop a run cleanly (`FATAL_DISK`, 8)
+   before a write fails, but the cure for a filling disk is still a human freeing `models/`.
 
 **Crons are session-only**: a `CronCreate` job dies with the session and expires after 7 days.
 After any orchestrator restart or handoff, RE-CREATE the :07 hourly check — nothing else will

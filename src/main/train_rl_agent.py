@@ -199,6 +199,18 @@ async def main():
     # — the first moment `model_dir` is known — and BEFORE the directory is created, so a refusal
     # leaves nothing behind. `--allow-inherited-fork-lr` is the deliberate opt-in.
     enforce_inherited_fork_lr(args, model_dir)
+    # THE DISK-SPACE PREFLIGHT (`utils.disk_guard`): the free space on the archive's filesystem must cover
+    # what THIS run still writes (checkpoints, eval traces, compile cache, logs + a margin). The arithmetic
+    # is printed; a refusal is FATAL_CONFIG (the launcher must not restart into it) and — placed before
+    # the makedirs — leaves nothing behind. `--debug` is exempt; `--allow-low-disk` tolerates.
+    from main.train.disk_preflight import verdict_for_namespace as _disk_verdict
+    _disk = _disk_verdict(args, model_dir)
+    if _disk.refused:
+        print("\n🛑 [DiskGuard] FATAL: this run will not start — not enough free disk.", file=sys.stderr, flush=True)
+    for _l in _disk.lines():
+        print(f"[DiskGuard] {_l}", file=sys.stderr if _disk.refused else sys.stdout, flush=True)
+    if _disk.refused:
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
     os.makedirs(model_dir, exist_ok=True)
     # K3: the run's OWN compile cache, declared before anything compiles or spawns (lifecycle.py).
     _declare_compile_cache(args, model_dir)
@@ -208,6 +220,7 @@ async def main():
     # ride into metadata.json beside the flags, so a run's measurement regime is auditable — two
     # eras with different hashes (e.g. the pre-fix OOD-eval era) are not metric-comparable.
     cli_args["_desktop_gpu"] = _desktop_gpu.to_record()    # T23: what the desktop check saw / tolerated
+    cli_args["_disk_guard"] = _disk.to_record()            # what the disk preflight saw / tolerated
     cli_args["_matchup_spec"] = matchup.to_dict()
     cli_args["_matchup_spec_hash"] = matchup.spec_hash()
     if not args.run_dir:

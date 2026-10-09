@@ -96,6 +96,25 @@ verdict (`desktop GPU :` line). `--allow-desktop-gpu` is the dev / short-run opt
 `--debug` (CPU) is exempt. ⚠️ The default target stays graphical, so a reboot brings the desktop BACK: the launcher's
 next restart of a run then exits `FATAL_CONFIG` at once — stop gdm again before relaunching.
 
+**0c. The disk must fit the run (owner class fix, 2026-10-09).** On 2026-10-09 ~07:00 the root filesystem reached
+100 % (2.2 GB free) while a pinned screen chain wrote checkpoints (~3.2-4.2 GB per 15M-step run); a failed checkpoint
+write would have cost a registered seed. `utils/disk_guard.py` now refuses (`FATAL_CONFIG`, no restart) a launch whose
+filesystem (`run_archive_dir()`) has less free space than REQUIRED, derived from the run itself and PRINTED:
+`REQUIRED = (periodic checkpoints still to write + 3 extra copies (+1 on a fork) + pool snapshots (<= 20)) x
+checkpoint bytes + eval cycles x 72 MiB + the compile cache not yet on disk (2.4 GiB) + sidecar/tb/logs per million
+steps) x 1.25 + a 4 GiB reserve`. Checkpoint bytes come from the run's own newest checkpoint (resume), the fork
+source, or the newest same-architecture run in the archive. Worked example, a fresh 15M `--arch production` run with
+62.8 MB checkpoints: 15 x 62.8 MB + 3 x 62.8 MB + 8 snapshots x 62.8 MB + 8 x 72 MiB + 2.4 GiB + 90 MiB ~ 4.6 GiB,
+x 1.25 + 4 GiB = ~9.7 GiB (the real run: 4.2 GB). The LAUNCHER asks before the pin / worktree / run dir exist (so a PINNED
+child, whose trainer predates the guard, is covered); the trainer asks again at its own startup; `--dry-run` prints the
+same verdict (`disk space :` line with the arithmetic). In flight, at every checkpoint save the trainer reads
+`shutil.disk_usage` once: free < 2 x the next save prints `[DiskGuard] LOW DISK` at every save; free < 1 x stops
+cleanly (the checkpoint just written stands; exit `FATAL_DISK` 8; the launcher does NOT restart); a save that fails
+with ENOSPC removes the torn file and stops the same way. `--allow-low-disk` is the dev / short-run opt-out (recorded
+in `metadata.json` `cli_args._disk_guard`; it also stands the in-run STOP down, the warnings stay); `--debug` is exempt
+from the preflight. Before a launch: `df -h /` and `du -sh models/* | sort -h` (retention:
+`designs/research_state/models_retention_policy.md`) — free the archive; never pass the flag to a registered run.
+
 Ledger `81016942` (2026-09-06): an arm ran ~7 GPU-hours with 31 architecture flags silently at their
 OFF defaults while `checkargs`, `resolve_config` and `--dry-run` all passed. Every check below
 answers one of the two questions; do both.

@@ -53,6 +53,9 @@ class GracefulRestartCallback(BaseCallback):
         self.abort_fn = None
         # Wired with abort_fn: the run's `DeferredAbort.safe_point` (a signal-requested abort, run here).
         self.safe_point_fn = None
+        # Wired with abort_fn: the run's `DeferredAbort.disk_stop` (the checkpoint callback's disk guard
+        # stops through it; `utils.disk_guard`).
+        self.disk_stop_fn = None
         self._start: float | None = None
         self._fired = False
 

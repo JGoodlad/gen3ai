@@ -111,6 +111,12 @@ def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
         found = [s for s in (l.strip() for l in lines) if "FATAL_LIVE_PARSE" in s or "LiveParseHalt" in s][-3:]
         return (["a live session could not read its input (T28 parse panic) — all live play is HALTED "
                  "until root-caused: python -m main.live.halt status"] + found)
+    if rc == int(TrainExitCode.FATAL_DISK):
+        # utils.disk_guard: the trainer stopped cleanly because the archive's disk could not take
+        # another checkpoint (or a save failed with ENOSPC). A restart meets the same full disk.
+        found = [s for s in (l.strip() for l in lines) if "[DiskGuard]" in s or "[DISK]" in s][-3:]
+        return (["the run's disk is (nearly) full (disk guard) — the last checkpoint stands; free space "
+                 "(`df -h /`, `du -sh models/* | sort -h`), then resume with --model"] + found)
     if rc == int(TrainExitCode.FATAL_SUPPLY):
         # gen3_supply_guard_v1: a LIVE coefficient's external supply (the cf label producer) died
         # or starved in flight. A restart would train on the same missing supply — STOP.
@@ -308,6 +314,18 @@ def _prepare_session(
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
     child_env[PYTHON_ENV_VAR] = _torch.python
 
+    # THE DISK-SPACE PREFLIGHT (`utils.disk_guard`): the same verdict the trainer reaches at its own
+    # startup and `--dry-run` prints, asked HERE — before the pin, the worktree, the run dir — so it also
+    # guards a PINNED child whose trainer predates the guard. FATAL_CONFIG, nothing left behind.
+    from main.launcher.disk_gate import verdict_for_launch as _disk_verdict_for_launch
+    _disk = _disk_verdict_for_launch(child_args, run_dir)
+    state.add_event(_disk.lines()[0])        # the verdict line; the arithmetic prints on a refusal / --dry-run
+    if _disk.refused:
+        print("[launcher] ERROR: not enough free disk for this run (utils.disk_guard):", file=sys.stderr)
+        for _l in _disk.lines():
+            print(f"[launcher]   {_l}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
     #: Set below once the pin is resolved: True when the child will run a commit that is NOT this
     #: tree's HEAD, which makes the arch-surface comparison informational (see the gate's docstring).
     pinned_differs = False
@@ -401,6 +419,17 @@ def _prepare_session(
             # a few lines below, and an argv checked without it is not the argv that runs.
             checked_argv = _insert_or_replace_run_dir_arg(child_args, run_dir)
             report = pinned_parser_check(pin_hash, checked_argv, repo_root)
+            # `--allow-low-disk` is the LAUNCHER's to honour when the pinned trainer has no such flag
+            # (its disk preflight ran above): drop it from what the pinned child receives.
+            from main.launcher.disk_gate import consume_if_absent_at_pin
+            from main.launcher.disk_gate import strip_opt_out as strip_disk_opt_out
+            checked_argv, _consumed = consume_if_absent_at_pin(checked_argv, report)
+            if _consumed:
+                child_args = strip_disk_opt_out(child_args)
+                state.add_event("ℹ️  --allow-low-disk consumed by the launcher (the pinned trainer "
+                                f"@{pin_hash[:8]} predates the disk guard; the launcher's preflight above "
+                                "is its guard)")
+                report = pinned_parser_check(pin_hash, checked_argv, repo_root)
             for line in report_lines(report, checked_argv):
                 state.add_event(line)
             if refuses(report, checked_argv):
@@ -680,6 +709,7 @@ def _supervise(
             kind = ("Non-finite learner" if rc == int(TrainExitCode.FATAL_NONFINITE)
                     else "Starved supply" if rc == int(TrainExitCode.FATAL_SUPPLY)
                     else "Live parse panic" if rc == int(TrainExitCode.FATAL_LIVE_PARSE)
+                    else "Disk full (guard)" if rc == int(TrainExitCode.FATAL_DISK)
                     else "Fatal config error")
             state.add_event(f"🛑 {kind} — will NOT restart{saved}")
             for line in fatal_reason:

@@ -476,6 +476,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         graceful_restart_callback.abort_fn = _abort_fn
         # gen3_deferred_abort_v1: a stop signal only records the request; it runs at these safe points.
         graceful_restart_callback.safe_point_fn = _abort_fn.safe_point
+        graceful_restart_callback.disk_stop_fn = _abort_fn.disk_stop     # utils.disk_guard's clean stop
 
         # Seed the pool from these weights iff self-play is active and the pool is empty
         # (no env rebuild — workers re-scan the dir on demand). No-op when below threshold
@@ -643,6 +644,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         graceful_restart_callback.abort_fn = _abort_fn
         # gen3_deferred_abort_v1: a stop signal only records the request; it runs at these safe points.
         graceful_restart_callback.safe_point_fn = _abort_fn.safe_point
+        graceful_restart_callback.disk_stop_fn = _abort_fn.disk_stop     # utils.disk_guard's clean stop
 
         # Seed the pool from these weights iff self-play is active and the pool is empty
         # (no env rebuild — workers re-scan the dir on demand).

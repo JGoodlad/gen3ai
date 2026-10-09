@@ -955,6 +955,16 @@ def run_archive(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _the_disk_guard_never_reads_the_real_free_space(monkeypatch):
+    """No test reads the box's REAL free disk: `utils.disk_guard.free_bytes` (the seam every verdict and
+    every in-run check reads) reports a roomy 10 TiB, so a launcher / trainer / dry-run test passes on a
+    nearly-full disk and fails only for its own reason. A test of the guard stubs the number it wants;
+    the reader proper is `disk_guard._read_free`."""
+    import utils.disk_guard as disk_guard
+    monkeypatch.setattr(disk_guard, "free_bytes", lambda path: 10 * 1024 * disk_guard.GiB)
+
+
+@pytest.fixture(autouse=True)
 def _the_desktop_gpu_check_never_reads_the_real_box(monkeypatch):
     """T23: no test reads the box's REAL display state. `--device auto` resolves to CPU for the
     desktop-GPU check (`utils.desktop_gpu.nvidia_gpu_visible` reads `nvidia-smi`) and the NVML listing

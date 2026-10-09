@@ -6,7 +6,7 @@ how it works internally. The UI is **Textual**, built on the shared `src/main/tu
 Modules: framework-agnostic core `checkpoint.py`, `worktree.py`, `child.py`, `input.py`,
 `state.py`, `ipc.py` + pure formatters `format.py`; `pinned_argv.py` + `pinned_argv_probe.py`
 (validate the child argv against the PINNED commit's parser, not this tree's); the UI `app.py` +
-`launcher.tcss`; the run loop / supervisor `run.py`; the resolve-and-print `dry_run.py`; entry
+`launcher.tcss`; the run loop / supervisor `run.py`; the resolve-and-print `dry_run.py`; the disk-space preflight's launcher half `disk_gate.py`; entry
 points `__init__.main()` (`python -m main.launcher`) and the `tui.py` back-compat alias
 (`python -m main.launcher.tui`).
 
@@ -399,6 +399,7 @@ What that established:
 | 6 | `FATAL_CUDA_LEAK` | **K6's CUDA memory trend STOPPED the child** — `agents.training.learner_lifecycle.CudaMemoryLeakError` (a SUSTAINED growth of live CUDA memory projected an OOM inside the declared horizon; `designs/training/learner_lifecycle.md` "The memory half"). The trainer checkpointed (`final_model_exception.zip`) before exiting, and a fresh process clears a leak, so the launcher **RESTARTS** from that checkpoint with a loud `⚠️ CUDA memory leak STOP #n` event — at most `exit_codes.CUDA_LEAK_RESTART_CAP` (2) times per launcher session, independent of `--max-crash-restarts`; the next one (`🛑 … over the cap … will NOT restart`) ends the session with code 6: a reproducible leak wants a human. Pinned by `cuda_leak_exit_test.py`. |
 | 5 | `FATAL_SUPPLY` | **A live lever's supply starved in flight** — `main.exit_codes.SupplyStarvedError` (`gen3_supply_guard_v2`: `agents.training.lever_supply.LeverStarvedError` when a live lever — the self-play pool, PFSP (`--pfsp-scale`), the fork arm — delivers nothing for its declared floor, `designs/training/supply_guards.md`; the cf label supply's guard, `CfLabelSupplyError`, was deleted with the cf training half). A restart would train the same run on the same missing supply, so the launcher saves the crash log, shows `🛑 Starved supply — will NOT restart` + the `[SUPPLY]` lines, and returns 5. Pinned by `agents/training/lever_supply_test.py`. |
 | 7 | `FATAL_LIVE_PARSE` | **A LIVE websocket session could not read its input** (T28, owner 2026-10-07) — `main.live.halt.LiveParseHalt` (mapped by NAME): an unparseable or unclassified protocol line, an encoder raise, or a choice it could not send. The live entry point (`main.play`, or `main.anchors` when its live client halts — P6) wrote the durable HALT marker (`python -m main.live.halt status`) before exiting, and every live entry point refuses to start while it exists — exiting 7 itself. The launcher never runs live play, but a child exiting 7 is never restarted (`🛑 Live parse panic — will NOT restart`). Cleared only by `python -m main.live.halt clear --fixed-by <commit>` (an ancestor of HEAD that touches a test file). Pinned by `src/main/live/halt_test.py`. |
+| 8 | `FATAL_DISK` | **The disk guard stopped the run** (`utils/disk_guard.py`, 2026-10-09): at a checkpoint save the free space on the run archive's filesystem fell below ONE more checkpoint, or the save itself failed with ENOSPC (the torn file is removed; `latest.txt` still names the previous checkpoint). The checkpoint just written stands, the process exits cleanly through `DeferredAbort.disk_stop` (no new save), and a restart would meet the same full disk, so the launcher saves the crash log, shows `🛑 Disk full (guard) — will NOT restart` + the `[DiskGuard]` line, and returns 8. Free space, then resume with `--model`. Pinned by `main/launcher/disk_exit_test.py`, `main/train/disk_guard_wiring_test.py`. |
 
 ## Flags
 
@@ -764,6 +765,20 @@ fails the dry run, FATAL_CONFIG, and is ADVISORY when the child runs a pinned ot
 carry the check). `--debug` (CPU) is exempt; NVML unreadable is a refusal for a CUDA run. `--allow-desktop-gpu`
 rides to the child verbatim (restarts keep it) and is recorded in `metadata.json` (`cli_args`). Gate:
 `utils/desktop_gpu_test.py`, `dry_run_test.py` (h).
+
+🚨 **THE DISK-SPACE GUARD (2026-10-09).** A launch whose run-archive filesystem has less free space than REQUIRED is
+refused `FATAL_CONFIG` (exit 3) naming the shortfall and printing the arithmetic (`utils/disk_guard.py`: the checkpoints
+still to be written x the checkpoint size, eval traces, the compile cache not yet on disk, log allowances, x 1.25 + a 4 GiB
+reserve; the checkpoint size is read from the run's own newest checkpoint, the fork source, or the newest same-architecture
+run). `main/launcher/disk_gate.py` asks in `_prepare_session` BEFORE the pin / worktree / run dir exist — the only guard a
+PINNED child gets, its trainer predating this check — and `--dry-run` prints the same verdict (`disk space :` line); the
+trainer asks again at its own startup (`main/train/disk_preflight.py`, before `os.makedirs`). `--allow-low-disk` is the
+recorded opt-out (a trainer flag, forwarded verbatim; `metadata.json` `cli_args._disk_guard`); when the PINNED trainer has
+no such flag the launcher CONSUMES it (`disk_gate.consume_if_absent_at_pin`) instead of failing the pinned-parser check.
+In flight, `run_io._TrackingCheckpointCallback` reads `shutil.disk_usage` once per save: free < 2 x the next save warns
+(`[DiskGuard] LOW DISK`), free < 1 x stops cleanly with `FATAL_DISK` (8, the exit-code table above); the opt-out keeps the
+warning and drops the stop. `--debug` is exempt from the preflight. Gate: `utils/disk_guard_test.py`,
+`main/train/disk_guard_wiring_test.py`, `main/launcher/disk_exit_test.py`, `dry_run_test.py` (j).
 
 Underneath, `child.resolve_child_python()` — the FRESH default — in precedence order:
 

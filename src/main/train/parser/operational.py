@@ -96,3 +96,13 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "(~0.8 GiB) is gone from the run. Recorded in metadata.json "
                              "(cli_args.allow_desktop_gpu + cli_args._desktop_gpu). `--debug` (CPU) "
                              "is exempt without it.")
+    # --- THE DISK-SPACE GUARD (utils.disk_guard) -------------------------------------------------
+    parser.add_argument("--allow-low-disk", action="store_true",
+                        help="Consent to a run whose REQUIRED disk space (checkpoints still to be written + "
+                             "eval traces + compile cache + log allowances + a margin, derived from the run "
+                             "itself and printed) exceeds the free space on the run archive's filesystem. "
+                             "Without it such a launch exits FATAL_CONFIG naming the shortfall; the "
+                             "launcher's --dry-run reports the same verdict. Also stands the in-run STOP "
+                             "down (free < one more checkpoint => clean exit FATAL_DISK 8); the low-disk "
+                             "warnings stay. Dev / short runs only. Recorded in metadata.json "
+                             "(cli_args.allow_low_disk + cli_args._disk_guard). `--debug` is exempt.")

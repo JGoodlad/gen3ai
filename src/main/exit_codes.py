@@ -35,6 +35,12 @@ class TrainExitCode(IntEnum):
                                  # ``main.live.halt.LiveParseHalt``). It wrote the durable HALT marker
                                  # every live entry point refuses to start past; NOTHING restarts it —
                                  # only a root-cause commit + ``python -m main.live.halt clear`` does.
+    FATAL_DISK = 8               # THE DISK GUARD stopped the run (``utils.disk_guard``, 2026-10-09): at a
+                                 # checkpoint save the free space on the run archive's filesystem fell below
+                                 # ONE more checkpoint, or a save failed with ENOSPC. The checkpoint just
+                                 # written stands; the process exits cleanly. A restart would meet the same
+                                 # full disk (and the trainer's own preflight refusal), so the launcher
+                                 # STOPS — free space, then resume with ``--model``.
 
 
 #: How many CUDA-leak stops the launcher restarts per session before it gives up (orchestrator,

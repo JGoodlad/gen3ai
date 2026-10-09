@@ -81,6 +81,17 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
         save_path=os.path.join(model_dir, "checkpoints"),
         name_prefix="checkpoint",
     )
+    # THE DISK GUARD's in-run half (`utils.disk_guard.InRunGuard`): one `disk_usage` per save; warn at
+    # free < 2 x the next save, stop cleanly (FATAL_DISK 8) at < 1 x. Installed for `--debug` too (a
+    # smoke's checkpoints are tiny, so it never trips; only the PREFLIGHT exempts `--debug`). The stop is
+    # wired through the run's DeferredAbort (`GracefulRestartCallback.disk_stop_fn`, set in model_build).
+    from utils import disk_guard
+    checkpoint_callback.disk_guard = disk_guard.InRunGuard(
+        model_dir, stop_enabled=not getattr(args, "allow_low_disk", False))
+    # (`graceful_restart_callback` is bound below, long before the first save calls this)
+    checkpoint_callback.disk_stop_fn = lambda reason: (
+        graceful_restart_callback.disk_stop_fn(reason)
+        if graceful_restart_callback.disk_stop_fn is not None else None)
 
     # --lr must lie within [--min-lr, --max-lr]. This is the user-facing contract
     # for both pure-adaptive runs and TwoPhaseLR Phase 1 — KL adaptation reads

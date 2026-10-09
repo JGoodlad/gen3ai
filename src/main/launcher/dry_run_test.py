@@ -564,3 +564,52 @@ def test_i_a_fork_dry_run_still_labels_an_untyped_value_from_the_argv(isolated, 
              monkeypatch)
     line = _grad_accum_line(capsys.readouterr().out)
     assert " 1 " in line and "(from the argv)" in line, line
+
+
+# ---------------------------------------------------------------------------------------
+# (j) the DISK GUARD: the dry run reports the verdict the launch and the trainer reach
+# ---------------------------------------------------------------------------------------
+
+from utils import disk_guard as disk_guard_mod  # noqa: E402
+
+
+def test_j_a_dry_run_on_a_full_disk_is_refused_with_the_arithmetic(isolated, monkeypatch, capsys):
+    monkeypatch.setattr(disk_guard_mod, "free_bytes", lambda path: 1 * disk_guard_mod.GiB)
+    _dry_run(["--steps", "15000000", "--device", "cuda", *_ARCH_OK], monkeypatch,
+             expect=int(TrainExitCode.FATAL_CONFIG))
+    out = capsys.readouterr().out
+    assert "disk space  : ✗ REFUSED" in out and "SHORT by" in out and "= REQUIRED" in out
+    assert "periodic checkpoints" in out and "compile cache" in out
+    assert "--allow-low-disk" in out and "would NOT launch" in out
+
+
+def test_j_a_dry_run_with_room_passes(isolated, monkeypatch, capsys):
+    _dry_run(["--steps", "15000000", "--device", "cuda", *_ARCH_OK], monkeypatch)
+    out = capsys.readouterr().out
+    assert "disk space  : ✓" in out and "would launch" in out
+
+
+def test_j_the_opt_out_flag_turns_the_refusal_into_a_note(isolated, monkeypatch, capsys):
+    monkeypatch.setattr(disk_guard_mod, "free_bytes", lambda path: 1 * disk_guard_mod.GiB)
+    _dry_run(["--steps", "15000000", "--allow-low-disk", *_ARCH_OK], monkeypatch)
+    out = capsys.readouterr().out
+    assert "tolerated under --allow-low-disk" in out and "would launch" in out
+
+
+def test_j_the_launch_and_the_trainer_reach_the_same_verdict_at_the_same_bar(isolated, monkeypatch):
+    """PARITY: the launcher's verdict (`disk_gate.verdict_for_launch`, which `--dry-run` prints and
+    `_prepare_session` enforces) and the trainer's (`disk_preflight.verdict_for_namespace`, on the namespace
+    its parser builds from the same argv) flip at the SAME free-space number."""
+    from main.launcher.disk_gate import verdict_for_launch
+    from main.train.disk_preflight import verdict_for_namespace
+    from main.train_rl_agent import build_parser
+    _root, _shas, work = isolated
+    run = str(work / "models" / "x")
+    argv = ["--steps", "15000000", "--device", "cuda", *_ARCH_OK]
+    ns = build_parser().parse_args(argv)
+    bar = verdict_for_launch(argv, run).req.required
+    assert verdict_for_namespace(ns, run).req.required == bar
+    for free, refused in ((bar - 1, True), (bar, False)):
+        monkeypatch.setattr(disk_guard_mod, "free_bytes", lambda path, f=free: f)
+        assert verdict_for_launch(argv, run).refused is refused
+        assert verdict_for_namespace(ns, run).refused is refused

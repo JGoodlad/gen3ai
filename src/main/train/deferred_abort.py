@@ -93,12 +93,15 @@ class DeferredAbort:
 
     def __init__(self, commit: Callable[[str], None], *,
                  checkpoint: Optional[Callable[[], None]] = None,
+                 disk_commit: Optional[Callable[[str], None]] = None,
                  deadline_sec: float = SAFE_POINT_DEADLINE_SEC,
                  exit_fn: Callable[[int], None] = os._exit,
                  wait_fn: Optional[Callable[[float], None]] = None,
                  clock: Callable[[], float] = time.monotonic) -> None:
         self._commit = commit
         self._checkpoint = checkpoint
+        # The disk guard's stop body (`disk_stop`): NO save — free space is what is missing.
+        self._disk_commit = disk_commit
         self.deadline_sec = float(deadline_sec)
         self._exit = exit_fn
         self._clock = clock
@@ -194,6 +197,18 @@ class DeferredAbort:
             self._park()
         self._commit(reason)
         self._exit(int(TrainExitCode.INTERRUPTED))
+
+    def disk_stop(self, reason: str) -> None:
+        """THE DISK GUARD's stop (`utils.disk_guard`): main thread, at the checkpoint callback's step (a
+        safe point — never inside an update or a dump). Claims the exit, runs the light body (the pending
+        scalar dump; NO new checkpoint — the one just written, or the previous one after an ENOSPC, is the
+        state to resume) and exits ``FATAL_DISK`` (8), which the launcher does not restart. Does not
+        return."""
+        if not self._claim("disk guard"):
+            self._park()
+        if self._disk_commit is not None:
+            self._disk_commit(reason)
+        self._exit(int(TrainExitCode.FATAL_DISK))
 
     #: The run's "save a checkpoint and exit 15" path is CALLED with a reason (the graceful restart's
     #: ``abort_fn``) — the same as `abort`.

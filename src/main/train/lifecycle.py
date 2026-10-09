@@ -263,6 +263,18 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             print(f"[ABORT] Save failed: {e}")
         sys.stdout.flush()
 
+    def _commit_disk_stop(reason: str) -> None:
+        """The disk guard's stop body (`DeferredAbort.disk_stop`): the pending-scalar dump only. A save
+        is exactly what the disk cannot afford; the periodic checkpoint just written (or the previous
+        one, after an ENOSPC) is the state the operator resumes from."""
+        shutdown_event.set()
+        print(f"\n[DISK] {reason}", flush=True)
+        try:
+            model.dump_logs()
+        except Exception as e:
+            print(f"[DISK] pending-scalar dump failed: {e}")
+        sys.stdout.flush()
+
     def _forced_checkpoint() -> None:
         """SIGUSR1's save — at a safe point, on the main thread (`DeferredAbort.request_checkpoint`,
         gen3_deferred_checkpoint_v1); training continues after it, and a failed save is REPORTED, never
@@ -291,7 +303,8 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             return
         print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip", flush=True)
 
-    abort = DeferredAbort(_commit_abort, checkpoint=_forced_checkpoint, exit_fn=exit_fn, wait_fn=wait_fn)
+    abort = DeferredAbort(_commit_abort, checkpoint=_forced_checkpoint, disk_commit=_commit_disk_stop,
+                          exit_fn=exit_fn, wait_fn=wait_fn)
 
     def _forced_eval(sig, frame):
         # Signal context: just flag the request (request_forced_eval is async-signal-safe).
