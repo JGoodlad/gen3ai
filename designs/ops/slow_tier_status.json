@@ -123,10 +123,10 @@
   },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cpu": {
    "status": "pass",
-   "commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
-   "at": "2026-10-08T01:38:44Z",
-   "duration_s": 183.07,
-   "contention": 1.01,
+   "commit": "73408d02db7bb209525a876ed02dd9233f41a819",
+   "at": "2026-10-09T00:57:07Z",
+   "duration_s": 199.77,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cuda": {
@@ -136,8 +136,8 @@
    "duration_s": 88.24,
    "contention": 1.01,
    "detail": "",
-   "last_skipped_at": "2026-10-08T01:38:44Z",
-   "last_skipped_commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
+   "last_skipped_at": "2026-10-09T00:57:07Z",
+   "last_skipped_commit": "73408d02db7bb209525a876ed02dd9233f41a819",
    "last_skip_detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_cpu_backward_still_does_not_compile": {
@@ -202,7 +202,10 @@
    "at": "2026-10-04T06:43:39Z",
    "duration_s": 0.63,
    "contention": 1.0,
-   "detail": ""
+   "detail": "",
+   "last_skipped_at": "2026-10-09T00:57:07Z",
+   "last_skipped_commit": "73408d02db7bb209525a876ed02dd9233f41a819",
+   "last_skip_detail": ""
   },
   "src/agents/training/cycle_ledger_integration_test.py::test_the_cycles_ledger_rows_are_its_games_and_the_ledger_changes_no_game": {
    "status": "pass",
@@ -219,8 +222,8 @@
    "duration_s": 2.47,
    "contention": 1.01,
    "detail": "",
-   "last_skipped_at": "2026-10-08T01:38:44Z",
-   "last_skipped_commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
+   "last_skipped_at": "2026-10-09T00:52:41Z",
+   "last_skipped_commit": "73408d02db7bb209525a876ed02dd9233f41a819",
    "last_skip_detail": ""
   },
   "src/agents/training/instrumented_ppo_device_batches_test.py::test_on_cuda_the_device_batches_equal_the_host_batches": {
@@ -230,8 +233,8 @@
    "duration_s": 0.56,
    "contention": 1.0,
    "detail": "",
-   "last_skipped_at": "2026-10-08T01:38:44Z",
-   "last_skipped_commit": "2a4a02b2a508f3191f1cfffed70803f67ae917c2",
+   "last_skipped_at": "2026-10-09T00:52:41Z",
+   "last_skipped_commit": "73408d02db7bb209525a876ed02dd9233f41a819",
    "last_skip_detail": ""
   },
   "src/agents/training/lever_supply_integration_test.py::test_a_self_play_run_whose_pool_never_seeds_exits_FATAL_SUPPLY": {
@@ -870,5 +873,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-08T18:24:48Z"
+ "last_written": "2026-10-09T00:57:07Z"
 }

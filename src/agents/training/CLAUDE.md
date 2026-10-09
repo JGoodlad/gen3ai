@@ -126,7 +126,11 @@ R1's loss as the DECLARED EAGER TAIL, in order. Each part is straight-line sourc
 host read (`.item()`, `float(t)`, `bool(t)`), no boolean-mask indexing / `nonzero` / `bincount`, no
 Python branch on a tensor value, no numpy — a diagnostic is a `(value, weight)` pair of 0-d tensors
 (weight 1.0 exactly where the old fold appended to its list), and `train()` reads ALL of a micro-batch's
-diagnostics in ONE host read (`micro_step.pack`). The belief losses' static twins are
+diagnostics as ONE packed device tensor (`micro_step.pack`). 🚨 **That read is DEFERRED to the next optimizer step's
+one transfer** (`instrumented_ppo/host_reads.py`, `gen3_batched_host_reads_v1`, T25 item 1) unless something
+before the backward needs it, and the K9(c) loss / KL verdicts ride it; a new per-micro-batch host read in
+`train()` (an `.item()`, a `float(t)`, an `as_numpy`) goes through the queue too, or it is a full GPU-queue drain
+×480 per production update — `host_sync_guard_test.py` FAILS on one. The belief losses' static twins are
 `belief_bank_static.py`; the opponent-intent block's is `instrumented_ppo/intent_fold.py`, which dispatches to
 X5's flat-pointer fold (`flat_intent_fold.py`; the blob α / β fold was deleted at the X5 version break, v144) — the
 legacy `belief_bank` functions stay as the REFERENCE they are pinned equal to (float64 to 1e-12). A new term on the production surface belongs in R1, written to these rules; anything else

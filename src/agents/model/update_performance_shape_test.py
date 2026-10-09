@@ -125,7 +125,14 @@ def test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager
 #: 1,060 → 1,056 at the version break's part 2 (2026-10-07): the flat pointer's scorer bias (F16b) was the one
 #: deleted parameter tensor that received a gradient (MEASURED: re-attaching it restores 1,060); the deleted value
 #: tower (F1) held no gradient, so it was never stepped and moved no read.
-GOLDEN_UPDATE_HOST_SCALAR_READS = 1056
+#: 1,056 → 984 (−72) at the BATCHED HOST READS (gen3_batched_host_reads_v1, T25 item 1, 2026-10-08): the grad-balance
+#: probe's 16 norm / dot reads, the edge (34) and cell (8) liveness norms, the per-term noise sampler's 8 `sq_norm`s,
+#: the step's 4 `float(norm)`s, the noise base's `float` and `train/loss`'s `.item()` became BATCHED transfers
+#: (`.cpu()` of a stack — which this meter does not count; `src/agents/training/host_sync_guard_test.py` counts
+#: TRANSFERS, residency-aware). What is left is ALL `optimizer.step()`'s: the per-parameter `step` reads of the
+#: non-fused AdamW (MEASURED: 984 − 72 removed = the 984 the X5 part-2 note above attributes to the step sites), and
+#: those `step` counters are HOST tensors — not device syncs on CUDA.
+GOLDEN_UPDATE_HOST_SCALAR_READS = 984
 
 
 def test_a_real_update_makes_a_bounded_number_of_host_scalar_reads(learner, monkeypatch):

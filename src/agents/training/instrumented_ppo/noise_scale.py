@@ -58,13 +58,20 @@ class NoiseScaleDiagnostics:
     def _global_grad_sq(params) -> float:
         """Squared global L2 norm ‖g‖² of the CURRENT .grad over all params (one device→host sync).
         Mirrors what clip_grad_norm_ computes, but read-only (no clipping)."""
+        sq = NoiseScaleDiagnostics._global_grad_sq_t(params)
+        return float(sq) if sq is not None else 0.0
+
+    @staticmethod
+    def _global_grad_sq_t(params):
+        """`_global_grad_sq` left ON THE DEVICE (a 0-d tensor, or None with no gradient) — the same
+        sum in the same order, for a caller that batches the read (`host_reads`)."""
         sq = None
         for p in params:
             g = p.grad
             if g is not None:
                 s = g.detach().pow(2).sum()
                 sq = s if sq is None else sq + s
-        return float(sq) if sq is not None else 0.0
+        return sq
 
     @staticmethod
     def _noise_scale_estimate(g_small_sq, g_big_sq, b_small, b_big):

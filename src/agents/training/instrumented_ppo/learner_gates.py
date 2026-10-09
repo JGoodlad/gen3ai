@@ -16,10 +16,14 @@ into Adam's moments — silently, with the run continuing on a dead network. Two
 the optimizer can move anything:
 
 * `check_loss_finite` — once per micro-batch, on the ASSEMBLED loss (every fold included), naming the
-  term(s) that went non-finite (the names are the grad-balance probe's, plus policy/entropy/value);
+  term(s) that went non-finite (the names are the grad-balance probe's, plus policy/entropy/value).
+  Since `gen3_batched_host_reads_v1` the verdict of a micro-batch whose values nothing reads earlier is
+  made from its deferred host read (`check_loss_finite_read`) at the optimizer step it joins — after its
+  backward, still before that step: the backward writes only ``.grad``, and the raise means no step
+  ever applies it, so the weights and Adam's moments are the last finite ones either way;
 * `clip_grad_norm_checked` — at every optimizer step, the pre-clip total norm the step already
-  reads, with ``error_if_nonfinite`` so a NaN/Inf norm raises BEFORE the in-place scaling, naming the
-  parameters whose gradient is non-finite. This one also covers a finite loss whose BACKWARD produced
+  reads (in the same transfer as the deferred reads), judged on the host so a NaN/Inf norm raises
+  BEFORE the in-place scaling, naming the parameters whose gradient is non-finite. This one also covers a finite loss whose BACKWARD produced
   a NaN (and the grad-accumulation flush's rescale).
 
 plus `check_buffer_finite` (once per update, before any forward: rewards, values, log-probs, advantages, returns and
@@ -65,6 +69,8 @@ def behaviour_gate_mode(model: Any) -> str:
 def _nonfinite(t: Any) -> bool:
     if isinstance(t, th.Tensor):
         return not bool(th.isfinite(t.detach()).all())
+    if isinstance(t, np.ndarray):
+        return not bool(np.isfinite(t).all())
     return isinstance(t, float) and not math.isfinite(t)
 
 
@@ -72,35 +78,74 @@ def check_loss_finite(loss: th.Tensor, terms: Dict[str, Any], *, epoch: int, mic
     """K9(c): raise `NonFiniteLearnerError` if the assembled ``loss`` is NaN/Inf (module docs)."""
     if bool(th.isfinite(loss.detach()).all()):
         return
+    raise_nonfinite_loss(float(loss.detach()), terms, epoch=epoch, micro=micro, where="before its backward")
+
+
+def check_loss_finite_read(loss_finite: bool, loss_value: float, terms: Dict[str, Any], *, epoch: int,
+                           micro: int) -> None:
+    """K9(c), from the HOST READ of a micro-batch (`micro_step.unpack`; ``terms`` are float32 host
+    arrays): the same verdict and message as `check_loss_finite`, made at the optimizer step the
+    micro-batch joins (`gen3_batched_host_reads_v1`) — still BEFORE that step moves anything."""
+    if loss_finite:
+        return
+    raise_nonfinite_loss(loss_value, terms, epoch=epoch, micro=micro,
+                         where="after its backward, before the optimizer step it joins")
+
+
+def raise_nonfinite_loss(loss_value: float, terms: Dict[str, Any], *, epoch: int, micro: int,
+                         where: str) -> None:
     bad = [k for k, v in terms.items() if v is not None and _nonfinite(v)]
     named = ", ".join(bad) if bad else ("none of the named terms — an unnamed fold (e.g. the set-valued "
                                         "beta term) or the sum itself overflowed")
     raise nonfinite(
-        f"[K9(c)] NON-FINITE LOSS {float(loss.detach()):g} at epoch {epoch} (micro-batch {micro} of this "
-        f"update), before its backward — non-finite term(s): {named}. Refusing to apply it (the optimizer would write NaN into "
+        f"[K9(c)] NON-FINITE LOSS {loss_value:g} at epoch {epoch} (micro-batch {micro} of this "
+        f"update), {where} — non-finite term(s): {named}. Refusing to apply it (the optimizer would write NaN into "
         "every parameter).")
 
 
-def clip_grad_norm_checked(policy: Any, max_norm: float, *, epoch: int) -> float:
+def clip_grad_norm_checked(policy: Any, max_norm: float, *, epoch: int, reads: Any = None) -> float:
     """``clip_grad_norm_`` with K9(c) fail-closed: the pre-clip total norm (the value the fold already
     logs as ``grad_norms``), or `NonFiniteLearnerError` naming the parameters whose gradient is NaN/Inf.
 
-    ``error_if_nonfinite=True`` raises BEFORE the in-place scaling (torch's default scales every
-    gradient by ``max_norm / NaN``, which would erase the attribution), so the gradients read below are
-    the ones the backward produced. The norm and the clipping arithmetic are unchanged."""
+    torch's own two halves, `get_total_norm` then `clip_grads_with_norm_` (exactly what
+    ``clip_grad_norm_`` runs), with the norm READ IN BETWEEN: a NaN/Inf norm raises BEFORE the in-place
+    scaling (torch's default scales every gradient by ``max_norm / NaN``, which would erase the
+    attribution), so the gradients named below are the ones the backward produced. The norm and the
+    clipping arithmetic are unchanged.
+
+    ``reads`` (`host_reads.HostReadQueue`, `gen3_batched_host_reads_v1`): the norm is read in the SAME
+    transfer as every read the update deferred to this step — the micro-batches' metrics and their K9(c)
+    loss / KL verdicts, whose callbacks run (and may raise) BEFORE the norm is judged, the order the inline
+    checks ran in. One host sync per optimizer step instead of one per read."""
     params = list(policy.parameters())
-    try:
-        norm = th.nn.utils.clip_grad_norm_(params, max_norm, error_if_nonfinite=True)
-    except RuntimeError as exc:
+    grads = [p.grad for p in params if p.grad is not None]
+    if not grads:
+        if reads is not None:
+            reads.drain()
+        return 0.0
+    with th.no_grad():
+        total = th.nn.utils.get_total_norm(grads, 2.0, error_if_nonfinite=False, foreach=None)
+    if reads is not None and total.dtype == th.float32:
+        host = reads.drain([total])
+        assert host is not None
+        norm = float(host[0])
+    else:
+        if reads is not None:
+            reads.drain()
+        norm = float(total)
+    if not math.isfinite(norm):
         bad = [name for name, p in policy.named_parameters()
                if p.grad is not None and not bool(th.isfinite(p.grad).all())]
         if not bad:
-            raise
+            raise RuntimeError(f"The total norm of order 2.0 for gradients from `parameters` is non-finite "
+                               f"({norm}), but no parameter's gradient is — refusing the step")
         raise nonfinite(
             f"[K9(c)] NON-FINITE GRADIENT at epoch {epoch}, before optimizer.step() — {len(bad)} parameter(s) "
             f"with a NaN/Inf gradient, first: {bad[:8]}. The loss was finite (checked per micro-batch), so a "
-            "BACKWARD produced it. Refusing the step.") from exc
-    return float(norm)
+            "BACKWARD produced it. Refusing the step.")
+    with th.no_grad():
+        th.nn.utils.clip_grads_with_norm_(params, max_norm, total, foreach=None)
+    return norm
 
 
 def check_kl_finite(approx_kl: float, *, epoch: int) -> None:

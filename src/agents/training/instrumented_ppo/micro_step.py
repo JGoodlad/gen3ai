@@ -22,10 +22,12 @@ exactly where the inline fold appended to its metric list), no Python branch on 
 flags are `MicroStatic`, resolved once per `train()`), no numpy, no mutation outside its own locals
 (the extractor's own per-forward stash aside, which the compiled extractor has always written).
 
-THE CONTRACT WITH `train()`. The host reads ONE flat tensor per micro-batch (`pack`'s bundle: every
-metric value + weight, the loss's finiteness, the approx-KL), then appends each present metric to the
-same per-update lists the inline fold filled — so every TB tag keeps its meaning (mean over the
-micro-batches that produced it).
+THE CONTRACT WITH `train()`. `pack` bundles ONE flat DEVICE tensor per micro-batch (every metric value +
+weight, the loss's finiteness and value, every term's value, the approx-KL); `train()` reads it through its
+`host_reads.HostReadQueue` (`gen3_batched_host_reads_v1`) — at once only when the host needs a value
+before the micro-batch's backward, else batched into the transfer the next optimizer step makes anyway —
+then appends each present metric to the same per-update lists the inline fold filled, in micro-batch
+order — so every TB tag keeps its meaning (mean over the micro-batches that produced it).
 """
 from __future__ import annotations
 
@@ -256,25 +258,60 @@ def micro_step(policy: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
 
 
 # --------------------------------------------------------------------------- the host side
-def pack(out: MicroOut) -> Tuple[List[str], List[str], th.Tensor]:
-    """The ONE device->host read per micro-batch: ``(metric_keys, present_keys, flat)`` where
-    ``flat`` = [every metric value, every metric weight, every present flag, loss finite], float32.
-    Key order is the dict order (static per run)."""
+class Packed(NamedTuple):
+    """One micro-batch's diagnostics as ONE flat float32 DEVICE tensor (`pack`) and the static key
+    lists that say what each slot holds. ``flat`` = [every metric value, every metric weight, every
+    present flag, loss finite, loss value, every term's value (flattened, ``term_sizes`` each)]."""
+    metric_keys: List[str]
+    present_keys: List[str]
+    term_names: List[str]
+    term_sizes: List[int]
+    flat: th.Tensor
+
+
+class MicroRead(NamedTuple):
+    """`unpack`'s host view of one `Packed`: the PRESENT metric values (a metric whose weight is 0 was
+    not produced this micro-batch), the present flags, the loss's finiteness and value, and every
+    term's values (float32 host arrays — what K9(c) names a non-finite term from)."""
+    values: Dict[str, float]
+    present: Dict[str, bool]
+    loss_finite: bool
+    loss: float
+    terms: Dict[str, Any]
+
+
+def pack(out: MicroOut) -> Packed:
+    """Every diagnostic of one micro-batch as ONE flat float32 tensor ON THE DEVICE — no host read here.
+    `train()` reads it through its `host_reads.HostReadQueue`: at once when a value is needed before the
+    micro-batch's backward, else in the transfer the next optimizer step makes anyway (the K9(c) loss
+    check moves with it, still BEFORE that step). Key order is the dict order (static per run)."""
     mkeys = list(out.metrics)
     pkeys = list(out.present)
+    tnames = [k for k, v in out.terms.items() if isinstance(v, th.Tensor)]
+    tvals = [out.terms[k].detach().to(th.float32).reshape(-1) for k in tnames]
+    loss = out.loss.detach()
     parts = [th.stack([out.metrics[k][0] for k in mkeys]) if mkeys else None,
              th.stack([out.metrics[k][1] for k in mkeys]) if mkeys else None,
              th.stack([out.present[k].to(th.float32) for k in pkeys]) if pkeys else None,
-             th.isfinite(out.loss.detach()).to(th.float32).reshape(1)]
+             th.isfinite(loss).to(th.float32).reshape(1),
+             loss.to(th.float32).reshape(1)] + tvals
     flat = th.cat([p.reshape(-1) for p in parts if p is not None])
-    return mkeys, pkeys, flat.cpu()
+    return Packed(mkeys, pkeys, tnames, [int(t.numel()) for t in tvals], flat)
 
 
-def unpack(mkeys: List[str], pkeys: List[str], flat: th.Tensor
-           ) -> Tuple[Dict[str, float], Dict[str, bool], bool]:
-    """``(present metric values, present flags, loss finite)`` from `pack`'s host tensor."""
-    a = flat.tolist()
-    n = len(mkeys)
+def unpack(packed: Packed, host: Any) -> MicroRead:
+    """`MicroRead` from the host copy of ``packed.flat`` (a float32 numpy array). A float32 value read
+    this way is the value ``.item()`` of that element would have given."""
+    a = host.tolist()
+    mkeys, pkeys = packed.metric_keys, packed.present_keys
+    n, p = len(mkeys), len(pkeys)
     vals = {k: a[i] for i, k in enumerate(mkeys) if a[n + i] > 0.5}
     pres = {k: a[2 * n + j] > 0.5 for j, k in enumerate(pkeys)}
-    return vals, pres, a[-1] > 0.5
+    off = 2 * n + p
+    finite, loss = a[off] > 0.5, a[off + 1]
+    off += 2
+    terms: Dict[str, Any] = {}
+    for name, size in zip(packed.term_names, packed.term_sizes):
+        terms[name] = host[off:off + size]
+        off += size
+    return MicroRead(vals, pres, finite, loss, terms)

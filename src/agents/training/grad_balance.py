@@ -35,6 +35,8 @@ import numpy as np
 import torch as th
 from torch import nn
 
+from agents.training.batched_reads import read_floats
+
 # Phase submodules of Gen3FeaturesExtractor whose parameters are TRULY SHARED — both the
 # policy-loss and value-loss gradients write the *same* tensors. This is the contested
 # representation the pressure metric is about.
@@ -125,8 +127,6 @@ def grad_balance_metrics(
     """
     g_pi = _flat_grads(policy_term, shared_params)
     g_vf = _flat_grads(value_term, shared_params)
-    n_pi = float(g_pi.norm())
-    n_vf = float(g_vf.norm())
 
     # gen3_tb_relevance_v1: AN AUX TERM THAT *IS* THE VALUE TERM IS NOT A SECOND TERM. Under
     # the win-prob critic: the deployed critic loss IS the win-prob BCE, so `ppo.py` passes the SAME
@@ -137,13 +137,18 @@ def grad_balance_metrics(
     # Identity (`is`) rather than value equality: it is exactly the "same tensor" case, it costs
     # nothing, and two numerically-equal-but-distinct terms are a genuine coincidence to report.
     aux_g: Dict[str, th.Tensor] = {}
-    aux_n: Dict[str, float] = {}
     for name, term in (aux_terms or {}).items():
         if term is value_term:
             continue
-        g = _flat_grads(term, shared_params)
-        aux_g[name] = g
-        aux_n[name] = float(g.norm())
+        aux_g[name] = _flat_grads(term, shared_params)
+    # gen3_batched_host_reads_v1: every norm and every dot product the shares and cosines below use, read
+    # in ONE transfer (each value is the float32 `float(t)` / `.item()` read it replaced).
+    _names = list(aux_g)
+    _host = read_floats([g_pi.norm(), g_vf.norm(), g_pi @ g_vf]
+                        + [aux_g[k].norm() for k in _names] + [aux_g[k] @ g_pi for k in _names])
+    n_pi, n_vf, dot_pv = _host[0], _host[1], _host[2]
+    aux_n = {k: _host[3 + i] for i, k in enumerate(_names)}
+    aux_dot = {k: _host[3 + len(_names) + i] for i, k in enumerate(_names)}
 
     # ONE common denominator = the FULL trunk pull (policy + value + every reported scaffold), so
     # every `*_share` is on the same scale, they sum to ~1, and any term crowding out the rest is
@@ -154,9 +159,9 @@ def grad_balance_metrics(
     def _share(n: float) -> float:
         return (n / total) if total > 0.0 else 0.0
 
-    def _cos_vs_policy(g: th.Tensor, n: float) -> float:
+    def _cos_vs_policy(dot: float, n: float) -> float:
         # Guarded 0.0 when either norm is zero (a detached-graph artifact; live both are >0).
-        return float((g @ g_pi).item() / (n * n_pi)) if n > 0.0 and n_pi > 0.0 else 0.0
+        return float(dot / (n * n_pi)) if n > 0.0 and n_pi > 0.0 else 0.0
 
     out: Dict[str, float] = {
         "grad/policy_norm_shared": n_pi,
@@ -175,13 +180,13 @@ def grad_balance_metrics(
         # heads (<0 ⟹ policy and value pull the trunk in opposing directions). Guarded 0.0 on a
         # zero norm (unit-test detached artifact).
         "grad/policy_value_cosine": (
-            float((g_pi @ g_vf).item() / (n_pi * n_vf)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
+            float(dot_pv / (n_pi * n_vf)) if n_pi > 0.0 and n_vf > 0.0 else 0.0
         ),
     }
     for name, n in aux_n.items():
         out[f"grad/{name}_norm_shared"] = n
         out[f"grad/{name}_share"] = _share(n)
-        out[f"grad/{name}_policy_cosine"] = _cos_vs_policy(aux_g[name], n)
+        out[f"grad/{name}_policy_cosine"] = _cos_vs_policy(aux_dot[name], n)
     if aux_n:
         # Total non-RL scaffold draw on the trunk (Σ aux shares) — the rollup of every aux term, so
         # one curve answers "are the auxiliaries collectively crowding out policy/value".
@@ -243,16 +248,19 @@ def edge_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
     eb = getattr(features_extractor, "edge_bias", None)
     if eb is None:
         return {}
-    out: Dict[str, float] = {}
+    keys: List[str] = []
+    norms: List[th.Tensor] = []
     for fam in sorted(getattr(eb, "families", ()) or ()):
         lin = getattr(eb, f"{fam}_map", None)
         w = getattr(lin, "weight", None)
         if w is None:
             continue
-        out[f"edge/{fam}_weight_norm"] = float(w.detach().norm())
+        keys.append(f"edge/{fam}_weight_norm")
+        norms.append(w.detach().norm())
         if w.grad is not None:
-            out[f"edge/{fam}_grad_norm"] = float(w.grad.detach().norm())
-    return out
+            keys.append(f"edge/{fam}_grad_norm")
+            norms.append(w.grad.detach().norm())
+    return dict(zip(keys, read_floats(norms)))     # ONE host read (gen3_batched_host_reads_v1)
 
 
 #: The zero-init POINTER-CELL projections, `(metric name, extractor attribute)`. Each of these
@@ -293,7 +301,8 @@ def cell_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
     extractor and touches no forward path. Returns ``{}`` when no cell is enabled — which is the
     normal case, since each is flag-gated and absent from the extractor when off.
     """
-    out: Dict[str, float] = {}
+    keys: List[str] = []
+    norms: List[th.Tensor] = []
     for name, attr in CELL_FAMILIES:
         cell = getattr(features_extractor, attr, None)
         if cell is None:
@@ -301,7 +310,9 @@ def cell_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
         w = getattr(getattr(cell, "proj", None), "weight", None)
         if w is None:
             continue
-        out[f"cell/{name}_weight_norm"] = float(w.detach().norm())
+        keys.append(f"cell/{name}_weight_norm")
+        norms.append(w.detach().norm())
         if w.grad is not None:
-            out[f"cell/{name}_grad_norm"] = float(w.grad.detach().norm())
-    return out
+            keys.append(f"cell/{name}_grad_norm")
+            norms.append(w.grad.detach().norm())
+    return dict(zip(keys, read_floats(norms)))     # ONE host read (gen3_batched_host_reads_v1)

@@ -23554,3 +23554,74 @@ The registered look-1 read of `design_static_tokens.md` §8.1 + §8.2 (P_st `6c6
 6. **GPU lease** `static look1 cross`: acquired 15:17:35, released 15:40:37 PDT, immediately after the play.
 
 Tag: **READ · static-token screen look 1 · CONTINUE (t_NI 3.822 < 5.761) · s −3.7 % · S3 VALID · no HARM flag**
+
+### 2026-10-08 · BUILT · **PERF PHASE item 1 — the learner update's host↔device syncs batched: plain production update ~716 → 22 learner syncs by count (one per optimizer step + 2), every logged value bit-identical; GPU effect NOT measured**
+
+T25 item 1 (owner 2026-10-08: the perf phase before the remaining screens; the CUDA-graph prerequisite). Evidence it
+answers: `measurements/bottleneck_profile_2026-10-03/` (~764 D2H reads per update, ~11 s host spin-block, ~8 % host
+bubbles). Code: `instrumented_ppo/host_reads.py` (`HostReadQueue`), `micro_step.pack` (device-only),
+`learner_gates.clip_grad_norm_checked(reads=...)` / `check_loss_finite_read`, `batched_reads.read_floats`.
+
+**Inventory (CPU, by instrumentation: `agents/training/host_sync_trace.py`, a residency-aware `TorchFunctionMode`
+over one golden update, plus static reading).** Production shape = 98,304 rows / 2,048 = 48 micro-batches × 10
+epochs, accumulation 32 → 20 optimizer steps; epoch 0 = 48 micro-batches.
+
+| site (HEAD `73408d02`) | class | plain before | plain after |
+|---|---|---|---|
+| `micro_step.pack` `.cpu()` (ppo.py:329), per micro-batch | (a) metrics + (b) K9(c) loss / KL | 480 | 0 (rides the step transfer) |
+| calibration `as_numpy` ×4 (ppo.py:378–383), epoch 0 | (a) | 192 | 0 (rides the step transfer) |
+| `clip_grad_norm_` `error_if_nonfinite` `bool` + `float(norm)` (learner_gates.py:93/103), per step | (b) K9(c) + (a) | 40 | 20 (one transfer per step, with every deferred read) |
+| `_global_grad_sq` `float` (ppo.py:509) | (a) noise scale | 1 | 0 |
+| `train/loss` `loss.item()` (ppo.py:591) | (a) | 1 | 0 |
+| rank probe (rank_metrics.py:117), every update under `--rank-tripwire warn` | (a) | 1 | 1 (stayed) |
+| episode-start calibration (calibration.py:214 via metrics export) | (a) | 1 | 1 (stayed) |
+| K9(b) probe: tie-margin recorder (tie_margins.py:371, :395) + consistency (134, 427, 662) | (b) gate | ~95 | ~95 (stayed) |
+| **total** | | **~811** | **~117** |
+
+Diagnostics update (1 in 10): + grad balance 16, edge 34, cell 8, per-term noise 8 → each ONE batched read; but the
+per-term noise tagger needs epoch 0's first `accum` micro-batches' presence flags before their backward, so those 32
+are read at once: ~877 → ~153. Golden (64 rows, micro 16, accum 3, 2 epochs): plain 36 → 6, diagnostics 102 → 13.
+No (c)-class (data-dependent shape) sync exists on the update path (no `nonzero` / bool-mask index on a device tensor).
+
+**What stayed and why.** (1) One read per optimizer step: K9(c) must see a non-finite gradient norm BEFORE the step,
+and every deferred verdict rides it. (2) The K9(b) probe's per-MARGIN-call reads: once per update, before the epoch
+loop on a shallow queue, inside a GIGO gate whose flip-judge reads the op's operands at the moment the op ran —
+batching them needs operand copies; not a CUDA-graph blocker (outside R1). (3) Immediate reads when a consumer needs
+a value before the backward (`target_kl`, capacity telemetry — both off in production — the per-term noise tagger and
+a grad-balance sample on a diagnostics update). (4) The rank probe and the episode-start calibration, once each.
+
+**Identity proof.** The K9 golden IDENTICAL; every logged scalar (timers excluded), the parameter bytes, Adam's
+state and the torch + numpy RNG equal HEAD's in 11 configurations of the golden learner (plain / diagnostics /
+behaviour probe / two updates / ragged micro-batch 21 / accum 1 × 3 epochs / `target_kl` early stop plain and
+diagnostics / ride-along heads plain and diagnostics / capacity telemetry). The `--debug` smoke passes bare and with
+`--arch production` (the debug shape).
+
+**Tests.** `host_sync_guard_test.py` (plain ≤ steps + 2 at two micro-batch sizes, diagnostics ≤ steps + accum + 6,
+no sync at a retired site, the tracer's teeth, the queue, a static `synchronize` / `.cuda()` scan) — each count test
+FAILS at HEAD (36 > 6, 102 > 13). `learner_gates_test`: a deferred NaN term (named, micro 0, weights AND Adam
+untouched), a deferred NaN gradient, the deferred reader's KL / loss verdicts. `update_performance_shape_test`'s pin
+1,056 → 984.
+
+**FINDINGS.**
+1. **The GPU effect is UNMEASURED** (the GPU is leased to the static-token screen). To measure under a lease, HEAD vs
+   this commit, plain updates only, quiet windows: (a) update wall (`lifecycle/update_wall_s`, `train/train_ms`;
+   `main.compile_inventory --stage time` on the pinned buffer, both commits); (b) host-blocked time (nsys: time in
+   D2H `cudaMemcpyAsync` + `cudaStreamSynchronize` per update, and the D2H COUNT — expect ~117 vs ~811); (c) GPU busy %
+   in the update and the 0.1–10 ms drain-refill gap bucket (1.2 s per update in the profile's run 1); plus
+   `torch.cuda.set_sync_debug_mode("warn")` over one update, `lifecycle/cuda_*_peak_*` and pinned-host memory (the host
+   can now run ahead of the GPU across micro-batches, bounded by the launch queue, instead of draining at each), and the compile canary.
+2. **The expected gain is modest, ESTIMATE ≤ ~2 s per 40 s update** — a GPU-bound update's host spin-block is not lost
+   GPU time; what goes is the drain-and-refill bubbles. `program_rust_core.md` K2's 2026-09-28 benchmark measured the
+   per-micro-batch reads at 1.0 s (1.7 %). The value is structural: no host read is left inside the micro-step loop
+   of a plain update, the prerequisite for CUDA-graphing R1.
+3. **The ride-along heads (X26's config, OFF in production) carry ~200 host syncs per epoch-0 micro-batch** (`_ridealong_update`'s
+   `.item()`s, `RideAlongAccumulator.observe`'s bool-mask indexing and floats; golden: 790 over 4 micro-batches) —
+   ~9,500 per production update with every head and variant on. Untouched here (out of scope); the measured cost was
+   +0.59 s / +0.97 s of a 67 s update (`ridealong_step_benchmark`), so the next candidate if X26 runs with them.
+4. **The learner benchmark's `_scalar_read_meter` counts `.item()` / `float` only**: it never saw a `.cpu()` transfer
+   and counts AdamW's host-side `step` reads (984 of the golden's 984) as syncs. `HostSyncTrace` is the residency-aware
+   count.
+5. A diagnostics update keeps 32 immediate reads (the per-term noise tagger's presence flags); folding presence into the
+   tagger on the device would remove them, at 1 update in 10.
+
+Tag: **BUILT · T25 item 1 · learner syncs ~716 → 22 per plain production update (count) · bit-identical (11 configs + K9 golden) · GPU measurement DEFERRED**

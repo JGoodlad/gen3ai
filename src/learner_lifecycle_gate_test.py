@@ -102,6 +102,8 @@ STEP_MODULES: Dict[str, str] = {
     "agents/training/capacity_telemetry.py": "capacity telemetry the fold computes per update",
     "agents/training/grad_balance.py": "gradient-balance metrics + shared-trunk parameter lists, per update",
     "agents/training/rank_metrics.py": "the rank probe, run on the update's features",
+    "agents/training/batched_reads.py": "the diagnostics probes' ONE batched host read of many norms, per "
+                                        "update (gen3_batched_host_reads_v1; builds nothing)",
     "agents/training/opp_intent_labels.py": "the opponent-intent labels built per rollout/update",
     "agents/training/fork_arm.py": "the fork-arm PG mask read per minibatch",
     "agents/training/scaffolding.py": "`reliability_table`, the win-prob calibration read's statistic "

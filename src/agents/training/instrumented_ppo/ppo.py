@@ -55,9 +55,11 @@ from agents.training.instrumented_ppo.learner_gates import (   # K9(b) dispatch 
     check_buffer_finite,
     check_kl_finite,
     check_loss_finite,
+    check_loss_finite_read,
     clip_grad_norm_checked,
 )
 from agents.training.instrumented_ppo.metrics_export import TrainMetricsExport
+from agents.training.instrumented_ppo.host_reads import HostReadQueue as _HostReadQueue
 from agents.training.instrumented_ppo.micro_step import pack as _pack_micro
 from agents.training.instrumented_ppo.micro_step import unpack as _unpack_micro
 from agents.model.masked_categorical import MaskedPi as _MaskedPi
@@ -100,7 +102,79 @@ def train_step_source() -> str:
         TrainMetricsExport._record_noise_scale_metrics,
         TrainMetricsExport._record_head_metrics,
         TrainMetricsExport._record_capacity_metrics,
+        _micro_reader,
+        _calibration_reader,
     ))
+
+
+# ------------------------------------------------------------------ the deferred host reads' callbacks
+#: R1's probe terms in the inline fold's REGISTRATION order (the grad-balance probe's and K9(c)'s names).
+_R1_PROBE_TERMS = ("species_belief", "move_belief", "move_latent", "spread_belief",
+                   "nature_ev", "hp_type", "item_belief", "win_prob")
+
+
+def _micro_reader(packed, sink, last, box, *, epoch, approx_kl_divs, deferred):
+    """The host side of ONE micro-batch's read (`gen3_batched_host_reads_v1`): route every present metric
+    into the per-update lists (``sink``, by group) in the order the inline read did, record the loss value
+    (``last``) and the values the fold reads back (``box``) — and, for a DEFERRED read, make the K9(c)
+    verdicts the inline fold made right after it: the loss (`check_loss_finite_read`, naming the terms the
+    inline check would name) and the approx-KL (appended to its epoch's list, then `check_kl_finite`)."""
+    def apply(host):
+        rd = _unpack_micro(packed, host)
+        vals = dict(rd.values)
+        approx_kl = vals.pop("approx_kl/")
+        for mk, mv in vals.items():
+            grp, _, key = mk.partition("/")
+            if grp in ("belief", "aux", "win_prob"):
+                sink[grp].setdefault(key, []).append(mv)
+            else:
+                sink[grp].append(mv)
+        last["loss"] = rd.loss
+        box.update(present=rd.present, finite=rd.loss_finite, approx_kl=approx_kl)
+        if not deferred:
+            return
+        t, pres = rd.terms, rd.present
+        terms = {"policy": t["policy"], "entropy": t["entropy"], "value": t.get("value", 0.0)}
+        for name in _R1_PROBE_TERMS + ("opp_intent",):
+            if name in t and pres.get(name, False):
+                terms[name] = t[name]
+        check_loss_finite_read(rd.loss_finite, rd.loss, terms, epoch=epoch,
+                               micro=len(sink["pg_losses"]) - 1)
+        kl = np.float32(approx_kl)
+        approx_kl_divs.append(kl)
+        check_kl_finite(float(kl), epoch=epoch)
+    return apply
+
+
+def _calibration_reader(logits, target, mask, margin, calib_all, calib_contested):
+    """``(flat, apply)`` for `HostReadQueue.push`: epoch 0's four calibration columns as ONE device copy
+    (made now — the extractor's stash is replaced by the next forward), folded into the two accumulators
+    on the host exactly as the inline read folded them. None when a column is not float32 (the caller
+    reads inline)."""
+    cols = [logits, target, mask] + ([margin] if margin is not None else [])
+    if any(c.dtype != th.float32 for c in cols):
+        return None
+    sizes = [int(c.numel()) for c in cols]
+    flat = th.cat([c.detach().reshape(-1) for c in cols])
+
+    def apply(host):
+        o1, o2, o3 = sizes[0], sizes[0] + sizes[1], sizes[0] + sizes[1] + sizes[2]
+        cp = _calib_sigmoid(host[:o1])
+        cy, ck_mask = host[o1:o2], host[o2:o3]
+        calib_all.observe(cp, cy, ck_mask)
+        cmar = _calib_contested_mask(host[o3:o3 + sizes[3]] if margin is not None else None,
+                                     _WIN_CONTESTED_TAU)
+        if cmar is not None and cmar.size == cp.size:
+            calib_contested.observe(cp, cy, ck_mask * cmar)
+    return flat, apply
+
+
+def _noise_small_reader(box, accum):
+    """The noise scale's small-batch point, `accum² · ‖.grad‖²` after group 0's first micro-batch, set
+    when its deferred read lands (`_global_grad_sq` read inline gave the same float32 value)."""
+    def apply(host):
+        box["v"] = (accum ** 2) * float(host[0])
+    return apply
 
 
 class InstrumentedMaskablePPO(PpoHyperparameters,
@@ -279,6 +353,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         _ppo_lists = {"pg_losses": pg_losses, "clip_fractions": clip_fractions,
                       "value_losses": value_losses, "entropy_losses": entropy_losses,
                       "vf_clip_fractions": vf_clip_fractions}
+        # +HOST READS (gen3_batched_host_reads_v1, T25 item 1): every device->host read the update can
+        # DEFER — a micro-batch's metrics and its K9(c) verdicts, epoch 0's calibration rows, the noise
+        # scale's small-batch norm — is queued as a device tensor and made in ONE transfer at the next
+        # optimizer step, which reads its gradient norm anyway. A micro-batch is read AT ONCE only when
+        # something before its backward needs its values (`_read_now` below). Same float32 values, same
+        # order, same verdicts: only WHEN the host blocks moves (`host_reads.py`).
+        _hr = _HostReadQueue()
+        _rd_sink = {"belief": belief_metrics, "aux": aux_metrics, "win_prob": win_prob_metrics,
+                    **_ppo_lists}
+        _last_read: dict = {}                          # the newest micro-batch's read (`train/loss`)
+        _noise_small = {"v": noise_g_small_sq, "taken": noise_g_small_sq is not None}
         if _ph is not None: _ph("setup")
         # +K8 (gen3_device_batches_v1 / gen3_device_batch_mode_v1): how the micro-batches reach the
         # device — `--device-batch` (`device_batches.MODES`: one resident copy of the flattened buffer,
@@ -324,20 +409,25 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # HERE, before the tail: a tail fold that re-forwards would overwrite the stashes.
                 if shared_trunk and diag.rank and not rank_metrics:
                     rank_metrics = rank_probe_from_stash(self.policy.features_extractor)
-                # THE ONE host read of this micro-batch's diagnostics (every metric + presence + the
-                # loss's finiteness + the approx-KL), routed into the per-update lists below.
-                _mvals, _mpres, _mfinite = _unpack_micro(*_pack_micro(_mo))
-                _approx_kl = _mvals.pop("approx_kl/")
-                for _mk, _mv in _mvals.items():
-                    _grp, _, _key = _mk.partition("/")
-                    if _grp == "belief":
-                        belief_metrics.setdefault(_key, []).append(_mv)
-                    elif _grp == "aux":
-                        aux_metrics.setdefault(_key, []).append(_mv)
-                    elif _grp == "win_prob":
-                        win_prob_metrics.setdefault(_key, []).append(_mv)
-                    else:
-                        _ppo_lists[_grp].append(_mv)
+                # THE micro-batch's diagnostics (every metric + presence + the loss's finiteness and
+                # value + every term + the approx-KL) as ONE device tensor, routed into the per-update
+                # lists in micro-batch order by `_micro_reader`. +HOST READS: read AT ONCE only when
+                # something before this backward needs a value — the KL early stop, the capacity probes,
+                # the per-term noise tagger, the grad-balance probe still waiting for its sample — else
+                # at the next optimizer step, where `_micro_reader` makes this micro-batch's K9(c) loss
+                # and KL verdicts from it, still before that step.
+                _read_now = (self.target_kl is not None or capacity is not None
+                             or _ntg is not NULL_TAGGER
+                             or bool(shared_trunk and diag.grad_balance and not grad_balance))
+                _rd_box: dict = {}
+                _pk = _pack_micro(_mo)
+                _hr.push(_pk.flat, _micro_reader(_pk, _rd_sink, _last_read, _rd_box, epoch=epoch,
+                                                 approx_kl_divs=approx_kl_divs, deferred=not _read_now))
+                if _read_now:
+                    _hr.drain()
+                    _mpres, _mfinite, _approx_kl = _rd_box["present"], _rd_box["finite"], _rd_box["approx_kl"]
+                else:                  # the deferred read makes the K9(c) verdicts itself
+                    _mpres, _mfinite, _approx_kl = {}, True, None
                 for _tn, _tt in _mo.terms.items():          # the noise-scale per-term tagger
                     if _mpres.get(_tn, True):
                         _ntg.add(_mo.term_groups[_tn], _tt)
@@ -369,21 +459,25 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # drifts; ECE/MCE/the per-bin gaps isolate the reliability term. Accumulated in BIN
                 # COUNTS across the minibatches of EPOCH 0 (an ECE is nonlinear in the bin
                 # populations — the mean of per-minibatch ECEs is not the pooled ECE) and folded
-                # once at the end. Read-only: detached, no gradient, no RNG.
+                # once at the end. Read-only: detached, no gradient, no RNG. +HOST READS: the four
+                # columns ride the next optimizer step's transfer (`_calibration_reader`).
                 if win_prob_on and epoch == 0:
                     _cz = getattr(self.policy.features_extractor, "last_win_prob_logits", None)
                     _ct = rollout_data.observations.get("win_target")
                     _cm = rollout_data.observations.get("win_mask")
                     if _cz is not None and _ct is not None and _cm is not None:
-                        _cp = _calib_sigmoid(_calib_as_numpy(_cz).reshape(-1))
-                        _cy = _calib_as_numpy(_ct).reshape(-1)
-                        _ck_mask = _calib_as_numpy(_cm).reshape(-1)
-                        calib_all.observe(_cp, _cy, _ck_mask)
-                        _cmar = _calib_contested_mask(
-                            _calib_as_numpy(rollout_data.observations.get("win_margin")),
-                            _WIN_CONTESTED_TAU)
-                        if _cmar is not None and _cmar.size == _cp.size:
-                            calib_contested.observe(_cp, _cy, _ck_mask * _cmar)
+                        _cmg = rollout_data.observations.get("win_margin")
+                        _calib_q = _calibration_reader(_cz, _ct, _cm, _cmg, calib_all, calib_contested)
+                        if _calib_q is not None:
+                            _hr.push(*_calib_q)
+                        else:          # a non-float32 column: the inline read, unchanged
+                            _cp = _calib_sigmoid(_calib_as_numpy(_cz).reshape(-1))
+                            _cy = _calib_as_numpy(_ct).reshape(-1)
+                            _ck_mask = _calib_as_numpy(_cm).reshape(-1)
+                            calib_all.observe(_cp, _cy, _ck_mask)
+                            _cmar = _calib_contested_mask(_calib_as_numpy(_cmg), _WIN_CONTESTED_TAU)
+                            if _cmar is not None and _cmar.size == _cp.size:
+                                calib_contested.observe(_cp, _cy, _ck_mask * _cmar)
 
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
@@ -461,14 +555,18 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # and Schulman blog: http://joschu.net/blog/kl-approx.html
                 # (computed inside R1; read with the micro-batch's one host read — a float32 scalar,
                 # as sb3's `.cpu().numpy()` produced, so `np.mean` folds it in float32 exactly as before)
-                approx_kl_div = np.float32(_approx_kl)
-                approx_kl_divs.append(approx_kl_div)
-                # +K9(c): a NaN/Inf KL can ride a FINITE loss (an overflowed ratio on a positive-
-                # advantage row takes the clipped branch) and would pin the KL->LR controller's EMA
-                # forever; the host read above is the micro-batch's own, so the check is free.
-                check_kl_finite(float(approx_kl_div), epoch=epoch)
+                # +HOST READS: a DEFERRED read appends it and makes the K9(c) check in `_micro_reader`,
+                # at the next optimizer step — there is no early stop to decide (`target_kl` is None).
+                if _read_now:
+                    approx_kl_div = np.float32(_approx_kl)
+                    approx_kl_divs.append(approx_kl_div)
+                    # +K9(c): a NaN/Inf KL can ride a FINITE loss (an overflowed ratio on a positive-
+                    # advantage row takes the clipped branch) and would pin the KL->LR controller's EMA
+                    # forever; the host read above is the micro-batch's own, so the check is free.
+                    check_kl_finite(float(approx_kl_div), epoch=epoch)
 
-                if self.target_kl is not None and approx_kl_div > 1.5 * self.target_kl:
+                if (_read_now and self.target_kl is not None
+                        and approx_kl_div > 1.5 * self.target_kl):
                     continue_training = False
                     if self.verbose >= 1:
                         print(f"Early stopping at step {epoch} due to reaching max kl: {approx_kl_div:.2f}")
@@ -505,13 +603,22 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # +NOISE-SCALE: after the FIRST micro-batch of group 0 (epoch 0), .grad holds exactly
                 # g_1/accum (this micro's gradient, scaled) → ‖g_1‖² = accum²·‖.grad‖². The single
                 # micro-batch (B=batch_size) sample for the noise-scale estimate.
-                if accum >= 2 and epoch == 0 and micro_in_group == 1 and noise_g_small_sq is None:
-                    noise_g_small_sq = (accum ** 2) * self._global_grad_sq(self.policy.parameters())
+                # +HOST READS: the norm stays on the device and rides the group's step transfer.
+                if accum >= 2 and epoch == 0 and micro_in_group == 1 and not _noise_small["taken"]:
+                    _noise_small["taken"] = True
+                    _ns_sq = self._global_grad_sq_t(self.policy.parameters())
+                    if _ns_sq is None or _ns_sq.dtype != th.float32:
+                        _noise_small["v"] = (accum ** 2) * (float(_ns_sq) if _ns_sq is not None else 0.0)
+                    else:
+                        _hr.push(_ns_sq.reshape(1), _noise_small_reader(_noise_small, accum))
                 if _ph is not None: _ph("noise_base")
                 if micro_in_group == accum:
                     # +INSTRUMENTATION: pre-clip total grad norm (per step). +K9(c): a NaN/Inf norm is a
                     # typed FATAL BEFORE the in-place clip and the optimizer step (`learner_gates`).
-                    grad_norm = clip_grad_norm_checked(self.policy, self.max_grad_norm, epoch=epoch)
+                    # +HOST READS: the norm is read in the SAME transfer as everything this group
+                    # deferred, whose K9(c) verdicts are made first (`learner_gates`).
+                    grad_norm = clip_grad_norm_checked(self.policy, self.max_grad_norm, epoch=epoch,
+                                                       reads=_hr)
                     grad_norms.append(grad_norm)
                     # +NOISE-SCALE: the accumulated group gradient (B=batch_size·accum) — pre-clip norm
                     # from clip_grad_norm_. Captured on group 0 (same data as the micro-batch above).
@@ -547,10 +654,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     for _p in self.policy.parameters():
                         if _p.grad is not None:
                             _p.grad.mul_(_rescale)
-                grad_norms.append(clip_grad_norm_checked(self.policy, self.max_grad_norm, epoch=epoch))
+                grad_norms.append(clip_grad_norm_checked(self.policy, self.max_grad_norm, epoch=epoch,
+                                                         reads=_hr))
                 self.policy.optimizer.step()
                 self.policy.optimizer.zero_grad()
                 micro_in_group = 0
+            # +HOST READS: nothing is left pending at an epoch's end (every micro-batch joined a step,
+            # or was read at once); the drain is free then, and keeps the per-epoch slices honest.
+            _hr.drain()
 
             # +PER-EPOCH: close this epoch's pair. Placed AFTER the minibatch loop so a KL early stop
             # (which `break`s out of it) still records the partial epoch, tripping minibatch included.
@@ -566,6 +677,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         if _devb is not None and _devb.nbytes:   # gen3_cuda_ledger_v1: the update's device copy
             self.logger.record("lifecycle/device_batch_mib", _devb.nbytes / (1 << 20))
         _devb_uninstall(self.rollout_buffer)   # +K8: the device copy is the update's, not the run's
+        _hr.drain()                            # +HOST READS: nothing pending (a KL early stop's break)
+        noise_g_small_sq = _noise_small["v"]
 
         # +CAPACITY TELEMETRY: the once-per-train() half — fold the per-minibatch canary/cosine
         # samples and (on cadence) run the frozen probe batch through the extractor for the
@@ -588,7 +701,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             self.logger.record(f"train/approx_kl_epoch_{_k}", _kl)
         for _k, _cf in enumerate(epoch_clip_fraction):
             self.logger.record(f"train/clip_fraction_epoch_{_k}", _cf)
-        self.logger.record("train/loss", loss.item())
+        # +HOST READS: the last micro-batch's loss, from its read (the float32 value `loss.item()` gave)
+        self.logger.record("train/loss", (_last_read["loss"] if ("loss" in _last_read and loss is _mo.loss)
+                                          else loss.item()))
         self.logger.record("train/explained_variance", explained_var)
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         self.logger.record("train/clip_range", clip_range)

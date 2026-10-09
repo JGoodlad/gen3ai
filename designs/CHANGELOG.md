@@ -13077,3 +13077,37 @@ Five small items from the P6 findings; manifest `designs/ops/deletion_pass_manif
   polite, tested on a fake fetcher only; nothing was downloaded.
 - **`scripts/ops/s_read.py`** — the paired speed read, fixed and generalised from the static screen's copy: a pair with
   no quiet cycles on a side is `insufficient quiet cycles`, not a `TypeError`.
+
+## 2026-10-08 — PERF PHASE item 1: the learner update's HOST SYNCS are batched (`gen3_batched_host_reads_v1`, T25; no config / ARCH bump, training arithmetic untouched)
+
+The 2026-10-03 bottleneck profile counted ~764 device→host reads per production update, each a full drain of a
+~22 ms-deep GPU queue. Most read values nobody needs before the next optimizer step.
+
+- **`instrumented_ppo/host_reads.py` (new): `HostReadQueue`.** A micro-batch's diagnostics (`micro_step.pack`, now a
+  DEVICE tensor carrying the metric values / weights, presence, the loss's finiteness and value, every term's value
+  and the approx-KL), epoch 0's four calibration columns and the noise scale's small-batch norm are queued and read
+  in ONE transfer at the next optimizer step, beside its gradient norm. A micro-batch is read at once only when
+  something before its backward needs it (`target_kl` set, capacity telemetry, the per-term noise tagger, the
+  grad-balance probe still waiting).
+- **K9(c) moves with it** (`learner_gates.check_loss_finite_read`, `clip_grad_norm_checked(reads=...)`): a deferred
+  micro-batch's loss and KL verdicts run in its callback (`ppo._micro_reader`) at the step it joins — after its
+  backward, still BEFORE that step, so the weights and Adam's moments are the last finite ones either way; the same
+  term names, micro-batch index and message (but for the "after its backward, before the optimizer step it joins"
+  clause). The clip is torch's own two halves (`get_total_norm`, then `clip_grads_with_norm_`) with the norm read
+  between them, so a NaN norm still raises before the in-place scaling.
+- **The diagnostics probes** (`grad_balance`'s norms and dots, edge / cell liveness, the per-term noise sampler) read
+  through `batched_reads.read_floats`, one transfer each.
+- **Counts (CPU, residency-aware, `host_sync_trace.HostSyncTrace`):** the golden plain update 36 → 6, the golden
+  diagnostics update 102 → 13; production shape (48 micro-batches × 10 epochs, 20 optimizer steps), plain:
+  learner ~716 → 22 (one per step + the rank probe + the episode-start calibration), plus the K9(b) probe's ~95,
+  unchanged. `update_performance_shape_test`'s `.item()` / `float` pin 1,056 → 984 (all AdamW's host-side `step`
+  reads now).
+- **Identity:** every logged scalar, the parameters, Adam's state and the RNG bit-identical to HEAD in 11 golden
+  configurations (plain / diagnostics / behaviour probe / two updates / ragged micro-batch / accum 1 × 3 epochs /
+  `target_kl` early stop plain and diagnostics / ride-along heads plain and diagnostics / capacity telemetry); the K9
+  golden IDENTICAL.
+- **New tests:** `host_sync_guard_test.py` (the shape bound; no sync at a retired per-micro-batch site; the tracer's
+  own teeth; the queue; a static scan for `synchronize` / `wait_stream` / `.cuda()`), four deferred-verdict tests in
+  `learner_gates_test.py`.
+- **Deferred to a GPU lease:** update wall, host-blocked time, GPU busy % (`designs/training/learner_gates.md` "The
+  deferred reads").

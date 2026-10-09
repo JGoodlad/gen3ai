@@ -420,3 +420,79 @@ def test_every_non_finite_fatal_is_the_launchers_class_and_carries_the_tag():
     assert str(ei.value).startswith("[Learner] FATAL [K9(c)]")
     assert exit_code_for(ei.value) == int(TrainExitCode.FATAL_NONFINITE) == 4
     assert str(G.nonfinite("[Learner] FATAL x")) == "[Learner] FATAL x"
+
+
+# ---------------------------------------------------------------- the DEFERRED verdicts (gen3_batched_host_reads_v1)
+def _plain(model):
+    """Make the next update a PLAIN one (not a diagnostics update): every micro-batch's read is deferred
+    to the optimizer step it joins, where its K9(c) verdicts are made (`instrumented_ppo/host_reads.py`)."""
+    model.diagnostics_every = 10
+    model._diagnostics_ran_in_process = True
+    model.num_timesteps = model.n_steps * model.n_envs * 3
+    return model
+
+
+def _opt_state(model):
+    return [v.clone() for st in model.policy.optimizer.state.values() for v in st.values()
+            if isinstance(v, th.Tensor)]
+
+
+def test_a_deferred_non_finite_term_is_fatal_before_any_step_naming_it():
+    """The same NaN as `test_a_non_finite_term_is_fatal_before_its_backward_naming_it`, on a PLAIN update:
+    the verdict is made from the micro-batch's deferred read at the first optimizer step — same term
+    named, same micro-batch, and the weights AND Adam's state untouched."""
+    model = _plain(_learner("off"))
+    p = next(q for n, q in model.policy.named_parameters() if n.startswith("features_extractor.win_head"))
+    with th.no_grad():
+        p.view(-1)[0] = float("nan")
+    before, opt_before = _params(model), _opt_state(model)
+    with pytest.raises(G.NonFiniteLearnerError,
+                       match=r"NON-FINITE LOSS .* epoch 0 \(micro-batch 0 of this update\), after its backward, "
+                             r"before the optimizer step it joins.*win_prob"):
+        _train(model)
+    assert th.allclose(before, _params(model), rtol=0.0, atol=0.0, equal_nan=True)
+    assert all(th.equal(a, b) for a, b in zip(opt_before, _opt_state(model)))
+
+
+def test_a_deferred_nan_gradient_is_fatal_naming_the_parameter():
+    model = _plain(_learner("off"))
+    name, p = next((n, q) for n, q in model.policy.named_parameters() if n.startswith("pointer_head"))
+    p.register_hook(lambda grad: grad * float("nan"))
+    before = _params(model)
+    with pytest.raises(G.NonFiniteLearnerError, match=r"NON-FINITE GRADIENT.*" + name.replace(".", r"\.")):
+        _train(model)
+    assert th.equal(before, _params(model))
+
+
+def _packed_micro(kl: float, loss: float, win_prob: float):
+    from agents.training.instrumented_ppo.micro_step import Packed
+
+    host = np.array([0.1, kl,            # metric values: pg_losses/, approx_kl/
+                     1.0, 1.0,           # their weights
+                     1.0,                # present: win_prob
+                     float(np.isfinite(loss)), loss,
+                     0.1, 0.2, win_prob],   # terms: policy, entropy, win_prob
+                    dtype=np.float32)
+    return Packed(["pg_losses/", "approx_kl/"], ["win_prob"], ["policy", "entropy", "win_prob"], [1, 1, 1],
+                  th.from_numpy(host)), host
+
+
+def test_the_deferred_reader_makes_the_inline_kl_and_loss_verdicts():
+    """`ppo._micro_reader` on a deferred read: the KL lands in its epoch's list and a non-finite one is
+    `check_kl_finite`'s FATAL; a non-finite loss names its term — the inline path's verdicts, at the step."""
+    from agents.training.instrumented_ppo.ppo import _micro_reader
+
+    sink: dict = {"pg_losses": []}
+    kls: list = []
+    packed, host = _packed_micro(0.01, 1.0, 0.5)
+    _micro_reader(packed, sink, {}, {}, epoch=1, approx_kl_divs=kls, deferred=True)(host)
+    assert sink["pg_losses"] == [pytest.approx(0.1)] and kls == [np.float32(0.01)]
+    packed, host = _packed_micro(math.inf, 1.0, 0.5)
+    with pytest.raises(G.NonFiniteLearnerError, match="approx-KL inf at epoch 1"):
+        _micro_reader(packed, sink, {}, {}, epoch=1, approx_kl_divs=kls, deferred=True)(host)
+    packed, host = _packed_micro(0.01, math.nan, math.nan)
+    with pytest.raises(G.NonFiniteLearnerError, match=r"micro-batch 2 of this update.*: win_prob\."):
+        _micro_reader(packed, sink, {}, {}, epoch=1, approx_kl_divs=kls, deferred=True)(host)
+    box: dict = {}
+    _micro_reader(packed, {"pg_losses": []}, {}, box, epoch=1, approx_kl_divs=[], deferred=False)(host)
+    assert box["finite"] is False      # an IMMEDIATE read only reports; the inline check decides

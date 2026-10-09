@@ -439,9 +439,9 @@ can move anything (so a crash-save holds the last finite weights):
 | gate | where | catches |
 |---|---|---|
 | `check_buffer_finite` | once per update, right after the intent-label alignment — before any forward (it once also ran BEFORE PopArt's advance, which rewrote `value_net` outside the optimizer; PopArt is deleted) | a NaN/Inf reward, value, behaviour log-prob, advantage, return, or FLOAT label key (the flat `observation` is not scanned: an input whose NaN reaches the loss, and a full scan is ~0.3 s at production size) |
-| `check_loss_finite` | once per micro-batch, on the assembled loss, before the grad-balance / noise probes and the backward. Since K8 the region R1's `isfinite(loss)` rides the micro-batch's ONE host read (`micro_step.pack`); the full check (its own read) runs when the eager tail folded a term onto R1's loss, or to NAME the term(s) on a failure — same timing, same message | any term; NAMES the non-finite term(s) (policy, entropy, value, and every `aux_probe_terms` entry) |
-| `check_kl_finite` | per micro-batch, on sb3's own approx-KL host read | an Inf KL under a FINITE loss (an overflowed ratio on a positive-advantage row takes the clipped branch) |
-| `clip_grad_norm_checked` | every optimizer step (the in-loop step and the accumulation flush) | a NaN/Inf gradient from a finite loss; `error_if_nonfinite=True` raises BEFORE the in-place scaling, so the named parameters are the ones the backward poisoned |
+| `check_loss_finite` / `check_loss_finite_read` | once per micro-batch, on the assembled loss. Since K8 the region R1's `isfinite(loss)`, its value and every term's value ride the micro-batch's ONE packed read (`micro_step.pack`). Since `gen3_batched_host_reads_v1` (T25 item 1, 2026-10-08) WHEN that read lands depends on who needs it: **immediate** (the old timing — before the grad-balance / noise probes and the backward, `check_loss_finite`, which also re-reads to name the term when the eager tail folded one onto R1's loss) when the KL early stop (`target_kl` set), the capacity probes, the per-term noise tagger or the grad-balance probe still waiting for its sample needs the micro-batch's values; **deferred** otherwise (every micro-batch of a plain production update): the verdict is `check_loss_finite_read` on the read made in the transfer of the optimizer step the micro-batch joins — AFTER its backward, still BEFORE that step, so the weights and Adam's moments are the last finite ones either way (the backward writes only `.grad`). Same term names, same micro-batch index, same message but for the "after its backward, before the optimizer step it joins" clause | any term; NAMES the non-finite term(s) (policy, entropy, value, and every `aux_probe_terms` entry) |
+| `check_kl_finite` | per micro-batch, on the approx-KL from the same packed read — immediate or deferred with it (the deferred one appends to its epoch's list and checks in the micro-batch's callback, `ppo._micro_reader`; the KL→LR controller reads it after `train()` returns either way) | an Inf KL under a FINITE loss (an overflowed ratio on a positive-advantage row takes the clipped branch) |
+| `clip_grad_norm_checked` | every optimizer step (the in-loop step and the accumulation flush): torch's own `get_total_norm`, the norm read in ONE transfer with every read the update deferred to this step (whose loss / KL verdicts run FIRST, the inline order), judged on the host, then `clip_grads_with_norm_` — exactly the two halves `clip_grad_norm_` runs, so the clip is bit-identical | a NaN/Inf gradient from a finite loss; raised BEFORE the in-place scaling, so the named parameters are the ones the backward poisoned |
 
 ### The audit (2026-09-30) — every site, its verdict, and what was done
 
@@ -488,6 +488,22 @@ rate functions, the `try/except` telemetry blocks in
 
 **OPEN — off in production, recorded rather than changed:** `keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message);
 `--target-kl nan` parses (no finiteness validation in the parser).
+
+**The deferred reads and the host-sync guard (`gen3_batched_host_reads_v1`, T25 item 1).** On CUDA every
+device→host read blocks the host until the GPU queue drains; the 2026-10-03 profile counted ~764 per production
+update (`designs/research_state/measurements/bottleneck_profile_2026-10-03/`). `instrumented_ppo/host_reads.py`'s
+`HostReadQueue` holds every read the update can defer — a micro-batch's packed diagnostics and verdicts, epoch 0's
+four calibration columns, the noise scale's small-batch norm — as device tensors, and makes them in ONE transfer at the
+next optimizer step, beside its gradient norm; the diagnostics probes (`grad_balance`, edge / cell liveness, the
+per-term noise sampler) read their norms through `batched_reads.read_floats` (one transfer each). Every logged scalar,
+the parameters, Adam's state and the RNG are bit-identical to the inline reads (measured on the golden learner in 11
+configurations: plain / diagnostics / behaviour probe / two updates / a ragged micro-batch / accum 1 × 3 epochs /
+`target_kl` early stop / ride-along heads / capacity telemetry). A plain production update goes from ~716 learner
+syncs to 22 (one per optimizer step + the rank probe + the episode-start calibration); the K9(b) probe's ~95 (the
+tie-margin recorder's per-MARGIN-call reads) are unchanged. `host_sync_guard_test.py` counts them on one CPU update
+with `host_sync_trace.HostSyncTrace` (a `TorchFunctionMode`, residency-aware: a read of a host tensor such as
+AdamW's `step` counter is not a sync) and holds them to the shape's bound — one transfer per optimizer step + 2 —
+so a per-micro-batch read fails the routine gate.
 
 **The exit side (cutover-prep, `743008c1`).** Every K9(c) raise is `main.exit_codes.NonFiniteLearnerError`
 (a `FloatingPointError`; `learner_gates.nonfinite(msg)` builds it) with its message tagged

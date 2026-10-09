@@ -40,6 +40,8 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import torch as th
 
+from agents.training.batched_reads import read_floats
+
 #: The gradient groups, in reporting order. `aux` is deliberately ONE bucket rather than one entry
 #: per head — `grad/<term>_share` already breaks the heads out individually, and the question this
 #: module answers ("do the dense supervised losses deflate the total reading?") is answered by the
@@ -64,13 +66,20 @@ def per_term_enabled(model: object) -> bool:
 
 def sq_norm(grads: Iterable[Optional[th.Tensor]]) -> float:
     """‖g‖² over a gradient tuple, tolerating the `None`s `allow_unused=True` returns."""
+    acc = sq_norm_t(grads)
+    return float(acc) if acc is not None else 0.0
+
+
+def sq_norm_t(grads: Iterable[Optional[th.Tensor]]) -> Optional[th.Tensor]:
+    """`sq_norm` left ON THE DEVICE (None for no gradient): the same sum in the same order, read later
+    in one batch with the others (`batched_reads.read_floats`, gen3_batched_host_reads_v1)."""
     acc = None
     for g in grads:
         if g is None:
             continue
         s = g.detach().pow(2).sum()
         acc = s if acc is None else acc + s
-    return float(acc) if acc is not None else 0.0
+    return acc
 
 
 #: The original private spelling, kept so nothing that reached for it breaks.
@@ -148,7 +157,8 @@ class PerTermNoiseSampler:
         self._groups: Tuple[str, ...] = tuple(groups)
         self._pending: Dict[str, List[th.Tensor]] = {}
         self._accum: Dict[str, List[Optional[th.Tensor]]] = {}
-        self.small_sq: Dict[str, float] = {}
+        #: each group's first-micro-batch ‖g‖², ON THE DEVICE until `result` reads them all at once
+        self.small_sq: Dict[str, Optional[th.Tensor]] = {}
         self.micros: int = 0
         self.probe_seconds: float = 0.0
         self.failed: bool = False
@@ -181,7 +191,7 @@ class PerTermNoiseSampler:
                             continue
                         buf[i] = g.detach().clone() if buf[i] is None else buf[i] + g.detach()
                 if first:
-                    self.small_sq[group] = sq_norm(grads)
+                    self.small_sq[group] = sq_norm_t(grads)
             self.micros += 1
         except Exception as exc:                              # pragma: no cover - defensive
             self.failed = True
@@ -203,12 +213,12 @@ class PerTermNoiseSampler:
         if self.failed or self.micros < accum or accum < 2:
             return {}
         inv = 1.0 / float(accum * accum)
-        out: Dict[str, Tuple[float, float]] = {}
-        for group, buf in self._accum.items():
-            if group not in self.small_sq:
-                continue    # first appeared on a later micro-batch — no matched small-batch point
-            out[group] = (self.small_sq[group], sq_norm(buf) * inv)
-        return out
+        # first appeared on a later micro-batch — no matched small-batch point: skipped
+        groups = [g for g in self._accum if g in self.small_sq]
+        host = read_floats([self.small_sq[g] for g in groups]
+                           + [sq_norm_t(self._accum[g]) for g in groups])    # ONE host read
+        n = len(groups)
+        return {g: (host[i], host[n + i] * inv) for i, g in enumerate(groups)}
 
     def release(self) -> None:
         """Drop the per-group gradient accumulators (the probe's only non-trivial memory)."""
