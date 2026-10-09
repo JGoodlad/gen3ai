@@ -23737,3 +23737,15 @@ Owner request 2026-10-09: where is `--token-encoding static` worse or less expre
 4. ~75 min of nice-19 CPU work ran beside the live screen: its speed read may have lost quiet cycles in 07:05–08:10 PDT (its strength read is unaffected).
 
 Tag: **DESCRIPTIVE · static-token diagnostic · H1 NOT SUPPORTED (Δ −2.6 / −3.2 / −2.1 pp at 5 / 10 / 15M) · H2 SUPPORTED for board facts (our-side Spikes R² 0.33 vs 0.46) · H3 SUPPORTED · deficit on slow teams (stall −10.7 pp, HO −1.2) · proposed lever: a third trunk round**
+
+## 2026-10-09 — OPS CORRECTION: the skeleton cleanup also removed per-checkpoint sidecar JSONs; the era-2/era-1 DOSE gap re-reads 4.31x
+A correction to the skeleton-cleanup entry above. The plan deleted each pre-`rb_` run's `checkpoints/` (and `snapshots/` etc.) as a WHOLE directory whenever no kept file sat inside it. That took the per-checkpoint sidecar JSONs (`checkpoints/*.json`, a few KB each) too, contrary to the stated "small json kept" rule. They are not recoverable.
+
+Consequence: `main.dose` read its LR median from those sidecars. As of `6ed20cdd` it reads a skeleton run from the run's TensorBoard `train/learning_rate` curve, and every row names its `source`.
+- The 2026-09-21 era-2/era-1 dose comparison now reads era 2 = 1.181e-8 (TB median LR 5.81e-5), against the banked 1.119e-8 (sidecar median 5.5e-5), 5.5 % apart.
+- Era 1 is unmoved at 5.086e-8.
+- The ratio is 4.31x (was 4.55x).
+
+The 09-21 entry stands as measured then; its conclusion (a dose confound of ~4.3-4.5x) is unchanged.
+
+Also: `policy_spectrum`'s committed Lane S bank names pre-`rb_` eval traces as build sources, so the bank probably can no longer be REBUILT (UNVERIFIED). The committed bank itself is intact.
