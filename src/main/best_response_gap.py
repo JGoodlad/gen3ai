@@ -15,7 +15,8 @@ python -m main.best_response_gap \
     ai_v13_13_exploit5_offense ai_v13_14_exploit5_balance ai_v13_15_exploit5_stall \
     --json /tmp/brgap.json --md /tmp/brgap.md
 
-# ... which REFUSES on dose (5.086e-08 vs 1.119e-08 under K10(c)'s step count, 4.55x apart). Print it anyway:
+# ... which REFUSES on dose (5.086e-08 vs 1.181e-08, 4.31x apart, the LR read from each run's TB curve
+# since the 2026-10-09 cleanup deleted the sidecars; 1.119e-08 / 4.55x when they existed). Print it anyway:
 python -m main.best_response_gap <the six runs> --allow-unmatched
 
 # one round alone, on the endpoint convention the banked numbers use
@@ -243,6 +244,8 @@ def render_text(doc: Dict[str, Any]) -> str:
         note = "  ⚠ lineage DERIVED from original_command" if r["lineage_derived"] else ""
         budget = f"{r['budget']:,}" if isinstance(r.get("budget"), int) else "—"
         dose = f"{r['dose_rate']:.4g}" if r.get("dose_rate") is not None else "—"
+        if r.get("dose_rate") is not None and r.get("dose_source"):
+            dose += f" (LR from {r['dose_source']})"
         n_post = sum(1 for p in r["series"] if p["post_fork"])
         out.append(f"  {r['run']}  round {r['round']}  archetype "
                    f"{r['archetype'] or 'UNASSIGNED'} ({r['membership']})")

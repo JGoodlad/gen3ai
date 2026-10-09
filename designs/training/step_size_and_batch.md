@@ -415,11 +415,24 @@ breaks EVERY save in the run at the pre-train round-trip smoke (observed while b
 `_correction_buffer` hazard again). The snapshot is taken AFTER the pin so a freeze is captured.
 
 `python -m main.dose <run>…` answers the same question for runs already on disk, from what they
-already wrote down: median LR over the **checkpoint sidecars** (preferred over `snapshot_history`,
-which is CAPPED at ~15 rows while sidecars keep every un-groomed checkpoint; then the run-level
-`current_lr` as a single point), the shape from the SAME rows, and a ratio against a `--reference`
-run (default `ai_v8_14_distill3_0725`). A run whose shape MOVED mid-flight is flagged rather than
-averaged. Torch-free and model-free, so it reads a run whose architecture drifted past current code.
+already wrote down: median LR over the **checkpoint sidecars** (`source: sidecars`, preferred); with
+the sidecars gone, the run's own **TensorBoard LR curve** (`source: tb` — `tb/` `train/learning_rate`,
+one point per update, a fork's inherited parent prefix skipped; the median over every update, a
+DIFFERENT statistic from the sidecar median — on the era-2 exploiters 5.81e-05 against the banked
+5.50e-05); then `snapshot_history` (CAPPED at ~15 rows, 3 on the era-2 exploiters, so a median over a
+smaller run than the one asked about); then the run-level `current_lr` as a single point. The shape
+(batch, accumulation, epochs, rollout) comes from the checkpoint rows or, failing them, `metadata.json`
+(`shape_source`), and a ratio against a `--reference` run (default `ai_v8_14_distill3_0725`) is
+printed. A run whose shape MOVED mid-flight is flagged rather than averaged, and any reading that is not
+the sidecar median says where its LR came from (`lr from tb (79 pts)`). Torch-free and model-free, so it
+reads a run whose architecture drifted past current code.
+
+🚨 **The pre-Rustboro SKELETON cleanup (2026-10-09, owner-approved) deleted every intermediate checkpoint
+of every pre-`rb_` run, sidecars with them.** Their doses are now read from the TB curve; a figure
+quoted from before then (ledger 2026-09-21: 8.392e-09 at lr_median 5.5e-05) was a sidecar-median reading
+and is not reproducible — re-read with `python -m main.dose <run>` and say which `source`. A comparison
+of two doses is only sound on ONE source: `main.best_response_gap` refuses a pair read from different
+records, or from a capped / one-point one (`designs/training/exploiter_and_distillation.md`).
 
 **Flag class: training-runtime.** Neither flag reaches the extractor, scales a loss or changes a
 weight shape ⇒ no `ARCH_SIGNATURE` bump, not in `model_config.json`/`ModelVersion`, not in
@@ -431,8 +444,9 @@ Tests: `src/main/fork_lr_test.py` (the discrimination rule incl. the warm-start 
 decisions, the freeze surviving a restart from the record AND from the argv, the three-site pin, the
 clamp, the freeze holding across a KL excursion a control arm demonstrably moves on, and the three
 config refusals), `src/agents/training/dose_test.py` (the arithmetic against v8's own recorded row,
-the block, the pickle-safety of the snapshot), `src/main/dose_test.py` (source precedence, step
-ordering, the shape-moved flag, the CLI, and that importing it pulls in no torch).
+the block, the pickle-safety of the snapshot), `src/main/dose_test.py` (source precedence — sidecars, then the TB curve, then the capped history —
+step ordering, the shape-moved flag, the CLI, the TB reader's inherited-prefix and duplicate-step rules,
+and that importing it pulls in no torch).
 
 ### `--adaptive-batch` — CLOSING the loop on the noise scale (`gen3_adaptive_batch_v1`)
 

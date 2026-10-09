@@ -372,8 +372,8 @@
    "duration_s": 38.96,
    "contention": 1.0,
    "detail": "",
-   "last_skipped_at": "2026-10-08T11:54:06Z",
-   "last_skipped_commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
+   "last_skipped_at": "2026-10-09T14:57:35Z",
+   "last_skipped_commit": "ea8470c5ca8a4ee4507c05de2b5e7f4351f7ea08",
    "last_skip_detail": ""
   },
   "src/main/prober/web/render_integration_test.py::test_a_404_page_still_renders_the_shell": {
@@ -873,5 +873,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-09T00:57:07Z"
+ "last_written": "2026-10-09T14:57:35Z"
 }

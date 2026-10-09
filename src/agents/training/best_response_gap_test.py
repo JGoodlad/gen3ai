@@ -38,11 +38,15 @@ def _team_files(tmp_path, stems):
 
 def make_run(tmp_path, name, *, target_run, target_step, fork_step, num_timesteps,
              cycles, team_stems, lr=2.5e-4, batch_size=2048, grad_accum=32, n_epochs=10,
-             bot_fraction=0.5, external=None, role="exploiter", with_target=True, extra_cli=None):
+             bot_fraction=0.5, external=None, role="exploiter", with_target=True, extra_cli=None,
+             sidecars=True, tb_lrs=None):
     """One synthetic exploiter run directory: metadata.json + sidecars + eval_results.jsonl.
 
     ``cycles`` is ``[(step, wins, games), …]``; ``external`` overrides the ``ext_*`` label so a
-    target/series disagreement can be exercised.
+    target/series disagreement can be exercised. ``sidecars=False`` is a run whose per-checkpoint
+    sidecars are gone (the 2026-10-09 pre-Rustboro cleanup): its shape then comes from a
+    ``snapshot_history`` row per cycle, and ``tb_lrs`` (``[lr, …]``, one per update) writes the TB
+    ``train/learning_rate`` curve ``main.dose`` reads the LR from.
     """
     run = tmp_path / name
     (run / "checkpoints").mkdir(parents=True)
@@ -65,11 +69,20 @@ def make_run(tmp_path, name, *, target_run, target_step, fork_step, num_timestep
                     "exploiter_target": target_block if with_target else None,
                     "ancestry": []},
     }
+    rows = {f"checkpoint_{step}_steps.zip": {
+        "num_timesteps": step, "lr": lr, "batch_size": batch_size,
+        "grad_accum_steps": grad_accum, "n_epochs": n_epochs} for step, _w, _g in cycles}
+    if not sidecars:
+        meta["snapshot_history"] = rows
+        (run / "checkpoints").rmdir()
     (run / "metadata.json").write_text(json.dumps(meta))
-    for i, (step, _w, _g) in enumerate(cycles):
-        (run / "checkpoints" / f"checkpoint_{step}_steps.json").write_text(json.dumps(
-            {"num_timesteps": step, "lr": lr, "batch_size": batch_size,
-             "grad_accum_steps": grad_accum, "n_epochs": n_epochs}))
+    if sidecars:
+        for name, row in rows.items():
+            (run / "checkpoints" / name.replace(".zip", ".json")).write_text(json.dumps(row))
+    if tb_lrs is not None:
+        from agents.training.tb_inherit_test import _write_events
+        _write_events(str(run / "tb"), [(1000 * (i + 1), "train/learning_rate", v)
+                                        for i, v in enumerate(tb_lrs)])
     label = external or f"ext_{target_run}"
     with open(run / "eval_results.jsonl", "w") as fh:
         for step, w, g in cycles:
@@ -213,6 +226,56 @@ def test_dose_mismatch_refuses(tmp_path):
     found = brg.check_matched([a, b], allow_unmatched=True)
     assert [m.kind for m in found] == ["dose"]
     assert "dose" in found[0].message().lower()
+
+
+# ----- WHICH LR record a dose was read from (the 2026-10-09 cleanup deleted the sidecars) -----
+
+def _exploiter(tmp_path, name, *, lr=2.5e-4, **kw):
+    return brg.read_exploiter(make_run(
+        tmp_path, name, target_run=f"g_{name}", target_step=10, fork_step=10, num_timesteps=20,
+        cycles=[(15, 7, 10)], team_stems=["aaaa1111"], lr=lr, **kw), TEAMSETS)
+
+
+def test_the_dose_source_is_read_and_recorded(tmp_path):
+    a = _exploiter(tmp_path, "a")
+    b = _exploiter(tmp_path, "b", sidecars=False, tb_lrs=[2.5e-4] * 5)
+    assert (a.dose_source, b.dose_source) == ("sidecars", "tb")
+    assert a.to_json()["dose_source"] == "sidecars" and b.to_json()["dose_source"] == "tb"
+
+
+def test_two_exploiters_read_from_the_SAME_full_resolution_record_are_matched(tmp_path):
+    a = _exploiter(tmp_path, "a", sidecars=False, tb_lrs=[5e-5] * 4 + [8e-5])
+    b = _exploiter(tmp_path, "b", sidecars=False, tb_lrs=[5e-5] * 4 + [8e-5])
+    assert a.dose_source == b.dose_source == "tb"
+    assert brg.check_matched([a, b]) == []
+
+
+def test_a_sidecar_dose_beside_a_TB_dose_is_REFUSED_even_when_the_numbers_agree(tmp_path):
+    """Two statistics of one trajectory: never silently set side by side (owner 2026-10-09)."""
+    a = _exploiter(tmp_path, "a", lr=5e-5)
+    b = _exploiter(tmp_path, "b", sidecars=False, tb_lrs=[5e-5] * 5)
+    assert a.dose_rate == pytest.approx(b.dose_rate)
+    with pytest.raises(UnmatchedDoseError, match="'sidecars' vs 'tb'"):
+        brg.check_matched([a, b])
+    assert [m.kind for m in brg.check_matched([a, b], allow_unmatched=True)] == ["dose"]
+
+
+def test_a_dose_read_from_the_CAPPED_history_is_refused_against_any_other(tmp_path):
+    """No sidecars and no TB curve: `main.dose` falls back to the capped history. The meter reports
+    it (one run, one reading) but will not compare it."""
+    a = _exploiter(tmp_path, "a", sidecars=False)
+    b = _exploiter(tmp_path, "b", sidecars=False)
+    assert a.dose_source == b.dose_source == "snapshot_history"
+    with pytest.raises(UnmatchedDoseError, match="CAPPED"):
+        brg.check_matched([a, b])
+    assert brg.check_matched([a]) == []
+
+
+def test_a_run_that_states_no_dose_source_is_not_judged_on_it(tmp_path):
+    a = _exploiter(tmp_path, "a")
+    b = _exploiter(tmp_path, "b")
+    a.dose_source = b.dose_source = None
+    assert brg.check_matched([a, b]) == []
 
 
 def test_budget_mismatch_refuses(tmp_path):

@@ -13176,3 +13176,27 @@ NON-INFERIORITY, split on failure.
   every kept one does not, the E5 tail, C1b on a planted Amnesia row, the worst row's gating and route).
 - **Not built:** a crit-KO noisy-OR; noisy-OR columns at the edge kernels; the optional learned E5 bench pool.
   `designs/research_state/measurements/op_reduction_f6b_2026-10-08/`.
+
+## 2026-10-09 — METER CONTRACT: `main.dose` reads the LR from the TB curve when the sidecars are gone; `main.best_response_gap` refuses a dose comparison across LR records (no model / obs / config change)
+
+The owner-approved pre-Rustboro `models/` cleanup (2026-10-09) deleted every intermediate checkpoint of every
+pre-`rb_` run — the per-checkpoint sidecar JSONs `main.dose` took its LR median from with them. Its fallback (the
+capped `metadata.json` `snapshot_history`, 3 rows on the era-2 exploiters) silently read a different number
+(`ai_v13_13_exploit5_offense`: 1.4175e-08 against the banked 1.119e-08), which is how the one test that pins the
+archive read failed.
+- **`main.dose`:** the preference order is now sidecars, then the run's own TB `train/learning_rate` curve (the
+  median over every update, a fork's inherited parent prefix skipped), then `snapshot_history`, then `current_lr`.
+  Every row carries `source` (the LR record) and `shape_source` (where batch / accumulation / epochs came from), and
+  the table flags any reading that is not the sidecar median (`lr from tb (79 pts)`). Runs that still have their
+  sidecars read exactly as before.
+- **`main.best_response_gap`:** each run carries `dose_source`; a dose pair read from DIFFERENT records, or from a
+  capped / one-point one, is an `UnmatchedDoseError` (also under `--allow-unmatched`, where it is carried in the
+  header and the JSON).
+- **The archive read moves** (not the verdict): the six exploiters of the ledger's 2026-09-21 read now give era 1
+  5.086e-08 (constant LR, unmoved) and era 2 1.181e-08 (LR median 5.81e-05 over every update, against the banked
+  5.50e-05 over the checkpoint saves, 5.5 % apart, inside the gate's 10 %): the refusal fires at **4.31x** where it
+  said 4.55x. The ledger's figures are as-then-measured and are not edited.
+- **Tests:** `main/dose_test.py` (the TB source, the inherited-prefix rule, duplicate steps, precedence, the shape
+  still needing a record), `best_response_gap_test.py` (source recorded; same-record matched; sidecar-vs-TB and
+  capped refused), `best_response_gap_integration_test.py` (the six real runs read `tb`, within 10 % of the banked
+  era-2 dose).

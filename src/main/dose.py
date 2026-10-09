@@ -23,23 +23,34 @@ alone but the DOSE:
 here on. This tool answers the same question for every run ALREADY on disk, from what those runs
 already wrote down.
 
-WHERE THE NUMBERS COME FROM, in preference order, and why the first one wins:
+WHERE THE LR COMES FROM, in preference order, and why the first one wins:
 
   1. the per-checkpoint SIDECARS (`<run>/checkpoints/*.json`) — one `lr` per checkpoint, so the
      MEDIAN is over the run's own recorded trajectory rather than over its endpoints;
-  2. `metadata.json`'s `snapshot_history` — the same rows, but CAPPED (a long run keeps ~15 while
-     its sidecars keep every un-groomed checkpoint), so it is the fallback;
-  3. `metadata.json`'s top-level `current_lr` — one point, reported as such.
+  2. the run's own TENSORBOARD LR curve (`tb/` -> `train/learning_rate`, one point per update, the
+     inherited parent prefix of a fork EXCLUDED) — the finest durable record of the trajectory, and
+     the only one the 2026-10-09 pre-Rustboro skeleton cleanup kept (it deleted every intermediate
+     checkpoint, sidecars with them). It is a DIFFERENT statistic from (1) — the median over every
+     update rather than over the checkpoint saves — so a reading from it says `source: tb` and a
+     reader comparing two doses must see the same source on both (`best_response_gap` refuses
+     otherwise); on the era-2 exploiters it reads 5.8e-5 where the sidecar median read 5.5e-5;
+  3. `metadata.json`'s `snapshot_history` — the same rows as (1), but CAPPED (a long run keeps ~15
+     while its sidecars keep every un-groomed checkpoint; the era-2 exploiters kept 3), so it is a
+     median over a different, smaller run than the one asked about;
+  4. `metadata.json`'s top-level `current_lr` — one point, reported as such.
+
+Only the LR changes with the source: `batch_size`, `grad_accum_steps`, `n_epochs` and the rollout
+come from the checkpoint rows (1)/(3) or, failing both, `metadata.json`, so the dose is computed from
+one consistent shape record rather than from a shape read out of `cli_args` and an LR read out of
+somewhere else. The row's `shape_source` says which.
 
 The `steps` column is `metadata.json`'s top-level `num_timesteps` (else the last sidecar's) — how
 far the run trained, which is the exposure the dose RATE was applied for. A run that predates the
 key shows `—`: this tool never opens a checkpoint zip, so unknown stays unknown.
 
-Everything else (`batch_size`, `grad_accum_steps`, `n_epochs`) comes from the SAME rows, so the
-dose is computed from one consistent record rather than from a shape read out of `cli_args` and an
-LR read out of somewhere else. When a run CHANGED shape mid-flight the table says so
-(`shape_stable: false`) and uses the LAST row's shape — a run whose effective batch moved has no
-single dose, and averaging one is worse than flagging it.
+When a run CHANGED shape mid-flight the table says so (`shape_stable: false`) and uses the LAST
+row's shape — a run whose effective batch moved has no single dose, and averaging one is worse than
+flagging it.
 
 Torch is never imported and no checkpoint zip is opened, so this works on a run whose architecture
 has drifted past the current code — which is most of `models/`.
@@ -59,6 +70,15 @@ from agents.training.dose import effective_batch, optimizer_steps_per_epoch, upd
 #: The v8 fold whose dose every gen-era fold is compared against (ledger M7). Used only when it
 #: exists under the resolved models dir; a missing reference is omitted, never faked.
 DEFAULT_REFERENCE = "ai_v8_14_distill3_0725"
+
+#: The scalar SB3 / the trainer logs the optimizer's LR under, once per update.
+TB_LR_TAG = "train/learning_rate"
+
+#: The LR sources a dose can be read from, finest first. The first two are FULL-RESOLUTION (the
+#: run's own trajectory: every checkpoint save, or every update); the last two are a capped or a
+#: one-point record — `best_response_gap` will not compare doses read from those.
+LR_SOURCES = ("sidecars", "tb", "snapshot_history", "metadata")
+FULL_RESOLUTION_SOURCES = ("sidecars", "tb")
 
 
 def _read_json(path: str) -> Optional[Dict[str, Any]]:
@@ -114,6 +134,36 @@ def _history_rows(run_dir: str) -> List[Dict[str, Any]]:
     return [v for _, v in sorted(hist.items()) if isinstance(v, dict)]
 
 
+def _tb_lr_points(run_dir: str) -> List[float]:
+    """The run's OWN `train/learning_rate` curve from `<run>/tb/`, oldest step first; `[]` if none.
+
+    A fork's `tb/` also holds its PARENT's curve as one inherited prefix file
+    (`tb_inherit.INHERITED_EVENTS_BASENAME`); that is the parent's trajectory, not this run's, so the
+    file is skipped. A step that two event files both carry (a restart re-logging its resume point)
+    counts once, the later file winning. Torch is not imported (`tensorboard` is the reader).
+    """
+    from agents.training.tb_inherit import INHERITED_EVENTS_BASENAME, event_files, tb_dir_of
+
+    files = [f for f in event_files(tb_dir_of(run_dir))
+             if os.path.basename(f) != INHERITED_EVENTS_BASENAME]
+    if not files:
+        return []
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+    by_step: Dict[int, float] = {}
+    for path in files:
+        try:
+            acc = EventAccumulator(path, size_guidance={"scalars": 0})
+            acc.Reload()
+            if TB_LR_TAG not in acc.Tags().get("scalars", []):
+                continue
+            for pt in acc.Scalars(TB_LR_TAG):
+                by_step[int(pt.step)] = float(pt.value)
+        except Exception:  # noqa: BLE001 — a truncated / foreign event file contributes nothing
+            continue
+    return [v for _, v in sorted(by_step.items()) if v > 0]
+
+
 def _shape(row: Dict[str, Any]) -> Optional[tuple]:
     """`(batch_size, grad_accum_steps, n_epochs)` if the row states all three, else None."""
     bs, ga, ne = row.get("batch_size"), row.get("grad_accum_steps", 1), row.get("n_epochs")
@@ -133,7 +183,7 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     """
     out: Dict[str, Any] = {
         "run": os.path.basename(os.path.normpath(run_dir)), "dir": run_dir,
-        "source": None, "n_lr": 0, "lr_median": None, "lr_min": None, "lr_max": None,
+        "source": None, "shape_source": None, "n_lr": 0, "lr_median": None, "lr_min": None, "lr_max": None,
         "batch_size": None, "grad_accum_steps": None, "effective_batch": None, "n_epochs": None,
         "updates_per_env_step": None, "dose_rate": None, "shape_stable": None,
         "rollout_rows": None, "rollout_source": None, "optimizer_steps_per_epoch": None,
@@ -153,6 +203,11 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         # Last resort: the run-level record is ONE point. Reported as such (`n_lr` = 1), because a
         # median over one sample and a median over forty are different claims about the same run.
         rows, source = [meta], "metadata"
+    shape_source = source
+    # The checkpoint rows are the finest LR record when they exist. With the sidecars gone (groomed,
+    # or the 2026-10-09 pre-Rustboro cleanup) the run's own TensorBoard curve is finer than the
+    # capped `snapshot_history`, so it takes the LR over — the SHAPE still comes from `rows`.
+    tb_lrs = _tb_lr_points(run_dir) if source != "sidecars" else []
 
     # The RECORDED dose block, when the run is new enough to have written one. Reported beside the
     # derived numbers rather than instead of them: a recorded value and a derived one that disagree
@@ -171,15 +226,19 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     if isinstance(steps, (int, float)):
         out["num_timesteps"] = int(steps)
 
-    lrs = [float(r["lr"]) for r in rows
-           if isinstance(r.get("lr"), (int, float)) and float(r["lr"]) > 0]
-    if not lrs:
-        lrs = [float(r["current_lr"]) for r in rows
-               if isinstance(r.get("current_lr"), (int, float)) and float(r["current_lr"]) > 0]
+    if tb_lrs:
+        lrs, source = tb_lrs, "tb"
+    else:
+        lrs = [float(r["lr"]) for r in rows
+               if isinstance(r.get("lr"), (int, float)) and float(r["lr"]) > 0]
+        if not lrs:
+            lrs = [float(r["current_lr"]) for r in rows
+                   if isinstance(r.get("current_lr"), (int, float)) and float(r["current_lr"]) > 0]
     shapes = [sh for sh in (_shape(r) for r in rows) if sh is not None]
     if not lrs or not shapes:
         out["error"] = f"no lr/shape rows recorded ({source})"
         out["source"] = source
+        out["shape_source"] = shape_source
         return out
 
     bs, ga, ne = shapes[-1]        # the LAST row's shape — see the module docstring
@@ -187,7 +246,7 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     ups = updates_per_env_step(batch_size=bs, grad_accum_steps=ga, n_epochs=ne, rollout_rows=rollout)
     med = statistics.median(lrs)
     out.update({
-        "source": source, "n_lr": len(lrs), "lr_median": med,
+        "source": source, "shape_source": shape_source, "n_lr": len(lrs), "lr_median": med,
         "lr_min": min(lrs), "lr_max": max(lrs),
         "batch_size": bs, "grad_accum_steps": ga, "effective_batch": effective_batch(bs, ga),
         "n_epochs": ne, "updates_per_env_step": ups, "dose_rate": med * ups,
@@ -239,6 +298,12 @@ def render(rows: List[Dict[str, Any]], reference: Optional[Dict[str, Any]],
             flags.append("FROZEN")
         if r.get("dose_rate") is not None and not r.get("rollout_rows"):
             flags.append("ROWS UNKNOWN: assumes the rollout divides by the effective batch")
+        src = r.get("source")
+        if r.get("dose_rate") is not None and src and src != "sidecars":
+            # Not the per-checkpoint sidecar median: say which record the LR median came from, so a
+            # reader never takes a TB-curve or a capped-history reading for the sidecar statistic.
+            capped = "" if src in FULL_RESOLUTION_SOURCES else ", CAPPED/ONE-POINT"
+            flags.append(f"lr from {src} ({r.get('n_lr')} pts{capped})")
         if r.get("fork_lr") is not None:
             flags.append(f"pinned {r['fork_lr']:.2e}")
         if r.get("error"):

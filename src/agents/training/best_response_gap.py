@@ -57,7 +57,13 @@ A gap is only comparable across rounds at a matched EXPLOITER, so four propertie
 every pair of exploiters in the invocation and a mismatch is a typed refusal naming the cause:
 
 * :class:`UnmatchedBudgetError` — post-fork steps differ by more than ``budget_tol`` (2 %);
-* :class:`UnmatchedDoseError`   — ``dose_rate`` differs by more than ``dose_tol`` (10 %);
+* :class:`UnmatchedDoseError`   — ``dose_rate`` differs by more than ``dose_tol`` (10 %), OR the two
+  doses were not read from the same full-resolution LR record (``main.dose``'s ``source``: the
+  per-checkpoint sidecars, or the run's TensorBoard LR curve — two different statistics of the same
+  trajectory; a capped ``snapshot_history`` or a one-point ``metadata`` reading is not comparable at
+  all). The sidecars of every pre-Rustboro run were deleted by the 2026-10-09 skeleton cleanup, so
+  those runs now read from their TB curve (``dose_source: tb``) — the six exploiters of the ledger's
+  2026-09-21 read included; the meter never reads a different number silently;
 * :class:`UnmatchedRegimeError` — the regime tuple differs: ``eval_sentinel_greedy``, the
   exploiter opponent mix (``exploiter_keep_bots`` / ``exploiter_bot_fraction`` / the temperature
   schedule), the per-cycle ``n_games``, and whether the TARGET pilots its own pin or the pool.
@@ -65,7 +71,8 @@ every pair of exploiters in the invocation and a mismatch is a typed refusal nam
 ``--allow-unmatched`` downgrades each to a WARNING that is carried into the printed header AND into
 the JSON, because **the era-2/era-1 comparison of 2026-09-21 was confounded by exactly a 4.5×
 dose gap** (3.815e-08 against 8.392e-09 as counted then; 5.086e-08 / 1.119e-08 under K10(c)'s corrected
-step count, 2026-09-30 — the same 4.55x) that nobody registered: same ``--lr 0.0003`` flag both
+step count, 2026-09-30 — the same 4.55x; 5.086e-08 / 1.181e-08, 4.31x, when read from the TB LR curve
+after the sidecars were deleted, 2026-10-09) that nobody registered: same ``--lr 0.0003`` flag both
 times, but ``--fork-lr`` unset, so the new parent's annealed rate was inherited. A number that
 crosses that boundary must carry the reason it should not be trusted, on the same line.
 
@@ -109,6 +116,10 @@ DEFAULT_TEAMSETS = repo_path("designs/research_state/exploiter_teamsets_2026-09-
 #: launch lands on an `n_steps` boundary), dose is a median over a live controller's trajectory.
 DEFAULT_BUDGET_TOL = 0.02
 DEFAULT_DOSE_TOL = 0.10
+
+#: The LR records a dose may be compared on — ``main.dose.FULL_RESOLUTION_SOURCES`` (a unit test holds
+#: the two equal; this module imports ``main.dose`` only inside ``read_exploiter``, as before).
+DOSE_FULL_RESOLUTION = ("sidecars", "tb")
 
 #: Bootstrap for the paired round-over-round delta. The pairing unit is the ARCHETYPE, of which
 #: there are three — so the interval is wide on purpose and the census prints beside it.
@@ -330,6 +341,9 @@ class ExploiterRun:
     series: List[SeriesPoint]
     lineage_derived: bool
     round: Optional[int] = None
+    #: Which LR record ``dose_rate`` was read from (``main.dose``'s ``source``): ``sidecars`` | ``tb`` |
+    #: ``snapshot_history`` | ``metadata``; ``None`` = no dose was read (or a test double said nothing).
+    dose_source: Optional[str] = None
 
     # ---- the two rates, each with its Wilson interval ----
     @property
@@ -363,6 +377,7 @@ class ExploiterRun:
                        "pins_own_teams": self.target_pins_own_teams},
             "fork_step": self.fork_step, "num_timesteps": self.num_timesteps,
             "budget": self.budget, "dose_rate": self.dose_rate, "lr_median": self.lr_median,
+            "dose_source": self.dose_source,
             "lineage_derived": self.lineage_derived,
             "teams": list(self.teams), "regime": dict(self.regime),
             "series_regime": SERIES_REGIME,
@@ -557,6 +572,7 @@ def read_exploiter(ref: str, teamsets: Dict[str, Dict[str, Any]]) -> ExploiterRu
         target_pins_own_teams=target_pins,
         fork_step=fork_step, num_timesteps=steps, budget=budget,
         dose_rate=drow.get("dose_rate"), lr_median=drow.get("lr_median"),
+        dose_source=drow.get("source") if drow.get("dose_rate") is not None else None,
         teams=list(teams), archetype=arch, membership=membership,
         regime=_regime(_read_json(os.path.join(run_dir, "metadata.json")), series, target_pins),
         series=series, lineage_derived=derived)
@@ -691,6 +707,22 @@ def check_matched(runs: Sequence[ExploiterRun], *, budget_tol: float = DEFAULT_B
             elif a.dose_rate is None or b.dose_rate is None:
                 found.append(Mismatch("dose", a.run, b.run,
                                       "one side recorded no dose_rate (main.dose read nothing)"))
+            # WHICH RECORD each dose was read from. Two statistics of one LR trajectory (the sidecar
+            # median vs the TB-curve median) differ by a few percent on the same run, and a capped or
+            # one-point record is a different run's worth of evidence — so a pair is comparable only
+            # when BOTH come from the same full-resolution record. A side that states no source
+            # (a test double, an older caller) is not judged here.
+            sa, sb = a.dose_source, b.dose_source
+            if sa and sb and (sa != sb or sa not in DOSE_FULL_RESOLUTION):
+                found.append(Mismatch(
+                    "dose", a.run, b.run,
+                    f"dose read from {sa!r} vs {sb!r} — "
+                    + ("different records of the LR trajectory, i.e. different statistics"
+                       if sa != sb else
+                       "a CAPPED / one-point record (the checkpoint sidecars and the full TB LR "
+                       "curve are both unreadable), not the run's trajectory")
+                    + " (main.dose `source`; the 2026-10-09 pre-Rustboro cleanup removed the "
+                      "per-checkpoint sidecars of every older run)"))
             diff = [k for k in sorted(set(a.regime) | set(b.regime))
                     if a.regime.get(k) != b.regime.get(k)]
             if diff:

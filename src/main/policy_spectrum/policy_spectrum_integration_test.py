@@ -21,8 +21,12 @@ from main.policy_spectrum.bank_test import BANK_V1
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
-#: The reader-vs-recording probability bar (float reassociation between the recording and the read).
-DP_BAR = 1e-4
+#: (The reader-vs-RECORDING test that lived here — `test_reader_reproduces_the_recording_policy_and_is_
+#: deterministic`, with its `DP_BAR` of 1e-4 — read the banked policy `ai_v14_01_base/eval_traces/step_74000016/
+#: snapshot.zip`. That file was deleted with every pre-Rustboro run's `eval_traces/` on 2026-10-09 (owner-approved),
+#: and the policy was pre-X5, refused at HEAD, so the test could only skip. `recording_agreement`'s arithmetic is
+#: pinned on a synthetic bank in `reader_test.py`; reproduction of a recording belongs to the next banked policy
+#: that is an `rb_` eval snapshot.)
 
 
 def _subset(bank, per_source: int):
@@ -117,56 +121,3 @@ def test_the_reader_is_deterministic_on_an_x5_checkpoint(tmp_path, restore_torch
     assert hashlib.sha256(pa.tobytes()).digest() == hashlib.sha256(pb.tobytes()).digest()
     strip = lambda r: {k: v for k, v in r.items() if k != "label"}   # noqa: E731
     assert strip(r1) == strip(r2)
-
-
-def test_reader_reproduces_the_recording_policy_and_is_deterministic(tmp_path,
-                                                                     restore_torch_globals):
-    from utils.paths import main_models_dir
-
-    from main.policy_spectrum.reader import load_probs, read_checkpoint, reencode
-
-    md = main_models_dir()
-    if md is None:
-        pytest.skip("no models/ archive")
-    bank = B.load_bank(BANK_V1)
-    label = "N0@74M"
-    battles = [b for b in bank.battles if b.source["label"] == label][:6]
-    ids = {b.battle_id for b in battles}
-    sub = B.Bank(bank.manifest, battles, [d for d in bank.decisions if d["battle"] in ids])
-    snap = md / battles[0].source["banked_policy"]
-    if not snap.exists():
-        pytest.skip(f"{snap} is not in the archive")
-    rows, masks, gate = reencode(sub)
-    from agents.model.model_version import ModelVersionError
-    from agents.model.model_version.version_break import LAST_BLOB_COMMIT
-    try:
-        r1 = read_checkpoint(sub, rows, masks, gate, snap, "a", tmp_path, threads=2, models_root=md)
-    except ModelVersionError as e:
-        # The recording policy predates the X5 version break (config v144): this code REFUSES it with the pinned
-        # fix (asserted: the refusal names the last pre-break commit), and the reproduction claim belongs to a
-        # checkout at or before it. Determinism is pinned on a fresh X5 checkpoint
-        # (`test_the_reader_is_deterministic_on_an_x5_checkpoint`).
-        assert "PRE-GENERATION" in str(e) and LAST_BLOB_COMMIT[:12] in str(e), str(e)[:400]
-        pytest.skip(f"the recording policy {snap} predates the X5 version break and is refused at HEAD "
-                    f"(asserted); its reproduction check runs pinned at <= {LAST_BLOB_COMMIT[:12]}")
-    r2 = read_checkpoint(sub, rows, masks, gate, snap, "b", tmp_path, threads=2, models_root=md)
-    agree = r1["recording_agreement"]
-    assert agree["decisions"] == len(sub.decisions)
-    # Determinism holds whatever the op's semantics: two reads are byte-identical.
-    pa, pb = load_probs(tmp_path, "a", sub), load_probs(tmp_path, "b", sub)
-    assert hashlib.sha256(pa.tobytes()).digest() == hashlib.sha256(pb.tobytes()).digest()
-    strip = lambda r: {k: v for k, v in r.items() if k != "label"}   # noqa: E731
-    assert strip(r1) == strip(r2)
-    if bank.manifest.get("op_semantics") != B.op_semantics():
-        # The recorded logits came from a forward with DIFFERENT op feature semantics (the bank predates
-        # gen3_nonformula_damage_v1, which re-prices Seismic Toss / Return / … in every kernel without a
-        # signature bump): this checkout cannot reproduce them, and the reader must SAY so, not pass.
-        assert agree["max_abs_dp"] >= DP_BAR, agree
-        pytest.skip(f"the bank was recorded under op semantics {bank.manifest.get('op_semantics')!r}, "
-                    f"this checkout computes {B.op_semantics()!r} — the reproduction check belongs to "
-                    f"a checkout at the recording's semantics (read max|dp| {agree['max_abs_dp']:.3g}); "
-                    "determinism passed")
-    assert agree["max_abs_dp"] < DP_BAR
-    # A flipped argmax is legal only at a DECLARED near-tie — Lane E's rule (`judge_flips`): a flip whose
-    # larger top-1 / top-2 margin is < 2 x the bar is a tie; any other flip is a real disagreement.
-    assert agree["argmax_agree"] == 1.0 or agree["argmax_flip_max_margin"] < 2 * DP_BAR, agree

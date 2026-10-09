@@ -231,3 +231,97 @@ def test_the_rollout_rows_come_from_the_recorded_block_then_the_original_command
     row = read_run(str(run))
     assert (row["rollout_rows"], row["rollout_source"], row["optimizer_steps_per_epoch"]) == (131_072, "recorded", 2)
     assert "ROWS UNKNOWN" not in render([row], None)
+
+
+# ------------------------------------------------------------------------------------
+# The TB LR curve — the durable record the 2026-10-09 pre-Rustboro cleanup left (it deleted every
+# intermediate checkpoint, sidecars included)
+# ------------------------------------------------------------------------------------
+
+def _history_only_run(tmp_path, name="r", *, history_lrs=(2e-5, 4e-5), n_epochs=10):
+    """A run whose sidecars are gone: `metadata.json`'s capped `snapshot_history` is all that is left."""
+    run = tmp_path / name
+    run.mkdir()
+    hist = {f"checkpoint_{(i + 1) * 1000}_steps.zip": {
+        "lr": lr, "n_epochs": n_epochs, "batch_size": 4096, "grad_accum_steps": 1,
+        "num_timesteps": (i + 1) * 1000} for i, lr in enumerate(history_lrs)}
+    (run / "metadata.json").write_text(json.dumps({"snapshot_history": hist}))
+    return run
+
+
+def _tb(run, entries, name="events.out.tfevents.1700000000.host.1.0"):
+    from agents.training.tb_inherit_test import _write_events
+
+    _write_events(str(run / "tb"), entries, name=name)
+
+
+def test_with_the_sidecars_gone_the_LR_comes_from_the_TB_curve_not_the_capped_history(tmp_path):
+    """The archive's pre-Rustboro runs: the capped history keeps 3 rows (median 6.97e-5 on an
+    exploiter whose LR climbed 2.8e-5 -> 8.4e-5); the TB curve holds every update."""
+    run = _history_only_run(tmp_path, history_lrs=(4e-5, 8e-5, 9e-5))
+    _tb(run, [(s, "train/learning_rate", lr) for s, lr in
+              ((100, 2e-5), (200, 2e-5), (300, 2e-5), (400, 6e-5), (500, 9e-5))])
+    row = read_run(str(run))
+    assert row["source"] == "tb" and row["shape_source"] == "snapshot_history"
+    assert row["n_lr"] == 5
+    assert row["lr_median"] == pytest.approx(2e-5)            # the history's median would be 8e-5
+    assert row["dose_rate"] == pytest.approx(2e-5 * 10 / 4096)
+    assert "lr from tb (5 pts)" in render([row], None)
+
+
+def test_a_forks_INHERITED_PREFIX_is_not_its_own_trajectory(tmp_path):
+    """`tb_inherit` copies the parent's curve into the fork's tb/ as one file — the parent's LR."""
+    from agents.training.tb_inherit import INHERITED_EVENTS_BASENAME
+
+    run = _history_only_run(tmp_path)
+    _tb(run, [(s, "train/learning_rate", 3e-4) for s in range(10, 60, 10)],
+        name=INHERITED_EVENTS_BASENAME)                        # the PARENT's (high) curve
+    _tb(run, [(s, "train/learning_rate", 3e-5) for s in range(100, 160, 10)])
+    row = read_run(str(run))
+    assert row["source"] == "tb" and row["n_lr"] == 6
+    assert row["lr_median"] == pytest.approx(3e-5)
+
+
+def test_a_step_two_event_files_both_carry_counts_once_and_the_later_file_wins(tmp_path):
+    run = _history_only_run(tmp_path)
+    _tb(run, [(100, "train/learning_rate", 1e-5), (200, "train/learning_rate", 1e-5)],
+        name="events.out.tfevents.1700000001.host.1.0")
+    _tb(run, [(200, "train/learning_rate", 5e-5), (300, "train/learning_rate", 5e-5)],
+        name="events.out.tfevents.1700000002.host.1.0")        # a restart re-logging step 200
+    row = read_run(str(run))
+    assert row["n_lr"] == 3 and row["lr_median"] == pytest.approx(5e-5)
+
+
+def test_the_sidecars_still_WIN_over_the_TB_curve(tmp_path):
+    """Preference 1 is unchanged for every run that still has its checkpoints (every rb_ run)."""
+    run = _run(tmp_path, "r", lrs=[1e-4] * 3)
+    _tb(run, [(s, "train/learning_rate", 9e-9) for s in (1, 2, 3)])
+    row = read_run(str(run))
+    assert row["source"] == "sidecars" and row["lr_median"] == pytest.approx(1e-4)
+
+
+def test_a_tb_dir_without_the_LR_tag_or_with_a_foreign_file_falls_through_to_the_history(tmp_path):
+    run = _history_only_run(tmp_path, history_lrs=(2e-5, 4e-5))
+    _tb(run, [(1, "train/other", 1.0)])
+    (run / "tb" / "events.out.tfevents.1800000000.garbage").write_bytes(b"not an event file")
+    row = read_run(str(run))
+    assert row["source"] == "snapshot_history" and row["lr_median"] == pytest.approx(3e-5)
+    assert "CAPPED/ONE-POINT" in render([row], None)
+
+
+def test_a_run_with_a_TB_curve_but_no_shape_record_still_reads_UNKNOWN(tmp_path):
+    """The TB curve supplies the LR only; the shape (batch, accumulation, epochs) still needs a record."""
+    run = tmp_path / "r"
+    run.mkdir()
+    (run / "metadata.json").write_text("{}")
+    _tb(run, [(1, "train/learning_rate", 1e-4)])
+    row = read_run(str(run))
+    assert row["dose_rate"] is None and row["error"]
+
+
+def test_the_full_resolution_sources_are_the_ones_best_response_gap_compares_on():
+    from agents.training import best_response_gap as brg
+    from main import dose
+
+    assert set(dose.FULL_RESOLUTION_SOURCES) <= set(dose.LR_SOURCES)
+    assert tuple(brg.DOSE_FULL_RESOLUTION) == tuple(dose.FULL_RESOLUTION_SOURCES)

@@ -526,8 +526,8 @@ DISTRIBUTION of opponents failed identically (−1.37 pp). So an exploiter is re
 the pool, not as a teacher — and the meter for the loop that consumes it that way is the
 **BEST-RESPONSE GAP**, `python -m main.best_response_gap` (offline; see the root `CLAUDE.md`'s
 offline-meters block and `designs/training/exploiter_and_distillation.md`). It REFUSES a comparison
-at unmatched budget / dose / regime, because that week's era-2/era-1 read was confounded by a 4.5×
-dose gap nobody registered. 🚨 **Two exploiters of one archetype against one target file are
+at unmatched budget / dose / regime (a dose read from different LR records included), because that week's era-2/era-1 read was confounded by a 4.5×
+dose gap nobody registered (4.31× when re-read from the TB curve after the 2026-10-09 cleanup). 🚨 **Two exploiters of one archetype against one target file are
 REPLICATES**: each keeps its row, a `POOLED` row is the archetype's one pairing unit, and the delta
 prints every replicate's own row beside it — until 2026-09-23 the later-sorted one silently
 replaced the other (finding F3). One archetype + one round but a different TARGET or teamset size
@@ -1076,7 +1076,10 @@ collateral is the DOSE**, `lr × n_epochs × optimizer steps per epoch / rollout
 last accumulation group is a FULL-weight step, so 98,304 rows at 2,048 × 32 take 2 steps an epoch, not
 1.5 — K10(c), `agents/training/dose.py`) — three folds launched
 at the same `--lr` ran at 1.00× / 6.62× / 3.19× v8's rate and nothing in any of them said so. Read
-it with `python -m main.dose <run>` or the live `train/dose_rate`.
+it with `python -m main.dose <run>` or the live `train/dose_rate`. 🚨 **A dose reading names its LR RECORD** (`source`):
+the median over the checkpoint sidecars, else over the run's own TB `train/learning_rate` curve (every pre-`rb_` run, since
+the 2026-10-09 skeleton cleanup deleted their sidecars — a different statistic, ~6 % apart on the era-2 exploiters), else a
+capped `snapshot_history`; `main.best_response_gap` refuses to compare doses read from different records.
 🚨 **A FORK INHERITS THE PARENT'S LR BUT NOT ITS FREEZE**, so forking a `--fork-lr-freeze` run
 without naming a `--fork-lr` of your own is a startup `[ForkLR] FATAL`
 (`gen3_fork_lr_inherit_guard_v1`; `--allow-inherited-fork-lr` is the deliberate opt-in). The three

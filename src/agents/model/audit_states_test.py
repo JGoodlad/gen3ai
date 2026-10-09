@@ -175,19 +175,26 @@ def test_collect_states_refuses_a_maskless_trace(tmp_path):
         collect_states([str(tmp_path / "eval_traces" / "**" / "*_states.npz")], max_states=10)
 
 
-#: The gen-17 run whose real traces this reads. Resolved against the MAIN checkout's `models/`
-#: (a worktree has none) — see `utils.paths`.
-_REAL_TRACE_RUN = "ai_v9_21_gen17_pfspoff_0820"
+#: The run whose REAL traces these read: a Rustboro-era run (Rust-core traces, whose `*_states.npz`
+#: carries the recorder's own `action_mask`). Resolved against the MAIN checkout's `models/` (a
+#: worktree has none) — see `utils.paths`.
+#:
+#: 🚨 It was `ai_v9_21_gen17_pfspoff_0820` until the owner-approved 2026-10-09 pre-Rustboro cleanup
+#: deleted every pre-`rb_` run's `eval_traces/` — and with them the only REAL traces that took the
+#: sibling-SUMMARY branch of `recover_legal_mask` (gen-17's recorder stored PRE-mask logits and no
+#: `action_mask`). That branch is still pinned, on SYNTHETIC traces, by
+#: `test_pre_mask_logits_fall_through_to_the_sibling_summary` and its refusals above; what the real
+#: archive can still show is that the recovery on real Rust-core traces is not all-legal.
+_REAL_TRACE_RUN = "rb_st_legacy_s1001"
 
 
-def test_real_gen17_traces_recover_a_mask_with_illegal_actions():
-    """THE test that matters — it FAILS on the `logits > -1e8` behaviour.
-
-    Real gen-3 decisions always mask something: a fainted/absent bench slot cannot be switched
-    to, struggle is illegal whenever any move has PP. Measured over 400 archived trace files,
-    100% of rows carry at least one illegal action and ~38% of the action space is illegal on
-    average. So a sample that comes back ALL-LEGAL is proof the recovery is broken — which is
-    exactly what the pre-fix threshold returned on every trace in the archive.
+def test_real_core_traces_recover_a_mask_with_illegal_actions():
+    """Real gen-3 decisions always mask something: a fainted/absent bench slot cannot be switched
+    to, struggle is illegal whenever any move has PP. Measured over 400 archived gen-17 trace files
+    (since deleted), 100% of rows carried at least one illegal action and ~38% of the action space was
+    illegal on average; the same read over 36 files of this run (1,200 rows, 2026-10-09) gives 38.6%.
+    So a sample that comes back ALL-LEGAL is proof the recovery is broken — which is exactly what
+    the pre-fix `logits > -1e8` threshold returned on every pre-mask trace in the archive.
     """
     traces = trace_glob(_REAL_TRACE_RUN)
     if traces is None:
@@ -202,3 +209,26 @@ def test_real_gen17_traces_recover_a_mask_with_illegal_actions():
     assert masks.any(axis=1).all(), "no real state has zero legal actions"
     illegal = 1.0 - masks.mean()
     assert 0.05 < illegal < 0.95, f"implausible illegal fraction {illegal:.3f} for real traces"
+
+
+def test_real_core_traces_recorded_mask_admits_every_played_action():
+    """The recorder's `action_mask` and its `actions` are written together; a mask that forbids the
+    action the player actually took is a recorder defect, and every audit that renormalises the
+    policy over the mask would be reading the wrong set. Checked on real traces (36 files, 1,200 rows
+    on 2026-10-09: zero violations), a deterministic every-40th-file sample."""
+    import glob
+
+    traces = trace_glob(_REAL_TRACE_RUN)
+    if traces is None:
+        pytest.skip(run_skip_reason(_REAL_TRACE_RUN))
+    files = sorted(glob.glob(traces, recursive=True))[::40]
+    if not files:
+        pytest.skip(run_skip_reason(_REAL_TRACE_RUN))
+    rows = 0
+    for f in files:
+        with np.load(f) as z:
+            mask, acts = np.asarray(z["action_mask"], dtype=bool), np.asarray(z["actions"]).astype(int)
+        assert ((acts >= 0) & (acts < mask.shape[1])).all(), f"{f}: an action index outside the space"
+        assert mask[np.arange(len(acts)), acts].all(), f"{f}: the player took an action its mask forbids"
+        rows += len(acts)
+    assert rows > 0

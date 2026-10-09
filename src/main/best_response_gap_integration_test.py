@@ -34,8 +34,19 @@ ERA2 = [("ai_v13_13_exploit5_offense", "offense", 0.70, 263),
 #: `main.dose`'s reading of each era, and the gap that refuses the comparison. Both eras train 98,304
 #: rows at 2,048 x 32, i.e. TWO optimizer steps an epoch (K10(c), 2026-09-30: the short last group is a
 #: full step), so these are 4/3 of the ledger's 2026-09-21 readings (3.815e-08 / 8.392e-09, counted at
-#: 1.5 steps); the RATIO — what the refusal is about — is unchanged at 4.55x.
-ERA1_DOSE, ERA2_DOSE = 5.086e-08, 1.119e-08
+#: 1.5 steps).
+#:
+#: 🚨 THE LR RECORD CHANGED ON 2026-10-09. The 2026-09-21 readings took the LR median over each run's
+#: per-checkpoint SIDECARS, which the owner-approved pre-Rustboro cleanup deleted with every
+#: intermediate checkpoint. `main.dose` now reads the run's own TB `train/learning_rate` curve (the
+#: median over every update — a different statistic of the same trajectory), so era 2 reads 5.81e-05
+#: where the sidecar median read 5.50e-05: ERA2_DOSE 1.181e-08 (4.31x below era 1) against the banked
+#: 1.119e-08 (4.55x). Era 1 sat at a constant 2.5e-4 and is unmoved. What the refusal is about — a ~4x
+#: dose gap nobody registered — is the same finding either way.
+ERA1_DOSE, ERA2_DOSE = 5.086e-08, 1.181e-08
+#: The sidecar-era reading of era 2 (ledger 2026-09-21 x 4/3), kept so the TB reading is held against it:
+#: the swap of record must stay inside the gate's own tolerance, or the swap would have moved a verdict.
+BANKED_ERA2_DOSE = 1.119e-08
 #: Both eras trained the same number of post-fork steps — the budget is MATCHED and must stay so,
 #: which is what makes DOSE the cause the refusal names.
 BUDGET = 8_060_928
@@ -105,9 +116,18 @@ def test_the_cross_era_comparison_refuses_on_dose(repo_cwd):
         assert r.dose_rate == pytest.approx(ERA1_DOSE, rel=1e-3), r.run
     for r in runs[3:]:
         assert r.dose_rate == pytest.approx(ERA2_DOSE, rel=1e-3), r.run
+    # The record each dose came from: the pre-Rustboro skeleton kept no checkpoint sidecars, so every
+    # one of the six reads from its TB LR curve. A fall back to the capped `snapshot_history` would
+    # read 1.4175e-08 for era 2 (the median of the 3 rows it kept) — a different number, silently.
+    assert {r.dose_source for r in runs} == {"tb"}
+    # The change of LR record must not have moved a verdict: each era-2 run reads within the gate's own
+    # 10 % tolerance of its banked sidecar-median dose, and the cross-era gap stays above 4x on both.
+    for r in runs[3:]:
+        assert abs(r.dose_rate - BANKED_ERA2_DOSE) / BANKED_ERA2_DOSE < brg.DEFAULT_DOSE_TOL, r.run
+        assert runs[0].dose_rate / r.dose_rate > 4.0 and runs[0].dose_rate / BANKED_ERA2_DOSE > 4.0
     with pytest.raises(UnmatchedDoseError) as exc:
         brg.check_matched(runs)
-    assert "4.55x apart" in str(exc.value)
+    assert "4.31x apart" in str(exc.value)
     assert "budget" not in str(exc.value).lower().split("dose")[0]
 
 

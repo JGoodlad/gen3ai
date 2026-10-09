@@ -141,9 +141,11 @@ def test_intent_move_cell_real_obs_skips_on_an_empty_archive(monkeypatch, tmp_pa
 def test_audit_states_real_trace_gate_skips_on_an_empty_archive(monkeypatch, tmp_path):
     from agents.model import audit_states_test as m
     _empty_archive(monkeypatch, tmp_path)
-    with pytest.raises(Skipped) as ei:
-        m.test_real_gen17_traces_recover_a_mask_with_illegal_actions()
-    assert m._REAL_TRACE_RUN in str(ei.value)
+    for real_trace_test in (m.test_real_core_traces_recover_a_mask_with_illegal_actions,
+                            m.test_real_core_traces_recorded_mask_admits_every_played_action):
+        with pytest.raises(Skipped) as ei:
+            real_trace_test()
+        assert m._REAL_TRACE_RUN in str(ei.value)
 
 
 # ------------------------------------------------------------------- 3. the class, closed
