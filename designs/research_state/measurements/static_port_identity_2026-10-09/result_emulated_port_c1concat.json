@@ -1,0 +1,106 @@
+{
+ "build": {
+  "flat_intent_head": "FlatIntentHead",
+  "hypothesis_builder": "HypothesisBuilder",
+  "move_resolution": "str",
+  "obs_facts_inject": "NoneType",
+  "op_content": "OpContent",
+  "op_reduction": "max",
+  "pokemon_encoder": "StaticTokenEncoder",
+  "policy_readout": "tower",
+  "static_board": true,
+  "token_encoding": "static"
+ },
+ "c1": {
+  "deleted_cols": [
+   78,
+   94
+  ],
+  "kept_type1_cols": [
+   62,
+   78
+  ]
+ },
+ "c1_spelling": "concat",
+ "c2": {
+  "dropped": [
+   "features_extractor.op_content.outgoing_proj.bias",
+   "features_extractor.op_content.outgoing_proj.weight",
+   "pi_features_extractor.op_content.outgoing_proj.bias",
+   "pi_features_extractor.op_content.outgoing_proj.weight",
+   "vf_features_extractor.op_content.outgoing_proj.bias",
+   "vf_features_extractor.op_content.outgoing_proj.weight"
+  ],
+  "target_init_keys": [
+   "features_extractor.op_content.outgoing_proj.phi.bias",
+   "features_extractor.op_content.outgoing_proj.phi.weight",
+   "features_extractor.op_content.outgoing_proj.rho.bias",
+   "features_extractor.op_content.outgoing_proj.rho.weight",
+   "pi_features_extractor.op_content.outgoing_proj.phi.bias",
+   "pi_features_extractor.op_content.outgoing_proj.phi.weight",
+   "pi_features_extractor.op_content.outgoing_proj.rho.bias",
+   "pi_features_extractor.op_content.outgoing_proj.rho.weight",
+   "vf_features_extractor.op_content.outgoing_proj.phi.bias",
+   "vf_features_extractor.op_content.outgoing_proj.phi.weight",
+   "vf_features_extractor.op_content.outgoing_proj.rho.bias",
+   "vf_features_extractor.op_content.outgoing_proj.rho.weight"
+  ]
+ },
+ "c2_output_layer": "op_content.outgoing_proj.rho",
+ "commit": "2e3579717d2037d121a4a16f8ad9d18aefd1e07c",
+ "declared_removed": [
+  "features_extractor.flat_intent_head.out.bias",
+  "features_extractor.value_pre_norm.bias",
+  "features_extractor.value_pre_norm.weight",
+  "features_extractor.value_projection.bias",
+  "features_extractor.value_projection.weight",
+  "mlp_extractor.value_net.0.bias",
+  "mlp_extractor.value_net.0.weight",
+  "mlp_extractor.value_net.2.bias",
+  "mlp_extractor.value_net.2.weight",
+  "pi_features_extractor.flat_intent_head.out.bias",
+  "pi_features_extractor.value_pre_norm.bias",
+  "pi_features_extractor.value_pre_norm.weight",
+  "pi_features_extractor.value_projection.bias",
+  "pi_features_extractor.value_projection.weight",
+  "value_net.bias",
+  "value_net.weight",
+  "vf_features_extractor.flat_intent_head.out.bias",
+  "vf_features_extractor.value_pre_norm.bias",
+  "vf_features_extractor.value_pre_norm.weight",
+  "vf_features_extractor.value_projection.bias",
+  "vf_features_extractor.value_projection.weight"
+ ],
+ "emulated": true,
+ "forward": {
+  "entropy": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  },
+  "log_prob": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  },
+  "masked_logp": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  },
+  "masks_bool": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  },
+  "values": {
+   "equal": true,
+   "max_abs_delta": 0.0
+  }
+ },
+ "forward_bitwise": true,
+ "reference_commit": "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01",
+ "removed_params": 592130,
+ "reshaped": [],
+ "tie_exact": true,
+ "torch": "2.8.0+cu126",
+ "undeclared_extra": [],
+ "undeclared_missing": [],
+ "variant": "tied_pre1_fb0_c1c2"
+}

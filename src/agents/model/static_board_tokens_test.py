@@ -95,11 +95,14 @@ def _with_op_content(model: Any, amount: bool = False, outgoing: bool = False, b
     fe = copy.deepcopy(model.policy.features_extractor)
     g = torch.Generator().manual_seed(7)
     oc = fe.op_content
-    for lin, live in ((oc.amount_proj, amount), (oc.outgoing_proj, outgoing)):
+    # gen3_static_port_v1: the outgoing route is a set function — its per-move network keeps random weights either
+    # way (it is NOT zero at init); the zero-init output layer `outgoing_proj` is what switches the route on / off.
+    for lin, live in ((oc.amount_proj, amount), (oc.outgoing_cell, True), (oc.outgoing_proj, outgoing)):
         with torch.no_grad():
             lin.weight.copy_(torch.randn(lin.weight.shape, generator=g) * 0.3 if live else torch.zeros_like(lin.weight))
-            lin.bias.copy_(torch.randn(lin.bias.shape, generator=g) * 0.3 if (live and bias)
-                           else torch.zeros_like(lin.bias))
+            if lin.bias is not None:
+                lin.bias.copy_(torch.randn(lin.bias.shape, generator=g) * 0.3 if (live and bias)
+                               else torch.zeros_like(lin.bias))
     fe.eval()
     return fe
 
@@ -149,9 +152,12 @@ def test_the_op_content_zero_init_survives_a_real_policy_build():
     from agents.model.identity_init_test import _build_real_policy
     model, _ = _build_real_policy(token_encoding="static", edge_bias_families="x,g")
     oc = model.policy.features_extractor.op_content
-    assert oc is not None and oc.outgoing_proj is not None
-    for lin in (oc.amount_proj, oc.outgoing_proj):
-        assert float(lin.weight.detach().abs().max()) == 0.0 and float(lin.bias.detach().abs().max()) == 0.0
+    assert oc is not None and oc.outgoing_proj is not None and oc.outgoing_cell is not None
+    assert float(oc.amount_proj.weight.detach().abs().max()) == 0.0
+    assert float(oc.amount_proj.bias.detach().abs().max()) == 0.0
+    # gen3_static_port_v1: the set function's OUTPUT layer is the zero (bias-free); its per-move layer is live.
+    assert oc.outgoing_proj.bias is None and float(oc.outgoing_proj.weight.detach().abs().max()) == 0.0
+    assert oc.outgoing_cell.bias is None and float(oc.outgoing_cell.weight.detach().abs().max()) > 0.0
 
 
 # --------------------------------------------------------------------------------------- the sides

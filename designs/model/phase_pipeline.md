@@ -183,7 +183,9 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
    extra seat shifts by 2, and the edge families read their board seat from `board_seats` ((12, 12, 12) under
    legacy: `x` → the mon's own side, `g` / `c4` → FIELD under static). Just before the trunk the per-mon
    OP CONTENT (`op_content`, T1, zero-init) adds the `x` ⊕ `g` amounts on every mon and our `d1` cells on
-   their mons. Readers take `TeamTransformer.board_rows()` ([B, 1, D] legacy, [B, 3, D] static).
+   their mons (a set function of our moves), and under `--mon-hazard-cost on` each mon's own side's Spikes layers
+   + its switch-in cost (`static_facts.py`, the op's `spikes_entry`); under `--move-actor-state on` the E3 seats
+   carry our active's HP + status (both zero-init, `gen3_static_port_v1`). Readers take `TeamTransformer.board_rows()` ([B, 1, D] legacy, [B, 3, D] static).
    Returns the two refined team-token blocks. **Optional gradient checkpointing**: a runtime
    `grad_checkpointing` flag (set per run by `train_rl_agent.py --grad-checkpointing`, never
    saved/version-checked) runs these encoder layers under `torch.utils.checkpoint(...,

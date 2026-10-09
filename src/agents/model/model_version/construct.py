@@ -239,6 +239,11 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_op_reduction_principled_v1 (v146): the op's reductions over their believed moves (audit F6b).
             op_reduction=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("op_reduction", "max")),
+            # gen3_static_port_v1 (v147): the static encoder's two narrow facts.
+            mon_hazard_cost=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("mon_hazard_cost", "off")),
+            move_actor_state=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_actor_state", "off")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

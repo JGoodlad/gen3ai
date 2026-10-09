@@ -37,6 +37,8 @@
   "max_moves": 400,
   "max_species": 400,
   "max_types": 20,
+  "mon_hazard_cost": "off",
+  "move_actor_state": "off",
   "move_belief_coef": 0.05,
   "move_belief_latent_coef": 0.05,
   "move_belief_mode": "both",

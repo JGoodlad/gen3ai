@@ -1141,25 +1141,23 @@ class DamageOperatorPairwise:
         ], dim=-1)                                                                # [B,4,4]
         return cells * is_prot[:, :, None]                                        # non-Protect slots 0
 
-    def pairwise_entry(self, ctx: 'ExtractorContext',
-                       move_belief_logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """gen3_edge_bias_trunk_v1 (X): the ENTRY/EXIT edge — what switching a mon IN or OUT costs,
-        per mon, delivered at the (mon seat, GLOBAL seat) pair. → `(our_cells [B,6,4],
-        opp_cells [B,6,4])`, cell `[entry_chip, pursuit_p, pursuit_eff, grounded]`:
+    def spikes_entry(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """THE gen-3 Spikes ENTRY rule, per mon — `(chip_our, chip_opp, grounded_our, grounded_opp)`, each [B,6],
+        UN-gated (no alive / revealed gate: each caller applies its own). ONE definition, read by the `x` edge
+        cell (`pairwise_entry`) and by `--mon-hazard-cost`'s per-mon fact (`gen3_static_port_v1`), so the two
+        can never drift.
 
-          * entry_chip — gen3 Spikes on the mon's OWN entry side (1/2/3 layers → 1/8, 1/6, 1/4 of
-            maxhp), grounded-gated (Flying / Levitate immune; opp Levitate revealed-exact else the
-            SPECIES_TRAP_PRIOR levitate column — the T-family fold, reused).
-          * pursuit_p — P(the OTHER side carries Pursuit): vs OUR mons the belief-composed max over
-            alive opp slots (revealed rides pinned ≈1); vs OPP mons exact (our movesets are known).
-          * pursuit_eff — Dark effectiveness at the victim's types (decorrelated from p).
-        Victim-alive-gated; opp cells revealed-gated (unknown types). The "switching is not free"
-        facts, attention-composable with every mon token via the global seat."""
-        device = ctx.device
-        from agents.model.damage_tables import _pursuit_num, _T2I
-        pur = _pursuit_num()
-        dark = _T2I["DARK"]
-        chip_table = torch.tensor([0.0, 1.0 / 8, 1.0 / 6, 1.0 / 4], device=device)
+        Verified in `deps/pokemon-showdown` (gen 3 inherits gen 4's scripts): `spikes`' `onEntryHazard` (the
+        gen-4 mod; gen 4's `runSwitch` fires `runEvent('EntryHazard')` on every switch-in) damages
+        `[0, 3, 4, 6][layers] * maxhp / 24` = 1/8, 1/6, 1/4 of max HP iff `pokemon.isGrounded()`; in gen 3
+        `isGrounded` is false only for a FLYING type or LEVITATE (Gravity, Ingrain-grounding, Iron Ball, Magnet
+        Rise, Air Balloon, Roost, Smack Down are gen 4+; Magic Guard, num 98, is a gen-4 ability; Heavy-Duty
+        Boots is gen 8). Our abilities are KNOWN exactly; an opponent's is exact where REVEALED (the `known`
+        flag, `opp_ability_view`), and otherwise its species' Smogon P(Levitate) (`SPECIES_TRAP_PRIOR[:, 3]`),
+        the belief. The fraction is the nominal one (Showdown floors the HP lost).
+
+        Under X5 the caller passes the HYPOTHESIS context: a hidden slot's types / species are its hypothesis'."""
+        chip_table = torch.tensor([0.0, 1.0 / 8, 1.0 / 6, 1.0 / 4], device=ctx.device)
         # --- grounded (the T-family recipe) ---
         our_ab = ctx.ability1_ids[:, :TEAM_SIZE]
         # gen3_op_ability_known_v1: revealed = the `known` flag (an unrevealed id1 is the top-1 PRIOR).
@@ -1175,6 +1173,27 @@ class DamageOperatorPairwise:
         layers = (ctx.spikes_feature * 3.0).round().long().clamp(0, 3)           # [B,2]
         chip_our = chip_table[layers[:, 0]][:, None] * gr_i                       # [B,6]
         chip_opp = chip_table[layers[:, 1]][:, None] * gr_j
+        return chip_our, chip_opp, gr_i, gr_j
+
+    def pairwise_entry(self, ctx: 'ExtractorContext',
+                       move_belief_logits: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """gen3_edge_bias_trunk_v1 (X): the ENTRY/EXIT edge — what switching a mon IN or OUT costs,
+        per mon, delivered at the (mon seat, GLOBAL seat) pair. → `(our_cells [B,6,4],
+        opp_cells [B,6,4])`, cell `[entry_chip, pursuit_p, pursuit_eff, grounded]`:
+
+          * entry_chip — gen3 Spikes on the mon's OWN entry side (1/2/3 layers → 1/8, 1/6, 1/4 of
+            maxhp), grounded-gated (Flying / Levitate immune; opp Levitate revealed-exact else the
+            SPECIES_TRAP_PRIOR levitate column — the T-family fold, reused).
+          * pursuit_p — P(the OTHER side carries Pursuit): vs OUR mons the belief-composed max over
+            alive opp slots (revealed rides pinned ≈1); vs OPP mons exact (our movesets are known).
+          * pursuit_eff — Dark effectiveness at the victim's types (decorrelated from p).
+        Victim-alive-gated; opp cells revealed-gated (unknown types). The "switching is not free"
+        facts, attention-composable with every mon token via the global seat."""
+        from agents.model.damage_tables import _pursuit_num, _T2I
+        pur = _pursuit_num()
+        dark = _T2I["DARK"]
+        # --- the Spikes entry rule: ONE function (`spikes_entry`), shared with `--mon-hazard-cost`'s per-mon fact ---
+        chip_our, chip_opp, gr_i, gr_j = self.spikes_entry(ctx)                   # [B,6] ×4
         # --- Pursuit exposure ---
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()

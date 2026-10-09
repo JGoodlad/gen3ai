@@ -120,6 +120,8 @@ class ExtractorBuild(torch.nn.Module):
                  speed_physics: str = "off",
                  op_reduction: str = "max",
                  obs_facts: str = "off",
+                 mon_hazard_cost: str = "off",
+                 move_actor_state: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -1084,6 +1086,33 @@ class ExtractorBuild(torch.nn.Module):
         from agents.model.op_reduction import OP_WORST_DIM
         self.op_worst_proj: Optional[_IsoLin] = (_IsoLin(OP_WORST_DIM, D_MODEL, zero=True, bias=False)
                                                  if op_reduction == "principled" else None)
+
+        # gen3_static_port_v1 (`--mon-hazard-cost`, `--move-actor-state`; `static_facts.py`): two NARROW facts for the
+        # static encoder, from the static diagnostic. Each `on` builds ONE zero-init, bias-free `IsolatedLinear` LAST
+        # (no global RNG draw; SB3's orthogonal re-init skips it), so every other parameter's initial bytes equal the
+        # `off` build's and ON adds exactly 0 at init. `off` (the default) builds nothing. Requirements are enforced
+        # HERE, where `flag_requires_test` can see them.
+        from agents.model.static_facts import (MON_HAZARD_COST_MODES, MON_HAZARD_DIM, MOVE_ACTOR_DIM,
+                                               MOVE_ACTOR_STATE_MODES)
+        if mon_hazard_cost not in MON_HAZARD_COST_MODES:
+            raise ValueError(f"mon_hazard_cost must be one of {MON_HAZARD_COST_MODES}, got {mon_hazard_cost!r}")
+        if move_actor_state not in MOVE_ACTOR_STATE_MODES:
+            raise ValueError(f"move_actor_state must be one of {MOVE_ACTOR_STATE_MODES}, got {move_actor_state!r}")
+        if mon_hazard_cost == "on" and token_encoding != "static":
+            raise ValueError("mon_hazard_cost='on' requires token_encoding='static': it puts the entry-hazard cost back "
+                             "into the static per-mon token (legacy's encoder reads the Spikes column already).")
+        if mon_hazard_cost == "on" and not damage_op:
+            raise ValueError("mon_hazard_cost='on' requires damage_op=True: the fraction is the damage operator's ONE "
+                             "Spikes entry rule (`DamageOperator.spikes_entry`), never a second copy.")
+        if move_actor_state == "on" and token_encoding != "static":
+            raise ValueError("move_actor_state='on' requires token_encoding='static': legacy's move network already "
+                             "mixes the mon's HP into its move tokens.")
+        self.mon_hazard_cost = mon_hazard_cost
+        self.move_actor_state = move_actor_state
+        self.mon_hazard_proj: Optional[_IsoLin] = (_IsoLin(MON_HAZARD_DIM, D_MODEL, zero=True, bias=False)
+                                                   if mon_hazard_cost == "on" else None)
+        self.move_actor_proj: Optional[_IsoLin] = (_IsoLin(MOVE_ACTOR_DIM, D_MODEL, zero=True, bias=False)
+                                                   if move_actor_state == "on" else None)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

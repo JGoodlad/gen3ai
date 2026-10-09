@@ -491,6 +491,20 @@ def _migrate_config(data: dict) -> dict:
     if version < 146:
         data.setdefault("op_reduction", "max")
         data["config_version"] = 146
+    # v147 (gen3_static_port_v1) — the static port: `static`'s per-mon S reads the type SET (summed; one fewer 16-wide
+    # input block) and its op content's outgoing route is a Deep Sets module (new keys), so a v145 / v146 `static`
+    # record has no home here: REFUSED. `legacy` is unchanged; `mon_hazard_cost` / `move_actor_state` default "off"
+    # (the only possible past: the facts did not exist).
+    if version < 147:
+        if data.get("token_encoding") == "static":
+            raise ModelVersionError(
+                f"model_config.json (config_version {version}) records token_encoding='static' from BEFORE the static "
+                "port (v147, gen3_static_port_v1), which made the static encoder equivariant: S reads the type SET "
+                "(summed) and the op content's outgoing route is a set function of our moves, so its state_dict has no "
+                "home here. Run it PINNED to its own commit, or start a fresh run.")
+        data.setdefault("mon_hazard_cost", "off")
+        data.setdefault("move_actor_state", "off")
+        data["config_version"] = 147
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

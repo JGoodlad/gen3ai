@@ -1,0 +1,169 @@
+{
+ "buffer": "learner_golden_buffer_fixed_mass.npz",
+ "buffer_sha256": "4b48eaf0a08c0382b655c79bc8e27aea5c3980f7594856479ab1056a08c66539",
+ "build": {
+  "flat_intent_head": "FlatIntentHead",
+  "hypothesis_builder": "HypothesisBuilder",
+  "move_resolution": "str",
+  "obs_facts_inject": "NoneType",
+  "op_content": "OpContent",
+  "op_reduction": "<absent: pre-v146>",
+  "pokemon_encoder": "StaticTokenEncoder",
+  "policy_readout": "tower",
+  "static_board": true,
+  "token_encoding": "static"
+ },
+ "commit": "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01",
+ "files": {
+  "one_fb0/forward.pt": "cb3ace8ef8f7f23405bbe4a0460757fc34ed53260837c644898e2128076aac18",
+  "one_fb0/init_state.pt": "c9a6a56f0cf06555f4a413eeaced1b3ca9709dad6b6081ffcaf523129ad7ca85",
+  "raw/forward.pt": "1c948ae2f38eabcc35d7cc1b5cad654c8e90ffc395aa8e20ef5977afb5e88942",
+  "raw/init_state.pt": "80e17860da702de248c27339e3fedb074ba727af53a8e8a76d0a7218b1e58dd6",
+  "rows.pt": "e0c178432326f887f1571d0b51286841c94aa9475b7fd572009991ee491f9ef9",
+  "tied/forward.pt": "df574b0d42876bd177b8990071da34a811bbb22ba4cf680e68cc28d9784d28f9",
+  "tied/init_state.pt": "e4513cf69ba7d31f69df454b92b0c5b16629116115d2fea35b458bb4ae32dc20",
+  "tied_fb0/forward.pt": "171a20857f1133d2835fb438c654fe21be9c31b8216baf786591e85d38c7947f",
+  "tied_fb0/init_state.pt": "3f53f1c9dd2a69e67dadeb33738dca1662382ca41f6e2085ac5fe94c038cacc2",
+  "tied_pre1/forward.pt": "638702bc49c8cd73d28c5c3500045d2543d5b4ae483157a396917205fdff3ac6",
+  "tied_pre1/init_state.pt": "43fa5fda50c63c1c84d272955627f91eb74303605b5411bfdae9f3f360ce5808",
+  "tied_pre1/losses.json": "f752e6a4a025fbc8695d413d6c49ac9d8e092269bd4d9aa12780b8965f800d25",
+  "tied_pre1/post_state.pt": "d8dac34058d092e6c3e5b655222be8cb7fed79dcb08fff2b26749112be1185cf",
+  "tied_pre1_fb0/forward.pt": "b6fd75cd95d6aa0558980cf360f45eabe7d7090056ec55915a4f412014c7298a",
+  "tied_pre1_fb0/init_state.pt": "e1adacc65de874d050afd178e0fdc5daa35855f0ce9c02ae50de16159af68b1c",
+  "tied_pre1_fb0_c1c2/forward.pt": "ddb288414caa34d4ee068241c53edca861ee5ce7bfd299d319a7c693f63b9740",
+  "tied_pre1_fb0_c1c2/init_state.pt": "7044c2bdc516363ff864cbde2ddac475174102144dc200dac4cd7ee2d502cc07"
+ },
+ "overrides": {
+  "belief_tokens": "fixed_mass",
+  "token_encoding": "static"
+ },
+ "src": "/home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09/src",
+ "torch": "2.8.0+cu126",
+ "variants": {
+  "one_fb0": {
+   "conditions": [
+    "one",
+    "fb0"
+   ],
+   "facts": {},
+   "init_sd_sha256": "70db7ac076c31e7d869a986ff826874dc2232ee7dae5562b0fde471b992b2873"
+  },
+  "raw": {
+   "conditions": [],
+   "facts": {},
+   "init_sd_sha256": "7c161b8d45aa6d4bd74507376ee9af55b34fcf6ee5b43b767f24878c35f6c873"
+  },
+  "tied": {
+   "conditions": [
+    "tie"
+   ],
+   "facts": {
+    "tie_groups": 29
+   },
+   "init_sd_sha256": "0eeceb7f4573a81dccfcd070da0f012c9f6d45454338dd30a5ebc5d84d9e1f5e"
+  },
+  "tied_fb0": {
+   "conditions": [
+    "tie",
+    "fb0"
+   ],
+   "facts": {
+    "tie_groups": 29
+   },
+   "init_sd_sha256": "b3ab55d3128faede1feebb57d901deb5c7e8ca74ad633f5abc66e6295fa050c5"
+  },
+  "tied_pre1": {
+   "conditions": [
+    "tie",
+    "pre1"
+   ],
+   "facts": {
+    "pre1_groups": [
+     [
+      "out_move",
+      "1"
+     ],
+     [
+      "out_p_outspeed"
+     ],
+     [
+      "out_secondary",
+      "4"
+     ]
+    ],
+    "pre1_positions": 9,
+    "tie_groups": 29
+   },
+   "init_sd_sha256": "91c100621d65056255acace95d80e0ac59fe149df9b8be9d6a4015e79adcbb3e",
+   "update": {
+    "gains_frozen": true,
+    "init_params_sha256": "b5eee00f5f41bb2abe65c57ecb253d2465e4eb6e0c05d589af6a78e6c7dd42e4",
+    "post_params_sha256": "7af4aa3093d26291e9014886e2b0dbb2cfe8dcb75c92f273d8cad652c6b43dfa"
+   }
+  },
+  "tied_pre1_fb0": {
+   "conditions": [
+    "tie",
+    "pre1",
+    "fb0"
+   ],
+   "facts": {
+    "pre1_groups": [
+     [
+      "out_move",
+      "1"
+     ],
+     [
+      "out_p_outspeed"
+     ],
+     [
+      "out_secondary",
+      "4"
+     ]
+    ],
+    "pre1_positions": 9,
+    "tie_groups": 29
+   },
+   "init_sd_sha256": "4c663b89eb77b7aa31861f569080ea076acf254224470fc0de656d9903b4f75e"
+  },
+  "tied_pre1_fb0_c1c2": {
+   "conditions": [
+    "tie",
+    "pre1",
+    "fb0",
+    "c1",
+    "c2"
+   ],
+   "facts": {
+    "c1_type1_cols": [
+     62,
+     78
+    ],
+    "c1_type2_cols": [
+     78,
+     94
+    ],
+    "c2_outgoing_proj": [
+     128,
+     24
+    ],
+    "pre1_groups": [
+     [
+      "out_move",
+      "1"
+     ],
+     [
+      "out_p_outspeed"
+     ],
+     [
+      "out_secondary",
+      "4"
+     ]
+    ],
+    "pre1_positions": 9,
+    "tie_groups": 29
+   },
+   "init_sd_sha256": "151ff01bd0f2c5ff8f0c85e308861791329f71a5963785485501f01c906822b6"
+  }
+ }
+}

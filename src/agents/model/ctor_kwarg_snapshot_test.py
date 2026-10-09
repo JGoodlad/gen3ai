@@ -70,6 +70,8 @@ CTOR_KWARGS_V96 = frozenset({
     "move_resolution",
     "speed_physics",
     "op_reduction",
+    "mon_hazard_cost",
+    "move_actor_state",
     "obs_facts",
 })
 

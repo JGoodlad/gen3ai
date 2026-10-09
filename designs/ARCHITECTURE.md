@@ -512,7 +512,8 @@ encoder is built. The `static` arm ([`endstate/design_static_tokens.md`](endstat
 `agents/model/static_tokens.py`'s `StaticTokenEncoder` at the same `pokemon_encoder` attribute: each mon's
 token is S + D. S, the static identity, reads only the mon's set fields: species, the six level-100 ACTUAL
 stats (our team from the observed spread; an opponent from the Smogon usage-weighted stat mean ± std,
-`belief_tables.build_static_stat_prior`), types, item, abilities, species_known, the Hidden Power block, and
+`belief_tables.build_static_stat_prior`), types (a SET: the two type embeddings SUMMED, so the obs's alphabetical
+type order carries no weight — `gen3_static_port_v1`), item, abilities, species_known, the Hidden Power block, and
 the four moves through the move network (no context columns) and the within-mon self-attention, SUMMED as a
 set. D, the dynamic state, reads HP, status, the counters, the sleep-wake belief, recency, protect odds, the
 last action, the trap bits, the active flag, the item-consumed bit, the side's active context on the active
@@ -531,10 +532,22 @@ edge goes to the mon's OWN side token, `g` and `c4` to FIELD (§5). The critic's
 reads the three refined board tokens where it reads the global token; `tower`'s head-only `non_matchup_rest`
 concat is DELETED (pi width 1177 → 1152); `trunk`'s state query attends over the three board tokens. Every mon
 on BOTH sides gets the per-mon OP CONTENT (`op_content`, zero-init): its `x` ⊕ `g` cells (entry chip, Pursuit
-exposure, grounded; the end-of-turn ledger) through one shared `Linear(8, 128)`, and on each of THEIR mons the
-`d1` cells of our four request-order moves through `Linear(24, 128)`; our mons' incoming rows keep riding
+exposure, grounded; the end-of-turn ledger) through one shared `Linear(8, 128)`, and on each of THEIR mons what our
+active does to it as a SET of moves (`gen3_static_port_v1`): each of our moves' `d1` cell through ONE bias-free
+`Linear(6, 32)` + ReLU, SUMMED over the moves, then a zero-init bias-free `Linear(32, 128)` (Deep Sets: the request
+order carries no weight, an empty / illegal slot's all-zero cell adds exactly 0); our mons' incoming rows keep riding
 `prefuse_proj`. The board context therefore reaches a mon only through the trunk's attention, the edges and the
-op's amounts. Nothing has been trained on `static`; it is the screen's arm (design note §8).
+op's amounts — plus two NARROW facts, each a flag of its own, OFF by default (`agents/model/static_facts.py`, config
+v147, from the static diagnostic's H2 / H3): **`--mon-hazard-cost on`** adds to every mon's token (both sides),
+through a zero-init bias-free `IsolatedLinear(2, 128)`, its own side's Spikes layers /3 and the HP fraction it would
+lose switching in, computed by the op's ONE Spikes entry rule `DamageOperator.spikes_entry` (the same function the `x`
+cell reads; on the context the op prices with, so an X5 hidden slot is priced as its hypothesis), after the op content
+and before the trunk; **`--move-actor-state on`** adds our active's HP fraction and status one-hot to its four VALID E3
+seats through a zero-init bias-free `IsolatedLinear(8, 128)` (equivalently zero-init input columns of
+`move_seat_proj`). Both are built LAST with no RNG draw, so each flag's ON build starts byte-equal to its OFF build
+plus one zero matrix. The static screen trained `static` PINNED at `6c6d2e09` (pre-break, design note §8.2); at
+HEAD it is the port (`gen3_static_port_v1`, design note §12), which reproduces the pin's static forward on mapped
+weights up to the type-sum's fp32 rounding (`research_state/measurements/static_port_identity_2026-10-09/`).
 
 The concrete steps:
 
@@ -675,12 +688,12 @@ seats and every later seat shifts by 2 (`_total_tokens` = 15; `board_seats` = (1
 
 | Seats | Index range | Token type | Content |
 |---|---|---|---|
-| our mons | 0–5 | `TOKEN_TYPE_OUR_TEAM` | S + D (+ `prefuse_proj` incoming rows + `op_content` x ⊕ g) |
-| opp mons | 6–11 | `TOKEN_TYPE_THEIR_TEAM` | S + D (+ move-belief reinjection + `op_content` x ⊕ g + our `d1` cells) |
+| our mons | 0–5 | `TOKEN_TYPE_OUR_TEAM` | S + D (+ `prefuse_proj` incoming rows + `op_content` x ⊕ g; + `mon_hazard_proj` under `--mon-hazard-cost on`) |
+| opp mons | 6–11 | `TOKEN_TYPE_THEIR_TEAM` | S + D (+ move-belief reinjection + `op_content` x ⊕ g + our `d1` cells as a set; + `mon_hazard_proj` under `--mon-hazard-cost on`) |
 | OUR SIDE | 12 | `TOKEN_TYPE_OUR_SIDE` (6) | `side_proj(our side's 10 facts)` |
 | THEIR SIDE | 13 | `TOKEN_TYPE_THEIR_SIDE` (7) | `side_proj(their side's 10 facts)` — the SAME projection |
 | FIELD | 14 | `TOKEN_TYPE_FIELD` (8) | `field_proj(weather 7, clock 3, turns since progress)` |
-| E3 / E4 / E5 / [OTHER] / events | 15–62 | as above | unchanged, shifted by 2 |
+| E3 / E4 / E5 / [OTHER] / events | 15–62 | as above | unchanged, shifted by 2 (the E3 seats + our active's HP / status under `--move-actor-state on`) |
 E5 deliberately reuses `TOKEN_TYPE_THEIR_THREAT` rather than adding a 7th token-type row (growing
 the table changes every model's state_dict).
 
@@ -1571,7 +1584,7 @@ E4 `[17:23]`, E5 `[23:29]`, OTHER_species `29`, event seats `[30:62]`.
 | **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; folded by the Rust trackers, log-saturated; **IN the production families string** since gen-12 — the one family whose cell the GPU cannot recompute, since it IS compiled battle history) |
 | **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 3 | `[is_actor, is_target, is_rel]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C; `is_rel` added by `gen3_event_record_v2`): event *e*'s recorded actor/target/REL mon IS mon *m* (species-num equality, side-gated against mirror false-links — actor on the row's side, target on the other, REL on its own `REL_SIDE`; `_event_reference_cells`, pure). **IN the production string** — requires `--history-events`, which is ON (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
-| **x** | each mon × **global** (both sides; its OWN side token 12 / 13 under `static`) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |
+| **x** | each mon × **global** (both sides; its OWN side token 12 / 13 under `static`) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` — `entry_chip` and `grounded` from `DamageOperator.spikes_entry`, the ONE gen-3 Spikes entry rule (1/8, 1/6, 1/4; Flying / Levitate immune, an unrevealed opponent's Levitate its Smogon prior) |
 | **g** | each mon × **global** (both sides; FIELD 14 under `static`) | 4 | `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |
 
 **No family targets the E5 tail seats** — they are token content only.
@@ -1675,6 +1688,8 @@ does nothing given another setting.
 | `intent_move_cell` | `true` | ACTIVE |
 | `intent_threshold` | `true` | ACTIVE |
 | `item_belief` | `true` | ACTIVE |
+| `mon_hazard_cost` | `"off"` | OFF |
+| `move_actor_state` | `"off"` | OFF |
 | `move_belief_mode` | `"both"` | ACTIVE |
 | `move_candidate_floor` | `0.02` | ACTIVE |
 | `move_latent` | `true` | ACTIVE |

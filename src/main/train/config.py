@@ -516,6 +516,8 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("speed_physics", "off")               # v143 structural str (F7b's speed physics; fresh-only)
     _resolve("obs_facts", "off")                   # v144 structural str (gen3_obs_facts_v1, part 3; fresh-only)
     _resolve("op_reduction", "max")                # v146 structural str (audit F6b's principled reductions; fresh-only)
+    _resolve("mon_hazard_cost", "off")             # v147 structural str (static's per-mon Spikes fact; fresh-only)
+    _resolve("move_actor_state", "off")            # v147 structural str (static's E3 actor HP + status; fresh-only)
     _resolve("oracle_reveal", "off")               # v137 RESUME-IMMUTABLE str (the diagnostic observation mode; flagless resume inherits)
     _resolve("token_encoding", "legacy")           # v139 structural str (static tokens; version-checked, fresh-only)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —

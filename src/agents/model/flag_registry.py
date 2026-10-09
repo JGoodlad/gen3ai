@@ -566,6 +566,26 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "'max' is byte-identical (graph, state_dict, outputs). Screened in the bundle with "
                    "--token-encoding static, --move-resolution on, --speed-physics on as NON-INFERIORITY.",
               requires=("damage_op",)),
+    ModelFlag("mon_hazard_cost", "off", Tier.CLI, Klass.STRUCTURAL, 147,
+              "a NARROW per-mon fact for --token-encoding static ('off' = nothing built, production; 'on' = every "
+              "mon's token, both sides, gets its own side's Spikes layers and the fraction of max HP it would lose "
+              "switching in: 1/8, 1/6, 1/4, 0 for Flying / Levitate, the opponent's Levitate from its belief)",
+              note="gen3_static_port_v1 (`static_facts.py`; the static diagnostic's H2 / H3: our side's Spikes the "
+                   "one fact whose gap to legacy GREW). The fraction is the damage operator's ONE entry rule "
+                   "(`DamageOperator.spikes_entry`, which the `x` edge cell also reads). Zero-init bias-free "
+                   "IsolatedLinear (2 -> 128) built LAST, no RNG draw: every other initial byte equals 'off''s, and "
+                   "ON adds exactly 0 at init. Added as token content after the op (not into D's MLP: a hidden "
+                   "slot's static token is a dex-table gather).",
+              requires=("token_encoding", "damage_op")),
+    ModelFlag("move_actor_state", "off", Tier.CLI, Klass.STRUCTURAL, 147,
+              "a NARROW per-move fact for --token-encoding static ('off' = nothing built, production; 'on' = our "
+              "active's 4 E3 move seats get its current HP fraction and status one-hot)",
+              note="gen3_static_port_v1 (`static_facts.py`; the static diagnostic's H2: our active's HP on its move "
+                   "tokens R² 0.59 vs legacy's 0.80, since static's move tokens carry no HP). Zero-init bias-free "
+                   "IsolatedLinear (8 -> 128) added to the E3 seats (equivalently zero-init input columns of "
+                   "`move_seat_proj`), built LAST, no RNG draw. The opponent's E4 seats get nothing: neither "
+                   "encoding ever gave them their active's state.",
+              requires=("token_encoding",)),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

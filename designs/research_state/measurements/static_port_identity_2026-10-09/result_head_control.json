@@ -1,0 +1,665 @@
+{
+ "commit": "2e3579717d2037d121a4a16f8ad9d18aefd1e07c",
+ "control_readd_flat_bias": true,
+ "mapping": "head",
+ "overrides": {
+  "obs_facts": "off",
+  "op_reduction": "max",
+  "token_encoding": "static"
+ },
+ "reference_commit": "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01",
+ "torch": "2.8.0+cu126",
+ "variants": {
+  "one_fb0": {
+   "build": {
+    "flat_intent_head": "FlatIntentHead",
+    "hypothesis_builder": "HypothesisBuilder",
+    "move_resolution": "str",
+    "obs_facts_inject": "NoneType",
+    "op_content": "OpContent",
+    "op_reduction": "max",
+    "pokemon_encoder": "StaticTokenEncoder",
+    "policy_readout": "tower",
+    "static_board": true,
+    "token_encoding": "static"
+   },
+   "conditions": [
+    "one",
+    "fb0"
+   ],
+   "declared_removed": [
+    "features_extractor.value_pre_norm.bias",
+    "features_extractor.value_pre_norm.weight",
+    "features_extractor.value_projection.bias",
+    "features_extractor.value_projection.weight",
+    "mlp_extractor.value_net.0.bias",
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.2.bias",
+    "mlp_extractor.value_net.2.weight",
+    "pi_features_extractor.value_pre_norm.bias",
+    "pi_features_extractor.value_pre_norm.weight",
+    "pi_features_extractor.value_projection.bias",
+    "pi_features_extractor.value_projection.weight",
+    "value_net.bias",
+    "value_net.weight",
+    "vf_features_extractor.value_pre_norm.bias",
+    "vf_features_extractor.value_pre_norm.weight",
+    "vf_features_extractor.value_projection.bias",
+    "vf_features_extractor.value_projection.weight"
+   ],
+   "forward": {
+    "randn": {
+     "entropy": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "log_prob": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masked_logp": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    },
+    "zeros": {
+     "entropy": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "log_prob": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masked_logp": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    }
+   },
+   "forward_bitwise": true,
+   "n_params_target": 2469064,
+   "obs_facts_fills_equal": true,
+   "removed_params": 592129,
+   "reshaped": [],
+   "tie_exact": true,
+   "undeclared_extra": [],
+   "undeclared_missing": []
+  },
+  "raw": {
+   "build": {
+    "flat_intent_head": "FlatIntentHead",
+    "hypothesis_builder": "HypothesisBuilder",
+    "move_resolution": "str",
+    "obs_facts_inject": "NoneType",
+    "op_content": "OpContent",
+    "op_reduction": "max",
+    "pokemon_encoder": "StaticTokenEncoder",
+    "policy_readout": "tower",
+    "static_board": true,
+    "token_encoding": "static"
+   },
+   "conditions": [],
+   "declared_removed": [
+    "features_extractor.value_pre_norm.bias",
+    "features_extractor.value_pre_norm.weight",
+    "features_extractor.value_projection.bias",
+    "features_extractor.value_projection.weight",
+    "mlp_extractor.value_net.0.bias",
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.2.bias",
+    "mlp_extractor.value_net.2.weight",
+    "pi_features_extractor.value_pre_norm.bias",
+    "pi_features_extractor.value_pre_norm.weight",
+    "pi_features_extractor.value_projection.bias",
+    "pi_features_extractor.value_projection.weight",
+    "value_net.bias",
+    "value_net.weight",
+    "vf_features_extractor.value_pre_norm.bias",
+    "vf_features_extractor.value_pre_norm.weight",
+    "vf_features_extractor.value_projection.bias",
+    "vf_features_extractor.value_projection.weight"
+   ],
+   "forward": {
+    "randn": {
+     "entropy": {
+      "equal": false,
+      "max_abs_delta": 0.00010418891906738281
+     },
+     "log_prob": {
+      "equal": false,
+      "max_abs_delta": 0.002313852310180664
+     },
+     "masked_logp": {
+      "equal": false,
+      "max_abs_delta": 0.0033156871795654297
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": false,
+      "max_abs_delta": 0.00017374753952026367
+     }
+    },
+    "zeros": {
+     "entropy": {
+      "equal": false,
+      "max_abs_delta": 0.00010418891906738281
+     },
+     "log_prob": {
+      "equal": false,
+      "max_abs_delta": 0.002313852310180664
+     },
+     "masked_logp": {
+      "equal": false,
+      "max_abs_delta": 0.0033156871795654297
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": false,
+      "max_abs_delta": 0.00017374753952026367
+     }
+    }
+   },
+   "forward_bitwise": false,
+   "n_params_target": 2469064,
+   "obs_facts_fills_equal": true,
+   "removed_params": 592129,
+   "reshaped": [],
+   "tie_exact": false,
+   "undeclared_extra": [],
+   "undeclared_missing": []
+  },
+  "tied": {
+   "build": {
+    "flat_intent_head": "FlatIntentHead",
+    "hypothesis_builder": "HypothesisBuilder",
+    "move_resolution": "str",
+    "obs_facts_inject": "NoneType",
+    "op_content": "OpContent",
+    "op_reduction": "max",
+    "pokemon_encoder": "StaticTokenEncoder",
+    "policy_readout": "tower",
+    "static_board": true,
+    "token_encoding": "static"
+   },
+   "conditions": [
+    "tie"
+   ],
+   "declared_removed": [
+    "features_extractor.value_pre_norm.bias",
+    "features_extractor.value_pre_norm.weight",
+    "features_extractor.value_projection.bias",
+    "features_extractor.value_projection.weight",
+    "mlp_extractor.value_net.0.bias",
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.2.bias",
+    "mlp_extractor.value_net.2.weight",
+    "pi_features_extractor.value_pre_norm.bias",
+    "pi_features_extractor.value_pre_norm.weight",
+    "pi_features_extractor.value_projection.bias",
+    "pi_features_extractor.value_projection.weight",
+    "value_net.bias",
+    "value_net.weight",
+    "vf_features_extractor.value_pre_norm.bias",
+    "vf_features_extractor.value_pre_norm.weight",
+    "vf_features_extractor.value_projection.bias",
+    "vf_features_extractor.value_projection.weight"
+   ],
+   "forward": {
+    "randn": {
+     "entropy": {
+      "equal": false,
+      "max_abs_delta": 1.6689300537109375e-06
+     },
+     "log_prob": {
+      "equal": false,
+      "max_abs_delta": 5.269050598144531e-05
+     },
+     "masked_logp": {
+      "equal": false,
+      "max_abs_delta": 0.0002760887145996094
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    },
+    "zeros": {
+     "entropy": {
+      "equal": false,
+      "max_abs_delta": 1.6689300537109375e-06
+     },
+     "log_prob": {
+      "equal": false,
+      "max_abs_delta": 5.269050598144531e-05
+     },
+     "masked_logp": {
+      "equal": false,
+      "max_abs_delta": 0.0002760887145996094
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    }
+   },
+   "forward_bitwise": false,
+   "n_params_target": 2469064,
+   "obs_facts_fills_equal": true,
+   "removed_params": 592129,
+   "reshaped": [],
+   "tie_exact": true,
+   "undeclared_extra": [],
+   "undeclared_missing": []
+  },
+  "tied_fb0": {
+   "build": {
+    "flat_intent_head": "FlatIntentHead",
+    "hypothesis_builder": "HypothesisBuilder",
+    "move_resolution": "str",
+    "obs_facts_inject": "NoneType",
+    "op_content": "OpContent",
+    "op_reduction": "max",
+    "pokemon_encoder": "StaticTokenEncoder",
+    "policy_readout": "tower",
+    "static_board": true,
+    "token_encoding": "static"
+   },
+   "conditions": [
+    "tie",
+    "fb0"
+   ],
+   "declared_removed": [
+    "features_extractor.value_pre_norm.bias",
+    "features_extractor.value_pre_norm.weight",
+    "features_extractor.value_projection.bias",
+    "features_extractor.value_projection.weight",
+    "mlp_extractor.value_net.0.bias",
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.2.bias",
+    "mlp_extractor.value_net.2.weight",
+    "pi_features_extractor.value_pre_norm.bias",
+    "pi_features_extractor.value_pre_norm.weight",
+    "pi_features_extractor.value_projection.bias",
+    "pi_features_extractor.value_projection.weight",
+    "value_net.bias",
+    "value_net.weight",
+    "vf_features_extractor.value_pre_norm.bias",
+    "vf_features_extractor.value_pre_norm.weight",
+    "vf_features_extractor.value_projection.bias",
+    "vf_features_extractor.value_projection.weight"
+   ],
+   "forward": {
+    "randn": {
+     "entropy": {
+      "equal": false,
+      "max_abs_delta": 1.430511474609375e-06
+     },
+     "log_prob": {
+      "equal": false,
+      "max_abs_delta": 5.257129669189453e-05
+     },
+     "masked_logp": {
+      "equal": false,
+      "max_abs_delta": 0.0002759695053100586
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    },
+    "zeros": {
+     "entropy": {
+      "equal": false,
+      "max_abs_delta": 1.430511474609375e-06
+     },
+     "log_prob": {
+      "equal": false,
+      "max_abs_delta": 5.257129669189453e-05
+     },
+     "masked_logp": {
+      "equal": false,
+      "max_abs_delta": 0.0002759695053100586
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    }
+   },
+   "forward_bitwise": false,
+   "n_params_target": 2469064,
+   "obs_facts_fills_equal": true,
+   "removed_params": 592129,
+   "reshaped": [],
+   "tie_exact": true,
+   "undeclared_extra": [],
+   "undeclared_missing": []
+  },
+  "tied_pre1": {
+   "build": {
+    "flat_intent_head": "FlatIntentHead",
+    "hypothesis_builder": "HypothesisBuilder",
+    "move_resolution": "str",
+    "obs_facts_inject": "NoneType",
+    "op_content": "OpContent",
+    "op_reduction": "max",
+    "pokemon_encoder": "StaticTokenEncoder",
+    "policy_readout": "tower",
+    "static_board": true,
+    "token_encoding": "static"
+   },
+   "conditions": [
+    "tie",
+    "pre1"
+   ],
+   "declared_removed": [
+    "features_extractor.value_pre_norm.bias",
+    "features_extractor.value_pre_norm.weight",
+    "features_extractor.value_projection.bias",
+    "features_extractor.value_projection.weight",
+    "mlp_extractor.value_net.0.bias",
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.2.bias",
+    "mlp_extractor.value_net.2.weight",
+    "pi_features_extractor.value_pre_norm.bias",
+    "pi_features_extractor.value_pre_norm.weight",
+    "pi_features_extractor.value_projection.bias",
+    "pi_features_extractor.value_projection.weight",
+    "value_net.bias",
+    "value_net.weight",
+    "vf_features_extractor.value_pre_norm.bias",
+    "vf_features_extractor.value_pre_norm.weight",
+    "vf_features_extractor.value_projection.bias",
+    "vf_features_extractor.value_projection.weight"
+   ],
+   "forward": {
+    "randn": {
+     "entropy": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "log_prob": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masked_logp": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    },
+    "zeros": {
+     "entropy": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "log_prob": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masked_logp": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    }
+   },
+   "forward_bitwise": true,
+   "n_params_target": 2469064,
+   "obs_facts_fills_equal": true,
+   "removed_params": 592129,
+   "reshaped": [],
+   "tie_exact": true,
+   "undeclared_extra": [],
+   "undeclared_missing": [],
+   "update": {
+    "bitwise": true,
+    "gains_frozen": true,
+    "groups_unequal": {},
+    "losses_equal": true,
+    "losses_unequal": {}
+   }
+  },
+  "tied_pre1_fb0": {
+   "build": {
+    "flat_intent_head": "FlatIntentHead",
+    "hypothesis_builder": "HypothesisBuilder",
+    "move_resolution": "str",
+    "obs_facts_inject": "NoneType",
+    "op_content": "OpContent",
+    "op_reduction": "max",
+    "pokemon_encoder": "StaticTokenEncoder",
+    "policy_readout": "tower",
+    "static_board": true,
+    "token_encoding": "static"
+   },
+   "conditions": [
+    "tie",
+    "pre1",
+    "fb0"
+   ],
+   "declared_removed": [
+    "features_extractor.value_pre_norm.bias",
+    "features_extractor.value_pre_norm.weight",
+    "features_extractor.value_projection.bias",
+    "features_extractor.value_projection.weight",
+    "mlp_extractor.value_net.0.bias",
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.2.bias",
+    "mlp_extractor.value_net.2.weight",
+    "pi_features_extractor.value_pre_norm.bias",
+    "pi_features_extractor.value_pre_norm.weight",
+    "pi_features_extractor.value_projection.bias",
+    "pi_features_extractor.value_projection.weight",
+    "value_net.bias",
+    "value_net.weight",
+    "vf_features_extractor.value_pre_norm.bias",
+    "vf_features_extractor.value_pre_norm.weight",
+    "vf_features_extractor.value_projection.bias",
+    "vf_features_extractor.value_projection.weight"
+   ],
+   "forward": {
+    "randn": {
+     "entropy": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "log_prob": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masked_logp": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    },
+    "zeros": {
+     "entropy": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "log_prob": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masked_logp": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    }
+   },
+   "forward_bitwise": true,
+   "n_params_target": 2469064,
+   "obs_facts_fills_equal": true,
+   "removed_params": 592129,
+   "reshaped": [],
+   "tie_exact": true,
+   "undeclared_extra": [],
+   "undeclared_missing": []
+  },
+  "tied_pre1_fb0_c1c2": {
+   "build": {
+    "flat_intent_head": "FlatIntentHead",
+    "hypothesis_builder": "HypothesisBuilder",
+    "move_resolution": "str",
+    "obs_facts_inject": "NoneType",
+    "op_content": "OpContent",
+    "op_reduction": "max",
+    "pokemon_encoder": "StaticTokenEncoder",
+    "policy_readout": "tower",
+    "static_board": true,
+    "token_encoding": "static"
+   },
+   "conditions": [
+    "tie",
+    "pre1",
+    "fb0",
+    "c1",
+    "c2"
+   ],
+   "declared_removed": [
+    "features_extractor.value_pre_norm.bias",
+    "features_extractor.value_pre_norm.weight",
+    "features_extractor.value_projection.bias",
+    "features_extractor.value_projection.weight",
+    "mlp_extractor.value_net.0.bias",
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.2.bias",
+    "mlp_extractor.value_net.2.weight",
+    "pi_features_extractor.value_pre_norm.bias",
+    "pi_features_extractor.value_pre_norm.weight",
+    "pi_features_extractor.value_projection.bias",
+    "pi_features_extractor.value_projection.weight",
+    "value_net.bias",
+    "value_net.weight",
+    "vf_features_extractor.value_pre_norm.bias",
+    "vf_features_extractor.value_pre_norm.weight",
+    "vf_features_extractor.value_projection.bias",
+    "vf_features_extractor.value_projection.weight"
+   ],
+   "forward": {
+    "randn": {
+     "entropy": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "log_prob": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masked_logp": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    },
+    "zeros": {
+     "entropy": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "log_prob": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masked_logp": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "masks_bool": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     },
+     "values": {
+      "equal": true,
+      "max_abs_delta": 0.0
+     }
+    }
+   },
+   "forward_bitwise": true,
+   "n_params_target": 2469064,
+   "obs_facts_fills_equal": true,
+   "removed_params": 592129,
+   "reshaped": [],
+   "tie_exact": true,
+   "undeclared_extra": [],
+   "undeclared_missing": []
+  }
+ }
+}

@@ -47,7 +47,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens", "index_max",
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "obs_facts_inject", "opp_intent",
-    "move_order", "move_resolution", "move_resolution_rules", "op_reduction", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_tokens", "switch_branch",
+    "move_order", "move_resolution", "move_resolution_rules", "op_reduction", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_facts", "static_tokens", "switch_branch",
     "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
 )
 

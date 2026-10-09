@@ -228,6 +228,21 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "presence normalised; one mixture for every channel), and the noisy-OR P(some move of "
                              "theirs KOs this mon) is added to our mon tokens through a zero-init projection. "
                              "STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
+    from agents.model.static_facts import MON_HAZARD_COST_MODES, MOVE_ACTOR_STATE_MODES
+    parser.add_argument("--mon-hazard-cost", "--mon_hazard_cost", dest="mon_hazard_cost",
+                        choices=MON_HAZARD_COST_MODES, default=None,
+                        help="A NARROW per-mon fact for --token-encoding static (gen3_static_port_v1, v147; "
+                             "designs/endstate/design_static_tokens.md §12). 'off' (default; production): builds "
+                             "nothing. 'on': every mon's token (both sides) gets its own side's Spikes layers and the "
+                             "fraction of max HP it would lose switching in (the damage operator's one Spikes entry "
+                             "rule: 1/8, 1/6, 1/4; 0 for Flying / Levitate), through a zero-init projection. "
+                             "STRUCTURAL, version-checked, fresh-only. Requires --token-encoding static and --damage-op.")
+    parser.add_argument("--move-actor-state", "--move_actor_state", dest="move_actor_state",
+                        choices=MOVE_ACTOR_STATE_MODES, default=None,
+                        help="A NARROW per-move fact for --token-encoding static (gen3_static_port_v1, v147). 'off' "
+                             "(default; production): builds nothing. 'on': our active's 4 move seats (E3) get its "
+                             "current HP fraction and status one-hot, through a zero-init projection. STRUCTURAL, "
+                             "version-checked, fresh-only. Requires --token-encoding static.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

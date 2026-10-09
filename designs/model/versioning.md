@@ -200,6 +200,12 @@ before; a v121–v143 config keeps its belief-specific reason and `LAST_BLOB_COM
 144 and 145. The archive held NO config at or above v144 when it landed (scan 2026-10-07: max v138). Tests:
 `mon_tied_gain_test.py`.
 
+**v147 (`gen3_static_port_v1`, 2026-10-09)** reshaped only `--token-encoding static` (its type pair summed, its op
+content's outgoing route a set function) and added two STRUCTURAL fields, `mon_hazard_cost` / `move_actor_state`
+{off,on}. A v145 / v146 `static` record is REFUSED in `_migrate_config` (its state_dict has no home; the archive held
+none: every static run is the pinned screen's v143); `legacy` stamps through and both fields default `off`. No
+`ARCH_SIGNATURE` or floor change (production is `legacy`, byte-identical).
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

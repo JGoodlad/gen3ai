@@ -5,7 +5,8 @@ A Pokémon's token is the SUM of two parts, and NO board fact enters either:
 
 * **S, the static identity** — a pure function of the mon's SET fields: species, the six level-100 ACTUAL
   stats (exact from the observed spread for our team; the Smogon usage-weighted mean ± std for an opponent,
-  ``STAT_PRIOR`` = `belief_tables.build_static_stat_prior`), types, item (id + known), abilities (ids +
+  ``STAT_PRIOR`` = `belief_tables.build_static_stat_prior`), types (a SET: the two embeddings summed,
+  `gen3_static_port_v1`), item (id + known), abilities (ids +
   dominance + known), the four moves through the move network and the within-mon self-attention, SUMMED as
   a set (Deep Sets; audit F14), species_known and the Hidden Power block;
 * **D, the dynamic state** — what is happening TO the mon: HP, status, the counters, the sleep-wake belief,
@@ -126,7 +127,7 @@ class StaticTokenEncoder(torch.nn.Module):
         self._ab_known = abil['offset'] + abil['layout']['known']['offset']
         role_input_dim = (layout['species_embedding_dim'] + STAT_FEATURE_DIM
                           + layout['item_embedding_dim'] + 1                 # item + known
-                          + 2 * layout['type_embedding_dim']
+                          + layout['type_embedding_dim']                     # the type SET (summed)
                           + 2 * layout['ability_embedding_dim'] + 2          # + dominance + known
                           + MOVE_NET_HIDDEN[1]                               # the SET pool
                           + 1                                                # species_known
@@ -209,7 +210,10 @@ class StaticTokenEncoder(torch.nn.Module):
             self._actual_stats(pp, ids["species_ids"]),
             embeddings.item_embedding(ids["item_ids"]),
             pp[..., self._item_known:self._item_known + 1],
-            embeddings.type_embedding(ids["type1_ids"]), embeddings.type_embedding(ids["type2_ids"]),
+            # gen3_static_port_v1: a mon's types are a SET — the obs lists them in ALPHABETICAL order (slot 2 empty
+            # on a mono-type), so a concat gave each type a different weight by its partner's name (the v145
+            # sweep's "type-pair columns"). SUMMED, one embedding read for both: equivariant over the pair.
+            embeddings.type_embedding(ids["type1_ids"]) + embeddings.type_embedding(ids["type2_ids"]),
             embeddings.ability_embedding(ids["ability1_ids"]), embeddings.ability_embedding(ids["ability2_ids"]),
             pp[..., self._ab_dom:self._ab_dom + 1], pp[..., self._ab_known:self._ab_known + 1],
             move_set,

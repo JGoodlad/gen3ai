@@ -19,9 +19,10 @@ scalars of `reactive`) and, for the counts and Sleep Clause, the per-mon slots o
 **OP CONTENT** (`OpContent`, audit B2, a requirement of the arm): an edge bias only reweights a softmax row, so
 an AMOUNT reaches a token only as content (§4 A3). Each mon on BOTH sides gets a zero-init projection of its
 Spikes entry cost and its end-of-turn ledger (the `x` / `g` cells, one shared projection both sides — the same
-side relativity), and each of THEIR mons what our active does to it (the `d1` cells of our four request-order
-moves). Our mons' incoming rows keep riding `prefuse_proj` (unchanged). Zero-init ⇒ the board-content
-injection is exactly 0 at init (`restore_identity_init` protects it, by observation).
+side relativity), and each of THEIR mons what our active does to it (the `d1` cells of our active's moves, as a
+SET: one shared per-move network, summed — `gen3_static_port_v1`; the request order carries no weight). Our mons'
+incoming rows keep riding `prefuse_proj` (unchanged). Zero-init ⇒ the board-content injection is exactly 0 at
+init (`restore_identity_init` protects it, by observation).
 """
 from __future__ import annotations
 
@@ -29,7 +30,7 @@ from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import torch
 
-from agents.model.arch_constants import D_MODEL
+from agents.model.arch_constants import D_MODEL, STATIC_OPC_OUT_HIDDEN
 from agents.model.extractor_ctx import ExtractorContext
 from agents.observation.constants import (CONDITION_DIM, POKEMON_CONDITION_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET,
                                           POKEMON_SPECIES_KNOWN_OFFSET, TEAM_SIZE)
@@ -66,10 +67,10 @@ BOARD_SEATS_STATIC: Tuple[int, int, int] = (2 * TEAM_SIZE, 2 * TEAM_SIZE + 1, 2 
 N_BOARD_TOKENS_STATIC = 3
 
 #: OP CONTENT input widths: the `x` cell [entry_chip, pursuit_p, pursuit_eff, grounded] ⊕ the `g` cell
-#: [leftovers, weather_chip, status_tick, leech] (both sides); the `d1` cell of our 4 request-order moves on one
-#: of their mons, 4 × [low, high, crit, pko, type_mult, revealed] (their side).
+#: [leftovers, weather_chip, status_tick, leech] (both sides); the `d1` cell of ONE of our moves on one of their
+#: mons, [low, high, crit, pko, type_mult, revealed] (their side; the set function reads one move at a time).
 OPC_AMOUNT_DIM = 4 + 4
-OPC_OUTGOING_DIM = 4 * 6
+OPC_OUTGOING_CELL = 6
 
 
 class BoardOffsets(NamedTuple):
@@ -124,8 +125,14 @@ class OpContent(torch.nn.Module):
 
     * ``amount_proj`` (``OPC_AMOUNT_DIM`` → ``D_MODEL``), shared by BOTH sides: the mon's `x` cell (its Spikes
       chip on entry, the Pursuit exposure, grounded) ⊕ its `g` cell (its end-of-turn ledger);
-    * ``outgoing_proj`` (``OPC_OUTGOING_DIM`` → ``D_MODEL``), THEIR mons only: the `d1` cells of our four
-      request-order moves on that mon (what our active does to it). ``None`` when the op has no outgoing
+    * the OUTGOING set function, THEIR mons only — what our active does to that mon, as a SET of moves
+      (`gen3_static_port_v1`): ``outgoing_cell`` (bias-free ``Linear(OPC_OUTGOING_CELL → STATIC_OPC_OUT_HIDDEN)``,
+      ONE network for every move) → ReLU → SUM over our moves → ``outgoing_proj`` (zero-init, bias-free
+      ``Linear(STATIC_OPC_OUT_HIDDEN → D_MODEL)``). The Deep Sets form (the static encoder's own move-set rule): a
+      permutation of our request slots leaves it EXACTLY unchanged, and a move with an all-zero cell (an empty /
+      illegal slot) contributes exactly 0 (bias-free, ReLU(0) = 0), so no slot count leaks in. It replaced a
+      ``Linear(24 → D_MODEL)`` over the four REQUEST-ORDER cells concatenated, which gave each request slot its
+      own weights (the v145 sweep's last arbitrary static weight). ``None`` both when the op has no outgoing
       kernel (`--damage-outgoing` off).
 
     Our mons' incoming rows ride `prefuse_proj` (unchanged)."""
@@ -133,12 +140,16 @@ class OpContent(torch.nn.Module):
     def __init__(self, outgoing: bool):
         super().__init__()
         self.amount_proj = torch.nn.Linear(OPC_AMOUNT_DIM, D_MODEL)
+        torch.nn.init.zeros_(self.amount_proj.weight)
+        torch.nn.init.zeros_(self.amount_proj.bias)
+        # The per-move network keeps its (SB3-redrawn) random init: the zero output layer is what makes the route
+        # exactly 0 at init (`restore_identity_init` re-zeros it after SB3's orthogonal re-init).
+        self.outgoing_cell: Optional[torch.nn.Linear] = (
+            torch.nn.Linear(OPC_OUTGOING_CELL, STATIC_OPC_OUT_HIDDEN, bias=False) if outgoing else None)
         self.outgoing_proj: Optional[torch.nn.Linear] = (
-            torch.nn.Linear(OPC_OUTGOING_DIM, D_MODEL) if outgoing else None)
-        for lin in (self.amount_proj, self.outgoing_proj):
-            if lin is not None:
-                torch.nn.init.zeros_(lin.weight)
-                torch.nn.init.zeros_(lin.bias)
+            torch.nn.Linear(STATIC_OPC_OUT_HIDDEN, D_MODEL, bias=False) if outgoing else None)
+        if self.outgoing_proj is not None:
+            torch.nn.init.zeros_(self.outgoing_proj.weight)
 
     def forward(self, x_cells: Tuple[torch.Tensor, torch.Tensor], g_cells: Tuple[torch.Tensor, torch.Tensor],
                 d1_cells: Optional[torch.Tensor]) -> torch.Tensor:
@@ -148,10 +159,11 @@ class OpContent(torch.nn.Module):
                              torch.cat([x_cells[1], g_cells[1]], dim=-1)], dim=1)       # [B,12,8]
         out: torch.Tensor = self.amount_proj(amounts)
         if self.outgoing_proj is not None:
+            assert self.outgoing_cell is not None
             if d1_cells is None:
                 raise ValueError("OpContent was built with the outgoing route but received no d1 cells — a "
                                  "silent skip would read exactly like a route that learned nothing.")
-            B = d1_cells.shape[0]
-            per_mon = d1_cells.permute(0, 2, 1, 3).reshape(B, TEAM_SIZE, OPC_OUTGOING_DIM)    # [B,6,24]
-            out = torch.cat([out[:, :TEAM_SIZE], out[:, TEAM_SIZE:] + self.outgoing_proj(per_mon)], dim=1)
+            per_move = torch.relu(self.outgoing_cell(d1_cells.permute(0, 2, 1, 3)))          # [B,6 their,4,H]
+            out = torch.cat([out[:, :TEAM_SIZE], out[:, TEAM_SIZE:] + self.outgoing_proj(per_move.sum(dim=2))],
+                            dim=1)
         return out

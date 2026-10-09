@@ -154,6 +154,8 @@ UNTIERED_CHILDREN = frozenset({
     "unpack",               # ObsUnpack: produces the tier-0 INPUT, ahead of every tier
     "prefuse_proj",         # the T1->trunk residual, owned by the root rather than by a phase
     "op_worst_proj",        # `--op-reduction principled`: its noisy-OR twin beside `prefuse_proj` (same seam)
+    "mon_hazard_proj",      # `--mon-hazard-cost on`: the per-mon Spikes fact, the root's pre-trunk residual (same seam)
+    "move_actor_proj",      # `--move-actor-state on`: the actor's state onto the E3 seats, the root's pre-trunk residual
     "pre_proj_norm", "projection", "activation",
     "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths
 })

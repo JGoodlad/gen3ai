@@ -178,6 +178,7 @@ Rules to preserve:
 | X5's T0 hypothesis builder (built with the opponent-belief family — the only belief representation: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
 | X5's hypothesis-token ENCODING (`PokemonEncoder` split exactly at its two first Linears: the species half once over the dex table, gathered; the row-level half per row; the rest per opponent slot — the per-row pass on `hypothesis_ctx` stays the definition its test compares against) | `hypothesis_encode.py` |
 | the STATIC per-mon encoder (`--token-encoding static`: S = the static identity from the set fields, D = the mon's own state, added, no board input; the X5 hypothesis tokens as the dex table encoded once and gathered) | `static_tokens.py` |
+| the STATIC arm's two NARROW facts (`--mon-hazard-cost`: every mon's own side's Spikes + its switch-in cost, from the op's ONE entry rule `DamageOperator.spikes_entry`; `--move-actor-state`: our active's HP + status on its E3 seats; `gen3_static_port_v1`) | `static_facts.py` |
 | the STATIC arm's BOARD (`--token-encoding static`, stage 2: the side-relative SIDE / FIELD content the three board tokens project, the seat tuples, the per-mon op content `OpContent`) | `board_tokens.py` |
 | the OBS-FACTS block's consumer (`--obs-facts v1`: the zero-init `ObsFactsInject` — the facts as token content; `FACTS_TOKEN_CLASS` routes each sub-block, a SIDE fact to the static board's side tokens) | `obs_facts_inject.py` |
 | X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks, the op's opponent-MON roster `OpRoster` + OTHER's averaged `other_roster`) | `hypothesis_tokens.py` |
@@ -353,6 +354,11 @@ the base seat count is `TeamTransformer._total_tokens` (15 under static) and a b
 `TeamTransformer.board_rows()` / `board_seats`, never `2·TEAM_SIZE` or the global token.
 `static_board_tokens_test.py` fails on a side mix-up, a dropped count, a one-sided or missing op content, a
 `x` / `g` / `c4` seat regression and a readout that still reads the global token or `non_matchup_rest`.
+**No static weight is keyed by a POSITION** (`gen3_static_port_v1`, v145's rule): the type pair is summed, our moves'
+outgoing cells are a set function, and a narrow per-mon / per-seat fact (`static_facts.py`) is added as token content
+AFTER the encoder, never into S or D's MLP (a hidden slot's token is a dex-table gather). A fact that restates op
+physics READS the op's own rule function (`spikes_entry`), never a second copy. `static_port_test.py` permutes our
+team slots through a full forward and fails on a position-keyed weight.
 
 **The op's opponent-MON axis under X5 reads `op.stash.x5` (an `OpRoster`), never a gate of
 its own.** Every opponent-slot kernel in `damage_op*.py` takes "alive" from `roster.alive`

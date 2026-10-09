@@ -32,6 +32,7 @@ from agents.model.flat_intent import FlatConsumerOps, append_other, compat_inten
 from agents.model.hypothesis_set import HypothesisSet
 from agents.model.hypothesis_encode import gathered_hypothesis_tokens
 from agents.model.static_tokens import StaticTokenEncoder, static_hypothesis_tokens
+from agents.model.static_facts import mon_hazard_features, move_actor_features
 from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoster, build_op_roster,
                                             fixed_mass_moves, hypothesis_ctx, key_log_presence,
                                             other_column, other_roster, splice_hypothesis_tokens)
@@ -553,6 +554,13 @@ class ExtractorForward(ExtractorApi):
             _tok_req_raw, _move_valid, ctx, self.damage_op,
             self.last_move_belief_logits,
             self.stash.entity_latent_table, fixed_moves=_fm, x5_roster=_x5r)
+        # gen3_static_port_v1 (`--move-actor-state on`, `static_facts.py`): our active's HP + status onto its 4 E3
+        # move seats (zero-init, bias-free; an invalid seat stays the zero token it is).
+        if self.move_actor_proj is not None:
+            _actor = self.move_actor_proj(move_actor_features(ctx).to(_seat_tokens.dtype))            # [B,D]
+            _seat_tokens = torch.cat([
+                _seat_tokens[:, :4] + _actor[:, None, :] * _move_valid[:, :, None].to(_seat_tokens.dtype),
+                _seat_tokens[:, 4:]], dim=1)
         _seat_types = self.entity_seats.seat_types(ctx.device)
         # gen3_event_window_v1 (Tier H-B): the event seats join the extra seam LAST, so every
         # front-indexed seat slice (E3 [:4], E4 [4:4+K], the E5 tail) is position-stable, and
@@ -729,6 +737,12 @@ class ExtractorForward(ExtractorApi):
         # (T1), beside `prefuse_proj`'s incoming rows on our mons. None under legacy (nothing built).
         if self.op_content is not None:
             role_tokens = role_tokens + self._op_content_rows(_opctx, _sp, _cells)
+        # gen3_static_port_v1 (`--mon-hazard-cost on`, `static_facts.py`): every mon's own side's Spikes layers and its
+        # switch-in HP cost (the op's ONE entry rule, on the context the op prices with), as D content (zero-init).
+        if self.mon_hazard_proj is not None:
+            _haz = mon_hazard_features(self.damage_op, _opctx,
+                                       _x5r.concrete if _x5r is not None else None)              # [B,12,2]
+            role_tokens = role_tokens + self.mon_hazard_proj(_haz.to(role_tokens.dtype))
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),

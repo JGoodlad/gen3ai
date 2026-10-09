@@ -1,0 +1,66 @@
+{
+ "parent_2e357971": {
+  "legacy (production)": {
+   "policy_params": 1997785,
+   "fe_params": 1937942,
+   "matmul_flops_per_row": 60304432.0,
+   "fwd_ms_per_64_median7": 115.1
+  },
+  "static": {
+   "policy_params": 1947911,
+   "fe_params": 1888068,
+   "matmul_flops_per_row": 60214704.0,
+   "fwd_ms_per_64_median7": 112.4
+  },
+  "bundle (no facts)": {
+   "policy_params": 1952863,
+   "fe_params": 1893788,
+   "matmul_flops_per_row": 75521896.0,
+   "fwd_ms_per_64_median7": 141.3
+  }
+ },
+ "port": {
+  "legacy (production)": {
+   "policy_params": 1997785,
+   "fe_params": 1937942,
+   "matmul_flops_per_row": 60304432.0,
+   "fwd_ms_per_64_median7": 120.3
+  },
+  "static": {
+   "policy_params": 1944903,
+   "fe_params": 1885060,
+   "matmul_flops_per_row": 60088752.0,
+   "fwd_ms_per_64_median7": 119.3
+  },
+  "static + mon_hazard_cost": {
+   "policy_params": 1945159,
+   "fe_params": 1885316,
+   "matmul_flops_per_row": 60094896.0,
+   "fwd_ms_per_64_median7": 119.9
+  },
+  "static + move_actor_state": {
+   "policy_params": 1945927,
+   "fe_params": 1886084,
+   "matmul_flops_per_row": 60090800.0,
+   "fwd_ms_per_64_median7": 120.1
+  },
+  "static + both facts": {
+   "policy_params": 1946183,
+   "fe_params": 1886340,
+   "matmul_flops_per_row": 60096944.0,
+   "fwd_ms_per_64_median7": 116.5
+  },
+  "bundle (no facts)": {
+   "policy_params": 1949855,
+   "fe_params": 1890780,
+   "matmul_flops_per_row": 75395944.0,
+   "fwd_ms_per_64_median7": 142.0
+  },
+  "bundle + both facts": {
+   "policy_params": 1951135,
+   "fe_params": 1892060,
+   "matmul_flops_per_row": 75404136.0,
+   "fwd_ms_per_64_median7": 142.1
+  }
+ }
+}

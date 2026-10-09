@@ -13200,3 +13200,57 @@ archive read failed.
   still needing a record), `best_response_gap_test.py` (source recorded; same-record matched; sidecar-vs-TB and
   capped refused), `best_response_gap_integration_test.py` (the six real runs read `tb`, within 10 % of the banked
   era-2 dose).
+
+## 2026-10-09 — v147 / `gen3_static_port_v1`: `--token-encoding static` PORTED to HEAD and made equivariant; two narrow facts behind `--mon-hazard-cost` and `--move-actor-state` (both OFF; production byte-identical)
+
+- **Why.** The static-token screen runs PINNED at `6c6d2e09` (pre-break); the owner ruled its look 3 adopts on the
+  registered non-inferiority rule, and the bundle screen (static + F11 + F7b + F10 + F6b + obs facts) needs `static`
+  on the current graph. The static diagnostic (`measurements/static_diag_2026-10-09/`, H2 / H3) found two dynamic
+  facts static reads worse than legacy: our side's Spikes on our mon tokens (R² 0.33 vs 0.46, the one gap that grew)
+  and our active's HP on its move tokens (0.59 vs 0.80). Owner-approved 2026-10-09.
+- **The port.** `static` composes with every post-pin change (X5 `fixed_mass` only, F1, F16b, F6a, F7a, the tied gains,
+  `--op-reduction`, `--move-resolution`, `--speed-physics`, `--value-threat-inject off`, `--obs-facts v1`); the full
+  bundle with both facts builds, trains (CPU `--debug` smoke) and is in the tests. **Identity proof**
+  (`measurements/static_port_identity_2026-10-09/`, a weight mapping from a seeded, perturbed pin learner, the 64 K9
+  `fixed_mass` rows): the 2761-dim observation prefix is identical; on the conditioned subspace (v145 tie groups equal,
+  the three part-5 gains at 1.0, the deleted flat bias at 0) static at `2e357971` is BITWISE the pin's forward and one
+  K9 update (gains frozen) is bitwise under the F16b control; at this commit the same mapping reads log π 8.3e-7 / values
+  1.2e-7, the type SUM's summation order (its concat spelling is the bitwise control). Not an identity: part 5 and the
+  v145 ties on trained gains (semantic), and a trained pin's unequal type / request-slot blocks.
+- **Equivariance fixes (static only; v145's rule, the sweep's two static items).** (1) S reads the type pair as a SET,
+  `emb(t1) + emb(t2)` (the obs lists types alphabetically; role input 178 → 162). (2) The op content's outgoing route
+  is a Deep Sets function of our moves: a bias-free per-move `outgoing_cell` `Linear(6, 32)` + ReLU, SUMMED, then the
+  zero-init bias-free `outgoing_proj` `Linear(32, 128)` (`STATIC_OPC_OUT_HIDDEN`), replacing the request-ordered
+  `Linear(24, 128)`; an empty slot's zero cell adds exactly 0. Legacy (production) keeps its F14 concat and type pair.
+- **Fact A, `--mon-hazard-cost {off,on}`.** Every mon, BOTH sides, gets `[its own side's Spikes layers / 3, the HP
+  fraction lost switching in]` (`static_facts.mon_hazard_features`) through a zero-init bias-free `IsolatedLinear(2,
+  128)` added to its token after the op content, before the trunk. The fraction is `DamageOperator.spikes_entry`, the
+  op's ONE Spikes entry rule, now factored out of `pairwise_entry` so the `x` cell and the fact read the same function
+  (the orchestrator's drift hazard, option (a)). Verified in `deps/pokemon-showdown`: 1/8, 1/6, 1/4 of max HP iff
+  grounded; in gen 3 only Flying or Levitate is ungrounded (Magic Guard is gen 4, Boots gen 8, the other groundings gen
+  4+). Our ability exact; an opponent's Levitate revealed-exact else its species' Smogon P(Levitate) (0 or 1 per gen-3
+  species); an X5 hidden slot priced as its hypothesis. Token content, not D's MLP: a hidden slot's static token is a
+  dex-table gather.
+- **Fact B, `--move-actor-state {off,on}`.** Our active's `[HP fraction, status one-hot]` onto its four VALID E3 seats
+  through a zero-init bias-free `IsolatedLinear(8, 128)` (≡ zero-init columns of `move_seat_proj`). Not the opponent's
+  E4 seats: neither encoding ever gave them their active's state, so the diagnostic shows no gap there.
+- **Versioning.** `MODEL_CONFIG_VERSION` 146 → 147; registry rows (STRUCTURAL, `cli`, since 147, `requires`
+  `token_encoding` (+ `damage_op` for the hazard)), parser + `_resolve`, `ModelVersion` fields / `check_compatible` /
+  construct, snapshot surfaces, production mirror `off`, tier contract (root residuals), delivery graph, flag census,
+  `ctor_kwarg_snapshot_test`, `flag_requires_test`. A v145 / v146 `static` record is REFUSED (none exists: every static
+  run in the archive is the screen's v143); `legacy` stamps through with both fields `off`. No `ARCH_SIGNATURE` or
+  floor change. **Production byte-identical:** the production extractor's dynamo graph (`8b376785…`, 20,162 lines),
+  state_dict and outputs equal the parent's (the `spikes_entry` refactor is the same ops).
+- **Smoke:** CPU `--arch production --debug --steps 10000` with static + both facts + the full bundle: EXIT 0, five updates, the learner freeze's 10 checks passed, `model_config.json` stamped 147 with every flag.
+- **Cost (MEASURED, CPU, 64 real rows):** static extractor 1,888,068 → 1,885,060 parameters (type sum −4,096,
+  outgoing set function +1,088), matmul FLOPs 60.21 → 60.09 M / row; the hazard fact +256 parameters (+6.1 k FLOP /
+  row), the actor fact +1,024 (+2.0 k). `measurements/static_port_2026-10-09/`.
+- **Tests (fail on revert; each mutation applied and FAILED, then restored):** `src/agents/model/static_port_test.py`
+  — the Spikes cost on constructed boards (Flying, Levitate known, an opponent's Levitate unknown under its prior, a
+  top-1 prior id that is not a reveal, 0–3 layers, both sides); one rule (a planted `spikes_entry` reaches the `x` cell
+  and the fact); a hidden slot priced as its hypothesis; the E3 seats carry our active's HP (only valid seats; the
+  flag-off control reads none); our-team-slot permutation through a full forward with every zero-init route live
+  (static, each fact, both); the type pair as a set; the outgoing route as a set; the one-lever init on a real SB3
+  build; the versioning. Updated: `static_board_tokens_test.py` (the outgoing route's new shape).
+- **Deferred to a GPU lease (the screen holds it):** compile parity forward + backward on CUDA, T2's CUDA-graph build
+  on the new graph, a real two-minute launch, the cost read.

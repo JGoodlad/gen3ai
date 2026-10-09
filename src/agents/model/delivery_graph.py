@@ -126,6 +126,8 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "cls_pool": ("CLSPool",),
     "prefuse_proj": ("prefuse_proj",),
     "op_worst_proj": ("op_worst_proj",),
+    "mon_hazard_proj": ("mon_hazard_proj",),
+    "move_actor_proj": ("move_actor_proj",),
     "obs_facts_inject": ("ObsFactsInject",),
     "assembler": ("ProjectionAssembler",),
     "value_entity_pool": ("UnifiedValueReadout",),
@@ -504,6 +506,12 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            fx.MOVE_NET_HIDDEN[1], "MOVE_NET_HIDDEN[1]",
                            via="EntityMoveSeats.move_seat_proj",
                            note="request-slot order — seat k IS action logit 6+k"))
+        # gen3_static_port_v1 (`--move-actor-state on` only, static): our active's HP + status onto the seat.
+        if getattr(fe, "move_actor_proj", None) is not None:
+            from agents.model.static_facts import MOVE_ACTOR_DIM
+            edges.append(_edge("obs_unpack", f"E3_move[{k}]", "content", MOVE_ACTOR_DIM, "MOVE_ACTOR_DIM",
+                               via="move_actor_proj", zero_init=True,
+                               note="our active's [HP fraction, status one-hot] — the actor of the move"))
     _e4_note = ("[latent, belief w, accuracy, is_phys]; idx detached, w differentiable"
                 if hb is None else
                 "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); "
@@ -564,6 +572,15 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                via="op_worst_proj", zero_init=True,
                                note="P(some physical / special move of theirs KOs this mon) — the noisy-OR "
                                     "worst case beside the incoming row's expectation"))
+    # gen3_static_port_v1 (`--mon-hazard-cost on` only, static): each mon's own side's Spikes + its switch-in cost.
+    if getattr(fe, "mon_hazard_proj", None) is not None:
+        from agents.model.static_facts import MON_HAZARD_DIM
+        for side in ("our_mon", "opp_mon"):
+            for i in range(T):
+                edges.append(_edge("damage_op", f"{side}[{i}]", "content", MON_HAZARD_DIM, "MON_HAZARD_DIM",
+                                   via="mon_hazard_proj", zero_init=True,
+                                   note="[own side's Spikes layers / 3, the HP fraction lost switching in] — the op's "
+                                        "ONE Spikes entry rule (`spikes_entry`)"))
     if fe.move_belief is not None:
         for j in range(T):
             edges.append(_edge("move_belief", f"opp_mon[{j}]", "content", D,

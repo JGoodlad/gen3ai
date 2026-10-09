@@ -1480,6 +1480,8 @@ def current_model_version(
     speed_physics: str = "off",
     obs_facts: str = "off",
     op_reduction: str = "max",
+    mon_hazard_cost: str = "off",
+    move_actor_state: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1547,6 +1549,9 @@ def current_model_version(
     ext_kwargs["obs_facts"] = str(obs_facts)
     # gen3_op_reduction_principled_v1 (v146): the op's reductions over their believed moves — structural.
     ext_kwargs["op_reduction"] = str(op_reduction)
+    # gen3_static_port_v1 (v147): the static encoder's two narrow facts — structural.
+    ext_kwargs["mon_hazard_cost"] = str(mon_hazard_cost)
+    ext_kwargs["move_actor_state"] = str(move_actor_state)
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1647,6 +1652,9 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_op_reduction_principled_v1 (v146): 'principled' re-means every op reduction over their believed moves
         # and builds `op_worst_proj`, so a frozen opponent's gate must see it.
         "op_reduction": str(getattr(fe, "op_reduction", "max") or "max"),
+        # gen3_static_port_v1 (v147): each `on` builds a zero-init projection, so a frozen opponent's gate must see it.
+        "mon_hazard_cost": str(getattr(fe, "mon_hazard_cost", "off") or "off"),
+        "move_actor_state": str(getattr(fe, "move_actor_state", "off") or "off"),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

@@ -1,0 +1,167 @@
+{
+ "build": {
+  "pin": {
+   "flat_intent_head": "FlatIntentHead",
+   "hypothesis_builder": "HypothesisBuilder",
+   "move_resolution": "str",
+   "obs_facts_inject": "NoneType",
+   "op_content": "OpContent",
+   "op_reduction": "<absent: pre-v146>",
+   "pokemon_encoder": "StaticTokenEncoder",
+   "policy_readout": "tower",
+   "static_board": true,
+   "token_encoding": "static"
+  },
+  "target": {
+   "flat_intent_head": "FlatIntentHead",
+   "hypothesis_builder": "HypothesisBuilder",
+   "move_resolution": "str",
+   "obs_facts_inject": "NoneType",
+   "op_content": "OpContent",
+   "op_reduction": "max",
+   "pokemon_encoder": "StaticTokenEncoder",
+   "policy_readout": "tower",
+   "static_board": true,
+   "token_encoding": "static"
+  }
+ },
+ "layout_differing_entries": {
+  "base_dim": [
+   2761,
+   2845
+  ],
+  "parts.reactive.end": [
+   2761,
+   2845
+  ],
+  "total_dim": [
+   2761,
+   2845
+  ]
+ },
+ "layout_entries_only_pin": [],
+ "layout_entries_only_target": [
+  "obs_facts.choice.dim",
+  "obs_facts.choice.offset",
+  "obs_facts.screens.conditions.0",
+  "obs_facts.screens.conditions.1",
+  "obs_facts.screens.conditions.2",
+  "obs_facts.screens.conditions.3",
+  "obs_facts.screens.dim",
+  "obs_facts.screens.offset",
+  "obs_facts.screens.side_dim",
+  "obs_facts.screens.sides",
+  "obs_facts.seen.dim",
+  "obs_facts.seen.offset",
+  "obs_facts.seen.row_dim",
+  "obs_facts.seen.rows",
+  "obs_facts.vol.cell_dim",
+  "obs_facts.vol.dim",
+  "obs_facts.vol.effects.0",
+  "obs_facts.vol.effects.1",
+  "obs_facts.vol.effects.2",
+  "obs_facts.vol.effects.3",
+  "obs_facts.vol.effects.4",
+  "obs_facts.vol.offset",
+  "obs_facts.vol.side_dim",
+  "obs_facts.vol.sides",
+  "obs_facts_dim",
+  "obs_facts_offset"
+ ],
+ "n_params": [
+  3061302,
+  2469063
+ ],
+ "obs_constants_differing": {},
+ "obs_constants_only_target": [
+  "OFFSET_OBS_FACTS"
+ ],
+ "obs_facts_offset_target": 2761,
+ "obs_space_differing": {
+  "observation": [
+   [
+    2761
+   ],
+   [
+    2845
+   ]
+  ]
+ },
+ "obs_width": [
+  2761,
+  2845
+ ],
+ "pin": "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01",
+ "prefix_identical": true,
+ "role_in": {
+  "pin": {
+   "item_embedding_dim": 16,
+   "role_encoder.0.weight": [
+    256,
+    178
+   ],
+   "species_embedding_dim": 32,
+   "type_embedding_dim": 16,
+   "type_table_windows": [
+    62,
+    78
+   ],
+   "width": 178
+  },
+  "target": {
+   "item_embedding_dim": 16,
+   "role_encoder.0.weight": [
+    256,
+    178
+   ],
+   "species_embedding_dim": 32,
+   "type_embedding_dim": 16,
+   "type_table_windows": [
+    62,
+    78
+   ],
+   "width": 178
+  }
+ },
+ "state_dict_only_pin": [
+  "features_extractor.flat_intent_head.out.bias",
+  "features_extractor.value_pre_norm.bias",
+  "features_extractor.value_pre_norm.weight",
+  "features_extractor.value_projection.bias",
+  "features_extractor.value_projection.weight",
+  "mlp_extractor.value_net.0.bias",
+  "mlp_extractor.value_net.0.weight",
+  "mlp_extractor.value_net.2.bias",
+  "mlp_extractor.value_net.2.weight",
+  "value_net.bias",
+  "value_net.weight"
+ ],
+ "state_dict_only_target": [],
+ "state_dict_reshaped": {
+  "features_extractor.damage_op.out_gain": [
+   [
+    138
+   ],
+   [
+    29
+   ]
+  ],
+  "pi_features_extractor.damage_op.out_gain": [
+   [
+    138
+   ],
+   [
+    29
+   ]
+  ],
+  "vf_features_extractor.damage_op.out_gain": [
+   [
+    138
+   ],
+   [
+    29
+   ]
+  ]
+ },
+ "target": "2e3579717d2037d121a4a16f8ad9d18aefd1e07c"
+}

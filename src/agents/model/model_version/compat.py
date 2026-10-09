@@ -562,6 +562,22 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "(the same widths read a different quantity).\n"
                 "Resume with the matching --op-reduction setting (a flagless resume inherits it), or start a fresh "
                 "training run.")
+        # gen3_static_port_v1 (v147): the static encoder's two narrow facts — each `on` builds a zero-init projection
+        # and adds a fact to the trained forward; a frozen opponent's gate must name the cause.
+        if self.mon_hazard_cost != saved.mon_hazard_cost:
+            raise ModelVersionError(
+                f"mon_hazard_cost mismatch: saved={saved.mon_hazard_cost!r}, current={self.mon_hazard_cost!r}.\n"
+                "The static encoder's per-mon Spikes fact is fixed for a run's lifetime ('on' builds a projection and "
+                "adds the fact to every forward).\n"
+                "Resume with the matching --mon-hazard-cost setting (a flagless resume inherits it), or start a fresh "
+                "training run.")
+        if self.move_actor_state != saved.move_actor_state:
+            raise ModelVersionError(
+                f"move_actor_state mismatch: saved={saved.move_actor_state!r}, current={self.move_actor_state!r}.\n"
+                "The static encoder's E3 actor-state fact is fixed for a run's lifetime ('on' builds a projection and "
+                "adds the fact to every forward).\n"
+                "Resume with the matching --move-actor-state setting (a flagless resume inherits it), or start a fresh "
+                "training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

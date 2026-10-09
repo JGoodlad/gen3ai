@@ -96,7 +96,7 @@ generation, before the Baton Pass, prior-denominator, Beat Up and ability-known 
 | T4 | static S: actual L100 stats | ours: the gen-3 stat formula on the observed spread; theirs: the Smogon usage-weighted mean ± std of each realised stat; ÷ `STATIC_STAT_SCALE` 500 | (a) (c) | `static_tokens.py`, `belief_tables.build_static_stat_prior` · ARM | part of the static arm only (look 2 above); not isolated | stat arithmetic from base stats + a raw spread | KEEP |
 | T5 | static D: per-move PP / legality, matched by move-num identity | `Σ_k ReLU(W[m_k; pp_k; legal_k])` with legality crossed from request order to sorted order by identity | (a) | `static_tokens.py`, `extractor_ctx.active_move_legality_sorted` · ARM (the identity rule is ON in both encodings) | the identity rule fixed a wrong legality input on 6.8 % of real move-bearing decisions (F-ST-1, MEASURED) | which request slot is which move | KEEP |
 | T6 | `prefuse_proj`: the op's incoming rows as our tokens' content | each of our mons' incoming per-mon row (12) added to its token, zero-init | (b) | `extractor_forward.py` · ON | **UNVERIFIED: never ablated in isolation** (the §4.1 probe zeroed the concat only) | the amount of damage each of our mons takes, as content rather than an edge ratio | KEEP |
-| T7 | static OPC: the op's per-mon amounts on BOTH sides | `amount_proj`: each mon's `x` ⊕ `g` cells (entry chip, Pursuit exposure, grounded; the end-of-turn ledger); `outgoing_proj`: on each of THEIR mons the `d1` cells of our four moves | (b) | `board_tokens.OpContent` · ARM | diag: the entry-chip column of `amount_proj` grew to weight norm 2.7–3.6 across the five static seeds vs ~1.0 for the weather chip (DESCRIPTIVE: a weight norm, not an ablation) | amounts the trunk can only see as ratios (entity audit §4 A3) | KEEP |
+| T7 | static OPC: the op's per-mon amounts on BOTH sides | `amount_proj`: each mon's `x` ⊕ `g` cells (entry chip, Pursuit exposure, grounded; the end-of-turn ledger); on each of THEIR mons the `d1` cells of our active's moves as a SET (a shared bias-free per-move `Linear(6, 32)` + ReLU summed, then the zero-init `outgoing_proj`; since `gen3_static_port_v1` — the request-ordered `Linear(24, 128)` before it gave each request slot its own weights) | (b) | `board_tokens.OpContent` · ARM | diag: the entry-chip column of `amount_proj` grew to weight norm 2.7–3.6 across the five static seeds vs ~1.0 for the weather chip (DESCRIPTIVE: a weight norm, not an ablation) | amounts the trunk can only see as ratios (entity audit §4 A3) | KEEP |
 | T8 | `op_worst_proj`: the noisy-OR KO worst case on our tokens | per our mon `[P(some physical move of theirs KOs it), P(some special move KOs it)]`, zero-init `Linear(2, 128)` | (a) | `op_reduction.py` · ARM (`--op-reduction principled`) | strength **UNVERIFIED** (in the bundle) | the worst case the hard max used to stand in for | KEEP pending the bundle |
 
 ### 2.3 Board / side / field tokens
@@ -236,21 +236,32 @@ only +2.44 [+0.31, +4.57] pp (species) / +2.18 [+0.53, +3.84] pp (full) at 15M, 
 
 ---
 
-## 3. IN FLIGHT (a parallel agent is building these; it updates the rows when it lands)
+## 3. BUILT behind their own flags, OFF (the static port, `gen3_static_port_v1`, config v147, 2026-10-09)
 
 Both come from the static diagnostic (`measurements/static_diag_2026-10-09/`, H2 / H3: static is less expressive for
-board facts that arrive only through attention, mostly at the last of two trunk rounds).
+board facts that arrive only through attention, mostly at the last of two trunk rounds). Both are BUILT
+(`agents/model/static_facts.py`, `design_static_tokens.md` §12.3–12.4), each a STRUCTURAL `cli` flag that requires
+`--token-encoding static`, OFF in production, through a zero-init bias-free `IsolatedLinear` built LAST (no RNG draw:
+the ON build is the OFF build plus one zero matrix). Neither is trained; the bundle screen after the perf phase reads
+them.
 
 | # | feature | what it computes | why | where · status | evidence it helps | learning it replaces | action |
 |---|---|---|---|---|---|---|---|
-| N1 | our-side entry-hazard cost per mon, in D | for each of OUR mons: the Spikes layers on our side and the HP fraction it would lose on switching in (1/8, 1/6, 1/4), 0 for a Flying or Levitate mon | (b) | the static encoder's D input · IN FLIGHT | diag: our-side Spikes after the trunk R² 0.33 static vs 0.46 legacy (bench mon 0.31 vs 0.50), the one gap that GROWS with training; static holds stall teams 10.7 pp worse than legacy (DESCRIPTIVE) | attention carrying "Spikes are on my side" into each token | TRY ADDING |
-| N2 | the active mon's HP and status on its move tokens | the move tokens the pointer head and the E3 seats read gain the active's HP (and status) | (b) | the static encoder's move tokens · IN FLIGHT | diag: our active's HP in its move token R² 0.59 static vs 0.80 legacy (DESCRIPTIVE) | attention from the move seat to its owner | TRY ADDING |
+| N1 | the entry-hazard cost per mon, BOTH sides (`--mon-hazard-cost on`) | for every mon: its OWN side's Spikes layers / 3, and the HP fraction it would lose on switching in (1/8, 1/6, 1/4; 0 for a Flying type or Levitate — our ability exact, an opponent's revealed-exact else its species' Smogon P(Levitate), 0 or 1 per species in gen 3); an X5 hidden slot priced as its hypothesis; 2 → 128, added to the mon token after the op content, before the trunk (D content, not D's MLP: a hidden slot's static token is a dex-table gather) | (b) | `static_facts.mon_hazard_features` reading `DamageOperator.spikes_entry`, the ONE rule the `x` cell reads too · BUILT, OFF | diag: our-side Spikes after the trunk R² 0.33 static vs 0.46 legacy (bench mon 0.31 vs 0.50), the one gap that GROWS with training; static holds stall teams 10.7 pp worse than legacy (DESCRIPTIVE). Strength **UNVERIFIED** (the bundle screen) | attention carrying "Spikes are on my side" into each token | TRY ADDING (bundle screen) |
+| N2 | our active's HP and status on its move seats (`--move-actor-state on`) | our active's `[HP fraction, status one-hot (7)]`, 8 → 128, added to its four VALID E3 seats (≡ zero-init input columns of `move_seat_proj`); the opponent's E4 seats get nothing (neither encoding ever gave them their active's state, so the diagnostic shows no gap there) | (b) | `static_facts.move_actor_features`, root `move_actor_proj` · BUILT, OFF | diag: our active's HP in its move token R² 0.59 static vs 0.80 legacy (DESCRIPTIVE). Strength **UNVERIFIED** (the bundle screen) | attention from the move seat to its owner | TRY ADDING (bundle screen) |
 
-**A hazard for N1 (reported to the orchestrator):** the same entry-chip number is already computed by the operator's
-`x` cell (`damage_op_pairwise.py`, T1) and carried as content by static's OPC (T7). D is built at T0, before the op,
-so the tier contract forbids N1 from reading the op: it must re-implement the rule. Two implementations of one gen-3
-rule can drift (the Levitate prior, a revealed Levitate, a typechange). N1 should share ONE rule function with the
-`x` kernel, or carry a test that the two agree on every row.
+**The N1 hazard, RESOLVED as built (option (a), ONE rule):** the rule is factored into
+`DamageOperator.spikes_entry` and BOTH the `x` cell and N1 call it, so there is no second implementation to drift.
+N1 is added after the op runs (beside OPC, not inside D's MLP), so it reads the op's function on the op's context
+within the tier contract. `static_port_test.py` plants a value into `spikes_entry` and sees both move, and checks the
+two agree on constructed boards (Flying, Levitate known, an opponent's Levitate unknown under its prior, a top-1
+prior id that is not a reveal, 0–3 layers). Overlap that stays: N1's fraction column restates the `x` cell's
+`entry_chip`, which OPC (T7) already carries onto every mon, alive-gated; N1's new fact is the layers column. **A
+typechange is NOT handled, by either:** the observation's type columns are the CURRENT types (the Rust `PMon::types`
+returns the temporary types: Color Change, Transform), while a switch-in uses the base types (types reset on
+switching out). So an active Kecleon turned Flying reads "immune on re-entry", wrongly, in both the `x` cell and N1.
+The fix is to read the species' base types (`SPECIES_TYPE`) for the grounded check in `spikes_entry`; it changes the
+production `x` cell (retrain-class), so it is not taken here.
 
 ---
 
@@ -337,8 +348,9 @@ the bug.
    `spin_value_lost`, the hazard stake of `spin_denied` and three hand thresholds ride every production forward until
    the bundle adopts move resolution (P2, P3, P6, P8). This is by design (one-lever screening), but it is stated
    nowhere as a standing exposure.
-4. **The in-flight entry-hazard input (N1) duplicates the `x` cell's rule** across the tier boundary (§3): two
-   implementations of one gen-3 rule.
+4. ~~The in-flight entry-hazard input (N1) duplicates the `x` cell's rule~~ RESOLVED as built (2026-10-09): one
+   rule, `DamageOperator.spikes_entry`, read by both (§3). A typechange (Color Change, Transform) is still read from
+   the current types by both (§3).
 5. **The evidence base for KEEP is mostly stale or absent.** Of the 88 rows, the ones with a strength reading tied to
    the feature itself are the gen-3 9.6M audits (§4.1, §5.4: STALE per F22), two critic-route dV reads (gen-14), and
    the X5 / static screens (which test bundles, not single rows). Every other row is a correctness gate or
@@ -353,3 +365,4 @@ the bug.
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-09 | **The doc is created** (owner request: "put an end state doc where we list what we are hand computing instead, so we know what we would add next or attempt to remove") | One always-current ledger of every hand-computed feature the model reads, grouped by where it lives, each with its kind (a exact physics / b narrow-channel fact / c Smogon prior, or J a judgment), status, evidence and candidate action; in-flight work marked; ranked add / remove lists; `src/agents/model/CLAUDE.md` points here | Folding it into ARCHITECTURE.md (which states what IS, not why or what next); one row per tensor (too fine to rank) | owner 2026-10-09; this doc §2 verified against the code at `2e357971` |
+| 2026-10-09 | **N1 / N2 BUILT, OFF; the N1 hazard resolved by ONE rule** (the static port, `gen3_static_port_v1`) | N1 (`--mon-hazard-cost`) and N2 (`--move-actor-state`) built behind their own flags; the Spikes entry rule factored into `DamageOperator.spikes_entry`, read by both the `x` cell and N1 (option (a) of the orchestrator's hazard note); N1 covers BOTH sides (the brief) and is token content after the op; T7's outgoing route is now a set function | a test-only agreement check with two implementations (option (b)); N1 inside D's MLP (ends the X5 dex-table gather) | `design_static_tokens.md` §12; `static_port_test.py` |

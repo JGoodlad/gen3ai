@@ -4,7 +4,9 @@
 `legacy`. Production is `legacy`. The screen (§8.1, REGISTERED in §8.2 at P_st `6c6d2e09`) has trained three
 seeds per arm to 15M at look 1 and five at look 2; LOOK 1 (2026-10-08) read CONTINUE (Δ̂ −1.26 pp, t_NI 3.822 <
 5.761) and LOOK 2 (2026-10-09) reads CONTINUE (Δ̂ −2.70 pp, t_NI 0.864 < 2.683; t_SUP −2.901; Decision record), so
-every strength claim below is still a hypothesis.** Stage 1 (`gen3_static_tokens_v1`, config v139: the per-mon encoder, S + D,
+every strength claim below is still a hypothesis.** **At HEAD `static` is PORTED to the post-break graph and made
+equivariant (`gen3_static_port_v1`, config v147, §12), with two narrow facts behind their own flags (`--mon-hazard-cost`,
+`--move-actor-state`, OFF), for the bundle screen after the perf phase.** Stage 1 (`gen3_static_tokens_v1`, config v139: the per-mon encoder, S + D,
 and the X5 table gather) takes board context OUT of the per-mon tokens. Stage 2 (`gen3_static_board_v1`, config
 v140, §4: the three board tokens SIDE ×2 + FIELD, the edge retargets, the readers, and the per-mon op content
 on both sides, from the entity-coverage audit) gives that context its new home. **`static` is now buildable
@@ -255,9 +257,10 @@ proof). Module: `agents/model/board_tokens.py`.
   own seat order, so the per-key log-presence stays aligned).
 - **OPC** (`OpContent`, root attribute `op_content`, tier T1, zero-init, protected by `restore_identity_init`):
   `amount_proj` = `Linear(8, 128)` on every mon of BOTH sides over its `x` cell [entry_chip, pursuit_p,
-  pursuit_eff, grounded] ⊕ its `g` cell [leftovers, weather_chip, status_tick, leech]; `outgoing_proj` =
-  `Linear(24, 128)` on each of THEIR mons over the `d1` cells of our four request-order moves on it (built iff
-  `--damage-outgoing`). Our mons' incoming rows keep riding `prefuse_proj`. The cells are the edge families' own
+  pursuit_eff, grounded] ⊕ its `g` cell [leftovers, weather_chip, status_tick, leech]; on each of THEIR mons the `d1`
+  cells of our active's moves on it as a SET (built iff `--damage-outgoing`): since the port (§12.2) a bias-free
+  per-move `outgoing_cell` `Linear(6, 32)` + ReLU summed over the moves, then the zero-init `outgoing_proj`
+  `Linear(32, 128)` (stage 2 built a request-ordered `Linear(24, 128)` here). Our mons' incoming rows keep riding `prefuse_proj`. The cells are the edge families' own
   tensors when a family built them this forward (production: all three), else the same kernels on the same
   context. Added to the mon tokens after the op, just before the trunk.
 - **Both readouts** build and run under static (`tower` and `trunk`), on both belief arms (`blob`, `fixed_mass`);
@@ -649,6 +652,121 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
     ([`measurements/k9_flip_judge_2026-10-08/`](../research_state/measurements/k9_flip_judge_2026-10-08/README.md)).
     The ceiling, the margin and the bar are unchanged. A pinned static seed (≤ `6c6d2e09`) still runs the old rule.
 
+
+## 12. As-built port at HEAD (`gen3_static_port_v1`, config v147, 2026-10-09)
+
+The screen runs PINNED at `6c6d2e09` (config v143, pre-break); the owner ruled look 3 adopts on the registered
+non-inferiority rule, and the bundle screen (static + move resolution F11 + speed physics F7b + critic route F10 +
+principled op F6b + obs facts) needs `static` on the current graph. This section is what was built for that.
+
+**12.1 The port.** `static` at HEAD composes with everything since the pin: X5's `fixed_mass` hypothesis tokens only
+(blob deleted), F1, F16b, F6a, F7a, the tied gains (part 4 + v145), `--op-reduction`, `--move-resolution`,
+`--speed-physics`, `--value-threat-inject off` and `--obs-facts v1`. The bundle with both facts builds and trains on CPU
+(the `--debug` smoke, `measurements/static_port_2026-10-09/` §3: exit 0, five updates, the freeze's 10 checks passed);
+`static_port_test.py` builds `static` and each fact on a real SB3 policy.
+
+**The identity proof** (`research_state/measurements/static_port_identity_2026-10-09/`, CPU, the 64 K9 `fixed_mass`
+rows, a weight MAPPING from a seeded, perturbed pin learner). The 2761-dim observation prefix is identical at both
+commits (OBS-FACTS is appended). With the reference weights conditioned so each change's identity can hold (the v145
+tie groups of `out_gain` equal: `tie`; the three gains part 5 now reads before the gain at 1.0: `pre1`; the deleted
+flat-pointer bias at 0: `fb0`), static at HEAD (`2e357971`) reproduces the pin's static forward BIT FOR BIT, and one
+K9 update (gains frozen) too under the F16b control. At this port (the two equivariance fixes in, both facts OFF) the
+same mapping (type2 block = type1 block; the old outgoing route and the new one's output layer at 0) reads values
+1.2e-7, log π 8.3e-7: the type SUM's first-Linear summation order, whose concat spelling is the bitwise control.
+
+| change since the pin | on the static path |
+|---|---|
+| blob deleted, F1, F7a, `--op-reduction max`, the poke-env deletions, `957d4dbd` | BITWISE |
+| F6a (`max_by_index`) | BITWISE forward; an update differs only on an exact tie with a nonzero upstream gradient |
+| F16b (the flat pointer's shared bias deleted) | fp32 rounding (log π 2.4e-7); bitwise under `fb0` and under the control |
+| part 4 + v145 (`out_gain` tied) | BITWISE iff the gains are group-equal; trainable gains change the update by construction |
+| part 5 (consumers read three gains' channels PRE-gain) | BITWISE iff those gains are 1.0; a semantic change, NOT an identity for trained gains ≠ 1 |
+| OBS-FACTS appended, `--obs-facts off` | BITWISE (two different fills read equal) |
+| this port's type SUM (12.2) | fp32 rounding iff the two type blocks are equal; never bitwise |
+| this port's outgoing set function (12.2) | BITWISE iff both the old and the new route contribute 0 |
+
+**Cannot be proved:** an identity for a TRAINED screen checkpoint (part 5's re-routed gains and the v145 ties are
+semantic; a trained pin's type blocks and request-slot blocks are not equal), and anything on CUDA or under compile
+(a CPU-only unit; 12.6).
+
+**12.2 The equivariance fixes** (v145's "fix those non-equivariant knobs", applied to `static`; the v145 sweep's two
+static items, verified in the code):
+- **The type pair is a SET.** The observation lists a mon's types in ALPHABETICAL order (`encoder/slot.rs` `types`,
+  slot 2 empty on a mono-type), and S concatenated `[emb(t1); emb(t2)]`, so a type's weights depended on its partner's
+  name. S now reads `emb(t1) + emb(t2)` (role input 178 → 162). Swapping the two leaves S bit-identical (the test).
+- **The outgoing op content is a SET function of our moves.** `outgoing_proj` was `Linear(24, 128)` over our four
+  REQUEST-ORDER `d1` cells concatenated, and the request order is the team file's move order: arbitrary. It is now Deep
+  Sets, the encoder's own move-set rule: `outgoing_proj(Σ_k ReLU(outgoing_cell(d1_k)))`, `outgoing_cell` a bias-free
+  `Linear(6, 32)` shared by every move (so an empty / illegal slot's all-zero cell adds exactly 0 and no slot count
+  leaks in), `outgoing_proj` a zero-init bias-free `Linear(32, 128)` (`STATIC_OPC_OUT_HIDDEN` = 32). A sum of a
+  per-move LINEAR map would be a linear map of the summed cells (a "total damage" blind to the best move); the ReLU
+  keeps each move's cell coherent.
+- **Nothing else** on the static path is indexed by a position: the per-move pools are sums, the move self-attention
+  has no position, `amount_proj`, `side_proj`, `move_seat_proj` and the facts' projections are shared, the token types
+  are roles. The test permutes our six team slots through a full forward with every zero-init route planted live
+  (static, each fact, both) and requires the trunk's input mon tokens to permute exactly, and their tokens and the E3
+  seats not to move.
+
+**12.3 Fact A, `--mon-hazard-cost on`: the entry-hazard cost per mon** (`static_facts.mon_hazard_features`). Every
+mon's token, BOTH sides, gets `[its own side's Spikes layers / 3, the HP fraction it would lose switching in]` through a
+zero-init bias-free `IsolatedLinear(2, 128)`. The fraction is the op's ONE rule, `DamageOperator.spikes_entry`: the `x`
+edge cell reads the same function (a test plants a value into it and sees both move), so the two can never drift.
+Mechanics VERIFIED in `deps/pokemon-showdown`: gen 3 inherits gen 4's `runSwitch`, which fires `EntryHazard` on every
+switch-in; `spikes`' `onEntryHazard` (gen-4 mod) deals `[0, 3, 4, 6][layers] · maxhp / 24` = 1/8, 1/6, 1/4 iff
+`isGrounded()`; in gen 3 only a FLYING type or LEVITATE is ungrounded (Gravity, Ingrain grounding, Iron Ball, Magnet
+Rise, Air Balloon, Roost and Smack Down are gen 4+; Magic Guard is num 98, a gen-4 ability; Heavy-Duty Boots is gen 8);
+gen 3's mod overrides none of it. Our abilities are exact; an opponent's Levitate is exact where REVEALED (the `known`
+flag: a top-1 prior id is not a reveal) and otherwise its species' Smogon P(Levitate). In gen 3 every species that can
+have Levitate has it as its only ability, so that prior is 0 or 1 once the species is known. Under X5 the fact reads the
+context the op prices with, so a hidden slot is priced as its HYPOTHESIS species (and counts as known); with the belief
+family off an unrevealed slot's fraction is 0 (unknown types), its layers column still set. The fraction is nominal
+(Showdown floors the HP lost).
+
+*Why token content, not D's MLP input:* a hidden opponent slot's static token is a dex-table GATHER (§5), a pure
+function of the species; a board-dependent column inside D's MLP would end that (or cost four table encodes, one per
+layer count). Added before the trunk, the fact is in every token at the first layer, which is what H3 (board facts
+arrive only at the last layer) asks for. Overlap: the fraction column restates the `x` cell's `entry_chip`, which OPC's
+`amount_proj` already carries onto every mon (alive-gated); the layers column is the new fact (the diagnostic's
+"Spikes are on my side", R² 0.33 vs legacy 0.46, the one gap that grew).
+
+**12.4 Fact B, `--move-actor-state on`: the actor's state on its move seats** (`static_facts.move_actor_features`). Our
+active's `[HP fraction, status one-hot (7)]` is added to its four VALID E3 seats through a zero-init bias-free
+`IsolatedLinear(8, 128)`, the same as zero-init input columns of `move_seat_proj` since the content is common to the
+four seats. An invalid seat stays the zero token. **The opponent's E4 threat seats get nothing:** the diagnostic's
+logic is "a fact static REMOVED" (legacy's move network mixed HP into our move tokens and static's does not, R² 0.59 vs
+0.80), and neither encoding ever gave the E4 seats their active's state, so there is no static-vs-legacy gap there; a
+symmetric E4 fact would be a new lever with no evidence behind it.
+
+**12.5 Both facts: one-lever init, versioning, cost.** Each flag ON builds its one `IsolatedLinear` LAST (no global RNG
+draw, skipped by SB3's orthogonal re-init): on a real SB3 build every other parameter's initial bytes equal the OFF
+build's and the forward at init is bit-identical (the test). Flags: STRUCTURAL `cli` rows (`requires`: `token_encoding`;
+`mon_hazard_cost` also `damage_op`), since v147, production `off`. Config v147: a v145 / v146 `static` record is REFUSED
+(no such checkpoint exists: the 2026-10-09 archive scan finds only the pinned screen's v143 static runs), `legacy`
+stamps through, both fields default `off`; no `ARCH_SIGNATURE` or floor change. Production is byte-identical: the
+production extractor's dynamo graph (`8b376785…`, 20,162 lines), state_dict and outputs equal the parent's.
+
+Cost (MEASURED, CPU, 64 real rows, the production toggles through a real SB3 build;
+`research_state/measurements/static_port_2026-10-09/`):
+
+| | extractor params | matmul FLOP / row |
+|---|---|---|
+| legacy (production) | 1,937,942 | 60.30 M |
+| `static`, parent `2e357971` | 1,888,068 | 60.21 M |
+| `static`, this port | **1,885,060** (−3,008: type sum −4,096, outgoing set function +1,088) | **60.09 M** (−0.21 %) |
+| + `--mon-hazard-cost on` | +256 | +6.1 k (+0.01 %) |
+| + `--move-actor-state on` | +1,024 | +2.0 k |
+| the bundle (static, F11, F7b, F10 off, F6b, obs facts): no facts → both facts | 1,890,780 → 1,892,060 | 75.40 M → 75.40 M |
+
+**The obs is unchanged** (both facts read existing columns: `global_env`'s Spikes layers, the per-mon type, ability,
+ability-known and species columns, HP and the status one-hot), so the Rust encoder benchmark does not apply. The CPU
+`--debug` smoke (`--arch production --debug --steps 10000`, auto-shaped) with `static`, both facts and the full bundle:
+`measurements/static_port_2026-10-09/README.md`.
+
+**12.6 DEFERRED to a GPU lease (the screen holds it):** compile parity forward + backward of `static` × the bundle ×
+both facts on CUDA (the R1 startup gate), T2's CUDA-graph build on the new graph (the F-ST-8 class; the key count is
+unchanged, 64), a real two-minute `--compile-trainer` launch, and the cost read (`train_ms`, the T2 flush, `UpdateFit`
+headroom) against legacy at the same commit.
+
 ---
 
 ## Decision record
@@ -682,3 +800,5 @@ headroom) against legacy at the same commit, and the X5 hypothesis-encoding time
 | 2026-10-08 | **LOOK 1 READ (registered rule, no decision by anyone yet)** | **CONTINUE to look 2.** 3 × 3 cross at P_st, 1,000 mirrored pairs per cell: Δ̂ −1.26 pp (static vs legacy), √V̂ 0.585 on 4 df, t_NI 3.822 and t_SUP −2.161, both below 5.761; fixed-sample 90 % interval [−2.51, −0.02], look-1 interval (± 5.761 √V̂) [−4.63, +2.11]; no futility. In-arm speed s −3.7 % on quiet cycles (legacy 179, static 203 kept; resume windows excluded) ⇒ s ≤ 5 %, the strength rule alone decides. Bots panel +0.58 pp, no HARM flag (frozen pool + SmallRL not played). S3's amendment-2 validity verified (82 post-switch probes, max abs d log pi 4.05e-5). OPEN for the orchestrator: read literally with §8.1's fixed-sample 2.132, the 90 % interval would sit inside ±δ (EQUIVALENT) and wholly below 0; §8.2's boundaries replace 2.132, so the registered reading is CONTINUE | treating the fixed-sample interval as decisive at an interim look (it does not hold its error rate across three looks) | ledger READ 2026-10-08; `measurements/static_screen_look1_2026-10-08/` |
 | 2026-10-09 | **LOOK 2 READ (registered rule, no decision by anyone yet)** | **CONTINUE to look 3.** 5 × 5 cross at P_st (look 1's 9 cells reused from the ledger, 16 new), 1,000 mirrored pairs per cell: Δ̂ −2.70 pp (static vs legacy; 24 of 25 cells below 50), √V̂ 0.930 on 8 df (s²_R 2.68, s²_C 1.64); t_NI 0.864 < 2.683; t_SUP −2.901; look-2 interval (± 2.683 √V̂) [−5.19, −0.20] straddles −δ, so neither EQUIVALENT nor INFERIOR; no futility (Δ̂ > −3.5); the fixed-sample 90 % [−4.43, −0.97] reads the same; X5's `cross.decide` agrees. In-arm speed s −2.7 % on quiet cycles (legacy 424 / 760, static 439 / 775 kept; resume windows excluded) ⇒ s ≤ 5 %. Bots panel +0.12 pp, no HARM flag. L4, L5, S4, S5 verified with no deviation (one child each, no restart, no K9(b) stop, no warn). OPEN for the orchestrator: t_SUP lies past −2.683, i.e. a two-sided OBF test of Δ = 0 would reject equality in LEGACY's favour (static ≈ 2.7 pp weaker, inside the margin); §8.1's table has no row for "worse but inside δ", and adoption was registered only on BETTER / EQUIVALENT / NON-INFERIOR. The S5 row (44.46) and the L5 column (45.33) carry most of the move from look 1 (descriptive) | reading the fixed-sample interval or the two-sided t_SUP as the outcome (§8.2's boundaries govern an interim look, orchestrator ruling after look 1) | ledger READ 2026-10-09; `measurements/static_screen_look2_2026-10-09/` |
 | 2026-10-09 | **OWNER RULING on look 2's open question: the registered NON-INFERIORITY rule stands** | Owner, 2026-10-09: "Let's adopt our classic non-inferiority approach." At look 3 (n = 8, boundary 1.874) static is ADOPTED on NON-INFERIOR (t_NI ≥ 1.874, i.e. Δ̂ > −δ = −3.5 pp at the registered confidence), EQUIVALENT or BETTER exactly as §8.1 registered, even if t_SUP shows static detectably worse inside δ. "Worse but inside δ" is NOT a separate stop row. INFERIOR / futility reject as registered. Rationale: static is the arch direction (static per-mon tokens + attention mixes context), it is ≈ 3 % faster, and the bundle screen against production (move resolution, speed physics, critic route, principled op) is where any residual gap is judged, split on failure | adding a "detectably worse ⇒ reject" row after seeing look-2 data (a post-hoc rule change, the thing the registration exists to prevent) | owner, 2026-10-09 |
+| 2026-10-09 | **The static PORT at HEAD** (`gen3_static_port_v1`, config v147; §12) | `static` composed with every post-pin lever and proved against the pin by a weight mapping (bitwise on the conditioned subspace except F16b's ~1 ulp, plus the type sum's fp32 summation order at the port); made EQUIVARIANT: S's type pair SUMMED, the op content's outgoing route a Deep Sets function of our moves (bias-free per-move `Linear(6, 32)` + ReLU, summed, zero-init `Linear(32, 128)`); a v145 / v146 `static` record refused | keeping the per-slot `outgoing_proj` and the type concat (position-keyed weights, v145's rule); a SUM of a per-move linear map (a linear map of the total, blind to the best move); the outgoing route on the move seats instead (moves the amount off the mon token where the audit's A3 put it) | orchestrator brief (owner-approved 2026-10-09); v145's sweep; `measurements/static_port_identity_2026-10-09/` |
+| 2026-10-09 | **Two NARROW facts for `static`, each its own flag, OFF** (§12.3, §12.4) | `--mon-hazard-cost`: every mon (both sides) gets its own side's Spikes layers and its switch-in HP cost from the op's ONE rule `spikes_entry` (shared with the `x` cell), added as token content before the trunk, priced on the op's context (an X5 hidden slot as its hypothesis); `--move-actor-state`: our active's HP + status onto its valid E3 seats; zero-init bias-free `IsolatedLinear`s built LAST | the fact inside D's MLP input (ends the X5 dex-table gather, or four table encodes); a second copy of the Spikes rule (drift: the orchestrator's hazard, option (a) taken); the actor's state on the E4 threat seats too (no static-vs-legacy gap there: neither encoding ever had it) | the static diagnostic's H2 / H3 (`measurements/static_diag_2026-10-09/`); orchestrator brief and its 2026-10-09 hazard note |

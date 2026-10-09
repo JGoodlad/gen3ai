@@ -432,6 +432,11 @@ class ModelVersionFields:
     # STRUCTURAL: 'principled' replaces the op's per-channel hard maxima over the opponent's believed moves with the
     # alpha-weighted expectation and builds the zero-init `op_worst_proj` (the noisy-OR KO row; a state_dict delta).
     op_reduction: str = "max"
+    # gen3_static_port_v1 (config v147): `--mon-hazard-cost {off,on}` / `--move-actor-state {off,on}` — two narrow facts
+    # for `--token-encoding static` (`static_facts.py`). STRUCTURAL: each `on` builds one zero-init projection (a
+    # state_dict delta) and changes the trained forward.
+    mon_hazard_cost: str = "off"
+    move_actor_state: str = "off"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

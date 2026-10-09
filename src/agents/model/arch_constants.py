@@ -233,3 +233,8 @@ FLAT_INTENT_INIT_SEED = 20261004
 STATIC_STAT_SCALE = 500.0
 STATIC_DYN_HIDDEN = 128
 STATIC_MOVE_POOL_DIM = 32
+# gen3_static_port_v1: the per-MOVE hidden width of the static op content's OUTGOING set function (`board_tokens.OpContent`):
+# each of our active's moves' d1 cell on one of their mons goes through ONE shared bias-free Linear(6 → this) + ReLU,
+# summed over the moves (Deep Sets), then a zero-init bias-free Linear(this → D_MODEL). Replaces the request-ordered
+# Linear(24 → D_MODEL), which gave each request slot its own weights (the v145 sweep's last arbitrary static weight).
+STATIC_OPC_OUT_HIDDEN = 32

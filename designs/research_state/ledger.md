@@ -23749,3 +23749,41 @@ Consequence: `main.dose` read its LR median from those sidecars. As of `6ed20cdd
 The 09-21 entry stands as measured then; its conclusion (a dose confound of ~4.3-4.5x) is unchanged.
 
 Also: `policy_spectrum`'s committed Lane S bank names pre-`rb_` eval traces as build sources, so the bank probably can no longer be REBUILT (UNVERIFIED). The committed bank itself is intact.
+
+### 2026-10-09 · BUILT · **THE STATIC PORT at HEAD (`gen3_static_port_v1`, v147): `--token-encoding static` composed with every post-pin lever and proved against the screen's pin by a weight mapping (bitwise on the conditioned subspace but F16b's ~1 ulp and the type sum's summation order, log π 8.3e-7); made EQUIVARIANT (the type pair summed; the outgoing op content a set function of our moves); two narrow facts behind `--mon-hazard-cost` / `--move-actor-state` (OFF; zero-init; one Spikes rule shared with the `x` cell); production byte-identical**
+
+- **Built.** `static` at HEAD runs with X5 `fixed_mass`, F1, F16b, F6a, F7a, the tied gains, `--op-reduction`,
+  `--move-resolution`, `--speed-physics`, `--value-threat-inject off`, `--obs-facts v1`. Equivariance: S reads
+  `emb(t1) + emb(t2)` (the obs lists types alphabetically); the op content's outgoing route is
+  `outgoing_proj(Σ_k ReLU(outgoing_cell(d1_k)))` (bias-free `Linear(6, 32)`, zero-init bias-free `Linear(32, 128)`), not
+  a request-ordered `Linear(24, 128)`. Fact A (`--mon-hazard-cost on`): every mon, both sides, `[own side's Spikes / 3,
+  switch-in HP fraction]`, the fraction from `DamageOperator.spikes_entry` (factored out of `pairwise_entry`; the `x`
+  cell reads it too), token content after the op, an X5 hidden slot priced as its hypothesis. Fact B
+  (`--move-actor-state on`): our active's `[HP, status one-hot]` on its valid E3 seats; NOT the E4 seats (no
+  static-vs-legacy gap there). Mechanics verified in `deps/pokemon-showdown` (gen 3 = gen 4's `runSwitch` +
+  `onEntryHazard`: 1/8, 1/6, 1/4 iff grounded; only Flying / Levitate ungrounded in gen 3; Magic Guard gen 4).
+- **Identity** (`measurements/static_port_identity_2026-10-09/`, CPU, the 64 K9 `fixed_mass` rows): the 2761-dim obs
+  prefix is identical; static at `2e357971` reproduces the pin's forward BITWISE on the conditioned subspace (v145 tie
+  groups equal, the three part-5 gains at 1.0, the flat bias at 0) and one K9 update (gains frozen) bitwise under the
+  F16b control; at this commit log π 8.3e-7 / values 1.2e-7 (the type sum's summation order; concat spelling bitwise).
+  Not identities: part 5 and the v145 ties on TRAINED gains; a trained pin's unequal type / request-slot blocks.
+- **Production byte-identical:** the production extractor's dynamo graph `8b376785…` (20,162 lines), state_dict and
+  outputs equal the parent's; the K9 learner golden unchanged.
+- **Cost (MEASURED, CPU):** static extractor 1,888,068 → 1,885,060 params, 60.21 → 60.09 M matmul FLOP / row; hazard
+  +256 params (+6.1 k FLOP), actor +1,024 (+2.0 k). `measurements/static_port_2026-10-09/`.
+- **Smoke:** CPU `--debug --arch production --steps 10000` with static + both facts + the full bundle: EXIT 0, 5 updates, 10 freeze checks passed, config 147 recorded (`measurements/static_port_2026-10-09/` §3).
+- **Tests (fail on revert):** `static_port_test.py` (12 items; 9 mutations applied, each failed at least one, restored).
+
+FINDINGS:
+1. **A typechange is read from the CURRENT types** by both the `x` cell and the new fact: the Rust `PMon::types`
+   returns the temporary types (Color Change, Transform), while a switch-in uses the base types. An active Kecleon
+   turned Flying reads "immune on re-entry". The fix (the species' base types in `spikes_entry`'s grounded check)
+   changes the production `x` cell, retrain-class; not taken.
+2. **Fact A's fraction column restates the `x` cell's `entry_chip`**, which OPC's `amount_proj` already carries onto
+   every mon (alive-gated); the new information is the layers column.
+3. **Deferred GPU checks (no lease):** compile parity forward + backward of static × the bundle × both facts on CUDA,
+   T2's CUDA-graph build on the new graph, a real two-minute launch, the cost read.
+4. **The equivariance fixes change what `static` means at HEAD** relative to the screened arm (the screen's look 3
+   reads the pinned form); the bundle screen judges the port.
+
+Tag: **BUILT · the static port · v147 · equivariant · `--mon-hazard-cost` / `--move-actor-state` OFF · production byte-identical · identity proof bitwise but c1 (8.3e-7) · GPU checks DEFERRED** · design: [`design_static_tokens.md`](../endstate/design_static_tokens.md) §12 · measurements: [`measurements/static_port_2026-10-09/`](measurements/static_port_2026-10-09/), [`measurements/static_port_identity_2026-10-09/`](measurements/static_port_identity_2026-10-09/)

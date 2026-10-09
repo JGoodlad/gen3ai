@@ -525,7 +525,15 @@ from typing import Any, Dict
 #   case (P(some move KOs), delivered by the zero-init `op_worst_proj`; P(some mon holds Pursuit)). A STRUCTURAL
 #   string {max,principled}, gated in check_compatible; a v145 config migrates to "max" (the only possible past). No
 #   ARCH_SIGNATURE bump ('max' is byte-identical), no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 146
+# v147 (gen3_static_port_v1): `--token-encoding static` ported to the post-break graph, made EQUIVARIANT where it was
+#   not (S reads the type SET as a sum, not an alphabetical concat; the op content's outgoing route is a Deep Sets
+#   function of our moves, not a request-ordered Linear(24 -> 128)), plus two narrow facts for it, each a STRUCTURAL
+#   string {off,on} gated in check_compatible: `mon_hazard_cost` (every mon's own side's Spikes layers + its switch-in
+#   HP cost, the op's ONE entry rule) and `move_actor_state` (our active's HP + status onto its E3 move seats). A
+#   v145 / v146 `static` record is REFUSED (its weights have no home: no such checkpoint exists, archive scan
+#   2026-10-09); `legacy` stamps through and both new fields migrate to "off". No ARCH_SIGNATURE bump (production is
+#   `legacy`, byte-identical), no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 147
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
