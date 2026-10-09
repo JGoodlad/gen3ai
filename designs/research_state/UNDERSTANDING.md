@@ -1367,11 +1367,11 @@ The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the 
 
 [DESCRIPTIVE · same entry]
 
-### 4.6 The static-token screen at look 1 (interim, 2026-10-08)
+### 4.6 The static-token screen at look 2 (interim, 2026-10-09)
 
-**Static Pokémon tokens (`--token-encoding static`: a mon's fixed identity as one token, the battle's dynamic state added to it) are not yet distinguishable from the legacy encoder in strength, and are not slower.** At three 15M seeds per arm the mirrored head-to-head cross reads Δ̂ **−1.26 pp** (fixed-sample 90 % [−2.51, −0.02]); t_NI 3.822 is below look 1's O'Brien–Fleming boundary 5.761, so the registered design CONTINUES to five seeds. Per training cycle `static` is about 3.7 % FASTER on quiet cycles (−1 to −4 % across readings), against the build's predicted +1.5 % FLOPs. No bot-panel harm (+0.58 pp).
+**Static Pokémon tokens (`--token-encoding static`: a mon's fixed identity as one token, the battle's dynamic state added to it) read slightly WEAKER than the legacy encoder so far, inside the 3.5 pp margin, and are not slower.** At five 15M seeds per arm the mirrored head-to-head cross reads Δ̂ **−2.70 pp** (look 1 at three seeds: −1.26); 24 of 25 cells sit below 50. t_NI 0.864 is far below look 2's O'Brien–Fleming boundary 2.683 and the look-2 interval [−5.19, −0.20] straddles −3.5, so the registered design CONTINUES to eight seeds. t_SUP −2.901 is past the boundary on the wrong side: a two-sided test of "no difference" would favour legacy, a reading the registered table has no row for (open with the orchestrator). Much of the move from look 1 sits in two new seeds (a weak static s1005, a strong legacy s1005). Per training cycle `static` is about 2.7 % FASTER on quiet cycles (−2.7 to −3.1 % across readings). No bot-panel harm (+0.12 pp).
 
-[NOT DETECTED at an interim look (no boundary crossed; the fixed-sample interval sits inside ±3.5 pp and just below 0, which a three-look design does not license reading as a verdict) · ledger 2026-10-08 READ "STATIC-TOKEN SCREEN LOOK 1"; `measurements/static_screen_look1_2026-10-08/`]
+[NOT DETECTED at an interim look (no boundary of the registered table crossed; the point estimate and every interval lie below 0, the margin −3.5 inside the look-2 interval) · ledger 2026-10-09 READ "STATIC-TOKEN SCREEN LOOK 2" (supersedes the LOOK 1 read); `measurements/static_screen_look2_2026-10-09/`, `measurements/static_screen_look1_2026-10-08/`]
 ---
 
 ## 5. Retired hypotheses

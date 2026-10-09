@@ -1,0 +1,795 @@
+{
+ "cells": [
+  {
+   "aborted": 0,
+   "d": 7,
+   "l": 1050,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1001@15048185",
+   "pairs": [
+    262,
+    3,
+    523,
+    4,
+    208
+   ],
+   "player": "rb_st_static_s1001@15087831",
+   "score_pp": 47.325,
+   "verdict": "OK",
+   "w": 943
+  },
+  {
+   "aborted": 0,
+   "d": 11,
+   "l": 1010,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1002@15048123",
+   "pairs": [
+    233,
+    6,
+    538,
+    5,
+    218
+   ],
+   "player": "rb_st_static_s1001@15087831",
+   "score_pp": 49.225,
+   "verdict": "OK",
+   "w": 979
+  },
+  {
+   "aborted": 0,
+   "d": 15,
+   "l": 1018,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1003@15047206",
+   "pairs": [
+    238,
+    6,
+    536,
+    9,
+    211
+   ],
+   "player": "rb_st_static_s1001@15087831",
+   "score_pp": 48.725,
+   "verdict": "OK",
+   "w": 967
+  },
+  {
+   "aborted": 0,
+   "d": 9,
+   "l": 1030,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1004@15048251",
+   "pairs": [
+    240,
+    2,
+    549,
+    5,
+    204
+   ],
+   "player": "rb_st_static_s1001@15087831",
+   "score_pp": 48.275,
+   "verdict": "OK",
+   "w": 961
+  },
+  {
+   "aborted": 0,
+   "d": 5,
+   "l": 1067,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1005@15048032",
+   "pairs": [
+    238,
+    3,
+    588,
+    2,
+    169
+   ],
+   "player": "rb_st_static_s1001@15087831",
+   "score_pp": 46.525,
+   "verdict": "OK",
+   "w": 928
+  },
+  {
+   "aborted": 0,
+   "d": 15,
+   "l": 1053,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1001@15048185",
+   "pairs": [
+    259,
+    7,
+    529,
+    6,
+    199
+   ],
+   "player": "rb_st_static_s1002@15050373",
+   "score_pp": 46.975,
+   "verdict": "OK",
+   "w": 932
+  },
+  {
+   "aborted": 0,
+   "d": 9,
+   "l": 985,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1002@15048123",
+   "pairs": [
+    216,
+    3,
+    550,
+    6,
+    225
+   ],
+   "player": "rb_st_static_s1002@15050373",
+   "score_pp": 50.525,
+   "verdict": "OK",
+   "w": 1006
+  },
+  {
+   "aborted": 0,
+   "d": 12,
+   "l": 1007,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1003@15047206",
+   "pairs": [
+    236,
+    5,
+    530,
+    7,
+    222
+   ],
+   "player": "rb_st_static_s1002@15050373",
+   "score_pp": 49.35,
+   "verdict": "OK",
+   "w": 981
+  },
+  {
+   "aborted": 0,
+   "d": 17,
+   "l": 997,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1004@15048251",
+   "pairs": [
+    223,
+    11,
+    540,
+    6,
+    220
+   ],
+   "player": "rb_st_static_s1002@15050373",
+   "score_pp": 49.725,
+   "verdict": "OK",
+   "w": 986
+  },
+  {
+   "aborted": 0,
+   "d": 19,
+   "l": 1063,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1005@15048032",
+   "pairs": [
+    263,
+    11,
+    526,
+    8,
+    192
+   ],
+   "player": "rb_st_static_s1002@15050373",
+   "score_pp": 46.375,
+   "verdict": "OK",
+   "w": 918
+  },
+  {
+   "aborted": 0,
+   "d": 5,
+   "l": 1018,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1001@15048185",
+   "pairs": [
+    235,
+    3,
+    545,
+    2,
+    215
+   ],
+   "player": "rb_st_static_s1003@15067350",
+   "score_pp": 48.975,
+   "verdict": "OK",
+   "w": 977
+  },
+  {
+   "aborted": 0,
+   "d": 15,
+   "l": 1005,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1002@15048123",
+   "pairs": [
+    219,
+    6,
+    561,
+    9,
+    205
+   ],
+   "player": "rb_st_static_s1003@15067350",
+   "score_pp": 49.375,
+   "verdict": "OK",
+   "w": 980
+  },
+  {
+   "aborted": 0,
+   "d": 16,
+   "l": 1029,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1003@15047206",
+   "pairs": [
+    241,
+    9,
+    539,
+    5,
+    206
+   ],
+   "player": "rb_st_static_s1003@15067350",
+   "score_pp": 48.15,
+   "verdict": "OK",
+   "w": 955
+  },
+  {
+   "aborted": 0,
+   "d": 15,
+   "l": 1021,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1004@15048251",
+   "pairs": [
+    227,
+    7,
+    560,
+    8,
+    198
+   ],
+   "player": "rb_st_static_s1003@15067350",
+   "score_pp": 48.575,
+   "verdict": "OK",
+   "w": 964
+  },
+  {
+   "aborted": 0,
+   "d": 13,
+   "l": 1096,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1005@15048032",
+   "pairs": [
+    268,
+    7,
+    553,
+    6,
+    166
+   ],
+   "player": "rb_st_static_s1003@15067350",
+   "score_pp": 44.875,
+   "verdict": "OK",
+   "w": 891
+  },
+  {
+   "aborted": 0,
+   "d": 14,
+   "l": 1063,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1001@15048185",
+   "pairs": [
+    254,
+    7,
+    549,
+    5,
+    185
+   ],
+   "player": "rb_st_static_s1004@15046967",
+   "score_pp": 46.5,
+   "verdict": "OK",
+   "w": 923
+  },
+  {
+   "aborted": 0,
+   "d": 14,
+   "l": 1004,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1002@15048123",
+   "pairs": [
+    223,
+    7,
+    552,
+    5,
+    213
+   ],
+   "player": "rb_st_static_s1004@15046967",
+   "score_pp": 49.45,
+   "verdict": "OK",
+   "w": 982
+  },
+  {
+   "aborted": 0,
+   "d": 15,
+   "l": 1034,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1003@15047206",
+   "pairs": [
+    247,
+    9,
+    531,
+    6,
+    207
+   ],
+   "player": "rb_st_static_s1004@15046967",
+   "score_pp": 47.925000000000004,
+   "verdict": "OK",
+   "w": 951
+  },
+  {
+   "aborted": 0,
+   "d": 18,
+   "l": 1012,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1004@15048251",
+   "pairs": [
+    230,
+    8,
+    544,
+    10,
+    208
+   ],
+   "player": "rb_st_static_s1004@15046967",
+   "score_pp": 48.949999999999996,
+   "verdict": "OK",
+   "w": 970
+  },
+  {
+   "aborted": 0,
+   "d": 4,
+   "l": 1109,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1005@15048032",
+   "pairs": [
+    275,
+    2,
+    557,
+    2,
+    164
+   ],
+   "player": "rb_st_static_s1004@15046967",
+   "score_pp": 44.45,
+   "verdict": "OK",
+   "w": 887
+  },
+  {
+   "aborted": 0,
+   "d": 18,
+   "l": 1101,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1001@15048185",
+   "pairs": [
+    278,
+    13,
+    532,
+    5,
+    172
+   ],
+   "player": "rb_st_static_s1005@15047386",
+   "score_pp": 44.5,
+   "verdict": "OK",
+   "w": 881
+  },
+  {
+   "aborted": 0,
+   "d": 13,
+   "l": 1108,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1002@15048123",
+   "pairs": [
+    302,
+    7,
+    497,
+    6,
+    188
+   ],
+   "player": "rb_st_static_s1005@15047386",
+   "score_pp": 44.275,
+   "verdict": "OK",
+   "w": 879
+  },
+  {
+   "aborted": 0,
+   "d": 20,
+   "l": 1115,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1003@15047206",
+   "pairs": [
+    272,
+    16,
+    555,
+    4,
+    153
+   ],
+   "player": "rb_st_static_s1005@15047386",
+   "score_pp": 43.75,
+   "verdict": "OK",
+   "w": 865
+  },
+  {
+   "aborted": 0,
+   "d": 14,
+   "l": 1085,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1004@15048251",
+   "pairs": [
+    264,
+    6,
+    551,
+    8,
+    171
+   ],
+   "player": "rb_st_static_s1005@15047386",
+   "score_pp": 45.4,
+   "verdict": "OK",
+   "w": 901
+  },
+  {
+   "aborted": 0,
+   "d": 12,
+   "l": 1106,
+   "n_pairs": 1000,
+   "opponent": "rb_st_legacy_s1005@15048032",
+   "pairs": [
+    268,
+    7,
+    563,
+    5,
+    157
+   ],
+   "player": "rb_st_static_s1005@15047386",
+   "score_pp": 44.4,
+   "verdict": "OK",
+   "w": 882
+  }
+ ],
+ "code_head": "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01",
+ "col_sha256": [
+  "672ba373eb545d2dd625f119b9f05c5eb865269ed356520dd6504dc7d71cb194",
+  "0d950ec3a9b28bb33f2712f8186b41c1c4ccf691fca9840e1c7cfbef88e252ea",
+  "dd58b03249fcf3fa63e6e25a6b7a84f02edff58a8c9397e411b24f850a1d7071",
+  "c96b84216a262a95432a81477d042ca2ac9d814a28efde257cd5c6fdeb1acb24",
+  "b4b2b0c74f25ffc7d17f60da47f1545cdaea884ce8ec04c24bba0913e389ea78"
+ ],
+ "family": "st_screen_strength_steps",
+ "fixed_sample": {
+  "crossed": {
+   "BETTER": false,
+   "EQUIVALENT": false,
+   "FUTILITY": false,
+   "INFERIOR": false,
+   "NON-INFERIOR": false
+  },
+  "interval": [
+   -4.425767715339731,
+   -0.9682322846602602
+  ],
+  "multiplier": 1.8595480375308973,
+  "near_boundary": [],
+  "t_NI": 0.8637465061891635,
+  "t_SUP": -2.901026559392475
+ },
+ "fixed_sample_outcome": "CONTINUE",
+ "inconclusive": [],
+ "look": 2,
+ "n_cells_look1": 9,
+ "n_cells_look2": 16,
+ "outcome": "CONTINUE",
+ "preconditions": [],
+ "primary": {
+  "crossed": {
+   "BETTER": false,
+   "EQUIVALENT": false,
+   "FUTILITY": false,
+   "INFERIOR": false,
+   "NON-INFERIOR": false
+  },
+  "interval": [
+   -5.19130705023098,
+   -0.20269294976901042
+  ],
+  "multiplier": 2.683,
+  "near_boundary": [],
+  "t_NI": 0.8637465061891635,
+  "t_SUP": -2.901026559392475
+ },
+ "readings_agree": true,
+ "regime_id": "adfdbee824c9eb0a",
+ "requests": [
+  "st_look1_steps",
+  "st_look2_steps"
+ ],
+ "row_sha256": [
+  "0c8ec881d682b3bdd495d4594be9e7d67ec4bf50c487cbd39ae85552ba31730c",
+  "a7d909d171b7140687be569ab7a90a277eb6e93e3deec57c28b471e57c6c4b8f",
+  "40cf852c0caa0173dc88c87de9a04db8e5b3205d31320e28a46f16071c9770ec",
+  "de9c2c7eae6926078272ea1371a9e1b99e9d3ea34d381a4ad5f8800fc46e1c79",
+  "c23eadd7126682b5410ee81759e1d6e60b442ac9d1f7bc91f23bdc0a02a4b8b9"
+ ],
+ "s3_check": "VALID: 82 probes after the 2026-10-08 13:48:20 switch, max |d log pi| (every current row) 4.05e-05 < 0.0001",
+ "seed_facts": {
+  "rb_st_legacy_s1001": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1001/final_model.zip",
+   "final_num_timesteps": 15048185,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "legacy",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_legacy_s1002": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1002/final_model.zip",
+   "final_num_timesteps": 15048123,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "legacy",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_legacy_s1003": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1003/final_model.zip",
+   "final_num_timesteps": 15047206,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "legacy",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_legacy_s1004": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1004/final_model.zip",
+   "final_num_timesteps": 15048251,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "legacy",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_legacy_s1005": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1005/final_model.zip",
+   "final_num_timesteps": 15048032,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "legacy",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_static_s1001": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1001/final_model.zip",
+   "final_num_timesteps": 15087831,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "static",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_static_s1002": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1002/final_model.zip",
+   "final_num_timesteps": 15050373,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "static",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_static_s1003": {
+   "behaviour_check_warn_in_metadata": true,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1003/final_model.zip",
+   "final_num_timesteps": 15067350,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "static",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_static_s1004": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1004/final_model.zip",
+   "final_num_timesteps": 15046967,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "static",
+   "torch_version": "2.8.0+cu126"
+  },
+  "rb_st_static_s1005": {
+   "behaviour_check_warn_in_metadata": false,
+   "belief_tokens": "fixed_mass",
+   "final": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1005/final_model.zip",
+   "final_num_timesteps": 15047386,
+   "init_num_threads": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "policy_readout": "tower",
+   "token_encoding": "static",
+   "torch_version": "2.8.0+cu126"
+  }
+ },
+ "stat": {
+  "ci95_pp": [
+   -4.840824961722529,
+   -0.5531750382774625
+  ],
+  "col_means_pp": [
+   46.855000000000004,
+   48.57,
+   47.58,
+   48.185,
+   45.325
+  ],
+  "delta_hat_pp": -2.6969999999999956,
+  "df": 8,
+  "h_pp": [
+   [
+    47.325,
+    49.225,
+    48.725,
+    48.275,
+    46.525
+   ],
+   [
+    46.975,
+    50.525,
+    49.35,
+    49.725,
+    46.375
+   ],
+   [
+    48.975,
+    49.375,
+    48.15,
+    48.575,
+    44.875
+   ],
+   [
+    46.5,
+    49.45,
+    47.925000000000004,
+    48.949999999999996,
+    44.45
+   ],
+   [
+    44.5,
+    44.275,
+    43.75,
+    45.4,
+    44.4
+   ]
+  ],
+  "margin_pp": 3.5,
+  "n": 5,
+  "row_means_pp": [
+   48.015,
+   48.589999999999996,
+   47.989999999999995,
+   47.455,
+   44.464999999999996
+  ],
+  "s2_cols": 1.6432824999999973,
+  "s2_rows": 2.6781575000000015,
+  "se_pp": 0.929670909515835,
+  "t": 0.8637465061891635,
+  "upper95_one_sided_pp": -0.9682322846602602,
+  "v_hat": 0.8642879999999998
+ },
+ "t_exact_95_df8": 1.8595480375308973,
+ "t_exact_975_df8": 2.306004135204166,
+ "x5_decision": {
+  "boundary": 2.683,
+  "label": null,
+  "look": 2,
+  "near_boundary": [],
+  "outcome": "CONTINUE",
+  "reasons": [],
+  "stat": {
+   "ci95_pp": [
+    -4.840824961722529,
+    -0.5531750382774625
+   ],
+   "col_means_pp": [
+    46.855000000000004,
+    48.57,
+    47.58,
+    48.185,
+    45.325
+   ],
+   "delta_hat_pp": -2.6969999999999956,
+   "df": 8,
+   "h_pp": [
+    [
+     47.325,
+     49.225,
+     48.725,
+     48.275,
+     46.525
+    ],
+    [
+     46.975,
+     50.525,
+     49.35,
+     49.725,
+     46.375
+    ],
+    [
+     48.975,
+     49.375,
+     48.15,
+     48.575,
+     44.875
+    ],
+    [
+     46.5,
+     49.45,
+     47.925000000000004,
+     48.949999999999996,
+     44.45
+    ],
+    [
+     44.5,
+     44.275,
+     43.75,
+     45.4,
+     44.4
+    ]
+   ],
+   "margin_pp": 3.5,
+   "n": 5,
+   "row_means_pp": [
+    48.015,
+    48.589999999999996,
+    47.989999999999995,
+    47.455,
+    44.464999999999996
+   ],
+   "s2_cols": 1.6432824999999973,
+   "s2_rows": 2.6781575000000015,
+   "se_pp": 0.929670909515835,
+   "t": 0.8637465061891635,
+   "upper95_one_sided_pp": -0.9682322846602602,
+   "v_hat": 0.8642879999999998
+  }
+ },
+ "x5_verdict": "CONTINUE"
+}

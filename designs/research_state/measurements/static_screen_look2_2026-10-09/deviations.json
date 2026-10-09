@@ -1,0 +1,303 @@
+{
+ "runs": [
+  {
+   "run": "rb_st_legacy_s1001",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-07T21:15:43-07:00] START rb_st_legacy_s1001 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-08T00:14:30-07:00] END rb_st_legacy_s1001 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 2.83e-05,
+   "k9b_max_abs_dlogp_judged": 2.83e-05,
+   "k9b_max_abs_dlogp_excluded": 1.18e-05,
+   "k9b_max_excluded_frac": 0.0723,
+   "k9b_violations_total_max": 0.0,
+   "clean": true
+  },
+  {
+   "run": "rb_st_legacy_s1002",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T06:26:47-07:00] START rb_st_legacy_s1002 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-08T09:18:56-07:00] END rb_st_legacy_s1002 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 5.29e-05,
+   "k9b_max_abs_dlogp_judged": 5.29e-05,
+   "k9b_max_abs_dlogp_excluded": 2.95e-05,
+   "k9b_max_excluded_frac": 0.085,
+   "k9b_violations_total_max": 0.0,
+   "clean": true
+  },
+  {
+   "run": "rb_st_legacy_s1003",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T09:18:56-07:00] START rb_st_legacy_s1003 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-08T12:09:00-07:00] END rb_st_legacy_s1003 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 0.0523,
+   "k9b_max_abs_dlogp_judged": 3.31e-05,
+   "k9b_max_abs_dlogp_excluded": 0.0523,
+   "k9b_max_excluded_frac": 0.0625,
+   "k9b_violations_total_max": 0.0,
+   "clean": true
+  },
+  {
+   "run": "rb_st_legacy_s1004",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T15:47:16-07:00] START rb_st_legacy_s1004 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-08T18:32:06-07:00] END rb_st_legacy_s1004 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 2.98e-05,
+   "k9b_max_abs_dlogp_judged": 2.98e-05,
+   "k9b_max_abs_dlogp_excluded": 1.37e-05,
+   "k9b_max_excluded_frac": 0.083,
+   "k9b_violations_total_max": 0.0,
+   "clean": true
+  },
+  {
+   "run": "rb_st_legacy_s1005",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T23:55:50-07:00] START rb_st_legacy_s1005 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-09T02:37:31-07:00] END rb_st_legacy_s1005 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 0.000329,
+   "k9b_max_abs_dlogp_judged": 2.1e-05,
+   "k9b_max_abs_dlogp_excluded": 0.000329,
+   "k9b_max_excluded_frac": 0.0703,
+   "k9b_violations_total_max": 0.0,
+   "clean": true
+  },
+  {
+   "run": "rb_st_static_s1001",
+   "final_model": true,
+   "tb_files": 2,
+   "child_attach_markers": 2,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 1,
+   "crashes_dir_files": 1,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    1
+   ],
+   "launcher_crash_lines": 1,
+   "launcher_auto_restart_lines": 1,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T00:14:30-07:00] START rb_st_static_s1001 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T03:18:47-07:00] END rb_st_static_s1001 launcher_rc=0"
+   ],
+   "k9b_probes": 159,
+   "k9b_max_abs_dlogp_current": 3.55e-05,
+   "k9b_max_abs_dlogp_judged": 2.53e-05,
+   "k9b_max_abs_dlogp_excluded": 3.55e-05,
+   "k9b_max_excluded_frac": 0.0654,
+   "k9b_violations_total_max": 0.0,
+   "clean": false
+  },
+  {
+   "run": "rb_st_static_s1002",
+   "final_model": true,
+   "tb_files": 2,
+   "child_attach_markers": 2,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 1,
+   "crashes_dir_files": 1,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    1
+   ],
+   "launcher_crash_lines": 1,
+   "launcher_auto_restart_lines": 1,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T03:18:47-07:00] START rb_st_static_s1002 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T06:26:47-07:00] END rb_st_static_s1002 launcher_rc=0"
+   ],
+   "k9b_probes": 160,
+   "k9b_max_abs_dlogp_current": 2.36e-05,
+   "k9b_max_abs_dlogp_judged": 2.36e-05,
+   "k9b_max_abs_dlogp_excluded": 2.05e-05,
+   "k9b_max_excluded_frac": 0.0957,
+   "k9b_violations_total_max": 0.0,
+   "clean": false
+  },
+  {
+   "run": "rb_st_static_s1003",
+   "final_model": true,
+   "tb_files": 6,
+   "child_attach_markers": 6,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 6,
+   "crashes_dir_files": 5,
+   "warn_in_metadata": true,
+   "launcher_restarts_summary": [
+    4
+   ],
+   "launcher_crash_lines": 5,
+   "launcher_auto_restart_lines": 4,
+   "launcher_training_complete": false,
+   "chain": [
+    "[2026-10-08T12:09:00-07:00] START rb_st_static_s1003 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T13:48:08-07:00] END rb_st_static_s1003 launcher_rc=1",
+    "[2026-10-08T13:48:08-07:00] CHAIN STOP: rb_st_static_s1003 has no final_model.zip (rc=1) \u2014 INCONCLUSIVE, the session decides the replacement",
+    "[2026-10-08T13:48:16-07:00] S3 WARN-SWITCH: resumed rb_st_static_s1003 from checkpoint_7000118_steps.zip with --behaviour-check warn (launcher 1484469)",
+    "[2026-10-08T15:12:27-07:00] END rb_st_static_s1003 (warn resume) launcher_rc=0"
+   ],
+   "k9b_probes": 159,
+   "k9b_max_abs_dlogp_current": 4.05e-05,
+   "k9b_max_abs_dlogp_judged": 4.05e-05,
+   "k9b_max_abs_dlogp_excluded": 1.45e-05,
+   "k9b_max_excluded_frac": 0.206,
+   "k9b_violations_total_max": 0.0,
+   "clean": false
+  },
+  {
+   "run": "rb_st_static_s1004",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T18:32:06-07:00] START rb_st_static_s1004 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T21:14:52-07:00] END rb_st_static_s1004 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 5.77e-05,
+   "k9b_max_abs_dlogp_judged": 5.77e-05,
+   "k9b_max_abs_dlogp_excluded": 2e-05,
+   "k9b_max_excluded_frac": 0.0879,
+   "k9b_violations_total_max": 0.0,
+   "clean": true
+  },
+  {
+   "run": "rb_st_static_s1005",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T21:14:52-07:00] START rb_st_static_s1005 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T23:55:50-07:00] END rb_st_static_s1005 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 3.05e-05,
+   "k9b_max_abs_dlogp_judged": 3.05e-05,
+   "k9b_max_abs_dlogp_excluded": 1.84e-05,
+   "k9b_max_excluded_frac": 0.0645,
+   "k9b_violations_total_max": 0.0,
+   "clean": true
+  }
+ ],
+ "look2_runs_clean": {
+  "rb_st_legacy_s1004": true,
+  "rb_st_legacy_s1005": true,
+  "rb_st_static_s1004": true,
+  "rb_st_static_s1005": true
+ }
+}
