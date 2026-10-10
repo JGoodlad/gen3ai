@@ -130,3 +130,40 @@ too: `test_every_bespoke_coupling_still_exists` refuses an entry that matches no
 flag while explicitly disabling one of its dependencies is reported offline instead of crashing the
 child ~40 s into a launch. It only fires on an EXPLICIT negation — an omitted dependency is inherited
 from the checkpoint's config on resume, so absence carries no information.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+
+### The flag registry — read it BEFORE adding a toggle
+
+**A model-relevant toggle is one `ModelFlag` row in `agents/model/flag_registry.py`, and five
+hand-synced surfaces** — the `argparse` entry (**defaulting to `None`**, or its `_resolve` line is
+dead code), the `_resolve("name", default)` line beside it, `extractor_arch.ARCH_ARG_KEYS`,
+`snapshot.current_model_version()`'s keyword, and the `ModelVersion` field. `flag_registry_test.py`
+fails with a message NAMING the missing site; every historical failure in this class was silent.
+Four more rules govern the row, all of them enforced, none of them guessable:
+
+- **Three TIERS** — `cli` / `config_only` / `constructor_only`. A `config_only` toggle is FROZEN at
+  its registry `default` for every CLI-launched run, so that default must be what production wants.
+- **Four CLASSES** — `structural` / `resume_immutable` / `training_coef` / `runtime` — decide which
+  gate a mismatch gets, and getting it wrong hurts in BOTH directions.
+- **`requires=`** is the dependency data. `requirement_closure(name)` gives the transitive set,
+  `flag_requires_test.py` enforces it forward and in reverse, and `python -m main.checkargs` reads
+  the graph so an unsatisfiable command is reported offline instead of crashing a launch.
+- **Read [`designs/flag_registry.md`](../flag_registry.md)** for the current table
+  (GENERATED; `--check` is the gate).
+
+All four in full, with the demotion history and the reachability gate that found five live flags in
+the dead-`_resolve` state: [`designs/model/flag_registry_rules.md`](flag_registry_rules.md).
+
+🚨 **`oracle_reveal` (v137) is the registry's one OBSERVATION-MODE row** — a `resume_immutable` flag with no module and no
+weight: `--oracle-reveal {off,species,full}` makes the Rust encoder write the opponent's true species (`full`: the whole set) into the observation
+(a DIAGNOSTIC for the X5 A/B's oracle arm, `designs/endstate/design_x5_belief_tokens.md` §7.6; never production). The
+extractor only stores it. It is recorded, inherited by a flagless resume and refused on a flip (`check_oracle_reveal`),
+kept off the ARCH surface and out of `check_compatible` by its class, and `oracle_reveal.py` is the reader a tool
+uses to REFUSE such a checkpoint when it builds observations without the reveal (`main.anchors`, `main.play`,
+`main.belief_roles`, `main.policy_spectrum`). `main.h2h` PLAYS one, at its recorded level, through its per-side reveal
+(`--oracle-reveal-mode one_sided|both_sided`, `main.h2h.reveal`) and refuses one under its default `off`.

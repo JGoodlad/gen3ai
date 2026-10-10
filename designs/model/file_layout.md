@@ -190,3 +190,89 @@ path (`from agents.model.features_extractor import DamageOperator / EdgeBias / d
 _DMG_* / _SB_ATK`, `from agents.model.snapshot import maybe_compile_extractor`) still resolves — the
 prober, `model_version`, `snapshot` and the tests all rely on that. `Gen3FeaturesExtractor` itself
 stays DEFINED in `features_extractor.py`: SB3 checkpoints pickle the class by its defining module.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+
+### Architecture constants — single source of truth
+
+All network dims are defined as module-level constants in **`arch_constants.py`** (relocated there
+2026-08-01 so `damage_op.py` can read them without importing the extractor — that would be circular).
+`features_extractor.py` **re-exports the whole block unchanged**, so it remains the documented import
+surface and `from agents.model.features_extractor import D_MODEL` still resolves:
+
+```python
+ROLE_TOKEN_SIZE = 128
+PROJECTION_DIM = 512
+MOVE_NET_HIDDEN = [96, 32]
+MOVE_LATENT_HIDDEN = 64      # MoveLatentEncoder MLP hidden
+MOVE_LATENT_DIM = 32         # per-move latent dim (the similarity-grading space)
+ROLE_ENCODER_HIDDEN = [256, 128]
+```
+
+**Change them in `arch_constants.py` and nowhere else.** The phase modules' `__init__` read from these constants; `ModelVersion` imports them so `model_config.json` always reflects the live values. Do not hardcode these numbers anywhere else in the codebase.
+
+Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `state_encoder.get_layout()` and flow through `features_extractor_kwargs` — same principle, different file.
+
+**`role_input_dim` is not a module-level constant** — it is computed dynamically in `PokemonEncoder.__init__` from the layout fields and `MOVE_NET_HIDDEN`. You do not need to update it manually when dims change; it is derived correctly. The projection input dims are likewise derived — static arithmetic in `compute_projection_widths` (`gen3_static_widths_v1`), verified per flag combo by `projection_width_test.py`.
+### File layout (one responsibility per file; phases split 2026-08-16)
+
+**Every file, its one responsibility, and the split rounds that produced it:**
+[`designs/model/file_layout.md`](file_layout.md). The map:
+
+| you are looking for | file |
+|---|---|
+| the architecture constants | `arch_constants.py` |
+| the extractor: `__init__` · the `last_*` surface · `forward_internal` · the class + `forward` | `extractor_build.py` · `extractor_api.py` · `extractor_forward.py` · `features_extractor.py` (the re-export HUB) |
+| the phases | `extractor_ctx.py` · `encoders.py` · `team_transformer.py` · `pools.py` · `belief_heads.py` · `projection.py` |
+| the op | `damage_op.py` · `index_max.py` (`max_by_index`, every gradient-path max — a leaf) · `op_reduction.py` (`--op-reduction principled`: the α-weighted expectation + the noisy-OR worst case that replace the maxima over THEIR believed moves — a leaf) · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` · `damage_op_speed.py` (`--speed-physics on`'s inputs) · `move_order.py` (THE move-order rule: priority bracket + speed physics) · `damage_kinds.py` (the non-formula damage + Beat Up's exact party terms every kernel applies) · `status_rules.py` (the incoming side / clause status rule the op and the move-resolution family share; whether a clause is in force is `agents.gen3_data.format_spec`'s call, never a constant) |
+| the lookup tables, in LAYER order | `damage_tables.py` → `belief_tables.py` → `dex_ids.py` |
+| the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` |
+| the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` · the move-resolution family that replaces them under `--move-resolution on` (`move_resolution.py` · `move_resolution_rules.py` · `move_resolution_tables.py`) |
+| versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` |
+| the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
+| X5's dex-row table (a hypothesised opponent mon's per-mon obs row, per species; the generator, the loader, the committed artifact) | `hypothesis_dex_rows.py` + `hypothesis_dex_rows.json` |
+| X5's T0 hypothesis builder (built with the opponent-belief family — the only belief representation: δ_θ, the fixed-size presence, the one stable ordering, OTHER, the active's move group; the set-BCE helpers) | `hypothesis_set.py` |
+| X5's hypothesis-token ENCODING (`PokemonEncoder` split exactly at its two first Linears: the species half once over the dex table, gathered; the row-level half per row; the rest per opponent slot — the per-row pass on `hypothesis_ctx` stays the definition its test compares against) | `hypothesis_encode.py` |
+| the STATIC per-mon encoder (`--token-encoding static`: S = the static identity from the set fields, D = the mon's own state, added, no board input; the X5 hypothesis tokens as the dex table encoded once and gathered) | `static_tokens.py` |
+| the STATIC arm's two NARROW facts (`--mon-hazard-cost`: every mon's own side's Spikes + its switch-in cost, from the op's ONE entry rule `DamageOperator.spikes_entry`; `--move-actor-state`: our active's HP + status on its E3 seats; `gen3_static_port_v1`), and the switch-cell hazard (`--switch-hazard-cost`, the same values on the switch pointer cell; `gen3_static_recovery_v1`) | `static_facts.py` |
+| the STATIC-RECOVERY levers (`gen3_static_recovery_v1`; the combined arm is `--arch static_recovery`, `src/main/train/arch_arms.py`): trunk depth (`--trunk-layers N`: identity-init pre-LN extra rounds) and every mon's end-of-turn residual (`--eot-residual`) | `trunk_depth.py` · `eot_residual.py` |
+| the FACT-COMPLETION levers (`gen3_endstate_facts_v1`, v152; the end-state arm is `--arch endstate`): the exact P(KO) (`--ko-ramp exact`) and the cure-availability flags (`--status-facts exact`; its two pair facts live in `damage_op_blocks.pair_outcome_coords`; the restored move-resolution facts in `move_resolution.restored_*`; the one end-of-turn rule in `eot_residual.g_cells`; the progress-clock mask in `ObsUnpack`) | `ko_exact.py` · `status_facts.py` |
+| the STATIC arm's BOARD (`--token-encoding static`, stage 2: the side-relative SIDE / FIELD content the three board tokens project, the seat tuples, the per-mon op content `OpContent`) | `board_tokens.py` |
+| the OBS-FACTS block's consumer (`--obs-facts v1`: the zero-init `ObsFactsInject` — the facts as token content; `FACTS_TOKEN_CLASS` routes each sub-block, a SIDE fact to the static board's side tokens) | `obs_facts_inject.py` |
+| X5's hypothesis TOKENS in the chain (the hypothesis context, the spliced tokens, the per-key log-presence, the class-E pools' float masks, the op's opponent-MON roster `OpRoster` + OTHER's averaged `other_roster`) | `hypothesis_tokens.py` |
+
+🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
+`forward` is normally a pure function of `obs["observation"]` — but a route may read a flag-gated
+Dict key of its own and **RAISE** when it is absent (a silent skip reads exactly like a route that
+learned nothing). The privileged true-team route's `opp_true_team` was the first (deleted; the registry is now EMPTY and
+the mechanism + its drift gate stay). That mapping is DECLARED once
+in `extra_obs_keys.py` as `(extractor attribute -> key, shape, canonical zero block)`, keyed on the
+ATTRIBUTE the forward itself tests, and every synthetic-obs caller on a TRAINING path builds from it
+via `zero_extra_obs` / `synthetic_obs`: `main/train/lifecycle.py`'s round-trip
+smoke, `compile_trainer`, `compile_opponents`, `agents/training/churn_probe.py`'s `masked_action_probs`. **Never hand-build
+`{"observation": zeros(1, D)}` on a path a run reaches** — that literal is what killed
+`ai_v12_14_ladder_truevalue` two minutes into its launch, and `extra_obs_keys_test.py` reproduces
+it plus an AST gate that fails on any obs key the table does not declare. The ~17 OFFLINE audit /
+probe CLIs still hand-build (they fail at a terminal, not on the GPU) — see
+[`designs/ops/TECH_DEBT_BACKLOG.md`](../ops/TECH_DEBT_BACKLOG.md).
+
+🚨 **The table layering only ever points DOWN** (`damage_tables` → `belief_tables` → `dex_ids`), and
+**an import back closes a cycle Python resolves only for whichever module was imported first** — it
+would work in the normal import order and raise in every other. Do not add one;
+`belief_tables_test.py` AST-scans every up-edge and also fails if a name is DEFINED in two of the
+three. Every one of these tables is `persistent=False`, so a relocation moves no `state_dict` key.
+
+#### The extractor CLASS is a base-class CHAIN (`gen3_extractor_class_split_v1`, 2026-08-23)
+`ExtractorBuild` → `ExtractorApi` → `ExtractorForward` → `Gen3FeaturesExtractor`, one file each,
+`features_extractor.py` holding the class and `forward`. Why inheritance rather than helper
+functions, why `__init__` is not split further, and the module-GLOBAL patching hazard a test author
+must know: [`designs/model/file_layout.md`](file_layout.md).
+
+**⚠️ `forward` stays on `Gen3FeaturesExtractor`, and must.** Both compile flags patch the BOUND
+`fe.forward`; the capacity probe calls `type(fe).forward` for a deliberately-EAGER pass; and
+`instrumented_ppo_test` ASSIGNS `type(fe).forward` and restores it. An attribute defined on a base
+would be SHADOWED by that assignment and the restore would leave the shadow in place forever.

@@ -177,3 +177,50 @@ reader's, on fixed probes, per the X26 amendment.
 trainer's `_setup_model` with its Adam state pre-allocated. There is no lazy build: a step that
 finds one missing raises `RideAlongLifecycleViolation`. The heads' step is the K8 inventory's candidate compile region R-ride; it stays eager
 for now.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+
+**Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
+critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
+over all 12 team tokens to produce `value_pooled`; `ProjectionAssembler.forward` returns a
+`(pi_combined, vf_combined)` pair; and the root `forward` returns a `(pi_features, value_pooled)`
+tuple — the value half has NO projection (`vf_features_dim` = `D_MODEL`; architecture audit F1, the X5
+version break's part 2). This extractor therefore **must** be paired with `Gen3DualHeadMaskablePolicy`
+(`policy.py`), which keeps `share_features_extractor=True` (one body) and overrides `forward` /
+`evaluate_actions` / `get_distribution` / `predict_values` to unpack the tuple: the policy half goes to
+`mlp_extractor.forward_actor`, and the value is `_critic_value(vf)` = `sigmoid(fe.last_win_prob_logits)` (the
+win-prob head on `value_pooled`, the only critic; `vf` is read only for its batch size). There is NO value
+tower: the policy's `_build` does not call SB3's — it builds an ACTOR-only `MlpExtractor` (`vf=[]`), SB3's
+orthogonal re-init (extractor, then mlp extractor, gain √2), the retire hooks, the pointer head and the
+optimizer, and `action_net` / `value_net` are RAISING stubs (`_NoFlatActionNet` / `_NoValueNet`). A stock SB3
+policy expects a single-tensor extractor and will break — doubly so under the pointer-native action head
+(`gen3_pointer_native_v1`): the action logits come from the `PointerNativeActionHead` over
+the extractor's `last_pointer_inputs` stash (per-logit inputs: `designs/ARCHITECTURE.md` § Heads). The startup `_run_roundtrip_test` and the snapshot/feature tests all
+unpack the tuple — keep that in mind when touching the extractor's return shape.
+
+**`value_pooled` is vf-only by construction.** `vf_combined` IS `value_pooled` and `pi_combined`
+is a concat that never contains it, so anything injected into `value_pooled` leaves `pi` bit-identical
+at ANY weight; the extractor's `_value_pooled_routes` seam has ONE member (`value_entity_pool`). The
+privileged true-team route and the dense auxiliary head that once read off it are deleted.
+
+**The DETACHED RIDE-ALONG heads live on the POLICY, not the extractor** (`gen3_ridealong_heads_v1`,
+v126, `ridealong_heads.py`). The extractor only RECORDS `ridealong_{ensemble,rnd,adv,opp}` (so the
+flag registry, the version gate and every worker rebuild see them); `Gen3DualHeadMaskablePolicy`
+builds `policy.ridealong` in `__init__` AFTER `_build`. Three rules keep "the baseline learns exactly
+what production learns" true, and each has a test that fails on revert: **(1)** build inside
+`torch.random.fork_rng` from `RIDEALONG_INIT_SEED` — a module built from the global RNG shifts every
+later draw (init, rollout sampling, minibatch shuffles); **(2)** never put them in `policy.optimizer`
+or fold their loss into PPO's `loss` — PPO's global `clip_grad_norm_` would include their gradient
+and rescale the trunk's; **(3)** every input goes through `RideAlongBatch.detached`. A frozen random
+network (RND target, randomized prior) is a BUFFER (`freeze_to_buffers`), never a
+`requires_grad=False` parameter. **The RND VARIANTS** (`ridealong_rnd_variants`, v127,
+`RND_VARIANT_DECLS`) are built LAST in `RideAlongHeads`, each from its own private seed or a deep copy
+of base's predictor, so adding one never changes another head's init. B reads X5's FLAT opponent
+pointer (`FlatOppEffectEnsemble`; labels from `flat_intent.flat_intent_targets`) — still detached, pinned
+bit-identical to learning by `ridealong_update_test`. They are excluded from
+`trainable_parameters()`: each has its own optimizer (`variant_parameters(name)`). The observation
+variants share base's target and normaliser, so they must never own copies of them. Detail: [`designs/model/readouts_and_value_routes.md`](readouts_and_value_routes.md).

@@ -166,3 +166,151 @@ limitation test therefore builds at `belief_grad_mode="shaping"` explicitly, bec
 moved to `label_only` at gen-11 and the pin would otherwise have gone green while testing nothing;
 that is
 pinned as a limitation test that fails if it ever lifts.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+
+### The op's flat layout has ONE slicer (`gen3_op_tensors_views_v1`)
+
+`DamageOperator.tensors_from_block()` is the only place the flat block's offsets are walked; it
+returns **`OpTensors`** — named zero-copy views (`incoming_rows`, the CB tail, the outgoing/status
+groups, the opaque matrix renders). Every same-forward consumer reads a field off
+`damage_op.last_tensors` (prefuse injection, the assembler's `seed_rows`) or goes through
+`pointer_cells` (which itself now assembles from the views); **never re-derive an offset at a
+consumer** — the layout walk raises if a region is added to the block without a view. The flat
+block remains the serialization: `decode_damage_block` (the prober's human-readable mirror) and
+`last_raw_block` still read it, and dropping it from the forward is `design_op_tensors.md` step 3
+(retrain-class — it shrinks `out_gain`). Landed as a byte-identical refactor under the proof
+bundle recorded in `designs/research_state/claude_md_archive/model_leaf_history.md`, on 64 real
+gen-9 eval states across three config arms.
+
+🚨 **`last_tensors` is POST-gain and is for PROJECTIONS only.** The op's learned `out_gain` (one scalar per
+(region, channel) with NO position in its key — tied across request slots / move seats, the X5 version break's part 4,
+and across our team slots / their mons, `gen3_mon_tied_gain_v1`; `damage_op_layout.out_gain_channel_keys`) is a
+projection adapter, not physics. A consumer that uses an op value AS a probability or a
+damage fraction (P(first), a roll, a secondary chance) reads it PRE-gain: a typed pre-gain stash, or the block's
+channels through **`last_raw_tensors`** (live views; `last_raw_block` is the detached prober copy — never a
+training-path input). `intent_conditional` and the move-resolution family do (part 5;
+`x5_version_break_part45_test.py`). A new region of the block needs a key in `out_gain_channel_keys` (the op
+raises at build if the key walk and `out_dim` disagree), and its key names the channel only — a request slot, seat,
+team slot or listing position is arbitrary and is never part of it (`mon_tied_gain_test.py` permutes team slots).
+
+**The op's SIDE VALUES and the EXTRACTOR's follow one contract** (`gen3_op_stashes_v1` /
+`gen3_extractor_stashes_v1`): every per-forward stash lives in ONE dataclass the forward replaces at
+ENTRY, **reads** go through the `last_*` properties and **writes** through `op.stash.<field>` /
+`fe.stash.<field>` — writing a `last_*` name raises. Add the dataclass field with its shape comment,
+never a bare `self.last_x = …`; each producer owns its own stash surface and a submodule never writes
+into its parent's. Gate: `extractor_stashes_test.py`. Detail:
+[`designs/model/op_contracts.md`](op_contracts.md).
+
+🚨 **THAT CONTRACT IS SINGLE-THREADED, AND `forward` IS NOT RE-ENTRANT.**
+"The forward replaces the stash at ENTRY" makes a stale read unrepresentable only while ONE forward
+is in flight per extractor — true of training (each env worker is its own process) and false the
+moment two threads share a model object, which `main.search_dividend`'s mirror did by design (deleted
+in P6 slice 6d-1, 2026-10-08). Measured 2026-09-22: two threads, one real extractor, 2,400 interleaved
+forwards ⇒ **1,063 failures in seven classes**, including `ValueThreatInject shape mismatch: tokens (1, 6)
+vs rows (9, 6)`. ⚠️ **The crash is the lucky case** — same-batch-size forwards corrupt each other
+silently. **There is NO guard any more** (`forward_guard.py`, the opt-in lock, had no caller after that
+deletion and was removed in the 2026-10-08 cleanup bundle): a thread-sharing caller gives each thread
+its OWN extractor (a deepcopy of the policy) or serializes the whole forward + its `last_*` reads itself.
+
+### 🚨 Our active's moves live in TWO orders — cross them by IDENTITY only (`gen3_move_legality_by_id_v1`)
+
+The per-mon move slots (`ctx.all_move_ids`, every encoder) are SORTED BY `Move.id` STRING; the request
+block (`ctx.our_active_req_move_*`) and actions 6–9 are in REQUEST order. **Never apply a request-order
+tensor to the per-mon slots by position, or a per-mon tensor to the request slots** — go through
+`extractor_ctx.active_request_sorted_match` (or `active_move_legality_sorted`), the ONE rule the pointer
+head, `PokemonEncoder` and the static encoder share. The positional form fired twice (the old prev-turn
+mask; then `PokemonEncoder`'s legality from `bcdd868b` to this fix, wrong on 6.8 % of real move-bearing
+decisions) and is silent whenever every move is legal. `move_legality_alignment_test.py` fails on it;
+`agents/action/ordering_integrity.check_obs_move_order` RAISES on a served row that breaks the rule's
+preconditions.
+
+### 🚨 An OPPONENT's ability is revealed only by its `known` flag (`gen3_op_ability_known_v1`)
+
+An unrevealed opponent's ability slot carries its species' TOP-1 Smogon-prior ability in `id1` with `known = 0`.
+The op read `ability1_ids > 0` as "revealed" until 2026-10-07 and so asserted the guess as CERTAIN in every
+damage / status / secondary kernel (Toxic "never landed" on an unrevealed Snorlax). **Read an opponent's ability
+through `extractor_ctx.ability_known` / `revealed_ability1_ids` (the op's `opp_ability_view` + `_known_or_prior`)
+and take the Smogon species marginal when it is unknown.** Status landing has ONE rule per direction
+(`_outgoing_status_land`; `_incoming_dedicated_land` + `status_rules.incoming_status_mask`). Gates:
+`ability_known_gate_test.py` (AST, allowlist EMPTY), `op_status_rules_test.py`; detail:
+[`designs/model/op_contracts.md`](op_contracts.md).
+
+### 🚨 Every DISCRETE op in the forward is DECLARED (`selection_sites.py`, `gen3_behaviour_tie_exclusion_v1`)
+
+The forward is piecewise-discontinuous: a `topk` / `argmax` / comparison whose operands sit within a
+rounding error of the cutoff resolves differently in T2's compiled forward and the learner's eager one,
+and log π jumps on that row. K9(b) EXCLUDES those rows by their TIE MARGIN and judges the rest
+deterministically (`designs/training/learner_gates.md`), so it must know every such op. **A new
+selection call, value-position comparison or float → int cast in a `FORWARD_MODULES` module must be
+declared in `selection_sites.py`** — a `MARGIN` rule when its operand is a score (it moves with the
+weights, or is float arithmetic a rounding error can push across the cutoff), an `EXACT` reason
+otherwise (observation / table / integer / gathered at a declared selection). `selection_sites_test.py`
+fails on an undeclared or stale entry, on a line mixing the two classes (the recorder resolves ops by
+LINE — split it), and when a site declared EXACT moves under a few-ulp weight jitter; at run time an
+undeclared op on a float operand is a typed FATAL at the first update. The keys are source text, so
+editing a declared line means re-declaring it. 🚨 **An `argmax` MARGIN rule may declare its `payload`**
+(`gen3_behaviour_tie_identity_v1`: the frame-local tensors its index gathers — a tie between candidates
+whose payloads are bit-identical is then no tie). The payload must be EVERYTHING the index reaches:
+`selection_sites_test` fails when the index is read anywhere but a `gather` of a declared payload, so a
+new consumer of a payload site's index means extending the declaration (or dropping it). 🚨 **Every
+`hypothesis_set.stable_order` caller declares how it READS the order** (`consumed`,
+`gen3_behaviour_tie_consumed_v1`): a `SetCuts` (a set before each cut: the op's per-mon move orders), a long
+count (in order up to it: the species order), or None (every pair: the move group). A new reader of an order
+declared `SetCuts` that reads its positions IN ORDER makes the declaration unsound —
+`tie_identity_integration_test` permutes every set prefix and requires log π bit-identical.
+### ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
+
+`BeliefHead.species_posterior` computes `P(species)` for the expected-latent defender. It is written
+as **`log_softmax(...).exp()`, not `torch.softmax(...)`, and that is deliberate** — do not
+"simplify" it.
+`extractor_compiles_test.py` owns the compile matrix and pins the spelling (a real compile of the
+production arch with suppression OFF; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `GEN3AI_TEST_ALLOW_GPU=1`
+for the CUDA cells, only under a GPU lease). The Inductor diagnosis:
+[`designs/model/op_contracts.md`](op_contracts.md).
+
+🚨 **A second load-bearing spelling: EVERY gradient-path value-reduction max is `max_by_index`, never `amax`**
+(`index_max.max_by_index`, a LEAF module; `damage_op` re-exports it; architecture audit F6a, after
+`gen3_fm_index_max_v1` / F-XC-4). `amax`'s backward divides by `Σ(x == amax)`; when Inductor RECOMPUTES
+`x` in the backward kernel and Triton's FMA contraction rounds it differently from the forward kernel,
+no element equals the saved max and the compiled gradient is 0/0 = NaN (CUDA, 41 parameters, 2026-10-05).
+`max_by_index(x, dim, keepdim)` gathers at the detached argmax: the same value bit for bit, a scatter
+backward, and on an exact tie the WHOLE gradient goes to the FIRST maximum (the declared convention). It covers
+the op's ten incoming channel maxima in EVERY configuration (belief on or off), the pairwise kernels, the
+status-landing maxima, the E5 tail's worst-phys/spec and `pair_reduce`'s inert pool; a NEW max over candidates on
+a gradient path uses it. `amax` / `amin` are legal only OFF any gradient path (a comparison operand, a table
+lookup, a constant, an observation indicator, a `no_grad` bracket, a diagnostic) — the list:
+[`designs/model/op_contracts.md`](op_contracts.md) "The op's MAXIMA". Its argmax is
+K9(b)'s one `MAX_VALUE` EXACT site (`selection_sites`; the index may only gather its own operand —
+`selection_sites_test` pins it). Detail: `designs/training/compile_flags.md`.
+**A max over THEIR believed candidates is a `--op-reduction` site** (`gen3_op_reduction_principled_v1`, audit F6b):
+spell it `op_reduction.believed_reduce(w · v, w_total)` (`max` → this same `max_by_index`, bit for bit;
+`principled` → the α-weighted expectation), never a bare `max_by_index`, or the `principled` arm silently keeps
+your max. A max over OUR moves stays a max. Keep the `max` expression VERBATIM — dynamo names graph nodes after
+local variables, so a renamed temporary changes the production graph hash
+([`designs/model/op_contracts.md`](op_contracts.md) "ONE switch").
+
+🚨 **A third: every FLOAT attention bias reaches SDPA through `dense_attn_bias`** (`gen3_dense_attn_bias_v1`,
+F-ST-8). Under Inductor, a bias built by in-place slice writes (`EdgeBias._write_block`'s head-innermost
+`m.permute(0, 3, 1, 2)`) is a FLEXIBLE buffer, and Inductor may lay it out head-innermost. Inductor's own SDPA
+stride constraint passes it unfrozen whenever the key count is a multiple of 8. CUDA's efficient kernel then
+raises "(*bias): last dimension must be contiguous". `--token-encoding static` (64 keys) died on this in the T2
+service's first graph build; legacy (62 keys) took the padded-copy branch and never did. `dense_attn_bias` pins the
+bias row-major (Inductor's `inductor_force_stride_order`; its identity backward is registered at import) and is
+`.contiguous()` in eager. A NEW SDPA call with a float mask goes through it. `dense_attn_bias_test.py` fails when a
+call site drops it. Its CUDA test reproduces the failure without the pin. A CPU compile cannot reproduce it,
+because the constraint's CPU branch always requires the stride order.
+
+🚨 **A forward reads PLAIN INTS precomputed in `__init__`, never a module attribute holding a sub-dict of `layout`**
+(`gen3_static_layout_ints_v1`, F-ST-9). `ObsUnpack.layout` reaches the same object, so dynamo installs an
+object-aliasing guard. On the `static` arm's CUDA launch that guard recompiled the learner's region after the
+compile lock (`[CompileSentinel] FATAL` at update 1), although the two objects stayed identical.
+`static_tokens_test.py` fails when the static encoder holds a layout container.
+
+**The general lesson:** a backend that "can't compile our model" was one op, not a property of the
+architecture. Before reaching for a global suppression flag, bisect to the op — see
+`designs/training/compile_flags.md` → Compiled CPU opponents.

@@ -295,3 +295,143 @@ it is absent from `agents/model/flag_registry.py`: that registry's declared scop
 architecture toggles, and this one reaches no extractor — the heads it selects between were already
 built by their own flags. It rides `snapshot.current_model_version(critic=…)` and
 `arch_toggles_from_model` so a frozen eval / pool / sentinel opponent's load gate sees it.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+
+### Model versioning (`model_version/`, `snapshot.py`)
+
+**`model_version` is a PACKAGE**; `__init__.py` is a pure re-export hub. What each module holds, what
+a save writes, the two sanitizers and the recorded-`critic` version gate:
+[`designs/model/versioning.md`](versioning.md). The playbooks are here.
+
+**When you change an architecture constant:**
+- `check_compatible()` catches the mismatch automatically — no extra steps needed
+- Old models can't be loaded, which is correct (rapid iteration project)
+
+**When you add an optional new feature** (new field with a sensible default):
+1. Add the field to `ModelVersionFields` in `model_version/fields.py`
+2. Bump `MODEL_CONFIG_VERSION`
+3. Add one `if version < N:` block in `_migrate_config()` with `data.setdefault(...)`
+
+🚨 **Every value `--arch production` writes must be a `ModelVersion` field**, including a DERIVED
+row's enabling coefficient. A launcher restart strips `--arch` and inherits only what
+`model_config.json` records. `opp_intent_coef` was not recorded until v125, and every such restart
+FATALed. When the past value is unknown, the migration leaves the field `None` rather than invent it
+(the v125 branch). Gate: `main/train/derived_toggle_resume_test.py`.
+
+🚨 **When you change what an observation cell MEANS without changing a shape** (a re-scale, a re-defined flag — v151's
+Toxic counter n/8 → n/15), set `OBS_SEMANTICS_VERSION` (`model_version/constants.py`) to the config version the commit
+stamps, add its clause to `OBS_SEMANTICS_REASON`, and re-pin `obs_semantics_test.py`'s golden hash. `check_compatible`
+cannot see this (shapes fit, so the weights load); the marker is what lets a READER — the prober's model views, via
+`main/prober/arch_status.py` — refuse a checkpoint recorded below it. It gates no resume. The test fails when the obs
+golden moves without it; a model-INTERNAL input fix the golden cannot see (an op edge cell) must be raised by hand.
+
+**When you make a structural change** (different forward pass, new layer type):
+1. Change `ARCH_SIGNATURE` in `model_version/constants.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
+2. Old models get a clear arch-family error on load
+
+🚨 **The X5 VERSION BREAK (config v144, `gen3_x5_version_break_v1`) RAISED `MIGRATION_FLOOR` to 144**: every
+pre-break checkpoint (blob or fixed_mass) is refused at the floor with the belief-specific reason and runs PINNED
+(`model_version/version_break.py` — `LAST_BLOB_COMMIT`, `check_post_break`, the pickled `belief_tokens` judgment).
+The post-floor `if version < N` branches (v122–v143) are unreachable and left in place (legacy manifest R1 / L1).
+**v145 (`gen3_mon_tied_gain_v1`) raised the floor to 145** (the op's `out_gain` tied across team slots): a v144 config
+is refused with `version_break.v144_reason()` and runs pinned at or before `LAST_V144_COMMIT`.
+
+**When you DELETE an extractor kwarg** — the case with no automatic gate, and the one this project
+has silently got wrong five times. Every archived checkpoint keeps the deleted name pickled in
+`policy_kwargs["features_extractor_kwargs"]`, and **SB3 rebuilds the extractor from the ZIP, not
+from `model_config.json`** — so a deleted kwarg `TypeError`s every training resume, frozen pool
+opponent and eval worker that touches such a checkpoint. `_migrate_config`'s `MIGRATION_FLOOR` does
+NOT cover it: the pickled kwargs carry no `config_version` for a floor to apply to.
+
+The judging procedure — `_DEAD_FEK_INERT` vs `_DEAD_FEK_JUDGED`, when `_migrate_config` needs a
+matching entry, and `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96` LAST — is in
+[`designs/model/versioning.md`](versioning.md). Do all three, in that order.
+
+**⚠️ REORDERING a module's parameters silently breaks the optimizer on resume.** SB3/torch save+load
+the Adam optimizer state **by parameter POSITION, not name**. So if a refactor changes the *order*
+`named_parameters()` yields (e.g. building submodules in `__init__` in a different sequence — the
+`gen3_nature_ev_belief_v1` bug, where `SpreadBelief.__init__` moved `reinject`/`norm` before
+`stat_head`), a resume's **weights** still load fine (name-keyed `load_state_dict` → arch check PASSES)
+but the **momentum** (`exp_avg`/`exp_avg_sq`) gets assigned to the WRONG params. It then crashes in
+`AdamW.step()` ("size of tensor a (128) must match b (5)") the moment a misassigned param of a
+different shape first gets a gradient — **data-dependently, so it can survive many steps**, and (until
+the guard) the broad `except` in the trainer masked it as a clean completion. Guard:
+`main/train/checkpoint_state._validate_or_reset_optimizer_state(model, checkpoint_path)` runs on every resume and
+**REMAPS the momentum to the current params BY NAME** — it reads the saved optimizer state + the saved
+parameter NAME ORDER straight from the checkpoint zip (`policy.optimizer.pth` + `policy.pth`) and
+rebuilds `opt.state` so each current param receives the momentum saved for its name, regardless of
+registration order. So a reorder is **corrected**, not just caught: a **same-shape** reorder (which a
+shape check CANNOT see and would silently scramble) now follows the name, and a name reused at a
+different shape (or a genuinely new param) cleanly drops to fresh zero-init. **This means "append new
+params LAST" is no longer load-bearing for optimizer correctness** — though still good hygiene. Falls
+back to the legacy shape-only drop-all-momentum reset only if the zip can't be read (never crashes a
+resume); no-op (momentum carried verbatim) on an aligned resume. Pinned by
+`src/main/resume_optimizer_realign_test.py` (incl. the same-shape-reorder + zip-read cases).
+
+**Resume-immutable training hparams (value-meaning, NOT weight-shape)** — `vf_coef`, the reward
+fields — are recorded on `ModelVersion` but **deliberately excluded from `check_compatible`**, which
+gates EVERY load including the frozen eval / pool opponents whose forward is identical
+regardless. They get a dedicated `check_*` on the training-resume path only, and the trainer
+FATALs on a mismatch exactly like an arch error. To add one: field + `MODEL_CONFIG_VERSION` bump +
+`_migrate_config` default, **plus** a dedicated `check_*` and an `enforce_*` opt-in on
+`load_model_snapshot`, and leave it out of `_WEIGHT_FIELDS`. The family list and the 2026-08-18
+default flip: [`designs/model/versioning.md`](versioning.md).
+
+The live `MODEL_CONFIG_VERSION` is in `model_version/constants.py`; per-version entries are in `designs/CHANGELOG.md`.
+
+- **What the architecture IS right now**: [`designs/ARCHITECTURE.md`](../ARCHITECTURE.md).
+- **What each version changed**: [`designs/CHANGELOG.md`](../CHANGELOG.md) — history, do not quote as current.
+- **The live values**: `MODEL_CONFIG_VERSION` and `ARCH_SIGNATURE` in `model_version/constants.py`. Read
+  them there. This file deliberately states neither: a version number in prose is stale the moment the
+  next one lands, and quoting a stale one is how a v30 description got applied to a v59 model.
+
+The mechanics above (what to bump when, the optimizer-reorder guard, the resume-immutable-hparam
+playbook) are the durable part and stay here. When you add a toggle, follow those rules, then record
+the entry in `CHANGELOG.md` and state the new truth in `ARCHITECTURE.md` — never narrate it here.
+
+A startup smoke test (`_run_roundtrip_test` in `main/train/lifecycle.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
+
+### The CRITIC MODE (`critic_mode.py`, the recorded `critic` field {shaped,winprob}, v109)
+
+`gen3_winprob_critic_mode_v1`. `critic` is a RECORDED field with two historical values, and
+`agents/model/critic_mode.py` is the ONE declaration of the legal set; since the X5 version break's part 2
+(architecture audit F1) the policy BUILDS only `winprob` — its `critic` kwarg defaults to `winprob` and any other
+value is refused before anything is built (the scalar `value_net` a `shaped` critic read is deleted with the
+whole SB3 value tower). That module is
+deliberately **torch-free and import-light**: `main.checkargs` promises not to import torch and
+needs the legal set to validate an argv offline. There is NO `--critic` flag any more (deletion pass P11b batch (b)): the win-prob critic is a CONSTANT of every trainer namespace, and `critic` survives as the FIELD `model_config.json` records, string-compared by `check_compatible` (an absent record still means `shaped`).
+
+| recorded `critic` | `_critic_value` returns | at HEAD |
+|---|---|---|
+| `shaped` (what an ABSENT RECORD means — `CRITIC_UNRECORDED`, for a `ModelVersion` / `model_config.json` read) | `value_net(latent_vf)` (historical) | NOT constructible: the policy refuses it, and every such checkpoint is below `MIGRATION_FLOOR` 144 — run it PINNED to its own commit |
+| **`winprob`** (the only critic; the policy kwarg's DEFAULT) | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]` | the only one built; no value tower exists |
+
+**Read the mode through `is_winprob`, never a bare `== "winprob"`** — one spelling, one answer, and
+a `getattr(obj, "critic", "shaped")` read answers correctly through it.
+
+🚨 **The version gate matters more here than for a typical structural flag: BOTH routes return a
+`[B,1]` float tensor**, so a flipped `critic` produces no shape error, no load failure and no metric
+that changes name — the run simply predicts a different quantity for the rest of its life. The string
+compare in `check_compatible` is the only thing standing between a resume and that. (No
+`ARCH_SIGNATURE` bump at v109 nor at the default flip; the version break's floor now refuses every
+`shaped` checkpoint anyway.)
+[`designs/model/versioning.md`](versioning.md) has both in full, and how the
+kwarg is threaded.
+
+### DELETED: PopArt, the distributional value head, `value_from_dist` (deletion pass L1, v131)
+
+`popart.py`, `ValueDistHead` (`--value-dist-*`), the `value_from_dist` critic route, the CVaR value-tail
+weight and the win-prob aux-BCE coefficient were levers of the shaped critic and of the Python env core, and
+every v121+ checkpoint recorded them OFF. They are DELETED (`designs/deleted_flags.md`). The recorded fields
+are popped by `_migrate_config`; a checkpoint that recorded PopArt / the dist head / `value_from_dist` ON is
+refused on every load, and a resume or fork of a run that recorded ANY retired lever ON is refused
+(`model_version/retired_levers.py` — each later deletion unit appends its levers to that one table). A
+checkpoint's PICKLED `use_popart` / `value_from_dist` (policy kwargs) and `value_dist_*` (extractor kwargs) are
+stripped on load by `snapshot._DEAD_POLICY_KWARGS_JUDGED` / `_DEAD_FEK_*` — a BARE `MaskablePPO.load` of a
+pre-deletion zip TypeErrors (`play.py` and the prober's loaders sanitize; `snapshot.historical_load_kwargs`
+is the helper). Detail: [`designs/model/versioning.md`](versioning.md).

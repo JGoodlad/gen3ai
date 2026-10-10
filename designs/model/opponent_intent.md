@@ -193,3 +193,103 @@ stays a shape error even in the phase whose entire job is producing a column of 
 another per-defender consumer, take α from the same `pair_alpha` / `pair_alpha_full` ladder rather
 than computing a defender-conditioned one; the planted-violation test in
 `pair_outcome_switch_test.py` is what proves the structure is real rather than merely intended.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+
+### Opponent intent — X5's FLAT POINTER, re-expressed as `α` / `β` (`flat_intent.py`; `opp_intent.py` keeps the shared constants)
+
+The build for one sentence the model could not express: *"they are likely to click **this**, so
+**this** is my answer."* `--opp-intent-coef>0` turns on the SUPERVISED opponent-intent readout, which since
+the X5 version break (v144) is X5's **flat pointer** (`gen3_x5_flat_pointer_v1`): ONE softmax over the
+opponent active's K move seats, OTHER_move, a switch to each of their six slots and OTHER_species, scored by
+one shared scorer plus each candidate's DETACHED log π. Its consumers read its RE-EXPRESSION
+(`fe.stash.flat_consumer_ops`, `flat_intent.FlatConsumerOps`): **`α`** over the K seats + OTHER_move + the
+switch mass, **`β`** over the six slots + OTHER_species. The pointer's shared scorer is BIAS-FREE (one scorer
+over ONE softmax: a bias is a common shift, audit F16b) — unlike the POLICY pointer head's three per-FAMILY
+scorer biases, which are not common to every logit and stay. The blob path's `AlphaIntentHead` /
+`BetaSwitchHead` are DELETED, and with them the `alpha_logits` / `beta_logits` / `alpha_seat_nums` stashes and the
+`last_alpha_logits` / `last_beta_logits` properties; the deleted poke-env trace recorder (`agents/inference/player.py`) and the deleted
+`main/search_dividend/alpha.py` (P6 slice 6d-1) read the flat pointer (`last_flat_intent_logits` /
+`last_flat_intent`). Why pointers, matching by canonical id, and why the label is shifted back
+one row before `get()` shuffles: [`designs/model/opponent_intent.md`](opponent_intent.md).
+
+**Supervision only:** the pointer reads a DETACHED input (`opp_intent_grad_mode` `detached`), so a null
+indicts its predictive power, not the policy. Structural + version-checked; requires the whole belief family
+(X5's requirements, refused at build); OFF builds none of it.
+
+#### 🚨 Reading `opp_intent/*` — take the `_pool` suffix, not the bare key
+
+Every metric is emitted **pooled AND per opponent class** (`_bot` / `_pool` / `_stable` /
+`_exploiter`, a class appearing only when it holds ≥2 supervised rows in the minibatch —
+`OPP_CLASS_NAMES`, mirroring `agents.training.opponent_classes`). **`_pool` — frozen selves — is
+the one that measures the thing the head is for.** Against the random bot the optimal prediction is
+uniform and the achievable gain is ~0 BY CONSTRUCTION; against a heuristic it is easy but models a
+decision tree rather than a player. Measured on gen-11: bot info gain **0.124 nats** vs pool
+**0.254**, with bot accuracy flat at ~0.50 all run.
+
+🚨 **The bare key is a MIX, and the mix MOVES** — supervised rows ran 100% bot at 2M and ~7% from 6M
+on, so a pooled metric rises as the mix shifts and that rise is indistinguishable from the head
+improving. Any trend spanning the ramp is uninterpretable. `flat_mask_rate` and `other_label_rate` (the flat
+pointer's, `opp_intent/*`; the blob α's `alpha_mask_rate` left with it, v144) are the coverage reads: a choice the
+pointer's named candidates miss is an OTHER label, supervised, never masked. Full metric inventory and the head→human path:
+[`designs/model/opponent_intent.md`](opponent_intent.md).
+
+##### 🚨 How a `β` slot is NAMED — two branches, and conflating them produced a wrong conclusion
+
+`β` points at a SLOT, so something has to name it, and **where the name comes from decides what the
+row means** (`gen3_beta_revealed_naming_v1`):
+
+| slot | named from | trace flag |
+|---|---|---|
+| already REVEALED on the board | (recorder history: the poke-env `battle.opponent_team` via `get_team_list`, deleted in T27 P6; the prober's current hypotheses view names a revealed slot from the obs's own opponent-team row, `main/prober/engine/readout.py`) | `"revealed": true` |
+| still HIDDEN | the model's OWN species posterior (`belief_decode.top_species_per_slot`) — the same content-addressing `β`'s training target uses | `"revealed": false` |
+
+**Traces already on disk cannot be repaired** (they baked the posterior name and do not carry the
+board), so the read side attaches `engine.BELIEF_NAME_CAVEAT` to any candidate not flagged
+`revealed` rather than inventing a replacement name. See `src/main/prober/CLAUDE.md`.
+
+#### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
+
+Nine modules now contract α against the op's physics (ten with `MoveResolutionCell`, `--move-resolution on`, which retires seven of them) (listed in
+[`designs/model/opponent_intent.md`](opponent_intent.md)). They share four
+conventions, and each exists because breaking it fails silently:
+
+1. **T1 produces, T2 consumes.** α is scored from the E4 seats and the CLS pools, both DOWNSTREAM
+   of the op — so the op cannot reduce by α, and every consumer runs at the pointer stash. A
+   "swap `_chan_max`'s `how=`" plan is unbuildable for that reason, not for want of a knob.
+2. **Read the flat pointer's re-expression (`FlatConsumerOps.alpha` / `.beta`, built from the
+   PUBLICATION), never a raw stash** — and take the **UNRENORMALIZED move slice** (OTHER_move included as a
+   PRICED seat). The missing SWITCH mass is the literally-correct statement that a switching opponent applies
+   no outcome this turn; renormalizing asserts they attacked.
+3. **Align by CONSTRUCTION and fail loud on a width mismatch.** α's seats and the op's top-K are
+   the SAME axis (`intent_axis_alignment_test`); broadcasting a mismatch would pair each α weight
+   with the wrong opponent move while every shape check still passed — the named `op move-order`
+   bug class.
+4. **Zero-init the projection**, and let `restore_identity_init` capture it by observation (M1).
+
+`pair_outcome.py` adds two worth copying — **stop-grad α unconditionally** on a policy-side consumer
+(resting on `label_only` makes the route's EXISTENCE a function of a TRAINING flag), and **give α a
+documented FALLBACK only if the flag can stand alone**, saying loudly that the R1 `belief_mean` rung
+is a different object from the publication.
+
+**⚠️ "Give it a fallback" is not the same as "a fallback is meaningful", and v94 is where the two
+came apart.** `SwitchBranchMoveCell` REFUSES one and requires `opp_intent` instead: every coordinate
+it computes is conditioned on `α_SWITCH` or on β, and the R1 rung is a presence belief over their
+MOVES with no switch class at all — so the fallback would set `α_SWITCH ≡ 0` and make every
+coordinate assert *"they never switch."* **A flag whose fallback silently states something false is
+worse than a flag that says it needs the head.** The test for whether to build one is not "can I
+compute something", it is "is what I would compute an ABSENCE or a CLAIM". Same rule kills the
+tempting `softmax` over an all-`-inf` β row: that yields a UNIFORM arrival distribution, which is a
+claim; the shipped code gates it to exactly zero.
+
+Two more rules, evidence in
+[`designs/model/opponent_intent.md`](opponent_intent.md): **before choosing an
+α rung, locate the consumer in the tier chain** — one inside `CLSPool` pools BEFORE the α/β heads
+exist, so its rung is fixed by ORDERING and is not a fallback; and **a critic-facing α consumer owes
+its own gradient guard** — `value_route_gradient_test.py` covers the `_value_pooled_routes` seam by
+construction, but the two token-content injections sit outside it by design, so extend that test in
+the same pass as any critic-side enrichment.
