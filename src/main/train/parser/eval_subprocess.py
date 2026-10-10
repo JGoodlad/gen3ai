@@ -86,8 +86,10 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                         type=int, default=10,
                         help="Retain the N most-recent eval weight snapshots in eval_traces/step_<N>/snapshot.zip "
                              "so the prober can reload the bit-exact model that produced a cycle's traces "
-                             "(~27MB each; default 10 ≈ 270MB). 0 only writes the identity manifest; the prober "
-                             "then falls back to the nearest persisted checkpoint.")
+                             "(~62MB each). Where the cycle's step is also a checkpoint step and the checkpoint is "
+                             "byte-identical (sha256) on the same filesystem, snapshot.zip is a HARD LINK to it, "
+                             "so the weights are stored once; else a copy. 0 only writes the identity manifest; "
+                             "the prober then falls back to the nearest persisted checkpoint.")
     parser.add_argument("--keep-eval-trace-steps", "--keep_eval_trace_steps", dest="keep_eval_trace_steps",
                         type=int, default=KEEP_EVAL_TRACE_STEPS_DEFAULT,
                         help="The trainer grooms the forensic traces it writes: after each eval cycle it "

@@ -6,12 +6,13 @@ snapshots and the trace dirs, the best-model copies, and the cycle's wall clock
 (``record_cycle_wall``). ``eval_callback`` re-exports every public name here.
 """
 import glob
+import hashlib
 import json
 import os
 import re
 import shutil
 import time
-from typing import Any
+from typing import Any, Optional, Tuple
 
 from agents.training.eval_launch import EVAL_MANIFEST_NAME, EVAL_SNAPSHOT_NAME
 from agents.training.eval_quota import ForensicQuota, _rule_for
@@ -158,27 +159,111 @@ def record_eval_selection(model_dir: str | None, step: int, merged: dict,
     return block
 
 
+def checkpoint_at_step(model_dir: "str | None", step: int) -> Optional[str]:
+    """``<model_dir>/checkpoints/checkpoint_<step>_steps.zip`` when it exists, else None.
+
+    The periodic checkpointer (`main.train.run_io._TrackingCheckpointCallback`) and the eval callbacks fire on the
+    SAME callback call whenever their cadences coincide, both naming the file by the model's ``num_timesteps`` -
+    and the checkpointer is first in the callback list, so at an eval step that is also a checkpoint step the
+    checkpoint is already on disk when the cycle's snapshot is persisted."""
+    if not model_dir:
+        return None
+    path = os.path.join(model_dir, "checkpoints", f"checkpoint_{int(step)}_steps.zip")
+    return path if os.path.isfile(path) else None
+
+
+def _sha256_file(path: str, chunk: int = 1 << 20) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            block = f.read(chunk)
+            if not block:
+                break
+            h.update(block)
+    return h.hexdigest()
+
+
+def store_eval_snapshot(snapshot_path: str, dst: str, checkpoint_path: Optional[str]) -> Tuple[str, str, str]:
+    """Put the cycle's weight snapshot at ``dst``; returns ``(mode, sha256, note)``.
+
+    ``mode`` is ``"hardlink"`` when ``checkpoint_path`` (the periodic checkpoint saved at the same step) exists on
+    the SAME filesystem as ``dst`` and is BYTE-IDENTICAL to ``snapshot_path`` (sha256 of both, size first) - ``dst`` is
+    then a second name for the checkpoint's inode, not a 62 MB duplicate of it (a run's eval traces were 416 MB of 484
+    MB of duplicated weights). Otherwise ``"copy"``, and ``note`` says why a link was not made. A hard link survives the
+    checkpoint's deletion (retention frees the blocks only when the LAST name goes), and ``snapshot.zip`` is an
+    ordinary file path to every reader.
+
+    🚨 ``dst`` is replaced ATOMICALLY (build ``dst.tmp``, then ``os.replace``) and never opened for writing: an
+    existing ``dst`` may already be a hard link to a checkpoint (a restart re-persisting the same step), and a plain
+    ``shutil.copy2`` onto it would truncate the CHECKPOINT through the shared inode.
+    """
+    tmp = dst + ".tmp"
+    try:
+        os.remove(tmp)
+    except FileNotFoundError:
+        pass
+    mode, note = "copy", "no periodic checkpoint at this step (eval and checkpoint cadences do not coincide here)"
+    digest = ""
+    if checkpoint_path is not None:
+        try:
+            if os.stat(checkpoint_path).st_size != os.stat(snapshot_path).st_size:
+                note = "the checkpoint at this step is not the same size as the snapshot"
+            elif os.stat(checkpoint_path).st_dev != os.stat(os.path.dirname(dst)).st_dev:
+                note = "the checkpoint is on another filesystem"
+            else:
+                digest = _sha256_file(snapshot_path)
+                if _sha256_file(checkpoint_path) != digest:
+                    note = "the checkpoint at this step is not byte-identical to the snapshot"
+                else:
+                    os.link(checkpoint_path, tmp)
+                    os.replace(tmp, dst)
+                    # POSIX rename() of one hard link onto ANOTHER NAME OF THE SAME INODE does nothing and
+                    # leaves the source: a re-persist over an existing link would strand `dst.tmp` (a third name).
+                    if os.path.lexists(tmp):
+                        os.remove(tmp)
+                    return "hardlink", digest, "hard link to " + os.path.join("checkpoints", os.path.basename(checkpoint_path))
+        except OSError as e:
+            note = f"linking failed ({e})"
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+    shutil.copy2(snapshot_path, tmp)
+    os.replace(tmp, dst)
+    return mode, digest, note
+
+
 def persist_eval_snapshot(model_dir: str | None, step: int, snapshot_path: str, keep_n: int) -> None:
-    """Copy a cycle's weight snapshot into ``eval_traces/step_<N>/snapshot.zip`` (next to
+    """Persist a cycle's weight snapshot as ``eval_traces/step_<N>/snapshot.zip`` (next to
     its traces), patch that step's manifest to point at it, then prune to the N most-recent.
 
-    No-op when ``keep_n<=0`` (traces still carry the identity manifest). Lets the prober
-    reload the bit-exact model that produced a cycle's traces. Shared by both eval callbacks.
+    The file is a HARD LINK to the periodic checkpoint saved at the same step when that exists on the same
+    filesystem and is byte-identical (:func:`store_eval_snapshot`), else a copy; the manifest's ``snapshot_storage``
+    says which. No-op when ``keep_n<=0`` (traces still carry the identity manifest). Lets the prober reload the
+    bit-exact model that produced a cycle's traces. Shared by both eval callbacks.
     """
     if keep_n <= 0 or not model_dir:
         return
     dst_dir = os.path.join(model_dir, "eval_traces", f"step_{step}")
     os.makedirs(dst_dir, exist_ok=True)
+    ckpt = checkpoint_at_step(model_dir, step)
     try:
-        shutil.copy2(snapshot_path, os.path.join(dst_dir, EVAL_SNAPSHOT_NAME))
+        mode, digest, note = store_eval_snapshot(snapshot_path, os.path.join(dst_dir, EVAL_SNAPSHOT_NAME), ckpt)
     except OSError as e:
         print(f"⚠️ [EVAL] could not persist snapshot for step {step:,}: {e}")
         return
+    if mode == "hardlink":
+        print(f"[EVAL] step {step:,}: snapshot.zip is a {note} (sha256 verified; the weights are stored once)")
+    elif ckpt is not None:
+        print(f"⚠️ [EVAL] step {step:,}: snapshot.zip COPIED although a checkpoint exists at this step: {note}")
     mpath = os.path.join(dst_dir, EVAL_MANIFEST_NAME)
     try:
         with open(mpath) as f:
             m = json.load(f)
         m["snapshot"] = EVAL_SNAPSHOT_NAME
+        m["snapshot_storage"] = {"mode": mode, "note": note, "sha256": digest or None,
+                                 "checkpoint": (os.path.join("checkpoints", os.path.basename(ckpt))
+                                                if mode == "hardlink" and ckpt else None)}
         with open(mpath, "w") as f:
             json.dump(m, f, indent=2)
     except (OSError, ValueError):

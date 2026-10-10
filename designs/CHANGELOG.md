@@ -13494,3 +13494,22 @@ read both cells for its end-of-turn rule and found them wrong.
 - `play.py`'s port refusal told the operator to run `npm run showdown -- 9017`; it now names the in-repo Rust websocket front
   end, `python -m utils.bridge.ws_frontend --port 9017`. `play_test.py` pins that the message names it, that the module
   exists and parses `--port`, and that the 8001 reason no longer claims a live training server.
+
+## 2026-10-10 — EVAL TRACES: `eval_traces/step_<N>/snapshot.zip` is a HARD LINK to the same-step checkpoint (no model, observation or training change)
+
+- **The waste.** Each eval cycle persisted a 62 MB copy of the weights at its step, and the periodic checkpointer had just
+  written the same bytes (the checkpointer is first in the callback list; both name the file by `num_timesteps`; the
+  cadences coincide): 416 MB of a run's 484 MB of eval traces, the battle records being 21 MB. Measured on a finished screen
+  run (`rb_st_legacy_s1001`, five coincident steps): the snapshot and the checkpoint were sha256-identical at every one.
+- **The change.** `eval_collect.persist_eval_snapshot` -> `store_eval_snapshot`: a hard link to
+  `checkpoints/checkpoint_<N>_steps.zip` when it exists on the same filesystem and is byte-identical (size, then sha256 of
+  both), else a copy; the manifest gains `snapshot_storage` (`mode`, `note`, `sha256`, `checkpoint`) and a copy made
+  although a checkpoint exists prints the reason. The file is replaced atomically (`dst.tmp` -> `os.replace`) and never
+  opened for writing, so a re-persist over an existing link cannot truncate a checkpoint through the shared inode (a plain
+  `copy2` would). Hard links survive deletion of the other name, so checkpoint retention is safe; every reader
+  (`prober.discovery` -> the prober's model loader, `eval_trace_gen`) opens an ordinary path. `main.prober.groom` no
+  longer counts a linked snapshot as reclaimed space (`bytes_hardlinked_not_freed`). Existing runs are not rewritten.
+- Tests: `agents/training/eval_snapshot_dedup_test.py` (link when identical; copy when no checkpoint / other bytes / other
+  size / no link possible; re-persist never writes through a link; survives the checkpoint's deletion; prune and groom
+  leave the checkpoint intact; the prober's exact tier and `eval_trace_gen` read it). Docs: `eval_and_rating.md`, the
+  training and prober leaves, the `--keep-eval-snapshots` help.

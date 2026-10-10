@@ -260,7 +260,10 @@ and loads the model **per selected battle**, not once at startup
 (`discovery.resolve_model_for_step(tree, step, override, tier)` → `ModelChoice`):
 
 1. **exact** — the retained `eval_traces/step_<N>/snapshot.zip` (written when
-   training ran with `--keep-eval-snapshots`); bit-exact, faithfulness ≈ 100%.
+   training ran with `--keep-eval-snapshots`); bit-exact, faithfulness ≈ 100%. Since 2026-10-10 it is a
+   HARD LINK to the same-step `checkpoints/checkpoint_<N>_steps.zip` where that is byte-identical
+   (the manifest's `snapshot_storage.mode`; a copy otherwise) — an ordinary path to this ladder, and it
+   survives the checkpoint's deletion.
 2. **nearest** — the persisted `checkpoint_<N>_steps.zip` with the smallest
    `|Δstep|` (exact weights at a nearby step). `discovery.list_checkpoints` searches BOTH the
    current `<run>/checkpoints/` and the legacy `<run>/` root (deduping a copy-backported step to
@@ -722,8 +725,9 @@ impl-invariant. The two known divergences and the build/override path: `designs/
 
 ## Retention / grooming (`groom.py`)
 
-Training writes a trace pair per sampled eval battle (+ a ~27MB snapshot per cycle
-when `--keep-eval-snapshots`, default 10, is on), so `eval_traces/` grows. The
+Training writes a trace pair per sampled eval battle (+ a ~62MB snapshot per cycle
+when `--keep-eval-snapshots`, default 10, is on — a hard link to the same-step checkpoint where one is
+byte-identical, so ~0 extra), so `eval_traces/` grows. The
 groomer prunes it — **scoped strictly to `eval_traces/`**:
 
 ```bash
@@ -732,12 +736,13 @@ python -m main.prober.groom <run_dir> [--keep-trace-steps 10] [--keep-snapshots 
 
 Keeps full traces for the K most-recent eval steps (deletes older step dirs) and
 `snapshot.zip` for the N most-recent. **Dry-run by default** — it prints a JSON
-report (`removed_steps`, `dropped_snapshots`, `mb_reclaimed`); pass `--apply` to
+report (`removed_steps`, `dropped_snapshots`, `mb_reclaimed`, `bytes_hardlinked_not_freed` — a
+hard-linked snapshot whose checkpoint stands frees no blocks and is NOT in `mb_reclaimed`); pass `--apply` to
 delete.
 
 This CLI is a **manual fallback**. The producer grooms its own data: the **trainer**
 (rl_agent eval callback) prunes after every cycle — `_prune_eval_snapshots`
-(`--keep-eval-snapshots`, default 10) — so a live run's ~27 MB weight snapshots stay bounded on
+(`--keep-eval-snapshots`, default 10) — so a live run's ~62 MB weight snapshots stay bounded on
 its own. 🚨 **`--keep-eval-trace-steps` now defaults to `0` = KEEP ALL** (2026-09-08): the old
 cap of 20 groomed arm A's 10M-step traces off disk and made the win-prob ladder's registered
 A@10M comparator uncomputable, so the TRACES are no longer auto-pruned at all. The

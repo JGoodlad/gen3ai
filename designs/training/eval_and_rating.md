@@ -482,10 +482,24 @@ three sit alongside a per-cycle
 **`eval_manifest.json`** (`write_eval_manifest`) recording exactly which model produced them
 — `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /
 `model_config.json`), and a `snapshot` pointer. The eval snapshot is normally ephemeral
-(`model.save` → the cycle loads it → deleted in `_cleanup`) and the eval `step` rarely lines up with
-a persisted `<run>/checkpoints/checkpoint_<N>_steps.zip`, so the prober can't reload the *exact* weights unless
-they're retained: `--keep-eval-snapshots N` copies the snapshot into
+(`model.save` → the cycle loads it → deleted in `_cleanup`) and the eval `step` lines up with
+a persisted `<run>/checkpoints/checkpoint_<N>_steps.zip` only where the two cadences coincide, so the prober can't reload the *exact* weights unless
+they're retained: `--keep-eval-snapshots N` puts the snapshot at
 `eval_traces/step_<N>/snapshot.zip` (keeping the N most-recent) and points the manifest at it.
+🚨 **`snapshot.zip` IS A HARD LINK to the checkpoint saved at the same step** (`eval_collect.store_eval_snapshot`,
+2026-10-10) when `checkpoints/checkpoint_<N>_steps.zip` exists on the same filesystem and is BYTE-IDENTICAL
+(sha256 of both, size first), else a copy. A finished screen run's five coincident steps were all sha256-identical,
+and the copies were 416 MB of a run's 484 MB of eval traces (the battle records are 21 MB). The manifest's
+`snapshot_storage` block says `{mode: hardlink|copy, note, sha256, checkpoint}`; a copy made although a checkpoint
+exists at that step prints `⚠️ [EVAL] … COPIED although a checkpoint exists` with the reason (not identical /
+other size / other filesystem / link failed). A hard link is an ordinary path to every reader, SURVIVES the
+checkpoint's deletion (the blocks go with the last name, so checkpoint retention can never orphan a trace) and
+leaves the checkpoint intact when the snapshot is pruned. 🚨 The file is replaced ATOMICALLY (`dst.tmp` then
+`os.replace`) and never opened for writing — a plain copy onto an existing link would truncate the CHECKPOINT
+through the shared inode. `main.prober.groom` counts a hard-linked snapshot as NOT reclaimed
+(`bytes_hardlinked_not_freed`). The ledger/archive caveat: a `cp -r` or a cross-filesystem move of a run dir
+un-links them (each name becomes its own copy). Existing runs are not rewritten. Pinned by
+`agents/training/eval_snapshot_dedup_test.py`.
 The prober consumes the manifest to load the exact model, falling back to the nearest
 checkpoint. **The trainer grooms the traces it writes**: after each cycle
 `_prune_eval_traces` keeps only the `--keep-eval-trace-steps` most-recent eval
@@ -585,7 +599,7 @@ Behaviors:
 | `--eval-shard-games` | `25` | Games per work-steal **shard unit** (battle-level work-stealing). Each opponent's `EVAL_GAMES` split into chunks any idle worker drains → the long tail collapses to one shard (≈4-shards-per-opponent default = ~4× shorter tail). Smaller = finer tail collapse but more player builds / (on websocket) more connection churn — the bridge is preferred for fine shards. `>= EVAL_GAMES` ⇒ one shard/opponent = the original opponent-level behaviour. Aggregation is exact (Σwon/Σfinished etc.); see the package below. |
 | ~~`--eval-device`~~ (DELETED, P11) | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
 | ~~`--eval-concurrency-per-worker`~~ (DELETED, P11) | `1` | Battles each worker overlaps **within** its claimed opponent (single-thread asyncio latency-hiding — NOT multi-core). `1` = today's sequential play. Threaded to the constructor's `eval_concurrency` → `cfg["concurrency"]` → `run_local_battles(concurrency=)` (bridge) / the player's `max_concurrent_battles` (websocket). See the concurrency note below. |
-| `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
+| `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~62MB each; a HARD LINK to the same-step checkpoint where one is byte-identical, so ~0 extra) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
 | `--keep-eval-trace-steps` | `0` (= **KEEP ALL**) | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle. 🚨 **Was `20`, and that default deleted arm A's 10M traces — the ladder's registered A@10M comparator — before anyone read them** (`gen3_keep_all_eval_traces_v1`, 2026-09-08). ~55 MB/cycle, ~3 GB for a 75M run. Pass a positive N to cap it again; `python -m main.prober.groom` is the manual fallback. |
 | `--keep-stalls` | `50` | Each cycle keep only the N most-recent `stalls/stall_*.html` replays (`0` = keep all). A self-play run writes thousands (~80 KB each); this caps the dir. `artifact_retention.py`; CLI fallback `python -m agents.training.artifact_retention`. |
 | `--keep-crashes` | `10` | Each cycle keep only the N most-recent `crashes/restart_err_*.txt` launcher diagnostics (`0` = keep all). Same module/CLI as `--keep-stalls`. |

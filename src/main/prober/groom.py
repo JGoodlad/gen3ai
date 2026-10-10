@@ -1,9 +1,13 @@
 """Groom a run's eval data so it doesn't grow without bound.
 
 Training writes a forensic trace pair (``*_summary.json`` + ``*_states.npz``) per
-sampled eval battle plus, with ``--keep-eval-snapshots``, a ~27MB weight snapshot
+sampled eval battle plus, with ``--keep-eval-snapshots``, a ~62MB weight snapshot
 per cycle — under ``<run_dir>/eval_traces/step_<N>/``. Over a long run this piles
-up. This groomer enforces retention, **scoped strictly to ``eval_traces/``**:
+up. (Where the cycle's step is also a checkpoint step the snapshot is a HARD LINK to
+that checkpoint, ``agents.training.eval_collect.store_eval_snapshot``: removing it
+frees nothing while the checkpoint stands, so the report counts only files whose
+LAST name this removes.) This groomer enforces retention, **scoped strictly to
+``eval_traces/``**:
 
 - keep full traces for the **K most-recent eval steps**; delete older step dirs;
 - among the steps kept, keep ``snapshot.zip`` only for the **N most-recent**
@@ -28,15 +32,26 @@ _SNAPSHOT_NAME = "snapshot.zip"
 _STEP_RE = re.compile(r"^step_(\d+)$")
 
 
-def _dir_size(path: str) -> int:
-    total = 0
+def _freed_by_removing(path: str) -> "tuple[int, int]":
+    """``(freed, shared)`` bytes for removing the file at ``path``: ``freed`` when it is the file's LAST name,
+    else 0 with its size counted as ``shared`` (a hard-linked eval snapshot whose checkpoint still stands frees
+    no blocks)."""
+    try:
+        st = os.stat(path)
+    except OSError:
+        return 0, 0
+    return (st.st_size, 0) if st.st_nlink <= 1 else (0, st.st_size)
+
+
+def _dir_size(path: str) -> "tuple[int, int]":
+    """``(freed, shared)`` bytes for removing the whole directory at ``path`` (see :func:`_freed_by_removing`)."""
+    freed = shared = 0
     for root, _dirs, files in os.walk(path):
         for f in files:
-            try:
-                total += os.path.getsize(os.path.join(root, f))
-            except OSError:
-                pass
-    return total
+            a, b = _freed_by_removing(os.path.join(root, f))
+            freed += a
+            shared += b
+    return freed, shared
 
 
 def _eval_root(path: str) -> str:
@@ -65,19 +80,22 @@ def groom_run(run_dir: str, keep_trace_steps: int = 10, keep_snapshots: int = 5,
 
     plan = []
     reclaim = 0
+    shared_total = 0
     for i, (step, path) in enumerate(steps):
         if i >= keep_trace_steps:
-            size = _dir_size(path)
+            size, shared = _dir_size(path)
             reclaim += size
-            plan.append({"step": step, "action": "remove_step", "bytes": size})
+            shared_total += shared
+            plan.append({"step": step, "action": "remove_step", "bytes": size, "shared_bytes": shared})
         else:
             snap = os.path.join(path, _SNAPSHOT_NAME)
             if i >= keep_snapshots and os.path.exists(snap):
-                size = os.path.getsize(snap)
+                size, shared = _freed_by_removing(snap)
                 reclaim += size
-                plan.append({"step": step, "action": "drop_snapshot", "bytes": size})
+                shared_total += shared
+                plan.append({"step": step, "action": "drop_snapshot", "bytes": size, "shared_bytes": shared})
             else:
-                plan.append({"step": step, "action": "keep", "bytes": 0})
+                plan.append({"step": step, "action": "keep", "bytes": 0, "shared_bytes": 0})
 
     if apply:
         for entry, (_step, path) in zip(plan, steps):
@@ -100,6 +118,9 @@ def groom_run(run_dir: str, keep_trace_steps: int = 10, keep_snapshots: int = 5,
         "dropped_snapshots": [e["step"] for e in plan if e["action"] == "drop_snapshot"],
         "bytes_reclaimed": reclaim,
         "mb_reclaimed": round(reclaim / 1e6, 1),
+        # hard-linked files (an eval snapshot that is a second name for its checkpoint): removed here, but their
+        # blocks stay while the other name stands - NOT counted in bytes_reclaimed
+        "bytes_hardlinked_not_freed": shared_total,
         "plan": plan,
     }
 

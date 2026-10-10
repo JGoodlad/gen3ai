@@ -339,6 +339,11 @@ safe points (`safe_point_fn`). The standalone Python eval oracle that outlived i
 retirement P6 slice 6c: every eval cycle, the offline ones included, plays on the Rust eval executor. An OFFLINE
 caller declares its own eval core + T2 slots through `rust_eval.offline` (`run_rust`; `build_models` for seeded
 perturbed checkpoints) — `main.ops.eval_trace_gen` generates a cycle for a saved checkpoint that way.
+🚨 **A cycle's retained `eval_traces/step_<N>/snapshot.zip` is a HARD LINK to the same-step checkpoint** when that is
+byte-identical (sha256) on the same filesystem, else a copy (`eval_collect.store_eval_snapshot`; the manifest's
+`snapshot_storage` says which): the weights are stored once, the link survives the checkpoint's deletion, and the file
+is replaced atomically so a re-persist never writes THROUGH a link into a checkpoint. Detail:
+`designs/training/eval_and_rating.md`; pinned by `eval_snapshot_dedup_test.py`.
 
 🚨 **THE FORENSIC TRACE'S RESULT VOCABULARY is `WIN` | `LOSS` | `DRAW`** (`gen3_trace_result_v2`,
 `trace_result.py`); a `DRAW` carries `meta.draw_kind` (`timeout` vs `tie`), and an unknown result is
