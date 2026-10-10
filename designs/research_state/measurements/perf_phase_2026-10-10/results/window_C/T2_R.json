@@ -1,0 +1,47 @@
+{
+ "tag": "T2_R",
+ "argv": "--arch static_recovery --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_6e0a1a7a/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 2.8544921875,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 1.2333698889706284
+ },
+ "imports_from": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_6e0a1a7a/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5620187,
+  "diagnostics_every": 10
+ },
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "SKIPPED",
+  "error": "--t2-only"
+ },
+ "train": {
+  "marginal_epoch_s": NaN,
+  "update_s_est": NaN
+ },
+ "t2": {
+  "startup_s": 250.10491379501764,
+  "per_bucket": {
+   "64": {
+    "median_ms": 3.44116851920262,
+    "p10_ms": 3.4289509407244623,
+    "p90_ms": 3.467459080275148
+   },
+   "256": {
+    "median_ms": 7.036270457319915,
+    "p10_ms": 7.012808963190764,
+    "p90_ms": 7.067944353912026
+   }
+  }
+ }
+}

@@ -101,7 +101,65 @@ closed form), except the item-1 pair, which ran on extracted trees of `957d4dbd^
     (UNVERIFIED): the rest are pageable host-to-device copies, which CUDA stages synchronously.
   - Window C profiles 3 epochs and runs the wrapped meter on the GPU (which also counts pageable H2D copies).
 
+## Window C: who idles the GPU, the SHARED compile cache, T2 per architecture (16:00–16:42)
+
+**E_stack** (`--profile --profile-epochs 3 --sync-sites`, HEAD `15982f6c`): plain update 53.8 s (gate PASS).
+
+| read | epoch 0 alone (window B) | 3 epochs | so, later epochs |
+|---|---|---|---|
+| GPU busy | 85.6 % | **92.1 %** | ~95 % |
+| `cudaStreamSynchronize` per micro-batch | 121 | 40 | ~0 |
+| kernel launches per micro-batch | 4,528 | 3,304 | ~2,700 |
+
+- The wrapped meter (every host-blocking Tensor call and every pageable host-to-device copy, on the GPU) counted
+  33 calls per micro-batch and 2.22 s blocked over 3 epochs.
+  - **1.75 s of it is one site**: `ridealong_heads.py:466` (`.item()`), in the ride-along accumulator's EPOCH-0 read
+    (`ridealong_terms.py:395`). It blocks once per micro-batch on the deep queue and drains it.
+  - Everything else is < 0.15 s.
+  - No pageable H2D copy appeared.
+- **Read:** the idle time is ~1 s per update in epoch 0 (that drain) plus ~5 % launch-bound gaps in each later epoch.
+  That is ~3 s per update in all (~6 %), not the 7 s first estimated (window B's correction stands).
+- The cheap fix is to make the ride-along epoch-0 read DEFERRED, as perf item 1 did for the learner: it rides the
+  optimizer step's batched transfer. NEXT.
+
+**The SHARED compile cache** (`gen3_shared_compile_cache_v1`, `62c6165e` + the clean-rule fix `15982f6c`): a FRESH
+one-update `--arch endstate` launch through the launcher's normal pinned path, a scratch archive, an empty shared root:
+
+| launch | cache line | T2 up | R1 reset + gate + prewarm | whole launch (start → `Training complete`) |
+|---|---|---|---|---|
+| cc_cold | `SHARED-NEW` (key `182d764f2a0e`) | **850.7 s** | not finished: killed by the 18-min budget mid-R1 | > 17.8 min |
+| cc_warm (a different fresh run) | `SHARED-HIT`, the same entry | **124.9 s (6.8× faster)** | **104.1 s** (vs ~277 s cold in the bench) | **5.6 min** |
+
+- A fresh launch or restart of an unchanged commit + config starts ~15 min faster: T2 −726 s, R1 ~−170 s.
+- The pinned worktree read CLEAN under the new rule (ignored importables counted), so pinned runs share.
+- Caveats:
+  - cc_cold was killed mid-R1, so cc_warm's R1 hit was at most partial and 104 s is an UPPER bound for a warm R1.
+  - n = 1 per arm; descriptive.
+  - The sharing-off control was skipped: a cold shared start compiles what a per-run cold start compiles.
+- The throwaway run dirs and the 3.3 GB shared root were deleted after the read. The launcher output is in
+  `results/window_C/logs/cc_{cold,warm}.log`.
+
+**T2 per flush, ONE slot** (graph backend, the service's own startup parity gate; `--t2-only`, code pinned at
+`6e0a1a7a`):
+
+| arch | bucket 64 | bucket 256 | T2 startup (2 buckets) |
+|---|---|---|---|
+| P | 3.17 ms | 6.38 ms | 243 s |
+| R (+ the third round) | 3.44 ms (+8.6 %) | 7.04 ms (+10.3 %) | 250 s |
+
+The third trunk round costs T2 about the share it costs the update. This matches `gpu_checks_endstate`'s per-step T2
+wait (+11 %). **E's T2 is NOT measured**: E_stack passed its buckets out of order and the service refused them; the
+harness now sorts them.
+
 ## Findings (standing rule 7)
+
+- **F-PC-1 (harness).** `--t2 256,64` was refused (`ServiceSpec: buckets must be strictly ascending`), so E's T2 is
+  lost. Fixed for later jobs; T2_P / T2_R ran with it.
+- **F-PC-2 (cold cache vs budget).** A cold `--arch endstate` launch takes > 17.8 min to its first update, with T2
+  alone 14.2 min. This is the per-restart cost the shared cache now removes, but only for a CLEAN tree at an unchanged
+  key.
+- **F-PC-3 (the closing test stays per-run).** At the orchestrator's request, the closing test's remaining seeds run
+  with `GEN3AI_SHARED_COMPILE_CACHE=0`, so their setup stays constant. They pay the cold startup every restart.
 
 - **F-PB-1 (bf16 gate).** The fp32 bar refuses bf16 by design: compiled vs eager loss rel 9.7e-4 at startup, and
   1.3e-4 at the canary on trained weights. Not a bug; it is the missing bf16 parity rule.
@@ -140,3 +198,5 @@ closed form), except the item-1 pair, which ran on extracted trees of `957d4dbd^
   dead first attempt (F-PA-1).
 - `results/window_B/{E_base,E_bf16,E_cudagraphs,E_coordesc,P_pre_item1,P_at_item1}.json` + `logs/` + `window.log`:
   window B. Raw traces are LOCAL (`~/gen3ai_archive/perf_phase_2026-10-10/traces/`).
+- `results/window_C/{E_stack,T2_P,T2_R}.json` + `logs/` (incl. the two launches' launcher output) + `window.log`:
+  window C.

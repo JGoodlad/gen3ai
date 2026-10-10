@@ -1,0 +1,11 @@
+[window C] START E_stack at 16:00:34 (budget 11 min, 44 min left)
+[window C] END E_stack rc=0 at 16:09:43: [bench E_stack] DONE: marginal epoch 5.24s, update est 53.8s, gate PASS
+[window C] START cc_cold at 16:09:43 (budget 18 min, 34 min left)
+[window C] END cc_cold rc=124 at 16:27:45: 
+[window C] START cc_warm at 16:27:45 (budget 9 min, 16 min left)
+[window C] END cc_warm rc=0 at 16:33:31: [CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 4 graphs in process, max 1 cache entries per code object (limit 8) — reset + prewarm took 104.1s Training complete. Model saved to /home/goodlad/gen3ai_archive/perf_phase_2026-10-10/runs/rb_t25_cc_warm_16
+[window C] START T2_P at 16:33:31 (budget 5 min, 11 min left)
+[window C] END T2_P rc=0 at 16:37:38: [bench T2_P] DONE: marginal epoch nans, update est nans, gate SKIPPED
+[window C] START T2_R at 16:37:38 (budget 5 min, 6 min left)
+[window C] END T2_R rc=0 at 16:41:52: [bench T2_R] DONE: marginal epoch nans, update est nans, gate SKIPPED
+[window C] FINISHED at 16:41:52

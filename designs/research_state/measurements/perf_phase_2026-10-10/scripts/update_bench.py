@@ -456,7 +456,7 @@ def main():
         if a.trunk_precision != "fp32":
             from agents.model.trunk_precision import set_trunk_precision
             set_trunk_precision(tmpl, "fp32")
-        buckets = tuple(int(b) for b in a.t2.split(","))
+        buckets = tuple(sorted({int(b) for b in a.t2.split(",")}))   # the service requires strictly ascending
         t0 = time.perf_counter()
         spec = ServiceSpec(groups=(SlotGroupSpec("bench", 1, tmpl),), device="cuda", backend="graph",
                            buckets=buckets, max_rows_per_flush=max(1024, max(buckets)), lanes=1)

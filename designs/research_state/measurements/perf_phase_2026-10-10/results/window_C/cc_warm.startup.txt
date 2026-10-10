@@ -1,0 +1,2 @@
+[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 4 graphs in process, max 1 cache entries per code object (limit 8) — reset + prewarm took 104.1s
+Training complete. Model saved to /home/goodlad/gen3ai_archive/perf_phase_2026-10-10/runs/rb_t25_cc_warm_1627/final_model

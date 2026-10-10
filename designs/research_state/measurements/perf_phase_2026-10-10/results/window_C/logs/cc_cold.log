@@ -1,0 +1,61 @@
+[mem_cap] cap 40.00 GB (swap 0) · unit gen3ai-capped-main.launcher-3025344.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🖥  No TTY on stdin — launcher running HEADLESS (TUI disabled, events echoed below). Start it from a terminal for the interactive dashboard.
+[16:09:44] disk space  : ✓ 503.36 GiB free on /home/goodlad/gen3ai_archive/perf_phase_2026-10-10/runs vs 32.10 GiB REQUIRED (checkpoint no checkpoint of this run, no fork source and no sized run in the archive)
+[16:09:44] showdown deps : ✓ /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a6972c46074d027ef/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+[16:09:44] RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@49cd523f38ee]
+[16:09:44]   --arch endstate applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+[16:09:44]   sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+[16:09:44]   ✓ every RECIPE knob matches recipe.fresh (28 knobs)
+[16:09:45] ARCH SURFACE vs designs/production_config.json + arm 'endstate' (main/train/arch_arms.py)  [endstate@production_config@49cd523f38ee+overlay@2b359668]
+[16:09:45]   --arch endstate applied the production surface + the arm's overlay token_encoding='static', mon_hazard_cost='on', move_actor_state='on', trunk_layers=3, switch_hazard_cost='on', eot_residual='on', move_resolution='on', speed_physics='on', value_threat_inject=False, op_reduction='principled', obs_facts='v1', move_resolution_facts='full', status_facts='exact', ko_ramp='exact', drop_progress_clock='on', g_ledger='eot', effective_stats='on', move_target_state='on', move_set_closure='on' (explicit flags still win; the RECIPE is production's)
+[16:09:45]   ✓ every ARCH-surface key matches the production mirror + the arm 'endstate' (57 of 65 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+[16:09:45] 🚀 Starting — single run (no restart)
+[16:09:45] 🐍 Interpreter: /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 (torch 2.8.0+cu126) — FRESH launch; this torch is recorded at the run's first save
+[16:09:45] 🌉 Transport: in-process bridge [rust] (no Showdown server)
+[16:09:45] 📌 Pinned to 15982f6c (isolated worktree)
+[16:09:46] ✅ Child PID 3025375 started
+[16:09:47] ⚖️  [EVAL REGIME] promotion: first win_rate_vs_pool > --promote-threshold (--no-promotion-sprt, source=default)
+[16:09:47] ⚖️  [EVAL REGIME] in-loop eval pairing: unpaired games (--no-eval-mirrored-pairs, source=default)
+[16:09:47] ⚖️  [EVAL REGIME] eval sentinels GREEDY + symmetric teams (--eval-sentinel-greedy, source=default); promote_threshold=0.55 (source=default)
+[16:09:47] ARCH SURFACE vs designs/production_config.json + arm 'endstate' (main/train/arch_arms.py)  [endstate@production_config@49cd523f38ee+overlay@2b359668]
+[16:09:47]   --arch endstate applied the production surface + the arm's overlay token_encoding='static', mon_hazard_cost='on', move_actor_state='on', trunk_layers=3, switch_hazard_cost='on', eot_residual='on', move_resolution='on', speed_physics='on', value_threat_inject=False, op_reduction='principled', obs_facts='v1', move_resolution_facts='full', status_facts='exact', ko_ramp='exact', drop_progress_clock='on', g_ledger='eot', effective_stats='on', move_target_state='on', move_set_closure='on' (explicit flags still win; the RECIPE is production's)
+[16:09:47]   ✓ every ARCH-surface key matches the production mirror + the arm 'endstate' (57 of 65 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+[16:09:47] RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@49cd523f38ee]
+[16:09:47]   --arch endstate applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+[16:09:47]   sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+[16:09:47]   ✓ every RECIPE knob matches recipe.fresh (28 knobs)
+[16:09:47] 🌉 Transport: in-process BattleStream bridge [rust] for BOTH training and eval (no Showdown server needed)
+[16:09:47] ℹ️  [BRIDGE=rust] __RECON__ and resumeReseed are SUPPORTED (gen3_bridge_recon_record_v1 / gen3_bridge_resume_reseed_v1), and so are the OFFLINE search/replay drivers (gen3_rust_search_driver_v1 / gen3_rust_replay_driver_v1 — one search_driver binary serves open_root/expand_many AND replay/reroll/reroll_many), so better-line / lookahead / falsify / the SEARCH TEACHER all run on rust. Select the driver impl with --impl / POKESIM_SEARCH_DRIVER_BIN. Honest scope, ONE known gap: pre_state volatile NAMES are reconstructed from typed fields and only the duration-1 exclusion is gated — pre_state has no consumer today. (The CHOICE-REJECT framing gap this warning used to name is CLOSED — gen3_choice_reject_framing_v1 emits the [Invalid]/[Unavailable] forms and re-requests the offending side ONLY; both parity harnesses' allowlists are down to error TEXT. And poke-env DOES reach that path — gen3_locked_choice_never_rejected_v1 killed two launches there — so do not treat it as unreachable.)
+[16:09:55] 🦀 [BRIDGE=rust] sim_bridge binary (prebuilt, published to children): /tmp/launcher-15982f6c-eec75te5/src/rust_sim/target/release/sim_bridge
+[16:09:55] ⚡ --compile-trainer ON by default (device=cuda) — ~1.75x on the PPO train step. --no-compile-trainer opts out. Compile failure is FATAL by design.
+[16:09:55] 📦 72 sample teams (bias) / 719 total loaded
+[16:09:58] 🧭 [MATCHUP fb823b7177] trainee teams: full pool + 10% sample-team bias
+[16:09:58]    opponent teams: full pool | mix: self_play
+[16:09:58]    eval: trainee on full pool + 10% sample-team bias vs opponents greedy
+[16:09:59] 🧊 [CompileCache] SHARED-NEW /home/goodlad/.cache/gen3ai/tmp/t25_cc_20261010/182d764f2a0eff71bedcd242d44d68a6 — clean tree, key 182d764f2a0e; a new entry (cold); 0.0 / 20 GiB after pruning 0 entries (0.0 MB before; torch 2.8.0+cu126, code 15982f6ce5, config row 77ec780af9) [gen3_hermetic_compile_cache_v1]
+[16:09:59] [Reward] composition: 1 TERMINAL + 0 PBRS + 0 BIAS (none — fully policy-invariant)
+[16:09:59] 🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS that head's BCE against the terminal outcome, weighted by --vf-coef 0.5. Reward = the TERMINAL WIN INDICATOR alone; gamma=1; win_prob_mode='shaping'. At victory_value 1.0 and gamma 1.0, V(s) == P(win|s) exactly. ⚠️ A [0,1] critic cannot express 'a timeout is worse than a loss' — stall rate and mean episode length are PRIMARY endpoints on this arm.
+[16:09:59] ⚙️ Initializing 256 envs (RustVecEnv — the M5 Rust env core)
+[16:09:59] 🎮 [SELFPLAY] Pool has 0 snapshots, win_rate_vs_bots=0.00% → self_play_fraction=0% (live, per-episode)
+[16:10:08] 🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 9.5 s (/tmp/launcher-15982f6c-eec75te5/src/rust_env/target/release)
+[16:24:23] 🦀 [RUST ENV] T2 up in 850.7s: 1 slot group(s) [('pool0', 31)], trainee slot(s) [24], buckets (8, 64, 256) (non-trainee slots <= 64), lanes 8, backend graph on cuda
+[16:24:24] 🦀 [RUST ENV] core up in 0.1s: 256 envs x 8 threads (proc front end, release build), 717 teams validated by use, label families ['belief', 'spread', 'hp_type', 'item', 'margin', 'intent'], 32 routes
+[16:24:24] 🦀 [RUST ENV] collector: complete-game buffer, update at >= 98,304 completed-game rows (quantum 2,048); arena 362,496 rows; opponent sampling keyed (gen3_keyed_draw_v1)
+[16:24:26] 🦀 [RUST EVAL] eval core up in 0.1s: 64 envs, 717 teams validated by use, routes: 9 bots (in core, per-episode streams) + 5 sentinel slot(s) [26, 27, 28, 29, 30] + fixed [] (loaded []) + filler; trainee eval slot 25
+[16:24:26] 🦀 [ENV CORE] rust — 256 envs x 8 threads, proc/release, complete-game buffer, update at >= 98,304 completed-game rows (quantum 2,048), T2 graph buckets (8, 64, 256)
+[16:24:26] ⚡ [CompileTrainer] ON — the learner compiles as its DECLARED REGION (R1, the micro-step) at the compile sentinel, gated there (gen3_one_gate_per_region_v1)
+[16:24:28] [CompileControl] dynamo reset at startup: dropped 3 cache entries compiled before the region was installed [decide (engine.py:41) x3] (now 0)
+[16:24:28] [CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)
+[16:27:43] 📡 SIGTERM received — saving checkpoint & shutting down…
+[16:27:43] 📡 SIGTERM received — saving checkpoint & shutting down…
+[16:27:43] 👋 Quit requested — waiting for child to save…
+[16:27:43] 👋 Quit requested — waiting for child to save…
+[16:27:43] 👋 Quit complete.
+
+📄 Full child log: /home/goodlad/gen3ai_archive/perf_phase_2026-10-10/runs/rb_t25_cc_cold_1609/launcher_child.log
+📚 Untrimmed copy (rotating, 1 file(s)): /home/goodlad/gen3ai_archive/perf_phase_2026-10-10/runs/rb_t25_cc_cold_1609/launcher_child.full.log
+
+── Training session ended ──────────────────────────────────────
+  Run folder : /home/goodlad/gen3ai_archive/perf_phase_2026-10-10/runs/rb_t25_cc_cold_1609
+  Restarts   : 0
+[mem_cap] done: gen3ai-capped-main.launcher-3025344.scope exit 0 · peak 15.61 GB of cap 40.00 GB (39%) · not OOM-killed
