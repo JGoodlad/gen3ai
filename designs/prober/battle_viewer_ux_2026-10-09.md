@@ -21,8 +21,18 @@ this note explains the decisions behind it. Owner's words, collected over the ev
 and how the model thought — and can judge "how is the model doing, compared to how I'd be
 reasoning?".
 
-Screenshots (before / after, desktop 1440 px and phone 390 px, locked and unlocked) live in
-`~/gen3ai_archive/prober_ux_2026-10-09/{before,after}/`. Audit inputs: the real run
+Screenshots (before / after, desktop 1440 px and phone 390 / 360 px, locked and unlocked, all three
+perspectives) live in `~/gen3ai_archive/prober_ux_2026-10-09/{before,after}/`.
+
+**As built (2026-10-09), in four commits:** `2ec395c0` this note · `2f8197ea` the merged viewer (§3–§6,
+§9, §11) · `3e309bbb` the scouting notes (§7; the belief data built by a delegated sub-agent to a written
+spec) · `82aae1aa` the phone (§10). Where the build went beyond or differs from the text below: on a
+phone the site NAV also folds behind one labelled 44px menu button (the wrapped tabs + run picker had
+cost 150–230px before any content; now 63px); both sides' distributions show their 9 likeliest rows and
+fold the rest, the same cut on both; never-seen opponent mons render as compact marked cards under
++ Truth only; the model slots say WHY on first paint when the model cannot run on a step (merged with
+the parallel run-picker / arch-status work, `927bb9f4`). STILL OPEN (T29): scan / triage tables on a
+phone, `/analyze`'s phone form, swipe navigation, and the owner's sign-off on a real phone. Audit inputs: the real run
 `rb_st_static_s1008` (Rustboro era, 1,448 traced battles; its checkpoints predate the X5 break, so
 its model views are locked out as an older architecture) and a HEAD-architecture CPU smoke
 (`--debug --arch production --debug-eval`, config v151, 54 traced battles) served from a scratch
