@@ -194,6 +194,10 @@
 
 {# ----------------------------------------------------------------------------- distributions #}
 
+{# Both sides' distributions show their DIST_TOP likeliest rows and fold the rest (same cut on both, for
+   parity) — a 17-candidate α list was a phone screen of 3% bars. #}
+{% set DIST_TOP = 9 %}
+
 {# One distribution row: label, bar, percent; the mark says what happened. Same component on both sides. #}
 {% macro dist_row(label, p, cls, mark="", mark_title="", title="") %}
 <li class="drow {{ 'marked' if mark else '' }}" {% if title %}title="{{ title }}"{% endif %}>

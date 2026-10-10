@@ -31,12 +31,17 @@
 <div id="game-intent" class="pcol them" hx-swap-oob="true" data-model-state="ok">
   <h3>{{ g.chip("opp") }} What we expected them to do <span class="muted small" title="{{ G['α'] }}">— α, the opponent pointer</span></h3>
   {% if d.intent %}
+  {% set cands = d.intent.candidates | sort(attribute='p', reverse=True) %}
+  {% macro cand_row(c) %}{{ g.dist_row(c.label, c.p, "them", "◀" if c.actual else "", "what they did",
+                  c.term ~ (' — ' ~ G['OTHER_move'] if c.kind == 'other_move' else (' — ' ~ G['OTHER_species'] if c.kind == 'other_species' else ''))) }}{% endmacro %}
   <ul class="dist them" data-dist="intent">
-    {% for c in d.intent.candidates | sort(attribute='p', reverse=True) %}
-    {{ g.dist_row(c.label, c.p, "them", "◀" if c.actual else "", "what they did",
-                  c.term ~ (' — ' ~ G['OTHER_move'] if c.kind == 'other_move' else (' — ' ~ G['OTHER_species'] if c.kind == 'other_species' else ''))) }}
-    {% endfor %}
+    {% for c in cands[:g.DIST_TOP] %}{{ cand_row(c) }}{% endfor %}
   </ul>
+  {% if cands | length > g.DIST_TOP %}
+  <details class="more-rows"><summary>{{ cands | length - g.DIST_TOP }} less likely{% if cands[g.DIST_TOP:] | selectattr("actual") | list %} — incl. what they did{% endif %}</summary>
+    <ul class="dist them">{% for c in cands[g.DIST_TOP:] %}{{ cand_row(c) }}{% endfor %}</ul>
+  </details>
+  {% endif %}
   {% if d.intent.actual_text %}
   <p class="oppdid {{ '' if d.intent.actual_col is not none else 'miss' }}"><span class="dmark">◀</span> {{ d.intent.actual_text }}
     {% if d.intent.p_actual is not none %}<span class="tag {{ 'ok' if d.intent.top_hit else '' }}">the model gave it {{ g.pc(d.intent.p_actual) }}{% if d.intent.top_hit %} — its top guess{% endif %}</span>

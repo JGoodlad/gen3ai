@@ -438,6 +438,21 @@ def test_no_page_scrolls_sideways_on_a_narrow_viewport(server, browser, path):
         f"{path}: document scrollWidth {data['docw']} > viewport {data['vw']}")
 
 
+@pytest.mark.parametrize("phone", ["360", "430"])
+@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/game", "/analyze", "/falsify",
+                                  "/calibration"])
+def test_every_page_at_true_phone_widths_scrolls_nowhere_with_a_tappable_menu(server, browser, path, phone):
+    """T29: every page at 360 and 430px — the page never scrolls sideways (wide tables scroll in their own
+    box), the header is the folded one-row menu, and its button is a 44px target."""
+    data = _probe(browser, server, path, size=PHONES[phone])
+    assert data["narrow"] == "1"
+    assert data["overflowby"] == "0", (
+        f"{path} overflows by {data['overflowby']}px at {phone}px — widest offender: {data['overflowwhat']}")
+    assert int(data["docw"]) <= int(data["vw"]) + 1
+    assert int(data["headerh"]) <= 80, f"{path}: the phone header is {data['headerh']}px"
+    assert int(data["tapmin"]) >= 44, f"{path}: a control is {data['tapmin']}px: {data['tapwhat']}"
+
+
 def test_a_wide_table_scrolls_inside_its_wrapper_not_the_page(server, browser):
     """The mechanism behind the rule above, asserted directly.
 
@@ -585,21 +600,36 @@ def test_form_controls_are_large_enough_not_to_trap_ios_zoom(server, browser):
 
 
 def test_the_narrow_header_stays_compact_and_hides_nothing(server, browser):
-    """The nav WRAPS rather than becoming a horizontal strip.
+    """T29 (2026-10-09): on a phone the nav and the run picker fold behind ONE labelled menu button.
 
-    The arch viewer shipped that strip: six controls in a scrollable bar of which exactly one was
-    ever visible, with nothing to say the rest existed. Wrapping costs a line and hides nothing —
-    so the header is allowed to be tallish, but must not be a scroll.
+    The page's content then starts near the top of the screen instead of under ~150–230px of wrapped
+    tabs and picker (measured before the fold: 26px text-link tabs, a 160px budget). What must NOT
+    happen is the arch viewer's failure — controls hidden in a scroll strip nobody can see — so the
+    button NAMES the page you are on, is a 44px target, and opening it shows every tab (each 44px)
+    and the picker. The fold is CSS-only (a checkbox + its label): it works with JavaScript off.
     """
     data = _probe(browser, server, "/scan", size=NARROW)
-    # 160px buys three wrapped rows at this width: brand + auth badge, six nav tabs, and the run
-    # picker. That is more furniture than the 130px this allowed before the picker existed, and
-    # the trade is deliberate — the header is NOT sticky on narrow, so its height costs one scroll
-    # rather than a permanent slice of the screen, whereas the ways of making it shorter all mean
-    # hiding a control behind something (the exact regression the docstring above is about).
-    assert int(data["headerh"]) <= 160, (
-        f"the header is {data['headerh']}px of a phone screen — too much furniture")
-    assert data["overflowby"] == "0", "the nav is overflowing rather than wrapping"
+    assert int(data["headerh"]) <= 80, (
+        f"the header is {data['headerh']}px of a phone screen — the nav is not folded")
+    assert data["overflowby"] == "0", "the header is overflowing"
+
+    def drive(page):
+        closed = page.eval("(() => { const b = document.querySelector('.navbtn').getBoundingClientRect();"
+                           " return {btn: Math.min(b.width, b.height), label: document.querySelector('.navbtn').textContent,"
+                           " tabs: document.querySelector('nav.tabs').getBoundingClientRect().height}; })()")
+        assert closed["btn"] >= 44 and "scan" in closed["label"], closed
+        assert closed["tabs"] == 0, "the nav is not folded on a phone"
+        page.click(".navbtn")
+        opened = page.wait_for(
+            "(() => { const t = [...document.querySelectorAll('nav.tabs a')].map(a => a.getBoundingClientRect());"
+            " return t.length && t.every(r => r.height > 0) ? {n: t.length, min: Math.min(...t.map(r => Math.min(r.width, r.height))),"
+            " picker: document.querySelector('#runsel').getBoundingClientRect().height,"
+            " over: document.documentElement.scrollWidth - innerWidth} : null; })()",
+            timeout=scale_timeout(10.0))
+        assert opened["n"] >= 7 and opened["min"] >= 44, f"a nav tab is not a 44px target when the menu is open: {opened}"
+        assert opened["picker"] > 0, "the run picker is not in the opened menu"
+        assert opened["over"] <= 1, "the opened menu scrolls the page sideways"
+    _clicked(browser, server, "/scan", NARROW, drive)
 
 
 def test_the_narrow_header_stays_compact_with_the_show_all_link(archive_server, browser):

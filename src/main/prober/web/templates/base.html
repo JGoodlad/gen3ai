@@ -18,6 +18,12 @@
       data-unlocked="{{ '1' if unlocked else '0' }}">
 <header class="top">
   <span class="brand">gen3ai prober</span>
+  {# PHONE (T29): the nav and the run picker fold behind ONE labelled 44px menu button that names the page
+     you are on — a CSS-only toggle (a checkbox + its label), so it works with JavaScript off. On a wider
+     screen the button is hidden and `.navwrap` is `display: contents`: the header is what it always was. #}
+  <input type="checkbox" id="navtoggle" class="navtoggle" aria-controls="navwrap">
+  <label for="navtoggle" class="navbtn" title="pages and runs" aria-label="menu — pages and runs (now: {{ page_name }})"><span aria-hidden="true">☰</span> {{ page_name }}</label>
+  <div class="navwrap" id="navwrap">
   <nav class="tabs">
     {% for href, label in nav %}
     <a href="{{ href }}{% if run %}?run={{ run | urlencode }}{% endif %}"
@@ -51,6 +57,7 @@
     <noscript><button type="submit">go</button></noscript>
   </form>
   {% endif %}
+  </div>
 
   <span class="authbox">
     {% if not auth_required %}

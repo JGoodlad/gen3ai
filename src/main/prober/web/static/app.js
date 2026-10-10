@@ -159,7 +159,7 @@
     /* TAP TARGETS (T29): the smallest side of every visible control the viewer is driven with —
        the turn rail's rows, the step bar, the battle / decision arrows, the perspective switch.
        `tapwhat` names the offender so a failure carries its own fix. */
-    var taps = document.querySelectorAll(".trow > a, .stepbtn, .iconbtn, .persp-opt, .rail > summary");
+    var taps = document.querySelectorAll(".trow > a, .stepbtn, .iconbtn, .persp-opt, .rail > summary, .navbtn");
     var tapmin = null, tapwhat = "";
     for (var t = 0; t < taps.length; t++) {
       var tr = taps[t].getBoundingClientRect();

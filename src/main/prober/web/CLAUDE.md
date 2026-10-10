@@ -711,11 +711,14 @@ becomes a drawer of the SAME rows and a sticky bar carries prev / next as 44px b
 asserted — the render test reads `monstack`, `overflowby`, `vpanels` and `tapmin` at 360, 390, 430 and
 1440px (T29).
 
-Under `@media (max-width: 720px)` the layout instead: drops the sticky header and truncates the run path,
-**wraps** the nav (never a horizontal strip — the arch viewer shipped that strip and five of its
-six controls were invisible), gives each filter control its own full-width row at **≥16px** (below
-that, iOS zooms the page when a `<select>` takes focus and does not zoom back out), and tightens
-the paddings.
+Under `@media (max-width: 720px)` the layout instead: drops the sticky header and **folds the nav and
+the run picker behind ONE labelled 44px menu button** (T29, 2026-10-09: brand · `☰ <this page>` ·
+unlock in one row, ≤ 80px measured, where the wrapped tabs + picker had cost 150–230px before a page's
+content began). Opened, every tab is a 44px cell of a 4-column grid and the picker its own row. It is a
+CSS-only toggle (a checkbox + its label), so it works with JavaScript off, and the button NAMES the
+page you are on — never the arch viewer's failure of a horizontal strip whose controls nobody could see.
+It also gives each filter control its own full-width row at **≥16px** (below that, iOS zooms the page
+when a `<select>` takes focus and does not zoom back out), and tightens the paddings.
 
 Two things bite that are not obvious:
 
@@ -774,9 +777,10 @@ like it asserted something (which is exactly what the first draft of these did).
 `--window-size` to ≥500 px wide (measured, both `--headless` and `--headless=new`). The CDP driver
 sets the layout viewport exactly (`Emulation.setDeviceMetricsOverride`), so a true 390 is now
 possible; 500 is KEPT so every layout measurement stays comparable with its history, and the 720px
-breakpoint sits comfortably above it, so every phone rule is exercised. Moving to 390 is a
-deliberate change of what is gated, not a free cleanup (the header-height bound, for one, was set
-at 500).
+breakpoint sits comfortably above it, so every phone rule is exercised. **The TRUE phone widths are
+gated beside it (T29, 2026-10-09)**: every page at 360 and 430 (no sideways scroll, the folded header
+≤ 80px, every measured control ≥ 44px — `tapmin`), and the battle viewer at 360, 390 and 430 (every
+panel present, the board stacked, the rail drawer).
 
 ## Tests
 

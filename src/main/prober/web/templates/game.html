@@ -120,8 +120,13 @@
         <h3>{{ g.chip("we") }} What we could do <span class="muted small">— the policy, at play time</span></h3>
         {% set legal = dec.actions | selectattr("label") | selectattr("valid") | sort(attribute="prob", reverse=True) | list %}
         <ul class="dist us" data-dist="ours">
-          {% for a in legal %}{{ g.dist_row(a.display or a.label, a.prob, "us", "✔" if a.chosen else "", "what we chose") }}{% endfor %}
+          {% for a in legal[:g.DIST_TOP] %}{{ g.dist_row(a.display or a.label, a.prob, "us", "✔" if a.chosen else "", "what we chose") }}{% endfor %}
         </ul>
+        {% if legal | length > g.DIST_TOP %}
+        <details class="more-rows"><summary>{{ legal | length - g.DIST_TOP }} less likely{% if legal[g.DIST_TOP:] | selectattr("chosen") | list %} — incl. what we chose{% endif %}</summary>
+          <ul class="dist us">{% for a in legal[g.DIST_TOP:] %}{{ g.dist_row(a.display or a.label, a.prob, "us", "✔" if a.chosen else "", "what we chose") }}{% endfor %}</ul>
+        </details>
+        {% endif %}
         {% set na = dec.actions | selectattr("label") | rejectattr("valid") | rejectattr("placeholder") | list %}
         {% if na %}<p class="na muted small">not available: {% for a in na %}{{ a.display or a.label }}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
       </div>
