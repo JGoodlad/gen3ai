@@ -50,6 +50,10 @@ pub const MOVE_SLOT_DIM: usize = 11;
 pub const CONDITION_DIM: usize = 7;
 pub const STATS_DIM: usize = 6;
 pub const POKEMON_COUNTER_DIM: usize = 2;
+/// The gen-3 `tox` stage CAP — `tox.onResidual` ramps `effectState.stage` to 15 (`data/conditions.ts`), the damage
+/// is `floor(maxhp/16) · stage`. The toxic counter cell is `min(stage, TOXIC_STAGE_MAX) / TOXIC_STAGE_MAX`, so the
+/// whole stage range 0..=15 is represented (it saturated at 8 until `gen3_toxic_stage_scale_v1`, config v151).
+pub const TOXIC_STAGE_MAX: usize = 15;
 pub const BOOSTS_DIM: usize = 14;
 pub const VOLATILES_DIM: usize = 46;
 pub const ACTIVE_CONTEXT_DIM: usize = 60;

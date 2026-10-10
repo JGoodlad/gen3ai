@@ -203,7 +203,7 @@ impl SideTrackers {
         self.prev_frame = std::mem::take(&mut self.opp_frame);
         self.label = Some(IntentLabel::build(&d, &self.prev_frame));
         self.opp_frame = live.opp.mons.iter().map(|m| m.species.clone()).collect();
-        self.wish_pending = self.wish.pending(turn);
+        self.wish_pending = self.wish.pending(turn, live.residual_done);
         self.delta = Some(d);
         self.decisions += 1;
         Ok(())

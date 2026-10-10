@@ -18,6 +18,7 @@ from agents.model.damage_tables import build_self_boost_tables
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor, TEAM_SIZE,
 )
+from agents.observation.constants import TOXIC_STAGE_MAX
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 _mappings = load_mappings()
@@ -404,12 +405,20 @@ def test_toxic_and_sleep_consequences():
     # --- the G-ledger Toxic RAMP (both worlds of the same fact) ---
     ctx.pokemon_part[ar, 1, POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0
     ctx.pokemon_part[ar, 1, POKEMON_CONDITION_OFFSET + 6] = 1.0        # our mon 1: TOX
-    ctx.pokemon_part[ar, 1, POKEMON_COUNTER_OFFSET + 1] = 3.0 / 8.0    # 3 ticks deep
+    ctx.pokemon_part[ar, 1, POKEMON_COUNTER_OFFSET + 1] = 3.0 / TOXIC_STAGE_MAX    # 3 ticks deep
     ctx.hp_and_active[ar, 1, 0] = 1.0
     with torch.no_grad():
         our_g, _opp_g = fe.damage_op.pairwise_schedule(ctx)
     assert abs(float(our_g[0, 1, 2]) - (-4.0 / 16.0)) < 1e-6, \
         "the G ledger must charge the RAMPED next tick (3 ticks deep → −4/16)"
+    # GIGO (`gen3_toxic_stage_scale_v1`): the cell saturated at 8 ticks, so the 9th tick on read as the 9th. Showdown's
+    # `tox.onResidual` runs the stage to 15 before the damage `floor(maxhp/16) · stage`: n ticks taken → min(n+1, 15)/16.
+    for ticks, want in ((8, 9.0), (11, 12.0), (12, 13.0), (14, 15.0), (15, 15.0)):
+        ctx.pokemon_part[ar, 1, POKEMON_COUNTER_OFFSET + 1] = ticks / TOXIC_STAGE_MAX
+        with torch.no_grad():
+            our_g, _opp_g = fe.damage_op.pairwise_schedule(ctx)
+        assert abs(float(our_g[0, 1, 2]) - (-want / 16.0)) < 1e-5, \
+            f"{ticks} ticks deep: the G ledger must charge −{want:g}/16 (the engine's stage, not the old 8-tick cap)"
 
 
 def test_belly_drum_priced_with_cost_and_fail_gate():

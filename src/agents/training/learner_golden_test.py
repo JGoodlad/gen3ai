@@ -60,21 +60,25 @@ def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
     seed-18 buffer was rebuilt): ONE history row carrying the break's reason, after the moved-verbatim row. Then
     v145 (`gen3_mon_tied_gain_v1`, the op's out_gain tied across our team slots) re-recorded it once more: its
     init moved ONLY in `damage_op` (the out_gain shape, so its name-keyed perturbation), and the buffer was rebuilt
-    because the seeded learner's behaviour log-probs follow that perturbation.
+    because the seeded learner's behaviour log-probs follow that perturbation. Then v151 (`gen3_toxic_stage_scale_v1`:
+    the `g` ledger's toxic decoder) re-recorded the UPDATE once more on the SAME buffer and init (the buffer's toxic
+    cells still carry the old `min(n, 8) / 8` scale, which the new decoder reads on the new scale).
     FAILS if anyone re-records the golden without a new reason row, or restores an arm block."""
     g = L.load_golden()
     e = g["entries"]["2.8.0+cu126"]
     assert e["init_params_sha256"] == "60cb6e1cfc147b613c5496433f2f660fdd0a2b981123bb68660f54ccedeb8f5b"
-    assert e["post_params_sha256"] == "1c404cde769616176a46864118c42cb4c2078e9d5fd378ce58364b995f060d18"
+    assert e["post_params_sha256"] == "5171d83af811cbb6a6ce2ec16d4d58e17d4a4d32df1c4f16ed85bb9f8210481d"
     assert g["buffer_sha256"] == "66a1439218721fca5f0ab20a9514ffd804012f45d04a86e51bef65f0ea937b29"
     assert g["perturb"] == "name_keyed" and "arms" not in g
     assert L.RECORD_RUN_SEED == 18
-    assert "MOVED VERBATIM" in g["history"][-3]["reason"]
-    brk = g["history"][-2]["reason"]
+    assert "MOVED VERBATIM" in g["history"][-4]["reason"]
+    brk = g["history"][-3]["reason"]
     assert brk.startswith("gen3_x5_version_break_v1 (config v144)") and "obs-facts appended (2845)" in brk
     assert sum("gen3_x5_version_break_v1 (config v144)" in h["reason"] for h in g["history"]) == 1
-    assert g["history"][-1]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
+    assert g["history"][-2]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
     assert sum(h["reason"].startswith("gen3_mon_tied_gain_v1") for h in g["history"]) == 1
+    assert g["history"][-1]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
+    assert sum(h["reason"].startswith("gen3_toxic_stage_scale_v1") for h in g["history"]) == 1
 
 
 def test_record_requires_a_reason():

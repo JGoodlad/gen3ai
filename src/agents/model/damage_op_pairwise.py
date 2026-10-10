@@ -11,6 +11,7 @@ import torch
 from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 from agents.observation.constants import (
     TEAM_SIZE,
+    TOXIC_STAGE_MAX,
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
     POKEMON_CONDITION_OFFSET,
@@ -64,6 +65,21 @@ from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, beatup
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
+
+
+
+def toxic_next_tick(counter_cell: torch.Tensor) -> torch.Tensor:
+    """The fraction of MAX HP a badly-poisoned mon's NEXT residual tick costs, from the observation's toxic cell
+    (``POKEMON_COUNTER_OFFSET + 1`` = ``min(stage, TOXIC_STAGE_MAX) / TOXIC_STAGE_MAX``, ``gen3_toxic_stage_scale_v1``).
+
+    Gen 3 `tox.onResidual` (deps/pokemon-showdown data/conditions.ts): ``if (stage < 15) stage++`` BEFORE the damage
+    ``floor(maxhp/16) · stage`` — so with ``n`` ticks taken the next tick is ``min(n + 1, 15) / 16``: a fresh Toxic
+    reads 1/16, the 9th tick 9/16, and the 15th-and-later 15/16 (NOT 16/16). The cell is the engine's stage over its
+    true cap, so ``n`` is read exactly (it saturated at 8 before: every tick from the 9th on read as the 8th). The `g`
+    ledger (`pairwise_schedule`) and `--eot-residual` (`eot_residual.py`) both decode the cell with this one function.
+    (It lives here, not in `damage_op_layout`: the forward's torch ops may only run from `selection_sites.FORWARD_MODULES`.)"""
+    cap = float(TOXIC_STAGE_MAX)
+    return torch.clamp(counter_cell * cap + 1.0, max=cap) / 16.0
 
 
 class DamageOperatorPairwise:
@@ -1086,12 +1102,12 @@ class DamageOperatorPairwise:
             cond = ctx.pokemon_part[:, sl,
                                     POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7]
             # Burn/poison flat −1/8; TOXIC now carries its RAMP (owner-prioritized 2026-08-06):
-            # the obs toxic counter (min(ticks,8)/8, PUBLIC both sides) → the NEXT tick costs
-            # (ticks+1)/16 — a fresh Toxic reads −1/16, a 5-turn one −6/16. The old flat −1/8
-            # under-priced late-stall Toxic 3-4× (the CurseLax/stall war fact).
-            tox_ticks = ctx.pokemon_part[:, sl, POKEMON_COUNTER_OFFSET + 1] * 8.0    # [B,6]
+            # the obs toxic counter (min(stage,15)/15, PUBLIC both sides; it saturated at 8 until config v151) →
+            # the NEXT tick costs min(stage+1, 15)/16 — a fresh Toxic reads −1/16, a 5-turn one −6/16, a 12-turn
+            # one −13/16. The old flat −1/8 under-priced late-stall Toxic 3-4× (the CurseLax/stall war fact).
+            tox_next = toxic_next_tick(ctx.pokemon_part[:, sl, POKEMON_COUNTER_OFFSET + 1])    # [B,6]
             status = (-(1.0 / 8.0) * (cond[..., _COND_BRN_IDX] + cond[..., 5])
-                      - cond[..., 6] * (tox_ticks + 1.0) / 16.0)
+                      - cond[..., 6] * tox_next)
             leech_active = ctx_raw[:, _BOOSTS_DIM + _LEECH_SEED_CTX_SLOT]         # [B] active volatile
             leech = torch.zeros(B, TEAM_SIZE, device=device)
             leech[ar, active_local] = -(1.0 / 8.0) * (leech_active > 0.5).float()

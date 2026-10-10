@@ -1051,7 +1051,11 @@ impl EventWindow {
 
 // ---------------------------------------------------------------------------- wish / sleep
 
-/// The whole-log WISH fold (`wish_belief.build_wish_pending`), incrementally.
+/// The whole-log WISH fold (`wish_belief.build_wish_pending`), incrementally: the turns on which each side's SUCCESSFUL
+/// casts were made. Gen 3 (`data/mods/gen4/moves.ts` wish: `slotCondition: 'Wish'`, `duration: 2`, `onResidualOrder: 7`;
+/// `Side.addSlotCondition` returns false while the slot already holds one, so a second cast FAILS with `[still]` +
+/// `-fail`): a cast on turn `k` lands at the END of turn `k + 1`, on whoever then occupies the slot (the wisher's faint
+/// does not cancel it), and no cast can succeed in between.
 #[derive(Debug, Clone, PartialEq)]
 pub struct WishFold {
     last_ok: [i64; 2],
@@ -1069,6 +1073,9 @@ impl WishFold {
         if e.kind == K::Move && ev::move_id(e) == Some("wish") {
             if let Some(s) = e.side {
                 let t = e.turn as i64;
+                // A cast the turn after a SUCCESSFUL one is a cast into a pending slot condition: it fails (the
+                // sim prints `|move|…|Wish||[still]` then `|-fail|`), so it is not a cast. A failed cast leaves
+                // `last_ok` alone, which is why the cast two turns on is a fresh one.
                 if self.last_ok[ri(s)] != t - 1 {
                     self.last_ok[ri(s)] = t;
                     self.ok[ri(s)].insert(t);
@@ -1076,9 +1083,17 @@ impl WishFold {
             }
         }
     }
-    /// `{ours, opp}` — a Wish resolves at the end of `cur_turn`.
-    pub fn pending(&self, cur_turn: i64) -> [bool; 2] {
-        [self.ok[0].contains(&(cur_turn - 1)), self.ok[1].contains(&(cur_turn - 1))]
+    /// `{ours, opp}` — a Wish WILL land at the NEXT end-of-turn residual: the slot condition (`duration` 2) has lived
+    /// exactly one residual phase. A cast on turn `k` has lived the residual of turn `k`; the residual of turn `k + 1`
+    /// is the one that lands it. At a decision on `cur_turn` the residual of `cur_turn` is behind us iff
+    /// `residual_done` (its `|upkeep|` was read: the replacement decision after an end-of-turn faint still carries the
+    /// turn number its residual ran in), so the cast that lands next is `k = cur_turn - 1` before it (the Wish lands at
+    /// the end of THIS turn) and `k = cur_turn` after it (it lands at the end of the NEXT one). The flag used to read
+    /// `k = cur_turn - 1` at both phases: after the residual it kept a Wish that had ALREADY landed and missed the
+    /// one cast that same turn.
+    pub fn pending(&self, cur_turn: i64, residual_done: bool) -> [bool; 2] {
+        let k = cur_turn - 1 + residual_done as i64;
+        [self.ok[0].contains(&k), self.ok[1].contains(&k)]
     }
 }
 

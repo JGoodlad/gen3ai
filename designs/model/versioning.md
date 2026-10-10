@@ -223,6 +223,16 @@ of the current-ability column. `_migrate_config` stamps every past config throug
 (production builds byte-identically). The NAMED ARM `--arch static_recovery` writes all three (and the v147 facts) as
 recorded fields, so a launcher restart inherits them from `model_config.json`.
 
+**v151 (`gen3_toxic_stage_scale_v1` + `gen3_wish_flag_truth_v1`, 2026-10-09)** — two OBSERVATION-VALUE fixes with NO field and
+no weight shape. (1) The per-mon toxic counter cell is `min(stage, 15) / 15` (the engine's `tox` stage over its cap), where
+it was `min(stage, 8) / 8` (every tick from the 9th on read as the 8th); every toxic mon's cell value changes (`n/15`, not
+`n/8`), so a checkpoint trained on the old scale reads a re-scaled input from here on. (2) The board's Wish flag means "a
+Wish lands at the NEXT end-of-turn residual" (it read "cast last turn", the wrong phase at a replacement decision after the
+end-of-turn faint). `_migrate_config` stamps every past config through (`if version < 151`); no `ARCH_SIGNATURE` or floor
+change (a signature bump would refuse every existing checkpoint, eval opponent and anchor to re-scale one cell and move
+one flag). The obs golden moved on 107 of 991 decisions, all on those two cells. Tests: `toxic_stage_core_test.py`,
+`obs_stage_truth_test.rs`.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

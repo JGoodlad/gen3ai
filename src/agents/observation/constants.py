@@ -45,6 +45,10 @@ POKEMON_HP_OFFSET = 67          # 23 + 44
 POKEMON_SPECIES_KNOWN_OFFSET = 68  # 67 + 1 (HP); 1.0 when slot is populated, 0.0 when absent
 POKEMON_COUNTER_OFFSET = 69    # 68 + 1 (species_known): sleep_ctr, toxic_ctr
 POKEMON_COUNTER_DIM = 2        # sleep turn count (norm), toxic turn count (norm)
+# The gen-3 `tox` stage cap (Showdown `data/conditions.ts`: `tox.onResidual` ramps the stage to 15, the chip is
+# floor(maxhp/16) * stage). The toxic cell (POKEMON_COUNTER_OFFSET + 1) is min(stage, TOXIC_STAGE_MAX) / TOXIC_STAGE_MAX;
+# it read min(stage, 8) / 8 until `gen3_toxic_stage_scale_v1` (config v151). Held equal to layout.rs by the layout gate.
+TOXIC_STAGE_MAX = 15
 # Spread block (18 dims): IVs (6) + EVs (6) + spread_known (1) + nature modifiers (5)
 # Stat order for IVs/EVs: [health_pts, atk, def, spa, spd, spe]
 # Stat order for nature modifiers: [atk, def, spa, spd, spe] (HP is never nature-modified)

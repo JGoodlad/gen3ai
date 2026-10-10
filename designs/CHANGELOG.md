@@ -13325,3 +13325,61 @@ archive read failed.
 - **Tests (fail on revert):** `agents/model/static_recovery_test.py`, `main/train/arch_arms_test.py`, and the
   `static_recovery` parametrization of `main/train/debug_shape_smoke_integration_test.py`. Detail and cost:
   `designs/endstate/design_static_tokens.md` §13, `research_state/measurements/static_recovery_2026-10-09/`.
+
+
+## 2026-10-09 — v151 / `gen3_toxic_stage_scale_v1` + `gen3_wish_flag_truth_v1`: two OBSERVATION-VALUE fixes found by the static-recovery build (TRAINING-INPUT CHANGE; no field, no weight shape)
+
+🚨 **Arms launched from this commit on read a re-scaled Toxic counter and a re-phased Wish flag, and are NOT obs-identical
+to earlier arms** (a pinned run executes its pin's code and is unaffected; a checkpoint trained on the old scale reads a
+re-scaled input from here on). The static-recovery build (`designs/research_state/measurements/static_recovery_2026-10-09/`)
+read both cells for its end-of-turn rule and found them wrong.
+
+- **Toxic counter cap.** The per-mon toxic cell (`POKEMON_COUNTER_OFFSET + 1`) was `min(stage, 8) / 8` while Showdown's
+  `tox.onResidual` runs the stage to 15 (`if (stage < 15) stage++` BEFORE the damage `floor(maxhp/16) * stage`,
+  `deps/pokemon-showdown` `data/conditions.ts`, inherited unchanged through gen 4): every tick from the 9th on read as the
+  8th and every reader (the `g` end-of-turn ledger, `--eot-residual`) under-priced it by up to 7/16 of max HP. The cell is
+  now `min(stage, 15) / 15` (`TOXIC_STAGE_MAX`, one constant in `encoder/layout.rs` and `constants.py`, held equal by the
+  layout gate) — a changed scale, no new column, the obs dim stays 2845. Both readers decode it with ONE function,
+  `damage_op_pairwise.toxic_next_tick` = `min(n + 1, 15) / 16` (an unclamped `(n + 1) / 16` would read 16/16 at stage 15; the
+  engine's chip is 15/16). The Rust tracker already counted to the engine's 15 (`PMon::note_residual_chip`); only the
+  encoder's cap was wrong.
+- **Wish flag.** The board's "Wish pending" flag read "a Wish cast LAST turn", which is "lands at the end of THIS turn"
+  only before this turn's residual: a replacement decision after the end-of-turn faint carries the turn number whose
+  residual already ran, so it kept a Wish that had just LANDED and missed one cast that very turn. `WishFold::pending(turn,
+  residual_done)` now means "a Wish lands at the NEXT end-of-turn residual" (cast on turn k, `duration: 2`, lands at the end of
+  k+1 on whoever holds the slot; the wisher's faint does not cancel it; a second cast while one is pending fails with
+  `|move|…|Wish||[still]` + `|-fail|` and is not a cast — the fold's adjacency rule already handled that half exactly).
+- **Found by an engine differential, not by reading.** `tests/obs_stage_truth_test.rs` holds both cells to the ENGINE: the
+  toxic cell equals the engine's `Toxic(n)` over 15 at every decision of both viewers of a Soft-Boiled + Leftovers Blissey
+  that reaches stage 12 (hand-checked: HP 64 after tick 12, dead at tick 13); the Wish flag equals `SideState::wish_pending`
+  one residual from landing at every decision of 120 seeded battles with Wish on every team (11,805 decisions, 456 failed
+  double-Wish casts, 0 mismatches after the fix; the old phase rule: 83 mismatches). `agents/observation/toxic_stage_core_test.py`
+  runs the stage-12 battle through the real `core_events` binary and decodes the real row.
+- **Obs golden** (`golden_obs_core --write`): 107 of 991 decisions moved — a field-level census inverts the new toxic scale
+  and the two Wish cells and reproduces all 991 committed hashes: 106 decisions moved on the toxic cell alone, 1 on the toxic
+  cell plus the Wish flag, 0 elsewhere. Encoder benchmark before / after (release `core_events`, same box, loadavg ~6):
+  encode median 6.8 / 6.8-6.9 µs, p90 9.5 / 8.0-9.6, cold `present()`+encode median 11.1 / 11.0-11.2 µs — unchanged.
+- **Pins re-recorded (each a deliberate TRAINING-INPUT / update change, reason in the file).** The K9 learner golden
+  (`learner_golden record`; post `1c404cde…` → `5171d83a…`, init and buffer unchanged: its committed buffer's toxic cells
+  still carry the old `min(n, 8) / 8` scale and the new `g` decoder reads them on the new one — with the old decoder patched
+  back the golden reproduces exactly, so the delta is this change alone); `main.h2h`'s off/off bits digest
+  (`play_reveal_integration_test`, `fa189a94…` → `dea7e96e…`; the OUTCOME digest did not move); and the three
+  `oracle_reveal_test` corpus digests (a census over 27,333 decisions, hashing the obs column with the 12 toxic cells and the 2
+  Wish cells zeroed, gives IDENTICAL digests on the old and the new encoder: nothing else moved).
+- **Versioning.** `MODEL_CONFIG_VERSION` 150 → 151, no-field migration branch, no `ARCH_SIGNATURE` / floor change
+  (`designs/model/versioning.md`). The helper `toxic_next_tick` lives in `damage_op_pairwise.py`, not `damage_op_layout.py`:
+  the forward's torch ops may only run from `selection_sites.FORWARD_MODULES` (`selection_sites_test` failed the first
+  placement).
+
+## 2026-10-09 — the truth audit names Ingrain and Nightmare (one-sidedly); the prober captures every trunk round; the `--arch` arm drift lines name the arm
+
+- **Audit.** `present::audit::TRUTH_VOLATILES` lists 13 volatiles (it listed 11 and ignored the view's `ingrain` /
+  `nightmare` keys entirely). The engine fails loud on both moves (`scan_move_probe`: `status move "ingrain" is not
+  modeled`), so the audit is ONE-SIDED for them (`ENGINE_CANNOT_HOLD`): it fails a view that reports one, not a view that
+  misses one the engine holds. Tests: `version_test.rs` (the tamper has teeth: removing the entries fails it; the expiry
+  guard fails the day the engine models either), `present::tests` (the reading on the sim's own emission strings).
+- **Prober.** `main/prober/model_capture.py` hooked only the post-LN `BiasedEncoderLayer`s, so a `--trunk-layers 3/4` policy's
+  `/game` drew a 2-round trunk. It now hooks the pre-LN `IdentityInitRound`s too (over `norm1(x)`), stacked in execution order;
+  `model_capture_test.py` rebuilds an extra round's output from its captured weights and captures a real 3-round policy.
+- **Arch drift label.** `--arch static_recovery`'s per-key drift lines printed `production: <arm's value>`; they name the arm
+  (`arm 'static_recovery': 3`), and the refusal text and the fork note name it too (`arch_arms_test.py`).

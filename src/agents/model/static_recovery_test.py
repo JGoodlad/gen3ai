@@ -45,7 +45,7 @@ from agents.model.static_port_test import _constructed_board, _permute_ours, _pl
 from agents.model.trunk_depth import IdentityInitRound
 from agents.observation.constants import (BOOSTS_DIM, POKEMON_CONDITION_OFFSET, POKEMON_COUNTER_OFFSET,
                                           POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_OFFSET,
-                                          TEAM_SIZE)
+                                          TEAM_SIZE, TOXIC_STAGE_MAX)
 from agents.observation.gen3_effects import VOLATILE_SLOTS
 from utils.paths import repo_path
 
@@ -344,7 +344,7 @@ def _mon(ctx: ExtractorContext, slot: int, *, species: str = "", types: Tuple[st
     if status:
         pp[:, slot, POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0
         pp[:, slot, POKEMON_CONDITION_OFFSET + ["", "brn", "par", "slp", "frz", "psn", "tox"].index(status)] = 1.0
-    pp[:, slot, POKEMON_COUNTER_OFFSET + 1] = tox_ticks / 8.0
+    pp[:, slot, POKEMON_COUNTER_OFFSET + 1] = min(tox_ticks, TOXIC_STAGE_MAX) / TOXIC_STAGE_MAX    # the cell's own scale
     pp[:, slot, POKEMON_SLEEP_BELIEF_OFFSET + 1] = p_wake
     if hp >= 0.0:
         ha[:, slot, 0] = hp
@@ -454,6 +454,17 @@ def test_the_status_tick_burn_poison_toxic_and_shed_skin(eot_fe: Any, rows: torc
     ctx = _mon(ctx, 7, species="dragonair", types=("DRAGON",), ability="shedskin", status="psn")
     out = _eot(eot_fe, ctx)
     _only(out, "status", {0: -4 / 16, 1: -1 / 16, 2: -1 / 8, 3: -1 / 8, 7: -(1 / 8) * (2 / 3)})
+
+
+def test_the_toxic_tick_ramps_past_the_old_8_cap_to_the_engines_15(eot_fe: Any, rows: torch.Tensor) -> None:
+    """GIGO (`gen3_toxic_stage_scale_v1`): the obs toxic cell saturated at 8 ticks while Showdown's `tox.onResidual`
+    runs the stage to 15 (`if (stage < 15) stage++` BEFORE the damage `floor(maxhp/16) · stage`), so the 9th tick on
+    read as the 9th/8th. With n ticks taken the next tick is min(n + 1, 15)/16."""
+    ctx = _blank(eot_fe, rows)
+    for slot, n in ((0, 8), (1, 11), (2, 13), (3, 14), (4, 15)):
+        ctx = _mon(ctx, slot, status="tox", tox_ticks=n)
+    out = _eot(eot_fe, ctx)
+    _only(out, "status", {0: -9 / 16, 1: -12 / 16, 2: -14 / 16, 3: -15 / 16, 4: -15 / 16})
 
 
 def test_leech_seed_drain_and_its_heal_to_the_other_side(eot_fe: Any, rows: torch.Tensor) -> None:

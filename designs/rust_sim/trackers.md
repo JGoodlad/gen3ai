@@ -31,7 +31,7 @@ line, over the side's READINGS (the `BattleEvent`s slice E held equal to `Gen3Ba
 | `RecencyTracker` | `history::Recency` | the per-mon recency triplet |
 | `PairHistoryTracker` | `history::PairHistory` | H-A last action + the 6×6×5 pair block |
 | `EventWindowTracker` (32 rows) | `history::EventWindow` | the H-B event window (`history_events`, ON in production) |
-| `wish_belief.build_wish_pending` | `history::WishFold` (incremental) | the wish slot |
+| `wish_belief.build_wish_pending` | `history::WishFold` (incremental; `pending(turn, residual_done)` since `gen3_wish_flag_truth_v1`) | the wish slot: a Wish that LANDS AT THE NEXT end-of-turn residual (the engine's slot condition one residual from landing; held to `SideState::wish_pending` at every decision by `tests/obs_stage_truth_test.rs`) |
 | `sleep_belief.build_sleep_sources` | `history::SleepFold` (incremental) | the sleep-belief triple's inputs |
 | `opp_intent_labels.build_opp_intent_label` | `IntentLabel` (ids; the num tables cross at M4) | the α/β heads |
 | `Gen3RewardManager` under the win indicator | `trackers::reward` | the value target |

@@ -813,7 +813,11 @@ Shed Skin, Liquid Ooze, Cloud Nine / Air Lock); game cliffs stay probabilities (
 Nightmare × P(stays asleep) from the observation's sleep-wake belief, Cloud Nine suppression as a probability over both
 actives). Leech Seed's heal is the one cross-mon amount: min(the seeded mon's max HP / 8, its HP) / the recipient's max
 HP, max HP from the op's convention (ours exact from the spread, theirs `2·base + 31 + 110`, Shedinja 1), Liquid Ooze
-inverting it; it assumes the seeded active stays in. **Home: the mon token** (zero-init bias-free
+inverting it; it assumes the seeded active stays in. Two of its inputs were GIGO and are fixed at their source
+(config v151): the Toxic tick reads the observation's counter, which saturated at 8 ticks while the engine ramps to 15
+(now `min(stage, 15) / 15`, the tick `min(n + 1, 15) / 16`, `gen3_toxic_stage_scale_v1`), and the board's Wish flag, the
+`wish` column's input, read the wrong phase at a replacement decision after the end-of-turn faint (now "a Wish lands at the
+next end-of-turn residual", `gen3_wish_flag_truth_v1`). **Home: the mon token** (zero-init bias-free
 `IsolatedLinear(11, 128)` beside `mon_hazard_proj`), not the switch cell: the switch logit already reads mon j's refined
 token, a benched mon's row IS its switch-in residual by the definition, and one route per fact keeps the bisection
 clean. Not included: partial trapping (its last turn deals nothing and the timer is an OBS-FACTS-only fact), Future

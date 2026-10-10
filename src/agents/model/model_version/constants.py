@@ -550,7 +550,19 @@ from typing import Any, Dict
 #   `eot_residual` {off,on} (every mon's end-of-turn HP change, zero-init token content). Each is STRUCTURAL and
 #   gated in check_compatible; a pre-v150 config migrates to 2 / off / off (the only possible past). No ARCH_SIGNATURE
 #   bump (production builds byte-identically), no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 150
+# v151 (gen3_toxic_stage_scale_v1 + gen3_wish_flag_truth_v1): no field, no weight shape; two OBSERVATION-VALUE fixes.
+#   (1) The per-mon toxic counter cell
+#   (`POKEMON_COUNTER_OFFSET + 1`) was min(stage, 8) / 8 while Showdown's `tox.onResidual` runs the stage to 15 (damage
+#   floor(maxhp/16) * stage), so every tick from the 9th on read as the 8th and every reader of the cell (the `g` ledger,
+#   `--eot-residual`) under-priced it. It is now min(stage, 15) / 15 (`TOXIC_STAGE_MAX`); `damage_op_pairwise.toxic_next_tick`
+#   decodes it (next tick = min(stage + 1, 15) / 16). Every toxic mon's cell value changes (n/15, not n/8), so a checkpoint
+#   trained on the old scale reads a re-scaled input from here on. (2) The board's "Wish pending" flag read "a Wish cast last
+#   turn" at every decision, which is wrong at a replacement decision AFTER the end-of-turn faint (the turn number is the one
+#   whose residual already ran): it kept a Wish that had just landed and missed one cast that turn; it is now "a Wish lands
+#   at the next end-of-turn residual" (`WishFold::pending(turn, residual_done)`), equal to the engine's slot condition.
+#   Every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change, state_dict unchanged. The obs
+#   golden moved on 107 of 991 decisions: 106 on the toxic cell alone and 1 on the toxic cell plus the Wish flag.
+MODEL_CONFIG_VERSION = 151
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

@@ -520,6 +520,11 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("switch_hazard_cost", "off")
         data.setdefault("eot_residual", "off")
         data["config_version"] = 150
+    # v151 (gen3_toxic_stage_scale_v1 + gen3_wish_flag_truth_v1) — no field: the toxic counter cell's SCALE (min(stage, 15) /
+    # 15, was min(stage, 8) / 8) and the board Wish flag's PHASE (a Wish landing at the NEXT end-of-turn residual); two
+    # observation-value fixes, the state_dict is unchanged, so every past config stamps through.
+    if version < 151:
+        data["config_version"] = 151
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

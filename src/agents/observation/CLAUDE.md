@@ -276,11 +276,14 @@ species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 d
 activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so
 the model knows what was lost. `species_known = 1.0` for all populated slots (own team and
 revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter:
-`min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(stage, 8) / 8`, where `stage`
+`min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(stage, 15) / 15` (`TOXIC_STAGE_MAX`, held equal to `layout.rs` by the layout gate), where `stage`
 is the sim's `tox` stage — the residual `[from] psn` chips since the switch-in, 0 while benched
 (`gen3_pe_reading_fixes_v1`; it used to tick at `|turn|`, one off the sim after a post-residual
-entry or before the next `|turn|`) — so the NEXT chip is `(stage + 1) / 16` exactly (practical max
-before fainting with Leftovers).
+entry or before the next `|turn|`) — so the NEXT chip is `min(stage + 1, 15) / 16` exactly (Showdown's `tox.onResidual`:
+`if (stage < 15) stage++` BEFORE the damage `floor(maxhp/16) * stage`; `damage_op_pairwise.toxic_next_tick` decodes it).
+It was `min(stage, 8) / 8` until `gen3_toxic_stage_scale_v1` (config v151): every tick from the 9th on read as the 8th.
+`toxic_stage_core_test.py` pins stage 12 end to end through the real core; `obs_stage_truth_test.rs` holds the cell to
+the engine's `Toxic(n)` at every decision.
 
 **Sleep-wake belief (3 dims, `gen3_sleep_wake_belief_v1`, layout in `sleep_belief.py`):** zeros
 unless the mon is asleep, else `[sleep_is_deterministic, p_wake, sleep_counter_reliable]`. poke-env
@@ -383,9 +386,14 @@ those last 20 turns 55.1% of its range. Both remaining forms are raw facts, not 
 the model.
 
 - `wish_floating` — the pending-Wish heal: a flat `WISH_HEAL_FRACTION` (≈0.5; gen3 Wish heals the
-  RECIPIENT's maxhp/2, so the fraction is constant and GIGO-proof) when a Wish cast last turn
-  resolves at the end of this turn, else 0. Slot-keyed, so it survives faint / Roar-phaze / switch.
-  reconstructed from the event record (the Rust trackers; the Python `wish_belief.py` fold is deleted).
+  RECIPIENT's maxhp/2, so the fraction is constant and GIGO-proof) when the side's Wish WILL LAND at the
+  NEXT end-of-turn residual, else 0 (`gen3_wish_flag_truth_v1`: it was "cast last turn", which is the same thing before
+  this turn's residual and WRONG after it — a replacement decision after the end-of-turn faint carries the turn number
+  its residual ran in, so the flag kept a Wish that had just landed and missed one cast that turn). A second cast while
+  one is pending FAILS (`|move|…|Wish||[still]` + `|-fail|`) and is not a cast. Slot-keyed, so it survives faint /
+  Roar-phaze / switch (the wisher's faint does not cancel it in gen 3). Reconstructed from the event record (the Rust
+  trackers; the Python `wish_belief.py` fold is deleted) and held to the engine's own slot condition at every decision
+  by `tests/obs_stage_truth_test.rs`.
 
 **`active_req_moves` (12 dims):** OUR active mon's 4 moves in **REQUEST order** (slot *k* ↔ action
 logit 6+*k*) — `[move_num ×4, resolved_type_id ×4, legal_now ×4]`, sourced from `legal.move_slots`,

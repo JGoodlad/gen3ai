@@ -21,8 +21,9 @@ gen4 over gen5 … over the base; `measurements/static_recovery_2026-10-09/READM
   scaled by P(no Cloud Nine / Air Lock on the field). (`data/conditions.ts` sandstorm / hail, order 8.)
 * ``rain_dish`` +1/16 in rain × P(Rain Dish) × the same live / unsuppressed weather. (`data/mods/gen3/abilities.ts`.)
 * ``status`` the next status tick: burn −1/8 and poison −1/8 (gen 3: `data/mods/gen6/conditions.ts` sets 1/8 for burn);
-  Toxic −(n + 1)/16 where n is the ticks taken (the observation's counter, which resets on a switch, so a benched toxic
-  mon switching in ticks −1/16: `data/conditions.ts` tox `onSwitchIn`); × (1 − P(Shed Skin)/3) (Shed Skin's 33 % cure
+  Toxic −min(n + 1, 15)/16 where n is the ticks taken (the observation's counter, min(n, 15)/15, the engine's stage
+  to its cap of 15; it resets on a switch, so a benched toxic mon switching in ticks −1/16: `data/conditions.ts` tox
+  `onSwitchIn`); × (1 − P(Shed Skin)/3) (Shed Skin's 33 % cure
   resolves at sub-order 3, before the tick at 6).
 * ``leech_drain`` −1/8 for the ACTIVE mon carrying Leech Seed (a volatile: cleared on switch-out).
 * ``leech_gain`` for every mon of the side OPPOSITE a seeded active (the heal goes to whoever is in the seeder's slot):
@@ -30,9 +31,10 @@ gen4 over gen5 … over the base; `measurements/static_recovery_2026-10-09/READM
   (gen 3: the seeder TAKES that amount instead: `data/mods/gen4/abilities.ts` liquidooze). Max HP: ours EXACT (the
   spread in the observation), theirs the op's neutral estimate (2·base + 31 + 110), Shedinja 1 — the op's own
   convention. The one cross-mon quantity; it assumes the seeded active stays in.
-* ``wish`` +1/2 for every mon of a side whose Wish heals at the end of THIS turn (gen 3 heals HALF THE RECIPIENT'S max
-  HP: `data/mods/gen4/moves.ts` wish replaces the condition; base gen 5+ stores the wisher's). The observation's
-  board flag is exactly that event (`trackers/history.rs`: a Wish used last turn) at 0.5.
+* ``wish`` +1/2 for every mon of a side whose Wish heals at the next end-of-turn residual (gen 3 heals HALF THE
+  RECIPIENT'S max HP: `data/mods/gen4/moves.ts` wish replaces the condition; base gen 5+ stores the wisher's). The
+  observation's board flag is exactly that event at 0.5 (`trackers/history.rs::WishFold`: a successful Wish cast one
+  residual ago; at a replacement decision AFTER this turn's residual it means the NEXT turn's, `gen3_wish_flag_truth_v1`).
 * ``ingrain`` +1/16 for an active with Ingrain; ``curse`` −1/4 for an active with Curse (the Ghost one);
   ``nightmare`` −1/4 for an active with Nightmare × P(it does not wake this turn) (the observation's sleep-wake
   belief) × (1 − P(Shed Skin)/3) — Nightmare ends on waking.
@@ -57,6 +59,7 @@ import torch
 from agents.observation.constants import (BOOSTS_DIM, POKEMON_CONDITION_OFFSET, POKEMON_COUNTER_OFFSET,
                                           POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_OFFSET,
                                           TEAM_SIZE, WEATHER_ONEHOT_DIM)
+from agents.model.damage_op_pairwise import toxic_next_tick
 from agents.model.extractor_ctx import ability_known, revealed_ability1_ids
 from agents.observation.gen3_effects import VOLATILE_SLOTS
 
@@ -80,8 +83,8 @@ _A_SAND_VEIL, _A_RAIN_DISH, _A_SHED_SKIN, _A_LIQUID_OOZE, _A_SUPPRESS = range(le
 
 #: The condition one-hot is [None, BRN, PAR, SLP, FRZ, PSN, TOX].
 _BRN, _SLP, _PSN, _TOX = 1, 3, 5, 6
-#: The observation's Toxic counter is min(ticks, 8) / 8 (`encoder/slot.rs`), the sleep-wake belief's P(wake) its 2nd column.
-_TOX_COUNTER_SCALE = 8.0
+#: The sleep-wake belief's P(wake) is its 2nd column. (The observation's Toxic counter is min(stage, 15) / 15
+#: (`encoder/slot.rs`, `TOXIC_STAGE_MAX`); `damage_op_pairwise.toxic_next_tick` decodes it to the next tick's fraction.)
 _P_WAKE_COL = 1
 #: The weather block: one-hot [NONE, SUN, RAIN, SAND, HAIL], permanent, turns remaining / 5 (`encoder/mod.rs`).
 _W_RAIN, _W_SAND, _W_HAIL = 2, 3, 4
@@ -208,9 +211,9 @@ class EotResidualRule(torch.nn.Module):
 
         # --- status: the next tick (Toxic at its counter + 1; a benched mon's counter is 0), Shed Skin's cure first ---
         cond = pp[..., POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7]
-        tox_ticks = pp[..., POKEMON_COUNTER_OFFSET + 1] * _TOX_COUNTER_SCALE
+        tox_next = toxic_next_tick(pp[..., POKEMON_COUNTER_OFFSET + 1])      # min(ticks taken + 1, 15) / 16
         no_cure = 1.0 - ab[..., _A_SHED_SKIN] / 3.0
-        status = -(cond[..., _BRN] / 8.0 + cond[..., _PSN] / 8.0 + cond[..., _TOX] * (tox_ticks + 1.0) / 16.0) * no_cure
+        status = -(cond[..., _BRN] / 8.0 + cond[..., _PSN] / 8.0 + cond[..., _TOX] * tox_next) * no_cure
 
         # --- the actives' volatiles (cleared by a switch: a benched mon reads 0) ---
         def _vol(name: str) -> torch.Tensor:

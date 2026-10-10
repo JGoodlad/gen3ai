@@ -40,62 +40,62 @@
     "pointer_head.switch_proj": "56442780e02a3330",
     "pointer_head.switch_score": "8d7dc4a1a2fda3d3"
    },
-   "post_params_sha256": "1c404cde769616176a46864118c42cb4c2078e9d5fd378ce58364b995f060d18",
+   "post_params_sha256": "5171d83af811cbb6a6ce2ec16d4d58e17d4a4d32df1c4f16ed85bb9f8210481d",
    "group_sha256": {
-    "features_extractor.belief_head": "bbb767b08e4cfa4a",
-    "features_extractor.cls_pool": "15521828850f684b",
-    "features_extractor.conditional_threat": "6a944643e0340d75",
+    "features_extractor.belief_head": "c7897ed18e8cff35",
+    "features_extractor.cls_pool": "fc22e5d27271f464",
+    "features_extractor.conditional_threat": "d0838b5bad89d4d5",
     "features_extractor.damage_op": "6dd515fde421be42",
-    "features_extractor.edge_bias": "3e8f90f4f92d0475",
-    "features_extractor.embeddings": "a6a5860aae36b994",
-    "features_extractor.entity_seats": "b6aae709fc71c7eb",
-    "features_extractor.flat_intent_head": "26b4ac98160963c7",
-    "features_extractor.hidden_opp_belief": "5aed14b1597930b6",
-    "features_extractor.history_events": "c2fb873d87716f58",
-    "features_extractor.hp_type_belief_head": "e69cd6a87eee427f",
-    "features_extractor.hypothesis_builder": "305418e82296e960",
-    "features_extractor.intent_conditional": "47c52ad7f849887c",
+    "features_extractor.edge_bias": "9103a5cdc3e977c7",
+    "features_extractor.embeddings": "e6ac101a11fb7c76",
+    "features_extractor.entity_seats": "b6374f6a94390996",
+    "features_extractor.flat_intent_head": "957d891344474bd7",
+    "features_extractor.hidden_opp_belief": "86450336169cac9c",
+    "features_extractor.history_events": "fe216cb2834785c9",
+    "features_extractor.hp_type_belief_head": "20eee251afb62b78",
+    "features_extractor.hypothesis_builder": "5fd8f75c5e712d1d",
+    "features_extractor.intent_conditional": "1605385b4e4da54a",
     "features_extractor.intent_move_cell": "4fb829e21991b6a7",
-    "features_extractor.intent_threshold_move": "373a8f988a62ff51",
-    "features_extractor.item_belief_head": "f3e50fddf73c63c0",
-    "features_extractor.move_belief": "dfba646841d56a37",
-    "features_extractor.pair_outcome_move": "651b3e6c3b3de272",
-    "features_extractor.pair_outcome_switch": "ab695fd18424c08d",
-    "features_extractor.pokemon_encoder": "c5d1a51527659548",
-    "features_extractor.pre_proj_norm": "acfca8b41487a38e",
-    "features_extractor.prefuse_proj": "3f2404da50bdf435",
-    "features_extractor.projection": "7dec5bb8e0e49b42",
-    "features_extractor.spread_belief": "0b53dc30a658adf8",
-    "features_extractor.switch_branch": "12031e7bbc37f3b4",
-    "features_extractor.team_transformer": "ee054839f3afa6ab",
-    "features_extractor.value_entity_pool": "c3e512c483e99bc1",
-    "features_extractor.win_head": "ef39f41917fbfd13",
-    "mlp_extractor.policy_net": "2484ea131677a7cb",
-    "pointer_head.ctx_proj": "64579df30f6255e1",
-    "pointer_head.move_proj": "638a869753d0e463",
-    "pointer_head.move_score": "61ce3d00b5208bfc",
-    "pointer_head.struggle_score": "8674a264582fc942",
-    "pointer_head.switch_proj": "a7de91484fa02a3b",
-    "pointer_head.switch_score": "113ee5d469abc641"
+    "features_extractor.intent_threshold_move": "3a6ae52d3245571b",
+    "features_extractor.item_belief_head": "8bd22b868fc74c4d",
+    "features_extractor.move_belief": "01b4682d5f24c8c5",
+    "features_extractor.pair_outcome_move": "6300d1053a900213",
+    "features_extractor.pair_outcome_switch": "277d18219f8c3c88",
+    "features_extractor.pokemon_encoder": "42fe177a036887c3",
+    "features_extractor.pre_proj_norm": "13d957ac5a5506fe",
+    "features_extractor.prefuse_proj": "81d847ebd4801bea",
+    "features_extractor.projection": "95a87be83979a3cd",
+    "features_extractor.spread_belief": "18940d314c584168",
+    "features_extractor.switch_branch": "7cec1bd65dd13ae7",
+    "features_extractor.team_transformer": "46a5ee8d8f5da71b",
+    "features_extractor.value_entity_pool": "c2f224bddc47391b",
+    "features_extractor.win_head": "65596583088b864b",
+    "mlp_extractor.policy_net": "a5107e6dc11b4c2a",
+    "pointer_head.ctx_proj": "84717615098cf78a",
+    "pointer_head.move_proj": "e735b423e9959a52",
+    "pointer_head.move_score": "5180d7d8eda79642",
+    "pointer_head.struggle_score": "3a2088f136d6f306",
+    "pointer_head.switch_proj": "d6cc98a307d24bc3",
+    "pointer_head.switch_score": "0d93754d86d84f7c"
    },
    "losses": {
-    "belief/hptype_loss": 0.8236247152090073,
-    "belief/item_loss": 0.8394970446825027,
+    "belief/hptype_loss": 0.8236247226595879,
+    "belief/item_loss": 0.8394970297813416,
     "belief/move_loss": 0.01708706351928413,
-    "belief/movelatent_loss": 0.5037696734070778,
-    "belief/natureev_loss": 2.1375758349895477,
+    "belief/movelatent_loss": 0.5037696696817875,
+    "belief/natureev_loss": 2.1375758051872253,
     "belief/set_aux_loss": 6.184859275817871,
-    "belief/spread_loss": 0.04556969180703163,
+    "belief/spread_loss": 0.045569689478725195,
     "opp_intent/flat_loss": 0.5460954010486603,
-    "train/approx_kl": 0.001419966109097004,
+    "train/approx_kl": 0.0014199623838067055,
     "train/clip_fraction": 0.0,
-    "train/entropy_loss": -1.9194308519363403,
+    "train/entropy_loss": -1.919430896639824,
     "train/explained_variance": 0.5033698678016663,
-    "train/loss": 0.71993088722229,
+    "train/loss": 0.7199307680130005,
     "train/n_updates": 2.0,
-    "train/policy_gradient_loss": -0.0031627637799829245,
-    "train/value_loss": 0.03752138704294339,
-    "win_prob/loss": 1.340450458228588
+    "train/policy_gradient_loss": -0.0031627786811441183,
+    "train/value_loss": 0.03752137365518138,
+    "win_prob/loss": 1.340450532734394
    },
    "fp64_reference": {
     "rows_judged": 63,
@@ -112,36 +112,36 @@
      "nature_ev": 0.1069064512848854,
      "hp_type": 0.0413719043135643,
      "item_belief": 0.04109179601073265,
-     "win_prob": 0.9431003332138062,
+     "win_prob": 0.9431003928184509,
      "loss": 1.4072983264923096
     },
     "terms_fp64": {
-     "policy": -2.552383137295721e-09,
-     "entropy": -0.09587998846348122,
-     "species_belief_set": 0.31476661966376857,
+     "policy": 1.7532701498736523e-08,
+     "entropy": -0.09587998948275914,
+     "species_belief_set": 0.31476662220959256,
      "move_belief": 0.0008567352326534352,
-     "opp_intent": 0.02767031534534581,
+     "opp_intent": 0.027670316582065105,
      "move_latent": 0.025121612151337448,
      "spread_belief": 0.002292697229575594,
      "nature_ev": 0.10690643682777588,
      "hp_type": 0.04137190932745438,
      "item_belief": 0.041091798948331516,
-     "win_prob": 0.9431003625367835,
-     "loss": 1.4072984962471617
+     "win_prob": 0.9431004220771422,
+     "loss": 1.4072985786358705
     },
     "term_abs_err": {
-     "policy": 3.661218167439623e-08,
-     "entropy": 1.3319889746732372e-08,
-     "species_belief_set": 1.5304618433686912e-07,
+     "policy": 1.6527097038363983e-08,
+     "entropy": 1.2300611834659136e-08,
+     "species_belief_set": 1.5559200833292763e-07,
      "move_belief": 4.2039376114359067e-10,
-     "opp_intent": 8.098471893092096e-10,
+     "opp_intent": 2.0465664857249877e-09,
      "move_latent": 3.229848714869643e-10,
      "spread_belief": 8.832267946526362e-11,
      "nature_ev": 1.4457109523413614e-08,
      "hp_type": 5.013890080896033e-09,
      "item_belief": 2.937598865548896e-09,
-     "win_prob": 2.9322977379564463e-08,
-     "loss": 1.697548521750747e-07
+     "win_prob": 2.9258691247591173e-08,
+     "loss": 2.5214356091929346e-07
     },
     "grads": {
      "features_extractor.hypothesis_builder.delta_out.weight": {
@@ -149,28 +149,28 @@
       "rel_err": 2.1788759279635804e-07
      },
      "features_extractor.hypothesis_builder.other_map.weight": {
-      "norm_fp64": 0.028093847206929153,
-      "rel_err": 3.5951428161958976e-07
+      "norm_fp64": 0.02809384427240221,
+      "rel_err": 3.3713543859551195e-07
      },
      "features_extractor.hypothesis_builder.hypothesis_marker": {
-      "norm_fp64": 0.006727950861285741,
-      "rel_err": 5.117181537912743e-07
+      "norm_fp64": 0.006727953212489778,
+      "rel_err": 5.085073665535537e-07
      },
      "features_extractor.flat_intent_head.hidden.weight": {
-      "norm_fp64": 0.010647632664829898,
-      "rel_err": 6.104741191470005e-07
+      "norm_fp64": 0.010647633361002488,
+      "rel_err": 6.044788721006886e-07
      },
      "features_extractor.belief_head.species_head.weight": {
-      "norm_fp64": 0.27449755317801666,
-      "rel_err": 3.163538255525319e-07
+      "norm_fp64": 0.2744975538462535,
+      "rel_err": 3.1646993004605645e-07
      },
      "pointer_head.move_proj.weight": {
-      "norm_fp64": 0.06368214876053492,
-      "rel_err": 2.9533191901531814e-06
+      "norm_fp64": 0.06368218705610729,
+      "rel_err": 3.0297963580682636e-06
      },
      "features_extractor.win_head.net.3.weight": {
-      "norm_fp64": 5.136490896635421,
-      "rel_err": 1.742141963851854e-07
+      "norm_fp64": 5.136491213161016,
+      "rel_err": 1.668821892154785e-07
      }
     },
     "grads_absent": [],
@@ -198,9 +198,9 @@
     "hypothesis_rows": 29,
     "near_tie_rows": 0
    },
-   "recorded_at_commit": "25ea2cc68b9a246c7504bbcf89819f496a4fbdf3",
-   "recorded_on": "2026-10-07",
-   "reason": "gen3_mon_tied_gain_v1 (config v145): the damage op's out_gain tied across our team slots and their mons (production 99 -> 29); the buffer re-recorded (the seeded learner's out_gain perturbation follows the tied shape)",
+   "recorded_at_commit": "43a59bbd5ef42efd8366a1edacd144c9c328c405",
+   "recorded_on": "2026-10-09",
+   "reason": "gen3_toxic_stage_scale_v1 (config v151): the g ledger decodes the obs toxic cell as min(stage+1, 15)/16 over a cell scaled by 15 (was (cell*8+1)/16 over a cell scaled by 8). The committed buffer's toxic cells still carry the OLD scale (min(n,8)/8; the buffer changes only with the obs LAYOUT), so the pinned update reads them on the new scale: a deliberate change to what the update computes. With the old decoder patched back the golden reproduces exactly (verified before re-recording).",
    "torch": "2.8.0+cu126",
    "numpy": "2.4.3",
    "python": "3.11.15"
@@ -377,6 +377,30 @@
    "post_params_sha256": "1c404cde769616176a46864118c42cb4c2078e9d5fd378ce58364b995f060d18",
    "changed": [
     "(first entry)"
+   ]
+  },
+  {
+   "recorded_at_commit": "43a59bbd5ef42efd8366a1edacd144c9c328c405",
+   "recorded_on": "2026-10-09",
+   "reason": "gen3_toxic_stage_scale_v1 (config v151): the g ledger decodes the obs toxic cell as min(stage+1, 15)/16 over a cell scaled by 15 (was (cell*8+1)/16 over a cell scaled by 8). The committed buffer's toxic cells still carry the OLD scale (min(n,8)/8; the buffer changes only with the obs LAYOUT), so the pinned update reads them on the new scale: a deliberate change to what the update computes. With the old decoder patched back the golden reproduces exactly (verified before re-recording).",
+   "torch": "2.8.0+cu126",
+   "numpy": "2.4.3",
+   "python": "3.11.15",
+   "post_params_sha256": "5171d83af811cbb6a6ce2ec16d4d58e17d4a4d32df1c4f16ed85bb9f8210481d",
+   "changed": [
+    "loss belief/hptype_loss: 0.8236247152090073 -> 0.8236247226595879 (delta 7.45e-09)",
+    "loss belief/item_loss: 0.8394970446825027 -> 0.8394970297813416 (delta -1.49e-08)",
+    "loss belief/movelatent_loss: 0.5037696734070778 -> 0.5037696696817875 (delta -3.73e-09)",
+    "loss belief/natureev_loss: 2.1375758349895477 -> 2.1375758051872253 (delta -2.98e-08)",
+    "loss belief/spread_loss: 0.04556969180703163 -> 0.045569689478725195 (delta -2.33e-09)",
+    "loss train/approx_kl: 0.001419966109097004 -> 0.0014199623838067055 (delta -3.73e-09)",
+    "loss train/entropy_loss: -1.9194308519363403 -> -1.919430896639824 (delta -4.47e-08)",
+    "loss train/loss: 0.71993088722229 -> 0.7199307680130005 (delta -1.19e-07)",
+    "loss train/policy_gradient_loss: -0.0031627637799829245 -> -0.0031627786811441183 (delta -1.49e-08)",
+    "loss train/value_loss: 0.03752138704294339 -> 0.03752137365518138 (delta -1.34e-08)",
+    "loss win_prob/loss: 1.340450458228588 -> 1.340450532734394 (delta 7.45e-08)",
+    "parameter groups whose post-update bytes moved: ['features_extractor.belief_head', 'features_extractor.cls_pool', 'features_extractor.conditional_threat', 'features_extractor.edge_bias', 'features_extractor.embeddings', 'features_extractor.entity_seats', 'features_extractor.flat_intent_head', 'features_extractor.hidden_opp_belief', 'features_extractor.history_events', 'features_extractor.hp_type_belief_head', 'features_extractor.hypothesis_builder', 'features_extractor.intent_conditional', 'features_extractor.intent_threshold_move', 'features_extractor.item_belief_head', 'features_extractor.move_belief', 'features_extractor.pair_outcome_move', 'features_extractor.pair_outcome_switch', 'features_extractor.pokemon_encoder', 'features_extractor.pre_proj_norm', 'features_extractor.prefuse_proj', 'features_extractor.projection', 'features_extractor.spread_belief', 'features_extractor.switch_branch', 'features_extractor.team_transformer', 'features_extractor.value_entity_pool', 'features_extractor.win_head', 'mlp_extractor.policy_net', 'pointer_head.ctx_proj', 'pointer_head.move_proj', 'pointer_head.move_score', 'pointer_head.struggle_score', 'pointer_head.switch_proj', 'pointer_head.switch_score']",
+    "post_params_sha256 1c404cde76961617 -> 5171d83af811cbb6"
    ]
   }
  ],

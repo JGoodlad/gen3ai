@@ -136,7 +136,9 @@ fn mon_vector(trk: &SideTrackers, t: &Tables, mon: &PMon, live: &MonView, own: b
     let is_tox = live.status == Some("tox");
     let ctr = live.status_counter as i64;
     put(v, POKEMON_COUNTER_OFFSET, if is_slp { ctr.min(4) as f64 / 4.0 } else { 0.0 });
-    put(v, POKEMON_COUNTER_OFFSET + 1, if is_tox { ctr.min(8) as f64 / 8.0 } else { 0.0 });
+    // The toxic cell is the sim's STAGE over its true cap (`gen3_toxic_stage_scale_v1`; it was `min(stage, 8) / 8`,
+    // which read every tick from the 9th on as the 8th): the stage runs to 15 (`tox.onResidual`).
+    put(v, POKEMON_COUNTER_OFFSET + 1, if is_tox { ctr.min(TOXIC_STAGE_MAX as i64) as f64 / TOXIC_STAGE_MAX as f64 } else { 0.0 });
     if is_slp {
         let (det, p_wake, reliable) = sleep_belief(trk, mon, own, ctr);
         put(v, POKEMON_SLEEP_BELIEF_OFFSET, det);

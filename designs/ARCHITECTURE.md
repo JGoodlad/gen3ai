@@ -152,9 +152,10 @@ Move slot (11, `moves.py`): `[id, power/200, has_secondary, has_recoil, type_id,
 current_pp, max_pp, accuracy, never_miss]`.
 
 The two counters are read off the vendored poke-env's `status_counter`: sleep `min(n, 4)/4` (the
-`|cant|`/`|move|` lines since the sleep began), toxic `min(stage, 8)/8` where `stage` is the SIM's
-`tox` stage — the residual `[from] psn` chips since the switch-in, 0 on entry and while benched
-(`gen3_pe_reading_fixes_v1`). A FAINTED active's `active_context` boosts are zero (the sim's faint
+`|cant|`/`|move|` lines since the sleep began), toxic `min(stage, 15)/15` where `stage` is the SIM's
+`tox` stage (Showdown's `tox.onResidual` ramps it to 15; `TOXIC_STAGE_MAX`) — the residual `[from] psn` chips since the
+switch-in, 0 on entry and while benched (`gen3_pe_reading_fixes_v1`; the scale was `min(stage, 8)/8` until
+`gen3_toxic_stage_scale_v1`, so the 9th tick on read as the 8th). The next tick costs `min(stage + 1, 15)/16` of max HP. A FAINTED active's `active_context` boosts are zero (the sim's faint
 clears them), and the `flashfire` volatile slot stays set until its holder leaves the field.
 
 An OPPONENT's Hidden-Power block is `HiddenPowerTracker`'s per-species vector (our own mons read
@@ -196,6 +197,13 @@ scalars moved to the mon slots (§1.2).
 | `wish_floating_our` | 3 | 1 |
 | `wish_floating_opp` | 4 | 1 |
 | `active_req_moves` — `[move_num ×4, type_id ×4, legal_now ×4]` | 5 | 12 |
+
+`wish_floating_our` / `_opp` are `WISH_HEAL_FRACTION` (0.5: gen-3 Wish heals half the RECIPIENT's max HP) when that side's Wish
+WILL LAND at the NEXT end-of-turn residual, else 0 — the engine's slot condition one residual from landing
+(`trackers/history.rs::WishFold`; cast on turn *k*, lands at the end of turn *k*+1 on whoever then holds the slot, the
+wisher's faint does not cancel it, a second cast while one is pending FAILS and is not a cast). At a replacement decision
+after the end-of-turn faint (same turn number as the residual that already ran) it drops a Wish that just landed and
+keeps one cast this turn (`gen3_wish_flag_truth_v1`).
 
 `active_req_moves` is in **request-slot order** (slot *k* ↔ action logit 6+*k*) and is sliced
 straight into `ExtractorContext`; it never enters the raw-scalar projection path. The per-mon move
@@ -549,7 +557,7 @@ plus one zero matrix. Two more levers (config v150, `gen3_static_recovery_v1`, O
 either encoding: **`--eot-residual on`** adds every mon's (both sides) END-OF-TURN HP change if it is the mon on its
 side's field at the end of this turn — Leftovers (known item, else the species' Smogon prior), sand / hail chip (types,
 Sand Veil; none on a timed weather's last turn; × P(no Cloud Nine / Air Lock)), Rain Dish, the next status tick (burn /
-poison 1/8, Toxic (n+1)/16, × (1 − P(Shed Skin)/3)), Leech Seed's drain on the seeded active and its heal to every mon of
+poison 1/8, Toxic min(n+1, 15)/16, × (1 − P(Shed Skin)/3)), Leech Seed's drain on the seeded active and its heal to every mon of
 the other side (scaled by max HP; Liquid Ooze inverts it), Wish +1/2 (half the RECIPIENT's max HP in gen 3), Ingrain,
 Curse, Nightmare × P(stays asleep), and the HP-clamped net (11 columns, `agents/model/eot_residual.py`'s
 `EotResidualRule`, on the op's context) — through a zero-init bias-free `IsolatedLinear(11, 128)` beside

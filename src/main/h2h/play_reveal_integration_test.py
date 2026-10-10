@@ -48,7 +48,10 @@ PAIRS, N_ENVS = 12, 8
 #: RE-RECORDED 2026-10-07 for gen3_mon_tied_gain_v1 (config v145): the op's out_gain shrank 99 -> 29, and the
 #: conftest's ORDER-keyed `perturb_` draws every later parameter's noise from one stream, so the checkpoints moved;
 #: was 4dd7ba19… / e4c9f4e8….
-OFF_BITS = "fa189a9413cde29573bc6ce70004f2af2b124e0e79e703d5ae218313326df35f"
+#: RE-RECORDED 2026-10-09 for gen3_toxic_stage_scale_v1 + gen3_wish_flag_truth_v1 (config v151): the toxic cell and the
+#: Wish flag the checkpoints read, and the `g` ledger's toxic decoder, moved the played logits' low bits; the OUTCOMES
+#: (`OFF_OUTCOME_ALL`: every result, end turn, team and action) did not move; was fa189a94… for the bits.
+OFF_BITS = "dea7e96ee3f8ccdbc5759b559eb3f24868f6da663c726e687d823a0be69b201c"
 OFF_OUTCOME_ALL = "ee8512eeda767c34f9c9b186c31692943524389eab7131ce1dd6bff2fbfef9fc"
 
 
