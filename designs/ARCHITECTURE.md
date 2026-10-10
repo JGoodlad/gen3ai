@@ -352,7 +352,7 @@ blocked attack (outcome `fail` against Protect / Detect) is the exogenous FREEZE
 no-op.
 
 Per-slot layout of the event record, and the embedded-ID manifest that routes raw ids to
-embedding tables, live in `src/agents/observation/CLAUDE.md`.
+embedding tables, live in `designs/observation/per_block_reference.md`.
 
 ### 1.7 The OBS-FACTS block — 84 dims (`gen3_obs_facts_v1`)
 
@@ -2031,7 +2031,7 @@ not re-derive them.
 | Question | File |
 |---|---|
 | **This document as a clickable digraph** — the **120 nodes / 1103 edges** above (counted 2026-08-23 from `delivery_graph_snapshot.json`, which the viewer is built from — read it there rather than trusting this cell), hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `value_pooled` to see exactly what the critic reads) | **https://model.g5d.io** (served live from the workstation checkout, so it is never a stale copy), or `designs/architecture_viewer.html` via `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
-| Obs-build performance gate (mandatory benchmark) + per-slot detail | `src/agents/observation/CLAUDE.md` |
+| Obs-build performance gate (mandatory benchmark) + per-slot detail | `src/agents/observation/CLAUDE.md` (the rule) · `designs/observation/per_block_reference.md` (the detail) |
 | Phase contract, `ExtractorContext`, versioning playbook | `src/agents/model/CLAUDE.md` |
 | How it got here — every version entry, verbatim | `designs/CHANGELOG.md` |
 | Which `ai_vN` folder is relevant | `designs/CLAUDE.md` |

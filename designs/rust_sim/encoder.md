@@ -365,7 +365,7 @@ labels' consumer guard); `src/utils/rust_env/oracle_reveal_integration_test.py` 
 `encoder::facts::obs_facts(inputs, tables, out)` is `agents/observation/obs_facts.py`'s
 `encode_obs_facts`, cell for cell (f64, one round at the write): what the opponent has seen of our team,
 the opponent active's Choice-lock evidence, the actives' Encore / Taunt / Disable / Uproar / partial-trap
-turns and each side's screen turns (`ARCHITECTURE`-level detail: `src/agents/observation/CLAUDE.md`).
+turns and each side's screen turns (`ARCHITECTURE`-level detail: `designs/observation/per_block_reference.md`).
 `encode_into` writes it at `OFFSET_OBS_FACTS` (2761) as step 8, the row's last block (appended at the X5
 version break, config v144, part 3: `OBS_DIM` 2761 → 2845, the prefix byte-identical; `cell_name` names a
 cell `obs_facts+k`). `BattleVersion::encode_facts(side, &mut [f32; OBS_FACTS_DIM])` computes the block
