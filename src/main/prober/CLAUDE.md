@@ -147,9 +147,10 @@ The other top-level modules (full text: `designs/prober/engine_and_model.md`):
 - 🚨 **`overvalue_tau` is in the CRITIC'S OWN UNITS** — the shaped 5.0 carried onto a win-prob critic makes
   `critic_overvalued` read a confident, false 0. `None` resolves it per run; an explicit value is honoured
   and a tau no gap can reach raises `threshold_warning`.
-- 🚨 **β name PROVENANCE**: a β candidate not `revealed` is named by the species POSTERIOR, which was a mon
-  not on the team at all in 73.3% of pivots — one such label produced a wrong research conclusion. Read time
-  attaches `engine.BELIEF_NAME_CAVEAT` and NEVER re-derives a name. Detail: `designs/prober/analyze_output.md`.
+- 🚨 **β name PROVENANCE**: a RECORDED β name is the species POSTERIOR, which was a mon not on the team at
+  all in 73.3% of pivots — one such label produced a wrong research conclusion. Read time attaches
+  `engine.BELIEF_NAME_CAVEAT` to every named β slot and NEVER re-derives a name (the recorder's `revealed` flag
+  has no writer any more and is not read). Detail: `designs/prober/analyze_output.md`.
 - 🚨 **THE TRACE QUOTA PREFERS LOSSES — read `selection` FIRST** (`ProbeSession.trace_selection`,
   declared in `agents/training/trace_selection.py`). A tree that records none is `known: false`, SELECTION
   UNKNOWN — never read as uniform. Detail: `designs/prober/counterfactual_probes.md`.

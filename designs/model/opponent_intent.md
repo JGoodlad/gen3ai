@@ -243,14 +243,16 @@ pointer's named candidates miss is an OTHER label, supervised, never masked. Ful
 `β` points at a SLOT, so something has to name it, and **where the name comes from decides what the
 row means** (`gen3_beta_revealed_naming_v1`):
 
-| slot | named from | trace flag |
-|---|---|---|
-| already REVEALED on the board | (recorder history: the poke-env `battle.opponent_team` via `get_team_list`, deleted in T27 P6; the prober's current hypotheses view names a revealed slot from the obs's own opponent-team row, `main/prober/engine/readout.py`) | `"revealed": true` |
-| still HIDDEN | the model's OWN species posterior (`belief_decode.top_species_per_slot`) — the same content-addressing `β`'s training target uses | `"revealed": false` |
+| slot | named from |
+|---|---|
+| already REVEALED on the board | (recorder history: the poke-env `battle.opponent_team` via `get_team_list`, deleted in T27 P6; the prober's current hypotheses view names a revealed slot from the obs's own opponent-team row, `main/prober/engine/readout.py`) |
+| still HIDDEN | the model's OWN species posterior (`belief_decode.top_species_per_slot`) — the same content-addressing `β`'s training target uses |
 
-**Traces already on disk cannot be repaired** (they baked the posterior name and do not carry the
-board), so the read side attaches `engine.BELIEF_NAME_CAVEAT` to any candidate not flagged
-`revealed` rather than inventing a replacement name. See `src/main/prober/CLAUDE.md`.
+The recorder also wrote a per-row `"revealed"` flag saying which branch named the row. **Its only writer
+is deleted and the prober no longer reads it** (no Rust-core trace records an `opp_intent` block). **Traces
+already on disk cannot be repaired** (they baked the posterior name and do not carry the board), so the
+read side attaches `engine.BELIEF_NAME_CAVEAT` to EVERY named recorded β candidate rather than inventing a
+replacement name. See `src/main/prober/CLAUDE.md`.
 
 #### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
 

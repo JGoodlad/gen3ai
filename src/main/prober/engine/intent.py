@@ -61,17 +61,16 @@ def _move_display(move_id: str) -> str:
 
 
 def _beta_candidate(e: dict) -> OppIntentCandidate:
-    """One recorded `β` row → a candidate, with the naming PROVENANCE resolved once.
+    """One recorded `β` row → a candidate.
 
-    Names are NOT re-derived here, deliberately: an old trace baked the posterior name and the
-    board it should have been read from is not in the trace at all, so the only honest repair at
-    read time is to attach `BELIEF_NAME_CAVEAT` — never to invent a replacement name."""
+    Every NAMED slot carries `BELIEF_NAME_CAVEAT`: the recorded name is the species posterior, and the
+    board it should have been read from is not in the trace, so the only honest repair at read time is
+    to attach the caveat — never to invent a replacement name. A `revealed` key a stored row may carry
+    (written by the deleted poke-env recorder) is deliberately not read."""
     species = str(e["species"]) if e.get("species") else None
-    revealed = bool(e.get("revealed"))
     return OppIntentCandidate(
         slot=int(e.get("slot", -1)), p=float(e.get("p", 0.0)), species=species,
-        revealed=revealed,
-        caveat=(BELIEF_NAME_CAVEAT if (species is not None and not revealed) else None))
+        caveat=(BELIEF_NAME_CAVEAT if species is not None else None))
 
 
 def build_opp_intent(inv: dict) -> "OppIntentView | None":
@@ -118,7 +117,7 @@ def opp_intent_text(view: "OppIntentView | None", top_n: int = 3) -> str:
     `expects fireblast 41% · SWITCH 22% · icebeam 12%`, and when SWITCH leads, the `β` follow-up:
     `expects SWITCH 52% · fireblast 20% → in: blissey 61%`. Empty string on `None`.
 
-    When the `β` name is a POSTERIOR DECODE rather than a mon read off the board, the sentence
+    The `β` name is a POSTERIOR DECODE rather than a mon read off the board, so the sentence
     carries `BELIEF_NAME_CAVEAT` — the sentence is the shared vocabulary, so the qualifier has to
     ride IN it or the surfaces that print only the sentence lose it silently."""
     if view is None or not view.alpha:

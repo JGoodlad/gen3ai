@@ -1170,14 +1170,14 @@ _FULL_ANALYSIS = {
     },
     "opp_intent": {"alpha": [{"name": "earthquake", "p": 0.5, "is_switch": False},
                              {"name": "SWITCH", "p": 0.3, "is_switch": True}],
-                   # ONE OF EACH β naming provenance, because the three render differently: a
-                   # board-read name (plain), a posterior decode (carries the engine's caveat), and
-                   # a slot no species head could name at all (a bare index, already honest).
-                   "beta": [{"slot": 2, "p": 0.6, "species": "blissey", "revealed": True,
-                             "caveat": None},
-                            {"slot": 3, "p": 0.3, "species": "porygon2", "revealed": False,
+                   # Both β shapes: a recorded name (a posterior decode — carries the engine's
+                   # caveat) and a slot no species head could name at all (a bare index, already
+                   # honest).
+                   "beta": [{"slot": 2, "p": 0.6, "species": "blissey",
                              "caveat": BELIEF_NAME_CAVEAT},
-                            {"slot": 4, "p": 0.2, "species": None, "revealed": False,
+                            {"slot": 3, "p": 0.3, "species": "porygon2",
+                             "caveat": BELIEF_NAME_CAVEAT},
+                            {"slot": 4, "p": 0.2, "species": None,
                              "caveat": None}],
                    "top": {"name": "earthquake", "p": 0.5, "is_switch": False},
                    "switch_p": 0.3, "text": "it expected earthquake (50%)"},
@@ -1429,10 +1429,9 @@ def _beta_rows(html: str) -> dict:
     return rows
 
 
-def test_analyze_marks_a_BELIEVED_beta_name_and_leaves_a_REVEALED_one_plain(client):
-    """/analyze renders β's FULL candidate list, so it is where the provenance mix is visible at
-    once. `_FULL_ANALYSIS` carries one of each: a board-read name (plain), a posterior decode
-    (caveated), and a slot with no species head at all (a bare index, nothing to qualify).
+def test_analyze_marks_every_NAMED_beta_slot_as_believed_and_leaves_a_bare_index_plain(client):
+    """/analyze renders β's FULL candidate list. `_FULL_ANALYSIS` carries both shapes: recorded names (posterior
+    decodes, caveated) and a slot with no species head at all (a bare index, nothing to qualify).
 
     The caveat STRING is the engine's (`BELIEF_NAME_CAVEAT`) — a sentence one surface learns must
     not go missing on another, and a second surface authoring its own wording is how two surfaces
@@ -1446,8 +1445,8 @@ def test_analyze_marks_a_BELIEVED_beta_name_and_leaves_a_REVEALED_one_plain(clie
     # analysis this fix came out of, on a turn whose slot held a revealed Salamence.
     assert "porygon2" in rows["slot 3"] and BELIEF_NAME_CAVEAT in rows["slot 3"]
     assert 'class="tag believed"' in rows["slot 3"]
-    # The board-read name is a fact and stays plain.
-    assert "blissey" in rows["slot 2"] and "believed" not in rows["slot 2"]
+    # A recorded name is a posterior decode whatever it names: there is no "plain" β name any more.
+    assert "blissey" in rows["slot 2"] and BELIEF_NAME_CAVEAT in rows["slot 2"]
     # A slot no species head could name renders as a bare index — a caveat needs a name to qualify.
     assert "believed" not in rows["slot 4"]
 

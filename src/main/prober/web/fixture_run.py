@@ -50,16 +50,12 @@ def _inv(turn: int, chosen: str, reward_total: float, *, faint: bool = False,
 # ATTACK (β is irrelevant and stays in the drop-down) and one where α expects a SWITCH (β's named
 # mon is promoted onto the card). A fixture carrying only the first would leave the β path ungated.
 #
-# The `revealed` key is the β-name PROVENANCE (`gen3_beta_revealed_naming_v1`) and the fixture holds
-# ONE OF EACH, because the two render differently and a fixture with only one leaves the other path
-# untested: `true` = the recorder read the mon off the board (renders plain), absent/`false` = the
-# species posterior named it (renders with the engine's caveat). ABSENT rather than `false` on the
-# posterior rows on purpose — that is the literal shape of every trace written before the fix, which
-# is the case the caveat exists for.
+# A recorded β name is the species posterior, so every named slot renders with the engine's caveat; the
+# stored rows carry NO `revealed` key (nothing writes one any more, and the prober does not read one).
 _INTENT_ATTACK = {
     "alpha": [{"name": "earthquake", "p": 0.52}, {"name": "SWITCH", "p": 0.21},
               {"name": "icebeam", "p": 0.18}, {"name": "toxic", "p": 0.09}],
-    "beta": [{"slot": 3, "p": 0.44, "species": "blissey", "revealed": True},
+    "beta": [{"slot": 3, "p": 0.44, "species": "blissey"},
              {"slot": 4, "p": 0.31, "species": "skarmory"}],
 }
 _INTENT_SWITCH = {

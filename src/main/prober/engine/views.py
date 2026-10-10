@@ -297,8 +297,8 @@ class OppIntentOption:
     was_actual: bool = False
 
 
-#: The caveat every surface must print beside a `β` slot name that came from the model's species
-#: POSTERIOR rather than from the board. It lives here, not in a template, for the same reason
+#: The caveat every surface must print beside a RECORDED `β` slot name: that name is the model's species
+#: POSTERIOR, not a mon read off the board. It lives here, not in a template, for the same reason
 #: `timeline_entry_text` does: a sentence one surface learns must not go missing on another.
 #:
 #: Why it exists: `β`'s candidate mask is alive-and-not-active, which INCLUDES revealed bench mons,
@@ -306,38 +306,31 @@ class OppIntentOption:
 #: is un-trained. Measured over a 843-battle sentinel sweep (2026-08-19), the posterior-decoded name
 #: was a mon not on the opponent's team **at all** in 73.3% of 6,876 pivots (88.3% on revealed
 #: slots), and one such label was read as "β predicts porygon2" on a turn where β's slot was the
-#: revealed Salamence and β was CORRECT. Recorders from `gen3_beta_revealed_naming_v1` on name a
-#: revealed slot off the board and flag it (`revealed: true`); EVERY trace written before that
-#: baked the posterior name, and no read-time re-derivation can recover the board — so the honest
-#: repair for an old trace is to say what the name is.
+#: revealed Salamence and β was CORRECT. The recorder that could flag a board-read name
+#: (`revealed: true`, `gen3_beta_revealed_naming_v1`) was the poke-env `BattleRecorder`, DELETED
+#: with the Python battle layer (T27 P6); no current trace carries an `opp_intent` block at all, so
+#: the prober no longer reads the flag: EVERY recorded β name reads as a posterior decode, which is
+#: what the traces that exist (all written before the core cutover) baked. A revealed slot is named
+#: off the obs's own opponent-team row by the model-backed hypotheses view (`readout.py`), not here.
 BELIEF_NAME_CAVEAT = "believed (posterior decode)"
 
 
 @dataclass(frozen=True)
 class OppIntentCandidate:
-    """One `β` candidate: a slot the opponent could bring in, and how much mass `β` puts there.
+    """One recorded `β` candidate: a slot the opponent could bring in, and how much mass `β` puts there.
 
-    `species` names the slot, and WHERE the name came from is the load-bearing part:
+    `species` names the slot, and it is the model's OWN species posterior
+    (`belief_decode.top_species_per_slot`), which is un-supervised on a revealed slot — a guess, so
+    `caveat` carries the sentence saying so (`BELIEF_NAME_CAVEAT`). The recorded `revealed` provenance
+    flag is NOT read (see `BELIEF_NAME_CAVEAT`): nothing writes it any more.
 
-    - `revealed=True` — the slot was already on the board at that decision, and the recorder named
-      it from the opponent's revealed team (the encoder's own opp-slot order). A fact.
-    - `revealed=False` — the model's OWN species posterior
-      (`belief_decode.top_species_per_slot`), which is un-supervised on a revealed slot. A guess,
-      and `caveat` carries the sentence saying so.
-
-    Every trace written before `gen3_beta_revealed_naming_v1` carries no `revealed` key at all, so
-    it reads as `False` — correct, because those names ARE all posterior decodes.
-
-    `caveat` is `None` when there is nothing to qualify: a revealed name, or a slot with no species
-    head to name it (which renders as a bare index and is already honest)."""
+    `caveat` is `None` only when there is nothing to qualify: a slot with no species head to name it
+    (which renders as a bare index and is already honest)."""
     slot: int
     p: float
     species: "str | None"
-    #: Did the RECORDER name this slot off the board? False on every pre-`gen3_beta_revealed_naming_v1`
-    #: trace, which is the honest reading of one.
-    revealed: bool = False
-    #: `BELIEF_NAME_CAVEAT` when the name is a posterior decode, else None. A stored FIELD rather
-    #: than a property, so `asdict` carries it into the CLI JSON and no surface re-derives the test.
+    #: `BELIEF_NAME_CAVEAT` when `species` names the slot, else None. A stored FIELD rather than a
+    #: property, so `asdict` carries it into the CLI JSON and no surface re-derives the test.
     caveat: "str | None" = None
 
 

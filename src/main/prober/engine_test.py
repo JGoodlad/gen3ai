@@ -1022,50 +1022,52 @@ def test_build_opp_intent_without_beta():
 
 
 def test_opp_intent_text_is_the_shared_sentence():
-    from main.prober.engine import build_opp_intent, opp_intent_text
+    from main.prober.engine import BELIEF_NAME_CAVEAT, build_opp_intent, opp_intent_text
     assert opp_intent_text(None) == ""
     text = opp_intent_text(build_opp_intent({"opp_intent": _INTENT}))
     assert text == "expects earthquake 52% · SWITCH 21% · icebeam 18%"
     # β is appended ONLY when α actually leads with the switch — otherwise it is noise on the line.
     assert "in:" not in text
     sw = {"alpha": [{"name": "SWITCH", "p": 0.61}, {"name": "toxic", "p": 0.39}],
-          "beta": [{"slot": 2, "p": 0.58, "species": "blissey", "revealed": True}]}
+          "beta": [{"slot": 2, "p": 0.58, "species": "blissey"}]}
     assert opp_intent_text(build_opp_intent({"opp_intent": sw})) == \
-        "expects SWITCH 61% · toxic 39% → in: blissey 58%"
+        f"expects SWITCH 61% · toxic 39% → in: blissey 58% · {BELIEF_NAME_CAVEAT}"
 
 
 # ---------------------------------------------------------------------------
-# β name PROVENANCE (`gen3_beta_revealed_naming_v1`) — the read-time half
+# β name PROVENANCE — every recorded name is a posterior decode
 # ---------------------------------------------------------------------------
 # The recorder used to name EVERY β slot from the species posterior, which is un-supervised on a
 # revealed slot: measured over a 843-battle sweep (2026-08-19) the rendered mon was not on the
 # opponent's team at all in 73.3% of 6,876 pivots, and one such label was read as "β predicts
-# porygon2" on a turn where β's slot held the revealed Salamence and β was CORRECT. Traces already
-# on disk baked that name and do not carry the board, so read time attaches a CAVEAT — it never
-# re-derives a name it cannot ground.
+# porygon2" on a turn where β's slot held the revealed Salamence and β was CORRECT. Traces on disk
+# baked that name and do not carry the board, so read time attaches a CAVEAT — it never re-derives a
+# name it cannot ground. The recorder's `revealed` flag (`gen3_beta_revealed_naming_v1`) had its only
+# writer deleted with the poke-env recorder (T27 P6), so the prober no longer reads it.
 
-def test_beta_names_from_an_OLD_trace_are_all_caveated():
-    """Every trace written before the recorder fix carries no `revealed` key at all. That must read
-    as 'posterior decode', because that is exactly what those names are."""
+def test_beta_names_from_a_recorded_trace_are_all_caveated():
+    """A recorded β name is the species posterior. It must read as 'posterior decode', because that is
+    exactly what it is."""
     from main.prober.engine import build_opp_intent, BELIEF_NAME_CAVEAT
-    v = build_opp_intent({"opp_intent": _INTENT})       # no `revealed` key anywhere
-    assert [c.revealed for c in v.beta] == [False, False]
+    v = build_opp_intent({"opp_intent": _INTENT})
     assert v.beta[0].species == "blissey" and v.beta[0].caveat == BELIEF_NAME_CAVEAT
     # …and the name itself is passed through UNCHANGED. Repairing it is impossible (the board is
     # not in the trace) and guessing a replacement would be the same defect facing the other way.
     assert v.beta[0].species == "blissey"
 
 
-def test_a_revealed_beta_name_carries_no_caveat():
-    """A slot the recorder read off the board is a FACT — caveating it would teach the reader to
-    discount the honest half too."""
-    from main.prober.engine import build_opp_intent
+def test_a_stored_revealed_flag_is_not_read():
+    """A trace written by the deleted recorder may carry `"revealed": true`. The prober ignores it: the
+    candidate has no `revealed` field and the name is caveated whatever the flag says (fails on a revert
+    that reads it again, which would leave a name the board never supported plain)."""
+    import dataclasses
+    from main.prober.engine import build_opp_intent, BELIEF_NAME_CAVEAT
     v = build_opp_intent({"opp_intent": {
         "alpha": [{"name": "SWITCH", "p": 1.0}],
         "beta": [{"slot": 0, "p": 0.7, "species": "salamence", "revealed": True},
                  {"slot": 3, "p": 0.3, "species": "snorlax", "revealed": False}]}})
-    assert (v.beta[0].revealed, v.beta[0].caveat) == (True, None)
-    assert v.beta[1].revealed is False and v.beta[1].caveat
+    assert "revealed" not in {f.name for f in dataclasses.fields(v.beta[0])}
+    assert [c.caveat for c in v.beta] == [BELIEF_NAME_CAVEAT, BELIEF_NAME_CAVEAT]
 
 
 def test_a_bare_index_is_not_caveated_because_there_is_no_name_to_qualify():

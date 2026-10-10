@@ -179,9 +179,8 @@ move order, a hazard, a mid-turn forced replacement on each side, residuals, "ne
 end) plus planted hidden facts for the perspective guard; `/game` opens on it by default. Its
 `opp_intent` blocks come in **two shapes on purpose** (α expects an ATTACK at one decision, a SWITCH at
 another so `β`'s named mon is promoted onto the card), on only ONE battle, so the `β` path and the
-heads-off path are both gated. Its `β` candidates hold **one of each name provenance**: one
-`"revealed": true` and the rest with the key **ABSENT** (the literal shape of every trace before
-`gen3_beta_revealed_naming_v1`).
+heads-off path are both gated. Its `β` candidates carry no `revealed` key (nothing writes one and the prober does not read one), so
+every named slot renders with the engine's posterior-decode caveat.
 
 **It writes no `value_dist`** (the distributional head and the awareness fold that read it are deleted;
 `model_config.json` is `{}`), and win-prob on exactly one battle.
