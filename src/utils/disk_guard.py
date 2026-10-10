@@ -17,6 +17,8 @@ TWO HALVES, ONE MODULE.
        + eval cycles x eval-trace bytes per cycle       (traces are kept forever by default)
        + pool snapshots x checkpoint bytes              (capped by the pool window, 20)
        + the run's compile cache (what is not on disk yet)
+       + the SHARED compile root's growth (cap - in use), when sharing is on and it shares this filesystem
+         (on another filesystem it is checked there and REPORTED: `shared_cache_plan`)
        + value-sidecar / TensorBoard / log bytes per million steps
        = subtotal;   REQUIRED = subtotal x (1 + MARGIN_FRACTION) + RESERVE_BYTES
 
@@ -254,6 +256,24 @@ class RunPlan:
     snapshots: bool = True           # pool snapshots are written (self-play); conservative default
     compile_cache: bool = True       # a CUDA run builds the inductor / triton cache
     existing_compile_cache_bytes: int = 0
+    shared_cache: Optional["SharedCachePlan"] = None   # the SHARED compile root's growth (when sharing is on)
+
+
+@dataclass(frozen=True)
+class SharedCachePlan:
+    """The SHARED compile cache (`agents.model.compile_cache_shared`, gen3_shared_compile_cache_v1) as the disk
+    sees it: the root may grow to its CAP (LRU pruning holds it there), so the growth still possible is
+    ``cap - used``. On the run archive's filesystem it is COUNTED in REQUIRED; on another filesystem it is
+    checked against THAT filesystem's free space and REPORTED (orchestrator 2026-10-10, the shared cache's
+    FINDING 3)."""
+    root: str
+    cap: int
+    used: int
+    same_fs: bool
+
+    @property
+    def growth(self) -> int:
+        return max(0, int(self.cap) - int(self.used))
 
 
 @dataclass(frozen=True)
@@ -300,6 +320,14 @@ def requirement(plan: RunPlan, allow: Allowances = DEFAULT_ALLOWANCES) -> Requir
     terms.append(("compile cache", cc,
                   f"{_fmt(allow.compile_cache_bytes)} - {_fmt(plan.existing_compile_cache_bytes)} already on disk"
                   if plan.compile_cache else "CPU run: none"))
+    sc = plan.shared_cache
+    if sc is not None:
+        if sc.same_fs:
+            terms.append(("shared compile cache", sc.growth,
+                          f"cap {_fmt(sc.cap)} - {_fmt(sc.used)} in use at {sc.root} (this filesystem: counted)"))
+        else:
+            terms.append(("shared compile cache", 0,
+                          f"growth {_fmt(sc.growth)} at {sc.root}: ANOTHER filesystem, checked below"))
     side = int(mstep * (allow.value_sidecar_bytes_per_mstep + allow.log_bytes_per_mstep))
     terms.append(("sidecar + tb + logs", side,
                   f"{mstep:.1f}M steps x {_fmt(allow.value_sidecar_bytes_per_mstep + allow.log_bytes_per_mstep)}/M"))
@@ -319,6 +347,7 @@ class DiskVerdict:
     req: Optional[Requirement] = None
     ckpt_source: str = ""
     allow_flag: bool = False
+    shared_line: str = ""            # the shared root on ANOTHER filesystem: its own check, REPORTED
 
     @property
     def refused(self) -> bool:
@@ -346,6 +375,8 @@ class DiskVerdict:
                    f"or pass {OPT_OUT_FLAG} (dev / short runs only; recorded in metadata.json)."]
         if sized:
             out.append("              " + sized.strip())
+        if self.shared_line:
+            out.append("              " + self.shared_line)
         out.append("              the arithmetic:")
         out += [f"  {ln}" for ln in r.lines()]
         return out
@@ -368,8 +399,39 @@ def check_for_run(plan: Optional[RunPlan], *, debug: bool, allow: bool,
     free = int((free_fn or free_bytes)(plan.run_dir))
     ok = free >= req.required
     status = PASS if ok else (OPTED_OUT if allow else REFUSED_LOW)
+    shared_line = ""
+    sc = plan.shared_cache
+    if sc is not None and not sc.same_fs:
+        sfree = int((free_fn or free_bytes)(sc.root))
+        need = sc.growth + RESERVE_BYTES
+        shared_line = (f"shared compile cache: {'✓' if sfree >= need else '⚠️  LOW —'} {_fmt(sfree)} free on "
+                       f"{probe_path(sc.root)} (another filesystem) vs its growth {_fmt(sc.growth)} "
+                       f"(cap {_fmt(sc.cap)} - {_fmt(sc.used)} in use) + reserve {_fmt(RESERVE_BYTES)}"
+                       + ("" if sfree >= need else " — REPORTED, not refused: LRU pruning holds the root at "
+                          "its cap, so a full disk there fails compiles loudly; lower "
+                          "$GEN3AI_COMPILE_SHARED_CAP_GB or free space"))
     return DiskVerdict(status, free=free, path=path, req=req, ckpt_source=plan.ckpt_source,
-                       allow_flag=bool(allow))
+                       allow_flag=bool(allow), shared_line=shared_line)
+
+
+def shared_cache_plan(run_dir: str, compiles: bool) -> Optional[SharedCachePlan]:
+    """The shared compile root's plan when the run COMPILES (CUDA) and sharing is ON (`compile_cache_shared.
+    enabled`), else None. Reads only — never creates the root (the preflight and `--dry-run` change nothing).
+    A dirty tree falls back to the per-run cache at startup, which the per-run term already counts; this
+    term is the shared root's, counted whenever sharing is on (conservative)."""
+    if not compiles:
+        return None
+    from agents.model import compile_cache_shared as SH
+    on, _why = SH.enabled()
+    if not on:
+        return None
+    root = SH.shared_root_path()
+    used = _dir_bytes(root) if os.path.isdir(root) else 0
+    try:
+        same = os.stat(probe_path(root)).st_dev == os.stat(probe_path(run_dir)).st_dev
+    except OSError:
+        same = True                     # unknown: count it (conservative)
+    return SharedCachePlan(root=root, cap=SH.cap_bytes(), used=used, same_fs=same)
 
 
 def plan_from_values(*, run_dir: str, model_path: Optional[str], steps: int, resume_steps: int,
@@ -385,11 +447,13 @@ def plan_from_values(*, run_dir: str, model_path: Optional[str], steps: int, res
     cb, src = find_checkpoint_bytes(run_dir, model_path, archive_dir)
     cc_dir = os.path.join(run_dir, "compile_cache")
     existing = _dir_bytes(cc_dir) if os.path.isdir(cc_dir) else 0
+    compiles = str(device or "auto").strip().lower() != "cpu"
     return RunPlan(run_dir=run_dir, steps=int(steps), resume_steps=int(resume_steps),
                    checkpoint_interval=interval, eval_freq=ef, ckpt_bytes=cb, ckpt_source=src,
                    fork=bool(fork), snapshots=bool(self_play),
-                   compile_cache=str(device or "auto").strip().lower() != "cpu",
-                   existing_compile_cache_bytes=existing)
+                   compile_cache=compiles,
+                   existing_compile_cache_bytes=existing,
+                   shared_cache=shared_cache_plan(run_dir, compiles))
 
 
 # --- the in-run watch ----------------------------------------------------------------------------

@@ -447,8 +447,13 @@ an unnameable commit, a `$LAUNCHER_GIT_HASH` disagreement, an unreadable GPU, or
 runs either way — a hit only skips compile time. The shared root is capped at 20 GiB
 (`GEN3AI_COMPILE_SHARED_CAP_GB`) and pruned least-recently-used at each start, never an entry a live
 process uses. A start that fails to LOAD a cached library (a truncated `.so` after a SIGKILL
-mid-link) is fixed by deleting that entry or launching once with `GEN3AI_SHARED_COMPILE_CACHE=0`. Detail:
-`designs/training/compile_flags.md` → "The SHARED compile cache, by KEY".
+mid-link) is fixed by deleting that entry or launching once with `GEN3AI_SHARED_COMPILE_CACHE=0`. **The disk
+preflight counts the shared root** (`utils.disk_guard.shared_cache_plan`) whenever sharing is on and the run compiles:
+- on the run archive's filesystem, its remaining growth (`cap − in use`) is a `shared compile cache` term of REQUIRED;
+- on another filesystem, a `shared compile cache:` line checks that filesystem's free space against the growth +
+  reserve and REPORTS it (✓ / ⚠️ LOW). It never refuses there, since pruning holds the root at its cap.
+
+Detail: `designs/training/compile_flags.md` → "The SHARED compile cache, by KEY".
 
 ### Memory headroom — `--grad-checkpointing` (operator knob)
 

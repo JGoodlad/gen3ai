@@ -243,3 +243,49 @@ def test_a_full_disk_write_error_is_recognised_through_its_wrapper():
         assert dg.is_disk_full(outer)
     assert not dg.is_disk_full(OSError(errno.EACCES, "denied"))
     assert not dg.is_disk_full(ValueError("x"))
+
+
+# --- the SHARED compile root (gen3_shared_compile_cache_v1; the shared cache's FINDING 3) ---------
+
+def test_the_shared_roots_growth_is_COUNTED_on_the_run_archives_filesystem(tmp_path):
+    sc = dg.SharedCachePlan(root=str(tmp_path / "shared"), cap=20 * GiB, used=3 * GiB, same_fs=True)
+    base = dg.requirement(_plan(tmp_path))
+    req = dg.requirement(_plan(tmp_path, shared_cache=sc))
+    assert _terms(req)["shared compile cache"] == 17 * GiB          # cap - in use
+    assert req.subtotal == base.subtotal + 17 * GiB
+    need = req.required
+    assert dg.check_for_run(_plan(tmp_path, shared_cache=sc), debug=False, allow=False,
+                            free_fn=lambda p: need - 1).refused
+
+
+def test_on_ANOTHER_filesystem_it_is_checked_there_and_REPORTED_never_counted(tmp_path):
+    sc = dg.SharedCachePlan(root=str(tmp_path / "elsewhere"), cap=20 * GiB, used=0, same_fs=False)
+    plan = _plan(tmp_path, shared_cache=sc)
+    assert _terms(dg.requirement(plan))["shared compile cache"] == 0
+    need = dg.requirement(plan).required
+
+    def free(p):                         # the run archive is roomy, the shared root's filesystem is not
+        return 1 * GiB if p == sc.root else need
+    v = dg.check_for_run(plan, debug=False, allow=False, free_fn=free)
+    assert v.status == dg.PASS
+    assert "shared compile cache: ⚠️  LOW" in v.shared_line and "REPORTED, not refused" in v.shared_line
+    assert v.shared_line in "\n".join(v.lines())
+    roomy = dg.check_for_run(plan, debug=False, allow=False, free_fn=lambda p: 500 * GiB)
+    assert roomy.shared_line.startswith("shared compile cache: ✓")
+
+
+def test_the_plan_reads_the_shared_root_only_when_sharing_is_on_and_creates_nothing(tmp_path, monkeypatch):
+    from agents.model import compile_cache_shared as SH
+    root = tmp_path / "never_created"
+    monkeypatch.setenv(SH.ENV_DIR, str(root))
+    monkeypatch.setenv(SH.ENV_CAP, "2")
+    monkeypatch.setenv(SH.ENV_OPT, "0")
+    assert dg.shared_cache_plan(str(tmp_path / "run"), compiles=True) is None       # opted out
+    monkeypatch.setenv(SH.ENV_OPT, "1")
+    assert dg.shared_cache_plan(str(tmp_path / "run"), compiles=False) is None      # a CPU run compiles nothing
+    sc = dg.shared_cache_plan(str(tmp_path / "run"), compiles=True)
+    assert sc is not None and sc.root == str(root) and sc.cap == 2 * GiB and sc.used == 0 and sc.same_fs
+    assert not root.exists()                                                         # the preflight changes nothing
+    plan = dg.plan_from_values(run_dir=str(tmp_path / "run"), model_path=None, steps=98_304, resume_steps=0,
+                               checkpoint_every_steps=None, eval_freq=None, fork=False, device="cuda")
+    assert plan.shared_cache == sc

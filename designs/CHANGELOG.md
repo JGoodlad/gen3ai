@@ -13698,3 +13698,21 @@ read both cells for its end-of-turn rule and found them wrong.
   cache HIT). The clean-rule and atomic-publish tests were mutation-checked (they fail on revert).
 - **Measurement.** The cold vs warm-shared `--arch endstate` startup read is written as commands in
   `designs/training/compile_flags.md` (NOT run; the perf agent's next lease window).
+
+## 2026-10-10 — the disk preflight COUNTS the shared compile root (the shared cache's FINDING 3)
+
+- **Why.** The orchestrator, 2026-10-10. With the shared compile cache on by default, the preflight reserved a per-run
+  compile cache that a shared run barely uses, and it never saw the shared root, which can grow to its 20 GiB cap on
+  the same `/home` filesystem.
+- **What.** `utils.disk_guard.shared_cache_plan` (reads only; `compile_cache_shared.shared_root_path` never creates the
+  root) applies when sharing is on and the run compiles.
+  - Same filesystem as the run archive: the root's remaining growth (`cap − in use`) is a `shared compile cache` term
+    of REQUIRED.
+  - Another filesystem: that filesystem's free space is checked against the growth + reserve and REPORTED on its own
+    line (✓ / ⚠️ LOW). It never refuses there, since LRU pruning holds the root at its cap.
+  - The per-run compile-cache term stays, which is conservative: a dirty tree falls back to it.
+  - A fresh `--arch endstate` dry run on this box: REQUIRED 7.10 → 32.10 GiB (20 GiB growth + its 25 % margin)
+    against 508 GiB free.
+- **Tests.** `disk_guard_test.py`: counted on the same filesystem (it can refuse); reported, never counted, on
+  another; the plan exists only with sharing on and a compiling run; the preflight creates nothing.
+- **Docs.** `training_runbook.md`; the `disk_guard` docstring.

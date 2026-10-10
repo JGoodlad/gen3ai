@@ -135,12 +135,18 @@ def enabled() -> Tuple[bool, str]:
     return False, f"${ENV_OPT}={raw!r} is not one of {_ON[1:] + _OFF} — treated as OFF"
 
 
+def shared_root_path() -> str:
+    """Where the shared root IS (`$GEN3AI_COMPILE_SHARED_DIR`, else `~/.cache/gen3ai/compile_shared`), absolute,
+    WITHOUT creating it — for readers that must change nothing (the disk preflight, `--dry-run`)."""
+    root = os.environ.get(ENV_DIR) or os.path.join(os.path.expanduser("~"), *DEFAULT_SUBPATH)
+    return os.path.abspath(root)
+
+
 def shared_root() -> str:
     """`$GEN3AI_COMPILE_SHARED_DIR`, else `~/.cache/gen3ai/compile_shared` (created). Raises
     `OSError` when it cannot be made and `RuntimeError` when it is on a RAM filesystem."""
     from utils.scratch import REFUSED_FS, fs_type
-    root = os.environ.get(ENV_DIR) or os.path.join(os.path.expanduser("~"), *DEFAULT_SUBPATH)
-    root = os.path.abspath(root)
+    root = shared_root_path()
     os.makedirs(root, exist_ok=True)
     fs = fs_type(root)
     if fs in REFUSED_FS:
