@@ -92,7 +92,7 @@ case "$WIN" in
     # WHO SYNCS (F-PB-4) + T2 per-step for E; then the SHARED compile cache's cold vs warm fresh launch
     # (`designs/training/compile_flags.md` "The SHARED compile cache, by KEY"; the per-run control is skipped: a
     # cold shared start compiles exactly what a per-run cold start compiles); then T2 per-step for P and R.
-    job E_stack     10 HEAD --argv "$(cfg E)" --profile --profile-stack --t2 256,64
+    job E_stack     11 HEAD --argv "$(cfg E)" --profile --profile-epochs 3 --sync-sites --t2 256,64
     launchjob cc_cold 18
     launchjob cc_warm  9
     job T2_P         5 "$TA" --argv "$(cfg P)" --t2-only --t2 256,64

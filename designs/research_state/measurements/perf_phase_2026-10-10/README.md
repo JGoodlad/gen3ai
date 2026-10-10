@@ -90,6 +90,16 @@ closed form), except the item-1 pair, which ran on extracted trees of `957d4dbd^
     each with its own optimizer step per micro-batch) and per-micro-batch device-to-host copies.
   - A with-stack profile attributes them (window C). At 14 % idle, closing it is worth up to ~7 s per E update
     (ESTIMATE), and it is also what lets bf16's GPU-side gain reach the wall clock.
+  - ⚠️ **CORRECTION (2026-10-10, before window C).** Every profiled call above was ONE epoch, i.e. EPOCH 0. Epoch 0
+    carries the once-per-update work: the ride-along accumulator's host reads (`ridealong_terms.py` `acc.observe`),
+    the calibration and noise reads, and the label alignment. It costs ~1.3 s more than a later epoch
+    (6.57 vs 5.21 s). So the 14 % idle is EPOCH 0's, and later epochs' idle fraction is NOT measured. The
+    "~7 s per update" above is an UPPER bound; if later epochs are busy, the lever is nearer epoch 0's ~1 s.
+  - A CPU proxy (`--sync-sites`: every host-blocking Tensor call wrapped and attributed to its `src/` frames)
+    points at the ride-along tail: per micro-batch, a `bool(isfinite(grad norm))` for the four heads and one per
+    RND variant, plus the epoch-0 meters. These are a handful per micro-batch, not ~121. Hypothesis
+    (UNVERIFIED): the rest are pageable host-to-device copies, which CUDA stages synchronously.
+  - Window C profiles 3 epochs and runs the wrapped meter on the GPU (which also counts pageable H2D copies).
 
 ## Findings (standing rule 7)
 

@@ -107,6 +107,8 @@ def main():
     ap.add_argument("--reps", type=int, default=2, help="timed calls per epoch count")
     ap.add_argument("--profile", action="store_true")
     ap.add_argument("--profile-stack", action="store_true", help="with --profile: attribute every host-blocking CUDA call to its src/ frames")
+    ap.add_argument("--profile-epochs", type=int, default=1, help="epochs of the --profile / --sync-sites call (per-micro numbers average over them)")
+    ap.add_argument("--sync-sites", action="store_true", help="one more plain epoch with every host-blocking Tensor / CUDA call WRAPPED and attributed to its src/ frames")
     ap.add_argument("--canary", action="store_true")
     ap.add_argument("--t2", default="", help="comma-separated T2 buckets to time (empty = skip)")
     ap.add_argument("--t2-reps", type=int, default=50)
@@ -299,7 +301,7 @@ def main():
             from torch.profiler import ProfilerActivity, profile
             from agents.training.learner_benchmark import summarise_profile
             buf, _ = fresh_buffer()
-            model.n_epochs = 1
+            model.n_epochs = int(a.profile_epochs)
             model.num_timesteps = rows_per * 1          # a PLAIN update's phase (the cadence note above)
             res["profile_phase"] = "plain"
             acts = [ProfilerActivity.CPU] + ([] if cpu else [ProfilerActivity.CUDA])
@@ -308,12 +310,13 @@ def main():
                 model.train()
                 _sync()
                 pw = time.perf_counter() - t
-            n_micro = N_STEPS * N_ENVS // model.batch_size
+            n_micro = N_STEPS * N_ENVS // model.batch_size * int(a.profile_epochs)
             if a.profile_stack:
                 # WHO SYNCS (window B's F-PB-4): every host-blocking CUDA runtime call of the epoch, attributed to
                 # its innermost frames in OUR code (src/), counted per micro-batch and timed.
                 from collections import Counter
-                blk = ("cudaStreamSynchronize", "cudaDeviceSynchronize", "cudaEventSynchronize", "cudaMemcpy")
+                blk = ("cudaStreamSynchronize", "cudaDeviceSynchronize", "cudaEventSynchronize", "cudaMemcpy",
+                       "aten::_local_scalar_dense", "aten::nonzero")   # the host READS (a sync on CUDA)
                 cnt, tim = Counter(), Counter()
                 for ev in prof.events():
                     if not ev.name.startswith(blk):
@@ -331,6 +334,88 @@ def main():
             s["wall_s_profiled"] = pw
             s["kernel_classes"] = kernel_classes(prof)
             res["profile"] = s
+            save()
+
+        if a.sync_sites:
+            # WHO BLOCKS THE HOST (window B's F-PB-4: ~121 cudaStreamSynchronize per micro-batch that perf item 1's
+            # counter does not see). The profiler records no Python stack in this build (checked 2026-10-10), so
+            # every host-blocking Tensor / CUDA call is WRAPPED for one plain 1-epoch call and attributed to its
+            # innermost frames in our src/ (on CUDA: only calls on a CUDA tensor; the CPU smoke counts all, a proxy).
+            import traceback
+            from collections import Counter
+            cnt, tim = Counter(), Counter()
+            T = torch.Tensor
+            names = ("item", "__float__", "__int__", "__bool__", "tolist", "cpu", "numpy", "nonzero")
+            orig = {n: getattr(T, n) for n in names}
+            orig_to = T.to
+            orig_sync = torch.cuda.synchronize
+
+            def _site():
+                fr = [f for f in traceback.extract_stack()[:-2] if "/src/" in f.filename
+                      and "/site-packages/" not in f.filename]
+                return " < ".join(f"{f.filename.split('/src/')[-1]}:{f.lineno}" for f in reversed(fr[-3:]))
+
+            def wrap(n, fn):
+                def w(self, *x, **k):
+                    if not cpu and not self.is_cuda:
+                        return fn(self, *x, **k)
+                    t0 = time.perf_counter()
+                    try:
+                        return fn(self, *x, **k)
+                    finally:
+                        key = f"{n} <- {_site()}"
+                        cnt[key] += 1
+                        tim[key] += time.perf_counter() - t0
+                return w
+
+            def to_w(self, *x, **k):
+                tgt = (x[0] if x else k.get("device"))
+                is_d2h = (cpu or self.is_cuda) and (str(tgt).startswith("cpu") if tgt is not None else False)
+                # a PAGEABLE host tensor to the GPU: CUDA stages it synchronously (a cudaStreamSynchronize)
+                is_h2d_pageable = (not cpu and not self.is_cuda and tgt is not None and str(tgt).startswith("cuda")
+                                   and not self.is_pinned())
+                if not (is_d2h or is_h2d_pageable):
+                    return orig_to(self, *x, **k)
+                t0 = time.perf_counter()
+                try:
+                    return orig_to(self, *x, **k)
+                finally:
+                    key = f"{'to(cpu)' if is_d2h else 'to(cuda) from PAGEABLE'} <- {_site()}"
+                    cnt[key] += 1
+                    tim[key] += time.perf_counter() - t0
+
+            def sync_w(*x, **k):
+                t0 = time.perf_counter()
+                try:
+                    return orig_sync(*x, **k)
+                finally:
+                    key = f"cuda.synchronize <- {_site()}"
+                    cnt[key] += 1
+                    tim[key] += time.perf_counter() - t0
+
+            buf, _ = fresh_buffer()
+            model.n_epochs = int(a.profile_epochs)
+            model.num_timesteps = rows_per * 1
+            try:
+                for n in names:
+                    setattr(T, n, wrap(n, orig[n]))
+                T.to = to_w
+                torch.cuda.synchronize = sync_w
+                t = time.perf_counter()
+                model.train()
+                _sync()
+                sw = time.perf_counter() - t
+            finally:
+                for n in names:
+                    setattr(T, n, orig[n])
+                T.to = orig_to
+                torch.cuda.synchronize = orig_sync
+            n_micro = N_STEPS * N_ENVS // model.batch_size * int(a.profile_epochs)
+            res["sync_meter"] = {"wall_s": sw, "n_micro": n_micro,
+                                 "total_calls_per_micro": sum(cnt.values()) / n_micro,
+                                 "total_blocked_s": sum(tim.values()),
+                                 "sites": [{"site": k, "per_micro": c / n_micro, "s_total": tim[k]}
+                                           for k, c in sorted(cnt.items(), key=lambda kv: -tim[kv[0]])[:40]]}
             save()
 
         if a.canary:
