@@ -1,0 +1,13 @@
+[window A] START E at 09:13:41 (budget 10 min, 35 min left)
+[window A] END E rc=1 at 09:22:10: 
+[window A] START P at 09:22:10 (budget 6 min, 26 min left)
+[window A] END P rc=0 at 09:26:16: [bench P] DONE: marginal epoch 4.44s, update est 53.1s, gate PASS
+[window A] START R at 09:26:16 (budget 6 min, 22 min left)
+[window A] END R rc=0 at 09:30:17: [bench R] DONE: marginal epoch 5.02s, update est 51.4s, gate PASS
+[window A] START EK at 09:30:17 (budget 6 min, 18 min left)
+[window A] END EK rc=0 at 09:34:55: [bench EK] DONE: marginal epoch 5.20s, update est 53.2s, gate PASS
+[window A] START SF at 09:34:55 (budget 6 min, 13 min left)
+[window A] END SF rc=0 at 09:38:48: [bench SF] DONE: marginal epoch 4.33s, update est 44.5s, gate PASS
+[window A] START S at 09:38:48 (budget 7 min, 9 min left)
+[window A] END S rc=0 at 09:42:37: [bench S] DONE: marginal epoch 4.31s, update est 44.4s, gate PASS
+[window A] FINISHED at 09:42:37

@@ -1,0 +1,82 @@
+{
+ "tag": "SF",
+ "argv": "--arch static_recovery --trunk-layers 2 --allow-nonproduction-arch --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_6e0a1a7a/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 1.67919921875,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 1.235197808011435,
+  "compile_gate_prewarm": 164.36999712401303
+ },
+ "imports_from": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_6e0a1a7a/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5487707,
+  "diagnostics_every": 10
+ },
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "PASS",
+  "lines": [
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+   "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 0.00e+00 <= 0.0001; train features: fp32 max|compiled-eager| 0.00e+00 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.40e-05 (features_extractor.history_events.stat_emb.weight) over 221 params <= 0.00988 [the K9 learner golden's real labelled buffer]",
+   "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+   "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 164.3s",
+   "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "peak_reserved_mib": 6084.0,
+ "diag_1ep_s": 12.718896362057421,
+ "train": {
+  "walls_s": {
+   "1": [
+    5.5752872040029615,
+    5.564228258037474
+   ],
+   "3": [
+    14.227176451007836,
+    14.231515004008543
+   ]
+  },
+  "median_s": {
+   "1": 5.569757731020218,
+   "3": 14.22934572750819
+  },
+  "marginal_epoch_s": 4.329793998243986,
+  "update_s_est": 44.53790371521609,
+  "first_epoch_overhead_s": 1.239963732776232,
+  "per_micro_ms_marginal": 90.20404163008304,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 1.724587626522407,
+    "n": 17952
+   },
+   {
+    "epochs": 1,
+    "s": 1.728682805900462,
+    "n": 17952
+   },
+   {
+    "epochs": 3,
+    "s": 1.7315297788009048,
+    "n": 20064
+   },
+   {
+    "epochs": 3,
+    "s": 1.7307005992624909,
+    "n": 20064
+   }
+  ]
+ },
+ "load1_end": 1.8974609375,
+ "gpu_others_end": []
+}

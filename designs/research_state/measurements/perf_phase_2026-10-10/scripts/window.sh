@@ -41,26 +41,34 @@ job() {
 }
 cfg() { "$PY" "$HERE/configs.py" --argv "$1"; }
 
+TA="$TREES/at_6e0a1a7a/src"     # window A's pinned tree (the 16-roll exact KO)
 case "$WIN" in
   A)
     # Window A is PINNED to 6e0a1a7a (the 16-roll exact KO; main moves to the closed form after it), extracted by
     # `git archive 6e0a1a7a src data designs scripts`.
     TA="$TREES/at_6e0a1a7a/src"
-    job E   11 "$TA" --argv "$(cfg E)"  --t2 256 --profile
-    job P    9 "$TA" --argv "$(cfg P)"  --t2 256
-    job R    9 "$TA" --argv "$(cfg R)"  --t2 256
+    job E   10 "$TA" --argv "$(cfg E)"  --t2 256 --profile
+    job P    6 "$TA" --argv "$(cfg P)"
+    job R    7 "$TA" --argv "$(cfg R)"
     job EK   7 "$TA" --argv "$(cfg EK)"
     job SF   7 "$TA" --argv "$(cfg SF)"
     job S    7 "$TA" --argv "$(cfg S)"
     ;;
   B)
-    job E_base       8 HEAD --argv "$(cfg E)" --canary          # the levers' paired baseline (the closed-form KO)
+    # Budgets from window A's measured times (E: compile + gate + prewarm 277 s, the timed schedule ~85 s).
+    job E_base       8 HEAD --argv "$(cfg E)" --canary --profile   # the levers' paired baseline (closed-form KO)
     job E_bf16       8 HEAD --argv "$(cfg E)" --trunk-precision bf16 --canary --profile
-    job E_coordesc  10 HEAD --argv "$(cfg E)" --r1-preset coordesc --canary
-    job E_cudagraphs 8 HEAD --argv "$(cfg E)" --r1-preset cudagraphs --canary
-    job P_pre_item1  7 "$TREES/pre_957d4dbd/src" --argv "--arch production $(cfg P | sed 's/--arch production//')" --profile
-    job P_at_item1   7 "$TREES/at_957d4dbd/src"  --argv "--arch production $(cfg P | sed 's/--arch production//')" --profile
-    job E_combo      8 HEAD --argv "$(cfg E)" --r1-preset combo --canary
+    job E_cudagraphs 8 HEAD --argv "$(cfg E)" --r1-preset cudagraphs --canary --profile
+    job P_pre_item1  5 "$TREES/pre_957d4dbd/src" --argv "--arch production $(cfg P | sed 's/--arch production//')" --profile
+    job P_at_item1   5 "$TREES/at_957d4dbd/src"  --argv "--arch production $(cfg P | sed 's/--arch production//')" --profile
+    job E_coordesc  11 HEAD --argv "$(cfg E)" --r1-preset coordesc --canary
+    ;;
+  C)
+    # T2's per-step cost per architecture (window A dropped it) + the last preset.
+    job T2_P         5 "$TA" --argv "$(cfg P)" --t2-only --t2 256,64
+    job T2_R         5 "$TA" --argv "$(cfg R)" --t2-only --t2 256,64
+    job T2_E         6 HEAD  --argv "$(cfg E)" --t2-only --t2 256,64
+    job E_combo      8 HEAD  --argv "$(cfg E)" --r1-preset combo --canary
     ;;
   *) echo "unknown window $WIN" >&2; exit 2 ;;
 esac

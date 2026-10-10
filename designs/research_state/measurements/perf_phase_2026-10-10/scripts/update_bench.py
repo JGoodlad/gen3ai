@@ -109,6 +109,7 @@ def main():
     ap.add_argument("--canary", action="store_true")
     ap.add_argument("--t2", default="", help="comma-separated T2 buckets to time (empty = skip)")
     ap.add_argument("--t2-reps", type=int, default=50)
+    ap.add_argument("--t2-only", action="store_true", help="skip the learner compile and update; time T2 only")
     ap.add_argument("--out", required=True)
     ap.add_argument("--cpu-smoke", action="store_true",
                     help="the CODE PATH on CPU: 2,048 rows, batch 256 x 4, eager (no compile, no gate, no T2)")
@@ -157,6 +158,24 @@ def main():
     dev = torch.device("cpu" if cpu else "cuda")
     model.policy.to(dev)
     model.device = dev
+    # A launch builds the learner ON its device; this one was built on the CPU, so every optimizer's DECLARED
+    # state (the policy's AdamW, the ride-along heads' own Adams) still sits there: move it (window A's first
+    # attempt died in the ride-along step: "cuda:0 and cpu").
+    seen_opt = set()
+
+    def _move_opt(o):
+        if isinstance(o, torch.optim.Optimizer) and id(o) not in seen_opt:
+            seen_opt.add(id(o))
+            for st in o.state.values():
+                for k, v in list(st.items()):
+                    if torch.is_tensor(v) and (k != "step" or v.device.type != "cpu" or
+                                               any(g.get("fused") or g.get("capturable") for g in o.param_groups)):
+                        st[k] = v.to(dev)      # torch keeps a non-fused, non-capturable Adam's `step` on the CPU
+    for holder in [model, model.policy] + list(model.policy.modules()):
+        for v in list(vars(holder).values()):
+            for o in (v if isinstance(v, (list, tuple)) else list(v.values()) if isinstance(v, dict) else [v]):
+                _move_opt(o)
+    res["optimizers_moved"] = len(seen_opt)
     model.rollout_buffer.device = dev
     model.batch_size = 256 if cpu else int(args.batch_size)
     model.grad_accum_steps = 4 if cpu else int(getattr(args, "grad_accum_steps", 1) or 1)
@@ -175,126 +194,145 @@ def main():
     res["phases_s"]["build"] = time.perf_counter() - t0
     save()
 
-    # ---- compile: the launch's own sentinel (gate + prewarm + lock), or install + prewarm without the gate
-    t0 = time.perf_counter()
-    lines = []
-    from agents.model.compile_control import control
-    try:
-        if cpu:
-            raise ct.CompileTrainerError("cpu smoke: eager, nothing compiled")
-        if a.gate == "off":
-            raise ct.CompileTrainerError("gate skipped by --gate off")
-        ct.arm_compile_sentinel(model, batch_size=model.batch_size, emit=lines.append)
-        res["gate"] = {"verdict": "PASS", "lines": [ln for ln in lines if "parity" in ln.lower() or "R1" in ln]}
-    except ct.CompileTrainerError as exc:
-        res["gate"] = {"verdict": "SKIPPED" if a.gate == "off" else "REFUSED", "error": str(exc)[:4000],
-                       "lines": lines[-20:]}
-        save()
-        cr.uninstall(model)
-        if not cpu:
-            ctl = control(lines.append).install()
-            print(ctl.reset(), flush=True)
-            cr.install(model)
-            ctl.prewarm(cr.prewarm_calls(model, batch_size=model.batch_size))
-    _sync()
-    res["phases_s"]["compile_gate_prewarm"] = time.perf_counter() - t0
-    save()
-
-    # ---- the timed updates on the fixture rollout
-    live_buf = model.rollout_buffer          # the template (its declared shape); never trained on
-
-    def fresh_buffer():
-        # A FRESH fixture per train(): `get()` flattens the buffer IN PLACE and train() re-aligns the
-        # opponent-intent labels in it, so a buffer is single-use, exactly like a real rollout's.
-        model.rollout_buffer = live_buf
-        b, src = UF.fixture_buffer(model)
-        model.rollout_buffer = b
-        return b, src
-
-    buf, source = fresh_buffer()
-    res["fixture_source"] = source
-    model.behaviour_check = "off"
-    from agents.training.learner_benchmark import _scalar_read_meter
-    # The schedule: `--warm` untimed 1-epoch calls (the first is the process's diagnostics update), then for each
-    # epoch count E in `--epochs` (e.g. "1,3"), `--reps` timed calls of E epochs. A call's FIRST epoch carries the
-    # update's one-time work (label alignment, epoch-0 calibration / noise reads, the device-batch build), so the
-    # MARGINAL epoch is (median(E_hi) - median(E_lo)) / (E_hi - E_lo) and a full update is estimated as
-    # median(E_lo) + (n_epochs - E_lo) x marginal. With one E only, update = median / E x n_epochs (an upper bound).
-    epochs_list = [int(x) for x in str(a.epochs).split(",")]
-    sched = [(1, False)] * a.warm + [(e, True) for e in epochs_list for _ in range(a.reps)]
-    walls = {e: [] for e in epochs_list}
-    reads = []
-    for i, (ep, timed) in enumerate(sched):
-        if i:
-            buf, _ = fresh_buffer()
-        model.n_epochs = ep
-        acc = {"s": 0.0, "n": 0}
-        _sync()
-        if not cpu:
-            torch.cuda.reset_peak_memory_stats()
-        with (contextlib.nullcontext() if cpu else torch.cuda.nvtx.range(f"{a.tag}_train_{i}_e{ep}")), \
-                _scalar_read_meter(acc):
-            t = time.perf_counter()
-            model.train()
-            _sync()
-            w = time.perf_counter() - t
-        if timed:
-            walls[ep].append(w)
-            reads.append({"epochs": ep, **acc})
-        peak = 0.0 if cpu else torch.cuda.max_memory_reserved() / 2**20
-        print(f"[bench {a.tag}] train {i} ({'timed' if timed else 'warm'}, {ep} ep): {w:.2f}s, "
-              f"scalar reads {acc['n']} / {acc['s']:.2f}s, peak {peak:.0f} MiB", flush=True)
-        res["peak_reserved_mib"] = max(res.get("peak_reserved_mib", 0.0), peak)
-    meds = {e: statistics.median(v) for e, v in walls.items()}
-    n_micro = N_STEPS * N_ENVS // model.batch_size
-    if len(epochs_list) >= 2:
-        lo, hi = min(epochs_list), max(epochs_list)
-        marginal = (meds[hi] - meds[lo]) / (hi - lo)
-        update_est = meds[lo] + (n_epochs_full - lo) * marginal
-    else:
-        lo = epochs_list[0]
-        marginal = meds[lo] / lo
-        update_est = marginal * n_epochs_full
-    res["train"] = {"walls_s": {str(k): v for k, v in walls.items()}, "median_s": {str(k): v for k, v in meds.items()},
-                    "marginal_epoch_s": marginal, "update_s_est": update_est,
-                    "first_epoch_overhead_s": meds[lo] - lo * marginal,
-                    "per_micro_ms_marginal": 1e3 * marginal / n_micro, "scalar_reads": reads}
-    res["load1_end"] = os.getloadavg()[0]
-    res["gpu_others_end"] = [] if cpu else gpu_others()
-    save()
-
-    if a.profile:
-        from torch.profiler import ProfilerActivity, profile
-        from agents.training.learner_benchmark import summarise_profile
-        buf, _ = fresh_buffer()
-        model.n_epochs = 1
-        acts = [ProfilerActivity.CPU] + ([] if cpu else [ProfilerActivity.CUDA])
-        with profile(activities=acts) as prof:
-            t = time.perf_counter()
-            model.train()
-            _sync()
-            pw = time.perf_counter() - t
-        n_micro = N_STEPS * N_ENVS // model.batch_size
-        tp = os.path.join(os.path.dirname(os.path.abspath(a.out)), f"profile_{a.tag}.trace.json.gz")
-        s = summarise_profile(prof, n_micro, None if os.environ.get("BENCH_NO_TRACE") else
-                              __import__("pathlib").Path(tp))
-        s["wall_s_profiled"] = pw
-        s["kernel_classes"] = kernel_classes(prof)
-        res["profile"] = s
-        save()
-
-    if a.canary:
+    if not a.t2_only:
+        # ---- compile: the launch's own sentinel (gate + prewarm + lock), or install + prewarm without the gate
+        t0 = time.perf_counter()
+        lines = []
+        from agents.model.compile_control import control
         try:
-            ctl = control()
-            can = getattr(ctl, "canary", None)
-            if can is None:
-                from agents.model.compile_canary import CompileCanary
-                can = CompileCanary(model, batch_size=model.batch_size)
-            with ctl.guard("bench canary") if ctl.locked else contextlib.nullcontext():
-                res["canary"] = {"verdict": "PASS", "out": can.run()}
-        except BaseException as exc:  # noqa: BLE001 — the canary raises on a disagreement; record it
-            res["canary"] = {"verdict": "FAIL", "error": f"{type(exc).__name__}: {str(exc)[:3000]}"}
+            if cpu:
+                raise ct.CompileTrainerError("cpu smoke: eager, nothing compiled")
+            if a.gate == "off":
+                raise ct.CompileTrainerError("gate skipped by --gate off")
+            ct.arm_compile_sentinel(model, batch_size=model.batch_size, emit=lines.append)
+            res["gate"] = {"verdict": "PASS", "lines": [ln for ln in lines if "parity" in ln.lower() or "R1" in ln]}
+        except ct.CompileTrainerError as exc:
+            res["gate"] = {"verdict": "SKIPPED" if a.gate == "off" else "REFUSED", "error": str(exc)[:4000],
+                           "lines": lines[-20:]}
+            save()
+            cr.uninstall(model)
+            if not cpu:
+                ctl = control(lines.append).install()
+                print(ctl.reset(), flush=True)
+                cr.install(model)
+                ctl.prewarm(cr.prewarm_calls(model, batch_size=model.batch_size))
+        _sync()
+        res["phases_s"]["compile_gate_prewarm"] = time.perf_counter() - t0
         save()
+
+        # ---- the timed updates on the fixture rollout
+        live_buf = model.rollout_buffer          # the template (its declared shape); never trained on
+
+        def fresh_buffer():
+            # A FRESH fixture per train(): `get()` flattens the buffer IN PLACE and train() re-aligns the
+            # opponent-intent labels in it, so a buffer is single-use, exactly like a real rollout's.
+            model.rollout_buffer = live_buf
+            b, src = UF.fixture_buffer(model)
+            model.rollout_buffer = b
+            return b, src
+
+        buf, source = fresh_buffer()
+        res["fixture_source"] = source
+        model.behaviour_check = "off"
+        from agents.training.learner_benchmark import _scalar_read_meter
+        # The schedule: `--warm` untimed 1-epoch calls (the first is the process's diagnostics update), then for each
+        # epoch count E in `--epochs` (e.g. "1,3"), `--reps` timed calls of E epochs. A call's FIRST epoch carries the
+        # update's one-time work (label alignment, epoch-0 calibration / noise reads, the device-batch build), so the
+        # MARGINAL epoch is (median(E_hi) - median(E_lo)) / (E_hi - E_lo) and a full update is estimated as
+        # median(E_lo) + (n_epochs - E_lo) x marginal. With one E only, update = median / E x n_epochs (an upper bound).
+        # THE DIAGNOSTICS CADENCE (`diagnostics_cadence.py`): the phase is the ROLLOUT INDEX num_timesteps // rows, and
+        # a call at phase ≡ 0 (mod diagnostics_every) — or the process's first — is a DIAGNOSTIC update (the per-term
+        # noise sampler's extra backwards, grad balance, liveness). The timed calls run at phase 1..9 (PLAIN updates, as
+        # 9 of 10 production updates are); one extra 1-epoch call at phase 10 times a diagnostic update ("diag").
+        # (Window A's E and P ran before this fix: every call of theirs was a diagnostic update.)
+        rows_per = N_STEPS * N_ENVS
+        every = int(getattr(model, "diagnostics_every", 1) or 1)
+        epochs_list = [int(x) for x in str(a.epochs).split(",")]
+        sched = [(1, False)] * a.warm + [(e, True) for e in epochs_list for _ in range(a.reps)] + [(1, "diag")]
+        walls = {e: [] for e in epochs_list}
+        reads = []
+        for i, (ep, timed) in enumerate(sched):
+            if i:
+                buf, _ = fresh_buffer()
+            model.num_timesteps = rows_per * (every if timed == "diag" else (1 + i % max(1, every - 1)) if every > 1
+                                              else i)
+            model.n_epochs = ep
+            acc = {"s": 0.0, "n": 0}
+            _sync()
+            if not cpu:
+                torch.cuda.reset_peak_memory_stats()
+            with (contextlib.nullcontext() if cpu else torch.cuda.nvtx.range(f"{a.tag}_train_{i}_e{ep}")), \
+                    _scalar_read_meter(acc):
+                t = time.perf_counter()
+                model.train()
+                _sync()
+                w = time.perf_counter() - t
+            if timed == "diag":
+                res["diag_1ep_s"] = w
+            elif timed:
+                walls[ep].append(w)
+                reads.append({"epochs": ep, **acc})
+            peak = 0.0 if cpu else torch.cuda.max_memory_reserved() / 2**20
+            print(f"[bench {a.tag}] train {i} ({'timed' if timed else 'warm'}, {ep} ep): {w:.2f}s, "
+                  f"scalar reads {acc['n']} / {acc['s']:.2f}s, peak {peak:.0f} MiB", flush=True)
+            res["peak_reserved_mib"] = max(res.get("peak_reserved_mib", 0.0), peak)
+        meds = {e: statistics.median(v) for e, v in walls.items()}
+        n_micro = N_STEPS * N_ENVS // model.batch_size
+        if len(epochs_list) >= 2:
+            lo, hi = min(epochs_list), max(epochs_list)
+            marginal = (meds[hi] - meds[lo]) / (hi - lo)
+            update_est = meds[lo] + (n_epochs_full - lo) * marginal
+        else:
+            lo = epochs_list[0]
+            marginal = meds[lo] / lo
+            update_est = marginal * n_epochs_full
+        res["train"] = {"walls_s": {str(k): v for k, v in walls.items()}, "median_s": {str(k): v for k, v in meds.items()},
+                        "marginal_epoch_s": marginal, "update_s_est": update_est,
+                        "first_epoch_overhead_s": meds[lo] - lo * marginal,
+                        "per_micro_ms_marginal": 1e3 * marginal / n_micro, "scalar_reads": reads}
+        res["load1_end"] = os.getloadavg()[0]
+        res["gpu_others_end"] = [] if cpu else gpu_others()
+        save()
+
+        if a.profile:
+            from torch.profiler import ProfilerActivity, profile
+            from agents.training.learner_benchmark import summarise_profile
+            buf, _ = fresh_buffer()
+            model.n_epochs = 1
+            model.num_timesteps = rows_per * 1          # a PLAIN update's phase (the cadence note above)
+            res["profile_phase"] = "plain"
+            acts = [ProfilerActivity.CPU] + ([] if cpu else [ProfilerActivity.CUDA])
+            with profile(activities=acts) as prof:
+                t = time.perf_counter()
+                model.train()
+                _sync()
+                pw = time.perf_counter() - t
+            n_micro = N_STEPS * N_ENVS // model.batch_size
+            tp = os.path.join(os.path.expanduser("~/gen3ai_archive/perf_phase_2026-10-10/traces"), f"profile_{a.tag}.trace.json.gz")  # LOCAL (too large to commit)
+            s = summarise_profile(prof, n_micro, None if os.environ.get("BENCH_NO_TRACE") else
+                                  __import__("pathlib").Path(tp))
+            s["wall_s_profiled"] = pw
+            s["kernel_classes"] = kernel_classes(prof)
+            res["profile"] = s
+            save()
+
+        if a.canary:
+            try:
+                ctl = control()
+                can = getattr(ctl, "canary", None)
+                if can is None:
+                    from agents.model.compile_canary import CompileCanary
+                    can = CompileCanary(model, batch_size=model.batch_size)
+                with ctl.guard("bench canary") if ctl.locked else contextlib.nullcontext():
+                    res["canary"] = {"verdict": "PASS", "out": can.run()}
+            except BaseException as exc:  # noqa: BLE001 — the canary raises on a disagreement; record it
+                res["canary"] = {"verdict": "FAIL", "error": f"{type(exc).__name__}: {str(exc)[:3000]}"}
+            save()
+
+    else:
+        live_buf, buf = model.rollout_buffer, None
+        res["gate"] = {"verdict": "SKIPPED", "error": "--t2-only"}
+        res["train"] = {"marginal_epoch_s": float("nan"), "update_s_est": float("nan")}
 
     if a.t2:
         import copy
@@ -308,7 +346,11 @@ def main():
             _c().release("bench: the T2 measurement compiles after the learner's lock")
         except Exception as exc:  # noqa: BLE001
             res["t2_release_note"] = repr(exc)
-        tmpl = copy.deepcopy(model.policy).eval()
+        # A FRESH build of the same architecture carrying the learner's weights: the trained policy itself does
+        # not deepcopy (its per-forward stashes hold non-leaf graph tensors — window A's first E run died here).
+        tmpl = LG.build_learner(args=args).policy
+        tmpl.load_state_dict({k: v.detach().cpu() for k, v in model.policy.state_dict().items()})
+        tmpl = tmpl.eval()
         if a.trunk_precision != "fp32":
             from agents.model.trunk_precision import set_trunk_precision
             set_trunk_precision(tmpl, "fp32")

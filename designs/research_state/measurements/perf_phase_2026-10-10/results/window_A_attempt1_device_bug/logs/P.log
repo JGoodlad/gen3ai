@@ -1,0 +1,6 @@
+[mem_cap] cap 40.00 GB (swap 0) · unit gen3ai-capped-python3-2140915.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_2140923_k1zoybp4 for this process (perf phase update bench P) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+[bench P] imports from /home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_6e0a1a7a/src/agents/training/instrumented_ppo/micro_step.py
+[CompileControl] dynamo reset at startup: dropped 0 cache entries compiled before the region was installed (now 0)
+[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)
+[mem_cap] done: gen3ai-capped-python3-2140915.scope exit 143 · peak 1.82 GB of cap 40.00 GB (5%) · not OOM-killed

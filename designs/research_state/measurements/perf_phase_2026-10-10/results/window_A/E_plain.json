@@ -1,0 +1,82 @@
+{
+ "tag": "E_plain",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_6e0a1a7a/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 1.625,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 3.1370491069974378,
+  "compile_gate_prewarm": 277.5336088850163
+ },
+ "imports_from": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_6e0a1a7a/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5624179,
+  "diagnostics_every": 10
+ },
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "PASS",
+  "lines": [
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+   "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 0.00e+00 <= 0.0001; train features: fp32 max|compiled-eager| 0.00e+00 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.55e-05 (features_extractor.history_events.denial_emb.weight) over 232 params <= 0.00988 [the K9 learner golden's real labelled buffer]",
+   "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+   "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 277.5s",
+   "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "peak_reserved_mib": 6696.0,
+ "diag_1ep_s": 14.810687564022373,
+ "train": {
+  "walls_s": {
+   "1": [
+    6.45114190899767,
+    6.445333077048417
+   ],
+   "3": [
+    16.872839890012983,
+    16.919636011007242
+   ]
+  },
+  "median_s": {
+   "1": 6.4482374930230435,
+   "3": 16.896237950510113
+  },
+  "marginal_epoch_s": 5.2240002287435345,
+  "update_s_est": 53.464239551714854,
+  "first_epoch_overhead_s": 1.224237264279509,
+  "per_micro_ms_marginal": 108.83333809882363,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 2.06665936607169,
+    "n": 18016
+   },
+   {
+    "epochs": 1,
+    "s": 2.0617338524898514,
+    "n": 18016
+   },
+   {
+    "epochs": 3,
+    "s": 2.066543683700729,
+    "n": 20256
+   },
+   {
+    "epochs": 3,
+    "s": 2.074756623536814,
+    "n": 20256
+   }
+  ]
+ },
+ "load1_end": 1.26953125,
+ "gpu_others_end": []
+}
