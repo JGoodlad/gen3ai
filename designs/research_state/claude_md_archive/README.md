@@ -63,6 +63,17 @@ to the new `designs/model/` tree; only the dated records came here:
 |---|---|
 | `model_leaf_history.md` | § Phase module structure's SimSiam-deletion parenthetical, the two refactor-proof bundles (the op split + the 2026-08-23 class split), and the M1 ortho-init measurement (25 lines) |
 
+**Added 2026-10-09 / 2026-10-10 — WHOLE-FILE snapshots** taken before a rewrite to the current world (owner,
+2026-10-10: "clean up the docs fully with our current world"). Each is the leaf byte-for-byte as it stood,
+under a three-line FROZEN header; the topic detail went to the leaf's `designs/<area>/` docs and the false
+statements were deleted:
+
+| file | snapshot of | size before → after |
+|---|---|---|
+| `root_CLAUDE_2026-10-09.md` | the root `CLAUDE.md`, before `d53ba5f0` | 71 KB → 31 KB |
+| `designs_CLAUDE_2026-10-10.md` | `designs/CLAUDE.md` — its 2026-09-07 version-state table (a dead active run, the ai_v12 "live chapter") | 29.4 KB → 13.0 KB |
+<!-- leaf rows: append below -->
+
 **Nothing here is current.** Every guard these incidents produced is live and described in
 `CLAUDE.md`; this is the evidence behind them. Do not re-derive a plan from anything here without
 checking the code first — an entry that outlives its own fix misleads every reader after it.
