@@ -62,12 +62,10 @@
          the battle and gives you no way to act on it. `analyze` is deliberately not a web view
          (it loads a checkpoint and holds state), so the honest bridge is the command. #}
       <td class="nowrap">
-        {# Straight to the crater: the replay opens WINDOWED on the losing turn and anchored on the
-           exact decision, so "where it went wrong" becomes "here is the game around it". #}
-        <a class="linky" href="/battle?run={{ run | urlencode }}&battle={{ r.short_id | urlencode }}&start={{ w.turn }}#inv-{{ w.inv }}"
-           title="Read the game around turn {{ w.turn }}">turns</a>
+        {# Straight to the crater: the viewer opens ON the losing decision, so "where it went wrong"
+           becomes "here is the game around it". #}
         <a class="linky" href="/game?run={{ run | urlencode }}&battle={{ r.short_id | urlencode }}&inv={{ w.inv }}#decision"
-           title="Open this decision in the battle viewer — what the model expected, where it looked, its damage physics">game</a>
+           title="Open the game at this decision — the turn story, the board, our options against theirs, and the model's read">game</a>
         {# Straight to the decision itself. `/analyze` loads the checkpoint and renders the whole
            forensic read in the browser, so the row no longer dead-ends in a command to copy. #}
         <a class="linky" href="/analyze?run={{ run | urlencode }}&battle={{ r.short_id | urlencode }}&inv={{ w.inv }}"

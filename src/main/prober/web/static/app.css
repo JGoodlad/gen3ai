@@ -22,6 +22,15 @@
   --good: #57b894;
   --bad: #d0806a;
   --warn: #d4b483;
+  /* SIDES (the battle viewer): blue = us, orange = them — the colour-blind-safe pair, never alone
+     (a side chip always says `us` / `them`). WCAG contrast, measured 2026-10-09: 8.1:1 / 9.0:1 on
+     --bg here, 6.1:1 / 5.3:1 on the light --bg below. Green / red stay WIN / LOSS only. */
+  --us: #6cb2ff;
+  --them: #ffa057;
+  --us-bg: rgba(108, 178, 255, 0.14);
+  --them-bg: rgba(255, 160, 87, 0.14);
+  /* GROUND TRUTH (hidden from the model): violet + a dashed underline + the ◇ glyph. 8.3:1 / 6.1:1. */
+  --truth: #c99cff;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
@@ -37,6 +46,11 @@
     --good: #2a7f62;
     --bad: #a4553f;
     --warn: #8a6d3b;
+    --us: #1a5fb4;
+    --them: #a8500f;
+    --us-bg: rgba(26, 95, 180, 0.10);
+    --them-bg: rgba(168, 80, 15, 0.10);
+    --truth: #7b3fbf;
   }
 }
 
@@ -215,25 +229,9 @@ details.caveats li { color: var(--dim); font-size: 13px; margin: 6px 0; }
  */
 .battlehead { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin: 0 0 8px; }
 .small { font-size: 12px; }
-p.jumps { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; margin: 6px 0 0;
-          font-size: 13px; }
-p.jumps .k { color: var(--dim); font-size: 11px; text-transform: uppercase;
-             letter-spacing: 0.4px; margin-right: 2px; }
-a.jump, a.pagelink { color: var(--accent); text-decoration: none; padding: 2px 8px;
-                     border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); }
-a.jump:hover, a.pagelink:hover { border-color: var(--accent); }
-.windowbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; margin: 10px 0; }
-
-section.card.turn { padding: 10px 14px; margin-bottom: 10px; }
-/* `scroll-margin-top` is what makes a `#inv-N` jump land BELOW the sticky header instead of
-   underneath it — without it the linked turn is the one row you cannot see. */
-.turn { scroll-margin-top: 70px; }
-h2.turnhead { font-size: 12px; margin: 0 0 8px; color: var(--dim); text-transform: uppercase;
-              letter-spacing: 0.6px; }
-.decision { padding: 6px 0; scroll-margin-top: 70px; }
-.decision + .decision { border-top: 1px dashed var(--line); margin-top: 8px; padding-top: 10px; }
-.decision:target { background: var(--surface-2); border-radius: 6px;
-                   box-shadow: 0 0 0 2px var(--accent); }
+a.pagelink { color: var(--accent); text-decoration: none; padding: 2px 8px;
+             border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); }
+a.pagelink:hover { border-color: var(--accent); }
 
 /* Board: two mons and a "vs". A grid, so both sides' species/HP line up on a desktop row and
    stack cleanly when there is no room. */
@@ -259,23 +257,6 @@ h2.turnhead { font-size: 12px; margin: 0 0 8px; color: var(--dim); text-transfor
 .badge.boost { color: var(--accent); }
 .badge.flag.faint { color: var(--bad); }
 .badge.flag.switch, .badge.flag.opp-switch { color: var(--accent); }
-
-/* What the model expected the OPPONENT to do (α). Deliberately quieter than `chose` and tinted
-   with the opponent's colour: it sits between the board and our choice, and it must read as a
-   prediction about them, not as another thing we did. Wraps like the board rather than scrolling —
-   the whole point of this view is that it reflows on a phone. */
-p.expect { margin: 2px 0 4px; font-size: 12.5px; display: flex; flex-wrap: wrap;
-           gap: 4px 8px; align-items: baseline; color: var(--dim); }
-p.expect .who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
-                color: var(--bad); min-width: 2.2em; }
-p.expect .opt { font-family: var(--mono); }
-p.expect .opt .p { font-variant-numeric: tabular-nums; color: var(--dim); }
-/* SWITCH is the "none of these moves" option, and the mon β then names — both are about a PIVOT,
-   so they share the accent that every switch on this page already uses. */
-p.expect .opt.switch, p.expect .opt.inmon { color: var(--accent); }
-/* The option they actually took, marked in place so the prediction reads against the outcome. */
-p.expect .opt.actual { color: var(--text); font-weight: 600;
-                       box-shadow: inset 0 -2px 0 var(--good); }
 
 /* β's name PROVENANCE. β points at a SLOT; where the recorder could not read that slot off the
    board it named it from the species posterior, which is un-supervised on a revealed slot — and a
@@ -369,12 +350,6 @@ pre.proto { font-family: var(--mono); font-size: 11px; line-height: 1.5; margin:
             padding: 8px 10px; background: var(--surface-2); border-radius: 6px;
             overflow-x: auto; max-height: 320px; overflow-y: auto; color: var(--dim); }
 
-p.critic { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 2px;
-           font-family: var(--mono); font-size: 12px; color: var(--dim);
-           font-variant-numeric: tabular-nums; }
-p.critic span[title] { cursor: help; }
-p.critic .cmd { margin-left: auto; }
-
 /* A tappable metric, and the panel a tap opens ------------------------------------------------
  *
  * The dotted underline is the DISCOVERABILITY half: a `title` gives a desktop reader a cursor cue
@@ -382,9 +357,10 @@ p.critic .cmd { margin-left: auto; }
  * explain themselves. `cursor: help` already existed for hover; this adds the mark that survives
  * on a phone.
  */
-p.critic .metric, p.pwin .metric { text-decoration: underline dotted var(--line);
-                                   text-underline-offset: 3px; }
-p.critic .metric:hover, p.pwin .metric:hover { text-decoration-color: var(--accent); }
+/* `/game`'s decision header carries them now (P(win), the move in points, the chosen option's
+   probability); the classic replay's critic row that introduced the pattern was merged into it. */
+.metric { text-decoration: underline dotted var(--line); text-underline-offset: 3px; cursor: help; }
+.metric:hover { text-decoration-color: var(--accent); }
 /* The explanation lands directly under the row it belongs to, indented so it reads as a note on
    that row rather than as another line of data. */
 p.metric-help { margin: 2px 0 6px; padding: 6px 10px; font-size: 12.5px; line-height: 1.45;
@@ -397,65 +373,6 @@ a.whatsthis { color: var(--dim); text-decoration: none; border: 1px solid var(--
               border-radius: 50%; width: 15px; height: 15px; line-height: 13px;
               display: inline-block; text-align: center; font-size: 10.5px; }
 a.whatsthis:hover { color: var(--accent); border-color: var(--accent); }
-/* Opening the legend when it is the jump target — a collapsed <details> the reader lands on is a
-   dead end on the devices this fallback exists for. */
-details.legend-card:target { }
-details.legend-card:target > summary { color: var(--accent); font-weight: 700; }
-
-/* The visible legend for a turn card ---------------------------------------------------------
- *
- * Every number in the critic row also carries a `title`, but a tooltip DOES NOT EXIST on a touch
- * device and this is the one view built to be read on a phone. So the explanations live here too,
- * once per page rather than once per turn, collapsed so they cost a reader who already knows them
- * nothing. A definition list, not a table: these are terms and their meanings, and a <dl> reflows
- * down a narrow screen without a scroll container.
- */
-details.legend-card > summary { cursor: pointer; font-size: 13px; color: var(--accent);
-                                font-weight: 600; }
-.legend-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px;
-             margin: 10px 0 0; font-size: 13px; }
-.legend-dl dt { font-family: var(--mono); font-weight: 600; color: var(--text);
-                white-space: nowrap; }
-.legend-dl dd { margin: 0; color: var(--dim); }
-
-/* "Did it KNOW?" — the distributional head's read, under the scalar critic row ---------------
- *
- * A strip rather than a number alone, because the fact being read is a CROSSING (P(win) passing
- * BELOW 50% and staying there) and a column of percentages hides exactly that. The 50% mark is
- * drawn on the bar so the badge's `knew @ turn N` can be checked against the picture instead of
- * trusted. Same reflow contract as the rest of the replay: it wraps, it never scrolls.
- *
- * It reads as P(WIN) — one direction per card, matching the win-prob head on the line above — so
- * the fill is a GOOD-news bar and shrinks as the position sours. That inverts the colour rule
- * against the earlier P(loss) draft: a SHORT bar is now the dangerous one, exactly like `.hpfill`
- * two rules up, which is the association a reader already has on this page.
- */
-p.pwin { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 4px;
-         font-family: var(--mono); font-size: 11.5px; color: var(--dim);
-         font-variant-numeric: tabular-nums; }
-p.pwin span[title] { cursor: help; }
-p.pwin .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-p.pwin .strip { position: relative; display: inline-block; width: 140px; max-width: 40vw;
-                height: 7px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
-p.pwin .fill { display: block; height: 100%; background: var(--good); }
-/* The decision bar the verdict is defined by — dim, thin, and inside the strip so it cannot be
-   mistaken for data. */
-p.pwin .bar50 { position: absolute; left: 50%; top: 0; width: 1px; height: 100%;
-                background: var(--line); }
-p.pwin .tail { color: var(--bad); }
-/* Past the sustained onset the model is already calling the game: the fill drops to the loss
-   colour and the row picks up a rail, so scrolling the replay SHOWS where the read turned. */
-p.pwin.knew .fill { background: var(--bad); }
-p.pwin.knew { border-left: 2px solid var(--bad); padding-left: 6px; margin-left: -8px; }
-p.pwin .knewmark { color: var(--bad); }
-
-/* The battle-level verdict, above the replay. */
-p.awarehead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px;
-              margin: 0 0 8px; font-size: 12.5px; }
-p.awarehead .verdict { color: var(--text); }
-.badge.blind { color: var(--bad); font-weight: 600; }
-.badge.knew { color: var(--warn); }
-
 /* Narrow viewports ------------------------------------------------------------------------
  *
  * These are tables of forensic numbers, so the phone answer is NOT to reflow every table into
@@ -502,25 +419,6 @@ p.awarehead .verdict { color: var(--text); }
   th, td { padding: 5px 8px; }
   td.wrap { max-width: 34ch; }
 
-  /* Battle replay on a phone. The turn card is the one thing here designed to reflow rather than
-     scroll, so the work is: give each side its own full-width line (species + HP bar + status read
-     left-to-right; two mons squeezed onto one line is what makes this unreadable), drop the "vs"
-     that only made sense side-by-side, and let the log wrap. The header is NOT sticky at this width
-     (see rule 4 above), so the `#inv-N` jump offset comes back down to nothing. */
-  .mon { flex: 1 1 100%; }
-  .board .vs { display: none; }
-  .hpbar { width: 56px; }
-  .turn, .decision { scroll-margin-top: 8px; }
-  section.card.turn { padding: 10px 12px; }
-  ul.log li { font-size: 12px; }
-  /* The analyze button is a desktop hand-off (it copies a CLI line); on a phone it must not sit
-     on the far right of a wrapped row where it reads as a stray control. */
-  p.critic .cmd { margin-left: 0; flex: 1 1 100%; }
-  p.critic { gap: 4px 12px; }
-  /* A max-content term column plus a definition is unreadable at 500px — stack them. */
-  .legend-dl { grid-template-columns: 1fr; gap: 2px; }
-  .legend-dl dd { margin: 0 0 8px; }
-  a.jump, a.pagelink { padding: 5px 10px; }   /* tap targets, not text links */
 }
 
 /* /analyze — one decision, all the way down --------------------------------------------
@@ -602,6 +500,10 @@ pre.proto .pl.swap { color: var(--accent); }
 pre.proto .pl.faint { color: var(--bad); font-weight: 600; }
 
 @media (max-width: 720px) {
+  /* /analyze's board on a phone: each side its own full-width line, the "vs" dropped. */
+  .board .mon { flex: 1 1 100%; }
+  .board .vs { display: none; }
+  a.pagelink { padding: 5px 10px; }   /* tap targets, not text links */
   /* Same rule as everywhere else on this site: the PAGE never scrolls sideways. The heat matrix
      and every forensic table keep their columns and scroll inside their own .scroll-x box. */
   ul.beliefs li { font-size: 12px; }
@@ -674,74 +576,290 @@ details.traj ul.events li { font-family: var(--mono); font-size: 12px; line-heig
 }
 
 /* ---------------------------------------------------------------------------------------- /game
-   The battle viewer: a turn list beside the selected decision. The turn list scrolls INSIDE itself
-   (never the page); on a phone it collapses to a short strip above the decision. */
-.gamegrid { display: grid; grid-template-columns: minmax(180px, 250px) minmax(0, 1fr); gap: 14px;
-            align-items: start; }
-.gamemain { min-width: 0; }
-.turnlist { position: sticky; top: 56px; max-height: calc(100vh - 80px); overflow-y: auto; padding: 10px; }
-.turnlist h2 { margin-top: 0; }
-.turnlist ol { list-style: none; margin: 0; padding: 0; }
-.turnlist li a, .turnlist li .nolink { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline;
-                                       padding: 3px 6px; border-radius: 6px; text-decoration: none;
-                                       color: var(--text); font-size: 12px; }
-.turnlist li .nolink { color: var(--dim); }
-.turnlist li a:hover { background: var(--surface-2); }
-.turnlist li.current a { background: var(--surface-2); outline: 1px solid var(--accent); }
-.turnlist .tn { font-family: var(--mono); color: var(--dim); min-width: 2.6em; }
-.turnlist .tev { font-size: 11px; overflow-wrap: anywhere; }
-.turnlist .tev.we { color: var(--good); }
-.turnlist .tev.opp { color: var(--bad); }
-p.decnav { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin-top: 0; }
+ * THE battle viewer (designs/prober/battle_viewer_ux_2026-10-09.md). Three columns on a wide screen —
+ * the turn rail, the decision (board → our options vs their action → what happened), the model's read
+ * (scouting notes, under the hood) — two below 1280px, one on a phone, where the rail becomes a drawer
+ * and a sticky bar carries prev / next. Sides are blue (us) / orange (them) EVERYWHERE, always with
+ * the word on a chip; ground truth is violet + dashed + ◇. */
+
+.small { font-size: 12px; }
 kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-radius: 4px;
       padding: 0 4px; background: var(--surface-2); }
-.gboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.gside { min-width: 0; }
-.gside-head { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
-.gside .who { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-.gside.our .who { color: var(--good); }
-.gside.opp .who { color: var(--bad); }
-.badge.hazard { color: var(--warn); }
-ul.gmons { list-style: none; margin: 0; padding: 0; }
-ul.gmons li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; padding: 1px 0; }
-ul.gmons li.active .species { font-weight: 700; }
-ul.gmons li.fainted { opacity: 0.45; }
-ul.gmons li .species { min-width: 6.5em; }
-ul.gmons .hp { font-family: var(--mono); color: var(--dim); }
-.hpfill.unk { background: var(--line); }
-ol.gevents { list-style: none; margin: 0; padding: 0 0 0 10px; border-left: 2px solid var(--line); }
-ol.gevents li { font-size: 13px; padding: 2px 0; overflow-wrap: anywhere; }
-ol.gevents li.we { color: var(--good); }
-ol.gevents li.opp { color: var(--bad); }
-ol.gevents li.field { color: var(--dim); }
-ol.gevents li.move { font-weight: 600; }
-ol.gevents li.faint { font-weight: 700; }
-ol.gevents li.supereffective, ol.gevents li.crit { color: var(--warn); }
-ol.gevents .evk { display: inline-block; min-width: 6.5em; font-family: var(--mono); font-size: 10px;
-                  text-transform: uppercase; color: var(--dim); font-weight: 400; }
-ul.dist.intent li.actual .lbl { font-weight: 700; color: var(--text); }
-ul.dist .bar.opp > span { background: var(--bad); }
-ul.dist.intent li.actual .bar > span { background: var(--warn); }
-/* On /game the label FOLLOWS its bar (a fixed-width bar column), so a long list reads row by row. */
-.gamemain ul.dist li { grid-template-columns: 46px minmax(70px, 160px) 1fr; }
-.gamemain ul.dist .lbl { font-family: inherit; }
-ul.dist.one { min-width: 160px; }
-.gamemain ul.dist.one li { grid-template-columns: 46px 1fr 0; }
-.gamemain ul.dist.attn li { grid-template-columns: 40px 90px 1fr; }
-ul.dist.attn li.history .lbl { color: var(--dim); }
-table.gpolicy tr.chosen td, table.gop tr.chosen td { font-weight: 700; }
-table.gpolicy tr.invalid { opacity: 0.45; }
-th.absent, td.absent { opacity: 0.4; }
-.gattn-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.gattn h3 { font-size: 13px; margin: 6px 0; }
 .warnline { color: var(--warn); }
+.badge.hazard { color: var(--warn); }
+.badge.weather { color: var(--accent); font-family: inherit; }
+.hpfill.hi { background: var(--good); }
+.hpfill.lo { background: var(--bad); }
+.hpbar.unk .hpfill, .hpfill.unk { background: var(--line); }
+
+/* Visible focus everywhere a keyboard can land. */
+a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* The side chip: colour AND the word. */
+.chip { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px;
+        text-transform: uppercase; padding: 0 6px; border-radius: 4px; line-height: 17px; }
+.chip.us { color: var(--us); background: var(--us-bg); }
+.chip.them { color: var(--them); background: var(--them-bg); }
+.chip.field { color: var(--dim); background: var(--surface-2); }
+
+/* A fact only ground truth knows. */
+.fv.truth { color: var(--truth); text-decoration: underline dashed var(--truth); text-underline-offset: 3px; }
+.truthmark { margin-right: 2px; font-size: 0.9em; text-decoration: none; display: inline-block; }
+.truthline { color: var(--truth); font-size: 12px; }
+
+details.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+               padding: 10px 14px; margin-bottom: 12px; }
+details.card > summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+
+/* ---- the battle bar */
+.battlebar { padding: 10px 14px; }
+.bb-row { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.bb-title { font-size: 18px; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 10px;
+            align-items: baseline; flex: 1 1 auto; min-width: 0; }
+.bb-meta { font-size: 13px; font-weight: 400; }
+.result { font-weight: 800; letter-spacing: 0.5px; }
+.result.win { color: var(--good); }
+.result.loss { color: var(--bad); }
+.result.draw { color: var(--warn); }
+.iconbtn { display: inline-flex; align-items: center; justify-content: center; min-width: 38px;
+           min-height: 38px; border: 1px solid var(--line); border-radius: 8px;
+           background: var(--surface-2); color: var(--text); text-decoration: none; font-size: 20px;
+           line-height: 1; flex: 0 0 auto; }
+.iconbtn:hover { border-color: var(--accent); color: var(--accent); }
+.iconbtn.off { opacity: 0.3; }
+.bb-pick select { font: inherit; font-size: 13px; max-width: 26rem; padding: 6px 8px;
+                  background: var(--surface-2); color: var(--text); border: 1px solid var(--line);
+                  border-radius: 6px; }
+.persp-row { margin-top: 8px; }
+.persp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dim); }
+nav.persp { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.persp-opt { padding: 6px 12px; text-decoration: none; color: var(--dim); font-size: 13px;
+             min-height: 38px; display: inline-flex; align-items: center; }
+.persp-opt + .persp-opt { border-left: 1px solid var(--line); }
+.persp-opt:hover { color: var(--text); background: var(--surface-2); }
+.persp-opt.on { background: var(--accent); color: var(--bg); font-weight: 600; }
+.persp-opt.p-truth.on { background: var(--truth); }
+.persp-note { font-size: 12.5px; flex: 1 1 260px; }
+.bb-pwin { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.bb-pwin .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dim); }
+.bb-pwin .chart { margin: 0; min-height: 56px; flex: 1 1 auto; }
+
+/* ---- the three columns */
+.viewer { display: grid; grid-template-columns: 256px minmax(0, 1fr) minmax(320px, 390px); gap: 14px;
+          align-items: start; }
+.viewer > * { min-width: 0; }
+.viewer section.card { margin-bottom: 12px; }
+.decision { scroll-margin-top: 64px; }
+
+/* ---- the turn rail: ONE row component, fixed grid, >= 44px, the same states everywhere */
+.rail { position: sticky; top: 56px; max-height: calc(100vh - 72px); overflow-y: auto; padding: 6px; }
+.rail > summary { display: none; }
+ol.turns { list-style: none; margin: 0; padding: 0; }
+.trow > a, .trow > .tlink { display: grid; grid-template-columns: 2.4em minmax(0, 1fr) auto; gap: 0 6px;
+                            align-items: center; min-height: 44px; padding: 3px 6px 3px 3px;
+                            border-radius: 6px; text-decoration: none; color: var(--text);
+                            border-left: 3px solid transparent; }
+.trow > a:hover { background: var(--surface-2); }
+.trow.current > a { background: var(--surface-2); border-left-color: var(--accent);
+                    box-shadow: inset 0 0 0 1px var(--accent); }
+.trow.current .tn { color: var(--accent); font-weight: 700; }
+.trow.nodec > .tlink { color: var(--dim); }
+.trow .tn { font-family: var(--mono); font-size: 12px; color: var(--dim); text-align: right; }
+.trow .lines { display: flex; flex-direction: column; min-width: 0; }
+.rl { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto; gap: 0 3px; align-items: baseline;
+      font-size: 12px; line-height: 17px; }
+.rl .who { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+.rl.us .who { color: var(--us); }
+.rl.them .who { color: var(--them); }
+.rl .act { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rl .glyph { color: var(--dim); margin-right: 3px; }
+.rl .marks { white-space: nowrap; }
+.rl.us .faintmark { color: var(--us); }
+.rl.them .faintmark { color: var(--them); }
+.trow .tw { display: flex; flex-direction: column; align-items: flex-end; font-family: var(--mono);
+            font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; line-height: 15px; }
+.trow .dropmark { color: var(--bad); }
+.trow .result { font-size: 10px; }
+.rail .keys { margin: 8px 4px 2px; line-height: 1.9; }
+
+/* ---- the decision header */
+.dechead { padding: 10px 14px; }
+.dh-row { display: flex; align-items: center; gap: 10px; }
+.dh-row h2 { margin: 0; flex: 1 1 auto; font-size: 17px; }
+.dh-facts { margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline;
+            font-size: 13.5px; }
+.delta.neg { color: var(--bad); }
+.delta.pos { color: var(--good); }
+.delta.flat { color: var(--dim); }
+.forcedword { color: var(--warn); }
+.boardcard h3, .parity h3, .story h3, .scouting h3 { font-size: 14px; margin: 0 0 8px; display: flex;
+                                                     flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+
+/* ---- the board: us left, them right, the same row format on both sides */
+.board2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.bside { min-width: 0; border-top: 3px solid var(--line); padding-top: 6px; }
+.bside.us { border-top-color: var(--us); }
+.bside.them { border-top-color: var(--them); }
+.bside header { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
+.bside ul.mons { list-style: none; margin: 0; padding: 0; }
+.bside li.mon { display: grid; grid-template-columns: minmax(0, 8.6em) 64px auto auto; gap: 2px 8px;
+                align-items: center; font-size: 13px; padding: 2px 0; }
+.bside li.mon.active { font-weight: 600; }
+.bside li.mon.fainted { opacity: 0.45; }
+.bside li.mon.unseen { grid-template-columns: auto auto; justify-content: start; }
+.bside li.mon .mname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bside li.mon .hp { font-family: var(--mono); font-size: 12px; color: var(--dim); font-weight: 400;
+                    white-space: nowrap; }
+.bside li.mon .hpbar { width: 64px; }
+.bside li.mon .mdetail { grid-column: 1 / -1; font-size: 12px; font-weight: 400; color: var(--dim);
+                         padding-left: 1.1em; line-height: 1.6; }
+.mdetail .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; margin: 0 2px 0 6px; }
+.mdetail .k:first-child { margin-left: 0; }
+.mdetail .fv { color: var(--text); }
+.mdetail .fv.truth { color: var(--truth); }
+.activemark { color: var(--accent); margin-right: 3px; font-size: 0.85em; }
+.faintmark { color: var(--bad); margin-right: 3px; }
+
+details.teamsheet { margin-top: 10px; font-size: 13px; }
+details.teamsheet > summary { cursor: pointer; color: var(--accent); min-height: 32px; }
+ul.sheet { list-style: none; margin: 6px 0 0; padding: 0; }
+ul.sheet li { padding: 3px 0; border-bottom: 1px solid var(--line); line-height: 1.6; }
+ul.sheet .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--dim);
+              margin: 0 2px 0 8px; }
+
+/* ---- our options vs their action: one component, mirrored, one bar scale */
+.parity { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.pcol { min-width: 0; padding-left: 10px; }
+.pcol.us { border-left: 3px solid var(--us); }
+.pcol.them { border-left: 3px solid var(--them); }
+ul.dist li.drow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(56px, 34%) 3.2em; gap: 8px;
+                  align-items: center; font-size: 13px; padding: 2px 0; min-height: 24px; }
+.drow .dl { overflow-wrap: anywhere; }
+.drow.marked .dl { font-weight: 700; }
+.dmark { display: inline-block; width: 1.2em; font-weight: 700; }
+ul.dist.us .dmark { color: var(--us); }
+ul.dist.them .dmark, .pcol.them .dmark { color: var(--them); }
+.drow .dp { font-family: var(--mono); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums;
+            color: var(--dim); }
+.drow.marked .dp { color: var(--text); font-weight: 700; }
+.pbar { display: block; height: 8px; border-radius: 4px; background: var(--surface-2);
+        border: 1px solid var(--line); overflow: hidden; }
+.pbar > span { display: block; height: 100%; background: var(--accent); }
+.pbar.us > span { background: var(--us); }
+.pbar.them > span { background: var(--them); }
+.pbar.neutral > span { background: var(--dim); }
+p.na { margin: 6px 0 0; }
+.pcol p.oppdid { font-size: 14px; margin: 0 0 6px; }
+.pcol p.calib { margin: 8px 0 0; }
+.locked-inline a { font-weight: 600; }
+
+/* ---- what happened: ordered beats, the phase word on the left, consequences under each action */
+ol.beats { list-style: none; margin: 0; padding: 0; }
+li.beat { display: grid; grid-template-columns: 7.4em minmax(0, 1fr); gap: 0 10px; padding: 6px 4px 6px 8px;
+          border-left: 3px solid var(--line); margin-bottom: 4px; }
+li.beat.side-we { border-left-color: var(--us); }
+li.beat.side-opp { border-left-color: var(--them); }
+li.beat.mine { background: var(--surface-2); border-radius: 0 6px 6px 0; }
+li.beat .ph { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+              color: var(--dim); padding-top: 3px; }
+li.beat .ph .ord { color: var(--text); }
+li.beat.phase-replace .ph { color: var(--warn); }
+li.beat.note .ph { color: var(--bad); }
+.bhead { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; font-size: 14px; }
+.bhead .glyph { color: var(--dim); }
+.tag { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 9px; background: var(--surface-2);
+       color: var(--dim); white-space: nowrap; }
+.tag.warn { color: var(--warn); }
+.tag.first { color: var(--text); border: 1px solid var(--line); }
+.tag.here { color: var(--accent); border: 1px solid var(--accent); }
+.tag.ok { color: var(--good); }
+a.declink { font-size: 12px; }
+ul.effects { list-style: none; margin: 4px 0 0; padding: 0; }
+li.eff { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: center; font-size: 13px; padding: 2px 0; }
+li.eff.faint { font-weight: 700; }
+li.eff .hpnums { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+.hpd { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.hpd.neg { color: var(--bad); }
+.hpd.pos { color: var(--good); }
+.src, .cause { color: var(--dim); font-size: 12px; }
+li.eff.faint .cause { font-weight: 400; }
+.hpbar.delta { position: relative; width: 96px; }
+.hpchange { position: absolute; top: 0; height: 100%; }
+.hpchange.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, transparent 2px 4px);
+                 opacity: 0.75; }
+.hpchange.gain { background: var(--good); opacity: 0.45; }
+
+/* ---- the model's read: scouting notes, under the hood */
+.scards { display: grid; gap: 10px; }
+article.scard { border: 1px solid var(--line); border-left: 3px solid var(--them); border-radius: 6px;
+                padding: 8px 10px; }
+article.scard.active { box-shadow: inset 0 0 0 1px var(--them-bg); background: var(--surface-2); }
+article.scard.fainted { opacity: 0.6; }
+article.scard header { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: 14px; }
+article.scard header .hp { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+article.scard dl { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); gap: 3px 8px; margin: 6px 0 0;
+                   font-size: 12.5px; }
+article.scard dt { color: var(--dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px;
+                   padding-top: 2px; }
+article.scard dd { margin: 0; overflow-wrap: anywhere; line-height: 1.6; }
+.bmove, .bitem, .seenmove, .chg { white-space: nowrap; }
+.chg { font-family: var(--mono); font-size: 11.5px; }
+.verdict { font-size: 11.5px; margin-left: auto; }
+.sband { display: inline-block; margin-right: 6px; white-space: nowrap; font-family: var(--mono);
+         font-size: 11.5px; }
+.sband.b-high { color: var(--text); font-weight: 700; }
+.sband.b-low { color: var(--dim); }
+.unseen-card { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 13px; }
+.unseen-card p { margin: 0 0 4px; }
+.hood h4 { font-size: 13px; margin: 12px 0 6px; }
+.hood h5 { font-size: 12px; margin: 8px 0 4px; color: var(--dim); }
+table.gpolicy tr.chosen td, table.gop tr.chosen td { font-weight: 700; }
+
+/* ---- the glossary and the phone's step bar */
 details.gloss dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; font-size: 13px; }
 details.gloss dt { font-family: var(--mono); color: var(--accent); }
 details.gloss dd { margin: 0; }
+.stepbar { display: none; }
 
+@media (max-width: 1279px) {
+  .viewer { grid-template-columns: 240px minmax(0, 1fr); }
+  .mind { grid-column: 2; }
+}
+
+/* Phone (T29): one column, the rail a DRAWER of the same rows, a sticky bottom bar of 44px buttons. */
 @media (max-width: 720px) {
-  .gamegrid { grid-template-columns: 1fr; }
-  .turnlist { position: static; max-height: 170px; }
-  .gboard, .gattn-rows { grid-template-columns: 1fr; }
+  .viewer { grid-template-columns: 1fr; gap: 0; }
+  .mind { grid-column: auto; }
+  .rail { position: static; max-height: none; margin-bottom: 12px; }
+  .rail > summary { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+                    min-height: 44px; padding: 4px 8px; list-style: none; font-size: 15px; cursor: pointer; }
+  .rail > summary::-webkit-details-marker { display: none; }
+  .rail > summary::after { content: "▾"; color: var(--dim); margin-left: auto; }
+  .rail[open] > summary::after { content: "▴"; }
+  .rail ol.turns { max-height: 60vh; overflow-y: auto; }
+  .board2, .parity { grid-template-columns: 1fr; }
+  .bside li.mon { grid-template-columns: minmax(0, 1fr) 64px auto auto; }
+  li.beat { grid-template-columns: 1fr; }
+  li.beat .ph { padding-top: 0; }
+  .iconbtn { min-width: 44px; min-height: 44px; }
+  nav.persp { display: flex; width: 100%; }
+  .persp-opt { flex: 1 1 0; justify-content: center; padding: 6px 4px; min-height: 44px; text-align: center; }
+  /* the battle's identity on ONE row between its arrows; the picker its own full-width row */
+  .bb-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+  .bb-top .bb-pick { grid-column: 1 / -1; }
+  .bb-pick { width: 100%; }
+  .bb-pick select { width: 100%; max-width: none; font-size: 16px; min-height: 44px; }
+  .bb-title { font-size: 16px; }
+  ul.dist li.drow { min-height: 28px; }
+  .stepbar { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; position: sticky; bottom: 0;
+             z-index: 6; background: var(--surface); border-top: 1px solid var(--line);
+             margin: 12px -12px -12px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  .stepbtn { min-height: 44px; display: flex; align-items: center; justify-content: center;
+             border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2);
+             text-decoration: none; color: var(--text); font-size: 16px; }
+  .stepbtn.off { opacity: 0.3; }
+  .stepmid { min-height: 44px; display: flex; align-items: center; justify-content: center;
+             font-size: 13px; color: var(--dim); text-decoration: none; padding: 0 4px; }
   details.gloss dl { grid-template-columns: 1fr; }
 }

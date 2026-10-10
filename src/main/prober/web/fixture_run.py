@@ -18,6 +18,8 @@ import os
 
 import numpy as np
 
+from main.prober.web.fixture_story import write_story_battle
+
 _OBS_LEN = 256
 OPPONENTS = ("aggressive_v2", "heuristic2")
 STEPS = (2000000, 4000000)
@@ -224,6 +226,11 @@ def build(root: str, identity: "dict | None" = None) -> str:
                   [1.0, -3.0, -9.0], dists=True, win_probs=[0.61, 0.18])
     _write_battle(run, STEPS[1], OPPONENTS[1], "win_002",
                   [_inv(1, "thunderbolt", 2.0)], [4.0, 9.0])
+
+    # step 3 — THE STORY BATTLE: a real gen-3 protocol log + a reconstruction record, so the battle
+    # viewer's turn story, its perspective board and its ground-truth overlay all have something to
+    # render (see `write_story_battle`). The newest step, so `/game` opens on it by default.
+    write_story_battle(run)
 
     # a checkpoint path gives the model-resolution ladder something to name (never loaded here).
     open(os.path.join(run, "checkpoint_3200000_steps.zip"), "w").close()

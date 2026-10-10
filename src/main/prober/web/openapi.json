@@ -1510,6 +1510,84 @@
         ]
       }
     },
+    "/api/game/board": {
+      "get": {
+        "operationId": "api_game_board_api_game_board_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Battle"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inv",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Inv",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Api Game Board Api Game Board Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "The board one decision was made on, every fact tagged public / ours / hidden (model-free)",
+        "tags": [
+          "read-only"
+        ]
+      }
+    },
     "/api/game/readout": {
       "get": {
         "operationId": "api_game_readout_api_game_readout_get",
@@ -1574,7 +1652,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "One battle's model panels: intent, hypotheses, attention summary, pointer scores, operator facts (LOADS the checkpoint; current architecture only)",
+        "summary": "One battle's model panels: intent, beliefs, attention summary, pointer scores, operator facts (LOADS the checkpoint; current architecture only)",
         "tags": [
           "read-only"
         ]
@@ -1641,7 +1719,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "One battle's turn story: per turn the protocol events + the board; the decisions (model-free)",
+        "summary": "One battle's turn story: per turn the protocol events, the ordered beats, the board; the decisions (model-free)",
         "tags": [
           "read-only"
         ]
@@ -2782,7 +2860,7 @@
     },
     "/battle": {
       "get": {
-        "operationId": "page_battle_battle_get",
+        "operationId": "page_battle_redirect_battle_get",
         "parameters": [
           {
             "in": "query",
@@ -2801,7 +2879,6 @@
             }
           },
           {
-            "description": "battle short_id; default = the first",
             "in": "query",
             "name": "battle",
             "required": false,
@@ -2814,12 +2891,11 @@
                   "type": "null"
                 }
               ],
-              "description": "battle short_id; default = the first",
               "title": "Battle"
             }
           },
           {
-            "description": "first game turn to show (windowing)",
+            "description": "game turn (mapped to turn=)",
             "in": "query",
             "name": "start",
             "required": false,
@@ -2832,20 +2908,13 @@
                   "type": "null"
                 }
               ],
-              "description": "first game turn to show (windowing)",
+              "description": "game turn (mapped to turn=)",
               "title": "Start"
             }
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
+          "307": {
             "description": "Successful Response"
           },
           "422": {
@@ -2859,7 +2928,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Turn-by-turn replay of one battle: board, what happened, the critic's read",
+        "summary": "The classic replay, MERGED into /game (2026-10-09): redirects there, keeping the battle and mapping start=N to turn=N",
         "tags": [
           "pages"
         ]
@@ -3065,6 +3134,42 @@
               "description": "decision index; default = the first",
               "title": "Inv"
             }
+          },
+          {
+            "description": "game turn; selects its first decision",
+            "in": "query",
+            "name": "turn",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "game turn; selects its first decision",
+              "title": "Turn"
+            }
+          },
+          {
+            "description": "perspective: model (default) | truth | public",
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "perspective: model (default) | truth | public",
+              "title": "View"
+            }
           }
         ],
         "responses": {
@@ -3089,7 +3194,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Battle viewer: the turn story, opponent intent, attention, operator facts",
+        "summary": "The battle viewer: the turn story, the board under an information perspective, our options vs their action, and (unlocked) the model's beliefs, intent and attention",
         "tags": [
           "pages"
         ]
@@ -3625,6 +3730,22 @@
               ],
               "default": "0",
               "title": "Inv"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "View"
             }
           }
         ],

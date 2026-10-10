@@ -1,7 +1,6 @@
-"""`/game`'s three session methods (`designs/prober/battle_view_v2.md`):
+"""`/game`'s MODEL session methods (`designs/prober/battle_view_v2.md`; the model-free story and board
+are `session/story.py`):
 
-* `battle_story` — MODEL-FREE: every turn's protocol events + the board after it, and the decisions
-  of that turn with our choice against the legal set. Works on every run with traces.
 * `battle_readout` — loads the battle's checkpoint (the one exact → nearest → recent ladder) and
   runs ONE batched eager forward over every recorded decision (`ProbeModel.capture_battle`): opponent
   intent + its calibration, the hypothesis tokens and their evolution, the pointer head's scores, the
@@ -15,102 +14,20 @@ The capture is cached in memory per (checkpoint path, battle) — bounded, dropp
 
 from __future__ import annotations
 
-import os
 from collections import OrderedDict
 
 import numpy as np
 
-from main.prober.engine.protocol import parse_protocol_log
 from main.prober.engine.readout import (action_display, attention_matrix, attention_summary, belief_evolution,
     hypotheses_view, intent_calibration, intent_view, operator_view, opp_actual_action, token_labels)
-from main.prober.engine.turn_events import fold_turns
 from main.prober.session.serialize import _choice_dict, _short_id
+from main.prober.session.story import GLOSSARY  # noqa: F401 — the one glossary, re-exported
 
 #: Battle captures one session keeps (each ≈ 15 MB on a 250-decision battle, mostly attention).
 _READOUT_CACHE_CAP = 8
 
-#: Plain-word explanations of every abbreviation `/game` prints, served WITH the data so the page and
-#: the JSON cannot disagree about what a term means.
-GLOSSARY = {
-    "α": "the model's prediction of the opponent's next action (the flat opponent pointer)",
-    "π": "presence — the model's probability that this species is on the opponent's team",
-    "P(win)": "the critic's probability that we win from here (the win-prob head)",
-    "P(KO)": "the probability the move knocks the target out",
-    "P(KO first)": "the probability we knock them out before they act (move-resolution family)",
-    "P(resolve)": "the probability the move does what it says — lands, not blocked or immune",
-    "P(lands)": "for a status move: the probability the status lands",
-    "OTHER_move": "any move of theirs the model did not give a seat of its own",
-    "OTHER_species": "a switch to a mon the model has not guessed",
-    "E3": "a trunk token for one of OUR active's moves",
-    "E4": "a trunk token for one of THEIR active's likely moves",
-    "E5": "a trunk token summarising the rest of a mon's moves (beyond its seats)",
-    "pointer score": "the raw score the action head gives each action before the softmax",
-    "log loss": "how surprised the prediction was by what happened — lower is better",
-}
-
-
-def _trainee_side(summary: dict, lines) -> str:
-    src = (summary.get("meta") or {}).get("trace_source") or {}
-    if src.get("trainee_side") in ("p1", "p2"):
-        return str(src["trainee_side"])
-    # An older (python-era) trace: our side's HP lines carry exact points, theirs hundredths.
-    for ln in lines or ():
-        if ln.startswith("|switch|"):
-            p = ln.split("|")
-            if len(p) > 4 and "/" in p[4] and not p[4].split("/")[1].startswith("100"):
-                return p[2][:2]
-    return "p1"
-
 
 class _GameMixin:
-    # ------------------------------------------------------------------ model-free
-    def _battle_protocol(self, b) -> tuple:
-        replay = b.summary_path[: -len("_summary.json")] + "_replay.html"
-        if os.path.exists(replay):
-            with open(replay, encoding="utf-8") as f:
-                return parse_protocol_log(f.read())
-        return tuple(self._core_protocol(b))
-
-    def battle_story(self, battle_id: str) -> dict:
-        """The turn story (model-free): ``turns`` = per game turn its typed protocol events, the board at
-        the END of the turn, and the decision indices made at it; ``decisions`` = per recorded decision
-        the turn, phase, our choice and the legal set with the recorded probabilities. Works at any
-        architecture."""
-        b = self._battle(battle_id)
-        bt = self.battle_turns(battle_id)
-        summary = self._summary(b)
-        lines = self._battle_protocol(b)
-        side = _trainee_side(summary, lines)
-        our_team = [m.get("species") for m in ((summary.get("teams") or {}).get("our") or [])
-                    if isinstance(m, dict)]
-        folded = fold_turns(lines, trainee_side=side, our_team=our_team)
-        decisions = []
-        for t in bt.get("turns") or []:
-            for d in t.get("decisions") or []:
-                decisions.append({
-                    "inv": d["inv"], "turn": d["turn"], "phase": d.get("phase"), "chosen": d.get("chosen"),
-                    "chosen_index": next((i for i, a in enumerate(d.get("actions") or []) if a.get("chosen")), None),
-                    "actions": [dict(a, display=action_display(a.get("label") or ""))
-                                for a in d.get("actions") or []],
-                    "chosen_display": action_display(d.get("chosen") or ""), "value": d.get("value"), "win_prob": d.get("win_prob"),
-                    "delta_v": d.get("delta_v"), "flags": d.get("flags") or [],
-                    "our": (d.get("our") or {}).get("species"), "opp": (d.get("opp") or {}).get("species"),
-                    "summary": [e.get("text") for e in d.get("timeline") or []]})
-        by_turn: dict = {}
-        for d in decisions:
-            by_turn.setdefault(int(d["turn"] or 0), []).append(d["inv"])
-        # A decision whose turn the protocol never reached (no log at all on an old trace without a
-        # `_replay.html`) still gets its row — an empty one that says so — so no decision is orphaned.
-        have = {int(t["turn"]) for t in folded}
-        folded = folded + [{"turn": n, "events": [], "board": None, "no_protocol": True}
-                           for n in sorted(set(by_turn) - have)]
-        folded.sort(key=lambda t: int(t["turn"]))
-        turns = [dict(t, decisions=by_turn.get(int(t["turn"]), [])) for t in folded]
-        return {"id": bt["id"], "short_id": bt["short_id"], "step": bt["step"], "opponent": bt["opponent"],
-                "outcome": bt["outcome"], "critic_currency": bt.get("critic_currency"),
-                "trainee_side": side, "n_turns": bt.get("n_turns"), "n_decisions": len(decisions),
-                "turns": turns, "decisions": decisions, "glossary": GLOSSARY}
-
     # ------------------------------------------------------------------ model
     def _capture(self, b):
         model, choice = self._model_for(b)

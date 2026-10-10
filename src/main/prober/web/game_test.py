@@ -57,7 +57,7 @@ def test_the_page_renders_the_story_and_a_model_slot(client):
     b = _battle(client)
     r = client.get("/game", params={"battle": b})
     assert r.status_code == 200
-    assert 'class="turnlist' in r.text and 'id="game-model"' in r.text
+    assert 'class="rail' in r.text and 'id="game-model"' in r.text
     assert "/partials/game/model" in r.text
 
 
@@ -124,7 +124,7 @@ def test_the_page_carries_the_keyboard_links_and_the_glossary(client):
     story = client.get("/api/game/story", params={"battle": b}).json()
     listed = {i for t in story["turns"] for i in t["decisions"]}
     assert listed == {d["inv"] for d in story["decisions"]}
-    assert "what the terms mean" in html and "OTHER_species" in html
+    assert "what the terms and marks mean" in html and "OTHER_species" in html
 
 
 def test_decision_index_is_clamped_not_a_500(client):
@@ -139,7 +139,7 @@ def test_a_locked_visitor_gets_the_story_and_one_unlock_prompt_never_an_error(cl
     b = _battle(client)
     r = client.get("/game", params={"battle": b, "inv": "1"})
     assert r.status_code == 200
-    assert 'class="turnlist' in r.text                                  # the model-free story renders
+    assert 'class="rail' in r.text                                      # the model-free story renders
     assert 'data-model-state="locked"' in r.text and "Unlock to view the model" in r.text
     assert "/partials/game/model" not in r.text                         # no request that would be refused
     assert 'data-model-state="error"' not in r.text

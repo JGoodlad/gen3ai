@@ -1,0 +1,92 @@
+{% import "_game_macros.html" as g %}
+{# SCOUTING NOTES on their team — the way a player tracks the opponent
+   (designs/prober/battle_viewer_ux_2026-10-09.md §7). Built from the decision's PERSPECTIVE board
+   (`opp_side`: what was revealed, + ground truth marked ◇ under + Truth) and, when the model is
+   loaded, its beliefs (`scout`, from `battle_readout`'s per-decision `scouting`). Every board fact
+   goes through `g.fv`; every truth-only judgement sits inside a `data-vis="hidden"` block. #}
+{% set beliefs = {} %}
+{% for b in ((scout.mons if scout else []) or []) %}{% set _ = beliefs.update({b.id: b}) %}{% endfor %}
+<section class="card scouting" aria-label="scouting notes on their team">
+  <h3>{{ g.chip("opp") }} Their team <span class="muted small">— scouting notes{% if scout %}: what was seen, and what the model believes{% else %}: what has been seen so far{% endif %}</span></h3>
+  {% if opp_side %}
+  {% set ordered = (opp_side.mons | selectattr("active") | list) + (opp_side.mons | rejectattr("active") | list) %}
+  <div class="scards">
+  {% for mon in ordered if shown(mon.species.vis, view) %}
+    {% set bel = beliefs.get(mon.key) %}
+    <article class="scard {{ 'active' if mon.active else '' }} {{ 'fainted' if mon.fainted else '' }} {{ 'unrevealed' if not mon.appeared else '' }}" data-species="{{ mon.key }}">
+      <header>
+        {% if mon.active %}<span class="activemark" title="in battle">▶</span>{% endif %}{% if mon.fainted %}<span class="faintmark" title="fainted">✕</span>{% endif %}
+        <b>{{ g.fv(mon.species, view) }}</b>
+        {% if mon.hp_pct and not mon.fainted and shown(mon.hp_pct.vis, view) %}{{ g.hpbar(mon.hp_pct.v) }} <span class="hp">{{ g.fv(mon.hp_pct, view, "%.0f%%") }}</span>{% endif %}
+        {{ g.status_badge(mon.status, view) }}
+        {% if mon.first_turn is not none %}<span class="muted small">seen turn {{ mon.first_turn }}</span>{% endif %}
+        {% if view == "truth" and bel and bel.verdict %}
+        <span class="fv truth verdict" data-vis="hidden" title="how the model's belief compares with the truth (ground truth — hidden from the model)"><span class="truthmark" aria-hidden="true">◇</span>moves {{ bel.verdict.moves_right }}/{{ bel.verdict.moves_total }}{% if bel.verdict.item_right is not none %} · item {{ '✓' if bel.verdict.item_right else '✗' }}{% endif %}</span>
+        {% endif %}
+      </header>
+      <dl>
+        <dt>Moves</dt>
+        <dd>
+          {%- for x in mon.moves if x.vis == "public" %}<span class="seenmove">{{ g.fv(x, view) }} <small class="muted">seen</small></span>{% if not loop.last %} · {% endif %}{% endfor %}
+          {%- if bel and bel.moves %}
+            {%- set seen_names = mon.moves | selectattr("vis", "equalto", "public") | map(attribute="v") | list -%}
+            {%- for b in bel.moves if b.name not in seen_names %}{% if loop.first %}{% if seen_names %} · {% endif %}{% endif %}<span class="bmove" title="the model's belief that this move is in its set">{{ b.name }} {{ g.pc(b.p) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+          {%- elif not (mon.moves | selectattr("vis", "equalto", "public") | list) %}<span class="muted">none seen yet</span>{% endif %}
+          {%- set truth_moves = mon.moves | selectattr("vis", "equalto", "hidden") | list -%}
+          {%- if truth_moves and view == "truth" %}<br><span class="truthline">actually also: {% for x in truth_moves %}{{ g.fv(x, view) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
+        </dd>
+        <dt>Item</dt>
+        <dd>
+          {%- if mon.item and mon.item.vis == "public" %}{{ g.fv(mon.item, view) }} <small class="muted">{{ 'used' if mon.item_gone else 'revealed' }}</small>
+          {%- elif bel and bel.item %}{% for it in bel.item %}<span class="bitem" title="the model's belief about its item">{{ it.name }} {{ g.pc(it.p) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+          {%- else %}<span class="muted">not revealed</span>{% endif %}
+          {%- if mon.item and mon.item.vis == "hidden" and view == "truth" %}<br><span class="truthline">actually: {{ g.fv(mon.item, view) }}</span>{% endif %}
+        </dd>
+        {% if (mon.ability and shown(mon.ability.vis, view)) %}
+        <dt>Ability</dt>
+        <dd>{{ g.fv(mon.ability, view) }}{% if mon.ability.inferred %} <small class="muted">its only one</small>{% endif %}</dd>
+        {% endif %}
+        {% if bel and bel.spread %}
+        <dt>Spread</dt>
+        <dd class="spread">
+          {%- for st in ("spe", "atk", "spa", "def", "spd") if bel.spread.band and bel.spread.band[st] is defined %}<span class="sband b-{{ bel.spread.band[st] }}" title="believed {{ st }} {{ '%.0f' | format(bel.spread.stats[st]) }} in its possible range {{ '%.0f' | format(bel.spread.range[st][0]) }}–{{ '%.0f' | format(bel.spread.range[st][1]) }}">{{ {'spe': 'Spe', 'atk': 'Atk', 'spa': 'SpA', 'def': 'Def', 'spd': 'SpD'}[st] }} {{ '%.0f' | format(bel.spread.stats[st]) }} <small>{{ bel.spread.band[st] }}</small></span>{% endfor %}
+          {%- if bel.spread.nature %} · {% for n in bel.spread.nature[:2] %}{{ n.name }} {{ g.pc(n.p) }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+          {%- if view == "truth" and bel.truth and bel.truth.stats %}<br><span class="fv truth truthline" data-vis="hidden" title="ground truth — hidden from the model"><span class="truthmark" aria-hidden="true">◇</span>actually {{ bel.truth.nature or '' }}{% for st in ("spe", "atk", "spa", "def", "spd") if bel.truth.stats[st] is defined %} · {{ {'spe': 'Spe', 'atk': 'Atk', 'spa': 'SpA', 'def': 'Def', 'spd': 'SpD'}[st] }} {{ '%.0f' | format(bel.truth.stats[st]) }}{% endfor %}</span>{% endif %}
+        </dd>
+        {% endif %}
+        {% if bel and bel.delta and (bel.delta.moves or bel.delta.item) %}
+        <dt>Changed</dt>
+        <dd class="changed">since the last decision:
+          {% for c in (bel.delta.moves or []) + (bel.delta.item or []) %}<span class="chg">{{ c.name }} {{ g.pc(c["from"]) }} → {{ g.pc(c.to) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+          {% if bel.delta.after %}<span class="muted"> — after: {{ bel.delta.after | join('; ') }}</span>{% endif %}
+        </dd>
+        {% endif %}
+      </dl>
+    </article>
+  {% endfor %}
+  </div>
+  {# the slots nobody has seen yet #}
+  {% set ns = namespace(n=0) %}{% for mon in opp_side.mons %}{% if mon.appeared %}{% set ns.n = ns.n + 1 %}{% endif %}{% endfor %}
+  {% set unseen_n = (opp_side.team_size or 6) - ns.n %}
+  {% if unseen_n > 0 %}
+  <div class="unseen-card">
+    <p><b>{{ unseen_n }} not seen yet</b>
+    {% if scout and scout.unseen and scout.unseen.guesses %} — the model's guesses (how likely each is on their team):{% endif %}</p>
+    {% if scout and scout.unseen and scout.unseen.guesses %}
+    <ul class="dist them guesses">
+      {% for gu in scout.unseen.guesses %}
+      <li class="drow"><span class="dl">{{ gu.species }}{% if view == "truth" and gu.on_team is not none %} <span class="fv truth" data-vis="hidden" title="ground truth — hidden from the model"><span class="truthmark" aria-hidden="true">◇</span>{{ '✓ on their team' if gu.on_team else '✗ not on their team' }}</span>{% endif %}</span>{{ g.bar(gu.p, "them") }}<span class="dp">{{ g.pc(gu.p) }}</span></li>
+      {% endfor %}
+    </ul>
+    {% if scout.unseen.other_any is not none %}<p class="muted small">someone not on this list: {{ g.pc(scout.unseen.other_any) }} at least one</p>{% endif %}
+    {% endif %}
+    {% set hidden_mons = opp_side.mons | rejectattr("appeared") | list %}
+    {% if view == "truth" and hidden_mons %}
+    <p class="truthline">actually: {% for mon in hidden_mons %}{{ g.fv(mon.species, view) }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <p class="muted">no board for this decision.</p>
+  {% endif %}
+</section>

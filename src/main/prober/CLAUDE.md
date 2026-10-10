@@ -17,7 +17,7 @@ already cost a wrong reading. Follow the pointer when you touch the subject.
 
 | I am about to… | Read |
 |---|---|
-| read or change `/game`, the battle viewer (turn story · intent · attention · operator facts) | `designs/prober/battle_view_v2.md` |
+| read or change `/game`, THE battle viewer (turn story as ordered beats · the information perspective · intent · scouting notes · attention) | `designs/prober/battle_view_v2.md` (field map) + `designs/prober/battle_viewer_ux_2026-10-09.md` (why it is shaped this way, what was removed) |
 | read a decision's panels field by field | `designs/prober/analyze_panels.md` |
 | change what the RESULT timeline says happened | `designs/prober/result_timeline.md` |
 | read or change the belief / threat views | `designs/prober/beliefs_and_threats.md` |
@@ -51,7 +51,7 @@ human-facing surface. What was dropped with it, and why:
 `designs/research_state/claude_md_archive/prober_leaf_history.md`.
 
 **Reading a game turn by turn** is `battle_turns()` (below) — model-free, so it opens instantly.
-`query turns` prints the whole game as JSON; `/battle` renders it as a phone-readable replay. The
+`query turns` prints the whole game as JSON; the web reads a game in `/game` (the classic `/battle` replay was merged into it on 2026-10-09 and redirects there). The
 plain-text battle log is `engine.timeline_entry_text`, and the vocabulary it draws on
 (`engine.CANT_PHRASE` / `NO_EFFECT_TEXT` / `surprise_phrase`) lives in the ENGINE precisely so that
 a reason one surface learns cannot go missing on another.
@@ -88,7 +88,9 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   | `analyze.py` | `analyze_invocation` — the top-level entry — plus `build_meta` (`build_value_dist` was deleted with the value-dist head, L1) |
   | `taxonomy.py` | loss attribution: the turning-point category table |
   | `probes.py` | representation probing (`fit_probe`) |
-  | `turn_events.py` | `/game`'s TURN STORY: every state-bearing protocol line → a typed event (side from the trainee's seat, HP as % of max, the `[from]` source), and the board after each turn as a fold over the same lines |
+  | `turn_events.py` | `/game`'s TURN STORY: every state-bearing protocol line → a typed event (side from the trainee's seat, the mon named by SPECIES never nickname, HP as % of max, the `[from]` source), and the board after each turn as a fold over the same lines (incl. the items / abilities the protocol revealed) |
+  | `turn_beats.py` | the turn's events grouped into ordered BEATS — phase (lead · start · switch · move · replace · residual · end, read off the protocol's own framing), execution order + "moved first", consequences under their cause, faint causes, the rail's per-side summary |
+  | `perspective.py` | INFORMATION PERSPECTIVE: every board fact tagged public / ours / hidden (from the fold + both teams' reconstruction sheets), and `shown(vis, view)` — the ONE rule `/game`'s `fv` macro applies |
   | `readout.py` | `/game`'s MODEL panels from one battle capture: the flat opponent pointer with the label mapped by the training rule (+ the battle's calibration), the hypothesis tokens and their evolution, the trunk's seat labels and attention summary, the operator facts |
 - **`model.py`** — `ProbeModel`: the torch boundary, and the ONLY place a forward or backward runs.
   `load(ckpt)` does a plain strict load (`snapshot.load_checkpoint_strict` — no env, no `ModelVersion`

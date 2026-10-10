@@ -1,31 +1,203 @@
-{# `/game`'s shared fragments. Every abbreviation carries a `title` (the glossary the session serves). #}
+{# `/game`'s components — ONE implementation of each, used by the page and its fragments
+   (designs/prober/battle_viewer_ux_2026-10-09.md). Every board fact goes through `fv`, which asks the
+   engine's `shown(vis, view)` and nothing else, so no two panels can disagree about who knows what. #}
 
-{% macro hpbar(pct) %}{% if pct is none %}<span class="hpbar" title="HP not seen yet"><span class="hpfill unk" style="width:100%"></span></span>{% else %}<span class="hpbar" title="{{ '%.0f' | format(pct) }}% HP"><span class="hpfill {{ 'low' if pct < 25 else ('mid' if pct < 50 else '') }}" style="width:{{ '%.0f' | format(pct) }}%"></span></span>{% endif %}{% endmacro %}
+{# A probability, one format everywhere: integer percent; <1% / >99% for the unreadable tails; 0% and
+   100% only when exact. #}
+{% macro pc(p) -%}
+{%- if p is none -%}<span class="muted" title="not available">—</span>
+{%- elif p <= 0 -%}0%
+{%- elif p >= 1 -%}100%
+{%- elif p < 0.005 -%}&lt;1%
+{%- elif p >= 0.995 -%}&gt;99%
+{%- else -%}{{ '%.0f' | format(p * 100) }}%
+{%- endif -%}
+{%- endmacro %}
 
-{% macro bar(p, cls="") %}<span class="bar {{ cls }}"><span style="width:{{ '%.1f' | format((p or 0) * 100) }}%"></span></span>{% endmacro %}
+{# A DIFFERENCE of two probabilities, in percentage points: one decimal under 10 points (so a move
+   between two rounded percentages never reads as "±0"), whole points above. #}
+{% macro pts(d) -%}
+{%- if d is none -%}<span class="muted">—</span>
+{%- else -%}{%- set v = d * 100 -%}{%- set a = v | abs -%}
+{%- set txt = ('%.1f' | format(a)) if a < 9.95 else ('%.0f' | format(a)) -%}
+{%- if txt == '0.0' -%}<span class="delta flat" title="percentage points">±0 pts</span>
+{%- else -%}<span class="delta {{ 'neg' if v < 0 else 'pos' }}" title="percentage points">{{ '−' if v < 0 else '+' }}{{ txt }} pts</span>
+{%- endif -%}
+{%- endif -%}
+{%- endmacro %}
 
-{% macro pc(p, digits=0) %}{% if p is none %}<span class="muted" title="not available">—</span>{% else %}{{ ("%." ~ digits ~ "f") | format(p * 100) }}%{% endif %}{% endmacro %}
+{# A probability bar on ONE scale (linear 0–100%). `cls` picks the side colour. #}
+{% macro bar(p, cls="") -%}
+{%- set w = (p or 0) * 100 -%}{%- set w = 100 if w > 100 else (0 if w < 0 else w) -%}
+<span class="pbar {{ cls }}" aria-hidden="true"><span style="width:{{ '%.1f' | format(w) }}%"></span></span>
+{%- endmacro %}
 
-{% macro side_board(side, label, cls) %}
-<div class="gside {{ cls }}">
-  <div class="gside-head"><span class="who">{{ label }}</span>
-    {% for k, v in (side.conditions or {}).items() %}<span class="badge hazard" title="{{ 'Spikes layers' if k == 'spikes' else 'a screen / side effect' }}">{{ {'spikes': 'Spikes', 'reflect': 'Reflect', 'lightscreen': 'Light Screen', 'safeguard': 'Safeguard', 'mist': 'Mist'}.get(k, k) }}{% if k == 'spikes' %} ×{{ v }}{% endif %}</span>{% endfor %}
-    {% for st, n in (side.boosts or {}).items() %}<span class="badge boost" title="stat stage of the mon in battle">{{ st }} {{ '%+d' | format(n) }}</span>{% endfor %}
-    {% for v in (side.volatiles or []) %}<span class="badge status" title="a temporary effect on the mon in battle">{{ v }}</span>{% endfor %}
-  </div>
-  <ul class="gmons">
-    {% for mon in side.mons %}
-    <li class="{{ 'active' if mon.active else '' }} {{ 'fainted' if mon.fainted else '' }}">
-      <span class="species">{{ mon.species }}</span>
-      {{ hpbar(mon.hp_pct) }}
-      <span class="hp">{% if mon.fainted %}fainted{% elif mon.hp_pct is none %}?{% else %}{{ '%g' | format(mon.hp_pct) }}%{% endif %}</span>
-      {% if mon.status and not mon.fainted %}<span class="badge status" title="status condition">{{ mon.status }}</span>{% endif %}
-      {% if mon.active %}<span class="badge flag switch" title="the mon in battle">in</span>{% endif %}
-    </li>
-    {% endfor %}
-    {% if side.team_size and side.mons | length < side.team_size %}
-    <li class="unseen muted">{{ side.team_size - side.mons | length }} not seen yet</li>
+{# The side chip: colour AND the word, never colour alone. #}
+{% macro chip(side) -%}
+{%- if side == "we" -%}<span class="chip us">us</span>
+{%- elif side == "opp" -%}<span class="chip them">them</span>
+{%- else -%}<span class="chip field">field</span>
+{%- endif -%}
+{%- endmacro %}
+
+{# ONE board fact under the page's perspective. `fmt` formats a number; `cls` styles the span. #}
+{% macro fv(f, view, fmt=None, cls="") -%}
+{%- if f and f.v is not none and f.v != "" and shown(f.vis, view) -%}
+{%- set text = (fmt | format(f.v)) if fmt else f.v -%}
+{%- if f.vis == "hidden" -%}
+<span class="fv truth {{ cls }}" data-vis="hidden" title="ground truth — hidden from the model at this point"><span class="truthmark" aria-hidden="true">◇</span>{{ text }}</span>
+{%- elif f.vis == "ours" -%}
+<span class="fv ours {{ cls }}" data-vis="ours" title="our own team's private fact: the model knew it, a spectator did not">{{ text }}</span>
+{%- else -%}
+<span class="fv {{ cls }}" data-vis="public">{{ text }}</span>
+{%- endif -%}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro hpbar(pct, label="") -%}
+{%- if pct is none -%}<span class="hpbar unk" role="img" aria-label="HP not seen yet"><span class="hpfill" style="width:100%"></span></span>
+{%- else -%}<span class="hpbar" role="img" aria-label="{{ label }}{{ '%.0f' | format(pct) }}% HP"><span class="hpfill {{ 'lo' if pct <= 20 else ('mid' if pct <= 50 else 'hi') }}" style="width:{{ '%.1f' | format(pct) }}%"></span></span>
+{%- endif -%}
+{%- endmacro %}
+
+{# Damage / healing as an HP-bar DELTA: what is left, the lost (or regained) slice hatched. #}
+{% macro hpdelta(before, after) -%}
+{%- if before is none or after is none -%}{{ hpbar(after) }}
+{%- else -%}
+{%- set lo = [before, after] | min -%}{%- set hi = [before, after] | max -%}
+<span class="hpbar delta" role="img" aria-label="HP {{ '%.0f' | format(before) }}% to {{ '%.0f' | format(after) }}%"><span class="hpfill {{ 'lo' if after <= 20 else ('mid' if after <= 50 else 'hi') }}" style="width:{{ '%.1f' | format(lo) }}%"></span><span class="hpchange {{ 'gain' if after > before else 'loss' }}" style="left:{{ '%.1f' | format(lo) }}%;width:{{ '%.1f' | format(hi - lo) }}%"></span></span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro status_badge(f, view) -%}
+{%- if f and shown(f.vis, view) -%}<span class="badge status" title="status condition">{{ fv(f, view) }}</span>{%- endif -%}
+{%- endmacro %}
+
+{# One mon on the board. Rendered only when its SPECIES is visible under the perspective. #}
+{% macro mon_row(m, view, side, detail=False) %}
+{%- if shown(m.species.vis, view) -%}
+<li class="mon {{ 'active' if m.active else '' }} {{ 'fainted' if m.fainted else '' }} {{ 'unrevealed' if not m.appeared else '' }}"
+    data-vis-species="{{ m.species.vis }}">
+  <span class="mname">{% if m.active %}<span class="activemark" title="in battle">▶</span>{% endif %}{% if m.fainted %}<span class="faintmark" title="fainted">✕</span>{% endif %}{{ fv(m.species, view) }}</span>
+  {% if m.hp_pct and shown(m.hp_pct.vis, view) %}{{ hpbar(m.hp_pct.v) }}{% else %}<span class="hpbar unk"></span>{% endif %}
+  <span class="hp">{% if m.fainted %}fainted{% elif m.hp_pct %}{{ fv(m.hp_pct, view, "%.0f%%") }}{% endif %}{% if m.hp_exact and not m.fainted %} <small>{{ fv(m.hp_exact, view) }}</small>{% endif %}</span>
+  {{ status_badge(m.status, view) }}
+  {% if detail %}
+  <span class="mdetail">
+    {%- for x in m.moves if shown(x.vis, view) %}{% if loop.first %}<span class="k">moves</span> {% endif %}{{ fv(x, view, cls="move") }}{% if not loop.last %} · {% endif %}{% endfor %}
+    {%- if m.item and shown(m.item.vis, view) %} <span class="k">item</span> {{ fv(m.item, view) }}{% if m.item_gone %} <small class="muted">(used)</small>{% endif %}{% endif %}
+    {%- if m.ability and shown(m.ability.vis, view) %} <span class="k">ability</span> {{ fv(m.ability, view) }}{% endif %}
+  </span>
+  {% endif %}
+</li>
+{%- endif -%}
+{% endmacro %}
+
+{# One side of the board, mirrored: us left, them right. #}
+{% macro side_panel(sv, side, view) %}
+<section class="bside {{ 'us' if side == 'we' else 'them' }}" aria-label="{{ 'our' if side == 'we' else 'their' }} side">
+  <header>{{ chip(side) }}
+    {% for k, v in (sv.conditions or {}).items() %}<span class="badge hazard" title="{{ 'Spikes layers' if k == 'spikes' else 'a screen / side effect' }}">{{ {'spikes': 'Spikes', 'reflect': 'Reflect', 'lightscreen': 'Light Screen', 'safeguard': 'Safeguard', 'mist': 'Mist'}.get(k, k) }}{% if k == 'spikes' %} ×{{ v }}{% endif %}</span>{% endfor %}
+    {% for st, n in (sv.boosts or {}).items() %}<span class="badge boost" title="stat stage of the mon in battle">{{ st }} {{ '%+d' | format(n) }}</span>{% endfor %}
+    {% for v in (sv.volatiles or []) %}<span class="badge status" title="a temporary effect on the mon in battle">{{ v }}</span>{% endfor %}
+  </header>
+  <ul class="mons">
+    {% for m in sv.mons %}{{ mon_row(m, view, side, detail=(m.active and not m.fainted)) }}{% endfor %}
+    {% set ns = namespace(n=0) %}{% for m in sv.mons %}{% if shown(m.species.vis, view) %}{% set ns.n = ns.n + 1 %}{% endif %}{% endfor %}
+    {% if sv.team_size and ns.n < sv.team_size %}
+    <li class="mon unseen"><span class="mname muted">? × {{ sv.team_size - ns.n }}</span><span class="muted small">not yet seen</span></li>
     {% endif %}
   </ul>
-</div>
+</section>
+{% endmacro %}
+
+{# ----------------------------------------------------------------------------- the turn story #}
+
+{% macro effect(e, view) %}
+<li class="eff {{ e.kind }} {{ 'side-' ~ (e.side or 'field') }}">
+  {%- if e.kind in ("damage", "heal", "sethp") and e.hp_after is not none %}
+  {{ chip(e.side) }} <b>{{ e.species }}</b> {{ hpdelta(e.hp_before, e.hp_after) }}
+  <span class="hpnums">{% if e.hp_before is not none %}{{ '%.0f' | format(e.hp_before) }}% → {% endif %}{{ '%.0f' | format(e.hp_after) }}%</span>
+  {% if e.pct is not none %}<span class="hpd {{ 'neg' if e.pct < 0 else 'pos' }}">{{ '−' if e.pct < 0 else '+' }}{{ '%.0f' | format(e.pct | abs) }}%</span>{% endif %}
+  {% if e.hits and e.hits > 1 %}<span class="tag">{{ e.hits }} hits</span>{% endif %}
+  {% for t in e.tags or [] %}<span class="tag {{ 'warn' if t in ('super effective', 'critical hit') else '' }}">{{ t }}</span>{% endfor %}
+  {% if e.source %}<span class="src">from {{ e.source }}</span>{% endif %}
+  {%- elif e.kind == "faint" %}
+  <span class="faintmark" aria-hidden="true">✕</span> {{ chip(e.side) }} <b>{{ e.species }}</b> fainted{% if e.cause %} <span class="cause">— {{ e.cause }}</span>{% endif %}
+  {%- elif e.kind == "end" %}
+  <b>{{ e.text }}</b>
+  {%- else %}
+  {% if e.side %}{{ chip(e.side) }} {% endif %}{{ e.text }}{% for t in e.tags or [] %} <span class="tag">{{ t }}</span>{% endfor %}
+  {%- endif %}
+</li>
+{% endmacro %}
+
+{% macro ordinal(n) -%}{{ n }}{{ {1: 'st', 2: 'nd', 3: 'rd'}.get(n if n < 20 else n % 10, 'th') }}{%- endmacro %}
+
+{# One beat: the phase word, who acted, what they did, and every consequence under it. #}
+{% macro beat(b, view, cur_inv, base) %}
+<li class="beat phase-{{ b.phase }} {{ 'side-' ~ (b.side or 'field') }} {{ 'mine' if b.decision is defined and b.decision == cur_inv else '' }}"
+    data-phase="{{ b.phase }}" data-side="{{ b.side or 'field' }}">
+  <span class="ph">{{ b.phase_word }}{% if b.phase == "move" and b.order %} <span class="ord" title="the order this turn's actions ran in">{{ ordinal(b.order) }}</span>{% endif %}</span>
+  <div class="bbody">
+    <p class="bhead">
+      {% if b.kind in ("move", "cant") %}
+        {{ chip(b.side) }} <b>{{ b.species }}</b>
+        {% if b.kind == "move" %}<span class="glyph" aria-hidden="true">▸</span> <b class="mv">{{ b.move }}</b>{% if b.target_species and b.target_side != b.side %} <span class="muted">on {{ 'our' if b.target_side == 'we' else 'their' }} {{ b.target_species }}</span>{% endif %}{% if b.missed %} <span class="tag">missed</span>{% endif %}
+        {% else %}<span class="glyph" aria-hidden="true">⏸</span> {{ b.text }}{% endif %}
+        {% if b.first %}<span class="tag first" title="this turn's first action">moved first</span>{% endif %}
+      {% elif b.kind == "switch" %}
+        {{ chip(b.side) }} {% if b.from_species %}<b>{{ b.from_species }}</b> <span class="glyph" title="switched by choice">⇄</span> {% endif %}<b>{{ b.species }}</b>
+        <span class="muted">switched in</span>
+      {% elif b.kind == "replace" %}
+        {{ chip(b.side) }} <span class="glyph" title="sent in after a faint">↳</span> <b>{{ b.species }}</b>
+        <span class="muted">sent in after {{ b.from_species or 'a faint' }} fainted — a forced replacement</span>
+      {% elif b.kind == "lead" %}
+        {{ chip(b.side) }} <b>{{ b.species }}</b> <span class="muted">leads</span>
+      {% elif b.kind == "start" %}
+        <span class="muted">before anyone moved</span>
+      {% endif %}
+      {% if b.decision is defined and b.decision is not none %}
+        {% if b.decision == cur_inv %}<span class="tag here" title="the decision you are looking at">this decision</span>
+        {% else %}<a class="declink" href="{{ base }}&inv={{ b.decision }}#decision">decision {{ b.decision + 1 }} ›</a>{% endif %}
+      {% endif %}
+    </p>
+    {% if b.effects %}<ul class="effects">{% for e in b.effects %}{{ effect(e, view) }}{% endfor %}</ul>{% endif %}
+  </div>
+</li>
+{% endmacro %}
+
+{# ----------------------------------------------------------------------------- the turn rail #}
+
+{% macro rail_line(s, side) -%}
+{%- set a = s.action if s else none -%}
+<span class="rl {{ 'us' if side == 'we' else 'them' }}" title="{{ 'us' if side == 'we' else 'them' }}: {% if a %}{{ a.glyph }} {{ a.label }}{% if a.species and a.kind in ('move', 'cant') %} ({{ a.species }}){% endif %}{% else %}no action{% endif %}{% if s and s.fainted %} · fainted: {{ s.fainted | join(', ') }}{% endif %}{% if s and s.sent_in %} · sent in: {{ s.sent_in | join(', ') }}{% endif %}">
+  <span class="who">{{ 'us' if side == 'we' else 'them' }}</span>
+  <span class="act">{% if a %}{% if a.glyph %}<span class="glyph" aria-hidden="true">{{ a.glyph }}</span>{% endif %}{{ a.label }}{% else %}<span class="muted">—</span>{% endif %}</span>
+  <span class="marks">{% if s and s.fainted %}<span class="faintmark" aria-label="fainted">✕</span>{% endif %}{% if s and s.sent_in %}<span class="glyph" aria-label="sent in after a faint">↳</span>{% endif %}</span>
+</span>
+{%- endmacro %}
+
+{# The ONE turn-rail row: fixed grid, fixed minimum height, the same states everywhere. #}
+{% macro rail_row(t, cur_turn, base, last, outcome) %}
+{%- set first = t.decisions[0] if t.decisions else none -%}
+{%- set cur = cur_turn is not none and t.turn == cur_turn -%}
+<li class="trow {{ 'current' if cur else '' }} {{ 'nodec' if first is none else '' }} {{ 'forced' if t.forced else '' }} {{ 'drop' if t.drop else '' }}"
+    data-turn="{{ t.turn }}">
+  {% if first is not none %}<a class="tlink" href="{{ base }}&inv={{ first }}#decision" {% if cur %}aria-current="step"{% endif %}>{% else %}<span class="tlink">{% endif %}
+    <span class="tn">{{ t.turn if t.turn else 'lead' }}</span>
+    <span class="lines">{{ rail_line(t.summary.we if t.summary else none, "we") }}{{ rail_line(t.summary.opp if t.summary else none, "opp") }}</span>
+    <span class="tw">{% if t.p_win is not none %}<span title="P(win) at this turn's decision (recorded at play time)">{{ pc(t.p_win) }}</span>{% endif %}{% if t.drop %}<span class="dropmark" title="one of the {{ 3 }} biggest P(win) drops of this battle">▼</span>{% endif %}{% if last %}<span class="result {{ outcome }}">{{ outcome | upper }}</span>{% endif %}</span>
+  {% if first is not none %}</a>{% else %}</span>{% endif %}
+</li>
+{% endmacro %}
+
+{# ----------------------------------------------------------------------------- distributions #}
+
+{# One distribution row: label, bar, percent; the mark says what happened. Same component on both sides. #}
+{% macro dist_row(label, p, cls, mark="", mark_title="", title="") %}
+<li class="drow {{ 'marked' if mark else '' }}" {% if title %}title="{{ title }}"{% endif %}>
+  <span class="dl">{% if mark %}<span class="dmark" title="{{ mark_title }}">{{ mark }}</span>{% endif %}{{ label }}</span>
+  {{ bar(p, cls) }}<span class="dp">{{ pc(p) }}</span>
+</li>
 {% endmacro %}

@@ -831,12 +831,15 @@ def test_the_session_cache_is_bounded_and_closes_what_it_evicts(tmp_path_factory
         assert closed, "evicted sessions must be closed, not left for the collector"
 
 
-# -- /battle: the turn-by-turn replay ---------------------------------------------------------
+# -- /api/battle-turns (the CLI's turn-by-turn contract) + the battle-addressed pages' security ----
 #
-# The security tests here are the important ones. `/battle` is the first view that takes a
-# per-TRACE identifier from the client, and `ProbeSession._battle` falls back to opening an
-# arbitrary path for an id it does not recognise — so this endpoint is exactly where the run
-# picker's "membership, not sanitisation" rule has to be repeated one level down.
+# The classic `/battle` page was MERGED into `/game` (2026-10-09; its page tests moved to
+# `game_test.py` / `game_viewer_test.py`, and the removed features are listed in
+# designs/prober/battle_viewer_ux_2026-10-09.md §13). The JSON endpoint stays, and the security
+# tests here are the important ones: it takes a per-TRACE identifier from the client, and
+# `ProbeSession._battle` falls back to opening an arbitrary path for an id it does not recognise —
+# so this is exactly where the run picker's "membership, not sanitisation" rule has to be repeated
+# one level down.
 
 _REPLAY_BATTLE = "step_4000000/heuristic2/loss_003"       # the fixture battle with a real log
 
@@ -895,70 +898,65 @@ def test_a_summary_path_from_another_run_is_refused(tmp_path_factory):
         assert "run_secret" not in r.text
 
 
-def test_the_battle_page_renders_the_turns_with_their_log(client):
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    assert html.lstrip().startswith("<!DOCTYPE html>")
-    assert "Battle replay" in html
-    assert html.count('class="card turn"') == 2, "one card per game turn"
-    # The damage is re-attributed: our icebeam's number is the OPPONENT's recorded HP loss (-31%),
-    # which is the misreading `build_result_timeline` exists to fix.
-    assert "we icebeam did 31%" in html, "the battle log is the whole point of this view"
-    assert "opp earthquake did 22%" in html
-    assert "hpfill" in html, "an HP bar is sized from the session's hp_pct"
-    assert 'id="inv-0"' in html, "each decision needs an anchor to be linkable"
 
-
-def test_the_replay_says_when_the_move_order_is_unknown(client):
-    """The fixture records no `move_order`, so top-to-bottom is NOT the real sequence. Showing an
-    implied order we cannot ground in the log would be a quiet lie — but the caveat is a legend
-    printed ONCE plus a marker per log, not the full sentence repeated under all fifty turns."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    assert "log unordered" in html, "the dashed marker is the whole signal"
-    assert "order not recorded" in html
-    assert html.count("not necessarily in the order shown") == 1, (
-        "the caveat should be explained once, not repeated under every turn")
-
-
-def test_the_replay_window_pages_and_deep_links(client, run):
-    """A 249-turn battle (measured, real run) is a download, not a page — so it is windowed, and
-    every position in it has to be a URL you can send someone."""
-    from main.prober.web.app import _TURN_PAGE
-    assert _TURN_PAGE <= 100
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE, "start": "2"}).text
-    assert 'data-turn="2"' in html
-    assert 'data-turn="1"' not in html, "start= must window the replay, not just scroll it"
-
-
-def test_a_bad_start_value_does_not_break_the_page(client):
-    """A hand-edited URL is a browser control by another name: it must never 422 the view."""
+def test_the_battle_route_redirects_into_the_viewer_keeping_the_battle_and_the_turn(client):
+    """`/battle` was MERGED into `/game` (2026-10-09). Every old link — scan rows, bookmarks, the
+    analyze footer — must still land on the same battle, at the same turn: `start=N` is the game
+    turn the replay was windowed on, and the viewer opens that turn's first decision."""
+    r = client.get("/battle", params={"battle": _REPLAY_BATTLE, "start": "2"}, follow_redirects=False)
+    assert r.status_code == 307, r.status_code
+    loc = r.headers["location"]
+    from urllib.parse import parse_qs, urlsplit
+    q = parse_qs(urlsplit(loc).query)
+    assert urlsplit(loc).path == "/game" and q["battle"] == [_REPLAY_BATTLE] and q["turn"] == ["2"]
+    page = client.get(loc)
+    assert page.status_code == 200 and 'data-page-name="game"' in page.text
+    story = client.get("/api/game/story", params={"battle": _REPLAY_BATTLE}).json()
+    want = next(d["inv"] for d in story["decisions"] if int(d["turn"]) >= 2)
+    assert f"decision {want + 1} of" in page.text, "turn=2 did not open that turn's first decision"
+    # a hand-edited start is a browser control by another name: it never breaks the redirect
     for start in ("", "abc", "-5", "99999"):
-        r = client.get("/battle", params={"battle": _REPLAY_BATTLE, "start": start})
-        assert r.status_code == 200, f"start={start!r} broke the page"
-        assert "card turn" in r.text
+        rr = client.get("/battle", params={"battle": _REPLAY_BATTLE, "start": start})
+        assert rr.status_code == 200, f"start={start!r} broke the redirect target"
 
 
-def test_the_replay_is_reachable_from_the_tables_that_find_a_battle(client):
-    """Otherwise the view exists but nothing leads to it: `battles` finds the trace and `scan`
-    finds the losing TURN, so both must open the replay — scan's link landing ON that turn."""
-    # The battle row IS the link — the whole row navigates (app.js reads data-href) and the id cell
-    # is a real <a>, so it works with JavaScript off, tabs to, and opens in a new tab.
+def test_the_viewer_is_reachable_from_the_tables_that_find_a_battle(client):
+    """`battles` finds the trace and `scan` finds the losing DECISION, so both open the viewer — scan's
+    link landing ON that decision. Nothing links to the retired `/battle` page any more."""
     battles = client.get("/partials/battles").text
-    assert "/battle?run=" in battles
+    assert "/game?run=" in battles and "/battle?" not in battles
     assert "data-href=" in battles, "the row is not clickable"
     assert 'class="rowlink"' in battles, (
         "no real <a> in the row — a JS-only row click has no keyboard stop and no open-in-new-tab")
-
     scan = client.get("/partials/scan", params={"outcome": "loss"}).text
-    assert "/battle?run=" in scan
-    assert "&start=" in scan and "#inv-" in scan, "scan must open the replay AT the crater"
+    assert "/game?run=" in scan and "/battle?" not in scan
+    assert "&inv=" in scan.split("/game?", 1)[1].split('"', 1)[0], "scan must open the viewer AT the crater"
 
 
-def test_the_replay_offers_jumps_into_a_long_battle(client):
-    """The session's own `notable` block, rendered as links — not re-derived here."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    assert "worst value drops" in html and "faints" in html
-    assert "start=" in html.split("jumps")[1][:600]
+def test_every_hand_off_goes_to_a_web_view_not_a_retired_terminal(client, run):
+    """`/analyze` IS a web view, and both the viewer and the scan table link straight to it; neither
+    may send a reader to the Textual TUI, retired on 2026-08-13."""
+    viewer = client.get("/game", params={"battle": _REPLAY_BATTLE}).text
+    assert "/analyze?run=" in viewer and "the TUI" not in viewer
+    scan = client.get("/partials/scan", params={"outcome": "loss"}).text
+    assert "/analyze?run=" in scan, "a scan row still dead-ends at a command to copy"
+    assert "the TUI" not in scan
+    assert "main.prober.query analyze" in scan, "the CLI equivalent should still be offered"
 
+
+def test_the_battle_links_keep_the_selected_run(models_client):
+    html = models_client.get("/game", params={"run": "run_other"}).text
+    assert "run=run_other" in html
+    assert "ctxstrip" in html and "run_other" in html
+
+
+def test_analyze_is_reachable_from_every_decision_and_the_where_to_start_card(client):
+    """`/analyze` lost its NAV TAB (it is a per-DECISION page: from the nav it could only guess a
+    decision) — so it must stay one click from where decisions live, and on the start card."""
+    from main.prober.web.app import _NAV
+    assert ("/analyze", "analyze") not in _NAV
+    assert "/analyze" in client.get("/").text and "Why did it choose that" in client.get("/").text
+    assert "/analyze?run=" in client.get("/game").text
 
 def test_the_battles_tab_preselects_the_newest_checkpoint(client, run):
     """A run holds every eval cycle it ever ran. Opening this page essentially always means "what
@@ -991,172 +989,7 @@ def test_the_replay_defaults_to_the_newest_checkpoint_not_the_oldest(client, run
     assert body["step"] == _newest_step(ProbeSession(run).run_summary())
 
 
-def test_the_turn_dropdown_carries_the_model_free_detail(client):
-    """The TUI's per-decision detail, restricted to what needs no checkpoint."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    assert "<details class=\"more\">" in html
-    assert "policy — what else it considered" in html
-    assert "class=\"dist\"" in html, "no action distribution"
-    assert "raw Showdown protocol" not in html, (
-        "the fixture has no *_replay.html sibling, so the protocol panel must not claim one")
-    # And it says where the model-dependent analysis actually lives — as a LINK, because /analyze
-    # is a web view. It used to point at the Textual TUI, which was retired 2026-08-13.
-    assert "/analyze?run=" in html, "the drop-down still dead-ends instead of linking to /analyze"
-    assert "main.prober.query analyze" in html, "the CLI equivalent should still be offered"
-    assert "the TUI" not in html, "the replay still refers readers to a surface that no longer exists"
-
-
-def test_the_replay_shows_what_it_expected_the_opponent_to_do(client, run):
-    """The v67 α/β read on the card itself, between the board and our choice. That placement is the
-    point: it is the only line separating a turn the model played AROUND a threat from one where it
-    never saw the move coming, and the board / log / critic numbers are identical in both."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    assert 'class="expect"' in html
-    # Rendered from the session's own numbers, not re-derived here.
-    raw = ProbeSession(run).battle_turns(
-        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
-    top = raw["turns"][0]["decisions"][0]["opp_intent"]["alpha"][0]
-    assert f'{top["name"]} <span class="p">{top["p"] * 100:.0f}%' in html
-    # β is promoted onto the card ONLY on the decision where α actually expects the switch — the
-    # fixture's second decision — and the slot is named by the species posterior, not left an index.
-    sw = raw["turns"][1]["decisions"][0]["opp_intent"]
-    assert sw["top"]["is_switch"] is True
-    assert "→ in: slot" in html and "· blissey" in html  # slot index now shown (three hidden slots can share a top-1 belief)
-    # The full distribution + β live in the drop-down, next to our own policy distribution.
-    assert "opponent intent — what it expected THEM to do" in html
-    assert "if they switch, who comes in" in html
-
-
-def test_a_beta_name_says_whether_it_was_READ_or_BELIEVED(client, run):
-    """β points at a SLOT, and where the name came from changes what the row MEANS. The species
-    posterior is un-supervised on a slot the board already revealed — measured over a 843-battle
-    sweep (2026-08-19) it named a mon not on the opponent's team at all in 73.3% of 6,876 pivots —
-    so a posterior-decoded name rendered bare reads as "β predicted this mon" when it is nothing of
-    the kind. The fixture holds one of each provenance; both must be distinguishable on the page."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    raw = ProbeSession(run).battle_turns(
-        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
-    beta = {c["slot"]: c for t in raw["turns"] for d in t["decisions"]
-            if d["opp_intent"] for c in d["opp_intent"]["beta"]}
-
-    # The session resolves the provenance — the page renders it, and derives nothing.
-    assert beta[3]["revealed"] is True and beta[3]["caveat"] is None
-    assert beta[4]["revealed"] is False and beta[4]["caveat"] == BELIEF_NAME_CAVEAT
-    # slot 2 is the one PROMOTED onto the card (α leads with SWITCH there) and it is posterior-named.
-    assert beta[2]["revealed"] is False and beta[2]["caveat"] == BELIEF_NAME_CAVEAT
-
-    assert BELIEF_NAME_CAVEAT in html, "a posterior-decoded β name renders with no qualifier"
-    assert 'class="tag believed"' in html
-    # The board-read name renders PLAIN — caveating the honest half would teach readers to discount
-    # it too. Slot 3 is the revealed one; slot 4 sits beside it in the same drop-down list and is not.
-    rows = _beta_rows(html)
-    assert "believed" not in rows["slot 3"], "a β name read off the BOARD was caveated as a belief"
-    assert BELIEF_NAME_CAVEAT in rows["slot 4"], "the posterior-named neighbour lost its caveat"
-
-
-def test_the_card_says_what_the_OPPONENT_actually_picked(client, run):
-    """A prediction is only readable next to its outcome. `α` saying "Drill Peck 41%" means one
-    thing when Drill Peck is what came and another when it was not — and until now the difference
-    was reachable only by expanding `details` or by reading it back out of the battle log."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    raw = ProbeSession(run).battle_turns(
-        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
-    decisions = [d for t in raw["turns"] for d in t["decisions"]]
-
-    # Decision 1: the opponent did something α named — marked in place, and named on its own line.
-    hit = decisions[0]["opp_intent"]
-    assert hit["actual"] and not hit["actual_unlisted"]
-    assert any(o["was_actual"] for o in hit["alpha"]), "the session did not match the actual option"
-    assert 'class="opt actual"' in html, "the taken option is not marked in the expect line"
-    assert "as expected" in html
-
-    # Decision 2: a move α never listed at all. That is a DIFFERENT failure from ranking it low,
-    # and it is the one worth seeing from across the page.
-    miss = decisions[1]["opp_intent"]
-    assert miss["actual_unlisted"] is True
-    assert not any(o["was_actual"] for o in miss["alpha"])
-    assert "oppdid miss" in html and "not expected" in html
-    # Named the way a human reads it. (The battle log below still prints the recorder's raw id —
-    # that is its existing style and not what this line is about.)
-    assert "Hydro Pump" in html
-    assert 'class="opt">Hydro Pump</span>' in html
-
-
-def test_a_run_without_the_intent_heads_renders_no_expectation(client, run):
-    """Every trace written before v67 carries no `opp_intent` block at all. The card must simply not
-    have the line — never an empty one, and never a fabricated 0%."""
-    turns = client.get("/api/battle-turns",
-                       params={"battle": "step_2000000/aggressive_v2/loss_001"}).json()
-    assert all(d["opp_intent"] is None
-               for t in turns["turns"] for d in t["decisions"])
-    html = client.get("/battle", params={"battle": "step_2000000/aggressive_v2/loss_001"}).text
-    assert 'class="expect"' not in html
-    assert "opponent intent" not in html
-
-
 # -- "did it KNOW?" — the awareness layer on the three views that carry it --------------------
-
-def test_the_replay_leads_with_whether_it_saw_the_loss_coming(client, run):
-    """The battle-level verdict above the replay, because it changes how the whole game reads: a
-    loss the model called 40 turns out is a position it could not convert; one it never saw coming
-    is a missed signal. The sentence is the ENGINE's, so this page cannot phrase it its own way."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    raw = ProbeSession(run).battle_turns(
-        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
-    aw = raw["awareness"]
-    assert aw["knew_by_turn"] is not None, "fixture: this battle must be one it saw coming"
-    assert aw["text"] in html, "the page re-worded the engine's verdict instead of printing it"
-    assert f"knew @ turn {aw['knew_by_turn']}" in html
-    assert "badge blind" not in html
-
-
-def test_a_blind_loss_is_badged_and_carries_the_stall_signature(client, run):
-    """The other shape, and the one that matters: P(loss) never crossed the bar (so the badge says
-    BLIND) while catastrophic-band mass piled up under a still-positive mean — exactly what a
-    scalar critic cannot show, which is the reason the dist head is read at all."""
-    battle = "step_2000000/aggressive_v2/loss_001"
-    raw = ProbeSession(run).battle_turns(
-        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == battle][0])
-    assert raw["awareness"]["blind_loss"] is True
-    assert raw["awareness"]["mean_tail_divergence"] >= 0.25
-    html = client.get("/battle", params={"battle": battle}).text
-    assert "badge blind" in html and "blind loss" in html
-    assert "stall signature" in html
-
-
-def test_every_decision_carries_the_distributions_own_read_under_the_critic_row(client, run):
-    """P(loss) per decision, marked from the sustained onset on — so scrolling the replay SHOWS
-    where the model started calling it rather than asking the reader to trust the badge."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    raw = ProbeSession(run).battle_turns(
-        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
-    rows = [d for t in raw["turns"] for d in t["decisions"]]
-    assert 'class="pwin' in html
-    assert html.count('class="pwin') == len(rows), "a decision is missing its P(win) strip"
-    assert "pwin knew" in html, "the onset marker never rendered"
-    assert html.count("pwin knew") == sum(1 for d in rows if d["knew"])
-    # Rendered as P(win) — one direction per card — and every value is the session's own p_win.
-    for d in rows:
-        assert f'aria-label="P(win) {d["p_win"] * 100:.0f}%"' in html
-
-
-def test_the_replay_shows_the_calibrated_win_prob_beside_v(client, run):
-    """P(win) BESIDE V, not instead of it: V is a shaped, discounted return whose zero is not
-    'even', so only the calibrated number reads as odds."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    assert "ΔP" in html and "pp</span>" in html
-    # TWO different quantities are both called P(win) on this card — the calibrated HEAD and the
-    # distributional strip — so they must stay distinguishable. The strip carries `· dist`.
-    assert "P(win) · dist" in html, "the strip must not share a bare name with the head"
-    # …and the head is absent entirely on a trace without it, which is the ordinary case. That
-    # battle still has a dist strip, so `"P(win)" not in ...` would no longer test anything.
-    other = client.get("/battle", params={"battle": "step_2000000/aggressive_v2/loss_001"}).text
-    # The marker has to be ROW-SHAPED, and two looser attempts show why: the bare term "ΔP" also
-    # appears in the page's legend, and "pp</span>" is a substring of "opp</span>" — the opponent
-    # label on every board. `ΔP <span` is the rendered row and nothing else.
-    assert "ΔP <span" not in other, "the win-prob head rendered on a trace that has none"
-    assert "P(win) · dist" in other, "the distributional strip should still render there"
-
 
 def test_a_run_with_no_dist_head_renders_no_awareness_rather_than_zeros(client, run):
     """A 0% P(loss) or an un-badged 'not blind' would both be claims the trace cannot support."""
@@ -1164,8 +997,6 @@ def test_a_run_with_no_dist_head_renders_no_awareness_rather_than_zeros(client, 
     turns = client.get("/api/battle-turns", params={"battle": battle}).json()
     assert turns["awareness"] is None
     assert all(d["p_loss"] is None for t in turns["turns"] for d in t["decisions"])
-    html = client.get("/battle", params={"battle": battle}).text
-    assert 'class="ploss' not in html and "awarehead" not in html
 
 
 def test_scan_rows_say_whether_the_model_saw_each_crater_coming(client, run):
@@ -1223,39 +1054,6 @@ def test_the_awareness_panel_says_so_when_the_run_has_no_dist_head(tmp_path):
     assert "gen-10 baseline" not in body
 
 
-def test_every_hand_off_goes_to_the_web_view_not_a_retired_terminal(client, run):
-    """`/analyze` IS a web view — it loads the checkpoint and renders faithfulness, beliefs, threat
-    tables and saliency in the browser. The replay and the scan table both used to tell readers to
-    go and run a CLI command "or the TUI", a surface RETIRED on 2026-08-13, which is how a working
-    feature ends up looking absent. Every such hand-off is now a link."""
-    replay = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    assert "/analyze?run=" in replay
-    assert "the TUI" not in replay
-
-    scan = client.get("/partials/scan", params={"outcome": "loss"}).text
-    assert "/analyze?run=" in scan, "a scan row still dead-ends at a command to copy"
-    assert "the TUI" not in scan
-    # The CLI equivalent stays offered — it is a real second surface, unlike the TUI.
-    assert "main.prober.query analyze" in replay and "main.prober.query analyze" in scan
-
-
-def test_the_critic_row_explains_every_number_it_prints(client):
-    """These are the six most cryptic numbers on the page. Each carries a `title`, and because a
-    tooltip does not exist on a touch device — and this view is explicitly built for one — the same
-    explanations are collected once in a visible legend."""
-    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    for term in ("V(s) — the critic's expected", "VALUE CLIFF", "calibrated", "percentage POINTS",
-                 "TD residual", "environment reward"):
-        assert term in html, f"the critic row prints a number with no explanation of {term!r}"
-    assert "how to read a turn card" in html, "no visible legend — tooltips alone fail on a phone"
-    # …and each number is TAPPABLE, because a `title` has no touch equivalent and this view is
-    # built to be read on a phone. The class is what app.js's delegated handler keys on.
-    assert html.count('class="metric"') >= 6, "the critic row's numbers are not tappable"
-    assert 'class="k metric"' in html, "the P(win)·dist label is not tappable"
-    # V's zero is the single most misreadable thing on the row, so it is stated in BOTH places.
-    assert html.count("not 'even'") + html.count('not "even"') >= 1
-
-
 def test_the_action_distribution_marks_illegal_actions_without_alarming(client, run):
     """An unavailable action must read as grey/dimmed, never as a red danger value — the same
     distinction the TUI draws with _DISABLED_GREY."""
@@ -1290,12 +1088,6 @@ def test_the_picker_always_contains_the_battle_being_shown():
     assert [r["step"] for r in newest_first] == sorted(
         (r["step"] for r in newest_first), reverse=True)
     assert newest_first[0]["step"] == rows[-1]["step"]
-
-
-def test_the_battle_links_keep_the_selected_run(models_client):
-    html = models_client.get("/battle", params={"run": "run_other"}).text
-    assert "run=run_other" in html
-    assert "ctxstrip" in html and "run_other" in html
 
 
 def test_the_most_recently_used_run_survives_eviction(tmp_path_factory):
@@ -1513,7 +1305,7 @@ def _fragment(client, **params):
     return r.text
 
 
-@pytest.mark.parametrize("path", ["/battle", "/analyze"])
+@pytest.mark.parametrize("path", ["/game", "/analyze"])
 def test_a_run_with_no_traces_is_an_empty_state_not_a_404(tmp_path, path):
     """The FIRST thing a fresh run shows, so it must not look broken.
 
@@ -1848,15 +1640,6 @@ def test_the_gpu_cpu_provenance_distinction_survives_from_the_tui(client):
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert "🔷 GPU" in body and "📋 CPU" in body
-
-
-def test_analyze_is_in_the_nav_and_the_where_to_start_card(client):
-    """We are retiring the TUI, so this view has to be reachable without knowing it exists."""
-    from main.prober.web.app import _NAV
-    assert ("/analyze", "analyze") in _NAV
-    html = client.get("/").text
-    assert "/analyze" in html
-    assert "Why did it choose that" in html
 
 
 def test_the_analyze_view_carries_the_run_into_its_links(models_client):

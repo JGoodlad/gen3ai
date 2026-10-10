@@ -1,159 +1,136 @@
 {% import "_macros.html" as m %}
 {% import "_game_macros.html" as g %}
-{# `/game`'s model panels for ONE decision (`ProbeSession.battle_readout`, verbatim). On a run whose
-   architecture is older than the code this renders one plain sentence and folds the diagnosis. #}
+{# `/game`'s MODEL panels for ONE decision (`ProbeSession.battle_readout`, verbatim), swapped into the
+   right column (#game-model). The "what they did / what the model expected" column beside our options
+   is filled OUT OF BAND (#game-intent), so the two halves of the decision stay side by side. On a run
+   whose architecture is older than the code this renders one plain sentence and folds the diagnosis. #}
+{% set rq = (run or '') | urlencode %}
+{% set opp_side = board.board.opp if (board and board.board) else none %}
+{% set cur = (story.decisions[inv] if (story and story.decisions and inv < story.decisions | length) else none) %}
+{% set cur_turn = (story.turns | selectattr("turn", "equalto", cur.turn) | first) if (story and cur) else none %}
+{% set did = cur_turn.summary.opp.action if (cur_turn and cur_turn.summary) else none %}
+
 {% if error %}
+{% set scout = none %}
+{% include "partials/game_scouting.html" %}
 <section class="card model-unavailable" data-model-state="{{ error.kind }}">
-  <h2>Model views</h2>
+  <h3>Model views</h3>
   <p class="{{ 'warnline' if error.kind == 'arch_drift' else 'err' }}">{{ error.text }}</p>
   {% if error.detail %}<details class="small"><summary>the full diagnosis</summary><pre class="err">{{ error.detail }}</pre></details>{% endif %}
 </section>
+<div id="game-intent" class="pcol them" hx-swap-oob="true">
+  <h3>{{ g.chip("opp") }} What they did</h3>
+  <p class="oppdid">{% if did %}<span class="dmark" title="what they did">◀</span> {% if did.glyph %}{{ did.glyph }} {% endif %}<b>{{ did.label }}</b>{% else %}<span class="muted">no action of theirs this turn</span>{% endif %}</p>
+  <p class="muted small">The model's expectation needs a current-architecture checkpoint.</p>
+</div>
 {% elif r and d %}
 {% set G = r.glossary %}
-<section class="card" data-model-state="ok">
-  <h2>How the model saw it <span class="muted small">re-run on the stored observation · {{ r.model_resolution.detail }}</span></h2>
-  <div class="stats">
-    <div class="stat"><span class="k" title="{{ G['P(win)'] }}">P(win) now</span><span class="v">{{ g.pc(d.win_prob, 1) }}</span></div>
-    {% if r.intent_calibration %}
-    <div class="stat"><span class="k" title="mean probability the model gave the action the opponent actually took, over this battle's {{ r.intent_calibration.n }} labelled decisions">intent: P(what they did)</span><span class="v">{{ g.pc(r.intent_calibration.mean_p_actual, 0) }}</span></div>
-    <div class="stat"><span class="k" title="how often the model's single most likely opponent action was the one they took">intent: top pick right</span><span class="v">{{ g.pc(r.intent_calibration.top1, 0) }}</span></div>
-    <div class="stat"><span class="k" title="{{ G['log loss'] }} (nats)">intent: log loss</span><span class="v">{{ '%.2f' | format(r.intent_calibration.log_loss) }}</span></div>
-    {% endif %}
-  </div>
-  {% if wp_spec %}{{ m.chart("game-winprob", wp_spec) }}{% endif %}
-</section>
+{% set scout = d.scouting if d.scouting is defined else none %}
 
-<section class="card">
-  <h2>Our options, as the action head scored them</h2>
-  <p class="muted small">The <span title="{{ G['pointer score'] }}">pointer score</span> is the raw number the
-    action head gives each option; the softmax over the legal ones turns them into the probabilities.</p>
-  <div class="scroll-x"><table class="gpolicy">
-    <thead><tr><th>option</th><th class="num" title="{{ G['pointer score'] }}">score</th><th>probability</th></tr></thead>
-    <tbody>
-    {% for a in d.policy if a.label %}
-      <tr class="{{ 'chosen' if a.chosen else '' }} {{ '' if a.legal else 'invalid' }}" {% if not a.legal %}title="not legal this turn"{% endif %}>
-        <td>{{ a.display or a.label }}{% if a.chosen %} <span class="badge flag switch">chosen</span>{% endif %}</td>
-        <td class="num mono">{% if a.score is not none %}{{ '%+.2f' | format(a.score) }}{% else %}—{% endif %}</td>
-        <td><ul class="dist one"><li><span class="p">{{ g.pc(a.p, 1) }}</span>{{ g.bar(a.p) }}<span></span></li></ul></td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table></div>
-</section>
-
-{% if d.intent %}
-<section class="card gintent">
-  <h2>What we expected them to do <span class="muted small" title="{{ G['α'] }}">(α, the opponent pointer)</span></h2>
-  {% if d.intent.actual_text %}
-  <p class="oppdid {{ '' if d.intent.actual_col is not none else 'miss' }}">
-    <span class="opt">{{ d.intent.actual_text }}</span>
-    {% if d.intent.p_actual is not none %}<span class="tag {{ 'ok' if d.intent.top_hit else '' }}">we gave it {{ g.pc(d.intent.p_actual, 0) }}{% if d.intent.top_hit %} — our top pick{% endif %}</span>{% endif %}
-  </p>
-  {% else %}
-  <p class="muted small">no opponent choice to compare with at this decision (a forced replacement, or the battle ended).</p>
-  {% endif %}
-  <ul class="dist intent">
+{# ---------------- their next action: the model's α, sorted, what they did marked (out of band) #}
+<div id="game-intent" class="pcol them" hx-swap-oob="true" data-model-state="ok">
+  <h3>{{ g.chip("opp") }} What we expected them to do <span class="muted small" title="{{ G['α'] }}">— α, the opponent pointer</span></h3>
+  {% if d.intent %}
+  <ul class="dist them" data-dist="intent">
     {% for c in d.intent.candidates | sort(attribute='p', reverse=True) %}
-    <li class="{{ 'actual' if c.actual else '' }} {{ c.kind }}" title="{{ c.term }}{% if c.kind == 'other_move' %} — {{ G['OTHER_move'] }}{% elif c.kind == 'other_species' %} — {{ G['OTHER_species'] }}{% endif %}">
-      <span class="p">{{ g.pc(c.p, 0) }}</span>{{ g.bar(c.p, 'opp') }}
-      <span class="lbl">{{ c.label }}{% if c.actual %} ◀ what they did{% endif %}{% if c.on_team is sameas false %} <span class="tag believed" title="this guessed mon is NOT on their team">not on their team</span>{% endif %}</span>
-    </li>
+    {{ g.dist_row(c.label, c.p, "them", "◀" if c.actual else "", "what they did",
+                  c.term ~ (' — ' ~ G['OTHER_move'] if c.kind == 'other_move' else (' — ' ~ G['OTHER_species'] if c.kind == 'other_species' else ''))) }}
     {% endfor %}
   </ul>
-  {% if r.intent_calibration and r.intent_calibration.bins %}
-  <details class="small"><summary>how well-calibrated the top pick was over this battle (n = {{ r.intent_calibration.n }})</summary>
-    <table><thead><tr><th>top pick's probability</th><th class="num">decisions</th><th class="num">mean</th><th class="num">it came</th></tr></thead>
-    <tbody>{% for b in r.intent_calibration.bins %}<tr><td>{{ '%.0f' | format(b.lo * 100) }}–{{ '%.0f' | format(b.hi * 100) }}%</td><td class="num">{{ b.n }}</td><td class="num">{{ g.pc(b.mean_p, 0) }}</td><td class="num">{{ g.pc(b.hit_rate, 0) }}</td></tr>{% endfor %}</tbody></table>
-    <p class="muted">{{ r.intent_calibration.note }}</p>
-  </details>
+  {% if d.intent.actual_text %}
+  <p class="oppdid {{ '' if d.intent.actual_col is not none else 'miss' }}"><span class="dmark">◀</span> {{ d.intent.actual_text }}
+    {% if d.intent.p_actual is not none %}<span class="tag {{ 'ok' if d.intent.top_hit else '' }}">the model gave it {{ g.pc(d.intent.p_actual) }}{% if d.intent.top_hit %} — its top guess{% endif %}</span>
+    {% else %}<span class="tag">the model did not list it</span>{% endif %}</p>
+  {% else %}
+  <p class="muted small">no opponent choice to compare with here (a forced replacement, or the battle ended).</p>
   {% endif %}
-</section>
+  {% if r.intent_calibration %}
+  <p class="muted small calib">Over this battle ({{ r.intent_calibration.n }} labelled decisions): its top guess was right {{ g.pc(r.intent_calibration.top1) }} of the time and it gave what they did {{ g.pc(r.intent_calibration.mean_p_actual) }} on average — descriptive, one battle.</p>
+  {% endif %}
+  {% else %}
+  <p class="oppdid">{% if did %}<span class="dmark">◀</span> <b>{{ did.label }}</b>{% endif %}</p>
+  <p class="muted small">This model has no opponent-intent head.</p>
+  {% endif %}
+</div>
+
+{% include "partials/game_scouting.html" %}
+{% if belief_spec %}
+<details class="card"><summary>How its team guesses moved over the battle</summary>{{ m.chart("game-belief", belief_spec) }}</details>
 {% endif %}
 
-{% if d.hypotheses %}
-<section class="card">
-  <h2>Who we think is on their team <span class="muted small">(the hypothesis tokens)</span></h2>
-  <div class="scroll-x"><table class="ghyp">
-    <thead><tr><th>their slot</th><th>mon</th><th class="num" title="{{ G['π'] }}">presence π</th><th>on their team?</th></tr></thead>
-    <tbody>
-    {% for s in d.hypotheses.slots %}
-      <tr class="{{ 'seen' if s.revealed else 'guess' }}">
-        <td class="num">{{ s.slot + 1 }}</td>
-        <td>{{ s.species }} {% if s.revealed %}<span class="badge">seen</span>{% else %}<span class="tag believed">guess</span>{% endif %}</td>
-        <td class="num">{{ g.pc(s.presence, 0) }}</td>
-        <td>{% if s.on_team is sameas true %}<span class="pos">yes</span>{% elif s.on_team is sameas false %}<span class="neg">no</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table></div>
-  {% if d.hypotheses.other_live %}
-  <p class="small"><span title="{{ G['OTHER_species'] }}">Everyone else</span> carries
-    {{ '%.2f' | format(d.hypotheses.other_mass) }} expected mons
-    (P(at least one) {{ g.pc(d.hypotheses.other_any, 0) }}); likeliest:
-    {% for t in d.hypotheses.other_top %}{{ t.species }} {{ g.pc(t.p, 0) }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
-  {% endif %}
-  {% if d.hypotheses.active_moves %}
-  <p class="small">Their active's moves as the model sees them:
-    {% for mv in d.hypotheses.active_moves %}<span class="badge {{ '' if mv.seen else 'status' }}" title="{{ 'seen' if mv.seen else 'guess — presence' }}">{{ mv.move }}{% if not mv.seen %} {{ g.pc(mv.presence, 0) }}{% endif %}</span> {% endfor %}
-    {% if d.hypotheses.other_move_mass is not none %}<span class="muted" title="{{ G['OTHER_move'] }}">+ other moves {{ '%.2f' | format(d.hypotheses.other_move_mass) }}</span>{% endif %}</p>
-  {% endif %}
-  {% if belief_spec %}{{ m.chart("game-belief", belief_spec) }}{% endif %}
-</section>
-{% endif %}
+<details class="card hood" data-model-state="ok">
+  <summary>Under the hood <span class="muted small">— attention, damage physics, raw scores, raw protocol</span></summary>
 
-{% if d.attention %}
-<section class="card gattn">
-  <h2>Where the model looked <span class="muted small">(the trunk's attention)</span></h2>
-  <p class="muted small">Attention is a reading aid, not an explanation: a big weight means that token's
-    content was mixed in, not that it caused the choice. Averaged over {{ d.attention.n_layers }} layers × {{ d.attention.n_heads }} heads.</p>
-  <div class="gattn-rows">
-  {% for key, title in [("chosen", "what the chosen option's token looked at"), ("active", "what our mon in battle looked at")] %}
-    {% set row = d.attention.rows.get(key) %}
-    {% if row %}
-    <div>
-      <h3>{{ title }} <span class="muted small">({{ row.label }})</span></h3>
+  {% if d.attention %}
+  <section class="gattn">
+    <h4>Where the model looked</h4>
+    <p class="muted small">Attention is a reading aid, not an explanation: a big weight means that token's content
+      was mixed in, not that it caused the choice. Averaged over {{ d.attention.n_layers }} layers × {{ d.attention.n_heads }} heads.</p>
+    {% for key, title in [("chosen", "what the chosen option's token looked at"), ("active", "what our mon in battle looked at")] %}
+      {% set row = d.attention.rows.get(key) %}
+      {% if row %}
+      <h5>{{ title }} <span class="muted small">({{ row.label }})</span></h5>
       <ul class="dist attn">
-        {% for k in row["keys"] %}<li class="{{ k.group | replace(' ', '-') }}"><span class="p">{{ '%.0f' | format(k.weight * 100) }}%</span>{{ g.bar(k.weight * 4) }}<span class="lbl">{{ k.label }}</span></li>{% endfor %}
+        {% for k in row["keys"][:8] %}{{ g.dist_row(k.label, k.weight, "neutral") }}{% endfor %}
       </ul>
-    </div>
-    {% endif %}
-  {% endfor %}
-  </div>
-  <div id="game-attn" hx-get="/partials/game/attention?run={{ (run or '') | urlencode }}&battle={{ battle | urlencode }}&inv={{ inv }}"
-       hx-trigger="load" hx-swap="innerHTML"><p class="muted small"><span class="spinner"></span> drawing the full map…</p></div>
-</section>
-{% endif %}
-
-{% if d.operator %}
-<section class="card">
-  <h2>Our moves against their active <span class="muted small">(the damage operator's physics)</span></h2>
-  <div class="scroll-x"><table class="gop">
-    <thead><tr><th>move</th>
-      <th class="num" title="expected damage, low–high roll, % of their max HP">damage</th>
-      <th class="num" title="damage on a critical hit">crit</th>
-      <th class="num" title="{{ G['P(KO)'] }}">P(KO)</th>
-      <th class="num" title="{{ G['P(lands)'] }}">P(lands)</th>
-      <th class="num {{ '' if d.operator.move_resolution_built else 'absent' }}" title="{{ G['P(resolve)'] }}{% if not d.operator.move_resolution_built %} — not built in this run's model{% endif %}">P(resolve)</th>
-      <th class="num {{ '' if d.operator.move_resolution_built else 'absent' }}" title="{{ G['P(KO first)'] }}{% if not d.operator.move_resolution_built %} — not built in this run's model{% endif %}">P(KO first)</th>
-    </tr></thead>
-    <tbody>
-    {% for mv in d.operator.moves %}
-      <tr class="{{ 'chosen' if mv.action == d.chosen_index else '' }}">
-        <td>{{ mv.move }}</td>
-        <td class="num mono">{% if mv.high %}{{ '%.0f' | format(mv.low * 100) }}–{{ '%.0f' | format(mv.high * 100) }}%{% else %}<span class="muted">no damage</span>{% endif %}</td>
-        <td class="num mono">{% if mv.high %}{{ '%.0f' | format(mv.crit * 100) }}%{% else %}—{% endif %}</td>
-        <td class="num mono">{{ g.pc(mv.p_ko, 0) }}</td>
-        <td class="num mono">{{ g.pc(mv.p_land, 0) }}</td>
-        <td class="num mono {{ '' if d.operator.move_resolution_built else 'absent' }}">{{ g.pc(mv.p_resolve, 0) }}</td>
-        <td class="num mono {{ '' if d.operator.move_resolution_built else 'absent' }}">{{ g.pc(mv.p_ko_first, 0) }}</td>
-      </tr>
+      {% endif %}
     {% endfor %}
-    </tbody>
-  </table></div>
-  <p class="small">P(we move first): {{ g.pc(d.operator.p_we_first, 0) }}
-    {% if not d.operator.move_resolution_built %}<span class="muted"> · grey columns: the move-resolution family is not built in this run's model (it is off in production).</span>{% endif %}</p>
-</section>
-{% endif %}
+    <details class="small"><summary>the full heat map (layer × head)</summary>
+      <div id="game-attn" hx-get="/partials/game/attention?run={{ rq }}&battle={{ battle | urlencode }}&inv={{ inv }}"
+           hx-trigger="toggle from:closest details once" hx-swap="innerHTML"><p class="muted small">opening the map…</p></div>
+    </details>
+  </section>
+  {% endif %}
+
+  {% if d.operator %}
+  <section>
+    <h4>Our moves against their active <span class="muted small">— the damage operator's physics</span></h4>
+    <div class="scroll-x"><table class="gop">
+      <thead><tr><th>move</th>
+        <th class="num" title="expected damage, low–high roll, % of their max HP">damage</th>
+        <th class="num" title="damage on a critical hit">crit</th>
+        <th class="num" title="{{ G['P(KO)'] }}">P(KO)</th>
+        <th class="num" title="{{ G['P(lands)'] }}">P(lands)</th>
+        {% if d.operator.move_resolution_built %}<th class="num" title="{{ G['P(resolve)'] }}">P(resolve)</th><th class="num" title="{{ G['P(KO first)'] }}">P(KO first)</th>{% endif %}
+      </tr></thead>
+      <tbody>
+      {% for mv in d.operator.moves | sort(attribute='high', reverse=True) %}
+        <tr class="{{ 'chosen' if mv.action == d.chosen_index else '' }}">
+          <td>{{ mv.move }}{% if mv.action == d.chosen_index %} <span class="dmark" title="what we chose">✔</span>{% endif %}</td>
+          <td class="num mono">{% if mv.high %}{{ '%.0f' | format(mv.low * 100) }}–{{ '%.0f' | format(mv.high * 100) }}%{% else %}<span class="muted">no damage</span>{% endif %}</td>
+          <td class="num mono">{% if mv.high %}{{ '%.0f' | format(mv.crit * 100) }}%{% else %}—{% endif %}</td>
+          <td class="num mono">{{ g.pc(mv.p_ko) }}</td>
+          <td class="num mono">{{ g.pc(mv.p_land) }}</td>
+          {% if d.operator.move_resolution_built %}<td class="num mono">{{ g.pc(mv.p_resolve) }}</td><td class="num mono">{{ g.pc(mv.p_ko_first) }}</td>{% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="small">P(we move first): {{ g.pc(d.operator.p_we_first) }}</p>
+  </section>
+  {% endif %}
+
+  <section>
+    <h4>The action head's raw scores <span class="muted small">— before the softmax</span></h4>
+    <div class="scroll-x"><table class="gpolicy">
+      <thead><tr><th>option</th><th class="num" title="{{ G['pointer score'] }}">score</th><th class="num">re-run probability</th></tr></thead>
+      <tbody>
+      {% for a in d.policy | selectattr("label") | selectattr("legal") | sort(attribute="p", reverse=True) %}
+        <tr class="{{ 'chosen' if a.chosen else '' }}"><td>{{ a.display or a.label }}{% if a.chosen %} <span class="dmark">✔</span>{% endif %}</td>
+          <td class="num mono">{% if a.score is not none %}{{ '%+.2f' | format(a.score) }}{% else %}—{% endif %}</td>
+          <td class="num mono">{{ g.pc(a.p) }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="muted small">{{ r.model_resolution.detail }}</p>
+  </section>
+
+  <section>
+    <h4>The raw protocol of turn {{ cur.turn if cur else '' }}</h4>
+    <pre class="proto">{% for e in (cur_turn.events if cur_turn else []) %}{{ e.raw }}
+{% endfor %}</pre>
+  </section>
+</details>
 {% else %}
 <section class="card"><p class="muted">no model readout for this decision.</p></section>
 {% endif %}

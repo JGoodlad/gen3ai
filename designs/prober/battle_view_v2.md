@@ -5,10 +5,53 @@ Owned by this tree (always current, updated in the same pass as the code). Owner
 Rust protocol parsing so each turn has its details. Improve the battle prober including opponent
 intent, and show where the model spent its attention, like a heat map."*
 
-`/game` is a NEW page beside the classic `/battle` replay (which stays, unchanged, and links to it).
-One battle at a time: a turn list on the left, the selected decision read all the way down on the
-right, and a battle-level strip on top. Every number comes back from a `ProbeSession` method
-verbatim (web `CLAUDE.md`'s one rule); the engine does the arithmetic, the page only draws.
+`/game` is THE battle viewer: the classic `/battle` replay was MERGED into it on 2026-10-09 and
+redirects there (307, `start=N` → `turn=N`). Why it is shaped as below, the owner's complaints that
+drove it and everything removed: [`battle_viewer_ux_2026-10-09.md`](battle_viewer_ux_2026-10-09.md).
+Every number comes back from a `ProbeSession` method verbatim (web `CLAUDE.md`'s one rule); the
+engine does the arithmetic, the page only draws.
+
+**The page** (`web/game.py`, `templates/game.html`, the components in `_game_macros.html`), one battle
+at a time, one decision selected (`/game?run=…&battle=…&inv=N&view=model|truth|public`, or `turn=N`
+for that turn's first decision):
+
+- **the battle bar** — the result, opponent, step and length; ‹ › to the neighbouring battles; the
+  picker (the app's one `_picker_rows`, always containing the battle shown); the PERSPECTIVE switch
+  (§0); the **P(win) strip** — the critic's RECORDED P(win) at every decision (model-free: under the
+  win-prob critic `values` IS P(win)), the current decision marked, each point a link to it;
+- **the turn rail** (left; a drawer on a phone) — ONE row component per turn, a fixed grid of at least
+  44px: the turn number, then our line and their line (`us` / `them` + the side's primary action:
+  `▸` a move, `⇄` a switch, `⏸` can't move, `—` none; `✕` a faint, `↳` a forced replacement), and on
+  the right the recorded P(win) at the turn's decision, `▼` on the three biggest drops (the session's
+  `notable`) and the result word on the last turn. The current turn is filled and `aria-current`;
+- **the decision** (centre) — the header (turn, decision k of n, "forced replacement" when it is one,
+  P(win) before → after in points, what we chose at what probability, the glossary `?`, the `/analyze`
+  hand-off); **the board it was made on** (`battle_board`: the start-of-turn board, or the MID-turn board
+  after the faint for a forced replacement), us left, them right, the same row format on both sides,
+  the active mon's moves / item / ability, and OUR TEAM SHEET folded under it; **what we could do vs what
+  they did** — the same sorted distribution component on both sides (our recorded policy; their α when
+  the model is loaded, else just what they did), the actual choice marked `✔` / `◀`, unavailable options
+  listed once in grey; **what happened** — the turn's ordered BEATS (§1);
+- **the model's read** (right column ≥ 1280px, below otherwise) — the SCOUTING NOTES on their team
+  (§6; their public half renders without the model), then **under the hood**, collapsed: attention,
+  damage physics, the raw pointer scores, the raw protocol of the turn;
+- **the step bar** (phone only) — ‹ prev · turn · next › as 44px buttons, sticky at the bottom.
+
+### 0. The information perspective (model-free)
+
+Every board fact is a field `{"v": value, "vis": "public" | "ours" | "hidden"}` built by
+`engine/perspective.perspective_board` from the protocol fold (what was announced) and both teams'
+reconstruction sheets (`_our_team_details` / `_opp_team_details`): `public` = a protocol line announced
+it (a mon that appeared, its HP %, the moves it used, an item / ability a `[from]` / `-item` /
+`-enditem` / `-ability` line named, or an ability the species can only have one of — the Smogon table);
+`ours` = known to our agent only (our six mons from turn 0, our exact HP, our full sets); `hidden` =
+unknown to our agent at that point (their unrevealed mons, moves, items, abilities). The page's
+perspective decides what renders, through ONE rule, `perspective.shown(vis, view)`, injected into Jinja
+as `shown` and applied by the macro `fv`: `public` everywhere, `ours` in `model` and `truth`, `hidden`
+only in `truth` and always MARKED (`◇`, a dashed underline, the class `truth`, `data-vis="hidden"`).
+The model's choices and beliefs are its mind, not the board, so they show in every perspective.
+`perspective_guard_test.py` is the class guard. Without a reconstruction record there is no truth and
+the switch offers only the other two.
 
 ## The scope ruling — CURRENT ARCHITECTURE ONLY (owner, 2026-10-08)
 
@@ -57,6 +100,22 @@ answers the same card as a 200 (HTMX swallows a 403). The JSON endpoints answer 
 
 ### 1. The turn story (model-free)
 
+**The turn is read as ordered BEATS** (`engine/turn_beats.py`): one actor's action plus every
+consequence it caused, in the order the sim ran them, each with its PHASE — `lead` (turn 0), `start`
+(before the first action), `switch` (by choice), `move` (a `|move|` or `|cant|`, numbered in execution
+order; the first is "moved first"), `replace` (a FORCED replacement — gen 3 sends it straight after the
+action that caused the faint, so it can sit between two moves, or after `upkeep` for a residual KO),
+`residual` (from the residual action's opening blank line to `|upkeep|`) and `end`. The phase is read off
+the protocol's own framing (`sim/battle.ts` `runAction`), never guessed from wording. Inside a beat:
+damage is an HP-bar DELTA (before → after, the lost slice hatched) with its cause — the move, or the
+`[from]` source in display case — the effectiveness / critical-hit lines that preceded it are TAGS on it,
+the hits of a multi-hit move merge into one line, and a faint carries its cause ("our Skarmory's Drill
+Peck", "its own Explosion", "Sandstorm"). A forced-replacement beat links the decision it was; a
+move-selection decision whose mon fainted before it moved adds a "never got to use X — it fainted
+first" line. Every mon is named by its SPECIES (a nickname never reaches the page — the HEAD smoke's
+French nicknames, and one mojibake nickname in `data/teams/`, did). The flat `events` list stays in the
+JSON, each event stamped with its `beat` and `phase`; `turns[i].summary` is the rail's per-side line.
+
 Per game turn: the protocol events in the order the sim emitted them, each a typed row
 (`kind` ∈ move · damage · heal · switch · drag · faint · status · cure · boost · unboost ·
 crit · supereffective · resisted · immune · miss · fail · cant · weather · hazard · screen ·
@@ -79,7 +138,9 @@ the Rust core now emits the full protocol for every core trace (`core_trace.prot
 The flat opponent pointer (`flat_intent_head`, ARCHITECTURE §2.1) is ONE softmax over: the
 opponent active's K move seats (revealed moves first), OTHER_move ("some move not in the seats"),
 a switch to each of their six slots, and OTHER_species ("a switch to a mon we have not guessed").
-The page draws every live candidate as a bar, in that order, each labelled in words
+The page draws every live candidate as a bar — SORTED by probability, beside our own options in the
+same component (swapped in out of band, `#game-intent`), the action they actually took marked `◀` —
+each labelled in words
 (`Earthquake (seen)`, `Ice Beam (guess)`, `any other move`, `switch → Skarmory (seen)`,
 `switch → Blissey (guess, 51% present)`, `switch → a mon not on our list`).
 
@@ -144,11 +205,9 @@ features show, absent ones are greyed, nothing crashes.
 ### 5. Navigation
 
 `←` / `→` (or `j` / `k`) step decision by decision, `[` / `]` step battle by battle within the run's
-listing; every position is a URL (`/game?run=…&battle=…&inv=N`) that works with JavaScript off
-(the turn list is links). `/battles` and `/scan` rows, the classic `/battle` replay (its header and
-every decision) and `/analyze` link here, anchored on the decision. `/game` holds the nav tab `/battle`
-used to (a ninth tab wraps the phone header past the render test's 160px budget); `/battle` stays one
-link away.
+listing; every position is a URL (`/game?run=…&battle=…&inv=N&view=…`) that works with JavaScript off
+(the rail is links). `/battles` and `/scan` rows and `/analyze` link here, anchored on the decision; the
+old `/battle` URLs redirect here. A link to a collapsed `<details>` (`#glossary`) opens it.
 
 A trace with no protocol log (an old python-era trace without its `_replay.html`) still lists every
 decision's turn — an empty row that says so — so no decision is orphaned; its board panels are absent.

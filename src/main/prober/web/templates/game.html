@@ -1,19 +1,9 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
 {% import "_game_macros.html" as g %}
-{% block title %}game{% endblock %}
+{% block title %}{% if story %}{{ story.outcome }} vs {{ story.opponent }}{% else %}battle{% endif %}{% endblock %}
 
 {% block content %}
-<h1>Battle viewer</h1>
-<p class="lede">
-  One battle, decision by decision. On the left every turn; on the right what happened in it, the
-  board, what we chose and — from the model itself — what it expected the opponent to do, who it
-  thinks is on their team, where its attention went and what its damage physics said.
-  <span class="muted">Keys: <kbd title="previous decision">←</kbd> <kbd title="next decision">→</kbd>
-  (or <kbd>j</kbd>/<kbd>k</kbd>) step decisions, <kbd title="previous battle">[</kbd>
-  <kbd title="next battle">]</kbd> step battles.</span>
-</p>
-
 {% if empty %}
 <section class="card empty-state">
   <h2>no battles captured yet</h2>
@@ -23,131 +13,198 @@
     something to show.</p>
 </section>
 {% elif story %}
-{% set base = "/game?run=" ~ ((run or '') | urlencode) ~ "&battle=" ~ (story.short_id | urlencode) %}
-<section class="card gamehead">
-  <form class="filters" method="get" action="/game">
-    <input type="hidden" name="run" value="{{ run or '' }}">
-    <label>battle
-      <select name="battle" onchange="this.form.submit()">
+{% set rq = (run or '') | urlencode %}
+{% set base = "/game?run=" ~ rq ~ "&battle=" ~ (story.short_id | urlencode) ~ ("&view=" ~ view if view != "model" else "") %}
+{% set cur_turn = dec.turn if dec else none %}
+
+{# ------------------------------------------------------------------ the battle bar #}
+<section class="battlebar card" aria-label="battle">
+  <div class="bb-row bb-top">
+    {% if prev_battle %}<a class="iconbtn" data-nav="prev-battle" href="/game?run={{ rq }}&battle={{ prev_battle | urlencode }}{{ '&view=' ~ view if view != 'model' else '' }}" title="previous battle ([)" aria-label="previous battle">‹</a>{% else %}<span class="iconbtn off" aria-hidden="true">‹</span>{% endif %}
+    <h1 class="bb-title"><span class="result {{ story.outcome }}">{{ story.outcome | upper }}</span>
+      <span>vs <b>{{ story.opponent }}</b></span>
+      <span class="muted bb-meta">step {{ "{:,}".format(story.step) }} · {{ story.n_turns }} turns · {{ story.n_decisions }} decisions</span></h1>
+    {% if next_battle %}<a class="iconbtn" data-nav="next-battle" href="/game?run={{ rq }}&battle={{ next_battle | urlencode }}{{ '&view=' ~ view if view != 'model' else '' }}" title="next battle (])" aria-label="next battle">›</a>{% else %}<span class="iconbtn off" aria-hidden="true">›</span>{% endif %}
+    <form class="bb-pick" method="get" action="/game">
+      <input type="hidden" name="run" value="{{ run or '' }}">
+      {% if view != "model" %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
+      <label class="sr-only" for="battlesel">battle</label>
+      <select id="battlesel" name="battle" onchange="this.form.submit()">
         {% for b in battles %}
-        <option value="{{ b.short_id }}" {% if b.short_id == selected.short_id %}selected{% endif %}>
-          {{ b.short_id }} — {{ b.outcome }}</option>
+        <option value="{{ b.short_id }}" {% if b.short_id == selected.short_id %}selected{% endif %}>{{ b.outcome | upper }} · vs {{ b.opponent }} · step {{ "{:,}".format(b.step) }} · #{{ b.index }}</option>
         {% endfor %}
       </select>
-    </label>
-    <noscript><button type="submit">open</button></noscript>
-  </form>
-  <p class="battlehead">
-    {% if prev_battle %}<a class="pagelink" data-nav="prev-battle" href="/game?run={{ (run or '') | urlencode }}&battle={{ prev_battle | urlencode }}" title="previous battle ([)">‹ battle</a>{% endif %}
-    <span class="mono strong">{{ story.short_id }}</span>
-    <span class="{{ story.outcome }}">{{ story.outcome | upper }}</span>
-    <span class="muted">vs {{ story.opponent }} · step {{ "{:,}".format(story.step) }} ·
-      {{ story.n_turns }} turns / {{ story.n_decisions }} decisions</span>
-    {% if next_battle %}<a class="pagelink" data-nav="next-battle" href="/game?run={{ (run or '') | urlencode }}&battle={{ next_battle | urlencode }}" title="next battle (])">battle ›</a>{% endif %}
-  </p>
+      <noscript><button type="submit">open</button></noscript>
+    </form>
+  </div>
+  <div class="bb-row persp-row">
+    <span class="persp-label" id="persp-label">Show</span>
+    <nav class="persp" aria-labelledby="persp-label">
+      {% for p in perspectives %}{% if p != "truth" or story.has_truth %}
+      <a href="/game?run={{ rq }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}{{ '&view=' ~ p if p != 'model' else '' }}#decision"
+         class="persp-opt {{ 'on' if p == view else '' }} p-{{ p }}" {% if p == view %}aria-current="true"{% endif %}
+         title="{{ perspective_words[p][1] }}">{{ perspective_words[p][0] }}</a>
+      {% endif %}{% endfor %}
+    </nav>
+    <span class="persp-note muted">{{ perspective_words[view][1] }}.{% if not story.has_truth %} (No battle record here, so no ground truth.){% endif %}</span>
+  </div>
+  {% if wp_spec %}
+  <div class="bb-pwin" title="The critic's P(win) at every decision, as recorded during play. Click a point to open that decision.">
+    <span class="k">P(win)</span>{{ m.chart("game-pwin", wp_spec) }}
+  </div>
+  {% endif %}
 </section>
 
-<div class="gamegrid">
-  <nav class="turnlist card" aria-label="turns">
-    <h2>Turns</h2>
-    <ol>
-    {% for t in story.turns %}
-      {% set first = t.decisions[0] if t.decisions else none %}
-      {% set cur = dec and t.turn == dec.turn %}
-      {% set faint = t.events | selectattr("kind", "equalto", "faint") | list %}
-      <li class="{{ 'current' if cur else '' }}">
-        {% if first is not none %}<a href="{{ base }}&inv={{ first }}#decision" {% if cur %}aria-current="true"{% endif %}>{% else %}<span class="nolink">{% endif %}
-          <span class="tn">T{{ t.turn }}</span>
-          {% for e in t.events if e.kind in ('move', 'switch', 'drag') %}{% if loop.index <= 2 %}<span class="tev {{ e.side }}">{{ e.move or ('→ ' ~ (e.mon or '')) }}</span>{% endif %}{% endfor %}
-          {% for e in faint %}<span class="badge flag faint" title="{{ e.text }}">✕ {{ e.mon }}</span>{% endfor %}
-        {% if first is not none %}</a>{% else %}</span>{% endif %}
-      </li>
-    {% endfor %}
+<div class="viewer">
+  {# ------------------------------------------------------------------ the turn rail #}
+  <details class="rail card" open id="rail">
+    <summary><span>Turn <b>{{ cur_turn if cur_turn is not none else '—' }}</b> of {{ story.n_turns }}</span> <span class="muted">· all turns</span></summary>
+    <script>(function(){var d=document.getElementById('rail');if(d&&window.matchMedia&&window.matchMedia('(max-width: 720px)').matches){d.removeAttribute('open');}})();</script>
+    <ol class="turns" aria-label="turns">
+      {% for t in story.turns %}{{ g.rail_row(t, cur_turn, base, loop.last, story.outcome) }}{% endfor %}
     </ol>
-  </nav>
+    <p class="keys muted small">
+      <kbd title="previous decision">←</kbd><kbd title="next decision">→</kbd> or <kbd>j</kbd><kbd>k</kbd> decisions ·
+      <kbd>[</kbd><kbd>]</kbd> battles · ▼ a big P(win) drop · ↳ a forced replacement
+    </p>
+  </details>
 
-  <div class="gamemain" id="decision">
+  {# ------------------------------------------------------------------ the decision #}
+  <div class="decision" id="decision">
   {% if dec %}
-    <section class="card">
-      <p class="decnav">
-        {% if inv > 0 %}<a class="pagelink" data-nav="prev" href="{{ base }}&inv={{ inv - 1 }}#decision" title="previous decision (←)">‹ previous</a>{% endif %}
-        <span class="strong">Turn {{ dec.turn }} · decision {{ inv + 1 }} of {{ story.n_decisions }}</span>
-        <span class="muted">{{ dec.phase | replace('_', ' ') }}</span>
-        {% if inv + 1 < story.n_decisions %}<a class="pagelink" data-nav="next" href="{{ base }}&inv={{ inv + 1 }}#decision" title="next decision (→)">next ›</a>{% endif %}
-        <a class="small" href="/analyze?run={{ (run or '') | urlencode }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}">deep analysis</a>
-        <a class="small" href="/battle?run={{ (run or '') | urlencode }}&battle={{ story.short_id | urlencode }}&start={{ dec.turn }}#inv-{{ inv }}">classic replay</a>
-      </p>
-
-      {% if board_before %}
-      <h2>The board at the start of turn {{ dec.turn }}</h2>
-      <div class="gboard">
-        {{ g.side_board(board_before.we, "us", "our") }}
-        {{ g.side_board(board_before.opp, "them", "opp") }}
+    <section class="card dechead">
+      <div class="dh-row">
+        {% if inv > 0 %}<a class="iconbtn" data-nav="prev" href="{{ base }}&inv={{ inv - 1 }}#decision" title="previous decision (←)" aria-label="previous decision">‹</a>{% else %}<span class="iconbtn off" aria-hidden="true">‹</span>{% endif %}
+        <h2>Turn {{ dec.turn }} <span class="muted">· decision {{ inv + 1 }} of {{ story.n_decisions }}{% if dec.phase == "forced_switch" %} · <b class="forcedword">forced replacement</b>{% endif %}</span></h2>
+        {% if inv + 1 < story.n_decisions %}<a class="iconbtn" data-nav="next" href="{{ base }}&inv={{ inv + 1 }}#decision" title="next decision (→)" aria-label="next decision">›</a>{% else %}<span class="iconbtn off" aria-hidden="true">›</span>{% endif %}
       </div>
-      <p class="muted small">weather: {{ board_before.weather or 'none' }}</p>
-      {% endif %}
-
-      <h2>What we chose <span class="muted small" title="the recorded policy distribution over the legal actions">(the policy's probabilities)</span></h2>
-      <ul class="dist">
-        {% for a in dec.actions if a.label %}
-        <li class="{{ 'chosen' if a.chosen else '' }} {{ '' if a.valid else 'invalid' }}" title="{{ 'not legal this turn' if not a.valid else '' }}">
-          <span class="p">{{ g.pc(a.prob) }}</span>{{ g.bar(a.prob) }}<span class="lbl">{{ a.display or a.label }}{% if a.chosen %} ✔{% endif %}</span>
-        </li>
-        {% endfor %}
-      </ul>
+      <p class="dh-facts">
+        {% if dec.p_win is not none %}
+        <span class="metric" title="P(win) — the critic's probability that we win, recorded when the model made this decision{% if next_dec and next_dec.p_win is not none %}, and at the next decision{% endif %}.">P(win) <b>{{ g.pc(dec.p_win) }}</b>{% if next_dec and next_dec.p_win is not none %} → {{ g.pc(next_dec.p_win) }}</span>
+        <span class="metric" title="How much this turn moved the odds, in percentage POINTS (a difference of two probabilities is not a %).">{{ g.pts(next_dec.p_win - dec.p_win) }}{% endif %}</span>
+        {% endif %}
+        <span class="metric" title="The policy's probability for the option it chose.">we chose <b>{{ dec.chosen_display or dec.chosen }}</b> at {{ g.pc((dec.actions | selectattr('chosen') | map(attribute='prob') | first) if dec.actions | selectattr('chosen') | list else none) }}</span>
+        <a class="whatsthis" href="#glossary" title="What do these numbers mean?">?</a>
+        <span class="small"><a href="/analyze?run={{ rq }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}" title="Faithfulness, saliency, threat tables and the counterfactual probes for this one decision (loads the checkpoint)">deep analysis ›</a></span>
+      </p>
     </section>
 
-    {% if turn %}
-    <section class="card">
-      <h2>What happened in turn {{ turn.turn }}</h2>
-      <ol class="gevents">
-        {% for e in turn.events %}
-        <li class="ev {{ e.kind }} {{ e.side or 'field' }}" title="{{ e.raw or '' }}">
-          <span class="evk">{{ e.kind }}</span> {{ e.text }}
-        </li>
-        {% else %}
-        <li class="muted">no events recorded for this turn</li>
-        {% endfor %}
-      </ol>
-      {% if turn.board %}
-      <details class="small"><summary>the board after the turn</summary>
-        <div class="gboard">
-          {{ g.side_board(turn.board.we, "us", "our") }}
-          {{ g.side_board(turn.board.opp, "them", "opp") }}
-        </div>
+    {# ---------------- the board the decision was made on, under the perspective #}
+    {% if board and board.board %}
+    <section class="card boardcard">
+      <h3>{% if board.kind == "replacement" %}The board when {{ 'we' }} had to send a replacement in{% else %}The board at the start of turn {{ dec.turn }}{% endif %}
+        {% if board.board.weather %}<span class="badge weather">{{ board.board.weather }}</span>{% endif %}</h3>
+      <div class="board2" data-monstack>
+        {{ g.side_panel(board.board.we, "we", view) }}
+        {{ g.side_panel(board.board.opp, "opp", view) }}
+      </div>
+      <details class="teamsheet">
+        <summary>Our team sheet <span class="muted small">— {{ 'every set, as the model knows it' if view != 'public' else 'what a spectator has seen of it' }}</span></summary>
+        <ul class="sheet">
+          {% for mon in board.board.we.mons if shown(mon.species.vis, view) %}
+          <li><b>{{ g.fv(mon.species, view) }}</b>
+            {%- if mon.item and shown(mon.item.vis, view) %} <span class="k">item</span> {{ g.fv(mon.item, view) }}{% endif %}
+            {%- if mon.ability and shown(mon.ability.vis, view) %} <span class="k">ability</span> {{ g.fv(mon.ability, view) }}{% endif %}
+            {%- for x in mon.moves if shown(x.vis, view) %}{% if loop.first %} <span class="k">moves</span>{% endif %} {{ g.fv(x, view) }}{% if not loop.last %} ·{% endif %}{% endfor %}</li>
+          {% endfor %}
+        </ul>
       </details>
-      {% endif %}
     </section>
+    {% elif turn and turn.no_protocol %}
+    <section class="card"><p class="muted">This trace carries no protocol log, so the board and the story are not available — the decision below still is.</p></section>
     {% endif %}
 
-    {% if model_status and not model_status.model_views %}
-    {# The model panels CANNOT run on this step (older architecture, an observation that changed meaning, no
-       checkpoint…): say why on first paint — no loader to wait on, no password prompt for a view the password
-       cannot unlock. The fragment route renders the same card if it is hit directly. #}
-    <div id="game-model">
-      {% include "partials/model_unavailable.html" %}
-    </div>
-    {% elif unlocked %}
-    <div id="game-model"
-         hx-get="/partials/game/model?run={{ (run or '') | urlencode }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}"
-         hx-trigger="load" hx-swap="innerHTML">
-      <section class="card"><p class="muted"><span class="spinner"></span>
-        loading the checkpoint and re-running the model on this battle's stored observations…</p></section>
-    </div>
-    {% else %}
-    {# Locked: the model panels need the password (web/gate.py), so make no request that would be refused. #}
-    <div id="game-model">
-      {% set next_url = '/game?run=' ~ ((run or '') | urlencode) ~ '&battle=' ~ (story.short_id | urlencode) ~ '&inv=' ~ inv %}
-      {% include "partials/model_locked.html" %}
-    </div>
+    {# ---------------- our options vs their action: the same component, mirrored #}
+    <section class="card parity" aria-label="the decision">
+      <div class="pcol us">
+        <h3>{{ g.chip("we") }} What we could do <span class="muted small">— the policy, at play time</span></h3>
+        {% set legal = dec.actions | selectattr("label") | selectattr("valid") | sort(attribute="prob", reverse=True) | list %}
+        <ul class="dist us" data-dist="ours">
+          {% for a in legal %}{{ g.dist_row(a.display or a.label, a.prob, "us", "✔" if a.chosen else "", "what we chose") }}{% endfor %}
+        </ul>
+        {% set na = dec.actions | selectattr("label") | rejectattr("valid") | rejectattr("placeholder") | list %}
+        {% if na %}<p class="na muted small">not available: {% for a in na %}{{ a.display or a.label }}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+      </div>
+      <div class="pcol them" id="game-intent">
+        <h3>{{ g.chip("opp") }} What they did {% if unlocked %}<span class="muted small">— and what the model expected</span>{% endif %}</h3>
+        {% if dec.phase == "forced_switch" %}
+        {# A forced replacement is not a turn: they either send in their own replacement at the same
+           moment, or make no choice at all. #}
+        {% set theirs = (turn.beats if turn else []) | selectattr("kind", "equalto", "replace") | selectattr("side", "equalto", "opp") | list %}
+        <p class="oppdid">{% if theirs %}<span class="dmark" title="what they did">◀</span> <span class="glyph">↳</span> <b>{{ theirs[0].species }}</b> <span class="muted">— their own replacement</span>{% else %}<span class="muted">no choice of theirs — they wait while we replace</span>{% endif %}</p>
+        {% else %}
+        {% set did = turn.summary.opp.action if (turn and turn.summary) else none %}
+        <p class="oppdid">{% if did %}<span class="dmark" title="what they did">◀</span> {% if did.glyph %}{{ did.glyph }} {% endif %}<b>{{ did.label }}</b>{% if did.kind in ('move', 'cant') %} <span class="muted">({{ did.species }})</span>{% endif %}{% else %}<span class="muted">no action of theirs this turn</span>{% endif %}</p>
+        {% endif %}
+        {% if model_status and not model_status.model_views %}
+        <p class="muted small">The model's expectation needs a current-architecture checkpoint (see the model's read).</p>
+        {% elif unlocked %}
+        <p class="muted small"><span class="spinner"></span> loading the model's expectation…</p>
+        {% else %}
+        <p class="locked-inline small"><a class="linky" href="/login?next={{ ('/game?run=' ~ rq ~ '&battle=' ~ (story.short_id | urlencode) ~ '&inv=' ~ inv) | urlencode }}">Unlock</a> to see what the model expected them to do.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    {# ---------------- what happened, in the order the game ran it #}
+    {% if turn %}
+    <section class="card story" aria-label="what happened">
+      <h3>What happened in turn {{ turn.turn }} <span class="muted small">— in the order the game ran it</span></h3>
+      {% if turn.beats %}
+      <ol class="beats">
+        {% for b in turn.beats %}{{ g.beat(b, view, inv, base) }}{% endfor %}
+        {% if turn.unexecuted %}
+        <li class="beat note side-we" data-phase="note"><span class="ph">Missed</span><div class="bbody"><p class="bhead">{{ g.chip("we") }} our <b>{{ turn.unexecuted.species }}</b> never got to use <b>{{ turn.unexecuted.chosen }}</b>{% if turn.unexecuted.fainted_first %} — it fainted first{% endif %}</p></div></li>
+        {% endif %}
+      </ol>
+      {% else %}
+      <p class="muted">no events recorded for this turn</p>
+      {% endif %}
+    </section>
     {% endif %}
   {% else %}
     <section class="card"><p class="muted">this battle has no recorded decisions.</p></section>
   {% endif %}
   </div>
+
+  {# ------------------------------------------------------------------ the model's read #}
+  <aside class="mind" id="game-model" aria-label="the model's read">
+    {% set opp_side = board.board.opp if (board and board.board) else none %}
+    {% include "partials/game_scouting.html" %}
+    {% if dec %}
+    {% if model_status and not model_status.model_views %}
+    {# The model panels CANNOT run on this step (older architecture, an observation that changed meaning, no
+       checkpoint…): say why on first paint — no loader to wait on, no password prompt for a view the password
+       cannot unlock. The fragment route renders the same reason if it is hit directly. #}
+    {% include "partials/model_unavailable.html" %}
+    {% elif unlocked %}
+    <div id="game-model-live"
+         hx-get="/partials/game/model?run={{ rq }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}&view={{ view }}"
+         hx-trigger="load" hx-target="#game-model" hx-swap="innerHTML">
+      <p class="muted small"><span class="spinner"></span> loading the checkpoint and re-running the model on this battle…</p>
+    </div>
+    {% else %}
+    {% set next_url = '/game?run=' ~ rq ~ '&battle=' ~ (story.short_id | urlencode) ~ '&inv=' ~ inv %}
+    {% include "partials/model_locked.html" %}
+    {% endif %}
+    <details class="card hood">
+      <summary>Under the hood <span class="muted small">— the raw protocol of turn {{ dec.turn }}</span></summary>
+      <pre class="proto">{% for e in (turn.events if turn else []) %}{{ e.raw }}
+{% endfor %}</pre>
+    </details>
+    {% endif %}
+  </aside>
 </div>
 
-<details class="card gloss"><summary>what the terms mean</summary>
+{% if dec %}
+<nav class="stepbar" aria-label="step through decisions">
+  {% if inv > 0 %}<a class="stepbtn" href="{{ base }}&inv={{ inv - 1 }}#decision" aria-label="previous decision">‹ prev</a>{% else %}<span class="stepbtn off">‹ prev</span>{% endif %}
+  <a class="stepmid" href="#rail">Turn {{ dec.turn }} · {{ inv + 1 }}/{{ story.n_decisions }}</a>
+  {% if inv + 1 < story.n_decisions %}<a class="stepbtn" href="{{ base }}&inv={{ inv + 1 }}#decision" aria-label="next decision">next ›</a>{% else %}<span class="stepbtn off">next ›</span>{% endif %}
+</nav>
+{% endif %}
+
+<details class="card gloss" id="glossary"><summary>what the terms and marks mean</summary>
   <dl>{% for k, v in story.glossary.items() %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}</dl>
 </details>
 {% endif %}

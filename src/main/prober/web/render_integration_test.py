@@ -310,7 +310,7 @@ def _probe(browser, base: str, path: str, size=DESKTOP, dark: bool = False) -> d
 
 # -- the gate ---------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle", "/game", "/analyze",
+@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/game", "/analyze",
                                   "/falsify", "/calibration"])
 def test_every_page_boots_with_its_vendored_libraries(server, browser, path):
     """Both bundles must define their globals with the network taken away.
@@ -417,7 +417,7 @@ def test_the_pages_reference_no_remote_asset(server, browser):
 # defined after the query that showed it, so `display:none` won and the sheet had no way out) —
 # only asking the laid-out page catches that.
 
-@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle", "/game", "/analyze",
+@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/game", "/analyze",
                                   "/falsify", "/calibration"])
 def test_no_page_scrolls_sideways_on_a_narrow_viewport(server, browser, path):
     """The single rule the whole responsive layout serves.
@@ -455,56 +455,69 @@ def test_a_wide_table_scrolls_inside_its_wrapper_not_the_page(server, browser):
     assert data["overflowby"] == "0"
 
 
-# The replay is the one view that REFLOWS instead of scrolling, so it gets its own pair of
-# measurements. `_REPLAY` pins the fixture battle that actually has a battle log — the default
-# battle has none, and a layout test over an empty card proves very little.
-_REPLAY = "/battle?battle=step_4000000%2Fheuristic2%2Floss_003"
+# THE BATTLE VIEWER (designs/prober/battle_viewer_ux_2026-10-09.md) — the one view that REFLOWS instead
+# of scrolling, so it gets its own measurements at three PHONE widths (T29: 360, 390, 430) and a
+# desktop one. `_VIEWER` pins the fixture's STORY battle — a real protocol + a reconstruction record —
+# and a decision mid-battle, so the rail, the board, both distributions and the beats all render.
+_VIEWER = "/game?battle=step_6000000%2Fheuristic2%2Fwin_005&inv=3"
+PHONES = {"360": (360, 800), "390": (390, 844), "430": (430, 932)}
+WIDE = (1440, 900)
+_PANELS = {"rail", "board", "options", "action", "story", "scouting"}
 
 
-def test_the_battle_replay_stacks_on_a_phone_and_scrolls_nowhere(server, browser):
-    """Everywhere else on this site the phone answer is "scroll the table, don't reflow it",
-    because a row of forensic numbers read out of column order is worse than one you scroll. A
-    TURN is different — it is a short narrative — so here the answer IS to reflow, and the claim
-    that it does is a measurement rather than a screenshot someone looked at once.
-    """
-    data = _probe(browser, server, _REPLAY, size=NARROW)
+@pytest.mark.parametrize("phone", sorted(PHONES))
+def test_the_viewer_on_a_phone_scrolls_nowhere_shows_every_panel_and_is_tappable(server, browser, phone):
+    """At 360–430px: the PAGE never scrolls sideways, every panel of the viewer is there (stacked),
+    the two sides of the board stack, and every control the viewer is driven with — the rail's rows,
+    the step bar, the arrows, the perspective switch — is at least 44px on its short side."""
+    data = _probe(browser, server, _VIEWER, size=PHONES[phone])
     assert data["narrow"] == "1"
-    assert int(data["rows"]) > 0, "no turn cards rendered at 500px"
-    assert data["monstack"] == "1", (
-        "the two mons are still side by side on a phone — the board did not reflow, so the "
-        "species and HP are being squeezed into half a screen each")
     assert data["overflowby"] == "0", (
-        f"the replay overflows by {data['overflowby']}px — widest offender: {data['overflowwhat']}")
-    assert int(data["scrollers"]) == 0, (
-        "the replay grew a .scroll-x wrapper — if it now needs one, it stopped being a reflowing "
-        "card layout and the phone rules above need rethinking, not a scrollbar")
+        f"the viewer overflows by {data['overflowby']}px at {phone}px — widest offender: {data['overflowwhat']}")
+    assert int(data["docw"]) <= int(data["vw"]) + 1
+    assert _PANELS <= set(data["vpanels"].split(",")), data["vpanels"]
+    assert data["monstack"] == "1", "the two sides of the board are squeezed side by side on a phone"
+    assert int(data["tapmin"]) >= 44, (
+        f"a viewer control is {data['tapmin']}px on its short side at {phone}px (< 44): {data['tapwhat']}")
 
 
-def test_the_replay_metrics_are_tappable_in_the_browser(server, browser):
-    """The `title` tooltips have no TOUCH equivalent, so each metric is also tappable and the page
-    carries a no-JS anchor to its legend. What a `--dump-dom` browser can prove is that the markup
-    reached the live DOM and that app.js's own selector matches it — `metrics` is counted by that
-    selector, not by the test.
+def test_the_viewer_on_a_desktop_is_three_columns_side_by_side(server, browser):
+    """The other half of the same claim: the phone rules must not leak up — the board's two sides sit
+    on one line for read-across, and nothing overflows at 1440px."""
+    data = _probe(browser, server, _VIEWER, size=WIDE)
+    assert data["narrow"] == "0" and data["monstack"] == "0"
+    assert data["overflowby"] == "0", data["overflowwhat"]
+    assert _PANELS <= set(data["vpanels"].split(",")), data["vpanels"]
+    geo = _clicked(browser, server, _VIEWER, WIDE, lambda page: page.eval(
+        "(() => { const r = s => document.querySelector(s).getBoundingClientRect();"
+        " return {rail: r('.rail').left, dec: r('#decision').left, mind: r('.mind').left,"
+        "         railTop: r('.rail').top, mindTop: r('.mind').top}; })()"))
+    assert geo["rail"] < geo["dec"] < geo["mind"], f"the three columns are not side by side: {geo}"
 
-    The tap BEHAVIOUR (the panel opening, its toggle, the legend jump) is gated by the CLICK-level
-    tests at the end of this file, which dispatch real mouse events through the DevTools pipe.
-    """
-    data = _probe(browser, server, _REPLAY)
-    assert int(data["metrics"]) >= 6, (
+
+def test_the_turn_rail_is_a_drawer_on_a_phone_and_opens_on_a_tap(server, browser):
+    """On a phone the rail starts CLOSED (the decision is the first thing on screen) and its summary
+    — the same rows, one tap away — opens it."""
+    def drive(page):
+        assert page.eval("document.getElementById('rail').open") is False, "the rail drawer starts open on a phone"
+        page.click(".rail > summary")
+        page.wait_for("document.getElementById('rail').open === true", timeout=scale_timeout(10.0))
+        rows = page.eval("document.querySelectorAll('.rail .trow > a').length")
+        assert rows >= 5
+    _clicked(browser, server, _VIEWER, PHONES["390"], drive)
+
+
+def test_the_viewer_metrics_are_tappable_in_the_browser(server, browser):
+    """The `title` tooltips have no TOUCH equivalent, so the decision header's numbers are also
+    tappable and the page carries a no-JS anchor to its glossary. The tap BEHAVIOUR is gated by the
+    CLICK-level tests at the end of this file."""
+    data = _probe(browser, server, _VIEWER)
+    assert int(data["metrics"]) >= 2, (
         "no tappable metrics in the live DOM — app.js's `.metric[title]` selector matches nothing, "
         "so a tap would explain nothing on a phone")
-    dom = _dump_dom(browser, server + _REPLAY)
-    assert 'id="turncard-legend"' in dom, "the legend has no anchor for the no-JS fallback to reach"
-    assert 'class="whatsthis"' in dom, "no per-row link to the legend"
-
-
-def test_the_battle_replay_is_side_by_side_on_a_desktop(server, browser):
-    """The other half of the same claim: reflowing on a phone must not mean a phone layout on a
-    1280px screen, where the two boards belong on one line for read-across."""
-    data = _probe(browser, server, _REPLAY, size=DESKTOP)
-    assert data["narrow"] == "0"
-    assert data["monstack"] == "0", "the mons stacked at desktop width — the phone rule leaked up"
-    assert data["overflowby"] == "0"
+    dom = _dump_dom(browser, server + _VIEWER)
+    assert 'id="glossary"' in dom, "the glossary has no anchor for the no-JS fallback to reach"
+    assert 'class="whatsthis"' in dom, "no link to the glossary"
 
 
 # -- the dark palette ---------------------------------------------------------------------------
@@ -518,7 +531,7 @@ _DARK_ACCENT, _LIGHT_ACCENT = "rgb(88, 166, 200)", "rgb(42, 111, 151)"
 _UA_LINK_BLUE = "rgb(0, 0, 238)"
 
 
-@pytest.mark.parametrize("path", ["/", "/battles", "/battle"])
+@pytest.mark.parametrize("path", ["/", "/battles", "/game"])
 def test_the_dark_palette_is_actually_painted(server, browser, path):
     data = _probe(browser, server, path, dark=True)
     assert data["scheme"] == "dark", "prefers-color-scheme did not match — the probe is not testing dark"
@@ -526,7 +539,7 @@ def test_the_dark_palette_is_actually_painted(server, browser, path):
         f"{path} painted {data['bg']} in dark mode — the dark palette is defined but not applied")
 
 
-@pytest.mark.parametrize("path", ["/", "/battles", "/battle"])
+@pytest.mark.parametrize("path", ["/", "/battles", "/game"])
 def test_links_follow_the_theme_rather_than_the_browser_default(server, browser, path):
     """MEASURED before the fix: an unclassed <a> was the UA default `rgb(0, 0, 238)` in BOTH
     schemes — about 2.4:1 against the dark background, under the 4.5:1 floor. Styling only the
@@ -720,7 +733,7 @@ def test_tapping_a_metric_opens_its_explanation_under_the_row_and_tapping_again_
         second = page.eval(_METRIC_STATE % 1)
         assert second["panels"] == 1, f"tapping a second metric stacked {second['panels']} panels"
         assert second["record"] == second["label"]
-    _clicked(browser, server, _REPLAY, size, drive)
+    _clicked(browser, server, _VIEWER, size, drive)
 
 
 def test_the_whatsthis_link_takes_a_reader_to_the_legend(server, browser):
@@ -730,17 +743,17 @@ def test_the_whatsthis_link_takes_a_reader_to_the_legend(server, browser):
     def drive(page):
         page.eval("window.scrollTo(0, document.body.scrollHeight)")      # start far from it
         n = page.eval("document.querySelectorAll('a.whatsthis').length")
-        assert n >= 1, "no `?` link on any turn card"
+        assert n >= 1, "no `?` link to the glossary"
         page.click("a.whatsthis", n - 1)                                  # the LAST row's link
         state = page.wait_for(
-            "location.hash === '#turncard-legend' && (() => {"
-            " const r = document.getElementById('turncard-legend').getBoundingClientRect();"
+            "location.hash === '#glossary' && (() => {"
+            " const r = document.getElementById('glossary').getBoundingClientRect();"
             " return {top: r.top, vh: window.innerHeight}; })()",
             timeout=scale_timeout(10.0))
         assert 0 <= state["top"] < state["vh"] / 2, (
             f"the hash moved but the legend is at {state['top']:.0f}px of a {state['vh']}px "
             "viewport — the reader was not taken to it")
-    _clicked(browser, server, _REPLAY, NARROW, drive)
+    _clicked(browser, server, _VIEWER, NARROW, drive)
 
 
 def test_clicking_a_copy_button_copies_its_command(server, browser):

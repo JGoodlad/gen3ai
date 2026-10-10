@@ -298,6 +298,40 @@ def game_win_prob_spec(series: "list[dict]", *, selected: "int | None" = None) -
                  data={"values": values}, width="container", height=150, layer=layers)
 
 
+def game_pwin_strip_spec(decisions: "list[dict]", *, selected: "int | None" = None,
+                         href=None) -> dict:
+    """The battle bar's P(win) strip: the critic's RECORDED win probability at every decision (model-
+    free — under the win-prob critic V is P(win) and the trace records it), the even line at 50%, the
+    current decision marked, and every point a LINK to its decision (``href(inv)``). Short, so it reads
+    as the shape of the game rather than as a chart to study."""
+    values = [{"decision": d["inv"], "turn": d.get("turn"), "p": d["p_win"],
+               **({"href": href(d["inv"])} if href else {})}
+              for d in decisions if d.get("p_win") is not None]
+    point_enc = {"x": {"field": "decision", "type": "quantitative"},
+                 "y": {"field": "p", "type": "quantitative"},
+                 "tooltip": [{"field": "turn", "type": "quantitative", "title": "turn"},
+                             {"field": "decision", "type": "quantitative", "title": "decision"},
+                             {"field": "p", "type": "quantitative", "format": ".0%", "title": "P(win)"}]}
+    if href:
+        point_enc["href"] = {"field": "href", "type": "nominal"}
+    layers: list = [
+        {"mark": {"type": "rule", "strokeDash": [3, 3], "opacity": 0.6},
+         "encoding": {"y": {"datum": 0.5}}},
+        {"mark": {"type": "area", "line": {"color": _ACCENT, "strokeWidth": 1.5}, "color": _ACCENT,
+                  "opacity": 0.18, "interpolate": "monotone"},
+         "encoding": {"x": {"field": "decision", "type": "quantitative", "axis": None},
+                      "y": {"field": "p", "type": "quantitative", "scale": {"domain": [0, 1]},
+                            "axis": {"format": "%", "values": [0, 0.5, 1], "title": None, "grid": False}}}},
+        {"mark": {"type": "point", "size": 36, "filled": True, "color": _ACCENT, "opacity": 0.001,
+                  "cursor": "pointer"},
+         "encoding": point_enc},
+    ]
+    if selected is not None:
+        layers.append({"mark": {"type": "rule", "color": _MARK, "strokeWidth": 2},
+                       "encoding": {"x": {"datum": int(selected)}}})
+    return _spec(data={"values": values}, width="container", height=56, layer=layers)
+
+
 def game_belief_spec(evo: "dict | None", *, selected: "int | None" = None,
                      max_species: int = 6) -> "dict | None":
     """Presence π of the likeliest guessed species, decision by decision (100% once seen). Capped at

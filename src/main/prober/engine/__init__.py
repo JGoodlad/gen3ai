@@ -33,6 +33,8 @@ THE MODULE MAP — a strict DAG, leaves first:
     taxonomy.py    loss attribution: the turning-point category table
     probes.py      representation probing (`fit_probe`)
     turn_events.py `/game`'s turn story: the protocol folded into typed events + the board per turn
+    turn_beats.py  the turn's events grouped into ordered BEATS (phases, order, faint causes)
+    perspective.py who could know each board fact: public / ours / hidden, and `shown(vis, view)`
     readout.py     `/game`'s model panels from one battle capture (intent, hypotheses, attention, op facts)
 """
 
@@ -110,8 +112,14 @@ from main.prober.engine.probes import (   # noqa: F401 — re-export hub
     _L2_GRID, _auc, _kfold_indices, _logistic_fit, _oof_predict, _ridge_fit, _selection_score,
     _sigmoid, _standardize, fit_probe,
 )
+from main.prober.engine.turn_beats import (   # noqa: F401 — re-export hub
+    PHASE_WORDS, build_beats, turn_summary,
+)
 from main.prober.engine.turn_events import (   # noqa: F401 — re-export hub
-    CANT_WORDS, SIDE_CONDITIONS, STATUS_WORDS, TurnFold, fold_turns,
+    CANT_WORDS, SIDE_CONDITIONS, SOURCE_WORDS, STATUS_WORDS, TurnFold, fold_turns,
+)
+from main.prober.engine.perspective import (   # noqa: F401 — re-export hub
+    DEFAULT_PERSPECTIVE, PERSPECTIVES, PERSPECTIVE_WORDS, perspective_board, shown,
 )
 from main.prober.engine.readout import (   # noqa: F401 — re-export hub
     CALIBRATION_BINS, attention_matrix, attention_summary, belief_evolution, chosen_token,

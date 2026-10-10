@@ -48,6 +48,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from agents.training.trace_result import OUTCOMES
 from main.prober.engine import BELIEF_NAME_CAVEAT, opponent_rank, sort_opponents
+from main.prober.engine.perspective import shown
 from main.prober.web import charts
 from main.prober.web.auth import COOKIE, Auth
 from main.prober.web.gate import UnlockRequired, job_gate, model_gate, route_gate_kind
@@ -217,6 +218,10 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     # template: the tag on a β name and the legend explaining the tag must be the same string, and
     # the engine owns it.
     templates.env.globals["BELIEF_NAME_CAVEAT"] = BELIEF_NAME_CAVEAT
+    # The ONE information-perspective rule (`engine/perspective.shown`): `/game`'s `fv` macro asks it
+    # whether a public / ours / hidden fact renders under the page's perspective, and nothing else
+    # decides — so no two panels can disagree about who knows what.
+    templates.env.globals["shown"] = shown
     # Exposed so the staleness gate can assert the pin on a real app rather than on a template
     # object it constructed itself — which would prove nothing about what the app serves.
     app.state.templates = templates
@@ -694,32 +699,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                     error=err or rerr, opponents=_opponents(data), selected_step=step,
                     rows=shown, total=total, capped=_BATTLE_PAGE)
 
-    @app.get("/battle", response_class=HTMLResponse, tags=["pages"],
-             summary="Turn-by-turn replay of one battle: board, what happened, the critic's read")
-    def page_battle(
-        request: Request,
-        run: "str | None" = Query(None),
-        battle: "str | None" = Query(None, description="battle short_id; default = the first"),
-        start: "str | None" = Query(None, description="first game turn to show (windowing)"),
-    ) -> HTMLResponse:
-        # DELIBERATELY NOT HTMX. Every other page refilters a table in place; this one is a thing
-        # you read, link to and send to someone ("look at turn 47"). So the battle picker and the
-        # turn window are plain GET forms and links, which makes every view of it a shareable URL
-        # and leaves it fully working with JavaScript off.
-        name, data, err = _load(pick, session, guarded, run, store, lambda s: s.run_summary())
-        sess = session(pick(run))
-        try:
-            row = battle_row(sess, battle)
-        except _NoBattles as empty:
-            return page(request, "battle.html", "battle", name, summary=data, error=err,
-                        battles=[], selected=None, turns=None, window=[],
-                        first_turn=None, last_turn=None, empty=empty.detail)
-        turns, terr = guarded(lambda: sess.battle_turns(row["id"]))
-        window, first, last = _turn_window(turns, _form_int(start))
-        return page(request, "battle.html", "battle", name, summary=data, error=err or terr,
-                    battles=_picker_rows(sess.battles(), row), selected=row,
-                    turns=turns, window=window, first_turn=first, last_turn=last)
-
     @app.get("/analyze", response_class=HTMLResponse, tags=["pages"],
              summary="One decision, fully analyzed: faithfulness, beliefs, threats, saliency")
     def page_analyze(
@@ -1078,7 +1057,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     register_game_routes(app, GameHelpers(
         pick=pick, session=session, guarded=guarded, battle_row=battle_row, page=page,
         fragment=fragment, load=lambda run, fn: _load(pick, session, guarded, run, store, fn),
-        no_battles=_NoBattles), _newest_first)
+        no_battles=_NoBattles), _newest_first, _picker_rows)
 
     # Registered on STARLETTE's HTTPException, not FastAPI's. Starlette dispatches by walking
     # `type(exc).__mro__`, and an unmatched route raises the starlette class — which is the PARENT
@@ -1131,12 +1110,12 @@ def _unlock_next(current_url: "str | None", default: str) -> str:
 # Ordered by the investigation recipe in src/main/prober/CLAUDE.md — "triage: start here for
 # 'what next'" — not by when each view happened to be written. Six equal tabs in an arbitrary
 # order is exactly the "information doesn't flow" complaint the TUI earned.
-# `/game` (the battle viewer, 2026-10-08) took the classic `/battle` replay's tab: a ninth tab wraps the
-# phone header past its 160px budget (render test), and `/battle` stays one link away — from `/game`'s
-# "classic replay" link and every `battles` / `scan` row.
+# `/game` is THE battle viewer: the classic `/battle` replay was MERGED into it (2026-10-09) and now
+# redirects there. `analyze` has no tab: it is a per-DECISION page, opened from every decision in the
+# viewer and every scan row — from the nav it could only guess a decision, and one tab fewer is one
+# row fewer on a phone header.
 _NAV = [("/", "run"), ("/triage", "triage"), ("/scan", "scan"), ("/battles", "battles"),
-        ("/game", "game"), ("/analyze", "analyze"),
-        ("/falsify", "falsify"), ("/calibration", "calibration")]
+        ("/game", "game"), ("/falsify", "falsify"), ("/calibration", "calibration")]
 
 # What each view ANSWERS, in recipe order. Rendered as the "where to start" card on `/` and as the
 # one-line subtitle on each page, so a newcomer never has to guess which tab holds their question.
@@ -1147,12 +1126,11 @@ VIEW_QUESTIONS = [
      "The single worst decision in every matching battle, ranked globally. Model-free."),
     ("/battles", "battles", "Which battles were captured?",
      "The raw trace list, filterable — the ids you hand to the CLI or the TUI."),
-    ("/game", "game", "What was the model thinking, turn by turn?",
-     "The battle viewer: every turn's events and board (model-free), then what the model expected the "
-     "opponent to do, who it thinks is on their team, where its attention went and what its damage "
-     "physics said — re-run on a current-architecture checkpoint."),
-    ("/battle", "battle", "How did one game actually go?",
-     "Turn by turn: the board, what each side did, and what the critic made of it. Model-free."),
+    ("/game", "game", "How did one game go, and how did the model think?",
+     "The battle viewer: every turn in the order it happened (switches, moves, faints, replacements, "
+     "end of turn), the board the model saw, our options against what they did — and, with the "
+     "password, what the model expected them to do and what it believes about their team. The turn "
+     "story works on every run; the model's half needs a current-architecture checkpoint."),
     ("/analyze", "analyze", "Why did it choose that, and what did it believe?",
      "One decision, all the way down — faithfulness, beliefs, threat tables, saliency. The only "
      "view that LOADS the checkpoint, so it works on a current-architecture run and diagnoses "
@@ -1268,17 +1246,11 @@ def _form_opt_float(value: "str | None") -> "float | None":
 # it is a download. Cap it and say so — the filters are how you find a specific battle.
 _BATTLE_PAGE = 200
 
-# How many battles the /battle page's picker <select> offers, and how many game turns one view of a
-# battle shows. MEASURED on a real run: the longest battle is 249 turns / 522 KB of session JSON, so
-# an unwindowed replay is the same "download, not a page" failure `_BATTLE_PAGE` exists to prevent —
-# and it lands on a phone. The window is navigated by plain prev/next links (and jumped into by the
-# `notable` shortcuts), so nothing is unreachable.
-#
-# The picker is 100, not 300, because it is a CONVENIENCE, not the way you find a battle: `battles`
-# and `scan` are, and both now link straight into the replay. At 300 the dropdown was 40 KB of a
-# 154 KB page (measured) — a quarter of the payload, on a phone, for a list nobody scrolls.
+# How many battles a battle-addressed page's picker <select> offers (`/game`, `/analyze`). It is a
+# CONVENIENCE, not the way you find a battle: `battles` and `scan` are, and both link straight into
+# the viewer. At 300 the dropdown was 40 KB of a 154 KB page (measured) — a quarter of the payload,
+# on a phone, for a list nobody scrolls.
 _BATTLE_PICK = 100
-_TURN_PAGE = 50
 
 
 def _by_opponent_strength(rows: "list[dict]") -> "list[dict]":
@@ -1315,28 +1287,6 @@ def _picker_rows(rows: "list[dict]", selected: dict) -> "list[dict]":
         shown = [selected] + shown[:_BATTLE_PICK - 1]
     return shown
 
-
-def _turn_window(turns: "dict | None", start: "int | None"):
-    """The slice of `battle_turns()["turns"]` to render, plus the first/last GAME TURN either side of
-    it (`None` when there is nothing further that way — the template renders prev/next off that).
-
-    `start` is a game turn NUMBER, not an index: it arrives from a `notable` jump link ("the biggest
-    value drop was at turn 47"), and turn numbers are what a reader and a CLI both speak. Turns
-    whose number is missing (older recorders bucket them under `None`) sort last and are reachable
-    by paging to the end rather than being silently dropped.
-    """
-    rows = (turns or {}).get("turns") or []
-    if not rows:
-        return [], None, None
-    begin = 0
-    if start is not None:
-        begin = next((i for i, t in enumerate(rows)
-                      if t["turn"] is not None and t["turn"] >= start), max(0, len(rows) - 1))
-    begin = max(0, min(begin, len(rows) - 1))
-    end = min(begin + _TURN_PAGE, len(rows))
-    prev_turn = rows[max(0, begin - _TURN_PAGE)]["turn"] if begin > 0 else None
-    next_turn = rows[end]["turn"] if end < len(rows) else None
-    return rows[begin:end], prev_turn, next_turn
 
 # How many runs' `ProbeSession`s stay cached. MEASURED: a scan of one run leaves ~430 MB behind
 # (real `models/`: 1→466 MB, 6→3.0 GB RSS, monotonic), and the picker offers 81 runs — so an

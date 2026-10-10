@@ -84,9 +84,11 @@
    * phone" here means "the boards stacked" — and that is a fact only the laid-out page knows.
    * Absent on every page that has no board. */
   function monStacking() {
-    var board = document.querySelector(".board");
+    /* `/game`'s board is two SIDES (`.board2 > .bside`, us and them); `/analyze`'s is two mons. */
+    var board = document.querySelector(".board2") || document.querySelector(".board");
     if (!board) { return null; }
-    var mons = board.querySelectorAll(".mon");
+    var mons = board.classList.contains("board2") ? board.querySelectorAll(".bside")
+                                                  : board.querySelectorAll(".mon");
     if (mons.length !== 2) { return null; }
     var a = mons[0].getBoundingClientRect(), b = mons[1].getBoundingClientRect();
     return b.top >= a.bottom - 1 ? "1" : "0";
@@ -154,6 +156,29 @@
     d.scrollingwrappers = String(scrolling);
     var stacked = monStacking();
     if (stacked !== null) { d.monstack = stacked; }
+    /* TAP TARGETS (T29): the smallest side of every visible control the viewer is driven with —
+       the turn rail's rows, the step bar, the battle / decision arrows, the perspective switch.
+       `tapwhat` names the offender so a failure carries its own fix. */
+    var taps = document.querySelectorAll(".trow > a, .stepbtn, .iconbtn, .persp-opt, .rail > summary");
+    var tapmin = null, tapwhat = "";
+    for (var t = 0; t < taps.length; t++) {
+      var tr = taps[t].getBoundingClientRect();
+      if (tr.width <= 0 || tr.height <= 0) { continue; }          /* not on screen at this width */
+      var side = Math.min(tr.width, tr.height);
+      if (tapmin === null || side < tapmin) {
+        tapmin = side;
+        tapwhat = taps[t].tagName.toLowerCase() + "." + String(taps[t].className).trim().split(/\s+/).join(".");
+      }
+    }
+    if (tapmin !== null) { d.tapmin = String(Math.floor(tapmin)); d.tapwhat = tapwhat; }
+    /* Which of the viewer's panels are on the page (a missing one is a broken layout, not a style). */
+    var vp = [];
+    [["rail", ".rail"], ["board", ".board2"], ["options", ".parity .pcol.us"],
+     ["action", "#game-intent"], ["story", "ol.beats"], ["scouting", ".scouting"],
+     ["model", "[data-model-state]"]].forEach(function (pr) {
+      if (document.querySelector(pr[1])) { vp.push(pr[0]); }
+    });
+    d.vpanels = vp.join(",");
 
     /* THEME, measured. The page ships two palettes and only one is ever on screen, so every
      * screenshot review covers exactly half of it. These make the other half checkable:
@@ -168,7 +193,9 @@
      * style regardless of the page — a white dropdown on a dark page. Not visible in a
      * --force-dark-mode screenshot, which darkens UA widgets anyway, so it has to be read. */
     d.colorscheme = window.getComputedStyle(document.documentElement).colorScheme || "normal";
-    var anyLink = document.querySelector("main a");
+    /* A PLAIN link (no class): the classed controls (the viewer's arrows, the perspective switch)
+       style themselves deliberately; the base `a` rule is what this measures. */
+    var anyLink = document.querySelector("main a:not([class])") || document.querySelector("main a");
     d.linkcolor = anyLink ? window.getComputedStyle(anyLink).color : "";
     var axisLabel = document.querySelector('.chart g[class*="role-axis-label"] text')
                  || document.querySelector(".chart .role-axis text")
@@ -380,8 +407,9 @@
      a plain URL. Ignored while typing in a control. */
   (function centreCurrentTurn() {
     /* Keep the selected turn in view inside the turn list's OWN scroller (never the page). */
-    var li = document.querySelector(".turnlist li.current");
-    var box = li && li.closest(".turnlist");
+    var li = document.querySelector(".rail .trow.current");
+    var box = li && (window.matchMedia("(max-width: 720px)").matches
+                     ? li.closest("ol.turns") : li.closest(".rail"));
     /* Rect-relative, not offsetTop: on a phone the list is `position: static`, so its rows' offsetParent
        is the page and offsetTop would scroll it to the wrong turn. */
     if (li && box) {
@@ -404,6 +432,33 @@
     document.body.dataset.navkey = nav;
     window.location.href = a.href;
   });
+
+  /* LANDING ON A COLLAPSED <details> IS A DEAD END — on a phone the reader followed a link to an
+     explanation and got a one-line summary. So a hash that targets a <details> (`#glossary`, the
+     viewer's `?` link) opens it and brings it into view. */
+  function revealDetails(el) {
+    el.open = true;
+    window.scrollTo(0, window.scrollY + el.getBoundingClientRect().top - 8);
+  }
+  function detailsFor(hash) {
+    var id = hash && hash.charAt(0) === "#" ? decodeURIComponent(hash.slice(1)) : "";
+    var el = id ? document.getElementById(id) : null;
+    return el && el.tagName === "DETAILS" ? el : null;
+  }
+  /* A click on an in-page link to a <details>: open it and scroll BEFORE the hash moves, so the
+     reader (and anything waiting on the hash) never sees the half-way state; pushState sets the hash
+     without a second, native jump. */
+  document.body.addEventListener("click", function (evt) {
+    var a = evt.target.closest && evt.target.closest('a[href^="#"]');
+    var el = a ? detailsFor(a.getAttribute("href")) : null;
+    if (!el || evt.metaKey || evt.ctrlKey || evt.shiftKey) { return; }
+    evt.preventDefault();
+    revealDetails(el);
+    if (window.history && window.history.pushState) { window.history.pushState(null, "", a.getAttribute("href")); }
+  });
+  /* …and a page OPENED on such a hash (a shared link) lands on it open too. */
+  var landed = detailsFor(window.location.hash);
+  if (landed) { revealDetails(landed); }
 
   /* A failed fetch must be visible on the page, not only in the console. */
   document.body.addEventListener("htmx:responseError", function (evt) {

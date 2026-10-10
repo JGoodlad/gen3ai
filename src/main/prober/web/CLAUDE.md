@@ -243,10 +243,12 @@ some CPU", not "may read private data".
 
 ## Information flow (why the pages are shaped the way they are)
 
-**`/game` holds the nav tab the classic `/battle` replay used to** (2026-10-08): a ninth tab wraps the
-phone header past the render test's 160px budget, and `/battle` stays one link away — `/game`'s
-"classic replay" link and every `battles` / `scan` row. Every battle surface links INTO `/game`
-anchored on the decision (`game_test.py` pins it).
+**`/game` is THE battle viewer** (2026-10-09): the classic `/battle` replay was MERGED into it and
+`/battle` answers 307 to `/game` (`start=N` → `turn=N`), so every old link lands on the same battle and
+turn. `/analyze` has no nav tab (it is a per-DECISION page, opened from every decision in the viewer and
+every scan row). Every battle surface links INTO `/game` anchored on the decision (`game_test.py`,
+`app_test.py` pin both). Why the page is shaped as it is, and everything removed:
+`designs/prober/battle_viewer_ux_2026-10-09.md`.
 
 The TUI's standing complaint was that *the information didn't flow*. These are the deliberate
 answers, each pinned by a test in `app_test.py` → "usability / information flow":
@@ -345,7 +347,6 @@ Nothing 500s; the cost is real estate and a reader wondering what is broken:
 | `index.html` "did it know?" card | heading + 6-line blurb always render; the swap fills with `{{ data.error }}` — a permanently empty card, second section of the landing page |
 | `scan_table.html` `knew @` / `lead` columns | headers always render, every cell `—` |
 | `triage_table.html` `blind` / `median lead` columns | same |
-| `battle.html` `P(win) · dist` legend entry | static `<dl>`, so it explains a strip that never appears |
 | `/api/awareness`'s `lead_bar`/`cap_turn`/`stall_bar` | inert (`app.py::_value_dist_spec`, their `/battle` chart, was DELETED in L1) |
 
 Purging them is the remaining awareness-vertical deletion (the head and its model-side views are gone, L1; the owner has permitted deleting prober pieces — a census candidate, not done here).
@@ -391,8 +392,8 @@ produced it.
 | `/battles` | `battles()` | outcome / opponent / step filters — **outcome is `win` / `loss` / `draw`** (the `draw` option and every `pattern=` here are built from `agents.training.trace_result.OUTCOMES`, so a bucket cannot exist in the CLI and 422 on the web) |
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
-| `/battle` | `battle_turns()` | **one game, turn by turn** — board · expected opponent intent (α/β) · battle log · critic · **P(win) and the P(loss) strip** (model-free) |
-| `/game` | `battle_story()` + `battle_readout()` + `decision_attention()` | **the battle viewer** — a turn list beside the selected decision: every protocol event of the turn, the board, our choice vs the legal set (model-free); then, as an HTMX fragment that LOADS the checkpoint (**password-gated**; a locked visitor sees an unlock card in its place), what the model expected the opponent to do (the flat pointer, the actual action marked, α's calibration over the battle), the hypothesis tokens and their evolution, the pointer head's scores, the attention heat map (layer × head picker) and the operator facts. ←/→ (j/k) step decisions, [ / ] step battles. Field map: `designs/prober/battle_view_v2.md`. Routes live in `game.py` |
+| `/battle` | — | **merged into `/game`** (2026-10-09): a 307 there, keeping `battle` and mapping `start=N` → `turn=N`. `/api/battle-turns` (the CLI's `turns` contract) stays |
+| `/game` | `battle_story()` + `battle_board()` + `battle_readout()` + `decision_attention()` | **THE battle viewer** — the turn rail (one row component: us / them, their actions, faints, replacements, P(win), the big drops) beside the selected decision: the board it was made on under an INFORMATION PERSPECTIVE (`view=model` default · `truth` · `public`), our options vs their action as the same sorted component, and the turn as ordered BEATS (switch → moves in order → replacements → end of turn); all model-free. Then, as an HTMX fragment that LOADS the checkpoint (**password-gated**; a locked visitor sees an unlock card and the PUBLIC half of the scouting notes), the model's α beside our options (out of band), the scouting notes on their team, and under the hood: attention, damage physics, raw scores. ←/→ (j/k) step decisions, [ / ] step battles. Field map: `designs/prober/battle_view_v2.md`. Routes live in `game.py` |
 | `/analyze` | `analyze()` | **one decision, all the way down** — faithfulness · beliefs · threats · intervention · saliency. **LOADS THE CHECKPOINT** (see below); **password-gated** |
 | `/falsify` | `falsify_scan()` | the crater bracket — **a background job** |
 | `/calibration` | `calibration()` | the reliability curve — **a background job** |
@@ -407,23 +408,21 @@ and returned a confident answer to a question nobody asked. Fixed, and pinned by
 `test_the_page_form_fields_actually_reach_the_probe` (verified to fail on the reverted code).
 `run` stays a `Query` on purpose: it rides the URL, because the run picker is a link.
 
-### `/battle` — the turn-by-turn replay
+### `/game` — THE battle viewer
 
-The read-it-like-a-game view: decisions grouped by GAME TURN, each with the board it was made on,
-the ordered battle log of what then happened, and V / ΔV / TD δ / reward. `scan` answers *which*
-decision lost the battle; this answers *how the game went* around it.
+The read-it-like-a-game view, and the one place a battle is read (the classic `/battle` replay was
+merged into it, 2026-10-09). The field map is **`designs/prober/battle_view_v2.md`**; the reasons —
+the owner's complaints, the audit, every removal — are
+**`designs/prober/battle_viewer_ux_2026-10-09.md`**. The rules it rests on: the page is a plain GET
+(`/game?run=…&battle=…&inv=N&view=…`: a decision and the perspective it is read under are things you
+link to, and it works with JavaScript off); the model's half is an HTMX fragment because it loads a
+checkpoint; the battle picker is the app's ONE `_picker_rows` (newest first, and ALWAYS containing the
+battle shown — `/game` used to slice its own list and named a different battle as selected); the
+INFORMATION PERSPECTIVE is decided per field by `engine/perspective.shown`, injected into Jinja as the
+global `shown` and applied by the one macro `fv` — a board fact rendered any other way is what
+`perspective_guard_test.py` catches.
 
-The per-bullet field map — what the card, the collapsed drop-down, the `expect` line, the awareness
-strip and the critic row each carry, and why each is shaped that way — is
-**`designs/prober/web_views.md`**. The decisions that page rests on: it is deliberately NOT HTMX (a
-battle is a thing you read and LINK to, so the picker and the turn window are plain GET forms); it
-is windowed at `_TURN_PAGE` = 50 turns; every number in the critic row explains itself; P(win) sits
-BESIDE V rather than instead of it, since the two disagree in sign routinely and only the
-calibrated one reads as odds; the default battle and the picker are NEWEST-first (`battles()` is
-ordered by step ASCENDING, so a naive `rows[0]` lands the visitor on the oldest checkpoint); and it
-renders server-side on first paint (~110 ms for the whole page).
-
-**A run with no traces is an EMPTY STATE, not a 404.** Both battle-addressed pages (`/battle`,
+**A run with no traces is an EMPTY STATE, not a 404.** Both battle-addressed pages (`/game`,
 `/analyze`) resolve a battle before rendering, and a run that has captured nothing has none — which
 surfaced as a 404, indistinguishable from a bad link on a perfectly healthy run. It is also not an
 edge case: the app opens the NEWEST run by default and a freshly-launched run has no traces until
@@ -449,7 +448,6 @@ with no distributional head, which is most of them.
 
 | where | what it adds |
 |---|---|
-| `/battle` | the battle verdict above the replay + a per-decision **`P(win) · dist` strip** (see above) |
 | `/scan` | `knew @` and `lead` columns beside each crater — `BLIND` badged when it never saw it coming |
 | `/triage` | a `blind` / `median lead` column per category, **beside** the lever, never folded into it |
 | `/` | the run-level panel: the aggregate against the published **gen-10 baseline** |
@@ -486,7 +484,7 @@ footer, its per-decision button, the page lede and the `scan` table all told the
 run a CLI command *"or the TUI"*, a surface **retired on 2026-08-13**. The feature was built,
 shipped and reachable, and the copy around it said it lived somewhere that no longer existed.
 
-Both the replay and every `scan` row now LINK straight to `/analyze?run=…&battle=…&inv=N`; the
+Both the battle viewer and every `scan` row now LINK straight to `/analyze?run=…&battle=…&inv=N`; the
 CLI equivalent stays offered beside it, because that is a real second surface. Pinned by
 `test_every_hand_off_goes_to_the_web_view_not_a_retired_terminal`, which also asserts the string
 "the TUI" appears in neither view — the cheapest possible guard against the same copy drifting
@@ -640,9 +638,11 @@ not the virtual-time budget, was the old tier's ~25 s per test (bare chrome star
 
 **The CLICK-level tests** (end of the file) dispatch real mouse press/release at an element's centre
 (`Page.click`, through hit testing — a covered or zero-size target misses as a finger would): a tap
-on a turn-card metric opens ITS title in a panel directly under the row and a second tap closes it
-(phone and desktop); the `?` link lands the reader at `#turncard-legend`; a copy button puts its
-row's command on the clipboard. Each was proven to FAIL with the behaviour broken in `app.js`.
+on one of the viewer's decision-header metrics opens ITS title in a panel directly under the row and a
+second tap closes it (phone and desktop); the `?` link lands the reader at `#glossary`, OPENED (a link
+to a collapsed `<details>` is a dead end — `app.js` opens and scrolls it before the hash moves); the
+viewer's turn-rail drawer starts closed on a phone and opens on a tap; a copy button puts its row's
+command on the clipboard. Each was proven to FAIL with the behaviour broken in `app.js`.
 They are written against the DOM for the fixture trace, never the Python that produced it.
 
 | key | proves |
@@ -651,8 +651,10 @@ They are written against the DOM for the fixture trace, never the Python that pr
 | `htmx` / `vega` / `vega-lite` | the vendored bundles defined their globals **with the network blocked** |
 | `charts` | how many specs the server embedded |
 | `chart-marks` | how many mark elements **Vega actually drew** — a spec can compile cleanly and plot nothing |
-| `rows` | data rows present in the DOM (table rows **and** battle-replay turn cards) |
-| `monstack` | on `/battle`: whether the two mons stacked (phone) or sat side by side (desktop) |
+| `rows` | data rows present in the DOM (`[data-row]` table rows) |
+| `monstack` | on `/game`: whether the board's two SIDES stacked (phone) or sat side by side (desktop); on `/analyze` the two mons |
+| `tapmin` + `tapwhat` | the smallest side of every visible control the viewer is driven with (rail rows, step bar, arrows, perspective switch) and WHICH one — the T29 ≥ 44px gate |
+| `vpanels` | which of the viewer's panels are on the page (`rail,board,options,action,story,scouting,model`) |
 | `scheme` · `bg` · `colorscheme` · `linkcolor` · `axistext` | the PALETTE, measured (see below) |
 | `swaps` | completed HTMX swaps |
 | `busy` | outstanding work (page load, in-flight HTMX requests, embed passes); **"0" = SETTLED** — the signal the tests wait on |
@@ -701,13 +703,13 @@ is checking cannot catch the palette failing to apply.
 `.scroll-x` for tables, `.chart` for an oversized SVG. Everything else follows from that.
 
 These are tables of forensic numbers, so the phone answer is deliberately **not** to reflow every
-table into cards: a `scan` row read out of column order is worse than one you scroll. **`/battle`
-is the one exception, and it earns it** — a turn is a short narrative (board → choice → what
-happened → what the critic thought), not a row whose columns carry the meaning, so it is built as
-cards that reflow: the two mons stack, the log wraps, and the page needs no scroll container at
-all. That claim is measured, not asserted — `app.js` publishes **`monstack`** (did the two boards
-stack, or are they side by side?) and the render test requires `1` at 500px, `0` at 1280px, plus
-`scrollers == 0` so the view cannot quietly regress into "grew a scrollbar".
+table into cards: a `scan` row read out of column order is worse than one you scroll. **`/game`
+is the one exception, and it earns it** — a turn is a short narrative (board → choices → what
+happened → what the model thought), not a row whose columns carry the meaning, so it REFLOWS: three
+columns at ≥ 1280px (rail · decision · the model's read), two below, one on a phone, where the rail
+becomes a drawer of the SAME rows and a sticky bar carries prev / next as 44px buttons. Measured, not
+asserted — the render test reads `monstack`, `overflowby`, `vpanels` and `tapmin` at 360, 390, 430 and
+1440px (T29).
 
 Under `@media (max-width: 720px)` the layout instead: drops the sticky header and truncates the run path,
 **wraps** the nav (never a horizontal strip — the arch viewer shipped that strip and five of its
@@ -817,9 +819,20 @@ was applied to a copy of the tree and the matching test confirmed red):
 - `openapi_snapshot_test.py` — the committed contract, plus a **proof the gate fails on drift**
   (a `--check` that always passes is worse than none).
 - `render_integration_test.py` — `@integration`; the headless-browser gate above.
+- `game_viewer_test.py` — the viewer's READING contract on the fixture's story battle: ordered beats
+  with their phases, "moved first", forced replacements linked to their decision, "never got to move",
+  the side class + chip on every beat and effect, our options and the model's α as the same sorted
+  component, locked vs unlocked, and the picker never naming another battle.
+- `perspective_guard_test.py` — the INFORMATION-PERSPECTIVE class guard: the story battle's
+  reconstruction plants facts the protocol never reveals; none may reach the `model` / `public` page,
+  our private ones never the `public` page, and under `truth` every planted fact appears only MARKED.
 - `fixture_run.py` — the synthetic run both the unit and the render test build, so they cannot end
-  up testing different data. It has **no `reconstruction.json`**, so the heavy probes are expected
-  to fail on it — and `app_test.py` asserts that failure renders. Its `opp_intent` blocks come in
+  up testing different data. Its LOSS battles have **no `reconstruction.json`**, so the heavy probes are
+  expected to fail on them — and `app_test.py` asserts that failure renders. The newest step carries
+  ONE WIN with a real gen-3 protocol and a reconstruction record — **the story battle**
+  (`fixture_story.py`): every beat shape (a voluntary switch, move order, a hazard, a mid-turn forced
+  replacement on each side, residuals, "never got to move", the end) plus planted hidden facts for the
+  perspective guard. `/game` opens on it by default. Its `opp_intent` blocks come in
   **two shapes on purpose** (one decision where `α` expects an ATTACK, one where it expects a SWITCH
   so `β`'s named mon is promoted onto the card) and on only ONE of its battles — a fixture carrying
   a single shape would leave the `β` path and the heads-off path ungated. Its `β` candidates

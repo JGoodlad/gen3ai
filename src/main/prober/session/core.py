@@ -26,6 +26,7 @@ from main.prober.session.game import _GameMixin
 from main.prober.session.probes import _ProbesMixin
 from main.prober.session.reading import _ReadingMixin
 from main.prober.session.scans import _ScansMixin
+from main.prober.session.story import _StoryMixin
 from main.prober.session.trace_io import _TraceIOMixin
 
 
@@ -38,7 +39,7 @@ _DEFAULT_GAMMA = 0.99
 
 
 class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
-                   _CounterfactualMixin, _AggregateMixin, _ProbesMixin, _GameMixin):
+                   _CounterfactualMixin, _AggregateMixin, _ProbesMixin, _GameMixin, _StoryMixin):
     """Programmatic access to the probing infrastructure — see the package docstring.
 
     The command families are mixins; every method below is one all of them use.
@@ -81,6 +82,7 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         self._play_models.clear()
         self._summaries.clear()
         self.__dict__.get("_readout_cache", {}).clear()      # `/game`'s battle captures (session/game.py)
+        self.__dict__.get("_story_cache", {}).clear()        # `/game`'s protocol folds (session/story.py)
 
     def __enter__(self) -> "ProbeSession":
         return self

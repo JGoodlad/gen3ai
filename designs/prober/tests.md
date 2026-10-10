@@ -13,7 +13,13 @@ attention reproduces `BiasedEncoderLayer`'s own output; dropping the bias does n
 older architecture is one sentence with the diagnosis folded, every battle surface links in; and the ACCESS
 cases: a locked visitor gets the story + one unlock card, the model JSON is 403, the fragments answer the
 card, a hostile `HX-Current-URL` cannot redirect the unlock, an `--open` instance is unlocked),
-`web/gate_guard_test.py` (the class guard for the unlock gate, below) and
+`web/gate_guard_test.py` (the class guard for the unlock gate, below),
+`game_turn_beats_test.py` (pure, 2026-10-09: the turn as ORDERED BEATS — an Explosion double KO's two
+forced replacements are `replace` beats, a gen-3 mid-turn replacement sits between two moves, the
+residuals and a residual KO's replacement after `upkeep`, can't-move in the order, species never
+nickname, `[still]` is no charge, Baton Pass, multi-hit totals, who won, revealed items / abilities),
+`web/game_viewer_test.py` (the viewer's reading contract on the fixture's story battle, see the web
+leaf), `web/perspective_guard_test.py` (the information-perspective class guard) and
 `game_integration_test.py` (`sim`: real Rust-core battles + a fresh current-architecture checkpoint —
 the readout's probabilities equal the policy's, every panel present, no hook left behind, the web
 views populated, and `damage_op_view` decoding on the production surface).

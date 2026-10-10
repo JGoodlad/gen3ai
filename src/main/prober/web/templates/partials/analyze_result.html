@@ -46,7 +46,7 @@
     <strong>model-free</strong> view works on this run regardless:
     <a href="/scan?run={{ (run or '') | urlencode }}">scan</a> ·
     <a href="/triage?run={{ (run or '') | urlencode }}">triage</a> ·
-    <a href="/battle?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}">turns</a>.
+    <a href="/game?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}">the battle viewer</a>.
   </p>
 {% elif not a %}
   <p class="empty" data-analysis="empty">the probe returned nothing</p>
@@ -942,8 +942,7 @@
   {% if a.meta and a.inv_index + 1 < a.meta.n_invocations %}
   <a class="pagelink" href="/analyze?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;inv={{ a.inv_index + 1 }}">next decision →</a>
   {% endif %}
-  <a class="pagelink" href="/battle?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;start={{ a.turn }}#inv-{{ a.inv_index }}">read the game around turn {{ a.turn }}</a>
-  <a class="pagelink" href="/game?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;inv={{ a.inv_index }}#decision">open in the battle viewer</a>
+  <a class="pagelink" href="/game?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;inv={{ a.inv_index }}#decision">read the game around turn {{ a.turn }}</a>
   <button class="linky copybtn" type="button"
           data-copy="python -m main.prober.query analyze {{ battle_path }} {{ a.inv_index }}"
           title="Copy the equivalent CLI invocation">copy cmd</button>
