@@ -43,14 +43,18 @@ cfg() { "$PY" "$HERE/configs.py" --argv "$1"; }
 
 case "$WIN" in
   A)
-    job E   11 HEAD --argv "$(cfg E)"  --t2 256 --profile
-    job P    9 HEAD --argv "$(cfg P)"  --t2 256
-    job R    9 HEAD --argv "$(cfg R)"  --t2 256
-    job EK   7 HEAD --argv "$(cfg EK)"
-    job SF   7 HEAD --argv "$(cfg SF)"
-    job S    7 HEAD --argv "$(cfg S)"
+    # Window A is PINNED to 6e0a1a7a (the 16-roll exact KO; main moves to the closed form after it), extracted by
+    # `git archive 6e0a1a7a src data designs scripts`.
+    TA="$TREES/at_6e0a1a7a/src"
+    job E   11 "$TA" --argv "$(cfg E)"  --t2 256 --profile
+    job P    9 "$TA" --argv "$(cfg P)"  --t2 256
+    job R    9 "$TA" --argv "$(cfg R)"  --t2 256
+    job EK   7 "$TA" --argv "$(cfg EK)"
+    job SF   7 "$TA" --argv "$(cfg SF)"
+    job S    7 "$TA" --argv "$(cfg S)"
     ;;
   B)
+    job E_base       8 HEAD --argv "$(cfg E)" --canary          # the levers' paired baseline (the closed-form KO)
     job E_bf16       8 HEAD --argv "$(cfg E)" --trunk-precision bf16 --canary --profile
     job E_coordesc  10 HEAD --argv "$(cfg E)" --r1-preset coordesc --canary
     job E_cudagraphs 8 HEAD --argv "$(cfg E)" --r1-preset cudagraphs --canary
