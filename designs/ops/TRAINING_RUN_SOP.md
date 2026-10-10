@@ -115,6 +115,18 @@ in `metadata.json` `cli_args._disk_guard`; it also stands the in-run STOP down, 
 from the preflight. Before a launch: `df -h /` and `du -sh models/* | sort -h` (retention:
 `designs/research_state/models_retention_policy.md`) — free the archive; never pass the flag to a registered run.
 
+**0d. The launching checkout must carry a usable `deps/pokemon-showdown` (2026-10-10, F-GE-4 of
+`measurements/gpu_checks_endstate_2026-10-09/`).** The pinned child's team validation `require`s that directory, and the
+launcher's pinned worktree gets it as a LINK to the LAUNCHING checkout's submodule — so a launch from an agent worktree
+whose submodule was never initialised or built linked an empty placeholder, and the run died minutes later (the model and
+the inference service already up) with `Cannot find module .../deps/pokemon-showdown`; the first P attempt of the
+end-state GPU check died so. The LAUNCHER now asks before the pin / worktree / run dir exist: the closed list of files
+team validation reads (`utils/showdown_deps.py` `NEEDS`, traced against a real validation) must be present, and `node` on
+PATH, else `FATAL_CONFIG` naming the missing files and the fix; `--dry-run` prints the same verdict (`showdown deps :`
+line). Never advisory (a pinned trainer predates any check of its own) and no opt-out flag. Fix, in the launching
+checkout: `git submodule update --init` (if `package.json` is missing), then `./scripts/bootstrap.sh --skip-env` (links
+the main checkout's built `dist/` and `node_modules/` into a worktree; leaves the shared conda env alone).
+
 Ledger `81016942` (2026-09-06): an arm ran ~7 GPU-hours with 31 architecture flags silently at their
 OFF defaults while `checkargs`, `resolve_config` and `--dry-run` all passed. Every check below
 answers one of the two questions; do both.

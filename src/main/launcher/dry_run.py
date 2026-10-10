@@ -446,6 +446,14 @@ def dry_run(
     for line in disk.lines():
         out(f"  {line}")
 
+    # 7f. THE SUBMODULE PREFLIGHT - `utils.showdown_deps`, the verdict the launcher's `_prepare_session` enforces: the
+    #     child's team validation reads `deps/pokemon-showdown` through the link the pinned worktree gets to THIS
+    #     checkout's submodule (`worktree.showdown_link_source`), or this tree's own under --no-pin. Never advisory.
+    from main.launcher.submodule_gate import verdict_for_launch as _deps_for_launch
+    deps = _deps_for_launch(pin=pin, repo_root=get_repo_root() if pin else None)
+    for line in deps.lines():
+        out(f"  {line}")
+
     # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
     #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
     #    ask that commit's parser (3b), these are ADVISORY: they describe rules the child will not
@@ -488,6 +496,8 @@ def dry_run(
     if desktop.refused and not _dg_advisory:      # printed at 7d
         failed = True
     if disk.refused:                              # printed at 7e
+        failed = True
+    if deps.refused:                              # printed at 7f
         failed = True
 
     if failed:

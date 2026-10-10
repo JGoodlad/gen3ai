@@ -6,7 +6,7 @@ how it works internally. The UI is **Textual**, built on the shared `src/main/tu
 Modules: framework-agnostic core `checkpoint.py`, `worktree.py`, `child.py`, `input.py`,
 `state.py`, `ipc.py` + pure formatters `format.py`; `pinned_argv.py` + `pinned_argv_probe.py`
 (validate the child argv against the PINNED commit's parser, not this tree's); the UI `app.py` +
-`launcher.tcss`; the run loop / supervisor `run.py`; the resolve-and-print `dry_run.py`; the disk-space preflight's launcher half `disk_gate.py`; entry
+`launcher.tcss`; the run loop / supervisor `run.py`; the resolve-and-print `dry_run.py`; the disk-space preflight's launcher half `disk_gate.py`; the showdown-submodule preflight `submodule_gate.py`; entry
 points `__init__.main()` (`python -m main.launcher`) and the `tui.py` back-compat alias
 (`python -m main.launcher.tui`).
 
@@ -779,6 +779,27 @@ In flight, `run_io._TrackingCheckpointCallback` reads `shutil.disk_usage` once p
 (`[DiskGuard] LOW DISK`), free < 1 x stops cleanly with `FATAL_DISK` (8, the exit-code table above); the opt-out keeps the
 warning and drops the stop. `--debug` is exempt from the preflight. Gate: `utils/disk_guard_test.py`,
 `main/train/disk_guard_wiring_test.py`, `main/launcher/disk_exit_test.py`, `dry_run_test.py` (j).
+
+🚨 **THE SUBMODULE PREFLIGHT (2026-10-10, F-GE-4 of `designs/research_state/measurements/gpu_checks_endstate_2026-10-09/`).**
+`_create_run_worktree` replaces the pinned worktree's empty `deps/pokemon-showdown` placeholder with a LINK to the
+LAUNCHING checkout's submodule (`worktree.showdown_link_source(repo_root)`), and an un-pinned child reads the launching
+tree's own. A launch from a checkout whose submodule was never initialised or built therefore gave the child an empty
+directory, and it died minutes later in `Teambuilder`'s team validation (`utils/bridge/validate_team.js` does
+`require('<repo>/deps/pokemon-showdown')`; `team_validator` swallows `Cannot find module` into `{"valid": False}`, so the
+visible symptom is "No valid teams found" after the model and the T2 service are up). `main/launcher/submodule_gate.py`
+asks BEFORE the pin / worktree / run dir exist, in `_prepare_session` right after the disk question, and `--dry-run` prints
+the same verdict (`showdown deps :` line, fails the dry run): `utils/showdown_deps.py` `NEEDS` — the closed list of files
+`validate_teams_locally` reads (sentinels of the three things that can be wrong: the submodule `checkout`, its `build`
+(`dist/`), its `modules` (`node_modules/`); `os.path.exists` follows links, so a dangling `dist` link reads as missing) —
+must be present and `node` on PATH, else `FATAL_CONFIG` (3) naming the missing files, the checkout and the fix:
+`git submodule update --init` (only when `package.json` is missing), then `./scripts/bootstrap.sh --skip-env` (links the
+main checkout's built `dist/` and `node_modules/` into a worktree; leaves the shared conda env alone); or `node build` /
+`npm ci` in the submodule. Never advisory (a pinned trainer predates any check of its own) and NO opt-out flag. Pinned by
+`submodule_gate_test.py` (the launcher refuses before a worktree or run dir exists, for a placeholder and an unbuilt
+checkout; the healthy path; `--no-pin` asks about its own tree; `--dry-run` fails/passes; the checked directory IS the
+one a real pinned worktree is linked to) and `utils/showdown_deps_test.py` (the verdict, the fix text, and a REAL node
+trace of one validation proving every listed file is read). A test that fakes the launcher's repo root with a throwaway
+repository writes a stub checkout (`showdown_deps.write_stub_checkout`) after its commits.
 
 Underneath, `child.resolve_child_python()` — the FRESH default — in precedence order:
 

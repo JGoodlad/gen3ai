@@ -31,6 +31,7 @@ import main.launcher.pinned_argv as pa
 import main.launcher.pinned_argv_probe as probe
 import main.launcher.worktree as wt
 from main.exit_codes import TrainExitCode
+from utils import showdown_deps
 
 launcher_run = importlib.import_module("main.launcher.run")
 
@@ -198,6 +199,9 @@ def repo(tmp_path):
         _git(root, "add", "-A")
         _git(root, "commit", "-q", "-m", f"commit {n}")
         shas.append(_git(root, "rev-parse", "HEAD"))
+    # The launcher's submodule preflight (`utils.showdown_deps`) asks THIS root; it is not what these tests are about.
+    # Written AFTER the commits, so it is untracked - never part of any pinned tree.
+    showdown_deps.write_stub_checkout(str(root))
     return str(root), shas
 
 

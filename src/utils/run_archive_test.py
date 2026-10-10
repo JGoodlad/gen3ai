@@ -24,6 +24,7 @@ from pathlib import Path
 import pytest
 
 import utils.paths as paths
+from utils import showdown_deps
 from main.exit_codes import TrainExitCode, exit_code_for
 from utils.paths import (
     MODELS_DIR_ENV_VAR,
@@ -57,6 +58,9 @@ def repos(tmp_path):
     _git(main, "add", "-A")
     _git(main, "commit", "-q", "-m", "c1")
     (main / "models").mkdir()
+    # The launcher's submodule preflight (`utils.showdown_deps`) asks the launching root; it is not what these tests
+    # are about. Written AFTER the commit, so it is untracked - never part of the linked worktree.
+    showdown_deps.write_stub_checkout(str(main))
     wt = (tmp_path / "wt").resolve()
     _git(main, "worktree", "add", "-q", "-b", "feat", str(wt))
     return main, wt

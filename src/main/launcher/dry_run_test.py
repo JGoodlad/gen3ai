@@ -30,6 +30,7 @@ from main.exit_codes import TrainExitCode
 import main.launcher.dry_run as dry_run_mod
 import main.launcher.worktree as wt
 from utils import desktop_gpu as desktop_gpu_mod
+from utils import showdown_deps
 
 launcher_run = importlib.import_module("main.launcher.run")
 
@@ -61,6 +62,9 @@ def repo(tmp_path):
         _git(root, "add", "-A")
         _git(root, "commit", "-q", "-m", f"commit {n}: {text}")
         shas.append(_git(root, "rev-parse", "HEAD"))
+    # The launcher's submodule preflight (`utils.showdown_deps`) asks THIS root (`submodule_gate_test.py` owns that
+    # subject). Written AFTER the commits, so it is untracked - never part of any pinned tree.
+    showdown_deps.write_stub_checkout(str(root))
     return str(root), shas
 
 

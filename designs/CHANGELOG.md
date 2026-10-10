@@ -13460,3 +13460,24 @@ read both cells for its end-of-turn rule and found them wrong.
   (the "code default is still 3.0" caveat and both example argvs), the root `CLAUDE.md` hazard bullet. Pinned by
   `src/main/launcher/restart_interval_default_test.py` (the literal, the parser's reading of an absent flag, a typed value
   winning, and the two doc tables). Runs already launched typed `6` and are unaffected.
+
+## 2026-10-10 — LAUNCHER: the SUBMODULE PREFLIGHT - a launch from a checkout without a usable `deps/pokemon-showdown` is refused `FATAL_CONFIG` before anything exists (no model change)
+
+- **The incident.** The pinned worktree gets `deps/pokemon-showdown` as a LINK to the LAUNCHING checkout's submodule
+  (`worktree._create_run_worktree`). From an agent worktree whose submodule was never initialised or built that is an empty
+  placeholder, and the child died minutes after the launch - model and inference service already up - in `Teambuilder`'s
+  team validation (`validate_team.js` does `require('<repo>/deps/pokemon-showdown')`; `team_validator` swallows `Cannot find
+  module` into `{"valid": False}`). The first P attempt of the end-state GPU check died so
+  (`measurements/gpu_checks_endstate_2026-10-09/` F-GE-4).
+- **The check.** `utils/showdown_deps.py` `NEEDS`: the 13 files `validate_teams_locally` reads (`package.json`; the `dist/sim`,
+  `dist/config`, `dist/data` and `dist/data/mods/gen3` entry points; the two `node_modules` the sim imports), measured by
+  tracing `require` + `readFileSync` over one real validation (`showdown_deps_test.py` repeats the trace, so the list cannot
+  hold a phantom), plus `node` on PATH. `main/launcher/submodule_gate.py` asks in `_prepare_session` right after the disk
+  question - before the pin, the worktree and the run dir - and `--dry-run` prints the same verdict (`showdown deps :`).
+  `FATAL_CONFIG` names the missing files, the checkout and the fix (`git submodule update --init` only when `package.json` is
+  missing, then `./scripts/bootstrap.sh --skip-env`; or `node build` / `npm ci`). Never advisory, no opt-out flag.
+  `worktree.showdown_link_source(repo_root)` is the ONE definition of the linked directory, so the preflight checks exactly
+  what the child is given (pinned by a test that creates a real pinned worktree).
+- **Tests.** `submodule_gate_test.py`, `utils/showdown_deps_test.py`; four launcher/archive test fixtures that fake the
+  launcher's repo root with a throwaway repository now write a stub checkout after their commits.
+- Docs: launcher leaf, `TRAINING_RUN_SOP.md` section 1 0d, `training_runbook.md`, root `CLAUDE.md`.

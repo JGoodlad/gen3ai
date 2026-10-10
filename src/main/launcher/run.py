@@ -326,6 +326,21 @@ def _prepare_session(
             print(f"[launcher]   {_l}", file=sys.stderr)
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
+    # THE SUBMODULE PREFLIGHT (`utils.showdown_deps`, `submodule_gate`): the child's team validation `require`s
+    # `deps/pokemon-showdown`, which the pinned worktree gets as a LINK to THIS checkout's submodule - so a launch from
+    # a checkout whose submodule is not initialised / built dies minutes in ("Cannot find module"). Asked HERE, before
+    # the pin, the worktree and the run dir exist, for the same reason as the disk question above: FATAL_CONFIG, the
+    # fix named, nothing left behind. Never advisory - a pinned child's trainer cannot make this check itself.
+    from main.launcher.submodule_gate import verdict_for_launch as _deps_verdict_for_launch
+    _deps = _deps_verdict_for_launch(pin=pin, repo_root=get_repo_root() if pin else None)
+    if _deps.refused:
+        print("[launcher] ERROR: the child cannot validate teams from this checkout's deps/pokemon-showdown "
+              "(utils.showdown_deps):", file=sys.stderr)
+        for _l in _deps.lines():
+            print(f"[launcher]   {_l}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+    state.add_event(_deps.lines()[0])        # the verdict line (✓ ...)
+
     #: Set below once the pin is resolved: True when the child will run a commit that is NOT this
     #: tree's HEAD, which makes the arch-surface comparison informational (see the gate's docstring).
     pinned_differs = False

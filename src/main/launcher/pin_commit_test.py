@@ -25,6 +25,7 @@ from main.exit_codes import TrainExitCode
 import importlib
 
 import main.launcher.worktree as wt
+from utils import showdown_deps
 
 # `main.launcher.__init__` re-exports the `run` FUNCTION under that name, so
 # `import main.launcher.run` would hand back the function, not the module.
@@ -60,6 +61,9 @@ def repo(tmp_path):
         _git(root, "add", "-A")
         _git(root, "commit", "-q", "-m", f"commit {n}: {text}")
         shas.append(_git(root, "rev-parse", "HEAD"))
+    # The launcher's submodule preflight (`utils.showdown_deps`) asks THIS root; it is not what these tests are about.
+    # Written AFTER the commits, so it is untracked - never part of any pinned tree.
+    showdown_deps.write_stub_checkout(str(root))
     return str(root), shas
 
 

@@ -19,7 +19,7 @@ from typing import Callable, Optional
 from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import run_dir_for_checkpoint
 from main.train.fork_lr import is_same_run_checkpoint
-from utils import worktree_guard
+from utils import showdown_deps, worktree_guard
 from utils.git import get_git_hash, get_main_repo_root, get_repo_root
 
 _WORKTREE_PREFIX = "launcher-"
@@ -409,6 +409,13 @@ def _prune_stale_launcher_worktrees(
         say(f"[worktree] pruned {os.path.basename(path)} - {reason}")
 
 
+def showdown_link_source(repo_root: "str | None" = None) -> str:
+    """The directory :func:`_create_run_worktree` links into the pinned tree as ``deps/pokemon-showdown``: the
+    LAUNCHING checkout's submodule (``repo_root``, default the cwd's toplevel). ONE definition, so the launcher's
+    submodule preflight (``main/launcher/submodule_gate.py``) checks exactly the directory the child will be given."""
+    return showdown_deps.source_dir(repo_root or get_repo_root())
+
+
 def _create_run_worktree(
     git_hash: str, run_dir: "str | None" = None
 ) -> "tuple[str, str, callable]":
@@ -432,10 +439,12 @@ def _create_run_worktree(
         raise RuntimeError(f"git worktree add failed:\n{result.stderr.strip()}")
     _write_owner_file(tmp, run_dir)
 
-    # Replace the empty submodule placeholder with a symlink to the main repo's
-    # fully-initialized pokemon-showdown checkout.  Node's require() needs the
-    # whole directory (including package.json), not just dist/ + node_modules/.
-    ps_main = os.path.join(repo_root, "deps", "pokemon-showdown")
+    # Replace the empty submodule placeholder with a symlink to the LAUNCHING checkout's
+    # pokemon-showdown (`showdown_link_source`).  Node's require() needs the whole directory
+    # (including package.json), not just dist/ + node_modules/.  The link is only as good as that
+    # checkout's submodule - `submodule_gate` (the launcher's preflight, run before this) refuses a
+    # launch from one that is not initialised / built.
+    ps_main = showdown_link_source(repo_root)
     ps_wt = os.path.join(tmp, "deps", "pokemon-showdown")
     if os.path.isdir(ps_wt) and not os.path.islink(ps_wt):
         os.rmdir(ps_wt)  # git leaves an empty placeholder directory
