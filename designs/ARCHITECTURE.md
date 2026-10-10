@@ -462,8 +462,8 @@ normalised is the α of an expectation instead, §4); a revealed Hidden Power's 
 typed mixture; the active's E5 seat is OTHER_move — and the active's move REINJECTION soft-embeds its
 row by that detached presence (the other slots keep sigmoid weights in production — no four-move limit there, so a
 benched mon with four revealed moves still reinjects believed others; **`--move-set-closure on`** (OFF, config v154,
-`gen3_move_set_closure_v1`) gives every other slot its own fixed-mass presence at k = 4 − revealed through the move
-head's graph, `measurements/belief_closure_2026-10-10/`). The op's opponent-MON axis reads an
+`gen3_move_set_closure_v1`; ON in the `--arch endstate` arm) gives every other slot its own fixed-mass presence at
+k = 4 − revealed through the move head's graph, `measurements/belief_closure_2026-10-10/`). The op's opponent-MON axis reads an
 `OpRoster` (`hypothesis_tokens.py`): the op runs on the HYPOTHESIS context, so a hidden slot is priced as
 its concrete species at first appearance (full HP, no status); "alive" is `opp_addressable`, never an HP
 cell; a hypothesis DEFENDER is the expected-latent read on a per-slot one-hot (its own species, P(KO)
@@ -961,7 +961,7 @@ encoding).
 
 The named arm **`--arch endstate`** (`main/train/arch_arms.py`) is `static_recovery` + `--move-resolution on`,
 `--speed-physics on`, `--value-threat-inject off`, `--op-reduction principled`, `--obs-facts v1` + all five levers +
-`--effective-stats on --move-target-state on`, on the production recipe.
+`--effective-stats on --move-target-state on` + `--move-set-closure on`, on the production recipe.
 
 **OFF in production: `move_resolution`** (v141, `gen3_move_resolution_v1`, `--move-resolution {off,on}` —
 architecture audit F11 §9, the owner's 2026-10-06 ruling: FACTS kept, JUDGMENTS dropped). `off` builds nothing

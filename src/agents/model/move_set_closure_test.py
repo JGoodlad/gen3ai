@@ -238,6 +238,31 @@ def test_the_active_was_already_closed(perturbed: Any, boards: dict, mode: str) 
     assert float(dv.max()) == 0.0 and float(dl.max()) == 0.0, (float(dv.max()), float(dl.max()))
 
 
+@pytest.fixture(scope="module")
+def endstate_arm() -> Any:
+    """The END-STATE arm as DECLARED (`main.train.arch_arms`'s `endstate` overlay over the production toggles: the static
+    token encoding and every fact lever), perturbed like `perturbed`. Owner 2026-10-10 ("Do A"): the closure is in
+    that arm, a pre-data amendment of the closing test (`design_endstate_closing_test.md` Decision record)."""
+    from main.train.arch_arms import arm_overlay
+    pol = copy.deepcopy(_policy(**arm_overlay("endstate")))
+    perturb_(pol, seed=1234, scale=0.02, keyed=True)
+    pol.set_training_mode(False)
+    return pol
+
+
+def test_the_endstate_arm_closes_the_bench_leak(endstate_arm: Any, boards: dict) -> None:
+    """The arm BUILDS with the closure on (fails if `move_set_closure` leaves the `endstate` overlay), and under the
+    arm's own encoding (static tokens) the bench case is closed: bit-identical under the bump. The same arm with the
+    flag flipped off MOVES, so the reinjection is read under the static encoding too and the check is not vacuous."""
+    fe = endstate_arm.features_extractor
+    assert fe.move_set_closure == "on", "the declared `endstate` arm must build with --move-set-closure on"
+    x, m = boards["bench"]
+    dv, dl = _delta(endstate_arm, x, m, "on")
+    assert float(dv.max()) == 0.0 and float(dl.max()) == 0.0, (float(dv.max()), float(dl.max()))
+    dv, dl = _delta(endstate_arm, x, m, "off")
+    assert max(float(dv.max()), float(dl.max())) > LEAK_BAR
+
+
 # --------------------------------------------------------------------------------------------- build + versioning
 
 def test_on_needs_the_belief_family() -> None:

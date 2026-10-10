@@ -13541,3 +13541,23 @@ read both cells for its end-of-turn rule and found them wrong.
   a gradient), `on` bit-identical under the bump on constructed boards (a benched mon given four moves), `off` moves
   (the leak, pinned so `on` cannot pass vacuously), the active case bit-identical in both modes, the build refusal, the
   versioning. Reverting the forward branch fails the bench case.
+
+## 2026-10-10 — `--arch endstate` gains `--move-set-closure on` (the closing test's end-state arm, a PRE-DATA amendment; no config bump)
+
+- **Why.** Owner, 2026-10-10: "Do A" — the four-move closure (`gen3_move_set_closure_v1`, v154) joins the END-STATE arm
+  of the closing test before any end-state seed has run (only the throwaway GPU check `rb_es_gpucheck_end` had), per the
+  owner's "run all levers speculatively, bisect after". Production keeps it OFF; the production arm (pinned at P_prod
+  `95d014fa`) is untouched.
+- **What.** `main/train/arch_arms.py`'s `endstate` overlay + `("move_set_closure", "on")`. No `MODEL_CONFIG_VERSION` bump:
+  the field exists since v154, and an arm's overlay is a launch surface (`model_config.json` records the value as for
+  every overlay key, so a launcher restart inherits it).
+- **Identity (CPU, `graph_sha.py`).** Production unchanged (`421c6b98ce7937f4` / `749c56159ab028f4` /
+  `51c02c6c6342a045`, 1,937,942 params). The arm: one dynamo graph, 35,662 lines, graph `42ee361b11fa5a8d`, state
+  `df71da47741a8a0f` (unchanged: the closure builds nothing), outputs `5adfaa6c40a7a71e`, 2,031,460 params; the
+  closure-off overlay at the same tree reproduces `95d014fa`'s arm (`55c7f5c009d4595b` / `c78ca89766000c71`). The K9(b)
+  tie-margin recorder sees no undeclared discrete op with the closure on.
+- **Tests (fail on revert).** `arch_arms_test.py`'s `ENDSTATE` table; `move_set_closure_test.py::
+  test_the_endstate_arm_closes_the_bench_leak` builds the DECLARED arm (static tokens + every fact lever) and asserts it
+  builds with the closure on, is bit-identical under the bench bump, and moves with the flag flipped off (non-vacuous).
+- **Docs.** ARCHITECTURE, versioning (v154 note), training_runbook, flag census, `design_static_tokens.md` §14,
+  `design_hand_computed_features.md` rank 15 + Decision record, `design_endstate_closing_test.md` §2.2.

@@ -246,8 +246,9 @@ to off / off; no `ARCH_SIGNATURE` or floor change. `--arch endstate` records bot
 
 **v154 (`gen3_move_set_closure_v1`, 2026-10-10)** added one STRUCTURAL field gated in `check_compatible`:
 `move_set_closure` ({off,on}; no parameter — `on` changes what every non-active opponent slot's MoveBelief reinjection
-reads, so the string compare is the only gate). A pre-v154 config migrates to off; no `ARCH_SIGNATURE` or floor change;
-no named arm records it.
+reads, so the string compare is the only gate). A pre-v154 config migrates to off; no `ARCH_SIGNATURE` or floor change.
+The NAMED ARM `--arch endstate` records it `on` (owner 2026-10-10, a pre-data amendment of the closing test); no
+config bump came with that: an arm's overlay is a launch surface, and the field already existed.
 
 ## Where the per-version entries went
 

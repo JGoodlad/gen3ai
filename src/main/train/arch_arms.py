@@ -49,7 +49,8 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
     ),
     # gen3_endstate_facts_v1 (owner 2026-10-09: "run all of them speculatively together, then bisect"): the END-STATE
     # arm — `static_recovery` + the bundle's four levers (move resolution, speed physics, the principled reductions,
-    # the OBS-FACTS block) with the critic's threat injection off, + every fact-completion lever. Bisected afterwards.
+    # the OBS-FACTS block) with the critic's threat injection off, + every fact-completion lever (v152), the probe
+    # battery's two facts (v153) and the four-move closure (v154). Bisected afterwards.
     "endstate": ArmDecl(
         overlay=(
             ("token_encoding", "static"),
@@ -70,11 +71,15 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
             ("g_ledger", "eot"),
             ("effective_stats", "on"),
             ("move_target_state", "on"),
+            # gen3_move_set_closure_v1 (config v154; owner 2026-10-10 "Do A", a PRE-DATA amendment of the closing
+            # test): the four-move FACT in every opponent slot's MoveBelief reinjection.
+            ("move_set_closure", "on"),
         ),
         purpose="static_recovery + move resolution, speed physics, the principled op reductions, the OBS-FACTS block, "
                 "no critic threat injection, + every fact-completion lever (the restored move-resolution facts, the "
-                "exact status facts and cure flags, the exact P(KO), no progress clock, one end-of-turn rule); the "
-                "end-state candidate, bisected lever by lever",
+                "exact status facts and cure flags, the exact P(KO), no progress clock, one end-of-turn rule, the active "
+                "mons' stage-applied stats, their active's state on our move seats, the four-move closure in the "
+                "move belief's reinjection); the end-state candidate, bisected lever by lever",
         design="designs/endstate/design_hand_computed_features.md §4 / §5 (and design_static_tokens.md §13)",
     ),
 }

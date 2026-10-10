@@ -122,7 +122,7 @@ production ⊕ the overlay (no consent needed for the arm itself; a drift from t
 (`designs/endstate/design_static_tokens.md` §13); **`--arch endstate`** (`gen3_endstate_facts_v1`) is `static_recovery`
 + `--move-resolution on --speed-physics on --value-threat-inject off --op-reduction principled --obs-facts v1` + the
 five fact-completion levers `--move-resolution-facts full --status-facts exact --ko-ramp exact --drop-progress-clock on
---g-ledger eot` + `--effective-stats on --move-target-state on` (`designs/endstate/design_hand_computed_features.md` §4 /
+--g-ledger eot` + `--effective-stats on --move-target-state on` + `--move-set-closure on` (`designs/endstate/design_hand_computed_features.md` §4 /
 §5, `design_static_tokens.md` §14). A bisection arm is the named arm plus ONE typed lever and
 `--allow-nonproduction-arch`.
 

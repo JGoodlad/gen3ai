@@ -1,0 +1,3 @@
+{"config": "production", "move_set_closure": "off", "check": "no undeclared op", "excluded_share": 0.0625, "eps": 0.0002, "rows": 64, "sites_seen": 11}
+{"config": "endstate @95d014fa overlay (closure off)", "move_set_closure": "off", "check": "no undeclared op", "excluded_share": 0.0781, "eps": 0.0002, "rows": 64, "sites_seen": 5}
+{"config": "endstate (P_end overlay, closure on)", "move_set_closure": "on", "check": "no undeclared op", "excluded_share": 0.0781, "eps": 0.0002, "rows": 64, "sites_seen": 5}

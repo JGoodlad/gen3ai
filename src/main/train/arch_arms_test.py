@@ -111,7 +111,9 @@ ENDSTATE = {**STATIC_RECOVERY, "move_resolution": "on", "speed_physics": "on", "
             "op_reduction": "principled", "obs_facts": "v1", "move_resolution_facts": "full", "status_facts": "exact",
             "ko_ramp": "exact", "drop_progress_clock": "on", "g_ledger": "eot",
             # gen3_probe_facts_v1 (v153): the probe battery's two facts
-            "effective_stats": "on", "move_target_state": "on"}
+            "effective_stats": "on", "move_target_state": "on",
+            # gen3_move_set_closure_v1 (v154; owner 2026-10-10 "Do A", a pre-data amendment of the closing test)
+            "move_set_closure": "on"}
 
 
 def test_the_endstate_arm_is_static_recovery_plus_the_bundle_plus_every_fact_lever():

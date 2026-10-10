@@ -1,0 +1,5 @@
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-pend_smoke-1857773.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+.                                                                        [100%]
+slow-tier status: 1 row(s) recorded into /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a5ae77429bc305a19/designs/ops/slow_tier_status.json
+1 passed in 1009.88s (0:16:49)
+[mem_cap] done: gen3ai-capped-pend_smoke-1857773.scope exit 0 · peak 3.39 GB of cap 24.00 GB (14%) · not OOM-killed
