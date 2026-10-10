@@ -1,4 +1,4 @@
-# `/game` — the battle viewer (v2): story, opponent intent, attention, operator facts
+# `/game` — the battle viewer (v2): story, opponent intent, attention, operator facts, scouting notes
 
 Owned by this tree (always current, updated in the same pass as the code). Owner request,
 2026-10-08: *"The prober seems very outdated … make it better, especially now that we have the full
@@ -79,6 +79,7 @@ first brief and DROPPED by this ruling before any of it was built):
 | our choice vs the legal set | `battle_story` | the recorded action distribution + mask | free |
 | win-prob over the battle, opponent intent, hypotheses, pointer scores, operator facts, attention summary | `battle_readout(battle_id)` | ONE batched eager CPU forward over every recorded decision's stored obs (`states.npz`), with read-only forward hooks (`model_capture.py`) | ~0.1 s per 64 decisions on the production arch, plus the checkpoint load once per session (cached by path) |
 | the full attention heat map for one decision | `decision_attention(battle_id, inv, layer, head)` | the cached capture of the same forward | free after `battle_readout` |
+| scouting notes per decision (the model's per-opponent-mon move / item / spread / HP-type beliefs vs the truth) | `battle_readout` → `decisions[i]["scouting"]` | bounded top-k summaries of the belief stashes captured by the SAME forward (`model_capture._belief_summaries`) + the reconstruction's true sets, read by `engine/scouting.py` | ~0 extra on the forward (within the box's noise); ~0.3 ms per decision to build; ~2.9 KB per decision of JSON (2026-10-09, below) |
 
 The readout is cached IN MEMORY per (checkpoint path, battle summary path) — a bounded LRU on the
 session (`_READOUT_CACHE_CAP`), dropped by `close()`. Nothing is written anywhere: not under
@@ -212,12 +213,52 @@ old `/battle` URLs redirect here. A link to a collapsed `<details>` (`#glossary`
 A trace with no protocol log (an old python-era trace without its `_replay.html`) still lists every
 decision's turn — an empty row that says so — so no decision is orphaned; its board panels are absent.
 
+### 6. Scouting notes per decision (model)
+
+**On the page** (`partials/game_scouting.html`, the right column): one card per opponent mon — active first —
+with what was SEEN (from the perspective board: revealed moves / item / ability, HP, status), then what the
+model BELIEVES (moves ≥ 5% presence sorted, Hidden Power with its type split; the top items; the spread as
+each stat's band; the top natures), "changed since the last decision" with its `after` evidence, and under
++ Truth the marked "actually" lines and the verdict chip. Mons never seen render as compact marked cards
+under + Truth only; the unseen slots' guesses are a sorted distribution with ◇ on-team marks. A locked
+visitor gets the SEEN half of every card (model-free) and one unlock card.
+
+`battle_readout`'s `decisions[i]["scouting"]` (`engine/scouting.py`, `scouting_view(cap, i,
+opp_team_details, prev)`; the design of record is `battle_viewer_ux_2026-10-09.md` §7). Per opponent
+OBS slot that holds a REVEALED species — the active first, then slot order — one card:
+
+| field | what it is | from |
+|---|---|---|
+| `moves` | the top 8 believed moves, presence sorted desc; Hidden Power is ONE entry (presence = the sum over its 16 typed channels) with `hp_type`, its believed type split (top 3); `seen` = the obs has revealed it (the head pins a revealed move at ~1) | `last_move_belief_logits` (sigmoid), summarised in the capture; `seen` from `ProbeModel.opp_slot_facts` |
+| `item` | the top 3 items | `last_item_logits` (softmax over item nums; a num the gen-2 table shares with a gen-3 item names the Smogon-prior id) |
+| `spread` | the believed L100 stats; per stat its `range` [lo, hi] (IV 31; 0 EV × 0.9 nature → 252 EV × 1.1, `engine.spread._derived_stat`), `pos` = (believed − lo)/(hi − lo) clamped to [0, 1], `band` low / mid / high at the thirds (a DISPLAY rule), `nature` = the top 3 natures | `last_spread_belief`, `last_spread_nature_logits` |
+| `hp_type_head` | the Hidden-Power-type HEAD's own top 3 — before the composition's certain narrowing (after the opponent fires HP the two differ; `moves`' split is the one the op consumes) | `last_hp_type_logits` (softmax) |
+| `floor` | the largest presence / item probability NOT listed — an exact upper bound on every unlisted entry | the capture |
+| `truth` | the true moves, item, ability, nature, EVs and derived stats | the reconstruction record (`_opp_team_details`), matched by exact normalized species id |
+| `verdict` | moves right / total (a true move is right at presence ≥ 0.5), `missed` (a true move below 0.5; `p` None when unlisted under a floor < 0.5), `moves_undetermined` (unlisted under a floor ≥ 0.5 — never guessed), `false` (believed ≥ 0.5, not in the set), `item_right` (the top item is the true one), `item_p_true`, `spe_err` (believed − true Speed) | the two rows above |
+| `delta` | vs the previous decision's notes for the SAME species: moves / items whose probability moved ≥ 0.10, largest change first; a side that was unlisted reads its `floor` and says `unlisted`; `after` = the PUBLIC events that touched that mon between the two decisions' turns ("it used Spikes", "it came in", "its Leftovers showed"; at most 3, oldest first) — the evidence a reader checks the update against, not a claim it caused it | the previous decision's `scouting`; `after` from `battle_story` via `engine.scouting.reveal_notes` |
+
+`unseen`: `n` hidden slots, `guesses` = the hypothesis tokens' species by presence (`hypotheses_view`,
+the one source), `on_team` against the truth, `other_any` = OTHER_species' "at least one" mass, and
+`truth` = their true mons not yet revealed. Every truth field is None without a reconstruction; a head
+the model does not build gives None, never zeros (`has` names which were captured: `belief_move_nums`,
+`belief_item_nums`, `belief_spread`, `belief_nature_nums`, `belief_hp_type`). Every belief head's
+slot axis is the obs opponent-slot order (each reads `role_tokens[:, TEAM_SIZE:]` sliced from the obs
+team block; pinned end to end by `game_integration_test.py`: a move the obs revealed for slot j reads
+~1 in belief row j).
+
 ## Measured (CPU, 2026-10-08, a 65-decision production-arch battle from a `--debug --arch production` run)
 
 `battle_story` 0.6 s cold (the core walk's expansion; cached after), `battle_readout` 1.75 s cold
 including the checkpoint load (the capture itself 0.12 s), `decision_attention` < 1 ms from the cache;
 `/game` 0.76 s cold, the model fragment 1.9 s cold. The readout JSON is ~690 KB (mostly the per-decision
 attention summaries); the page renders one decision at a time, so it never ships it whole.
+
+The scouting notes (2026-10-09, CPU, the HEAD-arch smoke run `rb_ux_head_smoke`
+`step_8000/heuristic2/loss_s0_001`, 55 decisions, box load ~15 on 16 threads): the capture with the belief
+summaries on vs off, five interleaved reps each, 0.108–0.132 s vs 0.103–0.185 s — no difference above the
+noise; building the readout from the cached capture 0.027 s vs 0.012 s before; the readout JSON 766 KB
+vs 608 KB (+158 KB, ~2.9 KB per decision).
 
 ## Abbreviations
 

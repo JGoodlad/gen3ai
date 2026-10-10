@@ -4,7 +4,8 @@ are `session/story.py`):
 * `battle_readout` — loads the battle's checkpoint (the one exact → nearest → recent ladder) and
   runs ONE batched eager forward over every recorded decision (`ProbeModel.capture_battle`): opponent
   intent + its calibration, the hypothesis tokens and their evolution, the pointer head's scores, the
-  operator facts, the attention summary, the re-run win probability. CURRENT ARCHITECTURE ONLY — an
+  operator facts, the attention summary, the re-run win probability, the scouting notes (the model's
+  per-opponent-mon move / item / spread / Hidden-Power-type beliefs vs the truth, `engine.scouting`). CURRENT ARCHITECTURE ONLY — an
   older checkpoint raises the existing `ArchDriftError`, which a surface renders as a sentence.
 * `decision_attention` — one decision's full [T,T] attention map (a layer/head, or their average)
   with its seat labels, read from the same cached capture.
@@ -20,11 +21,24 @@ import numpy as np
 
 from main.prober.engine.readout import (action_display, attention_matrix, attention_summary, belief_evolution,
     hypotheses_view, intent_calibration, intent_view, operator_view, opp_actual_action, token_labels)
+from main.prober.engine.scouting import reveal_notes, scouting_view
 from main.prober.session.serialize import _choice_dict, _short_id
 from main.prober.session.story import GLOSSARY  # noqa: F401 — the one glossary, re-exported
 
 #: Battle captures one session keeps (each ≈ 15 MB on a 250-decision battle, mostly attention).
 _READOUT_CACHE_CAP = 8
+
+
+def _join_reveal_notes(rows: list, story_turns: list) -> None:
+    """The EVIDENCE beside a belief that moved: on every scouting card whose belief changed since the previous
+    decision (`delta`), ``delta["after"]`` = the public events touching that mon between the previous
+    decision's turn and this one's (`engine.scouting.reveal_notes`, from the model-free story)."""
+    for k in range(1, len(rows)):
+        t_prev, t_cur = int(rows[k - 1]["turn"] or 0), int(rows[k]["turn"] or 0)
+        for mon in (rows[k].get("scouting") or {}).get("mons") or ():
+            d = mon.get("delta") or {}
+            if d.get("moves") or d.get("item"):
+                d["after"] = reveal_notes(story_turns, t_prev, max(t_cur, t_prev + 1), mon["species"])
 
 
 class _GameMixin:
@@ -51,7 +65,8 @@ class _GameMixin:
         """Every model panel of `/game` for one battle (LOADS THE CHECKPOINT; current architecture
         only — an older one raises `ArchDriftError`). Per decision: the policy (probabilities + the
         pointer head's raw scores), the opponent intent + the label, the hypothesis tokens, the
-        attention summary, the operator facts. Battle level: the re-run P(win) series, α's calibration,
+        attention summary, the operator facts, the SCOUTING notes (`engine.scouting.scouting_view`, its
+        ``delta`` against the previous decision's notes). Battle level: the re-run P(win) series, α's calibration,
         the belief evolution, the token layout."""
         b = self._battle(battle_id)
         cap, choice = self._capture(b)
@@ -59,8 +74,10 @@ class _GameMixin:
         invs = summary.get("invocations") or []
         opp = self._opp_team_details(b)
         opp_ids = [str(s) for s in (opp[0] if opp else ())]
+        opp_details = opp[1] if opp else None
         n = int(cap["probs"].shape[0])
         rows, intents = [], []
+        scout = None
         for i in range(n):
             inv = invs[i] if i < len(invs) else {}
             labels = list((inv.get("actions") or {}).keys())
@@ -72,6 +89,7 @@ class _GameMixin:
             iv = intent_view(cap, i, opp_actual_action(inv), opp_ids)
             intents.append(iv)
             tl = token_labels(cap["layout"], teams, cap, i, labels) if "layout" in cap else None
+            scout = scouting_view(cap, i, opp_details, prev=scout)
             rows.append({
                 "inv": i, "turn": inv.get("turn"), "chosen": inv.get("chosen"), "chosen_index": chosen,
                 "policy": [{"action": a, "label": labels[a] if a < len(labels) else f"action {a}",
@@ -83,7 +101,9 @@ class _GameMixin:
                 "intent": iv,
                 "hypotheses": hypotheses_view(cap, i, opp_ids),
                 "attention": attention_summary(cap, i, tl, chosen, active) if tl else None,
-                "operator": operator_view(cap, i, labels, legal)})
+                "operator": operator_view(cap, i, labels, legal),
+                "scouting": scout})
+        _join_reveal_notes(rows, self.battle_story(battle_id)["turns"])
         return {"id": b.summary_path, "short_id": _short_id(b), "model_resolution": _choice_dict(choice),
                 "n_decisions": n, "decisions": rows,
                 "win_prob_series": ([{"inv": i, "turn": rows[i]["turn"], "p": rows[i]["win_prob"]}
@@ -92,7 +112,9 @@ class _GameMixin:
                 "belief_evolution": belief_evolution(cap),
                 "layout": cap.get("layout"), "n_layers": cap.get("n_layers"),
                 "has": {k: (k in cap) for k in ("attention", "intent_p", "slot_species", "op", "mr_move",
-                                                "query_attention", "scores", "win_prob")},
+                                                "query_attention", "scores", "win_prob",
+                                                "belief_move_nums", "belief_item_nums", "belief_spread",
+                                                "belief_nature_nums", "belief_hp_type")},
                 "glossary": GLOSSARY}
 
     def decision_attention(self, battle_id: str, inv: int, layer: "int | None" = None,

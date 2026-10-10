@@ -168,6 +168,69 @@ def test_the_intent_column_is_sorted_by_probability_with_what_they_did_marked(cl
     assert [m for m, _l, _p in rows] == [True, False, False, False]
 
 
+
+def _scouting_readout():
+    """A readout whose decision 1 carries SCOUTING notes in the shipped shape (`engine/scouting.py`):
+    beliefs, a change with its evidence, the truth and the verdict against it."""
+    tyr = {"slot": 0, "species": "Tyranitar", "id": "tyranitar", "active": True,
+           "moves": [{"id": "rockslide", "name": "Rock Slide", "p": 1.0, "seen": True, "hp_type": None},
+                     {"id": "earthquake", "name": "Earthquake", "p": 0.71, "seen": False, "hp_type": None},
+                     {"id": "dragondance", "name": "Dragon Dance", "p": 0.4, "seen": False, "hp_type": None}],
+           "item": [{"id": "leftovers", "name": "Leftovers", "p": 0.5}],
+           "spread": {"stats": {"atk": 403.0, "spe": 243.0}, "range": {"atk": [251, 403], "spe": [158, 243]},
+                      "pos": {"atk": 1.0, "spe": 1.0}, "band": {"atk": "high", "spe": "high"},
+                      "nature": [{"name": "Adamant", "p": 0.6}]},
+           "truth": {"moves": ["rockslide", "earthquake", "focuspunch", "pursuit"], "nature": "adamant",
+                     "stats": {"atk": 403, "spe": 243}},
+           "verdict": {"moves_right": 2, "moves_total": 4, "moves_undetermined": 0,
+                       "missed": [{"name": "Focus Punch", "p": None}], "false": [],
+                       "item_right": False, "item_p_true": 0.02, "spe_err": 0.0},
+           "delta": {"moves": [{"name": "Earthquake", "from": 0.5, "to": 0.71, "unlisted": None}], "item": [],
+                     "after": ["it used Rock Slide"]}}
+    scout = {"mons": [tyr], "unseen": {"n": 5, "other_any": 0.9, "truth": ["Celebi"],
+                                       "guesses": [{"species": "Celebi", "id": "celebi", "p": 0.6, "on_team": True},
+                                                   {"species": "Blissey", "id": "blissey", "p": 0.4, "on_team": False}]}}
+    gl = {k: k for k in ("α", "π", "P(KO)", "P(lands)", "P(resolve)", "P(KO first)", "OTHER_move",
+                         "OTHER_species", "pointer score")}
+    return {"n_decisions": 7, "glossary": gl, "model_resolution": {"detail": "exact"}, "intent_calibration": None,
+            "belief_evolution": None,
+            "decisions": [{"inv": i, "chosen_index": 7, "policy": [], "attention": None, "operator": None,
+                           "intent": None, "scouting": scout if i == 1 else None} for i in range(7)]}
+
+
+def _fragment(client, view):
+    _unlock(client)
+    client.get("/api/run")
+    for sess in client.app.state.sessions.values():
+        sess.battle_readout = lambda _bid: _scouting_readout()
+    r = client.get("/partials/game/model", params={"battle": STORY_SHORT_ID, "inv": "1", "view": view})
+    assert r.status_code == 200
+    return r.text
+
+
+def test_the_scouting_notes_read_like_a_players_notes(client):
+    """Per opponent mon: what was SEEN, then what the model BELIEVES (sorted, in the one percent format),
+    how the belief moved and the public evidence in between — and the unseen slots as sorted guesses."""
+    html = _html.unescape(_fragment(client, "model"))
+    card = html.split('data-species="tyranitar"', 1)[1].split("</article>", 1)[0]
+    assert "Rock Slide" in card and "seen" in card
+    assert card.index("Earthquake 71%") < card.index("Dragon Dance 40%"), "beliefs are not sorted"
+    assert "Earthquake 50% → 71%" in card and "after: it used Rock Slide" in card
+    assert "Leftovers 50%" in card and "Atk 403" in card and "high" in card and "Adamant 60%" in card
+    guesses = html.split('class="dist them guesses"', 1)[1].split("</ul>", 1)[0]
+    assert guesses.index("Celebi") < guesses.index("Blissey")
+
+
+def test_the_scouting_truth_only_shows_under_truth_and_always_marked(client):
+    model = _fragment(client, "model")
+    assert 'data-vis="hidden"' not in model, "a truth-only judgement reached the model's view"
+    assert "missed Focus Punch" not in model and "✓ on their team" not in model and "not on their team" not in model
+    truth = _fragment(client, "truth")
+    marked = " ".join(re.findall(r'data-vis="hidden"[^>]*><span class="truthmark"[^>]*>◇</span>(.*?)</span>',
+                                 truth, re.S))
+    assert "moves 2/4" in marked and "item ✗" in marked
+    assert "missed Focus Punch" in marked and "not on their team" in marked
+
 # -- locked vs unlocked ----------------------------------------------------------------------------
 
 def test_locked_the_story_and_board_render_with_one_unlock_card_per_model_slot(client):

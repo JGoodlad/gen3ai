@@ -823,6 +823,9 @@ was applied to a copy of the tree and the matching test confirmed red):
   with their phases, "moved first", forced replacements linked to their decision, "never got to move",
   the side class + chip on every beat and effect, our options and the model's α as the same sorted
   component, locked vs unlocked, and the picker never naming another battle.
+- `game_viewer_test.py` also renders the SCOUTING notes from a readout in the shipped shape: beliefs sorted,
+  the change with its evidence, the unseen guesses sorted, and every truth-only judgement absent from the
+  model view and MARKED under + Truth.
 - `perspective_guard_test.py` — the INFORMATION-PERSPECTIVE class guard: the story battle's
   reconstruction plants facts the protocol never reveals; none may reach the `model` / `public` page,
   our private ones never the `public` page, and under `truth` every planted fact appears only MARKED.

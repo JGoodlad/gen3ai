@@ -120,6 +120,37 @@ def test_the_readout_re_runs_the_policy_and_reads_every_panel(run, sess):
     assert all(not m._forward_pre_hooks and not m._forward_hooks for m in fe.modules())
 
 
+def test_the_readout_carries_the_scouting_notes(run, sess):
+    """Every decision carries the scouting notes: per REVEALED opponent mon the model's move / item / spread /
+    HP-type beliefs, sorted and in [0, 1], joined to the reconstruction's truth (a core trace carries it). A move
+    the obs has REVEALED for slot j reads presence ~1 in belief row j — the move head pins a revealed move, so this
+    holds only if the belief stash's slot axis IS the obs opponent-slot order the notes label it with."""
+    sp = run[1][0]
+    r = sess.battle_readout(sp)
+    assert all(r["has"][k] for k in ("belief_move_nums", "belief_item_nums", "belief_spread", "belief_nature_nums",
+                                     "belief_hp_type"))
+    notes = [d["scouting"] for d in r["decisions"]]
+    assert all(s is not None for s in notes)
+    mons = [m for s in notes for m in s["mons"]]
+    assert mons, "a real battle reveals at least the opponent's lead"
+    n_seen = 0
+    for s in notes:
+        assert [m["active"] for m in s["mons"]] == sorted((m["active"] for m in s["mons"]), reverse=True)
+        assert s["unseen"]["n"] == 6 - len(s["mons"]) and s["unseen"]["truth"] is not None
+        for m in s["mons"]:
+            ps = [x["p"] for x in m["moves"]]
+            assert ps == sorted(ps, reverse=True) and 0 < len(ps) <= 8 and all(0.0 <= p <= 1.0 for p in ps)
+            assert len(m["item"]) == 3 and all(0.0 <= x["p"] <= 1.0 for x in m["item"])
+            assert set(m["spread"]["stats"]) == {"atk", "def", "spa", "spd", "spe"}
+            assert all(0.0 <= v <= 1.0 for v in m["spread"]["pos"].values())
+            for x in m["moves"]:
+                if x["seen"]:
+                    n_seen += 1
+                    assert x["p"] >= 0.99, (m["id"], x)
+            assert m["truth"] is not None and m["verdict"]["moves_total"] == len(m["truth"]["moves"])
+    assert n_seen, "the opponent used no move the whole battle"
+
+
 def test_the_attention_map_is_a_distribution_per_live_row(run, sess):
     sp = run[1][0]
     a = sess.decision_attention(sp, 0)

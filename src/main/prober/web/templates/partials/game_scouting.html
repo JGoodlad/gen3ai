@@ -13,6 +13,12 @@
   <div class="scards">
   {% for mon in ordered if shown(mon.species.vis, view) %}
     {% set bel = beliefs.get(mon.key) %}
+    {% if not mon.appeared %}
+    <article class="scard unrevealed compact" data-species="{{ mon.key }}">
+      <header><b>{{ g.fv(mon.species, view) }}</b> <span class="muted small">never seen by the model</span></header>
+      <p class="truthline">{% for x in mon.moves %}{{ g.fv(x, view) }}{% if not loop.last %} · {% endif %}{% endfor %}{% if mon.item %} @ {{ g.fv(mon.item, view) }}{% endif %}{% if mon.ability %} · {{ g.fv(mon.ability, view) }}{% endif %}</p>
+    </article>
+    {% else %}
     <article class="scard {{ 'active' if mon.active else '' }} {{ 'fainted' if mon.fainted else '' }} {{ 'unrevealed' if not mon.appeared else '' }}" data-species="{{ mon.key }}">
       <header>
         {% if mon.active %}<span class="activemark" title="in battle">▶</span>{% endif %}{% if mon.fainted %}<span class="faintmark" title="fainted">✕</span>{% endif %}
@@ -30,10 +36,11 @@
           {%- for x in mon.moves if x.vis == "public" %}<span class="seenmove">{{ g.fv(x, view) }} <small class="muted">seen</small></span>{% if not loop.last %} · {% endif %}{% endfor %}
           {%- if bel and bel.moves %}
             {%- set seen_names = mon.moves | selectattr("vis", "equalto", "public") | map(attribute="v") | list -%}
-            {%- for b in bel.moves if b.name not in seen_names %}{% if loop.first %}{% if seen_names %} · {% endif %}{% endif %}<span class="bmove" title="the model's belief that this move is in its set">{{ b.name }} {{ g.pc(b.p) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+            {%- for b in bel.moves if b.name not in seen_names and b.p >= 0.05 %}{% if loop.first %}{% if seen_names %} · {% endif %}{% endif %}<span class="bmove" title="the model's belief that this move is in its set (presence)">{{ b.name }} {{ g.pc(b.p) }}{% if b.hp_type %} <small class="muted">({% for t in b.hp_type[:2] %}{{ t.type }} {{ g.pc(t.p) }}{% if not loop.last %}, {% endif %}{% endfor %})</small>{% endif %}</span>{% if not loop.last %} · {% endif %}{% endfor %}
           {%- elif not (mon.moves | selectattr("vis", "equalto", "public") | list) %}<span class="muted">none seen yet</span>{% endif %}
           {%- set truth_moves = mon.moves | selectattr("vis", "equalto", "hidden") | list -%}
           {%- if truth_moves and view == "truth" %}<br><span class="truthline">actually also: {% for x in truth_moves %}{{ g.fv(x, view) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
+          {%- if view == "truth" and bel and bel.verdict and (bel.verdict.false or bel.verdict.missed) %}<br><span class="fv truth truthline" data-vis="hidden" title="how the belief compares with the truth (ground truth — hidden from the model)"><span class="truthmark" aria-hidden="true">◇</span>{% for f in bel.verdict.false %}✗ believed {{ f.name }} {{ g.pc(f.p) }} — not in its set{% if not loop.last %}; {% endif %}{% endfor %}{% if bel.verdict.false and bel.verdict.missed %}; {% endif %}{% for m in bel.verdict.missed %}✗ missed {{ m.name }}{% if m.p is not none %} ({{ g.pc(m.p) }}){% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</span>{% endif %}
         </dd>
         <dt>Item</dt>
         <dd>
@@ -57,12 +64,13 @@
         {% if bel and bel.delta and (bel.delta.moves or bel.delta.item) %}
         <dt>Changed</dt>
         <dd class="changed">since the last decision:
-          {% for c in (bel.delta.moves or []) + (bel.delta.item or []) %}<span class="chg">{{ c.name }} {{ g.pc(c["from"]) }} → {{ g.pc(c.to) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+          {% for c in (bel.delta.moves or []) + (bel.delta.item or []) %}<span class="chg" title="{{ 'below the listed beliefs: at most this' if c.unlisted else 'the model\'s belief before → now' }}">{{ c.name }} {% if c.unlisted == 'from' %}≤{% endif %}{{ g.pc(c["from"]) }} → {% if c.unlisted == 'to' %}≤{% endif %}{{ g.pc(c.to) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
           {% if bel.delta.after %}<span class="muted"> — after: {{ bel.delta.after | join('; ') }}</span>{% endif %}
         </dd>
         {% endif %}
       </dl>
     </article>
+    {% endif %}
   {% endfor %}
   </div>
   {# the slots nobody has seen yet #}
@@ -80,10 +88,7 @@
     </ul>
     {% if scout.unseen.other_any is not none %}<p class="muted small">someone not on this list: {{ g.pc(scout.unseen.other_any) }} at least one</p>{% endif %}
     {% endif %}
-    {% set hidden_mons = opp_side.mons | rejectattr("appeared") | list %}
-    {% if view == "truth" and hidden_mons %}
-    <p class="truthline">actually: {% for mon in hidden_mons %}{{ g.fv(mon.species, view) }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
-    {% endif %}
+    {% if view == "truth" %}<p class="muted small">Their unseen mons are shown above, marked ◇.</p>{% endif %}
   </div>
   {% endif %}
   {% else %}

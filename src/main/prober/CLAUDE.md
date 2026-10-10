@@ -92,6 +92,7 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   | `turn_beats.py` | the turn's events grouped into ordered BEATS — phase (lead · start · switch · move · replace · residual · end, read off the protocol's own framing), execution order + "moved first", consequences under their cause, faint causes, the rail's per-side summary |
   | `perspective.py` | INFORMATION PERSPECTIVE: every board fact tagged public / ours / hidden (from the fold + both teams' reconstruction sheets), and `shown(vis, view)` — the ONE rule `/game`'s `fv` macro applies |
   | `readout.py` | `/game`'s MODEL panels from one battle capture: the flat opponent pointer with the label mapped by the training rule (+ the battle's calibration), the hypothesis tokens and their evolution, the trunk's seat labels and attention summary, the operator facts |
+  | `scouting.py` | `/game`'s SCOUTING NOTES from the same capture: per revealed opponent mon the believed moves / item / spread / HP type, the verdict against the reconstruction's truth, the change since the previous decision, the unseen slots |
 - **`model.py`** — `ProbeModel`: the torch boundary, and the ONLY place a forward or backward runs.
   `load(ckpt)` does a plain strict load (`snapshot.load_checkpoint_strict` — no env, no `ModelVersion`
   check; sb3's non-strict "SB3 < 1.7.0" retry is REFUSED, `gen3_strict_checkpoint_load_v1`, so a checkpoint
@@ -105,7 +106,8 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   same torch boundary): the trunk's attention recomputed from EVERY trunk round's own `in_proj`
   + bias (the post-LN `BiasedEncoderLayer`s and, under `--trunk-layers 3/4`, the pre-LN `IdentityInitRound`s, over
   `norm1(x)`; stacked in execution order; pinned against each round's output by `model_capture_test.py`), the pointer head's raw
-  scores, the flat opponent pointer + hypothesis set, the op stash; every hook removed in a
+  scores, the flat opponent pointer + hypothesis set, the op stash, bounded top-k summaries of the belief stashes
+  (moves / item / spread / nature / HP type, per opponent slot — the scouting notes'); every hook removed in a
   `finally`, so the cost when off is zero. The three non-torch decode helpers (`describe_global`,
   `describe_team`, `describe_turn_outcome`) live here because they need the encoder. 🚨 **A turn's
   events land in the NEXT decision's obs**, so `describe_turn_outcome` is read from decision *T+1*.

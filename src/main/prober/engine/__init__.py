@@ -36,6 +36,7 @@ THE MODULE MAP — a strict DAG, leaves first:
     turn_beats.py  the turn's events grouped into ordered BEATS (phases, order, faint causes)
     perspective.py who could know each board fact: public / ours / hidden, and `shown(vis, view)`
     readout.py     `/game`'s model panels from one battle capture (intent, hypotheses, attention, op facts)
+    scouting.py    `/game`'s scouting notes: per opponent mon the believed moves / item / spread vs the truth
 """
 
 from __future__ import annotations
@@ -125,4 +126,7 @@ from main.prober.engine.readout import (   # noqa: F401 — re-export hub
     CALIBRATION_BINS, attention_matrix, attention_summary, belief_evolution, chosen_token,
     hypotheses_view, intent_calibration, intent_view, move_name, operator_view, opp_actual_action,
     species_name, token_labels, top_keys,
+)
+from main.prober.engine.scouting import (   # noqa: F401 — re-export hub
+    BELIEVED_AT, DELTA_MIN, band_of, scouting_view, stat_range,
 )

@@ -8,7 +8,12 @@ seat, the recoil / Leftovers sources, the board fold), `game_readout_test.py` (p
 column rule incl. OTHER_move / OTHER_species and the Hidden Power direction, calibration, seat labels,
 the attention summary, the greyed move-resolution columns), `model_capture_test.py` (the recomputed
 attention reproduces `BiasedEncoderLayer`'s own output; dropping the bias does not; the same for an extra pre-LN
-`IdentityInitRound`, rebuilt from its captured weights, and a real `--trunk-layers 3` policy captures three rounds),
+`IdentityInitRound`, rebuilt from its captured weights, and a real `--trunk-layers 3` policy captures three rounds;
+the belief summaries are bounded top-k per opponent slot and equal the head's own stash — Hidden Power collapsed, the
+floor the exact ceiling of the unlisted), `game_scouting_test.py` (pure: the scouting notes — active first, moves
+sorted, the verdict rule with a near-boundary case excluded, an unlisted true move undetermined above a high floor,
+the 0.10 change rule incl. a move entering from under the floor, the spread's range / position / band, the unseen
+slots, None without the truth or the head, a gen-2/gen-3 shared item num named by its Smogon id),
 `web/game_test.py` (the degraded paths on the synthetic fixture: the story renders, a model view on an
 older architecture is one sentence with the diagnosis folded, every battle surface links in; and the ACCESS
 cases: a locked visitor gets the story + one unlock card, the model JSON is 403, the fragments answer the
@@ -22,7 +27,9 @@ nickname, `[still]` is no charge, Baton Pass, multi-hit totals, who won, reveale
 leaf), `web/perspective_guard_test.py` (the information-perspective class guard) and
 `game_integration_test.py` (`sim`: real Rust-core battles + a fresh current-architecture checkpoint —
 the readout's probabilities equal the policy's, every panel present, no hook left behind, the web
-views populated, and `damage_op_view` decoding on the production surface).
+views populated, `damage_op_view` decoding on the production surface, and every decision's scouting notes
+populated, sorted, joined to the truth, with each obs-revealed move reading ~1 in its slot's belief row — the
+slot-axis check).
 
 `engine_test.py` (pure, FakeProbeModel + offset regression, + the loss-attribution
 taxonomy and the `fit_probe` stats as pure cases — decodable-vs-noise,

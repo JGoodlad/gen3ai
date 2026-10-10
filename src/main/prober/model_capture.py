@@ -18,7 +18,9 @@ nothing in the model changes and nothing is trained:
   addend and every edge family). The rounds stack in EXECUTION order (``attention[:, l]`` is round ``l``).
   `PolicyStateQuery` (``--policy-readout trunk`` only) the same way;
 * the DamageOperator's pre-gain stash (`damage_op.last_raw_block`) and, when the move-resolution family
-  is built, its RAW facts (a pre-hook re-reads `MoveResolutionCell.raw` on the same ops).
+  is built, its RAW facts (a pre-hook re-reads `MoveResolutionCell.raw` on the same ops);
+* BOUNDED top-k summaries of the opponent belief stashes — moves, item, spread, nature, Hidden-Power type, per
+  opponent slot (`_belief_summaries`; the scouting notes' raw material, `engine/scouting.py`).
 
 Every hook is installed for one capture and removed in a ``finally``; with no capture running the
 model carries none, so the cost when off is zero. Eager only: a compiled extractor would skip the
@@ -38,6 +40,15 @@ CAPTURE_BATCH = 64
 #: How many species the belief-evolution read keeps per decision (by presence).
 SPECIES_TOP = 12
 TAIL_TOP = 5
+#: The scouting notes' bounded belief summaries (per opponent slot): believed moves, items, natures, HP types.
+MOVE_BELIEF_TOP = 8
+ITEM_BELIEF_TOP = 3
+NATURE_BELIEF_TOP = 3
+HP_TYPE_TOP = 3
+#: The capture keys the belief summaries add (each ABSENT when its head is not built).
+BELIEF_KEYS = ("belief_move_nums", "belief_move_p", "belief_move_floor", "belief_move_hp_type",
+               "belief_move_hp_type_p", "belief_item_nums", "belief_item_p", "belief_item_floor", "belief_spread",
+               "belief_nature_nums", "belief_nature_p", "belief_hp_type", "belief_hp_type_p")
 _MASKED = -1e8          # a key whose bias is below this on every query row is key-padded
 #: The trunk's attention ROUNDS, by class name (this module imports no model code at import time): production's two
 #: post-LN `BiasedEncoderLayer`s, then the identity-init pre-LN `IdentityInitRound`s that `--trunk-layers 3/4` append.
@@ -231,6 +242,8 @@ def capture(policy, obs: np.ndarray, masks: np.ndarray, *, batch: int = CAPTURE_
                 if cur["mr_m"]:
                     put("mr_move", _np(cur["mr_m"][-1]))
                     put("mr_switch", _np(cur["mr_s"][-1]))
+                for k, v in _belief_summaries(fe).items():
+                    put(k, v)
     finally:
         for h in handles:
             h.remove()
@@ -252,8 +265,86 @@ def capture(policy, obs: np.ndarray, masks: np.ndarray, *, batch: int = CAPTURE_
                                                         MOVE_RESOLUTION_SWITCH_COORDS)
         res["mr_move_coords"] = list(MOVE_RESOLUTION_MOVE_COORDS)
         res["mr_switch_coords"] = list(MOVE_RESOLUTION_SWITCH_COORDS)
+    if "belief_move_hp_type" in res or "belief_hp_type" in res:
+        from agents.observation.belief_labels import HP_TYPE_NAMES
+        res["hp_type_names"] = list(HP_TYPE_NAMES)      # the HP-type axis, so the engine never assumes it
     res["n_layers"] = len(layers)
     return res
 
 
-__all__ = ["CAPTURE_BATCH", "capture", "token_layout"]
+def _topk(p, k: int):
+    """``(values, indices, floor)`` of the top ``k`` along the last axis; ``floor`` = the largest value NOT
+    kept (0 when nothing is left out) — an exact upper bound on every entry the summary drops."""
+    import torch
+
+    kk = min(k, int(p.shape[-1]))
+    srt, idx = torch.sort(p.float(), dim=-1, descending=True)
+    floor = srt[..., kk] if int(p.shape[-1]) > kk else torch.zeros_like(srt[..., 0])
+    return srt[..., :kk], idx[..., :kk], floor
+
+
+def _belief_summaries(fe) -> Dict[str, np.ndarray]:
+    """BOUNDED per-opponent-slot summaries of the belief stashes the forward just wrote (the scouting notes'
+    raw material, `designs/prober/battle_viewer_ux_2026-10-09.md` §7) — never the full 400/600-wide rows.
+    Every stash's slot axis is the OBS opponent-slot order (`extractor_forward`: each head reads
+    ``role_tokens[:, TEAM_SIZE:]`` / ``species_ids[:, TEAM_SIZE:]``, sliced from the obs team block with no
+    reordering — the same order `ProbeModel.team_species(row)["opp"]` decodes). A head the model does not
+    build leaves its keys ABSENT.
+
+    * moves (`last_move_belief_logits`, multi-label; sigmoid = presence): Hidden Power is COLLAPSED to one
+      entry under the bare num 237 — its presence is ``Σ_t sigmoid(logit[HP_t])`` over the 16 typed nums
+      (= the composed head's presence exactly; clamped to 1 under the ``flat`` ablation, whose typed
+      channels are independent), and its type split ``P(t | HP)`` = the typed channels renormalised (the
+      belief the op consumes, AFTER the tracker's certain narrowing). Top `MOVE_BELIEF_TOP` + the floor.
+    * item (`last_item_logits`, softmax): top `ITEM_BELIEF_TOP` + the floor.
+    * spread (`last_spread_belief`): the five believed L100 stats, whole ([6,5] is already small).
+    * nature (`last_spread_nature_logits`, softmax over nature nums): top `NATURE_BELIEF_TOP`.
+    * HP type (`last_hp_type_logits`, softmax): the HP-type HEAD's own posterior, top `HP_TYPE_TOP` (before
+      the narrowing the composition applies)."""
+    import torch
+
+    out: Dict[str, np.ndarray] = {}
+    mb = getattr(fe, "last_move_belief_logits", None)
+    if mb is not None:
+        from agents.model.damage_tables import _hp_typed_nums
+        from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
+
+        p = torch.sigmoid(mb.float())                                           # [B,6,M]
+        hp_nums = torch.tensor(list(_hp_typed_nums()), dtype=torch.long, device=p.device)
+        typed = p.index_select(-1, hp_nums)                                     # [B,6,16]
+        presence = typed.sum(-1).clamp(max=1.0)
+        col = p.clone()
+        col[..., hp_nums] = 0.0
+        col[..., HIDDEN_POWER_MOVE_NUM] = presence
+        v, i, fl = _topk(col, MOVE_BELIEF_TOP)
+        out["belief_move_nums"] = i.to(torch.int32).cpu().numpy()
+        out["belief_move_p"] = _np(v)
+        out["belief_move_floor"] = _np(fl)
+        split = typed / typed.sum(-1, keepdim=True).clamp_min(1e-12)
+        sv, si, _ = _topk(split, HP_TYPE_TOP)
+        out["belief_move_hp_type"] = si.to(torch.int8).cpu().numpy()
+        out["belief_move_hp_type_p"] = _np(sv)
+    il = getattr(fe, "last_item_logits", None)
+    if il is not None:
+        v, i, fl = _topk(torch.softmax(il.float(), dim=-1), ITEM_BELIEF_TOP)
+        out["belief_item_nums"] = i.to(torch.int32).cpu().numpy()
+        out["belief_item_p"] = _np(v)
+        out["belief_item_floor"] = _np(fl)
+    sb = getattr(fe, "last_spread_belief", None)
+    if sb is not None:
+        out["belief_spread"] = _np(sb)
+    nl = getattr(fe, "last_spread_nature_logits", None)
+    if nl is not None:
+        v, i, _ = _topk(torch.softmax(nl.float(), dim=-1), NATURE_BELIEF_TOP)
+        out["belief_nature_nums"] = i.to(torch.int8).cpu().numpy()
+        out["belief_nature_p"] = _np(v)
+    hl = getattr(fe, "last_hp_type_logits", None)
+    if hl is not None:
+        v, i, _ = _topk(torch.softmax(hl.float(), dim=-1), HP_TYPE_TOP)
+        out["belief_hp_type"] = i.to(torch.int8).cpu().numpy()
+        out["belief_hp_type_p"] = _np(v)
+    return out
+
+
+__all__ = ["BELIEF_KEYS", "CAPTURE_BATCH", "HP_TYPE_TOP", "ITEM_BELIEF_TOP", "MOVE_BELIEF_TOP", "NATURE_BELIEF_TOP",
+           "capture", "token_layout"]

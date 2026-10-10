@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import gymnasium as gym
 import numpy as np
+import pytest
 import torch
 
 from agents.model.team_transformer import BiasedEncoderLayer
@@ -151,3 +152,57 @@ def test_capture_stacks_every_trunk_round_of_a_deeper_trunk():
         rnd.load_state_dict(saved)
         pol.observation_space = space
         pol.train(was_training)
+
+
+# ======================================================================================= the BELIEF summaries
+# `/game`'s scouting notes read BOUNDED per-opponent-slot summaries of the belief stashes (never the 400/600-wide
+# rows). Pinned here against the stashes the same forward left behind, on the production belief surface.
+
+def test_capture_summarises_every_belief_head_bounded_per_opponent_slot():
+    from agents.model.compile_parity_fixture import load_parity_rows
+    from agents.model.damage_tables import _hp_typed_nums
+    from agents.model.static_recovery_test import _policy
+    from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    obs, mask = load_parity_rows(Gen3ObservationEncoder(load_mappings()).dimension)
+    obs, mask = np.asarray(obs[:6], dtype=np.float32), np.asarray(mask[:6])
+    pol = _policy(trunk_layers=3)                               # the cached production-surface policy above
+    space, was_training = pol.observation_space, pol.training
+    pol.observation_space = gym.spaces.Dict({**space.spaces, "action_mask": gym.spaces.MultiBinary(mask.shape[1])})
+    pol.eval()
+    try:
+        cap = model_capture.capture(pol, obs, mask, batch=6)     # ONE batch: the stashes below are this forward's
+        fe = pol.features_extractor
+        full = torch.sigmoid(fe.last_move_belief_logits.float()).numpy()
+        item = torch.softmax(fe.last_item_logits.float(), -1).numpy()
+        spread = fe.last_spread_belief.float().numpy()
+    finally:
+        pol.observation_space = space
+        pol.train(was_training)
+    N = obs.shape[0]
+    T = model_capture
+    for k in T.BELIEF_KEYS:
+        assert k in cap, f"the production surface builds every belief head, but {k} is missing"
+    assert cap["belief_move_nums"].shape == (N, 6, T.MOVE_BELIEF_TOP) == cap["belief_move_p"].shape
+    assert cap["belief_item_nums"].shape == (N, 6, T.ITEM_BELIEF_TOP) and cap["belief_spread"].shape == (N, 6, 5)
+    assert cap["belief_nature_nums"].shape == (N, 6, T.NATURE_BELIEF_TOP)
+    assert cap["belief_hp_type"].shape == cap["belief_move_hp_type"].shape == (N, 6, T.HP_TYPE_TOP)
+    assert len(cap["hp_type_names"]) == 16
+    hp = np.asarray(list(_hp_typed_nums()))
+    presence = np.minimum(full[..., hp].sum(-1), 1.0)
+    collapsed = full.copy()
+    collapsed[..., hp] = 0.0
+    collapsed[..., HIDDEN_POWER_MOVE_NUM] = presence
+    for i in range(N):
+        for j in range(6):
+            nums, ps = cap["belief_move_nums"][i, j], cap["belief_move_p"][i, j]
+            assert np.all(np.diff(ps) <= 0) and not set(nums.tolist()) & set(hp.tolist())
+            assert np.allclose(ps, collapsed[i, j, nums], atol=1e-6)            # the listed p IS the head's
+            rest = np.delete(collapsed[i, j], nums)
+            assert cap["belief_move_floor"][i, j] == pytest.approx(rest.max(), abs=1e-6)   # the exact ceiling
+            top_items = np.sort(item[i, j])[::-1]
+            assert np.allclose(cap["belief_item_p"][i, j], top_items[:3], atol=1e-6)
+            assert cap["belief_item_floor"][i, j] == pytest.approx(top_items[3], abs=1e-6)
+    assert np.allclose(cap["belief_spread"], spread)
+    assert np.all((cap["belief_nature_p"] >= 0) & (cap["belief_nature_p"] <= 1))
+    assert np.all(np.diff(cap["belief_hp_type_p"], axis=-1) <= 0)

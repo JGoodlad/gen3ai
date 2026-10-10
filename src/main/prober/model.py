@@ -1107,7 +1107,39 @@ class ProbeModel:
             raise RuntimeError("capture_battle needs the EAGER extractor (the prober was started with --compile)")
         res = capture(self._policy, obs, np.asarray(masks))
         res["teams"] = [self.team_species(row) for row in obs]
+        facts = [self.opp_slot_facts(row) for row in obs]
+        res["opp_active"] = np.asarray([f["active"] for f in facts], dtype=np.int8)
+        res["opp_revealed_moves"] = [f["revealed_moves"] for f in facts]
         return res
+
+    def opp_slot_facts(self, obs: np.ndarray) -> dict:
+        """Per OBS opponent slot (the order `team_species` decodes and every belief stash uses): which slot
+        is ACTIVE (the per-mon active bit; -1 when none) and the moves the obs has REVEALED for each slot
+        (move ids as the encoder decodes them; any Hidden Power — bare or typed — as ``hiddenpower``).
+        What the opponent showed, read off the observation — the scouting notes' "seen" marks."""
+        import agents.observation.constants as C
+
+        arr = np.asarray(obs)
+        stride = self.offsets.pokemon_full_dim
+        active, moves = -1, []
+        for i in range(6):
+            block = arr[self._opp_team_off + i * stride: self._opp_team_off + (i + 1) * stride]
+            if block.shape[0] < stride:
+                moves.append([])
+                continue
+            if block[stride - 1] > 0.5 and active < 0:
+                active = i
+            known = bool(block[C.POKEMON_SPECIES_KNOWN_OFFSET] > 0.5)
+            d = (self._pokemon_encoder.describe_vector(block)
+                 if (known and self._pokemon_encoder is not None) else {})
+            ms = []
+            for m in d.get("moves") or []:
+                mid = "hiddenpower" if str(m).startswith("hiddenpower") else "".join(
+                    ch for ch in str(m).lower() if ch.isalnum())
+                if mid and mid != "none" and mid not in ms:
+                    ms.append(mid)
+            moves.append(ms)
+        return {"active": active, "revealed_moves": moves}
 
     def spread_belief_view(self, obs: np.ndarray, mask: np.ndarray):
         """The SpreadBelief's predicted opp DERIVED stats for THIS obs — per opp slot
