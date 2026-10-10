@@ -607,8 +607,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         DEFENDER's ``screen`` multiplier + ``maxhp``/``cur_hp`` + per-candidate ``acc`` (all broadcast-
         compatible) → ``(high_frac, low_frac, crit_frac, ko_ramp)``: the max-roll / 0.85-roll / ×2-crit
         damage as a fraction of MAX HP (gen3 crit ignores screens → ×2 the PRE-screen damage; clamped,
-        "damage IF it lands"), and the accuracy-discounted P(KO this turn) vs CURRENT HP (``acc·P(KO|hit)``,
-        the exact realized KO probability — accuracy and the roll are independent events)."""
+        "damage IF it lands"), and the accuracy-discounted P(KO this turn) vs CURRENT HP (``acc·P(KO|hit)``;
+        accuracy and the roll are independent events). ⚠️ The KO term is an APPROXIMATION, not the exact
+        realized probability: a continuous linear ramp across the ``[0.85, 1.0]·dmg`` roll window (the 16
+        discrete rolls smoothed) that omits the 1/16 crit KO — an approximate FACT whose fix is exactness
+        (``designs/endstate/design_hand_computed_features.md`` D9 / §4 rank 3)."""
         # `screen=None` means "no screen multiplier" — skips a full-tensor multiply by an all-ones
         # tensor (the coarse refine path allocated one every round). `x * 1.0 == x` exactly in IEEE-754
         # for every finite value, so the two forms are bit-identical.

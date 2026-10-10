@@ -9,7 +9,9 @@ measured evidence it has, and what we would do with it next.
 [`../ARCHITECTURE.md`](../ARCHITECTURE.md) states what the model IS and wins any disagreement with this doc; this doc
 does not restate it, it classifies it. Verified against the code at `2e357971` (`arch_constants.py`, the extractor's
 phase modules, `damage_op*.py`, `board_tokens.py`, `static_tokens.py`, `belief_tables.py`, `damage_tables.py`, the
-Rust encoder `src/rust_sim/src/encoder/` and trackers `src/rust_sim/src/trackers/`). Tags: **MEASURED** (a number with
+Rust encoder `src/rust_sim/src/encoder/` and trackers `src/rust_sim/src/trackers/`); the FACT / JUDGMENT re-sort of
+2026-10-09 (§1's classification test) re-read `intent_threshold.py`, `switch_branch.py`, `pair_outcome.py`,
+`damage_op_blocks.pair_outcome_coords`, `damage_op._rolls` and `trackers/clock.rs` at `f0869884`. Tags: **MEASURED** (a number with
 its source), **DESCRIPTIVE** (a measured number that is not a registered test), **UNVERIFIED** (never ablated, or not
 checked here).
 
@@ -29,12 +31,34 @@ Decision record): STATIC per-mon tokens (who the Pokémon is) plus a small dynam
 | **(b)** | **a fact that would otherwise reach the deciding token only through a narrow channel** | counts on the SIDE tokens, the op's per-mon amounts as token content, Spikes on our side | attention is a softmax AVERAGE (it cannot count), an edge bias is a RATIO (it cannot carry an amount), and with two trunk rounds a fact that arrives at the last round cannot be combined with anything (the static diagnostic's lesson, `measurements/static_diag_2026-10-09/`) |
 | **(c)** | **a prior from Smogon** | move / item / ability / species / spread / speed priors | the opponent's hidden set is not in the observation; a prior is the starting belief. **It must be Smogon-derived, never pool-derived** (owner rule 2026-08-15): the 719-team pool may MEASURE structure but never ships as a prior |
 
+**The classification test (owner-approved 2026-10-09).** Whether a quantity is a FACT or a JUDGMENT is decided by what
+it IS, never by what it is for or how it is named:
+
+| class | the test | consequence |
+|---|---|---|
+| **FACT** | the probability or magnitude of a GAME EVENT, in its own natural unit (an HP fraction, a probability, turns of a mechanic, hazard layers), determined by the rules + the board + beliefs (including the opponent's intent α). It is verifiable by simulating the game | hand-computed; kept |
+| **JUDGMENT** | it (1) COMBINES different units with a weight we chose (an exchange rate), or (2) ASSUMES what WE will do on later turns (our own plan), or (3) applies a THRESHOLD that grades good / bad rather than describing an event | not hand-computed; the network's job. A judgment still in production is marked **J** and removed or replaced by facts |
+| **APPROXIMATE FACT** (**AF**) | a fact computed with a shortcut (the KO ramp smooths the 16 damage rolls and omits the crit KO) | the fix is to make it EXACT, never to remove it |
+
 **What we deliberately do NOT hand-compute: judgment and strategy.** A feature that says what the RIGHT play is (a
-valuation, a threshold on when a move "pays") belongs to the network. The owner's ruling of 2026-10-06 (audit
-Decision record, F11): **FACTS** (what will actually happen if I press this) are kept, **JUDGMENTS** (opinions of the
-right play) are dropped — explicitly `tempo_cost` and `wasted_ko` ("don't click the KO into the obvious switch"), plus
-`neutralization`, `spin_value_lost`, the hazard stake of `spin_denied` and every hand threshold (Focus Punch,
-Substitute, Endure, Endeavor). **Game cliffs stay probabilities**: a KO, a speed tie or a forfeit deadline is delivered
+valuation, a threshold on when a move "pays") belongs to the network. **Facts** (what will actually happen if I press
+this) are kept. The factual record: on 2026-10-06 the owner DECLINED, as judgments, `tempo_cost`, `wasted_ko` ("don't
+click the KO into the obvious switch"), `neutralization`, `spin_value_lost`, the hazard stake of `spin_denied` and every
+hand threshold (Focus Punch, Substitute, Endure, Endeavor) (audit Decision record, F11), and move resolution (§2.6) was
+built on that list. **On 2026-10-09 the owner re-examined it** ("several rows marked J are actually FACTS, hard-to-compute
+quantities handed to the model so it doesn't spend capacity on them") and adopted the test above; it re-sorts the list:
+
+| quantity | 2026-10-06 | 2026-10-09 by the test |
+|---|---|---|
+| P8 `intent_threshold`: Focus Punch survives, Destiny Bond × P(KO), Substitute, Endure × P(KO), Endeavor × (1 − P(KO)) | "hand thresholds" | **FACT** (an event probability each; the Substitute ramp is an **AF**). KEEP |
+| P6 `wasted_ko` = P(KO \| they stay) × α_SWITCH | judgment | **FACT** (an event probability), REDUNDANT with its two input columns (an interaction term). Remove only as a redundancy bisect, not as bias |
+| P6 `spin_value_lost`, P3 `spin_denied`'s hazard stake | judgment | **FACT** (P(spin blocked) × hazard layers = the expected layers preserved). KEEP |
+| P2 `neutralization` | judgment | **JUDGMENT as implemented** (a base-stat proxy for burn; paralysis 0.25 + 0.75·Δ outspeed is a weighted sum across units), though its intent ("the net effect of a status") is a fact. REPLACE with separate exact facts (§4 rank 4) |
+| P2 `tempo_cost` | judgment | **MOSTLY JUDGMENT** (it assumes our cure plan). REPLACE with FACT flags (§4 rank 4) |
+| O10 `turns_since_progress` | not classed | **JUDGMENT** (thresholds that grade progress). KEEP as removal rank 1 |
+| D9 the KO ramp | not classed | **AF**. Make it exact (§4 rank 3) |
+
+**Game cliffs stay probabilities**: a KO, a speed tie or a forfeit deadline is delivered
 as a probability or a margin, never as a hand threshold (Destiny Bond's feature is P(the opponent KOs us this turn),
 "no threshold", owner 2026-10-06; the clock gives the deadline as two REMAINING scalars, not a "near the end" bit; a
 tie is a coin flip, never a rounding rule).
@@ -49,8 +73,8 @@ feature, not that its fact has another home.
 
 ## 2. The inventory
 
-**Columns.** *why* = (a) / (b) / (c) of §1, or **J** where the feature is a JUDGMENT that §1 says should not be
-hand-computed. *status* = **ON** (production builds and reads it) · **OFF** (built, production off) · **ARM** (built,
+**Columns.** *why* = (a) / (b) / (c) of §1, or **J** where the feature is a JUDGMENT by §1's classification test (it
+should not be hand-computed); **AF** marks an APPROXIMATE FACT (a fact computed with a shortcut: fix it, do not remove it). *status* = **ON** (production builds and reads it) · **OFF** (built, production off) · **ARM** (built,
 OFF in production, inside a registered screen) · **INERT** (built, consumes nothing). *action* = **KEEP** · **TRY
 REMOVING** (one-lever ablation) · **TRY ADDING** (built or specified, not in production) · **REPLACE WITH LEARNED** (a
 learned path exists or is proposed) · **REPLACE** (a better hand form exists).
@@ -80,10 +104,10 @@ generation, before the Baton Pass, prior-denominator, Beat Up and ability-known 
 | O7 | pair-history tendencies h[i,j] (6 × 6 × 5) | per (their mon i, our mon j): switch-ins, attacks, status clicks by i while j was active, shared-field turns, pairing recency; log-saturated at 10 | (b) | `encoder/mod.rs::pair_history`; read ONLY by the `h` edge · ON | **UNVERIFIED: never ablated** (not in the §5.4 edge table, which predates it) | opponent tendencies from history (the event window is 32 events) | TRY REMOVING (one-lever: drop `h` from the families string) |
 | O8 | event-record derived columns | per event row: the attributed `hp_delta`, faint CAUSE, item TRANSITION, ACTION DENIAL rows (the gen-3 turn cut), entry reason, REL mon, Spikes layers at the event, Pursuit-on-switch | (a) (b) | `trackers/history.rs` · ON (via the event seats) | owner requirement E12 (`obs_enrichment_backlog.md` §1a); the derivations are correctness-gated (`window_record_test.rs`); strength **UNVERIFIED: never ablated** | parsing raw protocol lines; residual damage is not an event at all | KEEP |
 | O9 | deadline clock (3) | `log(1+turn)/log(251)`, `(250 − turn)/250`, `log(1+250−turn)/log(251)` | (b) | `encoder/mod.rs::global_env` · ON | motivation MEASURED pre-fix (`ai_v9_09` @16M: a positive V before a forfeit in 13 of 14 timeout losses; ARCH §1.4); the fix is **UNVERIFIED: never ablated** | resolution at the forfeit cliff from a single log-elapsed scalar | KEEP |
-| O10 | `turns_since_progress` (1) | a no-progress counter, log-saturated at 10, reset by a HAND definition of "progress": our move's own hit ≥ 3 % and the target's net fall ≥ 3 %, a status on them, a new Spikes layer, they switched, a winning residual, a boost, a new Substitute, a successful Wish; with Rest-loop, wasted self-cure and heal-freeze carve-outs | **J** | `trackers/clock.rs` · ON (global token / FIELD token) | **UNVERIFIED: never ablated.** It was the deleted shaped reward's tax input; it survived as an obs scalar | judging whether a turn achieved anything | **TRY REMOVING** (§5 rank 1) |
+| O10 | `turns_since_progress` (1) | a no-progress counter, log-saturated at 10, reset by a HAND definition of "progress" (eight reset conditions): our move's own hit ≥ 3 % and the target's net fall ≥ 3 %, a status on them, a new Spikes layer, they switched, a winning residual, a boost, a new Substitute, a successful Wish; with Rest-loop, wasted self-cure, heal-freeze and other carve-outs | **J** (thresholds that grade progress) | `trackers/clock.rs` · ON (global token / FIELD token) | **UNVERIFIED: never ablated.** It was the deleted shaped reward's tax input; it survived as an obs scalar | judging whether a turn achieved anything | **TRY REMOVING** (§5 rank 1). If a clock signal then proves needed, the threshold-free FACT alternative is "turns since either side lost HP" |
 | O11 | Wish pending (1 / side) | a flat 0.5 (gen-3 Wish heals the recipient's maxhp/2) when a Wish resolves this turn | (a) | `encoder/mod.rs::board` · ON | **UNVERIFIED: never ablated** | remembering a Wish across two turns | KEEP |
 | O12 | weather turns-left + permanent bit | `max(0, 5 − turns_active)/…`; Drizzle / Drought / Sand Stream permanent | (a) | `encoder/mod.rs::global_env` · ON | **UNVERIFIED: never ablated** | counting weather turns | KEEP |
-| O13 | the OBS-FACTS block (84) | `seen` (what the opponent has seen of each of our mons), `choice` (evidence AGAINST their Choice lock), `vol` (Encore / Taunt / Disable / Uproar / partial trap: elapsed, min left, max left), `screens` (turns left) | (a) (b) | `encoder/facts.rs`; read only under `--obs-facts v1` · OFF | **UNVERIFIED: never trained** | the opponent's knowledge of us, the lock, volatile and screen timing (no other source exists: entity audit §4 A5) | TRY ADDING (§4 rank 3) |
+| O13 | the OBS-FACTS block (84) | `seen` (what the opponent has seen of each of our mons), `choice` (evidence AGAINST their Choice lock), `vol` (Encore / Taunt / Disable / Uproar / partial trap: elapsed, min left, max left), `screens` (turns left) | (a) (b) | `encoder/facts.rs`; read only under `--obs-facts v1` · OFF | **UNVERIFIED: never trained** | the opponent's knowledge of us, the lock, volatile and screen timing (no other source exists: entity audit §4 A5) | TRY ADDING (§4 rank 6) |
 | O14 | move-slot dex features (in the per-mon slot) | `power/200`, has_secondary, has_recoil, category, accuracy, never-miss bit, max PP | (a) | `encoder/slot.rs::moves` · ON | **UNVERIFIED: never ablated** | move semantics from the id embedding alone | KEEP |
 
 ### 2.2 The per-mon token (legacy production, and the static arm's S + D)
@@ -120,7 +144,7 @@ generation, before the Baton Pass, prior-denominator, Beat Up and ability-known 
 | D6 | opponent ability: known or Smogon marginal | every op read of their ability: revealed → exact row; unrevealed → the species' Smogon marginal (damage multipliers, status blocks, Early Bird, traps) | (a) (c) | `damage_op_blocks.opp_ability_view` · ON | GIGO fix (Toxic "never landed" on every unrevealed Snorlax before, ARCH §4) | — | KEEP |
 | D7 | non-formula damage models | fixed (Seismic Toss 100, Dragon Rage, Psywave's mean), target-HP fraction (Super Fang, OHKO moves), Endeavor, Flail / Reversal / Eruption by HP, Return / Frustration 102, Magnitude 71, Present 52, Beat Up exact; Counter / Mirror Coat / Bide / Low Kick / Spit Up 0 by declaration | (a) | `damage_tables.DAMAGE_MODELS`, `damage_kinds.py` · ON | Beat Up MEASURED against the sim (507.2 HP sim mean vs 511.5 op, `beatup_sim_parity_test.py`); strength **UNVERIFIED: never ablated** | — | KEEP |
 | D8 | field base-power modifiers | weather ×1.5 / ×0.5; Mud / Water Sport ×0.5 on Electric / Fire | (a) | `DamageOperator._sport_mult` · ON | **UNVERIFIED: never ablated** | — | KEEP |
-| D9 | the KO ramp | `acc · clamp((dmg − cur_hp) / (0.15 · dmg), 0, 1)`: a continuous ramp across the roll range | (a) | `DamageOperator._rolls` · ON | **UNVERIFIED** as physics: it smooths the 16 discrete rolls and ignores the 1/16 crit KO (FINDING, §7) | — | KEEP; REPLACE with the exact roll / crit KO if a check shows it matters |
+| D9 | the KO ramp | `acc · clamp((dmg − cur_hp) / (0.15 · dmg), 0, 1)`: a continuous ramp across the roll range; also inlined for the Choice-Band tail (`ko_cb`) and re-thresholded at the sub's HP in `intent_threshold` (P8) | (a) **AF** | `DamageOperator._rolls` · ON | **UNVERIFIED** as physics: it smooths the 16 discrete rolls and ignores the 1/16 crit KO (FINDING, §7); `_rolls`' docstring wrongly called it "the exact realized KO probability" (docstring corrected 2026-10-09) | — | **FIX: make it EXACT** over the 16 rolls + the crit chance (§4 rank 3). KEEP the feature |
 | D10 | hand constants | the gen-3 RULES (roll 0.85–1.0, crit 1/16 ×2, paralysis speed ×0.25, Band ×1.5) and the hand CLAMPS (`_DMG_CHIP_CAP` 1.5, `_DMG_CRIT_CAP` 3.0) | (a) | `damage_op_layout.py` · ON | audit F7c: the rules are exact physics (KEEP); the clamps are documented saturations | — | KEEP |
 | D11 | Pursuit | `p_pur_vs_us` (P(some mon of theirs holds Pursuit)); the `x` cell's `pursuit_p` / `pursuit_eff`; `intent_conditional`'s ×2 never-miss strike on a departing target | (a) | `damage_op_pairwise.py`, `intent_conditional.py` · ON | edge `x` 0.3 % flips (§5.4, STALE); the rest **UNVERIFIED: never ablated** | — | KEEP |
 
@@ -149,22 +173,24 @@ is the §5.4 edge table (zero the family → masked KL / argmax flips / |dV|; ge
 
 Every family off together: KL 0.1011, **13.9 %** flips, |dV| 1.857 (§5.4, STALE).
 
-### 2.5 Pair outcome and the seven per-action blocks (production), F11's judgments marked
+### 2.5 Pair outcome and the seven per-action blocks (production), F11's judgments re-sorted by §1's test
 
 All read the opponent-intent α / β (detached) and widen the pointer cells; production carries all seven
 (move cell 13 → 62 wide, switch cell 15 → 34). Audit F11: **no end-of-run read of any block's dependence exists —
-every row is UNVERIFIED: never ablated.** The move-resolution family (§2.6) RETIRES all seven when on.
+every row is UNVERIFIED: never ablated.** The move-resolution family (§2.6) RETIRES all seven when on, and
+it was built on the 2026-10-06 list, so it also DROPS several quantities the 2026-10-09 test calls FACTS (`spin_value_lost`,
+`spin_denied`'s stake, four of P8's six); restoring them is §4 rank 5.
 
 | # | feature | what it computes | why | where · status | evidence it helps | learning it replaces | action |
 |---|---|---|---|---|---|---|---|
 | P1 | `pair_outcome_cell` — facts (12) | at our active: the α-reduced incoming low / high / crit / KO ramp / acc / physical, and P(par / brn / frz / slp / psn / tox lands) by status identity | (a) | `pair_outcome.py` · ON | **UNVERIFIED: never ablated** | trading damage against status in one currency | REPLACE (move resolution keeps them) |
-| P2 | `pair_outcome_cell` — `neutralization`, `tempo_cost` | a hand valuation of a status (burn = `base_atk/(atk+spa)`, paralysis 0.25 + 0.75·Δ outspeed, …) and the cheapest undo path in turns | **J** | `pair_outcome.py` · ON | **UNVERIFIED: never ablated**; owner DECLINED `tempo_cost` explicitly (2026-10-06) | the value of a status | TRY REMOVING (via move resolution, in the bundle) |
-| P3 | `pair_outcome_switch` (15) | P1's 12 at EVERY defender + the 2 judgments + `spin_denied` (= is_ghost(j) · α_spin · their hazards) | (a) + **J** | `pair_outcome.py` · ON | **UNVERIFIED: never ablated** | — | REPLACE (move resolution keeps the facts and the fact half of `spin_denied`) |
+| P2 | `pair_outcome_cell` — `neutralization`, `tempo_cost` | `neutralization` = Σ_s p_s · sev_s: burn = `0.5 · base_atk/(base_atk+base_spa)` (a base-stat proxy), paralysis = 0.25 + 0.75·Δ P(outspeed), freeze / sleep = 1.0, poison / toxic = the first residual tick (an HP fraction): units combined with chosen weights. `tempo_cost` = P(any major status) × `undo_turns`, the cheapest of {self-cure 1, Natural Cure 1, Rest 2, bench cleric 2}: the turn counts assume OUR cure plan, and items (Lum / Chesto) are not read | **J** as implemented (`neutralization`: weighted sum across units; `tempo_cost`: MOSTLY J, it assumes our plan; the existence of a cure path is a fact) | `damage_op_blocks.pair_outcome_coords` (feeds `pair_outcome.py`) · ON | **UNVERIFIED: never ablated**; owner DECLINED `tempo_cost` (2026-10-06), re-classed 2026-10-09 | the value of a status | **REPLACE with facts** (§4 rank 4): burn → the exact damage lost on the mon's believed PHYSICAL moves; paralysis → P(full para) 0.25 and Δ P(outspeed) as separate columns; cure → FACT flags. The cell leaves production with the bundle (move resolution drops it) before the facts exist |
+| P3 | `pair_outcome_switch` (15) | P1's 12 at EVERY defender + the 2 judgments + `spin_denied` (= is_ghost(j) · α_spin · their hazards) | (a) + **J** (the two P2 coordinates) | `pair_outcome.py` · ON | **UNVERIFIED: never ablated** | — | REPLACE (move resolution keeps the facts and only the probability half of `spin_denied`). `spin_denied` itself, probability × hazard stake, is a FACT (expected layers preserved): KEEP it, and restore the stake (§4 rank 5) |
 | P4 | `conditional_threat_cell` (4) | `e_pko_acc` (P(this mon dies)), `e_type_mult`, margin high, margin crit | (a) | `conditional_threat.py` · ON | **UNVERIFIED: never ablated** | — | REPLACE (move resolution keeps all four) |
 | P5 | `switch_branch_cell` — facts (7) | our move's outcome on the β-weighted arrival (high, P(KO), mult), P(they switch), P(spin blocked), Protect attack / blocked mass | (a) | `switch_branch.py` · ON | **UNVERIFIED: never ablated** | — | REPLACE (move resolution keeps them) |
-| P6 | `switch_branch_cell` — `wasted_ko`, `spin_value_lost` | `pko_stay · α_SWITCH` ("don't click the KO into the obvious switch"); the hazards a blocked spin fails to clear | **J** | `switch_branch.py` · ON | **UNVERIFIED: never ablated**; owner DECLINED `wasted_ko` explicitly | — | TRY REMOVING (via move resolution, in the bundle) |
+| P6 | `switch_branch_cell` — `wasted_ko`, `spin_value_lost` | `pko_stay · α_SWITCH` = P(KO \| they stay) × P(they switch), an event probability and an interaction term of two delivered columns; `p_spin_blocked` × the Spikes fraction on OUR side = the expected hazard layers a blocked spin leaves | (a) both FACTS (`wasted_ko` REDUNDANT with its inputs) | `switch_branch.py` · ON | **UNVERIFIED: never ablated**; owner DECLINED both (2026-10-06), re-classed FACT 2026-10-09 | — | `wasted_ko`: **TRY REMOVING as a redundancy bisect** (§5 rank 11), not as bias; `spin_value_lost`: **KEEP** (move resolution drops it: restore, §4 rank 5) |
 | P7 | `intent_move_cell` (7) | what a landed status does (Δ their outspeed, burn, schedule, sleep, sleep-free turns) + 2 redundant | (a) | `intent_move_cell.py` · ON | **UNVERIFIED: never ablated**; G2 usage baseline before the build | — | REPLACE |
-| P8 | `intent_threshold` (6) | P(KO) context; Focus Punch survives; Destiny Bond × P(KO); and the hand thresholds Substitute (a 15 % ramp at the sub's 25 %), Endure × P(KO), Endeavor × (1 − P(KO)) | (a) + **J** (3) | `intent_threshold.py` · ON | **UNVERIFIED: never ablated**; usage before the build: Endure 0.0 %, Substitute 0.9 % (`gen12_mechanic_usage_baseline.json`) | — | REPLACE (facts) / TRY REMOVING (the three judgments) |
+| P8 | `intent_threshold` (6) | P(KO) context; P(Focus Punch survives) = 1 − Σ α·acc·1[high > 0]; Destiny Bond gate × P(KO); Substitute = P(their move breaks a 25 % sub), the KO ramp re-thresholded at the sub's HP; Endure gate × P(KO); Endeavor gate × (1 − P(KO)) (P(not KO'd this turn); it does not condition on move order) | (a) all FACTS; the Substitute ramp is an **AF** (via the KO-ramp window) | `intent_threshold.py` · ON | **UNVERIFIED: never ablated**; usage before the build: Endure 0.0 %, Substitute 0.9 % (`gen12_mechanic_usage_baseline.json`); owner DECLINED "the hand thresholds" (2026-10-06), re-classed FACT 2026-10-09 | — | KEEP (the Substitute ramp becomes exact with the KO-ramp fix, §4 rank 3). Move resolution drops four of the six: restore (§4 rank 5) |
 | P9 | `intent_conditional` (13) | Counter / Mirror Coat returns, flinch usefulness, Explosion's trade and blockers (Protect / Detect only), Pursuit's ×2 trigger, Protect's avoided damage / status and its odds × P(an action follows), Magic Coat's `reflectable` bounce | (a) | `intent_conditional.py` · ON | **UNVERIFIED: never ablated** | — | REPLACE |
 
 ### 2.6 Move resolution (audit F11 as built)
@@ -284,15 +310,17 @@ semi-stall 8.2 pp, hyper-offense 1.2 pp, and Wish / spin / spinblock / phaze / S
 |---|---|---|---|---|---|
 | 1 | **the entry chip in the SWITCH pointer cell** (entity audit B3) | the HP fraction mon j loses on switching in (Spikes × grounded) | the switch logit has NO entry-chip coordinate today (incoming row 12 + CB 3 + pair outcome 15 + threat 4; ARCH §3.3); Spikes is the central gen-3 hazard and the diag's sharpest gap; the cell is the absolute route the switch decision reads | the switch cell (a widening, the `pair_outcome_switch` precedent); under move resolution, beside `p_switch_resolves` | S (the `x` cell computes it) |
 | 2 | **the residual ledger per mon in D / on the switch cell** | the end-of-turn net per mon: Leftovers, weather chip, the Toxic tick at its next ramp, Leech Seed, the Wish heal arriving to whoever is in the slot | stall's residual race; under static the `g` amounts reach tokens only via OPC (T7), and the switch cell has none | D (ours), the switch cell | S (the `g` cell computes most of it) |
-| 3 | **the OBS-FACTS block** (`--obs-facts v1`, O13) | what the opponent has seen of us; evidence against their Choice lock; Encore / Taunt / Disable / Uproar / partial-trap elapsed and bounds; screen turns left | built and gated, never trained; facts with no other source (entity audit §4 A5) | as built (`obs_facts_inject.py`) | XS to enable; one screen |
-| 4 | **phazing's entry damage** | for Roar / Whirlwind: the expected entry chip of the mon gen 3 drags in at random (the mean over their alive bench of `x`'s chip) | phaze teams are among those static loses most; Roar into Spikes is a core gen-3 plan (`obs_enrichment_backlog.md` E12) and no cell prices it | the move cell (move resolution's family) | S |
-| 5 | **Freeze Clause used, per side** | any frozen mon on that side (the op already reads it) | the side token carries Sleep Clause but not Freeze Clause (`design_format_spec.md` §8) | SIDE | XS |
-| 6 | **Future Sight / Doom Desire pending on the TARGET side** (entity audit B6) | turns left and the damage priced at cast (typeless) | today a bit on the USER, lost when the user switches (WRONG entity) | SIDE + the op | S |
-| 7 | **speed-order evidence** (backlog E8) | whether an observed move order contradicts the believed speed | conditions S2's Smogon mixture on the battle (its open lever) | the belief / S2 | S |
-| 8 | **per-cause HP accounting** (backlog E2 / E3) | HP lost and gained by cause, per mon per turn; the opponent's PP estimate | the stall resources legibility question | D / event rows | S–M |
+| 3 | **the EXACT KO ramp** (D9, an **AF**) | P(KO \| hit) over the 16 discrete damage rolls (85 … 100 %) plus the crit chance (1/16, ×2 damage, screens ignored), instead of the continuous 15 %-window ramp that smooths the rolls and omits the crit KO | an APPROXIMATE FACT feeds every P(KO) the model reads (D1 · D3 · D12-D15, P1 · P4 · P5 · P8, the Substitute break, `ko_cb`), wrong in the tails where decisions are; the fix is exactness, not removal | `DamageOperator._rolls` (+ the inlined `ko_cb`, `intent_threshold`'s sub ramp) | S–M (one rule, three sites; a behaviour change: its own version and screen) |
+| 4 | **the status FACTS that replace `neutralization` / `tempo_cost`** (P2) | **burn**: the exact damage lost on the mon's believed PHYSICAL moves (the operator can compute it); **paralysis**: P(full para) 0.25 and Δ P(outspeed) as SEPARATE columns; **cure**: FACT flags, a Heal Bell / Aromatherapy user alive on that side, Natural Cure, Rest available, believed Lum / Chesto (items are read nowhere today) | the P2 judgments leave production with the bundle; the facts they approximated (what a status costs, whether a cure exists) have no other home. The existence of a cure path is a fact, only its turn price (our plan) was a judgment | the pair-outcome / move-resolution status block (`damage_op_blocks.pair_outcome_coords`) | S–M |
+| 5 | **restore the FACTS move resolution dropped** (P3 · P6 · P8) | `spin_value_lost` and `spin_denied`'s hazard stake (P(spin blocked) × layers, expected layers preserved); P8's Focus Punch survives, Substitute break (exact via rank 3), Endure × P(KO), Endeavor × (1 − P(KO)) | the 2026-10-09 test calls them FACTS, and the bundle's move-resolution arm drops all of them as judgments; a bundle screen on the old list would measure its absence | `move_resolution*.py` (the switch and move cells); its dropped-judgment test (`move_resolution_test.py`) and ARCHITECTURE's "Dropped (judgments)" paragraph change with it | S |
+| 6 | **the OBS-FACTS block** (`--obs-facts v1`, O13) | what the opponent has seen of us; evidence against their Choice lock; Encore / Taunt / Disable / Uproar / partial-trap elapsed and bounds; screen turns left | built and gated, never trained; facts with no other source (entity audit §4 A5) | as built (`obs_facts_inject.py`) | XS to enable; one screen |
+| 7 | **phazing's entry damage** | for Roar / Whirlwind: the expected entry chip of the mon gen 3 drags in at random (the mean over their alive bench of `x`'s chip) | phaze teams are among those static loses most; Roar into Spikes is a core gen-3 plan (`obs_enrichment_backlog.md` E12) and no cell prices it | the move cell (move resolution's family) | S |
+| 8 | **Freeze Clause used, per side** | any frozen mon on that side (the op already reads it) | the side token carries Sleep Clause but not Freeze Clause (`design_format_spec.md` §8) | SIDE | XS |
+| 9 | **Future Sight / Doom Desire pending on the TARGET side** (entity audit B6) | turns left and the damage priced at cast (typeless) | today a bit on the USER, lost when the user switches (WRONG entity) | SIDE + the op | S |
+| 10 | **speed-order evidence** (backlog E8) | whether an observed move order contradicts the believed speed | conditions S2's Smogon mixture on the battle (its open lever) | the belief / S2 | S |
+| 11 | **per-cause HP accounting** (backlog E2 / E3) | HP lost and gained by cause, per mon per turn; the opponent's PP estimate | the stall resources legibility question | D / event rows | S–M |
 
-**Not on the list, on purpose:** Rapid Spin's VALUE (the hazards it would clear, a stake: `spin_value_lost` was
-declined as a judgment); any "is this my last answer" scarcity feature (`design_pair_reduction.md` §11, a judgment);
+**Not on the list, on purpose:** any "is this my last answer" scarcity feature (`design_pair_reduction.md` §11, a judgment);
 anything from the pool or the omniscient board.
 
 **The learned alternative to all of these** is a third trunk round under static (diag "Next lever"; the owner's
@@ -314,8 +342,8 @@ op-block re-read on current checkpoints (audit F22, ~0.5 agent-day, CPU forwards
 
 | rank | candidate | why remove | what replaces it | cost |
 |---|---|---|---|---|
-| 1 | **`turns_since_progress`** (O10) | a hand definition of "progress" (3 % thresholds, nine reset rules, three carve-outs) is a JUDGMENT, the kind §1 says the network should learn; it survived the shaped reward it was built for; never ablated | the event window, the deadline clock and the trunk | one screen; an in-model mask of its column avoids an obs change |
-| 2 | **the seven blocks' judgments** (P2, P6, P8's three thresholds) | owner DECLINED them (2026-10-06); they still ride production because move resolution is off | move resolution (R1 / R2) keeps the facts | already IN the bundle |
+| 1 | **`turns_since_progress`** (O10) | a hand definition of "progress" (3 % thresholds, eight reset conditions, carve-outs) is a JUDGMENT (thresholds that grade progress), the kind §1 says the network should learn; it survived the shaped reward it was built for; never ablated | the event window, the deadline clock and the trunk; if a clock signal proves needed, the threshold-free FACT "turns since either side lost HP" | one screen; an in-model mask of its column avoids an obs change |
+| 2 | **the judgment-as-implemented P2 coordinates** (`neutralization`, `tempo_cost`) | by §1's test: `neutralization` sums units with chosen weights (a base-stat burn proxy, 0.25 + 0.75·Δ outspeed), `tempo_cost` assumes our cure plan; the owner DECLINED `tempo_cost` (2026-10-06) and re-sorted the rest on 2026-10-09 | SEPARATE exact facts (§4 rank 4) | already IN the bundle (move resolution drops the cell); the facts are a later add |
 | 3 | **`value_threat_inject`** (C2) | a third critic route for one fact (audit F10); its α is a deliberately crude presence belief | the trunk (`prefuse_proj`) and the entity pool's op rows | the OFF arm is built; meter `main.ops.critic_read` (`gate.resolution.*`) |
 | 4 | **the consequence edges `c1`–`c5`** (D19–D23) | ≤ 0.4 % argmax flips each (§5.4, gen-3, STALE) | the trunk and the pointer cells | re-read first (F22, CPU); then one bundle of five, split on failure |
 | 5 | **the hard maxima** (L1) | incoherent (defect D2) | L2 + the trunk's attention over the E4 tokens | already IN the bundle |
@@ -324,6 +352,7 @@ op-block re-read on current checkpoints (audit F22, ~0.5 agent-day, CPU forwards
 | 8 | **belief trunk shaping** (H12) | six aux losses reshape the trunk at an unchosen 0.05; the oracle ceiling says belief has little strength leverage at this budget | the belief heads' outputs alone (`belief_grad_mode detached`, built) | one screen |
 | 9 | **the last-action block** (O6) | likely a duplicate of the newest event rows | the event seats | coverage check first (P9), then one screen |
 | 10 | **the inert pair-reduction rungs** (L4) | dead code, no consumer | nothing | tech debt (T21), no screen |
+| 11 | **`wasted_ko`** (P6), only as a REDUNDANCY bisect | a FACT (P(KO \| stay) × α_SWITCH), but the product of two columns the cell already carries: an interaction term the network may form itself. NOT a bias removal | its two input columns | already IN the bundle; as a lone screen, drop the one coordinate |
 
 **Removed by the static arm if it is adopted:** the legacy board broadcast (T2) and the `non_matchup_rest` bypass (B1).
 
@@ -336,7 +365,7 @@ and the model reads: an observation column the Rust encoder computes, an operato
 block, a prior table, a board-token fact, a reduction, a critic route) updates its row here IN THE SAME COMMIT:
 its status, its evidence (the measured result and its pointer, or **UNVERIFIED: never ablated**) and its action. A
 screen that reads a verdict on a row updates that row's evidence and action. A new row says which kind (a / b / c)
-it is; a feature that is a JUDGMENT is marked **J** and needs the owner. `src/agents/model/CLAUDE.md` points here.
+it is; a feature that is a JUDGMENT by §1's classification test is marked **J** and needs the owner; an approximate fact is marked **AF** and is fixed, not removed. `src/agents/model/CLAUDE.md` points here.
 ARCHITECTURE.md stays the statement of what the model IS; where the two disagree, ARCHITECTURE wins and this doc is
 the bug.
 
@@ -345,17 +374,25 @@ the bug.
 ## 7. FINDINGS (from writing this doc)
 
 1. **`turns_since_progress` is a JUDGMENT in production's observation.** Its "progress" definition
-   (`trackers/clock.rs::is_progress`: a 3 % damage floor, nine reset rules, Rest-loop / wasted-self-cure /
-   heal-freeze carve-outs) is a hand opinion of what a good turn is, the class the owner dropped from the pointer
+   (`trackers/clock.rs::is_progress`: a 3 % damage floor, eight reset conditions, Rest-loop / wasted-self-cure /
+   heal-freeze and other carve-outs) is a hand opinion of what a good turn is, the class the owner dropped from the pointer
    cells on 2026-10-06. No doc classified it as one; ARCHITECTURE calls it a "no-progress clock" and the entity
-   audit moves it to FIELD unchanged (K8 keeps the deadline clock, not this). Never ablated.
+   audit moves it to FIELD unchanged (K8 keeps the deadline clock, not this). Never ablated. The threshold-free
+   fact alternative, "turns since either side lost HP", is the fallback if a clock signal proves needed (2026-10-09).
 2. **The KO ramp is not exact.** `DamageOperator._rolls` calls `ko_ramp` "the exact realized KO probability", but it
    is a continuous ramp over `[0.85, 1.0] · dmg` (the 16 discrete rolls smoothed) and it ignores the 1/16 crit KO.
-   F6b names "a crit-KO noisy-OR" as not built; no doc names the non-crit ramp's own approximation.
-3. **Production still carries the judgments the owner declined.** `tempo_cost`, `neutralization`, `wasted_ko`,
-   `spin_value_lost`, the hazard stake of `spin_denied` and three hand thresholds ride every production forward until
-   the bundle adopts move resolution (P2, P3, P6, P8). This is by design (one-lever screening), but it is stated
-   nowhere as a standing exposure.
+   F6b names "a crit-KO noisy-OR" as not built; no doc names the non-crit ramp's own approximation. By the 2026-10-09
+   test it is an APPROXIMATE FACT (fix: exactness, §4 rank 3); the "exact realized KO probability" claim was in
+   `DamageOperator._rolls`' docstring only (corrected 2026-10-09, comment-only), and `_damage_rolls`' docstring already said
+   "modal no-crit". Three sites share the shape: `_rolls`, the inlined `ko_cb`, and `intent_threshold`'s sub-break ramp.
+3. **Production carries the quantities the owner declined on 2026-10-06; on 2026-10-09 the owner re-examined them.** The
+   factual record stands: `tempo_cost`, `neutralization`, `wasted_ko`, `spin_value_lost`, the hazard stake of
+   `spin_denied` and the hand thresholds ride every production forward until the bundle adopts move resolution
+   (P2, P3, P6, P8), by design (one-lever screening). The 2026-10-09 classification test (§1) re-sorts them: only
+   `neutralization` (as implemented) and `tempo_cost` (mostly) are JUDGMENTS; `wasted_ko`, `spin_value_lost`, `spin_denied`'s
+   stake and P8's thresholds are FACTS. So production carries two judgments, not the declined list, and the bundle's
+   move-resolution arm DROPS FACTS (§4 rank 5; `move_resolution_test.py::test_spin_denied_keeps_the_fact_and_drops_the_stake`
+   and ARCHITECTURE's "Dropped (judgments)" paragraph still encode the 2026-10-06 list).
 4. ~~The in-flight entry-hazard input (N1) duplicates the `x` cell's rule~~ RESOLVED as built (2026-10-09): one
    rule, `DamageOperator.spikes_entry`, read by both (§3). ~~A typechange (Color Change, Transform) is read from the
    current types~~ RESOLVED (v148, 2026-10-09): the rule reads base types. The current-ABILITY read of Levitate
@@ -377,3 +414,4 @@ the bug.
 | 2026-10-09 | **N1 / N2 BUILT, OFF; the N1 hazard resolved by ONE rule** (the static port, `gen3_static_port_v1`) | N1 (`--mon-hazard-cost`) and N2 (`--move-actor-state`) built behind their own flags; the Spikes entry rule factored into `DamageOperator.spikes_entry`, read by both the `x` cell and N1 (option (a) of the orchestrator's hazard note); N1 covers BOTH sides (the brief) and is token content after the op; T7's outgoing route is now a set function | a test-only agreement check with two implementations (option (b)); N1 inside D's MLP (ends the X5 dex-table gather) | `design_static_tokens.md` §12; `static_port_test.py` |
 | 2026-10-09 | **The Spikes entry rule reads BASE types** (`gen3_spikes_entry_base_types_v1`, v148; GIGO fix) | `spikes_entry` takes Flying immunity from `SPECIES_TYPE[species_ids]`, not the obs type columns (current types after Color Change / Transform / Conversion / Forecast); changes the production `x` cell for an active mon with changed types | keeping the current-type read (wrong: a switch-in reverts to base); a new base-type obs column (a layout change for a derivable fact) | `deps/pokemon-showdown` `sim/pokemon.ts` `clearVolatile` / `setSpecies`; `static_port_test.py::test_the_spikes_entry_reads_base_types_not_the_current_ones` |
 | 2026-10-09 | **The Spikes entry rule reads the SPECIES' Levitate** (`gen3_spikes_entry_species_levitate_v1`, v149; GIGO fix) | Levitate from `SPECIES_TRAP_PRIOR[species, 3]` (exactly 0 or 1 in gen 3: Levitate is the sole ability of its 17 species), not the current-ability column or the revealed-ability view; changes the production `x` cell for a Traced / Role-Played / Skill-Swapped / Transformed active mon | a base-ability obs column (unneeded: the premise holds); a known-ability fallback for revealed mons (needed only if a species held Levitate beside another ability) | Showdown gen-3 pokedex (node `Dex.mod('gen3')`, num <= 386); `static_port_test.py::test_the_spikes_entry_reads_the_species_levitate_not_the_current_ability`, `::test_every_gen3_species_levitate_prior_is_zero_or_one` |
+| 2026-10-09 | **FACT / JUDGMENT re-classification** (owner: "several rows marked J are actually FACTS, hard-to-compute quantities handed to the model so it doesn't spend capacity on them"; test owner-approved via the orchestrator) | §1 adopts the classification test (FACT: an event's probability or magnitude in its natural unit; JUDGMENT: mixes units with a chosen weight, assumes our later plan, or grades with a threshold; APPROXIMATE FACT: a fact with a shortcut, fix it). Re-sorted: P8 (all six) FACT, Substitute an AF; P6 `wasted_ko` FACT but redundant (a bisect candidate, §5 rank 11); `spin_value_lost` / `spin_denied` FACT, KEEP; P2 `neutralization` JUDGMENT as implemented and `tempo_cost` MOSTLY JUDGMENT, REPLACE with facts (§4 rank 4); O10 JUDGMENT, §5 rank 1; the KO ramp an AF, fix (§4 rank 3). §4 gains ranks 3-5, §5 rank 2 is rewritten and rank 11 added. The 2026-10-06 decline is kept as the factual record. `DamageOperator._rolls`' docstring ("exact realized KO probability") corrected, comment-only | keeping the old list as "judgments" (it hid facts from the model); removing the KO ramp instead of making it exact; replacing `neutralization` by a re-weighted sum (still a judgment) | owner 2026-10-09; code read at `f0869884`: `intent_threshold.py`, `switch_branch.py`, `pair_outcome.py`, `damage_op_blocks.pair_outcome_coords`, `damage_op._rolls`, `trackers/clock.rs::is_progress` |
