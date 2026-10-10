@@ -114,7 +114,7 @@ incoming-damage blocks, the archived TurnDelta slot):
 
 ## Static typing (mypy)
 
-This package is type-checked at **ZERO errors**, sharing `mypy.ini` (`files = src/agents/model, src/agents/observation`)
+This package is type-checked at **ZERO errors**, sharing `mypy.ini` (`files = src/agents/model, src/agents/observation, src/utils/disk_guard.py`)
 with the model package; the gate is `src/agents/model/mypy_gate_test.py`. **A loosening to clear something here
 silently de-tiers the model package — narrow with a targeted `# type: ignore[code]` + reason instead.** mypy types the
 ARRAY, not the INDEX: it cannot catch a wrong offset. Detail and the idioms:

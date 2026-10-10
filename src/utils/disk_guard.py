@@ -502,12 +502,13 @@ class InRunGuard:
         return Decision(OK, free, nxt)
 
 
-def is_disk_full(exc: BaseException) -> bool:
+def is_disk_full(exc: "BaseException | None") -> bool:
     """An ENOSPC / EDQUOT write failure, however it was wrapped."""
-    seen = set()
-    while exc is not None and id(exc) not in seen:
-        seen.add(id(exc))
-        if isinstance(exc, OSError) and exc.errno in (errno.ENOSPC, errno.EDQUOT):
+    seen: "set[int]" = set()
+    cur: "BaseException | None" = exc
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        if isinstance(cur, OSError) and cur.errno in (errno.ENOSPC, errno.EDQUOT):
             return True
-        exc = exc.__cause__ or exc.__context__
+        cur = cur.__cause__ or cur.__context__
     return False

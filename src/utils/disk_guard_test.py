@@ -289,3 +289,15 @@ def test_the_plan_reads_the_shared_root_only_when_sharing_is_on_and_creates_noth
     plan = dg.plan_from_values(run_dir=str(tmp_path / "run"), model_path=None, steps=98_304, resume_steps=0,
                                checkpoint_every_steps=None, eval_freq=None, fork=False, device="cuda")
     assert plan.shared_cache == sc
+
+
+def test_is_disk_full_takes_none_and_survives_a_cyclic_cause_chain():
+    """The mypy fix (the cursor is `BaseException | None`): `None` is not a disk-full error, and a
+    `__cause__` / `__context__` cycle terminates (the `seen` set) instead of looping."""
+    assert not dg.is_disk_full(None)
+    a, b = ValueError("a"), ValueError("b")
+    a.__cause__, b.__cause__ = b, a
+    assert not dg.is_disk_full(a)
+    full = OSError(errno.ENOSPC, "No space left on device")
+    b.__cause__ = full
+    assert dg.is_disk_full(a)
