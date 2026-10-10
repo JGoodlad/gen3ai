@@ -13513,3 +13513,10 @@ read both cells for its end-of-turn rule and found them wrong.
   size / no link possible; re-persist never writes through a link; survives the checkpoint's deletion; prune and groom
   leave the checkpoint intact; the prober's exact tier and `eval_trace_gen` read it). Docs: `eval_and_rating.md`, the
   training and prober leaves, the `--keep-eval-snapshots` help.
+
+## 2026-10-10 — TASK_BACKLOG: T16 (R1's fp64-REFERENCED startup gate) raised from rank 13 to rank 2
+
+- New evidence from the end-state GPU check (`measurements/gpu_checks_endstate_2026-10-09/README.md` F-GE-3): in the failing
+  graph ~15 parameters sat at 2-5e-3 compiled error against eager's 1e-6 (>= 1,000x), all UNDER the trained-regime bar
+  9.88e-3; only `choice_proj` tripped it. The per-regime constant bar is not an envelope, so a graph that is wrong across the
+  board can pass whenever its worst parameter stays under it. Ranks 2-12 shifted down by one.
