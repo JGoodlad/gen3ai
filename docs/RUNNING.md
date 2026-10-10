@@ -51,13 +51,18 @@ T27 P6) and nothing here imports it. `src/poke_env_absent_gate_test.py` guards b
 ## Training — no server required
 
 Training is **serverless**: the in-process Rust bridge is the only transport, and runs battles
-through an in-process reimplementation of the Gen 3 battle engine. Quick smoke (~1 minute, CPU):
+through an in-process reimplementation of the Gen 3 battle engine. Quick smoke (~2 minutes, CPU;
+set `GEN3AI_MODELS_DIR` to a scratch directory to keep a throwaway run out of `models/`):
 
 ```bash
+export GEN3AI_MODELS_DIR=$(mktemp -d)
 python src/main/train_rl_agent.py --debug --steps 10000
 ```
 
-Look for `[ModelVersion] Round-trip smoke test PASSED` early and `Training complete` at the end.
+Look for `🦀 [ENV CORE] rust` and `[ModelVersion] Round-trip smoke test PASSED` early and
+`Training complete` at the end. `--debug` skips evaluation; add `--debug-eval --eval-freq 4000` to
+run two in-process eval cycles as well (`--debug-eval` alone fires none: the default interval is
+2,000,000 steps).
 
 For real runs, use the **launcher** — it wraps the trainer with periodic restarts (memory
 hygiene), crash auto-restart from the last checkpoint, a terminal dashboard, and git-worktree
@@ -65,7 +70,7 @@ isolation (the run is pinned to its launch commit, so pushes to `main` never dis
 
 ```bash
 python -m main.launcher \
-  --restart-interval-hours 3 \
+  --restart-interval-hours 6 \
   --steps 15000000 \
   --device cuda --log-level periodic --arch production
 ```
@@ -87,7 +92,7 @@ Resume from a checkpoint (the launcher pins to the checkpoint's recorded commit)
 
 ```bash
 python -m main.launcher --model models/<run>/checkpoints/checkpoint_NNNN_steps.zip \
-  --restart-interval-hours 3 --steps 15000000 --device cuda
+  --restart-interval-hours 6 --steps 15000000 --device cuda
 ```
 
 On a resume an argv is not a config: every flag you do not name is inherited from the checkpoint's
@@ -95,16 +100,17 @@ On a resume an argv is not a config: every flag you do not name is inherited fro
 restores the checkpoint's own values. A bare run directory anywhere a model is expected means that
 run's **last snapshot** — name the `.zip` to pin a file.
 
-Checkpoints land in `models/run_<timestamp>/checkpoints/`; TensorBoard logs beside them
-(`tensorboard --logdir models/`).
+Checkpoints land in `models/rb_run_<timestamp>/checkpoints/` (the `rb_` prefix is the current
+era's code, `src/utils/era.py`); TensorBoard logs beside them (`tensorboard --logdir models/`). From
+a git worktree the run still lands in the MAIN checkout's `models/`.
 
-**`torch.compile` is on by default** — the CPU env-worker opponents (`--compile-opponents`, plus its
-forkserver preload) and, when the resolved device is `cuda`, the GPU learner (`--compile-trainer`,
-~1.75x on the PPO train step). The flags exist as fallbacks: `--no-compile-opponents` /
-`--no-compile-trainer` return to eager if the compiler is ever the suspect. Two things worth knowing
-before a launch: `--compile-trainer` announces itself at startup when the cuda default turns it on,
-and a compile failure there is FATAL by design rather than a silent fall back to a ~1.75x slower run. The CPU smoke above is unaffected — the trainer
-compile is off on `cpu` and off under `--debug`.
+**`torch.compile` is on by default for the GPU learner** (`--compile-trainer`, auto-on when the
+resolved device is `cuda`; ~1.75x on the PPO train step). `--no-compile-trainer` returns to eager if
+the compiler is ever the suspect. It announces itself at startup, and a compile failure there is
+FATAL by design rather than a silent fall back to a slower run. There is no opponent compile flag:
+opponents are served by the inference service (the old `--compile-opponents` flags are deleted,
+`designs/deleted_flags.md`). The CPU smoke above is unaffected — the trainer compile is off on `cpu`
+and under `--debug`.
 
 ## Tests
 
@@ -114,7 +120,7 @@ Two orthogonal marker axes: capability (*what a test needs* — `integration`, `
 | When | Command | ~Time |
 |---|---|---|
 | Fast inner loop | `pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` | ~1.5 min |
-| **The routine gate** (before any commit) | `pytest src/ -m "not slow and not e2e" -q -n 2` | ~4 min |
+| **The routine gate** (before any commit) | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.3 min (`-n 4` beside a training run) |
 | Everything (before a release/ship) | `pytest src/ -q` | ~47 min |
 
 Seventeen static gates run inside the suite, all declaring the `static` tier so they run in every tier:
@@ -141,7 +147,7 @@ node src/rust_sim/harness/ab_fuzz.js --battles 200
 
 ## The Showdown server (optional)
 
-Only the live-server paths need it — ladder play and `*_e2e_test.py`
+Only the live-server paths need it — `play.py` against a local server and the `*_e2e_test.py`
 scripts:
 
 ```bash
@@ -151,13 +157,13 @@ npm run stop                # stop :8000 (Ctrl+C orphans subprocesses — use th
 npm run stop -- 8001
 ```
 
-Convention on a shared box: 8000 = development, 8001 = training (`main.launcher` defaults to
-8001), anything ephemeral on 9XXX.
+Convention on a shared box: 8000 = development, 8001 = the standing training server (other tools
+use it; training itself connects to no server), anything ephemeral on 9XXX.
 
 ## Evaluation and forensics
 
 ```bash
-python src/main/play.py --mode selfplay --port 9017   # websocket client: selfplay/challenge/accept/ladder
+python src/main/play.py --mode selfplay --port 9017   # Rust-stack websocket client: selfplay/challenge/accept (ladder is REFUSED: we never play humans)
 python src/main/ladder_drift_scan.py --n 200      # pre-flight protocol-drift gate (public replays)
 python -m main.elo models/<run>                  # offline ELO ladder + Elo-vs-step curve
 python -m main.prober models/<run>               # forensic replay inspector (web UI, :6008)

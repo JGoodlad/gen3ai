@@ -1,8 +1,52 @@
 # Contributing to Gen3AI
 
 Contributions of any size are genuinely wanted — an idea, a question, a single test, or a
-subsystem. This page is the mechanical part: how to get a working checkout, what to run before
-you push, and the handful of local conventions that are not obvious from the code.
+subsystem. **What to work on** (the good-first list, drawn from real open items) is in the
+[README's Contributing section](README.md#contributing). This page is the mechanical part: how a
+contribution lands, how to get a working checkout, what to run before you open a pull request, and
+the handful of local conventions that are not obvious from the code.
+
+## How a contribution lands
+
+- **Outside contributors: fork, branch, open a pull request against `main`.** The maintainer works
+  differently — edits in git worktrees and pushes straight to `main` (see
+  [Git workflow](#git-workflow--never-commit-on-main)) — but that path is the maintainer's;
+  everything from outside comes in as a PR and is reviewed there.
+- **Open an issue first for anything bigger than a fix** — a new observation fact, a model change,
+  an experiment. A change to what the network reads is run as ONE lever with its own screen, so it
+  is scheduled, not merged blind.
+- **Proposing an experiment:** an issue stating the ONE lever, the question, the meter you would
+  read and the decision rule (what result keeps it, what kills it). Experiments here are
+  pre-registered before their first game; the queue is
+  [`designs/research_state/EXPERIMENT_BACKLOG.md`](designs/research_state/EXPERIMENT_BACKLOG.md)
+  and the evidence vocabulary is
+  [`designs/research_state/UNDERSTANDING.md`](designs/research_state/UNDERSTANDING.md) §0.
+- **"The model got this wrong" reports are contributions.** Link the battle in the prober's `/game`
+  view ([prober.g5d.io](https://prober.g5d.io)), name the turn, and say what you would have clicked
+  and why.
+
+### What a pull request needs
+
+1. **A test that fails if your fix is reverted** — for a mechanics bug, a named, deterministic pin
+   of the exact case. A test that passes either way is not a test of the fix.
+2. **A green test run you name in the PR.** The routine gate (below) is the default; a TARGETED set
+   you choose plus the static gates is fine when the blast radius is clearly contained — say which
+   tests you ran and why that scope is enough. Shared infrastructure, or any doubt, means the
+   routine gate.
+3. **Docs in the same PR.** If your change makes a `CLAUDE.md`, a `README.md` or
+   `designs/ARCHITECTURE.md` stale, fix it there (see
+   [Conventions](#conventions-worth-knowing-before-you-write-code)).
+4. **Mechanics claims verified at the source.** Anything about how Gen 3 works is checked against
+   `deps/pokemon-showdown/data/mods/gen3/` (and the generations it inherits from), with the file
+   named in the PR.
+
+### Conduct
+
+Be kind and direct; argue with ideas, not people. **Respect the people on Pokémon Showdown:** this
+project never plays, challenges or chats with human players — the ladder mode is refused in code
+(owner policy, 2026-10-07; `designs/endstate/design_ladder_campaign.md` Decision record), and
+public-server use is limited to low-volume self-vs-self challenges between our own accounts. A
+contribution that adds a way to contact or play humans will not be merged.
 
 The research context lives elsewhere and is worth reading if you want to work on the model:
 [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) is the only document that describes the
@@ -119,12 +163,13 @@ Two **orthogonal** marker axes. A *capability* marker says what a test **needs**
 | When | Command | ~Time |
 |---|---|---|
 | Inner loop — fastest true/false | `pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` | ~1.5 min |
-| **The routine gate — before any commit** | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.5 min (one at a time; `-n 4` beside a training run) |
+| **The routine gate — before any commit** | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.3 min (one at a time; `-n 4` beside a training run) |
 | Everything — before a release | `pytest src/ -q` | ~47 min |
 
-Those durations were measured on an idle box on 2026-08-14 and the tree has grown since; treat them
-as an order of magnitude, not a budget. The counts are current: 10,186 tests collected in all,
-10,105 in the routine gate, 9,979 in the inner loop.
+The routine gate's ~4.3 min at `-n 6` was measured on a quiet box on 2026-10-01
+([`designs/ops/testing.md`](designs/ops/testing.md)); the other two are older — treat them as an
+order of magnitude, not a budget. Counts collected 2026-10-09: 11,193 tests in all, 11,144 in the
+routine gate, 10,633 in the inner loop.
 
 | Marker | Means |
 |---|---|
@@ -169,13 +214,18 @@ One more guard the import path itself, and it is NOT a static-tier gate: `src/pa
 declarations by `src/utils/static_gates_test.py` (list them with `python -m utils.static_gates`). A missing linter **fails** rather than skips: a linter that silently opts out
 reads exactly like a linter that found nothing.
 
-**Fuzz tests are not parametrized unit tests.** In this repo a `*_fuzz_test.py` plays *real
-battles* through the in-process bridge and validates observations against the actual protocol
-stream. Run them directly as scripts:
+**Fuzz tests are not parametrized unit tests.** In this repo a fuzzer plays *real battles* and
+checks them against ground truth. The main one today is the Rust engine's A/B differential fuzzer:
+it drives the real Showdown sim and the Rust port side by side and saves a standalone repro for
+every divergence (`src/rust_sim/CLAUDE.md`, "A/B fuzzer"):
 
 ```bash
-python src/agents/action/fuzz_test.py 50
+node src/rust_sim/harness/ab_fuzz.js --mode random --battles 200
 ```
+
+Every divergence it finds becomes a named deterministic pin
+([`designs/rust_sim/regression_pins.md`](designs/rust_sim/regression_pins.md)). A pytest-collected
+test, by contrast, takes SEEDED battles from the Rust core, so it plays the same battle every run.
 
 **Benchmarks warn instead of scaling.** Wall-clock *bounds* scale by measured CPU contention
 (`src/utils/contention.py`), because this box usually carries a live training run and a timeout is
@@ -207,8 +257,11 @@ npm run stop -- 9001         # and only ever this one
 
 ## Git workflow — never commit on `main`
 
-There are no pull-request gates on this repo, but **`main` must never be dirty**. All edits and
-commits happen in a branch or a git worktree, and land on `main` by push:
+*This section is the MAINTAINER's workflow. Outside contributors fork and open a pull request
+([How a contribution lands](#how-a-contribution-lands)); the worktree notes below still help if you
+keep several branches checked out.* The maintainer works without pull requests, but **`main` must
+never be dirty**: all edits and commits happen in a branch or a git worktree, and land on `main` by
+push:
 
 ```bash
 git worktree add ../gen3ai-myfeature -b myfeature
@@ -230,12 +283,14 @@ failure exits without pushing. It never force-pushes — a rejected
 non-fast-forward means someone landed first, so rebase the worktree on `main`, resolve, and run it
 again. Run the routine gate yourself before you call it; the script gates statics, not the suite.
 
-🚨 **The export is mandatory in a worktree, and it is the one thing that fails silently.** A `.pth`
-entry cannot know which worktree you are standing in, so `pytest` run here with no `PYTHONPATH`
-collects *this* tree's test files while importing *main's* code — every result is then about a tree
-you did not edit. `bootstrap.sh` therefore **skips** the install step in a worktree rather than
+🚨 **The export is mandatory in a worktree for anything but pytest, and it is the one thing that
+fails silently.** A `.pth` entry cannot know which worktree you are standing in, so a
+`python <script>` run here with no `PYTHONPATH` imports *main's* code — every result is then about a
+tree you did not edit. `pytest` is covered for you: since 2026-10-07 the root `conftest.py` puts
+THIS checkout's `src/` first on `sys.path` and in `PYTHONPATH` for the session, its workers and
+every subprocess a test spawns. `bootstrap.sh` **skips** the install step in a worktree rather than
 pointing the `.pth` at a directory that will later be deleted, and `src/packaging_gate_test.py`
-fails loudly with exactly this diagnosis. Export first anyway.
+fails loudly on a stale one. Export first anyway.
 
 A fresh worktree gets an empty submodule directory and no build artifacts. `bootstrap.sh` detects
 a linked worktree and symlinks `dist/` and `node_modules/` from the main checkout rather than
@@ -280,8 +335,16 @@ to the launch commit — so pushing to `main` never disturbs a run in flight.
   `/home/…` used as a value.
 - **Architecture constants live in exactly one file**: `src/agents/model/arch_constants.py`.
 - **`data/` is the source of truth.** The runtime reads only `data/`, through the
-  `agents.gen3_data` facade — never live from poke-env. `tools/` is the only layer that knows
+  `agents.gen3_data` facade — never live from an upstream. `tools/` is the only layer that knows
   the upstreams.
+- **Priors are Smogon-derived, only.** Anything the network reads as a prior traces to Smogon
+  usage data, ground-truth labels or ladder replays; the training team pool may MEASURE structure
+  but never ships as a prior.
+- **Hand the network FACTS, not judgments.** A hand-computed feature is the probability or size of
+  a game event in its own unit (an HP fraction, a probability, turns, hazard layers). A weighted mix
+  of units, an assumption about our own later plan, or a good/bad threshold is a judgment, and the
+  network's job. The test and the inventory:
+  [`designs/endstate/design_hand_computed_features.md`](designs/endstate/design_hand_computed_features.md) §1.
 - **Any change under `src/agents/observation/` must run the encoder benchmark** before and
   after (`python -m agents.observation.rust_encoder_benchmark`) — the gate is in that
   package's `CLAUDE.md`.
@@ -298,8 +361,9 @@ to the launch commit — so pushing to `main` never disturbs a run in flight.
 pytest src/ -m "not slow and not e2e" -q -n 6     # the routine gate
 ```
 
-If something unrelated is red, `git stash` and re-run before blaming your change — this box
-often has a training run on it, and a duration measured under starvation is not a measurement.
+If something unrelated is red, re-run it on a clean checkout of `main` before blaming your change,
+and say so in the PR. A timeout on a busy machine is not a semantic failure: bounds scale with
+measured contention, but a duration measured under starvation is not a measurement.
 
 ---
 
