@@ -1,0 +1,10 @@
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-python3-515256.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_515266_rrdtpaqz for this process (gpu checks endstate ablate) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+
+E judged 240 [('history_events.stat_emb.weight', '1.07e-05'), ('history_events.status_emb.weight', '1.07e-05'), ('history_events.faint_emb.weight', '8.96e-06'), ('history_events.kind_emb.weight', '8.62e-06'), ('embeddings.item_embedding.weight', '7.99e-06')] 234.2s
+Traceback (most recent call last):
+
+E-move_resolution judged 231 [('history_events.status_emb.weight', '1.10e-05'), ('history_events.itemtr_emb.weight', '1.08e-05'), ('history_events.stat_emb.weight', '9.03e-06'), ('history_events.denial_emb.weight', '8.71e-06'), ('history_events.cant_emb.weight', '8.51e-06')] 216.3s
+Traceback (most recent call last):
+
+[mem_cap] done: gen3ai-capped-python3-515256.scope exit 143 · peak 10.46 GB of cap 24.00 GB (44%) · not OOM-killed

@@ -24031,3 +24031,43 @@ build reports it UNDRAWN; not fixed here). (2) Deferred GPU checks as for v152 (
 K9(b) on a real update, a real launch, the cost read).
 
 Tag: **BUILT · probe-battery facts · v153 · OFF · in `--arch endstate` · production byte-identical · GPU checks DEFERRED** · design: [`design_hand_computed_features.md`](../endstate/design_hand_computed_features.md) §4 rows 12-13
+
+### 2026-10-10 · MEASURED · **THE DEFERRED GPU CHECKS ON THE END-STATE GRAPH at `43a59bbd`: P (production) PASS and R (`--arch static_recovery`) PASS (R1 compiled == eager, T2 CUDA graphs, a real launch to the update-10 canary); R costs `train_ms` +14.8 %, rows/s −11.4 %, `UpdateFit` headroom −556 MiB; E (R + move-resolution + speed-physics + no value-threat-inject + principled + obs-facts) FAILS the R1 startup gate with a REAL Inductor compiled-gradient error (1,000× eager's own fp32 error vs float64), formed only by the conjunction obs-facts × move-resolution × principled × value-threat-inject off; the same offline probe reads CLEAN at `c0f528b4`**
+
+- **What ran.** These are the GPU checks that the static port (v147), F6b (v146), F7b (v143) and the
+  static-recovery levers (v150) had deferred, run under the lease. Three configurations were real `python -m
+  main.launcher --compile-trainer` launches pinned to `43a59bbd`, each stopped by the launcher's PID after 13
+  update tables. The throwaway run dirs were deleted after the read.
+- **P / R PASS.** The R1 startup gate (fresh + perturbed): worst per-parameter error 1.48e-5 (P) and 1.53e-5 (R).
+  The update-10 canary: 2.46e-5 and 1.88e-5. T2 built 3 `decide` graphs, R1 4 graphs, with 0 recompiles after the
+  lock and 0 cache-limit hits. The learner froze, and updates completed with no FATAL.
+- **Cost, R vs P** (quiet steady updates, n 2 and 5; the box carried a CPU probe battery, F-GE-6): `train_ms`
+  51.6 vs 44.9 s (+14.8 %), rows/s 1,632 vs 1,843 (−11.4 %), T2 GPU wait +11.0 %, `UpdateFit` headroom 2,110 vs
+  2,666 MiB. Compile time is not comparable (P's startup was contended). E's cost and `--trunk-layers 3`'s
+  isolated cost are NOT measured.
+- **E FAILS** `[CompileSentinel] FATAL`: `obs_facts_inject.choice_proj.weight` 1.13e-2 > the trained bar 9.88e-3.
+  - **It reproduces exactly offline.** The golden learner at the trainer's seed 42 is bit-equal to a launch's
+    init (276/276 hashes), and the gate's own perturbed rung on it gives the same error.
+  - **It is a compiled error, not noise.** The matched-noise method of `k6_k8/r1_noise` gives compiled vs fp64
+    1.1e-2 against CUDA eager 2.2e-6 and CPU eager 1.7e-6. About 15 more parameters sit at 2–5e-3 vs ≤ 7e-6, all
+    under the bar. `aot_eager` is bit-equal to eager, so the error is Inductor's code generation.
+  - **What was ruled out.** `noisy_or`'s `prod` backward alone, and ObsFactsInject's backward alone: both clean.
+  - **It is a conjunction of levers.** Reverting ANY one of obs-facts, move-resolution, principled, or
+    value-threat-inject-off reads clean (≤ 2.5e-5). Speed-physics off reads 6.1e-4.
+  - **The Inductor side is only probable.** Pattern-matcher off, or MATH-only SDPA, clears it, but that was read
+    on main-checkout code (the scripts imported main's src by path, F-GE-5), so it is UNVERIFIED at
+    `43a59bbd`. Which SDPA site is open.
+  - **It reads clean at `c0f528b4`** (P_prod at the time, `git archive`): the same probe gives 1.17e-5.
+  - **No fix shipped.** Both known switches are global and would change production's compiled path.
+
+FINDINGS: (1) E's `--compile-trainer` launch at `43a59bbd` is refused by the startup gate. At the closing-test
+commit, ONE real end-state launch to its update-10 canary is the proof (UNVERIFIED until then). (2) The defect
+depends on the whole graph, so any future lever can re-form it; the R1 gate and the canary are the only guards, and
+they worked. (3) In the failing graph about 15 parameters were about 1,000× off yet under the trained bar; the bar
+catches a graph through its WORST parameter only (a float64-envelope rule would catch the rest, at a cost). (4) The
+launcher's pinned worktree links `deps/pokemon-showdown` to the LAUNCHING checkout's submodule, so a launch from an
+un-bootstrapped agent worktree dies in team validation. (5) A diagnostic script run by path imports the MAIN
+checkout's code; main moved mid-hunt and silently flipped two reproductions. (6) Three diagnostic compiles in
+parallel OOM the 12 GiB card.
+
+Tag: **MEASURED · GPU checks · P PASS · R PASS (+14.8 % train_ms) · E FAIL at `43a59bbd` (compiled-gradient defect, conjunction of four levers; clean offline at `c0f528b4`) · no fix shipped** · measurements: [`measurements/gpu_checks_endstate_2026-10-09/`](measurements/gpu_checks_endstate_2026-10-09/README.md) · design: [`design_static_tokens.md`](../endstate/design_static_tokens.md) §10, §12.6, §13.6

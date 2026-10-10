@@ -1,0 +1,2 @@
+cuda_eager done
+compile worst: [('history_events.stat_emb.weight', '1.17e-05'), ('history_events.status_emb.weight', '1.14e-05'), ('history_events.faint_emb.weight', '9.26e-06'), ('history_events.kind_emb.weight', '8.50e-06'), ('embeddings.item_embedding.weight', '7.78e-06')]

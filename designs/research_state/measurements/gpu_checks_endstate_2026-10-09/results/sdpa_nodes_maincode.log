@@ -1,0 +1,69 @@
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-python3-792200.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_792209_ifolm124 for this process (gpu checks endstate sdpa nodes) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+
+{
+ "cfg": "E",
+ "inductor_counters": {
+  "pattern_matcher_count": 1821,
+  "pattern_matcher_nodes": 2172
+ },
+ "attention_nodes": [
+  {
+   "target": "aten._scaled_dot_product_efficient_attention.default",
+   "where": [
+    "File \"src/agents/model/extractor_forward.py\", line 758, in forward_internal",
+    "File \"src/agents/model/team_transformer.py\", line 485, in forward",
+    "File \"src/agents/model/team_transformer.py\", line 65, in forward"
+   ],
+   "count": 2
+  },
+  {
+   "target": "aten._scaled_dot_product_efficient_attention.default",
+   "where": [
+    "File \"src/agents/model/extractor_forward.py\", line 758, in forward_internal",
+    "File \"src/agents/model/team_transformer.py\", line 497, in forward",
+    "File \"src/agents/model/trunk_depth.py\", line 70, in forward"
+   ],
+   "count": 1
+  },
+  {
+   "target": "aten._scaled_dot_product_efficient_attention.default",
+   "where": [
+    "File \"src/agents/model/features_extractor.py\", line 282, in forward",
+    "File \"src/agents/model/extractor_forward.py\", line 1040, in forward_internal",
+    "File \"src/agents/model/pools.py\", line 177, in forward"
+   ],
+   "count": 2
+  },
+  {
+   "target": "aten._scaled_dot_product_efficient_attention_backward.default",
+   "where": [
+    "File \"src/agents/model/features_extractor.py\", line 282, in forward",
+    "File \"src/agents/model/extractor_forward.py\", line 1040, in forward_internal",
+    "File \"src/agents/model/pools.py\", line 177, in forward"
+   ],
+   "count": 2
+  },
+  {
+   "target": "aten._scaled_dot_product_efficient_attention_backward.default",
+   "where": [
+    "File \"src/agents/model/extractor_forward.py\", line 758, in forward_internal",
+    "File \"src/agents/model/team_transformer.py\", line 497, in forward",
+    "File \"src/agents/model/trunk_depth.py\", line 70, in forward"
+   ],
+   "count": 1
+  },
+  {
+   "target": "aten._scaled_dot_product_efficient_attention_backward.default",
+   "where": [
+    "File \"src/agents/model/extractor_forward.py\", line 758, in forward_internal",
+    "File \"src/agents/model/team_transformer.py\", line 485, in forward",
+    "File \"src/agents/model/team_transformer.py\", line 65, in forward"
+   ],
+   "count": 2
+  }
+ ]
+}
+Traceback (most recent call last):
+
+[mem_cap] done: gen3ai-capped-python3-792200.scope exit 143 · peak 6.92 GB of cap 32.00 GB (22%) · not OOM-killed

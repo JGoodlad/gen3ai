@@ -1,0 +1,5 @@
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-bash-846022.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+TypeError: scaled_dot_product_attention(): argument 'attn_mask' (position 4) must be Tensor, not float
+site=hopb cfg=E worst: [('history_events.status_emb.weight', '1.08e-05'), ('history_events.stat_emb.weight', '1.07e-05'), ('history_events.kind_emb.weight', '8.85e-06'), ('history_events.cant_emb.weight', '8.48e-06')]
+site=extra cfg=E worst: [('history_events.status_emb.weight', '1.11e-05'), ('history_events.stat_emb.weight', '1.11e-05'), ('history_events.kind_emb.weight', '9.48e-06'), ('embeddings.item_embedding.weight', '8.54e-06')]
+[mem_cap] done: gen3ai-capped-bash-846022.scope exit 0 · peak 7.68 GB of cap 24.00 GB (32%) · not OOM-killed

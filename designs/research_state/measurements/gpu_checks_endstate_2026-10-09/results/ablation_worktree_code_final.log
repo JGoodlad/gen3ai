@@ -1,0 +1,14 @@
+imports: /home/goodlad/dev/gen3ai/.claude/worktrees/agent-acced6eb99d98f7fa/src/agents/__init__.py /home/goodlad/dev/gen3ai/.claude/worktrees/agent-acced6eb99d98f7fa/src/utils/__init__.py /home/goodlad/dev/gen3ai/.claude/worktrees/agent-acced6eb99d98f7fa/src/main/__init__.py
+== variant E 23:50:02
+compile worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03'), ('edge_bias.d2_map.weight', '2.55e-03')]
+== variant E-obs_facts 23:53:06
+compile worst: [('history_events.cant_emb.weight', '1.61e-05'), ('history_events.itemtr_emb.weight', '1.37e-05'), ('history_events.denial_emb.weight', '1.24e-05'), ('history_events.faint_emb.weight', '9.72e-06'), ('embeddings.item_embedding.weight', '9.54e-06')]
+== variant E-move_resolution 23:56:08
+compile worst: [('history_events.status_emb.weight', '1.11e-05'), ('history_events.stat_emb.weight', '1.09e-05'), ('history_events.itemtr_emb.weight', '1.04e-05'), ('embeddings.ability_embedding.weight', '7.23e-06'), ('history_events.cant_emb.weight', '7.17e-06')]
+== variant E-op_reduction 23:58:57
+compile worst: [('hypothesis_builder.other_map.weight', '2.50e-05'), ('spread_belief.reinject.weight', '2.14e-05'), ('hypothesis_builder.other_rest', '1.91e-05'), ('hypothesis_builder.other_map.bias', '1.91e-05'), ('edge_bias.r_map.weight', '1.35e-05')]
+== variant E-speed_physics 00:02:01
+compile worst: [('edge_bias.r_map.weight', '6.10e-04'), ('history_events.faint_emb.weight', '4.36e-04'), ('op_worst_proj.weight', '3.98e-04'), ('embeddings.species_embedding.weight', '3.20e-04'), ('history_events.kind_emb.weight', '2.77e-04')]
+== variant E+value_threat_inject 00:04:58
+compile worst: [('history_events.itemtr_emb.weight', '8.64e-06'), ('embeddings.type_embedding.weight', '8.64e-06'), ('history_events.status_emb.weight', '8.64e-06'), ('history_events.faint_emb.weight', '6.92e-06'), ('embeddings.ability_embedding.weight', '6.82e-06')]
+== site none 00:08:03

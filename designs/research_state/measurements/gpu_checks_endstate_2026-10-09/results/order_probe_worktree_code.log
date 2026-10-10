@@ -1,0 +1,5 @@
+agents from /home/goodlad/dev/gen3ai/.claude/worktrees/agent-acced6eb99d98f7fa/src/agents/__init__.py
+cuda_eager done
+compile_reuse worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03'), ('edge_bias.d2_map.weight', '2.55e-03')]
+compile worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03'), ('edge_bias.d2_map.weight', '2.55e-03')]
+[mem_cap] done: gen3ai-capped-python3-992960.scope exit 0 · peak 8.46 GB of cap 24.00 GB (35%) · not OOM-killed

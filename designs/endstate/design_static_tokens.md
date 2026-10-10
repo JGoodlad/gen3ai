@@ -550,9 +550,9 @@ The other arms' launches are in the ledger entry for 2026-10-07 (F-ST-8 / F-ST-9
 the cost of the two extra trunk tokens in `train_ms` and the T2 flush; the compiled region / T2 graph with the
 board tokens and the op content.
 
-**DEFERRED to a GPU lease (both stages):** the compiled (Inductor) forward and backward on CUDA (the R1
-startup gate, `--compile-trainer`), the T2 compiled graph, the cost read (`train_ms`, T2 flush, `UpdateFit`
-headroom) against legacy at the same commit, and the X5 hypothesis-encoding time under `static`.
+**GPU checks (both stages): run 2026-10-09 inside `--arch static_recovery`** ([`measurements/gpu_checks_endstate_2026-10-09/`](../research_state/measurements/gpu_checks_endstate_2026-10-09/README.md); §13.6). They covered the
+R1 compiled forward + backward on CUDA, the T2 compiled graph, and the cost against legacy. `static` ALONE was not
+launched; the X5 hypothesis-encoding time under `static` is still not measured.
 
 ## 11. Findings
 
@@ -766,10 +766,12 @@ ability-known and species columns, HP and the status one-hot), so the Rust encod
 `--debug` smoke (`--arch production --debug --steps 10000`, auto-shaped) with `static`, both facts and the full bundle:
 `measurements/static_port_2026-10-09/README.md`.
 
-**12.6 DEFERRED to a GPU lease (the screen holds it):** compile parity forward + backward of `static` × the bundle ×
-both facts on CUDA (the R1 startup gate), T2's CUDA-graph build on the new graph (the F-ST-8 class; the key count is
-unchanged, 64), a real two-minute `--compile-trainer` launch, and the cost read (`train_ms`, the T2 flush, `UpdateFit`
-headroom) against legacy at the same commit.
+**12.6 GPU checks: RUN 2026-10-09 at `43a59bbd`** ([`measurements/gpu_checks_endstate_2026-10-09/`](../research_state/measurements/gpu_checks_endstate_2026-10-09/README.md)). They ran as part of R (`--arch static_recovery`)
+and E (R + the bundle). **R PASSES**: the R1 startup gate, T2's CUDA-graph build, a real launch to the update-10
+canary. **E (the bundle) FAILED the R1 startup gate** with a real compiled-gradient error, not noise. It needs the
+conjunction of `--obs-facts v1`, `--move-resolution on`, `--op-reduction principled` and the value-threat
+injection off. The same offline probe reads clean at `c0f528b4`, which leaves a real launch at the closing-test
+commit as the proof. Cost, R vs legacy (production): `train_ms` +14.8 %, `UpdateFit` headroom −556 MiB.
 
 ---
 
@@ -855,10 +857,12 @@ hand facts together < 0.1 % of the FLOPs. The arm: 2,020,228 extractor parameter
 `--arch static_recovery` passes (§4 there). Tests that fail on revert: `agents/model/static_recovery_test.py`
 (26 items), `main/train/arch_arms_test.py` (5), the smoke's `static_recovery` parametrization.
 
-**13.6 DEFERRED to a GPU lease:** compile parity forward + backward of the arm on CUDA (the R1 startup gate: the extra
-round's SDPA goes through `dense_attn_bias`, the F-ST-8 class), T2's CUDA-graph build on the deeper graph, a real
-two-minute `--compile-trainer` launch, and the cost read (`train_ms`, the T2 flush, `UpdateFit` headroom) against
-`static` and legacy at the same commit.
+**13.6 GPU checks: RUN 2026-10-09 at `43a59bbd`, the arm PASSES** ([`measurements/gpu_checks_endstate_2026-10-09/`](../research_state/measurements/gpu_checks_endstate_2026-10-09/README.md)). Compile parity forward + backward on
+CUDA passes: the R1 startup gate's worst per-parameter error is 1.53e-5, and the update-10 canary's 1.88e-5. T2's
+CUDA-graph build passes (3 `decide` graphs, 0 recompiles after the lock). A real launcher launch ran 13 updates with
+no FATAL. Cost against legacy (production) at the same commit: `train_ms` 51.6 s vs 44.9 s (**+14.8 %**), rows/s
+−11.4 %, T2 GPU wait +11.0 %, `UpdateFit` headroom 2,110 vs 2,666 MiB. NOT measured: the cost against `static` alone,
+and the isolated cost of `--trunk-layers 3`.
 
 ---
 

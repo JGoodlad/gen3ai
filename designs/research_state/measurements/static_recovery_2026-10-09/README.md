@@ -88,7 +88,8 @@ threads), so the wall is DESCRIPTIVE; the parameter and FLOP columns are exact.
 the attention itself), +31 % of the extractor's matmul FLOPs, but only ≈ +10 % of the eager CPU forward (the op and
 the encoders dominate the wall). Every hand fact together costs < 0.1 % in FLOPs. The combined arm against `static`:
 +135,168 extractor parameters, +31.5 % FLOPs, +9.9 % CPU forward; against legacy (production): +4.2 % parameters,
-+31.0 % FLOPs, +8.1 % CPU forward. The GPU cost (`train_ms`, the T2 flush) is a DEFERRED read.
++31.0 % FLOPs, +8.1 % CPU forward. The GPU cost was read 2026-10-09 (`../gpu_checks_endstate_2026-10-09/`): against legacy, `train_ms` +14.8 %,
+rows/s −11.4 %, T2 GPU wait +11.0 %, `UpdateFit` headroom −556 MiB.
 
 ```bash
 cd <checkout>/src && python -c "import runpy,sys; sys.argv=['cost.py','--reps','41']; \
@@ -104,8 +105,8 @@ update. **Both PASSED** (2026-10-09, `f0869884` + this build, under `scripts/ops
 at least one update with its metrics table, `Training complete.`; for `static_recovery` the run's `model_config.json`
 records every overlay key (static, the four `on` levers, `trunk_layers` 3) and `arch_source` starts
 `static_recovery@`. Wall 712 s (production) and 893 s (the arm) beside other load. Recorded in
-`designs/ops/slow_tier_status.json`. `--debug` is CPU, eager T2, no compile: the compiled / CUDA layer is NOT exercised
-(DEFERRED).
+`designs/ops/slow_tier_status.json`. `--debug` is CPU, eager T2, no compile: the compiled / CUDA layer is NOT exercised here. It PASSED on CUDA on
+2026-10-09: the R1 gate, T2, a real launch to the update-10 canary (`../gpu_checks_endstate_2026-10-09/`).
 
 ## 5. The observation
 

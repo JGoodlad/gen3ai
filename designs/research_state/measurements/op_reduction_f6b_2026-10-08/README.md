@@ -73,8 +73,12 @@ same with `--token-encoding static --move-resolution on --speed-physics on` (265
 PASSED, `[LEARNER FREEZE] released — 4 checks passed`, `Training complete`; `model_config.json` records
 `op_reduction: "principled"`, config 146.
 
-## Deferred (GPU; no lease)
+## GPU checks (run 2026-10-09: `../gpu_checks_endstate_2026-10-09/`)
 
-Compile parity of the `principled` forward and backward (the noisy-OR's `prod` backward under Inductor is UNVERIFIED);
-the T2 inference service's graph build on CUDA; a real launch's first two minutes; the GPU cost read (update wall,
-`train_ms`).
+- The noisy-OR's `prod` backward under Inductor on CUDA is CLEAN alone (compiled vs eager about 1e-7, exact zeros
+  and values near 1 included).
+- In the end-state bundle (E) at `43a59bbd`, the R1 startup gate FAILED with a compiled-gradient error that needs
+  `principled` together with `--obs-facts v1`, `--move-resolution on` and the value-threat injection off.
+  Reverting `principled` alone clears it, so it is not this module's own code. It reads clean at `c0f528b4`.
+- The T2 build passed in that launch.
+- Cost: not read (E never reached an update).

@@ -1,0 +1,215 @@
+{
+ "configs": {
+  "P": {
+   "kept_updates": [
+    7,
+    8,
+    10,
+    11,
+    12
+   ],
+   "contended_updates": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "t2_up_s": "846.9",
+   "r1_reset_prewarm_s": "240.0",
+   "start_to_first_update_s": 1214.0,
+   "startup_windows": 121,
+   "startup_windows_ge_1.05": 95,
+   "startup_max_factor": 2.1873,
+   "update_fit": {
+    "demand_mib": 8258.0,
+    "peak_alloc_mib": 6416.27685546875,
+    "reserved_mib": 8258.0,
+    "device_free_mib": 2666.5,
+    "card_mib": 10924.5,
+    "headroom_mib": 2666.5,
+    "headroom_required_mib": 1024.0,
+    "seconds": 13.301859667990357,
+    "oom": null
+   },
+   "canary": [
+    {
+     "verdict": "pass",
+     "update": 10,
+     "num_timesteps": 988928,
+     "time": 1791605183.1266747
+    }
+   ],
+   "graphs_total": [
+    4.0
+   ],
+   "recompiles_after_lock_max": 0.0,
+   "cache_limit_hits_max": 0.0,
+   "train/train_ms": {
+    "steady": 44948.1055,
+    "n_steady": 5,
+    "all_but_warm_DESCRIPTIVE": 44953.1406,
+    "n_all": 11
+   },
+   "cycle_fps": {
+    "steady": 1842.5,
+    "n_steady": 5,
+    "all_but_warm_DESCRIPTIVE": 1779.2,
+    "n_all": 11
+   },
+   "cycle_rollout_s": {
+    "steady": 8.41,
+    "n_steady": 5,
+    "all_but_warm_DESCRIPTIVE": 10.3,
+    "n_all": 11
+   },
+   "rust_env/gpu_wait_ms_per_host_step": {
+    "steady": 6.2739,
+    "n_steady": 5,
+    "all_but_warm_DESCRIPTIVE": 6.2739,
+    "n_all": 11
+   },
+   "rust_env/flush_ms_per_host_step": {
+    "steady": 0.7732,
+    "n_steady": 5,
+    "all_but_warm_DESCRIPTIVE": 1.0944,
+    "n_all": 11
+   },
+   "lifecycle/cuda_update_peak_reserved_mib": {
+    "steady": 8258.0,
+    "n_steady": 5,
+    "all_but_warm_DESCRIPTIVE": 8258.0,
+    "n_all": 11
+   },
+   "lifecycle/cuda_device_free_mib": {
+    "steady": 2666.5,
+    "n_steady": 5,
+    "all_but_warm_DESCRIPTIVE": 2666.5,
+    "n_all": 11
+   }
+  },
+  "R": {
+   "kept_updates": [
+    1,
+    2
+   ],
+   "contended_updates": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12
+   ],
+   "t2_up_s": "582.9",
+   "r1_reset_prewarm_s": "183.7",
+   "start_to_first_update_s": 889.4,
+   "startup_windows": 88,
+   "startup_windows_ge_1.05": 7,
+   "startup_max_factor": 1.6215,
+   "update_fit": {
+    "demand_mib": 8810.0,
+    "peak_alloc_mib": 6873.14111328125,
+    "reserved_mib": 8810.0,
+    "device_free_mib": 2110.5,
+    "card_mib": 10920.5,
+    "headroom_mib": 2110.5,
+    "headroom_required_mib": 1024.0,
+    "seconds": 15.117734557949007,
+    "oom": null
+   },
+   "canary": [
+    {
+     "verdict": "pass",
+     "update": 10,
+     "num_timesteps": 989184,
+     "time": 1791606870.8035467
+    }
+   ],
+   "graphs_total": [
+    4.0
+   ],
+   "recompiles_after_lock_max": 0.0,
+   "cache_limit_hits_max": 0.0,
+   "train/train_ms": {
+    "steady": 51585.623,
+    "n_steady": 2,
+    "all_but_warm_DESCRIPTIVE": 51233.1562,
+    "n_all": 11
+   },
+   "cycle_fps": {
+    "steady": 1631.8,
+    "n_steady": 2,
+    "all_but_warm_DESCRIPTIVE": 1556.3,
+    "n_all": 11
+   },
+   "cycle_rollout_s": {
+    "steady": 8.95,
+    "n_steady": 2,
+    "all_but_warm_DESCRIPTIVE": 12.13,
+    "n_all": 11
+   },
+   "rust_env/gpu_wait_ms_per_host_step": {
+    "steady": 6.9616,
+    "n_steady": 2,
+    "all_but_warm_DESCRIPTIVE": 6.9696,
+    "n_all": 11
+   },
+   "rust_env/flush_ms_per_host_step": {
+    "steady": 0.8089,
+    "n_steady": 2,
+    "all_but_warm_DESCRIPTIVE": 0.9318,
+    "n_all": 11
+   },
+   "lifecycle/cuda_update_peak_reserved_mib": {
+    "steady": 8810.0,
+    "n_steady": 2,
+    "all_but_warm_DESCRIPTIVE": 8810.0,
+    "n_all": 11
+   },
+   "lifecycle/cuda_device_free_mib": {
+    "steady": 2110.5,
+    "n_steady": 2,
+    "all_but_warm_DESCRIPTIVE": 2110.5,
+    "n_all": 11
+   }
+  }
+ },
+ "deltas_vs_base": {
+  "R": {
+   "train/train_ms": {
+    "steady": 14.77,
+    "all_but_warm_DESCRIPTIVE": 13.97
+   },
+   "cycle_fps": {
+    "steady": -11.44,
+    "all_but_warm_DESCRIPTIVE": -12.53
+   },
+   "cycle_rollout_s": {
+    "steady": 6.42,
+    "all_but_warm_DESCRIPTIVE": 17.77
+   },
+   "rust_env/gpu_wait_ms_per_host_step": {
+    "steady": 10.96,
+    "all_but_warm_DESCRIPTIVE": 11.09
+   },
+   "rust_env/flush_ms_per_host_step": {
+    "steady": 4.62,
+    "all_but_warm_DESCRIPTIVE": -14.86
+   },
+   "lifecycle/cuda_update_peak_reserved_mib": {
+    "steady": 6.68,
+    "all_but_warm_DESCRIPTIVE": 6.68
+   },
+   "lifecycle/cuda_device_free_mib": {
+    "steady": -20.85,
+    "all_but_warm_DESCRIPTIVE": -20.85
+   }
+  }
+ },
+ "base": "P"
+}

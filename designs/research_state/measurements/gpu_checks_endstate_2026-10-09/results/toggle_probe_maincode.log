@@ -1,0 +1,7 @@
+tf32 matmul False cudnn True precision highest
+base worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03')]
+no_pattern_matcher worst: [('history_events.stat_emb.weight', '1.20e-05'), ('history_events.status_emb.weight', '1.05e-05'), ('history_events.kind_emb.weight', '8.67e-06'), ('history_events.faint_emb.weight', '8.23e-06')]
+sdpa_math worst: [('history_events.status_emb.weight', '1.24e-05'), ('history_events.stat_emb.weight', '1.17e-05'), ('history_events.kind_emb.weight', '8.79e-06'), ('embeddings.item_embedding.weight', '7.89e-06')]
+no_split_reductions worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03')]
+deterministic worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03')]
+no_persistent_reductions worst: [('edge_bias.d1_map.weight', '8.85e-03'), ('cls_pool.norm_pool_our.weight', '8.62e-03'), ('cls_pool.our_cls_attn.out_proj.weight', '8.12e-03'), ('cls_pool.norm_pool_our.bias', '8.10e-03')]

@@ -1,0 +1,19 @@
+[mem_cap] cap 40.00 GB (swap 0) · unit gen3ai-capped-bash-578336.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_578346_ddvh5b6x for this process (gpu checks endstate order probe) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+cuda_eager done
+
+compile worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03'), ('edge_bias.d2_map.weight', '2.55e-03')]
+compile2 worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03'), ('edge_bias.d2_map.weight', '2.55e-03')]
+Traceback (most recent call last):
+=====
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_578345_zyje0z1z for this process (gpu checks endstate order probe) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+cpu_eager done
+fp64 done
+cuda_eager done
+cuda_eager vs first cuda_eager: max 2.0067210070945595e-08
+cuda_eager done
+
+compile worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03'), ('edge_bias.d2_map.weight', '2.55e-03')]
+compile2 worst: [('obs_facts_inject.choice_proj.weight', '1.13e-02'), ('hp_type_belief_head.reinject_proj.weight', '5.34e-03'), ('hp_type_belief_head.reinject_norm.weight', '2.62e-03'), ('op_content.outgoing_proj.weight', '2.58e-03'), ('edge_bias.d2_map.weight', '2.55e-03')]
+Traceback (most recent call last):
+[mem_cap] done: gen3ai-capped-bash-578336.scope exit 0 · peak 10.40 GB of cap 40.00 GB (26%) · not OOM-killed

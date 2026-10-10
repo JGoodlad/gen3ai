@@ -1,0 +1,1161 @@
+{
+ "cfg": "E",
+ "k": 0,
+ "model_seed": 42,
+ "B": 2048,
+ "torch": "2.8.0+cu126",
+ "note": "fresh build + perturbed_parameters(seed=rung_seed(0), scale=0.05)",
+ "loss": {
+  "R64": 1.0985942923682774,
+  "E32": 1.0985937118530273,
+  "C32": 1.098593831062317,
+  "X32": 1.0985939502716064,
+  "AOT": 1.0985937118530273
+ },
+ "summary": {
+  "gate": {
+   "max": 0.011269238470985689,
+   "n": 240,
+   "argmax": "features_extractor.obs_facts_inject.choice_proj.weight"
+  },
+  "c64": {
+   "max": 0.011269128034968157,
+   "n": 240,
+   "argmax": "features_extractor.obs_facts_inject.choice_proj.weight"
+  },
+  "e64": {
+   "max": 2.704259943770007e-06,
+   "n": 240,
+   "argmax": "features_extractor.spread_belief.ev_head.bias"
+  },
+  "x64": {
+   "max": 1.2916609724349209e-05,
+   "n": 240,
+   "argmax": "features_extractor.history_events.stat_emb.weight"
+  },
+  "ee_rep": {
+   "max": 2.4409206879451813e-08,
+   "n": 240,
+   "argmax": "features_extractor.pokemon_encoder.move_latent_encoder.mlp.0.bias"
+  },
+  "cc_rep": {
+   "max": 4.294782944819611e-06,
+   "n": 240,
+   "argmax": "features_extractor.history_events.cant_emb.weight"
+  },
+  "ee_cpu": {
+   "max": 1.348342613076972e-05,
+   "n": 240,
+   "argmax": "features_extractor.history_events.stat_emb.weight"
+  },
+  "aot_e": {
+   "max": 1.641658844677229e-08,
+   "n": 240,
+   "argmax": "features_extractor.pokemon_encoder.move_latent_encoder.mlp.0.weight"
+  },
+  "aot64": {
+   "max": 2.704259943770007e-06,
+   "n": 240,
+   "argmax": "features_extractor.spread_belief.ev_head.bias"
+  }
+ },
+ "outside_2x_eager_envelope": [
+  [
+   "features_extractor.embeddings.species_embedding.weight",
+   0.0011938481041579086,
+   1.1716584488115272e-06,
+   3.392056029227594e-06
+  ],
+  [
+   "features_extractor.embeddings.move_embedding.weight",
+   0.0009324334111166293,
+   1.23543707578282e-06,
+   7.2960397535752665e-06
+  ],
+  [
+   "features_extractor.embeddings.item_embedding.weight",
+   0.0008149645974073869,
+   1.7904850135261892e-06,
+   7.396979457374383e-06
+  ],
+  [
+   "features_extractor.embeddings.ability_embedding.weight",
+   0.000859037537162209,
+   1.0748209560951564e-06,
+   4.522109561534784e-06
+  ],
+  [
+   "features_extractor.embeddings.type_embedding.weight",
+   0.0008859062169880227,
+   1.4642354901109127e-06,
+   4.357547304666558e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_latent_encoder.mlp.0.weight",
+   0.001061511447488167,
+   1.3316017414039834e-06,
+   1.2256836590348504e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_latent_encoder.mlp.0.bias",
+   0.0011009057181628394,
+   1.2793222254551053e-06,
+   7.985888611707712e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_latent_encoder.mlp.2.weight",
+   0.0010868427517670511,
+   1.3843883647754031e-06,
+   1.1768929775915328e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_latent_encoder.mlp.2.bias",
+   0.0011138723650289978,
+   1.327605872673969e-06,
+   6.22759906722797e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_network.0.weight",
+   0.0009784742043475933,
+   1.2931419941197798e-06,
+   1.1404434393178166e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_network.0.bias",
+   0.0009790119129971845,
+   1.2222115990128958e-06,
+   5.431056056400909e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_network.2.weight",
+   0.0008359054165240563,
+   1.1169632651134057e-06,
+   1.0868866425057206e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_network.2.bias",
+   0.0008313242841126914,
+   1.0895425120897285e-06,
+   4.61422380826663e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_self_attn.in_proj_weight",
+   0.0007844944107801438,
+   1.082471748575579e-06,
+   1.8192252866238335e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_self_attn.in_proj_bias",
+   0.0008234930646177016,
+   9.89531197992075e-07,
+   4.418784319030371e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_self_attn.out_proj.weight",
+   0.0008066367486221912,
+   1.023094690849625e-06,
+   1.7169063839625382e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_self_attn.out_proj.bias",
+   0.0008318266698945195,
+   9.251133732196274e-07,
+   4.0485855550193784e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_self_norm.weight",
+   0.0009590502281456926,
+   9.527156363399632e-07,
+   3.6980944522355836e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_self_norm.bias",
+   0.000770505549749827,
+   9.603615701333468e-07,
+   2.6447845222764407e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.role_encoder.0.weight",
+   0.0007545127248150976,
+   1.0166313593313278e-06,
+   6.83074975409929e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.role_encoder.0.bias",
+   0.0006466358793362322,
+   9.623825105034332e-07,
+   3.826266889289316e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.role_encoder.2.weight",
+   0.0006060744907273208,
+   1.0225335907175492e-06,
+   6.389009716601498e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.role_encoder.2.bias",
+   0.0005135027267650506,
+   8.194649306926296e-07,
+   3.276038684327783e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_dyn_proj.weight",
+   8.841842966256709e-05,
+   1.0647092314856278e-06,
+   3.5760109885341845e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_dyn_proj.bias",
+   8.970575413598965e-05,
+   1.0932701440161359e-06,
+   7.375269497409398e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_dyn_pool.weight",
+   0.0007926188570176062,
+   1.18921063765907e-06,
+   5.711447761270878e-06
+  ],
+  [
+   "features_extractor.pokemon_encoder.move_dyn_pool.bias",
+   0.0007547960508870735,
+   1.153576116669947e-06,
+   4.1541975509095107e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.dynamic_encoder.0.weight",
+   0.0006633660178223901,
+   9.7250410813084e-07,
+   6.480782062163551e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.dynamic_encoder.0.bias",
+   0.000622321933474695,
+   9.26130177827199e-07,
+   3.6869941928014474e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.dynamic_encoder.2.weight",
+   0.0005486727583054535,
+   8.917770674541136e-07,
+   6.088784848748239e-07
+  ],
+  [
+   "features_extractor.pokemon_encoder.dynamic_encoder.2.bias",
+   0.0005135027267650506,
+   8.194649306926296e-07,
+   3.276038684327783e-07
+  ],
+  [
+   "features_extractor.entity_seats.tail_marker",
+   0.001322570528053711,
+   1.0170308988823915e-06,
+   5.18325713080084e-07
+  ],
+  [
+   "features_extractor.entity_seats.tail_proj.weight",
+   0.0012711236983222669,
+   1.0124451345716563e-06,
+   4.164103176239951e-06
+  ],
+  [
+   "features_extractor.entity_seats.tail_proj.bias",
+   0.001322570528053711,
+   1.0170308988823915e-06,
+   5.18325713080084e-07
+  ],
+  [
+   "features_extractor.entity_seats.move_seat_proj.weight",
+   8.376378069112044e-05,
+   1.475188097812211e-06,
+   9.217439679970216e-07
+  ],
+  [
+   "features_extractor.entity_seats.move_seat_proj.bias",
+   8.221852259299353e-05,
+   1.0809246458278775e-06,
+   6.324293776626273e-07
+  ],
+  [
+   "features_extractor.entity_seats.threat_seat_proj.weight",
+   0.0005784014918232015,
+   1.1407241645261306e-06,
+   1.3979727236180101e-06
+  ],
+  [
+   "features_extractor.entity_seats.threat_seat_proj.bias",
+   0.0006337335573705715,
+   1.0756297743548944e-06,
+   6.156096373399515e-07
+  ],
+  [
+   "features_extractor.edge_bias.d1_map.weight",
+   0.00016153915559764665,
+   2.3672302060576775e-06,
+   4.7748341728840494e-06
+  ],
+  [
+   "features_extractor.edge_bias.d1_map.bias",
+   0.00012587456092301848,
+   2.1836503038598297e-06,
+   1.0491057887820059e-06
+  ],
+  [
+   "features_extractor.edge_bias.d2_map.weight",
+   0.002552223084951946,
+   8.589627647876791e-07,
+   2.6564277787001653e-06
+  ],
+  [
+   "features_extractor.edge_bias.d4_map.bias",
+   0.00024525312258394356,
+   7.208289814500159e-07,
+   4.407208484279513e-07
+  ],
+  [
+   "features_extractor.edge_bias.v_map.weight",
+   0.0004911377616818725,
+   7.291418554154708e-07,
+   1.0094666371482723e-05
+  ],
+  [
+   "features_extractor.edge_bias.v_map.bias",
+   0.00024525312258394356,
+   7.208289814500159e-07,
+   4.407208484279513e-07
+  ],
+  [
+   "features_extractor.edge_bias.t_map.bias",
+   0.0002943729060360744,
+   8.036921421381475e-07,
+   4.7057121078479874e-07
+  ],
+  [
+   "features_extractor.edge_bias.x_map.weight",
+   9.012932428217422e-05,
+   5.106718790647481e-07,
+   1.503866652810514e-06
+  ],
+  [
+   "features_extractor.edge_bias.x_map.bias",
+   7.455014032002723e-05,
+   5.014514694152179e-07,
+   3.4185395904705e-07
+  ],
+  [
+   "features_extractor.edge_bias.g_map.bias",
+   5.961020106126697e-05,
+   7.528809677257711e-07,
+   2.2038861282055927e-07
+  ],
+  [
+   "features_extractor.edge_bias.c1_map.bias",
+   0.00012587456092301848,
+   2.1836503038598297e-06,
+   1.0491057887820059e-06
+  ],
+  [
+   "features_extractor.edge_bias.c3_map.bias",
+   0.00012579851945285672,
+   2.1836503038598297e-06,
+   1.0491057887820059e-06
+  ],
+  [
+   "features_extractor.edge_bias.h_map.weight",
+   0.000871353842165466,
+   8.640302424461476e-07,
+   1.1394313063228876e-05
+  ],
+  [
+   "features_extractor.edge_bias.h_map.bias",
+   0.0002943954952856873,
+   8.27047698648676e-07,
+   1.6405549671807857e-06
+  ],
+  [
+   "features_extractor.edge_bias.r_map.weight",
+   0.0008998586249127735,
+   1.6117453436481587e-06,
+   5.803248840181264e-06
+  ],
+  [
+   "features_extractor.edge_bias.r_map.bias",
+   0.0006415785676524805,
+   1.761009190696758e-06,
+   1.462090803824499e-07
+  ],
+  [
+   "features_extractor.team_transformer.token_type_emb.weight",
+   0.0007885303823889616,
+   8.731554543988726e-07,
+   1.236553916917073e-06
+  ],
+  [
+   "features_extractor.team_transformer.side_proj.weight",
+   5.8189913438517595e-05,
+   9.850581375637565e-07,
+   2.8835623847891536e-06
+  ],
+  [
+   "features_extractor.team_transformer.side_proj.bias",
+   5.668392890901975e-05,
+   1.0185426543021225e-06,
+   2.8170388321148167e-07
+  ],
+  [
+   "features_extractor.team_transformer.field_proj.weight",
+   2.6961163378144673e-05,
+   6.643335561045958e-07,
+   2.014280752025822e-06
+  ],
+  [
+   "features_extractor.team_transformer.field_proj.bias",
+   2.6940381462103932e-05,
+   5.922370606359029e-07,
+   2.55489906357973e-07
+  ],
+  [
+   "features_extractor.team_transformer.transformer_layers.0.in_proj.weight",
+   0.0006754763684149861,
+   1.1069091942851535e-06,
+   7.806867951103762e-07
+  ],
+  [
+   "features_extractor.team_transformer.transformer_layers.0.in_proj.bias",
+   0.0005038891634771306,
+   6.963381184112633e-07,
+   4.276370819064053e-07
+  ],
+  [
+   "features_extractor.team_transformer.transformer_layers.0.out_proj.weight",
+   0.0006591658965663562,
+   7.112970829623652e-07,
+   6.976449118836315e-07
+  ],
+  [
+   "features_extractor.team_transformer.transformer_layers.0.out_proj.bias",
+   0.0004650418131902465,
+   4.7095960194699465e-07,
+   2.803283690406205e-07
+  ],
+  [
+   "features_extractor.team_transformer.transformer_layers.0.linear1.weight",
+   0.0007354239449509386,
+   6.194442327489657e-07,
+   6.7961558695357e-07
+  ],
+  [
+   "features_extractor.team_transformer.transformer_layers.0.linear1.bias",
+   0.0005471794108697685,
+   4.628012939227724e-07,
+   2.6335143454028674e-07
+  ],
+  [
+   "features_extractor.team_transformer.transformer_layers.0.norm1.weight",
+   0.0005214875739577246,
+   5.413840136283174e-07,
+   1.9617074824343526e-06
+  ],
+  [
+   "features_extractor.team_transformer.transformer_layers.0.norm1.bias",
+   0.0004614180389700124,
+   4.77748710834197e-07,
+   2.065329991885579e-06
+  ],
+  [
+   "features_extractor.move_belief.reinject.weight",
+   0.0015810100007525917,
+   1.277198647768464e-06,
+   1.0106361085903494e-06
+  ],
+  [
+   "features_extractor.move_belief.reinject.bias",
+   0.0020644013742471766,
+   1.2978878576340937e-06,
+   8.11608091707935e-07
+  ],
+  [
+   "features_extractor.move_belief.norm.weight",
+   0.0022678682220847244,
+   1.2636515063241245e-06,
+   1.1895712949148685e-06
+  ],
+  [
+   "features_extractor.move_belief.norm.bias",
+   0.0019284497743449977,
+   1.3030299844291655e-06,
+   1.2287713248992478e-06
+  ],
+  [
+   "features_extractor.spread_belief.reinject.weight",
+   0.0005196984784902376,
+   1.7056583204123217e-06,
+   8.809756351919819e-06
+  ],
+  [
+   "features_extractor.spread_belief.reinject.bias",
+   0.0020965350228512427,
+   1.1865228880248564e-06,
+   6.889630207598042e-07
+  ],
+  [
+   "features_extractor.spread_belief.norm.weight",
+   0.002472741593861345,
+   1.5815124431256122e-06,
+   1.6922647262896931e-06
+  ],
+  [
+   "features_extractor.spread_belief.norm.bias",
+   0.0018910787039779528,
+   1.2040391391590258e-06,
+   1.2874091128264155e-06
+  ],
+  [
+   "features_extractor.spread_belief.nature_head.weight",
+   9.750068210012824e-05,
+   4.1776361962424116e-07,
+   4.763741007538149e-07
+  ],
+  [
+   "features_extractor.spread_belief.nature_head.bias",
+   9.078114207401539e-05,
+   2.4754988522655947e-07,
+   1.8495176086009266e-07
+  ],
+  [
+   "features_extractor.spread_belief.ev_head.weight",
+   0.0005694983902195452,
+   2.4636432466754283e-06,
+   2.6344724367569107e-06
+  ],
+  [
+   "features_extractor.spread_belief.ev_head.bias",
+   0.0005551075637446975,
+   2.704259943770007e-06,
+   2.187711706379956e-06
+  ],
+  [
+   "features_extractor.hp_type_belief_head.type_head.weight",
+   0.0002759705518670018,
+   6.732845840418977e-07,
+   5.977390030157398e-07
+  ],
+  [
+   "features_extractor.hp_type_belief_head.type_head.bias",
+   0.0003226094616454527,
+   6.220254968274471e-07,
+   2.2215928206526756e-07
+  ],
+  [
+   "features_extractor.hp_type_belief_head.reinject_proj.weight",
+   0.005338340011702614,
+   1.4539049708574663e-06,
+   1.3068130283836892e-06
+  ],
+  [
+   "features_extractor.hp_type_belief_head.reinject_proj.bias",
+   0.0021605718629485442,
+   1.3484369821924006e-06,
+   7.903204029756574e-07
+  ],
+  [
+   "features_extractor.hp_type_belief_head.reinject_norm.weight",
+   0.002619518263147401,
+   1.3225518871907856e-06,
+   1.1118947797877228e-06
+  ],
+  [
+   "features_extractor.hp_type_belief_head.reinject_norm.bias",
+   0.0020142565992086756,
+   1.2782720552473341e-06,
+   1.1476370556769694e-06
+  ],
+  [
+   "features_extractor.damage_op.out_gain",
+   0.0003796545829509016,
+   4.3101612520574904e-07,
+   2.3689166466113042e-07
+  ],
+  [
+   "features_extractor.prefuse_proj.weight",
+   0.0005353745435851172,
+   8.742851927105192e-07,
+   4.800314145602036e-07
+  ],
+  [
+   "features_extractor.prefuse_proj.bias",
+   0.0005000269727313862,
+   8.324206037640791e-07,
+   2.032159425641658e-06
+  ],
+  [
+   "features_extractor.op_content.amount_proj.weight",
+   0.0011054012188343454,
+   9.500413578043898e-07,
+   5.0462068942672015e-06
+  ],
+  [
+   "features_extractor.op_content.amount_proj.bias",
+   0.0008253181877879962,
+   8.710756493060557e-07,
+   3.49263624967778e-07
+  ],
+  [
+   "features_extractor.op_content.outgoing_cell.weight",
+   0.002041757916009304,
+   7.84897121893619e-07,
+   7.339445111886015e-06
+  ],
+  [
+   "features_extractor.op_content.outgoing_proj.weight",
+   0.0025826902661151984,
+   1.2520215522188435e-06,
+   8.238985681392809e-07
+  ],
+  [
+   "features_extractor.history_events.event_marker",
+   0.0006990496530798146,
+   7.695000622185511e-07,
+   1.5345589562410322e-06
+  ],
+  [
+   "features_extractor.history_events.kind_emb.weight",
+   0.0009709425695232223,
+   1.4837925040804527e-06,
+   8.61994742882783e-06
+  ],
+  [
+   "features_extractor.history_events.status_emb.weight",
+   0.0007292368122078184,
+   2.052537342686286e-06,
+   9.042897833496998e-06
+  ],
+  [
+   "features_extractor.history_events.cant_emb.weight",
+   0.0005288665234265689,
+   3.8997850876412593e-07,
+   6.307333955562201e-06
+  ],
+  [
+   "features_extractor.history_events.faint_emb.weight",
+   0.0019762796559394972,
+   2.2581417217687164e-06,
+   7.5719349716225914e-06
+  ],
+  [
+   "features_extractor.history_events.itemtr_emb.weight",
+   0.0008330559513690777,
+   7.373707243244805e-07,
+   2.29910417796842e-06
+  ],
+  [
+   "features_extractor.history_events.entry_emb.weight",
+   0.0007176019340792425,
+   7.760503483672514e-07,
+   5.9133695335321115e-06
+  ],
+  [
+   "features_extractor.history_events.denial_emb.weight",
+   0.00019375562670224215,
+   7.14096511636484e-07,
+   6.302738625075744e-06
+  ],
+  [
+   "features_extractor.history_events.stat_emb.weight",
+   0.0005832101564297742,
+   7.778861312844915e-07,
+   1.2916609724349209e-05
+  ],
+  [
+   "features_extractor.history_events.proj.weight",
+   0.000813338781683972,
+   8.187528708480203e-07,
+   5.46523976793496e-07
+  ],
+  [
+   "features_extractor.history_events.proj.bias",
+   0.0006813915120380741,
+   7.886299076687973e-07,
+   3.379610720594131e-07
+  ],
+  [
+   "features_extractor.history_events.norm.weight",
+   0.0009185609379470169,
+   7.789482282135366e-07,
+   1.2936881047632983e-06
+  ],
+  [
+   "features_extractor.history_events.norm.bias",
+   0.0006990496530798146,
+   8.63727073348323e-07,
+   1.3855420969890998e-06
+  ],
+  [
+   "features_extractor.obs_facts_inject.seen_proj.weight",
+   0.0008095197147763642,
+   9.29409088600795e-07,
+   2.667623274896422e-06
+  ],
+  [
+   "features_extractor.obs_facts_inject.seen_proj.bias",
+   0.0005000269727313862,
+   8.324206037640791e-07,
+   2.032159425641658e-06
+  ],
+  [
+   "features_extractor.obs_facts_inject.vol_proj.bias",
+   0.001880862330735015,
+   1.1675558322246574e-06,
+   4.6561751333660755e-07
+  ],
+  [
+   "features_extractor.obs_facts_inject.choice_proj.weight",
+   0.011269128034968157,
+   2.220435511682186e-06,
+   1.7386291447276227e-06
+  ],
+  [
+   "features_extractor.obs_facts_inject.screens_proj.bias",
+   5.668392890901975e-05,
+   1.0185426543021225e-06,
+   1.8328245035057103e-06
+  ],
+  [
+   "features_extractor.move_actor_proj.weight",
+   9.933267017929005e-05,
+   1.1990952211041677e-06,
+   2.101419946387904e-06
+  ],
+  [
+   "features_extractor.eot_residual_proj.weight",
+   0.0011382725022017926,
+   8.897382292712583e-07,
+   5.0548370476685865e-06
+  ]
+ ],
+ "secs": 320.4,
+ "focus": {
+  "features_extractor.obs_facts_inject.seen_proj.weight": {
+   "gate": 0.00080958171719098,
+   "c64": 0.0008095197147763642,
+   "e64": 9.29409088600795e-07,
+   "x64": 2.667623274896422e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 2.8291178549813642e-06,
+   "aot_e": 0.0,
+   "aot64": 9.29409088600795e-07,
+   "norm_frac": 0.02137908338824859
+  },
+  "features_extractor.obs_facts_inject.seen_proj.bias": {
+   "gate": 0.0005001259057858638,
+   "c64": 0.0005000269727313862,
+   "e64": 8.324206037640791e-07,
+   "x64": 2.032159425641658e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 2.17842496035332e-06,
+   "aot_e": 0.0,
+   "aot64": 8.324206037640791e-07,
+   "norm_frac": 0.016706053655068675
+  },
+  "features_extractor.obs_facts_inject.vol_proj.bias": {
+   "gate": 0.0018809290294868278,
+   "c64": 0.001880862330735015,
+   "e64": 1.1675558322246574e-06,
+   "x64": 4.6561751333660755e-07,
+   "ee_rep": 0.0,
+   "cc_rep": 1.282882326643598e-09,
+   "ee_cpu": 1.2751742748162977e-06,
+   "aot_e": 0.0,
+   "aot64": 1.1675558322246574e-06,
+   "norm_frac": 0.004539786142663711
+  },
+  "features_extractor.obs_facts_inject.choice_proj.weight": {
+   "gate": 0.011269238470985689,
+   "c64": 0.011269128034968157,
+   "e64": 2.220435511682186e-06,
+   "x64": 1.7386291447276227e-06,
+   "ee_rep": 1.813518204631492e-08,
+   "cc_rep": 2.6189267309111224e-08,
+   "ee_cpu": 2.334821037193085e-06,
+   "aot_e": 1.4513241515306989e-08,
+   "aot64": 2.220650297243119e-06,
+   "norm_frac": 0.001473094196873654
+  },
+  "features_extractor.obs_facts_inject.screens_proj.bias": {
+   "gate": 5.665770495433903e-05,
+   "c64": 5.668392890901975e-05,
+   "e64": 1.0185426543021225e-06,
+   "x64": 1.8328245035057103e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 2.0718695270062936e-06,
+   "aot_e": 0.0,
+   "aot64": 1.0185426543021225e-06,
+   "norm_frac": 0.006117312256225963
+  }
+ },
+ "per_param_top30_by_gate": {
+  "features_extractor.obs_facts_inject.choice_proj.weight": {
+   "gate": 0.011269238470985689,
+   "c64": 0.011269128034968157,
+   "e64": 2.220435511682186e-06,
+   "x64": 1.7386291447276227e-06,
+   "ee_rep": 1.813518204631492e-08,
+   "cc_rep": 2.6189267309111224e-08,
+   "ee_cpu": 2.334821037193085e-06,
+   "aot_e": 1.4513241515306989e-08,
+   "aot64": 2.220650297243119e-06,
+   "norm_frac": 0.001473094196873654
+  },
+  "features_extractor.hp_type_belief_head.reinject_proj.weight": {
+   "gate": 0.005338633709970814,
+   "c64": 0.005338340011702614,
+   "e64": 1.4539049708574663e-06,
+   "x64": 1.3068130283836892e-06,
+   "ee_rep": 9.60174681264734e-09,
+   "cc_rep": 1.3263852806880205e-08,
+   "ee_cpu": 1.4291953718373616e-06,
+   "aot_e": 8.73495483204836e-09,
+   "aot64": 1.454365015431872e-06,
+   "norm_frac": 0.00928859687752271
+  },
+  "features_extractor.hp_type_belief_head.reinject_norm.weight": {
+   "gate": 0.0026197943276409625,
+   "c64": 0.002619518263147401,
+   "e64": 1.3225518871907856e-06,
+   "x64": 1.1118947797877228e-06,
+   "ee_rep": 2.0732123689003797e-09,
+   "cc_rep": 4.665371464610119e-09,
+   "ee_cpu": 1.3416783642911268e-06,
+   "aot_e": 2.0732123689003797e-09,
+   "aot64": 1.3227465564095213e-06,
+   "norm_frac": 0.006282127636285493
+  },
+  "features_extractor.op_content.outgoing_proj.weight": {
+   "gate": 0.0025829450037327716,
+   "c64": 0.0025826902661151984,
+   "e64": 1.2520215522188435e-06,
+   "x64": 8.238985681392809e-07,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 1.1612957331154399e-06,
+   "aot_e": 0.0,
+   "aot64": 1.2520215522188435e-06,
+   "norm_frac": 0.0483227474367463
+  },
+  "features_extractor.edge_bias.d2_map.weight": {
+   "gate": 0.0025521615857999544,
+   "c64": 0.002552223084951946,
+   "e64": 8.589627647876791e-07,
+   "x64": 2.6564277787001653e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 2.7896394892327324e-06,
+   "aot_e": 0.0,
+   "aot64": 8.589627647876791e-07,
+   "norm_frac": 0.0011139880535649075
+  },
+  "features_extractor.spread_belief.norm.weight": {
+   "gate": 0.0024730353619830045,
+   "c64": 0.002472741593861345,
+   "e64": 1.5815124431256122e-06,
+   "x64": 1.6922647262896931e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 2.1303303122742265e-06,
+   "aot_e": 0.0,
+   "aot64": 1.5815124431256122e-06,
+   "norm_frac": 0.006548923075287493
+  },
+  "features_extractor.move_belief.norm.weight": {
+   "gate": 0.0022681380597321422,
+   "c64": 0.0022678682220847244,
+   "e64": 1.2636515063241245e-06,
+   "x64": 1.1895712949148685e-06,
+   "ee_rep": 4.456443392530493e-10,
+   "cc_rep": 1.6032470389479694e-08,
+   "ee_cpu": 1.5806828457487889e-06,
+   "aot_e": 6.302362577804247e-10,
+   "aot64": 1.263622565554046e-06,
+   "norm_frac": 0.006535023280422455
+  },
+  "features_extractor.hp_type_belief_head.reinject_proj.bias": {
+   "gate": 0.00216086309563351,
+   "c64": 0.0021605718629485442,
+   "e64": 1.3484369821924006e-06,
+   "x64": 7.903204029756574e-07,
+   "ee_rep": 0.0,
+   "cc_rep": 1.4283560445173974e-08,
+   "ee_cpu": 1.156960408485154e-06,
+   "aot_e": 0.0,
+   "aot64": 1.3484369821924006e-06,
+   "norm_frac": 0.006733865584147226
+  },
+  "features_extractor.spread_belief.reinject.bias": {
+   "gate": 0.002096746308103303,
+   "c64": 0.0020965350228512427,
+   "e64": 1.1865228880248564e-06,
+   "x64": 6.889630207598042e-07,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 1.1399021846991592e-06,
+   "aot_e": 0.0,
+   "aot64": 1.1865228880248564e-06,
+   "norm_frac": 0.007580030052752092
+  },
+  "features_extractor.move_belief.reinject.bias": {
+   "gate": 0.0020646614502368233,
+   "c64": 0.0020644013742471766,
+   "e64": 1.2978878576340937e-06,
+   "x64": 8.11608091707935e-07,
+   "ee_rep": 2.9576292401164312e-09,
+   "cc_rep": 8.137403471278168e-09,
+   "ee_cpu": 1.1039404391946606e-06,
+   "aot_e": 0.0,
+   "aot64": 1.2978878576340937e-06,
+   "norm_frac": 0.0019693446212257276
+  },
+  "features_extractor.op_content.outgoing_cell.weight": {
+   "gate": 0.00204163389029177,
+   "c64": 0.002041757916009304,
+   "e64": 7.84897121893619e-07,
+   "x64": 7.339445111886015e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 7.25552881059545e-06,
+   "aot_e": 0.0,
+   "aot64": 7.84897121893619e-07,
+   "norm_frac": 0.009946495746853202
+  },
+  "features_extractor.hp_type_belief_head.reinject_norm.bias": {
+   "gate": 0.0020144551134994282,
+   "c64": 0.0020142565992086756,
+   "e64": 1.2782720552473341e-06,
+   "x64": 1.1476370556769694e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 4.417407762405565e-09,
+   "ee_cpu": 1.4201971861352988e-06,
+   "aot_e": 2.9465798740957062e-09,
+   "aot64": 1.2784928149810705e-06,
+   "norm_frac": 0.007906917125866235
+  },
+  "features_extractor.history_events.faint_emb.weight": {
+   "gate": 0.0019754022177244563,
+   "c64": 0.0019762796559394972,
+   "e64": 2.2581417217687164e-06,
+   "x64": 7.5719349716225914e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 3.244411963979802e-06,
+   "ee_cpu": 6.756430061489591e-06,
+   "aot_e": 0.0,
+   "aot64": 2.2581417217687164e-06,
+   "norm_frac": 0.0011824185604782582
+  },
+  "features_extractor.move_belief.norm.bias": {
+   "gate": 0.001928723847282026,
+   "c64": 0.0019284497743449977,
+   "e64": 1.3030299844291655e-06,
+   "x64": 1.2287713248992478e-06,
+   "ee_rep": 6.176236588796346e-09,
+   "cc_rep": 1.5321321096435662e-08,
+   "ee_cpu": 1.5282177449633605e-06,
+   "aot_e": 0.0,
+   "aot64": 1.3030299844291655e-06,
+   "norm_frac": 0.007544518341760796
+  },
+  "features_extractor.spread_belief.norm.bias": {
+   "gate": 0.0018913263175124693,
+   "c64": 0.0018910787039779528,
+   "e64": 1.2040391391590258e-06,
+   "x64": 1.2874091128264155e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 1.6049371975948867e-06,
+   "aot_e": 0.0,
+   "aot64": 1.2040391391590258e-06,
+   "norm_frac": 0.008356887467847378
+  },
+  "features_extractor.obs_facts_inject.vol_proj.bias": {
+   "gate": 0.0018809290294868278,
+   "c64": 0.001880862330735015,
+   "e64": 1.1675558322246574e-06,
+   "x64": 4.6561751333660755e-07,
+   "ee_rep": 0.0,
+   "cc_rep": 1.282882326643598e-09,
+   "ee_cpu": 1.2751742748162977e-06,
+   "aot_e": 0.0,
+   "aot64": 1.1675558322246574e-06,
+   "norm_frac": 0.004539786142663711
+  },
+  "features_extractor.move_belief.reinject.weight": {
+   "gate": 0.0015811420760820302,
+   "c64": 0.0015810100007525917,
+   "e64": 1.277198647768464e-06,
+   "x64": 1.0106361085903494e-06,
+   "ee_rep": 9.323574204238061e-09,
+   "cc_rep": 1.2309046744456165e-08,
+   "ee_cpu": 1.2191336665377732e-06,
+   "aot_e": 1.1399199604782741e-08,
+   "aot64": 1.2775629999105259e-06,
+   "norm_frac": 0.013472710677387896
+  },
+  "features_extractor.entity_seats.tail_marker": {
+   "gate": 0.0013226985397269816,
+   "c64": 0.001322570528053711,
+   "e64": 1.0170308988823915e-06,
+   "x64": 5.18325713080084e-07,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 1.2052967747197318e-06,
+   "aot_e": 0.0,
+   "aot64": 1.0170308988823915e-06,
+   "norm_frac": 0.005372907775259929
+  },
+  "features_extractor.entity_seats.tail_proj.bias": {
+   "gate": 0.0013226985397269816,
+   "c64": 0.001322570528053711,
+   "e64": 1.0170308988823915e-06,
+   "x64": 5.18325713080084e-07,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 1.2052967747197318e-06,
+   "aot_e": 0.0,
+   "aot64": 1.0170308988823915e-06,
+   "norm_frac": 0.005372907775259929
+  },
+  "features_extractor.entity_seats.tail_proj.weight": {
+   "gate": 0.0012712322317443316,
+   "c64": 0.0012711236983222669,
+   "e64": 1.0124451345716563e-06,
+   "x64": 4.164103176239951e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 4.25743882647476e-06,
+   "aot_e": 0.0,
+   "aot64": 1.0124451345716563e-06,
+   "norm_frac": 0.006122329837240634
+  },
+  "features_extractor.embeddings.species_embedding.weight": {
+   "gate": 0.0011938746937125693,
+   "c64": 0.0011938481041579086,
+   "e64": 1.1716584488115272e-06,
+   "x64": 3.392056029227594e-06,
+   "ee_rep": 4.421034248539668e-09,
+   "cc_rep": 5.263877650586721e-07,
+   "ee_cpu": 3.5572487439763142e-06,
+   "aot_e": 4.240758688232592e-09,
+   "aot64": 1.1714936110369026e-06,
+   "norm_frac": 0.00807467111167125
+  },
+  "features_extractor.eot_residual_proj.weight": {
+   "gate": 0.0011384240302379327,
+   "c64": 0.0011382725022017926,
+   "e64": 8.897382292712583e-07,
+   "x64": 5.0548370476685865e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 5.082396195812757e-06,
+   "aot_e": 0.0,
+   "aot64": 8.897382292712583e-07,
+   "norm_frac": 0.001314333738460378
+  },
+  "features_extractor.pokemon_encoder.move_latent_encoder.mlp.2.bias": {
+   "gate": 0.0011139983641701126,
+   "c64": 0.0011138723650289978,
+   "e64": 1.327605872673969e-06,
+   "x64": 6.22759906722797e-07,
+   "ee_rep": 5.509217405530585e-09,
+   "cc_rep": 3.709693792353169e-08,
+   "ee_cpu": 1.3272170948791145e-06,
+   "aot_e": 7.791209839622389e-09,
+   "aot64": 1.3249627323510525e-06,
+   "norm_frac": 0.03383183100450197
+  },
+  "features_extractor.op_content.amount_proj.weight": {
+   "gate": 0.0011055615252591926,
+   "c64": 0.0011054012188343454,
+   "e64": 9.500413578043898e-07,
+   "x64": 5.0462068942672015e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 0.0,
+   "ee_cpu": 5.1654219023593975e-06,
+   "aot_e": 0.0,
+   "aot64": 9.500413578043898e-07,
+   "norm_frac": 0.016142632182665043
+  },
+  "features_extractor.pokemon_encoder.move_latent_encoder.mlp.0.bias": {
+   "gate": 0.0011010435434804131,
+   "c64": 0.0011009057181628394,
+   "e64": 1.2793222254551053e-06,
+   "x64": 7.985888611707712e-07,
+   "ee_rep": 2.4409206879451813e-08,
+   "cc_rep": 4.3894755067574073e-08,
+   "ee_cpu": 1.2726579482789117e-06,
+   "aot_e": 0.0,
+   "aot64": 1.2793222254551053e-06,
+   "norm_frac": 0.03054370188907091
+  },
+  "features_extractor.pokemon_encoder.move_latent_encoder.mlp.2.weight": {
+   "gate": 0.0010870169528259894,
+   "c64": 0.0010868427517670511,
+   "e64": 1.3843883647754031e-06,
+   "x64": 1.1768929775915328e-06,
+   "ee_rep": 1.2772558075495156e-08,
+   "cc_rep": 2.9389645291472312e-08,
+   "ee_cpu": 1.6879331936379744e-06,
+   "aot_e": 1.1031761160391041e-08,
+   "aot64": 1.3851401185270274e-06,
+   "norm_frac": 0.15232699869840835
+  },
+  "features_extractor.pokemon_encoder.move_latent_encoder.mlp.0.weight": {
+   "gate": 0.0010617027993469824,
+   "c64": 0.001061511447488167,
+   "e64": 1.3316017414039834e-06,
+   "x64": 1.2256836590348504e-06,
+   "ee_rep": 9.980527390077679e-09,
+   "cc_rep": 3.5476986372138654e-08,
+   "ee_cpu": 1.6218917091759194e-06,
+   "aot_e": 1.641658844677229e-08,
+   "aot64": 1.3321823594711352e-06,
+   "norm_frac": 0.12631725281640274
+  },
+  "features_extractor.pokemon_encoder.move_network.0.bias": {
+   "gate": 0.0009791212107750204,
+   "c64": 0.0009790119129971845,
+   "e64": 1.2222115990128958e-06,
+   "x64": 5.431056056400909e-07,
+   "ee_rep": 1.144484985052843e-09,
+   "cc_rep": 2.315352663021648e-08,
+   "ee_cpu": 1.2337777259398882e-06,
+   "aot_e": 9.227132959640864e-09,
+   "aot64": 1.2237576040943887e-06,
+   "norm_frac": 0.04071414363362791
+  },
+  "features_extractor.pokemon_encoder.move_network.0.weight": {
+   "gate": 0.0009786433503301433,
+   "c64": 0.0009784742043475933,
+   "e64": 1.2931419941197798e-06,
+   "x64": 1.1404434393178166e-06,
+   "ee_rep": 8.188241680348756e-09,
+   "cc_rep": 1.6478485553246706e-08,
+   "ee_cpu": 1.6127558589921697e-06,
+   "aot_e": 9.222602555619391e-09,
+   "aot64": 1.2931656051795805e-06,
+   "norm_frac": 0.2380164693256612
+  },
+  "features_extractor.history_events.kind_emb.weight": {
+   "gate": 0.0009708485328042428,
+   "c64": 0.0009709425695232223,
+   "e64": 1.4837925040804527e-06,
+   "x64": 8.61994742882783e-06,
+   "ee_rep": 0.0,
+   "cc_rep": 1.0413226751342226e-06,
+   "ee_cpu": 9.629568192089342e-06,
+   "aot_e": 0.0,
+   "aot64": 1.4837925040804527e-06,
+   "norm_frac": 0.0035926749524823882
+  }
+ }
+}
