@@ -86,57 +86,14 @@ see what we think it saw? A lot of that needs Pokémon knowledge more than ML kn
 
 ### Good first contributions
 
-Every item below is real open work, linked to where it's tracked.
-
-**1. Verify Gen 3 mechanics against Showdown (the GIGO hunt).** Our worst bugs have been quiet
-mechanics errors in what the network is told. The clearest example: for five months, **Baton Pass
-never passed its boosts** as far as the network could see. The engine got it right, but our client
-threw away the one protocol line that says a pass happened, so every run trained blind to it. That
-touched 22% of our team pool (172 of 773 teams), and the reward shaping of the time even penalized
-a successful pass. The owner spotted it from a single prober view; it was fixed on 2026-08-23 (`393532ce`;
-[research ledger](designs/research_state/ledger_index.md), "Baton Pass never carried its boosts").
-If you know an ADV interaction cold, pick a hand-computed rule in
-[`design_hand_computed_features.md`](designs/endstate/design_hand_computed_features.md) §2. Check it
-against `deps/pokemon-showdown/data/mods/gen3/` (and the generations it inherits from), then send a test that pins the
-case. Its §7 lists findings already made.
-
-**2. Add a hand-computed FACT** from the ranked ADD list in
-[`design_hand_computed_features.md` §4](designs/endstate/design_hand_computed_features.md). The
-smaller items:
-  - **Freeze Clause, per side** (rank 8, XS): the side token carries Sleep Clause but not Freeze Clause.
-  - **Future Sight / Doom Desire pending on the *target* side** (rank 9, S): today it's a bit on the
-    user, which is lost when the user switches.
-  - **Phazing's entry damage** (rank 7, S): the expected Spikes chip of the random mon Roar or
-    Whirlwind drags in.
-  - **The exact KO ramp** (rank 3): P(KO) over the 16 discrete damage rolls plus the crit, replacing a
-    smoothed approximation.
-
-  Each one must pass the doc's §1 test: it's the probability or size of a **game event**, never a
-  weighted judgment of what's good. If it's a prior, it's Smogon-derived. Each new fact is one lever
-  with its own screen, so please open an issue first.
-
-**3. Probe and prober views.** Make the prober usable on a phone (`/game`'s turn strip, intent bars
-and attention heat map: [`TASK_BACKLOG.md`](designs/ops/TASK_BACKLOG.md) T29), or add a view that
-answers a question the current ones can't. See [`src/main/prober/web/CLAUDE.md`](src/main/prober/web/CLAUDE.md).
-
-**4. Rust engine coverage and fuzzing.** Run the A/B differential fuzzer in its broader team modes
-(`node src/rust_sim/harness/ab_fuzz.js --mode random --battles 200`). Then turn each divergence into
-a named, deterministic regression pin
-([`designs/rust_sim/regression_pins.md`](designs/rust_sim/regression_pins.md)). Showdown's own
-random-battle generator (`--mode randbats`) reaches far more species and moves than our team pool.
-
-**5. Docs.** If a doc confused you, that's a bug in the doc. Fixing an always-current doc
-(`ARCHITECTURE.md`, a `CLAUDE.md`, a `README.md`) is as valuable as fixing code.
-
-**6. Competitive-player expertise.** You can contribute:
-  - **"The model got this wrong" reports**: a [prober.g5d.io](https://prober.g5d.io) `/game` link,
-    the turn, and what you'd have clicked and why. We have tooling built to turn "this move was bad"
-    into a measured answer.
-  - **Teams and sets**: good, legal ADV OU teams as Showdown exports (the pool lives under
-    `data/teams/others/`, with its sources in `sources.json`), and corrections to set or spread
-    assumptions.
-  - **ADV theory arguments** in issues: why the agent under-switches, what a stall team needs to
-    know, which interaction we're probably missing.
+| If you… | Try this | Start here |
+|---|---|---|
+| **know ADV mechanics** | Check a rule we hand the network against Showdown's source, and pin any mistake with a test. Bugs like this are real: for five months the network never saw Baton Pass carry boosts (fixed 2026-08-23). | [hand-computed features §2](designs/endstate/design_hand_computed_features.md), `deps/pokemon-showdown/data/mods/gen3/` |
+| **play competitively** | Send a "the model got this wrong" report: a `/game` link, the turn, and what you'd have clicked. Teams and set corrections are welcome too. | [prober.g5d.io](https://prober.g5d.io), `data/teams/others/` |
+| **want a small model change** | Add one game FACT from the ranked list, e.g. Freeze Clause per side, or Future Sight pending on the target's side. Open an issue first. | [hand-computed features §4](designs/endstate/design_hand_computed_features.md) |
+| **write Rust** | Run the A/B fuzzer against Showdown and turn each divergence into a regression test. | `node src/rust_sim/harness/ab_fuzz.js --mode random --battles 200`, [regression pins](designs/rust_sim/regression_pins.md) |
+| **build web UIs** | Make the prober work well on a phone (task T29). | [`src/main/prober/web/CLAUDE.md`](src/main/prober/web/CLAUDE.md) |
+| **found a doc confusing** | Fix it. A confusing doc is a bug. | any `README.md` or `CLAUDE.md` |
 
 ### Proposing an experiment
 
@@ -245,6 +202,8 @@ documentation for that area, written for human and AI contributors alike.
   ships as a prior.
 - **Facts, not judgments.** We hand the network exact game facts (damage, P(KO), speed order,
   hazard chip). Judgment about what's *good* is the network's job.
+- **Guards over good intentions.** When a silent bug is found, the fix ships with a structural check
+  (a static gate, a throwing guard) that makes the whole bug class fail loudly.
 
 ### Respect for players
 
@@ -253,8 +212,6 @@ leave that community better off. For our own work, that means we play the agent 
 against bots. We haven't taken it onto the public ladder, and we never chat with other players.
 If you run this code on Showdown yourself, please follow the server's rules and its policy on
 bots, and treat every opponent with respect.
-- **Guards over good intentions.** When a silent bug is found, the fix ships with a structural check
-  (a static gate, a throwing guard) that makes the whole bug class fail loudly.
 
 ---
 
