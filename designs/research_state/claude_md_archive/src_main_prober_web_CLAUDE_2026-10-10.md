@@ -1,0 +1,897 @@
+> **FROZEN SNAPSHOT — HISTORY, NOT CURRENT.** `src/main/prober/web/CLAUDE.md` byte-for-byte as it stood on 2026-10-10, before the cleanup that cut it to a map.
+> Its true detail moved to `designs/prober/web_service.md`, `designs/prober/web_pages.md` and `designs/prober/web_tests.md`; do not update this file.
+> Some lines below were already stale when snapshotted (e.g. ":8001 (live training)", the TUI-era `app.py` sentence).
+
+# CLAUDE.md — `src/main/prober/web/` (browser front end for the prober)
+
+A **third sibling** over the analysis engine. `engine/` is the analysis; the Textual TUI
+(`app.py`) and the JSON CLI (`query.py`) are two independent callers of it. This is a third — a
+FastAPI app whose handlers are a thin adapter over **`ProbeSession`**, the same facade `query.py`
+uses.
+
+```bash
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
+python -m main.prober.web models/                         # a models ROOT -> pick any run in it
+python -m main.prober.web models/run_<timestamp>          # one run -> the picker offers only it
+python -m main.prober.web models/ --port 6108 --job-workers 1 --open
+python -m main.prober.web models/ --impl rust             # the probes spawn the rust driver
+python -m main.prober.web --openapi                       # regenerate the committed contract
+python -m main.prober.web --check-openapi                 # the staleness gate (exit 1 if stale)
+```
+
+**This is the only human-facing surface** — the Textual TUI (`main.prober.app`) was retired
+2026-08-13. The rule it was built under still holds and matters more now: nothing here contains
+analysis. Every number comes from `ProbeSession`, so the browser and `query.py` cannot disagree
+about a run.
+
+## How to actually look at it
+
+**It is DEPLOYED at https://prober.g5d.io** — a `gen3ai-prober-web.service` systemd user unit
+binding `127.0.0.1:6008`, with `cloudflared` forwarding to it, exactly like TensorBoard (`:6006`)
+and the model viewer (`:6007`). The unit is reference-copied at
+`scripts/workstation/gen3ai-prober-web.service`; it is pointed at **`models/`** (not one run) so a
+new generation needs no restart — the header carries the run picker. **No Cloudflare Access**: the
+owner's decision (2026-08-09) is that this is an open-source model whose outcomes and traces are
+meant to be public, same posture as `model.g5d.io`.
+
+*(This section previously said "LOCAL ONLY — there is no g5d.io hostname for it". That was true
+when written and false by 2026-08-18, which is a good illustration of why deployment facts belong
+next to the thing deployed.)*
+
+```bash
+# ad hoc, on the workstation (the deployed instance is the systemd unit above)
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
+python -m main.prober.web /home/goodlad/dev/gen3ai/models/
+
+# from anywhere else without the tunnel, over SSH
+ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io   # then http://localhost:6008
+```
+
+`models/` exists only in the **main checkout**, never in a worktree — pass an absolute
+`models/...` path when serving from one.
+
+Operational detail is in `scripts/workstation/GCP_INFRASTRUCTURE.md` → *Prober web views*.
+
+### ⚠ ONE REVISION, or a 500 — the staleness contract
+
+**Jinja reloads a changed template from disk. Python cannot reload a changed module.** So a
+long-lived server drifts into serving NEW templates against OLD code, and that is not a stale page
+but a broken one.
+
+**Measured 2026-08-18**, and the shape is worth remembering: the service had been up **5 days**;
+every `/battle` for a current run returned **HTTP 500** —
+`UndefinedError: 'dict object' has no attribute 'win_prob'` — because a template shipped two days
+earlier read a key the running `session.py` predated. `Restart=always` never fired: **nothing had
+crashed.** systemd called the unit healthy, the tunnel agreed, and the only symptom was a user
+saying they could not load a game.
+
+Two mechanisms close it, and both are needed:
+
+1. **Templates are pinned to the process** (`templates.env.auto_reload = False`, set in
+   `create_app`). A stale process now serves a COHERENT old page instead of a hybrid. The cost is
+   real and accepted: editing a template locally needs a restart.
+2. **A watchdog replaces the process when it falls behind** —
+   `scripts/workstation/prober_web_watchdog.sh`, driven by a systemd `.timer` every 2 minutes. It
+   compares `/api/health`'s **`revision`** (the git sha of the source THIS PROCESS imported,
+   captured once, never re-read) against the repo's HEAD, and restarts on a mismatch. It **defers
+   while `jobs_running > 0`** — a restart kills a multi-minute `falsify_scan` — and it **verifies
+   the replacement actually came up on the new revision**, because "restarted successfully" into a
+   crash-loop is the same class of lie it exists to catch.
+
+`revision` is keyed on the SOURCE directory, not the process CWD: those coincide today and would
+silently diverge the moment anyone served a worktree. Known limit, stated rather than papered
+over: an **uncommitted** edit does not move HEAD, so it does not trigger a restart — correct on
+this box, where main only advances by commit, but hand-edit under the service and you restart it
+yourself.
+
+Gates: `staleness_test.py` (both halves — the pin asserted AND behaviourally proven by editing a
+template mid-process, each verified to fail when `auto_reload` is put back; the watchdog driven end
+to end through the real script with a stubbed `systemctl`, covering current / stale / no-revision /
+job-deferred / unit-stopped / unreachable).
+
+## The one rule
+
+**Every number rendered here comes back from a `ProbeSession` method verbatim.** This package
+reshapes nothing, derives nothing, and rounds nothing the session did not already round. If a page
+wants a figure the session does not return, the fix is a session method — not a computation in a
+handler. Otherwise the web view and the CLI start disagreeing about the same run, which is exactly
+the failure the engine/TUI/CLI split exists to prevent. `app_test.py` enforces it by comparing each
+JSON endpoint against a direct `ProbeSession` call on the same run rather than against
+hand-written expectations.
+
+## Run picker + path confinement (`runs.py`)
+
+Point the app at a **models directory** and it enumerates the runs inside it; point it at a
+**single run** and the picker offers exactly that one (the root is NOT widened to the parent —
+pointing at one run must never make its siblings reachable).
+
+**The security property: no client string is ever joined to a path.** The server enumerates the
+children of the models root, and a request's `run` value is only tested for MEMBERSHIP in that
+enumerated set. A traversal string cannot appear in a directory listing, so it cannot select
+anything. This is deliberately not input sanitisation — sanitising is a blocklist you can be wrong
+about; membership is an allowlist you cannot. `runs_test.py` is written as a list of attacks
+(`../../etc`, `%2e%2e%2f`, `run_a/../../x`, NUL bytes, absolute paths…) and each asserts that
+nothing resolves.
+
+**Symlinks are asymmetric, by the owner's decision (2026-08-09).** The launcher isolates each run
+in a git worktree and surfaces it into `models/` as a symlink — on this box the five newest runs,
+the whole current generation, are links into `.claude/worktrees/<name>/models/run_<ts>`. So:
+
+- a **direct child** of the models root may be a symlink; it is resolved ONCE at enumeration and
+  the resolved path becomes that run's canonical root;
+- **nothing deeper** may be — a run containing a symlink at any depth is REFUSED outright (loudly,
+  not skipped: a link planted inside a run is the one remaining way to read a file outside it).
+  The audit is a `followlinks=False` walk, cached per run (~7k entries on a real run).
+
+Errors never echo the rejected input — a rendered message must not become an oracle for mapping
+the filesystem.
+
+### The picker is three groups, not every directory (2026-10-09)
+
+The owner: *"clean up the model selection; 99 % are irrelevant."* On the real archive 38 of 323 runs have eval
+traces (all v136–v143, none at HEAD) and 285 are trimmed skeletons or launches mid-first-cycle. `list_runs()` rows
+now carry `tier` / `model_views` / `arch` beside `has_traces`, and the picker (`app._picker`) offers:
+
+- **Current architecture · full model views** — traces AND the model views can run;
+- **Older architecture · turn story only** — traces; every model-free view works, the model views are refused with
+  the typed reason (`arch_status`; an `unrecorded` run lands here too, labelled "architecture not recorded");
+- **No eval traces · nothing to inspect** — HIDDEN behind "show all N" (`?all_runs=1`, carried through the picker
+  form), except the run currently selected, which always stays in the list. Hiding is presentation: `resolve()` is
+  still membership in EVERY enumerated run, so a deep link to a skeleton opens (as an empty state).
+
+`has_traces` now means "at least one `eval_traces/step_<N>/`" (an empty directory is not traces). **The default
+run** (`RunStore.default_run`) is the newest CURRENT run with traces, else the newest run with traces, else — no
+traces anywhere — the newest run; the old "newest by mtime" opened a launch that had captured nothing. Each option
+reads `name · v<config_version>`. Classification is two small JSON reads per run (`model_config.json` + the newest
+eval manifest; **no checkpoint is opened to list** — `runs_test` booby-traps the zip machinery), cached by mtime.
+`/api/runs` returns EVERY run with its `tier` and `arch` block (clients filter); the 285-hidden figure is the
+picker's, not the API's. None of this touches the security properties above: no client string is joined to a path,
+`_SANE_NAME` still guards enumeration, the symlink audit still runs in `resolve()`.
+
+## Access: reading is anonymous, spending CPU is not (`auth.py`, `gate.py`)
+
+The model is open source and its outcomes are meant to be public, so **every read view is
+anonymous**. What is gated is not the DATA but the WORK, and "work" is two things: **background
+probes** (`falsify_scan`, `calibration`, the per-decision counterfactuals: Node re-rolls for minutes
+beside a live trainer) and **anything that loads a checkpoint or runs the model forward**
+(`/analyze`, `/game`'s model panels: seconds of CPU and a resident model, with the step chosen by an
+anonymous query string). A public endpoint that starts either is a free CPU-burn button.
+
+🚨 **THE RULE (2026-10-09): a route that loads a checkpoint, runs the model forward or starts a job
+carries a gate in its `dependencies=[...]` — `model_gate(next_url)` or `job_gate(next_url)` from
+`gate.py` — and nothing else checks `unlocked()` by hand.** The model-free turn story
+(`/api/game/story`, the page's story half) stays open. A locked `/api` or page route answers a plain
+403; a locked `/partials/...` HTMX target answers a 200 FRAGMENT (`partials/locked.html` for a job,
+`partials/model_locked.html` for the model) because HTMX swallows a non-2xx into a generic error. The
+fragment's unlock link returns to the page it was embedded in (`HX-Current-URL`, accepted only for
+`/game` and `/analyze` and passed through `_safe_next`). `/game` and `/analyze` render the model slot
+as that same card on first paint when locked — no request that would be refused — and the turn story
+renders either way. The gated routes document `403` in the OpenAPI contract.
+
+**The class guard is `gate_guard_test.py`, and it derives the route set from the CODE, never from a
+hand-kept list.** Leg 1 (static): the `ProbeSession` methods that reach model-loading code are computed
+by AST over `session/` (calls `_model_for` / `ProbeModel` / `capture_battle` / …, transitively through
+`self.`), each route handler is walked (its lambdas and the web helpers it calls), and a handler that
+calls a model-reaching method or `jobs.submit` MUST be gated in the route table — and a gated route MUST
+be expensive by that derivation, so the set cannot drift into decoration. Leg 2 (behavioural): every
+route is requested anonymously with `ProbeSession._model_for` and `JobRegistry.submit` replaced by
+recorders (nothing may be recorded; the expensive routes must answer locked), then again unlocked (each
+must reach a recorder — the proof the first sweep is not vacuous). **A new route is covered the moment
+it exists; a new model-loading session method is covered by the closure.** Proven to fail with a gate
+removed from `/api/game/readout` or `/api/analyze`.
+
+One **shared password**, no usernames, no email — handed out in Discord. It unlocks the gated work and
+nothing else.
+
+```bash
+# the secret never goes in argv (a command line is world-readable in `ps`)
+export GEN3AI_PROBER_PASSWORD_FILE=~/.config/gen3ai/prober-password   # preferred
+export GEN3AI_PROBER_PASSWORD='…'                                     # or inline
+python -m main.prober.web models/ --open      # laptop mode: no password, jobs open
+```
+
+On this box the secret lives at `~/.config/gen3ai/prober-password` (mode 0600) and only the *path*
+is exported — from `~/.config/environment.d/60-gen3ai-prober.conf` (systemd user services, at
+boot), `~/.profile` (login shells, including non-interactive) and `~/.bashrc` (interactive
+non-login shells). None of those files contains the password. `.profile` is not redundant:
+Ubuntu's `.bashrc` returns early when not interactive, so an export appended there is invisible to
+`bash -lc`. Operational detail: `scripts/workstation/GCP_INFRASTRUCTURE.md`.
+
+**The password is never written into this repository** — not in a doc, not as a test fixture. The
+tests use an obviously-fake `test-only-password`; a committed test file publishes a secret exactly
+as effectively as a committed doc does.
+
+What keeps a low-entropy shared password honest: constant-time comparison; an HMAC-signed cookie
+rather than the password itself (HttpOnly, SameSite=Lax — which is also the CSRF story for the job
+POSTs); a signed 14-day expiry; a signing key that SURVIVES restarts but is bound to the password (below); and **two**
+rate limits. **It fails CLOSED** — with no password configured the probes and the model views are off, not open, so an
+operator who forgets the secret publishes a read-only site rather than a CPU-burn button.
+
+**The unlock outlasts a restart (2026-10-09).** The cookie key used to be minted per process, so every
+restart logged everyone out — and this service restarts many times a day (the watchdog above replaces
+it whenever main's HEAD moves; the orchestrator restarts it after fixes). Now `create_app(...,
+cookie_key_file=...)` (passed by `__main__` whenever a password is configured; `None` — unit tests,
+`--open` — keeps a per-process key) loads a 32-byte key from a mode-0600 file,
+`$GEN3AI_PROBER_COOKIE_KEY_FILE` else `~/.local/state/gen3ai/prober_cookie_key`, created atomically
+on first start (`load_or_create_key`: temp file + `link()`, race-safe). The key that SIGNS is
+`HMAC(file_key, SHA256(password))`, so **changing the shared password still ends every session**
+(and the key file alone forges nothing). A missing or wrong-size file is regenerated (old cookies
+die); a file looser than 0600, owned by another user, a symlink or not a regular file is REFUSED
+(`CookieKeyError`) and `Auth` falls back to a per-process key with a logged warning
+(`Auth.key_persisted` is False) — never signs with a key someone else could have read. Pinned by
+`auth_test.py`'s "signing key outlives a restart" block. The service must be restarted ONCE to pick
+this up; that restart is the last one that logs anyone out.
+
+**Why TWO rate limits, and why `_client` is fussy about headers.** The first version keyed the
+throttle on `CF-Connecting-IP` (falling back to `X-Forwarded-For`) read unconditionally. An
+adversarial review defeated it completely: rotating the header per request gave **500/500 guesses
+with the cooldown never firing**, and spoofing someone else's address could lock THEM out. Two
+changes followed, and the second is the one that matters:
+
+1. `app._client` honours the forwarding header **only from a trusted peer** (loopback — which is
+   where `cloudflared` sits, and Cloudflare's edge overwrites a client-supplied `CF-Connecting-IP`).
+   `X-Forwarded-For` was dropped entirely rather than trust-gated: it is the append-friendly one.
+   When this is wrong it now over-throttles rather than under-throttles.
+2. `auth.py` adds a **global** cap (`_GLOBAL_MAX_FAILURES` in `_GLOBAL_WINDOW_SECONDS`) on top of
+   the per-client one. A keying scheme is exactly the thing that gets quietly weakened again, so
+   "you cannot brute-force this at request rate" must not depend on keying being right. The global
+   cap holds even if every request presents a fresh identity, and a successful login deliberately
+   does **not** reset it.
+
+The failure map is also bounded (`_MAX_TRACKED_CLIENTS`, LRU-evicted) — it is written by anonymous
+requests, and unbounded it was an attacker-controlled memory leak (3000 spoofed identities left
+3000 permanent entries).
+
+This is a speed bump, not a security boundary, and it is sized for what is behind it: "may spend
+some CPU", not "may read private data".
+
+## Information flow (why the pages are shaped the way they are)
+
+**`/game` is THE battle viewer** (2026-10-09): the classic `/battle` replay was MERGED into it and
+`/battle` answers 307 to `/game` (`start=N` → `turn=N`), so every old link lands on the same battle and
+turn. `/analyze` has no nav tab (it is a per-DECISION page, opened from every decision in the viewer and
+every scan row). Every battle surface links INTO `/game` anchored on the decision (`game_test.py`,
+`app_test.py` pin both). Why the page is shaped as it is, and everything removed:
+`designs/prober/battle_viewer_ux_2026-10-09.md`.
+
+The TUI's standing complaint was that *the information didn't flow*. These are the deliberate
+answers, each pinned by a test in `app_test.py` → "usability / information flow":
+
+- **The nav follows the documented investigation recipe**, not the order the views were written:
+  `run → triage → scan → battles → falsify → calibration`. `src/main/prober/CLAUDE.md` says of
+  triage *"start here for 'what next'"*, and `_NAV` now agrees with it.
+- **`/` carries a "where to start" card** — the five views in recipe order, each with the QUESTION
+  it answers (`VIEW_QUESTIONS` in `app.py`). Six equal tabs answering six different questions and
+  saying so nowhere is the flow complaint restated.
+- **A context strip on every page** names the run, its step count and its W/L. Without it the run
+  being viewed lives only inside a dropdown, and a screenshot of a chart records nothing.
+- **Scan rows are not dead ends.** Each row carries `data-battle-id` and copy buttons for the id
+  and for the exact `python -m main.prober.query analyze <id> <inv>` line. The table names the
+  decision that lost the battle; `analyze` is deliberately not a web view (checkpoint + state), so
+  the honest continuation is the command.
+- **First paint is populated where that is cheap.** Measured on a real run: battles **119 ms**,
+  triage **436 ms**, scan **2006 ms**. Battles and triage render server-side (HTMX only fires on
+  `change`); scan stays async because 2 s of white page is worse than a page that fills in — and
+  its waiting state says what it is doing rather than "loading…".
+- **The battles table is capped at `_BATTLE_PAGE` (200) and says so.** Uncapped it emitted 2397
+  rows / 545 KB, which is a download rather than a table.
+- **`/battles` preselects the NEWEST eval step, and its rows open the replay.** A run holds every
+  cycle it ever ran; the question behind opening the page is essentially always "what is the
+  *current* model doing", and an all-steps default answered that with a 200-row cap sliced out of
+  an arbitrary mixture of checkpoints. "All steps" stays one selection away. Each row then carries
+  `data-href` (a delegated handler in `app.js` navigates on a row click, ignoring clicks that land
+  on a button or link) **and** a real `<a>` in the id cell — the `<a>` is what makes it work with
+  JavaScript off, gives the row a keyboard tab stop, and lets open-in-new-tab behave; a JS-only row
+  click has none of those.
+- **SENTINELS COME FIRST on `/battles`** — in the opponent dropdown (`_opponents`) and in the rows
+  themselves (`_by_opponent_strength`), both through the one shared key `engine.opponent_rank`. A
+  sentinel is the trainee against a recent SELF, so those games say most about where the model is
+  now; scattered alphabetically among nine fixed bots they were something to hunt for, and with the
+  200-row cap a sentinel game could be cut entirely by an alphabetical accident.
+  ⚠ **`sentinel_0` is the STRONGEST, not the oldest.** The index is a strength rank and the labels
+  FLOAT — a promotion re-seats every sentinel — so ascending index is descending strength. Getting
+  that backwards would put the weakest opponent at the top of the list while looking equally
+  deliberate, which is why `test_sentinel_zero_is_the_STRONGEST_and_sorts_first` says so in its
+  name. The fixed bots are moved as a BLOCK in their existing order rather than re-sorted: ranking
+  them by strength is a different claim, and the ELO ladder owns it.
+  `/api/battles` is deliberately NOT reordered — row order is a presentation choice about which
+  rows a human meets first, and a machine client asked for the run's battles, not for this page's
+  opinion about them.
+- **The run picker is grouped by architecture, not by name** (`_picker`; the old `_group_runs` generation buckets
+  are gone): current · older · hidden-no-traces. See *The picker is three groups* above.
+- **Cryptic columns explain themselves** via `title=` (`inv`, `ΔV`, `TD δ`), and `wp_coverage=0`
+  is rendered as prose rather than a bare stat — it means the winning/behind split fell back to
+  `V > 0`, which the project's own docs call systematically wrong, so it belongs next to the two
+  categories it distorts.
+
+## The critic's CURRENCY, and the thresholds that depend on it
+
+The win-prob critic (the only critic) makes V a **probability in [0,1]** instead of a shaped return of roughly ±30,
+and `values` then EQUALS `win_probs`. Nothing here computes that — `ProbeSession.critic_currency()`
+does, and it rides `run_summary()`, `battle_turns()`, `analyze()` and `calibration()`. This package
+only has to stop CONTRADICTING it.
+
+**The regression worth remembering: a "default" typed into a handler is not a default.** `/api/triage`
+declared `v_even: float = Query(0.0)` and `/calibration` `overvalue_tau = Form("5.0")`, so both
+reached the session as **EXPLICIT** arguments and defeated its per-currency resolution entirely —
+the engine's `if v_even is None` branch was dead code on every web request. Both are now `None`/blank
+by default (`_form_opt_float` keeps "unset" and "the user typed a number" tellable apart, and treats
+an unparseable value as unset rather than as a threshold). The calibration form's placeholder shows
+the run's own `default_overvalue_tau`, so the hint cannot drift from the resolver.
+
+The consequence on a winprob run was not cosmetic: a shaped τ of 5.0 exceeds the whole range a
+probability gap can occupy, so `critic_overvalued` read a confident **0%** for units reasons alone.
+`calibration_result.html` now renders the engine's **`threshold_warning`** ABOVE the numbers it
+invalidates — generating that sentence and discarding it in the template is the same defect one
+layer up.
+
+`/` names the mode in its stat strip and spells out the units, because a reader who does not learn
+it on the orientation page carries the shaped scale into every later V. `/battle`'s legend, the
+per-turn V tooltip and `/analyze`'s critic card all branch on `is_probability`; under winprob they
+say P(win) **is** V rather than describing it as "the readable complement to V", and mark the P(win)
+tiles `= V`. Two panels showing one number while the copy promises two estimators is a reader trap,
+not a redundancy.
+
+**The reliability charts follow the currency too.** On a win-prob critic the curve is a genuine
+PROBABILITY CALIBRATION — predicted P(win) against the realized win rate — because `values` IS
+P(win) and G is the terminal win indicator at γ=1. Its axes therefore read `predicted P(win)` /
+`realized win rate` rather than `recorded V(s)` / `realized return G(s)`, and the gap chart's y-axis
+reads `gap (pp)`, since a difference of two probabilities is percentage POINTS. That is not a
+styling preference: labelling 0..1 axes as a "return" invites the reader to hunt for a shaped scale
+that is not there — the same units confusion `overvalue_tau` encoded as a number, restated in prose.
+`charts_test.py` pins both eras, including that the winprob spec contains the string "realized
+return" nowhere.
+
+**DEAD under this era — listed for the era-boundary purge, deliberately NOT deleted here.** The
+dist head is not built (`value_dist_mode == "none"`; since L1 the head cannot be built at all, and no new trace carries `value_dist`), so every awareness surface degrades to empty.
+Nothing 500s; the cost is real estate and a reader wondering what is broken:
+
+| surface | state |
+|---|---|
+| `index.html` "did it know?" card | heading + 6-line blurb always render; the swap fills with `{{ data.error }}` — a permanently empty card, second section of the landing page |
+| `scan_table.html` `knew @` / `lead` columns | headers always render, every cell `—` |
+| `triage_table.html` `blind` / `median lead` columns | same |
+| `/api/awareness`'s `lead_bar`/`cap_turn`/`stall_bar` | inert (`app.py::_value_dist_spec`, their `/battle` chart, was DELETED in L1) |
+
+Purging them is the remaining awareness-vertical deletion (the head and its model-side views are gone, L1; the owner has permitted deleting prober pieces — a census candidate, not done here).
+
+**The era's offline instruments are LINKED from `/`, not re-implemented here.** Each owns statistics
+this app does not — a Bradley-Terry ladder, a cluster bootstrap over teams, a selection reweighting
+that REFUSES rather than falling back — and *the one rule* says every number comes back from a
+session method verbatim. Re-deriving one in a handler is how two surfaces start disagreeing about a
+run; running one in a request would start minutes of battles on a box that trains. So `/` carries a
+card with the commands, `critic_gate` shown only on a winprob run:
+
+```bash
+python -m main.critic_gate <run> --parent <ref> --control <refs…>        # the pre-registered read
+python -m main.scaffolding_gauge <run> --reliability --reliability-reweight
+python -m main.untaught_meter <run> --control <continuation arms…>       # refs are POSITIONAL
+python -m main.elo <run>
+```
+
+⚠ **A command in a template is a command someone will paste**, so these were checked against the
+live parsers rather than written from memory — which caught one (`main.untaught_meter` takes its
+refs positionally; a `--ref` flag does not exist). Keeping them in this file is deliberate: the
+CLAUDE.md freshness gate resolves every `--flag` against some parser in the tree, so the flags
+above cannot rot silently the way the template alone would.
+
+## Which sim the probes spawn (`--impl`)
+
+`falsify_scan` and `calibration` re-roll turns through an offline replay/search driver, and since
+`gen3_search_driver_impl_seam_v1` that driver can be **node** (default) or **rust**.
+`ProbeSession` treats the choice as **session-wide** — *"two probes of the same run answering
+under different engines would not be comparable"* — so this is a **startup flag**, not a query
+parameter. A per-request knob would invite exactly the incomparable mix the seam exists to
+prevent, and the app caches one `ProbeSession` per run, which the session-wide reading matches
+exactly.
+
+`/api/health` reports the active engine, so a falsify result can always be traced to the sim that
+produced it.
+
+## Scope (deliberately read-only)
+
+| View | Session call | Notes |
+|---|---|---|
+| `/` run | `run_summary()` + `awareness_scan()` | steps · per-step identity and **`model_views`** (can the model views run on it) · opponents · checkpoints (each marked loadable / story only) · γ, **plus the "did it know?" panel** (async, see below). Prints `result_vocabulary_note` above the outcome chart when any of the tree predates the DRAW bucket — 🚨 a pre-2026-09-07 run's `draw: 0` is what the instrument could express, not what happened, and the chart omits the draw series there rather than drawing a flat zero. See *THE RESULT VOCABULARY* in `../CLAUDE.md` |
+| `/battles` | `battles()` | outcome / opponent / step filters — **outcome is `win` / `loss` / `draw`** (the `draw` option and every `pattern=` here are built from `agents.training.trace_result.OUTCOMES`, so a bucket cannot exist in the CLI and 422 on the web) |
+| `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
+| `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
+| `/battle` | — | **merged into `/game`** (2026-10-09): a 307 there, keeping `battle` and mapping `start=N` → `turn=N`. `/api/battle-turns` (the CLI's `turns` contract) stays |
+| `/game` | `battle_story()` + `battle_board()` + `battle_readout()` + `decision_attention()` | **THE battle viewer** — the turn rail (one row component: us / them, their actions, faints, replacements, P(win), the big drops) beside the selected decision: the board it was made on under an INFORMATION PERSPECTIVE (`view=model` default · `truth` · `public`), our options vs their action as the same sorted component, and the turn as ordered BEATS (switch → moves in order → replacements → end of turn); all model-free. Then, as an HTMX fragment that LOADS the checkpoint (**password-gated**; a locked visitor sees an unlock card and the PUBLIC half of the scouting notes), the model's α beside our options (out of band), the scouting notes on their team, and under the hood: attention, damage physics, raw scores. ←/→ (j/k) step decisions, [ / ] step battles. Field map: `designs/prober/battle_view_v2.md`. Routes live in `game.py` |
+| `/analyze` | `analyze()` | **one decision, all the way down** — faithfulness · beliefs · threats · intervention · saliency. **LOADS THE CHECKPOINT** (see below); **password-gated** |
+| `/falsify` | `falsify_scan()` | the crater bracket — **a background job** |
+| `/calibration` | `calibration()` | the reliability curve — **a background job** |
+| (on `/analyze`) | `lookahead()` · `better_line()` · `replay_counterfactual()` | the counterfactual tier — **background jobs**, password-gated |
+
+⚠ **An HTMX `<form hx-post>` sends its fields in the BODY — declare them `Form(...)`, never
+`Query(...)`.** `/falsify` and `/calibration` shipped with `Query`, so every control on both pages
+was silently ignored and the probes ran at their defaults: a submit of
+`outcome=win/limit=3/seeds=7/concurrency=4` reached the session as `loss/20/32/1`. The `outcome`
+one made it a CORRECTNESS bug rather than an inconvenience — asking for wins quietly scanned losses
+and returned a confident answer to a question nobody asked. Fixed, and pinned by
+`test_the_page_form_fields_actually_reach_the_probe` (verified to fail on the reverted code).
+`run` stays a `Query` on purpose: it rides the URL, because the run picker is a link.
+
+### `/game` — THE battle viewer
+
+The read-it-like-a-game view, and the one place a battle is read (the classic `/battle` replay was
+merged into it, 2026-10-09). The field map is **`designs/prober/battle_view_v2.md`**; the reasons —
+the owner's complaints, the audit, every removal — are
+**`designs/prober/battle_viewer_ux_2026-10-09.md`**. The rules it rests on: the page is a plain GET
+(`/game?run=…&battle=…&inv=N&view=…`: a decision and the perspective it is read under are things you
+link to, and it works with JavaScript off); the model's half is an HTMX fragment because it loads a
+checkpoint; the battle picker is the app's ONE `_picker_rows` (newest first, and ALWAYS containing the
+battle shown — `/game` used to slice its own list and named a different battle as selected); the
+INFORMATION PERSPECTIVE is decided per field by `engine/perspective.shown`, injected into Jinja as the
+global `shown` and applied by the one macro `fv` — a board fact rendered any other way is what
+`perspective_guard_test.py` catches.
+
+**A run with no traces is an EMPTY STATE, not a 404.** Both battle-addressed pages (`/game`,
+`/analyze`) resolve a battle before rendering, and a run that has captured nothing has none — which
+surfaced as a 404, indistinguishable from a bad link on a perfectly healthy run. It is also not an
+edge case: the app opens the NEWEST run by default and a freshly-launched run has no traces until
+its first eval cycle (gen-9 sat exactly there for hours on 2026-08-13). `_NoBattles` is caught by
+the two page handlers and rendered as a message pointing at the run summary; the JSON API still
+returns the status code, and an unknown battle token is still a real 404 that never echoes the
+token. Pinned by `test_a_run_with_no_traces_is_an_empty_state_not_a_404` +
+`test_a_battle_that_does_not_exist_is_still_a_404`.
+
+**A battle is named by its `short_id`, and the name is checked for MEMBERSHIP** — `runs.py`'s rule
+one level down, and load-bearing for the same reason: `ProbeSession._battle` falls back to
+`build_trace_tree(battle_id)` for an id it does not recognise, which will happily open a
+`*_summary.json` belonging to **another run**. `app.battle_row()` therefore matches the token
+against the run's own battle listing and passes the session a path the *server* produced. The
+reversion test proved it: without that check a pinned single-run instance served a sibling run's
+trace with a **200**.
+
+### "Did it know?" — the awareness layer, on three views
+
+One fold (`main/prober/awareness.py`), surfaced wherever it changes a reading. It is **model-free**,
+so unlike `/analyze` it works on every run at any architecture — and `None` throughout on the runs
+with no distributional head, which is most of them.
+
+| where | what it adds |
+|---|---|
+| `/scan` | `knew @` and `lead` columns beside each crater — `BLIND` badged when it never saw it coming |
+| `/triage` | a `blind` / `median lead` column per category, **beside** the lever, never folded into it |
+| `/` | the run-level panel: the aggregate against the published **gen-10 baseline** |
+
+**The baseline is data, not copy.** The gen-10 figures live in `awareness.AWARENESS_BASELINES` and
+ride `awareness_scan()`'s own payload as `aggregate.baseline`, so this page renders them the same
+way it renders the live numbers — the one rule applied to a reference point. A baseline typed into
+a template is one the CLI would eventually disagree with.
+
+**Two honesty rules the panel enforces in the markup**, because a comparison table invites reading
+every row as a like-for-like verdict:
+
+- **cap-aware@5 prints its `n` on both sides** and says "a direction, not a rate". The baseline is
+  over **12** cap losses; at that n the fraction moves in quarter-steps.
+- **The two coverage rows are NOT comparable at the default filter.** The baseline was measured
+  over ALL outcomes; the panel defaults to losses, which are the low-outcome tail, so a filtered
+  PIT is biased low *by construction*. The page says so next to those rows and links the
+  unfiltered read, rather than leaving it in the caveats fold. Same fix landed in the CLI, where
+  `--outcome` had only `win`/`loss` — the probe's own caveat was prescribing a reading its
+  interface could not produce (`--outcome all` now does).
+
+It loads **async on `/`** (`hx-trigger="load"`, the `/scan` pattern): it reads every matching
+battle's npz, so the run summary must not sit behind it. Measured on a real run (gen-11, **1292
+losses**): `awareness_scan()` **5.4 s** cold, against `scan()`'s 2.0 s warm — the same order, and
+both taken on a box carrying a live trainer, so treat them as upper bounds.
+`render_integration_test.py` requires a completed swap there — a route returning 200 to a test
+client would not catch the panel spinning forever.
+
+### Every hand-off points HERE, not at a retired terminal
+
+`/analyze` is a web view. It loads the checkpoint and renders faithfulness, beliefs, threat
+tables, intervention and saliency in the browser — but until 2026-08-18 the replay's drop-down
+footer, its per-decision button, the page lede and the `scan` table all told the reader to go and
+run a CLI command *"or the TUI"*, a surface **retired on 2026-08-13**. The feature was built,
+shipped and reachable, and the copy around it said it lived somewhere that no longer existed.
+
+Both the battle viewer and every `scan` row now LINK straight to `/analyze?run=…&battle=…&inv=N`; the
+CLI equivalent stays offered beside it, because that is a real second surface. Pinned by
+`test_every_hand_off_goes_to_the_web_view_not_a_retired_terminal`, which also asserts the string
+"the TUI" appears in neither view — the cheapest possible guard against the same copy drifting
+back.
+
+**The lesson is about docs, not code:** a retirement has to sweep the *user-facing copy*, not just
+the module. Deleting `app.py` left ten pointers to it in templates, and every one of them read as
+an instruction.
+
+### `/analyze` — a view that loads a checkpoint (password-gated, with `/game`'s model panels)
+
+The per-decision forensic read, ported here as part of retiring the TUI. Page shell + an HTMX
+fragment (`hx-trigger="load"`, the `/scan` pattern) because it deserializes a checkpoint; the
+battle and `inv` stay plain GET params, because "look at this decision" is a thing you link to.
+
+**Read the arch-drift section in `src/main/prober/CLAUDE.md` before trusting anything here.**
+Re-running the model needs a checkpoint at the CURRENT architecture, and measured over `models/`,
+**none of the 38 archived runs with traces can load** (79 of 79 in 2026-08). So this view's ordinary output on an
+old run is a TYPED `ArchDriftError` (`kind` + ONE plain sentence, `arch_status`): on first paint the page asks
+`ProbeSession.model_status` (model-free) and, when the views cannot run, renders the reason at once
+(`partials/model_unavailable.html`, `data-model-reason="<kind>"`) instead of a loader — and instead of a password
+prompt for a view the password cannot unlock. The fragment route renders the same sentence over the whole
+diagnosis (obs dim, `arch_signature`, dropped flags, the exact `git checkout`) in `.err` (`white-space:
+pre-wrap`) rather than collapsing it to "analysis failed"; the JSON routes answer 400 `{error, kind, plain}`.
+Every other view is model-free and unaffected; that asymmetry is why they were built first.
+
+Two faithfulness banners are load-bearing and must never be dropped: `obs_mismatch` (every
+obs-offset decode below is reading past a divergence) and `model_resolution.dropped_kwargs` (flags
+the current code no longer accepts were dropped to make the load possible, so the rebuilt extractor
+is not the one that played). The panels self-hide per flag-gated head, so an absent panel reads as
+"that head was off", never as a broken probe.
+
+**The genuine upgrades over the terminal**, both because a browser can draw: the distributional
+critic's return distribution is a real **chart** (the TUI could only manage a one-line eighth-block
+sparkline, where "sharp vs wide vs bimodal" — the entire point of the head — was a judgement call
+about eight characters), and the operator's `incoming_matrix` is a real **heatmap table** (opp
+candidate move × our mon), where the terminal had to fake a 2-D grid as an indented list.
+
+**The beliefs section carries TWO readings of the species belief, and the order is load-bearing**
+(`#beliefs-exclusive`, `a.exclusive_belief`). The raw per-slot marginals come first — that is what
+the model actually believes — and the **species-clause reading** sits below it: the most likely
+hidden team gen3 would allow, plus the slots where the two readings disagree. The panel is
+deliberately QUIET when the belief was already coherent (one line, no second table) and it says in
+its own copy that it changes nothing. Measured on gen-15, **14.2% of decisions display two hidden
+slots naming the same mon**, which is the case it exists for; see `src/main/prober/CLAUDE.md` →
+*The SPECIES-CLAUSE reading* for what it is not.
+
+**The counterfactual tier rides `/analyze`** — `lookahead`, `better_line` and
+`replay_counterfactual` are per-DECISION probes, so they launch from the bottom of this page
+pre-filled with the current battle + inv, rather than getting a page of their own. They run for
+seconds to minutes (`lookahead` / `better_line` on a search child, `replay_counterfactual` as an
+in-process play-out on the Rust core), so they go through the **job registry** exactly like `falsify_scan`
+(submit → job id → poll `/partials/job/{id}`) and they are **password-gated** by the same rule:
+reading is anonymous, spending CPU is not.
+
+Two handoffs are ported from the TUI's `L`→`C` flow: a finished `lookahead` offers its best
+non-chosen alternative straight to the replay probe, and `better_line` renders the interior-opponent
+provenance with a **self-proxy banner** at depth ≥ 2 (the trainee standing in for the opponent is an
+approximation, and a contrastive line that does not say so reads as fact). `replay_counterfactual`
+at `n_rollouts=1` is a single realized-dice line and **not** a probability — the session says so in
+its `caveats` and the page renders them.
+
+`interior_opponent="ckpt"` is deliberately NOT exposed: it takes a filesystem path from the client,
+which is the one thing `runs.py`'s membership rule exists to prevent. CLI-only.
+
+⚠ **A COVERAGE HOLE, stated rather than papered over.** `/analyze` is in the headless render test's
+page list, but the fixture run has no loadable checkpoint, so what the browser actually measures is
+the page shell and the **arch-drift error state**. The POPULATED markup — the incoming-matrix
+heatmap and the wide faithfulness/threat tables, i.e. exactly the widest things on the site — is
+covered by unit tests (strings in the HTML) and by an eyeball, **not** by the measured layout gate
+(`overflowby` / `scrollers` / `monstack`). Closing it needs a fixture checkpoint at the current
+architecture; until one exists, treat "the heatmap does not overflow on a phone" as unproven.
+
+## The session cache is BOUNDED (`_MAX_CACHED_SESSIONS`)
+
+One `ProbeSession` is cached per run, and a `scan` of one run costs **~430 MB** of cached summaries
+and value arrays (measured on the real `models/`: 6 runs → 3.0 GB, growing monotonically). The
+picker offers **81** runs, so an unbounded dict is an anonymous visitor's lever to ~35 GB — on a box
+whose day job is training.
+
+So `app.state.sessions` is an LRU bounded at `_MAX_CACHED_SESSIONS`, and an evicted session gets
+`.close()` called (dropping its `_summaries` / `_models` caches) rather than being left to the
+garbage collector's discretion. Same defect class as the auth failure map, found the same way:
+*anything an anonymous request can make grow must have a bound*.
+
+## Architecture decisions, and why
+
+- **FastAPI + uvicorn**, not `http.server` (which is what `arch_viewer_serve.py` uses). Two
+  reasons, both load-bearing: the heavy probes need to run off the request thread, and
+  `/openapi.json` is a machine-readable description of the surface that can be snapshot-committed
+  and `--check`ed like `delivery_graph_snapshot.json`.
+- **Server-rendered Jinja2 + HTMX**, no build step, no `node_modules`. The server owns the state
+  (the loaded `ProbeSession`), so the client has nothing to hold; a SPA would add a build system to
+  a repo whose root `package.json` has zero dependencies.
+- **Charts are Vega-Lite specs emitted from Python** (`charts.py`) — dicts, so they diff, snapshot
+  and unit-test. No template writes plotting code; `_macros.html`'s `chart()` macro is the one
+  place a spec reaches the page.
+- **The JS is VENDORED** (`static/vendor/`), never CDN-linked. This is a direct lesson from
+  `build_arch_viewer_render_integration_test.py`, whose strongest assertions **skip** when the CDN
+  is unreachable — offline, the best gate in that suite is a no-op. Here the render test launches
+  chrome with every non-loopback host mapped to a dead address, so a remote asset would make the
+  test **fail**, not skip.
+
+Rejected: Streamlit (rerun-per-interaction fights an expensive server-side session),
+React/Vite (the repo's first JS build), Dash/Panel/Gradio.
+
+## Background jobs (`jobs.py`)
+
+`falsify_scan` and `calibration` spawn Node per re-roll and take minutes. Running one in a handler
+would stall the event loop and therefore every other page. So a submit returns **202 + a job id**,
+the work runs on a small `ThreadPoolExecutor`, and the page polls `/partials/job/{id}` every 2s —
+the poll trigger is emitted only while the job is unfinished, so a finished page stops hitting the
+server. A failure is captured as `status="error"`, because a probe raising on a run whose traces
+have no `*_reconstruction.json` sibling is an ordinary state of the data, not a 500.
+
+`--job-workers` defaults to **2**. Each concurrent job spawns its own Node processes and the box
+normally carries a live training run — see the contention notes in the root `CLAUDE.md`.
+
+**Handlers are `def`, not `async def`, on purpose.** FastAPI runs a sync handler on a worker thread
+and an async one *on the event loop*; the read-only session calls do real file IO (they open every
+trace's npz), so making them async would let a slow `scan` stall a poll.
+
+## The OpenAPI snapshot
+
+`openapi.json` is **committed** and gated by `openapi_snapshot_test.py`. It is generated from
+`create_app(None)` — an app with no run directory — so the contract cannot vary with what happens
+to be in someone's `models/`. **The HTML routes are in the schema too**: the snapshot is the route
+inventory, and hiding the pages would let one be added, renamed or deleted without the gate
+noticing.
+
+Regenerate deliberately: `python -m main.prober.web --openapi`.
+
+## What the render test actually verifies
+
+`static/app.js` publishes a record into `document.body.dataset` at the end of init, and
+`render_integration_test.py` reads it back out of headless chrome (skipping, loudly, only when
+there is no browser).
+
+**How it drives chrome** (2026-09-29): ONE browser per test module over the DevTools pipe
+(`src/utils/headless_chrome.py` — stdlib only, no Playwright), a fresh **browser context** per probe
+(its own cookies/storage/cache — the isolation a fresh process used to buy), and a wait on the
+page's own **`busy` == "0"** settled signal instead of a fixed `--virtual-time-budget`. The whole
+`-m browser` tier (both files, 57 tests) runs in **~19 s** on a quiet box. 🚨 **`ready` alone is NOT
+a settled signal**: it is set by the first-paint record, which on a chart-free page lands BEFORE
+DOMContentLoaded — before HTMX has issued its `load`-triggered request. Swap the wait to `ready`
+and `/scan`'s swap test fails (measured). 🚨 **Every launch goes through
+`headless_chrome.BASE_FLAGS`, whose `--password-store=basic` is load-bearing**: without it every page
+that touches chrome's network stack pays a 25 s D-Bus keyring timeout — that, not "cold start" and
+not the virtual-time budget, was the old tier's ~25 s per test (bare chrome starts in 0.37 s).
+`src/utils/headless_chrome_test.py` pins it.
+
+**The CLICK-level tests** (end of the file) dispatch real mouse press/release at an element's centre
+(`Page.click`, through hit testing — a covered or zero-size target misses as a finger would): a tap
+on one of the viewer's decision-header metrics opens ITS title in a panel directly under the row and a
+second tap closes it (phone and desktop); the `?` link lands the reader at `#glossary`, OPENED (a link
+to a collapsed `<details>` is a dead end — `app.js` opens and scrolls it before the hash moves); the
+viewer's turn-rail drawer starts closed on a phone and opens on a tap; a copy button puts its row's
+command on the clipboard. Each was proven to FAIL with the behaviour broken in `app.js`.
+They are written against the DOM for the fixture trace, never the Python that produced it.
+
+| key | proves |
+|---|---|
+| `ready` | the bootstrap ran to completion — any throw leaves it unset |
+| `htmx` / `vega` / `vega-lite` | the vendored bundles defined their globals **with the network blocked** |
+| `charts` | how many specs the server embedded |
+| `chart-marks` | how many mark elements **Vega actually drew** — a spec can compile cleanly and plot nothing |
+| `rows` | data rows present in the DOM (`[data-row]` table rows) |
+| `monstack` | on `/game`: whether the board's two SIDES stacked (phone) or sat side by side (desktop); on `/analyze` the two mons |
+| `tapmin` + `tapwhat` | the smallest side of every visible control the viewer is driven with (rail rows, step bar, arrows, perspective switch) and WHICH one — the T29 ≥ 44px gate |
+| `vpanels` | which of the viewer's panels are on the page (`rail,board,options,action,story,scouting,model`) |
+| `scheme` · `bg` · `colorscheme` · `linkcolor` · `axistext` | the PALETTE, measured (see below) |
+| `swaps` | completed HTMX swaps |
+| `busy` | outstanding work (page load, in-flight HTMX requests, embed passes); **"0" = SETTLED** — the signal the tests wait on |
+| `metrichelp` · `copied` | set by the tap and copy handlers — what the click-level tests read back |
+| `chart-error` / `htmx-error` | a failure surfaced on the page rather than only in the console |
+| `vw` · `docw` · `narrow` · `headerh` · `ctlfont` · `overflowby` + `overflowwhat` · `scrollers` + `scrollingwrappers` | the LAYOUT, measured (see below) |
+
+The strongest single assertion is on `/scan`: nothing in its table or chart exists in the page
+source. The filter form fires `hx-trigger="load"`, HTMX fetches `/partials/scan`, the fragment
+carries a Vega-Lite spec, and `app.js` re-embeds it on `htmx:afterSwap`. A non-zero
+`chart-marks` there proves the whole chain — fragment, swap, re-embed, draw — end to end.
+
+**The SVG renderer is not a preference.** Under the canvas renderer Vega leaves no DOM behind, so
+`chart-marks` would read 0 for a healthy chart and 0 for a broken one, and the best gate on the
+page would silently be a no-op. `app.js` pins `renderer: "svg"` for exactly that reason.
+
+## The two palettes, and why the dark one needs its own gate
+
+Dark is the BASE (`:root`) and light is a `prefers-color-scheme` override, so the default open on a
+dark desktop needs no toggle and no flash. But **only one palette is ever on screen**, which makes
+review-by-screenshot cover exactly half the stylesheet. Three defects lived in the unseen half
+until the record started measuring it (`scheme` · `bg` · `colorscheme` · `linkcolor` · `axistext`):
+
+- **Chart text was Vega's near-black on `#16161a`.** `charts._BASE` makes the chart background
+  transparent so it sits on the page, and a static spec emitted by Python cannot know the theme —
+  so `app.js` applies the theme at EMBED time (`themeConfig` → `themed`), reading the live values
+  back out of the stylesheet's own custom properties rather than restating them. Spec-provided
+  config still wins over the theme, so a chart that deliberately sets a colour keeps it.
+- **Unclassed `<a>` kept the browser default `#0000EE`** — about **2.4:1** against the dark
+  background, under the 4.5:1 floor. Only the link *classes* were styled, so any plain link was
+  missed. Fixed with a base `a { color: var(--accent) }` rule, which a later link cannot undo.
+- **`color-scheme` was never declared** (measured `normal`), so the browser rendered its OWN
+  widgets — `<select>` menus, scrollbars — in the light style: a white dropdown on a dark page.
+
+**A dark screenshot FLATTERS the page, which is why the third one hid.** `--force-dark-mode` (the
+only CLI way to make `prefers-color-scheme: dark` match) *also* darkens UA widgets — which a real
+dark-mode visitor does not get. So the widget defect was invisible in every screenshot and only the
+`colorscheme` reading catches it. The render test now sets the media feature per context over CDP
+(`Emulation.setEmulatedMedia`), which does NOT touch the widgets; `colorscheme` stays the gate. The expected colours in `render_integration_test.py` are written out literally rather
+than re-derived from the stylesheet: a test that computes its expectation from the same source it
+is checking cannot catch the palette failing to apply.
+
+## Responsive layout (desktop + phone), and how it is gated
+
+**The one rule: the PAGE never scrolls sideways.** Wide content scrolls inside its own container —
+`.scroll-x` for tables, `.chart` for an oversized SVG. Everything else follows from that.
+
+These are tables of forensic numbers, so the phone answer is deliberately **not** to reflow every
+table into cards: a `scan` row read out of column order is worse than one you scroll. **`/game`
+is the one exception, and it earns it** — a turn is a short narrative (board → choices → what
+happened → what the model thought), not a row whose columns carry the meaning, so it REFLOWS: three
+columns at ≥ 1280px (rail · decision · the model's read), two below, one on a phone, where the rail
+becomes a drawer of the SAME rows and a sticky bar carries prev / next as 44px buttons. Measured, not
+asserted — the render test reads `monstack`, `overflowby`, `vpanels` and `tapmin` at 360, 390, 430 and
+1440px (T29).
+
+Under `@media (max-width: 720px)` the layout instead: drops the sticky header and **folds the nav and
+the run picker behind ONE labelled 44px menu button** (T29, 2026-10-09: brand · `☰ <this page>` ·
+unlock in one row, ≤ 80px measured, where the wrapped tabs + picker had cost 150–230px before a page's
+content began). Opened, every tab is a 44px cell of a 4-column grid and the picker its own row. It is a
+CSS-only toggle (a checkbox + its label), so it works with JavaScript off, and the button NAMES the
+page you are on — never the arch viewer's failure of a horizontal strip whose controls nobody could see.
+It also gives each filter control its own full-width row at **≥16px** (below that, iOS zooms the page
+when a `<select>` takes focus and does not zoom back out), and tightens the paddings.
+
+Two things bite that are not obvious:
+
+- **Vega does not wrap title text.** A 150-character subtitle renders as one ~1000px line and drags
+  the chart past its container. `charts._subtitle()` pre-wraps anything long into the list-of-lines
+  form Vega-Lite accepts, and `.chart { overflow-x: auto }` catches whatever is left.
+- **Checking the CSS is not checking the layout.** A media query can be present and still lose on
+  specificity. So `app.js` publishes what the laid-out page *measured of itself* and the tests read
+  that: `narrow` (the query actually matched), `overflowby` + `overflowwhat` (**which element**
+  overflows, so the failure carries its own fix), `ctlfont`, `headerh`, and
+  `scrollingwrappers` — the last distinguishing "the table fits" from "the wrapper is not
+  constraining it and the page is absorbing the width".
+
+### A CHROME TIMEOUT IS NEVER A SEMANTIC OUTCOME
+
+`_dump_dom` used to let a starved chrome raise `TimeoutExpired`, which pytest recorded as a
+FAILURE — a load average reported as a rendering bug, and the exact rule the root `CLAUDE.md`
+timeout doctrine exists to enforce. Measured on the win-prob-era landing (2026-09-06): **three
+failures at load 36.8 on 16 cores, every one a timeout and not one a layout assertion**, and on a
+re-run the failing SET MOVED (`/` passed, then failed, on identical code) — the signature no real
+regression has.
+
+A timeout now gets its own bucket, and the quiet/busy asymmetry decides what it means:
+
+| box | a timeout means | why |
+|---|---|---|
+| **quiet** (`_load_ratio()` < `_QUIET_LOAD` = **0.5**) | retry once, then hard **FAILURE** | a page that cannot SETTLE within the (scaled) 30 s bound on an idle machine is broken — a JS error before the record hook, or a request that never answered, both leave `busy` above 0, and bucketing every timeout as "busy" would quietly delete this gate |
+| **busy** | **SKIP** immediately, loudly, with `describe_contention()` | INCONCLUSIVE about the page — a different claim from "broken", and it must read differently |
+
+🚨 **QUIET IS THE RAW LOAD RATIO, NOT `cpu_contention_factor`** — and getting that wrong is the
+defect this section records, because the first version of this fix shipped it. That factor is a
+SCALING metric clamped to a floor of **1.0**, so by construction it cannot tell a half-loaded box
+from an idle one. Measured 2026-09-06 at **load 12.89 on 16 cores**, chrome unable to render inside
+180 s: the factor read exactly **1.0**, so a 1.05 "quiet" bar called an 80%-utilised box idle and
+turned every starvation timeout into a hard FAILURE — *strictly worse than the raw
+`TimeoutExpired`* it replaced. The unfloored ratio separates the cases cleanly: 3.89/16 = 0.24
+(idle) vs 12.89/16 = 0.81 (a live trainer), with the bar at 0.5.
+
+⚠️ **The retry is QUIET-ONLY.** On an idle box a second attempt is cheap; on a busy box the
+first timeout is already the answer, and retrying only doubles the slow path. Also measured: a
+two-attempt-everywhere draft turned the 45-test tier into **7 tests in 50 minutes** and was killed
+mid-line by its own wrapper, destroying the pytest summary and every failure message with it.
+
+⚠️ **The bound was deliberately NOT inflated.** *Scaling does not rescue a cap* — a starved
+subprocess slows by a multiple of `loadavg / cpus`, so a bigger constant only buys a
+confidently-reported wrong answer later.
+
+The asymmetry is pinned in **`app_test.py`** (unmarked, stubbed chrome, milliseconds) rather than
+beside the browser tests it guards — the rule needs no browser, and a guard that only runs inside the
+`slow` browser tier is one nobody sees fail. Four cases: the retry, busy⇒skip, **quiet⇒still fails**,
+and that the quiet bar is not the looks-idle bar. ⚠️ `Skipped` derives from `BaseException`, so
+`pytest.raises(Exception)` does NOT catch it — a test written that way skips itself while looking
+like it asserted something (which is exactly what the first draft of these did).
+
+**The narrow case is 500×900.** Under `--dump-dom` that was forced — headless chrome clamps
+`--window-size` to ≥500 px wide (measured, both `--headless` and `--headless=new`). The CDP driver
+sets the layout viewport exactly (`Emulation.setDeviceMetricsOverride`), so a true 390 is now
+possible; 500 is KEPT so every layout measurement stays comparable with its history, and the 720px
+breakpoint sits comfortably above it, so every phone rule is exercised. **The TRUE phone widths are
+gated beside it (T29, 2026-10-09)**: every page at 360 and 430 (no sideways scroll, the folded header
+≤ 80px, every measured control ≥ 44px — `tapmin`), and the battle viewer at 360, 390 and 430 (every
+panel present, the board stacked, the rail drawer).
+
+## Tests
+
+```bash
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
+python3 -m pytest src/main/prober/web -q                       # unit + the snapshot gate
+python3 -m pytest src/main/prober/web -q -m integration        # + headless chrome (~15 s; needs a browser)
+```
+
+- `runs_test.py` — **path confinement**, written as a list of ATTACKS rather than behaviour
+  checks: every traversal string a visitor could type, plus the symlink cases (top-level followed
+  and marked; one inside a run refuses the run; a pinned run cannot reach its siblings). These
+  should read as boring — that is the point of membership-over-sanitisation. Also the picker's
+  classification on a constructed archive (a HEAD-architecture run, an older one with traces, a skeleton, a
+  launch with no traces yet): the three tiers, the default-run rule, hidden runs still resolve, and that a
+  listing never opens a zip. Its sibling in `app_test.py` ("the run picker, by architecture") pins the HTML:
+  the optgroups, show-all, the selected run staying in the list, the model slots' first-paint reasons and the
+  `{error, kind, plain}` envelope. `fixture_run.build(root, identity=…)` stamps an architecture record
+  (`head_identity()`) and a valid husk zip — the gating tests use it; the default records none.
+- `gate_guard_test.py` — the CLASS GUARD for the unlock gate (see *Access*): the route set is derived from the code, plus an anonymous behavioural sweep.
+- `auth_test.py` — the gate's properties: fails closed with no password, the cookie is a
+  signature and not the secret, a tampered expiry is rejected, throttling is per client AND
+  globally capped.
+
+**The 2026-08-09 review's four fixes each have a regression test, and each was PROVEN to fail when
+its fix is reverted** (a security test that passes either way is worse than none — the reversion
+was applied to a copy of the tree and the matching test confirmed red):
+`test_a_rotating_client_identity_cannot_brute_force_the_password`,
+`test_the_failure_map_is_bounded`,
+`test_a_spoofed_forwarding_header_is_ignored_from_an_untrusted_peer`,
+`test_an_unreadable_subdirectory_refuses_the_run_rather_than_passing_it`,
+`test_a_pinned_run_whose_name_fails_the_enumeration_pattern_still_resolves`.
+- `charts_test.py` — pure spec assertions: the field a chart plots, the fixed lever order, that
+  the reliability curve keeps its identity rule, that the derived
+  `critic_headroom_upper_bound` is **not** stacked as a fifth lever.
+- `app_test.py` — `TestClient` over `fixture_run.build()`: every endpoint against a direct
+  `ProbeSession` call, the HTMX fragments, the job lifecycle (with the session method replaced —
+  the re-roll machinery is `falsifier_integration_test.py`'s job), and that a failing probe renders
+  as a message.
+- `openapi_snapshot_test.py` — the committed contract, plus a **proof the gate fails on drift**
+  (a `--check` that always passes is worse than none).
+- `render_integration_test.py` — `@integration`; the headless-browser gate above.
+- `game_viewer_test.py` — the viewer's READING contract on the fixture's story battle: ordered beats
+  with their phases, "moved first", forced replacements linked to their decision, "never got to move",
+  the side class + chip on every beat and effect, our options and the model's α as the same sorted
+  component, locked vs unlocked, and the picker never naming another battle.
+- `game_viewer_test.py` also renders the SCOUTING notes from a readout in the shipped shape: beliefs sorted,
+  the change with its evidence, the unseen guesses sorted, and every truth-only judgement absent from the
+  model view and MARKED under + Truth.
+- `perspective_guard_test.py` — the INFORMATION-PERSPECTIVE class guard: the story battle's
+  reconstruction plants facts the protocol never reveals; none may reach the `model` / `public` page,
+  our private ones never the `public` page, and under `truth` every planted fact appears only MARKED.
+- `fixture_run.py` — the synthetic run both the unit and the render test build, so they cannot end
+  up testing different data. Its LOSS battles have **no `reconstruction.json`**, so the heavy probes are
+  expected to fail on them — and `app_test.py` asserts that failure renders. The newest step carries
+  ONE WIN with a real gen-3 protocol and a reconstruction record — **the story battle**
+  (`fixture_story.py`): every beat shape (a voluntary switch, move order, a hazard, a mid-turn forced
+  replacement on each side, residuals, "never got to move", the end) plus planted hidden facts for the
+  perspective guard. `/game` opens on it by default. Its `opp_intent` blocks come in
+  **two shapes on purpose** (one decision where `α` expects an ATTACK, one where it expects a SWITCH
+  so `β`'s named mon is promoted onto the card) and on only ONE of its battles — a fixture carrying
+  a single shape would leave the `β` path and the heads-off path ungated. Its `β` candidates
+  likewise hold **one of each name provenance**: one `"revealed": true` (renders plain) and the rest
+  with the key **ABSENT** rather than `false` — absent is the literal shape of every trace written
+  before `gen3_beta_revealed_naming_v1`, which is the case the caveat exists for. Because the
+  fixture carries them, the measured layout gate (`overflowby` / `scrollers` / `monstack`) covers
+  the new markup with no new assertion.
+
+  **Its distributions follow the same one-of-each rule**, and the `model_config.json` that declares
+  the atom support: one **blind** loss that also carries the **stall signature** (both recorded
+  values positive, so P(loss) never crosses the bar, while 30% of the second decision's mass sits
+  in the bottom atoms — the exact pathology the head exists to make visible), one loss it **called**
+  (values under water, so the onset marker and the `knew` strip render), one trace with **no
+  `value_dist` at all** (the counted-but-never-judged path), and win-prob on exactly one battle so
+  the far more common no-win-prob rendering stays gated.
+
+  **`build_winprob()` is the SECOND era's fixture**, and separate on purpose: the two differ in what
+  EXISTS, not in numbers. `values` equals `win_probs` exactly (so the "one readout" copy has a case
+  that cannot be faked by two close numbers), there is no dist head at all, γ is 1.0 with a terminal
+  win indicator, and `model_config.json` carries `"critic": "winprob"` — while `build()` deliberately
+  carries NO `critic` key, because 214 of 215 archived runs carry none and "absent means shaped" is
+  the rule that keeps them readable. Its loss is valued high and its win low, so `V − G` spans about
+  ±0.7: above the winprob τ (≈0.083) and far below the shaped one (5.0), which is exactly the
+  discrimination the unreachable-threshold guard has to make. Without it none of the currency
+  behaviour was test-covered, which is how the hardcoded handler defaults shipped.
+
+  ⚠ **A distribution must agree with its own recorded V.** The awareness fold denormalizes the
+  support by a least-squares fit over the trace's `(dist mean, recorded V)` pairs, so a row built
+  to a chosen P(loss) is silently relocated by that fit — a first draft did exactly that and read
+  back `p_loss = 0.00` on every decision. The rows are therefore built as a SHAPE centred on the
+  recorded value, and P(loss) falls out of `(V, spread)` the way it does in a real trace. A
+  requested tail mass the mean cannot carry is a hard error, never a quiet degradation: on
+  `[-12, 12]` no distribution with mean 10 holds 30% at −10.
+
+## Gotchas
+
+- **Register error handlers on `starlette.exceptions.HTTPException`, not FastAPI's.** Starlette
+  dispatches by walking `type(exc).__mro__`, and an unmatched route raises the *starlette* class —
+  the PARENT of `fastapi.HTTPException`, not a subclass. Handling only the FastAPI one misses every
+  404 (it did: `/nope` returned the stock `{"detail": ...}` JSON to a browser).
+- **`build_trace_tree` tolerates a path with no traces** — it returns an empty tree rather than
+  raising. On the CLI that reads as an empty JSON object; on a web page it renders as a confident
+  "0 battles captured", which looks like a finding about the run rather than a typo. So
+  `__main__` rejects a nonexistent path at **startup**; the app itself does not invent an error the
+  session did not report.
+- **`models/` is gitignored and lives only in the main checkout**, not in a worktree — pass an
+  absolute `models/...` path when serving from one.
+- Port **6008** by default, beside tensorboard (6006) and the arch viewer (6007). Bind loopback and
+  put a tunnel in front, as `arch_viewer_serve.py` does for model.g5d.io — do not bind a public
+  interface, and never touch **:8001** (live training).

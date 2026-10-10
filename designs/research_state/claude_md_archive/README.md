@@ -79,6 +79,7 @@ statements were deleted:
 | `src_main_prober_CLAUDE_2026-10-10.md` | `src/main/prober/CLAUDE.md` — each section moved to its `designs/prober/` topic doc ("From the prober leaf (moved 2026-10-10)"; new: `result_vocabulary.md`, `retention.md`) | 62.2 KB → 22.7 KB |
 | `src_agents_observation_CLAUDE_2026-10-10.md` | `src/agents/observation/CLAUDE.md` — each section moved to the new `designs/observation/` tree (`per_block_reference.md`, `volatile_vocabulary.md`, `typing.md` + README) | 39.3 KB → 9.3 KB |
 | `tools_CLAUDE_2026-10-10.md` | `tools/CLAUDE.md` — detail moved to the new `designs/tools/` tree; removed as false: "32 sample + 687 others" (72 + 647 now), "the downloaders key by sha256" (only `others`), four stale Rust function locations | 28.1 KB → 7.7 KB |
+| `src_main_prober_web_CLAUDE_2026-10-10.md` | `src/main/prober/web/CLAUDE.md` — detail moved to the new `designs/prober/web_service.md`, `web_pages.md`, `web_tests.md` | 67.6 KB → 10.8 KB |
 <!-- leaf rows: append below -->
 
 **Nothing here is current.** Every guard these incidents produced is live and described in

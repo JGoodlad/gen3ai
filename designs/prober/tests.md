@@ -97,5 +97,5 @@ a job is behind the unlock gate, DERIVED from the code (AST over `session/` for 
 methods, AST over each handler, then an anonymous behavioural sweep with the model seam and the job pool
 replaced by recorders) · `staleness_test.py` the template-pinning contract ·
 `openapi_snapshot_test.py` the committed-contract drift gate · `render_integration_test.py`
-`@integration`, headless chrome with the network blocked — see `web/CLAUDE.md`):
+`@integration @browser`, headless chrome with the network blocked — see [`web_tests.md`](web_tests.md)):
 
