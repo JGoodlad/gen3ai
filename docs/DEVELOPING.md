@@ -189,9 +189,8 @@ start one, use your own port:
 
 | Port | Owner |
 |---|---|
-| 8000 | development |
-| 8001 | the standing training server on the maintainer's box: never stop, restart or kill it |
-| 9XXX | pick one for anything ephemeral you start |
+| 8000 / 8001 | reserved (refused in code by `play.py`, `main.anchors` and the websocket front end); nothing of ours listens there |
+| 9XXX | pick one for anything you start, and stop only that one, by its PID |
 
 ```bash
 npm run showdown -- 9001     # your own server, if you really need one

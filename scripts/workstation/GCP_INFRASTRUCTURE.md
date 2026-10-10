@@ -17,9 +17,9 @@ Both ends are key-only — no password auth possible from outside.
 | 1080 | SOCKS5 proxy | — | `proxy-tunnel` |
 
 Every origin binds `127.0.0.1`, so a Cloudflare tunnel entry is the only way anything becomes
-publicly reachable. Ports **8000** (dev Showdown) and **8001** (LIVE TRAINING Showdown — never
-touch it) are not web endpoints and are not tunnelled; an agent needing its own Showdown server
-binds a `9XXX` port.
+publicly reachable. Ports **8000** and **8001** are RESERVED (refused in code by `play.py`, `main.anchors` and
+`utils.bridge.ws_frontend`; training runs in-process and listens on nothing) and are not tunnelled; an
+agent needing its own Showdown server binds a `9XXX` port and stops it by its PID.
 
 ---
 

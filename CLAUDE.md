@@ -183,16 +183,14 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch2
 export PYTHONPATH=$PYTHONPATH:src
 python -m main.checkargs models/<run>          # or --argv "…": does it launch, AND is it the architecture you meant?
 python -m main.launcher --dry-run …            # resolve the ACTUAL launch without creating anything (safe on a restart)
-python -m main.launcher --restart-interval-hours 6 --steps 15000000 \
-  --device cuda --log-level periodic --arch production                     # fresh run
-python -m main.launcher --restart-interval-hours 6 --model models/<run>/checkpoints/<ckpt>.zip \
-  --steps 15000000 --device cuda                                           # resume / fork
+python -m main.launcher --steps 15000000 --device cuda --log-level periodic --arch production   # fresh run
+python -m main.launcher --model models/<run>/checkpoints/<ckpt>.zip --steps 15000000 --device cuda   # resume / fork
 ```
 
 The hazards that have actually cost runs (full text: the runbook's "Launch hazards in full"):
 
 - 🚨 **"It launches" and "it is the experiment" are INDEPENDENT checks.** `--arch production` supplies the architecture AND the training recipe; `checkargs` refuses a fresh argv whose surface differs. Type a recipe knob only when it IS the arm's lever. A design-doc command block is not a launch command (2026-09-06: 24.4M steps on a near-bare network).
-- 🚨 **Restart interval: 6 h** (owner, 2026-10-04) — the launcher default since 2026-10-10 (`run.DEFAULT_RESTART_INTERVAL_HOURS`; was 3), so a bare launch restarts every 6 h; the examples above still type it, and a typed value wins.
+- **Restart interval: 6 h** (owner, 2026-10-04) — the launcher default (`run.DEFAULT_RESTART_INTERVAL_HOURS`); a typed `--restart-interval-hours` wins.
 - 🚨 **AN ARGV IS NOT A CONFIG.** With `--model`, every flag you do not name is INHERITED from `model_config.json`; `--lr` / `--batch-size` / `--n-steps` are INERT on a resume — a fork pins its rate with `--fork-lr`, and the quantity to match is the DOSE (`python -m main.dose <run>`).
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`--stable-opponents`, `--exploiter`, …); name the `.zip` or `@step` to pin a file.
 - 🚨 **A restart RESUMES; a FRESH argv never lands on a run** — a fresh launch into a dir holding a checkpoint is refused; pass `--model` or a new `--run-name`. A PINNED argv is judged by the PINNED commit's parser. Never "launch and kill" to validate — use `--dry-run`.
@@ -236,10 +234,10 @@ Reads a run's `eval_traces` + a checkpoint; no server. Two surfaces over one eng
 
 ```bash
 python3 -m main.prober models/<run>          # browser app
-python3 -m main.prober.web models/           # :6008 run picker; public at prober.g5d.io (model routes behind the shared password)
+python3 -m main.prober.web models/           # :6008 run picker (runs without traces fold into a hidden group); public at prober.g5d.io
 ```
 
-⚠️ Model-loading views work only at the CURRENT architecture (`ArchDriftError` elsewhere); model-free commands work on every run. 🚨 **The trace quota PREFERS LOSSES** — read each cycle's `eval_manifest.json`; none recorded = SELECTION UNKNOWN. Detail: `src/main/prober/CLAUDE.md`.
+`/game` is THE battle viewer (`/battle` redirects to it). 🚨 Every route that loads a checkpoint or runs the model is behind the shared password — a new such route must be too (a derived class guard enforces it). ⚠️ Model-loading views work only at the CURRENT architecture (elsewhere a typed `ArchDriftError`, diagnosed by `main.prober.arch_status`); model-free commands work on every run. 🚨 **The trace quota PREFERS LOSSES** — read each cycle's `eval_manifest.json`; none recorded = SELECTION UNKNOWN. Detail: `src/main/prober/CLAUDE.md`.
 
 ---
 
@@ -278,7 +276,7 @@ deps/           the pokemon-showdown submodule   models/   saved runs (NOT commi
 
 - The observation is a flat **2845-dim float32 vector** + an 11-dim `action_mask` (a Dict obs). 🚨 **NEVER hardcode an index** — read `Gen3ObservationEncoder.get_layout()`; offsets live in `agents/observation/constants.py`.
 - `Gen3FeaturesExtractor` returns a **`(pi_features, vf_features)` tuple** and MUST be paired with `Gen3DualHeadMaskablePolicy`; the action head is the **pointer head** (no flat `action_net`).
-- `ARCH_SIGNATURE` / `MODEL_CONFIG_VERSION` live in `src/agents/model/model_version/`. **Read live values from the code — a version quoted in prose is stale the moment the next lands.** Experimental arms (e.g. the static-token encoder, `--arch static_recovery`) are built and OFF; `designs/ARCHITECTURE.md` and `designs/endstate/design_static_tokens.md` say which. Every quantity the model reads that our code derives by hand is ledgered in `designs/endstate/design_hand_computed_features.md`.
+- `ARCH_SIGNATURE` / `MODEL_CONFIG_VERSION` live in `src/agents/model/model_version/`. **Read live values from the code — a version quoted in prose is stale the moment the next lands.** X5's hypothesis tokens (the old `fixed_mass`) are the production belief representation. Experimental arms are built and OFF: the static per-mon tokens (`--arch static_recovery`) were NOT adopted (the static screen's look 3 read NOT DETECTED), and the legacy encoding stays until the end-state closing test (`designs/endstate/design_endstate_closing_test.md`, `--arch endstate` vs `--arch production`) reads; `designs/ARCHITECTURE.md` and `designs/endstate/design_static_tokens.md` say which. Every quantity the model reads that our code derives by hand is ledgered in `designs/endstate/design_hand_computed_features.md`.
 - **Every save writes `model_config.json`** (the arch record; a mismatch is a hard `[ModelVersion] FATAL`) **and `metadata.json`**, whose `original_command`, `lineage` and `pin_history` blocks are IMMUTABLE — read them through `main.lineage` / `main.sidecar_audit`, never by re-deriving.
 - 🚨 **BASELINES are NAMED and read by name** (`designs/baselines.json` + `agents.training.baselines`); never copy a path. `python -m main.baselines set … --reason` is the only way to change one.
 - 🚨 **`models/` retention is policy:** the pre-Rustboro SKELETON was applied 2026-10-09 — every pre-`rb_` run keeps only its records, TensorBoard, jsonl, final model and registry-named files (intermediate checkpoints, eval traces and their sidecar JSONs are GONE). What survives where: `designs/research_state/models_retention_policy.md` §0.

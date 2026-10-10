@@ -147,18 +147,18 @@ node src/rust_sim/harness/ab_fuzz.js --battles 200
 
 ## The Showdown server (optional)
 
-Only the live-server paths need it — `play.py` against a local server and the `*_e2e_test.py`
-scripts:
+Only the live-server paths need one — `play.py` against a local server and the `*_e2e_test.py`
+scripts. Prefer our Rust websocket front end (no Node); use Node's server only when the test is about
+Node:
 
 ```bash
-npm run showdown            # port 8000 (the port is a positional arg; there is no --port flag)
-npm run showdown -- 8001
-npm run stop                # stop :8000 (Ctrl+C orphans subprocesses — use this)
-npm run stop -- 8001
+python -m utils.bridge.ws_frontend --port 9017 &   # our Rust front end; stop it by its PID
+npm run showdown -- 9017    # Node's server (the port is a positional arg; there is no --port flag)
+npm run stop -- 9017        # stops whatever holds :9017 (Ctrl+C orphans subprocesses)
 ```
 
-Convention on a shared box: 8000 = development, 8001 = the standing training server (other tools
-use it; training itself connects to no server), anything ephemeral on 9XXX.
+Ports 8000 / 8001 are reserved and refused in code (training connects to no server); use a 9XXX port
+and stop only the server you started.
 
 ## Evaluation and forensics
 
