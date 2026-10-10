@@ -303,6 +303,19 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "(gen3_endstate_facts_v1, v152). 'coarse' (default; production): the op's own ledger. "
                              "'eot': the ONE rule --eot-residual reads (eot_residual.EotResidualRule). Requires "
                              "--damage-op.")
+    # gen3_probe_facts_v1 (v153; design_hand_computed_features.md §4 rows 12-13, the probe battery's candidates).
+    from agents.model.static_facts import EFFECTIVE_STATS_MODES, MOVE_TARGET_STATE_MODES
+    parser.add_argument("--effective-stats", "--effective_stats", dest="effective_stats",
+                        choices=EFFECTIVE_STATS_MODES, default=None,
+                        help="Each side's ACTIVE mon's STAGE-APPLIED stats (gen3_probe_facts_v1, v153). 'off' (default; "
+                             "production). 'on': Atk / Def / SpA / SpD / Spe after the gen-3 stage multipliers (Spe after "
+                             "paralysis; ours exact, theirs the believed spread) and the accuracy / evasion multipliers, "
+                             "as zero-init token content. STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
+    parser.add_argument("--move-target-state", "--move_target_state", dest="move_target_state",
+                        choices=MOVE_TARGET_STATE_MODES, default=None,
+                        help="THEIR active's HP fraction + status one-hot onto our 4 E3 move seats (gen3_probe_facts_v1, "
+                             "v153; --move-actor-state's sibling). 'off' (default; production). 'on': through a "
+                             "zero-init projection. STRUCTURAL, version-checked, fresh-only.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

@@ -877,9 +877,12 @@ finding 7, each behind its own flag, OFF in production (ARCHITECTURE "the FACT-C
 | `--ko-ramp exact` | every P(KO) exact over the 16 rolls + the crit chance, each roll's KO resolved over the observed HP interval | 0 |
 | `--drop-progress-clock on` | the model reads `turns_since_progress` (a judgment) as 0 | 0 |
 | `--g-ledger eot` | the op's `g` cell reads the ONE end-of-turn rule (§13's N4) | 0 |
+| `--effective-stats on` (v153) | each side's ACTIVE mon's stage-applied stats + accuracy / evasion multipliers as token content (the probe battery's row 12) | +896 |
+| `--move-target-state on` (v153) | their active's HP + status onto our E3 seats (row 13; `--move-actor-state`'s sibling) | +1,024 |
 
 **`--arch endstate`** = `static_recovery` + `--move-resolution on --speed-physics on --value-threat-inject off
---op-reduction principled --obs-facts v1` + the five, on the production recipe. Measured (CPU; `research_state/
+--op-reduction principled --obs-facts v1` + the five + `--effective-stats on --move-target-state on` (v153), on the
+production recipe. Measured (CPU; `research_state/
 measurements/endstate_facts_2026-10-09/`): flags off, production / `static` / `static_recovery` / E keep the parent's
 graph, state_dict and outputs hash for hash; the arm is ONE dynamo graph, 2,026,908 extractor parameters (+960 over E,
 all zero-init), the eager CPU forward +12.4 % over E (the exact P(KO)'s element-wise terms: +9.9 % alone); the K9(b)

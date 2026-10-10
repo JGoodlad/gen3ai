@@ -567,7 +567,11 @@ from typing import Any, Dict
 #   `drop_progress_clock` {off,on}, `g_ledger` {coarse,eot}; each gated in check_compatible; a pre-v152 config
 #   migrates to off / off / ramp / off / coarse (the only possible past). No ARCH_SIGNATURE bump (production builds
 #   byte-identically), no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 152
+# v153 (gen3_probe_facts_v1): two STRUCTURAL fields, production at the old value: `effective_stats` {off,on} (each side's
+#   ACTIVE mon's stage-applied stats as zero-init token content) and `move_target_state` {off,on} (their active's HP +
+#   status onto our E3 seats). Each gated in check_compatible; a pre-v153 config migrates to off / off. No
+#   ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 153
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

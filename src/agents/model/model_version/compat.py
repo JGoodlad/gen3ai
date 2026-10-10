@@ -601,6 +601,19 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "fact to every forward).\n"
                 "Resume with the matching --eot-residual setting (a flagless resume inherits it), or start a fresh "
                 "training run.")
+        # gen3_probe_facts_v1 (v153): each builds a projection and adds a fact to every forward.
+        if self.effective_stats != saved.effective_stats:
+            raise ModelVersionError(
+                f"effective_stats mismatch: saved={saved.effective_stats!r}, current={self.effective_stats!r}.\n"
+                "This probe-battery fact (gen3_probe_facts_v1) is fixed for a run's lifetime: it builds a projection "
+                "and changes what the network reads.\n"
+                "Resume with the matching --effective-stats setting (a flagless resume inherits it), or start a fresh training run.")
+        if self.move_target_state != saved.move_target_state:
+            raise ModelVersionError(
+                f"move_target_state mismatch: saved={saved.move_target_state!r}, current={self.move_target_state!r}.\n"
+                "This probe-battery fact (gen3_probe_facts_v1) is fixed for a run's lifetime: it builds a projection "
+                "and changes what the network reads.\n"
+                "Resume with the matching --move-target-state setting (a flagless resume inherits it), or start a fresh training run.")
         # gen3_endstate_facts_v1 (v152): the five fact-completion levers — each changes the trained forward (two also
         # build parameters), so a frozen opponent's gate must name the cause rather than read a different input.
         if self.move_resolution_facts != saved.move_resolution_facts:

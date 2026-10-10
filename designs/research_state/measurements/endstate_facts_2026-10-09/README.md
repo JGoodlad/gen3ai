@@ -31,6 +31,13 @@ site, the restored / status / cure blocks and the one end-of-turn rule in the `g
 python designs/research_state/measurements/endstate_facts_2026-10-09/shas.py <parent src> <this src>   # -> shas.out
 ```
 
+**Addendum (`gen3_probe_facts_v1`, v153, the second commit):** with `--effective-stats on --move-target-state on` in
+the arm, production (`421c6b98…`) and E (`b3361475…`) are still the parent's hash for hash; the extended arm is ONE
+graph, 34,898 lines, `55c7f5c009d4595b`, state `df71da47741a8a0f`, outputs `c78ca89766000c71`, 2,031,460 params (+1,920:
+two zero-init projections, 7 → 128 and 8 → 128); the K9(b) recorder still sees no undeclared op; the CPU `--debug` smoke of the extended arm PASSED (1,039 s, peak 3.36 GB; a run beside the routine gate timed out at the test's 1,200 s bound, now 1,800 s). Stat tables VERIFIED:
+`sim/pokemon.ts` `boostTable = [1, 1.5, 2, 2.5, 3, 3.5, 4]`, `data/mods/gen3/scripts.ts` accuracy
+`[1, 4/3, 5/3, 2, 7/3, 8/3, 3]`, paralysis ×0.25 (`data/mods/gen4/conditions.ts`).
+
 ## 2. The mechanics, VERIFIED in `deps/pokemon-showdown` (pinned `e0551883`; `[Gen 3] OU` = gen3 → gen4 → … → base)
 
 | rule | gen-3 fact | source |

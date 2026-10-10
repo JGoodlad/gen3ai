@@ -662,6 +662,22 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "eot_residual.EotResidualRule grouped into the ledger's four columns (eot_residual.g_cells). No "
                    "parameters.",
               requires=("damage_op",)),
+    # gen3_probe_facts_v1 (config v153; design_hand_computed_features.md §4 rows 12-13, the representation probe
+    # battery's two candidates `measurements/probe_battery_2026-10-09/`), each OFF in production (byte-identical).
+    ModelFlag("effective_stats", "off", Tier.CLI, Klass.STRUCTURAL, 153,
+              "each side's ACTIVE mon's STAGE-APPLIED stats as token content ('off' = nothing built, production; 'on' = "
+              "Atk / Def / SpA / SpD / Spe after the gen-3 stage multipliers (Spe after paralysis) / 500, and the "
+              "accuracy / evasion multipliers; ours exact, theirs the believed spread)",
+              note="The probe battery: a boost's SIZE reads at R2 <= 0.10 while 'is boosted' reads at AUC 0.97 (the role "
+                   "network squashes the stage columns). static_facts.effective_stat_features; one zero-init bias-free "
+                   "IsolatedLinear (7 -> 128) built LAST, no RNG draw. Composes with either token encoding.",
+              requires=("damage_op",)),
+    ModelFlag("move_target_state", "off", Tier.CLI, Klass.STRUCTURAL, 153,
+              "THEIR active's HP fraction + status one-hot onto our 4 E3 move seats ('off' = nothing built, production; "
+              "'on' = through a zero-init projection)",
+              note="--move-actor-state's sibling (the TARGET of the moves). The probe battery: their HP reads at R2 0.85 at "
+                   "its own token but 0.26-0.34 at our decision tokens. static_facts.move_target_features; one zero-init "
+                   "bias-free IsolatedLinear (8 -> 128) built LAST, no RNG draw. Composes with either token encoding."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

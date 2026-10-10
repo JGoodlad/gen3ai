@@ -251,6 +251,11 @@ class ModelVersionConstruction(ModelVersionFields):
                 policy_kwargs.get("features_extractor_kwargs", {}).get("switch_hazard_cost", "off")),
             eot_residual=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("eot_residual", "off")),
+            # gen3_probe_facts_v1 (v153): the probe battery's two facts.
+            effective_stats=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("effective_stats", "off")),
+            move_target_state=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_target_state", "off")),
             # gen3_endstate_facts_v1 (v152): the five fact-completion levers.
             move_resolution_facts=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution_facts", "off")),

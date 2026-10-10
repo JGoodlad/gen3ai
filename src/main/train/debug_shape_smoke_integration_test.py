@@ -38,7 +38,9 @@ def test_arch_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run_archive, a
             stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=str(repo_root()),
             env={**os.environ, "PYTHONPATH": str(src_root()), "CUDA_VISIBLE_DEVICES": ""})
         try:
-            rc = proc.wait(timeout=scale_timeout(1200))
+            # 1800 s: `endstate` (a 3-round trunk + the exact P(KO)) ran 884-1039 s on a quiet box, within 13 % of a
+            # 1200 s bound (timed out beside the routine gate, 2026-10-09); a timeout is never the semantic outcome.
+            rc = proc.wait(timeout=scale_timeout(1800))
         except subprocess.TimeoutExpired:
             rc = None
         finally:

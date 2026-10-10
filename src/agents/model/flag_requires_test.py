@@ -71,6 +71,9 @@ _ON_OVERRIDE: Dict[str, object] = {
     "ko_ramp": "exact",
     "drop_progress_clock": "on",
     "g_ledger": "eot",
+    # gen3_probe_facts_v1 (v153)
+    "effective_stats": "on",
+    "move_target_state": "on",
 }
 
 

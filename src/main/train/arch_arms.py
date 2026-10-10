@@ -68,6 +68,8 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
             ("ko_ramp", "exact"),
             ("drop_progress_clock", "on"),
             ("g_ledger", "eot"),
+            ("effective_stats", "on"),
+            ("move_target_state", "on"),
         ),
         purpose="static_recovery + move resolution, speed physics, the principled op reductions, the OBS-FACTS block, "
                 "no critic threat injection, + every fact-completion lever (the restored move-resolution facts, the "

@@ -24010,3 +24010,24 @@ FINDINGS:
    (a refusal ⇒ INCONCLUSIVE).
 
 Tag: **REGISTRATION · END-STATE CLOSING TEST · P_prod `c0f528b4` · 8 + 8 seeds · fixed n · PASS iff 90 % upper > 0 and lower > −2.0 pp · nothing launched** · design: [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) · rule: [`endstate_closing_test_2026-10-09/`](measurements/endstate_closing_test_2026-10-09/)
+### 2026-10-09 · BUILT · **THE PROBE BATTERY'S TWO FACTS (`gen3_probe_facts_v1`, v153): `--effective-stats` (each active mon's stage-applied stats + accuracy / evasion multipliers as token content) and `--move-target-state` (their active's HP + status on our E3 seats), both OFF, both added to `--arch endstate`; production byte-identical**
+
+- **Why.** The probe battery (`measurements/probe_battery_2026-10-09/`): a boost's size reads at R² ≤ 0.10 ("boosted" at
+  AUC 0.97); their active's HP at R² 0.26–0.34 at our decision tokens (0.85 at its own). Orchestrator, from
+  `design_hand_computed_features.md` §4 rows 12-13; owner policy: run together, then bisect.
+- **Built.** `--effective-stats on`: per ACTIVE mon (both sides) Atk / Def / SpA / SpD / Spe × the gen-3 stage multiplier
+  (Spe × 1/4 more when paralysed) / 500 — ours exact from the observed spread, theirs the believed spread — and the
+  accuracy / evasion multipliers; zero-init `IsolatedLinear(7, 128)`. `--move-target-state on`: their active's HP +
+  status one-hot onto our valid E3 seats; zero-init `IsolatedLinear(8, 128)`. Tables VERIFIED at source
+  (`sim/pokemon.ts`, `data/mods/gen3/scripts.ts`, `data/mods/gen4/conditions.ts`).
+- **Identity:** flags off, production (`421c6b98…`) and E (`b3361475…`) unchanged; the extended `--arch endstate` is one
+  CPU graph, 2,031,460 params (+1,920). K9(b): no undeclared op.
+- **Tests (fail on revert):** `agents/model/probe_facts_test.py` (constructed boards, the Showdown tables, one-lever
+  init in both encodings + the planted projection reaches the trunk, equivariance, versioning); 4 revert mutations,
+  each caught.
+
+FINDINGS: (1) the delivery graph has no edge for static's `op_content` (pre-existing; `module_coverage` on any static
+build reports it UNDRAWN; not fixed here). (2) Deferred GPU checks as for v152 (the arm's compile parity, T2 CUDA graph,
+K9(b) on a real update, a real launch, the cost read).
+
+Tag: **BUILT · probe-battery facts · v153 · OFF · in `--arch endstate` · production byte-identical · GPU checks DEFERRED** · design: [`design_hand_computed_features.md`](../endstate/design_hand_computed_features.md) §4 rows 12-13

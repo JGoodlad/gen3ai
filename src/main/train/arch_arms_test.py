@@ -109,7 +109,9 @@ def test_the_arm_trains_on_the_production_recipe_and_a_restart_restores_it():
 # gen3_endstate_facts_v1: the END-STATE arm (owner 2026-10-09: "run all of them speculatively together, then bisect").
 ENDSTATE = {**STATIC_RECOVERY, "move_resolution": "on", "speed_physics": "on", "value_threat_inject": False,
             "op_reduction": "principled", "obs_facts": "v1", "move_resolution_facts": "full", "status_facts": "exact",
-            "ko_ramp": "exact", "drop_progress_clock": "on", "g_ledger": "eot"}
+            "ko_ramp": "exact", "drop_progress_clock": "on", "g_ledger": "eot",
+            # gen3_probe_facts_v1 (v153): the probe battery's two facts
+            "effective_stats": "on", "move_target_state": "on"}
 
 
 def test_the_endstate_arm_is_static_recovery_plus_the_bundle_plus_every_fact_lever():

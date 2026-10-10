@@ -32,7 +32,8 @@ from agents.model.flat_intent import FlatConsumerOps, append_other, compat_inten
 from agents.model.hypothesis_set import HypothesisSet
 from agents.model.hypothesis_encode import gathered_hypothesis_tokens
 from agents.model.static_tokens import StaticTokenEncoder, static_hypothesis_tokens
-from agents.model.static_facts import mon_hazard_features, move_actor_features, switch_hazard_features
+from agents.model.static_facts import (effective_stat_features, mon_hazard_features, move_actor_features,
+                                       move_target_features, switch_hazard_features)
 from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoster, build_op_roster,
                                             fixed_mass_moves, hypothesis_ctx, key_log_presence,
                                             other_column, other_roster, splice_hypothesis_tokens)
@@ -581,6 +582,13 @@ class ExtractorForward(ExtractorApi):
             _seat_tokens = torch.cat([
                 _seat_tokens[:, :4] + _actor[:, None, :] * _move_valid[:, :, None].to(_seat_tokens.dtype),
                 _seat_tokens[:, 4:]], dim=1)
+        # gen3_probe_facts_v1 (`--move-target-state on`, `static_facts.move_target_features`): THEIR active's HP + status
+        # (the target) onto our 4 E3 move seats (zero-init, bias-free; an invalid seat stays the zero token it is).
+        if self.move_target_proj is not None:
+            _target = self.move_target_proj(move_target_features(ctx).to(_seat_tokens.dtype))         # [B,D]
+            _seat_tokens = torch.cat([
+                _seat_tokens[:, :4] + _target[:, None, :] * _move_valid[:, :, None].to(_seat_tokens.dtype),
+                _seat_tokens[:, 4:]], dim=1)
         _seat_types = self.entity_seats.seat_types(ctx.device)
         # gen3_event_window_v1 (Tier H-B): the event seats join the extra seam LAST, so every
         # front-indexed seat slice (E3 [:4], E4 [4:4+K], the E5 tail) is position-stable, and
@@ -781,6 +789,11 @@ class ExtractorForward(ExtractorApi):
             assert self.status_cure_rule is not None
             _cure = self.status_cure_rule(_opctx, self.damage_op, self.last_move_belief_logits)   # [B,12,CURE_DIM]
             role_tokens = role_tokens + self.status_cure_proj(_cure.to(role_tokens.dtype))
+        # gen3_probe_facts_v1 (`--effective-stats on`, `static_facts.effective_stat_features`): each side's ACTIVE mon's
+        # stage-applied stats (ours exact, theirs the believed spread) as token content (zero-init).
+        if self.effective_stats_proj is not None:
+            _eff = effective_stat_features(self.damage_op, _opctx, self.last_spread_belief)      # [B,12,EFF_DIM]
+            role_tokens = role_tokens + self.effective_stats_proj(_eff.to(role_tokens.dtype))
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),

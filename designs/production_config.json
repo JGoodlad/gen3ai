@@ -21,6 +21,7 @@
   "draw_penalty": 0.0,
   "drop_progress_clock": "off",
   "edge_bias_families": "d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r",
+  "effective_stats": "off",
   "entity_tail_seats": true,
   "entity_topk_seats": 6,
   "eot_residual": "off",
@@ -56,6 +57,7 @@
   "move_prior_fusion": true,
   "move_resolution": "off",
   "move_resolution_facts": "off",
+  "move_target_state": "off",
   "net_arch": [
     512,
     512

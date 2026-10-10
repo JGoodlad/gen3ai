@@ -177,6 +177,8 @@
 | `--ko-ramp` | — | 0 / 0 | `--arch production`: `production_config.json` `ko_ramp` = `"ramp"`; the end-state arm's `exact` (P(KO) over the 16 rolls + crit; §4 rank 3, config v152) | **KEEP** |
 | `--drop-progress-clock` | — | 0 / 0 | `--arch production`: `production_config.json` `drop_progress_clock` = `"off"`; the end-state arm's `on` (the model reads `turns_since_progress` as 0; §5 rank 1, config v152) | **KEEP** |
 | `--g-ledger` | — | 0 / 0 | `--arch production`: `production_config.json` `g_ledger` = `"coarse"`; the end-state arm's `eot` (the `g` cell reads the ONE end-of-turn rule; finding 7, config v152) | **KEEP** |
+| `--effective-stats` | — | 0 / 0 | `--arch production`: `production_config.json` `effective_stats` = `"off"`; the end-state arm's `on` (each active mon's stage-applied stats as token content; `designs/endstate/design_hand_computed_features.md` §4 row 12, config v153) | **KEEP** |
+| `--move-target-state` | — | 0 / 0 | `--arch production`: `production_config.json` `move_target_state` = `"off"`; the end-state arm's `on` (their active's HP + status on our E3 seats; §4 row 13, config v153) | **KEEP** |
 | `--obs-facts` | — | 0 / 0 | `--arch production`: `production_config.json` `obs_facts` = `"off"`; the OBS-FACTS screen's `v1` arm (the entity-coverage audit's B5 / B7 / B8 / B9 lever, `designs/endstate/design_entity_coverage_audit.md` §8, config v144) | **KEEP** |
 | `--fork-fraction` | — | 1 / 0 | the Rust fork arm (declared, OFF; `designs/training/forks.md` section 14 checklist gates enabling it; `designs/endstate/`) | **KEEP** |
 | `--fork-branches` | — | 1 / 0 | the Rust fork arm's branch count | **KEEP** |

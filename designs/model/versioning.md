@@ -240,6 +240,10 @@ possible past); no `ARCH_SIGNATURE` or floor change (production builds byte-iden
 parameter (`ko_ramp`, `drop_progress_clock`, `g_ledger`: the string compare is the only gate, as for `speed_physics`);
 the NAMED ARM `--arch endstate` writes all five (and the static-recovery / bundle levers) as recorded fields.
 
+**v153 (`gen3_probe_facts_v1`, 2026-10-09)** added two STRUCTURAL fields, each gated in `check_compatible`:
+`effective_stats` and `move_target_state` ({off,on}; each builds one zero-init projection). A pre-v153 config migrates
+to off / off; no `ARCH_SIGNATURE` or floor change. `--arch endstate` records both.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

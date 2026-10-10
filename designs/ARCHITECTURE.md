@@ -947,9 +947,17 @@ endstate_facts_2026-10-09/`):
   end-of-turn rule `--eot-residual` reads (`eot_residual.g_cells`: [Leftovers + Rain Dish + Wish + Ingrain, weather,
   status + Curse + Nightmare, Leech drain + heal]) instead of its own coarser ledger. No parameters.
 
+Two more facts (config v153, `gen3_probe_facts_v1`, OFF; the representation probe battery's candidates,
+`endstate/design_hand_computed_features.md` §4 rows 12-13): **`--effective-stats on`** adds to each side's ACTIVE mon's
+token (zero-init bias-free `IsolatedLinear(7, 128)`) its Atk / Def / SpA / SpD / Spe after the gen-3 stat stages (Spe
+also after paralysis) / 500 — ours from the observed spread, theirs the believed spread — and its accuracy / evasion
+stage multipliers (a benched mon reads 0); **`--move-target-state on`** adds THEIR active's HP fraction and status
+one-hot to our four VALID E3 seats (zero-init `IsolatedLinear(8, 128)`; `--move-actor-state`'s sibling, either
+encoding).
+
 The named arm **`--arch endstate`** (`main/train/arch_arms.py`) is `static_recovery` + `--move-resolution on`,
-`--speed-physics on`, `--value-threat-inject off`, `--op-reduction principled`, `--obs-facts v1` + all five levers,
-on the production recipe.
+`--speed-physics on`, `--value-threat-inject off`, `--op-reduction principled`, `--obs-facts v1` + all five levers +
+`--effective-stats on --move-target-state on`, on the production recipe.
 
 **OFF in production: `move_resolution`** (v141, `gen3_move_resolution_v1`, `--move-resolution {off,on}` —
 architecture audit F11 §9, the owner's 2026-10-06 ruling: FACTS kept, JUDGMENTS dropped). `off` builds nothing
@@ -1753,6 +1761,7 @@ does nothing given another setting.
 | `damage_topk_k` | `6` | ACTIVE |
 | `drop_progress_clock` | `"off"` | OFF |
 | `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r"` | ACTIVE |
+| `effective_stats` | `"off"` | OFF |
 | `entity_tail_seats` | `true` | ACTIVE |
 | `entity_topk_seats` | `6` | ACTIVE |
 | `eot_residual` | `"off"` | OFF |
@@ -1772,6 +1781,7 @@ does nothing given another setting.
 | `move_prior_fusion` | `true` | ACTIVE |
 | `move_resolution` | `"off"` | OFF |
 | `move_resolution_facts` | `"off"` | OFF |
+| `move_target_state` | `"off"` | OFF |
 | `obs_facts` | `"off"` | OFF |
 | `op_believed_lean` | `true` | ACTIVE |
 | `op_drop_renders` | `true` | ACTIVE |

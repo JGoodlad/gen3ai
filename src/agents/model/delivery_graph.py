@@ -128,6 +128,8 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "op_worst_proj": ("op_worst_proj",),
     "mon_hazard_proj": ("mon_hazard_proj",),
     "move_actor_proj": ("move_actor_proj",),
+    "move_target_proj": ("move_target_proj",),      # gen3_probe_facts_v1 (`--move-target-state on`)
+    "effective_stats_proj": ("effective_stats_proj",),   # gen3_probe_facts_v1 (`--effective-stats on`)
     "eot_residual_proj": ("eot_residual_proj",),
     "status_cure_proj": ("status_cure_proj",),      # gen3_endstate_facts_v1 (`--status-facts exact`)
     "obs_facts_inject": ("ObsFactsInject",),
@@ -514,6 +516,12 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             edges.append(_edge("obs_unpack", f"E3_move[{k}]", "content", MOVE_ACTOR_DIM, "MOVE_ACTOR_DIM",
                                via="move_actor_proj", zero_init=True,
                                note="our active's [HP fraction, status one-hot] — the actor of the move"))
+        # gen3_probe_facts_v1 (`--move-target-state on` only): their active's HP + status onto the seat.
+        if getattr(fe, "move_target_proj", None) is not None:
+            from agents.model.static_facts import MOVE_TARGET_DIM
+            edges.append(_edge("obs_unpack", f"E3_move[{k}]", "content", MOVE_TARGET_DIM, "MOVE_TARGET_DIM",
+                               via="move_target_proj", zero_init=True,
+                               note="their active's [HP fraction, status one-hot] — the target of the move"))
     _e4_note = ("[latent, belief w, accuracy, is_phys]; idx detached, w differentiable"
                 if hb is None else
                 "[latent, w, accuracy, is_phys] in the move group's ONE order (X5 FixedMassMoves); "
@@ -593,6 +601,15 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    note="the end-of-turn residual if this mon is on the field: Leftovers, weather, "
                                         "Rain Dish, the status tick, Leech Seed drain / heal, Wish, Ingrain, Curse, "
                                         "Nightmare, and the HP-clamped net (`eot_residual.EotResidualRule`)"))
+    # gen3_probe_facts_v1 (`--effective-stats on` only): each side's ACTIVE mon's stage-applied stats.
+    if getattr(fe, "effective_stats_proj", None) is not None:
+        from agents.model.static_facts import EFFECTIVE_STATS_DIM
+        for side in ("our_mon", "opp_mon"):
+            for i in range(T):
+                edges.append(_edge("damage_op", f"{side}[{i}]", "content", EFFECTIVE_STATS_DIM, "EFFECTIVE_STATS_DIM",
+                                   via="effective_stats_proj", zero_init=True,
+                                   note="the active's Atk / Def / SpA / SpD / Spe after the stat stages (Spe after "
+                                        "paralysis) / 500 + its accuracy / evasion multipliers (0 on a bench)"))
     # gen3_endstate_facts_v1 (`--status-facts exact` only): every mon's cure-availability facts.
     if getattr(fe, "status_cure_proj", None) is not None:
         from agents.model.status_facts import CURE_DIM

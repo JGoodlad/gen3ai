@@ -130,6 +130,8 @@ class ExtractorBuild(torch.nn.Module):
                  ko_ramp: str = "ramp",
                  drop_progress_clock: str = "off",
                  g_ledger: str = "coarse",
+                 effective_stats: str = "off",
+                 move_target_state: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -1186,6 +1188,26 @@ class ExtractorBuild(torch.nn.Module):
         self.status_cure_rule: Optional[CureFlags] = CureFlags(layout) if status_facts == "exact" else None
         self.status_cure_proj: Optional[_IsoLin] = (_IsoLin(CURE_DIM, D_MODEL, zero=True, bias=False)
                                                     if status_facts == "exact" else None)
+
+        # gen3_probe_facts_v1 (config v153; `design_hand_computed_features.md` §4 rows 12-13, the probe battery's two
+        # candidates): `--effective-stats on` = each ACTIVE mon's stage-applied stats as token content (both sides),
+        # `--move-target-state on` = their active's HP + status onto our 4 E3 seats (`--move-actor-state`'s sibling).
+        # Each builds ONE zero-init, bias-free `IsolatedLinear` LAST (no RNG draw; ON adds exactly 0 at init).
+        from agents.model.static_facts import (EFFECTIVE_STATS_DIM, EFFECTIVE_STATS_MODES, MOVE_TARGET_DIM,
+                                               MOVE_TARGET_STATE_MODES)
+        if effective_stats not in EFFECTIVE_STATS_MODES:
+            raise ValueError(f"effective_stats must be one of {EFFECTIVE_STATS_MODES}, got {effective_stats!r}")
+        if move_target_state not in MOVE_TARGET_STATE_MODES:
+            raise ValueError(f"move_target_state must be one of {MOVE_TARGET_STATE_MODES}, got {move_target_state!r}")
+        if effective_stats == "on" and not damage_op:
+            raise ValueError("effective_stats='on' requires damage_op=True: the stats are read with the op's base-stat "
+                             "table and its spread belief, the op's own stat convention.")
+        self.effective_stats = effective_stats
+        self.move_target_state = move_target_state
+        self.effective_stats_proj: Optional[_IsoLin] = (_IsoLin(EFFECTIVE_STATS_DIM, D_MODEL, zero=True, bias=False)
+                                                        if effective_stats == "on" else None)
+        self.move_target_proj: Optional[_IsoLin] = (_IsoLin(MOVE_TARGET_DIM, D_MODEL, zero=True, bias=False)
+                                                    if move_target_state == "on" else None)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

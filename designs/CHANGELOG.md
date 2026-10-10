@@ -13434,3 +13434,17 @@ read both cells for its end-of-turn rule and found them wrong.
 - **Docs whose premise changed.** ARCHITECTURE's "Dropped (judgments)" paragraph now names only the two judgments; the
   restored facts are FACTS. `move_resolution_test.py::test_spin_denied_keeps_the_fact_and_drops_the_stake` and
   `test_the_dropped_judgments_are_not_coordinates` keep their assertions on the BASE family, their premise re-stated.
+
+## 2026-10-09 — v153 / `gen3_probe_facts_v1`: the probe battery's two facts `--effective-stats`, `--move-target-state` (both OFF; production byte-identical), added to `--arch endstate`
+
+- **Why.** The representation probe battery (`measurements/probe_battery_2026-10-09/`): a boost's SIZE reads at R² ≤ 0.10
+  while "is boosted" reads at AUC 0.97 (the role network squashes the stage columns); their active's HP reads at R² 0.85
+  at its own token but 0.26–0.34 at our decision tokens. `design_hand_computed_features.md` §4 rows 12-13.
+- **`--effective-stats {off,on}`** (`static_facts.effective_stat_features`): each side's ACTIVE mon's Atk / Def / SpA /
+  SpD / Spe after the gen-3 stat stages (`sim/pokemon.ts` boostTable; Spe ×1/4 when paralysed) / 500 — ours from the
+  observed spread, theirs the believed spread — and its accuracy / evasion multipliers (`data/mods/gen3/scripts.ts`
+  table); a benched mon 0; zero-init `IsolatedLinear(7, 128)` token content, either encoding.
+- **`--move-target-state {off,on}`** (`static_facts.move_target_features`): their active's HP fraction + status one-hot
+  onto our four valid E3 seats, zero-init `IsolatedLinear(8, 128)` (`--move-actor-state`'s sibling; either encoding).
+- **Versioning.** Config 152 → 153: two STRUCTURAL fields gated in `check_compatible`, migrated to off / off. Flags off,
+  production and E keep the parent's graph, state_dict and outputs; the extended arm is one graph, +1,920 params.

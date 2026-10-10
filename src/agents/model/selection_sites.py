@@ -433,6 +433,10 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "status_facts": {
         "OBS": ("ctx.hp_and_active[:, :, 0] > 0",),
     },
+    # gen3_probe_facts_v1 (`--effective-stats on`): the stage sign (an observed stage, k / 6 × 6) and the alive gate.
+    "static_facts": {
+        "OBS": ("s >= 0", "ctx.hp_and_active[:, :, 0] > 0"),
+    },
     "eot_residual": {
         "OBS": ("hp > 0", "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round()",
                 "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round().long()"),

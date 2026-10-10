@@ -160,6 +160,8 @@ UNTIERED_CHILDREN = frozenset({
     "eot_residual_proj",    # `--eot-residual on`: its zero-init projection, the root's pre-trunk residual (same seam)
     "status_cure_rule",     # `--status-facts exact`: the cure-availability rule (tables only), on the op's context pre-trunk
     "status_cure_proj",     # `--status-facts exact`: its zero-init projection, the root's pre-trunk residual (same seam)
+    "effective_stats_proj", # `--effective-stats on`: the active mons' stage-applied stats, the root's pre-trunk residual
+    "move_target_proj",     # `--move-target-state on`: their active's HP + status onto the E3 seats, pre-trunk residual
     "pre_proj_norm", "projection", "activation",
     "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths
 })

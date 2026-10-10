@@ -455,6 +455,11 @@ class ModelVersionFields:
     ko_ramp: str = "ramp"
     drop_progress_clock: str = "off"
     g_ledger: str = "coarse"
+    # gen3_probe_facts_v1 (config v153): the probe battery's two candidates (`design_hand_computed_features.md` §4 rows
+    # 12-13): `--effective-stats {off,on}` (the active mons' stage-applied stats as token content) and
+    # `--move-target-state {off,on}` (their active's HP + status on our E3 seats). STRUCTURAL (each builds a projection).
+    effective_stats: str = "off"
+    move_target_state: str = "off"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

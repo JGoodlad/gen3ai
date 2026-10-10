@@ -533,6 +533,11 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("drop_progress_clock", "off")
         data.setdefault("g_ledger", "coarse")
         data["config_version"] = 152
+    # v153 (gen3_probe_facts_v1) — two structural facts, each absent before (the only possible past).
+    if version < 153:
+        data.setdefault("effective_stats", "off")
+        data.setdefault("move_target_state", "off")
+        data["config_version"] = 153
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

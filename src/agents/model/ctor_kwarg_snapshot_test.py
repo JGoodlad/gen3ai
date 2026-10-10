@@ -80,6 +80,8 @@ CTOR_KWARGS_V96 = frozenset({
     "ko_ramp",
     "drop_progress_clock",
     "g_ledger",
+    "effective_stats",
+    "move_target_state",
     "obs_facts",
 })
 
