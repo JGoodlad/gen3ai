@@ -115,12 +115,13 @@ _BINARY_VOLATILES: Tuple[str, ...] = (
 
 # SAME STATE, SECOND NAME. Showdown's Mind Reader adds the very `lockon` volatile Lock-On does
 # (moves.ts `source.addVolatile('lockon', target)` in both), but announces it as
-# `-activate|<user>|move: Mind Reader`, which poke-env records as `Effect.MIND_READER`. It is the
+# `-activate|<user>|move: Mind Reader`, which the reader records as `Effect.MIND_READER`. It is the
 # lockon STATE ("the user's next move cannot miss"), so it writes the lockon slot.
 _SAME_STATE_ALIASES: Dict[str, str] = {"mindreader": "lockon"}
 
 # NOT-A-VOLATILE — ids that DO reach ``LiveView.volatiles`` but are NOT a volatile state, each with
-# where its information actually lives. poke-env's ``-activate`` handler calls ``start_effect`` for
+# where its information actually lives. The reader's ``-activate`` handler (the Rust core's
+# ``present/board_reading.rs``, a port of poke-env's, which is retired) calls ``start_effect`` for
 # ANY ``|-activate|<mon>|<effect>`` it has no special branch for, so a ONE-SHOT announcement ("Heal
 # Bell rang", "Beat Up hit with this ally") lands in ``mon.effects`` beside the real volatiles and
 # stays there until the mon switches out. Encoding it as a state would be FALSE (nothing persists),
@@ -128,11 +129,12 @@ _SAME_STATE_ALIASES: Dict[str, str] = {"mindreader": "lockon"}
 #
 # THIS SET IS SOURCE-DERIVED, AND THE TEST PROVES IT. ``gen3_effect_sources`` scans every
 # ``add('-start'|'-activate'|'-singleturn'|'-singlemove', …)`` the gen3 format executes (sim/,
-# data/, the mod chain resolved as the gen3 Dex merges it), EXECUTES each line on a real
-# ``Gen3Battle`` and reads back the id that lands in ``LiveView.volatiles``;
-# ``gen3_effects_test.py`` fails when that set is not covered by GEN3_VOLATILE_TO_SLOT ∪ this map,
-# when an entry here is no longer derived (dead), or when a line lands as ``unknown`` (a poke-env
-# ``Effect`` enum gap no encoder can classify). ``ladder_drift_scan`` re-runs the same
+# data/, the mod chain resolved as the gen3 Dex merges it), EXECUTES each line on the Rust reader the
+# live client runs (``main.live.effect_scan.probe_lines``; the Python ``Gen3Battle`` execution is deleted,
+# T27 P6) and ENCODES the result; ``gen3_effects_test.py`` fails when a derived line does not read and
+# encode clean, when an entry here is no longer derived (dead), or when a line lands as ``unknown`` (an
+# ``Effect`` vocabulary gap — ``present/tables.rs`` ``EFFECTS`` — no encoder can classify).
+# ``ladder_drift_scan`` re-runs the same
 # text derivation against the Showdown the PUBLIC server runs (on the Rust reader since P6). The whack-a-mole this ends:
 # doomdesire → immunity → magmaarmor → waterveil → healbell (belief-calibration read, 2026-09-24).
 #
@@ -141,24 +143,24 @@ _SAME_STATE_ALIASES: Dict[str, str] = {"mindreader": "lockon"}
 NOT_A_VOLATILE: Dict[str, str] = {
     "healbell": "ONE-SHOT. `-activate|<user>|move: Heal Bell`; the cures arrive as one "
                 "`-curestatus|<mon>|<status>` per cured team member (gen4 mod onHit → "
-                "`cureStatus`), which poke-env folds into each mon's status",
+                "`cureStatus`), which the reader folds into each mon's status",
     "magnitude": "ONE-SHOT. `-activate|<user>|move: Magnitude|<n>` announces the rolled "
                  "magnitude; its only consequence is the `-damage` that follows",
     "spite": "ONE-SHOT. `-activate|<target>|move: Spite|<move>|<pp cut>`; its consequence is a "
-             "PP cut (own side: the next |request| carries it; opponent side: see the poke-env "
-             "finding in observation/CLAUDE.md — poke-env does not apply it)",
+             "PP cut (own side: the next |request| carries it; opponent side: the reader does not "
+             "apply it — a reading finding, designs/observation/volatile_vocabulary.md)",
     "mist": "ONE-SHOT. `-activate|<target>|move: Mist` when the side's Mist blocks a stat drop; "
             "Mist itself is a SIDE condition (`-sidestart`), and the blocked drop is the absence "
             "of a `-unboost`",
     "safeguard": "ONE-SHOT. `-activate|<target>|move: Safeguard` when the side's Safeguard blocks "
                  "a status; Safeguard itself is a SIDE condition (`-sidestart`)",
     "focusband": "ONE-SHOT. `-activate|<holder>|item: Focus Band` when the band leaves it at 1 HP; "
-                 "the HP arrives as `-damage` (the item disclosure does NOT — a poke-env reading "
-                 "finding, observation/CLAUDE.md)",
+                 "the HP arrives as `-damage` (the item disclosure does NOT — a reading finding, "
+                 "designs/observation/volatile_vocabulary.md)",
     "typechange": "PERSISTENT, CARRIED ELSEWHERE. `-start|<mon>|typechange|<Type>` (Conversion, "
-                  "Conversion 2, Camouflage, Color Change): poke-env's `start_effect(TYPECHANGE, "
-                  "details)` sets `_temporary_types`, which `Pokemon.type_1/type_2` (the per-mon "
-                  "TYPE block) and `LivePokemon.types` (the damage op) read; switch-out clears "
+                  "Conversion 2, Camouflage, Color Change): the Rust reader's `start_effect(TYPECHANGE, "
+                  "details)` (`present/mon.rs`) sets the mon's temporary types, which the per-mon "
+                  "TYPE block and `LivePokemon.types` (the damage op) read; switch-out clears "
                   "both. A volatile bit would duplicate the type block",
 }
 

@@ -66,8 +66,9 @@ from main.launcher.worktree import (
 
 # A self-crash sooner than this after (re)launch counts toward the consecutive
 # circuit-breaker (a deterministic startup crash can't spin forever); a crash after
-# sustained progress resets the counter. 10 minutes — comfortably past the 3+ min it
-# takes to bring up the SubprocVecEnv workers + Showdown connections.
+# sustained progress resets the counter. 10 minutes — comfortably past the startup a launch
+# spends before its first rollout (model build, the inference service and the Rust env-core
+# workers coming up, the first compile).
 _FAST_CRASH_SECONDS = 600.0
 
 #: How long a SIGTERMed child gets before the launcher SIGKILLs it — the supervisor's escalation AND
@@ -900,11 +901,12 @@ def _apply_nice(target: int) -> "int | None":
     """Raise this process's scheduling niceness to ``target``; return the level, or None.
 
     The launcher and every training subprocess must never compete on equal terms with
-    interactive work on the same box: a run holds ~940 processes at load 20+ on 16 cores,
-    and at nice 0 an interactive client sharing the box measured 2.1 s of run-queue wait
-    per 1 s of CPU. Children inherit niceness across fork/exec, so setting it once here
-    covers the training child, its SubprocVecEnv workers and every eval worker — including
-    the ones spawned by later periodic/crash restarts.
+    interactive work on the same box: a run (measured 2026-08-13, on the since-deleted Python
+    env core's ~940 processes) held load 20+ on 16 cores, and at nice 0 an interactive client
+    sharing the box measured 2.1 s of run-queue wait per 1 s of CPU. Children inherit niceness
+    across fork/exec, so setting it once here covers the training child, its Rust env-core
+    workers (`rust_env_proc`) and every eval worker — including the ones spawned by later
+    periodic/crash restarts.
 
     Only ever RAISES (lowers priority): a negative nice needs CAP_SYS_NICE, which an
     unprivileged launcher does not have, so a lower target is a no-op rather than an error.

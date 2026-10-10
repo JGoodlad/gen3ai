@@ -50,7 +50,7 @@ function ladderRows(tier = 'milestone') {
  * random from `tier` with the fuzzer's seeded team RNG (so a master seed replays the same draws).
  * Every corpus team already passed the ENGINE oracle; `teamFilterClean` (the JS mirror of the
  * modeled sets) is REPORTED against, never used to drop a team — a picker predicate that gates a
- * test silently shrinks it (src/rust_sim/CLAUDE.md, "The picker's own blind spots").
+ * test silently shrinks it (designs/rust_sim/fuzzers.md, "The picker's own blind spots").
  */
 function makeLadderProvider(rng, stats, tier = 'milestone', teamFilterClean = null) {
   const rows = ladderRows(tier);

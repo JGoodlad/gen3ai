@@ -41,13 +41,14 @@ class LauncherState:
         self._metrics_ts: Optional[float] = None
         self._eval_metrics_ts: Optional[float] = None
         # Monotonic timestamp of the LAST sign of life from the child — any stdout
-        # line, IPC event, or metrics update. Consumed by the dashboard (ui.py) to
+        # line, IPC event, or metrics update. Consumed by the dashboard (app.py) to
         # paint a `⚠ no child output for Nm` indicator when it goes stale. NOTE: this
         # is purely *visual* — the launcher does NOT auto-restart on stall (see the
-        # `--restart-grace-minutes` note in CLAUDE.md). The case that used to hang
-        # invisibly — a mid-battle websocket drop — now crashes the child loudly via
-        # the `_AsyncQueue` disconnect guard (poke_env env.py), so proc.wait returns
-        # and the normal crash path closes the TUI; it no longer relies on this clock.
+        # `--restart-grace-minutes` row in designs/launcher/flags.md). Training and
+        # eval run in-process on the Rust env core and open no websocket, so there is
+        # no connection to drop (the poke-env disconnect guard that used to crash a
+        # hung child loudly was deleted with it, T27 P6): a silent child is a stalled
+        # collector or learner, and this clock is how the operator sees it.
         self._last_activity_ts: float = time.monotonic()
         self.pid: Optional[int] = None
         self.run_start: float = time.monotonic()

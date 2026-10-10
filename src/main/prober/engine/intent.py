@@ -75,7 +75,8 @@ def _beta_candidate(e: dict) -> OppIntentCandidate:
 
 def build_opp_intent(inv: dict) -> "OppIntentView | None":
     """What the model expected the OPPONENT to do — model-free, from the summary invocation's
-    `opp_intent` block (`RLPlayer._opp_intent` → `BattleRecorder.record`).
+    `opp_intent` block (written by the deleted poke-env `RLPlayer` / `BattleRecorder`; no Rust-core
+    trace carries one, so this reads pre-core archive traces only).
 
     `None` when the block is absent (the `α`/`β` heads were off, i.e. every trace before v67) or
     holds no named option. **The `alpha` order is the recorder's** — `render_alpha` already sorted it

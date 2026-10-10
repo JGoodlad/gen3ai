@@ -1,4 +1,4 @@
-"""The engine's top-level entry — `analyze_invocation`, plus the trace meta and value-dist reads."""
+"""The engine's top-level entry — `analyze_invocation`, plus the trace meta read."""
 
 from __future__ import annotations
 
@@ -132,8 +132,10 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     # above already built a model-free one without them).
     outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome, protocol=protocol)}
     acts = inv["actions"]
-    # The recorded `actions` dict is ALREADY in ACTION-INDEX order: `BattleRecorder._all_action_labels`
-    # iterates action index 0..10 and keys move slot m (action 6+m) on `legal.move_ids[m]` — the SAME
+    # The recorded `actions` dict is ALREADY in ACTION-INDEX order: `trace_labels.all_action_labels`
+    # (what the core recorder, `main.prober.core_recorder`, writes the summary with; the deleted
+    # poke-env `BattleRecorder._all_action_labels` was its predecessor) iterates action index 0..10
+    # and keys move slot m (action 6+m) on `legal.move_ids[m]` — the SAME
     # request-slot order the action mask, the DamageOperator's per-move blocks, and the policy logits
     # (action 6+k) use. So `labels[i]` ↔ action index i ↔ `probs[i]` directly; every action-6+k-indexed
     # consumer below (matchups ×mult, op outgoing, the re-run argmax) is correctly paired with NO realign.

@@ -2,7 +2,7 @@
 
 Two separate obligations live here, and they are easy to conflate:
 
-1. **The `species_posterior` spelling.** `--compile-opponents` used to set
+1. **The `species_posterior` spelling.** The (since deleted) `--compile-opponents` used to set
    `torch._dynamo.config.suppress_errors = True`. That looked like defensive hygiene but was
    actually working around a single failure: on the `BeliefHead.species_posterior` path, the
    softmax over species logits lowered to a `[B,6,n_species]` numerator plus a `[B,6,1]`
@@ -21,7 +21,7 @@ Two separate obligations live here, and they are easy to conflate:
 
    | | forward | forward + backward |
    |---|---|---|
-   | **CPU** | ✅ the frozen self-play OPPONENT (`--compile-opponents`, B=1 in every env worker) | ❌ **does not lower** — Inductor's C++ backend asserts on an `atomic_add` scatter |
+   | **CPU** | ✅ the offline opponent compile (`maybe_compile_extractor`, B=1; the trainer-side `--compile-opponents` path was deleted, U3 — under the Rust env core every policy opponent is served by the T2 inference service) | ❌ **does not lower** — Inductor's C++ backend asserts on an `atomic_add` scatter |
    | **CUDA** | ✅ eval / inference on the card | ✅ the TRAINER's step, the ~1.75x lever |
 
    Each cell has its own test below, including the ❌ one — that is a LIMITATION PIN, and it fails
@@ -290,8 +290,8 @@ def test_x5_fixed_mass_arch_compiles_to_one_graph():
 @pytest.mark.slow
 def test_h_tier_arch_compiles_without_suppression(restore_torch_globals):
     """The gen-13 enable gate: production + the H tiers (`--history-events` seats + the `r`
-    reference family) must survive Inductor BEFORE a launch depends on `--compile-opponents`
-    with them on — the compile matrix's blind spot is exactly a flag combination nobody
+    reference family) must survive Inductor BEFORE a launch depends on the opponent compile
+    (`maybe_compile_extractor`) with them on — the compile matrix's blind spot is exactly a flag combination nobody
     compiled until launch day (the v80×v74 intersection lesson, compile edition)."""
     torch.set_num_threads(1)
     torch._dynamo.reset()
@@ -326,7 +326,7 @@ def test_h_tier_arch_compiles_to_one_graph():
 def test_intent_threshold_arch_compiles_to_one_graph():
     """gen3_intent_threshold_v1 (v84) + gen3_intent_conditional_v1 (v85) +
     gen3_pair_outcome_v1 (v93): production + EVERY α move-cell rider must hold the one-graph
-    property before a run relies on `--compile-opponents` with them on — the same launch-day
+    property before a run relies on the opponent compile with them on — the same launch-day
     blind spot the H-tier cells close. All three paths are pure tensor ops over the op's
     stashes (gathers + α contractions), so a break here means one of them stopped lowering.
     They ride ONE test rather than three because the expensive part is the dynamo pass, not
@@ -383,7 +383,7 @@ def test_switch_branch_and_pair_outcome_switch_compile_to_one_graph():
     CompilePrewarm).
 
     EXPLAIN-only, deliberately: the arm above measures 73 s with these two flags on and the
-    graph-break count is what `--compile-opponents` actually depends on. The numeric agreement of
+    graph-break count is what the opponent compile actually depends on. The numeric agreement of
     a zero-init cell is bounded anyway — at init it contributes exactly 0 to every logit, which
     the flags' own suites assert on a real `MaskablePPO` build.
     """
@@ -410,7 +410,7 @@ def test_phase_c_conditional_threat_compiles_to_one_graph():
     per-flag cell would never exercise the stacked `cat`.
 
     EXPLAIN-only, deliberately, and the same reasoning as the Phase-B cell: graph-break count is
-    what `--compile-opponents` depends on, and the numeric agreement of a zero-init module is
+    what the opponent compile depends on, and the numeric agreement of a zero-init module is
     bounded at init anyway (it contributes exactly 0, which both suites assert on a real
     `MaskablePPO` build).
     """
@@ -536,7 +536,7 @@ def test_cpu_backward_still_does_not_compile(restore_torch_globals):
     THIS TEST FAILS IF THE LIMITATION GENUINELY LIFTS, and that is the point. If a torch upgrade
     fixes the atomic_add lowering, this raises no longer — at which point: the eager route for
     grad-enabled calls stops being load-bearing, CPU training could compile, and the docs in
-    `src/agents/training/CLAUDE.md` -> Compiled CPU opponents need updating.
+    `designs/training/compile_flags.md` -> Compiled CPU opponents need updating.
 
     It also asserts the REASON, not merely that something raised — an unrelated new backend failure
     must not silently satisfy this.

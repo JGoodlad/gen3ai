@@ -60,12 +60,14 @@
 //! ([`crate::state::MonState::base_species_id`]) instead of the live one, which is also
 //! what `pokemon.baseSpecies` means and what the Transform overlay already did.
 //!
-//! ⚠️ **Observation-side consequence (owner decision, flagged not taken):** poke-env parses
-//! `|-formechange|` and will re-key the mon's species to `castformrainy` for the rest of the
-//! turn-block. That is IDENTICAL to what `--use-bridge=node` already emits — the rust bridge
-//! introduces no new obs behaviour — and `data/pokemon/gen3_species.json` already carries the
-//! three `battleOnly` forme rows (kept out of the num-indexed model buffers by
-//! `base_form_ids()`). See `src/rust_sim/CLAUDE.md` → ROUND 35.
+//! ⚠️ **Observation-side consequence (flagged when this landed, settled since):** the READER
+//! of this stream — the Rust core's `present/board_reading.rs` (`|-formechange|` →
+//! `Mon::forme_change`, the port of poke-env's) — re-reads the forme's dex row (base stats,
+//! types) but does NOT rename the mon (rule R11): its species key stays `castform`, so the obs
+//! species channel never carries `castformrainy`. The rust bridge introduces no new obs
+//! behaviour (the Node sim emits the same line), and `data/pokemon/gen3_species.json` carries
+//! the three `battleOnly` forme rows, kept out of the num-indexed model buffers by
+//! `base_form_ids()`. See ROUND 35 in `designs/rust_sim/port_build_log.md`.
 //!
 //! # Where it fires
 //!

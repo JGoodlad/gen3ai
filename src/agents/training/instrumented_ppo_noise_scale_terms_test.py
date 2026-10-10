@@ -4,9 +4,10 @@ Three things have to hold, and each is a different kind of test:
 
 1. **The math is the same math.** The per-group fold must recover a PLANTED `tr(Σ)` / `|G|²` per
    group exactly, through the same two-point solve the total uses — `test_per_term_fold_*`.
-2. **The probe cannot change training.** With the feature OFF, one real `train()` from a captured
-   init must produce a BIT-IDENTICAL parameter update and the identical total scalars; and even
-   ON, `add()` must hand back the very object it was given — `test_off_is_byte_identical*`,
+2. **The probe cannot change training.** Two identically-seeded FRESH models, one real `train()` each
+   (a restored state_dict is NOT reproducible on this toy — see `_arm`), must produce a BIT-IDENTICAL
+   parameter update and the identical total scalars with the feature OFF and ON; and even ON, `add()`
+   must hand back the very object it was given — `test_off_is_byte_identical*`,
    `test_add_returns_the_same_tensor_object`.
 3. **The advisor says the interesting thing.** A total that reads over-batched while the policy
    term does not is the finding; it has to become its own warning naming the deflation — the
@@ -517,7 +518,7 @@ def test_the_total_reading_has_no_startup_bias_on_a_constant_gradient_stream():
 
 def test_a_negative_first_sample_no_longer_suppresses_the_total_for_hundreds_of_calls():
     """THE revert-catcher, and the production failure it reproduces (documented in
-    `src/agents/training/CLAUDE.md`: "the total's tr(Σ) EMA started negative and
+    `designs/training/step_size_and_batch.md`: "the total's tr(Σ) EMA started negative and
     `train/noise_scale{,_ratio}` therefore never emitted at all across 11 calls").
 
     Sample 1 is `tr(Σ) = -10` — the sign flip a single-call two-point solve produces routinely.

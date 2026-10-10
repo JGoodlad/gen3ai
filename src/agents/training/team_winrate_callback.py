@@ -14,12 +14,14 @@ team-PFSP win rate confounded by team strength, so "our win rate with team T is 
 "we pilot T badly", and anything that spends budget on that signal must first normalize against a
 team-strength baseline (the team's pool-average win rate under a reference pilot).
 
-**Seam: an ``env_method`` PULL, not an info-dict thread.** Each worker's teambuilder accumulates a
-windowed per-team, per-opponent-class count; this callback drains every worker at a rollout
-boundary. That is what makes it correct under BOTH ``SubprocVecEnv`` and ``--async-rollout``:
-``env_method`` is drain-safe on ``AsyncSubprocVecEnv`` (it stashes in-flight step results before the
-barrier RPC), whereas an info-dict route would have to reconstruct which buffer row a terminal
-landed on, which the async collector alone knows.
+**Seam: an ``env_method`` PULL, not an info-dict thread.** Each env's seeded teambuilder (the Rust
+rollout's ``TeamStager``, ``rust_rollout/teams.py``) accumulates a windowed per-team,
+per-opponent-class count; this callback drains every env at a rollout boundary through
+``training_env.env_method("drain_team_wr_counts")`` (``RustVecEnv.SURFACE`` serves it; any unmapped
+method is a typed ``RustEnvSurfaceError``). An info-dict route would have to reconstruct which
+buffer row a terminal landed on, which the collector alone knows. (The Python collectors this seam
+once had to be correct under — ``SubprocVecEnv`` and the async-rollout wave collector — are
+deleted.)
 
 **Instrumentation only.** It counts every episode, is on by default, keys per ``team_sha`` and keeps
 RAW counts (a rate with no denominator cannot serve as a headroom denominator). (Team-PFSP, which
@@ -119,7 +121,7 @@ class TeamWinRateCallback(BaseCallback):
             return
         self._load_existing()
 
-        # PULL every worker's window: each is (counts, keys) or None. `counts` is SPARSE — only the
+        # PULL every env's window: each is (counts, keys) or None. `counts` is SPARSE — only the
         # pool indices that actually played — because a ~719-team pool touches a handful per window.
         results = [r for r in self.training_env.env_method("drain_team_wr_counts") if r is not None]
         if not results:

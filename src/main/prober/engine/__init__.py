@@ -29,7 +29,7 @@ THE MODULE MAP — a strict DAG, leaves first:
     spread.py      believed vs TRUE derived spreads (the DamageOperator's stat input)
     switch_in.py   forced-switch OUTGOING damage per bench candidate
     decode.py      the obs/model decoding units (faithfulness, matchups, intervention, saliency)
-    analyze.py     `analyze_invocation` — the top-level entry — plus `build_meta` / value-dist
+    analyze.py     `analyze_invocation` — the top-level entry — plus `build_meta`
     taxonomy.py    loss attribution: the turning-point category table
     probes.py      representation probing (`fit_probe`)
     turn_events.py `/game`'s turn story: the protocol folded into typed events + the board per turn

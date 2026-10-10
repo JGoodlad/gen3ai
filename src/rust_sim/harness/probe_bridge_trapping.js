@@ -14,12 +14,12 @@
 // records the exact `active[0]` flags + the `|error|` text on both sides.
 //
 // The gen3 trapping SEMANTICS are already modeled in the Rust engine
-// (`gen3_trapping_v1`, `src/rust_sim/CLAUDE.md` → "## Trapping") — this probe pins
-// the REQUEST-DISPLAY state machine the Rust `|request|` EMITTER (a Phase-1
-// deliverable) must reproduce so poke-env's `parse_request` derives the identical
-// switch-legality (`src/poke_env/battle/battle.py`: `active[0].trapped` →
-// `self._trapped` → `available_switches` empty; `maybeTrapped` → `self._maybe_trapped`,
-// display-only). The sim is the ONLY oracle — every source read is a hypothesis.
+// (`gen3_trapping_v1`, `designs/rust_sim/port_build_log.md` → "## Trapping: the SWITCH-legality
+// gate") — this probe pins the REQUEST-DISPLAY state machine the Rust `|request|` EMITTER must
+// reproduce so the reader's request parse (`src/rust_sim/src/present/legal.rs`, the port of
+// poke-env's `parse_request`) derives the identical switch-legality (`active[0].trapped` →
+// `trapped` → no available switches; `maybeTrapped` → `maybe_trapped`, display-only). The sim is
+// the ONLY oracle — every source read is a hypothesis.
 //
 // ── THE STATE MACHINE (what the Rust |request| emitter must implement) ────────────
 //   Recompute trap-ness PER REQUEST from the engine's `is_trapped` (never sticky):

@@ -94,7 +94,7 @@ def test_no_match_raises(tmp_path):
 
 def _summary_for(valid_rows):
     """The recorder's summary shape: one ordered 11-entry `actions` dict per invocation, whose
-    insertion order IS the action index (battle_recorder._all_action_labels)."""
+    insertion order IS the action index (`trace_labels.all_action_labels`)."""
     labels = [f"switch:mon{i}" for i in range(6)] + [f"move{i}" for i in range(4)] + ["struggle"]
     return {"invocations": [
         {"i": r + 1, "actions": {lbl: {"prob": "0.0%", "valid": bool(v)}

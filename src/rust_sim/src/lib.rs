@@ -7,8 +7,8 @@
 //! crate must emit byte-identical protocol output to upstream Showdown. That is a
 //! control-flow constraint, not just a math one — the RNG has to be consumed in
 //! the exact same order and count, and the `|...|` protocol lines have to match
-//! exactly (our poke-env fork parses them). See `src/rust_sim/CLAUDE.md` for the
-//! full rationale and the verification strategy.
+//! exactly (the Rust reader, `present/`, and the live client parse them). See
+//! `src/rust_sim/CLAUDE.md` for the full rationale and the verification strategy.
 //!
 //! ## Status
 //!

@@ -24,7 +24,7 @@ The sampler here:
 
 THE SECOND BUG THIS FIXES (`gen3_audit_mask_recovery_v1`, 2026-08-22): the legal mask was
 recovered as `logits > -1e8`, which only works if the stored logits are POST-mask. They never
-were. `inference/player.py` stashes `logits[0]` — the RAW pre-mask row — while the `-1e9` mask
+were. `inference/player.py` (the poke-env player, since deleted) stashed `logits[0]` — the RAW pre-mask row — while the `-1e9` mask
 offset lives in a separate `masked_logits` local that is never written to disk. Measured over
 the archive: **0 of 800+ sampled `states.npz` across every run back to ai_v5 carries a single
 logit below -1e8**, so the recovery returned ALL-LEGAL on every row of every audit ever run,
@@ -35,7 +35,8 @@ not cosmetic: the audits renormalize the policy over this mask and sum the KL ac
 
 The real mask ships in the sibling `*_summary.json` (`invocations[i]["actions"]` — an ordered
 11-entry dict of `{"prob", "valid"}`, index-aligned with the npz rows by construction in
-`battle_recorder._all_action_labels`), and from 2026-08-22 also as a first-class `action_mask`
+`agents.training.trace_labels.all_action_labels`, which the core recorder writes the summary with;
+the deleted poke-env `battle_recorder._all_action_labels` was its predecessor), and from 2026-08-22 also as a first-class `action_mask`
 array inside the npz itself. `recover_legal_mask` prefers the array, accepts a genuinely
 post-mask logit row, falls back to the summary sibling, and otherwise REFUSES — a vacuous guard
 is the bug, so an unrecoverable trace must stop the audit, never default to legal.

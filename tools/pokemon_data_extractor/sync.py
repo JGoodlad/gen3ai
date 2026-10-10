@@ -359,7 +359,7 @@ _PROTECT_VOLATILES = frozenset({"protect", "endure"})
 # is set conditionally on the user's type at onTryHit time, so it can only be
 # resolved live in the encoder, not as a static flag. Memento is NOT a self-boost
 # (its boosts target the FOE and the user faints) — excluded by the target=='self'
-# gate below. See tools/CLAUDE.md.
+# gate below. See designs/tools/pokemon_data_extractor.md.
 _CALLBACK_SELF_BOOST = frozenset({"bellydrum"})
 
 # Status-CURE moves (gen3_status_cure_moves_v1). Like the self-boost above, the cure
@@ -375,7 +375,8 @@ _CALLBACK_SELF_BOOST = frozenset({"bellydrum"})
 #     (both `target: allyTeam` in gen3). Lets the model learn to value the move off the
 #     BENCH status one-hots, not just the active's.
 # Ability-based cures (Natural Cure / Shed Skin) are NOT moves and are out of scope here
-# (surfaced via the per-mon ability block + the `ability_activated` volatile). See tools/CLAUDE.md.
+# (surfaced via the per-mon ability block + the `ability_activated` volatile). See
+# designs/tools/pokemon_data_extractor.md.
 _CURES_SELF_STATUS = frozenset({"refresh"})
 _CURES_TEAM_STATUS = frozenset({"healbell", "aromatherapy"})
 

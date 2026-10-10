@@ -37,9 +37,10 @@ def resolve_child_python() -> str:
 def _build_child_env() -> dict:
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
-    # Prevent PyTorch from spawning extra threads inside each SubprocVecEnv worker.
-    # With 64 workers, the default (1 thread per core) creates hundreds of competing
-    # threads and kills throughput.
+    # Prevent PyTorch / OpenMP from spawning a thread per core inside every Python
+    # process the trainer starts (the eval workers, the Inductor compile workers): N
+    # processes x one thread per core creates hundreds of competing threads and kills
+    # throughput. (The env cores are Rust processes, `rust_env_proc`, and are unaffected.)
     env["OMP_NUM_THREADS"] = "1"
     env["MKL_NUM_THREADS"] = "1"
     # Use the CUDA caching allocator's expandable-segments mode so freed activation
