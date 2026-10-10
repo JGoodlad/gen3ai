@@ -1,0 +1,736 @@
+{
+ "runs": [
+  {
+   "run": "rb_st_legacy_s1001",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-07T21:15:43-07:00] START rb_st_legacy_s1001 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-08T00:14:30-07:00] END rb_st_legacy_s1001 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 2.83e-05,
+   "k9b_max_abs_dlogp_judged": 2.83e-05,
+   "k9b_max_abs_dlogp_excluded": 1.18e-05,
+   "k9b_max_excluded_frac": 0.0723,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[00:14:28] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_legacy_s1002",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T06:26:47-07:00] START rb_st_legacy_s1002 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-08T09:18:56-07:00] END rb_st_legacy_s1002 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 5.29e-05,
+   "k9b_max_abs_dlogp_judged": 5.29e-05,
+   "k9b_max_abs_dlogp_excluded": 2.95e-05,
+   "k9b_max_excluded_frac": 0.085,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[09:18:55] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_legacy_s1003",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T09:18:56-07:00] START rb_st_legacy_s1003 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-08T12:09:00-07:00] END rb_st_legacy_s1003 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 0.0523,
+   "k9b_max_abs_dlogp_judged": 3.31e-05,
+   "k9b_max_abs_dlogp_excluded": 0.0523,
+   "k9b_max_excluded_frac": 0.0625,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[12:08:59] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_legacy_s1004",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T15:47:16-07:00] START rb_st_legacy_s1004 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-08T18:32:06-07:00] END rb_st_legacy_s1004 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 2.98e-05,
+   "k9b_max_abs_dlogp_judged": 2.98e-05,
+   "k9b_max_abs_dlogp_excluded": 1.37e-05,
+   "k9b_max_excluded_frac": 0.083,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[18:32:05] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_legacy_s1005",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T23:55:50-07:00] START rb_st_legacy_s1005 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-09T02:37:31-07:00] END rb_st_legacy_s1005 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 0.000329,
+   "k9b_max_abs_dlogp_judged": 2.1e-05,
+   "k9b_max_abs_dlogp_excluded": 0.000329,
+   "k9b_max_excluded_frac": 0.0703,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[02:37:29] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_legacy_s1006",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-09T02:58:11-07:00] START rb_st_legacy_s1006 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch'",
+    "[2026-10-09T05:39:07-07:00] END rb_st_legacy_s1006 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 3.31e-05,
+   "k9b_max_abs_dlogp_judged": 3.31e-05,
+   "k9b_max_abs_dlogp_excluded": 1.45e-05,
+   "k9b_max_excluded_frac": 0.0859,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[05:39:05] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_legacy_s1007",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-09T11:27:50-07:00] START rb_st_legacy_s1007 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch' disk_free_gb=575",
+    "[2026-10-09T14:10:12-07:00] END rb_st_legacy_s1007 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 2.29e-05,
+   "k9b_max_abs_dlogp_judged": 2.29e-05,
+   "k9b_max_abs_dlogp_excluded": 1.32e-05,
+   "k9b_max_excluded_frac": 0.0801,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[14:10:11] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_legacy_s1008",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-09T14:10:12-07:00] START rb_st_legacy_s1008 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch' disk_free_gb=572",
+    "[2026-10-09T16:51:56-07:00] END rb_st_legacy_s1008 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 0.000161,
+   "k9b_max_abs_dlogp_judged": 2.43e-05,
+   "k9b_max_abs_dlogp_excluded": 0.000161,
+   "k9b_max_excluded_frac": 0.0713,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[16:51:55] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_static_s1001",
+   "final_model": true,
+   "tb_files": 2,
+   "child_attach_markers": 2,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 1,
+   "crashes_dir_files": 1,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    1
+   ],
+   "launcher_crash_lines": 1,
+   "launcher_auto_restart_lines": 1,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T00:14:30-07:00] START rb_st_static_s1001 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T03:18:47-07:00] END rb_st_static_s1001 launcher_rc=0"
+   ],
+   "k9b_probes": 159,
+   "k9b_max_abs_dlogp_current": 3.55e-05,
+   "k9b_max_abs_dlogp_judged": 2.53e-05,
+   "k9b_max_abs_dlogp_excluded": 3.55e-05,
+   "k9b_max_excluded_frac": 0.0654,
+   "k9b_violations_total_max": 0.0,
+   "clean": false,
+   "k9b_stops": [
+    {
+     "num_timesteps": 14653328,
+     "n_updates": 1480,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 8.58306884765625e-06,
+     "max_dumped_rows": 8.58306884765625e-06,
+     "excluded_frac": 0.1748046875,
+     "rows_current": 1024,
+     "rows_excluded": 179,
+     "amendment_1_tie_only": true
+    }
+   ],
+   "launcher_events": [
+    "[03:04:13] \ud83d\uded1 Child crashed (exit 1) \u2014 saved crashes/restart_err_20261008_030413_93ce21.txt \u00b7 crash #1",
+    "[03:04:13] \u267b\ufe0f  Auto-restart #1 after crash from checkpoint_14000046_steps.zip",
+    "[03:18:45] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 1"
+   ],
+   "deviation_found": "amendment 1 x1",
+   "deviation_expected": "amendment 1 x1",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_static_s1002",
+   "final_model": true,
+   "tb_files": 2,
+   "child_attach_markers": 2,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 1,
+   "crashes_dir_files": 1,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    1
+   ],
+   "launcher_crash_lines": 1,
+   "launcher_auto_restart_lines": 1,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T03:18:47-07:00] START rb_st_static_s1002 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T06:26:47-07:00] END rb_st_static_s1002 launcher_rc=0"
+   ],
+   "k9b_probes": 160,
+   "k9b_max_abs_dlogp_current": 2.36e-05,
+   "k9b_max_abs_dlogp_judged": 2.36e-05,
+   "k9b_max_abs_dlogp_excluded": 2.05e-05,
+   "k9b_max_excluded_frac": 0.0957,
+   "k9b_violations_total_max": 0.0,
+   "clean": false,
+   "k9b_stops": [
+    {
+     "num_timesteps": 6788531,
+     "n_updates": 680,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 1.3828277587890625e-05,
+     "max_dumped_rows": 1.3828277587890625e-05,
+     "excluded_frac": 0.26171875,
+     "rows_current": 1024,
+     "rows_excluded": 268,
+     "amendment_1_tie_only": true
+    }
+   ],
+   "launcher_events": [
+    "[04:45:53] \ud83d\uded1 Child crashed (exit 1) \u2014 saved crashes/restart_err_20261008_044553_231233.txt \u00b7 crash #1",
+    "[04:45:53] \u267b\ufe0f  Auto-restart #1 after crash from checkpoint_6000032_steps.zip",
+    "[06:26:45] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 1"
+   ],
+   "deviation_found": "amendment 1 x1",
+   "deviation_expected": "amendment 1 x1",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_static_s1003",
+   "final_model": true,
+   "tb_files": 6,
+   "child_attach_markers": 6,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 6,
+   "crashes_dir_files": 5,
+   "warn_in_metadata": true,
+   "launcher_restarts_summary": [
+    4
+   ],
+   "launcher_crash_lines": 5,
+   "launcher_auto_restart_lines": 4,
+   "launcher_training_complete": false,
+   "chain": [
+    "[2026-10-08T12:09:00-07:00] START rb_st_static_s1003 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T13:48:08-07:00] END rb_st_static_s1003 launcher_rc=1",
+    "[2026-10-08T13:48:08-07:00] CHAIN STOP: rb_st_static_s1003 has no final_model.zip (rc=1) \u2014 INCONCLUSIVE, the session decides the replacement",
+    "[2026-10-08T13:48:16-07:00] S3 WARN-SWITCH: resumed rb_st_static_s1003 from checkpoint_7000118_steps.zip with --behaviour-check warn (launcher 1484469)",
+    "[2026-10-08T15:12:27-07:00] END rb_st_static_s1003 (warn resume) launcher_rc=0"
+   ],
+   "k9b_probes": 159,
+   "k9b_max_abs_dlogp_current": 4.05e-05,
+   "k9b_max_abs_dlogp_judged": 4.05e-05,
+   "k9b_max_abs_dlogp_excluded": 1.45e-05,
+   "k9b_max_excluded_frac": 0.206,
+   "k9b_violations_total_max": 0.0,
+   "clean": false,
+   "k9b_stops": [
+    {
+     "num_timesteps": 2364160,
+     "n_updates": 230,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 1.1444091796875e-05,
+     "max_dumped_rows": 1.1444091796875e-05,
+     "excluded_frac": 0.234375,
+     "rows_current": 1024,
+     "rows_excluded": 240,
+     "amendment_1_tie_only": true
+    },
+    {
+     "num_timesteps": 7412795,
+     "n_updates": 740,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 7.152557373046875e-06,
+     "max_dumped_rows": 7.152557373046875e-06,
+     "excluded_frac": 0.2099609375,
+     "rows_current": 1024,
+     "rows_excluded": 215,
+     "amendment_1_tie_only": true
+    },
+    {
+     "num_timesteps": 7516980,
+     "n_updates": 740,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 9.775161743164062e-06,
+     "max_dumped_rows": 9.775161743164062e-06,
+     "excluded_frac": 0.17333984375,
+     "rows_current": 2048,
+     "rows_excluded": 355,
+     "amendment_1_tie_only": true
+    },
+    {
+     "num_timesteps": 7621503,
+     "n_updates": 740,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 8.225440979003906e-06,
+     "max_dumped_rows": 8.225440979003906e-06,
+     "excluded_frac": 0.177734375,
+     "rows_current": 2048,
+     "rows_excluded": 364,
+     "amendment_1_tie_only": true
+    },
+    {
+     "num_timesteps": 7725920,
+     "n_updates": 740,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 9.894371032714844e-06,
+     "max_dumped_rows": 9.894371032714844e-06,
+     "excluded_frac": 0.1826171875,
+     "rows_current": 2048,
+     "rows_excluded": 374,
+     "amendment_1_tie_only": true
+    },
+    {
+     "num_timesteps": 8480371,
+     "n_updates": 840,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 1.9669532775878906e-05,
+     "max_dumped_rows": 1.9669532775878906e-05,
+     "excluded_frac": 0.2060546875,
+     "rows_current": 1024,
+     "rows_excluded": 211,
+     "amendment_1_tie_only": true
+    }
+   ],
+   "launcher_events": [
+    "[12:42:25] \ud83d\uded1 Child crashed (exit 1) \u2014 saved crashes/restart_err_20261008_124225_7eb849.txt \u00b7 crash #1",
+    "[12:42:25] \u267b\ufe0f  Auto-restart #1 after crash from checkpoint_2000128_steps.zip",
+    "[13:36:52] \ud83d\uded1 Child crashed (exit 1) \u2014 saved crashes/restart_err_20261008_133652_2282ac.txt \u00b7 crash #2",
+    "[13:36:52] \u267b\ufe0f  Auto-restart #2 after crash from final_model_exception.zip",
+    "[13:40:42] \ud83d\uded1 Child crashed (exit 1) \u2014 saved crashes/restart_err_20261008_134042_904a15.txt \u00b7 crash #3",
+    "[13:40:42] \u267b\ufe0f  Auto-restart #3 after crash from final_model_exception.zip",
+    "[13:44:27] \ud83d\uded1 Child crashed (exit 1) \u2014 saved crashes/restart_err_20261008_134427_196611.txt \u00b7 crash #4",
+    "[13:44:27] \u267b\ufe0f  Auto-restart #4 after crash from final_model_exception.zip",
+    "[13:48:05] \ud83d\uded1 Child crashed (exit 1) \u2014 saved crashes/restart_err_20261008_134805_f40bca.txt \u00b7 crash #5",
+    "Restarts   : 4"
+   ],
+   "deviation_found": "amendment 2 (warn switch)",
+   "deviation_expected": "amendment 2 (warn switch)",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_static_s1004",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T18:32:06-07:00] START rb_st_static_s1004 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T21:14:52-07:00] END rb_st_static_s1004 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 5.77e-05,
+   "k9b_max_abs_dlogp_judged": 5.77e-05,
+   "k9b_max_abs_dlogp_excluded": 2e-05,
+   "k9b_max_excluded_frac": 0.0879,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[21:14:51] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_static_s1005",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-08T21:14:52-07:00] START rb_st_static_s1005 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-08T23:55:50-07:00] END rb_st_static_s1005 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 3.05e-05,
+   "k9b_max_abs_dlogp_judged": 3.05e-05,
+   "k9b_max_abs_dlogp_excluded": 1.84e-05,
+   "k9b_max_excluded_frac": 0.0645,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[23:55:48] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_static_s1006",
+   "final_model": true,
+   "tb_files": 2,
+   "child_attach_markers": 2,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 1,
+   "crashes_dir_files": 1,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    1
+   ],
+   "launcher_crash_lines": 1,
+   "launcher_auto_restart_lines": 1,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-09T05:39:07-07:00] START rb_st_static_s1006 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static'",
+    "[2026-10-09T07:00:38-07:00] ADOPT rb_st_static_s1006 launcher pid 2383309 (chain_look3b.sh pid 2476841, disk gate 6 GB)",
+    "[2026-10-09T08:38:09-07:00] END rb_st_static_s1006 launcher_rc=adopted(see launcher log)"
+   ],
+   "k9b_probes": 162,
+   "k9b_max_abs_dlogp_current": 3.49e-05,
+   "k9b_max_abs_dlogp_judged": 3.49e-05,
+   "k9b_max_abs_dlogp_excluded": 1e-05,
+   "k9b_max_excluded_frac": 0.0742,
+   "k9b_violations_total_max": 0.0,
+   "clean": false,
+   "k9b_stops": [
+    {
+     "num_timesteps": 3937536,
+     "n_updates": 390,
+     "failed": [
+      "excluded_frac"
+     ],
+     "max_judged": 4.291534423828125e-06,
+     "max_dumped_rows": 4.291534423828125e-06,
+     "excluded_frac": 0.25390625,
+     "rows_current": 1024,
+     "rows_excluded": 260,
+     "amendment_1_tie_only": true
+    }
+   ],
+   "launcher_events": [
+    "[06:26:36] \ud83d\uded1 Child crashed (exit 1) \u2014 saved crashes/restart_err_20261009_062636_e0ec6b.txt \u00b7 crash #1",
+    "[06:26:36] \u267b\ufe0f  Auto-restart #1 after crash from checkpoint_3000064_steps.zip",
+    "[08:37:41] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 1"
+   ],
+   "deviation_found": "amendment 1 x1 + chain adopt",
+   "deviation_expected": "amendment 1 x1 + chain adopt",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_static_s1007",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-09T08:38:09-07:00] START rb_st_static_s1007 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static' disk_free_gb=582",
+    "[2026-10-09T11:27:50-07:00] END rb_st_static_s1007 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 0.0025,
+   "k9b_max_abs_dlogp_judged": 2.57e-05,
+   "k9b_max_abs_dlogp_excluded": 0.0025,
+   "k9b_max_excluded_frac": 0.0791,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[11:27:48] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  },
+  {
+   "run": "rb_st_static_s1008",
+   "final_model": true,
+   "tb_files": 1,
+   "child_attach_markers": 1,
+   "pin_history": [
+    "6c6d2e0942e2111703a7e6d79bfadb31c8e51f01"
+   ],
+   "behaviour_violations": 0,
+   "crashes_dir_files": 0,
+   "warn_in_metadata": false,
+   "launcher_restarts_summary": [
+    0
+   ],
+   "launcher_crash_lines": 0,
+   "launcher_auto_restart_lines": 0,
+   "launcher_training_complete": true,
+   "chain": [
+    "[2026-10-09T16:51:56-07:00] START rb_st_static_s1008 pin=6c6d2e09 extra='--belief-tokens fixed_mass --allow-nonproduction-arch --token-encoding static' disk_free_gb=567",
+    "[2026-10-09T19:50:36-07:00] END rb_st_static_s1008 launcher_rc=0"
+   ],
+   "k9b_probes": 153,
+   "k9b_max_abs_dlogp_current": 2.38e-05,
+   "k9b_max_abs_dlogp_judged": 2.38e-05,
+   "k9b_max_abs_dlogp_excluded": 1.6e-05,
+   "k9b_max_excluded_frac": 0.0781,
+   "k9b_violations_total_max": 0.0,
+   "clean": true,
+   "k9b_stops": [],
+   "launcher_events": [
+    "[19:50:35] \u2705 Training complete \u2014 all steps done",
+    "Restarts   : 0"
+   ],
+   "deviation_found": "none",
+   "deviation_expected": "none",
+   "matches_brief": true
+  }
+ ],
+ "all_match_brief": true
+}

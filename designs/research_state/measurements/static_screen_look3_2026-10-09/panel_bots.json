@@ -1,0 +1,531 @@
+{
+ "arms": {
+  "static": {
+   "runs": {
+    "s1001": {
+     "step": 14000046,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T09:57:42.157526+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.88,
+      "heuristic2": 0.81,
+      "staller": 0.89,
+      "staller_v2": 0.94,
+      "aggressive": 0.87,
+      "aggressive_v2": 0.84,
+      "setup_sweep": 0.88,
+      "setup_sweep_v2": 0.88
+     },
+     "bots_mean_pp": 87.375,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000225,
+      10000075,
+      8000160,
+      6000015,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.44,
+      0.61,
+      0.67,
+      0.76,
+      0.83
+     ],
+     "monotonicity": 1.0
+    },
+    "s1002": {
+     "step": 14000186,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T13:16:12.400608+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.88,
+      "heuristic2": 0.94,
+      "staller": 0.97,
+      "staller_v2": 0.97,
+      "aggressive": 0.95,
+      "aggressive_v2": 0.84,
+      "setup_sweep": 0.92,
+      "setup_sweep_v2": 0.86
+     },
+     "bots_mean_pp": 91.625,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000100,
+      10000112,
+      8000374,
+      6000032,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.6,
+      0.59,
+      0.71,
+      0.72,
+      0.89
+     ],
+     "monotonicity": 0.8
+    },
+    "s1003": {
+     "step": 14000032,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T22:01:35.582682+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.89,
+      "heuristic2": 0.92,
+      "staller": 0.93,
+      "staller_v2": 0.97,
+      "aggressive": 0.93,
+      "aggressive_v2": 0.9,
+      "setup_sweep": 0.88,
+      "setup_sweep_v2": 0.84
+     },
+     "bots_mean_pp": 90.75,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000285,
+      10000069,
+      8000162,
+      6000088,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.59,
+      0.63,
+      0.65,
+      0.8,
+      0.85
+     ],
+     "monotonicity": 1.0
+    },
+    "s1004": {
+     "step": 14000076,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T04:03:35.303870+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.85,
+      "heuristic2": 0.87,
+      "staller": 0.95,
+      "staller_v2": 0.95,
+      "aggressive": 0.91,
+      "aggressive_v2": 0.88,
+      "setup_sweep": 0.92,
+      "setup_sweep_v2": 0.85
+     },
+     "bots_mean_pp": 89.75,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000027,
+      10000357,
+      8000121,
+      6000362,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.5,
+      0.55,
+      0.68,
+      0.71,
+      0.86
+     ],
+     "monotonicity": 1.0
+    },
+    "s1005": {
+     "step": 14000217,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T06:45:12.717680+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.87,
+      "heuristic2": 0.88,
+      "staller": 0.95,
+      "staller_v2": 0.91,
+      "aggressive": 0.91,
+      "aggressive_v2": 0.85,
+      "setup_sweep": 0.86,
+      "setup_sweep_v2": 0.85
+     },
+     "bots_mean_pp": 88.5,
+     "random": 0.99,
+     "sentinel_steps": [
+      12000087,
+      10000012,
+      8000055,
+      6000047,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.62,
+      0.62,
+      0.68,
+      0.77,
+      0.9
+     ],
+     "monotonicity": 1.0
+    },
+    "s1006": {
+     "step": 14000180,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T15:25:15.321700+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.87,
+      "heuristic2": 0.87,
+      "staller": 0.95,
+      "staller_v2": 0.95,
+      "aggressive": 0.93,
+      "aggressive_v2": 0.95,
+      "setup_sweep": 0.89,
+      "setup_sweep_v2": 0.88
+     },
+     "bots_mean_pp": 91.125,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000079,
+      10000011,
+      8000031,
+      6000220,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.55,
+      0.69,
+      0.65,
+      0.76,
+      0.93
+     ],
+     "monotonicity": 0.8
+    },
+    "s1007": {
+     "step": 14000188,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T18:16:05.221637+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.9,
+      "heuristic2": 0.81,
+      "staller": 0.93,
+      "staller_v2": 0.96,
+      "aggressive": 0.95,
+      "aggressive_v2": 0.84,
+      "setup_sweep": 0.85,
+      "setup_sweep_v2": 0.92
+     },
+     "bots_mean_pp": 89.5,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000175,
+      10000095,
+      8000108,
+      6000359,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.59,
+      0.53,
+      0.63,
+      0.74,
+      0.87
+     ],
+     "monotonicity": 0.8
+    },
+    "s1008": {
+     "step": 14000018,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-10T02:37:44.496758+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.88,
+      "heuristic2": 0.85,
+      "staller": 0.9,
+      "staller_v2": 0.94,
+      "aggressive": 0.92,
+      "aggressive_v2": 0.88,
+      "setup_sweep": 0.9,
+      "setup_sweep_v2": 0.75
+     },
+     "bots_mean_pp": 87.75,
+     "random": 0.99,
+     "sentinel_steps": [
+      12000025,
+      10000129,
+      8000198,
+      6000232,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.48,
+      0.56,
+      0.72,
+      0.74,
+      0.86
+     ],
+     "monotonicity": 1.0
+    }
+   },
+   "mean_pp": 89.546875,
+   "monotonicity_mean": 0.925
+  },
+  "legacy": {
+   "runs": {
+    "s1001": {
+     "step": 14000010,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T07:03:08.282255+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.87,
+      "heuristic2": 0.92,
+      "staller": 0.95,
+      "staller_v2": 0.91,
+      "aggressive": 0.94,
+      "aggressive_v2": 0.85,
+      "setup_sweep": 0.87,
+      "setup_sweep_v2": 0.85
+     },
+     "bots_mean_pp": 89.5,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000080,
+      10000209,
+      8000145,
+      6000065,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.54,
+      0.58,
+      0.7,
+      0.71,
+      0.82
+     ],
+     "monotonicity": 1.0
+    },
+    "s1002": {
+     "step": 14000024,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T16:07:28.015730+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.92,
+      "heuristic2": 0.79,
+      "staller": 0.95,
+      "staller_v2": 0.87,
+      "aggressive": 0.95,
+      "aggressive_v2": 0.88,
+      "setup_sweep": 0.92,
+      "setup_sweep_v2": 0.89
+     },
+     "bots_mean_pp": 89.625,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000065,
+      10000179,
+      8000091,
+      6000046,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.48,
+      0.58,
+      0.67,
+      0.78,
+      0.9
+     ],
+     "monotonicity": 1.0
+    },
+    "s1003": {
+     "step": 14000067,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-08T18:58:07.405182+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.8,
+      "heuristic2": 0.88,
+      "staller": 0.95,
+      "staller_v2": 0.92,
+      "aggressive": 0.92,
+      "aggressive_v2": 0.85,
+      "setup_sweep": 0.89,
+      "setup_sweep_v2": 0.9
+     },
+     "bots_mean_pp": 88.875,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000076,
+      10000218,
+      8000233,
+      6000097,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.51,
+      0.63,
+      0.68,
+      0.77,
+      0.82
+     ],
+     "monotonicity": 1.0
+    },
+    "s1004": {
+     "step": 14000348,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T01:20:01.858436+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.82,
+      "heuristic2": 0.89,
+      "staller": 0.94,
+      "staller_v2": 0.91,
+      "aggressive": 0.9,
+      "aggressive_v2": 0.92,
+      "setup_sweep": 0.88,
+      "setup_sweep_v2": 0.88
+     },
+     "bots_mean_pp": 89.25,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000097,
+      10000173,
+      8000178,
+      6000235,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.55,
+      0.58,
+      0.63,
+      0.79,
+      0.88
+     ],
+     "monotonicity": 1.0
+    },
+    "s1005": {
+     "step": 14000078,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T09:26:40.769175+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.83,
+      "heuristic2": 0.92,
+      "staller": 0.95,
+      "staller_v2": 0.96,
+      "aggressive": 0.85,
+      "aggressive_v2": 0.89,
+      "setup_sweep": 0.9,
+      "setup_sweep_v2": 0.91
+     },
+     "bots_mean_pp": 90.125,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000121,
+      10000051,
+      8000202,
+      6000128,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.51,
+      0.58,
+      0.65,
+      0.7,
+      0.76
+     ],
+     "monotonicity": 1.0
+    },
+    "s1006": {
+     "step": 14000023,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T12:28:17.061100+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.92,
+      "heuristic2": 0.94,
+      "staller": 0.94,
+      "staller_v2": 0.96,
+      "aggressive": 0.98,
+      "aggressive_v2": 0.89,
+      "setup_sweep": 0.88,
+      "setup_sweep_v2": 0.86
+     },
+     "bots_mean_pp": 92.125,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000207,
+      10000353,
+      8000082,
+      6000208,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.55,
+      0.55,
+      0.55,
+      0.72,
+      0.81
+     ],
+     "monotonicity": 1.0
+    },
+    "s1007": {
+     "step": 14000157,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T20:59:18.812390+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.87,
+      "heuristic2": 0.9,
+      "staller": 0.95,
+      "staller_v2": 0.97,
+      "aggressive": 0.93,
+      "aggressive_v2": 0.87,
+      "setup_sweep": 0.85,
+      "setup_sweep_v2": 0.93
+     },
+     "bots_mean_pp": 90.875,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000214,
+      10000190,
+      8000074,
+      6000182,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.59,
+      0.59,
+      0.59,
+      0.76,
+      0.82
+     ],
+     "monotonicity": 1.0
+    },
+    "s1008": {
+     "step": 14000231,
+     "n_games_per_bot": 100,
+     "evaluated_at": "2026-10-09T23:41:05.666400+00:00",
+     "bots_ex_random": {
+      "heuristic": 0.9,
+      "heuristic2": 0.9,
+      "staller": 0.93,
+      "staller_v2": 0.95,
+      "aggressive": 0.93,
+      "aggressive_v2": 0.88,
+      "setup_sweep": 0.89,
+      "setup_sweep_v2": 0.88
+     },
+     "bots_mean_pp": 90.75,
+     "random": 1.0,
+     "sentinel_steps": [
+      12000079,
+      10000024,
+      8000172,
+      6000134,
+      4000000
+     ],
+     "sentinel_win_rates": [
+      0.57,
+      0.68,
+      0.66,
+      0.73,
+      0.91
+     ],
+     "monotonicity": 0.8
+    }
+   },
+   "mean_pp": 90.140625,
+   "monotonicity_mean": 0.975
+  }
+ },
+ "static_minus_legacy_pp": -0.59375,
+ "harm_flag": false,
+ "note": "bots component only; frozen pool + SmallRL not read; monotonicity DESCRIPTIVE"
+}

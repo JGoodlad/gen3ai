@@ -1,0 +1,168 @@
+pin checkout /home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09: HEAD 6c6d2e0942e2111703a7e6d79bfadb31c8e51f01
+3253 tracked files under src/ + data/ at P_st compared; 0 differ or are missing
+CLEAN: the pin checkout is P_st 6c6d2e09 with src/ and data/ unmodified
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-main.h2h-4110430.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+main.h2h.errors.H2HError: the team pool is read relative to the working directory (/home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09/src): /home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09/src/data/teams is missing, not this checkout's /home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09/data/teams — run `python -m main.h2h` from the repo root /home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09
+[mem_cap] done: gen3ai-capped-main.h2h-4110430.scope exit 1 · peak 0.03 GB of cap 32.00 GB (0%) · not OOM-killed
+[mem_cap] cap 32.00 GB (swap 0) · unit gen3ai-capped-python3-4110976.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[look3] main.h2h from /home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09/src/main/h2h/__init__.py
+[h2h] play-many: 39 cell(s) x 1000 pairs in batches of 500; 39 with batches to play (78 batch(es)), 0 already recorded; purpose ab, family st_screen_strength_steps, request st_look3_steps under /home/goodlad/dev/gen3ai/models/_ledger
+[h2h] pre-flight: 39 cell(s), 16 checkpoint(s) — 2 architecture(s): eval declared from rb_st_static_s1001@15087831 (slots ['player']); eval_b declared from rb_st_legacy_s1006@15047666 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 34.9s
+[h2h] engine up in 781.5s: rb_st_static_s1001@15087831 vs rb_st_legacy_s1006@15047666; 64 envs, T2 graph on cuda; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/39: rb_st_static_s1001@15087831 vs rb_st_legacy_s1006@15047666 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 0.00s
+[h2h] batch 1/2: 500 pairs / 1000 games in 18.4s (54.36 games/s); W/L/D 486/511/3; pair counts [121, 2, 267, 1, 109]; near-tie games 1; digest db2a5d2ce321
+[h2h] batch 2/2: 500 pairs / 1000 games in 14.5s (68.76 games/s); W/L/D 457/540/3; pair counts [134, 0, 273, 1, 92]; near-tie games 2; digest a11b893aa96b
+[h2h] cell 2/39: rb_st_static_s1001@15087831 vs rb_st_legacy_s1007@15048371 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 1.86s
+[h2h] batch 1/2: 500 pairs / 1000 games in 15.7s (63.83 games/s); W/L/D 460/534/6; pair counts [134, 3, 263, 3, 97]; near-tie games 2; digest 75a31428b954
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.8s (63.44 games/s); W/L/D 486/509/5; pair counts [114, 2, 279, 3, 102]; near-tie games 0; digest 84e21f90bb44
+[h2h] cell 3/39: rb_st_static_s1001@15087831 vs rb_st_legacy_s1008@15047962 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 1.97s
+[h2h] batch 1/2: 500 pairs / 1000 games in 15.7s (63.54 games/s); W/L/D 473/521/6; pair counts [131, 5, 254, 1, 109]; near-tie games 1; digest 444f2d103237
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.2s (65.99 games/s); W/L/D 489/507/4; pair counts [113, 3, 278, 1, 105]; near-tie games 2; digest 8989e53e5e96
+[h2h] cell 4/39: rb_st_static_s1002@15050373 vs rb_st_legacy_s1006@15047666 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 3.30s
+[h2h] batch 1/2: 500 pairs / 1000 games in 15.9s (62.74 games/s); W/L/D 486/505/9; pair counts [122, 7, 254, 2, 115]; near-tie games 1; digest 8e2f0ca54fdb
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.0s (66.72 games/s); W/L/D 481/513/6; pair counts [125, 5, 258, 1, 111]; near-tie games 1; digest 37def568f577
+[h2h] cell 5/39: rb_st_static_s1002@15050373 vs rb_st_legacy_s1007@15048371 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 1.92s
+[h2h] batch 1/2: 500 pairs / 1000 games in 16.4s (61.16 games/s); W/L/D 475/521/4; pair counts [127, 1, 266, 3, 103]; near-tie games 1; digest 843d90b1ac12
+[h2h] batch 2/2: 500 pairs / 1000 games in 16.8s (59.42 games/s); W/L/D 451/544/5; pair counts [137, 2, 268, 3, 90]; near-tie games 1; digest 78c771b1271f
+[h2h] cell 6/39: rb_st_static_s1002@15050373 vs rb_st_legacy_s1008@15047962 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 0.59s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.0s (52.54 games/s); W/L/D 462/528/10; pair counts [129, 5, 265, 5, 96]; near-tie games 1; digest a2d08e8c8392
+[h2h] batch 2/2: 500 pairs / 1000 games in 17.6s (56.67 games/s); W/L/D 459/537/4; pair counts [129, 3, 276, 1, 91]; near-tie games 0; digest 11a5bffe20b4
+[h2h] cell 7/39: rb_st_static_s1003@15067350 vs rb_st_legacy_s1006@15047666 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 3.41s
+[h2h] batch 1/2: 500 pairs / 1000 games in 16.2s (61.79 games/s); W/L/D 471/520/9; pair counts [119, 3, 280, 4, 94]; near-tie games 1; digest ef5d804b3a02
+[h2h] batch 2/2: 500 pairs / 1000 games in 14.7s (68.08 games/s); W/L/D 469/525/6; pair counts [128, 3, 266, 3, 100]; near-tie games 2; digest f1f6657415d8
+[h2h] cell 8/39: rb_st_static_s1003@15067350 vs rb_st_legacy_s1007@15048371 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 1.94s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.8s (50.60 games/s); W/L/D 420/575/5; pair counts [149, 3, 274, 2, 72]; near-tie games 2; digest 1681631eeff9
+[h2h] batch 2/2: 500 pairs / 1000 games in 18.9s (52.93 games/s); W/L/D 460/535/5; pair counts [127, 2, 279, 3, 89]; near-tie games 3; digest b269c5cf44f4
+[h2h] cell 9/39: rb_st_static_s1003@15067350 vs rb_st_legacy_s1008@15047962 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 0.62s
+[h2h] batch 1/2: 500 pairs / 1000 games in 15.3s (65.38 games/s); W/L/D 448/547/5; pair counts [133, 2, 279, 3, 83]; near-tie games 2; digest c412df029a48
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.5s (64.40 games/s); W/L/D 448/544/8; pair counts [135, 3, 272, 3, 87]; near-tie games 1; digest afa390d29b0f
+[h2h] cell 10/39: rb_st_static_s1004@15046967 vs rb_st_legacy_s1006@15047666 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 3.24s
+[h2h] batch 1/2: 500 pairs / 1000 games in 14.3s (69.95 games/s); W/L/D 451/544/5; pair counts [138, 4, 264, 1, 93]; near-tie games 2; digest 8cd4238ce36a
+[h2h] batch 2/2: 500 pairs / 1000 games in 14.3s (70.13 games/s); W/L/D 480/517/3; pair counts [122, 1, 272, 2, 103]; near-tie games 3; digest f35c7fd7467d
+[h2h] cell 11/39: rb_st_static_s1004@15046967 vs rb_st_legacy_s1007@15048371 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 1.91s
+[h2h] batch 1/2: 500 pairs / 1000 games in 14.7s (68.06 games/s); W/L/D 463/528/9; pair counts [119, 6, 284, 3, 88]; near-tie games 3; digest ccdbdeb41519
+[h2h] batch 2/2: 500 pairs / 1000 games in 16.4s (60.92 games/s); W/L/D 459/529/12; pair counts [127, 9, 266, 3, 95]; near-tie games 4; digest ea2bcfa59744
+[h2h] cell 12/39: rb_st_static_s1004@15046967 vs rb_st_legacy_s1008@15047962 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 0.59s
+[h2h] batch 1/2: 500 pairs / 1000 games in 13.8s (72.26 games/s); W/L/D 495/499/6; pair counts [105, 2, 287, 4, 102]; near-tie games 0; digest 099135b6c30e
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.7s (63.64 games/s); W/L/D 452/543/5; pair counts [130, 2, 281, 3, 84]; near-tie games 2; digest af9166eb44a6
+[h2h] cell 13/39: rb_st_static_s1005@15047386 vs rb_st_legacy_s1006@15047666 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 3.45s
+[h2h] batch 1/2: 500 pairs / 1000 games in 15.7s (63.61 games/s); W/L/D 429/562/9; pair counts [147, 6, 262, 3, 82]; near-tie games 4; digest e05aacdc6150
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.4s (65.09 games/s); W/L/D 431/563/6; pair counts [141, 4, 277, 2, 76]; near-tie games 1; digest 2e196874cb36
+[h2h] cell 14/39: rb_st_static_s1005@15047386 vs rb_st_legacy_s1007@15048371 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 1.88s
+[h2h] batch 1/2: 500 pairs / 1000 games in 14.7s (67.93 games/s); W/L/D 435/558/7; pair counts [147, 4, 260, 3, 86]; near-tie games 0; digest f46a4c582888
+[h2h] batch 2/2: 500 pairs / 1000 games in 18.2s (54.93 games/s); W/L/D 443/549/8; pair counts [142, 5, 260, 3, 90]; near-tie games 1; digest aad9af4bedf1
+[h2h] cell 15/39: rb_st_static_s1005@15047386 vs rb_st_legacy_s1008@15047962 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 0.60s
+[h2h] batch 1/2: 500 pairs / 1000 games in 17.6s (56.80 games/s); W/L/D 431/561/8; pair counts [147, 6, 261, 2, 84]; near-tie games 3; digest 726f1cb35a95
+[h2h] batch 2/2: 500 pairs / 1000 games in 13.7s (73.18 games/s); W/L/D 411/584/5; pair counts [163, 4, 254, 1, 78]; near-tie games 0; digest ea8f844d25ce
+[h2h] cell 16/39: rb_st_static_s1006@15098531 vs rb_st_legacy_s1001@15048185 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 3.18s
+[h2h] batch 1/2: 500 pairs / 1000 games in 20.9s (47.90 games/s); W/L/D 481/513/6; pair counts [118, 2, 275, 4, 101]; near-tie games 0; digest 7f23756f8b46
+[h2h] batch 2/2: 500 pairs / 1000 games in 15.4s (64.90 games/s); W/L/D 498/497/5; pair counts [111, 0, 275, 5, 109]; near-tie games 2; digest d509d2a077e6
+[h2h] cell 17/39: rb_st_static_s1006@15098531 vs rb_st_legacy_s1002@15048123 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.04s
+[h2h] batch 1/2: 500 pairs / 1000 games in 16.3s (61.31 games/s); W/L/D 500/494/6; pair counts [108, 4, 274, 2, 112]; near-tie games 0; digest ad16b26f30d1
+[h2h] batch 2/2: 500 pairs / 1000 games in 20.6s (48.57 games/s); W/L/D 515/482/3; pair counts [101, 2, 278, 1, 118]; near-tie games 2; digest 193fd5fc163f
+[h2h] cell 18/39: rb_st_static_s1006@15098531 vs rb_st_legacy_s1003@15047206 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.55s
+[h2h] batch 1/2: 500 pairs / 1000 games in 18.8s (53.13 games/s); W/L/D 490/502/8; pair counts [106, 5, 285, 3, 101]; near-tie games 2; digest 912932c7e0fc
+[h2h] batch 2/2: 500 pairs / 1000 games in 21.0s (47.69 games/s); W/L/D 494/501/5; pair counts [103, 3, 292, 2, 100]; near-tie games 2; digest f4ed7941aeed
+[h2h] cell 19/39: rb_st_static_s1006@15098531 vs rb_st_legacy_s1004@15048251 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.58s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.4s (51.63 games/s); W/L/D 509/485/6; pair counts [113, 2, 257, 4, 124]; near-tie games 1; digest d801f0afe72a
+[h2h] batch 2/2: 500 pairs / 1000 games in 21.2s (47.14 games/s); W/L/D 501/493/6; pair counts [102, 2, 287, 4, 105]; near-tie games 1; digest d5afb0e4b6ae
+[h2h] cell 20/39: rb_st_static_s1006@15098531 vs rb_st_legacy_s1005@15048032 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.49s
+[h2h] batch 1/2: 500 pairs / 1000 games in 21.8s (45.84 games/s); W/L/D 478/516/6; pair counts [117, 4, 278, 2, 99]; near-tie games 4; digest df8d98c01e0a
+[h2h] batch 2/2: 500 pairs / 1000 games in 21.8s (45.84 games/s); W/L/D 485/511/4; pair counts [114, 2, 281, 2, 101]; near-tie games 1; digest 1047d3ee9f1b
+[h2h] cell 21/39: rb_st_static_s1006@15098531 vs rb_st_legacy_s1006@15047666 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.91s
+[h2h] batch 1/2: 500 pairs / 1000 games in 21.0s (47.68 games/s); W/L/D 499/497/4; pair counts [106, 1, 284, 3, 106]; near-tie games 3; digest fbcacfa17823
+[h2h] batch 2/2: 500 pairs / 1000 games in 20.2s (49.57 games/s); W/L/D 497/496/7; pair counts [110, 2, 274, 5, 109]; near-tie games 1; digest 974ab383a441
+[h2h] cell 22/39: rb_st_static_s1006@15098531 vs rb_st_legacy_s1007@15048371 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.41s
+[h2h] batch 1/2: 500 pairs / 1000 games in 22.0s (45.42 games/s); W/L/D 491/500/9; pair counts [103, 5, 290, 2, 100]; near-tie games 1; digest cb791cb9f34f
+[h2h] batch 2/2: 500 pairs / 1000 games in 21.1s (47.33 games/s); W/L/D 467/529/4; pair counts [125, 2, 278, 0, 95]; near-tie games 2; digest 5d69583ebdde
+[h2h] cell 23/39: rb_st_static_s1006@15098531 vs rb_st_legacy_s1008@15047962 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.63s
+[h2h] batch 1/2: 500 pairs / 1000 games in 21.8s (45.92 games/s); W/L/D 492/504/4; pair counts [114, 1, 275, 3, 107]; near-tie games 2; digest 79b6bad25a77
+[h2h] batch 2/2: 500 pairs / 1000 games in 18.1s (55.28 games/s); W/L/D 472/521/7; pair counts [129, 5, 258, 2, 106]; near-tie games 5; digest ebf7e8efebbb
+[h2h] cell 24/39: rb_st_static_s1007@15047146 vs rb_st_legacy_s1001@15048185 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 3.56s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.5s (51.19 games/s); W/L/D 515/483/2; pair counts [100, 2, 281, 0, 117]; near-tie games 3; digest 566152661a07
+[h2h] batch 2/2: 500 pairs / 1000 games in 21.5s (46.43 games/s); W/L/D 479/516/5; pair counts [125, 2, 264, 3, 106]; near-tie games 1; digest a4f979c7d6a5
+[h2h] cell 25/39: rb_st_static_s1007@15047146 vs rb_st_legacy_s1002@15048123 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.45s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.4s (51.50 games/s); W/L/D 502/492/6; pair counts [108, 3, 274, 1, 114]; near-tie games 4; digest 6f868f3b4af2
+[h2h] batch 2/2: 500 pairs / 1000 games in 24.4s (40.94 games/s); W/L/D 504/489/7; pair counts [105, 1, 278, 6, 110]; near-tie games 1; digest 28d069ed79a0
+[h2h] cell 26/39: rb_st_static_s1007@15047146 vs rb_st_legacy_s1003@15047206 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.42s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.0s (52.60 games/s); W/L/D 512/481/7; pair counts [105, 2, 269, 5, 119]; near-tie games 1; digest e443975b8a7b
+[h2h] batch 2/2: 500 pairs / 1000 games in 20.8s (48.10 games/s); W/L/D 508/485/7; pair counts [106, 0, 273, 7, 114]; near-tie games 1; digest 7ca3dde30ebf
+[h2h] cell 27/39: rb_st_static_s1007@15047146 vs rb_st_legacy_s1004@15048251 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.59s
+[h2h] batch 1/2: 500 pairs / 1000 games in 18.8s (53.19 games/s); W/L/D 461/527/12; pair counts [128, 4, 268, 6, 94]; near-tie games 1; digest 2300c49223d7
+[h2h] batch 2/2: 500 pairs / 1000 games in 18.1s (55.24 games/s); W/L/D 502/494/4; pair counts [119, 3, 253, 1, 124]; near-tie games 2; digest c7282e87c059
+[h2h] cell 28/39: rb_st_static_s1007@15047146 vs rb_st_legacy_s1005@15048032 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 6.42s
+[h2h] batch 1/2: 500 pairs / 1000 games in 21.2s (47.22 games/s); W/L/D 484/511/5; pair counts [124, 2, 261, 3, 110]; near-tie games 5; digest 3419561f67d2
+[h2h] batch 2/2: 500 pairs / 1000 games in 19.3s (51.78 games/s); W/L/D 494/495/11; pair counts [106, 5, 278, 6, 105]; near-tie games 2; digest e55836e22fe8
+[h2h] cell 29/39: rb_st_static_s1007@15047146 vs rb_st_legacy_s1006@15047666 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.44s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.7s (50.69 games/s); W/L/D 494/502/4; pair counts [114, 0, 274, 4, 108]; near-tie games 1; digest 66c4536a471e
+[h2h] batch 2/2: 500 pairs / 1000 games in 18.8s (53.25 games/s); W/L/D 485/509/6; pair counts [114, 4, 277, 2, 103]; near-tie games 1; digest b6149e7a62d3
+[h2h] cell 30/39: rb_st_static_s1007@15047146 vs rb_st_legacy_s1007@15048371 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.36s
+[h2h] batch 1/2: 500 pairs / 1000 games in 21.1s (47.44 games/s); W/L/D 439/552/9; pair counts [150, 5, 247, 4, 94]; near-tie games 0; digest 1e2547344b39
+[h2h] batch 2/2: 500 pairs / 1000 games in 20.0s (49.90 games/s); W/L/D 481/515/4; pair counts [109, 2, 295, 2, 92]; near-tie games 2; digest 243258747f10
+[h2h] cell 31/39: rb_st_static_s1007@15047146 vs rb_st_legacy_s1008@15047962 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.22s
+[h2h] batch 1/2: 500 pairs / 1000 games in 18.4s (54.22 games/s); W/L/D 495/500/5; pair counts [108, 3, 281, 2, 106]; near-tie games 1; digest e6a675018190
+[h2h] batch 2/2: 500 pairs / 1000 games in 21.0s (47.69 games/s); W/L/D 487/503/10; pair counts [117, 2, 268, 6, 107]; near-tie games 1; digest eb8d6264fdef
+[h2h] cell 32/39: rb_st_static_s1008@15047434 vs rb_st_legacy_s1001@15048185 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 3.86s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.6s (51.07 games/s); W/L/D 476/517/7; pair counts [123, 2, 269, 5, 101]; near-tie games 2; digest ee38b7237a26
+[h2h] batch 2/2: 500 pairs / 1000 games in 19.0s (52.75 games/s); W/L/D 487/508/5; pair counts [119, 2, 269, 1, 109]; near-tie games 0; digest 150ce01ea031
+[h2h] cell 33/39: rb_st_static_s1008@15047434 vs rb_st_legacy_s1002@15048123 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.34s
+[h2h] batch 1/2: 500 pairs / 1000 games in 18.0s (55.52 games/s); W/L/D 488/506/6; pair counts [114, 2, 276, 4, 104]; near-tie games 0; digest 502eb17b181a
+[h2h] batch 2/2: 500 pairs / 1000 games in 19.4s (51.49 games/s); W/L/D 515/482/3; pair counts [105, 1, 271, 2, 121]; near-tie games 1; digest 9418b726ef82
+[h2h] cell 34/39: rb_st_static_s1008@15047434 vs rb_st_legacy_s1003@15047206 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.70s
+[h2h] batch 1/2: 500 pairs / 1000 games in 20.3s (49.37 games/s); W/L/D 505/487/8; pair counts [108, 3, 268, 5, 116]; near-tie games 3; digest 70799360b47a
+[h2h] batch 2/2: 500 pairs / 1000 games in 18.5s (54.07 games/s); W/L/D 486/509/5; pair counts [114, 4, 277, 1, 104]; near-tie games 1; digest 66d68118dac5
+[h2h] cell 35/39: rb_st_static_s1008@15047434 vs rb_st_legacy_s1004@15048251 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 3.17s
+[h2h] batch 1/2: 500 pairs / 1000 games in 20.2s (49.54 games/s); W/L/D 495/494/11; pair counts [112, 6, 265, 3, 114]; near-tie games 2; digest 24e1e4afd109
+[h2h] batch 2/2: 500 pairs / 1000 games in 18.8s (53.09 games/s); W/L/D 497/497/6; pair counts [107, 4, 279, 2, 108]; near-tie games 2; digest c91ee3baf857
+[h2h] cell 36/39: rb_st_static_s1008@15047434 vs rb_st_legacy_s1005@15048032 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.83s
+[h2h] batch 1/2: 500 pairs / 1000 games in 19.7s (50.87 games/s); W/L/D 460/536/4; pair counts [134, 3, 265, 1, 97]; near-tie games 3; digest 7fbed550d513
+[h2h] batch 2/2: 500 pairs / 1000 games in 25.9s (38.67 games/s); W/L/D 468/521/11; pair counts [119, 4, 281, 3, 93]; near-tie games 3; digest e4d6f99b8c91
+[h2h] cell 37/39: rb_st_static_s1008@15047434 vs rb_st_legacy_s1006@15047666 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.97s
+[h2h] batch 1/2: 500 pairs / 1000 games in 23.7s (42.25 games/s); W/L/D 470/522/8; pair counts [128, 6, 260, 2, 104]; near-tie games 0; digest bf8f3a5ca9a0
+[h2h] batch 2/2: 500 pairs / 1000 games in 20.4s (49.12 games/s); W/L/D 488/507/5; pair counts [117, 2, 271, 3, 107]; near-tie games 3; digest b33c8052a8c8
+[h2h] cell 38/39: rb_st_static_s1008@15047434 vs rb_st_legacy_s1007@15048371 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.94s
+[h2h] batch 1/2: 500 pairs / 1000 games in 22.3s (44.78 games/s); W/L/D 448/544/8; pair counts [127, 6, 284, 2, 81]; near-tie games 4; digest c673e526e235
+[h2h] batch 2/2: 500 pairs / 1000 games in 17.7s (56.58 games/s); W/L/D 454/538/8; pair counts [132, 5, 269, 3, 91]; near-tie games 1; digest 6bfad38b3b4e
+[h2h] cell 39/39: rb_st_static_s1008@15047434 vs rb_st_legacy_s1008@15047962 — 2 batch(es) to play, 0 recorded; request st_look3_steps; swap 2.46s
+[h2h] batch 1/2: 500 pairs / 1000 games in 20.4s (48.99 games/s); W/L/D 459/536/5; pair counts [141, 2, 253, 1, 103]; near-tie games 0; digest 4c63903f2ec3
+[h2h] batch 2/2: 500 pairs / 1000 games in 20.4s (49.09 games/s); W/L/D 468/522/10; pair counts [130, 5, 258, 3, 104]; near-tie games 2; digest 8c82efd6c366
+rb_st_static_s1001@15087831 vs rb_st_legacy_s1006@15047666: score 47.30% [45.21, 49.39] (pair-clustered 95%), SE 1.066 pp over 1000 pairs / 2000 games; W/L/D 943/1051/6; pentanomial [255, 2, 540, 2, 201]; 60.72 games/s
+rb_st_static_s1001@15087831 vs rb_st_legacy_s1007@15048371: score 47.58% [45.50, 49.65] (pair-clustered 95%), SE 1.058 pp over 1000 pairs / 2000 games; W/L/D 946/1043/11; pentanomial [248, 5, 542, 6, 199]; 63.63 games/s
+rb_st_static_s1001@15087831 vs rb_st_legacy_s1008@15047962: score 48.35% [46.25, 50.45] (pair-clustered 95%), SE 1.072 pp over 1000 pairs / 2000 games; W/L/D 962/1028/10; pentanomial [244, 8, 532, 2, 214]; 64.74 games/s
+rb_st_static_s1002@15050373 vs rb_st_legacy_s1006@15047666: score 48.73% [46.59, 50.86] (pair-clustered 95%), SE 1.092 pp over 1000 pairs / 2000 games; W/L/D 967/1018/15; pentanomial [247, 12, 512, 3, 226]; 64.67 games/s
+rb_st_static_s1002@15050373 vs rb_st_legacy_s1007@15048371: score 46.52% [44.44, 48.61] (pair-clustered 95%), SE 1.066 pp over 1000 pairs / 2000 games; W/L/D 926/1065/9; pentanomial [264, 3, 534, 6, 193]; 60.28 games/s
+rb_st_static_s1002@15050373 vs rb_st_legacy_s1008@15047962: score 46.40% [44.34, 48.46] (pair-clustered 95%), SE 1.053 pp over 1000 pairs / 2000 games; W/L/D 921/1065/14; pentanomial [258, 8, 541, 6, 187]; 54.53 games/s
+rb_st_static_s1003@15067350 vs rb_st_legacy_s1006@15047666: score 47.38% [45.32, 49.43] (pair-clustered 95%), SE 1.051 pp over 1000 pairs / 2000 games; W/L/D 940/1045/15; pentanomial [247, 6, 546, 7, 194]; 64.78 games/s
+rb_st_static_s1003@15067350 vs rb_st_legacy_s1007@15048371: score 44.25% [42.23, 46.27] (pair-clustered 95%), SE 1.033 pp over 1000 pairs / 2000 games; W/L/D 880/1110/10; pentanomial [276, 5, 553, 5, 161]; 51.74 games/s
+rb_st_static_s1003@15067350 vs rb_st_legacy_s1008@15047962: score 45.12% [43.09, 47.16] (pair-clustered 95%), SE 1.039 pp over 1000 pairs / 2000 games; W/L/D 896/1091/13; pentanomial [268, 5, 551, 6, 170]; 64.89 games/s
+rb_st_static_s1004@15046967 vs rb_st_legacy_s1006@15047666: score 46.75% [44.66, 48.84] (pair-clustered 95%), SE 1.066 pp over 1000 pairs / 2000 games; W/L/D 931/1061/8; pentanomial [260, 5, 536, 3, 196]; 70.04 games/s
+rb_st_static_s1004@15046967 vs rb_st_legacy_s1007@15048371: score 46.62% [44.59, 48.66] (pair-clustered 95%), SE 1.037 pp over 1000 pairs / 2000 games; W/L/D 922/1057/21; pentanomial [246, 15, 550, 6, 183]; 64.29 games/s
+rb_st_static_s1004@15046967 vs rb_st_legacy_s1008@15047962: score 47.62% [45.61, 49.64] (pair-clustered 95%), SE 1.027 pp over 1000 pairs / 2000 games; W/L/D 947/1042/11; pentanomial [235, 4, 568, 7, 186]; 67.67 games/s
+rb_st_static_s1005@15047386 vs rb_st_legacy_s1006@15047666: score 43.38% [41.34, 45.41] (pair-clustered 95%), SE 1.040 pp over 1000 pairs / 2000 games; W/L/D 860/1125/15; pentanomial [288, 10, 539, 5, 158]; 64.34 games/s
+rb_st_static_s1005@15047386 vs rb_st_legacy_s1007@15048371: score 44.27% [42.18, 46.37] (pair-clustered 95%), SE 1.068 pp over 1000 pairs / 2000 games; W/L/D 878/1107/15; pentanomial [289, 9, 520, 6, 176]; 60.74 games/s
+rb_st_static_s1005@15047386 vs rb_st_legacy_s1008@15047962: score 42.43% [40.34, 44.51] (pair-clustered 95%), SE 1.064 pp over 1000 pairs / 2000 games; W/L/D 842/1145/13; pentanomial [310, 10, 515, 3, 162]; 63.95 games/s
+rb_st_static_s1006@15098531 vs rb_st_legacy_s1001@15048185: score 49.23% [47.17, 51.28] (pair-clustered 95%), SE 1.051 pp over 1000 pairs / 2000 games; W/L/D 979/1010/11; pentanomial [229, 2, 550, 9, 210]; 55.12 games/s
+rb_st_static_s1006@15098531 vs rb_st_legacy_s1002@15048123: score 50.98% [48.92, 53.03] (pair-clustered 95%), SE 1.050 pp over 1000 pairs / 2000 games; W/L/D 1015/976/9; pentanomial [209, 6, 552, 3, 230]; 54.20 games/s
+rb_st_static_s1006@15098531 vs rb_st_legacy_s1003@15047206: score 49.53% [47.53, 51.52] (pair-clustered 95%), SE 1.017 pp over 1000 pairs / 2000 games; W/L/D 984/1003/13; pentanomial [209, 8, 577, 5, 201]; 50.26 games/s
+rb_st_static_s1006@15098531 vs rb_st_legacy_s1004@15048251: score 50.80% [48.73, 52.87] (pair-clustered 95%), SE 1.057 pp over 1000 pairs / 2000 games; W/L/D 1010/978/12; pentanomial [215, 4, 544, 8, 229]; 49.28 games/s
+rb_st_static_s1006@15098531 vs rb_st_legacy_s1005@15048032: score 48.40% [46.36, 50.44] (pair-clustered 95%), SE 1.040 pp over 1000 pairs / 2000 games; W/L/D 963/1027/10; pentanomial [231, 6, 559, 4, 200]; 45.84 games/s
+rb_st_static_s1006@15098531 vs rb_st_legacy_s1006@15047666: score 50.08% [48.03, 52.12] (pair-clustered 95%), SE 1.042 pp over 1000 pairs / 2000 games; W/L/D 996/993/11; pentanomial [216, 3, 558, 8, 215]; 48.61 games/s
+rb_st_static_s1006@15098531 vs rb_st_legacy_s1007@15048371: score 48.23% [46.21, 50.24] (pair-clustered 95%), SE 1.030 pp over 1000 pairs / 2000 games; W/L/D 958/1029/13; pentanomial [228, 7, 568, 2, 195]; 46.36 games/s
+rb_st_static_s1006@15098531 vs rb_st_legacy_s1008@15047962: score 48.48% [46.38, 50.57] (pair-clustered 95%), SE 1.070 pp over 1000 pairs / 2000 games; W/L/D 964/1025/11; pentanomial [243, 6, 533, 5, 213]; 50.17 games/s
+rb_st_static_s1007@15047146 vs rb_st_legacy_s1001@15048185: score 49.88% [47.80, 51.95] (pair-clustered 95%), SE 1.061 pp over 1000 pairs / 2000 games; W/L/D 994/999/7; pentanomial [225, 4, 545, 3, 223]; 48.69 games/s
+rb_st_static_s1007@15047146 vs rb_st_legacy_s1002@15048123: score 50.62% [48.57, 52.68] (pair-clustered 95%), SE 1.049 pp over 1000 pairs / 2000 games; W/L/D 1006/981/13; pentanomial [213, 4, 552, 7, 224]; 45.62 games/s
+rb_st_static_s1007@15047146 vs rb_st_legacy_s1003@15047206: score 51.35% [49.28, 53.42] (pair-clustered 95%), SE 1.057 pp over 1000 pairs / 2000 games; W/L/D 1020/966/14; pentanomial [211, 2, 542, 12, 233]; 50.25 games/s
+rb_st_static_s1007@15047146 vs rb_st_legacy_s1004@15048251: score 48.55% [46.43, 50.67] (pair-clustered 95%), SE 1.082 pp over 1000 pairs / 2000 games; W/L/D 963/1021/16; pentanomial [247, 7, 521, 7, 218]; 54.19 games/s
+rb_st_static_s1007@15047146 vs rb_st_legacy_s1005@15048032: score 49.30% [47.22, 51.38] (pair-clustered 95%), SE 1.060 pp over 1000 pairs / 2000 games; W/L/D 978/1006/16; pentanomial [230, 7, 539, 9, 215]; 49.39 games/s
+rb_st_static_s1007@15047146 vs rb_st_legacy_s1006@15047666: score 49.20% [47.14, 51.26] (pair-clustered 95%), SE 1.051 pp over 1000 pairs / 2000 games; W/L/D 979/1011/10; pentanomial [228, 4, 551, 6, 211]; 51.94 games/s
+rb_st_static_s1007@15047146 vs rb_st_legacy_s1007@15048371: score 46.33% [44.26, 48.39] (pair-clustered 95%), SE 1.053 pp over 1000 pairs / 2000 games; W/L/D 920/1067/13; pentanomial [259, 7, 542, 6, 186]; 48.64 games/s
+rb_st_static_s1007@15047146 vs rb_st_legacy_s1008@15047962: score 49.48% [47.42, 51.53] (pair-clustered 95%), SE 1.051 pp over 1000 pairs / 2000 games; W/L/D 982/1003/15; pentanomial [225, 5, 549, 8, 213]; 50.75 games/s
+rb_st_static_s1008@15047434 vs rb_st_legacy_s1001@15048185: score 48.45% [46.36, 50.54] (pair-clustered 95%), SE 1.065 pp over 1000 pairs / 2000 games; W/L/D 963/1025/12; pentanomial [242, 4, 538, 6, 210]; 51.89 games/s
+rb_st_static_s1008@15047434 vs rb_st_legacy_s1002@15048123: score 50.38% [48.30, 52.45] (pair-clustered 95%), SE 1.057 pp over 1000 pairs / 2000 games; W/L/D 1003/988/9; pentanomial [219, 3, 547, 6, 225]; 53.43 games/s
+rb_st_static_s1008@15047434 vs rb_st_legacy_s1003@15047206: score 49.88% [47.81, 51.94] (pair-clustered 95%), SE 1.056 pp over 1000 pairs / 2000 games; W/L/D 991/996/13; pentanomial [222, 7, 545, 6, 220]; 51.61 games/s
+rb_st_static_s1008@15047434 vs rb_st_legacy_s1004@15048251: score 50.02% [47.96, 52.09] (pair-clustered 95%), SE 1.055 pp over 1000 pairs / 2000 games; W/L/D 992/991/17; pentanomial [219, 10, 544, 5, 222]; 51.26 games/s
+rb_st_static_s1008@15047434 vs rb_st_legacy_s1005@15048032: score 46.77% [44.72, 48.83] (pair-clustered 95%), SE 1.051 pp over 1000 pairs / 2000 games; W/L/D 928/1057/15; pentanomial [253, 7, 546, 4, 190]; 43.94 games/s
+rb_st_static_s1008@15047434 vs rb_st_legacy_s1006@15047666: score 48.23% [46.13, 50.32] (pair-clustered 95%), SE 1.071 pp over 1000 pairs / 2000 games; W/L/D 958/1029/13; pentanomial [245, 8, 531, 5, 211]; 45.43 games/s
+rb_st_static_s1008@15047434 vs rb_st_legacy_s1007@15048371: score 45.50% [43.48, 47.52] (pair-clustered 95%), SE 1.034 pp over 1000 pairs / 2000 games; W/L/D 902/1082/16; pentanomial [259, 11, 553, 5, 172]; 49.99 games/s
+rb_st_static_s1008@15047434 vs rb_st_legacy_s1008@15047962: score 46.73% [44.59, 48.86] (pair-clustered 95%), SE 1.092 pp over 1000 pairs / 2000 games; W/L/D 927/1058/15; pentanomial [271, 7, 511, 4, 207]; 49.04 games/s
+[mem_cap] done: gen3ai-capped-python3-4110976.scope exit 0 · peak 11.48 GB of cap 32.00 GB (36%) · not OOM-killed

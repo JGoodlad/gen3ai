@@ -1,0 +1,433 @@
+{
+ "rule": "python speed_read.py [--models M] [--cpu-dir ~/.claude/jobs/st_screen] [--out speed.json]",
+ "arms": {
+  "legacy": {
+   "runs": [
+    {
+     "run": "rb_st_legacy_s1001",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791433874.goodlad-desktop.200481.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 5339,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 38,
+     "median_s": 60.851,
+     "kept_update_wall_s_median": 46.82856369018555,
+     "end_to_end_wall_h": 2.719,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "contended": 95,
+      "eval cycle in window": 7,
+      "kept": 38,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_legacy_s1002",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791466779.goodlad-desktop.968793.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 5143,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 60,
+     "median_s": 58.8145,
+     "kept_update_wall_s_median": 46.72848892211914,
+     "end_to_end_wall_h": 2.653,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "contended": 73,
+      "eval cycle in window": 7,
+      "kept": 60,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_legacy_s1003",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791477131.goodlad-desktop.1192252.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 5082,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 81,
+     "median_s": 58.399,
+     "kept_update_wall_s_median": 46.70553207397461,
+     "end_to_end_wall_h": 2.612,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "contended": 52,
+      "kept": 81,
+      "eval cycle in window": 7,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_legacy_s1004",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791500384.goodlad-desktop.1640372.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 4928,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 112,
+     "median_s": 58.332,
+     "kept_update_wall_s_median": 46.65843200683594,
+     "end_to_end_wall_h": 2.537,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "kept": 112,
+      "eval cycle in window": 7,
+      "contended": 21,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_legacy_s1005",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791529703.goodlad-desktop.2101447.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 4836,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 133,
+     "median_s": 57.809,
+     "kept_update_wall_s_median": 46.51644515991211,
+     "end_to_end_wall_h": 2.484,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "kept": 133,
+      "eval cycle in window": 7,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_legacy_s1006",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791540638.goodlad-desktop.2270320.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 4813,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 133,
+     "median_s": 57.649,
+     "kept_update_wall_s_median": 46.46199035644531,
+     "end_to_end_wall_h": 2.473,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "kept": 133,
+      "eval cycle in window": 7,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_legacy_s1007",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791571234.goodlad-desktop.3683449.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 4856,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 133,
+     "median_s": 57.939,
+     "kept_update_wall_s_median": 46.64112091064453,
+     "end_to_end_wall_h": 2.492,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "kept": 133,
+      "eval cycle in window": 7,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_legacy_s1008",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791580959.goodlad-desktop.3803122.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 4837,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 133,
+     "median_s": 57.742,
+     "kept_update_wall_s_median": 46.56521224975586,
+     "end_to_end_wall_h": 2.486,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "kept": 133,
+      "eval cycle in window": 7,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    }
+   ],
+   "kept_n": 823,
+   "pooled_median_s": 57.936,
+   "end_to_end_wall_h_mean": 2.557
+  },
+  "static": {
+   "runs": [
+    {
+     "run": "rb_st_static_s1001",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791444629.goodlad-desktop.460055.0",
+       "tb_records": 148
+      },
+      {
+       "file": "events.out.tfevents.1791454037.goodlad-desktop.689307.0",
+       "tb_records": 11
+      }
+     ],
+     "cpu_rows": 5504,
+     "canary_verdicts": 3,
+     "cycles_total": 157,
+     "kept_n": 44,
+     "median_s": 58.192,
+     "kept_update_wall_s_median": 45.64947700500488,
+     "end_to_end_wall_h": 2.75,
+     "exclusions": {
+      "start window (child's first 11 updates)": 20,
+      "kept": 44,
+      "eval cycle in window": 7,
+      "contended": 85,
+      "compile canary in window": 1
+     }
+    },
+    {
+     "run": "rb_st_static_s1002",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791455694.goodlad-desktop.708144.0",
+       "tb_records": 68
+      },
+      {
+       "file": "events.out.tfevents.1791460200.goodlad-desktop.866302.0",
+       "tb_records": 92
+      }
+     ],
+     "cpu_rows": 5614,
+     "canary_verdicts": 2,
+     "cycles_total": 158,
+     "kept_n": 49,
+     "median_s": 58.492,
+     "kept_update_wall_s_median": 45.40077209472656,
+     "end_to_end_wall_h": 2.792,
+     "exclusions": {
+      "start window (child's first 11 updates)": 20,
+      "contended": 81,
+      "eval cycle in window": 7,
+      "kept": 49,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_static_s1003",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791487296.goodlad-desktop.1379954.0",
+       "tb_records": 23
+      },
+      {
+       "file": "events.out.tfevents.1791488690.goodlad-desktop.1454644.0",
+       "tb_records": 54
+      },
+      {
+       "file": "events.out.tfevents.1791492013.goodlad-desktop.1478336.0",
+       "tb_records": 0
+      },
+      {
+       "file": "events.out.tfevents.1791492239.goodlad-desktop.1480145.0",
+       "tb_records": 0
+      },
+      {
+       "file": "events.out.tfevents.1791492459.goodlad-desktop.1482240.0",
+       "tb_records": 0
+      },
+      {
+       "file": "events.out.tfevents.1791492701.goodlad-desktop.1484575.0",
+       "tb_records": 82
+      }
+     ],
+     "cpu_rows": 5482,
+     "canary_verdicts": 3,
+     "cycles_total": 156,
+     "kept_n": 110,
+     "median_s": 56.528000000000006,
+     "kept_update_wall_s_median": 45.45164108276367,
+     "end_to_end_wall_h": 2.554,
+     "exclusions": {
+      "start window (child's first 11 updates)": 30,
+      "kept": 110,
+      "eval cycle in window": 6,
+      "contended": 9,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_static_s1004",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791510349.goodlad-desktop.1766913.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 4866,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 115,
+     "median_s": 56.565,
+     "kept_update_wall_s_median": 45.39189147949219,
+     "end_to_end_wall_h": 2.482,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "contended": 18,
+      "kept": 115,
+      "eval cycle in window": 7,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_static_s1005",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791520085.goodlad-desktop.1928975.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 4812,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 121,
+     "median_s": 56.368,
+     "kept_update_wall_s_median": 45.30171203613281,
+     "end_to_end_wall_h": 2.461,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "contended": 12,
+      "eval cycle in window": 7,
+      "kept": 121,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_static_s1006",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791550307.goodlad-desktop.2383357.0",
+       "tb_records": 39
+      },
+      {
+       "file": "events.out.tfevents.1791552538.goodlad-desktop.2462590.0",
+       "tb_records": 123
+      }
+     ],
+     "cpu_rows": 5336,
+     "canary_verdicts": 3,
+     "cycles_total": 160,
+     "kept_n": 72,
+     "median_s": 56.809,
+     "kept_update_wall_s_median": 45.33993148803711,
+     "end_to_end_wall_h": 2.722,
+     "exclusions": {
+      "start window (child's first 11 updates)": 20,
+      "kept": 72,
+      "eval cycle in window": 6,
+      "contended": 60,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_static_s1007",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791561230.goodlad-desktop.2595229.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 5070,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 75,
+     "median_s": 57.063,
+     "kept_update_wall_s_median": 45.535404205322266,
+     "end_to_end_wall_h": 2.564,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "kept": 75,
+      "eval cycle in window": 7,
+      "contended": 58,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    },
+    {
+     "run": "rb_st_static_s1008",
+     "children": [
+      {
+       "file": "events.out.tfevents.1791590661.goodlad-desktop.3918434.0",
+       "tb_records": 153
+      }
+     ],
+     "cpu_rows": 5333,
+     "canary_verdicts": 2,
+     "cycles_total": 152,
+     "kept_n": 45,
+     "median_s": 55.039,
+     "kept_update_wall_s_median": 45.73701095581055,
+     "end_to_end_wall_h": 2.768,
+     "exclusions": {
+      "start window (child's first 11 updates)": 10,
+      "kept": 45,
+      "eval cycle in window": 7,
+      "contended": 88,
+      "compile canary in window": 1,
+      "step does not advance (a save / abort dump)": 1
+     }
+    }
+   ],
+   "kept_n": 631,
+   "pooled_median_s": 56.691,
+   "end_to_end_wall_h_mean": 2.637
+  }
+ },
+ "s": -0.021489229494614737,
+ "speed_rule": "s <= 5 %: the strength rule alone decides",
+ "near_boundary": [],
+ "end_to_end_ratio_minus_1": 0.03128666405944469,
+ "matched_wall_checkpoint_floor_1M": 15000000
+}

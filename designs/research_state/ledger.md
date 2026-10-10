@@ -23832,3 +23832,44 @@ FINDINGS:
    deeper graph, a real two-minute launch, the GPU cost read.
 
 Tag: **BUILT · static-recovery levers · v150 · OFF · `--arch static_recovery` declared · production byte-identical · GPU checks DEFERRED** · design: [`design_static_tokens.md`](../endstate/design_static_tokens.md) §13 · [`design_hand_computed_features.md`](../endstate/design_hand_computed_features.md) N3 / N4 · measurements: [`measurements/static_recovery_2026-10-09/`](measurements/static_recovery_2026-10-09/)
+
+### 2026-10-09 · READ · **STATIC-TOKEN SCREEN LOOK 3 (FINAL, n = 8 per arm): NOT DETECTED — static vs legacy Δ̂ −2.32 pp, look-3 interval [−3.68, −0.95] (straddles −δ), fixed-sample 90 % [−3.60, −1.04]; t_NI 1.623 < 1.874 (NOT non-inferior); t_SUP −3.184; not INFERIOR; `static` NOT adopted on the registered rule, legacy stays (and, per the owner, no legacy code is deleted on this read); in-arm speed s −2.1 % (≤ 5 %); bots panel −0.59 pp, no HARM flag; all sixteen seeds' deviations as briefed and valid**
+
+The registered look-3 (FINAL) read of `design_static_tokens.md` §8.1 + §8.2 (P_st `6c6d2e09`; amendments 1–2 of 2026-10-08): `--token-encoding static` vs `legacy`, both `fixed_mass` + `tower`, 15M, δ = 3.5 pp, X5's group-sequential looks 3 / 5 / 8 (O'Brien–Fleming 5.761 / 2.683 / 1.874), rule 8. At look 3 §8.2 applies §8.1's table as written: no CONTINUE, no futility row. Under the OWNER RULING of 2026-10-09 the registered NON-INFERIORITY rule governs (no "worse but inside δ" row). Under the OWNER decision of 2026-10-09 legacy is KEPT until a CLOSING test, whatever this read says. Artifact: [`measurements/static_screen_look3_2026-10-09/`](measurements/static_screen_look3_2026-10-09/) (`README.md`, `result.md`, `result.json`, `speed.json`, `panel_bots.json`, `deviations.json`).
+
+**Inputs.** The 8 × 8 cross (each static seed's `final_model.zip` × each legacy seed's), 1,000 mirrored pairs per cell. Look 1's 9 cells (`st_look1_steps`) and look 2's 16 (`st_look2_steps`) were REUSED from the eval COUNT ledger (same engine at P_st, regime `adfdbee824c9eb0a`, same checkpoints by sha256). 39 NEW cells were played under `st_look3_steps` (family `st_screen_strength_steps`) = 78,000 games, both sides greedy, schedule seed 0, one engine (T2 graph, CUDA), purpose `ab`. 0 aborted. The uniqueness guard by sha ran on the plan and read sides. Ledger audit after: OK (3,620 rows, 468 requests, 0 live claims). Played AND read from the look-1 checkout detached at `6c6d2e09`, verified by content (`pin_check.py`: HEAD file + all 3,253 tracked `src/` / `data/` blobs identical). Preconditions (`plan_look3.py`): all sixteen at `pin_history` [6c6d2e09] only, finals 15.05–15.10M, `init_num_threads` 1, torch 2.8.0, the arms' encodings as declared, S3's amendment-2 check VALID; none failed. S8 (`rb_st_static_s1008`) banked 19:50:36 PDT (`launcher_rc=0`) before any play. GPU lease `static look3 cross` 19:50:49 → 20:31:49 PDT (released right after the play; engine compile 781.5 s).
+
+**Deviations (`deviations.py`, read-only, all sixteen vs the brief: all match).** L1–L8, S4, S5, S7, S8: one launcher child, `Restarts : 0`, no crash, no K9(b) stop, no warn; judged max |d log π| ≤ 5.8e-5. Some current-row maxima sit on EXCLUDED near-tie rows (L3 5.2e-2, L5 3.3e-4, L8 1.6e-4, S7 2.5e-3), each with its judged max ≤ 3.3e-5. S1 / S2: one amendment-1 resume each (banked at look 1). S3: the amendment-2 warn switch (VALID, banked at look 1). **S6: one amendment-1 stop, VALID.** At u390 (3.94M) the only failed condition was the tie-share ceiling (excluded share 0.254, max 4.3e-6). The launcher's crash restart #1 at 06:26:36 resumed from the run's own latest checkpoint (3.0M), and the 162 probes give a judged max of 3.5e-5. **S6's chain swap is valid too:** `chain_look3b.sh` ADOPTED S6's running launcher (pid 2383309) at 07:00:38 for the disk gate and waited on it. The launcher log ends "Training complete" with `Restarts : 1`, so there was no extra child and no argv change.
+
+**The read (look 3, df 14).** h_ij (static row vs legacy column, pp):
+- s1001: 47.33 / 49.23 / 48.73 / 48.27 / 46.52 / 47.30 / 47.58 / 48.35
+- s1002: 46.98 / 50.52 / 49.35 / 49.73 / 46.38 / 48.73 / 46.52 / 46.40
+- s1003: 48.98 / 49.38 / 48.15 / 48.58 / 44.88 / 47.38 / 44.25 / 45.12
+- s1004: 46.50 / 49.45 / 47.93 / 48.95 / 44.45 / 46.75 / 46.62 / 47.62
+- s1005: 44.50 / 44.27 / 43.75 / 45.40 / 44.40 / 43.38 / 44.27 / 42.43
+- s1006: 49.23 / 50.98 / 49.53 / 50.80 / 48.40 / 50.08 / 48.23 / 48.48
+- s1007: 49.88 / 50.62 / 51.35 / 48.55 / 49.30 / 49.20 / 46.33 / 49.48
+- s1008: 48.45 / 50.38 / 49.88 / 50.02 / 46.77 / 48.23 / 45.50 / 46.73
+
+56 of 64 cells are below 50. Row means 47.91 / 48.08 / 47.09 / 47.28 / 44.05 / 49.46 / 49.34 / 48.24 (s²_R 2.877); column means 47.73 / 49.35 / 48.58 / 48.79 / 46.39 / 47.63 / 46.16 / 46.83 (s²_C 1.364); √V̂ 0.728 pp. Δ̂ −2.32; t_NI = 1.623 < 1.874 (NON-INFERIOR would have needed Δ̂ ≥ −2.14); t_SUP = −3.184. The look-3 interval Δ̂ ± 1.874 √V̂ = [−3.68, −0.95] is not inside ±3.5 (no EQUIVALENT) and its upper end is not below −3.5 (no INFERIOR). Nothing lies within 1e-9 of a boundary. **Outcome: NOT DETECTED at the final look.** §8.1's row for it: "legacy stays; back to the owner with the read: add seeds (the X5 extension) or run the §7 split". The fixed-sample 90 % interval [−3.60, −1.04] reads the same; X5's `main.h2h.cross.decide` (look 3) reads NOT DETECTED with no INFERIOR label; the 95 % two-sided interval is [−3.88, −0.76].
+
+**Speed (registered in-arm s, REPORTED).** Quiet cycles: contention factor < 1.05, each child's first 11 updates excluded (so every resume window, S6's included), and canary / eval / dump cycles out.
+- legacy: 823 of 1,216 kept, median 57.94 s;
+- static: 631 of 1,239 kept, median 56.69 s.
+
+⇒ **s = −2.1 %** (mean of the per-seed medians −2.7 %, median of them −2.5 %). s ≤ 5 %: the strength rule alone decides. End-to-end wall per run is +3.1 % for static (2.637 h vs 2.557 h), which includes the four static resumes and the static arm's more contended windows.
+
+**Secondary (REPORTED).** Bots, from each run's own last in-loop eval (≈ 14.0M, 8 bots × 100 games): static 89.55 vs legacy 90.14 pp, −0.59, no HARM flag. Sentinel MONOTONICITY (Kendall τ, newest → oldest sentinel): static mean 0.925, legacy 0.975. Four runs read 0.80 (S2, S6, S7, L8; each one adjacent inversion among five 100-game sentinels) and the other twelve read 1.00. Frozen pool and SmallRL were not played.
+
+**DESCRIPTIVE ONLY, NOT THE DECISION — the owner's future closing-test rule** (pass iff the 90 % two-sided interval includes 0 or lies above it AND its lower end > −2.0 pp; unregistered). On this cross the 90 % interval is [−3.60, −1.04]: wholly below 0, lower end below −2.0. It would FAIL on both clauses.
+
+**FINDINGS (standing rule 7).**
+1. **A near miss of NON-INFERIOR, not a harm signal.** t_NI 1.623 vs 1.874. Look 2's arithmetic projected that NI needed Δ̂ ≥ −2.12; the final need was −2.14, and Δ̂ landed at −2.32. The point estimate improved from look 2 (−2.70) because the three new static seeds are the strongest static rows (their 24 cells average −0.99). Static is still detectably WORSE than legacy: t_SUP −3.184 and every interval lies below 0, by about 1–4 pp.
+2. **The registered NOT DETECTED row sends this to the owner; the owner's 2026-10-09 decision already answers it.** Legacy is kept, the static-recovery levers (`--arch static_recovery`, §13) are next, and a CLOSING test follows. The X5 extension (+2 seeds per arm) is the registered alternative; this read does not take it.
+3. **Static s1005 is an outlier row** (44.05; the next weakest is 47.09). Without it Δ̂ would be −1.80 (DESCRIPTIVE; seeds do not pair runs).
+4. **Four runs read 0.80 monotonicity, not three:** S2 joins the briefed S6 / S7 / L8. S2's inversion is one game (.60 vs .59).
+5. **Pin verification method changed.** The worktree-isolated agent may not run git inside the pin checkout, so `play_look2.sh`'s `git rev-parse` / `git status` became a content check (`pin_check.py`), and the play / read ran as plain commands that import the pin's `src/` explicitly (README "THE COMMAND"). The play logs `main.h2h` imported from the pin.
+6. **A first launch failed before any game** because `main.h2h` refuses a cwd other than the repo root (the team pool is cwd-relative). No ledger row was written; the relaunch from the pin root played everything.
+7. **The panel is the bots component only**, from in-loop evals at ≈ 14.0M; frozen pool and SmallRL are unread (as at looks 1 and 2).
+
+Tag: **READ · static-token screen look 3 (FINAL) · NOT DETECTED (t_NI 1.623 < 1.874; t_SUP −3.184) · static NOT adopted, legacy kept (owner: no deletion on this read) · s −2.1 % · all deviations valid · no HARM flag**
