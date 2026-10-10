@@ -13290,3 +13290,38 @@ archive read failed.
   (Gardevoir with a Levitate column pays; Gengar / Latias / Flygon / Weezing / Misdreavus do not, revealed or not) and
   `::test_every_gen3_species_levitate_prior_is_zero_or_one` (the premise).
 
+
+## 2026-10-09 — v150 / `gen3_static_recovery_v1`: the static-RECOVERY levers `--trunk-layers`, `--switch-hazard-cost`, `--eot-residual` (all OFF; production byte-identical) and the named arm `--arch static_recovery`
+
+- **Why.** The owner kept the legacy encoding until a CLOSING test and asked for the static recovery levers first, all
+  together, to be bisected afterwards ("run all of them speculatively together and then we can bisect them out",
+  2026-10-09). The static diagnostic (`measurements/static_diag_2026-10-09/`): board facts reach static's mon tokens
+  only at the last of two rounds (H3); our side's Spikes is the gap that grew; static loses most on stall / semi-stall /
+  Wish / spin / phaze / Spikes teams.
+- **`--trunk-layers N`** (`trunk_depth.py`; N ∈ {2, 3, 4}, production 2). N − 2 extra rounds after the two post-LN
+  layers, each a PRE-LN residual block whose attention out-proj and FFN output start at zero (weight and bias): the
+  deeper trunk at init IS the 2-round network, bit for bit (a post-LN round with zero outputs is LN∘LN, not the
+  identity). Built from a private seed (`TRUNK_EXTRA_INIT_SEED`) out of `IsolatedLinear`s, so no other initial byte moves.
+  132,480 parameters per round.
+- **`--switch-hazard-cost {off,on}`** (`static_facts.switch_hazard_features`). Each switch target's [our side's Spikes
+  layers / 3, its switch-in HP fraction] from the op's ONE entry rule `spikes_entry`, appended LAST to the switch
+  pointer cell; the pointer head reads it through its own zero-init bias-free `IsolatedLinear(2, 64)`
+  (`switch_extra_proj`): exactly zero-init input columns of `switch_proj`, whose width and init are unchanged.
+- **`--eot-residual {off,on}`** (`eot_residual.py`). Every mon, both sides: its end-of-turn HP change if it is the mon on
+  its side's field at the end of this turn, 10 components + the HP-clamped net (Leftovers, sand / hail, Rain Dish, the
+  status tick, Leech Seed drain and heal, Wish, Ingrain, Curse, Nightmare), as token content through a zero-init
+  bias-free `IsolatedLinear(11, 128)`. Every component verified in `deps/pokemon-showdown` first: gen-3 Wish heals half
+  the RECIPIENT's max HP (gen-4 mod), burn is 1/8, Toxic (n+1)/16 resets on switch, Sand Veil is a sand immunity, Liquid
+  Ooze makes the seeder take the drained HP, a timed weather deals no chip on its last turn. Unknown items / abilities
+  are the species' Smogon priors. Excluded: partial trapping, Future Sight / Doom Desire, Dig / Dive.
+- **`--arch static_recovery`** (`main/train/arch_arms.py`, NAMED ARMS): production's ARCH surface + the declared overlay
+  `--token-encoding static --mon-hazard-cost on --move-actor-state on --trunk-layers 3 --switch-hazard-cost on
+  --eot-residual on`, production's recipe; the arch guard judges a fresh argv against production ⊕ the overlay;
+  `arch_source` = `static_recovery@production_config@<12>+overlay@<8>`; a restart restores the recipe.
+- **Versioning.** `MODEL_CONFIG_VERSION` 149 → 150: three STRUCTURAL fields (`trunk_layers` int 2, `switch_hazard_cost`
+  / `eot_residual` off), each gated in `check_compatible`, a pre-v150 config migrates to 2 / off / off. No
+  `ARCH_SIGNATURE` or floor change. Production's dynamo graph, state_dict and outputs are unchanged
+  (`11338474…`, 20,144 lines); `static` and the v147 bundle likewise.
+- **Tests (fail on revert):** `agents/model/static_recovery_test.py`, `main/train/arch_arms_test.py`, and the
+  `static_recovery` parametrization of `main/train/debug_shape_smoke_integration_test.py`. Detail and cost:
+  `designs/endstate/design_static_tokens.md` §13, `research_state/measurements/static_recovery_2026-10-09/`.

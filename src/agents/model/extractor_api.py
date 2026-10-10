@@ -297,7 +297,16 @@ class ExtractorApi(ExtractorBuild):
         # gen3_conditional_threat_v1 (OA1): the SECOND — the four coordinates that row cannot carry.
         base += CONDITIONAL_THREAT_SWITCH_DIM if self.conditional_threat is not None else 0
         # gen3_move_resolution_v1 (v141): the move-resolution family's switch block.
-        return base + (MOVE_RESOLUTION_SWITCH_DIM if self.move_resolution_cell is not None else 0)
+        base += MOVE_RESOLUTION_SWITCH_DIM if self.move_resolution_cell is not None else 0
+        # gen3_static_recovery_v1 (`--switch-hazard-cost on`): the LAST block, the target's entry-hazard cost.
+        return base + self.pointer_switch_extra_dim
+
+    @property
+    def pointer_switch_extra_dim(self) -> int:
+        """The width of the switch cell's TRAILING block that the pointer head reads through its own zero-init
+        projection (`gen3_static_recovery_v1`, `--switch-hazard-cost on`: the entry-hazard cost); 0 when off."""
+        from agents.model.static_facts import SWITCH_HAZARD_DIM
+        return SWITCH_HAZARD_DIM if getattr(self, "switch_hazard_cost", "off") == "on" else 0
 
     def _publish_belief(self, t: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         """Hand a belief output to the FORWARD (reinject / the op / the edge cells / the seats / the

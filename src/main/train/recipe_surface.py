@@ -307,7 +307,9 @@ def _is_production_launch(original_command: Optional[str]) -> bool:
     if not original_command:
         return False
     try:
-        return argv_umbrella(shlex.split(original_command)) == "production"
+        # a NAMED ARM (`main.train.arch_arms`) applies production's recipe too (gen3_static_recovery_v1)
+        from main.train.arch_surface import UMBRELLA_VALUES
+        return argv_umbrella(shlex.split(original_command)) in UMBRELLA_VALUES
     except ValueError:
         return False
 

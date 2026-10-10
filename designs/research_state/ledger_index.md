@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,790-line file. **The ledger itself is append-only and is never edited by this**;
+23,835-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**830 headings · 775 dated · 2026-08-01 → 2026-10-09 · ledger 23,790 lines.**
+**831 headings · 776 dated · 2026-08-01 → 2026-10-09 · ledger 23,835 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -850,3 +850,4 @@ rename.
   - `L23717` · `2026-10-09` · DESCRIPTIVE · **WHERE IS STATIC WORSE? (CPU diagnostic, not the screen): H1 "attention slow to learn" NOT SUPPORTED (paired-seed Δ −2.6 / −3.2 / −2.1 pp at 5M / 10M / 15M; static's layer-1 attention starts SHARPER); H2 SUPPORTED for board facts (our side's Spikes after the trunk R² 0.33 vs 0.46, the one gap that GROWS with training; our active's HP in its move token 0.59 vs 0.80; per-mon facts within 0.05); H3 SUPPORTED (board facts reach static's tokens mostly at layer 2); the game deficit concentrates on SLOW teams (stall −10.7 pp, hyper-offense −1.2 pp)**
 - `L23741` · `2026-10-09` · OPS CORRECTION: the skeleton cleanup also removed per-checkpoint sidecar JSONs; the era-2/era-1 DOSE gap re-reads 4.31x
   - `L23753` · `2026-10-09` · BUILT · **THE STATIC PORT at HEAD (`gen3_static_port_v1`, v147): `--token-encoding static` composed with every post-pin lever and proved against the screen's pin by a weight mapping (bitwise on the conditioned subspace but F16b's ~1 ulp and the type sum's summation order, log π 8.3e-7); made EQUIVARIANT (the type pair summed; the outgoing op content a set function of our moves); two narrow facts behind `--mon-hazard-cost` / `--move-actor-state` (OFF; zero-init; one Spikes rule shared with the `x` cell); production byte-identical**
+  - `L23791` · `2026-10-09` · BUILT · **THE STATIC-RECOVERY LEVERS (`gen3_static_recovery_v1`, v150): `--trunk-layers N` (identity-init PRE-LN extra rounds, the 2-round network at init bit for bit), `--switch-hazard-cost` (the switch cell's entry-hazard block, the op's ONE Spikes rule, through the pointer head's zero-init projection), `--eot-residual` (every mon's end-of-turn HP change, both sides, mechanics verified at source), all OFF; and ONE combined arm, the named `--arch static_recovery`; production byte-identical**

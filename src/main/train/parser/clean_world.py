@@ -243,6 +243,30 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "(default; production): builds nothing. 'on': our active's 4 move seats (E3) get its "
                              "current HP fraction and status one-hot, through a zero-init projection. STRUCTURAL, "
                              "version-checked, fresh-only. Requires --token-encoding static.")
+    # gen3_static_recovery_v1 (v150; designs/endstate/design_static_tokens.md §13): the static-recovery levers.
+    from agents.model.eot_residual import EOT_RESIDUAL_MODES
+    from agents.model.static_facts import SWITCH_HAZARD_COST_MODES
+    from agents.model.trunk_depth import TRUNK_LAYERS_CHOICES
+    parser.add_argument("--trunk-layers", "--trunk_layers", dest="trunk_layers", type=int,
+                        choices=TRUNK_LAYERS_CHOICES, default=None,
+                        help="The number of trunk self-attention rounds (gen3_static_recovery_v1, v150). 2 (default; "
+                             "production): the two post-LN layers. 3 / 4: append 1 / 2 IDENTITY-INIT pre-LN residual "
+                             "rounds (zero attention out-proj and FFN output), so the network starts exactly equal to "
+                             "the 2-round one. STRUCTURAL, version-checked, fresh-only.")
+    parser.add_argument("--switch-hazard-cost", "--switch_hazard_cost", dest="switch_hazard_cost",
+                        choices=SWITCH_HAZARD_COST_MODES, default=None,
+                        help="The switch pointer cell's ENTRY-HAZARD cost (gen3_static_recovery_v1, v150). 'off' "
+                             "(default; production): nothing built. 'on': each switch target's [our side's Spikes "
+                             "layers / 3, the HP fraction it loses switching in] (the damage operator's one Spikes "
+                             "entry rule) appended to its switch cell, read through a zero-init projection. "
+                             "STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
+    parser.add_argument("--eot-residual", "--eot_residual", dest="eot_residual",
+                        choices=EOT_RESIDUAL_MODES, default=None,
+                        help="Every mon's END-OF-TURN HP change if it is on the field at the end of the turn "
+                             "(gen3_static_recovery_v1, v150). 'off' (default; production): nothing built. 'on': "
+                             "Leftovers, weather, Rain Dish, the status tick, Leech Seed drain / heal, Wish, Ingrain, "
+                             "Curse, Nightmare and the HP-clamped net, both sides, added to the mon tokens through a "
+                             "zero-init projection. STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

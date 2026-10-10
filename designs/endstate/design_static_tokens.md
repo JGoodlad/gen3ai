@@ -6,7 +6,9 @@ seeds per arm to 15M at look 1 and five at look 2; LOOK 1 (2026-10-08) read CONT
 5.761) and LOOK 2 (2026-10-09) reads CONTINUE (Δ̂ −2.70 pp, t_NI 0.864 < 2.683; t_SUP −2.901; Decision record), so
 every strength claim below is still a hypothesis.** **At HEAD `static` is PORTED to the post-break graph and made
 equivariant (`gen3_static_port_v1`, config v147, §12), with two narrow facts behind their own flags (`--mon-hazard-cost`,
-`--move-actor-state`, OFF), for the bundle screen after the perf phase.** Stage 1 (`gen3_static_tokens_v1`, config v139: the per-mon encoder, S + D,
+`--move-actor-state`, OFF), for the bundle screen after the perf phase.** **The static-RECOVERY levers are built
+(`gen3_static_recovery_v1`, config v150, §13: `--trunk-layers`, `--switch-hazard-cost`, `--eot-residual`, OFF) with ONE
+combined arm, `--arch static_recovery`, the closing-test candidate, to be bisected lever by lever.** Stage 1 (`gen3_static_tokens_v1`, config v139: the per-mon encoder, S + D,
 and the X5 table gather) takes board context OUT of the per-mon tokens. Stage 2 (`gen3_static_board_v1`, config
 v140, §4: the three board tokens SIDE ×2 + FIELD, the edge retargets, the readers, and the per-mon op content
 on both sides, from the entity-coverage audit) gives that context its new home. **`static` is now buildable
@@ -770,6 +772,91 @@ headroom) against legacy at the same commit.
 
 ---
 
+## 13. The recovery arm (`gen3_static_recovery_v1`, config v150, 2026-10-09)
+
+The owner kept legacy until a CLOSING test (Decision record, 2026-10-09) and asked for the static RECOVERY levers to be
+tried first: *"run all of them speculatively together and then we can bisect them out."* This section is the as-built
+arm. Every lever is its own flag, OFF in production; with all of them off the build is byte-identical (§13.5).
+
+**13.1 Trunk depth, `--trunk-layers N`** (`agents/model/trunk_depth.py`; N ∈ {2, 3, 4}, production 2). The diagnostic's
+H3: under `static` board facts reach a mon token mostly at the LAST of two rounds, leaving no round to combine them
+(`measurements/static_diag_2026-10-09/`). N > 2 appends N − 2 rounds after the two post-LN `BiasedEncoderLayer`s, on the
+trunk's one shared bias. Each extra round is an `IdentityInitRound`, a **pre-LN** residual block:
+`x ← x + out_proj(attn(LN₁ x))`, `x ← x + linear2(relu(linear1(LN₂ x)))`, with `out_proj` and `linear2` (weight and bias)
+at exactly zero, so the deeper network at init IS the 2-round one, bit for bit (tested on a real SB3 build, `static` and
+legacy: every shared parameter byte, the extractor's outputs, the pointer inputs, the win-prob logits). Why not a third
+post-LN layer with zero outputs: its output would be LN(LN(x)), and LayerNorm's ε moves an already-normalised vector
+(the test pins it), so it would not start as the 2-round network. `in_proj` and `linear1` take the init SB3 gives the
+existing rounds (orthogonal, gain √2, bias 0), inside `torch.random.fork_rng` from `TRUNK_EXTRA_INIT_SEED`, out of
+`IsolatedLinear`s (no global RNG draw: no other initial byte moves). The round learns from step 0 (its `out_proj` gets a
+gradient at init). Equivariant: it has no position-keyed weight (the test permutes our slots through a full forward).
+
+**13.2 The switch-cell hazard, `--switch-hazard-cost on`** (`static_facts.switch_hazard_features`; the hand-computed doc's
+ADD rank 1, entity audit B3). Each switch target j's `[our side's Spikes layers / 3, the HP fraction j loses switching in]`
+— exactly our half of `--mon-hazard-cost`'s values, so the op's ONE rule `DamageOperator.spikes_entry` (base types, the
+species' Levitate) prices the `x` cell, the per-mon fact and the switch cell alike — appended LAST to the switch pointer
+cell. The policy's pointer head reads the trailing block through its own zero-init bias-free `IsolatedLinear(2, 64)`
+(`switch_extra_proj`, sized by `pointer_switch_extra_dim`), which is exactly zero-init input columns of `switch_proj`
+while `switch_proj` keeps its width and its init draw. Composes with either encoding (requires `damage_op` only).
+
+**13.3 The end-of-turn residual, `--eot-residual on`** (`agents/model/eot_residual.py`; ADD rank 2). For every mon on BOTH
+sides, the HP it gains or loses at the end of THIS turn if it is the mon on its side's field then (the active staying in,
+or a benched mon switching in), as 10 signed components + the HP-clamped net (fractions of its own max HP): Leftovers,
+sand / hail chip, Rain Dish, the next status tick, Leech Seed drain, Leech Seed heal, Wish, Ingrain, Curse, Nightmare.
+Every component was VERIFIED in `deps/pokemon-showdown` before it was written (the table with file citations:
+`research_state/measurements/static_recovery_2026-10-09/README.md` §2), and two of the brief's expectations changed on
+the source: **gen-3 Wish heals half the RECIPIENT's max HP** (the gen-4 mod's condition, not the wisher's as in gen 5+),
+and **a timed weather deals no chip on its last turn** (the duration ends it before the field residual). Known facts
+are exact; an unrevealed item or ability is its species' format-filtered Smogon prior (Leftovers; Sand Veil, Rain Dish,
+Shed Skin, Liquid Ooze, Cloud Nine / Air Lock); game cliffs stay probabilities (Shed Skin's 1/3 cure before the tick,
+Nightmare × P(stays asleep) from the observation's sleep-wake belief, Cloud Nine suppression as a probability over both
+actives). Leech Seed's heal is the one cross-mon amount: min(the seeded mon's max HP / 8, its HP) / the recipient's max
+HP, max HP from the op's convention (ours exact from the spread, theirs `2·base + 31 + 110`, Shedinja 1), Liquid Ooze
+inverting it; it assumes the seeded active stays in. **Home: the mon token** (zero-init bias-free
+`IsolatedLinear(11, 128)` beside `mon_hazard_proj`), not the switch cell: the switch logit already reads mon j's refined
+token, a benched mon's row IS its switch-in residual by the definition, and one route per fact keeps the bisection
+clean. Not included: partial trapping (its last turn deals nothing and the timer is an OBS-FACTS-only fact), Future
+Sight / Doom Desire, Dig / Dive's semi-invulnerable turn. The production `g` ledger is the older, coarser rule for the
+same quantity (`design_hand_computed_features.md` §7 finding 7).
+
+**13.4 The combined arm, `--arch static_recovery`** (`src/main/train/arch_arms.py`, a NAMED ARM: the production ARCH
+surface + a declared overlay, applied as if typed, with production's RECIPE). Exactly:
+
+```
+--arch static_recovery
+  ≡ --arch production + --token-encoding static --mon-hazard-cost on --move-actor-state on
+                        --trunk-layers 3 --switch-hazard-cost on --eot-residual on
+```
+
+`python -m main.checkargs`, `--dry-run` and the launcher judge a fresh argv against production ⊕ the overlay, so the arm
+launches without `--allow-nonproduction-arch` and a drift from the ARM (e.g. a typed `--trunk-layers 2`) is refused,
+naming the key; `arch_source` records `static_recovery@production_config@<12>+overlay@<8>`. Both arms of the closing
+test train on the same production recipe; a launcher restart restores it (`recipe_surface._is_production_launch`).
+**Bisection:** drop one lever at a time from the arm (each is one typed flag on top of `--arch static_recovery` plus
+`--allow-nonproduction-arch`), depth first (it is the learned competitor of the hand facts), then the residual, the
+switch-cell hazard, the per-mon Spikes fact, the actor's state.
+
+**13.5 Identity, cost, tests.** With every new flag at its default the production extractor's dynamo graph, state_dict and
+outputs are unchanged (`11338474…`, 20,144 lines), and so are `static`'s and the v147 bundle's; the combined arm traces
+to ONE dynamo graph on CPU (`research_state/measurements/static_recovery_2026-10-09/` §1). One-lever init: each lever ON
+adds only its own parameters (zero where its identity needs it), every other initial byte equals the OFF build's, and
+the init forward (the extractor's outputs, the pointer inputs, the win-prob logits, the action logits) is BIT-identical
+— for every lever alone and for all of them together (the arm at init IS `static`). Cost (MEASURED, CPU, 64 real rows;
+§3 there): the extra trunk round is 132,480 parameters and ≈ 18.9 M matmul FLOP / row (+31 %), ≈ +10 % of the eager
+CPU forward; the residual +1,408 parameters, the switch-cell projection +128 (policy), the two v147 facts +1,280 — the
+hand facts together < 0.1 % of the FLOPs. The arm: 2,020,228 extractor parameters, 79.01 M FLOP / row, CPU forward
+177.4 vs `static` 161.4 vs legacy 164.1 ms / 64 rows (descriptive: other load on the box). The observation is unchanged
+(every lever reads existing columns), so the Rust encoder benchmark does not apply. The CPU `--debug` smoke of
+`--arch static_recovery` passes (§4 there). Tests that fail on revert: `agents/model/static_recovery_test.py`
+(26 items), `main/train/arch_arms_test.py` (5), the smoke's `static_recovery` parametrization.
+
+**13.6 DEFERRED to a GPU lease:** compile parity forward + backward of the arm on CUDA (the R1 startup gate: the extra
+round's SDPA goes through `dense_attn_bias`, the F-ST-8 class), T2's CUDA-graph build on the deeper graph, a real
+two-minute `--compile-trainer` launch, and the cost read (`train_ms`, the T2 flush, `UpdateFit` headroom) against
+`static` and legacy at the same commit.
+
+---
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
@@ -804,3 +891,4 @@ headroom) against legacy at the same commit.
 | 2026-10-09 | **The static PORT at HEAD** (`gen3_static_port_v1`, config v147; §12) | `static` composed with every post-pin lever and proved against the pin by a weight mapping (bitwise on the conditioned subspace except F16b's ~1 ulp, plus the type sum's fp32 summation order at the port); made EQUIVARIANT: S's type pair SUMMED, the op content's outgoing route a Deep Sets function of our moves (bias-free per-move `Linear(6, 32)` + ReLU, summed, zero-init `Linear(32, 128)`); a v145 / v146 `static` record refused | keeping the per-slot `outgoing_proj` and the type concat (position-keyed weights, v145's rule); a SUM of a per-move linear map (a linear map of the total, blind to the best move); the outgoing route on the move seats instead (moves the amount off the mon token where the audit's A3 put it) | orchestrator brief (owner-approved 2026-10-09); v145's sweep; `measurements/static_port_identity_2026-10-09/` |
 | 2026-10-09 | **Two NARROW facts for `static`, each its own flag, OFF** (§12.3, §12.4) | `--mon-hazard-cost`: every mon (both sides) gets its own side's Spikes layers and its switch-in HP cost from the op's ONE rule `spikes_entry` (shared with the `x` cell), added as token content before the trunk, priced on the op's context (an X5 hidden slot as its hypothesis); `--move-actor-state`: our active's HP + status onto its valid E3 seats; zero-init bias-free `IsolatedLinear`s built LAST | the fact inside D's MLP input (ends the X5 dex-table gather, or four table encodes); a second copy of the Spikes rule (drift: the orchestrator's hazard, option (a) taken); the actor's state on the E4 threat seats too (no static-vs-legacy gap there: neither encoding ever had it) | the static diagnostic's H2 / H3 (`measurements/static_diag_2026-10-09/`); orchestrator brief and its 2026-10-09 hazard note |
 | 2026-10-09 | **OWNER: the LEGACY encoding is KEPT (deletion DEFERRED) until a CLOSING test** | Owner, 2026-10-09: defer removing the legacy (pre-static) encoding; first run head-to-heads of the static recovery levers (more trunk depth, the hard-to-compute-but-available facts brought in earlier: `--mon-hazard-cost`, `--move-actor-state`, and next candidates from `design_hand_computed_features.md`), then a CLOSING static-vs-legacy test under a stricter definition ("the uncertainty interval includes zero", registration pending the owner's choice of margin and n). Delete legacy if strength is recovered, or probably if close; avoid churn. Look 3's registered outcome still reads tonight, but no legacy code is removed on it | deleting legacy on look 3's NON-INFERIOR alone (the owner wants the recovery levers tried and a closing test first) | owner, 2026-10-09 |
+| 2026-10-09 | **The static-RECOVERY levers BUILT, OFF, and ONE combined arm** (`gen3_static_recovery_v1`, config v150; §13) | `--trunk-layers N` (identity-init PRE-LN extra rounds, the 2-round network at init bit for bit), `--switch-hazard-cost` (the switch cell's entry-hazard block from the op's ONE `spikes_entry` rule, through the pointer head's zero-init projection), `--eot-residual` (every mon's end-of-turn HP change, both sides, on the mon token, mechanics verified at source: gen-3 Wish = half the RECIPIENT's max HP, no chip on a timed weather's last turn), and the NAMED ARM `--arch static_recovery` = static + all five levers on the production recipe, judged by the arch guard against production ⊕ its overlay; bisected lever by lever after the closing test | a third POST-LN layer with zero outputs (LN∘LN is not the identity); widening `switch_proj` (re-draws its init); the residual on the switch cell too (two routes for one fact inside one arm); the residual read off the `g` cell (coarser: no Wish / Ingrain / Curse / Nightmare / priors); a documented flag list instead of a declared arm (the 2026-09-06 incident's shape) | owner 2026-10-09 ("run all of them speculatively together and then we can bisect them out"); `measurements/static_recovery_2026-10-09/`; `static_recovery_test.py`, `arch_arms_test.py` |

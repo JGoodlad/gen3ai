@@ -578,6 +578,29 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "adds the fact to every forward).\n"
                 "Resume with the matching --move-actor-state setting (a flagless resume inherits it), or start a fresh "
                 "training run.")
+        # gen3_static_recovery_v1 (v150): the three static-recovery levers — each builds parameters and changes the
+        # trained forward; a frozen opponent's gate must name the cause rather than fail a strict load on key names.
+        if self.trunk_layers != saved.trunk_layers:
+            raise ModelVersionError(
+                f"trunk_layers mismatch: saved={saved.trunk_layers!r}, current={self.trunk_layers!r}.\n"
+                "The trunk's depth is fixed for a run's lifetime (each extra round is its own parameters).\n"
+                "Resume with the matching --trunk-layers setting (a flagless resume inherits it), or start a fresh "
+                "training run.")
+        if self.switch_hazard_cost != saved.switch_hazard_cost:
+            raise ModelVersionError(
+                f"switch_hazard_cost mismatch: saved={saved.switch_hazard_cost!r}, "
+                f"current={self.switch_hazard_cost!r}.\n"
+                "The switch pointer cell's entry-hazard block is fixed for a run's lifetime ('on' widens the cell and "
+                "builds the pointer head's projection).\n"
+                "Resume with the matching --switch-hazard-cost setting (a flagless resume inherits it), or start a "
+                "fresh training run.")
+        if self.eot_residual != saved.eot_residual:
+            raise ModelVersionError(
+                f"eot_residual mismatch: saved={saved.eot_residual!r}, current={self.eot_residual!r}.\n"
+                "The per-mon end-of-turn residual is fixed for a run's lifetime ('on' builds a projection and adds the "
+                "fact to every forward).\n"
+                "Resume with the matching --eot-residual setting (a flagless resume inherits it), or start a fresh "
+                "training run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

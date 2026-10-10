@@ -217,6 +217,12 @@ weight shape: `spikes_entry` reads Levitate from the SPECIES (`SPECIES_TRAP_PRIO
 of the current-ability column. `_migrate_config` stamps every past config through (`if version < 149`); no
 `ARCH_SIGNATURE` or floor change.
 
+**v150 (`gen3_static_recovery_v1`, 2026-10-09)** added three STRUCTURAL fields, each gated in `check_compatible`:
+`trunk_layers` (int, 2 = production; 3 / 4 append identity-init trunk rounds), `switch_hazard_cost` and `eot_residual`
+({off,on}). A pre-v150 config migrates to 2 / off / off (the only possible past); no `ARCH_SIGNATURE` or floor change
+(production builds byte-identically). The NAMED ARM `--arch static_recovery` writes all three (and the v147 facts) as
+recorded fields, so a launcher restart inherits them from `model_config.json`.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

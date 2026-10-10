@@ -83,9 +83,11 @@ from agents.training import baselines
 #: "production" is. Resolved at import; the registry is a committed file, not a live lookup.
 PRODUCTION_CONFIG_PATH = baselines.production_config_path()
 
-#: The umbrella flag's only value today. A string rather than a bool because the next mirror
-#: (`--arch gen16`, a named archived config) is a value here, not a second flag.
-UMBRELLA_VALUES = ("production",)
+from main.train.arch_arms import NAMED_ARMS, arm_overlay
+
+#: The umbrella flag's values: `production` (the mirror) and every NAMED ARM (`main.train.arch_arms`: the mirror ⊕ a
+#: declared overlay, gen3_static_recovery_v1). A string rather than a bool so each arm is a value, not a second flag.
+UMBRELLA_VALUES: Tuple[str, ...] = ("production",) + tuple(NAMED_ARMS)
 
 #: The consent flag. Launcher-recognised, FORWARDED to the child, and recorded — it lands in
 #: `metadata.json`'s `cli_args` like every other flag, and additionally stamps `arch_source` in
@@ -174,9 +176,31 @@ def production_blob_sha(path: str = PRODUCTION_CONFIG_PATH) -> str:
     return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
 
 
-def arch_source_tag(path: str = PRODUCTION_CONFIG_PATH) -> str:
-    """The `arch_source` string recorded in `model_config.json` by `--arch production`."""
-    return f"production_config@{production_blob_sha(path)[:12]}"
+def arch_source_tag(path: str = PRODUCTION_CONFIG_PATH, arm: Optional[str] = None) -> str:
+    """The `arch_source` string recorded in `model_config.json` by `--arch production` — or, for a NAMED ARM, the arm's
+    name, the mirror's content hash and the overlay's (`<arm>@production_config@<12>+overlay@<8>`)."""
+    base = f"production_config@{production_blob_sha(path)[:12]}"
+    if arm is None or arm == "production":
+        return base
+    ov = json.dumps(sorted(arm_overlay(arm).items()), sort_keys=True).encode()
+    return f"{arm}@{base}+overlay@{hashlib.sha1(ov).hexdigest()[:8]}"
+
+
+def arm_surface(umbrella: Optional[str], production: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """The surface an `--arch` value DECLARES: the production mirror, with a NAMED ARM's overlay on top
+    (`main.train.arch_arms`). `production` / None / no umbrella → the mirror itself. An overlay key that is not an
+    ARCH-surface registry row is refused (the arm would then set a value the guard never compares)."""
+    prod = load_production_config() if production is None else dict(production)
+    if umbrella is None or umbrella == "production":
+        return prod
+    overlay = arm_overlay(umbrella)
+    surface = {f.name for f in arch_surface_flags()}
+    stray = sorted(set(overlay) - surface)
+    if stray:
+        raise ValueError(f"arm {umbrella!r} overlays {stray}, which are not ARCH-surface registry rows")
+    out = dict(prod)
+    out.update(overlay)
+    return out
 
 
 def inherit_arch_source_on_restart(ns: Any, run_dir: Optional[str], saved_ver: Any,
@@ -396,12 +420,15 @@ def report(ns: Any, *, fresh: bool, allowed: bool = False,
            umbrella: Optional[str] = None, advisory: bool = False,
            production: Optional[Dict[str, Any]] = None) -> ArchReport:
     """THE one entry point. `main.checkargs`, `--dry-run` and the launcher all call this."""
+    # A NAMED ARM is judged against the surface it DECLARES (production ⊕ its overlay), so the arm launches without
+    # consent and a drift from the ARM is still refused (`main.train.arch_arms`).
+    declared = arm_surface(umbrella, production) if umbrella in NAMED_ARMS else production
     return ArchReport(
-        diffs=tuple(diff_against_production(ns, production)),
+        diffs=tuple(diff_against_production(ns, declared)),
         fresh=bool(fresh),
         allowed=bool(allowed),
         umbrella=umbrella,
-        source_tag=arch_source_tag(),
+        source_tag=arch_source_tag(arm=umbrella if umbrella in NAMED_ARMS else None),
         advisory=bool(advisory),
         unapplied=tuple(unapplied_for_argv(ns, production)) if umbrella else (),
     )
@@ -428,8 +455,15 @@ def report_for_child_argv(child_args: Sequence[str],
 
 def report_lines(rep: ArchReport) -> List[str]:
     """The printed block, identical on all three surfaces."""
-    out = [f"ARCH SURFACE vs designs/production_config.json  [{rep.source_tag}]"]
-    if rep.umbrella:
+    arm = rep.umbrella if rep.umbrella in NAMED_ARMS else None
+    vs = ("designs/production_config.json" if arm is None
+          else f"designs/production_config.json + arm {arm!r} (main/train/arch_arms.py)")
+    out = [f"ARCH SURFACE vs {vs}  [{rep.source_tag}]"]
+    if arm is not None:
+        out.append(f"  --arch {arm} applied the production surface + the arm's overlay "
+                   + ", ".join(f"{k}={v!r}" for k, v in arm_overlay(arm).items())
+                   + " (explicit flags still win; the RECIPE is production's)")
+    elif rep.umbrella:
         out.append(f"  --arch {rep.umbrella} applied the production surface "
                    f"(explicit flags still win)")
         skipped = list(rep.unapplied) or [(f, v, False) for f, v in unapplied_production_keys()]
@@ -445,10 +479,12 @@ def report_lines(rep: ArchReport) -> List[str]:
              f"{part['critic']} critic readouts + {part['non_structural']} non-structural rows "
              f"are excluded by their own declaration")
     if not rep.diffs:
-        out.append(f"  ✓ every ARCH-surface key matches the production mirror ({scope})")
+        out.append(f"  ✓ every ARCH-surface key matches the production mirror"
+                   f"{'' if arm is None else ' + the arm ' + repr(arm)} ({scope})")
         return out
     verb = "differ" if len(rep.diffs) != 1 else "differs"
-    out.append(f"  {len(rep.diffs)} of {part['arch']} ARCH-surface key(s) {verb} from production "
+    out.append(f"  {len(rep.diffs)} of {part['arch']} ARCH-surface key(s) {verb} from "
+               f"{'production' if arm is None else 'the arm ' + repr(arm)} "
                f"({scope}):")
     out += [f"      {d.line()}" for d in rep.diffs]
     if not rep.fresh:

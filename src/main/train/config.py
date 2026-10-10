@@ -187,19 +187,23 @@ def desugar_umbrella_flags(args) -> None:
     # read) rather than handled here: a fork INHERITS its parent's surface through `_resolve`, and
     # writing production's values over that would replace inheritance with a mirror the parent may
     # never have matched — a check_compatible FATAL at best, a silently different network at worst.
-    if getattr(args, "arch", None) == "production" and not getattr(args, "model", None):
-        from main.train.arch_surface import apply_production_arch, arch_source_tag
-        applied = apply_production_arch(args)
-        args.arch_source = arch_source_tag()
-        print(f"[Arch] --arch production: applied {len(applied)} ARCH-surface flag(s) from "
-              f"designs/production_config.json ({args.arch_source}). An explicitly-typed flag "
-              f"still wins.")
+    # gen3_static_recovery_v1: a NAMED ARM (`main.train.arch_arms`, e.g. `--arch static_recovery`) is the production
+    # surface + its declared overlay, applied the same way (typed flags still win), with production's RECIPE below.
+    from main.train.arch_surface import UMBRELLA_VALUES
+    if getattr(args, "arch", None) in UMBRELLA_VALUES and not getattr(args, "model", None):
+        from main.train.arch_surface import apply_production_arch, arch_source_tag, arm_surface
+        _umb = args.arch
+        applied = apply_production_arch(args, arm_surface(_umb))
+        args.arch_source = arch_source_tag(arm=_umb)
+        print(f"[Arch] --arch {_umb}: applied {len(applied)} ARCH-surface flag(s) from "
+              f"designs/production_config.json{'' if _umb == 'production' else ' + the arm overlay'} "
+              f"({args.arch_source}). An explicitly-typed flag still wins.")
         # K10(a) THE RECIPE SURFACE, right after the architecture and before every other desugar
         # (and before `resolve_critic_mode`, which then implies the rest of the win-prob critic's
         # settings). Typed tokens win: `recipe_surface.typed_dests` is the parser's record.
         from main.train.recipe_surface import apply_production_recipe
         recipe = apply_production_recipe(args)
-        print(f"[Recipe] --arch production: applied {len(recipe)} RECIPE knob(s) from "
+        print(f"[Recipe] --arch {_umb}: applied {len(recipe)} RECIPE knob(s) from "
               f"designs/production_config.json's recipe.fresh ({args.recipe_source}). An "
               f"explicitly-typed flag still wins.")
     # `--debug` SAFE BY CONSTRUCTION (main.train.debug_shape): AFTER the recipe (it reads the update
@@ -518,6 +522,9 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("op_reduction", "max")                # v146 structural str (audit F6b's principled reductions; fresh-only)
     _resolve("mon_hazard_cost", "off")             # v147 structural str (static's per-mon Spikes fact; fresh-only)
     _resolve("move_actor_state", "off")            # v147 structural str (static's E3 actor HP + status; fresh-only)
+    _resolve("trunk_layers", 2)                    # v150 structural int (the trunk's depth; identity-init extra rounds)
+    _resolve("switch_hazard_cost", "off")          # v150 structural str (the switch cell's entry-hazard block)
+    _resolve("eot_residual", "off")                # v150 structural str (every mon's end-of-turn HP change)
     _resolve("oracle_reveal", "off")               # v137 RESUME-IMMUTABLE str (the diagnostic observation mode; flagless resume inherits)
     _resolve("token_encoding", "legacy")           # v139 structural str (static tokens; version-checked, fresh-only)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —

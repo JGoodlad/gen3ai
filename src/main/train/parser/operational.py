@@ -54,7 +54,8 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
     # "it launches" and "it is the experiment" are INDEPENDENT checks. A validator that only ever
     # answered the first let a 38-token argv train a near-bare architecture for ~7 GPU-hours /
     # 24.4M steps (31 keys off production). These two flags are the answer to the OTHER question.
-    parser.add_argument("--arch", type=str, default=None, choices=["production"],
+    from main.train.arch_arms import NAMED_ARMS
+    parser.add_argument("--arch", type=str, default=None, choices=["production", *NAMED_ARMS],
                         help="Apply an ENTIRE architecture surface as if every flag had been "
                              "typed. 'production' reads designs/production_config.json — the same "
                              "mirror the generated ARCHITECTURE.md tables and the compile gate key "
@@ -68,7 +69,10 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "them). Refused on a resume, which INHERITS its parent's surface "
                              "instead (a same-run restart of such a run restores the recipe from "
                              "its own metadata.json). Records "
-                             "arch_source=production_config@<content hash> in model_config.json.")
+                             "arch_source=production_config@<content hash> in model_config.json. A NAMED ARM "
+                             "(main/train/arch_arms.py; 'static_recovery' = static + every static-recovery lever, "
+                             "designs/endstate/design_static_tokens.md §13) applies production + the arm's declared "
+                             "overlay and production's recipe, and is judged against production + its overlay.")
     parser.add_argument("--allow-nonproduction-arch", action="store_true",
                         help="Consent to a FRESH run whose architecture differs from "
                              "designs/production_config.json. Without it such a launch is REFUSED, "

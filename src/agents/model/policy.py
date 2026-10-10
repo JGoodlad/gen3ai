@@ -193,6 +193,9 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             move_cell_dim=fe.pointer_move_cell_dim,
             switch_cell_dim=fe.pointer_switch_cell_dim,
             hidden=pointer_hidden,
+            # gen3_static_recovery_v1 (`--switch-hazard-cost on`): the switch cell's trailing block, read through the
+            # head's own zero-init projection (0 = nothing built, the production head byte for byte).
+            switch_extra_dim=int(getattr(fe, "pointer_switch_extra_dim", 0)),
         )
         # `Optimizer.__init__` is typed without `lr`; every concrete class SB3 selects takes it.
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),  # type: ignore[call-arg]

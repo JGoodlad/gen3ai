@@ -156,6 +156,8 @@ UNTIERED_CHILDREN = frozenset({
     "op_worst_proj",        # `--op-reduction principled`: its noisy-OR twin beside `prefuse_proj` (same seam)
     "mon_hazard_proj",      # `--mon-hazard-cost on`: the per-mon Spikes fact, the root's pre-trunk residual (same seam)
     "move_actor_proj",      # `--move-actor-state on`: the actor's state onto the E3 seats, the root's pre-trunk residual
+    "eot_residual_rule",    # `--eot-residual on`: the end-of-turn rule (tables only), read on the op's context pre-trunk
+    "eot_residual_proj",    # `--eot-residual on`: its zero-init projection, the root's pre-trunk residual (same seam)
     "pre_proj_norm", "projection", "activation",
     "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths
 })

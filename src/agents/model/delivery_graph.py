@@ -128,6 +128,7 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "op_worst_proj": ("op_worst_proj",),
     "mon_hazard_proj": ("mon_hazard_proj",),
     "move_actor_proj": ("move_actor_proj",),
+    "eot_residual_proj": ("eot_residual_proj",),
     "obs_facts_inject": ("ObsFactsInject",),
     "assembler": ("ProjectionAssembler",),
     "value_entity_pool": ("UnifiedValueReadout",),
@@ -581,6 +582,16 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    via="mon_hazard_proj", zero_init=True,
                                    note="[own side's Spikes layers / 3, the HP fraction lost switching in] — the op's "
                                         "ONE Spikes entry rule (`spikes_entry`)"))
+    # gen3_static_recovery_v1 (`--eot-residual on` only): every mon's end-of-turn HP change if it is on the field.
+    if getattr(fe, "eot_residual_proj", None) is not None:
+        from agents.model.eot_residual import EOT_DIM
+        for side in ("our_mon", "opp_mon"):
+            for i in range(T):
+                edges.append(_edge("damage_op", f"{side}[{i}]", "content", EOT_DIM, "EOT_DIM",
+                                   via="eot_residual_proj", zero_init=True,
+                                   note="the end-of-turn residual if this mon is on the field: Leftovers, weather, "
+                                        "Rain Dish, the status tick, Leech Seed drain / heal, Wish, Ingrain, Curse, "
+                                        "Nightmare, and the HP-clamped net (`eot_residual.EotResidualRule`)"))
     if fe.move_belief is not None:
         for j in range(T):
             edges.append(_edge("move_belief", f"opp_mon[{j}]", "content", D,
@@ -822,6 +833,17 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    "margins, and P(the switch resolves))",
                                zero_init=True,
                                note="the judgments (neutralization, tempo_cost, the spin stake) dropped"))
+    # gen3_static_recovery_v1 (`--switch-hazard-cost on`): the switch cell's LAST block, read by the pointer head's own
+    # zero-init `switch_extra_proj`.
+    if getattr(fe, "switch_hazard_cost", "off") == "on":
+        from agents.model.static_facts import SWITCH_HAZARD_DIM
+        for j in range(T):
+            edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
+                               SWITCH_HAZARD_DIM, "SWITCH_HAZARD_DIM",
+                               via="pointer_head.switch_extra_proj", zero_init=True,
+                               note="[our side's Spikes layers / 3, the HP fraction mon j loses switching in] — the "
+                                    "op's ONE Spikes entry rule (`spikes_entry`), the same values as "
+                                    "--mon-hazard-cost's per-mon fact"))
 
     # --- OPPONENT INTENT: what the FLAT POINTER reads, and where its publication lands ----------
     # gen3_x5_flat_pointer_v1 (X5 U4, design §3.7). One candidate list — their K move seats, OTHER_move,

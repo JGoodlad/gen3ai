@@ -49,6 +49,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "obs_facts_inject", "opp_intent",
     "move_order", "move_resolution", "move_resolution_rules", "op_reduction", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_facts", "static_tokens", "switch_branch",
     "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
+    "eot_residual", "trunk_depth",
 )
 
 #: Top-level functions of a forward module that are NOT the forward (loss, label and metric helpers):
@@ -413,6 +414,12 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "static_tokens": {
         "OBS": ("known > 0.5",),
         "INT": ("ids['all_move_ids'] == HIDDEN_POWER_MOVE_NUM", "slot_species.long()"),
+    },
+    # gen3_static_recovery_v1 (`--eot-residual on`): the alive gate (an observed HP fraction against 0) and the weather's
+    # turns remaining (an observed k / 5 rounded back to the integer k it encodes).
+    "eot_residual": {
+        "OBS": ("hp > 0", "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round()",
+                "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round().long()"),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

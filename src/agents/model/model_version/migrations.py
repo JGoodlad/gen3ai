@@ -513,6 +513,13 @@ def _migrate_config(data: dict) -> dict:
     # forward fix; the state_dict is unchanged), so every past config stamps through.
     if version < 149:
         data["config_version"] = 149
+    # v150 (gen3_static_recovery_v1) — three structural levers, each absent before: the 2-round trunk, no switch-cell
+    # hazard block, no end-of-turn residual (the only possible past).
+    if version < 150:
+        data.setdefault("trunk_layers", 2)
+        data.setdefault("switch_hazard_cost", "off")
+        data.setdefault("eot_residual", "off")
+        data["config_version"] = 150
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

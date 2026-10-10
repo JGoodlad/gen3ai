@@ -46,6 +46,11 @@ MON_HAZARD_DIM = 2
 #: [current HP fraction] ⊕ the status one-hot [None, BRN, PAR, SLP, FRZ, PSN, TOX].
 MOVE_ACTOR_DIM = 1 + CONDITION_DIM
 
+#: `--switch-hazard-cost` (`gen3_static_recovery_v1`): the legal values (``off`` builds nothing) and the width of the
+#: switch pointer cell's new trailing block, [our side's Spikes layers / 3, the switch-in HP fraction].
+SWITCH_HAZARD_COST_MODES = ("off", "on")
+SWITCH_HAZARD_DIM = MON_HAZARD_DIM
+
 
 def mon_hazard_features(op: Any, ctx: 'ExtractorContext', opp_concrete: Optional[torch.Tensor] = None) -> torch.Tensor:
     """[B, 12, MON_HAZARD_DIM]: per mon, its OWN side's Spikes layers (/3: ours for slots 0–5, theirs for 6–11) and
@@ -59,6 +64,15 @@ def mon_hazard_features(op: Any, ctx: 'ExtractorContext', opp_concrete: Optional
     ours = torch.stack([sp[:, 0:1].expand(-1, TEAM_SIZE), chip_our], dim=-1)            # [B,6,2]
     theirs = torch.stack([sp[:, 1:2].expand(-1, TEAM_SIZE), chip_opp * opp_concrete.to(chip_opp.dtype)], dim=-1)
     return torch.cat([ours, theirs], dim=1)
+
+
+def switch_hazard_features(op: Any, ctx: 'ExtractorContext') -> torch.Tensor:
+    """[B, 6, SWITCH_HAZARD_DIM] (`--switch-hazard-cost on`, `gen3_static_recovery_v1`): per switch target j (OUR team
+    slot j), ``[our side's Spikes layers / 3, the HP fraction j loses switching in]`` — EXACTLY our half of
+    `mon_hazard_features` (the op's ONE entry rule, ``op.spikes_entry``; our mons are always known), so the switch cell,
+    the per-mon fact and the `x` edge cell can never disagree. Appended LAST to the switch pointer cell. Not alive-gated:
+    a fainted or active target's switch logit is masked, and the rule is the mon's own (no other mon's state enters)."""
+    return mon_hazard_features(op, ctx)[:, :TEAM_SIZE]
 
 
 def move_actor_features(ctx: 'ExtractorContext') -> torch.Tensor:

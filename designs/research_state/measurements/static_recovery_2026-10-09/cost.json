@@ -1,0 +1,82 @@
+{
+ "legacy (production)": {
+  "policy_params": 1997785,
+  "fe_params": 1937942,
+  "matmul_flops_per_row": 60304432.0,
+  "fwd_ms_per_64_median": 164.1,
+  "fwd_ms_iqr": [
+   159.92,
+   169.62
+  ]
+ },
+ "legacy + trunk_layers 3": {
+  "policy_params": 2130265,
+  "fe_params": 2070422,
+  "matmul_flops_per_row": 78525488.0,
+  "fwd_ms_per_64_median": 181.0,
+  "fwd_ms_iqr": [
+   177.68,
+   185.01
+  ]
+ },
+ "static": {
+  "policy_params": 1944903,
+  "fe_params": 1885060,
+  "matmul_flops_per_row": 60088752.0,
+  "fwd_ms_per_64_median": 161.42,
+  "fwd_ms_iqr": [
+   158.63,
+   166.29
+  ]
+ },
+ "static + trunk_layers 3": {
+  "policy_params": 2077383,
+  "fe_params": 2017540,
+  "matmul_flops_per_row": 78963120.0,
+  "fwd_ms_per_64_median": 177.44,
+  "fwd_ms_iqr": [
+   174.15,
+   181.53
+  ]
+ },
+ "static + switch_hazard_cost": {
+  "policy_params": 1945031,
+  "fe_params": 1885060,
+  "matmul_flops_per_row": 60088752.0,
+  "fwd_ms_per_64_median": 161.25,
+  "fwd_ms_iqr": [
+   158.89,
+   168.38
+  ]
+ },
+ "static + eot_residual": {
+  "policy_params": 1946311,
+  "fe_params": 1886468,
+  "matmul_flops_per_row": 60122544.0,
+  "fwd_ms_per_64_median": 162.52,
+  "fwd_ms_iqr": [
+   160.05,
+   170.13
+  ]
+ },
+ "static + mon_hazard_cost + move_actor_state": {
+  "policy_params": 1946183,
+  "fe_params": 1886340,
+  "matmul_flops_per_row": 60096944.0,
+  "fwd_ms_per_64_median": 161.53,
+  "fwd_ms_iqr": [
+   159.25,
+   166.25
+  ]
+ },
+ "static_recovery (the combined arm)": {
+  "policy_params": 2080199,
+  "fe_params": 2020228,
+  "matmul_flops_per_row": 79005104.0,
+  "fwd_ms_per_64_median": 177.4,
+  "fwd_ms_iqr": [
+   173.02,
+   182.22
+  ]
+ }
+}

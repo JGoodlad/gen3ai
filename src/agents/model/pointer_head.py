@@ -254,13 +254,22 @@ class PointerNativeActionHead(torch.nn.Module):
     """
 
     def __init__(self, move_token_dim: int, d_model: int, ctx_dim: int,
-                 move_cell_dim: int = 0, switch_cell_dim: int = 0, hidden: int = POINTER_HIDDEN):
+                 move_cell_dim: int = 0, switch_cell_dim: int = 0, hidden: int = POINTER_HIDDEN,
+                 switch_extra_dim: int = 0):
         super().__init__()
         self.move_cell_dim = int(move_cell_dim)
         self.switch_cell_dim = int(switch_cell_dim)
+        # gen3_static_recovery_v1 (`--switch-hazard-cost on`): the switch cell's LAST `switch_extra_dim` columns are
+        # read by a separate zero-init, bias-free `IsolatedLinear` built LAST below — exactly zero-init input columns
+        # of `switch_proj`, with `switch_proj` itself sized and drawn as without them (no other initial byte moves).
+        self.switch_extra_dim = int(switch_extra_dim)
+        if not 0 <= self.switch_extra_dim <= self.switch_cell_dim:
+            raise ValueError(f"switch_extra_dim {self.switch_extra_dim} must lie in [0, switch_cell_dim "
+                             f"{self.switch_cell_dim}]: the extra columns are the switch cell's LAST ones")
+        self._switch_base_dim = self.switch_cell_dim - self.switch_extra_dim
         self.ctx_proj = torch.nn.Linear(ctx_dim, hidden)
         self.move_proj = torch.nn.Linear(move_token_dim + self.move_cell_dim, hidden)
-        self.switch_proj = torch.nn.Linear(d_model + self.switch_cell_dim, hidden)
+        self.switch_proj = torch.nn.Linear(d_model + self._switch_base_dim, hidden)
         # The three SCORERS are zero-init (weight AND bias) => all logits exactly 0 at init =>
         # uniform-over-legal cold start.
         self.move_score = torch.nn.Linear(hidden, 1)
@@ -269,6 +278,10 @@ class PointerNativeActionHead(torch.nn.Module):
         for lin in (self.move_score, self.switch_score, self.struggle_score):
             torch.nn.init.zeros_(lin.weight)
             torch.nn.init.zeros_(lin.bias)
+        self.switch_extra_proj: Optional[torch.nn.Module] = None
+        if self.switch_extra_dim:
+            from agents.model.hypothesis_set import IsolatedLinear   # local: hypothesis_set is a heavy import
+            self.switch_extra_proj = IsolatedLinear(self.switch_extra_dim, hidden, zero=True, bias=False)
 
     def forward(self, ctx_vec: torch.Tensor, move_tokens_req: torch.Tensor,
                 move_valid: torch.Tensor, team_tokens: torch.Tensor,
@@ -280,9 +293,17 @@ class PointerNativeActionHead(torch.nn.Module):
         Returns the [B,11] action logits."""
         c = self.ctx_proj(ctx_vec)                                            # [B,H]
         m_in = torch.cat([move_tokens_req, move_cells], dim=-1)               # [B,4,tok+cell]
-        s_in = torch.cat([team_tokens, switch_cells], dim=-1)                 # [B,6,d_model+cell]
         m = torch.tanh(self.move_proj(m_in) + c[:, None, :])                  # [B,4,H]
-        s = torch.tanh(self.switch_proj(s_in) + c[:, None, :])                # [B,6,H]
+        if self.switch_extra_proj is None:
+            s_in = torch.cat([team_tokens, switch_cells], dim=-1)             # [B,6,d_model+cell]
+            s = torch.tanh(self.switch_proj(s_in) + c[:, None, :])            # [B,6,H]
+        else:
+            # gen3_static_recovery_v1: the base columns through `switch_proj`, the trailing extra block through its
+            # own zero-init projection (≡ zero-init input columns of `switch_proj`).
+            s_in = torch.cat([team_tokens, switch_cells[..., :self._switch_base_dim]], dim=-1)
+            s = torch.tanh(self.switch_proj(s_in)
+                           + self.switch_extra_proj(switch_cells[..., self._switch_base_dim:])
+                           + c[:, None, :])                                   # [B,6,H]
         # An unresolved request slot (forced Struggle / <4 moves) contributes exactly 0, never a
         # score computed from a zero token — the action mask already forbids it, but a nonzero logit
         # there would still perturb the softmax normaliser over the LEGAL actions.

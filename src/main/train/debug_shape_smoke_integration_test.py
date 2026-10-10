@@ -26,11 +26,14 @@ _RUNNER = ("import runpy, sys; sys.argv = ['trainer'] + sys.argv[1:]; "
            "runpy.run_module('main.train_rl' '_agent', run_name='__main__', alter_sys=True)")
 
 
-def test_arch_production_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run_archive):
+@pytest.mark.parametrize("arch", ["production", "static_recovery"])
+def test_arch_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run_archive, arch):
+    """`production` and the NAMED ARM `static_recovery` (gen3_static_recovery_v1: static + every static-recovery
+    lever, `main.train.arch_arms`) — the arm's run records every lever in its `model_config.json`."""
     log = tmp_path / "trainer.log"
     with open(log, "wb") as fh:
         proc = subprocess.Popen(
-            [sys.executable, "-c", _RUNNER, "--arch", "production", "--debug", "--steps", "10000"],
+            [sys.executable, "-c", _RUNNER, "--arch", arch, "--debug", "--steps", "10000"],
             stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=str(repo_root()),
             env={**os.environ, "PYTHONPATH": str(src_root()), "CUDA_VISIBLE_DEVICES": ""})
         try:
@@ -47,3 +50,12 @@ def test_arch_production_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run
     updates = [int(m) for m in re.findall(r"\|\s+n_updates\s+\|\s+(\d+)", text)]
     assert updates and max(updates) >= 1, text[-3000:]
     assert "Training complete." in text
+    if arch != "production":
+        import json
+        from main.train.arch_arms import arm_overlay
+        cfgs = sorted(run_archive.rglob("model_config.json"))
+        assert len(cfgs) == 1, cfgs
+        rec = json.loads(cfgs[0].read_text())
+        for key, value in arm_overlay(arch).items():
+            assert rec.get(key) == value, (key, rec.get(key), value)
+        assert str(rec.get("arch_source", "")).startswith(f"{arch}@"), rec.get("arch_source")

@@ -437,6 +437,13 @@ class ModelVersionFields:
     # state_dict delta) and changes the trained forward.
     mon_hazard_cost: str = "off"
     move_actor_state: str = "off"
+    # gen3_static_recovery_v1 (config v150): `--trunk-layers N` (2 = production; N > 2 appends identity-init rounds),
+    # `--switch-hazard-cost {off,on}` (the switch pointer cell's entry-hazard block) and `--eot-residual {off,on}` (every
+    # mon's end-of-turn HP change as token content). STRUCTURAL: each builds parameters (a state_dict delta) and changes
+    # the trained forward.
+    trunk_layers: int = 2
+    switch_hazard_cost: str = "off"
+    eot_residual: str = "off"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

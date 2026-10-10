@@ -768,12 +768,20 @@
    "contention": 1.0,
    "detail": ""
   },
-  "src/main/train/debug_shape_smoke_integration_test.py::test_arch_production_debug_smoke_reaches_an_update_and_exits_0": {
+  "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[production]": {
    "status": "pass",
-   "commit": "26131c0ce62b2de7c9913d9c84e8c318a0200b19",
-   "at": "2026-10-07T20:00:33Z",
-   "duration_s": 529.75,
-   "contention": 7.27,
+   "commit": "f086988433aacd07b4b3cbec5b0451215a57ce6c",
+   "at": "2026-10-10T01:09:33Z",
+   "duration_s": 712.08,
+   "contention": 1.07,
+   "detail": ""
+  },
+  "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[static_recovery]": {
+   "status": "pass",
+   "commit": "f086988433aacd07b4b3cbec5b0451215a57ce6c",
+   "at": "2026-10-10T01:09:33Z",
+   "duration_s": 892.9,
+   "contention": 1.03,
    "detail": ""
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_the_artifact_carries_the_rust_eval_transport_stamp": {
@@ -873,5 +881,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-09T14:57:35Z"
+ "last_written": "2026-10-10T01:09:33Z"
 }

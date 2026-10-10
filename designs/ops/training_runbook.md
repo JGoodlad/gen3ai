@@ -114,6 +114,14 @@ provenance tags — `arch_source` from the checkpoint's `model_config.json`, `re
 `cli_args` (`[Arch] same-run restart: arch_source=… kept`); before 2026-09-30 the first restart
 recorded `arch_source: null`. A fork into a new run dir keeps neither (its parent is in `lineage`).
 
+**A NAMED ARM** (`src/main/train/arch_arms.py`, `gen3_static_recovery_v1`) is `--arch <arm>`: the production surface
+plus the arm's DECLARED overlay, applied as if typed, with production's RECIPE; the guard judges a fresh argv against
+production ⊕ the overlay (no consent needed for the arm itself; a drift from the arm is refused by name), and
+`arch_source` records `<arm>@production_config@<12>+overlay@<8>`. The one arm today, **`--arch static_recovery`**, is
+`static` + `--mon-hazard-cost on --move-actor-state on --trunk-layers 3 --switch-hazard-cost on --eot-residual on`
+(`designs/endstate/design_static_tokens.md` §13). A bisection arm is the named arm plus ONE typed lever and
+`--allow-nonproduction-arch`.
+
 Three resolution rules the tool applies, each of which has burned a launch:
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`) —
   through the one choke point `fixed_opponent_pool.resolve_model_ref`. Name the `.zip` or `@step`

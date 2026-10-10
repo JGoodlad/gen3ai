@@ -185,7 +185,11 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
    OP CONTENT (`op_content`, T1, zero-init) adds the `x` ⊕ `g` amounts on every mon and our `d1` cells on
    their mons (a set function of our moves), and under `--mon-hazard-cost on` each mon's own side's Spikes layers
    + its switch-in cost (`static_facts.py`, the op's `spikes_entry`); under `--move-actor-state on` the E3 seats
-   carry our active's HP + status (both zero-init, `gen3_static_port_v1`). Readers take `TeamTransformer.board_rows()` ([B, 1, D] legacy, [B, 3, D] static).
+   carry our active's HP + status (both zero-init, `gen3_static_port_v1`); under `--eot-residual on` every mon (either
+   encoding) gets its end-of-turn HP change if it is on the field then (`eot_residual.py`, zero-init,
+   `gen3_static_recovery_v1`). Readers take `TeamTransformer.board_rows()` ([B, 1, D] legacy, [B, 3, D] static).
+   **`--trunk-layers N > 2`** appends `N − 2` identity-init PRE-LN rounds (`trunk_depth.IdentityInitRound`,
+   `team_transformer.extra_rounds`) after the two post-LN layers, on the same shared bias.
    Returns the two refined team-token blocks. **Optional gradient checkpointing**: a runtime
    `grad_checkpointing` flag (set per run by `train_rl_agent.py --grad-checkpointing`, never
    saved/version-checked) runs these encoder layers under `torch.utils.checkpoint(...,

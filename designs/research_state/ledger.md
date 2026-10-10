@@ -23787,3 +23787,48 @@ FINDINGS:
    reads the pinned form); the bundle screen judges the port.
 
 Tag: **BUILT · the static port · v147 · equivariant · `--mon-hazard-cost` / `--move-actor-state` OFF · production byte-identical · identity proof bitwise but c1 (8.3e-7) · GPU checks DEFERRED** · design: [`design_static_tokens.md`](../endstate/design_static_tokens.md) §12 · measurements: [`measurements/static_port_2026-10-09/`](measurements/static_port_2026-10-09/), [`measurements/static_port_identity_2026-10-09/`](measurements/static_port_identity_2026-10-09/)
+
+### 2026-10-09 · BUILT · **THE STATIC-RECOVERY LEVERS (`gen3_static_recovery_v1`, v150): `--trunk-layers N` (identity-init PRE-LN extra rounds, the 2-round network at init bit for bit), `--switch-hazard-cost` (the switch cell's entry-hazard block, the op's ONE Spikes rule, through the pointer head's zero-init projection), `--eot-residual` (every mon's end-of-turn HP change, both sides, mechanics verified at source), all OFF; and ONE combined arm, the named `--arch static_recovery`; production byte-identical**
+
+- **Why.** Owner 2026-10-09: legacy is kept until a CLOSING test; try the recovery levers first, "run all of them
+  speculatively together and then we can bisect them out". The static diagnostic (`measurements/static_diag_2026-10-09/`)
+  located the gap: board facts arrive at static's mon tokens only at the last of two rounds (H3), our-side Spikes the
+  growing gap, stall / Wish / Spikes teams the losses.
+- **Built.** (1) `--trunk-layers N` ∈ {2, 3, 4}: N − 2 `IdentityInitRound`s after the two post-LN layers, on the shared
+  bias; out-proj and FFN output zero (weight and bias), so the extra round adds exactly 0 at init (a post-LN round with
+  zero outputs is LN∘LN, not the identity); private-seed `IsolatedLinear`s. (2) `--switch-hazard-cost on`: each switch
+  target's [our side's Spikes / 3, its switch-in fraction] (= our half of `--mon-hazard-cost`'s fact, `spikes_entry`)
+  appended LAST to the switch pointer cell, read through the head's zero-init `IsolatedLinear(2, 64)`. (3)
+  `--eot-residual on`: every mon, both sides, its end-of-turn HP change if it is on the field then — Leftovers (Smogon
+  prior where unknown), sand / hail (types, Sand Veil; Cloud Nine / Air Lock as a probability; no chip on a timed
+  weather's last turn), Rain Dish, the status tick (burn / poison 1/8, Toxic (n+1)/16, × (1 − P(Shed Skin)/3)), Leech
+  Seed drain and heal (max-HP ratio, Liquid Ooze inverts), Wish +1/2, Ingrain, Curse, Nightmare × P(stays asleep), and
+  the clamped net — on the MON TOKEN (zero-init `IsolatedLinear(11, 128)`). Every component VERIFIED in
+  `deps/pokemon-showdown` (`measurements/static_recovery_2026-10-09/README.md` §2); the source changed two expectations:
+  gen-3 Wish heals half the RECIPIENT's max HP, and a timed weather's last turn has no chip. (4) `--arch static_recovery`
+  (`main/train/arch_arms.py`): production + `--token-encoding static --mon-hazard-cost on --move-actor-state on
+  --trunk-layers 3 --switch-hazard-cost on --eot-residual on`, production's recipe; the arch guard judges it against
+  production ⊕ the overlay.
+- **Identity:** flags off, the production extractor's dynamo graph / state_dict / outputs are unchanged (`11338474…`,
+  20,144 lines), as are `static`'s and the v147 bundle's; every lever ON (alone and all together) is bit-identical to
+  OFF at init on a real SB3 build; the arm traces to one dynamo graph on CPU.
+- **Cost (MEASURED, CPU, 64 rows):** one extra trunk round +132,480 params, +18.9 M matmul FLOP / row (+31 %), ≈ +10 %
+  eager CPU forward (descriptive, loaded box); the hand facts < 0.1 % FLOPs. The arm: 2,020,228 extractor params,
+  79.01 M FLOP / row, 177.4 vs static 161.4 vs legacy 164.1 ms / 64 rows.
+- **Smoke:** `--arch static_recovery --debug --steps 10000` (CPU): PASS, exit 0, updates reached, the run records every
+  lever and `arch_source` `static_recovery@…` (`debug_shape_smoke_integration_test.py`, slow, recorded).
+- **Tests (fail on revert):** `static_recovery_test.py` (26), `arch_arms_test.py` (5); 18 mutations applied, each caught.
+
+FINDINGS:
+1. **Two end-of-turn rules now exist:** production's `g` cell (coarser: Leftovers revealed-only, no Wish / Ingrain /
+   Curse / Nightmare / Rain Dish / Shed Skin / Liquid Ooze, a timed weather charged on its last turn) and N4. If N4 is
+   adopted, `g` should read N4's rule (a production change of its own).
+2. **The obs Toxic counter saturates at 8 ticks** (engine 15): every reader under-prices the 9th+ tick.
+3. **Ingrain and Nightmare are not in the view-vs-engine volatile audit** (`present/audit.rs`), and the Wish board flag
+   does not check whether the Wish failed (verification sub-agent, read-only).
+4. **The prober's `/game` attention capture hooks only `BiasedEncoderLayer`s**: under `--trunk-layers 3` the extra
+   round's attention is not shown (`main/prober/model_capture.py`).
+5. **Deferred GPU checks (no lease):** compile parity forward + backward of the arm on CUDA, T2's CUDA-graph build on the
+   deeper graph, a real two-minute launch, the GPU cost read.
+
+Tag: **BUILT · static-recovery levers · v150 · OFF · `--arch static_recovery` declared · production byte-identical · GPU checks DEFERRED** · design: [`design_static_tokens.md`](../endstate/design_static_tokens.md) §13 · [`design_hand_computed_features.md`](../endstate/design_hand_computed_features.md) N3 / N4 · measurements: [`measurements/static_recovery_2026-10-09/`](measurements/static_recovery_2026-10-09/)

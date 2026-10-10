@@ -32,7 +32,7 @@ from agents.model.flat_intent import FlatConsumerOps, append_other, compat_inten
 from agents.model.hypothesis_set import HypothesisSet
 from agents.model.hypothesis_encode import gathered_hypothesis_tokens
 from agents.model.static_tokens import StaticTokenEncoder, static_hypothesis_tokens
-from agents.model.static_facts import mon_hazard_features, move_actor_features
+from agents.model.static_facts import mon_hazard_features, move_actor_features, switch_hazard_features
 from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoster, build_op_roster,
                                             fixed_mass_moves, hypothesis_ctx, key_log_presence,
                                             other_column, other_roster, splice_hypothesis_tokens)
@@ -743,6 +743,18 @@ class ExtractorForward(ExtractorApi):
             _haz = mon_hazard_features(self.damage_op, _opctx,
                                        _x5r.concrete if _x5r is not None else None)              # [B,12,2]
             role_tokens = role_tokens + self.mon_hazard_proj(_haz.to(role_tokens.dtype))
+        # gen3_static_recovery_v1 (`--switch-hazard-cost on`, `static_facts.switch_hazard_features`): each switch
+        # target's [our side's Spikes layers / 3, its switch-in HP fraction] (the op's ONE entry rule), appended LAST to
+        # the switch pointer cell below (the head's zero-init `switch_extra_proj` reads it).
+        _sw_haz: Optional[torch.Tensor] = (switch_hazard_features(self.damage_op, _opctx)
+                                           if self.switch_hazard_cost == "on" else None)          # [B,6,2]
+        # gen3_static_recovery_v1 (`--eot-residual on`, `eot_residual.py`): every mon's expected END-OF-TURN HP change
+        # if it is the one on the field at the end of this turn, per component, as token content (zero-init).
+        if self.eot_residual_proj is not None:
+            assert self.eot_residual_rule is not None
+            _eot = self.eot_residual_rule(_opctx, self.damage_op,
+                                          _x5r.concrete if _x5r is not None else None)           # [B,12,EOT_DIM]
+            role_tokens = role_tokens + self.eot_residual_proj(_eot.to(role_tokens.dtype))
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),
@@ -1011,6 +1023,10 @@ class ExtractorForward(ExtractorApi):
                 gather_move_resolution_ops(self, ctx, _al, _bl, _imc_ops, _x5i))
             _mcells = torch.cat([_mcells, _mr_m], dim=2)
             _scells = torch.cat([_scells, _mr_s], dim=2)
+        # gen3_static_recovery_v1 (`--switch-hazard-cost on`): the LAST switch-cell columns, read by the pointer head's
+        # zero-init `switch_extra_proj` (`pointer_switch_extra_dim`), so the existing scorer's init is untouched.
+        if _sw_haz is not None:
+            _scells = torch.cat([_scells, _sw_haz.to(_scells.dtype)], dim=2)
         self.stash.pointer_inputs = PointerInputs(
             move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
             move_cells=_mcells, switch_cells=_scells)

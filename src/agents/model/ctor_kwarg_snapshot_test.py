@@ -72,6 +72,9 @@ CTOR_KWARGS_V96 = frozenset({
     "op_reduction",
     "mon_hazard_cost",
     "move_actor_state",
+    "trunk_layers",
+    "switch_hazard_cost",
+    "eot_residual",
     "obs_facts",
 })
 

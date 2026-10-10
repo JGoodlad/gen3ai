@@ -238,3 +238,7 @@ STATIC_MOVE_POOL_DIM = 32
 # summed over the moves (Deep Sets), then a zero-init bias-free Linear(this → D_MODEL). Replaces the request-ordered
 # Linear(24 → D_MODEL), which gave each request slot its own weights (the v145 sweep's last arbitrary static weight).
 STATIC_OPC_OUT_HIDDEN = 32
+# gen3_static_recovery_v1 (`--trunk-layers N`, `trunk_depth.py`): the PRIVATE init seed of the extra trunk rounds. They
+# are built inside `torch.random.fork_rng` from it, out of `IsolatedLinear`s SB3's orthogonal re-init skips, so a deeper
+# trunk draws nothing from the global stream (every other parameter's initial bytes equal the 2-round build's).
+TRUNK_EXTRA_INIT_SEED = 20261009

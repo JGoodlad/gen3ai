@@ -727,7 +727,8 @@ class ProbeModel:
             return getattr(ex, attr, None) is not None
 
         d = getattr(F, "D_MODEL", "?")
-        layers = getattr(F, "TRANSFORMER_N_LAYERS", "?")
+        # gen3_static_recovery_v1: the model's OWN depth (`--trunk-layers`), the constant only for an older extractor.
+        layers = getattr(ex, "trunk_layers", getattr(F, "TRANSFORMER_N_LAYERS", "?"))
         hist = getattr(F, "N_HISTORY_TURNS", 0)   # gen3_frame_deletion_v1: absent ⇒ 0 frames
         tokens = 12 + (hist if isinstance(hist, int) else 0) + 1
         proj = getattr(ex, "projection_dim", getattr(F, "PROJECTION_DIM", "?"))

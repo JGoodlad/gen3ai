@@ -544,7 +544,13 @@ from typing import Any, Dict
 #   of its 17 species) instead of the CURRENT-ability column, which Trace / Role Play / Skill Swap / Transform change
 #   while a switch-in reverts them. Production's `x` cell changes for an active mon whose current ability differs from
 #   its species'; every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 149
+# v150 (gen3_static_recovery_v1): three STATIC-RECOVERY levers, each its own field, production at the old value:
+#   `trunk_layers` (int; 2 = production; 3 / 4 append identity-init pre-LN trunk rounds), `switch_hazard_cost` {off,on}
+#   (the switch pointer cell's entry-hazard block, read by the pointer head's zero-init `switch_extra_proj`) and
+#   `eot_residual` {off,on} (every mon's end-of-turn HP change, zero-init token content). Each is STRUCTURAL and
+#   gated in check_compatible; a pre-v150 config migrates to 2 / off / off (the only possible past). No ARCH_SIGNATURE
+#   bump (production builds byte-identically), no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 150
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

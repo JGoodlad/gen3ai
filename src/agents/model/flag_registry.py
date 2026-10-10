@@ -586,6 +586,38 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "`move_seat_proj`), built LAST, no RNG draw. The opponent's E4 seats get nothing: neither "
                    "encoding ever gave them their active's state.",
               requires=("token_encoding",)),
+    ModelFlag("trunk_layers", 2, Tier.CLI, Klass.STRUCTURAL, 150,
+              "the number of trunk self-attention rounds (2 = production, the two post-LN layers; 3 or 4 append "
+              "1 or 2 IDENTITY-INIT pre-LN residual rounds after them, so the deeper network starts exactly equal "
+              "to the 2-round one)",
+              note="gen3_static_recovery_v1 (`trunk_depth.py`; the static diagnostic's H3: under static, board facts "
+                   "reach the mon tokens only at the LAST of two rounds). Each extra round's attention out-proj and FFN "
+                   "output are zero (weight and bias), so it adds exactly 0 at init (bitwise); its other projections "
+                   "are IsolatedLinears built from a PRIVATE seed (TRUNK_EXTRA_INIT_SEED), so no other initial byte "
+                   "moves. A post-LN round with zero outputs would NOT be the identity (LN of an LN output moves values "
+                   "by ~eps), hence the pre-LN form. 2 builds nothing (byte-identical)."),
+    ModelFlag("switch_hazard_cost", "off", Tier.CLI, Klass.STRUCTURAL, 150,
+              "the switch pointer cell's entry-hazard cost ('off' = nothing built, production; 'on' = each switch "
+              "target's [our side's Spikes layers / 3, the HP fraction it loses switching in: 1/8, 1/6, 1/4, 0 for "
+              "Flying / Levitate] appended LAST to its switch cell)",
+              note="gen3_static_recovery_v1 (`static_facts.switch_hazard_features`; design_hand_computed_features.md "
+                   "§4 ADD rank 1, entity audit B3: the switch logit had no entry-chip coordinate). The values are the "
+                   "op's ONE entry rule (`DamageOperator.spikes_entry`), our half of --mon-hazard-cost's fact. The "
+                   "pointer head reads the block through its own zero-init bias-free IsolatedLinear "
+                   "(`switch_extra_proj`, built LAST: zero-init input columns of `switch_proj`, whose own init is "
+                   "unchanged). Composes with either token encoding.",
+              requires=("damage_op",)),
+    ModelFlag("eot_residual", "off", Tier.CLI, Klass.STRUCTURAL, 150,
+              "every mon's END-OF-TURN HP change if it is the one on the field at the end of this turn ('off' = "
+              "nothing built, production; 'on' = Leftovers, weather, Rain Dish, the status tick, Leech Seed drain / "
+              "heal, Wish, Ingrain, Curse, Nightmare and the HP-clamped net, both sides, added to the mon tokens)",
+              note="gen3_static_recovery_v1 (`eot_residual.py`; design_hand_computed_features.md §4 ADD rank 2: the "
+                   "stall residual race static loses most). Mechanics verified in deps/pokemon-showdown (gen 3 Wish "
+                   "heals half the RECIPIENT's max HP; burn 1/8; Toxic (n+1)/16 reset on switch; Liquid Ooze inverts "
+                   "the seeder's heal; a timed weather's last turn has no chip). Unrevealed items / abilities are the "
+                   "species' Smogon priors. Zero-init bias-free IsolatedLinear (11 -> 128) built LAST, no RNG draw; "
+                   "the rule itself holds only constant tables. Composes with either token encoding.",
+              requires=("damage_op",)),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

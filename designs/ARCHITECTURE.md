@@ -545,7 +545,18 @@ cell reads, on the mon's BASE types; on the context the op prices with, so an X5
 and before the trunk; **`--move-actor-state on`** adds our active's HP fraction and status one-hot to its four VALID E3
 seats through a zero-init bias-free `IsolatedLinear(8, 128)` (equivalently zero-init input columns of
 `move_seat_proj`). Both are built LAST with no RNG draw, so each flag's ON build starts byte-equal to its OFF build
-plus one zero matrix. The static screen trained `static` PINNED at `6c6d2e09` (pre-break, design note §8.2); at
+plus one zero matrix. Two more levers (config v150, `gen3_static_recovery_v1`, OFF; design note §13) compose with
+either encoding: **`--eot-residual on`** adds every mon's (both sides) END-OF-TURN HP change if it is the mon on its
+side's field at the end of this turn — Leftovers (known item, else the species' Smogon prior), sand / hail chip (types,
+Sand Veil; none on a timed weather's last turn; × P(no Cloud Nine / Air Lock)), Rain Dish, the next status tick (burn /
+poison 1/8, Toxic (n+1)/16, × (1 − P(Shed Skin)/3)), Leech Seed's drain on the seeded active and its heal to every mon of
+the other side (scaled by max HP; Liquid Ooze inverts it), Wish +1/2 (half the RECIPIENT's max HP in gen 3), Ingrain,
+Curse, Nightmare × P(stays asleep), and the HP-clamped net (11 columns, `agents/model/eot_residual.py`'s
+`EotResidualRule`, on the op's context) — through a zero-init bias-free `IsolatedLinear(11, 128)` beside
+`mon_hazard_proj`; **`--switch-hazard-cost on`** appends each switch target's [our side's Spikes layers / 3, its
+switch-in HP fraction] (the same `spikes_entry` values) LAST to the switch pointer cell (§3.3). The named arm
+**`--arch static_recovery`** (`main/train/arch_arms.py`) is `static` with all five of these levers and
+`--trunk-layers 3`, on the production recipe. The static screen trained `static` PINNED at `6c6d2e09` (pre-break, design note §8.2); at
 HEAD it is the port (`gen3_static_port_v1`, design note §12), which reproduces the pin's static forward on mapped
 weights up to the type-sum's fp32 rounding (`research_state/measurements/static_port_identity_2026-10-09/`).
 
@@ -634,7 +645,13 @@ The concrete steps:
 9. **`TeamTransformer`** — **62 tokens** (13 base + 16 entity seats + OTHER_species + 32 event seats, §2.3),
    2 `BiasedEncoderLayer`s, `d_model` 128, 4 heads, FFN 256, post-LN. One `[B,4,62,62]` float bias
    carries both the key-padding addend (`-1e9`) and every edge family; it is built once and shared
-   by both layers. Each layer hands it to SDPA through `dense_attn_bias` (as does `PolicyStateQuery`'s
+   by every layer. **`--trunk-layers N`** (production 2; `trunk_depth.py`, `gen3_static_recovery_v1`, config v150)
+   appends `N − 2` EXTRA rounds after the two (`team_transformer.extra_rounds`, N ∈ {2, 3, 4}), each an
+   `IdentityInitRound`: a PRE-LN residual block (`x + out_proj(attn(LN₁ x))`, then `x + linear2(relu(linear1(LN₂ x)))`)
+   on the same shared bias, whose `out_proj` and `linear2` start at exactly zero, so the deeper trunk at init IS the
+   2-round one, bit for bit (a post-LN round with zero outputs would compute LN(LN(x)) ≠ x). Its other projections are
+   `IsolatedLinear`s built from a private seed (`TRUNK_EXTRA_INIT_SEED`, the orthogonal gain-√2 init SB3 gives the
+   existing rounds), so no other initial byte moves. One extra round is 132,480 parameters. Each layer hands it to SDPA through `dense_attn_bias` (as does `PolicyStateQuery`'s
    key bias): under `torch.compile` Inductor's `inductor_force_stride_order` pins it row-major, in eager
    it is `.contiguous()` (a no-op here). Without the pin, Inductor can lay the bias out head-innermost
    whenever the token count is a multiple of 8, and CUDA's efficient-attention kernel refuses that layout
@@ -656,7 +673,7 @@ The concrete steps:
 | `ROLE_ENCODER_HIDDEN` | `[256, 128]` | " |
 | `ACTIVE_CTX_HIDDEN` | `[64, 32]` | " |
 | `POINTER_HIDDEN` | 64 | " |
-| `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 | " |
+| `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 (the production depth; `--trunk-layers` appends identity-init rounds) | " |
 | `NET_ARCH` (the ACTOR-only mlp_extractor; no critic branch) | `[512, 512]` | " |
 
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
@@ -688,8 +705,8 @@ seats and every later seat shifts by 2 (`_total_tokens` = 15; `board_seats` = (1
 
 | Seats | Index range | Token type | Content |
 |---|---|---|---|
-| our mons | 0–5 | `TOKEN_TYPE_OUR_TEAM` | S + D (+ `prefuse_proj` incoming rows + `op_content` x ⊕ g; + `mon_hazard_proj` under `--mon-hazard-cost on`) |
-| opp mons | 6–11 | `TOKEN_TYPE_THEIR_TEAM` | S + D (+ move-belief reinjection + `op_content` x ⊕ g + our `d1` cells as a set; + `mon_hazard_proj` under `--mon-hazard-cost on`) |
+| our mons | 0–5 | `TOKEN_TYPE_OUR_TEAM` | S + D (+ `prefuse_proj` incoming rows + `op_content` x ⊕ g; + `mon_hazard_proj` under `--mon-hazard-cost on`; + `eot_residual_proj` under `--eot-residual on`) |
+| opp mons | 6–11 | `TOKEN_TYPE_THEIR_TEAM` | S + D (+ move-belief reinjection + `op_content` x ⊕ g + our `d1` cells as a set; + `mon_hazard_proj` under `--mon-hazard-cost on`; + `eot_residual_proj` under `--eot-residual on`) |
 | OUR SIDE | 12 | `TOKEN_TYPE_OUR_SIDE` (6) | `side_proj(our side's 10 facts)` |
 | THEIR SIDE | 13 | `TOKEN_TYPE_THEIR_SIDE` (7) | `side_proj(their side's 10 facts)` — the SAME projection |
 | FIELD | 14 | `TOKEN_TYPE_FIELD` (8) | `field_proj(weather 7, clock 3, turns since progress)` |
@@ -1018,7 +1035,7 @@ Output layout is `[switch ×6, move ×4, struggle]` (`agents/action/constants.py
 | Logit | Entity token | Physics cells | Cell width |
 |---|---|---|---|
 | **move k** (logit 6+k) | the **refined E3 seat k** (`last_pointer_inputs[0]`, `[B,4,128]`) — post-attention, board-aware, already permuted sorted-by-id → **request** order by move-num identity | `[low, high, crit, pko, p_land, known, sec×7]` | **13** (`_PTR_MOVE_CELL`) |
-| **switch j** | our-team token *j* (`our_team_out[:, j]`, `[B,6,128]`) — the same post-transformer token the CLS pools read | the incoming per-defender row (12) + `[phys_high_cb_j, pko_cb_j, p_cb]` | **15** (`_PTR_SWITCH_CELL_IN`), +15 under `pair_outcome_switch`, +4 under `conditional_threat_cell` |
+| **switch j** | our-team token *j* (`our_team_out[:, j]`, `[B,6,128]`) — the same post-transformer token the CLS pools read | the incoming per-defender row (12) + `[phys_high_cb_j, pko_cb_j, p_cb]` | **15** (`_PTR_SWITCH_CELL_IN`), +15 under `pair_outcome_switch`, +4 under `conditional_threat_cell`, +2 LAST under `--switch-hazard-cost on` |
 | **struggle** | none — context only | none | 0 |
 
 The move cell WIDENS under the opt-in α cells, each appending its own zero-init block:
@@ -1032,7 +1049,12 @@ The **switch** cell likewise widens under `pair_outcome_switch`
 (+`CONDITIONAL_THREAT_SWITCH_DIM` = 4), summed by `pointer_switch_cell_dim` and appended in that
 order; until v94 nothing widened it at all. Under `--move-resolution on` (OFF in production) the seven blocks
 are retired on a built policy and the family's two blocks are the only riders: move cell 13 + 38 = 51, switch
-cell 15 + 18 = 33 (`MOVE_RESOLUTION_MOVE_DIM` / `MOVE_RESOLUTION_SWITCH_DIM`).
+cell 15 + 18 = 33 (`MOVE_RESOLUTION_MOVE_DIM` / `MOVE_RESOLUTION_SWITCH_DIM`). **`--switch-hazard-cost on`**
+(OFF in production; `gen3_static_recovery_v1`, config v150) appends `SWITCH_HAZARD_DIM` = 2 LAST, after every other
+block: switch target *j*'s [our side's Spikes layers / 3, the HP fraction it loses switching in] from the op's ONE entry
+rule (`DamageOperator.spikes_entry`; `static_facts.switch_hazard_features`). The head reads that trailing block through
+its own zero-init bias-free `IsolatedLinear(2, 64)` (`switch_extra_proj`, built last, sized by
+`pointer_switch_extra_dim`), so `switch_proj` keeps its width and its init: exactly zero-init input columns.
 
 Scoring: `tanh(proj(token ⊕ cells) + ctx_proj(latent_pi))` → a zero-init `Linear(64, 1)`.
 Move logits are multiplied by `move_valid`, so an unresolved request slot contributes **exactly 0**
@@ -1681,6 +1703,7 @@ does nothing given another setting.
 | `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r"` | ACTIVE |
 | `entity_tail_seats` | `true` | ACTIVE |
 | `entity_topk_seats` | `6` | ACTIVE |
+| `eot_residual` | `"off"` | OFF |
 | `history_events` | `true` | ACTIVE |
 | `hp_belief_mode` | `"composed"` | ACTIVE |
 | `intent_conditional` | `true` | ACTIVE |
@@ -1715,8 +1738,10 @@ does nothing given another setting.
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
 | `switch_branch_cell` | `true` | ACTIVE |
+| `switch_hazard_cost` | `"off"` | OFF |
 | `t0_species_prior` | `true` | ACTIVE |
 | `token_encoding` | `"legacy"` | OFF |
+| `trunk_layers` | `2` | ACTIVE |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `true` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |

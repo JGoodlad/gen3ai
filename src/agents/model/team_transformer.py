@@ -319,7 +319,8 @@ class TeamTransformer(torch.nn.Module):
     fainted/seat key-padding mask, returns the two team token blocks + the
     refined extra seats."""
 
-    def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy"):
+    def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy",
+                 trunk_layers: int = TRANSFORMER_N_LAYERS):
         super().__init__()
         # Runtime-only memory/compute knob (NOT a weight or arch param — never enters
         # model_config.json / the version check). When True, the encoder layers are run
@@ -368,6 +369,12 @@ class TeamTransformer(torch.nn.Module):
         self.board_seats = BOARD_SEATS_STATIC if self.static_board else BOARD_SEATS_LEGACY
         self.last_global_out: Optional[torch.Tensor] = None   # legacy: [B, D_MODEL]
         self.last_board_out: Optional[torch.Tensor] = None    # static: [B, 3, D_MODEL] (our side, their side, field)
+        # gen3_static_recovery_v1 (`--trunk-layers N`, `trunk_depth.py`): N − 2 EXTRA rounds after the two post-LN layers,
+        # each a pre-LN residual block whose output projections start at zero (the identity at init, bit for bit), built
+        # LAST from a private seed (no global RNG draw). None at the production depth 2: nothing built, byte-identical.
+        from agents.model.trunk_depth import build_extra_rounds
+        self.trunk_layers = int(trunk_layers)
+        self.extra_rounds: Optional[torch.nn.ModuleList] = build_extra_rounds(self.trunk_layers)
 
     def board_tokens(self, ctx: ExtractorContext, side_extra: Optional[torch.Tensor] = None) -> torch.Tensor:
         """[B, 3, D_MODEL] the static board tokens BEFORE the trunk (OUR SIDE, THEIR SIDE, FIELD), type
@@ -476,6 +483,18 @@ class TeamTransformer(torch.nn.Module):
                 )
             else:
                 tokens = layer(tokens, bias=attn_bias)
+        # gen3_static_recovery_v1 (`--trunk-layers N > 2`): the extra identity-init rounds, after the post-LN stack,
+        # on the SAME shared bias. None (production) runs nothing.
+        if self.extra_rounds is not None:
+            for extra_round in self.extra_rounds:
+                if use_ckpt:
+                    tokens = checkpoint(
+                        lambda t, _layer=extra_round: _layer(t, bias=attn_bias),
+                        tokens,
+                        use_reentrant=False,
+                    )
+                else:
+                    tokens = extra_round(tokens, bias=attn_bias)
 
         our_team_out   = tokens[:, self._our_token_slice, :]
         their_team_out = tokens[:, self._their_token_slice, :]

@@ -61,6 +61,10 @@ _ON_OVERRIDE: Dict[str, object] = {
     # gen3_static_port_v1 (v147): two-value mode strings; 'off' is OFF.
     "mon_hazard_cost": "on",
     "move_actor_state": "on",
+    # gen3_static_recovery_v1 (v150): an int depth (2 is production) and two two-value mode strings.
+    "trunk_layers": 3,
+    "switch_hazard_cost": "on",
+    "eot_residual": "on",
 }
 
 

@@ -1482,6 +1482,9 @@ def current_model_version(
     op_reduction: str = "max",
     mon_hazard_cost: str = "off",
     move_actor_state: str = "off",
+    trunk_layers: int = 2,
+    switch_hazard_cost: str = "off",
+    eot_residual: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1552,6 +1555,10 @@ def current_model_version(
     # gen3_static_port_v1 (v147): the static encoder's two narrow facts — structural.
     ext_kwargs["mon_hazard_cost"] = str(mon_hazard_cost)
     ext_kwargs["move_actor_state"] = str(move_actor_state)
+    # gen3_static_recovery_v1 (v150): the three static-recovery levers — structural.
+    ext_kwargs["trunk_layers"] = int(trunk_layers)
+    ext_kwargs["switch_hazard_cost"] = str(switch_hazard_cost)
+    ext_kwargs["eot_residual"] = str(eot_residual)
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1655,6 +1662,10 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_static_port_v1 (v147): each `on` builds a zero-init projection, so a frozen opponent's gate must see it.
         "mon_hazard_cost": str(getattr(fe, "mon_hazard_cost", "off") or "off"),
         "move_actor_state": str(getattr(fe, "move_actor_state", "off") or "off"),
+        # gen3_static_recovery_v1 (v150): each builds parameters, so a frozen opponent's gate must see it.
+        "trunk_layers": int(getattr(fe, "trunk_layers", 2) or 2),
+        "switch_hazard_cost": str(getattr(fe, "switch_hazard_cost", "off") or "off"),
+        "eot_residual": str(getattr(fe, "eot_residual", "off") or "off"),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

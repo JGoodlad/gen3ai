@@ -244,6 +244,13 @@ class ModelVersionConstruction(ModelVersionFields):
                 policy_kwargs.get("features_extractor_kwargs", {}).get("mon_hazard_cost", "off")),
             move_actor_state=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_actor_state", "off")),
+            # gen3_static_recovery_v1 (v150): the three static-recovery levers.
+            trunk_layers=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("trunk_layers", 2)),
+            switch_hazard_cost=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("switch_hazard_cost", "off")),
+            eot_residual=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("eot_residual", "off")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

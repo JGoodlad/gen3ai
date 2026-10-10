@@ -25,7 +25,7 @@ from gymnasium import spaces
 from agents.model.arch_constants import (
     CONDITIONAL_THREAT_SWITCH_DIM, D_MODEL, INTENT_COND_MOVE_DIM, INTENT_MOVE_CELL_DIM,
     INTENT_THRESH_MOVE_DIM, PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM,
-    PROJECTION_DIM, ROLE_TOKEN_SIZE, SWITCH_BRANCH_MOVE_DIM,
+    PROJECTION_DIM, ROLE_TOKEN_SIZE, SWITCH_BRANCH_MOVE_DIM, TRANSFORMER_N_LAYERS,
 )
 from agents.model.aux_value_heads import WinProbHead
 from agents.model.belief_heads import (
@@ -122,6 +122,9 @@ class ExtractorBuild(torch.nn.Module):
                  obs_facts: str = "off",
                  mon_hazard_cost: str = "off",
                  move_actor_state: str = "off",
+                 trunk_layers: int = TRANSFORMER_N_LAYERS,
+                 switch_hazard_cost: str = "off",
+                 eot_residual: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -236,7 +239,11 @@ class ExtractorBuild(torch.nn.Module):
         self.edge_bias_families = str(edge_bias_families or "off")
         self.edge_bias = (EdgeBias(self.edge_bias_families)
                           if self.edge_bias_families != "off" else None)
-        self.team_transformer = TeamTransformer(layout, token_encoding=token_encoding)
+        # gen3_static_recovery_v1 (`--trunk-layers`): the extra rounds are built inside the transformer from a PRIVATE
+        # seed (`trunk_depth.build_extra_rounds`), so passing a depth > 2 here draws nothing from the global stream.
+        self.trunk_layers = int(trunk_layers)
+        self.team_transformer = TeamTransformer(layout, token_encoding=token_encoding,
+                                                trunk_layers=self.trunk_layers)
         # The injection width IS the op reducer's `extra_dim`, computed by the SAME function the
         # reducer uses. It has to come from the pure helper rather than `self.damage_op`, because
         # the op is built ~250 lines BELOW this point and module construction order is load-bearing
@@ -1113,6 +1120,30 @@ class ExtractorBuild(torch.nn.Module):
                                                    if mon_hazard_cost == "on" else None)
         self.move_actor_proj: Optional[_IsoLin] = (_IsoLin(MOVE_ACTOR_DIM, D_MODEL, zero=True, bias=False)
                                                    if move_actor_state == "on" else None)
+
+        # gen3_static_recovery_v1 (`--switch-hazard-cost`, `--eot-residual`; `design_static_tokens.md` §13). The
+        # switch-cell hazard adds the target's entry-hazard cost (the op's ONE rule) as the switch pointer cell's LAST
+        # block, read by the POLICY's pointer head through its own zero-init projection (`pointer_switch_extra_dim`;
+        # nothing is built here). The end-of-turn residual builds its rule (constant tables only: no parameter, no RNG)
+        # and ONE zero-init, bias-free `IsolatedLinear` LAST, so ON adds exactly 0 at init and moves no other byte.
+        from agents.model.eot_residual import EOT_DIM, EOT_RESIDUAL_MODES, EotResidualRule
+        from agents.model.static_facts import SWITCH_HAZARD_COST_MODES
+        if switch_hazard_cost not in SWITCH_HAZARD_COST_MODES:
+            raise ValueError(f"switch_hazard_cost must be one of {SWITCH_HAZARD_COST_MODES}, got {switch_hazard_cost!r}")
+        if eot_residual not in EOT_RESIDUAL_MODES:
+            raise ValueError(f"eot_residual must be one of {EOT_RESIDUAL_MODES}, got {eot_residual!r}")
+        if switch_hazard_cost == "on" and not damage_op:
+            raise ValueError("switch_hazard_cost='on' requires damage_op=True: the cost is the damage operator's ONE "
+                             "Spikes entry rule (`DamageOperator.spikes_entry`), never a second copy.")
+        if eot_residual == "on" and not damage_op:
+            raise ValueError("eot_residual='on' requires damage_op=True: the residual reads the op's context (the X5 "
+                             "hypothesis context) and its base-stat table, the op's max-HP convention.")
+        self.switch_hazard_cost = switch_hazard_cost
+        self.eot_residual = eot_residual
+        self.eot_residual_rule: Optional[EotResidualRule] = (EotResidualRule(layout) if eot_residual == "on"
+                                                             else None)
+        self.eot_residual_proj: Optional[_IsoLin] = (_IsoLin(EOT_DIM, D_MODEL, zero=True, bias=False)
+                                                     if eot_residual == "on" else None)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so
