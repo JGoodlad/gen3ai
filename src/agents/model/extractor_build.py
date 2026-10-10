@@ -132,6 +132,7 @@ class ExtractorBuild(torch.nn.Module):
                  g_ledger: str = "coarse",
                  effective_stats: str = "off",
                  move_target_state: str = "off",
+                 move_set_closure: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -1208,6 +1209,18 @@ class ExtractorBuild(torch.nn.Module):
                                                         if effective_stats == "on" else None)
         self.move_target_proj: Optional[_IsoLin] = (_IsoLin(MOVE_TARGET_DIM, D_MODEL, zero=True, bias=False)
                                                     if move_target_state == "on" else None)
+
+        # gen3_move_set_closure_v1 (config v154; `design_hand_computed_features.md` §4, the four-move FACT): `on` = every
+        # opponent slot's MoveBelief reinjection reads its own fixed-mass move presence (k = 4 − revealed, so a mon with
+        # four revealed moves reinjects nothing else), not the sigmoid inclusion weights. Builds NOTHING (no parameter,
+        # no RNG draw); `off` (production) is byte-identical. Needs X5's hypothesis builder (its legality table).
+        from agents.model.hypothesis_set import MOVE_SET_CLOSURE_MODES
+        if move_set_closure not in MOVE_SET_CLOSURE_MODES:
+            raise ValueError(f"move_set_closure must be one of {MOVE_SET_CLOSURE_MODES}, got {move_set_closure!r}")
+        if move_set_closure == "on" and self.hypothesis_builder is None:
+            raise ValueError("move_set_closure='on' requires the opponent-belief family (opp_belief_slots + opp_intent): "
+                             "the per-slot fixed-mass move presence is X5's construction, read through its builder.")
+        self.move_set_closure = move_set_closure
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

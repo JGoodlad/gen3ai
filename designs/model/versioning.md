@@ -244,6 +244,11 @@ the NAMED ARM `--arch endstate` writes all five (and the static-recovery / bundl
 `effective_stats` and `move_target_state` ({off,on}; each builds one zero-init projection). A pre-v153 config migrates
 to off / off; no `ARCH_SIGNATURE` or floor change. `--arch endstate` records both.
 
+**v154 (`gen3_move_set_closure_v1`, 2026-10-10)** added one STRUCTURAL field gated in `check_compatible`:
+`move_set_closure` ({off,on}; no parameter — `on` changes what every non-active opponent slot's MoveBelief reinjection
+reads, so the string compare is the only gate). A pre-v154 config migrates to off; no `ARCH_SIGNATURE` or floor change;
+no named arm records it.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

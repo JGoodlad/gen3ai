@@ -24071,3 +24071,59 @@ checkout's code; main moved mid-hunt and silently flipped two reproductions. (6)
 parallel OOM the 12 GiB card.
 
 Tag: **MEASURED · GPU checks · P PASS · R PASS (+14.8 % train_ms) · E FAIL at `43a59bbd` (compiled-gradient defect, conjunction of four levers; clean offline at `c0f528b4`) · no fix shipped** · measurements: [`measurements/gpu_checks_endstate_2026-10-09/`](measurements/gpu_checks_endstate_2026-10-09/README.md) · design: [`design_static_tokens.md`](../endstate/design_static_tokens.md) §10, §12.6, §13.6
+
+### 2026-10-10 · MEASURED + BUILT · **THE FOUR-MOVE CLOSURE: every fixed-mass reader of the opponent's moves already knows "four revealed ⇒ no other move", except MoveBelief's REINJECTION on every non-active slot (F-X5-33), a measured GIGO leak (trained screen final: a bump of a benched four-revealed mon's unrevealed beliefs moves the value by a median 4.0 pp, argmax 13.6 %); `--move-set-closure on` (`gen3_move_set_closure_v1`, v154, OFF) closes it. The garbled `data/teams/` nicknames reach NOTHING the model reads (byte-identical observations three ways)**
+
+**Question.** The prober showed a Skarmory with all four moves revealed still "believing" Roar at 92 % (8k-step
+smoke). Is the gen-3 fact "at most four moves" enforced where the model READS the move belief, or only missing from
+the display? And does a mis-encoded nickname (`MÃ©talosse`, `data/teams/`) reach the model?
+
+**Where the fact lives (HEAD `3190a05d`).** The published posterior `last_move_belief_logits` is per-move independent
+sigmoids (Smogon prior ⊕ learned delta, revealed pinned) with NO four-move limit; only Hidden Power is ruled out by
+moveset exhaustion. Every fixed-mass reader closes it itself at k = 4 − revealed: the opponent ACTIVE's move group
+(E4 seats, E5 = OTHER_move, the op's incoming candidates, the flat pointer, the active's reinjection) and the op's
+per-mon roster (every attacker, the bench E5 tails). The one reader outside it is MoveBelief's reinjection on every
+other slot, which soft-embeds `sigmoid(logits)`. The prober displays the raw sigmoid.
+
+**Evidence** (`measurements/belief_closure_2026-10-10/sensitivity.py`: ±6 on the logit of every unrevealed move of
+every four-revealed opponent mon, the change in masked policy probabilities and value; a change = a leak):
+
+- trained `rb_st_static_s1008` final at its pin `6c6d2e09` (same reinjection code) on the probe bank
+  (`bank_v1`): four-revealed ACTIVE only, 1,481 decisions, **0** change; an alive BENCHED mon with four, 860
+  decisions, all change — Δvalue median **4.0 pp** (p90 26, max 68), argmax flips **13.6 %**;
+- HEAD fresh production build (perturbed 0.02) on 60 seeded Rust-core battles: active 0 / 35; bench 16 / 16 change
+  (Δvalue max 1.9 pp); the reinjection projection zeroed: **0** (the reinjection is the only leak);
+- `--move-set-closure on` (HEAD flag; emulated at the pin with the same construction): **0** on every row.
+
+A trained model does not learn the fact. Its raw belief still sums to 2.52 expected moves on a four-revealed mon's
+unrevealed moves (the fresh prior: 2.40), with an unrevealed move ≥ 0.5 on 57 % of such mons. The head is one
+linear read + the species prior and cannot express "four seen ⇒ 0".
+
+**How often.** In the probe bank's 25,000 decisions, 10.5 % have ≥ 1 alive opponent mon with four revealed moves:
+7.6 % the active (already closed) and **3.4 % a benched mon (the leak)**. 33.2 % have one with ≥ 3 revealed. These
+are DESCRIPTIVE rates of a stratified sample.
+
+**Built.** `--move-set-closure {off,on}` (config v154, STRUCTURAL, OFF, in no named arm). Under `on`, every non-active
+slot's reinjection reads `slot_move_presence(..., graph=True)`: the op roster's construction and values, carrying the
+move head's graph through σ(a + τ). It builds nothing, the build refuses it without the belief family, and `off`
+keeps the expressions verbatim. Out of distribution on the trained final (closure on vs off, no bump), the value
+moves by a median 0.8 pp on bench-four rows and 0.5 pp elsewhere (the 4 − r renormalisation), with argmax flips of
+4.8 % and 1.3 %.
+
+**Nicknames: NO GIGO.** 60 seeded battles with the 20 mojibake pool teams on both sides, nicknames as stored /
+blanked / renamed `Zq0..`: identical observation and mask bytes (one sha256). Species comes from the packed species
+field (`team_packing.py`, `team.rs`) and the protocol DETAILS field (`board_reading.rs`, `core_events`). The ident
+name is only an identity key, and `MonView` has no name field. All 20 teams load, validate and play. The `data/`
+repair (`raw.decode("utf-8").encode("latin-1")`, round-trip checked on all 21 files) re-ids 20 pool teams for no
+model gain. It is NOT made, and is proposed for a pool / era boundary with no pinned run live.
+
+FINDINGS: (1) the prober's move list shows the raw sigmoid. For the active and the physics that is NOT what the
+model reads (fixed-mass, 0 at four revealed); for the bench reinjection in production it is. The display is left as
+is and reported. (2) the move BCE averages over 400 moves at 0.05, so the closure is a fact the head cannot learn
+in practice: an argument for giving it, not for a loss change. (3) the nickname trace: the prober docstring "our
+teams are packed without nicknames" is false (a nicknamed actor's move-order read is unknown, display only); a latent
+species-parse trap in `team_packing.py` for a nickname containing `(`; `TeamLoader` opens files without
+`encoding=`. (4) `--move-set-closure` is a production candidate after the closing test. It changes every bench and
+hidden token (the renormalisation), so it is a behaviour change and needs its own screen.
+
+Tag: **MEASURED (CPU) · leak confined to the bench / hidden reinjection · BUILT OFF (v154) · production byte-identical · nicknames NO GIGO** · measurements: [`measurements/belief_closure_2026-10-10/`](measurements/belief_closure_2026-10-10/)

@@ -842,26 +842,26 @@
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_procedural_teams": {
    "status": "pass",
-   "commit": "1b6b11c2564ce61b3bd5e80ea4fe6848222326b4",
-   "at": "2026-10-08T05:54:24Z",
-   "duration_s": 59.48,
-   "contention": 1.84,
+   "commit": "3190a05d11be3e2e009c20b14f229879cf2806a1",
+   "at": "2026-10-10T09:45:02Z",
+   "duration_s": 30.91,
+   "contention": 1.01,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_milestone_tier": {
    "status": "pass",
-   "commit": "1b6b11c2564ce61b3bd5e80ea4fe6848222326b4",
-   "at": "2026-10-08T05:54:24Z",
-   "duration_s": 60.61,
-   "contention": 1.52,
+   "commit": "3190a05d11be3e2e009c20b14f229879cf2806a1",
+   "at": "2026-10-10T09:45:02Z",
+   "duration_s": 40.11,
+   "contention": 1.0,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_training_pool": {
    "status": "pass",
-   "commit": "1b6b11c2564ce61b3bd5e80ea4fe6848222326b4",
-   "at": "2026-10-08T05:54:24Z",
-   "duration_s": 56.82,
-   "contention": 1.63,
+   "commit": "3190a05d11be3e2e009c20b14f229879cf2806a1",
+   "at": "2026-10-10T09:45:02Z",
+   "duration_s": 31.31,
+   "contention": 1.01,
    "detail": ""
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[ladder_milestone-12]": {
@@ -889,5 +889,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-10T06:40:59Z"
+ "last_written": "2026-10-10T09:45:02Z"
 }

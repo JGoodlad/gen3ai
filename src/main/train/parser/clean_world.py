@@ -316,6 +316,16 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         help="THEIR active's HP fraction + status one-hot onto our 4 E3 move seats (gen3_probe_facts_v1, "
                              "v153; --move-actor-state's sibling). 'off' (default; production). 'on': through a "
                              "zero-init projection. STRUCTURAL, version-checked, fresh-only.")
+    # gen3_move_set_closure_v1 (v154; design_hand_computed_features.md §4, the four-move fact).
+    from agents.model.hypothesis_set import MOVE_SET_CLOSURE_MODES
+    parser.add_argument("--move-set-closure", "--move_set_closure", dest="move_set_closure",
+                        choices=MOVE_SET_CLOSURE_MODES, default=None,
+                        help="The four-move FACT in the opponent move belief's reinjection (gen3_move_set_closure_v1, "
+                             "v154). 'off' (default; production): every opponent slot but the active reinjects its "
+                             "moves by their sigmoid inclusion weights, so a mon with four revealed moves still "
+                             "reinjects believed others. 'on': every slot reads its fixed-mass presence (k = 4 - "
+                             "revealed; four revealed -> only them). STRUCTURAL, version-checked, fresh-only. Requires "
+                             "the opponent-belief family.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

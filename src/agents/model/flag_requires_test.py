@@ -74,6 +74,8 @@ _ON_OVERRIDE: Dict[str, object] = {
     # gen3_probe_facts_v1 (v153)
     "effective_stats": "on",
     "move_target_state": "on",
+    # gen3_move_set_closure_v1 (v154)
+    "move_set_closure": "on",
 }
 
 

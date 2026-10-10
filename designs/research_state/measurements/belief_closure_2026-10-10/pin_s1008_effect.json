@@ -1,0 +1,56 @@
+{
+ "rows": 25000,
+ "mode": "effect",
+ "bump": 6.0,
+ "closure": false,
+ "closure_mechanism": "emulated",
+ "zero_reinject": false,
+ "bank": "/home/goodlad/gen3ai_archive/probe_battery/bank_v1",
+ "checkpoint": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1008/final_model.zip",
+ "perturb": 0.0,
+ "category_rows_available": {
+  "opp_ACTIVE_has_4_only": 1481,
+  "alive_BENCH_mon_has_4": 860,
+  "no_opp_mon_has_4": 21235
+ },
+ "opp_ACTIVE_has_4_only": {
+  "rows": 1481,
+  "dvalue_median": 0.005041301250457764,
+  "dvalue_p90": 0.02405703067779541,
+  "dvalue_max": 0.12372592091560364,
+  "dprob_median": 0.008773893117904663,
+  "dprob_p90": 0.02610623836517334,
+  "dprob_max": 0.10685098171234131,
+  "argmax_flip_rate": 0.02228224091231823,
+  "rows_with_any_change": 1415
+ },
+ "alive_BENCH_mon_has_4": {
+  "rows": 860,
+  "dvalue_median": 0.008094578981399536,
+  "dvalue_p90": 0.03817978873848915,
+  "dvalue_max": 0.19683867692947388,
+  "dprob_median": 0.015122681856155396,
+  "dprob_p90": 0.046564020216464996,
+  "dprob_max": 0.12721407413482666,
+  "argmax_flip_rate": 0.04767441749572754,
+  "rows_with_any_change": 860
+ },
+ "no_opp_mon_has_4": {
+  "rows": 2000,
+  "dvalue_median": 0.005081037059426308,
+  "dvalue_p90": 0.01827165298163891,
+  "dvalue_max": 0.10154229402542114,
+  "dprob_median": 0.007290154695510864,
+  "dprob_p90": 0.02560896798968315,
+  "dprob_max": 0.14287734031677246,
+  "argmax_flip_rate": 0.012500000186264515,
+  "rows_with_any_change": 1921
+ },
+ "published_residual_on_alive_4_revealed_mons": {
+  "mons": 2124,
+  "sum_sigmoid_unrevealed_mean": 2.516206741333008,
+  "sum_sigmoid_unrevealed_median": 2.5592169761657715,
+  "max_single_move_mean": 0.5442803502082825,
+  "frac_mons_with_an_unrevealed_move_ge_0.5": 0.5720338821411133
+ }
+}

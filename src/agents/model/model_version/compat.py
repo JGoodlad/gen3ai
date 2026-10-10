@@ -614,6 +614,13 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "This probe-battery fact (gen3_probe_facts_v1) is fixed for a run's lifetime: it builds a projection "
                 "and changes what the network reads.\n"
                 "Resume with the matching --move-target-state setting (a flagless resume inherits it), or start a fresh training run.")
+        # gen3_move_set_closure_v1 (v154): changes what every opponent slot's reinjection reads.
+        if self.move_set_closure != saved.move_set_closure:
+            raise ModelVersionError(
+                f"move_set_closure mismatch: saved={saved.move_set_closure!r}, current={self.move_set_closure!r}.\n"
+                "This four-move fact (gen3_move_set_closure_v1) is fixed for a run's lifetime: it changes the weights "
+                "every opponent slot's MoveBelief reinjection reads.\n"
+                "Resume with the matching --move-set-closure setting (a flagless resume inherits it), or start a fresh training run.")
         # gen3_endstate_facts_v1 (v152): the five fact-completion levers — each changes the trained forward (two also
         # build parameters), so a frozen opponent's gate must name the cause rather than read a different input.
         if self.move_resolution_facts != saved.move_resolution_facts:

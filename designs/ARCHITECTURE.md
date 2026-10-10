@@ -460,7 +460,10 @@ cells and the intent operands (no `torch.topk`); the op's incoming maxes weight 
 DETACHED fixed-mass presence (the presence-scaled max; under `--op-reduction principled` that presence
 normalised is the α of an expectation instead, §4); a revealed Hidden Power's seat is priced as its
 typed mixture; the active's E5 seat is OTHER_move — and the active's move REINJECTION soft-embeds its
-row by that detached presence (the other slots keep sigmoid weights). The op's opponent-MON axis reads an
+row by that detached presence (the other slots keep sigmoid weights in production — no four-move limit there, so a
+benched mon with four revealed moves still reinjects believed others; **`--move-set-closure on`** (OFF, config v154,
+`gen3_move_set_closure_v1`) gives every other slot its own fixed-mass presence at k = 4 − revealed through the move
+head's graph, `measurements/belief_closure_2026-10-10/`). The op's opponent-MON axis reads an
 `OpRoster` (`hypothesis_tokens.py`): the op runs on the HYPOTHESIS context, so a hidden slot is priced as
 its concrete species at first appearance (full HP, no status); "alive" is `opp_addressable`, never an HP
 cell; a hypothesis DEFENDER is the expected-latent read on a per-slot one-hot (its own species, P(KO)
@@ -595,7 +598,8 @@ The concrete steps:
 3. **`MoveBelief`** (T0, `move_belief_mode` = `"both"` — every opp slot, revealed and hidden)
    — reads the opp **role** tokens, predicts each opp slot's moveset,
    fuses the Smogon log-odds prior, pins revealed moves, and reinjects the soft-embedded moveset
-   into the opp role tokens. Stash: `last_move_belief_logits` `[B,6,400]`.
+   into the opp role tokens. Stash: `last_move_belief_logits` `[B,6,400]` — per-move independent sigmoids with NO
+   four-move limit (only Hidden Power is ruled out by moveset exhaustion); every fixed-mass reader closes it itself.
    The prior buffer `[n_species, n_moves]` is **learnset-gated unconditionally**: a move the species
    cannot learn is `logit(1e-6)` (impossible), a legal move keeps its **true** Smogon usage (no rarity
    cap — a surprise tech is never zeroed), a legal move absent from the usage data gets the
@@ -1781,6 +1785,7 @@ does nothing given another setting.
 | `move_prior_fusion` | `true` | ACTIVE |
 | `move_resolution` | `"off"` | OFF |
 | `move_resolution_facts` | `"off"` | OFF |
+| `move_set_closure` | `"off"` | OFF |
 | `move_target_state` | `"off"` | OFF |
 | `obs_facts` | `"off"` | OFF |
 | `op_believed_lean` | `true` | ACTIVE |

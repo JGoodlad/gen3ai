@@ -36,7 +36,8 @@ from agents.model.static_facts import (effective_stat_features, mon_hazard_featu
                                        move_target_features, switch_hazard_features)
 from agents.model.hypothesis_tokens import (FixedMassMoves, OppPresence, OpRoster, build_op_roster,
                                             fixed_mass_moves, hypothesis_ctx, key_log_presence,
-                                            other_column, other_roster, splice_hypothesis_tokens)
+                                            other_column, other_roster, slot_move_presence,
+                                            splice_hypothesis_tokens)
 from agents.model.damage_op_layout import _DMG_OMX_IDX_PKO, _SB_SPE
 from agents.model.intent_threshold import threshold_probs
 from agents.model.move_resolution import gather_ops as gather_move_resolution_ops
@@ -182,7 +183,19 @@ class ExtractorForward(ExtractorApi):
                 bi = torch.arange(ctx.batch_size, device=ctx.device)
                 fm = fixed_mass_moves(hs_m.moves, logits[bi, ctx.opp_active_local])
                 act = torch.nn.functional.one_hot(ctx.opp_active_local, TEAM_SIZE).bool().unsqueeze(-1)
-                weights = torch.where(act, fm.w_all.to(logits.dtype).unsqueeze(1), torch.sigmoid(logits))
+                # gen3_move_set_closure_v1 (`--move-set-closure on`): every OTHER slot's row is its own fixed-mass
+                # presence too (k = 4 − revealed: a mon with four revealed moves reinjects only them, the rest
+                # renormalised to 4 − r) — through the graph, so the move head keeps the PPO route these rows had.
+                # `off` (production): the sigmoid inclusion weights (F-X5-33), the expression kept VERBATIM (dynamo
+                # names graph nodes after locals, so the production graph stays the parent's).
+                if self.move_set_closure == "on":
+                    assert self.hypothesis_builder is not None
+                    closed, _rv, _sel = slot_move_presence(self.hypothesis_builder, logits,
+                                                           sctx.species_ids[:, TEAM_SIZE:],
+                                                           ctx.all_move_ids[:, TEAM_SIZE:, :], graph=True)
+                    weights = torch.where(act, fm.w_all.to(logits.dtype).unsqueeze(1), closed)
+                else:
+                    weights = torch.where(act, fm.w_all.to(logits.dtype).unsqueeze(1), torch.sigmoid(logits))
         enriched = self.move_belief.reinject_moves(  # type: ignore[union-attr]
             opp_tokens, mb_mask, self.embeddings.move_embedding, logits, weights=weights)
         # gen3_opp_hp_type_belief_v2: ALSO reinject the presence-gated expected TYPE embedding. This is

@@ -71,7 +71,7 @@ offline.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-64 toggles — 62 `cli`, 2 `config_only`, 0 `constructor_only`.
+65 toggles — 63 `cli`, 2 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | family | default | since | requires | meaning |
 |---|---|---|---|---|---|---|---|---|
@@ -139,10 +139,11 @@ offline.
 | `g_ledger` | `--g-ledger` | `cli` | `structural` | `arch` | `'coarse'` | v152 | `damage_op` | which end-of-turn rule the op's g cell reads ('coarse' = the op's own older ledger, production; 'eot' = the ONE rule --eot-residual reads) |
 | `effective_stats` | `--effective-stats` | `cli` | `structural` | `arch` | `'off'` | v153 | `damage_op` | each side's ACTIVE mon's STAGE-APPLIED stats as token content ('off' = nothing built, production; 'on' = Atk / Def / SpA / SpD / Spe after the gen-3 stage multipliers (Spe after paralysis) / 500, and the accuracy / evasion multipliers; ours exact, theirs the believed spread) |
 | `move_target_state` | `--move-target-state` | `cli` | `structural` | `arch` | `'off'` | v153 | — | THEIR active's HP fraction + status one-hot onto our 4 E3 move seats ('off' = nothing built, production; 'on' = through a zero-init projection) |
+| `move_set_closure` | `--move-set-closure` | `cli` | `structural` | `arch` | `'off'` | v154 | `opp_belief_slots`, `opp_intent` | whether EVERY opponent slot's MoveBelief reinjection reads its fixed-mass move presence at k = 4 - revealed ('off' = the sigmoid inclusion weights on every slot but the active, production; 'on' = a mon with four revealed moves reinjects only them, fewer renormalise the rest to 4 - revealed) |
 
-**The ARCH SURFACE.** 56 of 64 toggles are `structural` AND `family` = `arch`. That set is what `--arch production` applies and what the ARCH-SURFACE guard compares against `designs/production_config.json` on every FRESH launch (`main.train.arch_surface`, read by `--dry-run`, `python -m main.checkargs` and the launcher alike). `family` = `critic` marks a readout an experiment deliberately VARIES (the win-prob critic implies one and refuses two others), so it is excluded from both; `training_coef` / `runtime` / `resume_immutable` are excluded by CLASS.
+**The ARCH SURFACE.** 57 of 65 toggles are `structural` AND `family` = `arch`. That set is what `--arch production` applies and what the ARCH-SURFACE guard compares against `designs/production_config.json` on every FRESH launch (`main.train.arch_surface`, read by `--dry-run`, `python -m main.checkargs` and the launcher alike). `family` = `critic` marks a readout an experiment deliberately VARIES (the win-prob critic implies one and refuses two others), so it is excluded from both; `training_coef` / `runtime` / `resume_immutable` are excluded by CLASS.
 
-**Dependencies.** 40 of 64 toggles name a `requires`. The column lists only DIRECT dependencies; the transitive closure is `flag_registry.requirement_closure(name)` — e.g. enabling `intent_conditional` also pulls in `opp_intent`, `entity_topk_seats`, `damage_op`, `move_belief_mode`, `attend_unrevealed_opponents`, `move_latent`, `damage_outgoing`, `damage_matrices_outgoing`. "Enabled" follows `flag_registry.is_enabled`: `False` / `0` / `'off'` / `'none'` are OFF, everything else is ON.
+**Dependencies.** 41 of 65 toggles name a `requires`. The column lists only DIRECT dependencies; the transitive closure is `flag_registry.requirement_closure(name)` — e.g. enabling `intent_conditional` also pulls in `opp_intent`, `entity_topk_seats`, `damage_op`, `move_belief_mode`, `attend_unrevealed_opponents`, `move_latent`, `damage_outgoing`, `damage_matrices_outgoing`. "Enabled" follows `flag_registry.is_enabled`: `False` / `0` / `'off'` / `'none'` are OFF, everything else is ON.
 
 Two constructor checks are STRONGER than the column can say, and stay hand-written in `Gen3FeaturesExtractor.__init__`: `damage_op` needs `move_belief_mode` in *{revealed, both}* specifically (the column can only say "enabled"), and `edge_bias_families` carries a requirement PER FAMILY LETTER — most families need `damage_op`, `d1/s1/c1/c2` also need `damage_outgoing`, `d3/s3` need `entity_topk_seats > 0`, `r` needs `history_events`, and `h` needs nothing — which no flag-level declaration can represent. `flag_requires_test.py` holds that list and fails if a new coupling appears in neither place.
 
@@ -193,6 +194,7 @@ Two constructor checks are STRONGER than the column can say, and stay hand-writt
 - `g_ledger` — Finding 7 (two end-of-turn rules): under 'eot' the g cell, c4's nets and the static op content read eot_residual.EotResidualRule grouped into the ledger's four columns (eot_residual.g_cells). No parameters.
 - `effective_stats` — The probe battery: a boost's SIZE reads at R2 <= 0.10 while 'is boosted' reads at AUC 0.97 (the role network squashes the stage columns). static_facts.effective_stat_features; one zero-init bias-free IsolatedLinear (7 -> 128) built LAST, no RNG draw. Composes with either token encoding.
 - `move_target_state` — --move-actor-state's sibling (the TARGET of the moves). The probe battery: their HP reads at R2 0.85 at its own token but 0.26-0.34 at our decision tokens. static_facts.move_target_features; one zero-init bias-free IsolatedLinear (8 -> 128) built LAST, no RNG draw. Composes with either token encoding.
+- `move_set_closure` — The four-move fact (a gen-3 mon has at most four moves). Every other consumer (the op roster, E4 / E5, OTHER_move, the active's reinjection) already reads the fixed-mass presence; the bench / hidden rows' reinjection was the one leak (F-X5-33): a trained screen final moves its value by a median 2.9 pp under a +-6 logit bump on a four-revealed bench mon's unrevealed moves. Builds nothing; the weights carry the move head's graph (sigma(a + tau), tau no-grad).
 <!-- END GENERATED: registry-table -->
 
 ## Out of scope

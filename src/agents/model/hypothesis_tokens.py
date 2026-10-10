@@ -290,7 +290,8 @@ class OpRoster:
 
 
 def slot_move_presence(hb: Any, move_logits: torch.Tensor, species: torch.Tensor,
-                       revealed_ids: torch.Tensor) -> "tuple[torch.Tensor, torch.Tensor, torch.Tensor]":
+                       revealed_ids: torch.Tensor,
+                       graph: bool = False) -> "tuple[torch.Tensor, torch.Tensor, torch.Tensor]":
     """Per opponent mon, its FIXED-MASS move presence (§3.2 "Moves", applied to every slot):
     ``(w [B,6,M], rev_move [B,6,M] bool, sel [B,6,M] bool)``.
 
@@ -302,7 +303,11 @@ def slot_move_presence(hb: Any, move_logits: torch.Tensor, species: torch.Tensor
     the order key (2 on a revealed non-HP move — structural, never a float compare with π — else
     ``w``); ``sel`` the selectable moves (the candidates of a LIVE group, the revealed moves but 237, and
     a revealed HP's typed channels; a mon whose four moves are all revealed has ``k_m = 0`` and no
-    candidate — structural, so a π ≡ 0 row never reads as a tie). The key is `slot_order_key`."""
+    candidate — structural, so a π ≡ 0 row never reads as a tie). The key is `slot_order_key`.
+
+    ``graph`` (`--move-set-closure on`, gen3_move_set_closure_v1): ``w`` carries the GRAPH of ``move_logits`` —
+    the same VALUES, π = σ(a + τ) with τ a no-grad shift (`fixed_size_tau`), so the gradient reaches the move
+    head exactly as the sigmoid weights it replaces did; the op's roster keeps the detached default (M10)."""
     from agents.observation.moves import HIDDEN_POWER_MOVE_NUM as HP
     from agents.model.hypothesis_set import MOVE_GROUP_MASS, fixed_mass_presence, move_candidates
     B, T, M = move_logits.shape
@@ -312,11 +317,20 @@ def slot_move_presence(hb: Any, move_logits: torch.Tensor, species: torch.Tensor
     cand, revealed, r = move_candidates(legal, hb.move_valid, revealed_ids.reshape(B * T, -1))
     cand, revealed, r = cand.reshape(B, T, M), revealed.reshape(B, T, M), r.reshape(B, T)
     k_m = (MOVE_GROUP_MASS - r).clamp(min=0)
-    pres = fixed_mass_presence(move_logits.detach(), cand, k_m)                      # [B,6,M]
+    # The default (detached) path keeps its expressions VERBATIM (dynamo names graph nodes after locals).
+    if graph:
+        pres = fixed_mass_presence(move_logits, cand, k_m)                           # [B,6,M], a + τ carries the graph
+    else:
+        pres = fixed_mass_presence(move_logits.detach(), cand, k_m)                  # [B,6,M]
     pi = pres.pi
+    if graph:   # the same values on a live candidate, through the graph (`Presence.logits` = a + τ)
+        pi = torch.where(cand & pres.live.unsqueeze(-1), torch.sigmoid(pres.logits), pi)
     dt = pi.dtype
     hp_rev = revealed[..., HP]                                                       # [B,6]
-    typed = torch.sigmoid(move_logits.detach()[..., _TYPED_HP[0]:_TYPED_HP[-1] + 1].to(dt))
+    if graph:
+        typed = torch.sigmoid(move_logits[..., _TYPED_HP[0]:_TYPED_HP[-1] + 1].to(dt))
+    else:
+        typed = torch.sigmoid(move_logits.detach()[..., _TYPED_HP[0]:_TYPED_HP[-1] + 1].to(dt))
     p_t = typed / typed.sum(-1, keepdim=True).clamp(min=torch.finfo(dt).tiny)       # [B,6,16]
     one = torch.ones((), dtype=dt, device=pi.device)
     w = torch.where(revealed, one, pi)

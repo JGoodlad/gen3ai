@@ -57,6 +57,7 @@
   "move_prior_fusion": true,
   "move_resolution": "off",
   "move_resolution_facts": "off",
+  "move_set_closure": "off",
   "move_target_state": "off",
   "net_arch": [
     512,

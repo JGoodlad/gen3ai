@@ -460,6 +460,9 @@ class ModelVersionFields:
     # `--move-target-state {off,on}` (their active's HP + status on our E3 seats). STRUCTURAL (each builds a projection).
     effective_stats: str = "off"
     move_target_state: str = "off"
+    # gen3_move_set_closure_v1 (config v154): `--move-set-closure {off,on}` — every opponent slot's MoveBelief
+    # reinjection reads its fixed-mass move presence (k = 4 − revealed). STRUCTURAL (it changes the forward).
+    move_set_closure: str = "off"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

@@ -571,7 +571,11 @@ from typing import Any, Dict
 #   ACTIVE mon's stage-applied stats as zero-init token content) and `move_target_state` {off,on} (their active's HP +
 #   status onto our E3 seats). Each gated in check_compatible; a pre-v153 config migrates to off / off. No
 #   ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 153
+# v154 (gen3_move_set_closure_v1): one STRUCTURAL field, production at the old value: `move_set_closure` {off,on}
+#   (every opponent slot's MoveBelief reinjection reads its fixed-mass move presence at k = 4 − revealed — the
+#   four-move fact). Gated in check_compatible; a pre-v154 config migrates to off. No ARCH_SIGNATURE bump, no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 154
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

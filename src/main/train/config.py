@@ -532,6 +532,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("g_ledger", "coarse")                 # v152 structural str (the g cell reads the ONE end-of-turn rule)
     _resolve("effective_stats", "off")             # v153 structural str (the active mons' stage-applied stats)
     _resolve("move_target_state", "off")           # v153 structural str (their active's HP + status on our E3 seats)
+    _resolve("move_set_closure", "off")            # v154 structural str (the four-move fact in the belief reinjection)
     _resolve("oracle_reveal", "off")               # v137 RESUME-IMMUTABLE str (the diagnostic observation mode; flagless resume inherits)
     _resolve("token_encoding", "legacy")           # v139 structural str (static tokens; version-checked, fresh-only)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —

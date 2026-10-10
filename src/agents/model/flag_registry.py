@@ -678,6 +678,18 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="--move-actor-state's sibling (the TARGET of the moves). The probe battery: their HP reads at R2 0.85 at "
                    "its own token but 0.26-0.34 at our decision tokens. static_facts.move_target_features; one zero-init "
                    "bias-free IsolatedLinear (8 -> 128) built LAST, no RNG draw. Composes with either token encoding."),
+    # gen3_move_set_closure_v1 (config v154; design_hand_computed_features.md §4, the four-move FACT,
+    # measurements/belief_closure_2026-10-10/), OFF in production (byte-identical).
+    ModelFlag("move_set_closure", "off", Tier.CLI, Klass.STRUCTURAL, 154,
+              "whether EVERY opponent slot's MoveBelief reinjection reads its fixed-mass move presence at k = 4 - "
+              "revealed ('off' = the sigmoid inclusion weights on every slot but the active, production; 'on' = a mon "
+              "with four revealed moves reinjects only them, fewer renormalise the rest to 4 - revealed)",
+              note="The four-move fact (a gen-3 mon has at most four moves). Every other consumer (the op roster, E4 / "
+                   "E5, OTHER_move, the active's reinjection) already reads the fixed-mass presence; the bench / hidden "
+                   "rows' reinjection was the one leak (F-X5-33): a trained screen final moves its value by a median "
+                   "2.9 pp under a +-6 logit bump on a four-revealed bench mon's unrevealed moves. Builds nothing; the "
+                   "weights carry the move head's graph (sigma(a + tau), tau no-grad).",
+              requires=("opp_belief_slots", "opp_intent")),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

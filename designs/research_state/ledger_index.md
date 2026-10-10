@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,074-line file. **The ledger itself is append-only and is never edited by this**;
+24,130-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**837 headings · 782 dated · 2026-08-01 → 2026-10-10 · ledger 24,074 lines.**
+**838 headings · 783 dated · 2026-08-01 → 2026-10-10 · ledger 24,130 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -857,3 +857,4 @@ rename.
   - `L23956` · `2026-10-09` · REGISTRATION · **THE END-STATE CLOSING TEST IS REGISTERED, BEFORE ANY SEED: `--arch endstate` (pin P_end) vs `--arch production` (pin P_prod = `c0f528b4`), 15M, the production recipe, 8 seeds per arm (2001–2008), fixed n, ONE look; the 8 × 8 mirrored cross at P_end, X5's Δ̂ / V̂ on 14 df; the OWNER's rule: PASS iff the two-sided 90 % interval Δ̂ ± 1.761 √V̂ has upper end > 0 AND lower end > −2.0 pp, FAIL otherwise; PASS ⇒ adopt + delete legacy and the judgments, FAIL ⇒ the registered bisection (B2 = `static_recovery` first). The production arm launches now; the end-state arm waits for the SDPA fix + GPU checks + the production-identity preconditions**
   - `L24013` · `2026-10-09` · BUILT · **THE PROBE BATTERY'S TWO FACTS (`gen3_probe_facts_v1`, v153): `--effective-stats` (each active mon's stage-applied stats + accuracy / evasion multipliers as token content) and `--move-target-state` (their active's HP + status on our E3 seats), both OFF, both added to `--arch endstate`; production byte-identical**
   - `L24035` · `2026-10-10` · MEASURED · **THE DEFERRED GPU CHECKS ON THE END-STATE GRAPH at `43a59bbd`: P (production) PASS and R (`--arch static_recovery`) PASS (R1 compiled == eager, T2 CUDA graphs, a real launch to the update-10 canary); R costs `train_ms` +14.8 %, rows/s −11.4 %, `UpdateFit` headroom −556 MiB; E (R + move-resolution + speed-physics + no value-threat-inject + principled + obs-facts) FAILS the R1 startup gate with a REAL Inductor compiled-gradient error (1,000× eager's own fp32 error vs float64), formed only by the conjunction obs-facts × move-resolution × principled × value-threat-inject off; the same offline probe reads CLEAN at `c0f528b4`**
+  - `L24075` · `2026-10-10` · MEASURED + BUILT · **THE FOUR-MOVE CLOSURE: every fixed-mass reader of the opponent's moves already knows "four revealed ⇒ no other move", except MoveBelief's REINJECTION on every non-active slot (F-X5-33), a measured GIGO leak (trained screen final: a bump of a benched four-revealed mon's unrevealed beliefs moves the value by a median 4.0 pp, argmax 13.6 %); `--move-set-closure on` (`gen3_move_set_closure_v1`, v154, OFF) closes it. The garbled `data/teams/` nicknames reach NOTHING the model reads (byte-identical observations three ways)**

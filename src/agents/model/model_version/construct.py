@@ -256,6 +256,9 @@ class ModelVersionConstruction(ModelVersionFields):
                 policy_kwargs.get("features_extractor_kwargs", {}).get("effective_stats", "off")),
             move_target_state=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_target_state", "off")),
+            # gen3_move_set_closure_v1 (v154): the four-move fact in the bench / hidden reinjection.
+            move_set_closure=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_set_closure", "off")),
             # gen3_endstate_facts_v1 (v152): the five fact-completion levers.
             move_resolution_facts=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution_facts", "off")),

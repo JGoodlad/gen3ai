@@ -103,6 +103,10 @@ TYPED_HP_NUMS = tuple(range(355, 371))
 N_TEAM_SEATS = TEAM_SIZE
 #: The opponent active's move group mass (§3.1: "mass 4").
 MOVE_GROUP_MASS = 4
+#: `--move-set-closure` (gen3_move_set_closure_v1, v154): whether EVERY opponent slot's MoveBelief reinjection reads its
+#: fixed-mass move presence at k = 4 − revealed (`on`) or the sigmoid inclusion weights (`off`, production) — the
+#: opponent active's row is the move group's in both.
+MOVE_SET_CLOSURE_MODES = ("off", "on")
 
 
 # ============================================================================ the pure construction

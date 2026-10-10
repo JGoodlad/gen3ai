@@ -13520,3 +13520,24 @@ read both cells for its end-of-turn rule and found them wrong.
   graph ~15 parameters sat at 2-5e-3 compiled error against eager's 1e-6 (>= 1,000x), all UNDER the trained-regime bar
   9.88e-3; only `choice_proj` tripped it. The per-regime constant bar is not an envelope, so a graph that is wrong across the
   board can pass whenever its worst parameter stays under it. Ranks 2-12 shifted down by one.
+## 2026-10-10 — v154 / `gen3_move_set_closure_v1`: the FOUR-MOVE closure in the move belief's reinjection, `--move-set-closure` (OFF; production byte-identical; in no named arm)
+
+- **Why.** The prober showed a Skarmory with all four moves revealed still "believing" Roar at 92 %
+  (`designs/prober/battle_viewer_ux_2026-10-09.md`). The audit (`measurements/belief_closure_2026-10-10/`):
+  the published move posterior has no four-move limit (Hidden Power aside), every fixed-mass reader closes it itself (the
+  ACTIVE's move group: E4 / E5 / OTHER_move / the op / the flat pointer / its reinjection; the op's per-mon roster), and
+  the ONE leak is MoveBelief's reinjection on every non-active slot, which read `sigmoid(logits)` (F-X5-33). A ±6-logit
+  bump on a benched four-revealed mon's unrevealed moves moves the trained `rb_st_static_s1008` final's value by a median
+  4.0 pp and its argmax on 13.6 % of 860 bank decisions; on a four-revealed ACTIVE it moves nothing (1,481). An alive
+  benched mon with four revealed moves is in 3.4 % of the probe bank's decisions (any alive mon: 10.5 %).
+- **`--move-set-closure {off,on}`** (STRUCTURAL; builds nothing, no RNG draw): `on` gives every non-active slot's
+  reinjection its per-slot fixed-mass presence (`hypothesis_tokens.slot_move_presence(..., graph=True)`: 1 revealed,
+  σ(a + τ) with Σ = 4 − r over the slot species' legal unrevealed moves, 0 at r = 4) — the op roster's construction and
+  values, carrying the move head's graph (τ no-grad) so the PPO → move-head route these rows had is kept. Requires the
+  belief family (refused at build). `off` keeps the production expressions verbatim.
+- **Versioning.** Config 153 → 154: one STRUCTURAL field gated in `check_compatible`, migrated to `off`; no
+  `ARCH_SIGNATURE` / floor change.
+- **Tests.** `move_set_closure_test.py`: the construction (values = the detached roster presence, mass 4 − r, 0 at r = 4,
+  a gradient), `on` bit-identical under the bump on constructed boards (a benched mon given four moves), `off` moves
+  (the leak, pinned so `on` cannot pass vacuously), the active case bit-identical in both modes, the build refusal, the
+  versioning. Reverting the forward branch fails the bench case.

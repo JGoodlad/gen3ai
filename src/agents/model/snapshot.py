@@ -1492,6 +1492,7 @@ def current_model_version(
     g_ledger: str = "coarse",
     effective_stats: str = "off",
     move_target_state: str = "off",
+    move_set_closure: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1575,6 +1576,8 @@ def current_model_version(
     # gen3_probe_facts_v1 (v153): the probe battery's two facts — structural.
     ext_kwargs["effective_stats"] = str(effective_stats)
     ext_kwargs["move_target_state"] = str(move_target_state)
+    # gen3_move_set_closure_v1 (v154): the four-move fact — structural.
+    ext_kwargs["move_set_closure"] = str(move_set_closure)
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1691,6 +1694,8 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_probe_facts_v1 (v153): each builds a projection, so a frozen opponent's gate must see it.
         "effective_stats": str(getattr(fe, "effective_stats", "off") or "off"),
         "move_target_state": str(getattr(fe, "move_target_state", "off") or "off"),
+        # gen3_move_set_closure_v1 (v154): changes the forward, so a frozen opponent's gate must see it.
+        "move_set_closure": str(getattr(fe, "move_set_closure", "off") or "off"),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

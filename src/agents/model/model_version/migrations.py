@@ -538,6 +538,10 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("effective_stats", "off")
         data.setdefault("move_target_state", "off")
         data["config_version"] = 153
+    # v154 (gen3_move_set_closure_v1) — one structural field, absent before (the only possible past).
+    if version < 154:
+        data.setdefault("move_set_closure", "off")
+        data["config_version"] = 154
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

@@ -1,0 +1,18 @@
+{
+ "bank": "/home/goodlad/gen3ai_archive/probe_battery/bank_v1",
+ "decisions": 25000,
+ "frac_any_opp_mon_4_revealed": 0.1506,
+ "frac_any_ALIVE_opp_mon_4_revealed": 0.10476,
+ "frac_opp_ACTIVE_4_revealed": 0.0756,
+ "frac_alive_BENCH_mon_4_revealed": 0.0344,
+ "frac_any_ALIVE_opp_mon_3plus_revealed": 0.33208,
+ "rows_with_exactly_one_active": 1.0,
+ "hist_max_revealed_per_decision": [
+  790,
+  4198,
+  8360,
+  7887,
+  3765
+ ],
+ "mean_mons_with_4_per_decision": 0.1728
+}

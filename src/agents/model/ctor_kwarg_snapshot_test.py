@@ -82,6 +82,7 @@ CTOR_KWARGS_V96 = frozenset({
     "g_ledger",
     "effective_stats",
     "move_target_state",
+    "move_set_closure",
     "obs_facts",
 })
 
