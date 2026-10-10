@@ -305,3 +305,95 @@ revert-catcher; the non-scalar skip; provenance content + sha; the second call b
 grandparent prefix; the seam's restart/fresh/disabled/missing-parent no-ops; the census incl. the
 `derived` flag; and the torch-free + no-second-fork-predicate contracts.
 
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### MatchupSpec — the declared matchup (`matchup_spec.py`)
+
+**The ONE explicit declaration of what a run's battles look like** — built ONCE in `train_rl_agent`
+(`MatchupSpec.from_args(args)`), then CONSUMED, never re-derived (the `plan.json` pattern). It
+exists because one week produced four independent failures with a shared root: *the matchup a run
+plays was assembled implicitly across seams that nothing forced to agree*.
+
+🚨 **`spec_hash()` is a MEASUREMENT-REGIME TAG: two runs or eras with different hashes are NOT
+metric-comparable.** It is stamped into `metadata.json`, every `eval_results.jsonl` row,
+`eval_manifest.json`, each checkpoint sidecar and `snapshot_history`; a `--model` launch whose
+declared matchup differs from the checkpoint's recorded one prints `⚠️ [MATCHUP DRIFT]` with the
+field-level diff, worded **RESTART** (a mid-run change) or **FORK of <parent>** (the expected case for an
+exploiter fork of a self-play parent). **The two sides are
+independent BY CONSTRUCTION** (`trainee_teams` / `opponent_teams`), so the mirror-bug class is
+structurally closed.
+**Full detail — in [`designs/training/matchup_and_lineage.md`](matchup_and_lineage.md).**
+
+### WHICH FILE a run spec names — the ONE resolution rule (`gen3_last_snapshot_resolution_v1`)
+
+**A bare run directory resolves to the run's LAST SNAPSHOT, not to `best_model/best_model.zip`.**
+Owner ruling, 2026-09-06. `best_model` is exported on **BOT win rate** — an opponent set with
+nothing to do with what a model reused as a teacher / target is needed FOR — and probe H8 measured the consequence:
+for 2 of 8 unfunded R5F teachers the exported file was a ~0.93M-step exploiter rather than the
+~2.93M final, and **nothing recorded which file was used**. Every meter this programme banks scores
+a run at its END, so the last snapshot is what the metrics already measure.
+
+#### The rungs, for a BARE run dir (no `@step`)
+
+| # | rung | file |
+|---|---|---|
+| 1 | `latest_txt` | `<run>/latest.txt` — a run-RELATIVE path (root CLAUDE.md); resolves both forms it can hold (`checkpoints/checkpoint_<N>_steps.zip` and the bare `final_model.zip`) |
+| 2 | `highest_checkpoint` | the highest-step `checkpoints/checkpoint_<N>_steps.zip`, **including** the SIGUSR1 `checkpoint_forced_<N>_<HHMMSS>.zip`; legacy run-root copies too |
+| 3 | `final_model` | `final_model.zip` / `final_model_interrupted.zip` (the higher of the two) |
+| 4 | `best_model_fallback` | `best_model/best_model.zip`, then the legacy `<run>/best_model.zip` — **LAST**, only for a run that has nothing else, and it says so on **stderr** when it fires |
+
+Two more rungs are not ladder steps at all — they are the ways a caller names a file outright, and
+both **bypass the ladder entirely**: `explicit_step` (`<run>@<step>` → that checkpoint) and
+`explicit_zip` (a path ending `.zip`, **`best_model/best_model.zip` included**, used verbatim).
+**Naming the file is how you pin it.** Each rung also reports a coarse `rule` — `explicit_step` /
+`explicit_zip` / `last_snapshot` (rungs 1-3) / `best_model_fallback`.
+
+#### 🚨 DISAGREEMENT: the higher `num_timesteps` wins, not the earlier rung
+
+Rungs 1-3 are three names for "the end of this run", and they disagree in **both** directions:
+
+* a **COMPLETED** run writes `latest.txt → final_model.zip` *after* its last periodic checkpoint, so
+  `latest.txt` is AHEAD of `checkpoints/`. Measured on the eight R5F runs (2026-09-06):
+  `final_model.zip` @**28,115,184** vs the highest checkpoint @**28,067,760** — **47,424 steps
+  apart**, and rung 1 fires for every one of them;
+* an **INTERRUPTED** / crashed run can leave `latest.txt` naming a file a later
+  `final_model_interrupted.zip` has since passed.
+
+Taking the earlier rung is right in the first case and wrong in the second, so neither ordering is
+the rule. The rule is **the file that trained furthest**, with the rung order used only to break a
+tie — or to decide when NO candidate declares a step at all (an unreadable zip). `num_timesteps` is
+read from the SB3 zip's plain-JSON `data` member (`lineage.checkpoint_num_timesteps` — no torch, no
+model load), falling back to the `checkpoint_<N>_steps.zip` filename. `best_model` is not on that
+tier at all: it is a different SELECTION rule, so it never competes on steps and loses to every
+other rung even when it trained further.
+
+**Every consumer goes through ONE choke point** —
+`agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
+carrying the rung, the rule and `num_timesteps`. It serves `--stable-opponents` and `--exploiter`
+(and, until deletion pass L1 / L3 / L4 / P11, the exploiter ladder, the distillation, PBRS-source and
+consensus-warm-start flags); `run_spec_test.py` holds the census that
+fails, naming the file and its flags, when one of them stops. 🚨 **EVERY TEACHER LOADED BEFORE
+2026-09-06 WENT THROUGH THE OLD RULE and recorded nothing about it** — `main.lineage` says so
+rather than re-resolving under today's rule, because a current answer presented as history is worse
+than no answer. **NOT VERSIONED**: this changes which FILE a run loads, never a weight shape.
+**Full detail — in [`designs/training/matchup_and_lineage.md`](matchup_and_lineage.md).**
+
+### LINEAGE — who forked whom (`lineage.py`, `python -m main.lineage`)
+
+`metadata.json`'s **`lineage`** block states the fork graph instead of implying it: `role`
+(`fresh`/`fork`/`fold`/`exploiter` — `fold` and `teachers` are HISTORICAL: nothing writes them since
+distillation was deleted, but the reader still derives them from OLD recorded commands),
+`fork_parent`, `exploiter_target`, a walked
+`ancestry` and an `ancestry_stop` saying where the chain went dark and why. 🚨 **IMMUTABILITY is the
+whole feature** — the existing value always wins, because a launcher restart re-derives the block
+and would silently re-point the recorded parent at the DRIFTED student. 🚨 **RECORDED and DERIVED
+are INDEPENDENT**: a block REGEXed out of `original_command` is a recorded GUESS, and the CLI's
+header says both. **The FRESH form is explicit** (`fork_parent: null`) — "no block" and "no parent"
+are different facts. A fork also inherits its parent's TB curves as a TRUNCATED prefix
+(`tb_inherit.py`, `--no-tb-inherit` opts out); truncation is not optional, or parent-only progress
+draws inside the fork's own step range.
+**Full detail — in [`designs/training/matchup_and_lineage.md`](matchup_and_lineage.md).**

@@ -151,3 +151,141 @@ accumulation makes anyway — and `--adaptive-batch total`'s input), `signal/*`,
 ## Rollout collection — the Rust complete-game collector is the ONLY collector
 
 > The Python collectors are DELETED (deletion pass U3): the per-step-barrier `SubprocVecEnv` path, the async-wave collector (`AsyncSubprocVecEnv`, `collect_rollouts_async`, and the async-rollout flag) and `OwnedLoop._collect_python`. `InstrumentedMaskablePPO.collect_rollouts` / `OwnedLoop` collect only through the Rust collector (`rust_rollout/`; a `RolloutProbes.collect_rollouts` with no `_rust_collector` raises). Design and hazards: [`rust_collector.md`](rust_collector.md). The async design record, with its dated FPS table (+14% at `--n-envs 64`, heuristic opponents) is history: `designs/ai_v5/design_async_rollout.md`.
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### The PPO step (`instrumented_ppo/`) — and the FOLD ORDER contract
+
+`instrumented_ppo` is a PACKAGE whose `__init__.py` is a pure re-export hub; the module map and the
+two source-pin rules (a pin that says "in `train()`" should read `ppo.train_step_source()`; a
+monkeypatch follows the SYMBOL) are in
+[`designs/training/ppo_step.md`](ppo_step.md). **The contract below stays
+here, because it is the thing a fold edit must not get wrong.**
+
+**THE FOLD SEQUENCE is TWO straight lines** (K8, `gen3_learner_micro_step_v1`): steps 1 to 3a below
+are the body of ONE function, `instrumented_ppo/micro_step.micro_step` — the compile REGION R1 under
+`--compile-trainer` (`fullgraph=True`), eager otherwise — and `train()` folds the steps after 3a onto
+R1's loss as the DECLARED EAGER TAIL, in order. Each part is straight-line source and
+`instrumented_ppo_hub_contract_test.py` pins both orders. 🚨 **R1 is a static-shape program**: no
+host read (`.item()`, `float(t)`, `bool(t)`), no boolean-mask indexing / `nonzero` / `bincount`, no
+Python branch on a tensor value, no numpy — a diagnostic is a `(value, weight)` pair of 0-d tensors
+(weight 1.0 exactly where the old fold appended to its list), and `train()` reads ALL of a micro-batch's
+diagnostics as ONE packed device tensor (`micro_step.pack`). 🚨 **That read is DEFERRED to the next optimizer step's
+one transfer** (`instrumented_ppo/host_reads.py`, `gen3_batched_host_reads_v1`, T25 item 1) unless something
+before the backward needs it, and the K9(c) loss / KL verdicts ride it; a new per-micro-batch host read in
+`train()` (an `.item()`, a `float(t)`, an `as_numpy`) goes through the queue too, or it is a full GPU-queue drain
+×480 per production update — `host_sync_guard_test.py` FAILS on one. The belief losses' static twins are
+`belief_bank_static.py`; the opponent-intent block's is `instrumented_ppo/intent_fold.py`, which dispatches to
+X5's flat-pointer fold (`flat_intent_fold.py`; the blob α / β fold was deleted at the X5 version break, v144) — the
+legacy `belief_bank` functions stay as the REFERENCE they are pinned equal to (float64 to 1e-12). A new term on the production surface belongs in R1, written to these rules; anything else
+joins the tail in contract order. What moved out of `train()` before K8 is everything AROUND the
+sequence: the pre-loop setup (`train_setup`, incl. R1's static flags `_micro_static`), the metrics
+export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
+
+🚨 **THE LOOP AROUND `train()` IS OURS TOO** (`gen3_owned_ppo_loop_v1`, `src/agents/training/instrumented_ppo/loop.py`;
+[`designs/endstate/design_own_ppo_loop.md`](../endstate/design_own_ppo_loop.md)): `learn()`
+is the declared `LOOP_PHASES` table, and `_setup_learn` / `dump_logs` are
+vendored from sb3 operation for operation (hash-pinned). **PPO stage 3 (deletion pass U4) took the rest of
+sb3's RUNTIME off it — each owned module holds sb3's arithmetic for our one layout and REFUSES any other:**
+the rollout buffer (`rollout_buffer.py`, `gen3_owned_rollout_buffer_v1`: host numpy, sb3's `get()`
+permutation — the K9 golden is its bar), the logger (`train_logger.py`, `gen3_owned_logger_v1`: the same
+tags, steps, stdout table and `name_to_value` bus; its writers pair values with exclusions KEY FOR KEY —
+`paired()` raises on a key only one side holds, where sb3's `zip(strict=True)` checked lengths only), the callback protocol (`loop_callbacks.py`,
+`gen3_owned_callbacks_v1`: declared events, and the per-step locals declared in `STEP_LOCALS` — an
+undeclared key, an sb3 callback or a bare function is refused) and the env base (`trainer_env.py`: the
+learner's env must be a `TrainerVecEnv` — `RustVecEnv`, or `testkit.ToyVecEnv` in a test). The
+`GEN3AI_PPO_LOOP=sb3_reference` seam and its lockstep test against upstream are gone with it. Four things
+an edit must not break: the **dump stays BEFORE the update** (update k's `train/*` is stamped after
+rollout k+1 — the archive's TB convention); the **final dump** (`gen3_final_update_dump_v1`, P3) writes the
+LAST update's pending scalars at `learn()`'s end, at the current step (so on a normal end the `train/*`
+tags carry two points at the final step — update k-1's, then update k's), and the abort / graceful-restart
+path (`main/train/lifecycle.py`) runs the loop's own `dump_logs()` before it saves — at a SAFE POINT only
+(`main/train/deferred_abort.py`, `gen3_deferred_abort_v1`: a stop signal just records the request, and
+`GracefulRestartCallback` runs it at every loop event, never inside an update or a dump; a new loop event
+or a new place that dumps must not become a place the abort can run mid-update) — so a test reads what
+an update logged from a recorded dump (`testkit.record_dumps`), never from `name_to_value` after `learn()`;
+**`learn` > `collect` | `update` are the DECLARED HOOK POINTS** (`agents/training/loop_hooks.py`,
+`gen3_declared_loop_hooks_v1`: K6's freeze guard and the compile sentinel REGISTER there, outermost first
+by `HOOK_OWNERS`; the table freezes at training start and a late, duplicate or undeclared hook is
+FATAL_CONFIG — never reassign a learner's bound method to hook it); and the **`step` event fires before
+the buffer row is written**, with the declared step locals (`infos`, `dones`). `owned_loop_test.py` pins
+the dump order, the final dump, the env refusal and the protocol; `rollout_buffer_test.py` /
+`train_logger_test.py` hold the buffer and the logger EXACT against sb3's while sb3 is installed (stage 4
+drops it — `design_own_ppo_loop.md` §3.4). 🚨 **REGIME BOUNDARY
+(`gen3_eval_dump_isolation_v1`, 2026-10-01):** an eval cycle's mid-rollout `logger.dump(step)` used to
+CLEAR the previous update's `train/*`, so the KL→LR controller (and RankTripwire) skipped one reading per eval cycle — 5% of N0's updates. Both eval callbacks'
+`_collect_pending` now run under `logger_scope.isolated_dump`, so the cycle dumps only its own scalars.
+A live-controller run from that commit onward is not comparable with an earlier one on its LR / dose
+trajectory (`designs/training/step_size_and_batch.md`). A new callback that dumps the logger
+mid-rollout MUST use the same decorator. **Seeding is OURS too** (`gen3_owned_seeding_v1`, `OwnedLoop.set_random_seed`):
+sb3's draws in sb3's order and NO cuDNN flag — sb3 set the process-wide `cudnn.deterministic=True` on
+every CUDA construction and load (a nominal regime boundary: 0 cuDNN kernels run in a production update).
+🚨 **No global RNG is SEEDED after the freeze** (`gen3_no_global_reseed_v1`, `global_rng_guard.py`): `LearnerFreeze` arms a guard
+on `random.seed` / `numpy.random.seed` / `torch.manual_seed` and kin, so a seed is `GlobalReseedError` (FATAL_CONFIG) naming its
+site. An opponent / reader load (`InferenceMaskablePPO`) never seeds and builds inside `isolated_global_rng()`. Until 2026-10-02
+every load re-seeded to the snapshot's seed, which replayed the minibatch permutation. A stream that must repeat owns a generator. Static twin: `src/global_rng_seed_gate_test.py`. Detail:
+`designs/training/learner_lifecycle.md` "No global reseed after the freeze".
+
+**K9 — the learner's GIGO gates** ([`designs/training/learner_gates.md`](learner_gates.md)).
+🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and
+every loss, per torch build — so ANY change to the fold, a term, a coefficient default or the step
+fails the routine gate until someone re-records deliberately: `python -m agents.training.learner_golden
+record --reason "..."` under EVERY interpreter with an entry (never a routine step). **Its ONE entry is X5's
+fixed-mass surface** (the production model since the X5 version break, v144): the former `arms.fixed_mass` entry
+MOVED VERBATIM to the default slot, then was re-recorded ONCE at the end of the break (the seed-18 buffer rebuilt for
+the 2845-dim observation, the NAME-KEYED perturbation, fp64 reference, K9(b) read and coverage re-taken;
+`learner_golden_fixed_mass_test.py` holds the X5-specific checks); the blob entry and buffer are deleted
+(`learner_gates.md`). Every non-finite
+loss / gradient / buffer value / KL is `main.exit_codes.NonFiniteLearnerError` (tagged `[Learner]
+FATAL`; exit 4, the launcher does NOT restart) BEFORE the optimizer moves anything
+(`instrumented_ppo/learner_gates.py`) — never a `nan_to_num`, a NaN-mask on a trained
+quantity or a skipped step; a new term must reach the assembled loss (or carry its own check), and a
+`where(isfinite)` on a label is a NaN hide unless it means `-inf` (use `isneginf`).
+
+🚨 **K6 — THE LEARNER FREEZES at the first rollout of `learn()`** (`learner_lifecycle.py`, [`designs/training/learner_lifecycle.md`](learner_lifecycle.md)): after it, a NEW optimizer, `nn.Parameter`, module, buffer or optimizer-state entry anywhere in the learner's graph is `LazyAcquisitionError` (`[LearnerLifecycle] FATAL`, exit 3, not restarted) naming the object and its construction site. Build anything the steady state uses at STARTUP — in `_build` / `_setup_model` / an `__init__`, or a function marked `@lifecycle_decl.startup_builder` that the startup path runs — never on the first update. Adam/AdamW state is declared at startup (`declare_optimizer_state`, bit-identical to torch's lazy init). Every run logs a CUDA memory LEDGER by startup step (`cuda_ledger.py`, `<run_dir>/cuda_ledger.json`) and per-update peaks (`lifecycle/cuda_*_peak_*`, `lifecycle/device_batch_mib`); a rust-core pool refresh is a DECLARED LOAD (pool on the CPU; `checked_slot_load` refuses a load that allocates). On CUDA the MEMORY half rides the same attach (`CudaMemoryWatch` over `cuda_memory_trend.py`): a sample after every rollout and update, the OOM projection logged at every window (`[CudaMemTrend]`, TB `lifecycle/cuda_*`), and only a SUSTAINED leak projecting an OOM inside 25 updates stops — `CudaMemoryLeakError`, checkpoint (`final_model_exception.zip`) then exit 6 (`FATAL_CUDA_LEAK`), which the launcher restarts from that checkpoint at most twice per session; a step-up or fragmentation never does. The STATIC twin is `src/learner_lifecycle_gate_test.py` (routine, EMPTY allowlist): a
+construction in a training-step path outside a `@startup_builder` / `__init__` / `_build` / `_setup_model`
+fails the gate before it can fail a run. 🚨 **A CUDA STREAM / GRAPH / GRAPH POOL is a startup acquisition
+too** (the gate's `cuda_resource` kind, `gen3_staged_compute_stream_v1`), and for it a bare `__init__` is
+NOT an exemption — only `@startup_builder` / `_setup_model` / `_build`: the caching allocator keeps a
+cache per stream, so the staged batch's per-update side stream (built in a helper's `__init__`) stranded
++1.86 GiB of reserved over 31 updates of sizing arm B, invisible to every segment counter.
+
+**`train()` carries BENCHMARK-ONLY phase marks** (`gen3_learner_phase_hook_v1`): ~14 lines of
+`if _ph is not None: _ph("<phase>")`, `_ph` read ONCE per call from `instrumented_ppo/phase_hook.py`
+(None in production). A new mark must use exactly that guarded one-line form and a name in
+`phase_hook.PHASES`; `learner_benchmark_test.py` pins the guard, the names, and that installing a
+hook changes no parameter. The one consumer is `learner_benchmark.py` (where an update's wall time
+goes — `designs/ops/testing.md` → Benchmarks), and its workers measure the LEARN LOOP's update only: the
+trainer's own startup `train()` (the CUDA fit check's dry update) runs production's code (`learn_loop_only`).
+
+Per minibatch (1 to 3a inside R1):
+
+1. the upstream PPO loss (`policy_grad_coef·policy_loss + ent_coef·entropy + vf_term` — `--policy-grad-coef`
+   scales ONLY the clipped surrogate, never entropy/value/aux; at the 1.0 default the UNSCALED
+   `policy_loss` tensor is used, byte-identical to upstream, and 0.0 removes the policy-gradient
+   term alone. Training-only, the `training_coef` provenance
+   class: recorded, `_resolve`-inherited on a flagless resume, never gated)
+2. the belief bank — the hidden-team set BCE (X5), opponent intent (the flat pointer's CE), move / spread /
+   nature-EV / HP-type / item belief, move-latent
+3. (3a) the win-prob BCE — the last R1 term
+4. (retired — the value-dist HL-Gauss CE was deleted with the dist head; the numbering below is unchanged)
+5. (retired — the distill family was deleted with distillation, config v133; the numbering is unchanged)
+6. (retired — search-teacher AWR and OPD were deleted with the search teacher, config v133)
+7. (retired — the TD-consistency auxiliary was deleted, P11c; the numbering is unchanged)
+8. (retired — the counterfactual block (cf-winprob, cf-evidential, cf-twin, cf-shadow, q-winprob) was deleted with the cf training half, config v134; the numbering is unchanged)
+
+**No flag combination reorders these.** Each term is guarded by its own `if <x>_on:`; a term that
+is off contributes nothing and moves no one. **A tail fold that runs its OWN extractor
+forward CLOBBERS the minibatch's stashes** (`last_win_prob_logits`, `last_spread_belief`, …)
+that steps 2-4 read. Moving a stash-reading fold below such a fold does not crash — it silently scores
+the wrong states. `instrumented_ppo_hub_contract_test.py` pins R1's order and that the R1 call
+precedes every eager-tail fold by reading the source, along with the mixin base list (a dropped mixin removes a
+whole family of loss terms without breaking an import) and `MaskablePPO` staying LAST in the MRO
+(or `_excluded_save_params`'s `super()` stops reaching upstream and checkpoints start pickling a
+`threading.Lock`). It also walks the package's own import graph TRANSITIVELY from the hub, so a
+module reached only through `train_setup` still counts as reachable — requiring a direct edge from
+`__init__`/`ppo` would forbid a decomposition rather than check one.

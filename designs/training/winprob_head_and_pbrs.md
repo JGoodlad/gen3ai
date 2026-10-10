@@ -73,3 +73,26 @@ never "the whiff was the mistake". Action-level badness needs a counterfactual c
 structurally lacks. That is why "shaping has been live for generations and the bait loops persist" was
 never a dose mystery — the live mode was never pointed at behavior. The routes that WERE pointed at it
 (the win-prob PBRS family) are deleted; their design is `designs/ai_v12/design_winprob_behavior_coupling.md`.
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### The win-probability head (`--win-prob-mode`); its PBRS routes were DELETED
+
+A calibrated **P(win|state)** supervised by the Monte-Carlo episode OUTCOME, filled onto every
+row of a game by the Rust collector (`store.fill_complete`); a game still in progress is
+**never trained toward a fabricated label**. `win_target`/`win_mask` are TRAINING-ONLY obs keys
+read only by the loss, so the outcome cannot leak into the forward.
+
+🚨 **`--win-prob-mode shaping` carries NO behavioral force, and the word has misled readers.** It is
+**REPRESENTATION** shaping — the BCE gradient reaches the shared trunk; there is no gradient path
+anywhere from *predicting wins* to *choosing winning actions*, because the logit is a SIDE readout
+never concatenated into pi/vf. **The head is a BAROMETER, not a coach.** It is also
+self-referential: its labels are outcomes under the CURRENT policy, so a habitual whiff that still
+wins 55% teaches it "55%", never "the whiff was the mistake".
+
+**The routes that were pointed at behaviour — `--win-prob-pbrs-coef` (self-φ), `--win-prob-pbrs-source` (a frozen foreign φ) and `--win-prob-pbrs-frozen` (the actor-only frozen potential) — were DELETED** (deletion pass L1, config v131; `designs/deleted_flags.md`, ledger L18659: shaped vs winprob NOT DETECTED).
+**Full detail — in [`designs/training/winprob_head_and_pbrs.md`](winprob_head_and_pbrs.md).**

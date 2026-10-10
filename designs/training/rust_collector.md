@@ -206,3 +206,99 @@ consumer list is `rust_rollout.build.value_slot_ids`. Evidence: `designs/ops/del
 ## The gate — what holds the collector now
 
 The rollout-level slice N and the learner-level check (`rust_rollout/parity.py`: RECORD in Rust, REPLAY through the Python `collect_rollouts` over production-surface `Gen3Env`s) were retired with the Python env core in the deletion pass (U3); no Python path remains to replay against. The collector is held by its own unit and integration tests (`rust_rollout/store_test.py`, `trigger_test.py`, `collector_integration_test.py`, `fork_test.py`), by K9(b)'s behaviour-consistency gate at every update (`consistency.py`, above), and by the Rust-side differential gates (`designs/rust_sim/`). The measured numbers of the retired gate (exact observation / action / reward equality, values and log-probs within 1e-5, one optimizer step within 1e-5 of the Python learner; F-LG-8's amplification over several steps) are history in `designs/research_state/` PROGRESS files.
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### Rollout collection — the Rust complete-game collector is the ONLY collector
+
+There is no Python rollout collector, no per-step `SubprocVecEnv` barrier and no async-wave collector (all deleted in the deletion pass, U3; the async-rollout flag with them). The collector is `rust_rollout/` (see "The env core" below and `designs/training/rust_collector.md`).
+
+🚨 **A STEP-COUNTED CADENCE IS TOTAL ENV STEPS, never vec calls or rollouts** (F-SZ-3, 2026-10-01).
+The periodic checkpoint was SB3's `n_calls % save_freq` at 50,000 calls — 2.4M env steps at N = 48,
+~102M at N = 2048; it now saves when `num_timesteps` crosses each
+multiple of 2.4M (`main.train.constants.checkpoint_due`), like eval, the pool add/refresh it drives,
+and the plasticity canary. A callback CALL is not a fixed number of env steps (N decisions on the Rust collector), so a new cadence compares
+`num_timesteps` against a boundary — never `n_calls`. Everything counted in UPDATES or rollouts
+(`--diagnostics-every`, the compile canary, the team pulls, the CUDA memory-trend horizon, …) moves
+with `n_steps × n_envs`. The table and its tests: `designs/ops/training_runbook.md` → "Cadences and
+N", `src/main/train/cadence_n_independence_test.py`.
+
+**`--policy-gae-lambda` (default 0.80) is the POLICY's GAE λ** (`gen3_policy_gae_lambda_v1`, config v123; the critic's BCE target is the terminal outcome, with no λ-return).
+The former was a literal 0.80 at both `model_build` sites until 2026-09-26; it is now recorded on
+`ModelVersion` and INHERITED on a flagless resume (name it to change it). **`train()` logs one
+`train/approx_kl_epoch_<k>` / `train/clip_fraction_epoch_<k>` pair per epoch that ran**, folded
+from the numbers the loop already computes — ⚠️ stock `train/approx_kl` is the LAST epoch's mean
+while `train/clip_fraction` pools every epoch. Detail:
+[`designs/training/ppo_step.md`](ppo_step.md).
+
+**`--diagnostics-every N` (fresh default 10; `gen3_diagnostics_cadence_v1`, config v124) runs the
+OPTIONAL probes — per-term noise scale, `grad/*`, `rank/*`, `edge/*`, `cell/*` — on every Nth update
+only**, and a skipped update writes NONE of their tags (a gap, never a stale value). The first update
+of every process always runs them (the compile lock follows it), `--rank-tripwire` keeps `rank/*`
+every update and `--adaptive-batch policy` keeps the per-term probe every update. Learning is
+BIT-IDENTICAL at any N (`diagnostics_cadence_test.py`). Recorded + inherited; a pre-v124 run inherits
+1. ⚠️ A reader that windows by reading COUNT (the vf_coef "last 20") now spans N× the updates.
+Detail: [`designs/training/ppo_step.md`](ppo_step.md).
+
+### Where the trainee's observation comes from — the Rust core, the ONLY source
+
+`gen3_core_obs_source_v1`: the trainee's observation row (2845-dim) and 11-bit mask are produced by the Rust core (`__OBS__` frames
+from the `sim_bridge` / env core) and read by the collector; the obs-source flag (a Python-vs-core choice) was deleted in the deletion pass (U3) with the Python env core, so there is no second source to
+diff against. Labels, reward and the action mapping are served by the core too (`rust_rollout/`). **The trainee's `(observation_space, action_space)` has ONE builder,
+`agents.training.trainee_spaces`** (`trainee_spaces()`, `trainee_env_kwargs()` — the per-run label switches as a pure function of the args; no env is built to read them). The Rust env core records a decision only at the env's decision rows (no phantom decision on a `wait` request, no phantom opponent poll; the Python-road fixes `gen3_no_phantom_decision_v1` / `gen3_no_phantom_opponent_poll_v1` were retired with that road, T27 P6).
+Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
+
+### The env core — the Rust core (the ONLY core; the M5 switch, M5 Lane G)
+
+🚨 **`rust` is the ONLY env core** (`gen3_env_core_switch_v1`; the Python core was deleted in the deletion pass, U3, and the one-valued `--env-core` flag with it, P11b: a typed one is refused at parse time with the reason, and no `env_core` attribute is left on the namespace). Every run SIZE is declared in ONE block, `designs/production_config.json` `recipe.sizing`.
+Every launch runs on rust (a fresh `--arch production` or bare argv — the bare argv is the win-prob critic (the only critic) + its three reward values, which the Rust core serves). What stays keyed on the RECORD: a `--model` checkpoint produced on rust runs on it silently, and a PYTHON-ERA checkpoint (produced on python, or before the core was stamped) that trained the WINPROB critic moves onto rust, announced as a CORE SWITCH (`rust_env_setup.env_core_switch_line`, read off `metadata.json`'s `env_core` stamp). A checkpoint that trained the SHAPED critic is REFUSED on a resume or fork whatever the core (`FATAL_CONFIG`, D4 `PythonEraShapedCheckpoint`: run it pinned to its own commit); it still LOADS as an opponent, in the meters and in the prober.
+One refusal: `main.train.rust_env_setup.refuse_python_era_checkpoint`, called by `resolve_config` and
+`checkargs` (read off the checkpoint's recorded critic); pinned by `main/train/env_core_switch_test.py`. Runbook: `designs/ops/training_runbook.md`.
+
+The trainer runs the rollout on the M5 Rust env core: N envs in ONE core (process front end by
+default, `--rust-env-front`), the trainee and every policy opponent forwarded through the inference
+service in ONE flush, the scripted bots played inside the core, and the COMPLETE-GAME collector
+(the only trigger): a game's rows are buffered until it ends, GAE
+and the win label run on the complete game (every row `win_mask` 1), and an update fires at
+`--rollout-target-samples` completed-game rows (default `n_steps × n_envs`), consuming exactly that many
+— no row is dropped or down-weighted for age. Hazards an agent must know before touching it:
+
+- 🚨 **A fresh model is BUILT AT ONE TORCH THREAD** (`model_build.construct_fresh_learner`, `utils.torch_state_guard.single_thread_build`, `gen3_single_thread_init_v1`): SB3's orthogonal re-init is a LAPACK QR whose rounding follows the thread count, so an unpinned build gave a different start for the same `--seed` at a different core count / `OMP_NUM_THREADS`. The caller's count is restored on return; a resume / fork loads strictly and needs none. It is RECORDED: `construct_fresh_learner` sets `model.init_num_threads` to the count `single_thread_build` reported from INSIDE the block (the helper yields it; never the process default), the int rides every checkpoint, `run_io._model_hparams` hands it to `save_model_snapshot`, and `metadata.json`'s `init_num_threads` is IMMUTABLE once written (existing value wins, like `original_command`): a resume keeps the original, a fork (new run dir) records the build its loaded weights came from, and a checkpoint that predates the record leaves the key ABSENT (unknown, never a guessed 1). Pinned by `src/main/train/init_num_threads_test.py`. Any new site that creates and initialises fresh parameters uses the same helper (`fresh_build_threads_test.py`; `designs/training/learner_gates.md`).
+- 🚨 **`--oracle-reveal` is the RUN's observation mode, declared once** (`RustEnvDecl.oracle_reveal`, resume-immutable; a DIAGNOSTIC, never production — `designs/endstate/design_x5_belief_tokens.md` §7.6): the collector's spec and `build_eval_core` (which reads its `collector_decl`) take the same value, so the in-loop eval plays at the run's recorded mode; the Rust core gives each side's chain the other side's team (symmetric; scripted bots unaffected). It is refused with the fork arm (`oracle_reveal_vs_fork_arm`: search chains build `off` rows). `main.h2h` plays an oracle checkpoint only through its PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`, `main.h2h.reveal`: `build_eval_core(oracle_reveal=(p1, p2))`, the spec's `[p1, p2]` form) and refuses one under its default `off`.
+- 🚨 **Startup runs BEFORE `--compile-trainer`** (`model_build._start_rust_env`): the inference service
+  deep-copies the policy as its slot templates, and a copy taken after the compile would carry the
+  patched `forward` bound to the LEARNER's extractor.
+- **The collector fills `win_target` / `win_mask`** (`store.fill_complete`; the `WinProbLabelCallback` is deleted).
+- **K9(b) `--behaviour-check`** (default `fatal`): before any optimizer step of every
+  update, the learner's log π on rows played at the CURRENT version must equal the stored behaviour
+  log-prob (ONE gate, at fp32 matmul precision `highest` — the only precision, TF32 was retired: DETERMINISTIC — a row whose forward has a declared selection / threshold within a relative margin 2e-4 of its cutoff is EXCLUDED (3.7 % of healthy rows; `agents/model/selection_sites.py`, `rust_rollout/tie_margins.py`) — unless the tied candidates gather bit-identical PAYLOADS, and no row while the action scorers are still zero-init (`gen3_behaviour_tie_identity_v1`: such a tie cannot move log π), and an X5 sort pair counts only where its caller reads the ORDER (`gen3_behaviour_tie_consumed_v1`: the op's per-mon move orders are a SET before each cut), and a row whose ONLY near tie is one element of one call (an isolated sort pair, a threshold) is JUDGED under BOTH resolutions instead — passes if either is within the bar, FATAL if neither (`gen3_behaviour_tie_flip_judge_v1`, one extra probe forward only when needed) — every other row's |Δ| < 1e-4 or FATAL at once, the excluded share < 0.15; a process at any other precision is refused; under `warn` a violation's diagnostic scan is a 4,096-row sample). Lane G's pre-loop probe runs its own forward and logs
+  `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*` (`learner_gates.md`). No staleness remedy is built (per-game version pinning was deleted); those tags are the whole read.
+- **Every micro-batch is FULL — no padding, no drop.** `--rollout-target-samples` must be a multiple of
+  lcm(`--batch-size`, `--n-envs`) (refused at parse, at the trigger, and by the
+  collector before a fill); the one game straddling the target is split and its tail trained next
+  update. Only the last ACCUMULATION group can be short, and the learner flushes it as a FULL-weight step
+  normalised by its real rows — which the dose now counts as such (K10(c)).
+- **Stochastic actions are the KEYED DRAW** (`gen3_keyed_draw_v1`; the trainee always, policy opponents
+  always): replayable from the decision's key, which is what keeps the
+  parity gates exact. It is NOT a speed lever (~0.2 ms a step: F-LE-8's "5.1 ms of sampling" was the host
+  waiting for the forward). A core RESPAWN (up to `--rust-env-respawn-budget`) cuts the live games,
+  derives a new segment seed and re-stages; past the budget it is fatal.
+- `rollout/collect_ms` + `rollout/collect_decisions` are logged (the A/B reads them);
+  `rust_env/*` is the collector's per-phase read. `metadata.json` records `env_core` on every save.
+- ⚠️ A launcher RESUME pins to the checkpoint's commit. A commit before Lane G has no env core flag
+  and is refused by name (`NOT IN PINNED TREE`, for the collector flags the argv types). The trainer builds its checkout's env core at startup
+  (`utils.rust_env.build`), because a pin worktree has no `target/`. A `--model` launch is judged off
+  the checkpoint's RECORDED core (`metadata.json` / the sidecar's `env_core` stamp). Detail:
+  `src/main/launcher/CLAUDE.md` → "A Rust-core run under the launcher".
+- **EVAL runs on the core too** (M5 Lane H, `rust_eval/`): both eval callbacks write the same plan and
+  manifest, then play the cycle IN PROCESS and BLOCKING on a declared eval core (`--rust-eval-envs`) and
+  declared eval T2 slots, publish the workers' own shard records, and collect them with the unchanged
+  code. Games are seeded by the GAME (`gen3_eval_game_seed_v1`); traces are CORE traces (records +
+  reconstruction + states; the prober expands them). A missing eval core is FATAL, never a
+  fall-back to Python workers. Detail: `designs/training/eval_and_rating.md` → "Eval on the Rust env core".
+
+Detail: [`designs/training/rust_collector.md`](rust_collector.md).

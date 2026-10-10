@@ -108,3 +108,25 @@ a fork's inherited counters ignored, failed cycles, the drain, `--bot-weights`, 
 `rust_rollout/fork_test.py` (a pass that injects nothing for its floor is FATAL_SUPPLY; one that injects resets the streak); `agents/training/lever_supply_integration_test.py`
 with REAL processes — the trainer exits 3 on a `--bot-weights` typo (rc 1 on the parent commit), and (slow, sim) the
 `--debug` trainer exits 5 on a self-play run that can never seed.
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### 🚨 Every live lever's SUPPLY is a declared resource (`gen3_supply_guard_v2`, `lever_supply.py`)
+
+A flag that is ON while the mechanism behind it delivers nothing used to train a whole run that then
+read as a result about the lever. Now each such lever is judged once per cycle by a
+`lever_supply.DryStreakGuard`: LIVE and delivering ZERO for its declared floor of consecutive cycles
+→ `LeverStarvedError` → exit **`FATAL_SUPPLY` (5)**; a mis-wiring a restart would repeat →
+`LeverConfigError` → **`FATAL_CONFIG` (3)**. Neither is restarted. Floors (`lever_supply.LEVERS`,
+override `--supply-starve-cycles key=N`, `key=0` = off and ANNOUNCED): `self_play_pool` 3 eval
+cycles (`--self-play` with the pool still EMPTY — failed cycles count; `ai_v12_27` trained 10M
+against bots), `pfsp` 3, `fork` 5 rollouts
+(its four DISABLE-with-a-print paths are now FATAL_CONFIG). The eval-cycle streak persists per RUN
+(`snapshots/summary.json` `supply_guard`), not per launcher segment. Every supply line goes
+through `lever_supply.loud` (the run's own log AND the launcher event stream — `emit` alone never
+reaches the child log). End of every segment: LOUD at zero. Also `FATAL_CONFIG`, never CRASH: a
+`--bot-weights` typo (a failed `--warmstart-consensus` was the second case until P11 deleted it). **Detail: [`designs/training/supply_guards.md`](supply_guards.md).**

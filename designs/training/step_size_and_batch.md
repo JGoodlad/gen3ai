@@ -551,3 +551,95 @@ value under the same emit gate; the callback mutating `grad_accum_steps` and not
 round-trip through real `record_checkpoint`/`read_checkpoint_metadata`; and the byte-identity gate
 (two identically-seeded fresh models, one with the callback attached and not moving K).
 
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### The recipe surface — `--arch production`'s TRAINING-RECIPE half (`main.train.recipe_surface`, K10(a))
+
+The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s `recipe` block:
+- **`recipe.fresh`** is N0's MEASURED fresh recipe (`models/ai_v14_01_base`): every training knob it
+  launched with — the rollout/update shape, `n_epochs` 10, `lr` 3e-4 with the KL controller as it ran
+  (`max_lr` unset, no cosine, and `kl_controller`'s `target_kl` / `kl_factor` / `lr_factor`, which
+  are constructor constants pinned against the callbacks), clip, entropy, self-play, `vf_coef` and every supervision dose. A key that is also a
+  recorded top-level mirror field must EQUAL it.
+- **`recipe.fork`** is what a generalist fork changes: E5 (`n_epochs` 5 at a FROZEN `fork_lr`
+  5.6e-5). Never applied by `--arch` (`--fork-lr` is refused on a fresh run); a fork's argv is
+  compared with it as INFO. 🚨 5 epochs at a FRESH LR was never measured — never pair them.
+- `baselines.production_config()` STRIPS the block (every arch consumer sees config fields only);
+  `baselines.production_recipe_block()` reads it; `compare_production` exempts it; `--sync-config`
+  carries it over.
+- **`--arch production`** writes every `recipe.fresh` knob the argv did not TYPE, as if typed (after
+  the ARCH surface, before `resolve_critic_mode`, which now implies only `--win-prob-mode shaping`). "Typed" is recorded by the parser
+  (`_recipe_typed`). `recipe_source` lands in `metadata.json`'s `cli_args`.
+- 🚨 **`gamma` is not a recipe row or a flag** — `--gamma` is DELETED (P11b batch (c)); the discount is `WINPROB_GAMMA` = 1.0, a constant of the namespace (`critic_mode.critic_gamma` is deleted), and `recipe.fresh` holds no gamma.
+- **Refusal.** `checkargs`, `--dry-run` and the launcher REFUSE a FRESH argv that differs on an
+  UNTYPED knob; a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-recipe`
+  consents.
+- 🧪 **`--debug` is safe by construction** (`src/main/train/debug_shape.py`, 2026-10-07): a FRESH
+  `--debug` run (ONE CPU env) whose untyped update is above 4,096 rows — `--arch production`'s
+  98,304 — takes `--rollout-target-samples` 2,304 (rounded up to lcm(batch, n_envs)), `--batch-size`
+  384 and `--n-epochs` 1, each only if UNTYPED, printed as `[DEBUG SHAPE]`; the recipe surface
+  reports them as source `debug`, never as silent drift. A resume is untouched.
+- 🚨 **A same-run RESTART strips `--arch`.** For a run whose immutable `original_command` carried
+  `--arch production`, `inherit_on_restart` resolves each untyped knob by exactly one route
+  (`restart_route`), announced as `[Recipe] … from <source>`:
+  - `--lr` / `--batch-size` / `--n-steps` are INERT on a resume (SB3 restores them, and a checkpoint's own gamma) —
+    never re-applied;
+  - a recorded tri-state field (critic, doses incl. `opp_intent_coef`, `policy_gae_lambda`) is `_resolve`'s to inherit;
+  - a recorded value-checked field (`vf_coef`; the reward fields `terminal_indicator` / `victory_value` / `draw_penalty` are no recipe rows now) comes from the checkpoint's `model_config.json`;
+  - a knob recorded nowhere else comes from the run's `metadata.json:cli_args`.
+
+  A value MISSING from its route REFUSES by name (`RecipeRestartError` → `FATAL_CONFIG`; `checkargs`
+  and `--dry-run` report it) — never a parser or registry default. The restart also KEEPS the
+  provenance tags the stripped `--arch` would have stamped — `recipe_source` from `cli_args`, and (any
+  same-run restart, `arch_surface.inherit_arch_source_on_restart`) `arch_source` from the
+  checkpoint's `model_config.json` — which the first restart used to null. It sits ON TOP of the general
+  rule (`68850f27`: a restart inherits the surface from `model_config.json`, `opp_intent_coef`
+  recorded from config v125, a pre-v125 dose migrated from `cli_args` or refused) and covers only
+  what that cannot supply.
+- **The "production" argv IS a launch:** `main.train.production_args.production_args()` (re-homed from the deleted cutover harness)
+  runs `resolve_config` on a fresh `--arch production` argv (the trainer's own resolver), so the
+  recipe arrives with the arch; `production_args_test.py` holds it to a real fresh launch on every
+  mirror key, the recipe included (it used to `hasattr`-copy the top-level keys and skip `recipe`).
+- Values, sources, what was left out: `designs/endstate/design_learner_recipe.md` §3.22;
+  `src/recipe_doc_gate_test.py` holds the doc and the block together.
+
+### Step size, batch size and THE DOSE (`--grad-accum-steps` · `--fork-lr` · `--adaptive-batch`)
+
+**`--grad-accum-steps K`** runs K `batch_size` micro-batches per optimizer step, so the accumulated
+gradient is the **exact** gradient of a `batch_size·K` batch at one micro-batch's activation peak;
+`K=1` is byte-identical to upstream. It is also what makes the McCandlish **gradient noise scale**
+free (`train/noise_scale_ratio` ≫1 ⇒ noise-limited, ≪1 ⇒ over-batched).
+
+🚨 **`train/noise_scale` is measured on the TOTAL gradient, and on this tree the total gradient is
+mostly not PPO.** A dozen dense supervised auxiliaries have agreeing per-example gradients, which
+DEFLATES `B_simple` — the live runs read the total at 0.001–0.05 ("over-batched 16–1000×") on runs
+whose **`train/noise_scale_ratio_policy`** read noise-limited. **Read the policy term; never size a
+batch on the total.** `--adaptive-batch policy` closes that loop, moving K only — never
+`--batch-size`, which would be the unbounded shape set `--compile-trainer` refuses.
+
+🚨 **`--lr`, `--batch-size` and `--n-steps` are INERT on a resume** — SB3 restores the checkpoint's
+own values, so a FORK inherits whatever the parent's KL controller had annealed to. **`--fork-lr`
+pins it** and fires ONLY on a genuine fork (a checkpoint outside the run dir); `--fork-lr-freeze`
+makes it constant and persists across every restart. 🚨 **The quantity that predicts a fold's
+collateral is the DOSE**, `lr × n_epochs × optimizer steps per epoch / rollout rows` (=
+`lr × n_epochs / (batch_size × grad_accum_steps)` when the rollout divides evenly; the learner's short
+last accumulation group is a FULL-weight step, so 98,304 rows at 2,048 × 32 take 2 steps an epoch, not
+1.5 — K10(c), `agents/training/dose.py`) — three folds launched
+at the same `--lr` ran at 1.00× / 6.62× / 3.19× v8's rate and nothing in any of them said so. Read
+it with `python -m main.dose <run>` or the live `train/dose_rate`. 🚨 **A dose reading names its LR RECORD** (`source`):
+the median over the checkpoint sidecars, else over the run's own TB `train/learning_rate` curve (every pre-`rb_` run, since
+the 2026-10-09 skeleton cleanup deleted their sidecars — a different statistic, ~6 % apart on the era-2 exploiters), else a
+capped `snapshot_history`; `main.best_response_gap` refuses to compare doses read from different records.
+🚨 **A FORK INHERITS THE PARENT'S LR BUT NOT ITS FREEZE**, so forking a `--fork-lr-freeze` run
+without naming a `--fork-lr` of your own is a startup `[ForkLR] FATAL`
+(`gen3_fork_lr_inherit_guard_v1`; `--allow-inherited-fork-lr` is the deliberate opt-in). The three
+era-2 exploiters did exactly that — the parent's frozen 2.80e-05 annealed to 8.36e-05, median
+5.5e-05, **0.39× v8 against era-1's 1.78×**. The evidence is the PARENT's `metadata.json` (its
+`original_command`, else its `dose` block): the optimisation block is **not in
+`model_config.json`**, which is why this is not a `combination_checks` rule. ⚠️ **The dose is a product of TWO
+controllers** (KL-lr and adaptive-batch), so watch `train/dose_rate`, never either loop's own series.
+**Full detail — in [`designs/training/step_size_and_batch.md`](step_size_and_batch.md).**

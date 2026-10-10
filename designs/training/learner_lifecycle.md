@@ -695,3 +695,23 @@ deleted, and a missing optimizer is `RideAlongLifecycleViolation`. MEASURED unde
 parameters, 356 buffers, 6 optimizers (`model._ridealong_opt` + the five variants'
 `model._ridealong_vopts[...]`, plus the policy's) — `released — learn() returned; 6 checks passed`,
 `Training complete` (`~/gen3ai_archive/k6_k8/ridealong_smoke/run_stable.log`).
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### Process liveness guards (`watchdog.py`)
+
+A daemon-thread watchdog keeps an abandoned smoke from lingering (the SubprocVecEnv worker watchdog that sat beside it
+went with the Python env core's workers — it was a no-op on the Rust env, deletion pass U4):
+
+- **`start_orphan_watchdog`** — for the `--debug` smoke path. A
+  smoke run is a child of the launching shell/agent; if that parent dies the run is orphaned
+  (PPID changes) and a hung smoke would otherwise sit as a
+  multi-GB zombie indefinitely. This thread captures the launching PPID up front and `os._exit`s
+  when `os.getppid()` *changes* (by-change, not `== 1`, so PID-namespace subreapers count).
+  Started early in `main()` inside the `if args.debug:` block — before team/env/server setup —
+  so a startup hang is covered too. **Real launcher-managed runs keep a live parent and never
+  arm it.** Regression test: `watchdog_test.py` (subprocess-driven orphan + no-false-fire).

@@ -289,3 +289,50 @@ straddles 0 reads `UNRESOLVED`, never "no effect".
 A torn final line (a killed run) is **skipped**, never guessed. A plain restart at the same λ is
 **not** a refusal — the pooled read succeeds and a note states how many writer sessions the file
 holds.
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### The training-side VALUE SIDECAR (`--value-sidecar`, `gen3_value_sidecar_v1`)
+
+**Detail: [`designs/training/value_sidecar.md`](value_sidecar.md).**
+
+Every other instrument that reads the critic reads **eval** battles. This one reads the **training
+buffer** — the value PPO actually used, against `win_target`, the label the BCE actually minimises.
+Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appended to
+`<run>/value_sidecar/rows.jsonl`. Read it with `python -m main.ops.value_sidecar_read <run>`.
+
+- **`--value-sidecar {auto,on,off}` (default `auto` = ON under the win-prob critic (the only critic))**, plus
+  `--value-sidecar-fraction` (1/64) and `--value-sidecar-seed` (0). None of the three reaches
+  `model_config.json`, so there is no `MODEL_CONFIG_VERSION` implication.
+- 🚨 **THE LABELS MUST BE FILLED BEFORE THE SIDECAR READS THEM.** The Rust COLLECTOR fills `win_target` /
+  `win_mask` itself (`store.fill_complete`) BEFORE `on_rollout_end`;
+  `WinProbLabelCallback` (whose registration order used to be the hazard) was deleted in U3. A sidecar that read the
+  placeholders would write ZEROS — a file that looks exactly like a critic scoring an unbroken run of losses — so at runtime an all-zero mask over
+  a whole rollout is REPORTED (`labels_unfilled`) rather than written as data.
+- 🚨 **It cannot be reconstructed after the fact.** It reads the rollout buffer, which is gone the
+  moment `train()` returns. A run launched without it has no training-side read, ever.
+- 🚨 **`target` is the terminal 0/1 OUTCOME, and the `outcome` column always equals it.** An OLD
+  file (written while the λ-return / rollout targets existed) can carry a soft `target` and the
+  `win_prob_lambda` / `win_prob_rollout_*` header fields; `value_sidecar_read` still reads them, and
+  the header says which quantity a file holds. **Matching row counts are not evidence of a matching
+  quantity**, and **`win_margin` is a per-turn MATERIAL margin, not an outcome**.
+- 🚨 **ONE HEADER PER WRITER SESSION, not per file** — a resume used to append its rows under the
+  first process's header, hiding a mid-file change of meaning. `value_sidecar_read` reads the
+  header FIRST, labels every table with the quantity it scored, and REFUSES a mid-file change by
+  ROW INDEX and a `--compare` across a quantity boundary. A schema-1 file and a schema-2 file at
+  λ = 1.0 compare EQUAL on purpose.
+- 🚨 **`critic_read` (eval) and `value_sidecar_read` (training) answer DIFFERENT questions.**
+  Neither supersedes the other; a disagreement is a finding about GENERALISATION.
+- ⚠️ **`opp_class` now rides the win-prob gate too**, not just the intent labels — a win-prob arm
+  normally has no intent loss, so the by-opponent-class slice was otherwise empty on exactly the
+  runs the sidecar exists for. It stays a label key the network never reads
+  (`designs/ARCHITECTURE.md` §7). There is no opponent NAME, snapshot STEP or ladder RATING: the
+  first two never reach the observation and the third does not exist at training time.
+- **Cost, measured 2026-09-08 at production shape: 19.3 ms median per rollout, 0.57 MB — 0.016% of
+  a hostile 120 s rollout.** 🚨 A `--debug` smoke A/B CANNOT measure this (the ON arm came out 6.5 s
+  *faster*); use `src/agents/training/value_sidecar_benchmark.py`, which measures the numerator
+  directly and warns on contention rather than rescaling.

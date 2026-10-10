@@ -420,10 +420,10 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   pool opponents (then `set_env`). The worker watchdog is started *after* this, just before
   `learn()`. Later restarts find the pool already populated and skip the rebuild.
 - **`--debug --self-play --debug-eval` exercises the real path** (seed → pool eval → promotion)
-  on a fast eval cadence, so a CPU smoke against a `9XXX` server validates the wiring without
-  disrupting the `:8001` training server (`--debug` skips all eval by default — `--debug-eval`
-  opts in). `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
-  play (both modes) + version check in-process via the local bridge (no server).
+  on a fast eval cadence (add a short `--eval-freq`), in process and serverless (`--debug` skips
+  all eval by default — `--debug-eval` opts in). (`selfplay_opponent_fuzz_test.py`, which drove Python battles, was deleted in T27 P6 slice 6d-2,
+  `cbfc2a31`.)
+
 ## Stable (cross-run) opponents (`--stable-opponents`, `fixed_opponent_pool.py`)
 
 Load a frozen model from **another, already-finished run** as a **fixed opponent** — measured
@@ -546,3 +546,28 @@ a stable opponent rides the *existing* pool-vs-heuristic split in the opponent s
   `snapshot_test.py::*opponent*/*foreign*` (the loader + `check_opponent_compatible`), and the
   end-to-end `stable_opponent_fuzz_test.py` (bridge, no server — resolve + arch FATAL + foreign
   load + legal stochastic play) (the fold-back realized-team guard `opponent_pin_fuzz_test.py` was deleted in U3).
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### Self-play opponents (`--self-play`, gated behind pathology hunting)
+
+`SelfPlayCallback` replaces `PerOpponentEvalCallback` and the training opponents become frozen
+snapshots of the agent itself, drawn from a directory-backed `SnapshotPool` (`snapshot_pool.py`;
+state reconstructed from `<run_dir>/snapshots/` on every restart — no manifest). Design:
+`designs/ai_v5/`. 🚨 **A FORK starts with an EMPTY pool, and an empty pool does not disable
+`--self-play` — it falls back to the BOT pool**; a genuine fork auto-seeds its parent's and exits
+`FATAL_CONFIG` if it still has none (`pool_seed.py`), and ANY run whose pool is still empty after 3
+eval cycles exits `FATAL_SUPPLY` (§ above). 🚨 **`max_snapshots` holds on EVERY path that
+populates the pool, a directory SCAN included** (`gen3_pool_cap_every_path_v1`): a scan applies the add
+path's eviction order, only the trainer's `owns_dir` pool deletes what it evicts, and a pool still over
+its cap raises `PoolOverCapError`. 🚨 **The pool's `model_config.json` is a WRITE-ONCE ARCH RECORD**
+(`SnapshotPool._record_arch`, `gen3_pool_arch_record_v1`): a snapshot zip carries no `ModelVersion`, so
+the record is the only witness of what the pool was written under. It used to be REWRITTEN with the live
+version on every add, so after the first promotion every `load_opponent_snapshot` check compared the run
+with itself. Now it is written when absent, checked against the live version BEFORE every add (a
+`ModelVersionError`, nothing written) and never rewritten.
+**Full detail — in [`designs/training/self_play_and_pool.md`](self_play_and_pool.md).**

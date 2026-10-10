@@ -281,3 +281,58 @@ per opponent kind, the reset-time push onto the env, the env emission, the one-a
 episode-boundary drop, buffer shuffle-alignment on a real rollout buffer (sb3-contrib's `MaskableDictRolloutBuffer` then; the owned `rollout_buffer.RolloutBuffer`, the same layout, since deletion pass U4), and the
 train-loop call site).
 
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### ⚠️ Reading a belief target: `belief_supervision(...)`, never `last_*`
+
+Cross-cutting rule for **every** belief loss below (`gen3_belief_label_only_v1`). Under
+`--belief-grad-mode label_only` the extractor's `last_move_belief_logits` / `last_spread_belief` /
+`last_hp_type_logits` / `last_spread_nature_logits` / `last_spread_ev` / `last_flat_intent_logits` stashes
+are **stop-grad publications** — that is how the mode stops the policy/value gradient reaching a
+belief head through any of its forward consumers. A supervised loss must therefore read its target
+through **`self.policy.features_extractor.belief_supervision("<key>")`**, which returns the LIVE
+tensor (and the identical object under `shaping`/`detached`).
+
+A loss that reads the `last_*` attribute instead trains **nothing** under `label_only`, and does so
+**silently** — the loss value, its gradient norm and every `belief/*` metric look completely normal,
+because the loss is still computed; only the graph behind it is gone. The accessor raises a
+`KeyError` on an unknown key so a typo cannot degrade into that, and
+`agents/model/belief_label_only_gate_test.py::test_every_belief_loss_still_trains_its_head` is the
+guard that each key still deposits gradient on its own head. The full four-route table is in
+`src/agents/model/CLAUDE.md` → `--belief-grad-mode`.
+
+### The supervised belief losses
+
+Six supervised belief heads, all folded through **`belief_bank.py`** — one declarative ROW per head
+(stash/attr/obs spec · coef key · metric prefix) and `compute(site=…)` at the THREE original
+`train()` positions, where the site tag is what preserves the float-addition sequence exactly. A
+seventh belief is a row, not a slice. Every head emits **`mask_rate`** under its own prefix — the
+uniform per-head coverage key, comparable across heads and batch sizes where the older `n_slots`
+counts are not. ⚠️ **The mask conventions TILE**: hidden-team masks HIDDEN slots, the
+spread/nature-EV/hp-type heads mask REVEALED ones.
+
+| flag | default | supervises | label |
+|---|---|---|---|
+| `--opp-belief-aux-coef` (+ `--opp-belief-moves-weight`) | `0.0` | the opponent's still-hidden mons — X5's SET BCE: the hypothesis presence + `BeliefHead` re-targeted + the hypothesis seats' moves (the blob path's Hungarian row was deleted, v144) | `belief_species`/`belief_moves`, from agent2's own team |
+| `--move-belief-mode` / `--move-belief-coef` | `off` / `0.0` | the reinjected moveset, over two DISJOINT slot populations (revealed = direct BCE, unrevealed = Hungarian) | `known_moves` / `belief_moves` |
+| `--spread-belief-coef` (+ `--spread-belief-nature`) | `0.0` | the hidden derived stats the `DamageOperator` consumes; the nature⊕EV decomposition supervises it structurally | true `mon.stats`, and agent2's TRUE declared nature/EVs, guarded against them (`gen3_true_spread_labels_v1`) |
+| `--hp-type-belief-coef` | `0.05` | the discrete Hidden-Power type posterior | `hp_type_label`/`hp_type_mask` |
+| `--intent-label-bot-weight` | `1.0` (OFF) | a per-sample weight on the opponent-intent (the flat pointer's) LABELS produced against a **bot** | the existing `opp_class` obs key |
+
+🚨 **Every belief label is a TRAINING-ONLY Dict-obs key read only by the loss** — the model forward
+reads only `obs["observation"]`, so privileged truth cannot leak — and each builder is **fail-loud**
+(a non-contiguous `species_known`, an out-of-vocab num) rather than mis-slotting supervision.
+🚨 **`--intent-label-bot-weight` is confined to the INTENT labels and that is a design claim**: the other beliefs
+are TEAM TRUTH, which does not depend on who is piloting, so discounting a bot's rows there would
+throw away valid labels. Only INTENT is behaviour; at 1.0 the loss is **bit-identical**. Every
+structural toggle is version-checked and fresh-only; every `*_coef` is training-only and **read back
+on a flagless resume**.
+🧩 **The hidden-team row is `hidden_team_set`** — X5's set BCE (presence + BeliefHead re-targeted +
+hypothesis-seat moves) on `--opp-belief-aux-coef`; the blob path's Hungarian `hidden_team` row was deleted at the
+X5 version break (v144); `--beta-setvalued-coef` (which scaled the blob β's set-valued credit) was DELETED in the
+break's part 2 (`designs/deleted_flags.md`).
+**Full detail — in [`designs/training/belief_losses.md`](belief_losses.md).**

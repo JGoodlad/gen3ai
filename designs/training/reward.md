@@ -109,3 +109,27 @@ fresh). Their motivating measurements (probes M and N,
 ## State-conditioned entropy boosts — DELETED (deletion pass L2)
 
 Two training-only boosts multiplied the per-decision entropy bonus on flagged decisions, with no reward change: `--defensive-entropy-boost` (`gen3_defensive_entropy_v1`, decisions where the trainee's active mon had a productive heal / status-cure option, flag `defensive_opportunity`) and `--bait-entropy-boost` (`gen3_bait_entropy_v1`, the bait boards of the E4 verdict — "exploration starvation at a saturated action", ledger *E4 VERDICT*, 2026-08-23 — flag `bait_opportunity`), each with an `--*-anneal-frac` fade. Neither was ever in production or a recipe, and measured exposure was ~1 % of decisions at the default mix (`baitent/flagged_frac` 0.005-0.016, 2026-08-23); both were deleted with their env predicates, obs keys, R1 statics and `defent/*` / `baitent/*` TB tags. **The entropy term is now always `ent_coef * -mean(entropy)`.** `BaitBot` itself (`agents/baitbot.py`, the opponent) is unaffected. Recoverable at pin <= 475bd817.
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### The reward — the TERMINAL alone (`reward_config.terminal_breakdown`, the Rust core's twin)
+
+**The shaped reward path is DELETED** (`gen3_shaped_reward_deletion_v1`, config v122, 2026-09-26):
+the PBRS potentials, the BIAS terms, the bias refund, the no-progress TAX and their 14 flags
+(`designs/deleted_flags.md`). The reward is the terminal — production's win indicator
+(indicator, victory 1.0, draw 0.0 — constants of the namespace; the four flags `--gamma`, `--victory-value`, `--draw-penalty`, `--terminal-indicator` are DELETED, P11b batch (c)), or — historically, for an old checkpoint only — the signed ±`victory_value` / draw-penalty
+terminal. The rule is `reward_config.terminal_breakdown` (shared with the prober's core recorder); training's
+terminal is the Rust env core's twin (`src/rust_env`, pinned by its episode tests and `utils/rust_env/episode_test.py`).
+The per-turn Python `Gen3RewardManager` that wrapped it, and `reward_golden_test.py` (recorded at the last pre-shaping-
+deletion commit), are DELETED with the Python battle layer (T27 P6 slice 6d-2). 🚨 **A resume or fork of a checkpoint trained
+WITH shaping REFUSES** (`agents.model.model_version.shaped_reward`, enforced in `resolve_config`
+and `main.checkargs`) — run it pinned to ≤ `029cee83`; never continue it silently on the terminal
+alone. `material_margin.py` is the Python statement of the `win_margin` training-only label rule (not a reward
+term; the label is the Rust core's `labels/margin.rs`, rule for rule; `win_prob_test` drives the contested split
+with it), and the no-progress clock is an OBS-only counter the Rust trackers keep.
+
+**Full detail — the terminal table, the parity proof, the refusal, the clock — is in [`designs/training/reward.md`](reward.md).**

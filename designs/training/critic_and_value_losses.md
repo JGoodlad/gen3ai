@@ -207,3 +207,107 @@ critic's `ΔV` between adjacent states. The ladder's `tdaux` arm read NOT DETECT
 (`designs/research_state/levers/td_consistency_aux.md`), and nothing live named it, so it was
 deleted. A resume or fork of a run that recorded a non-zero value is refused by
 `model_version/retired_levers.py`. Detail: `designs/deleted_flags.md`.
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### THE VALUE LOSS has a MODE — the win-prob critic (`gen3_winprob_critic_mode_v1`)
+
+**`winprob` is the ONLY trainable critic** (a CONSTANT of every trainer namespace — `src/main/train/parser/objective.py`, `parser.set_defaults`; the `--critic` flag is DELETED, P11b batch (b), and a typed one is refused with its reason from `designs/deleted_flags.md`; `CRITIC_TRAINABLE_MODES` is deleted). `shaped` is the historical critic (`CRITIC_SHAPED`, still in `CRITIC_MODES` and the meaning of an ABSENT record, so an old shaped checkpoint still LOADS as an opponent, in meters and in the prober); a resume or fork of one is refused `FATAL_CONFIG` (D4) — run it pinned to its own commit. The `shaped` column below is the historical contrast. Design of record:
+`designs/ai_v12/design_winprob_only_critic.md`; the model-side half is `src/agents/model/CLAUDE.md`
+→ *The CRITIC MODE*.
+
+| | `shaped` | `winprob` |
+|---|---|---|
+| the value TERM | `vf_coef · mean((returns − values)²)` (clipped under `--clip-range-vf`) | `vf_coef · _win_prob_loss(...)` — the head's **BCE against the terminal outcome** |
+| the scalar `value_loss` | the loss | a DIAGNOSTIC only (its term is dropped), computed UNCLIPPED |
+| PopArt · `--value-dist-*` · `--value-from-dist` · `--value-tail-weight` · `--win-prob-coef` · every `--win-prob-pbrs-*` | **DELETED** (L1, config v131: `designs/deleted_flags.md`; a checkpoint that recorded one ON is refused, `model_version/retired_levers.py`) | **DELETED** |
+
+🚨 **`winprob` has the win-indicator terminal (indicator, victory 1.0, draw 0.0) and gamma 1.0 BY CONSTRUCTION** (constants of the namespace, `parser/objective.py` `set_defaults`; a typed flag is refused with its reason; a recorded non-production reward is refused on a resume by `check_reward_config`), so the undiscounted return
+is exactly `1{win}` and `V(s) = P(win|s)` with no approximation term.
+🚨 **THE COST IS STATED, NOT BURIED: a critic bounded in [0,1] cannot represent "a timeout is worse
+than a loss."** The anti-stall pressure is the obs deadline clock (the reward has no anti-stall term), and
+**stall rate and mean episode length are PRIMARY, kill-condition-bearing endpoints on a `winprob`
+arm.** 🚨 **A `winprob` run's `train/*` value tags are not comparable with a `shaped` run's.**
+
+🚨 **`critic_resolution` IS the meter; `critic_reliability` is not.** A base-rate forecaster scores
+a perfect 0 reliability and a useless 0 resolution — the committed baseline measured this head at
+reliability ~0.002 against a resolution of 0.062 out of an available 0.182, so a promotion that
+improves ECE and leaves `critic_resolution` flat has moved the meter that was never the disease.
+The `win_prob/critic_*` family comes from `scaffolding.reliability_table`, **imported, never
+re-implemented**, and an unmeasurable rollout publishes **`{}`, never zeros**.
+
+🚨 **A DRAW IS SCORED AS A NOT-WIN BY DECISION** (`y = 0`), never dropped and never 0.5 — that is
+what makes "P(win)" literally P(win). ⚠️ `signal/draw_rate` counts **ties and not timeouts**, so the
+series that watches the 250-turn cap is `signal/stall_rate` / mean episode length.
+🚨 **THE 250-TURN CAP IS A TERMINAL, NOT A TRUNCATION** — this env never truncates in the SB3 sense;
+a cap forfeit used to arrive as `truncated`, so SB3 bootstrapped `V(s_last)` onto a 0 reward at
+γ=1 and the timeout left the loss entirely with **a TD error of identically zero**. Fixed in
+the Python env wrapper's `resolve_episode_end` (deleted with that core in U3; the Rust collector's complete-game rule serves it now), under `winprob` only. **`gamma` is a constant of the namespace (1.0; no flag), and SB3 restores a checkpoint's own gamma on a
+resume like `--lr`.**
+
+#### `--fork-fraction` — THE FORK ARM, contested-state EXPLORING STARTS (`gen3_fork_v1`, v120)
+
+**Default `0.0` = OFF and BIT-identical** — no fork object built, no obs key declared, no row injected.
+**It runs on the win-prob critic (the only critic)**; the arm's replay
+ring, `--cf-records`, was deleted in deletion pass L4 and the Python arm's code in L5. Detail:
+[`designs/training/forks.md`](forks.md).
+
+🚨 **ONE implementation: the Rust port** (the Python arm — callback, replay-ring child process,
+buffer subclass, decision-time handle capture — is DELETED, deletion pass L5; `fork_arm.py` keeps
+its selector and meters and `fork_buffer.py` its FILL table, which the port imports). The arm is the COLLECTOR's fork phase (`rust_rollout/fork.py`,
+`gen3_fork_rust_v1`, forks.md §14) — DECLARED and OFF, deferred by the owner's one-ply scope
+(2026-10-01). It replays the core's finished input log on Lane I playout handles, keys every branch
+draw on the PARENT's keyed-draw key (a parent-action branch IS the parent — gate
+`rust_rollout/fork_crn_integration_test.py`) and puts each branch game into the complete-game FIFO
+after its parent, so **branch rows COMPETE for the update's D** rather than doubling the buffer, and
+a branch plays the parent's REAL policy opponent where its slot still serves it
+(`fork/opp_substituted` is the rest). Both are DEPARTURES from the arm that read NOT DETECTED on
+2026-09-16 — that read does not transfer unchanged. Needs no extra flag.
+
+🚨 **WHY — the head ranks siblings at CHANCE.** `paired_refit_discrimination_2026-09-14` measured
+the promoted win-prob critic's pairwise accuracy on successors ONE MOVE APART at **0.5169
+[0.4800, 0.5524]**, while a FROZEN trunk with only the head's four tensors refit on counterfactual
+successors reaches **0.6032** (+0.0863, DETECTED) and a pairwise RANKING term buys **nothing**
+(−0.0107, NOT DETECTED). Pairwise accuracy is a RANK statistic, so the ordering was in
+`value_pooled` all along and the on-policy stream never asked for it: **the DATA is the lever, not
+the loss form.** A rollout visits exactly ONE successor per decision; this manufactures the
+siblings. At a contested decision the battle is forked, three branches (the policy's top-2 + ONE
+uniformly random legal action) are played to a terminal by the CURRENT policy, and their
+transitions enter the SAME PPO buffer. **Plain BCE, NO ranking term — closed as a lever.**
+
+🚨 **THE MASK RULE IS UNIFORM: the FORK STEP is out of the policy term for EVERY branch**, the
+top-2 included, and the term is RENORMALISED over the kept rows (not just zeroed — a masked
+`.mean()` would silently lower the effective policy LR by the fork rate). Masking only the random
+branch would re-weight the policy gradient by the branch MIX. The fork step stays fully in the
+VALUE terms. Carrier: the `fork_pg_m` obs key.
+
+🚨 **THE PREFIX IS COUNTED ONCE** — a branch's rows begin AT the fork step. The fork STATE appears
+once per branch with a DIFFERENT action; that is the exploring start, not a duplicate.
+
+🚨 **`--fork-crn dice_and_draws` (default) pairs the DICE *and* the policy draws.** `cf_q_labels`
+paired only the dice — a concrete, testable account of its null — and
+`rust_rollout/fork_crn_integration_test.py` proves a parent-action branch reproduces the parent byte for byte.
+
+⚠️ **The ecology approximation** (the Python arm's largest caveat; the Rust port shrinks it to the
+bot share): a branch is played against the parent's REAL policy opponent where its slot still serves
+it, else a SELF-LIKE one, and those rows are labelled `opp_class = POOL`; `fork/opp_substituted`,
+`fork/branch_share` and `fork/bot_share` price it.
+
+🚨 **A fork dropped at the row budget has ALREADY BEEN PLAYED**, so the ask is bounded by the
+previous rollout's MEASURED `fork/rows_per_fork`. Read **`fork/rate`**, **`fork/branch_share`**,
+**`fork/tie_rate`**, **`fork/random_wins`**, **`fork/pairwise_acc`** (IN-SAMPLE; the endpoint is a
+held-out read) and **`fork/sim_steps_share`** (the cost).
+
+**Full detail — the currency argument, the cap-terminal measurement, the `--vf-coef` BCE
+announcement and every value-side flag below — is in
+[`designs/training/critic_and_value_losses.md`](critic_and_value_losses.md).**
+
+#### The other value-side flags, in one place
+
+| flag | default | what it does, and the one thing to know |
+|---|---|---|
+| `--vf-coef` | `0.5` | multiplies a BCE under `winprob`, an MSE on a shaped return under `shaped` — **the 0.5 default carries no information about the first**. The startup announcement prints the raw BCE and the value/policy shared-trunk gradient RATIO (`10 ** grad/value_policy_logratio`); it never divides by `|policy loss|`, which is ≈0 by construction on epoch 1. Fixed for a run's lifetime |

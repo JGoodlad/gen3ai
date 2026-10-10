@@ -124,3 +124,26 @@ read `by_class`: a pre-self-play curriculum phase is ~all `bot` episodes, where 
   the `env_method`-not-infos seam claim. Plus `utils/teambuilder_test.py` (the off-path RNG identity
   also asserts the index resolves).
 
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### Team curriculum — per-team win-rate tracking (`--team-wr-tracking`) and team blocking (`--team-block-episodes`)
+
+**`--team-wr-tracking`** (DEFAULT ON) is instrumentation only — a running per-`team_sha` record of
+wins/games stratified by opponent class, riding `metadata.json`'s `team_win_rates` block.
+`--team-block-episodes N` holds each drawn trainee team for N consecutive episodes (per-team gradient
+density; 1 = off). **Team-side PFSP (`team-pfsp`, which biased the trainee's team draw toward the pool
+teams it was weakest on) was DELETED in deletion pass L4** — `designs/deleted_flags.md` has the flags and
+citation.
+
+⚠️ **A raw per-team win rate conflates PILOT COMPETENCE with TEAM STRENGTH** (the ai_v8 team-PFSP
+finding). Anything spending budget on this signal must normalize against a team-strength baseline
+first; the artifact carries that sentence in its own `notes` field. 🚨 **NO TensorBoard emission**
+(owner rule: per-team series are noisy spam), pinned by a test that fails on "just one scalar".
+🚨 **Same pool SIZE is not the same pool ORDER** — the tracker verifies per-index team identity
+across workers and RAISES on disagreement. Both are training-only, not version-locked, and the
+tracker takes an `env_method` PULL rather than an info-dict thread.
+**Full detail — in [`designs/training/team_curriculum.md`](team_curriculum.md).**

@@ -782,3 +782,100 @@ is answered offline by `python -m main.scaffolding_gauge --reliability --reliabi
 (which stratifies bot vs pool sentinel, where the head's bias FLIPS SIGN) and by
 `main.critic_gate`. ⚠️ A run started before `gen3_obs_margin_unconditional_v1` carries the
 degenerate margin AND, if it also predates the gate, the duplicate tags — read them as absent.
+
+## From the training leaf (moved 2026-10-10)
+
+> These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
+> stood (minus statements verified FALSE). Where an earlier section of this doc says the same in more
+> detail, both are current; fix both in the same pass.
+
+### TensorBoard export census — every scalar, and its CURRENCY
+
+> 🔒 **Two anchors here are PINNED to this file** by
+> `tb_relevance_test.py::test_the_census_table_carries_an_era_column`: the string
+> `gen3_tb_relevance_v1` and the heading *What to watch on a WIN-PROB run*. Keep both. Everything
+> beneath them — the site/tag counts, the group table, the NOISE / REDUNDANT / CONDITIONAL
+> classification, the five per-group tag tables and the annotated dashboard — is in
+> [`designs/training/telemetry_scalars.md`](telemetry_scalars.md).
+
+**THE FIRST QUESTION ABOUT ANY SCALAR HERE IS WHAT UNIT IT IS IN**, because this trainer runs
+value quantities in **three different currencies at once** (a fourth, PopArt-normalized, left with PopArt) and two of them look like floats:
+
+| currency | is | who is in it |
+|---|---|---|
+| **RAW REWARD** | the units the terminal's victory value (a constant, 1.0) is in, undiscounted | every `reward/*` term |
+| **RAW SHAPED RETURN** | `Σγᵏr` in raw-reward units | `train/return_*`, `rollout_buffer.{values,returns}`, `train/explained_variance` |
+| **PROBABILITY** | `[0, 1]`, outcome units, undiscounted | every `win_prob/*`, `eval/win_rate_*` |
+| ⚠️ **PROBABILITY, under the win-prob critic (the only critic)** | the same `[0,1]`, but it is now ALSO what `rollout_buffer.values` / `returns` / `train/explained_variance` are in | the row above **plus** `train/return_*`, `train/explained_variance`, `train/value_loss` (raw) |
+
+⚠️ **A number is only comparable to another number in the SAME currency.** PopArt (and with it the
+`popart/*` tags and the normalized-return currency) was DELETED (deletion pass L1, config v131), so
+`train/value_loss` is raw in every run; `designs/learning/popart_value_scale_and_currencies.md` is the
+historical background for old traces.
+
+🚨 **The win-prob critic (the only critic) COLLAPSES the currencies into one, which changes what several tags
+MEAN without changing their names** (`gen3_winprob_critic_mode_v1`). The reward is the terminal WIN
+INDICATOR and `V(s) = sigmoid(win_head logit)` — so `train/return_mean` reads a
+win RATE, `train/value_loss` is an MSE in probability units (a diagnostic; its term is
+dropped from the loss) and `train/explained_variance` is EV in the P(win) currency. **A `winprob`
+run's `train/*` value tags are not comparable with a `shaped` run's**, and nothing in the tag names
+says so — read the run's `🎯 [CRITIC]` startup line first. The one tag that IS comparable across
+the two is the `win_prob/` family, which was in probability units all along.
+
+**ERA RELEVANCE — a tag whose SOURCE is absent is not emitted (`gen3_tb_relevance_v1`).** The
+The win-prob critic (the only critic) era changes no tag NAME but removes the SOURCE behind several of them, and the
+recorders kept publishing — flat constants and byte-identical duplicates a reader cannot tell from
+a measurement. Classified from the live arm's own tfevents (216 tags): **166 LIVE · 31 NOISE, all
+now GATED · 19 REDUNDANT · 0 DEAD**, plus ~48 correctly-silent CONDITIONAL ones. 🚨 **The gate is
+on the SOURCE, never on the value**, so a shaped run's tag set stays byte-identical and a dead
+source leaves a GAP rather than a confident number. ⚠️ **A run pinned before
+`gen3_obs_margin_unconditional_v1` carries a degenerate `win_margin`** — read its whole
+`win_prob/*contested*` family as absent.
+
+#### What to watch on a WIN-PROB run — the 28-tag dashboard
+
+The first two blocks are in PROBABILITY units, which is the era's whole point. Read the run's
+`🎯 [CRITIC]` startup line first — a `shaped` run's `train/*` value tags are not comparable with
+these. Each tag's currency and reading rule: the topic doc.
+
+**Is it getting stronger?** `eval/elo` + `eval/elo_ci` (the only cross-run number) · `eval/win_rate_vs_bots` (saturates — read a FALL as an alarm) · `eval/win_rate_vs_pool` (pinned near 0.50 by the gate; leaving it is the news) · `signal/outcome_win_rate_bots` · `_pool` · `rollout/ep_rew_mean`.
+
+**Is the critic HONEST?** **`win_prob/critic_resolution`** (the G1 PRIMARY meter, HIGHER is better) · `critic_reliability` · `critic_brier` · `critic_skill` · `critic_uncertainty` · `critic_base_rate` · `critic_decomp_residual` (must sit at ≈0) · `win_prob/ece` · `mce` · `rel_gap_b0…b9` (a NaN bin is a HOLE, never a zero error) · **`win_prob/start_gap`** (the PAIRED episode-start read; **positive = optimistic at the opening board**) · `train/explained_variance` · `win_prob/coverage` (a fall here invalidates every line above it).
+
+**Is the OPTIMIZATION healthy?** `train/approx_kl` · `train/learning_rate` + **`train/dose_rate`** · `clip_fraction` · `grad_norm` · **`grad/value_policy_logratio`** · `grad/{policy,value,aux}_share` · `train/noise_scale_ratio_policy` (read BESIDE `train/noise_scale_ratio`, never alone) · `signal/adv_raw_mean` **as a ratio to** `adv_raw_std`.
+
+**The G7 KILL condition and the two GIGO guards.** **`rollout/ep_len_mean`** and **`signal/draw_rate`** are PRIMARY endpoints, not monitored ones — a `[0,1]` critic cannot represent "a timeout is worse than a loss", so stalling is this era's registered failure mode. **`reward/untracked_abs_mean` must read exactly 0.0** (the startup composition census and the reward folds agree) and **`train/return_abs_max` must read exactly 1.0** (the reward stream IS the win indicator the `V = P(win)` identity rests on). Plus `time/fps`.
+
+**What to read when the contested split is ABSENT:** the family is gated off rather than duplicated
+on a spread-free margin, so the contested-vs-blowout question is answered offline by
+`python -m main.scaffolding_gauge --reliability --reliability-reweight` and by `main.critic_gate`.
+
+### Gradient-balance + value-scale diagnostics (`grad_balance.py`)
+
+The dual-head extractor shares ONE transformer trunk between policy, value and a dozen auxiliaries,
+and all of their gradients compete there. A read-only `autograd.grad(retain_graph=True)` probe on
+ONE minibatch per `train()` measures each head's pull **on one common denominator**, so every
+`grad/*_share` sums to ~1 and any term crowding out the rest is read directly. "Shared" is the
+DECLARED `SHARED_TRUNK_PHASES` allow-list — it excludes `cls_pool` and both projection heads, so
+only truly contested params count.
+
+**`grad/value_policy_logratio` is the gauge to read** (`log10(‖g_value‖/‖g_policy‖)`, 0 = balanced)
+— it is AUX-INDEPENDENT, where `grad/value_share` moves with how many auxiliaries are on. It is
+also what `--vf-coef`'s startup announcement quotes rather than recomputing.
+⚠️ **`edge/<fam>_*` and `cell/<name>_*` liveness are NOT effect sizes** — every family and cell
+enters ZERO-INIT, so a dead one is bit-identical in the logs to a working one; read `weight_norm`
+and `grad_norm` as a PAIR, and only an ablation measures importance.
+**Full detail — in [`designs/training/telemetry_scalars.md`](telemetry_scalars.md).**
+
+### The SCAFFOLDING GAUGE — OFFLINE ONLY: `python -m main.scaffolding_gauge` (the in-training `train/scaffolding_*` was RETIRED, P11d)
+
+🚨 **THE IN-TRAINING SCALAR IS GONE; THE OFFLINE CLI READS OLD SHAPED RUNS.** The gauge measured the divergence between
+TWO readouts — the shaped critic V and the win-prob head. Under the win-prob critic (the only critic) there is one: V is
+`sigmoid(win_prob_logit)`, so a rank gauge between them is a tautology (rho 1, gauge 0) and it published exactly that on
+every run. `scaffolding.live_gauge_metrics`, `_same_ordering`, `ppo.py`'s paired epoch-0 reads and `metrics_export`'s publish
+are deleted; the offline math (`rank_gauge`, `affine_gauge`, `gauge_slice`, `constancy_row`, `reliability_table`,
+`spearman_rho`, `cluster_bootstrap_ci`) and the CLI stay for what reads them (`critic_gate`, `main/ops/*`, `stats.py`, the
+win-prob calibration read). Read the CLI on an archived shaped run; do not read it as a scaffolding measurement of a
+terminal-only run, which has no scaffolding to measure.
+
+**Full detail — every flag, gate, measurement and hazard — is in [`designs/training/telemetry_scalars.md`](telemetry_scalars.md).**
