@@ -512,7 +512,8 @@ echo $GEN3AI_PROBER_PASSWORD_FILE             # the path, in a fresh login shell
 `environment.d` is picked up when the user manager starts, so a change needs a re-login (or
 `systemctl --user import-environment` for an already-running session). To rotate the password,
 edit the file and restart whatever is serving — the app reads it once at startup, and its
-cookie-signing key is per-process, so every existing session ends at the same moment.
+cookie-signing key is derived from the password (and a persisted key file), so every existing
+session ends at the same moment; a plain restart without a password change keeps them.
 
 **It fails closed.** With no password set the probes are switched off entirely rather than left
 open, so a misconfigured deploy is read-only, never a public CPU-burn button. `--open` is the

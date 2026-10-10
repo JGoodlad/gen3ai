@@ -177,9 +177,24 @@ as effectively as a committed doc does.
 
 What keeps a low-entropy shared password honest: constant-time comparison; an HMAC-signed cookie
 rather than the password itself (HttpOnly, SameSite=Lax — which is also the CSRF story for the job
-POSTs); a signed expiry; a per-process signing key so a restart logs everyone out; and **two**
+POSTs); a signed 14-day expiry; a signing key that SURVIVES restarts but is bound to the password (below); and **two**
 rate limits. **It fails CLOSED** — with no password configured the probes and the model views are off, not open, so an
 operator who forgets the secret publishes a read-only site rather than a CPU-burn button.
+
+**The unlock outlasts a restart (2026-10-09).** The cookie key used to be minted per process, so every
+restart logged everyone out — and this service restarts many times a day (the watchdog above replaces
+it whenever main's HEAD moves; the orchestrator restarts it after fixes). Now `create_app(...,
+cookie_key_file=...)` (passed by `__main__` whenever a password is configured; `None` — unit tests,
+`--open` — keeps a per-process key) loads a 32-byte key from a mode-0600 file,
+`$GEN3AI_PROBER_COOKIE_KEY_FILE` else `~/.local/state/gen3ai/prober_cookie_key`, created atomically
+on first start (`load_or_create_key`: temp file + `link()`, race-safe). The key that SIGNS is
+`HMAC(file_key, SHA256(password))`, so **changing the shared password still ends every session**
+(and the key file alone forges nothing). A missing or wrong-size file is regenerated (old cookies
+die); a file looser than 0600, owned by another user, a symlink or not a regular file is REFUSED
+(`CookieKeyError`) and `Auth` falls back to a per-process key with a logged warning
+(`Auth.key_persisted` is False) — never signs with a key someone else could have read. Pinned by
+`auth_test.py`'s "signing key outlives a restart" block. The service must be restarted ONCE to pick
+this up; that restart is the last one that logs anyone out.
 
 **Why TWO rate limits, and why `_client` is fussy about headers.** The first version keyed the
 throttle on `CF-Connecting-IP` (falling back to `X-Forwarded-For`) read unconditionally. An

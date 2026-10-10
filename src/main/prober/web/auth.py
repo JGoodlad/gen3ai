@@ -21,8 +21,17 @@ security boundary. The measures here are the ones that keep that speed bump hone
   * **The secret never appears in argv.** It comes from `$GEN3AI_PROBER_PASSWORD` or a file — a
     command line is world-readable in `ps` on a shared box.
   * **Constant-time comparison** (`hmac.compare_digest`), so the check cannot be timed open.
-  * **A signed cookie, not the password in a cookie.** HMAC-SHA256 over an expiry, with a signing
-    key minted at startup — so a restart logs everyone out, and a stolen cookie expires.
+  * **A signed cookie, not the password in a cookie.** HMAC-SHA256 over an expiry, so a stolen
+    cookie expires. The signing key is PERSISTED across restarts (2026-10-09: the service restarts
+    many times a day — the watchdog replaces it whenever main's HEAD moves — and a per-process key
+    logged the owner out each time): 32 random bytes in a mode-0600 file under
+    `~/.local/state/gen3ai/` (`$GEN3AI_PROBER_COOKIE_KEY_FILE` overrides), and the key actually
+    used to sign is `HMAC(file_key, SHA256(password))`. So a restart keeps every session for its
+    14 days, but CHANGING the shared password still ends every session, and a leaked key file
+    alone does not forge a cookie without the password. A key file that is missing or the wrong
+    size is regenerated; one that is looser than 0600, not ours, or not a regular file is REFUSED
+    — the process then falls back to a per-process key (sessions end at restart, loudly logged)
+    rather than sign with a key someone else could have read.
   * **HttpOnly + SameSite=Lax.** Lax is what makes cross-site POSTs fail, which is the CSRF story
     for the job endpoints; there is no separate token to manage.
   * **Failure throttling per client**, because a shared password is guessable by definition.
@@ -36,14 +45,16 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import logging
 import os
 import secrets
+import stat
 import threading
 import time
 from collections import OrderedDict
 
 COOKIE = "prober_session"
-_TTL_SECONDS = 14 * 24 * 3600          # a fortnight; a restart invalidates sooner anyway
+_TTL_SECONDS = 14 * 24 * 3600          # a fortnight; a restart no longer shortens it (key persists)
 _MAX_FAILURES = 8                      # per client, before the cooldown
 _COOLDOWN_SECONDS = 300.0
 
@@ -62,6 +73,85 @@ _MAX_TRACKED_CLIENTS = 2048
 
 ENV_VAR = "GEN3AI_PROBER_PASSWORD"
 ENV_FILE_VAR = "GEN3AI_PROBER_PASSWORD_FILE"
+KEY_FILE_VAR = "GEN3AI_PROBER_COOKIE_KEY_FILE"
+_KEY_BYTES = 32
+
+_log = logging.getLogger(__name__)
+
+
+class CookieKeyError(RuntimeError):
+    """The persisted signing-key file cannot be trusted (loose permissions, wrong owner, not a
+    regular file, unreadable). Never echoes key material."""
+
+
+def default_key_path(*, env=None) -> str:
+    """`$GEN3AI_PROBER_COOKIE_KEY_FILE`, else `~/.local/state/gen3ai/prober_cookie_key`."""
+    env = os.environ if env is None else env
+    path = env.get(KEY_FILE_VAR)
+    if path:
+        return path
+    return os.path.join(os.path.expanduser("~"), ".local", "state", "gen3ai", "prober_cookie_key")
+
+
+def _read_key(path: str) -> "bytes | None":
+    """The key in `path`, None when the file is absent or its size is wrong (=> regenerate);
+    CookieKeyError when it exists but may not be trusted."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise CookieKeyError(f"cookie key file {path!r} cannot be opened: {exc.strerror}") from exc
+    try:
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            raise CookieKeyError(f"cookie key file {path!r} is not a regular file")
+        if st.st_uid != os.geteuid():
+            raise CookieKeyError(f"cookie key file {path!r} is owned by another user")
+        if st.st_mode & 0o077:
+            raise CookieKeyError(
+                f"cookie key file {path!r} has mode {stat.S_IMODE(st.st_mode):04o}; need 0600 "
+                "(group/other access refused)")
+        data = os.read(fd, _KEY_BYTES + 1)
+    finally:
+        os.close(fd)
+    return data if len(data) == _KEY_BYTES else None
+
+
+def load_or_create_key(path: str) -> bytes:
+    """The persisted 32-byte signing key, minted atomically on first use.
+
+    Creation writes a mode-0600 temp file in the same directory and `link()`s it into place, which
+    fails rather than clobbers when another process won the race (then we read the winner's key).
+    A corrupt (wrong-size) file is replaced the same way via `rename`. Raises CookieKeyError for a
+    file that exists but is untrustworthy."""
+    key = _read_key(path)
+    if key is not None:
+        return key
+    directory = os.path.dirname(os.path.abspath(path))
+    os.makedirs(directory, mode=0o700, exist_ok=True)
+    fresh = secrets.token_bytes(_KEY_BYTES)
+    tmp = os.path.join(directory, f".{os.path.basename(path)}.{os.getpid()}.{secrets.token_hex(4)}.tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(fresh)
+            fh.flush()
+            os.fsync(fh.fileno())
+        try:
+            os.link(tmp, path)                       # atomic, never overwrites
+        except FileExistsError:
+            winner = _read_key(path)                 # raced, or a corrupt file is in the way
+            if winner is not None:
+                return winner
+            os.replace(tmp, path)                    # corrupt/short file: replace atomically
+            return fresh
+        return fresh
+    finally:
+        try:
+            os.unlink(tmp)
+        except FileNotFoundError:
+            pass
 
 
 def load_password(*, env=None) -> "str | None":
@@ -85,10 +175,24 @@ def load_password(*, env=None) -> "str | None":
 class Auth:
     """The gate. `unlocked(request)` is the only question the app asks it."""
 
-    def __init__(self, password: "str | None", *, open_access: bool = False) -> None:
+    def __init__(self, password: "str | None", *, open_access: bool = False,
+                 key_file: "str | None" = None) -> None:
+        """`key_file` names the persisted signing-key file (see the module docstring); None keeps
+        a per-process key, which is what unit tests and `--open` laptop sessions want."""
         self._password = password
         self.open_access = bool(open_access)
-        self._key = secrets.token_bytes(32)      # per-process: a restart ends every session
+        file_key: "bytes | None" = None
+        if key_file is not None:
+            try:
+                file_key = load_or_create_key(key_file)
+            except (CookieKeyError, OSError) as exc:
+                _log.warning("prober cookie key not persisted (%s); sessions end at restart", exc)
+        self.key_persisted = file_key is not None
+        if file_key is None:
+            file_key = secrets.token_bytes(_KEY_BYTES)
+        # Bind the password in: changing it changes this key, so every old cookie stops verifying.
+        pw_digest = hashlib.sha256((password or "").encode("utf-8")).digest()
+        self._key = hmac.new(file_key, pw_digest, hashlib.sha256).digest()
         # OrderedDict so the oldest entry is cheap to evict — see _MAX_TRACKED_CLIENTS.
         self._failures: "OrderedDict[str, list]" = OrderedDict()  # client -> [count, first_ts]
         self._global_failures: "list[float]" = []  # timestamps, pruned to the window

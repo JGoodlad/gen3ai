@@ -90,11 +90,13 @@ def main(argv=None) -> int:
     import uvicorn
 
     from main.prober.web.app import create_app
-    from main.prober.web.auth import ENV_FILE_VAR, ENV_VAR, load_password
+    from main.prober.web.auth import ENV_FILE_VAR, ENV_VAR, default_key_path, load_password
 
     password = load_password()
     app = create_app(os.path.abspath(a.run), max_job_workers=a.job_workers,
-                     password=password, open_access=a.open_access, impl=a.impl)
+                     password=password, open_access=a.open_access, impl=a.impl,
+                     # the signing key outlives a restart (the watchdog restarts this service often)
+                     cookie_key_file=default_key_path() if password else None)
     n_runs = len(app.state.runs.list_runs())
 
     print(f"prober web → http://{a.host}:{a.port}   ({n_runs} run(s) under {a.run})")

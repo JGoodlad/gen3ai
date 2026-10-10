@@ -161,7 +161,7 @@ class _NoBattles(HTTPException):
 
 def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                password: "str | None" = None, open_access: bool = False,
-               impl: str = "node") -> FastAPI:
+               impl: str = "node", cookie_key_file: "str | None" = None) -> FastAPI:
     """Build the app.
 
     `root` is a models directory (the picker enumerates its runs) or a single run directory (the
@@ -172,7 +172,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     app = FastAPI(title=TITLE, description=DESCRIPTION, version=VERSION)
     app.state.root = root
     app.state.runs = RunStore(root) if root else None
-    app.state.auth = Auth(password, open_access=open_access)
+    app.state.auth = Auth(password, open_access=open_access, key_file=cookie_key_file)
     # WHICH offline replay/search engine the re-roll-backed probes spawn. `ProbeSession` treats
     # this as SESSION-WIDE on purpose ("two probes of the same run answering under different
     # engines would not be comparable"), so it is a startup flag here rather than a query param —

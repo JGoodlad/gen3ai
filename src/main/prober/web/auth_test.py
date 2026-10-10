@@ -12,7 +12,10 @@ import time
 
 import pytest
 
-from main.prober.web.auth import Auth, ENV_FILE_VAR, ENV_VAR, load_password
+from main.prober.web.auth import (
+    Auth, CookieKeyError, ENV_FILE_VAR, ENV_VAR, KEY_FILE_VAR, default_key_path, load_or_create_key,
+    load_password,
+)
 
 
 # -- where the secret comes from ----------------------------------------------------------
@@ -93,8 +96,8 @@ def test_a_forged_cookie_is_rejected(forged):
 
 
 def test_a_cookie_signed_by_another_process_is_rejected():
-    """The signing key is minted per process, so a restart logs everyone out — and a token from a
-    different instance was never valid here."""
+    """With no key file the signing key is minted per process, so a token from a different
+    instance was never valid here."""
     other = Auth("test-only-password").issue()
     assert Auth("test-only-password").valid(other) is False
 
@@ -203,3 +206,104 @@ def test_a_single_client_is_still_throttled_quickly():
         auth.check("wrong", "1.2.3.4")
     assert auth.throttled("1.2.3.4") > 0
     assert auth.throttled("9.9.9.9") == 0.0, "one guesser must not lock out everyone else"
+
+
+# -- the signing key outlives a restart ---------------------------------------------------
+
+def test_a_cookie_survives_a_restart_with_the_same_key_file_and_password(tmp_path):
+    """The owner's complaint (2026-10-09): every restart logged him out. A NEW Auth (the simulated
+    restart) over the same key file and password must accept the old cookie."""
+    keyfile = str(tmp_path / "key")
+    token = Auth("test-only-password", key_file=keyfile).issue()
+    restarted = Auth("test-only-password", key_file=keyfile)
+    assert restarted.key_persisted is True
+    assert restarted.valid(token) is True
+    assert restarted.unlocked(token) is True
+
+
+def test_changing_the_password_invalidates_existing_cookies(tmp_path):
+    keyfile = str(tmp_path / "key")
+    token = Auth("test-only-password", key_file=keyfile).issue()
+    assert Auth("another-test-only-password", key_file=keyfile).valid(token) is False
+
+
+def test_a_different_key_file_does_not_validate(tmp_path):
+    token = Auth("test-only-password", key_file=str(tmp_path / "a")).issue()
+    assert Auth("test-only-password", key_file=str(tmp_path / "b")).valid(token) is False
+
+
+def test_the_key_file_is_created_0600_and_32_bytes(tmp_path):
+    path = tmp_path / "sub" / "key"
+    key = load_or_create_key(str(path))
+    assert len(key) == 32 and path.read_bytes() == key
+    assert (path.stat().st_mode & 0o777) == 0o600
+    assert load_or_create_key(str(path)) == key           # stable across calls
+    assert [p.name for p in path.parent.iterdir()] == ["key"]   # no temp litter
+
+
+@pytest.mark.parametrize("mode", [0o640, 0o604, 0o644, 0o666])
+def test_a_key_file_looser_than_0600_is_refused(tmp_path, mode):
+    path = tmp_path / "key"
+    path.write_bytes(b"k" * 32)
+    path.chmod(mode)
+    with pytest.raises(CookieKeyError):
+        load_or_create_key(str(path))
+    # Auth never signs with it: it falls back to a per-process key, and says so.
+    auth = Auth("test-only-password", key_file=str(path))
+    assert auth.key_persisted is False
+    assert Auth("test-only-password", key_file=str(path)).valid(auth.issue()) is False
+    assert path.read_bytes() == b"k" * 32                  # not overwritten
+
+
+def test_a_key_file_owned_by_someone_else_is_refused(tmp_path, monkeypatch):
+    path = tmp_path / "key"
+    path.write_bytes(b"k" * 32)
+    path.chmod(0o600)
+    monkeypatch.setattr("main.prober.web.auth.os.geteuid", lambda: path.stat().st_uid + 1)
+    with pytest.raises(CookieKeyError):
+        load_or_create_key(str(path))
+
+
+def test_a_symlinked_key_file_is_refused(tmp_path):
+    real = tmp_path / "real"
+    real.write_bytes(b"k" * 32)
+    real.chmod(0o600)
+    link = tmp_path / "key"
+    link.symlink_to(real)
+    with pytest.raises(CookieKeyError):
+        load_or_create_key(str(link))
+
+
+def test_a_missing_key_file_is_regenerated_and_old_cookies_die(tmp_path):
+    keyfile = tmp_path / "key"
+    token = Auth("test-only-password", key_file=str(keyfile)).issue()
+    keyfile.unlink()
+    fresh = Auth("test-only-password", key_file=str(keyfile))
+    assert keyfile.exists() and fresh.key_persisted is True
+    assert fresh.valid(token) is False
+    assert Auth("test-only-password", key_file=str(keyfile)).valid(fresh.issue()) is True
+
+
+@pytest.mark.parametrize("junk", [b"", b"short", b"x" * 33])
+def test_a_corrupt_key_file_is_regenerated_safely(tmp_path, junk):
+    keyfile = tmp_path / "key"
+    keyfile.write_bytes(junk)
+    keyfile.chmod(0o600)
+    first = Auth("test-only-password", key_file=str(keyfile))
+    assert first.key_persisted is True
+    assert len(keyfile.read_bytes()) == 32 and (keyfile.stat().st_mode & 0o777) == 0o600
+    assert Auth("test-only-password", key_file=str(keyfile)).valid(first.issue()) is True
+
+
+def test_the_expiry_still_applies_to_a_persisted_key(tmp_path, monkeypatch):
+    keyfile = str(tmp_path / "key")
+    auth = Auth("test-only-password", key_file=keyfile)
+    token = auth.issue()
+    real = time.time
+    monkeypatch.setattr(time, "time", lambda: real() + 15 * 24 * 3600)
+    assert Auth("test-only-password", key_file=keyfile).valid(token) is False
+
+
+def test_the_key_path_honours_the_env_override_and_the_state_default(tmp_path):
+    assert default_key_path(env={KEY_FILE_VAR: "/x/y"}) == "/x/y"
+    assert default_key_path(env={}).endswith("/.local/state/gen3ai/prober_cookie_key")
