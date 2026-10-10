@@ -318,11 +318,14 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # gen3_endstate_facts_v1 (`--ko-ramp exact`, `ko_exact.py`): every P(KO) the op prices is the exact one over
         # the 16 rolls + the move's crit chance (its `critRatio`), resolved over the observed HP interval. `ramp`
         # (production) registers nothing and runs every site's legacy expression: byte-identical.
-        from agents.model.ko_exact import KO_RAMP_MODES, crit_p_table
+        # `exact_closed` prices the SAME rule in closed form (`ko_exact.roll_ko_prob_closed`, O(1) per cell): every
+        # `ko_exact` gate below is shared, and `ko_closed` only picks the spelling at the one shared function.
+        from agents.model.ko_exact import KO_EXACT_MODES, KO_RAMP_MODES, crit_p_table
         if ko_ramp not in KO_RAMP_MODES:
             raise ValueError(f"DamageOperator ko_ramp={ko_ramp!r} — one of {KO_RAMP_MODES}")
         self.ko_ramp = ko_ramp
-        self.ko_exact = ko_ramp == "exact"
+        self.ko_exact = ko_ramp in KO_EXACT_MODES
+        self.ko_closed = ko_ramp == "exact_closed"
         if self.ko_exact:
             self.register_buffer("MOVE_CRIT_P", crit_p_table(layout['max_moves']), persistent=False)
         # gen3_endstate_facts_v1 (`--g-ledger eot`): the `g` end-of-turn ledger (and `c4`'s nets, the static op
@@ -692,7 +695,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             lo, hi = ours_hp_bounds(cur_hp, 1.0)
         else:
             lo, hi = opp_hp_bounds(cur_hp, opp_hp_frac, maxhp, 1.0)
-        return ko_given_hit(dmg, crit_dmg, lo, hi, crit_p)
+        return ko_given_hit(dmg, crit_dmg, lo, hi, crit_p, closed=self.ko_closed)
 
     def _damage_rolls(self, atk: torch.Tensor, spa: torch.Tensor, at1: torch.Tensor, at2: torch.Tensor,
                       def_stat: torch.Tensor, spd_stat: torch.Tensor, maxhp: torch.Tensor,

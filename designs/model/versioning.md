@@ -250,6 +250,15 @@ reads, so the string compare is the only gate). A pre-v154 config migrates to of
 The NAMED ARM `--arch endstate` records it `on` (owner 2026-10-10, a pre-data amendment of the closing test); no
 config bump came with that: an arm's overlay is a launch surface, and the field already existed.
 
+**`ko_ramp = 'exact_closed'` (2026-10-10) is a new legal VALUE of an existing field, with NO config bump** — the same
+judgment as the arm amendment above, for the same reasons: no field is added, removed or defaulted differently, so
+`_migrate_config` has nothing to do (every past config's `ko_ramp` keeps its meaning, and no past config can hold the
+new value); it builds no parameter or buffer (an `exact_closed` model is state-dict identical to an `exact` one); and
+an older checkout handed an `exact_closed` config refuses LOUDLY at construction (`DamageOperator` / the extractor
+build check the value against `KO_RAMP_MODES`), never silently. `check_compatible`'s string compare keeps the two
+spellings apart on a resume (a run's spelling is fixed for its lifetime; they agree to a rounding bound, not bit for
+bit). No `ARCH_SIGNATURE` bump: the production forward is unchanged.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

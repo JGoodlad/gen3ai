@@ -360,5 +360,9 @@ def test_split_other_move_compiles_as_one_graph():
     assert type(got) is MoveResolutionOps and got._fields == want._fields
     for f in want._fields:
         a, b = getattr(got, f), getattr(want, f)
-        # gen3_endstate_facts_v1: the `--ko-ramp exact` operands are None under `ramp` (on both sides)
+        # gen3_endstate_facts_v1: the `--ko-ramp exact` operands are None under `ramp` (on both sides); `ko_closed`
+        # (`--ko-ramp exact_closed`'s spelling switch) is a plain bool
+        if isinstance(b, bool):
+            assert a is b, f
+            continue
         assert (a is None and b is None) or torch.equal(a, b), f

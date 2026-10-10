@@ -249,7 +249,11 @@ deterministically (`designs/training/learner_gates.md`), so it must know every s
 selection call, value-position comparison or float → int cast in a `FORWARD_MODULES` module must be
 declared in `selection_sites.py`** — a `MARGIN` rule when its operand is a score (it moves with the
 weights, or is float arithmetic a rounding error can push across the cutoff), an `EXACT` reason
-otherwise (observation / table / integer / gathered at a declared selection). `selection_sites_test.py`
+otherwise (observation / table / integer / gathered at a declared selection). Three EXACT reasons cover a SCORE
+operand whose flip cannot reach log π because the value is continuous across it — `MAX_VALUE` (an argmax read only
+through a gather of its own operand), `BISECT` (a fixed-step bisection's direction test) and `COUNT_CONTINUOUS`
+(`--ko-ramp exact_closed`'s two run counts: the closed-form sum does not jump at a count's step) — and each is exempt
+from the jitter check below, its own test pinning the continuity. `selection_sites_test.py`
 fails on an undeclared or stale entry, on a line mixing the two classes (the recorder resolves ops by
 LINE — split it), and when a site declared EXACT moves under a few-ulp weight jitter; at run time an
 undeclared op on a float operand is a typed FATAL at the first update. The keys are source text, so

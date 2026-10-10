@@ -227,8 +227,8 @@ def test_the_production_forward_runs_only_declared_modules_and_sites(production:
 
 #: EXACT reasons whose operands move with the weights BY DECLARATION — the reason itself says why a flip
 #: cannot reach log pi (an argmax read only through a gather of its own operand; a fixed-step bisection's
-#: direction test). Their own tests pin that claim (`damage_op_index_max_test`, `hypothesis_set_test`).
-_VALUE_CONTINUOUS = ("MAX_VALUE", "BISECT")
+#: direction test; a closed-form sum's run COUNT, continuous across its step). Their own tests pin that claim (`damage_op_index_max_test`, `hypothesis_set_test`).
+_VALUE_CONTINUOUS = ("MAX_VALUE", "BISECT", "COUNT_CONTINUOUS")
 #: FINDING (the X5 version break, 2026-10-07): until the break this test ran on the BLOB production surface,
 #: so X5's EXACT declarations were never jitter-tested here. On X5 (production now) these four EXACT sites'
 #: OPERANDS move under the jitter on rows K9(b) does not exclude: X5's OTHER-mode pass prices a hidden slot

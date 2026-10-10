@@ -156,6 +156,8 @@ class ExactKo(NamedTuple):
     ``maxhp`` [B] (HP points) and each seat's crit chance ``crit_p`` [B,K'] (an OTHER seat: the base 1/16)."""
     maxhp: torch.Tensor
     crit_p: torch.Tensor
+    #: `--ko-ramp exact_closed`: the same rule in closed form (`ko_exact.roll_ko_prob_closed`)
+    closed: bool = False
 
 
 def sub_break_given_hit(high_k: torch.Tensor, crit_k: torch.Tensor, exact: ExactKo) -> torch.Tensor:
@@ -165,7 +167,7 @@ def sub_break_given_hit(high_k: torch.Tensor, crit_k: torch.Tensor, exact: Exact
     maxhp = exact.maxhp[:, None]
     sub = torch.floor(maxhp / 4.0) / maxhp
     lo, hi = ours_hp_bounds(sub, 1.0 / maxhp)
-    return ko_given_hit(high_k, crit_k, lo, hi, exact.crit_p.to(high_k.dtype))
+    return ko_given_hit(high_k, crit_k, lo, hi, exact.crit_p.to(high_k.dtype), closed=exact.closed)
 
 
 class IntentThresholdMoveCell(torch.nn.Module):

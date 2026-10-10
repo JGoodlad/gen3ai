@@ -124,7 +124,8 @@ production ⊕ the overlay (no consent needed for the arm itself; a drift from t
 five fact-completion levers `--move-resolution-facts full --status-facts exact --ko-ramp exact --drop-progress-clock on
 --g-ledger eot` + `--effective-stats on --move-target-state on` + `--move-set-closure on` (`designs/endstate/design_hand_computed_features.md` §4 /
 §5, `design_static_tokens.md` §14). A bisection arm is the named arm plus ONE typed lever and
-`--allow-nonproduction-arch`.
+`--allow-nonproduction-arch`. (`--ko-ramp exact_closed` is `exact`'s closed-form spelling, the same probability at
+O(1) per cell; no arm records it, so it too is typed with `--allow-nonproduction-arch`.)
 
 Three resolution rules the tool applies, each of which has burned a launch:
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`) —

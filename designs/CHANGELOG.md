@@ -13579,3 +13579,46 @@ read both cells for its end-of-turn rule and found them wrong.
   shape, compiled by the trainer's own sentinel, timed), `configs.py`, `window.sh` (a lease window in priority order),
   `cpu_flops.py`, `module_flops.py`.
 - **Docs.** `designs/training/compile_flags.md` (the two switches); T25's backlog row.
+## 2026-10-10 — `--ko-ramp exact_closed`: the exact P(KO) in CLOSED FORM (a new legal value of `ko_ramp`; no config bump; `exact` and `ramp` byte-identical; in no named arm)
+
+- **Why.** Owner, 2026-10-10: "optimise the 16 rolls, since it's a known formula with a crit chance". `--ko-ramp exact`
+  (v152) prices every P(KO) as a 16-term clamped sum per cell (16 passes eager).
+- **What.** `ko_exact.roll_ko_prob_closed`: the op's damage is continuous (no per-roll floor), so the 16 terms
+  `(top · r/100 − hp_lo) / w` are an exact arithmetic sequence; the terms reading 0 and 1 are COUNTED (`run_counts`: a
+  ceil / floor on detached operands) and the middle run is its count × its mean (`closed_sum`). The same real function
+  as the sum for our exact HP and their percentage bin alike — re-verified at the pinned submodule (`sim/battle.ts`
+  `randomizer`, `data/mods/gen3/scripts.ts` `modifyDamage`): neither spelling floors a roll, so there is no flooring
+  error to quantify (the per-roll floor and the 1-HP minimum stay named residuals). `ko_given_hit(..., closed=)` routes
+  BOTH the no-crit and the crit call; `DamageOperator.ko_exact` is now `ko_ramp in KO_EXACT_MODES` (every exact gate
+  shared) and `ko_closed` picks the spelling at the four call paths (`_ko_exact` for `_rolls` and `ko_cb`, move
+  resolution's `_exact_ko_ours` through `MoveResolutionOps.ko_closed`, intent_threshold's `sub_break_given_hit` through
+  `ExactKo.closed`; `move_resolution_x5_test`'s compiled-vs-eager field loop now compares that bool by identity). Parser choice, flag registry text (+ the regenerated `designs/flag_registry.md`).
+- **Bars (`ko_exact_closed_test.py`, all deterministic).** A derived rounding bound: |closed − sum| ≤ 8 eps (1 +
+  (|top| + |hp_lo|) / w) in float64 AND float32, and each within 6 eps (…) of the EXACT rational value (Fraction
+  arithmetic) — over a 139,360-input seeded + adversarial grid (steps exactly at the clamp edges, top = 0, lo above /
+  hi below every roll, w at and below its 1e-6 floor, negative damage, a huge condition number); ≤ 1e-12 asserted on
+  the k1 ≤ 563 domain the bound guarantees. Measured: max |closed − sum| 6.0e-15 over the four realistic regimes,
+  6.5e-13 over the adversarial set, worst ratio to the bound's eps k1 0.70 (bound 8). Gradients (float64 autograd) equal
+  the sum's within 64 eps k1 / w off the kinks (kink-adjacent inputs excluded by rule: a term within 64 eps k1 of 0 or
+  1); at an exact kink the sum returns torch.clamp's inclusive subgradient and the closed form one of the two one-sided
+  derivatives (pinned). Continuity across every count step (a one-ulp move of lo across an exact edge flips a count on
+  ≥ 100 lattice inputs and moves the value ≤ 16 eps k1). `torch.compile(fullgraph=True)` (CPU, dynamo eager backend):
+  no break, forward + backward bit-equal to eager. Mutation teeth: a wrong mean index, a dropped high run, a
+  non-reversed sequence for top < 0, a detached step and a wrong width floor each fail it.
+- **K9(b).** The two counts are floor / ceil of a score but the sum is continuous across each step — declared under a
+  new `selection_sites` EXACT reason `COUNT_CONTINUOUS` (exempt from the jitter check like `MAX_VALUE` / `BISECT`); they
+  return floats, so the runtime recorder never records them. The END-STATE forward at `exact_closed` runs no
+  undeclared op and records exactly the MARGIN sites `exact` records.
+- **Identity (CPU, `static_recovery_2026-10-09/graph_sha.py`).** Production unchanged (`421c6b98ce7937f4` /
+  `749c56159ab028f4` / `51c02c6c6342a045`); the end-state arm (`exact`) unchanged (`42ee361b11fa5a8d` /
+  `df71da47741a8a0f` / `5adfaa6c40a7a71e`); the arm at `exact_closed`: one graph (31,480 lines vs 35,662), state
+  `df71da47741a8a0f` (state-dict identical, no new parameter), outputs `fb2134d54039c341` (differ by rounding).
+- **Versioning.** No `MODEL_CONFIG_VERSION` bump (a new legal VALUE of an existing field: nothing to migrate, no
+  parameter, an older checkout refuses the value loudly at construction); no `ARCH_SIGNATURE` bump (production
+  forward unchanged); `check_compatible`'s string compare keeps the two spellings apart on a resume.
+- **Cost (CPU, descriptive; the GPU read is the perf phase's).** One eager R1 micro-step (forward + backward) of the
+  end-state learner, 256 rows, 4 threads, 9 interleaved repeats on a loaded box (load ~7): median `exact` 0.911 s,
+  `exact_closed` 0.840 s, `ramp` 0.819 s — the closed form removes ~77 % of exact's overhead over the ramp. The KO
+  function alone (`ko_given_hit`, 2048 × 6 × 64 cells, forward + backward): 23.9 ms → 6.1 ms.
+- **Docs.** `ko_exact.py` docstring, ARCHITECTURE (`--ko-ramp` bullet), versioning, op_contracts (the EXACT reasons),
+  file_layout, training_runbook, flag census, `design_hand_computed_features.md` D9 rows + Decision record.

@@ -191,6 +191,13 @@ REASONS: Dict[str, str] = {
               "either branch keeps the root inside the bracket, so a flip at a rounding error moves the "
               "converged root by at most the final bracket width — a continuous, ulp-scale change, never a "
               "log pi jump",
+    "COUNT_CONTINUOUS": "a floor / ceil that COUNTS the terms of an arithmetic sequence on one side of a clamp "
+                        "edge, read only by the closed-form sum over the counted runs (`ko_exact.roll_ko_prob_closed`, "
+                        "`--ko-ramp exact_closed`): the term that changes class at the count's step sits ON the edge "
+                        "(0 or 1) to the quotient's rounding, so a count off by one moves the sum by that rounding — "
+                        "continuous, never a log pi jump. It returns a FLOAT (the runtime recorder never sees it) and "
+                        "its operands are detached; `ko_exact_closed_test` pins the continuity (the sum at both "
+                        "neighbouring counts agrees at every step)",
 }
 
 #: Every EXACT site: module -> reason -> sources.
@@ -208,8 +215,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
         "PYTHON": ("op_reduction == 'principled'",   # gen3_op_reduction_principled_v1: the constructor's mode
-                   # gen3_endstate_facts_v1: the constructor's `--ko-ramp` / `--status-facts` modes
-                   "ko_ramp == 'exact'", "status_facts == 'exact'"),
+                   # gen3_endstate_facts_v1: the constructor's `--ko-ramp` / `--status-facts` modes (`exact` is
+                   # `ko_ramp in KO_EXACT_MODES`, an `in` test; `exact_closed` picks the closed-form spelling)
+                   "ko_ramp == 'exact_closed'", "status_facts == 'exact'"),
         "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
@@ -425,9 +433,12 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # gen3_static_recovery_v1 (`--eot-residual on`): the alive gate (an observed HP fraction against 0) and the weather's
     # turns remaining (an observed k / 5 rounded back to the integer k it encodes).
     # gen3_endstate_facts_v1 (`--ko-ramp exact`): THEIR reported HP fraction against "full" (an observation read; the
-    # HP Percentage Mod bin is exact at 100 %). The exact P(KO) itself is clamps only — continuous, no cutoff.
+    # HP Percentage Mod bin is exact at 100 %). The exact P(KO)'s 16-roll sum is clamps only — continuous, no cutoff.
+    # `--ko-ramp exact_closed` (`roll_ko_prob_closed`): the two COUNTS of the closed form (the terms reading 0, the
+    # terms reading at most 1) — a ceil / floor of a score whose sum is continuous across each step.
     "ko_exact": {
         "OBS": ("hp_frac >= 1.0",),
+        "COUNT_CONTINUOUS": ("(-xs / sd).ceil()", "((1.0 - xs) / sd).floor()"),
     },
     # gen3_endstate_facts_v1 (`--status-facts exact`): the alive gate (an observed HP fraction against 0).
     "status_facts": {

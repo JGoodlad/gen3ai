@@ -292,7 +292,10 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         help="How the damage operator prices P(KO) (gen3_endstate_facts_v1, v152). 'ramp' (default; "
                              "production): the mean-roll 15%%-window ramp, no crit. 'exact': over the 16 gen-3 rolls + "
                              "the move's crit chance (1/16, high-crit 1/8), each roll's KO resolved over the observed HP "
-                             "interval (ours exact, theirs the HP-percentage bin). Requires --damage-op.")
+                             "interval (ours exact, theirs the HP-percentage bin). 'exact_closed': the SAME probability "
+                             "in closed form (the 16 roll terms are an arithmetic sequence: two counts and one "
+                             "arithmetic-series sum, O(1) per cell instead of 16 passes; state-dict identical to "
+                             "'exact'). Requires --damage-op.")
     parser.add_argument("--drop-progress-clock", "--drop_progress_clock", dest="drop_progress_clock",
                         choices=DROP_PROGRESS_CLOCK_MODES, default=None,
                         help="The model reads the observation's turns_since_progress as 0 (gen3_endstate_facts_v1, "
