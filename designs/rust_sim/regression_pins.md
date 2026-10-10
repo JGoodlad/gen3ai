@@ -224,3 +224,39 @@ slower Snorlax at the probed seed; the no-item control's stream diverges); **B4-
 `focus_band_survives_a_lethal_move_hit_at_one_hp` (survive at exactly 1 HP on the 1/10-pass seed;
 the no-item control faints on a different stream).
 
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### Regression tests (the pins that hold every fix)
+
+The e2e capstone and the fuzzers are SWEEPS: they FIND real engine bugs bit-for-bit, but each repro is
+BURIED in a golden that is regenerated every layer — not a STABLE, NAMED pin.
+**`tests/regression_test.rs` backfills one dedicated pin per bug**, each a CONSTRUCTED scenario
+(explicit hacked `gen3customgame` teams + an explicit seed + scripted choices through the public
+`Battle::start_with_switchins` / `run_turn` / `run_full_battle` surface), whose NAME and doc comment
+state WHICH bug it pins and what the WRONG pre-fix behaviour was.
+
+🚨 **THE LAW: every edge case / engine bug a fuzz surfaces becomes a NAMED deterministic pin here**
+(or, if the minimal repro needs an irreducibly complex board, a `# regression:`-named scenario in the
+relevant golden harness), **and the pin is only real once you have REVERTED the fix and watched it
+fail.** A pin that passes on the pre-fix binary is not a pin.
+
+Two assertion styles: **STATE pins** (hp/status/boost — no PRNG fragility) and **DRAW-COUNT (seed)
+pins** (the post-decision PRNG seed vs the REAL-Showdown ground truth, whose printed `seedAfter`s are
+copied verbatim into the test as constants). Regenerate the ground truth after any PRNG/draw-order
+change, then update the constants:
+
+```bash
+node src/rust_sim/harness/probe_regression_rng.js
+node src/rust_sim/harness/probe_residual_order_rng.js
+node src/rust_sim/harness/probe_phaze_regression_rng.js
+```
+
+The full bug -> pin map (82 rows), each family's ground-truth probe, and the FEATURE pins for
+newly-modelled mechanics:
+[`designs/rust_sim/regression_pins.md`](regression_pins.md).

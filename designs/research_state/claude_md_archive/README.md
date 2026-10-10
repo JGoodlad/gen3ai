@@ -72,6 +72,7 @@ statements were deleted:
 |---|---|---|
 | `root_CLAUDE_2026-10-09.md` | the root `CLAUDE.md`, before `d53ba5f0` | 71 KB → 31 KB |
 | `designs_CLAUDE_2026-10-10.md` | `designs/CLAUDE.md` — its 2026-09-07 version-state table (a dead active run, the ai_v12 "live chapter") | 29.4 KB → 13.0 KB |
+| `src_rust_sim_CLAUDE_2026-10-10.md` | `src/rust_sim/CLAUDE.md` — every section moved to a `designs/rust_sim/` topic doc's "Moved from the leaf (2026-10-10)" section (new: `fuzzers.md`, `move_census.md`) | 101.3 KB → 21.8 KB |
 <!-- leaf rows: append below -->
 
 **Nothing here is current.** Every guard these incidents produced is live and described in

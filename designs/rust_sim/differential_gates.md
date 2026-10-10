@@ -161,3 +161,43 @@ count, validated end-to-end.
   Surf / Tackle / Hydro Pump / Megahorn / Crabhammer / Swift (never_miss) and bulky
   defenders.
 
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### The differential-gate ladder
+
+Every layer is validated against the REAL Showdown, one rung at a time. **Each rung's port
+implementation, harness construction and honest scope is
+[`designs/rust_sim/differential_gates.md`](differential_gates.md)** — read the
+rung you are about to change. The ladder itself:
+
+| rung | port | harness (regenerates the vectors) | `cargo test` gate | what it proves |
+|---|---|---|---|---|
+| **PRNG** (level 1) | `prng/` | `harness/gen_prng_vectors.js` (cross-checks a dependency-free JS re-derivation against the REAL `prng.js` value-by-value and **aborts on any mismatch**) -> `tests/vectors/prng_golden.txt`, ~2900 assertions | `tests/prng_golden.rs` | same seed ⇒ same draws — the determinism foundation |
+| **Dex** | `dex/` | `harness/gen_dex_golden.py` dumps the `agents.gen3_data` facade's view | `tests/dex_test.rs` (~1500 lines) | Rust and the Python runtime agree BY CONSTRUCTION |
+| **Team** | `team.rs` | `harness/gen_team_golden.js` captures `(IN, UNPACK, PACK)` triples from the REAL `Teams`, plus hand-crafted raw fixtures | `tests/team_test.rs` (24) | the packed bytes `>player` consumes. 🚨 The edge fixtures exist because an adversarial review caught FOUR real bit-parity bugs the happy-path golden missed — a regression here must stay caught |
+| **Stats** | `stats.rs` | `harness/gen_stats_golden.js` reads each mon's `storedStats` + `maxhp` from an in-process omniscient `BattleStream` — the sim's OWN stats | `tests/stats_test.rs` (18 cases) | integer nature math, floor placement, the Shedinja `maxHP` hook |
+| **State** | `state.rs::BattleState::start` | `harness/gen_state_golden.js` dumps all 12 mons at the first request | `tests/state_test.rs` | construction-time fields ONLY — switch-in EVENT effects belong to `event.rs` and have their own golden |
+| **Turn** | `turn.rs::run_turn` | `harness/gen_turn_golden.js`, 15 scenarios x 60 seeds, capturing `SEED_BEFORE` / `SEED_AFTER` | `tests/turn_test.rs` | the **draw-ORDER+COUNT proof**: post-turn PRNG seed == the sim's across 780 (scenario, seed) rows |
+| **E2E capstone** | the whole engine | `harness/gen_e2e_fuzz.js` | `tests/e2e_fuzz_test.rs` | STRICT `filtered_diverged == 0`, real teams, to game-end (below) |
+
+🚨 **THE TURN RUNG'S THREE DRAW-COUNT SUBTLETIES.** Each is a desync if wrong, each is pinned, and
+each is the kind of thing no formula-level reading of the mechanic would tell you:
+
+- **An IMMUNE move draws ONLY accuracy** — gen-3 `tryMoveHit` resolves immunity AFTER the accuracy
+  roll but BEFORE `getDamage`, so there is NO crit roll and NO damage roll. (Water/Volt Absorb
+  additionally HEAL the defender `floor(maxhp/4)` at that short-circuit, draw-free, and only on a
+  HIT.)
+- **FAINT-SKIP** — if the first mover KOs the target, the second mover's queued move is cancelled
+  (gen3 singles `cancelAction`-all) and draws NOTHING.
+- **No Quick Claw on a faint** — the gen-3 end-of-turn Quick Claw `randomChance(1,5)` is drawn
+  UNCONDITIONALLY of Quick Claw possession, but only if `endTurn()` completes; a faint defers it
+  behind a switch request.
+
+The harness GUARDS its own class invariant: a "distinct-speed" scenario whose actives silently TIE on
+action speed (or vice versa) fails loudly at generation.

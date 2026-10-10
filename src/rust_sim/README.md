@@ -546,7 +546,7 @@ src/rust_sim/
                           #        + WATER/VOLT ABSORB heal now ACCURACY-GATED (an onTryHit → fires only on a HIT;
                           #          a missed Water/Electric move no longer heals the holder)
                           #        + SPIKES / PHAZING / LEECH SEED / SUBSTITUTE / EXPLOSION move layers (see the
-                          #          feature blurbs above + CLAUDE.md for each's draw model + e2e status)
+                          #          feature blurbs above + designs/rust_sim/ for each's draw model + e2e status)
                           #        + FIXED-DAMAGE / FIXED-FORMULA MOVES (run_fixed_damage_move, routed by
                           #          is_fixed_damage_move BEFORE the category==Status branch [bp 0 → derive_category
                           #          calls them Status]: Seismic Toss/Night Shade [damage:'level' → user's level],
@@ -1080,8 +1080,8 @@ Run `--check` after every regeneration; the Python side is separately pinned by
 ## The handler-completeness audit (manifest + gate)
 
 The STATIC completeness guarantee for the at-site dispatch model
-(`gen3_handler_audit_v1` — CLAUDE.md "## Data-driven mechanics" → "### Handler-completeness
-audit"): every resolved handler key on every REACHABLE effect (MODELED∪NOOP abilities,
+(`gen3_handler_audit_v1` — `designs/rust_sim/data_driven_mechanics.md`, the handler-completeness
+audit): every resolved handler key on every REACHABLE effect (MODELED∪NOOP abilities,
 MODELED items, the engine-enterable conditions, the isModeledMove moves + struggle) has an
 explicit disposition in `tests/vectors/gen3_handler_audit.json` (human census:
 `gen3_handler_audit.md`), body-fingerprint-pinned against the resolved dist:

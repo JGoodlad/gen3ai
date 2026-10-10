@@ -206,3 +206,79 @@ disabled-by-default guarantee; this is the unabridged bullet.)*
   keeps an empty, cost-free buffer AND every emit hook is a no-op that touches nothing.
   `run_full_battle_logged` enables it, emits the framing, runs the SAME `run_full_battle`, and
   returns `(BattleOutcome, Vec<ProtocolLine>)`.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### Protocol emission (level-2, Phase 1 + Phase 2): the byte-identical `|...|` stream
+
+This is the **level-2** goal — emit the byte-identical OMNISCIENT `|...|` protocol stream the Showdown
+clients (and the Rust side reader) parse, so the port is a drop-in behind the bridge. The engine is already
+bit-for-bit RNG+state faithful; this layer is a **side output** of events that ALREADY happened.
+
+- **The emit API** (`protocol.rs`): `ProtocolBuilder` is an **append-only, PRNG-free** line buffer on
+  `BattleState` (the `log` field), with ONE sim-mirroring exception — `attr_last_move_still()`, the
+  port of `Battle.attrLastMove('[still]')`, for fail forms the sim itself decides RETROACTIVELY after
+  draws the announce preceded. The engine pushes lines at hook points in `turn.rs`; **all fiddly
+  formatting lives in ONE place** — `MonRef` / `SideRef`, `HpStatus` (the three variants `x/y` /
+  `x/y <status>` / `0 fnt`, the #1 correctness point), `Cause`, `STAT_TOKENS`. The full formatter
+  inventory is in
+  [`designs/rust_sim/protocol_emission.md`](protocol_emission.md).
+  🚨 **A `MonRef`'s IDENT name is the mon's on-field NICKNAME, never the species**
+  (`turn.rs::display_name` = the packed set's `set.name`, falling back to the species only when the
+  set has no nickname — mirroring `Pokemon.name = set.name || species.name`). A reader keys each mon
+  by that `p<N>a: <nick>` token, so rendering the species there made the reader of the day (poke-env)
+  fail to match the mon it already tracked and try to ADD a 7th — the localized/nicknamed-team overflow CRASH
+  (`gen3_nickname_ident_v1`, pinned by
+  `regression_test::nicknamed_mon_renders_nickname_in_every_ident_not_species`). The SPECIES name
+  (`turn.rs::species_name`) lives ONLY in the `|switch|`/`|drag|` DETAILS field.
+  **Disabled by default** (`ProtocolBuilder::new()` → off): `run_full_battle` never enables it, so the
+  seed suite keeps an empty, cost-free buffer AND every emit hook is a no-op that touches nothing.
+  `run_full_battle_logged` enables it, emits the framing, runs the SAME `run_full_battle`, and returns
+  `(BattleOutcome, Vec<ProtocolLine>)`.
+
+- **OBSERVATION-ONLY (the load-bearing guarantee).** Emission draws NO PRNG and mutates no
+  asserted state, so wiring it changes NO seed assertion. THE PROOF: the ENTIRE existing seed suite
+  (`battle_test`'s 2034 cross-turn seed assertions, `fullbattle` 2053, `secondary`, the `e2e_fuzz`
+  STRICT gate, every move layer, every regression pin — at the Phase-2 landing that was e2e 14228 +
+  22 pins; the CURRENT tree is e2e 11673 + 44 pins, the corpus/pin growth from later layers) stays
+  green with BYTE-IDENTICAL seed counts after Phase 2 — run the full suite before/after and diff (it does). The only
+  engine-behaviour changes are the two emission-line REORDERS (the `|turn|N+1` marker moved to the
+  next-turn top; the weather chip reads the shuffle permutation) — both provably state-/seed-
+  invariant (the shuffle already drew; distinct/saturating mons) — which the seed suite re-confirms.
+
+- **The port TIES at Showdown's 1000-turn limit** (`gen3_turn_limit_tie_v1`): `|message|` + `|` +
+  `|tie` past turn 1000 and the `|bigerror|` countdown from turn 500, byte-gated by
+  `tests/turn_limit_test.rs` (it used to PANIC at 1,000 committed turns). Detail:
+  [`designs/rust_sim/protocol_emission.md`](protocol_emission.md) § The turn limit.
+- **The per-phase line inventory** — which lines Phase 1 / 2 / 3 emit, in what order, and the
+  deferral record (`DEFERRED_SCENARIOS` is EMPTY, 0 battles skipped) — is
+  [`designs/rust_sim/protocol_emission.md`](protocol_emission.md).
+- **The byte-differential gate** (`tests/protocol_test.rs`): replays the capture golden through
+  `run_full_battle_logged`, filters BOTH the golden's lines and the engine's output to the gated types
+  (only `debug` + `error` dropped from BOTH; `|t:|` normalized), and asserts BYTE-EQUALITY per line, in
+  order, with a first-divergence panic. A TRUNCATED golden (the capture hit a decision/turn cap
+  mid-stall) is asserted as a byte-exact PREFIX of the longer engine output. **Result: 132 battles,
+  19348 lines byte-equal, across all 22 scenarios.** The formatters are ALSO pinned by deterministic
+  unit gates in `protocol.rs` — including the **disabled-builder-emits-nothing invariant**, which is
+  what keeps the seed suite's buffer cost-free.
+
+- **The drop-in endgame — BUILT** (`gen3_writeline_stream_v1`): `battle.rs`'s
+  **`BattleStream::write_line`** accepts the bridge's command stream (`>start` / `>player pN` /
+  `>pN move K|switch N`) and returns, PER WRITE, exactly the omniscient chunk the real Node
+  `BattleStream` flushes for that write — gated by **`tests/writeline_test.rs`** against the
+  per-write capture `harness/gen_writeline_capture.js` (the SAME 19-scenario corpus at 2 fresh
+  seeds: **44 battles / 2377 writes / 7276 filtered lines, all chunks byte-equal**). Chunk
+  attribution (probe-verified): `>start` → `|t:|`+`|gametype`; each `>player` → its `|player|`
+  line (the second also the whole framing through `|turn|1`); a choice write → nothing until the
+  boundary completes, then the whole turn chunk ENDING with the eager `|turn|N+1` (the sim's
+  `makeRequest` flush — the port now emits the marker at turn END and the batch separator+`|t:|`
+  at the COMMIT, concatenation-identical, chunk-correct). Internals + honest scope (replay-from-
+  genesis; the pre-first-decision seed convention; request frames/privacy fold out of scope) are
+  on the `battle.rs` module row above. Design: `PROTOCOL_EMISSION_DESIGN.md`; line grammar:
+  `tests/vectors/protocol_inventory.md`.

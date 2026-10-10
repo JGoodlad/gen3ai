@@ -1,0 +1,1109 @@
+> **HISTORY — a frozen snapshot of `src/rust_sim/CLAUDE.md` as it stood on 2026-10-10 (`a9d6fd79`), taken before
+> the leaf cleanup. NOT current; do not update it. Each removed section went to a `designs/rust_sim/` topic doc's
+> "Moved from the leaf (2026-10-10)" section; the current leaf is `src/rust_sim/CLAUDE.md`.**
+
+# CLAUDE.md — `src/rust_sim/` (pokesim)
+
+A from-scratch Rust reimplementation of the Pokémon Showdown battle simulator,
+scoped first to **Gen 3 OU singles**, whose hard requirement is **bit-for-bit
+identical** output to upstream Showdown given the same seed + teams + choices.
+
+**`sim_bridge` is the ONLY training/eval transport** (the default since
+2026-08-14): every trainer run is serverless, and a typed `--use-bridge` is refused at parse time with the reason (deletion passes U3, P11b). The node bridge survives only as the explicit A/B arm of the standalone harnesses (the benchmarks that offered a node arm were deleted in P6 slice 6c), and the websocket server only for `play.py` / the ladder. See the root `CLAUDE.md` → In-process bridge transport.
+
+The engine is **live and bit-for-bit through full battles**: every layer in the
+module map below is differentially validated against the real Showdown (PRNG →
+dex → team → stats → state → events → damage → turns → full battles with
+switching/secondaries/status/setup/recovery/protect/spikes/phazing/leech/
+substitute/explosion/fixed-damage/PP+Struggle/taunt+disable/trapping), capped by
+the 220-battle real-team e2e capstone (STRICT `filtered_diverged == 0`) and a
+byte-identical protocol-emission Phase 1+2+3 (132 battles / 19348 lines), and the
+bridge-facing `BattleStream::write_line` streaming surface — per-write byte-gated
+against the real Node `BattleStream` (44 battles / 2377 writes, `writeline_test.rs`).
+
+### 🚨 The move census is RECOUNTED, never quoted
+
+**Every ROUND entry below states the census as of THAT round, and each says "current" because it
+was.** They are round-scoped history — do not read one as today's number. The **only** current
+answer is the tool:
+
+```bash
+# THE UNIVERSE COUNT — the ENGINE is the oracle (all four gen3 universes)
+cd src/rust_sim && cargo build --release --bin scan_move_probe
+PROBE_KIND=move|species|item|ability ./target/release/scan_move_probe < ids.txt   # JSON verdict per id
+# the POOL report + the 0-MISMODELED invariant gate — a DIFFERENT question, keep both
+cd src/rust_sim/harness && SCAN_UNIVERSE=1 SCAN_UNIVERSE_LIST=1 node scan_move_coverage.js
+cd src/rust_sim/harness && node scan_move_coverage.js                   # the 762-team pool report
+```
+
+🚨 **THE UNIVERSE COUNT IS THE PROBE'S TO STATE, NOT THE JS SCAN'S.** `scan_move_coverage.js`
+computes its verdict from modeled-move sets **mirrored BY HAND** from `turn.rs`, and on 2026-09-08
+those mirrors were three moves stale (ROUND 51's `defensecurl`, ROUND 52's `minimize` + `imprison`) —
+it said 309/60 where the engine itself runs **312/57**. `scan_move_probe` cannot drift, because it
+*is* the engine running. The JS scan keeps the two jobs the probe cannot do: the team-pool report and
+the `0 MISMODELED` invariant gate.
+
+**Measured 2026-09-08 by `scan_move_probe`, after ROUND 59: 369 gen3-legal moves → 321 MODELED ·
+48 FAIL-LOUD · 0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106**
+(the four fail-loud: `shellbell` / `machobrace` / `mentalherb` / `mail`). The full ranked gap, by
+family and by legal-learner count, is [`designs/rust_sim/gen3_coverage_census_2026-09-08.md`](../../designs/rust_sim/gen3_coverage_census_2026-09-08.md) —
+a dated SNAPSHOT, not a current number.
+
+🚨 **"MODELED" MEANS "THE ENGINE DOES NOT FAIL LOUD" — IT DOES NOT MEAN "GATED", AND IT DOES NOT MEAN
+"THE DRAW COUNT IS RIGHT".** ROUND 57 found that `confuseray` — shipped at ROUND 44, carrying a
+named revert-verified pin, and counted MODELED by every census since — **never rolled its accuracy**,
+consuming one draw fewer than the sim on every use. Its pin asserted EMISSIONS and no seed. Of the
+312 moves the engine ran before that round, **36 are played by no committed battle golden at all**
+(the census's first tier table said 0, because it counted a `dex_golden.txt` row as battle exposure).
+When you touch a move, check whether anything has ever EXECUTED it. Pool **762/762** fully engine-playable (813 `.txt` files, 51 validate-fail — the
+count MOVES as the pool grows, and it read 722/722 when the pool was 40 teams smaller). ⚠️ **This
+is NOT the root `CLAUDE.md`'s 719-team pool and the two must not be "reconciled".** 762 is what
+`Teams.import` + `TeamValidator('gen3ou')` accept out of `data/teams/*.txt`; **719** is what
+`utils.team_loader.TeamLoader.get_all_teams()` returns to TRAINING (72 sample + 647 other,
+measured 2026-09-07). Different filters, both current. For scale, the ROUND-40 entry says 281/88 and ROUND 44 says 286/83 —
+both were true when written. **The invariant is the load-bearing claim, not the split:** 0
+MISMODELED is what makes an unmodeled move a loud construction failure rather than a silent
+desync, and it has held under every round separately and combined. Re-run after admitting any move
+class, and fix the two always-current docs that carry a copy of this number (root `CLAUDE.md`,
+`src/utils/bridge/README.md`) in the same pass — both had gone stale by 28 moves before the
+2026-08-23 doc audit.
+
+## Why "bit-for-bit" is the hard part (read this first)
+
+Reproducing *Gen 3's mechanics* is the easy half. The constraint that costs the
+effort is matching Showdown's **control flow**, for two reasons:
+
+1. **RNG-consumption-order equivalence.** All battle randomness funnels through
+   one `PRNG` (no `Math.random()` in the battle path). Bit-identity therefore
+   requires consuming the RNG in the *exact same order and count* — including the
+   Fisher-Yates speed-tie shuffle, which itself draws from the PRNG. Roll
+   accuracy-before-crit where Showdown rolls crit-before-accuracy and every
+   downstream draw desyncs. So you must mirror Showdown's `runEvent`/`singleEvent`
+   dispatch order (handlers sorted by order → priority → speed), not just the
+   observable formula.
+2. **Byte-identical protocol output.** The Rust side reader (`side_reader.rs`) and the websocket
+   front end parse the `|...|` lines (and an outside client does too); they must match exactly
+   (tokens, order, HP-fraction formatting). The one documented exception is `|t:|` wall-clock
+   lines, which no reader uses.
+
+The verification answer to both is **differential testing against the real
+Showdown**, layer by layer. Level 1 (the PRNG) is built; see below.
+
+## Module map
+
+**One line per module. The unabridged Responsibility column — every type, feature signature and
+draw-model note — is [`designs/rust_sim/module_map.md`](../../designs/rust_sim/module_map.md);
+read the row you are about to edit.**
+
+| Module | State | In one line |
+|---|---|---|
+| `prng/` | done, validated | Bit-for-bit port of `sim/prng.ts` — `Prng` over `SodiumRng` (ChaCha20, default) + `Gen5Rng` (64-bit LCG). |
+| `json.rs` | done | Tiny std-only JSON reader so the dex parses with zero deps. Load-time only, never in the battle path. |
+| `dex/` | done, validated | Static data over this repo's `data/pokemon/*.json` (the same source `agents.gen3_data` uses). `Dex::for_gen(3)`, move-id aliases, and the `ItemData`/`AbilityData`/`MoveData` mechanic PARAMETERS the data-driven classes fold on. |
+| `team.rs` | done, validated | Bit-faithful `Teams.unpack`/`pack` for one team — the packed string the bridge feeds `>player`; ingests Showdown AND poke-env lowercase forms. |
+| `stats.rs` | done, validated | Gen-3 in-battle stat computation: exact floor placement, integer nature math, the Shedinja `maxHP` hook. |
+| `state.rs` | construction done, validated | `BattleState`/`SideState`/`MonState`/`Field` + every modelled volatile and side condition, and the **`cached_speed`** the tie-shuffles and residual sort read. |
+| `event.rs` | switch-in done, validated | The dispatch core: `single_event_ability_start` + the reusable `speed_sort` with the **Fisher-Yates speed-tie shuffle** — the RNG-consumption crux. Wired for `>start` switch-in abilities. |
+| `damage.rs` | done, validated | Gen-3 single-hit damage: `calc_damage(&DamageContext, &Dex) -> DamageResult{base, rolls:[u16;16]}`, EXPLICIT inputs, no `BattleState`. Gen3's own two-phase `modifyDamage` + the integer 4096 chain. |
+| `turn.rs` (+ `src/turn/`) | validated through full battles | The turn cycle in Showdown's EXACT draw order, split across `mod {driver, moves, status_moves, secondaries, residuals, items, status, switch, speed, helpers}` (`gen3_turn_submodule_split_v1`, pure file-org, ZERO behaviour change). `run_turn` / `run_battle` / `run_full_battle`. |
+| `protocol.rs` | types + emit API, validated | `Player`, `Choice`, `ProtocolLine`, and the append-only PRNG-free `ProtocolBuilder` — all fiddly `\|...\|` formatting in ONE place. |
+| `battle.rs` | `write_line` DONE, validated | `BattleOptions`/`PlayerOptions`/`PackedTeam` + `Battle::start`/`start_with_switchins` + **`BattleStream::write_line`**, the streaming drop-in for `local_sim_bridge.js`. |
+| `bridge.rs` | DONE, validated (in-scope corpus) | The PER-SIDE (`p1`/`p2`) streams + the `\|request\|` JSON + the HP-privacy fold, additive on top of the omniscient stream. `run_full_battle_bridge`. |
+| `bin/sim_bridge.rs` | DONE, validated | The drop-in `node local_sim_bridge.js` REPLACEMENT, INCREMENTAL (`gen3_bridge_incremental_replay_v1`) — O(1) per CHOOSE, O(N) per battle. Plus the OPT-IN CORE OBSERVATION MODE (`gen3_bridge_core_obs_v1`, START's `core_obs`, default OFF): one `__OBS__` row per decision, built through the parser — [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md) §5a. |
+| `side_reader.rs` + `bin/live_reader.rs` | BUILT (P4; the ONE side reader since P6) | ONE side's parse-built observation chain advanced write by write — shared by `sim_bridge`'s core_obs mode, `live_reader` (the stdio READER SESSION live websocket play feeds a FOREIGN stream to, `main.live`) and `core_events --obs-stream` (the prober's batch reader, through `advance_fold`: no frame, encode on demand; merged in P6, F-P5-8); the env crate's `bot_side.rs` + `bin/bot_reader.rs` (P6) put a Lane-F bot on the same chain for a `bot:` anchors our-side and gate (c)'s bot peers. [`designs/rust_sim/live_reader.md`](../../designs/rust_sim/live_reader.md). |
+| `search.rs` | DONE, validated | The search + replay KERNELS (`gen3_rust_search_driver_v1`): the aux PRNG, `Record::parse`, `build_to_turn`, `resolve_turn*`, the `outcome_of`/`pre_state` renderers. Pure helpers. |
+| `bin/search_driver.rs` | DONE, validated | The drop-in replacement for BOTH node offline drivers — the persistent `{id, cmd}` search server AND the one-shot `mode` replay verbs. Dispatch is on the KEY. An `expand_many` may carry **`side`** to ELIDE the one-sided payload the caller will not read (`gen3_expand_many_side_elision_v1`). |
+| `driver_timing.rs` | DONE | OPT-IN per-phase wall accounting inside `expand_many` (`POKESIM_SEARCH_TIMING=1`). **Off it renders the empty string**, so an un-set build is byte-identical and the cross-impl parity harness is unaffected. |
+| `core_events/` (+ `bin/core_events.rs`) | M1 BUILT, not used by training | The Rust Core's typed event layer (`gen3_core_events_v1`): every omniscient line is a typed `Line` whose text is its rendering; one side's stream → `CoreEvent`s carrying the named reading rules (ported from the deleted Python `Gen3Battle`); `parse(lines)`; the persisted record. The binary is also the PROBER's battle reader (poke-env retirement P5: `--walk`, `--obs-stream`, `core_events.md` §9). Detail: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md). |
+| `emission_check.rs` | BUILT; ON in `cargo test` + the fuzzers, compiled OUT of `--release` | The EMISSION SELF-CHECK (`gen3_core_emission_selfcheck_v1`): at every emission, the omniscient line round-trips (`Line::parse(render(l)) == l`), each viewer's render is the line that viewer is owed (the typed `side_view`) and no secret (exact HP, an owner-only line, a one-side frame) reaches the other viewer; a failure panics with the line, both renders and the viewer. Detail: [`designs/rust_sim/emission_selfcheck.md`](../../designs/rust_sim/emission_selfcheck.md). |
+| `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `BoardReading` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` FROZEN, Rust-owned (once generated from poke-env). Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
+| `version.rs` | M2 BUILT | `BattleVersion` (`gen3_core_version_v1`): the persistent battle state — `Arc` parent, per-side stream (`BoardReading` + event `Reader`), per-transition events, memoized views, the `Engine` as REFEREE (step-built only); built by step (a fork: an engine clone in a fresh transport, its lines folded from their text), by observing a caller's session (linear), or by parse (one side's text), gated `parse == step` version by version. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
+| `trackers/` | M3 BUILT; read by the encoder (search's rows, the env core), not by training | The per-decision TRACKERS on the version (`gen3_core_trackers_v1`): slots, the Hidden-Power belief, the progress clock (obs half), recency, pair history, the 32-row event window, the wish / sleep folds, the α/β label, the win-indicator reward — folded from one side's stream at each of its decisions, shared by a fork (`Arc`); and the NATIVE window record (`record.rs`: ordered actions + attributed effects, denials incl. the gen-3 turn cut, the information boundary as a type, checked in `agents/battle/core_corpus_test.py`). Opt-in (`SideStream::with_trackers`). The training-input semantics (the M3 loss catalogue's GIGO, fixed on both paths: `gen3_event_window_semantics_fixes_v1` / `gen3_intent_label_semantics_fixes_v1` / `gen3_progress_clock_attribution_fix_v1`; and the cutover stress's `gen3_hp_prior_support_v1`) are pinned in `tests/tracker_semantics_test.rs`. The event window carries the native record's attribution since `gen3_event_record_v2` (E12 — 30-column rows, DENIED rows, the E4 refused-switch target resolved from the side's noted choice token: `trackers::attempted_switch_species`; a step-built version notes the transport's `choice_log` at the line it was fed, so a search root / child resolves it as the parse chain does) — the schema is `designs/ARCHITECTURE.md` §1.6, the per-mechanic fixtures `tests/window_record_test.rs` (its Python-vs-core twin `event_record_v2_fixture_test.py` was deleted in P6 slice 6c). Detail: [`designs/rust_sim/trackers.md`](../../designs/rust_sim/trackers.md) §5. |
+| `encoder/` | M4 BUILT; SEARCH reads it (`expand_many`'s `rows`); `sim_bridge` ships it under the opt-in `core_obs` — the Rust env core reads it | THE ENCODER (`gen3_core_encoder_v1`): `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the `OBS_DIM`-dim row (2845 since the X5 version break's part 3: its LAST block is the OBS-FACTS block `encoder/facts.rs`, written over the `trackers::facts` fold, held to the ENGINE by `tests/obs_facts_truth_test.rs`; `BattleVersion::encode_facts` computes the block alone) of one side from its reading, view, legality and TRACKERS, byte-equal to `Gen3ObservationEncoder` until P6 slice 6c deleted that comparison (slice O; the row is now held by the obs golden and `designs/rust_sim/encoder.md` §6a); `layout.rs` GENERATED from `agents/observation/constants.py`; the dex / prior tables read from `data/`; NaN-prefilled in test / fuzz builds; the row on the wire as a `<f4` frame (`wire.rs`); `oracle.rs` is the DIAGNOSTIC ORACLE REVEAL — the opponent block's unseen tail under `--oracle-reveal {species,full}` (`full` also overlays the true set on the seen mons), built per chain by the Rust env core, absent (`Inputs.oracle = None`) everywhere else, so `sim_bridge`'s `core_obs` and search build `off` rows. Detail: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md). |
+| `core_error.rs` | BUILT | `CoreError` (`gen3_core_error_v1`): the core's error — a `Refusal` carrying the Python exception class poke-env raised on the same input (the parity gate that compared it was deleted in P6 slice 6c), `Malformed` input, or a core `Fault`. Never a bare `String` inside the core; the message converts unchanged at the transport boundary. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
+| `engine.rs` | BUILT | The ENGINE half of a bridge session (`gen3_core_engine_split_v1`): the battle, the turn loop, the open boundary and the TYPED requests, advancing over a caller-owned command queue into an `EngineSink`. `bridge::BridgeSession` is the TRANSPORT around it (what `sim_bridge` writes, byte-identical); a version owns the engine alone. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
+
+## The core's event layer — typed at the source (`gen3_core_events_v1`)
+
+The Rust Core Program's M1 ([`designs/endstate/program_rust_core.md`](../../designs/endstate/program_rust_core.md)).
+**Every `ProtocolBuilder` method builds a typed `core_events::Line` and the text is its
+`render()`** — one representation, no raw-string escape hatch. Recording (the per-line
+`SourceRec` with the engine's action `Scope`, and the bridge's per-side source tracking) is ON only
+in a session built by `BridgeSession::new_core` / `new_construct_turn0_core`; `sim_bridge` never
+does, so training ships the same bytes and uses none of it. Full contract, the 11 named reading
+rules and the record format: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md).
+
+🚨 **A move of the OTHER side's mon run INSIDE another action goes through
+`BattleState::in_nested_move_scope`** (`gen3_core_nested_move_scope_v1`: Pursuit's strike, a
+Snatch-stolen move; Magic Coat's bounce when it is modelled). The step path's outcome OWNER is the
+source scope and `parse` reads it from line order, so a nest left in the enclosing scope is a
+`parse != step` refusal — the cutover stress's one slice-E refusal (`pool_110_5`, 2026-09-25) was
+exactly that ([`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md) §3, §5).
+
+🚨 **A new emit form is a typed method, and it must be CANONICAL**: `Line::parse(render(l)) == l`
+(a `|` inside one field is two fields — `volatile_start_detail`, not a pipe-joined string). Every
+corpus battle checks it (`tests/core_events_test.rs`, and `core_events` refuses otherwise).
+
+🚨 **The keyword table is Rust-owned source, and the ONLY one** (P1 of the poke-env retirement; it was GENERATED from
+the Python `battle_event.py`, which P6 slice 6d-2 deleted with the Python battle layer): edit `core_events/schema.rs`
+directly for a new keyword / `EventKind` / value key — there is no Python twin to mirror any more; the cargo tests
+(`tests/core_events_test.rs`, `tracker_semantics_test.rs`, `window_record_test.rs`) are its gates.
+
+| gate | what it proves |
+|---|---|
+| `tests/core_events_test.rs` (`cargo test`) | on the protocol capture corpus, every byte-fuzz fixture, the trapping golden and the turn-limit golden: canonical source records (one per line), the step path re-derives the shipped bytes with per-side conservation, `parse(side text) == step`; recording changes no byte |
+| `python3 -m pytest src/agents/battle/core_corpus_test.py -q` | the COMMIT corpus (`rust_core_parity_fixtures/commit_tier.json.gz`: 12 recorded battles) replays `ok` through `core_events --views --trackers --obs` — `parse == step`, the parse-chain encode gate, the engine BOARD audit at every decision, the recorded per-side bytes — with every row fully written and every decision's tokens equal to its legal actions; the information boundary holds on the native record; the golden records round-trip byte-identically and re-parse. The Python-vs-core comparisons that used to ride beside it (slice E events, V views, T trackers, O the row: `rust_core_parity*.py`, `rust_core_present_test.py`, the MILESTONE tier) were DELETED in P6 slice 6c — `designs/rust_sim/encoder.md` §6a names what holds the core now |
+| `tests/tracker_semantics_test.rs`, `tests/window_record_test.rs` (`cargo test`) | the trackers, the α/β label, the reward and the native window record on constructed battles (the M3 loss catalogue's cases, denials, faint causes, the information boundary) — the cargo twin of the deleted slice T and its `tracker_semantics_fixtures_test.py` (`designs/rust_sim/trackers.md` §4) |
+| `src/present/tests.rs`, `tests/obs_facts_truth_test.rs`, `tests/obs_stage_truth_test.rs` (`cargo test`) | `present()` + `legal_actions()` per rule (V1–V13, PE-V10 / PE-V16 / PE-R1b, the refusals) and the reading's sim-fact fields against the omniscient engine — the cargo twin of the deleted slice V / `rust_core_present_test.py` (`present.md` §5). `obs_stage_truth_test.rs`: the toxic counter cell is the engine's `Toxic(n)` stage over its cap of 15 (a Soft-Boiled Blissey reaches stage 12) and the board's Wish flag is the engine's slot condition one residual from landing, at every decision of both viewers. The audit (`audit::check_view`) lists thirteen volatiles, Ingrain and Nightmare one-sidedly (the engine cannot hold them: `present.md`) |
+
+## The core's VERSION and READING — M2 (`gen3_core_version_v1`, `gen3_core_present_v1`)
+
+**`present(reading)` takes NO BOARD** — the view is built from one side's stream alone, so a
+board fact cannot reach it by construction; the omniscient board is a REFEREE (`check_view`, the
+audit `core_corpus_test.py` replays). 🚨 **Every version folds `parse(render)`** — the one observation path (program
+§6c); the typed-at-source shortcut and its integrity mode are DELETED (program §4 M4 row). A core
+session's lines carry only the engine's SCOPE (`BridgeSession::side_scopes`, the owner truth). 🚨 **`present()` is the TRUE reading — parity with poke-env was never the goal.** Where
+poke-env was wrong about a sim fact the stream establishes, the view carries the truth and the
+disagreement was a registered FINDING (`agents/battle/poke_env_findings.py`, deleted in P6 slice 6c — one field, a
+value-aware predicate, the reproduction, whether it reached the obs; EMPTY since M2's three,
+PE-V10 / PE-R1b / PE-V16, were fixed in the fork as `gen3_pe_reading_fixes_v1`); never add a rule
+whose only purpose is to reproduce a poke-env mistake, and the fork is deleted (T27 P6), so there is nothing to fix there. Search runs on it:
+every successor is a `BattleVersion` (`search_driver`'s `open_root` `core: "text"` / `side`; the
+protocol / view roads are deleted, program §4 M2). Contract, the rules, the search road, the
+gates: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md).
+
+🚨 **The poke-env tables are FROZEN, Rust-owned source** (P1 of the poke-env retirement; they were GENERATED from
+poke-env's data by a Python generator that imported it, now deleted): edit `present/tables.rs` directly. Nothing
+re-derives them from the fork any more, so a change to the fork's data (none is planned: it is retired in P6) is NOT
+picked up — the engine-truth audit and the per-rule pins are the checks.
+
+🚨 **A TRAINING SESSION BUILDS NO CORE RECORDING unless asked.** A reader opts in (`new_core`).
+The one exception is OPT-IN per battle: START's `core_obs` key makes the child fold a PARSE chain with
+trackers per requested side (its own `present()` reading) and ship
+`__OBS__` rows (`designs/rust_sim/encoder.md` §5a); absent, not one byte changes.
+
+## The ENCODER — the observation row on the version — M4 (`gen3_core_encoder_v1`)
+
+`BattleVersion::encode(side, out)` writes the `OBS_DIM`-dim row the deleted Python `Gen3ObservationEncoder.encode` built for
+the trainee, from that side's stream alone: the view for the
+current-board facts, the raw `PMon` for the item / type / ability / move sub-encoders (Python reads
+the raw `Pokemon` there too), the legality, and the M3 trackers (REQUIRED — a stream without them
+refuses). 🚨 **The encoder reproduces, it never fixes**: a wrong tracker value is fixed in the tracker,
+in both languages. 🚨 **The gate is BYTES** — f64 in Python's order, one round to f32 at the write;
+the obs golden hashes `tobytes()`, so a `-0.0` fails. 🚨 **Test / fuzz builds NaN-prefill the row** (release
+zero-fills), so an unwritten slot or block reads NaN. 🚨 **`encoder/layout.rs` is Rust-OWNED source** (since P6
+slice 6d-2; its Python generator went with the Python encoder): edit it directly, together with
+`agents/observation/constants.py` — `src/agents/observation/rust_core_obs_layout_test.py` PARSES it and fails when any
+value the MODEL also reads (every shared offset / dim, `EventCol`, the obs-facts tables, the volatile / cant /
+faint-cause / type / status vocabularies) differs. Contract, the wire frame, the
+gates: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md).
+
+| gate | proves |
+|---|---|
+| `src/agents/battle/core_corpus_test.py` (`sim`) | the core's rows over the COMMIT corpus are fully WRITTEN (no NaN from the self-check build's prefill, no `-0.0`), every obs block is nonzero somewhere, and each decision's choice tokens are exactly its legal actions (slice O's Python-row comparison was DELETED in P6 slice 6c, `designs/rust_sim/encoder.md` §6a) |
+| `src/agents/training/golden_obs_core_test.py` (`sim`; `python -m agents.training.golden_obs_core --check`) | the core, replaying the banked golden battles, writes rows that hash to `training/golden_obs_fixture.json` exactly, in order |
+| `tests/hypothesis_dex_rows_test.rs` (`cargo test`; also run by `agents/model/hypothesis_dex_rows_sim_test.py`, `sim`) | X5's hypothesis row (`encoder::hypothesis::hypothesis_slot`, the ONE synthetic input the encoder takes — "species s present, unrevealed set, full HP, no status", through the same `slot::populated_slot` writer) equals the slot the encoder writes at the REAL first appearance of every base-form species (and every corpus mon), byte for byte, outside the DECLARED `on_field` / field-revealed blocks of `hypothesis::CELLS`; the committed table it feeds (`agents/model/hypothesis_dex_rows.json`, via `core_events --dex-rows`) is byte-gated by the same sim test — [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md) §10 |
+| `src/rust_env/tests/oracle_reveal_test.rs` (`cargo test` in `src/rust_env`) | the diagnostic ORACLE REVEAL (`encoder/oracle.rs`, `--oracle-reveal`; [`encoder.md`](../../designs/rust_sim/encoder.md) §11): `off` is byte-identical (the obs / mask / label bytes pinned to a digest recorded before the build); `species` differs from `off` ONLY in the opponent block's unseen tail (real battles, both sides, every decision), which is the true unseen species' `hypothesis_slot` in dex-num order; `full` additionally tells the set, checked against the OPPOSING chain's own-team slot of the same mon; `off`, `species` and `full` each byte-pinned; formes, Species-Clause duplicates, a reveal in play, a real Forecast battle |
+| `tests/encoder_test.rs` (`cargo test`) | no NaN left at any decision; step-built == parse-built bytes; the trackerless and wrong-length refusals; `version::parse_encode_matches_step` refuses a parse chain whose trackers fold differently |
+| `core_events --obs` (every replay, `core_corpus_test.py` included) — the PARSE-chain gate (`gen3_core_parse_obs_gate_v1`) | each side's parse chain (trackers on, the same `note_choice` tokens) decides at exactly the step chain's decisions, one per write, and encodes a BYTE-identical row, mask and tokens — the encode path `sim_bridge`'s `core_obs` ships |
+| `tests/sim_bridge_core_obs_test.rs` (`cargo test`) | `sim_bridge`'s `__OBS__` rows == `core_events --obs`'s, byte for byte, one per decision, before the request chunk; recycled child == fresh child; OFF byte-identical; the bridge rows equal an in-process parse chain's and the `POKESIM_SIM_BRIDGE_TEETH=clock_start` hook reaches them; a malformed key (incl. the deleted clock booleans) refused; the parse-chain gate refuses (`POKESIM_CORE_EVENTS_TEETH=parse_clock`, a test-build hook that starts the parse chain's clock at another `n`) |
+| `src/utils/rust_env/successors_integration_test.py` (`sim`) | the in-process successors' rows == the `search_driver` binary's (`expand_many`'s `rows`: row + mask + `present::choice_tokens`), byte for byte. ⚠️ The poke-env replay's comparison of those rows, D10 leaves included (`core_row_parity_fuzz_test.py`), was DELETED in P6 slice 6c: search's successor rows now have no second reading |
+
+## The EMISSION SELF-CHECK — every line checked as it is emitted (`gen3_core_emission_selfcheck_v1`)
+
+The whole-battle replay (`core_corpus_test.py`, over `core_events`) checks a battle after it ends; `src/emission_check.rs`
+checks each line AT ITS EMISSION: the omniscient line is canonical (`ProtocolBuilder::emit` /
+`retro_edit`), each viewer's render parses back to the typed fold it is owed (`bridge::derive_side`,
+`split_log_lines`), each bridge frame parses and belongs to its side (`push_chunk`), and — as its own
+invariant — no secret reaches the other viewer. A failure PANICS with `EMISSION SELF-CHECK FAILED`,
+the line, both renders and the viewer; `sim_bridge` / `search_driver` EXIT (86) on one rather than
+answer `__ERR__`. Detail, the build table and the proof of zero production cost:
+[`designs/rust_sim/emission_selfcheck.md`](../../designs/rust_sim/emission_selfcheck.md).
+
+```bash
+cargo test                                                         # ON (debug_assertions)
+cargo build --profile selfcheck --features emission-selfcheck      # ON, optimized -> target/selfcheck/
+cargo build --release                                              # OFF: every call compiled out
+```
+
+🚨 **Every call site carries `#[cfg(any(debug_assertions, feature = "emission-selfcheck"))]`** —
+`tests/emission_check_test.rs` fails a call without it (production would pay for it). 🚨 **The
+self-check build lives in `target/selfcheck/`, never `target/release/`** — so it cannot overwrite the
+binary a live run execs. Python selects it with `POKESIM_EMISSION_SELFCHECK=1` (set by the root
+`conftest.py` for every pytest session and automatically for a `*fuzz_test.py` run as a script;
+`utils.bridge.sim_bridge_bin.expected_bin_path` for a test that execs a pre-built binary). The four
+A/B fuzzers build it themselves. 🚨 **A regression the check finds gets its own unit test** that
+exercises the exact edge case and FAILS on revert.
+
+## The callable surface (battle.rs) maps to the existing bridge
+
+`battle.rs` deliberately mirrors the SIX ways `src/utils/bridge/` already drives
+Showdown, so a finished core is a drop-in:
+
+| Bridge today (Node)                     | Rust surface |
+|---|---|
+| streaming battle (`local_sim_bridge.js`) | `BattleStream::write_line` |
+| websocket server for an OUTSIDE client (`ws_frontend.py`) | the SAME `src/bin/sim_bridge.rs` — one child per battle. The front end adds only the `>battle-…` room framing and the `rqid` the SERVER injects (`server/room-battle.ts:796`), never an engine line; byte-gated against `local_sim_bridge.js` by `ws_frontend_replay.py` (40 battles / 44,034 lines, 2026-09-14). Surface + deferrals: [`designs/rust_sim/ws_frontend.md`](../../designs/rust_sim/ws_frontend.md) |
+| mid-battle RNG swap (counterfactual/search) | `Battle::reseed` |
+| clone-and-branch (`State.serialize…`)    | `BridgeSession::snapshot` (a derived `Clone`; PRNG continuity is automatic) |
+| search server (`search_driver.js`)       | `src/bin/search_driver.rs` over `src/search.rs` (`gen3_rust_search_driver_v1`) |
+| offline replay / re-roll (`replay_driver.js`) | the SAME `src/bin/search_driver.rs`, one-shot `mode` verbs (`gen3_rust_replay_driver_v1`) — node splits the two families across two scripts, the port serves both from one binary, which is what `sim_bridge_bin.py::search_driver_spawn_argv` assumes |
+| damage oracle (`damage_probe.js`)        | `Battle::new` + state accessors (TODO) |
+| team pack / validate                     | out of core scope — keep as a thin shim |
+
+When you implement the engine, keep these signatures stable; the bridge contract
+is the spec.
+
+## Clone-and-branch: the SNAPSHOT primitive (`gen3_bridge_clone_branch_v1`)
+
+The last surface the Rust bridge was missing for the prober's SEARCH path
+(`better-line`'s CRN-anchored beam, which branches a paused mid-battle state by CLONING it).
+The Node search server does this with `State.serializeBattle`/`deserializeBattle`; the port's
+answer is **`BridgeSession::snapshot()` — a derived `Clone`**, and the reason a byte format is
+NOT needed is structural: Showdown needs one because its battle graph is full of cyclic object
+references, whereas everything under `BridgeSession` (battle state, PRNG, driver phase, chunk
+
+**PRNG continuity is automatic** (the whole dice state is `Prng`'s backend seed), and the `&Dex` is
+threaded per method rather than owned, so a snapshot copies a couple of teams' worth of state rather
+than ~16 MB. Why a byte format is not needed — and why `Battle::serialize`/`deserialize` are DELETED
+rather than implemented — is in
+[`designs/rust_sim/search_and_replay_drivers.md`](../../designs/rust_sim/search_and_replay_drivers.md).
+
+| method | contract |
+|---|---|
+| `snapshot() -> BridgeSession` | the deep clone (engine AND transport); shares NOTHING with the parent |
+| `engine() -> &Engine` / `resume(engine)` | the ENGINE half alone (`gen3_core_engine_split_v1`) / a FRESH transport around an engine clone — no chunks, no `script`, no seed anchors, the outstanding requests' issued bytes shared with the engine (rendered once, at issue). What a `BattleVersion` fork uses, so a fork never copies the wire's history |
+| `clear_chunks()` | reset the chunk stream so a branch's `chunks()` is only ITS suffix. Deliberately does NOT touch `prev_log_len` — that is a cursor into the BATTLE LOG, and resetting it would re-emit the whole battle into the next chunk |
+| `request_kind(side) -> Option<RequestState>` | Showdown's `side.requestState`. `Move` / `Switch` (a forced replacement) / `Wait`; `None` when no boundary is open |
+| `is_choice_done(side) -> bool` | `side.isChoiceDone()`. True also for a `Wait` side and when no boundary is open; FALSE across a REJECT (a reject re-issues the request and holds the boundary open) |
+| `active_request_json(side) -> Option<&str>` | `side.activeRequest` — the EXACT bytes that went on the wire, stored (not rebuilt) at every emit site, INCLUDING the `trapped:true`+`update:true` re-request a hidden-trap reject re-issues. Cleared when the boundary closes / the battle ends |
+| `battle_state() -> Option<&BattleState>` | the omniscient referee readout (HP/status/boosts/field/seed) |
+| `winner() -> Option<usize>` | the winner once ended, from BOTH end paths (the driver's win check and `forfeit`, which ends via the protocol so the driver's phase never becomes `Ended`). `None` = still playing OR a gen-3 TIE — pair with `is_ended()` |
+
+**Gate: `tests/bridge_clone_branch_test.rs`** (7 tests on a real seeded gen3 battle, every one
+carrying a non-vacuity guard — without those, a snapshot of a FINISHED battle would pass while
+proving nothing). Fault-injection proven.
+
+**Not built here:** `Battle::{new,choose,ended,winner,seed,reseed}`, which stay `todo!()` because
+every production path drives the engine through `FullBattleDriver` instead. The SECOND half — the
+driver that consumes this API — is below.
+
+## The offline drivers: the SEARCH server + the REPLAY family
+
+`src/bin/search_driver.rs` over `src/search.rs` (`gen3_rust_search_driver_v1` +
+`gen3_rust_replay_driver_v1`) is the byte-compatible drop-in for **both** node offline drivers, so
+`utils/bridge/search_session.py` (the prober's `better_line` beam and the search-dividend probe) and
+`utils/bridge/reconstruction.py` (`better_line` / `lookahead` / `falsify`) swap `node` for the binary
+with ZERO protocol change. **Dispatch is on the KEY**: a request carrying `mode` is the one-shot
+REPLAY family (`replay` / `reroll` / `reroll_many`) — a BARE JSON object on stdout, **no trailing
+newline**, exit **0**, or `{"error"}` + exit **1**, which is what `_run_driver` branches on before it
+parses stdout; anything else runs the persistent `{id, cmd}` search loop (`open_root` /
+`expand_many` / `close`).
+
+**It already replaces node in `better_line`** — `search_session.py` has the `impl` switch and
+`search_clone_parity_fuzz_test` took `--impl rust` (deleted in P6 slice 6d-1 with the poke-env materializer it compared against). (The trainer-side composition that once ran the
+search teacher on it was deleted with the search teacher, deletion pass L3.) The node driver (`--impl node`) remains the fallback.
+
+| gate | needs node? | what it proves |
+|---|---|---|
+| `tests/search_driver_test.rs` (5 tests) | no | the aux-RNG stream vs node draw tables (EXACT f64 — a tolerance would only hide a divergence), clone independence, the `stuck` guard's exact 41 iterations |
+| `tests/replay_driver_test.rs` (12 tests) | no | the one-shot dispatch + exit codes, the persistent protocol untouched, the `recorded_queues` refusal-pull, turn-1 opening on both verb families |
+| `src/rust_sim/harness/search_impl_parity.py` | yes + a captured golden | the node `search_driver.js` wire output diffed field-by-field. ⚠️ Its golden's generators (`search_golden.py`, `gen_search_golden.py`) were poke-env drivers and were DELETED in P6 slice 6c; the golden (`tmp/search_golden_node.json`) is gitignored scratch and none is committed, so this harness has no way to get one |
+| `src/rust_sim/harness/replay_impl_parity.py` | yes | `node replay_driver.js` vs the binary LIVE on identical requests |
+
+🚨 **RUN EACH PARITY GATE ON AT LEAST TWO FRESH SEEDS BEFORE CALLING IT GREEN.** A golden is three
+random battles; across seven freshly generated ones the per-golden divergence count ran
+1 / 0 / 0 / 6 / 8 / 0 / 6 — three of the seven would have read as a green gate, and one bug class
+turned up only on the SEVENTH.
+
+🚨 **AN ALLOWLIST ENTRY CAN OUTLIVE ITS OWN FIX AND THEN MISLEAD EVERY READER AFTER.** Two entries
+here described the port as emitting no `|error|` "on a path poke-env never takes"; both halves were
+false, and that path killed **two production launches at ~8 minutes**
+(`gen3_locked_choice_never_rejected_v1`). Verify an allowlist claim against
+`src/rust_sim/harness/search_impl_parity.py`'s `ALLOWLIST` and the code, never against prose. The
+only live entry in either harness is `.error` message TEXT; the verdict, the exit code and the error
+CLASS stay strict.
+
+## The ONE-SIDED VIEW (`view.rs`) — DELETED
+
+The port's one-sided PROJECTION of the omniscient board (`view.rs::one_sided_view`, its per-side
+reveal fold in `BridgeChunks`, `enable_view_fold`, the `view_pN` / `view_pN_at` payloads of
+`search_driver` and `core_events --views`' `views` / `truth`) and its Python consumers are
+DELETED (Rust Core deletion pass, program §4 M2): every successor the search scores is a Rust-core
+version read from its own stream (`present()`), and the engine board audit holds that reading to the omniscient
+board at every decision (the comparison with the training `LiveView` — slice V — was deleted in P6 slice 6c). 🚨 **Do NOT feed `search::volatile_names` to the obs layer** — that
+set is the port's TYPED fields and includes conditions the sim never announces (gen-3 Choice lock
+raised `UnknownVolatileError` on the first real board); the reading folds the announcing lines.
+History, the reading-rule table (V1–V13) and the findings the projection surfaced:
+[`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md).
+
+🚨 **`pre_state` VOLATILE NAMES ARE UNVERIFIED.** `pre_state` mirrors Node's `preState` and has no
+consumer today; its `volatiles` list is a RECONSTRUCTION from the port's typed fields, and exactly ONE
+name is positively verified (`substitutebroken`). Do not read a green parity run as evidence that
+`choicelock` / `perishsong` / `twoturnmove` / … is spelled or timed right — `replay_impl_parity`
+prints a `pre_state:nonempty-volatiles` count precisely so an all-empty record set cannot be mistaken
+for coverage.
+
+🚨 **A gen3ou repro MUST be replayed with `{format:'gen3ou', allowHiddenPower:true}`** — the probe
+default is customgame, and the sim then diverges from the golden.
+
+🚨 **`expand_many` SHIPS TWICE WHAT A SEARCH READS, UNLESS THE REQUEST SAYS OTHERWISE.** The
+driver renders both sides' one-sided payload (`p1_chunks`+`p2_chunks`, and `core_p1`+`core_p2` on a
+core arm); a search reads ONE side. Measured on 864 banked arms the discarded half was **43.0% of the reply bytes**, and
+`expand_many`'s optional top-level **`side`** (`"p1"`/`"p2"`, `gen3_expand_many_side_elision_v1`)
+omits it — **30,326 → 17,330 B/arm**, with the surviving side byte-identical and an omitted `side`
+rendering the historical body byte-for-byte. Python's elided slot is a sentinel that is falsy but
+RAISES on read, never an empty dict (an empty dict ENCODES). Gates:
+`tests/search_side_elision_test.rs` (the byte diff, both ways, in one process) and
+`src/utils/bridge/search_session_test.py` (the sentinel's contract; it moved there from `main/search_dividend/side_elision_test.py`, P6 slice 6d-1). Measured (on the since-deleted view / protocol roads), interleaved, load-matched, one road per
+process: **1.10x / 1.11x at wide B**, not resolved at B = 1. 🚨 **Two candidates that LOOKED certain were rejected on measurement**: a
+compact fixed-order payload (0.024 ms/arm of parse, all of it given back re-keying for the
+existing adapter) and holding Python's cyclic collector off for the reply parse (**2.3x on a
+captured 454 KB reply, NOTHING end to end** — built, gated and reverted). **A micro-benchmark share
+is not a wall share.** The split, both instrument findings, and the four candidates the measurement
+killed with their numbers:
+[`designs/research_state/measurements/expand_many_2026-09-22/README.md`](../../designs/research_state/measurements/expand_many_2026-09-22/README.md).
+
+Full detail — the protocol, the structural simplification over Node's serialize/restart/baseline
+dance, the kernel reuse, the `turn_log` split-line reconstruction, and the honest scope of
+`pre_state`:
+[`designs/rust_sim/search_and_replay_drivers.md`](../../designs/rust_sim/search_and_replay_drivers.md).
+
+## The differential-gate ladder
+
+Every layer is validated against the REAL Showdown, one rung at a time. **Each rung's port
+implementation, harness construction and honest scope is
+[`designs/rust_sim/differential_gates.md`](../../designs/rust_sim/differential_gates.md)** — read the
+rung you are about to change. The ladder itself:
+
+| rung | port | harness (regenerates the vectors) | `cargo test` gate | what it proves |
+|---|---|---|---|---|
+| **PRNG** (level 1) | `prng/` | `harness/gen_prng_vectors.js` (cross-checks a dependency-free JS re-derivation against the REAL `prng.js` value-by-value and **aborts on any mismatch**) -> `tests/vectors/prng_golden.txt`, ~2900 assertions | `tests/prng_golden.rs` | same seed ⇒ same draws — the determinism foundation |
+| **Dex** | `dex/` | `harness/gen_dex_golden.py` dumps the `agents.gen3_data` facade's view | `tests/dex_test.rs` (~1500 lines) | Rust and the Python runtime agree BY CONSTRUCTION |
+| **Team** | `team.rs` | `harness/gen_team_golden.js` captures `(IN, UNPACK, PACK)` triples from the REAL `Teams`, plus hand-crafted raw fixtures | `tests/team_test.rs` (24) | the packed bytes `>player` consumes. 🚨 The edge fixtures exist because an adversarial review caught FOUR real bit-parity bugs the happy-path golden missed — a regression here must stay caught |
+| **Stats** | `stats.rs` | `harness/gen_stats_golden.js` reads each mon's `storedStats` + `maxhp` from an in-process omniscient `BattleStream` — the sim's OWN stats | `tests/stats_test.rs` (18 cases) | integer nature math, floor placement, the Shedinja `maxHP` hook |
+| **State** | `state.rs::BattleState::start` | `harness/gen_state_golden.js` dumps all 12 mons at the first request | `tests/state_test.rs` | construction-time fields ONLY — switch-in EVENT effects belong to `event.rs` and have their own golden |
+| **Turn** | `turn.rs::run_turn` | `harness/gen_turn_golden.js`, 15 scenarios x 60 seeds, capturing `SEED_BEFORE` / `SEED_AFTER` | `tests/turn_test.rs` | the **draw-ORDER+COUNT proof**: post-turn PRNG seed == the sim's across 780 (scenario, seed) rows |
+| **E2E capstone** | the whole engine | `harness/gen_e2e_fuzz.js` | `tests/e2e_fuzz_test.rs` | STRICT `filtered_diverged == 0`, real teams, to game-end (below) |
+
+🚨 **THE TURN RUNG'S THREE DRAW-COUNT SUBTLETIES.** Each is a desync if wrong, each is pinned, and
+each is the kind of thing no formula-level reading of the mechanic would tell you:
+
+- **An IMMUNE move draws ONLY accuracy** — gen-3 `tryMoveHit` resolves immunity AFTER the accuracy
+  roll but BEFORE `getDamage`, so there is NO crit roll and NO damage roll. (Water/Volt Absorb
+  additionally HEAL the defender `floor(maxhp/4)` at that short-circuit, draw-free, and only on a
+  HIT.)
+- **FAINT-SKIP** — if the first mover KOs the target, the second mover's queued move is cancelled
+  (gen3 singles `cancelAction`-all) and draws NOTHING.
+- **No Quick Claw on a faint** — the gen-3 end-of-turn Quick Claw `randomChance(1,5)` is drawn
+  UNCONDITIONALLY of Quick Claw possession, but only if `endTurn()` completes; a faint defers it
+  behind a switch request.
+
+The harness GUARDS its own class invariant: a "distinct-speed" scenario whose actives silently TIE on
+action speed (or vice versa) fails loudly at generation.
+
+## E2E capstone: real teams, full battles, bit-for-bit (per-decision STATE+SEED+winner differential)
+
+The closure gate: instead of constructed scenarios with hand-picked mons and scripted moves, the
+capstone drives BOTH engines over **REAL Showdown-export teams** for **complete random battles to
+game-end**, asserting per-decision state + status + boosts + confusion + running PRNG seed + winner
+**bit-for-bit**. It is the union of every prior rung exercised on production data.
+
+- **The generator** `harness/gen_e2e_fuzz.js` globs `data/teams/*.txt`, validates each under gen3ou,
+  and from a fixed `MASTER_SEED` pairs distinct teams + a battle seed, picking a random legal choice
+  per decision from a SEPARATE seeded choice-RNG — **restricted to the modeled allow/blocklist**
+  (`isModeledMove` + `MODELED_ABILITIES` + `MODELED_ITEMS`). The battle FORMAT is `gen3customgame`
+  (no clauses ⇒ no SetStatus handler-sort shuffle), so the Rust gate runs with `sleep_clause` OFF.
+- **The gate** `tests/e2e_fuzz_test.rs::e2e_fuzz_golden_matches_showdown` seeds a `BattleState` ONCE
+  at the sim's pre-first-decision PRNG state and replays the recorded choices WITHOUT re-seeding.
+  🚨 **The invariant is STRICT `filtered_diverged == 0` over EVERY battle — there is no escape
+  hatch.** The committed golden is **220 battles / 11825 decisions / 0 diverged**, byte-reproducible
+  at the committed knobs (MASTER_SEED 0x1234abcd, FILTERED_TARGET 220).
+- 🚨 **The per-decision assertion tallies are CLEAN-ONLY** — the loop breaks at the first divergence,
+  so post-desync rows are never counted. A tally is not a coverage claim.
+- 🚨 **Coverage is GATED, not reported.** The golden carries per-decision feature columns and the test
+  enforces FLOORS (`status_present_rows >= 500`; `spikes` / `substitute` / `taunt` / `trapped` /
+  `fixed_damage` / `batch5` decisions each `>= 50`; **no DISABLE floor — expected 0, the honest
+  disclosure**). Each floor is teeth-verified by zeroing its flag. A generator STATISTIC would have
+  been a coverage claim nobody could fail.
+- 🚨 **The coverage taxonomy `tests/vectors/e2e_fuzz_taxonomy.txt` ranks gaps by STATIC TEAM
+  COMPOSITION** — which unmodeled ability/item the paired teams CARRY — **not** by observed
+  divergence cause, and it is **MOVE-LEVEL-BLIND** (it only ever picks damaging-or-switch choices).
+  It does NOT gate `cargo test`: it is the measured remaining-work map, nothing more.
+- **Run it:** `node src/rust_sim/harness/gen_e2e_fuzz.js` (env knobs `E2E_FILTERED_TARGET` [default
+  **220**, the committed golden's size — 🚨 but a plain regen does NOT reproduce it today: the
+  golden predates the pool's growth (722 → 762 teams), so its team draw no longer matches; a regen
+  is a NEW golden to be reviewed, not a check (found 2026-09-25)],
+  `E2E_UNFILTERED`, `E2E_MAX_TRIES`, `E2E_MASTER_SEED`) regenerates both vectors; then `cargo test`
+  re-pins the Rust against them. The ignored helpers `e2e_diag` (categorize divergences
+  SEED/STATE/FIRSTMOVER) + `e2e_trace_one` (per-decision HP/seed trace, `E2E_TRACE`/`E2E_LO`/
+  `E2E_HI`) are the triage tools used to build the allow/blocklist and localize an engine bug.
+
+The generator's construction, the four modeled move sets and the ability/item admission ladder, the
+per-batch record, and every engine bug this capstone surfaced (Water/Volt Absorb heal, Intimidate vs
+`onTryBoost` and vs Substitute, the residual-vs-faint ordering + the cached-`pokemon.speed` model, the
+residual handler GATHER order, the Protect duration-handler trio, the forced-replacement
+`updateSpeed`): [`designs/rust_sim/e2e_capstone.md`](../../designs/rust_sim/e2e_capstone.md).
+
+## Regression tests (the pins that hold every fix)
+
+The e2e capstone and the fuzzers are SWEEPS: they FIND real engine bugs bit-for-bit, but each repro is
+BURIED in a golden that is regenerated every layer — not a STABLE, NAMED pin.
+**`tests/regression_test.rs` backfills one dedicated pin per bug**, each a CONSTRUCTED scenario
+(explicit hacked `gen3customgame` teams + an explicit seed + scripted choices through the public
+`Battle::start_with_switchins` / `run_turn` / `run_full_battle` surface), whose NAME and doc comment
+state WHICH bug it pins and what the WRONG pre-fix behaviour was.
+
+🚨 **THE LAW: every edge case / engine bug a fuzz surfaces becomes a NAMED deterministic pin here**
+(or, if the minimal repro needs an irreducibly complex board, a `# regression:`-named scenario in the
+relevant golden harness), **and the pin is only real once you have REVERTED the fix and watched it
+fail.** A pin that passes on the pre-fix binary is not a pin.
+
+Two assertion styles: **STATE pins** (hp/status/boost — no PRNG fragility) and **DRAW-COUNT (seed)
+pins** (the post-decision PRNG seed vs the REAL-Showdown ground truth, whose printed `seedAfter`s are
+copied verbatim into the test as constants). Regenerate the ground truth after any PRNG/draw-order
+change, then update the constants:
+
+```bash
+node src/rust_sim/harness/probe_regression_rng.js
+node src/rust_sim/harness/probe_residual_order_rng.js
+node src/rust_sim/harness/probe_phaze_regression_rng.js
+```
+
+The full bug -> pin map (82 rows), each family's ground-truth probe, and the FEATURE pins for
+newly-modelled mechanics:
+[`designs/rust_sim/regression_pins.md`](../../designs/rust_sim/regression_pins.md).
+
+## A/B fuzzer (the continuous differential parity hunter)
+
+The e2e capstone is a FIXED 220-battle committed golden; the **A/B fuzzer** is its UNBOUNDED sibling —
+`harness/ab_fuzz.js` runs for hours unattended, generating fresh team pairs + seeds + random legal
+choices, driving the REAL Showdown sim and the port side by side through `src/bin/ab_replay.rs`, and
+saving a **self-contained, standalone-replayable repro** for every divergence. Zero API quota while
+running; every future mechanic layer becomes automatically stress-tested.
+
+- **Five team modes** (`--mode`, default `randbats`; `ourandom` and `ladder` below): **`randbats`** — Showdown's OWN gen3
+  random-battle generator, with sets adapted at the SET level to be port-replayable (adjustment rate
+  logged per chunk); **`random`** — the MODELED-UNIVERSE generator, the coverage multiplier that
+  flushes out modeled-predicate ↔ engine drift (195 species / 146 distinct moves on its first smoke,
+  vs the pool's 21 / 37); **`pool`** — the filter-clean `data/teams/` teams with fresh seeds/choices.
+  Flags: `--battles N` / `--hours H`, `--master-seed S` (defaults from time, **ALWAYS printed** ⇒
+  reproducible), `--chunk N`, `--out DIR`, `--keep-chunks`.
+- **The verdict taxonomy** `ab_replay` emits per battle, in precedence order:
+  `seed` [a draw bug] > `request` > `species` > `state` [hp/maxhp/fainted/left] > `status` > `boost` >
+  `confusion` > `spikes` > `firstmover`. Engine PANICS are CAUGHT (`catch_unwind` + a
+  message-capturing hook) and reported as `"verdict":"panic"` — the loop never dies.
+- **Repros** land in `<out>/divergences/<runid>_<battleid>/` as `battle.txt` (a single-battle chunk,
+  standalone FOREVER, independent of generator drift) + `summary.json`. After an engine fix the same
+  `ab_replay <dir>` must flip to `ok` — **then pin it** per the law above.
+- 🚨 **The tool is FAULT-INJECTION PROVEN** (2026-07-03): a dropped draw ⇒ 6/6 flagged `kind=seed`, a
+  +1-damage state error ⇒ 6/6 `kind=state`, a flipped winner ⇒ 5/6 `kind=winner` (the 6th a
+  never-ended prefix battle, correctly still ok). A hunter nobody has fault-injected is a hunter that
+  may be finding nothing.
+- 🚨 **`ab_fuzz_out*` run dirs are gitignored — NEVER commit run output.**
+- **Run it:** see the README runbook ("A/B differential fuzzer"). Quick start:
+  `node src/rust_sim/harness/ab_fuzz.js --mode randbats --hours 12` (overnight),
+  `--mode random --battles 200 --master-seed S` (reproducible bounded hunt);
+  replay any repro with `target/selfcheck/ab_replay <repro-dir>` (the self-check build `ab_fuzz.js` builds).
+- **The root-causing workhorse** is `harness/probe_repro_simtrace.js` — replay ANY saved repro dir
+  through the REAL sim with per-draw PRNG call-site instrumentation, under the repro's own `FMT`
+  format (a gen3ou repro replayed as `gen3customgame` is a different battle).
+
+The driver/replayer internals and every closed finding record (the first bounded smoke's fix queue,
+the residual tail's 7 engine bugs, fix-queue #4's 3 more):
+[`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md).
+
+### The OMNISCIENT BYTE differential (`--protocol`, `gen3_omniscient_byte_fuzz_v1`)
+
+`--protocol` turns the A/B fuzzer's reconstructed STATE+seed+winner check into a **literal `|...|`
+protocol byte differential**: per battle it TEES the real omniscient filtered log into the chunk
+golden, `ab_replay --protocol` replays via `run_full_battle_logged`, filters BOTH sides through a
+shared DENYLIST (drop `debug`/`error`, normalize `|t:|`), and first-divergence-diffs to a
+`kind:"protocol"` verdict — **reported ONLY after state/seed/winner match, so a draw bug still
+surfaces as `seed`**. `--format {gen3customgame,gen3ou}` threads the run format (gen3ou = the
+clause-shuffle draw path + the OU framing). Genders are pinned (`pinGenders`) so the sim never draws
+one at construction. Isolated build + run:
+
+```bash
+CARGO_TARGET_DIR=/tmp/pokesim_target_bytefuzz cargo build --profile selfcheck --features emission-selfcheck --bin ab_replay
+POKESIM_AB_REPLAY_BIN=/tmp/pokesim_target_bytefuzz/selfcheck/ab_replay \
+  node src/rust_sim/harness/ab_fuzz.js --mode pool --protocol \
+  --format gen3ou --battles 300
+```
+
+FAULT-INJECTION PROVEN (a mangled `[from] item: Leftovers` tag ⇒ 6/6 flagged `kind=protocol` at the
+exact `-heal` line). The byte bugs it found and closed — BF1-BF4, the STATUS-MOVE EMISSION-FORM SWEEP
+(pool byte-clean 27% -> ~95%, 13 pins) and the WIDE-NET round (BF-F16..BF-F20) — are recorded in
+[`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md). All were
+observation-only: the full seed suite stayed BYTE-IDENTICAL and the e2e md5 unchanged.
+
+### The KNOWN-RESIDUAL ALLOWLIST + the GREEN GATE (`gen3_omniscient_byte_fuzz_v1`)
+
+The byte fuzzer is a **GREEN GATE**: a NEW divergence fails loudly, while a DOCUMENTED,
+non-gen3ou-impacting artifact is EXPLICITLY allowlisted — never silently ignored. **These clauses are
+the live definition of when the gate may pass; edit them only with an injection proof.**
+
+`ab_replay --protocol` classifies a first-divergence byte diff via
+`classify_known_residual(golden_framing, engine_framing, leads_speed_tie)` and adds
+`"allowlisted":<reason>` to the per-battle verdict ONLY when the divergence FORM matches a documented
+residual; otherwise the field is ABSENT and the divergence is a hard failure. Both live entries share
+one root — the unmodeled turn-0 CONSTRUCTION speed-tie Fisher-Yates shuffle, the project-wide seed
+convention every committed golden depends on — and both are **seed=None-invisible, so ZERO production
+impact under the Rust bridge (the only training transport)** (at `seed=None` the port is the sole oracle, and
+`event::run_start_switchins` falls back to a DETERMINISTIC side-order at a raw-Speed tie, drawing
+nothing).
+
+- **E1 `turn0-construction-speed-tie-attribution`** — a PURE PERMUTATION of identical-CONTENT framing
+  lines. The classifier takes the two FULL framing WINDOWS (everything before the first `|turn|1`),
+  sorts both, and allowlists ONLY IF `leads_speed_tie` AND the two windows are an **IDENTICAL
+  MULTISET**. 🚨 **A CONTENT change therefore makes the multisets DIFFER ⇒ returns None ⇒ the gate
+  FAILS.** That narrowing is the point: the prior coarse per-line-TYPE key SWALLOWED a
+  content-different framing divergence at a mirror lead — a potential real bug.
+- **A1 `turn0-construction-speed-tie-mirror-of-flip`** (`classify_construction_mirror_of_flip`) — the
+  single-line weather-`[of]`-FLIP on a same-species MIRROR lead, which is NOT a pure permutation (one
+  line's `[of]` CONTENT changed) so E1 returns None. Allowlisted **ONLY when ALL SIX STRUCTURAL
+  CLAUSES hold**, else None ⇒ the gate FAILS: (1) the construction speed-tie (`leads_speed_tie`);
+  (2) the two equal-length framing windows differ in EXACTLY ONE line; (3) that line, in BOTH golden
+  and engine, is a `-weather`/`-ability` framing line; (4) the two are byte-identical after stripping
+  the trailing `|[of] pNa: <name>` clause (same weather/ability, same `[from]`); (5) the two `[of]`
+  targets are the two DIFFERENT active slots (one `p1a:`, one `p2a:`); (6) both `[of]` idents map —
+  via the framing `|switch|` details' species field — to the SAME species (the sibling mirror). An
+  `[of]` to a non-sibling or different-species mon, a different weather/ability prefix, a
+  missing/extra framing line, or a non-mirror pair breaks a clause. **GATE-INTEGRITY PROVEN** by two
+  mangled-golden injections plus 7 `a1_allowlist_tests` in `ab_replay.rs`, the load-bearing one being
+  `clause6_wrong_of_to_a_real_different_species_mon_fails`.
+
+- **`ab_fuzz.js --protocol`** counts `allowlisted` SEPARATELY from `diverged`, reports
+  allowlisted-by-reason, and **exits non-zero ONLY on a non-allowlisted `diverged`/`panic`/
+  `parse_error`**. Allowlisted repros are saved under `<out>/allowlisted/` (auditable, and a fixture
+  source); real divergences under `<out>/divergences/`.
+- **`tests/byte_fuzz_corpus_test.rs`** (the `cargo test` gate) enforces "no NEW kinds": each fixture
+  resolves to either `ok` (the emission-form fixtures stay byte-clean) OR a `diverged` verdict whose
+  `allowlisted` reason EXACTLY equals a `# ALLOWLIST <reason>` header the fixture is tagged with. So
+  (i) a residual fixture that stops matching its reason FAILS, and (ii) **nobody can add a
+  silently-ignored divergence — every escape is a named allowlist entry backed by a tagged repro.**
+  FAULT-INJECTION PROVEN: stripping a fixture's tag makes the corpus test FAIL. To add a fixture, drop
+  a clean fuzzer repro `battle.txt` in the folder (see its `README.md`) — the test auto-discovers it.
+
+The R- and T-numbered bugs behind the current green state (R3 IV-derived Hidden Power BP, R2 the
+Leftovers `-heal` slot-condition gather order, R13 Encore x Sleep Talk, R15 Sleep Clause x a
+self-Rest sleeper, T1 freeze persistence vs Hidden Power Fire, the Endure and Natural-Cure emission
+fixes, and the Pressure-Curse PP root of the round-2 tail):
+[`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md).
+
+## Bridge / request A/B fuzzer (the per-side + `|request|` parity hunter)
+
+The **PER-SIDE sibling** of `ab_fuzz.js`: `harness/bridge_ab_fuzz.js` verifies, over random teams,
+that the crate's PER-SIDE (`p1`/`p2`) streams + the `|request|` JSON — the poke-env legal-action
+requests, including the maybeTrapped/trapped switch-legality state machine — are BYTE-IDENTICAL to the
+real Node `getPlayerStreams`. It is the validation harness for `bridge.rs`. Its taxonomy: `preamble` /
+`perside` / `privacy` [HP-fold] / `request` [JSON] / `error` [trapped] / `chunk_count` / `panic`.
+
+- **Modes** (`--mode`, default `trapping`): **trapping** — a coordinated Arena-Trap / Magnet-Pull /
+  Shadow-Tag matchup vs varied grounded/Flying/Levitate/Steel/Ghost foes, the one mode where the port
+  is already bit-for-bit on the omniscient stream, so ALL divergences are genuine request/per-side
+  issues; plus `randbats` / `random` / `pool` reusing `ab_fuzz.js`'s exported providers. **TRAPPING
+  PROBES** (`--trap-prob`, default 0.5) issue a REJECTED `switch` first so the `|error|` +
+  `trapped:true` re-request round is exercised.
+- 🚨 **Isolated build: `CARGO_TARGET_DIR=/tmp/pokesim_target_bridge`** — NEVER the shared `target/`,
+  which holds the live `ab_replay`.
+- **Fault-injection PROVEN**: drop the firm-trapped flag ⇒ `kind=request`; wrong `|error|` text ⇒
+  `kind=error`; wrong HP-fold % under gen3ou ⇒ `kind=privacy`. Each caught, standalone-replayable, and
+  restored byte-identical.
+- **Three real Phase-1 bugs it found + FIXED** — Shadow Tag's FIRM trap (`trapped:true` on the FIRST
+  request with no `maybeTrapped` phase, and a rejected switch draws `|error|` with NO re-request,
+  unlike Arena Trap / Magnet Pull's `tryTrap(true)` -> `'hidden'` machine; `state::trap_is_firm`
+  distinguishes them), the forced-Struggle `|-activate|<mon>|move: Struggle` OWNER-ONLY `sideupdate`
+  line, and the per-side request residual.
+
+- 🚨 **`maybeTrapped` is NOT "trapped but unconfirmed", and `maybeDisabled` is NOT "shares a move".**
+  Both are endTurn DISPLAY predicates wider than the restriction they hint at. `maybeTrapped` also
+  fires for a mon Transformed into its foe (`knownType` false: Magnet Pull drops its Steel gate,
+  Arena Trap its Flying gate) and, in gen3ou only, for a foe whose SPECIES could hold Arena Trap /
+  Shadow Tag (a Sand Veil Dugtrio) — `BattleState::is_maybe_trapped`, `gen3_known_type_maybe_trap_v1`.
+  Imprison sets `maybeDisabled` + `maybeLocked` on EVERY live foe; `maybeLocked` drops only on a
+  refused-MOVE re-request; the trap flag is written LAST; and the engine REFUSES a pick of an
+  imprisoned move (`gen3_imprison_maybe_flags_v1`, `gen3_imprison_choice_reject_v1`). poke-env reads
+  `maybeTrapped` into the observation. Oracle `harness/probe_maybe_flags.js`; pins
+  `tests/bridge_maybe_flags_test.rs` + bridge fixture 25. 🚨 **The fuzzers' pickers mirror the hidden
+  disable, so NO fuzzer submits an imprisoned pick** — that path is covered by the pins only. An
+  ALL-imprisoned mon is still OFFERED its full list and its pick is Struggle-SUBSTITUTED
+  (`BattleState::forced_struggle`, `gen3_imprison_all_struggle_v1` — the request shape keeps reading
+  `MonState::must_struggle`, the choice-time sites read `forced_struggle`; oracle
+  `harness/probe_rereq_accumulate.js` F rows, pins `tests/bridge_imprison_struggle_test.rs`).
+  Successive refusals in ONE decision ACCUMULATE on the outstanding `Request` (the sim's one
+  `activeRequest`): `disabled_mask` keeps every slot a refused move flipped, `trapped` stays once a
+  refused switch set it, and a refusal that changes nothing is `[Invalid choice]` with NO
+  re-request — except a repeated IMPRISONED pick, which re-derives `maybeLocked` and so re-requests
+  again (`gen3_rereq_accumulate_v1`). A `move` sent to a FORCED-SWITCH request is refused FIRST
+  (`[Invalid choice] Can't move: You need a switch response`, nothing follows —
+  `gen3_choice_kind_mismatch_v1`). Oracle `harness/probe_rereq_accumulate.js` A / K rows; pins
+  `tests/bridge_rereq_accumulate_test.rs`
+  ([`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md) § The
+  M6 CUTOVER stress).
+
+- **Honest scope (next phase):** `randbats`/`random` modes surface PRE-EXISTING **omniscient-stream**
+  gaps orthogonal to the request/per-side layer — the non-L100 `details` LEVEL display
+  (`switch_details`/request `details` omit `, L84`; the port targets L100 gen3ou), a **mid-battle
+  Intimidate `|-unboost|…|atk|0`** at the −6 Atk FLOOR (`turn.rs:6667` hardcodes the delta `-1` →
+  always `atk|1`; the sim emits the CLAMPED-applied 0 — repro saved, probe-confirmed
+  `harness` Intimidate-clamp), and the same Toxic-`[from]`/status-move/Water-Absorb clusters
+  `ab_fuzz.js` already tracks. These belong to the omniscient fuzzer's fix-queue (they'd desync the
+  raw stream too), not the bridge layer. `trapped:true` coverage is dense; a `gen3ou`-format trapping
+  run additionally exercises the OU reframe + HP-privacy fold.
+
+### The PER-SIDE KNOWN-RESIDUAL ALLOWLIST (`bridge_replay --ab`) — the bridge fuzzer's green gate
+
+`bridge_ab_fuzz.js` exits non-zero on any `diverge`/`panic`/`parse_error` verdict that carries no
+`allowlisted` reason (`verdictClass`: only a `diverge` can be allowlisted). **These clauses are the
+live definition of when the per-side gate may pass; edit them only with an injection proof.** The
+`|request|` keys (`classify_known_perside_residual`: Curse target and `return102`, both DORMANT, plus
+the gender/level `details` suffix) are one family. The other three keys are a `kind=perside` first
+divergence tried IN ORDER, and all three have the SAME root as the omniscient E1/A1: the unmodelled
+turn-0 construction speed-tie order (the sim's tied `runSwitch` insert draws `battle.random`; the
+port's `event::run_start_switchins` is deterministic at a tie). All three are seed=None-invisible:
+- **B1 `turn0-construction-speed-tie-order-flip`**: a pure permutation of the framing window
+  where every moved line is `-ability`/`-weather`.
+- **`perside-construction-speed-tie-mirror-of-flip`**: a same-species MIRROR lead's ident flip
+  (the single-line `[of]` form, or the Intimidate block permutation).
+- **`turn0-construction-speed-tie-switchin-block-swap`** (`src/bin/bridge_replay/switchin_block_swap.rs`):
+  a NON-mirror tie whose moved lines include Intimidate's `-unboost` (B1's clause 3 rejects that line;
+  the mirror key needs same-species leads). The Zapdos-vs-Salamence cutover-stress repros are the
+  example. Allowlisted ONLY IF ALL of these hold: (1) the leads' Speeds tie; (2) on BOTH sides the first
+  `|turn|` line is exactly `|turn|1`, at the same index in golden and engine; (3) on BOTH sides everything
+  from `|turn|1` to the end is BYTE-IDENTICAL; (4) each side's windows are an identical MULTISET; (5) a
+  differing window is exactly ONE swap of two adjacent runs (golden `A++B`, engine `B++A`); (6) `A` and
+  `B` are each a well-formed switch-in block of the two DIFFERENT leads. A block is a lone
+  `-weather|…|[from] ability: …|[of] pNa`, a lone non-Intimidate `-ability`, or the pair
+  `-ability|…|Intimidate|boost` then `-unboost|<foe>|atk|<n>`. A blocked Intimidate (`-fail`/`-immune`
+  tail), Forecast, a three-block rotation, or a co-occurring request residual is NOT admitted.
+- 🚨 **B1 and the mirror key do NOT check the rest of the battle.** The verdict is first-divergence,
+  so an allowlisted B1/mirror battle cannot report a LATER real divergence. The block-swap key's
+  clause (3) closes that for itself only. On 2026-09-25 all 10 B1/mirror-allowlisted cutover-stress
+  repros were byte-identical after the window, so nothing was hidden in that run. Retrofitting (3)
+  onto B1 and the mirror key is still OPEN.
+- **Gate integrity:** `node harness/bridge_ab_fuzz.js --selftest` runs 25 cases through the real
+  replayer. It replays every tagged fixture to its reason, then applies 14 mangled-golden injections
+  that must each still FAIL (the NEGATIVES are the load-bearing half): `atk|1`→`atk|2`, a changed
+  ability, a mis-targeted `-unboost`, a dropped line, an extra line, the Intimidate pair internally
+  reordered (the multiset is preserved), the lead `|switch|` lines swapped, the other side's window,
+  a non-tie lead, a later `-damage` or `|request|` on either side, a truncated golden, and the
+  fixture-22 orientation. The classifier's own 26 `#[cfg(test)]` cases are also mutation-checked:
+  every clause's revert fails a test, except (4) and the equal-length check, which (5) implies. Tagged
+  corpus fixtures: `tests/vectors/bridge_corpus/21_*` and `22_*`. **Run `--selftest` after ANY change
+  to a per-side allowlist clause.**
+
+### The BANKED SPEC QUEUE — probe-settled specs
+
+Each mechanic that reached the engine through a probe left a re-runnable oracle in `harness/` whose
+header carries a SETTLED block: the draw model, the exact emission forms, the edges, and the named way
+a naive implementation desyncs. 🚨 **Read the probe before implementing; do not re-derive from
+source.** The eight queued specs (Safeguard / Recycle / Fake Out / Conversion / Torment / Imprison /
+Weather Ball / Skill Swap) are ALL SHIPPED; the queue and the trap that made each one non-obvious are
+in [`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md).
+
+### The `ab_replay` SUBSEQUENCE SEED ANCHOR
+
+`gen3_ab_replay_seed_anchor_subsequence_v1`. `align_seed_subsequence` aligns the sim's per-decision
+seeds as a SUBSEQUENCE of the port's checkpoints, so a decision-boundary CHECKPOINT offset stops
+reading as `kind:"seed"` and costing a full triage; the per-decision STATE checks then run at the
+ALIGNED pairs, and verdicts still report the GOLDEN's decision index (what a reader greps for in
+`battle.txt`).
+
+🚨 **A sloppy anchor makes the omniscient gate VACUOUS — far worse than the artifact it removes.**
+`anchor_tests` is 10 cases and **the NEGATIVES are the load-bearing half**: an injected extra draw, a
+missing draw, a REORDERED pair (same values, wrong order), a port stream that ends early, and an empty
+port stream must each still FAIL. `POKESIM_DUMP_SEEDS=1` prints both per-decision seed lists, so the
+anchor's soundness precondition — the port's checkpoint list really is a SUPERSET of the sim's — is
+CHECKABLE on any repro rather than assumed.
+
+**THREE READINGS, AND ONLY THE THIRD IS RIGHT — the durable methodological lesson.** Within one
+session this repro was called: (1) "the known segmentation artifact", asserted from a byte-clean
+`POKESIM_PROTOCOL_ONLY` replay — under-evidenced; (2) "the port surfaces FEWER requests, possibly
+round 26's hypothesis (b), a real draw-free legality bug" — WRONG, and the alarming one; (3) the
+one-draw checkpoint offset above. What settled it was comparing draw POSITIONS **within a single
+decision**. The earlier reads compared draw COUNTS across differently-scoped windows — `ab_replay`
+plays the WHOLE scripted battle before it compares, so its 171-draw trace covers all 33 port
+decisions, not the 5 the verdict names. **A count comparison whose two sides cover different windows
+is not evidence, and it reads exactly like evidence.**
+
+What the anchor did and did not close on `ab_41_9` (a one-draw checkpoint-placement artifact the
+anchor correctly refuses to reconcile — the port's RNG consumption is CORRECT), and why anchoring
+against the DRAW stream instead carries its own vacuity risk:
+[`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md).
+
+### `--mode ourandom` — "gen3ou-randbats", the fuzz surface that is actually the one we care about
+
+`gen3_ou_random_teams_v1` (`harness/ou_random_teams.js`). The fuzzers had two team sources and
+NEITHER is the training/ladder surface:
+
+| mode | on-surface? | diverse? |
+|---|---|---|
+| `pool` | **yes** — the 762 real gen3ou teams | **no**: a FIXED human-built set from a narrow meta, and the committed capstone samples only 220 battles of it |
+| `randbats` | **no** — non-L100 levels, curated movesets, near-uniform items | yes |
+| **`ourandom`** | **yes** | **yes** |
+| **`ladder`** | **yes** — real PUBLIC-LADDER teams | **yes**: 22,813 human-built teams (`--ladder-tier commit\|milestone\|full`) |
+
+### `--mode ladder` — the LADDER-USAGE corpus (`gen3_ladder_usage_corpus_v1`)
+
+All four A/B fuzzers take `--mode ladder` (`harness/ladder_corpus.js`, the JS twin of
+`utils.ladder_corpus`): the Metamon `hl_05_26` gen3ou teams, filtered to what the ENGINE plays
+(`scan_move_probe` — 22,813 of 22,862 kept; the 49 dropped carry Metronome, Shell Bell, Snore,
+Psywave, Fly, Blast Burn, Dig, Grudge or Triple Kick). A team is drawn from the tier with the
+fuzzer's seeded team RNG, so a master seed replays; `teamFilterClean` (the JS mirror) is REPORTED
+against, never used to drop a team, and typed Hidden Power is pickable (the corpus is gen3ou-valid
+and HP is priced at its IV-true BP). The same corpus is a team source of the Python fuzz scripts (`--team-source ladder`) and was the parity harness's third
+(`rust_core_parity.play(key, source="ladder")`, deleted in P6 slice 6c).
+The chapter: `designs/ops/testing.md` → THREE TEAM SOURCES.
+
+🚨 **ITS FIRST RUN FOUND A LIVE EMISSION BUG THE POOL COULD NEVER SHOW** (`gen3_lockedmove_announce_v1`):
+every CONTINUATION turn of a lock — Outrage / Thrash / Petal Dance, Uproar, Rollout / Ice Ball —
+announces `|move|<user>|<Move>|<target>|[from] lockedmove` in the sim (`runMove`'s `getLockedMove()`
+branch), and the port emitted the BARE line, so poke-env read each continuation as a fresh use and
+charged a PP for it. 0 pool teams and 0 gen3 randbats sets carry any of those moves. Pinned by
+`protocol_byte_fuzz_test::lockin_continuations_announce_from_lockedmove` (fails on revert). The
+same probe found a MECHANICS bug behind it (`gen3_rollout_lock_duration_v1`): the sim's `rollout`
+volatile is added on the first use with `duration: 1` and refreshed to 2 only by the
+`basePowerCallback` (a turn that computes damage), so a MISS / Protect / a turn the user cannot act
+ENDS the lock at that residual — the next use is fresh (PP paid, bp 30). The port kept the lock
+across a miss (wrong PP, wrong bp, a wrong `trapped` request), and had no residual handler for the
+volatile at all (a NO_ORDER/subOrder-2 duration handler, the Fury Cutter tie group). Pinned by
+`protocol_byte_fuzz_test::rollout_lock_ends_on_a_turn_that_does_not_hit`; rust == node on full
+per-side streams for Rollout / Ice Ball × {plain, paralysing, Protect} foes over 8 seeds each.
+
+**THE MOTIVATING MEASUREMENT.** Both bugs found on 2026-08-17 (ROUND 42's Trace/forecast, ROUND
+43's Substitute/wrap) have **ZERO gen3ou-pool exposure** — 0 of 773 pool files carry Castform, 0
+carry a wrap-family move. Training plays pool-vs-pool, so neither could ever have fired there.
+That is the round-24 lesson ("fix bugs found on the SURFACE YOU CARE ABOUT") restated as a number,
+and it is why a gen3ou-native random generator is worth having.
+
+**Every input is Smogon-derived and already committed** (`gen3_smogon_stats.json` usage,
+`gen3_teammate_priors.json`, and the move / item / ability / spread priors) — deliberately NOT
+`data/teams/gen3_species_priors.json`, which is POOL-derived, and the whole point is independence from
+the pool. **Legality is Showdown's verdict, not a reimplementation**: every generated team goes
+through the real `TeamValidator('gen3ou')`, so the banlist and every team-building clause are enforced
+by the sim. 🚨 **Coverage is DISCLOSED, not assumed** — move sampling is renormalized over
+ENGINE-MODELED moves (so a generated battle ALWAYS plays to completion), and the renormalized mass is
+printed in the run banner by `describeCoverage()` on every run.
+
+The Hidden-Power closed form (restricting IVs to {30,31} PINS BP at 70, so the bit-0 pattern alone
+selects the type — verified 16/16 by RECOMPUTING type and BP from the emitted IVs), the two bugs the
+real data shapes caught, and the first results:
+[`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md).
+
+### The picker's own blind spots (found while measuring the above)
+
+- **STRUGGLE is now pickable.** It is ENGINE-MODELED (`pp_struggle_test.rs` is a full
+  STATE+PP+SEED+winner differential) but `isModeledMove` returns false for it, so a mon with every
+  slot spent AND no switch had no pickable choice and the whole battle was DROPPED to a prefix.
+  That truncated precisely the PP-exhaustion endgames — the deepest, most state-laden turns, and the
+  ones gen3ou STALL teams produce most. The live per-side gate already accepted Struggle
+  (`id === 'struggle' || isModeledMove(id)`); the two harnesses simply disagreed and the offline one
+  was weaker. **A picker predicate that gates a test silently SHRINKS that test** — the same shape
+  as ROUND 42's L100 pin.
+- **The drop LABEL named an innocent bystander.** `forced-unmodeled-move:<moves[0]>` reported the
+  FIRST slot in the request regardless of why the pick failed, so a drop on a mon whose first slot
+  happened to be Substitute read as `forced-unmodeled-move:substitute` — and Substitute is modeled,
+  so the label sent a reader hunting a bug that does not exist (it did, on 2026-08-17). It now names
+  the moves that actually blocked, with a distinct `all-disabled(...)` reason. **A diagnostic that
+  names an innocent bystander is worse than one that names nothing.**
+- **A HIDDEN disable reads `disabled:false` in the request** (`gen3_picker_hidden_disable_v1`).
+  Imprison seals the foe's shared moves with a `'hidden'` disable that the owner's request masks,
+  so a request-reading picker submits a doomed move; the picker now mirrors the sim's own
+  `moveSlot.disabled` under `maybeDisabled`, as it mirrors `pokemon.trapped` for switches.
+- 🚨 **The recorder never re-writes a HELD side** (`gen3_recorder_held_choice_v1`). After one side's
+  reject the other side's choice is held, and a re-write is NOT a no-op in the sim — writes apply in
+  order, so a held p2's re-write lands on the NEXT turn's request once `>p1` commits (a held p1's
+  REPLACES it). The port's script keeps the held choice, so the repro replays one turn off with
+  correct draws and reads `kind=seed` (the M6 stress's `rmuggvoke_ab_3_15`). A live client never
+  sends that write (only the rejected side is re-asked). A repro recorded before this fix cannot
+  flip to `ok`. Re-record it from the sim-APPLIED choices to test the port on it —
+  [`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md) § The M6
+  CUTOVER stress.
+
+### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
+
+`gen3_simbridge_diff_allowlist_v1`. **This is the strongest correctness gate in the project**, because
+it is the only one that compares what poke-env ACTUALLY consumes, at the boundary poke-env sits on.
+
+**Why it outranks the byte/seed gates.** `ab_fuzz`/`ab_replay` diff the OMNISCIENT log — which poke-env
+never sees — and replay a FIXED recorded decision list, so they must ASSUME both engines segment
+decisions identically. When they don't, you get a `kind=seed` artifact that cannot be distinguished from
+a real legality bug (the round-26 finding: 12 of 13 open repros have ZERO wrong draws). This harness
+instead spawns BOTH real bridges, feeds identical stdin, and **discovers boundaries live** (read a
+request → choose → compare). The segmentation artifact CANNOT occur by construction, and a genuine extra
+request is an unambiguous request-frame mismatch. It also covers the `|request|` JSON — a genuinely
+separate observable with its own bug history (PA2's Spikes-under-Pressure PP was INVISIBLE to the
+omniscient fuzzer and only diverged in the request's `pp` field).
+
+**THE LAYERING PRINCIPLE.** per-side + request = the CONTRACT (the correctness requirement); the
+omniscient log = a LOCALIZER (engine bug vs fold/serializer bug); the PRNG seed = a LEADING INDICATOR
+(catches divergence before it is observable). **An outer-layer mismatch is ALWAYS a bug; an inner-layer
+mismatch with a clean outer layer is NOT necessarily one** (the turn-0 construction residuals are exactly
+that). Inner layers buy detection SPEED and LOCALIZATION, not correctness.
+
+**What landed:**
+- **The GREEN GATE + allowlist.** Previously any known-benign residual failed the run — a 10-battle
+
+- **`--selftest`** — 14 gate-integrity assertions: 10 allowlist ones whose NEGATIVES are load-bearing
+  (a different move; an alias PLUS a residual pp difference; a LEVEL value difference; a GENDER value
+  difference; a missing move; a non-request line; identical lines), plus 4 pinning the switch-probe
+  content discriminator. **Run it after ANY change to `ALLOWLIST_TRANSFORMS` or the probe path.**
+- **THE DRAIN / PROBE CONTRACT.** Every wait on a child is bounded and every bound is CHECKED:
+  `assertDrained` on START + per decision, content-based acceptance on the trapped switch probe
+  (`probeWasAccepted`, `PROBE_MAX_MS` 750 ms), and a per-battle wall-clock budget (`BATTLE_BUDGET_MS`
+  300 s) over the outer loop. 🚨 **`drain_timeouts` must stay 0** — any non-zero value means a child
+  went quiet somewhere, even on a path that recovers. Env overrides for investigation:
+  `SBD_DRAIN_MAX_MS`, `SBD_PROBE_MAX_MS`, `SBD_BATTLE_BUDGET_MS`, `SBD_TRACE_DRAINS=1`, and
+  `POKESIM_SIMBRIDGE_TARGET` (so two concurrent investigations never share one cargo target dir).
+- 🚨 **`--persistent` is MANDATORY for a soak** — ~600 battles/hr with it, ~80/hr without (each battle
+  otherwise respawns a Node child that reloads the whole Showdown dist), and ~96% of wall time is the
+  per-write quiescence settle rather than CPU.
+
+**HONEST SCOPE:** cross-side p1/p2 interleaving is not asserted (a Node scheduler artifact the Python
+demux does not depend on); `__RECON__` is excluded (a real rust deferral — `resumeReseed` works,
+`gen3_bridge_resume_reseed_v1`, so reconstruction + search paths still require node); unmodeled moves
+fail loud, so "clean" is always relative to the modeled universe.
+
+What landed in the green gate + allowlist, and the measured throughput:
+[`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md).
+
+## Data-driven mechanics (the class framework)
+
+**The strategic shift (Phase 1 landed 2026-07-03, `gen3_item_mechanics_v1`):** stop hand-modeling
+items/abilities one id at a time. The A/B fuzzer's motivating find: Pink Bow / Polkadot Bow + the
+4 gen4-named incenses sat in the e2e's `MODELED_ITEMS` while the port's hardcoded
+`resolve_atk_stat_mods` match-arm priced NONE of them — a drift class that recurs whenever an
+allow-list and an engine table are maintained by hand in two places. The framework kills the
+class: extract the gen3-RESOLVED item/ability tables ONCE (like the dex), classify EVERY entry
+into mechanic CLASSES with machine-readable parameters, and implement ONE generic engine path per
+class, validated by one class-sweep golden.
+
+- **THE MOD-CHAIN LAW (the Light Ball cautionary tale).** gen3 resolves through gen4 → … → base,
+  and later mods REPLACE and DELETE handlers: base Light Ball doubles Atk+SpA, the gen4 mod
+  REWRITES it to an `onBasePower` double, the gen3 mod REWRITES it again to **SpA-ONLY ×2**.
+  NEVER regex a single data file — extract from the resolved dist; the probe/golden against the
+  real sim is the only oracle. (Same law as the taunt/disable durations.)
+
+- **The extraction, the class map and the DRIFT GATE.** `harness/dump_gen3_mechanics.js` reads the
+  RESOLVED `Dex.mod('gen3')`, dumps every gen3 item and ability with its resolved handler inventory +
+  extracted parameters, classifies each (**UNCLASSIFIED fails the dump**), and writes
+  `tests/vectors/gen3_mechanics_inventory.md` — the class map every future phase executes against.
+  **`--check` is the drift gate**: it verifies the committed `data/pokemon/gen3_items.json` /
+  `gen3_abilities.json` mechanics fields EXACTLY match the resolved dist. Run it whenever either
+  regenerates. `--json` emits the machine-readable extraction.
+
+**The wired classes** — Phase 1's STAT/BP-MODIFIER item family (TYPE_BOOST, SPECIES_STAT, CHOICE),
+Phase 2's ability DMG_MOD family (PINCH, unconditional Atk, Guts, Marvel Scale), Phase 3's ACCURACY
+pipeline (the acc/eva stage table, ACCURACY_ITEM, ACCURACY ability), the STATUS_IMMUNE / SWITCH_OUT /
+TYPE-INTERACTION classes, and ability batches 1-4 — each carry their parameters, draw model and
+dedicated golden in
+[`designs/rust_sim/data_driven_mechanics.md`](../../designs/rust_sim/data_driven_mechanics.md),
+alongside the per-class roadmap and the committed-data contract. **Read the class before adding a
+member to it.**
+
+### Handler-completeness audit (`gen3_handler_audit_v1`) — the dispatch-bus guarantee as a STATIC gate
+
+The port implements effects AT-SITE (no generic runEvent bus). The recurring bug class that allows: an
+effect carries a handler at a hook we never enumerated, or hand-placed at the wrong site — Immunity's
+onUpdate cure, Cloud Nine's onEnd WeatherChange, Plus/Minus's cross-field onModifySpA, the tox
+onSwitchIn reset, sun/rain's unguarded onFieldResidual, facade's onBasePower. The audit closes the
+class STATICALLY.
+
+`harness/dump_gen3_handlers.js` enumerates EVERY handler-bearing key (`on*` functions AND the numeric
+priority/order/subOrder metadata AND draw-relevant declaratives) on EVERY effect in the port's
+REACHABLE surface — the MODELED ∪ NOOP abilities + MODELED items (from `gen_e2e_fuzz.js`, the one
+source of truth) + every condition the engine can enter + every `isModeledMove` move + `struggle` —
+each (effect, hook) row carrying an FNV-1a **body fingerprint** of the resolved source, so a semantic
+change in the dist is DETECTED. `tests/vectors/gen3_handler_audit.json` is the manifest: one row per
+(effect, hook) with an explicit `disposition: implemented | noop_justified | unreachable_justified |
+failloud_guarded`, the fingerprint, and — for `implemented` — an **anchor** `file.rs::symbol` that
+must grep in `src/`. The dispositions are CURATED CODE in `harness/handler_audit_dispositions.js`.
+
+🚨 **The gate FAILS on all four drift modes** — a resolved key with NO manifest row (a new/unnoticed
+handler), a stale row, a body FINGERPRINT drift (re-probe before re-accepting), or a dead
+`implemented` anchor — and is wired into `cargo test` as `tests/handler_audit_test.rs`, which
+**fails loudly if node/dist are unavailable: a silently-skipped completeness gate is no gate.**
+All four failure modes are perturbation-demonstrated. Regenerate after a triage:
+
+```bash
+node src/rust_sim/harness/dump_gen3_handlers.js          # regenerate
+node src/rust_sim/harness/dump_gen3_handlers.js --audit   # the gate
+```
+
+🚨 **Admitting a deferred effect to a MODELED set pulls its handlers INTO the surface**, and the gate
+then demands rows for them. The deferred fail-loud universe is documented in the manifest's
+`_meta.excluded_deferred`.
+
+The audit's first run surfaced TWO REAL MISSES, both latent (zero corpus exposure), both fixed
+bit-for-bit and pinned — the JUMP KICK / HIGH JUMP KICK crash (`gen3_jump_kick_crash_v1`, whose crash
+`getDamage` DRAWS crit + the 16-way roll) and FREEZE CLAUSE MOD (`gen3_freeze_clause_v1`, unreachable
+in the gen3customgame corpora, latent for every clause format). Detail, and the rows the audit
+CONFIRMED already modelled:
+[`designs/rust_sim/data_driven_mechanics.md`](../../designs/rust_sim/data_driven_mechanics.md).
+
+## Protocol emission (level-2, Phase 1 + Phase 2): the byte-identical `|...|` stream
+
+This is the **level-2** goal — emit the byte-identical OMNISCIENT `|...|` protocol stream the Showdown
+clients (and the Rust side reader) parse, so the port is a drop-in behind the bridge. The engine is already
+bit-for-bit RNG+state faithful; this layer is a **side output** of events that ALREADY happened.
+
+- **The emit API** (`protocol.rs`): `ProtocolBuilder` is an **append-only, PRNG-free** line buffer on
+  `BattleState` (the `log` field), with ONE sim-mirroring exception — `attr_last_move_still()`, the
+  port of `Battle.attrLastMove('[still]')`, for fail forms the sim itself decides RETROACTIVELY after
+  draws the announce preceded. The engine pushes lines at hook points in `turn.rs`; **all fiddly
+  formatting lives in ONE place** — `MonRef` / `SideRef`, `HpStatus` (the three variants `x/y` /
+  `x/y <status>` / `0 fnt`, the #1 correctness point), `Cause`, `STAT_TOKENS`. The full formatter
+  inventory is in
+  [`designs/rust_sim/protocol_emission.md`](../../designs/rust_sim/protocol_emission.md).
+  🚨 **A `MonRef`'s IDENT name is the mon's on-field NICKNAME, never the species**
+  (`turn.rs::display_name` = the packed set's `set.name`, falling back to the species only when the
+  set has no nickname — mirroring `Pokemon.name = set.name || species.name`). poke-env keys each mon
+  by that `p<N>a: <nick>` token, so rendering the species there makes poke-env fail to match the mon
+  it already tracks and try to ADD a 7th — the localized/nicknamed-team overflow CRASH
+  (`gen3_nickname_ident_v1`, pinned by
+  `regression_test::nicknamed_mon_renders_nickname_in_every_ident_not_species`). The SPECIES name
+  (`turn.rs::species_name`) lives ONLY in the `|switch|`/`|drag|` DETAILS field.
+  **Disabled by default** (`ProtocolBuilder::new()` → off): `run_full_battle` never enables it, so the
+  seed suite keeps an empty, cost-free buffer AND every emit hook is a no-op that touches nothing.
+  `run_full_battle_logged` enables it, emits the framing, runs the SAME `run_full_battle`, and returns
+  `(BattleOutcome, Vec<ProtocolLine>)`.
+
+- **OBSERVATION-ONLY (the load-bearing guarantee).** Emission draws NO PRNG and mutates no
+  asserted state, so wiring it changes NO seed assertion. THE PROOF: the ENTIRE existing seed suite
+  (`battle_test`'s 2034 cross-turn seed assertions, `fullbattle` 2053, `secondary`, the `e2e_fuzz`
+  STRICT gate, every move layer, every regression pin — at the Phase-2 landing that was e2e 14228 +
+  22 pins; the CURRENT tree is e2e 11673 + 44 pins, the corpus/pin growth from later layers) stays
+  green with BYTE-IDENTICAL seed counts after Phase 2 — run the full suite before/after and diff (it does). The only
+  engine-behaviour changes are the two emission-line REORDERS (the `|turn|N+1` marker moved to the
+  next-turn top; the weather chip reads the shuffle permutation) — both provably state-/seed-
+  invariant (the shuffle already drew; distinct/saturating mons) — which the seed suite re-confirms.
+
+- **The port TIES at Showdown's 1000-turn limit** (`gen3_turn_limit_tie_v1`): `|message|` + `|` +
+  `|tie` past turn 1000 and the `|bigerror|` countdown from turn 500, byte-gated by
+  `tests/turn_limit_test.rs` (it used to PANIC at 1,000 committed turns). Detail:
+  [`designs/rust_sim/protocol_emission.md`](../../designs/rust_sim/protocol_emission.md) § The turn limit.
+- **The per-phase line inventory** — which lines Phase 1 / 2 / 3 emit, in what order, and the
+  deferral record (`DEFERRED_SCENARIOS` is EMPTY, 0 battles skipped) — is
+  [`designs/rust_sim/protocol_emission.md`](../../designs/rust_sim/protocol_emission.md).
+- **The byte-differential gate** (`tests/protocol_test.rs`): replays the capture golden through
+  `run_full_battle_logged`, filters BOTH the golden's lines and the engine's output to the gated types
+  (only `debug` + `error` dropped from BOTH; `|t:|` normalized), and asserts BYTE-EQUALITY per line, in
+  order, with a first-divergence panic. A TRUNCATED golden (the capture hit a decision/turn cap
+  mid-stall) is asserted as a byte-exact PREFIX of the longer engine output. **Result: 132 battles,
+  19348 lines byte-equal, across all 22 scenarios.** The formatters are ALSO pinned by deterministic
+  unit gates in `protocol.rs` — including the **disabled-builder-emits-nothing invariant**, which is
+  what keeps the seed suite's buffer cost-free.
+
+- **The drop-in endgame — BUILT** (`gen3_writeline_stream_v1`): `battle.rs`'s
+  **`BattleStream::write_line`** accepts the bridge's command stream (`>start` / `>player pN` /
+  `>pN move K|switch N`) and returns, PER WRITE, exactly the omniscient chunk the real Node
+  `BattleStream` flushes for that write — gated by **`tests/writeline_test.rs`** against the
+  per-write capture `harness/gen_writeline_capture.js` (the SAME 19-scenario corpus at 2 fresh
+  seeds: **44 battles / 2377 writes / 7276 filtered lines, all chunks byte-equal**). Chunk
+  attribution (probe-verified): `>start` → `|t:|`+`|gametype`; each `>player` → its `|player|`
+  line (the second also the whole framing through `|turn|1`); a choice write → nothing until the
+  boundary completes, then the whole turn chunk ENDING with the eager `|turn|N+1` (the sim's
+  `makeRequest` flush — the port now emits the marker at turn END and the batch separator+`|t:|`
+  at the COMMIT, concatenation-identical, chunk-correct). Internals + honest scope (replay-from-
+  genesis; the pre-first-decision seed convention; request frames/privacy fold out of scope) are
+  on the `battle.rs` module row above. Design: `PROTOCOL_EMISSION_DESIGN.md`; line grammar:
+  `tests/vectors/protocol_inventory.md`.
+
+## Standing lessons from the coverage rounds
+
+The rounds themselves are CLOSED and live in
+[`designs/rust_sim/port_build_log.md`](../../designs/rust_sim/port_build_log.md). These are the
+lessons that outlive them — each cost a round to learn, and each binds the NEXT change.
+
+- 🚨 **A new mechanic can FALSIFY an old "no draw here" proof.** When a class gains a second member,
+  re-read every "this can never tie" argument: two Safeguards TIE at residual order 4, which is
+  invisible to any single-side test.
+- 🚨 **A determinism-oriented suite systematically UNDER-TESTS the nondeterministic default.** Every
+  gate here is seeded, so the seedless bridge path had no test at all — and it ran on a FIXED seed,
+  replaying one dice stream for every training episode, for months. **At least one gate must run with
+  the reproducibility knob OFF and assert a DISTRIBUTIONAL property.**
+- 🚨 **A gate that exempts a file by BASENAME exempts every file with that name.** Compare the
+  relative path.
+- 🚨 **A PICKER PREDICATE THAT GATES A TEST SILENTLY SHRINKS THAT TEST.** Struggle was fully modelled
+  and fully gated, yet `isModeledMove` returned false for it — so every PP-exhaustion endgame, the
+  deepest and most state-laden turns gen3ou stall teams produce, was dropped to a prefix.
+- 🚨 **A DIAGNOSTIC THAT NAMES AN INNOCENT BYSTANDER IS WORSE THAN ONE THAT NAMES NOTHING.** A drop
+  label reporting the first move slot regardless of why the pick failed sent a reader hunting a bug
+  that does not exist.
+- 🚨 **AN ALLOWLIST ENTRY CAN OUTLIVE ITS OWN FIX**, and then it misleads every reader after. So can a
+  "STILL NEEDED" note. Verify against the harness and the code, never against prose.
+- 🚨 **A COUNT COMPARISON WHOSE TWO SIDES COVER DIFFERENT WINDOWS IS NOT EVIDENCE, and it reads
+  exactly like evidence.** Compare draw POSITIONS within a single decision.
+- 🚨 **A PIN THAT READS THE PORT'S OWN REPRESENTATION CERTIFIES ITS BUGS.** Defense Curl's and
+  Rage's pins asserted `boosts[2]` / `boosts[1]`, the same wrong indices the engine wrote, so both
+  passed for months while the moves raised SpA and Def (`gen3_boost_index_fixes_v1`). Assert the
+  sim's OBSERVABLE (the emitted `|-boost|<u>|def|1`) too. Likewise a probe's SETTLED header can name
+  a row its script never ran (`probe_imprison.js` Q3 re-sent Splash, not Imprison). Check that
+  the script actually runs the row.
+- 🚨 **FIX BUGS FOUND ON THE SURFACE YOU CARE ABOUT.** Two bugs found on 2026-08-17 have ZERO
+  gen3ou-pool exposure — 0 of 773 pool files carry either mechanic — so neither could ever have fired
+  in training. That is what `--mode ourandom` exists for.
+- 🚨 **A GATE NOBODY CAN START IS INDISTINGUISHABLE FROM A GATE THAT PASSES.** Both parity harnesses
+  (`search_impl_parity.py`, `replay_impl_parity.py`) were un-runnable for weeks after a directory move left their repo-root index behind.
+- 🚨 **NEVER regex a single data file for a mechanic** — extract from the RESOLVED dist. gen3 resolves
+  through gen4 → … → base, and later mods REPLACE and DELETE handlers (the Light Ball cautionary
+  tale). See the MOD-CHAIN LAW above.
+
+## Conventions
+
+- **std-only, zero dependencies.** Determinism + a no-network `cargo test` are
+  the point. Add a dep only with a clear reason, and never one in the
+  deterministic battle path.
+- **Generation-generic.** Gen 3 OU is the only target now, but don't hard-code
+  Gen-3 constants into the engine — put them behind the generation parameter
+  (e.g. `Dex::for_gen(gen)`, `moves::derive_category(gen, …)`), mirroring
+  Showdown's gen9→gen3 mod-delta layering, so other gens are a data layer + a
+  branch, not an engine rewrite. Do not add anything that would break future gens.
+- **Data source of truth** is this repo's `data/pokemon/*.json`, read the same
+  way `agents.gen3_data` reads it — so Python and Rust agree by construction.
+
+## Per-mechanic coverage records — where the detail lives
+
+Each gen-3 mechanic below was modelled in its own coverage round, with a differential gate and
+revert-verified regression pins. Those records are **CLOSED** and live verbatim in
+[`designs/rust_sim/port_build_log.md`](../../designs/rust_sim/port_build_log.md) — read the one you
+are debugging rather than loading all of them here. The build log also holds the 55 numbered fuzz
+ROUNDS and the move-coverage BATCH 1-9 records.
+
+CONFUSION family (confuseray / supersonic / sweetkiss / teeterdance) ·
+SPREAD STAT-DROPS (leer / growl / tailwhip / stringshot / sweetscent) · FOCUS ENERGY ·
+Damage · Fixed-damage moves ·
+Full battle · Multi-turn · PP tracking + Struggle · Phazing ·
+Protect / Detect · Recovery moves · SNATCH · Secondary effects + onBeforeMove status · Setup moves ·
+Spikes · Status moves · Switch-in events · TRICK · Taunt + Disable · Trapping · YAWN.
+
+🚨 **SWAGGER and FLATTER inflict confusion and are NOT in that family** — they carry a TARGET
+`boosts` map whose half succeeds INDEPENDENTLY of the confusion half (probe-measured: into an
+already-confused target the +2 Atk still lands and there is NO `-fail`; at the +6 cap the delta-0
+`-boost|…|atk|0` prints AND the confusion still applies). They remain FAIL-LOUD; closing them needs
+a positive foe-directed `targetBoosts` field in `gen3_moves.json` (`statDropBoosts` is
+negative-only). ROUND 57 in the build log has the measurement.
+
+🚨 **ATTRACT (338 learners — the largest single-move gap) IS BLOCKED BY A CONSTRUCTION DRAW, not by
+Attract.** Its spec is settled and committed (`harness/probe_attract_move.js`), but
+`MonState::from_set` stores only the PACKED gender, while the sim's ctor is
+`set.gender || species.gender || sample(['M','F'])` — and that sample is a construction-time draw
+the `start_with_switchins` path does not model. A `None` gender PANICS at the attract compare, which
+is harmless today only because Cute Charm is on 0 pool teams. Admitting the MOVE would fail-loud
+across every corpus. The prerequisite round is the construction gender, and modelling that sample
+adds draws and moves **every committed golden's seed**. ROUND 59b has the full finding.
+
+## Where the rest of the detail lives
+
+| I am about to… | Read |
+|---|---|
+| edit a module | [`designs/rust_sim/module_map.md`](../../designs/rust_sim/module_map.md) — the unabridged per-module column |
+| change a rung of the gate ladder | [`designs/rust_sim/differential_gates.md`](../../designs/rust_sim/differential_gates.md) |
+| touch `search_driver` / `replay_driver` / the clone-branch API | [`designs/rust_sim/search_and_replay_drivers.md`](../../designs/rust_sim/search_and_replay_drivers.md) |
+| regenerate or widen the e2e capstone | [`designs/rust_sim/e2e_capstone.md`](../../designs/rust_sim/e2e_capstone.md) |
+| add or read a regression pin | [`designs/rust_sim/regression_pins.md`](../../designs/rust_sim/regression_pins.md) |
+| triage a fuzz divergence, or ask whether a class was already closed | [`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md) |
+| add an item/ability to a mechanic class | [`designs/rust_sim/data_driven_mechanics.md`](../../designs/rust_sim/data_driven_mechanics.md) |
+| add a protocol line | [`designs/rust_sim/protocol_emission.md`](../../designs/rust_sim/protocol_emission.md) |
+| debug ONE gen-3 mechanic | [`designs/rust_sim/port_build_log.md`](../../designs/rust_sim/port_build_log.md) — the closed round that modelled it |

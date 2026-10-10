@@ -461,3 +461,85 @@ MOD-CHAIN LAW, the drift gate and the audit's invocation.
   4 gen4-named incenses are an explicit, documented exception to the extractor's gen filter (the
   sim applies them under gen3 formats; adding ENTRIES is obs-neutral — the obs encodes items by
   per-id `num` lookup, no enumeration index). `dex/items.rs` parses it all into `ItemData`.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### Data-driven mechanics (the class framework)
+
+**The strategic shift (Phase 1 landed 2026-07-03, `gen3_item_mechanics_v1`):** stop hand-modeling
+items/abilities one id at a time. The A/B fuzzer's motivating find: Pink Bow / Polkadot Bow + the
+4 gen4-named incenses sat in the e2e's `MODELED_ITEMS` while the port's hardcoded
+`resolve_atk_stat_mods` match-arm priced NONE of them — a drift class that recurs whenever an
+allow-list and an engine table are maintained by hand in two places. The framework kills the
+class: extract the gen3-RESOLVED item/ability tables ONCE (like the dex), classify EVERY entry
+into mechanic CLASSES with machine-readable parameters, and implement ONE generic engine path per
+class, validated by one class-sweep golden.
+
+- **THE MOD-CHAIN LAW (the Light Ball cautionary tale).** gen3 resolves through gen4 → … → base,
+  and later mods REPLACE and DELETE handlers: base Light Ball doubles Atk+SpA, the gen4 mod
+  REWRITES it to an `onBasePower` double, the gen3 mod REWRITES it again to **SpA-ONLY ×2**.
+  NEVER regex a single data file — extract from the resolved dist; the probe/golden against the
+  real sim is the only oracle. (Same law as the taunt/disable durations.)
+
+- **The extraction, the class map and the DRIFT GATE.** `harness/dump_gen3_mechanics.js` reads the
+  RESOLVED `Dex.mod('gen3')`, dumps every gen3 item and ability with its resolved handler inventory +
+  extracted parameters, classifies each (**UNCLASSIFIED fails the dump**), and writes
+  `tests/vectors/gen3_mechanics_inventory.md` — the class map every future phase executes against.
+  **`--check` is the drift gate**: it verifies the committed `data/pokemon/gen3_items.json` /
+  `gen3_abilities.json` mechanics fields EXACTLY match the resolved dist. Run it whenever either
+  regenerates. `--json` emits the machine-readable extraction.
+
+**The wired classes** — Phase 1's STAT/BP-MODIFIER item family (TYPE_BOOST, SPECIES_STAT, CHOICE),
+Phase 2's ability DMG_MOD family (PINCH, unconditional Atk, Guts, Marvel Scale), Phase 3's ACCURACY
+pipeline (the acc/eva stage table, ACCURACY_ITEM, ACCURACY ability), the STATUS_IMMUNE / SWITCH_OUT /
+TYPE-INTERACTION classes, and ability batches 1-4 — each carry their parameters, draw model and
+dedicated golden in
+[`designs/rust_sim/data_driven_mechanics.md`](data_driven_mechanics.md),
+alongside the per-class roadmap and the committed-data contract. **Read the class before adding a
+member to it.**
+
+#### Handler-completeness audit (`gen3_handler_audit_v1`) — the dispatch-bus guarantee as a STATIC gate
+
+The port implements effects AT-SITE (no generic runEvent bus). The recurring bug class that allows: an
+effect carries a handler at a hook we never enumerated, or hand-placed at the wrong site — Immunity's
+onUpdate cure, Cloud Nine's onEnd WeatherChange, Plus/Minus's cross-field onModifySpA, the tox
+onSwitchIn reset, sun/rain's unguarded onFieldResidual, facade's onBasePower. The audit closes the
+class STATICALLY.
+
+`harness/dump_gen3_handlers.js` enumerates EVERY handler-bearing key (`on*` functions AND the numeric
+priority/order/subOrder metadata AND draw-relevant declaratives) on EVERY effect in the port's
+REACHABLE surface — the MODELED ∪ NOOP abilities + MODELED items (from `gen_e2e_fuzz.js`, the one
+source of truth) + every condition the engine can enter + every `isModeledMove` move + `struggle` —
+each (effect, hook) row carrying an FNV-1a **body fingerprint** of the resolved source, so a semantic
+change in the dist is DETECTED. `tests/vectors/gen3_handler_audit.json` is the manifest: one row per
+(effect, hook) with an explicit `disposition: implemented | noop_justified | unreachable_justified |
+failloud_guarded`, the fingerprint, and — for `implemented` — an **anchor** `file.rs::symbol` that
+must grep in `src/`. The dispositions are CURATED CODE in `harness/handler_audit_dispositions.js`.
+
+🚨 **The gate FAILS on all four drift modes** — a resolved key with NO manifest row (a new/unnoticed
+handler), a stale row, a body FINGERPRINT drift (re-probe before re-accepting), or a dead
+`implemented` anchor — and is wired into `cargo test` as `tests/handler_audit_test.rs`, which
+**fails loudly if node/dist are unavailable: a silently-skipped completeness gate is no gate.**
+All four failure modes are perturbation-demonstrated. Regenerate after a triage:
+
+```bash
+node src/rust_sim/harness/dump_gen3_handlers.js          # regenerate
+node src/rust_sim/harness/dump_gen3_handlers.js --audit   # the gate
+```
+
+🚨 **Admitting a deferred effect to a MODELED set pulls its handlers INTO the surface**, and the gate
+then demands rows for them. The deferred fail-loud universe is documented in the manifest's
+`_meta.excluded_deferred`.
+
+The audit's first run surfaced TWO REAL MISSES, both latent (zero corpus exposure), both fixed
+bit-for-bit and pinned — the JUMP KICK / HIGH JUMP KICK crash (`gen3_jump_kick_crash_v1`, whose crash
+`getDamage` DRAWS crit + the 16-way roll) and FREEZE CLAUSE MOD (`gen3_freeze_clause_v1`, unreachable
+in the gen3customgame corpora, latent for every clause format). Detail, and the rows the audit
+CONFIRMED already modelled:
+[`designs/rust_sim/data_driven_mechanics.md`](data_driven_mechanics.md).

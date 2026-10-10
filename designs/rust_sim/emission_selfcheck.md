@@ -107,3 +107,37 @@ Measurement record:
 | every other `cargo test` | runs with the check on every emitted line |
 | `utils/bridge/sim_bridge_bin_test.py` | the two builds never share a directory; the switch selects the build and keeps separate cache slots; a fuzz script turns it on, a production entry point does not, an explicit value wins |
 | `core_corpus_test.py` (`sim`) | the commit corpus ran on the self-check `core_events` (the counts) — and, being a self-check build, its NaN-prefilled rows prove every cell was written |
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### The EMISSION SELF-CHECK — every line checked as it is emitted (`gen3_core_emission_selfcheck_v1`)
+
+The whole-battle replay (`core_corpus_test.py`, over `core_events`) checks a battle after it ends; `src/emission_check.rs`
+checks each line AT ITS EMISSION: the omniscient line is canonical (`ProtocolBuilder::emit` /
+`retro_edit`), each viewer's render parses back to the typed fold it is owed (`bridge::derive_side`,
+`split_log_lines`), each bridge frame parses and belongs to its side (`push_chunk`), and — as its own
+invariant — no secret reaches the other viewer. A failure PANICS with `EMISSION SELF-CHECK FAILED`,
+the line, both renders and the viewer; `sim_bridge` / `search_driver` EXIT (86) on one rather than
+answer `__ERR__`. Detail, the build table and the proof of zero production cost:
+[`designs/rust_sim/emission_selfcheck.md`](emission_selfcheck.md).
+
+```bash
+cargo test                                                         # ON (debug_assertions)
+cargo build --profile selfcheck --features emission-selfcheck      # ON, optimized -> target/selfcheck/
+cargo build --release                                              # OFF: every call compiled out
+```
+
+🚨 **Every call site carries `#[cfg(any(debug_assertions, feature = "emission-selfcheck"))]`** —
+`tests/emission_check_test.rs` fails a call without it (production would pay for it). 🚨 **The
+self-check build lives in `target/selfcheck/`, never `target/release/`** — so it cannot overwrite the
+binary a live run execs. Python selects it with `POKESIM_EMISSION_SELFCHECK=1` (set by the root
+`conftest.py` for every pytest session and automatically for a `*fuzz_test.py` run as a script;
+`utils.bridge.sim_bridge_bin.expected_bin_path` for a test that execs a pre-built binary). The four
+A/B fuzzers build it themselves. 🚨 **A regression the check finds gets its own unit test** that
+exercises the exact edge case and FAILS on revert.

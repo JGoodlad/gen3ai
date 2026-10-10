@@ -247,3 +247,44 @@ The prober reads a battle from the core, never from poke-env (`src/main/prober/c
   better-line successors; its rows equal the stored rows of every core trace in that integration
   test, and the poke-env materializer's rows on the P5 identity set
   (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`).
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### The core's event layer — typed at the source (`gen3_core_events_v1`)
+
+The Rust Core Program's M1 ([`designs/endstate/program_rust_core.md`](../endstate/program_rust_core.md)).
+**Every `ProtocolBuilder` method builds a typed `core_events::Line` and the text is its
+`render()`** — one representation, no raw-string escape hatch. Recording (the per-line
+`SourceRec` with the engine's action `Scope`, and the bridge's per-side source tracking) is ON only
+in a session built by `BridgeSession::new_core` / `new_construct_turn0_core`; `sim_bridge` never
+does, so training ships the same bytes and uses none of it. Full contract, the 11 named reading
+rules and the record format: [`designs/rust_sim/core_events.md`](core_events.md).
+
+🚨 **A move of the OTHER side's mon run INSIDE another action goes through
+`BattleState::in_nested_move_scope`** (`gen3_core_nested_move_scope_v1`: Pursuit's strike, a
+Snatch-stolen move; Magic Coat's bounce when it is modelled). The step path's outcome OWNER is the
+source scope and `parse` reads it from line order, so a nest left in the enclosing scope is a
+`parse != step` refusal — the cutover stress's one slice-E refusal (`pool_110_5`, 2026-09-25) was
+exactly that ([`designs/rust_sim/core_events.md`](core_events.md) §3, §5).
+
+🚨 **A new emit form is a typed method, and it must be CANONICAL**: `Line::parse(render(l)) == l`
+(a `|` inside one field is two fields — `volatile_start_detail`, not a pipe-joined string). Every
+corpus battle checks it (`tests/core_events_test.rs`, and `core_events` refuses otherwise).
+
+🚨 **The keyword table is Rust-owned source, and the ONLY one** (P1 of the poke-env retirement; it was GENERATED from
+the Python `battle_event.py`, which P6 slice 6d-2 deleted with the Python battle layer): edit `core_events/schema.rs`
+directly for a new keyword / `EventKind` / value key — there is no Python twin to mirror any more; the cargo tests
+(`tests/core_events_test.rs`, `tracker_semantics_test.rs`, `window_record_test.rs`) are its gates.
+
+| gate | what it proves |
+|---|---|
+| `tests/core_events_test.rs` (`cargo test`) | on the protocol capture corpus, every byte-fuzz fixture, the trapping golden and the turn-limit golden: canonical source records (one per line), the step path re-derives the shipped bytes with per-side conservation, `parse(side text) == step`; recording changes no byte |
+| `python3 -m pytest src/agents/battle/core_corpus_test.py -q` | the COMMIT corpus (`rust_core_parity_fixtures/commit_tier.json.gz`: 12 recorded battles) replays `ok` through `core_events --views --trackers --obs` — `parse == step`, the parse-chain encode gate, the engine BOARD audit at every decision, the recorded per-side bytes — with every row fully written and every decision's tokens equal to its legal actions; the information boundary holds on the native record; the golden records round-trip byte-identically and re-parse. The Python-vs-core comparisons that used to ride beside it (slice E events, V views, T trackers, O the row: `rust_core_parity*.py`, `rust_core_present_test.py`, the MILESTONE tier) were DELETED in P6 slice 6c — `designs/rust_sim/encoder.md` §6a names what holds the core now |
+| `tests/tracker_semantics_test.rs`, `tests/window_record_test.rs` (`cargo test`) | the trackers, the α/β label, the reward and the native window record on constructed battles (the M3 loss catalogue's cases, denials, faint causes, the information boundary) — the cargo twin of the deleted slice T and its `tracker_semantics_fixtures_test.py` (`designs/rust_sim/trackers.md` §4) |
+| `src/present/tests.rs`, `tests/obs_facts_truth_test.rs`, `tests/obs_stage_truth_test.rs` (`cargo test`) | `present()` + `legal_actions()` per rule (V1–V13, PE-V10 / PE-V16 / PE-R1b, the refusals) and the reading's sim-fact fields against the omniscient engine — the cargo twin of the deleted slice V / `rust_core_present_test.py` (`present.md` §5). `obs_stage_truth_test.rs`: the toxic counter cell is the engine's `Toxic(n)` stage over its cap of 15 (a Soft-Boiled Blissey reaches stage 12) and the board's Wish flag is the engine's slot condition one residual from landing, at every decision of both viewers. The audit (`audit::check_view`) lists thirteen volatiles, Ingrain and Nightmare one-sidedly (the engine cannot hold them: `present.md`) |

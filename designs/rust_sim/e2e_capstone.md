@@ -317,3 +317,53 @@ invariant, the coverage floors and the run command.
   Surf / Tackle / Hydro Pump / Megahorn / Crabhammer / Swift (never_miss) and bulky
   defenders.
 
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### E2E capstone: real teams, full battles, bit-for-bit (per-decision STATE+SEED+winner differential)
+
+The closure gate: instead of constructed scenarios with hand-picked mons and scripted moves, the
+capstone drives BOTH engines over **REAL Showdown-export teams** for **complete random battles to
+game-end**, asserting per-decision state + status + boosts + confusion + running PRNG seed + winner
+**bit-for-bit**. It is the union of every prior rung exercised on production data.
+
+- **The generator** `harness/gen_e2e_fuzz.js` globs `data/teams/*.txt`, validates each under gen3ou,
+  and from a fixed `MASTER_SEED` pairs distinct teams + a battle seed, picking a random legal choice
+  per decision from a SEPARATE seeded choice-RNG — **restricted to the modeled allow/blocklist**
+  (`isModeledMove` + `MODELED_ABILITIES` + `MODELED_ITEMS`). The battle FORMAT is `gen3customgame`
+  (no clauses ⇒ no SetStatus handler-sort shuffle), so the Rust gate runs with `sleep_clause` OFF.
+- **The gate** `tests/e2e_fuzz_test.rs::e2e_fuzz_golden_matches_showdown` seeds a `BattleState` ONCE
+  at the sim's pre-first-decision PRNG state and replays the recorded choices WITHOUT re-seeding.
+  🚨 **The invariant is STRICT `filtered_diverged == 0` over EVERY battle — there is no escape
+  hatch.** The committed golden is **220 battles / 11825 decisions / 0 diverged**, byte-reproducible
+  at the committed knobs (MASTER_SEED 0x1234abcd, FILTERED_TARGET 220).
+- 🚨 **The per-decision assertion tallies are CLEAN-ONLY** — the loop breaks at the first divergence,
+  so post-desync rows are never counted. A tally is not a coverage claim.
+- 🚨 **Coverage is GATED, not reported.** The golden carries per-decision feature columns and the test
+  enforces FLOORS (`status_present_rows >= 500`; `spikes` / `substitute` / `taunt` / `trapped` /
+  `fixed_damage` / `batch5` decisions each `>= 50`; **no DISABLE floor — expected 0, the honest
+  disclosure**). Each floor is teeth-verified by zeroing its flag. A generator STATISTIC would have
+  been a coverage claim nobody could fail.
+- 🚨 **The coverage taxonomy `tests/vectors/e2e_fuzz_taxonomy.txt` ranks gaps by STATIC TEAM
+  COMPOSITION** — which unmodeled ability/item the paired teams CARRY — **not** by observed
+  divergence cause, and it is **MOVE-LEVEL-BLIND** (it only ever picks damaging-or-switch choices).
+  It does NOT gate `cargo test`: it is the measured remaining-work map, nothing more.
+- **Run it:** `node src/rust_sim/harness/gen_e2e_fuzz.js` (env knobs `E2E_FILTERED_TARGET` [default
+  **220**, the committed golden's size — 🚨 but a plain regen does NOT reproduce it today: the
+  golden predates the pool's growth (722 → 762 teams), so its team draw no longer matches; a regen
+  is a NEW golden to be reviewed, not a check (found 2026-09-25)],
+  `E2E_UNFILTERED`, `E2E_MAX_TRIES`, `E2E_MASTER_SEED`) regenerates both vectors; then `cargo test`
+  re-pins the Rust against them. The ignored helpers `e2e_diag` (categorize divergences
+  SEED/STATE/FIRSTMOVER) + `e2e_trace_one` (per-decision HP/seed trace, `E2E_TRACE`/`E2E_LO`/
+  `E2E_HI`) are the triage tools used to build the allow/blocklist and localize an engine bug.
+
+The generator's construction, the four modeled move sets and the ability/item admission ladder, the
+per-batch record, and every engine bug this capstone surfaced (Water/Volt Absorb heal, Intimidate vs
+`onTryBoost` and vs Substitute, the residual-vs-faint ordering + the cached-`pokemon.speed` model, the
+residual handler GATHER order, the Protect duration-handler trio, the forced-replacement
+`updateSpeed`): [`designs/rust_sim/e2e_capstone.md`](e2e_capstone.md).

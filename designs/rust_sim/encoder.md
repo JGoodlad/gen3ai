@@ -379,3 +379,37 @@ random-legal battles, every decision, the encoded screens equal the engine's rem
 engine's volatile durations inside the encoded bounds, no NOT-locked proof while the engine holds
 `choicelock` and the first move IS the locked move.
 
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### The ENCODER — the observation row on the version — M4 (`gen3_core_encoder_v1`)
+
+`BattleVersion::encode(side, out)` writes the `OBS_DIM`-dim row the deleted Python `Gen3ObservationEncoder.encode` built for
+the trainee, from that side's stream alone: the view for the
+current-board facts, the raw `PMon` for the item / type / ability / move sub-encoders (Python reads
+the raw `Pokemon` there too), the legality, and the M3 trackers (REQUIRED — a stream without them
+refuses). 🚨 **The encoder reproduces, it never fixes**: a wrong tracker value is fixed in the tracker,
+in both languages. 🚨 **The gate is BYTES** — f64 in Python's order, one round to f32 at the write;
+the obs golden hashes `tobytes()`, so a `-0.0` fails. 🚨 **Test / fuzz builds NaN-prefill the row** (release
+zero-fills), so an unwritten slot or block reads NaN. 🚨 **`encoder/layout.rs` is Rust-OWNED source** (since P6
+slice 6d-2; its Python generator went with the Python encoder): edit it directly, together with
+`agents/observation/constants.py` — `src/agents/observation/rust_core_obs_layout_test.py` PARSES it and fails when any
+value the MODEL also reads (every shared offset / dim, `EventCol`, the obs-facts tables, the volatile / cant /
+faint-cause / type / status vocabularies) differs. Contract, the wire frame, the
+gates: [`designs/rust_sim/encoder.md`](encoder.md).
+
+| gate | proves |
+|---|---|
+| `src/agents/battle/core_corpus_test.py` (`sim`) | the core's rows over the COMMIT corpus are fully WRITTEN (no NaN from the self-check build's prefill, no `-0.0`), every obs block is nonzero somewhere, and each decision's choice tokens are exactly its legal actions (slice O's Python-row comparison was DELETED in P6 slice 6c, `designs/rust_sim/encoder.md` §6a) |
+| `src/agents/training/golden_obs_core_test.py` (`sim`; `python -m agents.training.golden_obs_core --check`) | the core, replaying the banked golden battles, writes rows that hash to `training/golden_obs_fixture.json` exactly, in order |
+| `tests/hypothesis_dex_rows_test.rs` (`cargo test`; also run by `agents/model/hypothesis_dex_rows_sim_test.py`, `sim`) | X5's hypothesis row (`encoder::hypothesis::hypothesis_slot`, the ONE synthetic input the encoder takes — "species s present, unrevealed set, full HP, no status", through the same `slot::populated_slot` writer) equals the slot the encoder writes at the REAL first appearance of every base-form species (and every corpus mon), byte for byte, outside the DECLARED `on_field` / field-revealed blocks of `hypothesis::CELLS`; the committed table it feeds (`agents/model/hypothesis_dex_rows.json`, via `core_events --dex-rows`) is byte-gated by the same sim test — [`designs/rust_sim/encoder.md`](encoder.md) §10 |
+| `src/rust_env/tests/oracle_reveal_test.rs` (`cargo test` in `src/rust_env`) | the diagnostic ORACLE REVEAL (`encoder/oracle.rs`, `--oracle-reveal`; [`encoder.md`](encoder.md) §11): `off` is byte-identical (the obs / mask / label bytes pinned to a digest recorded before the build); `species` differs from `off` ONLY in the opponent block's unseen tail (real battles, both sides, every decision), which is the true unseen species' `hypothesis_slot` in dex-num order; `full` additionally tells the set, checked against the OPPOSING chain's own-team slot of the same mon; `off`, `species` and `full` each byte-pinned; formes, Species-Clause duplicates, a reveal in play, a real Forecast battle |
+| `tests/encoder_test.rs` (`cargo test`) | no NaN left at any decision; step-built == parse-built bytes; the trackerless and wrong-length refusals; `version::parse_encode_matches_step` refuses a parse chain whose trackers fold differently |
+| `core_events --obs` (every replay, `core_corpus_test.py` included) — the PARSE-chain gate (`gen3_core_parse_obs_gate_v1`) | each side's parse chain (trackers on, the same `note_choice` tokens) decides at exactly the step chain's decisions, one per write, and encodes a BYTE-identical row, mask and tokens — the encode path `sim_bridge`'s `core_obs` ships |
+| `tests/sim_bridge_core_obs_test.rs` (`cargo test`) | `sim_bridge`'s `__OBS__` rows == `core_events --obs`'s, byte for byte, one per decision, before the request chunk; recycled child == fresh child; OFF byte-identical; the bridge rows equal an in-process parse chain's and the `POKESIM_SIM_BRIDGE_TEETH=clock_start` hook reaches them; a malformed key (incl. the deleted clock booleans) refused; the parse-chain gate refuses (`POKESIM_CORE_EVENTS_TEETH=parse_clock`, a test-build hook that starts the parse chain's clock at another `n`) |
+| `src/utils/rust_env/successors_integration_test.py` (`sim`) | the in-process successors' rows == the `search_driver` binary's (`expand_many`'s `rows`: row + mask + `present::choice_tokens`), byte for byte. ⚠️ The poke-env replay's comparison of those rows, D10 leaves included (`core_row_parity_fuzz_test.py`), was DELETED in P6 slice 6c: search's successor rows now have no second reading |

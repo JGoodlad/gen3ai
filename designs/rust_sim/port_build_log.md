@@ -6111,3 +6111,51 @@ substantial, separately-gated round with a blast radius across the whole vector 
 be scoped as one. **Left out with the finding written up rather than approximated** — the probe is
 committed, so the next attempt starts from the settled spec and spends its budget on the gender
 question alone.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### Standing lessons from the coverage rounds
+
+The rounds themselves are CLOSED and live in
+[`designs/rust_sim/port_build_log.md`](port_build_log.md). These are the
+lessons that outlive them — each cost a round to learn, and each binds the NEXT change.
+
+- 🚨 **A new mechanic can FALSIFY an old "no draw here" proof.** When a class gains a second member,
+  re-read every "this can never tie" argument: two Safeguards TIE at residual order 4, which is
+  invisible to any single-side test.
+- 🚨 **A determinism-oriented suite systematically UNDER-TESTS the nondeterministic default.** Every
+  gate here is seeded, so the seedless bridge path had no test at all — and it ran on a FIXED seed,
+  replaying one dice stream for every training episode, for months. **At least one gate must run with
+  the reproducibility knob OFF and assert a DISTRIBUTIONAL property.**
+- 🚨 **A gate that exempts a file by BASENAME exempts every file with that name.** Compare the
+  relative path.
+- 🚨 **A PICKER PREDICATE THAT GATES A TEST SILENTLY SHRINKS THAT TEST.** Struggle was fully modelled
+  and fully gated, yet `isModeledMove` returned false for it — so every PP-exhaustion endgame, the
+  deepest and most state-laden turns gen3ou stall teams produce, was dropped to a prefix.
+- 🚨 **A DIAGNOSTIC THAT NAMES AN INNOCENT BYSTANDER IS WORSE THAN ONE THAT NAMES NOTHING.** A drop
+  label reporting the first move slot regardless of why the pick failed sent a reader hunting a bug
+  that does not exist.
+- 🚨 **AN ALLOWLIST ENTRY CAN OUTLIVE ITS OWN FIX**, and then it misleads every reader after. So can a
+  "STILL NEEDED" note. Verify against the harness and the code, never against prose.
+- 🚨 **A COUNT COMPARISON WHOSE TWO SIDES COVER DIFFERENT WINDOWS IS NOT EVIDENCE, and it reads
+  exactly like evidence.** Compare draw POSITIONS within a single decision.
+- 🚨 **A PIN THAT READS THE PORT'S OWN REPRESENTATION CERTIFIES ITS BUGS.** Defense Curl's and
+  Rage's pins asserted `boosts[2]` / `boosts[1]`, the same wrong indices the engine wrote, so both
+  passed for months while the moves raised SpA and Def (`gen3_boost_index_fixes_v1`). Assert the
+  sim's OBSERVABLE (the emitted `|-boost|<u>|def|1`) too. Likewise a probe's SETTLED header can name
+  a row its script never ran (`probe_imprison.js` Q3 re-sent Splash, not Imprison). Check that
+  the script actually runs the row.
+- 🚨 **FIX BUGS FOUND ON THE SURFACE YOU CARE ABOUT.** Two bugs found on 2026-08-17 have ZERO
+  gen3ou-pool exposure — 0 of 773 pool files carry either mechanic — so neither could ever have fired
+  in training. That is what `--mode ourandom` exists for.
+- 🚨 **A GATE NOBODY CAN START IS INDISTINGUISHABLE FROM A GATE THAT PASSES.** Both parity harnesses
+  (`search_impl_parity.py`, `replay_impl_parity.py`) were un-runnable for weeks after a directory move left their repo-root index behind.
+- 🚨 **NEVER regex a single data file for a mechanic** — extract from the RESOLVED dist. gen3 resolves
+  through gen4 → … → base, and later mods REPLACE and DELETE handlers (the Light Ball cautionary
+  tale). See the MOD-CHAIN LAW above.

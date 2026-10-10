@@ -245,3 +245,37 @@ Record: [`designs/research_state/measurements/rust_core_m2_2026-09-23/`](../rese
   non-branchable node on the core road where the old roads expanded it from end-of-turn with the
   intermediate tokens (a depth ≥ 2 difference, not a parity break: the gates' depth-1 decisions
   agree); `recorded_exact` is refused on core.
+
+---
+
+## Moved from the leaf (2026-10-10)
+
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup (links re-based;
+> statements found FALSE against the code were corrected in place, each saying so). The leaf keeps a
+> one-line pointer here. Frozen original: `designs/research_state/claude_md_archive/src_rust_sim_CLAUDE_2026-10-10.md`.
+
+### The core's VERSION and READING — M2 (`gen3_core_version_v1`, `gen3_core_present_v1`)
+
+**`present(reading)` takes NO BOARD** — the view is built from one side's stream alone, so a
+board fact cannot reach it by construction; the omniscient board is a REFEREE (`check_view`, the
+audit `core_corpus_test.py` replays). 🚨 **Every version folds `parse(render)`** — the one observation path (program
+§6c); the typed-at-source shortcut and its integrity mode are DELETED (program §4 M4 row). A core
+session's lines carry only the engine's SCOPE (`BridgeSession::side_scopes`, the owner truth). 🚨 **`present()` is the TRUE reading — parity with poke-env was never the goal.** Where
+poke-env was wrong about a sim fact the stream establishes, the view carries the truth and the
+disagreement was a registered FINDING (`agents/battle/poke_env_findings.py`, deleted in P6 slice 6c — one field, a
+value-aware predicate, the reproduction, whether it reached the obs; EMPTY since M2's three,
+PE-V10 / PE-R1b / PE-V16, were fixed in the fork as `gen3_pe_reading_fixes_v1`); never add a rule
+whose only purpose is to reproduce a poke-env mistake, and the fork is deleted (T27 P6), so there is nothing to fix there. Search runs on it:
+every successor is a `BattleVersion` (`search_driver`'s `open_root` `core: "text"` / `side`; the
+protocol / view roads are deleted, program §4 M2). Contract, the rules, the search road, the
+gates: [`designs/rust_sim/present.md`](present.md).
+
+🚨 **The poke-env tables are FROZEN, Rust-owned source** (P1 of the poke-env retirement; they were GENERATED from
+poke-env's data by a Python generator that imported it, now deleted): edit `present/tables.rs` directly. Nothing
+re-derives them from the fork any more, so a change to the fork's data (none is planned: it is retired in P6) is NOT
+picked up — the engine-truth audit and the per-rule pins are the checks.
+
+🚨 **A TRAINING SESSION BUILDS NO CORE RECORDING unless asked.** A reader opts in (`new_core`).
+The one exception is OPT-IN per battle: START's `core_obs` key makes the child fold a PARSE chain with
+trackers per requested side (its own `present()` reading) and ship
+`__OBS__` rows (`designs/rust_sim/encoder.md` §5a); absent, not one byte changes.
