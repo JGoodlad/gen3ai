@@ -500,6 +500,16 @@ through the shared inode. `main.prober.groom` counts a hard-linked snapshot as N
 (`bytes_hardlinked_not_freed`). The ledger/archive caveat: a `cp -r` or a cross-filesystem move of a run dir
 un-links them (each name becomes its own copy). Existing runs are not rewritten. Pinned by
 `agents/training/eval_snapshot_dedup_test.py`.
+**The same rule now stores two more names for the same bytes** (`agents/training/weights_link.py`, one
+implementation `link_or_copy(src, dst, twin)` behind all three): `best_model/best_model.zip` (both eval callbacks'
+`_maybe_save_best` → `eval_collect.store_best_model`, which prints the link in the "new best" line and warns about a
+copy made although a checkpoint exists) and the self-play pool entry (`SnapshotPool.add_from_path(src, step,
+twin=<checkpoint_at_step>)`, called by `SelfPlayCallback` at a seeding and a promotion). A hard link is only ever made
+to a SAME-STEP checkpoint that is byte-identical, so at a non-coincident step both stay copies. 🚨 The mirror hazard
+is an IN-PLACE writer opening a name that shares an inode: `weights_link.unshare(path)` removes that one name first,
+and the periodic checkpointer (`run_io._TrackingCheckpointCallback`) and the pool's live `add` call it before
+`model.save`, so a re-reached step can neither rewrite nor (torn) corrupt the other names. Pinned by
+`agents/training/weights_link_test.py`, each test failing on revert.
 The prober consumes the manifest to load the exact model, falling back to the nearest
 checkpoint. **The trainer grooms the traces it writes**: after each cycle
 `_prune_eval_traces` keeps only the `--keep-eval-trace-steps` most-recent eval

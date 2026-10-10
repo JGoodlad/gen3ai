@@ -60,6 +60,8 @@ from agents.training.eval_callback import (
     record_per_opponent,
     merge_eval_results,
     persist_eval_snapshot,
+    store_best_model,
+    checkpoint_at_step,
     prune_eval_traces,
     record_eval_selection,
     replay_last_eval_to_tui,
@@ -576,7 +578,8 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             self.win_rate_vs_bots, floor=self._heuristic_floor,
             start=self._self_play_start_wr, full=self._self_play_full_wr)
         if sf > 0 and self._pool.is_empty():
-            self._pool.add_from_path(pending["snapshot"], step)
+            self._pool.add_from_path(pending["snapshot"], step,
+                                     twin=checkpoint_at_step(self._model_dir, step))
             self._pool_generation += 1
             emit(f"🌱 [SELFPLAY] Win rate cleared the threshold — seeded the pool from the "
                  f"step {step:,} snapshot (self_play_fraction={sf:.0%})")
@@ -745,7 +748,8 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         if self._sprt_on:
             self._sprt_begin(step, pending)
         elif win_rate_vs_pool > self._promote_threshold:
-            self._pool.add_from_path(pending["snapshot"], step)
+            self._pool.add_from_path(pending["snapshot"], step,
+                                     twin=checkpoint_at_step(self._model_dir, step))
             self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(step))
             # Pay the one-time snapshot-ladder tax for the NEW frozen node — a DETACHED subprocess
@@ -1017,13 +1021,14 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             return
         self._best_aggregate_win_rate = aggregate
         if self.best_model_save_path is not None:
-            # The frozen snapshot IS the evaluated model — copy it rather than re-saving
-            # the (now-advanced) live model.
+            # The frozen snapshot IS the evaluated model — store it rather than re-saving the
+            # (now-advanced) live model: a hard link to the same-step checkpoint when byte-identical,
+            # else a copy (never written through a link).
             dst = os.path.join(self.best_model_save_path, "best_model.zip")
-            shutil.copy2(pending["snapshot"], dst)
+            how = store_best_model(self._model_dir, step, pending["snapshot"], dst)
             copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)  # model_config.json
             write_best_model_sidecar(self._model_dir, dst, self.model)                 # best_model.json (+ELO)
-            print(f"[SELFPLAY EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
+            print(f"[SELFPLAY EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}{how}")
 
     def _cleanup(self, pending: dict, keep_logs: bool) -> None:
         # Drop the (large) transient run-dir snapshot; persist_eval_snapshot has already

@@ -6,7 +6,6 @@ snapshots and the trace dirs, the best-model copies, and the cycle's wall clock
 (``record_cycle_wall``). ``eval_callback`` re-exports every public name here.
 """
 import glob
-import hashlib
 import json
 import os
 import re
@@ -18,6 +17,7 @@ from agents.training.eval_launch import EVAL_MANIFEST_NAME, EVAL_SNAPSHOT_NAME
 from agents.training.eval_quota import ForensicQuota, _rule_for
 from agents.training.eval_sharding import PLAN_NAME, ShardedEvalPool
 from agents.training.trace_selection import SELECTION_SCHEMA, build_selection
+from agents.training.weights_link import link_or_copy, sha256_file as _sha256_file  # noqa: F401
 from main.launcher.ipc import send_metrics
 from utils.contention import describe_contention
 
@@ -172,17 +172,6 @@ def checkpoint_at_step(model_dir: "str | None", step: int) -> Optional[str]:
     return path if os.path.isfile(path) else None
 
 
-def _sha256_file(path: str, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        while True:
-            block = f.read(chunk)
-            if not block:
-                break
-            h.update(block)
-    return h.hexdigest()
-
-
 def store_eval_snapshot(snapshot_path: str, dst: str, checkpoint_path: Optional[str]) -> Tuple[str, str, str]:
     """Put the cycle's weight snapshot at ``dst``; returns ``(mode, sha256, note)``.
 
@@ -197,40 +186,23 @@ def store_eval_snapshot(snapshot_path: str, dst: str, checkpoint_path: Optional[
     existing ``dst`` may already be a hard link to a checkpoint (a restart re-persisting the same step), and a plain
     ``shutil.copy2`` onto it would truncate the CHECKPOINT through the shared inode.
     """
-    tmp = dst + ".tmp"
-    try:
-        os.remove(tmp)
-    except FileNotFoundError:
-        pass
-    mode, note = "copy", "no periodic checkpoint at this step (eval and checkpoint cadences do not coincide here)"
-    digest = ""
-    if checkpoint_path is not None:
-        try:
-            if os.stat(checkpoint_path).st_size != os.stat(snapshot_path).st_size:
-                note = "the checkpoint at this step is not the same size as the snapshot"
-            elif os.stat(checkpoint_path).st_dev != os.stat(os.path.dirname(dst)).st_dev:
-                note = "the checkpoint is on another filesystem"
-            else:
-                digest = _sha256_file(snapshot_path)
-                if _sha256_file(checkpoint_path) != digest:
-                    note = "the checkpoint at this step is not byte-identical to the snapshot"
-                else:
-                    os.link(checkpoint_path, tmp)
-                    os.replace(tmp, dst)
-                    # POSIX rename() of one hard link onto ANOTHER NAME OF THE SAME INODE does nothing and
-                    # leaves the source: a re-persist over an existing link would strand `dst.tmp` (a third name).
-                    if os.path.lexists(tmp):
-                        os.remove(tmp)
-                    return "hardlink", digest, "hard link to " + os.path.join("checkpoints", os.path.basename(checkpoint_path))
-        except OSError as e:
-            note = f"linking failed ({e})"
-            try:
-                os.remove(tmp)
-            except OSError:
-                pass
-    shutil.copy2(snapshot_path, tmp)
-    os.replace(tmp, dst)
-    return mode, digest, note
+    return link_or_copy(snapshot_path, dst, checkpoint_path)
+
+
+def store_best_model(model_dir: "str | None", step: int, snapshot_path: str, dst: str) -> str:
+    """Put the cycle's frozen snapshot at ``dst`` (``best_model/best_model.zip``): a HARD LINK to the checkpoint
+    saved at the same ``step`` when that exists on the same filesystem and is byte-identical (sha256), else a copy
+    (:func:`agents.training.weights_link.link_or_copy`; the atomic replace is what keeps a re-save from writing
+    through a link into the CHECKPOINT). Returns the clause the caller appends to its "new best" line - ``""`` for
+    a plain copy. A copy made although a checkpoint exists at the step prints why, like
+    :func:`persist_eval_snapshot`."""
+    ckpt = checkpoint_at_step(model_dir, step)
+    mode, _digest, note = link_or_copy(snapshot_path, dst, ckpt)
+    if mode == "hardlink":
+        return f" [{note}; sha256 verified, the weights are stored once]"
+    if ckpt is not None:
+        print(f"⚠️ [EVAL] step {step:,}: best_model.zip COPIED although a checkpoint exists at this step: {note}")
+    return ""
 
 
 def persist_eval_snapshot(model_dir: str | None, step: int, snapshot_path: str, keep_n: int) -> None:

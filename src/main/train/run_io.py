@@ -14,6 +14,7 @@ from agents.training.loop_callbacks import BaseCallback
 from agents.model.snapshot import record_checkpoint
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
+from agents.training.weights_link import unshare
 from main.train.constants import checkpoint_due
 from utils import disk_guard
 from utils.torch_state_guard import INIT_NUM_THREADS_ATTR
@@ -341,6 +342,10 @@ class _TrackingCheckpointCallback(BaseCallback):
         if self._due(now):
             ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{now}_steps.zip")
             try:
+                # A re-reached step (a restart that resumed from an earlier checkpoint) finds the old file here,
+                # perhaps linked to a best-model / pool / eval-snapshot name: give the save a fresh inode so it
+                # cannot rewrite (or, torn, corrupt) those names.
+                unshare(ckpt_path)
                 self.model.save(ckpt_path)
             except OSError as e:
                 # A write that dies on a full disk leaves a TORN zip; latest.txt still names the previous

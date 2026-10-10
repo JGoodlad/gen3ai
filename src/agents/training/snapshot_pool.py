@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import random
-import shutil
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +17,7 @@ from sb3_contrib import MaskablePPO
 
 from agents.model.snapshot import load_opponent_snapshot
 from agents.model.model_version import ModelVersion, ModelVersionError
+from agents.training.weights_link import link_or_copy, unshare
 from main.launcher.ipc import emit
 
 
@@ -271,21 +271,32 @@ class SnapshotPool:
              f"(pool size: {len(self._entries)})")
         return entry
 
-    def add_from_path(self, src_zip: "str | Path", step: int) -> SnapshotEntry:
+    def add_from_path(self, src_zip: "str | Path", step: int, twin: "str | Path | None" = None) -> SnapshotEntry:
         """Promote an already-saved snapshot file (frozen weights) as a new pool entry.
 
-        Like ``add()``, but COPIES an existing ``.zip`` instead of re-saving a live model.
+        Like ``add()``, but stores an existing ``.zip`` instead of re-saving a live model.
         The self-play eval freezes the trainee's weights to disk at the
         trigger step, then promotes THAT bit-exact snapshot after the (later) collect —
         by which point the live model has advanced, so re-saving it would promote the
         wrong weights. Evicts the oldest non-pinned entry if the pool would exceed
         ``max_snapshots``.
+
+        ``twin`` is the periodic checkpoint saved at the SAME step (the caller names it): when it is a
+        byte-identical file on the pool's filesystem the entry is a HARD LINK to it - a second name for the
+        checkpoint's inode, not another 62 MB - else a copy (:func:`agents.training.weights_link.link_or_copy`;
+        replaced atomically, so a re-promotion never writes through a link into the checkpoint).
         """
         src = Path(src_zip)
         dst = self.pool_dir / f"snapshot_{step:012d}.zip"
-        self._record_arch()      # BEFORE the copy: a refused add leaves nothing on disk
+        self._record_arch()      # BEFORE the store: a refused add leaves nothing on disk
+        how = ""
         if src.resolve() != dst.resolve():
-            shutil.copy2(src, dst)
+            mode, _digest, note = link_or_copy(str(src), str(dst), str(twin) if twin is not None else None)
+            if mode == "hardlink":
+                how = f" [{note}; sha256 verified, the weights are stored once]"
+            elif twin is not None:
+                emit(f"⚠️ [SELFPLAY] step {step:,}: pool snapshot COPIED although a checkpoint exists at "
+                     f"this step: {note}")
         entry = SnapshotEntry(path=dst, step=step, pinned=False)
         # Replace any existing entry at this step (idempotent), keep sorted by step.
         self._entries = [e for e in self._entries if e.step != step]
@@ -293,7 +304,7 @@ class SnapshotPool:
         self._entries.sort(key=lambda e: e.step)
         self._enforce_cap(unlink=True)
         emit(f"📦 [SELFPLAY] Snapshot promoted at step {step:,} → {entry.path.name} "
-             f"(pool size: {len(self._entries)})")
+             f"(pool size: {len(self._entries)}){how}")
         return entry
 
     # ── Sampling ───────────────────────────────────────────────────────────
@@ -534,6 +545,7 @@ class SnapshotPool:
     def _write(self, model: MaskablePPO, step: int, pinned: bool) -> SnapshotEntry:
         path = self.pool_dir / f"snapshot_{step:012d}.zip"
         self._record_arch()      # BEFORE the save: a refused add leaves nothing on disk
+        unshare(str(path))       # an in-place save must not rewrite a checkpoint this entry is linked to
         model.save(str(path))
         entry = SnapshotEntry(path=path, step=step, pinned=pinned)
         # Replace any existing entry at this step (idempotent re-seed)

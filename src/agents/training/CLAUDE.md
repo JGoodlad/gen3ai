@@ -149,7 +149,9 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   every `ladder.json` carries a `recipe` stamp and a cross-run reader refuses or refits without it (`python -m
   main.elo refit [--apply] <run>`); **bump `LADDER_FITTER_VERSION` whenever the fit changes what a rating means**. The
   ladder's TRANSPORT (Rust engine vs the old poke-env rows) is a regime boundary a fit refuses to mix.
-- A retained `eval_traces/step_<N>/snapshot.zip` may be a HARD LINK to a checkpoint — never write THROUGH it.
+- A retained `eval_traces/step_<N>/snapshot.zip`, `best_model/best_model.zip` and a `snapshots/snapshot_<N>.zip` pool
+  entry may each be a HARD LINK to the same-step checkpoint (`weights_link.link_or_copy`) — never write THROUGH one:
+  store with `link_or_copy` (atomic replace) and call `weights_link.unshare(path)` before any in-place `model.save`.
 
 ## Opponents, the pool, run specs, supply
 

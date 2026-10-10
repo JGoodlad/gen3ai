@@ -26,8 +26,10 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   collect merges per-opponent + per-sentinel results → `win_rate_vs_bots` /
   `win_rate_vs_pool` / `sentinel_monotonicity`, records to TensorBoard + the TUI + metadata.json
   (with the `pool` block), persists `win_rate_vs_bots` (feeds `heuristic_fraction` next run),
-  saves best by **copying** the frozen snapshot, and — if `win_rate_vs_pool > --promote-threshold`
-  — **promotes the FROZEN snapshot into the pool by file-copy** (`SnapshotPool.add_from_path`):
+  saves best by **storing** the frozen snapshot (a hard link to the same-step checkpoint when byte-identical, else a
+  copy: `eval_collect.store_best_model`), and — if `win_rate_vs_pool > --promote-threshold`
+  — **promotes the FROZEN snapshot into the pool by file-copy** (`SnapshotPool.add_from_path`; a hard link to the
+  same-step checkpoint when byte-identical, `weights_link.link_or_copy`):
   the file the cycle actually played, never a re-save of `self.model`. Sentinels load via
   `load_opponent_snapshot` (inference-only, the ride-along keys ignored —
   `gen3_opponent_inference_load_v1`) against the pool's shared `model_config.json` (a WRITE-ONCE record,

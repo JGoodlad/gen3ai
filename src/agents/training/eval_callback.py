@@ -54,7 +54,7 @@ from agents.training.eval_launch import (  # noqa: F401
 from agents.training.eval_collect import (  # noqa: F401
     merge_eval_results, prune_eval_traces, prune_eval_snapshots, record_eval_selection,
     persist_eval_snapshot, copy_run_config_to_best_model, write_best_model_sidecar,
-    record_cycle_wall,
+    record_cycle_wall, store_best_model, checkpoint_at_step,
 )
 from agents.training.eval_record import (  # noqa: F401
     read_latest_eval_block, replay_last_eval_to_tui, latest_recorded_eval_step, bot_mean,
@@ -506,12 +506,13 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             return
         self._best_aggregate_win_rate = aggregate
         if self.best_model_save_path is not None:
-            # The frozen snapshot IS the best model — copy it rather than re-saving.
+            # The frozen snapshot IS the best model — store it rather than re-saving: a hard link to the
+            # same-step checkpoint when byte-identical, else a copy (never written through a link).
             dst = os.path.join(self.best_model_save_path, "best_model.zip")
-            shutil.copy2(pending["snapshot"], dst)
+            how = store_best_model(self._model_dir, step, pending["snapshot"], dst)
             copy_run_config_to_best_model(self._model_dir, self.best_model_save_path)  # model_config.json
             write_best_model_sidecar(self._model_dir, dst, self.model)                 # best_model.json (+ELO)
-            print(f"[EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}")
+            print(f"[EVAL] new best ({aggregate * 100:.1f}%) saved to {dst}{how}")
 
     def _persist_snapshot(self, pending: dict) -> None:
         persist_eval_snapshot(self._model_dir, pending["step"], pending["snapshot"],

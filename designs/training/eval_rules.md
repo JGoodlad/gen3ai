@@ -71,6 +71,9 @@ byte-identical (sha256) on the same filesystem, else a copy (`eval_collect.store
 `snapshot_storage` says which): the weights are stored once, the link survives the checkpoint's deletion, and the file
 is replaced atomically so a re-persist never writes THROUGH a link into a checkpoint. Detail:
 `designs/training/eval_and_rating.md`; pinned by `eval_snapshot_dedup_test.py`.
+The SAME rule stores `best_model/best_model.zip` (`eval_collect.store_best_model`, both eval callbacks) and a pool
+entry (`SnapshotPool.add_from_path(…, twin=<the same-step checkpoint>)`); one implementation,
+`agents/training/weights_link.py`, pinned by `weights_link_test.py`.
 
 🚨 **THE FORENSIC TRACE'S RESULT VOCABULARY is `WIN` | `LOSS` | `DRAW`** (`gen3_trace_result_v2`,
 `trace_result.py`); a `DRAW` carries `meta.draw_kind` (`timeout` vs `tie`), and an unknown result is
