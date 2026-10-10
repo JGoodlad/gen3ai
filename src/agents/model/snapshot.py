@@ -1485,6 +1485,11 @@ def current_model_version(
     trunk_layers: int = 2,
     switch_hazard_cost: str = "off",
     eot_residual: str = "off",
+    move_resolution_facts: str = "off",
+    status_facts: str = "off",
+    ko_ramp: str = "ramp",
+    drop_progress_clock: str = "off",
+    g_ledger: str = "coarse",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1559,6 +1564,12 @@ def current_model_version(
     ext_kwargs["trunk_layers"] = int(trunk_layers)
     ext_kwargs["switch_hazard_cost"] = str(switch_hazard_cost)
     ext_kwargs["eot_residual"] = str(eot_residual)
+    # gen3_endstate_facts_v1 (v152): the five fact-completion levers — structural.
+    ext_kwargs["move_resolution_facts"] = str(move_resolution_facts)
+    ext_kwargs["status_facts"] = str(status_facts)
+    ext_kwargs["ko_ramp"] = str(ko_ramp)
+    ext_kwargs["drop_progress_clock"] = str(drop_progress_clock)
+    ext_kwargs["g_ledger"] = str(g_ledger)
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1666,6 +1677,12 @@ def arch_toggles_from_model(model: Any) -> dict:
         "trunk_layers": int(getattr(fe, "trunk_layers", 2) or 2),
         "switch_hazard_cost": str(getattr(fe, "switch_hazard_cost", "off") or "off"),
         "eot_residual": str(getattr(fe, "eot_residual", "off") or "off"),
+        # gen3_endstate_facts_v1 (v152): each changes the forward, so a frozen opponent's gate must see it.
+        "move_resolution_facts": str(getattr(fe, "move_resolution_facts", "off") or "off"),
+        "status_facts": str(getattr(fe, "status_facts", "off") or "off"),
+        "ko_ramp": str(getattr(fe, "ko_ramp", "ramp") or "ramp"),
+        "drop_progress_clock": str(getattr(fe, "drop_progress_clock", "off") or "off"),
+        "g_ledger": str(getattr(fe, "g_ledger", "coarse") or "coarse"),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

@@ -251,6 +251,17 @@ class ModelVersionConstruction(ModelVersionFields):
                 policy_kwargs.get("features_extractor_kwargs", {}).get("switch_hazard_cost", "off")),
             eot_residual=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("eot_residual", "off")),
+            # gen3_endstate_facts_v1 (v152): the five fact-completion levers.
+            move_resolution_facts=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution_facts", "off")),
+            status_facts=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("status_facts", "off")),
+            ko_ramp=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("ko_ramp", "ramp")),
+            drop_progress_clock=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("drop_progress_clock", "off")),
+            g_ledger=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("g_ledger", "coarse")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

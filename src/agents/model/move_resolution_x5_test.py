@@ -359,4 +359,6 @@ def test_split_other_move_compiles_as_one_graph():
         torch._dynamo.reset()
     assert type(got) is MoveResolutionOps and got._fields == want._fields
     for f in want._fields:
-        assert torch.equal(getattr(got, f), getattr(want, f)), f
+        a, b = getattr(got, f), getattr(want, f)
+        # gen3_endstate_facts_v1: the `--ko-ramp exact` operands are None under `ramp` (on both sides)
+        assert (a is None and b is None) or torch.equal(a, b), f

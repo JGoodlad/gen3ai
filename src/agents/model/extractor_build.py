@@ -34,7 +34,7 @@ from agents.model.conditional_threat import ConditionalThreatCell
 from agents.model.damage_op import DamageOperator, _DMG_PER_MON
 from agents.model.damage_tables import _PRIOR_FLOOR
 from agents.model.encoders import PokemonEncoder
-from agents.model.extractor_ctx import Embeddings, ObsUnpack
+from agents.model.extractor_ctx import DROP_PROGRESS_CLOCK_MODES, Embeddings, ObsUnpack
 from agents.model.extractor_stashes import ExtractorStashes
 from agents.model.intent_conditional import IntentConditionalMoveCell
 from agents.model.intent_move_cell import IntentMoveCell
@@ -125,6 +125,11 @@ class ExtractorBuild(torch.nn.Module):
                  trunk_layers: int = TRANSFORMER_N_LAYERS,
                  switch_hazard_cost: str = "off",
                  eot_residual: str = "off",
+                 move_resolution_facts: str = "off",
+                 status_facts: str = "off",
+                 ko_ramp: str = "ramp",
+                 drop_progress_clock: str = "off",
+                 g_ledger: str = "coarse",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -675,7 +680,9 @@ class ExtractorBuild(torch.nn.Module):
                                          drop_renders=op_drop_renders,
                                          believed_lean=op_believed_lean,
                                          speed_physics=(speed_physics == "on"),
-                                         op_reduction=op_reduction)
+                                         op_reduction=op_reduction,
+                                         # gen3_endstate_facts_v1: three op-level fact levers (validated below)
+                                         ko_ramp=ko_ramp, g_ledger=g_ledger, status_facts=status_facts)
                           if damage_op else None)
         # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
         # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the
@@ -1065,7 +1072,8 @@ class ExtractorBuild(torch.nn.Module):
             self.damage_op.stash_pair_outcome = True
             self.damage_op.stash_pair_type_mult = True
             self.damage_op.stash_species_post = True
-            self.move_resolution_cell = MoveResolutionCell(self.damage_op)
+            self.move_resolution_cell = MoveResolutionCell(self.damage_op, facts=move_resolution_facts,
+                                                           status_facts=status_facts)
 
         # gen3_obs_facts_v1 (`--obs-facts`, the X5 version break's part 3, config v144): the OBS-FACTS block's
         # consumer. The observation ALWAYS carries the block (its last 84 dims); `off` (production) builds
@@ -1144,6 +1152,40 @@ class ExtractorBuild(torch.nn.Module):
                                                              else None)
         self.eot_residual_proj: Optional[_IsoLin] = (_IsoLin(EOT_DIM, D_MODEL, zero=True, bias=False)
                                                      if eot_residual == "on" else None)
+
+        # gen3_endstate_facts_v1 (`designs/endstate/design_hand_computed_features.md` §4 ranks 3-5, §5 rank 1, finding
+        # 7): five FACT-completion levers, each OFF in production and byte-identical there. Requirements are enforced
+        # HERE, where `flag_requires_test` can see them. Parameters only where a lever adds an input: the restored /
+        # status move-resolution blocks (built inside `MoveResolutionCell`, above) and the cure flags' projection,
+        # each a zero-init bias-free `IsolatedLinear` built LAST (no RNG draw; ON adds exactly 0 at init).
+        from agents.model.ko_exact import KO_RAMP_MODES
+        from agents.model.eot_residual import G_LEDGER_MODES
+        from agents.model.move_resolution_rules import MOVE_RESOLUTION_FACTS_MODES
+        from agents.model.pair_outcome import STATUS_FACTS_MODES
+        from agents.model.status_facts import CURE_DIM, CureFlags
+        for _name, _val, _modes in (("move_resolution_facts", move_resolution_facts, MOVE_RESOLUTION_FACTS_MODES),
+                                    ("status_facts", status_facts, STATUS_FACTS_MODES),
+                                    ("ko_ramp", ko_ramp, KO_RAMP_MODES),
+                                    ("drop_progress_clock", drop_progress_clock, DROP_PROGRESS_CLOCK_MODES),
+                                    ("g_ledger", g_ledger, G_LEDGER_MODES)):
+            if _val not in _modes:
+                raise ValueError(f"{_name} must be one of {_modes}, got {_val!r}")
+        if move_resolution_facts == "full" and move_resolution != "on":
+            raise ValueError("move_resolution_facts='full' requires move_resolution='on': it restores facts INSIDE the "
+                             "move-resolution family's cells (production's seven blocks still carry them).")
+        for _name, _val, _off in (("status_facts", status_facts, "off"), ("ko_ramp", ko_ramp, "ramp"),
+                                  ("g_ledger", g_ledger, "coarse")):
+            if _val != _off and not damage_op:
+                raise ValueError(f"{_name}={_val!r} requires damage_op=True: it is the damage operator's physics.")
+        self.move_resolution_facts = move_resolution_facts
+        self.status_facts = status_facts
+        self.ko_ramp = ko_ramp
+        self.drop_progress_clock = drop_progress_clock
+        self.g_ledger = g_ledger
+        self.unpack.drop_progress_clock = drop_progress_clock == "on"
+        self.status_cure_rule: Optional[CureFlags] = CureFlags(layout) if status_facts == "exact" else None
+        self.status_cure_proj: Optional[_IsoLin] = (_IsoLin(CURE_DIM, D_MODEL, zero=True, bias=False)
+                                                    if status_facts == "exact" else None)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

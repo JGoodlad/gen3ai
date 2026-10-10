@@ -211,3 +211,14 @@ PAIR_FACT_COORDS: Tuple[str, ...] = (
 
 #: The flag's legal values (`--move-resolution`); 'off' is production and builds nothing.
 MOVE_RESOLUTION_MODES: Tuple[str, ...] = ("off", "on")
+
+# ------------------------------------------------------------- gen3_endstate_facts_v1: the RESTORED facts
+#: `--move-resolution-facts`'s legal values: ``off`` (the family as built on the 2026-10-06 list, byte-identical);
+#: ``full`` = + the FACTS that list dropped as judgments and the owner's 2026-10-09 classification test re-classed
+#: (`design_hand_computed_features.md` §1; `move_resolution.restored_move_facts` / `restored_switch_facts`).
+MOVE_RESOLUTION_FACTS_MODES: Tuple[str, ...] = ("off", "full")
+#: The restored MOVE-cell coordinates, in order (P8's four dropped mechanics + P6's `spin_value_lost`).
+MOVE_RESOLUTION_RESTORED_MOVE_COORDS: Tuple[str, ...] = (
+    "fp_survives", "sub_survives", "endure_p_ko", "endeavor_survives", "spin_value_lost")
+#: The restored SWITCH-cell coordinate (P3's `spin_denied` hazard stake).
+MOVE_RESOLUTION_RESTORED_SWITCH_COORDS: Tuple[str, ...] = ("spin_denied_stake",)

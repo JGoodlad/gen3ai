@@ -129,6 +129,7 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "mon_hazard_proj": ("mon_hazard_proj",),
     "move_actor_proj": ("move_actor_proj",),
     "eot_residual_proj": ("eot_residual_proj",),
+    "status_cure_proj": ("status_cure_proj",),      # gen3_endstate_facts_v1 (`--status-facts exact`)
     "obs_facts_inject": ("ObsFactsInject",),
     "assembler": ("ProjectionAssembler",),
     "value_entity_pool": ("UnifiedValueReadout",),
@@ -592,6 +593,15 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    note="the end-of-turn residual if this mon is on the field: Leftovers, weather, "
                                         "Rain Dish, the status tick, Leech Seed drain / heal, Wish, Ingrain, Curse, "
                                         "Nightmare, and the HP-clamped net (`eot_residual.EotResidualRule`)"))
+    # gen3_endstate_facts_v1 (`--status-facts exact` only): every mon's cure-availability facts.
+    if getattr(fe, "status_cure_proj", None) is not None:
+        from agents.model.status_facts import CURE_DIM
+        for side in ("our_mon", "opp_mon"):
+            for i in range(T):
+                edges.append(_edge("damage_op", f"{side}[{i}]", "content", CURE_DIM, "CURE_DIM",
+                                   via="status_cure_proj", zero_init=True,
+                                   note="[a live Heal Bell / Aromatherapy user on its side, Natural Cure, Rest, Lum, "
+                                        "Chesto] (`status_facts.CureFlags`; theirs the move / ability / item beliefs)"))
     if fe.move_belief is not None:
         for j in range(T):
             edges.append(_edge("move_belief", f"opp_mon[{j}]", "content", D,

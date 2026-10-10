@@ -618,6 +618,50 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "species' Smogon priors. Zero-init bias-free IsolatedLinear (11 -> 128) built LAST, no RNG draw; "
                    "the rule itself holds only constant tables. Composes with either token encoding.",
               requires=("damage_op",)),
+    # gen3_endstate_facts_v1 (config v152; design_hand_computed_features.md §1's FACT / JUDGMENT test, §4 ranks 3-5,
+    # §5 rank 1, finding 7): the FACT-COMPLETION levers, each OFF in production (byte-identical).
+    ModelFlag("move_resolution_facts", "off", Tier.CLI, Klass.STRUCTURAL, 152,
+              "move resolution's RESTORED facts ('off' = the family as built on the 2026-10-06 list, production; "
+              "'full' = + Focus Punch survives, the Substitute survives, Endure x P(KO), Endeavor x P(not KO'd), "
+              "the hazard layers a failed Rapid Spin leaves, the layers our Ghost switch-in preserves)",
+              note="Owner 2026-10-09: these were dropped as judgments but are FACTS by §1's test. Two zero-init "
+                   "bias-free IsolatedLinears inside MoveResolutionCell (the zero-init input columns of its "
+                   "move_proj / switch_proj, built LAST, no RNG draw). Requires --move-resolution on.",
+              requires=("move_resolution",)),
+    ModelFlag("status_facts", "off", Tier.CLI, Klass.STRUCTURAL, 152,
+              "the pair-outcome STATUS coordinates ('off' = neutralization / tempo_cost, production; 'exact' = the "
+              "expected burn damage lost and the expected outspeed lost to paralysis in the same two positions, and "
+              "every mon's cure-availability flags as token content)",
+              note="Owner 2026-10-09: neutralization (a weighted sum across units) and tempo_cost (our cure plan) are "
+                   "JUDGMENTS by §1's test. The swap is width-neutral (pair_outcome.STATUS_FACT_COORDS); the cure flags "
+                   "(status_facts.CureFlags: a live Heal Bell / Aromatherapy user on the side, Natural Cure, Rest, Lum / "
+                   "Chesto Berry; ours exact, theirs the move / ability / item beliefs) ride a zero-init bias-free "
+                   "IsolatedLinear (5 -> 128) built LAST; under --move-resolution on the two facts also reach its "
+                   "cells through their own zero-init projections. P(full para) = 1/4 is the rule constant times the "
+                   "delivered p_par column.",
+              requires=("damage_op",)),
+    ModelFlag("ko_ramp", "ramp", Tier.CLI, Klass.STRUCTURAL, 152,
+              "how every P(KO) is priced ('ramp' = the op's mean-roll 15%-window ramp with no crit, production, an "
+              "APPROXIMATE fact; 'exact' = over the 16 gen-3 rolls and the move's crit chance, each roll's KO "
+              "resolved over the observed HP interval)",
+              note="ko_exact.py: one shared function at every site (DamageOperator._rolls, the inlined Choice-Band "
+                   "ko_cb, intent_threshold's Substitute break, move resolution's Pursuit KO). Continuous and "
+                   "differentiable (no new discrete site for K9(b)). No parameters; the string compare in "
+                   "check_compatible is the only gate.",
+              requires=("damage_op",)),
+    ModelFlag("drop_progress_clock", "off", Tier.CLI, Klass.STRUCTURAL, 152,
+              "whether the model reads the observation's turns_since_progress ('off' = it does, production; 'on' = "
+              "it reads 0 there)",
+              note="§5 rank 1: a hand definition of 'progress' (3% thresholds, eight reset conditions) is a JUDGMENT. "
+                   "Zeroed at the model input (ObsUnpack), never in the Rust observation layout. The threshold-free "
+                   "fact alternative ('turns since either side lost HP') is not built."),
+    ModelFlag("g_ledger", "coarse", Tier.CLI, Klass.STRUCTURAL, 152,
+              "which end-of-turn rule the op's g cell reads ('coarse' = the op's own older ledger, production; 'eot' = "
+              "the ONE rule --eot-residual reads)",
+              note="Finding 7 (two end-of-turn rules): under 'eot' the g cell, c4's nets and the static op content read "
+                   "eot_residual.EotResidualRule grouped into the ledger's four columns (eot_residual.g_cells). No "
+                   "parameters.",
+              requires=("damage_op",)),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}
@@ -645,8 +689,9 @@ OFF_VALUES = (False, 0, "off", "none")
 #: The OFF spellings of a MODE string. ``'tower'`` is `policy_readout`'s (audit F2, v138): today's flat
 #: policy tower, nothing new built. ``'legacy'`` is `token_encoding`'s OFF state (v139): today's
 #: `PokemonEncoder`. ``'max'`` is `op_reduction`'s (v146, audit F6b): the op's legacy per-channel hard maxima.
-#: (``'blob'``, `belief_tokens`' OFF state, left with the flag at the X5 version break.)
-OFF_STRINGS: Tuple[str, ...] = ("off", "none", "tower", "legacy", "max")
+#: (``'blob'``, `belief_tokens`' OFF state, left with the flag at the X5 version break.) ``'ramp'`` is `ko_ramp`'s and
+#: ``'coarse'`` `g_ledger`'s (v152, gen3_endstate_facts_v1): the op's legacy KO ramp / end-of-turn ledger.
+OFF_STRINGS: Tuple[str, ...] = ("off", "none", "tower", "legacy", "max", "ramp", "coarse")
 
 
 def is_enabled(value: Any) -> bool:

@@ -399,6 +399,26 @@ class ExtractorForward(ExtractorApi):
             type_mult=append_other(st.pair_type_mult, st.pair_type_mult_other, 2, "pair_type_mult"),
             out_cells=out_cells, out_pko=out_pko, opp_p_ghost=ghost)
 
+    def _exact_ko_operands(self, opctx: ExtractorContext, n_seats: int) -> Optional[Any]:
+        """gen3_endstate_facts_v1 (`--ko-ramp exact`): `intent_threshold.ExactKo` for a threshold on OUR active —
+        its exact max HP (the op's own `_active_defender`) and each of the ``n_seats`` seats' crit chance (the op's
+        top-K move nums; a seat past them — X5's OTHER_move — reads the base 1/16). None under `ramp`."""
+        op = self.damage_op
+        if op is None or not op.ko_exact:
+            return None
+        from agents.model.intent_threshold import ExactKo
+        from agents.model.ko_exact import CRIT_P_BASE
+        maxhp = op._active_defender(opctx)[2]                                              # [B]
+        nums = op.last_topk_idx
+        crit = op._crit_p(nums) if nums is not None else None
+        B = opctx.batch_size
+        if crit is None:
+            crit = maxhp.new_full((B, 0), CRIT_P_BASE)
+        pad = n_seats - crit.shape[-1]
+        if pad > 0:
+            crit = torch.cat([crit, crit.new_full((B, pad), CRIT_P_BASE)], dim=-1)
+        return ExactKo(maxhp=maxhp, crit_p=crit[:, :n_seats])
+
     def _op_content_rows(self, opctx: ExtractorContext, sp: Optional[torch.Tensor],
                          cells: Dict[str, Any]) -> torch.Tensor:
         """gen3_static_board_v1 (`--token-encoding static`): [B, 12, D_MODEL] the per-mon OP CONTENT
@@ -755,6 +775,12 @@ class ExtractorForward(ExtractorApi):
             _eot = self.eot_residual_rule(_opctx, self.damage_op,
                                           _x5r.concrete if _x5r is not None else None)           # [B,12,EOT_DIM]
             role_tokens = role_tokens + self.eot_residual_proj(_eot.to(role_tokens.dtype))
+        # gen3_endstate_facts_v1 (`--status-facts exact`, `status_facts.py`): every mon's cure-availability FACTS (a
+        # live cleric on its side, Natural Cure, Rest, a Lum / Chesto Berry), both sides, as token content (zero-init).
+        if self.status_cure_proj is not None:
+            assert self.status_cure_rule is not None
+            _cure = self.status_cure_rule(_opctx, self.damage_op, self.last_move_belief_logits)   # [B,12,CURE_DIM]
+            role_tokens = role_tokens + self.status_cure_proj(_cure.to(role_tokens.dtype))
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),
@@ -871,7 +897,8 @@ class ExtractorForward(ExtractorApi):
                     "incoming matrix that computes it).")
             _tp = threshold_probs(
                 _x5i.alpha, _pair_cells, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
-                ctx.our_active_idx, seat_live=_x5i.seat_live)
+                ctx.our_active_idx, seat_live=_x5i.seat_live,
+                exact=self._exact_ko_operands(_opctx, _x5i.alpha.shape[-1] - 1))
             self.stash.thresh_probs = _tp
             _mcells = torch.cat([_mcells, self.intent_threshold_move(
                 *_tp, ctx.our_active_req_move_ids)], dim=2)

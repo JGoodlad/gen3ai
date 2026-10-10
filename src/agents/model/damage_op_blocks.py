@@ -98,6 +98,10 @@ class DamageOperatorBlocks:
         # and mypy checks it there; this only stops the reads decaying to `Any`.
         _rolls: Callable[..., Tuple[torch.Tensor, ...]]
         _damage_rolls: Callable[..., Tuple[torch.Tensor, ...]]
+        _crit_p: Callable[..., Optional[torch.Tensor]]
+        _crit_p_at: Callable[..., Optional[torch.Tensor]]
+        ko_exact: bool
+        guts_num: int
         _boost_mult: Callable[..., torch.Tensor]
         _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]
         _weather_mult: Callable[..., torch.Tensor]
@@ -300,7 +304,10 @@ class DamageOperatorBlocks:
         opp_reflect = ctx.screen_feature[:, 1:2]                                      # OPP-side screens
         opp_ls = ctx.screen_feature[:, 3:4]
         screen = 1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys))             # [B,4]
-        high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None], opp_cur_hp[:, None], acc, eps)
+        high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None], opp_cur_hp[:, None], acc, eps,
+                                          crit_p=self._crit_p(move_ids),
+                                          opp_hp_frac=(ctx.hp_and_active[ar, opp_act, 0][:, None]
+                                                       if self.ko_exact else None))
         # gen3_nonformula_damage_v1: OUR non-formula moves (Seismic Toss / Night Shade 100, Super Fang ½,
         # Endeavor, OHKO …) replace the rolls — immunity-gated; × usable gates an illegal one (a formula
         # cell is already 0 there, so the multiply is exact for it).
@@ -493,7 +500,10 @@ class DamageOperatorBlocks:
         opp_reflect = ctx.screen_feature[:, 1:2]; opp_ls = ctx.screen_feature[:, 3:4]     # OPP-side screens
         screen = (1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys)))[:, :, None]   # [B,4,1]
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, :],
-                                          opp_cur_hp[:, None, :], acc[:, :, None], eps)    # each [B,4,6]
+                                          opp_cur_hp[:, None, :], acc[:, :, None], eps,
+                                          crit_p=self._crit_p_at(move_ids, 2),
+                                          opp_hp_frac=(opp_hp_frac[:, None, :] if self.ko_exact
+                                                       else None))    # each [B,4,6]
         # gen3_nonformula_damage_v1: non-formula moves into each defender — immunity + legality gated, CB-invariant.
         nf = nonformula_rolls(tuple(t[:, :, None] for t in gather_nonformula(self, move_ids)),
                               opp_cur_hp[:, None, :], opp_maxhp[:, None, :], our_cur_hp[:, None, None],
@@ -513,7 +523,7 @@ class DamageOperatorBlocks:
 
     def _outgoing_attacker_matrix(self, ctx: 'ExtractorContext',
                                   spread_belief: Optional[torch.Tensor] = None,
-                                  inherit_stages: bool = False) -> torch.Tensor:
+                                  inherit_stages: bool = False, force_burn: bool = False) -> torch.Tensor:
         """gen3_per_move_matrices_v1 (v39): the TRANSPOSE of `_outgoing_matrix` — our 6 MONS' 4 moves → the opp
         ACTIVE. On a FORCED SWITCH our active is fainted, so `_outgoing_block`/`_outgoing_matrix` (which only
         price the current active attacker) ZERO and the policy picks switch-ins BLIND to offense; this prices
@@ -575,6 +585,10 @@ class DamageOperatorBlocks:
             spe_boost = torch.ones(B, TEAM_SIZE, device=device); spe_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spe)
         # Burn / Choice Band compose PER MON (each mon's own KNOWN condition/item).
         our_burn = ctx.pokemon_part[:, our, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B,6]
+        if force_burn:
+            # gen3_endstate_facts_v1 (`--status-facts exact`): the HYPOTHETICAL world in which every one of our mons
+            # is burned — the burn-loss fact is this world's damage subtracted from the real one (one kernel).
+            our_burn = torch.ones_like(our_burn)
         our_para = ctx.pokemon_part[:, our, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B,6]
         our_cb = (ctx.item_ids[:, our] == self.cb_item_num).float()                     # [B,6]
         our_atk = our_atk * torch.where(our_cb > 0.5, our_atk.new_tensor(self.cb_phys_mult), our_atk.new_tensor(1.0))
@@ -631,7 +645,10 @@ class DamageOperatorBlocks:
         opp_reflect = ctx.screen_feature[:, 1:2]; opp_ls = ctx.screen_feature[:, 3:4]   # OPP-side screens [B,1]
         screen = 1.0 - 0.5 * (opp_reflect[:, :, None] * phys + opp_ls[:, :, None] * (1.0 - phys))  # [B,6,4]
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, None],
-                                          opp_cur_hp[:, None, None], acc, eps)           # each [B,6,4]
+                                          opp_cur_hp[:, None, None], acc, eps,
+                                          crit_p=self._crit_p(move_ids),
+                                          opp_hp_frac=(ctx.hp_and_active[ar, opp_act, 0][:, None, None]
+                                                       if self.ko_exact else None))      # each [B,6,4]
         # gen3_nonformula_damage_v1: non-formula moves into the opp active — immunity + legality gated, CB-invariant.
         nf = nonformula_rolls(gather_nonformula(self, move_ids), opp_cur_hp[:, None, None],
                               opp_maxhp[:, None, None], our_cur_hp[:, :, None], eff, acc, eps)
@@ -835,9 +852,34 @@ class DamageOperatorBlocks:
                      * damage_gate * (1.0 - already[:, :, None])).clamp(max=1.0)              # [B,6,K]
         return torch.maximum(dedicated, secondary)                                            # [B,6,K]
 
+    def our_burn_loss(self, ctx: 'ExtractorContext', spread_belief: Optional[torch.Tensor] = None
+                      ) -> torch.Tensor:
+        """gen3_endstate_facts_v1 (`--status-facts exact`): ``[B,6]`` per OUR mon j, the EXACT expected damage a burn
+        costs it — the damage its moves deal THEIR ACTIVE now minus the damage with its Attack burned, as a fraction
+        of the target's max HP, under the op's principled expectation over j's moves (α = presence / total presence;
+        our movesets are known, so each held move weighs 1 / the number held). Gen 3 (`data/mods/gen3/scripts.ts`
+        `modifyDamage`): a burn halves a PHYSICAL move's base damage before the ``+2`` unless the user has Guts; a
+        non-formula move (Seismic Toss …) is untouched (its damage never reaches `modifyDamage`). Both worlds are
+        the SAME kernel (`_outgoing_attacker_matrix`, the D2 / switch-in offense physics), so a special move, an
+        already-burned mon (halved in both worlds) and a non-formula move read exactly 0. Guts: OUR ability is
+        exact, and a Guts mon loses nothing (Showdown skips the halving; Guts' own ×1.5 is not in the op)."""
+        B = ctx.batch_size
+        n_cells = TEAM_SIZE * _DMG_OAX_PER_MON
+        now = self._outgoing_attacker_matrix(ctx, spread_belief)[:, :n_cells]
+        brn = self._outgoing_attacker_matrix(ctx, spread_belief, force_burn=True)[:, :n_cells]
+        hi_now = now.reshape(B, TEAM_SIZE, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE)[..., _DMG_OAX_IDX_HIGH]
+        hi_brn = brn.reshape(B, TEAM_SIZE, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE)[..., _DMG_OAX_IDX_HIGH]
+        held = (ctx.all_move_ids[:, :TEAM_SIZE] > 0).to(hi_now.dtype)                     # [B,6,4]
+        # an empty slot deals 0 in both worlds; the active's row is in REQUEST order, so `held` only COUNTS
+        e_lost = (hi_now - hi_brn).clamp(min=0.0).sum(-1) / held.sum(-1).clamp(min=1.0)    # [B,6]
+        guts = (ctx.ability1_ids[:, :TEAM_SIZE] == self.guts_num).to(e_lost.dtype)
+        out: torch.Tensor = e_lost * (1.0 - guts)
+        return out
+
     def pair_outcome_coords(self, ctx: 'ExtractorContext', real_idx: torch.Tensor,
                             pair_high: torch.Tensor, our_spe: torch.Tensor,
-                            opp_spe: torch.Tensor, d_base: torch.Tensor) -> torch.Tensor:
+                            opp_spe: torch.Tensor, d_base: torch.Tensor,
+                            burn_loss: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_pair_outcome_v1 — the EIGHT non-damage coordinates of the unified outcome vector,
         per (our defender j, their believed seat k). `[B, 6, K, _PAIR_OUTCOME_NEW]`, in
         `PAIR_OUTCOME_COORDS` order after the damage prefix:
@@ -952,6 +994,18 @@ class DamageOperatorBlocks:
             ones * _NEUTRAL_PSN_TICK,                                 # psn
             ones * _NEUTRAL_TOX_FIRST_TICK,                           # tox
         ], dim=-1)                                                                  # [B,6,6]
+        if burn_loss is not None:
+            # gen3_endstate_facts_v1 (`--status-facts exact`, `pair_outcome.STATUS_FACT_COORDS`): the two JUDGMENTS
+            # leave and two FACTS take their positions (width-neutral): the expected burn damage lost and the
+            # expected outspeed lost, each = P(this seat's burn / paralysis lands on j) × its exact effect. P(full
+            # paralysis) = 1/4 per turn (`data/mods/gen4/conditions.ts` par.onBeforeMove, inherited by gen 3) is
+            # the rule constant × the delivered `p_par` column, so it is carried there; the cure availability rides
+            # the mon tokens (`status_facts.cure_flags`); a sleep's wake odds are the observation's sleep belief.
+            e_brn = p_ident[..., 1] * burn_loss[:, :, None]                              # [B,6,K]
+            e_par = p_ident[..., 0] * d_fast[:, :, None]                                 # [B,6,K]
+            out = torch.cat([p_ident, e_brn[..., None], e_par[..., None]], dim=-1)
+            assert out.shape[-1] == _PAIR_OUTCOME_NEW and out.shape[:3] == (B, TEAM_SIZE, K)
+            return out
         neutral = torch.einsum("bjks,bjs->bjk", p_ident, sev)                       # [B,6,K]
 
         # --- tempo: P(any major status) x the turns THIS mon spends undoing it ---
@@ -1268,7 +1322,8 @@ class DamageOperatorBlocks:
         reflect, light_screen = ctx.screen_feature[:, 0:1], ctx.screen_feature[:, 2:3]    # [B,1] OUR-side screens
         screen = 1.0 - 0.5 * (reflect * phys_k + light_screen * (1.0 - phys_k))           # [B,K]
         high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None],
-                                            cur_hp[:, :, None], acc_k[:, None, :], eps)     # each [B,6,K]
+                                            cur_hp[:, :, None], acc_k[:, None, :], eps,
+                                            crit_p=self._crit_p_at(topk_idx, 1))   # each [B,6,K]
         # gen3_nonformula_damage_v1: the non-formula kinds replace the rolls (attacker HP = obs fraction ×
         # the neutral max HP, the op's opp-HP convention).
         atk_cur = opp_hp_frac * (2.0 * a_base[:, 0] + 31.0 + 110.0)                        # [B]

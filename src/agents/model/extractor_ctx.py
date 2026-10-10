@@ -304,6 +304,11 @@ class Embeddings(torch.nn.Module):
 
 
 
+#: `--drop-progress-clock`'s legal values (`gen3_endstate_facts_v1`): ``off`` = production (the model reads the
+#: observation's `turns_since_progress`), ``on`` = the model reads it as 0 (`ObsUnpack.drop_progress_clock`).
+DROP_PROGRESS_CLOCK_MODES = ("off", "on")
+
+
 class ObsUnpack(torch.nn.Module):
     """Stateless phase that peels the flat observation vector into named tensors
     (`ExtractorContext`). This is the bulk of the gather/slice plumbing; isolating it
@@ -329,6 +334,13 @@ class ObsUnpack(torch.nn.Module):
         # the blocks they hid. They existed to A/B whether the GPU DamageOperator subsumed the CPU
         # incoming-damage / move-effect / active-move-scalar regions; that A/B is settled and the
         # producers are deleted, so there is nothing left to mask.
+        # gen3_endstate_facts_v1 (`--drop-progress-clock on`): the model reads `turns_since_progress` (a hand
+        # definition of "progress" — a JUDGMENT by the owner's 2026-10-09 test) as 0. Set by the extractor after
+        # construction; the observation's layout is untouched. The column's offset inside `non_matchup_rest` is a
+        # PLAIN INT here (the F-ST-9 rule: a forward never reads a layout container).
+        self.drop_progress_clock = False
+        from agents.model.board_tokens import board_offsets
+        self._tsp = int(board_offsets(layout).tsp)
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> ExtractorContext:
         layout = self.layout
@@ -435,6 +447,12 @@ class ObsUnpack(torch.nn.Module):
         # the global-env block + the 5 raw board scalars (this raw-scalar span never contains
         # an ID by construction).
         non_matchup_rest = x[:, sl['global_env'].start : sl['reactive.active_req_moves'].start]
+        if self.drop_progress_clock:
+            # gen3_endstate_facts_v1: every reader of the board scalars (the legacy global token, the static FIELD
+            # token, the head's `non_matchup_rest` concat) reads the no-progress clock as 0.
+            t = self._tsp
+            non_matchup_rest = torch.cat([non_matchup_rest[:, :t], torch.zeros_like(non_matchup_rest[:, t:t + 1]),
+                                          non_matchup_rest[:, t + 1:]], dim=1)
         return ExtractorContext(
             batch_size=batch_size, device=x.device,
             pokemon_part=pokemon_part,

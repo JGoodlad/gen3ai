@@ -117,9 +117,12 @@ recorded `arch_source: null`. A fork into a new run dir keeps neither (its paren
 **A NAMED ARM** (`src/main/train/arch_arms.py`, `gen3_static_recovery_v1`) is `--arch <arm>`: the production surface
 plus the arm's DECLARED overlay, applied as if typed, with production's RECIPE; the guard judges a fresh argv against
 production ⊕ the overlay (no consent needed for the arm itself; a drift from the arm is refused by name), and
-`arch_source` records `<arm>@production_config@<12>+overlay@<8>`. The one arm today, **`--arch static_recovery`**, is
+`arch_source` records `<arm>@production_config@<12>+overlay@<8>`. Two arms today: **`--arch static_recovery`** is
 `static` + `--mon-hazard-cost on --move-actor-state on --trunk-layers 3 --switch-hazard-cost on --eot-residual on`
-(`designs/endstate/design_static_tokens.md` §13). A bisection arm is the named arm plus ONE typed lever and
+(`designs/endstate/design_static_tokens.md` §13); **`--arch endstate`** (`gen3_endstate_facts_v1`) is `static_recovery`
++ `--move-resolution on --speed-physics on --value-threat-inject off --op-reduction principled --obs-facts v1` + the
+five fact-completion levers `--move-resolution-facts full --status-facts exact --ko-ramp exact --drop-progress-clock on
+--g-ledger eot` (`designs/endstate/design_hand_computed_features.md` §4 / §5, `design_static_tokens.md` §14). A bisection arm is the named arm plus ONE typed lever and
 `--allow-nonproduction-arch`.
 
 Three resolution rules the tool applies, each of which has burned a launch:

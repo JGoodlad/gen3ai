@@ -65,6 +65,12 @@ _ON_OVERRIDE: Dict[str, object] = {
     "trunk_layers": 3,
     "switch_hazard_cost": "on",
     "eot_residual": "on",
+    # gen3_endstate_facts_v1 (v152): five two-value mode strings; each default is OFF.
+    "move_resolution_facts": "full",
+    "status_facts": "exact",
+    "ko_ramp": "exact",
+    "drop_progress_clock": "on",
+    "g_ledger": "eot",
 }
 
 

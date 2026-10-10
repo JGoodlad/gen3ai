@@ -109,6 +109,10 @@ class DamageOperatorPairwise:
         # and mypy checks it there; this only stops the reads decaying to `Any`.
         _rolls: Callable[..., Tuple[torch.Tensor, ...]]
         _damage_rolls: Callable[..., Tuple[torch.Tensor, ...]]
+        _crit_p: Callable[..., Optional[torch.Tensor]]
+        _crit_p_at: Callable[..., Optional[torch.Tensor]]
+        ko_exact: bool
+        eot_rule: Any
         _boost_mult: Callable[..., torch.Tensor]
         _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]
         _weather_mult: Callable[..., torch.Tensor]
@@ -327,12 +331,13 @@ class DamageOperatorPairwise:
                                                   torch.Tensor, torch.Tensor, torch.Tensor,
                                                   torch.Tensor, torch.Tensor,
                                                   Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-                                                  torch.Tensor, torch.Tensor]:
+                                                  torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
         """Shared C1b/C3 attacker block (the D4 recipe with the ACTIVE column KEPT): per opp mon
         j its top-`k_cand` most-believed candidates from ITS OWN slot of the composed posterior
         (selection detached, weights differentiable), de-timid offense, revealed+alive gate.
         → (w_k, bp_k, mty_k, phys_k, acc_k [B,6,K]; atk_j, spa_j, att_gate [B,6]; nf_k = 3×[B,6,K]
-        (fixed, target_frac, endeavor); atk_cur_j [B,6]; bu_k [B,6,K] the 0/1 Beat Up flag). `bp_k` is the
+        (fixed, target_frac, endeavor); atk_cur_j [B,6]; bu_k [B,6,K] the 0/1 Beat Up flag; crit_k [B,6,K] the
+        candidates' crit chance under `--ko-ramp exact`, else None). `bp_k` is the
         EFFECTIVE BP (each mon's HP resolved) and `nf_k` / `atk_cur_j` feed `damage_kinds.nonformula_rolls` —
         gen3_nonformula_damage_v1; `bu_k` feeds `damage_kinds.beatup_swap` — gen3_beatup_exact_v1.
 
@@ -368,7 +373,9 @@ class DamageOperatorPairwise:
         if _x5 is not None:
             att_gate = _x5.alive
         bu_k = gather_beatup(self, topk_idx)                                         # [B,6,K]
-        return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate, nf_k, atk_cur_j, bu_k
+        # gen3_endstate_facts_v1 (`--ko-ramp exact`): each candidate's crit chance (None under `ramp`).
+        crit_k = self._crit_p(topk_idx)                                              # [B,6,K] | None
+        return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate, nf_k, atk_cur_j, bu_k, crit_k
 
     def _attacker_total(self, ctx: 'ExtractorContext',
                         move_belief_logits: torch.Tensor) -> Optional[torch.Tensor]:
@@ -480,7 +487,7 @@ class DamageOperatorPairwise:
         d_outspeed = (p_par - p_now)[:, None, :] * is_par[:, :, None]                # [B,4,6]
         # --- burn: mon j's worst believed PHYSICAL hit on our active, Atk halved ---
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate, nf_k, atk_cur_j, bu_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j, bu_k, crit_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6] | None (max)
         def_c, spd_c, maxhp, cur_hp, at1, at2, amul = self._active_defender(ctx)
         # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count vs OUR active's BASE Def.
@@ -510,7 +517,8 @@ class DamageOperatorPairwise:
             core = 42.0 * bp_k * A / (D + eps) / 50.0 + plus2
             dmg_ns = core * (1.0 + 0.5 * is_stab) * eff * 0.925 * (bp_k > 0).float()
             high, _l, _c, _k = override_rolls(self._rolls(dmg_ns, screen, maxhp[:, None, None],
-                                                          cur_hp[:, None, None], acc_k, eps), nf)  # [B,6,K]
+                                                          cur_hp[:, None, None], acc_k, eps,
+                                                          crit_p=crit_k), nf)  # [B,6,K]
             return believed_reduce(w_k * high * mask, w_tot)                        # [B,6]
 
         d_in_phys = ((_worst(0.5, phys_mask) - _worst(1.0, phys_mask))[:, None, :]
@@ -694,7 +702,7 @@ class DamageOperatorPairwise:
         opp = slice(TEAM_SIZE, 2 * TEAM_SIZE)
         deltas, is_boost, hp_cost = self._setup_deltas(ctx)                          # [B,4,5], [B,4], [B,4]
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate, nf_k, atk_cur_j, bu_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j, bu_k, crit_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT def/spd stages) ---
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
@@ -741,7 +749,8 @@ class DamageOperatorPairwise:
         high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None],
                                             maxhp[:, None, None, None],
                                             cur_hp[:, None, None, None],
-                                            acc_k[:, None], eps)                     # [B,W,6,K]
+                                            acc_k[:, None], eps,
+                                            crit_p=None if crit_k is None else crit_k[:, None])   # [B,W,6,K]
         # gen3_nonformula_damage_v1: the declared non-formula damage (Def-independent → identical in
         # every world, so a defensive boost moves Seismic Toss by exactly 0 — the true physics).
         nf = nonformula_rolls(tuple(t[:, None] for t in nf_k), cur_hp[:, None, None, None],
@@ -791,7 +800,7 @@ class DamageOperatorPairwise:
         w_frac = (2.0 / 3.0) * sun + 0.25 * other_w + 0.5 * (1.0 - sun - other_w)    # [B,1]
         frac = torch.where(wh > 0, w_frac.expand_as(frac), frac)
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
-         att_gate, nf_k, atk_cur_j, bu_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
+         att_gate, nf_k, atk_cur_j, bu_k, crit_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
         # --- defender: OUR ACTIVE (real spread; CURRENT stages — a heal changes no stage) ---
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
@@ -834,7 +843,8 @@ class DamageOperatorPairwise:
                                + ls[:, :, None] * (1.0 - phys_k)))                   # [B,6,K]
         _h, _l, _c, ko_w = self._rolls(dmg_ns[:, None], screen[:, None],
                                        maxhp[:, None, None, None],
-                                       hp_w[:, :, None, None], acc_k[:, None], eps)  # [B,W,6,K]
+                                       hp_w[:, :, None, None], acc_k[:, None], eps,
+                                       crit_p=None if crit_k is None else crit_k[:, None])  # [B,W,6,K]
         # gen3_nonformula_damage_v1: the declared non-formula damage vs each world's post-heal HP
         # (Super Fang / OHKO / Endeavor read the healed HP; Seismic Toss its fixed 100).
         nf = nonformula_rolls(tuple(t[:, None] for t in nf_k), hp_w[:, :, None, None],
@@ -1048,7 +1058,8 @@ class DamageOperatorPairwise:
                                + light_screen[:, :, None] * (1.0 - phys_k)))           # [B,6j,K]
         high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None, :, :],
                                             maxhp[:, :, None, None], cur_hp[:, :, None, None],
-                                            acc_k[:, None, :, :], eps)                 # each [B,6i,6j,K]
+                                            acc_k[:, None, :, :], eps,
+                                            crit_p=self._crit_p_at(topk_idx, 1))   # each [B,6i,6j,K]
         # gen3_nonformula_damage_v1: the declared non-formula damage per (defender i, attacker j, cand c).
         atk_cur_j = hp_j * (2.0 * a_base[..., 0] + 31.0 + 110.0)                       # [B,6j] neutral max HP
         nf = nonformula_rolls(tuple(t[:, None] for t in nf_k), cur_hp[:, :, None, None],
@@ -1080,6 +1091,16 @@ class DamageOperatorPairwise:
             an active volatile and clears on switch; the drained credit side is deliberately NOT
             cross-charged — cross-mon maxhp scaling is a GIGO trap, the head composes it)
         Alive-gated; opp weather/status legs revealed-gated (unknown types/condition provenance)."""
+        if self.eot_rule is not None:
+            # gen3_endstate_facts_v1 (`--g-ledger eot`): THE end-of-turn rule (`eot_residual.EotResidualRule`, the one
+            # `--eot-residual` reads) grouped into the ledger's four columns (`eot_residual.g_cells`). Their side is
+            # gated as the rule gates it: alive × concrete (X5: the roster's), and the roster's alive under X5.
+            from agents.model.eot_residual import g_cells
+            _x5g = self.stash.x5
+            our_g, opp_g = g_cells(self.eot_rule(ctx, self, None if _x5g is None else _x5g.concrete))
+            if _x5g is not None:
+                opp_g = opp_g * _x5g.alive[:, :, None]
+            return our_g, opp_g
         B, device = ctx.batch_size, ctx.device
         ar = torch.arange(B, device=device)
         from agents.model.damage_tables import _T2I

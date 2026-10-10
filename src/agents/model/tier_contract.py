@@ -158,6 +158,8 @@ UNTIERED_CHILDREN = frozenset({
     "move_actor_proj",      # `--move-actor-state on`: the actor's state onto the E3 seats, the root's pre-trunk residual
     "eot_residual_rule",    # `--eot-residual on`: the end-of-turn rule (tables only), read on the op's context pre-trunk
     "eot_residual_proj",    # `--eot-residual on`: its zero-init projection, the root's pre-trunk residual (same seam)
+    "status_cure_rule",     # `--status-facts exact`: the cure-availability rule (tables only), on the op's context pre-trunk
+    "status_cure_proj",     # `--status-facts exact`: its zero-init projection, the root's pre-trunk residual (same seam)
     "pre_proj_norm", "projection", "activation",
     "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths
 })

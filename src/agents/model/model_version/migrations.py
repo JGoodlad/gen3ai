@@ -525,6 +525,14 @@ def _migrate_config(data: dict) -> dict:
     # observation-value fixes, the state_dict is unchanged, so every past config stamps through.
     if version < 151:
         data["config_version"] = 151
+    # v152 (gen3_endstate_facts_v1) — five structural fact levers, each absent before (the only possible past).
+    if version < 152:
+        data.setdefault("move_resolution_facts", "off")
+        data.setdefault("status_facts", "off")
+        data.setdefault("ko_ramp", "ramp")
+        data.setdefault("drop_progress_clock", "off")
+        data.setdefault("g_ledger", "coarse")
+        data["config_version"] = 152
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

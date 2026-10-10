@@ -23907,3 +23907,48 @@ built; (5) an edit is a lower bound (the event window remembers); (6) a near-con
 and every probe was re-run on the fix; (7) busy windows 17:28–21:05 PDT, CPU nice 19, ≤ 4 threads.
 
 Tag: **DESCRIPTIVE · probe battery v1 · hunt list: residual race, boost size, opponent HP at our tokens, speed margin, their Spikes at our tokens; static: Spikes at our tokens, move-seat HP · phazing: boost half used, Spikes half not under static · depth > width** · tool: [`../prober/probe_battery.md`](../prober/probe_battery.md) · measurements: [`measurements/probe_battery_2026-10-09/`](measurements/probe_battery_2026-10-09/) · hand-computed candidates: [`design_hand_computed_features.md`](../endstate/design_hand_computed_features.md) §4
+
+### 2026-10-09 · BUILT · **THE FACT-COMPLETION LEVERS (`gen3_endstate_facts_v1`, v152): `--ko-ramp exact` (P(KO) over the 16 rolls + the crit, each roll resolved over the observed HP interval), `--status-facts exact` (the burn / paralysis FACTS in place of `neutralization` / `tempo_cost` + the cure flags), `--move-resolution-facts full` (the facts move resolution dropped, restored), `--drop-progress-clock on`, `--g-ledger eot` (ONE end-of-turn rule), all OFF; and the named END-STATE arm `--arch endstate`; production byte-identical**
+
+- **Why.** The owner's 2026-10-09 FACT / JUDGMENT test (`endstate/design_hand_computed_features.md` §1) re-sorted the
+  hand-computed features; owner: "run all of them speculatively together, then bisect".
+- **Built.** (1) `--ko-ramp exact` (`ko_exact.py`): one function at every KO site (`_rolls`, the Band `ko_cb`, P8's sub
+  break, move resolution's Pursuit KO): the 16 gen-3 rolls (r uniform on 85 … 100, last) + the move's crit chance
+  (`critRatio` 1 → 1/16, 2 → 1/8; ×2 after the `+2`, screens ignored), each roll's KO resolved over the observed HP
+  interval (ours ±½ HP; theirs HP Percentage Mod's (p − 1 %, p] bin) — continuous, so K9(b) gains no discrete site, and
+  exact given what is observed. (2) `--status-facts exact`: pair-outcome positions 12-13 = P(burn lands) × the exact
+  damage our mon loses to a burn (`our_burn_loss`: the same kernel with Attack halved, the expectation over its held
+  moves; 0 for special / non-formula moves, Guts, an already-burned mon) and P(paralysis lands) × Δ P(outspeed)
+  (width-neutral); every mon's cure FACTS (live Heal Bell / Aromatherapy user on its side, Natural Cure, Rest, Lum /
+  Chesto) as zero-init token content (`status_facts.CureFlags`); under move resolution the two facts reach its cells.
+  (3) `--move-resolution-facts full`: `fp_survives` (a hit on our own sub excepted), `sub_survives` (exact under
+  `--ko-ramp exact`), `endure_p_ko`, `endeavor_survives`, `spin_value_lost` = (1 − p_resolve) × our layers / 3,
+  `spin_denied_stake` = P(their spin fails on our Ghost) × their layers / 3. (4) `--drop-progress-clock on`: the model
+  reads `turns_since_progress` as 0 (`ObsUnpack`; the Rust layout unchanged). (5) `--g-ledger eot`: the op's `g` cell, `c4`
+  and the static op content read N4's rule (`eot_residual.g_cells`). (6) `--arch endstate` = `static_recovery` +
+  `--move-resolution on --speed-physics on --value-threat-inject off --op-reduction principled --obs-facts v1` + the five.
+  Every rule VERIFIED in `deps/pokemon-showdown` (`measurements/endstate_facts_2026-10-09/README.md` §2).
+- **Identity:** flags off, production / `static` / `static_recovery` / E (= `static_recovery` + the bundle, the GPU
+  check's arm) keep the parent's dynamo graph, state_dict and outputs hash for hash; the arm is one graph on CPU.
+- **Cost (MEASURED, CPU, 64 rows, descriptive):** +960 extractor params over E (all zero-init); matmul FLOPs unchanged;
+  eager CPU forward 181.3 vs E 161.3 ms / 64 rows (+12.4 %; the exact P(KO)'s element-wise terms alone +9.9 %).
+- **K9(b):** the recorder sees no undeclared discrete op; excluded share at 2e-4 on 64 planted rows: production 0.062,
+  E 0.062, endstate 0.078 (DESCRIPTIVE).
+- **Smoke:** `--arch endstate --debug --steps 10000` (CPU): PASS, 884 s, peak 3.34 GB, the run records every lever.
+- **Tests (fail on revert):** `agents/model/endstate_facts_test.py` (28), `main/train/arch_arms_test.py` (+2), the smoke's
+  `endstate` parametrization; 12 revert mutations, each caught.
+
+FINDINGS:
+1. **The op's damage columns are MEAN-roll, not max-roll as their docstrings say** (every kernel multiplies by 0.925):
+   `high` is the mean roll and `low` = 0.85 × mean is BELOW the true minimum roll (0.786 of the top). The legacy KO ramp
+   inherited the anchoring (P(KO) 0 where 8 of 16 rolls KO). `--ko-ramp exact` corrects P(KO) only; `low` / `high` are
+   unchanged (a production input; not this brief).
+2. **A staircase P(KO) cannot ride K9(b):** it is a step of a weight-driven damage estimate on ~2,300 cells per row;
+   hence the observed-HP resolution (continuous). A pure staircase would be excluded on most rows.
+3. **Named residuals of the exact P(KO):** Focus Energy / Scope Lens / Lucky Punch / Stick, Battle / Shell Armor (no
+   crit), a crit's disregard of stat stages, the per-hit floors; the consequence-edge kernels (C1b / C2 / C3 / D4) read
+   each candidate's own crit ratio, X5's OTHER_move seat the base 1/16.
+4. **Deferred GPU checks (no lease):** CUDA compile parity forward + backward of the arm and of E + `--ko-ramp exact`;
+   T2's CUDA-graph build; K9(b) on a real first update; a real two-minute launch; the GPU cost read.
+
+Tag: **BUILT · fact-completion levers · v152 · OFF · `--arch endstate` declared · production byte-identical · GPU checks DEFERRED** · design: [`design_hand_computed_features.md`](../endstate/design_hand_computed_features.md) §4 / §5 · [`design_static_tokens.md`](../endstate/design_static_tokens.md) §14 · measurements: [`endstate_facts_2026-10-09/`](measurements/endstate_facts_2026-10-09/)

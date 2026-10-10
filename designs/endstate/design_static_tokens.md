@@ -862,6 +862,37 @@ two-minute `--compile-trainer` launch, and the cost read (`train_ms`, the T2 flu
 
 ---
 
+## 14. The END-STATE arm (`gen3_endstate_facts_v1`, config v152, 2026-10-09)
+
+**What and why.** Owner, 2026-10-09: "run all of them speculatively together, then bisect". The recovery arm (§13) is
+static's closing-test candidate; the END-STATE arm adds to it the four levers of the owner's bundle (move resolution,
+speed physics, the principled op reductions, the OBS-FACTS block; the critic's threat injection off — the arm a GPU
+check validates as "E") and the FACT-COMPLETION levers of `design_hand_computed_features.md` §4 ranks 3-5, §5 rank 1 and
+finding 7, each behind its own flag, OFF in production (ARCHITECTURE "the FACT-COMPLETION levers"):
+
+| flag | lever | params |
+|---|---|---|
+| `--move-resolution-facts full` | the facts move resolution dropped as judgments on 2026-10-06 and the owner re-classed as FACTS on 2026-10-09: Focus Punch survives, the Substitute survives, Endure × P(KO), Endeavor × P(not KO'd), the layers a failed Rapid Spin leaves, the layers our Ghost switch-in preserves | +208 (two zero-init bias-free projections onto move resolution's blocks) |
+| `--status-facts exact` | `neutralization` / `tempo_cost` replaced in place by the expected burn damage lost and the expected outspeed lost to paralysis; every mon's cure-availability flags (a live cleric on its side, Natural Cure, Rest, Lum / Chesto) as token content | +752 (the cure projection 5 → 128, + 76 + 36 on the move-resolution blocks) |
+| `--ko-ramp exact` | every P(KO) exact over the 16 rolls + the crit chance, each roll's KO resolved over the observed HP interval | 0 |
+| `--drop-progress-clock on` | the model reads `turns_since_progress` (a judgment) as 0 | 0 |
+| `--g-ledger eot` | the op's `g` cell reads the ONE end-of-turn rule (§13's N4) | 0 |
+
+**`--arch endstate`** = `static_recovery` + `--move-resolution on --speed-physics on --value-threat-inject off
+--op-reduction principled --obs-facts v1` + the five, on the production recipe. Measured (CPU; `research_state/
+measurements/endstate_facts_2026-10-09/`): flags off, production / `static` / `static_recovery` / E keep the parent's
+graph, state_dict and outputs hash for hash; the arm is ONE dynamo graph, 2,026,908 extractor parameters (+960 over E,
+all zero-init), the eager CPU forward +12.4 % over E (the exact P(KO)'s element-wise terms: +9.9 % alone); the K9(b)
+recorder sees no undeclared discrete op. Every lever ON at init: the parameter-adding ones are bit-identical to OFF at
+init; the three parameter-free ones change the forward by design (their tests pin what they compute). Tests:
+`agents/model/endstate_facts_test.py`, `main/train/arch_arms_test.py`, the smoke's `endstate` parametrization.
+
+**14.1 DEFERRED to a GPU lease (the new flags only):** CUDA compile parity forward + backward of the arm and of E +
+`--ko-ramp exact` alone; T2's CUDA-graph build; K9(b) on a real first update; a real two-minute launch; the cost read
+against E at the same commit.
+
+---
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
@@ -898,3 +929,4 @@ two-minute `--compile-trainer` launch, and the cost read (`train_ms`, the T2 flu
 | 2026-10-09 | **OWNER: the LEGACY encoding is KEPT (deletion DEFERRED) until a CLOSING test** | Owner, 2026-10-09: defer removing the legacy (pre-static) encoding; first run head-to-heads of the static recovery levers (more trunk depth, the hard-to-compute-but-available facts brought in earlier: `--mon-hazard-cost`, `--move-actor-state`, and next candidates from `design_hand_computed_features.md`), then a CLOSING static-vs-legacy test under a stricter definition ("the uncertainty interval includes zero", registration pending the owner's choice of margin and n). Delete legacy if strength is recovered, or probably if close; avoid churn. Look 3's registered outcome still reads tonight, but no legacy code is removed on it | deleting legacy on look 3's NON-INFERIOR alone (the owner wants the recovery levers tried and a closing test first) | owner, 2026-10-09 |
 | 2026-10-09 | **The static-RECOVERY levers BUILT, OFF, and ONE combined arm** (`gen3_static_recovery_v1`, config v150; §13) | `--trunk-layers N` (identity-init PRE-LN extra rounds, the 2-round network at init bit for bit), `--switch-hazard-cost` (the switch cell's entry-hazard block from the op's ONE `spikes_entry` rule, through the pointer head's zero-init projection), `--eot-residual` (every mon's end-of-turn HP change, both sides, on the mon token, mechanics verified at source: gen-3 Wish = half the RECIPIENT's max HP, no chip on a timed weather's last turn), and the NAMED ARM `--arch static_recovery` = static + all five levers on the production recipe, judged by the arch guard against production ⊕ its overlay; bisected lever by lever after the closing test | a third POST-LN layer with zero outputs (LN∘LN is not the identity); widening `switch_proj` (re-draws its init); the residual on the switch cell too (two routes for one fact inside one arm); the residual read off the `g` cell (coarser: no Wish / Ingrain / Curse / Nightmare / priors); a documented flag list instead of a declared arm (the 2026-09-06 incident's shape) | owner 2026-10-09 ("run all of them speculatively together and then we can bisect them out"); `measurements/static_recovery_2026-10-09/`; `static_recovery_test.py`, `arch_arms_test.py` |
 | 2026-10-09 | **LOOK 3 READ (FINAL; registered rule)** | **NOT DETECTED: `static` is NOT adopted, legacy stays.** 8 × 8 cross at P_st (looks 1–2's 25 cells reused from the ledger by sha256, 39 new), 1,000 mirrored pairs per cell: Δ̂ −2.32 pp (static vs legacy; 56 of 64 cells below 50), √V̂ 0.728 on 14 df (s²_R 2.88, s²_C 1.36); t_NI 1.623 < 1.874 (NON-INFERIOR needed Δ̂ ≥ −2.14); t_SUP −3.184; look-3 interval (± 1.874 √V̂) [−3.68, −0.95] straddles −δ, so neither EQUIVALENT nor INFERIOR; nothing within 1e-9 of a boundary; the fixed-sample 90 % [−3.60, −1.04] and X5's `cross.decide` read the same. §8.1's row for a final-look NOT DETECTED: "legacy stays; back to the owner with the read: add seeds (the X5 extension) or run the §7 split". **Per the OWNER (2026-10-09), no legacy code is deleted on this read**: legacy is kept, the static-recovery levers (§13) come next, then a CLOSING test. In-arm speed s −2.1 % on quiet cycles (legacy 823 / 1,216, static 631 / 1,239 kept; resume windows excluded) ⇒ s ≤ 5 %. Bots panel −0.59 pp, no HARM flag; sentinel monotonicity 0.80 on S2 / S6 / S7 / L8, 1.00 on the rest. All sixteen seeds' deviations as briefed and valid (S6: one amendment-1 tie-only stop at 3.94M, max abs d log pi 4.3e-6, resumed from its own 3.0M checkpoint; its chain swap adopted the running launcher, with no extra child). DESCRIPTIVE ONLY: the owner's future closing-test rule (90 % interval includes 0 or lies above it, lower end > −2.0) would FAIL on both clauses | the X5 extension (+2 seeds per arm, a further look; not taken: the owner's closing test supersedes it); deleting legacy (owner: not before a closing test); a post-hoc "worse inside δ" row (owner ruling: none) | ledger READ 2026-10-09 "STATIC-TOKEN SCREEN LOOK 3"; `measurements/static_screen_look3_2026-10-09/` |
+| 2026-10-09 | **The END-STATE arm declared and the fact-completion levers BUILT, OFF** (`gen3_endstate_facts_v1`, config v152; §14) | `--arch endstate` = `static_recovery` + the bundle (move resolution, speed physics, principled reductions, OBS-FACTS; threat injection off) + `--move-resolution-facts full`, `--status-facts exact`, `--ko-ramp exact`, `--drop-progress-clock on`, `--g-ledger eot`; each lever its own flag for the bisection | a separate arm per lever before any screen (the owner's speculative-bundle rule: bisect after); the levers inside `static_recovery` (that arm is static's closing-test candidate and is being validated as is) | `research_state/measurements/endstate_facts_2026-10-09/`; `endstate_facts_test.py` |

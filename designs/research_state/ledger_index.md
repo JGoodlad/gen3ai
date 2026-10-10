@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-23,910-line file. **The ledger itself is append-only and is never edited by this**;
+23,955-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**833 headings · 778 dated · 2026-08-01 → 2026-10-09 · ledger 23,910 lines.**
+**834 headings · 779 dated · 2026-08-01 → 2026-10-09 · ledger 23,955 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -853,3 +853,4 @@ rename.
   - `L23791` · `2026-10-09` · BUILT · **THE STATIC-RECOVERY LEVERS (`gen3_static_recovery_v1`, v150): `--trunk-layers N` (identity-init PRE-LN extra rounds, the 2-round network at init bit for bit), `--switch-hazard-cost` (the switch cell's entry-hazard block, the op's ONE Spikes rule, through the pointer head's zero-init projection), `--eot-residual` (every mon's end-of-turn HP change, both sides, mechanics verified at source), all OFF; and ONE combined arm, the named `--arch static_recovery`; production byte-identical**
   - `L23836` · `2026-10-09` · READ · **STATIC-TOKEN SCREEN LOOK 3 (FINAL, n = 8 per arm): NOT DETECTED — static vs legacy Δ̂ −2.32 pp, look-3 interval [−3.68, −0.95] (straddles −δ), fixed-sample 90 % [−3.60, −1.04]; t_NI 1.623 < 1.874 (NOT non-inferior); t_SUP −3.184; not INFERIOR; `static` NOT adopted on the registered rule, legacy stays (and, per the owner, no legacy code is deleted on this read); in-arm speed s −2.1 % (≤ 5 %); bots panel −0.59 pp, no HARM flag; all sixteen seeds' deviations as briefed and valid**
   - `L23876` · `2026-10-09` · DESCRIPTIVE · **THE REPRESENTATION PROBE BATTERY (`gen3_probe_battery_v1`, `python -m main.probe_battery`): what the screen arms represent easily and what they do not; the next Spikes-like gaps are the end-of-turn race, the SIZE of a boost, the opponent's HP at our decision tokens, the speed margin and Spikes on THEIR side at our decision tokens, in BOTH encodings; phazing's boost half is USED, its Spikes half barely (legacy) or not (static); depth looks saturated, width not under-used**
+  - `L23911` · `2026-10-09` · BUILT · **THE FACT-COMPLETION LEVERS (`gen3_endstate_facts_v1`, v152): `--ko-ramp exact` (P(KO) over the 16 rolls + the crit, each roll resolved over the observed HP interval), `--status-facts exact` (the burn / paralysis FACTS in place of `neutralization` / `tempo_cost` + the cure flags), `--move-resolution-facts full` (the facts move resolution dropped, restored), `--drop-progress-clock on`, `--g-ledger eot` (ONE end-of-turn rule), all OFF; and the named END-STATE arm `--arch endstate`; production byte-identical**

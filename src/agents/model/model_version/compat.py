@@ -601,6 +601,43 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "fact to every forward).\n"
                 "Resume with the matching --eot-residual setting (a flagless resume inherits it), or start a fresh "
                 "training run.")
+        # gen3_endstate_facts_v1 (v152): the five fact-completion levers — each changes the trained forward (two also
+        # build parameters), so a frozen opponent's gate must name the cause rather than read a different input.
+        if self.move_resolution_facts != saved.move_resolution_facts:
+            raise ModelVersionError(
+                f"move_resolution_facts mismatch: saved={saved.move_resolution_facts!r}, current={self.move_resolution_facts!r}.\n"
+                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
+                "the network reads.\n"
+                "Resume with the matching --move-resolution-facts setting (a flagless resume inherits it), or start a fresh training "
+                "run.")
+        if self.status_facts != saved.status_facts:
+            raise ModelVersionError(
+                f"status_facts mismatch: saved={saved.status_facts!r}, current={self.status_facts!r}.\n"
+                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
+                "the network reads.\n"
+                "Resume with the matching --status-facts setting (a flagless resume inherits it), or start a fresh training "
+                "run.")
+        if self.ko_ramp != saved.ko_ramp:
+            raise ModelVersionError(
+                f"ko_ramp mismatch: saved={saved.ko_ramp!r}, current={self.ko_ramp!r}.\n"
+                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
+                "the network reads.\n"
+                "Resume with the matching --ko-ramp setting (a flagless resume inherits it), or start a fresh training "
+                "run.")
+        if self.drop_progress_clock != saved.drop_progress_clock:
+            raise ModelVersionError(
+                f"drop_progress_clock mismatch: saved={saved.drop_progress_clock!r}, current={self.drop_progress_clock!r}.\n"
+                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
+                "the network reads.\n"
+                "Resume with the matching --drop-progress-clock setting (a flagless resume inherits it), or start a fresh training "
+                "run.")
+        if self.g_ledger != saved.g_ledger:
+            raise ModelVersionError(
+                f"g_ledger mismatch: saved={saved.g_ledger!r}, current={self.g_ledger!r}.\n"
+                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
+                "the network reads.\n"
+                "Resume with the matching --g-ledger setting (a flagless resume inherits it), or start a fresh training "
+                "run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —
         # a resume that dropped one would silently delete a trained baseline head, one that added

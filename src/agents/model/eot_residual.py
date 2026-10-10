@@ -68,6 +68,10 @@ if TYPE_CHECKING:
 
 #: `--eot-residual`'s legal values (``off`` builds nothing).
 EOT_RESIDUAL_MODES = ("off", "on")
+#: `--g-ledger`'s legal values (`gen3_endstate_facts_v1`): ``coarse`` = the op's own older `g` ledger
+#: (`DamageOperatorPairwise.pairwise_schedule`, production, byte-identical); ``eot`` = the `g` cell (and every reader
+#: of it: `c4`'s nets, the static op content) reads THIS rule through `g_cells`, so the model holds ONE end-of-turn rule.
+G_LEDGER_MODES = ("coarse", "eot")
 
 #: The per-mon columns, in order (signed fractions of the mon's own max HP).
 EOT_FACTS: Tuple[str, ...] = ("leftovers", "weather", "rain_dish", "status", "leech_drain", "leech_gain", "wish",
@@ -261,3 +265,26 @@ class EotResidualRule(torch.nn.Module):
         shedinja = self.SHEDINJA_HP_ONE[ctx.species_ids]
         out: torch.Tensor = shedinja + (1.0 - shedinja) * formula
         return out
+
+
+#: The `g` cell's four columns as sums of `EOT_FACTS` components (`g_cells`): every component lands in exactly one
+#: column, so the four sum to the rule's unclamped total (`c4` sums them).
+G_FROM_EOT: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
+    ("heal", ("leftovers", "rain_dish", "wish", "ingrain")),
+    ("weather", ("weather",)),
+    ("status", ("status", "curse", "nightmare")),
+    ("leech", ("leech_drain", "leech_gain")),
+)
+
+
+def g_cells(eot: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    """`--g-ledger eot` (`gen3_endstate_facts_v1`): the `g` ledger's ``(our_cells [B,6,4], opp_cells [B,6,4])`` —
+    ``[heal, weather, status, leech]`` per mon, signed max-HP fractions — from THE end-of-turn rule's per-mon
+    components ``eot`` ``[B,12,EOT_DIM]`` (`EotResidualRule.forward`). The coarse ledger's four columns are
+    Leftovers / weather / status / Leech Seed drain; here each column also carries the rule's other components of its
+    kind (Rain Dish, Wish and Ingrain heal; Curse and Nightmare tick with the status; the seeder's heal with the
+    drain), so `g`, `c4` and the static op content price the end of the turn by the SAME rule as `--eot-residual`."""
+    idx = {n: i for i, n in enumerate(EOT_FACTS)}
+    cols = [torch.stack([eot[..., idx[c]] for c in comps], dim=-1).sum(-1) for _name, comps in G_FROM_EOT]
+    g = torch.stack(cols, dim=-1)                                                       # [B,12,4]
+    return g[:, :TEAM_SIZE], g[:, TEAM_SIZE:]

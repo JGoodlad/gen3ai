@@ -444,6 +444,17 @@ class ModelVersionFields:
     trunk_layers: int = 2
     switch_hazard_cost: str = "off"
     eot_residual: str = "off"
+    # gen3_endstate_facts_v1 (config v152): the FACT-COMPLETION levers (`design_hand_computed_features.md` §4 ranks
+    # 3-5, §5 rank 1, finding 7). `--move-resolution-facts {off,full}` (the facts move resolution dropped, restored),
+    # `--status-facts {off,exact}` (neutralization / tempo_cost replaced by exact facts + the cure flags),
+    # `--ko-ramp {ramp,exact}` (P(KO) exact over the 16 rolls + the crit), `--drop-progress-clock {off,on}` (the
+    # model reads turns_since_progress as 0) and `--g-ledger {coarse,eot}` (the op's `g` cell reads the ONE
+    # end-of-turn rule). STRUCTURAL: each changes the trained forward (two also add parameters).
+    move_resolution_facts: str = "off"
+    status_facts: str = "off"
+    ko_ramp: str = "ramp"
+    drop_progress_clock: str = "off"
+    g_ledger: str = "coarse"
     # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
     # Two EVAL-only knobs, the training-only provenance class and then some: neither is read by any forward, no
     # weight shape depends on either, and a frozen eval/pool opponent runs no eval cycle at

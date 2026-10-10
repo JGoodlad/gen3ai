@@ -47,6 +47,34 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
                 "candidate against legacy, bisected lever by lever",
         design="designs/endstate/design_static_tokens.md §13",
     ),
+    # gen3_endstate_facts_v1 (owner 2026-10-09: "run all of them speculatively together, then bisect"): the END-STATE
+    # arm — `static_recovery` + the bundle's four levers (move resolution, speed physics, the principled reductions,
+    # the OBS-FACTS block) with the critic's threat injection off, + every fact-completion lever. Bisected afterwards.
+    "endstate": ArmDecl(
+        overlay=(
+            ("token_encoding", "static"),
+            ("mon_hazard_cost", "on"),
+            ("move_actor_state", "on"),
+            ("trunk_layers", 3),
+            ("switch_hazard_cost", "on"),
+            ("eot_residual", "on"),
+            ("move_resolution", "on"),
+            ("speed_physics", "on"),
+            ("value_threat_inject", False),
+            ("op_reduction", "principled"),
+            ("obs_facts", "v1"),
+            ("move_resolution_facts", "full"),
+            ("status_facts", "exact"),
+            ("ko_ramp", "exact"),
+            ("drop_progress_clock", "on"),
+            ("g_ledger", "eot"),
+        ),
+        purpose="static_recovery + move resolution, speed physics, the principled op reductions, the OBS-FACTS block, "
+                "no critic threat injection, + every fact-completion lever (the restored move-resolution facts, the "
+                "exact status facts and cure flags, the exact P(KO), no progress clock, one end-of-turn rule); the "
+                "end-state candidate, bisected lever by lever",
+        design="designs/endstate/design_hand_computed_features.md §4 / §5 (and design_static_tokens.md §13)",
+    ),
 }
 
 

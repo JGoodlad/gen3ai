@@ -216,7 +216,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                  drop_renders: bool = False,
                  believed_lean: bool = False,
                  speed_physics: bool = False,
-                 op_reduction: str = "max"):
+                 op_reduction: str = "max",
+                 ko_ramp: str = "ramp",
+                 g_ledger: str = "coarse",
+                 status_facts: str = "off"):
         super().__init__()
         # gen3_op_lean_forward_v1 (v86, design_op_tensors step 3): `drop_renders` removes the three
         # RENDER regions (outgoing matrix / incoming matrix / OAX) from the flat forward block — they
@@ -312,6 +315,37 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             raise ValueError(f"DamageOperator op_reduction={op_reduction!r} — one of {OP_REDUCTION_MODES}")
         self.op_reduction = op_reduction
         self.op_principled = op_reduction == "principled"
+        # gen3_endstate_facts_v1 (`--ko-ramp exact`, `ko_exact.py`): every P(KO) the op prices is the exact one over
+        # the 16 rolls + the move's crit chance (its `critRatio`), resolved over the observed HP interval. `ramp`
+        # (production) registers nothing and runs every site's legacy expression: byte-identical.
+        from agents.model.ko_exact import KO_RAMP_MODES, crit_p_table
+        if ko_ramp not in KO_RAMP_MODES:
+            raise ValueError(f"DamageOperator ko_ramp={ko_ramp!r} — one of {KO_RAMP_MODES}")
+        self.ko_ramp = ko_ramp
+        self.ko_exact = ko_ramp == "exact"
+        if self.ko_exact:
+            self.register_buffer("MOVE_CRIT_P", crit_p_table(layout['max_moves']), persistent=False)
+        # gen3_endstate_facts_v1 (`--g-ledger eot`): the `g` end-of-turn ledger (and `c4`'s nets, the static op
+        # content) read the ONE end-of-turn rule `eot_residual.EotResidualRule` instead of the coarser ledger.
+        # `coarse` (production) builds nothing: byte-identical.
+        from agents.model.eot_residual import G_LEDGER_MODES, EotResidualRule
+        if g_ledger not in G_LEDGER_MODES:
+            raise ValueError(f"DamageOperator g_ledger={g_ledger!r} — one of {G_LEDGER_MODES}")
+        self.g_ledger = g_ledger
+        self.eot_rule: Optional[EotResidualRule] = EotResidualRule(layout) if g_ledger == "eot" else None
+        # gen3_endstate_facts_v1 (`--status-facts exact`): `pair_outcome_coords` emits the two status FACTS in the
+        # positions of `neutralization` / `tempo_cost` (`pair_outcome.STATUS_FACT_COORDS`); `off` is byte-identical.
+        from agents.model.pair_outcome import STATUS_FACTS_MODES
+        if status_facts not in STATUS_FACTS_MODES:
+            raise ValueError(f"DamageOperator status_facts={status_facts!r} — one of {STATUS_FACTS_MODES}")
+        self.status_facts = status_facts
+        self.status_exact = status_facts == "exact"
+        if self.status_exact:
+            from agents import gen3_data
+            _guts = gen3_data.abilities.get("guts")
+            if _guts is None:
+                raise ValueError("DamageOperator: 'guts' does not resolve in gen3_data.abilities")
+            self.guts_num = int(_guts.num)
         self.qc_item_num = QUICK_CLAW_ITEM_NUM
         # Quick Claw is BANNED in gen3ou (`move_order.quick_claw_live` reads the format spec; owner + master 2026-10-07):
         # the rule stays implemented, and is OFF for the format the model plays.
@@ -601,7 +635,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
 
     def _rolls(self, dmg_ns: torch.Tensor, screen: Optional[torch.Tensor], maxhp: torch.Tensor,
                cur_hp: torch.Tensor, acc: torch.Tensor,
-               eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
+               eps: float = 1e-6, crit_p: Optional[torch.Tensor] = None,
+               opp_hp_frac: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, ...]:
         """The single source of the 3-roll + accuracy-folded-P(KO) physics — BOTH the incoming kernel
         and the outgoing block call this (the DRY core). From pre-screen max-roll damage ``dmg_ns`` + the
         DEFENDER's ``screen`` multiplier + ``maxhp``/``cur_hp`` + per-candidate ``acc`` (all broadcast-
@@ -620,8 +655,41 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         high = (dmg * inv).clamp(max=_DMG_CHIP_CAP)
         low = (_DMG_ROLL_MIN * dmg * inv).clamp(max=_DMG_CHIP_CAP)
         crit = (2.0 * dmg_ns * inv).clamp(max=_DMG_CRIT_CAP)
+        if self.ko_exact:
+            # gen3_endstate_facts_v1 (`--ko-ramp exact`, `ko_exact.py`): the 16 rolls + the crit, each roll's KO
+            # resolved over the observed HP interval (ours ±½ HP; theirs the reported percentage bin) — the
+            # caller names a THEIR-side defender by its reported fraction ``opp_hp_frac``.
+            return high, low, crit, acc * self._ko_exact(dmg, 2.0 * dmg_ns, maxhp, cur_hp, crit_p, opp_hp_frac)
         ko = acc * torch.clamp((dmg - cur_hp) / (0.15 * dmg + eps), 0.0, 1.0)
         return high, low, crit, ko
+
+    def _crit_p(self, nums: Optional[torch.Tensor], batch: Optional[int] = None) -> Optional[torch.Tensor]:
+        """gen3_endstate_facts_v1: the crit chance of each move num in ``nums`` under `--ko-ramp exact` (None under
+        `ramp`, where no site reads it; None ``nums`` → None, the base 1/16). ``batch`` expands a 1-D candidate axis
+        to ``[batch, C]`` (the incoming kernel's broadcast contract)."""
+        if not self.ko_exact or nums is None:
+            return None
+        c: torch.Tensor = self.MOVE_CRIT_P[nums]
+        if batch is not None:
+            c = c.reshape(-1, c.shape[-1]).expand(batch, -1)
+        return c
+
+    def _crit_p_at(self, nums: Optional[torch.Tensor], dim: int) -> Optional[torch.Tensor]:
+        """`_crit_p` with one broadcast axis inserted at ``dim`` (None under `ramp`)."""
+        c = self._crit_p(nums)
+        return None if c is None else c.unsqueeze(dim)
+
+    def _ko_exact(self, dmg: torch.Tensor, crit_dmg: torch.Tensor, maxhp: torch.Tensor, cur_hp: torch.Tensor,
+                  crit_p: Optional[torch.Tensor], opp_hp_frac: Optional[torch.Tensor]) -> torch.Tensor:
+        """gen3_endstate_facts_v1: THE exact P(KO | hit) of `ko_exact.ko_given_hit` in HP points (``dmg`` the
+        post-screen mean-roll damage, ``crit_dmg`` 2 × the PRE-screen one). ``opp_hp_frac`` None = OUR defender
+        (exact HP, ±½ HP); else THEIR defender's reported HP fraction (HP Percentage Mod's bin)."""
+        from agents.model.ko_exact import ko_given_hit, opp_hp_bounds, ours_hp_bounds
+        if opp_hp_frac is None:
+            lo, hi = ours_hp_bounds(cur_hp, 1.0)
+        else:
+            lo, hi = opp_hp_bounds(cur_hp, opp_hp_frac, maxhp, 1.0)
+        return ko_given_hit(dmg, crit_dmg, lo, hi, crit_p)
 
     def _damage_rolls(self, atk: torch.Tensor, spa: torch.Tensor, at1: torch.Tensor, at2: torch.Tensor,
                       def_stat: torch.Tensor, spd_stat: torch.Tensor, maxhp: torch.Tensor,
@@ -630,7 +698,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                       bp_all: torch.Tensor, mty_all: torch.Tensor, phys_all: torch.Tensor,
                       acc_all: torch.Tensor, nf_all: Tuple[torch.Tensor, ...], atk_cur_hp: torch.Tensor,
                       bu_all: torch.Tensor, bu_party: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-                      weather_mult: torch.Tensor, eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
+                      weather_mult: torch.Tensor, eps: float = 1e-6,
+                      crit_all: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, ...]:
         """Role-parameterized gen3 single-hit damage per ``(defender, candidate)`` — the shared
         physics kernel every DIRECTION reuses (incoming opp→our-6, outgoing our→opp, safe-switch).
         Roles are passed in rather than hardcoded so the SAME math serves attacker/defender swaps.
@@ -702,7 +771,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         dmg_ns = core * eff_pre                                         # [B,n,C] pre-screen
         # Final 3 rolls + accuracy-folded P(KO) via the shared formula (DRY — same as the outgoing block).
         high, low, crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
-                                          acc_all[:, None, :], eps)
+                                          acc_all[:, None, :], eps,
+                                          crit_p=None if crit_all is None else crit_all[:, None, :])
         # gen3_nonformula_damage_v1: the NON-FORMULA moves (`damage_tables.DAMAGE_MODELS` — Seismic Toss /
         # Night Shade = level 100, Dragon Rage 40, Super Fang ½ HP, OHKO, Endeavor, …) ignore Atk/Def/roll/
         # crit but RESPECT type/ability immunity; their rolls are replaced below (Fighting Seismic Toss → 0
@@ -721,8 +791,15 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             * eff_pre * screen[:, None, :]                              # [B,n,C] post-screen (reuses eff_pre)
         inv_cb = 1.0 / (maxhp[:, :, None] + eps)
         high_cb = (dmg_cb * inv_cb).clamp(max=_DMG_CHIP_CAP)
-        ko_cb = acc_all[:, None, :] * torch.clamp(
-            (dmg_cb - cur_hp[:, :, None]) / (0.15 * dmg_cb + eps), 0.0, 1.0)
+        if self.ko_exact:
+            # gen3_endstate_facts_v1 (`--ko-ramp exact`): the SAME exact rule (`_ko_exact`), its crit at 2 × the
+            # PRE-screen Band damage (a crit ignores the screens).
+            ko_cb = acc_all[:, None, :] * self._ko_exact(
+                dmg_cb, 2.0 * dmg_cb / screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
+                None if crit_all is None else crit_all[:, None, :], None)
+        else:
+            ko_cb = acc_all[:, None, :] * torch.clamp(
+                (dmg_cb - cur_hp[:, :, None]) / (0.15 * dmg_cb + eps), 0.0, 1.0)
         # gen3_nonformula_damage_v1: the declared non-formula kinds (fixed / level, fraction of the
         # target's current HP, Endeavor) REPLACE the rolls — immunity-gated, CB- and screen-invariant.
         nf = nonformula_rolls(tuple(t[:, None, :] for t in nf_all),
@@ -982,7 +1059,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp, t1d, t2d,
             ctx.ability1_ids[:, :TEAM_SIZE], our_reflect, our_light_screen,
             bp_all, mty_all, phys_all, acc_all, nf_all, opp_cur_hp_att, bu_all, bu_party,
-            weather_mult, eps)
+            weather_mult, eps, crit_all=self._crit_p(cand_all, bp_all.shape[0]))
 
         # --- per (defender, channel): HARD max of the belief-weighted roll/KO over the candidates ---
         # The dominant believed move owns each channel (the candidate-count-robust max, NOT a diluting
@@ -1224,11 +1301,13 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                         "stash_pair_outcome is on but no top-K move-num selection was recorded — "
                         "the status coordinates have no seat axis to be computed on. Requires "
                         "damage_topk_k>0 (and the incoming matrix that computes it).")
+                # gen3_endstate_facts_v1 (`--status-facts exact`): our six mons' burn loss, ONCE per forward
+                _bl = self.our_burn_loss(ctx, spread_belief) if self.status_exact else None
                 if _mix is None:
                     _dmg = self.stash.pair_cells
                     _extra = self.pair_outcome_coords(
                         ctx, _ti, _dmg[..., PAIR_OUTCOME_IDX["high"]],
-                        our_spe, opp_spe, d_base)
+                        our_spe, opp_spe, d_base, burn_loss=_bl)
                     self.stash.pair_in = torch.cat([_dmg, _extra], dim=-1)     # [B,J,K,RAW]
                 else:
                     # X5: the status / tempo coordinates on the EXTENDED axis (num-keyed), then the
@@ -1236,7 +1315,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                     assert fixed_moves is not None and self.stash.seat_ext_idx is not None
                     _ext = self.pair_outcome_coords(
                         ctx, self.stash.seat_ext_idx, _dmg_g[..., PAIR_OUTCOME_IDX["high"]],
-                        our_spe, opp_spe, d_base)
+                        our_spe, opp_spe, d_base, burn_loss=_bl)
                     self.stash.pair_in = fixed_moves.mix_seats(
                         torch.cat([_dmg_g, _ext], dim=-1), dim=2)              # [B,J,K,RAW]
                     if _ou is not None and self.stash.pair_cells_other is not None:
@@ -1246,7 +1325,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                                              ).expand(_pr_cells_raw.shape[0], -1)
                         _ext_f = self.pair_outcome_coords(
                             ctx, _full, _pr_cells_raw[..., PAIR_OUTCOME_IDX["high"]],
-                            our_spe, opp_spe, d_base)                 # [B,J,M,8]
+                            our_spe, opp_spe, d_base, burn_loss=_bl)  # [B,J,M,8]
                         _co = torch.einsum("bjcf,bc->bjf", _ext_f, _ou.to(_ext_f.dtype))
                         self.stash.pair_in_other = torch.cat(
                             [self.stash.pair_cells_other[:, :, 0], _co], dim=-1).unsqueeze(2)

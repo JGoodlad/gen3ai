@@ -525,6 +525,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("trunk_layers", 2)                    # v150 structural int (the trunk's depth; identity-init extra rounds)
     _resolve("switch_hazard_cost", "off")          # v150 structural str (the switch cell's entry-hazard block)
     _resolve("eot_residual", "off")                # v150 structural str (every mon's end-of-turn HP change)
+    _resolve("move_resolution_facts", "off")       # v152 structural str (move resolution's restored facts)
+    _resolve("status_facts", "off")                # v152 structural str (exact status facts + the cure flags)
+    _resolve("ko_ramp", "ramp")                    # v152 structural str (exact P(KO): 16 rolls + crit)
+    _resolve("drop_progress_clock", "off")         # v152 structural str (the model reads turns_since_progress as 0)
+    _resolve("g_ledger", "coarse")                 # v152 structural str (the g cell reads the ONE end-of-turn rule)
     _resolve("oracle_reveal", "off")               # v137 RESUME-IMMUTABLE str (the diagnostic observation mode; flagless resume inherits)
     _resolve("token_encoding", "legacy")           # v139 structural str (static tokens; version-checked, fresh-only)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —

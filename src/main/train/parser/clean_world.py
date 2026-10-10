@@ -267,6 +267,42 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "Leftovers, weather, Rain Dish, the status tick, Leech Seed drain / heal, Wish, Ingrain, "
                              "Curse, Nightmare and the HP-clamped net, both sides, added to the mon tokens through a "
                              "zero-init projection. STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
+    # gen3_endstate_facts_v1 (v152; designs/endstate/design_hand_computed_features.md §4 ranks 3-5, §5 rank 1): the
+    # fact-completion levers. Each OFF in production (byte-identical); STRUCTURAL, version-checked, fresh-only.
+    from agents.model.extractor_ctx import DROP_PROGRESS_CLOCK_MODES
+    from agents.model.eot_residual import G_LEDGER_MODES
+    from agents.model.ko_exact import KO_RAMP_MODES
+    from agents.model.move_resolution_rules import MOVE_RESOLUTION_FACTS_MODES
+    from agents.model.pair_outcome import STATUS_FACTS_MODES
+    parser.add_argument("--move-resolution-facts", "--move_resolution_facts", dest="move_resolution_facts",
+                        choices=MOVE_RESOLUTION_FACTS_MODES, default=None,
+                        help="The FACTS move resolution dropped as judgments (gen3_endstate_facts_v1, v152). 'off' "
+                             "(default; production): the family as built. 'full': + Focus Punch survives, the "
+                             "Substitute survives, Endure x P(KO), Endeavor x P(not KO'd), the Rapid Spin layers a "
+                             "failed spin leaves, and the Spikes layers our Ghost switch-in preserves, through "
+                             "zero-init projections. Requires --move-resolution on.")
+    parser.add_argument("--status-facts", "--status_facts", dest="status_facts",
+                        choices=STATUS_FACTS_MODES, default=None,
+                        help="Replace the pair-outcome judgments neutralization / tempo_cost with EXACT status FACTS "
+                             "(gen3_endstate_facts_v1, v152). 'off' (default; production). 'exact': the expected "
+                             "burn damage lost and the expected outspeed lost to paralysis (the same two positions), "
+                             "and every mon's cure-availability flags (a live cleric on its side, Natural Cure, Rest, "
+                             "Lum / Chesto Berry) as zero-init token content. Requires --damage-op.")
+    parser.add_argument("--ko-ramp", "--ko_ramp", dest="ko_ramp", choices=KO_RAMP_MODES, default=None,
+                        help="How the damage operator prices P(KO) (gen3_endstate_facts_v1, v152). 'ramp' (default; "
+                             "production): the mean-roll 15%%-window ramp, no crit. 'exact': over the 16 gen-3 rolls + "
+                             "the move's crit chance (1/16, high-crit 1/8), each roll's KO resolved over the observed HP "
+                             "interval (ours exact, theirs the HP-percentage bin). Requires --damage-op.")
+    parser.add_argument("--drop-progress-clock", "--drop_progress_clock", dest="drop_progress_clock",
+                        choices=DROP_PROGRESS_CLOCK_MODES, default=None,
+                        help="The model reads the observation's turns_since_progress as 0 (gen3_endstate_facts_v1, "
+                             "v152; a hand definition of progress, a JUDGMENT). 'off' (default; production). The "
+                             "observation layout is unchanged.")
+    parser.add_argument("--g-ledger", "--g_ledger", dest="g_ledger", choices=G_LEDGER_MODES, default=None,
+                        help="Which end-of-turn rule the op's g cell (and c4's nets, the static op content) reads "
+                             "(gen3_endstate_facts_v1, v152). 'coarse' (default; production): the op's own ledger. "
+                             "'eot': the ONE rule --eot-residual reads (eot_residual.EotResidualRule). Requires "
+                             "--damage-op.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",
                         dest="t0_species_prior", action=BoolFlag, default=None,
                         help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "

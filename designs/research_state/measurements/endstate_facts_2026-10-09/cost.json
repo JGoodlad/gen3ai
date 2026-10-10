@@ -1,0 +1,82 @@
+{
+ "production": {
+  "policy_params": 1997785,
+  "fe_params": 1937942,
+  "matmul_flops_per_row": 60304432.0,
+  "fwd_ms_per_64_median": 121.38,
+  "fwd_ms_iqr": [
+   115.98,
+   127.82
+  ]
+ },
+ "E (static_recovery + the bundle)": {
+  "policy_params": 2085151,
+  "fe_params": 2025948,
+  "matmul_flops_per_row": 94312296.0,
+  "fwd_ms_per_64_median": 161.34,
+  "fwd_ms_iqr": [
+   156.02,
+   173.04
+  ]
+ },
+ "E + move_resolution_facts full": {
+  "policy_params": 2085359,
+  "fe_params": 2026156,
+  "matmul_flops_per_row": 94314032.0,
+  "fwd_ms_per_64_median": 161.28,
+  "fwd_ms_iqr": [
+   155.3,
+   172.82
+  ]
+ },
+ "E + status_facts exact": {
+  "policy_params": 2085903,
+  "fe_params": 2026700,
+  "matmul_flops_per_row": 94298816.0,
+  "fwd_ms_per_64_median": 162.9,
+  "fwd_ms_iqr": [
+   156.63,
+   173.58
+  ]
+ },
+ "E + ko_ramp exact": {
+  "policy_params": 2085151,
+  "fe_params": 2025948,
+  "matmul_flops_per_row": 94312296.0,
+  "fwd_ms_per_64_median": 177.27,
+  "fwd_ms_iqr": [
+   169.92,
+   184.68
+  ]
+ },
+ "E + drop_progress_clock on": {
+  "policy_params": 2085151,
+  "fe_params": 2025948,
+  "matmul_flops_per_row": 94312296.0,
+  "fwd_ms_per_64_median": 161.64,
+  "fwd_ms_iqr": [
+   157.12,
+   173.84
+  ]
+ },
+ "E + g_ledger eot": {
+  "policy_params": 2085151,
+  "fe_params": 2025948,
+  "matmul_flops_per_row": 94312296.0,
+  "fwd_ms_per_64_median": 162.1,
+  "fwd_ms_iqr": [
+   156.14,
+   174.45
+  ]
+ },
+ "endstate (the arm)": {
+  "policy_params": 2086111,
+  "fe_params": 2026908,
+  "matmul_flops_per_row": 94300552.0,
+  "fwd_ms_per_64_median": 181.34,
+  "fwd_ms_iqr": [
+   173.8,
+   198.49
+  ]
+ }
+}

@@ -913,6 +913,44 @@ while `e_high_switch` carries the magnitude there. `SWITCH_BRANCH_MOVE_DIM` = **
 Rapid Spin also clears Leech Seed and partial-trap from its user, and a Ghost KO'd on the switch-in
 denies nothing.
 
+**OFF in production: the FACT-COMPLETION levers** (config v152, `gen3_endstate_facts_v1`;
+`endstate/design_hand_computed_features.md` §4 ranks 3-5, §5 rank 1, finding 7). Five flags, each its own lever, each
+OFF in production and byte-identical there (graph, state_dict and outputs, `research_state/measurements/
+endstate_facts_2026-10-09/`):
+
+* **`--ko-ramp exact`** (`agents/model/ko_exact.py`; production `ramp`): every P(KO) the op prices — `_rolls` (every
+  kernel), the Choice-Band tail's inlined `ko_cb`, `intent_threshold`'s Substitute break and move resolution's
+  Pursuit KO — is the exact probability over the 16 gen-3 damage rolls (r uniform on 85 … 100, applied last) plus the
+  move's crit chance (`critRatio` 1 → 1/16, 2 → 1/8; ×2 after the `+2`, ignoring the screens), each roll's KO
+  resolved over the observed HP interval (ours exact: ±½ HP; theirs HP Percentage Mod's bin, a reported p < 100 %
+  being (p − 1 %, p]). The `ramp` it replaces anchored a 15 %-wide line at the op's MEAN roll (0.925 of the top),
+  so a hit whose mean roll equals the HP read 0 where 8 of 16 rolls KO, and it omitted the crit. Continuous and
+  differentiable (no new discrete site for K9(b)); no parameters.
+* **`--status-facts exact`** (production `off`): the pair-outcome grid's positions 12-13 (`neutralization`,
+  `tempo_cost`) carry `e_burn_dmg_lost` = P(this seat's burn lands on our mon j) × the exact damage a burn costs j's
+  moves against their active (`DamageOperatorBlocks.our_burn_loss`: the same kernel with Attack halved, the
+  expectation over j's held moves; 0 for a special move, a non-formula move, Guts or an already-burned mon) and
+  `e_par_outspeed_lost` = P(paralysis lands) × Δ P(j outspeeds their active) (width-neutral). P(full paralysis) = 1/4
+  is the rule constant times the delivered `p_par`. Every mon, BOTH sides, gets its cure-availability FACTS as token
+  content (`agents/model/status_facts.py`, `CureFlags`; zero-init bias-free `IsolatedLinear(5, 128)` beside
+  `eot_residual_proj`): a live Heal Bell / Aromatherapy user on its side, Natural Cure, Rest, a Lum / Chesto Berry —
+  ours exact, theirs the move / ability / item beliefs. Under `--move-resolution on` the two pair facts also reach
+  its cells (α-reduced at our active and per mon) through their own zero-init projections.
+* **`--move-resolution-facts full`** (requires `--move-resolution on`; production `off`): the restored facts on the
+  move-resolution cells through zero-init bias-free projections onto the same blocks — move cell `fp_survives`
+  (1 − Σ α·P(a seat's hit lands on us), a hit on our Substitute excepted), `sub_survives` (the exact break under
+  `--ko-ramp exact`, else the ramp at 25 %), `endure_p_ko`, `endeavor_survives`, `spin_value_lost` (1 − p_resolve)
+  × our Spikes layers / 3; switch cell `spin_denied_stake` (P(their spin fails on our Ghost j) × their layers / 3).
+* **`--drop-progress-clock on`** (production `off`): the model reads the observation's `turns_since_progress` (a hand
+  definition of progress) as 0 — at `ObsUnpack`, for every reader of the board scalars; the Rust layout is unchanged.
+* **`--g-ledger eot`** (production `coarse`): the op's `g` cell (and `c4`'s nets, the static op content) reads THE
+  end-of-turn rule `--eot-residual` reads (`eot_residual.g_cells`: [Leftovers + Rain Dish + Wish + Ingrain, weather,
+  status + Curse + Nightmare, Leech drain + heal]) instead of its own coarser ledger. No parameters.
+
+The named arm **`--arch endstate`** (`main/train/arch_arms.py`) is `static_recovery` + `--move-resolution on`,
+`--speed-physics on`, `--value-threat-inject off`, `--op-reduction principled`, `--obs-facts v1` + all five levers,
+on the production recipe.
+
 **OFF in production: `move_resolution`** (v141, `gen3_move_resolution_v1`, `--move-resolution {off,on}` —
 architecture audit F11 §9, the owner's 2026-10-06 ruling: FACTS kept, JUDGMENTS dropped). `off` builds nothing
 and sets no op seam: the production forward, its compiled graph and its parameters are byte-identical to the
@@ -937,8 +975,13 @@ puts ONE zero-init block on each pointer cell:
   `conditional_threat` multiplies the already-accuracy-folded `ko_ramp` by `acc` again), `e_type_mult`, the two
   margins, and `p_switch_resolves` (their Pursuit can KO the departing mon).
 
-Dropped (judgments): `tempo_cost`, `neutralization`, `wasted_ko`, `spin_value_lost`, the hazard stake of
-`spin_denied`, and the Focus Punch / Substitute / Endure / Endeavor hand thresholds. The op itself now applies
+Not in the base family: `tempo_cost`, `neutralization`, `wasted_ko`, `spin_value_lost`, the hazard stake of
+`spin_denied`, and the Focus Punch / Substitute / Endure / Endeavor coordinates. By the owner's 2026-10-09
+classification test (`endstate/design_hand_computed_features.md` §1: a FACT is an event's probability or magnitude in
+its own unit; a JUDGMENT mixes units with a chosen weight, assumes our later plan, or grades with a threshold) only
+`neutralization` (as implemented) and `tempo_cost` are judgments — their facts are `--status-facts exact`'s (below);
+`wasted_ko` is a fact but an interaction of two delivered columns; the rest are FACTS and come back behind
+**`--move-resolution-facts full`** (below). The op itself now applies
 the incoming side / clause rules and reads an opponent's ability through its `known` flag (§4), so the family's
 own re-application of `status_rules.incoming_status_mask` is an exact no-op on real op output; every op value it
 reads is PRE-gain (the one rule every op consumer follows — P(first) from the op's live `last_raw_tensors` view),
@@ -1708,16 +1751,19 @@ does nothing given another setting.
 | `damage_op` | `true` | ACTIVE |
 | `damage_outgoing` | `true` | ACTIVE |
 | `damage_topk_k` | `6` | ACTIVE |
+| `drop_progress_clock` | `"off"` | OFF |
 | `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r"` | ACTIVE |
 | `entity_tail_seats` | `true` | ACTIVE |
 | `entity_topk_seats` | `6` | ACTIVE |
 | `eot_residual` | `"off"` | OFF |
+| `g_ledger` | `"coarse"` | ACTIVE |
 | `history_events` | `true` | ACTIVE |
 | `hp_belief_mode` | `"composed"` | ACTIVE |
 | `intent_conditional` | `true` | ACTIVE |
 | `intent_move_cell` | `true` | ACTIVE |
 | `intent_threshold` | `true` | ACTIVE |
 | `item_belief` | `true` | ACTIVE |
+| `ko_ramp` | `"ramp"` | ACTIVE |
 | `mon_hazard_cost` | `"off"` | OFF |
 | `move_actor_state` | `"off"` | OFF |
 | `move_belief_mode` | `"both"` | ACTIVE |
@@ -1725,6 +1771,7 @@ does nothing given another setting.
 | `move_latent` | `true` | ACTIVE |
 | `move_prior_fusion` | `true` | ACTIVE |
 | `move_resolution` | `"off"` | OFF |
+| `move_resolution_facts` | `"off"` | OFF |
 | `obs_facts` | `"off"` | OFF |
 | `op_believed_lean` | `true` | ACTIVE |
 | `op_drop_renders` | `true` | ACTIVE |
@@ -1745,6 +1792,7 @@ does nothing given another setting.
 | `speed_physics` | `"off"` | OFF |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
+| `status_facts` | `"off"` | OFF |
 | `switch_branch_cell` | `true` | ACTIVE |
 | `switch_hazard_cost` | `"off"` | OFF |
 | `t0_species_prior` | `true` | ACTIVE |

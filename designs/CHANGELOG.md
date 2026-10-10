@@ -13403,3 +13403,34 @@ read both cells for its end-of-turn rule and found them wrong.
   something different. v151's Toxic cell re-scale kept every shape, so a v150 checkpoint loaded in the prober without a word.
   A reader compares a checkpoint's recorded `config_version` against the marker; nothing gates a resume. `obs_semantics_test.py`
   pins the obs golden's hash beside it so re-recording the golden forces the question.
+## 2026-10-09 — v152 / `gen3_endstate_facts_v1`: the FACT-COMPLETION levers `--move-resolution-facts`, `--status-facts`, `--ko-ramp`, `--drop-progress-clock`, `--g-ledger` (all OFF; production byte-identical) and the named arm `--arch endstate`
+
+- **Why.** The owner's 2026-10-09 FACT / JUDGMENT test (`endstate/design_hand_computed_features.md` §1) re-sorted the
+  hand-computed features: move resolution had dropped FACTS as judgments, two pair-outcome coordinates are judgments as
+  implemented, the KO ramp is an approximate fact, `turns_since_progress` is a judgment, and two end-of-turn rules had
+  drifted apart. Owner: "run all of them speculatively together, then bisect".
+- **`--ko-ramp {ramp,exact}`** (`ko_exact.py`). Every P(KO) — `DamageOperator._rolls` (every kernel), the Choice-Band
+  `ko_cb`, `intent_threshold`'s Substitute break, move resolution's Pursuit KO — over the 16 gen-3 rolls + the move's crit
+  chance (`critRatio` 1 → 1/16, 2 → 1/8; ×2 after the `+2`, screens ignored), each roll's KO resolved over the observed
+  HP interval (ours ±½ HP; theirs HP Percentage Mod's bin). The ramp it replaces was anchored at the MEAN roll (the op's
+  damage is ×0.925) and omitted the crit: a hit whose mean roll equals the HP read 0 where 8 of 16 rolls KO.
+  Continuous (no K9(b) discrete site), differentiable, no parameters.
+- **`--status-facts {off,exact}`.** The pair-outcome grid's positions 12-13 carry `e_burn_dmg_lost` (P(burn lands) × the
+  exact damage our mon's moves lose to a burn, `our_burn_loss`) and `e_par_outspeed_lost` (P(paralysis lands) × Δ
+  P(outspeed)) instead of `neutralization` / `tempo_cost` (width-neutral); every mon's cure FACTS (a live Heal Bell /
+  Aromatherapy user on its side, Natural Cure, Rest, Lum / Chesto) ride its token (`status_facts.CureFlags`, zero-init
+  `IsolatedLinear(5, 128)`); under move resolution the two facts reach its cells through their own zero-init projections.
+- **`--move-resolution-facts {off,full}`** (requires `--move-resolution on`): `fp_survives`, `sub_survives`, `endure_p_ko`,
+  `endeavor_survives`, `spin_value_lost` on the move cell, `spin_denied_stake` on the switch cell, through zero-init
+  bias-free projections onto the family's blocks.
+- **`--drop-progress-clock {off,on}`**: the model reads `turns_since_progress` as 0 (`ObsUnpack`); the Rust layout is
+  unchanged. **`--g-ledger {coarse,eot}`**: the op's `g` cell (and `c4`, the static op content) reads N4's rule
+  (`eot_residual.g_cells`).
+- **`--arch endstate`** (`main/train/arch_arms.py`): `static_recovery` + `--move-resolution on --speed-physics on
+  --value-threat-inject off --op-reduction principled --obs-facts v1` + the five, on the production recipe.
+- **Versioning.** Config 151 → 152: five STRUCTURAL fields gated in `check_compatible`, migrated to off / off / ramp /
+  off / coarse; no `ARCH_SIGNATURE` / floor change. Flags off, production / `static` / `static_recovery` / E keep the
+  parent's dynamo graph, state_dict and outputs (`measurements/endstate_facts_2026-10-09/`).
+- **Docs whose premise changed.** ARCHITECTURE's "Dropped (judgments)" paragraph now names only the two judgments; the
+  restored facts are FACTS. `move_resolution_test.py::test_spin_denied_keeps_the_fact_and_drops_the_stake` and
+  `test_the_dropped_judgments_are_not_coordinates` keep their assertions on the BASE family, their premise re-stated.

@@ -233,6 +233,13 @@ change (a signature bump would refuse every existing checkpoint, eval opponent a
 one flag). The obs golden moved on 107 of 991 decisions, all on those two cells. Tests: `toxic_stage_core_test.py`,
 `obs_stage_truth_test.rs`.
 
+**v152 (`gen3_endstate_facts_v1`, 2026-10-09)** added five STRUCTURAL fields, each gated in `check_compatible`:
+`move_resolution_facts` ({off,full}), `status_facts` ({off,exact}), `ko_ramp` ({ramp,exact}), `drop_progress_clock`
+({off,on}) and `g_ledger` ({coarse,eot}). A pre-v152 config migrates to off / off / ramp / off / coarse (the only
+possible past); no `ARCH_SIGNATURE` or floor change (production builds byte-identically). Three of them build no
+parameter (`ko_ramp`, `drop_progress_clock`, `g_ledger`: the string compare is the only gate, as for `speed_physics`);
+the NAMED ARM `--arch endstate` writes all five (and the static-recovery / bundle levers) as recorded fields.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

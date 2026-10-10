@@ -104,3 +104,33 @@ def test_the_arm_trains_on_the_production_recipe_and_a_restart_restores_it():
     assert arm.recipe_source == prod.recipe_source
     assert recipe_surface._is_production_launch("train.py --steps 1 --arch static_recovery")
     assert not recipe_surface._is_production_launch("train.py --steps 1")
+
+
+# gen3_endstate_facts_v1: the END-STATE arm (owner 2026-10-09: "run all of them speculatively together, then bisect").
+ENDSTATE = {**STATIC_RECOVERY, "move_resolution": "on", "speed_physics": "on", "value_threat_inject": False,
+            "op_reduction": "principled", "obs_facts": "v1", "move_resolution_facts": "full", "status_facts": "exact",
+            "ko_ramp": "exact", "drop_progress_clock": "on", "g_ledger": "eot"}
+
+
+def test_the_endstate_arm_is_static_recovery_plus_the_bundle_plus_every_fact_lever():
+    """Fails if a lever is dropped from the arm, if it stops containing `static_recovery`, or if it sets a key the
+    guard never reads."""
+    assert arm_overlay("endstate") == ENDSTATE
+    assert set(STATIC_RECOVERY.items()) <= set(arm_overlay("endstate").items())
+
+
+def test_the_endstate_arm_launches_without_consent_and_differs_from_production_in_its_overlay(capsys):
+    ns, rep = _report(ARGV + ["--arch", "endstate"])
+    assert not rep.refuses and not rep.diffs, "\n".join(arch_surface.report_lines(rep))
+    for key, value in ENDSTATE.items():
+        assert getattr(ns, BY_NAME[key].arg) == value, key
+    plain = arch_surface.diff_against_production(ns)
+    assert {d.name for d in plain} == set(ENDSTATE), [d.line() for d in plain]
+    assert rep.source_tag.startswith("endstate@production_config@")
+    _ns, drift = _report(ARGV + ["--arch", "endstate", "--ko-ramp", "ramp"])
+    assert drift.refuses and [(d.name, d.resolved, d.production) for d in drift.diffs] == [("ko_ramp", "ramp", "exact")]
+    from main.checkargs import main as checkargs_main
+    rc = checkargs_main(["--argv", " ".join(ARGV + ["--arch", "endstate"])])
+    out = capsys.readouterr().out
+    assert rc == 0, out[-2000:]
+    assert "every ARCH-surface key matches the production mirror + the arm 'endstate'" in out

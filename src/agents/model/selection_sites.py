@@ -49,7 +49,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "obs_facts_inject", "opp_intent",
     "move_order", "move_resolution", "move_resolution_rules", "op_reduction", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_facts", "static_tokens", "switch_branch",
     "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
-    "eot_residual", "trunk_depth",
+    "eot_residual", "trunk_depth", "ko_exact", "status_facts",
 )
 
 #: Top-level functions of a forward module that are NOT the forward (loss, label and metric helpers):
@@ -207,7 +207,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("hp_frac > 0", "opp_burn > 0.5", "opp_para > 0.5", "our_para > 0.5", "s >= 0"),
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
-        "PYTHON": ("op_reduction == 'principled'",),   # gen3_op_reduction_principled_v1: the constructor's mode
+        "PYTHON": ("op_reduction == 'principled'",   # gen3_op_reduction_principled_v1: the constructor's mode
+                   # gen3_endstate_facts_v1: the constructor's `--ko-ramp` / `--status-facts` modes
+                   "ko_ramp == 'exact'", "status_facts == 'exact'"),
         "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
@@ -229,6 +231,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                   "live_cleric.sum(dim=-1, keepdim=True) - live_cleric > 0.5"),
         "SELECTED": ("bp_k > 0", "ded.sum(dim=-1, keepdim=True) > 0.5", "sec_tot > eps"),
         "INT": ("ctx.all_move_ids[ar, opp_act] > 0", "ctx.item_ids[:, our] == self.cb_item_num",
+                # gen3_endstate_facts_v1 (`--status-facts exact`, `our_burn_loss`): the held-move count and our
+                # mon's Guts — integer move nums / ability ids
+                "ctx.all_move_ids[:, :TEAM_SIZE] > 0", "ctx.ability1_ids[:, :TEAM_SIZE] == self.guts_num",
                 "ctx.item_ids[ar, our_act] == self.cb_item_num", "move_ids == self.hp_num",
                 "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX", "move_ty == _WATER_TIDX",
                 "move_ty == at1[:, :, None]", "move_ty == at1[:, None]", "move_ty == at2[:, :, None]",
@@ -365,6 +370,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                   "o.self_boost < 0", "o.self_boost != 0", "(o.self_boost != 0).to(dt).sum(-1) > 0.5",
                   "o.self_boost > 0", "o.self_boost[..., 0] > 0", "tm_a > 0"),
         "INT": ("ids == op.hp_num", "o.opp_last_move > 0", "o.req_ids > 0", "o.st_cat < 6",
+                # gen3_endstate_facts_v1 (`--move-resolution-facts full`): Endeavor by its move num
+                "o.req_ids[..., None] == endeavor_num",
                 "o.st_cat == slp_cat", "o.st_cat > 0", "our_types[..., 0] == T_GHOST",
                 "our_types[..., 1] == T_GHOST", "op.MOVE_STATUS_CAT[ids].long()"),
     },
@@ -417,6 +424,15 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     # gen3_static_recovery_v1 (`--eot-residual on`): the alive gate (an observed HP fraction against 0) and the weather's
     # turns remaining (an observed k / 5 rounded back to the integer k it encodes).
+    # gen3_endstate_facts_v1 (`--ko-ramp exact`): THEIR reported HP fraction against "full" (an observation read; the
+    # HP Percentage Mod bin is exact at 100 %). The exact P(KO) itself is clamps only — continuous, no cutoff.
+    "ko_exact": {
+        "OBS": ("hp_frac >= 1.0",),
+    },
+    # gen3_endstate_facts_v1 (`--status-facts exact`): the alive gate (an observed HP fraction against 0).
+    "status_facts": {
+        "OBS": ("ctx.hp_and_active[:, :, 0] > 0",),
+    },
     "eot_residual": {
         "OBS": ("hp > 0", "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round()",
                 "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round().long()"),

@@ -1,0 +1,9 @@
+{"config": "production", "tree": "parent", "n_graphs": 1, "graph_lines": 20148, "graph_sha": "421c6b98ce7937f4", "state_sha": "749c56159ab028f4", "out_sha": "51c02c6c6342a045", "n_params": 1937942}
+{"config": "production", "tree": "build", "n_graphs": 1, "graph_lines": 20148, "graph_sha": "421c6b98ce7937f4", "state_sha": "749c56159ab028f4", "out_sha": "51c02c6c6342a045", "n_params": 1937942}
+{"config": "static", "tree": "parent", "n_graphs": 1, "graph_lines": 20291, "graph_sha": "6fb7bfd8364205d6", "state_sha": "1274a2311555fd98", "out_sha": "92cd6c3b61c07f1c", "n_params": 1885060}
+{"config": "static", "tree": "build", "n_graphs": 1, "graph_lines": 20291, "graph_sha": "6fb7bfd8364205d6", "state_sha": "1274a2311555fd98", "out_sha": "92cd6c3b61c07f1c", "n_params": 1885060}
+{"config": "static_recovery", "tree": "parent", "n_graphs": 1, "graph_lines": 20656, "graph_sha": "859fe82912a8583a", "state_sha": "b7e2bf2f9807b7cd", "out_sha": "edef79de32277a26", "n_params": 2020228}
+{"config": "static_recovery", "tree": "build", "n_graphs": 1, "graph_lines": 20656, "graph_sha": "859fe82912a8583a", "state_sha": "b7e2bf2f9807b7cd", "out_sha": "edef79de32277a26", "n_params": 2020228}
+{"config": "E (bundle + static_recovery)", "tree": "parent", "n_graphs": 1, "graph_lines": 25436, "graph_sha": "b3361475ef3677b7", "state_sha": "4451ffc5108942db", "out_sha": "23f3ff11dd020732", "n_params": 2028580}
+{"config": "E (bundle + static_recovery)", "tree": "build", "n_graphs": 1, "graph_lines": 25436, "graph_sha": "b3361475ef3677b7", "state_sha": "4451ffc5108942db", "out_sha": "23f3ff11dd020732", "n_params": 2028580}
+{"config": "endstate", "tree": "build", "n_graphs": 1, "graph_lines": 34643, "graph_sha": "55e1a5649289d923", "state_sha": "3345d4eb83d9a6ce", "out_sha": "d70ac227d47dbd82", "n_params": 2029540}

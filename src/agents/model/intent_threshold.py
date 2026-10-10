@@ -102,6 +102,7 @@ _KO_RAMP_WINDOW = 0.15       # the op's own modal-roll KO-ramp window (see damag
 def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
                     pair_gate: torch.Tensor, our_active_idx: torch.Tensor,
                     seat_live: Optional[torch.Tensor] = None,
+                    exact: Optional["ExactKo"] = None,
                     ) -> ThresholdProbs:
     """`(published α logits [B,K+1], op pair cells [B,6,K,6], gate [B,6,1], our_active [B])`
     → `(p_ko, p_sub_broken, p_fp_broken)`, each `[B, 1]`. Pure — no parameters, no state.
@@ -113,6 +114,11 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
 
     ``seat_live`` `[B,K]` (X5 U4, F-X5-15): the meaningful-K gate `pair_alpha` applies — mask, never
     renormalise. Passed under X5 only.
+
+    ``exact`` (`gen3_endstate_facts_v1`, `--ko-ramp exact`): the Substitute break becomes the EXACT P(their hit deals
+    ≥ the sub's HP) — `ko_exact.ko_given_hit` over the 16 rolls and the seat's crit chance, at the sub's exact HP
+    ``floor(maxhp / 4)`` (Showdown `data/moves.ts` substitute ``Math.floor(target.maxhp / 4)``) resolved over ±½ HP.
+    None (production): the legacy re-thresholded ramp, byte-identical.
     """
     k = alpha_logits.shape[-1] - 1                                     # last class is SWITCH
     if pair_cells.shape[2] != k:
@@ -130,8 +136,11 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
     acc_k = cells[..., 4]                                              # [B,K]
     break_fp_k = acc_k * (high_k > 0).float()                          # any landing damage breaks it
     # The op's own ramp shape (clamp((dmg − τ)/(0.15·dmg), 0, 1)), re-thresholded at the sub's HP.
-    break_sub_k = acc_k * torch.clamp(
-        (high_k - _SUB_HP_FRAC) / (_KO_RAMP_WINDOW * high_k + 1e-6), 0.0, 1.0)
+    if exact is None:
+        break_sub_k = acc_k * torch.clamp(
+            (high_k - _SUB_HP_FRAC) / (_KO_RAMP_WINDOW * high_k + 1e-6), 0.0, 1.0)
+    else:
+        break_sub_k = acc_k * sub_break_given_hit(high_k, cells[..., 2], exact)
     # UNRENORMALIZED move slice — the missing SWITCH mass correctly reads "no damage this turn".
     alpha = torch.softmax(alpha_logits.float(), dim=-1)[:, :k].to(pair_cells.dtype)   # [B,K]
     if seat_live is not None:
@@ -140,6 +149,23 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
     p_sub = (alpha * break_sub_k).sum(dim=-1, keepdim=True) * gate
     p_fp = (alpha * break_fp_k).sum(dim=-1, keepdim=True) * gate
     return ThresholdProbs(p_ko=p_ko, p_sub_broken=p_sub, p_fp_broken=p_fp)
+
+
+class ExactKo(NamedTuple):
+    """`--ko-ramp exact`'s operands for a threshold on OUR active (`gen3_endstate_facts_v1`): its exact max HP
+    ``maxhp`` [B] (HP points) and each seat's crit chance ``crit_p`` [B,K'] (an OTHER seat: the base 1/16)."""
+    maxhp: torch.Tensor
+    crit_p: torch.Tensor
+
+
+def sub_break_given_hit(high_k: torch.Tensor, crit_k: torch.Tensor, exact: ExactKo) -> torch.Tensor:
+    """P(a hit breaks OUR Substitute | it hits), exact (`ko_exact.ko_given_hit`): the sub holds ``floor(maxhp / 4)``
+    HP; ``high_k`` / ``crit_k`` [B,K'] are the op's mean-roll / crit damage fractions of our max HP."""
+    from agents.model.ko_exact import ko_given_hit, ours_hp_bounds
+    maxhp = exact.maxhp[:, None]
+    sub = torch.floor(maxhp / 4.0) / maxhp
+    lo, hi = ours_hp_bounds(sub, 1.0 / maxhp)
+    return ko_given_hit(high_k, crit_k, lo, hi, exact.crit_p.to(high_k.dtype))
 
 
 class IntentThresholdMoveCell(torch.nn.Module):

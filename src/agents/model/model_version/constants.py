@@ -562,7 +562,12 @@ from typing import Any, Dict
 #   at the next end-of-turn residual" (`WishFold::pending(turn, residual_done)`), equal to the engine's slot condition.
 #   Every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change, state_dict unchanged. The obs
 #   golden moved on 107 of 991 decisions: 106 on the toxic cell alone and 1 on the toxic cell plus the Wish flag.
-MODEL_CONFIG_VERSION = 151
+# v152 (gen3_endstate_facts_v1): five FACT-COMPLETION levers, each its own STRUCTURAL field, production at the old
+#   value: `move_resolution_facts` {off,full}, `status_facts` {off,exact}, `ko_ramp` {ramp,exact},
+#   `drop_progress_clock` {off,on}, `g_ledger` {coarse,eot}; each gated in check_compatible; a pre-v152 config
+#   migrates to off / off / ramp / off / coarse (the only possible past). No ARCH_SIGNATURE bump (production builds
+#   byte-identically), no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 152
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

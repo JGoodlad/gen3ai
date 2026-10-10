@@ -138,7 +138,12 @@ def test_the_coordinate_tables_are_the_single_spelling_of_the_widths():
 
 
 def test_the_dropped_judgments_are_not_coordinates():
-    """The owner's ruling: tempo_cost, wasted_ko, neutralization and the hand thresholds are GONE."""
+    """The owner's 2026-10-06 ruling: tempo_cost, wasted_ko, neutralization and the hand thresholds are not BASE
+    coordinates. On 2026-10-09 the owner re-classified several as FACTS (`design_hand_computed_features.md` §1's
+    test): `spin_value_lost`, the spin-denial stake and P8's Focus Punch / Substitute / Endure / Endeavor coordinates
+    come back behind `--move-resolution-facts full` (`MOVE_RESOLUTION_RESTORED_*_COORDS`, `endstate_facts_test.py`),
+    so the base family (the flag's `off`) still carries none of them; neutralization / tempo_cost stay JUDGMENTS
+    (their facts are `--status-facts exact`'s)."""
     names = set(MOVE_RESOLUTION_MOVE_COORDS) | set(MOVE_RESOLUTION_SWITCH_COORDS)
     for judgment in ("tempo_cost", "wasted_ko", "neutralization", "spin_value_lost", "spin_denied",
                      "p_sub_broken", "p_fp_broken", "e_pko_acc"):
@@ -424,6 +429,9 @@ def test_e_pko_counts_accuracy_once():
 
 
 def test_spin_denied_keeps_the_fact_and_drops_the_stake():
+    """The BASE family (`--move-resolution-facts off`) keeps the probability half only. Owner 2026-10-09: the stake
+    (P(spin blocked) × layers = the expected layers preserved) is a FACT too — restored as `spin_denied_stake` under
+    `--move-resolution-facts full` (`endstate_facts_test.test_the_spin_denial_stake_is_the_expected_layers_kept`)."""
     ghost = torch.zeros(1, 6)
     ghost[0, 2] = 1.0
     o = ops(("tackle",), seats=("rapidspin", "growl", "growl"), alpha=(0.4, 0.2, 0.2), our_is_ghost=ghost)
