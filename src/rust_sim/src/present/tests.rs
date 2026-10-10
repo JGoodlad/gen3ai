@@ -196,6 +196,31 @@ fn pe_v10_a_fainted_mon_holds_no_stages() {
     assert_eq!(opp(&v, "zapdos").boosts, vec![("spa", 1)], "non-vacuity: the boost was read");
 }
 
+/// Ingrain and Nightmare — the two volatiles `audit::TRUTH_VOLATILES` names but the engine cannot hold
+/// (`audit::ENGINE_CANNOT_HOLD`), so the engine audit cannot check their READING. These pin it on the sim's own emission
+/// strings: Ingrain `-start|…|move: Ingrain` (data/moves.ts ingrain `onStart`), Nightmare `-start|…|Nightmare` and its
+/// silent removal on waking, `-curestatus|…|slp` then `-end|…|Nightmare|[silent]` (sim/pokemon.ts `cureStatus`); a mon
+/// that leaves the field loses both (`clearVolatile`).
+#[test]
+fn ingrain_and_nightmare_are_read_off_the_sims_own_lines_and_end_with_the_mon_or_the_sleep() {
+    let held = |v: &OneSidedView, k: &str| opp(v, "zapdos").volatiles.iter().any(|(n, _)| n == k);
+    let lines = with(&["|-start|p2a: Zapdos|move: Ingrain"]);
+    assert!(held(&view(&lines), "ingrain"), "Ingrain is read off `-start|…|move: Ingrain`");
+    let mut out = lines;
+    out.push("|switch|p2a: Snorlax|Snorlax|100/100".into());
+    assert!(!held(&view(&out), "ingrain"), "leaving the field ends Ingrain");
+
+    let asleep = with(&["|-status|p2a: Zapdos|slp", "|-start|p2a: Zapdos|Nightmare"]);
+    assert!(held(&view(&asleep), "nightmare"), "Nightmare is read off `-start|…|Nightmare`");
+    assert!(!held(&view(&with(&["|-status|p2a: Zapdos|slp"])), "nightmare"), "non-vacuity: no Nightmare, none read");
+    let mut woke = asleep.clone();
+    woke.extend(["|-curestatus|p2a: Zapdos|slp|[msg]".to_string(), "|-end|p2a: Zapdos|Nightmare|[silent]".to_string()]);
+    assert!(!held(&view(&woke), "nightmare"), "waking ends Nightmare (the sim removes it silently)");
+    let mut left = asleep;
+    left.push("|switch|p2a: Snorlax|Snorlax|100/100".into());
+    assert!(!held(&view(&left), "nightmare"), "leaving the field ends Nightmare");
+}
+
 /// PE-V16: the sim's `flashfire` volatile lasts until its holder leaves the field, so the view
 /// keeps Flash Fire through the holder's own Fire move (upstream poke-env's `moved` ended it there).
 #[test]

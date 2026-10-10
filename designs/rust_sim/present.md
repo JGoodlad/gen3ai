@@ -161,6 +161,16 @@ The board audit (`check_view`) checks every SIM-FACT field against the engine at
 three fixed findings' fields and the benched toxic stage included (Flash Fire joined the audited
 volatiles) — and names what it cannot check (V9, V14, V15) in `rules_fired`.
 
+**Ingrain and Nightmare are audited ONE-SIDEDLY** (`audit::TRUTH_VOLATILES` lists thirteen volatiles;
+`audit::ENGINE_CANNOT_HOLD` names these two). The engine fails loud on both moves (`scan_move_probe`: `status move "ingrain"
+is not modeled`), so no battle it plays holds either and `search::volatile_names` has no such field: the audit can fail a
+view that REPORTS one (`version_test.rs::the_audit_catches_a_view_that_reports_ingrain_or_nightmare_the_engine_cannot_hold`),
+but not a view that MISSES one the engine holds. The day the engine models either, `the_engine_still_fails_loud_on_the_volatiles_the_audit_cannot_check`
+fails and says what to wire. Meanwhile the READING of both is pinned on the sim's own emission strings
+(`present::tests::ingrain_and_nightmare_are_read_off_the_sims_own_lines_…`: `-start|…|move: Ingrain`, `-start|…|Nightmare`,
+the silent `-end` on waking, the switch-out clear). Closing the other direction needs the engine to model the two moves (a
+Rust-core crossing with differential gates) or a Showdown-node truth differential.
+
 **What a protocol line has revealed** (`gen3_obs_facts_v1`; rules V18 / V19): `PMove.seen`
 (`moved(reveal)`), `PMon.item_public` (`set_item`, `-enditem`, a Trick swap) and `ability_public`
 (`set_ability`; the request path writes through `set_ability_from_request`, the oracle overlay too, so

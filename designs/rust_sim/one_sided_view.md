@@ -250,8 +250,9 @@ that shipped a `|request|`; the reference is a `Gen3Battle` fed each viewer's te
 `offline_feed` and read at the exact chunk `Player._handle_battle_message` dispatches the decision
 on (`decision_points`). Field by field (§2b's classes), plus the TRUTH checks no projection can
 make: a revealed opposing item / ability / move / type against the OTHER viewer's engine-sourced
-`ours` row, a consumed item no longer held, and ten sim-state volatiles (`TRUTH_VOLATILES`)
-present on the reading exactly when the engine holds them. No allowlist; a decision the two sides
+`ours` row, a consumed item no longer held, and thirteen audited volatiles (`TRUTH_VOLATILES`)
+present on the reading exactly when the engine holds them (Ingrain and Nightmare among them, one-sidedly: the engine fails
+loud on both moves, `ENGINE_CANNOT_HOLD`). No allowlist; a decision the two sides
 cannot align is an `[ALIGN]` divergence, never a skip. Scope: gen3ou (the training obs path is
 gen3ou-only); the `gen3customgame` scenario corpora are counted as out of scope and printed.
 

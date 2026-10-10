@@ -207,6 +207,70 @@ fn the_board_audit_passes_the_truth_and_catches_a_tampered_view() {
     assert!(a.divergences.iter().any(|(c, _)| c.ends_with("boosts")), "{:?}", a.divergences);
 }
 
+/// The audit names INGRAIN and NIGHTMARE (`TRUTH_VOLATILES`; the `--eot-residual` lever and the encoder read both off the
+/// view's active context). The engine fails loud on both moves, so the audit is ONE-SIDED for them (`ENGINE_CANNOT_HOLD`):
+/// a view that reports one is a divergence on the `volatiles` class. Before they were listed the audit ignored the keys
+/// altogether (it filtered the view's volatiles through the list) — a tracker that invented an Ingrain went unseen.
+#[test]
+fn the_audit_catches_a_view_that_reports_ingrain_or_nightmare_the_engine_cannot_hold() {
+    use pokesim::present::audit::{ENGINE_CANNOT_HOLD, TRUTH_VOLATILES};
+    let dex = Dex::for_gen(3);
+    let mut v = Arc::new(root(&dex));
+    for cmds in script().into_iter().take(3) {
+        v = v.step(&cmds, &dex).unwrap();
+    }
+    let board = v.engine().unwrap().battle_state().unwrap();
+    let view = v.view(0).unwrap().clone();
+    assert!(check_view(&view, board, 0, &dex, true).divergences.is_empty(), "non-vacuity: the untampered view is clean");
+    for id in ENGINE_CANNOT_HOLD {
+        assert!(TRUTH_VOLATILES.iter().any(|(k, v)| *k == id && *v == id), "{id} is not audited");
+        // …on OUR active mon and on THEIR active mon: both sides' volatiles are checked
+        let mut ours = view.clone();
+        let a = ours.ours.active.expect("our active");
+        ours.ours.mons[a].volatiles.push((id.to_string(), 1));
+        let r = check_view(&ours, board, 0, &dex, true);
+        assert!(r.divergences.iter().any(|(c, d)| c == "ours.volatiles" && d.contains(id)), "{id} (ours): {:?}", r.divergences);
+        let mut theirs = view.clone();
+        let o = theirs.opp.active.expect("their active");
+        theirs.opp.mons[o].volatiles.push((id.to_string(), 1));
+        let r = check_view(&theirs, board, 0, &dex, true);
+        assert!(r.divergences.iter().any(|(c, d)| c == "opp.volatiles" && d.contains(id)), "{id} (theirs): {:?}", r.divergences);
+    }
+}
+
+/// The EXPIRY of that one-sidedness: the audit can only check Ingrain and Nightmare in one direction BECAUSE the engine
+/// fails loud on both moves (`scan_move_probe`: `status move "ingrain" is not modeled`). The day the engine models one,
+/// this fails — add the engine field to `search::volatile_names`, delete the entry from `ENGINE_CANNOT_HOLD`, and the
+/// audit holds the view to a real value in both directions.
+#[test]
+fn the_engine_still_fails_loud_on_the_volatiles_the_audit_cannot_check() {
+    use pokesim::battle::{Battle, BattleOptions, PackedTeam, PlayerOptions};
+    use pokesim::present::audit::ENGINE_CANNOT_HOLD;
+    use pokesim::turn::{Choice, ScriptDecision};
+    use std::panic::{self, AssertUnwindSafe};
+    let dex = Dex::for_gen(3);
+    let team = |mv: &str| format!("|snorlax||immunity|{mv},splash,splash,splash|Serious|252,252,252,252,252,252|||||");
+    for id in ENGINE_CANNOT_HOLD {
+        let opts = BattleOptions {
+            format_id: "gen3customgame".to_string(),
+            seed: Some("1,2,3,4".to_string()),
+            p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(team(id)) },
+            p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(team("splash")) },
+        };
+        let mut battle = Battle::start_with_switchins(&opts, &dex).expect("the probe battle builds");
+        let script: Vec<ScriptDecision> = (0..6).map(|_| ScriptDecision::both(Choice::Move(0), Choice::Move(0))).collect();
+        let ran = panic::catch_unwind(AssertUnwindSafe(|| battle.state_mut().unwrap().run_full_battle(&script, &dex)));
+        let msg = match ran {
+            Ok(_) => panic!(
+                "the engine now RUNS {id}: add its volatile to `search::volatile_names`, delete {id:?} from \
+                 `audit::ENGINE_CANNOT_HOLD`, and the audit checks it in both directions"
+            ),
+            Err(p) => p.downcast_ref::<String>().cloned().or_else(|| p.downcast_ref::<&str>().map(|s| s.to_string())).unwrap_or_default(),
+        };
+        assert!(msg.contains("not modeled"), "{id}: panicked, but not the fail-loud guard: {msg}");
+    }
+}
+
 /// V15 — only the active mon the CURRENT request re-synced has the sim's PP; every other own mon's
 /// is poke-env's sighting count, which can LAG a deduction it cannot see (found by slice V on
 /// procedural teams: a Forretress's Explosion into an unannounced Pressure, the user fainting
