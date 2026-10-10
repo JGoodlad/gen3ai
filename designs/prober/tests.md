@@ -7,7 +7,8 @@ in `src/main/prober/CLAUDE.md`.
 seat, the recoil / Leftovers sources, the board fold), `game_readout_test.py` (pure: the label →
 column rule incl. OTHER_move / OTHER_species and the Hidden Power direction, calibration, seat labels,
 the attention summary, the greyed move-resolution columns), `model_capture_test.py` (the recomputed
-attention reproduces `BiasedEncoderLayer`'s own output; dropping the bias does not),
+attention reproduces `BiasedEncoderLayer`'s own output; dropping the bias does not; the same for an extra pre-LN
+`IdentityInitRound`, rebuilt from its captured weights, and a real `--trunk-layers 3` policy captures three rounds),
 `web/game_test.py` (the degraded paths on the synthetic fixture: the story renders, a model view on an
 older architecture is one sentence with the diagnosis folded, every battle surface links in) and
 `game_integration_test.py` (`sim`: real Rust-core battles + a fresh current-architecture checkpoint —

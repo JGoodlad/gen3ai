@@ -10,11 +10,13 @@ nothing in the model changes and nothing is trained:
 * the win-probability head (`last_win_prob_logits`);
 * the flat opponent pointer (`last_flat_intent_logits` + `last_flat_intent`, X5) and the hypothesis
   set (`last_hypothesis`);
-* the trunk's attention: a forward PRE-hook on every `BiasedEncoderLayer` receives the layer's input
-  and its additive bias and recomputes ``softmax(q kᵀ/√d_head + bias)`` from the layer's own
-  ``in_proj`` — exactly what ``scaled_dot_product_attention`` consumes (its default scale is
-  1/√d_head; the bias carries the key-padding addend and every edge family). `PolicyStateQuery`
-  (``--policy-readout trunk`` only) the same way;
+* the trunk's attention: a forward PRE-hook on every trunk round — the POST-LN `BiasedEncoderLayer`s and, under
+  ``--trunk-layers 3/4``, the PRE-LN `IdentityInitRound`s appended after them (`agents.model.trunk_depth`) —
+  receives the round's input and its additive bias and recomputes ``softmax(q kᵀ/√d_head + bias)`` from the
+  round's own ``in_proj`` (over ``LN₁(x)`` for a pre-LN round, whose attention reads the normed input) — exactly
+  what ``scaled_dot_product_attention`` consumes (its default scale is 1/√d_head; the bias carries the key-padding
+  addend and every edge family). The rounds stack in EXECUTION order (``attention[:, l]`` is round ``l``).
+  `PolicyStateQuery` (``--policy-readout trunk`` only) the same way;
 * the DamageOperator's pre-gain stash (`damage_op.last_raw_block`) and, when the move-resolution family
   is built, its RAW facts (a pre-hook re-reads `MoveResolutionCell.raw` on the same ops).
 
@@ -37,6 +39,11 @@ CAPTURE_BATCH = 64
 SPECIES_TOP = 12
 TAIL_TOP = 5
 _MASKED = -1e8          # a key whose bias is below this on every query row is key-padded
+#: The trunk's attention ROUNDS, by class name (this module imports no model code at import time): production's two
+#: post-LN `BiasedEncoderLayer`s, then the identity-init pre-LN `IdentityInitRound`s that `--trunk-layers 3/4` append.
+_ROUND_TYPES = ("BiasedEncoderLayer", "IdentityInitRound")
+#: Of those, the rounds that attend over ``norm1(x)`` rather than ``x`` (pre-LN: ``x ← x + attn(LN₁(x))``).
+_PRE_LN_ROUNDS = ("IdentityInitRound",)
 
 
 def _np(t) -> np.ndarray:
@@ -44,11 +51,14 @@ def _np(t) -> np.ndarray:
 
 
 def _attn_weights(mod, x, bias):
-    """softmax(q kᵀ/√d + bias) for one `BiasedEncoderLayer` input — its own `in_proj`, its own heads."""
+    """softmax(q kᵀ/√d + bias) for one trunk round's input — its own `in_proj`, its own heads. A PRE-LN round
+    (`IdentityInitRound`) projects ``norm1(x)``; a post-LN `BiasedEncoderLayer` projects ``x`` itself."""
     import torch
 
     B, n, d = x.shape
     H, hd = int(mod.n_heads), int(mod.head_dim)
+    if type(mod).__name__ in _PRE_LN_ROUNDS:
+        x = mod.norm1(x)
     qkv = mod.in_proj(x).reshape(B, n, 3, H, hd)
     q, k = qkv[:, :, 0].transpose(1, 2), qkv[:, :, 1].transpose(1, 2)
     logits = (q @ k.transpose(-1, -2)) / math.sqrt(hd)
@@ -102,7 +112,7 @@ def capture(policy, obs: np.ndarray, masks: np.ndarray, *, batch: int = CAPTURE_
     from agents.model.damage_op_layout import decode_damage_block
 
     fe = policy.features_extractor
-    layers = [m for m in fe.modules() if type(m).__name__ == "BiasedEncoderLayer"]
+    layers = [m for m in fe.modules() if type(m).__name__ in _ROUND_TYPES]
     pq = getattr(fe, "policy_query", None)
     mr = getattr(fe, "move_resolution_cell", None)
     ptr = getattr(policy, "pointer_head", None)
@@ -111,7 +121,7 @@ def capture(policy, obs: np.ndarray, masks: np.ndarray, *, batch: int = CAPTURE_
     cur: Dict[str, List] = {"attn": [], "query": [], "ptr": [], "mr_m": [], "mr_s": [], "keymask": []}
     handles = []
 
-    def layer_hook(mod, args, kwargs):
+    def layer_hook(mod, args, kwargs):      # one call per trunk round, in execution order
         x = args[0]
         bias = args[1] if len(args) > 1 else kwargs.get("bias")
         w = _attn_weights(mod, x, bias)

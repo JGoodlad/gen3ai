@@ -86,9 +86,11 @@ hypothesis, decision by decision, with each reveal marked.
 
 ### 3. Attention heat maps (model)
 
-Captured with forward PRE-hooks on each `BiasedEncoderLayer` (the trunk), in eager mode, with no
-change to model code: the hook receives the layer's input `x` and its additive bias, and recomputes
-`softmax(q kᵀ / √d_head + bias)` from the layer's own `in_proj` — exactly the logits
+Captured with forward PRE-hooks on each trunk round (the post-LN `BiasedEncoderLayer`s, then — under
+`--trunk-layers 3/4` — the pre-LN `IdentityInitRound`s appended after them), in eager mode, with no
+change to model code: the hook receives the round's input `x` and its additive bias, and recomputes
+`softmax(q kᵀ / √d_head + bias)` from the round's own `in_proj` (over `norm1(x)` for a pre-LN round, whose
+attention reads the normed input) — exactly the logits
 `scaled_dot_product_attention` consumes (the bias already carries the key-padding addend and every
 edge family). A unit test pins the recomputation against the layer's own output (re-deriving the
 layer's output from the captured weights). Hooks are installed for the duration of one capture and

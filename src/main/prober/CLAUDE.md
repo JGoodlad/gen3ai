@@ -99,8 +99,9 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   `belief`, `damage_op_view`, `move_belief`, `win_prob_at` and `architecture()` each
   read a head's stash after one clean forward. **`capture_battle(obs, masks)`** is `/game`'s ONE
   batched EAGER forward over a battle's stored decisions with read-only hooks (`model_capture.py`, the
-  same torch boundary): the trunk's attention recomputed from each `BiasedEncoderLayer`'s own `in_proj`
-  + bias (pinned against the layer's output by `model_capture_test.py`), the pointer head's raw
+  same torch boundary): the trunk's attention recomputed from EVERY trunk round's own `in_proj`
+  + bias (the post-LN `BiasedEncoderLayer`s and, under `--trunk-layers 3/4`, the pre-LN `IdentityInitRound`s, over
+  `norm1(x)`; stacked in execution order; pinned against each round's output by `model_capture_test.py`), the pointer head's raw
   scores, the flat opponent pointer + hypothesis set, the op stash; every hook removed in a
   `finally`, so the cost when off is zero. The three non-torch decode helpers (`describe_global`,
   `describe_team`, `describe_turn_outcome`) live here because they need the encoder. 🚨 **A turn's

@@ -186,7 +186,7 @@ class _GameMixin:
         b = self._battle(battle_id)
         cap, _choice = self._capture(b)
         if "attention" not in cap:
-            raise ValueError("this model exposes no trunk attention (no BiasedEncoderLayer was captured)")
+            raise ValueError("this model exposes no trunk attention (no trunk round (BiasedEncoderLayer / IdentityInitRound) was captured)")
         n = int(cap["attention"].shape[0])
         if not 0 <= int(inv) < n:
             raise IndexError(f"decision {inv} out of range (the battle has {n})")
