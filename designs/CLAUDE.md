@@ -16,7 +16,7 @@ narrated, never appended to:
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | what the MODEL is now — §6's tables are GENERATED (`python -m agents.model.arch_tables`, pinned by `arch_tables_test.py`) and the PROSE around them is pinned by `src/mode_flag_doc_gate_test.py` against `production_config.json` | [`CHANGELOG.md`](CHANGELOG.md) |
 | [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md) | what we BELIEVE about the research now — every claim tagged SIGNIFICANT / WITHIN FLOOR / NOT DETECTED / EQUIVALENCE SUPPORTED / REFUTED / UNVERIFIED and pointing at its evidence. 🔎 **Find a ledger entry through the GENERATED [`research_state/ledger_index.md`](research_state/ledger_index.md)** (`python -m main.ledger_index --write`, gated by `src/ledger_index_gate_test.py`) — NEVER edit either by hand; `research_state/README.md` holds the heading convention and the rebase rule | [`research_state/ledger.md`](research_state/ledger.md) |
 | every doc in [`endstate/`](endstate/) | the end-state designs, each ending with a **Decision record** (owner, 2026-09-27): a decision or build that differs updates the doc in the same commit, saying what changed and why. [`endstate/README.md`](endstate/README.md) is the index and the reading order | — |
-| the seven leaf-detail trees below, and every `CLAUDE.md` under `designs/` | the detail lifted out of a code leaf, updated with the code exactly like the leaf | — |
+| the eight leaf-detail trees below, and every `CLAUDE.md` under `designs/` | the detail lifted out of a code leaf, updated with the code exactly like the leaf | — |
 
 When `UNDERSTANDING.md` and the ledger disagree, **the later ledger entry wins and the view is a
 bug** — fix the view, never the ledger.
@@ -50,6 +50,7 @@ code before believing it still holds.
 | [`prober/`](prober/) | `src/main/prober/CLAUDE.md` (+ `web/`) | the analyze panels, result timeline, belief/threat views, the per-method session reference, counterfactual probes, arch drift, the sim impl, the tests, the result vocabulary, retention, and `/game` (the battle viewer) |
 | [`launcher/`](launcher/) | `src/main/launcher/CLAUDE.md` | restarts and the resume contract, crashes and exit codes, the flag notes, pinning and worktrees, the launch guards, the child's interpreter, the TUI ([`launcher/README.md`](launcher/README.md) is the index) |
 | [`observation/`](observation/) | `src/agents/observation/CLAUDE.md` | per-block field semantics, the volatile vocabulary, typing ([`observation/README.md`](observation/README.md) is the index; the Rust encoder itself is `rust_sim/encoder.md`) |
+| [`tools/`](tools/) | `tools/CLAUDE.md` | the data extractor's per-builder notes, the Smogon priors (the denominator, the 12-month merge, the format-spec filter), the team downloaders and their encodings ([`tools/README.md`](tools/README.md) is the index) |
 | [`ops/`](ops/) | the root `CLAUDE.md` | the SOPs and chapters below |
 
 **`ops/` — procedures of record.** [`ops/TRAINING_RUN_SOP.md`](ops/TRAINING_RUN_SOP.md) (how a run is

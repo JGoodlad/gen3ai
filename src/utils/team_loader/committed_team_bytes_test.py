@@ -12,7 +12,7 @@ mojibake AT REST and every layer above merely carries it faithfully. Pinned so t
 not go looking for an encoder again, and so a future re-sync of ``data/teams/`` that silently CHANGES these bytes
 is a visible event: a team file is hashed into ``pin_sha`` (`MatchupSpec`) and keys
 ``data/teams/gen3_team_archetypes.json``, so rewriting one re-ids the team and orphans its archetype label (see
-`tools/CLAUDE.md`, "Both downloaders NAME their encodings").
+`designs/tools/team_downloaders.md`, "Both downloaders NAME their encodings").
 """
 from __future__ import annotations
 

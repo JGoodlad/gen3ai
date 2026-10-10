@@ -177,7 +177,7 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
   declared model for (`damage_tables.DAMAGE_MODELS`).
   **Typed Hidden Power has distinct nums** (`gen3_typed_hidden_power_ids_v1`): bare `hiddenpower`=237,
   the 16 typed variants=355-370 (Showdown ships them all at 237; the extractor tool overrides — see
-  `tools/CLAUDE.md`). OUR known HP uses the distinct num; the opponent's unrevealed HP is the bare 237.
+  `designs/tools/pokemon_data_extractor.md`). OUR known HP uses the distinct num; the opponent's unrevealed HP is the bare 237.
 - `gen3_items.json` — item id → `{num, name}` (`num` is the item-dex number; cross-gen aliases share one num)
 - `gen3_abilities.json` — ability id → `{num, name}`
 - `gen3_type_chart.json` — `{DEF: {ATT: multiplier}}` effectiveness chart (was live `GenData`)
