@@ -929,12 +929,12 @@ endstate_facts_2026-10-09/`):
   resolved over the observed HP interval (ours exact: ±½ HP; theirs HP Percentage Mod's bin, a reported p < 100 %
   being (p − 1 %, p]). The `ramp` it replaces anchored a 15 %-wide line at the op's MEAN roll (0.925 of the top),
   so a hit whose mean roll equals the HP read 0 where 8 of 16 rolls KO, and it omitted the crit. Continuous and
-  differentiable (no new discrete site for K9(b)); no parameters. **`--ko-ramp exact_closed`** is the SAME probability
-  in closed form (`ko_exact.roll_ko_prob_closed`: the op's damage is continuous, so the 16 roll terms are an exact
-  arithmetic sequence — two run counts and one arithmetic-series sum instead of 16 passes); equal to `exact` within
-  a derived rounding bound (8 eps (1 + (|top| + |hp_lo|) / w), `ko_exact_closed_test.py`), state-dict identical, its
-  two counts declared `COUNT_CONTINUOUS` in `selection_sites` (the sum is continuous across each count's step). In no
-  named arm: `--arch endstate` records `exact`.
+  differentiable; no parameters. It is computed in CLOSED FORM (`ko_exact.roll_ko_prob`, `gen3_ko_exact_closed_v1`):
+  the op's damage is continuous, so the 16 roll terms are an exact arithmetic sequence — two run counts and one
+  arithmetic-series sum per cell, not 16 passes; equal to the 16-roll sum (the test oracle, `ko_exact_test.py`) within
+  a derived rounding bound of 8 eps (1 + (|top| + |hp_lo|) / w), its two counts declared `COUNT_CONTINUOUS` in
+  `selection_sites` (the sum is continuous across each count's step). The value `exact_closed` that carried this
+  form beside the sum at `6e0a1a7a` is RETIRED (refused with its reason, `designs/deleted_flags.md` §4).
 * **`--status-facts exact`** (production `off`): the pair-outcome grid's positions 12-13 (`neutralization`,
   `tempo_cost`) carry `e_burn_dmg_lost` = P(this seat's burn lands on our mon j) × the exact damage a burn costs j's
   moves against their active (`DamageOperatorBlocks.our_burn_loss`: the same kernel with Attack halved, the

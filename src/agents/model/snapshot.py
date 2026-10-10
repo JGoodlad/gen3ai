@@ -1183,8 +1183,10 @@ def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
     constructor when it rebuilds the policy. A key dropped from one and not the other either fails
     the gate for the wrong reason or TypeErrors inside the constructor.
     """
+    from agents.model.model_version.retired_levers import refuse_retired_values
     from agents.model.model_version.version_break import refuse_pickled_belief_tokens
     changed = refuse_pickled_belief_tokens(fek)     # v144: blob REFUSED with its own reason; fixed_mass pops
+    refuse_retired_values(fek)                      # gen3_ko_exact_closed_v1: a retired VALUE, refused with its reason
     for dead, supported in _DEAD_FEK_JUDGED:
         if dead in fek:
             # Compare on TYPE, not truthiness: the v78 entries are mode STRINGS, and `bool("off")`

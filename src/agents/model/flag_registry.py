@@ -643,13 +643,14 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("ko_ramp", "ramp", Tier.CLI, Klass.STRUCTURAL, 152,
               "how every P(KO) is priced ('ramp' = the op's mean-roll 15%-window ramp with no crit, production, an "
               "APPROXIMATE fact; 'exact' = over the 16 gen-3 rolls and the move's crit chance, each roll's KO "
-              "resolved over the observed HP interval; 'exact_closed' = the same probability in closed form)",
+              "resolved over the observed HP interval, computed in closed form)",
               note="ko_exact.py: one shared function at every site (DamageOperator._rolls, the inlined Choice-Band "
                    "ko_cb, intent_threshold's Substitute break, move resolution's Pursuit KO). Continuous and "
-                   "differentiable. 'exact' sums the 16 rolls (clamps only, no discrete site for K9(b)); "
-                   "'exact_closed' (roll_ko_prob_closed) is the arithmetic-series closed form, its two run counts "
-                   "declared COUNT_CONTINUOUS in selection_sites. No parameters (an exact_closed model is "
-                   "state-dict identical to an exact one); the string compare in check_compatible is the only gate.",
+                   "differentiable; 'exact' is the arithmetic-series CLOSED FORM of the 16-roll sum "
+                   "(gen3_ko_exact_closed_v1), its two run counts declared COUNT_CONTINUOUS in selection_sites. No "
+                   "parameters; the string compare in check_compatible is the only gate. The value 'exact_closed' "
+                   "(briefly legal at 6e0a1a7a) is RETIRED: refused at parse time and on any load "
+                   "(retired_levers.RETIRED_VALUES).",
               requires=("damage_op",)),
     ModelFlag("drop_progress_clock", "off", Tier.CLI, Klass.STRUCTURAL, 152,
               "whether the model reads the observation's turns_since_progress ('off' = it does, production; 'on' = "

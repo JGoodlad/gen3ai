@@ -1,5 +1,7 @@
-"""`--ko-ramp exact_closed` (`ko_exact.roll_ko_prob_closed`): the 16-roll P(KO) sum of `--ko-ramp exact` in CLOSED
-FORM (owner 2026-10-10: "optimise the 16 rolls, since it's a known formula with a crit chance").
+"""`--ko-ramp exact` (`ko_exact.roll_ko_prob`) is the 16-roll P(KO) sum in CLOSED FORM (`gen3_ko_exact_closed_v1`;
+owner 2026-10-10: "optimise the 16 rolls, since it's a known formula with a crit chance", then "remove the old one").
+The 16-roll sum itself survives HERE only, as the REFERENCE ORACLE (`_sum16`, the shipped loop of config v152 verbatim);
+`--ko-ramp exact_closed`, the value that briefly carried the closed form beside it, is RETIRED (last test section).
 
 The op's damage is CONTINUOUS (no per-roll floor — `ko_exact`'s docstring), so the 16 terms
 ``x_r = (top · r/100 − lo) / w`` are an exact arithmetic sequence and ``Σ clamp(x_r, 0, 1)`` has an exact closed form:
@@ -47,8 +49,8 @@ import pytest
 import torch
 
 from agents.model import ko_exact as KE
-from agents.model.ko_exact import (CRIT_P_BASE, MEAN_ROLL, N_ROLLS, ROLLS, closed_sum, ko_given_hit,
-                                   roll_ko_prob, roll_ko_prob_closed, run_counts)
+from agents.model.ko_exact import (CRIT_P_BASE, MEAN_ROLL, N_ROLLS, ROLLS, closed_sum, ko_given_hit, roll_ko_prob,
+                                   run_counts)
 
 F64 = torch.float64
 EPS64 = torch.finfo(F64).eps
@@ -57,6 +59,17 @@ EPS32 = torch.finfo(torch.float32).eps
 K1_MAX_1E12 = 1e-12 / (8.0 * EPS64)
 
 Grid = Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+
+
+def _sum16(mean_dmg: torch.Tensor, hp_lo: torch.Tensor, hp_hi: torch.Tensor) -> torch.Tensor:
+    """THE REFERENCE ORACLE: the 16-roll enumeration `ko_exact.roll_ko_prob` shipped at config v152 (before the closed
+    form replaced it), verbatim — each roll's KO resolved over the observed HP interval, summed, ÷ 16."""
+    top = mean_dmg / MEAN_ROLL
+    width = (hp_hi - hp_lo).clamp_min(KE._TINY)
+    total = torch.zeros_like(top + hp_lo)
+    for r in ROLLS:
+        total = total + ((top * (r / 100.0) - hp_lo) / width).clamp(0.0, 1.0)
+    return total / float(N_ROLLS)
 
 
 def _k1(m: torch.Tensor, lo: torch.Tensor, hi: torch.Tensor, tiny: float) -> torch.Tensor:
@@ -146,7 +159,7 @@ def test_the_closed_form_equals_the_16_roll_sum_in_float64_within_the_rounding_b
     the k1 ≤ 563 domain (the bound itself puts it there). Fails on a wrong count (an off-by-one run reads a whole term
     of error), a wrong mean index, a dropped high run, a mis-ordered sequence for top < 0, or a w-floor mismatch."""
     m, lo, hi = grid64
-    b, c = roll_ko_prob(m, lo, hi), roll_ko_prob_closed(m, lo, hi)
+    b, c = _sum16(m, lo, hi), roll_ko_prob(m, lo, hi)
     k1 = _k1(m, lo, hi, _tiny(F64))
     assert torch.isfinite(b).all() and torch.isfinite(c).all()
     err = (c - b).abs()
@@ -167,8 +180,8 @@ def test_both_spellings_meet_the_exact_rational_value(grid64: Grid) -> None:
     tiny = _tiny(F64)
     ex = torch.tensor([_exact(float(a), float(b_), float(c_), tiny) for a, b_, c_ in zip(m, lo, hi)], dtype=F64)
     bound = 6.0 * EPS64 * _k1(m, lo, hi, tiny)
+    assert bool(((_sum16(m, lo, hi) - ex).abs() <= bound).all())
     assert bool(((roll_ko_prob(m, lo, hi) - ex).abs() <= bound).all())
-    assert bool(((roll_ko_prob_closed(m, lo, hi) - ex).abs() <= bound).all())
 
 
 def test_float32_is_within_the_stated_bound(grid64: Grid) -> None:
@@ -177,9 +190,9 @@ def test_float32_is_within_the_stated_bound(grid64: Grid) -> None:
     from the fp32 inputs. The summation ORDER differs (16 sequential adds vs count × mean), which is what the bound
     prices; it is not a tolerance chosen by measurement."""
     m, lo, hi = (t.to(torch.float32) for t in grid64)
-    b, c = roll_ko_prob(m, lo, hi), roll_ko_prob_closed(m, lo, hi)
+    b, c = _sum16(m, lo, hi), roll_ko_prob(m, lo, hi)
     k1 = _k1(m, lo, hi, _tiny(torch.float32))
-    ref = roll_ko_prob(m.to(F64), lo.to(F64), hi.to(F64))
+    ref = _sum16(m.to(F64), lo.to(F64), hi.to(F64))
     ref_err = 6.0 * EPS64 * k1
     assert bool(((c.to(F64) - b.to(F64)).abs() <= 8.0 * EPS32 * k1).all())
     assert bool(((c.to(F64) - ref).abs() <= 6.0 * EPS32 * k1 + ref_err).all())
@@ -195,12 +208,12 @@ def test_degenerate_inputs_read_what_the_16_roll_sum_reads() -> None:
              (92.5, 90.5, 89.5, 10.0 / 16.0), (-92.5, -95.5, -94.5, 10.5 / 16.0)]
     for m, lo, hi, want in cases:
         args = (torch.tensor(m, dtype=F64), torch.tensor(lo, dtype=F64), torch.tensor(hi, dtype=F64))
+        assert float(_sum16(*args)) == pytest.approx(want, abs=1e-13), (m, lo, hi)
         assert float(roll_ko_prob(*args)) == pytest.approx(want, abs=1e-13), (m, lo, hi)
-        assert float(roll_ko_prob_closed(*args)) == pytest.approx(want, abs=1e-13), (m, lo, hi)
     # the width FLOOR is the sum's own (1e-6): a zero width with the 90-roll half a floor-width above lo reads ½ there
     mean = torch.tensor(92.5, dtype=F64)
     lo_t = (mean / MEAN_ROLL) * 0.9 - 0.5 * KE._TINY
-    for fn in (roll_ko_prob, roll_ko_prob_closed):
+    for fn in (_sum16, roll_ko_prob):
         assert float(fn(mean, lo_t, lo_t)) == pytest.approx(10.5 / 16.0, abs=1e-6), fn.__name__
 
 
@@ -237,7 +250,7 @@ def test_the_sum_is_continuous_across_every_count_step(grid64: Grid) -> None:
         xs2 = torch.minimum((top * 0.85 - lo2) / w2, (top * 1.0 - lo2) / w2)
         a0, a1 = run_counts(xs2, top.abs() * 0.01 / w2)
         flips += int(((a0 != n0) | (a1 != n1)).sum())
-        dv = (roll_ko_prob_closed(m, lo2, hi) - roll_ko_prob_closed(m, lo, hi)).abs()
+        dv = (roll_ko_prob(m, lo2, hi) - roll_ko_prob(m, lo, hi)).abs()
         assert bool((dv <= 16.0 * EPS64 * k1).all()), float((dv / (16.0 * EPS64 * k1)).max())
     assert flips >= 100, f"only {flips} count flips — the continuity check saw no step"
 
@@ -273,7 +286,7 @@ def test_gradients_equal_the_16_roll_sums_off_the_kinks(grid64: Grid) -> None:
     keep = _off_kink(m, lo, hi)
     assert int(keep.sum()) > 0.5 * m.numel()
     m, lo, hi = m[keep], lo[keep], hi[keep]
-    gb, gc = _grads(roll_ko_prob, m, lo, hi), _grads(roll_ko_prob_closed, m, lo, hi)
+    gb, gc = _grads(_sum16, m, lo, hi), _grads(roll_ko_prob, m, lo, hi)
     w = (hi - lo).clamp_min(_tiny(F64))
     tol = 64.0 * EPS64 * _k1(m, lo, hi, _tiny(F64)) / w
     for name, a, b in zip(("mean_dmg", "hp_lo", "hp_hi"), gb, gc):
@@ -294,11 +307,11 @@ def test_at_an_exact_kink_each_spelling_returns_a_valid_subgradient() -> None:
     for r in ROLLS[1:-1]:
         lo = top * (r / 100.0)
         hi = lo + 0.25                                                # the next roll is 4 spacings away
-        g_sum = _grads(roll_ko_prob, mean, lo, hi)[0]
-        g_closed = _grads(roll_ko_prob_closed, mean, lo, hi)[0]
+        g_sum = _grads(_sum16, mean, lo, hi)[0]
+        g_closed = _grads(roll_ko_prob, mean, lo, hi)[0]
         nudge = 0.1 * float(top) / 100.0
-        g_left = _grads(roll_ko_prob, mean, lo - nudge, hi - nudge)[0]     # the edge term inside the run
-        g_right = _grads(roll_ko_prob, mean, lo + nudge, hi + nudge)[0]    # the edge term below 0
+        g_left = _grads(_sum16, mean, lo - nudge, hi - nudge)[0]     # the edge term inside the run
+        g_right = _grads(_sum16, mean, lo + nudge, hi + nudge)[0]    # the edge term below 0
         assert float(g_sum) == pytest.approx(float(g_left), rel=1e-12)
         close = [s for s, g in (("in", g_left), ("out", g_right)) if abs(float(g_closed - g)) <= 1e-12 * abs(float(g))]
         assert close, (r, float(g_closed), float(g_left), float(g_right))
@@ -307,22 +320,22 @@ def test_at_an_exact_kink_each_spelling_returns_a_valid_subgradient() -> None:
 
 
 # ============================================================================================ THE CRIT MIX
-def test_ko_given_hit_routes_both_calls_and_exact_is_unchanged() -> None:
-    """`closed=True` prices the no-crit AND the crit roll through the closed form; `closed=False` (`--ko-ramp exact`)
-    is BIT-identical to the pre-closed-form body (the same two `roll_ko_prob` calls, the same mix)."""
+def test_ko_given_hit_mixes_both_calls_through_the_closed_form() -> None:
+    """The crit mix prices the no-crit AND the crit roll through `roll_ko_prob` (bit-equal to the explicit mix), and
+    is within the bound of the same mix over the ORACLE (the mix is a convex combination, so the bound carries)."""
     g = torch.Generator().manual_seed(4)
-    m = torch.rand(512, generator=g) * 300.0
-    crit = 2.0 * m * (1.0 + torch.rand(512, generator=g))
-    lo = torch.rand(512, generator=g) * 250.0
+    m = torch.rand(512, generator=g, dtype=F64) * 300.0
+    crit = 2.0 * m * (1.0 + torch.rand(512, generator=g, dtype=F64))
+    lo = torch.rand(512, generator=g, dtype=F64) * 250.0
     hi = lo + 1.0
-    c = torch.where(torch.rand(512, generator=g) > 0.5, 1.0 / 8.0, 1.0 / 16.0)
-    legacy = (1.0 - c) * roll_ko_prob(m, lo, hi) + c * roll_ko_prob(crit, lo, hi)
-    assert torch.equal(ko_given_hit(m, crit, lo, hi, c), legacy)
-    assert torch.equal(ko_given_hit(m, crit, lo, hi, c, closed=False), legacy)
-    want = (1.0 - c) * roll_ko_prob_closed(m, lo, hi) + c * roll_ko_prob_closed(crit, lo, hi)
-    assert torch.equal(ko_given_hit(m, crit, lo, hi, c, closed=True), want)
-    base = (1.0 - CRIT_P_BASE) * roll_ko_prob_closed(m, lo, hi) + CRIT_P_BASE * roll_ko_prob_closed(crit, lo, hi)
-    assert torch.equal(ko_given_hit(m, crit, lo, hi, closed=True), base)
+    c = torch.where(torch.rand(512, generator=g) > 0.5, 1.0 / 8.0, 1.0 / 16.0).to(F64)
+    want = (1.0 - c) * roll_ko_prob(m, lo, hi) + c * roll_ko_prob(crit, lo, hi)
+    assert torch.equal(ko_given_hit(m, crit, lo, hi, c), want)
+    base = (1.0 - CRIT_P_BASE) * roll_ko_prob(m, lo, hi) + CRIT_P_BASE * roll_ko_prob(crit, lo, hi)
+    assert torch.equal(ko_given_hit(m, crit, lo, hi), base)
+    oracle = (1.0 - c) * _sum16(m, lo, hi) + c * _sum16(crit, lo, hi)
+    k1 = torch.maximum(_k1(m, lo, hi, _tiny(F64)), _k1(crit, lo, hi, _tiny(F64)))
+    assert bool(((ko_given_hit(m, crit, lo, hi, c) - oracle).abs() <= 8.0 * EPS64 * k1).all())
 
 
 # =============================================================================================== COMPILE
@@ -333,46 +346,41 @@ def test_the_closed_form_compiles_fullgraph_with_no_break() -> None:
     same kernels)."""
     torch._dynamo.reset()
     try:
-        f = torch.compile(roll_ko_prob_closed, fullgraph=True, backend="eager")
-        mix = torch.compile(lambda a, b, lo, hi, c: ko_given_hit(a, b, lo, hi, c, closed=True),
-                            fullgraph=True, backend="eager")
+        f = torch.compile(roll_ko_prob, fullgraph=True, backend="eager")
+        mix = torch.compile(ko_given_hit, fullgraph=True, backend="eager")
         g = torch.Generator().manual_seed(9)
         m = (torch.rand(4, 6, 5, generator=g) * 300.0).requires_grad_(True)
         lo = torch.rand(4, 6, 1, generator=g) * 250.0
         hi = lo + 1.0
         out = f(m, lo, hi)
-        assert torch.equal(out, roll_ko_prob_closed(m, lo, hi))
+        assert torch.equal(out, roll_ko_prob(m, lo, hi))
         (gc,) = torch.autograd.grad(out.sum(), m)
-        (ge,) = torch.autograd.grad(roll_ko_prob_closed(m, lo, hi).sum(), m)
+        (ge,) = torch.autograd.grad(roll_ko_prob(m, lo, hi).sum(), m)
         assert torch.equal(gc, ge)
         c = torch.full((4, 1, 5), 1.0 / 16.0)
-        assert torch.equal(mix(m, 2.0 * m, lo, hi, c), ko_given_hit(m, 2.0 * m, lo, hi, c, closed=True))
+        assert torch.equal(mix(m, 2.0 * m, lo, hi, c), ko_given_hit(m, 2.0 * m, lo, hi, c))
     finally:
         torch._dynamo.reset()
 
 
 # =========================================================================================== THE MODEL
-_POLICIES: Dict[Tuple[str, str], Any] = {}
+_POLICIES: Dict[str, Any] = {}
 #: Where each exact-KO site runs: the END-STATE arm (the closing test's overlay) prices the op's KO and move
 #: resolution's Pursuit / Substitute; `--move-resolution on` retires intent_threshold, so its Substitute break is
-#: reached on the PRODUCTION surface + `--ko-ramp` alone.
+#: reached on the PRODUCTION surface + `--ko-ramp exact` alone.
 SURFACE_SITES = {"endstate": {"_ko_exact", "_exact_ko_ours"}, "production": {"_ko_exact", "sub_break_given_hit"}}
 
 
-def _policy(surface: str, ko_ramp: str) -> Any:
-    """A real SB3 policy on ``surface`` ('endstate' = the arm's overlay; 'production') at ``ko_ramp``."""
-    if (surface, ko_ramp) not in _POLICIES:
+def _policy(surface: str) -> Any:
+    """A real SB3 policy on ``surface`` ('endstate' = the arm's overlay; 'production') at `--ko-ramp exact`."""
+    if surface not in _POLICIES:
         from agents.model.endstate_facts_test import _toggles
         from agents.model.identity_init_test import _build_real_policy
         from main.train.arch_arms import arm_overlay
         over = dict(arm_overlay("endstate")) if surface == "endstate" else {}
-        over["ko_ramp"] = ko_ramp
-        _POLICIES[(surface, ko_ramp)] = _build_real_policy(**_toggles(**over))[0].policy
-    return _POLICIES[(surface, ko_ramp)]
-
-
-def _endstate_policy(ko_ramp: str) -> Any:
-    return _policy("endstate", ko_ramp)
+        over["ko_ramp"] = "exact"
+        _POLICIES[surface] = _build_real_policy(**_toggles(**over))[0].policy
+    return _POLICIES[surface]
 
 
 @pytest.fixture(scope="module")
@@ -383,28 +391,15 @@ def rows() -> torch.Tensor:
     return torch.as_tensor(obs)
 
 
-def test_an_exact_closed_model_is_state_dict_identical_to_an_exact_one() -> None:
-    """No new parameter or buffer: the SAME keys, shapes and bytes at the same seeds (a checkpoint of either loads into
-    the other's shapes; `check_compatible`'s string compare is the only gate between them)."""
-    a = _endstate_policy("exact").state_dict()
-    b = _endstate_policy("exact_closed").state_dict()
-    assert list(a) == list(b)
-    assert all(torch.equal(a[k], b[k]) for k in a)
-    op = _endstate_policy("exact_closed").features_extractor.damage_op
-    assert op.ko_exact and op.ko_closed and op.ko_ramp == "exact_closed"
-    assert not _endstate_policy("exact").features_extractor.damage_op.ko_closed
-
-
 @pytest.mark.parametrize("surface", sorted(SURFACE_SITES))
-def test_every_ko_site_of_the_forward_reads_the_closed_form_within_the_bound(
+def test_every_ko_site_of_the_forward_meets_the_oracle_within_the_bound(
         surface: str, rows: torch.Tensor, monkeypatch: pytest.MonkeyPatch) -> None:
-    """On the compile-parity fixture's real rows at `exact_closed`: every call reaches `roll_ko_prob_closed` (a spy on
-    the module global `ko_given_hit` reads at call time), from every site the surface runs — the op's `_ko_exact`
-    (`_rolls` and the Choice-Band `ko_cb`), move resolution's `_exact_ko_ours` (Pursuit, Substitute; END-STATE) and
-    intent_threshold's `sub_break_given_hit` (PRODUCTION + the flag) — and on each call's REAL operands the value is
-    within 8 eps32 k1 of the 16-roll sum. Fails if a site keeps the 16-roll sum under `exact_closed`, or the flag
-    never reaches a site."""
-    real = KE.roll_ko_prob_closed
+    """On the compile-parity fixture's real rows at `--ko-ramp exact`: every P(KO) call goes through `roll_ko_prob`
+    (a spy on the module global `ko_given_hit` reads at call time), from every site the surface runs — the op's
+    `_ko_exact` (`_rolls` and the Choice-Band `ko_cb`), move resolution's `_exact_ko_ours` (Pursuit, Substitute;
+    END-STATE) and intent_threshold's `sub_break_given_hit` (PRODUCTION + the flag) — and on each call's REAL operands
+    the value is within 8 eps32 k1 of the 16-roll ORACLE. Fails if a site prices its KO by anything else."""
+    real = KE.roll_ko_prob
     calls: List[Tuple[str, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]] = []
 
     def spy(m: torch.Tensor, lo: torch.Tensor, hi: torch.Tensor) -> torch.Tensor:
@@ -412,29 +407,75 @@ def test_every_ko_site_of_the_forward_reads_the_closed_form_within_the_bound(
         calls.append((sys._getframe(2).f_code.co_name, m.detach(), lo.detach(), hi.detach(), out.detach()))
         return out
 
-    monkeypatch.setattr(KE, "roll_ko_prob_closed", spy)
-    fe = _policy(surface, "exact_closed").features_extractor
+    monkeypatch.setattr(KE, "roll_ko_prob", spy)
+    fe = _policy(surface).features_extractor
     with torch.no_grad():
         fe({"observation": rows})
     sites = {c[0] for c in calls}
     assert sites == SURFACE_SITES[surface], sites
     for site, m, lo, hi, out in calls:
-        b = roll_ko_prob(m, lo, hi)
+        b = _sum16(m, lo, hi)
         k1 = _k1(*torch.broadcast_tensors(m, lo, hi), _tiny(m.dtype))
         assert bool(((out.to(F64) - b.to(F64)).abs() <= 8.0 * EPS32 * k1).all()), site
 
 
-def test_the_tie_recorder_is_clean_on_the_endstate_arm_at_exact_closed(rows: torch.Tensor) -> None:
-    """K9(b): the END-STATE forward at `exact_closed` runs NO undeclared discrete op (the counts are float floor /
-    ceil, declared COUNT_CONTINUOUS and never a recorded cast) and records exactly the MARGIN sites the `exact` arm
-    records — the closed form adds no tie site, so it excludes no row the sum would not."""
+def test_the_tie_recorder_is_clean_on_the_endstate_arm(rows: torch.Tensor) -> None:
+    """K9(b): the END-STATE forward at `--ko-ramp exact` runs NO undeclared discrete op, and the closed form's counts
+    (float floor / ceil, declared COUNT_CONTINUOUS) are never a recorded site — they exclude no row."""
     from agents.training.rust_rollout.tie_margins import TieMargins
-    seen = {}
-    for mode in ("exact", "exact_closed"):
-        fe = _endstate_policy(mode).features_extractor
-        rec = TieMargins(rows.shape[0])
-        with torch.no_grad(), rec:
-            fe({"observation": rows})
-        rec.check()
-        seen[mode] = set(rec.sites_seen)
-    assert seen["exact"] == seen["exact_closed"] and seen["exact"]
+    fe = _policy("endstate").features_extractor
+    rec = TieMargins(rows.shape[0])
+    with torch.no_grad(), rec:
+        fe({"observation": rows})
+    rec.check()
+    assert rec.sites_seen and not any(s.startswith("ko_exact.py") for s in rec.sites_seen), rec.sites_seen
+
+
+# ===================================================================================== THE RETIRED VALUE
+def test_the_retired_exact_closed_value_is_refused_with_its_reason_everywhere() -> None:
+    """`--ko-ramp exact_closed` (legal only at 6e0a1a7a) is refused WITH its reason at every door a value can come
+    through: the parser (before argparse's bare "invalid choice"), a `model_config.json` (`_migrate_config`), a zip's
+    pickled extractor kwargs (`sanitize_dead_extractor_kwargs`) and the constructor — never a KeyError or a bare
+    "one of". `exact` and `ramp` pass every door."""
+    import argparse
+
+    from agents.model.model_version import ModelVersionError
+    from agents.model.model_version.migrations import _migrate_config
+    from agents.model.model_version.retired_levers import RETIRED_VALUES, refuse_retired_values
+    from agents.model.snapshot import sanitize_dead_extractor_kwargs
+    from main.train.parser.clean_world import add_clean_world_flags
+
+    assert [(r.field, r.value) for r in RETIRED_VALUES] == [("ko_ramp", "exact_closed")]
+    p = argparse.ArgumentParser(exit_on_error=False)
+    add_clean_world_flags(p)
+    with pytest.raises(argparse.ArgumentError, match="exact_closed was RETIRED .*pass --ko-ramp exact"):
+        p.parse_args(["--ko-ramp", "exact_closed"])
+    assert p.parse_args(["--ko-ramp", "exact"]).ko_ramp == "exact"
+    with pytest.raises(ModelVersionError, match="exact_closed was RETIRED"):
+        refuse_retired_values({"ko_ramp": "exact_closed"})
+    with pytest.raises(ModelVersionError, match="exact_closed was RETIRED"):
+        _migrate_config({"config_version": 154, "ko_ramp": "exact_closed"})
+    with pytest.raises(ModelVersionError, match="exact_closed was RETIRED"):
+        sanitize_dead_extractor_kwargs({"ko_ramp": "exact_closed"})
+    for ok in ("exact", "ramp"):
+        refuse_retired_values({"ko_ramp": ok})
+        sanitize_dead_extractor_kwargs({"ko_ramp": ok})
+    from agents.model.endstate_facts_test import _toggles
+    from agents.model.identity_init_test import _build_real_policy
+    with pytest.raises(ValueError, match="exact_closed was RETIRED"):
+        _build_real_policy(**_toggles(ko_ramp="exact_closed"))
+
+
+def test_the_history_doc_lists_exactly_the_retired_values() -> None:
+    """`designs/deleted_flags.md` §4 (the flag lives, a VALUE is gone) lists exactly `RETIRED_VALUES`, each with a
+    citation — the doc and the refusal table cannot drift."""
+    import re
+
+    from agents.model.model_version.retired_levers import RETIRED_VALUES
+    from utils.paths import repo_path
+    text = repo_path("designs", "deleted_flags.md").read_text(encoding="utf-8")
+    sec = text[text.index("## 4. RETIRED VALUES"):]
+    sec = sec[:sec.index("\n---")] if "\n---" in sec else sec
+    rows = re.findall(r"^\| --([a-z0-9-]+) ([A-Za-z0-9_]+) \| (.+?) \|", sec, flags=re.M)
+    assert {(f, v) for f, v, _c in rows} == {(r.flag, r.value) for r in RETIRED_VALUES}
+    assert all(re.search(r"gen3_[a-z0-9_]+|20\d\d-\d\d-\d\d|[0-9a-f]{8}", c) for _f, _v, c in rows)

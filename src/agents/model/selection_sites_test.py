@@ -157,6 +157,34 @@ def test_a_planted_topk_argmax_or_score_comparison_is_caught() -> None:
     assert len(_undeclared("damage_op", nodes)) == 5
 
 
+def test_a_planted_FUNCTION_spelled_step_is_caught() -> None:
+    """The 2026-10-10 scan gap (`gen3_ko_exact_closed_v1`'s finding): `torch.floor(x)` / `th.sign(x)` / ... — a step
+    function spelled as a torch FUNCTION — read as no node, because the cast branch required a call with no positional
+    argument (the METHOD form). Every step function in both spellings is a node now, undeclared until declared; a
+    Python builtin (`round(k)`) or a non-torch module (`math.floor(k)`) is not a tensor op and stays out."""
+    src = ("def f(x, v, k):\n"
+           "    a = torch.floor(x / 4.0)\n"
+           "    b = th.ceil(x)\n"
+           "    c = torch.round(x)\n"
+           "    d = torch.trunc(x)\n"
+           "    e = torch.sign(x)\n"
+           "    g = torch.frac(x)\n"
+           "    h = torch.heaviside(x, v)\n"
+           "    i = x.sign()\n"
+           "    j = x.frac()\n"
+           "    m = round(k) + math.floor(k)\n"
+           "    return a, b, c, d, e, g, h, i, j, m\n")
+    nodes = SS.scan_source("move_resolution", src)
+    assert sorted((n.kind, n.src) for n in nodes) == sorted([
+        ("cast", "torch.floor(x / 4.0)"), ("cast", "th.ceil(x)"), ("cast", "torch.round(x)"),
+        ("cast", "torch.trunc(x)"), ("cast", "torch.sign(x)"), ("cast", "torch.frac(x)"),
+        ("cast", "torch.heaviside(x, v)"), ("cast", "x.sign()"), ("cast", "x.frac()")])
+    assert len(_undeclared("move_resolution", nodes)) == len(nodes)
+    # the declared spelling of the same source line is NOT undeclared (the module's real floor)
+    real = SS.scan_source("move_resolution", "def g(o):\n    return torch.floor(o.our_maxhp / 4.0)\n")
+    assert len(real) == 1 and not _undeclared("move_resolution", real)
+
+
 # ----------------------------------------------------------------------------------------- runtime
 class _Ops(TorchFunctionMode):
     """Every torch op's issuing file, and every discrete op's float operands (by site, in order)."""

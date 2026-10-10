@@ -431,7 +431,7 @@ class ExtractorForward(ExtractorApi):
         pad = n_seats - crit.shape[-1]
         if pad > 0:
             crit = torch.cat([crit, crit.new_full((B, pad), CRIT_P_BASE)], dim=-1)
-        return ExactKo(maxhp=maxhp, crit_p=crit[:, :n_seats], closed=bool(op.ko_closed))
+        return ExactKo(maxhp=maxhp, crit_p=crit[:, :n_seats])
 
     def _op_content_rows(self, opctx: ExtractorContext, sp: Optional[torch.Tensor],
                          cells: Dict[str, Any]) -> torch.Tensor:

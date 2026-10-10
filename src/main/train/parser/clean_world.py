@@ -7,6 +7,7 @@ Lifted VERBATIM out of the old single-file `parser.py` (lines 329-649); the flag
 keep their original relative order, which is the order `--help` renders.
 """
 import argparse
+from typing import Callable
 
 from agents.training.value_sidecar import DEFAULT_SIDECAR_FRACTION
 from main.train.constants import CLIP_RANGE_DEFAULT
@@ -22,6 +23,20 @@ def _rnd_variants_arg(value: str) -> str:
         return canonical_rnd_variants(value)
     except ValueError as e:
         raise argparse.ArgumentTypeError(str(e)) from e
+
+
+def _not_retired(field: str) -> Callable[[str], str]:
+    """An argparse ``type`` that refuses a RETIRED value of a surviving flag WITH its reason
+    (`retired_levers.RETIRED_VALUES`; argparse applies ``type`` before ``choices``, so the reason replaces the bare
+    "invalid choice"). Every other value passes through unchanged for the ``choices`` check."""
+    def check(value: str) -> str:
+        from agents.model.model_version.retired_levers import retired_value_message
+        msg = retired_value_message(field, value)
+        if msg is not None:
+            raise argparse.ArgumentTypeError(msg)
+        return value
+    check.__name__ = field
+    return check
 
 
 def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
@@ -289,13 +304,12 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "and every mon's cure-availability flags (a live cleric on its side, Natural Cure, Rest, "
                              "Lum / Chesto Berry) as zero-init token content. Requires --damage-op.")
     parser.add_argument("--ko-ramp", "--ko_ramp", dest="ko_ramp", choices=KO_RAMP_MODES, default=None,
+                        type=_not_retired("ko_ramp"),
                         help="How the damage operator prices P(KO) (gen3_endstate_facts_v1, v152). 'ramp' (default; "
                              "production): the mean-roll 15%%-window ramp, no crit. 'exact': over the 16 gen-3 rolls + "
                              "the move's crit chance (1/16, high-crit 1/8), each roll's KO resolved over the observed HP "
-                             "interval (ours exact, theirs the HP-percentage bin). 'exact_closed': the SAME probability "
-                             "in closed form (the 16 roll terms are an arithmetic sequence: two counts and one "
-                             "arithmetic-series sum, O(1) per cell instead of 16 passes; state-dict identical to "
-                             "'exact'). Requires --damage-op.")
+                             "interval (ours exact, theirs the HP-percentage bin), in closed form. ('exact_closed', briefly "
+                             "legal, is RETIRED: it is now what 'exact' computes.) Requires --damage-op.")
     parser.add_argument("--drop-progress-clock", "--drop_progress_clock", dest="drop_progress_clock",
                         choices=DROP_PROGRESS_CLOCK_MODES, default=None,
                         help="The model reads the observation's turns_since_progress as 0 (gen3_endstate_facts_v1, "

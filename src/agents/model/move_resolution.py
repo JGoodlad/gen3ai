@@ -201,8 +201,6 @@ class MoveResolutionOps(NamedTuple):
     #     each seat's crit chance (an OTHER_move level: the base 1/16) — the exact Substitute break and Pursuit KO
     our_maxhp: Optional[torch.Tensor] = None   # [B]
     seat_crit: Optional[torch.Tensor] = None   # [B,K']
-    #     `--ko-ramp exact_closed`: the same rule in closed form (`ko_exact.roll_ko_prob_closed`)
-    ko_closed: bool = False
 
 
 def _g(t: torch.Tensor, idx: torch.Tensor) -> torch.Tensor:
@@ -548,8 +546,7 @@ def switch_facts(o: MoveResolutionOps, seat_spin: Optional[torch.Tensor] = None)
         ko2 = torch.clamp((h2 - o.our_hp[:, None]) / (ROLL_WINDOW * h2 + _EPS), 0.0, 1.0)
     else:
         # gen3_endstate_facts_v1 (`--ko-ramp exact`): the 16 rolls + the crit, our HP exact (±½ HP)
-        ko2 = _exact_ko_ours(h2, PURSUIT_SWITCH_MULT * pin_a[..., 2], o.our_hp[:, None], o.our_maxhp, o.seat_crit,
-                             o.ko_closed)
+        ko2 = _exact_ko_ours(h2, PURSUIT_SWITCH_MULT * pin_a[..., 2], o.our_hp[:, None], o.our_maxhp, o.seat_crit)
     pur = o.seat_kind[..., SEAT_KIND_IDX["pursuit"]].to(dt)
     p_sw = 1.0 - (alpha * pur * ko2).sum(-1, keepdim=True)                            # [B,1]
     per = torch.stack([p_spin_denied, e_pko, e_type, m_high, m_crit], dim=-1) * gate  # [B,6,5]
@@ -557,13 +554,12 @@ def switch_facts(o: MoveResolutionOps, seat_spin: Optional[torch.Tensor] = None)
 
 
 def _exact_ko_ours(mean_dmg: torch.Tensor, crit_dmg: torch.Tensor, our_hp: torch.Tensor, our_maxhp: torch.Tensor,
-                   seat_crit: Optional[torch.Tensor], closed: bool = False) -> torch.Tensor:
+                   seat_crit: Optional[torch.Tensor]) -> torch.Tensor:
     """gen3_endstate_facts_v1 (`--ko-ramp exact`): P(the hit deals ≥ ``our_hp`` | it hits) on OUR active, exact over
-    the 16 rolls and the seat's crit chance (`ko_exact.ko_given_hit`), our HP exact (±½ HP). Fractions of max HP.
-    ``closed`` (`exact_closed`): the same probability in closed form."""
+    the 16 rolls and the seat's crit chance (`ko_exact.ko_given_hit`), our HP exact (±½ HP). Fractions of max HP."""
     from agents.model.ko_exact import ko_given_hit, ours_hp_bounds
     lo, hi = ours_hp_bounds(our_hp, 1.0 / our_maxhp[:, None])
-    return ko_given_hit(mean_dmg, crit_dmg, lo, hi, seat_crit, closed=closed)
+    return ko_given_hit(mean_dmg, crit_dmg, lo, hi, seat_crit)
 
 
 def restored_move_facts(o: MoveResolutionOps, m: torch.Tensor, kind_t: torch.Tensor, flag_t: torch.Tensor,
@@ -602,8 +598,7 @@ def restored_move_facts(o: MoveResolutionOps, m: torch.Tensor, kind_t: torch.Ten
         brk = torch.clamp((high_k - SUB_HP_FRACTION) / (ROLL_WINDOW * high_k + _EPS), 0.0, 1.0)
     else:
         sub_frac = torch.floor(o.our_maxhp / 4.0) / o.our_maxhp                       # [B] the sub's exact HP
-        brk = _exact_ko_ours(high_k, pin_a[..., _PAIR["crit"]], sub_frac[:, None], o.our_maxhp, o.seat_crit,
-                             o.ko_closed)
+        brk = _exact_ko_ours(high_k, pin_a[..., _PAIR["crit"]], sub_frac[:, None], o.our_maxhp, o.seat_crit)
     p_sub_broken = (alpha * acc_k * brk).sum(-1, keepdim=True)                        # [B,1]
     p_resolve = m[..., MOVE_RESOLUTION_MOVE_IDX["p_resolve"]]                         # [B,4]
     p_ko_us = m[..., MOVE_RESOLUTION_MOVE_IDX["p_ko_us"]]                             # [B,4] (already gated)
@@ -988,8 +983,7 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
         is_brn=is_brn, is_slp=is_slp,
         # gen3_endstate_facts_v1 (`--ko-ramp exact`): our active's exact max HP and each seat's crit chance
         our_maxhp=(op._active_defender(ctx)[2] if op.ko_exact else None),
-        seat_crit=(_seat_crit(op, seat_nums, other_u is not None) if op.ko_exact else None),
-        ko_closed=bool(op.ko_closed))
+        seat_crit=(_seat_crit(op, seat_nums, other_u is not None) if op.ko_exact else None))
     if other_u is None:
         return ops
     # X5: OTHER_move (α's last seat) → one seat per PRIORITY level (`split_other_move`).

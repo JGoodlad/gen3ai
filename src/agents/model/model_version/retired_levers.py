@@ -317,6 +317,61 @@ RETIRED_FIELDS: tuple = tuple(r.field for r in RETIRED) + INERT_RETIRED_FIELDS
 RETIRED_FIELD_FLAGS: Dict[str, str] = {r.field: "--" + r.flag for r in RETIRED}
 
 
+class RetiredValue(NamedTuple):
+    """A retired VALUE of a field that survives (the flag lives; one of its values is gone). The flag is stored
+    WITHOUT its ``--`` for the freshness gate's reason (module docstring)."""
+    field: str
+    value: str
+    flag: str
+    citation: str
+    reason: str
+    #: A pin at or before this commit (and at or after the value's introduction) still accepts the value.
+    last_commit: str
+
+
+#: The last commit whose tree accepts `--ko-ramp exact_closed` (the commit that introduced it, on main).
+LAST_COMMIT_KO_EXACT_CLOSED = "6e0a1a7a674e4b0b9d3a1458819387b30a429e97"
+
+#: Every retired VALUE, refused WITH its reason at parse time (`main/train/parser`), on every config load
+#: (`_migrate_config` → :func:`refuse_retired_values`), on every zip load (`snapshot.sanitize_dead_extractor_kwargs`)
+#: and at construction (:func:`refuse_retired_value`). `designs/deleted_flags.md` §4 lists the same rows
+#: (`retired_levers_test` pins the two equal). Later units APPEND here.
+RETIRED_VALUES: tuple = (
+    RetiredValue("ko_ramp", "exact_closed", "ko-ramp", "gen3_ko_exact_closed_v1 (2026-10-10)",
+                 "the closed-form P(KO) it selected beside the 16-roll sum is now what 'exact' computes — one "
+                 "implementation (owner 2026-10-10: 'remove the old one'); pass --ko-ramp exact",
+                 LAST_COMMIT_KO_EXACT_CLOSED),
+)
+
+
+def retired_value(field: str, value: Any) -> Optional[RetiredValue]:
+    """The :data:`RETIRED_VALUES` row for ``field = value``, or None."""
+    return next((r for r in RETIRED_VALUES if r.field == field and r.value == value), None)
+
+
+def retired_value_message(field: str, value: Any) -> Optional[str]:
+    """The refusal text for a retired ``field = value`` (None when the value is not retired)."""
+    r = retired_value(field, value)
+    if r is None:
+        return None
+    return (f"--{r.flag} {r.value} was RETIRED ({r.citation}): {r.reason}. A checkpoint that recorded it can only "
+            f"be re-read pinned to {r.last_commit[:8]} (the one commit that accepted it).")
+
+
+def refuse_retired_value(field: str, value: Any, exc: Callable[[str], Exception] = ModelVersionError) -> None:
+    """Raise ``exc`` with the reason when ``field = value`` is a retired value (the constructor's guard)."""
+    msg = retired_value_message(field, value)
+    if msg is not None:
+        raise exc(msg)
+
+
+def refuse_retired_values(raw: Dict[str, Any]) -> None:
+    """`_migrate_config`'s half: refuse, on EVERY load, a config that recorded a retired value."""
+    for r in RETIRED_VALUES:
+        if raw.get(r.field) == r.value:
+            refuse_retired_value(r.field, r.value)
+
+
 class RetiredLeverCheckpointError(ModelVersionError):
     """A resume or fork of a checkpoint that recorded a DELETED lever ON. Typed, so a caller (and a
     test) can tell it from every other version refusal; a `ModelVersionError`, so every existing

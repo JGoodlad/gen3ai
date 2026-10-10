@@ -20,7 +20,7 @@ escape hatch, and it is a ratchet, not a bin:
   prose actually meant to name a live flag, correct the prose instead.
 
 Three categories, because "does not resolve" has three different causes and they call for different
-reactions from a reader.
+reactions from a reader — plus a fourth (§4) for a flag that RESOLVES but has lost one of its values.
 
 ---
 
@@ -285,6 +285,18 @@ constructor kwarg. A document that still spells one of these `--like-a-flag` is 
 | flag | citation | note |
 |---|---|---|
 | `--trainee-team-prob` | named as future-only since 2026-08-25 in `src/agents/training/CLAUDE.md` § MatchupSpec, which says so verbatim: "the future `--trainee-team-prob` shape — supported, no CLI yet" | the `pin_biased` draw exists; the flag does not |
+
+## 4. RETIRED VALUES — the flag lives, one of its VALUES is gone
+
+A surviving flag whose value was briefly legal and is now refused WITH its reason (at parse time, on every
+`model_config.json` / zip load and at construction). The table in code is
+`src/agents/model/model_version/retired_levers.py` `RETIRED_VALUES`; `ko_exact_test.py` pins this section equal to
+it. The first cell is deliberately NOT backticked: the flag itself is live, so it must not read as history to the
+freshness gate.
+
+| flag value | citation | note |
+|---|---|---|
+| --ko-ramp exact_closed | `gen3_ko_exact_closed_v1` (2026-10-10; legal only at `6e0a1a7a`) | the closed-form exact P(KO), carried beside the 16-roll sum for one commit; owner 2026-10-10 "remove the old one" made the closed form what `exact` computes, so the value has nothing left to select. No run recorded it. Pass `exact` |
 
 ---
 

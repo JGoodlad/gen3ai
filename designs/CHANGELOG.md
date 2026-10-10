@@ -13622,3 +13622,43 @@ read both cells for its end-of-turn rule and found them wrong.
   function alone (`ko_given_hit`, 2048 × 6 × 64 cells, forward + backward): 23.9 ms → 6.1 ms.
 - **Docs.** `ko_exact.py` docstring, ARCHITECTURE (`--ko-ramp` bullet), versioning, op_contracts (the EXACT reasons),
   file_layout, training_runbook, flag census, `design_hand_computed_features.md` D9 rows + Decision record.
+
+## 2026-10-10 — `--ko-ramp exact` IS the closed form (the 16-roll sum leaves the forward; `--ko-ramp exact_closed` RETIRED) + the K9(b) scan catches FUNCTION-spelled step ops (`gen3_ko_exact_closed_v1`; no config / obs / signature bump; production byte-identical)
+
+- **Why.** Owner, 2026-10-10, on the one-commit `exact_closed` build (`6e0a1a7a`): "remove the old one. If we're
+  confident on the math, I'm happy just to remove it."
+- **What (1): one implementation.** `ko_exact.roll_ko_prob` is the closed form (two run counts + one arithmetic-series
+  sum); the 16-roll loop, `roll_ko_prob_closed`, `ko_given_hit`'s `closed`, `DamageOperator.ko_closed`,
+  `MoveResolutionOps.ko_closed` and `ExactKo.closed` are deleted. The 16-roll + crit enumeration survives ONLY as the
+  REFERENCE ORACLE `_sum16` of `ko_exact_test.py` (renamed from `ko_exact_closed_test.py`): every bar of the
+  `exact_closed` entry above now holds the forward to it — ≤ 8 eps k1 in fp64 and fp32 over the 139,360-input grid, each
+  within 6 eps k1 of the exact rational value, ≤ 1e-12 on the k1 ≤ 563 domain, gradients off the kinks, valid
+  subgradients at exact kinks, continuity across count steps, compile fullgraph, and every KO site of the end-state and
+  production+`exact` forwards within 8 eps32 k1 of the oracle on its REAL operands.
+- **What (2): `exact_closed` RETIRED.** `model_version/retired_levers.RETIRED_VALUES` (a new table: a retired VALUE of a
+  surviving field) refuses it WITH its reason at parse time (an argparse `type`, so the reason replaces the bare
+  "invalid choice"), on every config load (`_migrate_config` → `refuse_retired_values`), on every zip load
+  (`snapshot.sanitize_dead_extractor_kwargs`) and at construction (the extractor build, `DamageOperator`) — never a
+  KeyError. `designs/deleted_flags.md` gains §4 RETIRED VALUES (first cell unbackticked: the flag lives), pinned equal
+  to the table. No run recorded the value.
+- **What (3): the K9(b) scan gap.** `selection_sites.scan_source` read `torch.floor(x)` (a step function spelled as a
+  torch FUNCTION) as no node — the cast branch required a call with no positional argument. `STEP_FUNCS` (round, floor,
+  ceil, trunc, fix, sign, sgn, frac, heaviside) are now nodes in their `torch.` / `th.` function spelling, and
+  sign / sgn / frac / fix join the method spellings (`CAST_ATTRS`). The three existing hits are DECLARED: `damage_kinds`
+  `torch.floor(hp_frac * 48.0 + _FLAIL_FLOOR_NUDGE)` (OBS: the attacker's observed HP fraction), `intent_threshold`
+  `torch.floor(maxhp / 4.0)` and `move_resolution` `torch.floor(o.our_maxhp / 4.0)` (OBS: our active's max HP from the
+  base-stat table and the observed spread — no weight reaches it). `selection_sites_test::
+  test_a_planted_FUNCTION_spelled_step_is_caught` fails on revert. The runtime recorder is unchanged in effect (a step
+  function returns a float, which it never records).
+- **Identity (CPU, `static_recovery_2026-10-09/graph_sha.py`).** Production unchanged (`421c6b98ce7937f4` /
+  `749c56159ab028f4` / `51c02c6c6342a045`). The end-state arm (`exact`): state `df71da47741a8a0f` (unchanged), outputs
+  `fb2134d54039c341` — BIT-identical to `exact_closed`'s at `6e0a1a7a`; graph `a1e771af47523746` (31,480 lines, one
+  graph). Against the 16-roll `exact` of `b132b099` the op's fp32 KO column moves ≤ 1.12e-6 on the 64 compile-parity
+  rows (the trunk outputs at init are unchanged on them). The closing test's end-state arm runs PINNED at `b132b099`.
+- **Versioning.** No `MODEL_CONFIG_VERSION` bump (no field / default / meaning change; the retired value is refused
+  version-independently), no `OBS_SEMANTICS_VERSION` bump (no obs cell moved), no `ARCH_SIGNATURE` bump (the real
+  function is unchanged, only its fp evaluation; a bump would refuse every checkpoint for a rounding-level change —
+  `designs/model/versioning.md` states the judgment).
+- **Docs.** `ko_exact.py` docstring, ARCHITECTURE, versioning, op_contracts (the EXACT reasons + the step-function
+  spellings), file_layout, training_runbook, flag census, flag registry (+ regenerated `designs/flag_registry.md`),
+  deleted_flags §4, `design_hand_computed_features.md` D9 rows + Decision record, `src/agents/model/CLAUDE.md`.

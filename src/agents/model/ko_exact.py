@@ -1,5 +1,5 @@
 """THE EXACT P(KO) — `--ko-ramp exact` (`gen3_endstate_facts_v1`, config v152; `design_hand_computed_features.md`
-D9 / §4 rank 3, an APPROXIMATE FACT made exact), and its closed form `--ko-ramp exact_closed`.
+D9 / §4 rank 3, an APPROXIMATE FACT made exact), computed in CLOSED FORM (`gen3_ko_exact_closed_v1`, 2026-10-10).
 
 **What it replaces.** Every P(KO) the damage operator hands the model was the continuous ramp
 ``acc · clamp((dmg − hp) / (0.15 · dmg), 0, 1)``, with ``dmg`` the op's MEAN-roll damage (its kernels multiply the
@@ -33,30 +33,28 @@ over the base):**
 
 and every caller folds accuracy in as before (``acc · P(KO | hit)``; the two are independent events).
 
-**Why a sum over the 16 rolls and not a closed-form count.** The count is a step function of the damage estimate,
-and the damage estimate moves with the weights (the spread / species beliefs reach it): a STEP there is a discrete
-threshold on a score, which K9(b)'s behaviour check (`selection_sites`, `tie_margins`) must exclude every row of that
-sits within a rounding error of a step — with ~2,300 (defender, candidate) cells per row, most rows. Resolving each
-step over the observed HP interval makes the function CONTINUOUS (piecewise linear: no new discrete site, nothing for
-K9(b) to exclude) and DIFFERENTIABLE (its true gradient, where gradients flow: the spread belief reaches the damage),
-and it is the exact probability given the observation rather than a smoothing. Sixteen fused element-wise terms per
-site (Inductor fuses the loop into one kernel; eager CPU pays 16 small passes): cost measured in
-`measurements/endstate_facts_2026-10-09/`.
+**Why the resolved interval, and not a staircase count of rolls.** A count of KOing rolls is a step function of the
+damage estimate, and the damage estimate moves with the weights (the spread / species beliefs reach it): a STEP there is
+a discrete threshold on a score, which K9(b)'s behaviour check (`selection_sites`, `tie_margins`) must exclude every row
+of that sits within a rounding error of a step — with ~2,300 (defender, candidate) cells per row, most rows. Resolving
+each step over the observed HP interval makes the function CONTINUOUS (piecewise linear) and DIFFERENTIABLE (its true
+gradient, where gradients flow: the spread belief reaches the damage), and it is the exact probability given the
+observation rather than a smoothing.
 
-**The closed form — `--ko-ramp exact_closed` (owner 2026-10-10: "optimise the 16 rolls, since it's a known formula
-with a crit chance").** Because the op's damage is continuous, the 16 terms ``(top · r/100 − hp_lo) / w`` are an EXACT
-arithmetic sequence in r, and the clamped sum has an exact closed form (`roll_ko_prob_closed`): the terms reading 0
-and the terms reading 1 are COUNTED, the middle run is its count times its mean. It is the SAME real function as the
-16-roll sum — for our exact HP and their percentage bin alike, there is no flooring error to quantify because neither
-spelling has a floor (re-verified 2026-10-10 at the pinned submodule: `sim/battle.ts` ``randomizer`` is
-``tr(tr(base · (100 − random(16))) / 100)`` and `data/mods/gen3/scripts.ts` ``modifyDamage`` applies it after the type
-chart and the ``ModifyDamage`` event, then floors once with a minimum of 1 — the per-roll floor and that minimum are
-the named residuals below, modelled by neither spelling). The two differ by floating-point rounding only, bounded by
-``8 eps (1 + (|top| + |hp_lo|) / w)`` (`ko_exact_closed_test.py` derives and pins it, in float64 and float32). The
-counts are a floor / ceil of a score, but the SUM is continuous across each count's step (the term that changes
-class sits on the clamp's edge), so they are tie-safe — declared ``COUNT_CONTINUOUS`` in `selection_sites`, never a
-K9(b) margin. The crit mix is unchanged; both of its calls route through the chosen spelling (`ko_given_hit`'s
-``closed``). `exact` stays the 16-roll sum, byte-identical (the closing test's `--arch endstate` pins it).
+**THE CLOSED FORM (owner 2026-10-10: "optimise the 16 rolls, since it's a known formula with a crit chance"; then
+"remove the old one").** Because the op's damage is continuous, the 16 terms ``(top · r/100 − hp_lo) / w`` are an
+EXACT arithmetic sequence in r, and their clamped sum has an exact closed form (`roll_ko_prob`): the terms reading 0
+and the terms reading 1 are COUNTED, the middle run is its count times its mean — O(1) per cell where the first build
+summed 16 passes. It is the SAME real function as that sum, for our exact HP and their percentage bin alike; there is
+no flooring error to quantify because neither spelling floors a roll (verified 2026-10-10 at the pinned submodule:
+`sim/battle.ts` ``randomizer`` is ``tr(tr(base · (100 − random(16))) / 100)`` and `data/mods/gen3/scripts.ts`
+``modifyDamage`` applies it after the type chart and the ``ModifyDamage`` event, then floors once with a minimum of 1 —
+the per-roll floor and that minimum are named residuals below). The 16-roll sum survives as the REFERENCE ORACLE of
+`ko_exact_test.py`, which derives and pins the rounding bound between the two (``8 eps (1 + (|top| + |hp_lo|) / w)``,
+float64 and float32) and the gradients. The counts are a floor / ceil of a score, but the SUM is continuous across
+each count's step (the term that changes class sits on the clamp's edge), so they are tie-safe — declared
+``COUNT_CONTINUOUS`` in `selection_sites`, never a K9(b) margin. (A brief `--ko-ramp exact_closed` value carried this
+form beside the sum on main at `6e0a1a7a`; it is RETIRED — `model_version/retired_levers.RETIRED_VALUES`.)
 
 **Residuals (named, not modelled):** the attacker's Focus Energy (+2 crit stages), Scope Lens (+1), Lucky Punch /
 Stick (+2) and the defender's Battle Armor / Shell Armor (no crit) — every site reads the move's own ratio only; a
@@ -72,11 +70,8 @@ from typing import Dict, Optional, Tuple, Union
 import torch
 
 #: `--ko-ramp`'s legal values. ``ramp`` = the legacy mean-anchored 15 %-window ramp, no crit (production;
-#: byte-identical — every site keeps its own inline expression); ``exact`` = this module's 16-roll SUM
-#: (`roll_ko_prob`); ``exact_closed`` = the SAME probability in closed form (`roll_ko_prob_closed`, O(1) per cell).
-KO_RAMP_MODES: Tuple[str, ...] = ("ramp", "exact", "exact_closed")
-#: The values that price P(KO) by the exact rule (either spelling of it): every site's ``op.ko_exact`` gate.
-KO_EXACT_MODES: Tuple[str, ...] = ("exact", "exact_closed")
+#: byte-identical — every site keeps its own inline expression); ``exact`` = this module (the closed form).
+KO_RAMP_MODES: Tuple[str, ...] = ("ramp", "exact")
 
 #: The 16 gen-3 damage rolls (percent of the 100-roll damage), `sim/battle.ts` ``randomizer``.
 ROLLS: Tuple[int, ...] = tuple(range(85, 101))
@@ -91,7 +86,7 @@ CRIT_P_BASE = CRIT_P_BY_RATIO[1]
 OPP_HP_PERCENT = 0.01
 
 _TINY = 1e-6
-#: `roll_ko_prob_closed`'s floor on the per-roll step in the COUNT division only (the value uses the true step): a
+#: `roll_ko_prob`'s floor on the per-roll step in the COUNT division only (the value uses the true step): a
 #: step below it (|top| < 1e-28 · width) can mis-count only terms of magnitude <= 16 · 1e-30, so the bound is far
 #: below fp32's resolution of anything the sum reads. Normal in fp32 (smallest normal ~1.2e-38).
 _STEP_FLOOR = 1e-30
@@ -99,19 +94,8 @@ _STEP_FLOOR = 1e-30
 
 def roll_ko_prob(mean_dmg: torch.Tensor, hp_lo: torch.Tensor, hp_hi: torch.Tensor) -> torch.Tensor:
     """P(the hit KOs | no crit) over the 16 gen-3 rolls, the target's HP uniform on ``[hp_lo, hp_hi]`` (the
-    observation's precision). ``mean_dmg`` is the op's MEAN-roll damage in the SAME units as the HP bounds (HP
-    points, or fractions of max HP); every argument broadcasts. Continuous, piecewise linear in the damage."""
-    top = mean_dmg / MEAN_ROLL
-    width = (hp_hi - hp_lo).clamp_min(_TINY)
-    total = torch.zeros_like(top + hp_lo)
-    for r in ROLLS:
-        total = total + ((top * (r / 100.0) - hp_lo) / width).clamp(0.0, 1.0)
-    return total / float(N_ROLLS)
-
-
-def roll_ko_prob_closed(mean_dmg: torch.Tensor, hp_lo: torch.Tensor, hp_hi: torch.Tensor) -> torch.Tensor:
-    """`roll_ko_prob` in CLOSED FORM (`--ko-ramp exact_closed`): the same probability, O(1) per cell instead of 16
-    passes. Every argument broadcasts as there.
+    observation's precision), IN CLOSED FORM. ``mean_dmg`` is the op's MEAN-roll damage in the SAME units as the HP
+    bounds (HP points, or fractions of max HP); every argument broadcasts. Continuous, piecewise linear in the damage.
 
     The 16 terms ``x_r = (top · r/100 − lo) / w`` are an EXACT arithmetic sequence in r (the op's damage is
     continuous — no per-roll floor), so with the sequence ascending from ``x_start`` (the r = 85 term for top >= 0,
@@ -126,7 +110,7 @@ def roll_ko_prob_closed(mean_dmg: torch.Tensor, hp_lo: torch.Tensor, hp_hi: torc
     (at n1) to the quotient's rounding, so a count off by one moves the value by that rounding, never a jump
     (`selection_sites` REASONS ``COUNT_CONTINUOUS``). The counts are read on DETACHED operands (piecewise constant:
     their gradient is 0, and a zero step must not put 0/0 into the backward); the value reads the true
-    ``x_start`` / ``step``, so its gradient is the brute force's term by term — Σ over the middle run of
+    ``x_start`` / ``step``, so its gradient is the 16-roll sum's term by term — Σ over the middle run of
     ∂x_r — including at top = 0, where ``torch.minimum``'s tie splits the two end terms' slopes (0.85 and 1.0 per
     100 w) evenly into the mean roll's 0.925 and ``abs``'s derivative is 0. Both ends are inclusive (a term exactly at
     0 or 1 is in the middle run), as `torch.clamp`'s subgradient is."""
@@ -141,7 +125,7 @@ def roll_ko_prob_closed(mean_dmg: torch.Tensor, hp_lo: torch.Tensor, hp_hi: torc
 
 
 def run_counts(x_start: torch.Tensor, step: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-    """`roll_ko_prob_closed`'s two run counts (FLOAT tensors, on DETACHED operands): ``n0`` = the terms below 0,
+    """`roll_ko_prob`'s two run counts (FLOAT tensors, on DETACHED operands): ``n0`` = the terms below 0,
     ``n1`` = the terms at most 1, of the ascending sequence ``x_start + step · j`` (j = 0 … 15)."""
     xs, sd = x_start.detach(), step.detach().clamp_min(_STEP_FLOOR)
     n0 = (-xs / sd).ceil().clamp(0.0, float(N_ROLLS))
@@ -159,14 +143,12 @@ def closed_sum(x_start: torch.Tensor, step: torch.Tensor, n0: torch.Tensor, n1: 
 
 
 def ko_given_hit(mean_dmg: torch.Tensor, crit_mean_dmg: torch.Tensor, hp_lo: torch.Tensor, hp_hi: torch.Tensor,
-                 crit_p: Optional[torch.Tensor] = None, closed: bool = False) -> torch.Tensor:
+                 crit_p: Optional[torch.Tensor] = None) -> torch.Tensor:
     """P(KO | the move hits) = the no-crit roll probability and the crit roll probability, mixed by the move's crit
     chance ``crit_p`` (None → the base 1/16). ``crit_mean_dmg`` is the op's crit column (2 × the PRE-screen
-    mean-roll damage: a crit ignores the screens). ``closed`` (`--ko-ramp exact_closed`) prices both through
-    `roll_ko_prob_closed`; False (`exact`) through the 16-roll sum."""
+    mean-roll damage: a crit ignores the screens)."""
     c = CRIT_P_BASE if crit_p is None else crit_p
-    roll = roll_ko_prob_closed if closed else roll_ko_prob
-    return (1.0 - c) * roll(mean_dmg, hp_lo, hp_hi) + c * roll(crit_mean_dmg, hp_lo, hp_hi)
+    return (1.0 - c) * roll_ko_prob(mean_dmg, hp_lo, hp_hi) + c * roll_ko_prob(crit_mean_dmg, hp_lo, hp_hi)
 
 
 def ours_hp_bounds(cur_hp: torch.Tensor, one_hp: Union[torch.Tensor, float]) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -201,6 +183,6 @@ def crit_p_table(n_moves: int) -> torch.Tensor:
     return out
 
 
-__all__ = ["KO_RAMP_MODES", "KO_EXACT_MODES", "ROLLS", "N_ROLLS", "MEAN_ROLL", "CRIT_P_BY_RATIO", "CRIT_P_BASE",
-           "OPP_HP_PERCENT", "roll_ko_prob", "roll_ko_prob_closed", "run_counts", "closed_sum", "ko_given_hit",
+__all__ = ["KO_RAMP_MODES", "ROLLS", "N_ROLLS", "MEAN_ROLL", "CRIT_P_BY_RATIO", "CRIT_P_BASE",
+           "OPP_HP_PERCENT", "roll_ko_prob", "run_counts", "closed_sum", "ko_given_hit",
            "ours_hp_bounds", "opp_hp_bounds", "crit_p_table"]

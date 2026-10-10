@@ -192,11 +192,11 @@ REASONS: Dict[str, str] = {
               "converged root by at most the final bracket width — a continuous, ulp-scale change, never a "
               "log pi jump",
     "COUNT_CONTINUOUS": "a floor / ceil that COUNTS the terms of an arithmetic sequence on one side of a clamp "
-                        "edge, read only by the closed-form sum over the counted runs (`ko_exact.roll_ko_prob_closed`, "
-                        "`--ko-ramp exact_closed`): the term that changes class at the count's step sits ON the edge "
+                        "edge, read only by the closed-form sum over the counted runs (`ko_exact.roll_ko_prob`, "
+                        "`--ko-ramp exact`): the term that changes class at the count's step sits ON the edge "
                         "(0 or 1) to the quotient's rounding, so a count off by one moves the sum by that rounding — "
                         "continuous, never a log pi jump. It returns a FLOAT (the runtime recorder never sees it) and "
-                        "its operands are detached; `ko_exact_closed_test` pins the continuity (the sum at both "
+                        "its operands are detached; `ko_exact_test` pins the continuity (the sum at both "
                         "neighbouring counts agrees at every step)",
 }
 
@@ -215,9 +215,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
         "PYTHON": ("op_reduction == 'principled'",   # gen3_op_reduction_principled_v1: the constructor's mode
-                   # gen3_endstate_facts_v1: the constructor's `--ko-ramp` / `--status-facts` modes (`exact` is
-                   # `ko_ramp in KO_EXACT_MODES`, an `in` test; `exact_closed` picks the closed-form spelling)
-                   "ko_ramp == 'exact_closed'", "status_facts == 'exact'"),
+                   # gen3_endstate_facts_v1: the constructor's `--ko-ramp` / `--status-facts` modes
+                   "ko_ramp == 'exact'", "status_facts == 'exact'"),
         "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
@@ -269,7 +268,10 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "damage_kinds": {
         # gen3_nonformula_damage_v1: the declared non-formula / HP-dependent-BP kinds (the attacker's
         # and the target's HP are observed fractions × computed max HP; the kinds are table bits).
-        "OBS": ("ctx.hp_and_active[:, sl, 0] > 0", "ratio < thr", "status < 0.5", "tgt_cur_hp > 0", "bp > 0"),
+        "OBS": ("ctx.hp_and_active[:, sl, 0] > 0", "ratio < thr", "status < 0.5", "tgt_cur_hp > 0", "bp > 0",
+                # the Flail / Reversal ratio floor(48 · f): the attacker's observed HP fraction (+ a constant nudge
+                # that keeps an exact k/48 off the step) — the function spelling the 2026-10-10 scan fix exposed
+                "torch.floor(hp_frac * 48.0 + _FLAIL_FLOOR_NUDGE)"),
         "TABLE": ("fixed + target_frac + endeavor > 0", "hp_scaled > 0", "flail > 0", "eff > 0",
                   "nonformula > 0", "op.MOVE_BEATUP[move_ids] > 0", "target_frac >= 1.0"),
         # gen3_beatup_exact_v1: Beat Up's ally filter reads observed HP fractions and 0/1 condition flags
@@ -333,6 +335,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "intent_threshold": {
         "INT": ("req_move_ids[..., None] == self.mech_nums",),
+        # `--ko-ramp exact`'s Substitute HP floor(maxhp / 4): our active's max HP is table + observed-spread arithmetic
+        # (`_active_defender`; no weight reaches it) — the function spelling the 2026-10-10 scan fix exposed
+        "OBS": ("torch.floor(maxhp / 4.0)",),
     },
     "masked_categorical": {
         "INT": ("actions.long()",),
@@ -366,6 +371,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # resolves the same way; a stage is a multiple of 1 and the ±5.5 cut sits half a stage from either side.
     "move_resolution": {
         "OBS": ("ctx.hp_and_active[..., 0] > 0", "ctx.hp_and_active[ar, our_act, 0] > 0",
+                # `--ko-ramp exact`'s Substitute HP floor(maxhp / 4) (as intent_threshold's; the 2026-10-10 scan fix)
+                "torch.floor(o.our_maxhp / 4.0)",
                 "o.beatup_n <= 0.5", "o.opp_alive_total > 1.5", "o.opp_cond[..., 1:].sum(-1) > 0.5",
                 "o.opp_hp > SUB_HP_FRACTION", "o.our_alive.sum(-1) - o.our_alive[ar, o.our_active] > 0.5",
                 "o.our_cond[..., 1:].sum(-1) > 0.5",
@@ -433,9 +440,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # gen3_static_recovery_v1 (`--eot-residual on`): the alive gate (an observed HP fraction against 0) and the weather's
     # turns remaining (an observed k / 5 rounded back to the integer k it encodes).
     # gen3_endstate_facts_v1 (`--ko-ramp exact`): THEIR reported HP fraction against "full" (an observation read; the
-    # HP Percentage Mod bin is exact at 100 %). The exact P(KO)'s 16-roll sum is clamps only — continuous, no cutoff.
-    # `--ko-ramp exact_closed` (`roll_ko_prob_closed`): the two COUNTS of the closed form (the terms reading 0, the
-    # terms reading at most 1) — a ceil / floor of a score whose sum is continuous across each step.
+    # HP Percentage Mod bin is exact at 100 %). The exact P(KO) is the CLOSED FORM (`roll_ko_prob`,
+    # gen3_ko_exact_closed_v1): its two run COUNTS (the terms reading 0, the terms reading at most 1) are a ceil / floor
+    # of a score whose sum is continuous across each step.
     "ko_exact": {
         "OBS": ("hp_frac >= 1.0",),
         "COUNT_CONTINUOUS": ("(-xs / sd).ceil()", "((1.0 - xs) / sd).floor()"),
@@ -488,7 +495,15 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
 
 # ------------------------------------------------------------------------------------------- the scan
 SELECTION_ATTRS = frozenset({"topk", "argmax", "argmin", "sort", "argsort", "kthvalue", "msort"})
-CAST_ATTRS = frozenset({"long", "int", "round", "floor", "ceil", "trunc"})
+#: METHOD spellings of a float -> int cast or a STEP function (``x.long()``, ``x.floor()``, ``x.sign()`` ...): each is a
+#: discontinuity in its operand — a score a rounding error can push across an integer (or across 0, for ``sign``).
+CAST_ATTRS = frozenset({"long", "int", "round", "floor", "ceil", "trunc", "fix", "sign", "sgn", "frac"})
+#: The same step functions spelled as torch FUNCTIONS (``torch.floor(x)``, ``th.sign(x)``, ``torch.heaviside(x, v)``)
+#: — the K9(b) scan gap of 2026-10-10 (`gen3_ko_exact_closed_v1`'s finding): the method branch requires NO
+#: positional argument, so a function spelling (whose operand IS its first argument) read as no node at all.
+STEP_FUNCS = frozenset({"round", "floor", "ceil", "trunc", "fix", "sign", "sgn", "frac", "heaviside"})
+#: The module names a forward module calls torch by.
+TORCH_NAMES = frozenset({"torch", "th"})
 COMPARE_CALLS = frozenset({"gt", "ge", "lt", "le", "eq", "ne", "greater", "greater_equal", "less", "less_equal"})
 _INT_DTYPES = ("long", "int", "int8", "int16", "int32", "int64", "uint8", "bool")
 _CMP_OPS = {ast.Gt: "gt", ast.GtE: "ge", ast.Lt: "lt", ast.LtE: "le", ast.Eq: "eq", ast.NotEq: "ne"}
@@ -530,8 +545,8 @@ def _is_int_dtype(n: ast.AST) -> bool:
 def scan_source(module: str, source: str) -> List[Node]:
     """Every discrete node of ``source`` (module docs): selection calls, value-position comparisons (not
     an ``if`` / ``while`` / ``assert`` / conditional-expression / comprehension test; no ``is`` / ``in``),
-    comparison calls (``x.gt(y)``, ``torch.ge(...)``) and float -> int casts (``.long()``, ``.round()``,
-    ``.to(torch.long)``, ...)."""
+    comparison calls (``x.gt(y)``, ``torch.ge(...)``) and float -> int casts / step functions (``.long()``,
+    ``.round()``, ``.to(torch.long)``, ``.sign()`` ... and their torch-FUNCTION spellings ``torch.floor(x)`` ...)."""
     tree = ast.parse(source)
     tests: set = set()
     for n in ast.walk(tree):
@@ -555,6 +570,9 @@ def scan_source(module: str, source: str) -> List[Node]:
             elif a in COMPARE_CALLS and n.args:
                 kind, ops = "cmp", (a,)
             elif a in CAST_ATTRS and not n.args:
+                kind, ops = "cast", (a,)
+            elif (a in STEP_FUNCS and n.args and isinstance(n.func.value, ast.Name)
+                  and n.func.value.id in TORCH_NAMES):
                 kind, ops = "cast", (a,)
             elif a in ("to", "type") and (any(_is_int_dtype(x) for x in n.args)
                                           or any(k.arg == "dtype" and _is_int_dtype(k.value) for k in n.keywords)):
@@ -600,7 +618,7 @@ def runtime_op(name: str) -> Optional[Tuple[str, str]]:
         return "cmp", _RUNTIME_OPS[name]
     if name in SELECTION_ATTRS or name in ("max", "min"):
         return "sel", name
-    if name in CAST_ATTRS or name in ("to", "type"):
+    if name in CAST_ATTRS or name in STEP_FUNCS or name in ("to", "type"):
         return "cast", name
     return None
 

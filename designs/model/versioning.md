@@ -250,14 +250,25 @@ reads, so the string compare is the only gate). A pre-v154 config migrates to of
 The NAMED ARM `--arch endstate` records it `on` (owner 2026-10-10, a pre-data amendment of the closing test); no
 config bump came with that: an arm's overlay is a launch surface, and the field already existed.
 
-**`ko_ramp = 'exact_closed'` (2026-10-10) is a new legal VALUE of an existing field, with NO config bump** — the same
-judgment as the arm amendment above, for the same reasons: no field is added, removed or defaulted differently, so
-`_migrate_config` has nothing to do (every past config's `ko_ramp` keeps its meaning, and no past config can hold the
-new value); it builds no parameter or buffer (an `exact_closed` model is state-dict identical to an `exact` one); and
-an older checkout handed an `exact_closed` config refuses LOUDLY at construction (`DamageOperator` / the extractor
-build check the value against `KO_RAMP_MODES`), never silently. `check_compatible`'s string compare keeps the two
-spellings apart on a resume (a run's spelling is fixed for its lifetime; they agree to a rounding bound, not bit for
-bit). No `ARCH_SIGNATURE` bump: the production forward is unchanged.
+**`ko_ramp = 'exact'` is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`, 2026-10-10), with NO config, obs-semantics
+or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
+commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove
+the old one" made the closed form what `exact` computes and RETIRED the value. The judgment, rule by rule:
+
+* **`MODEL_CONFIG_VERSION`: no bump.** No field is added, removed or defaulted differently; every recorded `ko_ramp`
+  keeps its meaning (`exact` = THE exact P(KO) over the 16 rolls + crit, resolved over the observed HP interval — the
+  same real function, now in closed form). The retired value is refused VERSION-INDEPENDENTLY, like
+  `refuse_structural`: `_migrate_config` → `retired_levers.refuse_retired_values` (config), `snapshot.
+  sanitize_dead_extractor_kwargs` (zip), the extractor build / `DamageOperator` (constructor) and the parser — each with
+  the reason (`retired_levers.RETIRED_VALUES`, mirrored in `designs/deleted_flags.md` §4). No run recorded it.
+* **`OBS_SEMANTICS_VERSION`: no bump.** No observation cell moved.
+* **`ARCH_SIGNATURE`: no bump — a judgment against the letter of "any forward-math change bumps it".** The real
+  function the `exact` forward computes is unchanged; only its floating-point evaluation is (the closed form and the
+  sum differ by ≤ 8 eps (1 + (|top| + |hp_lo|) / w), measured ≤ 1.2e-6 on the op's fp32 KO column over the
+  compile-parity rows, the class of difference a compile or a device change makes). A signature bump would refuse
+  every checkpoint, production's included, whose forward did not change at all. Production (`ramp`) is
+  byte-identical. A checkpoint trained under the 16-roll `exact` (the closing test's end-state arm, pinned at
+  `b132b099`) loads here and evaluates its KO cells to that rounding bound.
 
 ## Where the per-version entries went
 

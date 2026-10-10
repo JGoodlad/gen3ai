@@ -113,7 +113,8 @@ Smogon prior in `id1`. Read through `extractor_ctx.ability_known` / `revealed_ab
 species marginal when unknown (`ability_known_gate_test.py`, allowlist EMPTY; `op_status_rules_test.py`).
 
 🚨 **Every DISCRETE op in the forward is DECLARED in `selection_sites.py`** (`topk` / `argmax` / a value
-comparison / a float→int cast in a `FORWARD_MODULES` module): `MARGIN` for a score operand, `EXACT` with a
+comparison / a float→int cast / a STEP function — `floor` / `ceil` / `round` / `sign` / … as a method OR as
+`torch.floor(x)` — in a `FORWARD_MODULES` module): `MARGIN` for a score operand, `EXACT` with a
 reason otherwise. Keys are source text, so editing a declared line re-declares it. An `argmax` MARGIN rule's
 `payload` must be EVERYTHING its index reaches; every `hypothesis_set.stable_order` caller declares how it
 reads the order (`consumed`). Gates: `selection_sites_test.py`, `tie_identity_integration_test.py`; detail:

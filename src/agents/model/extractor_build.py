@@ -1162,6 +1162,7 @@ class ExtractorBuild(torch.nn.Module):
         # status move-resolution blocks (built inside `MoveResolutionCell`, above) and the cure flags' projection,
         # each a zero-init bias-free `IsolatedLinear` built LAST (no RNG draw; ON adds exactly 0 at init).
         from agents.model.ko_exact import KO_RAMP_MODES
+        from agents.model.model_version.retired_levers import refuse_retired_value
         from agents.model.eot_residual import G_LEDGER_MODES
         from agents.model.move_resolution_rules import MOVE_RESOLUTION_FACTS_MODES
         from agents.model.pair_outcome import STATUS_FACTS_MODES
@@ -1171,6 +1172,7 @@ class ExtractorBuild(torch.nn.Module):
                                     ("ko_ramp", ko_ramp, KO_RAMP_MODES),
                                     ("drop_progress_clock", drop_progress_clock, DROP_PROGRESS_CLOCK_MODES),
                                     ("g_ledger", g_ledger, G_LEDGER_MODES)):
+            refuse_retired_value(_name, _val, ValueError)
             if _val not in _modes:
                 raise ValueError(f"{_name} must be one of {_modes}, got {_val!r}")
         if move_resolution_facts == "full" and move_resolution != "on":

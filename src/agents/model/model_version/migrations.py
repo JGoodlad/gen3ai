@@ -356,8 +356,11 @@ def _migrate_config(data: dict) -> dict:
     # keep training without one is refused BEFORE this runs, from the raw file
     # (`model_version.retired_levers.check_no_retired_levers`). Version-INDEPENDENT, like the
     # sanitizers above: `cls(**data)` TypeErrors on a stale key whatever vintage wrote it.
-    from agents.model.model_version.retired_levers import RETIRED_FIELDS, refuse_structural
+    from agents.model.model_version.retired_levers import RETIRED_FIELDS, refuse_retired_values, refuse_structural
     refuse_structural(data)
+    # gen3_ko_exact_closed_v1: a retired VALUE of a surviving field (`ko_ramp = 'exact_closed'`) is refused WITH
+    # its reason on every load, never left to a KeyError or a bare "one of" downstream.
+    refuse_retired_values(data)
     for _dead in RETIRED_FIELDS:
         data.pop(_dead, None)
     # ---- POST-FLOOR MIGRATION BRANCHES (N > MIGRATION_FLOOR) --------------------------------
