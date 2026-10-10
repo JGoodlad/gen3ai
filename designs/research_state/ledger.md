@@ -23873,3 +23873,37 @@ The registered look-3 (FINAL) read of `design_static_tokens.md` §8.1 + §8.2 (P
 7. **The panel is the bots component only**, from in-loop evals at ≈ 14.0M; frozen pool and SmallRL are unread (as at looks 1 and 2).
 
 Tag: **READ · static-token screen look 3 (FINAL) · NOT DETECTED (t_NI 1.623 < 1.874; t_SUP −3.184) · static NOT adopted, legacy kept (owner: no deletion on this read) · s −2.1 % · all deviations valid · no HARM flag**
+### 2026-10-09 · DESCRIPTIVE · **THE REPRESENTATION PROBE BATTERY (`gen3_probe_battery_v1`, `python -m main.probe_battery`): what the screen arms represent easily and what they do not; the next Spikes-like gaps are the end-of-turn race, the SIZE of a boost, the opponent's HP at our decision tokens, the speed margin and Spikes on THEIR side at our decision tokens, in BOTH encodings; phazing's boost half is USED, its Spikes half barely (legacy) or not (static); depth looks saturated, width not under-used**
+
+- **Built.** `src/main/probe_battery/`: a fresh deterministic bank (games between checkpoints on the Rust eval core at the
+  checkpoints' own commit, replayed through `core_events --views` for BOTH sides' TRUE state, stratified by team
+  archetype and phase); captures at 10 token seats × every depth + the policy state + the critic pool; ~115 facts
+  (per-mon, side, field, speed, KO, belief, race, switch-in, aggregates, phazing, the opponent's next action); ridge
+  probes, folds BY BATTLE, with the input layer, a random network of the same architecture, a Hewitt & Liang control
+  task and a species-lookup baseline; phazing behaviour under obs edits; depth / capacity use (logit lens, round and
+  head ablations, update norms, effective rank, weight spectra, low-rank truncation, dead units). CPU only; the worker
+  runs BY PATH under the checkpoint's own checkout; every output refuses `models/`. Tests fail on revert (6 mutations,
+  each caught).
+- **Read** (8 legacy + 7 static finals at `6c6d2e09`, 25,000 decisions from 704 games): the poorly represented facts
+  (R² after the trunk at the best decision site, legacy / static): end-of-turn net HP change 0.18 / 0.19 (ours), 0.22 /
+  0.21 (theirs); Atk / Def / Spe stage ≤ 0.10 (even at the input 0.09–0.23; "boosted" AUC 0.97); their active's HP in
+  the policy state 0.27 / 0.34 (0.85 at its own input token); speed margin 0.41 / 0.40; Spikes on THEIR side at our
+  move seats 0.35 / 0.25 (0.72 / 0.81 at the board token). Static-specific (reproducing
+  the diag on fresh games): Spikes on our side at our active 0.45 / 0.25, move seats 0.59 / 0.24, policy state 0.44 /
+  0.26; the bench mon's entry chip 0.42 / 0.31 (gap −0.10 [−0.20, −0.01]); our HP on the move seats 0.77 / 0.43.
+- **Phazing:** with a phazer available, mass on the phaze 0.29 vs a boosted foe, 0.08 vs an unboosted one; zeroing the
+  foe's boosts −8.6 pp (legacy) / −6.4 pp (static); removing their Spikes −1.9 pp / −0.4 pp (gap +1.6 [+0.4, +2.8]);
+  both critics −5.9 / −5.6 pp of win-prob without their Spikes. A boosted mon sets up 0.16 / 0.22 / 0.28 with no /
+  a hidden / a revealed opposing phazer (natural strata, confounded).
+- **Depth / width:** logit lens KL 0.48 / 0.49 nats, top-1 agreement 0.61 / 0.58; static's last-round attention
+  matters more (top-1 0.58 vs 0.67 without it); token participation ratio ~18–22 of 128; every head 0.05–0.14 KL; 0 dead
+  FFN units; no rank-r truncation of the trunk is free (r = 96: KL 0.17).
+
+FINDINGS: (1) the control task cannot gate at a mon token (species is decodable at AUC ~0.99), so a species-lookup
+baseline was added and the tier never rests on selectivity; (2) the pool nearly fixes a species' set, so belief
+decodability here is species memory; (3) a first archetype map was wrong (`classify_team` reads an export, not a
+packed team: all teams read semi-stall) and was replaced before any read; (4) no "remove a revealed phazer" edit was
+built; (5) an edit is a lower bound (the event window remembers); (6) a near-constant column blew up a held-out fold
+and every probe was re-run on the fix; (7) busy windows 17:28–21:05 PDT, CPU nice 19, ≤ 4 threads.
+
+Tag: **DESCRIPTIVE · probe battery v1 · hunt list: residual race, boost size, opponent HP at our tokens, speed margin, their Spikes at our tokens; static: Spikes at our tokens, move-seat HP · phazing: boost half used, Spikes half not under static · depth > width** · tool: [`../prober/probe_battery.md`](../prober/probe_battery.md) · measurements: [`measurements/probe_battery_2026-10-09/`](measurements/probe_battery_2026-10-09/) · hand-computed candidates: [`design_hand_computed_features.md`](../endstate/design_hand_computed_features.md) §4

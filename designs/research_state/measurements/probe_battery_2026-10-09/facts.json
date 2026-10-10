@@ -1,0 +1,1693 @@
+[
+ {
+  "name": "hp_OA",
+  "family": "mon",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's HP fraction (true)",
+  "n_valid": 22969,
+  "base": 0.7562685026448148,
+  "species_lookup": 0.0103
+ },
+ {
+  "name": "status_any_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA has a major status",
+  "n_valid": 22969,
+  "base": 0.2056249727894118,
+  "species_lookup": 0.674
+ },
+ {
+  "name": "status_par_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's status is par",
+  "n_valid": 22969,
+  "base": 0.10858113108972964,
+  "species_lookup": 0.6885
+ },
+ {
+  "name": "status_slp_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's status is slp",
+  "n_valid": 22969,
+  "base": 0.0314336714702425,
+  "species_lookup": 0.8742
+ },
+ {
+  "name": "status_psn_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's status is psn/tox",
+  "n_valid": 22969,
+  "base": 0.0400539858069572,
+  "species_lookup": 0.7253
+ },
+ {
+  "name": "status_brn_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's status is brn",
+  "n_valid": 22969,
+  "base": 0.017850145848752667,
+  "species_lookup": 0.653
+ },
+ {
+  "name": "boost_atk_OA",
+  "family": "mon",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's atk stage / 6",
+  "n_valid": 22969,
+  "base": 0.002002699291645362,
+  "species_lookup": 0.002
+ },
+ {
+  "name": "boost_def_OA",
+  "family": "mon",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's def stage / 6",
+  "n_valid": 22969,
+  "base": 0.005667058549955344,
+  "species_lookup": 0.0051
+ },
+ {
+  "name": "boost_spa_OA",
+  "family": "mon",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's spa stage / 6",
+  "n_valid": 22969,
+  "base": 0.03443772078658112,
+  "species_lookup": 0.2976
+ },
+ {
+  "name": "boost_spd_OA",
+  "family": "mon",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's spd stage / 6",
+  "n_valid": 22969,
+  "base": 0.03309533174052258,
+  "species_lookup": 0.2964
+ },
+ {
+  "name": "boost_spe_OA",
+  "family": "mon",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's spe stage / 6",
+  "n_valid": 22969,
+  "base": -0.0001378668947137639,
+  "species_lookup": 0.0448
+ },
+ {
+  "name": "boosted_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA has a positive stage",
+  "n_valid": 22969,
+  "base": 0.11097566284992816,
+  "species_lookup": 0.8635
+ },
+ {
+  "name": "toxic_counter_OA",
+  "family": "mon",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's Toxic counter / 8 (Toxic rows only)",
+  "n_valid": 920,
+  "base": 0.2691576086956522,
+  "species_lookup": -0.0325
+ },
+ {
+  "name": "sleep_turns_OA",
+  "family": "mon",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA's sleep turns slept / 4 (asleep rows only)",
+  "n_valid": 722,
+  "base": 0.2690443213296399,
+  "species_lookup": 0.0023
+ },
+ {
+  "name": "substitute_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA has substitute",
+  "n_valid": 22969,
+  "base": 0.0005224432931342244,
+  "species_lookup": null
+ },
+ {
+  "name": "leechseed_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA has leechseed",
+  "n_valid": 22969,
+  "base": 0.017501850319996518,
+  "species_lookup": 0.6989
+ },
+ {
+  "name": "confusion_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "OA has confusion",
+  "n_valid": 22969,
+  "base": 0.000435369410945187,
+  "species_lookup": null
+ },
+ {
+  "name": "hp_TA",
+  "family": "mon",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's HP fraction (true)",
+  "n_valid": 24810,
+  "base": 0.7438110973991446,
+  "species_lookup": 0.0151
+ },
+ {
+  "name": "status_any_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA has a major status",
+  "n_valid": 24810,
+  "base": 0.19596936719064892,
+  "species_lookup": 0.6752
+ },
+ {
+  "name": "status_par_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's status is par",
+  "n_valid": 24810,
+  "base": 0.10326481257557436,
+  "species_lookup": 0.7003
+ },
+ {
+  "name": "status_slp_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's status is slp",
+  "n_valid": 24810,
+  "base": 0.02962515114873035,
+  "species_lookup": 0.8617
+ },
+ {
+  "name": "status_psn_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's status is psn/tox",
+  "n_valid": 24810,
+  "base": 0.03752519145505844,
+  "species_lookup": 0.7294
+ },
+ {
+  "name": "status_brn_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's status is brn",
+  "n_valid": 24810,
+  "base": 0.018097541313986297,
+  "species_lookup": 0.665
+ },
+ {
+  "name": "boost_atk_TA",
+  "family": "mon",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's atk stage / 6",
+  "n_valid": 24810,
+  "base": 0.0013704151653897516,
+  "species_lookup": 0.0023
+ },
+ {
+  "name": "boost_def_TA",
+  "family": "mon",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's def stage / 6",
+  "n_valid": 24810,
+  "base": 0.004628510065061438,
+  "species_lookup": -0.0032
+ },
+ {
+  "name": "boost_spa_TA",
+  "family": "mon",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's spa stage / 6",
+  "n_valid": 24810,
+  "base": 0.03322585014290792,
+  "species_lookup": 0.3048
+ },
+ {
+  "name": "boost_spd_TA",
+  "family": "mon",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's spd stage / 6",
+  "n_valid": 24810,
+  "base": 0.03155313749038995,
+  "species_lookup": 0.3039
+ },
+ {
+  "name": "boost_spe_TA",
+  "family": "mon",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's spe stage / 6",
+  "n_valid": 24810,
+  "base": 0.0004164987985091265,
+  "species_lookup": 0.043
+ },
+ {
+  "name": "boosted_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA has a positive stage",
+  "n_valid": 24810,
+  "base": 0.10636839983877469,
+  "species_lookup": 0.8633
+ },
+ {
+  "name": "toxic_counter_TA",
+  "family": "mon",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's Toxic counter / 8 (Toxic rows only)",
+  "n_valid": 930,
+  "base": 0.25120967741935485,
+  "species_lookup": -0.0181
+ },
+ {
+  "name": "sleep_turns_TA",
+  "family": "mon",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA's sleep turns slept / 4 (asleep rows only)",
+  "n_valid": 735,
+  "base": 0.27414965986394557,
+  "species_lookup": 0.0121
+ },
+ {
+  "name": "substitute_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA has substitute",
+  "n_valid": 24810,
+  "base": 0.00016122531237404273,
+  "species_lookup": null
+ },
+ {
+  "name": "leechseed_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA has leechseed",
+  "n_valid": 24810,
+  "base": 0.016686819830713424,
+  "species_lookup": 0.7015
+ },
+ {
+  "name": "confusion_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "TA has confusion",
+  "n_valid": 24810,
+  "base": 0.0005239822652156388,
+  "species_lookup": null
+ },
+ {
+  "name": "hp_OB",
+  "family": "mon",
+  "kind": "c",
+  "about": "OB",
+  "sites": [
+   "OB",
+   "PI"
+  ],
+  "desc": "OB's HP fraction (true)",
+  "n_valid": 24006,
+  "base": 0.8267082668922103,
+  "species_lookup": -0.0024
+ },
+ {
+  "name": "status_any_OB",
+  "family": "mon",
+  "kind": "b",
+  "about": "OB",
+  "sites": [
+   "OB",
+   "PI"
+  ],
+  "desc": "OB has a major status",
+  "n_valid": 24006,
+  "base": 0.09151878696992419,
+  "species_lookup": 0.6628
+ },
+ {
+  "name": "choice_locked_OA",
+  "family": "mon",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "our Choice Band active is locked into one move (CB holders only)",
+  "n_valid": 1184,
+  "base": 0.5211148648648649,
+  "species_lookup": 0.52
+ },
+ {
+  "name": "choice_locked_TA",
+  "family": "mon",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their Choice Band active is locked (true CB holders only)",
+  "n_valid": 1361,
+  "base": 0.4709772226304188,
+  "species_lookup": 0.5509
+ },
+ {
+  "name": "spikes_ours",
+  "family": "side",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "Spikes layers on our side / 3",
+  "n_valid": 25000,
+  "base": 0.2120133366894722,
+  "species_lookup": 0.0247
+ },
+ {
+  "name": "spikes_ours_any",
+  "family": "side",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "any Spikes on our side",
+  "n_valid": 25000,
+  "base": 0.34968,
+  "species_lookup": 0.5654
+ },
+ {
+  "name": "spikes_theirs",
+  "family": "side",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "TA",
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "Spikes layers on their side / 3",
+  "n_valid": 25000,
+  "base": 0.19517333638072012,
+  "species_lookup": 0.086
+ },
+ {
+  "name": "spikes_theirs_any",
+  "family": "side",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "TA",
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "any Spikes on their side",
+  "n_valid": 25000,
+  "base": 0.32128,
+  "species_lookup": 0.6875
+ },
+ {
+  "name": "screen_ours",
+  "family": "side",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "Reflect or Light Screen on our side",
+  "n_valid": 25000,
+  "base": 0.0,
+  "species_lookup": null
+ },
+ {
+  "name": "safeguard_ours",
+  "family": "side",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "Safeguard on our side",
+  "n_valid": 25000,
+  "base": 0.0,
+  "species_lookup": null
+ },
+ {
+  "name": "screen_turns_ours",
+  "family": "side",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "turns left on our screen / 5 (screen rows only)",
+  "n_valid": 0,
+  "base": null,
+  "species_lookup": null
+ },
+ {
+  "name": "screen_opp",
+  "family": "side",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "TA",
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "Reflect or Light Screen on their side",
+  "n_valid": 25000,
+  "base": 4e-05,
+  "species_lookup": null
+ },
+ {
+  "name": "safeguard_opp",
+  "family": "side",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "TA",
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "Safeguard on their side",
+  "n_valid": 25000,
+  "base": 0.0,
+  "species_lookup": null
+ },
+ {
+  "name": "screen_turns_opp",
+  "family": "side",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "TA",
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "turns left on their screen / 5 (screen rows only)",
+  "n_valid": 1,
+  "base": 0.4000000059604645,
+  "species_lookup": null
+ },
+ {
+  "name": "wish_ours",
+  "family": "side",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "a Wish resolves on our side this turn",
+  "n_valid": 25000,
+  "base": 0.00368,
+  "species_lookup": 0.8791
+ },
+ {
+  "name": "wish_theirs",
+  "family": "side",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "TA",
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "a Wish resolves on their side this turn",
+  "n_valid": 25000,
+  "base": 0.0048,
+  "species_lookup": 0.6611
+ },
+ {
+  "name": "weather_any",
+  "family": "field",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "any weather",
+  "n_valid": 25000,
+  "base": 0.66508,
+  "species_lookup": 0.6124
+ },
+ {
+  "name": "weather_sand",
+  "family": "field",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "the weather is sand",
+  "n_valid": 25000,
+  "base": 0.66488,
+  "species_lookup": 0.6121
+ },
+ {
+  "name": "weather_rain",
+  "family": "field",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "the weather is rain",
+  "n_valid": 25000,
+  "base": 0.00012,
+  "species_lookup": null
+ },
+ {
+  "name": "weather_sun",
+  "family": "field",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "the weather is sun",
+  "n_valid": 25000,
+  "base": 8e-05,
+  "species_lookup": null
+ },
+ {
+  "name": "weather_hail",
+  "family": "field",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "the weather is hail",
+  "n_valid": 25000,
+  "base": 0.0,
+  "species_lookup": null
+ },
+ {
+  "name": "weather_turns_left",
+  "family": "field",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "a TEMPORARY weather's turns left / 5",
+  "n_valid": 5,
+  "base": 0.5600000113248825,
+  "species_lookup": null
+ },
+ {
+  "name": "turn",
+  "family": "field",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "OA",
+   "OB",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "the turn number / 150 (capped)",
+  "n_valid": 25000,
+  "base": 0.21212960039321332,
+  "species_lookup": 0.1103
+ },
+ {
+  "name": "we_move_first",
+  "family": "speed",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "OA",
+   "TA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "our active's effective Speed beats theirs (ties excluded)",
+  "n_valid": 22682,
+  "base": 0.4985891896658143,
+  "species_lookup": 0.7259
+ },
+ {
+  "name": "speed_log_ratio",
+  "family": "speed",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "OA",
+   "TA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "log(our effective Speed / theirs), clipped \u00b12",
+  "n_valid": 22969,
+  "base": 0.0015231467365979827,
+  "species_lookup": 0.1498
+ },
+ {
+  "name": "we_can_ko",
+  "family": "ko",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "OA",
+   "TA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "a usable move of our active max-rolls their active's HP (no crit)",
+  "n_valid": 21333,
+  "base": 0.3159893123330052,
+  "species_lookup": 0.6924
+ },
+ {
+  "name": "they_can_ko",
+  "family": "ko",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "TA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "a move of their active max-rolls our active's HP (true set)",
+  "n_valid": 21226,
+  "base": 0.3193724677282578,
+  "species_lookup": 0.6855
+ },
+ {
+  "name": "our_best_dmg",
+  "family": "ko",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "OA",
+   "TA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "our best max-roll damage / their current HP, clipped at 2",
+  "n_valid": 21821,
+  "base": 0.8161371856824415,
+  "species_lookup": 0.1335
+ },
+ {
+  "name": "their_best_dmg",
+  "family": "ko",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "TA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "their best max-roll damage / our current HP, clipped at 2",
+  "n_valid": 21742,
+  "base": 0.8184613119344772,
+  "species_lookup": 0.1306
+ },
+ {
+  "name": "TA_hidden_phazer",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a phazer move (rows where none is revealed and < 4 are)",
+  "n_valid": 22779,
+  "base": 0.13235875148162782,
+  "species_lookup": 0.9541
+ },
+ {
+  "name": "TA_hidden_recovery",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a recovery move (rows where none is revealed and < 4 are)",
+  "n_valid": 20846,
+  "base": 0.06572004221433368,
+  "species_lookup": 0.9941
+ },
+ {
+  "name": "TA_hidden_rest",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a rest move (rows where none is revealed and < 4 are)",
+  "n_valid": 22092,
+  "base": 0.04404309252217997,
+  "species_lookup": 0.9322
+ },
+ {
+  "name": "TA_hidden_setup",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a setup move (rows where none is revealed and < 4 are)",
+  "n_valid": 20565,
+  "base": 0.1640165329443229,
+  "species_lookup": 0.8971
+ },
+ {
+  "name": "TA_hidden_status",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a status move (rows where none is revealed and < 4 are)",
+  "n_valid": 19996,
+  "base": 0.15973194638927785,
+  "species_lookup": 0.9094
+ },
+ {
+  "name": "TA_hidden_earthquake",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a earthquake move (rows where none is revealed and < 4 are)",
+  "n_valid": 19867,
+  "base": 0.19373836009462927,
+  "species_lookup": 0.9585
+ },
+ {
+  "name": "TA_hidden_explosion",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a explosion move (rows where none is revealed and < 4 are)",
+  "n_valid": 22929,
+  "base": 0.1403026734702778,
+  "species_lookup": 0.9869
+ },
+ {
+  "name": "TA_hidden_spikes",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a spikes move (rows where none is revealed and < 4 are)",
+  "n_valid": 21066,
+  "base": 0.02064938763884933,
+  "species_lookup": 1.0
+ },
+ {
+  "name": "TA_hidden_rapidspin",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a rapidspin move (rows where none is revealed and < 4 are)",
+  "n_valid": 22289,
+  "base": 0.05285118219749652,
+  "species_lookup": 0.9965
+ },
+ {
+  "name": "TA_hidden_protect",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a protect move (rows where none is revealed and < 4 are)",
+  "n_valid": 22157,
+  "base": 0.08146409712506206,
+  "species_lookup": 0.9107
+ },
+ {
+  "name": "TA_hidden_batonpass",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a batonpass move (rows where none is revealed and < 4 are)",
+  "n_valid": 22910,
+  "base": 0.030292448712352683,
+  "species_lookup": 0.9766
+ },
+ {
+  "name": "TA_hidden_substitute",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED moves include a substitute move (rows where none is revealed and < 4 are)",
+  "n_valid": 22910,
+  "base": 0.03941510257529463,
+  "species_lookup": 0.9124
+ },
+ {
+  "name": "TA_hidden_item_leftovers",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED item is leftovers",
+  "n_valid": 6131,
+  "base": 0.5791877344641984,
+  "species_lookup": 0.9058
+ },
+ {
+  "name": "TA_hidden_item_choiceband",
+  "family": "belief",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active's UNREVEALED item is choiceband",
+  "n_valid": 6131,
+  "base": 0.2663513293100636,
+  "species_lookup": 0.9497
+ },
+ {
+  "name": "opp_hidden_count",
+  "family": "belief",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "opponent mons not yet revealed / 6",
+  "n_valid": 25000,
+  "base": 0.29265333729445936,
+  "species_lookup": 0.0513
+ },
+ {
+  "name": "opp_switches_next",
+  "family": "opp_action",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "the opponent's ACTUAL choice at this board is a switch",
+  "n_valid": 22791,
+  "base": 0.19709534465359133,
+  "species_lookup": 0.5956
+ },
+ {
+  "name": "opp_attacks_next",
+  "family": "opp_action",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "the opponent's actual choice is a damaging move",
+  "n_valid": 22791,
+  "base": 0.5415295511386073,
+  "species_lookup": 0.6737
+ },
+ {
+  "name": "residual_OA",
+  "family": "race",
+  "kind": "c",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "VF",
+   "PI"
+  ],
+  "desc": "our active's net end-of-turn HP change (approx.)",
+  "n_valid": 22969,
+  "base": 0.00577680787147895,
+  "species_lookup": 0.0813
+ },
+ {
+  "name": "residual_TA",
+  "family": "race",
+  "kind": "c",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "VF",
+   "PI"
+  ],
+  "desc": "their active's net end-of-turn HP change (approx.)",
+  "n_valid": 24810,
+  "base": 0.00713925836356308,
+  "species_lookup": 0.0889
+ },
+ {
+  "name": "residual_race",
+  "family": "race",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "OA",
+   "TA",
+   "VF",
+   "PI"
+  ],
+  "desc": "residual_OA minus residual_TA",
+  "n_valid": 22969,
+  "base": -0.0013033871740171536,
+  "species_lookup": 0.05
+ },
+ {
+  "name": "entry_chip_OB",
+  "family": "switch_in",
+  "kind": "c",
+  "about": "OB",
+  "sites": [
+   "OB",
+   "PI"
+  ],
+  "desc": "Spikes damage our bench mon takes on entry (fraction)",
+  "n_valid": 24006,
+  "base": 0.04114075678791055,
+  "species_lookup": 0.0975
+ },
+ {
+  "name": "threat_on_OB",
+  "family": "switch_in",
+  "kind": "c",
+  "about": "OB",
+  "sites": [
+   "OB",
+   "PI"
+  ],
+  "desc": "their active's best max-roll on our bench mon / its HP, cap 2",
+  "n_valid": 22654,
+  "base": 0.8810538245708545,
+  "species_lookup": 0.0474
+ },
+ {
+  "name": "OB_ko_by_TA",
+  "family": "switch_in",
+  "kind": "b",
+  "about": "OB",
+  "sites": [
+   "OB",
+   "PI"
+  ],
+  "desc": "their active can max-roll KO our bench mon (from full entry)",
+  "n_valid": 22098,
+  "base": 0.3417503846501946,
+  "species_lookup": 0.5896
+ },
+ {
+  "name": "OB_outspeeds_TA",
+  "family": "switch_in",
+  "kind": "b",
+  "about": "OB",
+  "sites": [
+   "OB",
+   "PI"
+  ],
+  "desc": "our bench mon outspeeds their active (ties excluded)",
+  "n_valid": 23627,
+  "base": 0.4952808227874889,
+  "species_lookup": 0.7224
+ },
+ {
+  "name": "our_hp_total",
+  "family": "aggregate",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "VF",
+   "PI"
+  ],
+  "desc": "our summed HP fractions / 6",
+  "n_valid": 25000,
+  "base": 0.6192408749393746,
+  "species_lookup": 0.0711
+ },
+ {
+  "name": "their_hp_total",
+  "family": "aggregate",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "VF",
+   "PI"
+  ],
+  "desc": "their summed HP fractions / 6 (true)",
+  "n_valid": 25000,
+  "base": 0.6197392824729253,
+  "species_lookup": 0.0507
+ },
+ {
+  "name": "hp_total_diff",
+  "family": "aggregate",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "VF",
+   "PI"
+  ],
+  "desc": "our HP total minus theirs",
+  "n_valid": 25000,
+  "base": -0.0004984075285925428,
+  "species_lookup": -0.0059
+ },
+ {
+  "name": "our_alive",
+  "family": "aggregate",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "VF",
+   "PI"
+  ],
+  "desc": "our mons alive / 6",
+  "n_valid": 25000,
+  "base": 0.7202733335912228,
+  "species_lookup": 0.0672
+ },
+ {
+  "name": "their_alive",
+  "family": "aggregate",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "VF",
+   "PI"
+  ],
+  "desc": "their mons alive / 6",
+  "n_valid": 25000,
+  "base": 0.72800000038445,
+  "species_lookup": 0.0299
+ },
+ {
+  "name": "alive_diff",
+  "family": "aggregate",
+  "kind": "c",
+  "about": "-",
+  "sites": [
+   "VF",
+   "PI"
+  ],
+  "desc": "our alive minus theirs / 6",
+  "n_valid": 25000,
+  "base": -0.007726666852831841,
+  "species_lookup": 0.008
+ },
+ {
+  "name": "outcome_win",
+  "family": "aggregate",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "VF",
+   "PI"
+  ],
+  "desc": "the viewer WINS this game (draws excluded)",
+  "n_valid": 25000,
+  "base": 0.49068,
+  "species_lookup": 0.5207
+ },
+ {
+  "name": "TA_phazer_true",
+  "family": "phazing",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active HAS Roar / Whirlwind (true set)",
+  "n_valid": 24810,
+  "base": 0.14046755340588474,
+  "species_lookup": 0.9568
+ },
+ {
+  "name": "TA_phazer_revealed",
+  "family": "phazing",
+  "kind": "b",
+  "about": "TA",
+  "sites": [
+   "TA",
+   "PI"
+  ],
+  "desc": "their active has REVEALED Roar / Whirlwind",
+  "n_valid": 24810,
+  "base": 0.01894397420395002,
+  "species_lookup": 0.9289
+ },
+ {
+  "name": "opp_team_phazer_true",
+  "family": "phazing",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "an alive opponent mon has Roar / Whirlwind",
+  "n_valid": 25000,
+  "base": 0.42744,
+  "species_lookup": 0.5938
+ },
+ {
+  "name": "opp_team_phazer_revealed",
+  "family": "phazing",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "an alive opponent mon has REVEALED Roar / Whirlwind",
+  "n_valid": 25000,
+  "base": 0.03412,
+  "species_lookup": 0.4929
+ },
+ {
+  "name": "OA_phazer",
+  "family": "phazing",
+  "kind": "b",
+  "about": "OA",
+  "sites": [
+   "OA",
+   "Mcat",
+   "PI"
+  ],
+  "desc": "our active has a usable Roar / Whirlwind",
+  "n_valid": 22969,
+  "base": 0.13278767033828204,
+  "species_lookup": 0.958
+ },
+ {
+  "name": "our_team_phazer",
+  "family": "phazing",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "OA"
+  ],
+  "desc": "an alive mon of ours has Roar / Whirlwind",
+  "n_valid": 25000,
+  "base": 0.3872,
+  "species_lookup": 0.7378
+ },
+ {
+  "name": "phaze_value",
+  "family": "phazing",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "OA",
+   "TA",
+   "VF"
+  ],
+  "desc": "their active is boosted or behind a Substitute AND Spikes are on their side (phazing chips + erases)",
+  "n_valid": 24810,
+  "base": 0.03466344216041919,
+  "species_lookup": 0.6669
+ },
+ {
+  "name": "phaze_value_tool",
+  "family": "phazing",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "OA",
+   "TA",
+   "VF"
+  ],
+  "desc": "phaze_value AND our active can phaze now",
+  "n_valid": 22969,
+  "base": 0.0031346597588053464,
+  "species_lookup": 0.8814
+ },
+ {
+  "name": "phaze_threat",
+  "family": "phazing",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "OA",
+   "TA",
+   "VF"
+  ],
+  "desc": "our active is boosted AND an alive opponent mon has a phazer",
+  "n_valid": 22969,
+  "base": 0.04732465496974183,
+  "species_lookup": 0.8334
+ },
+ {
+  "name": "phaze_threat_believed",
+  "family": "phazing",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "OA",
+   "TA",
+   "VF"
+  ],
+  "desc": "our active is boosted AND an alive opponent mon has REVEALED a phazer",
+  "n_valid": 22969,
+  "base": 0.004571378814924463,
+  "species_lookup": 0.7971
+ },
+ {
+  "name": "opp_hidden_has_tyranitar",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include tyranitar (rows where tyranitar is not revealed and some mon is hidden)",
+  "n_valid": 11354,
+  "base": 0.40135635018495686,
+  "species_lookup": 0.5513
+ },
+ {
+  "name": "opp_hidden_has_swampert",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include swampert (rows where swampert is not revealed and some mon is hidden)",
+  "n_valid": 12525,
+  "base": 0.3544111776447106,
+  "species_lookup": 0.5216
+ },
+ {
+  "name": "opp_hidden_has_metagross",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include metagross (rows where metagross is not revealed and some mon is hidden)",
+  "n_valid": 13916,
+  "base": 0.22089680942799655,
+  "species_lookup": 0.5611
+ },
+ {
+  "name": "opp_hidden_has_jirachi",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include jirachi (rows where jirachi is not revealed and some mon is hidden)",
+  "n_valid": 14590,
+  "base": 0.21439342015078822,
+  "species_lookup": 0.5251
+ },
+ {
+  "name": "opp_hidden_has_salamence",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include salamence (rows where salamence is not revealed and some mon is hidden)",
+  "n_valid": 14223,
+  "base": 0.13450045700625746,
+  "species_lookup": 0.5722
+ },
+ {
+  "name": "opp_hidden_has_celebi",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include celebi (rows where celebi is not revealed and some mon is hidden)",
+  "n_valid": 15483,
+  "base": 0.16618226441904024,
+  "species_lookup": 0.5714
+ },
+ {
+  "name": "opp_hidden_has_zapdos",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include zapdos (rows where zapdos is not revealed and some mon is hidden)",
+  "n_valid": 13308,
+  "base": 0.05755936278929967,
+  "species_lookup": 0.5472
+ },
+ {
+  "name": "opp_hidden_has_skarmory",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include skarmory (rows where skarmory is not revealed and some mon is hidden)",
+  "n_valid": 13007,
+  "base": 0.09041285461674484,
+  "species_lookup": 0.5814
+ },
+ {
+  "name": "opp_hidden_has_blissey",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include blissey (rows where blissey is not revealed and some mon is hidden)",
+  "n_valid": 13839,
+  "base": 0.13021172050003613,
+  "species_lookup": 0.6065
+ },
+ {
+  "name": "opp_hidden_has_gengar",
+  "family": "belief",
+  "kind": "b",
+  "about": "-",
+  "sites": [
+   "PI",
+   "VF",
+   "TA"
+  ],
+  "desc": "the opponent's UNREVEALED mons include gengar (rows where gengar is not revealed and some mon is hidden)",
+  "n_valid": 15687,
+  "base": 0.14253840759864855,
+  "species_lookup": 0.519
+ }
+]

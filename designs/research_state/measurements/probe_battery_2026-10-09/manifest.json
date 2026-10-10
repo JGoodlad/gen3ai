@@ -1,0 +1,41 @@
+{
+ "battles": 704,
+ "by_archetype": {
+  "balance": 5000,
+  "hyper_offense": 5000,
+  "offense": 5000,
+  "semi_stall": 5000,
+  "stall": 5000
+ },
+ "by_phase": {
+  "endgame": 5449,
+  "midgame": 17714,
+  "opening": 1837
+ },
+ "by_seat_arm": {
+  "L": 13399,
+  "S": 11601
+ },
+ "cells": 22,
+ "checkout": "/home/goodlad/dev/gen3ai/.claude/worktrees/st-look1-pin-6c6d2e09",
+ "commit": "6c6d2e09",
+ "decisions": 25000,
+ "decisions_replayed": 65489,
+ "games": 704,
+ "obs_dim": 2761,
+ "pairs_per_cell": 16,
+ "play": {
+  "cells_done": 22,
+  "cmd": "play",
+  "games": 0,
+  "note": "nothing to do"
+ },
+ "schema": "gen3_probe_battery_v1",
+ "seed": 20261009,
+ "sha256": {
+  "decisions.jsonl.gz (content)": "c2912ee241afdf16bee1aea6de8eeddfebafea7d2c40afde84516e8ce74412fa",
+  "games.jsonl.gz (content)": "f7a52d43d8d8e01d4c1d53215ab1be99829ce5c042932cdd2cfb1045e5bc5964",
+  "masks.npy": "91aab914b64b71ae4112d5aa8caf7c6c5fccae8e6ecc057265d19cd5db685c1d",
+  "rows.npy": "d6d61b8ea7c2817b4c43225495bf1b41a132fc6bb01c81e13ac54852c9925fa0"
+ }
+}

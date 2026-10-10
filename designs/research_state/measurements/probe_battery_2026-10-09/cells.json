@@ -1,0 +1,200 @@
+[
+ {
+  "cell": "L1xS1",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1001/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1001/final_model.zip",
+  "player_label": "L1",
+  "opponent_label": "S1",
+  "pairs": 16,
+  "seed": 20261009
+ },
+ {
+  "cell": "L2xS2",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1002/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1002/final_model.zip",
+  "player_label": "L2",
+  "opponent_label": "S2",
+  "pairs": 16,
+  "seed": 20262009
+ },
+ {
+  "cell": "L3xS3",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1003/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1003/final_model.zip",
+  "player_label": "L3",
+  "opponent_label": "S3",
+  "pairs": 16,
+  "seed": 20263009
+ },
+ {
+  "cell": "L4xS4",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1004/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1004/final_model.zip",
+  "player_label": "L4",
+  "opponent_label": "S4",
+  "pairs": 16,
+  "seed": 20264009
+ },
+ {
+  "cell": "L5xS5",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1005/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1005/final_model.zip",
+  "player_label": "L5",
+  "opponent_label": "S5",
+  "pairs": 16,
+  "seed": 20265009
+ },
+ {
+  "cell": "L6xS6",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1006/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1006/final_model.zip",
+  "player_label": "L6",
+  "opponent_label": "S6",
+  "pairs": 16,
+  "seed": 20266009
+ },
+ {
+  "cell": "L7xS7",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1007/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1007/final_model.zip",
+  "player_label": "L7",
+  "opponent_label": "S7",
+  "pairs": 16,
+  "seed": 20267009
+ },
+ {
+  "cell": "L1xL2",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1001/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1002/final_model.zip",
+  "player_label": "L1",
+  "opponent_label": "L2",
+  "pairs": 16,
+  "seed": 20268009
+ },
+ {
+  "cell": "L2xL3",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1002/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1003/final_model.zip",
+  "player_label": "L2",
+  "opponent_label": "L3",
+  "pairs": 16,
+  "seed": 20269009
+ },
+ {
+  "cell": "L3xL4",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1003/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1004/final_model.zip",
+  "player_label": "L3",
+  "opponent_label": "L4",
+  "pairs": 16,
+  "seed": 20270009
+ },
+ {
+  "cell": "L4xL5",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1004/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1005/final_model.zip",
+  "player_label": "L4",
+  "opponent_label": "L5",
+  "pairs": 16,
+  "seed": 20271009
+ },
+ {
+  "cell": "L5xL6",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1005/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1006/final_model.zip",
+  "player_label": "L5",
+  "opponent_label": "L6",
+  "pairs": 16,
+  "seed": 20272009
+ },
+ {
+  "cell": "L6xL7",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1006/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1007/final_model.zip",
+  "player_label": "L6",
+  "opponent_label": "L7",
+  "pairs": 16,
+  "seed": 20273009
+ },
+ {
+  "cell": "L7xL8",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1007/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1008/final_model.zip",
+  "player_label": "L7",
+  "opponent_label": "L8",
+  "pairs": 16,
+  "seed": 20274009
+ },
+ {
+  "cell": "L8xL1",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1008/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_legacy_s1001/final_model.zip",
+  "player_label": "L8",
+  "opponent_label": "L1",
+  "pairs": 16,
+  "seed": 20275009
+ },
+ {
+  "cell": "S1xS2",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1001/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1002/final_model.zip",
+  "player_label": "S1",
+  "opponent_label": "S2",
+  "pairs": 16,
+  "seed": 20276009
+ },
+ {
+  "cell": "S2xS3",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1002/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1003/final_model.zip",
+  "player_label": "S2",
+  "opponent_label": "S3",
+  "pairs": 16,
+  "seed": 20277009
+ },
+ {
+  "cell": "S3xS4",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1003/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1004/final_model.zip",
+  "player_label": "S3",
+  "opponent_label": "S4",
+  "pairs": 16,
+  "seed": 20278009
+ },
+ {
+  "cell": "S4xS5",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1004/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1005/final_model.zip",
+  "player_label": "S4",
+  "opponent_label": "S5",
+  "pairs": 16,
+  "seed": 20279009
+ },
+ {
+  "cell": "S5xS6",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1005/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1006/final_model.zip",
+  "player_label": "S5",
+  "opponent_label": "S6",
+  "pairs": 16,
+  "seed": 20280009
+ },
+ {
+  "cell": "S6xS7",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1006/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1007/final_model.zip",
+  "player_label": "S6",
+  "opponent_label": "S7",
+  "pairs": 16,
+  "seed": 20281009
+ },
+ {
+  "cell": "S7xS1",
+  "player": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1007/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/rb_st_static_s1001/final_model.zip",
+  "player_label": "S7",
+  "opponent_label": "S1",
+  "pairs": 16,
+  "seed": 20282009
+ }
+]

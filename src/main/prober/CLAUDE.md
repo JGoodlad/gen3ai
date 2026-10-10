@@ -29,6 +29,7 @@ already cost a wrong reading. Follow the pointer when you touch the subject.
 | diagnose a checkpoint that will not load | `designs/prober/arch_drift.md` |
 | choose `--impl node` vs `rust` | `designs/prober/sim_impl.md` |
 | add or find a test | `designs/prober/tests.md` |
+| ask what a checkpoint REPRESENTS (linear probes, phazing use, depth / width use; `python -m main.probe_battery`, its own package) | `designs/prober/probe_battery.md` |
 
 History — the retired Textual TUI, its panels, its keys and manual review mode — is in
 `designs/research_state/claude_md_archive/prober_leaf_history.md`. Nothing there is current.
