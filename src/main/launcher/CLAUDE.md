@@ -1,973 +1,169 @@
 # CLAUDE.md — Training Launcher (`src/main/launcher/`)
 
-The launcher wraps `train_rl_agent.py` for long, unattended runs. **Invocation commands
-(start fresh / resume) live in the root `CLAUDE.md` → Launcher section** — this file documents
-how it works internally. The UI is **Textual**, built on the shared `src/main/tui/` base.
-Modules: framework-agnostic core `checkpoint.py`, `worktree.py`, `child.py`, `input.py`,
-`state.py`, `ipc.py` + pure formatters `format.py`; `pinned_argv.py` + `pinned_argv_probe.py`
-(validate the child argv against the PINNED commit's parser, not this tree's); the UI `app.py` +
-`launcher.tcss`; the run loop / supervisor `run.py`; the resolve-and-print `dry_run.py`; the disk-space preflight's launcher half `disk_gate.py`; the showdown-submodule preflight `submodule_gate.py`; entry
-points `__init__.main()` (`python -m main.launcher`) and the `tui.py` back-compat alias
-(`python -m main.launcher.tui`).
+The launcher wraps `train_rl_agent.py` for long, unattended runs: periodic restarts, crash
+auto-restart, git-worktree isolation (a pin), a Textual TUI (headless when detached) and live child
+logs. **How to launch / resume / fork is the operator chapter `designs/ops/training_runbook.md` →
+*Launcher*; this file is the rules and the map for working ON the launcher. The detail — mechanism,
+evidence, gates — is the topic docs in [`designs/launcher/`](../../../designs/launcher/README.md)**
+(lifted out 2026-10-10; the old leaf is frozen at
+`designs/research_state/claude_md_archive/src_main_launcher_CLAUDE_2026-10-10.md`, history).
 
-> **History:** the launcher used to have a second **Rich** frontend (`ui.py` + a Rich `run()`
-> loop). It was removed once the Textual UI proved out — Textual is now the only UI. If you're
-> reading old commits/docs that mention "two frontends", that's why.
+## Module map
 
-## How the UI reconciles with Textual's event loop
+| file | does |
+|---|---|
+| `__init__.py` / `__main__.py` | entry point `main()` (`python -m main.launcher`); `tui.py` is the back-compat alias (`python -m main.launcher.tui`) |
+| `run.py` | the run loop / supervisor (`_prepare_session`, `_supervise`, `_reap`), `build_launcher_parser()`, the module constants (`DEFAULT_RESTART_INTERVAL_HOURS`, `DEFAULT_NICE`, `KILL_GRACE_SECONDS`, `_FAST_CRASH_SECONDS`), `headless_mode()`, `_arch_surface_gate` |
+| `checkpoint.py` | run-dir resolution, `find_latest_checkpoint`, `run_dir_for_checkpoint`, the RESUME-role argv (`resume_child_args`), the idempotent-fork swap, the fresh-into-progress refusal, `_strip_launcher_args` |
+| `worktree.py` | the pin (`resolve_pin` → `PinDecision` / `PinRefused`), `_create_run_worktree` + its ownership record, the startup prune, the Showdown-submodule link |
+| `child.py` | spawning the child (`_launch_child`, `resolve_child_python`), the log sinks (ring + rotating full copy), checkpoint events |
+| `torch_runtime.py` | which interpreter / torch a resume or fork runs (`resolve_for_launch`, `KNOWN_ENVS`) |
+| `pinned_argv.py` + `pinned_argv_probe.py` | validate the child argv against the PINNED commit's parser, not this tree's |
+| `dry_run.py` | `--dry-run`: resolve and print the launch, create nothing |
+| `disk_gate.py` / `submodule_gate.py` | the launcher halves of the disk-space and Showdown-submodule preflights |
+| `state.py`, `ipc.py`, `input.py`, `format.py` | the lock-protected state snapshot, child IPC, key dispatch, pure formatters |
+| `app.py` + `launcher.tcss` | the Textual UI (a `Gen3App` on the shared `src/main/tui/` base) |
 
-`run()` sets up the session (worktree pin, run dir, at-exit handlers) on the main thread, then
-drives a `LauncherApp` whose `@work(thread=True)` worker runs the supervisor loop **beside** the
-render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
+## Where the detail is
 
-- `_prepare_session()` (worktree pin + run-dir + initial events + at-exit handlers) runs on the
-  main thread **before** the screen opens — a pin failure `sys.exit`s with a clean message.
-  **Run-dir resolution** (`checkpoint.resolve_launch_run_dir`, three cases): a **fresh** run (no
-  `--model`) honours `--run-dir` (made absolute), then `--run-name <name>` (→ `<archive>/<name>`,
-  basename-sanitized — a memorable name without the full path), else a timestamped `<archive>/rb_run_<ts>` (era-prefixed, `utils/era.py`; an explicit name is accepted as typed).
-  🚨 **`<archive>` is `utils.paths.run_archive_dir()` — `$GEN3AI_MODELS_DIR`, else the MAIN checkout's
-  `models/` — never a cwd-relative `models/`** (from a worktree that directory is deleted silently with
-  it; 2026-09-23). Every resolved dir is ABSOLUTE and passes `checked_run_dir`: an explicit `--run-dir`
-  (or a resumed checkpoint's own dir) inside a linked worktree's own `models/`, or no archive at all, is a
-  typed `RunArchiveError` → `FATAL_CONFIG` (3, `sys.exit` in `_prepare_session`; `--dry-run` prints
-  `REFUSED (run dir)` and returns 3). `archive_anchored_args` first re-points a `--model models/<run>/…`
-  the cwd does not hold at the archive (a fallback — a main-checkout launch is byte-identical).
-  A **plain resume** (`--model`, no fork signal) takes the checkpoint's own folder (continue it). A
-  **fork** — a `--model` resume WITH an explicit `--run-name`, or with `--exploiter` — instead writes
-  to a fresh `--run-name`/timestamped dir: the `--model` is only the INIT (an exploiter trained vs a
-  frozen target, or a named experiment forked off a still-running run), so its own checkpoints must
-  NOT land in the source checkpoint's dir (which may be a live run / the exploiter's target). The
-  chosen folder (the one the run writes into) shows in the TUI 🗂 badge.
-  **A fork is IDEMPOTENT ("copy once from the source, resume in place after").** The FIRST launch
-  copies the source `--model` into the new dir; a *re-launch* of the same fork command (launcher
-  process death → reboot / re-running the launch script) detects that the fork dir already holds its
-  OWN resumable checkpoint and RESUMES it from that (`checkpoint.resolve_fork_resume_model`, swapped
-  in `run._prepare_session`) instead of re-copying the source (which would silently discard the
-  fork's progress). So a fork command is safe to re-run unattended. The clobber guard now FATALs only
-  when the fork target exists but has **no** resumable checkpoint — a genuine run-name collision or a
-  fork that crashed before its first save. (The launcher's OWN 6h/crash restart loop was already
-  idempotent — it finds the run dir's latest checkpoint and replaces `--model`; this extends the same
-  guarantee to a full launcher-process restart.) Tests: `launcher_test.py::TestResolveLaunchRunDir`
-  (`test_idempotent_fork_with_checkpoint_resumes_not_raises` / `test_fork_first_launch_keeps_source_model`
-  / `test_fork_onto_existing_run_without_checkpoint_raises`).
-  🚨 **A FRESH launch into a run dir that already holds a run is REFUSED** (`FreshRunDirHasProgress`,
-  exit `FATAL_CONFIG`, `--dry-run` too): a resumable checkpoint (`find_latest_checkpoint`, run-scoped —
-  the step-0 `snapshots/` seed does not count) or a `model_config.json` (`checkpoint.run_dir_progress`).
-  The message names both fixes — `--model <that run's latest checkpoint>` to continue, or a new
-  `--run-name`/`--run-dir`. Before 2026-09-26 there was no fresh-side guard at all (the fork guard
-  above never covered a no-`--model` argv), so `ai_v14_01_base`'s argv with `--arch` dropped and no
-  `--model` resolved as a step-0 FRESH run INTO the live run dir. A dir with only `metadata.json`
-  (a fresh run that crashed before its first save) is still accepted.
-- `LauncherApp` (a `Gen3App` subclass) renders from `state.snapshot()` on a `set_interval(0.5)`
-  timer. Input is split by latency sensitivity: **view navigation** (`l`/`e`/`d`, the `q` confirm
-  overlay, `n`/`y`, ctrl-c) is handled **app-locally** via the `view_mode` reactive — switching is
-  instant. **Child-control** keys (`r`/`c`/`p`/`s`, plus the confirmed force-eval `f`) and the
-  confirmed-quit sentinel `"__quit__"` go to the supervisor's `cmd_q`, where `_supervise` handles
-  them via `input._dispatch_command` (latency there is irrelevant — they aren't view changes).
-- **Force eval (`f`):** like `q`, the keypress is app-local — it opens a `confirm_force_eval`
-  overlay rather than acting immediately. `y` then routes the `f` control char to `cmd_q` →
-  `_dispatch_command` sends the child **SIGUSR2**; `train_rl_agent`'s handler flags a
-  `request_forced_eval()` that the active eval callback consumes on its next `_on_step` to launch
-  an off-cadence eval cycle. **The accept-vs-reject decision is the child's** (it owns the
-  authoritative "eval already running" state, `_pending`): a request that lands mid-cycle is
-  REJECTED and reported back to the Events panel, mirroring the normal cadence's skip-while-running
-  rule. See `src/agents/training/CLAUDE.md` → Bot evaluation.
-- `_supervise()` runs in a `@work(thread=True)` worker, drives `LauncherState`, and **returns**
-  an exit code; it then asks the app to exit via `call_from_thread`. A render fault in the timer
-  is swallowed (surfaced once as an event) so a cosmetic bug can never crash the app — which, via
-  the child reap below, would otherwise kill the run.
-- **Quit / Ctrl-C:** `q` (or ctrl-c) opens a confirm overlay; `y` (or a second ctrl-c) pushes
-  `"__quit__"` → the supervisor SIGTERMs the child (which checkpoints on SIGTERM) and waits, then
-  the app exits. The on-screen "waiting for child to save…" event covers the wait; `_reap`
-  (`run()`'s `finally`) narrates it on stderr if the screen is already down.
-- **SIGHUP / SIGTERM (closed terminal / external kill):** the child stays in the launcher's
-  session (`child._launch_child`, no `start_new_session`), so a closed tmux/SSH terminal SIGHUPs
-  the whole group — and `train_rl_agent` now handles SIGHUP itself (checkpoints, like SIGTERM),
-  so it saves before exiting (see **What it provides** below). The app *also* installs asyncio
-  SIGHUP+SIGTERM handlers that route to the same clean `"__quit__"` save-and-exit path, so the
-  **launcher** tears down cleanly too rather than dying abruptly. Two complementary backstops →
-  a closed terminal never costs a checkpoint or orphans the run.
-- **No orphan child:** on any exit `run()`'s `finally` sets a `shutdown` Event and `_reap`s the
-  tracked child (SIGTERM → 10s grace → SIGKILL), narrating progress on stderr.
-- **🚨 Headless when stdin is not a TTY (`run.headless_mode()`).** A detached launch
-  (`nohup … < /dev/null &`, systemd, cron, an agent's background shell) leaves stdin on
-  /dev/null, and Textual's input thread then **busy-loops a whole core forever**: an fd at EOF
-  is *permanently* readable, so `selector.select(0.1)` returns instantly, `os.read` yields
-  `b""`, and the `if not unicode_data: break` inside `linux_driver.run_input_thread` breaks
-  only the inner `for` — the outer `while` spins at full speed. Measured on a live 15 h run
-  (2026-08-14): **96% of a core** (83% user), **13 h 34 m** of CPU burned by one thread, plus a
-  **982 MB** launcher log of full-screen ANSI repaints growing at **17 KB/s**, because the
-  "screen" was a redirected file. A standalone A/B of a two-line Textual app isolated the cause
-  to stdin alone — /dev/null **98%** of a core, a real pty **0%**, headless **0%** and 0 bytes
-  of stdout.
-  So `run()` passes `app.run(headless=headless_mode())`: `HeadlessDriver` starts no input
-  thread and writes nothing. **Nothing is lost** — with stdin on /dev/null there is no keyboard
-  to serve, and the repaints were going somewhere no one could read as a screen; the supervisor
-  worker, restarts, events, metrics and checkpointing are all driver-independent. A TTY on
-  stdin keeps the full interactive TUI (the normal foreground case).
-  Because headless has no screen, `LauncherState.event_sink` echoes every event as a plain
-  `[HH:MM:SS] …` line so a detached run stays followable by `tail -f` — wired **before**
-  `_prepare_session` so the setup events (worktree pin, run dir, transport) are captured too,
-  and bound to the **real** `sys.stdout` captured before `app.run()`, since Textual replaces
-  `sys.stdout` for the duration of the run and a plain `print()` from the supervisor thread
-  would be swallowed by its capture. The sink is called *outside* the state lock (a slow write
-  must never stall a reader thread) and its exceptions are swallowed.
-  Measured after: **1.8% of a core**, and a **1.5 KB** log with **0** escape sequences for a
-  full run. Gate: `headless_test.py` — including an end-to-end CPU assertion that fails at
-  96.7% if the fix is reverted (bound: <30%).
-- **Stdout discipline:** the child's stdout only reaches `state.add_log` + `launcher_child.log`
-  (never the terminal), and the launcher's own stderr prints fire via `atexit` after the screen
-  closes — so a stray `print()` never corrupts the Textual screen.
+| I am about to touch… | Read |
+|---|---|
+| restarts, run dirs, forks, the resume contract, a Rust-core run under the launcher | [`designs/launcher/restarts_and_resume.md`](../../../designs/launcher/restarts_and_resume.md) |
+| crash restart, the child logs, an exit code | [`designs/launcher/crashes_and_exit_codes.md`](../../../designs/launcher/crashes_and_exit_codes.md) |
+| a launcher flag | [`designs/launcher/flags.md`](../../../designs/launcher/flags.md) (+ `designs/ops/flag_census.md`) |
+| the pin, the worktree prune, the pinned-parser check, a recorded `git_hash` | [`designs/launcher/pinning_and_worktrees.md`](../../../designs/launcher/pinning_and_worktrees.md) |
+| `--dry-run`, the arch / recipe guards, a startup preflight | [`designs/launcher/launch_guards.md`](../../../designs/launcher/launch_guards.md) |
+| the child's interpreter / torch | [`designs/launcher/interpreter.md`](../../../designs/launcher/interpreter.md) |
+| the TUI, quit / signal teardown, headless mode | [`designs/launcher/tui_and_session.md`](../../../designs/launcher/tui_and_session.md) |
 
-Tests: `src/main/launcher_app_test.py` (Pilot render/keys/view/confirm/ctrl-c/signal + a
-deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launcher_test.py`
-(checkpoint/strip/dispatch/crash-log helpers) and `launcher/state_test.py`.
+## Hazards and rules (each has cost a run or a launch)
 
-## What it provides
+- 🚨 **Never "launch the real command and kill it" to validate — use `--dry-run`.** Harmless on a
+  fork, DESTRUCTIVE on a same-run restart: a few seconds wrote `final_model_interrupted.zip`,
+  repointed `latest.txt` and overwrote `metadata.json` / `model_config.json` of the real run
+  (2026-09-05). `--dry-run` reaches only pure resolvers; `dry_run_test.py` booby-traps every effectful
+  entry point and byte-checks a fake run dir — keep it that way.
+- 🚨 **Every same-run restart (interval, crash, forced `r`) re-launches in the RESUME role**
+  (`checkpoint.resume_child_args`): strip `main.train.combination_checks.fresh_only_flags()` (today
+  `--arch`), add `--model <latest checkpoint>` + `--run-dir`. Never re-pass the original argv
+  (`ai_v14_01_base` crash-looped out at its first restart, 2026-09-26). A FRESH launch into a dir
+  holding a checkpoint or `model_config.json` is REFUSED (`FreshRunDirHasProgress`, `FATAL_CONFIG`).
+  On restart the CHILD restores an `--arch production` run's untyped recipe knobs
+  (`recipe_surface.inherit_on_restart`); a missing value refuses, never guesses.
+- 🚨 **Fork vs restart is ONE predicate, imported, never re-derived:**
+  `main.train.fork_lr.is_same_run_checkpoint` (where the resumed checkpoint lives). `--fork-lr`, the
+  fork's pool seeding, the idempotent-fork `--model` swap (`checkpoint.resolve_fork_resume_model`, run
+  FIRST) and the restart pin guard all key on it. A fork command is safe to re-run: it resumes its
+  own progress instead of re-copying the source.
+- 🚨 **Run dirs resolve through `utils.paths.run_archive_dir()`** (`$GEN3AI_MODELS_DIR`, else the MAIN
+  checkout's `models/`) and the child gets an ABSOLUTE `--run-dir`; a run dir inside a worktree's own
+  `models/` is a `RunArchiveError` → `FATAL_CONFIG` (eight runs died with their worktree, 2026-09-23).
+- 🚨 **The startup prune removes only a DEAD launcher's worktree.** Each `launcher-*` worktree has a
+  `<worktree>.owner.json` claim (pid + `/proc` start time) BESIDE it; every ambiguity resolves to
+  KEEP, and a tree holding RUN DATA (`utils.worktree_guard`, the same guard `scripts/land.sh` runs) is
+  kept. The old prune-everything rule deleted a live production run's checkout (2026-09-05).
+  Corollary: **a validation command must never touch the worktree list** — `pinned_argv.py` uses
+  `git archive`, never `git worktree add`.
+- 🚨 **A pinned argv is judged by the PINNED commit's parser** whenever the pin is not this
+  checkout's HEAD (`pinned_argv.pinned_parser_check`): a flag whose ARITY changed, or one ADDED since
+  the pin (`✗ NOT IN PINNED TREE`), is invisible to a presence check against this tree. Only
+  `build_parser` / `parse_args_hook` verdicts may refuse; `ast_scan` and `unavailable` WARN, and the
+  mode is printed on every run. The arch / recipe / combination checks are ADVISORY under a non-HEAD pin.
+- 🚨 **The child's `PYTHONPATH=<worktree>/src` must never be "cleaned up", and the spawn passes no
+  `cwd=`.** That line is the only thing making a pinned child IMPORT its pin (an editable install's
+  `.pth` sits after it); the child stands in main and writes the absolute `--run-dir`.
+- 🚨 **The recorded `git_hash` has ONE resolver** — `agents.model.snapshot.resolve_git_hash`
+  (explicit → `$LAUNCHER_GIT_HASH` → the IMPORTED checkout's HEAD, raising `GitHashMismatchError` when
+  they disagree). A sidecar once recorded main's ambient HEAD instead of the pin. The scalar `git_hash`
+  is "current"; the code that ran is the append-only `pin_history` (`python -m main.sidecar_audit`).
+- 🚨 **A RESTART may never MOVE the pin**: `--pin-commit` differing from the resumed checkpoint's
+  recorded hash on a same-run restart is `FATAL_CONFIG`. Pin precedence: `--pin-commit` > the
+  checkpoint's `git_hash` > HEAD (`--sync-to-main` or fresh); the source is recorded as `pin_source`.
+- 🚨 **The ARCH and RECIPE surface guards are ONE function each, four readers**
+  (`main.train.arch_surface.report`, `main.train.recipe_surface.report` — the launcher, `--dry-run`,
+  `main.checkargs`, `resolve_config`). A FRESH argv that differs from `designs/production_config.json`
+  is REFUSED (`--allow-nonproduction-arch` / `--allow-nonproduction-recipe` consent); never add a
+  second copy of the comparison, and never a hand list of keys (it is derived from the flag registry).
+- 🚨 **The launcher owns NO trainer default.** Everything not launcher-owned is forwarded verbatim;
+  `compile_flag_forwarding_test.py` and `pool_seed_flag_forwarding_test.py` pin that against the REAL
+  `build_launcher_parser()`, and both parsers are `allow_abbrev=False`.
+- 🚨 **A detached launch runs HEADLESS** (`run.headless_mode()`: stdin not a TTY). Textual's input
+  thread busy-loops a core on a /dev/null stdin (96% of a core for 13 h plus a 982 MB repaint log,
+  2026-08-14); `headless_test.py` fails at 96.7% CPU if reverted. Events echo as plain `[HH:MM:SS]`
+  lines to the REAL `sys.stdout`, outside the state lock.
+- 🚨 **The child's save is DEFERRED to a safe point** (`main/train/deferred_abort.py`): a SIGTERM /
+  SIGHUP / SIGINT, and the `c` key's SIGUSR1, only record the request. A 120 s watchdog
+  (`SAFE_POINT_DEADLINE_SEC`) exits 15 WITHOUT a save; `KILL_GRACE_SECONDS` (150 s) must stay above
+  that plus the save budget (`deferred_abort_test`). The child shares the launcher's session (no
+  `start_new_session`), so a closed terminal SIGHUPs both — both handle it.
+- 🚨 **A resume or fork runs under the torch its run RECORDED** (see *Which interpreter the child
+  runs* below).
+- 🚨 **Three preflights refuse `FATAL_CONFIG` BEFORE the pin / worktree / run dir exist**, and
+  `--dry-run` prints each verdict: the desktop holding the GPU (`utils/desktop_gpu.py`,
+  `--allow-desktop-gpu`), too little disk for the run (`disk_gate.py` → `utils/disk_guard.py`,
+  `--allow-low-disk`), and an unusable `deps/pokemon-showdown` (`submodule_gate.py` →
+  `utils/showdown_deps.py`, no opt-out). The launcher's ask is the only one a PINNED older trainer gets.
+- The launcher has **no Showdown port**: training and eval run in-process on the Rust core, and
+  `--showdown-port` is deleted (`designs/deleted_flags.md`). A PINNED resume of a pre-Rust run runs its
+  own commit's trainer with that trainer's own default.
 
-- **Periodic restarts** — kills and relaunches the child every N hours to reclaim pymalloc
-  fragmentation; the child saves a checkpoint on SIGTERM and the launcher picks it up
-  automatically. 🚨 **The child's save is DEFERRED to a SAFE POINT** (`main/train/deferred_abort.py`,
-  `gen3_deferred_abort_v1`, P10 review F1): a SIGINT / SIGTERM / SIGHUP only records the request,
-  and the abort (pending-scalar dump, `final_model_interrupted.zip`, exit 15) runs on the main thread
-  at the next loop event (a collector step, a rollout start / end, training start / end) or at
-  every HOST STEP of the in-process Rust eval cycle (P10-A2), never inside an update or a logger
-  dump. A signal mid-update therefore waits for that update (`train_ms` median ~41 s, max 50.6 s at
-  the production recipe, five `sizing_*` runs 2026-10-02/03); one mid-eval waits one host step. If no
-  safe point comes within `SAFE_POINT_DEADLINE_SEC` (120 s: ~2x the worst measured stretch without
-  one, ~58.5 s = that max + the ~8 s of loop around an update) a watchdog exits 15
-  WITHOUT a save (a save then could tear the checkpoint) and the launcher resumes from the last
-  periodic checkpoint; 120 s + a 15 s save budget fit inside `KILL_GRACE_SECONDS` (150 s, module
-  level in `run.py`, pinned by `deferred_abort_test`) — the grace of BOTH the supervisor's SIGKILL
-  escalation and `_reap` (an abnormal app exit; it was 10 s, which SIGKILLed a child mid-update).
-  The abort line names the longest stretch between safe points so far. **SIGUSR1 (the `c` key's
-  forced checkpoint) is deferred the same way** (`gen3_deferred_checkpoint_v1`): recorded, saved at
-  the next safe point, training continues — expect the `💾 [CHECKPOINT] Forced save` line up to an
-  update after the key (the events panel shows `Checkpoint requested` at once and `Checkpoint saved →
-  <file>` only at the save, `child.checkpoint_event`). The old in-handler abort deadlocked on TensorBoard's non-reentrant writer
-  lock when the signal landed inside a dump, and could save mid-update; the old SIGUSR1 handler
-  could save mid-update too. The child also checkpoints on **SIGHUP** (`_setup_signal_handlers` routes it
-  to the same graceful path) — the child shares the launcher's session (`child.py` spawns it
-  without `start_new_session`), so closing the controlling terminal/tmux window SIGHUPs the
-  whole group; without that handler the child died mid-iteration with no checkpoint. Running
-  the launcher under `nohup` prevents the SIGHUP entirely; the handler is the in-code backstop.
-- 🚨 **Every same-run restart (interval, crash, forced `r`) re-launches from the RESUME role** —
-  `checkpoint.resume_child_args`: strip every FRESH-only flag the trainer refuses beside `--model`
-  (`main.train.combination_checks.fresh_only_flags()` — the trainer's OWN list, declared per check as
-  `fresh_only=`; today `--arch`), then `--model <latest checkpoint>` + `--run-dir`. The stripped
-  flags are announced (`✂️  Resume argv: dropped FRESH-only --arch`); nothing is lost, the run's
-  `model_config.json` holds what `--arch production` expanded to (see the v125 note below). Before 2026-09-26 the loop
-  re-passed the original argv, so a fresh `--arch production` run (`ai_v14_01_base`) died at its
-  first 3 h restart: exit 2 ×3, circuit-breaker, ~40 GPU-min. `--dry-run` prints the restart argv as
-  an `on restart :` line. That refusal now also exits `FATAL_CONFIG` (not argparse's 2), so if a new
-  fresh-only flag ever slips the list the launcher stops at once instead of crash-looping. Tests:
-  `restart_resume_role_test.py`, `dry_run_test.py::test_h_*`,
-  `combination_checks_test.py::test_every_check_refusing_a_resume_declares_what_to_strip`.
-  🚨 **"Nothing is lost" holds only for what `model_config.json` RECORDS.** Until config v125 it
-  recorded the `opp_intent` BOOL but not `opp_intent_coef`, the dose `--arch production` writes to
-  turn it on. So the first restart of a fresh `--arch production` run that did not also type
-  `--opp-intent-coef` died with `[ModelVersion] FATAL: opp_intent mismatch: saved=True,
-  current=False` (2026-09-30, `~/gen3ai_archive/cutover_prep/fresh2`, on the Rust core; the Python
-  core is identical). `opp_intent_coef` is now a `ModelVersion` field. A pre-v125 checkpoint migrates
-  the dose from its run's `metadata.json:cli_args`, announced as `[Resume] MIGRATION`. With neither
-  source the resume is REFUSED (`FATAL_CONFIG`, naming the flag); the dose is never guessed. Tests:
-  `main/train/derived_toggle_resume_test.py`. (a) Every key the umbrella's ARCH half writes is a
-  recorded field. (b) Fresh → save → this function's argv → resolve returns every surface value unchanged.
-  🚨 **The umbrella's RECIPE half (K10(a)) writes knobs `model_config.json` does NOT record**
-  (`n_envs`, `n_epochs`, `ent_coef`, `self_play`, …) plus value-CHECKED recorded fields with concrete
-  parser defaults (the reward values, `vf_coef`) that `_resolve` cannot inherit. For a run whose
-  `original_command` carried `--arch production`, the CHILD resolves each untyped one on a same-run
-  restart (`main.train.recipe_surface.inherit_on_restart`): `--lr` / `--batch-size` / `--n-steps`
-  untouched (INERT — SB3 restores them); recorded tri-state fields left to `_resolve` (the
-  mechanism above — `opp_intent_coef` included); value-checked fields from `model_config.json`; the rest
-  from `metadata.json:cli_args` — each announced `[Recipe] … from <source>`, and a MISSING value
-  REFUSED (`FATAL_CONFIG`, naming the flag). This file's restart argv is unchanged. Test:
-  `recipe_surface_test.py::test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recipe`.
-- **Crash auto-restart** — when the child *self-crashes* (unhandled exception → any
-  non-`INTERRUPTED` exit), the launcher snapshots its output to a per-crash
-  `<run_dir>/crashes/restart_err_<token>.txt` (a timestamp + random hex so back-to-back crashes
-  never collide; never overwritten, unlike the reused `launcher_child.log`; folded under a
-  `crashes/` subfolder so they don't clutter the checkpoint listing) and relaunches from the last
-  checkpoint. A **circuit-breaker** (`--max-crash-restarts`, default 3) stops the run after that
-  many *consecutive rapid* crashes (each within `_FAST_CRASH_SECONDS` = 600 s / 10 min of launch)
-  so a deterministic startup crash can't spin forever; a crash after sustained progress resets the
-  counter. The window is deliberately well past the 3+ min it takes to bring up the env core
-  and its inference service, so a startup-time crash is still counted as "rapid" rather than
-  misread as progress. If a crash has no checkpoint to resume from, it's fatal — the launcher
-  propagates the child's exit code rather than masking it. "Checkpoint" here means a *real* run
-  checkpoint at `<run>/checkpoints/checkpoint_*_steps.zip` / `…/checkpoint_forced_*` (current
-  layout) or `<run>/*_steps.zip` / `forced_*` (legacy, at the root): `find_latest_checkpoint`
-  deliberately skips `*.zip` artifacts nested under `snapshots/` (the self-play pool — whose
-  step-0 seed is written at startup, *before* any rollout), `best_model/`, and `eval_traces/` —
-  but NOT `checkpoints/`, which IS resumable. The caller derives `run_dir` via
-  **`run_dir_for_checkpoint`** (a plain `dirname`, then strip a trailing `checkpoints/`), so a
-  checkpoint in the subdir still resolves to the run root for the `--run-dir` arg + the TUI 🗂
-  badge. Counting one of the ARTIFACT dirs instead would mis-derive `run_dir` to the artifact
-  subdir (`…/snapshots`, the wrong dir shown in the badge) and let a startup crash silently
-  "resume" from the freshly-initialised seed instead of failing loudly. The dashboard shows a
-  `↻ N restarts (M crash)` badge and the exit summary reports the crash count.
-- **Non-recoverable config errors don't loop** — a checkpoint arch-family mismatch (or a resume
-  `vf_coef`/reward-config drift) fails the *same* way on every retry, so auto-restarting just burns
-  the circuit-breaker and hides the cause behind the logs. `train_rl_agent.py` exits these with a
-  dedicated `FATAL_CONFIG` (3) code (raised for any `ModelVersionError`); `_supervise` classifies
-  them via `_fatal_config_reason(rc, log_lines)` — the exit code is the primary signal, plus a
-  defensive scan for a `[ModelVersion] FATAL` line in the captured output (catches a FATAL that
-  escaped as a generic exit 1). On a match it saves the crash log, prints the FATAL reason straight
-  into the **Events panel** (`🛑 Fatal config error — will NOT restart`, then the reason lines), and
-  returns immediately — no restart, no checkpoint discovery — so the fix is on-screen, not buried in
-  `crashes/restart_err_*.txt`.
-- **Worktree isolation** — at startup, creates a detached git worktree pinned to the commit
-  `worktree.resolve_pin` chooses (`--pin-commit` > the checkpoint's recorded `metadata.json`
-  hash on a resume > HEAD). Agent pushes to `main` never affect a running session.
+## Exit codes (`src/main/exit_codes.py`) — the launcher's reaction
 
-  🚨 **THE STARTUP PRUNE REMOVES ONLY A DEAD LAUNCHER'S WORKTREE, and that is a 2026-09-05
-  fix paid for with a run.** `_prune_stale_launcher_worktrees` used to force-remove EVERY
-  `launcher-*` worktree it found, on the assumption that such a directory can only be a
-  crashed session's debris. It is not: it is also every LIVE run's isolated checkout. A
-  one-second validation command — `python -m main.launcher --pin-commit deadbeef --steps 1`,
-  which exits `FATAL_CONFIG` before creating a worktree of its own — deleted a live
-  production run's. The run kept going on its already-open file descriptors and looked
-  healthy for hours; it died at its next 3 h periodic restart, when the launcher re-exec'd
-  the child out of a directory that no longer existed (**exit 2, no `final_model`**). The
-  resume then surfaced a second defect (see *Which commit a checkpoint records*).
+Full table with causes and pins: [`designs/launcher/crashes_and_exit_codes.md`](../../../designs/launcher/crashes_and_exit_codes.md).
+Errors are mapped by class NAME through `exit_codes.exit_code_for`; a new non-recoverable class goes
+through that mapping, never a bare `sys.exit`.
 
-  **The ownership record.** `_create_run_worktree` now writes a claim naming this process:
-  `<worktree>.owner.json` — pid, its `/proc/<pid>/stat` **start time** (the pid-reuse guard;
-  a pid alone is not an identity, `(pid, starttime)` is), the run dir, and `sys.argv`. It
-  lives **BESIDE** the worktree, not inside it, so it cannot appear in that worktree's
-  `git status`: the pinned tree is a real checkout of a real commit, and an ignore rule added
-  today does not exist in a checkout of a commit from last month, while the child itself runs
-  `git` in there. Being a `tempfile.mkdtemp` sibling, it is collected by the same /tmp
-  cleanup, and `cleanup()` removes both.
-
-  **The prune rule**, per `launcher-*` worktree — and every ambiguity resolves to KEEP,
-  because a stale directory in /tmp costs disk and a deleted live one costs a run:
-
-  | state | verdict |
-  |---|---|
-  | owner file present, pid alive (`os.kill(pid, 0)`) **and** its starttime matches | **KEEP** — a live run |
-  | owner alive but starttime unrecorded / `/proc` unreadable | **KEEP** — cannot verify reuse |
-  | owner pid gone, or alive with a DIFFERENT starttime (pid reuse) | remove |
-  | no owner file (pre-fix worktree), mtime < 24 h | **KEEP** — may be a live pre-fix run |
-  | no owner file, mtime > 24 h (`_LEGACY_ORPHAN_MAX_AGE_S`) | remove — abandoned |
-  | the directory no longer exists | remove — the case git's own prune handles |
-  | any "remove" above, but the tree holds **RUN DATA** (`utils.worktree_guard`) | **KEEP**, and say what it holds |
-
-  🚨 **The last row, and the atexit `cleanup()`, run the SAME guard `scripts/land.sh` runs**
-  (`_run_data_held`, 2026-09-23): refuse when a main-checkout `models/` symlink resolves into the
-  tree, or when its untracked + ignored content outside the build/cache allowlist exceeds 50 MiB.
-  A pin never holds a run — the child gets an ABSOLUTE `--run-dir` in the archive — but a launcher
-  started from INSIDE a worktree used to put eight v9 runs in theirs (a cwd-relative `models/<run>`), and a
-  forced removal of those worktrees destroyed them (ledger 2026-09-23); that path is now closed at its
-  source (`run_archive_dir` / `checked_run_dir`), and this guard stays as the backstop. A guard that
-  cannot run keeps the tree. Gate: `worktree_prune_test.py` (e), `src/utils/run_archive_test.py`.
-
-  It **reports every decision** through a `report` callable (`state.add_event` from the
-  launcher, `print` standalone), naming the owning pid on each skip — a startup that leaves
-  debris behind must say so rather than look like a no-op. Gate:
-  `worktree_prune_test.py`, over a real temp git repo: a current-pid worktree survives, a
-  dead-pid one is removed, a reused pid is not mistaken for the owner, an unverifiable live
-  owner is kept, legacy fresh/old split correctly, a non-`launcher-*` worktree is untouched,
-  and the claim provably does not change the worktree's `git status`.
-- **Textual TUI** — live dashboard showing metrics, FPS, restart countdown; `l` logs · `e`
-  events · `d` dashboard · `r` restart · `c` forced checkpoint · `p` plots · `s` status ·
-  `f` force eval → confirm → `y`/`n` (off-cadence eval cycle; child rejects if one is already
-  running) · `q`/ctrl-c → confirm → `y`/`n` quit · `v` copy mode (inherited from `Gen3App`) freezes the
-  2 Hz refresh + hands the mouse back to the terminal for native select-and-copy, same key
-  resumes — the **portable** copy path (works on Terminal.app); `super+c` (⌘C) also copies the
-  Textual selection on terminals that forward ⌘C + honour OSC 52. See `src/main/tui/CLAUDE.md`
-  → Copying text. Built on the shared `src/main/tui/` base — see **How the
-  UI reconciles with Textual's event loop** above. **Skill rating (ELO)** surfaces as a
-  badge-row headline `🏅 ELO 1532 ±40` (`app.py::_elo_badge`, cyan) AND inside the eval panel: the
-  table has a dedicated **`elo` column** — the model's own rating (±CI) on the `all` row, and each
-  opponent's anchored ELO on its row (bots = their fixed anchor; sentinels = their rating this
-  cycle, from `eval/elo_vs_<opp>` recorded by `eval_record._record_opponent_elos`). This is the
-  at-a-glance "is it going well?" number during self-play pool play — anchored Bradley-Terry over
-  the fixed bots, so it rises with strength even while `win_rate_vs_pool` sits pinned near 50% (see
-  `src/agents/training/CLAUDE.md` → ELO / skill rating). *(The per-sentinel ELO is a noisy
-  single-cycle estimate — `python -m main.elo … --source tb` is the well-anchored canonical fit.)*
-  **Metrics layout** — the dashboard's metrics row is **three side-by-side tables** so a metric-rich
-  run stays readable instead of one over-long column: a **left misc column** (rollout / time, then the
-  `grad/*` diagnostics), a **dedicated `train/*` column** (by far the
-  biggest section — all the PPO losses, `return_*`, `value_pred_std`, `grad_norm`, the opponent-mix
-  `*_fraction` telemetry, then the `belief/*` aux diagnostics rendered directly **below** train when a
-  belief aux is on), and the **eval column**. Non-eval metrics are split across the first two
-  **by whole top-level section — a section is never split across columns**
-  (`app.py::_fill_metric_sections`); the two narrow metric columns hug their content (`width: auto`)
-  so the wider eval column (`width: 1fr`) gets the horizontal slack.
-  **Gradient-balance + value-scale diagnostics** (always on) ride that layout: the `grad/*` block
-  (`policy share` + `value share` — the two RL heads' slices of ONE common-denominator pie; `aux share (all)`
-  = the total non-RL draw; `log val/pol grad` = the aux-independent non-saturating `log10(‖g_v‖/‖g_p‖)`
-  ratio; `policy-value cos`, policy/value grad-norms; plus, when an aux is on, its OWN share broken out —
-  `species blf` / `move blf` / `latent` / `move-lat` / `winprob` — so any single scaffold
-  crowding out the rest is visible) sits in the left column, while
-  `train/return_*`, `train/value_pred_std`, and `train/grad_norm` join the train column — together the
-  direct shared-trunk pressure gauge for tuning `vf_coef` (computed
-  in `agents/training/grad_balance.py`; see `src/agents/training/CLAUDE.md`). They need no new launcher
-  wiring: they ride the same generic `MetricsExporterCallback` scalar path and auto-route by their
-  `grad/` / `train/` section prefix; only their display order + short labels are declared in
-  `format.py`. `grad/value_policy_logratio` should be seen falling toward ~0. (The `popart/*` block that once appeared under `--use-popart` left with PopArt, L1.)
-- **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
-  (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
-  5000-line in-memory scrollback. The on-disk log is a **disk ring buffer**
-  (`child._CappedChildLog`, `_CHILD_LOG_MAX_BYTES` ≈ 1 MiB): it streams every line
-  line-buffered, but once the file passes the cap it's rewritten keeping only the recent
-  tail, and a pre-existing oversized file (e.g. a legacy multi-GB log) is trimmed on open —
-  so a long multi-restart run can't grow it without bound. On a non-zero exit the last 100
-  lines are dumped to the terminal after the TUI closes; on *every* exit (crash, complete,
-  quit) the full log path is printed and the file is finalized (the in-memory buffer is
-  flushed to it as a fallback if streaming never started).
-
-  🚨 **THE RING TRIMS SILENTLY, so a ROTATING full copy rides beside it**:
-  **`<run_dir>/launcher_child.full.log`**, with older generations at `.1` … `.7`
-  (`child._RotatingChildLog`, **64 MiB × (1 live + 7 backups) = a hard 512 MiB ceiling per
-  run**). Both sinks are fed by the same reader thread through `child._ChildLogFanout`, and
-  the **ring is written FIRST and is unchanged in every respect** — same path, same cap,
-  same trim marker, same tail — because it is what the TUI reads and what the crash dump
-  tails; the full copy is strictly additive and a failure in it is swallowed. `log.path` is
-  still the RING's path, so every "log written to …" line is unchanged; the exit summary
-  additionally names the rotating copy and how many generations exist.
-
-  **Why rotate rather than keep or drop.** 2026-09-06: a per-worker compile count taken
-  across a restart became unrecoverable the moment the ring wrapped, and had to be settled
-  from source instead — *a read that cannot be redone is a read that cannot be checked*. But
-  the ring exists because of a **982 MB repaint log**, so unbounded is not an option: the
-  volume this writes to also holds `models/`. 64 MiB × 8 is chosen against that incident —
-  the storm fills the rotation and **stops** at roughly half its size, a normal 3-hour
-  restart cycle never engages the rotation at all, and 64 MiB is a file a reader can
-  actually `grep` and copy off the box. Gate: `launcher_test.py::TestRotatingChildLog`
-  (rotation at the cap, the file-count bound, the ring untouched by the fan-out, and a
-  planted repaint storm proving the on-disk total is bounded).
-
-  ⚠️ The live launcher process runs OLD code and is **pinned**, so it will not pick this up.
-  The rotating copy appears on the next launcher started from new code.
-
-## A Rust-core run under the launcher (M5; F-LG-6, closed 2026-09-30)
-
-Exercised end to end on CPU: a fresh launch, an interval restart, a crash restart (the child
-SIGKILLed by PID) and a SIGTERM stop, all pinned. Run dirs: `~/gen3ai_archive/cutover_prep/fresh{1..4}`.
-What that established:
-
-- 🚨 **The pinned worktree has no Rust env build**, because `git worktree add` gives no `target/`. The
-  env core loads from THIS checkout's `src/rust_env/target/<profile>/`
-  (`utils.rust_env.proc.default_path` / `ffi.default_path`), so every Rust-core launch through
-  the launcher died about 10 s in with `ProcLoadError: …/rust_env_proc does not exist`. The trainer
-  now builds its own checkout's core at startup, before the model exists
-  (`utils.rust_env.build.ensure_built`, from `rust_env_setup.build_rust_vec_env`). It is an
-  incremental `cargo build` into the crate's own `target/`: about 7 s cold in a fresh pin and 0.0 s
-  on a restart, printed as `🦀 [ENV CORE BUILD]`. The stamp check still refuses a foreign build. ⚠️ A
-  checkpoint recorded at a commit BEFORE this fix still cannot be resumed through the launcher on the
-  Rust core: its pin has no build step. Use `--sync-to-main`.
-- **A restart keeps the run's env core** (`gen3_env_core_switch_v1`): there is one core and no flag to
-  type for it (`--env-core` was deleted, P11b), so every restart re-declares the same core, T2 slots and
-  eval core (the SIZES come from `recipe.sizing` / the run's `cli_args`). The events to look for are
-  `🦀 [RUST ENV] T2 up …`, `🦀 [RUST EVAL] eval core up …` and `🦀 [ENV CORE] rust — …`. `--dry-run`
-  prints `env core : rust [the only core]` beside what the checkpoint recorded, and the trainer emits
-  `🔀 [ENV CORE] CORE SWITCH …` for a python-era winprob checkpoint (`rust_env_setup.env_core_switch_line`,
-  keyed on the recorded `env_core`). That switch is not refused, because moving a winprob checkpoint
-  onto the only core is the M5 carry-over; a SHAPED-critic checkpoint IS refused (D4,
-  `refuse_python_era_checkpoint`).
-- **A pin that predates the Rust env core flags (before `ac67fa6c`) is refused before anything exists.** The
-  pinned parser check names `--rust-eval-envs` (and the other collector flags the argv types) as `NOT IN PINNED TREE`
-  (`FATAL_CONFIG`). No flag here is FRESH-only, so none is stripped on a restart. (A recorded argv that
-  types a flag HEAD deleted — `--env-core`, `--use-bridge`, `--critic`, `--gamma`, `--victory-value`, `--draw-penalty`, `--terminal-indicator`, … — is the opposite case: the PINNED
-  parser knows it, so it is ADVISORY, and `checkargs` still builds the effective config from the rest.)
-- `metadata.json` and every sidecar record `env_core` (the core's stamp, T2, trigger) beside
-  `git_hash` / `pin_history`. The `*_after_freeze` counters are ENFORCED after every update and eval
-  cycle (`LifecycleViolation`), not logged. A clean restart is the absence of that error.
-- **A T2 parity refusal STOPS the launcher (2026-09-30).** Before, the per-slot gate refused a
-  COLLAPSED win-prob critic (`VacuousParity`: V near-constant even on the seeded perturbation) at a
-  trainee load, and exited `CRASH`. The restart resumed `final_model_exception.zip` and T2's
-  startup refused the same weights again (`fresh3`: three crashes, then the circuit breaker).
-  - Now the gate walks a declared perturbation LADDER and judges the first informative rung
-    (`gen3_parity_perturb_ladder_v1`, `designs/research_state/measurements/m5_t2/PROGRESS.md`
-    "Flat weights"), so a collapsed critic like fresh3's is judged, not refused. A critic
-    saturated beyond what the ladder's capped scale can move is still refused.
-  - A refusal that remains exits `FATAL_CONFIG` (see the exit-code table), and the launcher shows
-    the service's exception line.
-  - A fresh `--arch production` model passes T2 startup on the first rung.
-
-## Exit codes (`src/main/exit_codes.py`)
-
-| Code | `TrainExitCode` | Meaning |
-|------|----------------|---------|
-| 0 | `COMPLETE` | All steps done — launcher stops |
-| 15 | `INTERRUPTED` | SIGTERM received, checkpoint saved at the next safe point (or, past the 120 s safe-point deadline, NO save — the last periodic checkpoint stands) — launcher restarts |
-| 1 | `CRASH` | Unhandled exception — launcher saves `crashes/restart_err_<token>.txt` and auto-restarts from the last checkpoint (up to `--max-crash-restarts` consecutive rapid crashes, then gives up; any non-enum exit code is treated the same way). A crash with no checkpoint to resume from is fatal: the child's exit code is propagated and the crash log printed. |
-| 3 | `FATAL_CONFIG` | **Non-recoverable** config/architecture error — `train_rl_agent.py` raises it for a `ModelVersionError` (checkpoint arch-family mismatch, or a resume `vf_coef`/reward-config drift), exits with it on the T2 inference service's `ParityFailure` / `VacuousParity` (mapped by NAME; the verdict is deterministic in code + weights + fixture and a restart resumes the same weights; `parity_refusal_exit_test.py`), and for any `main.exit_codes.FatalConfigError` raised anywhere (mapped by NAME through `exit_code_for`, like codes 4/5; `gen3_supply_guard_v2`): a `--bot-weights` typo (it used to exit 1, i.e. be RESTARTED; the consensus warm start, whose failure did so without bound, was deleted by P11), a mis-wired fork arm (`LeverConfigError`). Restarting would hit the *identical* error every time, so the launcher does **not** restart: it saves the crash log, surfaces the reason on-screen, and gives up immediately (returning this code) instead of looping until the crash circuit-breaker trips. See **Crash auto-restart**. |
-| 4 | `FATAL_NONFINITE` | **The learner went non-finite** — a NaN / Inf loss or gradient (`main.exit_codes.NonFiniteLearnerError`, Lane K's K9 fail-closed guard; a guard's own class must subclass it — the NAME is matched along the MRO and the `__cause__` chain), or T2 refused NaN / Inf WEIGHTS (`NonFiniteWeights`, matched by name). The trainer's two fail-fast handlers — and, since 2026-09-30, `build_and_train`'s FRESH-path `learn()` handler, which used to `os._exit(1)` — exit `exit_codes.exit_code_for(exc)`, so this error is 4 and every other uncaught exception stays `CRASH`. Same class as `FATAL_CONFIG`: a restart would resume the checkpoint that produced it and replay the same update, so the launcher saves the crash log, shows `🛑 Non-finite learner — will NOT restart` + the error line, and returns 4. Pinned by `nonfinite_exit_test.py`. |
-| 6 | `FATAL_CUDA_LEAK` | **K6's CUDA memory trend STOPPED the child** — `agents.training.learner_lifecycle.CudaMemoryLeakError` (a SUSTAINED growth of live CUDA memory projected an OOM inside the declared horizon; `designs/training/learner_lifecycle.md` "The memory half"). The trainer checkpointed (`final_model_exception.zip`) before exiting, and a fresh process clears a leak, so the launcher **RESTARTS** from that checkpoint with a loud `⚠️ CUDA memory leak STOP #n` event — at most `exit_codes.CUDA_LEAK_RESTART_CAP` (2) times per launcher session, independent of `--max-crash-restarts`; the next one (`🛑 … over the cap … will NOT restart`) ends the session with code 6: a reproducible leak wants a human. Pinned by `cuda_leak_exit_test.py`. |
-| 5 | `FATAL_SUPPLY` | **A live lever's supply starved in flight** — `main.exit_codes.SupplyStarvedError` (`gen3_supply_guard_v2`: `agents.training.lever_supply.LeverStarvedError` when a live lever — the self-play pool, PFSP (`--pfsp-scale`), the fork arm — delivers nothing for its declared floor, `designs/training/supply_guards.md`; the cf label supply's guard, `CfLabelSupplyError`, was deleted with the cf training half). A restart would train the same run on the same missing supply, so the launcher saves the crash log, shows `🛑 Starved supply — will NOT restart` + the `[SUPPLY]` lines, and returns 5. Pinned by `agents/training/lever_supply_test.py`. |
-| 7 | `FATAL_LIVE_PARSE` | **A LIVE websocket session could not read its input** (T28, owner 2026-10-07) — `main.live.halt.LiveParseHalt` (mapped by NAME): an unparseable or unclassified protocol line, an encoder raise, or a choice it could not send. The live entry point (`main.play`, or `main.anchors` when its live client halts — P6) wrote the durable HALT marker (`python -m main.live.halt status`) before exiting, and every live entry point refuses to start while it exists — exiting 7 itself. The launcher never runs live play, but a child exiting 7 is never restarted (`🛑 Live parse panic — will NOT restart`). Cleared only by `python -m main.live.halt clear --fixed-by <commit>` (an ancestor of HEAD that touches a test file). Pinned by `src/main/live/halt_test.py`. |
-| 8 | `FATAL_DISK` | **The disk guard stopped the run** (`utils/disk_guard.py`, 2026-10-09): at a checkpoint save the free space on the run archive's filesystem fell below ONE more checkpoint, or the save itself failed with ENOSPC (the torn file is removed; `latest.txt` still names the previous checkpoint). The checkpoint just written stands, the process exits cleanly through `DeferredAbort.disk_stop` (no new save), and a restart would meet the same full disk, so the launcher saves the crash log, shows `🛑 Disk full (guard) — will NOT restart` + the `[DiskGuard]` line, and returns 8. Free space, then resume with `--model`. Pinned by `main/launcher/disk_exit_test.py`, `main/train/disk_guard_wiring_test.py`. |
+| code | `TrainExitCode` | launcher |
+|---|---|---|
+| 0 | `COMPLETE` | stops |
+| 15 | `INTERRUPTED` | restarts from the latest checkpoint |
+| 1 | `CRASH` (and any non-enum code) | saves `crashes/restart_err_<token>.txt`, restarts; `--max-crash-restarts` consecutive crashes each < 10 min after launch stop it; no checkpoint ⇒ fatal |
+| 3 | `FATAL_CONFIG` | **no restart** (a `ModelVersionError`, any `FatalConfigError`, a T2 `ParityFailure` / `VacuousParity`); reason shown in the Events panel. The launcher's own refusals (preflights, pin, surfaces) also exit 3 |
+| 4 | `FATAL_NONFINITE` | **no restart** — a NaN / Inf loss, gradient or weights |
+| 5 | `FATAL_SUPPLY` | **no restart** — a live lever's supply starved |
+| 6 | `FATAL_CUDA_LEAK` | restarts at most `CUDA_LEAK_RESTART_CAP` (2) times per session, then stops |
+| 7 | `FATAL_LIVE_PARSE` | **no restart** — live play's T28 halt (the launcher never runs live play) |
+| 8 | `FATAL_DISK` | **no restart** — the in-flight disk guard stopped cleanly after a save; free space, then resume (`--allow-low-disk` keeps the warning, drops the stop) |
 
 ## Flags
 
+Full notes: [`designs/launcher/flags.md`](../../../designs/launcher/flags.md). Launcher-owned flags
+are stripped; everything else is forwarded verbatim to `train_rl_agent.py`.
+
 | Flag | Default | Notes |
 |------|---------|-------|
-| `--restart-interval-hours` | `6.0` | Set to `0` for a single run with no restart. Default `run.DEFAULT_RESTART_INTERVAL_HOURS` = 6 h (owner rule 2026-10-04, in code 2026-10-10; it was `3.0`). A launch that TYPES the flag is unaffected; one that omits it now restarts every 6 h. Pinned by `restart_interval_default_test.py`. |
-| `--max-crash-restarts` | `3` | Consecutive rapid self-crashes (each < 10 min after launch) to auto-restart through before giving up. `0` = unlimited. A crash after sustained progress resets the counter (see **Crash auto-restart**). |
-| `--restart-grace-minutes` | `20.0` | Force-kill window after a scheduled restart's deadline (child overran its rollout boundary). A child that ignores the SIGTERM is SIGKILL'd after a 150 s grace (`KILL_GRACE_SECONDS`), and a launcher-forced kill restarts from the last checkpoint (not treated as a fatal crash). The dashboard shows `⚠ no child output for Nm` once the child has been silent > 2 min, so a stall is *visible* — but there is no auto-restart on stall. A connection failure crashes loudly rather than hanging: a connect-time failure via the `Gen3Player` connect guard, and a **mid-battle** websocket drop via the `_AsyncQueue` disconnect guard (`PSClient.listen()` sets `_disconnected` on *any* close it did not initiate — an abnormal drop OR a clean peer/server-initiated close such as the server stopping; a close the client requests via `stop_listening` sets `_closing` and exits clean, since terminating the connection on purpose is not an error. The env's blocking `step`/`reset` get races against `_disconnected` and raises `ShowdownException` instead of waiting forever for a message the dead listen task can't deliver). Both deterministic — no timeout guess. A **silent** stall (the server sends no next message *and* does not close) can't be caught deterministically, so `_AsyncQueue.race_get` bounds it with a generous watchdog (`_RACE_GET_TIMEOUT_S`=120 s, ~100× a normal step; override `GEN3_RACE_GET_TIMEOUT_S`) that **crashes** (raises `ShowdownException` → worker dies → restart from checkpoint) rather than recovers — recovering would feed PPO a fabricated transition. With `GEN3_RACE_TRACE=1` the wedged battle's cross-thread interleaving is dumped into the crash log. The one known cause — `race_get` stranding a queued force-switch on a stale `_trying_again` event (an upstream poke-env bug) — is now fixed (see `src/agents/training/CLAUDE.md`), so this watchdog is a should-never-fire backstop. |
-| `--nice` | `10` | Scheduling niceness for the launcher **and everything it spawns** — `0` disables. Applied in `run.main()` before any child exists (`run._apply_nice`, default `run.DEFAULT_NICE`); niceness is inherited across fork/exec, so the training child, its SubprocVecEnv workers and every eval worker are covered without per-spawn wiring — including the processes created by later periodic and crash restarts. It only ever **raises** niceness: a negative target needs `CAP_SYS_NICE`, so it no-ops rather than failing. **On an idle box this changes nothing** — niceness only arbitrates under contention. Why it defaults on: a run holds ~940 processes, and at nice 0 it competes on equal terms with interactive work sharing the box (measured 2026-08-13 at load 17–25 on 16 cores: an interactive client in the *same cgroup* as the run waited 2.1 s in the run queue per 1 s of CPU it received, and every training process sat at nice 0). Note the limit of the mechanism: nice arbitrates **within** a cgroup, so a client in its own systemd scope is already protected by cgroup `cpu.weight` and gains little — the flag's value is for whatever shares the run's own scope. Gate: `nice_test.py` (including the inheritance test — without it the workers silently revert to nice 0 and nothing else would notice). |
-| `--no-pin` | off | Skip worktree creation; run from the current source tree |
-| `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
-| `--pin-commit COMMIT` | unset | **Pin the isolated worktree to a NAMED commit** (full sha or unambiguous prefix — resolved with `git rev-parse --verify <spec>^{commit}` and announced at startup as the full sha plus its subject line). Spelled `--pin-to-hash` before 2026-09-05; both spellings still parse, `--pin-commit` is the name. Beats the checkpoint's recorded `git_hash` on a genuine FORK and HEAD on a fresh run; **refused** beside `--sync-to-main` (argparse — they name two different sources of truth) and beside `--no-pin`; **refused** on a same-run RESTART whose checkpoint records a different hash (see the resume contract). An unresolvable commit exits `FATAL_CONFIG` naming it — never a silent fall-back to HEAD, which is the whole failure it exists to prevent. |
-| `--allow-torch-switch` | off | **Consent** to resume/fork a run under a torch OTHER than the one its run recorded (`metadata.json` `torch_version`; unrecorded = 2.5.1). Without it the launcher selects the env carrying the recorded torch, or refuses `FATAL_CONFIG` — see **Which interpreter the child runs**. Launcher-owned (stripped). |
-
-| `--arch production` | unset | *(forwarded)* Apply the whole ARCH surface AND the TRAINING RECIPE from `designs/production_config.json` as if typed — see **Is this the ARCHITECTURE you meant?** and **Is this the RECIPE you meant?** below. Refused on a resume (`FATAL_CONFIG`); the launcher's own restarts STRIP it (resume role). |
-| `--allow-nonproduction-arch` | off | *(forwarded)* Consent to a FRESH run whose architecture differs from the production mirror; without it that launch is REFUSED. |
-| `--allow-nonproduction-recipe` | off | *(forwarded)* Consent to a FRESH run whose training recipe differs from the mirror's `recipe` block on a knob the argv did NOT type; without it that launch is REFUSED. A TYPED differing value never needs it. |
-| `--dry-run` | off | **Resolve this launch and PRINT it, then exit — creating nothing.** Role (FRESH / FORK of <parent> / RESTART of <run>), the run dir the argv would write into, the pin (sha + subject + source), `--steps` beside the checkpoint's recorded `num_timesteps` so `+X steps` is visible, the effective config a `--model` inherits (per-flag `INHERITED` vs `from the argv`), the pool as recorded, and a `(child-only: …)` line for everything that needs torch. Exits `0`, or `FATAL_CONFIG` (3) on any refusal the real path makes. See **Validating a launch without launching** below. |
-
-All other flags are forwarded verbatim to `train_rl_agent.py` (the launcher strips only
-launcher-owned flags).
-
-**The launcher owns NO compile default.** `--compile-trainer` defaults ON in `train_rl_agent`'s own parser (2026-08-17; the compile-opponents flags were deleted in U3), and the launcher's
-only job is to be transparent to it and to its `--no-` opt-out. Two ways it could stop being:
-`_strip_launcher_args` could grow an entry that eats one, or argparse could abbreviation-match an
-unknown token against a launcher flag (it parses with `parse_known_args`, and `--no-pin` lives right
-next to `--no-compile-*` — the launcher parser and the trainer's are `allow_abbrev=False` since deletion pass
-P11, `main/train/parser_abbrev_test.py`, so an abbreviation is refused instead of matched).
-`compile_flag_forwarding_test.py` pins both against the REAL parser —
-`build_launcher_parser()` was extracted from `main()` for exactly that, so the test interrogates the
-parser rather than a hand-copied twin. It catches the launcher silently swallowing a child flag
-(its sibling `default_port_test.py`, which caught a launcher-injected default drifting from the
-trainer's, went with the injection in deletion pass P11).
-
-## Validating a launch without launching — `--dry-run`
-
-🚨 **A "dry launch" of the real command is safe on a FORK and DESTRUCTIVE on a same-run RESTART.
-That asymmetry cost a run's provenance on 2026-09-05.** To check that a restart with a larger
-`--steps` would still launch, a session launched the real command and killed it a few seconds
-later, after the startup lines. A fork writes a NEW directory, so that habit had always been
-harmless; a RESTART operates on the REAL run directory, and those seconds were enough to write
-`final_model_interrupted.zip`/`.json`, repoint `latest.txt` at that phantom artifact, overwrite
-`metadata.json` (whose `steps` became a target that never ran) and `model_config.json`, and leave
-`.compile_quorum` files behind (the compile quorum was deleted in U3; the incident record stands). **"Dry" was a property of forks, never of the launcher.**
-
-`--dry-run` makes it a property of the launcher. It performs *everything the launcher resolves
-before a child exists* — argv parse, the fork-vs-restart classification (`fork_lr.
-is_same_run_checkpoint`, IMPORTED), the idempotent-fork `--model` swap, the run dir
-(`resolve_launch_run_dir`, **without** the `makedirs` that follows it in `_prepare_session`), the
-pin (`resolve_pin`), and the effective config a `--model` inherits — prints one startup-shaped
-block, and exits.
-
-**What it prints**, in order: role · run dir (flagged `EXISTS — a real launch WRITES INTO IT` when
-it does) · `--model` · pin sha + subject + source · `--steps` beside the checkpoint's recorded
-`num_timesteps` and the `+X steps` delta · interpreter · transport · restart/grace/nice · the
-effective config with each reported flag marked `INHERITED`, `RESTORED at restart from <source>` or `from the argv` (`grad_accum_steps`, `fork_lr`,
-`fork_lr_freeze` — `dry_run.REPORTED_DESTS`; a same-run restart of an `--arch production` run restores its untyped recipe rows from `metadata.json:cli_args`, even when HEAD's `ModelVersion` cannot read a PINNED run's `model_config.json`, in which case a `could NOT be read under THIS tree` line says so — `dry_run_test.py::test_i_*`) · the pool as recorded (`N snapshot(s)` + `win_rate_vs_bots`, so pool
-drift is visible BEFORE launch) · then one `(child-only: …)` line per fact it structurally cannot
-compute.
-
-**It refuses what the real path refuses**, with the same exit code: an unresolvable `--pin-commit`
-and a same-run RESTART whose `--pin-commit` differs from the checkpoint's recorded hash both leave
-`FATAL_CONFIG` (3); `--pin-commit` + `--sync-to-main` and `--pin-commit` + `--no-pin` still fail at
-parse time (a dry run is not a way around a refusal the parser owns); a stale flag or a refused
-combination is `FATAL_CONFIG` too. A run-dir resolution failure exits `1`, as `_prepare_session`
-does.
-
-**What it never does, and how that is enforced.** No run dir created or modified, no worktree, no
-startup prune, no child, no `metadata.json` / `latest.txt` / `model_config.json` write, no
-environment export — and not even the `--nice` change, because `main()` returns into `dry_run`
-*before* `_apply_nice`. That ordering is the guarantee: `dry_run.py` imports only pure resolvers and
-never reaches `_create_run_worktree` / `_prune_stale_launcher_worktrees` / `_launch_child`. It is
-PROVEN rather than asserted by `dry_run_test.py`, which sha256s (+ mtime) every file in a fake run
-dir before and after a same-run-restart dry run and requires byte-identity, checks `git worktree
-list` is unchanged, and booby-traps all four effectful entry points so a future edit that reaches
-one FAILS the suite.
-
-**What it cannot know.** The architecture-compatibility verdict, the `ModelVersion` round-trip, the
-resolved compile flags, the pool SEEDING and the obs dim all need torch and a built model in the
-child. Each is printed as `(child-only: …)` rather than guessed at — a dry run that invented them
-would be worse than one that names the gap.
-
-**It is the EXECUTING complement to `python -m main.checkargs`** (root `CLAUDE.md` → *Will this
-command still launch?*): `checkargs` answers "do these flags still parse and cohere?" from an argv
-anywhere; `--dry-run` answers "what would THIS command do, on THIS box, right now?" — and calls
-`checkargs.check` for the flag half rather than re-implementing it, so the two cannot drift.
-
-```bash
-python -m main.launcher --dry-run --model models/<run>/checkpoints/checkpoint_N_steps.zip \
-  --steps 30000000 --device cuda
-```
-
-## Is this the ARCHITECTURE you meant? — the ARCH-SURFACE guard (`gen3_arch_surface_guard_v1`)
-
-> **"it launches" and "it is the experiment" are INDEPENDENT checks, and only the RESOLVED-CONFIG
-> DIFF tests the second.**
-
-**2026-09-06, ~7 GPU-hours** (ledger `2026-09-06 · INCIDENT`). The first win-prob-critic arm was
-launched from a design document's 38-token command block: the critic flags and the PPO knobs, none
-of the production feature flags, so every architecture flag silently took its OFF default. Three
-gates ran and all three passed — `python -m main.checkargs` exit 0, `resolve_config` accepted,
-`--dry-run` clean. All three were RIGHT. The run trained a near-bare network for **25,131 s / 24.4M
-steps / 6 checkpoints** and was still holding the GPU when it was found a second time; **31 keys of
-its `model_config.json` differ from `designs/production_config.json`** (every edge family off, zero
-entity seats, no belief slots, no event window, no intent heads). Every validator here answered
-*does this launch*; none answered *is this the architecture you meant*, and only a launch-time
-answer arrives before the GPU-hours do.
-
-🚨 **THIS IS A DIFFERENT FAILURE FROM A REFUSED FLAG COMBINATION, AND THE TWO SHARE NO MESSAGE, NO
-SUMMARY LINE AND NO REFUSAL PATH.** Rebuilding that arm from an older generation's recorded
-`original_command` also fails — on nine flags the win-prob critic (the only critic) SUBSUMES. That failure is **LOUD
-and PRE-launch**: `checkargs` names it, nothing starts, it is fixed in a minute. Arch drift is
-**SILENT and POST-launch**. A guard that catches the first is no protection against the second.
-
-`_prepare_session` now runs that comparison. It is the LAST thing before anything exists on disk —
-immediately before `_create_run_worktree` on the pinned path, before the `makedirs` under
-`--no-pin` — and deliberately AFTER the pin decision and the pinned-parser check, because "this
-command cannot launch at all" must reach the reader before a question about its intent.
-
-| the argv | what the guard does |
-|---|---|
-| **FRESH**, un-pinned or pinned to HEAD | prints the diff and **REFUSES** (`FATAL_CONFIG`), naming every differing key with both values |
-| FRESH + `--allow-nonproduction-arch` | prints the diff, launches, and stamps `arch_source` in `model_config.json` |
-| FRESH + `--arch production` | applies the whole surface first, so there is usually nothing to print |
-| **FORK / RESTART** | prints the diff as **INFO** — a resume INHERITS its parent's surface through `config.inherit_saved_flag`, so its silence is the parent's architecture. A same-run RESTART also keeps the run's `arch_source` / `recipe_source` (`arch_surface.inherit_arch_source_on_restart`, `recipe_surface.inherit_on_restart`) — the stripped `--arch` no longer nulls them at the first restart |
-| **PINNED to a non-HEAD commit** | prints the diff as **ADVISORY** — see below |
-
-**The ADVISORY rung is `gen3_pinned_argv_parser_v1`'s lesson applied a second time.**
-`designs/production_config.json` is THIS tree's mirror; a child pinned to another commit is built by
-that commit's registry, its flags and its own mirror — and `--arch` does not exist before
-2026-09-06, so a pinned older argv could not even take the remedy the message offers. Refusing there
-would be the same false POSITIVE that made `--pin-commit` unusable. The diff is still computed and
-printed; only the gate is dropped.
-
-**ONE function, four readers.** `main.train.arch_surface.report` serves this, `--dry-run`,
-`python -m main.checkargs` and `resolve_config`'s (report-only) print. Three copies of a guard is
-three things to keep in step, and this tree has paid for that shape twice already. The key set is
-DERIVED from `flag_registry.arch_surface_flags()` — the `structural` × `family=arch` rows — never a
-hand list, which would go stale the first time a toggle landed and then silently under-report.
-
-**The compared-key count is RECONCILED, not merely smaller.** Every block prints
-`39 arch + 7 critic + 3 non-structural = 49 registry rows` (`arch_surface.surface_partition()`,
-2026-09-06), because a guard that compares fewer keys than a reader's own count leaves them unable
-to tell an excluded row from a forgotten one. `family=critic` is excluded because the win-prob critic
-IMPLIES one of those readouts and REFUSES two others, so gating them would refuse every critic arm.
-
-**`--arch production` is the remedy**, and what it does NOT set it NAMES on every run: the critic
-readouts the win-prob critic implies, and `--belief-grad-mode`. The win-prob critic (a constant now), its three reward
-values and the SUPERVISION DOSES (`--move-belief-coef` and siblings) it used to only name are now
-APPLIED by its recipe half (next section). Silence that reads as coverage is the same failure one
-layer down. Measured against the incident's own config: of its 31 differing keys, 26 are refused on
-the surface, the doses are applied and compared by the RECIPE surface, and the last is the enable
-coefficient of a refused surface row — none can pass unmentioned.
-
-## Is this the RECIPE you meant? — the RECIPE-SURFACE guard (K10(a))
-
-The ARCH guard's twin, for the TRAINING RECIPE: five parser defaults (`--n-envs`, `--batch-size`,
-`--n-epochs`, `--ent-coef`, `--clip-range-vf`) and more (`--grad-accum-steps` 1 vs 32, `--self-play`,
-the critic, the reward values, the doses) differed from the live recipe, and `--arch production`
-applied none of them. `main.train.recipe_surface` holds the declared rows; the values live in
-`designs/production_config.json`'s `recipe` block: `recipe.fresh` (N0's measured fresh recipe) and
-`recipe.fork` (E5). Spec, values and their sources:
-`designs/endstate/design_learner_recipe.md` §3.22.
-
-| the argv | what the guard does |
-|---|---|
-| **FRESH**, a differing knob the argv did NOT type | prints the RECIPE SURFACE block and **REFUSES** (`FATAL_CONFIG`), naming every untyped knob |
-| FRESH, every differing knob TYPED | INFO — a typed value is the arm's lever |
-| FRESH + `--allow-nonproduction-recipe` | prints the block and launches |
-| FRESH + `--arch production` | applies every untyped `recipe.fresh` knob first (N0's measured recipe) |
-| **FORK** | INFO, compared with `recipe.fork` (E5: 5 epochs at a frozen 5.6e-5) — a fork's recipe is its ARGV plus what it inherits from its parent's config |
-| **same-run RESTART** of an `--arch production` run | the child resolves each untyped knob by ONE route (INERT / `model_config.json` / `metadata.json:cli_args`), announced; a MISSING value REFUSES by name (`checkargs` / `--dry-run` report it) |
-| **PINNED to a non-HEAD commit** | ADVISORY, for the ARCH guard's reason |
-
-The gate runs inside `_arch_surface_gate` (first, same last stop), and in `--dry-run` and
-`python -m main.checkargs`, all from `main.checkargs.check`'s one `recipe_surface.report`. The doc
-and the block are held together by `src/recipe_doc_gate_test.py`.
-
-## An argv is validated by the parser of the tree that will RUN it — `pinned_argv.py`
-
-🚨 **`--pin-commit` refused the exact command it exists for, and the reason is a class of drift no
-presence check can see.** On 2026-09-05::
-
-    python -m main.launcher --pin-commit b13b30b2 <the argv that run recorded> --dry-run
-    error: argument --hp-type-belief-coef: invalid float value: 'learned'
-
-At `b13b30b2` **`--hp-type-belief` TOOK A VALUE** (`learned`). Today that flag is deleted, so
-argparse — which abbreviation-matches by default — resolved the token onto the surviving
-`--hp-type-belief-coef` and handed it the value. (HEAD's parsers no longer abbreviation-match — deletion pass P11 —
-so today that token is `unrecognized`; a PINNED commit's parser is judged by its own setting, which the probe now
-reports as `ParseReport.allow_abbrev`.) Every argv check the launcher performed (its own
-`--dry-run`, and `main.checkargs`) read the **CURRENT** tree's `build_parser()`, while the child
-runs the **PINNED** tree's. **A same-named flag whose ARITY or TYPE changed is invisible to a "does
-the parser still know this flag?" test**, because the current parser thinks it does — and the
-result was that re-running an old recipe on its own commit, the one thing `--pin-commit` is for,
-could not be validated at all.
-
-**The rule now: when the resolved pin names a commit other than the HEAD of the checkout the
-launcher is running from, every argv validation runs against the PINNED tree's parser.** Pin ==
-HEAD is unchanged in every respect (no subprocess, no archive, the current parser) — pinned to your
-own tree, the current parser IS the right one.
-
-**And "the resolved pin" means `resolve_pin`'s answer, which `main.checkargs` now CALLS rather than
-re-deriving** — explicit `--pin-commit` > `--sync-to-main` ⇒ HEAD > the checkpoint's recorded
-`git_hash` > HEAD, with the chosen rule printed on the parser line: `checkargs` used to take the
-checkpoint's hash whenever a `--model` was present, so every `--sync-to-main` fork was judged at its
-parent's commit and exited 3 naming the HEAD-only flags it legitimately carries (reproduced on
-`models/ai_v9_162_TCUNFA_0903`'s recorded command, a run that trained to completion).
-
-🚨 **AND THE "ACCEPTED" BUCKET IS THE PINNED PARSER'S, NOT THIS TREE'S — the second half, and it
-cost three arms on 2026-09-05.** The inverse of a deleted flag is a flag ADDED since the pin: it
-parses cleanly against the parser you are standing in, so every "is this flag still known?" check
-passes it, and the child — which runs the pinned tree — dies at startup on a flag its parser never
-had. `python -m main.checkargs --pin b13b30b2 "<the v8 argv> --checkpoint-every-steps 150000"`
-exited **0** and named nothing, because `--checkpoint-every-steps` is real *here*.
-
-Every mode now reports its **OPTION SET**, and `flags_only_in_current_tree` names each argv flag
-this tree knows and the pin does not. It is printed FIRST, above the summary, because it is the
-finding a reader must not scroll past:
-
-```
-✗ NOT IN PINNED TREE @b13b30b2: --checkpoint-every-steps (exists only in the current tree)
-```
-
-In an authoritative mode that is a **refusal** — `FATAL_CONFIG` from the launcher and from
-`checkargs` alike, one finding with one exit code. Under `ast_scan` it is a named **WARNING** and
-never a `+1` in a count, because a reconstruction can be incomplete in both directions. An
-unambiguous ABBREVIATION is not called absent (argparse abbreviation-matches, so a unique prefix
-really does parse at the pin), and a launcher-owned flag never is either — `checkargs.forwarded_argv`
-strips the launcher's own flags before asking, since a recorded `launcher_command` carries
-`--restart-interval-hours 6` and friends that the child's parser has never heard of.
-
-**How the pinned parser is obtained** (`pinned_argv.pinned_parser_check`, one subprocess):
-`git archive <sha> -- src/main src/agents src/utils src/poke_env data` into a temp dir (`src/poke_env` is archived only when the pinned commit has it — deleted from HEAD in T27 P6), copy
-`pinned_argv_probe.py` beside it, run it with a **clean environment** (the caller's `PYTHONPATH`
-names the *current* `src` in every worktree shell on this box, so inheriting it would silently
-validate against the parser we are trying not to use). **Measured on this repo (2026-09-05, box
-under a live run): `b13b30b2` 3.25 s cold / 2.89 s warm (`ast_scan`, 171 options); `HEAD~30`
-3.33 s cold / 2.84 s warm (`build_parser`, 579 options).** The archive+extract is only ~0.4 s of
-that — the rest is the probe subprocess importing the pinned tree — so the per-sha cache saves
-little and the whole check is ~3 s either way. `data/` is 18 MB of the archive and `src/` 20 MB;
-`src/rust_sim`'s 66 MB is excluded, since nothing on the parser path imports it. Time-boxed at
-60 s, and a timeout is UNAVAILABLE, never a pass.
-
-**`git archive`, never `git worktree add`.** A worktree is a durable, registered, prunable object,
-and a one-second validation command that touched the worktree list has already cost this program a
-live production run (see the prune incident above). An archive is a read of the object database
-and leaves nothing registered anywhere. `pinned_argv_test.py` asserts `git worktree list` is
-unchanged.
-
-**Four outcomes, and TWO of them are a verdict. Which one answered is printed on every run**
-(`[mode=…]` in the summary line) — a reader must never have to guess whether the verdict came from
-the real parser or a reconstruction of it:
-
-| mode | what it is | a failure means |
-|---|---|---|
-| `build_parser` | the pinned tree's own `build_parser()` — the parser the child constructs | **`FATAL_CONFIG` (3)**, naming the offending token. The child would die on it ~40 s later, with a run dir already on disk |
-| **`parse_args_hook`** | for every commit BEFORE `build_parser()` existed: run the pinned `main/train_rl_agent.py` as `__main__` with `argparse.ArgumentParser.parse_args` MONKEYPATCHED, so the first call hands us the fully-built REAL parser, answers, and exits | **`FATAL_CONFIG` (3)** — also AUTHORITATIVE, because the parser answering IS the parser the child builds. The only static thing about it is that the entry point is never allowed to run |
-| `ast_scan` | a STATIC read of every `…add_argument(…)` call in the pinned `train_rl_agent.py` (+ `main/train/parser/*.py`), replayed into a synthetic parser carrying only each option's SPELLING and ARITY | a **WARNING** — the fallback when the hook times out or the pinned tree will not import on this box. A reconstruction can be incomplete, so it may not refuse |
-| `unavailable` | `parser_unavailable_at_pin` — git failed, nothing was readable at all, or the probe timed out | a **WARNING** naming the reason, and the launch proceeds with the argv marked UNVALIDATED. **Never a silent pass** — but also never a refusal on a check we could not run |
-
-**The `parse_args_hook`, and why it is safe to point at a real training entry point on a box
-carrying a live run.** `build_parser()` landed 2026-08-16 (`26b28509`); every commit before it —
-`b13b30b2` included — builds its parser inline inside `main()`, and the old answer was "that cannot
-be called without starting a training job". It can: at b13b30b2 the first ~1080 lines of `main()`
-are `add_argument` calls and `parse_args()` is the next statement, so a monkeypatch installed
-**before the module is executed** intercepts the real parser before one line of work. The hook
-writes its report and calls **`os._exit(0)`** from inside the call — not `sys.exit`, because a
-`SystemExit` can be caught or wrapped by whatever the entry point had running (at b13b30b2 the call
-sits inside `asyncio.run`), and "probably unwinds cleanly" is not a guarantee worth having. It runs
-in a **child of the probe** with **cwd = the temp dir**, so a hang, a hard crash, or an
-incompatibility with today's site-packages degrades to `ast_scan` instead of taking the probe down,
-and a relative `models/` in the entry point could not reach the repo even if it ran. A parser
-carrying fewer than `MIN_HOOK_OPTIONS` (20) option strings is declined and passed through — that is
-some dependency's import-time argparse, not the trainer's. Time-boxed at
-`HOOK_TIMEOUT_S = 120 s` (a pre-2026-08 tree imports torch on the way to its parser); the outer
-probe box is 180 s so a hook timeout still reaches the fallback it exists for.
-**Measured on the real `b13b30b2` (2026-09-05, box under a live run): 2.5 s, 369 options** — the
-torch import is cheap enough that the hook, not the scan, is what answers in practice.
-`pinned_argv_test.py` asserts a fake run-dir tree is **byte-identical** (sha256 per file) after the
-probe, that no `models/` appears in the repo, and that the repo tree is unchanged.
-
-⚠️ **A CUSTOM ACTION CLASS IS NOT A STRING** — `ast_scan` read `action=` only when it was an
-`ast.Constant`, so `action=BoolFlag` (38 flags at b13b30b2) parsed as "no action ⇒ takes one value"
-and the real v8 argv came back as `argument --self-play: expected one argument`, for a flag that is
-a bare boolean there. A non-string action is now resolved from the pinned tree's OWN `class` body:
-the `nargs` it passes to `super().__init__` **and** whether it generates `--no-<flag>` spellings
-(`--no-stall-pbrs` is a real flag at that commit, declared by no `add_argument` call) are both read
-out of the AST, so the reconstruction follows the pinned commit rather than a class name frozen into
-the probe. An action class that cannot be resolved takes `nargs="?"` — the only arity that accepts
-the flag bare AND with a value, so a scan that guesses wrong under-reports rather than inventing a
-refusal.
-
-`data/` is in the archive and that is not optional: `utils.paths.repo_root()` is
-`__file__`-relative, so a pinned tree looks for its data beside itself and the `gen3_data` facade
-raises `FileNotFoundError` at import — which would silently demote every recent pin from
-`build_parser` to the static scan.
-
-**Only the PARSER is pinned, and the other checks say so.** The extractor dependency graph
-(`agents.model.flag_registry`) and the value-conditional refusals (`main.train.combination_checks`)
-are still read from the current tree, so whenever a pinned check ran their findings print as
-`ℹ️ ADVISORY — the CURRENT tree, not the pinned parser` and do **not** fail the dry run. That
-inversion is the fix: judging a pinned argv by today's flag set is precisely what made
-`--pin-commit` unusable.
-
-**Where it is wired.** `run._prepare_session` (the real launch — checked **before**
-`_create_run_worktree`, so a refusal creates nothing, and against `child_args` **with `--run-dir`
-injected**, because that is the argv the child receives), `launcher/dry_run.py`, and
-`main.checkargs --pin <sha>`. `checkargs` defaults the pin to the git_hash **recorded by the argv's
-`--model` checkpoint** — the commit `worktree.resolve_pin` would pin a resume to — and always
-prints which parser it used.
-
-```bash
-python -m main.checkargs --pin b13b30b2 --argv "--steps 1000 --hp-type-belief learned"
-python -m main.checkargs models/<run>          # pins itself to that checkpoint's git_hash
-```
-
-Gate: `pinned_argv_test.py`, over a real **5-commit** temp repo whose `--flag` **changes arity**
-across commits (a deleted flag would test the easy half) and two of whose commits build their parser
-inline with a `BoolFlag`-shaped custom action: the same argv validates clean at commit 1 and is
-refused at commit 2 with the token named, `--dry-run` exits 0 and 3 respectively, a pin naming HEAD
-spawns no probe at all, commit 3 is answered by the `parse_args_hook` **and leaves a fake run-dir
-tree byte-identical**, commit 4 (which will not import) degrades to the static scan where
-`--self-play` / `--self-play true` / `--no-self-play` are all legal, and commit 5 reports
-`parser_unavailable_at_pin` and still launches. Section (f) is DEFECT 1 — a REAL current flag
-(`--checkpoint-every-steps`) absent at the pin must be named, must lead the block, must refuse
-authoritatively, must only warn under `ast_scan`, and must not fire for a launcher-owned flag, a
-flag missing from both trees, or an unambiguous abbreviation.
+| `--restart-interval-hours` | `6.0` | `0` = a single run, no restart. `run.DEFAULT_RESTART_INTERVAL_HOURS` (owner rule 2026-10-04, in code 2026-10-10; it was `3.0`). Pinned by `restart_interval_default_test.py` |
+| `--max-crash-restarts` | `3` | consecutive rapid (< 10 min) self-crashes before giving up; `0` = unlimited; sustained progress resets it |
+| `--restart-grace-minutes` | `20.0` | force-kill window past a scheduled restart's deadline; SIGKILL after `KILL_GRACE_SECONDS`. A silent child shows `⚠ no child output for Nm` — no auto-restart on stall |
+| `--nice` | `10` | niceness for the launcher and everything it spawns (inherited across fork/exec); only ever raises; `0` disables. `nice_test.py` |
+| `--no-pin` | off | no worktree; run from the current tree |
+| `--sync-to-main` | off | pin a resume to HEAD instead of the checkpoint's `git_hash` |
+| `--pin-commit COMMIT` | unset | pin to a NAMED commit (legacy spelling `--pin-to-hash`); refused beside `--sync-to-main` / `--no-pin`, and on a restart that would move the pin; unresolvable ⇒ `FATAL_CONFIG` |
+| `--allow-torch-switch` | off | consent to resume under a torch other than the recorded one (launcher-owned) |
+| `--dry-run` | off | resolve and print the launch, create nothing; exits 0 or the refusal's code |
+| `--arch production` | unset | *(forwarded)* the production ARCH surface + TRAINING RECIPE as if typed; FRESH-only, stripped on restart |
+| `--allow-nonproduction-arch` / `--allow-nonproduction-recipe` | off | *(forwarded)* consent to a FRESH run off the production mirror |
 
 ## Which interpreter the child runs
 
-🚨 **A resume or fork runs under the TORCH its run RECORDED** (`torch_runtime.py`, owner 2026-09-30:
-torch 2.8 / `gen3ai_torch28` is the default, torch 2.5.1 / `gen3ai_stable` is LEGACY, kept so old
-pinned runs resume on their own torch). Every save writes `metadata.json`'s `torch_version` (and a
-`torch` key on each `pin_history` span); a run with NO record predates it and **reads as 2.5.1**.
-`resolve_for_launch` decides ONCE per launcher session, after the fork swap and before anything is
-created, and the choice rides in `child_env[$GEN3AI_PYTHON]` so every restart spawns the same one:
+`torch_runtime.resolve_for_launch` decides ONCE per launcher session and holds the choice in
+`child_env[$GEN3AI_PYTHON]`, so every restart spawns the same interpreter. FRESH:
+`child.resolve_child_python()` — `$GEN3AI_PYTHON`, else `sys.executable` (never a machine path;
+`interpreter_test.py` fails on one). RESUME / FORK: the interpreter carrying the run's RECORDED torch
+(`metadata.json` `torch_version`; none = 2.5.1), else the sibling env `KNOWN_ENVS` names (selected and
+announced), else `FATAL_CONFIG` unless `--allow-torch-switch`. HEAD's code runs torch >= 2.8 only
+(`utils/torch_floor.py`), so a 2.5.1 run resumes only PINNED — `--no-pin` / `--sync-to-main` make it
+refuse at startup. A bare `train_rl_agent.py --model …` is not checked by this. Detail:
+[`designs/launcher/interpreter.md`](../../../designs/launcher/interpreter.md).
 
-| launch | child interpreter |
-|---|---|
-| FRESH | `resolve_child_python()` (below) — its torch becomes the run's record at the first save |
-| RESUME / FORK, the default interpreter carries the recorded torch | that interpreter |
-| … it does not, no `$GEN3AI_PYTHON` | the sibling conda env `KNOWN_ENVS` names for that torch (`2.5.1` → `gen3ai_stable`, `2.8.0` → `gen3ai_torch28`; found beside the launcher's own env, never a machine path), **SELECTED and announced** |
-| … nothing carries it, or `$GEN3AI_PYTHON` names the wrong torch | **`FATAL_CONFIG` refusal**, unless `--allow-torch-switch` (launcher-owned consent; the new torch is then recorded at the child's first save) |
+## Tests
 
-Versions compare by RELEASE (`2.5.1+cu121` ≡ `2.5.1`). The startup event and `--dry-run` print the
-interpreter, its torch and the run's recorded torch with its source. The probe reads the env's torch
-METADATA in a subprocess (~50 ms; torch is not imported). Gate: `torch_runtime_test.py` (fake
-interpreters, so it reads the same on any box; reverting the refusal or the `child_env` hold fails
-it). ⚠️ The guard is the LAUNCHER's: a bare `train_rl_agent.py --model …` is not checked by it.
-🚨 **HEAD's CODE runs torch >= 2.8 only** (deletion pass K1, 2026-10-02): the trainer's `main()` calls
-`utils/torch_floor.py` first and exits `FATAL_CONFIG` on an older torch (HEAD has no 2.5.1 path left).
-So a 2.5.1 run resumes only PINNED (its own commit's `src/`, the selected `gen3ai_stable`): with
-`--no-pin` / `--sync-to-main` the child is HEAD code on 2.5.1 and refuses at startup — drop the flag,
-or switch the run to 2.8 with `--allow-torch-switch`.
-
-🚨 **THE DESKTOP-GPU REFUSAL (T23, 2026-10-05).** A CUDA run does not start while a display process (gnome-shell,
-Xorg, Xwayland, a display manager, … — the declared `utils.desktop_gpu.DISPLAY_PROCESS_NAMES`) holds the GPU: the
-trainer exits `FATAL_CONFIG` (the launcher does not restart it) naming the process, pid, VRAM and the fix
-(`sudo systemctl stop gdm.service`). `--dry-run` calls the SAME `check_for_run` on the resolved `--device` /
-`--debug` / `--allow-desktop-gpu` and prints a `desktop GPU :` line (✓ / exempt / tolerated / ✗ REFUSED; the refusal
-fails the dry run, FATAL_CONFIG, and is ADVISORY when the child runs a pinned other commit, whose trainer may not
-carry the check). `--debug` (CPU) is exempt; NVML unreadable is a refusal for a CUDA run. `--allow-desktop-gpu`
-rides to the child verbatim (restarts keep it) and is recorded in `metadata.json` (`cli_args`). Gate:
-`utils/desktop_gpu_test.py`, `dry_run_test.py` (h).
-
-🚨 **THE DISK-SPACE GUARD (2026-10-09).** A launch whose run-archive filesystem has less free space than REQUIRED is
-refused `FATAL_CONFIG` (exit 3) naming the shortfall and printing the arithmetic (`utils/disk_guard.py`: the checkpoints
-still to be written x the checkpoint size, eval traces, the compile cache not yet on disk, log allowances, x 1.25 + a 4 GiB
-reserve; the checkpoint size is read from the run's own newest checkpoint, the fork source, or the newest same-architecture
-run). `main/launcher/disk_gate.py` asks in `_prepare_session` BEFORE the pin / worktree / run dir exist — the only guard a
-PINNED child gets, its trainer predating this check — and `--dry-run` prints the same verdict (`disk space :` line); the
-trainer asks again at its own startup (`main/train/disk_preflight.py`, before `os.makedirs`). `--allow-low-disk` is the
-recorded opt-out (a trainer flag, forwarded verbatim; `metadata.json` `cli_args._disk_guard`); when the PINNED trainer has
-no such flag the launcher CONSUMES it (`disk_gate.consume_if_absent_at_pin`) instead of failing the pinned-parser check.
-In flight, `run_io._TrackingCheckpointCallback` reads `shutil.disk_usage` once per save: free < 2 x the next save warns
-(`[DiskGuard] LOW DISK`), free < 1 x stops cleanly with `FATAL_DISK` (8, the exit-code table above); the opt-out keeps the
-warning and drops the stop. `--debug` is exempt from the preflight. Gate: `utils/disk_guard_test.py`,
-`main/train/disk_guard_wiring_test.py`, `main/launcher/disk_exit_test.py`, `dry_run_test.py` (j).
-
-🚨 **THE SUBMODULE PREFLIGHT (2026-10-10, F-GE-4 of `designs/research_state/measurements/gpu_checks_endstate_2026-10-09/`).**
-`_create_run_worktree` replaces the pinned worktree's empty `deps/pokemon-showdown` placeholder with a LINK to the
-LAUNCHING checkout's submodule (`worktree.showdown_link_source(repo_root)`), and an un-pinned child reads the launching
-tree's own. A launch from a checkout whose submodule was never initialised or built therefore gave the child an empty
-directory, and it died minutes later in `Teambuilder`'s team validation (`utils/bridge/validate_team.js` does
-`require('<repo>/deps/pokemon-showdown')`; `team_validator` swallows `Cannot find module` into `{"valid": False}`, so the
-visible symptom is "No valid teams found" after the model and the T2 service are up). `main/launcher/submodule_gate.py`
-asks BEFORE the pin / worktree / run dir exist, in `_prepare_session` right after the disk question, and `--dry-run` prints
-the same verdict (`showdown deps :` line, fails the dry run): `utils/showdown_deps.py` `NEEDS` — the closed list of files
-`validate_teams_locally` reads (sentinels of the three things that can be wrong: the submodule `checkout`, its `build`
-(`dist/`), its `modules` (`node_modules/`); `os.path.exists` follows links, so a dangling `dist` link reads as missing) —
-must be present and `node` on PATH, else `FATAL_CONFIG` (3) naming the missing files, the checkout and the fix:
-`git submodule update --init` (only when `package.json` is missing), then `./scripts/bootstrap.sh --skip-env` (links the
-main checkout's built `dist/` and `node_modules/` into a worktree; leaves the shared conda env alone); or `node build` /
-`npm ci` in the submodule. Never advisory (a pinned trainer predates any check of its own) and NO opt-out flag. Pinned by
-`submodule_gate_test.py` (the launcher refuses before a worktree or run dir exists, for a placeholder and an unbuilt
-checkout; the healthy path; `--no-pin` asks about its own tree; `--dry-run` fails/passes; the checked directory IS the
-one a real pinned worktree is linked to) and `utils/showdown_deps_test.py` (the verdict, the fix text, and a REAL node
-trace of one validation proving every listed file is read). A test that fakes the launcher's repo root with a throwaway
-repository writes a stub checkout (`showdown_deps.write_stub_checkout`) after its commits.
-
-Underneath, `child.resolve_child_python()` — the FRESH default — in precedence order:
-
-| # | Source | Notes |
-|---|---|---|
-| 1 | **`$GEN3AI_PYTHON`** | Explicit override. Set it only to run the child under a *different* interpreter than the launcher — a blank/whitespace value falls through rather than becoming `argv[0]` |
-| 2 | **`sys.executable`** | The default: the launcher's OWN interpreter |
-
-**`sys.executable` is the correct default, not a guess.** The launcher is already running under the
-environment the run wants, so the child inherits it on any machine under any env name — there is no
-conda prefix, env name or absolute path to keep in sync, and a fresh clone needs no source edit.
-The resolved value is announced in the events panel at startup (`🐍 Interpreter: …`, marked
-`(pinned by $GEN3AI_PYTHON)` when the override is live), because if the launcher was started from
-the wrong environment then *every* child inherits that, and this line is where it shows.
-
-`_launch_child` takes argv[0] from the session's `child_env[$GEN3AI_PYTHON]` (set by
-`resolve_for_launch` above), falling back to `resolve_child_python()` at spawn time for a caller that
-set none (tests), so a launcher that outlives a dozen children across restarts spawns one torch.
-
-> **History.** This was a hardcoded `/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3` with
-> no flag and no override until 2026-08-22 — a fresh clone died with `FileNotFoundError` on its
-> first launcher run and the only fix was editing the source. On this box the change is
-> behaviour-identical (the launcher *is* started with that interpreter, so `sys.executable` resolves
-> to it). Gate: `interpreter_test.py`, whose durable half fails if **any** launcher module
-> re-introduces a machine-specific path — not just the old line.
-
-**Recorded commands are unaffected.** `run.py` records `LAUNCHER_COMMAND = " ".join(sys.argv)`, and
-`sys.argv[0]` is the launcher's `__main__.py`, never the interpreter — verified over all 104
-archived `models/*/metadata.json` (0 embed a python or conda path). The launcher constructs the
-child argv itself, so an old run's recorded command relaunches unchanged.
-
-## Resume contract
-
-🚨 **A PERIODIC RESTART is a resume of the SAME run, and one flag has to tell the two apart.**
-`--fork-lr` pins the LR of a checkpoint being FORKED (`--lr` is inert on any resume — the optimizer's
-saved rate wins), and the restart loop re-invokes the same argv into the same run dir every
-`--restart-interval-hours`. So the trainer keys the pin on WHERE the resumed checkpoint lives
-(`main/train/fork_lr.py::is_same_run_checkpoint`): outside the run dir ⇒ a FORK, pin applies; a
-checkpoint this run wrote (`<run>/checkpoints/*.zip`, or `<run>/*.zip` for the legacy layout) ⇒ a
-RESTART, the pin is NOT re-applied and the KL controller keeps its adapted rate. That is the same
-predicate this package's own `checkpoint.resolve_fork_resume_model` uses to decide whether a restart
-re-inits from the source or continues in place — and because that function SWAPS `--model` to the
-fork's own checkpoint once the fork has progress, restart #2 of a fork reads RESTART for the same
-reason a plain resume does. `--fork-lr-freeze` is the exception: it is a property of the RUN, so it
-persists across every restart, re-read from `metadata.json`'s `dose.fork_lr_pin`.
-
-🚨 **AND A FORK OF A FROZEN RUN MUST NAME ITS OWN DOSE.** The freeze is a property of the parent's
-run, not of its weights — a fork inherits the pinned NUMBER through SB3's optimizer state and
-leaves the freeze behind, so a live KL controller starts annealing away from a rate that was chosen
-precisely because it should not move. That combination is now a startup `[ForkLR] FATAL`
-(`gen3_fork_lr_inherit_guard_v1`, `FATAL_CONFIG`/exit 3, refused before the run dir is created);
-`--allow-inherited-fork-lr` is the deliberate opt-in, and `python -m main.checkargs` prints the
-same verdict offline. The three era-2 exploiters are what it stands for: the plateau parent's
-frozen 2.80e-05 → 8.36e-05, median 5.5e-05, 0.39× the v8 reference against era-1's 1.78×, on argvs
-that `checkargs` and `--dry-run` had both passed. Detail:
-[`designs/training/step_size_and_batch.md`](../../../designs/training/step_size_and_batch.md).
-
-🚨 **THE SAME SPLIT GOVERNS THE SELF-PLAY POOL, and it is why the restart loop is safe here.** A
-FORK begins in a new run dir whose `snapshots/` is empty, and an empty pool does not disable
-`--self-play` — it silently falls back to the BOT pool. `agents.training.pool_seed` therefore
-auto-seeds a genuine fork's pool from its parent (the zips AND `summary.json` /
-`win_rate_vs_bots.txt` / `model_config.json`, since the starting `self_play_fraction` comes from the
-metadata) and REFUSES a fork whose pool is still empty with `FATAL_CONFIG`. It keys on the SAME
-imported `is_same_run_checkpoint`, so a periodic restart never re-seeds — which matters more here
-than for `--fork-lr`: re-seeding on every restart would overwrite the run's own grown pool with the
-parent's stale one every few hours. The two flags (`--no-fork-pool-seed`, `--allow-empty-pool`) are
-trainer-owned and forwarded verbatim; the launcher must never acquire a default for either
-(`pool_seed_flag_forwarding_test.py`, same shape as `compile_flag_forwarding_test.py`).
-
-The checkpoint must have a `metadata.json` with a `git_hash` field (written automatically by
-`save_model_snapshot()`). The launcher pins the worktree to that exact commit so the resumed
-run uses the same code as the original — unless `--sync-to-main` or `--pin-commit` is passed.
-
-### Which commit a checkpoint records
-
-🚨 **The pin only works if the recorded hash IS the code that ran, and until 2026-09-05 it was
-not.** The run whose worktree the prune deleted (above) then failed to resume correctly,
-because its checkpoint **sidecar** recorded `fff95a16` — the ambient HEAD of the main checkout
-— while the run-level `metadata.json` recorded the actual pin `eb5261ff`. `resolve_pin` reads
-the sidecar first, so the resume pinned the wrong commit. Two independent causes:
-
-1. `agents.model.snapshot.record_checkpoint` resolved `git_hash or get_git_hash()`, never
-   consulting `$LAUNCHER_GIT_HASH`. Worse, the truthy value it produced then **won** the
-   `git_hash or env or …` chain inside `_build_snapshot_entry`, so that function's env
-   fallback was dead code for the whole checkpoint path.
-2. `utils.git.get_git_hash()` ran `git rev-parse HEAD` **in the process cwd**. The launcher
-   puts the pinned worktree on the child's `PYTHONPATH` but spawns it with **no `cwd=`** (see
-   the `PYTHONPATH` note above — that split is deliberate, so `models/` lands in the main
-   checkout), so the child *imports* the pin while *standing in* un-pinned `main`.
-
-Fixed at the root: `get_git_hash()` is anchored at `utils.paths.repo_root()`, the checkout the
-code was **imported from** — in a detached launcher worktree that is the pin, in the main
-checkout nothing changes. And **one resolver**, `snapshot.resolve_git_hash`, now serves the
-run-level metadata and every sidecar: explicit argument → `$LAUNCHER_GIT_HASH` → the imported
-checkout's HEAD, **raising `GitHashMismatchError` when the launcher's pin and the imported
-tree name different commits** (a producer-side GIGO throw — a warning in a training child's
-stdout is a line in a 1 MiB ring buffer nobody reads). Gate:
-`src/agents/model/snapshot_git_hash_test.py`.
-
-**`pin_history` — the scalar `git_hash` is "current", not "the code that ran".** It is
-rewritten on every save, so on a run that restarts every 3 h it names the LAST code to touch
-the run (observed on `ai_v9_171`: `eb5261ff`, then `fff95a16` after one resume). `metadata.json`
-therefore also carries an **append-only** `pin_history` — `{git_hash, pin_source, first_step,
-last_step}` per contiguous commit span, written by the same save path, with the same
-immutability contract as `lineage` (an existing entry is never rewritten except to advance its
-`last_step`). A legacy run with no history is seeded with one `derived: true` span from its
-scalar hash, so *absent* never reads as *one commit*. Every checkpoint sidecar stamps the
-history as of its write.
-
-**`python -m main.sidecar_audit <models_dir_or_run>…`** is the offline reader (JSON only, no
-torch, no `.zip` opened): per run it prints the run-level pin, the `pin_history` spans, and
-every sidecar's hash, flags a run with >1 span as **PIN-SPLIT**, and separates a sidecar whose
-hash *is* a recorded span (explained — a restart) from one that appears nowhere (misattributed
-— the shape this defect leaves). `--json`, `-v`, and `--strict` (exit 1 on any unexplained
-hash).
-
-🚨 **THE PIN HAS FOUR SOURCES AND ONE DECISION FUNCTION** (`worktree.resolve_pin`, returning a
-`PinDecision(sha, source, subject)`; every refusal is a `PinRefused` carrying the exit code to
-leave with). In precedence order: an explicit **`--pin-commit`**, the resumed checkpoint's
-recorded **`git_hash`**, **HEAD** under `--sync-to-main`, **HEAD** on a fresh run. The chosen
-source is exported to the child as `LAUNCHER_PIN_SOURCE` and recorded as `metadata.json`'s
-top-level **`pin_source`** (`"pin_commit"` / `"checkpoint"` / `"sync_to_main"` / `"head"`) beside
-the `git_hash` it chose — so a finished run can say whether its commit was NAMED or inherited.
-
-**Why `--pin-commit` exists, measured.** A batch of arms launched sequentially under
-`--sync-to-main` each pins to HEAD *at its own launch*, so a commit landing mid-batch splits the
-batch across two commits and nothing in any run's output says so — that happened on 2026-09-04
-(arm 1 on `0c76e2ee`, arms 2-4 on `52ab5914`). Naming the commit on every arm removes HEAD from
-the decision. It is the launcher half of the fix; the chain script's half is to record the pin
-once and refuse to launch when HEAD has moved off it.
-
-**A RESTART may never MOVE the pin, and that is the one case `--pin-commit` does not win.** The
-launcher re-invokes the identical argv into the identical run dir every
-`--restart-interval-hours`, so a `--pin-commit` that differs from the resumed checkpoint's
-recorded `git_hash` would silently walk a live run onto other code every few hours. That is
-`FATAL_CONFIG`, naming both commits and the three ways out. Fork-vs-restart is
-`main.train.fork_lr.is_same_run_checkpoint`, **IMPORTED** — the same predicate `--fork-lr`, the
-pool seeding and `resolve_fork_resume_model` key on. The **fork swap runs first** on purpose:
-once an idempotent fork has its own progress, re-running its launch command is a RESTART of that
-fork, so the guard is checked against the fork's own checkpoint rather than the source it was
-originally forged from. Gate: `pin_commit_test.py`.
-
-**The child's `PYTHONPATH` is what makes that pin real, and it must never be "cleaned up."** The
-spawn passes no `cwd=`, so `PYTHONPATH=<worktree>/src` is the only thing making a resumed run
-*import* the code its checkpoint was saved on. Measured (2026-08-22 scope survey, Finding B): with
-an editable install present and no `PYTHONPATH`, a pinned old-commit child imports `agents` from the
-**main checkout** — an old checkpoint silently resuming on current HEAD, the arch-drift disaster
-class. `PYTHONPATH` entries land in `sys.path` *before* a `.pth`'s, so the pin and an editable
-install coexist correctly exactly as long as that line stays. Note the deliberate split it creates:
-the child **imports from the worktree** while the run it writes is the ABSOLUTE `--run-dir` the launcher
-hands it (in the archive — main's `models/`), so a pinned child running an OLD commit that knows nothing of
-`run_archive_dir` still lands there from any launcher cwd (verified 2026-10-02: a launcher in a worktree,
-child pinned to HEAD, wrote only into the archive; `run_archive_test.py` pins the absolute `--run-dir` and
-the no-`cwd=` spawn).
-
-`models/` exists **only in the main checkout** and never in a worktree —
-so anything else that needs the run archive must reach across rather than look beside itself.
-`utils.paths.main_models_dir()` is that reach (via git's shared `--git-common-dir`, the same fact
-`utils.git.get_main_repo_root()` reads); see the root `CLAUDE.md` § *Path discovery*. Four tests
-used to encode this box's absolute path instead and therefore skipped forever everywhere else.
-
-## Showdown port — GONE (deletion pass P11)
-
-The launcher injects **no** `--showdown-port` and the trainer has no such flag: the Rust bridge is the only transport
-(U3; `--use-bridge` was deleted, P11b), training AND eval run in-process, and nothing HEAD's trainer accepts connects to a Showdown server. The events
-panel and `--dry-run` print `🌉 Transport: in-process bridge [rust] (no Showdown server)`. `DEFAULT_TRAINING_SHOWDOWN_PORT`,
-`child_uses_bridge`, `_apply_default_showdown_port` and `default_port_test.py` were deleted with the flag (the websocket
-branch they served was already unreachable). A PINNED resume of a pre-rust-bridge (websocket) run no longer gets the
-launcher's `:8001` default — it runs its own commit's trainer with that trainer's default (`:8000`); the training
-server on `:8001` is untouched (root `CLAUDE.md` § Showdown Server). The root `CLAUDE.md` → In-process bridge transport
-has the transport.
+`src/main/launcher_app_test.py` (Pilot: render, keys, confirm overlays, signals; `_supervise`
+exit codes, crash restart, `_reap`) · `src/main/launcher_test.py` (checkpoint / strip / dispatch /
+crash-log / run-dir / log sinks) · in this directory: `state_test.py`, `headless_test.py`,
+`dry_run_test.py`, `restart_resume_role_test.py`, `worktree_prune_test.py`, `pinned_argv_test.py`,
+`pin_commit_test.py`, `torch_runtime_test.py`, `interpreter_test.py`, `nice_test.py`,
+`compile_flag_forwarding_test.py`, `pool_seed_flag_forwarding_test.py`, `reap_grace_test.py`,
+`restart_interval_default_test.py`, `submodule_gate_test.py`, `checkpoint_event_test.py`,
+`ipc_test.py`, and one per non-restart exit code (`parity_refusal_exit_test.py`,
+`nonfinite_exit_test.py`, `cuda_leak_exit_test.py`, `disk_exit_test.py`).

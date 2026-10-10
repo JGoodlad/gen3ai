@@ -54,8 +54,8 @@ the run. A TTY keeps the full interactive TUI. Detail: `src/main/launcher/CLAUDE
 quit/ctrl-c/SIGHUP teardown, crash reporting + auto-restart, exit codes
 (`COMPLETE`/`INTERRUPTED`/`CRASH`/`FATAL_CONFIG` — the last gives up without restarting on an
 arch/config mismatch instead of looping), the full flag table (`--restart-interval-hours`,
-`--restart-grace-minutes`, `--max-crash-restarts`, `--nice`, `--no-pin`, `--sync-to-main`), the
-and the resume contract — live in `src/main/launcher/CLAUDE.md`.** (The launcher has no Showdown port: `--showdown-port` is deleted, `designs/deleted_flags.md`.)
+`--restart-grace-minutes`, `--max-crash-restarts`, `--nice`, `--no-pin`, `--sync-to-main`) and the
+resume contract — are the rules in `src/main/launcher/CLAUDE.md` and the detail in `designs/launcher/`.** (The launcher has no Showdown port: `--showdown-port` is deleted, `designs/deleted_flags.md`.)
 
 **The launcher and everything it spawns run at `--nice 10` by default** (`0` disables). A run holds
 ~940 processes; at nice 0 it competes on equal terms with interactive work sharing the box.
