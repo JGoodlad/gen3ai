@@ -7,6 +7,9 @@ and a public endpoint that starts them is a free CPU-burn button. One shared pas
 in Discord, unlocks those. No usernames, no accounts, no email: helping out should not cost anyone
 personal information.
 
+(2026-10-09: "the work" is also anything that loads a checkpoint or runs the model forward — `/analyze`,
+`/game`'s model panels. The mechanism is `gate.py`; `gate_guard_test.py` derives which routes must carry it.)
+
 So this is deliberately NOT a user system. There is one secret, it grants one capability, and the
 only thing a session proves is "this visitor knows the password".
 

@@ -26,6 +26,13 @@ def client(run):
         yield c
 
 
+def _unlock(client):
+    """The model views need the shared password (`web/gate.py`); the story does not."""
+    r = client.post("/login", data={"password": "test-only-password", "next": "/game"},
+                    follow_redirects=False)
+    assert r.status_code == 303, r.text[:300]
+
+
 def _battle(client):
     return client.get("/api/battles").json()[0]["short_id"]
 
@@ -43,6 +50,7 @@ def test_game_is_in_the_nav():
 
 
 def test_the_page_renders_the_story_and_a_model_slot(client):
+    _unlock(client)
     b = _battle(client)
     r = client.get("/game", params={"battle": b})
     assert r.status_code == 200
@@ -60,6 +68,7 @@ def test_the_story_api_matches_the_session(client):
 
 
 def test_a_run_with_no_loadable_checkpoint_renders_a_message_not_a_500(client):
+    _unlock(client)
     b = _battle(client)
     r = client.get("/partials/game/model", params={"battle": b, "inv": "0"})
     assert r.status_code == 200 and 'model-unavailable' in r.text and 'data-model-state="ok"' not in r.text
@@ -69,6 +78,7 @@ def test_a_run_with_no_loadable_checkpoint_renders_a_message_not_a_500(client):
 
 
 def test_an_older_architecture_is_one_plain_sentence_with_the_diagnosis_folded(client):
+    _unlock(client)
     from main.prober.model import ArchDriftError
 
     def drift(_battle_id):
@@ -118,3 +128,62 @@ def test_decision_index_is_clamped_not_a_500(client):
     b = _battle(client)
     assert client.get("/game", params={"battle": b, "inv": "99999"}).status_code == 200
     assert client.get("/game", params={"battle": b, "inv": "-3"}).status_code == 200
+
+
+# -- ACCESS: the model views are behind the shared password (web/gate.py) -----------------------
+
+def test_a_locked_visitor_gets_the_story_and_one_unlock_prompt_never_an_error(client):
+    b = _battle(client)
+    r = client.get("/game", params={"battle": b, "inv": "1"})
+    assert r.status_code == 200
+    assert 'class="turnlist' in r.text                                  # the model-free story renders
+    assert 'data-model-state="locked"' in r.text and "Unlock to view the model" in r.text
+    assert "/partials/game/model" not in r.text                         # no request that would be refused
+    assert 'data-model-state="error"' not in r.text
+    # the unlock link returns to THIS battle and decision
+    import re
+    from urllib.parse import parse_qs, unquote, urlsplit
+    href = re.search(r'model-locked.*?href="(/login\?next=[^"]+)"', r.text, re.S).group(1).replace("&amp;", "&")
+    nxt = unquote(parse_qs(urlsplit(href).query)["next"][0])
+    assert urlsplit(nxt).path == "/game" and parse_qs(urlsplit(nxt).query)["inv"] == ["1"]
+    assert parse_qs(urlsplit(nxt).query)["battle"] == [b]
+
+
+def test_the_story_stays_open(client):
+    assert client.get("/api/game/story", params={"battle": _battle(client)}).status_code == 200
+
+
+@pytest.mark.parametrize("path", ["/api/game/readout", "/api/game/attention", "/api/analyze"])
+def test_the_model_json_endpoints_are_403_with_the_way_in(client, path):
+    r = client.get(path, params={"battle": _battle(client)})
+    assert r.status_code == 403
+    assert "/login" in r.json()["error"]
+
+
+@pytest.mark.parametrize("path", ["/partials/game/model", "/partials/game/attention", "/partials/analyze"])
+def test_the_model_fragments_answer_a_locked_visitor_with_a_prompt_not_a_swallowed_403(client, path):
+    r = client.get(path, params={"battle": _battle(client), "inv": "0"},
+                   headers={"HX-Current-URL": "http://prober.example/game?run=r&battle=b&inv=3"})
+    assert r.status_code == 200
+    assert 'data-model-state="locked"' in r.text and "Unlock to view the model" in r.text
+    assert "next=/game%3Frun%3Dr%26battle%3Db%26inv%3D3" in r.text   # back to the page it was embedded in
+
+
+def test_a_hostile_current_url_header_cannot_redirect_the_unlock(client):
+    for evil in ("http://evil.example/steal?next=//x", "javascript:alert(1)", "//evil.example/game"):
+        r = client.get("/partials/game/model", params={"battle": _battle(client)},
+                       headers={"HX-Current-URL": evil})
+        assert r.status_code == 200 and "evil" not in r.text, evil
+
+
+def test_the_analyze_page_degrades_the_same_way(client):
+    r = client.get("/analyze", params={"battle": _battle(client)})
+    assert r.status_code == 200
+    assert 'data-model-state="locked"' in r.text and "/partials/analyze" not in r.text
+
+
+def test_an_open_instance_is_unlocked_without_a_password(run):
+    with TestClient(create_app(run, open_access=True)) as c:
+        r = c.get("/game", params={"battle": _battle(c)})
+        assert 'data-model-state="locked"' not in r.text and "/partials/game/model" in r.text
+        assert c.get("/partials/game/model", params={"battle": _battle(c)}).status_code == 200

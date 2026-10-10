@@ -10,6 +10,12 @@ The page is a plain GET (`/game?run=…&battle=…&inv=N`), like `/battle`: a po
 thing you link to. The model panels arrive as an HTMX fragment because they load a checkpoint, and
 on a run whose architecture is older than the code they render one plain sentence (plus the
 `ArchDriftError` diagnosis folded under it) — never a 500, never a blank panel.
+
+ACCESS (`web/gate.py`): the turn story is model-free and open; every route that loads a checkpoint or
+runs the model forward (`/api/game/readout`, `/api/game/attention`, the two `/partials/game/*`) carries
+`model_gate` — the shared password, like the job probes. A locked visitor's page renders the story and,
+in the model slot, one "unlock to view" prompt (the HTMX fragments answer the same prompt, never a 403
+the swap would swallow). `gate_guard_test.py` derives the set of routes that must be gated from the code.
 """
 
 from __future__ import annotations
@@ -21,6 +27,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 
 from main.prober.web import charts
+from main.prober.web.gate import model_gate
 
 ARCH_OLDER_TEXT = ("This run's architecture is older than the code, so the model views (intent, "
                    "attention, operator facts) cannot load its checkpoint — they need a "
@@ -77,7 +84,7 @@ def register_game_routes(app: FastAPI, h: GameHelpers, newest_first: Callable[[l
             raise HTTPException(status_code=400, detail=err)
         return data
 
-    @app.get("/api/game/readout", tags=["read-only"], response_model=dict,
+    @app.get("/api/game/readout", tags=["read-only"], response_model=dict, dependencies=[model_gate("/game")],
              summary="One battle's model panels: intent, hypotheses, attention summary, pointer scores, "
                      "operator facts (LOADS the checkpoint; current architecture only)")
     def api_game_readout(run: "str | None" = Query(None), battle: "str | None" = Query(None)) -> dict:
@@ -88,7 +95,7 @@ def register_game_routes(app: FastAPI, h: GameHelpers, newest_first: Callable[[l
             raise HTTPException(status_code=400, detail=err)
         return data
 
-    @app.get("/api/game/attention", tags=["read-only"], response_model=dict,
+    @app.get("/api/game/attention", tags=["read-only"], response_model=dict, dependencies=[model_gate("/game")],
              summary="One decision's full attention map (query × key), one layer/head or their average")
     def api_game_attention(run: "str | None" = Query(None), battle: "str | None" = Query(None),
                            inv: int = Query(0, ge=0), layer: "int | None" = Query(None, ge=0),
@@ -127,6 +134,7 @@ def register_game_routes(app: FastAPI, h: GameHelpers, newest_first: Callable[[l
                       prev_battle=prev_b, next_battle=next_b, empty=None)
 
     @app.get("/partials/game/model", response_class=HTMLResponse, tags=["partials"],
+             dependencies=[model_gate("/game")],
              summary="/game's model panels for one decision (HTMX target; loads the checkpoint)")
     def partial_game_model(request: Request, run: "str | None" = Query(None),
                            battle: "str | None" = Query(None), inv: "str | None" = Query("0")) -> HTMLResponse:
@@ -147,6 +155,7 @@ def register_game_routes(app: FastAPI, h: GameHelpers, newest_first: Callable[[l
                           battle=row["short_id"], inv=i, wp_spec=wp, belief_spec=bel)
 
     @app.get("/partials/game/attention", response_class=HTMLResponse, tags=["partials"],
+             dependencies=[model_gate("/game")],
              summary="/game's attention heat map for one decision (HTMX target)")
     def partial_game_attention(request: Request, run: "str | None" = Query(None),
                                battle: "str | None" = Query(None), inv: "str | None" = Query("0"),

@@ -4,10 +4,12 @@
 {% block content %}
 <h1>Unlock the expensive probes</h1>
 <p class="lede">
-  Everything you can already see stays open — run summary, battles, scan, triage, and any finished
-  probe result. What this unlocks is the two probes that <em>spend real time</em>:
-  <code>falsify_scan</code> and <code>calibration</code> re-roll battles through the Showdown
-  bridge, which is minutes of CPU next to a live training run.
+  Everything you can already see stays open — run summary, battles, scan, triage, the turn-by-turn
+  story of a game, and any finished probe result. What this unlocks is the work that <em>spends real
+  CPU</em> next to a live training run: the probes (<code>falsify_scan</code>, <code>calibration</code>
+  and the per-decision counterfactuals re-roll battles — minutes) and the model's own analysis
+  (<code>/analyze</code>, and <code>/game</code>'s intent, attention and score panels load a checkpoint
+  and run it forward — seconds).
 </p>
 <p class="lede">
   One shared password, no account, no email. Ask for it if you need it.

@@ -10,7 +10,10 @@ the attention summary, the greyed move-resolution columns), `model_capture_test.
 attention reproduces `BiasedEncoderLayer`'s own output; dropping the bias does not; the same for an extra pre-LN
 `IdentityInitRound`, rebuilt from its captured weights, and a real `--trunk-layers 3` policy captures three rounds),
 `web/game_test.py` (the degraded paths on the synthetic fixture: the story renders, a model view on an
-older architecture is one sentence with the diagnosis folded, every battle surface links in) and
+older architecture is one sentence with the diagnosis folded, every battle surface links in; and the ACCESS
+cases: a locked visitor gets the story + one unlock card, the model JSON is 403, the fragments answer the
+card, a hostile `HX-Current-URL` cannot redirect the unlock, an `--open` instance is unlocked),
+`web/gate_guard_test.py` (the class guard for the unlock gate, below) and
 `game_integration_test.py` (`sim`: real Rust-core battles + a fresh current-architecture checkpoint —
 the readout's probabilities equal the policy's, every panel present, no hook left behind, the web
 views populated, and `damage_op_view` decoding on the production surface).
@@ -77,7 +80,10 @@ belief stack):
 and the **web** suite under `web/` (`charts_test.py` pure Vega-Lite specs · `app_test.py`
 `TestClient` over a synthetic run, each endpoint compared against a direct `ProbeSession` call ·
 `runs_test.py` the run-picker / no-client-string-joined-to-a-path rule · `auth_test.py` the
-fail-closed password gate · `staleness_test.py` the template-pinning contract ·
+fail-closed password gate · `gate_guard_test.py` every route that reaches model-loading code or starts
+a job is behind the unlock gate, DERIVED from the code (AST over `session/` for the model-reaching
+methods, AST over each handler, then an anonymous behavioural sweep with the model seam and the job pool
+replaced by recorders) · `staleness_test.py` the template-pinning contract ·
 `openapi_snapshot_test.py` the committed-contract drift gate · `render_integration_test.py`
 `@integration`, headless chrome with the network blocked — see `web/CLAUDE.md`):
 

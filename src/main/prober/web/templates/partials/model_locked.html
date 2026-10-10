@@ -1,0 +1,14 @@
+{# The model's analysis, for a visitor who has not unlocked. Included by /game and /analyze on first
+   paint (no request is made that would only be refused) and returned as the HTMX answer when a
+   gated fragment is requested without the cookie — a 403 would be swallowed into the generic error.
+   The turn story and every other model-free view stay open. Needs `next_url` (a local path). #}
+<section class="card model-locked" data-model-state="locked">
+  <h2>Model views</h2>
+  <p class="warnline">Unlock to view the model's analysis.</p>
+  <p class="muted small">
+    The opponent-intent read, attention, pointer scores, win-probability re-run and operator facts
+    load a checkpoint and run the network forward &mdash; real CPU beside a live training run &mdash;
+    so they need the shared password. Everything else on the site stays open.
+  </p>
+  <p><a class="linky" href="/login?next={{ next_url | urlencode }}">unlock &rarr;</a></p>
+</section>

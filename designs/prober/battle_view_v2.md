@@ -39,6 +39,20 @@ The readout is cached IN MEMORY per (checkpoint path, battle summary path) — a
 session (`_READOUT_CACHE_CAP`), dropped by `close()`. Nothing is written anywhere: not under
 `models/` (read-only) and not to disk, the prober's standing convention for derived data.
 
+### Access: the story is open, the model panels need the shared password
+
+`/game` is public at prober.g5d.io, so the split above is also the access split (`web/gate.py`,
+`web/CLAUDE.md` "Access"): the turn story (`/api/game/story`, the page's story half) is model-free
+and stays anonymous — measured 2026-10-09 on a real 1,448-battle run, ~20 ms of Python plus ~30 ms of
+the `core_events --walk` child per UNCACHED battle (~50 ms CPU, under the 100 ms bar), 4 ms warm. Every
+route that loads the checkpoint or runs the forward (`/api/game/readout`, `/api/game/attention`,
+`/partials/game/model`, `/partials/game/attention`) carries `model_gate`: a locked visitor's page
+renders the story and, in the model slot, one "Unlock to view the model's analysis" card
+(`partials/model_locked.html`, `data-model-state="locked"`) whose link returns to the same battle and
+decision; no HTMX request is made that would be refused, and a stale-cookie request to a fragment
+answers the same card as a 200 (HTMX swallows a 403). The JSON endpoints answer a plain 403.
+`web/gate_guard_test.py` is the class guard.
+
 ### 1. The turn story (model-free)
 
 Per game turn: the protocol events in the order the sim emitted them, each a typed row

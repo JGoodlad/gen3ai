@@ -8,8 +8,8 @@
   <code>ProbeSession.analyze()</code> — one decision, all the way down: what the policy did and
   whether it still would, what it BELIEVED about the hidden half of the board, what the
   <code>DamageOperator</code> priced, what the critic thought, and which parts of the observation
-  the two heads actually read. <strong>This is the only view that loads the checkpoint</strong>,
-  so it re-runs the model under <em>current</em> code — which means it works on a run trained at
+  the two heads actually read. <strong>This view loads the checkpoint (as do /game's model panels), so it needs the shared
+  password</strong>; it re-runs the model under <em>current</em> code — which means it works on a run trained at
   the current architecture and, on every older one, prints the drift diagnosis instead.
 </p>
 
@@ -50,6 +50,7 @@
   </form>
 </section>
 
+{% if unlocked %}
 <section class="card">
   {# Deliberately NOT server-rendered. Every other slow page here is slow because it opens a lot
      of files; this one is slow because it DESERIALIZES A CHECKPOINT and runs forward/backward
@@ -66,5 +67,10 @@
   </div>
   <span id="analyze-busy" class="htmx-indicator muted">re-running the model…</span>
 </section>
+{% else %}
+{# Locked: the analysis loads a checkpoint and needs the password (web/gate.py); no request is made that would be refused. #}
+{% set next_url = '/analyze?run=' ~ ((run or '') | urlencode) ~ '&battle=' ~ (selected.short_id | urlencode) ~ '&inv=' ~ inv %}
+{% include "partials/model_locked.html" %}
+{% endif %}
 {% endif %}
 {% endblock %}

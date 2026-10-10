@@ -1559,6 +1559,7 @@ def test_a_battle_that_does_not_exist_is_still_a_404(client):
 def test_the_analyze_page_renders_and_defers_the_work_to_a_fragment(client):
     """Unlike `/battles` and `/triage` this one may NOT arrive populated: it deserializes a
     checkpoint. Same answer as `/scan` — arrive, then fill in, and say what is being waited on."""
+    _unlock(client)
     html = client.get("/analyze").text
     assert html.lstrip().startswith("<!DOCTYPE html>")
     assert "Decision analysis" in html
@@ -1585,6 +1586,7 @@ def test_a_bad_inv_value_does_not_break_the_analyze_page(client):
 
 def test_api_analyze_returns_the_session_result_unreshaped(client):
     """The package's one rule at this endpoint: the handler is a pass-through, not a renderer."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     got = client.get("/api/analyze", params={"battle": _ANALYZE_BATTLE, "inv": 1}).json()
     assert got == _FULL_ANALYSIS
@@ -1601,6 +1603,7 @@ def test_an_analyze_battle_token_is_never_joined_to_a_path(client, attack):
     """`runs.py`'s membership rule, repeated one level down — the same reason `/battle` needs it:
     `ProbeSession._battle` falls back to `build_trace_tree(battle_id)` for an unrecognised id and
     will happily open a `*_summary.json` belonging to another run."""
+    _unlock(client)
     api = client.get("/api/analyze", params={"battle": attack, "inv": 0})
     assert api.status_code == 404
     assert "passwd" not in api.text and "etc" not in api.json().get("error", "")
@@ -1612,6 +1615,7 @@ def test_the_real_analyze_on_this_fixture_renders_a_diagnosis_not_a_500(client):
     """The fixture has no loadable checkpoint (by design), and neither does any archived run:
     measured 2026-08-13, 79 of 79 fail to load under current code. So a failed model load is an
     ordinary state of the data and must READ as one."""
+    _unlock(client)
     body = _fragment(client, inv="0")
     assert 'data-analysis="error"' in body
     assert "cannot be re-run under the current code" in body
@@ -1623,6 +1627,7 @@ def test_the_arch_drift_message_renders_whole_including_its_git_checkout_line(cl
     """The message is a multi-line diagnosis written for a human whose LAST useful line is the
     exact commit to re-probe from. Collapsing it to "analysis failed" throws away the only part
     that says what to do next — so this pins the whole thing through, newlines included."""
+    _unlock(client)
     from main.prober.model import ArchDriftError
 
     message = ("This checkpoint cannot be re-run under the current code:\n"
@@ -1652,6 +1657,7 @@ def test_analyze_panels_self_hide_when_their_head_was_off(client):
     """Most of this view is flag-gated (`--damage-op`, `--move-belief-mode`, `--spread-belief`,
     `--win-prob-mode`, `--opp-intent-coef`). An absent panel must mean "that
     head was off", never an empty box that reads as a broken probe."""
+    _unlock(client)
     _stub_analyze(client, _BARE_ANALYSIS)
     bare = _fragment(client)
     for gone in ("beliefs", "threats", "saliency", "intervention", "P(win)",
@@ -1690,6 +1696,7 @@ def test_analyze_marks_a_BELIEVED_beta_name_and_leaves_a_REVEALED_one_plain(clie
     The caveat STRING is the engine's (`BELIEF_NAME_CAVEAT`) — a sentence one surface learns must
     not go missing on another, and a second surface authoring its own wording is how two surfaces
     end up saying different things about the same row."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     rows = _beta_rows(body)
@@ -1707,6 +1714,7 @@ def test_analyze_marks_a_BELIEVED_beta_name_and_leaves_a_REVEALED_one_plain(clie
 def test_the_timeline_prints_the_engines_own_sentence_verbatim(client):
     """`engine.timeline_entry_text` exists so no second surface re-derives the battle-log line from
     the structured fields — the drift the engine/renderer split is there to prevent."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     for entry in _TIMELINE:
@@ -1716,6 +1724,7 @@ def test_the_timeline_prints_the_engines_own_sentence_verbatim(client):
 def test_an_unrecorded_move_order_is_never_rendered_as_a_sequence(client):
     """`order_certain=False` means both sides moved and the recorder never captured who went
     first, so a numbered list would be a quiet lie about the sequence."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     ordered = _fragment(client)
     assert '<ol class="log">' in ordered
@@ -1737,6 +1746,7 @@ def test_the_faithfulness_table_keeps_the_recorded_action_order(client):
     """The recorded `actions` are ALREADY in action-index order (the recorder keys move slot m on
     `legal.move_ids[m]`). A re-sort onto the per-mon moveset order once transposed the labels and
     produced a spurious `disagree` — see the gotcha in src/main/prober/CLAUDE.md."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     positions = [body.index(r["label"] + "</td>") for r in _FULL_ANALYSIS["actions"]]
@@ -1748,6 +1758,7 @@ def test_the_faithfulness_table_keeps_the_recorded_action_order(client):
 def test_a_phantom_type_multiplier_renders_as_a_dash(client):
     """The obs computes a multiplier for EVERY request slot, including non-damaging ones, where it
     is an artefact — a confident "2.00×" on Spikes is a misreading waiting to happen."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     # spikes/roar are `applicable=False` and carry 2.0 / 4.0 in the same array.
@@ -1759,6 +1770,7 @@ def test_a_phantom_type_multiplier_renders_as_a_dash(client):
 def test_the_intervention_says_so_when_the_chosen_action_is_not_a_move(client):
     """`InterventionSweep.applicable` is a @property, so `asdict` DROPS it — the test has to be
     `request_slot >= 0`, not a missing key that would silently read as False forever."""
+    _unlock(client)
     _stub_analyze(client, dict(_FULL_ANALYSIS,
                                sweep=dict(_FULL_ANALYSIS["sweep"], request_slot=-1, rows=[])))
     body = _fragment(client)
@@ -1769,6 +1781,7 @@ def test_the_intervention_says_so_when_the_chosen_action_is_not_a_move(client):
 def test_the_switch_in_percentages_are_not_scaled_twice(client):
     """`switch_in_outgoing` rows are ALREADY percentages (0–100) while the operator's own
     low/high are FRACTIONS (0–1). A uniform ×100 across the panel turns 42% into 4200%."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert "42–50%" in body
@@ -1778,6 +1791,7 @@ def test_the_switch_in_percentages_are_not_scaled_twice(client):
 def test_the_cpu_decodes_dim_only_when_the_operator_subsumes_them(client):
     """The graceful-degradation contract: the observation decodes go secondary when the
     DamageOperator is present and back to full strength when there is no operator."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     assert 'class="cpudecodes dim"' in _fragment(client)
 
@@ -1790,6 +1804,7 @@ def test_the_cpu_decodes_dim_only_when_the_operator_subsumes_them(client):
 def test_the_incoming_matrix_is_a_real_heatmap_and_marks_immunity(client):
     """The biggest win over the terminal: which opponent move threatens which of our mons, as a
     grid tinted by P(KO). A type-immune cell must read `safe`, not a damage range."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert 'class="heat"' in body
@@ -1803,6 +1818,7 @@ def test_the_incoming_matrix_is_a_real_heatmap_and_marks_immunity(client):
 def test_the_td_residual_never_appears_without_its_plain_language_gloss(client):
     """The rule this view inherits from the TUI: the ML term is always paired with the engine's
     own sentence, so the number is self-explaining."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert "much worse than the critic expected" in body
@@ -1813,6 +1829,7 @@ def test_the_three_unreliability_banners_render(client):
     """Each of these means "stop before quoting a number below", so none of them may be a
     footnote: an obs-dim mismatch, a dropped extractor flag, and an opponent pivot that makes the
     damage tables be about the wrong defender."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert "OBS MISMATCH" in body and "2667" in body and "2669" in body
@@ -1825,6 +1842,7 @@ def test_the_belief_markers_keep_their_three_way_meaning(client):
     """✓ top-1 right · ≈ the true mon is in the belief but not top-1 · ✗ not in the top-k at all.
     Collapsing the middle case into "wrong" loses the near-miss, which is the whole signal in a
     belief that is sharpening."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert "marker hit" in body and "marker near" in body and "marker miss" in body
@@ -1835,6 +1853,7 @@ def test_the_belief_markers_keep_their_three_way_meaning(client):
 def test_the_gpu_cpu_provenance_distinction_survives_from_the_tui(client):
     """A signal the model computed for itself and a decode the prober did from the observation
     answer different questions; a panel that mixes them without saying so reads as one."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert "🔷 GPU" in body and "📋 CPU" in body
@@ -1941,6 +1960,7 @@ def _cf_forms(client):
 def test_the_counterfactual_probes_are_launchable_from_the_decision_they_are_about(client):
     """They are PER-DECISION, so they belong where the battle, the inv and the legal actions
     already are — not on a page of their own that would ask for all three again."""
+    _unlock(client)
     body = _cf_forms(client)
     for path in _CF_PATHS:
         assert f'hx-post="{path}"' in body, path
@@ -1956,6 +1976,7 @@ def test_the_replay_action_picker_is_the_decisions_own_action_list(client):
     """`replay_counterfactual` needs an action INDEX, and the only honest source for it is the
     recorded action list this page already renders — in action-index order, illegal ones disabled
     rather than hidden, and with no default, because "replay something else" has to say what."""
+    _unlock(client)
     body = _cf_forms(client)
     assert 'name="action" required' in body
     assert "— pick an action —" in body
@@ -2184,6 +2205,7 @@ def test_the_clause_reading_shows_the_coherent_team_and_names_only_the_DISAGREEM
     So: the hypothesis line always renders, and per-slot rows appear ONLY where the raw top-1 and
     the clause-consistent read disagree — a row per hidden slot would be visual noise on the slots
     that were never in question."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert "species clause" in body
@@ -2204,6 +2226,7 @@ def test_the_clause_reading_says_it_is_a_READING_AID_and_never_replaces_the_raw_
     view would substitute our arithmetic for the model's state — the interpretability failure this
     panel exists to fix, one level up. Both must be on the page, and the panel must SAY which is
     which."""
+    _unlock(client)
     _stub_analyze(client, _FULL_ANALYSIS)
     body = _fragment(client)
     assert "reading aid" in body
@@ -2216,6 +2239,7 @@ def test_the_clause_reading_says_it_is_a_READING_AID_and_never_replaces_the_raw_
 def test_a_COHERENT_belief_collapses_to_one_line_instead_of_a_duplicate_table(client):
     """When nothing was adjusted, drawing a second table identical to the first is worse than
     saying so — and the reader still needs to know the check RAN."""
+    _unlock(client)
     import copy
     a = copy.deepcopy(_FULL_ANALYSIS)
     a["exclusive_belief"] = {
@@ -2237,6 +2261,7 @@ def test_a_COHERENT_belief_collapses_to_one_line_instead_of_a_duplicate_table(cl
 def test_a_NON_CONVERGED_clause_reading_refuses_to_claim_consistency(client):
     """An unreachable constraint set means the adjusted rows do NOT satisfy the clause. Presenting
     them as if they did is the one thing this panel must never do."""
+    _unlock(client)
     import copy
     a = copy.deepcopy(_FULL_ANALYSIS)
     a["exclusive_belief"] = dict(a["exclusive_belief"], converged=False)

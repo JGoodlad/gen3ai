@@ -50,6 +50,7 @@ from agents.training.trace_result import OUTCOMES
 from main.prober.engine import BELIEF_NAME_CAVEAT, opponent_rank, sort_opponents
 from main.prober.web import charts
 from main.prober.web.auth import COOKIE, Auth
+from main.prober.web.gate import UnlockRequired, job_gate, model_gate, route_gate_kind
 from main.prober.web.jobs import JobRegistry
 from main.prober.web.runs import RunAccessError, RunStore
 
@@ -68,7 +69,8 @@ TITLE = "gen3ai prober"
 DESCRIPTION = (
     "Read-only browser views over the prober's analysis engine, adapted from `ProbeSession` — "
     "the same facade `python -m main.prober.query` uses. No analysis lives here. Reading is "
-    "anonymous; the two expensive probe endpoints require the shared password."
+    "anonymous; the work is not: the background probes and every route that loads a checkpoint or "
+    "runs the model require the shared password."
 )
 VERSION = "1.1.0"
 
@@ -283,13 +285,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     def unlocked(request: Request) -> bool:
         return app.state.auth.unlocked(request.cookies.get(COOKIE))
 
-    def require_unlocked(request: Request) -> None:
-        if not unlocked(request):
-            raise HTTPException(
-                status_code=403,
-                detail="this probe spends minutes of CPU beside a live training run — "
-                       "unlock it with the shared password at /login")
-
     def shell(request: Request, run_name: "str | None") -> dict:
         rows = store().list_runs() if app.state.runs else []
         return {"nav": _NAV, "runs": rows, "run_groups": _group_runs(rows), "run": run_name,
@@ -373,7 +368,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         sess = session(pick(run))
         return sess.battle_turns(battle_row(sess, battle)["id"])
 
-    @app.get("/api/analyze", tags=["read-only"], response_model=dict,
+    @app.get("/api/analyze", tags=["read-only"], response_model=dict, dependencies=[model_gate("/analyze")],
              summary="ProbeSession.analyze() — one decision, fully analyzed (LOADS THE CHECKPOINT)")
     def api_analyze(
         run: "str | None" = Query(None),
@@ -382,7 +377,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                               "default = the newest checkpoint's first captured battle"),
         inv: int = Query(0, ge=0, description="invocation index — the Nth recorded decision"),
     ) -> dict:
-        # THE ONE MODEL-LOADING VIEW. It raises `ArchDriftError` on any run that is not at the
+        # A MODEL-LOADING VIEW (password-gated: it loads a checkpoint). It raises `ArchDriftError` on any run that is not at the
         # current architecture (measured 2026-08-13: 79/79 archived runs), which is an ordinary
         # state of the data, not a server fault — so it comes back as the usual `{"error": ...}`
         # envelope carrying the diagnosis VERBATIM (multi-line, ending in the `git checkout` to
@@ -445,7 +440,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
 
     # -- JSON API: the expensive probes, as jobs (PASSWORD REQUIRED) ----------------------
 
-    @app.post("/api/jobs/falsify-scan", tags=["jobs"], response_model=JobRef, status_code=202,
+    @app.post("/api/jobs/falsify-scan", tags=["jobs"], dependencies=[job_gate()], response_model=JobRef, status_code=202,
               summary="Submit ProbeSession.falsify_scan() — minutes; needs the shared password")
     def api_job_falsify(
         request: Request,
@@ -461,7 +456,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                  description="battles falsified in parallel; each re-roll spawns "
                                              "Node, so raise it only on an idle box"),
     ) -> JobRef:
-        require_unlocked(request)
         sess = session(pick(run))
         params = {"run": run, "outcome": outcome, "opponent": opponent, "step": step,
                   "limit": limit, "worst": worst, "seeds": seeds, "alts": alts,
@@ -473,7 +467,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                       concurrency=concurrency))
         return JobRef(**{k: job.as_dict()[k] for k in ("id", "kind", "status", "done")})
 
-    @app.post("/api/jobs/calibration", tags=["jobs"], response_model=JobRef, status_code=202,
+    @app.post("/api/jobs/calibration", tags=["jobs"], dependencies=[job_gate()], response_model=JobRef, status_code=202,
               summary="Submit ProbeSession.calibration() — minutes; needs the shared password")
     def api_job_calibration(
         request: Request,
@@ -492,7 +486,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                               "FOLLOW THE RUN'S CRITIC — unset takes the per-currency default "
                               "(5.0 shaped, ~0.083 P(win) under the win-prob critic)"),
     ) -> JobRef:
-        require_unlocked(request)
         sess = session(pick(run))
         params = {"run": run, "outcome": outcome, "opponent": opponent, "step": step,
                   "limit": limit, "worst": worst, "seeds": seeds, "alts": alts,
@@ -518,7 +511,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     # not at the current architecture (measured 79/79 archived runs) — arrive as `status="error"`
     # with the message intact. `partials/job.html` renders that message whole; see the note there.
 
-    @app.post("/api/jobs/lookahead", tags=["jobs"], response_model=JobRef, status_code=202,
+    @app.post("/api/jobs/lookahead", tags=["jobs"], dependencies=[job_gate()], response_model=JobRef, status_code=202,
               summary="Submit ProbeSession.lookahead() — one-ply V(s′) per legal action")
     def api_job_lookahead(
         request: Request,
@@ -530,7 +523,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                        "dice-averages V(s′) ± std over that many fresh seeds"),
         followup: str = Query("random", pattern="^(random|default)$"),
     ) -> JobRef:
-        require_unlocked(request)
         sess = session(pick(run))
         row = battle_row(sess, battle)
         params = {"run": run, "battle": row["short_id"], "inv": inv, "seeds": seeds,
@@ -540,7 +532,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
             lambda: sess.lookahead(row["id"], inv=inv, n_seeds=seeds, followup=followup))
         return JobRef(**{k: job.as_dict()[k] for k in ("id", "kind", "status", "done")})
 
-    @app.post("/api/jobs/better-line", tags=["jobs"], response_model=JobRef, status_code=202,
+    @app.post("/api/jobs/better-line", tags=["jobs"], dependencies=[job_gate()], response_model=JobRef, status_code=202,
               summary="Submit ProbeSession.better_line() — a CRN-anchored beam over the critic")
     def api_job_better_line(
         request: Request,
@@ -558,7 +550,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                       description="ground-truth Monte-Carlo confirm of the "
                                                   "recommendation; each rollout is a full game"),
     ) -> JobRef:
-        require_unlocked(request)
         sess = session(pick(run))
         row = battle_row(sess, battle)
         params = {"run": run, "battle": row["short_id"], "inv": inv, "depth": depth, "beam": beam,
@@ -571,7 +562,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                      confirm_rollouts=confirm_rollouts))
         return JobRef(**{k: job.as_dict()[k] for k in ("id", "kind", "status", "done")})
 
-    @app.post("/api/jobs/replay-counterfactual", tags=["jobs"], response_model=JobRef,
+    @app.post("/api/jobs/replay-counterfactual", tags=["jobs"], dependencies=[job_gate()], response_model=JobRef,
               status_code=202,
               summary="Submit ProbeSession.replay_counterfactual() — substitute an action, "
                       "play the rest to a win/loss")
@@ -589,7 +580,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         opponent_source: str = Query("auto", pattern="^(auto|bot|self)$"),
         narrate: bool = Query(True, description="capture the first recovered win/loss play-by-play"),
     ) -> JobRef:
-        require_unlocked(request)
         sess = session(pick(run))
         row = battle_row(sess, battle)
         params = {"run": run, "battle": row["short_id"], "inv": inv, "action": action,
@@ -807,6 +797,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                         spec=spec, metric=metric, run=run)
 
     @app.get("/partials/analyze", response_class=HTMLResponse, tags=["partials"],
+             dependencies=[model_gate("/analyze")],
              summary="One decision's full analysis (HTMX target; loads the checkpoint)")
     def partial_analyze(
         request: Request,
@@ -868,6 +859,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                         **_job_view(job.kind, job.result))
 
     @app.post("/partials/job/falsify-scan", response_class=HTMLResponse, tags=["partials"],
+              dependencies=[job_gate("/falsify")],
               summary="Submit a falsify_scan from the page (needs the shared password)")
     def partial_submit_falsify(
         request: Request,
@@ -887,8 +879,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         alts: "str | None" = Form("2"),
         concurrency: "str | None" = Form("1"),
     ) -> HTMLResponse:
-        if not unlocked(request):
-            return fragment(request, "partials/locked.html", next_url="/falsify")
         sess = session(pick(run))
         params = {"run": run, "outcome": outcome, "opponent": opponent or None,
                   "step": _form_int(step), "limit": _form_int(limit, 20),
@@ -904,6 +894,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         return fragment(request, "partials/job.html", job=job.as_dict(), **_job_view(job.kind, None))
 
     @app.post("/partials/job/calibration", response_class=HTMLResponse, tags=["partials"],
+              dependencies=[job_gate("/calibration")],
               summary="Submit a calibration from the page (needs the shared password)")
     def partial_submit_calibration(
         request: Request,
@@ -922,8 +913,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         # confident 0% that means only "wrong units". Blank ⇒ the per-currency default.
         overvalue_tau: "str | None" = Form(None),
     ) -> HTMLResponse:
-        if not unlocked(request):
-            return fragment(request, "partials/locked.html", next_url="/calibration")
         sess = session(pick(run))
         params = {"run": run, "outcome": outcome, "opponent": opponent or None,
                   "step": _form_int(step), "limit": _form_int(limit, 20),
@@ -951,12 +940,8 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     # `run`/`battle`/`inv` included, therefore rides the body (the forms carry them as hidden
     # inputs), and the JSON `/api/jobs/...` twins above stay the query-string surface for scripts.
 
-    def _cf_locked(request: Request) -> HTMLResponse:
-        # Deliberately NOT echoing the run/battle back into the login `next`: this branch runs
-        # BEFORE any membership check, so those are still raw client strings.
-        return fragment(request, "partials/locked.html", next_url="/analyze")
-
     @app.post("/partials/job/lookahead", response_class=HTMLResponse, tags=["partials"],
+              dependencies=[job_gate("/analyze")],
               summary="Submit a one-ply lookahead from /analyze (needs the shared password)")
     def partial_submit_lookahead(
         request: Request,
@@ -966,8 +951,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         seeds: "str | None" = Form("0"),
         followup: "str | None" = Form("random"),
     ) -> HTMLResponse:
-        if not unlocked(request):
-            return _cf_locked(request)
         sess = session(pick(run))
         row = battle_row(sess, battle)
         params = {"run": run, "battle": row["short_id"], "inv": _form_int(inv, 0) or 0,
@@ -980,6 +963,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         return fragment(request, "partials/job.html", job=job.as_dict(), **_job_view(job.kind, None))
 
     @app.post("/partials/job/better-line", response_class=HTMLResponse, tags=["partials"],
+              dependencies=[job_gate("/analyze")],
               summary="Submit a better-line search from /analyze (needs the shared password)")
     def partial_submit_better_line(
         request: Request,
@@ -992,8 +976,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         interior_opponent: "str | None" = Form("self"),
         confirm_rollouts: "str | None" = Form("0"),
     ) -> HTMLResponse:
-        if not unlocked(request):
-            return _cf_locked(request)
         sess = session(pick(run))
         row = battle_row(sess, battle)
         params = {"run": run, "battle": row["short_id"], "inv": _form_int(inv, 0) or 0,
@@ -1011,6 +993,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         return fragment(request, "partials/job.html", job=job.as_dict(), **_job_view(job.kind, None))
 
     @app.post("/partials/job/replay-counterfactual", response_class=HTMLResponse, tags=["partials"],
+              dependencies=[job_gate("/analyze")],
               summary="Substitute an action and replay to a win/loss (needs the shared password)")
     def partial_submit_replay_counterfactual(
         request: Request,
@@ -1024,8 +1007,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         # — otherwise un-ticking the play-by-play would silently keep capturing it.
         narrate: "str | None" = Form(None),
     ) -> HTMLResponse:
-        if not unlocked(request):
-            return _cf_locked(request)
         act = _form_int(action)
         if act is None or act < 0:
             # There is no sensible default here — "replay something else" has to say WHAT. The form
@@ -1077,7 +1058,35 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                      "auth_configured": app.state.auth.configured,
                      "status": exc.status_code, "detail": exc.detail})
 
+    @app.exception_handler(UnlockRequired)
+    def _unlock_required(request: Request, exc: UnlockRequired):
+        """A locked `/partials/...` target gets a 200 FRAGMENT saying how to unlock (HTMX drops a
+        non-2xx response into a generic error); every other route gets the plain 403."""
+        if request.url.path.startswith("/partials/"):
+            return fragment(request, exc.template,
+                            next_url=_unlock_next(request.headers.get("hx-current-url"), exc.next_url))
+        return _http_error(request, exc)
+
+    # The contract says which routes can answer 403 (the gate is a dependency, which OpenAPI omits).
+    for route in app.routes:
+        if route_gate_kind(route):
+            route.responses.setdefault(403, {"description": "locked: needs the shared password (/login)"})
+
     return app
+
+
+def _unlock_next(current_url: "str | None", default: str) -> str:
+    """Where the unlock link returns to: the page the fragment is embedded in (HTMX sends it as
+    `HX-Current-URL`), so a visitor lands back on the same battle and decision. Only `/game` and
+    `/analyze` are honoured, and the result goes through `_safe_next`; anything else is `default`."""
+    from urllib.parse import urlsplit
+    try:
+        u = urlsplit(current_url or "")
+    except ValueError:
+        return default
+    if u.path in ("/game", "/analyze"):
+        return _safe_next(u.path + (f"?{u.query}" if u.query else ""))
+    return default
 
 
 # Ordered by the investigation recipe in src/main/prober/CLAUDE.md — "triage: start here for

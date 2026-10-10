@@ -120,12 +120,20 @@
     </section>
     {% endif %}
 
+    {% if unlocked %}
     <div id="game-model"
          hx-get="/partials/game/model?run={{ (run or '') | urlencode }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}"
          hx-trigger="load" hx-swap="innerHTML">
       <section class="card"><p class="muted"><span class="spinner"></span>
         loading the checkpoint and re-running the model on this battle's stored observations…</p></section>
     </div>
+    {% else %}
+    {# Locked: the model panels need the password (web/gate.py), so make no request that would be refused. #}
+    <div id="game-model">
+      {% set next_url = '/game?run=' ~ ((run or '') | urlencode) ~ '&battle=' ~ (story.short_id | urlencode) ~ '&inv=' ~ inv %}
+      {% include "partials/model_locked.html" %}
+    </div>
+    {% endif %}
   {% else %}
     <section class="card"><p class="muted">this battle has no recorded decisions.</p></section>
   {% endif %}

@@ -122,15 +122,40 @@ the whole current generation, are links into `.claude/worktrees/<name>/models/ru
 Errors never echo the rejected input — a rendered message must not become an oracle for mapping
 the filesystem.
 
-## Access: reading is anonymous, spending CPU is not (`auth.py`)
+## Access: reading is anonymous, spending CPU is not (`auth.py`, `gate.py`)
 
 The model is open source and its outcomes are meant to be public, so **every read view is
-anonymous**. What is gated is not the DATA but the WORK: `falsify_scan` and `calibration` spawn
-Node re-rolls for minutes each beside a live trainer, so a public endpoint that starts them is a
-free CPU-burn button.
+anonymous**. What is gated is not the DATA but the WORK, and "work" is two things: **background
+probes** (`falsify_scan`, `calibration`, the per-decision counterfactuals: Node re-rolls for minutes
+beside a live trainer) and **anything that loads a checkpoint or runs the model forward**
+(`/analyze`, `/game`'s model panels: seconds of CPU and a resident model, with the step chosen by an
+anonymous query string). A public endpoint that starts either is a free CPU-burn button.
 
-One **shared password**, no usernames, no email — handed out in Discord. It unlocks the two job
-endpoints and nothing else.
+🚨 **THE RULE (2026-10-09): a route that loads a checkpoint, runs the model forward or starts a job
+carries a gate in its `dependencies=[...]` — `model_gate(next_url)` or `job_gate(next_url)` from
+`gate.py` — and nothing else checks `unlocked()` by hand.** The model-free turn story
+(`/api/game/story`, the page's story half) stays open. A locked `/api` or page route answers a plain
+403; a locked `/partials/...` HTMX target answers a 200 FRAGMENT (`partials/locked.html` for a job,
+`partials/model_locked.html` for the model) because HTMX swallows a non-2xx into a generic error. The
+fragment's unlock link returns to the page it was embedded in (`HX-Current-URL`, accepted only for
+`/game` and `/analyze` and passed through `_safe_next`). `/game` and `/analyze` render the model slot
+as that same card on first paint when locked — no request that would be refused — and the turn story
+renders either way. The gated routes document `403` in the OpenAPI contract.
+
+**The class guard is `gate_guard_test.py`, and it derives the route set from the CODE, never from a
+hand-kept list.** Leg 1 (static): the `ProbeSession` methods that reach model-loading code are computed
+by AST over `session/` (calls `_model_for` / `ProbeModel` / `capture_battle` / …, transitively through
+`self.`), each route handler is walked (its lambdas and the web helpers it calls), and a handler that
+calls a model-reaching method or `jobs.submit` MUST be gated in the route table — and a gated route MUST
+be expensive by that derivation, so the set cannot drift into decoration. Leg 2 (behavioural): every
+route is requested anonymously with `ProbeSession._model_for` and `JobRegistry.submit` replaced by
+recorders (nothing may be recorded; the expensive routes must answer locked), then again unlocked (each
+must reach a recorder — the proof the first sweep is not vacuous). **A new route is covered the moment
+it exists; a new model-loading session method is covered by the closure.** Proven to fail with a gate
+removed from `/api/game/readout` or `/api/analyze`.
+
+One **shared password**, no usernames, no email — handed out in Discord. It unlocks the gated work and
+nothing else.
 
 ```bash
 # the secret never goes in argv (a command line is world-readable in `ps`)
@@ -153,7 +178,7 @@ as effectively as a committed doc does.
 What keeps a low-entropy shared password honest: constant-time comparison; an HMAC-signed cookie
 rather than the password itself (HttpOnly, SameSite=Lax — which is also the CSRF story for the job
 POSTs); a signed expiry; a per-process signing key so a restart logs everyone out; and **two**
-rate limits. **It fails CLOSED** — with no password configured the probes are off, not open, so an
+rate limits. **It fails CLOSED** — with no password configured the probes and the model views are off, not open, so an
 operator who forgets the secret publishes a read-only site rather than a CPU-burn button.
 
 **Why TWO rate limits, and why `_client` is fussy about headers.** The first version keyed the
@@ -330,8 +355,8 @@ produced it.
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
 | `/battle` | `battle_turns()` | **one game, turn by turn** — board · expected opponent intent (α/β) · battle log · critic · **P(win) and the P(loss) strip** (model-free) |
-| `/game` | `battle_story()` + `battle_readout()` + `decision_attention()` | **the battle viewer** — a turn list beside the selected decision: every protocol event of the turn, the board, our choice vs the legal set (model-free); then, as an HTMX fragment that LOADS the checkpoint, what the model expected the opponent to do (the flat pointer, the actual action marked, α's calibration over the battle), the hypothesis tokens and their evolution, the pointer head's scores, the attention heat map (layer × head picker) and the operator facts. ←/→ (j/k) step decisions, [ / ] step battles. Field map: `designs/prober/battle_view_v2.md`. Routes live in `game.py` |
-| `/analyze` | `analyze()` | **one decision, all the way down** — faithfulness · beliefs · threats · intervention · saliency. **LOADS THE CHECKPOINT** (see below) |
+| `/game` | `battle_story()` + `battle_readout()` + `decision_attention()` | **the battle viewer** — a turn list beside the selected decision: every protocol event of the turn, the board, our choice vs the legal set (model-free); then, as an HTMX fragment that LOADS the checkpoint (**password-gated**; a locked visitor sees an unlock card in its place), what the model expected the opponent to do (the flat pointer, the actual action marked, α's calibration over the battle), the hypothesis tokens and their evolution, the pointer head's scores, the attention heat map (layer × head picker) and the operator facts. ←/→ (j/k) step decisions, [ / ] step battles. Field map: `designs/prober/battle_view_v2.md`. Routes live in `game.py` |
+| `/analyze` | `analyze()` | **one decision, all the way down** — faithfulness · beliefs · threats · intervention · saliency. **LOADS THE CHECKPOINT** (see below); **password-gated** |
 | `/falsify` | `falsify_scan()` | the crater bracket — **a background job** |
 | `/calibration` | `calibration()` | the reliability curve — **a background job** |
 | (on `/analyze`) | `lookahead()` · `better_line()` · `replay_counterfactual()` | the counterfactual tier — **background jobs**, password-gated |
@@ -434,7 +459,7 @@ back.
 the module. Deleting `app.py` left ten pointers to it in templates, and every one of them read as
 an instruction.
 
-### `/analyze` — the one view that loads a checkpoint
+### `/analyze` — a view that loads a checkpoint (password-gated, with `/game`'s model panels)
 
 The per-decision forensic read, ported here as part of retiring the TUI. Page shell + an HTMX
 fragment (`hx-trigger="load"`, the `/scan` pattern) because it deserializes a checkpoint; the
@@ -722,6 +747,7 @@ python3 -m pytest src/main/prober/web -q -m integration        # + headless chro
   checks: every traversal string a visitor could type, plus the symlink cases (top-level followed
   and marked; one inside a run refuses the run; a pinned run cannot reach its siblings). These
   should read as boring — that is the point of membership-over-sanitisation.
+- `gate_guard_test.py` — the CLASS GUARD for the unlock gate (see *Access*): the route set is derived from the code, plus an anonymous behavioural sweep.
 - `auth_test.py` — the gate's properties: fails closed with no password, the cookie is a
   signature and not the secret, a tampered expiry is rejected, throttling is per client AND
   globally capped.

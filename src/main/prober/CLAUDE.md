@@ -753,11 +753,11 @@ python3 -m main.prober.web --check-openapi                                # cont
 
 Pointed at `models/` it enumerates the runs and offers a picker; a run is selected by NAME and the
 name must be in the server's own listing, so no client string ever reaches a path join. Reading is
-anonymous; `falsify_scan` / `calibration` need the shared password. `--impl {node,rust}` picks the
+anonymous; the work does not: the background probes and every route that loads a checkpoint or runs the model (`/analyze`, `/game`'s model panels) need the shared password (`web/gate.py`, class guard `web/gate_guard_test.py`). `--impl {node,rust}` picks the
 offline replay/search driver those two spawn — a **startup** flag, matching `ProbeSession`'s
 session-wide treatment of `impl` rather than a per-request knob.
 
-**Deployed at prober.g5d.io** (reads anonymous, probes password-gated/fail-closed; verified serving 2026-08-19). Local remains the debugging default — from elsewhere:
+**Deployed at prober.g5d.io** (reads anonymous, probes and model views password-gated/fail-closed; verified serving 2026-08-19). Local remains the debugging default — from elsewhere:
 `ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`.
 
 Full detail — the one rule (every number comes back from a session method verbatim), the job
