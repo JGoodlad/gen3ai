@@ -534,8 +534,20 @@ code, i.e. a pinned child's own worktree, never the launcher's cwd):
 - **Untracked files OUTSIDE `src/` do not matter**: the trainer and every process it spawns import
   from `src/` alone (`PYTHONPATH=<checkout>/src`), so nothing outside it can enter a compiled graph.
   `data/` is read from MAIN's cwd even by a pinned child, and whatever data reaches the model reaches
-  it as tensor VALUES or shapes — graph inputs, which Inductor's own key covers. Ignored files
-  (`__pycache__`, build output) are not looked at.
+  it as tensor VALUES or shapes — graph inputs, which Inductor's own key covers.
+- **No IGNORED or untracked IMPORTABLE file under `src/`** (`untracked_importables`: every
+  `.py` / `.pyc` / `.pyo` / `.pyd` / `.so` / `.pth` / `.pyx` / `.pxd` there that git does not track).
+  The owner, 2026-10-10: the shared cache is fine "as long as we're confident it comes from a hash with
+  no changes". `git status` never reports an IGNORED file, so before this rule a gitignored `src/foo.py`
+  passed as clean. Two directory names are skipped, each for a stated reason:
+  - `__pycache__`: CPython writes it from the TRACKED source and validates each `.pyc` against that
+    source's mtime + size before using it. A sourceless `.pyc` OUTSIDE `__pycache__` IS counted.
+  - a Cargo `target/` (`src/rust_*/target/`): it is built by cargo from the tracked crate sources, and it
+    feeds observations, never code, to a torch compile. This is the submodule's reason, below.
+
+  `test_an_IGNORED_importable_file_under_src_is_DIRT` pins both halves. On 2026-10-10 the live launcher
+  pin worktree (`/tmp/launcher-95d014fa-*`) held no such file outside those two, so pinned runs stay
+  shareable.
 - **The `deps/pokemon-showdown` submodule is EXCLUDED** (`--ignore-submodules=all`). No torch compile
   reads it: it is the JS simulator, training runs on the Rust core, and nothing it holds reaches a
   compiled graph except as values. And the launcher's pinned worktree REPLACES it with a symlink to

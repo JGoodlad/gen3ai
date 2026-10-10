@@ -147,6 +147,31 @@ def test_the_clean_rule_on_a_real_checkout(repo):
     assert SH.workspace_state(str(repo)).clean is True
 
 
+def test_an_IGNORED_importable_file_under_src_is_DIRT(repo):
+    """Owner 2026-10-10: the shared cache is fine "as long as we're confident it comes from a hash with no
+    changes". `git status` never reports an IGNORED file, so a gitignored `src/foo.py` (importable, able to change
+    behaviour) passed as clean before `untracked_importables`. Fails on revert of that scan."""
+    with open(repo / ".gitignore", "a") as f:
+        f.write("src/foo.py\nsrc/legacy.pyc\nsrc/ext.so\nsrc/*.json\nsrc/rust_env/target/\n")
+    _commit(repo, "ignore rules")
+    assert SH.workspace_state(str(repo)).clean is True
+    for planted in ("foo.py", "legacy.pyc", "ext.so"):                  # each one alone makes the tree dirty
+        (repo / "src" / planted).write_bytes(b"X = 1\n")
+        st = SH.workspace_state(str(repo))
+        assert st.clean is False and f"src/{planted}" in st.detail, (planted, st.detail)
+        os.remove(repo / "src" / planted)
+    # NOT dirt: a non-importable ignored file, a __pycache__ byte-code cache (CPython validates it against the
+    # tracked source), and a Cargo build dir (rebuilt from tracked crate sources; no torch-compile input)
+    (repo / "src" / "table.json").write_text("{}\n")
+    (repo / "src" / "agents" / "__pycache__").mkdir()
+    (repo / "src" / "agents" / "__pycache__" / "model.cpython-311.pyc").write_bytes(b"\0")
+    (repo / "src" / "rust_env" / "target" / "release").mkdir(parents=True)
+    (repo / "src" / "rust_env" / "target" / "release" / "libpokesim.so").write_bytes(b"\0")
+    st = SH.workspace_state(str(repo))
+    assert st.clean is True, st.detail
+    assert SH.untracked_importables(str(repo)) == []
+
+
 def test_the_launchers_symlinked_submodule_is_not_dirt(repo, tmp_path):
     """The launcher's pinned worktree replaces `deps/pokemon-showdown` with a SYMLINK to the launching
     checkout's submodule (`main/launcher/worktree.py`). No torch compile reads it; it must not make

@@ -13716,3 +13716,18 @@ read both cells for its end-of-turn rule and found them wrong.
 - **Tests.** `disk_guard_test.py`: counted on the same filesystem (it can refuse); reported, never counted, on
   another; the plan exists only with sharing on and a compiling run; the preflight creates nothing.
 - **Docs.** `training_runbook.md`; the `disk_guard` docstring.
+
+## 2026-10-10 — the shared compile cache's CLEAN rule counts IGNORED importable files under `src/`
+
+- **Why.** The owner, 2026-10-10: the shared cache is fine "as long as we're confident it comes from a hash with no
+  changes". `git status` never reports an IGNORED file, so a gitignored `src/foo.py`, which can change behaviour,
+  passed as clean (the shared-cache build's FINDING 5).
+- **What.** `compile_cache_shared.untracked_importables` makes the tree DIRTY when any untracked or ignored file
+  under `src/` has an importable suffix (`.py .pyc .pyo .pyd .so .pth .pyx .pxd`). Two directory names are skipped,
+  for stated reasons:
+  - `__pycache__`: CPython validates each `.pyc` against its tracked source's mtime + size. A sourceless `.pyc`
+    outside it is counted.
+  - Cargo `target/`: the Rust crates' build output, which feeds no torch compile.
+  The submodule exclusion is unchanged. On 2026-10-10 the live launcher pin worktree held no such file.
+- **Test.** `test_an_IGNORED_importable_file_under_src_is_DIRT`: a planted ignored `src/foo.py`, sourceless `.pyc`
+  or `.so` each makes the tree dirty; an ignored JSON, a `__pycache__` pyc and a `target/` `.so` do not.

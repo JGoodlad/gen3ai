@@ -29,7 +29,10 @@ THE CLEAN RULE (`workspace_state`): a shared entry is read or written only when 
 was imported from is CLEAN — no tracked change anywhere (staged or not) and no untracked file under
 `src/`. Untracked files OUTSIDE `src/` do not matter: the trainer and every process it spawns import
 from `src/` alone (`PYTHONPATH=<checkout>/src`), so nothing outside it can enter a compiled graph.
-Ignored files are not looked at (`__pycache__`, build outputs). The `deps/pokemon-showdown` submodule
+An IGNORED or untracked IMPORTABLE file under `src/` is dirt too (`untracked_importables`: `git status`
+never reports an ignored file, and an ignored `src/foo.py` can change behaviour under a "pristine" key —
+owner 2026-10-10); `__pycache__` and Cargo `target/` dirs are skipped, reasons at
+`IMPORT_SCAN_SKIP_DIRS`. The `deps/pokemon-showdown` submodule
 is EXCLUDED: no torch compile reads it (it is the JS simulator; training runs on the Rust core, and
 whatever data reaches a model reaches it as tensor VALUES, which are graph inputs, never artifacts),
 and the launcher's own pinned worktrees replace it with a symlink to the launching checkout's
@@ -218,7 +221,46 @@ def workspace_state(root: str) -> WorkspaceState:
     for code, path in _porcelain_paths(untracked):
         if code == "??":
             return WorkspaceState(False, f"untracked file under src/: {path}")
+    try:
+        stray = untracked_importables(root)
+    except Exception as exc:  # noqa: BLE001
+        return WorkspaceState(None, f"the importable-file scan failed in {root}: {type(exc).__name__}")
+    if stray:
+        return WorkspaceState(False, f"an IGNORED / untracked importable file under src/: {stray[0]}"
+                              + (f" (+{len(stray) - 1} more)" if len(stray) > 1 else ""))
     return WorkspaceState(True, "clean")
+
+
+#: Suffixes Python can IMPORT or that change what an import resolves to (a source module, a byte-compiled module
+#: outside the cache dir — a `foo.pyc` beside `foo.py`'s place is imported when no source exists — an extension
+#: module, a path-configuration file, Cython sources a pyximport could build).
+IMPORTABLE_SUFFIXES = (".py", ".pyc", ".pyo", ".pyd", ".so", ".pth", ".pyx", ".pxd")
+#: Directory names the importable scan SKIPS, each with its reason (owner 2026-10-10: the shared cache is fine "as
+#: long as we're confident it comes from a hash with no changes"):
+#:   `__pycache__` — CPython writes it from the TRACKED source and validates every `.pyc` against that source's
+#:      mtime + size before using it (PEP 3147 / 552 timestamp pycs), so a stale one is recompiled, never imported
+#:      over a source git already judged clean; a `.pyc` OUTSIDE `__pycache__` is a sourceless module and IS counted;
+#:   `target` (a Cargo build dir, `src/rust_*/target/`) — the Rust crates' build output, rebuilt by cargo from the
+#:      TRACKED crate sources, and it feeds observations to the model, never code to a torch compile (the same reason
+#:      the `deps/pokemon-showdown` submodule is excluded: no input of an Inductor / Triton artifact lives there).
+IMPORT_SCAN_SKIP_DIRS = ("__pycache__", "target", ".git")
+
+
+def untracked_importables(root: str) -> List[str]:
+    """Every file under `<root>/src/` with an `IMPORTABLE_SUFFIXES` suffix that git does NOT track — ignored or
+    not (`git status` never reports an IGNORED file, so a gitignored `src/foo.py` would otherwise pass as clean).
+    Skips `IMPORT_SCAN_SKIP_DIRS` (reasons there). Sorted repo-relative paths."""
+    src = os.path.join(root, "src")
+    tracked = set(_git(root, "ls-files", "-z", "--", "src").split("\0"))
+    out: List[str] = []
+    for d, dirs, files in os.walk(src):
+        dirs[:] = [x for x in dirs if x not in IMPORT_SCAN_SKIP_DIRS]
+        for f in files:
+            if f.endswith(IMPORTABLE_SUFFIXES):
+                rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, "/")
+                if rel not in tracked:
+                    out.append(rel)
+    return sorted(out)
 
 
 # --------------------------------------------------------------------------- the key
