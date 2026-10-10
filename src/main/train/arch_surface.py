@@ -101,14 +101,19 @@ class ArchDiff(NamedTuple):
     name: str
     cli_flag: str
     resolved: Any
+    #: The DECLARED value the argv is judged against: the production mirror's, or — under a NAMED ARM
+    #: (`main.train.arch_arms`) — the arm's (production ⊕ its overlay). The field keeps its historical name.
     production: Any
     #: Where the resolved value came from: "argv" (the operator typed it, or a desugar filled it)
     #: or "default" (nothing set it, so the registry's fresh-run default applies).
     source: str
+    #: WHAT the declared value belongs to, for the printed label: "production", or "arm 'static_recovery'". A line
+    #: that says `production: 3` beside an arm's declared 3 names the wrong authority (the production mirror says 2).
+    against: str = "production"
 
     def line(self) -> str:
         return (f"{self.name:<28} {self.resolved!r:<14} "
-                f"(this argv, {self.source})   production: {self.production!r}")
+                f"(this argv, {self.source})   {self.against}: {self.production!r}")
 
 
 class ArchReport(NamedTuple):
@@ -265,8 +270,10 @@ def resolved_value(flag: ModelFlag, ns: Any) -> Tuple[Any, str]:
     return (is_enabled(raw) if flag.derived else raw), "argv"
 
 
-def diff_against_production(ns: Any, production: Optional[Dict[str, Any]] = None) -> List[ArchDiff]:
-    """Every ARCH-surface key on which `ns` and the mirror disagree, in registry order.
+def diff_against_production(ns: Any, production: Optional[Dict[str, Any]] = None,
+                            against: str = "production") -> List[ArchDiff]:
+    """Every ARCH-surface key on which `ns` and the mirror disagree, in registry order. `against` labels the
+    surface compared to in each diff's printed line: "production", or the named arm whose declared surface was passed.
 
     A key the mirror does not carry is SKIPPED rather than guessed at — that is the schema delta
     between a mirror and the live code (`arch_tables_test` treats it the same way), and "the mirror
@@ -280,7 +287,7 @@ def diff_against_production(ns: Any, production: Optional[Dict[str, Any]] = None
         want = prod[flag.name]
         have, source = resolved_value(flag, ns)
         if have != want:
-            out.append(ArchDiff(flag.name, flag.cli_flag, have, want, source))
+            out.append(ArchDiff(flag.name, flag.cli_flag, have, want, source, against))
     return out
 
 
@@ -423,8 +430,9 @@ def report(ns: Any, *, fresh: bool, allowed: bool = False,
     # A NAMED ARM is judged against the surface it DECLARES (production ⊕ its overlay), so the arm launches without
     # consent and a drift from the ARM is still refused (`main.train.arch_arms`).
     declared = arm_surface(umbrella, production) if umbrella in NAMED_ARMS else production
+    against = f"arm {umbrella!r}" if umbrella in NAMED_ARMS else "production"
     return ArchReport(
-        diffs=tuple(diff_against_production(ns, declared)),
+        diffs=tuple(diff_against_production(ns, declared, against)),
         fresh=bool(fresh),
         allowed=bool(allowed),
         umbrella=umbrella,
@@ -490,7 +498,7 @@ def report_lines(rep: ArchReport) -> List[str]:
     if not rep.fresh:
         out.append("  ℹ️  INFO only — this is a FORK/RESTART, which INHERITS its parent's arch "
                    "surface from the recorded model_config.json. The diff above is against "
-                   "PRODUCTION, not against the parent.")
+                   f"{'PRODUCTION' if arm is None else 'the ARM ' + repr(arm)}, not against the parent.")
         return out
     if rep.allowed:
         out.append(f"  ℹ️  {ALLOW_FLAG} — the drift above is an EXPLICIT choice and is recorded "
@@ -502,15 +510,16 @@ def report_lines(rep: ArchReport) -> List[str]:
                    "production_config.json, so today's is not the authority on it (and `--arch` "
                    "may not exist there at all). Reported, not gated.")
         return out
+    declared = "production's" if arm is None else f"the arm {arm!r}'s"
     out += [
-        "  ✗ REFUSED: a FRESH run whose architecture is not production's, and did not say so.",
+        f"  ✗ REFUSED: a FRESH run whose architecture is not {declared}, and did not say so.",
         "     'it launches' and 'it is the experiment' are INDEPENDENT checks, and only the diff",
         "     above tests the second. 2026-09-06: an arm launched from a document's 38-token",
         "     command block trained a near-bare network for ~7 GPU-hours / 24.4M steps. checkargs",
         "     said 'still launches'; resolve_config accepted; --dry-run said 'would launch'; all",
         "     three were right, and none of them had been asked this.",
         "     FIX — either:",
-        "       * pass `--arch production` (applies every key above; explicit flags still win), or",
+        f"       * pass `--arch {arm or 'production'}` (applies every key above; explicit flags still win), or",
         f"       * pass `{ALLOW_FLAG}` to assert the drift is deliberate.",
     ]
     return out

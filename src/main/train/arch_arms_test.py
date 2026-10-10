@@ -58,6 +58,33 @@ def test_a_drift_from_the_arm_is_refused_naming_the_key():
     assert not ok.refuses
 
 
+def test_the_drift_lines_name_the_arm_not_production_as_the_declared_surface():
+    """Each per-key line prints the value the argv is judged against BESIDE a label naming whose it is. Under an arm
+    that value is the ARM's (`trunk_layers` 3), which the production mirror (2) does not say, so the line must not
+    read `production: 3`. Fails on revert of the label (the old line was hardcoded `production:`)."""
+    _ns, rep = _report(ARGV + ["--arch", "static_recovery", "--trunk-layers", "2"])
+    lines = arch_surface.report_lines(rep)
+    key_lines = [ln for ln in lines if ln.lstrip().startswith("trunk_layers ")]
+    assert len(key_lines) == 1, lines
+    assert "arm 'static_recovery': 3" in key_lines[0] and "production:" not in key_lines[0], key_lines[0]
+    assert [d.against for d in rep.diffs] == ["arm 'static_recovery'"]
+    text = "\n".join(lines)
+    assert "not the arm 'static_recovery''s" in text and "pass `--arch static_recovery`" in text, text
+    assert "not production's" not in text
+    # the same key judged against PLAIN production keeps its label (production's value there is 2)
+    ns_prod, rep_prod = _report(ARGV + ["--arch", "production", "--trunk-layers", "3"])
+    prod_line = [ln for ln in arch_surface.report_lines(rep_prod) if ln.lstrip().startswith("trunk_layers ")]
+    assert len(prod_line) == 1 and "production: 2" in prod_line[0], prod_line
+    assert "arm" not in prod_line[0].split("production:")[0].split("(this argv")[-1], prod_line
+
+
+def test_a_fork_note_names_the_arm_it_diffed_against():
+    _ns, rep = _report(ARGV + ["--arch", "static_recovery", "--trunk-layers", "2"])
+    forked = rep._replace(fresh=False)
+    text = "\n".join(arch_surface.report_lines(forked))
+    assert "The diff above is against the ARM 'static_recovery', not against the parent." in text, text
+
+
 def test_checkargs_accepts_the_arm(capsys):
     from main.checkargs import main as checkargs_main
     rc = checkargs_main(["--argv", " ".join(ARGV + ["--arch", "static_recovery"])])
