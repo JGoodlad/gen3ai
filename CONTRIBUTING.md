@@ -42,11 +42,11 @@ the handful of local conventions that are not obvious from the code.
 
 ### Conduct
 
-Be kind and direct; argue with ideas, not people. **Respect the people on Pokémon Showdown:** this
-project never plays, challenges or chats with human players — the ladder mode is refused in code
-(owner policy, 2026-10-07; `designs/endstate/design_ladder_campaign.md` Decision record), and
-public-server use is limited to low-volume self-vs-self challenges between our own accounts. A
-contribution that adds a way to contact or play humans will not be merged.
+Be kind and direct, and argue with ideas, not people. **Respect the people on Pokémon Showdown**
+(the README's [Respect for players](README.md#respect-for-players)). They're real people playing a
+game they love. Our own work plays the agent against itself and against bots, and we haven't taken
+it onto the public ladder. If you run this code on Showdown, follow the server's rules and its
+policy on bots, and treat every opponent with respect.
 
 The research context lives elsewhere and is worth reading if you want to work on the model:
 [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) is the only document that describes the
