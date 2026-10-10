@@ -23952,3 +23952,61 @@ FINDINGS:
    T2's CUDA-graph build; K9(b) on a real first update; a real two-minute launch; the GPU cost read.
 
 Tag: **BUILT · fact-completion levers · v152 · OFF · `--arch endstate` declared · production byte-identical · GPU checks DEFERRED** · design: [`design_hand_computed_features.md`](../endstate/design_hand_computed_features.md) §4 / §5 · [`design_static_tokens.md`](../endstate/design_static_tokens.md) §14 · measurements: [`endstate_facts_2026-10-09/`](measurements/endstate_facts_2026-10-09/)
+
+### 2026-10-09 · REGISTRATION · **THE END-STATE CLOSING TEST IS REGISTERED, BEFORE ANY SEED: `--arch endstate` (pin P_end) vs `--arch production` (pin P_prod = `c0f528b4`), 15M, the production recipe, 8 seeds per arm (2001–2008), fixed n, ONE look; the 8 × 8 mirrored cross at P_end, X5's Δ̂ / V̂ on 14 df; the OWNER's rule: PASS iff the two-sided 90 % interval Δ̂ ± 1.761 √V̂ has upper end > 0 AND lower end > −2.0 pp, FAIL otherwise; PASS ⇒ adopt + delete legacy and the judgments, FAIL ⇒ the registered bisection (B2 = `static_recovery` first). The production arm launches now; the end-state arm waits for the SDPA fix + GPU checks + the production-identity preconditions**
+
+Design of record: [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) (§3 binds). Decided by the
+owner (the rule, 8 seeds, fixed n, the bisect groups; 2026-10-09); the remaining choices by this registration, each
+listed in that doc's Decision record.
+
+- **Arms.** PRODUCTION `--arch production` at **P_prod = `c0f528b4`** (origin/main HEAD at registration, after the v151
+  Toxic / Wish fix `58f8149a`). END STATE `--arch endstate` (`arch_arms.py`'s closed overlay: `static_recovery` + move
+  resolution, speed physics, threat injection off, principled op reductions, OBS-FACTS + the five fact-completion
+  levers) at a later P_end.
+- **Production identity at P_prod (MEASURED, CPU):** graph_sha `421c6b98ce7937f4`, state_sha `749c56159ab028f4`,
+  out_sha `51c02c6c6342a045`, 1 graph, 1,937,942 params (`static_recovery_2026-10-09/graph_sha.py '{}'`, equal to
+  `endstate_facts_2026-10-09/shas.out`); K9 golden blobs `9ef44772a3f76fcfa4de7e59590aec7be6b05812` (json) /
+  `9f13350daec82f90f37cf557b776646c316e6415` (buffer); mirror `1f454b35e69c…`; obs golden `09733f8cef9a…`.
+- **P_end preconditions (§2.3):** (A) the same three extractor hashes; (B) the same golden blobs + `learner_golden_test`
+  green; (C) the same mirror and obs golden + `golden_obs_core --check` green; (D) the `src/` + `data/` diff from
+  `c0f528b4` classified, with NO production-path, Rust-core or `data/` change (else the identity is void: reshape, or
+  re-run production at P_end); (E) the end state's GPU checks + the R1 compiled startup gate pass at P_end; the argv
+  re-validated there.
+- **Rule 8:** an interval end within 1e-9 of 0 or −2.0 does not satisfy its clause. Coded before any seed:
+  `measurements/endstate_closing_test_2026-10-09/closing_rule.py` (`self-check`: the static screen's look-3 matrix →
+  FAIL on both clauses, [−3.60, −1.04], OK).
+- **No early look** (§3.4): a 4-seed look could only stop for harm (two-look OBF, t₆ ≤ −3.242); simulated, it stops
+  0.9 % at Δ = 0 and saves ≈ 3 GPU-h in expectation at Δ = −2.3, and halves the bisection's top rung. Not taken.
+- **Operating characteristics (SIMULATED, §3.5):** P(PASS) at the screen's variances: Δ = 0 → 0.835, −1 → 0.346,
+  −2 → 0.044; at a 2.5-pp run SD in both arms Δ = 0 → 0.437.
+- **K9(b):** strict, with the static screen's amendments 1 (a tie-only ceiling stop with max |d log π| < 1e-4 resumes
+  without limit) and 2 (crash budget spent on tie-only stops ⇒ resume under `--behaviour-check warn`, valid iff every
+  later probe < 1e-4) carried over verbatim.
+- **Speed:** reported, never decides (context: R vs P +14.8 % `train_ms`, −11.4 % throughput, the brief's 2026-10-09
+  GPU-check figures, UNVERIFIED here).
+- **The production argv (validated: checkargs 13 flags, 0 unrecognized, ARCH ✓, RECIPE ✓ 28 knobs, "still launches";
+  `--dry-run` FRESH, pin `c0f528b4cfab…`, torch 2.8.0+cu126, disk ✓, "would launch"):**
+  `python -m main.launcher --restart-interval-hours 6 --pin-commit c0f528b4 --arch production --steps 15000000 --seed 2001 --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --snapshot-ladder-games 0 --checkpoint-every-steps 1000000 --device cuda --run-name rb_es_prod_s2001`
+  (seeds 2002–2008: `--seed` and `--run-name rb_es_prod_s200N` together). End state: the same with `--pin-commit <P_end>
+  --arch endstate --run-name rb_es_end_s200N`.
+- **Chain:** `rb_es_prod_s2001` … `s2008` first, then `rb_es_end_s2001` … `s2008`; alternation allowed once the end state
+  is unblocked (recorded); an INCONCLUSIVE seed is replaced by the next id (2009, …). The cross after all sixteen.
+- **Bisection on FAIL (§5):** cumulative ladder from production, B1 encoding + recovery facts → B2 trunk depth (=
+  `static_recovery`) → B3 move resolution + status facts → B4 speed physics → B5 critic route → B6 op reduction (+
+  `ko_ramp`, `g_ledger`) → B7 obs facts (+ `drop_progress_clock`) = the end state; test B2 first, then binary search
+  (B1, or B5 → B3 / B4 / B6); each rung 8 seeds vs the same production seeds under the same rule; ≤ 4 arms.
+
+FINDINGS:
+1. **BLOCKER:** the end-state graph's predecessor E fails the compiled-learner startup gate (Inductor SDPA
+   memory-efficient backward numerics), being pinned; the end-state arm waits for the fix + GPU checks.
+2. **HAZARD:** the SDPA fix is likely CUDA / Inductor-level, invisible to the CPU identity hashes. If it changes
+   production's compiled path, precondition (D) voids the eight production seeds (≈ 21 GPU-h). The fix must be gated
+   on the end-state graph or shown off production's path.
+3. **POWER:** an equal end state FAILS 17 % of the time at the screen's variances (56 % at a 2.5-pp run SD); a FAIL is
+   not proof of a deficit.
+4. The ride-along heads are critic readouts outside the ARCH surface: no `--allow-nonproduction-arch` needed;
+   `--belief-tokens` (the screen typed it) is deleted.
+5. `data/` frozen for the whole window (≈ 2 days); the cross loads P_prod checkpoints at P_end through the strict loader
+   (a refusal ⇒ INCONCLUSIVE).
+
+Tag: **REGISTRATION · END-STATE CLOSING TEST · P_prod `c0f528b4` · 8 + 8 seeds · fixed n · PASS iff 90 % upper > 0 and lower > −2.0 pp · nothing launched** · design: [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) · rule: [`endstate_closing_test_2026-10-09/`](measurements/endstate_closing_test_2026-10-09/)
