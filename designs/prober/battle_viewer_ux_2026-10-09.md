@@ -459,7 +459,7 @@ protocol + the unlock card. No request is made that would be refused.
 |---|---|
 | the `/battle` page (classic replay) and its templates | a second viewer with a second data path and a second perspective; every element that earns its place moved into `/game` (rows below). The URL now redirects (307), so no link breaks |
 | `/battle`'s critic row: TD δ and r | under the win-prob critic γ = 1 and r = 0 until the end, so TD δ = ΔV on every row and r printed `0.00` fifty times; V is P(win) and now lives in the decision header and the P(win) strip |
-| `/battle`'s "did it know?" awareness verdict and `P(win) · dist` strip | the distributional head was deleted (L1); they rendered nothing on any current run |
+| `/battle`'s "did it know?" awareness verdict and `P(win) · dist` strip | the distributional head was deleted (L1); they rendered nothing on any current run. (The rest of that layer — the run page's "Did it know?" card, `/api/awareness`, the scan / triage columns, `awareness.py`, `query awareness` — was deleted 2026-10-10, owner: "delete didn't know") |
 | `/battle`'s recorded `expect` / `they` α/β line | no Rust-core trace records `opp_intent` (null on every battle of every current run); the model-backed intent (§6) replaces it on current-architecture runs |
 | the per-card reward breakdown | the win-indicator terminal has no shaping terms |
 | the turn window (`start=`, 50 turns per page) | the rail lists every turn and the page shows one decision; `start=` is mapped to `turn=` by the redirect |

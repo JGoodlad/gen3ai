@@ -61,7 +61,7 @@ no-cycle rule and `ProbeSession`'s mixin base list. `engine/` is a strict DAG, l
 | `board.py` | the BOARD read-model (`build_board`) |
 | `timeline.py` | the RESULT timeline — HP loss re-attributed, one line per action |
 | `beliefs.py` | species / move / exclusive-species beliefs + the refinement trajectory |
-| `intent.py` | the α/β opponent-intent read + `awareness_text` |
+| `intent.py` | the α/β opponent-intent read |
 | `spread.py` | believed vs TRUE derived spreads (the DamageOperator's stat input) |
 | `switch_in.py` | forced-switch OUTGOING damage per bench candidate |
 | `decode.py` | `_faithfulness` / `_matchups` / `_intervention_sweep` / `_saliency` / `_threats` / `decode_incoming_belief` |
@@ -113,7 +113,7 @@ The other top-level modules (full text: `designs/prober/engine_and_model.md`):
 ## Hazards that have cost a wrong reading
 
 - 🚨 **Model-loading views work ONLY at the CURRENT architecture** (owner, 2026-10-08: no pinned-checkout
-  worker). Model-FREE (`scan` · `triage` · `turns` · `battle_story` · `awareness` · `loops` · `overview` ·
+  worker). Model-FREE (`scan` · `triage` · `turns` · `battle_story` · `loops` · `overview` ·
   `find` bar `disagree` · `falsify` · `falsify_scan` · `calibration` · `decision_table`) works on every run;
   model-LOADING (`analyze` · `battle_readout` · `decision_attention` · `probe` · `lookahead` · `better_line` ·
   `replay_counterfactual` · `history_saliency` · `find disagree`) only on a current-arch run.
@@ -177,7 +177,7 @@ model_loader=fn)` injects a fake model in tests (no torch). It is assembled from
 |---|---|
 | `core.py` | `ProbeSession` itself — construction, shared internals, the resolution ladder, `critic_mode` |
 | `reading.py` | MODEL-FREE orientation: `run_summary` · `battles` · `decision_table` · `battle_overview` · `battle_turns` |
-| `scans.py` | run-level model-free folds: `scan` · `awareness_scan` · `loops` · `triage` |
+| `scans.py` | run-level model-free folds: `scan` · `loops` · `triage` |
 | `trace_io.py` | the trace's sibling files (protocol log, privileged teams, our HP types) — file IO kept OUT of the engine |
 | `analysis.py` | the per-decision deep read: `analyze` (loads the model) · `find` |
 | `counterfactual.py` | `falsify` · `lookahead` · `better_line` · `replay_counterfactual` |
@@ -204,7 +204,6 @@ python -m main.prober.query switch-vs-info <run_dir> [--step N] [--opponent X] [
 python -m main.prober.query summary  <run_dir>
 python -m main.prober.query list     <run_dir> --outcome loss --step 8000000
 python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--metric td_residual] [--limit K]
-python -m main.prober.query awareness <run_dir> [--outcome loss] [--opponent X] [--step N] [--lead-bar 5] [--cap-turn 240] [--stall-bar 0.25]
 python -m main.prober.query overview <battle_id>
 python -m main.prober.query turns    <battle_id>          # MODEL-FREE turn-by-turn replay of the game
 python -m main.prober.query find     <battle_id> value_drop --limit 5

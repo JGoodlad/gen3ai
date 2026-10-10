@@ -1,4 +1,4 @@
-"""RUN-LEVEL model-free scans: worst-turn `scan`, `awareness_scan`, `loops`, and `triage`.
+"""RUN-LEVEL model-free scans: worst-turn `scan`, `loops`, and `triage`.
 
 Each folds one verdict per battle and ranks across the run. All model-free — they read the traces
 on disk, so they answer on any run regardless of architecture drift.
@@ -10,130 +10,17 @@ import collections
 import json
 import os
 
-import numpy as np
-
 from agents.training.trace_result import OUTCOMES
 from main.prober.discovery import BattleTrace
-from main.prober.awareness import AWARENESS_BASELINES, coverage_from_npz
 from main.prober.loops import LOOP_BASELINES
 from main.prober.loops import analyze_battle as _analyze_loops
 from main.prober.engine import (SETUP_MOVES, WP_EVEN_DEFAULT, _npz_win_prob,
     attribute_turning_point, build_board, parse_pct, summary_flags)
 from main.prober.session.serialize import _active_str, _r, _short_id
-from main.prober.session.stats import _discounted_returns, _loop_aggregate
+from main.prober.session.stats import _loop_aggregate
 
 
 class _ScansMixin:
-    def awareness_scan(self, *, outcome: "str | None" = "loss",
-                       opponent: "str | None" = None, step: "int | None" = None,
-                       lead_bar: int = 5, cap_turn: int = 240,
-                       stall_bar: float = 0.25) -> dict:
-        """RUN-LEVEL 'did it KNOW?' — the awareness verdict (awareness.py) over every matching
-        battle, aggregated. The deadline-clock regression readout the gen-11 runbook §3 names:
-        *fraction of cap losses where the model was tail-aware ≥ ``lead_bar`` turns early*, plus
-        the blind-loss fraction and the stall-signature battles (tail mass piling up while the
-        MEAN still read positive — `mean_tail_divergence` ≥ ``stall_bar``). Model-free, so it
-        runs on any run with a dist head regardless of architecture drift. A battle whose last
-        decision turn ≥ ``cap_turn`` counts as a CAP loss (MAX_TURNS is 250; the last recorded
-        decision sits a few turns shy). Battles without dist rows are counted, never judged."""
-        support = self._dist_support()
-        if support is None:
-            return {"error": "this run has no distributional value head "
-                             "(value_dist_mode none / no model_config.json)"}
-        rows, n_skipped, all_pits = [], 0, []
-        for b in self.tree.all_battles():
-            if outcome and b.outcome != outcome:
-                continue
-            if opponent and b.opponent != opponent:
-                continue
-            if step is not None and b.step != step:
-                continue
-            invs = self._summary(b).get("invocations", [])
-            v = self._awareness(b, invs)
-            if v is None:
-                n_skipped += 1
-                continue
-            # Quantile coverage (runbook §3): PIT of the realized MC return under each
-            # predicted distribution — same return convention as the calibration probe.
-            rewards = [((inv.get("outcome") or {}).get("reward") or {}).get("total")
-                       if isinstance((inv.get("outcome") or {}).get("reward"), dict)
-                       else (inv.get("outcome") or {}).get("reward") for inv in invs]
-            cov = coverage_from_npz(self._npz(b),
-                                    _discounted_returns(rewards, self._gamma),
-                                    self._dist_support())
-            if cov is not None:
-                all_pits.extend(cov.pop("pits"))
-                cov["denorm"] = list(cov["denorm"])       # JSON round-trip parity — see `_awareness`
-            last_turn = v["turns"][-1] if v["turns"] else None
-            rows.append({
-                "id": b.summary_path, "short_id": _short_id(b), "step": b.step,
-                "opponent": b.opponent, "outcome": b.outcome,
-                "last_turn": last_turn,
-                # A battle that reached the forfeit deadline. The bucket it lands in depends on
-                # WHEN the trace was written: `draw` since the draw bucket landed (2026-09-07),
-                # `loss` before it (the trainee forfeits, so poke-env reported a loss). Both are
-                # accepted so this row means the same thing across the whole archive — the turn
-                # count, not the label, is what makes it a cap game.
-                "cap_loss": (b.outcome in ("loss", "draw") and last_turn is not None
-                             and last_turn >= cap_turn),
-                "knew_by_turn": v["knew_by_turn"], "lead_time": v["lead_time"],
-                "blind_loss": v["blind_loss"],
-                "mean_tail_divergence": v["mean_tail_divergence"],
-                "divergence_turn": v["divergence_turn"],
-                "coverage": cov,        # per-battle PIT summary; None on a no-reward trace
-            })
-        losses = [r for r in rows if r["outcome"] == "loss"]
-        caps = [r for r in losses if r["cap_loss"]]
-        leads = [r["lead_time"] for r in losses if r["lead_time"] is not None]
-
-        def _frac(part, whole):
-            return round(len(part) / len(whole), 3) if whole else None
-        agg = {
-            "n_battles": len(rows), "n_skipped_no_dist": n_skipped,
-            "n_losses": len(losses), "n_cap_losses": len(caps),
-            "blind_loss_fraction": _frac([r for r in losses if r["blind_loss"]], losses),
-            "aware_ge_bar_fraction": _frac(
-                [r for r in losses if (r["lead_time"] or -1) >= lead_bar], losses),
-            "cap_aware_ge_bar_fraction": _frac(
-                [r for r in caps if (r["lead_time"] or -1) >= lead_bar], caps),
-            "median_lead_time": (float(np.median(leads)) if leads else None),
-            "stall_signature_fraction": _frac(
-                [r for r in losses if r["mean_tail_divergence"] >= stall_bar], losses),
-            # Pooled quantile coverage over EVERY scored decision (not means-of-battle-means):
-            # calibrated ⟺ pit_mean ≈ 0.5 and coverage80 ≈ 0.80. Note the selection caveat —
-            # the default outcome="loss" filter biases pit_mean low BY CONSTRUCTION (losses are
-            # the low-outcome tail); judge calibration on outcome=None, direction on the filter.
-            "quantile_coverage": ({
-                "n_decisions": len(all_pits),
-                "pit_mean": round(float(np.mean(all_pits)), 4),
-                "pit_std": round(float(np.std(all_pits)), 4),
-                "coverage80": round(float(np.mean([(0.10 <= p <= 0.90) for p in all_pits])), 4),
-            } if all_pits else None),
-            "params": {"lead_bar": lead_bar, "cap_turn": cap_turn, "stall_bar": stall_bar},
-            # What gen-10 measured, carried WITH the live numbers so neither surface has to keep a
-            # baseline of its own — and so a reading is never quoted without its reference point.
-            "baseline": dict(AWARENESS_BASELINES),
-        }
-        caveats = [
-            f"Baselines are {AWARENESS_BASELINES['generation']}, measured "
-            f"{AWARENESS_BASELINES['measured']} ({AWARENESS_BASELINES['source']}) — a reference "
-            "point, NOT a target.",
-            f"cap_aware_ge_bar_fraction is over {len(caps)} cap loss(es) here and "
-            f"{AWARENESS_BASELINES['n_cap_losses']} in the baseline: at that n it moves in large "
-            "steps, so read it as a direction, not a rate.",
-            "SELECTION: quantile_coverage under an outcome filter is biased BY CONSTRUCTION "
-            f"(losses are the low-outcome tail; the baseline pit_mean/coverage80 were measured on "
-            f"{AWARENESS_BASELINES['coverage_scope']}). Judge calibration with outcome unset; use "
-            "a filtered read for direction only."
-            + ("" if outcome else "  [this scan is UNFILTERED, so coverage IS comparable]"),
-            "A battle with fewer than 2 recorded distributions is COUNTED (n_skipped_no_dist) and "
-            "never judged — it is not a blind loss.",
-        ]
-        # blind + stall-flagged first — the battles a reader should open
-        rows.sort(key=lambda r: (not r["blind_loss"], -r["mean_tail_divergence"]))
-        return {"run_dir": self.run_dir, "support": list(support),
-                "aggregate": agg, "caveats": caveats, "battles": rows}
-
     def loops(self, *, outcome: "str | None" = None, opponent: "str | None" = None,
               step: "int | None" = None, max_battles: "int | None" = None,
               near_zero_frac: float = 0.01, top: int = 12) -> dict:
@@ -248,15 +135,8 @@ class _ScansMixin:
         ``td_residual`` (most negative critic surprise δ = r + γV(s') − V(s)).
         Filters mirror ``battles()``. No checkpoint is loaded, so this is fast even
         across a whole run. Each row is ``{id, short_id, opponent, step, outcome,
-        turns, knew_by_turn, lead_time, blind_loss, awareness_text,
-        worst:{inv, turn, phase, chosen, our_active, opp_active, delta_v,
+        turns, worst:{inv, turn, phase, chosen, our_active, opp_active, delta_v,
         td_residual, reward_total, events, flags}}``.
-
-        The four ``awareness`` fields are the battle's "did it KNOW?" verdict
-        (``awareness_scan``'s per-battle fold) carried beside its worst turning point, because
-        the two answer one question together: a crater the model NEVER saw coming
-        (``blind_loss``) is a missed signal, while the same crater with 20 turns of warning is a
-        position it could not convert. ``None`` on a run with no distributional head.
         """
         if metric not in ("value_drop", "td_residual"):
             raise ValueError(f"metric must be 'value_drop' or 'td_residual', got {metric!r}")
@@ -319,21 +199,10 @@ class _ScansMixin:
             worst["incoming_active_pko"] = belief.active_pko
             worst["incoming_max_pko"] = belief.max_pko
             worst["incoming_active_outspeed"] = belief.active_outspeed
-        # "Did it KNOW?" for the whole battle, beside the decision that lost it. A crater the model
-        # never saw coming reads completely differently from one it had been calling for 20 turns:
-        # the first is a missed signal, the second a position it could not convert. Folded from the
-        # npz already in hand, so the scan pays one numpy pass, not a second file read.
-        aw = self._awareness(battle, invs, npz=npz)
         return {
             "id": battle.summary_path, "short_id": _short_id(battle),
             "opponent": battle.opponent, "step": battle.step, "outcome": battle.outcome,
             "turns": (summary.get("meta") or {}).get("turns"),
-            "knew_by_turn": (aw or {}).get("knew_by_turn"),
-            "lead_time": (aw or {}).get("lead_time"),
-            # None (not False) when there is no verdict at all, so "this run has no dist head" stays
-            # distinguishable from "it did see this one coming".
-            "blind_loss": None if aw is None else bool(aw.get("blind_loss")),
-            "awareness_text": (aw or {}).get("text"),
             "worst": worst,
         }
 
@@ -386,12 +255,6 @@ class _ScansMixin:
         move_id = "" if is_switch else chosen.lower().replace(" ", "")
         belief = self._belief_at(npz, best_i)
         psp = list(belief.per_slot_pko) if (belief is not None and belief.per_slot_pko) else None
-        # The battle's "did it KNOW?" verdict, carried on the turning-point feature so the taxonomy
-        # ranking can report what fraction of each category the model never saw coming. This does
-        # NOT feed `attribute_turning_point` — the categories stay exactly as they were; awareness
-        # is reported ALONGSIDE them, because "which lever" and "did it have warning" are two
-        # different questions and folding one into the other would silently redefine the taxonomy.
-        aw = self._awareness(battle, invs, npz=npz) or {}
         return {
             "short_id": _short_id(battle), "opponent": battle.opponent, "step": battle.step,
             "turns": (summary.get("meta") or {}).get("turns"),
@@ -405,8 +268,6 @@ class _ScansMixin:
             "n_healthy_bench": sum(1 for m in board.ours.bench if not m.fainted),
             "min_other_pko": (min(psp) if psp else None),
             "delta_v": best_dv, "td": td, "v_at": v_at, "wp_at": wp_at,
-            "blind_loss": aw.get("blind_loss"), "knew_by_turn": aw.get("knew_by_turn"),
-            "lead_time": aw.get("lead_time"), "has_awareness": bool(aw),
         }
 
     def _win_rates(self, step: "int | None") -> dict:
@@ -476,23 +337,16 @@ class _ScansMixin:
         cat_recover: dict = defaultdict(float)
         cat_by_opp: dict = defaultdict(lambda: defaultdict(int))
         cat_examples: dict = defaultdict(list)
-        cat_feats: dict = defaultdict(list)          # every feature per category, for the awareness split
         for opp, po in per_opp.items():
             for cat, feats in po["cats"].items():
                 cat_total[cat] += len(feats)
                 cat_by_opp[cat][opp] = len(feats)
-                cat_feats[cat].extend(feats)
                 for f in feats[:3]:
-                    # The awareness tag rides the example line itself: an example you can open is
-                    # exactly where "did it have warning?" is worth knowing before you open it.
-                    aware = ("" if not f.get("has_awareness") else
-                             (", BLIND" if f.get("blind_loss") else
-                              f", knew@t{f.get('knew_by_turn')} (+{f.get('lead_time')})"))
                     cat_examples[cat].append(
                         f"{f['short_id']} t{f.get('turn')}: {f.get('our_species')} chose "
                         f"{f.get('chosen')} (pko={_r(f.get('active_pko'),2)}, "
                         f"outspeed={_r(f.get('active_outspeed'),2)}, dHP={_r(f.get('our_hp_delta'),2)}, "
-                        f"healthy_bench={f.get('n_healthy_bench')}{aware})")
+                        f"healthy_bench={f.get('n_healthy_bench')})")
         for opp in bot_opps:
             n = per_opp[opp]["n"] or 1
             loss_rate = max(0.0, 1.0 - float(wr.get(opp, 0.0)))
@@ -501,24 +355,6 @@ class _ScansMixin:
 
         total = sum(cat_total.values())
 
-        def _cat_awareness(cat: str) -> dict:
-            """The 'did it KNOW?' split WITHIN one category (`awareness.py`), over the losses that
-            carry a verdict. Reported beside the lever rather than folded into it: the category
-            names WHAT to fix, this says whether the model had any warning to act on — a
-            `critic_blindspot` that is mostly blind is a different repair from one it saw coming
-            and mis-played. `None` throughout on a run with no distributional head."""
-            judged = [f for f in cat_feats[cat] if f.get("has_awareness")]
-            if not judged:
-                return {"n_judged": 0, "n_blind": None, "blind_fraction": None,
-                        "median_lead_time": None}
-            blind = [f for f in judged if f.get("blind_loss")]
-            leads = [f["lead_time"] for f in judged if f.get("lead_time") is not None]
-            return {
-                "n_judged": len(judged), "n_blind": len(blind),
-                "blind_fraction": round(len(blind) / len(judged), 3),
-                "median_lead_time": (float(np.median(leads)) if leads else None),
-            }
-
         # Rank by recoverable win-rate; break ties by raw volume so the order is stable AND meaningful
         # even when no bot win-rates exist (recover all 0 → fall back to "most losses first").
         cats = [{
@@ -526,7 +362,6 @@ class _ScansMixin:
             "n": cat_total[c], "pct_of_sampled_losses": round(100 * cat_total[c] / max(1, total), 1),
             "est_recoverable_winrate_pct": round(100 * cat_recover.get(c, 0.0), 2),
             "by_opponent": dict(cat_by_opp[c]),
-            "awareness": _cat_awareness(c),
             "examples": cat_examples[c][:4],
         } for c in sorted(cat_total, key=lambda c: (-cat_recover.get(c, 0.0), -cat_total[c]))]
 
@@ -544,10 +379,6 @@ class _ScansMixin:
             "per-opponent representative but raw counts are NOT the true loss volume — the recoverable "
             "estimate corrects for that via the true per-opponent win-rate.",
             "Each loss is attributed to its single worst-ΔV turning point; a loss can have several causes.",
-            "The per-category `awareness` split is REPORTED BESIDE the taxonomy, never folded into "
-            "it: the category names which lever to pull, the split says whether the model had any "
-            "warning to act on. It covers only the losses carrying a distributional verdict "
-            "(`n_judged`), which is 0 on a run with no dist head.",
             "Recoverable-winrate is over BOT opponents only (the ELO anchor); sentinel/ext losses are "
             "counted (pct_of_sampled_losses) but not rating-weighted (their win-rate is gate-pinned).",
             split_signal,

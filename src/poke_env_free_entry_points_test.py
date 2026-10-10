@@ -356,7 +356,7 @@ sub = str(next(i for i, a in enumerate(_acts) if a["valid"]))
 P = query._build_parser()
 rr = ["--seeds", "2", "--alts", "1", "--worst", "1"]
 cmds = [["summary", run], ["list", run], ["scan", run], ["scan", run, "--metric", "td_residual"],
-        ["awareness", run, "--outcome", "all"], ["loops", run], ["triage", run], ["switch-vs-info", run],
+        ["loops", run], ["triage", run], ["switch-vs-info", run],
         ["decision-table", run], ["turns", battle], ["overview", battle],
         *[["find", battle, c] for c in query._FIND_CRITERIA],
         ["analyze", battle, str(decide)],
@@ -448,8 +448,7 @@ def test_every_prober_command_and_the_web_app_run_with_poke_env_blocked(prober_r
     res = json.loads(line[len("PROBER-RESULT "):])
     assert not res["attempts"], res["report"]
     failed = {k: v for k, v in res["commands"].items() if not v["ok"]}
-    # `awareness` reads the deleted distributional value head; on a run that never had one it raises by design
-    assert set(failed) <= {"awareness --outcome all"}, failed
+    assert not failed, failed
     for must in ("turns", "overview", "analyze", "--impl rust falsify", "--impl rust lookahead",
                  "--impl rust better-line", "--impl rust replay-counterfactual"):
         hits = [k for k in res["commands"] if k.startswith(must)]

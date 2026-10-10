@@ -1,14 +1,13 @@
 """main.endofrun — the AUTOMATED end-of-run battery: every verdict a generation needs, one command.
 
 The generation loop turns over every ~2 days, and each turnover ends the same way: fit the dense
-ladder, run the critic-route audit, run the per-family edge ablation, read the awareness/coverage
-instruments, then apply the PRE-REGISTERED decision rules by hand from a runbook. This module
-mechanizes that: the runbooks (`designs/research_state/gen*_endofrun_runbook.md`) remain the
-pre-registration — the rules are encoded here as PURE FUNCTIONS citing them — and one invocation
+ladder, run the critic-route audit, run the per-family edge ablation, then apply the PRE-REGISTERED
+decision rules by hand from a runbook. This module mechanizes that: the runbooks
+(`designs/research_state/gen*_endofrun_runbook.md`) remain the pre-registration — the rules are encoded here as PURE FUNCTIONS citing them — and one invocation
 produces one verdict artifact:
 
     python -m main.endofrun models/<run> [--ref models/<prev-run>] [--max-states 6000]
-        [--skip elo,audits,awareness] [--out designs/research_state/measurements]
+        [--skip elo,audits,mechanics] [--out designs/research_state/measurements]
     (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 Outputs `<out>/<run>_endofrun.json` (every measured number + every verdict with the rule that
@@ -23,11 +22,9 @@ cannot run records WHY (the honest-status rule: an error is never an empty resul
                     (route arms → the §2 deletion rule) and `edge_ablation_audit` (per-family →
                     the family-alive rule). LOADS THE MODEL: on an arch-drifted run it records
                     `needs_pinned_tree` with the exact worktree commands instead of failing.
-  * **awareness** — model-free: `ProbeSession.awareness_scan` twice (losses → the blind/cap
-                    verdicts; all outcomes → quantile coverage) vs the recorded gen-10 baselines.
 
 The verdicts are DECISION-SUPPORT, not decisions: the report prints rule → number → verdict and
-flags every pre-registered confound (route substitutability; the coverage loss-filter bias).
+flags every pre-registered confound (route substitutability).
 """
 from __future__ import annotations
 
@@ -37,16 +34,7 @@ import os
 import statistics
 from typing import Dict, List, Optional
 
-# ------------------------------------------------------------------ pre-registered baselines
-# Gen-10 instrument baselines (measured 2026-08-15; ledger "Dist-head instrument baselines").
-AWARENESS_BASELINES = {
-    "blind_loss_fraction": 0.072,
-    "median_lead_time": 7.0,
-    "cap_aware_ge_bar_fraction": 0.50,
-    "coverage80": 0.44,
-    "pit_mean": 0.396,
-}
-
+# ------------------------------------------------------------------ pre-registered constants
 TAIL_K = 4                    # the tail-K ladder convention (the gen-8 resolution lesson)
 NONINF_MARGIN = -15.0         # §5 convention: within −15 …
 NONINF_HARD = -40.0           # … with the CI excluding −40
@@ -181,41 +169,6 @@ def family_verdicts(fams: Dict[str, dict], targets=("h",)) -> dict:
     return out
 
 
-def awareness_verdicts(loss_agg: dict, all_agg: dict,
-                       baselines: dict = AWARENESS_BASELINES) -> dict:
-    """Instrument reads vs the recorded gen-10 baselines — DIRECTIONS, not pass/fail (the
-    runbook treats these as instrument verdicts). Coverage is judged on the ALL-outcomes scan
-    (the loss filter biases PIT low by construction — pre-registered)."""
-    qc = (all_agg or {}).get("quantile_coverage") or {}
-    rows = {
-        "blind_loss_fraction": ((loss_agg or {}).get("blind_loss_fraction"),
-                                baselines["blind_loss_fraction"]),
-        "median_lead_time": ((loss_agg or {}).get("median_lead_time"),
-                             baselines["median_lead_time"]),
-        "cap_aware_ge_bar_fraction": ((loss_agg or {}).get("cap_aware_ge_bar_fraction"),
-                                      baselines["cap_aware_ge_bar_fraction"]),
-        "coverage80": (qc.get("coverage80"), baselines["coverage80"]),
-        "pit_mean": (qc.get("pit_mean"), baselines["pit_mean"]),
-    }
-    out = {}
-    better_up = {"median_lead_time", "cap_aware_ge_bar_fraction", "coverage80"}
-    _EPS = 0.005          # rounding-noise floor: a delta under this is UNCHANGED, not a verdict
-    for k, (cur, base) in rows.items():
-        if cur is None:
-            out[k] = {"verdict": "UNAVAILABLE"}
-            continue
-        if k == "pit_mean":
-            d = abs(base - 0.5) - abs(cur - 0.5)          # >0 ⇒ moved toward calibrated
-            direction = ("UNCHANGED" if abs(d) < _EPS
-                         else ("IMPROVED" if d > 0 else "WORSE"))
-        else:
-            d = (cur - base) if k in better_up else (base - cur)
-            direction = ("UNCHANGED" if abs(cur - base) < _EPS
-                         else ("IMPROVED" if d > 0 else "WORSE"))
-        out[k] = {"current": cur, "gen10_baseline": base, "verdict": direction}
-    return out
-
-
 # ------------------------------------------------------------------ the steps
 
 def _hodge(run_dir: str, anchors: str) -> Optional[dict]:
@@ -300,7 +253,7 @@ def step_audits(run_dir: str, max_states: int, batch: int) -> dict:
                 "how": [f"git worktree add /tmp/endofrun-pinned {git_hash}",
                         "copy src/main/endofrun.py + src/agents/model/critic_route_audit.py "
                         "into the pinned tree if it predates them",
-                        f"PYTHONPATH=src python -m main.endofrun {run_dir} --skip elo,awareness"]}
+                        f"PYTHONPATH=src python -m main.endofrun {run_dir} --skip elo"]}
     routes = route_audit(model.policy, obs, masks, batch=batch)
     fams = None
     try:
@@ -316,22 +269,6 @@ def step_audits(run_dir: str, max_states: int, batch: int) -> dict:
     else:
         result["family_arms"] = fams
     return result
-
-
-def step_awareness(run_dir: str) -> dict:
-    try:
-        from main.prober.session import ProbeSession
-        with ProbeSession(run_dir) as s:
-            losses = s.awareness_scan(outcome="loss")
-            everything = s.awareness_scan(outcome=None)
-        if "error" in losses:
-            return {"status": "skipped", "why": losses["error"]}
-        return {"status": "ok",
-                "loss_aggregate": losses["aggregate"],
-                "all_aggregate": everything["aggregate"],
-                "verdicts": awareness_verdicts(losses["aggregate"], everything["aggregate"])}
-    except Exception as e:  # noqa: BLE001
-        return {"status": "error", "why": f"{type(e).__name__}: {e}"}
 
 
 def step_mechanics(run_dir: str, ref_run: Optional[str]) -> dict:
@@ -412,20 +349,9 @@ def render_markdown(report: dict) -> str:
         L.append(f"- {aud.get('status')}: {aud.get('why')}")
         for h in aud.get("how", []):
             L.append(f"    - `{h}`")
-    aw = report["steps"].get("awareness", {})
-    L.append("\n## 3. Awareness + coverage (vs gen-10 baselines)")
-    if not aw:
-        L.append("- skipped")
-    elif aw.get("status") == "ok":
-        for k, v in aw["verdicts"].items():
-            cur = v.get("current")
-            L.append(f"- {k}: **{v['verdict']}**"
-                     + (f" ({cur} vs {v['gen10_baseline']})" if cur is not None else ""))
-    else:
-        L.append(f"- {aw.get('status')}: {aw.get('why')}")
     mech = report["steps"].get("mechanics", {})
     if mech:
-        L.append("\n## 4. Mechanic usage (G2 — conditional execution)")
+        L.append("\n## 3. Mechanic usage (G2 — conditional execution)")
         if mech.get("status") == "ok":
             cur = mech["current"]["mechanics"]
             ref = (mech.get("reference") or {}).get("mechanics", {})
@@ -453,7 +379,7 @@ def main(argv=None) -> int:
     ap.add_argument("--max-states", type=int, default=6000)
     ap.add_argument("--batch", type=int, default=512)
     ap.add_argument("--skip", default="",
-                    help="comma list of steps: elo,audits,awareness,mechanics")
+                    help="comma list of steps: elo,audits,mechanics")
     ap.add_argument("--out", default="designs/research_state/measurements")
     a = ap.parse_args(argv)
     skip = {s for s in a.skip.split(",") if s}
@@ -465,8 +391,6 @@ def main(argv=None) -> int:
         report["steps"]["elo"] = step_elo(a.run_dir, a.ref, a.anchors)
     if "audits" not in skip:
         report["steps"]["audits"] = step_audits(a.run_dir, a.max_states, a.batch)
-    if "awareness" not in skip:
-        report["steps"]["awareness"] = step_awareness(a.run_dir)
     if "mechanics" not in skip:
         report["steps"]["mechanics"] = step_mechanics(a.run_dir, a.ref)
 

@@ -126,7 +126,7 @@ whole tool:
 
 | tier | works on | why |
 |---|---|---|
-| **model-free** — `scan` · `triage` · `turns` · `battle_story` · `awareness` · `loops` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
+| **model-free** — `scan` · `triage` · `turns` · `battle_story` · `loops` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
 | **model-loading** — `analyze` · `battle_readout` · `decision_attention` · `probe` · `lookahead` · `better_line` · `replay_counterfactual` · `history_saliency` · `find disagree` | **only a run at the CURRENT arch** | re-runs the policy under today's code |
 
 So the durable surface is the model-free one, and it is not a coincidence that the web front end was

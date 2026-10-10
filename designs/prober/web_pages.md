@@ -1,4 +1,4 @@
-# The prober web app's PAGES — information flow, the critic's currency, `/game`, `/analyze`, awareness
+# The prober web app's PAGES — information flow, the critic's currency, `/game`, `/analyze`
 
 Owned by this tree (always current), lifted out of `src/main/prober/web/CLAUDE.md` on 2026-10-10.
 The battle viewer's field map is [`battle_view_v2.md`](battle_view_v2.md) and its reasons
@@ -74,17 +74,6 @@ CALIBRATION — axes `predicted P(win)` / `realized win rate`, the gap chart's y
 `recorded V(s)` / `realized return G(s)`. `charts_test.py` pins both eras, incl. that the winprob spec
 contains "realized return" nowhere.
 
-**DEAD under this era — a census candidate for deletion, deliberately NOT deleted here.** The
-distributional value head is gone (L1; no new trace carries `value_dist`), so every awareness surface
-degrades to empty. Nothing 500s:
-
-| surface | state |
-|---|---|
-| `index.html` "Did it know?" card | heading + blurb always render; the swap fills with `{{ data.error }}` — a permanently empty card |
-| `scan_table.html` `knew @` / `lead` columns | headers always render, every cell `—` |
-| `triage_table.html` `blind` / `median lead` columns | same |
-| `/api/awareness`'s `lead_bar` / `cap_turn` / `stall_bar` | inert (their chart was deleted in L1) |
-
 **The era's offline instruments are LINKED from `/`, not re-implemented.** Each owns statistics this app
 does not (a Bradley-Terry ladder, a cluster bootstrap, a selection reweighting that REFUSES), and
 re-deriving one in a handler breaks *the one rule*. So `/` carries a card with the commands
@@ -116,26 +105,7 @@ will happily open a `*_summary.json` belonging to **another run**; `app.battle_r
 against the run's own listing and passes the session a path the *server* produced. Without it a pinned
 single-run instance served a sibling run's trace with a **200**.
 
-## 4. "Did it know?" — the awareness layer
-
-One fold (`main/prober/awareness.py`), model-free, `None` throughout on runs with no distributional head
-(every run since L1):
-
-| where | what it adds |
-|---|---|
-| `/scan` | `knew @` and `lead` columns beside each crater — `BLIND` badged when it never saw it coming |
-| `/triage` | a `blind` / `median lead` column per category, **beside** the lever, never folded into it |
-| `/` | the run-level panel: the aggregate against the published **gen-10 baseline** |
-
-**The baseline is data, not copy** — `awareness.AWARENESS_BASELINES`, riding `awareness_scan()`'s payload
-as `aggregate.baseline`. Two honesty rules in the markup: **cap-aware@5 prints its `n` on both sides**
-("a direction, not a rate"; the baseline is over **12** cap losses), and **the two coverage rows are NOT
-comparable at the default filter** (the baseline was over ALL outcomes, the panel defaults to losses, so
-a filtered PIT is biased low by construction — the page says so and links the unfiltered read; the CLI
-gained `--outcome all` for the same reason). It loads **async on `/`** (`hx-trigger="load"`): measured
-on gen-11 (1292 losses), `awareness_scan()` **5.4 s** cold vs `scan()`'s 2.0 s warm, beside a live trainer.
-
-## 5. `/analyze` — a view that loads a checkpoint (password-gated)
+## 4. `/analyze` — a view that loads a checkpoint (password-gated)
 
 The per-decision forensic read: page shell + an HTMX fragment (`hx-trigger="load"`), the battle and
 `inv` plain GET params. Every hand-off (the viewer's decisions, every `scan` row) LINKS to
@@ -180,7 +150,7 @@ faithfulness/threat tables) is covered by unit tests and an eyeball, **not** the
 Until a fixture checkpoint at the current architecture exists, "the heatmap does not overflow on a
 phone" is unproven.
 
-## 6. The `/falsify` and `/calibration` forms
+## 5. The `/falsify` and `/calibration` forms
 
 ⚠ **An HTMX `<form hx-post>` sends its fields in the BODY — declare them `Form(...)`, never `Query(...)`.**
 Both pages shipped with `Query`, so every control was ignored: a submit of

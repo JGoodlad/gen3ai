@@ -228,7 +228,7 @@ Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to 
   the stored meta without expanding (so `run_summary` stays instant). Cached in memory only;
   nothing is written into the run dir. ABSENT on a core trace: `*_replay.html` (its stand-in is the
   expansion's own protocol log, `core_trace.protocol_log`), and every auxiliary head — `win_probs`
-  is NaN, `belief` / `opp_intent` / `move_logits` / `spread_belief` are not stored (and `value_dist` no longer exists in ANY new trace — the head was deleted, L1; old traces keep the array and `awareness.py` still reads it)
+  is NaN, `belief` / `opp_intent` / `move_logits` / `spread_belief` are not stored (and `value_dist` no longer exists in ANY new trace — the head was deleted, L1; old traces keep the array, which nothing reads since the awareness fold was deleted, 2026-10-10)
   (`analyze` re-runs the model on the stored obs). 🚨 **`core_trace` IS THE ONE `*_summary.json`
   READER under `src/`** — `load_summary` (expanded), `load_summary_meta` (stored meta, never
   expands), `refuse_core_trace` (a reader that needs a head a core trace lacks raises

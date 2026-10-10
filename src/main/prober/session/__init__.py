@@ -29,7 +29,7 @@ THE MODULE MAP:
     core.py            `ProbeSession` — construction, shared internals, the resolution ladder
     reading.py         MODEL-FREE orientation: run_summary · battles · decision_table ·
                        battle_overview · battle_turns
-    scans.py           RUN-LEVEL model-free folds: scan · awareness_scan · loops · triage
+    scans.py           RUN-LEVEL model-free folds: scan · loops · triage
     trace_io.py        the trace's sibling files (protocol log, privileged teams, our HP types)
     analysis.py        the per-decision deep read: analyze (loads the model) · find
     counterfactual.py  falsify · lookahead · better_line · replay_counterfactual

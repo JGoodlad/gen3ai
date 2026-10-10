@@ -25,7 +25,7 @@ THE MODULE MAP — a strict DAG, leaves first:
     board.py       the BOARD read-model
     timeline.py    the RESULT timeline — re-attributed, one line per action
     beliefs.py     species / move / exclusive-species beliefs + the refinement trajectory
-    intent.py      the α/β opponent-intent read + `awareness_text`
+    intent.py      the α/β opponent-intent read
     spread.py      believed vs TRUE derived spreads (the DamageOperator's stat input)
     switch_in.py   forced-switch OUTGOING damage per bench candidate
     decode.py      the obs/model decoding units (faithfulness, matchups, intervention, saliency)
@@ -87,7 +87,7 @@ from main.prober.engine.beliefs import (   # noqa: F401 — re-export hub
 )
 from main.prober.engine.intent import (   # noqa: F401 — re-export hub
     _beta_candidate, _matches_move, _move_display, _opp_actual_action, SWITCH_OPTION,
-    awareness_text, build_opp_intent, opp_intent_text,
+    build_opp_intent, opp_intent_text,
 )
 from main.prober.engine.spread import (   # noqa: F401 — re-export hub
     _SPREAD_BASE_KEY, _SPREAD_COLS, _SPREAD_PRIOR_CACHE, _derived_stat, _spread_prior_means,

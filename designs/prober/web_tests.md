@@ -183,16 +183,11 @@ heads-off path are both gated. Its `β` candidates hold **one of each name prove
 `"revealed": true` and the rest with the key **ABSENT** (the literal shape of every trace before
 `gen3_beta_revealed_naming_v1`).
 
-**Its distributions follow the same one-of-each rule** (the `value_dist` arrays OLD traces carry — the
-head is deleted, L1, but the awareness fold still reads archived ones): one **blind** loss that also
-carries the **stall signature**, one loss it **called**, one trace with **no `value_dist` at all**, and
-win-prob on exactly one battle. ⚠ **A distribution must agree with its own recorded V**: the awareness
-fold denormalizes the support by a least-squares fit over `(dist mean, recorded V)` pairs, so rows are
-built as a SHAPE centred on the recorded value, and a requested tail mass the mean cannot carry is a
-hard error.
+**It writes no `value_dist`** (the distributional head and the awareness fold that read it are deleted;
+`model_config.json` is `{}`), and win-prob on exactly one battle.
 
 **`build_winprob()` is the SECOND era's fixture**, separate because the two differ in what EXISTS:
-`values` equals `win_probs` exactly, no dist head, γ = 1.0 with a terminal win indicator, and
+`values` equals `win_probs` exactly, γ = 1.0 with a terminal win indicator, and
 `model_config.json` carries `"critic": "winprob"` — while `build()` carries NO `critic` key ("absent means
 shaped" keeps archived runs readable). Its loss is valued high and its win low, so `V − G` spans about
 ±0.7: above the winprob τ (≈0.083) and far below the shaped one (5.0) — the discrimination the

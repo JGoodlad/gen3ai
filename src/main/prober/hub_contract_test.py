@@ -67,7 +67,7 @@ _PRE_SPLIT_ENGINE = (
     "_side_board", "_sigmoid", "_softmax", "_species_maps", "_spread_prior_means",
     "_standardize", "_switch_prob_sum", "_team_entry", "_threats", "_timeline_for",
     "_true_derived_spread", "_value_saliency", "_was_winning", "analyze_invocation",
-    "attribute_turning_point", "awareness_text", "belief_view_from_logits", "build_belief",
+    "attribute_turning_point", "belief_view_from_logits", "build_belief",
     "build_belief_trajectory", "build_belief_truth", "build_board", "build_exclusive_belief",
     "build_meta", "build_opp_full_team", "build_opp_intent", "build_our_hp_types",
     "build_result_timeline", "build_spread_belief", "build_switch_in_outgoing",
@@ -173,7 +173,7 @@ def test_probe_session_carries_every_command_family():
     from main.prober.session import ProbeSession
 
     for method in ("run_summary", "battles", "decision_table", "battle_overview", "battle_turns",
-                   "scan", "triage", "awareness_scan", "loops", "analyze", "find", "falsify",
+                   "scan", "triage", "loops", "analyze", "find", "falsify",
                    "lookahead", "better_line", "replay_counterfactual", "falsify_scan",
                    "calibration", "probe", "switch_vs_info", "history_saliency", "probe_model",
                    "battle_story", "battle_readout", "decision_attention"):

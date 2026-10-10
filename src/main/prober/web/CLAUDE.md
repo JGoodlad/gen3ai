@@ -19,7 +19,7 @@ python -m main.prober.web --check-openapi                 # the staleness gate (
 | I am about to… | Read |
 |---|---|
 | deploy / restart the service, touch the run picker, auth, the gate, jobs, the session cache, the OpenAPI snapshot | `designs/prober/web_service.md` |
-| change what a page shows, its information flow, the critic-currency copy, `/analyze`, awareness | `designs/prober/web_pages.md` |
+| change what a page shows, its information flow, the critic-currency copy, `/analyze` | `designs/prober/web_pages.md` |
 | change `/game`, THE battle viewer | `designs/prober/battle_view_v2.md` (field map) + `designs/prober/battle_viewer_ux_2026-10-09.md` (why) |
 | touch the render test, the palettes, the phone layout, the fixture, any web test | `designs/prober/web_tests.md` |
 

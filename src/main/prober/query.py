@@ -9,7 +9,6 @@ A typical investigation:
     python -m main.prober.query summary  <run_dir>                         # orient
     python -m main.prober.query list     <run_dir> --outcome loss          # pick battles
     python -m main.prober.query scan     <run_dir> --outcome loss --opponent X  # worst turn per battle, ranked
-    python -m main.prober.query awareness <run_dir>                        # dist-head 'did it KNOW?' verdicts (model-free)
     python -m main.prober.query loops    <run_dir> --opponent 'sentinel_*' # BAIT LOOPS: immune pivot-ins we fired into anyway
     python -m main.prober.query overview <summary.json>                    # model-free digest
     python -m main.prober.query turns    <summary.json>                    # model-free TURN-BY-TURN replay
@@ -163,25 +162,6 @@ def _build_parser() -> argparse.ArgumentParser:
     psc.add_argument("--limit", type=int, default=None, help="cap the number of battles returned")
     psc.add_argument("--metric", default="value_drop", choices=["value_drop", "td_residual"],
                      help="rank by most-negative ΔV (default) or critic TD surprise")
-
-    paw = sub.add_parser(
-        "awareness", help="MODEL-FREE 'did it KNOW?': dist-head loss-awareness verdicts over a run "
-                          "(knew_by_turn/lead_time/blind_loss + the stall signature)")
-    paw.add_argument("root", help="run dir / eval_traces dir")
-    # `all` is REQUIRED, not a convenience: the result's own caveat tells the reader to judge the
-    # quantile-coverage half unfiltered (a loss filter biases PIT low by construction), and with
-    # only win/loss to choose from that instruction named a reading this CLI could not produce.
-    paw.add_argument("--outcome", choices=[*OUTCOMES, "all"], default="loss",
-                     help="filter battles (default loss); `all` is the UNFILTERED read the "
-                          "quantile-coverage baseline is comparable to")
-    paw.add_argument("--opponent")
-    paw.add_argument("--step", type=int)
-    paw.add_argument("--lead-bar", type=int, default=5,
-                     help="turns of warning that count as 'aware' in the aggregate (default 5)")
-    paw.add_argument("--cap-turn", type=int, default=240,
-                     help="last-decision turn ≥ this = a CAP loss (default 240; MAX_TURNS is 250)")
-    paw.add_argument("--stall-bar", type=float, default=0.25,
-                     help="mean_tail_divergence ≥ this flags the stall signature (default 0.25)")
 
     plp = sub.add_parser(
         "loops", help="MODEL-FREE BAIT-LOOP scan: the opponent pivots something immune in and we "
@@ -417,11 +397,6 @@ def _run(args) -> object:
         return ProbeSession(args.root).scan(
             outcome=args.outcome, opponent=args.opponent, step=args.step,
             limit=args.limit, metric=args.metric)
-    if args.cmd == "awareness":
-        return ProbeSession(args.root).awareness_scan(
-            outcome=(None if args.outcome == "all" else args.outcome),
-            opponent=args.opponent, step=args.step,
-            lead_bar=args.lead_bar, cap_turn=args.cap_turn, stall_bar=args.stall_bar)
     if args.cmd == "loops":
         return ProbeSession(args.root).loops(
             outcome=args.outcome, opponent=args.opponent, step=args.step,

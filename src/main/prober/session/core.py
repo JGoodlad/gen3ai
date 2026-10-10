@@ -9,14 +9,12 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict
 
 import numpy as np
 
 from main.prober.core_trace import load_summary, load_summary_meta
 from main.prober.discovery import BattleTrace, ModelChoice, build_trace_tree, resolve_model_for_step
-from main.prober.awareness import awareness_from_npz
-from main.prober.engine import awareness_text, decode_incoming_belief
+from main.prober.engine import decode_incoming_belief
 
 from main.prober.session.serialize import _short_id
 from main.prober.session.aggregate import _AggregateMixin
@@ -71,7 +69,6 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         self._by_path = {b.summary_path: b for b in self.tree.all_battles()}
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
         self._gamma = self._read_gamma()
-        self._dist_support_cache: object = "unset"   # model-free dist support (see _dist_support)
         self._critic_mode_cache: object = "unset"    # model-free critic currency (see critic_mode)
 
     def close(self) -> None:
@@ -155,30 +152,10 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
     def _values(self, battle: BattleTrace):
         return self._npz(battle).get("values")
 
-    def _dist_support(self) -> "tuple[float, float, int] | None":
-        """The dist head's atom support ``(vmin, vmax, bins)`` read MODEL-FREE from the run
-        root's ``model_config.json`` — the same numbers ``value_dist_support()`` reads off a
-        loaded extractor, available without loading one (so `turns`/awareness stay ~20 ms and
-        work on archived runs the current code can't re-load). None when the run trained no
-        dist head or the config is absent. Cached (one file, immutable for a run)."""
-        if self._dist_support_cache != "unset":
-            return self._dist_support_cache
-        support = None
-        try:
-            with open(os.path.join(self.run_dir or "", "model_config.json")) as f:
-                cfg = json.load(f)
-            if cfg.get("value_dist_mode", "none") != "none":
-                support = (float(cfg["value_dist_vmin"]), float(cfg["value_dist_vmax"]),
-                           int(cfg["value_dist_bins"]))
-        except (OSError, KeyError, TypeError, ValueError):
-            support = None
-        self._dist_support_cache = support
-        return support
-
     def critic_mode(self) -> str:
         """WHICH READOUT IS THE CRITIC, and therefore WHAT CURRENCY the recorded ``values`` are
-        in — read MODEL-FREE from the run root's ``model_config.json`` (the recorded ``critic``), exactly as
-        ``_dist_support`` reads the dist head's support. ``"shaped"`` or ``"winprob"``.
+        in — read MODEL-FREE from the run root's ``model_config.json`` (the recorded ``critic``).
+        ``"shaped"`` or ``"winprob"``.
 
         **An ABSENT key means ``"shaped"``**, and that is a fact about the archive rather than a
         default chosen here: the ``critic`` field landed with config version 109, so every run recorded
@@ -234,56 +211,6 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
                     "is NOT 'even' — a self-mirror 50/50 reads V ≈ −6.5 — so a V-based winning "
                     "split over-counts grinds unless re-centred.",
         }
-
-    def _awareness(self, battle: BattleTrace, invs: "list[dict]",
-                   npz: "dict | None" = None) -> "dict | None":
-        """The battle's awareness verdict (awareness.py) as a JSON dict, or None when the run
-        has no dist head / the trace carries <2 dist rows. Model-free.
-
-        `npz` lets a caller that has ALREADY loaded the trace's arrays (scan, triage) pass them in
-        — `_npz` re-opens and re-reads the file on every call, so folding awareness into a
-        whole-run sweep would otherwise double its file IO for data already in hand."""
-        support = self._dist_support()
-        if support is None:
-            return None
-        v = awareness_from_npz(npz if npz is not None else self._npz(battle),
-                               [inv.get("turn") for inv in invs],
-                               battle.outcome or "?", support)
-        if v is None:
-            return None
-        # LISTS, not the dataclass's tuples. `ProbeSession` promises JSON-serializable dicts, and a
-        # tuple is serializable but does NOT round-trip — it comes back a list, so a caller
-        # comparing this dict to its own JSON form (which is exactly how `web/app_test.py` enforces
-        # "the page reshapes nothing") gets a spurious mismatch on every array here.
-        d = {k: (list(x) if isinstance(x, tuple) else x) for k, x in asdict(v).items()}
-        # The verdict's SENTENCE is rendered here, in the engine, exactly like `timeline`'s `text`:
-        # a surface prints it rather than re-deriving it, so the CLI and the browser cannot end up
-        # phrasing the same fold differently.
-        d["text"] = awareness_text(d)
-        return d
-
-    @staticmethod
-    def _awareness_by_decision(aw: "dict | None") -> dict:
-        """`{inv: {p_loss, p_win, p_tail, knew}}` from the battle-level verdict — the per-DECISION view of
-        the same fold, keyed by the decision index the verdict records (never by game turn: a
-        faint puts two decisions on one turn). `knew` marks the decisions at or after the sustained
-        onset, i.e. the stretch the model was already reading as lost — and it keys off the onset
-        DECISION rather than its turn, so a decision sharing that turn but preceding the crossing
-        is not swept in with it."""
-        if not aw:
-            return {}
-        onset = aw.get("knew_from_decision")
-        out = {}
-        for inv, pl, pw, pt in zip(aw.get("decisions") or (),
-                                   aw.get("p_loss") or (), aw.get("p_win") or (),
-                                   aw.get("p_tail") or ()):
-            # BOTH directions ride the row: `p_win` is what the replay renders (one direction per
-            # card, higher = better, matching the win-prob head beside it) and `p_loss` is what the
-            # thresholds are defined on. A surface flipping one into the other itself would be a
-            # view deriving a number.
-            out[inv] = {"p_loss": pl, "p_win": pw, "p_tail": pt,
-                        "knew": onset is not None and inv >= onset}
-        return out
 
     @staticmethod
     def _v(values, i: int) -> "float | None":

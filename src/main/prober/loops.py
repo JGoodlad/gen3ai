@@ -48,7 +48,7 @@ from dataclasses import dataclass, field, replace
 from typing import Sequence
 
 #: What gen-15 measured, carried WITH every live reading so a number is never quoted without its
-#: reference point (the `awareness.AWARENESS_BASELINES` pattern). A baseline is a reference, NOT a
+#: reference point. A baseline is a reference, NOT a
 #: target — the pre-registered gen-16 BARS live in `designs/research_state/bait_loop_hunt.md`.
 #: Source: the 843-battle gen-15 sentinel sweep, `designs/research_state/ledger.md` (2026-08-19).
 LOOP_BASELINES = {

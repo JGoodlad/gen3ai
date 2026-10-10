@@ -46,6 +46,4 @@ ABSENT result is not an unknown one and passes through.
 **Where draws sit in the CAPTURE QUOTA: their own bucket** (`_FORENSIC_DRAW_QUOTA` = 5, beside
 win 5 / loss 10). Folding them into the loss quota — which is what the old code did — lets a stall
 storm evict the decisive losses the prober exists to study. `calibration` EXCLUDES draws (no binary
-realized label) and reports `n_draw_excluded` rather than dropping them silently; `awareness_scan`'s
-`cap_loss` accepts `loss` **or** `draw` at the cap so the row means the same thing across the whole
-archive.
+realized label) and reports `n_draw_excluded` rather than dropping them silently.

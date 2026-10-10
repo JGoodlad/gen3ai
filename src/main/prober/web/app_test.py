@@ -127,17 +127,6 @@ def test_the_json_battles_endpoint_is_NOT_reordered(client, run):
     assert client.get("/api/battles").json() == ProbeSession(run).battles()
 
 
-def test_api_awareness_matches_the_session(client, run):
-    sess = ProbeSession(run)
-    assert client.get("/api/awareness").json() == sess.awareness_scan()
-    # An EMPTY outcome must reach the session as "every battle" — the quantile-coverage half of
-    # this probe is only comparable to the published baseline unfiltered, so "all" cannot be an
-    # unreachable option. (`""` is what an HTML select's "all" submits; the pattern allows it.)
-    assert client.get("/api/awareness", params={"outcome": ""}).json() == \
-        sess.awareness_scan(outcome=None)
-    assert client.get("/api/awareness", params={"outcome": "drawn"}).status_code == 422
-
-
 # -- errors are data, not 500s -------------------------------------------------------------
 
 def test_an_api_404_is_a_parseable_error_envelope(client):
@@ -989,69 +978,38 @@ def test_the_replay_defaults_to_the_newest_checkpoint_not_the_oldest(client, run
     assert body["step"] == _newest_step(ProbeSession(run).run_summary())
 
 
-# -- "did it KNOW?" — the awareness layer on the three views that carry it --------------------
+# -- the "did it KNOW?" layer is DELETED (the distributional head went in L1; owner 2026-10-10) --
 
-def test_a_run_with_no_dist_head_renders_no_awareness_rather_than_zeros(client, run):
-    """A 0% P(loss) or an un-badged 'not blind' would both be claims the trace cannot support."""
-    battle = "step_2000000/aggressive_v2/loss_002"       # the fixture trace with no value_dist
-    turns = client.get("/api/battle-turns", params={"battle": battle}).json()
-    assert turns["awareness"] is None
-    assert all(d["p_loss"] is None for t in turns["turns"] for d in t["decisions"])
+def test_the_deleted_awareness_layer_stays_gone(client, run):
+    """No route, card, column or payload field of the dist-head awareness fold survives: it read
+    `value_dist`, which no trace has carried since L1, so every surface of it rendered empty.
+    Pins the deletion — a revert of any one piece (route, card, table column, scan/triage/turns
+    field) fails here."""
+    assert client.get("/api/awareness").status_code == 404
+    assert client.get("/partials/awareness").status_code == 404
+    assert "Did it know?" not in client.get("/").text
+    assert "awareness" not in client.get("/").text.lower()
 
+    scan_body = client.get("/partials/scan", params={"outcome": "loss"}).text
+    assert "knew @" not in scan_body and "BLIND" not in scan_body and ">lead</th>" not in scan_body
+    for row in ProbeSession(run).scan(outcome="loss"):
+        assert not {"knew_by_turn", "lead_time", "blind_loss", "awareness_text"} & set(row)
 
-def test_scan_rows_say_whether_the_model_saw_each_crater_coming(client, run):
-    """The same crater reads completely differently with and without warning, so the verdict sits
-    in the row beside the decision that lost it — from the session's own scan output, not a join
-    performed here."""
-    body = client.get("/partials/scan", params={"outcome": "loss"}).text
-    rows = ProbeSession(run).scan(outcome="loss")
-    assert any(r["blind_loss"] for r in rows) and any(not r["blind_loss"] for r in rows), (
-        "the fixture must carry both shapes for this column to be worth rendering")
-    assert "knew @" in body and ">BLIND<" in body
-    knew = next(r for r in rows if r["knew_by_turn"] is not None)
-    assert f">{knew['knew_by_turn']}</span>" in body
-
-
-def test_triage_reports_the_awareness_split_beside_the_lever(client, run):
-    """Beside, never folded in: the category names WHICH lever to pull, the split says whether the
-    model had any warning to act on."""
-    body = client.get("/partials/triage").text
+    triage_body = client.get("/partials/triage").text
+    assert ">blind</th>" not in triage_body and "median lead" not in triage_body
     data = ProbeSession(run).triage()
-    assert any(c["awareness"]["n_judged"] for c in data["categories"]), "fixture has no verdicts"
-    assert ">blind</th>" in body and "median lead" in body
-    assert any("REPORTED BESIDE" in c for c in data["caveats"])
+    assert all("awareness" not in c for c in data["categories"])
+    assert not any("awareness" in c for c in data["caveats"])
 
+    battle = "step_2000000/aggressive_v2/loss_001"
+    turns = client.get("/api/battle-turns", params={"battle": battle}).json()
+    assert "awareness" not in turns
+    for t in turns["turns"]:
+        for d in t["decisions"]:
+            assert not {"p_loss", "p_win", "p_tail", "knew"} & set(d)
 
-def test_the_run_page_carries_the_awareness_panel_against_the_published_baseline(client, run):
-    """The run-level readout a generation is judged on — and never a bare number: the gen-10
-    baseline ships in the session's own payload so the CLI and this page cannot quote different
-    reference points."""
-    shell = client.get("/").text
-    assert 'hx-get="/partials/awareness' in shell, "the panel must load async, like /scan"
-    assert "Did it know?" in shell
-
-    body = client.get("/partials/awareness").text
-    agg = ProbeSession(run).awareness_scan()["aggregate"]
-    assert "gen-10 baseline" in body
-    assert f"{agg['baseline']['blind_loss_fraction'] * 100:.1f}%" in body
-    assert f"{agg['blind_loss_fraction'] * 100:.1f}%" in body
-    # The small-n and selection caveats are the difference between a reading and a claim.
-    assert "direction, not a rate" in body
-    assert "biased low" in body and "judge calibration" in body.lower()
-
-
-def test_the_awareness_panel_says_so_when_the_run_has_no_dist_head(tmp_path):
-    """Most runs have none. That is a note about the RUN, not a failure of the probe — and it must
-    not render as an empty table or as a row of zeros. Built on its own copy of the fixture rather
-    than mutating the shared one, so the state cannot leak into another test."""
-    import os as _os
-
-    headless = fixture_run.build(str(tmp_path))
-    _os.remove(_os.path.join(headless, "model_config.json"))
-    with TestClient(create_app(headless, password="test-only-password")) as c:
-        body = c.get("/partials/awareness").text
-    assert "no distributional value head" in body
-    assert "gen-10 baseline" not in body
+    paths = client.get("/openapi.json").json()["paths"]
+    assert "/api/awareness" not in paths and "/partials/awareness" not in paths
 
 
 def test_the_action_distribution_marks_illegal_actions_without_alarming(client, run):

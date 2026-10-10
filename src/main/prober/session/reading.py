@@ -241,16 +241,13 @@ class _ReadingMixin:
         b = self._battle(battle_id)
         summary = self._summary(b)
         # ONE npz read for the whole replay: `_npz` re-opens the file on every call, and this view
-        # now wants three of its arrays (values, win_probs, value_dist).
+        # wants two of its arrays (values, win_probs).
         npz = self._npz(b)
         values = npz.get("values")
         invs = summary.get("invocations", [])
         meta = summary.get("meta", {})
         result_of(meta)          # same throwing guard as `battle_overview` — never render an
                                  # outcome this build cannot name.
-        # "Did it KNOW?" folded once for the battle, then joined onto each decision by INDEX.
-        awareness = self._awareness(b, invs, npz=npz)
-        aware_by_dec = self._awareness_by_decision(awareness)
 
         boards = [build_board(inv) for inv in invs]
         protocol = self._protocol_lines(b)      # parsed ONCE, sliced per turn below
@@ -302,13 +299,6 @@ class _ReadingMixin:
                 "win_prob": _r(wp),
                 "delta_win_prob": _r(wp_next - wp) if (wp is not None and wp_next is not None)
                                   else None,
-                # The distributional head's per-decision read of the SAME question the critic
-                # answers with one number: P(return < 0), and the catastrophic-band mass. A scalar
-                # V cannot show tail mass piling up while the mean still reads healthy — that is
-                # exactly the stall signature — so these ride beside V rather than replacing it.
-                # `knew` is true from the sustained-onset decision onward (see `_awareness_by_decision`).
-                **(aware_by_dec.get(i)
-                   or {"p_loss": None, "p_win": None, "p_tail": None, "knew": False}),
                 "reward_total": _r(rtotal),
                 # `RewardBreakdown.to_dict()` is `{"total": …}` plus ONE STRING PER GROUP
                 # ("base": "pbrs_material=-0.44"), not a nested components dict — so the components
@@ -358,13 +348,5 @@ class _ReadingMixin:
             # 37" into a link to a turn without doing arithmetic of its own.
             "notable": self._notable(flat),
             "decision_turns": [d["turn"] for d in flat],
-            # "Did it KNOW?" — the dist head's battle-level verdict (awareness.py): sustained
-            # P(loss)>0.5 onset (`knew_by_turn`/`lead_time`), `blind_loss`, and the stall
-            # signature (`mean_tail_divergence`: tail mass while the MEAN still read positive).
-            # Model-free (support from model_config.json, popart denorm fit from the trace's own
-            # values). None when the run has no dist head or the trace predates recording. The
-            # per-decision `p_loss`/`p_tail`/`knew` on each row above are this same fold, joined
-            # by decision index — folded ONCE, above.
-            "awareness": awareness,
             "turns": turns,
         }

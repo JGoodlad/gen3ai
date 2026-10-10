@@ -2,11 +2,11 @@
 
 The runner exists so the runbook rules get applied MECHANICALLY; these tests are what keep the
 mechanical application equal to the registered rules (tail-K reading, the §5 non-inferiority
-margins, the §2 route-deletion ratio, the family-alive bar, the coverage-confound handling)."""
+margins, the §2 route-deletion ratio, the family-alive bar)."""
 import pytest
 
 from main.endofrun import (
-    awareness_verdicts, family_verdicts, non_inferiority, render_markdown, route_verdicts,
+    family_verdicts, non_inferiority, render_markdown, route_verdicts,
     tail_rating,
 )
 
@@ -138,21 +138,6 @@ def test_family_verdicts_half_median_bar():
     assert family_verdicts({"d1": {"dv_mean": 1.0}}, targets=("h",))["h"]["verdict"] == "ABSENT"
 
 
-def test_awareness_verdict_directions():
-    loss = {"blind_loss_fraction": 0.05, "median_lead_time": 9.0,
-            "cap_aware_ge_bar_fraction": 0.7}
-    allo = {"quantile_coverage": {"coverage80": 0.61, "pit_mean": 0.47}}
-    v = awareness_verdicts(loss, allo)
-    assert v["blind_loss_fraction"]["verdict"] == "IMPROVED"    # fewer blind losses
-    assert v["median_lead_time"]["verdict"] == "IMPROVED"       # more warning
-    assert v["coverage80"]["verdict"] == "IMPROVED"             # toward 0.80
-    assert v["pit_mean"]["verdict"] == "IMPROVED"               # toward 0.5
-    worse = awareness_verdicts({"blind_loss_fraction": 0.2, "median_lead_time": 3.0,
-                                "cap_aware_ge_bar_fraction": 0.2},
-                               {"quantile_coverage": {"coverage80": 0.30, "pit_mean": 0.30}})
-    assert all(row["verdict"] == "WORSE" for row in worse.values())
-
-
 def test_report_renders_every_step_status():
     report = {
         "run": "test_run", "run_dir": "/x", "ref": None,
@@ -164,13 +149,9 @@ def test_report_renders_every_step_status():
                     "curve_len": 9},
             "audits": {"status": "needs_pinned_tree", "why": "arch drift",
                        "how": ["git worktree add ..."]},
-            "awareness": {"status": "ok", "loss_aggregate": {}, "all_aggregate": {},
-                          "verdicts": {"coverage80": {"current": 0.5,
-                                                      "gen10_baseline": 0.44,
-                                                      "verdict": "IMPROVED"}}},
         },
     }
     md = render_markdown(report)
     assert "2100.0" in md and "UNAVAILABLE" in md
     assert "needs_pinned_tree" in md and "git worktree add" in md
-    assert "coverage80" in md and "IMPROVED" in md
+    assert "awareness" not in md.lower()      # the dist-head awareness step is deleted
