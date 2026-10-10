@@ -14,9 +14,13 @@ the policy reads. What this module owns is the FRAMING and the RULES:
   :class:`main.live.halt.LiveParseHalt` carrying the battle id, the offending lines and the battle's whole received
   stream. The client stops at once: no other battle continues, no next game starts. The entry point records the
   marker and exits ``FATAL_LIVE_PARSE``.
-* **Zero contact with humans (owner 2026-10-07).** Outgoing traffic is a DECLARED command set
-  (:data:`ALLOWED_COMMANDS`): no chat, no PM, no ``/search`` (the ladder is OFF by policy and refused here
-  as well as in ``main.play``). Accept mode answers only the named opponent (or, on a LOCAL server, anyone).
+* **Respect for players (owner 2026-10-07; ladder ruling 2026-10-09).** Outgoing traffic is a DECLARED command set
+  (:data:`ALLOWED_COMMANDS`): no chat, no PM. ``/search`` and ``/cancelsearch`` (:data:`LADDER_COMMANDS`) are sent
+  ONLY by a client built with ``ClientConfig.ladder`` (``main.play --mode ladder``), and :meth:`LiveClient.ladder`
+  re-runs ``main.ladder_guard.check_ladder_policy`` (the T28 halt, the owner's approval token in an agent session, a
+  fresh drift-gate record) before EVERY search. The ladder is CONCURRENCY 1: the next ``/search`` goes out only after
+  the previous battle ended, and a second live battle room is a ``ClientError``. Accept mode answers only the named
+  opponent (or, on a LOCAL server, anyone).
 * **No reconnect inside a battle.** A dropped socket while a battle is live ends the run with
   :class:`ConnectionLost` (a CRASH, not a T28 halt): a rejoined battle replays its log without our own choice
   notes, so the reader's tracker rows after a rejoin could not be the training rows (``ladder_readiness.md``).
@@ -39,6 +43,8 @@ logger = logging.getLogger("main.live.client")
 #: Every command this client may send. Anything else is a programming error (raised, never sent).
 ALLOWED_COMMANDS = frozenset({"/trn", "/utm", "/challenge", "/accept", "/cancelchallenge",
                               "/choose", "/forfeit", "/leave", "/timer"})
+#: The ladder queue's two commands: allowed ONLY when ``ClientConfig.ladder`` is set (``main.play --mode ladder``).
+LADDER_COMMANDS = frozenset({"/search", "/cancelsearch"})
 
 _INVALID_CHOICE = "|error|[Invalid choice]"
 
@@ -57,6 +63,10 @@ class TeamRejected(ClientError):
 
 class ConnectionLost(ClientError):
     """The socket dropped while a battle was live (no reconnect inside a battle, by design)."""
+
+
+class SearchRefused(ClientError):
+    """The server answered a ladder ``/search`` with a popup instead of a match (locked, no such ladder, ...)."""
 
 
 class Policy(Protocol):
@@ -209,6 +219,11 @@ class ClientConfig:
     forfeit_turn_limit: int = 250
     #: a battle that has received NO message for this long is a stall → ClientError (never a T28 halt)
     battle_idle_timeout_s: float = 600.0
+    #: ``main.play --mode ladder``: lets this client queue (`/search`) and play ONE battle at a time
+    #: (:meth:`LiveClient.ladder`). Set only for a session ``main.ladder_guard.check_ladder_policy`` cleared.
+    ladder: bool = False
+    #: how long one ladder ``/search`` waits for a match before it is cancelled
+    ladder_search_timeout_s: float = 900.0
 
 
 class LiveClient:
@@ -234,6 +249,7 @@ class LiveClient:
         self._battle_done: "asyncio.Queue[BattleResult]" = asyncio.Queue()
         self._challenges: "asyncio.Queue[str]" = asyncio.Queue()
         self._popups: List[str] = []
+        self._searching = False  # a ladder /search is outstanding: a popup then is the server's refusal of it
         self._fatal: Optional[BaseException] = None
         self._recv_task: Optional[asyncio.Task] = None
         self._write_task: Optional[asyncio.Task] = None
@@ -291,8 +307,9 @@ class LiveClient:
         """Send one client line (`<room>|<command>`), refusing any command outside the declared set."""
         body = text.split("|", 1)[1] if "|" in text else text
         cmd = body.split(" ", 1)[0]
-        if cmd not in ALLOWED_COMMANDS:
-            raise ClientError(f"refusing to send {cmd!r}: not in the declared command set (no chat, no ladder)")
+        if cmd not in ALLOWED_COMMANDS and not (self.cfg.ladder and cmd in LADDER_COMMANDS):
+            raise ClientError(f"refusing to send {cmd!r}: not in the declared command set (no chat; the ladder queue "
+                              "only for `main.play --mode ladder`)")
         self._outq.put_nowait(text)
 
     async def _writer(self) -> None:
@@ -361,6 +378,8 @@ class LiveClient:
             logger.warning("[live] popup: %s", ln)
             if "rejected" in ln.lower() and "team" in ln.lower():
                 self._battle_started.put_nowait(TeamRejected(ln))  # type: ignore[arg-type]
+            elif self._searching:
+                self._battle_started.put_nowait(SearchRefused(ln))  # type: ignore[arg-type]
         elif kw == "pm" and len(parts) >= 5 and parts[4].startswith("/challenge "):
             self._challenges.put_nowait(parts[2].strip())
         elif kw == "updatechallenges" and len(parts) >= 3:
@@ -379,6 +398,11 @@ class LiveClient:
         if b is None:
             if not lines or lines[0] != "|init|battle":
                 return  # a message for a battle we are not in (e.g. after /leave)
+            if self.cfg.ladder and any(not x.ended for x in self._battles.values()):
+                from main.ladder_guard import LADDER_CONCURRENCY
+                raise ClientError(f"ladder concurrency is {LADDER_CONCURRENCY} (owner 2026-10-09): {room} opened "
+                                  "while another battle is live (is this account also playing elsewhere?) — "
+                                  "stopping rather than playing two games at once")
             if self._reader is None:
                 self._reader = self.reader_factory()
             b = LiveBattle(room, our_name=self.name or self.cfg.username, packed_team=self._team,
@@ -465,6 +489,35 @@ class LiveClient:
             self.send_raw(f"|/challenge {opponent}, {self.cfg.battle_format}")
             room = await self._next(self._battle_started, f"{opponent} to accept", accept_timeout_s)
             if isinstance(room, TeamRejected):
+                raise room
+            out.append(await self._await_battle_end(room))
+        return out
+
+    async def ladder(self, n: int) -> List[BattleResult]:
+        """Play ``n`` ladder games, ONE at a time: `/utm`, `/search <format>`, wait for the match, play it out, repeat.
+
+        Concurrency 1 is structural (the next search is queued only after the previous battle ended). Before EVERY
+        search ``main.ladder_guard.check_ladder_policy`` runs again, so a lapsed approval token, a stale drift record
+        or a halt marker stops the session at the next game boundary, and a caller that skipped ``main.play`` is
+        guarded here too."""
+        if not self.cfg.ladder:
+            raise ClientError("LiveClient.ladder() needs ClientConfig.ladder=True (main.play --mode ladder)")
+        from main.ladder_guard import check_ladder_policy
+        out: List[BattleResult] = []
+        for _ in range(n):
+            check_ladder_policy(battle_format=self.cfg.battle_format)
+            await self._set_team()
+            self._searching = True
+            try:
+                self.send_raw(f"|/search {self.cfg.battle_format}")
+                try:
+                    room = await self._next(self._battle_started, "a ladder match", self.cfg.ladder_search_timeout_s)
+                except ClientError:
+                    self.send_raw("|/cancelsearch")  # never leave a queued search behind
+                    raise
+            finally:
+                self._searching = False
+            if isinstance(room, ClientError):  # TeamRejected / SearchRefused
                 raise room
             out.append(await self._await_battle_end(room))
         return out

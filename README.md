@@ -213,6 +213,11 @@ against bots. We haven't taken it onto the public ladder, and we never chat with
 If you run this code on Showdown yourself, please follow the server's rules and its policy on
 bots, and treat every opponent with respect.
 
+The code does let *you* queue a model on the ladder (`python src/main/play.py --mode ladder`), but only
+one battle at a time, never while a parse-panic halt is outstanding, and only after the protocol-drift
+check (`python src/main/ladder_drift_scan.py`) has passed in the last two days. Our own AI coding agents
+may not do it at all without the maintainer's explicit approval.
+
 ---
 
 ## Acknowledgements

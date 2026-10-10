@@ -97,3 +97,8 @@ AI coding agents (for example Claude Code) working in this repo must follow the 
 They also follow the leaf `CLAUDE.md` in each directory they touch, and the `designs/` docs those
 point to. These files are the agents' rulebook. Humans can ignore them unless you're curious,
 though each leaf `CLAUDE.md` is also good, detailed documentation for its area.
+
+One rule worth knowing even if you're human: `python src/main/play.py --mode ladder` (queueing a model
+on the Showdown ladder) is allowed for people at one battle at a time, but the code refuses it in any AI
+agent session unless the maintainer has written an approval token by hand. See the README's
+[Respect for players](README.md#respect-for-players).

@@ -12,7 +12,7 @@ Modes:
     selfplay   two clients on this server play each other (the model if --model, else seeded random policies)
     challenge  our model challenges a named user
     accept     our model waits for challenges from a named user (or, on a LOCAL server, anyone)
-    ladder     REFUSED by policy: the ladder campaign is DEFERRED and we never play humans (owner 2026-10-07)
+    ladder     our model queues on the ladder (`/search`): ONE battle at a time, behind the guards below
 
 Examples::
 
@@ -20,10 +20,17 @@ Examples::
     python src/main/play.py --mode selfplay --port 9017
     python src/main/play.py --mode selfplay --port 9017 --model models/<run>/final_model.zip --n-battles 4
 
-🚨 **ZERO contact with humans (owner 2026-10-07).** ``--mode ladder`` is refused, and ``--server official``
-is refused unless ``--public-acceptance`` is given with BOTH accounts in ``$PS_OWN_ACCOUNTS`` — the gated
-self-vs-self acceptance series, which needs the orchestrator's explicit go and goes through the owner's SOCKS5
-proxy. The Rust client sends only a declared command set (no chat, no PM, no ``/search``).
+🚨 **RESPECT FOR PLAYERS (owner 2026-10-07; ladder ruling 2026-10-09: "allow mode ladder, just never for our
+agents without my explicit approval, and we would only ever do it at concurrency 1").** ``--mode ladder`` is
+allowed for USERS under four hard guards (``main.ladder_guard``): concurrency is FIXED at 1 (a typed ``--concurrency``
+is refused); the T28 halt marker refuses to start; the drift gate (``python src/main/ladder_drift_scan.py``) must have
+passed in the last ``DRIFT_MAX_AGE_DAYS`` days; and in an AI-agent session (Claude Code's ``CLAUDECODE`` /
+``CLAUDE_CODE_ENTRYPOINT`` environment) it REFUSES unless the OWNER has written the approval token — agents never
+create it. A ladder session prints a short respect-for-players notice at startup. Separately, ``--server official``
+for anything but a ladder session is refused unless ``--public-acceptance`` is given with BOTH accounts in
+``$PS_OWN_ACCOUNTS`` — the gated self-vs-self acceptance series, which needs the orchestrator's explicit go and goes
+through the owner's SOCKS5 proxy. The Rust client sends only a declared command set (no chat, no PM, and `/search`
+only in ladder mode).
 
 🚨 **T28: a parse panic HALTS all live play.** An unreadable line, an encoder raise or a choice the client could
 not send exits ``FATAL_LIVE_PARSE`` (7) with a durable marker (``python -m main.live.halt status``); every
@@ -39,6 +46,7 @@ import sys
 from typing import Optional
 
 from agents.training.stall import StallConfig
+from main.ladder_guard import DRIFT_MAX_AGE_DAYS
 from utils.teambuilder import Gen3Teambuilder
 
 #: The public server's websocket (the official client's). Reached ONLY by the gated public acceptance.
@@ -139,16 +147,32 @@ def resolve_uri(server: str, port: int) -> str:
     return f"ws://127.0.0.1:{port}/showdown/websocket"
 
 
-def check_policy(args) -> None:
-    """The owner's 2026-10-07 policy, in CODE: no ladder; the public server only for the gated self-vs-self
-    acceptance between our own accounts."""
+def check_ladder(args):
+    """The owner's 2026-10-09 ladder ruling, in CODE (``main.ladder_guard`` owns the guards): returns the permit, or
+    exits with the reason. The T28 halt (``HaltActive``) propagates to ``run``, which maps it to its exit code."""
+    from main.ladder_guard import LadderRefused, check_ladder_policy
+    if not args.model:
+        raise SystemExit("refusing --mode ladder without --model <checkpoint.zip>: the ladder plays the model it "
+                         "was handed, never a random policy against real people")
+    if not args.username:
+        raise SystemExit("--mode ladder needs --username (or $PS_USERNAME): the account that queues")
+    if args.opponent or args.public_acceptance:
+        raise SystemExit("--mode ladder queues for whoever the ladder matches: it never names an --opponent and is "
+                         "not a --public-acceptance series")
+    try:
+        return check_ladder_policy(battle_format=args.format)
+    except LadderRefused as exc:
+        raise SystemExit(str(exc)) from exc
+
+
+def check_policy(args):
+    """The owner's policy, in CODE: the ladder only behind ``main.ladder_guard``'s guards (2026-10-09), and the public
+    server otherwise only for the gated self-vs-self acceptance between our own accounts (2026-10-07). Returns the
+    ladder permit for ``--mode ladder``, else ``None``."""
     if args.mode == "ladder":
-        raise SystemExit(
-            "refusing --mode ladder: the ladder campaign is DEFERRED and we never play humans (owner "
-            "2026-10-07, designs/endstate/design_ladder_campaign.md Decision record). Local --mode "
-            "challenge/accept/selfplay only; the public self-vs-self acceptance is --public-acceptance.")
+        return check_ladder(args)
     if args.server != "official":
-        return
+        return None
     if not args.public_acceptance:
         raise SystemExit(
             "refusing --server official: P4 validates LOCALLY only. The self-vs-self public acceptance "
@@ -166,6 +190,7 @@ def check_policy(args) -> None:
                          "involves OUR OWN accounts only (owner 2026-10-07)")
     if not args.proxy:
         raise SystemExit("refusing --public-acceptance without --proxy: the owner's SOCKS5 proxy is required")
+    return None
 
 
 def to_id(text) -> str:
@@ -203,7 +228,10 @@ async def main(args) -> int:
     # T28 (owner 2026-10-07): a parse-panic HALT marker refuses EVERY live game, self-play included.
     from main.live.halt import refuse_if_halted
     refuse_if_halted("main.play")
-    check_policy(args)
+    permit = check_policy(args)
+    if permit is not None:
+        from main.ladder_guard import respect_notice
+        print(respect_notice(permit, forfeit_turn_limit=args.forfeit_turn_limit), flush=True)
     return await main_rust(args)
 
 
@@ -241,7 +269,7 @@ async def main_rust(args) -> int:
         return ClientConfig(uri=uri, username=name, battle_format=args.format, password=args.password,
                             auth=auth, proxy=args.proxy,
                             connect_timeout_s=args.connect_timeout or 30.0,
-                            forfeit_turn_limit=args.forfeit_turn_limit)
+                            forfeit_turn_limit=args.forfeit_turn_limit, ladder=args.mode == "ladder")
 
     print(f"[play] client: rust (main.live) on {uri}; forfeit turn limit {args.forfeit_turn_limit} "
           f"(trainer default {DEFAULT_FORFEIT_TURN_LIMIT})", flush=True)
@@ -268,12 +296,14 @@ async def main_rust(args) -> int:
             raise SystemExit(f"--mode {args.mode} needs --model <checkpoint.zip>")
         if args.mode == "challenge" and not args.opponent:
             raise SystemExit("--mode challenge needs --opponent <username>")
-        if args.server == "official" and not args.opponent:
+        if args.server == "official" and args.mode != "ladder" and not args.opponent:
             raise SystemExit("--server official needs --opponent (one of our own accounts)")
         c = LiveClient(cfg(args.username or "p4live"), policy=rust_policy(args), team_fn=rust_team_fn(args))
         try:
             await c.connect()
-            if args.mode == "accept":
+            if args.mode == "ladder":
+                res = await c.ladder(args.n_battles)  # one battle at a time; re-checks main.ladder_guard per game
+            elif args.mode == "accept":
                 res = await c.accept(args.opponent, args.n_battles)
             else:
                 res = await c.challenge(args.opponent, args.n_battles)
@@ -287,9 +317,17 @@ async def main_rust(args) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Play on Pokemon Showdown")
     p.add_argument("--mode", choices=("selfplay", "ladder", "accept", "challenge"),
-                   default="selfplay", help="what to do once connected")
+                   default="selfplay",
+                   help="what to do once connected. 'ladder' queues on the ladder (/search) for real players: "
+                        "allowed for USERS at concurrency 1 (fixed; --concurrency is refused), only with --model and "
+                        "--username, while no T28 halt marker exists and python src/main/ladder_drift_scan.py has "
+                        f"passed in the last {DRIFT_MAX_AGE_DAYS} days; in an AI-agent session (Claude Code's "
+                        "CLAUDECODE environment) it is REFUSED unless the OWNER has written the approval token "
+                        "(~/.local/state/gen3ai/ladder_owner_approval.json) - agents must never create it "
+                        "(owner ruling 2026-10-09)")
     p.add_argument("--server", choices=("local", "official"), default="local",
-                   help="'official' = wss://sim3.psim.us — REFUSED unless --public-acceptance (owner 2026-10-07)")
+                   help="'official' = wss://sim3.psim.us — for --mode ladder, or REFUSED unless --public-acceptance "
+                        "(owner 2026-10-07)")
     p.add_argument("--port", type=int, default=9017,
                    help="localhost port for --server local (8000/8001 are REFUSED)")
     p.add_argument("--public-acceptance", action="store_true",
@@ -342,7 +380,8 @@ DELETED_FLAGS = {
                 "in P6 of the poke-env retirement (2026-10-08)",
     "--avatar": "a poke-env client setting; the Rust client sends a declared command set only (P6, 2026-10-08)",
     "--concurrency": "the Rust client plays ONE battle at a time per account (P6 deleted the poke-env client that "
-                     "took it, 2026-10-08)",
+                     "took it, 2026-10-08), and --mode ladder is fixed at concurrency 1 with no option to raise it "
+                     "(owner 2026-10-09: \"we would only ever do it at concurrency 1\")",
 }
 
 
@@ -355,6 +394,7 @@ def refuse_deleted_flags(argv) -> None:
 
 def run(argv=None) -> int:
     from main.exit_codes import TrainExitCode
+    from main.ladder_guard import LadderRefused
     from main.live.halt import HaltActive
     from main.live.halt import LiveParseHalt, exit_on_halt
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -364,6 +404,9 @@ def run(argv=None) -> int:
     except HaltActive as exc:
         print(f"🛑 {exc}", file=sys.stderr)
         return int(TrainExitCode.FATAL_LIVE_PARSE)
+    except LadderRefused as exc:  # a guard that lapsed BETWEEN ladder games (token expired, drift record aged out)
+        print(f"🛑 {exc}", file=sys.stderr)
+        return 1
     except LiveParseHalt as exc:
         exit_on_halt(exc, entry_point="main.play")
 

@@ -14,6 +14,37 @@ would win it.
 
 ---
 
+## 2026-10-09 — `--mode ladder` allowed for users, at concurrency 1, never for our agents without the owner
+
+Owner: "Yes, allow mode ladder, just never for our agents without my explicit approval, and we would only ever do it
+at concurrency 1." The 2026-10-07 section's "`--mode ladder` is REFUSED" is superseded; everything else there stands.
+The policy lives in `src/main/ladder_guard.py`; `LiveClient.ladder` (`main.live.client`) is the only code that sends
+`/search`, and it re-runs the guards before EVERY search.
+
+- **Concurrency 1, fixed.** A constant, not a flag: `--concurrency` is refused with the reason; the next `/search` is
+  queued only after the previous battle ended; a second live battle room (the account also playing elsewhere) stops the
+  session.
+- **The T28 halt** refuses to start, as for every live entry point.
+- **The drift gate is enforced, not advised.** `ladder_drift_scan` writes `~/.local/state/gen3ai/ladder_drift_green.json`
+  (`$GEN3AI_LADDER_DRIFT_FILE`); the ladder needs the LATEST record to be a green for the session's format from the last
+  2 days. Only a FULL scan records a green (fresh download, freshly pulled Showdown master, all four checks, >= 60
+  replays; not `--offline` / `--showdown` / `--no-effects` / `--no-format-spec`); any scan that finds drift records it.
+- **Agents need the owner's token.** Claude Code's `CLAUDECODE` / `CLAUDE_CODE_ENTRYPOINT` / `CLAUDE_CODE_SESSION_ID`,
+  in the process's environment or any ancestor's (`/proc/<pid>/environ`, so `env -u CLAUDECODE` does not escape), make a
+  session an agent's; it then refuses unless `~/.local/state/gen3ai/ladder_owner_approval.json`
+  (`$GEN3AI_LADDER_APPROVAL_FILE`) holds a `purpose` and an `expires` at most 24 h ahead, written BY THE OWNER. Agents
+  never create it.
+- **Honest limits.** The agent guard is a tripwire, not a security boundary (a process on a box without `/proc` that
+  clears its markers, or an agent that writes the token itself, is not stopped). The `/search` path (`/utm`, `/search
+  <format>`, `|updatesearch|`, the match's `|init|battle`, `/cancelsearch` on a timeout, a popup read as the server's
+  refusal) was built and tested against FAKE sockets only: it has not run against a Showdown server, local or public,
+  and the ladder-only room lines (`|rated|`, `|askreg|`, the six-field `|player|`) are classified in the Rust schema but
+  have never been read from a live ladder room. A first validation (a local master-built Node server, two of our own
+  clients searching, owner-approved) is the next step before anyone relies on it. Official login through `--proxy` is
+  still unbuilt (`LiveClient._official_assertion`).
+
+---
+
 ## 2026-10-07 — live play moved onto the Rust stack (poke-env retirement P4) and the T28 halt
 
 **Read this before the 2026-08-23 audit below: it changes what "the client" is.** `main.play` now plays through
@@ -31,7 +62,7 @@ encoder are no longer on our live path (`--client poke-env` keeps the legacy `RL
 - **T28 (owner 2026-10-07): a parse panic HALTS ALL PLAY.** Exit `FATAL_LIVE_PARSE` (7), a durable marker
   (`python -m main.live.halt status`), every live entry point refuses to start past it, cleared only by
   `python -m main.live.halt clear --fixed-by <commit>` (an ancestor of HEAD that touches a test file).
-- **Respect, in code:** `--mode ladder` is REFUSED (the campaign is deferred); `--server official` is refused unless
+- **Respect, in code:** `--mode ladder` is REFUSED (the campaign is deferred; *superseded 2026-10-09, above*); `--server official` is refused unless
   `--public-acceptance` names two accounts in `$PS_OWN_ACCOUNTS` and `--proxy` is set; the client's outgoing traffic
   is a declared command set with no chat, no PM and no `/search`; accept mode IGNORES (never rejects) a challenge
   from anyone but the named opponent.

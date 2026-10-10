@@ -208,7 +208,9 @@ The hazards that have actually cost runs (full text: the runbook's "Launch hazar
 
 ## Playing / the LADDER
 
-🚨 **NO LADDER CAMPAIGN, and NEVER play, challenge or chat with a human** (owner, 2026-10-07: "be respectful that they are real people"). We play the agent against itself and against bots. The only public-server use is a low-volume CUSTOM gen3ou series between OUR OWN accounts, through the owner's SOCKS5 proxy, with the orchestrator's explicit go (`play.py --server official --public-acceptance --proxy …`, both accounts in `$PS_OWN_ACCOUNTS`; `--mode ladder` is refused). Decision record: `designs/endstate/design_ladder_campaign.md`.
+🚨 **NO LADDER CAMPAIGN, and an agent NEVER plays, challenges or chats with a human** (owner, 2026-10-07: "be respectful that they are real people"). We play the agent against itself and against bots. The only public-server use is a low-volume CUSTOM gen3ou series between OUR OWN accounts, through the owner's SOCKS5 proxy, with the orchestrator's explicit go (`play.py --server official --public-acceptance --proxy …`, both accounts in `$PS_OWN_ACCOUNTS`). Decision record: `designs/endstate/design_ladder_campaign.md`.
+
+🚨 **`--mode ladder` (owner, 2026-10-09): allowed for USERS at concurrency 1 (fixed); NEVER by an agent without the owner's explicit approval token.** In an agent session (Claude Code's environment markers, own or any ancestor's) it REFUSES unless the OWNER has written `~/.local/state/gen3ai/ladder_owner_approval.json` (a purpose and an expiry ≤ 24 h) — **an agent never creates, edits or requests it be created for itself.** The other guards (`src/main/ladder_guard.py`): no T28 halt marker, and a green `ladder_drift_scan` from the last 2 days (the scan records it). Never queue a ladder game from an agent on your own initiative.
 
 `src/main/play.py` is a websocket CLIENT on the Rust stack (`main.live`: the live reader reads the server's stream through the same chain training's rows come from — `designs/rust_sim/live_reader.md`). It dials a server YOU started on a 9XXX port:
 
@@ -222,7 +224,7 @@ python -m main.anchors --model models/<run> --opponent metamon:SmallRL \
 ```
 
 - 🚨 **A LIVE PARSE PANIC HALTS ALL PLAY (T28).** An unparseable / unclassified line, an encoder raise or an unsendable choice exits `FATAL_LIVE_PARSE` (7) and writes a durable HALT marker; `main.play` and `main.anchors` refuse to start while it exists (`python -m main.live.halt status`). Root-cause it with a regression test built from the captured lines that fails on revert, land it, then `python -m main.live.halt clear --fixed-by <commit>`, and PUSH the owner. Never skip the line.
-- 🚨 **Run the drift gate first**: the public server runs Showdown master while `deps/pokemon-showdown` is pinned, and the reader refuses an unknown keyword BY DESIGN — on a live game that is a T28 halt. Audit: `designs/research_state/ladder_readiness.md`.
+- 🚨 **Run the drift gate first**: the public server runs Showdown master while `deps/pokemon-showdown` is pinned, and the reader refuses an unknown keyword BY DESIGN — on a live game that is a T28 halt. `--mode ladder` enforces it (a green record ≤ 2 days old, written by a FULL scan). Audit: `designs/research_state/ladder_readiness.md`.
 - 🚨 **An external-anchor read is `python -m main.anchors`, procedure [`designs/ops/EXTERNAL_ANCHORS_SOP.md`](designs/ops/EXTERNAL_ANCHORS_SOP.md)** — greedy-vs-greedy, and a number never leaves it without its regime. It starts and stops its OWN server (the Rust front end by default, 9500–9599).
 - **A websocket game ends where a training episode ends**: `--forfeit-turn-limit` defaults to the trainer's stall threshold (`MAX_TURNS`); lower it if you must, never raise it.
 

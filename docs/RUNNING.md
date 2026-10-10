@@ -163,8 +163,8 @@ use it; training itself connects to no server), anything ephemeral on 9XXX.
 ## Evaluation and forensics
 
 ```bash
-python src/main/play.py --mode selfplay --port 9017   # Rust-stack websocket client: selfplay/challenge/accept (ladder is REFUSED: we never play humans)
-python src/main/ladder_drift_scan.py --n 200      # pre-flight protocol-drift gate (public replays)
+python src/main/play.py --mode selfplay --port 9017   # Rust-stack websocket client: selfplay/challenge/accept/ladder (ladder: users only, concurrency 1, needs a fresh drift-gate pass; never an agent without the owner's token)
+python src/main/ladder_drift_scan.py --n 200      # pre-flight protocol-drift gate (public replays); a full pass <= 2 days old is what --mode ladder requires
 python -m main.elo models/<run>                  # offline ELO ladder + Elo-vs-step curve
 python -m main.prober models/<run>               # forensic replay inspector (web UI, :6008)
 ```

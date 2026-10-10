@@ -34,7 +34,15 @@ Run::
     python src/main/ladder_drift_scan.py --n 60
     python src/main/ladder_drift_scan.py --n 200 --format gen3ou --cache /tmp/psreplays
 
-Exit 0 = clean, exit 1 = drift found (with the offending lines named). The bulk corpus read (P4 gate (b), 376,410
+Exit 0 = clean, exit 1 = drift found (with the offending lines named).
+
+**It is also the ladder's gate (owner ruling 2026-10-09).** The result is recorded in ``~/.local/state/gen3ai/
+ladder_drift_green.json`` (``main.ladder_guard``): ``play.py --mode ladder`` refuses unless the LATEST record is a green
+from the last ``DRIFT_MAX_AGE_DAYS`` days. Only a FULL scan (a fresh download, a freshly pulled Showdown master, all
+four checks, at least ``DRIFT_MIN_REPLAYS`` replays — no ``--offline`` / ``--showdown`` / ``--no-effects`` /
+``--no-format-spec``) records a green; any scan that finds drift records it, which revokes an earlier green.
+
+The bulk corpus read (P4 gate (b), 376,410
 replays) is ``python -m main.live.replay_scan``; this script is the pre-session check on a fresh download.
 
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
@@ -207,6 +215,7 @@ def main() -> int:
     args = ap.parse_args()
 
     effects_rc = format_rc = 0
+    master_commit = None  # the Showdown master commit this scan refreshed (None: a user-named / cached checkout)
     if not (args.no_effects and args.no_format_spec):
         root = args.showdown
         if root is None:
@@ -216,7 +225,8 @@ def main() -> int:
                       "--no-effects --no-format-spec", file=sys.stderr)
                 return 2
             if not args.offline:
-                print(f"[drift] Showdown master @ {fetch_showdown_master(root)}")
+                master_commit = fetch_showdown_master(root)
+                print(f"[drift] Showdown master @ {master_commit}")
         if not args.no_effects:
             effects_rc = effects_source_check(root)
         if not args.no_format_spec:
@@ -240,7 +250,31 @@ def main() -> int:
     if not paths:
         print("[drift] no replays to scan (network blocked? empty cache?)", file=sys.stderr)
         return 2
-    return max(scan(paths), effects_rc)
+    rc = max(scan(paths), effects_rc)
+    record_result(rc, args, n_replays=len(paths), master_commit=master_commit)
+    return rc
+
+
+def record_result(rc: int, args, *, n_replays: int, master_commit) -> None:
+    """Write the outcome to the ladder drift-gate record (``main.ladder_guard``: ``main.play --mode ladder`` refuses
+    without a green from the last ``DRIFT_MAX_AGE_DAYS`` days). Only a FULL scan can record a green — a fresh replay
+    download, a freshly pulled Showdown master (not ``--showdown``), every check, enough replays; a drift finding is
+    recorded from any scan, so it revokes an earlier green."""
+    from main import ladder_guard
+
+    full = bool(master_commit) and not (args.offline or args.no_effects or args.no_format_spec)
+    checks = ["read", "encoder_replayed"] + ([] if args.no_effects else ["encoder_source"]) + (
+        [] if args.no_format_spec else ["format_spec"])
+    rec = ladder_guard.record_drift_result(rc, battle_format=args.format, n_replays=n_replays, full=full,
+                                           showdown_commit=master_commit, checks=checks)
+    path = ladder_guard.drift_path()
+    if rec is None:
+        why = ("not a verdict" if rc not in (0, 1) else
+               f"a PARTIAL scan is not evidence of a fresh pass (needs: no --offline / --showdown / --no-effects / "
+               f"--no-format-spec, a fresh download and at least {ladder_guard.DRIFT_MIN_REPLAYS} replays)")
+        print(f"[drift] ladder gate record NOT written: {why}")
+    else:
+        print(f"[drift] ladder gate record: {rec['status'].upper()} ({rec['time']}) -> {path}")
 
 
 if __name__ == "__main__":
