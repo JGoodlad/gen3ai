@@ -14,7 +14,7 @@ WHY THE SERVER REBIND EXISTS (de-risk hazard H4)
 ------------------------------------------------
 ``metamon.env.wrappers.PokeEnvWrapper.server_configuration`` is a PROPERTY returning the
 module-level ``LocalhostServerConfiguration``, which poke-env hardcodes to
-``ws://localhost:8000`` — our shared DEV server, one port from the live TRAINING server on 8001.
+``ws://localhost:8000`` — our shared DEV server, one port from the reserved training-tools server on 8001.
 There is no CLI flag, no env var and no constructor argument. We rebind the module global before
 any env is constructed (the property reads it at call time) and refuse 8000/8001 in code.
 
@@ -85,7 +85,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
-RESERVED_PORTS = {8000: "the shared DEV server", 8001: "the live TRAINING server"}
+RESERVED_PORTS = {8000: "the shared DEV server",
+                  8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
 
 
 def rebind_server(server_uri):

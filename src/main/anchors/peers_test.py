@@ -2,7 +2,7 @@
 
 Every assertion here corresponds to something a 2026-09-14 de-risk paid for in wall clock:
 
-* the hardcoded ``ws://localhost:8000`` rebind (Metamon H4) — one port from the live training run;
+* the hardcoded ``ws://localhost:8000`` rebind (Metamon H4) — one port from the reserved training-tools server;
 * ``PYTHONUNBUFFERED`` (H5), without which the banner a driver waits on never lands;
 * ``CUDA_VISIBLE_DEVICES=""`` — a training arm owns the GPU;
 * ``PYTHONPATH=""`` — the Metamon env runs UPSTREAM poke-env and Metamon's own packages; our ``src/``
@@ -104,7 +104,7 @@ def test_the_metamon_env_carries_every_hazard_workaround(cfg, tmp_path) -> None:
 def test_the_server_uri_is_passed_explicitly_because_metamon_hardcodes_8000(cfg, tmp_path) -> None:
     """H4. `PokeEnvWrapper.server_configuration` returns poke-env's module-level
     `LocalhostServerConfiguration` = ws://localhost:8000 — our shared dev server, one port from
-    the live training server — and there is no flag, env var or constructor argument for it."""
+    the reserved training-tools server — and there is no flag, env var or constructor argument for it."""
     argv = _metamon_plan(cfg, tmp_path).argv
     assert argv[argv.index("--server-uri") + 1] == "ws://localhost:9501/showdown/websocket"
     assert "8000" not in " ".join(argv)

@@ -124,7 +124,7 @@ class MetamonPeer(Peer):
 
     * **H4, the hardcoded server.** ``PokeEnvWrapper.server_configuration`` returns the module-level
       ``LocalhostServerConfiguration``, which poke-env hardcodes to ``ws://localhost:8000`` — our
-      shared dev server, one port from the live training server. No flag, no env var, no
+      shared dev server, one port from the reserved training-tools server. No flag, no env var, no
       constructor argument. The driver rebinds the module global before any env is built.
     * **H2, FlashAttention.** ``amago``'s ``TformerTrajEncoder`` defaults to ``FlashAttention``, a
       CUDA-only wheel, so every Metamon transformer is unrunnable on CPU as shipped.

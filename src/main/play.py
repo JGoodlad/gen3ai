@@ -54,11 +54,14 @@ OFFICIAL_URI = "wss://sim3.psim.us/showdown/websocket"
 #: The env var listing OUR OWN accounts (comma-separated) — the only names a public-server game may involve.
 OWN_ACCOUNTS_ENV = "PS_OWN_ACCOUNTS"
 
-# Ports this process must NEVER touch. 8001 carries the live training run (dropping it
-# crashes every poke-env websocket at once) and 8000 is the shared dev server. A ladder
-# client has no business on either, so the refusal is in CODE rather than in a docs
-# warning — see the root CLAUDE.md § Showdown Server.
-RESERVED_PORTS = {8000: "the shared DEV server", 8001: "the live TRAINING server"}
+# Ports this process must NEVER touch. 8000 is the shared dev server and 8001 the reserved
+# training-tools server. (Training and eval themselves are IN-PROCESS on the Rust core: the trainer
+# connects to no server at all, so nothing here can "drop" a training run.) Nothing of ours starts,
+# stops or dials either port, so a client has no business on them and the refusal is in CODE rather
+# than in a docs warning — see the root CLAUDE.md § Showdown Server. Your own server goes on a 9XXX
+# port.
+RESERVED_PORTS = {8000: "the shared DEV server",
+                  8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
 
 # THE FORFEIT DEADLINE, read from the TRAINER rather than restated. `StallConfig.threshold`
 # defaults to `agents.observation.constants.MAX_TURNS` (250) and is the turn at which a training
@@ -135,7 +138,8 @@ def check_port(port: int) -> None:
     if reason is not None:
         raise SystemExit(
             f"refusing --port {port}: that is {reason}. Start your own throwaway "
-            f"server on a 9XXX port (`npm run showdown -- 9017`) and pass it here."
+            f"server on a 9XXX port with the in-repo Rust websocket front end "
+            f"(`python -m utils.bridge.ws_frontend --port 9017`) and pass it here."
         )
 
 

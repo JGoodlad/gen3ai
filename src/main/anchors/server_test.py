@@ -5,8 +5,8 @@
 life of the read; `ShowdownServer` is the explicit `--server node` opt-out. Both inherit ONE
 lifecycle (`ManagedServer`): start, PID-only stop, and a readiness that means ANSWERING.
 
-**8001 carries the live training run.** Dropping it crashes every poke-env websocket at once, and
-8000 is the shared dev server one digit away. The refusal is in CODE rather than in a document,
+**8001 is the reserved training-tools server and 8000 the shared dev server** (training itself is
+in-process on the Rust core and connects to neither). The refusal is in CODE rather than in a document,
 because a document cannot fail a test, and it is tested on EVERY path that can name a port —
 including the one where the caller supplies a whole URI, which is the same mistake with better
 camouflage.

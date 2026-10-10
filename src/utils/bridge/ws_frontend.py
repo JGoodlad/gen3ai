@@ -71,9 +71,11 @@ logger = logging.getLogger("ws_frontend")
 # `bridge_flush_on_exit_integration_test.py`.)
 BRIDGE_STREAM_LIMIT = 16 * 1024 * 1024
 
-# Ports this process must NEVER bind. 8001 carries the live training run and 8000 is the shared
-# dev server; the project rule is that an agent's own server lives in the 9XXX range.
-RESERVED_PORTS = {8000: "the shared DEV server", 8001: "the live TRAINING server"}
+# Ports this process must NEVER bind. 8000 is the shared dev server and 8001 the reserved
+# training-tools server (training itself is in-process on the Rust core and uses no server); the
+# project rule is that an agent's own server lives in the 9XXX range.
+RESERVED_PORTS = {8000: "the shared DEV server",
+                  8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
 
 # Showdown refuses a userid longer than this (`server/users.ts:745`) — and the refusal is a known
 # HANG for a client that does not read `|nametaken|` (foul-play de-risk hazard 1). Reproduced here

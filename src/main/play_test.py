@@ -2,9 +2,9 @@
 
 The ones that matter are SAFETY RAILS, not conveniences:
 
-* the reserved-port refusal — a client that connects to :8001 / :8000 has no business on the live training
-  server or the shared dev server (root CLAUDE.md § Showdown Server), so the refusal lives in code rather than in a
-  warning;
+* the reserved-port refusal — a client that connects to :8001 / :8000 has no business on the reserved training-tools
+  server or the shared dev server (root CLAUDE.md § Showdown Server; training itself is in-process and uses neither),
+  so the refusal lives in code rather than in a warning, and its remedy names the in-repo Rust front end;
 * `--server official` never reachable through a local port typo;
 * the flags DELETED with the legacy poke-env client (P6) are refused with their reason, never silently ignored.
 """
@@ -23,6 +23,30 @@ def test_reserved_local_ports_are_refused(port):
 
 def test_the_reserved_set_is_exactly_dev_and_training():
     assert set(RESERVED_PORTS) == {8000, 8001}
+
+
+def test_the_port_refusal_points_at_the_in_repo_rust_front_end_not_at_node():
+    """The refusal's remedy is a server of your own on a 9XXX port. Since the poke-env retirement that is the
+    in-repo Rust websocket front end, so the message must name the command that exists - and the module it names
+    must exist and take `--port` (a remedy that does not run is worse than none)."""
+    import importlib.util
+
+    with pytest.raises(SystemExit) as exc:
+        resolve_uri("local", 8001)
+    msg = str(exc.value)
+    assert "python -m utils.bridge.ws_frontend --port 9" in msg, msg
+    assert "npm run showdown" not in msg, "the Node server is no longer the way to get a server of your own"
+    assert "in-process" in msg, "the 8001 reason must not claim a live training server is hanging off it"
+    assert importlib.util.find_spec("utils.bridge.ws_frontend") is not None
+    from utils.bridge.ws_frontend import build_parser as ws_parser
+    assert ws_parser().parse_args(["--port", "9017"]).port == 9017
+
+
+def test_the_8001_reason_no_longer_claims_the_trainer_connects_to_it():
+    """Training and eval are in-process on the Rust core (root CLAUDE.md § Showdown Server): the reason shown for
+    :8001 must not say a training run's websockets hang off it."""
+    assert "live" not in RESERVED_PORTS[8001].lower()
+    assert "in-process" in RESERVED_PORTS[8001]
 
 
 def test_a_9xxx_port_is_allowed_and_points_at_localhost():

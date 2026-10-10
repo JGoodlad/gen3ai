@@ -3,7 +3,7 @@
 Four refusals are the point of this file, because each corresponds to a way an anchor read has
 already produced a number nobody could place:
 
-1. **a reserved port** (8000 dev / 8001 the live training run) on either the `--port` path or the
+1. **a reserved port** (8000 dev / 8001 the reserved training-tools server) on either the `--port` path or the
    `--server-uri` path;
 2. **an unmatched regime** — `--regime t1` against Foul Play, which is a search bot with no
    sampling knob, so only OUR side would move. The 2026-09-14 battery exists because a mixed-regime

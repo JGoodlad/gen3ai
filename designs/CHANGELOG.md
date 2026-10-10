@@ -13481,3 +13481,16 @@ read both cells for its end-of-turn rule and found them wrong.
 - **Tests.** `submodule_gate_test.py`, `utils/showdown_deps_test.py`; four launcher/archive test fixtures that fake the
   launcher's repo root with a throwaway repository now write a stub checkout after their commits.
 - Docs: launcher leaf, `TRAINING_RUN_SOP.md` section 1 0d, `training_runbook.md`, root `CLAUDE.md`.
+
+## 2026-10-10 — PLAY / ANCHORS: stale ":8001 carries the live training run" comments and the port-refusal text rewritten to the truth (no behaviour change)
+
+- `main/play.py` and `main/anchors/server.py` (and the same sentence in `utils/bridge/ws_frontend.py`, the Metamon peer
+  script, `anchors/peers.py` and three test docstrings) still said ":8001 carries the live training run (dropping it crashes
+  every poke-env websocket)". Training and eval are IN-PROCESS on the Rust core and the trainer connects to no server, so
+  nothing hangs off :8001; the ports are reserved (8000 the shared dev server, 8001 the reserved training-tools server) and
+  refused in code, which is the only reason they stay off limits. Comments rewritten; the `RESERVED_PORTS[8001]` reason
+  string (printed by every refusal) now reads "the reserved TRAINING server (the trainer itself is in-process and connects
+  to none)" in all four copies.
+- `play.py`'s port refusal told the operator to run `npm run showdown -- 9017`; it now names the in-repo Rust websocket front
+  end, `python -m utils.bridge.ws_frontend --port 9017`. `play_test.py` pins that the message names it, that the module
+  exists and parses `--port`, and that the 8001 reason no longer claims a live training server.

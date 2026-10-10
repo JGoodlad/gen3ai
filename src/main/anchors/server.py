@@ -1,9 +1,11 @@
 """The server this tool starts, and the PID it is obliged to stop.
 
 An external-anchor read needs a server both clients can reach, and it must NEVER be one that was
-already running: **8001 carries the live training run** (dropping it crashes every poke-env
-websocket at once) and **8000 is the shared dev server**. Both are refused in CODE here, the same
-way :func:`main.play.resolve_server` refuses them, because a warning in a document is not a guard.
+already running: **8000 is the shared dev server** and **8001 the reserved training-tools server**.
+(Training and eval themselves are IN-PROCESS on the Rust core - the trainer connects to no server -
+so stopping :8001 cannot crash a training run; it is still not ours to touch, and an anchor read's
+own server is always a fresh one on its own 9500-9599 port.) Both are refused in CODE here, the same
+way :func:`main.play.resolve_uri` refuses them, because a warning in a document is not a guard.
 
 🚨 **THE DEFAULT SERVER IS NOT NODE.** ``--server rust`` starts :class:`FrontEndServer` — the
 in-repo websocket front end (:mod:`utils.bridge.ws_frontend`) over the Rust ``sim_bridge`` — and no
@@ -46,7 +48,8 @@ from typing import IO, Dict, List, Optional
 from utils.paths import repo_path, src_root
 
 #: Ports this process must never touch, with the reason stated for the message it prints.
-RESERVED_PORTS = {8000: "the shared DEV server", 8001: "the live TRAINING server"}
+RESERVED_PORTS = {8000: "the shared DEV server",
+                  8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
 
 #: The websocket path every Showdown server serves.
 WS_PATH = "/showdown/websocket"
