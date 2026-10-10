@@ -391,6 +391,18 @@ rot on main three times: `integration` now spans a ~100x cost range, so excludin
 cheap, high-value coverage (bridge battles, data parity, mechanics) to avoid the browser suite. Cut
 on **`slow`** instead — that is the marker that means "expensive".
 
+### Worktree imports — pytest puts THIS checkout's `src/` first; a direct `python` does not
+
+*(Moved here from the root `CLAUDE.md`'s Python Environment section on 2026-10-09; the root keeps the rule.)*
+`pip install -e .` names ONE absolute path — the main checkout's `src/` — so a worktree run with no `PYTHONPATH`
+imports *main's* code, and every result is about a tree you did not edit. Since 2026-10-07 the root `conftest.py`
+(`_put_this_checkouts_src_first`) puts THIS checkout's absolute `src/` at the front of `sys.path` AND of
+`os.environ["PYTHONPATH"]`, so a pytest session, its xdist workers and every subprocess a test spawns import the tree
+you edited with no export (a worktree agent's harness refuses `export PYTHONPATH=…`). It PREPENDS, so the launcher's
+pin (which prepends ITS `src` in front) still wins; `src/packaging_gate_test.py` pins both halves
+(`GEN3AI_SKIP_SRC_FIRST=1` opts out). **A direct `python <script>` / `python -m …` from the worktree root still
+imports main's code without the export**: export it there, or run `python -m <module>` with `src/` as the cwd.
+
 ### The two STATIC gates (mypy + ruff) — default-on, in every tier
 
 Static checking is enforced by **tests**, not by habit, because there is no CI on this box: the

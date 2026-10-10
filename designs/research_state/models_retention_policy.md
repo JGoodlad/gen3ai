@@ -1,7 +1,11 @@
 # `models/` retention policy
 
-*Written 2026-09-06. ⚠️ **SUPERSEDED IN PRACTICE 2026-10-09:** the owner approved, and the orchestrator applied, a coarser PRE-RUSTBORO SKELETON (root `CLAUDE.md` § The Model states what each pre-`rb_` run keeps; per-path plan `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`; ~386 GB freed with the finished `rb_` compile caches). The tiers below were NOT applied as written.* *(Original:) **Nothing has been applied.** Both policies below have been run as dry runs
+*Written 2026-09-06. ⚠️ **SUPERSEDED IN PRACTICE 2026-10-09:** the owner approved, and the orchestrator applied, a coarser PRE-RUSTBORO SKELETON (§0 below states what each pre-`rb_` run keeps — moved here from the root `CLAUDE.md` on 2026-10-09; per-path plan `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`; ~386 GB freed with the finished `rb_` compile caches). The tiers below were NOT applied as written.* *(Original:) **Nothing has been applied.** Both policies below have been run as dry runs
 and their reports are committed beside them; the `--apply` commands are in §7.*
+
+## 0. What was APPLIED — the pre-Rustboro skeleton (owner, 2026-10-09)
+
+🚨 **The PRE-RUSTBORO SKELETON was APPLIED 2026-10-09 (owner):** every pre-`rb_` run keeps only `metadata.json`, `model_config.json`, TensorBoard, every jsonl (incl. `value_sidecar/`), small json/md/png, its `final_model*.zip` (or its newest checkpoint when it has none) and every file the baseline registry names — intermediate checkpoints, snapshot pools, eval traces, compile caches and `best_model/` are GONE (~322 GB) — ⚠️ WHOLE directories went when no kept file sat inside, so the per-checkpoint sidecar JSONs in `checkpoints/*.json` went too (`main.dose` now reads a skeleton run's LR from its TB curve, `6ed20cdd`); finished `rb_` runs lost only their `compile_cache/` (~64 GB; a resume recompiles). The per-path plan is `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`.
 
 The run archive is the one thing in this project that is never reproducible. A checkpoint is a
 weight file that no amount of compute re-derives, because the run that produced it consumed dice,

@@ -53,14 +53,15 @@ def _counted(doc: str, pattern: str) -> int:
 def test_every_prose_count_equals_the_inventory():
     n = len(static_gate_files())
     word = number_word(n)
-    assert _counted(_text("CLAUDE.md"), r"\*\*(\w[\w-]*) static gates, all `static`-tier") == n, word
+    # The root CLAUDE.md keeps only the count + a pointer (lean rewrite, 2026-10-09); the table is DEVELOPING.md's.
+    assert _counted(_text("CLAUDE.md"), r"\*\*(\w[\w-]*) static gates\*\* run in every tier") == n, word
     assert _counted(_text("docs", "DEVELOPING.md"), r"\*\*(\w[\w-]*) static gates run inside the suite") == n, word
     assert _counted(_text("docs", "RUNNING.md"), r"(\w[\w-]*) static gates run inside the suite") == n, word
 
 
-def test_every_gate_has_a_row_in_both_tables():
-    """The root ``CLAUDE.md`` and ``docs/DEVELOPING.md`` tables each open a row with the gate's path."""
-    for doc in (("CLAUDE.md",), ("docs", "DEVELOPING.md")):
+def test_every_gate_has_a_row_in_the_table():
+    """``docs/DEVELOPING.md``'s table (the ONE table; the root ``CLAUDE.md`` points at it) opens a row per gate."""
+    for doc in (("docs", "DEVELOPING.md"),):
         text = _text(*doc)
         rows = set(re.findall(r"^\| `(src/[\w/]+_test\.py)` \|", text, flags=re.M))
         missing = [g for g in static_gate_files() if g not in rows]
