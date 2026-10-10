@@ -875,6 +875,11 @@ def headless_mode(stream=None) -> bool:
 # than needing a flag to remember. Only matters under contention.
 DEFAULT_NICE = 10
 
+# The periodic full-process restart (``--restart-interval-hours``), in hours. Owner rule 2026-10-04: 6 h
+# on every launch (the code default was 3.0 until 2026-10-10; backlog T24 will set it from data on the
+# Rust env core). ONE definition: the parser default below and the test that pins it both read this.
+DEFAULT_RESTART_INTERVAL_HOURS = 6.0
+
 
 def _apply_nice(target: int) -> "int | None":
     """Raise this process's scheduling niceness to ``target``; return the level, or None.
@@ -1020,7 +1025,7 @@ def build_launcher_parser():
     parser.add_argument(
         "--restart-interval-hours",
         type=float,
-        default=3.0,
+        default=DEFAULT_RESTART_INTERVAL_HOURS,
         help="Restart the training process every N hours (0 = run once)",
     )
     parser.add_argument(

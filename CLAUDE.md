@@ -192,7 +192,7 @@ python -m main.launcher --restart-interval-hours 6 --model models/<run>/checkpoi
 The hazards that have actually cost runs (full text: the runbook's "Launch hazards in full"):
 
 - 🚨 **"It launches" and "it is the experiment" are INDEPENDENT checks.** `--arch production` supplies the architecture AND the training recipe; `checkargs` refuses a fresh argv whose surface differs. Type a recipe knob only when it IS the arm's lever. A design-doc command block is not a launch command (2026-09-06: 24.4M steps on a near-bare network).
-- 🚨 **Restart interval: type `--restart-interval-hours 6`** (owner, 2026-10-04) — the code default is still 3.
+- 🚨 **Restart interval: 6 h** (owner, 2026-10-04) — the launcher default since 2026-10-10 (`run.DEFAULT_RESTART_INTERVAL_HOURS`; was 3), so a bare launch restarts every 6 h; the examples above still type it, and a typed value wins.
 - 🚨 **AN ARGV IS NOT A CONFIG.** With `--model`, every flag you do not name is INHERITED from `model_config.json`; `--lr` / `--batch-size` / `--n-steps` are INERT on a resume — a fork pins its rate with `--fork-lr`, and the quantity to match is the DOSE (`python -m main.dose <run>`).
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`--stable-opponents`, `--exploiter`, …); name the `.zip` or `@step` to pin a file.
 - 🚨 **A restart RESUMES; a FRESH argv never lands on a run** — a fresh launch into a dir holding a checkpoint is refused; pass `--model` or a new `--run-name`. A PINNED argv is judged by the PINNED commit's parser. Never "launch and kill" to validate — use `--dry-run`.

@@ -13448,3 +13448,15 @@ read both cells for its end-of-turn rule and found them wrong.
   onto our four valid E3 seats, zero-init `IsolatedLinear(8, 128)` (`--move-actor-state`'s sibling; either encoding).
 - **Versioning.** Config 152 → 153: two STRUCTURAL fields gated in `check_compatible`, migrated to off / off. Flags off,
   production and E keep the parent's graph, state_dict and outputs; the extended arm is one graph, +1,920 params.
+
+## 2026-10-10 — LAUNCHER: `--restart-interval-hours` defaults to 6.0 (owner rule 2026-10-04, now in code; no model change)
+
+- The launcher's periodic full-process restart default was `3.0` for six days after the owner's 6-hour rule, so a launch
+  that did not TYPE the flag restarted twice as often (each restart paying the compile warm-up and a resume seam). The
+  default is now ONE module constant, `main.launcher.run.DEFAULT_RESTART_INTERVAL_HOURS = 6.0`, read by the parser. Nothing
+  else duplicated it (the child's `LAUNCHER_RESTART_INTERVAL_SEC` is derived from the parsed value; `utils/era` and the
+  `recipe` block carry no interval). A typed value still wins; `0` is still "no restart".
+- Docs brought in line: the launcher leaf's flag table, `designs/ops/flag_census.md`, `designs/ops/training_runbook.md`
+  (the "code default is still 3.0" caveat and both example argvs), the root `CLAUDE.md` hazard bullet. Pinned by
+  `src/main/launcher/restart_interval_default_test.py` (the literal, the parser's reading of an absent flag, a typed value
+  winning, and the two doc tables). Runs already launched typed `6` and are unaffected.

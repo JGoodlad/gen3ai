@@ -151,7 +151,7 @@ ARCH-SURFACE guard*, § *An argv is validated by the parser of the tree that wil
 the arm's lever.
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.launcher \
-  --restart-interval-hours 3 \
+  --restart-interval-hours 6 \
   --steps 15000000 \
   --device cuda \
   --log-level periodic \
@@ -161,7 +161,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch2
 ### Resuming from a checkpoint
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.launcher \
-  --restart-interval-hours 3 \
+  --restart-interval-hours 6 \
   --model models/<run>/checkpoints/checkpoint_NNNN_steps.zip \
   --steps 15000000 \
   --device cuda
@@ -682,7 +682,7 @@ Look for `🎯 [CRITIC] winprob`, `🦀 [ENV CORE] rust`, `[ModelVersion] Round-
 
 ### Defaults worth knowing
 
-The **Rust env core is the only env core** (the Python core was deleted, deletion pass U3, 2026-10-02): the in-process Rust bridge is the only training/eval transport (serverless — no Showdown server), neither is selectable, and a typed `--env-core` / `--use-bridge` is refused at parse time with the reason (`designs/deleted_flags.md`); a `--model` launch of a python-era checkpoint (produced on the Python core, or before the core stamp existed) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned to its own commit; deletion pass D4); `--compile-trainer` is **ON** (auto-on for cuda; the opponents are served by the inference service, so there is no opponent compile flag); the critic is the win-prob critic, the only critic (a constant of the trainer namespace; `--critic` is DELETED and a typed one is refused with its reason), its win-indicator terminal (indicator, victory 1.0, draw 0.0) and the discount (`gamma` 1.0) are likewise constants of the namespace — `--gamma`, `--victory-value`, `--draw-penalty` and `--terminal-indicator` are DELETED and a typed one is refused with its reason; a resume reads its checkpoint's recorded critic and terminal, and a recorded non-production reward is REFUSED (run it pinned to its own commit, or start a fresh run). Checkpoints land in `models/rb_run_<ts>/checkpoints/`. Everything runs at `--nice 10` by default; a detached launch (`nohup … < /dev/null &`) runs HEADLESS automatically. ⚠️ The launcher's `--restart-interval-hours` CODE default is still `3.0`; the owner's policy since 2026-10-04 is **6** on every launch (backlog T24 sets it from data on the Rust core), so type it.
+The **Rust env core is the only env core** (the Python core was deleted, deletion pass U3, 2026-10-02): the in-process Rust bridge is the only training/eval transport (serverless — no Showdown server), neither is selectable, and a typed `--env-core` / `--use-bridge` is refused at parse time with the reason (`designs/deleted_flags.md`); a `--model` launch of a python-era checkpoint (produced on the Python core, or before the core stamp existed) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned to its own commit; deletion pass D4); `--compile-trainer` is **ON** (auto-on for cuda; the opponents are served by the inference service, so there is no opponent compile flag); the critic is the win-prob critic, the only critic (a constant of the trainer namespace; `--critic` is DELETED and a typed one is refused with its reason), its win-indicator terminal (indicator, victory 1.0, draw 0.0) and the discount (`gamma` 1.0) are likewise constants of the namespace — `--gamma`, `--victory-value`, `--draw-penalty` and `--terminal-indicator` are DELETED and a typed one is refused with its reason; a resume reads its checkpoint's recorded critic and terminal, and a recorded non-production reward is REFUSED (run it pinned to its own commit, or start a fresh run). Checkpoints land in `models/rb_run_<ts>/checkpoints/`. Everything runs at `--nice 10` by default; a detached launch (`nohup … < /dev/null &`) runs HEADLESS automatically. The launcher's `--restart-interval-hours` default is **6.0** (owner policy 2026-10-04, in code since 2026-10-10; it was `3.0`; backlog T24 sets it from data on the Rust core), so a bare launch restarts every 6 h and a typed value wins.
 
 ### The offline meters — the index
 

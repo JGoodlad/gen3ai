@@ -303,7 +303,7 @@
 
 | flag | default | typed (all / last 40) | live user | verdict |
 |---|---|---|---|---|
-| `--restart-interval-hours` | 3.0 | — | the periodic full-process restart (`TRAINING_RUN_SOP.md`, root `CLAUDE.md`) | **KEEP** |
+| `--restart-interval-hours` | 6.0 | — | the periodic full-process restart (`TRAINING_RUN_SOP.md`, root `CLAUDE.md`) | **KEEP** |
 | `--restart-grace-minutes` | 20.0 | — | the scheduled restart's fallback window (`src/main/launcher/CLAUDE.md`) | **KEEP** |
 | `--max-crash-restarts` | 3 | — | the crash auto-restart breaker (`src/main/launcher/CLAUDE.md`) | **KEEP** |
 | `--nice` | 10 | — | every run is niced (root `CLAUDE.md`) | **KEEP** |
