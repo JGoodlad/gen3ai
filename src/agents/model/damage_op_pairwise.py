@@ -250,7 +250,7 @@ class DamageOperatorPairwise:
             re-run — recorded TODO, niche) and Defense Curl / the evasion moves stay all-zero
             rows, so their consequence is simply unpriced, never wrong.
           * `d_best_high` / `d_best_pko` — the change in our active's BEST (move-collapsed)
-            max-roll damage / P(KO) vs opp mon j after slot k's stage deltas.
+            mean-roll damage / P(KO) vs opp mon j after slot k's stage deltas.
           * `d_outspeed` — the change in P(our active outspeeds opp mon j) after the spe delta
             (the `pairwise_speed` recipe at the active row, WITH stage folding both worlds —
             here the stage IS the signal, unlike V's no-boost coarse convention).

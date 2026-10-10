@@ -638,19 +638,22 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                eps: float = 1e-6, crit_p: Optional[torch.Tensor] = None,
                opp_hp_frac: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, ...]:
         """The single source of the 3-roll + accuracy-folded-P(KO) physics — BOTH the incoming kernel
-        and the outgoing block call this (the DRY core). From pre-screen max-roll damage ``dmg_ns`` + the
+        and the outgoing block call this (the DRY core). From pre-screen MEAN-roll damage ``dmg_ns`` + the
         DEFENDER's ``screen`` multiplier + ``maxhp``/``cur_hp`` + per-candidate ``acc`` (all broadcast-
-        compatible) → ``(high_frac, low_frac, crit_frac, ko_ramp)``: the max-roll / 0.85-roll / ×2-crit
+        compatible) → ``(high_frac, low_frac, crit_frac, ko_ramp)``: the mean-roll / 0.85 × mean / ×2-crit
         damage as a fraction of MAX HP (gen3 crit ignores screens → ×2 the PRE-screen damage; clamped,
         "damage IF it lands"), and the accuracy-discounted P(KO this turn) vs CURRENT HP (``acc·P(KO|hit)``;
-        accuracy and the roll are independent events). ⚠️ The KO term is an APPROXIMATION, not the exact
+        accuracy and the roll are independent events). ⚠️ The op's damage is the MEAN roll: every kernel
+        multiplies the formula by 0.925, the mean of the 16 rolls, so ``high`` is the MEAN-roll damage (not the max
+        roll), and ``low`` = 0.85 × the mean sits BELOW the true minimum roll (0.786 of the top) — an approximate
+        fact, ``design_hand_computed_features.md`` D28. ⚠️ The KO term is an APPROXIMATION, not the exact
         realized probability: a continuous linear ramp across the ``[0.85, 1.0]·dmg`` roll window (the 16
         discrete rolls smoothed) that omits the 1/16 crit KO — an approximate FACT whose fix is exactness
         (``designs/endstate/design_hand_computed_features.md`` D9 / §4 rank 3)."""
         # `screen=None` means "no screen multiplier" — skips a full-tensor multiply by an all-ones
         # tensor (the coarse refine path allocated one every round). `x * 1.0 == x` exactly in IEEE-754
         # for every finite value, so the two forms are bit-identical.
-        dmg = dmg_ns if screen is None else dmg_ns * screen               # post-screen max-roll
+        dmg = dmg_ns if screen is None else dmg_ns * screen               # post-screen MEAN roll (× 0.925)
         inv = 1.0 / (maxhp + eps)
         high = (dmg * inv).clamp(max=_DMG_CHIP_CAP)
         low = (_DMG_ROLL_MIN * dmg * inv).clamp(max=_DMG_CHIP_CAP)
@@ -716,7 +719,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         defenders' base Def (`damage_kinds.beatup_*`) — gen3_beatup_exact_v1: a Beat Up candidate reads
         ``core = (42/50)·bp·S/D_base + 2N`` (typeless: its `mty_all` is '???') in the place of the single-hit
         formula, and rides every roll / screen / crit / KO line below unchanged. Returns ``(high_frac, low_frac, crit_frac, ko_ramp)``, each ``[B, n_def,
-        C]``: the max-roll / 0.85-roll / ×2-crit damage as a fraction of the defender's MAX HP (clamped —
+        C]``: the mean-roll / 0.85 × mean / ×2-crit damage as a fraction of the defender's MAX HP (clamped —
         damage IF it lands), and the **accuracy-discounted** modal no-crit P(KO) vs CURRENT HP
         (``acc · P(KO|hit)`` — so an inaccurate move reads a lower KO-this-turn risk). Pure /
         differentiable (no learned params) — the shared physics every direction reuses."""

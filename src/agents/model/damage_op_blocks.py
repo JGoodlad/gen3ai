@@ -887,7 +887,7 @@ class DamageOperatorBlocks:
             [p_par, p_brn, p_frz, p_slp, p_psn, p_tox, neutralization, tempo_cost]
 
         `real_idx` `[B,K]` are the top-K move NUMS (α's seat axis); `pair_high` `[B,6,K]` is the
-        already-aligned max-roll fraction (the same tensor `last_pair_cells[..., 1]` carries, passed
+        already-aligned MEAN-roll fraction (×0.925, not the max roll) (the same tensor `last_pair_cells[..., 1]` carries, passed
         in rather than re-derived); the speed/stat args are the op forward's own locals, so the
         physics here is the SAME physics the rest of the block was computed from.
 

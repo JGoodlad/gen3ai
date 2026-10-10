@@ -131,7 +131,7 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
     ar = torch.arange(B, device=pair_cells.device)
     cells = pair_cells[ar, our_active_idx]                             # [B,K,6] our ACTIVE's row
     gate = pair_gate[ar, our_active_idx]                               # [B,1] alive · has_opp
-    high_k = cells[..., 1]                                             # [B,K] max-roll frac of maxhp
+    high_k = cells[..., 1]                                             # [B,K] MEAN-roll frac of maxhp (×0.925)
     ko_k = cells[..., 3]                                               # [B,K] acc-discounted P(KO)
     acc_k = cells[..., 4]                                              # [B,K]
     break_fp_k = acc_k * (high_k > 0).float()                          # any landing damage breaks it
