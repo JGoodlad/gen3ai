@@ -17,6 +17,19 @@ branch's tree differs from main in a file the branch never changed, i.e. it carr
     honest rebase:       diff(main, HEAD) = the unit's files  ⊆  diff(BASE, HEAD) = unit + main's    -> OK
     soft-reset accident: diff(main, HEAD) = unit + 43 stale   ⊄  diff(BASE, HEAD) = the unit's files   -> REFUSED
 
+THE ONE EXEMPTION (``gen3_push_guard_v2``, 2026-10-10). A branch whose EARLIER commit already landed on main and whose
+NEW commit restores that file to its pre-branch content is NET-ZERO against the creation base, so the rule above
+does not own it - yet pushing it is exactly the branch undoing ITS OWN landed change:
+
+    base: f=b   ->  C1 (f=c) LANDED   ->  C2 (f=b, net-zero vs base)      diff(main, HEAD) has f, diff(BASE, HEAD) does not
+
+A file in ``diff <remote> HEAD`` that the branch does not own is therefore still allowed when ``<remote>``'s content
+of it is a version THIS BRANCH AUTHORED: the file's blob (or absence) at the remote equals its blob at one of the
+branch's own ``commit`` reflog tips (a ``commit`` / ``commit (amend)`` / ``commit (merge)`` entry; a ``reset`` onto
+a moved ref or a rebase finish is NOT one). The soft-reset accident stays refused: there main's content of the
+stale file comes from SOMEONE ELSE's commit, which matches no tip this branch ever committed. Anyone else's later
+change to the same file leaves ``<remote>``'s blob matching none of the tips, so reverting it is refused too.
+
 ``python -m utils.push_guard [--branch B] [--remote origin/main] [--repo DIR]`` exits 0 (OK) / 1
 (REFUSED, naming the files) / 2 (cannot decide — e.g. no git). `scripts/land.sh` runs it before the push.
 """
@@ -48,15 +61,45 @@ def creation_base(repo: str, branch: str, remote: str) -> str:
     return _git(repo, "merge-base", remote, branch).strip()
 
 
+def _blob(repo: str, rev: str, path: str) -> str:
+    """The blob id of ``path`` at ``rev``, or ``""`` when the path does not exist there."""
+    try:
+        return _git(repo, "rev-parse", "--verify", "-q", f"{rev}:{path}").strip()
+    except subprocess.CalledProcessError:
+        return ""
+
+
+def own_commit_tips(repo: str, branch: str) -> List[str]:
+    """The tips this branch reached by COMMITTING (reflog subject ``commit...``), newest first. A reset onto a
+    moved ref, a rebase finish or a fast-forward reaches a tip too, but it is not something the branch AUTHORED,
+    so it is not in this list. ``[]`` when the branch has no reflog (a fresh clone): no exemption then."""
+    try:
+        out = _git(repo, "reflog", "show", "--format=%H%x09%gs", branch)
+    except subprocess.CalledProcessError:
+        return []
+    tips: List[str] = []
+    for line in out.splitlines():
+        sha, _, subject = line.partition("\t")
+        if sha and subject.startswith("commit") and sha not in tips:
+            tips.append(sha)
+    return tips
+
+
 def check(repo: str, branch: str = "HEAD", remote: str = "origin/main") -> List[str]:
     """The files ``branch``'s push would change on ``remote`` WITHOUT the branch ever having changed
-    them (sorted; empty = OK)."""
+    them (sorted; empty = OK). A net-zero restore of a version the branch itself authored is allowed
+    (the module docstring's one exemption)."""
     if branch == "HEAD":
         branch = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
     base = creation_base(repo, branch, remote)
     owned = _files(repo, base, branch)
     pushed = _files(repo, remote, branch)
-    return sorted(pushed - owned)
+    stale = pushed - owned
+    if not stale:
+        return []
+    tips = own_commit_tips(repo, branch)
+    return sorted(f for f in stale
+                  if not tips or _blob(repo, remote, f) not in {_blob(repo, t, f) for t in tips})
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
