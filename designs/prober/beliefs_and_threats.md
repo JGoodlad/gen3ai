@@ -8,7 +8,7 @@ measurements behind it and the panel-by-panel contents of both sections.
 
 **It hangs off the RE-COMPUTED branch only, never the summary fallback** — the summary's `belief`
 block carries the top-3 per slot, whose rows do not sum to 1, so running the operator on them would
-answer a different question while looking identical. That is also why `battle_turns` / `/battle`
+answer a different question while looking identical. That is also why `battle_turns` / `/game`'s story
 (model-free by construction) do **not** carry it.
 
 **Two DIFFERENT defects, kept apart** (both on the view, neither folded into the other):
@@ -114,3 +114,28 @@ re-running the model; absent on older traces (then species-only). The capture is
 full `[6,5]`) so the trajectory needs no separate active-index array — the per-decision spread PANEL still
 re-runs the model for the full `[6,5]`-vs-truth view.
 
+## From the prober leaf (moved 2026-10-10)
+
+Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to rules, commands and the map.
+
+### The SPECIES-CLAUSE reading (`a.exclusive_belief`) — what it is and what it is NOT
+
+`BeliefHead` publishes one **independent** softmax per hidden slot, so nothing in its
+parameterization can express *"at most one of you is Salamence"*. Measured on gen-15, three hidden
+slots read P(Salamence) = 0.39 / 0.60 / 0.39 at one decision — an expected count of 1.38 on a team
+the species clause caps at 1. `engine.build_exclusive_belief` (over the pure operator
+`agents.inference.species_exclusivity`) applies that constraint at READ time and publishes an
+`ExclusiveBeliefView` beside the raw one: the adjusted per-slot rows, a **point team hypothesis**
+(the greedy no-duplicates assignment — most likely team consistent with the clause), and the raw
+belief's incoherence headline.
+
+> ⚠️ **The model's belief is `a.belief`, the raw marginals. `a.exclusive_belief` is a reading aid.**
+> Both are always rendered; showing only the adjusted view would substitute the prober's arithmetic
+> for the model's actual state, which is the same class of dishonesty the whole tool exists to
+> avoid. The panel says so in its own copy, and `app_test.py` pins that it does.
+
+It hangs off the RE-COMPUTED branch only, never the summary fallback (whose top-3 rows do not sum
+to 1), which is also why the model-free `battle_turns` / `/game` story do not carry it. The two
+distinct defects it separates (`max_expected_count`/`illegal_mass` vs `duplicate_top1`), the clean
+`revealed_leak_max` reading and its dependence on `--species-prior-fusion`, and the contents of
+both GPU-first sections, are in `designs/prober/beliefs_and_threats.md`.

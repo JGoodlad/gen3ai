@@ -171,3 +171,142 @@ it replaced on the P5 identity set. `replay-counterfactual` left poke-env in P6:
 battle as one in-process play-out on the core (`utils/rust_env/counterfactual.py`, the in-core bot ports;
 `designs/prober/counterfactual_probes.md`). There is no room tag to build any more: the core's walk is not
 a poke-env room, and no prober view materializes a poke-env battle.
+
+## From the prober leaf (moved 2026-10-10)
+
+Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to rules, commands and the map.
+
+### The engine's torch / records / discovery / core-trace / web modules, in full
+
+- **`model.py`** — `ProbeModel`: the torch boundary, and the ONLY place a forward or backward runs.
+  `load(ckpt)` does a plain strict load (`snapshot.load_checkpoint_strict` — no env, no `ModelVersion`
+  check; sb3's non-strict "SB3 < 1.7.0" retry is REFUSED, `gen3_strict_checkpoint_load_v1`, so a checkpoint
+  missing an extractor submodule is an `ArchDriftError` diagnosis, never a model with that submodule at
+  fresh init), resolves `ObsOffsets`
+  once from `enc.get_layout()`, and raises
+  `ArchDriftError` (typed: `kind` + `plain`; `NoCheckpointError` when there is no checkpoint) on a stale one — checked against the RECORDED identity BEFORE the load (`arch_status`). `action_dist` / `logit_grad` are the forward/backward pair;
+  `belief`, `damage_op_view`, `move_belief`, `win_prob_at` and `architecture()` each
+  read a head's stash after one clean forward. **`capture_battle(obs, masks)`** is `/game`'s ONE
+  batched EAGER forward over a battle's stored decisions with read-only hooks (`model_capture.py`, the
+  same torch boundary): the trunk's attention recomputed from EVERY trunk round's own `in_proj`
+  + bias (the post-LN `BiasedEncoderLayer`s and, under `--trunk-layers 3/4`, the pre-LN `IdentityInitRound`s, over
+  `norm1(x)`; stacked in execution order; pinned against each round's output by `model_capture_test.py`), the pointer head's raw
+  scores, the flat opponent pointer + hypothesis set, the op stash, bounded top-k summaries of the belief stashes
+  (moves / item / spread / nature / HP type, per opponent slot — the scouting notes'); every hook removed in a
+  `finally`, so the cost when off is zero. The three non-torch decode helpers (`describe_global`,
+  `describe_team`, `describe_turn_outcome`) live here because they need the encoder. 🚨 **A turn's
+  events land in the NEXT decision's obs**, so `describe_turn_outcome` is read from decision *T+1*.
+  Detail: `designs/prober/engine_and_model.md`.
+- **`arch_status.py`** — can the MODEL views run on this run / step / checkpoint, from RECORDS (no torch, no
+  checkpoint opened)? One typed `ArchVerdict` (`current` · `incompatible` · `unrecorded`; a `kind` from
+  `arch_status.KINDS`; ONE plain sentence) used by the run PICKER (`web/runs.py`, cached by mtime), the per-step
+  marks (`ProbeSession.model_status`) and `ProbeModel.load`. 🚨 **Every incompatibility is ONE typed diagnosis**
+  (2026-10-09) — a different network family, a width mismatch, a rejected state_dict, a rejected value, a missing
+  or unreadable checkpoint, and the SILENT class (weights fit, the observation changed meaning —
+  `model_version.OBS_SEMANTICS_VERSION`, caught by the recorded config version alone). Detail and the kind table:
+  `designs/prober/arch_drift.md`.
+- **`discovery.py`** — pure filesystem, and it never opens a JSON or an npz: `build_trace_tree`
+  groups step → opponent → battle by **parsing path strings only**, so a 1000-battle run opens
+  instantly. It reads each cycle's `eval_manifest.json` for model identity, and
+  `resolve_model_for_step` picks the model **per battle**. 🚨 **The `<outcome>` alternation is BUILT
+  from `agents.training.trace_result.OUTCOMES`**, never retyped here. A trace's siblings:
+  `*_replay.html` (the raw protocol every honest claim is checked against) and, on bridge-eval
+  traces, `*_reconstruction.json` (what every counterfactual probe needs).
+  Detail: `designs/prober/engine_and_model.md`.
+- **`core_trace.py`** — a Rust-eval **CORE TRACE** (`gen3_core_trace_v1`, written by
+  `agents.training.rust_eval.traces`) ships a META-ONLY `*_summary.json`; `ProbeSession._summary`
+  EXPANDS it on read to the full legacy shape (`teams` + `invocations`) FROM THE RUST CORE
+  (`gen3_core_walk_v1`, poke-env retirement P5): `core_walk.py` replays the reconstruction through
+  `core_events --walk` (per trainee decision the core's `present()` view, legality, slot registries,
+  frozen `TurnDelta` projection, mask and choice tokens; the terminal view + delta) and
+  `core_recorder.py` builds the summary with the live recorder's rules over those read-models (the
+  labels are `agents.training.trace_labels`, shared with `BattleRecorder`; the reward is
+  `reward_config.terminal_breakdown`). No poke-env battle is built. 🚨 **The stored
+  `<prefix>.p1.jsonl.gz` record is the AUTHORITY**: a walk whose protocol differs from it, or whose
+  decisions do not line up with `states.npz` (count, per-row legal mask, each row's action mapping
+  to the command actually played, result), RAISES `CoreTraceMismatch` — never repaired. `_meta` reads
+  the stored meta without expanding (so `run_summary` stays instant). Cached in memory only;
+  nothing is written into the run dir. ABSENT on a core trace: `*_replay.html` (its stand-in is the
+  expansion's own protocol log, `core_trace.protocol_log`), and every auxiliary head — `win_probs`
+  is NaN, `belief` / `opp_intent` / `move_logits` / `spread_belief` are not stored (and `value_dist` no longer exists in ANY new trace — the head was deleted, L1; old traces keep the array and `awareness.py` still reads it)
+  (`analyze` re-runs the model on the stored obs). 🚨 **`core_trace` IS THE ONE `*_summary.json`
+  READER under `src/`** — `load_summary` (expanded), `load_summary_meta` (stored meta, never
+  expands), `refuse_core_trace` (a reader that needs a head a core trace lacks raises
+  `CoreTraceUnsupported` by name). `src/trace_summary_reader_gate_test.py` fails any module that
+  opens one itself (F-LH-5: such a reader saw meta only and read ZERO decisions, silently); its
+  allowlist is EMPTY. Detail: `designs/prober/engine_and_model.md`.
+- **`core_walk.py`** / **`core_recorder.py`** — the prober's battle reading from the RUST CORE (P5).
+  `core_walk` is the transport + alignment: `walk(record, side)` (`core_events --walk`),
+  `decision_choices` (a decision's legal action → choice string, for falsify / lookahead /
+  better-line) and `read_streams` (`core_events --obs-stream`: one side's TEXT through the core's
+  parse chain with the trackers on — the chain training's rows are encoded on — our actions replayed
+  by index; the successor rows lookahead / better-line score); `replay_log` is the stand-in
+  `*_replay.html` log (reproducing the retired poke-env player's dispatch). `core_recorder` turns a walk into the summary.
+  🚨 **No prober command needs poke-env** (P6, 2026-10-07: `replay-counterfactual` plays the rest of a
+  battle as one in-process play-out on the Rust core — `replay.py` → `utils/rust_env/counterfactual.py`,
+  `gen3_cf_core_playout_v1`, the in-core bot ports); every CLI command and the web app RUN with poke-env
+  blocked (`src/poke_env_free_entry_points_test.py`, whose `PROBER_POKE_ENV_COMMANDS` is a closed list,
+  EMPTY). Detail: `designs/prober/engine_and_model.md`.
+- **`web/`** — the browser front end (FastAPI + Jinja2/HTMX over `ProbeSession`). It is
+  **first-class for the GPU obs**: the learned belief/op signals tagged `🔷 GPU` render PRIMARY
+  and the decoded CPU obs regions they subsume tagged `📋 CPU-obs` render dimmed, because the
+  operator's physics supersede the older type-effectiveness decode and a reader must be able to see
+  which is which. **Beliefs** is the model's world-model vs ground truth; **Threats** leads with the
+  DamageOperator. See `web/CLAUDE.md`, and `designs/prober/beliefs_and_threats.md` for
+  what those panels MEAN.
+
+### Per-battle model resolution (exact → nearest → most recent)
+
+A trace was generated by the eval snapshot at *its* step, so the prober resolves
+and loads the model **per selected battle**, not once at startup
+(`discovery.resolve_model_for_step(tree, step, override, tier)` → `ModelChoice`):
+
+1. **exact** — the retained `eval_traces/step_<N>/snapshot.zip` (written when
+   training ran with `--keep-eval-snapshots`); bit-exact, faithfulness ≈ 100%. Since 2026-10-10 it is a
+   HARD LINK to the same-step `checkpoints/checkpoint_<N>_steps.zip` where that is byte-identical
+   (the manifest's `snapshot_storage.mode`; a copy otherwise) — an ordinary path to this ladder, and it
+   survives the checkpoint's deletion.
+2. **nearest** — the persisted `checkpoint_<N>_steps.zip` with the smallest
+   `|Δstep|` (exact weights at a nearby step). `discovery.list_checkpoints` searches BOTH the
+   current `<run>/checkpoints/` and the legacy `<run>/` root (deduping a copy-backported step to
+   the `checkpoints/` path), so the ladder finds checkpoints under either layout.
+3. **most recent** — **the run's LAST SNAPSHOT**, resolved through the ONE choke point
+   `agents.training.fixed_opponent_pool.resolve_model_ref`, so a bare run dir means here exactly
+   what it means to a `--stable-opponents` spec.
+
+🚨 **This tier was `best_model` → latest until 2026-09-06, which is the ordering
+`gen3_last_snapshot_resolution_v1` INVERTED everywhere else** — `best_model/best_model.zip` is the
+BOT-WIN-RATE export and is now the LAST rung, a fallback for a run with nothing else. The prober
+kept a second opinion, and it was not academic: measured over five archived runs on this box, **all
+five disagreed**, the prober loading the bot-selected export while its own tier label read "most
+recent" (one pick differed by ~23.3M steps). `resolve_checkpoint_with_rung` returns the RUNG beside
+the file and `ModelChoice.detail` prints it, so a `best_model_fallback` read says outright that
+those weights were chosen by bot win rate rather than by being latest — a different claim, which
+must not render as the same sentence. It falls back to the historical ladder (reported as its own
+rung, never silently) when the choke point cannot resolve, since it needs a `model_config.json`.
+
+`query analyze --ckpt` forces an override. The badge shows the active tier + the trace's `git_hash` /
+`arch_signature` from the manifest, so any faithfulness drift is explained, and loaded models are
+cached by path (`_model_cache`) so revisiting a step is instant. Even for runs that predate the
+manifest (no snapshots), the ladder picks the **nearest checkpoint** — strictly better than always
+using `best_model`.
+
+### Obs-offset dependence (regression-guarded)
+
+**`gen3_cpu_damage_deleted_v1` (v48):** two of these regions no longer EXIST in the obs — the
+active-move type multipliers and the `incoming_damage` block were deleted (the DamageOperator
+computes both GPU-side from the learned belief). `ObsOffsets.mm_off` / `incoming_off` / `incoming_dim`
+now resolve to **0 = absent**, and every consumer no-ops on 0 (the saliency block list drops the
+"active move_multipliers(4)" row, `_active_move_mults` returns zeros, the intervention sweep skips
+its write). The fields are KEPT so archived pre-v48 traces still decode.
+**`gen3_entity_rehome_v1` (v60) extends the same convention to the matchup matrices**: the
+`our_matchups`/`their_matchups` blocks are DELETED from the obs (pair effectiveness is GPU-side —
+the D/V edge families), so `om_off`/`tm_off` also resolve to **0 = absent** — ThreatView returns
+`None` and the two saliency rows drop. The engine's one remaining live obs region beyond the
+per-mon/global blocks is the turn-history span — all resolved at runtime from
+`Gen3ObservationEncoder.get_layout()`. **If the obs layout changes, these move
+automatically** (e.g. `gen3_move_effects_v1` inserted a block before `our_matchups`,
+shifting it; `gen3_cpu_damage_deleted_v1` REMOVED three of them, moving the matchups
+1568 → 1465), and `engine_test.py` pins the resolved values
+(`test_offsets_resolve_matches_layout`) so a silent shift fails loudly. (Mirror note
+in `src/agents/observation/CLAUDE.md`.)

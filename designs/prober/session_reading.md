@@ -153,3 +153,24 @@ the tier that works on every run, forever.
   while **104 of 136** cure uses (76%) had nothing to cure — the policy is picking these moves close
   to independently of whether it is statused. See `designs/research_state/` for the hypothesis ledger.
 
+## From the prober leaf (moved 2026-10-10)
+
+Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to rules, commands and the map.
+
+### `critic_currency` — what every V on every view MEANS
+
+- `run_summary()` — **orient** (model-free): steps, per-step model identity
+  (git/arch/snapshot-available), opponents with win/loss tallies, persisted
+  checkpoints, γ, and **`critic_currency`**. The natural first call.
+
+  **`critic_currency` says WHICH READOUT IS THE CRITIC, and therefore what every V on every other
+  view MEANS** (`ProbeSession.critic_mode()` / `.critic_currency()`, model-free off the run's
+  `model_config.json` `critic` key, cached exactly like `_dist_support`). `{mode, units, low, high,
+  even, span, is_probability, default_overvalue_tau, note}` — `shaped` (V is a shaped, discounted
+  return of roughly ±30, and its zero is NOT "even": a self-mirror 50/50 reads V≈−6.5) or
+  `winprob` (V = sigmoid(win-prob logit) ∈ [0,1], `values` EQUALS `win_probs`,
+  G(s) the terminal win indicator at γ=1, and **0.5 really is even**).
+  **An ABSENT `critic` key means `shaped`** — a fact about the archive rather than a chosen
+  default: the flag landed at config version 109, so every run recorded before it has no key and
+  every one of them is shaped (**214 of the 215** on this box, measured 2026-09-06). An unreadable
+  config is shaped too, so a failed read can never silently re-scale an old run's numbers.

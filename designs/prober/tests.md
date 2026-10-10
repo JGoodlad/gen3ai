@@ -86,9 +86,8 @@ per-rollout seeds, stall sides, narrate, every refusal — with the core walk an
 the play-out's own semantics are `src/rust_env/tests/search_playout_cf_test.rs` +
 `src/utils/rust_env/cf_playout_test.py` + `successors_integration_test.py::test_the_counterfactual_keys_through_the_ffi`) +
 `lookahead_integration_test.py` (`@integration @sim`, real bridge → the core's successor row →
-a fake model's V), `hub_contract_test.py`, `groom_test.py` (the eval-data groomer, pure
-filesystem) and `belief_obs_fuzz_test.py` (run directly — real bridge battles over the full
-belief stack):
+a fake model's V), `hub_contract_test.py` and `groom_test.py` (the eval-data groomer, pure
+filesystem). (`belief_obs_fuzz_test.py` was deleted in T27 P6 slice 6d-2, `cbfc2a31`.)
 
 and the **web** suite under `web/` (`charts_test.py` pure Vega-Lite specs · `app_test.py`
 `TestClient` over a synthetic run, each endpoint compared against a direct `ProbeSession` call ·

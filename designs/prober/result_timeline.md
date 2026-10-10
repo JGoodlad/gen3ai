@@ -41,3 +41,46 @@ voluntarily switched, the recorded hp_delta can't price the hit on the switch-IN
 that left), so the attack shows the **resulting HP** instead (`we rockslide → celebi (now 11%)`) — the
 attack is never dropped. The shared renderer is `app._append_timeline_entry` / `_append_happened`
 (Summary + Review card) ·
+
+## From the prober leaf (moved 2026-10-10)
+
+Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to rules, commands and the map.
+
+### What the timeline may CLAIM
+
+🚨 **"— no effect" IS A CLAIM, AND IT IS ONLY OURS TO MAKE WHEN THE EVIDENCE SUPPORTS IT**
+(`engine._no_effect_supported`, 2026-09-07). Exactly three things support it: the recorder DECODED
+the move's fate/effectiveness, the SIM said so (`|-fail|` / `|-immune|` / `|-miss|` in the move's own
+protocol window), or that window was LOCATED and is EMPTY of effect tags. Anything else renders
+**`— outcome unrecorded`** — a gap in the evidence, said out loud, and *not* a synonym. And a window
+that CONTRADICTS the claim (it carries effect tags) beats every recorded outcome, because the log is
+the sim's own transcript while the recorded `events` list is known to have had a hole. The assertion
+form of the same rule is **`verify_timeline_against_protocol`** → raises `TimelineContradiction`;
+it is deliberately NOT called from `build_result_timeline` (a forensic view must still render a trace
+it cannot fully explain) — it is for tests and for a surface that would rather stop than mislead.
+
+⚠️ **"Nothing happened" had THREE causes and one sentence, so the line described the wrong thing.**
+The recorded outcome says what a side CHOSE; nothing in a model-free trace says whether the choice
+ever ran, so a move that never executed was explained as one that executed and achieved nothing — a
+claim about the MOVE on a turn where the move never happened. Reported on gen-16 `loss_s0_004`:
+Forretress CHOSE Explosion on turn 6, was outsped by a +2 Tyranitar and killed, and the timeline
+read `we explosion — no effect`. Two pure readers over the turn's protocol slice fix it, siblings of
+`move_order_from_protocol` and matching sides the same way:
+
+| the log says | now reads | before |
+|---|---|---|
+| no `\|move\|` for that side, and it fainted | `— never moved (fainted first)` | `— no effect` |
+| `\|cant\|<mon>\|frz` (or par/slp/flinch/…) | `— couldn't move (frozen)` | `— no effect` |
+| `\|-immune\|<target>` | `— no effect (immune)` | `— no effect` |
+
+
+The three pure protocol readers that supply that evidence (`protocol_action_fate` /
+`protocol_move_result` / `protocol_move_effects`), the precedence between a RECORDED outcome and
+the log, and the measured 9.8% of move lines they repaired, are in
+`designs/prober/result_timeline.md`.
+
+🚨 **A DETECTOR READS THE RAW PROTOCOL; ONLY A HUMAN SURFACE READS THE RENDERED TIMELINE.**
+`loops.py` keys on each battle's `*_replay.html` protocol lines, never on
+`engine.timeline_entry_text` — the rendering is a SENTENCE, and a detector must key on the fact
+underneath it. The timeline's job is to be readable, the detector's is to be exact, and the two
+must not be wired together.

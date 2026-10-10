@@ -224,3 +224,67 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   result carries `params.overvalue_tau_source` plus `critic_currency`. **A tau no gap in the run
   can reach now produces a loud `threshold_warning`** naming the largest observed gap — the durable
   half, since any future currency change re-opens this for every value-unit threshold in the tree.
+
+## From the prober leaf (moved 2026-10-10)
+
+Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to rules, commands and the map.
+
+### The trace QUOTA prefers losses — read `selection` FIRST
+
+🚨 **THE QUOTA IS NOW STATED, NOT ASSUMED — read `selection` FIRST**
+(`gen3_trace_selection_manifest_v1`). `captured_win_fraction` says what the sample's mix IS;
+`selection` says what the recorder's RULE WAS, which is what distinguishes a loss-enriched quota
+from a genuinely losing population — and until this shipped nothing in the trace tree recorded
+it, so every curve here silently inherited the skew (measured on `ai_v9_59_R2ACTION_0827`:
+captured outcome rate **0.46** against the same cycles' recorded **0.901 vs bots / 0.702 vs
+pool**). Both `calibration` and `falsify_scan` return the block, scoped to the `step` filter,
+from `ProbeSession.trace_selection(step)`: per step the rule in words plus per-opponent
+`battles_played` / `battles_won` / `traces_written` / `traces_won` and the derived
+`capture_rate_win` / `capture_rate_loss` (traces per battle PLAYED, by outcome — the pair whose
+DIFFERENCE is the skew; a zero denominator reads `None`, never `0.0`). ⚠️ **A tree that records
+no selection is `known: false` and carries the standing UNKNOWN label — never read as uniform**;
+`calibration` additionally puts that label FIRST in its `caveats`, because it says whether the
+selection confound below it can be sized on this tree at all. Every archived run is in that
+state; only cycles collected after this shipped carry a record. The `/calibration` web view
+renders the per-opponent capture-rate table and marks a selection-unknown curve as such.
+Declaration: `agents/training/trace_selection.py` — the one module the recorder, this session,
+and `main.scaffolding_gauge` all read, so the three cannot drift on what the quota was.
+
+### `overvalue_tau` is in the CRITIC'S OWN UNITS (the leaf's summary)
+
+`calibration`'s over-value threshold defaults **per critic currency** (`None` resolves it from the
+run): 5.0 shaped return units on a critic spanning roughly ±30, ≈**0.083** P(win) under
+the win-prob critic (the only critic) — the same 1/12-of-span fraction either way. Carried across unchanged, the
+shaped 5.0 **exceeds the entire representable range of a probability gap**, so no crater can clear
+it and `critic_overvalued` reads a confident **0** — a units error in the shape of a finding
+(measured: the headline moved 0.0 → 0.4997 once the tau was in the right currency). An EXPLICIT
+value is honoured verbatim, the result carries `params.overvalue_tau_source` + `critic_currency`,
+and a tau no gap in the run can reach raises a loud `threshold_warning`. Any future currency change
+re-opens this for every value-unit threshold in the tree. Detail:
+`designs/prober/counterfactual_probes.md`.
+
+### The counterfactual tier, as the leaf stated it
+
+The three re-roll/clone-powered probes, bridge-eval traces only (each needs the
+`*_reconstruction.json` sibling). **The surface is `/analyze`** — they are
+per-DECISION probes, so they launch from the bottom of that page as password-gated background jobs
+(`web/CLAUDE.md`); the CLI equivalents are `query lookahead|better-line|replay-counterfactual`.
+
+- **one-ply lookahead** — per legal action, the re-rolled successor's **V(s')** under common random
+  numbers (hold the realized dice, vary only our action), the **ΔV** vs the line actually played,
+  and `terminal` win/loss where an action ends the battle. The chosen action's CRN successor
+  reproduces the real next state, so its value is a built-in consistency anchor.
+- **better-line search** — a CRN-anchored beam returning ONE contrastive trajectory: *"turn T: you
+  played X → better line Y"*, the headline ΔV / ΔP(win), the principal variation ply by ply, and the
+  depth/beam/opponent provenance. At depth ≥ 2 the interior opponent is the trainee standing in for
+  the real one, which the surface must FLAG — a contrastive line that hides its proxy reads as fact.
+- **replay-to-end** — substitute an action and play the rest vs the reloaded opponent to a win/loss,
+  as one in-process play-out on the RUST CORE (the opponent's recorded turn-T move fed, a roster bot
+  played by its in-core port, every draw SEEDED from the battle + decision, so a rerun answers
+  identically); `n_rollouts > 1` resamples the post-divergence dice for a win-% ± Wilson CI. At
+  `n_rollouts == 1` it is a single realized-dice line and **not** a probability, which the payload's
+  own `caveats` say and every surface must repeat.
+
+`model.py` carries `win_prob_at` for these — the counterfactual analog of the
+trace's recorded win-prob array, since a re-rolled successor has no saved row, so
+it re-reads the head stash after a forward on s' (mirroring `belief` / `damage_op_view`). (`value_dist_at` was deleted with the dist head, L1.)

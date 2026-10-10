@@ -1,524 +1,206 @@
 # CLAUDE.md — `src/main/prober/` (forensic-replay inspector)
 
 The **prober**: browse the `eval_traces` a training run writes and inspect *why the policy chose
-what it did* at any saved decision point.
+what it did* at any saved decision point. No server, no poke-env: battles are read from the RUST
+CORE.
 
 ```bash
 # in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python3 -m main.prober <models_dir | run_dir>        # the browser front end -> :6008
 python3 -m main.prober.query <cmd> ...               # the JSON CLI, for agents and scripts
+python3 -m pytest src/main/prober -q                 # the suite
 ```
 
-
 **The DETAIL lives in `designs/prober/`** — an always-current tree that OWNS what it holds and is
-updated in the same pass as the code, exactly like this leaf. This file is a CONSTITUTION, a
-COMMAND CARD and a MAP: the rules, the invocations, the module maps and every hazard that has
-already cost a wrong reading. Follow the pointer when you touch the subject.
+updated in the same pass as the code, exactly like this leaf. This file is the rules, the
+invocations, the module maps and the hazards that have already cost a wrong reading. The leaf as it
+stood before the 2026-10-10 cut is frozen at
+`designs/research_state/claude_md_archive/src_main_prober_CLAUDE_2026-10-10.md` (history).
 
 | I am about to… | Read |
 |---|---|
-| read or change `/game`, THE battle viewer (turn story as ordered beats · the information perspective · intent · scouting notes · attention) | `designs/prober/battle_view_v2.md` (field map) + `designs/prober/battle_viewer_ux_2026-10-09.md` (why it is shaped this way, what was removed) |
-| read a decision's panels field by field | `designs/prober/analyze_panels.md` |
+| read or change `/game`, THE battle viewer (`/battle` redirects to it) | `designs/prober/battle_view_v2.md` (field map) + `designs/prober/battle_viewer_ux_2026-10-09.md` (why it is shaped this way) |
+| read a decision's panels field by field; the per-invocation flags; the label/op-order gotchas | `designs/prober/analyze_panels.md` |
 | change what the RESULT timeline says happened | `designs/prober/result_timeline.md` |
-| read or change the belief / threat views | `designs/prober/beliefs_and_threats.md` |
-| call `loops` / `triage` / `probe` | `designs/prober/session_scans.md` |
-| call any model-free reading method | `designs/prober/session_reading.md` |
-| read `analyze`'s JSON block by block | `designs/prober/analyze_output.md` |
-| run a re-roll / search / rollout probe | `designs/prober/counterfactual_probes.md` |
-| touch `ProbeModel` or trace discovery | `designs/prober/engine_and_model.md` |
+| read `win` / `loss` / `draw` on a trace, or an old tree's `draw: 0` | `designs/prober/result_vocabulary.md` |
+| read or change the belief / threat views, the species-clause reading | `designs/prober/beliefs_and_threats.md` |
+| call `loops` / `triage` / `probe`; the investigation recipe | `designs/prober/session_scans.md` |
+| call any model-free reading method; `critic_currency` | `designs/prober/session_reading.md` |
+| read `analyze`'s JSON block by block; β name provenance | `designs/prober/analyze_output.md` |
+| run a re-roll / search / rollout probe; the trace-quota selection; `overvalue_tau` | `designs/prober/counterfactual_probes.md` |
+| touch `ProbeModel`, trace discovery, core traces, the per-battle model ladder, obs offsets | `designs/prober/engine_and_model.md` |
 | diagnose a checkpoint that will not load | `designs/prober/arch_drift.md` |
-| choose `--impl node` vs `rust` | `designs/prober/sim_impl.md` |
+| choose `--impl node` vs `rust`; `--compile` | `designs/prober/sim_impl.md` |
+| groom `eval_traces/` | `designs/prober/retention.md` |
 | add or find a test | `designs/prober/tests.md` |
-| ask what a checkpoint REPRESENTS (linear probes, phazing use, depth / width use; `python -m main.probe_battery`, its own package) | `designs/prober/probe_battery.md` |
+| ask what a checkpoint REPRESENTS (`python -m main.probe_battery`, its own package) | `designs/prober/probe_battery.md` |
 
-History — the retired Textual TUI, its panels, its keys and manual review mode — is in
-`designs/research_state/claude_md_archive/prober_leaf_history.md`. Nothing there is current.
-
-**TWO surfaces over one engine, and that is the whole design.** `engine/` + `session/` are the
-analysis; `web/` renders it for a human and `query.py` prints it for an agent. Neither is a layer
-on the other.
-
-**Both are PACKAGES whose `__init__.py` is a re-export hub** (2026-08-23 — they were single
-3,058- and 2,573-line modules). `from main.prober.engine import <anything>` and
-`from main.prober.session import <anything>` resolve exactly as they always did; the module maps
-are in *Engine / app split* and *Agent API & JSON CLI* below, and `hub_contract_test.py` pins the
-full pre-split export set, the no-cycle rule, and `ProbeSession`'s mixin base list.
-
-
-**⚠ THE TEXTUAL TUI IS GONE** — `python -m main.prober` starts the WEB app, and its two TUI-only
-flags (`--ckpt`, `--inv`) print what replaced them instead of failing. `web/` is the only
-human-facing surface. What was dropped with it, and why:
+The Textual TUI is RETIRED: `python -m main.prober` starts the WEB app, and its two TUI-only flags
+(`--ckpt`, `--inv`) print what replaced them instead of failing. History:
 `designs/research_state/claude_md_archive/prober_leaf_history.md`.
-
-**Reading a game turn by turn** is `battle_turns()` (below) — model-free, so it opens instantly.
-`query turns` prints the whole game as JSON; the web reads a game in `/game` (the classic `/battle` replay was merged into it on 2026-10-09 and redirects there). The
-plain-text battle log is `engine.timeline_entry_text`, and the vocabulary it draws on
-(`engine.CANT_PHRASE` / `NO_EFFECT_TEXT` / `surprise_phrase`) lives in the ENGINE precisely so that
-a reason one surface learns cannot go missing on another.
 
 ## Engine / app split (the important seam)
 
-The analysis is a **pure, framework-agnostic engine** (`engine/` + `model.py`); the web front end
-(`web/`), the JSON CLI (`query.py`) and the one-shot `probe_replay.py` are all thin callers. This is
-the single source of truth — change the analysis once, every surface follows. It is also why
-retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not reasoning.
+**TWO surfaces over one engine.** `engine/` + `session/` + `model.py` are the analysis — pure and
+framework-agnostic; `web/` renders it for a human, `query.py` prints it for an agent, and
+`src/main/probe_replay.py` is a one-shot caller. Change the analysis once and every surface follows; neither
+surface is a layer on the other. **Every torch call goes through the injected `model`**, so the engine
+is unit-tested with a `FakeProbeModel` (`engine_test.py`).
 
-- **`engine/`** — `analyze_invocation(model, summary, npz, inv_index) →
-  InvocationAnalysis` (a tree of frozen dataclasses: `ActionRow`, `MatchupView`,
-  `InterventionSweep`, `Saliency`, …). No printing, no Textual, no file IO beyond
-  the passed-in arrays. **Every torch call goes through the
-  injected `model`**, so the whole engine is unit-tested with a `FakeProbeModel`
-  (no torch) — see `engine_test.py`. One module per concern, a strict DAG (leaves first),
-  with `__init__.py` the re-export hub:
+`engine/` and `session/` are PACKAGES whose `__init__.py` is a re-export hub: `from main.prober.engine
+import <anything>` resolves as before the split; `hub_contract_test.py` pins the export set, the
+no-cycle rule and `ProbeSession`'s mixin base list. `engine/` is a strict DAG, leaves first:
 
-  | module | holds |
-  |---|---|
-  | `views.py` | every frozen dataclass an analysis returns — the DATA MODEL. No numpy, no IO |
-  | `util.py` | the shared leaves: percent parsing, npz access, species keys, move predicates |
-  | `opponents.py` | opponent-NAME ordering (sentinels first, strongest first) |
-  | `flags.py` | `summary_flags` + the cure-option ("heal ≠ cure") helpers |
-  | `protocol.py` | reading the RAW Showdown protocol out of a trace's `*_replay.html` |
-  | `board.py` | the BOARD read-model (`build_board`) |
-  | `timeline.py` | the RESULT timeline — HP loss re-attributed, one line per action |
-  | `beliefs.py` | species / move / exclusive-species beliefs + the refinement trajectory |
-  | `intent.py` | the α/β opponent-intent read + `awareness_text` |
-  | `spread.py` | believed vs TRUE derived spreads (the DamageOperator's stat input) |
-  | `switch_in.py` | forced-switch OUTGOING damage per bench candidate |
-  | `decode.py` | `_faithfulness` / `_matchups` / `_intervention_sweep` / `_saliency` / `_threats` / `decode_incoming_belief` |
-  | `analyze.py` | `analyze_invocation` — the top-level entry — plus `build_meta` (`build_value_dist` was deleted with the value-dist head, L1) |
-  | `taxonomy.py` | loss attribution: the turning-point category table |
-  | `probes.py` | representation probing (`fit_probe`) |
-  | `turn_events.py` | `/game`'s TURN STORY: every state-bearing protocol line → a typed event (side from the trainee's seat, the mon named by SPECIES never nickname, HP as % of max, the `[from]` source), and the board after each turn as a fold over the same lines (incl. the items / abilities the protocol revealed) |
-  | `turn_beats.py` | the turn's events grouped into ordered BEATS — phase (lead · start · switch · move · replace · residual · end, read off the protocol's own framing), execution order + "moved first", consequences under their cause, faint causes, the rail's per-side summary |
-  | `perspective.py` | INFORMATION PERSPECTIVE: every board fact tagged public / ours / hidden (from the fold + both teams' reconstruction sheets), and `shown(vis, view)` — the ONE rule `/game`'s `fv` macro applies |
-  | `readout.py` | `/game`'s MODEL panels from one battle capture: the flat opponent pointer with the label mapped by the training rule (+ the battle's calibration), the hypothesis tokens and their evolution, the trunk's seat labels and attention summary, the operator facts |
-  | `scouting.py` | `/game`'s SCOUTING NOTES from the same capture: per revealed opponent mon the believed moves / item / spread / HP type, the verdict against the reconstruction's truth, the change since the previous decision, the unseen slots |
-- **`model.py`** — `ProbeModel`: the torch boundary, and the ONLY place a forward or backward runs.
-  `load(ckpt)` does a plain strict load (`snapshot.load_checkpoint_strict` — no env, no `ModelVersion`
-  check; sb3's non-strict "SB3 < 1.7.0" retry is REFUSED, `gen3_strict_checkpoint_load_v1`, so a checkpoint
-  missing an extractor submodule is an `ArchDriftError` diagnosis, never a model with that submodule at
-  fresh init), resolves `ObsOffsets`
-  once from `enc.get_layout()`, and raises
-  `ArchDriftError` (typed: `kind` + `plain`; `NoCheckpointError` when there is no checkpoint) on a stale one — checked against the RECORDED identity BEFORE the load (`arch_status`). `action_dist` / `logit_grad` are the forward/backward pair;
-  `belief`, `damage_op_view`, `move_belief`, `win_prob_at` and `architecture()` each
-  read a head's stash after one clean forward. **`capture_battle(obs, masks)`** is `/game`'s ONE
-  batched EAGER forward over a battle's stored decisions with read-only hooks (`model_capture.py`, the
-  same torch boundary): the trunk's attention recomputed from EVERY trunk round's own `in_proj`
-  + bias (the post-LN `BiasedEncoderLayer`s and, under `--trunk-layers 3/4`, the pre-LN `IdentityInitRound`s, over
-  `norm1(x)`; stacked in execution order; pinned against each round's output by `model_capture_test.py`), the pointer head's raw
-  scores, the flat opponent pointer + hypothesis set, the op stash, bounded top-k summaries of the belief stashes
-  (moves / item / spread / nature / HP type, per opponent slot — the scouting notes'); every hook removed in a
-  `finally`, so the cost when off is zero. The three non-torch decode helpers (`describe_global`,
-  `describe_team`, `describe_turn_outcome`) live here because they need the encoder. 🚨 **A turn's
-  events land in the NEXT decision's obs**, so `describe_turn_outcome` is read from decision *T+1*.
-  Detail: `designs/prober/engine_and_model.md`.
-- **`arch_status.py`** — can the MODEL views run on this run / step / checkpoint, from RECORDS (no torch, no
-  checkpoint opened)? One typed `ArchVerdict` (`current` · `incompatible` · `unrecorded`; a `kind` from
-  `arch_status.KINDS`; ONE plain sentence) used by the run PICKER (`web/runs.py`, cached by mtime), the per-step
-  marks (`ProbeSession.model_status`) and `ProbeModel.load`. 🚨 **Every incompatibility is ONE typed diagnosis**
-  (2026-10-09) — a different network family, a width mismatch, a rejected state_dict, a rejected value, a missing
-  or unreadable checkpoint, and the SILENT class (weights fit, the observation changed meaning —
-  `model_version.OBS_SEMANTICS_VERSION`, caught by the recorded config version alone). Detail and the kind table:
+| `engine/` module | holds |
+|---|---|
+| `views.py` | every frozen dataclass an analysis returns — the DATA MODEL. No numpy, no IO |
+| `util.py` | shared leaves: percent parsing, npz access, species keys, move predicates |
+| `opponents.py` | opponent-NAME ordering (sentinels first, strongest first) |
+| `flags.py` | `summary_flags` + the cure-option ("heal ≠ cure") helpers |
+| `protocol.py` | reading the RAW Showdown protocol out of a trace's `*_replay.html` |
+| `board.py` | the BOARD read-model (`build_board`) |
+| `timeline.py` | the RESULT timeline — HP loss re-attributed, one line per action |
+| `beliefs.py` | species / move / exclusive-species beliefs + the refinement trajectory |
+| `intent.py` | the α/β opponent-intent read + `awareness_text` |
+| `spread.py` | believed vs TRUE derived spreads (the DamageOperator's stat input) |
+| `switch_in.py` | forced-switch OUTGOING damage per bench candidate |
+| `decode.py` | `_faithfulness` / `_matchups` / `_intervention_sweep` / `_saliency` / `_threats` / `decode_incoming_belief` |
+| `analyze.py` | `analyze_invocation` — the top-level entry — plus `build_meta` |
+| `taxonomy.py` | loss attribution: the turning-point category table |
+| `probes.py` | representation probing (`fit_probe`) |
+| `turn_events.py` | `/game`'s turn story: every state-bearing protocol line → a typed event, and the board after each turn as a fold over the same lines |
+| `turn_beats.py` | the turn's events grouped into ordered BEATS (phase, execution order, consequences under their cause, faint causes, the rail's summary) |
+| `perspective.py` | INFORMATION PERSPECTIVE: every board fact tagged public / ours / hidden, and `shown(vis, view)` — the ONE rule `/game`'s `fv` macro applies |
+| `readout.py` | `/game`'s MODEL panels from one battle capture (opponent pointer, hypothesis tokens, attention, operator facts) |
+| `scouting.py` | `/game`'s SCOUTING NOTES: per revealed opponent mon the believed moves / item / spread / HP type vs the truth |
+
+The plain-text battle log is `engine.timeline_entry_text`, and its vocabulary (`engine.CANT_PHRASE` /
+`NO_EFFECT_TEXT` / `surprise_phrase`) lives in the ENGINE so a reason one surface learns cannot go
+missing on another.
+
+The other top-level modules (full text: `designs/prober/engine_and_model.md`):
+
+- **`model.py`** — `ProbeModel`, the torch boundary and the ONLY place a forward or backward runs.
+  `load(ckpt)` is a STRICT load (`snapshot.load_checkpoint_strict`; sb3's non-strict retry is refused),
+  checked against the RECORDED identity first (`arch_status`). **`capture_battle`** (`model_capture.py`)
+  is `/game`'s one batched eager forward with read-only hooks, every hook removed in a `finally`.
+  🚨 **A turn's events land in the NEXT decision's obs** — `describe_turn_outcome` is read from decision *T+1*.
+- **`arch_status.py`** — can the MODEL views run here, from RECORDS (no torch, no checkpoint opened)?
+  One typed `ArchVerdict` (`current` · `incompatible` · `unrecorded`, a `kind` from `arch_status.KINDS`,
+  one plain sentence), used by the run picker (`web/runs.py`), `ProbeSession.model_status` and `ProbeModel.load`.
+- **`discovery.py`** — pure filesystem, never opens a JSON or npz: `build_trace_tree` groups step →
+  opponent → battle by parsing PATH STRINGS, so a 1000-battle run opens instantly; `resolve_model_for_step`
+  picks the model per battle. 🚨 **The `<outcome>` alternation is BUILT from
+  `agents.training.trace_result.OUTCOMES`**, never retyped.
+- **`core_trace.py`** — a Rust-eval CORE TRACE ships a META-ONLY `*_summary.json`; `ProbeSession._summary`
+  EXPANDS it on read from the Rust core (`core_walk.py` runs `core_events --walk`; `core_recorder.py`
+  builds the summary with the live recorder's rules, labels from `agents.training.trace_labels`).
+  🚨 **The stored `<prefix>.p1.jsonl.gz` record is the AUTHORITY**: a walk whose protocol or decisions
+  differ RAISES `CoreTraceMismatch` — never repaired. Nothing is written into the run dir. A core trace has
+  NO `*_replay.html` (stand-in: `core_trace.protocol_log`) and no auxiliary heads (`win_probs` is NaN;
+  `analyze` re-runs the model). 🚨 **`core_trace` IS THE ONE `*_summary.json` READER under `src/`** —
+  `load_summary` / `load_summary_meta` / `refuse_core_trace` (`CoreTraceUnsupported` by name);
+  `src/trace_summary_reader_gate_test.py` fails any other opener (F-LH-5: one read ZERO decisions, silently).
+- **`core_walk.py`** — the transport + alignment: `walk(record, side)`, `decision_choices` (legal action →
+  choice string), `read_streams` (`core_events --obs-stream`: one side's text through the same parse chain
+  training's rows are encoded on — the successor rows lookahead / better-line score), `replay_log`.
+- 🚨 **No prober command needs poke-env**: every CLI command and the web app RUN with poke-env blocked
+  (`src/poke_env_free_entry_points_test.py`, whose `PROBER_POKE_ENV_COMMANDS` is a closed list, EMPTY).
+  `replay-counterfactual` plays out on the Rust core in process (`replay.py` → `utils/rust_env/counterfactual.py`).
+- **`web/`** — FastAPI + Jinja2/HTMX over `ProbeSession`, all JS vendored. The ONLY human-facing surface.
+  Its own leaf: `src/main/prober/web/CLAUDE.md`.
+
+## Hazards that have cost a wrong reading
+
+- 🚨 **Model-loading views work ONLY at the CURRENT architecture** (owner, 2026-10-08: no pinned-checkout
+  worker). Model-FREE (`scan` · `triage` · `turns` · `battle_story` · `awareness` · `loops` · `overview` ·
+  `find` bar `disagree` · `falsify` · `falsify_scan` · `calibration` · `decision_table`) works on every run;
+  model-LOADING (`analyze` · `battle_readout` · `decision_attention` · `probe` · `lookahead` · `better_line` ·
+  `replay_counterfactual` · `history_saliency` · `find disagree`) only on a current-arch run.
+- 🚨 **Every incompatibility is ONE typed diagnosis** (`ArchDriftError.kind`, 2026-10-09), said BEFORE
+  trying, including the SILENT class (weights fit, the observation changed meaning — only
+  `OBS_SEMANTICS_VERSION` in `agents/model/model_version/constants.py` can see it). `ArchDriftError` is the
+  EXPECTED outcome on an archived checkpoint: render its `plain` sentence, fold `exc.detail` under it, never
+  collapse it to "analysis failed", and branch on `kind`, never on message text. Kinds and walls:
   `designs/prober/arch_drift.md`.
-- **`discovery.py`** — pure filesystem, and it never opens a JSON or an npz: `build_trace_tree`
-  groups step → opponent → battle by **parsing path strings only**, so a 1000-battle run opens
-  instantly. It reads each cycle's `eval_manifest.json` for model identity, and
-  `resolve_model_for_step` picks the model **per battle**. 🚨 **The `<outcome>` alternation is BUILT
-  from `agents.training.trace_result.OUTCOMES`**, never retyped here. A trace's siblings:
-  `*_replay.html` (the raw protocol every honest claim is checked against) and, on bridge-eval
-  traces, `*_reconstruction.json` (what every counterfactual probe needs).
-  Detail: `designs/prober/engine_and_model.md`.
-- **`core_trace.py`** — a Rust-eval **CORE TRACE** (`gen3_core_trace_v1`, written by
-  `agents.training.rust_eval.traces`) ships a META-ONLY `*_summary.json`; `ProbeSession._summary`
-  EXPANDS it on read to the full legacy shape (`teams` + `invocations`) FROM THE RUST CORE
-  (`gen3_core_walk_v1`, poke-env retirement P5): `core_walk.py` replays the reconstruction through
-  `core_events --walk` (per trainee decision the core's `present()` view, legality, slot registries,
-  frozen `TurnDelta` projection, mask and choice tokens; the terminal view + delta) and
-  `core_recorder.py` builds the summary with the live recorder's rules over those read-models (the
-  labels are `agents.training.trace_labels`, shared with `BattleRecorder`; the reward is
-  `reward_config.terminal_breakdown`). No poke-env battle is built. 🚨 **The stored
-  `<prefix>.p1.jsonl.gz` record is the AUTHORITY**: a walk whose protocol differs from it, or whose
-  decisions do not line up with `states.npz` (count, per-row legal mask, each row's action mapping
-  to the command actually played, result), RAISES `CoreTraceMismatch` — never repaired. `_meta` reads
-  the stored meta without expanding (so `run_summary` stays instant). Cached in memory only;
-  nothing is written into the run dir. ABSENT on a core trace: `*_replay.html` (its stand-in is the
-  expansion's own protocol log, `core_trace.protocol_log`), and every auxiliary head — `win_probs`
-  is NaN, `belief` / `opp_intent` / `move_logits` / `spread_belief` are not stored (and `value_dist` no longer exists in ANY new trace — the head was deleted, L1; old traces keep the array and `awareness.py` still reads it)
-  (`analyze` re-runs the model on the stored obs). 🚨 **`core_trace` IS THE ONE `*_summary.json`
-  READER under `src/`** — `load_summary` (expanded), `load_summary_meta` (stored meta, never
-  expands), `refuse_core_trace` (a reader that needs a head a core trace lacks raises
-  `CoreTraceUnsupported` by name). `src/trace_summary_reader_gate_test.py` fails any module that
-  opens one itself (F-LH-5: such a reader saw meta only and read ZERO decisions, silently); its
-  allowlist is EMPTY. Detail: `designs/prober/engine_and_model.md`.
-- **`core_walk.py`** / **`core_recorder.py`** — the prober's battle reading from the RUST CORE (P5).
-  `core_walk` is the transport + alignment: `walk(record, side)` (`core_events --walk`),
-  `decision_choices` (a decision's legal action → choice string, for falsify / lookahead /
-  better-line) and `read_streams` (`core_events --obs-stream`: one side's TEXT through the core's
-  parse chain with the trackers on — the chain training's rows are encoded on — our actions replayed
-  by index; the successor rows lookahead / better-line score); `replay_log` is the stand-in
-  `*_replay.html` log (the poke-env player's dispatch). `core_recorder` turns a walk into the summary.
-  🚨 **No prober command needs poke-env** (P6, 2026-10-07: `replay-counterfactual` plays the rest of a
-  battle as one in-process play-out on the Rust core — `replay.py` → `utils/rust_env/counterfactual.py`,
-  `gen3_cf_core_playout_v1`, the in-core bot ports); every CLI command and the web app RUN with poke-env
-  blocked (`src/poke_env_free_entry_points_test.py`, whose `PROBER_POKE_ENV_COMMANDS` is a closed list,
-  EMPTY). Detail: `designs/prober/engine_and_model.md`.
-- **`web/`** — the browser front end (FastAPI + Jinja2/HTMX over `ProbeSession`). It is
-  **first-class for the GPU obs**: the learned belief/op signals tagged `🔷 GPU` render PRIMARY
-  and the decoded CPU obs regions they subsume tagged `📋 CPU-obs` render dimmed, because the
-  operator's physics supersede the older type-effectiveness decode and a reader must be able to see
-  which is which. **Beliefs** is the model's world-model vs ground truth; **Threats** leads with the
-  DamageOperator. See `web/CLAUDE.md`, and `designs/prober/beliefs_and_threats.md` for
-  what those panels MEAN.
-
-## THE RESULT VOCABULARY — `win` · `loss` · `draw`, and what an old tree's zero means
-
-One declaration, `agents/training/trace_result.py` (`gen3_trace_result_v2`, pure stdlib — the
-prober imports it without pulling in the training stack, exactly like `trace_selection`). The
-recorder writes it, the filename prefix carries it and every filter here is built from it.
-
-| `meta.result` | `meta.draw_kind` | how the battle layer reports it |
-|---|---|---|
-| `WIN` | — | `won` |
-| `LOSS` | — | `lost`, before the turn cap |
-| `DRAW` | `timeout` | `lost` **and** `turn >= MAX_TURNS` (250) — the trainee FORFEITED at the deadline |
-| `DRAW` | `tie` | `won`/`lost` both falsy, finished — the sim's `\|tie\|` |
-
-**A TIMEOUT ARRIVES WEARING A LOSS'S FLAGS.** The trainee forfeits at the cap
-(the stall forfeit: `agents.training.stall.StallConfig`; the Python `inference/player._handle_stall` that issued it was
-deleted in T27 P6), so the stream reports `lost=True`. The training reward never
-agreed — the terminal fold (`reward_config.terminal_breakdown`, the Rust env core's terminal) pays `draw_penalty`
-for exactly that state, keyed on the TURN COUNT — and `classify_result` now tests the cap **before** the loss, on the same constant
-(`reward_weights._TIMEOUT_TURN_CAP` == `MAX_TURNS`; parity pinned by
-`trace_result_test.test_the_classification_matches_the_training_rewards_own_timeout_rule`).
-
-🚨 **A PRE-DRAW-BUCKET TREE'S `draw: 0` IS NOT A MEASUREMENT.** Every trace written before
-2026-09-07 carries no `meta.result_vocabulary`, and that ABSENCE is what dates it. In that era a
-timeout was written as an ordinary `loss_*` (separable only by `meta.turns >= MAX_TURNS`, which is
-what the G7 kill clause has always done) and a tie was **dropped before the summary was written** —
-no file, no count. So such a tree can estimate a STALL rate but a TIE rate is **NOT MEASURABLE**
-there. `run_summary()` reports `result_vocabulary` (the eras present, sampled) and
-`result_vocabulary_note` (`trace_result.era_note`, `None` when the tree is all-current); `/` prints
-the note above the outcome chart, and the chart omits the draw series entirely rather than drawing
-a flat zero line. A MIXED tree — a run that restarted onto new code mid-flight — gets the note too.
-
-🚨 **AN UNKNOWN RESULT IS REFUSED, NEVER RENDERED.** `battle_overview` / `battle_turns` call
-`trace_result.result_of`, which raises `UnknownTraceResult` on a token outside the vocabulary
-(`"TIE"` included — it is the string the *previous* writer would have used). A forensic tool that
-displays an outcome it cannot classify is how a mislabelled bucket survives being looked at. An
-ABSENT result is not an unknown one and passes through.
-
-**Where draws sit in the CAPTURE QUOTA: their own bucket** (`_FORENSIC_DRAW_QUOTA` = 5, beside
-win 5 / loss 10). Folding them into the loss quota — which is what the old code did — lets a stall
-storm evict the decisive losses the prober exists to study. `calibration` EXCLUDES draws (no binary
-realized label) and reports `n_draw_excluded` rather than dropping them silently; `awareness_scan`'s
-`cap_loss` accepts `loss` **or** `draw` at the cap so the row means the same thing across the whole
-archive.
-
-## ⚠ Architecture drift — a model-loading probe only works on the CURRENT generation
-
-**MEASURED 2026-08-13 over every run in `models/`: 79 runs carry a checkpoint, and 0 of them load
-under current code.** Not one archived run is even at the current obs dim — the closest is 2667
-against the code's 2669 (the v65 deadline clock's +2). What they were trained on: `2992` ×42 ·
-`3409` ×8 · `3457` ×8 · `3469` ×6 · `2667` ×5 · `3390` ×3 · `3391` ×3 · `2889` ×3 · `2925` ×1.
-
-This is **by design, not a bug** — the root `CLAUDE.md` says *"checkpoint compatibility is not a
-concern"* and `ARCH_SIGNATURE` exists to reject stale checkpoints. But it decides how to read this
-whole tool:
-
-| tier | works on | why |
-|---|---|---|
-| **model-free** — `scan` · `triage` · `turns` · `battle_story` · `awareness` · `loops` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
-| **model-loading** — `analyze` · `battle_readout` · `decision_attention` · `probe` · `lookahead` · `better_line` · `replay_counterfactual` · `history_saliency` · `find disagree` | **only a run at the CURRENT arch** | re-runs the policy under today's code |
-
-So the durable surface is the model-free one, and it is not a coincidence that the web front end was
-built there first. **The owner's ruling (2026-10-08): the prober supports only the CURRENT architecture**
-("we are still rapidly iterating") — there is no pinned-checkout worker; on an older run `/game`'s
-model panels render one plain sentence with the `ArchDriftError` diagnosis folded under it. A model-loading view is worth having for the run you are *currently training* and
-stops working the day the obs layout moves.
-
-🚨 **EVERY way a checkpoint can be unusable is ONE typed diagnosis (2026-10-09), and the model slots say it BEFORE
-trying** — the owner: *"clean up the model selection; 99 % are irrelevant, and it doesn't even detect the new error
-correctly."* Two defects behind that: a checkpoint whose weights FIT but whose observation changed meaning (v151's
-Toxic cell re-scale) loaded without a word — nothing but `OBS_SEMANTICS_VERSION` (`model_version/constants.py`,
-compared with the recorded `config_version` by `arch_status`) can see it; and a run with traces but no weights died as
-a raw `FileNotFoundError`. Now `ArchDriftError.kind` is one of `arch_signature · obs_dim · obs_semantics ·
-state_dict · config_value · newer_than_code · no_checkpoint · unreadable · load_failed`, its `plain` is one sentence
-("This run's architecture (config vN, signature S) is older than the code (config vM…); model views need a
-current-architecture checkpoint."), and `/game` / `/analyze` render that reason on first paint from
-`ProbeSession.model_status` (model-free). The picker is the same classification (`web/CLAUDE.md`).
-
-**The three walls behind the diagnosis** — a deleted flag still baked into the zip's
-`features_extractor_kwargs` (recovered by dropping unknown kwargs, and *which* ones is reported),
-a value the code now validates (deliberately NOT recovered), and weight shapes that no longer fit
-(not recoverable in principle) — plus what the error message names and the ~5 ms `peek_checkpoint`
-that makes diagnosing cheap: `designs/prober/arch_drift.md`. Tests: `model_test.py`.
-
-## Per-battle model resolution (exact → nearest → most recent)
-
-A trace was generated by the eval snapshot at *its* step, so the prober resolves
-and loads the model **per selected battle**, not once at startup
-(`discovery.resolve_model_for_step(tree, step, override, tier)` → `ModelChoice`):
-
-1. **exact** — the retained `eval_traces/step_<N>/snapshot.zip` (written when
-   training ran with `--keep-eval-snapshots`); bit-exact, faithfulness ≈ 100%. Since 2026-10-10 it is a
-   HARD LINK to the same-step `checkpoints/checkpoint_<N>_steps.zip` where that is byte-identical
-   (the manifest's `snapshot_storage.mode`; a copy otherwise) — an ordinary path to this ladder, and it
-   survives the checkpoint's deletion.
-2. **nearest** — the persisted `checkpoint_<N>_steps.zip` with the smallest
-   `|Δstep|` (exact weights at a nearby step). `discovery.list_checkpoints` searches BOTH the
-   current `<run>/checkpoints/` and the legacy `<run>/` root (deduping a copy-backported step to
-   the `checkpoints/` path), so the ladder finds checkpoints under either layout.
-3. **most recent** — **the run's LAST SNAPSHOT**, resolved through the ONE choke point
-   `agents.training.fixed_opponent_pool.resolve_model_ref`, so a bare run dir means here exactly
-   what it means to a `--stable-opponents` spec.
-
-🚨 **This tier was `best_model` → latest until 2026-09-06, which is the ordering
-`gen3_last_snapshot_resolution_v1` INVERTED everywhere else** — `best_model/best_model.zip` is the
-BOT-WIN-RATE export and is now the LAST rung, a fallback for a run with nothing else. The prober
-kept a second opinion, and it was not academic: measured over five archived runs on this box, **all
-five disagreed**, the prober loading the bot-selected export while its own tier label read "most
-recent" (one pick differed by ~23.3M steps). `resolve_checkpoint_with_rung` returns the RUNG beside
-the file and `ModelChoice.detail` prints it, so a `best_model_fallback` read says outright that
-those weights were chosen by bot win rate rather than by being latest — a different claim, which
-must not render as the same sentence. It falls back to the historical ladder (reported as its own
-rung, never silently) when the choke point cannot resolve, since it needs a `model_config.json` and
-
-`--ckpt` forces an override. The badge shows the active tier + the trace's `git_hash` /
-`arch_signature` from the manifest, so any faithfulness drift is explained, and loaded models are
-cached by path (`_model_cache`) so revisiting a step is instant. Even for runs that predate the
-manifest (no snapshots), the ladder picks the **nearest checkpoint** — strictly better than always
-using `best_model`.
-
-## What one decision's analysis CONTAINS (the `/analyze` panels)
-
-Everything below renders purely from one `InvocationAnalysis` — this section is about what the
-FIELDS mean, which is why it survived the TUI that used to draw them. Where it still describes a
-terminal (glyphs, colour ramps, fixed-width columns), read that as the SEMANTIC it encodes: `/analyze`
-renders the same distinction in HTML, and `web/CLAUDE.md` says how. Panel-by-panel field map, kept
-current with the renderer, lives there.
-Panel by panel — the Summary header's three groups, MOVES / SWITCHES / OPP TEAM, the two belief
-forms, Board, Faithfulness, Intervention, Saliency, Flow and Outcome — is
-`designs/prober/analyze_panels.md`. What stays here is the part a surface can get WRONG.
-
-### What the timeline may CLAIM
-
-🚨 **"— no effect" IS A CLAIM, AND IT IS ONLY OURS TO MAKE WHEN THE EVIDENCE SUPPORTS IT**
-(`engine._no_effect_supported`, 2026-09-07). Exactly three things support it: the recorder DECODED
-the move's fate/effectiveness, the SIM said so (`|-fail|` / `|-immune|` / `|-miss|` in the move's own
-protocol window), or that window was LOCATED and is EMPTY of effect tags. Anything else renders
-**`— outcome unrecorded`** — a gap in the evidence, said out loud, and *not* a synonym. And a window
-that CONTRADICTS the claim (it carries effect tags) beats every recorded outcome, because the log is
-the sim's own transcript while the recorded `events` list is known to have had a hole. The assertion
-form of the same rule is **`verify_timeline_against_protocol`** → raises `TimelineContradiction`;
-it is deliberately NOT called from `build_result_timeline` (a forensic view must still render a trace
-it cannot fully explain) — it is for tests and for a surface that would rather stop than mislead.
-
-⚠️ **"Nothing happened" had THREE causes and one sentence, so the line described the wrong thing.**
-The recorded outcome says what a side CHOSE; nothing in a model-free trace says whether the choice
-ever ran, so a move that never executed was explained as one that executed and achieved nothing — a
-claim about the MOVE on a turn where the move never happened. Reported on gen-16 `loss_s0_004`:
-Forretress CHOSE Explosion on turn 6, was outsped by a +2 Tyranitar and killed, and the timeline
-read `we explosion — no effect`. Two pure readers over the turn's protocol slice fix it, siblings of
-`move_order_from_protocol` and matching sides the same way:
-
-| the log says | now reads | before |
-|---|---|---|
-| no `\|move\|` for that side, and it fainted | `— never moved (fainted first)` | `— no effect` |
-| `\|cant\|<mon>\|frz` (or par/slp/flinch/…) | `— couldn't move (frozen)` | `— no effect` |
-| `\|-immune\|<target>` | `— no effect (immune)` | `— no effect` |
-
-
-The three pure protocol readers that supply that evidence (`protocol_action_fate` /
-`protocol_move_result` / `protocol_move_effects`), the precedence between a RECORDED outcome and
-the log, and the measured 9.8% of move lines they repaired, are in
-`designs/prober/result_timeline.md`.
-
-🚨 **A DETECTOR READS THE RAW PROTOCOL; ONLY A HUMAN SURFACE READS THE RENDERED TIMELINE.**
-`loops.py` keys on each battle's `*_replay.html` protocol lines, never on
-`engine.timeline_entry_text` — the rendering is a SENTENCE, and a detector must key on the fact
-underneath it. The timeline's job is to be readable, the detector's is to be exact, and the two
-must not be wired together.
-
-### The SPECIES-CLAUSE reading (`a.exclusive_belief`) — what it is and what it is NOT
-
-`BeliefHead` publishes one **independent** softmax per hidden slot, so nothing in its
-parameterization can express *"at most one of you is Salamence"*. Measured on gen-15, three hidden
-slots read P(Salamence) = 0.39 / 0.60 / 0.39 at one decision — an expected count of 1.38 on a team
-the species clause caps at 1. `engine.build_exclusive_belief` (over the pure operator
-`agents.inference.species_exclusivity`) applies that constraint at READ time and publishes an
-`ExclusiveBeliefView` beside the raw one: the adjusted per-slot rows, a **point team hypothesis**
-(the greedy no-duplicates assignment — most likely team consistent with the clause), and the raw
-belief's incoherence headline.
-
-> ⚠️ **The model's belief is `a.belief`, the raw marginals. `a.exclusive_belief` is a reading aid.**
-> Both are always rendered; showing only the adjusted view would substitute the prober's arithmetic
-> for the model's actual state, which is the same class of dishonesty the whole tool exists to
-> avoid. The panel says so in its own copy, and `app_test.py` pins that it does.
-
-It hangs off the RE-COMPUTED branch only, never the summary fallback (whose top-3 rows do not sum
-to 1), which is also why the model-free `battle_turns` / `/battle` do not carry it. The two
-distinct defects it separates (`max_expected_count`/`illegal_mass` vs `duplicate_top1`), the clean
-`revealed_leak_max` reading and its dependence on `--species-prior-fusion`, and the contents of
-both GPU-first sections, are in `designs/prober/beliefs_and_threats.md`.
-
-**Per-invocation flags** (`engine.summary_flags`, model-free): `switch` · `uncertain` (top recorded
-prob < `UNCERTAIN_THRESHOLD` = 0.34, a genuine tossup) · `faint` · `opp-switch` (the OPPONENT
-voluntarily pivoted — `engine.opp_voluntary_switch`) · `cure-skipped` · plus `disagree`, added per
-analysis when the loaded model's argmax ≠ chosen. `query find <battle> <flag>` lists them. Two of
-them exist because a reader got the position wrong without them:
-
-### The "heal ≠ cure" trap (`cure-skipped`)
-
-**The "heal ≠ cure" trap (`cure-skipped`).** Recover / Soft-Boiled / Wish restore **HP and nothing
-else** — in Gen 3 only Refresh (self) and Heal Bell / Aromatherapy (team) CLEAR a status, and Rest
-"cures" by *inflicting* sleep. A move list shows all of them side by side, so a Toxic that keeps
-escalating through a heal loop reads as a sim bug when it is correct mechanics plus a policy choice.
-Three pure engine helpers make that legible: `is_status_cure(move_id)` (data-driven off the facade's
-`curesSelfStatus`/`curesTeamStatus` — never a hardcoded id list), `has_curable_status(status)` (splits
-the recorder's bundled `"TOX(2)|TAUNT"` — a volatile is not curable), and **`self_cure_options(inv)`**
-→ the cures that were **legal AND would have done something** (a Taunted cure and a cure with nothing
-to cure are both non-options). The flag fires when a cure was on the table and we did something else;
-`InvocationAnalysis.cure_options` carries the labels, so the page and the `analyze` JSON read ONE
-engine output rather than each deciding what counts as a real option. `query find <battle> cure-skipped` lists them.
-
-### The "computed-vs ≠ resolved-vs" guard (`opp-switch`)
-
-**The "computed-vs ≠ resolved-vs" guard (`opp-switch`).** When the opponent voluntarily switches, our
-move RESOLVES against the switch-IN, not the active we computed damage against — and the net result
-(e.g. Earthquake → immune) sits right next to a damage table computed vs the *pre-switch* active, which
-is easy to misread as "the model attacked the switch-in." So `analyze_invocation` carries
-`opp_switched_to` (the pivoted-in species), surfaced THREE ways: the `opp-switch` flag/glyph (markable +
-jumpable), a `⇄ opp→<species>` marker in the always-visible battle header, and a one-line callout at the
-top of the **Threats** panel (`⇄ opp pivoted <active>→<switch-in> — damage below is vs <active>
-(pre-switch); your move RESOLVED vs <switch-in>`). The battle header ALSO shows the opponent AGENT +
-its eval play **regime** for self-play sentinels — `opp: sentinel_0 [greedy]` vs `[stochastic@T]` (read
-from the run `metadata.json` `cli_args` `eval_sentinel_greedy`/`self_play_temp` by `_read_eval_opp_regime`)
-— so a self-play loss reads correctly: `greedy` = best-vs-best (the mirror genuinely out-decided us),
-`stochastic@T` = the opp was sampling its distribution (some "great play" is the temperature handout).
+- 🚨 **Per-battle model resolution is exact → nearest → most recent**, and "most recent" is the run's LAST
+  SNAPSHOT through the one choke point `agents.training.fixed_opponent_pool.resolve_model_ref`; `best_model`
+  (the bot-win-rate export) is the last-resort rung and is NAMED as such (`ModelChoice.detail`) — five of five
+  archived runs once loaded it while labelled "most recent". Faithfulness is exact only on the `exact` tier.
+- 🚨 **A TIMEOUT ARRIVES WEARING A LOSS'S FLAGS**, and `classify_result` tests the turn cap BEFORE the loss
+  (parity with the training reward pinned by `trace_result_test`). **A pre-2026-09-07 tree's `draw: 0` is NOT
+  a measurement** (no `meta.result_vocabulary` ⇒ ties were dropped, timeouts written as losses); **an UNKNOWN
+  result is REFUSED** (`UnknownTraceResult`), never rendered. Draws have their OWN capture quota; `calibration`
+  excludes them and reports `n_draw_excluded`. Detail: `designs/prober/result_vocabulary.md`.
+- 🚨 **"— no effect" IS A CLAIM** (`engine._no_effect_supported`): only a decoded fate, a sim tag
+  (`|-fail|` / `|-immune|` / `|-miss|`) or a located, EMPTY window supports it; anything else renders
+  `— outcome unrecorded`, and a window carrying effect tags beats every recorded outcome. "Never moved
+  (fainted first)" and "couldn't move (frozen)" are distinct lines. Detail: `designs/prober/result_timeline.md`.
+- 🚨 **A DETECTOR READS THE RAW PROTOCOL; ONLY A HUMAN SURFACE READS THE RENDERED TIMELINE.** `loops.py`
+  keys on protocol lines, never on `engine.timeline_entry_text`.
+- ⚠️ **The model's belief is `a.belief`, the raw marginals; `a.exclusive_belief` (the species-clause
+  reading) is a reading aid.** Always render both — showing only the adjusted view substitutes the prober's
+  arithmetic for the model's state (`app_test.py` pins the copy). Detail: `designs/prober/beliefs_and_threats.md`.
+- 🚨 **`critic_currency` says what every V MEANS** (`ProbeSession.critic_mode()`): an ABSENT `critic` key in
+  `model_config.json` means `shaped` (a fact about the archive), `winprob` means V ∈ [0,1] with 0.5 even.
+  Never read a V without it. Detail: `designs/prober/session_reading.md`.
+- 🚨 **`overvalue_tau` is in the CRITIC'S OWN UNITS** — the shaped 5.0 carried onto a win-prob critic makes
+  `critic_overvalued` read a confident, false 0. `None` resolves it per run; an explicit value is honoured
+  and a tau no gap can reach raises `threshold_warning`.
+- 🚨 **β name PROVENANCE**: a β candidate not `revealed` is named by the species POSTERIOR, which was a mon
+  not on the team at all in 73.3% of pivots — one such label produced a wrong research conclusion. Read time
+  attaches `engine.BELIEF_NAME_CAVEAT` and NEVER re-derives a name. Detail: `designs/prober/analyze_output.md`.
+- 🚨 **THE TRACE QUOTA PREFERS LOSSES — read `selection` FIRST** (`ProbeSession.trace_selection`,
+  declared in `agents/training/trace_selection.py`). A tree that records none is `known: false`, SELECTION
+  UNKNOWN — never read as uniform. Detail: `designs/prober/counterfactual_probes.md`.
+- 🚨 **Move-action labels are ALREADY in action-index order — do NOT re-sort them**
+  (`engine_test::test_recorded_actions_are_action_index_aligned`); the op's OUR-move blocks are
+  action-ordered too, and the old "op move order ≠ action order" caveat must never come back (`app_test.py`).
+  Detail: `designs/prober/analyze_panels.md`.
+- **Obs offsets resolve at runtime** from `Gen3ObservationEncoder.get_layout()`; deleted regions resolve to
+  **0 = absent** and every consumer no-ops on 0; `engine_test.py::test_offsets_resolve_matches_layout` pins
+  them. A trace whose obs length ≠ today's `total_dim` gets the `a.obs_mismatch` banner. A missing
+  `_states.npz` or `has_state=0` yields `warnings` and no panels — handled, not a crash.
+- **Blocking work**: the checkpoint load and every forward/backward block. The web runs `def` handlers on a
+  worker thread, loads `/analyze` via an HTMX fragment and puts minutes-long probes in the job registry
+  (`web/CLAUDE.md`); `query.py` and `src/main/probe_replay.py` are one-shot and simply block.
+- `models/` lives only in the MAIN checkout — from a worktree point the prober at an absolute `models/...` path.
 
 ## Agent API & JSON CLI (`session/`, `query.py`)
 
-`ProbeSession` is a framework-agnostic facade so **agents/scripts** can probe a
-model without a UI — all methods return JSON-serializable dicts and model
-loading uses the same exact→nearest→recent ladder (cached per process). A
-`battle_id` is the trace's `*_summary.json` path **or** a short
-`step_<N>/<Opponent>/<outcome>_<idx>` id.
+`ProbeSession` is the framework-agnostic facade: every method returns a JSON-serializable dict, model
+loading uses the exact → nearest → recent ladder (cached per process), and a `battle_id` is the trace's
+`*_summary.json` path **or** a short `step_<N>/<Opponent>/<outcome>_<idx>` id. `ProbeSession(...,
+model_loader=fn)` injects a fake model in tests (no torch). It is assembled from one MIXIN per family:
 
-**`session/` is a package; `ProbeSession` is assembled from one MIXIN per command family.** The
-class alone was 2,068 lines, so splitting the module without splitting the class would not have
-got under the size bound — hence a base list rather than one `class` block, and
-`hub_contract_test.py` pins that no family silently drops out of it.
-
-| module | holds |
+| `session/` module | holds |
 |---|---|
-| `core.py` | `ProbeSession` itself — construction, the shared internals, the resolution ladder |
+| `core.py` | `ProbeSession` itself — construction, shared internals, the resolution ladder, `critic_mode` |
 | `reading.py` | MODEL-FREE orientation: `run_summary` · `battles` · `decision_table` · `battle_overview` · `battle_turns` |
-| `scans.py` | RUN-LEVEL model-free folds: `scan` · `awareness_scan` · `loops` · `triage` |
-| `trace_io.py` | the trace's sibling files (protocol log, privileged teams, our HP types) — file IO kept OUT of the pure engine |
+| `scans.py` | run-level model-free folds: `scan` · `awareness_scan` · `loops` · `triage` |
+| `trace_io.py` | the trace's sibling files (protocol log, privileged teams, our HP types) — file IO kept OUT of the engine |
 | `analysis.py` | the per-decision deep read: `analyze` (loads the model) · `find` |
 | `counterfactual.py` | `falsify` · `lookahead` · `better_line` · `replay_counterfactual` |
 | `aggregate.py` | `falsify_scan` · `calibration` — the two run-level counterfactual folds |
 | `probes.py` | `probe` · `switch_vs_info` · `history_saliency` |
-| `game.py` | `/game`: `battle_story` (MODEL-FREE) · `battle_readout` · `decision_attention` (load the checkpoint; the capture is cached per (checkpoint, battle), bounded, dropped by `close()`) |
+| `story.py` | `/game`'s MODEL-FREE half: `battle_story` · `battle_board` (protocol fold cached per battle, dropped by `close()`) |
+| `game.py` | `/game`'s model half: `battle_readout` · `decision_attention` (the capture cached per (checkpoint, battle), bounded, dropped by `close()`) |
 | `serialize.py` | the JSON-shaping leaves |
-| `stats.py` | the pure statistics (loop aggregation, discounted returns, reliability bins) |
+| `stats.py` | pure statistics (loop aggregation, discounted returns, reliability bins) |
 | `probe_targets.py` | the representation-probe target table |
 
+The per-method reference is one doc per family: `designs/prober/session_reading.md` (model-free reading),
+`designs/prober/session_scans.md` (`loops` · `triage` · `probe`), `designs/prober/analyze_output.md`
+(`analyze`), `designs/prober/counterfactual_probes.md` (`lookahead` · `better_line` · `replay_counterfactual`
+· `falsify` · `falsify_scan` · `calibration`).
 
-**The per-method reference moved out of this leaf** — one doc per family, each stating what the
-method returns and what it costs:
+The CLI prints JSON to stdout (`{"error": …}` + exit 1 on failure, so an agent always gets parseable
+output); `--help` carries a worked example sequence:
 
-| family | methods | reference |
-|---|---|---|
-| model-free reading | `battles` · `scan` · `switch_vs_info` · `battle_turns` · `awareness_scan` · `battle_overview` · `find` · `probe_model` · `decision_table` | `designs/prober/session_reading.md` |
-| run-level scans | `loops` · `triage` · `probe` | `designs/prober/session_scans.md` |
-| the deep read | `analyze` and every block on its JSON | `designs/prober/analyze_output.md` |
-| counterfactual | `lookahead` · `better_line` · `replay_counterfactual` · `falsify` · `falsify_scan` · `calibration` | `designs/prober/counterfactual_probes.md` |
-
-Four rules from that reference are binding wherever a number of theirs is read, so they stay here.
-
-### `critic_currency` — what every V on every view MEANS
-
-- `run_summary()` — **orient** (model-free): steps, per-step model identity
-  (git/arch/snapshot-available), opponents with win/loss tallies, persisted
-  checkpoints, γ, and **`critic_currency`**. The natural first call.
-
-  **`critic_currency` says WHICH READOUT IS THE CRITIC, and therefore what every V on every other
-  view MEANS** (`ProbeSession.critic_mode()` / `.critic_currency()`, model-free off the run's
-  `model_config.json` `critic` key, cached exactly like `_dist_support`). `{mode, units, low, high,
-  even, span, is_probability, default_overvalue_tau, note}` — `shaped` (V is a shaped, discounted
-  return of roughly ±30, and its zero is NOT "even": a self-mirror 50/50 reads V≈−6.5) or
-  `winprob` (V = sigmoid(win-prob logit) ∈ [0,1], `values` EQUALS `win_probs`,
-  G(s) the terminal win indicator at γ=1, and **0.5 really is even**).
-  **An ABSENT `critic` key means `shaped`** — a fact about the archive rather than a chosen
-  default: the flag landed at config version 109, so every run recorded before it has no key and
-  every one of them is shaped (**214 of the 215** on this box, measured 2026-09-06). An unreadable
-  config is shaped too, so a failed read can never silently re-scale an old run's numbers.
-
-### β name provenance — a label decided a research conclusion
-
-🚨 **β name PROVENANCE — `revealed` / `caveat`, and it is not cosmetic.** `β` points at a SLOT, and
-what names that slot decides what the row MEANS. A candidate carries `revealed=True` when the
-RECORDER read the mon off the board; otherwise the name is the model's species POSTERIOR, which is
-**un-supervised on a revealed slot** (`β`'s candidate mask is alive-and-not-active, so it includes
-mons already seen, while the species aux scores only the *believed* slots). Measured over a
-843-battle sentinel sweep (2026-08-19), the posterior-decoded name was a mon not on the opponent's
-team **at all in 73.3% of 6,876 pivots** (88.3% on revealed slots) — and one such label was read as
-*"β predicts porygon2"* on a turn where `β`'s slot held the revealed Salamence and `β` was
-**CORRECT**. That is a wrong research conclusion caused entirely by a label.
-
-**Every trace written before `gen3_beta_revealed_naming_v1` carries no `revealed` key**, so it
-reads as `False` — correct, because those names all ARE posterior decodes. Read time attaches
-`engine.BELIEF_NAME_CAVEAT` (`"believed (posterior decode)"`) to any candidate that is not
-`revealed` and has a name to qualify, and **never re-derives a name**: the board those traces
-should have shown is not in them, so a substituted name would be the same defect facing the other
-way. The caveat rides `opp_intent_text` as well as the candidate, because a surface that prints
-only the sentence would otherwise drop it silently. A `species: None` row (no species head at all)
-gets no caveat — a bare `slot 4` already claims nothing.
-
-### The trace QUOTA prefers losses — read `selection` FIRST
-
-🚨 **THE QUOTA IS NOW STATED, NOT ASSUMED — read `selection` FIRST**
-(`gen3_trace_selection_manifest_v1`). `captured_win_fraction` says what the sample's mix IS;
-`selection` says what the recorder's RULE WAS, which is what distinguishes a loss-enriched quota
-from a genuinely losing population — and until this shipped nothing in the trace tree recorded
-it, so every curve here silently inherited the skew (measured on `ai_v9_59_R2ACTION_0827`:
-captured outcome rate **0.46** against the same cycles' recorded **0.901 vs bots / 0.702 vs
-pool**). Both `calibration` and `falsify_scan` return the block, scoped to the `step` filter,
-from `ProbeSession.trace_selection(step)`: per step the rule in words plus per-opponent
-`battles_played` / `battles_won` / `traces_written` / `traces_won` and the derived
-`capture_rate_win` / `capture_rate_loss` (traces per battle PLAYED, by outcome — the pair whose
-DIFFERENCE is the skew; a zero denominator reads `None`, never `0.0`). ⚠️ **A tree that records
-no selection is `known: false` and carries the standing UNKNOWN label — never read as uniform**;
-`calibration` additionally puts that label FIRST in its `caveats`, because it says whether the
-selection confound below it can be sized on this tree at all. Every archived run is in that
-state; only cycles collected after this shipped carry a record. The `/calibration` web view
-renders the per-opponent capture-rate table and marks a selection-unknown curve as such.
-Declaration: `agents/training/trace_selection.py` — the one module the recorder, this session,
-and `main.scaffolding_gauge` all read, so the three cannot drift on what the quota was.
-
-
-### `overvalue_tau` is in the CRITIC'S OWN UNITS
-
-`calibration`'s over-value threshold defaults **per critic currency** (`None` resolves it from the
-run): 5.0 shaped return units on a critic spanning roughly ±30, ≈**0.083** P(win) under
-the win-prob critic (the only critic) — the same 1/12-of-span fraction either way. Carried across unchanged, the
-shaped 5.0 **exceeds the entire representable range of a probability gap**, so no crater can clear
-it and `critic_overvalued` reads a confident **0** — a units error in the shape of a finding
-(measured: the headline moved 0.0 → 0.4997 once the tau was in the right currency). An EXPLICIT
-value is honoured verbatim, the result carries `params.overvalue_tau_source` + `critic_currency`,
-and a tau no gap in the run can reach raises a loud `threshold_warning`. Any future currency change
-re-opens this for every value-unit threshold in the tree. Detail:
-`designs/prober/counterfactual_probes.md`.
-
-### The JSON CLI
-
-CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, so an
-agent always gets parseable output). `--help` carries a worked example sequence:
 ```bash
-python -m main.prober.query triage   <run_dir> [--step N] [--opponent X]
+python -m main.prober.query triage   <run_dir> [--step N] [--opponent X]          # start here for "what next"
 python -m main.prober.query probe    <run_dir> <is_faster|damage_taken|faint_soon|faint_healthy|big_hit_incoming|opp_switches|opp_status_move> [--which vf|pi] [--step N] [--max-decisions K]
-python -m main.prober.query switch-vs-info <run_dir> [--step N] [--opponent X] [--outcome win|loss] [--max-battles K]   # MODEL-FREE: do we switch more when we know less?
+python -m main.prober.query switch-vs-info <run_dir> [--step N] [--opponent X] [--outcome win|loss] [--max-battles K]
 python -m main.prober.query summary  <run_dir>
 python -m main.prober.query list     <run_dir> --outcome loss --step 8000000
 python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--metric td_residual] [--limit K]
@@ -534,263 +216,64 @@ python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--see
 python -m main.prober.query falsify-scan <run_dir> [--outcome loss|win] [--opponent X] [--step N] [--limit K] [--worst K] [--seeds N] [--alts K] [--concurrency N]
 python -m main.prober.query calibration  <run_dir> [--step N] [--opponent X] [--limit K] [--worst K] [--seeds N] [--concurrency N] [--bins N] [--overvalue-tau F]
 python -m main.prober.query decision-table <run_dir> [--step N]... [--opponent X]... [--outcome loss] [--cat selfko]... [--out t.jsonl] [--limit K]
-
-# GLOBAL flags (before the subcommand): --compile (torch.compile the rollout models) and
-# --impl {node,rust} (which sim engine the search/replay children run — see below)
-python -m main.prober.query --impl rust better-line <battle_id> <inv>
+# also: loops, history-saliency. GLOBAL flags go BEFORE the subcommand:
+python -m main.prober.query --impl rust --compile better-line <battle_id> <inv>
 ```
-**Investigation recipe:** `triage` (which LEVER recovers the most rating — start here
-for "what next") → `summary` → `scan --outcome loss [--opponent X]` (the worst turn in
-*every* matching battle, ranked — model-free, fast) → `overview` the top battles (read
-`notable.biggest_value_drops` / `faints`) → `find disagree` / `find value_drop` →
-`analyze` the worst turn → `falsify` it (was that crater dice or a reducible
-mistake — separates irreducible aleatoric variance from real policy errors) →
-`falsify-scan` the whole run (aggregate that split across every loss into the
-**crater-fraction bracket** — `aleatoric` [LUCK] · `unattributed` [NEUTRAL, the
-residual the shallow sweep couldn't pin] · proven `policy_reducible` [MISTAKE];
-`critic_headroom_upper_bound` = LUCK+NEUTRAL is an **upper bound**, not a
-measurement — read its `caveats`) → `calibration` to split the `unattributed`
-bucket (`critic_overvalued` vs `lost_position`) via recorded V(s) vs realized
-return G(s) — **selection-aware** (reliability over wins+losses) and
-self-diagnosing (`bias_on_wins`/`bias_on_losses`/`captured_win_fraction` expose the
-eval-quota selection skew; on a quota-captured sample it is knowingly confounded,
-so its number is a loose upper bound pending true-WR reweighting or the rollout-PIT).
-γ is read from the run's `metadata.json`. (`triage` aggregates
-`scan`'s per-battle worst turns into ranked failure CATEGORIES; `scan` is the
-cross-battle generalization of a single battle's `notable.biggest_value_drops`.)
-`ProbeSession(..., model_loader=fn)` injects a fake model in tests (no torch).
 
-## Obs-offset dependence (regression-guarded)
+**Investigation recipe** (full text: `designs/prober/session_scans.md`): `triage` → `summary` → `scan
+--outcome loss` → `overview` the top battles → `find disagree` / `find value_drop` → `analyze` the worst
+turn → `falsify` it → `falsify-scan` the run (the crater-fraction bracket; its
+`critic_headroom_upper_bound` is an UPPER BOUND — read its `caveats`) → `calibration` to split the
+`unattributed` bucket (selection-aware; knowingly confounded on a quota-captured sample).
 
-**`gen3_cpu_damage_deleted_v1` (v48):** two of these regions no longer EXIST in the obs — the
-active-move type multipliers and the `incoming_damage` block were deleted (the DamageOperator
-computes both GPU-side from the learned belief). `ObsOffsets.mm_off` / `incoming_off` / `incoming_dim`
-now resolve to **0 = absent**, and every consumer no-ops on 0 (the saliency block list drops the
-"active move_multipliers(4)" row, `_active_move_mults` returns zeros, the intervention sweep skips
-its write). The fields are KEPT so archived pre-v48 traces still decode.
-**`gen3_entity_rehome_v1` (v60) extends the same convention to the matchup matrices**: the
-`our_matchups`/`their_matchups` blocks are DELETED from the obs (pair effectiveness is GPU-side —
-the D/V edge families), so `om_off`/`tm_off` also resolve to **0 = absent** — ThreatView returns
-`None` and the two saliency rows drop. The engine's one remaining live obs region beyond the
-per-mon/global blocks is the turn-history span — all resolved at runtime from
-`Gen3ObservationEncoder.get_layout()`. **If the obs layout changes, these move
-automatically** (e.g. `gen3_move_effects_v1` inserted a block before `our_matchups`,
-shifting it; `gen3_cpu_damage_deleted_v1` REMOVED three of them, moving the matchups
-1568 → 1465), and `engine_test.py` pins the resolved values
-(`test_offsets_resolve_matches_layout`) so a silent shift fails loudly. (Mirror note
-in `src/agents/observation/CLAUDE.md`.)
+## The counterfactual tier and the two global flags
 
-## Blocking work (the concern outlives the TUI)
+`lookahead` (one-ply, common random numbers), `better_line` (a CRN-anchored beam) and
+`replay_counterfactual` (play to the end on the Rust core, seeded) need the `*_reconstruction.json`
+sibling and launch from the bottom of `/analyze` as password-gated background jobs. Two rules every
+surface must repeat: at depth ≥ 2 `better_line`'s interior opponent is the trainee standing in for the
+real one — FLAG it; and `replay_counterfactual` at `n_rollouts == 1` is a single realized-dice line, **not**
+a probability (its own `caveats` say so). Detail: `designs/prober/counterfactual_probes.md`.
 
-The checkpoint load and every torch forward/backward are BLOCKING, and the surface that shows them
-must not stall on them. The Textual answer (exclusive worker threads + a staleness token) died with
-the TUI; the web answer is in `web/CLAUDE.md` and is the same shape for the same reason —
-`def` handlers run on a worker thread, `/analyze` arrives via an HTMX fragment so a checkpoint load
-never blocks first paint, and the minutes-long probes go through the job registry instead of a
-request. `probe_replay.py` and `query.py` are one-shot processes and simply block, which is correct
-for a CLI.
+- **`--compile`** — `torch.compile`s the no-grad rollout models (~6.5× per B=1 CPU forward, ~10-20 s once).
+  Off by default; it pays only on the SEARCH-shaped commands. Grad-enabled calls route to eager, so it
+  cannot change a saliency result.
+- **`--impl {node,rust}`** (default `node`) — which child the re-roll probes exec (`better-line` /
+  `lookahead` / `falsify` / `falsify-scan` / `calibration`); inert elsewhere; `replay-counterfactual` runs on
+  the Rust core whatever it says. 🚨 **It NEVER falls back to node** — an unbuildable binary is an error. The
+  default lives on the SESSION (`ProbeSession(root, impl=…)`), and `better_line` REFUSES a warm
+  `SearchSession` of the other impl, so one probe is never half on each engine.
 
-## The counterfactual tier (`lookahead` · `better_line` · `replay_counterfactual`)
+Both in full, with the pinned node-vs-rust equivalence: `designs/prober/sim_impl.md`.
 
-The three re-roll/clone-powered probes, bridge-eval traces only (each needs the
-`*_reconstruction.json` sibling). **The surface is `/analyze`** — they are
-per-DECISION probes, so they launch from the bottom of that page as password-gated background jobs
-(`web/CLAUDE.md`); the CLI equivalents are `query lookahead|better-line|replay-counterfactual`.
-
-- **one-ply lookahead** — per legal action, the re-rolled successor's **V(s')** under common random
-  numbers (hold the realized dice, vary only our action), the **ΔV** vs the line actually played,
-  and `terminal` win/loss where an action ends the battle. The chosen action's CRN successor
-  reproduces the real next state, so its value is a built-in consistency anchor.
-- **better-line search** — a CRN-anchored beam returning ONE contrastive trajectory: *"turn T: you
-  played X → better line Y"*, the headline ΔV / ΔP(win), the principal variation ply by ply, and the
-  depth/beam/opponent provenance. At depth ≥ 2 the interior opponent is the trainee standing in for
-  the real one, which the surface must FLAG — a contrastive line that hides its proxy reads as fact.
-- **replay-to-end** — substitute an action and play the rest vs the reloaded opponent to a win/loss,
-  as one in-process play-out on the RUST CORE (the opponent's recorded turn-T move fed, a roster bot
-  played by its in-core port, every draw SEEDED from the battle + decision, so a rerun answers
-  identically); `n_rollouts > 1` resamples the post-divergence dice for a win-% ± Wilson CI. At
-  `n_rollouts == 1` it is a single realized-dice line and **not** a probability, which the payload's
-  own `caveats` say and every surface must repeat.
-
-`model.py` carries `win_prob_at` for these — the counterfactual analog of the
-trace's recorded win-prob array, since a re-rolled successor has no saved row, so
-it re-reads the head stash after a forward on s' (mirroring `belief` / `damage_op_view`). (`value_dist_at` was deleted with the dist head, L1.)
-
-## `--compile` (search-shaped commands)
-
-`python -m main.prober.query --compile <cmd> …` `torch.compile`s the no-grad replay/rollout models
-that `session._load` builds (`ProbeSession(..., compile_extractor=True)`), for a measured **~6.5×** per
-B=1 CPU forward at a ~10-20 s one-time cost.
-
-**Off by default, and use it selectively.** A one-off `summary` / `list` / `analyze` does a handful of
-forwards and would never amortize the compile. It pays for the SEARCH-shaped commands, which do
-thousands: `better-line` (a CRN-anchored beam), `falsify` / `falsify-scan` (paired alternative-action
-sweeps × seeds), `replay-counterfactual` (Monte-Carlo re-rolls to a win/loss), `lookahead`.
-
-**Gradient saliency is unaffected.** `history-saliency` and the gradient paths backprop through this
-same extractor, and the compiled artifact is inference-only (AOTAutograd's CPU backward codegen fails
-on the model's scatter/`index_add`). `maybe_compile_extractor`'s wrapper routes any **grad-enabled**
-call to the eager forward, so `--compile` cannot change or break a saliency result — it simply does
-not apply there. Detail: `src/agents/training/CLAUDE.md` → Compiled CPU opponents.
-
-## `--impl {node,rust}` (which sim engine the search/replay children run)
-
-`python -m main.prober.query --impl rust <cmd> …` — the **offline analogue of the (now fixed)
-training transport**, and like `--compile` it is a global flag placed BEFORE the subcommand.
-Default `node` = today's behavior byte-for-byte.
-
-It picks the child process the re-roll-backed probes exec — `better-line` / `lookahead` / `falsify`
-/ `falsify-scan` / `calibration`. The model-free, no-replay commands
-(`summary`, `list`, `scan`, `triage`, `overview`, `find`, `analyze`, `probe`, `decision-table`)
-spawn no sim child, so the flag is inert for them. Under `node` the work is split across
-`search_driver.js` (the clone-and-branch server) and `replay_driver.js` (replay / reroll); under
-`rust` a single `src/rust_sim` `search_driver` binary serves both — resolved (and built, once) by
-`utils/bridge/sim_bridge_bin.resolve_search_driver_bin`, overridable with
-`$POKESIM_SEARCH_DRIVER_BIN`. `replay-counterfactual` spawns no child at all since P6 — its play-out
-runs in process on the Rust core whatever `--impl` says, and an `--impl node` read says so in its
-`caveats` (`engine: rust_core`). **It NEVER falls back to node** — an unbuildable binary is a clear error, because
-a "rust" probe that silently ran on node would answer a different question than the one asked.
-
-**The default lives on the SESSION, not the call**: `ProbeSession(root, …, impl="node")` stores it
-and every probe reads it — the same shape as `compile_extractor`, and deliberate, since two probes
-of one run answering under different engines would not be comparable. `better_line` REFUSES an
-injected warm `SearchSession` whose `impl` differs from the session's (a caller's reuse
-path), so a correction can't be half-searched on one engine and half-confirmed on the other.
-
-
-Equivalence is pinned node-vs-rust at 18873 + 30689 leaf fields, and the cross-impl
-`better_line_integration_test` asserts node and rust yield IDENTICAL candidate V — an obs-level
-bit-identity claim at every ply of the beam. Per-op the rust driver is 7–20×; end-to-end
-`better_line` is only ~1.9×, because Python-side obs materialization is the bottleneck and it is
-impl-invariant. The two known divergences and the build/override path: `designs/prober/sim_impl.md`.
-
-## Gotchas
-
-- **Move-action labels are ALREADY in action-index order — do NOT re-sort them.** The recorded
-  `summary.actions` dict is built by `BattleRecorder._all_action_labels`, which iterates action index 0..10
-  and keys move slot *m* (action 6+*m*) on **`legal.move_ids[m]`** — the SAME request-slot order the action
-  mask, the `DamageOperator`'s per-move blocks, and the policy logits (action 6+k) all use. So
-  `list(acts.keys())[i]` ↔ action index *i* ↔ `model.action_dist(...)[i]` directly, and `analyze_invocation`
-  zips them with NO realign. A former `_reorder_move_labels` step (+ `ProbeModel.our_active_move_slots`)
-  *re-sorted* the move labels to the per-mon obs block's **moveset** order — which differs from request order
-  after a server reorder — and thereby SCRAMBLED the already-correct labels (transposing e.g.
-  hiddenpower↔thunderbolt), producing a spurious `disagree` flag, a wrong re-run argmax, and backwards
-  Matchups ×mults / op-outgoing labels on `exact`-tier replays. **Both were removed** (the recorded order is
-  authoritative). Invariant pinned by `engine_test::test_recorded_actions_are_action_index_aligned` (an
-  exact-reproducing model with a scrambling `our_active_move_slots` must still AGREE with the recorded
-  choice). The outgoing-damage panel renders a non-damaging move EXPLICITLY as `— (non-damaging)`.
-- **Per-move incoming threat = the `incoming_matrix` (`--damage-matrices incoming`)**, which
-  `ProbeModel.damage_op_view` threads into `decode_damage_block` — since `gen3_op_block_trim_v1`
-  there is no lean top-K arm left to disambiguate, and a run whose matrices-decode flags are not
-  threaded mis-reads an ABSENT block rather than reporting one. What the panel renders per cell:
-  `designs/prober/analyze_panels.md`.
-- **Op OUR-move blocks are ACTION-ordered — the old "op move order ≠ action order" caveat is GONE, and
-  this entry exists so nobody re-derives a plan from it.** `gen3_op_move_align_v1` fixed it at the
-  MODEL: the op's OUTGOING blocks (`our damage (out)` / `our status (land)` / `our damage vs
-  switch-ins`) now read the request-ordered obs slice (`ctx.our_active_req_move_*`), so slot *k* ↔
-  action 6+*k*, the same axis as `a.matchups.move_labels`, the faithfulness table and the policy
-  logits. The prober therefore labels them with the recorded action labels; `ProbeModel._our_active_moves`
-  and the `dop["our_moves"]` relabel are DELETED, and `app_test.py` asserts the caveat string never
-  comes back. (Before the fix the blocks were indexed by `ctx.all_move_ids[our_active]` — the per-mon
-  moveset order — which differed from action order in ~90% of decisions, so the v23 outgoing tie-break /
-  v27 status-landing / v34 outgoing-matrix were positionally misaligned with the actions they informed.
-  Kept here as history because this doc told two readers otherwise after it was already fixed.)
-- **Faithfulness is exact only on the `exact` tier.** On `nearest`/`recent` the
-  model differs from the one that generated the trace, so recorded ≠ re-run (the
-  re-run cell is colored by the drift) — expected, and the badge says which tier.
-  For bit-exact replay, train with `--keep-eval-snapshots` (then the `exact` tier
-  loads the retained snapshot), or pass `--ckpt`.
-- A trace whose `_states.npz` is missing, or an invocation with `has_state=0`,
-  yields an analysis with `warnings` and no panels (the engine never touches the
-  model) — handled, not a crash.
-- **`ArchDriftError` is the EXPECTED outcome of loading an archived checkpoint**, not an
-  exceptional one (measured: 79/79 runs in 2026-08; 38/38 runs with traces in 2026-10). Any surface that loads a
-  model should render its `plain` sentence and fold the rest (`exc.detail` — multi-line, ends with the `git
-  checkout` to run) under it, and should NOT collapse it to "analysis failed". It carries `kind`; branch on that,
-  never on message text. See the drift section above.
-- `models/` is gitignored and lives only in the **main checkout**, not in a
-  worktree — point the prober at an absolute `models/...` path when running from
-  a worktree.
-- **Obs-version mismatch** (`a.obs_mismatch`): when the trace's obs length ≠ the CURRENT encoder's
-  `total_dim` (an obs change — e.g. `gen3_protect_odds_v1`'s +2 scalars — landed AFTER the probed
-  model was trained), every obs-OFFSET decode past the divergence (incoming P(KO)/outspeed, THREAT
-  incoming-eff, RESULT crit/boost/move-order, Matchups, Saliency) is misaligned. The Summary shows a
-  red **⚠ OBS MISMATCH** banner; the board / items / movesets (front-of-obs + summary-sourced) stay
-  correct. The model itself can't be re-run on the new obs (its policy expects the old dim), so the
-  fix is to probe a model trained on the current obs. `engine_test.py::test_obs_version_mismatch_is_flagged`
-  guards the detection.
-- The obs decode (`describe_team`) only OVERLAYS info onto the summary teams block via `_merge_team` —
-  an empty obs item never erases a known item (the bug where an own bench mon showed no item);
-  `test_obs_item_overlay_does_not_erase_a_known_item` guards it.
-
-## Retention / grooming (`groom.py`)
-
-Training writes a trace pair per sampled eval battle (+ a ~62MB snapshot per cycle
-when `--keep-eval-snapshots`, default 10, is on — a hard link to the same-step checkpoint where one is
-byte-identical, so ~0 extra), so `eval_traces/` grows. The
-groomer prunes it — **scoped strictly to `eval_traces/`**:
+## Retention (`groom.py`)
 
 ```bash
-python -m main.prober.groom <run_dir> [--keep-trace-steps 10] [--keep-snapshots 10] [--apply]
+python -m main.prober.groom <run_dir> [--keep-trace-steps 10] [--keep-snapshots 10] [--apply]   # dry-run by default
 ```
 
-Keeps full traces for the K most-recent eval steps (deletes older step dirs) and
-`snapshot.zip` for the N most-recent. **Dry-run by default** — it prints a JSON
-report (`removed_steps`, `dropped_snapshots`, `mb_reclaimed`, `bytes_hardlinked_not_freed` — a
-hard-linked snapshot whose checkpoint stands frees no blocks and is NOT in `mb_reclaimed`); pass `--apply` to
-delete.
-
-This CLI is a **manual fallback**. The producer grooms its own data: the **trainer**
-(rl_agent eval callback) prunes after every cycle — `_prune_eval_snapshots`
-(`--keep-eval-snapshots`, default 10) — so a live run's ~62 MB weight snapshots stay bounded on
-its own. 🚨 **`--keep-eval-trace-steps` now defaults to `0` = KEEP ALL** (2026-09-08): the old
-cap of 20 groomed arm A's 10M-step traces off disk and made the win-prob ladder's registered
-A@10M comparator uncomputable, so the TRACES are no longer auto-pruned at all. The
-prober is read-only and **never** grooms. Use this CLI for finished runs, a
-different retention, or a one-off deep clean.
+Scoped strictly to `eval_traces/`; a MANUAL fallback — the trainer prunes its own snapshots
+(`--keep-eval-snapshots`, default 10), and `--keep-eval-trace-steps` defaults to `0` = KEEP ALL traces.
+The prober itself is read-only and never grooms. Detail: `designs/prober/retention.md`.
 
 ## Tests
 
 Everything under `src/main/prober/` is unmarked (pure, no torch, no bridge) except the
-`*_integration_test.py` files that carry `@sim` (real bridge battles; `core_trace_integration_test.py`
-also builds the rust env cdylib), `web/`'s headless-chrome
-render test (`@integration @browser`), and `belief_obs_fuzz_test.py`, which is run as a script. What each file pins — the engine's `FakeProbeModel` +
-offset regression, the session API and its `falsify_scan` / `calibration` folds, the pure
-falsifier / better-line / awareness / loops / forensics cases, the torch boundary's stash-location
-and `ArchDriftError` tests, and the `web/` suite — is `designs/prober/tests.md`.
+`*_integration_test.py` files that carry `@sim` (`core_trace_integration_test.py` also builds the rust env
+cdylib) and `web/`'s headless-chrome render test (`@integration @browser`). What each file pins: `designs/prober/tests.md`.
 
-```bash
-# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
-python3 -m pytest src/main/prober -q
-```
-
-`textual`, `fastapi`, `uvicorn`, `jinja2` and `httpx` are pinned in `environment_torch28.yml`
-(`httpx` is what starlette's `TestClient` runs on, so the web unit tests need it). The shared
-Textual base lives in `src/main/tui/` — still used by the LAUNCHER's UI, which is why it
-survived the prober's TUI. See its CLAUDE.md.
+`fastapi`, `uvicorn`, `jinja2` and `httpx` (starlette's `TestClient` runs on it) are pinned in
+`environment_torch28.yml`; `textual` stays for the LAUNCHER's UI (`src/main/tui/`).
 
 ## Web front end (`web/`)
 
-A third sibling over the engine — FastAPI + server-rendered Jinja2/HTMX, charts as Vega-Lite specs
-emitted from Python, all JS **vendored** (no CDN, no build step, no `node_modules`). Read-only,
-adapts `ProbeSession` and nothing else — it is now the ONLY human-facing surface.
-
 ```bash
-# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
-python3 -m main.prober.web models/   # :6008, pick any run
-python3 -m main.prober.web --check-openapi                                # contract drift gate
+python3 -m main.prober.web models/                 # :6008, run picker (runs without traces hidden behind "show all")
+python3 -m main.prober.web --check-openapi         # contract drift gate
 ```
 
-Pointed at `models/` it enumerates the runs and offers a picker; a run is selected by NAME and the
-name must be in the server's own listing, so no client string ever reaches a path join. Reading is
-anonymous; the work does not: the background probes and every route that loads a checkpoint or runs the model (`/analyze`, `/game`'s model panels) need the shared password (`web/gate.py`, class guard `web/gate_guard_test.py`). `--impl {node,rust}` picks the
-offline replay/search driver those two spawn — a **startup** flag, matching `ProbeSession`'s
-session-wide treatment of `impl` rather than a per-request knob.
-
-**Deployed at prober.g5d.io** (reads anonymous, probes and model views password-gated/fail-closed; verified serving 2026-08-19). Local remains the debugging default — from elsewhere:
-`ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`.
-
-Full detail — the one rule (every number comes back from a session method verbatim), the job
-registry for the minutes-long probes, what the headless render test actually verifies, and the
-two gotchas (`starlette.HTTPException` dispatch; `build_trace_tree` tolerating a nonexistent path)
-— is in **`src/main/prober/web/CLAUDE.md`**.
+A run is selected by NAME from the server's own listing, so no client string reaches a path join.
+Reading is anonymous; the background probes and every route that loads a checkpoint or runs the model are
+password-gated (`web/gate.py`, class guard `web/gate_guard_test.py`). `--impl` is a STARTUP flag there.
+Deployed at prober.g5d.io; from elsewhere: `ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`.
+Everything else: `src/main/prober/web/CLAUDE.md`.

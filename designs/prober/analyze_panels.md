@@ -224,3 +224,101 @@ target). `f` cycles a battle-outcome filter (all → loss → win), rebuilding t
   "which opp move threatens which of my mons, by how much" read. (A prior bug omitted the matrices-decode flags,
   so on a `--damage-matrices incoming` run the prober mis-read the absent lean top-K block — the garbage
   `acc-580` render — and never decoded the matrix; deleting the lean block made that class unrepresentable.)
+
+## From the prober leaf (moved 2026-10-10)
+
+Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to rules, commands and the map.
+
+### Per-invocation flags
+
+**Per-invocation flags** (`engine.summary_flags`, model-free): `switch` · `uncertain` (top recorded
+prob < `UNCERTAIN_THRESHOLD` = 0.34, a genuine tossup) · `faint` · `opp-switch` (the OPPONENT
+voluntarily pivoted — `engine.opp_voluntary_switch`) · `cure-skipped` · plus `disagree`, added per
+analysis when the loaded model's argmax ≠ chosen. `query find <battle> <flag>` lists them. Two of
+them exist because a reader got the position wrong without them:
+
+### The "heal ≠ cure" trap (`cure-skipped`)
+
+**The "heal ≠ cure" trap (`cure-skipped`).** Recover / Soft-Boiled / Wish restore **HP and nothing
+else** — in Gen 3 only Refresh (self) and Heal Bell / Aromatherapy (team) CLEAR a status, and Rest
+"cures" by *inflicting* sleep. A move list shows all of them side by side, so a Toxic that keeps
+escalating through a heal loop reads as a sim bug when it is correct mechanics plus a policy choice.
+Three pure engine helpers make that legible: `is_status_cure(move_id)` (data-driven off the facade's
+`curesSelfStatus`/`curesTeamStatus` — never a hardcoded id list), `has_curable_status(status)` (splits
+the recorder's bundled `"TOX(2)|TAUNT"` — a volatile is not curable), and **`self_cure_options(inv)`**
+→ the cures that were **legal AND would have done something** (a Taunted cure and a cure with nothing
+to cure are both non-options). The flag fires when a cure was on the table and we did something else;
+`InvocationAnalysis.cure_options` carries the labels, so the page and the `analyze` JSON read ONE
+engine output rather than each deciding what counts as a real option. `query find <battle> cure-skipped` lists them.
+
+### The "computed-vs ≠ resolved-vs" guard (`opp-switch`)
+
+**The "computed-vs ≠ resolved-vs" guard (`opp-switch`).** When the opponent voluntarily switches, our
+move RESOLVES against the switch-IN, not the active we computed damage against — and the net result
+(e.g. Earthquake → immune) sits right next to a damage table computed vs the *pre-switch* active, which
+is easy to misread as "the model attacked the switch-in." So `analyze_invocation` carries
+`opp_switched_to` (the pivoted-in species), surfaced THREE ways: the `opp-switch` flag/glyph (markable +
+jumpable), and a one-line callout on `/analyze` (`partials/analyze_result.html`: `⇄ opp pivoted <active> →
+<switch-in>` — the damage tables are vs the pre-switch active; the move RESOLVED vs the switch-in).
+(The TUI's battle-header marker and its opponent-regime tag — `_read_eval_opp_regime` — went with the
+TUI; nothing in the prober reads `eval_sentinel_greedy` today.)
+
+### Gotchas (labels, op blocks, faithfulness tiers, obs mismatch)
+
+- **Move-action labels are ALREADY in action-index order — do NOT re-sort them.** The recorded
+  `summary.actions` dict is built by `agents.training.trace_labels.all_action_labels` (shared by the eval
+  recorder and `core_recorder`; it was `BattleRecorder._all_action_labels` before poke-env retirement P5), which
+  iterates action index 0..10 and keys move slot *m* (action 6+*m*) on **`legal.display_move_ids[m]`** — the SAME request-slot order the action
+  mask, the `DamageOperator`'s per-move blocks, and the policy logits (action 6+k) all use. So
+  `list(acts.keys())[i]` ↔ action index *i* ↔ `model.action_dist(...)[i]` directly, and `analyze_invocation`
+  zips them with NO realign. A former `_reorder_move_labels` step (+ `ProbeModel.our_active_move_slots`)
+  *re-sorted* the move labels to the per-mon obs block's **moveset** order — which differs from request order
+  after a server reorder — and thereby SCRAMBLED the already-correct labels (transposing e.g.
+  hiddenpower↔thunderbolt), producing a spurious `disagree` flag, a wrong re-run argmax, and backwards
+  Matchups ×mults / op-outgoing labels on `exact`-tier replays. **Both were removed** (the recorded order is
+  authoritative). Invariant pinned by `engine_test::test_recorded_actions_are_action_index_aligned` (an
+  exact-reproducing model with a scrambling `our_active_move_slots` must still AGREE with the recorded
+  choice). The outgoing-damage panel renders a non-damaging move EXPLICITLY as `— (non-damaging)`.
+- **Per-move incoming threat = the `incoming_matrix` (`--damage-matrices incoming`)**, which
+  `ProbeModel.damage_op_view` threads into `decode_damage_block` — since `gen3_op_block_trim_v1`
+  there is no lean top-K arm left to disambiguate, and a run whose matrices-decode flags are not
+  threaded mis-reads an ABSENT block rather than reporting one. What the panel renders per cell:
+  `designs/prober/analyze_panels.md`.
+- **Op OUR-move blocks are ACTION-ordered — the old "op move order ≠ action order" caveat is GONE, and
+  this entry exists so nobody re-derives a plan from it.** `gen3_op_move_align_v1` fixed it at the
+  MODEL: the op's OUTGOING blocks (`our damage (out)` / `our status (land)` / `our damage vs
+  switch-ins`) now read the request-ordered obs slice (`ctx.our_active_req_move_*`), so slot *k* ↔
+  action 6+*k*, the same axis as `a.matchups.move_labels`, the faithfulness table and the policy
+  logits. The prober therefore labels them with the recorded action labels; `ProbeModel._our_active_moves`
+  and the `dop["our_moves"]` relabel are DELETED, and `app_test.py` asserts the caveat string never
+  comes back. (Before the fix the blocks were indexed by `ctx.all_move_ids[our_active]` — the per-mon
+  moveset order — which differed from action order in ~90% of decisions, so the v23 outgoing tie-break /
+  v27 status-landing / v34 outgoing-matrix were positionally misaligned with the actions they informed.
+  Kept here as history because this doc told two readers otherwise after it was already fixed.)
+- **Faithfulness is exact only on the `exact` tier.** On `nearest`/`recent` the
+  model differs from the one that generated the trace, so recorded ≠ re-run (the
+  re-run cell is colored by the drift) — expected, and the badge says which tier.
+  For bit-exact replay, train with `--keep-eval-snapshots` (then the `exact` tier
+  loads the retained snapshot), or pass `--ckpt`.
+- A trace whose `_states.npz` is missing, or an invocation with `has_state=0`,
+  yields an analysis with `warnings` and no panels (the engine never touches the
+  model) — handled, not a crash.
+- **`ArchDriftError` is the EXPECTED outcome of loading an archived checkpoint**, not an
+  exceptional one (measured: 79/79 runs in 2026-08; 38/38 runs with traces in 2026-10). Any surface that loads a
+  model should render its `plain` sentence and fold the rest (`exc.detail` — multi-line, ends with the `git
+  checkout` to run) under it, and should NOT collapse it to "analysis failed". It carries `kind`; branch on that,
+  never on message text. See the drift section above.
+- `models/` is gitignored and lives only in the **main checkout**, not in a
+  worktree — point the prober at an absolute `models/...` path when running from
+  a worktree.
+- **Obs-version mismatch** (`a.obs_mismatch`): when the trace's obs length ≠ the CURRENT encoder's
+  `total_dim` (an obs change — e.g. `gen3_protect_odds_v1`'s +2 scalars — landed AFTER the probed
+  model was trained), every obs-OFFSET decode past the divergence (incoming P(KO)/outspeed, THREAT
+  incoming-eff, RESULT crit/boost/move-order, Matchups, Saliency) is misaligned. The Summary shows a
+  red **⚠ OBS MISMATCH** banner; the board / items / movesets (front-of-obs + summary-sourced) stay
+  correct. The model itself can't be re-run on the new obs (its policy expects the old dim), so the
+  fix is to probe a model trained on the current obs. `engine_test.py::test_obs_version_mismatch_is_flagged`
+  guards the detection.
+- The obs decode (`describe_team`) only OVERLAYS info onto the summary teams block via `_merge_team` —
+  an empty obs item never erases a known item (the bug where an own bench mon showed no item);
+  `test_obs_item_overlay_does_not_erase_a_known_item` guards it.

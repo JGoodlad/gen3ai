@@ -111,3 +111,30 @@ Owned by this tree. The facade contract and the CLI invocations stay in
   checkpoint load per call (step → one model). Measured @70M: `is_faster` rep
   AUC 0.94 on contested vs the provided feature's 0.75 (the model already infers
   speed — not a feature gap).
+
+## From the prober leaf (moved 2026-10-10)
+
+Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to rules, commands and the map.
+
+### The investigation recipe
+
+**Investigation recipe:** `triage` (which LEVER recovers the most rating — start here
+for "what next") → `summary` → `scan --outcome loss [--opponent X]` (the worst turn in
+*every* matching battle, ranked — model-free, fast) → `overview` the top battles (read
+`notable.biggest_value_drops` / `faints`) → `find disagree` / `find value_drop` →
+`analyze` the worst turn → `falsify` it (was that crater dice or a reducible
+mistake — separates irreducible aleatoric variance from real policy errors) →
+`falsify-scan` the whole run (aggregate that split across every loss into the
+**crater-fraction bracket** — `aleatoric` [LUCK] · `unattributed` [NEUTRAL, the
+residual the shallow sweep couldn't pin] · proven `policy_reducible` [MISTAKE];
+`critic_headroom_upper_bound` = LUCK+NEUTRAL is an **upper bound**, not a
+measurement — read its `caveats`) → `calibration` to split the `unattributed`
+bucket (`critic_overvalued` vs `lost_position`) via recorded V(s) vs realized
+return G(s) — **selection-aware** (reliability over wins+losses) and
+self-diagnosing (`bias_on_wins`/`bias_on_losses`/`captured_win_fraction` expose the
+eval-quota selection skew; on a quota-captured sample it is knowingly confounded,
+so its number is a loose upper bound pending true-WR reweighting or the rollout-PIT).
+γ is read from the run's `metadata.json`. (`triage` aggregates
+`scan`'s per-battle worst turns into ranked failure CATEGORIES; `scan` is the
+cross-battle generalization of a single battle's `notable.biggest_value_drops`.)
+`ProbeSession(..., model_loader=fn)` injects a fake model in tests (no torch).

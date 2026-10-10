@@ -108,3 +108,46 @@ logs, no `eval_traces/`) or launches that have not finished a first eval cycle. 
 Tests: `main/prober/arch_status_test.py` (the verdicts and the record readers), `model_test.py` (every class end
 to end through `ProbeModel.load`, the semantics-only case with a loader that WOULD succeed),
 `web/runs_test.py` + `web/app_test.py` ("the run picker, by architecture"), `agents/model/obs_semantics_test.py`.
+
+## From the prober leaf (moved 2026-10-10)
+
+Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to rules, commands and the map.
+
+### The model-free / model-loading tiers, and the measurement behind them
+
+**MEASURED 2026-08-13 over every run in `models/`: 79 runs carry a checkpoint, and 0 of them load
+under current code.** Not one archived run is even at the current obs dim — the closest is 2667
+against the code's 2669 (the v65 deadline clock's +2). What they were trained on: `2992` ×42 ·
+`3409` ×8 · `3457` ×8 · `3469` ×6 · `2667` ×5 · `3390` ×3 · `3391` ×3 · `2889` ×3 · `2925` ×1.
+
+This is **by design, not a bug** — the root `CLAUDE.md` says *"checkpoint compatibility is not a
+concern"* and `ARCH_SIGNATURE` exists to reject stale checkpoints. But it decides how to read this
+whole tool:
+
+| tier | works on | why |
+|---|---|---|
+| **model-free** — `scan` · `triage` · `turns` · `battle_story` · `awareness` · `loops` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
+| **model-loading** — `analyze` · `battle_readout` · `decision_attention` · `probe` · `lookahead` · `better_line` · `replay_counterfactual` · `history_saliency` · `find disagree` | **only a run at the CURRENT arch** | re-runs the policy under today's code |
+
+So the durable surface is the model-free one, and it is not a coincidence that the web front end was
+built there first. **The owner's ruling (2026-10-08): the prober supports only the CURRENT architecture**
+("we are still rapidly iterating") — there is no pinned-checkout worker; on an older run `/game`'s
+model panels render one plain sentence with the `ArchDriftError` diagnosis folded under it. A model-loading view is worth having for the run you are *currently training* and
+stops working the day the obs layout moves.
+
+🚨 **EVERY way a checkpoint can be unusable is ONE typed diagnosis (2026-10-09), and the model slots say it BEFORE
+trying** — the owner: *"clean up the model selection; 99 % are irrelevant, and it doesn't even detect the new error
+correctly."* Two defects behind that: a checkpoint whose weights FIT but whose observation changed meaning (v151's
+Toxic cell re-scale) loaded without a word — nothing but `OBS_SEMANTICS_VERSION` (`model_version/constants.py`,
+compared with the recorded `config_version` by `arch_status`) can see it; and a run with traces but no weights died as
+a raw `FileNotFoundError`. Now `ArchDriftError.kind` is one of `arch_signature · obs_dim · obs_semantics ·
+state_dict · config_value · newer_than_code · no_checkpoint · unreadable · load_failed`, its `plain` is one sentence
+("This run's architecture (config vN, signature S) is older than the code (config vM…); model views need a
+current-architecture checkpoint."), and `/game` / `/analyze` render that reason on first paint from
+`ProbeSession.model_status` (model-free). The picker is the same classification (`web/CLAUDE.md`).
+
+**The three walls behind the diagnosis** — a deleted flag still baked into the zip's
+`features_extractor_kwargs` (recovered by dropping unknown kwargs, and *which* ones is reported),
+a value the code now validates (deliberately NOT recovered), and weight shapes that no longer fit
+(not recoverable in principle) — plus what the error message names and the ~5 ms `peek_checkpoint`
+that makes diagnosing cheap: `designs/prober/arch_drift.md`. Tests: `model_test.py`.

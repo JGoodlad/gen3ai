@@ -76,6 +76,7 @@ statements were deleted:
 | `src_agents_training_CLAUDE_2026-10-10.md` | `src/agents/training/CLAUDE.md` — each section moved to its `designs/training/` topic doc (a "From the training leaf (moved 2026-10-10)" block, or the new `eval_rules.md` / `ridealong_heads.md`) | 133.7 KB → 26.1 KB |
 | `src_agents_model_CLAUDE_2026-10-10.md` | `src/agents/model/CLAUDE.md` — each section moved to a `designs/model/` topic doc's "Moved from the leaf (2026-10-10)" section | 63.2 KB → 19.1 KB |
 | `src_main_launcher_CLAUDE_2026-10-10.md` | `src/main/launcher/CLAUDE.md` — detail moved to the new `designs/launcher/` tree; removed as false: its poke-env stall guards in the flag table, the launcher's `:8001` default, a 60 s pinned-probe box (180 s in code), the stale 49-row arch-surface count | 91.8 KB → 14.8 KB |
+| `src_main_prober_CLAUDE_2026-10-10.md` | `src/main/prober/CLAUDE.md` — each section moved to its `designs/prober/` topic doc ("From the prober leaf (moved 2026-10-10)"; new: `result_vocabulary.md`, `retention.md`) | 62.2 KB → 22.7 KB |
 <!-- leaf rows: append below -->
 
 **Nothing here is current.** Every guard these incidents produced is live and described in
