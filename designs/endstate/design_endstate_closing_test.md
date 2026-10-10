@@ -7,13 +7,16 @@ doc updates it in the same commit, and the Decision record at the end says what 
 `2026-10-09 · REGISTRATION · THE END-STATE CLOSING TEST` is its record. The PRODUCTION arm may launch at once (its pin is
 fixed below). The END-STATE arm is BLOCKED until §2.3's preconditions hold (the compiled-learner startup gate fails on
 the end-state graph today, §8 F-ES-1). Nothing has been read.
+**Amended before any end-state data (2026-10-10, Decision record):** P_prod re-pinned to `95d014fa`; the end-state
+overlay gains `--effective-stats on --move-target-state on` (v153) and `--move-set-closure on` (v154, the owner's "Do
+A"); **P_end = `b132b099`**; precondition E at P_end is the first end-state seed's own startup gates.
 
 ## 0. Summary
 
 | | |
 |---|---|
 | question | is the end state (`--arch endstate`, `design_static_tokens.md` §14) NOT DETECTABLY WORSE than production? |
-| arms | PRODUCTION = `--arch production` pinned at **P_prod = `c0f528b4`**; END STATE = `--arch endstate` pinned at a later **P_end** at which production is byte-identical to P_prod (§2.3) |
+| arms | PRODUCTION = `--arch production` pinned at **P_prod = `95d014fa`** (re-pinned pre-data from `c0f528b4`); END STATE = `--arch endstate` pinned at a later **P_end = `b132b099`** at which production is byte-identical to P_prod (§2.3; Decision record) |
 | budget | 15M steps per seed, the production recipe, **8 seeds per arm** (ids 2001–2008), fixed n, ONE look |
 | meter | the mirrored head-to-head CROSS at P_end: 8 × 8 cells × 1,000 mirrored pairs (`main.h2h play-many`) |
 | statistic | X5 §7.4's: Δ̂ = mean(h) − 50, V̂ = (s²_R + s²_C)/8 on 14 df; the two-sided 90 % interval Δ̂ ± 1.761 √V̂ |
@@ -59,11 +62,14 @@ shas.out`, production "build"): the measurement is reproducible.
 
 ### 2.2 END STATE
 
-`--arch endstate` (`src/main/train/arch_arms.py`; overlay tag `overlay@01379f0b` at P_prod): `static_recovery` (static
-tokens + `--mon-hazard-cost`, `--move-actor-state`, `--trunk-layers 3`, `--switch-hazard-cost`, `--eot-residual`) +
-`--move-resolution on --speed-physics on --value-threat-inject off --op-reduction principled --obs-facts v1` +
-`--move-resolution-facts full --status-facts exact --ko-ramp exact --drop-progress-clock on --g-ledger eot`. The arm is
-the CLOSED declaration in `arch_arms.py` at P_end; it is never widened for this test (a changed overlay is a new
+`--arch endstate` (`src/main/train/arch_arms.py`; at P_end `b132b099` the checkargs tag is
+`endstate@production_config@49cd523f38ee+overlay@2b359668`): `static_recovery` (static tokens + `--mon-hazard-cost`,
+`--move-actor-state`, `--trunk-layers 3`, `--switch-hazard-cost`, `--eot-residual`) + `--move-resolution on
+--speed-physics on --value-threat-inject off --op-reduction principled --obs-facts v1` + `--move-resolution-facts full
+--status-facts exact --ko-ramp exact --drop-progress-clock on --g-ledger eot` + `--effective-stats on
+--move-target-state on` (v153) + `--move-set-closure on` (v154). The arm is the CLOSED declaration in `arch_arms.py` at
+P_end. It was widened twice BEFORE any end-state seed (the Decision record's 2026-10-10 rows, the second the owner's
+pre-data amendment); once an end-state seed has run it is never widened for this test (a changed overlay is then a new
 registration).
 
 ### 2.3 Preconditions on the END-STATE arm (before its first seed; each recorded in the ledger)
@@ -88,8 +94,15 @@ git -C <P_end checkout> rev-parse <P_end>:src/agents/training/golden_obs_fixture
 cd <P_end checkout>/src && $PY -m agents.training.golden_obs_core --check                  # green
 
 # (D) what changed between the pins, classified (CUDA-only and Rust changes are invisible to (A)-(C))
-git -C <P_end checkout> diff --name-only c0f528b4 <P_end> -- src/ data/ ':!*_test.py'
+git -C <P_end checkout> diff --name-only 95d014fa <P_end> -- src/ data/ ':!*_test.py'
 ```
+
+(The commands' expected values are P_prod's; after the 2026-10-10 re-pin the diff in (D) starts at `95d014fa`, and the
+mirror blob in (C) is `5ad40492fe21` at P_prod.)
+
+- **(C) as AMENDED (2026-10-10, pre-data):** the production mirror is identical to P_prod's **modulo NEW keys whose
+  production value is OFF**, each key listed in the ledger entry, with (A) + (B) the proof that production builds and
+  computes nothing new; the obs golden stays byte-identical and `golden_obs_core --check` green.
 
 - **(D)'s rule:** every listed file is classified in the ledger entry as (a) gated on a flag production keeps OFF,
   (b) tests / docs / tooling no run imports, or (c) on production's training path. **ANY `data/` file, any (c) file,
@@ -108,7 +121,8 @@ git -C <P_end checkout> diff --name-only c0f528b4 <P_end> -- src/ data/ ':!*_tes
 
 ### 2.4 Preconditions on BOTH arms
 
-- One commit per arm: every production seed `pin_history` = [`c0f528b4`] only, every end-state seed [P_end] only.
+- One commit per arm: every production seed `pin_history` = [`95d014fa`] only, every end-state seed [`b132b099`]
+  only.
 - `metadata.json` `init_num_threads` equal across all sixteen; torch 2.8.0+cu126 in all.
 - **`data/` frozen** from the first production launch to the last end-state seed's end (a pin isolates code, not
   data: pinned children read `data/` from MAIN).
@@ -220,7 +234,7 @@ floor), told to the owner before adoption; `train_ms`, the T2 flush; every seed'
 ### 4.1 PRODUCTION (validated at registration)
 
 ```bash
-cd /home/goodlad/dev/gen3ai && PYTHONPATH=src python -m main.launcher --restart-interval-hours 6 --pin-commit c0f528b4 \
+cd /home/goodlad/dev/gen3ai && PYTHONPATH=src python -m main.launcher --restart-interval-hours 6 --pin-commit 95d014fa \
   --arch production --steps 15000000 --seed 2001 \
   --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all \
   --snapshot-ladder-games 0 --checkpoint-every-steps 1000000 --device cuda --run-name rb_es_prod_s2001
@@ -237,9 +251,17 @@ torch 2.8.0+cu126, disk ✓ (8.95 GiB required), desktop GPU ✓, `✓ DRY RUN �
 
 ### 4.2 END STATE (at P_end, after §2.3)
 
-The same argv with `--pin-commit <P_end> --arch endstate` and `--run-name rb_es_end_s200N`. At `c0f528b4` it already
-passes `checkargs` (`✓ every ARCH-surface key matches the production mirror + the arm 'endstate'`, `✓ this command
-still launches`); it is re-validated at P_end (§2.3).
+The same argv with `--pin-commit b132b099 --arch endstate` and `--run-name rb_es_end_s200N`:
+
+```bash
+cd /home/goodlad/dev/gen3ai && PYTHONPATH=src python -m main.launcher --restart-interval-hours 6 --pin-commit b132b099 \
+  --arch endstate --steps 15000000 --seed 2001 \
+  --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all \
+  --snapshot-ladder-games 0 --checkpoint-every-steps 1000000 --device cuda --run-name rb_es_end_s2001
+```
+
+Re-validated at P_end (§2.3; `research_state/measurements/endstate_closing_test_2026-10-09/p_end_2026-10-10/`):
+`checkargs` and `--dry-run` as recorded there.
 
 ### 4.3 Chain order
 
@@ -263,10 +285,11 @@ The levers are grouped, in the owner's order, into a CUMULATIVE ladder from prod
 | B4 | **speed physics** | `speed_physics on` |
 | B5 | **critic route** | `value_threat_inject off` |
 | B6 | **op reduction** | `op_reduction principled`, `ko_ramp exact`, `g_ledger eot` |
-| B7 | **obs facts** | `obs_facts v1`, `drop_progress_clock on` (B7 = `--arch endstate`, the FAILED arm) |
+| B7 | **obs facts** | `obs_facts v1`, `drop_progress_clock on`, `move_set_closure on` (B7 = `--arch endstate`, the FAILED arm) |
 
 (`ko_ramp` and `g_ledger` are the damage operator's math, so they ride with the op group; `drop_progress_clock` removes
-a read of the observation, so it rides with the obs facts. Those three placements are this registration's call: the
+a read of the observation, so it rides with the obs facts; `move_set_closure` (the 2026-10-10 amendment) sits in the
+top rung as the last lever added. Those three placements are this registration's call: the
 owner may move them before the first bisection seed.)
 
 **Search:** each tested rung is a new 8-seed arm (ids 2001–2008, run names `rb_es_b<k>_s200N`) at its own pin under
@@ -330,3 +353,4 @@ Production ≈ 2.6 h per seed (the screen's legacy end-to-end 2.557 h) ⇒ ≈ 2
 | 2026-10-09 | Chain order | production 2001–2008 first (runnable tonight), then the end state; alternation allowed once the end state is unblocked | waiting for both arms to interleave from the start (idles the GPU) | §4.3 |
 | 2026-10-10 | **P_prod RE-PINNED to `95d014fa` (pre-data; no seed of either arm had launched)** | The end-state overlay gains `--effective-stats on` + `--move-target-state on` (`79da8cd3`, config v153; the probe battery's rows 12 / 13), per the owner's 'run all levers speculatively, bisect after'. P_prod moves from `c0f528b4` to `95d014fa` so that P_prod's production mirror already carries the two new keys (both OFF in production). Re-measured identity at `95d014fa` (CPU): production graph `421c6b98ce7937f4`, state `749c56159ab028f4`, outputs `51c02c6c6342a045`, 1,937,942 params (UNCHANGED from `c0f528b4`); K9 golden blobs `9ef44772…` / `9f13350d…` (UNCHANGED); `production_config.json` blob `5ad40492fe21` (was `1f454b35e69c`: two new OFF keys); obs golden blob unchanged. Precondition C now reads against `5ad40492fe21`. The END-STATE arm's identity at `95d014fa`: graph `55c7f5c009d4595b`, 2,031,460 params. The production argv is unchanged except `--pin-commit 95d014fa`. The end-state arm still awaits the SDPA compile fix (gated to the end-state arm only, never production's compiled path) + its GPU checks | launching production at `c0f528b4` and amending C after the fact (a cleaner pre-data re-pin was available) | orchestrator, under the owner's 10-09 delegation |
 | 2026-10-10 | **Precondition E MET for the END-STATE arm at `95d014fa` (GPU check, before any end-state seed)** | One real `--arch endstate` launch at `95d014fa` (`rb_es_gpucheck_end`, seed 2001, NOT a closing-test seed; run dir kept as evidence): startup R1 / compile-region parity PASS (loss rel 0, features max \|Δ\| 0, grad cosine 1.000000); K6 freeze armed; UpdateFit headroom 2,058 MiB (≥ 1,024); K9(b) strict 10 probes, excluded_frac max 0.031, max \|d log π\| 7.15e-7; the update-10 canary compiled == eager. `train_ms` ~53.8 s / update, fps ~1,685–1,868 (descriptive). The earlier E defect at `43a59bbd` (an Inductor graph-shape interaction needing obs_facts + move_resolution + principled + vti-off together) does NOT form at `95d014fa` (`53412b77`). The production chain `rb_es_prod_s2001..8` started 00:44:34 at `95d014fa`; `data/` is frozen. If P_end = `95d014fa`, preconditions A–D hold trivially (same commit); the end-state arm may then run at P_prod's own commit | none (the registered precondition, now met) | orchestrator |
+| 2026-10-10 | **END-STATE overlay + `--move-set-closure on`; P_end → `b132b099` (pre-end-state-data; owner 2026-10-10)** | Owner, 2026-10-10: "Do A". `--arch endstate` gains `--move-set-closure on` (the four-move closure, v154, `a9d6fd79`; `research_state/measurements/belief_closure_2026-10-10/`) as a PRE-DATA AMENDMENT: no end-state seed had run (only the throwaway GPU check `rb_es_gpucheck_end`). Production is untouched: P_prod stays `95d014fa` (`rb_es_prod_s2001` banked, `s2002` running). **P_end = `b132b09952bafb846198466af81fffcb979c12b1`** (the commit landing the overlay, on top of the infra commits since `95d014fa`). Re-run at P_end on CPU (`research_state/measurements/endstate_closing_test_2026-10-09/p_end_2026-10-10/`): **(A)** production graph `421c6b98ce7937f4`, state `749c56159ab028f4`, outputs `51c02c6c6342a045`, 1 graph, 20,148 lines, 1,937,942 params: EQUAL to P_prod; **(B)** `learner_golden.json` `9ef44772a3f76fcfa4de7e59590aec7be6b05812`, `learner_golden_buffer.npz` `9f13350daec82f90f37cf557b776646c316e6415`: equal, `learner_golden_test` 6 passed; **(C), AMENDED to "identical modulo new keys that are OFF in production"**: `production_config.json` blob `49cd523f38ee` vs P_prod's `5ad40492fe21`, the ONE new key `move_set_closure` = `"off"`, proven inert by (A) + (B); obs golden blob `09733f8cef9a42be6b7eb03e8f327ab20153e953` equal, `golden_obs_core --check` 991 / 991; **(D)** the `95d014fa..b132b099` `src/` + `data/` diff classified file by file (the measurement README): the closure build (gated OFF, or its record / parser surface with production's value OFF), the `endstate` overlay, the eval-snapshot hard link (`52c2cdd9`: on-disk STORAGE only, sha-verified, after the cycle's games), the launcher parent process (restart default, submodule preflight), live-play / anchor / prober tooling and docs; `data/` EMPTY; under `src/rust_sim/` two Markdown files only, no Rust code; no file on production's training path. Identity HOLDS. **The new end-state identity:** graph `42ee361b11fa5a8d`, state `df71da47741a8a0f`, outputs `5adfaa6c40a7a71e`, 1 graph, 35,662 lines, 2,031,460 params (the closure adds no parameter; the `95d014fa` overlay in the same tree reproduces `55c7f5c009d4595b` / `c78ca89766000c71`); the K9(b) recorder sees no undeclared op; the CPU `--debug` smoke PASSED (1,010 s). **(E) at P_end = the FIRST end-state seed's own startup gates** (R1 compile parity forward + backward, the K6 freeze, K9(b) at update 1, the update-10 canary): the `95d014fa` GPU check does not cover the closure's new graph path. **If its startup gate refuses, the chain HOLDS** (the training session's follower holds on a non-DONE ending) **and no data counts.** In §5's ladder the closure sits in B7. The argv: §4.2 (`--pin-commit b132b099 --arch endstate`, the rest as staged); `checkargs` and `--dry-run` ✓ at P_end | keeping the closure out of the closing test (its own screen after the read; the end state then read with a measured leak open); re-running production at P_end (not needed: (A)–(D) hold) | owner 2026-10-10; ledger AMENDMENT 2026-10-10 |

@@ -4,6 +4,10 @@
 (`--move-set-closure on`, `gen3_move_set_closure_v1`, config v154). Production is byte-identical. The closing test
 runs pinned at `95d014fa` and is untouched.**
 
+**Addendum (2026-10-10, owner "Do A"):** the closure is now ON in the closing test's END-STATE arm (`--arch endstate`),
+a pre-data amendment; production stays OFF at P_prod `95d014fa`, and P_end moved to `b132b099`
+(`../endstate_closing_test_2026-10-09/p_end_2026-10-10/`, `design_endstate_closing_test.md` Decision record).
+
 Two possible garbage-in problems turned up on 2026-10-09 while the battle viewer was being built
 (`designs/prober/battle_viewer_ux_2026-10-09.md`).
 

@@ -1,0 +1,21 @@
+checked 12 flags from --argv
+  parser                         : the CURRENT tree's (no --model and no --pin-commit — this argv would run on HEAD)
+  accepted by the trainer parser : 12
+  launcher-owned (not forwarded) : 0
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  oracle reveal                  : off (the production observation)
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json + arm 'endstate' (main/train/arch_arms.py)  [endstate@production_config@49cd523f38ee+overlay@2b359668]
+    --arch endstate applied the production surface + the arm's overlay token_encoding='static', mon_hazard_cost='on', move_actor_state='on', trunk_layers=3, switch_hazard_cost='on', eot_residual='on', move_resolution='on', speed_physics='on', value_threat_inject=False, op_reduction='principled', obs_facts='v1', move_resolution_facts='full', status_facts='exact', ko_ramp='exact', drop_progress_clock='on', g_ledger='eot', effective_stats='on', move_target_state='on', move_set_closure='on' (explicit flags still win; the RECIPE is production's)
+    ✓ every ARCH-surface key matches the production mirror + the arm 'endstate' (57 of 65 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@49cd523f38ee]
+    --arch endstate applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    ✓ every RECIPE knob matches recipe.fresh (28 knobs)
+  ✓ this command still launches

@@ -24127,3 +24127,50 @@ species-parse trap in `team_packing.py` for a nickname containing `(`; `TeamLoad
 hidden token (the renormalisation), so it is a behaviour change and needs its own screen.
 
 Tag: **MEASURED (CPU) · leak confined to the bench / hidden reinjection · BUILT OFF (v154) · production byte-identical · nicknames NO GIGO** · measurements: [`measurements/belief_closure_2026-10-10/`](measurements/belief_closure_2026-10-10/)
+
+### 2026-10-10 · AMENDMENT · **THE CLOSING TEST'S END-STATE ARM GAINS `--move-set-closure on` (the four-move closure, v154; owner 2026-10-10 "Do A"), BEFORE ANY END-STATE DATA; P_end → `b132b099`. Production identity re-proved on CPU (A–D): production's graph / state / outputs `421c6b98ce7937f4` / `749c56159ab028f4` / `51c02c6c6342a045` EQUAL P_prod `95d014fa`'s, the K9 golden blobs equal and green, the mirror identical modulo ONE new key that is OFF in production (`move_set_closure`), the obs golden equal and green, no `data/` or Rust change. The new end-state graph `42ee361b11fa5a8d`, 2,031,460 params. Precondition E = the first end-state seed's own startup gates**
+
+- **Why.** The four-move closure (`measurements/belief_closure_2026-10-10/`, `a9d6fd79`) closes a measured leak: every
+  non-active opponent slot's move-belief reinjection read the raw sigmoid, so a benched mon with four revealed moves
+  still reinjected believed others (a trained screen final: value moves a median 4.0 pp, argmax 13.6 % under a bump of
+  those beliefs). The owner (2026-10-10, "Do A") put it in the closing test's END-STATE arm as a PRE-DATA amendment: no
+  end-state seed had run (only the throwaway GPU check `rb_es_gpucheck_end`). Production is unchanged and keeps training
+  at P_prod = `95d014fa` (`rb_es_prod_s2001` banked, `s2002` running).
+- **The amendment.** `--arch endstate`'s overlay (`main/train/arch_arms.py`) + `("move_set_closure", "on")` (checkargs
+  tag `endstate@production_config@49cd523f38ee+overlay@2b359668`). No config bump (the field exists since v154; the
+  overlay is a launch surface and `model_config.json` records it). P_end = `b132b099` (the commit that lands it; it also
+  carries the infra commits since `95d014fa`: the launcher restart default `52598e84`, the submodule preflight
+  `59c53d73`, the eval-snapshot hard link `52c2cdd9`, the port-comment rewording `86f31b88`, the closure build
+  `a9d6fd79`). In the bisection ladder the closure sits in the top rung B7. Precondition (C) is amended to "identical
+  modulo new keys that are OFF in production", proven by (A) + (B) + the list of keys.
+- **(A)** at P_end (`graph_sha.py`, CPU): production graph `421c6b98ce7937f4`, state `749c56159ab028f4`, outputs
+  `51c02c6c6342a045`, 1 graph, 20,148 lines, 1,937,942 params: EQUAL to P_prod.
+- **(B)** `learner_golden.json` `9ef44772…`, `learner_golden_buffer.npz` `9f13350d…`: equal; `learner_golden_test` 6
+  passed.
+- **(C, amended)** `production_config.json` blob `49cd523f38ee` (P_prod `5ad40492fe21`): the ONLY difference is
+  `"move_set_closure": "off"`. Obs golden blob `09733f8c…` equal; `golden_obs_core --check`: all 991 hashes.
+- **(D)** `git diff --name-only 95d014fa b132b099 -- src/ data/ ':!*_test.py'`, classified file by file in the
+  measurement README: the closure build (gated OFF, or its record / parser surface with production's value OFF), the
+  `endstate` overlay, the eval-snapshot dedup (STORAGE only: the persisted snapshot is a sha-verified hard link instead
+  of a copy, after the cycle's games; the games read the unchanged scratch snapshot), the launcher PARENT process
+  (restart default, submodule preflight; runs from the launching checkout, not the pin; the trainer child imports only
+  the unchanged `main.launcher.ipc`), and live-play / anchor / prober / doc files the trainer never imports. **`data/`
+  EMPTY; `src/rust_sim/` and `src/rust_env/` EMPTY; no (c) file.** Identity holds.
+- **The new end-state identity** (CPU): one dynamo graph, 35,662 lines, graph `42ee361b11fa5a8d`, state
+  `df71da47741a8a0f`, outputs `5adfaa6c40a7a71e`, 2,031,460 params (no new parameter). The `95d014fa` overlay in the same
+  tree reproduces `95d014fa`'s arm (`55c7f5c009d4595b` / `c78ca89766000c71`). K9(b) recorder: no undeclared discrete op.
+  CPU `--debug` smoke of the new arm: PASSED (1,010 s, peak 3.39 GB; `model_config.json` records `move_set_closure: "on"`).
+- **(E) at P_end.** The GPU check that met E at `95d014fa` does not cover the closure's new graph path, so the FIRST
+  end-state seed's own startup gates are E: R1 compile parity (forward + backward), the K6 freeze, K9(b) at update 1 and
+  the update-10 canary. A refusal HOLDS the chain (the training session's follower holds on a non-DONE ending) and no
+  data counts.
+- **Argv** (`--pin-commit b132b099 --arch endstate`, the rest as staged): `checkargs` ✓ (12 flags, ARCH surface matches
+  the mirror + the arm, 28 recipe knobs match, still launches); `--dry-run` ✓ (FRESH, pin `b132b09952ba…`, torch 2.8.0+cu126, desktop GPU ✓, disk ✓, showdown deps ✓; nothing created).
+
+FINDINGS: (1) The strict (D) rule has no class for a new flag's RECORD (`model_version/*`, `snapshot.py`, the parser):
+they are on every save's path and were judged (a′), proven inert for production by (A) + (B); the amended (C) is the
+owner's acceptance of exactly that. (2) The bisection table (§5) did not list the v153 levers (`effective_stats`,
+`move_target_state`) before this amendment; by "B7 = `--arch endstate`" they sit in B7 today, placement not decided.
+(3) The doc body still carried `c0f528b4` in §0 / §2.4 / §4.1 after the 2026-10-10 re-pin; updated to `95d014fa` here. (4) Two Markdown files under `src/rust_sim/` (`CLAUDE.md`, `README.md`, the 2026-10-10 leaf cut `6900a964`) are in the window; (D)'s "any change under `src/rust_sim/`" was read as compiled code, which they are not.
+
+Tag: **AMENDMENT (pre-data) · end-state arm + `move_set_closure on` · P_end `b132b099` · production identity A–D HOLD · E = the first seed's startup gates** · design: [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) Decision record · measurements: [`measurements/endstate_closing_test_2026-10-09/p_end_2026-10-10/`](measurements/endstate_closing_test_2026-10-09/p_end_2026-10-10/)
