@@ -119,7 +119,7 @@ poke-env retirement P5 (2026-10-07); no poke-env battle is built:
    outcome from the `TurnDelta` projection as `_fill_pending_outcome` / `finalize` read it, every label
    from `agents.training.trace_labels` (the module `BattleRecorder` itself delegates to), the per-turn
    `outcome.reward` from `reward_config.terminal_breakdown` under the run's
-   `RewardConfig.from_dict(<run>/model_config.json)` (absent ⇒ the default), the probabilities the same
+   `core_trace.reward_config_for(<run>/model_config.json)` (the recorded terminal; an absent field ⇒ the PRODUCTION win-indicator terminal, never `RewardConfig`'s retired signed defaults), the probabilities the same
    torch masked softmax the live player computes; the recomputed result must equal `meta.result`;
 5. the recomputed `meta` is replaced by the STORED one (it keeps `trace_source`).
 

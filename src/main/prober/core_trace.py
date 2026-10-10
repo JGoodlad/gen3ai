@@ -46,7 +46,9 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from agents.training.reward_config import RewardConfig
 from agents.training.rust_eval.traces import is_core_trace
+from utils.rust_env.episode import PRODUCTION_TERMINAL
 
 __all__ = ["CoreTraceError", "CoreTraceMismatch", "CoreTraceUnsupported", "expand", "is_core_trace",
            "load_summary", "load_summary_meta", "refuse_core_trace", "protocol_log", "record_text_lines",
@@ -115,6 +117,20 @@ def refuse_core_trace(summary_path: str, *, reader: str, why: str) -> dict:
     return summary
 
 
+def reward_config_for(recorded: "dict | None") -> RewardConfig:
+    """The ``RewardConfig`` a core trace's per-turn ``outcome.reward`` is scored with.
+
+    The run's RECORDED terminal fields (``model_config.json``) win; an ABSENT one is the PRODUCTION
+    terminal (``utils.rust_env.episode.PRODUCTION_TERMINAL``: the win indicator, victory 1.0, draw 0.0 —
+    the constants of every trainer namespace, ``main.train.parser.objective``), the same default the
+    Rust env protocol applies when it is handed no terminal. NEVER ``RewardConfig``'s own dataclass
+    defaults for them: those are the RETIRED signed terminal (+30 / -30 / -35), and a core trace is
+    only ever produced under the production one, so a run dir with no ``model_config.json`` (or one
+    that records no terminal) used to print a shaped-era reward on every decision."""
+    base = {k: PRODUCTION_TERMINAL[k] for k in ("terminal_indicator", "victory_value", "draw_penalty")}
+    return RewardConfig.from_dict({**base, **(recorded or {})})
+
+
 def expand(summary_path: str, summary: dict, *, impl: str = "rust",
            run_dir: Optional[str] = None) -> dict:
     """The full legacy summary (``meta`` + ``teams`` + ``invocations``) for a core trace.
@@ -122,7 +138,8 @@ def expand(summary_path: str, summary: dict, *, impl: str = "rust",
     ``summary`` is the stored meta-only dict. A non-core summary is returned unchanged.
     ``run_dir`` (default: inferred from the path, as discovery does) supplies
     ``model_config.json``: the recorder's per-turn ``outcome.reward`` is scored with the run's
-    ``RewardConfig``, exactly as the live eval worker builds it (absent ⇒ the default config).
+    ``RewardConfig`` (:func:`reward_config_for`: the recorded terminal; an absent one ⇒ the production
+    win-indicator terminal, never the retired signed one).
     Cached in memory by path + the input files' mtimes; each call returns a deep COPY (a caller
     mutating its summary must not reach another session's)."""
     if not is_core_trace(summary):
@@ -247,7 +264,6 @@ def _expand_uncached(summary: dict, files: Dict[str, str], *, impl: str, reward_
     reconstruction and reports the trainee's per-decision views, trackers, masks and choice tokens;
     the summary is :class:`main.prober.core_recorder.CoreRecorder`'s. ``impl`` keys the cache only —
     the walk is the core's own replay, whatever driver a counterfactual view uses."""
-    from agents.training.reward_config import RewardConfig
     from agents.training.stall import StallConfig
     from main.prober import core_walk
     from main.prober.core_recorder import CoreRecorder
@@ -297,7 +313,7 @@ def _expand_uncached(summary: dict, files: Dict[str, str], *, impl: str, reward_
     masks = [walk.decisions[i].mask for i in range(n_rows)]
     probs = [_masked_probs(npz["logits"][i], masks[i]) for i in range(n_rows)]
     try:
-        out = CoreRecorder(walk, RewardConfig.from_dict(reward_cfg)).summary(
+        out = CoreRecorder(walk, reward_config_for(reward_cfg)).summary(
             n_rows=n_rows, actions=npz["actions"], probs=probs, masks=masks,
             step=int(meta.get("step", 0)), battle_tag=battle_tag)
     except ValueError as e:

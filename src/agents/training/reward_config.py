@@ -168,7 +168,14 @@ def terminal_breakdown(config: "RewardConfig", *, won: bool, lost: bool, finishe
     historical SIGNED terminal a timeout (the trainee FORFEITS at the turn cap, so it reads `lost` —
     detected by the turn count) takes `draw_penalty`, and a decisive loss or a pre-cap tie (which
     shares the branch) `-victory_value`. An unfinished board pays nothing. `lost` is accepted for the
-    callers' symmetry; the rule reads `won` / `finished` / `turn`."""
+    callers' symmetry; the rule reads `won` / `finished` / `turn`.
+
+    ⚠️ Under the PRODUCTION terminal (the win indicator — the only one a launch can record; its
+    `draw_penalty` is the namespace constant 0.0) the `draw_penalty` field is NEVER READ: every non-win
+    pays 0.0. The signed branch below is the RETIRED terminal, reachable only from a config that RECORDS
+    `terminal_indicator=False` (a pre-win-prob record); a config that records nothing must therefore be
+    built with the production terminal's values, not this dataclass's historical defaults —
+    `main.prober.core_trace.reward_config_for` does."""
     from agents.training.reward_weights import _TIMEOUT_TURN_CAP
 
     bd = RewardBreakdown()

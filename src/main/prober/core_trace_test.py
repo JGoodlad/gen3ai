@@ -13,9 +13,12 @@ import os
 import numpy as np
 import pytest
 
+from agents.training.reward_config import terminal_breakdown
 from main.prober.core_trace import (
     CoreTraceError, CoreTraceMismatch, _check_protocol, _masked_probs, expand, protocol_lines,
+    reward_config_for,
 )
+from main.train.parser.objective import OBJECTIVE_CONSTANTS
 
 
 def test_the_cross_check_ignores_timestamps_and_names_the_first_differing_line():
@@ -69,3 +72,45 @@ def test_the_session_reads_a_core_meta_without_expanding_and_refuses_a_broken_tr
     with pytest.raises(CoreTraceError, match="missing record, reconstruction, states"):
         sess._summary(b)
     assert os.listdir(os.path.dirname(sp)) == [os.path.basename(sp)]   # nothing written
+
+
+# -- the reward a core trace is scored with: the PRODUCTION terminal, never the retired signed one ----
+
+_BOARDS = {                       # (won, lost, finished, turn) — a win, a loss, a pre-cap tie, the 250-turn stall
+    "win": (True, False, True, 40), "loss": (False, True, True, 40),
+    "tie": (False, False, True, 40), "timeout": (False, True, True, 250),
+}
+
+
+def _fold(cfg) -> dict:
+    return {k: terminal_breakdown(cfg, won=w, lost=l, finished=f, turn=t).win_loss
+            for k, (w, l, f, t) in _BOARDS.items()}
+
+
+def test_a_run_that_records_no_terminal_is_scored_with_the_production_terminal():
+    """No `model_config.json` (`{}`), or one with no terminal fields, used to fall to RewardConfig's
+    dataclass defaults — the RETIRED signed terminal — and print +30 / -30 / -35 on a trace the Rust core
+    played under the win indicator. It is 1 / 0 / 0 / 0, the namespace constants."""
+    production = {"win": 1.0, "loss": 0.0, "tie": 0.0, "timeout": 0.0}
+    for absent in (None, {}, {"arch": "gen3_x"}):
+        cfg = reward_config_for(absent)
+        assert (cfg.terminal_indicator, cfg.victory_value, cfg.draw_penalty) == (
+            OBJECTIVE_CONSTANTS["terminal_indicator"], OBJECTIVE_CONSTANTS["victory_value"],
+            OBJECTIVE_CONSTANTS["draw_penalty"])
+        assert _fold(cfg) == production
+
+
+def test_a_recorded_terminal_still_wins_over_the_default():
+    """The run's RECORD decides when it states a terminal — the production one, or a retired signed one a
+    pre-win-prob run recorded (read faithfully, not silently rewritten to the production values)."""
+    signed = reward_config_for({"terminal_indicator": False, "victory_value": 30.0, "draw_penalty": -35.0})
+    assert _fold(signed) == {"win": 30.0, "loss": -30.0, "tie": -30.0, "timeout": -35.0}
+    assert _fold(reward_config_for({"terminal_indicator": True, "victory_value": 1.0, "draw_penalty": 0.0})) == {
+        "win": 1.0, "loss": 0.0, "tie": 0.0, "timeout": 0.0}
+
+
+def test_the_indicator_terminal_never_reads_draw_penalty():
+    """Under the win indicator every non-win pays 0.0 whatever the (inert, recorded) `draw_penalty` says."""
+    for dp in (0.0, -35.0, 12.5):
+        cfg = reward_config_for({"terminal_indicator": True, "victory_value": 1.0, "draw_penalty": dp})
+        assert _fold(cfg) == {"win": 1.0, "loss": 0.0, "tie": 0.0, "timeout": 0.0}, dp
