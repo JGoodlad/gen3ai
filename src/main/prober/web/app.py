@@ -51,6 +51,7 @@ from main.prober.engine import BELIEF_NAME_CAVEAT, opponent_rank, sort_opponents
 from main.prober.web import charts
 from main.prober.web.auth import COOKIE, Auth
 from main.prober.web.gate import UnlockRequired, job_gate, model_gate, route_gate_kind
+from main.prober.web.game import model_http_error
 from main.prober.web.jobs import JobRegistry
 from main.prober.web.runs import RunAccessError, RunStore
 
@@ -122,11 +123,32 @@ class Health(BaseModel):
                          "while this is non-zero.")
 
 
+class ArchBlock(BaseModel):
+    """`arch_status.ArchVerdict.as_dict()` — can the MODEL views run on this run/step, and if not, why."""
+    status: str = Field(..., description="current | incompatible | unrecorded")
+    kind: "str | None" = Field(None, description="Why not (arch_status.KINDS): arch_signature · obs_dim · "
+                                                  "obs_semantics · state_dict · config_value · newer_than_code · "
+                                                  "no_checkpoint · unreadable · load_failed. None unless incompatible.")
+    plain: str = Field(..., description="ONE plain-language sentence a page shows verbatim.")
+    model_views: bool = Field(..., description="False only when the model views are known not to run.")
+    config_version: "int | None" = None
+    arch_signature: "str | None" = None
+    obs_dim: "int | None" = None
+    source: "str | None" = Field(None, description="Which record said so: eval_manifest | model_config.")
+    current_config_version: int = Field(..., description="The code's MODEL_CONFIG_VERSION.")
+    current_arch_signature: str = Field(..., description="The code's ARCH_SIGNATURE.")
+
+
 class RunRow(BaseModel):
     name: str
-    has_traces: bool
+    has_traces: bool = Field(..., description="At least one eval_traces/step_<N>/ directory.")
     linked: bool = Field(..., description="Reached via an owner-placed symlink in the models root.")
     mtime: float
+    tier: str = Field(..., description="current (traces + model views run) | older (traces, turn story only) | "
+                                       "no_traces (nothing to inspect; the picker hides these behind 'show all').")
+    model_views: bool = Field(..., description="May the model views be tried on this run.")
+    arch: ArchBlock = Field(..., description="The cheap verdict behind `tier`, read from model_config.json / the "
+                                             "newest eval manifest — no checkpoint is opened to list.")
 
 
 class JobRef(BaseModel):
@@ -287,7 +309,11 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
 
     def shell(request: Request, run_name: "str | None") -> dict:
         rows = store().list_runs() if app.state.runs else []
-        return {"nav": _NAV, "runs": rows, "run_groups": _group_runs(rows), "run": run_name,
+        show_all = request.query_params.get("all_runs") in ("1", "true", "on")
+        return {"nav": _NAV, "runs": rows,
+                "picker": _picker(rows, show_all=show_all, selected=run_name,
+                                  toggle_href=_toggle_all_runs_href(request, show_all)),
+                "run": run_name,
                 "models_root": app.state.root,
                 "unlocked": unlocked(request),
                 "auth_required": app.state.auth.required,
@@ -303,7 +329,8 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
             meta = {"run": run_name, "n_steps": summary.get("n_steps"),
                     "battles": (summary.get("totals") or {}).get("battles"),
                     "wins": (summary.get("totals") or {}).get("win"),
-                    "losses": (summary.get("totals") or {}).get("loss")}
+                    "losses": (summary.get("totals") or {}).get("loss"),
+                    "model_views": summary.get("model_views")}
         return templates.TemplateResponse(
             request=request, name=template,
             context={"page_name": name, "run_meta": meta, "views": VIEW_QUESTIONS,
@@ -384,10 +411,12 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         # re-probe from), which is the same text the CLI prints and the page renders.
         sess = session(pick(run))
         row = battle_row(sess, battle)
-        data, err = guarded(lambda: sess.analyze(row["id"], inv))
-        if err:
-            raise HTTPException(status_code=400, detail=err)
-        return data
+        try:
+            return sess.analyze(row["id"], inv)
+        except HTTPException:
+            raise
+        except Exception as exc:                  # noqa: BLE001 — see model_http_error: a typed 400, not a 500
+            raise model_http_error(exc) from exc
 
     @app.get("/api/scan", tags=["read-only"], response_model=list,
              summary="ProbeSession.scan() — each battle's worst turning point, ranked (model-free)")
@@ -713,6 +742,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                         battles=[], selected=None, inv=0, empty=empty.detail)
         return page(request, "analyze.html", "analyze", name, summary=data, error=err,
                     battles=_picker_rows(sess.battles(), row), selected=row,
+                    model_status=sess.model_status(row["id"]),
                     inv=_form_int(inv, 0))
 
     @app.get("/scan", response_class=HTMLResponse, tags=["pages"],
@@ -808,13 +838,24 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         sess = session(pick(run))
         row = battle_row(sess, battle)
         i = _form_int(inv, 0) or 0
-        data, err = guarded(lambda: sess.analyze(row["id"], i))
-        # `ArchDriftError` is the EXPECTED outcome on an archived run (79/79 measured), and its
-        # message is a multi-line DIAGNOSIS written for a human that ends with the exact
-        # `git checkout` to re-probe from. `guarded` hands it over verbatim and `.err` is
-        # `white-space: pre-wrap`, so the page renders the whole thing rather than collapsing it
-        # to "analysis failed" — which would throw away the only part that says what to do next.
-        return fragment(request, "partials/analyze_result.html", a=data, error=err,
+        drift = None
+        try:
+            data, err = sess.analyze(row["id"], i), None
+        except HTTPException:
+            raise
+        except Exception as exc:                  # noqa: BLE001
+            data = None
+            from main.prober.model import ArchDriftError
+            if isinstance(exc, ArchDriftError):
+                # `ArchDriftError` is the EXPECTED outcome on an older run, and it is TYPED: ONE plain sentence
+                # (`drift.plain`, shown first) over the multi-line DIAGNOSIS written for a human that ends with
+                # the exact `git checkout` to re-probe from (`exc.detail`). `.err` is `white-space: pre-wrap`,
+                # so the page renders the whole thing rather than collapsing it to "analysis failed" — which
+                # would throw away the only part that says what to do next.
+                drift, err = exc, exc.detail
+            else:
+                err = f"{type(exc).__name__}: {exc}"
+        return fragment(request, "partials/analyze_result.html", a=data, error=err, drift=drift,
                         run=run, battle=row["short_id"], battle_path=row["id"], inv=i)
 
     @app.get("/partials/awareness", response_class=HTMLResponse, tags=["partials"],
@@ -1048,14 +1089,12 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         """JSON for the API, a rendered page for a browser — an agent hitting `/api/...` always
         gets parseable output, mirroring the CLI's `{"error": ...}` envelope."""
         if request.url.path.startswith("/api/"):
-            return JSONResponse({"error": exc.detail}, status_code=exc.status_code)
-        rows = app.state.runs.list_runs() if app.state.runs else []
+            # `model_http_error` hangs the typed diagnosis (`kind`, `plain`) on the exception it raises.
+            return JSONResponse({"error": exc.detail, **(getattr(exc, "extra", None) or {})},
+                                status_code=exc.status_code)
         return templates.TemplateResponse(
             request=request, name="error.html", status_code=exc.status_code,
-            context={"page_name": "error", "nav": _NAV, "runs": rows, "run": None,
-                     "models_root": app.state.root, "unlocked": unlocked(request),
-                     "auth_required": app.state.auth.required,
-                     "auth_configured": app.state.auth.configured,
+            context={"page_name": "error", **shell(request, None),
                      "status": exc.status_code, "detail": exc.detail})
 
     @app.exception_handler(UnlockRequired)
@@ -1312,26 +1351,53 @@ def _cap(rows, limit):
     return rows[:limit], len(rows)
 
 
-def _group_runs(rows: "list[dict]") -> "list[tuple]":
-    """Group the picker by generation so 79 near-identical names become a handful of choices.
+#: The picker's three groups, in the order they are offered (the first is the one worth opening).
+_TIER_LABELS = {
+    "current": "Current architecture · full model views",
+    "older": "Older architecture · turn story only",
+    "no_traces": "No eval traces · nothing to inspect",
+}
 
-    `ai_v9_06_gen5_...` -> "ai_v9"; `run_20260808_...` -> "run 2026-08"; anything else -> "other".
-    Groups keep the newest-first order of `rows`, so the group you are working in is at the top.
-    """
-    import re as _re
-    groups: "dict[str, list]" = {}
-    for r in rows:
-        name = r["name"]
-        m = _re.match(r"^(ai_v\d+)", name)
-        if m:
-            key = m.group(1)
-        elif _re.match(r"^(?:[a-z]{2}_)?run_(\d{4})(\d{2})\d{2}", name):
-            m2 = _re.match(r"^(?:[a-z]{2}_)?run_(\d{4})(\d{2})\d{2}", name)
-            key = f"run {m2.group(1)}-{m2.group(2)}"
-        else:
-            key = "other"
-        groups.setdefault(key, []).append(r)
-    return list(groups.items())
+
+def _picker(rows: "list[dict]", *, show_all: bool, selected: "str | None",
+            toggle_href: "str | None" = None) -> dict:
+    """The run picker's groups.
+
+    The old picker offered every directory under `models/` — 322 of them on 2026-10-09, of which 38 had
+    eval traces — grouped by name prefix, so the 38 that can be inspected were buried among 284 that cannot.
+    Now: **Current architecture** (traces, and the model views run) · **Older architecture** (traces; the turn
+    story and every model-free view work, the model views do not) · and the runs with **no traces**, which are
+    HIDDEN behind "show all N" (`?all_runs=1`) — except the run that is currently selected, which always stays
+    in the list so the `<select>` never shows a selection it does not offer. Each group is newest-first (the
+    order `RunStore.list_runs` returns). Classification is the store's (`tier`), so the picker, `/api/runs` and
+    the default run cannot disagree."""
+    by_tier = {t: [r for r in rows if r["tier"] == t] for t in _TIER_LABELS}
+    n_hidden = len(by_tier["no_traces"])
+    groups = []
+    for tier, label in _TIER_LABELS.items():
+        items = by_tier[tier]
+        if tier == "no_traces" and not show_all:
+            items = [r for r in items if r["name"] == selected]
+        if items:
+            groups.append({"tier": tier, "label": label, "items": items})
+    return {"groups": groups, "n_total": len(rows), "n_hidden": n_hidden, "show_all": show_all,
+            "toggle_href": toggle_href}
+
+
+def _toggle_all_runs_href(request: Request, show_all: bool) -> str:
+    """The current page's URL with `all_runs` flipped — every other query parameter kept, so toggling the list
+    does not lose the battle you were on. A relative path (never an absolute URL), built from the request's own
+    path and parameters."""
+    from urllib.parse import urlencode
+    q = [(k, v) for k, v in request.query_params.multi_items() if k != "all_runs"]
+    if not show_all:
+        q.append(("all_runs", "1"))
+    path = request.url.path
+    # `_safe_next`'s rule: one leading slash and no backslash. `//evil.example` would be a protocol-relative URL
+    # (the path is the visitor's own — a 404 page renders this link too), and nothing else is worth keeping.
+    if not path.startswith("/") or path.startswith("//") or "\\" in path:
+        path = "/"
+    return path + ("?" + urlencode(q) if q else "")
 
 
 def _newest_step(summary: "dict | None") -> "int | None":

@@ -78,9 +78,13 @@ def test_damage_op_view_none_when_no_op():
 # what drifted and which commit to check out — rather than as a raw torch error thrown four frames
 # inside SB3, and that a checkpoint whose ONLY problem is a deleted flag still loads.
 
-def _fake_ckpt(path, extractor_kwargs, obs_end=2669):
+def _fake_ckpt(path, extractor_kwargs, obs_end=None):
     """A zip shaped like an SB3 checkpoint's `data` member — enough for the peek, which is the whole
-    point of the peek: it must never deserialize 27MB to answer "what arch is this"."""
+    point of the peek: it must never deserialize 27MB to answer "what arch is this". Its observation is
+    the CURRENT width unless a test says otherwise, so the pre-load verdict has nothing to object to."""
+    if obs_end is None:
+        from main.prober.arch_status import current_obs_dim
+        obs_end = current_obs_dim()
     data = {"policy_kwargs": {"features_extractor_kwargs": dict(
         extractor_kwargs, layout={"parts": {"our_team": {"start": 0, "end": 696},
                                             "reactive": {"start": 700, "end": obs_end}}})}}
@@ -266,3 +270,140 @@ def test_load_turns_any_failure_into_a_diagnosis(tmp_path, monkeypatch):
         ProbeModel.load(ckpt)
     assert "cannot be re-run" in str(ei.value)
     assert isinstance(ei.value.__cause__, RuntimeError)   # the cause is chained, not swallowed
+
+
+# ── EVERY incompatibility is ONE typed diagnosis (2026-10-09) ────────────────────────────────────────
+# The owner: "it doesn't even detect the new error correctly". The classes below are the ways a checkpoint
+# can be unusable under HEAD; each must arrive as an `ArchDriftError` carrying its `kind` and ONE plain
+# sentence — never a raw StrictLoadError / RuntimeError / FileNotFoundError — and the ones decidable from
+# the RECORD must be refused BEFORE the load (the silent class, "the weights fit but the observation changed
+# meaning", would otherwise load fine and answer about inputs the model never trained on).
+
+from agents.model.model_version import (  # noqa: E402
+    ARCH_SIGNATURE, MODEL_CONFIG_VERSION, OBS_SEMANTICS_VERSION,
+)
+from agents.training.instrumented_ppo.strict_load import StrictLoadError  # noqa: E402
+from main.prober import arch_status as A  # noqa: E402
+from main.prober.model import NoCheckpointError  # noqa: E402
+
+_HEAD = {"config_version": MODEL_CONFIG_VERSION, "arch_signature": ARCH_SIGNATURE}
+
+
+def _run_ckpt(tmp_path, record, *, obs_end=None):
+    """`<tmp>/run/m.zip` (a fake checkpoint at the current width unless told otherwise) beside the run's
+    `model_config.json` (`record`; None = the run recorded nothing)."""
+    run = tmp_path / "run"
+    os.makedirs(run)
+    if record is not None:
+        (run / "model_config.json").write_text(json.dumps(record))
+    return _fake_ckpt(run / "m.zip", {"k": 1}, obs_end=obs_end)
+
+
+def _loader_must_not_run(monkeypatch):
+    def refuse(*a, **k):
+        raise AssertionError("the loader was reached: the recorded identity should have refused this first")
+    monkeypatch.setattr(snapshot, "load_checkpoint_strict", refuse)
+
+
+def _loader_succeeds(monkeypatch, calls):
+    class _StubPolicy(_Pol):
+        def set_training_mode(self, mode):
+            pass
+
+        def modules(self):
+            return []
+
+    def ok(path, *, device="cpu", custom_objects=None):
+        calls.append(path)
+        return type("M", (), {"policy": _StubPolicy(_Ext(_Op(np.zeros(6 * 12 + 13, dtype=np.float32))))})()
+
+    monkeypatch.setattr(snapshot, "load_checkpoint_strict", ok)
+
+
+@pytest.mark.parametrize("record,obs_end,kind", [
+    ({"config_version": 143, "arch_signature": "gen3_event_record_v2"}, None, A.KIND_ARCH_SIGNATURE),
+    (dict(_HEAD), 2761, A.KIND_OBS_DIM),
+    (dict(_HEAD, config_version=OBS_SEMANTICS_VERSION - 1), None, A.KIND_OBS_SEMANTICS),
+    (dict(_HEAD, config_version=MODEL_CONFIG_VERSION + 1), None, A.KIND_NEWER),
+])
+def test_a_recorded_incompatibility_is_refused_typed_before_any_load(tmp_path, monkeypatch, record, obs_end, kind):
+    ckpt = _run_ckpt(tmp_path, record, obs_end=obs_end)
+    _loader_must_not_run(monkeypatch)
+    with pytest.raises(ArchDriftError) as ei:
+        ProbeModel.load(ckpt)
+    e = ei.value
+    assert e.kind == kind
+    assert e.plain and str(e).startswith(e.plain), "the one plain sentence leads the full diagnosis"
+    assert e.plain not in e.detail, "…and the card that folds the detail under it does not say it twice"
+    assert "cannot be re-run under the current code" in str(e)
+
+
+def test_the_semantics_only_class_is_caught_though_the_weights_would_load(tmp_path, monkeypatch):
+    """THE SILENT CLASS, end to end: a checkpoint recorded one version below `OBS_SEMANTICS_VERSION` has the
+    current signature and the current width, so every shape check passes and the (stubbed) strict load
+    SUCCEEDS — yet it is refused, and the checkpoint one version later is not."""
+    calls: list = []
+    _loader_succeeds(monkeypatch, calls)
+    below = _run_ckpt(tmp_path, dict(_HEAD, config_version=OBS_SEMANTICS_VERSION - 1))
+    with pytest.raises(ArchDriftError) as ei:
+        ProbeModel.load(below)
+    assert ei.value.kind == A.KIND_OBS_SEMANTICS and not calls, "refused WITHOUT being loaded"
+    assert f"v{OBS_SEMANTICS_VERSION}" in ei.value.plain
+
+    (tmp_path / "ok").mkdir()
+    at = _run_ckpt(tmp_path / "ok", dict(_HEAD, config_version=OBS_SEMANTICS_VERSION))
+    assert isinstance(ProbeModel.load(at), ProbeModel) and calls == [at]
+
+
+@pytest.mark.parametrize("raised,kind", [
+    (StrictLoadError("the checkpoint's state dict does not match this model's (strict load): Missing key(s)"),
+     A.KIND_STATE_DICT),
+    (RuntimeError("Error(s) in loading state_dict for Gen3DualHeadMaskablePolicy: size mismatch for x"),
+     A.KIND_STATE_DICT),
+    (RuntimeError("mat1 and mat2 shapes cannot be multiplied (12x380 and 386x256)"), A.KIND_STATE_DICT),
+    (TypeError("__init__() got an unexpected keyword argument 'deleted_flag'"), A.KIND_CONFIG_VALUE),
+    (ValueError("move_candidate_floor=0.0 is not legal"), A.KIND_CONFIG_VALUE),
+    (RuntimeError("something nobody anticipated"), A.KIND_LOAD_FAILED),
+])
+def test_a_failed_load_is_classified_never_raw(tmp_path, monkeypatch, raised, kind):
+    """A run with NO record (so nothing to refuse it on) whose load then fails: the failure is mapped onto a
+    kind by its evidence, the cause is chained, and the catch-all is `load_failed` — nothing escapes untyped."""
+    ckpt = _run_ckpt(tmp_path, None)
+
+    def boom(*a, **k):
+        raise raised
+
+    monkeypatch.setattr(snapshot, "load_checkpoint_strict", boom)
+    with pytest.raises(ArchDriftError) as ei:
+        ProbeModel.load(ckpt)
+    assert ei.value.kind == kind and ei.value.plain
+    assert ei.value.__cause__ is raised
+
+
+def test_a_missing_or_unreadable_checkpoint_is_typed_not_a_raw_oserror(tmp_path, monkeypatch):
+    _loader_must_not_run(monkeypatch)
+    with pytest.raises(NoCheckpointError) as ei:
+        ProbeModel.load(str(tmp_path / "gone.zip"))
+    assert ei.value.kind == A.KIND_NO_CHECKPOINT and "no loadable checkpoint" in ei.value.plain
+    assert isinstance(ei.value, ArchDriftError) and isinstance(ei.value, FileNotFoundError)
+
+    empty = tmp_path / "empty.zip"
+    empty.write_bytes(b"")
+    with pytest.raises(ArchDriftError) as ei2:
+        ProbeModel.load(str(empty))
+    assert ei2.value.kind == A.KIND_UNREADABLE and not isinstance(ei2.value, NoCheckpointError)
+
+
+def test_a_record_that_vouches_for_head_still_gets_a_typed_error_when_the_load_fails(tmp_path, monkeypatch):
+    """The recorded identity is HEAD's, the weights are not what the code builds (a state_dict mismatch the
+    record could not foresee): the pre-load check passes and the CLASSIFIER catches it, with the recorded
+    version in the diagnosis rather than a guess."""
+    ckpt = _run_ckpt(tmp_path, dict(_HEAD))
+
+    def boom(*a, **k):
+        raise StrictLoadError("Missing key(s) in state_dict")
+
+    monkeypatch.setattr(snapshot, "load_checkpoint_strict", boom)
+    with pytest.raises(ArchDriftError) as ei:
+        ProbeModel.load(ckpt)
+    assert ei.value.kind == A.KIND_STATE_DICT and ei.value.saved_version == MODEL_CONFIG_VERSION

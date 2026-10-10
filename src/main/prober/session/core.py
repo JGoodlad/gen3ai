@@ -336,7 +336,24 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
     def _model_for(self, battle: BattleTrace):
         choice = self._resolve(battle)
         if choice.path is None:
-            raise FileNotFoundError(choice.detail)
+            # A run with traces and no weights (a trimmed skeleton) is a TYPED diagnosis like every other way a
+            # model view can be unavailable — an `ArchDriftError` (kind `no_checkpoint`) that is also a
+            # `FileNotFoundError`, so the probes that treat "no model" as an answer still do.
+            from main.prober import arch_status as A
+            from main.prober.model import NoCheckpointError
+            plain = A.plain_sentence(A.KIND_NO_CHECKPOINT)
+            raise NoCheckpointError(f"{plain}\n\n  {choice.detail}", kind=A.KIND_NO_CHECKPOINT, plain=plain,
+                                    current_version=A.MODEL_CONFIG_VERSION)
+        if self._model_loader is None and self.run_dir:
+            # The checkpoint's own record is `ProbeModel.load`'s to judge; the TRACE's is not — the model views
+            # run the checkpoint on this step's STORED observations, which an older run encoded under another
+            # meaning (and a `nearest` / `recent` rung is not the model that played the step). Same typed
+            # refusal, same surfaces. An injected loader is a test seam and skips it.
+            from main.prober import arch_status as A
+            trace_v = A.verdict_for_step(self.run_dir, battle.step)
+            if trace_v.status == A.INCOMPATIBLE:
+                from main.prober.model import arch_drift_error_from_verdict
+                raise arch_drift_error_from_verdict(choice.path, trace_v)
         model = self._models.get(choice.path)
         if model is None:
             if self._model_loader is not None:

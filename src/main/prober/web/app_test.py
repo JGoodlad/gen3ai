@@ -767,17 +767,6 @@ def test_the_run_picker_is_grouped(models_client):
     assert "<optgroup" in html
 
 
-def test_grouping_buckets_by_generation():
-    from main.prober.web.app import _group_runs
-    rows = [{"name": "ai_v9_06_gen5_x"}, {"name": "ai_v9_05_gen4_y"}, {"name": "ai_v8_13_z"},
-            {"name": "run_20260808_212910_gen4"}, {"name": "oddity"}]
-    groups = dict(_group_runs(rows))
-    assert len(groups["ai_v9"]) == 2
-    assert len(groups["ai_v8"]) == 1
-    assert "run 2026-08" in groups
-    assert "other" in groups
-
-
 def test_a_v_only_triage_warns_that_the_split_is_skewed(client):
     """`win-prob coverage 0%` as a bare stat is a number nobody can act on. It actually means the
     winning/behind split fell back to V > 0, which the project's own docs call systematically
@@ -1556,11 +1545,13 @@ def test_a_battle_that_does_not_exist_is_still_a_404(client):
     assert "nope" not in r.text and "loss_999" not in r.text
 
 
-def test_the_analyze_page_renders_and_defers_the_work_to_a_fragment(client):
+def test_the_analyze_page_renders_and_defers_the_work_to_a_fragment(head_client):
     """Unlike `/battles` and `/triage` this one may NOT arrive populated: it deserializes a
-    checkpoint. Same answer as `/scan` — arrive, then fill in, and say what is being waited on."""
-    _unlock(client)
-    html = client.get("/analyze").text
+    checkpoint. Same answer as `/scan` — arrive, then fill in, and say what is being waited on.
+    (On a run recording HEAD's architecture: on an older one the slot is the plain reason instead —
+    `test_an_older_runs_model_slot_is_the_plain_sentence_not_a_loader_or_a_lock`.)"""
+    _unlock(head_client)
+    html = head_client.get("/analyze").text
     assert html.lstrip().startswith("<!DOCTYPE html>")
     assert "Decision analysis" in html
     assert 'hx-get="/partials/analyze' in html and 'hx-trigger="load"' in html
@@ -2517,3 +2508,254 @@ def test_a_healthy_render_passes_straight_through_the_retry_wrapper(monkeypatch)
         dom = rit._dump_dom("chrome", "http://127.0.0.1:1/")
         assert dom == "<body data-ready='1' data-charts='2'></body>"
         assert calls["n"] == 1, "a successful render must not be retried"
+
+
+# -- the run picker, by architecture (2026-10-09) -------------------------------------------------------------
+# "Clean up the model selection; 99 % are irrelevant, and it doesn't even detect the new error correctly."
+# Three groups instead of 322 names: Current architecture (traces, model views run) · Older architecture (traces;
+# turn story only) · and the runs with NO eval traces, hidden until asked for. Classification is cheap (JSON
+# records, no checkpoint) and the same everywhere: the picker, /api/runs, the default run and the model slots.
+
+_OLD_IDENTITY = {"config_version": 143, "arch_signature": "gen3_event_record_v2", "total_dim": 2761}
+
+
+@pytest.fixture(scope="module")
+def head_run(tmp_path_factory):
+    """A fixture run that RECORDS HEAD's architecture: its model views may be tried."""
+    return fixture_run.build(str(tmp_path_factory.mktemp("proberweb_head")),
+                             identity=fixture_run.head_identity())
+
+
+@pytest.fixture()
+def head_client(head_run):
+    app = create_app(head_run, password="test-only-password")
+    with TestClient(app) as c:
+        c.app_state = app.state
+        yield c
+
+
+@pytest.fixture()
+def arch_client(tmp_path_factory):
+    """A models ROOT holding one of each: a HEAD-architecture run with traces (`rb_head`), an older one with
+    traces that is NEWER by mtime (`rb_old`), a pre-rb skeleton (`ai_skeleton`: config + weights, no traces) and
+    a launch that has captured nothing yet and is the newest of all (`rb_live`)."""
+    import os
+    import shutil
+    import time
+
+    root = tmp_path_factory.mktemp("arch_models")
+    for name, identity in (("rb_head", fixture_run.head_identity()), ("rb_old", _OLD_IDENTITY)):
+        staging = tmp_path_factory.mktemp("staging")
+        shutil.move(fixture_run.build(str(staging), identity=identity), str(root / name))
+    for name, cfg, age in (("ai_skeleton", {"config_version": 107, "arch_signature": "gen3_critic_route_wave_v1"},
+                            3000),
+                           ("rb_live", dict(fixture_run.head_identity()), 10)):
+        d = root / name
+        d.mkdir()
+        (d / "model_config.json").write_text(json.dumps(cfg))
+        (d / "metadata.json").write_text("{}")
+        (d / "final_model.zip").write_bytes(b"x")
+        t = time.time() - age
+        os.utime(str(d), (t, t))
+    for name, age in (("rb_head", 5000), ("rb_old", 4000)):
+        t = time.time() - age
+        os.utime(str(root / name), (t, t))
+    app = create_app(str(root), password="test-only-password")
+    with TestClient(app) as c:
+        c.app_state = app.state
+        yield c
+
+
+def _optgroups(html: str) -> "dict[str, list[str]]":
+    """`{optgroup label -> [option names]}` out of the run picker's `<select>`."""
+    import re
+    sel = html.split('id="runsel"', 1)[1].split("</select>", 1)[0]
+    out = {}
+    for m in re.finditer(r'<optgroup label="([^"]+)"[^>]*>(.*?)</optgroup>', sel, re.S):
+        out[m.group(1)] = re.findall(r'<option value="([^"]+)"', m.group(2))
+    return out
+
+
+def test_the_picker_offers_two_groups_and_hides_the_runs_with_no_traces(arch_client):
+    groups = _optgroups(arch_client.get("/").text)
+    assert list(groups.values()) == [["rb_head"], ["rb_old"]]
+    labels = list(groups)
+    assert labels[0].startswith("Current architecture · full model views")
+    assert labels[1].startswith("Older architecture · turn story only")
+    html = arch_client.get("/").text
+    assert "ai_skeleton" not in html.split('id="runsel"', 1)[1].split("</select>", 1)[0]
+    assert "show all 4" in html and "all_runs=1" in html, "the way to the hidden runs must be one click"
+
+
+def test_show_all_adds_the_hidden_group_and_keeps_the_rest_of_the_url(arch_client):
+    groups = _optgroups(arch_client.get("/battles", params={"all_runs": "1", "step": "4000000"}).text)
+    assert len(groups) == 3
+    hidden = next(v for k, v in groups.items() if k.startswith("No eval traces"))
+    assert sorted(hidden) == ["ai_skeleton", "rb_live"], hidden
+    html = arch_client.get("/battles", params={"all_runs": "1", "step": "4000000"}).text
+    assert "hide 2 without traces" in html
+    assert 'name="all_runs" value="1"' in html, "switching run must not silently turn the toggle off"
+    # the toggle link flips the flag and carries every other parameter
+    assert 'href="/battles?step=4000000"' in html
+
+
+def test_the_selected_run_stays_in_the_list_even_when_it_has_no_traces(arch_client):
+    groups = _optgroups(arch_client.get("/", params={"run": "ai_skeleton"}).text)
+    flat = [n for names in groups.values() for n in names]
+    assert "ai_skeleton" in flat and "rb_live" not in flat
+    assert 'value="ai_skeleton" selected' in arch_client.get("/", params={"run": "ai_skeleton"}).text
+
+
+def test_an_option_carries_the_version_it_was_recorded_at(arch_client):
+    html = arch_client.get("/").text
+    assert "rb_old · v143" in html
+    assert f"rb_head · v{fixture_run.head_identity()['config_version']}" in html
+
+
+def test_the_default_run_is_the_newest_current_one_not_the_newest_directory(arch_client):
+    """`rb_live` is the newest by mtime and `rb_old` is newer than `rb_head`; the app must open `rb_head`."""
+    assert arch_client.get("/api/run").json()["run_dir"].endswith("rb_head")
+    assert 'value="rb_head" selected' in arch_client.get("/").text
+
+
+def test_api_runs_carries_the_tier_and_the_verdict_behind_it(arch_client):
+    rows = {r["name"]: r for r in arch_client.get("/api/runs").json()}
+    assert {n: r["tier"] for n, r in rows.items()} == {
+        "rb_head": "current", "rb_old": "older", "ai_skeleton": "no_traces", "rb_live": "no_traces"}
+    old = rows["rb_old"]
+    assert old["model_views"] is False and old["arch"]["kind"] == "arch_signature"
+    assert old["arch"]["config_version"] == 143 and "older than the code" in old["arch"]["plain"]
+    assert rows["rb_head"]["arch"]["status"] == "current" and "path" not in old
+
+
+def test_a_hidden_run_can_still_be_opened_by_name(arch_client):
+    assert arch_client.get("/api/run", params={"run": "ai_skeleton"}).status_code == 200
+    assert arch_client.get("/api/run", params={"run": "../ai_skeleton"}).status_code == 404
+
+
+# -- the model slots say WHY, on first paint, and in one typed vocabulary -----------------------------------------
+
+def _old_battle(c):
+    return c.get("/api/battles", params={"run": "rb_old"}).json()[0]["short_id"]
+
+
+@pytest.mark.parametrize("page,loader", [("/game", "/partials/game/model"), ("/analyze", "/partials/analyze")])
+def test_an_older_runs_model_slot_is_the_plain_sentence_not_a_loader_or_a_lock(arch_client, page, loader):
+    b = _old_battle(arch_client)
+    for unlocked in (False, True):
+        if unlocked:
+            r = arch_client.post("/login", data={"password": "test-only-password", "next": page},
+                                 follow_redirects=False)
+            assert r.status_code == 303
+        html = arch_client.get(page, params={"run": "rb_old", "battle": b}).text
+        assert 'data-model-state="arch_drift"' in html and 'data-model-reason="arch_signature"' in html
+        assert "is older than the code" in html and "model views need a current-architecture checkpoint" in html
+        assert loader not in html, "no request is made for a view that cannot run"
+        assert "Unlock to view" not in html, "a password cannot unlock a view the architecture rules out"
+
+
+def test_a_current_runs_model_slot_still_loads_or_asks_for_the_password(arch_client):
+    b = arch_client.get("/api/battles", params={"run": "rb_head"}).json()[0]["short_id"]
+    locked = arch_client.get("/game", params={"run": "rb_head", "battle": b}).text
+    assert 'data-model-state="locked"' in locked
+    arch_client.post("/login", data={"password": "test-only-password", "next": "/game"}, follow_redirects=False)
+    assert "/partials/game/model" in arch_client.get("/game", params={"run": "rb_head", "battle": b}).text
+
+
+def test_the_context_strip_says_which_kind_of_run_this_is(arch_client):
+    old = arch_client.get("/", params={"run": "rb_old"}).text
+    assert "turn story only (older architecture, v143)" in old
+    head = arch_client.get("/", params={"run": "rb_head"}).text
+    assert "model views: current architecture" in head
+
+
+def test_a_steps_dropdown_marks_only_the_steps_that_differ_from_the_newest(tmp_path):
+    """Uniform runs stay clean (the context strip says it once); a run that resumed across an architecture
+    change marks the steps that fall on the other side."""
+    import glob
+    run = fixture_run.build(str(tmp_path), identity=fixture_run.head_identity())
+    older = glob.glob(f"{run}/eval_traces/step_{fixture_run.STEPS[0]}/eval_manifest.json")
+    (manifest,) = older
+    m = json.loads(open(manifest).read())
+    m.update(_OLD_IDENTITY)
+    open(manifest, "w").write(json.dumps(m))
+    with TestClient(create_app(run, password="test-only-password")) as c:
+        html = c.get("/battles").text
+        assert f'{fixture_run.STEPS[0]:,} · story only' in html
+        assert f'{fixture_run.STEPS[1]:,} ·' not in html and f'{fixture_run.STEPS[1]:,}</option>' in html
+
+
+def test_the_run_summary_marks_every_step_and_every_checkpoint(head_client, head_run):
+    s = head_client.get("/api/run").json()
+    assert s["model_views"]["status"] == "current"
+    assert all(st["model_views"]["status"] == "current" for st in s["steps"])
+    assert s["checkpoints"] and all(c["model_views"] for c in s["checkpoints"])
+
+
+def test_the_model_views_of_a_semantics_only_older_run_are_refused_though_the_shapes_fit(tmp_path):
+    """The silent class through the whole stack: HEAD's signature, HEAD's width, one version below the
+    obs-semantics marker. The page says why; nothing is loaded."""
+    from agents.model.model_version import OBS_SEMANTICS_VERSION
+    run = fixture_run.build(str(tmp_path),
+                            identity=dict(fixture_run.head_identity(), config_version=OBS_SEMANTICS_VERSION - 1))
+    with TestClient(create_app(run, open_access=True)) as c:
+        b = c.get("/api/battles").json()[0]["short_id"]
+        html = c.get("/game", params={"battle": b}).text
+        assert 'data-model-reason="obs_semantics"' in html and "never trained on" in html
+        r = c.get("/api/analyze", params={"battle": b})
+        assert r.status_code == 400 and r.json()["kind"] == "obs_semantics"
+
+
+def test_the_json_error_envelope_carries_the_kind(arch_client):
+    arch_client.post("/login", data={"password": "test-only-password", "next": "/"}, follow_redirects=False)
+    b = _old_battle(arch_client)
+    for path in ("/api/analyze", "/api/game/readout"):
+        r = arch_client.get(path, params={"run": "rb_old", "battle": b})
+        body = r.json()
+        assert r.status_code == 400, path
+        assert body["kind"] == "arch_signature" and "older than the code" in body["plain"], path
+        assert body["error"].startswith("ArchDriftError:"), "the old `error` string is still there for clients"
+
+
+def test_the_analyze_fragment_leads_with_the_plain_sentence_over_the_whole_diagnosis(arch_client):
+    arch_client.post("/login", data={"password": "test-only-password", "next": "/"}, follow_redirects=False)
+    b = _old_battle(arch_client)
+    html = arch_client.get("/partials/analyze", params={"run": "rb_old", "battle": b, "inv": "0"}).text
+    assert 'data-arch-kind="arch_signature"' in html and "model views need a current-architecture" in html
+    assert 'data-analysis="error"' in html and "cannot be re-run under the current code" in html
+    assert html.index("is older than the code") < html.index("cannot be re-run under the current code")
+
+
+def test_a_run_with_traces_and_no_checkpoint_is_the_typed_no_checkpoint_card(tmp_path):
+    """The skeleton case that DOES have traces: weights gone, `eval_traces/` kept. The ladder finds nothing; the
+    card says so in the same vocabulary instead of `FileNotFoundError: no checkpoint found (pass --ckpt)`."""
+    import glob
+    run = fixture_run.build(str(tmp_path), identity=fixture_run.head_identity())
+    for z in glob.glob(f"{run}/*.zip"):
+        __import__("os").remove(z)
+    with TestClient(create_app(run, open_access=True)) as c:
+        b = c.get("/api/battles").json()[0]["short_id"]
+        html = c.get("/game", params={"battle": b}).text
+        assert 'data-model-reason="no_checkpoint"' in html and "no loadable checkpoint" in html
+        assert "FileNotFoundError" not in html
+        r = c.get("/api/analyze", params={"battle": b})
+        assert r.status_code == 400 and r.json()["kind"] == "no_checkpoint"
+
+
+def test_the_show_all_link_can_never_be_turned_into_an_external_link():
+    """The link is built from the REQUEST's own path, and a 404 page renders it too — so a visitor-chosen path
+    (`//evil.example/x`, protocol-relative) must not become an `href` that leaves the site."""
+    from main.prober.web.app import _toggle_all_runs_href
+    from starlette.datastructures import QueryParams
+
+    class _Req:
+        def __init__(self, path, query=""):
+            self.url = type("U", (), {"path": path})()
+            self.query_params = QueryParams(query)
+
+    assert _toggle_all_runs_href(_Req("/battles", "step=4&run=a"), False) == "/battles?step=4&run=a&all_runs=1"
+    assert _toggle_all_runs_href(_Req("/battles", "step=4&all_runs=1"), True) == "/battles?step=4"
+    assert _toggle_all_runs_href(_Req("/", "all_runs=1"), True) == "/"
+    for hostile in ("//evil.example/x", "///evil.example", "/a\\b", "evil.example"):
+        href = _toggle_all_runs_href(_Req(hostile), False)
+        assert href == "/?all_runs=1", (hostile, href)

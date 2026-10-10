@@ -245,3 +245,138 @@ def test_enumeration_still_skips_odd_names_in_a_shared_models_dir(models):
     weird = os.path.join(models, "bad\nname")
     os.makedirs(os.path.join(weird, "eval_traces"), exist_ok=True)
     assert "bad\nname" not in {r["name"] for r in RunStore(models).list_runs()}
+
+
+# -- the picker's classification (2026-10-09): current / older / no traces ---------------------------------
+# The owner: "clean up the model selection; 99 % are irrelevant". On a real archive 38 of 322 runs had eval
+# traces and none was at the current architecture; the rest were skeletons. The store now classifies each run
+# CHEAPLY (model_config.json + the newest eval manifest; no checkpoint is opened) so the picker, `/api/runs` and
+# the default run share one answer.
+
+import json  # noqa: E402
+import time  # noqa: E402
+
+from agents.model.model_version import (  # noqa: E402
+    ARCH_SIGNATURE, MODEL_CONFIG_VERSION, OBS_SEMANTICS_VERSION,
+)
+
+_HEAD_REC = {"config_version": MODEL_CONFIG_VERSION, "arch_signature": ARCH_SIGNATURE, "total_dim": 2845}
+_OLD_REC = {"config_version": 143, "arch_signature": "gen3_event_record_v2", "total_dim": 2761}
+
+
+def _arch_run(root, name, rec=None, *, traces=True, age=0.0):
+    """A run recording `rec` (its config version + signature) in model_config.json and in its eval manifest,
+    with `traces` or as a SKELETON (weights and logs only), last touched `age` seconds ago."""
+    path = os.path.join(root, name)
+    os.makedirs(path, exist_ok=True)
+    if rec is not None:
+        with open(os.path.join(path, "model_config.json"), "w") as fh:
+            json.dump(rec, fh)
+    if traces:
+        step = os.path.join(path, "eval_traces", "step_100")
+        os.makedirs(os.path.join(step, "bot"), exist_ok=True)
+        with open(os.path.join(step, "eval_manifest.json"), "w") as fh:
+            json.dump(dict(rec or {}, step=100), fh)
+    else:
+        with open(os.path.join(path, "final_model.zip"), "wb") as fh:
+            fh.write(b"not a zip: a skeleton's weights are never opened to list it")
+    when = time.time() - age
+    os.utime(path, (when, when))
+    return path
+
+
+@pytest.fixture()
+def archive(tmp_path):
+    """One of each: a HEAD-architecture run with traces, an older one with traces, a skeleton, a run that has
+    not finished its first eval cycle, and a traced run that records nothing."""
+    root = str(tmp_path / "archive")
+    os.makedirs(root)
+    _arch_run(root, "rb_head", _HEAD_REC, age=5000)
+    _arch_run(root, "rb_old", _OLD_REC, age=4000)
+    _arch_run(root, "ai_skeleton", {"config_version": 107, "arch_signature": "gen3_critic_route_wave_v1"},
+              traces=False, age=3000)
+    _arch_run(root, "rb_live", _HEAD_REC, traces=False, age=10)           # NEWEST: a launch with no traces yet
+    _arch_run(root, "rb_unrecorded", None, age=6000)
+    return root
+
+
+def test_every_run_lands_in_one_of_three_tiers(archive):
+    rows = {r["name"]: r for r in RunStore(archive).list_runs()}
+    assert {n: r["tier"] for n, r in rows.items()} == {
+        "rb_head": "current", "rb_old": "older", "rb_unrecorded": "older",
+        "ai_skeleton": "no_traces", "rb_live": "no_traces"}
+    assert rows["rb_head"]["model_views"] is True and rows["rb_head"]["arch"]["status"] == "current"
+    assert rows["rb_old"]["model_views"] is False and rows["rb_old"]["arch"]["kind"] == "arch_signature"
+    assert rows["rb_old"]["arch"]["config_version"] == 143
+    assert rows["rb_unrecorded"]["arch"]["status"] == "unrecorded", "never counted as current"
+    assert rows["ai_skeleton"]["has_traces"] is False and rows["rb_head"]["has_traces"] is True
+
+
+def test_the_semantics_only_class_keeps_a_run_out_of_the_current_tier(tmp_path):
+    """A run one version below the obs-semantics marker has HEAD's signature and HEAD's width — every shape
+    fits — yet its model views cannot run. The picker must not offer it as 'current'."""
+    root = str(tmp_path / "archive")
+    os.makedirs(root)
+    _arch_run(root, "rb_prev", dict(_HEAD_REC, config_version=OBS_SEMANTICS_VERSION - 1))
+    (row,) = RunStore(root).list_runs()
+    assert row["tier"] == "older" and row["arch"]["kind"] == "obs_semantics"
+
+
+def test_an_empty_eval_traces_directory_is_not_traces(tmp_path):
+    root = str(tmp_path / "archive")
+    path = _arch_run(root, "rb_empty", _HEAD_REC, traces=False)
+    os.makedirs(os.path.join(path, "eval_traces"))
+    (row,) = RunStore(root).list_runs()
+    assert row["has_traces"] is False and row["tier"] == "no_traces"
+
+
+def test_the_default_is_the_newest_current_run_even_when_newer_runs_exist(archive):
+    """`rb_live` (no traces yet) is the newest by mtime and `rb_old` is newer than `rb_head` — the old rule
+    opened the former. The rule is: newest CURRENT run with traces."""
+    assert RunStore(archive).default_run() == "rb_head"
+
+
+def test_with_no_current_run_the_default_is_the_newest_run_that_has_traces(archive):
+    import shutil
+    shutil.rmtree(os.path.join(archive, "rb_head"))
+    assert RunStore(archive).default_run() == "rb_old"
+
+
+def test_with_no_traces_anywhere_the_default_is_the_newest_run(tmp_path):
+    root = str(tmp_path / "archive")
+    _arch_run(root, "a_skeleton", _OLD_REC, traces=False, age=100)
+    _arch_run(root, "b_skeleton", _OLD_REC, traces=False, age=5)
+    assert RunStore(root).default_run() == "b_skeleton"
+
+
+def test_a_run_the_picker_hides_is_still_openable(archive):
+    """Hiding is PRESENTATION. Membership in the server's own enumeration is the security gate, and it is
+    over EVERY run — a deep link to a skeleton (or a run mid-launch) still resolves."""
+    store = RunStore(archive)
+    assert store.resolve("ai_skeleton").endswith("ai_skeleton")
+    assert store.resolve("rb_live").endswith("rb_live")
+
+
+def test_listing_never_opens_a_checkpoint(archive, monkeypatch):
+    """The classification is two small JSON reads per run. The skeleton's `final_model.zip` is junk bytes and
+    the zip machinery is booby-trapped, so a listing that touched either would raise."""
+    import zipfile
+
+    def trap(*a, **k):
+        raise AssertionError("listing a run opened a zip")
+
+    monkeypatch.setattr(zipfile, "ZipFile", trap)
+    monkeypatch.setattr(zipfile, "is_zipfile", trap)
+    assert len(RunStore(archive).list_runs()) == 5
+
+
+def test_the_classification_is_cached_by_mtime(archive, monkeypatch):
+    from main.prober import arch_status as A
+
+    store = RunStore(archive)
+    store.list_runs()
+    reads = []
+    real = A._read_json
+    monkeypatch.setattr(A, "_read_json", lambda p: (reads.append(p), real(p))[1])
+    store.list_runs()
+    assert reads == [], "an untouched archive must be served from the cache, not re-read"

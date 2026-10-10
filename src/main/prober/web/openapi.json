@@ -1,6 +1,102 @@
 {
   "components": {
     "schemas": {
+      "ArchBlock": {
+        "description": "`arch_status.ArchVerdict.as_dict()` \u2014 can the MODEL views run on this run/step, and if not, why.",
+        "properties": {
+          "arch_signature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arch Signature"
+          },
+          "config_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Version"
+          },
+          "current_arch_signature": {
+            "description": "The code's ARCH_SIGNATURE.",
+            "title": "Current Arch Signature",
+            "type": "string"
+          },
+          "current_config_version": {
+            "description": "The code's MODEL_CONFIG_VERSION.",
+            "title": "Current Config Version",
+            "type": "integer"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why not (arch_status.KINDS): arch_signature \u00b7 obs_dim \u00b7 obs_semantics \u00b7 state_dict \u00b7 config_value \u00b7 newer_than_code \u00b7 no_checkpoint \u00b7 unreadable \u00b7 load_failed. None unless incompatible.",
+            "title": "Kind"
+          },
+          "model_views": {
+            "description": "False only when the model views are known not to run.",
+            "title": "Model Views",
+            "type": "boolean"
+          },
+          "obs_dim": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obs Dim"
+          },
+          "plain": {
+            "description": "ONE plain-language sentence a page shows verbatim.",
+            "title": "Plain",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Which record said so: eval_manifest | model_config.",
+            "title": "Source"
+          },
+          "status": {
+            "description": "current | incompatible | unrecorded",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "plain",
+          "model_views",
+          "current_config_version",
+          "current_arch_signature"
+        ],
+        "title": "ArchBlock",
+        "type": "object"
+      },
       "Body_do_login_login_post": {
         "properties": {
           "next": {
@@ -676,13 +772,23 @@
       },
       "RunRow": {
         "properties": {
+          "arch": {
+            "$ref": "#/components/schemas/ArchBlock",
+            "description": "The cheap verdict behind `tier`, read from model_config.json / the newest eval manifest \u2014 no checkpoint is opened to list."
+          },
           "has_traces": {
+            "description": "At least one eval_traces/step_<N>/ directory.",
             "title": "Has Traces",
             "type": "boolean"
           },
           "linked": {
             "description": "Reached via an owner-placed symlink in the models root.",
             "title": "Linked",
+            "type": "boolean"
+          },
+          "model_views": {
+            "description": "May the model views be tried on this run.",
+            "title": "Model Views",
             "type": "boolean"
           },
           "mtime": {
@@ -692,13 +798,21 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "tier": {
+            "description": "current (traces + model views run) | older (traces, turn story only) | no_traces (nothing to inspect; the picker hides these behind 'show all').",
+            "title": "Tier",
+            "type": "string"
           }
         },
         "required": [
           "name",
           "has_traces",
           "linked",
-          "mtime"
+          "mtime",
+          "tier",
+          "model_views",
+          "arch"
         ],
         "title": "RunRow",
         "type": "object"

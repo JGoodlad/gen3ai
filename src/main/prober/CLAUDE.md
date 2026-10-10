@@ -96,7 +96,7 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   missing an extractor submodule is an `ArchDriftError` diagnosis, never a model with that submodule at
   fresh init), resolves `ObsOffsets`
   once from `enc.get_layout()`, and raises
-  `ArchDriftError` on a stale checkpoint. `action_dist` / `logit_grad` are the forward/backward pair;
+  `ArchDriftError` (typed: `kind` + `plain`; `NoCheckpointError` when there is no checkpoint) on a stale one — checked against the RECORDED identity BEFORE the load (`arch_status`). `action_dist` / `logit_grad` are the forward/backward pair;
   `belief`, `damage_op_view`, `move_belief`, `win_prob_at` and `architecture()` each
   read a head's stash after one clean forward. **`capture_battle(obs, masks)`** is `/game`'s ONE
   batched EAGER forward over a battle's stored decisions with read-only hooks (`model_capture.py`, the
@@ -108,6 +108,14 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   `describe_team`, `describe_turn_outcome`) live here because they need the encoder. 🚨 **A turn's
   events land in the NEXT decision's obs**, so `describe_turn_outcome` is read from decision *T+1*.
   Detail: `designs/prober/engine_and_model.md`.
+- **`arch_status.py`** — can the MODEL views run on this run / step / checkpoint, from RECORDS (no torch, no
+  checkpoint opened)? One typed `ArchVerdict` (`current` · `incompatible` · `unrecorded`; a `kind` from
+  `arch_status.KINDS`; ONE plain sentence) used by the run PICKER (`web/runs.py`, cached by mtime), the per-step
+  marks (`ProbeSession.model_status`) and `ProbeModel.load`. 🚨 **Every incompatibility is ONE typed diagnosis**
+  (2026-10-09) — a different network family, a width mismatch, a rejected state_dict, a rejected value, a missing
+  or unreadable checkpoint, and the SILENT class (weights fit, the observation changed meaning —
+  `model_version.OBS_SEMANTICS_VERSION`, caught by the recorded config version alone). Detail and the kind table:
+  `designs/prober/arch_drift.md`.
 - **`discovery.py`** — pure filesystem, and it never opens a JSON or an npz: `build_trace_tree`
   groups step → opponent → battle by **parsing path strings only**, so a 1000-battle run opens
   instantly. It reads each cycle's `eval_manifest.json` for model identity, and
@@ -223,6 +231,17 @@ built there first. **The owner's ruling (2026-10-08): the prober supports only t
 ("we are still rapidly iterating") — there is no pinned-checkout worker; on an older run `/game`'s
 model panels render one plain sentence with the `ArchDriftError` diagnosis folded under it. A model-loading view is worth having for the run you are *currently training* and
 stops working the day the obs layout moves.
+
+🚨 **EVERY way a checkpoint can be unusable is ONE typed diagnosis (2026-10-09), and the model slots say it BEFORE
+trying** — the owner: *"clean up the model selection; 99 % are irrelevant, and it doesn't even detect the new error
+correctly."* Two defects behind that: a checkpoint whose weights FIT but whose observation changed meaning (v151's
+Toxic cell re-scale) loaded without a word — nothing but `OBS_SEMANTICS_VERSION` (`model_version/constants.py`,
+compared with the recorded `config_version` by `arch_status`) can see it; and a run with traces but no weights died as
+a raw `FileNotFoundError`. Now `ArchDriftError.kind` is one of `arch_signature · obs_dim · obs_semantics ·
+state_dict · config_value · newer_than_code · no_checkpoint · unreadable · load_failed`, its `plain` is one sentence
+("This run's architecture (config vN, signature S) is older than the code (config vM…); model views need a
+current-architecture checkpoint."), and `/game` / `/analyze` render that reason on first paint from
+`ProbeSession.model_status` (model-free). The picker is the same classification (`web/CLAUDE.md`).
 
 **The three walls behind the diagnosis** — a deleted flag still baked into the zip's
 `features_extractor_kwargs` (recovered by dropping unknown kwargs, and *which* ones is reported),
@@ -678,9 +697,10 @@ impl-invariant. The two known divergences and the build/override path: `designs/
   yields an analysis with `warnings` and no panels (the engine never touches the
   model) — handled, not a crash.
 - **`ArchDriftError` is the EXPECTED outcome of loading an archived checkpoint**, not an
-  exceptional one (measured: 79/79 runs). Any surface that loads a model should render its message
-  — it is written to be read by a human, multi-line, and ends with the `git checkout` to run — and
-  should NOT collapse it to "analysis failed". See the drift section above.
+  exceptional one (measured: 79/79 runs in 2026-08; 38/38 runs with traces in 2026-10). Any surface that loads a
+  model should render its `plain` sentence and fold the rest (`exc.detail` — multi-line, ends with the `git
+  checkout` to run) under it, and should NOT collapse it to "analysis failed". It carries `kind`; branch on that,
+  never on message text. See the drift section above.
 - `models/` is gitignored and lives only in the **main checkout**, not in a
   worktree — point the prober at an absolute `models/...` path when running from
   a worktree.

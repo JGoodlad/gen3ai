@@ -8,7 +8,7 @@ model-loading tier table in `main/prober/CLAUDE.md`).
 from __future__ import annotations
 
 from agents.training.trace_result import OUTCOMES, era_note, result_era, result_of
-from main.prober.discovery import list_checkpoints
+from main.prober.discovery import list_checkpoints, resolve_model_for_step
 from main.prober.engine import (_npz_win_prob, _timeline_for, build_board, parse_pct,
     protocol_for_turn, summary_flags, timeline_entry_text)
 from main.prober.session.serialize import (_active_str, _choice_dict, _chosen_prob,
@@ -35,8 +35,12 @@ class _ReadingMixin:
                 "identity": None if not man else {
                     "git_hash": man.get("git_hash"),
                     "arch_signature": man.get("arch_signature"),
+                    "config_version": man.get("config_version"),
                     "snapshot_available": self._snapshot_available(sg.step, man),
                 },
+                # Can the MODEL views run on this step? (`model_status`: the recorded identity + whether a
+                # checkpoint resolves — no checkpoint is loaded.) What the step dropdowns mark.
+                "model_views": self.model_status(step=sg.step),
                 "opponents": opps,
                 "totals": wl,
             })
@@ -56,9 +60,58 @@ class _ReadingMixin:
             # what happened: a timeout was booked as a loss and a tie was dropped unwritten.
             "result_vocabulary": self._result_eras(),
             "result_vocabulary_note": self._result_era_note(),
-            "checkpoints": [{"step": s, "path": p} for s, p in list_checkpoints(self.run_dir)],
+            "checkpoints": self._checkpoint_rows(),
+            # The NEWEST step's model-view verdict, for the run-level banner (None on a run with no steps).
+            "model_views": steps[-1]["model_views"] if steps else None,
             "steps": steps, "totals": totals,
         }
+
+    def _checkpoint_rows(self) -> "list[dict]":
+        """The persisted checkpoints, each marked with whether the model views can load it. Every periodic
+        checkpoint carries the run-level record (the per-checkpoint `.json` sidecar has no version), so ONE
+        verdict — read from the run's `model_config.json`, never from opening a zip — marks them all."""
+        from main.prober import arch_status as A
+        ckpts = list_checkpoints(self.run_dir)
+        v = A.checkpoint_verdict(ckpts[-1][1]) if ckpts else None
+        return [{"step": s, "path": p,
+                 "model_views": True if v is None else v.model_views,
+                 "kind": None if v is None else v.kind} for s, p in ckpts]
+
+    def model_status(self, battle_id: "str | None" = None, *, step: "int | None" = None) -> dict:
+        """Can the MODEL views (`/game`'s model panels, `analyze`, the counterfactual probes) run on this battle's
+        step? **Model-free**: reads the step's recorded identity (its eval manifest, else the run's
+        `model_config.json`) and resolves — without loading — the checkpoint `resolve_model_for_step` would pick.
+
+        `{status, kind, plain, model_views, config_version, arch_signature, obs_dim, source, step, checkpoint}`
+        where `status` is `current` / `incompatible` / `unrecorded`, `kind` one of `arch_status.KINDS` when
+        incompatible, `plain` ONE plain-language sentence, and `checkpoint` the resolution detail. With neither
+        `battle_id` nor `step`, the run's NEWEST step. A run with no eval step has none to resolve: its verdict
+        comes from `model_config.json` alone."""
+        from main.prober import arch_status as A
+        if step is None and battle_id is not None:
+            step = self._battle(battle_id).step
+        if step is None and self.tree.steps:
+            step = max(sg.step for sg in self.tree.steps)
+        if step is None:
+            v = A.verdict_for_step(self.run_dir) if self.run_dir else A.verdict_from_record(None, None)
+            return dict(v.as_dict(), step=None, checkpoint=None)
+        # Memoised per step: the session's tree is built once, so the answer cannot change under it, and
+        # `run_summary` asks once per step (a zip peek each) on every page that shows the summary.
+        cache = self.__dict__.setdefault("_model_status_cache", {})
+        if step not in cache:
+            choice = resolve_model_for_step(self.tree, step, self._override, self._tier)
+            if choice.path is None:
+                v = A.no_checkpoint_verdict(choice.detail)
+            else:
+                from main.prober.model import peek_checkpoint
+                v = A.checkpoint_verdict(choice.path,
+                                         peek_obs_dim=peek_checkpoint(choice.path).get("obs_dim"))
+                if self.run_dir:
+                    # …and the TRACE's own record: the views run this checkpoint on the step's STORED
+                    # observations, and on a `nearest` / `recent` rung those were written by another model.
+                    v = A.worst(v, A.verdict_for_step(self.run_dir, step))
+            cache[step] = dict(v.as_dict(), step=step, checkpoint=choice.detail)
+        return dict(cache[step])
 
     # -- result vocabulary (which ERA these traces were written in) ----------
 

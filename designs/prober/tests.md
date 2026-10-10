@@ -64,7 +64,7 @@ real bridge battle → full falsify pipeline, determinism re-run, and the run-le
 beam pruning, principal variation) + `better_line_integration_test.py` (`@integration`, real bridge,
 fake `V=obs.sum()` model: the depth-1 chosen value == sum(recorded next obs) value_crn anchor, the
 depth-2 beam principal variation, determinism), `model_test.py` (the torch boundary — where each
-forward stash LIVES, plus the `ArchDriftError` diagnosis and the dropped-kwarg recovery),
+forward stash LIVES, plus the `ArchDriftError` diagnosis, the dropped-kwarg recovery and — end to end through `ProbeModel.load` — every typed incompatibility kind, including the semantics-only one with a loader that WOULD succeed; `arch_status_test.py` pins the verdicts, the record readers and the picker's mtime cache),
 `awareness_test.py` (the "did it KNOW?" verdict fold over hand-built atom distributions),
 `loops_test.py` (the bait-loop detector, pinned on literal Showdown protocol lines — the whole
 point of the module is that it must not read the rendered timeline), `lookahead_test.py` +

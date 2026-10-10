@@ -120,7 +120,14 @@
     </section>
     {% endif %}
 
-    {% if unlocked %}
+    {% if model_status and not model_status.model_views %}
+    {# The model panels CANNOT run on this step (older architecture, an observation that changed meaning, no
+       checkpoint…): say why on first paint — no loader to wait on, no password prompt for a view the password
+       cannot unlock. The fragment route renders the same card if it is hit directly. #}
+    <div id="game-model">
+      {% include "partials/model_unavailable.html" %}
+    </div>
+    {% elif unlocked %}
     <div id="game-model"
          hx-get="/partials/game/model?run={{ (run or '') | urlencode }}&battle={{ story.short_id | urlencode }}&inv={{ inv }}"
          hx-trigger="load" hx-swap="innerHTML">

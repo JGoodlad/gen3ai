@@ -10,7 +10,8 @@ touching either — the engine/app seam, the module map, the per-battle resoluti
   a plain strict load (`snapshot.load_checkpoint_strict`: no env, no `ModelVersion` check — matching the
   legacy CLI — and sb3's non-strict retry refused, `gen3_strict_checkpoint_load_v1`; a strict mismatch
   is a `StrictLoadError`, which `load` turns into the same `ArchDriftError` diagnosis as any failed
-  load, the cause chained) and resolves `ObsOffsets` once from `enc.get_layout()`. `action_dist` /
+  load, the cause chained; the diagnosis is TYPED — a `kind` and ONE plain sentence, `designs/prober/arch_drift.md` —
+  and a checkpoint whose RECORDED identity is not HEAD's is refused before the load at all) and resolves `ObsOffsets` once from `enc.get_layout()`. `action_dist` /
   `logit_grad` are the only forward/backward passes (`belief` adds one when a
   belief-on checkpoint is loaded — see below). **`ProbeModel.belief(obs, mask)`**
   runs one clean forward and reads the belief head's stash

@@ -506,7 +506,10 @@ def main() -> None:
     try:
         out = _run(args)
     except Exception as e:  # noqa: BLE001 — agents want a JSON error, not a traceback
-        print(json.dumps({"error": f"{type(e).__name__}: {e}"}, indent=2))
+        env = {"error": f"{type(e).__name__}: {e}"}
+        if getattr(e, "kind", None):                 # a typed ArchDriftError: the kind + ONE plain sentence
+            env.update(kind=e.kind, plain=e.plain)
+        print(json.dumps(env, indent=2))
         sys.exit(1)
     print(json.dumps(out, indent=2))
 

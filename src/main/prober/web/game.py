@@ -56,13 +56,30 @@ def _int(v: "str | None", default: "int | None" = None) -> "int | None":
 
 
 def _model_error(exc: Exception) -> dict:
-    """An exception from a model view, as what the page shows: the arch-drift case gets the plain
-    sentence + its diagnosis, anything else its message."""
+    """An exception from a model view, as what the page shows: a typed `ArchDriftError` gets its ONE plain
+    sentence (`exc.plain`; the generic `ARCH_OLDER_TEXT` only for an error built without one) with the
+    diagnosis folded under it, and `reason` carries its `arch_status` kind; anything else its message."""
     from main.prober.model import ArchDriftError
 
     if isinstance(exc, ArchDriftError):
-        return {"kind": "arch_drift", "text": ARCH_OLDER_TEXT, "detail": str(exc)}
-    return {"kind": "error", "text": f"{type(exc).__name__}: {exc}", "detail": None}
+        return {"kind": "arch_drift", "reason": exc.kind, "text": exc.plain or ARCH_OLDER_TEXT,
+                "detail": exc.detail}
+    return {"kind": "error", "reason": None, "text": f"{type(exc).__name__}: {exc}", "detail": None}
+
+
+def model_http_error(exc: Exception) -> HTTPException:
+    """The 400 a JSON route raises when a MODEL call failed. The `error` string is what it always was
+    (`Type: message`); a typed `ArchDriftError` also carries `kind` (an `arch_status` kind) and `plain` (the one
+    sentence), which `app._http_error` copies into the response body, so an agent can branch on the kind instead
+    of parsing prose."""
+    detail = f"{type(exc).__name__}: {exc}"
+    from main.prober.model import ArchDriftError
+
+    if isinstance(exc, ArchDriftError):
+        err = HTTPException(status_code=400, detail=detail)
+        err.extra = {"kind": exc.kind, "plain": exc.plain}          # type: ignore[attr-defined]
+        return err
+    return HTTPException(status_code=400, detail=detail)
 
 
 def _neighbours(rows: "list[dict]", short_id: str) -> "tuple[str | None, str | None]":
@@ -90,10 +107,12 @@ def register_game_routes(app: FastAPI, h: GameHelpers, newest_first: Callable[[l
     def api_game_readout(run: "str | None" = Query(None), battle: "str | None" = Query(None)) -> dict:
         sess = h.session(h.pick(run))
         row = h.battle_row(sess, battle)
-        data, err = h.guarded(lambda: sess.battle_readout(row["id"]))
-        if err:
-            raise HTTPException(status_code=400, detail=err)
-        return data
+        try:
+            return sess.battle_readout(row["id"])
+        except HTTPException:
+            raise
+        except Exception as exc:  # noqa: BLE001 — a model that cannot load is a typed 400, not a 500
+            raise model_http_error(exc) from exc
 
     @app.get("/api/game/attention", tags=["read-only"], response_model=dict, dependencies=[model_gate("/game")],
              summary="One decision's full attention map (query × key), one layer/head or their average")
@@ -102,10 +121,12 @@ def register_game_routes(app: FastAPI, h: GameHelpers, newest_first: Callable[[l
                            head: "int | None" = Query(None, ge=0)) -> dict:
         sess = h.session(h.pick(run))
         row = h.battle_row(sess, battle)
-        data, err = h.guarded(lambda: sess.decision_attention(row["id"], inv, layer, head))
-        if err:
-            raise HTTPException(status_code=400, detail=err)
-        return data
+        try:
+            return sess.decision_attention(row["id"], inv, layer, head)
+        except HTTPException:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise model_http_error(exc) from exc
 
     @app.get("/game", response_class=HTMLResponse, tags=["pages"],
              summary="Battle viewer: the turn story, opponent intent, attention, operator facts")
@@ -120,6 +141,10 @@ def register_game_routes(app: FastAPI, h: GameHelpers, newest_first: Callable[[l
             return h.page(request, "game.html", "game", name, summary=data, error=err, story=None,
                           empty=empty.detail, battles=[], selected=None)
         story, serr = h.guarded(lambda: sess.battle_story(row["id"]))
+        # Can the MODEL panels run on this battle's step? Model-free (recorded identity + a checkpoint that
+        # resolves; nothing is loaded). When they cannot, the slot renders the plain reason on first paint —
+        # no loader to wait on, and no password prompt for a view the password cannot unlock.
+        model_status = sess.model_status(row["id"])
         listing = newest_first(sess.battles())
         prev_b, next_b = _neighbours(listing, row["short_id"])
         n = (story or {}).get("n_decisions") or 0
@@ -129,6 +154,7 @@ def register_game_routes(app: FastAPI, h: GameHelpers, newest_first: Callable[[l
         turn = next((t for t in (story or {}).get("turns", []) if int(t["turn"]) == turn_no), None)
         prev_turn = next((t for t in reversed((story or {}).get("turns", [])) if int(t["turn"]) < turn_no), None)
         return h.page(request, "game.html", "game", name, summary=data, error=err or serr, story=story,
+                      model_status=model_status,
                       selected=row, battles=listing[:200], inv=i, dec=dec, turn=turn,
                       board_before=(prev_turn or {}).get("board"),
                       prev_battle=prev_b, next_battle=next_b, empty=None)

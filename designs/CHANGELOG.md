@@ -13383,3 +13383,23 @@ read both cells for its end-of-turn rule and found them wrong.
   `model_capture_test.py` rebuilds an extra round's output from its captured weights and captures a real 3-round policy.
 - **Arch drift label.** `--arch static_recovery`'s per-key drift lines printed `production: <arm's value>`; they name the arm
   (`arm 'static_recovery': 3`), and the refusal text and the fork note name it too (`arch_arms_test.py`).
+
+## 2026-10-09 — PROBER: the run picker is three groups; every incompatibility is ONE typed diagnosis; `OBS_SEMANTICS_VERSION` makes the weights-fit-but-inputs-changed class detectable (no obs value, weight shape or config version changed)
+
+- **Picker.** 38 of 323 runs in `models/` have eval traces (all v136-v143, none at HEAD); the rest are trimmed skeletons or
+  launches mid-first-cycle. `RunStore.list_runs` rows carry `tier` (`current` / `older` / `no_traces`), `model_views` and an
+  `arch` verdict read from `model_config.json` + the newest eval manifest (cached by mtime; no checkpoint opened). The picker
+  offers "Current architecture" and "Older architecture" and hides the no-traces group behind "show all N" (`?all_runs=1`); the
+  selected run always stays listed. The default run is the newest CURRENT run with traces, else the newest with traces, else
+  the newest (it was "newest by mtime" - a launch that had captured nothing).
+- **One typed diagnosis.** `main/prober/arch_status.py` classifies a run, a step or a checkpoint (`current` / `incompatible` /
+  `unrecorded`) with a `kind` - `arch_signature`, `obs_dim`, `obs_semantics`, `state_dict`, `config_value`, `newer_than_code`,
+  `no_checkpoint`, `unreadable`, `load_failed` - and ONE plain sentence. `ProbeModel.load` checks the recorded identity before
+  the load and classifies a failed one; `ArchDriftError` carries `kind` / `plain` / `detail`; a run with traces and no weights
+  is a `NoCheckpointError` (also a `FileNotFoundError`), not a raw one. `/game` and `/analyze` render the reason on first paint
+  from the model-free `ProbeSession.model_status` (the worse of the checkpoint's and the trace's records); the JSON routes answer
+  `{error, kind, plain}`. `/analyze` used to print the whole raw dump (`ArchDriftError: ... StrictLoadError ... Missing key(s)`).
+- **`OBS_SEMANTICS_VERSION = 151`** (`model_version/constants.py`): the first config version whose observation values mean
+  something different. v151's Toxic cell re-scale kept every shape, so a v150 checkpoint loaded in the prober without a word.
+  A reader compares a checkpoint's recorded `config_version` against the marker; nothing gates a resume. `obs_semantics_test.py`
+  pins the obs golden's hash beside it so re-recording the golden forces the question.

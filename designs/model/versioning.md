@@ -13,7 +13,7 @@ gate's hard bound). `agents/model/model_version/__init__.py` is a pure re-export
 
 | module | holds |
 |---|---|
-| `constants.py` | `MODEL_CONFIG_VERSION` · `ARCH_SIGNATURE` · `ModelVersionError` · the reward-immutable field table + `_reward_flag_repr` |
+| `constants.py` | `MODEL_CONFIG_VERSION` · `ARCH_SIGNATURE` · **`OBS_SEMANTICS_VERSION`** (+ `OBS_SEMANTICS_REASON`: the first config version whose observation VALUES mean something different, shape change or not — a reader's marker for the weights-fit-but-inputs-changed class, compared with a checkpoint's recorded `config_version` by `main/prober/arch_status.py`; gates no resume; pinned beside the obs golden by `obs_semantics_test.py`; `designs/prober/arch_drift.md`) · `ModelVersionError` · the reward-immutable field table + `_reward_flag_repr` |
 | `migrations.py` | `MIGRATION_FLOOR` · `SIGNATURE_FIRST_VERSION` · `_migrate_config`, **including the PRE-FLOOR HISTORY archive** (a deliberate record of what every deleted branch did — do not trim it) |
 | `fields.py` | `ModelVersionFields` — the dataclass field block alone. Declaration ORDER is the constructor's positional order and `asdict()`'s key order |
 | `construct.py` | `from_layout_and_policy_kwargs` |

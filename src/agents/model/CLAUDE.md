@@ -496,6 +496,13 @@ row's enabling coefficient. A launcher restart strips `--arch` and inherits only
 FATALed. When the past value is unknown, the migration leaves the field `None` rather than invent it
 (the v125 branch). Gate: `main/train/derived_toggle_resume_test.py`.
 
+🚨 **When you change what an observation cell MEANS without changing a shape** (a re-scale, a re-defined flag — v151's
+Toxic counter n/8 → n/15), set `OBS_SEMANTICS_VERSION` (`model_version/constants.py`) to the config version the commit
+stamps, add its clause to `OBS_SEMANTICS_REASON`, and re-pin `obs_semantics_test.py`'s golden hash. `check_compatible`
+cannot see this (shapes fit, so the weights load); the marker is what lets a READER — the prober's model views, via
+`main/prober/arch_status.py` — refuse a checkpoint recorded below it. It gates no resume. The test fails when the obs
+golden moves without it; a model-INTERNAL input fix the golden cannot see (an op edge cell) must be raised by hand.
+
 **When you make a structural change** (different forward pass, new layer type):
 1. Change `ARCH_SIGNATURE` in `model_version/constants.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
 2. Old models get a clear arch-family error on load

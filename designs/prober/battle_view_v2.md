@@ -21,10 +21,12 @@ first brief and DROPPED by this ruling before any of it was built):
 - the MODEL half (intent, hypotheses, attention, pointer scores, operator facts, the re-run win
   probability) loads the battle's checkpoint through the session's ONE resolution ladder
   (exact → nearest → recent) and works only when that checkpoint is at HEAD's architecture. On an
-  older run the model panels render the existing `ArchDriftError` diagnosis as one plain sentence —
-  *"this run's architecture is older than the code; the model views need a current-architecture
-  checkpoint"* — with the full diagnosis folded under it, and the story above still renders. Never a
-  500, never a blank panel.
+  older run the model panels render the typed `ArchDriftError` as one plain sentence —
+  *"this run's architecture (config vN, signature S) is older than the code (…); model views need a
+  current-architecture checkpoint"* (the sentence is `exc.plain`; its `kind` — `arch_signature`, `obs_dim`,
+  `obs_semantics`, `no_checkpoint`, … — is on the card as `data-model-reason`) — with the full diagnosis folded
+  under it, and the story above still renders. The page asks `ProbeSession.model_status` and shows the reason on
+  FIRST PAINT when the views cannot run (no loader, no password prompt). Never a 500, never a blank panel.
 
 ## Where each view's data comes from, and what it costs
 

@@ -1537,3 +1537,124 @@ def test_the_prober_REFUSES_to_render_a_trace_whose_result_it_cannot_NAME(tmp_pa
                         {"step": 2000000, "result": "TIE", "turns": 30, "invocations": 0})
     with pytest.raises(UnknownTraceResult):
         ProbeSession(run).battle_overview(path)
+
+
+# -- can the MODEL views run? (`model_status`; 2026-10-09) ------------------------------------------------------
+# Model-free: the recorded identity of the step's trace and of the checkpoint the ladder would pick, with no
+# checkpoint loaded. The real loader refuses on it before loading; an injected test loader is a seam and skips it.
+
+def _zip(path):
+    import zipfile
+    with zipfile.ZipFile(path, "w") as z:
+        z.writestr("data", "{}")
+
+
+def _head_run(tmp_path):
+    """`_build_run`, but recording HEAD's architecture everywhere and holding a VALID checkpoint zip."""
+    from agents.model.model_version import ARCH_SIGNATURE, MODEL_CONFIG_VERSION
+    from main.prober.arch_status import current_obs_dim
+    run, summ = _build_run(tmp_path)
+    ident = {"config_version": MODEL_CONFIG_VERSION, "arch_signature": ARCH_SIGNATURE}
+    man = os.path.join(run, "eval_traces", "step_2000000", "eval_manifest.json")
+    with open(man) as f:
+        m = json.load(f)
+    with open(man, "w") as f:
+        json.dump(dict(m, **ident), f)
+    with open(os.path.join(run, "model_config.json"), "w") as f:
+        json.dump(dict(ident, total_dim=current_obs_dim()), f)
+    _zip(os.path.join(run, "checkpoint_3200000_steps.zip"))
+    return run, summ
+
+
+def test_model_status_at_head_is_current_and_loads_nothing(tmp_path, monkeypatch):
+    run, _ = _head_run(tmp_path)
+    from main.prober.model import ProbeModel
+
+    def trap(*a, **k):
+        raise AssertionError("model_status loaded a checkpoint")
+
+    monkeypatch.setattr(ProbeModel, "load", trap)
+    st = ProbeSession(run).model_status()
+    assert st["status"] == "current" and st["model_views"] is True and st["step"] == 2000000
+    assert "nearest checkpoint" in st["checkpoint"]
+
+
+def test_the_traces_own_record_counts_even_when_the_checkpoint_is_head(tmp_path):
+    """The views run a checkpoint on this step's STORED observations. Here the checkpoint (a `nearest` rung — not
+    the model that played) records HEAD but the trace was written by another architecture: the worse verdict
+    wins, and the reason is the trace's."""
+    run, _ = _head_run(tmp_path)
+    man = os.path.join(run, "eval_traces", "step_2000000", "eval_manifest.json")
+    with open(man) as f:
+        m = json.load(f)
+    m.update(config_version=143, arch_signature="gen3_event_record_v2")
+    with open(man, "w") as f:
+        json.dump(m, f)
+    st = ProbeSession(run).model_status()
+    assert st["model_views"] is False and st["kind"] == "arch_signature" and st["config_version"] == 143
+
+
+def test_the_real_loader_refuses_on_the_traces_record_before_it_loads(tmp_path, monkeypatch):
+    from main.prober.model import ArchDriftError, ProbeModel
+    run, summ = _head_run(tmp_path)
+    man = os.path.join(run, "eval_traces", "step_2000000", "eval_manifest.json")
+    with open(man) as f:
+        m = json.load(f)
+    m.update(config_version=143, arch_signature="gen3_event_record_v2")
+    with open(man, "w") as f:
+        json.dump(m, f)
+    loaded = []
+    monkeypatch.setattr(ProbeModel, "load", lambda path, *a, **k: loaded.append(path))
+    with pytest.raises(ArchDriftError) as ei:
+        ProbeSession(run).analyze(summ, 0)
+    assert ei.value.kind == "arch_signature" and not loaded, "refused before the checkpoint was touched"
+    # …while an INJECTED loader (the test seam) is not second-guessed
+    assert ProbeSession(run, model_loader=lambda path: _FakeModel()).analyze(summ, 0)["chosen"] == "earthquake"
+
+
+def test_a_run_with_traces_and_no_weights_is_a_typed_no_checkpoint(tmp_path):
+    from main.prober.model import ArchDriftError, NoCheckpointError
+    run, summ = _head_run(tmp_path)
+    os.remove(os.path.join(run, "checkpoint_3200000_steps.zip"))
+    sess = ProbeSession(run)
+    st = sess.model_status()
+    assert st["kind"] == "no_checkpoint" and st["model_views"] is False
+    with pytest.raises(NoCheckpointError) as ei:
+        sess.analyze(summ, 0)
+    assert isinstance(ei.value, ArchDriftError) and isinstance(ei.value, FileNotFoundError)
+    assert "FileNotFoundError" not in ei.value.plain
+
+
+def test_run_summary_marks_every_step_and_checkpoint_and_the_run(tmp_path):
+    run, _ = _head_run(tmp_path)
+    s = ProbeSession(run).run_summary()
+    assert s["model_views"]["status"] == "current"
+    assert [st["model_views"]["status"] for st in s["steps"]] == ["current"]
+    assert s["checkpoints"][0]["model_views"] is True and s["checkpoints"][0]["kind"] is None
+    assert s["steps"][0]["identity"]["config_version"] is not None
+    old_run, _ = _build_run(tmp_path / "old")
+    o = ProbeSession(old_run).run_summary()
+    assert o["model_views"]["model_views"] is False and o["model_views"]["kind"] == "arch_signature"
+
+
+def test_model_status_is_memoised_per_step(tmp_path, monkeypatch):
+    import main.prober.session.reading as R
+    run, _ = _head_run(tmp_path)
+    sess = ProbeSession(run)
+    sess.model_status()
+    calls = []
+    real = R.resolve_model_for_step
+    monkeypatch.setattr(R, "resolve_model_for_step", lambda *a, **k: (calls.append(1), real(*a, **k))[1])
+    sess.model_status()
+    sess.model_status(step=2000000)
+    assert calls == [], "run_summary asks once per step on every page; the answer cannot change under one tree"
+
+
+def test_a_run_with_no_steps_has_a_verdict_from_its_config_alone(tmp_path):
+    from agents.model.model_version import ARCH_SIGNATURE, MODEL_CONFIG_VERSION
+    root = tmp_path / "empty_run"
+    (root / "eval_traces").mkdir(parents=True)                 # a launch that has captured nothing yet
+    (root / "model_config.json").write_text(json.dumps(
+        {"config_version": MODEL_CONFIG_VERSION, "arch_signature": ARCH_SIGNATURE}))
+    st = ProbeSession(str(root)).model_status()
+    assert st["step"] is None and st["status"] == "current" and st["checkpoint"] is None

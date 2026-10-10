@@ -28,22 +28,26 @@
   {# The run picker is a plain GET form to the CURRENT page, so switching run keeps you on the
      view you were looking at and works with JavaScript off. The value submitted is the run NAME,
      never a path — see runs.py for why that distinction is the whole security model. #}
-  {# Grouped by generation: 79 flat near-identical names (`ai_v9_06_gen5_no_concat_0809`,
-     `ai_v8_17_rand20_...`) is a scanning task, not a choice. #}
-  {% if runs %}
+  {# THREE groups, not 322 names (`app._picker`): "Current architecture" (traces, and the model views run),
+     "Older architecture" (traces; the turn story and every model-free view work) and — hidden until you
+     ask — the runs with no eval traces at all. The run being viewed always stays in the list. #}
+  {% if picker and picker.groups %}
   <form class="runpick" method="get" action="">
     <label class="sr-only" for="runsel">run</label>
     <select id="runsel" name="run" onchange="this.form.submit()">
-      {% for group, items in run_groups %}
-      <optgroup label="{{ group }} ({{ items | length }})">
-        {% for r in items %}
+      {% for g in picker.groups %}
+      <optgroup label="{{ g.label }} ({{ g['items'] | length }})" data-tier="{{ g.tier }}">
+        {% for r in g['items'] %}
         <option value="{{ r.name }}" {% if r.name == run %}selected{% endif %}>
-          {{ r.name }}{% if not r.has_traces %} — no traces{% endif %}{% if r.linked %} ↗{% endif %}
+          {{ r.name }}{% if r.arch.config_version %} · v{{ r.arch.config_version }}{% endif %}{% if r.tier == 'older' and r.arch.status == 'unrecorded' %} · architecture not recorded{% endif %}{% if not r.has_traces %} · no traces{% endif %}{% if r.linked %} ↗{% endif %}
         </option>
         {% endfor %}
       </optgroup>
       {% endfor %}
     </select>
+    {% if picker.show_all %}<input type="hidden" name="all_runs" value="1">{% endif %}
+    {% if picker.n_hidden %}<a class="linky small" href="{{ picker.toggle_href }}"
+       title="runs with no eval traces have nothing to inspect: the skeleton runs the archive was trimmed to, and runs that have not finished their first eval cycle">{% if picker.show_all %}hide {{ picker.n_hidden }} without traces{% else %}show all {{ picker.n_total }}{% endif %}</a>{% endif %}
     <noscript><button type="submit">go</button></noscript>
   </form>
   {% endif %}
@@ -70,6 +74,16 @@
   <span>·</span><span>{{ run_meta.n_steps }} eval steps</span>
   <span>·</span><span>{{ run_meta.battles }} battles captured</span>
   <span>·</span><span class="win">{{ run_meta.wins }}W</span><span class="loss">{{ run_meta.losses }}L</span>
+  {% if run_meta.model_views %}
+  <span>·</span>
+  {% if run_meta.model_views.model_views and run_meta.model_views.status == 'current' %}
+  <span class="pos" title="{{ run_meta.model_views.plain }}">model views: current architecture</span>
+  {% elif run_meta.model_views.model_views %}
+  <span class="muted" title="{{ run_meta.model_views.plain }}">model views: untested (architecture not recorded)</span>
+  {% else %}
+  <span class="warnline" data-model-reason="{{ run_meta.model_views.kind }}" title="{{ run_meta.model_views.plain }}">turn story only{% if run_meta.model_views.kind == 'no_checkpoint' %} (no checkpoint){% elif run_meta.model_views.config_version is not none %} (older architecture, v{{ run_meta.model_views.config_version }}){% else %} (older architecture){% endif %}</span>
+  {% endif %}
+  {% endif %}
 </p>
 {% endif %}
 {% if error %}<section class="card"><p class="err">{{ error }}</p></section>{% endif %}

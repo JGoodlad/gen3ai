@@ -564,6 +564,26 @@ from typing import Any, Dict
 #   golden moved on 107 of 991 decisions: 106 on the toxic cell alone and 1 on the toxic cell plus the Wish flag.
 MODEL_CONFIG_VERSION = 151
 
+# THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
+# (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every
+# earlier version's, with or without a shape change. `ARCH_SIGNATURE` / `MIGRATION_FLOOR` catch a checkpoint whose
+# WEIGHTS no longer fit; nothing caught one whose weights still load and whose INPUTS were re-scaled or re-defined
+# underneath it (v151's Toxic counter cell n/8 -> n/15 and the Wish flag; v148 / v149's `x` cell fixes before it). A
+# reader that must answer "is this checkpoint reading the observation it trained on" (the prober's model views,
+# `main.prober.arch_status`) compares the checkpoint's RECORDED `config_version` against this: below it = older
+# input semantics = NOT current, even when the state_dict loads. Nothing here gates a resume or an opponent load
+# (a resumed run is meant to continue on the new inputs; `check_compatible` is unchanged).
+#
+# THE RULE: a commit that changes what an observation cell MEANS without changing a shape sets this to the config
+# version it stamps, and re-pins `src/agents/model/obs_semantics_test.py`'s golden hash. That test fails when the obs
+# golden (`agents/training/golden_obs_fixture.json`) moves without it. A change the golden cannot see (a
+# model-INTERNAL input such as an op edge cell) must be raised here by hand.
+OBS_SEMANTICS_VERSION = 151
+
+# What changed at `OBS_SEMANTICS_VERSION`, in one clause — rendered in the prober's drift diagnosis.
+OBS_SEMANTICS_REASON = ("the Toxic counter cell is now stage/15 where it was stage/8, and the Wish flag now means "
+                        "'lands at the next end-of-turn residual'")
+
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
 # pinned to agree by `belief_grad_mode_test.py::test_every_mode_has_a_migration_notice`, so a fourth

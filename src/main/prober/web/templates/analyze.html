@@ -50,7 +50,12 @@
   </form>
 </section>
 
-{% if unlocked %}
+{% if model_status and not model_status.model_views %}
+{# The checkpoint cannot be re-run under the current code (see partials/model_unavailable.html): say why on
+   first paint rather than loading a card that can only fail — and rather than asking for a password that
+   would not help. #}
+{% include "partials/model_unavailable.html" %}
+{% elif unlocked %}
 <section class="card">
   {# Deliberately NOT server-rendered. Every other slow page here is slow because it opens a lot
      of files; this one is slow because it DESERIALIZES A CHECKPOINT and runs forward/backward

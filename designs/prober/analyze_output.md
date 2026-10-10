@@ -5,8 +5,8 @@ raises `ArchDriftError` on any run off the current architecture) and β's name P
 is the block-by-block reference for what `analyze` returns.
 
 - `analyze(battle_id, inv)` — full `InvocationAnalysis` as a dict (**loads the model — so it raises
-  `ArchDriftError` on any run not at the current architecture, which today is every archived run;
-  see the drift section above**). `model_resolution` carries `dropped_kwargs`: non-empty ⇒ flags the
+  `ArchDriftError` — typed: `kind` + one plain `plain` sentence — on any run not at the current architecture,
+  which today is every archived run; see the drift section above and `designs/prober/arch_drift.md`**). `model_resolution` carries `dropped_kwargs`: non-empty ⇒ flags the
   current code no longer accepts were dropped to make the load possible, so faithfulness is
   approximate and a surface must say so. The value block gains a γ-discounted `td_residual` (the PopArt `popart_mu`/`popart_sigma`/`normalized_*` fields left with PopArt, L1). Also carries a `win_prob`
   block (`WinProbView`: recorded `P(win|s)` + `delta` ΔP to the next decision) — model-free, read

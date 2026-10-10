@@ -93,19 +93,18 @@ def _free_port() -> int:
         return probe.getsockname()[1]
 
 
-@pytest.fixture(scope="module")
-def server(tmp_path_factory):
-    """The REAL app under uvicorn, on a loopback port nobody else uses.
+def _serve(target: str):
+    """The REAL app under uvicorn on a loopback port nobody else uses, serving `target` (a run, or a models
+    ROOT for picker mode). Yields the base URL; always stops the process.
 
     A `TestClient` would exercise the handlers but not the socket, and it is the socket the browser
     talks to. `arch_viewer_serve`'s own test makes the same argument: byte-identical generated
     output says nothing about whether the server answers.
     """
-    run = fixture_run.build(str(tmp_path_factory.mktemp("renderrun")))
     port = _free_port()
     env = dict(os.environ, PYTHONPATH=os.path.join(_REPO, "src"))
     proc = subprocess.Popen(
-        [sys.executable, "-m", "main.prober.web", run, "--port", str(port)],
+        [sys.executable, "-m", "main.prober.web", target, "--port", str(port)],
         cwd=_REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     base = f"http://127.0.0.1:{port}"
     try:
@@ -128,6 +127,26 @@ def server(tmp_path_factory):
             proc.wait(timeout=15)
         except subprocess.TimeoutExpired:
             proc.kill()
+
+
+@pytest.fixture(scope="module")
+def server(tmp_path_factory):
+    yield from _serve(fixture_run.build(str(tmp_path_factory.mktemp("renderrun"))))
+
+
+@pytest.fixture(scope="module")
+def archive_server(tmp_path_factory):
+    """PICKER mode over a models ROOT: a traced run (so there is a group to pick from) plus a skeleton, which the
+    picker hides behind its "show all N" link — the one control the single-run server never renders."""
+    import shutil
+    root = tmp_path_factory.mktemp("renderarchive")
+    shutil.move(fixture_run.build(str(tmp_path_factory.mktemp("renderstage"))), str(root / "rb_traced"))
+    skeleton = root / "ai_skeleton"
+    skeleton.mkdir()
+    (skeleton / "metadata.json").write_text("{}")
+    (skeleton / "model_config.json").write_text(
+        '{"config_version": 107, "arch_signature": "gen3_critic_route_wave_v1"}')
+    yield from _serve(str(root))
 
 
 class _Browser:
@@ -568,6 +587,17 @@ def test_the_narrow_header_stays_compact_and_hides_nothing(server, browser):
     assert int(data["headerh"]) <= 160, (
         f"the header is {data['headerh']}px of a phone screen — too much furniture")
     assert data["overflowby"] == "0", "the nav is overflowing rather than wrapping"
+
+
+def test_the_narrow_header_stays_compact_with_the_show_all_link(archive_server, browser):
+    """Picker mode adds one control to the header — "show all N", for the runs with no traces — and the budget
+    above is the whole point of a phone header. The link must exist (this is the case that renders it) and the
+    header must still wrap into at most the same three rows without scrolling sideways."""
+    dom = _dump_dom(browser, archive_server + "/scan", size=NARROW)
+    assert "show all 2" in dom and "all_runs=1" in dom, "the toggle never rendered; this test would be vacuous"
+    data = _body_data(dom)
+    assert int(data["headerh"]) <= 160, f"the header is {data['headerh']}px of a phone screen with the picker link"
+    assert data["overflowby"] == "0", "the picker link pushed the header into a sideways scroll"
 
 
 def test_charts_still_draw_at_a_narrow_width(server, browser):

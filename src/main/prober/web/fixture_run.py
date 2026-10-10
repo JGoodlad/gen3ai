@@ -137,8 +137,43 @@ def _write_battle(run: str, step: int, opponent: str, name: str, invs, values,
                        "arch_signature": "gen3_fixture_v1", "snapshot": None}, f)
 
 
-def build(root: str) -> str:
-    """Write the fixture run under `root` and return its path.
+def head_identity() -> dict:
+    """The record a run trained at HEAD's architecture carries — what `identity=` stamps. Read from the code's own
+    constants so the fixture cannot drift from them."""
+    from agents.model.model_version import ARCH_SIGNATURE, MODEL_CONFIG_VERSION
+    from main.prober.arch_status import current_obs_dim
+    return {"config_version": MODEL_CONFIG_VERSION, "arch_signature": ARCH_SIGNATURE,
+            "total_dim": current_obs_dim()}
+
+
+def _stamp(run: str, identity: dict) -> None:
+    """Record `identity` (config_version / arch_signature / total_dim) in the run's `model_config.json` and every
+    step's eval manifest, and make the checkpoint a VALID zip (a husk with no weights: the strict load still
+    fails, as it must). Without this the fixture records no architecture and its checkpoint is an empty file —
+    `arch_status` reads that as "unrecorded / unreadable", which is what the arch-drift tests want; the gating
+    tests want a run whose model views MAY be tried, and say so by passing `identity=head_identity()`."""
+    import glob
+    import zipfile
+    cfg_path = os.path.join(run, "model_config.json")
+    with open(cfg_path) as f:
+        cfg = json.load(f)
+    cfg.update(identity)
+    with open(cfg_path, "w") as f:
+        json.dump(cfg, f)
+    manifest_fields = {k: v for k, v in identity.items() if k != "total_dim"}
+    for path in glob.glob(os.path.join(run, "eval_traces", "step_*", "eval_manifest.json")):
+        with open(path) as f:
+            man = json.load(f)
+        man.update(manifest_fields)
+        with open(path, "w") as f:
+            json.dump(man, f)
+    with zipfile.ZipFile(os.path.join(run, "checkpoint_3200000_steps.zip"), "w") as z:
+        z.writestr("data", "{}")
+
+
+def build(root: str, identity: "dict | None" = None) -> str:
+    """Write the fixture run under `root` and return its path. `identity` stamps an architecture record
+    (see `_stamp` / `head_identity`); the default records none.
 
     Shapes chosen so the views have something to rank: two steps × two opponents, losses whose
     worst ΔV differs (so `scan`'s global ranking is observable), a faint in the deepest crater
@@ -201,6 +236,8 @@ def build(root: str) -> str:
         json.dump({"value_dist_mode": "shaping",
                    "value_dist_vmin": DIST_SUPPORT[0], "value_dist_vmax": DIST_SUPPORT[1],
                    "value_dist_bins": DIST_BINS}, f)
+    if identity:
+        _stamp(run, identity)
     return run
 
 

@@ -92,6 +92,7 @@
     <thead><tr>
       <th class="num">step</th><th class="num">win</th><th class="num">loss</th>
       <th>opponents</th><th>git</th><th>arch signature</th><th>snapshot</th>
+      <th title="Can the model views (/game's model panels, /analyze, the counterfactual probes) run on this step? Read from the step's recorded config version and signature; no checkpoint is loaded.">model views</th>
     </tr></thead>
     <tbody>
     {% for s in data.steps %}
@@ -103,6 +104,7 @@
         <td class="mono">{{ (s.identity.git_hash or "")[:8] if s.identity else "—" }}</td>
         <td class="mono">{{ s.identity.arch_signature if s.identity else "—" }}</td>
         <td>{% if s.identity and s.identity.snapshot_available %}<span class="pos">exact</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>{% if s.model_views.status == 'current' %}<span class="pos" title="{{ s.model_views.plain }}">current</span>{% elif s.model_views.model_views %}<span class="muted" title="{{ s.model_views.plain }}">untested</span>{% else %}<span class="warnline" data-model-reason="{{ s.model_views.kind }}" title="{{ s.model_views.plain }}">story only{% if s.model_views.config_version is not none %} · v{{ s.model_views.config_version }}{% endif %}</span>{% endif %}</td>
       </tr>
     {% endfor %}
     </tbody>
@@ -117,10 +119,11 @@
   {% else %}
   <div class="scroll-x">
   <table>
-    <thead><tr><th class="num">step</th><th>path</th></tr></thead>
+    <thead><tr><th class="num">step</th><th>path</th><th>model views</th></tr></thead>
     <tbody>
     {% for c in data.checkpoints %}
-      <tr data-row><td class="num">{{ "{:,}".format(c.step) }}</td><td class="mono">{{ c.path }}</td></tr>
+      <tr data-row><td class="num">{{ "{:,}".format(c.step) }}</td><td class="mono">{{ c.path }}</td>
+        <td>{% if c.model_views %}<span class="muted">loadable</span>{% else %}<span class="warnline" data-model-reason="{{ c.kind }}">story only</span>{% endif %}</td></tr>
     {% endfor %}
     </tbody>
   </table>

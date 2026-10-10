@@ -15,6 +15,16 @@ keys with the submodule at FRESH INIT, so a forensic read answered with a model 
 strict mismatch is a ``StrictLoadError`` and arrives here as an ``ArchDriftError`` diagnosis like every
 other failed load.
 
+**EVERY incompatibility is ONE typed diagnosis (2026-10-09).** `ProbeModel.load` checks the checkpoint's
+RECORDED identity (`main.prober.arch_status.checkpoint_verdict`: the eval manifest beside it, else the nearest
+`model_config.json`, plus the observation width the zip itself declares) BEFORE the load, and maps every FAILURE of
+the load onto the same kinds (`arch_status.KINDS`): a different network family or a config below the migration
+floor, an observation of another width, a state_dict the strict load rejects, a value the constructor rejects, a
+checkpoint that is gone or unreadable. Each arrives as an `ArchDriftError` carrying its `kind` and a `plain`
+sentence — never a raw `StrictLoadError` / `RuntimeError` / `FileNotFoundError`. The SILENT class — a checkpoint
+whose weights fit and whose observation changed meaning (`OBS_SEMANTICS_VERSION`) — is caught by the recorded
+config version alone.
+
 **But "no gate" was not the same as "a good failure", and that gap is what
 `ArchDriftError` closes.** This project iterates the architecture continuously
 (root `CLAUDE.md`: *"checkpoint compatibility is not a concern"*), so a
@@ -52,14 +62,16 @@ import numpy as np
 
 
 class ArchDriftError(RuntimeError):
-    """A checkpoint that cannot be re-run under the CURRENT code.
+    """A checkpoint that cannot give model views under the CURRENT code.
 
-    Carries the drift itself (`dropped_kwargs`, `saved_obs_dim`, `current_obs_dim`,
-    `saved_arch`, `current_arch`, `git_hash`) so a surface can render it as a
-    diagnosis rather than re-parsing the message."""
+    Carries the drift itself (`dropped_kwargs`, `saved_obs_dim`, `current_obs_dim`, `saved_arch`, `current_arch`,
+    `git_hash`) plus the TYPED verdict (`kind` — one of `arch_status.KINDS` — and `plain`, ONE plain-language
+    sentence), so a surface renders it as a diagnosis rather than re-parsing the message. `str(exc)` is the full
+    multi-line diagnosis; `kind` / `plain` are None only on an error built without them (a test double)."""
 
     def __init__(self, message: str, *, dropped_kwargs=(), saved_obs_dim=None,
-                 current_obs_dim=None, saved_arch=None, current_arch=None, git_hash=None):
+                 current_obs_dim=None, saved_arch=None, current_arch=None, git_hash=None,
+                 kind=None, plain=None, saved_version=None, current_version=None):
         super().__init__(message)
         self.dropped_kwargs = tuple(dropped_kwargs)
         self.saved_obs_dim = saved_obs_dim
@@ -67,6 +79,25 @@ class ArchDriftError(RuntimeError):
         self.saved_arch = saved_arch
         self.current_arch = current_arch
         self.git_hash = git_hash
+        self.kind = kind
+        self.plain = plain
+        self.saved_version = saved_version
+        self.current_version = current_version
+
+    @property
+    def detail(self) -> str:
+        """`str(self)` without the `plain` sentence it opens with — what a card folds UNDER the sentence, so the
+        sentence is not said twice."""
+        msg = str(self)
+        if self.plain and msg.startswith(self.plain):
+            msg = msg[len(self.plain):].lstrip("\n")
+        return msg
+
+
+class NoCheckpointError(ArchDriftError, FileNotFoundError):
+    """The run has no loadable checkpoint at all (a trimmed "skeleton", or the file is gone). An `ArchDriftError`
+    (kind `no_checkpoint`) so every surface renders the typed diagnosis, and a `FileNotFoundError` so the callers
+    that already treat a missing model as "no model" (`ProbeSession.probe` / `history_saliency`) keep working."""
 
 
 def peek_checkpoint(ckpt_path: str) -> dict:
@@ -216,28 +247,83 @@ def _sidecar(ckpt_path: str, name: str) -> dict:
 
 
 def _current_obs_dim() -> "int | None":
-    try:
-        from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-        return int(Gen3ObservationEncoder(load_mappings()).dimension)
-    except Exception:  # noqa: BLE001
-        return None
+    from main.prober.arch_status import current_obs_dim
+    return current_obs_dim()
+
+
+def _classify_failure(exc: Exception, *, saved_obs, cur_obs, saved_arch, cur_arch, saved_version) -> str:
+    """Which `arch_status` kind a FAILED load is. Recorded evidence first (it names the cause the exception only
+    shows the symptom of), then the exception's own shape; the last rung is `load_failed`, so nothing escapes
+    untyped."""
+    from main.prober import arch_status as A
+    if isinstance(exc, FileNotFoundError):
+        return A.KIND_NO_CHECKPOINT
+    if isinstance(exc, (zipfile.BadZipFile, EOFError)) or isinstance(exc.__cause__, zipfile.BadZipFile) \
+            or "wasn't a zip-file" in str(exc):
+        return A.KIND_UNREADABLE
+    if (saved_arch and cur_arch and saved_arch != cur_arch) or (
+            saved_version is not None and saved_version < A.MIGRATION_FLOOR):
+        return A.KIND_ARCH_SIGNATURE
+    if saved_obs and cur_obs and saved_obs != cur_obs:
+        return A.KIND_OBS_DIM
+    text = " ".join(str(exc).split())
+    if (type(exc).__name__ == "StrictLoadError" or "state_dict" in text or "size mismatch" in text
+            or "shapes cannot be multiplied" in text or "must match the size" in text):
+        return A.KIND_STATE_DICT
+    if isinstance(exc, (TypeError, ValueError)) or type(exc).__name__ in ("ModelVersionError",
+                                                                          "PreBreakCheckpointError"):
+        return A.KIND_CONFIG_VALUE
+    return A.KIND_LOAD_FAILED
 
 
 def _arch_drift_error(ckpt_path: str, peek: dict, dropped: "tuple[str, ...]",
-                      exc: Exception) -> ArchDriftError:
-    """Turn a failed load into a DIAGNOSIS — what drifted, and what to do about it."""
+                      exc: "Exception | None" = None, *, verdict=None) -> ArchDriftError:
+    """Turn an incompatibility into a DIAGNOSIS — what drifted, and what to do about it.
+
+    `exc` is the failed load (classified into a kind); `verdict` is the PRE-LOAD verdict from the recorded
+    identity (`arch_status.checkpoint_verdict`) when the checkpoint was refused before any load. Exactly one of the
+    two is given; either way the error carries the typed `kind` and the one `plain` sentence, and its message is
+    the full diagnosis (the plain sentence first)."""
+    from main.prober import arch_status as A
     saved_obs = peek.get("obs_dim")
     cur_obs = _current_obs_dim()
     cfg = _sidecar(ckpt_path, "model_config.json")
     meta = _sidecar(ckpt_path, "metadata.json")
-    saved_arch = cfg.get("arch_signature")
-    try:
-        from agents.model.model_version import ARCH_SIGNATURE as cur_arch
-    except Exception:  # noqa: BLE001
-        cur_arch = None
+    cv, sig, dim, _src = A.checkpoint_record(ckpt_path)
+    if verdict is not None:
+        # The verdict names the record it was made from (a TRACE's manifest, say, not the checkpoint's sidecar):
+        # that record is the one the diagnosis must quote.
+        cv = verdict.config_version if verdict.config_version is not None else cv
+        sig = verdict.arch_signature or sig
+        dim = verdict.obs_dim or dim
+    saved_arch = sig or cfg.get("arch_signature")
+    saved_version = cv if cv is not None else A._int(cfg.get("config_version"))
+    saved_obs = saved_obs or dim
+    cur_arch = A.ARCH_SIGNATURE
     git_hash = meta.get("git_hash") or cfg.get("git_hash")
+    if verdict is not None and verdict.kind:
+        kind = verdict.kind
+    elif exc is not None:
+        kind = _classify_failure(exc, saved_obs=saved_obs, cur_obs=cur_obs, saved_arch=saved_arch,
+                                 cur_arch=cur_arch, saved_version=saved_version)
+    else:
+        kind = A.KIND_LOAD_FAILED
+    cause = None
+    if exc is not None and kind in (A.KIND_CONFIG_VALUE, A.KIND_LOAD_FAILED):
+        cause = f"{type(exc).__name__}: {' '.join(str(exc).split())[:140]}"
+    plain = verdict.plain if (verdict is not None and verdict.kind) else A.plain_sentence(
+        kind, config_version=saved_version, arch_signature=saved_arch, obs_dim=saved_obs, cause=cause)
 
-    lines = [f"This checkpoint cannot be re-run under the current code:\n  {ckpt_path}", ""]
+    if kind == A.KIND_NO_CHECKPOINT:
+        return NoCheckpointError("\n".join([plain, "", f"  looked for      {ckpt_path}"]), kind=kind, plain=plain,
+                                 saved_version=saved_version, current_version=A.MODEL_CONFIG_VERSION,
+                                 git_hash=git_hash)
+
+    lines = [plain, "", f"This checkpoint cannot be re-run under the current code:\n  {ckpt_path}", ""]
+    if saved_version is not None:
+        lines.append(f"  config version trained {saved_version}  ·  code is {A.MODEL_CONFIG_VERSION}"
+                     + (f"  (the observation changed meaning at v{A.OBS_SEMANTICS_VERSION})"
+                        if kind == A.KIND_OBS_SEMANTICS else ""))
     if saved_obs and cur_obs and saved_obs != cur_obs:
         lines.append(f"  obs dim        trained {saved_obs}  ·  code builds {cur_obs}")
     if saved_arch and cur_arch and saved_arch != cur_arch:
@@ -245,11 +331,12 @@ def _arch_drift_error(ckpt_path: str, peek: dict, dropped: "tuple[str, ...]",
     if dropped:
         lines.append("  dropped flags  " + ", ".join(dropped)
                      + "   (deleted since; the rebuilt extractor is NOT the one that played)")
-    lines += [
+    if exc is not None:
         # Collapsed to ONE line: these carry embedded newlines (the legality guard's message is a
         # paragraph), and truncating a multi-line string mid-sentence produced a ragged fragment
         # that read as a broken message rather than a quoted cause.
-        f"  underlying     {type(exc).__name__}: {' '.join(str(exc).split())[:180]}…",
+        lines.append(f"  underlying     {type(exc).__name__}: {' '.join(str(exc).split())[:180]}…")
+    lines += [
         "",
         "The prober re-runs the model under CURRENT code, so a run trained before an",
         "architecture change is not re-runnable — by design (see the root CLAUDE.md:",
@@ -267,7 +354,14 @@ def _arch_drift_error(ckpt_path: str, peek: dict, dropped: "tuple[str, ...]",
     ]
     return ArchDriftError("\n".join(lines), dropped_kwargs=dropped, saved_obs_dim=saved_obs,
                           current_obs_dim=cur_obs, saved_arch=saved_arch, current_arch=cur_arch,
-                          git_hash=git_hash)
+                          git_hash=git_hash, kind=kind, plain=plain, saved_version=saved_version,
+                          current_version=A.MODEL_CONFIG_VERSION)
+
+
+def arch_drift_error_from_verdict(ckpt_path: str, verdict) -> ArchDriftError:
+    """The typed, fully-diagnosed error for an INCOMPATIBLE `arch_status` verdict that was reached without a
+    failed load (the session's trace-side check). Same shape and message as the loader's own."""
+    return _arch_drift_error(ckpt_path, peek_checkpoint(ckpt_path), (), verdict=verdict)
 
 
 @dataclass(frozen=True)
@@ -409,10 +503,22 @@ class ProbeModel:
         # any the current extractor no longer accepts, so a checkpoint whose only problem is a
         # DELETED flag still loads. Anything else — a value the code now rejects, weight shapes that
         # no longer fit — is re-raised as an ArchDriftError that names the drift.
+        #
+        # THE PRE-LOAD VERDICT comes first. A checkpoint whose RECORDED identity is not HEAD's (another network
+        # family / below the migration floor, another observation width, an observation that changed meaning
+        # since `OBS_SEMANTICS_VERSION`, recorded by newer code) or that is simply absent is refused here, typed,
+        # without paying a load whose outcome is known — and the semantics-only class (weights that WOULD load)
+        # is never loaded to answer about inputs it did not train on. A checkpoint with NO record is tried, and
+        # its failure classified below.
+        from main.prober import arch_status as A
         peek = peek_checkpoint(ckpt_path)
-        custom_objects, dropped = sanitized_load_custom_objects(ckpt_path, device)
+        verdict = A.checkpoint_verdict(ckpt_path, peek_obs_dim=peek.get("obs_dim"))
+        if verdict.status == A.INCOMPATIBLE:
+            raise _arch_drift_error(ckpt_path, peek, (), verdict=verdict)
 
+        dropped: "tuple[str, ...]" = ()
         try:
+            custom_objects, dropped = sanitized_load_custom_objects(ckpt_path, device)
             model = load_checkpoint_strict(ckpt_path, device=device, custom_objects=custom_objects)
         except Exception as exc:  # noqa: BLE001 — every failure becomes a DIAGNOSIS, not a stack trace
             raise _arch_drift_error(ckpt_path, peek, dropped, exc) from exc

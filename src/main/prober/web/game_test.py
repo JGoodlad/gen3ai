@@ -15,7 +15,10 @@ from main.prober.web.game import ARCH_OLDER_TEXT, _model_error
 
 @pytest.fixture(scope="module")
 def run(tmp_path_factory):
-    return fixture_run.build(str(tmp_path_factory.mktemp("proberweb_game")))
+    # A run that RECORDS HEAD's architecture: its model views may be tried, so the gating tests below see the
+    # loader / the unlock prompt. (Its checkpoint is a husk, so the load itself still fails — typed.)
+    return fixture_run.build(str(tmp_path_factory.mktemp("proberweb_game")),
+                             identity=fixture_run.head_identity())
 
 
 @pytest.fixture()

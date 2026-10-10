@@ -122,6 +122,28 @@ the whole current generation, are links into `.claude/worktrees/<name>/models/ru
 Errors never echo the rejected input — a rendered message must not become an oracle for mapping
 the filesystem.
 
+### The picker is three groups, not every directory (2026-10-09)
+
+The owner: *"clean up the model selection; 99 % are irrelevant."* On the real archive 38 of 323 runs have eval
+traces (all v136–v143, none at HEAD) and 285 are trimmed skeletons or launches mid-first-cycle. `list_runs()` rows
+now carry `tier` / `model_views` / `arch` beside `has_traces`, and the picker (`app._picker`) offers:
+
+- **Current architecture · full model views** — traces AND the model views can run;
+- **Older architecture · turn story only** — traces; every model-free view works, the model views are refused with
+  the typed reason (`arch_status`; an `unrecorded` run lands here too, labelled "architecture not recorded");
+- **No eval traces · nothing to inspect** — HIDDEN behind "show all N" (`?all_runs=1`, carried through the picker
+  form), except the run currently selected, which always stays in the list. Hiding is presentation: `resolve()` is
+  still membership in EVERY enumerated run, so a deep link to a skeleton opens (as an empty state).
+
+`has_traces` now means "at least one `eval_traces/step_<N>/`" (an empty directory is not traces). **The default
+run** (`RunStore.default_run`) is the newest CURRENT run with traces, else the newest run with traces, else — no
+traces anywhere — the newest run; the old "newest by mtime" opened a launch that had captured nothing. Each option
+reads `name · v<config_version>`. Classification is two small JSON reads per run (`model_config.json` + the newest
+eval manifest; **no checkpoint is opened to list** — `runs_test` booby-traps the zip machinery), cached by mtime.
+`/api/runs` returns EVERY run with its `tier` and `arch` block (clients filter); the 285-hidden figure is the
+picker's, not the API's. None of this touches the security properties above: no client string is joined to a path,
+`_SANE_NAME` still guards enumeration, the symlink audit still runs in `resolve()`.
+
 ## Access: reading is anonymous, spending CPU is not (`auth.py`, `gate.py`)
 
 The model is open source and its outcomes are meant to be public, so **every read view is
@@ -269,8 +291,8 @@ answers, each pinned by a test in `app_test.py` → "usability / information flo
   `/api/battles` is deliberately NOT reordered — row order is a presentation choice about which
   rows a human meets first, and a machine client asked for the run's battles, not for this page's
   opinion about them.
-- **The run picker is grouped by generation** (`_group_runs`): 79 flat near-identical names like
-  `ai_v9_06_gen5_no_concat_0809` is a scanning task, not a choice.
+- **The run picker is grouped by architecture, not by name** (`_picker`; the old `_group_runs` generation buckets
+  are gone): current · older · hidden-no-traces. See *The picker is three groups* above.
 - **Cryptic columns explain themselves** via `title=` (`inv`, `ΔV`, `TD δ`), and `wp_coverage=0`
   is rendered as prose rather than a bare stat — it means the winning/behind split fell back to
   `V > 0`, which the project's own docs call systematically wrong, so it belongs next to the two
@@ -365,7 +387,7 @@ produced it.
 
 | View | Session call | Notes |
 |---|---|---|
-| `/` run | `run_summary()` + `awareness_scan()` | steps · per-step identity · opponents · checkpoints · γ, **plus the "did it know?" panel** (async, see below). Prints `result_vocabulary_note` above the outcome chart when any of the tree predates the DRAW bucket — 🚨 a pre-2026-09-07 run's `draw: 0` is what the instrument could express, not what happened, and the chart omits the draw series there rather than drawing a flat zero. See *THE RESULT VOCABULARY* in `../CLAUDE.md` |
+| `/` run | `run_summary()` + `awareness_scan()` | steps · per-step identity and **`model_views`** (can the model views run on it) · opponents · checkpoints (each marked loadable / story only) · γ, **plus the "did it know?" panel** (async, see below). Prints `result_vocabulary_note` above the outcome chart when any of the tree predates the DRAW bucket — 🚨 a pre-2026-09-07 run's `draw: 0` is what the instrument could express, not what happened, and the chart omits the draw series there rather than drawing a flat zero. See *THE RESULT VOCABULARY* in `../CLAUDE.md` |
 | `/battles` | `battles()` | outcome / opponent / step filters — **outcome is `win` / `loss` / `draw`** (the `draw` option and every `pattern=` here are built from `agents.training.trace_result.OUTCOMES`, so a bucket cannot exist in the CLI and 422 on the web) |
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
@@ -482,10 +504,14 @@ battle and `inv` stay plain GET params, because "look at this decision" is a thi
 
 **Read the arch-drift section in `src/main/prober/CLAUDE.md` before trusting anything here.**
 Re-running the model needs a checkpoint at the CURRENT architecture, and measured over `models/`,
-**79 of 79 archived runs cannot load**. So this view's ordinary output on an old run is an
-`ArchDriftError` diagnosis — obs dim, `arch_signature`, dropped flags, and the exact `git checkout`
-— which the fragment renders whole (`white-space: pre-wrap`) rather than collapsing to "analysis
-failed". Every other view is model-free and unaffected; that asymmetry is why they were built first.
+**none of the 38 archived runs with traces can load** (79 of 79 in 2026-08). So this view's ordinary output on an
+old run is a TYPED `ArchDriftError` (`kind` + ONE plain sentence, `arch_status`): on first paint the page asks
+`ProbeSession.model_status` (model-free) and, when the views cannot run, renders the reason at once
+(`partials/model_unavailable.html`, `data-model-reason="<kind>"`) instead of a loader — and instead of a password
+prompt for a view the password cannot unlock. The fragment route renders the same sentence over the whole
+diagnosis (obs dim, `arch_signature`, dropped flags, the exact `git checkout`) in `.err` (`white-space:
+pre-wrap`) rather than collapsing it to "analysis failed"; the JSON routes answer 400 `{error, kind, plain}`.
+Every other view is model-free and unaffected; that asymmetry is why they were built first.
 
 Two faithfulness banners are load-bearing and must never be dropped: `obs_mismatch` (every
 obs-offset decode below is reading past a divergence) and `model_resolution.dropped_kwargs` (flags
@@ -761,7 +787,13 @@ python3 -m pytest src/main/prober/web -q -m integration        # + headless chro
 - `runs_test.py` — **path confinement**, written as a list of ATTACKS rather than behaviour
   checks: every traversal string a visitor could type, plus the symlink cases (top-level followed
   and marked; one inside a run refuses the run; a pinned run cannot reach its siblings). These
-  should read as boring — that is the point of membership-over-sanitisation.
+  should read as boring — that is the point of membership-over-sanitisation. Also the picker's
+  classification on a constructed archive (a HEAD-architecture run, an older one with traces, a skeleton, a
+  launch with no traces yet): the three tiers, the default-run rule, hidden runs still resolve, and that a
+  listing never opens a zip. Its sibling in `app_test.py` ("the run picker, by architecture") pins the HTML:
+  the optgroups, show-all, the selected run staying in the list, the model slots' first-paint reasons and the
+  `{error, kind, plain}` envelope. `fixture_run.build(root, identity=…)` stamps an architecture record
+  (`head_identity()`) and a valid husk zip — the gating tests use it; the default records none.
 - `gate_guard_test.py` — the CLASS GUARD for the unlock gate (see *Access*): the route set is derived from the code, plus an anonymous behavioural sweep.
 - `auth_test.py` — the gate's properties: fails closed with no password, the cookie is a
   signature and not the secret, a tampered expiry is rejected, throttling is per client AND

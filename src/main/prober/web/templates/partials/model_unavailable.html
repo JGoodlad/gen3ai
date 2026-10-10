@@ -1,0 +1,15 @@
+{# The model views CANNOT run on this battle's step, and why — rendered by /game and /analyze on FIRST PAINT
+   from `ProbeSession.model_status` (recorded identity + a checkpoint that resolves; nothing is loaded). Needs
+   `model_status` = {kind, plain, config_version, arch_signature, current_config_version,
+   current_arch_signature, checkpoint}. The same sentence is what the fragment routes render from the typed
+   `ArchDriftError` when they are hit directly. #}
+<section class="card model-unavailable" data-model-state="arch_drift" data-model-reason="{{ model_status.kind }}">
+  <h2>Model views</h2>
+  <p class="warnline">{{ model_status.plain }}</p>
+  <p class="muted small">
+    Turn story, scan, triage, calibration and every other model-free view work on this run.
+    {% if model_status.config_version is not none %}Recorded: config v{{ model_status.config_version }}{% if model_status.arch_signature %}, {{ model_status.arch_signature }}{% endif %}
+    · code: config v{{ model_status.current_config_version }}, {{ model_status.current_arch_signature }}.{% endif %}
+    {% if model_status.checkpoint %}<span class="mono">{{ model_status.checkpoint }}</span>{% endif %}
+  </p>
+</section>

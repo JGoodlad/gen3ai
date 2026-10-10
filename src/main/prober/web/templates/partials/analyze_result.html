@@ -36,6 +36,10 @@
      runs fail to load under current code. Its message is a multi-line diagnosis ending in the
      exact `git checkout <hash>` to re-probe from, so it is printed WHOLE (`.err` is pre-wrap) —
      collapsing it to "analysis failed" would throw away the only part that says what to do. #}
+  {% if drift and drift.plain %}
+  {# The TYPED case: ONE plain sentence first (`kind` says which incompatibility), the full diagnosis below it. #}
+  <p class="warnline" data-arch-kind="{{ drift.kind }}">{{ drift.plain }}</p>
+  {% endif %}
   <p class="err" data-analysis="error">{{ error }}</p>
   <p class="muted small">
     Loading a checkpoint is the one thing this view does that the others do not. Every

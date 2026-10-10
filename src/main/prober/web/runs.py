@@ -34,6 +34,8 @@ from __future__ import annotations
 import os
 import re
 
+from main.prober import arch_status as A
+
 # A run's name is the directory's own basename, which the server produced. This is a
 # belt-and-braces reject of anything that could not be a plain directory entry we listed —
 # membership in `list_runs()` is the actual gate.
@@ -72,9 +74,16 @@ class RunStore:
     def list_runs(self) -> "list[dict]":
         """Every selectable run, newest first.
 
-        Each row is `{name, path, has_traces, linked}` — `linked` marks a run reached through an
-        owner-placed top-level symlink, so the UI can say so rather than pretending the layout is
-        flat.
+        Each row is `{name, path, has_traces, linked, mtime, tier, model_views, arch}`:
+
+        * `linked` marks a run reached through an owner-placed top-level symlink, so the UI can say so rather
+          than pretending the layout is flat;
+        * `has_traces` is "at least one `eval_traces/step_<N>/`" — an empty `eval_traces/` is nothing to inspect;
+        * `tier` is the picker's three-way split (`arch_status.TIERS`): **current** (traces AND the model views
+          can run), **older** (traces, but the model views cannot, or cannot be shown to), **no_traces**
+          (nothing to inspect — the 1-in-10 the picker hides behind "show all");
+        * `arch` is the cheap verdict behind it (`arch_status.ArchVerdict.as_dict`), read from
+          `model_config.json` / the newest eval manifest and cached by mtime — NO checkpoint is opened to list.
         """
         if self.pinned:
             return [self._row(os.path.basename(self.root), self.root, linked=False)]
@@ -103,11 +112,21 @@ class RunStore:
             mtime = os.path.getmtime(path)
         except OSError:
             mtime = 0.0
-        return {"name": name, "path": path, "linked": linked, "mtime": mtime,
-                "has_traces": os.path.isdir(os.path.join(path, "eval_traces"))}
+        has_traces = A.run_has_traces(path)
+        verdict = A.run_verdict(path)
+        return {"name": name, "path": path, "linked": linked, "mtime": mtime, "has_traces": has_traces,
+                "tier": A.tier_of(has_traces, verdict), "model_views": verdict.model_views,
+                "arch": verdict.as_dict()}
 
     def default_run(self) -> "str | None":
+        """The run the app opens on: the newest CURRENT-architecture run that has eval traces (its model views
+        work), else the newest run that has traces at all, else — an archive with no traces anywhere — the newest
+        run. The old rule was "newest by mtime", which on a live box is a run that has captured nothing yet."""
         rows = self.list_runs()
+        for tier in (A.TIER_CURRENT, A.TIER_OLDER):
+            for r in rows:
+                if r["tier"] == tier:
+                    return r["name"]
         return rows[0]["name"] if rows else None
 
     # -- resolution ----------------------------------------------------------------------
