@@ -42,21 +42,30 @@ def _apply_grad_checkpointing(model, enabled: bool) -> None:
 
 
 def _declare_compile_cache(args, model_dir: str) -> None:
-    """K3 (gen3_hermetic_compile_cache_v1): declare `<run>/compile_cache/` as this process tree's
-    ONLY compile cache — EMPTY at a fresh launch or a fork, reused only on this run's own restart
-    when its stamp (code commit + torch + compile-config row) matches. Must run the moment the run
+    """K3 (gen3_hermetic_compile_cache_v1): declare this process tree's ONLY compile cache — the
+    SHARED entry for the run's key when the code's checkout is clean (gen3_shared_compile_cache_v1,
+    owner 2026-10-10; the key includes `run_fields(args)`, the model config + the compile flags),
+    else `<run>/compile_cache/`: EMPTY at a fresh launch or a fork, reused only on this run's own
+    restart when its stamp (code commit + torch + compile-config row) matches. Must run the moment the run
     dir exists: before any compile, env worker, forkserver, eval subprocess or T2 service, every one
     of which inherits the three environment variables it sets. `args.model` here is the ARGV's
     (the ARGV's `--model`, so `is_same_run_checkpoint` judges the checkpoint the user named, not a derived
     path)."""
     from agents.model.compile_cache import CompileCacheError, prepare_run_cache
+    from agents.model.compile_cache_shared import run_fields
     from main.launcher.ipc import emit
     from main.train.fork_lr import is_same_run_checkpoint
+    try:
+        run = run_fields(args)
+    except Exception as exc:  # noqa: BLE001 — an unreadable surface never shares; it never kills the run
+        print(f"[CompileCache] the run's compile surface is unreadable ({type(exc).__name__}: {exc}) "
+              f"— this run will not share a compile cache", file=sys.stderr, flush=True)
+        run = None
     try:
         prepare_run_cache(model_dir,
                           same_run_resume=is_same_run_checkpoint(getattr(args, "model", None) or "",
                                                                  model_dir),
-                          emit=emit)
+                          emit=emit, run=run)
     except CompileCacheError as exc:
         print(f"\n[CompileCache] FATAL: {exc}", file=sys.stderr, flush=True)
         send_event(f"[CompileCache] FATAL: {exc}")

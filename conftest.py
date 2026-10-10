@@ -124,6 +124,16 @@ os.environ.setdefault("POKESIM_EMISSION_SELFCHECK", "1")
 # `src/utils/run_archive_test.py`.
 os.environ["GEN3AI_RUN_ARCHIVE_SEALED"] = "1"
 
+# --- The SHARED compile cache is OFF for every test (gen3_shared_compile_cache_v1) ---------------
+#
+# A trainer whose checkout is clean compiles into the box-wide shared entry for its key
+# (`agents.model.compile_cache_shared`, `~/.cache/gen3ai/compile_shared/`). A test run is its own run:
+# a trainer a test starts (and every subprocess) uses K3's per-run cache instead, so no test reads or
+# writes the operator's shared cache. The tests OF the shared cache switch it back on against their
+# own `tmp_path` root. Set at import, like the archive seal, so every subprocess inherits it.
+os.environ["GEN3AI_SHARED_COMPILE_CACHE"] = "0"
+os.environ.pop("GEN3AI_T2_AOT_DIR", None)
+
 
 # --- Tier budget: a slow test may not hide in the cheap tier -------------------------------------
 #

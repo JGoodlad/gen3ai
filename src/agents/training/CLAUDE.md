@@ -205,8 +205,13 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   `compile/recompiles_after_lock` must stay 0. The startup REGION gate runs on REAL rows (the committed
   `src/agents/model/compile_parity_obs.npz`; regenerate with `python -m agents.model.compile_parity_fixture --write`
   after an obs-layout change — a stale fixture refuses); the in-run canary re-checks R1 against eager.
-- 🚨 **The compile cache is the RUN's OWN** (`<run>/compile_cache/`, K3). **A new `torch.compile` site must call
-  `ensure_hermetic_cache()` first** (`compile_cache_test`). HEAD runs torch >= 2.8 ONLY.
+- 🚨 **The compile cache is SHARED BY KEY on a CLEAN checkout, else the RUN's OWN** (owner 2026-10-10: "Shared
+  cache is fine as long as we check the git hash and the workspace is clean"; `src/agents/model/compile_cache_shared.py`
+  — the key keeps K3's whole stamp + the platform, the torch env and the run's compile surface; a dirty tree falls
+  back to `<run>/compile_cache/`, K3, with one `NOT SHARED` line). A trainer flag that shapes a compile joins
+  `COMPILE_ARG_KEYS` (`compile_cache_shared_test` fails until it does). **A new `torch.compile` site must call
+  `ensure_hermetic_cache()` first** (`compile_cache_test`; it also takes the shared entry's lease). HEAD runs
+  torch >= 2.8 ONLY. Detail: `designs/training/compile_flags.md` "The SHARED compile cache, by KEY".
 
 ## The critic, the value side and the auxiliaries
 

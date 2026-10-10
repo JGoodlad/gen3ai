@@ -657,7 +657,11 @@ the production extractor's CPU codegen tests are `slow`, and a compile-path chan
 files' `slow` tier under torch 2.8 (`gen3ai_torch28`, the default) before shipping — the
 both-torches rule was RETIRED 2026-09-30 (`designs/training/compile_flags.md`).
 `compile_cache_test.py` pins all of it; the full rule is `designs/training/compile_flags.md`
-"The HERMETIC per-run compile cache".
+"The HERMETIC per-run compile cache". The SHARED compile cache a clean-checkout TRAINING RUN uses
+(`gen3_shared_compile_cache_v1`, 2026-10-10) is OFF for every test: the root `conftest.py` sets
+`GEN3AI_SHARED_COMPILE_CACHE=0` at import (every subprocess inherits it), so a trainer a test starts
+never reads or writes `~/.cache/gen3ai/compile_shared/`; `compile_cache_shared_test.py` turns it back
+on against its own `tmp_path` root.
 
 ### Inductor's COMPILE-WORKER POOL is shut down after each module (root `conftest.py`, `gen3_test_compile_pool_teardown_v1`)
 

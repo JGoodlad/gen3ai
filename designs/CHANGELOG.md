@@ -13662,3 +13662,39 @@ read both cells for its end-of-turn rule and found them wrong.
 - **Docs.** `ko_exact.py` docstring, ARCHITECTURE, versioning, op_contracts (the EXACT reasons + the step-function
   spellings), file_layout, training_runbook, flag census, flag registry (+ regenerated `designs/flag_registry.md`),
   deleted_flags §4, `design_hand_computed_features.md` D9 rows + Decision record, `src/agents/model/CLAUDE.md`.
+
+## 2026-10-10 — the SHARED compile cache, by KEY (`gen3_shared_compile_cache_v1`; T25; default ON; no config / obs / signature bump)
+
+- **Why.** Owner, 2026-10-10, verbatim: "Shared cache is fine as long as we check the git hash and the workspace is
+  clean." It relaxes the 2026-09-29 "always initialize from a fresh setup" rule (K3) for TRAINING RUNS under exactly
+  those two conditions. Motivation: `--arch endstate`'s learner compile + gate + prewarm is 277.5 s cold (T25 window A,
+  F-PA-4) plus T2's build, paid by every fresh launch and fork; K3's torch-2.8 read put warm at ~0.3x cold.
+- **What.** `agents/model/compile_cache_shared.py`, called from `compile_cache.prepare_run_cache` (the trainer's
+  `_declare_compile_cache`, same position): a run whose IMPORTED checkout (a pinned child's own worktree) is clean —
+  no tracked change anywhere, no untracked file under `src/`; the `deps/pokemon-showdown` submodule excluded (the
+  launcher's pinned worktree symlinks it, where a plain `git status` exits 128, and no compile reads it) — compiles
+  into `~/.cache/gen3ai/compile_shared/<key>/`. The key = K3's whole per-run stamp + `git rev-parse HEAD` of that
+  checkout (agreeing with `$LAUNCHER_GIT_HASH`) + python / triton / CUDA versions + the GPU (nvidia-smi: name, compute
+  capability, driver) + every compile-relevant env var + the run's compile surface (arch toggles + `COMPILE_ARG_KEYS`);
+  the full fields live in the entry's `stamp.json` and are compared on every open (a mismatch is a MISS). Entries are
+  published by one atomic `rename`; every compiling process holds a shared `flock` lease; startup prunes LRU to a
+  20 GiB cap (`GEN3AI_COMPILE_SHARED_CAP_GB`) under an exclusive non-blocking flock, rename-to-trash first. Otherwise
+  ONE `NOT SHARED — <why>` line and K3's per-run cache. T2's AOT packages stay in the run's own dir. Opt-out:
+  `GEN3AI_SHARED_COMPILE_CACHE=0`; root: `GEN3AI_COMPILE_SHARED_DIR`. The root `conftest.py` turns sharing off for
+  every test.
+- **Audit (torch 2.8.0 / triton 3.4.0 source, read).** Inductor's FX-graph / AOTAutograd / autotune / codegen writes
+  are temp-file + rename; Triton's `put` is temp-dir + `os.replace`; Inductor's C++ builds are serialised by a
+  cross-process FileLock but link the `.so` in place — a SIGKILL mid-link can leave a truncated library that FAILS TO
+  LOAD (loud; delete the entry). Recorded as a FINDING in `designs/training/compile_flags.md`.
+- **Gates unchanged.** R1's startup parity gate, the prewarm + lock, the update-10 canary and T2's startup parity gate
+  run on a hit as on a cold start (pinned at the call level under a real shared hit, and statically).
+- **Tests.** `compile_cache_shared_test.py` (28): the clean rule on a real repo (tracked edit anywhere, staged file,
+  untracked `src/` file dirty; untracked outside `src/`, ignored, symlinked submodule clean), a dirty tree never reads or
+  writes the root, a second clean run HITS, a new commit / K3 field / platform / env / arch / compile flag MISSES, a
+  stamp that is not the key's is never served, the opt-out, a pinned child keys on the PIN (and a real child standing in
+  another repo keys on the imported checkout), the compile-flag census, atomic publish under a concurrent writer + an
+  8-process race, the torch/triton atomic-write pattern, LRU pruning to the cap never touching a leased entry (a real
+  child's flock), a child's own lease, the gates on a hit, and two real processes sharing one Inductor compile (FX-graph
+  cache HIT). The clean-rule and atomic-publish tests were mutation-checked (they fail on revert).
+- **Measurement.** The cold vs warm-shared `--arch endstate` startup read is written as commands in
+  `designs/training/compile_flags.md` (NOT run; the perf agent's next lease window).

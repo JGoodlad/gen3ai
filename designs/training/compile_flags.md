@@ -395,7 +395,8 @@ module; every compile site calls it.
 
 | process | its compile cache | reused when |
 |---|---|---|
-| a TRAINING RUN (the trainer, its env core, eval subprocess, T2 service — every child inherits) | `<run>/compile_cache/{inductor,triton,t2_aot}` — `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `GEN3AI_COMPILE_CACHE_DIR` | only by the run's OWN restart (`--model` = a checkpoint this run wrote, `fork_lr.is_same_run_checkpoint`) AND a matching `stamp.json`; a fresh launch or a fork WIPES it to EMPTY |
+| a TRAINING RUN whose code checkout is CLEAN (since 2026-10-10, the default — "The SHARED compile cache" below) | the SHARED entry for its key, `~/.cache/gen3ai/compile_shared/<key>/{inductor,triton}`; T2's AOT packages in `<run>/compile_cache/t2_aot/` | by ANY run with the same key (K3's stamp + the platform + the torch env + the run's compile surface) |
+| a TRAINING RUN on a DIRTY tree, an unnameable commit, or opted out (`GEN3AI_SHARED_COMPILE_CACHE=0`) (the trainer, its env core, eval subprocess, T2 service — every child inherits) | `<run>/compile_cache/{inductor,triton,t2_aot}` — `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `GEN3AI_COMPILE_CACHE_DIR` | only by the run's OWN restart (`--model` = a checkpoint this run wrote, `fork_lr.is_same_run_checkpoint`) AND a matching `stamp.json`; a fresh launch or a fork WIPES it to EMPTY |
 | a pytest process (controller and each xdist worker) | a fresh `gen3ai_pytest_compile_<pid>_*` dir under the SCRATCH root (root `conftest.py`) | within that process's session only; deleted at unconfigure |
 | anything else that compiles (a benchmark, the prober, an offline meter, a standalone eval) | a fresh private `gen3ai_compile_<pid>_*` dir under the SCRATCH root (`ensure_hermetic_cache`) | never; deleted when its creator exits |
 
@@ -494,6 +495,135 @@ The warm residual is dynamo tracing + guard construction + CUDA-graph capture + 
 which no on-disk cache removes. Per-run disk: ~0.6 GB (learner 466 MB + T2 116 MB + opponents 13 MB) on the run's own disk, not tmpfs — `models/` retention may delete `compile_cache/` freely (it is regenerable; the next start is cold). The CPU opponents' compile in one env worker
 (`maybe_compile_extractor`, CUDA hidden, same load): **93.5 s cold → 26.6 s warm** (13 MB). (Until U3 the parent prewarm / forkserver preload paid it once at a fresh launch; neither exists now.) What K3 changes is only what a FRESH launch pays: the old box-wide cache was usually warm for a
 new run of an unchanged graph; the run's own cache is always cold at a fresh launch, by design.
+
+### The SHARED compile cache, by KEY (`gen3_shared_compile_cache_v1`, T25, 2026-10-10)
+
+**The owner (2026-10-10), verbatim: "Shared cache is fine as long as we check the git hash and the
+workspace is clean."** This relaxes the 2026-09-29 "always initialize from a fresh setup" rule above
+for TRAINING RUNS only, under exactly those two conditions; K3's per-run cache stays the fallback, and
+the pytest / private temp caches are unchanged. Module: `agents.model.compile_cache_shared`, called
+from `compile_cache.prepare_run_cache` (the trainer's `_declare_compile_cache`, unchanged position).
+Pinned by `src/agents/model/compile_cache_shared_test.py`; the root `conftest.py` sets
+`GEN3AI_SHARED_COMPILE_CACHE=0` for every test so no test touches the operator's shared root.
+
+**THE KEY** — the entry dir is the first 32 hex of the SHA256 of these fields; the FULL fields are
+written into the entry's `stamp.json` at creation and compared on every open, so a mismatch is a
+MISS (the per-run cache), never a hit:
+
+| field | why it is in the key |
+|---|---|
+| K3's per-run stamp, verbatim (code commit, `code_dirty`, torch, the interpreter, `config_row_hash()`) | every component of the per-run stamp is kept; the CONFIG ROW is the K1b protection — the settings the adapter pins that Inductor's own key omitted |
+| the commit again, `git rev-parse HEAD` in the checkout the code was IMPORTED from (`utils.paths.repo_root()`), which must agree with `$LAUNCHER_GIT_HASH` when set | a PINNED child imports its pin's worktree (the launcher's `PYTHONPATH`) while standing in main, so this is the PIN commit; the launcher already passes the pin in `$LAUNCHER_GIT_HASH` (no launcher change), and a disagreement does not share |
+| python's full version, triton's version, torch's CUDA version, each GPU's name + compute capability + driver (`nvidia-smi`, no CUDA context), `$CUDA_VISIBLE_DEVICES` | the artifacts are kernels for one toolchain and one card; an unreadable GPU does not share |
+| every `TORCHINDUCTOR_*` / `TORCHDYNAMO_*` / `TORCH_COMPILE*` / `TRITON_*` / `PYTORCH_*` / `TORCH_CUDA_ARCH_LIST` / `INDUCTOR_*` variable (the two cache-dir variables excluded) | an environment knob can change codegen without changing the graph — the K1b failure class |
+| the run's compile surface: `extractor_arch.arch_toggles_from_args(args)` (every version-checked architecture toggle) + `COMPILE_ARG_KEYS` (`compile_trainer`, `device`, `device_batch`, `batch_size`, `grad_checkpointing`, `t2_backend`, `t2_buckets`, `t2_lanes`, `t2_opponent_bucket_cap`) | the model config and the flags that shape a compile; a new trainer flag whose name says compile / precision / device / batch / T2 FAILS `test_every_compile_flag_is_keyed_or_declared_irrelevant` until it is keyed or declared irrelevant. The compile REGIONS are code, named by the commit |
+
+Why this keeps the K1b protection: K1b was a GLOBAL compile setting (`donated_buffer`) that changed the
+artifact without changing Inductor's key. Global compile settings come from four places — the code
+(keyed by the commit, and a dirty tree never shares), the adapter's config row (keyed), environment
+variables (keyed), and argv flags (the compile surface, keyed). No trainer flag sets a global torch
+compile config today (grep 2026-10-10: only `compile_control` / `compile_config`, the T2 engine's local
+`dynamo.config.patch`, and AOT's local `inductor_config.patch` touch one — all code). Everything else
+reaches an artifact through the traced graph, which Inductor's and AOTAutograd's own keys cover.
+
+**THE CLEAN RULE** (`workspace_state`, run in the CHILD's checkout — `repo_root()` of the imported
+code, i.e. a pinned child's own worktree, never the launcher's cwd):
+
+- **No tracked change anywhere** (staged or not; `git status --porcelain --untracked-files=no
+  --ignore-submodules=all`) and **no untracked file under `src/`** (`--untracked-files=all -- src`).
+- **Untracked files OUTSIDE `src/` do not matter**: the trainer and every process it spawns import
+  from `src/` alone (`PYTHONPATH=<checkout>/src`), so nothing outside it can enter a compiled graph.
+  `data/` is read from MAIN's cwd even by a pinned child, and whatever data reaches the model reaches
+  it as tensor VALUES or shapes — graph inputs, which Inductor's own key covers. Ignored files
+  (`__pycache__`, build output) are not looked at.
+- **The `deps/pokemon-showdown` submodule is EXCLUDED** (`--ignore-submodules=all`). No torch compile
+  reads it: it is the JS simulator, training runs on the Rust core, and nothing it holds reaches a
+  compiled graph except as values. And the launcher's pinned worktree REPLACES it with a symlink to
+  the launching checkout's submodule (`main/launcher/worktree.py`) — so it is never "at its recorded
+  commit" there, and a plain `git status --porcelain` there EXITS 128 ("expected submodule path … not
+  to be a symbolic link", measured 2026-10-10 in the test's real repo). Requiring a clean submodule
+  would have made every pinned run unshareable.
+- A dirty tree, an unknown commit, a `$LAUNCHER_GIT_HASH` disagreement, an unreadable GPU, a missing
+  compile surface or the opt-out falls back to K3's per-run cache with ONE line:
+  `🧊 [CompileCache] NOT SHARED — <why>; this run compiles into its own hermetic cache`.
+
+**SAFETY.**
+
+- **Entry creation is atomic**: a `.new-<key>-<pid>-*` dir gets its lock file, stamp and subdirs, then
+  ONE `rename` publishes it; a concurrent creator that loses the rename uses the winner's entry. An
+  entry is never visible without its complete stamp.
+- **The writers inside an entry are torch's and triton's — READ in torch 2.8.0 / triton 3.4.0, not
+  assumed**: Inductor's FX-graph, AOTAutograd, autotune, multi-kernel and generated-source writes go
+  through `codecache.write_atomic` (a `.<pid>.<thread>.tmp` file + `rename`); Triton's
+  `FileCacheManager.put` writes into a `tmp.pid_<pid>_<uuid>` dir + `os.replace`, and a kernel's
+  group file last. Inductor's C++ builds (CPU kernels, AOTInductor) run under a cross-process
+  `FileLock` in the cache's own `locks/` dir — SERIALISED against a concurrent writer — but the linker
+  writes the `.so` in place, so **a process SIGKILLed mid-link can leave a truncated library**; the
+  next process FAILS TO LOAD it (loud, never a silent wrong kernel). Recovery: delete that entry, or
+  start with `GEN3AI_SHARED_COMPILE_CACHE=0`. `test_torchs_own_cache_writes_are_atomic_renames` pins
+  the temp-file-plus-rename pattern, so a torch upgrade that drops it fails a test.
+- **Live use is a LEASE**: every process that compiles into an entry holds a SHARED `flock` on its
+  `.inuse.lock` for its lifetime — the trainer from `prepare_run_cache`, every child from
+  `ensure_hermetic_cache` — released by the kernel when the process dies, SIGKILL included.
+- **Pruning** runs at every shared start, after this process holds its own lease: least-recently-used
+  first (`.last_used`'s mtime, touched on every open) until the root is under its cap
+  (`GEN3AI_COMPILE_SHARED_CAP_GB`, default 20 GiB ≈ 8 entries at K3's measured 2.3–2.4 GB per run).
+  An entry is removed only under an EXCLUSIVE non-blocking `flock`, which no lease holder lets anyone
+  take, and only by renaming it to a `.trash-*` dir first — a process that opened its lock file just
+  before sees the inode vanish from the key path and retries on a fresh entry. One pruner at a time
+  (`.prune.lock`); dead creators' `.new-*` dirs and leftover `.trash-*` dirs are swept. An over-cap
+  entry that is in use stays and is reported (`… over-cap in use`).
+- **The gates still run on a hit — a hit only skips compile time.** R1's startup parity gate, the
+  prewarm, the lock and the update-10 canary (`arm_compile_sentinel`) and T2's startup parity gate at
+  every slot × bucket (`InferenceService._startup`) run exactly as on a cold start; pinned at the CALL
+  level under a real shared HIT (`test_the_learner_startup_gate_and_the_canary_are_ARMED_on_a_hit`,
+  `test_T2s_startup_parity_gate_runs_every_slot_x_bucket_on_a_hit`) and statically (no gate module
+  imports the cache decision).
+
+**Where things land.** The run's own `<run>/compile_cache/` keeps `stamp.json` (`"mode": "shared"`, the
+entry, the key, the K3 stamp) and `t2_aot/` (T2's packages are `mkdtemp`-unique, never reused, so they
+stay out of the shared entry: `$GEN3AI_T2_AOT_DIR`). A same-run restart whose previous start was shared
+and whose tree is now dirty WIPES the run-local dir and starts the per-run cache cold. The startup
+line: `🧊 [CompileCache] SHARED-HIT | SHARED-NEW <entry> — clean tree, key <12 hex>; … ; <x> / 20 GiB
+after pruning N entries`. Opt-outs and knobs: `GEN3AI_SHARED_COMPILE_CACHE` (`0` / `off` / `false` /
+`no` = off; unset / `1` / `on` = on; anything else = off, said in the line), `GEN3AI_COMPILE_SHARED_DIR`
+(the root; tmpfs refused), `GEN3AI_COMPILE_SHARED_CAP_GB`.
+
+**What it saves (ESTIMATE, from measured parts; the read below is NOT yet run).** `--arch endstate`'s
+learner compile + gate + prewarm is 277.5 s cold (`perf_phase_2026-10-10/README.md`, F-PA-4) plus T2's
+build; K3's torch-2.8 read put WARM at ~0.3× COLD for both the learner (394 → 117–134 s) and T2 (172 →
+32–33 s). Shared, every fresh launch and fork of an unchanged commit + config starts warm, not only a
+run's own restart.
+
+**The measurement (GPU; the perf agent's next lease window — commands only, not run here).** A cold vs
+warm-shared startup on `--arch endstate`, at a CLEAN commit that contains this change, through the
+launcher's normal pinned path (which also proves the symlinked-submodule rule live). Each launch is a
+fresh one-update run; read the learner's `… — reset + prewarm took <N>s` line and the `🦀 [RUST ENV] T2
+up in <N>s` line from each child log, and the `🧊 [CompileCache]` line (must say `SHARED-NEW`, then
+`SHARED-HIT`, then `NOT SHARED` for the control).
+
+```bash
+cd /home/goodlad/dev/gen3ai                     # the MAIN checkout after landing (clean), or a clean worktree at the commit
+export PYTHONPATH=$PWD/src PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3
+export GEN3AI_COMPILE_SHARED_DIR=$HOME/.cache/gen3ai/tmp/t25_cc_$(date +%Y%m%d_%H%M)   # an EMPTY root of its own
+eval "$(scripts/ops/gpu_lease.sh acquire --owner perf_T25 --max-hours 2)"   # the orchestrator's grant; exports GEN3AI_GPU_LEASE_TOKEN
+L="$PY -m main.launcher --restart-interval-hours 0 --device cuda --arch endstate --steps 98304 --snapshot-ladder-games 0"
+$L --dry-run --run-name rb_t25_cc_cold          # validate first (never launch-and-kill)
+# 1. COLD-SHARED: the first process on the empty root (expect SHARED-NEW)
+timeout 3000 scripts/ops/gpu_lock.sh scripts/ops/mem_cap.sh 40 $L --run-name rb_t25_cc_cold
+# 2. WARM-SHARED: a DIFFERENT fresh run, same commit + config (expect SHARED-HIT on the same entry)
+timeout 3000 scripts/ops/gpu_lock.sh scripts/ops/mem_cap.sh 40 $L --run-name rb_t25_cc_warm
+# 3. CONTROL: sharing off (expect "NOT SHARED … opted out": a cold per-run cache, today's fresh-launch cost)
+GEN3AI_SHARED_COMPILE_CACHE=0 timeout 3000 scripts/ops/gpu_lock.sh scripts/ops/mem_cap.sh 40 $L --run-name rb_t25_cc_control
+scripts/ops/gpu_lease.sh release
+for r in cold warm control; do echo "== $r"; grep -hE "CompileCache\]|reset \+ prewarm took|\] T2 (up|SHARED) in" models/rb_t25_cc_$r/launcher_child.log; done
+du -sh "$GEN3AI_COMPILE_SHARED_DIR"/*/
+```
+
+The desktop must not hold the GPU (T23) and the disk preflight must pass, exactly as for any CUDA
+launch. The three runs are throwaway (delete their run dirs after the read; the shared root too). The
+verdict is descriptive (n = 1 per arm, contention REPORTED): warm-shared learner and T2 seconds beside
+cold and the control, plus the entry's size.
 
 ## FP32 matmul precision — the ONLY precision (TF32 retired; `--matmul-precision` DELETED)
 

@@ -235,6 +235,16 @@ tree name different commits** (a producer-side GIGO throw — a warning in a tra
 stdout is a line in a 1 MiB ring buffer nobody reads). Gate:
 `src/agents/model/snapshot_git_hash_test.py`.
 
+**The SHARED compile cache keys on the same two facts** (`gen3_shared_compile_cache_v1`, 2026-10-10;
+`designs/training/compile_flags.md` "The SHARED compile cache, by KEY"): the trainer reads `git rev-parse
+HEAD` and the clean check in the IMPORTED checkout (`repo_root()` — a pinned child's own worktree,
+never the launcher's cwd), and shares only when that HEAD agrees with `$LAUNCHER_GIT_HASH`. No
+launcher change: the launcher already passes the full pin sha. ⚠️ **The pinned worktree's
+`deps/pokemon-showdown` is a SYMLINK** (to the launching checkout's submodule, `_create_run_worktree`),
+so a plain `git status --porcelain` there EXITS 128 ("expected submodule path … not to be a symbolic
+link") and `git diff-files` reports a typechange `T`; the clean check runs with
+`--ignore-submodules=all` and excludes that path (no torch compile reads the JS simulator).
+
 **`pin_history` — the scalar `git_hash` is "current", not "the code that ran".** It is
 rewritten on every save, so on a run that restarts every 3 h it names the LAST code to touch
 the run (observed on `ai_v9_171`: `eb5261ff`, then `fff95a16` after one resume). `metadata.json`

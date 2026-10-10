@@ -75,6 +75,8 @@ table exists to prevent:
 | `extractor_forward.py` | `ExtractorForward` — `forward_internal`, the T0/T1 belief+physics stack, `_value_pooled_routes` |
 | `features_extractor.py` | the `Gen3FeaturesExtractor` class + `forward`; **the re-export HUB for every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor(model, enabled, label, hide_cuda)` — the CPU compile of ONE frozen extractor, used by the offline readers (split out of `snapshot.py`; the trainer-side opponent compile, its strict mode and revert quorum were deleted in U3) |
+| `compile_cache.py` | K3's hermetic compile cache (`gen3_hermetic_compile_cache_v1`): the run's cache decision (`prepare_run_cache`), the per-run stamp, the private temp caches (`ensure_hermetic_cache`), T2's AOT dir |
+| `compile_cache_shared.py` | the SHARED compile cache by key (`gen3_shared_compile_cache_v1`, owner 2026-10-10): the key's fields, the clean-checkout rule, atomic entry creation, the flock leases, LRU pruning under a cap (`designs/training/compile_flags.md`) |
 | `compile_config.py` | the compile-config ROW `compile_control` pins per torch version (`COMPILE_CONFIG`: `donated_buffer=False` + the cache-key tag) and its hash, the hermetic cache stamp's third field — DATA only, no check at import (P10-D) |
 | `compile_control.py` | `gen3_compile_sentinel_v1` — the ONLY runtime module that touches `torch._dynamo`: the gate → reset → prewarm → lock → stats phases, the cache-limit detector, the torch version table and the source-hash drift tripwire, run by `require_supported_torch` where a learner compiles — never at import (`designs/training/compile_flags.md`) |
 

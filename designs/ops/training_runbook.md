@@ -435,6 +435,21 @@ which is why it announces itself at startup when the auto default resolves to on
 `state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` → Compiled GPU
 trainer.
 
+**The compile cache line — read it at every start** (`gen3_shared_compile_cache_v1`, owner 2026-10-10:
+"Shared cache is fine as long as we check the git hash and the workspace is clean"). A run whose code
+checkout (a pinned run's own worktree) is CLEAN compiles into the SHARED entry for its key under
+`~/.cache/gen3ai/compile_shared/`, so a fresh launch or fork of an unchanged commit + config starts
+WARM: `🧊 [CompileCache] SHARED-NEW <entry> …` (the first run of a key, cold) or `SHARED-HIT <entry> …
+(warm)`. Otherwise ONE line says why and the run uses its own per-run cache exactly as before:
+`🧊 [CompileCache] NOT SHARED — <why>; this run compiles into its own hermetic cache` (a dirty tree,
+an unnameable commit, a `$LAUNCHER_GIT_HASH` disagreement, an unreadable GPU, or the opt-out
+`GEN3AI_SHARED_COMPILE_CACHE=0`). Every parity gate (R1's startup gate, T2's, the update-10 canary)
+runs either way — a hit only skips compile time. The shared root is capped at 20 GiB
+(`GEN3AI_COMPILE_SHARED_CAP_GB`) and pruned least-recently-used at each start, never an entry a live
+process uses. A start that fails to LOAD a cached library (a truncated `.so` after a SIGKILL
+mid-link) is fixed by deleting that entry or launching once with `GEN3AI_SHARED_COMPILE_CACHE=0`. Detail:
+`designs/training/compile_flags.md` → "The SHARED compile cache, by KEY".
+
 ### Memory headroom — `--grad-checkpointing` (operator knob)
 
 `--grad-checkpointing` is the EXACT memory lever for the learner: it gradient-checkpoints the team transformer's encoder layers and the damage operator (`TeamTransformer`, `DamageOperator`) during the PPO update, trading ONE extra forward in the backward pass — on a GPU that is otherwise idle there — for about **5 GB less activation VRAM**. It is **bit-exact** (dropout 0, non-reentrant checkpointing), so a run on it trains the same numbers as a run without; it is a runtime knob (never in `check_compatible`, never in the saved checkpoint), so it is set fresh from the argv on every launch and **a flagless resume does NOT inherit it** — re-pass it on every resume of an arm that needs it. It is OFF by default and the production recipe does not use it. Reach for it when a launch dies with a CUDA out-of-memory in the update (a larger `--batch-size`, `--n-envs`, or the X5 belief-token architecture, whose tokens grow the transformer's activations), BEFORE shrinking the batch: shrinking the batch changes the dose, this does not. It must run before `--compile-trainer` patches the forward (the launch order handles that); the startup line `[GradCheckpoint] enabled on N transformer block(s)` is the confirmation.
