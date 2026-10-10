@@ -1,7 +1,7 @@
 """The ONE inventory of the static gates: every test file that declares ``pytest.mark.static``.
 
 The prose that counts them ("Seventeen static gates" in the root ``CLAUDE.md``, "Seventeen static gates run
-inside the suite" in ``CONTRIBUTING.md`` and ``docs/RUNNING.md``) used to be hand-counted and disagreed three
+inside the suite" in ``docs/DEVELOPING.md`` and ``docs/RUNNING.md``) used to be hand-counted and disagreed three
 ways (2026-10-08). The marker is the declaration (a tier is DECLARED, never inferred), so this module reads
 the declaration with an AST scan and ``static_gates_test.py`` holds every count and table to it.
 

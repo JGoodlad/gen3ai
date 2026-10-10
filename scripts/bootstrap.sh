@@ -541,7 +541,8 @@ Then, in rough order of usefulness:
     python -m main.prober models/<run>
 
 Where to read next:
-    CONTRIBUTING.md          how to work in this repo (tests, ports, worktrees)
+    CONTRIBUTING.md          your first pull request, in five steps
+    docs/DEVELOPING.md       the detailed developer reference (tests, ports, worktrees)
     docs/RUNNING.md          training, evaluation, the test tiers
     designs/ARCHITECTURE.md  the model, as it is today
 EOF

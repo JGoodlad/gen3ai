@@ -114,8 +114,8 @@ in [`UNDERSTANDING.md` §0](designs/research_state/UNDERSTANDING.md).
 - **Docs move with the code.** If your change makes a `CLAUDE.md`, a `README.md` or
   `designs/ARCHITECTURE.md` stale, update it in the same PR.
 
-The mechanics (setup, test tiers, ports, worktrees, local conventions) are in
-**[CONTRIBUTING.md](CONTRIBUTING.md)**.
+Your first PR in five steps is in **[CONTRIBUTING.md](CONTRIBUTING.md)**; the detailed mechanics
+(setup, test tiers, ports, worktrees, local conventions) are in [`docs/DEVELOPING.md`](docs/DEVELOPING.md).
 
 Be kind in issues and reviews. Disagreement is welcome when it's about ideas. And please read
 [Respect for players](#respect-for-players) below.
@@ -132,7 +132,7 @@ conda activate gen3ai_torch28        # torch 2.8
 ```
 
 `bootstrap.sh` is idempotent and fails loudly, so you can re-run it any time.
-[`CONTRIBUTING.md`](CONTRIBUTING.md) explains each step. It installs `src/` in editable mode, so
+[`docs/DEVELOPING.md`](docs/DEVELOPING.md#setup-in-depth) explains each step. It installs `src/` in editable mode, so
 `import agents` works from anywhere in the main checkout.
 
 **A training smoke test** runs on the CPU, needs no server and takes about 2 minutes. Use a scratch
@@ -155,7 +155,7 @@ python -m main.prober.web models/            # serves on :6008 with a run picker
 python -m main.prober.query --help           # the same engine as a JSON CLI
 ```
 
-**The tests** (tiers and timings in [`CONTRIBUTING.md`](CONTRIBUTING.md#tests--what-to-run-and-when)):
+**The tests** (tiers and timings in [`docs/DEVELOPING.md`](docs/DEVELOPING.md#tests)):
 
 ```bash
 pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2   # inner loop

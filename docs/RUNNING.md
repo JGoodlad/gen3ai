@@ -24,7 +24,7 @@ in this area), a container, a machine that skipped the bootstrap. Both spellings
 neither is being retired.
 
 Setup mechanics for contributors — flags, the CPU-only variant, the worktree case — are in
-[`CONTRIBUTING.md`](../CONTRIBUTING.md). What the script actually does, should you need to run a
+[`DEVELOPING.md`](DEVELOPING.md). What the script actually does, should you need to run a
 step by hand:
 
 ```bash
@@ -129,7 +129,7 @@ mode-flag mirror, the training-recipe mirror, the ledger index, the eval-trace s
 enum-string comparison, the learner lifecycle, the global-RNG seeding, the strict checkpoint load, the
 eval-ledger readers, the poke-env import ratchet and the poke-env absence. (`src/packaging_gate_test.py`
 guards the import path and is not one of them.) The full table with each gate's opt-out is in
-[`CONTRIBUTING.md`](../CONTRIBUTING.md); `python -m utils.static_gates` lists them from the
+[`DEVELOPING.md`](DEVELOPING.md#the-static-gates); `python -m utils.static_gates` lists them from the
 `pytest.mark.static` declarations, and `src/utils/static_gates_test.py` holds every count to that list.
 
 ```bash

@@ -303,7 +303,7 @@ def test_a_stale_editable_install_is_not_pointing_at_a_deleted_checkout() -> Non
     later deleted, and the `.pth` now names a path that is gone. Python skips missing `.pth`
     entries in silence, so the symptom is `ModuleNotFoundError: agents` on a machine where the
     install "succeeded" — and the natural next move is to re-export PYTHONPATH and never find
-    out. `CONTRIBUTING.md` says to install from the MAIN CHECKOUT only; this is that rule with
+    out. `docs/DEVELOPING.md` says to install from the MAIN CHECKOUT only; this is that rule with
     teeth.
 
     No editable install present (PYTHONPATH-only environments, CI, a fresh clone) means there
