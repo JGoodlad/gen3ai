@@ -1,0 +1,208 @@
+{
+ "tag": "E_bf16",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "bf16",
+ "r1_preset": "default",
+ "src": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a6972c46074d027ef/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 3.79541015625,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 3.196306437952444,
+  "compile_gate_prewarm": 285.11726810701657
+ },
+ "imports_from": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a6972c46074d027ef/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5624179,
+  "diagnostics_every": 10
+ },
+ "trunk_rounds_set": 3,
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "REFUSED",
+  "error": "--compile-trainer region R1: the compiled micro-step's LOSS disagrees with eager \u2014 0.7428860068321228 vs 0.741915762424469 (rel 9.70e-04 > 0.0001)",
+  "lines": [
+   "[CompileControl] dynamo reset at startup: dropped 0 cache entries compiled before the region was installed (now 0)",
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "peak_reserved_mib": 6154.0,
+ "diag_1ep_s": 11.49422428489197,
+ "train": {
+  "walls_s": {
+   "1": [
+    5.235654041985981,
+    5.275245337979868
+   ],
+   "3": [
+    16.53699355002027,
+    13.263784226961434
+   ]
+  },
+  "median_s": {
+   "1": 5.255449689982925,
+   "3": 14.900388888490852
+  },
+  "marginal_epoch_s": 4.822469599253964,
+  "update_s_est": 48.6576760832686,
+  "first_epoch_overhead_s": 0.43298009072896093,
+  "per_micro_ms_marginal": 100.46811665112425,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 1.6264321472262964,
+    "n": 18016
+   },
+   {
+    "epochs": 1,
+    "s": 1.604316974640824,
+    "n": 18016
+   },
+   {
+    "epochs": 3,
+    "s": 1.614046853268519,
+    "n": 20256
+   },
+   {
+    "epochs": 3,
+    "s": 1.6145111613441259,
+    "n": 20256
+   }
+  ]
+ },
+ "load1_end": 1.578125,
+ "gpu_others_end": [],
+ "profile_phase": "plain",
+ "profile": {
+  "n_micro": 48,
+  "trace": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/traces/profile_E_bf16.trace.json.gz",
+  "profiled_span_s": 5.519861018,
+  "gpu_busy_s": 4.711778755000078,
+  "gpu_busy_pct": 85.36045997598843,
+  "top_kernels": [
+   {
+    "name": "ampere_sgemm_32x128_tn",
+    "count": 5280,
+    "total_ms": 201.94617700000305,
+    "pct_of_kernel_time": 4.32591170249158
+   },
+   {
+    "name": "ampere_sgemm_128x128_nt",
+    "count": 384,
+    "total_ms": 195.02658400000342,
+    "pct_of_kernel_time": 4.1776863249189375
+   },
+   {
+    "name": "fmha_cutlassB_f32_aligned_64x64_k32_sm80(PyTorchMemEffAttention::AttentionBackwardKernel<cutlass::arch::Sm80, float, true, false, false, 64, 64, 32, false>::Par",
+    "count": 96,
+    "total_ms": 153.17053899999885,
+    "pct_of_kernel_time": 3.2810832915001304
+   },
+   {
+    "name": "ampere_sgemm_128x64_tn",
+    "count": 1296,
+    "total_ms": 146.1742930000085,
+    "pct_of_kernel_time": 3.131215921419301
+   },
+   {
+    "name": "ampere_sgemm_128x64_nn",
+    "count": 1104,
+    "total_ms": 122.65726199999249,
+    "pct_of_kernel_time": 2.6274549633159694
+   },
+   {
+    "name": "triton_poi_fused__to_copy_add_clone_copy_slice_backward_zeros_like_298",
+    "count": 48,
+    "total_ms": 118.81406399999608,
+    "pct_of_kernel_time": 2.5451293880059875
+   },
+   {
+    "name": "triton_red_fused__to_copy_add_clamp_cumsum_div_floor_ge_gt_index_le_lt_mul_round_rsub_sum_where_430",
+    "count": 48,
+    "total_ms": 108.09310199999932,
+    "pct_of_kernel_time": 2.3154744588227882
+   },
+   {
+    "name": "fmha_cutlassB_bf16_aligned_64x64_k32_seqaligned_sm80(PyTorchMemEffAttention::AttentionBackwardKernel<cutlass::arch::Sm80, cutlass::bfloat16_t, true, false, true",
+    "count": 144,
+    "total_ms": 94.69993599999891,
+    "pct_of_kernel_time": 2.0285779481113564
+   },
+   {
+    "name": "ampere_bf16_s1688gemm_bf16_128x128_ldg8_f2f_stages_32x1_nn",
+    "count": 576,
+    "total_ms": 80.78109700000664,
+    "pct_of_kernel_time": 1.7304209371214336
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_342",
+    "count": 48,
+    "total_ms": 80.15316600000139,
+    "pct_of_kernel_time": 1.7169699567580872
+   }
+  ],
+  "kernels": 218688,
+  "memcpy_memset": 19431,
+  "kernel_time_s": 4.668291701000019,
+  "per_micro": {
+   "kernel_launch_calls": 4550.958333333333,
+   "device_kernels": 4556.0,
+   "sync_calls": {
+    "cudaStreamSynchronize": 121.22916666666667,
+    "cudaDeviceSynchronize": 0.041666666666666664
+   },
+   "scalar_reads_local_scalar_dense": 405.4166666666667,
+   "memcpy_calls": {
+    "cudaMemcpyAsync": 235.3125
+   }
+  },
+  "wall_s_profiled": 5.528192176949233,
+  "kernel_classes": {
+   "gemm": {
+    "count": 31948,
+    "s": 1.513792282000048,
+    "pct": 32.42711421987124
+   },
+   "triton_pointwise": {
+    "count": 53568,
+    "s": 1.3882531050000115,
+    "pct": 29.73792543217951
+   },
+   "aten_other": {
+    "count": 106772,
+    "s": 0.6071303639999439,
+    "pct": 13.005407607024358
+   },
+   "triton_reduction": {
+    "count": 16032,
+    "s": 0.4973452289999929,
+    "pct": 10.653687919575665
+   },
+   "attention": {
+    "count": 480,
+    "s": 0.34394189499999767,
+    "pct": 7.367617900276448
+   },
+   "triton_persistent_reduction": {
+    "count": 9696,
+    "s": 0.31740790200002794,
+    "pct": 6.799230260868959
+   },
+   "triton_other": {
+    "count": 192,
+    "s": 0.00042092400000207997,
+    "pct": 0.009016660203815266
+   }
+  }
+ },
+ "canary": {
+  "verdict": "FAIL",
+  "error": "CompileCanaryError: [CompileCanary] FATAL after update 0: the disagreement is CONFIRMED (it reproduced on the same rows and on an independent fixture slice in the same update). The COMPILED learner no longer equals eager on the committed real-obs fixture at the startup gate's bars \u2014 --compile-trainer region R1: the compiled micro-step's LOSS disagrees with eager \u2014 0.34759438037872314 vs 0.3477211892604828 (rel 1.27e-04 > 0.0001)\nCheckpoint: not written (no run directory declared).\nSAFE ROLLBACK POINT: unknown (no run directory declared).\nTraining on a wrong function is GIGO: fatal by design, the launcher does NOT restart it (FATAL_CONFIG). See designs/training/learner_lifecycle.md (the canary)."
+ }
+}

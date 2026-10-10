@@ -1,0 +1,205 @@
+{
+ "tag": "P_at_item1",
+ "argv": "--arch production  --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_957d4dbd/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 1.36572265625,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 6.202117299893871,
+  "compile_gate_prewarm": 157.20705718907993
+ },
+ "imports_from": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_957d4dbd/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5537133,
+  "diagnostics_every": 10
+ },
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "PASS",
+  "lines": [
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+   "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 8.51e-08 <= 0.0001; train features: fp32 max|compiled-eager| 1.19e-07 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.14e-05 (features_extractor.history_events.cant_emb.weight) over 197 params <= 0.00988 [the K9 learner golden's real labelled buffer]",
+   "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+   "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 157.2s",
+   "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "peak_reserved_mib": 6560.0,
+ "diag_1ep_s": 13.077619515941478,
+ "train": {
+  "walls_s": {
+   "1": [
+    5.668212738004513,
+    5.674581942963414
+   ],
+   "3": [
+    14.495197177981026,
+    14.497324600932188
+   ]
+  },
+  "median_s": {
+   "1": 5.6713973404839635,
+   "3": 14.496260889456607
+  },
+  "marginal_epoch_s": 4.412431774486322,
+  "update_s_est": 45.38328331086086,
+  "first_epoch_overhead_s": 1.2589655659976415,
+  "per_micro_ms_marginal": 91.92566196846504,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 1.7569285091012716,
+    "n": 17880
+   },
+   {
+    "epochs": 1,
+    "s": 1.7569550445768982,
+    "n": 17880
+   },
+   {
+    "epochs": 3,
+    "s": 1.7579017193056643,
+    "n": 19848
+   },
+   {
+    "epochs": 3,
+    "s": 1.7599984753178433,
+    "n": 19848
+   }
+  ]
+ },
+ "load1_end": 2.32421875,
+ "gpu_others_end": [],
+ "profile_phase": "plain",
+ "profile": {
+  "n_micro": 48,
+  "trace": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/traces/profile_P_at_item1.trace.json.gz",
+  "profiled_span_s": 5.9483604670000005,
+  "gpu_busy_s": 5.150267480999988,
+  "gpu_busy_pct": 86.58297541940118,
+  "top_kernels": [
+   {
+    "name": "ampere_sgemm_128x64_tn",
+    "count": 1728,
+    "total_ms": 413.9499629999998,
+    "pct_of_kernel_time": 8.107133802159222
+   },
+   {
+    "name": "fmha_cutlassB_f32_aligned_64x64_k32_sm80(PyTorchMemEffAttention::AttentionBackwardKernel<cutlass::arch::Sm80, float, true, false, false, 64, 64, 32, false>::Par",
+    "count": 192,
+    "total_ms": 375.0011770000028,
+    "pct_of_kernel_time": 7.344329000232854
+   },
+   {
+    "name": "ampere_sgemm_128x128_nt",
+    "count": 480,
+    "total_ms": 342.2078349999953,
+    "pct_of_kernel_time": 6.702077435605879
+   },
+   {
+    "name": "ampere_sgemm_128x64_nn",
+    "count": 1296,
+    "total_ms": 217.982801000003,
+    "pct_of_kernel_time": 4.269153019048517
+   },
+   {
+    "name": "ampere_sgemm_32x128_tn",
+    "count": 4848,
+    "total_ms": 194.73924800000353,
+    "pct_of_kernel_time": 3.81393231352432
+   },
+   {
+    "name": "fmha_cutlassF_f32_aligned_64x64_rf_sm80(PyTorchMemEffAttention::AttentionKernel<float, cutlass::arch::Sm80, true, 64, 64, 64, true, true>::Params)",
+    "count": 192,
+    "total_ms": 159.92245399999834,
+    "pct_of_kernel_time": 3.1320518140682627
+   },
+   {
+    "name": "void cutlass::Kernel2<cutlass_80_simt_sgemm_128x64_8x5_nt_align1>(cutlass_80_simt_sgemm_128x64_8x5_nt_align1::Params)",
+    "count": 1680,
+    "total_ms": 141.13823199998845,
+    "pct_of_kernel_time": 2.7641662850543534
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_300",
+    "count": 48,
+    "total_ms": 101.82184400000016,
+    "pct_of_kernel_time": 1.9941620656470131
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_339",
+    "count": 48,
+    "total_ms": 76.9337569999985,
+    "pct_of_kernel_time": 1.506733464551105
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_327",
+    "count": 48,
+    "total_ms": 68.87907899999865,
+    "pct_of_kernel_time": 1.348984079079347
+   }
+  ],
+  "kernels": 201812,
+  "memcpy_memset": 19431,
+  "kernel_time_s": 5.105996435999984,
+  "per_micro": {
+   "kernel_launch_calls": 4199.375,
+   "device_kernels": 4204.416666666667,
+   "sync_calls": {
+    "cudaStreamSynchronize": 121.22916666666667,
+    "cudaDeviceSynchronize": 0.041666666666666664
+   },
+   "scalar_reads_local_scalar_dense": 402.5833333333333,
+   "memcpy_calls": {
+    "cudaMemcpyAsync": 234.3125
+   }
+  },
+  "wall_s_profiled": 5.956604971899651,
+  "kernel_classes": {
+   "gemm": {
+    "count": 28540,
+    "s": 1.8283945269999724,
+    "pct": 35.8087701375743
+   },
+   "triton_pointwise": {
+    "count": 45216,
+    "s": 1.482179451000013,
+    "pct": 29.028211624862482
+   },
+   "aten_other": {
+    "count": 104440,
+    "s": 0.6806449479999708,
+    "pct": 13.330305975167981
+   },
+   "attention": {
+    "count": 384,
+    "s": 0.5349236310000012,
+    "pct": 10.476380814301107
+   },
+   "triton_reduction": {
+    "count": 14496,
+    "s": 0.29981670700004953,
+    "pct": 5.8718549994704725
+   },
+   "triton_persistent_reduction": {
+    "count": 8640,
+    "s": 0.279782995999984,
+    "pct": 5.4794984584667
+   },
+   "triton_other": {
+    "count": 96,
+    "s": 0.00025417599999922095,
+    "pct": 0.004977990156968089
+   }
+  }
+ }
+}

@@ -101,3 +101,17 @@ label presence. Compare configurations within the tool; quote absolute seconds o
   - perf item 1's deferred A/B: `957d4dbd^` vs `957d4dbd` on production, with profiles (busy %, syncs per
     micro-batch, scalar-read time);
   - E_base (the closed-form KO at HEAD, the levers' paired baseline) and E_combo.
+
+## 5. Status after windows A and B (2026-10-10; numbers in [`README.md`](README.md))
+
+| lever | status |
+|---|---|
+| the attribution | MEASURED. Production 44.95 → the end state 53.5 s per update. The third trunk round is +6.9 s, ~80 % of the gap; the rest of the end state is +1.8 s; exact KO is +0.3 s |
+| A. bf16 trunk region | MEASURED. −20 % per 1-epoch call; per-epoch kernel time −21 % (GEMM −28 %, attention −51 %); peak memory −540 MiB. The fp32 R1 gate refuses it, as designed. NEXT: §2's adoption design (the matched-envelope parity rule, K9(b), a strength A/B), after the idle-time lever |
+| C. CUDA graphs over R1 | BLOCKED. The gate passes bit-equal, but the retain_graph probes (grad balance, the per-term noise sampler) die under cudagraph trees on the first, diagnostic, update. NEXT: give diagnostic updates a non-graphed route (a second declared signature), then re-measure |
+| B1. coordinate-descent tuning | IMPRACTICAL as a startup cost: R1 did not finish compiling in 11 min. Revisit only behind the shared compile cache |
+| B2. combo kernels | not measured (window C dropped it; low expected gain) |
+| closed-form exact KO | LANDED as THE `exact`. Cost-neutral on the GPU (53.5 vs 53.5 s); CPU KO function 23.9 → 6.1 ms |
+| perf item 1 (batched host reads) | MEASURED. −1.3 % per plain update; syncs 126 → 121 per micro-batch |
+| **NEW #1: the update's ~14 % GPU-idle time** | every plain epoch is 85–87 % GPU-busy, with ~121 `cudaStreamSynchronize` per micro-batch (~58 k per update) that item 1's counter does not see. Worth up to ~7 s per E update (ESTIMATE), and the prerequisite for bf16's gain to reach the wall clock. Window C attributes them (`--profile-stack`) |
+| 8. the shared compile cache | the OWNER APPROVED it 2026-10-10 ("shared cache is fine as long as we check the git hash and the workspace is clean"). BUILT and LANDED `62c6165e`, default ON, a dirty tree falls back per-run. Window C measures cold vs warm-shared |

@@ -1,0 +1,24 @@
+{
+ "tag": "E_coordesc",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "fp32",
+ "r1_preset": "coordesc",
+ "src": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a6972c46074d027ef/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 1.484375,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 3.0918889440363273
+ },
+ "imports_from": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a6972c46074d027ef/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5624179,
+  "diagnostics_every": 10
+ },
+ "grad_checkpointing": false
+}

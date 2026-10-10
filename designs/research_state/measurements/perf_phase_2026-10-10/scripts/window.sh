@@ -41,6 +41,31 @@ job() {
 }
 cfg() { "$PY" "$HERE/configs.py" --argv "$1"; }
 
+# launchjob <tag> <budget-minutes>: a FRESH one-update `--arch endstate` launch through the launcher's normal pinned
+# path (a scratch run archive, never models/; an EMPTY shared compile root of this day's own), its startup lines kept.
+CC_ROOT="$HOME/.cache/gen3ai/tmp/t25_cc_$(date +%Y%m%d)"
+RUNS=/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/runs
+launchjob() {
+  local tag=$1 budget=$2
+  local now left
+  now=$(date +%s); left=$(( (DEADLINE - now) / 60 ))
+  if (( left < budget )); then
+    echo "[window $WIN] SKIP $tag: needs ${budget} min, ${left} min left" | tee -a "$RES/window.log"
+    return
+  fi
+  echo "[window $WIN] START $tag at $(date +%T) (budget ${budget} min, ${left} min left)" | tee -a "$RES/window.log"
+  local run="rb_t25_${tag}_$(date +%H%M)"
+  ( cd "$ROOT" && GEN3AI_MODELS_DIR="$RUNS" GEN3AI_COMPILE_SHARED_DIR="$CC_ROOT" PYTHONPATH="$ROOT/src" \
+      timeout $(( budget * 60 )) "$ROOT/scripts/ops/gpu_lock.sh" "$ROOT/scripts/ops/mem_cap.sh" 40 "$PY" -m main.launcher \
+      --restart-interval-hours 0 --device cuda --arch endstate --steps 98304 --snapshot-ladder-games 0 \
+      --run-name "$run" ) > "$RES/logs/$tag.log" 2>&1
+  local rc=$?
+  grep -hE "CompileCache\]|reset \+ prewarm took|T2 (up|SHARED) in|Training complete" \
+      "$RUNS/$run/launcher_child.log" > "$RES/$tag.startup.txt" 2>/dev/null
+  echo "[window $WIN] END $tag rc=$rc at $(date +%T): $(head -3 "$RES/$tag.startup.txt" | tr '\n' ' ' | cut -c1-300)" \
+      | tee -a "$RES/window.log"
+}
+
 TA="$TREES/at_6e0a1a7a/src"     # window A's pinned tree (the 16-roll exact KO)
 case "$WIN" in
   A)
@@ -64,11 +89,14 @@ case "$WIN" in
     job E_coordesc  11 HEAD --argv "$(cfg E)" --r1-preset coordesc --canary
     ;;
   C)
-    # T2's per-step cost per architecture (window A dropped it) + the last preset.
+    # WHO SYNCS (F-PB-4) + T2 per-step for E; then the SHARED compile cache's cold vs warm fresh launch
+    # (`designs/training/compile_flags.md` "The SHARED compile cache, by KEY"; the per-run control is skipped: a
+    # cold shared start compiles exactly what a per-run cold start compiles); then T2 per-step for P and R.
+    job E_stack     10 HEAD --argv "$(cfg E)" --profile --profile-stack --t2 256,64
+    launchjob cc_cold 18
+    launchjob cc_warm  9
     job T2_P         5 "$TA" --argv "$(cfg P)" --t2-only --t2 256,64
     job T2_R         5 "$TA" --argv "$(cfg R)" --t2-only --t2 256,64
-    job T2_E         6 HEAD  --argv "$(cfg E)" --t2-only --t2 256,64
-    job E_combo      8 HEAD  --argv "$(cfg E)" --r1-preset combo --canary
     ;;
   *) echo "unknown window $WIN" >&2; exit 2 ;;
 esac

@@ -106,6 +106,7 @@ def main():
     ap.add_argument("--warm", type=int, default=1)
     ap.add_argument("--reps", type=int, default=2, help="timed calls per epoch count")
     ap.add_argument("--profile", action="store_true")
+    ap.add_argument("--profile-stack", action="store_true", help="with --profile: attribute every host-blocking CUDA call to its src/ frames")
     ap.add_argument("--canary", action="store_true")
     ap.add_argument("--t2", default="", help="comma-separated T2 buckets to time (empty = skip)")
     ap.add_argument("--t2-reps", type=int, default=50)
@@ -302,12 +303,28 @@ def main():
             model.num_timesteps = rows_per * 1          # a PLAIN update's phase (the cadence note above)
             res["profile_phase"] = "plain"
             acts = [ProfilerActivity.CPU] + ([] if cpu else [ProfilerActivity.CUDA])
-            with profile(activities=acts) as prof:
+            with profile(activities=acts, with_stack=bool(a.profile_stack)) as prof:
                 t = time.perf_counter()
                 model.train()
                 _sync()
                 pw = time.perf_counter() - t
             n_micro = N_STEPS * N_ENVS // model.batch_size
+            if a.profile_stack:
+                # WHO SYNCS (window B's F-PB-4): every host-blocking CUDA runtime call of the epoch, attributed to
+                # its innermost frames in OUR code (src/), counted per micro-batch and timed.
+                from collections import Counter
+                blk = ("cudaStreamSynchronize", "cudaDeviceSynchronize", "cudaEventSynchronize", "cudaMemcpy")
+                cnt, tim = Counter(), Counter()
+                for ev in prof.events():
+                    if not ev.name.startswith(blk):
+                        continue
+                    frames = [f for f in (ev.stack or []) if "/src/" in f and "/site-packages/" not in f]
+                    key = ev.name + " <- " + " < ".join(f.split("/src/")[-1] for f in frames[:4])
+                    cnt[key] += 1
+                    tim[key] += ev.time_range.end - ev.time_range.start
+                res["sync_sites"] = [{"site": k, "per_micro": c / n_micro, "ms_total": tim[k] / 1e3}
+                                     for k, c in cnt.most_common(40)]
+                save()
             tp = os.path.join(os.path.expanduser("~/gen3ai_archive/perf_phase_2026-10-10/traces"), f"profile_{a.tag}.trace.json.gz")  # LOCAL (too large to commit)
             s = summarise_profile(prof, n_micro, None if os.environ.get("BENCH_NO_TRACE") else
                                   __import__("pathlib").Path(tp))

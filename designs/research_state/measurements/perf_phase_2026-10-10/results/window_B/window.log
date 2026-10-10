@@ -1,0 +1,13 @@
+[window B] START E_base at 12:32:29 (budget 8 min, 44 min left)
+[window B] END E_base rc=0 at 12:39:34: [bench E_base] DONE: marginal epoch 5.21s, update est 53.5s, gate PASS
+[window B] START E_bf16 at 12:39:34 (budget 8 min, 36 min left)
+[window B] END E_bf16 rc=0 at 12:46:28: [bench E_bf16] DONE: marginal epoch 4.82s, update est 48.7s, gate REFUSED
+[window B] START E_cudagraphs at 12:46:28 (budget 8 min, 30 min left)
+[window B] END E_cudagraphs rc=1 at 12:50:14: 
+[window B] START P_pre_item1 at 12:50:14 (budget 5 min, 26 min left)
+[window B] END P_pre_item1 rc=0 at 12:55:00: [bench P_pre_item1] DONE: marginal epoch 4.48s, update est 46.0s, gate PASS
+[window B] START P_at_item1 at 12:55:00 (budget 5 min, 21 min left)
+[window B] END P_at_item1 rc=0 at 12:59:48: [bench P_at_item1] DONE: marginal epoch 4.41s, update est 45.4s, gate PASS
+[window B] START E_coordesc at 12:59:48 (budget 11 min, 16 min left)
+[window B] END E_coordesc rc=124 at 13:10:49: 
+[window B] FINISHED at 13:10:49

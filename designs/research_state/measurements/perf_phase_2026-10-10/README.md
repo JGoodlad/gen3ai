@@ -52,7 +52,60 @@ Both agree within 0.6 %, so the tiled-fixture bench reads the real update.
 **Not measured in window A:** T2's per-step cost per architecture. The template deepcopy failed on E (F-PA-3), and T2
 was dropped from P and R to fit the deadline. It is window C.
 
+## Window B: the LEVERS + perf item 1's deferred A/B (12:32–13:10, file-based handoff)
+
+**Method.** Same bench (plain updates, phase-advanced, one diagnostic call), at HEAD `e65a31ab` (E's exact KO = the
+closed form), except the item-1 pair, which ran on extracted trees of `957d4dbd^` and `957d4dbd`. Every
+`--profile` epoch is a PLAIN one.
+
+| job | per-call walls, 1 ep / 3 ep (s) | update (s) | vs its baseline | GPU busy (profiled plain epoch) | kernel time / epoch (s) | gate / canary |
+|---|---|---|---|---|---|---|
+| **E_base** (HEAD, closed-form KO) | 6.57, 6.57 / 17.00, 17.01 | **53.5** | = window A's 16-roll E (53.5) | 85.6 % | 5.89 | PASS / PASS (grad cosine 1.0000) |
+| **E_bf16** (`trunk_precision` bf16) | 5.24, 5.28 / 16.54, 13.26 | 48.7 (the 3-ep pair is noisy) | **−20 % per 1-ep call**; kernel time −21 % | 85.4 % | 4.67 | REFUSED (loss rel 9.7e-4 > 1e-4) / FAIL (1.3e-4) |
+| **E_cudagraphs** (`cudagraphs` preset) | — | — | — | — | — | gate PASS, bit-equal (loss rel 0); then DIED on the first update (F-PB-2) |
+| **E_coordesc** (`coordesc` preset) | — | — | — | — | — | never finished compiling: killed by its 11-min timeout (F-PB-3) |
+| **P_pre_item1** (`957d4dbd^`, production) | 5.69, 5.70 / 14.63, 14.66 | 45.98 | — | 86.0 % | 5.10 | PASS |
+| **P_at_item1** (`957d4dbd`, perf item 1) | 5.67, 5.67 / 14.50, 14.50 | **45.38** | **−0.60 s (−1.3 %)** | 86.6 % | 5.11 | PASS |
+
+**Read.**
+- **The closed-form KO** (now THE `exact`) is cost-neutral on the GPU: 53.5 vs 53.5 s. Exact KO's whole GPU cost was
+  0.3 s (window A), and Inductor already fused the 16-term loop. The CPU gain (KO function 23.9 → 6.1 ms) is real but
+  off the training path.
+- **bf16 trunk (lever A) is the biggest measured lever.**
+  - Per-epoch kernel time −21 %: GEMM 2.11 → 1.51 s, attention 0.70 → 0.34 s (−51 %), pointwise 1.50 → 1.39 s.
+  - The 1-epoch calls are −20 % (4 calls, consistent); peak memory −540 MiB.
+  - The full-update estimate (48.7 s) rests on a noisy 3-epoch pair; a −15 to −20 % update is the ESTIMATE.
+  - The fp32 R1 gate refuses it, as predicted: compiled bf16 vs eager bf16 is a bf16-rounding gap, 10× the fp32 bar.
+    Adoption needs PLAN.md §2: the matched-envelope parity rule, K9(b)'s bar, and a strength A/B.
+- **Perf item 1** (`gen3_batched_host_reads_v1`), the deferred measurement:
+  - marginal epoch 4.48 → 4.41 s; plain update −1.3 %;
+  - `cudaStreamSynchronize` per micro-batch 126.3 → 121.2; GPU busy 86.0 → 86.6 %;
+  - the scalar-read meter's blocked time moved from many short reads to fewer long ones (0.15 → 1.76 s per call):
+    the batched reads now WAIT on a deep queue instead of draining a shallow one many times.
+- **THE NEW TOP LEVER: the update is ~14 % GPU-IDLE.** Every plain epoch profiled at 85–87 % GPU busy, with ~121
+  `cudaStreamSynchronize`, ~235 `cudaMemcpyAsync` and ~4,500 kernel launches per micro-batch.
+  - Item 1's counter (`host_sync_guard_test`, the learner's syncs) does not see these ~121 per micro-batch
+    (~58,000 per update).
+  - Their source is UNVERIFIED. Candidates: the ride-along heads' eager tail (five ensemble + RND + ADV + OPP heads,
+    each with its own optimizer step per micro-batch) and per-micro-batch device-to-host copies.
+  - A with-stack profile attributes them (window C). At 14 % idle, closing it is worth up to ~7 s per E update
+    (ESTIMATE), and it is also what lets bf16's GPU-side gain reach the wall clock.
+
 ## Findings (standing rule 7)
+
+- **F-PB-1 (bf16 gate).** The fp32 bar refuses bf16 by design: compiled vs eager loss rel 9.7e-4 at startup, and
+  1.3e-4 at the canary on trained weights. Not a bug; it is the missing bf16 parity rule.
+- **F-PB-2 (CUDA graphs).** R1 under cudagraph trees passes the startup gate bit-for-bit. The first update then dies
+  in the grad-balance probe's `autograd.grad(retain_graph=True)` (`grad_balance._flat_grads`), with a torch
+  "TODO: graph recording observed an input tensor deallocate during graph recording that did not occur during
+  replay". The probes (grad balance, the per-term noise sampler) need a non-graphed route; a diagnostic update is
+  always the process's first.
+- **F-PB-3 (coordinate descent).** `coordinate_descent_tuning` did not finish compiling R1 in 11 minutes (one core
+  at ~88 %, CPU-bound tuning). As a startup cost it is impractical unless the shared compile cache serves it warm.
+  Even then, its first compile is a >11-min cold start. NOT measured.
+- **F-PB-4 (the idle 14 %).** See the read above. It is the top unexplained cost in the update.
+
+## Findings from window A (standing rule 7)
 
 - **F-PA-1 (harness, fixed).** The first attempt died in E's first `train()`: the ride-along heads' Adam state was
   still on the CPU. The bench builds the learner on CPU and moves it; a launch builds it on the device. The bench now
@@ -75,3 +128,5 @@ was dropped from P and R to fit the deadline. It is window C.
 - `results/cpu_flops_*.json`, `results/module_flops_endstate.json`: the CPU FLOP reads (PLAN.md §0).
 - `results/window_A/{P,S,SF,R,EK,E,E_plain}.json` + `logs/`: window A. `results/window_A_attempt1_device_bug/` is the
   dead first attempt (F-PA-1).
+- `results/window_B/{E_base,E_bf16,E_cudagraphs,E_coordesc,P_pre_item1,P_at_item1}.json` + `logs/` + `window.log`:
+  window B. Raw traces are LOCAL (`~/gen3ai_archive/perf_phase_2026-10-10/traces/`).
