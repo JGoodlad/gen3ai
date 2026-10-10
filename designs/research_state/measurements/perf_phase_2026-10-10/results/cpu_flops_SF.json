@@ -1,0 +1,242 @@
+{
+ "arch": "endstate",
+ "rows": 256,
+ "wall_s": 0.3922661819960922,
+ "params": 5487707,
+ "total_flops_counted": 44467059310,
+ "flops_per_row": 173699450.4296875,
+ "by_op_flops": {
+  "aten::mm": {
+   "flops": 28699754496,
+   "self_cpu_us": 75461.60700000082,
+   "calls": 312
+  },
+  "aten::addmm": {
+   "flops": 12143678464,
+   "self_cpu_us": 23701.65999999991,
+   "calls": 100
+  },
+  "aten::bmm": {
+   "flops": 3393318912,
+   "self_cpu_us": 16777.67099999965,
+   "calls": 88
+  },
+  "aten::mul": {
+   "flops": 114812308,
+   "self_cpu_us": 19107.160000000244,
+   "calls": 4239
+  },
+  "aten::add": {
+   "flops": 113791194,
+   "self_cpu_us": 10578.741999998945,
+   "calls": 2004
+  },
+  "aten::baddbmm": {
+   "flops": 1703936,
+   "self_cpu_us": 97.62199999997392,
+   "calls": 3
+  }
+ },
+ "top_self_cpu": {
+  "aten::mm": {
+   "flops": 28699754496,
+   "self_cpu_us": 75461.60700000082,
+   "calls": 312
+  },
+  "aten::copy_": {
+   "flops": 0,
+   "self_cpu_us": 36840.882999999776,
+   "calls": 6514
+  },
+  "aten::addmm": {
+   "flops": 12143678464,
+   "self_cpu_us": 23701.65999999991,
+   "calls": 100
+  },
+  "aten::where": {
+   "flops": 0,
+   "self_cpu_us": 20185.5669999999,
+   "calls": 2326
+  },
+  "aten::mul": {
+   "flops": 114812308,
+   "self_cpu_us": 19107.160000000244,
+   "calls": 4239
+  },
+  "aten::bmm": {
+   "flops": 3393318912,
+   "self_cpu_us": 16777.67099999965,
+   "calls": 88
+  },
+  "aten::fill_": {
+   "flops": 0,
+   "self_cpu_us": 16017.032000000152,
+   "calls": 1988
+  },
+  "aten::add": {
+   "flops": 113791194,
+   "self_cpu_us": 10578.741999998945,
+   "calls": 2004
+  },
+  "aten::add_": {
+   "flops": 0,
+   "self_cpu_us": 8961.877000000386,
+   "calls": 487
+  },
+  "aten::sum": {
+   "flops": 0,
+   "self_cpu_us": 6978.317000000311,
+   "calls": 1029
+  },
+  "aten::index": {
+   "flops": 0,
+   "self_cpu_us": 6866.683999999834,
+   "calls": 967
+  },
+  "aten::cat": {
+   "flops": 0,
+   "self_cpu_us": 6855.609999999515,
+   "calls": 295
+  },
+  "aten::slice": {
+   "flops": 0,
+   "self_cpu_us": 6045.9109999997745,
+   "calls": 7604
+  },
+  "aten::argmax": {
+   "flops": 0,
+   "self_cpu_us": 5580.73399999982,
+   "calls": 91
+  },
+  "aten::embedding_dense_backward": {
+   "flops": 0,
+   "self_cpu_us": 5184.250999999931,
+   "calls": 40
+  },
+  "aten::sigmoid": {
+   "flops": 0,
+   "self_cpu_us": 4551.159999999827,
+   "calls": 360
+  },
+  "aten::_to_copy": {
+   "flops": 0,
+   "self_cpu_us": 3992.7000000009243,
+   "calls": 5136
+  },
+  "aten::gather": {
+   "flops": 0,
+   "self_cpu_us": 3399.9629999997014,
+   "calls": 244
+  },
+  "aten::_index_put_impl_": {
+   "flops": 0,
+   "self_cpu_us": 3298.759000000099,
+   "calls": 91
+  },
+  "aten::gt": {
+   "flops": 0,
+   "self_cpu_us": 2962.577999999994,
+   "calls": 1055
+  },
+  "aten::as_strided": {
+   "flops": 0,
+   "self_cpu_us": 2930.567000001543,
+   "calls": 16712
+  },
+  "aten::div": {
+   "flops": 0,
+   "self_cpu_us": 2067.9529999996366,
+   "calls": 662
+  },
+  "aten::_softmax": {
+   "flops": 0,
+   "self_cpu_us": 2047.7630000000136,
+   "calls": 23
+  },
+  "aten::unsqueeze": {
+   "flops": 0,
+   "self_cpu_us": 1969.282000000231,
+   "calls": 3007
+  },
+  "aten::clamp_min": {
+   "flops": 0,
+   "self_cpu_us": 1963.1390000000156,
+   "calls": 33
+  },
+  "aten::sort": {
+   "flops": 0,
+   "self_cpu_us": 1936.4600000000646,
+   "calls": 9
+  },
+  "aten::sub": {
+   "flops": 0,
+   "self_cpu_us": 1918.2590000001892,
+   "calls": 947
+  },
+  "aten::select": {
+   "flops": 0,
+   "self_cpu_us": 1860.8560000005155,
+   "calls": 2204
+  },
+  "aten::clamp": {
+   "flops": 0,
+   "self_cpu_us": 1796.0649999999932,
+   "calls": 633
+  },
+  "aten::native_layer_norm_backward": {
+   "flops": 0,
+   "self_cpu_us": 1770.8759999997565,
+   "calls": 23
+  },
+  "aten::empty_strided": {
+   "flops": 0,
+   "self_cpu_us": 1717.4699999990657,
+   "calls": 5635
+  },
+  "aten::bitwise_and": {
+   "flops": 0,
+   "self_cpu_us": 1616.3969999999297,
+   "calls": 272
+  },
+  "aten::native_layer_norm": {
+   "flops": 0,
+   "self_cpu_us": 1598.62100000004,
+   "calls": 23
+  },
+  "aten::to": {
+   "flops": 0,
+   "self_cpu_us": 1528.0160000010942,
+   "calls": 6822
+  },
+  "aten::_softmax_backward_data": {
+   "flops": 0,
+   "self_cpu_us": 1519.2720000000554,
+   "calls": 17
+  },
+  "aten::reshape": {
+   "flops": 0,
+   "self_cpu_us": 1395.6860000005054,
+   "calls": 2219
+  },
+  "aten::empty": {
+   "flops": 0,
+   "self_cpu_us": 1337.264999997899,
+   "calls": 4107
+  },
+  "aten::_scaled_dot_product_flash_attention_for_cpu_backward": {
+   "flops": 0,
+   "self_cpu_us": 1322.7540000000154,
+   "calls": 2
+  },
+  "aten::addmv_": {
+   "flops": 0,
+   "self_cpu_us": 1216.7539999999717,
+   "calls": 40
+  },
+  "aten::ge": {
+   "flops": 0,
+   "self_cpu_us": 1168.3280000002233,
+   "calls": 230
+  }
+ }
+}

@@ -1,0 +1,242 @@
+{
+ "arch": "endstate",
+ "rows": 256,
+ "wall_s": 0.6426466159755364,
+ "params": 2609183,
+ "total_flops_counted": 63179539054,
+ "flops_per_row": 246795074.4296875,
+ "by_op_flops": {
+  "aten::mm": {
+   "flops": 41196519424,
+   "self_cpu_us": 111989.68600000042,
+   "calls": 351
+  },
+  "aten::addmm": {
+   "flops": 16437534720,
+   "self_cpu_us": 33737.15699999967,
+   "calls": 101
+  },
+  "aten::bmm": {
+   "flops": 5009673216,
+   "self_cpu_us": 20910.113000000543,
+   "calls": 94
+  },
+  "aten::add": {
+   "flops": 285084634,
+   "self_cpu_us": 24143.54399999947,
+   "calls": 4100
+  },
+  "aten::mul": {
+   "flops": 249023124,
+   "self_cpu_us": 34080.29099999883,
+   "calls": 7929
+  },
+  "aten::baddbmm": {
+   "flops": 1703936,
+   "self_cpu_us": 102.92299999989336,
+   "calls": 3
+  }
+ },
+ "top_self_cpu": {
+  "aten::mm": {
+   "flops": 41196519424,
+   "self_cpu_us": 111989.68600000042,
+   "calls": 351
+  },
+  "aten::copy_": {
+   "flops": 0,
+   "self_cpu_us": 51150.66299999989,
+   "calls": 12258
+  },
+  "aten::mul": {
+   "flops": 249023124,
+   "self_cpu_us": 34080.29099999883,
+   "calls": 7929
+  },
+  "aten::addmm": {
+   "flops": 16437534720,
+   "self_cpu_us": 33737.15699999967,
+   "calls": 101
+  },
+  "aten::where": {
+   "flops": 0,
+   "self_cpu_us": 29452.379000002104,
+   "calls": 3342
+  },
+  "aten::add": {
+   "flops": 285084634,
+   "self_cpu_us": 24143.54399999947,
+   "calls": 4100
+  },
+  "aten::bmm": {
+   "flops": 5009673216,
+   "self_cpu_us": 20910.113000000543,
+   "calls": 94
+  },
+  "aten::fill_": {
+   "flops": 0,
+   "self_cpu_us": 19687.593000000204,
+   "calls": 2290
+  },
+  "aten::div": {
+   "flops": 0,
+   "self_cpu_us": 14701.528999999278,
+   "calls": 3064
+  },
+  "aten::sum": {
+   "flops": 0,
+   "self_cpu_us": 13424.980999997846,
+   "calls": 1230
+  },
+  "aten::add_": {
+   "flops": 0,
+   "self_cpu_us": 11417.536999999655,
+   "calls": 1234
+  },
+  "aten::sub": {
+   "flops": 0,
+   "self_cpu_us": 11173.43800000066,
+   "calls": 3018
+  },
+  "aten::index": {
+   "flops": 0,
+   "self_cpu_us": 10583.354000000087,
+   "calls": 1262
+  },
+  "aten::_to_copy": {
+   "flops": 0,
+   "self_cpu_us": 10387.398000004538,
+   "calls": 10799
+  },
+  "aten::cat": {
+   "flops": 0,
+   "self_cpu_us": 9567.451000000827,
+   "calls": 376
+  },
+  "aten::slice": {
+   "flops": 0,
+   "self_cpu_us": 8935.312000006092,
+   "calls": 9508
+  },
+  "aten::ge": {
+   "flops": 0,
+   "self_cpu_us": 8131.201000004961,
+   "calls": 1032
+  },
+  "aten::le": {
+   "flops": 0,
+   "self_cpu_us": 7917.72300000221,
+   "calls": 852
+  },
+  "aten::embedding_dense_backward": {
+   "flops": 0,
+   "self_cpu_us": 5563.021999999648,
+   "calls": 41
+  },
+  "aten::sigmoid": {
+   "flops": 0,
+   "self_cpu_us": 5499.630000000119,
+   "calls": 403
+  },
+  "aten::clamp": {
+   "flops": 0,
+   "self_cpu_us": 5403.8120000011495,
+   "calls": 2068
+  },
+  "aten::argmax": {
+   "flops": 0,
+   "self_cpu_us": 4129.424999999864,
+   "calls": 56
+  },
+  "aten::as_strided": {
+   "flops": 0,
+   "self_cpu_us": 4124.475999997207,
+   "calls": 21090
+  },
+  "aten::_index_put_impl_": {
+   "flops": 0,
+   "self_cpu_us": 3940.0199999999704,
+   "calls": 167
+  },
+  "aten::to": {
+   "flops": 0,
+   "self_cpu_us": 3925.5469999940005,
+   "calls": 14074
+  },
+  "aten::gt": {
+   "flops": 0,
+   "self_cpu_us": 3846.1290000002286,
+   "calls": 1239
+  },
+  "aten::gather": {
+   "flops": 0,
+   "self_cpu_us": 3786.6520000003275,
+   "calls": 265
+  },
+  "aten::empty_strided": {
+   "flops": 0,
+   "self_cpu_us": 3720.7030000007244,
+   "calls": 11455
+  },
+  "aten::select": {
+   "flops": 0,
+   "self_cpu_us": 3139.5080000008456,
+   "calls": 3162
+  },
+  "aten::unsqueeze": {
+   "flops": 0,
+   "self_cpu_us": 3017.9090000016163,
+   "calls": 3816
+  },
+  "aten::_softmax": {
+   "flops": 0,
+   "self_cpu_us": 2968.578999999854,
+   "calls": 17
+  },
+  "aten::native_layer_norm_backward": {
+   "flops": 0,
+   "self_cpu_us": 2730.756000000285,
+   "calls": 25
+  },
+  "aten::lt": {
+   "flops": 0,
+   "self_cpu_us": 2670.0489999994797,
+   "calls": 234
+  },
+  "aten::clamp_min": {
+   "flops": 0,
+   "self_cpu_us": 2640.305000000065,
+   "calls": 135
+  },
+  "autograd::engine::evaluate_function: MulBackward0": {
+   "flops": 0,
+   "self_cpu_us": 2426.8110000015004,
+   "calls": 1489
+  },
+  "aten::reshape": {
+   "flops": 0,
+   "self_cpu_us": 2330.1269999994206,
+   "calls": 2864
+  },
+  "aten::threshold_backward": {
+   "flops": 0,
+   "self_cpu_us": 2146.4899999998743,
+   "calls": 21
+  },
+  "ClampBackward1": {
+   "flops": 0,
+   "self_cpu_us": 2056.588999995205,
+   "calls": 808
+  },
+  "aten::bitwise_and": {
+   "flops": 0,
+   "self_cpu_us": 2033.9100000001572,
+   "calls": 288
+  },
+  "autograd::engine::evaluate_function: AddBackward0": {
+   "flops": 0,
+   "self_cpu_us": 1987.318999999843,
+   "calls": 1007
+  }
+ }
+}

@@ -1,0 +1,1475 @@
+{
+ "arch": "endstate",
+ "rows": 256,
+ "total_flops": 62645431296,
+ "modules": [
+  {
+   "module": "Global",
+   "flops": 62645431296,
+   "frac": 1.0,
+   "ops": {
+    "aten.mm": 41196519424,
+    "aten.addmm": 16437534720,
+    "aten.bmm": 5009673216,
+    "aten.baddbmm": 1703936
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor",
+   "flops": 60883332096,
+   "frac": 0.971871864179942,
+   "ops": {
+    "aten.mm": 39775109120,
+    "aten.addmm": 16096845824,
+    "aten.bmm": 5009673216,
+    "aten.baddbmm": 1703936
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer",
+   "flops": 43516936192,
+   "frac": 0.694654586802703,
+   "ops": {
+    "aten.addmm": 12897165312,
+    "aten.mm": 25787932672,
+    "aten.bmm": 4831838208
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder.dropout3",
+   "flops": 36965192704,
+   "frac": 0.5900700488330788,
+   "ops": {
+    "aten.mm": 33694452736,
+    "aten.bmm": 3270739968
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder.dropout",
+   "flops": 36763866112,
+   "frac": 0.586856301432271,
+   "ops": {
+    "aten.mm": 33493126144,
+    "aten.bmm": 3270739968
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder.dropout2",
+   "flops": 36562539520,
+   "frac": 0.5836425540314633,
+   "ops": {
+    "aten.mm": 33291799552,
+    "aten.bmm": 3270739968
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder.dropout1",
+   "flops": 35925005312,
+   "frac": 0.5734656872622388,
+   "ops": {
+    "aten.mm": 32654265344,
+    "aten.bmm": 3270739968
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.flat_intent_head",
+   "flops": 35689493504,
+   "frac": 0.5697062461804588,
+   "ops": {
+    "aten.addmm": 177078272,
+    "aten.mm": 32242744320,
+    "aten.bmm": 3269670912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.flat_intent_head.hidden",
+   "flops": 35688117248,
+   "frac": 0.5696842772040862,
+   "ops": {
+    "aten.addmm": 177078272,
+    "aten.mm": 32241368064,
+    "aten.bmm": 3269670912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.value_entity_pool",
+   "flops": 33541609472,
+   "frac": 0.5354198826330322,
+   "ops": {
+    "aten.mm": 30239813632,
+    "aten.addmm": 46137344,
+    "aten.bmm": 3255658496
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.value_entity_pool.op_proj",
+   "flops": 33301485568,
+   "frac": 0.5315868193268605,
+   "ops": {
+    "aten.mm": 30067847168,
+    "aten.bmm": 3233638400
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_resolution_cell",
+   "flops": 31748354048,
+   "frac": 0.5067944044951795,
+   "ops": {
+    "aten.bmm": 3235035136,
+    "aten.addmm": 3952640,
+    "aten.mm": 28509366272
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.0",
+   "flops": 14510039040,
+   "frac": 0.23162166401951945,
+   "ops": {
+    "aten.addmm": 4294967296,
+    "aten.bmm": 1610612736,
+    "aten.mm": 8604459008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.1",
+   "flops": 14495514624,
+   "frac": 0.23138981285815746,
+   "ops": {
+    "aten.addmm": 4294967296,
+    "aten.bmm": 1610612736,
+    "aten.mm": 8589934592
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.extra_rounds.0",
+   "flops": 14495514624,
+   "frac": 0.23138981285815746,
+   "ops": {
+    "aten.addmm": 4294967296,
+    "aten.bmm": 1610612736,
+    "aten.mm": 8589934592
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events",
+   "flops": 5060678656,
+   "frac": 0.08078288474203756,
+   "ops": {
+    "aten.addmm": 406847488,
+    "aten.mm": 4614364160,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "PointerNativeActionHead",
+   "flops": 4853473280,
+   "frac": 0.07747529515867346,
+   "ops": {
+    "aten.addmm": 72253440,
+    "aten.mm": 4758654976,
+    "aten.bmm": 22564864
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.0.in_proj",
+   "flops": 4846362624,
+   "frac": 0.0773617887807478,
+   "ops": {
+    "aten.addmm": 1610612736,
+    "aten.mm": 3235749888
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.1.in_proj",
+   "flops": 4831838208,
+   "frac": 0.07712993761938582,
+   "ops": {
+    "aten.addmm": 1610612736,
+    "aten.mm": 3221225472
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.extra_rounds.0.in_proj",
+   "flops": 4831838208,
+   "frac": 0.07712993761938582,
+   "ops": {
+    "aten.addmm": 1610612736,
+    "aten.mm": 3221225472
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.r_map",
+   "flops": 4735898624,
+   "frac": 0.0755984678535112,
+   "ops": {
+    "aten.addmm": 4718592,
+    "aten.mm": 4689550336,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.d4_map",
+   "flops": 4734505984,
+   "frac": 0.07557623734170547,
+   "ops": {
+    "aten.addmm": 688128,
+    "aten.mm": 4692188160,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.v_map",
+   "flops": 4734407680,
+   "frac": 0.07557466812910743,
+   "ops": {
+    "aten.addmm": 516096,
+    "aten.mm": 4692261888,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.c3_map",
+   "flops": 4734063616,
+   "frac": 0.07556917588501424,
+   "ops": {
+    "aten.addmm": 344064,
+    "aten.mm": 4692089856,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.h_map",
+   "flops": 4733785088,
+   "frac": 0.0755647297826531,
+   "ops": {
+    "aten.mm": 4692155392,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.t_map",
+   "flops": 4732163072,
+   "frac": 0.07553883777478526,
+   "ops": {
+    "aten.addmm": 294912,
+    "aten.mm": 4690238464,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.x_map",
+   "flops": 4731769856,
+   "frac": 0.07553256092439306,
+   "ops": {
+    "aten.addmm": 196608,
+    "aten.mm": 4689943552,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.g_map",
+   "flops": 4731573248,
+   "frac": 0.07552942249919696,
+   "ops": {
+    "aten.mm": 4689845248,
+    "aten.addmm": 98304,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.c4_map",
+   "flops": 4726526976,
+   "frac": 0.07544886958583036,
+   "ops": {
+    "aten.addmm": 65536,
+    "aten.mm": 4684831744,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.s3_map",
+   "flops": 4726248448,
+   "frac": 0.07544442348346922,
+   "ops": {
+    "aten.addmm": 442368,
+    "aten.mm": 4684176384,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.c2_map",
+   "flops": 4723790848,
+   "frac": 0.07540519316851796,
+   "ops": {
+    "aten.addmm": 688128,
+    "aten.mm": 4681473024,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.s1_map",
+   "flops": 4720940032,
+   "frac": 0.07535968600317448,
+   "ops": {
+    "aten.addmm": 196608,
+    "aten.mm": 4679113728,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.field_proj",
+   "flops": 4720088064,
+   "frac": 0.07534608616065805,
+   "ops": {
+    "aten.addmm": 720896,
+    "aten.mm": 4677737472,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.side_proj",
+   "flops": 4719956992,
+   "frac": 0.07534399387719398,
+   "ops": {
+    "aten.addmm": 1310720,
+    "aten.mm": 4677016576,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.token_type_emb",
+   "flops": 4719367168,
+   "frac": 0.07533457860160567,
+   "ops": {
+    "aten.mm": 4677737472,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.eot_residual_proj",
+   "flops": 4711044096,
+   "frac": 0.07520171860163738,
+   "ops": {
+    "aten.mm": 4669414400,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.status_cure_proj",
+   "flops": 4710257664,
+   "frac": 0.07518916490085298,
+   "ops": {
+    "aten.mm": 4668627968,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.mon_hazard_proj",
+   "flops": 4695315456,
+   "frac": 0.07495064458594929,
+   "ops": {
+    "aten.mm": 4653685760,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.op_content.amount_proj",
+   "flops": 4668576768,
+   "frac": 0.0745238187592795,
+   "ops": {
+    "aten.addmm": 6291456,
+    "aten.mm": 4620655616,
+    "aten.bmm": 41629696
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.entity_seats.tail_proj",
+   "flops": 3840660480,
+   "frac": 0.061307910258496884,
+   "ops": {
+    "aten.addmm": 1572864,
+    "aten.mm": 3799620608,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_target_proj",
+   "flops": 3840660480,
+   "frac": 0.061307910258496884,
+   "ops": {
+    "aten.mm": 3801193472,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_actor_proj",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.embeddings.species_embedding",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.faint_emb",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.stat_emb",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.entry_emb",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.denial_emb",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.kind_emb",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.embeddings.move_embedding",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.cant_emb",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.itemtr_emb",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.status_emb",
+   "flops": 3840136192,
+   "frac": 0.06129954112464061,
+   "ops": {
+    "aten.mm": 3800669184,
+    "aten.bmm": 39467008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.embeddings.type_embedding",
+   "flops": 3747740672,
+   "frac": 0.05982464474211863,
+   "ops": {
+    "aten.mm": 3733519360,
+    "aten.bmm": 14221312
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder",
+   "flops": 3667918848,
+   "frac": 0.058550460458466055,
+   "ops": {
+    "aten.mm": 2508718080,
+    "aten.addmm": 1140326400,
+    "aten.bmm": 18874368
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.0.linear1",
+   "flops": 3221225472,
+   "frac": 0.05141995841292388,
+   "ops": {
+    "aten.addmm": 1073741824,
+    "aten.mm": 2147483648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.0.linear2",
+   "flops": 3221225472,
+   "frac": 0.05141995841292388,
+   "ops": {
+    "aten.addmm": 1073741824,
+    "aten.mm": 2147483648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.1.linear1",
+   "flops": 3221225472,
+   "frac": 0.05141995841292388,
+   "ops": {
+    "aten.addmm": 1073741824,
+    "aten.mm": 2147483648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.1.linear2",
+   "flops": 3221225472,
+   "frac": 0.05141995841292388,
+   "ops": {
+    "aten.addmm": 1073741824,
+    "aten.mm": 2147483648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.extra_rounds.0.linear1",
+   "flops": 3221225472,
+   "frac": 0.05141995841292388,
+   "ops": {
+    "aten.addmm": 1073741824,
+    "aten.mm": 2147483648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.extra_rounds.0.linear2",
+   "flops": 3221225472,
+   "frac": 0.05141995841292388,
+   "ops": {
+    "aten.addmm": 1073741824,
+    "aten.mm": 2147483648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.embeddings.ability_embedding",
+   "flops": 2675351552,
+   "frac": 0.04270625162366509,
+   "ops": {
+    "aten.mm": 2661130240,
+    "aten.bmm": 14221312
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.embeddings.item_embedding",
+   "flops": 2675351552,
+   "frac": 0.04270625162366509,
+   "ops": {
+    "aten.mm": 2661130240,
+    "aten.bmm": 14221312
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hypothesis_builder.delta_global",
+   "flops": 2470969344,
+   "frac": 0.03944372786460128,
+   "ops": {
+    "aten.addmm": 9502720,
+    "aten.mm": 2448883712,
+    "aten.bmm": 12582912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.obs_facts_inject.screens_proj",
+   "flops": 2452488192,
+   "frac": 0.03914871589616775,
+   "ops": {
+    "aten.mm": 2439905280,
+    "aten.bmm": 12582912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.obs_facts_inject.vol_proj",
+   "flops": 2450915328,
+   "frac": 0.03912360849459894,
+   "ops": {
+    "aten.addmm": 1966080,
+    "aten.mm": 2436366336,
+    "aten.bmm": 12582912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.obs_facts_inject.seen_proj",
+   "flops": 2449735680,
+   "frac": 0.039104777943422334,
+   "ops": {
+    "aten.mm": 2437152768,
+    "aten.bmm": 12582912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.assembler",
+   "flops": 2341904384,
+   "frac": 0.03738348249107727,
+   "ops": {
+    "aten.mm": 2322747392,
+    "aten.bmm": 19156992
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder",
+   "flops": 2164260864,
+   "frac": 0.03454778455868323,
+   "ops": {
+    "aten.mm": 1862270976,
+    "aten.addmm": 301989888
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief",
+   "flops": 2164260864,
+   "frac": 0.03454778455868323,
+   "ops": {
+    "aten.mm": 1862270976,
+    "aten.addmm": 301989888
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_dyn_proj",
+   "flops": 1980440576,
+   "frac": 0.03161348776804501,
+   "ops": {
+    "aten.addmm": 1777664,
+    "aten.mm": 1966080000,
+    "aten.bmm": 12582912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.cls_pool",
+   "flops": 1625817088,
+   "frac": 0.025952684088293775,
+   "ops": {
+    "aten.mm": 1593835520,
+    "aten.baddbmm": 1703936,
+    "aten.bmm": 5111808,
+    "aten.addmm": 25165824
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.0.out_proj",
+   "flops": 1610612736,
+   "frac": 0.02570997920646194,
+   "ops": {
+    "aten.addmm": 536870912,
+    "aten.mm": 1073741824
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.transformer_layers.1.out_proj",
+   "flops": 1610612736,
+   "frac": 0.02570997920646194,
+   "ops": {
+    "aten.addmm": 536870912,
+    "aten.mm": 1073741824
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.team_transformer.extra_rounds.0.out_proj",
+   "flops": 1610612736,
+   "frac": 0.02570997920646194,
+   "ops": {
+    "aten.addmm": 536870912,
+    "aten.mm": 1073741824
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.role_encoder",
+   "flops": 1546567680,
+   "frac": 0.024687637198831935,
+   "ops": {
+    "aten.addmm": 515522560,
+    "aten.mm": 1031045120
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder.multihead_attn",
+   "flops": 1358954496,
+   "frac": 0.02169279495545226,
+   "ops": {
+    "aten.mm": 1308622848,
+    "aten.addmm": 50331648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.history_events.proj",
+   "flops": 1220542464,
+   "frac": 0.01948334361739694,
+   "ops": {
+    "aten.addmm": 406847488,
+    "aten.mm": 813694976
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.cls_pool.our_cls_attn",
+   "flops": 983826432,
+   "frac": 0.01570467968129096,
+   "ops": {
+    "aten.mm": 973078528,
+    "aten.baddbmm": 393216,
+    "aten.bmm": 1966080,
+    "aten.addmm": 8388608
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_network",
+   "flops": 959938560,
+   "frac": 0.01532336101996465,
+   "ops": {
+    "aten.addmm": 319979520,
+    "aten.mm": 639959040
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.projection",
+   "flops": 905969664,
+   "frac": 0.014461863303634841,
+   "ops": {
+    "aten.addmm": 301989888,
+    "aten.mm": 603979776
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.role_encoder.0",
+   "flops": 863944704,
+   "frac": 0.013791024917968185,
+   "ops": {
+    "aten.addmm": 287981568,
+    "aten.mm": 575963136
+   }
+  },
+  {
+   "module": "Sequential",
+   "flops": 805306368,
+   "frac": 0.01285498960323097,
+   "ops": {
+    "aten.addmm": 268435456,
+    "aten.mm": 536870912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.belief_head.moves_head",
+   "flops": 786432000,
+   "frac": 0.012553700784405243,
+   "ops": {
+    "aten.addmm": 157286400,
+    "aten.mm": 629145600
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.belief_head",
+   "flops": 711065600,
+   "frac": 0.011350637792566409,
+   "ops": {
+    "aten.addmm": 314572800,
+    "aten.mm": 396492800
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.cls_pool.value_cls_attn",
+   "flops": 709754880,
+   "frac": 0.011329714957925733,
+   "ops": {
+    "aten.mm": 696254464,
+    "aten.baddbmm": 851968,
+    "aten.bmm": 4259840,
+    "aten.addmm": 8388608
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.item_belief_head",
+   "flops": 707788800,
+   "frac": 0.01129833070596472,
+   "ops": {
+    "aten.addmm": 235929600,
+    "aten.mm": 471859200
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.item_belief_head.item_head",
+   "flops": 707788800,
+   "frac": 0.01129833070596472,
+   "ops": {
+    "aten.addmm": 235929600,
+    "aten.mm": 471859200
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_network.0",
+   "flops": 703954944,
+   "frac": 0.011237131414640745,
+   "ops": {
+    "aten.addmm": 234651648,
+    "aten.mm": 469303296
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.dynamic_encoder",
+   "flops": 698621952,
+   "frac": 0.011152001631196496,
+   "ops": {
+    "aten.addmm": 232873984,
+    "aten.mm": 465747968
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.entity_seats",
+   "flops": 683265024,
+   "frac": 0.01090686120064477,
+   "ops": {
+    "aten.addmm": 9961472,
+    "aten.bmm": 27611136,
+    "aten.mm": 645692416
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.role_encoder.2",
+   "flops": 682622976,
+   "frac": 0.010896612280863752,
+   "ops": {
+    "aten.addmm": 227540992,
+    "aten.mm": 455081984
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.damage_op",
+   "flops": 671148032,
+   "frac": 0.010713439401970464,
+   "ops": {
+    "aten.mm": 608427008,
+    "aten.bmm": 62721024
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.cls_pool.their_cls_attn",
+   "flops": 641859584,
+   "frac": 0.010245912123538746,
+   "ops": {
+    "aten.mm": 629145600,
+    "aten.baddbmm": 458752,
+    "aten.bmm": 3866624,
+    "aten.addmm": 8388608
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder.self_attn",
+   "flops": 603979776,
+   "frac": 0.009641242202423227,
+   "ops": {
+    "aten.mm": 553648128,
+    "aten.addmm": 50331648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_latent_encoder.mlp",
+   "flops": 493793280,
+   "frac": 0.007882351031583199,
+   "ops": {
+    "aten.addmm": 164597760,
+    "aten.mm": 329195520
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_latent_encoder",
+   "flops": 481746944,
+   "frac": 0.007690057104463742,
+   "ops": {
+    "aten.addmm": 159989760,
+    "aten.mm": 321757184
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_belief.move_head",
+   "flops": 471859200,
+   "frac": 0.007532220470643146,
+   "ops": {
+    "aten.mm": 471859200
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.belief_head.species_head",
+   "flops": 471859200,
+   "frac": 0.007532220470643146,
+   "ops": {
+    "aten.addmm": 157286400,
+    "aten.mm": 314572800
+   }
+  },
+  {
+   "module": "Sequential.0",
+   "flops": 402653184,
+   "frac": 0.006427494801615485,
+   "ops": {
+    "aten.addmm": 134217728,
+    "aten.mm": 268435456
+   }
+  },
+  {
+   "module": "Sequential.2",
+   "flops": 402653184,
+   "frac": 0.006427494801615485,
+   "ops": {
+    "aten.addmm": 134217728,
+    "aten.mm": 268435456
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_self_attn",
+   "flops": 362643456,
+   "frac": 0.005788825274208868,
+   "ops": {
+    "aten.mm": 312868864,
+    "aten.bmm": 21331968,
+    "aten.addmm": 28442624
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.dynamic_encoder.0",
+   "flops": 357310464,
+   "frac": 0.00570369549076462,
+   "ops": {
+    "aten.addmm": 119103488,
+    "aten.mm": 238206976
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.dynamic_encoder.2",
+   "flops": 341311488,
+   "frac": 0.005448306140431876,
+   "ops": {
+    "aten.addmm": 113770496,
+    "aten.mm": 227540992
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hp_type_belief_head",
+   "flops": 333447168,
+   "frac": 0.005322769132587823,
+   "ops": {
+    "aten.addmm": 6291456,
+    "aten.mm": 327155712
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_latent_encoder.mlp.0",
+   "flops": 318222336,
+   "frac": 0.005079737331464728,
+   "ops": {
+    "aten.addmm": 106074112,
+    "aten.mm": 212148224
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hp_type_belief_head.norm",
+   "flops": 314572800,
+   "frac": 0.005021480313762097,
+   "ops": {
+    "aten.mm": 314572800
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder.linear1",
+   "flops": 301989888,
+   "frac": 0.0048206211012116135,
+   "ops": {
+    "aten.addmm": 100663296,
+    "aten.mm": 201326592
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hidden_opp_belief.decoder.linear2",
+   "flops": 301989888,
+   "frac": 0.0048206211012116135,
+   "ops": {
+    "aten.addmm": 100663296,
+    "aten.mm": 201326592
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.value_entity_pool.token_proj",
+   "flops": 281542656,
+   "frac": 0.004494224880817077,
+   "ops": {
+    "aten.mm": 252182528,
+    "aten.addmm": 29360128
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.cls_pool.norm_pool_our",
+   "flops": 270270464,
+   "frac": 0.004314288502907269,
+   "ops": {
+    "aten.mm": 268435456,
+    "aten.bmm": 1835008
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_network.2",
+   "flops": 255983616,
+   "frac": 0.004086229605323907,
+   "ops": {
+    "aten.addmm": 85327872,
+    "aten.mm": 170655744
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_latent_encoder.mlp.2",
+   "flops": 175570944,
+   "frac": 0.002802613700118471,
+   "ops": {
+    "aten.addmm": 58523648,
+    "aten.mm": 117047296
+   }
+  },
+  {
+   "module": "PointerNativeActionHead.switch_proj",
+   "flops": 94961664,
+   "frac": 0.0015158593697169331,
+   "ops": {
+    "aten.addmm": 31653888,
+    "aten.mm": 63307776
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias",
+   "flops": 91865088,
+   "frac": 0.0014664291728783375,
+   "ops": {
+    "aten.addmm": 10231808,
+    "aten.mm": 79470592,
+    "aten.bmm": 2162688
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.pokemon_encoder.move_dyn_pool",
+   "flops": 90660864,
+   "frac": 0.001447206318552217,
+   "ops": {
+    "aten.addmm": 30220288,
+    "aten.mm": 60440576
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.t0_species_prior",
+   "flops": 81920000,
+   "frac": 0.001307677165042213,
+   "ops": {
+    "aten.mm": 81920000
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.d2_map",
+   "flops": 79511552,
+   "frac": 0.0012692314563899718,
+   "ops": {
+    "aten.addmm": 98304,
+    "aten.mm": 77250560,
+    "aten.bmm": 2162688
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.c1_map",
+   "flops": 78614528,
+   "frac": 0.0012549123914327596,
+   "ops": {
+    "aten.addmm": 802816,
+    "aten.mm": 77676544,
+    "aten.bmm": 135168
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.d1_map",
+   "flops": 78270464,
+   "frac": 0.0012494201473395824,
+   "ops": {
+    "aten.addmm": 688128,
+    "aten.mm": 77447168,
+    "aten.bmm": 135168
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.c5_map",
+   "flops": 70451200,
+   "frac": 0.0011246023619363031,
+   "ops": {
+    "aten.addmm": 393216,
+    "aten.mm": 67895296,
+    "aten.bmm": 2162688
+   }
+  },
+  {
+   "module": "PointerNativeActionHead.move_proj",
+   "flops": 70385664,
+   "frac": 0.0011235562202042693,
+   "ops": {
+    "aten.addmm": 23461888,
+    "aten.mm": 46923776
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.edge_bias.d3_map",
+   "flops": 70242304,
+   "frac": 0.0011212677851654455,
+   "ops": {
+    "aten.mm": 70107136,
+    "aten.bmm": 135168
+   }
+  },
+  {
+   "module": "PointerNativeActionHead.move_score",
+   "flops": 64487424,
+   "frac": 0.00102940346432123,
+   "ops": {
+    "aten.addmm": 131072,
+    "aten.mm": 64356352
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.op_content",
+   "flops": 59572224,
+   "frac": 0.0009509428344186972,
+   "ops": {
+    "aten.addmm": 6291456,
+    "aten.mm": 51118080,
+    "aten.bmm": 2162688
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hypothesis_builder.delta_out",
+   "flops": 58982400,
+   "frac": 0.0009415275588303933,
+   "ops": {
+    "aten.addmm": 19660800,
+    "aten.mm": 39321600
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.value_entity_pool.out_proj",
+   "flops": 50331648,
+   "frac": 0.0008034368502019356,
+   "ops": {
+    "aten.addmm": 16777216,
+    "aten.mm": 33554432
+   }
+  },
+  {
+   "module": "PointerNativeActionHead.ctx_proj",
+   "flops": 50331648,
+   "frac": 0.0008034368502019356,
+   "ops": {
+    "aten.addmm": 16777216,
+    "aten.mm": 33554432
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.entity_seats.threat_seat_proj",
+   "flops": 41287680,
+   "frac": 0.0006590692911812752,
+   "ops": {
+    "aten.mm": 41287680
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hypothesis_builder.delta_hidden",
+   "flops": 37748736,
+   "frac": 0.0006025776376514517,
+   "ops": {
+    "aten.addmm": 12582912,
+    "aten.mm": 25165824
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.op_content.outgoing_proj",
+   "flops": 37748736,
+   "frac": 0.0006025776376514517,
+   "ops": {
+    "aten.mm": 37748736
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.op_worst_proj",
+   "flops": 34676736,
+   "frac": 0.0005535397439623687,
+   "ops": {
+    "aten.mm": 11796480,
+    "aten.bmm": 22880256
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.spread_belief",
+   "flops": 33807360,
+   "frac": 0.0005396620200483583,
+   "ops": {
+    "aten.mm": 31841280,
+    "aten.addmm": 1966080
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.spread_belief.nature_head",
+   "flops": 29491200,
+   "frac": 0.00047076377941519663,
+   "ops": {
+    "aten.mm": 29491200
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.spread_belief.ev_head",
+   "flops": 25943040,
+   "frac": 0.0004141250122043058,
+   "ops": {
+    "aten.mm": 25943040
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.win_head.net",
+   "flops": 25362432,
+   "frac": 0.0004048568502970691,
+   "ops": {
+    "aten.addmm": 8454144,
+    "aten.mm": 16908288
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.win_head",
+   "flops": 25362432,
+   "frac": 0.0004048568502970691,
+   "ops": {
+    "aten.addmm": 8454144,
+    "aten.mm": 16908288
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.entity_seats.move_seat_proj",
+   "flops": 25165824,
+   "frac": 0.0004017184251009678,
+   "ops": {
+    "aten.addmm": 8388608,
+    "aten.mm": 16777216
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.win_head.net.1",
+   "flops": 25165824,
+   "frac": 0.0004017184251009678,
+   "ops": {
+    "aten.addmm": 8388608,
+    "aten.mm": 16777216
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hp_type_belief_head.type_head",
+   "flops": 18874368,
+   "frac": 0.00030128881882572584,
+   "ops": {
+    "aten.addmm": 6291456,
+    "aten.mm": 12582912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_belief.reinject",
+   "flops": 18874368,
+   "frac": 0.00030128881882572584,
+   "ops": {
+    "aten.addmm": 6291456,
+    "aten.mm": 12582912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hp_type_belief_head.reinject_proj",
+   "flops": 18874368,
+   "frac": 0.00030128881882572584,
+   "ops": {
+    "aten.addmm": 6291456,
+    "aten.mm": 12582912
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.effective_stats_proj",
+   "flops": 16515072,
+   "frac": 0.0002636277164725101,
+   "ops": {
+    "aten.mm": 16515072
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.prefuse_proj",
+   "flops": 14155776,
+   "frac": 0.0002259666141192944,
+   "ops": {
+    "aten.mm": 14155776
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.obs_facts_inject",
+   "flops": 13172736,
+   "frac": 0.00021027448813878784,
+   "ops": {
+    "aten.mm": 9961472,
+    "aten.addmm": 3211264
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_resolution_cell.move_proj",
+   "flops": 9701376,
+   "frac": 0.00015486166827012406,
+   "ops": {
+    "aten.addmm": 2957312,
+    "aten.mm": 5914624,
+    "aten.bmm": 829440
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_resolution_cell.switch_proj",
+   "flops": 8900608,
+   "frac": 0.00014207912398183644,
+   "ops": {
+    "aten.addmm": 995328,
+    "aten.mm": 7905280
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.op_content.outgoing_cell",
+   "flops": 7077888,
+   "frac": 0.0001129833070596472,
+   "ops": {
+    "aten.mm": 7077888
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.hypothesis_builder.other_map",
+   "flops": 6291456,
+   "frac": 0.00010042960627524195,
+   "ops": {
+    "aten.addmm": 2097152,
+    "aten.mm": 4194304
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.spread_belief.reinject",
+   "flops": 5898240,
+   "frac": 9.415275588303932e-05,
+   "ops": {
+    "aten.addmm": 1966080,
+    "aten.mm": 3932160
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.obs_facts_inject.choice_proj",
+   "flops": 5701632,
+   "frac": 9.101433068693802e-05,
+   "ops": {
+    "aten.addmm": 1245184,
+    "aten.mm": 4456448
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_resolution_cell.status_switch_proj",
+   "flops": 1531904,
+   "frac": 2.445356298628938e-05,
+   "ops": {
+    "aten.mm": 1531904
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_resolution_cell.status_move_proj",
+   "flops": 1466368,
+   "frac": 2.340742125425561e-05,
+   "ops": {
+    "aten.mm": 1355776,
+    "aten.bmm": 110592
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.flat_intent_head.out",
+   "flops": 1376256,
+   "frac": 2.1968976372709178e-05,
+   "ops": {
+    "aten.mm": 1376256
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_resolution_cell.restored_move_proj",
+   "flops": 1296384,
+   "frac": 2.069399113679302e-05,
+   "ops": {
+    "aten.mm": 1167360,
+    "aten.bmm": 129024
+   }
+  },
+  {
+   "module": "PointerNativeActionHead.switch_extra_proj",
+   "flops": 1179648,
+   "frac": 1.8830551176607865e-05,
+   "ops": {
+    "aten.mm": 1179648
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.move_resolution_cell.restored_switch_proj",
+   "flops": 1073152,
+   "frac": 1.713057086205299e-05,
+   "ops": {
+    "aten.mm": 944128,
+    "aten.bmm": 129024
+   }
+  },
+  {
+   "module": "PointerNativeActionHead.switch_score",
+   "flops": 851968,
+   "frac": 1.3599842516439013e-05,
+   "ops": {
+    "aten.addmm": 196608,
+    "aten.mm": 655360
+   }
+  },
+  {
+   "module": "Gen3FeaturesExtractor.win_head.net.3",
+   "flops": 196608,
+   "frac": 3.138425196101311e-06,
+   "ops": {
+    "aten.addmm": 65536,
+    "aten.mm": 131072
+   }
+  },
+  {
+   "module": "PointerNativeActionHead.struggle_score",
+   "flops": 98304,
+   "frac": 1.5692125980506554e-06,
+   "ops": {
+    "aten.addmm": 32768,
+    "aten.mm": 65536
+   }
+  }
+ ]
+}

@@ -13561,3 +13561,21 @@ read both cells for its end-of-turn rule and found them wrong.
   builds with the closure on, is bit-identical under the bench bump, and moves with the flag flipped off (non-vacuous).
 - **Docs.** ARCHITECTURE, versioning (v154 note), training_runbook, flag census, `design_static_tokens.md` §14,
   `design_hand_computed_features.md` rank 15 + Decision record, `design_endstate_closing_test.md` §2.2.
+
+## 2026-10-10 — T25 perf phase starts on the END-STATE graph: the plan, two measurement switches, the update benchmark (no config bump)
+
+- **Why.** The owner (2026-10-09): "keeping the GPU busy since it's our bottleneck is a great first prioritization …
+  performance should only optimise the end state". The end-state update is ~53.8 s, about 80 % of a cycle.
+- **Plan.** `designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md` ranks the levers by expected
+  wall-clock gain, each with a risk and a measurement. CPU FLOP read: the three trunk rounds carry ~70 % of E's matmul
+  FLOPs; the third round adds +31.6 % FLOPs over production; exact KO adds none.
+- **Built (default OFF; the production compile byte-for-byte unchanged; no CLI flag until a lever is adopted).**
+  - `agents/model/trunk_precision.py` (`gen3_trunk_bf16_region_v1`): the trunk rounds under bf16 autocast, fp32 out,
+    decisions in fp32. A class swap, so it is deepcopy- and pickle-safe and `"fp32"` restores bit-exactly.
+  - `compile_regions.R1_INDUCTOR_PRESETS` (`gen3_r1_inductor_presets_v1`): `coordesc` / `combo` / `cudagraphs`,
+    passed to R1's `torch.compile(options=)` only.
+  - Tests: `trunk_precision_test.py` and `compile_regions_presets_test.py`.
+- **Measurement tooling** (the measurement's `scripts/`): `update_bench.py` (the real `train()` at the production
+  shape, compiled by the trainer's own sentinel, timed), `configs.py`, `window.sh` (a lease window in priority order),
+  `cpu_flops.py`, `module_flops.py`.
+- **Docs.** `designs/training/compile_flags.md` (the two switches); T25's backlog row.

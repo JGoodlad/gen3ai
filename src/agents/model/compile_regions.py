@@ -101,6 +101,33 @@ REGIONS: Tuple[Region, ...] = (
 )
 
 
+#: T25 perf levers B / C (`gen3_r1_inductor_presets_v1`; `designs/research_state/measurements/perf_phase_2026-10-10/
+#: PLAN.md`): NAMED Inductor option sets for R1's compile, passed as `torch.compile(..., options=)` so they reach R1
+#: only (never T2's graphs, never a global config). A preset is set on the learner as `_r1_inductor_preset` BEFORE
+#: `install` (default ``"default"``: no options, the production compile byte for byte); presets join with ``+``.
+#: All are numerics-neutral in intent — `coordesc` / `combo` re-tile / co-schedule kernels (an fp32 summation order
+#: may move within fp32 noise, which the startup gate and the canary judge as for any compile) and `cudagraphs`
+#: replays the same kernels from a captured graph — but each is a MEASUREMENT lever until its paired benchmark and
+#: the gates have run on the GPU (no trainer flag yet).
+R1_INDUCTOR_PRESETS: Dict[str, Dict[str, Any]] = {
+    "default": {},
+    "coordesc": {"coordinate_descent_tuning": True},     # tile / warp search per pointwise & reduction kernel
+    "combo": {"combo_kernels": True},                    # horizontal fusion of independent small kernels
+    "cudagraphs": {"triton.cudagraphs": True},           # cudagraph trees over R1's forward + backward
+}
+
+
+def r1_inductor_options(preset: str) -> Dict[str, Any]:
+    """The merged Inductor options of ``preset`` (names from `R1_INDUCTOR_PRESETS`, joined by ``+``); an
+    unknown name raises naming the known ones."""
+    out: Dict[str, Any] = {}
+    for name in str(preset or "default").split("+"):
+        if name not in R1_INDUCTOR_PRESETS:
+            raise ValueError(f"unknown R1 Inductor preset {name!r}; known: {sorted(R1_INDUCTOR_PRESETS)}")
+        out.update(R1_INDUCTOR_PRESETS[name])
+    return out
+
+
 def compiled_regions() -> Tuple[Region, ...]:
     return tuple(r for r in REGIONS if r.compiled)
 
@@ -133,6 +160,9 @@ def install(model: Any, *, backend: Optional[str] = None,
     kw: Dict[str, Any] = {"fullgraph": True, "dynamic": False}
     if backend is not None:
         kw["backend"] = backend
+    opts = r1_inductor_options(getattr(model, "_r1_inductor_preset", "default"))
+    if opts:                              # T25 levers B / C: a non-default preset only (`R1_INDUCTOR_PRESETS`)
+        kw["options"] = opts
     r1c = ctl.wrap_compiled(torch.compile(micro_step, **kw))
     rows = int(getattr(model, "batch_size", 0) or 0)
 

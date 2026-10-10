@@ -1611,6 +1611,28 @@ regression by `src/agents/model/extractor_compiles_test.py`.
 diffing against the live parser's defaults and REPORTING (never silently dropping) flags the tree no
 longer has — that is how the production shape above was recovered.
 
+## T25 perf levers on R1: MEASUREMENT switches, no trainer flag (2026-10-10)
+
+The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md`) adds two switches. Both are OFF by
+default and reach nothing a launch builds; the production compile is byte-for-byte unchanged.
+
+- **R1's Inductor option presets** (`compile_regions.R1_INDUCTOR_PRESETS`, `gen3_r1_inductor_presets_v1`):
+  `default` (no options), `coordesc` (`coordinate_descent_tuning`), `combo` (`combo_kernels`) and `cudagraphs`
+  (`triton.cudagraphs`, i.e. cudagraph trees over R1's forward + backward). Presets join with `+`. Set
+  `model._r1_inductor_preset` BEFORE `compile_regions.install`, which passes them as `torch.compile(..., options=)`:
+  R1 only, never T2's graphs, never a global config. `compile_regions_presets_test.py` pins this. The default passes
+  NO `options`; every key is a real Inductor config of this torch; an unknown name refuses.
+- **The trunk's compute precision** (`agents/model/trunk_precision.py`, `gen3_trunk_bf16_region_v1`):
+  `set_trunk_precision(policy, "bf16")` class-swaps every trunk round (`BiasedEncoderLayer`, `IdentityInitRound`)
+  to a subclass whose forward runs under bf16 autocast and returns fp32. The decisions stay fp32: heads, pointer,
+  masked softmax, value and losses. Set it BEFORE `install`. `"fp32"` restores the base classes.
+  `trunk_precision_test.py` pins it: fp32 out, fp32 params and grads, bf16 matmuls inside, bit-exact restore,
+  deepcopy and pickle safe.
+
+Neither has a CLI flag. A lever gets its flag, flag-registry row and recipe surface in its ADOPTION commit, after its
+paired GPU benchmark and the R1 gate and canary are green. bf16 also needs a bf16 parity rule and a K9(b) bar (PLAN.md
+§2). The benchmark that sets them is the measurement's `scripts/update_bench.py`.
+
 ## From the training leaf (moved 2026-10-10)
 
 > These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they
