@@ -19,86 +19,57 @@ Python bridge road, T27 P6 slice 6d-2.)
 
 Offline replay / re-roll (the probe-agnostic primitive)
 -------------------------------------------------------
-:func:`replay_battle` re-runs the full command log through a fresh in-process
-``BattleStream`` (``replay_driver.js``) and returns the regenerated per-side
+:func:`replay_battle` re-runs the full command log through a fresh battle in the
+Rust ``search_driver`` binary and returns the regenerated per-side
 chunks + the final omniscient outcome. :func:`reroll_turn` reconstructs to the
 start of turn ``t``, then resolves that one turn under N fresh PRNG seeds
-(``stream.battle.prng`` is swapped in place — all sim randomness routes through
+(the battle's PRNG is swapped in place — all sim randomness routes through
 it), with each side's start-of-turn action independently sourced from the
 recorded choice, a uniform-random legal choice, or an explicit choice string.
 What to fix vs re-sample, how many seeds, and what to measure are deliberately
 NOT decided here — Phase-1 consumers compose those.
 
-All three take an ``impl`` (``"node"`` default | ``"rust"``), the offline analogue of
-the training transport: it picks WHICH driver child runs, via the one seam
-``sim_bridge_bin.search_driver_spawn_argv``. Node splits these verbs across
-``replay_driver.js`` and ``search_driver.js``; the Rust port serves both from a single
-``search_driver`` binary. A missing/unbuildable rust binary raises — it never falls back
-to node.
+All three run the Rust ``search_driver`` binary (one binary serves these verbs AND the
+clone-and-branch search), resolved by the one seam ``sim_bridge_bin.search_driver_spawn_argv``.
+A missing/unbuildable binary raises. There is no engine choice: the Node drivers
+(``replay_driver.js`` / ``search_driver.js``) and the ``impl=`` selector were DELETED on
+2026-10-10 (owner: "delete node"; ``designs/deleted_flags.md``).
 """
 
 from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
-from utils.contention import describe_contention, scale_timeout
-from utils.paths import repo_path
-
-_DRIVER_JS = str(Path(__file__).parent / "replay_driver.js")
 
 RECORD_VERSION = 1
 RECON_SUFFIX = "_reconstruction.json"
 
 _STAT_ORDER = ("hp", "atk", "def", "spa", "spd", "spe")
 
-# Sim alias table ({alias_id: canonical display name}, e.g. wisp → Will-O-Wisp),
-# dumped lazily once per process. None = not loaded yet; {} = bridge unavailable.
+# The MOVE alias table ({alias_id: canonical_move_id}, e.g. wisp → willowisp), loaded lazily once
+# per process from data/pokemon/gen3_move_aliases.json (derived from Showdown's `aliases.ts` by
+# tools/pokemon_data_extractor — the SAME table the Rust port's dex resolves a packed-team move alias
+# with). It used to be dumped LIVE from the Showdown dist with a `node -e` subprocess, and fell back
+# SILENTLY to {} when node was missing or slow; deleted 2026-10-10 (owner: "delete node").
 _ALIAS_CACHE: Optional[Dict[str, str]] = None
-_ALIAS_DUMP_JS = (
-    "const a=require(process.argv[1]+'/dist/data/aliases');"
-    "process.stdout.write(JSON.stringify(a.Aliases));"
-)
-_PS_PATH = str(repo_path("deps", "pokemon-showdown"))
 
 
 def _sim_aliases() -> Dict[str, str]:
-    """The sim's own id-alias table, cached per process. Pool packed strings can
-    carry alias ids (a team export wrote "Wisp"); ``Teams.unpack`` resolves them,
-    so a review decode must too or its ids won't join with anything else in the
-    system (protocol/obs/summary all speak canonical ids). Falls back to ``{}``
-    when node / the sim dist is unavailable (pure-unit environments) — the
-    integration sweep validates the resolved decode against the sim itself."""
+    """The move-id alias table, cached per process. Pool packed strings can carry alias ids (a
+    team export wrote "Wisp"); ``Teams.unpack`` resolves them, so a review decode must too or its
+    ids won't join with anything else in the system (protocol/obs/summary all speak canonical
+    ids). Read from ``data/`` through the ``agents.gen3_data`` facade — no subprocess, no
+    fallback: a missing file RAISES (crash-don't-drop). ``packed_team_decode_integration_test.py``
+    validates the resolved decode against the sim's own ``Teams.unpack`` over the whole pool."""
     global _ALIAS_CACHE
     if _ALIAS_CACHE is None:
-        try:
-            # NODE-ONLY on purpose — NOT part of the `impl` seam. This dumps Showdown's own
-            # `aliases.ts` table out of `deps/pokemon-showdown/dist`; it is a DATA query against
-            # the reference sim, not a sim RUN, so there is nothing for a rust driver to serve
-            # (and the answer must come from the canonical source either way).
-            # Contention-scaled (`gen3_contention_robust_timeouts_v1`): this spawns node beside
-            # whatever else the box is running, and the failure mode below is SILENT.
-            proc = subprocess.run(["node", "-e", _ALIAS_DUMP_JS, _PS_PATH],
-                                  capture_output=True, timeout=scale_timeout(30))
-            _ALIAS_CACHE = json.loads(proc.stdout.decode()) if proc.returncode == 0 else {}
-        except subprocess.TimeoutExpired:
-            # NOT the same as node being absent. The empty fallback is a legitimate answer for a
-            # pure-unit environment with no sim dist; it is a WRONG answer for a machine that
-            # merely ran out of CPU, because the result is cached for the whole process and every
-            # later decode silently leaves aliases unresolved — ids that then fail to join with
-            # the protocol/obs/summary, which all speak canonical ids. Same shape as the parity
-            # test counting a timeout as an "unmodeled move": a timeout is not a semantic
-            # outcome. Degrade the same way (callers have no failure path here) but SAY SO.
-            print(f"⚠️  [reconstruction] the sim alias dump TIMED OUT — decodes in this process "
-                  f"will leave aliases UNRESOLVED, which can mis-join ids downstream. This is a "
-                  f"starved box, not a missing sim. {describe_contention()}", file=sys.stderr)
-            _ALIAS_CACHE = {}
-        except (OSError, ValueError, subprocess.SubprocessError):
-            _ALIAS_CACHE = {}
+        from agents.gen3_data import moves as gen3_moves
+
+        _ALIAS_CACHE = dict(gen3_moves.move_aliases())
     return _ALIAS_CACHE
 
 
@@ -108,10 +79,10 @@ def decode_packed_team(packed: str) -> List[dict]:
     Returns one dict per mon: ``{species, item, ability, moves, nature,
     evs: {hp..spe}, ivs: {hp..spe}, gender, level}`` with the packed format's
     omission-defaults applied (empty EV field = all 0, empty IV field = all 31,
-    level omitted = 100) and ids resolved through the sim's alias table (a pool
+    level omitted = 100) and ids resolved through the move alias table (a pool
     string can say ``wisp``; everything downstream speaks ``willowisp``).
-    Delegates to poke-env's ``parse_packed_team`` — the same parser the live
-    battle path uses — never a reimplementation; validated field-by-field
+    Delegates to ``utils.team_packing``'s ``parse_packed_team`` — never a
+    reimplementation; validated field-by-field
     against the sim's own ``Teams.unpack`` over the ENTIRE team pool by
     ``packed_team_decode_integration_test.py``. Replay/re-roll deliberately do
     NOT use this: they feed the packed string back to the sim verbatim.
@@ -227,7 +198,7 @@ class ReconstructionRecord:
 
 
 # ---------------------------------------------------------------------------
-# Offline replay / re-roll (drives replay_driver.js)
+# Offline replay / re-roll (drives the Rust search_driver binary)
 # ---------------------------------------------------------------------------
 
 
@@ -270,30 +241,22 @@ class RerollResult:
     rerolls: List[TurnReroll] = field(default_factory=list)
 
 
-def _run_driver(request: dict, timeout: float, impl: str = "node") -> dict:
+def _run_driver(request: dict, timeout: float) -> dict:
     """Spawn ONE offline replay/re-roll driver, feed it ``request``, return its JSON reply.
 
-    ``impl`` selects the child exactly like the training transport selects the live
-    transport. Note the ASYMMETRY the seam hides: **node** splits the offline verbs across two
-    scripts — ``replay_driver.js`` (replay / reroll / reroll_many, what this function drives) and
-    ``search_driver.js`` (the clone-and-branch server ``search_session.py`` drives) — while the
-    **rust** port serves BOTH verb families from the single ``search_driver`` binary. So the node
-    branch keeps its own script while the rust branch routes through
-    ``sim_bridge_bin.search_driver_spawn_argv``, which resolves/builds that one binary.
+    The child is the Rust ``search_driver`` binary, which serves the replay / reroll /
+    reroll_many verbs AND the clone-and-branch search ``search_session.py`` drives; it is
+    resolved (built if needed) by ``sim_bridge_bin.search_driver_spawn_argv``.
     """
-    if impl == "node":
-        argv = ["node", _DRIVER_JS]
-    else:
-        # rust (or an invalid name — the seam raises the ValueError, one place)
-        from utils.bridge.sim_bridge_bin import search_driver_spawn_argv
-        argv = search_driver_spawn_argv(impl)
+    from utils.bridge.sim_bridge_bin import search_driver_spawn_argv
+    argv = search_driver_spawn_argv()
     proc = subprocess.run(
         argv,
         input=json.dumps(request).encode(),
         capture_output=True,
         timeout=timeout,
     )
-    who = f"replay driver [{impl}: {argv[-1]}]"
+    who = f"replay driver [{argv[-1]}]"
     stdout = proc.stdout.decode("utf-8", "replace")
     stderr = proc.stderr.decode("utf-8", "replace")
     if proc.returncode != 0:
@@ -318,8 +281,7 @@ def _run_driver(request: dict, timeout: float, impl: str = "node") -> dict:
     return out
 
 
-def replay_battle(record: ReconstructionRecord, *, timeout: float = 120.0,
-                  impl: str = "node") -> BattleReplay:
+def replay_battle(record: ReconstructionRecord, *, timeout: float = 120.0) -> BattleReplay:
     """Re-run the battle verbatim (original seed, original commands) and return the
     regenerated per-side protocol + the final omniscient outcome.
 
@@ -328,11 +290,8 @@ def replay_battle(record: ReconstructionRecord, *, timeout: float = 120.0,
     wall-clock timestamp lines, which the sim stamps at emission time and which
     are state- and obs-invisible. Feed them to the Rust core's parse chain
     (``main.prober.core_walk.read_streams``) to rebuild the agent's exact rows.
-
-    ``impl`` selects the driver child (``"node"`` — the default and the historical behavior —
-    or ``"rust"``); see :func:`_run_driver`.
     """
-    out = _run_driver({"mode": "replay", "record": record.to_dict()}, timeout, impl)
+    out = _run_driver({"mode": "replay", "record": record.to_dict()}, timeout)
     return BattleReplay(p1_chunks=out["p1_chunks"], p2_chunks=out["p2_chunks"],
                         outcome=out["outcome"])
 
@@ -346,7 +305,6 @@ def reroll_turn(
     p2_action: str = "recorded",
     followup: str = "random",
     timeout: float = 300.0,
-    impl: str = "node",
 ) -> RerollResult:
     """Reconstruct to the start of turn ``turn`` and re-roll it under each seed.
 
@@ -376,9 +334,6 @@ def reroll_turn(
     Everything omniscient in the result (``pre_state``, ``outcome``,
     ``turn_log``) is for ground-truth analysis only; obs materialization must use
     only the per-side chunks.
-
-    ``impl`` selects the driver child (``"node"`` — the default and the historical behavior —
-    or ``"rust"``); see :func:`_run_driver`.
     """
     out = _run_driver(
         {
@@ -391,7 +346,6 @@ def reroll_turn(
             "followup": followup,
         },
         timeout,
-        impl,
     )
     rerolls = [
         TurnReroll(
@@ -446,22 +400,17 @@ def reroll_many(
     *,
     followup: str = "random",
     timeout: float = 300.0,
-    impl: str = "node",
 ) -> RerollManyResult:
-    """Resolve N independent ARMS of turn ``turn`` in ONE Node process — one ``buildToTurn`` + module
+    """Resolve N independent ARMS of turn ``turn`` in ONE driver process — one ``buildToTurn`` + module
     load instead of once per arm. Each ``arm`` is a dict ``{p1_action, p2_action, seed, label}`` with
     EXACTLY the per-side action-source semantics of :func:`reroll_turn` (``"recorded"`` / ``"random"`` /
     an explicit sim choice string; the special seed ``"original"`` keeps the battle's own mid-game PRNG).
 
     This is purely a PERFORMANCE batching of :func:`reroll_turn`: a candidate-action sweep (the prober's
-    one-ply lookahead) pays the ~677 ms Node-spawn / pokemon-showdown ``require`` cost ONCE rather than
-    per candidate (measured ~5× on the re-roll step). Each arm runs in its OWN fresh session, so an
+    one-ply lookahead) pays the driver spawn + battle rebuild ONCE rather than per candidate. Each arm runs in its OWN fresh session, so an
     arm's suffix chunks are BYTE-IDENTICAL to the same single :func:`reroll_turn` — guarded by
     ``reroll_many_parity_fuzz_test.py``. The shared prefix chunks + decision-point views are returned
-    once. ``arms=()`` just reconstructs (prefix/requests only).
-
-    ``impl`` selects the driver child (``"node"`` — the default and the historical behavior — or
-    ``"rust"``); see :func:`_run_driver`."""
+    once. ``arms=()`` just reconstructs (prefix/requests only)."""
     out = _run_driver(
         {
             "mode": "reroll_many",
@@ -471,7 +420,6 @@ def reroll_many(
             "followup": followup,
         },
         timeout,
-        impl,
     )
     arm_results = [
         ArmReroll(

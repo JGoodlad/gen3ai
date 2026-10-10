@@ -1,7 +1,7 @@
 """THE DEPTH-3 SUCCESSOR SLICE (M5 Lane I's gate, ``designs/endstate/program_rust_core.md`` §2 M5):
 the in-process search tree (:class:`utils.rust_env.successors.Successors`) against the
-``search_driver`` BINARY's JSON road (:class:`utils.bridge.search_session.SearchSession`,
-``impl="rust"``), driven in LOCKSTEP with the identical request sequence.
+``search_driver`` BINARY's JSON road (:class:`utils.bridge.search_session.SearchSession`),
+driven in LOCKSTEP with the identical request sequence.
 
 Per battle, per sampled turn, per searched side: ``open_root`` on both (every root field equal —
 node id, requests, recorded choices, ``pre_state``, both prefixes), then THREE plies: every legal
@@ -258,7 +258,7 @@ def run(logs: Sequence[dict], *, seed: int = 0, lib=None, **kw) -> Census:
 
     cen = Census()
     rng = np.random.default_rng(seed)
-    with SearchSession(impl="rust", timeout=600) as js, S.Successors(lib=lib) as ip:
+    with SearchSession(timeout=600) as js, S.Successors(lib=lib) as ip:
         for i, log in enumerate(logs):
             rec = S.log_to_record(log, battle_tag=f"b{i}")
             compare_battle(js, ip, rec, cen, rng, **kw)

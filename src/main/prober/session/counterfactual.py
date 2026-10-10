@@ -34,8 +34,7 @@ class _CounterfactualMixin:
         record = ReconstructionRecord.load(recon_path)
         return falsify_battle(record, self._summary(b), self._npz(b),
                               invs=invs, worst=worst, gamma=self._gamma,
-                              n_seeds=n_seeds, n_alts=n_alts, followup=followup,
-                              impl=self._impl)
+                              n_seeds=n_seeds, n_alts=n_alts, followup=followup)
 
     def lookahead(self, battle_id: str, *, invs=None, inv: "int | None" = None, worst: int = 3,
                   n_seeds: int = 0, followup: str = "random") -> dict:
@@ -64,11 +63,10 @@ class _CounterfactualMixin:
         summary, npz = self._summary(b), self._npz(b)
         if inv is not None:
             out = lookahead_decision(model, record, summary, npz, int(inv),
-                                     n_seeds=n_seeds, followup=followup, impl=self._impl)
+                                     n_seeds=n_seeds, followup=followup)
         else:
             out = lookahead_battle(model, record, summary, npz, invs=invs, worst=worst,
-                                   gamma=self._gamma, n_seeds=n_seeds, followup=followup,
-                                   impl=self._impl)
+                                   gamma=self._gamma, n_seeds=n_seeds, followup=followup)
         # The currency `value_crn` / `delta_v` are in. Under the win-prob critic `win_prob_crn` is
         # the SAME number as `value_crn` (verified on the live arm: equal to 4 dp on every
         # candidate), so a surface must be able to say "one readout" rather than presenting a
@@ -103,17 +101,6 @@ class _CounterfactualMixin:
             raise FileNotFoundError(
                 f"no reconstruction record next to this trace ({recon_path}) — better-line needs the "
                 "re-roll layer's replay data, which only bridge-eval traces carry")
-        # An injected WARM SearchSession carries its OWN impl (it was spawned before this call), so a
-        # caller that built it on one engine and the ProbeSession on another would produce a
-        # correction whose search half and replay half came from different sims. That is exactly the
-        # silent cross-engine mix the seam exists to prevent — refuse it rather than pick a winner.
-        if search_session is not None:
-            ss_impl = getattr(search_session, "impl", self._impl)
-            if ss_impl != self._impl:
-                raise ValueError(
-                    f"injected SearchSession impl {ss_impl!r} != this ProbeSession's impl "
-                    f"{self._impl!r} — build both on the same engine")
-
         record = ReconstructionRecord.load(recon_path)
         model, _ = self._model_for(b)
         summary, npz = self._summary(b), self._npz(b)
@@ -134,7 +121,7 @@ class _CounterfactualMixin:
 
         out = better_line_decision(
             model, record, summary, npz, int(inv), depth=depth, beam=beam, top_k=top_k,
-            followup=followup, opp_model=opp_model, session=search_session, impl=self._impl)
+            followup=followup, opp_model=opp_model, session=search_session)
         out["interior_opponent"] = opp_used
         # The currency the beam's ΔV and every ply's V(s′) are in — see `lookahead` above.
         out["critic_currency"] = self.critic_currency()
@@ -171,8 +158,7 @@ class _CounterfactualMixin:
         says it played — **stochastic** at temp 1.0, matching ``eval_worker``'s sentinels — unless
         ``opponent_stochastic`` overrides it. **Requires the trace's ``*_reconstruction.json``
         sibling.** The play-out runs on the in-process RUST CORE (``gen3_cf_core_playout_v1``, P6) —
-        every draw seeded from the battle + decision, so a rerun answers identically; ``--impl node``
-        does not apply and the result's ``caveats`` say so."""
+        every draw seeded from the battle + decision, so a rerun answers identically."""
         from main.prober.replay import replay_counterfactual_battle
 
         b, record = self._cf_record(battle_id)
@@ -188,7 +174,7 @@ class _CounterfactualMixin:
             play_model=play_model, opp_name=b.opponent, opponent_ckpt=opponent_ckpt,
             opp_model=opp_model, opponent_source=opponent_source,
             opponent_stochastic=opponent_stochastic, n_rollouts=n_rollouts,
-            narrate=narrate, impl=self._impl)
+            narrate=narrate)
 
     def _cf_record(self, battle_id: str):
         """``(battle, ReconstructionRecord)`` — the counterfactual replay's input, or a typed refusal."""

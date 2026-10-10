@@ -44,8 +44,7 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
     """
 
     def __init__(self, root: str, ckpt_override: "str | None" = None, tier: str = "auto",
-                 model_loader=None, compile_extractor: bool = False,
-                 impl: str = "node") -> None:
+                 model_loader=None, compile_extractor: bool = False) -> None:
         self.tree = build_trace_tree(root)
         self.run_dir = self.tree.run_dir
         self._override = ckpt_override
@@ -57,14 +56,8 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         # `summary`/`list` query would never amortize the compile. Worth it for the search-shaped
         # commands — better-line, falsify, falsify-scan, replay-counterfactual, lookahead.
         self._compile_extractor = bool(compile_extractor)
-        # WHICH offline replay/search driver the re-roll-backed probes spawn: "node" (default,
-        # the historical behavior) or "rust". SESSION-WIDE on purpose, exactly like
-        # `compile_extractor` above: it is a transport choice for the whole investigation, not a
-        # per-question semantic — two probes of the same run answering under different engines
-        # would not be comparable, which is precisely what a per-call knob would invite. The CLI
-        # surfaces it as `--impl` on the search-shaped commands; every probe below reads
-        # `self._impl`.
-        self._impl = impl
+        # The re-roll-backed probes (falsify / lookahead / better-line) run on the Rust
+        # `search_driver` — the only offline driver since the Node one was deleted (2026-10-10).
         self._summaries: "dict[str, dict]" = {}
         self._by_path = {b.summary_path: b for b in self.tree.all_battles()}
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}

@@ -38,6 +38,12 @@ cargo build --release --bin sim_bridge --bin search_driver \
     --manifest-path src/rust_sim/Cargo.toml             # the Rust simulator (recommended)
 ```
 
+Why Node is still needed: at run time, ONLY for **team validation** — every entry point that loads a
+team pool runs Showdown's validator (`src/utils/bridge/validate_team.js`) as a subprocess. Everything
+else Node does is a development / test oracle (the differential gates, the A/B fuzzers, the drift scan,
+data acquisition). The offline search, replay and every prober probe run on the Rust `search_driver`
+only (the Node drivers were deleted on 2026-10-10).
+
 Build the Rust binaries before your first test run — a fresh checkout otherwise pays for
 `cargo build` inside the first Rust-backed test, which can saturate the box and cascade into
 spurious timeouts.

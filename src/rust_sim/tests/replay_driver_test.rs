@@ -2,10 +2,10 @@
 //! (`gen3_rust_replay_driver_v1`): the one-shot `replay` / `reroll` / `reroll_many` verbs
 //! the `search_driver` binary now serves alongside the persistent search protocol.
 //!
-//! The differential lives in `tmp/replay_impl_parity.py` (it drives BOTH
-//! `node replay_driver.js` and this binary on the identical request and diffs every field).
-//! That harness is scratch and needs node + a captured record, so the properties below —
-//! the ones a `cargo test` run must never lose — are pinned here instead:
+//! The node-vs-rust differential (`harness/replay_impl_parity.py`, which drove BOTH
+//! `node replay_driver.js` and this binary on the identical request) and the Node driver itself
+//! were DELETED on 2026-10-10 (owner: "delete node"); the properties below — the ones a
+//! `cargo test` run must never lose — are the node-free gate:
 //!
 //!   1. **THE ONE-SHOT DISPATCH** — a request carrying `mode` is answered with a BARE JSON
 //!      object (no `id`, no `ok`, NO trailing newline) and the process EXITS: 0 on success,
@@ -423,7 +423,7 @@ fn a_recorded_queue_pulls_the_next_entry_when_the_first_is_refused() {
     // rebuilds the whole boundary (bridge.rs models only the trapped-SWITCH reject), so the
     // UNREJECTED side is asked a second time and its queue-then-follow-up answer is recorded
     // too — where Node re-opens only the rejected side. That is a PRE-EXISTING bridge gap,
-    // explicitly allowlisted (with its hit count) by `tmp/replay_impl_parity.py`; pinning it
+    // explicitly allowlisted by the (deleted, 2026-10-10) `replay_impl_parity.py`; pinning it
     // here would freeze the gap in place instead of the property.
     assert_eq!(r.used[1][0], "move 1", "p2's FIRST answer still comes from its queue");
 }

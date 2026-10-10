@@ -2,10 +2,14 @@
 
 <!-- Lifted verbatim out of `src/rust_sim/CLAUDE.md` on 2026-09-08 (the leaf split: 2,659 -> a command card). This tree is ALWAYS-CURRENT: state the truth, never narrate a change. The leaf keeps the rule, the command and the hazard; this file keeps the detail. -->
 
-`src/bin/search_driver.rs` over `src/search.rs` is the drop-in replacement for BOTH node offline
-drivers (`search_driver.js`'s persistent clone-and-branch server and `replay_driver.js`'s one-shot
-`replay`/`reroll`/`reroll_many` verbs). This document holds the protocol, the kernel reuse, the two
-gates per family, the honest scope of `pre_state`, and the clone-branch gate. The leaf keeps the
+`src/bin/search_driver.rs` over `src/search.rs` is THE offline driver — the only one. It was built as
+the byte-compatible replacement for BOTH node offline drivers (`search_driver.js`'s persistent
+clone-and-branch server and `replay_driver.js`'s one-shot `replay`/`reroll`/`reroll_many` verbs, over
+`replay_kernels.js`), and those Node drivers are DELETED (2026-10-10, owner: "delete node"), together
+with the `impl` selector and the two node-vs-rust differentials (`harness/search_impl_parity.py`,
+`harness/replay_impl_parity.py`). This document holds the protocol, the kernel reuse, the gates per
+family (the node-free cargo tests; what the deleted differentials measured is kept as their record),
+the honest scope of `pre_state`, and the clone-branch gate. The leaf keeps the
 snapshot API contract, the invocation and the hazards.
 
 ---
@@ -29,16 +33,15 @@ request, each fail exactly one named test).
 
 ## The SEARCH SERVER: `src/search.rs` + `src/bin/search_driver.rs` (`gen3_rust_search_driver_v1`)
 
-The Rust half of the clone-and-branch search layer: a byte-compatible drop-in for
-`src/utils/bridge/search_driver.js`, so `utils/bridge/search_session.py` (the prober's
-`better_line` beam) can swap `node search_driver.js` for this binary
-with ZERO protocol change.
+The clone-and-branch search layer's engine. It was built as a byte-compatible drop-in for the Node
+`search_driver.js` (deleted 2026-10-10), and `utils/bridge/search_session.py` (the prober's
+`better_line` beam) spawns it — and only it — through `sim_bridge_bin.search_driver_spawn_argv()`.
 
 **The same binary ALSO serves the offline REPLAY family** — see
 "## The REPLAY family" below (`gen3_rust_replay_driver_v1`). The two protocols share this
 binary and every kernel; they differ only in dispatch (`mode` = one-shot, `cmd` = persistent).
 
-- **`src/search.rs`** — the port of `src/utils/bridge/replay_kernels.js`'s search-relevant
+- **`src/search.rs`** — the port of the (deleted) Node `replay_kernels.js`'s search-relevant
   kernels. Pure helpers, no stdin/stdout, no node map: `aux_rng_from_seed` / `pick_uniform` /
   `random_choice` / `followup_choice`, `Record::parse` + `session_from_record` + `at_turn_start`
   + `build_to_turn` + `recorded_turn_choices`, `resolve_turn_exact` / `resolve_turn`, and the
@@ -81,7 +84,8 @@ golden below.
   verdict; the count is pinned exactly (`used[1].len() == 41`).
 
 **GATE 1 — `tests/search_driver_test.rs`** (5 tests, no node needed): the aux-RNG stream against
-four draw tables produced by `replay_kernels.js`'s OWN `auxRngFromSeed` under node (EXACT f64
+four draw tables produced by `replay_kernels.js`'s OWN `auxRngFromSeed` under node (captured into
+the test before the Node driver's deletion, so it needs no node; EXACT f64
 equality — `u32 / 2^32` is representable, so a tolerance would only hide a divergence) plus
 `pickUniform`'s index and its one-draw cost; `random_choice` determinism per seed, non-determinism
 across seeds, and legality of every pick against an independently-derived option set; CLONE
@@ -91,9 +95,16 @@ guard's exact iteration count. Every test carries a non-vacuity guard — the fi
 a mid-battle `move` boundary with a live bench, the two arms must really diverge, the wedge must
 really have wedged.
 
-> ⚠️ **P6 slice 6c (2026-10-08): the golden's GENERATORS are deleted.** `harness/search_golden.py` and `harness/gen_search_golden.py` drove real gen3ou battles through poke-env `RandomPlayer`s to capture `tmp/search_golden_node.json` (gitignored scratch — no golden is committed, and none existed on a fresh checkout), so `search_impl_parity.py`, `replay_impl_parity.py` and `rust_record_replay_check.py` below can no longer be fed one from this tree; they are kept (REPORTED, not deleted) until the owner decides whether the node-vs-rust search A/B is rebuilt on the Rust env core's recorded battles. The cargo `tests/search_driver_test.rs` never needed the golden.
+> ⚠️ **GATE 2 is DELETED (2026-10-10, owner: "delete node").** `harness/search_impl_parity.py` and
+> `harness/replay_impl_parity.py` diffed this binary against the Node drivers, which are deleted; their
+> golden's generators (`harness/search_golden.py`, `harness/gen_search_golden.py`, poke-env
+> `RandomPlayer` drivers) had already gone in P6 slice 6c, so neither had a golden to run on.
+> `rust_record_replay_check.py` stays (it drives `local_sim_bridge.js`, not the search drivers — but it
+> still reads `tmp/search_golden_node.json`, which this tree can no longer generate). The
+> node-free gates are the cargo `tests/search_driver_test.rs` and `tests/replay_driver_test.rs`. The
+> GATE 2 text below is the RECORD of what the differential measured while it ran.
 
-**GATE 2 — `src/rust_sim/harness/search_impl_parity.py`** (scratch, needs node + a captured record): replays
+**GATE 2 (DELETED 2026-10-10) — `src/rust_sim/harness/search_impl_parity.py`** (needed node + a captured record): replayed
 `tmp/search_golden_node.json` — the NODE `search_driver.js` wire output over 6 decision points
 across 2 real gen3ou battles, 54 arms (12 exercising multi-round forced-switch follow-ups) plus
 depth-2 expansions — through the built binary over raw stdin/stdout JSON, and diffs every field.
@@ -162,8 +173,8 @@ early-out beside `must_struggle`, gated by
 existing fuzz could not catch it by construction: it drives masked-LEGAL tokens, and there the
 token IS masked-legal because the mask is built FROM the request. **The durable lesson is that an
 allowlist entry can outlive its own fix and then mislead every reader after** — see the root
-`CLAUDE.md`. Verify an allowlist claim against the harness (`src/rust_sim/harness/search_impl_parity.py::ALLOWLIST`)
-and the code, never against this prose alone.
+`CLAUDE.md`. Verify a claim against the code and its cargo tests (the deleted harness's `ALLOWLIST`
+went with it), never against this prose alone.
 
 **HONEST SCOPE — `pre_state`.** It mirrors Node's `preState` and has NO consumer today. `turn`,
 `weather`, the per-mon species/hp/maxhp/status/fainted/position, boosts, item, ability, the
@@ -185,8 +196,8 @@ removal with `addVolatile('substitutebroken')`; the condition has no duration an
 so it sits on the mon until `clearVolatile`. It is mechanically INERT in gen 3 and is modeled
 purely so this readout can name it. **Every other name (`choicelock`, `perishsong`, `twoturnmove`,
 …) is still UNVERIFIED** — do not read a green parity run as evidence that one is spelled or timed
-right; `replay_impl_parity` prints a `pre_state:nonempty-volatiles` count on every run precisely so
-an all-empty record set cannot be mistaken for coverage.
+right; the (deleted) `replay_impl_parity` printed a `pre_state:nonempty-volatiles` count on every run
+precisely so an all-empty record set could not be mistaken for coverage.
 
 **The port-only one-sided `view_p1` / `view_p2` (and D10's `view_pN_at`) payloads are DELETED**
 (Rust Core deletion pass, program §4 M2); a CORE root's arms carry `core_pN` instead (the leaf
@@ -207,36 +218,28 @@ choices at interior plies, `branchable` for ours).
 
 | | |
 |---|---|
-| **default** | `SideWant::Both` — **byte-identical to the historical body**, same fields in the same ORDER. A request without `side` cannot tell the feature exists, which is what keeps `search_impl_parity`'s node comparison (whose golden requests carry no such key) valid field-for-field |
+| **default** | `SideWant::Both` — **byte-identical to the historical body**, same fields in the same ORDER. A request without `side` cannot tell the feature exists (which is what kept the since-deleted `search_impl_parity` node comparison valid field-for-field) |
 | **an unknown `side`** | an ERROR, never a fall-back to Both. A typo that returned everything would read as a working elision that saved nothing, and the only symptom would be a benchmark that refused to move |
 | **the elided slot, in Python** | `search_session.ElidedSide` — falsy, so the existing `payload or {}` guards take their COUNTED fallback, but RAISING on every way of reading a value out. An empty dict would have ENCODED: into a well-formed observation of a battle nobody played |
-| **under `impl="node"`** | nothing is elided. `search_driver.js` ignores the key and returns both sides, and the sentinel keys on the field being ABSENT, never on the request |
 | **wall gate** | `tests/search_side_elision_test.rs` — the same arm from the same root in the same process, with and without `side`, asserting the surviving payload is **byte-identical**, the other is gone, a `side`-less arm keeps the historical field order, and an unknown side is refused without killing the session |
 | **decision gate** | `src/main/search_dividend/side_elision_parity_integration_test.py` (deleted with the battery, P6 slice 6d-1; the sentinel's contract now lives in `utils/bridge/search_session_test.py`) — the real `SearchEngine` over one seeded decision, elision on vs off, comparing every successor's obs BYTES in order, the scores, the chosen action, the widths **and both fallback counters** (an elided payload read as empty would quietly move arms to the protocol road and still score plausibly) |
 
 🚨 **The driver can also report its OWN per-phase wall** — `POKESIM_SEARCH_TIMING=1` adds a
 `timing_us` object (`sim` / `view` / `chunks` / `render` / `total`, micros summed over the batch)
 to an `expand_many` reply. It is read ONCE per process and renders **the empty string** when off,
-so an un-set build is byte-identical; that is what lets the cross-impl parity harness go on
-comparing this driver to node's, which has no such field. `pokesim::driver_timing`.
+so an un-set build is byte-identical (what let the since-deleted cross-impl harness compare this
+driver to node's, which had no such field). `pokesim::driver_timing`.
 
-**IT ALREADY REPLACES node in `better_line`.** This paragraph used to list three things as STILL
-NEEDED and every one of them had already been done — *a note that outlived its own fix*, the exact
-class this file polices elsewhere (corrected 2026-09-07, verified against the code named here):
-
-- `utils/bridge/search_session.py` **has** the impl switch — `SearchSession(..., impl="node")`
-  selects the child through `search_driver_spawn_argv(impl)`, and `"rust"` spawns this binary.
-- `search_clone_parity_fuzz_test` **took** `--impl rust`, documented in its own header (deleted in P6 slice 6d-1), plus an
-  independent `--record-impl` so a record made by one engine is replayed on the other.
-- The search-teacher `input_log` blocker was **gone, and its stated reason was FALSE** — nothing reads
-  the record's committed-choice lines; the only readers (`replay_kernels.js::writeStart`,
-  `ReconstructionRecord.start_options()` / `.players()`) touch the `>start` / `>player` lines, which the
-  rust record renders exactly. The search-teacher consumer itself (and its `gen3_search_teacher_composition_rust_v1`
-  composition gate, which ran >= 2 teacher cycles on `--use-bridge rust`) is DELETED (deletion pass L3,
-  2026-10-02; [`../training/search_teacher.md`](../training/search_teacher.md)). The remaining legs of
-  that composition — better_line node≡rust candidate values bit-identical · `search_clone_parity` · the
-  counterfactual confirm leg — are untouched and still gated.
-  Porting a teacher onto this driver is a deferred build, to be scheduled with X15.
+**IT IS THE ONLY OFFLINE DRIVER.** `utils/bridge/search_session.py` and
+`utils/bridge/reconstruction.py` spawn it through `sim_bridge_bin.search_driver_spawn_argv()`, which
+takes no argument; the Node driver, the `impl` switch and every `--impl` that reached it were deleted
+2026-10-10 (owner: "delete node"), and a typed `--impl` on the prober's CLI / web app or
+`main.harvest` is refused with its reason (`sim_bridge_bin.SEARCH_IMPL_DELETED_REASON`).
+`src/node_free_search_integration_test.py` runs the replay / reroll / reroll_many verbs, a warm
+`SearchSession`, `better_line_decision` and `lookahead_decision` with Node impossible. The
+search-teacher consumer that once ran on this driver (and its composition gate) is DELETED (deletion
+pass L3, 2026-10-02; [`../training/search_teacher.md`](../training/search_teacher.md)); porting a
+teacher onto this driver is a deferred build, to be scheduled with X15.
 
 ### THE CORE ROAD — a tree of `BattleVersion`s (`gen3_core_search_v1`, the Rust Core Program's M2)
 
@@ -284,14 +287,14 @@ faithful), so a fix moves both drivers' bytes. Repro and counts:
 
 The SECOND half of the offline layer, served by the SAME `src/bin/search_driver.rs` binary. It
 closes the gap the search half opened: `utils/bridge/reconstruction.py::_run_driver` routes BOTH
-verb families through `sim_bridge_bin.search_driver_spawn_argv`, so under `impl="rust"` a
-`replay_battle` / `reroll_turn` / `reroll_many` call reached a binary that answered
+verb families through `sim_bridge_bin.search_driver_spawn_argv()`, so before this family was ported a
+`replay_battle` / `reroll_turn` / `reroll_many` call on the binary got
 `unknown cmd` — which broke `better_line` (it calls `replay_battle`), `lookahead` and `falsify`
 even though the search half worked.
 
 **PROTOCOL.** `{mode: "replay"|"reroll"|"reroll_many", …}` on stdin → ONE bare JSON object on
-stdout with **no trailing newline** → exit **0**; on failure `{"error": …}` → exit **1**. That is
-`replay_driver.js`'s whole lifecycle, and the EXIT CODE is the load-bearing half: `_run_driver`
+stdout with **no trailing newline** → exit **0**; on failure `{"error": …}` → exit **1**. That was the
+(deleted) `replay_driver.js`'s whole lifecycle, kept byte-for-byte, and the EXIT CODE is the load-bearing half: `_run_driver`
 branches on it BEFORE it parses stdout, so the message is informational. Dispatch is on the `mode`
 KEY; a `cmd` request still runs the persistent search loop, in the same process, unchanged.
 
@@ -328,7 +331,7 @@ in the ACTIVE slot of a battle that has NOT ended. The search golden never reach
 all end at a live move boundary and it never reports a finished battle), which is why it took
 `replay` + re-rolls of LATE turns to surface. All three branches are node-verified.
 
-**GATE 1 — `tests/replay_driver_test.rs`** (12 tests, no node): the one-shot dispatch (bare object,
+**GATE 1 — `tests/replay_driver_test.rs`** (14 tests, no node): the one-shot dispatch (bare object,
 no trailing newline, exit 0 / exit 1 with `{"error"}`, unknown mode, invalid turn); that the
 PERSISTENT protocol is untouched and the process stays alive after a `cmd` request (the regression
 the dispatch could plausibly cause); the `recorded_queues` REFUSAL-PULL together with its contrast
@@ -337,7 +340,7 @@ case (a single-shot source must NOT re-send); and `recorded_queues`' own per-sid
 through `BridgeSession::new_construct_turn0` — the same constructor `session_from_record` uses, so
 the recorded stream replays bit-for-bit.
 
-**Four of the twelve are `gen3_search_turn1_open_v1`** — the FIRST decision of a battle. They pin
+**Four of them are `gen3_search_turn1_open_v1`** — the FIRST decision of a battle. They pin
 the predicate (`at_turn_start` true for `t == 1` at a pre-commit boundary, false for every other
 `t`, and unchanged at `t >= 2`), that `build_to_turn(…, 1)` applies NO commands, and that turn 1
 opens through the real binary on BOTH verb families (one-shot `reroll` and persistent `open_root`).
@@ -346,9 +349,10 @@ the driver increments at `commitChoices` for turn 1 and EAGERLY at every later t
 `build_to_turn` walked the whole command log and reported "battle never reached the start of turn
 1". Node opened it fine, making this a silent impl-specific hole over ~3.35% of move decisions.
 
-**GATE 2 — `src/rust_sim/harness/replay_impl_parity.py`** (scratch, needs node + `tmp/search_golden_node.json`'s
-records): drives `node replay_driver.js` and the rust binary LIVE on the identical request and
-diffs every field. Live rather than golden-captured on purpose — the requests are cheap, so a
+**GATE 2 (DELETED 2026-10-10 with the Node drivers; this is its record) —
+`src/rust_sim/harness/replay_impl_parity.py`** (needed node + `tmp/search_golden_node.json`'s
+records): drove `node replay_driver.js` and the rust binary LIVE on the identical request and
+diffed every field. Live rather than golden-captured on purpose — the requests are cheap, so a
 stored golden would only add staleness. **RESULT: PASS — 76 cases (54 success + 22 error-path),
 136 arms, 30689 leaf fields.** It normalizes ONLY `|t:|<epoch>` and prints its allowlist, its hit
 counts and a COVERAGE table on every run.
@@ -375,14 +379,14 @@ error CLASS are all compared STRICTLY). An arm that feeds a choice the sim refus
 `switch N` into a FAINTED slot — used to diverge in the framing (`|error|[Invalid choice]` to the
 offending side only vs no `|error|` and a re-opened boundary to BOTH sides) and, downstream of
 that, in `choices_used`. `bridge.rs` now models every reject class, not just the trapped-SWITCH one
-(`gen3_choice_reject_framing_v1`), so neither entry remains in
-`src/rust_sim/harness/replay_impl_parity.py::ALLOWLIST`.
+(`gen3_choice_reject_framing_v1`), so neither entry remained in the (deleted)
+`replay_impl_parity.py`'s `ALLOWLIST`.
 
 ⚠️ **Retracted, same as the search half's note — do not re-derive a plan from the old text.** It
 described the port as "modelling only the trapped-SWITCH reject" on a path poke-env never takes;
 that path killed two production launches at ~8 minutes
 (`gen3_locked_choice_never_rejected_v1`). Read the search half's note above for the root cause and
-the lesson, and verify against the harness + the code rather than this prose.
+the lesson, and verify against the code + the cargo tests rather than this prose.
 
 
 
@@ -424,8 +428,8 @@ Showdown, so a finished core is a drop-in:
 | websocket server for an OUTSIDE client (`ws_frontend.py`) | the SAME `src/bin/sim_bridge.rs` — one child per battle. The front end adds only the `>battle-…` room framing and the `rqid` the SERVER injects (`server/room-battle.ts:796`), never an engine line; byte-gated against `local_sim_bridge.js` by `ws_frontend_replay.py` (40 battles / 44,034 lines, 2026-09-14). Surface + deferrals: [`designs/rust_sim/ws_frontend.md`](ws_frontend.md) |
 | mid-battle RNG swap (counterfactual/search) | `Battle::reseed` |
 | clone-and-branch (`State.serialize…`)    | `BridgeSession::snapshot` (a derived `Clone`; PRNG continuity is automatic) |
-| search server (`search_driver.js`)       | `src/bin/search_driver.rs` over `src/search.rs` (`gen3_rust_search_driver_v1`) |
-| offline replay / re-roll (`replay_driver.js`) | the SAME `src/bin/search_driver.rs`, one-shot `mode` verbs (`gen3_rust_replay_driver_v1`) — node splits the two families across two scripts, the port serves both from one binary, which is what `sim_bridge_bin.py::search_driver_spawn_argv` assumes |
+| search server (`search_driver.js`, deleted 2026-10-10) | `src/bin/search_driver.rs` over `src/search.rs` (`gen3_rust_search_driver_v1`) |
+| offline replay / re-roll (`replay_driver.js`, deleted 2026-10-10) | the SAME `src/bin/search_driver.rs`, one-shot `mode` verbs (`gen3_rust_replay_driver_v1`) — node split the two families across two scripts, the port serves both from one binary, which is what `sim_bridge_bin.py::search_driver_spawn_argv` returns |
 | damage oracle (`damage_probe.js`)        | `Battle::new` + state accessors (TODO) |
 | team pack / validate                     | out of core scope — keep as a thin shim |
 
@@ -469,27 +473,31 @@ driver that consumes this API — is below.
 ### The offline drivers: the SEARCH server + the REPLAY family
 
 `src/bin/search_driver.rs` over `src/search.rs` (`gen3_rust_search_driver_v1` +
-`gen3_rust_replay_driver_v1`) is the byte-compatible drop-in for **both** node offline drivers, so
-`utils/bridge/search_session.py` (the prober's `better_line` beam and the search-dividend probe) and
-`utils/bridge/reconstruction.py` (`better_line` / `lookahead` / `falsify`) swap `node` for the binary
-with ZERO protocol change. **Dispatch is on the KEY**: a request carrying `mode` is the one-shot
+`gen3_rust_replay_driver_v1`) is the ONLY offline driver — built as the byte-compatible drop-in for
+**both** node offline drivers, which are deleted (2026-10-10, owner: "delete node") — so
+`utils/bridge/search_session.py` (the prober's `better_line` beam) and
+`utils/bridge/reconstruction.py` (`better_line` / `lookahead` / `falsify`) spawn it and nothing else. **Dispatch is on the KEY**: a request carrying `mode` is the one-shot
 REPLAY family (`replay` / `reroll` / `reroll_many`) — a BARE JSON object on stdout, **no trailing
 newline**, exit **0**, or `{"error"}` + exit **1**, which is what `_run_driver` branches on before it
 parses stdout; anything else runs the persistent `{id, cmd}` search loop (`open_root` /
 `expand_many` / `close`).
 
-**It can replace node in `better_line`** — `search_session.py` has the `impl` switch (verified 2026-10-10: `impl="node"` is still the DEFAULT in `search_session.py`, `reconstruction.py` and `main/prober/better_line.py`; the binary is the opt-in `impl="rust"`) and
-`search_clone_parity_fuzz_test` took `--impl rust` (deleted in P6 slice 6d-1 with the poke-env materializer it compared against). (The trainer-side composition that once ran the
-search teacher on it was deleted with the search teacher, deletion pass L3.) The node driver (`impl="node"`) remains the DEFAULT.
+**There is no engine choice.** `sim_bridge_bin.search_driver_spawn_argv()` takes no argument;
+`SearchSession`, `replay_battle` / `reroll_turn` / `reroll_many` and the prober's probes take no
+`impl`; a typed `--impl` on `main.prober.query` / `main.prober.web` / `main.harvest` is REFUSED with its
+reason. `src/node_free_search_integration_test.py` runs the offline paths with Node impossible.
 
 | gate | needs node? | what it proves |
 |---|---|---|
 | `tests/search_driver_test.rs` (5 tests) | no | the aux-RNG stream vs node draw tables (EXACT f64 — a tolerance would only hide a divergence), clone independence, the `stuck` guard's exact 41 iterations |
-| `tests/replay_driver_test.rs` (12 tests) | no | the one-shot dispatch + exit codes, the persistent protocol untouched, the `recorded_queues` refusal-pull, turn-1 opening on both verb families |
-| `src/rust_sim/harness/search_impl_parity.py` | yes + a captured golden | the node `search_driver.js` wire output diffed field-by-field. ⚠️ Its golden's generators (`search_golden.py`, `gen_search_golden.py`) were poke-env drivers and were DELETED in P6 slice 6c; the golden (`tmp/search_golden_node.json`) is gitignored scratch and none is committed, so this harness has no way to get one |
-| `src/rust_sim/harness/replay_impl_parity.py` | yes | `node replay_driver.js` vs the binary LIVE on identical requests |
+| `tests/replay_driver_test.rs` (14 tests) | no | the one-shot dispatch + exit codes, the persistent protocol untouched, the `recorded_queues` refusal-pull, turn-1 opening on both verb families |
+| `src/node_free_search_integration_test.py` (`sim`) | no — Node is BLOCKED | the Python side end to end: replay / reroll / reroll_many, a warm `SearchSession`, `better_line_decision`, `lookahead_decision`, `team_details`, `query falsify` / `falsify-scan` / `calibration` under `utils/node_blocker.py` |
 
-🚨 **RUN EACH PARITY GATE ON AT LEAST TWO FRESH SEEDS BEFORE CALLING IT GREEN.** A golden is three
+The node-vs-rust differentials (`harness/search_impl_parity.py`, `harness/replay_impl_parity.py`) are
+DELETED with the Node drivers (2026-10-10); their record is the GATE 2 text above.
+
+🚨 **A REBUILT DIFFERENTIAL RUNS ON AT LEAST TWO FRESH SEEDS BEFORE IT IS CALLED GREEN** (the lesson of
+the deleted parity gates). A golden was three
 random battles; across seven freshly generated ones the per-golden divergence count ran
 1 / 0 / 0 / 6 / 8 / 0 / 6 — three of the seven would have read as a green gate, and one bug class
 turned up only on the SEVENTH.
@@ -497,10 +505,9 @@ turned up only on the SEVENTH.
 🚨 **AN ALLOWLIST ENTRY CAN OUTLIVE ITS OWN FIX AND THEN MISLEAD EVERY READER AFTER.** Two entries
 here described the port as emitting no `|error|` "on a path poke-env never takes"; both halves were
 false, and that path killed **two production launches at ~8 minutes**
-(`gen3_locked_choice_never_rejected_v1`). Verify an allowlist claim against
-`src/rust_sim/harness/search_impl_parity.py`'s `ALLOWLIST` and the code, never against prose. The
-only live entry in either harness is `.error` message TEXT; the verdict, the exit code and the error
-CLASS stay strict.
+(`gen3_locked_choice_never_rejected_v1`). Verify a claim against the code and
+its tests, never against prose. (The only entry left in either deleted harness's allowlist was
+`.error` message TEXT; the verdict, the exit code and the error CLASS were strict.)
 
 ### The ONE-SIDED VIEW (`view.rs`) — DELETED
 
@@ -518,9 +525,9 @@ History, the reading-rule table (V1–V13) and the findings the projection surfa
 🚨 **`pre_state` VOLATILE NAMES ARE UNVERIFIED.** `pre_state` mirrors Node's `preState` and has no
 consumer today; its `volatiles` list is a RECONSTRUCTION from the port's typed fields, and exactly ONE
 name is positively verified (`substitutebroken`). Do not read a green parity run as evidence that
-`choicelock` / `perishsong` / `twoturnmove` / … is spelled or timed right — `replay_impl_parity`
-prints a `pre_state:nonempty-volatiles` count precisely so an all-empty record set cannot be mistaken
-for coverage.
+`choicelock` / `perishsong` / `twoturnmove` / … is spelled or timed right — the (deleted)
+`replay_impl_parity` printed a `pre_state:nonempty-volatiles` count precisely so an all-empty record
+set could not be mistaken for coverage.
 
 🚨 **A gen3ou repro MUST be replayed with `{format:'gen3ou', allowHiddenPower:true}`** — the probe
 default is customgame, and the sim then diverges from the golden.

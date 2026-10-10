@@ -20,17 +20,17 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   sibling**. (`ProbeModel.value` is the V(s′) primitive; the successor row is read from
   `reroll.prefix_pN_chunks + reroll.pN_chunks` with our prefix actions replayed by index, every arm in
   ONE core process; the anchor's choice map is the core walk's, `core_walk.decision_choices`.) **The whole
-  `(candidate × seed)` sweep resolves in ONE Node process** via `reconstruction.reroll_many` (each arm
+  `(candidate × seed)` sweep resolves in ONE `search_driver` process** via `reconstruction.reroll_many` (each arm
   = a fresh session = byte-identical to a single `reroll_turn`, modulo `|t:|`), so the lookahead pays the
-  ~677 ms Node-spawn cost ONCE instead of once per candidate (~9× on a full 9-action sweep; pinned by
-  `utils/bridge/reroll_many_parity_fuzz_test.py`).
+  driver spawn ONCE instead of once per candidate (~9× on a full 9-action sweep, measured on the
+  since-deleted Node driver's ~677 ms spawn; the parity fuzz `reroll_many_parity_fuzz_test.py` was
+  deleted in P6 slice 6d-1).
 - `better_line(battle_id, inv, depth=2, beam=3, top_k=4, interior_opponent=, opponent_ckpt=,
   confirm_rollouts=0)` — **SEARCH for a better line** (`better_line.py`): the depth-≥2 generalization of
   `lookahead` (which IS its depth-1 instance). A shallow, CRN-anchored **beam over the critic** that
   branches a search TREE by CLONING mid-battle states in the warm `SearchSession`
-  (`utils/bridge/search_session.py` → `search_driver.js`'s `State.serializeBattle` on node, or the rust
-  binary's `BridgeSession::snapshot` under `--impl rust` — the only primitive that makes depth>1
-  feasible), expands OUR top-k actions by policy prior, scores each
+  (`utils/bridge/search_session.py` → the Rust `search_driver` binary's `BridgeSession::snapshot` — the
+  only primitive that makes depth>1 feasible; the one engine, `designs/prober/sim_impl.md`), expands OUR top-k actions by policy prior, scores each
   successor's V(s′) on its ONE-SIDED row read by the RUST CORE's parse chain (`core_walk.read_streams`,
   P5; `model.values_batch`, one critic forward per ply), keeps the top-`beam`, and recurses; backup is **max-over-our-continuations** and the returned
   LINE is the principal variation. Returns ONE human-legible **contrastive trajectory**: the divergence
@@ -72,8 +72,8 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   half of `embed_battle`, extracted byte-identically — the live obs path is unchanged, pinned by
   `obs_roundtrip_fuzz_test`); its bit-for-bit obs equivalence (track-only prefix vs full encode) is pinned
   by the clone-parity fuzz. **L4 (training-scale):** `better_line_decision(session=…)` accepts an injected
-  WARM `SearchSession` reused across battles (`open_root(record=…)` + the driver `NODES.clear()`s per root),
-  so a background worker pays the ~0.68 s Node spawn ONCE not per search (~1.66× cumulative, ~3.4 s warm).
+  WARM `SearchSession` reused across battles (`open_root(record=…)` + the driver clears its node map per root),
+  so a background worker pays the driver spawn ONCE not per search (measured on the deleted Node driver's ~0.68 s spawn: ~1.66× cumulative, ~3.4 s warm).
   This was the expert tier of the **search-as-teacher** plateau-breaker (selective offline ExIt), whose
   training-side consumer is DELETED (deletion pass L3, 2026-10-02; see
   [`../training/search_teacher.md`](../training/search_teacher.md)); the search + 3-tier-confirm here stay as
@@ -97,8 +97,7 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   (`fresh_seeds(…, salt=f"{tag}:{inv}:cf")`), a sampled opponent's per-rollout `torch.Generator`
   (`replay.sampler_seeds`) and a bot's streams (`replay.bot_seed`; rollout k's are
   `bot_stream_seed(seed, k, s)`) — so a rerun answers identically; the poke-env road drew a sampled
-  opponent and a bot from the process-wide unseeded streams. `--impl` does not apply (one engine): an
-  `--impl node` read says so in its `caveats`; the result's `engine` is `rust_core`. Identity with the road it
+  opponent and a bot from the process-wide unseeded streams. The result's `engine` is `rust_core`. Identity with the road it
   replaced: [`../research_state/measurements/pokeenv_p6_replay_cf_2026-10-07/`](../research_state/measurements/pokeenv_p6_replay_cf_2026-10-07/README.md).
   ⚠️ **A checkpoint opponent plays the RECORDED sampling regime — STOCHASTIC at temp 1.0**, which is
   what `eval_worker` recorded for a pool sentinel (`stochastic = not eval_sentinel_greedy`, default
@@ -145,7 +144,7 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   websocket traces raise with that explanation). Alternatives the sim refuses
   (maybe-trapped) are detected from the `[Unavailable choice]` error in the
   one-sided suffix and excluded from the verdict when mostly refused.
-  ~1–2 s per arm at 40 seeds (fresh Node replay per seed); a decision with 3
+  ~1–2 s per arm at 40 seeds (a fresh driver replay per seed; measured on the deleted Node driver); a decision with 3
   alts ≈ 5–10 s. Each falsified decision is annotated with `anchor_delta` — the
   TD-residual δ that selected it — the one source of truth `falsify_scan` weights
   craters by (`falsifier.anchor_deltas`, which `select_anchors` now ranks over).
@@ -178,7 +177,7 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   (nothing **silently dropped**). Weighting falls back to count-based
   (`weighting="uniform_fallback"`, announced) when every δ≈0 (e.g. placeholder values);
   `"none"` on an empty scan. Model-free. `concurrency` > 1 falsifies battles in
-  parallel (each re-roll spawns Node → raise it only on an **idle** box; it contends
+  parallel (each re-roll spawns a `search_driver` child → raise it only on an **idle** box; it contends
   with a live training run). The coarser defaults (worst=2, 32 seeds) keep a 20-loss
   scan to a few minutes — the run-level statistic gets its power from MANY decisions,
   not deep per-decision seeds. `include_decisions=True` adds each battle's full

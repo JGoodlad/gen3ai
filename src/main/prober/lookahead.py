@@ -57,14 +57,12 @@ def lookahead_decision(
     candidates: Optional[Sequence[int]] = None,
     followup: str = "random",
     mappings=None,
-    impl: str = "node",
 ) -> dict:
     """One-ply value-delta for one ``move_selection`` decision (see module header).
 
     ``candidates`` restricts the swept actions to a subset of legal action indices (the chosen action
     is always included); ``None`` sweeps every legal action. ``n_seeds`` > 0 adds the dice-averaged
-    value alongside the CRN headline. ``impl`` (``"node"`` default | ``"rust"``) selects the offline
-    replay/re-roll driver. Raises (like the falsifier) on a non-``move_selection`` anchor, a trace
+    value alongside the CRN headline. The re-rolls run on the Rust ``search_driver``. Raises (like the falsifier) on a non-``move_selection`` anchor, a trace
     missing the ``actions`` array, or a replay desync.
     """
     invs = summary.get("invocations", [])
@@ -114,9 +112,9 @@ def lookahead_decision(
     username = record.username(side)
     packed = record.packed_team(side)
 
-    # Resolve EVERY (candidate × seed) arm in ONE Node process (reroll_many) — the sweep pays the
-    # ~677ms Node-spawn / pokemon-showdown require cost ONCE instead of once per candidate (~3.8× on the
-    # re-roll step, measured). The CHOSEN action is sourced "recorded" so its "original" line reproduces
+    # Resolve EVERY (candidate × seed) arm in ONE driver process (reroll_many) — the sweep pays the
+    # spawn + rebuild cost ONCE instead of once per candidate (~3.8× on the re-roll step, measured on
+    # the deleted Node driver). The CHOSEN action is sourced "recorded" so its "original" line reproduces
     # the realized turn EXACTLY (resolveTurnExact ⇒ value_crn == recorded_next_value even with a mid-turn
     # forced switch); alternatives play their explicit choice. Each arm is byte-identical (modulo the
     # state-invisible |t:| timestamp) to a single reroll_turn — pinned by reroll_many_parity_fuzz_test.
@@ -126,7 +124,7 @@ def lookahead_decision(
         for s in seed_list:
             arms.append({f"{side}_action": our_action, f"{other_side}_action": "recorded",
                          "seed": s, "label": int(a)})
-    rr = reroll_many(record, turn, arms, followup=followup, impl=impl)
+    rr = reroll_many(record, turn, arms, followup=followup)
     prefix_chunks = rr.prefix_p1_chunks if side == "p1" else rr.prefix_p2_chunks
     by_arm: dict = {}                          # action index → {seed → ArmReroll}
     for arm in rr.arms:
@@ -242,7 +240,6 @@ def lookahead_battle(
     n_seeds: int = DEFAULT_SEEDS,
     followup: str = "random",
     mappings=None,
-    impl: str = "node",
 ) -> dict:
     """Look ahead from the chosen (or worst-δ) decisions of one battle — a thin loop over
     :func:`lookahead_decision` mirroring :func:`falsifier.falsify_battle`."""
@@ -254,7 +251,7 @@ def lookahead_battle(
         try:
             decisions.append(lookahead_decision(
                 model, record, summary, npz, int(inv_index),
-                n_seeds=n_seeds, followup=followup, mappings=mappings, impl=impl))
+                n_seeds=n_seeds, followup=followup, mappings=mappings))
         except (ValueError, RuntimeError, IndexError, subprocess.TimeoutExpired) as e:
             errors.append({"inv": int(inv_index), "error": str(e)})
     return {

@@ -32,6 +32,9 @@ half; these tests install ``utils.poke_env_blocker`` FIRST (every ``import poke_
    web app's views RUN with the blocker installed — ``replay-counterfactual`` too since P6 (the Rust play-out,
    a model and a self-model opponent); the commands that still need poke-env are the closed list
    :data:`PROBER_POKE_ENV_COMMANDS`, EMPTY since P6, and the test pins that nothing else reaches poke-env.
+   Since 2026-10-10 (owner: "delete node") the same child runs with NODE impossible as well
+   (:mod:`utils.node_blocker` + a ``node`` PATH tripwire): the search-shaped commands run on the Rust
+   ``search_driver`` only (``src/node_free_search_integration_test.py`` is the routine-tier twin).
 
 7. ``test_the_whole_import_surface_loads_with_poke_env_blocked`` (P6 end state) — EVERY module of the import gate's
    scope (``src/``, ``tools/``, ``scripts/``, every test file included) imports in one fresh interpreter under the
@@ -344,7 +347,9 @@ PROBER_POKE_ENV_COMMANDS: tuple = ()
 _PROBER = r"""
 import json, sys, traceback
 from utils import poke_env_blocker as B
+from utils import node_blocker as NB
 B.install()
+NB.install()   # 2026-10-10 (owner: "delete node"): the prober runs with NODE impossible too
 from main.prober import query
 
 run, battle, decide = sys.argv[1], sys.argv[2], int(sys.argv[3])
@@ -360,16 +365,16 @@ cmds = [["summary", run], ["list", run], ["scan", run], ["scan", run, "--metric"
         ["decision-table", run], ["turns", battle], ["overview", battle],
         *[["find", battle, c] for c in query._FIND_CRITERIA],
         ["analyze", battle, str(decide)],
-        ["--impl", "rust", "falsify", battle, "--inv", str(decide), "--seeds", "2", "--alts", "1"],
-        ["--impl", "rust", "lookahead", battle, "--inv", str(decide)],
-        ["--impl", "rust", "better-line", battle, str(decide), "--depth", "2", "--beam", "2", "--top-k", "2",
+        ["falsify", battle, "--inv", str(decide), "--seeds", "2", "--alts", "1"],
+        ["lookahead", battle, "--inv", str(decide)],
+        ["better-line", battle, str(decide), "--depth", "2", "--beam", "2", "--top-k", "2",
          "--interior-opponent", "self"],
-        ["--impl", "rust", "falsify-scan", run, "--outcome", "loss", "--limit", "1", *rr, "--concurrency", "1"],
-        ["--impl", "rust", "calibration", run, "--outcome", "loss", "--limit", "1", *rr, "--concurrency", "1"],
+        ["falsify-scan", run, "--outcome", "loss", "--limit", "1", *rr, "--concurrency", "1"],
+        ["calibration", run, "--outcome", "loss", "--limit", "1", *rr, "--concurrency", "1"],
         ["probe", run, "is_faster", "--max-decisions", "60"],
         ["history-saliency", run, "--max-decisions", "10"],
-        ["--impl", "rust", "replay-counterfactual", battle, str(decide), sub, "--rollouts", "2", "--narrate"],
-        ["--impl", "rust", "replay-counterfactual", battle, str(decide), sub, "--opponent-source", "self"]]
+        ["replay-counterfactual", battle, str(decide), sub, "--rollouts", "2", "--narrate"],
+        ["replay-counterfactual", battle, str(decide), sub, "--opponent-source", "self"]]
 out = {}
 for argv in cmds:
     key = " ".join(a for a in argv if not a.startswith("/"))
@@ -382,7 +387,7 @@ for argv in cmds:
 from fastapi.testclient import TestClient
 from main.prober.web.app import create_app
 pages = {}
-with TestClient(create_app(run, open_access=True, impl="rust")) as c:
+with TestClient(create_app(run, open_access=True)) as c:
     q = f"battle={short}&inv={decide}"
     for path in ("/api/run", "/api/battles", f"/api/battle-turns?battle={short}", f"/api/analyze?{q}",
                  "/api/scan", "/api/triage", "/", "/battles", f"/battle?battle={short}", f"/analyze?{q}",
@@ -394,7 +399,8 @@ out_attempts = list(B.ATTEMPTS)
 # the declared exceptions (none since P6): each reaches poke-env, and nothing else does
 exc = {}
 print("PROBER-RESULT " + json.dumps({"commands": out, "pages": pages, "attempts": [n for n, _ in out_attempts],
-                                     "report": B.report() if out_attempts else "", "exceptions": exc}))
+                                     "report": B.report() if out_attempts else "", "exceptions": exc,
+                                     "node_attempts": [w for w, _ in NB.ATTEMPTS], "node_report": NB.report()}))
 """
 
 
@@ -437,20 +443,25 @@ def prober_run(tmp_path_factory):
 @pytest.mark.slow  # 127 s on a quiet box (2026-10-08, P6 slice 1 ship): run per P6 slice explicitly
 @pytest.mark.sim
 @pytest.mark.integration
-def test_every_prober_command_and_the_web_app_run_with_poke_env_blocked(prober_run):
+def test_every_prober_command_and_the_web_app_run_with_poke_env_blocked(prober_run, tmp_path):
     """P5: the JSON CLI's every command bar the declared exception, and the web front end's views, RUN — not just
     import — with poke-env blocked, on real core traces and a current-architecture checkpoint."""
+    from utils import node_blocker as NB
+
     run_dir, battle, decide = prober_run
+    node_log = tmp_path / "node_attempts.log"
+    env = NB.shim_env(tmp_path / "node_shim", node_log, _env())   # a `node` TRIPWIRE first on the child's PATH
     r = subprocess.run([sys.executable, "-c", _PROBER, run_dir, battle, str(decide)], cwd=str(repo_root()),
-                       env=_env(), capture_output=True, text=True, timeout=scale_timeout(1500))
+                       env=env, capture_output=True, text=True, timeout=scale_timeout(1500))
     line = next((ln for ln in r.stdout.splitlines() if ln.startswith("PROBER-RESULT ")), None)
     assert r.returncode == 0 and line, (r.stdout[-3000:], r.stderr[-4000:])
     res = json.loads(line[len("PROBER-RESULT "):])
     assert not res["attempts"], res["report"]
+    assert not res["node_attempts"], res["node_report"]
+    assert not node_log.exists() or not node_log.read_text().strip(), node_log.read_text()
     failed = {k: v for k, v in res["commands"].items() if not v["ok"]}
     assert not failed, failed
-    for must in ("turns", "overview", "analyze", "--impl rust falsify", "--impl rust lookahead",
-                 "--impl rust better-line", "--impl rust replay-counterfactual"):
+    for must in ("turns", "overview", "analyze", "falsify", "lookahead", "better-line", "replay-counterfactual"):
         hits = [k for k in res["commands"] if k.startswith(must)]
         assert hits and all(res["commands"][k]["error"] is None for k in hits), (must, res["commands"])
     assert all(code == 200 for code in res["pages"].values()), res["pages"]

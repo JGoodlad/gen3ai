@@ -102,17 +102,14 @@ def better_line_decision(
     mappings=None,
     timeout: float = 300.0,
     session=None,
-    impl: str = "node",
 ) -> dict:
     """Search for a better line from one ``move_selection`` decision (module header). Returns the
     recommended contrastive trajectory + per-ply deltas. ``depth`` = how many OUR plies to look ahead
     (1 == lookahead), ``beam`` = nodes kept per ply, ``top_k`` = our candidate actions expanded per
     node, ``opp_model`` = the reloaded opponent for interior plies (None → sim-default, flagged).
 
-    ``impl`` (``"node"`` default | ``"rust"``) selects the offline replay/search driver, the same
-    way the training transport selects the live transport. It is IGNORED when ``session`` is
-    injected — that warm ``SearchSession`` already carries its own impl, and silently re-spawning
-    it on a different one would defeat the reuse the injection exists for."""
+    The search runs on the Rust ``search_driver`` (``SearchSession``) — a one-shot session, or the
+    injected warm ``session``."""
     invs = summary.get("invocations", [])
     if not (0 <= inv_index < len(invs)):
         raise IndexError(f"inv {inv_index} out of range (battle has {len(invs)})")
@@ -153,7 +150,7 @@ def better_line_decision(
     # A caller (the search-teacher worker) can inject a WARM SearchSession reused across battles — then
     # we don't close it (nullcontext); else we own a one-shot session and close it on exit.
     ctx = (nullcontext(session) if session is not None
-           else SearchSession(record, timeout=timeout, impl=impl))
+           else SearchSession(record, timeout=timeout))
     with ctx as ss:
         root = ss.open_root(turn, record=record)
         our_prefix = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks

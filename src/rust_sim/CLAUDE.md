@@ -8,8 +8,9 @@ the trackers and the encoder every training row comes from.
 **`sim_bridge` (in-process, serverless) is the ONLY training/eval transport**; a typed `--use-bridge`
 is refused at parse time (`designs/deleted_flags.md`). The Node bridge (`local_sim_bridge.js`)
 survives only as the REFERENCE arm of the A/B harnesses and gates below; an outside websocket client
-is served by the in-repo front end `python -m utils.bridge.ws_frontend` (`--impl rust`, the default,
-spawns this crate's `sim_bridge` per battle — [`designs/rust_sim/ws_frontend.md`](../../designs/rust_sim/ws_frontend.md)).
+is served by the in-repo front end `python -m utils.bridge.ws_frontend` (`--impl rust`, the default and
+the only value its CLI accepts since 2026-10-10, spawns this crate's `sim_bridge` per battle —
+[`designs/rust_sim/ws_frontend.md`](../../designs/rust_sim/ws_frontend.md)).
 
 **This leaf is the RULES, the COMMANDS, the MAP and the HAZARDS.** Every section's full text —
 including what used to live here verbatim — is in its `designs/rust_sim/` topic doc (each holds a
@@ -135,10 +136,11 @@ or investigation gets its own `CARGO_TARGET_DIR` — never the shared `target/`,
 
 ## The offline drivers (search + replay) and the clone-and-branch primitive
 
-`src/bin/search_driver.rs` is the byte-compatible drop-in for BOTH Node offline drivers; **dispatch
-is on the KEY** (`mode` ⇒ one-shot replay family, else the persistent `{id, cmd}` search loop).
-`impl="node"` is still the DEFAULT in `utils/bridge/search_session.py`, `reconstruction.py` and the
-prober's `better_line`; `impl="rust"` selects the binary. `BridgeSession::snapshot()` (a derived
+`src/bin/search_driver.rs` is the ONLY offline driver — it replaced both Node offline drivers, which
+were DELETED on 2026-10-10 with the `impl` selector (owner: "delete node"); **dispatch is on the KEY**
+(`mode` ⇒ one-shot replay family, else the persistent `{id, cmd}` search loop).
+`src/utils/bridge/search_session.py`, `reconstruction.py` and the prober's `better_line` / `lookahead` /
+falsifier exec it with no engine choice. `BridgeSession::snapshot()` (a derived
 `Clone`, PRNG continuity automatic) is the clone-and-branch primitive. The callable-surface table,
 the snapshot API contract and every gate: [`search_and_replay_drivers.md`](../../designs/rust_sim/search_and_replay_drivers.md).
 
@@ -154,7 +156,9 @@ the snapshot API contract and every gate: [`search_and_replay_drivers.md`](../..
   announces. The one-sided `view.rs` projection is DELETED ([`one_sided_view.md`](../../designs/rust_sim/one_sided_view.md)).
 - `expand_many`'s optional `side` elides the half a search does not read (`gen3_expand_many_side_elision_v1`);
   Python's elided slot is a sentinel that RAISES on read, never an empty dict.
-- ⚠️ `harness/search_impl_parity.py` has NO obtainable golden (its generators were deleted in P6).
+- The node-vs-rust differentials `harness/search_impl_parity.py` / `replay_impl_parity.py` are DELETED
+  (2026-10-10): no golden was obtainable since P6 deleted their generators, and both needed the deleted
+  Node drivers. The node-free gates are `tests/search_driver_test.rs` / `tests/replay_driver_test.rs`.
 
 ## The differential-gate ladder
 

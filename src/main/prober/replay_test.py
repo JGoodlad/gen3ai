@@ -213,7 +213,10 @@ def test_narrate_captures_the_first_win_and_the_first_loss(monkeypatch):
     assert calls[0]["text"] is False and out["winning_trajectory"] is None and out["losing_trajectory"] is None
 
 
-def test_impl_node_is_said_not_obeyed(monkeypatch):
+def test_the_play_out_takes_no_engine_choice(monkeypatch):
+    """The play-out has ONE engine (the in-process Rust core); the ``impl`` keyword it used to accept and
+    caveat away was deleted with the Node offline driver (2026-10-10, owner: "delete node")."""
     _install(monkeypatch, ["win"])
-    assert any("--impl node does not apply" in c for c in _run(0, impl="node")["caveats"])
-    assert not any("--impl" in c for c in _run(0, impl="rust")["caveats"])
+    with pytest.raises(TypeError):
+        _run(0, impl="rust")
+    assert not any("--impl" in c for c in _run(0)["caveats"])

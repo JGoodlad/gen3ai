@@ -58,9 +58,9 @@ server as `*_fuzz_e2e_test.py` — e.g. `effectiveness_fuzz_e2e_test`.)
 > **Deletion pass U3:** the Python RL transport (`bridge_session.py`, `BridgeSession` / `attach_bridge_transport`, the Python `Gen3Env` it fed) is DELETED, and the trainer's `--use-bridge` flag is DELETED (the Rust bridge is the only training transport; a typed one is refused at parse time with the reason). Training and eval run on the Rust env core. `BridgeSession` in the Rust-side passages below is `src/rust_sim/src/bridge.rs`'s struct and is live; passages that still describe the Python session (`_dispatch`, `_child_error`, `_recycle_child`, the fatal-report latch) are RECORDED INCIDENT HISTORY of the deleted code.
 
 The bridge child that speaks the `local_sim_bridge.js` stdin/stdout protocol has **two
-implementations**, selected by an `impl` argument (the offline drivers, the harnesses and benchmarks; `run_local_battles` took it until it was deleted):
+implementations**, selected by an `impl` argument (the websocket front end's `ShowdownFrontEnd(impl=…)` — `rust` by default and the only value its CLI accepts, `node` reachable from code as the dev / test ORACLE — and the harnesses; the offline drivers took an `impl` until 2026-10-10, when the Node offline drivers were deleted, and `run_local_battles` until it was deleted):
 
-- **`node`** (`local_sim_bridge.js`) — the default bridge impl, a relay over the real Showdown
+- **`node`** (`local_sim_bridge.js`) — the reference / oracle bridge impl, a relay over the real Showdown
   `BattleStream`. Handles the full gen3 move/ability set and produces the `__RECON__`
   reconstruction record + honors `resumeReseed` (the forensic / search / counterfactual layers).
   **Every exit path is drain-aware** (`gen3_bridge_flush_on_exit_v1`, `exitWhenDrained`): a bare
@@ -100,7 +100,7 @@ shipped in `2b826d4`; the older "no `__RECON__` / no `resumeReseed`" text here w
 `reroll_many_parity_fuzz_test` and `search_clone_parity_fuzz_test` all PASS on rust-recorded
 records, with the Node replay/clone drivers reproducing the rust-recorded winner, turn and next obs
 bit-for-bit (a cross-impl parity result worth more than the fuzzes' nominal subject). The record's
-`>start`/`>player` lines are exact — the only part `replay_kernels.js` reads; its committed-choice
+`>start`/`>player` lines are exact — the only part the replay kernels read (`search.rs`; then the since-deleted `replay_kernels.js`); its committed-choice
 `input_log` lines are re-rendered from the engine's own script (`>p1 move 1` slot form vs Node's
 `>p1 move icebeam`), replay-equivalent but not byte-identical, and consumed by nothing.
 
@@ -132,7 +132,7 @@ surface; the `Battle::serialize`/`deserialize` stubs are deleted, the port's sta
 format) and the driver on top of it both shipped — see *Offline driver transport* below. The
 old search-teacher + rust guard is **gone**, and the reason it used to give — the record's
 `input_log` being replay-EQUIVALENT rather than byte-identical — is **WRONG and RETRACTED**: no
-consumer reads the committed-choice lines at all (`replay_kernels.js::writeStart` and
+consumer reads the committed-choice lines at all (the replay kernels' start writer — the deleted `replay_kernels.js::writeStart`, now `search.rs` — and
 `ReconstructionRecord.start_options()`/`players()` read only `>start`/`>player`, which the rust
 record renders exactly). The blocker was always the missing driver. Do not re-derive a plan from
 the retracted reason.
@@ -190,61 +190,71 @@ Still genuinely deferred:
   did diverge and was fixed. Every other name is unverified because all 12 golden `pre_state`s end
   up empty. `pre_state` has no consumer today.
 
-## Offline driver transport — `impl={node,rust}` (`gen3_search_driver_impl_seam_v1`)
+## Offline driver transport — the Rust `search_driver` binary, only (`gen3_search_driver_impl_seam_v1`)
 
-`impl={node,rust}` selects the LIVE battle child of the library drivers. The **offline** children — the warm
-clone-and-branch search server and the replay/re-roll primitives — are selected the same way, by an
-`impl` argument threaded from the caller. Same module owns both: `sim_bridge_bin.py`.
+The **offline** children — the warm clone-and-branch search server and the replay/re-roll
+primitives — are ONE Rust binary, `src/rust_sim`'s `search_driver`, serving **both** verb families.
+There is no engine choice: the Node drivers (`search_driver.js` = `open_root`/`expand_many`,
+`replay_driver.js` = `replay`/`reroll`/`reroll_many`, over `replay_kernels.js`) and the `impl`
+selector were DELETED 2026-10-10 (owner: "delete node"). The LIVE battle child keeps its `impl`
+argument (`bridge_spawn_argv(impl)`), used only by the websocket front end, whose CLI accepts
+`--impl rust` alone (`ShowdownFrontEnd(impl="node")` is the dev / test ORACLE, reachable from code).
+Same module owns both: `sim_bridge_bin.py`.
 
-| family | node | rust | resolver | env override |
-|---|---|---|---|---|
-| live transport | `node local_sim_bridge.js` | `sim_bridge` binary | `resolve_sim_bridge_bin` / `bridge_spawn_argv(impl)` | `POKESIM_SIM_BRIDGE_BIN` |
-| offline drivers | `node search_driver.js` **+** `node replay_driver.js` | `search_driver` binary (**both** verb families) | `resolve_search_driver_bin` / `search_driver_spawn_argv(impl)` | `POKESIM_SEARCH_DRIVER_BIN` |
-
-Note the asymmetry: node splits the offline verbs across two scripts (`search_driver.js` =
-`open_root`/`expand_many`; `replay_driver.js` = `replay`/`reroll`/`reroll_many`), while the rust
-port serves both from ONE binary — so `reconstruction._run_driver` keeps its own node script but
-routes the rust branch through `search_driver_spawn_argv`.
+| family | engine | resolver | env override |
+|---|---|---|---|
+| live transport | `sim_bridge` binary (`node local_sim_bridge.js` as the in-code oracle) | `resolve_sim_bridge_bin` / `bridge_spawn_argv(impl)` | `POKESIM_SIM_BRIDGE_BIN` |
+| offline drivers | `search_driver` binary (**both** verb families) | `resolve_search_driver_bin` / `search_driver_spawn_argv()` (no argument) | `POKESIM_SEARCH_DRIVER_BIN` |
 
 Both resolvers share `_resolve_rust_bin(bin_name, env_var, selector)`: env override first (no
 build), else `cargo build --release --bin <name>` in `src/rust_sim` (the self-check build under
 `POKESIM_EMISSION_SELFCHECK=1`, `build_argv`), cached per bin name AND build across the
-process, and a clear actionable error on any failure. **Neither ever falls back to node** — a
-"rust" run that silently became a node run would answer a different question than the one asked.
+process, and a clear actionable error (`SimBridgeBinaryError`) on any failure — never a fallback.
 
-Threading (every default is `"node"`, so this is byte-identical for every existing caller):
+Callers (none takes an `impl`):
 
-- `SearchSession(record=None, timeout=…, impl="node")` — stores `self.impl`; the child-death /
-  timeout / desync messages name the impl **and** argv[0], so a rust failure self-diagnoses.
-- `reconstruction.replay_battle / reroll_turn / reroll_many (…, impl="node")` →
-  `_run_driver(request, timeout, impl)`. (`_sim_aliases` stays node-only by design: it dumps
-  Showdown's own `aliases.ts` — a data query against the reference sim, not a sim run.)
-- `obs_materializer.materialize_from_record / infer_action_indices (…, impl="node")` (DELETED, 6d-2).
-- `counterfactual.replay_counterfactual(…, impl=…)` → `run_local_battles(impl=…)` (DELETED, 6d-1 / 6d-2; the Rust core's is
-  `utils/rust_env/counterfactual.py`) — this leg played a REAL game, so it rode the LIVE `bridge_spawn_argv` seam, not the driver one.
-- Prober: `ProbeSession(root, …, impl="node")` holds it **session-wide** (like `compile_extractor`)
-  and every re-roll-backed probe reads it; the CLI exposes a global
-  `python -m main.prober.query --impl {node,rust} <cmd>`. `better_line` REFUSES an injected warm
-  `SearchSession` whose impl differs from the session's, so a correction can't be half-searched on
-  one engine and half-confirmed on the other.
+- `SearchSession(record=None, timeout=…)` — the child-death / timeout / desync messages name
+  argv[0], so a failure self-diagnoses.
+- `reconstruction.replay_battle / reroll_turn / reroll_many (…)` → `_run_driver(request, timeout)`,
+  both verb families through `search_driver_spawn_argv()`. `decode_packed_team` /
+  `ReconstructionRecord.team_details` resolve MOVE aliases from `data/pokemon/gen3_move_aliases.json`
+  through `agents.gen3_data.moves.move_aliases()` (it used to dump Showdown's alias table with a
+  `node -e` child, falling back SILENTLY to `{}` without node; species / item / ability aliases are
+  no longer resolved — the full-pool `packed_team_decode_integration_test.py` checks the decode
+  against Showdown's `Teams.unpack`).
+- Prober: `ProbeSession(...)`, `better_line_decision`, `lookahead_decision` / `_battle`,
+  `falsify_decision` / `_battle`, `replay_counterfactual_battle` (in process on the Rust core),
+  `core_trace.expand` / `protocol_log`.
+- A typed `--impl` on `python -m main.prober.query`, `python -m main.prober.web` (and
+  `python -m main.prober`) or `python -m main.harvest` is REFUSED at parse time with its reason
+  (`sim_bridge_bin.refuse_search_impl_flag` / `SEARCH_IMPL_DELETED_REASON`); `ws_frontend --impl node`
+  likewise (`ws_frontend.NODE_IMPL_REFUSED_REASON`).
 
-Tests — the SEAM: `sim_bridge_bin_test.py` (node argv, the `POKESIM_SEARCH_DRIVER_BIN` override,
-bad-impl `ValueError`, independence of the two overrides, and a missing rust binary raising instead
-of returning a node argv) + `search_session_test.py` (the exact historical node argv, rust execs
-only the resolved binary, unresolvable rust raises **before** spawning, errors name the impl).
+Tests — the SEAM: `sim_bridge_bin_test.py` (the search driver takes no impl and never names node,
+the `--impl` refusal, the `POKESIM_SEARCH_DRIVER_BIN` override, independence of the two overrides, a
+missing rust binary raising a clear error; the LIVE transport's node / rust argv) +
+`search_session_test.py` (the session execs only the resolved rust binary, an unresolvable binary
+raises **before** spawning, errors name the binary).
 
-Tests — the ENGINE EQUIVALENCE (the claim that actually matters: rust answers the same question):
+Tests — NODE-FREE (the claim that matters now: the offline paths never reach Node):
 
 | gate | what it pins |
 |---|---|
-| `src/rust_sim/harness/search_impl_parity.py` | node vs rust on `open_root`/`expand_many` — 6 cases / 60 arms / **18877 leaf fields**, only `\|t:\|` normalized. **Re-measured on 7 FRESHLY generated goldens 2026-08-23: PASS on every one**, ~37.6k leaf fields each, allowlist 0 hits |
-| `src/rust_sim/harness/replay_impl_parity.py` | node vs rust on `replay`/`reroll`/`reroll_many` — 76 cases / 136 arms / **30703 leaf fields**, incl. 9 error classes, 2 ended arms, 1 stuck arm. **Re-measured on the same 7 fresh sets: PASS on every one**, ~45-47k leaf fields each |
-| `search_clone_parity_fuzz_test.py --impl rust [--record-impl rust]` | the rust clone ≡ the rust `reroll_many` **at the OBS**, bit-for-bit, + the `value_crn` anchor + depth-2 |
-| `counterfactual_fuzz_test.py --impl rust [--record-impl rust]` | the CONFIRM leg — scripted-prefix obs oracle, divergence-to-terminal, Monte-Carlo reseed determinism |
-| `main/prober/better_line_integration_test.py` | parametrized over both impls, **plus a cross-impl test** asserting node and rust yield identical candidate V. The fake model is `V = obs.sum()`, so an exact match is an obs-level bit-identity claim at every ply of the beam |
 | `src/rust_sim/tests/{bridge_clone_branch,search_driver,replay_driver}_test.rs` | node-free: clone independence, the aux-RNG draw table, the `guard > 40` off-by-one, `recorded_queues` refusal-pull, one-shot dispatch |
+| `main/prober/better_line_integration_test.py` | depth-1 anchor, depth-2 principal variation, determinism, on the one engine. The fake model is `V = obs.sum()` |
+| `src/node_free_search_integration_test.py` | under `utils/node_blocker.py` (refuses + records any `node` spawn and any open under `deps/pokemon-showdown`; a `node` PATH tripwire for grandchildren): replay / reroll / reroll_many, a warm `SearchSession`, `better_line_decision`, `lookahead_decision`, `team_details`, `query falsify` / `falsify-scan` / `calibration`; plus the blocker's own teeth and the `--impl` refusals |
 
-⚠️ **A GOLDEN IS THREE RANDOM BATTLES, so ONE green run is weak evidence.** Both harnesses were
+**The ENGINE-EQUIVALENCE record (deleted 2026-10-10 with the Node drivers).** While both engines
+existed, `src/rust_sim/harness/search_impl_parity.py` (node vs rust on `open_root`/`expand_many`, 6
+cases / 60 arms / 18877 leaf fields; PASS on 7 freshly generated goldens 2026-08-23, ~37.6k leaf
+fields each) and `harness/replay_impl_parity.py` (on `replay`/`reroll`/`reroll_many`, 76 cases / 136
+arms / 30703 leaf fields; PASS on the same 7 sets) pinned the equivalence, and
+`better_line_integration_test.py`'s cross-impl test asserted identical candidate V. Their golden's
+generators went in P6 slice 6c, so they had nothing left to run on; the harnesses and the cross-impl
+test are deleted.
+
+⚠️ **A GOLDEN IS THREE RANDOM BATTLES, so ONE green run is weak evidence** (the lesson of the
+deleted differentials, for any that is rebuilt). Both harnesses were
 un-runnable from `ede4c79` until `f2bec7d`, and the first fresh goldens after that reported
 divergences whose count swung **1 / 0 / 0 / 6 / 8 / 0 / 6 across seven seeds** — four distinct rust
 bugs, no one of which every golden contains (the Return alias needs a Return carrier; the
@@ -286,10 +296,8 @@ The RSS and cold-start numbers matter more than they look for any caller that ru
 workers concurrently (the deleted search teacher ran `--teacher-search-workers` of them and respawned
 per cycle): 5 workers is ~0.97 GB of node children vs ~47 MB of rust ones.
 
-Both `--impl` and `--record-impl` exist on the two fuzz scripts on purpose: a MIXED run (train on
-rust, run forensics on node) is the realistic deployment, so a record produced by either engine must
-replay and search identically on both. The parity harnesses normalize `|t:|` and **nothing else
-silently** — every unclosed divergence is an explicit printed allowlist entry with a reason and a
+The (deleted) parity harnesses normalized `|t:|` and **nothing else
+silently** — every unclosed divergence was an explicit printed allowlist entry with a reason and a
 hit count, and both were fault-injection-proven (a one-line `pick_uniform` off-by-one → 2716
 divergences; a dropped `|split|` shared line + a disabled `fnt` token → 1461).
 
@@ -465,8 +473,8 @@ regenerates it exactly.
   whichever lands second writes `<prefix>_reconstruction.json` next to the trace. (The counterfactual training half's record tap — the opt-in callable
   that wrote each episode's record into a `cf_records/` ring — was deleted in deletion pass L4, and the Python transport that owned it in U3, so a
   training episode's record is no longer persisted anywhere.)
-- **`replay_battle(record)`** — re-runs the battle verbatim (`replay_driver.js`, batch
-  JSON-over-stdio, no server) and returns the regenerated per-side protocol chunks +
+- **`replay_battle(record)`** — re-runs the battle verbatim (the Rust `search_driver` binary's
+  one-shot `replay` verb, batch JSON-over-stdio, no server) and returns the regenerated per-side protocol chunks +
   the final omniscient outcome. Byte-identical to the live streams modulo `|t:|` wall-clock
   lines (state/obs-invisible; in poke-env's `MESSAGES_TO_IGNORE`).
 - **`reroll_turn(record, t, seeds=…)`** — reconstructs to the start of turn `t`, then resolves
@@ -476,10 +484,10 @@ regenerates it exactly.
   original timeline may not contain) use a configurable `followup` policy.
 - **`reroll_many(record, t, arms)`** — the BATCHED form: resolves N independent ARMS (each its own
   `{p1_action, p2_action, seed, label}`, with the EXACT per-side action semantics of `reroll_turn`)
-  of turn `t` in **one Node process**. The dominant per-re-roll cost is the **~677 ms Node-spawn /
-  pokemon-showdown `require`**, NOT the in-process `buildToTurn` (~26 ms warm), so a candidate sweep
-  (the prober's one-ply lookahead) pays it ONCE instead of once per candidate — measured **~9×** on a
-  full 9-legal-action sweep (5.5 s → 0.62 s). Each arm runs in its own fresh session, so its suffix
+  of turn `t` in **one driver process**, so a candidate sweep (the prober's one-ply lookahead) pays
+  the spawn + rebuild ONCE instead of once per candidate. (Measured on the since-deleted Node driver,
+  whose dominant per-re-roll cost was the **~677 ms Node-spawn / pokemon-showdown `require`**, not
+  the ~26 ms warm `buildToTurn`: **~9×** on a full 9-legal-action sweep, 5.5 s → 0.62 s.) Each arm runs in its own fresh session, so its suffix
   chunks are **byte-identical** to the same single `reroll_turn` (modulo `|t:|`) and the materialized
   successor obs is **bit-for-bit identical** — pinned by `reroll_many_parity_fuzz_test.py`. (This is
   why `State.serializeBattle`/`deserializeBattle` is NOT wired here: the data shows the spawn dominates,
@@ -509,7 +517,7 @@ genuinely nothing. Before that, the rust `search_driver` refusing turn 1 surface
 `failed (rc=1): ` with no reason at all, which reads like a crash and is not one. (That refusal is
 **FIXED** — `gen3_search_turn1_open_v1`; the stdout-first read is what made it diagnosable.)
 
-**Turn 1 opens on both impls** (`gen3_search_turn1_open_v1`). It did not until 2026-08-23: rust's
+**Turn 1 opens** (`gen3_search_turn1_open_v1`). It did not until 2026-08-23: rust's
 `at_turn_start` compared `BattleState::turn`, which the driver increments at `commitChoices` for
 the first turn and then EAGERLY at every turn end — so from turn 2 on the field already names the
 open boundary's turn, but at the FIRST boundary it still read `0` while the wire had already said
@@ -519,8 +527,8 @@ family). The predicate now maps a pre-commit `0` to `1` — exact rather than a 
 unbuilt battle (the other source of `turn() == 0`) has no boundary and is already excluded by the
 `request_kind` conjunct, and the mapping is the identity for every `t >= 2`. Gates:
 `src/rust_sim/tests/replay_driver_test.rs` (the predicate, `build_to_turn`, and both verbs through
-the real binary) and `search_driver_turn1_integration_test.py` (`sim`: turn 1 opens on node AND
-rust, with turn 2 as the identity control).
+the real binary); the Python `search_driver_turn1_integration_test.py` (node AND rust) was deleted in
+P6 slice 6d-1.
 
 ### Counterfactual replay-to-end (`counterfactual.py`) — DELETED in P6 slice 6d-1; history
 
@@ -552,27 +560,25 @@ seam that merges extra `START` fields like `resumeReseed`.) For a human-readable
 counterfactual win reads as an actual move-by-move line (`replay_counterfactual(..., capture_trajectory=True)`
 → the prober's `python -m main.prober.query replay-counterfactual --narrate`).
 
-### Warm clone-and-branch search-server (`search_driver.js` + `search_session.py`)
+### Warm clone-and-branch search-server (the `search_driver` binary + `search_session.py`)
 
 Where `reroll_turn` / `reroll_many` rebuild the battle from turn 1 per call (O(commands-to-T)), a
 multi-ply SEARCH (the prober's `better_line` beam) must branch a TREE from any explored node — so
 re-replaying the prefix per node is infeasible at depth. The search-server clones a **mid-battle state
-in-process** via Showdown's `State.serializeBattle` / `deserializeBattle` (`dist/sim/state.js`): a
-verified round-trip of a battle paused with both move requests open (deserialize rebuilds the open
-requests via `getRequests`; PRNG continuity restored from the live counter), at **~1.7 ms/clone —
-~16× cheaper than the ~26 ms warm `buildToTurn`, and CONSTANT in depth**.
+in-process** via `BridgeSession::snapshot` (a derived `Clone`, `gen3_bridge_clone_branch_v1`;
+`designs/rust_sim/search_and_replay_drivers.md`). (The deleted Node driver did this with Showdown's
+`State.serializeBattle` / `deserializeBattle` at ~1.7 ms/clone, ~16× cheaper than a ~26 ms warm
+`buildToTurn` and constant in depth.)
 
-- **`search_driver.js`** — a WARM, persistent Node process (vs `replay_driver.js`'s one-shot batch)
-  holding a node-snapshot cache. `open_root {record, turn}` reconstructs to turn T (via the shared
-  `replay_kernels.js`), serializes the root, and returns the request/team-complete prefix chunks.
-  `expand_many {arms}` clones a parent node, applies one joint turn (our action + the opponent's, via
-  the same `resolveTurn`/`resolveTurnExact` kernels), and re-serializes the child. A deserialized
-  battle can't re-emit the historical `|request|` lines (requests are out-of-band, not in `battle.log`),
-  so each expand returns this ply's one-sided **suffix** (flushed-prefix baseline + the new turn) and
-  the Python caller composes `root-prefix + each ply's suffix` — the same `(prefix + suffix)` shape
-  `reroll_many` produces. `recorded_exact` (root only) reproduces the realized turn for the
-  `value_crn` anchor. The per-side chunk splitting is REUSED verbatim (a deserialized battle is
-  re-attached to a fresh `BattleStream` and `restart()`-ed with the same `send` wiring).
+- **the `search_driver` binary** (`src/rust_sim/src/bin/search_driver.rs`, the Rust port of the
+  deleted Node `search_driver.js`) — a WARM, persistent process (vs the one-shot `mode` verbs of the
+  same binary) holding a tree-node snapshot map. `open_root {record, turn}` reconstructs to turn T and
+  returns the request/team-complete prefix chunks. `expand_many {arms}` clones a parent node, applies
+  one joint turn (our action + the opponent's, via the `resolve_turn` / `resolve_turn_exact` kernels
+  of `src/rust_sim/src/search.rs`), and keeps the child. Each expand returns this ply's one-sided
+  **suffix** and the Python caller composes `root-prefix + each ply's suffix` — the same
+  `(prefix + suffix)` shape `reroll_many` produces. `recorded_exact` (root only) reproduces the
+  realized turn for the `value_crn` anchor.
 - **`search_session.py`** (`SearchSession`) — the Python wrapper: one process per `better_line` call
   (context-managed), a synchronous request→one-line-response protocol over a background-drained queue
   (a wedged child fails ONE call, never hangs the prober). `open_root` / `expand_many` / `close`.
@@ -601,10 +607,10 @@ the live battle's tag had its `/choose default` orders recorded into the LIVE re
 record. `obs_materializer._next_tag` now always mints a unique tag
 (`gen3_recon_tag_collision_v1`); the cost of the collision is in that function's docstring.
 
-- **`replay_kernels.js`** — the shared sim kernels (`buildSession` / `buildToTurn` / `resolveTurn` /
-  `resolveTurnExact` / `recordedQueues` / `randomChoice` / `outcomeOf` / …) lifted out of
-  `replay_driver.js` so the replay/re-roll path and the search-server use ONE implementation (no
-  drift; the trusted reroll path is byte-for-byte unchanged).
+- **`src/rust_sim/src/search.rs`** — the shared kernels (`build_to_turn` / `resolve_turn` /
+  `resolve_turn_exact` / `recorded_queues` / `random_choice` / `outcome_of` / …; the port of the
+  deleted Node `replay_kernels.js`) so the replay/re-roll verbs and the search-server use ONE
+  implementation.
 
 **Faithfulness (a NEW path, so proven not asserted):** `search_clone_parity_fuzz_test.py` (real
 bridge, no server) asserts over many battles that a depth-1 clone's successor obs equals the
@@ -615,8 +621,10 @@ wall). Consumed by `main.prober.better_line`; see `src/main/prober/CLAUDE.md`.
 
 **Reading the teams for review** — `record.team_details(side)` / `decode_packed_team(packed)`
 is THE one decode home (moves, EVs, IVs, nature, item, ability, level; omission-defaults
-applied; ids resolved through the sim's alias table — a pool export can say `wisp`, everything
-downstream speaks `willowisp`). It delegates to poke-env's `parse_packed_team`, never a
+applied; MOVE ids resolved through `data/pokemon/gen3_move_aliases.json` via
+`agents.gen3_data.moves.move_aliases()` — a pool export can say `wisp`, everything downstream speaks
+`willowisp`; until 2026-10-10 a `node -e` child dumped Showdown's whole alias table, falling back
+silently to none without node). It delegates to `utils.team_packing`'s `parse_packed_team`, never a
 reimplementation, and is validated **field-by-field against the sim's own `Teams.unpack` over
 the ENTIRE team pool** by `packed_team_decode_integration_test.py` (719 teams / 4314 mons —
 which caught the alias case on its first run). Replay/re-roll never decode at all: the packed

@@ -76,7 +76,8 @@ real bridge battle → full falsify pipeline, determinism re-run, and the run-le
 `better_line_test.py` (pure: the SEARCH backup logic — terminal sentinels, max-over-continuations,
 beam pruning, principal variation) + `better_line_integration_test.py` (`@integration`, real bridge,
 fake `V=obs.sum()` model: the depth-1 chosen value == sum(recorded next obs) value_crn anchor, the
-depth-2 beam principal variation, determinism), `model_test.py` (the torch boundary — where each
+depth-2 beam principal variation, determinism — on the one engine, the Rust `search_driver`; the
+node-vs-rust cross-impl test went with the Node drivers, 2026-10-10), `model_test.py` (the torch boundary — where each
 forward stash LIVES, plus the `ArchDriftError` diagnosis, the dropped-kwarg recovery and — end to end through `ProbeModel.load` — every typed incompatibility kind, including the semantics-only one with a loader that WOULD succeed; `arch_status_test.py` pins the verdicts, the record readers and the picker's mtime cache),
 `loops_test.py` (the bait-loop detector, pinned on literal Showdown protocol lines — the whole
 point of the module is that it must not read the rendered timeline), `lookahead_test.py` +
@@ -87,6 +88,17 @@ the play-out's own semantics are `src/rust_env/tests/search_playout_cf_test.rs` 
 `lookahead_integration_test.py` (`@integration @sim`, real bridge → the core's successor row →
 a fake model's V), `hub_contract_test.py` and `groom_test.py` (the eval-data groomer, pure
 filesystem). (`belief_obs_fuzz_test.py` was deleted in T27 P6 slice 6d-2, `cbfc2a31`.)
+
+**Node-free gate (2026-10-10, owner: "delete node").** `src/node_free_search_integration_test.py`
+proves the prober's search-shaped paths never reach Node: under `utils/node_blocker.py` (an audit
+hook that refuses and records any `node` / `nodejs` spawn and any open under `deps/pokemon-showdown`,
+plus a `node` PATH tripwire for grandchildren) its `sim` test runs replay / reroll / reroll_many, a
+warm `SearchSession`, `better_line_decision`, `lookahead_decision`, `team_details` and the JSON CLI's
+`falsify` / `falsify-scan` / `calibration`; `test_the_node_blocker_has_teeth` keeps the blocker
+honest and `test_a_typed_impl_flag_is_refused_with_its_reason` pins the `--impl` refusals (query, web,
+harvest, and the front end's `--impl node`). The model-LOADING commands (`lookahead`, `better-line`,
+`replay-counterfactual` through the CLI, and the web app) run under the same blocker in
+`src/poke_env_free_entry_points_test.py`'s `slow` prober test.
 
 and the **web** suite under `web/` (`charts_test.py` pure Vega-Lite specs · `app_test.py`
 `TestClient` over a synthetic run, each endpoint compared against a direct `ProbeSession` call ·

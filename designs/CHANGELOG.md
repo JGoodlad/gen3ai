@@ -13731,3 +13731,44 @@ read both cells for its end-of-turn rule and found them wrong.
   The submodule exclusion is unchanged. On 2026-10-10 the live launcher pin worktree held no such file.
 - **Test.** `test_an_IGNORED_importable_file_under_src_is_DIRT`: a planted ignored `src/foo.py`, sourceless `.pyc`
   or `.so` each makes the tree dirty; an ignored JSON, a `__pycache__` pyc and a `target/` `.so` do not.
+## 2026-10-10 — the offline SEARCH / replay driver is RUST ONLY: the Node drivers and the `--impl` selector are DELETED (owner: "delete node"; no config / obs / signature bump)
+
+- **Why.** The owner, 2026-10-10: "delete node". Scoped the same day: team validation stays a Node subprocess ("relatively
+  cheap … the subprocess trick"), so the validated-pool manifest and dropping the launcher's submodule preflight were NOT
+  built; what goes is every RUNTIME Node path that duplicates a Rust one. Until this change `SearchSession`,
+  `replay_battle` / `reroll_turn` / `reroll_many`, `ProbeSession`, `better_line` and `python -m main.prober.query` /
+  `main.prober.web` DEFAULTED to the Node drivers (the hosted prober ran its jobs on Node).
+- **What.**
+  - Deleted `src/utils/bridge/search_driver.js`, `replay_driver.js`, `replay_kernels.js`, and the two node-vs-rust
+    differentials `src/rust_sim/harness/search_impl_parity.py` / `replay_impl_parity.py`. Neither harness had an
+    obtainable golden since P6 slice 6c, and both needed the deleted drivers.
+  - `sim_bridge_bin.search_driver_spawn_argv()` takes no argument (the Rust `search_driver`); the `impl=` keyword is gone
+    from `SearchSession`, the three replay primitives, `ProbeSession`, `better_line_decision`, `lookahead_*`,
+    `falsify_*`, `replay_counterfactual_battle` and `core_trace.expand` / `protocol_log`.
+  - A typed `--impl` on `main.prober.query`, `main.prober.web` (and `main.prober`) and `main.harvest` is REFUSED with its
+    reason (`refuse_search_impl_flag`); `utils.bridge.ws_frontend --impl node` likewise (`--impl rust`, the default and
+    what the anchors pass, is unchanged; `ShowdownFrontEnd(impl="node")` stays in code as the byte-identity test's
+    oracle). The prober web `/api/health` `impl` is always `rust` (OpenAPI description regenerated).
+  - The packed-team decode behind `team_details` read Showdown's alias table through a `node -e` child, falling back
+    SILENTLY to `{}` when node was missing or slow. It now reads `data/pokemon/gen3_move_aliases.json` through
+    `agents.gen3_data.moves.move_aliases()` (MOVE aliases only; the full-pool `packed_team_decode_integration_test.py`
+    oracle against `Teams.unpack` passes).
+- **Still Node.** Runtime team validation (`validate_team.js` via `utils.teambuilder`; the launcher's submodule preflight
+  stays), and the dev / test oracles: the differential gate ladder, the A/B fuzzers, the drift scan,
+  `main.live.master_series`, `tools/` acquisition, the anchors' `--server node` opt-out (kept), the front end's
+  byte-identity test, `rust_record_replay_check.py`.
+- **Tests.** NEW `src/utils/node_blocker.py`: an audit hook that refuses and records any `node` / `nodejs` spawn and any
+  open under `deps/pokemon-showdown`, and a `node` PATH tripwire for children. NEW `src/node_free_search_integration_test.py`
+  covers three things:
+  - the blocker's teeth;
+  - the four `--impl` refusals, each with its reason;
+  - (`sim`) replay / reroll / reroll_many, a warm `SearchSession`, `better_line_decision` (depth 2), `lookahead_decision`,
+    `team_details` and `query falsify` / `falsify-scan` / `calibration` RUN with Node impossible.
+
+  Revert-checked: restoring a Node search driver, or the swallowed `node -e` alias dump, fails it. The slow prober test in
+  `poke_env_free_entry_points_test.py` now runs every command and the web app with Node blocked too.
+  `better_line_integration_test.py` lost its node parametrization and its live cross-impl test (no golden, nothing left
+  to compare).
+- **Docs.** Root `CLAUDE.md` (Node's one runtime job), the prober, web, rust_sim and gen3_data leaves,
+  `designs/deleted_flags.md`, `designs/prober/`, `designs/rust_sim/search_and_replay_drivers.md` and its siblings,
+  `src/utils/bridge/README.md`, `docs/RUNNING.md`, `docs/DEVELOPING.md`.

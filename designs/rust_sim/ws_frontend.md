@@ -19,6 +19,11 @@ python -m utils.bridge.ws_frontend --port 9601 --impl rust --seed-base 914001 \
     --capture-dir /tmp/caps                              # reproducible + replayable
 ```
 
+`--impl rust` is the default and the only value the CLI accepts: `--impl node` is REFUSED with its
+reason (`ws_frontend.NODE_IMPL_REFUSED_REASON`; 2026-10-10, owner: "delete node"). The Node bridge
+(`local_sim_bridge.js`) survives only in CODE, as `ShowdownFrontEnd(impl="node")` — the dev / test
+ORACLE the byte-identity differential below and the front end's own tests use.
+
 **Why it exists.** Every external gen3ou opponent measured so far (Metamon, Foul Play) is a
 websocket CLIENT, so playing one has meant `npm run showdown -- 9XXX`. The serverless transports we
 already have — `bridge_session.py` for training (deleted in U3; training is the Rust env core), `local_battle_runner.py` for offline series (both deleted; the second in T27 P6 slice 6d-2) — were

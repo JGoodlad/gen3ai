@@ -9,7 +9,6 @@ Jinja2 + HTMX, charts as Vega-Lite specs emitted from Python, all JS vendored (n
 python -m main.prober.web models/                         # a models ROOT -> pick any run in it
 python -m main.prober.web models/run_<timestamp>          # one run -> the picker offers only it
 python -m main.prober.web models/ --port 6108 --job-workers 1 --open   # --open = laptop mode, no password
-python -m main.prober.web models/ --impl rust             # the probes spawn the rust driver
 python -m main.prober.web --openapi                       # regenerate the committed contract
 python -m main.prober.web --check-openapi                 # the staleness gate (exit 1 if stale)
 ```
@@ -29,7 +28,7 @@ The pre-cleanup leaf (history, not current): `designs/research_state/claude_md_a
 
 | file | does |
 |---|---|
-| `__main__.py` | CLI: `--host` (loopback) · `--port` (6008) · `--job-workers` (2) · `--impl` · `--open` · `--openapi` / `--check-openapi`; rejects a nonexistent path at startup; passes the cookie-key file when a password is configured |
+| `__main__.py` | CLI: `--host` (loopback) · `--port` (6008) · `--job-workers` (2) · `--open` · `--openapi` / `--check-openapi`; rejects a nonexistent path at startup; passes the cookie-key file when a password is configured. A typed `--impl` is REFUSED with its reason (deleted 2026-10-10 with the Node offline driver — the probes spawn the Rust `search_driver` only) |
 | `app.py` | `create_app` (templates pinned: `auto_reload = False`), every non-`/game` route, `_NAV`, the picker (`_picker`), `_client`, `battle_row`, the bounded session LRU (`_MAX_CACHED_SESSIONS`) |
 | `game.py` | `/game` (THE battle viewer), its `/api/game/*` + `/partials/game/*`, and `/battle` → 307 to `/game` (`start=N` → `turn=N`) |
 | `runs.py` | run enumeration + MEMBERSHIP resolution, the symlink audit, the three-group classification (`tier`, `default_run`) |
@@ -73,7 +72,8 @@ The pre-cleanup leaf (history, not current): `designs/research_state/claude_md_a
    `model_resolution.dropped_kwargs` banners are never dropped.
 7. **Long work never runs in a request**: `falsify_scan`, `calibration` and the counterfactual tier go
    through `jobs.py`. Handlers are `def`, not `async def` (the session does real file IO; async would
-   stall the event loop). `--impl` is a STARTUP flag because `ProbeSession` treats it as session-wide.
+   stall the event loop). Every re-roll / search probe runs on the Rust `search_driver` (the only offline
+   engine since 2026-10-10); `/api/health`'s `impl` says so (always `rust`).
 8. **`/game` and `/analyze` are plain GETs** (a decision and its perspective are things you link to; it
    works with JavaScript off); the model half is an HTMX fragment. A run with no traces is an EMPTY
    STATE, not a 404; an unknown battle is a 404 that never echoes the token. The information perspective

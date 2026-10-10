@@ -4,7 +4,7 @@
     python3 src/utils/rust_env/successors_benchmark.py [--battles 4] [--reps 4]
 
 RELEASE builds of THIS checkout on both roads (the ``search_driver`` binary through
-``SearchSession(impl="rust")``, the env core's cdylib through :class:`successors.Successors`), one
+``SearchSession``, the env core's cdylib through :class:`successors.Successors`), one
 thread each, the same requests:
 
 * **successors/s** — search's own shape: ``open_root(core="text", side, trackers)`` then ONE
@@ -67,7 +67,7 @@ def bench_successors(logs, reps: int, lib) -> dict:
     per_root = []  # (json_us_per_succ, inproc_us_per_succ)
     rng = np.random.default_rng(0)
     n_succ = 0
-    with SearchSession(impl="rust", timeout=600) as js, S.Successors(lib=lib, chunks=False) as ip:
+    with SearchSession(timeout=600) as js, S.Successors(lib=lib, chunks=False) as ip:
         for bi, log in enumerate(logs):
             rec = S.log_to_record(log, battle_tag=f"bench{bi}")
             last = SP._last_turn(rec)

@@ -55,41 +55,42 @@ def test_unknown_impl_rejected():
 
 
 # ---------------------------------------------------------------------------
-# The OFFLINE search/replay driver family — the exact mirror of the four above.
+# The OFFLINE search/replay driver — RUST ONLY since 2026-10-10 (the Node drivers are deleted).
 # ---------------------------------------------------------------------------
 
 
-def test_search_driver_node_argv_is_node_plus_the_js():
-    """`impl="node"` must keep producing the EXACT argv the drivers used before the seam
-    existed — this is the byte-identical-default guarantee every current caller relies on."""
-    argv = search_driver_spawn_argv("node")
-    assert argv[0] == "node"
-    assert argv[1].endswith("search_driver.js")
-    assert Path(argv[1]).is_file(), "the node driver script must actually exist"
-    assert len(argv) == 2
-
-
-def test_search_driver_rust_argv_is_the_resolved_binary_via_env_override(tmp_path, monkeypatch):
+def test_search_driver_takes_no_impl_and_never_names_node(tmp_path, monkeypatch):
+    """The offline driver has no engine choice: ``search_driver_spawn_argv()`` takes NO argument (a caller
+    passing an impl fails loudly) and its argv is the resolved binary — never ``node``, and the deleted
+    Node driver scripts are gone from the tree (owner 2026-10-10: "delete node")."""
     fake = tmp_path / "search_driver"
     fake.write_text("#!/bin/true\n")
     monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(fake))
-    argv = search_driver_spawn_argv("rust")
-    assert argv == [str(fake.resolve())]  # NO "node" — just the binary
+    assert search_driver_spawn_argv() == [str(fake.resolve())]  # NO "node" — just the binary
+    with pytest.raises(TypeError):
+        search_driver_spawn_argv("node")  # type: ignore[call-arg]
+    here = Path(sim_bridge_bin.__file__).parent
+    for gone in ("search_driver.js", "replay_driver.js", "replay_kernels.js"):
+        assert not (here / gone).exists(), f"{gone} was deleted with the Node offline driver"
+
+
+def test_a_typed_search_impl_flag_is_refused_with_the_reason():
+    from utils.bridge.sim_bridge_bin import SEARCH_IMPL_DELETED_REASON, refuse_search_impl_flag
+
+    refuse_search_impl_flag(["summary", "run", "--impl-x"], "tool")   # a different flag passes
+    for argv in (["--impl", "rust", "summary", "x"], ["summary", "--impl=node"]):
+        with pytest.raises(SystemExit) as ei:
+            refuse_search_impl_flag(argv, "tool")
+        assert SEARCH_IMPL_DELETED_REASON in str(ei.value) and "tool: --impl was DELETED" in str(ei.value)
 
 
 def test_search_driver_env_override_missing_file_raises_clear_error(monkeypatch):
     monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", "/nonexistent/search_driver_xyz")
     with pytest.raises(SimBridgeBinaryError) as ei:
-        search_driver_spawn_argv("rust")
+        search_driver_spawn_argv()
     msg = str(ei.value)
     assert "POKESIM_SEARCH_DRIVER_BIN" in msg
     assert "search_driver" in msg
-
-
-def test_search_driver_unknown_impl_rejected():
-    with pytest.raises(ValueError) as ei:
-        search_driver_spawn_argv("bogus")
-    assert "bogus" in str(ei.value)
 
 
 def test_search_driver_env_overrides_are_independent(tmp_path, monkeypatch):
@@ -103,13 +104,11 @@ def test_search_driver_env_overrides_are_independent(tmp_path, monkeypatch):
     monkeypatch.setenv("POKESIM_SIM_BRIDGE_BIN", str(bridge))
     monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(driver))
     assert bridge_spawn_argv("rust") == [str(bridge.resolve())]
-    assert search_driver_spawn_argv("rust") == [str(driver.resolve())]
+    assert search_driver_spawn_argv() == [str(driver.resolve())]
 
 
-def test_missing_rust_search_driver_raises_instead_of_falling_back_to_node(tmp_path, monkeypatch):
-    """THE no-silent-fallback contract. A rust search that quietly ran on node would answer a
-    different question than the one asked (and would make an engine A/B meaningless), so an
-    unresolvable binary must RAISE — never return a node argv.
+def test_missing_rust_search_driver_raises_a_clear_error(tmp_path, monkeypatch):
+    """An unresolvable binary must RAISE with the fix — there is no other driver to fall back to.
 
     Simulated by pointing the crate dir at an empty tmp dir (no Cargo.toml), the same shape as a
     checkout without src/rust_sim; the assertion that matters is 'not a node argv'.
@@ -117,7 +116,7 @@ def test_missing_rust_search_driver_raises_instead_of_falling_back_to_node(tmp_p
     monkeypatch.delenv("POKESIM_SEARCH_DRIVER_BIN", raising=False)
     monkeypatch.setattr(sim_bridge_bin, "_RUST_CRATE_DIR", tmp_path / "no_crate_here")
     with pytest.raises(SimBridgeBinaryError) as ei:
-        search_driver_spawn_argv("rust")
+        search_driver_spawn_argv()
     msg = str(ei.value)
     assert "Cargo.toml" in msg                  # says WHAT is missing
     assert "POKESIM_SEARCH_DRIVER_BIN" in msg   # ...and the escape hatch
@@ -148,13 +147,13 @@ def test_deferral_warning_states_the_current_rust_scope():
 
     It must ALSO not resurrect the retracted reason. The warning once blamed the record's
     ``input_log`` byte-identity for the search-teacher's node requirement; that was false —
-    nothing reads the committed-choice lines (``replay_kernels.js::writeStart`` and
+    nothing reads the committed-choice lines (the deleted ``replay_kernels.js::writeStart`` and
     ``ReconstructionRecord.start_options()``/``players()`` read only ``>start``/``>player``).
     """
     msg = rust_deferral_warning()
     assert "__RECON__" in msg and "resumeReseed" in msg
     assert "SUPPORTED" in msg, "must not still claim the forensic paths are deferred"
-    assert "search_driver" in msg, "must name the binary an operator selects with --impl"
+    assert "search_driver" in msg, "must name the binary the offline probes run"
     assert "gen3_rust_search_driver_v1" in msg and "gen3_rust_replay_driver_v1" in msg, (
         "both offline verb families must be named — an operator reading only 'search' would "
         "still think reroll/falsify needs node")

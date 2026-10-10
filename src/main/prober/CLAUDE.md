@@ -30,7 +30,7 @@ stood before the 2026-10-10 cut is frozen at
 | run a re-roll / search / rollout probe; the trace-quota selection; `overvalue_tau` | `designs/prober/counterfactual_probes.md` |
 | touch `ProbeModel`, trace discovery, core traces, the per-battle model ladder, obs offsets | `designs/prober/engine_and_model.md` |
 | diagnose a checkpoint that will not load | `designs/prober/arch_drift.md` |
-| choose `--impl node` vs `rust`; `--compile` | `designs/prober/sim_impl.md` |
+| the re-roll / search engine (Rust only); `--compile` | `designs/prober/sim_impl.md` |
 | groom `eval_traces/` | `designs/prober/retention.md` |
 | add or find a test | `designs/prober/tests.md` |
 | ask what a checkpoint REPRESENTS (`python -m main.probe_battery`, its own package) | `designs/prober/probe_battery.md` |
@@ -216,8 +216,8 @@ python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--see
 python -m main.prober.query falsify-scan <run_dir> [--outcome loss|win] [--opponent X] [--step N] [--limit K] [--worst K] [--seeds N] [--alts K] [--concurrency N]
 python -m main.prober.query calibration  <run_dir> [--step N] [--opponent X] [--limit K] [--worst K] [--seeds N] [--concurrency N] [--bins N] [--overvalue-tau F]
 python -m main.prober.query decision-table <run_dir> [--step N]... [--opponent X]... [--outcome loss] [--cat selfko]... [--out t.jsonl] [--limit K]
-# also: loops, history-saliency. GLOBAL flags go BEFORE the subcommand:
-python -m main.prober.query --impl rust --compile better-line <battle_id> <inv>
+# also: loops, history-saliency. The GLOBAL flag goes BEFORE the subcommand:
+python -m main.prober.query --compile better-line <battle_id> <inv>
 ```
 
 **Investigation recipe** (full text: `designs/prober/session_scans.md`): `triage` → `summary` → `scan
@@ -226,7 +226,7 @@ turn → `falsify` it → `falsify-scan` the run (the crater-fraction bracket; i
 `critic_headroom_upper_bound` is an UPPER BOUND — read its `caveats`) → `calibration` to split the
 `unattributed` bucket (selection-aware; knowingly confounded on a quota-captured sample).
 
-## The counterfactual tier and the two global flags
+## The counterfactual tier, the engine and `--compile`
 
 `lookahead` (one-ply, common random numbers), `better_line` (a CRN-anchored beam) and
 `replay_counterfactual` (play to the end on the Rust core, seeded) need the `*_reconstruction.json`
@@ -238,13 +238,15 @@ a probability (its own `caveats` say so). Detail: `designs/prober/counterfactual
 - **`--compile`** — `torch.compile`s the no-grad rollout models (~6.5× per B=1 CPU forward, ~10-20 s once).
   Off by default; it pays only on the SEARCH-shaped commands. Grad-enabled calls route to eager, so it
   cannot change a saliency result.
-- **`--impl {node,rust}`** (default `node`) — which child the re-roll probes exec (`better-line` /
-  `lookahead` / `falsify` / `falsify-scan` / `calibration`); inert elsewhere; `replay-counterfactual` runs on
-  the Rust core whatever it says. 🚨 **It NEVER falls back to node** — an unbuildable binary is an error. The
-  default lives on the SESSION (`ProbeSession(root, impl=…)`), and `better_line` REFUSES a warm
-  `SearchSession` of the other impl, so one probe is never half on each engine.
+- **The engine is RUST ONLY** (owner 2026-10-10: "delete node"). The re-roll / search probes (`better-line` /
+  `lookahead` / `falsify` / `falsify-scan` / `calibration`) exec the Rust `search_driver` binary
+  (`$POKESIM_SEARCH_DRIVER_BIN` points at a pre-built one; an unbuildable binary is an error);
+  `replay-counterfactual` plays out on the Rust core in process. The Node drivers and `--impl` are DELETED —
+  a typed `--impl` is refused with its reason. 🚨 **No prober path runs Node**: `src/node_free_search_integration_test.py`
+  RUNS the search-shaped commands with Node impossible, and the slow prober test in
+  `src/poke_env_free_entry_points_test.py` runs every command and the web app the same way.
 
-Both in full, with the pinned node-vs-rust equivalence: `designs/prober/sim_impl.md`.
+Both in full: `designs/prober/sim_impl.md`.
 
 ## Retention (`groom.py`)
 
@@ -274,6 +276,6 @@ python3 -m main.prober.web --check-openapi         # contract drift gate
 
 A run is selected by NAME from the server's own listing, so no client string reaches a path join.
 Reading is anonymous; the background probes and every route that loads a checkpoint or runs the model are
-password-gated (`web/gate.py`, class guard `web/gate_guard_test.py`). `--impl` is a STARTUP flag there.
+password-gated (`web/gate.py`, class guard `web/gate_guard_test.py`).
 Deployed at prober.g5d.io; from elsewhere: `ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`.
 Everything else: `src/main/prober/web/CLAUDE.md`.

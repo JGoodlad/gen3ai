@@ -74,6 +74,15 @@ BRIDGE_STREAM_LIMIT = 16 * 1024 * 1024
 # Ports this process must NEVER bind. 8000 is the shared dev server and 8001 the reserved
 # training-tools server (training itself is in-process on the Rust core and uses no server); the
 # project rule is that an agent's own server lives in the 9XXX range.
+#: Why the CLI refuses ``--impl node`` (owner 2026-10-10: "delete node" — no RUNTIME path runs Node
+#: where a Rust one does the same job). ``ShowdownFrontEnd(impl="node")`` survives in code only as
+#: the DEV / TEST ORACLE the byte-identity differential compares the Rust bridge against.
+NODE_IMPL_REFUSED_REASON = (
+    "the front end's battles run on the Rust sim_bridge only; the Node bridge (local_sim_bridge.js) "
+    "is a dev / test oracle, reachable from code (ShowdownFrontEnd(impl='node')), not from this CLI "
+    "(2026-10-10, owner: \"delete node\"). Drop the flag or pass --impl rust")
+
+
 RESERVED_PORTS = {8000: "the shared DEV server",
                   8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
 
@@ -798,8 +807,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--port", type=int, required=True,
                    help="port to bind (8000/8001 are REFUSED; use the 96XX range)")
     p.add_argument("--host", default="127.0.0.1")
+    # `node` stays a PARSER choice only so a typed one is refused WITH its reason (serve_forever);
+    # the Node bridge is the front end's dev / test ORACLE, constructed in code by its tests.
     p.add_argument("--impl", default="rust", choices=("rust", "node"),
-                   help="which sim bridge child backs each battle (default rust)")
+                   help="the sim bridge child behind each battle: rust (the only CLI engine; "
+                        "'node' is REFUSED — 2026-10-10)")
     p.add_argument("--format", dest="battle_format", default="gen3ou")
     p.add_argument("--seed-base", type=int, default=None,
                    help="derive each battle's PRNG seed from this base (reproducible series)")
@@ -824,6 +836,8 @@ async def serve_forever(args) -> int:
 
     if args.port in RESERVED_PORTS:
         raise SystemExit(f"refusing --port {args.port}: that is {RESERVED_PORTS[args.port]}.")
+    if args.impl == "node":
+        raise SystemExit(f"refusing --impl node: {NODE_IMPL_REFUSED_REASON}")
     if args.capture_dir and args.seed_base is None:
         logger.warning("--capture-dir without --seed-base: the child mints its own seed per "
                        "battle, so the records will NOT be replayable.")

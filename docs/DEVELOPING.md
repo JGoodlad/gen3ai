@@ -23,7 +23,7 @@ skipped), it fails loudly, and it announces what each step costs before spending
 | 2 | create/update the `gen3ai_torch28` conda env (torch 2.8) from `environment_torch28.yml`; a worktree never updates it silently (see below) | ~5-15 min fresh (about 2 GB of wheels) |
 | 3 | `pip install -e .`, which puts `src/` on the import path for good | ~2 s |
 | 4 | `git submodule update --init`: the Pokémon Showdown reference engine | ~30 s |
-| 5 | the Showdown build artifacts (`npm ci` + `node build`), or worktree symlinks | ~3-6 min fresh |
+| 5 | the Showdown build artifacts (`npm ci` + `node build`), or worktree symlinks. At run time Node only validates teams; the rest is the dev / test oracle | ~3-6 min fresh |
 | 6 | *(optional)* `cargo build --release` for the Rust simulator | ~3-10 min cold |
 | 7 | verify: the ruff and mypy gates, the two import-precedence gates, a ~10 s unit smoke | ~30-60 s |
 

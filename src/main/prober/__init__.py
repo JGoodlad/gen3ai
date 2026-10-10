@@ -28,7 +28,8 @@ def main() -> None:
     Kept as an alias rather than deleted because `python -m main.prober <run>` is in muscle memory,
     in scripts and throughout the docs — silently 404-ing that would be a worse migration than
     changing what it opens. Every argument is forwarded to `main.prober.web`, so `--port` /
-    `--impl` / `--open` work here too; the two TUI-only flags are translated below.
+    `--open` work here too (and a typed `--impl`, deleted 2026-10-10, is refused there with its
+    reason); the two TUI-only flags are translated below.
     """
     import sys
 

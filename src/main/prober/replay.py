@@ -32,7 +32,7 @@ from utils.rust_env import successors as S
 
 _OTHER = {"p1": "p2", "p2": "p1"}
 
-#: The play-out's engine, stamped on every result (``--impl`` does not apply: there is one engine).
+#: The play-out's engine, stamped on every result (there is one engine).
 ENGINE = "rust_core"
 
 
@@ -146,7 +146,6 @@ def replay_counterfactual_battle(
     opponent_stochastic: Optional[bool] = None,
     n_rollouts: int = 1,
     narrate: bool = False,
-    impl: str = "rust",
     core=None,
 ) -> dict:
     """Run the counterfactual: substitute ``action`` at ``inv_index``'s turn and play to a terminal
@@ -154,8 +153,7 @@ def replay_counterfactual_battle(
     a win-rate ± Wilson CI. See the module header for opponent resolution. Raises (like the falsifier)
     on a non-``move_selection`` anchor, an illegal substitute action, or a missing ``actions`` array.
 
-    The play-out runs on the in-process RUST CORE whatever ``impl`` says (there is no other engine for
-    it since P6); ``impl="node"`` is not an error — it is said in the ``caveats``."""
+    The play-out runs on the in-process RUST CORE (the only engine for it since P6)."""
     invs = summary.get("invocations", [])
     if not (0 <= inv_index < len(invs)):
         raise IndexError(f"inv {inv_index} out of range (battle has {len(invs)})")
@@ -257,9 +255,6 @@ def replay_counterfactual_battle(
         caveats.append("Opponent = the in-core Rust port of the bot, its random streams SEEDED from this "
                        "battle + decision — the same distribution the eval played, not the same draws "
                        "(the eval's bot ran on its own episode streams).")
-    if impl != "rust":
-        caveats.append(f"--impl {impl} does not apply: the play-out runs on the in-process Rust core "
-                       "(its only engine since the poke-env retirement's P6).")
 
     return {
         "inv": inv_index,

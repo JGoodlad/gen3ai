@@ -1,6 +1,5 @@
 """SearchSession — a WARM, persistent clone-and-branch search-server (the Python half of the
-search driver: ``search_driver.js`` under ``impl="node"``, the ``search_driver`` Rust binary
-under ``impl="rust"``).
+search driver: the ``search_driver`` Rust binary).
 
 Where :func:`reconstruction.reroll_turn` / :func:`reconstruction.reroll_many` spawn a
 fresh driver process and rebuild the battle from turn 1 per call, ``SearchSession`` keeps
@@ -9,14 +8,11 @@ lines (the prober's ``better_line`` probe) can branch a search TREE from any exp
 node by cloning its mid-battle state (``State.serializeBattle`` / ``deserializeBattle``,
 ~1.7 ms/clone, constant in depth) instead of re-replaying the whole prefix per node.
 
-**Transport selection.** ``impl`` picks WHICH driver child is spawned, exactly the way
-the training transport picks the live battle transport; the seam is
-``sim_bridge_bin.search_driver_spawn_argv``. ``"node"`` (the default) is the historical
-behavior byte-for-byte. ``"rust"`` execs the std-only ``src/rust_sim`` ``search_driver``
-binary, which speaks the identical request→one-line-response protocol — so nothing below
-changes but the executable. A missing/unbuildable rust binary raises a clear
-``SimBridgeBinaryError``; it NEVER falls back to node (a "rust" search that silently ran on
-node would answer a different question than the one asked).
+**The driver.** The child is the std-only ``src/rust_sim`` ``search_driver`` binary, resolved
+(and built if needed) by ``sim_bridge_bin.search_driver_spawn_argv``; ``$POKESIM_SEARCH_DRIVER_BIN``
+points it at a pre-built one. A missing/unbuildable binary raises a clear ``SimBridgeBinaryError``.
+There is no engine choice: the Node driver (``search_driver.js``) and the ``impl=`` selector were
+DELETED on 2026-10-10 (owner: "delete node"; ``designs/deleted_flags.md``).
 
 Lifecycle (one process per ``better_line`` call; context-managed):
 
@@ -180,21 +176,17 @@ class SearchSession:
     background workers — ONE WARM process REUSED across many battles (pass ``record=None`` here and the
     per-battle record to :meth:`open_root`), so the ~0.6 s spawn is amortized over hundreds of
     searches instead of paid per search. Each ``open_root`` starts a fresh tree (the driver clears its
-    node cache), so reuse is memory-bounded and battle-independent.
+    node cache), so reuse is memory-bounded and battle-independent. The child is the Rust
+    ``search_driver`` binary (see the module header)."""
 
-    ``impl`` selects the driver child (``"node"`` — the default and the historical behavior — or
-    ``"rust"``); see the module header."""
-
-    def __init__(self, record: "Optional[ReconstructionRecord]" = None, *, timeout: float = 120.0,
-                 impl: str = "node"):
+    def __init__(self, record: "Optional[ReconstructionRecord]" = None, *, timeout: float = 120.0):
         self._record = record
         self._timeout = timeout
         self._seq = 0
         self._closed = False
-        # Which driver child to spawn. Resolved BEFORE Popen so an unbuildable rust binary raises
-        # the actionable SimBridgeBinaryError here rather than surfacing as a dead child later.
-        self.impl = impl
-        self._argv = search_driver_spawn_argv(impl)
+        # Resolved BEFORE Popen so an unbuildable rust binary raises the actionable
+        # SimBridgeBinaryError here rather than surfacing as a dead child later.
+        self._argv = search_driver_spawn_argv()
         self._proc = subprocess.Popen(
             self._argv,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -231,9 +223,9 @@ class SearchSession:
         return "".join(self._stderr)[-2000:]
 
     def _who(self) -> str:
-        """How the child is named in an error — the impl plus the actual argv[0], so a rust
-        failure self-diagnoses ('which binary was that?') instead of reading like a node crash."""
-        return f"search driver [{self.impl}: {self._argv[-1]}]"
+        """How the child is named in an error — the actual binary, so a failure self-diagnoses
+        ('which binary was that?')."""
+        return f"search driver [{self._argv[-1]}]"
 
     def _call(self, payload: dict) -> dict:
         if self._closed:
@@ -319,16 +311,15 @@ class SearchSession:
         player has, and it silently made the search-dividend probe's dice-width ladder measure its
         own dilution. In a live decision, mint every seed.
 
-        ``side="p1"``/``"p2"`` (``gen3_expand_many_side_elision_v1``, **rust only**) asks the
+        ``side="p1"``/``"p2"`` (``gen3_expand_many_side_elision_v1``) asks the
         driver to SKIP the other side's ``pN_chunks`` / ``core_pN``. A search runs for ONE side
         and reads exactly its own; the other side's copy measured **43.0% of the
         reply bytes** — rendered, piped and ``json.loads``-ed only to be dropped
         (``designs/research_state/measurements/expand_many_2026-09-22/README.md``). The requested
         side's payload is BYTE-IDENTICAL either way. An elided side comes back as an
         :class:`ElidedSide`: falsy, but RAISING on any read, so a caller that wanted it fails loudly instead of
-        encoding an empty board. ``search_driver.js`` ignores the key and still returns both
-        sides — the sentinel keys on the field being ABSENT, never on the request, so nothing is
-        elided under ``impl="node"``."""
+        encoding an empty board. The sentinel keys on the field being ABSENT, never on the
+        request."""
         req: dict = {"cmd": "expand_many", "arms": [dict(a) for a in arms]}
         # ROWS (core nodes, `gen3_core_encoder_v1`): each wanted side's `core_pN` is the leaf's
         # ENCODED observation row (a `<f4` wire frame, `agents.battle.core_obs.wrap_row`) + mask +

@@ -156,10 +156,9 @@ def falsify_decision(
     n_alts: int = DEFAULT_ALTS,
     followup: str = "random",
     mappings=None,
-    impl: str = "node",
 ) -> dict:
-    """Luck/mistake attribution for one ``move_selection`` decision. ``impl`` (``"node"`` default |
-    ``"rust"``) selects the offline replay/re-roll driver."""
+    """Luck/mistake attribution for one ``move_selection`` decision (the re-rolls run on the Rust
+    ``search_driver``)."""
     invs = summary.get("invocations", [])
     if not (0 <= inv_index < len(invs)):
         raise IndexError(f"inv {inv_index} out of range (battle has {len(invs)})")
@@ -206,7 +205,7 @@ def falsify_decision(
     # Chosen arm: fix both actions; fresh seeds = the dice distribution,
     # "original" = the realized line.
     chosen_rr = reroll_turn(record, turn, seeds=seeds + ["original"],
-                            followup=followup, impl=impl, **fix_both)
+                            followup=followup, **fix_both)
     by_seed = {r.seed: r for r in chosen_rr.rerolls}
     realized = material_margin(by_seed["original"].outcome, side)
     chosen_margins = [material_margin(by_seed[s].outcome, side)
@@ -218,7 +217,7 @@ def falsify_decision(
     alts = []
     for alt in alt_idxs:
         rr = reroll_turn(
-            record, turn, seeds=seeds, followup=followup, impl=impl,
+            record, turn, seeds=seeds, followup=followup,
             **{f"{side}_action": choice_map[alt], f"{other_side}_action": "recorded"},
         )
         alt_by_seed = {r.seed: r for r in rr.rerolls}
@@ -328,7 +327,6 @@ def falsify_battle(
     n_alts: int = DEFAULT_ALTS,
     followup: str = "random",
     mappings=None,
-    impl: str = "node",
 ) -> dict:
     """Falsify the chosen (or worst-δ) decisions of one battle."""
     anchors = list(invs) if invs else select_anchors(summary, npz, gamma=gamma, worst=worst)
@@ -341,13 +339,13 @@ def falsify_battle(
         try:
             d = falsify_decision(
                 record, summary, npz, int(inv_index),
-                n_seeds=n_seeds, n_alts=n_alts, followup=followup, mappings=mappings, impl=impl)
+                n_seeds=n_seeds, n_alts=n_alts, followup=followup, mappings=mappings)
             # Surface the TD-residual δ that selected (and now weights) this anchor —
             # one source of truth for falsify_scan's crater-magnitude weighting.
             d["anchor_delta"] = round(scored[int(inv_index)], 4) if int(inv_index) in scored else None
             decisions.append(d)
         except (ValueError, RuntimeError, IndexError, subprocess.TimeoutExpired) as e:
-            # A wedged Node re-roll (TimeoutExpired) becomes a recorded decision-error
+            # A wedged re-roll (TimeoutExpired) becomes a recorded decision-error
             # like a node crash (RuntimeError) — it must not discard the battle's other
             # already-falsified decisions.
             errors.append({"inv": int(inv_index), "error": str(e)})

@@ -185,9 +185,11 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
 - `gen3_learnset.json` — species id → `[move_id, ...]` gen3 legal movepool (the hard legality gate the
   move-belief prior uses to prune impossible candidate moves; via `gen3_data.learnset`)
 - `gen3_move_aliases.json` — `{alias_id: canonical_move_id}` from Showdown's `aliases.ts`
-  (`wisp`→`willowisp`, `sd`→`swordsdance`, …). **Consumed ONLY by the `src/rust_sim` port** (its dex
-  resolves a packed-team move alias like the RL runtime never touches); the `agents.gen3_data` facade
-  does NOT load it, so it is obs-neutral. `gen3_move_alias_resolution_v1`.
+  (`wisp`→`willowisp`, `sd`→`swordsdance`, …). Consumed by the `src/rust_sim` port (its dex resolves a
+  packed-team move alias like the RL runtime never touches) and, through `gen3_data.moves.move_aliases()`,
+  by review tooling's packed-team decode (`utils.bridge.reconstruction.decode_packed_team`, the prober's
+  `team_details`; it replaced a live `node -e` dump of Showdown's alias table, 2026-10-10). The
+  observation path never reads it, so it is obs-neutral. `gen3_move_alias_resolution_v1`.
 
 Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/` (`sync.py` merges 12
 months of chaos JSONs → `compute_priors.py` derives six committed artifacts). **ALL priors must be

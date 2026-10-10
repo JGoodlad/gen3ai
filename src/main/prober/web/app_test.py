@@ -766,22 +766,14 @@ def test_a_v_only_triage_warns_that_the_split_is_skewed(client):
         assert "over-counts" in html
 
 
-def test_the_probe_engine_is_a_startup_choice_threaded_into_every_session(run):
-    """`ProbeSession` treats `impl` as SESSION-WIDE ("two probes of one run answered under
-    different engines would not be comparable"), so the web surfaces it as a startup flag rather
-    than a query param — and it must actually reach the sessions it builds, not just be stored."""
-    app = create_app(run, impl="rust")
-    with TestClient(app) as c:
+def test_the_probe_engine_is_rust_and_not_a_choice(run):
+    """The re-roll / search probes run on the Rust `search_driver` only (the Node drivers and the `impl`
+    selector were deleted 2026-10-10, owner: "delete node"): `/api/health` says `rust`, and the app no
+    longer takes an engine."""
+    with pytest.raises(TypeError):
+        create_app(run, impl="rust")  # type: ignore[call-arg]
+    with TestClient(create_app(run)) as c:
         assert c.get("/api/health").json()["impl"] == "rust"
-        c.get("/api/run")
-        (sess,) = app.state.sessions.values()
-        assert sess._impl == "rust", "the engine choice never reached ProbeSession"
-
-
-def test_the_probe_engine_defaults_to_node(client):
-    """Unchanged behaviour unless someone asks for rust."""
-    assert client.get("/api/health").json()["impl"] == "node"
-    assert _the_session(client)._impl == "node"
 
 
 def test_the_session_cache_is_bounded_and_closes_what_it_evicts(tmp_path_factory):

@@ -7,13 +7,13 @@ MUST equal the sum of the recorded ``states.npz`` next obs (its ``recorded_exact
 real next state bit-for-bit — the value_crn anchor). Depth 2 additionally checks the beam produces a
 principal variation of the right length through the (self-model) interior opponent.
 
-Every test runs against BOTH offline search drivers (``impl="node"`` — ``search_driver.js`` — and
-``impl="rust"`` — ``src/rust_sim/src/bin/search_driver.rs``), and one test pins them against EACH
-OTHER on the same record: the whole point of a byte-compatible port is that the search answers the
-same question, so a value that moves when only the engine changes is the failure mode worth
-catching. That cross-impl test is the durable regression gate for ``gen3_rust_search_driver_v1``.
+The search runs on the Rust ``search_driver`` (``src/rust_sim/src/bin/search_driver.rs``), the only
+offline driver. The node-vs-rust cross-impl test that lived here was REMOVED with the Node driver
+(2026-10-10, owner: "delete node"): it was a LIVE comparison with no golden, so with ``search_driver.js``
+deleted there is nothing left to compare against. The driver's node-free properties are pinned by the
+cargo tests (``src/rust_sim/tests/search_driver_test.rs`` / ``replay_driver_test.rs``).
 
-Needs the Node bridge and the env core's cdylib; no server."""
+Needs the env core's cdylib (and the Node team validator, for the fixture's pool teams); no server."""
 
 import tempfile
 
@@ -81,13 +81,12 @@ def _mid_anchor(summary, npz):
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("impl", ["node", "rust"])
-def test_better_line_depth1_chosen_value_matches_recorded_next_obs(lib, impl):
+def test_better_line_depth1_chosen_value_matches_recorded_next_obs(lib):
     with tempfile.TemporaryDirectory(prefix="better_line_d1_") as out_dir:
         record, summary, npz = _record_one_battle(lib, out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
-        out = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=1, impl=impl)
+        out = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=1)
 
         assert out["inv"] == anchor and out["depth"] == 1
         assert out["opp_model_used"] == "recorded@divergence"
@@ -111,15 +110,14 @@ def test_better_line_depth1_chosen_value_matches_recorded_next_obs(lib, impl):
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("impl", ["node", "rust"])
-def test_better_line_depth2_beam_produces_principal_variation(lib, impl):
+def test_better_line_depth2_beam_produces_principal_variation(lib):
     with tempfile.TemporaryDirectory(prefix="better_line_d2_") as out_dir:
         record, summary, npz = _record_one_battle(lib, out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
         model = _SumModel()
         out = better_line_decision(model, record, summary, npz, anchor,
-                                   depth=2, beam=3, top_k=4, opp_model=model, impl=impl)
+                                   depth=2, beam=3, top_k=4, opp_model=model)
         assert out["depth"] == 2 and out["opp_model_used"] == "reloaded"
         best = out["best_alternative"]
         # The battle is FIXED, so "did the beam produce a scorable alternative at all?" is a
@@ -134,92 +132,14 @@ def test_better_line_depth2_beam_produces_principal_variation(lib, impl):
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("impl", ["node", "rust"])
-def test_better_line_is_deterministic(lib, impl):
+def test_better_line_is_deterministic(lib):
     with tempfile.TemporaryDirectory(prefix="better_line_det_") as out_dir:
         record, summary, npz = _record_one_battle(lib, out_dir)
         anchor = _mid_anchor(summary, npz)
         assert anchor is not None
         a = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=2,
-                                 opp_model=_SumModel(), impl=impl)
+                                 opp_model=_SumModel())
         b = better_line_decision(_SumModel(), record, summary, npz, anchor, depth=2,
-                                 opp_model=_SumModel(), impl=impl)
+                                 opp_model=_SumModel())
         assert [c["action"] for c in a["candidates"]] == [c["action"] for c in b["candidates"]]
         assert [c["value"] for c in a["candidates"]] == [c["value"] for c in b["candidates"]]
-
-
-@pytest.mark.integration
-def test_better_line_node_and_rust_drivers_agree(lib):
-    """THE cross-impl gate for ``gen3_rust_search_driver_v1``.
-
-    The same record, the same anchor, the same deterministic model — searched once through
-    ``search_driver.js`` and once through the Rust binary. Every candidate's action, choice,
-    terminal label and V must match, and V is ``obs.sum()``, so an exact match here means the
-    two drivers materialized BIT-IDENTICAL successor observations at every ply of the beam.
-    That is a strictly stronger statement than "both ran without error", and it is the property
-    that lets a rust-driven ``better-line`` be compared against a node-driven one.
-
-    The record is the Rust env core's (the only engine that plays a battle since T27 P6; the former
-    parametrization over the live bridge that produced the record went with the Python bridge road).
-    """
-    with tempfile.TemporaryDirectory(prefix="better_line_xi_") as out_dir:
-        record, summary, npz = _record_one_battle(lib, out_dir)
-        anchor = _mid_anchor(summary, npz)
-        assert anchor is not None
-        kw = dict(depth=2, beam=3, top_k=4)
-        n = better_line_decision(_SumModel(), record, summary, npz, anchor,
-                                 opp_model=_SumModel(), impl="node", **kw)
-        r = better_line_decision(_SumModel(), record, summary, npz, anchor,
-                                 opp_model=_SumModel(), impl="rust", **kw)
-
-        assert n["opp_model_used"] == r["opp_model_used"]
-        assert len(n["candidates"]) == len(r["candidates"]), "candidate COUNT differs"
-
-        # Compare BY ACTION, not by position. The claim this test makes is about CONTENT — same
-        # actions, same choices, same terminal labels, same V — and `candidates` is not a ranked
-        # list (the caller reads it as a per-action mapping; `best_alternative` is computed
-        # separately). Position additionally encodes the order each driver happened to ENUMERATE
-        # the candidates it did not expand, which is not a property either driver promises.
-        #
-        # ⚠️ THIS WAS A ~35% FLAKE and the positional zip was the whole cause. Measured over 20
-        # random battles: 19 fully agreed, 1 returned the same actions with IDENTICAL values in a
-        # different order, 0 diverged on any value. The order differs only PAST the beam — the
-        # first `beam` entries are the expanded ones and always matched:
-        #     node [1, 5, 7 | 9, 8, 0, 6, 2]
-        #     rust [1, 5, 7 | 0, 6, 2, 8, 9]     (action 9 == 25043.0162 in BOTH)
-        # Keying by action keeps every assertion below at full strength — it is strictly STRONGER
-        # than the zip, since it also proves the two drivers returned the same action SET rather
-        # than merely the same number of rows.
-        nmap = {c["action"]: c for c in n["candidates"]}
-        rmap = {c["action"]: c for c in r["candidates"]}
-        assert set(nmap) == set(rmap), (
-            f"candidate ACTION SETS differ: node-only {sorted(set(nmap) - set(rmap))}, "
-            f"rust-only {sorted(set(rmap) - set(nmap))}")
-
-        # COUNTED (gen3_vacuity_hunt_v1). The numeric compare below is the STRONGEST claim in
-        # this file — with V = obs.sum() an exact match is cross-impl obs bit-identity — and it
-        # sits behind a `None` guard with a `continue`. If every action came back unscored on
-        # both drivers, the two would agree that they scored NOTHING and this test would report
-        # a green cross-impl parity result having compared zero observations. So the scored
-        # comparisons are counted and floored.
-        n_compared = 0
-        for action in sorted(nmap):
-            cn, cr = nmap[action], rmap[action]
-            assert cn["choice"] == cr["choice"], (
-                f"action {action}: choice differs — node {cn['choice']!r} vs rust {cr['choice']!r}")
-            assert cn["terminal"] == cr["terminal"], (
-                f"action {action}: terminal node {cn['terminal']} vs rust {cr['terminal']}")
-            if cn["value"] is None or cr["value"] is None:
-                assert cn["value"] == cr["value"], (
-                    f"action {action}: one driver scored it and the other did not")
-                continue
-            # V = obs.sum() over a 2667-dim float32 vector, so equality here is an obs-level
-            # bit-identity claim, not a tolerance. The 1e-6 only absorbs float64 summation order.
-            n_compared += 1
-            assert abs(cn["value"] - cr["value"]) < 1e-6, (
-                f"action {action}: V differs — node {cn['value']!r} vs rust {cr['value']!r} "
-                "(the drivers materialized DIFFERENT successor observations)")
-        assert n_compared >= 1, (
-            f"NO scored candidate was compared across impls ({len(nmap)} actions, all unscored "
-            f"on at least one driver) — the obs bit-identity claim was never evaluated")
-

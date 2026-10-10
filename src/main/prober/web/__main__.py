@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 
 _DEFAULT_SNAPSHOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "openapi.json")
 
@@ -42,12 +43,8 @@ def main(argv=None) -> int:
     ap.add_argument("--host", default="127.0.0.1", help="bind address (default loopback)")
     ap.add_argument("--port", type=int, default=6008, help="port (default 6008)")
     ap.add_argument("--job-workers", type=int, default=2,
-                    help="concurrent falsify/calibration jobs (default 2 — each spawns Node)")
-    ap.add_argument("--impl", default="node", choices=["node", "rust"],
-                    help="offline replay/search engine the falsify/calibration probes spawn "
-                         "(default node). SESSION-WIDE by design: ProbeSession treats it as a "
-                         "property of the whole investigation, since two probes of one run "
-                         "answered under different engines are not comparable.")
+                    help="concurrent falsify/calibration jobs (default 2 — each spawns the Rust "
+                         "search_driver)")
     ap.add_argument("--open", dest="open_access", action="store_true",
                     help="no password: anyone may start the expensive probes. For a laptop, "
                          "NOT for anything reachable off this box.")
@@ -56,6 +53,10 @@ def main(argv=None) -> int:
                                          f"(default {os.path.basename(_DEFAULT_SNAPSHOT)})")
     ap.add_argument("--check-openapi", action="store_true",
                     help="exit 1 if the committed openapi.json is stale (drift gate)")
+    from utils.bridge.sim_bridge_bin import refuse_search_impl_flag
+
+    argv = list(sys.argv[1:] if argv is None else argv)
+    refuse_search_impl_flag(argv, "python -m main.prober.web")
     a = ap.parse_args(argv)
 
     if a.check_openapi:
@@ -94,13 +95,13 @@ def main(argv=None) -> int:
 
     password = load_password()
     app = create_app(os.path.abspath(a.run), max_job_workers=a.job_workers,
-                     password=password, open_access=a.open_access, impl=a.impl,
+                     password=password, open_access=a.open_access,
                      # the signing key outlives a restart (the watchdog restarts this service often)
                      cookie_key_file=default_key_path() if password else None)
     n_runs = len(app.state.runs.list_runs())
 
     print(f"prober web → http://{a.host}:{a.port}   ({n_runs} run(s) under {a.run})")
-    print(f"  probe engine: {a.impl}")
+    print("  probe engine: rust (search_driver)")
     # Say the access posture out loud at startup. A hosted instance silently running with the
     # probes wide open, or silently unable to run them at all, are both states an operator should
     # learn from the log rather than from a user's confusion.

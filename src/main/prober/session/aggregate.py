@@ -194,7 +194,7 @@ class _AggregateMixin:
         for b, _ in jobs:
             self._summary(b)
 
-        # 2. falsify each (its time is spent in the Node re-roll subprocess, so
+        # 2. falsify each (its time is spent in the re-roll driver subprocess, so
         #    threads overlap real work — bounded by `concurrency`).
         def _run_job(job):
             b, recon = job
@@ -202,7 +202,7 @@ class _AggregateMixin:
                 fb = falsify_battle(
                     ReconstructionRecord.load(recon), self._summary(b), self._npz(b),
                     worst=worst, gamma=self._gamma, n_seeds=n_seeds,
-                    n_alts=n_alts, followup=followup, impl=self._impl)
+                    n_alts=n_alts, followup=followup)
                 return (b, fb, None)
             except Exception as e:  # noqa: BLE001 — one battle's failure must not sink the scan
                 return (b, None, f"{type(e).__name__}: {e}")

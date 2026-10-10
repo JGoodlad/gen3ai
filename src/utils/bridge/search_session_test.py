@@ -1,13 +1,7 @@
-"""Unit tests for ``SearchSession``'s transport selection (pure — the driver child is a fake
-``Popen``, so nothing is spawned and no Node/cargo is needed).
-
-The point of these is the **byte-identical-default** bar: making the driver impl-selectable must
-not change what any existing caller spawns. So the node case asserts the EXACT argv the session
-used before the seam existed, and the rust case asserts it fails loudly rather than quietly
-serving node.
+"""Unit tests for ``SearchSession``'s driver child (pure — the child is a fake ``Popen``, so nothing is
+spawned and no cargo is needed). The driver is the Rust ``search_driver`` binary only: the Node driver and
+the ``impl=`` selector were deleted 2026-10-10 (owner: "delete node").
 """
-
-from pathlib import Path
 
 import pytest
 
@@ -64,70 +58,44 @@ def spawned(monkeypatch):
     return calls
 
 
-def test_default_is_node_and_spawns_the_exact_historical_argv(spawned):
-    """No ``impl`` argument ⇒ ``["node", <…/search_driver.js>]``, exactly what the session
-    hard-coded before this was selectable. Any drift here is a behaviour change for every
-    existing caller (the prober, both search-teacher workers, teacher/produce)."""
-    s = SearchSession()
-    try:
-        assert s.impl == "node"
-        assert len(spawned) == 1
-        argv = spawned[0]
-        assert argv[0] == "node"
-        assert argv[1] == str(Path(ss_mod.__file__).parent / "search_driver.js")
-        assert len(argv) == 2
-    finally:
-        s.close()
-
-
-def test_explicit_node_matches_the_default(spawned):
-    a = SearchSession()
-    a.close()
-    b = SearchSession(impl="node")
-    b.close()
-    assert spawned[0] == spawned[1]
-
-
-def test_rust_execs_the_resolved_binary_and_never_node(spawned, tmp_path, monkeypatch):
+def test_the_session_execs_the_resolved_rust_binary_and_never_node(spawned, tmp_path, monkeypatch):
+    """The ONLY driver is the Rust ``search_driver`` binary (the Node driver and the ``impl=`` selector were
+    deleted 2026-10-10): the session execs the resolved binary, and it no longer accepts an engine choice."""
     fake = tmp_path / "search_driver"
     fake.write_text("#!/bin/true\n")
     monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(fake))
-    s = SearchSession(impl="rust")
+    s = SearchSession()
     try:
-        assert s.impl == "rust"
         assert spawned == [[str(fake.resolve())]]
     finally:
         s.close()
+    with pytest.raises(TypeError):
+        SearchSession(impl="node")  # type: ignore[call-arg]
+    assert len(spawned) == 1, "a refused construction must spawn nothing"
 
 
 def test_unresolvable_rust_binary_raises_before_spawning(spawned, tmp_path, monkeypatch):
-    """A missing rust binary must fail at construction with the actionable resolver error — NOT
-    fall back to node, and not surface later as a mysterious dead child."""
+    """A missing rust binary must fail at construction with the actionable resolver error — not
+    surface later as a mysterious dead child."""
     from utils.bridge import sim_bridge_bin
 
     monkeypatch.delenv("POKESIM_SEARCH_DRIVER_BIN", raising=False)
     monkeypatch.setattr(sim_bridge_bin, "_rust_bin_cache", {})
     monkeypatch.setattr(sim_bridge_bin, "_RUST_CRATE_DIR", tmp_path / "no_crate_here")
     with pytest.raises(SimBridgeBinaryError):
-        SearchSession(impl="rust")
-    assert spawned == [], "nothing may be spawned when the impl can't be resolved"
+        SearchSession()
+    assert spawned == [], "nothing may be spawned when the binary can't be resolved"
 
 
-def test_unknown_impl_rejected_before_spawning(spawned):
-    with pytest.raises(ValueError):
-        SearchSession(impl="bogus")
-    assert spawned == []
-
-
-def test_child_errors_name_the_impl_and_the_binary(spawned):
-    """A rust failure must self-diagnose. The stream-closed / timeout / desync messages used to
-    say 'search_driver.js died' unconditionally, which would read as a Node crash on a run that
-    never launched Node."""
-    s = SearchSession(impl="node")
+def test_child_errors_name_the_binary(spawned, tmp_path, monkeypatch):
+    """A failure must self-diagnose: the stream-closed / timeout / desync messages name the binary that
+    ran."""
+    fake = tmp_path / "search_driver"
+    fake.write_text("#!/bin/true\n")
+    monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(fake))
+    s = SearchSession()
     try:
-        who = s._who()
-        assert "node" in who
-        assert "search_driver.js" in who
+        assert str(fake.resolve()) in s._who()
     finally:
         s.close()
 

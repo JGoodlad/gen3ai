@@ -745,8 +745,8 @@ def _record_test_costs(session):
 _REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 _SHOWDOWN_DIR = os.path.join(_REPO_ROOT, "deps", "pokemon-showdown")
 
-# `dist/sim/index.js` is the compiled entry point the bridge children load (`local_sim_bridge.js`,
-# `replay_kernels.js` and `damage_probe.js` all `require(psPath + '/dist/sim/...')`); `node_modules/`
+# `dist/sim/index.js` is the compiled entry point the Node children load (`local_sim_bridge.js`,
+# `validate_team.js` and `damage_probe.js` all `require(psPath + '/dist/sim/...')`); `node_modules/`
 # is what that compiled code resolves ITS own imports through. Either one missing breaks the bridge,
 # and the two are restored by different steps, so both are checked and reported BY NAME.
 _REQUIRED_DEPS = (

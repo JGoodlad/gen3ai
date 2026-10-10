@@ -1,13 +1,13 @@
 //! search_driver_test.rs — the gate for the SEARCH kernels (`gen3_rust_search_driver_v1`,
 //! [`pokesim::search`]), covering everything that does NOT need the Node golden.
 //!
-//! The golden differential lives in `tmp/search_impl_parity.py` (it replays
-//! `tmp/search_golden_node.json` through the built `search_driver` binary). That harness
-//! is scratch and needs node + a captured record, so the properties below — the ones a
-//! `cargo test` run must never lose — are pinned here instead:
+//! The golden differential (`harness/search_impl_parity.py`, which replayed a captured
+//! `search_driver.js` golden through this binary) and the Node driver were DELETED on
+//! 2026-10-10 (owner: "delete node"); the properties below — the ones a `cargo test` run must
+//! never lose — are the node-free gate:
 //!
 //!   1. **AUX-RNG BIT-EXACTNESS** — the mulberry32-over-FNV-1a stream matches tables
-//!      produced by `replay_kernels.js`'s OWN `auxRngFromSeed` under node. A single wrong
+//!      produced by the (deleted) `replay_kernels.js`'s OWN `auxRngFromSeed` under node. A single wrong
 //!      operator (a signed shift, a non-wrapping multiply, a missing `>>> 0`) diverges by
 //!      draw 1, and every "random" arm in a search is downstream of this.
 //!   2. **`random_choice` DETERMINISM + LEGALITY** — the same seed reproduces the same
@@ -82,7 +82,8 @@ fn paused_session(dex: &Dex, turns: usize) -> BridgeSession {
 // 1. AUX-RNG BIT-EXACTNESS
 // ===========================================================================
 
-/// Draw tables produced by running `replay_kernels.js`'s OWN `auxRngFromSeed` under node:
+/// Draw tables produced by running `replay_kernels.js`'s OWN `auxRngFromSeed` under node (the file is
+/// deleted since 2026-10-10; recover it with `git show 84796da2:src/utils/bridge/replay_kernels.js`):
 ///
 /// ```text
 /// node -e "const K=require('./src/utils/bridge/replay_kernels.js');

@@ -208,3 +208,12 @@ def is_damaging(move_id: Optional[str]) -> bool:
     unrevealed move is not assumed to be damaging)."""
     md = get(move_id)
     return bool(md and md.is_damaging)
+
+
+#: ``{alias_id: canonical_move_id}`` from ``data/pokemon/gen3_move_aliases.json`` (Showdown's
+#: ``aliases.ts``, derived by ``tools/pokemon_data_extractor``; ``wisp`` → ``willowisp``). The SAME
+#: table the Rust port's dex resolves a packed-team move alias with. NOT read by the observation
+#: path (obs-neutral): its one Python reader is review tooling's packed-team decode
+#: (``utils.bridge.reconstruction.decode_packed_team``), which used to dump the table LIVE from the
+#: Showdown dist through a ``node`` subprocess (deleted 2026-10-10).
+move_aliases = _base.singleton(lambda: dict(_base.load_json("gen3_move_aliases.json")))

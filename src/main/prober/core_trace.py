@@ -131,7 +131,7 @@ def reward_config_for(recorded: "dict | None") -> RewardConfig:
     return RewardConfig.from_dict({**base, **(recorded or {})})
 
 
-def expand(summary_path: str, summary: dict, *, impl: str = "rust",
+def expand(summary_path: str, summary: dict, *,
            run_dir: Optional[str] = None) -> dict:
     """The full legacy summary (``meta`` + ``teams`` + ``invocations``) for a core trace.
 
@@ -144,20 +144,20 @@ def expand(summary_path: str, summary: dict, *, impl: str = "rust",
     mutating its summary must not reach another session's)."""
     if not is_core_trace(summary):
         return summary
-    return copy.deepcopy(_entry(summary_path, summary, impl=impl, run_dir=run_dir)["summary"])
+    return copy.deepcopy(_entry(summary_path, summary, run_dir=run_dir)["summary"])
 
 
-def protocol_log(summary_path: str, summary: dict, *, impl: str = "rust",
+def protocol_log(summary_path: str, summary: dict, *,
                  run_dir: Optional[str] = None) -> Tuple[str, ...]:
     """The trainee's protocol log EXACTLY as ``write_battle_record``'s ``*_replay.html`` would carry
     it (``battle._build_replay_events()`` of the expansion's battle, ``|``-lines only) — the stand-in
     for the ``_replay.html`` a core trace does not ship. Empty for a non-core summary."""
     if not is_core_trace(summary):
         return ()
-    return _entry(summary_path, summary, impl=impl, run_dir=run_dir)["protocol"]
+    return _entry(summary_path, summary, run_dir=run_dir)["protocol"]
 
 
-def _entry(summary_path: str, summary: dict, *, impl: str, run_dir: Optional[str]) -> dict:
+def _entry(summary_path: str, summary: dict, *, run_dir: Optional[str]) -> dict:
     files = _sibling_files(summary_path, summary)
     if run_dir is None:
         from main.prober.discovery import _infer_run_dir
@@ -165,10 +165,10 @@ def _entry(summary_path: str, summary: dict, *, impl: str, run_dir: Optional[str
         run_dir = _infer_run_dir(summary_path)
     cfg_path = os.path.join(run_dir, "model_config.json") if run_dir else None
     inputs = list(files.values()) + ([cfg_path] if cfg_path and os.path.exists(cfg_path) else [])
-    key = (os.path.abspath(summary_path), impl, tuple((p, os.stat(p).st_mtime_ns) for p in inputs))
+    key = (os.path.abspath(summary_path), tuple((p, os.stat(p).st_mtime_ns) for p in inputs))
     hit = _cache.get(key)
     if hit is None:
-        hit = _expand_uncached(summary, files, impl=impl, reward_cfg=_read_json(cfg_path))
+        hit = _expand_uncached(summary, files, reward_cfg=_read_json(cfg_path))
         _cache[key] = hit
         while len(_cache) > _CACHE_CAP:
             _cache.popitem(last=False)
@@ -259,11 +259,10 @@ def _stall_extra(walk, n_rows: int, threshold: int, side: str, commands) -> bool
     return last.view.turn >= threshold and bool(commands) and list(commands[-1]) == ["forcelose", side]
 
 
-def _expand_uncached(summary: dict, files: Dict[str, str], *, impl: str, reward_cfg: dict) -> dict:
+def _expand_uncached(summary: dict, files: Dict[str, str], *, reward_cfg: dict) -> dict:
     """The expansion through the RUST CORE (``gen3_core_walk_v1``): ``core_events --walk`` replays the
     reconstruction and reports the trainee's per-decision views, trackers, masks and choice tokens;
-    the summary is :class:`main.prober.core_recorder.CoreRecorder`'s. ``impl`` keys the cache only —
-    the walk is the core's own replay, whatever driver a counterfactual view uses."""
+    the summary is :class:`main.prober.core_recorder.CoreRecorder`'s."""
     from agents.training.stall import StallConfig
     from main.prober import core_walk
     from main.prober.core_recorder import CoreRecorder

@@ -34,7 +34,7 @@ Environment=GEN3AI_PROBER_PASSWORD_FILE=/home/goodlad/.config/gen3ai/prober-pass
 
 # models/ (not a single run): the header carries a run picker, so the endpoint
 # does not need restarting when a new generation starts training.
-# --job-workers 1: each job spawns Node re-rolls beside a live trainer, and the
+# --job-workers 1: each job spawns search_driver re-rolls beside a live trainer, and the
 # job endpoints are the one thing an authenticated visitor can use to spend real
 # CPU. One at a time is the bound.
 ExecStart=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.prober.web \
@@ -46,7 +46,7 @@ RestartSteps=6
 RestartMaxDelaySec=5min
 
 # MEASURED, not guessed. The app caches ProbeSessions LRU-bounded at 3, and a
-# scan of one run peaks around 400-700 MB; three plus a Node re-roll child sits
+# scan of one run peaks around 400-700 MB; three plus a re-roll driver child sits
 # near 2.5-3 GB. 6G leaves headroom for a falsify job without ever letting this
 # process be what pushes an 89 GB box (running training) into a global OOM — if
 # it gets there, its own cgroup should OOM and restart instead.

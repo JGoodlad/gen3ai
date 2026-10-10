@@ -133,6 +133,8 @@ done
 
 Without step 2 the root `conftest.py` REFUSES the test session with one message naming the fix (`GEN3AI_SKIP_DEPS_GUARD=1` opts a pure-unit CI out), and every Node-backed path (the team validator, `--server node`, the Node differential gates) fails with `Cannot find module '…/dist/sim/…'`.
 
+🚨 **Node's ONLY runtime job is TEAM VALIDATION** (owner 2026-10-10: "delete node", scoped the same day): `utils.teambuilder` runs `src/utils/bridge/validate_team.js` as a subprocess at startup, which is why the submodule stays a launch requirement. Everything else Node does is a DEV / TEST ORACLE — the differential gate ladder, the A/B fuzzers, the drift scan, `tools/` acquisition, the anchors' explicit `--server node` opt-out, the websocket front end's byte-identity test. The offline SEARCH / replay driver, `reconstruction`, `better_line` and every prober probe are RUST ONLY: the Node drivers (`search_driver.js` / `replay_driver.js`) are deleted, and a typed `--impl` on `main.prober.query` / `main.prober.web` / `main.harvest` (or `ws_frontend --impl node`) is refused with its reason. `src/node_free_search_integration_test.py` RUNS those paths with Node impossible (`src/utils/node_blocker.py`).
+
 ---
 
 ## Running Tests

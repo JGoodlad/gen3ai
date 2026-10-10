@@ -10,7 +10,7 @@ WHY SYNC HANDLERS. The read-only session calls are file IO (they open every trac
 FastAPI runs a `def` handler on a worker thread while an `async def` one runs ON the event loop.
 So these are deliberately `def`: a slow `scan` over a thousand-battle run must not stall the page
 that is polling a job. The genuinely expensive probes (`falsify_scan`, `calibration` — minutes,
-Node per re-roll) do not even get a thread per request; they go through `jobs.JobRegistry`.
+a search-driver child per re-roll) do not even get a thread per request; they go through `jobs.JobRegistry`.
 
 WHY THE HTML ROUTES ARE IN THE OPENAPI SCHEMA. `/openapi.json` is snapshot-committed and gated by
 `openapi_snapshot_test.py`, so the snapshot is the route inventory. Hiding the HTML routes would
@@ -113,7 +113,8 @@ class Health(BaseModel):
     n_runs: int = Field(..., description="Selectable runs under that root.")
     jobs_unlocked: bool = Field(..., description="May THIS request start an expensive probe?")
     auth_required: bool = Field(..., description="False when started with --open.")
-    impl: str = Field(..., description="Offline replay/search engine the probes spawn: node | rust.")
+    impl: str = Field(..., description="Offline replay/search engine the probes spawn — always "
+                                       "'rust' (the Node drivers were deleted, 2026-10-10).")
     version: str
     revision: str = Field(
         ..., description="Git revision of the SOURCE THIS PROCESS IS RUNNING (captured at import, "
@@ -184,7 +185,7 @@ class _NoBattles(HTTPException):
 
 def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                password: "str | None" = None, open_access: bool = False,
-               impl: str = "node", cookie_key_file: "str | None" = None) -> FastAPI:
+               cookie_key_file: "str | None" = None) -> FastAPI:
     """Build the app.
 
     `root` is a models directory (the picker enumerates its runs) or a single run directory (the
@@ -196,11 +197,6 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     app.state.root = root
     app.state.runs = RunStore(root) if root else None
     app.state.auth = Auth(password, open_access=open_access, key_file=cookie_key_file)
-    # WHICH offline replay/search engine the re-roll-backed probes spawn. `ProbeSession` treats
-    # this as SESSION-WIDE on purpose ("two probes of the same run answering under different
-    # engines would not be comparable"), so it is a startup flag here rather than a query param —
-    # a per-request knob would invite exactly the incomparable mix the seam exists to prevent.
-    app.state.impl = impl
     # LRU, NOT a plain dict — see _MAX_CACHED_SESSIONS. A scan of one run caches ~430 MB, and an
     # anonymous visitor can walk every run in the picker.
     app.state.sessions = OrderedDict()            # resolved run path -> ProbeSession
@@ -262,7 +258,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                 return got
             from main.prober.session import ProbeSession
             try:
-                got = ProbeSession(run_path, impl=app.state.impl)
+                got = ProbeSession(run_path)
             except Exception as exc:              # noqa: BLE001 — a broken run is a 400, not a 500
                 raise HTTPException(
                     status_code=400,
@@ -363,7 +359,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     def api_health(request: Request) -> Health:
         n = len(app.state.runs.list_runs()) if app.state.runs else 0
         return Health(ok=True, models_root=app.state.root, n_runs=n,
-                      jobs_unlocked=unlocked(request), impl=app.state.impl,
+                      jobs_unlocked=unlocked(request), impl="rust",
                       auth_required=app.state.auth.required, version=VERSION,
                       revision=SOURCE_REVISION, jobs_running=app.state.jobs.n_running())
 
@@ -469,7 +465,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         alts: int = Query(2, ge=1, le=8),
         concurrency: int = Query(1, ge=1, le=8,
                                  description="battles falsified in parallel; each re-roll spawns "
-                                             "Node, so raise it only on an idle box"),
+                                             "a search_driver child, so raise it only on an idle box"),
     ) -> JobRef:
         sess = session(pick(run))
         params = {"run": run, "outcome": outcome, "opponent": opponent, "step": step,
@@ -516,7 +512,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     # -- JSON API: the three PER-DECISION counterfactual probes (PASSWORD REQUIRED) -------
     #
     # Same registry, same gate, and for the same reason as the two run-level probes above: each of
-    # these spawns Node and runs for seconds to minutes (≈2 s for a depth-1 search, ≈4 s at depth 2,
+    # these spawns a search_driver child and runs for seconds to minutes (≈2 s for a depth-1 search, ≈4 s at depth 2,
     # seconds per replay rollout), so they are WORK, not reading. They differ only in being anchored
     # on ONE decision — hence `battle` + `inv`, and the battle token goes through `battle_row`, so a
     # client string is matched against the run's own listing rather than joined to a path.

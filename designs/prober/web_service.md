@@ -193,8 +193,8 @@ map: *anything an anonymous request can make grow must have a bound*.
 
 ## 6. Background jobs (`jobs.py`)
 
-`falsify_scan` and `calibration` spawn a re-roll child per seed per arm (Node under the default
-`--impl node`) and take minutes. Running one in a handler would stall every other page. So a submit
+`falsify_scan` and `calibration` spawn a re-roll child per seed per arm (the Rust `search_driver`
+binary) and take minutes. Running one in a handler would stall every other page. So a submit
 returns **202 + a job id**, the work runs on a small `ThreadPoolExecutor`, and the page polls
 `/partials/job/{id}` every 2 s — the poll trigger is emitted only while the job is unfinished. A
 failure is captured as `status="error"`, because a probe raising on a run whose traces have no
@@ -207,14 +207,14 @@ normally trains.
 an async one *on the event loop*; the read-only session calls do real file IO (every trace's npz), so
 making them async would let a slow `scan` stall a poll.
 
-## 7. Which sim the probes spawn (`--impl`)
+## 7. Which sim the probes spawn (one engine)
 
-`falsify_scan` and `calibration` re-roll turns through an offline replay/search driver: **node**
-(default) or **rust**. `ProbeSession` treats the choice as **session-wide** — two probes of the same run
-answering under different engines would not be comparable — so this is a **startup flag**, not a query
-parameter; the app caches one `ProbeSession` per run, which matches. `/api/health` reports the active
-engine. (`replay_counterfactual` plays out in process on the Rust core whatever `--impl` says —
-`designs/prober/sim_impl.md`.)
+`falsify_scan` and `calibration` re-roll turns through the offline replay/search driver, which is the
+Rust `search_driver` binary and nothing else. There is no engine choice: the Node drivers and the
+`--impl` startup flag were deleted 2026-10-10 (owner: "delete node"), and a typed `--impl` on
+`python -m main.prober.web` (or `python -m main.prober`) is REFUSED at parse time with its reason
+(`sim_bridge_bin.refuse_search_impl_flag`). `/api/health` still reports `impl`, always `"rust"`.
+(`replay_counterfactual` plays out in process on the Rust core — `designs/prober/sim_impl.md`.)
 
 ## 8. The OpenAPI snapshot
 

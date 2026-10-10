@@ -6,7 +6,7 @@
 * ``Core::finished`` reports every ended episode once, in env order, with its winner, end turn,
   forfeit and input log — identically through the FFI and the process front end;
 * ``rust_env_trace_json`` replays that log into records whose text the reconstruction record
-  reproduces through the offline replay driver (``replay_battle(impl="rust")``), and ends where the
+  reproduces through the offline replay driver (``replay_battle``), and ends where the
   core ended.
 """
 from __future__ import annotations
@@ -156,7 +156,7 @@ def test_the_trace_replays_to_the_cores_end_and_its_records_are_the_replay_drive
         assert header["event_schema"] == "gen3_core_event_v1" and header["viewer"] == "p1"
         texts = [json.loads(line)["text"] for line in t["records"]["p1"].splitlines()[1:]]
         rec = ReconstructionRecord.from_dict(dict(t["recon"], battle_tag=f"g{k}", trainee_username="rhone"))
-        rep = replay_battle(rec, impl="rust")
+        rep = replay_battle(rec)
         lines = [ln for ch in rep.p1_chunks for ln in ch.split("\n") if ln.startswith("|") and not ln.startswith("|t:|")]
         assert lines == [x for x in texts if not x.startswith("|t:|")]
         p = tmp_path / f"g{k}.p1.jsonl.gz"

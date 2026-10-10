@@ -48,7 +48,7 @@ rot between the builds that use them (the reason M1 deleted its cfg-gated spike 
 | build | self-check | who uses it |
 |---|---|---|
 | `cargo test` (the `test` profile has `debug_assertions`) | **ON** | every Rust test, and every binary a test spawns (`CARGO_BIN_EXE_*`) |
-| `cargo build --profile selfcheck --features emission-selfcheck` → `target/selfcheck/` | **ON** | the four A/B fuzzers (`ab_fuzz.js` state + `--protocol`, `bridge_ab_fuzz.js`, `gen_sim_bridge_diff.js`), `search_impl_parity.py` / `replay_impl_parity.py`, and every Python process under `POKESIM_EMISSION_SELFCHECK=1` — every pytest session (root `conftest.py`) and every fuzz script run directly (`sim_bridge_bin._auto_selfcheck`: an entry script named `*fuzz_test.py` / `*fuzz_e2e_test.py`) — so slice E/V's `core_events`, the Python fuzz scripts' `sim_bridge` and the search tests' `search_driver` |
+| `cargo build --profile selfcheck --features emission-selfcheck` → `target/selfcheck/` | **ON** | the four A/B fuzzers (`ab_fuzz.js` state + `--protocol`, `bridge_ab_fuzz.js`, `gen_sim_bridge_diff.js`), and every Python process under `POKESIM_EMISSION_SELFCHECK=1` — every pytest session (root `conftest.py`) and every fuzz script run directly (`sim_bridge_bin._auto_selfcheck`: an entry script named `*fuzz_test.py` / `*fuzz_e2e_test.py`) — so slice E/V's `core_events`, the Python fuzz scripts' `sim_bridge` and the search tests' `search_driver` |
 | `cargo build --release` → `target/release/` | **OFF — compiled out** | training (`utils.bridge.sim_bridge_bin` builds exactly this), eval, play, anchors |
 
 * **The self-check build has its OWN directory** (`[profile.selfcheck] inherits = "release"` in

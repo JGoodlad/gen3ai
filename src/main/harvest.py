@@ -725,13 +725,12 @@ def select(cands: Sequence[Candidate], n_states: int, *, mode: str = "blend", se
 _WORKER: dict = {}
 
 
-def _worker_init(subject_ckpt: str, impl: str) -> None:
+def _worker_init(subject_ckpt: str) -> None:
     for v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ.setdefault(v, "1")
     import torch
     torch.set_num_threads(1)
     _WORKER["subject"] = subject_ckpt
-    _WORKER["impl"] = impl
     _WORKER["sessions"] = {}
     _WORKER["models"] = {}
 
@@ -748,7 +747,7 @@ def _session_for(abs_prefix: str):
     traces = os.path.dirname(os.path.dirname(abs_prefix))
     sess = _WORKER["sessions"].get(traces)
     if sess is None:
-        sess = ProbeSession(traces, impl=_WORKER["impl"],
+        sess = ProbeSession(traces,
                             ckpt_override=_WORKER["subject"], compile_extractor=False)
         sess._play_models = _WORKER["models"]
         _WORKER["sessions"][traces] = sess
@@ -1055,7 +1054,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="outcome balance INSIDE the general stratum. Without it the gap term "
                         "selects won battles out of existence (measured: 1 of 300)")
     p.add_argument("--workers", type=int, default=2)
-    p.add_argument("--impl", default="rust", choices=("rust", "node"))
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--inline-obs", action="store_true",
                    help="embed each obs in its row (self-contained, ~13 KB/row before gzip)")
@@ -1075,6 +1073,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: "Optional[Sequence[str]]" = None) -> int:
     for v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ.setdefault(v, "1")
+    from utils.bridge.sim_bridge_bin import refuse_search_impl_flag
+
+    argv = list(sys.argv[1:] if argv is None else argv)
+    refuse_search_impl_flag(argv, "python -m main.harvest")
     args = build_parser().parse_args(argv)
     if args.finalize:
         return finalize(args.finalize)
@@ -1156,7 +1158,7 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:
         "finished_iso": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "subject_ckpt": os.path.relpath(subject, models_root),
         "models_root": models_root,
-        "runs": runs, "seed": args.seed, "impl": args.impl, "workers": args.workers,
+        "runs": runs, "seed": args.seed, "impl": "rust", "workers": args.workers,
         "rollouts": args.rollouts, "min_turn": args.min_turn,
         "priority_mode": args.priority, "max_per_battle": args.max_per_battle,
         "drag_frac": args.drag_frac, "general_win_frac": args.general_win_frac,
@@ -1276,7 +1278,7 @@ def _run_labeling(chosen: Sequence[Candidate], args, *, subject: str, models_roo
     stopped_early = False
     with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx,
                              initializer=_worker_init,
-                             initargs=(subject, args.impl)) as pool:
+                             initargs=(subject,)) as pool:
         # `submit` + `as_completed` rather than `map`, because `map` yields IN ORDER: one slow
         # state (a turn-100 drag rolled 32x to a 250-turn cap is minutes) would block every
         # finished result behind it, starving both the progress readout and the shard flush that

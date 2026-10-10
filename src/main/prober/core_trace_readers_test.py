@@ -39,7 +39,7 @@ def _write_core(run_dir: str, name: str, result: str = "LOSS", turns: int = 40) 
     return pre + "_summary.json"
 
 
-def _fake_expansion(summary_path, summary, *, impl="rust", run_dir=None):
+def _fake_expansion(summary_path, summary, *, run_dir=None):
     """What the replay would rebuild: the stored meta + one ``invocations`` entry per states row."""
     acts = {m: {"valid": True, "prob": "9.1%"} for m in ("substitute", "protect")}
     acts.update({f"slot{i}": {"valid": True, "prob": "9.1%"} for i in range(9)})
