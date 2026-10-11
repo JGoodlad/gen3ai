@@ -548,6 +548,14 @@ determinization on the training side and the ladder stands. Full text: the measu
    `run_det_playouts.py`, `score_det.py`. World building before registration: 16 prod states all reached 16 worlds
    (mean 3.2 tries per world).
 
+**Amendment 3 (2026-10-11, before any Phase 2 playout and before any Phase 1 outcome was read).** The orchestrator
+capped this pilot's CPU at 6 logical CPUs (physical cores 5–7 and their SMT siblings) until the closing test ends
+(~Mon 09:00; rule 5b, `94c324ab`: logical-CPU pins still slowed the live seed ~30 %). To keep Phase 2 inside the
+day: **Phase 2 plays the FIRST 8 of the 16 built worlds per state** (det LEAF-K up to 8, the det honest critic on
+worlds 0–7 unchanged; sequential halving capped at 8 samples per action, so its B = n·4 point is cap-bound and
+B = n·8 is not computed). R-HONEST and R-INFO are unchanged (both at K = 8); the retained share is read at K = 1, 4,
+8. Phase 1 is unchanged (its shard count changed on the restart; resume reads every shard file).
+
 ---
 
 ## 8. Build list

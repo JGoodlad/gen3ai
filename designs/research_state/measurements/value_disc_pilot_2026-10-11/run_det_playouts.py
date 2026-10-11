@@ -6,7 +6,7 @@ Phase 1's critic seeds 40–47 (one each). One fsync'd JSONL row per state; resu
     run_at_pin.sh <cp> 2 8 24h shards.sh W --det        (shards.sh passes --det through)
     run_at_pin.sh <cp> 2 8 24h run_det_playouts.py --shard i --of W [--limit N]
 
-The 16 worlds of one state are stepped in LOCKSTEP (one core handle each) and every pending row of
+The worlds of one state are stepped in LOCKSTEP (one core handle each) and every pending row of
 every world goes through ONE forward per step (identical rows deduplicated, as Phase 1).
 """
 import argparse
@@ -22,7 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import common as C  # noqa: E402
 from run_playouts import ACT, MOVE_START, Fwd, greedy  # noqa: E402
 
-J = 16
+#: worlds played per state (Amendment 3: 8, the first 8 of the 16 built; K ≤ 8 on the det rows)
+J = 8
 J_CRIT = 8
 
 
@@ -177,7 +178,7 @@ def main():
     ids = sorted(d["id"] for d in bank.decisions)
     ids = [x for i, x in enumerate(ids) if i % a.of == a.shard][: a.limit]
     path = od / "det" / f"rows_{a.shard}_of_{a.of}.jsonl"
-    done = {r["id"] for r in C.read_rows(path)}
+    done = {r["id"] for q in sorted(path.parent.glob("rows_*.jsonl")) for r in C.read_rows(q)}
     todo = [x for x in ids if x not in done]
     print(f"[det] {c} shard {a.shard}/{a.of}: {len(done)} done, {len(todo)} to go", flush=True)
     off = C.clock_offset()

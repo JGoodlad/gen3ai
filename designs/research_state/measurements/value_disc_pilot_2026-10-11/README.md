@@ -95,7 +95,9 @@ playout, ~15 CPU-s per state: ≈ 2.5 CPU-hours per checkpoint, far under the 12
 
 ## 6. Phase 1 results
 
-Not yet run.
+Not yet read. **Running** (2026-10-11): from 13:20 on 6 logical CPUs (physical cores 5–7 + SMT siblings, the
+orchestrator's rule-5b pin until the closing test ends), ~620 of 1,200 states left; ETA ≈ 16:00 for Phase 1, then
+Phase 2 (8 worlds per state, Amendment 3) ≈ 4–6 h more (UNVERIFIED estimates from the measured per-state CPU).
 
 ## 8. Phase 2: DETERMINIZED worlds (registered by the design doc's §7.10 Amendment 2)
 
@@ -107,7 +109,7 @@ between Phase 1 and Phase 2 is the price of not knowing the opponent's team (par
 
 | item | value |
 |---|---|
-| worlds | 16 per state; never-seen opponent slots sampled whole (species ∝ Smogon teammate co-occurrence with the revealed species, else usage; moves / item / ability / spread ∝ that species' usage; a Hidden Power sets its IVs), never-seen move slots of a seen mon re-drawn; only moves / items the pin's engine runs (`determinize.BANNED_*`, from `scan_move_probe`) |
+| worlds | 16 built per state, the FIRST 8 played (Amendment 3); never-seen opponent slots sampled whole (species ∝ Smogon teammate co-occurrence with the revealed species, else usage; moves / item / ability / spread ∝ that species' usage; a Hidden Power sets its IVs), never-seen move slots of a seen mon re-drawn; only moves / items the pin's engine runs (`determinize.BANNED_*`, from `scan_move_probe`) |
 | gate | the world's log, cut at the root, replayed at the pin (`core_events --trackers --obs`): the searched side's obs rows at every decision up to the root must be byte-equal to the true log's; ≤ 30 tries per world; a state enters only with all 16 worlds |
 | leaks (counted) | a seen mon's item, ability, nature, EVs, IVs; an ambiguous unseen move choice kept by name; the opponent's root-turn choice when the log holds it (~1 %); the true pre-root dice (a world must match the true team's construction draws) |
 | playouts | world j, dice seed j (Phase 1's leaf seed j), all actions to the end, CP greedy both sides; the opponent's open root decision answered greedily in the world |

@@ -41,7 +41,7 @@ def main():
         for r in C.read_rows(q):
             if r.get("ok"):
                 other_open[r["id"]] = bool(r["other_open"])
-    done = {r["id"] for r in C.read_rows(path)}
+    done = {r["id"] for q in sorted(path.parent.glob("worlds_*.jsonl")) for r in C.read_rows(q)}
     todo = [x for x in ids if x not in done]
     print(f"[worlds] {c}: {len(done)} done, {len(todo)} to go", flush=True)
     t0 = time.monotonic()

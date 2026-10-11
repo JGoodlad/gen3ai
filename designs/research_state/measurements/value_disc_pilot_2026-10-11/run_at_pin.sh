@@ -27,7 +27,8 @@ export PYTHONPATH="$PIN/src" CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS="$THREADS" 
 export VDP_CP="$CP" VDP_PIN="$PIN" VDP_PIN_SHA="$HEAD_SHA" VDP_THREADS="$THREADS" VDP_PY="$PY"
 cd "$PIN"
 case "$SCRIPT" in *.sh) RUNNER=bash ;; *) RUNNER="$PY" ;; esac
-# CPU cap (orchestrator 2026-10-11): pinned to $VDP_CPUS (default 4-15) so >= 4 hardware threads stay
-# free for a live trainer; keep (workers x threads) <= 12 across ALL concurrent jobs.
-CPUS="${VDP_CPUS:-4-15}"
+# CPU cap (orchestrator 2026-10-11, rule 5b): pinned to $VDP_CPUS (default 5-7,13-15 = physical cores 5-7 and
+# their SMT siblings; n and n+8 are siblings on this box) so the live trainer keeps its cores;
+# keep ALL concurrent workers x threads <= 6 until the closing test ends.
+CPUS="${VDP_CPUS:-5-7,13-15}"
 exec nice -n 19 "$REPO/scripts/ops/mem_cap.sh" --name "vdp_$CP" "$GB" timeout "$TO" taskset -c "$CPUS" "$RUNNER" "$HERE/$SCRIPT" "$@"

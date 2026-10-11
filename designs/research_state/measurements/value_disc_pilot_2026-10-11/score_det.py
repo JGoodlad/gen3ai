@@ -83,7 +83,12 @@ def read_cp(cp, partial):
     for did in ids:
         So, Sd = det_arrays(r1[did], rd[did], E[did])
         do, _ = S1.decisions(So)
-        dd, spd = S1.decisions(Sd)
+        n16 = S1.N_LEAF
+        S1.N_LEAF = Sd["W"].shape[1]                 # sequential halving's per-action cap = the worlds played
+        try:
+            dd, spd = S1.decisions(Sd)
+        finally:
+            S1.N_LEAF = n16
         T, t1 = So["truth"], So["top1"]
         X.append({k: T[v] - T[t1] for k, v in dd.items()})
         Xo.append({k: T[v] - T[t1] for k, v in do.items()})
@@ -91,7 +96,15 @@ def read_cp(cp, partial):
             costs.setdefault(k, []).append(S1.cost_of(Sd, k, spd))
     e = [E[i] for i in ids]
     bt = S1.Boot([x["battle"] for x in e], S1.reweights(st, e))
-    keys = sorted(X[0])
+    nw = len(rd[ids[0]]["out"][next(iter(rd[ids[0]]["out"]))])
+
+    def fits(k):
+        """A key whose per-action sample count exceeds the worlds played is not computable."""
+        if k.startswith("SH-"):
+            return int(k.split("n*")[1]) <= nw
+        name = k.split("|")[1]
+        return name == "CRITIC" or int(name.rsplit("K", 1)[1]) <= nw
+    keys = sorted(k for k in X[0] if fits(k))
     A = {k: np.array([p[k] for p in X]) for k in keys}
     O = {k: np.array([p[k] for p in Xo]) for k in keys}
     res = {"cp": cp, "n_states": len(ids), "excluded_no_world_set": len(excluded),
@@ -106,10 +119,9 @@ def read_cp(cp, partial):
          "det LEAF-K8 - oracle CRITIC": A["ARGMAX|LEAF-K8"] - O["ARGMAX|CRITIC"],
          "det CRITIC - oracle CRITIC": A["ARGMAX|CRITIC"] - O["ARGMAX|CRITIC"],
          "det LEAF-K8 - det LEAF-K4": A["ARGMAX|LEAF-K8"] - A["ARGMAX|LEAF-K4"],
-         "det LEAF-K16 - det LEAF-K8": A["ARGMAX|LEAF-K16"] - A["ARGMAX|LEAF-K8"],
          "det GUMBEL - ARGMAX at LEAF-K4": A["GUMBEL|LEAF-K4"] - A["ARGMAX|LEAF-K4"],
          "det SH-4 (B=n*2) - ARGMAX LEAF-K2": A["SH-4|B=n*2"] - A["ARGMAX|LEAF-K2"]}
-    for K in (1, 4, 16):
+    for K in (1, 4):
         C[f"R-INFO at K{K}: oracle - det LEAF-K{K}"] = O[f"ARGMAX|LEAF-K{K}"] - A[f"ARGMAX|LEAF-K{K}"]
     for d in S1.TRUNC_D:
         C[f"det TRUNC-{d}-K8 - det CRITIC"] = A[f"ARGMAX|TRUNC-{d}-K8"] - A["ARGMAX|CRITIC"]
@@ -118,7 +130,7 @@ def read_cp(cp, partial):
     for k, v in C.items():
         res["contrasts"][k] = bt.stat(v)
     # the share of the oracle leaf's improvement the honest leaf keeps (ratio of means, same draws)
-    for K in (1, 4, 8, 16):
+    for K in (1, 4, 8):
         a, o = A[f"ARGMAX|LEAF-K{K}"], O[f"ARGMAX|LEAF-K{K}"]
         nb = len(bt.ub)
         Sa = np.bincount(bt.bi, weights=a, minlength=nb)
@@ -171,7 +183,7 @@ def md(results):
         L += ["", "| contrast | Δ [95 %] |", "|---|---|"]
         for k, x in r["contrasts"].items():
             L.append(f"| {k} | {x['mean']:+.4f} [{x['ci'][0]:+.4f}, {x['ci'][1]:+.4f}] |")
-        for K in (1, 4, 8, 16):
+        for K in (1, 4, 8):
             x = r[f"retained_share_K{K}"]
             L.append(f"| retained share, LEAF-K{K} (det / oracle) | {x['mean']:.3f} {x['ci']} |")
         L += ["", "| unrevealed opponent slots | n | det LEAF-K8 | oracle LEAF-K8 | det CRITIC | oracle − det |",

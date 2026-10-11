@@ -207,7 +207,9 @@ def main():
         ids = ids[:a.limit]
     path = od / "rows" / f"shard_{a.shard}_of_{a.of}.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
-    done = {r["id"] for r in C.read_rows(path)} if not a.cost_only else set()
+    # done = a row in ANY shard file (so a relaunch may change the shard count)
+    done = set() if a.cost_only else {r["id"] for q in sorted(path.parent.glob("shard_*.jsonl"))
+                                      for r in C.read_rows(q)}
     todo = [x for x in ids if x not in done]
     print(f"[playouts] {c} shard {a.shard}/{a.of}: {len(done)} done, {len(todo)} to go", flush=True)
     off = C.clock_offset()
