@@ -1387,6 +1387,10 @@ The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the 
 
 [DESCRIPTIVE (POST-HOC on banked rows, no registered verdict) · ORACLE world (the playouts know both real teams; an honest leaf needs determinization) · one pre-end-state checkpoint, off-distribution states · ledger 2026-10-11 DESCRIPTIVE "VALUE DISCRIMINATION FOR SEARCH, the review's reads"; `measurements/value_disc_review_2026-10-11/`]
 
+**The registered pilot REPLICATES it on the closing test's end-state and production seeds, own states (2026-10-11, oracle world).** LEAF-K8's argmax beats the policy's pick by **+0.081 (end2) / +0.071 (prod)** per decision, the critic by +0.055 / +0.059 (R-LEAF LEAF-AHEAD on both); 16 rollouts add +0.010–0.017 more (R-K STILL CLIMBING); a 4-turn-then-critic leaf keeps about half at a seventh of the cost (R-TRUNC NONE: not within 1 point); the end-state critic alone +0.026 vs production's +0.012. **Trusting the policy prior HURTS** (Gumbel's rule at the `mctx` defaults −0.013 / −0.022; top-4 sequential halving worse at larger budgets): where the leaf disagrees with the policy, the leaf is right, and the value sits as much in the policy's confident states as its torn ones. Shared dice align for one turn (ρ 0.44–0.53) and not after (0.06), which indicates the per-turn reseed (S1). How much survives HONEST information is Phase 2 (determinized worlds, running).
+
+[SIGNIFICANT (registered R-LEAF, both seeds, CI excludes 0) · ORACLE world · 2 × 600 states · ledger 2026-10-11 MEASUREMENT "VALUE-DISCRIMINATION PILOT PHASE 1"; `measurements/value_disc_pilot_2026-10-11/`]
+
 ---
 
 ## 5. Retired hypotheses

@@ -7,6 +7,7 @@ set -uo pipefail
 W="$1"; shift
 DRIVER=run_playouts.py; TAG=""
 if [ "${1:-}" = "--det" ]; then DRIVER=run_det_playouts.py; TAG="det_"; shift; fi
+if [ "${1:-}" = "--worlds" ]; then DRIVER=det_worlds.py; TAG="worlds_"; shift; fi
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOGS="$HOME/gen3ai_archive/value_disc_pilot/$VDP_CP/logs"
 mkdir -p "$LOGS"

@@ -4,9 +4,10 @@
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
 **Status (2026-10-11): DESIGN, REVIEWED AND REVISED the same day** (an independent adversarial review at the owner's
-request; §12 lists every change and what remains disputed). **The pilot is REGISTERED (§7.10 Amendment 1: both
-closing-test seeds 2001, end2 and prod, oracle world) and its driver is built**
-(`research_state/measurements/value_disc_pilot_2026-10-11/`); no outcome has been read. The only numbers measured under this doc
+request; §12 lists every change and what remains disputed). **The pilot RAN: Phase 1 (oracle world, both
+closing-test seeds 2001) is READ (§7.11: R-LEAF LEAF-AHEAD on both, +7–8 points per decision at 8 rollouts);
+Phase 2 (determinized worlds, §7.10 Amendments 2–3) is running** (`research_state/measurements/value_disc_pilot_2026-10-11/`);
+the reusable search module is `src/main/value_search/`. The only numbers measured under this doc
 are the review's POST-HOC reads of BANKED rows (`research_state/measurements/value_disc_review_2026-10-11/`, §12.2):
 CPU, no playout run, no outcome of the pilot seen. §7 is the pilot's DRAFT pre-registration: it becomes a registration
 only when its own commit lands BEFORE the first playout and a ledger entry records it. §5's RNG findings are read from
@@ -556,6 +557,48 @@ worlds 0–7 unchanged; sequential halving capped at 8 samples per action, so it
 B = n·8 is not computed). R-HONEST and R-INFO are unchanged (both at K = 8); the retained share is read at K = 1, 4,
 8. Phase 1 is unchanged (its shard count changed on the restart; resume reads every shard file).
 
+### 7.11 Phase 1 RESULTS (oracle world, 2026-10-11; `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §6)
+
+600 own-trace states per checkpoint, every legal action, 40 shared seeds (16 leaf, 24 truth), all played. IMP on the
+win scale [95 %, battle-clustered], end2 / prod:
+
+| read | end2 | prod |
+|---|---|---|
+| IMP CRITIC (one-ply) | +0.026 [+0.014, +0.039] | +0.012 [+0.000, +0.023] |
+| IMP LEAF-K1 / K4 / **K8** / K16 | +0.035 / +0.069 / **+0.081** / +0.098 | +0.026 / +0.058 / **+0.071** / +0.082 |
+| IMP TRUNC-4-K1 / K4 / K8 | +0.027 / +0.052 / +0.051 | +0.028 / +0.037 / +0.037 |
+| IMP MIX-K8 (best scorer) | +0.087 | +0.076 |
+| **R-LEAF** (LEAF-K8 − CRITIC) | +0.055 [+0.040, +0.068] **LEAF-AHEAD** | +0.059 [+0.045, +0.075] **LEAF-AHEAD** |
+| R-TRUNC | **NONE** (TRUNC-4-K8 is −0.029 below the full leaf, +0.025 above the critic) | **NONE** (−0.035 / +0.025) |
+| R-K (K8 − K4) | +0.012 [+0.004, +0.020] **STILL CLIMBING** | +0.014 [+0.006, +0.021] **STILL CLIMBING** |
+| R-PRIOR (GUMBEL − ARGMAX at K4) | −0.013 [−0.021, −0.005] **PRIOR HURTS** | −0.022 [−0.031, −0.013] **PRIOR HURTS** |
+| R-SH (SH-4 at B = n·2 − ARGMAX K2) | −0.005 [−0.015, +0.006] NOT DETECTED | −0.002 [−0.012, +0.008] NOT DETECTED |
+| R-PAIR: ρ(1) / ρ(terminal) | 0.44 [0.37, 0.52] / 0.062 | 0.53 [0.45, 0.62] / 0.065 → **ALIGNMENT-LOSS SIGNATURE** |
+
+**What it says.**
+- The oracle rollout leaf improves decisions by 7–8 points per decision at 8 rollouts and is still climbing at 16
+  (above the predicted +0.02–0.06); the owner's "10×" question has a decision-currency answer: doubling 8 → 16 buys
+  +1–2 points more.
+- The end-state critic's one-ply decisions are better than production's (+0.026 vs +0.012; descriptive, different
+  state sets), but both are far below the leaf.
+- A 4-turn leaf keeps HALF the full leaf's value at a seventh of the cost (end2 TRUNC-4-K4 +0.052 at 1.3 CPU-s vs
+  LEAF-K8 +0.081 at 19.6), so it is the cost-efficient leaf; it does NOT clear R-TRUNC's 1-point non-inferiority.
+  1–2 turns buy nothing over the critic.
+- **Trust the leaf, not the prior:** Gumbel's prior-aware selection at the `mctx` defaults and the top-k
+  restrictions (PRIOR-2 / 3, SH-4) LOSE value; uniform allocation with an argmax (or SH over ALL legal actions at the
+  smallest budget) is the best acting rule measured. The value is spread across the policy's confident and torn
+  states alike, and it lives in the moves the policy ranks low. Consequence for §13's target: the completed-Q policy
+  target needs a larger σ scale (c_scale) than 0.1, or a sharper target, to carry the leaf's information.
+- The AIVAT-style branch-turn control variate buys nothing (CV-K8 − LEAF-K8 ≈ 0); averaging the critic into the leaf
+  (MIX) buys a little (+0.005–0.007 at K8, CI clear of 0).
+- **R-PAIR:** shared dice keep half their correlation for one turn (ρ(1) 0.44–0.53) and lose it by the end (0.06):
+  the registered rule says build S1 (per-turn reseed). Its payoff is in pairwise comparisons (sequential halving,
+  ranking two actions), less in an argmax over independent means.
+
+### 7.12 Phase 2 RESULTS (determinized worlds)
+
+Running (2026-10-11); this section is filled when its rows are complete.
+
 ---
 
 ## 8. Build list
@@ -728,3 +771,4 @@ states over ≥ 300 battles should give about ±0.012, enough to detect a 2-poin
 | 2026-10-11 | **REVIEWED AND REVISED (independent review, owner request)** | The pilot's PRIMARY becomes DECISION IMPROVEMENT over the policy's own pick (R-LEAF), with R-TRUNC (truncated leaves), R-K (the "10×" question on the decision currency) and R-PAIR (now gating S1 only when no truncated leaf works); 600 states stratified by the policy's gap over ALL legal actions; the independent-seed arm dropped; the ORACLE-world asymmetry named as a fifth error source; truncated / mixed leaves, AIVAT-style control variates, a regret-aware acting rule and a sibling-level trunk signal added as levers; the RNG table corrected file by file (47 + 7 sites; Quick Claw at the end of the previous turn moves S1's hook; speed-tie and always-tied shuffles; any faint ends the turn's actions; the fork arm keeps its stream); training-side claims scoped to their provenance (v13-W, rb-blob readout refits; UNVERIFIED for a trunk and the end state); related work added | keeping pairwise accuracy and the separable share as the decision currency (equal accuracy hid unequal decisions on banked rows); a torn-only sample (the banked leaf value is larger on decided states); the independent-seed control (the derangement estimator reads 1.000 [0.996, 1.005]); building S1 on an S0 VRF the banked rows already put at 1.06–1.13 without first trying truncation | §2.3 and §12 (POST-HOC reads of banked rows, `research_state/measurements/value_disc_review_2026-10-11/`); §5 re-verified at `f56621db`; owner 2026-10-11 |
 | 2026-10-11 | **PILOT REGISTERED (§7.10 Amendment 1), owner brief "make any decisions to gather data useful for design or our roadmap"** | Both closing-test seeds 2001 (end2 at `62085750`, prod at `95d014fa`), each at its own pin and on its own eval-trace states (600 each, gap quintiles); seeds 0–15 leaf / 16–39 truth / 40–47 critic; added scorers LEAF-K16, TRUNC at K up to 16, the AIVAT-style branch-turn control variate CV-K; acting rules defined before any outcome (ARGMAX, PRIOR-k, GUMBEL with `mctx` defaults, PUCT, sequential halving at matched budgets, the old 2·SE gate); R-PRIOR and R-SH added as secondary rules | waiting for the closing-test verdict to pick one arm (both are read instead, so the end-state critic's decision value and production's are both measured); the Lane S bank (off-distribution); the per-turn AIVAT form (needs extra dice samples per turn: deferred) | `research_state/measurements/value_disc_pilot_2026-10-11/README.md`; ledger 2026-10-11 REGISTRATION |
 | 2026-10-11 | **PHASE 2 REGISTERED (§7.10 Amendment 2): determinized worlds, offline** | 16 Smogon-prior worlds per state, rejection by byte-equal replay of the searched side's observations; Phase 1's scorers re-measured against the true world's truth; R-HONEST (honest leaf vs honest critic) and R-INFO (oracle vs honest leaf) registered | the model's own belief (X5 hypothesis tokens) as the sampler (a decoder for sampling sets from the network's belief is a bigger build, and the Smogon prior is the owner's prior rule); a fresh state constructor in the Rust core (a parity-critical crossing; rejection over the true log needs none); full determinization of a seen mon's item / EVs / nature (they shape the observed history, so the byte-equal gate would reject almost every redraw) | `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §8; ledger 2026-10-11 REGISTRATION "PHASE 2" |
+| 2026-10-11 | **PHASE 1 READ (oracle world)** | R-LEAF LEAF-AHEAD on both seeds (LEAF-K8 − CRITIC +0.055 / +0.059); R-K STILL CLIMBING; R-TRUNC NONE; R-PRIOR PRIOR HURTS; R-SH NOT DETECTED; R-PAIR ALIGNMENT-LOSS SIGNATURE. The search module's DEFAULT acting rule becomes a uniform-allocation ARGMAX (the measured best), with Gumbel's rule kept as an option; the 4-turn truncated leaf is the cost-efficient leaf (half the value at a seventh of the cost); S1 (per-turn reseed) is now indicated by the registered rule | Gumbel's prior-aware rule at the `mctx` defaults and top-k sequential halving as the default (both measured WORSE here); the AIVAT branch-turn CV (no gain); building S2 before S1 | §7.11; `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §6; ledger 2026-10-11 "PHASE 1" |

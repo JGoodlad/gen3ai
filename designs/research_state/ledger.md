@@ -24337,3 +24337,32 @@ owner's deferral of determinization for training and the ladder stands. Full tex
   INFO-COSTS; the gap largest with ≥ 2 unrevealed opponent slots.
 
 Tag: **REGISTRATION · CPU · offline · no outcome read**
+
+### 2026-10-11 · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 1 (oracle world): R-LEAF LEAF-AHEAD on BOTH closing-test seeds — an 8-rollout leaf's argmax beats the policy's own pick by +0.081 (end2) / +0.071 (prod) win probability per decision, the critic by +0.055 / +0.059; still climbing at 16 rollouts; a 4-turn leaf keeps half at a seventh of the cost; trusting the policy prior (Gumbel's rule, top-k halving) LOSES 1–3 points; shared dice align for one turn (ρ 0.44–0.53) and not after**
+
+Registered by `design_value_discrimination.md` §7.10 Amendment 1 (ledger 2026-10-11 REGISTRATION); read on all
+1,200 states (600 per checkpoint, own eval traces, 417 / 416 battles), 40 shared seeds per action (16 leaf, 24
+truth no scorer read), CP greedy on both sides, ORACLE world, each checkpoint at its own pin
+(`rb_es_end2_s2001` @ `62085750`, `rb_es_prod_s2001` @ `95d014fa`). Battle-clustered bootstrap, 2,000 draws.
+
+| read | end2 | prod |
+|---|---|---|
+| IMP CRITIC / LEAF-K1 / LEAF-K8 / LEAF-K16 | +0.026 / +0.035 / **+0.081** / +0.098 | +0.012 / +0.026 / **+0.071** / +0.082 |
+| IMP TRUNC-4-K4 / TRUNC-4-K8 / MIX-K8 | +0.052 / +0.051 / +0.087 | +0.037 / +0.037 / +0.076 |
+| R-LEAF LEAF-K8 − CRITIC | +0.055 [+0.040, +0.068] | +0.059 [+0.045, +0.075] |
+| R-K LEAF-K8 − LEAF-K4 | +0.012 [+0.004, +0.020] | +0.014 [+0.006, +0.021] |
+| R-PRIOR GUMBEL − ARGMAX (K4) | −0.013 [−0.021, −0.005] | −0.022 [−0.031, −0.013] |
+| R-SH SH-4 (B = n·2) − ARGMAX K2 | −0.005 [−0.015, +0.006] | −0.002 [−0.012, +0.008] |
+| ρ(1 turn) / ρ(terminal) | 0.44 [0.37, 0.52] / 0.062 | 0.53 [0.45, 0.62] / 0.065 |
+
+Verdicts (both): R-LEAF **LEAF-AHEAD**, R-TRUNC **NONE**, R-K **STILL CLIMBING**, R-PRIOR **PRIOR HURTS**, R-SH
+**NOT DETECTED**, R-PAIR **ALIGNMENT-LOSS SIGNATURE**. Validity: derangement VRF 0.999 / 0.998 (contains 1); the
+CV's two first-decision estimates agree (≈ 0). Predictions: R-LEAF / R-K right; IMP above the predicted range;
+R-TRUNC, R-PAIR, R-PRIOR, R-SH wrong. Descriptive: the value is flat across the policy's gap quintiles, NOT smaller
+with more of the opponent hidden, larger early than late; re-weighting to the natural outcome rate lowers IMP
+~10–20 %. Cost (contended CPU forward): ~28 turns and ~60 forward rows per full playout; 6.1 / 3.5 ms CPU per row.
+
+Caveats: ORACLE world (Phase 2 prices it); a per-decision gain in the greedy continuation's Q is not a per-game win
+rate; eval-trace states are loss-enriched (re-weighted reads beside).
+
+Tag: **MEASURED · REGISTERED VERDICTS · oracle world · 2 checkpoints × 600 states · CPU**

@@ -93,11 +93,58 @@ IMP(CRITIC) −0.01 to +0.02, R-LEAF LEAF-AHEAD; R-K UNRESOLVED or STILL CLIMBIN
 **Size rule.** The throughput pilot (4 end2 states, cost only, no outcome printed) measured 0.060 CPU-s per
 playout, ~15 CPU-s per state: ≈ 2.5 CPU-hours per checkpoint, far under the 12-hour cap. No state is dropped.
 
-## 6. Phase 1 results
+## 6. Phase 1 results (ORACLE world; read 2026-10-11 15:17; full tables `result.md`, numbers `result.json`)
 
-Not yet read. **Running** (2026-10-11): from 13:20 on 6 logical CPUs (physical cores 5–7 + SMT siblings, the
-orchestrator's rule-5b pin until the closing test ends), ~620 of 1,200 states left; ETA ≈ 16:00 for Phase 1, then
-Phase 2 (8 worlds per state, Amendment 3) ≈ 4–6 h more (UNVERIFIED estimates from the measured per-state CPU).
+**In plain language.** On both checkpoints' own states, playing every legal action out with the network and
+picking the best beats the network's own pick by about **7–8 points of win probability per decision** at 8
+rollouts per action, and the curve is still climbing at 16. The critic alone buys 1–3 points. Short rollouts
+(4 turns, then the critic) buy about half of the full rollout's value at a seventh of its cost; 1–2 turns buy
+nothing over the critic. Trusting the policy's prior in the acting rule (Gumbel's rule) LOSES 1–3 points: where
+the rollouts disagree with the policy, the rollouts are usually right. Spending the budget on the policy's top
+choices (sequential halving) is no better than spreading it evenly. Pairing the dice shares real luck for one
+turn and loses it after (so a per-turn reseed would pay). All of this is in the ORACLE world: Phase 2 measures
+how much survives honest information.
+
+All 1,200 states played (no refusal); 417 / 416 battles. IMP on the win scale, [95 % battle-clustered], raw (the
+registered read) and re-weighted to the natural outcome rate; CPU-s per decision on this box's contended CPU
+forward (6 logical CPUs; the forward is ~95 % of it).
+
+| scorer (ARGMAX over all legal) | end2 IMP | end2 CPU-s | prod IMP | prod CPU-s |
+|---|---|---|---|---|
+| CRITIC (one-ply, 8 seeds) | +0.026 [+0.014, +0.039] | 0.66 | +0.012 [+0.000, +0.023] | 0.44 |
+| LEAF-K1 | +0.035 [+0.024, +0.046] | 2.4 | +0.026 [+0.014, +0.039] | 1.4 |
+| LEAF-K2 | +0.054 [+0.041, +0.067] | 4.9 | +0.037 [+0.024, +0.051] | 2.9 |
+| LEAF-K4 | +0.069 [+0.055, +0.083] | 9.8 | +0.058 [+0.044, +0.072] | 5.7 |
+| **LEAF-K8** | **+0.081 [+0.066, +0.095]** | 19.6 | **+0.071 [+0.057, +0.087]** | 11.5 |
+| LEAF-K16 | +0.098 [+0.084, +0.113] | 39.0 | +0.082 [+0.067, +0.097] | 23.0 |
+| TRUNC-1-K8 / TRUNC-2-K8 | +0.028 / +0.040 | 0.7 / 1.3 | +0.014 / +0.015 | 0.4 / 0.9 |
+| TRUNC-4-K1 / K4 / K8 / K16 | +0.027 / +0.052 / +0.051 / +0.052 | 0.33 / 1.3 / 2.6 / 5.2 | +0.028 / +0.037 / +0.037 / +0.041 | 0.21 / 0.85 / 1.7 / 3.4 |
+| MIX-K1 / MIX-K8 (½ critic + ½ leaf) | +0.049 / **+0.087** | 3.1 / 20.3 | +0.034 / +0.076 | 1.9 / 11.9 |
+| CV-K8 (AIVAT-style, branch turn) | +0.078 | 20.3 | +0.071 | 11.9 |
+| ORACLE upper bound (winner's curse) | +0.152 | — | +0.132 | — |
+
+| rule (registered) | contrast | end2 | prod | verdict (both) |
+|---|---|---|---|---|
+| **R-LEAF (primary)** | LEAF-K8 − CRITIC | +0.055 [+0.040, +0.068] | +0.059 [+0.045, +0.075] | **LEAF-AHEAD** |
+| R-TRUNC | TRUNC-4-K8 − LEAF-K8 / − CRITIC | −0.029 [−0.042, −0.017] / +0.025 [+0.012, +0.038] | −0.035 / +0.025 | **NONE** (no depth ≤ 4 keeps the full leaf's value within 1 point) |
+| R-K | LEAF-K8 − LEAF-K4 | +0.012 [+0.004, +0.020] | +0.014 [+0.006, +0.021] | **STILL CLIMBING** (K16 − K8 +0.017 / +0.010, clear) |
+| R-PRIOR | GUMBEL − ARGMAX at LEAF-K4 | −0.013 [−0.021, −0.005] | −0.022 [−0.031, −0.013] | **PRIOR HURTS** (at K8: −0.022 / −0.031) |
+| R-SH | SH-4 (B = n·2) − ARGMAX LEAF-K2 | −0.005 [−0.015, +0.006] | −0.002 [−0.012, +0.008] | **NOT DETECTED** (at B = n·4 and n·8 SH-4 is WORSE: −0.011…−0.027) |
+| R-PAIR | ρ(1) / ρ(terminal) | 0.44 [0.37, 0.52] / 0.062 [0.051, 0.076] | 0.53 [0.45, 0.62] / 0.065 [0.052, 0.079] | **ALIGNMENT-LOSS SIGNATURE** ⇒ the registered rule says build S1 (per-turn reseed) |
+
+- **Validity:** the derangement VRF contains 1 (end2 0.999, prod 0.998); the CV's two estimates of the first
+  decision's V agree (mean difference −0.0003 [−0.0011, +0.0005] / 0.0000 [−0.0008, +0.0008]); the opponent's root
+  decision was open (answered greedily) on 98.7 % / 100 % of roots.
+- **Old acting rule:** GATE-2SE at K8 keeps +0.050 / +0.041 of the argmax's +0.081 / +0.071 (it switches on 18 % /
+  17 % of states vs ~50 %).
+- **Where (descriptive, end2 / prod, LEAF-K8):** flat across the policy's gap quintiles (q1 +0.078 / +0.090, q5
+  +0.075 / +0.072: "focus on torn states" is still the wrong selector); not smaller with more of the opponent hidden
+  (unrevealed 0–1: +0.072 / +0.061; 4–5: +0.092 / +0.074); larger early (turns 2–10 +0.082 / +0.090) than late
+  (26–40 +0.056 / +0.049); re-weighting to the natural outcome rate lowers every IMP by ~10–20 %.
+- **Predictions** (§5): R-LEAF and R-K right; IMP(LEAF-K8) ABOVE the predicted +0.02–0.06; R-TRUNC (predicted d = 4),
+  R-PAIR (predicted no signature), R-PRIOR (predicted not detected / helps) and R-SH (predicted helps) WRONG.
+- **Cost (measured, contended CPU):** a full playout is ~28 turns and ~60 forward rows (both sides); all-in CPU per
+  row 6.1 ms (end2) / 3.5 ms (prod); the critic's one-ply successors 0.66 / 0.44 CPU-s per decision.
 
 ## 8. Phase 2: DETERMINIZED worlds (registered by the design doc's §7.10 Amendment 2)
 
