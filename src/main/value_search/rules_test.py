@@ -22,7 +22,8 @@ def test_policy_order_breaks_ties_to_the_lower_index():
 def test_rescale_and_sigma():
     assert rules.rescale({1: 0.2, 2: 0.6}) == {1: 0.0, 2: 1.0}
     assert rules.rescale({1: 0.5, 2: 0.5}) == {1: 0.0, 2: 0.0}
-    assert rules.sigma(1.0, 8) == pytest.approx((50 + 8) * 0.1)
+    assert rules.sigma(1.0, 8) == pytest.approx((50 + 8) * 1.0)
+    assert rules.sigma(1.0, 8, c_scale=0.1) == pytest.approx((50 + 8) * 0.1)
 
 
 def test_pick_ties_go_to_the_policy_order():
@@ -33,12 +34,13 @@ def test_pick_ties_go_to_the_policy_order():
 
 def test_gumbel_score_trades_prior_against_value():
     lg = _logits({0: 3.0, 1: 0.0})
-    # a full win-scale gap (q̃ 1 vs 0) is worth (50 + N)·0.1 logits: 5.8 at N = 8 > the 3-logit prior gap
+    # a full rescaled gap (q̃ 1 vs 0) is worth (50 + N)·c_scale logits: 58 at N = 8 (c_scale 1)
     assert rules.pick(rules.gumbel_scores(lg, {0: 0.4, 1: 0.6}, 8), [0, 1]) == 1
-    # at N = 0 it is worth 5.0, still more than 3
-    assert rules.pick(rules.gumbel_scores(lg, {0: 0.4, 1: 0.6}, 0), [0, 1]) == 1
-    lg2 = _logits({0: 7.0, 1: 0.0})
+    lg2 = _logits({0: 70.0, 1: 0.0})
     assert rules.pick(rules.gumbel_scores(lg2, {0: 0.4, 1: 0.6}, 8), [0, 1]) == 0
+    # among three, the middle value's q̃ = 0.5 is worth 29 logits: a 30-logit prior lead keeps it on top
+    lg3 = _logits({0: 0.0, 1: 30.0, 2: 0.0})
+    assert rules.pick(rules.gumbel_scores(lg3, {0: 0.6, 1: 0.5, 2: 0.4}, 8), [1, 0, 2]) == 1
 
 
 def test_improved_policy_is_the_prior_when_every_q_is_equal():

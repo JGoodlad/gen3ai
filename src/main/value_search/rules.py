@@ -1,11 +1,13 @@
 """The ACTING RULES and the POLICY-IMPROVEMENT TARGET of the one-ply value search (pure numpy).
 
 Everything here is Gumbel MuZero's (Danihelka et al., ICLR 2022) final-selection machinery with NO
-Gumbel noise, at the ``mctx`` defaults the value-discrimination pilot registered
-(`designs/endstate/design_value_discrimination.md` §7.10 Amendment 1):
+Gumbel noise (`designs/endstate/design_value_discrimination.md` §7):
 
 * ``sigma(q̃) = (c_visit + N_max) · c_scale · q̃`` with q̃ the leaf values min-max rescaled to [0, 1]
-  over the actions they cover; ``c_visit`` 50, ``c_scale`` 0.1.
+  over the actions they cover; ``c_visit`` 50, ``c_scale`` **1.0** (the paper's board-game value). The
+  ``mctx`` default 0.1 was the pilot's registered rule and it LOST 1–3 points of decision improvement
+  against a plain argmax of the leaf (R-PRIOR, PRIOR HURTS on both checkpoints); the post-hoc scale read
+  (`target_scale_read.json`) recovers the full argmax value at c_scale ≥ 1.
 * the GUMBEL score of an action = its policy logit + sigma(q̃): prior-aware, value-driven.
 * SEQUENTIAL HALVING (Karnin et al. 2013, Gumbel AlphaZero's allocation): a playout budget split over
   ⌈log₂ m⌉ rounds among the policy's top-m, halving by the GUMBEL score after each round.
@@ -23,7 +25,7 @@ from typing import Dict, List, Optional, Sequence
 import numpy as np
 
 C_VISIT = 50.0
-C_SCALE = 0.1
+C_SCALE = 1.0
 TIE = 1e-6
 
 

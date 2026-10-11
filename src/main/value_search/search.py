@@ -32,10 +32,13 @@ class SearchConfig:
 
     budget: Optional[int] = None
     per_action: int = 4
-    allocation: str = "halving"
+    #: UNIFORM is the default: the pilot measured sequential halving over the policy's top-4 no better at
+    #: B = n·1…n·2 and WORSE at B ≥ n·4 (design doc §7.11, R-SH)
+    allocation: str = "uniform"
     m: Optional[int] = 4
-    rule: str = "gumbel"                   # uniform allocation only: "gumbel" | "argmax"
-    depth: Optional[int] = None
+    rule: str = "gumbel"                   # uniform allocation only: "gumbel" (c_scale 1.0) | "argmax"
+    #: 4 turns then the critic: half the full leaf's value at a seventh of its cost (§7.11); None = to the end
+    depth: Optional[int] = 4
     n_worlds: int = 16
     oracle: bool = False
 

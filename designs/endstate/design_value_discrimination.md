@@ -557,6 +557,15 @@ worlds 0–7 unchanged; sequential halving capped at 8 samples per action, so it
 B = n·8 is not computed). R-HONEST and R-INFO are unchanged (both at K = 8); the retained share is read at K = 1, 4,
 8. Phase 1 is unchanged (its shard count changed on the restart; resume reads every shard file).
 
+**Amendment 4 (2026-10-11, a DRIVER BUG fixed before any Phase 2 outcome was read).** The first Phase 2 pass refused
+153 of 554 prod states: the world builder rewrote a past opponent move it never saw executed to a numeric slot token
+(`move k`), which `core_events` (the gate) accepts but the playout core's replay REFUSES (it resolves a replayed
+choice against the offered tokens by NAME). Such states are exactly those with a chosen-but-unseen opponent move, so
+excluding them would bias the sample. Fix: the slot-tagged choice is rendered as the WORLD's move id at that slot of
+that mon (same semantics, accepted by both). Also a state needs only its first 8 worlds (Amendment 3), not all 16.
+Every world was rebuilt (deterministic: unaffected states get the same teams); the 406 states that had played were
+kept, the refused ones re-run. The same fix is in `src/main/value_search/worlds.py`.
+
 ### 7.11 Phase 1 RESULTS (oracle world, 2026-10-11; `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §6)
 
 600 own-trace states per checkpoint, every legal action, 40 shared seeds (16 leaf, 24 truth), all played. IMP on the

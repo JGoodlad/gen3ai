@@ -307,7 +307,7 @@ class WorldSampler:
                 elif seen_for:
                     tmpl.append([s_, t])
                 elif len(cand) == 1:
-                    tmpl.append([s_, f"move {moves_of[cand[0]].index(m) + 1}"])
+                    tmpl.append([s_, ("MOVE", cand[0], moves_of[cand[0]].index(m))])
                     leak["rewritten_moves"] += 1
                 else:
                     for k in cand:
@@ -322,8 +322,19 @@ class WorldSampler:
                 tmpl.append([s_, t])
 
         def world_cmds(team_w: str) -> List[list]:
-            names = [parse_set(e)[0] for e in team_w.split("]")]
-            return [[s_, f"switch {names[t[1]]}" if isinstance(t, tuple) else t] for s_, t in tmpl]
+            """The prefix with every SLOT-tagged choice rendered against the world's team: a switch to the
+            world's mon in that slot, a move as the world's move ID at that slot of that mon (the playout
+            core resolves a replayed choice against the offered tokens BY NAME: a numeric ``move k``
+            is refused there, though ``core_events`` accepts it)."""
+            sets_w = [parse_set(e) for e in team_w.split("]")]
+
+            def render(t):
+                if not isinstance(t, tuple):
+                    return t
+                if t[0] == "SLOT":
+                    return f"switch {sets_w[t[1]][0]}"
+                return f"move {sets_w[t[1]][4].split(',')[t[2]]}"      # ("MOVE", mon, slot)
+            return [[s_, render(t)] for s_, t in tmpl]
 
         rngs = [key_rng(key, j) for j in range(J)]
         teams: List[Optional[str]] = [None] * J

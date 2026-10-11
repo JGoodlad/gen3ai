@@ -281,7 +281,7 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
             elif seen_for:
                 tmpl.append([s_, t])
             elif len(cand) == 1:
-                tmpl.append([s_, f"move {moves_of[cand[0]].index(m) + 1}"])
+                tmpl.append([s_, ("MOVE", cand[0], moves_of[cand[0]].index(m))])
                 leak["rewritten_moves"] += 1
             else:
                 for k in cand:
@@ -301,8 +301,15 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
     revealed = kept
 
     def world_cmds(team_w: str) -> List[list]:
-        names = [parse_set(e)[0] for e in team_w.split("]")]
-        return [[s_, f"switch {names[t[1]]}" if isinstance(t, tuple) else t] for s_, t in tmpl]
+        sets_w = [parse_set(e) for e in team_w.split("]")]
+
+        def render(t):
+            if not isinstance(t, tuple):
+                return t
+            if t[0] == "SLOT":
+                return f"switch {sets_w[t[1]][0]}"
+            return f"move {sets_w[t[1]][4].split(',')[t[2]]}"      # ("MOVE", mon, slot)
+        return [[s_, render(t)] for s_, t in tmpl]
 
     rngs = [world_rng(did, j) for j in range(J)]
     teams: List[Optional[str]] = [None] * J

@@ -190,8 +190,8 @@ def main():
         with open(path, "a") as f:
             for i, did in enumerate(todo):
                 w = worlds.get(did)
-                if w is None or not w.get("ok") or any(t is None for t in w["teams"]):
-                    r = {"id": did, "ok": False, "error": "no complete world set (det_worlds)"}
+                if w is None or not w.get("ok") or any(t is None for t in w["teams"][:J]):
+                    r = {"id": did, "ok": False, "error": f"no complete set of the first {J} worlds (det_worlds)"}
                 else:
                     try:
                         r = one_state(cores, fwd, bank, did, w, off)
