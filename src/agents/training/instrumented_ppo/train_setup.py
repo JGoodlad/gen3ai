@@ -243,10 +243,19 @@ class TrainSetup:
             win_prob_on=bool(f.win_prob_on),
         )
 
-    def _micro_region(self) -> Any:
-        """R1 as installed: the compiled region under --compile-trainer (K8), else the function."""
+    def _micro_region(self, retained_graph: bool = False) -> Any:
+        """R1 as installed: the compiled region under --compile-trainer (K8), else the function. Under
+        `--learner-cudagraphs on` (gen3_r1_graphed_route_v1) the GRAPHED route serves a micro-step whose
+        graph is traversed once, and the compiled route one that a retain_graph probe re-enters
+        (``retained_graph``, `diagnostics_cadence.micro_retains_graph`); with the flag off there is one
+        compiled route and ``retained_graph`` changes nothing."""
         compiled = getattr(self, "_compiled_micro_step", None)
         if compiled is not None:
+            graphed = getattr(self, "_compiled_micro_step_graphed", None)
+            if graphed is not None:
+                from agents.model.compile_regions import r1_route_for
+                if r1_route_for(retained_graph=retained_graph) == "graphed":
+                    return graphed
             return compiled
         from agents.training.instrumented_ppo.micro_step import micro_step
         return micro_step

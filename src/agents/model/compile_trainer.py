@@ -453,7 +453,8 @@ def preflight_compile_trainer(model: Any, enabled: bool, *,
 
 
 def arm_compile_sentinel(model: Any, *, batch_size: int,
-                         emit: Optional[Callable[[str], None]] = None) -> str:
+                         emit: Optional[Callable[[str], None]] = None,
+                         learner_cudagraphs: bool = False) -> str:
     """Install, gate, prewarm and LOCK the learner's declared region, and attach the per-rollout /
     per-update checks. Called only for a compiled learner (`--compile-trainer`).
 
@@ -462,6 +463,11 @@ def arm_compile_sentinel(model: Any, *, batch_size: int,
     iteration). MUST run after `_apply_grad_checkpointing` (the forward reads `grad_checkpointing`,
     so a graph compiled before it is a stale entry) and before `learn()`. Raises
     `CompileTrainerError` (incl. `CompileSentinelError`).
+
+    ``learner_cudagraphs`` (`--learner-cudagraphs on`, T25 lever C, `gen3_r1_graphed_route_v1`): declare
+    R1's GRAPHED route too — the same micro-step compiled with cudagraph trees, served to every
+    micro-step that carries no retain_graph probe (`compile_regions.r1_route_for`); gated (with an
+    accumulation rung), prewarmed, counted by the inventory and judged by the canary like the first.
     """
     fe = getattr(getattr(model, "policy", None), "features_extractor", None)
     if fe is None or not hasattr(model, "_micro_static"):
@@ -487,8 +493,15 @@ def arm_compile_sentinel(model: Any, *, batch_size: int,
     t0 = time.perf_counter()
     _say(ctl.reset())
     from agents.model import compile_regions as _cr
+    # a RUNTIME switch, set by every process from its own argv (never pickled — `hparams`' exclusions)
+    model._learner_cudagraphs = bool(learner_cudagraphs)
     _say(f"[CompileRegions] installing {_cr.install(model, emit=emit)} (fullgraph=True, static "
          f"shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)")
+    if learner_cudagraphs:
+        ctl.graphed_check = lambda: _cr.graphed_route_skipped(model)
+        _say("📸 [CompileRegions] --learner-cudagraphs on: R1's GRAPHED route (cudagraph trees) serves every "
+             "micro-step with no retain_graph probe; the compiled route serves the probe micro-steps "
+             "(gen3_r1_graphed_route_v1)")
     _cr.gate_regions(model, batch_size=int(batch_size), say=_say)
     line = ctl.prewarm(_cr.prewarm_calls(model, batch_size=int(batch_size)))
     _say(_cr.assert_inventory(model))

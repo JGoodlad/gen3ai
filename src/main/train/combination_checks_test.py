@@ -209,6 +209,8 @@ ARGVS: dict[str, list[str]] = {
     # T6 SPRT promotion
     "promotion_sprt_needs_self_play": ["--promotion-sprt"],
     "promotion_sprt_ignores_the_threshold": ["--promotion-sprt", "--self-play", "--promote-threshold", "0.6"],
+    # T25 lever C (gen3_r1_graphed_route_v1): the graphed route needs a compiled CUDA learner
+    "learner_cudagraphs_needs_the_compiled_cuda_learner": ["--learner-cudagraphs", "on", "--device", "cpu"],
 }
 
 

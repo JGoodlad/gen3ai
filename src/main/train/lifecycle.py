@@ -81,7 +81,11 @@ def _maybe_compile_trainer(model, args) -> None:
     """
     from agents.model.compile_trainer import (CompileTrainerError, check_shape_stability,
                                                preflight_compile_trainer)
+    from main.train.compile_flags import learner_cudagraphs_refusal
     try:
+        refusal = learner_cudagraphs_refusal(args)
+        if refusal is not None:
+            raise CompileTrainerError(refusal)
         if getattr(args, "compile_trainer", False):
             # Decidable at startup, so decide it at startup: an update that does not divide into full
             # micro-batches would hand the one compiled learner graph a second, undeclared shape (the
@@ -117,10 +121,12 @@ def _arm_compile_sentinel(model, args) -> None:
     before it is a stale cache entry) and before `learn()`. No-op when the learner is not compiled.
     """
     from agents.model.compile_trainer import CompileTrainerError, arm_compile_sentinel
+    from main.train.compile_flags import learner_cudagraphs_on
     if not getattr(args, "compile_trainer", False):
         return
     try:
-        arm_compile_sentinel(model, batch_size=int(model.batch_size), emit=send_event)
+        arm_compile_sentinel(model, batch_size=int(model.batch_size), emit=send_event,
+                             learner_cudagraphs=learner_cudagraphs_on(args))
     except CompileTrainerError as exc:
         print(f"\n[CompileSentinel] FATAL: {exc}", file=sys.stderr, flush=True)
         send_event(f"[CompileSentinel] FATAL: {exc}")

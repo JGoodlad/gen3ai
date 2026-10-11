@@ -80,6 +80,12 @@ class Signature(NamedTuple):
     batch: str                       # "batch_size"
     mode: str                        # "eval" | "train"
     grad: bool
+    #: Which compiled callable serves it: "compiled" (the region's one compile) or "graphed" (the same
+    #: function compiled again with Inductor's cudagraph trees, `--learner-cudagraphs on`).
+    route: str = "compiled"
+    #: The trainer flag that DECLARES this signature (None = always declared). A gated signature exists
+    #: only on a run whose flag is on (`declared_signatures`).
+    gate: Optional[str] = None
 
 
 class Region(NamedTuple):
@@ -92,7 +98,11 @@ class Region(NamedTuple):
 
 REGIONS: Tuple[Region, ...] = (
     Region("R1_learner_micro_step", "instrumented_ppo.micro_step.micro_step",
-           (Signature("batch_size", "train", True),), True,
+           (Signature("batch_size", "train", True),
+            # T25 lever C (`gen3_r1_graphed_route_v1`, `--learner-cudagraphs on`): the SAME signature
+            # replayed from cudagraph trees on every micro-step that carries no retain_graph probe; the
+            # "compiled" route above serves the probe micro-steps (`r1_route_for`).
+            Signature("batch_size", "train", True, "graphed", "learner_cudagraphs")), True,
            "the accumulation group + optimizer step are per GROUP; the host read follows it"),
     Region("R2_rank_probe", "rank_metrics.rank_probe_from_stash (no forward)", (), False,
            "reads R1's own forward's stashes; the spectra are device tensors, one host read"),
@@ -132,20 +142,53 @@ def compiled_regions() -> Tuple[Region, ...]:
     return tuple(r for r in REGIONS if r.compiled)
 
 
-def declared_signature_count() -> int:
-    """How many compiled graphs the table declares."""
-    return sum(len(r.signatures) for r in compiled_regions())
+def learner_cudagraphs_on(model: Any = None) -> bool:
+    """Is the GRAPHED R1 route declared on ``model`` (`--learner-cudagraphs on`, set by
+    `compile_trainer.arm_compile_sentinel` before `install`)? False for None / an unset model."""
+    return bool(getattr(model, "_learner_cudagraphs", False)) if model is not None else False
+
+
+def declared_signatures(model: Any = None) -> Tuple[Signature, ...]:
+    """The compiled signatures ``model``'s run declares: every ungated one, and a gated one only when
+    its flag is on for ``model`` (None = no flag on: the production table)."""
+    on = {"learner_cudagraphs": learner_cudagraphs_on(model)}
+    return tuple(s for r in compiled_regions() for s in r.signatures
+                 if s.gate is None or on.get(s.gate, False))
+
+
+def declared_signature_count(model: Any = None) -> int:
+    """How many compiled graphs the table declares for ``model``'s run — one dynamo cache entry each on
+    R1's code object (`assert_inventory`)."""
+    return len(declared_signatures(model))
+
+
+def r1_route_for(*, retained_graph: bool) -> str:
+    """WHICH R1 callable a micro-step takes (`gen3_r1_graphed_route_v1`): ``"compiled"`` when the
+    micro-step will call autograd through R1's graph a SECOND time — a `retain_graph=True` probe before
+    its `backward()` (the per-term noise sampler's flush, the grad-balance probe) — else ``"graphed"``.
+    Decided BEFORE the call from the diagnostics plan and the probes' own state
+    (`instrumented_ppo.diagnostics_cadence.micro_retains_graph`): deterministic, never a try / except.
+    WHY: cudagraph trees record ONE backward per forward; a second traversal of the graph dies in the
+    recording ("graph recording observed an input tensor deallocate during graph recording that did not
+    occur during replay", F-PB-2) — so no retain_graph probe may ever run on the graphed route."""
+    return "compiled" if retained_graph else "graphed"
 
 
 # ------------------------------------------------------------------------------------- install
 def install(model: Any, *, backend: Optional[str] = None,
-            emit: Optional[Callable[[str], None]] = None) -> List[str]:
+            emit: Optional[Callable[[str], None]] = None,
+            graphed_backend: Optional[Any] = None) -> List[str]:
     """Compile R1 (`fullgraph=True`, static shapes) and install it as ``model._compiled_micro_step``
     (read by `TrainSetup._micro_region`). Any instance-level extractor forward (none is installed on
     the learner since the extractor-only compile's deletion) is removed first, so the region traces
     the extractor's own forward and every other caller runs it eager. Returns the installed region
     names. Compilation happens LAZILY at the region's first call — the gate and the prewarm make that
-    first call at startup."""
+    first call at startup.
+
+    Under `--learner-cudagraphs on` (``model._learner_cudagraphs``, gen3_r1_graphed_route_v1) R1 is
+    compiled a second time as the GRAPHED route (``model._compiled_micro_step_graphed``): the same
+    kwargs plus Inductor's ``triton.cudagraphs``. ``graphed_backend`` is a TEST SEAM (CPU has no
+    cudagraphs): that route compiles with it instead, without options."""
     from agents.model.compile_control import control
     from agents.training.instrumented_ppo.micro_step import micro_step
     policy = model.policy
@@ -160,11 +203,45 @@ def install(model: Any, *, backend: Optional[str] = None,
     kw: Dict[str, Any] = {"fullgraph": True, "dynamic": False}
     if backend is not None:
         kw["backend"] = backend
-    opts = r1_inductor_options(getattr(model, "_r1_inductor_preset", "default"))
+    preset = str(getattr(model, "_r1_inductor_preset", "default") or "default")
+    opts = r1_inductor_options(preset)
+    graphed = learner_cudagraphs_on(model)
+    if graphed and "cudagraphs" in preset.split("+"):
+        raise ct.CompileTrainerError(
+            f"--learner-cudagraphs on with the R1 Inductor preset {preset!r}: the preset graphs R1's ONE "
+            f"compile, so the retain_graph probes would run through cudagraph trees again (F-PB-2). The "
+            f"flag declares its own graphed route; drop `cudagraphs` from the preset "
+            f"(gen3_r1_graphed_route_v1)")
     if opts:                              # T25 levers B / C: a non-default preset only (`R1_INDUCTOR_PRESETS`)
         kw["options"] = opts
     r1c = ctl.wrap_compiled(torch.compile(micro_step, **kw))
     rows = int(getattr(model, "batch_size", 0) or 0)
+    model._compiled_micro_step = _r1_dispatcher(r1c, rows, "compiled")
+    names = ["R1_learner_micro_step"]
+    if hasattr(model, "_compiled_micro_step_graphed"):   # a re-install drops an earlier graphed route
+        model._compiled_micro_step_graphed = None
+    if graphed:
+        # T25 lever C (`gen3_r1_graphed_route_v1`): R1 compiled a SECOND time, the same function and the
+        # same options plus cudagraph trees — a second DECLARED signature on R1's code object (dynamo keys
+        # a cache entry by its compile wrapper), gated, prewarmed and locked like the first.
+        gkw = dict(kw, options={**opts, **R1_INDUCTOR_PRESETS["cudagraphs"]})
+        if graphed_backend is not None:              # the CPU test seam (no options: a stand-in)
+            gkw = {k: v for k, v in kw.items() if k != "options"}
+            gkw["backend"] = graphed_backend
+        r1g = ctl.wrap_compiled(torch.compile(micro_step, **gkw))
+        model._compiled_micro_step_graphed = _r1_dispatcher(r1g, rows, "graphed")
+        names.append("R1_learner_micro_step[graphed]")
+        from agents.model.compile_control import cudagraph_skips
+        model._cudagraph_skips_at_install = cudagraph_skips()
+    # the R1 signature this run DECLARES (its levers from the resolved config) — every update is
+    # held to it (`check_r1_declared`)
+    model._r1_declared = r1_declaration(model)
+    return names
+
+
+def _r1_dispatcher(r1c: Callable[..., Any], rows: int, route: str) -> Callable[..., Any]:
+    """The installed R1 callable of one ROUTE: the row-count refusal, the no-silent-eager check and
+    the route counters (``R1_compiled`` for every compiled call; ``R1_graphed`` for the graphed one)."""
 
     def r1(policy: Any, obs: Any, actions: Any, *rest: Any) -> Any:
         # R1's ONE declared signature is `batch_size` rows (`gen3_r1_no_ragged_v1`). The collector
@@ -183,13 +260,25 @@ def install(model: Any, *, backend: Optional[str] = None,
         out = r1c(policy, obs, actions, *rest)
         _ran_compiled("R1", before)
         RC.count("R1_compiled")
+        if route == "graphed":
+            RC.count("R1_graphed")
         return out
     r1._gen3_compiled = r1c                              # type: ignore[attr-defined]
-    model._compiled_micro_step = r1
-    # the R1 signature this run DECLARES (its levers from the resolved config) — every update is
-    # held to it (`check_r1_declared`)
-    model._r1_declared = r1_declaration(model)
-    return ["R1_learner_micro_step"]
+    r1._gen3_route = route                               # type: ignore[attr-defined]
+    return r1
+
+
+def r1_routes(model: Any) -> List[Tuple[str, Callable[..., Any]]]:
+    """Every installed R1 route as ``(route, callable)`` — the graphed one FIRST (it serves ~every
+    micro-step, so the gate and the canary judge it first), then the compiled one."""
+    out: List[Tuple[str, Callable[..., Any]]] = []
+    g = getattr(model, "_compiled_micro_step_graphed", None)
+    if g is not None:
+        out.append(("graphed", g))
+    c = getattr(model, "_compiled_micro_step", None)
+    if c is not None:
+        out.append(("compiled", c))
+    return out
 
 
 def _ran_compiled(region: str, before: int) -> None:
@@ -210,18 +299,44 @@ def assert_inventory(model: Any) -> str:
     prewarm): one cache entry on R1's code object. Other code objects are not judged (they belong to
     other components). Raises `CompileTrainerError`; returns the log line."""
     from agents.model.compile_control import cache_entries_by_code
+    skip = graphed_route_skipped(model)          # the graphed route's own failure, named first
+    if skip is not None:
+        raise ct.CompileTrainerError(skip)
     ent = cache_entries_by_code()
-    want = {"micro_step": 1}
+    want = {"micro_step": declared_signature_count(model)}
     got = {name: sum(v for k, v in ent.items() if k.split(" ")[0] == name) for name in want}
     if got != want:
         raise ct.CompileTrainerError(
             f"--compile-trainer: the compiled-region INVENTORY differs from the declaration — "
             f"cache entries {got}, declared {want} (gen3_no_silent_eager_v1)")
-    return "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)"
+    if not learner_cudagraphs_on(model):
+        return "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)"
+    return ("[CompileRegions] inventory == declaration: R1 2 graphs (fullgraph=True) — the compiled "
+            "route + the GRAPHED route (cudagraph trees, --learner-cudagraphs on; 0 cudagraph skips)")
+
+
+def graphed_route_skipped(model: Any) -> Optional[str]:
+    """The FATAL's text when Inductor declined to cudagraph a graph since the graphed route was installed
+    (its `cudagraph_skips` counter moved: an input mutation, a CPU tensor, …) — the graphed route would
+    then run UN-graphed, a silent no-op lever (`gen3_r1_graphed_route_v1`, the no-silent-eager rule
+    applied to graphs). None when healthy or when no graphed route is declared."""
+    if not learner_cudagraphs_on(model):
+        return None
+    from agents.model.compile_control import cudagraph_skips
+    base = getattr(model, "_cudagraph_skips_at_install", None)
+    now = cudagraph_skips()
+    if base is None or now <= int(base):
+        return None
+    return (f"--learner-cudagraphs on: Inductor SKIPPED cudagraphs {now - int(base)} time(s) since R1's "
+            f"graphed route was installed (torch._dynamo counters['inductor']['cudagraph_skips']), so "
+            f"the graphed route runs UN-graphed — a silent no-op lever. Refusing "
+            f"(gen3_r1_graphed_route_v1). Diagnose with TORCH_LOGS=perf_hints on a short launch.")
 
 
 def uninstall(model: Any) -> None:
     model._compiled_micro_step = None
+    if getattr(model, "_compiled_micro_step_graphed", None) is not None:
+        model._compiled_micro_step_graphed = None
     model._r1_declared = None
 
 
@@ -397,7 +512,30 @@ def _r1_arm(model: Any, fn: Callable[..., Any], args: Tuple[Any, ...]) -> Dict[s
           for p in params]
     for p in params:
         p.grad = None
-    return {"loss": out.loss.detach().float().reshape(1), "grad": torch.cat(gs),
+    # `.clone()`: on the graphed route the loss is cudagraph-pool memory the next replay overwrites
+    # (`gen3_r1_graphed_route_v1`); the flat gradient is a fresh `cat` already.
+    return {"loss": out.loss.detach().float().reshape(1).clone(), "grad": torch.cat(gs),
+            "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long)}
+
+
+def _r1_accum_arm(model: Any, fn: Callable[..., Any], args_list: List[Tuple[Any, ...]]) -> Dict[str, torch.Tensor]:
+    """``len(args_list)`` R1 calls + backwards ACCUMULATED into one ``.grad`` (as `train()`'s accumulation
+    group does, `.grad` cleared once before the first): the summed loss and the flat accumulated gradient."""
+    names_params = ct.grad_parameters(model, model.policy.features_extractor)
+    params = [p for _, p in names_params]
+    for p in params:
+        p.grad = None
+    losses = []
+    for args in args_list:
+        out = fn(*args)
+        out.loss.backward()
+        losses.append(out.loss.detach().float().reshape(1).clone())
+    gs = [(p.grad if p.grad is not None else torch.zeros_like(p)).detach().float().flatten()
+          for p in params]
+    flat = torch.cat(gs)
+    for p in params:
+        p.grad = None
+    return {"loss": torch.stack(losses).sum().reshape(1), "grad": flat,
             "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long)}
 
 
@@ -406,7 +544,8 @@ def _routes() -> Tuple[int, int]:
     return int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_compiled", 0))
 
 
-def _r1_pair(model: Any, args: Tuple[Any, ...]) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+def _r1_pair(model: Any, args: Tuple[Any, ...], fn: Optional[Callable[..., Any]] = None
+             ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """``(compiled, eager)`` arms of ONE R1 parity comparison, with their INDEPENDENCE proved
     (`gen3_gate_independent_arms_v1`, F-XC-4): the compiled arm must go through the installed
     dispatcher's COMPILED route exactly once and execute R1's Python body ZERO times, and the eager arm
@@ -415,9 +554,11 @@ def _r1_pair(model: Any, args: Tuple[Any, ...]) -> Tuple[Dict[str, torch.Tensor]
     fell back to eager, an "eager" arm that dispatched the compiled graph — is a typed refusal, never a
     verdict. Counters, not identities: they read what each arm actually EXECUTED (`region_calls`) —
     so a wrapper around the installed dispatcher (a test's planted fault) is still the compiled arm,
-    and the bare eager function in the compiled slot is refused (it runs the eager body)."""
+    and the bare eager function in the compiled slot is refused (it runs the eager body). ``fn`` is the
+    route under judgement (`r1_routes`); None = the installed compiled route."""
     from agents.training.instrumented_ppo.micro_step import micro_step
-    fn = getattr(model, "_compiled_micro_step", None)
+    if fn is None:
+        fn = getattr(model, "_compiled_micro_step", None)
     if fn is None:
         raise ct.GateArmsNotIndependentError(
             "--compile-trainer region R1: no compiled micro-step is installed, so the parity gate has no "
@@ -488,6 +629,15 @@ def gate_regions(model: Any, *, batch_size: int, say: Callable[[str], None] = pr
             if b.filled:
                 rules.append("R1 " + _r1_judged_set_rule(model, b, eager, names))
             rules.extend(r1_rules[1:])
+            # T25 lever C (`gen3_r1_graphed_route_v1`): the GRAPHED route gets the same rungs, plus the
+            # one thing a single fwd/bwd cannot show — a gradient ACCUMULATED across two replays (the
+            # graph pool's outputs are overwritten by the next replay; `.grad` must not alias them).
+            if learner_cudagraphs_on(model):
+                for route, fn in r1_routes(model):
+                    if route != "compiled":
+                        rules.extend(r1_rungs(model, args, names, regime, source=b.source,
+                                              fn=fn, route=route)[2])
+                rules.append(_r1_accum_rule(model, names, regime, int(batch_size)))
     finally:
         policy.set_training_mode(was)
         for p in policy.parameters():
@@ -495,6 +645,38 @@ def gate_regions(model: Any, *, batch_size: int, say: Callable[[str], None] = pr
     line = "[CompileRegions] parity PASS (fp32) — " + " | ".join(rules)
     say(line)
     return rules
+
+
+def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -> str:
+    """The GRAPHED route's ACCUMULATION rung (`gen3_r1_graphed_route_v1`): two micro-batches (the golden
+    rows' slices 0 and 1 — different rows, so the two gradients differ) through the graphed route with
+    ONE `.grad` accumulating across both, against the same through eager, at ``regime``'s bar (the
+    unmoved parameters at the fresh bar, as `r1_rungs`' live rung). A `.grad` that aliased the first
+    replay's pool output would read 2·g₂ for g₁ + g₂ — an O(1) error no bar passes. Deterministic. Arms
+    independent by the route counters, as `_r1_pair`."""
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    g = getattr(model, "_compiled_micro_step_graphed", None)
+    if g is None:
+        raise ct.GateArmsNotIndependentError(
+            "--learner-cudagraphs on but no graphed R1 route is installed — mis-wired "
+            "(gen3_r1_graphed_route_v1)")
+    args_list = [_r1_args(model, r1_batch(model, int(batch_size), s)) for s in (0, 1)]
+    e0, g0 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
+    graphed = _r1_accum_arm(model, g, args_list)
+    e1, g1 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
+    eager = _r1_accum_arm(model, micro_step, args_list)
+    e2, g2 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
+    if (e1 - e0, g1 - g0) != (0, 2) or (e2 - e1, g2 - g1) != (2, 0):
+        raise ct.GateArmsNotIndependentError(
+            f"--compile-trainer region R1[graphed]: the accumulation rung's arms are NOT independent — "
+            f"graphed arm eager body {e1 - e0}x / graphed route {g1 - g0}x (want 0 / 2), eager arm "
+            f"{e2 - e1}x / {g2 - g1}x (want 2 / 0) (gen3_gate_independent_arms_v1)")
+    unmoved = unmoved_parameters(model) if regime != "fresh" else []
+    idx = {n: i for i, n in enumerate(names)}
+    excepted = {idx[n]: R1_PARAM_BAR["fresh"] for n in unmoved}
+    return "R1[graphed] " + _r1_verdict(
+        eager, graphed, names, regime, bar_by_index=excepted,
+        label=f"{regime} weights, 2 micro-batches ACCUMULATED into one .grad (golden slices 0 + 1)")
 
 
 # ------------------------------------------------------------- R1's judged set vs the golden's own
@@ -679,7 +861,8 @@ def unmoved_parameters(model: Any) -> List[str]:
 
 
 def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *,
-             source: Optional[str] = None
+             source: Optional[str] = None, fn: Optional[Callable[..., Any]] = None,
+             route: Optional[str] = None
              ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], List[str]]:
     """Region R1's verdict rungs, shared by the startup gate and the in-run canary. Returns the live
     rung's EAGER and COMPILED arms (the judged-set rule and the canary's cosine read them) and one
@@ -694,24 +877,28 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
          parameter judged at the TRAINED bar (`_r1_unmoved_perturbed`) — so the unmoved parameters'
          backward paths are still held to the tight bar, on weights where their gradient is
          well-conditioned. A real miscompile there is caught by this rung.
+
+    ``fn`` / ``route``: the R1 route under judgement (`r1_routes`; None = the installed compiled route,
+    rule lines prefixed ``R1``; a named route prefixes ``R1[<route>]``).
     """
     unmoved = unmoved_parameters(model) if regime != "fresh" else []
-    comp, eager = _r1_pair(model, args)
+    pre = "R1 " if route is None else f"R1[{route}] "
+    comp, eager = _r1_pair(model, args, fn)
     idx = {n: i for i, n in enumerate(names)}
     excepted = {idx[n]: R1_PARAM_BAR["fresh"] for n in unmoved}
     tail = f" [{source}]" if source else ""
     if unmoved:
         tail += f" [unmoved rule: {unmoved_rule(model)}]"
-    rules = ["R1 " + _r1_verdict(eager, comp, names, regime, bar_by_index=excepted) + tail]
+    rules = [pre + _r1_verdict(eager, comp, names, regime, bar_by_index=excepted) + tail]
     if regime == "fresh":
-        rules.append("R1 " + _r1_perturbed(model, args, names))
+        rules.append(pre + _r1_perturbed(model, args, names, fn))
     elif unmoved:
-        rules.append("R1 " + _r1_unmoved_perturbed(model, args, names, unmoved))
+        rules.append(pre + _r1_unmoved_perturbed(model, args, names, unmoved, fn))
     return eager, comp, rules
 
 
 def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
-                          unmoved: List[str]) -> str:
+                          unmoved: List[str], fn: Optional[Callable[..., Any]] = None) -> str:
     """TRAINED weights with unmoved parameters: R1 again with ONLY those parameters moved off their
     init (the declared ladder's first rung, name-keyed noise ADDED to the live value; every other
     parameter at its live value), EVERY parameter judged at the TRAINED bar
@@ -724,7 +911,7 @@ def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
         raise ct.CompileTrainerError("--compile-trainer region R1: an unmoved parameter is not a "
                                      "parameter of the policy — mis-wired")
     with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale, only=only):
-        comp, eager = _r1_pair(model, args)
+        comp, eager = _r1_pair(model, args, fn)
     return _r1_verdict(eager, comp, names, "trained",
                        label=(f"trained weights, the {len(only)} unmoved param(s) perturbed "
                               f"scale={scale:g} seed+{k} (e.g. {only[0]})"))
@@ -749,7 +936,8 @@ def weights_regime(model: Any, rows: int = 8) -> str:
     return "fresh" if vacuous_keys({"legal_logprob": e["legal_logprob"]}, bar) else "trained"
 
 
-def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str]) -> str:
+def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
+                  fn: Optional[Callable[..., Any]] = None) -> str:
     """FRESH weights only: R1 again on the declared ladder's first rung — a seeded perturbation of
     every policy parameter, in place and restored bit-exactly (`parity_probe.perturbed_parameters`)
     — judged at the TRAINED bar. On fresh weights a few ill-conditioned gradients (the uniform belief
@@ -758,7 +946,7 @@ def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str]) -> str:
     from agents.model.parity_probe import PERTURB_LADDER, perturbed_parameters, rung_seed
     scale, k = PERTURB_LADDER[0]
     with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale):
-        comp, eager = _r1_pair(model, args)
+        comp, eager = _r1_pair(model, args, fn)
     return _r1_verdict(eager, comp, names, "trained",
                        label=f"fresh weights, seeded perturbation scale={scale:g} seed+{k}")
 
@@ -797,17 +985,24 @@ def _decision_readout(model: Any, obs: Any, mask: Any) -> Dict[str, torch.Tensor
 # ---------------------------------------------------------------------------------- the prewarm
 def prewarm_calls(model: Any, *, batch_size: int) -> List[Tuple[str, Callable[[], None]]]:
     """The declared signatures, as prewarm calls (`compile_control.prewarm`): R1 at its update
-    signature (forward + backward), on real rows."""
+    signature (forward + backward), on real rows — once per declared ROUTE (`r1_routes`: the compiled
+    one, and the graphed one under `--learner-cudagraphs on`)."""
     policy = model.policy
 
-    def _r1() -> None:
-        was = policy.training
-        policy.set_training_mode(True)
-        try:
-            with _fatal_compile_errors():
-                _r1_arm(model, model._compiled_micro_step, _r1_args(model, r1_batch(model, int(batch_size))))
-        finally:
-            policy.set_training_mode(was)
-            policy.zero_grad(set_to_none=True)
+    def _call(fn: Callable[..., Any]) -> Callable[[], None]:
+        def _r1() -> None:
+            was = policy.training
+            policy.set_training_mode(True)
+            try:
+                with _fatal_compile_errors():
+                    _r1_arm(model, fn, _r1_args(model, r1_batch(model, int(batch_size))))
+            finally:
+                policy.set_training_mode(was)
+                policy.zero_grad(set_to_none=True)
+        return _r1
 
-    return [(f"R1 learner_micro_step train/grad B={int(batch_size)}", _r1)]
+    calls = [(f"R1 learner_micro_step train/grad B={int(batch_size)}", _call(model._compiled_micro_step))]
+    g = getattr(model, "_compiled_micro_step_graphed", None)
+    if g is not None:
+        calls.append((f"R1[graphed] learner_micro_step train/grad B={int(batch_size)}", _call(g)))
+    return calls

@@ -159,7 +159,10 @@ class PpoHyperparameters:
         # hooks and an optimizer step hook — process-local, re-attached by every process; it also
         # owns the (table or duck-typed fallback) wrappers above when it is the outermost.
         # `_compiled_micro_step` (K8 region R1, `compile_regions.install`) is a process-local compiled
-        # callable — re-installed by every process that compiles, never pickled.
+        # callable — re-installed by every process that compiles, never pickled; so are its graphed twin
+        # `_compiled_micro_step_graphed` and the RUNTIME switch that declares it, `_learner_cudagraphs`
+        # (`--learner-cudagraphs`, gen3_r1_graphed_route_v1: set by every process's own argv, so a
+        # checkpoint never carries it into a process that did not ask), with its startup counter.
         # `_rust_collector` (M5 Lane G, the Rust env core) is the live env core + inference service
         # + row arena (locks, a child process, GPU slot storage): process-local by construction and
         # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
@@ -184,4 +187,6 @@ class PpoHyperparameters:
                                                   "collect_rollouts",
                                                   "train", "learn", "_compile_control",
                                                   "_learner_freeze", "_compiled_micro_step",
+                                                  "_compiled_micro_step_graphed", "_learner_cudagraphs",
+                                                  "_cudagraph_skips_at_install",
                                                   "rollout_buffer_class", "_loop_hooks"]

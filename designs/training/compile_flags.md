@@ -516,7 +516,7 @@ MISS (the per-run cache), never a hit:
 | the commit again, `git rev-parse HEAD` in the checkout the code was IMPORTED from (`utils.paths.repo_root()`), which must agree with `$LAUNCHER_GIT_HASH` when set | a PINNED child imports its pin's worktree (the launcher's `PYTHONPATH`) while standing in main, so this is the PIN commit; the launcher already passes the pin in `$LAUNCHER_GIT_HASH` (no launcher change), and a disagreement does not share |
 | python's full version, triton's version, torch's CUDA version, each GPU's name + compute capability + driver (`nvidia-smi`, no CUDA context), `$CUDA_VISIBLE_DEVICES` | the artifacts are kernels for one toolchain and one card; an unreadable GPU does not share |
 | every `TORCHINDUCTOR_*` / `TORCHDYNAMO_*` / `TORCH_COMPILE*` / `TRITON_*` / `PYTORCH_*` / `TORCH_CUDA_ARCH_LIST` / `INDUCTOR_*` variable (the two cache-dir variables excluded) | an environment knob can change codegen without changing the graph — the K1b failure class |
-| the run's compile surface: `extractor_arch.arch_toggles_from_args(args)` (every version-checked architecture toggle) + `COMPILE_ARG_KEYS` (`compile_trainer`, `device`, `device_batch`, `batch_size`, `grad_checkpointing`, `t2_backend`, `t2_buckets`, `t2_lanes`, `t2_opponent_bucket_cap`) | the model config and the flags that shape a compile; a new trainer flag whose name says compile / precision / device / batch / T2 FAILS `test_every_compile_flag_is_keyed_or_declared_irrelevant` until it is keyed or declared irrelevant. The compile REGIONS are code, named by the commit |
+| the run's compile surface: `extractor_arch.arch_toggles_from_args(args)` (every version-checked architecture toggle) + `COMPILE_ARG_KEYS` (`compile_trainer`, `device`, `device_batch`, `batch_size`, `grad_checkpointing`, `learner_cudagraphs`, `t2_backend`, `t2_buckets`, `t2_lanes`, `t2_opponent_bucket_cap`) | the model config and the flags that shape a compile; a new trainer flag whose name says compile / precision / device / batch / T2 FAILS `test_every_compile_flag_is_keyed_or_declared_irrelevant` until it is keyed or declared irrelevant. The compile REGIONS are code, named by the commit |
 
 Why this keeps the K1b protection: K1b was a GLOBAL compile setting (`donated_buffer`) that changed the
 artifact without changing Inductor's key. Global compile settings come from four places — the code
@@ -1753,10 +1753,10 @@ regression by `src/agents/model/extractor_compiles_test.py`.
 diffing against the live parser's defaults and REPORTING (never silently dropping) flags the tree no
 longer has — that is how the production shape above was recovered.
 
-## T25 perf levers on R1: MEASUREMENT switches, no trainer flag (2026-10-10)
+## T25 perf levers on R1: MEASUREMENT switches (2026-10-10)
 
-The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md`) adds two switches. Both are OFF by
-default and reach nothing a launch builds; the production compile is byte-for-byte unchanged.
+The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md`) adds two switches with no trainer
+flag, and lever C's flag (below). All are OFF by default; off, the production compile is byte-for-byte unchanged.
 
 - **R1's Inductor option presets** (`compile_regions.R1_INDUCTOR_PRESETS`, `gen3_r1_inductor_presets_v1`):
   `default` (no options), `coordesc` (`coordinate_descent_tuning`), `combo` (`combo_kernels`) and `cudagraphs`
@@ -1773,7 +1773,64 @@ default and reach nothing a launch builds; the production compile is byte-for-by
 
 Neither has a CLI flag. A lever gets its flag, flag-registry row and recipe surface in its ADOPTION commit, after its
 paired GPU benchmark and the R1 gate and canary are green. bf16 also needs a bf16 parity rule and a K9(b) bar (PLAN.md
-§2). The benchmark that sets them is the measurement's `scripts/update_bench.py`.
+§2). The benchmark that sets them is the measurement's `scripts/update_bench.py`. ⚠️ The `cudagraphs` PRESET alone graphs
+R1's ONE compile and dies on the first (diagnostic) update (F-PB-2, below); lever C's route is the flag below, and
+`install` refuses the preset combined with it.
+
+### Lever C: R1's GRAPHED route (`--learner-cudagraphs {off,on}`, `gen3_r1_graphed_route_v1`, 2026-10-10)
+
+**Why a second route.** Window B (`perf_phase_2026-10-10/README.md`, F-PB-2): R1 under Inductor's cudagraph trees
+passes the startup gate bit-equal, then dies on the first update in the grad-balance probe's
+`autograd.grad(retain_graph=True)` — "graph recording observed an input tensor deallocate during graph recording that
+did not occur during replay". Cudagraph trees record ONE backward per forward; a retain_graph probe traverses R1's graph
+a second time.
+
+**The retain_graph inventory** (every autograd call that re-enters R1's graph, 2026-10-10):
+
+| consumer | where | which micro-steps |
+|---|---|---|
+| the per-term noise sampler (`noise_scale_terms.PerTermNoiseSampler.flush_micro`, one `autograd.grad` per loss group) | `ppo.train`, before `backward()` | epoch 0's first accumulation group (`accum` micro-steps) of a cadence update (`plan.noise_terms`; EVERY update under `--adaptive-batch policy`) |
+| the grad-balance probe (`grad_balance._flat_grads`, one `autograd.grad` per term) | `ppo.train`, before `backward()` | ONE micro-step of a cadence update: the first whose terms are all present (data-dependent, usually epoch 0's first) |
+
+Not R1's graph: the capacity cosine (`capacity_telemetry.flat_grad`, its OWN eager forwards), the K9(b) behaviour probe
+(its own forward, before the loop), the ride-along heads (`ridealong_terms._ridealong_step`'s
+`backward(retain_graph=…)` runs on the heads' own graph over `RideAlongBatch.detached` inputs).
+
+**The route** (`compile_regions.r1_route_for` ← `diagnostics_cadence.micro_retains_graph`, decided BEFORE each R1 call,
+deterministic, no try/except): a micro-step whose per-term sampler is collecting (and has not failed) or whose
+grad-balance probe is still PENDING takes the un-graphed COMPILED route; every other micro-step takes the GRAPHED route.
+At the production shape (accumulation 32, 48 micro-batches × 10 epochs) a diagnostic update runs ~32 of its 480
+micro-steps compiled; a plain update (9 in 10) runs all 480 graphed.
+
+**What `on` builds.** `compile_regions.install` compiles R1 a SECOND time (`model._compiled_micro_step_graphed`): the
+same function, the same kwargs and preset options, plus `triton.cudagraphs` — a second DECLARED signature in `REGIONS`
+(`Signature(route="graphed", gate="learner_cudagraphs")`), one more dynamo cache entry on R1's code object. Both routes:
+
+- **gated** — `gate_regions` runs `r1_rungs` on each route, plus the graphed route's ACCUMULATION rung
+  (`_r1_accum_rule`: two micro-batches, golden slices 0 + 1, ONE `.grad` accumulating across two replays, against eager;
+  a `.grad` aliasing the graph pool would read 2·g₂ for g₁ + g₂);
+- **prewarmed** (`prewarm_calls`: one call per route) and **inventoried** (`assert_inventory`: 2 entries);
+- **locked** by the same stance; **canaried** — `CompileCanary` judges every declared route, the graphed one first
+  (its cosine is `compile/canary_grad_cosine`);
+- **no silent un-graphed route** — Inductor's `cudagraph_skips` counter moving after the install is FATAL at
+  `assert_inventory` and at every sentinel `check` (`compile_control.cudagraph_skips`, `CompileControl.graphed_check`);
+- `lifecycle/graphed_region_calls` (TB, flag on only) counts the graphed calls per update.
+
+**Output lifetime.** Cudagraph trees overwrite a replay's outputs at the next replay, so nothing may read R1's outputs
+or stashes across micro-steps. Inventory of every read after the call: `_mo` and the extractor stashes are read inside
+the same micro-step (the eager tail, the rank probe, `_MaskedPi`); `micro_step.pack` and the calibration reader COPY
+(`torch.cat`) before their deferred host read; the ride-along accumulator's deferred snapshots clone the batch fields and
+hold only fresh head outputs; the capacity snapshot is read in the same micro-step; `_r1_arm` clones the loss. The
+risk that remains is the AccumulateGrad steal (`.grad` taking the backward's pool output on a group's first micro-step):
+the accumulation rung judges it at startup.
+
+**OFF is byte-identical:** one `torch.compile` with the production kwargs, one cache entry, the same gate rules, prewarm,
+inventory line and canary; `r1_graphed_route_test.py` pins it. **The flag is a RUNTIME perf knob** like
+`--compile-trainer`: not versioned, not in `model_config.json`, never pickled (`hparams._excluded_save_params`), not
+fresh-only (the launcher's restarts forward it with the argv), keyed in the shared compile cache (`COMPILE_ARG_KEYS`).
+Refused (`FATAL_CONFIG`) on cpu, under `--debug`, with `--no-compile-trainer` (`combination_checks`) and when an AUTO
+`--compile-trainer` resolved off (`lifecycle._maybe_compile_trainer`). It stays a MEASUREMENT lever (default off) until
+its paired benchmark (PLAN.md lever C, window E) adopts it.
 
 ## From the training leaf (moved 2026-10-10)
 

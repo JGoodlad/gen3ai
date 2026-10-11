@@ -18,7 +18,9 @@ Optional: `--profile` one more epoch under torch.profiler (GPU busy %, kernel cl
 micro-batch — `learner_benchmark.summarise_profile` + a kernel-class table); `--canary` the compile canary's own
 compiled-vs-eager check on the trained weights after the reps; `--t2 256[,64]` the T2 inference service (graph
 backend, ONE slot of this policy, fp32) per-flush time at each bucket. Levers: `--trunk-precision bf16`
-(`agents.model.trunk_precision`), `--r1-preset <name>[+<name>]` (`compile_regions.R1_INDUCTOR_PRESETS`).
+(`agents.model.trunk_precision`), `--r1-preset <name>[+<name>]` (`compile_regions.R1_INDUCTOR_PRESETS`), and
+`--learner-cudagraphs on` INSIDE `--argv` (lever C, the trainer flag: R1's graphed route for the plain micro-steps,
+the compiled route for the probe micro-steps; each call's route counts land in `routes`).
 
 A BENCHMARK WARNS, IT NEVER STRETCHES: the load average and every other GPU process are RECORDED; nothing is
 rescaled. The fixture rows are the golden's 64 real rows tiled: the compiled graph is branch-free, so its cost is
@@ -148,6 +150,7 @@ def main():
         torch.cuda.set_device(0)
     from agents.model import compile_regions as cr
     from agents.model import compile_trainer as ct
+    from agents.model import region_calls as RC
     from agents.training import learner_golden as LG
     from agents.training import update_fit as UF
     import agents.training.instrumented_ppo.micro_step as MS
@@ -191,6 +194,12 @@ def main():
         from agents.model.trunk_precision import set_trunk_precision
         res["trunk_rounds_set"] = set_trunk_precision(model.policy, a.trunk_precision)
     model._r1_inductor_preset = a.r1_preset
+    # T25 lever C: `--learner-cudagraphs on` in --argv goes through the trainer's OWN wiring — `resolve_config`'s
+    # combination check above, then `compile_flags.learner_cudagraphs_on(args)` into `arm_compile_sentinel` below
+    # (never a hand-set attribute): the graphed R1 route, its gate + accumulation rung, prewarm, inventory, canary.
+    from main.train.compile_flags import learner_cudagraphs_on
+    lcg = bool(learner_cudagraphs_on(args)) and not cpu
+    res["learner_cudagraphs"] = lcg
     from main.train.lifecycle import _apply_grad_checkpointing
     _apply_grad_checkpointing(model, bool(getattr(args, "grad_checkpointing", False)))
     res["grad_checkpointing"] = bool(getattr(args, "grad_checkpointing", False))
@@ -207,7 +216,8 @@ def main():
                 raise ct.CompileTrainerError("cpu smoke: eager, nothing compiled")
             if a.gate == "off":
                 raise ct.CompileTrainerError("gate skipped by --gate off")
-            ct.arm_compile_sentinel(model, batch_size=model.batch_size, emit=lines.append)
+            ct.arm_compile_sentinel(model, batch_size=model.batch_size, emit=lines.append,
+                                    learner_cudagraphs=lcg)
             res["gate"] = {"verdict": "PASS", "lines": [ln for ln in lines if "parity" in ln.lower() or "R1" in ln]}
         except ct.CompileTrainerError as exc:
             res["gate"] = {"verdict": "SKIPPED" if a.gate == "off" else "REFUSED", "error": str(exc)[:4000],
@@ -266,10 +276,13 @@ def main():
                 torch.cuda.reset_peak_memory_stats()
             with (contextlib.nullcontext() if cpu else torch.cuda.nvtx.range(f"{a.tag}_train_{i}_e{ep}")), \
                     _scalar_read_meter(acc):
+                RC.take()
                 t = time.perf_counter()
                 model.train()
                 _sync()
                 w = time.perf_counter() - t
+                routes = RC.take()          # this call's R1 routes: R1_compiled (all) / R1_graphed (lever C)
+            res.setdefault("routes", []).append({"call": i, "epochs": ep, "timed": str(timed), **routes})
             if timed == "diag":
                 res["diag_1ep_s"] = w
             elif timed:

@@ -331,6 +331,15 @@ def dynamo_graphs_total() -> int:
         return -1
 
 
+def cudagraph_skips() -> int:
+    """How many times Inductor declined to cudagraph a graph in this process
+    (`counters['inductor']['cudagraph_skips']`, bumped by `cudagraph_utils.log_cudagraph_skip_and_bump_counter`
+    and `output_code`; not reset). The graphed R1 route's no-silent-un-graphed check reads it
+    (`compile_regions.graphed_route_skipped`, gen3_r1_graphed_route_v1)."""
+    from torch._dynamo.utils import counters
+    return int(counters["inductor"]["cudagraph_skips"])
+
+
 def cache_entries_by_code() -> Dict[str, int]:
     """{`name (file:line)`: resident cache entries} over every code object dynamo was handed.
 
@@ -434,6 +443,10 @@ class CompileControl:
         self.rejection_reasons: List[str] = []   # K6: the failing guard(s) of each rejection
         self.canary: Any = None                   # K6: `compile_canary.CompileCanary` (armed by the trainer)
         self.canary_scalars: Dict[str, float] = {}
+        #: `--learner-cudagraphs on` (gen3_r1_graphed_route_v1): returns the FATAL's text when the graphed
+        #: R1 route stopped being graphed (`compile_regions.graphed_route_skipped`), else None. Armed by
+        #: `compile_trainer.arm_compile_sentinel`; read by every `check`.
+        self.graphed_check: Optional[Callable[[], Optional[str]]] = None
         self.limit_hits: List[Tuple[str, str]] = []
         self.watch = TrainMsWatch()
         self._handler: Optional[_CacheLimitHandler] = None
@@ -626,6 +639,10 @@ class CompileControl:
             if current_stance() != "fail_on_recompile":
                 return (f"the dynamo stance is '{current_stance()}', not 'fail_on_recompile' — a "
                         f"recompile or a never-seen frame would no longer be refused")
+        if self.graphed_check is not None:
+            skipped = self.graphed_check()
+            if skipped is not None:
+                return skipped
         if self.limit_hits:
             kind, msg = self.limit_hits[0]
             return (f"dynamo hit config.{kind} ({len(self.limit_hits)} hit(s)) during phase "
@@ -768,6 +785,8 @@ class CompileControl:
             logger.record("lifecycle/compiled_region_calls", float(comp))
             logger.record("lifecycle/eager_fallback_calls", float(eager))
             logger.record("lifecycle/eager_share", float(eager) / float(comp + eager) if comp + eager else 0.0)
+            if "R1_graphed" in routes:       # --learner-cudagraphs on only: of the compiled calls, the GRAPHED
+                logger.record("lifecycle/graphed_region_calls", float(routes["R1_graphed"]))
             if tm is not None:
                 logger.record("lifecycle/update_wall_s", float(tm) / 1000.0)
             if self.locked and observe_train_ms and tm is not None:

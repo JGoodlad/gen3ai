@@ -453,6 +453,20 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         exit_style="exit1"),
 
     # ---- the compile pair: the rule itself lives in compile_flags, referenced not re-typed ------
+    CombinationCheck(
+        # T25 lever C (gen3_r1_graphed_route_v1): the graphed route is a second route of the COMPILED
+        # learner, on CUDA. An explicit --no-compile-trainer, a cpu device or --debug (cpu, uncompiled) has
+        # no compiled learner to graph — the lever would be silently inert. (An AUTO --compile-trainer that
+        # its own default turns OFF is refused at startup, `lifecycle._maybe_compile_trainer`.)
+        "learner_cudagraphs_needs_the_compiled_cuda_learner",
+        ("learner_cudagraphs", "compile_trainer", "device", "debug"),
+        lambda a: (_val(a, "learner_cudagraphs", "off") == "on"
+                   and (getattr(a, "compile_trainer", None) is False
+                        or _val(a, "device", "auto") == "cpu" or bool(getattr(a, "debug", False)))),
+        "--learner-cudagraphs on graphs the COMPILED learner's micro-step (region R1) on CUDA, but this "
+        "launch has no compiled CUDA learner (--no-compile-trainer, --device cpu or --debug) — the lever "
+        "would be silently inert. Drop --learner-cudagraphs, or launch with --compile-trainer on cuda.",
+        exit_style="fatal_config"),
 
     # ---- the env core (M5 Lane G): what the Rust env core serves, refused by name -------------
     CombinationCheck(

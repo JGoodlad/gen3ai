@@ -74,3 +74,21 @@ def resolve_compile_trainer_auto(*, device, debug: bool, n_steps: int, n_envs: i
     except CompileTrainerError as exc:
         return False, str(exc)
     return True, None
+
+
+def learner_cudagraphs_on(args) -> bool:
+    """`--learner-cudagraphs on` (T25 lever C, `gen3_r1_graphed_route_v1`) — what the trainer's
+    `_arm_compile_sentinel` and the perf phase's update bench both pass to `arm_compile_sentinel`."""
+    return str(getattr(args, "learner_cudagraphs", "off") or "off") == "on"
+
+
+def learner_cudagraphs_refusal(args):
+    """The STARTUP refusal of `--learner-cudagraphs on` on a launch whose RESOLVED `--compile-trainer` is
+    off — the case the parse-time combination check cannot see: an AUTO default its own shape check
+    turned OFF (`resolve_compile_trainer_auto`). None when the flag is off or the learner compiles."""
+    if not learner_cudagraphs_on(args) or bool(getattr(args, "compile_trainer", False)):
+        return None
+    return ("--learner-cudagraphs on graphs the COMPILED learner's micro-step (region R1), but "
+            "--compile-trainer resolved OFF for this launch — the lever would be silently inert "
+            "(gen3_r1_graphed_route_v1). Drop --learner-cudagraphs, or make the compile possible "
+            "(pass --compile-trainer to see why it is off).")

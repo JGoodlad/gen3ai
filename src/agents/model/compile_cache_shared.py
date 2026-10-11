@@ -22,7 +22,7 @@ written into the entry's `stamp.json` and compared on every open — a mismatch 
   `TRITON_*`, `PYTORCH_*`, `TORCH_CUDA_ARCH_LIST`; the cache-dir variables excluded);
 * the RUN's compile surface: the model config (`extractor_arch.arch_toggles_from_args` — every
   version-checked architecture toggle) and the trainer flags that shape what is compiled
-  (`COMPILE_ARG_KEYS`: the compile switch, device, batch size, grad checkpointing, T2's backend /
+  (`COMPILE_ARG_KEYS`: the compile switch, device, batch size, grad checkpointing, the graphed-R1 switch, T2's backend /
   buckets / lanes / caps). The compile REGIONS themselves are code, so the commit names them.
 
 THE CLEAN RULE (`workspace_state`): a shared entry is read or written only when the checkout the code
@@ -111,6 +111,7 @@ SUBMODULE_PATHS = ("deps/pokemon-showdown",)
 #: `compile_cache_shared_test` regex flags must be here or in `NOT_COMPILE_ARG_KEYS`, so a new compile
 #: flag forces a decision rather than slipping past the key.
 COMPILE_ARG_KEYS = ("batch_size", "compile_trainer", "device", "device_batch", "grad_checkpointing",
+                    "learner_cudagraphs",
                     "t2_backend", "t2_buckets", "t2_lanes", "t2_opponent_bucket_cap")
 NOT_COMPILE_ARG_KEYS = ("checkpoint_every_steps",)     # matched by the regex; a save cadence
 _ENV_PREFIXES = ("TORCHINDUCTOR_", "TORCHDYNAMO_", "TORCH_COMPILE", "TRITON_", "PYTORCH_",

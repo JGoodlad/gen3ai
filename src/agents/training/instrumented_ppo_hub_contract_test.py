@@ -145,7 +145,7 @@ def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
     for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1",
                    "+NOISE-SCALE", "+CAPACITY"):
         assert marker in src, f"the `{marker}` block left `train()`"
-    r1_call = src.index("self._micro_region()(")
+    r1_call = src.index("self._micro_region(_retains)(")
     for tail in ("self._ridealong_update(",):
         assert r1_call < src.index(tail), f"the tail fold `{tail}` now runs BEFORE region R1"
 

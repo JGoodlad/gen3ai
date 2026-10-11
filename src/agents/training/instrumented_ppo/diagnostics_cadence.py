@@ -103,6 +103,28 @@ def plan_for(model: object) -> DiagnosticsPlan:
     )
 
 
+def micro_retains_graph(noise_tagger: object, *, grad_balance_pending: bool) -> bool:
+    """Will THIS micro-step call autograd through R1's graph BEFORE its `backward()` — i.e. traverse it
+    twice (`gen3_r1_graphed_route_v1`)? Decided before R1 runs, from the plan's probes and their own
+    state; `compile_regions.r1_route_for` turns it into the route. The two retain_graph users (the
+    inventory, 2026-10-10):
+
+      * the per-term noise sampler (`noise_scale_terms.PerTermNoiseSampler`): one `autograd.grad` per
+        loss group in `flush_micro`, on EVERY micro-step it collects — epoch 0's first accumulation group
+        of a cadence update (every update under `--adaptive-batch policy`). ``noise_tagger`` is that
+        micro-step's tagger (`NULL_TAGGER` elsewhere); a sampler that has FAILED takes no gradient;
+      * the grad-balance probe (`grad_balance._flat_grads`): once per cadence update, on the FIRST
+        micro-step whose terms are all present — a DATA-dependent micro-step, so every micro-step while
+        it is still PENDING (``grad_balance_pending``: `shared_trunk and diag.grad_balance and not
+        grad_balance`) carries it potentially; the first eligible one takes it and clears the pending.
+
+    No other autograd call re-enters R1's graph: the capacity cosine and the K9(b) behaviour probe run
+    their OWN eager forwards; the ride-along heads backward through their own graph on DETACHED inputs;
+    the rank probe and the calibration / ride-along snapshots read R1's outputs without autograd."""
+    sampler = bool(getattr(noise_tagger, "collecting", False)) and not bool(getattr(noise_tagger, "failed", False))
+    return sampler or bool(grad_balance_pending)
+
+
 def mark_ran(model: object, plan: DiagnosticsPlan) -> None:
     if plan.due:
         setattr(model, "_diagnostics_ran_in_process", True)

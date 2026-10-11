@@ -214,6 +214,13 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   `COMPILE_ARG_KEYS` (`compile_cache_shared_test` fails until it does). **A new `torch.compile` site must call
   `ensure_hermetic_cache()` first** (`compile_cache_test`; it also takes the shared entry's lease). HEAD runs
   torch >= 2.8 ONLY. Detail: `designs/training/compile_flags.md` "The SHARED compile cache, by KEY".
+- 🚨 **`--learner-cudagraphs on` (T25 lever C, default off, a RUNTIME knob) gives R1 a second, GRAPHED route**
+  (cudagraph trees), served to every micro-step no retain_graph probe re-enters; the probe micro-steps (the per-term
+  noise sampler, the grad-balance probe) keep the compiled route (`diagnostics_cadence.micro_retains_graph` →
+  `compile_regions.r1_route_for`, decided before the call). Cudagraph trees allow ONE backward per forward and
+  OVERWRITE a replay's outputs at the next one: **a new `autograd.grad` / `retain_graph` consumer of R1's graph joins
+  `micro_retains_graph`, and nothing reads R1's outputs or stashes across micro-steps without a copy**
+  (`r1_graphed_route_test.py`'s stand-in raises on the first). Detail: `designs/training/compile_flags.md` "Lever C".
 
 ## The critic, the value side and the auxiliaries
 

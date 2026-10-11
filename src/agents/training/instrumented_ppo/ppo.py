@@ -48,6 +48,7 @@ from agents.training.instrumented_ppo.calibration import (   # the MODULE path, 
     sigmoid as _calib_sigmoid,                                # (pinned by the hub-contract test).
 )
 from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
+from agents.training.instrumented_ppo.diagnostics_cadence import micro_retains_graph as _micro_retains_graph
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.loop import OwnedLoop   # gen3_owned_ppo_loop_v1: the loop is ours
 from agents.training.instrumented_ppo.learner_gates import (   # K9(b) dispatch + K9(c)
@@ -390,7 +391,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # (`micro_step.micro_step`), in exactly this source order inside it. Compiled as one
                 # `fullgraph=True` region under --compile-trainer (`self._micro_region`), eager
                 # otherwise; the steps after 3a below are the DECLARED EAGER TAIL, in contract order.
-                _mo = self._micro_region()(self.policy, rollout_data.observations,
+                # +R1 ROUTE (gen3_r1_graphed_route_v1, `--learner-cudagraphs on`): a micro-step a
+                # retain_graph probe will re-enter takes the un-graphed compiled route, every other one
+                # the graphed route — decided HERE, before the call, from the probes' state.
+                _retains = _micro_retains_graph(
+                    _ntg, grad_balance_pending=bool(shared_trunk and diag.grad_balance and not grad_balance))
+                _mo = self._micro_region(_retains)(self.policy, rollout_data.observations,
                                          rollout_data.actions, rollout_data.action_masks,
                                          rollout_data.old_log_prob, rollout_data.old_values,
                                          rollout_data.advantages, rollout_data.returns,

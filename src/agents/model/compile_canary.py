@@ -274,7 +274,21 @@ class CompileCanary:
         # the startup gate's rungs (`compile_regions.r1_rungs`): the live weights at the regime's bar,
         # an unmoved zero-init parameter at the FRESH bar there and on its own perturbed rung at the
         # TRAINED bar (`gen3_r1_unmoved_param_v1`)
-        eager, comp, rules = cr.r1_rungs(model, args, names, cr.weights_regime(model))
-        out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
+        regime = cr.weights_regime(model)
+        if not cr.learner_cudagraphs_on(model):
+            eager, comp, rules = cr.r1_rungs(model, args, names, regime)
+            out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
+            out["compile/canary_unmoved_params"] = float(len(cr.unmoved_parameters(model)))
+            return rules
+        # `--learner-cudagraphs on` (gen3_r1_graphed_route_v1): EVERY declared route — the GRAPHED one
+        # first (it serves every plain micro-step) and its cosine is the tag's; then the compiled one (the
+        # diagnostic micro-steps' route, the same graph without cudagraph trees). One more compiled + eager
+        # pair per canary (~0.35 s at B = 2048, every 100 updates).
+        rules = []
+        for i, (route, fn) in enumerate(cr.r1_routes(model)):
+            eager, comp, r = cr.r1_rungs(model, args, names, regime, fn=fn, route=route)
+            rules.extend(r)
+            if i == 0:
+                out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
         out["compile/canary_unmoved_params"] = float(len(cr.unmoved_parameters(model)))
         return rules

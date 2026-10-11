@@ -13835,3 +13835,40 @@ read both cells for its end-of-turn rule and found them wrong.
      epoch 0 only (RIDEALONG_EPOCHS = 1).
 - **Docs.** `designs/training/ridealong_heads.md` (the new section), `learner_gates.md`, `designs/model/readouts_and_value_routes.md`,
   `designs/ops/testing.md`, `designs/ops/TASK_BACKLOG.md` T25's row, the training leaf `CLAUDE.md`.
+
+## 2026-10-10 — R1's GRAPHED route behind `--learner-cudagraphs {off,on}` (T25 lever C, `gen3_r1_graphed_route_v1`; default off; a RUNTIME knob; no config / obs / signature bump)
+
+- **Why.** Window B (F-PB-2): R1 under Inductor's cudagraph trees passed the startup gate bit-equal and died on the first
+  (always diagnostic) update in the grad-balance probe's `autograd.grad(retain_graph=True)`. Cudagraph trees record ONE
+  backward per forward; the retain_graph probes traverse R1's graph again.
+- **Inventory of the re-entrant consumers.** The per-term noise sampler (`flush_micro`, epoch 0's first accumulation
+  group of a cadence update; every update under `--adaptive-batch policy`) and the grad-balance probe (one data-dependent
+  micro-step of a cadence update). NOT R1's graph: the capacity cosine and the K9(b) probe (own eager forwards), the
+  ride-along heads' `backward(retain_graph=…)` (`ridealong_terms.py`, detached inputs, the heads' own graph — untouched).
+- **What.** `compile_regions`: `Signature` gains `route` / `gate`; R1 declares a second signature (`graphed`, gated by
+  `learner_cudagraphs`); `install` compiles the same micro-step again with `triton.cudagraphs` as
+  `model._compiled_micro_step_graphed` (the bare `cudagraphs` preset with the flag REFUSES); `gate_regions` judges both
+  routes plus the graphed route's ACCUMULATION rung (two replays into one `.grad` vs eager); `prewarm_calls` one per
+  route; `assert_inventory` counts the declared signatures and FATALs on an Inductor `cudagraph_skips` move (so does every
+  sentinel `check`, `CompileControl.graphed_check`); `r1_route_for`. `diagnostics_cadence.micro_retains_graph` and
+  `ppo.train` pick the route per micro-step BEFORE the call; `TrainSetup._micro_region(retained_graph)`. The canary judges
+  every declared route (graphed first). `_r1_arm` clones the loss (pool memory). `lifecycle/graphed_region_calls` (flag on
+  only). The flag: parser (`clean_world`), `combination_checks` (cpu / `--debug` / `--no-compile-trainer` refused,
+  FATAL_CONFIG), `lifecycle._maybe_compile_trainer` (an AUTO compile that resolved off refused),
+  `compile_flags.learner_cudagraphs_on` into `arm_compile_sentinel(learner_cudagraphs=)`, `COMPILE_ARG_KEYS`, never
+  pickled (`hparams`), the flag census row. The perf bench's `--argv "… --learner-cudagraphs on"` uses the same wiring
+  and records each call's route counts.
+- **OFF is byte-identical**: one `torch.compile` with the production kwargs, one cache entry, the same gate / prewarm /
+  inventory / canary lines; the K9 learner golden untouched (CPU, uncompiled).
+- **Tests.** NEW `src/agents/model/r1_graphed_route_test.py` (21): the route rule; the declaration; `install`'s compile
+  kwargs off / on / with a preset; the preset refusal; the full CPU lifecycle with a STAND-IN graphed backend that raises
+  on a second backward through one forward (gate, prewarm, inventory, lock, a diagnostic update routed
+  `c c c g g g g g` and a plain one all `g`); probes, logged scalars and parameters IDENTICAL flag off vs on; the canary on
+  both routes; the stand-in's teeth (everything routed graphed dies like F-PB-2); the accumulation rung refusing a route
+  that corrupts an accumulated `.grad`; the cudagraph-skip FATAL; the flag surface (default, runtime-only, not
+  fresh-only, keyed, refusals, the trainer's wiring, `checkargs`). Revert-checked: the `ppo.train` call site and the
+  canary change.
+- **FINDINGS.** GPU NOT measured (no lease): the cudagraph-tree behaviour (the AccumulateGrad steal across replays, the
+  graph pool's memory beside the compiled route's activations on a diagnostic update, a re-record after the lock) is
+  judged only by the startup accumulation rung, the update-fit dry update (a diagnostic update: both routes) and window
+  E's paired benchmark (PLAN.md lever C).

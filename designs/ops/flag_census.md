@@ -150,6 +150,7 @@
 | `--t0-species-prior` | — | 183 / 34 | `--arch production`: `production_config.json` `t0_species_prior` = `true` | **KEEP** |
 | `--species-prior-fusion` | — | 185 / 34 | `--arch production`: `production_config.json` `species_prior_fusion` = `true` | **KEEP** |
 | `--compile-trainer` | — | 187 / 34 | ON by default (root `CLAUDE.md`); the learner's compiled regions | **KEEP** |
+| `--learner-cudagraphs` | off | 0 / 0 | T25 perf lever C (`gen3_r1_graphed_route_v1`, 2026-10-10): R1's GRAPHED route; window E's paired benchmark (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md` lever C) is its live user; a RUNTIME knob (never recorded) | **KEEP** |
 | `--consequence-topk` | — | 184 / 34 | `--arch production`: `production_config.json` `consequence_topk` = `6` | **KEEP** |
 | `--entity-topk-seats` | — | 186 / 34 | `--arch production`: `production_config.json` `entity_topk_seats` = `6` | **KEEP** |
 | `--entity-tail-seats` | — | 186 / 34 | `--arch production`: `production_config.json` `entity_tail_seats` = `true` | **KEEP** |

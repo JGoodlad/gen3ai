@@ -385,6 +385,20 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "still refuses, loudly (that contract is unchanged). "
                              "--no-compile-trainer opts out. RUNTIME PERF KNOB: not versioned; with the auto default "
                              "a flagless cuda resume gets it ON.")
+    parser.add_argument("--learner-cudagraphs", "--learner_cudagraphs", dest="learner_cudagraphs",
+                        choices=("off", "on"), default="off",
+                        help="T25 perf lever C (gen3_r1_graphed_route_v1): 'on' declares a SECOND compiled "
+                             "route of the learner micro-step (region R1) — the same graph replayed from "
+                             "Inductor's cudagraph trees — and serves it to every micro-step that carries no "
+                             "retain_graph probe; the diagnostic micro-steps (the per-term noise sampler, the "
+                             "grad-balance probe) keep the un-graphed compiled route, which cudagraph trees "
+                             "cannot serve (F-PB-2). Both routes are gated at startup (the graphed one also on "
+                             "an ACCUMULATED two-micro-batch gradient), prewarmed, locked and canaried. "
+                             "Default 'off' (byte-identical: one compiled route). REQUIRES --compile-trainer "
+                             "on CUDA (refused on cpu, under --debug and with --no-compile-trainer). RUNTIME "
+                             "PERF KNOB like --compile-trainer: not versioned, not recorded in "
+                             "model_config.json; the launcher's restarts forward it with the argv. A "
+                             "MEASUREMENT lever until its paired benchmark (PLAN.md lever C) adopts it.")
     parser.add_argument("--consequence-topk", "--consequence_topk", dest="consequence_topk",
                         type=int, default=None,
                         help="v59: the CONSEQUENCE kernels' believed-candidate axis — C1b/C2/C3's "
