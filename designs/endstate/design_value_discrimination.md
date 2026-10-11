@@ -4,7 +4,9 @@
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
 **Status (2026-10-11): DESIGN, REVIEWED AND REVISED the same day** (an independent adversarial review at the owner's
-request; §12 lists every change and what remains disputed). Nothing is built. The only numbers measured under this doc
+request; §12 lists every change and what remains disputed). **The pilot is REGISTERED (§7.10 Amendment 1: both
+closing-test seeds 2001, end2 and prod, oracle world) and its driver is built**
+(`research_state/measurements/value_disc_pilot_2026-10-11/`); no outcome has been read. The only numbers measured under this doc
 are the review's POST-HOC reads of BANKED rows (`research_state/measurements/value_disc_review_2026-10-11/`, §12.2):
 CPU, no playout run, no outcome of the pilot seen. §7 is the pilot's DRAFT pre-registration: it becomes a registration
 only when its own commit lands BEFORE the first playout and a ledger entry records it. §5's RNG findings are read from
@@ -473,7 +475,46 @@ driver), `score.py` (D1–D2, M1–M4, the re-implemented acting rule, the boots
 
 ### 7.10 Amendments
 
-None.
+**Amendment 1 (2026-10-11, the REGISTRATION; written and committed before any playout outcome was played or read;
+the only playouts run were a 4-state throughput pilot that printed cost alone).** The owner's brief (2026-10-11:
+"you have my permission to make any decisions to gather data that would be useful for design or our roadmap")
+widens the pilot. The full text, with every number of the state build, is
+`research_state/measurements/value_disc_pilot_2026-10-11/README.md` §2–§5; the changes to §7.2–§7.8:
+
+1. **Two checkpoints, not the adopted arm alone:** `rb_es_end2_s2001/final_model.zip` (pin `62085750`) and
+   `rb_es_prod_s2001/final_model.zip` (pin `95d014fa`), each loaded, encoded and played at its OWN pin's code, each on
+   its OWN states; every rule is evaluated per checkpoint, and an end2-vs-prod difference is descriptive (different
+   state sets). The closing-test verdict is no longer needed to start.
+2. **States:** the last three eval-trace cycles of each run (its 10M / 12M / 14M snapshots), EVERY trace (not the
+   bank's 2/2/1 quota; the loss-enriched selection is stamped and re-weighted). Gate ① passed on every recorded
+   decision (end2 24,036, prod 23,392); the obs clock decodes to the protocol turn on all of them. top1 / top2 /
+   the gap come from the FINAL checkpoint's root forward. 600 states per checkpoint, 120 per quintile, ≤ 2 per
+   battle (end2 417 battles, prod 416).
+3. **Seeds:** `turn_seeds(id, 48)`: **0–15 leaf, 16–39 truth (24), 40–47 the critic's one-ply successors** (was
+   0–7 / 8–31 / 32–39), so sequential halving at matched budgets up to n·4 and a K = 16 point fit; the truth stays
+   24 seeds that no scorer reads.
+4. **Scorers added:** LEAF-K16; TRUNC-d-K at K = 1, 4, 8, 16 (X_d = V at the searched side's first decision with
+   turn ≥ T + d, the terminal if ended); **CV-K, the AIVAT-style branch-turn control variate**: LEAF-K(a) −
+   (mean over the K leaf seeds of X₁′(a, j) − Q̂(a)), with X₁′ = V at the searched side's first decision after the
+   root (exactly what `qhat.one_ply` captures) and Q̂ the critic's independent one-ply estimate on seeds 40–47
+   (unbiased for LEAF-K's mean; the per-turn AIVAT form is DEFERRED: it needs extra dice samples at every turn).
+5. **Acting rules, defined before any outcome:** ARGMAX; PRIOR-k (k = 2, 3); **GUMBEL** (the prior-aware rule:
+   Gumbel MuZero's final selection without noise, `mctx` defaults: argmax of logit(a) + (50 + N_max)·0.1·q̃(a), q̃
+   the scorer min-max rescaled over the legal actions, N_max the per-action sample count); PUCT (descriptive:
+   s(a) + 1.25·π(a)·√(n·K)/(1 + K)); **SH-m, sequential halving** (Gumbel AlphaZero's allocation, no noise) over the
+   policy's top-m (m = 4 and m = all) at budgets B = n·K, K = 1, 2, 4, 8, matched to LEAF-K's spend: ⌈log₂ m⌉
+   rounds, max(1, ⌊B / (R·|S|)⌋) new playouts per survivor per round (its leaf seeds in order, ≤ 16), halving by the
+   GUMBEL score, the spent budget reported; **GATE-2SE** (the deleted rule: switch from top1 to LEAF-K's argmax only if
+   K ≥ 4 and the paired mean d ≥ 2·SE, SE = max(sd/√K, 0.5/K), win scale).
+6. **Decision rules added (secondary):** R-PRIOR on IMP(GUMBEL∘LEAF-K4) − IMP(ARGMAX∘LEAF-K4) and R-SH on IMP(SH-4 at
+   B = n·2) − IMP(ARGMAX∘LEAF-K2): HELPS (lower > +0.0005) / HURTS (upper < −0.0005) / NOT DETECTED. R-LEAF (primary),
+   R-TRUNC, R-K and R-PAIR stand as written. D1 adds strata by phase and by the trace's outcome.
+7. **Cost:** CPU-s per decision from the forward rows (both sides) each scorer's playouts need at the state's
+   measured CPU-s per row, and the critic's measured one-ply CPU.
+8. **Size rule:** the throughput pilot measured 0.060 CPU-s per playout (end2, CPU forward, identical pending rows
+   deduplicated), ≈ 15 CPU-s per state, ≈ 2.5 CPU-hours per checkpoint: no state is dropped.
+9. **Phase 2 (determinized worlds)** is NOT part of this registration; if built it is registered by its own
+   amendment before its first playout.
 
 ---
 
@@ -645,3 +686,4 @@ states over ≥ 300 battles should give about ±0.012, enough to detect a 2-poin
 |---|---|---|---|---|
 | 2026-10-11 | **This doc CREATED at the owner's request** ("write the design doc, then have an agent review it and improve on it") | A measurement-first plan: the RNG read from the code (one stream per battle, alignment lost at the first differing draw); two counterfactual-only dice modes (S1 per-turn reseed, S2 counter-keyed split draws) proposed, each CONDITIONAL on the pilot; the pilot DRAFTED (frozen checkpoint, 500 torn states, K = 3, 32 shared seeds + an independent control, greedy continuation, M1–M4, R-PAIR and R-GAP); CPU only | building split streams first (unmeasured gain, a parity-critical crossing); brute-force rollout volume for the critic (excluded by the CRN label refit); a training-side label factory now (deferred by the one-ply scope rule) | §2.2; §5 (code at `c1fae513`); owner 2026-10-11 |
 | 2026-10-11 | **REVIEWED AND REVISED (independent review, owner request)** | The pilot's PRIMARY becomes DECISION IMPROVEMENT over the policy's own pick (R-LEAF), with R-TRUNC (truncated leaves), R-K (the "10×" question on the decision currency) and R-PAIR (now gating S1 only when no truncated leaf works); 600 states stratified by the policy's gap over ALL legal actions; the independent-seed arm dropped; the ORACLE-world asymmetry named as a fifth error source; truncated / mixed leaves, AIVAT-style control variates, a regret-aware acting rule and a sibling-level trunk signal added as levers; the RNG table corrected file by file (47 + 7 sites; Quick Claw at the end of the previous turn moves S1's hook; speed-tie and always-tied shuffles; any faint ends the turn's actions; the fork arm keeps its stream); training-side claims scoped to their provenance (v13-W, rb-blob readout refits; UNVERIFIED for a trunk and the end state); related work added | keeping pairwise accuracy and the separable share as the decision currency (equal accuracy hid unequal decisions on banked rows); a torn-only sample (the banked leaf value is larger on decided states); the independent-seed control (the derangement estimator reads 1.000 [0.996, 1.005]); building S1 on an S0 VRF the banked rows already put at 1.06–1.13 without first trying truncation | §2.3 and §12 (POST-HOC reads of banked rows, `research_state/measurements/value_disc_review_2026-10-11/`); §5 re-verified at `f56621db`; owner 2026-10-11 |
+| 2026-10-11 | **PILOT REGISTERED (§7.10 Amendment 1), owner brief "make any decisions to gather data useful for design or our roadmap"** | Both closing-test seeds 2001 (end2 at `62085750`, prod at `95d014fa`), each at its own pin and on its own eval-trace states (600 each, gap quintiles); seeds 0–15 leaf / 16–39 truth / 40–47 critic; added scorers LEAF-K16, TRUNC at K up to 16, the AIVAT-style branch-turn control variate CV-K; acting rules defined before any outcome (ARGMAX, PRIOR-k, GUMBEL with `mctx` defaults, PUCT, sequential halving at matched budgets, the old 2·SE gate); R-PRIOR and R-SH added as secondary rules | waiting for the closing-test verdict to pick one arm (both are read instead, so the end-state critic's decision value and production's are both measured); the Lane S bank (off-distribution); the per-turn AIVAT form (needs extra dice samples per turn: deferred) | `research_state/measurements/value_disc_pilot_2026-10-11/README.md`; ledger 2026-10-11 REGISTRATION |

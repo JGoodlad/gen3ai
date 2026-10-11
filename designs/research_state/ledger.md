@@ -24298,3 +24298,24 @@ a per-game win rate. The pilot (`design_value_discrimination.md` §7) re-measure
 own states.
 
 Tag: **DESCRIPTIVE · POST-HOC on banked rows · ORACLE world · one checkpoint (rb-blob), off-distribution · no registered verdict**
+
+### 2026-10-11 · REGISTRATION · **THE VALUE-DISCRIMINATION PILOT (oracle world, CPU): decision improvement over the policy's own pick for the critic, rollout leaves (K 1–16), short rollouts (1/2/4 turns then the critic), an AIVAT-style luck-corrected leaf and a mix, under argmax / prior-aware (Gumbel) / sequential-halving / old 2·SE acting rules, on the closing test's end-state AND production seeds 2001, 600 own-trace states each**
+
+Registered by `design_value_discrimination.md` §7.10 Amendment 1, committed before any playout outcome was played or
+read (a 4-state throughput pilot printed cost only: 0.060 CPU-s per playout, ≈ 2.5 CPU-hours per checkpoint). Full
+text: `measurements/value_disc_pilot_2026-10-11/README.md` §2–§5.
+
+- **Checkpoints:** `rb_es_end2_s2001` (pin `62085750`) and `rb_es_prod_s2001` (pin `95d014fa`), finals at 15.05M,
+  each loaded and played at its own pin (detached checkouts), CPU only.
+- **States:** each run's last three eval-trace cycles, every trace; gate ① byte-equal on every recorded decision
+  (24,036 / 23,392); 600 states per checkpoint stratified by the final policy's top-2 gap quintile (120 each, ≤ 2
+  per battle; 417 / 416 battles); all legal actions (mean 7.4).
+- **Seeds:** `turn_seeds(id, 48)`: 0–15 leaf, 16–39 truth (24, read by no scorer), 40–47 the critic's one-ply
+  successors. Greedy continuation on both sides; ORACLE world.
+- **Primary R-LEAF:** IMP(LEAF-K8) − IMP(CRITIC), argmax, paired battle-clustered bootstrap: LEAF-AHEAD (lower >
+  +0.0005) / CRITIC-EQUIVALENT (inside ±0.01) / NOT DETECTED. Secondary: R-TRUNC, R-K, R-PRIOR (GUMBEL∘LEAF-K4 vs
+  ARGMAX∘LEAF-K4), R-SH (SH-4 at B = n·2 vs ARGMAX∘LEAF-K2), R-PAIR. Rule 8 at ±0.0005.
+- **Predictions:** IMP(LEAF-K8) +0.02 to +0.06, IMP(CRITIC) −0.01 to +0.02 (LEAF-AHEAD); R-K UNRESOLVED or STILL
+  CLIMBING; R-TRUNC d = 4; R-PAIR NO SIGNATURE; R-PRIOR NOT DETECTED or HELPS; R-SH HELPS.
+
+Tag: **REGISTRATION · CPU · oracle world · no outcome read**

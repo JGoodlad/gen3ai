@@ -1,0 +1,111 @@
+# The value-discrimination pilot (2026-10-11): oracle-world decision improvement on the end-state and production seeds
+
+**Status: REGISTERED, not yet run.** This README is the pilot's pre-registration (a copy of
+`designs/endstate/design_value_discrimination.md` §7 as amended by §7.10 Amendment 1). Results go in §6 and
+`result.md` once the rows exist. Nothing below §5 has been read.
+
+## 1. In plain language
+
+At a decision, a one-ply search tries each legal action, estimates how good the position after it is, and plays
+the best. The question is which estimate is worth its cost:
+
+- the CRITIC (the network's own win-probability guess for the position after the action), which is nearly free;
+- ROLLOUTS (play the game out K times from the position after each action and count wins), which are expensive;
+- SHORT rollouts (play only 1, 2 or 4 turns, then ask the critic), which are in between;
+- a LUCK-CORRECTED rollout (subtract how lucky the first turn's dice were, using the critic as the yardstick).
+
+And which ACTING RULE turns those estimates into a move: take the best estimate (argmax), mix the estimate with
+the policy's own preference (prior-aware, as Gumbel AlphaZero does), spend the playout budget on the policy's
+favourites in rounds (sequential halving), or the old rule that switched away from the policy's pick only when a
+difference was statistically resolved (2 standard errors).
+
+The yardstick is DECISION IMPROVEMENT: how much more often the game is won, in win probability, if we play the
+rule's pick instead of the policy's own top choice, judged on 24 rollouts per action that no scorer ever saw.
+
+The big caveat: every rollout here plays from the TRUE battle, knowing the opponent's real team and sets (the
+ORACLE world). The critic does not know them. So a rollout leaf's edge over the critic is partly hidden
+information that no real player has.
+
+## 2. What is fixed (the registration; Amendment 1 of the design doc's §7.10)
+
+| item | value |
+|---|---|
+| checkpoints | **end2** = `models/rb_es_end2_s2001/final_model.zip` (15.05M, pin `62085750`, tag `closing-test-pend2`) and **prod** = `models/rb_es_prod_s2001/final_model.zip` (15.05M, pin `95d014fa`). Each is loaded, encoded and played at its OWN pin's code (a detached checkout; `run_at_pin.sh`), CPU only, through the strict loader; `check_winprob` passes on both |
+| states | each checkpoint's OWN eval traces: the last three cycles (its 10M / 12M / 14M snapshots, recorded at the pin), EVERY trace of every roster opponent (end2 661 traces, prod 679). Gate ① (re-encoding reproduces every recorded obs row byte-equal, masks equal, actions equal): end2 24,036 / 24,036 decisions, prod 23,392 / 23,392. The obs clock decodes to the protocol's turn on every decision (same counts) |
+| eligible | a free move round, turn 2–40, ≥ 3 legal actions: end2 16,693, prod 16,099 |
+| strata | the FINAL checkpoint's top-2 masked-logit gap at the root, quintiles over the eligible pool: end2 edges 0.265 / 0.605 / 1.071 / 1.874; prod 0.324 / 0.768 / 1.407 / 2.582. A state within 1e-6 of an edge, or with a top-2 tie, is excluded (rule 8; end2 1, prod 0) |
+| sample | 120 per quintile = 600 per checkpoint, at most 2 per battle, in `sha256("value_disc_pilot_2026:" + id)` order (end2 417 battles, prod 416). Mean legal actions 7.46 / 7.39. Traced outcome: end2 321 L / 262 W / 17 D; prod 317 / 266 / 17 (the trace quota is loss-enriched) |
+| options | ALL legal actions; `top1` = the final checkpoint's masked-logit argmax at the root (lowest index on a tie, never reached: ties excluded) |
+| continuation | CP greedy on both sides to the end (`play_out`'s request: production stall, `max_turns` 999), rooted at the decision's command index; the other side's open root decision answered by CP's greedy policy identically across siblings. +1 win / −1 loss / 0 tie or truncated. **World: ORACLE** |
+| seeds | `truth.turn_seeds(id, 48)`, shared by every action: **0–15 leaf** (every scorer's playouts), **16–39 truth** (24; no scorer ever reads them), **40–47 the critic's one-ply successors** (`qhat.one_ply`, never played on) |
+| value trace | for every (action, seed): CP's V at every searched-side decision, with its turn (decoded from the obs clock) and a switch-only flag; the terminal |
+| ties | an argmax tie (\|Δscore\| < 1e-6) breaks toward the policy's order (top1 first, then by logit) |
+| CIs | battle-clustered bootstrap, 2,000 draws, `numpy.random.default_rng(20261011)`, percentile 95 %, every contrast paired on the same draws; per checkpoint |
+
+## 3. The scorers (per action a, all on the win scale [0, 1])
+
+| scorer | definition |
+|---|---|
+| CRITIC | Q̂(a) = mean over seeds 40–47 of the critic's V at the searched side's next decision (a branch that ends first scores its terminal) |
+| LEAF-K, K = 1, 2, 4, 8, 16 | the mean outcome over seeds 0..K−1 |
+| TRUNC-d-K, d = 1, 2, 4; K = 1, 4, 8, 16 | the mean over seeds 0..K−1 of X_d = V at the searched side's first decision whose turn ≥ T + d (T = the root's turn), or the terminal if the game ended first |
+| CV-K (AIVAT-style, branch turn), K = 1, 2, 4, 8, 16 | LEAF-K(a) − β·(mean over seeds 0..K−1 of X₁′(a, j) − Q̂(a)), β = 1, where X₁′ = V at the searched side's FIRST decision after the root (the quantity `one_ply` captures, terminal if ended): the first turn's dice luck as the critic sees it, subtracted against the critic's own independent estimate of its mean (seeds 40–47). Unbiased for LEAF-K's mean for any fixed β. The per-turn AIVAT form (extra dice samples at every turn) is DEFERRED |
+| MIX-K, K = 1, 4, 8 | ½·CRITIC + ½·LEAF-K (AlphaGo's λ = 0.5) |
+
+## 4. The acting rules
+
+| rule | definition |
+|---|---|
+| ARGMAX | the scorer's argmax over all legal actions |
+| PRIOR-k | the argmax over the policy's top-k (k = 2, 3) |
+| GUMBEL (prior-aware; primary of its kind) | Gumbel MuZero's final selection WITHOUT noise, `mctx` defaults: argmax of logit(a) + (c_visit + N_max)·c_scale·q̃(a), c_visit = 50, c_scale = 0.1, q̃ = the scorer's values min-max rescaled to [0, 1] over the legal actions (all equal ⇒ 0), N_max = the per-action sample count (K; 8 for the critic). Logits = the root's raw masked logits |
+| PUCT (descriptive) | argmax of s(a) + 1.25·π(a)·√(n·K)/(1 + K), π the masked softmax, n the legal count |
+| SH-m (sequential halving, Gumbel AlphaZero's allocation, no noise), m = 4 and m = all | budget B = n·K playouts for K = 1, 2, 4, 8 (matched to LEAF-K's spend); candidates = the policy's top-m; R = ⌈log₂ m⌉ rounds; in a round each survivor gets max(1, ⌊B / (R·\|S\|)⌋) new playouts (its leaf seeds in order), capped at 16 per action; after each round keep the top ⌈\|S\|/2⌉ by the GUMBEL score on the samples so far; the pick is the last survivor (or the GUMBEL argmax of the last pair). The SPENT budget is reported beside B |
+| GATE-2SE (the old rule) | switch from top1 to LEAF-K's argmax a′ only if K ≥ 4 and the paired mean d = mean_j (o(a′, j) − o(top1, j)) over seeds 0..K−1 satisfies d ≥ 2·SE, SE = max(sd(d)/√K, 0.5/K) on the win scale; K = 4, 8, 16 |
+
+## 5. Metrics and registered decision rules (per checkpoint)
+
+**D1 (PRIMARY): IMP = mean over states of T(â) − T(top1)**, T = the mean outcome over the 24 truth seeds on the
+win scale. Reported for every scorer × rule, by gap quintile, by unrevealed opponent slots (0–1 / 2–3 / 4–5), by
+phase (turn 2–10 / 11–25 / 26–40), by the trace's outcome; raw AND re-weighted to the natural outcome rate of each
+(cycle, opponent) (weight = battles of that outcome played / traced); the raw one decides. The oracle bound
+max_a T(a) − T(top1) is reported with its winner's-curse stamp. **Cost** per decision: CPU-s from the measured
+forward rows (both sides) each scorer's playouts need, at the state's measured CPU-s per row; the critic's
+measured one-ply CPU.
+
+A bound within ±0.0005 of its boundary counts as not clear (rule 8).
+
+| rule | contrast (paired) | outcomes |
+|---|---|---|
+| **R-LEAF (primary)** | IMP(LEAF-K8) − IMP(CRITIC), ARGMAX | LEAF-AHEAD: lower > +0.0005 · CRITIC-EQUIVALENT: CI inside ±0.01 · NOT DETECTED |
+| R-TRUNC | smallest d ∈ {1, 2, 4} with IMP(TRUNC-d-8) − IMP(LEAF-K8) lower > −0.01 AND IMP(TRUNC-d-8) − IMP(CRITIC) lower > +0.0005 | that d, or NONE |
+| R-K | IMP(LEAF-K8) − IMP(LEAF-K4) | SATURATING: upper < +0.01 · STILL CLIMBING: lower > +0.0005 · UNRESOLVED |
+| R-PRIOR (added) | IMP(GUMBEL∘LEAF-K4) − IMP(ARGMAX∘LEAF-K4) | PRIOR HELPS: lower > +0.0005 · PRIOR HURTS: upper < −0.0005 · NOT DETECTED |
+| R-SH (added) | IMP(SH-4 at B = n·2) − IMP(ARGMAX∘LEAF-K2) | SH HELPS / SH HURTS / NOT DETECTED, as R-PRIOR |
+| R-PAIR | ρ(1) lower ≥ 0.30 AND ρ(terminal) upper < 0.20 (all pairs, terminal and X_d from the leaf seeds) | ALIGNMENT-LOSS SIGNATURE ⇒ build S1 · NO SIGNATURE |
+
+Everything else (CV-K, MIX-K, PRIOR-k, PUCT, GATE-2SE, the K curve to 16, M1–M3) is descriptive.
+
+**Predictions** (the doc's §7.6, carried over; written before measurement): IMP(LEAF-K8) +0.02 to +0.06,
+IMP(CRITIC) −0.01 to +0.02, R-LEAF LEAF-AHEAD; R-K UNRESOLVED or STILL CLIMBING; R-TRUNC d = 4; ρ(terminal)
+0.05–0.12, R-PAIR NO SIGNATURE. Added: R-PRIOR NOT DETECTED or PRIOR HELPS at K = 4; R-SH SH HELPS (a guess).
+
+**Size rule.** The throughput pilot (4 end2 states, cost only, no outcome printed) measured 0.060 CPU-s per
+playout, ~15 CPU-s per state: ≈ 2.5 CPU-hours per checkpoint, far under the 12-hour cap. No state is dropped.
+
+## 6. Results
+
+Not yet run.
+
+## 7. Files
+
+| file | what |
+|---|---|
+| `run_at_pin.sh` | runs a script here against a checkpoint's own pin checkout: CPU only, nice 19, mem cap, timeout |
+| `common.py` | the checkpoints, the seed plan, the clock decode, durable rows |
+| `probe_load.py` | load check + forward cost (no outcome) |
+| `make_states.py` | the pool, gate ①, the root forward, the quintiles, the sample → archive `<cp>/bank/`, `<cp>/pool.npz`; here `states_<cp>.json` |
+| `run_playouts.py` | the driver: all actions × 40 seeds to the end with the value trace, plus the critic's one-ply successors → archive `<cp>/rows/shard_*.jsonl` |
+| `states_end2.json`, `states_prod.json` | the registered samples (edges, counts, ids, the per-(cycle, opponent) capture rates) |
+
+Bulk: `~/gen3ai_archive/value_disc_pilot/`.
