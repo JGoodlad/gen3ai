@@ -566,6 +566,21 @@ that mon (same semantics, accepted by both). Also a state needs only its first 8
 Every world was rebuilt (deterministic: unaffected states get the same teams); the 406 states that had played were
 kept, the refused ones re-run. The same fix is in `src/main/value_search/worlds.py`.
 
+**Amendment 5 (2026-10-11, PHASE 2b REGISTERED: worlds from the network's OWN belief; written AFTER Phase 2's prod
+read (the Smogon-prior sampler: honest IMP ≈ 0, §7.12) and before any Phase 2b playout).** Disclosure: the prod
+Phase 2 result motivated this arm, as did two descriptive reads that use no outcome: the Smogon worlds put a true
+hidden species in a never-seen slot 22 % of the time (`world_accuracy_read.json`), while the network's X5 species
+presence puts 47 % of its mass on the true hidden species (top-k recall 60 %; `belief_accuracy_prod.json`).
+1. **Sampler B:** a never-seen slot draws its species ∝ the network's own X5 species presence π at the root
+   (`last_hypothesis.species.pi`, one CPU forward per root at the pin) instead of the teammate prior; sets, the gate,
+   the slot rewrites, the 16 built / 8 played worlds, the seeds and the referee are Phase 2's exactly. Archive
+   `<cp>/det_b/`.
+2. **Rules:** **R-HONEST-B** on IMP(det-B LEAF-K8) − IMP(det-B CRITIC), as R-HONEST; **R-BELIEF** on IMP(det-B LEAF-K8) −
+   IMP(det-A LEAF-K8) (belief vs Smogon worlds), on the states both arms played: HELPS (lower > +0.0005) / HURTS
+   (upper < −0.0005) / NOT DETECTED. Descriptive: the same table as Phase 2.
+3. **Prediction:** R-BELIEF HELPS; R-HONEST-B NOT DETECTED or a small LEAF-AHEAD (the sets still come from the
+   Smogon prior, and §7.12 found the move slots matter).
+
 ### 7.11 Phase 1 RESULTS (oracle world, 2026-10-11; `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §6)
 
 600 own-trace states per checkpoint, every legal action, 40 shared seeds (16 leaf, 24 truth), all played. IMP on the
@@ -769,6 +784,265 @@ states over ≥ 300 battles should give about ±0.012, enough to detect a 2-poin
 - **Whether the rb-blob reads transfer to CP**: off-distribution states may inflate the improvement and the "torn is
   the wrong selector" finding; the pilot re-measures both on CP's own states.
 - **The draft's cost model for S1 / S2** (agent-days) is the author's estimate, unchanged and UNVERIFIED.
+
+---
+
+## 13. THE BOOTSTRAP: an in-loop SEARCH FACTORY (DESIGN; owner-funded 2026-10-11; nothing built on the training side)
+
+### 13.0 Decision brief (one page; the owner's bar: "relative cost, performance and a convincing story")
+
+**The shape (owner, 2026-10-11).** Search's enablers live INSIDE the training loop, like the self-play pool: a
+SEARCH FACTORY built at startup, dormant until its gates open, with one smooth knob f (the fraction of training
+decisions searched, KataGo's playout-cap randomisation). It is a CLIENT of the same inference service the
+collectors use, its worlds are sampled in the Rust core, and its outputs are extra TARGET COLUMNS in the rollout
+buffer read by a SEPARATE auxiliary loss. PPO's objective and its behaviour policy are untouched: search changes
+LABELS, never the actions PPO learns from. The offline label factory is its stage-0 validation harness.
+
+**PERFORMANCE (measured, this pilot).** Per decision, over the raw policy's own pick, against held-out truth:
+
+| search (per decision) | ORACLE world end2 / prod | HONEST (determinized) end2 / prod |
+|---|---|---|
+| critic one-ply (8 successors) | +0.026 / +0.012 | (pending: Phase 2 / 2b read) |
+| 4-turn leaf, 1 playout per action (≈ 65 rows) | +0.027 / +0.028 | (pending: Phase 2 / 2b read) |
+| 4-turn leaf, 4 per action (≈ 260 rows) | +0.052 / +0.037 | (pending: Phase 2 / 2b read) |
+| full leaf, 8 per action (≈ 3,550 rows) | +0.081 / +0.071 | (pending: Phase 2 / 2b read) |
+
+(pending: Phase 2 / 2b read)
+
+**RELATIVE COST (§13.5; measured where marked, else ESTIMATE).** A 4-turn, 4-per-action search is ≈ 260 forward rows
+per decision: ≈ 16–29 GPU-ms on the inference service (0.063 ms per row MEASURED for production's T2 slot layout;
+×1.75 for the end state, ESTIMATE) plus ≈ 0.07 CPU-s of sim and glue and ≈ 0.08 CPU-s per determinized world
+(MEASURED with today's subprocess gate). Against ~1,700 training decisions per second, **f = 0.25 % adds ≈ 1,100
+rows/s ≈ +32 % of the inference service's rows (≈ +7–12 % of GPU time, ESTIMATE) and labels ≈ 37,000 decisions per
+15M-step run**; f = 1 % quadruples both. With today's subprocess world builder the CPU side (≈ 1.7 cores at f =
+0.25 % with 4 worlds per search) fits the 3 spare physical cores beside the trainer only at f ≤ 0.25 %; an in-Rust
+world builder (gap G5) is the precondition for f ≥ 0.5 %.
+
+**THE STORY (§13.2–13.4).** Search turns the network's own value into a better decision than its policy makes
+(measured above, in fair worlds); the completed-Q policy target and the search value are distilled into the network
+by an auxiliary loss; the stronger network is the next search's prior and critic, so the next targets are better.
+It improves rather than collapses because (i) with unbiased q the target is a policy improvement (Gumbel MuZero's
+theorem), (ii) where search cannot improve the prior the target EQUALS the prior and the aux loss goes quiet (the
+loop stalls, it does not corrupt), and (iii) every stage has a meter that catches the four ways it can degrade
+(§13.3) before the next stage costs anything. The search here is a one-ply best response to a MODELLED opponent, not
+an equilibrium method (§14 prices what that gives up).
+
+**THE ASK.** (pending: Phase 2 / 2b read)
+
+### 13.1 The loop, concretely
+
+1. **Select:** each collected decision of the trainee is searched with probability f (seeded, recorded), never in
+   the first M updates (dormant) and never while a stage gate is closed.
+2. **Worlds:** J honest worlds per searched decision from the BELIEF sampler (the network's own per-slot species
+   belief + the Smogon set prior; the measured fallback is §7.10 Amendment 2's Smogon-prior sampler), gated by the
+   byte-equal replay of the searched side's observations. **Never the trainer's true state:** an oracle label would
+   teach the policy to act on information it cannot have.
+3. **Leaves:** per legal action, K playouts over the J worlds (sample k in world k mod J), greedy on both sides,
+   scored at the critic after d = 4 turns (§7.11: the cost-efficient leaf); uniform allocation (sequential halving
+   over the policy's top-4 measured no better at small budgets and worse at larger).
+4. **Targets:** π′ = softmax(logit + (50 + K)·c·q̃(completed)), c = 1.0 (the `mctx` default 0.1 under-trusts the leaf
+   and lost 1–3 points; at c ≥ 1 sampling π′ recovers the full argmax gain, `target_scale_read.json`, post-hoc);
+   v′ = Σ π′·completed q. Columns: π′ [11], v′, the budget, J, the weights version, a `searched` flag.
+5. **Loss:** PPO's clipped objective unchanged on every row; an AUXILIARY λ_π·KL(π′ ‖ π_θ) + λ_v·BCE(v′, V_θ) on the
+   searched rows only, λ ramped by the stage gate. One lever per A/B.
+6. **Behaviour policy:** the action PPO records and learns from is ALWAYS the policy's own sampled action. Search does
+   not act in training. (Acting with search would make the PPO ratio π_θ/π_behaviour wrong: the search's choice is a
+   deterministic function of noisy playouts with no recorded log-probability. If S3 is ever wanted, the clean form is
+   to act by SAMPLING π′ and record log π′ as the behaviour log-probability, and to exclude those rows from the
+   value-target GAE, or to restrict acting to evaluation and live play. Not proposed.)
+
+### 13.2 Why it improves rather than collapses
+
+- **Policy improvement:** with unbiased q, Gumbel's completed-Q target improves on the prior (Danihelka, Guez,
+  Schrittwieser, Silver, ICLR 2022), and Gumbel MuZero "learns reliably even with 2 simulations" on 9×9 Go where
+  MuZero fails at ≤ 16. Expert Iteration (Anthony, Tian, Barber, NeurIPS 2017) beat MoHex 1.0 at Hex from scratch with
+  the distil-then-search loop. In a Pokémon format, Wang (2024) measured PPO + inference-time MCTS beating the network
+  alone 80.9 % (gen-4 random battles; the author calls it inflated, its search knew the opponent model).
+- **The per-decision gain compounds in a game.** By the performance-difference lemma, a policy that takes search's
+  pick at every decision gains, against the raw policy, the SUM over its game's decisions of the per-decision
+  improvement in Q^π (exactly what IMP measures, with the opponent playing the raw policy). Even +0.02 per decision
+  over ~25 own decisions is a large head-to-head gain before saturation (§13.6). The distilled network captures some
+  fraction of it; how much is S3's question.
+- **The fixed point is safe:** if search finds nothing, π′ = π and the KL is zero.
+- **The value target's bias falls with depth:** a 4-turn leaf replaces 4 turns of the critic's bias with real play.
+
+### 13.3 How it stalls or degrades, and the meter for each (all on TensorBoard)
+
+| failure | mechanism | meter (TensorBoard) and guard-rail |
+|---|---|---|
+| search no better than the prior | noisy q at budget B; the critic's sibling blindness | `search/imp` (IMP vs a held-out truth on a 1 % shadow subsample, CI); gate S1→S2 on its lower bound > 0; `search/agree` (π′'s argmax = the policy's) |
+| overfitting to search noise | π′ chases B playouts' luck | `search/kl_target_policy` on held-out searched states; λ_π small; c fixed |
+| oracle leakage | true-state worlds teach unexecutable play | honest worlds only, enforced in code (the factory has no path to the true opponent team); `search/belief_world_*` (acceptance rate, tries, leaks) |
+| value-target bias | the 4-turn leaf imports the critic's bias | λ_v = 0 until a calibration read of v′ vs held-out playout truth passes |
+| starvation reinforced | uniform allocation still visits every move; a top-k would not | uniform allocation by default; the X4 starvation meter on labelled states |
+| stale or mixed weights | a search spans a weight swap | every request carries the weights VERSION; a search whose replies mix versions is discarded (`search/discarded_version`) |
+| collection starved | search crowds the inference batcher | a declared budget share in the batcher; `search/cost_ms`, `search/fraction`, the trainer's fps |
+
+### 13.4 Staged plan, each stage with its go / no-go and cost
+
+| stage | what | go / no-go | cost (ESTIMATE unless marked) |
+|---|---|---|---|
+| **S0** (DONE) | this pilot: oracle + honest IMP; `main.value_search` | honest IMP lower bound > 0 at a realistic budget: (pending: Phase 2 / 2b read) | ≈ 30 CPU-h, no GPU (MEASURED) |
+| **S0b** offline battery (OWNER approval) | search-player vs raw-player, mirrored h2h, same checkpoint, honest worlds, 4-turn / 4-per-action | h2h gain lower bound > +4.57 pp (the replicate floor) | ≈ 1 CPU-day at f = 1 (every decision searched), or a GPU window |
+| **S0c** offline label factory | label N = 50k states of the adopted arm's own self-play on idle CPU; no training | held-out IMP of argmax π′ ≥ S0's; label throughput ≥ S2's need | ≈ 1 agent-day build (reuses the module) + idle CPU |
+| **S1 SHADOW** | the in-loop factory at f = 0.25 %, logs only (`search/*`) | `search/imp` lower bound > 0 over a 15M run; fps cost ≤ 5 % | build ≈ 3–5 agent-days (gaps G1–G6); one GPU run |
+| **S2 LABELS** | the aux loss at f = 0.25–1 %, λ ramp gated on S1's meter | the pre-registered A/B (§13.7) | ≈ 1–2 agent-days more; the A/B's GPU |
+| S3 acting | not proposed for training | — | — |
+
+### 13.5 Cost model
+
+| quantity | value | source |
+|---|---|---|
+| forward rows per full playout / per 4-turn playout | ≈ 60 / ≈ 8–9 (both sides) | MEASURED, Phase 1 (28 turns per playout) |
+| rows per decision: critic / 4-turn K1 / 4-turn K4 / full K8 (n ≈ 7.4 legal) | ≈ 60–100 / 65 / 260 / 3,550 | MEASURED rows × n |
+| CPU all-in per row, CPU forward (contended, this box) | 6.1 ms end2 / 3.5 ms prod | MEASURED |
+| GPU per row on the inference service | 0.063 ms (production, 457-row steps, compiled) | MEASURED (`perf_phase_2026-10-10` T2_lead) |
+| GPU per row, end state | ≈ 0.11 ms | ESTIMATE (×1.75, the CPU ratio) |
+| sim + glue per row with a GPU forward | ≈ 0.25 ms CPU | ESTIMATE (sim was ~5 % of the CPU-forward cost) |
+| determinized world (subprocess gate) | ≈ 0.08 CPU-s per world (2.5 tries) | MEASURED (1.2–1.3 CPU-s per 16 worlds) |
+| training throughput | ~1,700 decisions / s; ~2 served rows per decision | MEASURED (closing test fps 1,685–1,868; T2_lead 245 trainee + 212 opponent rows per step) |
+
+At a 4-turn K4 search (260 rows, J = 4 worlds):
+
+| f | searched / s | extra served rows / s (vs ~3,400) | GPU time added | CPU added (subprocess worlds → in-Rust) | labels per 15M run |
+|---|---|---|---|---|---|
+| 0.1 % | 1.7 | 440 (+13 %) | ≈ +3–5 % | 0.7 → 0.2 cores | 15k |
+| 0.25 % | 4.3 | 1,100 (+32 %) | ≈ +7–12 % | 1.7 → 0.4 cores | 37k |
+| 1 % | 17 | 4,400 (+130 %) | ≈ +28–48 % | 6.5 → 1.6 cores | 150k |
+
+(GPU time = extra rows × 0.063–0.11 ms; today's inference is ≈ 3,400 rows/s × 0.063 ms ≈ 21 % of GPU time, ESTIMATE. CPU = worlds (4 × 0.08 CPU-s per search, MEASURED subprocess; in-Rust assumed 10× cheaper, ESTIMATE) + 0.25 ms per row.) **Recommendation:** S1 SHADOW at f = 0.25 %, 4-turn K4,
+J = 4; S2 at f = 0.5 % once the in-Rust world builder (G5) lands; never f > 1 % without a fresh fps read. The
+trainer's 5 physical cores are respected at every row of the table only with G5.
+
+### 13.6 From per-decision improvement to win rate (UNVERIFIED projection; the battery measures it)
+
+Performance-difference lemma: V^{π′}(s₀) − V^{π}(s₀) = Σ_t E_{s_t ∼ π′}[Q^π(s_t, π′(s_t)) − V^π(s_t)], with the
+opponent fixed at π. The bracket is the per-decision IMP (relative to π's greedy pick). Summed over a game's ~25–30
+own decisions, an honest IMP of (pending: Phase 2 / 2b read) per decision is far beyond what a win probability can absorb: the
+projection SATURATES, so the honest search-player should win most mirrored games against the raw player — unless IMP
+on the search-player's own trajectories is much smaller than on these eval-trace states (it shrinks as positions
+become decided) or the honest q noise flips more decisions than measured. Wang's 80.9 % is the only public calibration
+point. **What IMP must be for distillation to pay:** the S0b battery's h2h gain must clear the 4.57 pp replicate floor
+(below it, no distilled fraction of it could be read in a strength A/B), and the S1 shadow IMP must stay > 0 on
+fresh checkpoints (search must keep beating the prior it is distilled into).
+
+### 13.7 The pre-registered first A/B (DRAFT; registered only when its commit lands before any seed)
+
+Factory ON (S2: f = 0.5 %, 4-turn K4, J = 4, λ_π ramped from 0 to 0.1 over 2M steps after the S1 gate, λ_v = 0)
+vs OFF, ONE lever, on the adopted arm's recipe, 8 seeds per arm, 15M steps, read on the closing test's mirrored 8×8
+h2h cross and rule. Secondary: the raw policy's IMP gap (search's gain over the policy should SHRINK in the ON arm:
+the policy absorbed it); `main.best_response_gap` at matched exploiter budget; fps. Cost ≈ 16 seeds × ~3 GPU-h.
+
+### 13.8 The architecture end state, and the gaps from today's code
+
+**End state:** the factory is a CLIENT of the trainer's inference service (`agents/inference/service/`), not a
+separate process with a stale checkpoint (the deleted counterfactual producer's failure). Its requests enter the
+same batcher under a declared SEARCH budget share; each carries the weights VERSION; many searches are in flight at
+once so their sequential playout steps still fill GPU batches; worlds are sampled and gated in the Rust core; its
+outputs land in the rollout buffer as target columns for a separate auxiliary loss.
+
+What the inference service has today (read 2026-10-11): fixed weight SLOTS × fixed BUCKETS with a declared
+lifecycle; `submit(slot, obs, mask, priority)` → `Ticket`; three priority classes `ROLLOUT` / `EVAL` / `FILLER`, and
+`flush()` serves every ROLLOUT row plus at most `filler_batches_per_flush` batches of the rest; a `Decision` carries
+`logp`, `value`, `greedy`; `load(slot, policy, model_id)` swaps a slot's weights in place.
+
+| gap | what is missing | estimate |
+|---|---|---|
+| G1 priority / share | a SEARCH class (or FILLER) with a declared share in rows per flush, never starving ROLLOUT | 0.5 agent-day |
+| G2 version tag | tickets / decisions do not record the slot's `model_id` or a load epoch; a reload mid-search would mix weights silently. Add the epoch to `Decision`; the factory discards mixed searches, or the trainer barriers searches before a swap | 0.5 |
+| G3 non-blocking client | `score()` flushes for everyone; the factory needs submit-now / collect-at-the-collector's-next-flush, with many searches in flight | 1 |
+| G4 batched playouts in Rust | today one Python-driven playout handle per world; in-loop needs a pool-style API (many searches, rows / masks as columns, like the env core) | 1–2 |
+| G5 in-Rust world builder | today the gate replays the prefix through a `core_events` SUBPROCESS from Python (≈ 0.08 CPU-s per world); in-process Rust sampling + replay + byte compare, with Python supplying only prior tables / belief logits | 1–2 |
+| G6 belief sampler | species per unrevealed slot drawn from the network's own belief (`BeliefHead` species logits, `agents/inference/belief_decode.py`; `species_exclusivity.py`), sets from the Smogon prior | 0.5 |
+| G7 buffer columns + aux loss | target columns in the rollout buffer and an auxiliary loss behind a flag (registry row, OFF), plus the `search/*` TensorBoard surface | 1–1.5 |
+| G8 declared lifecycle | the factory constructed at startup (cores, buffers, service class), dormant until its gate; no lazy construction | in G3/G7 |
+
+**The staged path:** P0 (DONE) the pilot + `main.value_search` (Python, CPU forward, offline) → P1 the offline label
+factory over the trainer's recorded decisions (S0c) → P2 G4 + G5 (Rust: batched playouts, in-process worlds) → P3 G1–G3
++ G6 (the service client, belief sampler) and S1 SHADOW → P4 G7 and S2 LABELS + the A/B. ≈ 6–9 agent-days in all
+(UNVERIFIED).
+
+**The owner's scope rule (2026-09-30: in-loop additions ≤ one ply, subsample-eligible; playout to terminal deferred).**
+The factory is subsample-eligible by construction (f). Its one-ply form (the critic scorer) FITS the rule as written
+but buys little (+0.012–0.026 oracle). The recommended 4-turn leaf is four turns of playout then the critic: not to
+terminal, but more than one ply, so it **needs the owner's ruling**. The full-rollout leaf stays deferred.
+
+---
+
+## 14. ALTERNATIVES CONSIDERED / THE THEORETICAL BEST (FUTURE WORK; no build)
+
+The owner asked (2026-10-11) to "know what we're giving up, what is the gap, what the theoretical best would be". Every
+compute figure below is from the cited paper (verified 2026-10-11 by a literature pass); anything not verified is
+marked UNVERIFIED.
+
+### 14.1 The theoretical best, and why we are not chasing it
+
+Gen-3 singles is a two-player zero-sum game with SIMULTANEOUS moves and IMPERFECT information (the opponent's six
+Pokémon, their moves, items, abilities and spreads are hidden until revealed, and dice decide much of each turn). Its
+"best" policy is a NASH EQUILIBRIUM: one that no opponent can exploit, which in a simultaneous-move hidden-information
+game is in general MIXED (it randomises when guessing a switch-in or a move matters) and hides its own information
+(it plays its sets so that its choices do not reveal them).
+
+Our system is not equilibrium-seeking:
+- PPO self-play against a pool converges, at best, to a policy good against the pool it trained on; the literature
+  (Sokota et al. 2023) shows plain PPO does not reliably reduce exploitability.
+- The search in this doc is a ONE-PLY BEST RESPONSE to a MODELLED opponent (the network's own greedy play, in worlds
+  sampled from a prior): it improves the decision against the opponent we assume, not against the worst one. It
+  plays a single action, so it cannot mix, and nothing in it values hiding information.
+- Determinized ("perfect-information Monte Carlo") search suffers STRATEGY FUSION (it assumes it could play a
+  different move in each sampled world, when it must play the same one in all) and NON-LOCALITY (Frank & Basin 1998;
+  Long et al., AAAI 2010). Long et al. find it works well when "leaf node correlation" is high, which a dice-heavy
+  game with gradual reveals plausibly has. UNVERIFIED here.
+
+What that costs: EXPLOITABILITY (a best-response opponent can find our predictable choices) and no principled
+bluffing or information hiding. What it buys: a method that runs on one box, inside the PPO loop we own, and that
+measurably improves decisions now (§7 results).
+
+### 14.2 The game-theoretic lineage, and what each would take here
+
+| method | mechanism | reported compute | here |
+|---|---|---|---|
+| **ReBeL** (Brown, Bakhtin, Lerer, Gong, NeurIPS 2020) | public belief states (public info + each player's probability over EVERY private hand); depth-limited CFR subgame solving with a PBS value net at the leaves; provably converges to Nash in two-player zero-sum | HUNL: 90 DGX-1 (8×V100 each) for data generation ("up to 128 machines with 8 GPUs each"); test time ≤ 5 s per decision on 1 CPU thread. Liar's Dice: 1 GPU + 60 CPU threads | the belief vector is over hidden HANDS; poker has 1,326 per player, gen-3 OU has ~10²¹–10³⁸ hidden team configurations (ESTIMATE: ~100 viable species → C(100,6) ≈ 1.2×10⁹ teams × 10²–7×10⁴ plausible sets per mon, to the 6th). A PBS would have to be FACTORED (per-slot marginals, like X5's hypothesis tokens) and the CFR subgame over simultaneous moves × dice × factored beliefs is unpriced. Out of reach |
+| **Student of Games** (Schmid et al., Science Advances 2023) | growing-tree CFR + a counterfactual value-and-policy network; sound self-play with exploitability bounds | "a similar amount of TPU resources" to AlphaZero's baseline (3,500 concurrent actors, one TPUv4 each); 1.1M training steps for poker | the same belief-size wall, plus fleet-scale compute. Out of reach |
+| **DeepNash / R-NaD** (Perolat et al., Science 2022) | Regularized Nash Dynamics: reward reshaped by a KL penalty toward a regularisation policy; iterate to a fixed point, make it the new regulariser; converges toward Nash; model-free, NO test-time search | 768 TPU nodes (learners) + 256 (actors), 7.21M learner steps; wall-clock UNVERIFIED | the most budget-relevant: it is a PPO-like update on our existing loop. A full R-NaD schedule is a research program; a single regulariser term is a one-lever A/B (§14.3) |
+| **Magnetic Mirror Descent** (Sokota et al., ICLR 2023) | π_{t+1} = argmax E_π[q] − α·KL(π, ρ) − (1/η)·KL(π, π_t), ρ a "magnet" policy; converges linearly to a quantal-response equilibrium; in deep RL, PPO with the adaptive forward-KL replaced by a reverse KL to a magnet | small games (Kuhn, Leduc, Dark Hex, Liar's Dice; deep runs to 10M steps); lower exploitability than PPO and NFSP | the CHEAPEST equilibrium-flavoured step: a reverse-KL-to-magnet term on our PPO loss, one lever, no new data path (§14.3) |
+| **Simultaneous-move MCTS** (Lisý et al., NIPS 2013; Kovařík & Lisý 2015; Smooth UCT, Heinrich & Silver 2015) | per-node selection by Exp3 / regret matching (Hannan-consistent) converges to approximate Nash when the mixed strategy is read from average frequencies; DECOUPLED UCT (UCB per player) does NOT converge, even in a one-stage game | modest; Smooth UCT took 3 silver medals at the 2014 ACPC | a multi-ply tree is outside the owner's one-ply scope rule; the selection-rule lesson matters if a tree is ever built (use regret matching, not UCB) |
+| **Information-set MCTS** (Cowling, Powley, Whitehouse 2012) | one tree over information sets instead of one per sampled world; removes strategy fusion | modest | the principled fix for our determinized search's strategy fusion, at multi-ply cost |
+| **Foul Play** (pmariglia/foul-play, current source) | samples N determinized worlds (a team-sets dataset, then Smogon usage stats), runs `poke_engine` MCTS per world with DECOUPLED UCB1 at each node and a heuristic leaf (`sigmoid(evaluate(state) − root_eval)`), sums root visit shares across worlds, samples among moves ≥ 75 % of the best | default 100 ms per world, N = parallelism (1 by default), doubled early | a determinized, decoupled-UCT search with a HAND-WRITTEN evaluator: not equilibrium-seeking either (decoupled UCB does not converge). The owner's long-term target is beatable by a better evaluator plus search — exactly the direction of §13. Its ladder rating: UNVERIFIED. Metamon (Grigsby et al. 2025, no search, 15M–200M-parameter transformers trained offline on 475k human battles, one 8×A5000 machine) DREW Foul Play in gen-3 OU |
+| **Wang 2024** (MIT MEng) | PPO self-play + inference-time MCTS; each trajectory samples a complete opponent world from Showdown's random-battle generator, rejection-sampled against the revealed info (the same rejection idea as our sampler) | 150M steps in 4 days on 1 A6000 + 80 CPU workers; 1,000–2,000 rollouts per 10 s decision on 20 workers | MCTS+NN beat NN alone 80.9 % (the author calls it "inflated": the search knows the opponent model exactly); peak rank 8 in gen-4 random battles. The closest public precedent for §13 |
+
+### 14.3 THE GAP, measurably, and the cheapest equilibrium-flavoured step
+
+We already own the meters that bound "what we give up":
+- `main.exploitability` and `main.best_response_gap`: a fresh exploiter's win rate against a frozen generalist,
+  minus 0.5, per round and per team archetype. It is a LOWER bound on exploitability (a stronger best response could
+  find more), and it is the direct read of what equilibrium methods buy: if R-NaD / MMD-style training lowers it at
+  matched strength, the gap was real and closable.
+- the population loop's per-round gap trend (it must FALL round over round for the loop to be working).
+
+The cheapest step is a **single-lever A/B: an MMD-style reverse-KL "magnet" term on the PPO loss** (the magnet = a
+slowly updated copy of the policy, or the uniform policy), at matched dose, against production. Cost: one flag, one
+fresh 15M arm pair (≈ 2 × 3 GPU-hours per seed on today's throughput; UNVERIFIED for the end-state arch), read on
+BOTH strength (the h2h cross) and exploitability (`main.best_response_gap` at matched exploiter budget). Pass =
+non-inferior strength AND a lower gap. It is the equilibrium-direction lever that fits our compute; it is not built
+and not registered.
+
+### 14.4 The decision-rationale table (the whole doc)
+
+| decision | alternatives | why chosen | what we give up | trigger to revisit |
+|---|---|---|---|---|
+| the currency is DECISION IMPROVEMENT over the policy's pick, against held-out truth | pairwise sibling accuracy; resolving pairs at 2 SE; VRF | equal accuracy hid unequal decisions on banked rows (§2.3); a decision is what search consumes; unbiased by construction | a direct read of the critic's ranking quality (kept as M3, descriptive) | a training target that needs pairwise ranking (lever (j)) |
+| greedy continuation on both sides | sampling at T = 1 | the eval regime; keeps the dice the only luck | the value under the training ecology's sampled play | a label factory whose target is T = 1 self-play |
+| oracle world first, then honest worlds | honest only | the oracle is the upper bound and needs no sampler; the gap is the price of hidden information | nothing (both are read) | — |
+| Smogon-prior world sampler (Phase 2) | the network's own belief (X5 species belief) | the owner's prior rule; available today; the belief sampler is a build (G6) | consistency with what the network believes; a sharper posterior | the in-loop factory (S1) |
+| rejection by byte-equal observation replay under the TRUE pre-root dice | a state constructor in the Rust core; marginalising the pre-root dice | no new parity-critical crossing; rejection IS conditioning on observations | residual leaks (a seen mon's hidden stats, the construction-draw class) | R-INFO's gap concentrated in leak classes, or acceptance collapsing |
+| one-ply best response to a modelled opponent | equilibrium search (ReBeL, Student of Games, SM-MCTS with regret matching) | fits one box and our PPO loop; measurably improves decisions now | exploitability; mixing; information hiding (§14.1) | `main.best_response_gap` stops falling, or exploiters find cheap, durable wins |
+| uniform allocation + argmax (Gumbel score at c = 1.0) | Gumbel MuZero's sequential halving over the top-k at `mctx` defaults | measured: the prior-aware rule lost 1–3 points and top-4 halving lost at B ≥ n·4 (§7.11) | budget concentration on contenders | a budget regime where SH over ALL legal actions wins (end2 at B = n·1: +0.017) |
+| a 4-turn leaf for the factory | the full leaf; the critic alone | half the full leaf's value at a seventh of the cost; 1–2 turns add nothing over the critic | the rest of the full leaf's value | honest-world R-TRUNC, or a cheaper GPU forward making the full leaf affordable |
+| search changes LABELS, not actions, in training | acting with search (S3) | keeps PPO on-policy (no wrong importance ratios) and keeps the PPO objective separate from search's findings | stronger play during collection | never for training; evaluation and live play may act |
+| an IN-LOOP factory as a client of the inference service | an offline label factory; a separate producer process | the owner's shape: one batcher, current weights, a smooth knob; the separate producer's stale checkpoints were the failure | isolation from the trainer's throughput | an fps cost > 5 % at the chosen f |
+| no S1 / S2 dice modes yet | build S1 (R-PAIR's registered consequence) | an argmax over independent means gains little from pairing; the measured acting rule does not compare pairs | ~0.2–0.4 of a turn's luck in pairwise comparisons | adopting sequential halving or any pairwise rule |
+| CPU only, pinned (rule 5b) | a GPU window | the closing test holds the GPU | wall time | the closing test ends |
 
 ---
 

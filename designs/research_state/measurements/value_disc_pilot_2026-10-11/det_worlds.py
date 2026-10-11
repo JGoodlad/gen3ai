@@ -16,12 +16,43 @@ import common as C  # noqa: E402
 import determinize as D  # noqa: E402
 
 
+def root_belief(c, bank, todo_ids):
+    """{decision id: {species id: π}}: the network's X5 species presence at each root (one CPU forward)."""
+    import numpy as np
+
+    from agents.inference.belief_decode import _num_to_species_id
+    from main.policy_spectrum.qhat import logits_and_values
+    from main.policy_spectrum.reader import inference_globals
+    from main.policy_spectrum.replay import replay
+
+    want = set(todo_ids)
+    decs = [d for d in sorted(bank.decisions, key=lambda x: x["id"]) if d["id"] in want]
+    bids = sorted({d["battle"] for d in decs})
+    reps = dict(zip(bids, replay([bank.battles[bank.battle_index[b]].recorded() for b in bids], workers=1)))
+    num2id = _num_to_species_id()
+    out = {}
+    with inference_globals(C.threads()):
+        model = C.load_model(c)
+        ext = model.policy.features_extractor
+        for i in range(0, len(decs), 64):
+            part = decs[i:i + 64]
+            dd = [reps[d["battle"]].decisions[0 if d["side"] == "p1" else 1][d["n"]] for d in part]
+            logits_and_values(model, np.stack([np.array(x.row, dtype=np.float32) for x in dd]),
+                              np.stack([np.asarray(x.mask, dtype=np.uint8) for x in dd]), batch=64)
+            pi = ext.last_hypothesis.species.pi.float().cpu().numpy()
+            for j, d in enumerate(part):
+                out[d["id"]] = {num2id[int(n)]: float(pi[j, n]) for n in np.flatnonzero(pi[j] > 0) if int(n) in num2id}
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--J", type=int, default=16)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
+    ap.add_argument("--sampler", choices=("smogon", "belief"), default="smogon")
+    ap.add_argument("--det-dir", default="det")
     a = ap.parse_args()
     c = C.cp()
     C.check_pin(c)
@@ -33,10 +64,11 @@ def main():
     P = D.Priors(Path(os.environ["VDP_PIN"]) / "data" / "pokemon")
     ids = sorted(d["id"] for d in bank.decisions)
     ids = [x for i, x in enumerate(ids) if i % a.of == a.shard][: a.limit]
-    path = od / "det" / f"worlds_{a.shard}_of_{a.of}.jsonl"
+    path = od / a.det_dir / f"worlds_{a.shard}_of_{a.of}.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     # Phase 1's root: did the log already hold the opponent's root-turn choice (other_open False)?
     other_open = {}
+    belief = root_belief(c, bank, todo_ids=ids) if a.sampler == "belief" else {}
     for q in sorted((od / "rows").glob("shard_*.jsonl")):
         for r in C.read_rows(q):
             if r.get("ok"):
@@ -55,7 +87,8 @@ def main():
                 if did not in other_open:
                     raise RuntimeError("no Phase-1 row for this state (other_open unknown)")
                 w = D.build_worlds(b, d["side"], at, d["n"], did, P, a.J,
-                                   root_choice_in_log=not other_open[did])
+                                   root_choice_in_log=not other_open[did],
+                                   species_w=belief.get(did) if a.sampler == "belief" else None)
                 row = {"id": did, "ok": True, "other_open": other_open[did], **w}
             except Exception as exc:          # counted, never dropped
                 row = {"id": did, "ok": False, "error": f"{type(exc).__name__}: {str(exc)[:400]}"}

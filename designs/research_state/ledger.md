@@ -24366,3 +24366,14 @@ Caveats: ORACLE world (Phase 2 prices it); a per-decision gain in the greedy con
 rate; eval-trace states are loss-enriched (re-weighted reads beside).
 
 Tag: **MEASURED · REGISTERED VERDICTS · oracle world · 2 checkpoints × 600 states · CPU**
+
+### 2026-10-11 · REGISTRATION · **VALUE-DISCRIMINATION PILOT PHASE 2b: honest worlds whose never-seen species come from the network's OWN X5 belief (not the Smogon teammate prior) — does a better belief make honest search pay?**
+
+Registered by `design_value_discrimination.md` §7.10 Amendment 5, AFTER Phase 2's prod read (Smogon-prior worlds:
+honest IMP ≈ 0) and before any Phase 2b playout; disclosed there. Motivating descriptive reads (no outcome): the
+Smogon worlds hit a true hidden species in 22 % of never-seen slots; the network's species presence puts 47 % of its
+mass on the true hidden species. Everything but the species draw is Phase 2's. Rules: R-HONEST-B (det-B LEAF-K8 −
+det-B CRITIC) and R-BELIEF (det-B LEAF-K8 − det-A LEAF-K8): HELPS / HURTS / NOT DETECTED. Prediction: R-BELIEF
+HELPS; R-HONEST-B NOT DETECTED or a small LEAF-AHEAD.
+
+Tag: **REGISTRATION · CPU · offline · Phase 2b outcomes unread**

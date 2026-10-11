@@ -166,8 +166,11 @@ def resample_revealed(rng, P: Priors, entry: str, seen_moves: Set[str]) -> Tuple
     return "|".join(f), len(mv) - len(keep)
 
 
-def sample_world(rng, P: Priors, team: str, revealed: Dict[str, Set[str]]) -> Tuple[str, dict]:
-    """The opponent's packed team with its hidden parts drawn. ``revealed``: {species id: seen move ids}."""
+def sample_world(rng, P: Priors, team: str, revealed: Dict[str, Set[str]],
+                 species_w: Optional[Dict[str, float]] = None) -> Tuple[str, dict]:
+    """The opponent's packed team with its hidden parts drawn. ``revealed``: {species id: seen move ids}.
+    ``species_w`` (Phase 2b, Amendment 5): never-seen slots draw their species ∝ these weights (the network's
+    own X5 species presence π at the root) instead of the Smogon teammate prior; sets stay Smogon."""
     entries = team.split("]")
     ids = [toid(parse_set(e)[1] or parse_set(e)[0]) for e in entries]
     present = {s for s in ids if s in revealed}
@@ -179,7 +182,9 @@ def sample_world(rng, P: Priors, team: str, revealed: Dict[str, Set[str]]) -> Tu
             redrawn += k
             continue
         cand = [s for s in P.pool if s not in present]
-        if revealed:
+        if species_w is not None:
+            w = np.array([species_w.get(s, 0.0) for s in cand])
+        elif revealed:
             w = np.array([np.mean([P.mates.get(r, {}).get(s, 0.0) for r in revealed]) for s in cand])
         else:
             w = np.array([P.usage.get(s, 0.0) for s in cand])
@@ -228,7 +233,8 @@ def world_rng(did: str, j: int):
 
 
 def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int,
-                 max_tries: int = MAX_TRIES, root_choice_in_log: bool = False) -> dict:
+                 max_tries: int = MAX_TRIES, root_choice_in_log: bool = False,
+                 species_w: Optional[Dict[str, float]] = None) -> dict:
     """J gate-passed worlds for one root. Returns {"teams": [packed or None] * J, "tries": [...],
     "stats": [...], "revealed": ..., "true_rows": int}."""
     from agents.battle.core_replay import RecordedBattle, run_core
@@ -322,7 +328,7 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
             break
         cand = {}
         for j in todo:
-            cand[j] = sample_world(rngs[j], P, team, revealed)
+            cand[j] = sample_world(rngs[j], P, team, revealed, species_w)
             tries[j] += 1
         out = run_core([rec(cand[j][0], f"{did}#w{j}", world_cmds(cand[j][0])) for j in todo],
                        trackers=True, obs=True)

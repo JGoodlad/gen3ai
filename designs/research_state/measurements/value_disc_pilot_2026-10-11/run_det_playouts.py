@@ -161,6 +161,7 @@ def main():
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--of", type=int, default=1)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--det-dir", default="det")
     a = ap.parse_args()
     c = C.cp()
     C.check_pin(c)
@@ -172,12 +173,12 @@ def main():
     od = C.out_dir(c)
     bank = load_bank(od / "bank")
     worlds = {}
-    for q in sorted((od / "det").glob("worlds_*.jsonl")):
+    for q in sorted((od / a.det_dir).glob("worlds_*.jsonl")):
         for r in C.read_rows(q):
             worlds[r["id"]] = r
     ids = sorted(d["id"] for d in bank.decisions)
     ids = [x for i, x in enumerate(ids) if i % a.of == a.shard][: a.limit]
-    path = od / "det" / f"rows_{a.shard}_of_{a.of}.jsonl"
+    path = od / a.det_dir / f"rows_{a.shard}_of_{a.of}.jsonl"
     done = {r["id"] for q in sorted(path.parent.glob("rows_*.jsonl")) for r in C.read_rows(q)}
     todo = [x for x in ids if x not in done]
     print(f"[det] {c} shard {a.shard}/{a.of}: {len(done)} done, {len(todo)} to go", flush=True)

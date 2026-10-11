@@ -1,0 +1,6 @@
+{
+ "cp": "prod",
+ "roots": 497,
+ "belief_expected_hit_share": 0.4702,
+ "belief_topk_recall": 0.5951
+}

@@ -1,0 +1,8 @@
+{
+ "prod": {
+  "hidden_slot_species_in_true_hidden_set": 0.2201,
+  "hidden_slots": 11041,
+  "redrawn_move_slot_equals_true": 0.1598,
+  "redrawn_move_slots": 46100
+ }
+}

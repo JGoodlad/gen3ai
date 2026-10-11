@@ -18,9 +18,12 @@ ARCH = S1.ARCH
 DEC = S1.DEC
 
 
+DET_DIR = "det"
+
+
 def det_rows(cp):
     rows = {}
-    for p in sorted((ARCH / cp / "det").glob("rows_*.jsonl")):
+    for p in sorted((ARCH / cp / DET_DIR).glob("rows_*.jsonl")):
         for line in p.read_text().splitlines():
             if line.strip():
                 try:
@@ -69,7 +72,7 @@ def read_cp(cp, partial):
     st, r1, missing1, _ = S1.load(cp, True)
     rd = det_rows(cp)
     worlds = {}
-    for p in sorted((ARCH / cp / "det").glob("worlds_*.jsonl")):
+    for p in sorted((ARCH / cp / DET_DIR).glob("worlds_*.jsonl")):
         for line in p.read_text().splitlines():
             if line.strip():
                 x = json.loads(line)
@@ -157,8 +160,8 @@ def read_cp(cp, partial):
                      "rewritten_switches": int(sum(x["leak"]["rewritten_switches"] for x in wl)),
                      "ambiguous_moves_kept": int(sum(len(x["leak"]["moves"]) for x in wl)),
                      "root_choice_kept": int(sum(x["leak"]["root_choice"] is not None for x in wl)),
-                     "new_slots_mean": round(float(np.mean([s["new_slots"] for x in wl for s in x["stats"]])), 3),
-                     "redrawn_move_slots_mean": round(float(np.mean([s["redrawn_move_slots"] for x in wl for s in x["stats"]])), 3)}
+                     "new_slots_mean": round(float(np.mean([s["new_slots"] for x in wl for s in x["stats"][:8] if s])), 3),
+                     "redrawn_move_slots_mean": round(float(np.mean([s["redrawn_move_slots"] for x in wl for s in x["stats"][:8] if s])), 3)}
     return res
 
 
@@ -201,7 +204,10 @@ def main():
     ap.add_argument("--out-json", default=None)
     ap.add_argument("--out-md", default=None)
     ap.add_argument("--partial", action="store_true")
+    ap.add_argument("--det-dir", default="det")
     a = ap.parse_args()
+    global DET_DIR
+    DET_DIR = a.det_dir
     res = [read_cp(c, a.partial) for c in a.cps]
     if a.out_json:
         Path(a.out_json).write_text(json.dumps(res, indent=1, sort_keys=True) + "\n")
