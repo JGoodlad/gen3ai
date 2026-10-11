@@ -1,0 +1,132 @@
+"""``search_decision``: one-ply value search at a decision of a core input log — a playout BUDGET spent
+by sequential halving (or uniformly) over the policy's candidates, each sample a greedy playout in a
+DETERMINIZED world (``worlds.WorldSampler``) scored at the end or truncated at a turn depth by the
+critic; the action by Gumbel's prior-aware rule; and the policy-improvement TARGET (Gumbel MuZero's
+completed-Q softmax) plus a value target, for an offline label factory.
+
+The design, the measured decision improvement behind its defaults and the bootstrap plan:
+`designs/endstate/design_value_discrimination.md` (§7 results, §13 the bootstrap). Offline / evaluation
+use only — nothing here is wired into training.
+"""
+from __future__ import annotations
+
+import hashlib
+import time
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+
+import numpy as np
+
+from main.value_search import rules
+from main.value_search.playout import ACT, LeafEngine, Request, decode_turn
+
+
+@dataclass
+class SearchConfig:
+    """``budget``: playouts per decision (an int), or ``per_action`` × the legal count when ``budget`` is
+    None. ``allocation``: ``"halving"`` (sequential halving over the policy's top-``m``) or
+    ``"uniform"`` (every legal action the same count, then the ``rule`` over all). ``depth``: leaf at
+    the critic ``depth`` turns past the root (None = to the end). ``n_worlds``: determinized worlds (a
+    sample k of an action uses world k); ``oracle`` plays the TRUE log instead (an upper bound, never an
+    honest search)."""
+
+    budget: Optional[int] = None
+    per_action: int = 4
+    allocation: str = "halving"
+    m: Optional[int] = 4
+    rule: str = "gumbel"                   # uniform allocation only: "gumbel" | "argmax"
+    depth: Optional[int] = None
+    n_worlds: int = 16
+    oracle: bool = False
+
+
+@dataclass
+class SearchResult:
+    action: int
+    policy_target: np.ndarray             # [11], 0 on illegal actions
+    q: Dict[int, float]                   # leaf means (win scale), visited actions
+    visits: Dict[int, int]
+    completed_q: Dict[int, float]
+    root_value: float                     # the critic at the root
+    value_target: float                   # Σ π' · completed q
+    prior: np.ndarray                     # the policy's masked softmax [11]
+    spent: int
+    cpu_s: float
+    wall_s: float
+    world_tries: List[int] = field(default_factory=list)
+    leak: dict = field(default_factory=dict)
+
+
+def seeds_for(key: str, n: int) -> List[str]:
+    return [f"sodium,{hashlib.sha256(f'value_search_dice_v1:{key}:{k}'.encode()).hexdigest()[:32]}"
+            for k in range(n)]
+
+
+def _cpu() -> float:
+    import resource
+
+    a = resource.getrusage(resource.RUSAGE_SELF)
+    return a.ru_utime + a.ru_stime
+
+
+def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row: np.ndarray,
+                    root_mask: np.ndarray, cfg: SearchConfig, key: str, sampler=None) -> SearchResult:
+    """Search the decision ``side`` takes at command index ``at`` of ``log`` (``root_row`` /
+    ``root_mask``: that decision's obs row and mask). ``key`` seeds the worlds and the dice
+    (deterministic). ``sampler``: a ``worlds.WorldSampler`` (required unless ``cfg.oracle``)."""
+    c0, w0 = _cpu(), time.monotonic()
+    out = engine.forward(root_row[None].astype(np.float32), root_mask[None].astype(np.uint8))[0]
+    logits = np.where(root_mask.astype(bool), out[:ACT].astype(np.float64), -np.inf)
+    v_root = float(out[ACT])
+    legal = [int(a) for a in np.flatnonzero(root_mask)]
+    root_turn = int(decode_turn(root_row[None], engine.off)[0])
+    tries, leak = [], {}
+    if cfg.oracle:
+        logs = [log] * cfg.n_worlds
+    else:
+        if sampler is None:
+            raise ValueError("an honest search needs a world sampler (or cfg.oracle=True)")
+        root = engine.root(log, at, side)
+        w = sampler.sample(log, at, side, cfg.n_worlds, key, root_choice_in_log=not bool(root["other_open"]))
+        logs, tries, leak = w.logs, w.tries, w.leak
+    seeds = seeds_for(key, cfg.n_worlds)
+    budget = cfg.budget if cfg.budget is not None else cfg.per_action * len(legal)
+
+    def play(req: Dict[int, int], have: Dict[int, int]) -> Dict[int, List[float]]:
+        reqs, who = [], []
+        for a, n in req.items():
+            for k in range(have.get(a, 0), have.get(a, 0) + n):
+                reqs.append(Request(world=k, action=a, seed=seeds[k]))
+                who.append(a)
+        vals = engine.leaves(logs, at, side, root_turn, reqs, depth=cfg.depth)
+        got: Dict[int, List[float]] = {}
+        for a, v in zip(who, vals):
+            got.setdefault(a, []).append(v)
+        return got
+
+    if cfg.allocation == "halving":
+        sh = rules.SequentialHalving(logits=logits, legal=legal, budget=budget, m=cfg.m, cap=cfg.n_worlds)
+        while not sh.done:
+            req = sh.next_round()
+            if not req:
+                continue
+            got = play(req, {a: len(sh.samples[a]) for a in req})
+            for a in req:
+                sh.observe(a, got[a])
+        q, visits, action, spent = sh.means(), sh.visits(), sh.pick(), sh.spent
+    elif cfg.allocation == "uniform":
+        k = min(cfg.n_worlds, max(1, budget // len(legal)))
+        got = play({a: k for a in legal}, {})
+        q = {a: float(np.mean(v)) for a, v in got.items()}
+        visits = {a: k for a in legal}
+        order = rules.policy_order(logits, legal)
+        score = rules.gumbel_scores(logits, q, k) if cfg.rule == "gumbel" else q
+        action, spent = rules.pick(score, order), k * len(legal)
+    else:
+        raise ValueError(f"unknown allocation {cfg.allocation!r}")
+    pi_t = rules.improved_policy(logits, legal, q, visits, v_root)
+    cq = rules.completed_q(logits, legal, q, visits, v_root)
+    return SearchResult(action=int(action), policy_target=pi_t, q=q, visits=visits, completed_q=cq,
+                        root_value=v_root, value_target=float(sum(pi_t[a] * cq[a] for a in legal)),
+                        prior=rules.softmax_masked(logits, legal), spent=int(spent),
+                        cpu_s=_cpu() - c0, wall_s=time.monotonic() - w0, world_tries=tries, leak=leak)
