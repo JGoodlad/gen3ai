@@ -1753,29 +1753,62 @@ regression by `src/agents/model/extractor_compiles_test.py`.
 diffing against the live parser's defaults and REPORTING (never silently dropping) flags the tree no
 longer has — that is how the production shape above was recovered.
 
-## T25 perf levers on R1: MEASUREMENT switches (2026-10-10)
+## T25 perf levers on R1 (2026-10-10)
 
-The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md`) adds two switches with no trainer
-flag, and lever C's flag (below). All are OFF by default; off, the production compile is byte-for-byte unchanged.
+The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md`) adds the switches below and lever C's flag
+(after them). Each is OFF by default. Off, the production and end-state compiles are byte-for-byte unchanged.
 
 - **R1's Inductor option presets** (`compile_regions.R1_INDUCTOR_PRESETS`, `gen3_r1_inductor_presets_v1`):
-  `default` (no options), `coordesc` (`coordinate_descent_tuning`), `combo` (`combo_kernels`) and `cudagraphs`
-  (`triton.cudagraphs`, i.e. cudagraph trees over R1's forward + backward). Presets join with `+`. Set
-  `model._r1_inductor_preset` BEFORE `compile_regions.install`, which passes them as `torch.compile(..., options=)`:
-  R1 only, never T2's graphs, never a global config. `compile_regions_presets_test.py` pins this. The default passes
-  NO `options`; every key is a real Inductor config of this torch; an unknown name refuses.
-- **The trunk's compute precision** (`agents/model/trunk_precision.py`, `gen3_trunk_bf16_region_v1`):
-  `set_trunk_precision(policy, "bf16")` class-swaps every trunk round (`BiasedEncoderLayer`, `IdentityInitRound`)
-  to a subclass whose forward runs under bf16 autocast and returns fp32. The decisions stay fp32: heads, pointer,
-  masked softmax, value and losses. Set it BEFORE `install`. `"fp32"` restores the base classes.
-  `trunk_precision_test.py` pins it: fp32 out, fp32 params and grads, bf16 matmuls inside, bit-exact restore,
-  deepcopy and pickle safe.
+  - the presets: `default` (no options), `coordesc` (`coordinate_descent_tuning`), `combo` (`combo_kernels`) and
+    `cudagraphs` (`triton.cudagraphs`, i.e. cudagraph trees over R1's forward + backward). Presets join with `+`.
+  - set `model._r1_inductor_preset` BEFORE `compile_regions.install`, which passes them as
+    `torch.compile(..., options=)`: R1 only, never T2's graphs, never a global config.
+  - `compile_regions_presets_test.py` pins this: the default passes NO `options`, every key is a real Inductor
+    config of this torch, and an unknown name refuses.
+  - They are MEASUREMENT switches with no CLI flag.
+- **The trunk's compute precision: `--trunk-precision {fp32,bf16}`** (`gen3_trunk_precision_flag_v1`, config v155;
+  `agents/model/trunk_precision.py`; BUILT, NOT ADOPTED: its strength A/B is PLAN.md §2d).
+  - **The switch.** `bf16` class-swaps the LEARNER's live trunk rounds (`BiasedEncoderLayer`, `IdentityInitRound`)
+    to subclasses whose forward runs under bf16 autocast and returns fp32. `apply_run_precision`, from
+    `apply_training_hparams`, does it on both build paths, before grad checkpointing and the R1 install.
+  - **Decisions stay fp32.** The heads, the pointer head, the masked log-softmax, the value, the losses and the
+    AdamW state all run in fp32.
+  - **Recorded.** It is a `ModelVersion` field, `_resolve`-inherited by a flagless resume. A pre-v155 config
+    migrates to fp32. `check_compatible` never compares it. It is in the shared compile cache's
+    `COMPILE_ARG_KEYS`.
+  - **Design (b): bf16 lives in R1 only.** T2, eval and every snapshot build from a state dict, so they get base
+    classes. The K9(b) probe's forward and its violation scan run under `trunk_precision.fp32_scope`, so K9(b)
+    compares fp32 with fp32 at its unchanged bars. `trunk_precision_flag_test` pins it: bit-identical probe
+    log-probs on a bf16 learner, revert-checked.
+  - **THE bf16 PARITY RULE** (`gen3_r1_bf16_parity_v1`, `compile_regions._r1_verdict_bf16`). It applies when the
+    policy's rounds are bf16, at the startup gate and at every canary, through the same rungs as fp32. Three arms
+    run on the same weights and rows: compiled bf16, eager bf16, and the fp32 EAGER REFERENCE (`_r1_reference`:
+    R1's eager body under `fp32_scope`, proved eager by the region counters). Two conditions are checked:
+    1. **DRIFT:** eager bf16 vs the reference, loss rel and global gradient rel-L2, each ≤ `BF16_DRIFT_BARS`.
+    2. **ENVELOPE:** compiled bf16 vs the reference ≤ K × max(eager bf16 vs the reference, a floor), for the loss,
+       the global gradient and EVERY judged parameter (`BF16_ENVELOPE_K`). The floor is the fp32 bar of that
+       quantity, except the scalar loss's, which is bf16's unit roundoff 2^-9 (`BF16_LOSS_FLOOR`).
+    - With `--learner-cudagraphs on`, the graphed route's accumulation rung is judged by the same rule, its fp32
+      reference arm accumulated eager under `fp32_scope`.
+  - **The bars** are R1_BAR_K × the healthy GPU maxima of window D's 20 reads, derived by
+    `scripts/derive_bf16_bars.py` into `results/bf16_parity_bars.json`. `compile_regions_bf16_test` re-derives them
+    and fails on a differing constant.
+    - DRIFT: loss 0.014, gradient rel-L2 0.68.
+    - ENVELOPE K: loss 5.4, gradient 6.4, per parameter 12.
+    - A `None` table refuses a bf16 R1 ("no measured bars").
+  - ⚠️ **The per-parameter teeth are COARSE.** bf16 moves the micro-batch gradient 1–18 % rel-L2 from fp32's, so the
+    median refusal threshold is 0.2–1.3 relative error. A dropped or sign-flipped path is refused; a 10 % one is
+    not. The derivation and the teeth are in PLAN.md §2a.
+  - **Pinned by** `trunk_precision_test.py` (the region itself), `trunk_precision_flag_test.py` (the flag surface,
+    `fp32_scope`, the K9(b) probe) and `compile_regions_bf16_test.py` (the rule: refused without bars, a healthy
+    pass, a planted compiled error, a planted drift, a mis-wired reference, an fp32 learner untouched).
 
-Neither has a CLI flag. A lever gets its flag, flag-registry row and recipe surface in its ADOPTION commit, after its
-paired GPU benchmark and the R1 gate and canary are green. bf16 also needs a bf16 parity rule and a K9(b) bar (PLAN.md
-§2). The benchmark that sets them is the measurement's `scripts/update_bench.py`. ⚠️ The `cudagraphs` PRESET alone graphs
-R1's ONE compile and dies on the first (diagnostic) update (F-PB-2, below); lever C's route is the flag below, and
-`install` refuses the preset combined with it.
+A preset gets its CLI flag, flag-registry row and recipe surface in its ADOPTION commit, after its paired GPU benchmark
+and the R1 gate and canary are green. `--trunk-precision` has its flag already, because its parity rule needs a run
+path to be gated on. It enters the recipe surface only on a PASS of PLAN.md §2d. The benchmark that sets the switches
+is the measurement's `scripts/update_bench.py`. ⚠️ The `cudagraphs` PRESET alone graphs R1's ONE compile and dies on
+the first (diagnostic) update (F-PB-2); lever C's route is `--learner-cudagraphs` (below), and `install` refuses the
+preset combined with it.
 
 ### Lever C: R1's GRAPHED route (`--learner-cudagraphs {off,on}`, `gen3_r1_graphed_route_v1`, 2026-10-10)
 

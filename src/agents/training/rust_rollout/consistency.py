@@ -47,6 +47,7 @@ import numpy as np
 #: headroom); the smallest one-step-stale fault micro-batch max 0.020 (200x over).
 
 
+
 class GateCondition(NamedTuple):
     statistic: str      # "max" | "p99" of |log π − log μ| over the JUDGED current rows | "excluded_frac"
     bar: float          # the condition holds iff statistic < bar (single-shot: one violation is FATAL)
@@ -460,6 +461,12 @@ def _violation_details(model: Any, buf: Any, t: np.ndarray, e: np.ndarray, old: 
 _SCAN_KEEP = 32
 
 
+def fp32_scope(module: Any) -> Any:
+    """`trunk_precision.fp32_scope` (imported lazily: this module keeps torch out of its import)."""
+    from agents.model.trunk_precision import fp32_scope as _scope
+    return _scope(module)
+
+
 def scan_current(model: Any, ages: np.ndarray, max_rows: Optional[int] = None) -> Dict[str, Any]:
     """EVERY current-version row of the buffer through the learner's forward (train mode, chunks of
     ``batch_size`` — the probe's own shape): how many exceed the gate's smallest bar, the max and
@@ -504,7 +511,7 @@ def scan_current(model: Any, ages: np.ndarray, max_rows: Optional[int] = None) -
             acts = th.as_tensor(buf.actions[t, e].reshape(-1)).long().to(model.device)
             masks = th.as_tensor(buf.action_masks[t, e]).to(model.device)
             rec = TieMargins(int(f.size)) if eps > 0 else None
-            with th.no_grad(), (rec if rec is not None else contextlib.nullcontext()):
+            with th.no_grad(), fp32_scope(model.policy), (rec if rec is not None else contextlib.nullcontext()):
                 _v, lp, _ent = model.policy.evaluate_actions(obs_as_tensor(obs, model.device), acts,
                                                              action_masks=masks)
             if rec is not None:
@@ -655,8 +662,10 @@ def probe_forward(model: Any, obs: Dict[str, np.ndarray], acts: Any, masks: Any,
     was_training = model.policy.training
     model.policy.set_training_mode(True)
     try:
+        # gen3_trunk_precision_flag_v1: T2 serves the trainee at fp32, so the probe reads the fp32 function even
+        # when the learner trains its trunk rounds in bf16 (`trunk_precision.fp32_scope`; a no-op at fp32)
         with th.enable_grad(), th.autograd.graph.saved_tensors_hooks(_drop_saved, _never_unpacked), \
-                (mode if mode is not None else contextlib.nullcontext()):
+                fp32_scope(model.policy), (mode if mode is not None else contextlib.nullcontext()):
             _v, logp, _ent = model.policy.evaluate_actions(obs_as_tensor(obs, model.device), acts,
                                                            action_masks=masks)
         new = logp.detach().float().cpu().numpy().astype(np.float64)

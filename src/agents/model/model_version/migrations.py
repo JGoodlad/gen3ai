@@ -545,6 +545,10 @@ def _migrate_config(data: dict) -> dict:
     if version < 154:
         data.setdefault("move_set_closure", "off")
         data["config_version"] = 154
+    # v155 (gen3_trunk_precision_flag_v1) — the learner's trunk precision: every run before v155 trained fp32.
+    if version < 155:
+        data.setdefault("trunk_precision", "fp32")
+        data["config_version"] = 155
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

@@ -127,6 +127,11 @@ def apply_training_hparams(model, args, *, mappings) -> None:
     # (`main.train.callbacks`), so a registered consumer can never read a thinned series.
     # (A namespace without the dest — a hand-built test namespace — keeps the class default 1.)
     model.diagnostics_every = int(getattr(args, "diagnostics_every", None) or 1)
+    # gen3_trunk_precision_flag_v1: the learner's trunk rounds at the run's precision — set HERE, on both build
+    # paths, before grad checkpointing and the R1 compile (which trace the classes they see). A namespace
+    # without the dest (the learner golden, a test) is fp32.
+    from agents.model.trunk_precision import apply_run_precision
+    apply_run_precision(model, getattr(args, "trunk_precision", None))
     # M5 Lane G — K9(b) behaviour-policy consistency (`--behaviour-check`): resolved per env core
     # (`rust_env_setup.resolve_env_core_args`: fatal by default — M5 Lane K9). A namespace
     # without the dest keeps it off.
@@ -265,6 +270,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             promote_threshold=args.promote_threshold,
             eval_mirrored_pairs=args.eval_mirrored_pairs,
             promotion_sprt=args.promotion_sprt,
+            trunk_precision=args.trunk_precision,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
@@ -597,6 +603,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             promote_threshold=args.promote_threshold,
             eval_mirrored_pairs=args.eval_mirrored_pairs,
             promotion_sprt=args.promotion_sprt,
+            trunk_precision=args.trunk_precision,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,

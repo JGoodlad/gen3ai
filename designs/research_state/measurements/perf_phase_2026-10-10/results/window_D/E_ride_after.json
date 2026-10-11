@@ -1,0 +1,248 @@
+{
+ "tag": "E_ride_after",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_3545b868/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 4.873046875,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 3.582734382012859,
+  "compile_gate_prewarm": 248.95776256092358
+ },
+ "imports_from": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_3545b868/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5624179,
+  "diagnostics_every": 10
+ },
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "PASS",
+  "lines": [
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+   "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 0.00e+00 <= 0.0001; train features: fp32 max|compiled-eager| 0.00e+00 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.78e-05 (features_extractor.history_events.denial_emb.weight) over 232 params <= 0.00988 [the K9 learner golden's real labelled buffer]",
+   "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+   "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 248.9s",
+   "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "peak_reserved_mib": 6718.0,
+ "diag_1ep_s": 14.68610212195199,
+ "train": {
+  "walls_s": {
+   "1": [
+    6.343638544087298,
+    6.35252184595447
+   ],
+   "3": [
+    16.759502979926765,
+    16.778272215044126
+   ]
+  },
+  "median_s": {
+   "1": 6.348080195020884,
+   "3": 16.768887597485445
+  },
+  "marginal_epoch_s": 5.210403701232281,
+  "update_s_est": 53.24171350611141,
+  "first_epoch_overhead_s": 1.1376764937886037,
+  "per_micro_ms_marginal": 108.55007710900584,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 0.002928902395069599,
+    "n": 15328
+   },
+   {
+    "epochs": 1,
+    "s": 0.0029965591384097934,
+    "n": 15328
+   },
+   {
+    "epochs": 3,
+    "s": 0.003379669855348766,
+    "n": 17568
+   },
+   {
+    "epochs": 3,
+    "s": 0.003350212238729,
+    "n": 17568
+   }
+  ]
+ },
+ "load1_end": 5.98095703125,
+ "gpu_others_end": [],
+ "profile_phase": "plain",
+ "profile": {
+  "n_micro": 144,
+  "trace": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/traces/profile_E_ride_after.trace.json.gz",
+  "profiled_span_s": 17.05313469,
+  "gpu_busy_s": 16.22277527699967,
+  "gpu_busy_pct": 95.13075204005013,
+  "top_kernels": [
+   {
+    "name": "fmha_cutlassB_f32_aligned_64x64_k32_sm80(PyTorchMemEffAttention::AttentionBackwardKernel<cutlass::arch::Sm80, float, true, false, false, 64, 64, 32, false>::Par",
+    "count": 720,
+    "total_ms": 1516.8062429999939,
+    "pct_of_kernel_time": 9.431597783145309
+   },
+   {
+    "name": "ampere_sgemm_128x64_tn",
+    "count": 4848,
+    "total_ms": 1438.97222399993,
+    "pct_of_kernel_time": 8.947620897869333
+   },
+   {
+    "name": "ampere_sgemm_128x64_nn",
+    "count": 5040,
+    "total_ms": 1089.7003279999942,
+    "pct_of_kernel_time": 6.775826012905923
+   },
+   {
+    "name": "ampere_sgemm_128x128_nt",
+    "count": 1584,
+    "total_ms": 877.6960769999746,
+    "pct_of_kernel_time": 5.457570083398139
+   },
+   {
+    "name": "fmha_cutlassF_f32_aligned_64x64_rf_sm80(PyTorchMemEffAttention::AttentionKernel<float, cutlass::arch::Sm80, true, 64, 64, 64, true, true>::Params)",
+    "count": 720,
+    "total_ms": 637.4874459999653,
+    "pct_of_kernel_time": 3.9639375234798937
+   },
+   {
+    "name": "void cutlass::Kernel2<cutlass_80_simt_sgemm_128x64_8x5_nt_align1>(cutlass_80_simt_sgemm_128x64_8x5_nt_align1::Params)",
+    "count": 3792,
+    "total_ms": 436.3480989999992,
+    "pct_of_kernel_time": 2.713240258734931
+   },
+   {
+    "name": "triton_red_fused__to_copy_add_clamp_cumsum_div_floor_ge_gt_index_le_lt_mul_round_rsub_sum_where_425",
+    "count": 144,
+    "total_ms": 333.2122470000081,
+    "pct_of_kernel_time": 2.0719349650792256
+   },
+   {
+    "name": "ampere_sgemm_32x128_tn",
+    "count": 11904,
+    "total_ms": 323.21551699992426,
+    "pct_of_kernel_time": 2.0097746615186254
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_296",
+    "count": 144,
+    "total_ms": 265.5899659999931,
+    "pct_of_kernel_time": 1.6514553167956494
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_338",
+    "count": 144,
+    "total_ms": 240.87836800001043,
+    "pct_of_kernel_time": 1.4977970272216026
+   }
+  ],
+  "kernels": 472429,
+  "memcpy_memset": 21644,
+  "kernel_time_s": 16.08217693199974,
+  "per_micro": {
+   "kernel_launch_calls": 3279.0486111111113,
+   "device_kernels": 3280.7569444444443,
+   "sync_calls": {
+    "cudaStreamSynchronize": 3.111111111111111,
+    "cudaDeviceSynchronize": 0.013888888888888888
+   },
+   "scalar_reads_local_scalar_dense": 122.02777777777777,
+   "memcpy_calls": {
+    "cudaMemcpyAsync": 87.13888888888889
+   }
+  },
+  "wall_s_profiled": 17.061664700042456,
+  "kernel_classes": {
+   "gemm": {
+    "count": 78604,
+    "s": 5.706048205999808,
+    "pct": 35.48057100805873
+   },
+   "triton_pointwise": {
+    "count": 156528,
+    "s": 4.500421626000163,
+    "pct": 27.98390818002621
+   },
+   "attention": {
+    "count": 1440,
+    "s": 2.1542936889999593,
+    "pct": 13.395535306625204
+   },
+   "triton_reduction": {
+    "count": 47664,
+    "s": 1.63598976100002,
+    "pct": 10.172688485628996
+   },
+   "aten_other": {
+    "count": 158529,
+    "s": 1.0711844329998779,
+    "pct": 6.660692999021006
+   },
+   "triton_persistent_reduction": {
+    "count": 29088,
+    "s": 1.0129234429998926,
+    "pct": 6.298422454141851
+   },
+   "triton_other": {
+    "count": 576,
+    "s": 0.001315774000018442,
+    "pct": 0.008181566498005393
+   }
+  }
+ },
+ "sync_meter": {
+  "wall_s": 16.694051933009177,
+  "n_micro": 144,
+  "total_calls_per_micro": 2.0555555555555554,
+  "total_blocked_s": 0.504895432619378,
+  "sites": [
+   {
+    "site": "cpu <- agents/training/batched_reads.py:22 < agents/training/instrumented_ppo/ridealong_terms.py:604 < agents/training/instrumented_ppo/ridealong_terms.py:543",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.278704714612104
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/host_reads.py:71 < agents/training/instrumented_ppo/learner_gates.py:129 < agents/training/instrumented_ppo/ppo.py:620",
+    "per_micro": 0.020833333333333332,
+    "s_total": 0.14119647385086864
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/host_reads.py:71 < agents/training/instrumented_ppo/learner_gates.py:129 < agents/training/instrumented_ppo/ppo.py:657",
+    "per_micro": 0.020833333333333332,
+    "s_total": 0.045331105939112604
+   },
+   {
+    "site": "nonzero <- agents/training/instrumented_ppo/ridealong_terms.py:259 < agents/training/instrumented_ppo/ridealong_terms.py:230 < agents/training/instrumented_ppo/ridealong_terms.py:470",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.030840210267342627
+   },
+   {
+    "site": "nonzero <- agents/training/instrumented_ppo/ridealong_terms.py:283 < agents/training/instrumented_ppo/ridealong_terms.py:230 < agents/training/instrumented_ppo/ridealong_terms.py:470",
+    "per_micro": 1.3333333333333333,
+    "s_total": 0.00804701098240912
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/host_reads.py:71 < agents/training/instrumented_ppo/ridealong_terms.py:233 < agents/training/instrumented_ppo/ridealong_terms.py:470",
+    "per_micro": 0.006944444444444444,
+    "s_total": 0.0004223729483783245
+   },
+   {
+    "site": "cpu <- agents/training/rank_metrics.py:117 < agents/training/rank_metrics.py:130 < agents/training/instrumented_ppo/ppo.py:411",
+    "per_micro": 0.006944444444444444,
+    "s_total": 0.0003535440191626549
+   }
+  ]
+ }
+}

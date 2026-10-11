@@ -54,12 +54,20 @@ def served_state_dict(policy: Any) -> Dict[str, torch.Tensor]:
 def served_replica(template: Any) -> Any:
     """A deep copy of ``template`` WITHOUT its detached ride-along heads (``policy.ridealong``): the
     heads are memoised to None, so they are never copied — not even transiently onto the template's
-    device while the slots are built (31 slots x 18.2 MiB at the X26 surface with every RND variant)."""
+    device while the slots are built (31 slots x 18.2 MiB at the X26 surface with every RND variant). Its
+    trunk rounds are the fp32 BASE classes whatever the template's (`--trunk-precision`, design (b))."""
     memo: Dict[int, Any] = {}
     heads = getattr(template, "ridealong", None)
     if isinstance(heads, torch.nn.Module):
         memo[id(heads)] = None
-    return copy.deepcopy(template, memo)
+    replica = copy.deepcopy(template, memo)
+    # gen3_trunk_precision_flag_v1, design (b): a slot SERVES the fp32 function whatever the learner TRAINS with —
+    # a `--trunk-precision bf16` learner's rounds are bf16 subclasses, and a deep copy would carry them into T2 (then
+    # K9(b)'s fp32 probe would read a different function; `k9_bf16_2026-10-10` FINDING 7). No-op at fp32.
+    from agents.model.trunk_precision import set_trunk_precision
+    if isinstance(replica, torch.nn.Module):
+        set_trunk_precision(replica, "fp32")
+    return replica
 
 
 def state_signature(sd: Dict[str, torch.Tensor]) -> Tuple[Tuple[str, Tuple[int, ...], str], ...]:

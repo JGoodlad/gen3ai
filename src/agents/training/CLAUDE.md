@@ -221,6 +221,12 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   OVERWRITE a replay's outputs at the next one: **a new `autograd.grad` / `retain_graph` consumer of R1's graph joins
   `micro_retains_graph`, and nothing reads R1's outputs or stashes across micro-steps without a copy**
   (`r1_graphed_route_test.py`'s stand-in raises on the first). Detail: `designs/training/compile_flags.md` "Lever C".
+- 🚨 **`--trunk-precision bf16` (BUILT, NOT ADOPTED; config v155) puts bf16 in R1 ONLY.** T2, eval, snapshots and
+  the K9(b) probe stay fp32 (`trunk_precision.fp32_scope`; T2 slots via `slots.served_replica`): a new forward of the
+  LIVE learner policy that must agree with the rollout runs under that scope. The compiled bf16 R1 is judged by the
+  bf16 PARITY RULE (DRIFT vs the fp32 eager reference + the ENVELOPE), its bars DERIVED from committed GPU reads
+  (`compile_regions_bf16_test` re-derives them). bf16 moves the micro-batch gradient 1–18 % from fp32's: adoption
+  needs its strength A/B. Detail: `designs/training/compile_flags.md` "T25 perf levers on R1".
 
 ## The critic, the value side and the auxiliaries
 

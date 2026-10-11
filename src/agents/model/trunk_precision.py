@@ -21,14 +21,27 @@ module-level class, so `copy.deepcopy`, pickling and `isinstance` behave exactly
 `state_dict` is unchanged, and at ``"fp32"`` (the default, and the restore) the module is again exactly its base
 class — the production graph is the same code object, byte for byte.
 
-STATUS: a MEASUREMENT lever (no trainer flag). Adopting it needs (1) R1's parity rule for a bf16 region (compiled
-bf16 vs eager bf16 differs by bf16 rounding, far above the fp32 bar; the matched-envelope rule against an fp64
-reference is the candidate), (2) the K9(b) behaviour check's bar (the rollout's T2 forward is fp32, so epoch 0's
-ratio is no longer 1 to 1e-6), and (3) its own strength A/B. PLAN.md carries the design.
+THE RUN FLAG (`--trunk-precision {fp32,bf16}`, `gen3_trunk_precision_flag_v1`, config v155; default fp32). It sets
+the LEARNER's live policy only (`apply_run_precision`, from `apply_training_hparams`, before the compile installs R1),
+so the training micro-step R1 — its forward, the backward through it, every probe that differentiates R1's
+outputs — runs the bf16 rounds. Everything that must agree with the ROLLOUT stays fp32 (design (b),
+`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md` §2):
+
+* T2, the eval core and every snapshot build a FRESH policy from a state dict, so they are base classes (fp32);
+* the K9(b) behaviour probe's forward (`rust_rollout.consistency.probe_forward`) and the compile gate's freshness
+  read run under `fp32_scope`, so K9(b) compares fp32 with fp32 — its bars and teeth are unchanged;
+* the R1 startup gate and the canary judge a bf16 R1 by THE bf16 PARITY RULE (`compile_regions`'s
+  `_r1_verdict_bf16`): compiled bf16 against eager bf16 AND both against the fp32 eager reference, run under
+  `fp32_scope`.
+
+What a bf16 run gives up is measured, not assumed: PPO's epoch-0 ratio reads the bf16 learner against the fp32
+behaviour (|Δ log π| p50 3e-5 to 5e-3 by state, clip fraction 0, CPU: `k9_bf16_2026-10-10/`), and the gradient carries bf16's
+rounding — which is why adopting it needs its own strength A/B (PLAN.md §2d).
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple, Type
+import contextlib
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Type
 
 import torch
 
@@ -92,3 +105,38 @@ def trunk_precision_of(module: torch.nn.Module) -> str:
     if len(kinds) > 1:
         raise RuntimeError("the trunk rounds are at MIXED precision — set_trunk_precision sets them all")
     return kinds.pop() if kinds else "fp32"
+
+
+def apply_run_precision(model: Any, precision: Optional[str]) -> int:
+    """The run flag's one application (`apply_training_hparams`): record ``model.trunk_precision`` and set the
+    live policy's rounds. ``None`` (a namespace without the dest: the learner golden, a test) is fp32. Must run
+    before `compile_regions.install` (the compiled R1 traces the classes it sees)."""
+    prec = str(precision or "fp32")
+    if prec not in TRUNK_PRECISIONS:
+        raise ValueError(f"--trunk-precision must be one of {TRUNK_PRECISIONS}, got {prec!r}")
+    model.trunk_precision = prec
+    return set_trunk_precision(model.policy, prec)
+
+
+@contextlib.contextmanager
+def fp32_scope(module: torch.nn.Module) -> Iterator[None]:
+    """Run the block with every trunk round under ``module`` at its fp32 BASE class, then put back EXACTLY the
+    classes that were there (also on an exception). A no-op on an all-fp32 module. For the forwards that must
+    match an fp32 counterpart — the K9(b) probe (T2 serves fp32), the bf16 parity rule's fp32 reference arm.
+
+    Never call a compiled region inside it: the compiled R1 traced the bf16 classes, and a call under the base
+    classes would be a new signature (after the lock, a FATAL). An EAGER call is safe: a class swap neither
+    touches the dynamo cache nor any parameter, and the restore makes the compiled route's guards hold again."""
+    table = _round_types()
+    bf16_to_base = {v: k for k, v in table.items()}
+    swapped: List[Tuple[torch.nn.Module, Type[torch.nn.Module]]] = []
+    try:
+        for m in module.modules():
+            cls = type(m)
+            if cls in bf16_to_base:
+                swapped.append((m, cls))
+                m.__class__ = bf16_to_base[cls]
+        yield
+    finally:
+        for m, cls in swapped:
+            m.__class__ = cls

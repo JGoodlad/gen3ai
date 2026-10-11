@@ -72,6 +72,7 @@ import numpy as np
 import torch
 
 from agents.model import compile_trainer as ct
+from agents.model.compile_gate_probe import per_param_grad_errors
 from agents.model import region_calls as RC
 from agents.training.lifecycle_decl import startup_builder
 
@@ -642,7 +643,10 @@ def gate_regions(model: Any, *, batch_size: int, say: Callable[[str], None] = pr
         policy.set_training_mode(was)
         for p in policy.parameters():
             p.grad = None
-    line = "[CompileRegions] parity PASS (fp32) — " + " | ".join(rules)
+    from agents.model.trunk_precision import trunk_precision_of
+    prec = trunk_precision_of(policy)
+    line = (f"[CompileRegions] parity PASS ({'fp32' if prec == 'fp32' else prec + ' trunk: the bf16 rule'}) — "
+            + " | ".join(rules))
     say(line)
     return rules
 
@@ -674,9 +678,21 @@ def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -
     unmoved = unmoved_parameters(model) if regime != "fresh" else []
     idx = {n: i for i, n in enumerate(names)}
     excepted = {idx[n]: R1_PARAM_BAR["fresh"] for n in unmoved}
-    return "R1[graphed] " + _r1_verdict(
-        eager, graphed, names, regime, bar_by_index=excepted,
-        label=f"{regime} weights, 2 micro-batches ACCUMULATED into one .grad (golden slices 0 + 1)")
+    label = f"{regime} weights, 2 micro-batches ACCUMULATED into one .grad (golden slices 0 + 1)"
+    from agents.model.trunk_precision import fp32_scope, trunk_precision_of
+    if trunk_precision_of(model.policy) == "bf16":
+        # the bf16 rule (`_r1_verdict_bf16`): the same two micro-batches accumulated through the fp32 EAGER
+        # reference, proved eager by the counters like the rung's eager arm
+        with fp32_scope(model.policy):
+            ref = _r1_accum_arm(model, micro_step, args_list)
+        e3, g3 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
+        if (e3 - e2, g3 - g2) != (2, 0):
+            raise ct.GateArmsNotIndependentError(
+                f"--compile-trainer region R1[graphed] (bf16 rule): the accumulation rung's fp32 REFERENCE arm ran "
+                f"the eager body {e3 - e2}x / the graphed route {g3 - g2}x (want 2 / 0)")
+        return "R1[graphed] " + _r1_verdict_bf16(eager, graphed, ref, names, regime, label=label,
+                                                 bar_by_index=excepted)
+    return "R1[graphed] " + _r1_verdict(eager, graphed, names, regime, bar_by_index=excepted, label=label)
 
 
 # ------------------------------------------------------------- R1's judged set vs the golden's own
@@ -883,18 +899,35 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
     """
     unmoved = unmoved_parameters(model) if regime != "fresh" else []
     pre = "R1 " if route is None else f"R1[{route}] "
-    comp, eager = _r1_pair(model, args, fn)
     idx = {n: i for i, n in enumerate(names)}
     excepted = {idx[n]: R1_PARAM_BAR["fresh"] for n in unmoved}
     tail = f" [{source}]" if source else ""
     if unmoved:
         tail += f" [unmoved rule: {unmoved_rule(model)}]"
-    rules = [pre + _r1_verdict(eager, comp, names, regime, bar_by_index=excepted) + tail]
+    eager, comp, line = _r1_judge(model, args, names, regime, fn, bar_by_index=excepted)
+    rules = [pre + line + tail]
     if regime == "fresh":
         rules.append(pre + _r1_perturbed(model, args, names, fn))
     elif unmoved:
         rules.append(pre + _r1_unmoved_perturbed(model, args, names, unmoved, fn))
     return eager, comp, rules
+
+
+def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
+              fn: Optional[Callable[..., Any]] = None, *,
+              label: Optional[str] = None, bar_by_index: Optional[Dict[int, float]] = None
+              ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], str]:
+    """ONE rung: the independent compiled / eager pair on the CURRENT weights, judged by the rule of the
+    policy's trunk precision — fp32: `_r1_verdict` (compiled vs eager at the fp32 bars); bf16: THE bf16 PARITY
+    RULE (`_r1_verdict_bf16`, with the fp32 eager REFERENCE arm `_r1_reference`). Returns (eager, compiled,
+    the rule line). ``fn``: the R1 route under judgement (`r1_routes`; None = the installed compiled route)."""
+    from agents.model.trunk_precision import trunk_precision_of
+    comp, eager = _r1_pair(model, args, fn)
+    if trunk_precision_of(model.policy) == "bf16":
+        ref = _r1_reference(model, args)
+        return eager, comp, _r1_verdict_bf16(eager, comp, ref, names, regime, label=label,
+                                             bar_by_index=bar_by_index)
+    return eager, comp, _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index)
 
 
 def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
@@ -911,10 +944,10 @@ def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
         raise ct.CompileTrainerError("--compile-trainer region R1: an unmoved parameter is not a "
                                      "parameter of the policy — mis-wired")
     with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale, only=only):
-        comp, eager = _r1_pair(model, args, fn)
-    return _r1_verdict(eager, comp, names, "trained",
-                       label=(f"trained weights, the {len(only)} unmoved param(s) perturbed "
-                              f"scale={scale:g} seed+{k} (e.g. {only[0]})"))
+        _, _, line = _r1_judge(model, args, names, "trained", fn,
+                               label=(f"trained weights, the {len(only)} unmoved param(s) perturbed "
+                                      f"scale={scale:g} seed+{k} (e.g. {only[0]})"))
+    return line
 
 
 def weights_regime(model: Any, rows: int = 8) -> str:
@@ -928,8 +961,10 @@ def weights_regime(model: Any, rows: int = 8) -> str:
     _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), int(rows),
                              ct.resolve_device(policy.features_extractor))
     policy.set_training_mode(False)
+    from agents.model.trunk_precision import fp32_scope
     try:
-        e = _decision_readout(model, obs, mask)
+        with fp32_scope(policy):              # the regime is a property of the WEIGHTS, read at the fp32 function
+            e = _decision_readout(model, obs, mask)
     finally:
         policy.set_training_mode(was)
     bar = {"legal_logprob": ct._FP32_TOL["legal_logprob"]}
@@ -946,9 +981,9 @@ def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
     from agents.model.parity_probe import PERTURB_LADDER, perturbed_parameters, rung_seed
     scale, k = PERTURB_LADDER[0]
     with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale):
-        comp, eager = _r1_pair(model, args, fn)
-    return _r1_verdict(eager, comp, names, "trained",
-                       label=f"fresh weights, seeded perturbation scale={scale:g} seed+{k}")
+        _, _, line = _r1_judge(model, args, names, "trained", fn,
+                               label=f"fresh weights, seeded perturbation scale={scale:g} seed+{k}")
+    return line
 
 
 def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], names: List[str],
@@ -970,6 +1005,156 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], n
                                  param_names=names, param_bar=R1_PARAM_BAR[regime],
                                  param_bar_by_index=bar_by_index)
     return f"[{label or regime + ' weights'}] {loss_rule}; {grad_rule}"
+
+
+# ------------------------------------------------------------------ THE bf16 PARITY RULE
+#: R1 under `--trunk-precision bf16` (`gen3_r1_bf16_parity_v1`; T25 lever A; the derivation is
+#: `designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md` §2a, its numbers `results/bf16_parity_bars.json`,
+#: re-derived by `compile_regions_bf16_test`). A bf16 compiled micro-step cannot equal a bf16 EAGER one to fp32's bars:
+#: each arm rounds at different points (Inductor fuses and upcasts where eager rounds every op's output to bf16), so the
+#: two differ by bf16 ROUNDING (unit roundoff 2^-8 relative, ~32,768x fp32's), and the fp32 rule refuses it on the
+#: loss alone (window B: loss rel 9.7e-4 > 1e-4). So the rule measures BOTH bf16 arms against the fp32 EAGER
+#: REFERENCE (the production function, the same weights and rows: `_r1_reference`, under `trunk_precision.fp32_scope`)
+#: and asks two questions, every one a deterministic comparison:
+#:
+#:   DRIFT    is the bf16 FUNCTION still near the fp32 one?  eager-bf16 vs the reference — the loss's relative
+#:            error and the gradient's global relative L2 error — each under `BF16_DRIFT_BARS` (R1_BAR_K x the
+#:            healthy maximum over the measured states). Catches bf16 losing the model (an overflow, a trunk whose
+#:            activations outgrew bf16's 8-bit mantissa): what the fp32 gate could never see, because both its arms
+#:            were fp32.
+#:   ENVELOPE is the COMPILED bf16 graph no farther from the reference than eager bf16 is?  For the loss, the global
+#:            gradient and EVERY judged parameter p: d(compiled, ref) <= K x max(d(eager, ref), floor), the floor
+#:            being the fp32 gate's own bar for that quantity (global sqrt(2(1 - 0.9999)) = the fp32 cosine bar as
+#:            a relative L2; per parameter `R1_PARAM_BAR[regime]`, an unmoved parameter's at the FRESH bar as in the
+#:            fp32 rule) — except the scalar LOSS, floored at bf16's unit roundoff 2^-9 (`BF16_LOSS_FLOOR`) — so a
+#:            compiled bf16 graph is never held tighter than an fp32 one, and a quantity whose eager error lands
+#:            near zero by chance does not shrink its own bar. K = R1_BAR_K x the healthy maximum of that ratio
+#:            (`BF16_ENVELOPE_K`).
+#:
+#: THE TEETH, stated (PLAN.md §2a): a backward miscompile on a parameter is refused only when it exceeds K x that
+#: parameter's own bf16 error — bf16's gradient noise is the resolution limit, coarser than the fp32 rule's by the
+#: ratio of the two errors (`results/bf16_parity_bars.json` "teeth"). `None` would mean NOT MEASURED: a bf16 R1 REFUSED.
+#: DERIVED (window D, 2026-10-10, `E_bf16_envelope`: RTX 3080 Ti, torch 2.8, `--arch endstate`, B = 2,048 of the gate's
+#: rows, 20 reads = fresh + 6 ladder-perturbed + 3 bf16-trained states x 2 slices, each arm twice — both bf16 arms were
+#: run-to-run bit-identical): healthy max drift loss 3.26e-3, gradient rel-L2 0.169; healthy max envelope ratio loss
+#: 1.35, gradient 1.58, per parameter 2.94. Each bar = R1_BAR_K x that, rounded UP to 2 significant digits.
+BF16_DRIFT_BARS: Optional[Dict[str, float]] = {"loss": 0.014, "grad_rel_l2": 0.68}
+BF16_ENVELOPE_K: Optional[Dict[str, float]] = {"loss": 5.4, "grad_rel_l2": 6.4, "param": 12.0}
+#: the global gradient's floor: the fp32 rule's cosine bar as a relative L2 (|a - b| / |b| = sqrt(2 (1 - cos)) for
+#: equal norms)
+BF16_GRAD_FLOOR = float(np.sqrt(2.0 * (1.0 - ct._MIN_GRAD_COSINE)))
+#: the loss's floor: bf16's UNIT ROUNDOFF, 2^-9 (round-to-nearest, an 8-bit significand), not fp32's 1e-4. The loss is
+#: an fp32 reduction over values that each carry the trunk's bf16 output rounding, so a relative disagreement under u
+#: is below what a bf16 forward resolves — and a SCALAR's eager error can land near zero by chance (window D: eager bf16
+#: read 2.5e-5 on one read where compiled read 8.5e-4, both ~u), which would make an fp32 floor an 8.5x "ratio" of
+#: pure rounding luck. Measured eager-bf16 loss errors: 2.5e-5 .. 3.3e-3 over 20 GPU reads.
+BF16_LOSS_FLOOR = max(ct._MAX_NUMERIC_DRIFT, 2.0 ** -9)
+
+
+def _r1_reference(model: Any, args: Tuple[Any, ...]) -> Dict[str, torch.Tensor]:
+    """The bf16 rule's REFERENCE arm: R1's EAGER body with every trunk round at its fp32 base class
+    (`trunk_precision.fp32_scope`) — the production function on the same weights and rows. Proved eager like the
+    gate's own eager arm: R1's Python body exactly once, the compiled route zero times (a compiled call under the
+    base classes would be a new signature)."""
+    from agents.model.trunk_precision import fp32_scope
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    e0, c0 = _routes()
+    with fp32_scope(model.policy):
+        ref = _r1_arm(model, micro_step, args)
+    e1, c1 = _routes()
+    if (e1 - e0, c1 - c0) != (1, 0):
+        raise ct.GateArmsNotIndependentError(
+            f"--compile-trainer region R1 (bf16 rule): the fp32 REFERENCE arm ran the eager body {e1 - e0}x and "
+            f"the compiled route {c1 - c0}x (want 1 / 0) — refusing (gen3_gate_independent_arms_v1)")
+    return ref
+
+
+def _rel(a: float, b: float) -> float:
+    return abs(a - b) / max(1.0, abs(b))
+
+
+def _rel_l2(a: torch.Tensor, b: torch.Tensor) -> float:
+    """||a - b|| / ||b|| in float64 (NaN when ``b`` is all zero or either side is non-finite)."""
+    a64, b64 = a.detach().double(), b.detach().double()
+    nb = float(b64.norm())
+    out = float((a64 - b64).norm()) / nb if nb > 0 else float("nan")
+    return out if np.isfinite(out) else float("nan")
+
+
+def bf16_measured() -> Optional[str]:
+    """``None`` when the bf16 rule has measured bars, else the refusal text."""
+    if BF16_DRIFT_BARS is None or BF16_ENVELOPE_K is None:
+        return ("--trunk-precision bf16: the compiled learner's bf16 PARITY RULE has no measured bars yet "
+                "(compile_regions.BF16_DRIFT_BARS / BF16_ENVELOPE_K are None) — refusing to judge with a guess")
+    return None
+
+
+def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], ref: Dict[str, torch.Tensor],
+                     names: List[str], regime: str, label: Optional[str] = None,
+                     bar_by_index: Optional[Dict[int, float]] = None) -> str:
+    """THE bf16 PARITY RULE (the block comment above): DRIFT (eager bf16 vs the fp32 reference) and ENVELOPE
+    (compiled bf16 vs the reference, within K x eager bf16's own error, floored at the fp32 bar). Raises
+    `CompileTrainerError`; returns the rule line."""
+    refusal = bf16_measured()
+    if refusal is not None:
+        raise ct.CompileTrainerError(refusal)
+    assert BF16_DRIFT_BARS is not None and BF16_ENVELOPE_K is not None
+    ct.require_finite_arms(eager=eager, compiled=comp, param_names=names)
+    ct.require_finite_arms(eager=ref, compiled=eager, param_names=names)
+    head = f"[{label or regime + ' weights'}] bf16 rule:"
+    l_ref, l_e, l_c = float(ref["loss"]), float(eager["loss"]), float(comp["loss"])
+    if not all(np.isfinite(v) for v in (l_ref, l_e, l_c)):
+        raise ct.CompileTrainerError(f"--compile-trainer region R1 (bf16 rule): non-finite loss (reference "
+                                     f"{l_ref}, eager {l_e}, compiled {l_c})")
+    d_loss_e, d_loss_c = _rel(l_e, l_ref), _rel(l_c, l_ref)
+    d_g_e, d_g_c = _rel_l2(eager["grad"], ref["grad"]), _rel_l2(comp["grad"], ref["grad"])
+    # ---- DRIFT: the bf16 function vs the fp32 one
+    for what, v in (("loss", d_loss_e), ("grad_rel_l2", d_g_e)):
+        if not v <= BF16_DRIFT_BARS[what]:
+            raise ct.CompileTrainerError(
+                f"--compile-trainer region R1 (bf16 rule): the bf16 EAGER micro-step has DRIFTED from the fp32 "
+                f"function — {what} {v:.2e} > {BF16_DRIFT_BARS[what]:g} (eager bf16 vs the fp32 eager reference, "
+                f"same weights and rows). bf16 no longer represents this model: run --trunk-precision fp32.")
+    # ---- ENVELOPE: compiled bf16 no farther from the reference than K x eager bf16 (floored at the fp32 bar)
+    checks = (("loss", d_loss_c, d_loss_e, BF16_LOSS_FLOOR),
+              ("grad_rel_l2", d_g_c, d_g_e, BF16_GRAD_FLOOR))
+    for what, dc, de, floor in checks:
+        bar = BF16_ENVELOPE_K[what] * max(de, floor)
+        if not dc <= bar:
+            raise ct.CompileTrainerError(
+                f"--compile-trainer region R1 (bf16 rule): the COMPILED bf16 micro-step is farther from the fp32 "
+                f"reference than eager bf16 allows — {what}: compiled {dc:.2e} > {BF16_ENVELOPE_K[what]:g} x "
+                f"max(eager {de:.2e}, floor {floor:g}) = {bar:.2e}. A faster wrong model is not a win.")
+    sizes = [int(x) for x in ref["grad_sizes"].tolist()]
+    err_c = dict(per_param_grad_errors(comp["grad"], ref["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
+    err_e = dict(per_param_grad_errors(eager["grad"], ref["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
+    if not err_c:
+        raise ct.VacuousCompileParityError("--compile-trainer region R1 (bf16 rule): no parameter's reference "
+                                           "gradient is above the per-parameter floor")
+    over = dict(bar_by_index or {})
+    k = BF16_ENVELOPE_K["param"]
+    worst = (-1.0, -1, 0.0, 0.0)
+    bad = []
+    for i, dc in err_c.items():
+        floor_i = float(over.get(i, R1_PARAM_BAR[regime]))
+        ratio = dc / max(err_e[i], floor_i)
+        if not (ratio == ratio):                            # NaN sorts worst and fails
+            ratio = float("inf")
+        if ratio > worst[0]:
+            worst = (ratio, i, dc, err_e[i])
+        if not ratio <= k:
+            bad.append((names[i] if i < len(names) else f"#{i}", dc, err_e[i]))
+    if bad:
+        raise ct.CompileTrainerError(
+            f"--compile-trainer region R1 (bf16 rule): the compiled TRAIN graph's gradient is farther from the fp32 "
+            f"reference than {k:g} x eager bf16's own error on {len(bad)} parameter(s) (e.g. "
+            + ", ".join(f"{n} compiled {c:.2e} vs eager {e:.2e}" for n, c, e in bad[:5])
+            + "). A backward miscompile under bf16's rounding — investigate before re-enabling.")
+    wn = names[worst[1]] if 0 <= worst[1] < len(names) else f"#{worst[1]}"
+    return (f"{head} drift loss {d_loss_e:.2e} <= {BF16_DRIFT_BARS['loss']:g}, grad {d_g_e:.2e} <= "
+            f"{BF16_DRIFT_BARS['grad_rel_l2']:g}; envelope loss {d_loss_c:.2e} (eager {d_loss_e:.2e}), grad "
+            f"{d_g_c:.2e} (eager {d_g_e:.2e}); per-param worst ratio {worst[0]:.2f} <= {k:g} ({wn}: compiled "
+            f"{worst[2]:.2e} vs eager {worst[3]:.2e}) over {len(err_c)} params")
 
 
 def _decision_readout(model: Any, obs: Any, mask: Any) -> Dict[str, torch.Tensor]:

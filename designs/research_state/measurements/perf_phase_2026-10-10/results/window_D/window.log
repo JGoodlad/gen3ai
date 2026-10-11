@@ -1,0 +1,7 @@
+[window D] START E_ride_before at 19:35:55 (budget 11 min, 44 min left)
+[window D] END E_ride_before rc=0 at 19:43:56: [bench E_ride_before] DONE: marginal epoch 5.23s, update est 53.6s, gate PASS
+[window D] START E_ride_after at 19:43:56 (budget 11 min, 35 min left)
+[window D] END E_ride_after rc=0 at 19:51:45: [bench E_ride_after] DONE: marginal epoch 5.21s, update est 53.2s, gate PASS
+[window D] START E_bf16_envelope at 19:51:45 (budget 15 min, 28 min left)
+[window D] END E_bf16_envelope rc=0 at 19:57:30: [envelope] DONE -> /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a136732e19dd297c0/designs/research_state/measurements/perf_phase_2026-10-10/scripts/../results/window_D/E_bf16_envelope.json
+[window D] FINISHED at 19:57:30

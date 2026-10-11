@@ -575,7 +575,12 @@ from typing import Any, Dict
 #   (every opponent slot's MoveBelief reinjection reads its fixed-mass move presence at k = 4 − revealed — the
 #   four-move fact). Gated in check_compatible; a pre-v154 config migrates to off. No ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 154
+# v155 (gen3_trunk_precision_flag_v1): one TRAINING-numerics field, `trunk_precision` {fp32,bf16} (`--trunk-precision`,
+#   T25 perf lever A): the learner's trunk rounds under bf16 autocast inside R1 only; T2 / eval / snapshots / the
+#   K9(b) probe stay fp32. Never compared by check_compatible (the served forward and every weight shape are
+#   unchanged); RECORDED and `_resolve`-inherited. A pre-v155 config migrates to fp32. No ARCH_SIGNATURE bump, no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 155
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

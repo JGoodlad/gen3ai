@@ -258,8 +258,9 @@ class CompileCanary:
         out["compile/canary_unconfirmed_disagreements"] = float(self.unconfirmed)
         out["compile/canary_seconds"] = time.perf_counter() - t0
         self.last = out
+        from agents.model.trunk_precision import trunk_precision_of
         self._say(f"🐤 [CompileCanary] update {self.updates}: compiled == eager on the fixture "
-                  f"(fp32, {out['compile/canary_seconds']:.1f} s) — " + " | ".join(rules))
+                  f"({trunk_precision_of(self.model.policy)}, {out['compile/canary_seconds']:.1f} s) — " + " | ".join(rules))
         return out
 
     # ------------------------------------------------------------------ the compiled region

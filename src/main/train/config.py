@@ -455,6 +455,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # cadence at a restart unless the flag is NAMED.
     from agents.training.instrumented_ppo.diagnostics_cadence import DIAGNOSTICS_EVERY_DEFAULT
     _resolve("diagnostics_every", DIAGNOSTICS_EVERY_DEFAULT)
+    # gen3_trunk_precision_flag_v1 (T25 lever A): the learner's trunk precision — training NUMERICS, so a
+    # flagless resume keeps the parent's recorded value (a pre-v155 parent migrates to fp32).
+    _resolve("trunk_precision", "fp32")
+    if args.trunk_precision != "fp32":
+        emit(f"🧮 [TRUNK PRECISION] {args.trunk_precision}: the learner's trunk rounds run under bf16 autocast in "
+             f"R1 (T2 / eval / the K9(b) probe stay fp32; the compile gate applies the bf16 parity rule)")
     # T17 (gen3_mirrored_pairs_v1): the in-loop eval's PAIRING REGIME. A fresh run takes OFF (the
     # orchestrator flips it at an era start); a flagless resume keeps the regime its checkpoint recorded,
     # so a live run's win_rate_vs_pool / eval/elo never cross the boundary unless the flag is NAMED.

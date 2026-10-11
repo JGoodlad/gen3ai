@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,212-line file. **The ledger itself is append-only and is never edited by this**;
+24,246-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**840 headings · 785 dated · 2026-08-01 → 2026-10-10 · ledger 24,212 lines.**
+**841 headings · 786 dated · 2026-08-01 → 2026-10-10 · ledger 24,246 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -860,3 +860,4 @@ rename.
   - `L24075` · `2026-10-10` · MEASURED + BUILT · **THE FOUR-MOVE CLOSURE: every fixed-mass reader of the opponent's moves already knows "four revealed ⇒ no other move", except MoveBelief's REINJECTION on every non-active slot (F-X5-33), a measured GIGO leak (trained screen final: a bump of a benched four-revealed mon's unrevealed beliefs moves the value by a median 4.0 pp, argmax 13.6 %); `--move-set-closure on` (`gen3_move_set_closure_v1`, v154, OFF) closes it. The garbled `data/teams/` nicknames reach NOTHING the model reads (byte-identical observations three ways)**
   - `L24131` · `2026-10-10` · AMENDMENT · **THE CLOSING TEST'S END-STATE ARM GAINS `--move-set-closure on` (the four-move closure, v154; owner 2026-10-10 "Do A"), BEFORE ANY END-STATE DATA; P_end → `b132b099`. Production identity re-proved on CPU (A–D): production's graph / state / outputs `421c6b98ce7937f4` / `749c56159ab028f4` / `51c02c6c6342a045` EQUAL P_prod `95d014fa`'s, the K9 golden blobs equal and green, the mirror identical modulo ONE new key that is OFF in production (`move_set_closure`), the obs golden equal and green, no `data/` or Rust change. The new end-state graph `42ee361b11fa5a8d`, 2,031,460 params. Precondition E = the first end-state seed's own startup gates**
   - `L24178` · `2026-10-10` · BUILT · **T25 NEXT LEVER 1: the ride-along heads' micro-batch path makes ONE host read where it made ~120 (the one `.item()` at `ridealong_heads.py:466` was the FIRST of ~120): host mirrors for the RND statistics, device gates for the label guards, deferred + one-transfer meters, one transfer for the verdicts; every logged value, weight, Adam state and the RNG bit-identical to HEAD (2 ride-along surfaces × a real `train()`); GPU effect UNMEASURED**
+  - `L24213` · `2026-10-10` · MEASURED + BUILT · **T25 PHASE 2, WINDOW D + LEVER A's ADOPTION MACHINERY: the ride-along host-read fix measured at −0.35 s per end-state update (53.59 → 53.24 s; host-blocked 2.36 → 0.50 s; GPU busy 93.2 → 95.1 %); `--trunk-precision {fp32,bf16}` (config v155, default fp32) BUILT with bf16 in R1 ONLY (T2 and the K9(b) probe stay fp32, design (b)); THE bf16 PARITY RULE (DRIFT vs the fp32 eager reference + the compiled-vs-eager ENVELOPE) with bars DERIVED from 20 GPU reads; bf16 moves the micro-batch gradient 1–18 % rel-L2 from fp32's, so its strength A/B is MANDATORY (proposal, not registered)**

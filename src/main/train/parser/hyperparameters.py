@@ -159,6 +159,17 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "(a pre-v124 run inherits 1). --rank-tripwire keeps rank/* every "
                              "update and --adaptive-batch policy keeps the per-term probe every "
                              "update (their readers need every reading).")
+    parser.add_argument("--trunk-precision", "--trunk_precision", dest="trunk_precision",
+                        choices=("fp32", "bf16"), default=None,
+                        help="The LEARNER's trunk-round compute precision (T25 perf lever A, "
+                             "gen3_trunk_precision_flag_v1): bf16 runs the trunk rounds under bf16 autocast "
+                             "inside the training micro-step R1 (fp32 out; the damage op, every head, the "
+                             "pointer head's log-softmax, the value, the losses and the optimizer state stay "
+                             "fp32). T2, eval, snapshots and the K9(b) behaviour probe stay fp32. The compiled "
+                             "learner is gated by the bf16 parity rule (designs/training/compile_flags.md). "
+                             "MEASURED on the end state: ~-20%% per 1-epoch update call; NOT ADOPTED, it "
+                             "needs its own strength A/B. UNSET resolves to fp32 on a fresh run; recorded in "
+                             "model_config.json and INHERITED on a flagless resume.")
     parser.add_argument("--device-batch", "--device_batch", dest="device_batch",
                         choices=("resident", "staged", "host"), default=None,
                         help="How the update's micro-batches reach the learner's CUDA device "

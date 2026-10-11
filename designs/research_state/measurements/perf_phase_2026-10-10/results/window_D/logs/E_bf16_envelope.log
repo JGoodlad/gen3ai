@@ -1,0 +1,205 @@
+[mem_cap] cap 40.00 GB (swap 0) · unit gen3ai-capped-python3-3466833.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🧊 [CompileCache] PRIVATE /home/goodlad/.cache/gen3ai/tmp/gen3ai_compile_3466841_1c0477vp for this process (perf phase bf16 envelope) — no run declared a cache; deleted at exit [gen3_hermetic_compile_cache_v1]
+[CompileControl] dynamo reset at startup: dropped 0 cache entries compiled before the region was installed (now 0)
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp6kac200x/cuda_utils.c:5:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp6kac200x/cuda_utils.c:1:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/compile_fx.py:282: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning: 
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp86btovvq/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp86btovvq/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmparedse37/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmparedse37/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpj9a7i8dd/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpj9a7i8dd/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpu40ylrv5/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpu40ylrv5/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp51vi5xjk/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp51vi5xjk/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpvwmmse53/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpvwmmse53/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpn0ycxrne/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpn0ycxrne/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpqwshwacw/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpqwshwacw/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpgs_e0tbi/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpgs_e0tbi/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpc8x2tlld/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpc8x2tlld/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpiljn4zbl/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpiljn4zbl/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpudwcl32k/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpudwcl32k/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpxzrwczx0/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpxzrwczx0/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmph6zrxazi/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmph6zrxazi/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+[envelope] fresh: Cbf_vs_E32 loss 2.12e-03 cos 0.999951 pmax 3.86e+00, Ebf_vs_E32 loss 1.18e-03 cos 0.999956 pmax 8.51e-01, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 2.85e-08, Cbf_vs_Ebf loss 9.38e-04 cos 0.999975 pmax 2.55e+00
+[envelope] pert05_k0: Cbf_vs_E32 loss 4.17e-03 cos 0.999889 pmax 2.86e-01, Ebf_vs_E32 loss 3.26e-03 cos 0.999842 pmax 2.43e-01, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 3.99e-08, Cbf_vs_Ebf loss 9.06e-04 cos 0.999962 pmax 2.45e-01
+[envelope] pert05_k1: Cbf_vs_E32 loss 8.52e-04 cos 0.999892 pmax 1.70e+00, Ebf_vs_E32 loss 2.53e-05 cos 0.999886 pmax 2.14e+00, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 3.04e-08, Cbf_vs_Ebf loss 8.27e-04 cos 0.999955 pmax 2.43e+00
+[envelope] pert05_k2: Cbf_vs_E32 loss 1.14e-03 cos 0.999815 pmax 1.84e+00, Ebf_vs_E32 loss 8.26e-04 cos 0.999793 pmax 1.86e+00, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 1.25e-08, Cbf_vs_Ebf loss 3.19e-04 cos 0.999928 pmax 4.31e+00
+[envelope] pert05_k3: Cbf_vs_E32 loss 9.63e-04 cos 0.998670 pmax 2.23e+00, Ebf_vs_E32 loss 1.53e-03 cos 0.999117 pmax 1.59e+00, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 3.07e-08, Cbf_vs_Ebf loss 5.67e-04 cos 0.999392 pmax 1.21e+00
+[envelope] pert10_k0: Cbf_vs_E32 loss 9.85e-04 cos 0.998312 pmax 5.98e+00, Ebf_vs_E32 loss 6.86e-04 cos 0.998061 pmax 5.49e+00, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 2.66e-08, Cbf_vs_Ebf loss 2.99e-04 cos 0.999572 pmax 2.56e+00
+[envelope] pert10_k1: Cbf_vs_E32 loss 2.22e-03 cos 0.993921 pmax 1.90e+00, Ebf_vs_E32 loss 1.89e-03 cos 0.992391 pmax 6.69e-01, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 2.19e-08, Cbf_vs_Ebf loss 3.29e-04 cos 0.999060 pmax 2.58e+00
+🎯 [CRITIC] winprob — --vf-coef 0.5 scale readout (first non-degenerate update): BCE 0.4820 (ln 2 ~ 0.693 = chance; lower = the head already calls lopsided games). SHARED-TRUNK GRADIENT: ||g_value|| 10.15 / ||g_policy|| 0.4546 -> 22.3x. READING: >>1 the value gradient dominates the trunk, cut --vf-coef by that factor; <<1 raise it. ⚠️ this is a ratio of GRADIENTS, not of losses — on epoch 1 the clipped surrogate sits at its stationary point (ratio == 1), so |policy loss| ~ 0 and a loss ratio against it is an artifact. And --vf-coef now multiplies a BCE, not the shaped-return MSE 0.5 was tuned for, which on a +-30 return was O(100). Confirm with grad/value_policy_logratio (log10 of this ratio) — see designs/ai_v12/design_winprob_only_critic.md 5.4.
+[envelope] trained_1: Cbf_vs_E32 loss 3.63e-04 cos 0.999793 pmax 4.84e-01, Ebf_vs_E32 loss 1.19e-04 cos 0.999826 pmax 1.21e+00, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 1.42e-08, Cbf_vs_Ebf loss 2.44e-04 cos 0.999937 pmax 7.74e+00
+[envelope] trained_3: Cbf_vs_E32 loss 2.78e-04 cos 0.997323 pmax 8.33e-01, Ebf_vs_E32 loss 2.34e-04 cos 0.997004 pmax 5.70e+00, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 2.83e-08, Cbf_vs_Ebf loss 4.41e-05 cos 0.998644 pmax 1.12e+00
+[envelope] trained_6: Cbf_vs_E32 loss 1.13e-04 cos 0.998403 pmax 2.21e+00, Ebf_vs_E32 loss 5.00e-05 cos 0.998299 pmax 1.48e+00, E32b_vs_E32 loss 0.00e+00 cos 1.000000 pmax 2.53e-08, Cbf_vs_Ebf loss 6.33e-05 cos 0.999512 pmax 1.51e+00
+[envelope] DONE -> /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a136732e19dd297c0/designs/research_state/measurements/perf_phase_2026-10-10/scripts/../results/window_D/E_bf16_envelope.json
+[mem_cap] done: gen3ai-capped-python3-3466833.scope exit 0 · peak 11.00 GB of cap 40.00 GB (28%) · not OOM-killed

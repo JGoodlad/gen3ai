@@ -1,0 +1,413 @@
+{
+ "tag": "E_ride_before",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_5e399caf/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 4.697265625,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 10.051171667058952,
+  "compile_gate_prewarm": 251.66288439801428
+ },
+ "imports_from": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_5e399caf/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5624179,
+  "diagnostics_every": 10
+ },
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "PASS",
+  "lines": [
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+   "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 0.00e+00 <= 0.0001; train features: fp32 max|compiled-eager| 0.00e+00 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.60e-05 (features_extractor.history_events.denial_emb.weight) over 232 params <= 0.00988 [the K9 learner golden's real labelled buffer]",
+   "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+   "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 251.6s",
+   "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "peak_reserved_mib": 6822.0,
+ "diag_1ep_s": 14.891304618911818,
+ "train": {
+  "walls_s": {
+   "1": [
+    6.502201925031841,
+    6.509643840952776
+   ],
+   "3": [
+    16.963716231985018,
+    16.97655922395643
+   ]
+  },
+  "median_s": {
+   "1": 6.505922882992309,
+   "3": 16.970137727970723
+  },
+  "marginal_epoch_s": 5.232107422489207,
+  "update_s_est": 53.594889685395174,
+  "first_epoch_overhead_s": 1.2738154605031013,
+  "per_micro_ms_marginal": 109.00223796852515,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 2.017303309054114,
+    "n": 18016
+   },
+   {
+    "epochs": 1,
+    "s": 2.021019180654548,
+    "n": 18016
+   },
+   {
+    "epochs": 3,
+    "s": 2.025165961473249,
+    "n": 20256
+   },
+   {
+    "epochs": 3,
+    "s": 2.029873680556193,
+    "n": 20256
+   }
+  ]
+ },
+ "load1_end": 5.78173828125,
+ "gpu_others_end": [],
+ "profile_phase": "plain",
+ "profile": {
+  "n_micro": 144,
+  "trace": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/traces/profile_E_ride_before.trace.json.gz",
+  "profiled_span_s": 17.44696562,
+  "gpu_busy_s": 16.25807799200015,
+  "gpu_busy_pct": 93.18570544647035,
+  "top_kernels": [
+   {
+    "name": "fmha_cutlassB_f32_aligned_64x64_k32_sm80(PyTorchMemEffAttention::AttentionBackwardKernel<cutlass::arch::Sm80, float, true, false, false, 64, 64, 32, false>::Par",
+    "count": 720,
+    "total_ms": 1513.2456199999988,
+    "pct_of_kernel_time": 9.390334833493174
+   },
+   {
+    "name": "ampere_sgemm_128x64_tn",
+    "count": 4848,
+    "total_ms": 1444.6558100000318,
+    "pct_of_kernel_time": 8.96470579247512
+   },
+   {
+    "name": "ampere_sgemm_128x64_nn",
+    "count": 5040,
+    "total_ms": 1090.9908690000093,
+    "pct_of_kernel_time": 6.770063910836751
+   },
+   {
+    "name": "ampere_sgemm_128x128_nt",
+    "count": 1584,
+    "total_ms": 881.3882440000186,
+    "pct_of_kernel_time": 5.469390177032042
+   },
+   {
+    "name": "fmha_cutlassF_f32_aligned_64x64_rf_sm80(PyTorchMemEffAttention::AttentionKernel<float, cutlass::arch::Sm80, true, 64, 64, 64, true, true>::Params)",
+    "count": 720,
+    "total_ms": 638.8032250000183,
+    "pct_of_kernel_time": 3.9640466135731844
+   },
+   {
+    "name": "void cutlass::Kernel2<cutlass_80_simt_sgemm_128x64_8x5_nt_align1>(cutlass_80_simt_sgemm_128x64_8x5_nt_align1::Params)",
+    "count": 3792,
+    "total_ms": 436.3592210000653,
+    "pct_of_kernel_time": 2.7077951779387033
+   },
+   {
+    "name": "triton_red_fused__to_copy_add_clamp_cumsum_div_floor_ge_gt_index_le_lt_mul_round_rsub_sum_where_425",
+    "count": 144,
+    "total_ms": 334.63140100000066,
+    "pct_of_kernel_time": 2.07653064357849
+   },
+   {
+    "name": "ampere_sgemm_32x128_tn",
+    "count": 11904,
+    "total_ms": 323.95519300011074,
+    "pct_of_kernel_time": 2.0102802169815277
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_296",
+    "count": 144,
+    "total_ms": 265.3869380000001,
+    "pct_of_kernel_time": 1.6468392013290587
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_338",
+    "count": 144,
+    "total_ms": 240.84833500000107,
+    "pct_of_kernel_time": 1.494566698127529
+   }
+  ],
+  "kernels": 475956,
+  "memcpy_memset": 26539,
+  "kernel_time_s": 16.114927176000137,
+  "per_micro": {
+   "kernel_launch_calls": 3303.5416666666665,
+   "device_kernels": 3305.25,
+   "sync_calls": {
+    "cudaStreamSynchronize": 40.4375,
+    "cudaDeviceSynchronize": 0.013888888888888888
+   },
+   "scalar_reads_local_scalar_dense": 150.69444444444446,
+   "memcpy_calls": {
+    "cudaMemcpyAsync": 121.13194444444444
+   }
+  },
+  "wall_s_profiled": 17.45579792605713,
+  "kernel_classes": {
+   "gemm": {
+    "count": 78604,
+    "s": 5.719588107000137,
+    "pct": 35.49248497702354
+   },
+   "triton_pointwise": {
+    "count": 156528,
+    "s": 4.504655126000055,
+    "pct": 27.953307370254873
+   },
+   "attention": {
+    "count": 1440,
+    "s": 2.152048845000017,
+    "pct": 13.354381447066348
+   },
+   "triton_reduction": {
+    "count": 47664,
+    "s": 1.6383178890000722,
+    "pct": 10.166461635892514
+   },
+   "aten_other": {
+    "count": 162056,
+    "s": 1.0845299109998994,
+    "pct": 6.729970909301298
+   },
+   "triton_persistent_reduction": {
+    "count": 29088,
+    "s": 1.014462029999957,
+    "pct": 6.295169806977398
+   },
+   "triton_other": {
+    "count": 576,
+    "s": 0.0013252680000097607,
+    "pct": 0.00822385348401371
+   }
+  }
+ },
+ "sync_meter": {
+  "wall_s": 17.014450127026066,
+  "n_micro": 144,
+  "total_calls_per_micro": 33.38194444444444,
+  "total_blocked_s": 2.364329834934324,
+  "sites": [
+   {
+    "site": "item <- agents/model/ridealong_heads.py:466 < agents/training/instrumented_ppo/ridealong_terms.py:395 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 1.8530326529871672
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/host_reads.py:71 < agents/training/instrumented_ppo/learner_gates.py:129 < agents/training/instrumented_ppo/ppo.py:620",
+    "per_micro": 0.020833333333333332,
+    "s_total": 0.14190447202418
+   },
+   {
+    "site": "__bool__ <- agents/model/ridealong_heads.py:836 < agents/training/instrumented_ppo/ridealong_terms.py:400 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.10109036299400032
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:255 < agents/training/instrumented_ppo/ridealong_terms.py:420 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 1.3333333333333333,
+    "s_total": 0.05291904485784471
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/host_reads.py:71 < agents/training/instrumented_ppo/learner_gates.py:129 < agents/training/instrumented_ppo/ppo.py:657",
+    "per_micro": 0.020833333333333332,
+    "s_total": 0.04556738899555057
+   },
+   {
+    "site": "item <- agents/model/ridealong_heads.py:474 < agents/model/ridealong_heads.py:483 < agents/model/ridealong_heads.py:494",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.03811869234777987
+   },
+   {
+    "site": "__bool__ <- agents/training/instrumented_ppo/ridealong_terms.py:172 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 6.666666666666667,
+    "s_total": 0.0230542371282354
+   },
+   {
+    "site": "__bool__ <- agents/training/instrumented_ppo/ridealong_terms.py:477 < agents/training/instrumented_ppo/ridealong_terms.py:423 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 1.3333333333333333,
+    "s_total": 0.01334823970682919
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:144 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 2.6666666666666665,
+    "s_total": 0.008453757967799902
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/ridealong_terms.py:137 < agents/training/instrumented_ppo/ridealong_terms.py:209 < agents/training/instrumented_ppo/ridealong_terms.py:415",
+    "per_micro": 2.0,
+    "s_total": 0.007845709449611604
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/ridealong_terms.py:137 < agents/training/instrumented_ppo/ridealong_terms.py:165 < agents/training/instrumented_ppo/ridealong_terms.py:415",
+    "per_micro": 1.6666666666666667,
+    "s_total": 0.006605503614991903
+   },
+   {
+    "site": "item <- agents/model/ridealong_heads.py:420 < agents/training/instrumented_ppo/ridealong_terms.py:409 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 1.3333333333333333,
+    "s_total": 0.0063260255847126245
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:173 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 1.6666666666666667,
+    "s_total": 0.0059258617693558335
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:487 < agents/training/instrumented_ppo/ridealong_terms.py:423 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 1.3333333333333333,
+    "s_total": 0.0056189175229519606
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:163 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 1.6666666666666667,
+    "s_total": 0.005406376323662698
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:162 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 1.6666666666666667,
+    "s_total": 0.00531868461985141
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:256 < agents/training/instrumented_ppo/ridealong_terms.py:420 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 1.3333333333333333,
+    "s_total": 0.0042552059749141335
+   },
+   {
+    "site": "__bool__ <- agents/training/instrumented_ppo/ridealong_terms.py:430 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.002999990014359355
+   },
+   {
+    "site": "item <- agents/model/ridealong_heads.py:466 < agents/training/instrumented_ppo/ridealong_terms.py:397 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0029790058033540845
+   },
+   {
+    "site": "item <- agents/model/ridealong_heads.py:474 < agents/model/ridealong_heads.py:483 < agents/model/ridealong_heads.py:784",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0023523021955043077
+   },
+   {
+    "site": "tolist <- agents/training/instrumented_ppo/ridealong_terms.py:154 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0022871161345392466
+   },
+   {
+    "site": "__bool__ <- agents/model/ridealong_heads.py:853 < agents/training/instrumented_ppo/ridealong_terms.py:400 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0022752530639991164
+   },
+   {
+    "site": "item <- agents/model/ridealong_heads.py:420 < agents/training/instrumented_ppo/ridealong_terms.py:403 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.002133182715624571
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:200 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.00167533487547189
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:443 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0016478159232065082
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:178 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0016391425160691142
+   },
+   {
+    "site": "__bool__ <- agents/training/instrumented_ppo/ridealong_terms.py:194 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0015915599651634693
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:197 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0015779011882841587
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:190 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0015204304363578558
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/ridealong_terms.py:137 < agents/training/instrumented_ppo/ridealong_terms.py:213 < agents/training/instrumented_ppo/ridealong_terms.py:415",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0014925035648047924
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:180 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0014918377855792642
+   },
+   {
+    "site": "__bool__ <- agents/training/instrumented_ppo/ridealong_terms.py:196 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0014757504686713219
+   },
+   {
+    "site": "item <- agents/model/ridealong_heads.py:474 < agents/model/ridealong_heads.py:755 < agents/training/instrumented_ppo/ridealong_terms.py:419",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0014713897835463285
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:188 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0014085047878324986
+   },
+   {
+    "site": "cpu <- agents/training/instrumented_ppo/ridealong_terms.py:137 < agents/training/instrumented_ppo/ridealong_terms.py:214 < agents/training/instrumented_ppo/ridealong_terms.py:415",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0013417507288977504
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:156 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0012545277131721377
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:150 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0012260581133887172
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:204 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0011360887438058853
+   },
+   {
+    "site": "__float__ <- agents/training/instrumented_ppo/ridealong_terms.py:159 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0011269866954535246
+   },
+   {
+    "site": "__bool__ <- agents/training/instrumented_ppo/ridealong_terms.py:151 < agents/training/instrumented_ppo/ridealong_terms.py:415 < agents/training/instrumented_ppo/ppo.py:449",
+    "per_micro": 0.3333333333333333,
+    "s_total": 0.0010946408146992326
+   }
+  ]
+ }
+}

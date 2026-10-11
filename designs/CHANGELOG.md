@@ -13872,3 +13872,62 @@ read both cells for its end-of-turn rule and found them wrong.
   graph pool's memory beside the compiled route's activations on a diagnostic update, a re-record after the lock) is
   judged only by the startup accumulation rung, the update-fit dry update (a diagnostic update: both routes) and window
   E's paired benchmark (PLAN.md lever C).
+## 2026-10-10 — `--trunk-precision {fp32,bf16}` and THE bf16 PARITY RULE (T25 perf lever A; config v155; default fp32, production and end-state graphs byte-identical)
+
+- **Why.** Window B measured the bf16 trunk region at −20 % per end-state 1-epoch call (GEMM −28 %, attention −51 %).
+  The fp32 R1 gate refused it by design (loss rel 9.7e-4 > 1e-4), and K9(b)'s bar was derived for fp32. Phase 2 builds
+  the adoption machinery: `designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md` §2.
+- **The flag.** `--trunk-precision {fp32,bf16}` is `ModelVersion.trunk_precision` (config v155; a pre-v155 config
+  migrates to fp32).
+  - It is `_resolve`-inherited and never compared by `check_compatible`.
+  - It is in the shared compile cache's `COMPILE_ARG_KEYS`.
+  - `trunk_precision.apply_run_precision`, from `apply_training_hparams` on both build paths before grad
+    checkpointing and the R1 install, sets the LEARNER's live trunk rounds to the bf16 autocast classes.
+- **Design (b): bf16 in R1 only.**
+  - T2 slots are reset to the fp32 base classes (`slots.served_replica`): a deep copy carried a bf16 learner's
+    classes into T2.
+  - The K9(b) probe forward and its violation scan run under `trunk_precision.fp32_scope`, so K9(b) is unchanged
+    byte for byte.
+  - The freshness read runs under the scope too.
+  - Design (a), T2 and the probe both bf16, has no teeth: the one-step-stale fault reads 1.2–1.7 × the healthy bf16
+    spread (`k9_bf16_2026-10-10/`, `6d51f98e`).
+- **THE bf16 PARITY RULE** (`gen3_r1_bf16_parity_v1`, `compile_regions._r1_judge` → `_r1_verdict_bf16`).
+  - **Three arms:** compiled bf16, eager bf16, and the fp32 eager REFERENCE (`_r1_reference`, under `fp32_scope`, proved
+    eager by the region counters).
+  - **DRIFT:** eager bf16 vs the reference, loss rel ≤ 0.014 and gradient rel-L2 ≤ 0.68.
+  - **ENVELOPE:** compiled vs the reference ≤ K × max(eager vs the reference, floor) for the loss (K 5.4, floor
+    bf16's unit roundoff 2^-9), the global gradient (6.4, floor 0.0141) and every judged parameter (12, floor
+    `R1_PARAM_BAR[regime]`).
+  - **Where it runs:** every rung of the startup gate and the canary, and lever C's graphed accumulation rung.
+  - **The bars** are 4 × the healthy maxima of window D's 20 GPU reads (`scripts/bf16_envelope.py`,
+    `scripts/derive_bf16_bars.py` → `results/bf16_parity_bars.json`). `compile_regions_bf16_test` re-derives them;
+    a `None` table refuses.
+- **Window D (GPU, 2026-10-10 19:36–19:57).**
+  - **The ride-along fix `3545b868`:** plain E update 53.59 → 53.24 s, host-blocked 2.36 → 0.50 s, GPU busy
+    93.2 → 95.1 %.
+  - **The bf16 envelope:** both bf16 arms were run-to-run bit-identical; R1 held one cache entry through every
+    reference arm (the class swap never recompiled).
+- **Tests.** NEW `compile_regions_bf16_test.py` (8, CPU; dynamo `eager` backend):
+  - refused without bars;
+  - a healthy pass whose reference arm runs fp32 and leaves bf16;
+  - a planted compiled error refused by the per-parameter envelope, and one by the global envelope;
+  - a planted drift;
+  - a mis-wired reference;
+  - an fp32 learner untouched;
+  - the committed bars equal the derivation.
+
+  NEW `trunk_precision_flag_test.py` (9):
+  - parse / resolve / inherit / migrate;
+  - `apply_training_hparams` sets the rounds, and the golden is fp32;
+  - `fp32_scope` restores exactly;
+  - THE K9(b) PROBE: bit-identical log-probs on a bf16 learner, and different without the scope (revert-checked);
+  - a T2 replica serves fp32.
+- **FINDINGS.**
+  1. **bf16 moves the micro-batch gradient 1–18 % rel-L2 from fp32's** (trained states 2–11 %). The rule's
+     per-parameter teeth are coarse: the median refusal threshold is 0.2–1.3 relative error. The strength A/B is
+     MANDATORY before adoption (PLAN.md §2d, a proposal).
+  2. The parity rule is not yet run on the flag path on the GPU (window E's `E_bf16_flag`).
+  3. The shared compile cache's key gains `trunk_precision` (and lever C's `learner_cudagraphs`), so every existing
+     shared entry misses once.
+- **Docs.** `designs/training/compile_flags.md` "T25 perf levers on R1", the training leaf, `designs/ops/flag_census.md`,
+  `PLAN.md` §1 / §2 / §5, the measurement's `README.md` (window D + F-PD-1..3), the ledger.

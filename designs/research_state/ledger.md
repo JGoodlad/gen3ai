@@ -24209,3 +24209,37 @@ diagnostics probes, the calibration): the traced plain update shows only the rid
 learner's per-optimizer-step drain, the calibration columns and the rank probe.
 
 Tag: **BUILT · T25 next lever 1 · ride-along host reads ~120 -> 1 per epoch-0 micro-batch (count, CPU) · bit-identical to HEAD (2 surfaces, a real update) · GPU measurement DEFERRED**
+
+### 2026-10-10 · MEASURED + BUILT · **T25 PHASE 2, WINDOW D + LEVER A's ADOPTION MACHINERY: the ride-along host-read fix measured at −0.35 s per end-state update (53.59 → 53.24 s; host-blocked 2.36 → 0.50 s; GPU busy 93.2 → 95.1 %); `--trunk-precision {fp32,bf16}` (config v155, default fp32) BUILT with bf16 in R1 ONLY (T2 and the K9(b) probe stay fp32, design (b)); THE bf16 PARITY RULE (DRIFT vs the fp32 eager reference + the compiled-vs-eager ENVELOPE) with bars DERIVED from 20 GPU reads; bf16 moves the micro-batch gradient 1–18 % rel-L2 from fp32's, so its strength A/B is MANDATORY (proposal, not registered)**
+
+**The ride-along fix (`3545b868`) on the GPU** (window D, `perf_phase_2026-10-10/README.md`; E at the production
+shape, pinned trees, paired in one window):
+
+| read | parent `5e399caf` | fix `3545b868` |
+|---|---|---|
+| plain update | 53.59 s | 53.24 s |
+| host-blocked time | 2.36 s | 0.50 s |
+| wrapped host-blocking calls per micro-batch | 33.4 | 2.1 |
+| GPU busy, 3 epochs | 93.2 % | 95.1 % |
+
+Its ledger entry's ~1 s ESTIMATE was high: the drain mostly overlapped queued GPU work.
+
+**Design (b) for bf16** (`k9_bf16_2026-10-10/`, `6d51f98e`; CPU): under design (a), with T2 and the probe both bf16,
+the one-step-stale fault reads 1.2–1.7 × its state's healthy bf16 spread, so no K9(b) bar separates it. Design (b)
+keeps K9(b) byte for byte, with epoch-0 |log r| ≤ 0.066 and clip fraction 0.
+- Built: `fp32_scope` on the probe forward and its scan.
+- Built: `slots.served_replica` resets every T2 replica to fp32. FINDING 7 there: a deep copy carried a bf16
+  learner's classes into T2.
+
+**The bf16 parity rule** (`compile_regions._r1_verdict_bf16`, `gen3_r1_bf16_parity_v1`) has three arms:
+compiled bf16, eager bf16, and the fp32 eager reference under `fp32_scope`.
+- **DRIFT:** eager vs ref. Loss rel ≤ 0.014 and gradient rel-L2 ≤ 0.68.
+- **ENVELOPE:** compiled vs ref ≤ K × max(eager vs ref, floor), with K = 5.4 (loss), 6.4 (gradient) and 12 (per
+  parameter). The floors are bf16's unit roundoff 2^-9 for the loss and the fp32 bars elsewhere.
+- **The derivation:** each bar is 4 × the healthy maximum over window D's 20 reads: fresh, six ladder rungs, and 1 / 3 / 6
+  bf16 updates × 2 slices. Every arm ran twice; both bf16 arms were bit-identical run to run, and R1 held one cache
+  entry through every fp32 reference arm.
+- **The teeth:** the median per-parameter refusal threshold is 0.2–1.3 relative error. That is coarse by
+  construction, because bf16's own gradient error is the resolution.
+
+Tag: **MEASURED (GPU, n = 2 reps per arm) · ride-along fix −0.7 % per E update · BUILT · bf16 parity bars DERIVED (20 reads) · bf16 changes the gradient 1–18 % rel-L2 ⇒ strength A/B MANDATORY (PLAN.md §2d, not registered)**

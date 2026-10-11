@@ -151,7 +151,77 @@ The third trunk round costs T2 about the share it costs the update. This matches
 wait (+11 %). **E's T2 is NOT measured**: E_stack passed its buckets out of order and the service refused them; the
 harness now sorts them.
 
+## Window D: the ride-along host-read fix, the bf16 parity envelope (19:36–19:57, file-based handoff)
+
+**Job 1: the ride-along host-read fix (`3545b868`) against its parent (`5e399caf`).**
+- Both runs are E at the production shape, pinned to extracted trees, with `--profile --profile-epochs 3 --sync-sites`.
+- The comparator is window C's `E_stack` (HEAD `15982f6c`).
+- Both pinned runs passed the gate. Load1 was 4.7–6.0; no other GPU process ran.
+
+| read | E_stack (window C) | E_ride_before (`5e399caf`) | E_ride_after (`3545b868`) |
+|---|---|---|---|
+| plain update (s) | 53.81 | 53.59 | **53.24** (−0.35 s, −0.7 %) |
+| 1-epoch calls (s) | 6.69, 6.70 | 6.50, 6.51 | 6.34, 6.35 |
+| first-epoch overhead (s) | 1.46 | 1.27 | 1.14 |
+| marginal epoch (s) | 5.235 | 5.232 | 5.210 |
+| GPU busy, 3 profiled epochs | 92.1 % | 93.2 % | **95.1 %** |
+| wrapped host-blocking calls per micro-batch | 33.4 | 33.4 | **2.1** |
+| host-blocked time, 3 epochs (s) | 2.22 | 2.36 (1.85 at `ridealong_heads.py:466`) | **0.50** (0.28 at the one batched transfer) |
+| memcpy + memset events | 26,539 | 26,539 | 21,644 |
+
+**Read.**
+- The fix does what it says: the epoch-0 drain is gone, from ~120 reads to 1 batched transfer per micro-batch, and
+  GPU busy is up 1.9 pp.
+- The wall gain is **0.35 s per update**, not the ~1 s ESTIMATE. Most of the old drain overlapped queued GPU work, so
+  it did not add its whole length to the wall.
+- The two 1-epoch reps per arm agree to 0.01 s, so the difference is real.
+- **Calibration.** E_stack → E_ride_before (the same code but 2 commits) moved 0.22 s at a lower load1 (8 → 5). Tool
+  drift between windows is therefore ~0.2 s. Compare only within a window.
+
+**Job 2: the bf16 parity ENVELOPE** (`scripts/bf16_envelope.py` on the `3545b868` tree; `results/window_D/E_bf16_envelope.json`).
+- **Setup.** One compiled-bf16 install of `--arch endstate` at B = 2,048 (compile + prewarm 243 s).
+- **Arms.** On the gate's own rows (slices 0 and 1): compiled bf16 ×2, eager bf16 ×2 and eager fp32 ×2.
+- **States.** Fresh, the ladder rungs (0.05 × 4 seeds, 0.1 × 2), and 1 / 3 / 6 real bf16 updates.
+- **Run-to-run.** Both bf16 arms were bit-identical on their repeat: on this GPU, eager and compiled bf16 are
+  deterministic run to run.
+- **Recompiles.** R1's dynamo cache held 1 entry throughout, so the fp32 reference arm's class swap never
+  recompiled.
+
+| quantity (bf16 vs the fp32 eager reference) | range over the 20 reads |
+|---|---|
+| eager loss rel | 2.5e-5 – 3.26e-3 |
+| eager gradient rel-L2 | **0.010 – 0.169** (trained states 0.02–0.11) |
+| compiled gradient rel-L2 | 0.012 – 0.183 |
+| decision, legal log-prob \|Δ\| (eval, no grad): p50 / max | 8e-4 – 9e-3 / 5e-3 – 0.12 |
+| decision, V \|Δ\| max | 7e-5 – 9.4e-3 |
+
+**The derived bars** (`scripts/derive_bf16_bars.py` → `results/bf16_parity_bars.json`; PLAN.md §2a):
+- DRIFT: loss 0.014 and gradient rel-L2 0.68, each 4 × the healthy maxima 3.26e-3 / 0.169.
+- ENVELOPE K: loss 5.4, gradient 6.4, per parameter 12, each 4 × the healthy maximum ratios 1.35 / 1.58 / 2.94.
+- **The loss floor is bf16's unit roundoff 2^-9.** Under the fp32 floor of 1e-4, one read's eager loss error landed
+  at 2.5e-5 by chance while the compiled one read 8.5e-4. That made an 8.5 × "ratio" out of rounding luck alone, and
+  K_loss = 35.
+
+**Read.**
+- **The bf16 trunk moves the micro-batch GRADIENT by 1–18 % relative L2 from fp32's.** This is a real numerics
+  change, which is why its strength A/B is mandatory (PLAN.md §2d).
+- The micro-batch figure overstates the optimizer step's, because rounding errors from different rows partly average
+  over the 32-micro-batch accumulation (ESTIMATE, ~√32 smaller if they are independent; NOT measured).
+- **The per-parameter TEETH are coarse.** The refusal threshold, K × max(own bf16 error, the fp32 bar), has a median
+  over judged parameters of 0.2–1.3 relative error by state. So the rule refuses a dropped or sign-flipped path
+  gradient (error 1–2) on most parameters, but not a 10 % one.
+- **What it still catches at fp32 strength:** non-finite gradients, mis-wired arms and a broken reference.
+- **Rule 8.** Every healthy read sits ≤ 25 % of the way to its bar.
+
 ## Findings (standing rule 7)
+
+- **F-PD-1 (the ride-along fix's gain).** It is −0.35 s per E update (−0.7 %), with host-blocked time 2.36 → 0.50 s
+  and GPU busy 93.2 → 95.1 %. The ~1 s ESTIMATE was high because the drain overlapped GPU work.
+- **F-PD-2 (bf16 moves the gradient).** On the gate's rows, eager bf16's micro-batch gradient is 1–18 % rel-L2 from
+  fp32's (trained 2–11 %). The bf16 parity rule's per-parameter teeth are coarse by construction (median refusal
+  threshold 0.2–1.3 relative error). The strength A/B is mandatory before adoption.
+- **F-PD-3 (the scalar floor).** A SCALAR's bf16 error can land near zero by chance, so the loss envelope's floor is
+  bf16's unit roundoff, not fp32's 1e-4.
 
 - **F-PC-1 (harness).** `--t2 256,64` was refused (`ServiceSpec: buckets must be strictly ascending`), so E's T2 is
   lost. Fixed for later jobs; T2_P / T2_R ran with it.
@@ -200,3 +270,5 @@ harness now sorts them.
   window B. Raw traces are LOCAL (`~/gen3ai_archive/perf_phase_2026-10-10/traces/`).
 - `results/window_C/{E_stack,T2_P,T2_R}.json` + `logs/` (incl. the two launches' launcher output) + `window.log`:
   window C.
+- `results/window_D/{E_ride_before,E_ride_after,E_bf16_envelope}.json` + `logs/` + `window.log`: window D;
+  `results/bf16_parity_bars.json`: the derived bf16 bars (`scripts/derive_bf16_bars.py`); `scripts/bf16_envelope.py`.

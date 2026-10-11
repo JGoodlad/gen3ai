@@ -599,3 +599,11 @@ class ModelVersionFields:
     # compared, RECORDED as a regime boundary (which snapshots enter the pool) and `_resolve`-inherited.
     # A pre-v129 config migrates to False — the only possible past.
     promotion_sprt: bool = False
+    # ---- gen3_trunk_precision_flag_v1 (config v155) — THE LEARNER'S TRUNK PRECISION (T25 lever A) ------------
+    # `--trunk-precision {fp32,bf16}`: the LEARNER's trunk rounds under bf16 autocast inside the training
+    # micro-step R1 (`agents/model/trunk_precision.py`); T2, the eval core, every snapshot and the K9(b) probe
+    # stay fp32 (they build from a state dict, or run under `fp32_scope`), so the SERVED forward and every weight
+    # shape are unchanged — never compared by check_compatible (a frozen opponent's forward does not read it).
+    # TRAINING numerics, so RECORDED (which gradients a run's weights came from) and `_resolve`-inherited: a
+    # flagless resume of a bf16 run stays bf16. A pre-v155 config migrates to "fp32" — the only possible past.
+    trunk_precision: str = "fp32"
