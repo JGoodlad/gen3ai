@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,262-line file. **The ledger itself is append-only and is never edited by this**;
+24,301-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**842 headings · 787 dated · 2026-08-01 → 2026-10-10 · ledger 24,262 lines.**
+**843 headings · 788 dated · 2026-08-01 → 2026-10-11 · ledger 24,301 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -862,3 +862,4 @@ rename.
   - `L24178` · `2026-10-10` · BUILT · **T25 NEXT LEVER 1: the ride-along heads' micro-batch path makes ONE host read where it made ~120 (the one `.item()` at `ridealong_heads.py:466` was the FIRST of ~120): host mirrors for the RND statistics, device gates for the label guards, deferred + one-transfer meters, one transfer for the verdicts; every logged value, weight, Adam state and the RNG bit-identical to HEAD (2 ride-along surfaces × a real `train()`); GPU effect UNMEASURED**
   - `L24213` · `2026-10-10` · MEASURED + BUILT · **T25 PHASE 2, WINDOW D + LEVER A's ADOPTION MACHINERY: the ride-along host-read fix measured at −0.35 s per end-state update (53.59 → 53.24 s; host-blocked 2.36 → 0.50 s; GPU busy 93.2 → 95.1 %); `--trunk-precision {fp32,bf16}` (config v155, default fp32) BUILT with bf16 in R1 ONLY (T2 and the K9(b) probe stay fp32, design (b)); THE bf16 PARITY RULE (DRIFT vs the fp32 eager reference + the compiled-vs-eager ENVELOPE) with bars DERIVED from 20 GPU reads; bf16 moves the micro-batch gradient 1–18 % rel-L2 from fp32's, so its strength A/B is MANDATORY (proposal, not registered)**
   - `L24247` · `2026-10-10` · MEASURED · **T25 WINDOW E (the last during the closing test): `--trunk-precision bf16` on its FLAG path cuts the end-state update 22.6 % (53.21 → 41.17 s; the bf16 parity rule and the canary PASS); `--t2-lead-trainee` −5.8 % of the T2 host step, bit-identical; `--learner-cudagraphs on` FAILS at its own startup accumulation rung (a CUDAGraphs output overwritten before AccumulateGrad read it; an untyped RuntimeError)**
+  - `L24263` · `2026-10-11` · DESCRIPTIVE (POST-HOC, banked rows) · **VALUE DISCRIMINATION FOR SEARCH, the review's reads: DECISIONS, not resolved pairs. An 8-rollout ORACLE leaf's argmax over all legal actions beats the policy's own pick by +0.062 win probability per decision [+0.045, +0.079] (1 rollout +0.025, the critic +0.008 [−0.005, +0.021]); today's shared-seed pairing is worth VRF 1.057 [1.045, 1.072]; the old 2·SE acting rule resolved only 5–7 % of pairs at 4 rollouts, which is why the playout arm bought nothing**

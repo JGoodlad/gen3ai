@@ -24259,3 +24259,42 @@ The bf16 speed is real, but the adoption question is STRENGTH, since bf16 moves 
 (F-PD-2). PLAN.md §2d's A/B is MANDATORY and NOT registered.
 
 Tag: **MEASURED (GPU, n = 2 reps per arm, one window) · bf16 −22.6 % per E update · lead lanes −5.8 % T2 step · lever C BROKEN on the GPU (follow-up) · bf16 adoption PENDING its strength A/B**
+
+### 2026-10-11 · DESCRIPTIVE (POST-HOC, banked rows) · **VALUE DISCRIMINATION FOR SEARCH, the review's reads: DECISIONS, not resolved pairs. An 8-rollout ORACLE leaf's argmax over all legal actions beats the policy's own pick by +0.062 win probability per decision [+0.045, +0.079] (1 rollout +0.025, the critic +0.008 [−0.005, +0.021]); today's shared-seed pairing is worth VRF 1.057 [1.045, 1.072]; the old 2·SE acting rule resolved only 5–7 % of pairs at 4 rollouts, which is why the playout arm bought nothing**
+
+The independent review of `designs/endstate/design_value_discrimination.md` (`2ba90cc0`, `86da145a`) read the CRN
+label refit's committed held-out rows (`crn_label_refit_2026-10-06/rows/`: 563 Lane S turns, EVERY legal action on the
+SAME 32 `sodium,` seeds, `rb_x5ab_blob_s1001` @ 15.05M greedy on both sides, the Rust core, ORACLE world: the playouts
+know both real teams). Three scripts, outputs beside them
+(`measurements/value_disc_review_2026-10-11/`); battle-clustered bootstrap, `default_rng(20261011)`. No playout was run.
+
+| read | value [95 %] |
+|---|---|
+| VRF(terminal), shared seeds vs unpaired, all 10,667 held-out pairs | **1.057 [1.045, 1.072]** (ρ 0.059) |
+| contested turns all pairs / top1\|top2 / move-move | 1.086 [1.052, 1.125] / 1.125 [1.039, 1.221] / 1.276 [1.194, 1.381] |
+| derangement VRF (seed j vs j+1; must read 1) | 1.000 [0.996, 1.005] |
+| old acting rule (`|mean d| ≥ 2·SE`, n ≥ 4) resolved share at R = 4 / 8 / 16 / 32, contested pairs | 6.7 / 15.3 / 17.7 / 26.9 % |
+| DECISION IMPROVEMENT over the policy's top-1, all legal actions, 468 eligible free turns, win scale | **LEAF-K8 +0.062 [+0.045, +0.079]** · LEAF-K1 +0.025 [+0.012, +0.037] · CRITIC +0.008 [−0.005, +0.021] |
+| paired: LEAF-K8 − CRITIC / LEAF-K8 − LEAF-K1 | [+0.038, +0.069] / [+0.025, +0.050] |
+| by the policy's top-2 gap: torn 40 % (187) / most decided 20 % (94) | LEAF-K8 +0.049 [+0.028, +0.073] / +0.082 [+0.044, +0.125] |
+| 3 options (top1, top2, a hash-chosen random), contested, 179 turns | pairwise accuracy CRITIC 0.609 vs LEAF-K8 0.604; improvement CRITIC +0.0001 vs LEAF-K8 +0.013 |
+
+**Scorer / referee seed DISJOINTNESS, confirmed from the code** (this entry's author, not the reviewer): the truth T is
+`O[8:32]` (seeds 8–31, `crn_label_refit_2026-10-06/refit.py` L215), LEAF-K is `O[:K]` (seeds 0..K−1, L218), and the
+critic BASE scores the one-ply successors captured on seeds 0–7 (`capture.py`, `turn_seeds(did, 8)`), a branch that
+ended within one ply scoring its own seed's terminal; the policy's top-1 comes from the banked root logits
+(`blob.probs.npz`), which no outcome touches. So no scorer ever sees seeds 8–31, and `focus_read.py`'s IMP(s) =
+mean[T(â_s) − T(top1)] is unbiased (no max over noisy truth means is taken; ties break to top-1).
+
+**What it says.** For a SEARCH DECISION the oracle playouts already carry value the critic lacks, and even one rollout
+per action carries some; resolving each pair at 2 SE (the deleted acting rule) is the wrong target and is what threw
+the leaf's value away. More rollouts still pay (K8 − K1 clear of zero), so the owner's "10×" question is not moot,
+but the first rollouts buy the most. Pairing in today's dice mode is worth ~6–13 %. The value is NOT concentrated on
+torn states on this checkpoint.
+
+**What it does not say.** ORACLE world (an honest, determinized leaf may keep much less); off-distribution states for
+rb-blob (ai_v14-lineage traces); one pre-end-state checkpoint; a per-decision gain in a greedy continuation's Q is not
+a per-game win rate. The pilot (`design_value_discrimination.md` §7) re-measures on the end-state and production seeds'
+own states.
+
+Tag: **DESCRIPTIVE · POST-HOC on banked rows · ORACLE world · one checkpoint (rb-blob), off-distribution · no registered verdict**
