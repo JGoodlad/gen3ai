@@ -123,6 +123,15 @@ class ServiceSpec:
     #: docs): the first informative rung judges the slot, none ⇒ `VacuousParity`. EMPTY disables
     #: the perturbed path, so a flat slot is REFUSED — never passed.
     perturb_ladder: Tuple[Tuple[float, int], ...] = PERTURB_LADDER
+    #: LEAD SLOTS (gen3_t2_lead_lanes_v1; T25 perf lever 4, default EMPTY = OFF): global slot ids that a
+    #: flush LAUNCHES FIRST, each on a lane of its OWN (lanes 0..k-1); every other slot round-robins over
+    #: the remaining lanes in slot order. Meant for the trainee's slot(s): its bucket-N replay is the
+    #: longest graph of a host step, and with the default plan (slot s on lane s % lanes, launched in slot
+    #: order) it is launched LAST, behind up to three opponent graphs on its lane. Only the launch order
+    #: and the lane binding change — every graph computes the same forward on the same rows, and the
+    #: packing (so every output offset) is unchanged. EMPTY = the default plan, byte-identical. With
+    #: more than one lane it needs MORE lanes than lead slots; on one lane (CPU) only the order changes.
+    lead_slots: Tuple[int, ...] = ()
 
     def validate(self) -> None:
         if not self.groups:
@@ -161,6 +170,14 @@ class ServiceSpec:
                              f"in ascending order, 0 < scale <= {PERTURB_MAX_SCALE} (the bars' "
                              f"calibrated range), offset >= 0 — or empty; got {self.perturb_ladder}")
         n_slots = sum(int(g.n_slots) for g in self.groups)
+        lead = tuple(int(x) for x in self.lead_slots)
+        if lead and (len(set(lead)) != len(lead) or min(lead) < 0 or max(lead) >= n_slots):
+            raise ValueError(f"ServiceSpec: lead_slots must be distinct declared slot ids (0..{n_slots - 1}), "
+                             f"got {self.lead_slots}")
+        if lead and int(self.lanes) > 1 and int(self.lanes) <= len(lead):
+            raise ValueError(f"ServiceSpec: {len(lead)} lead slot(s) each take a lane of their own, so they need "
+                             f"MORE lanes than lead slots (lanes {self.lanes}); declare more lanes or fewer "
+                             "lead slots")
         caps = tuple(int(c) for c in self.slot_bucket_caps)
         if caps and (len(caps) != n_slots or min(caps) < b[0]):
             raise ValueError(f"ServiceSpec: slot_bucket_caps must name one cap >= the smallest bucket "

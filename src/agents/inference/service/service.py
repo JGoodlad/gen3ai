@@ -192,7 +192,8 @@ class InferenceService:
                              max_rows=int(self.spec.max_rows_per_flush), lanes=int(self.spec.lanes),
                              obs_dim=self.obs_dim, n_actions=self.n_actions,
                              artifact_dir=self.spec.artifact_dir,
-                             slot_caps=tuple(int(c) for c in self.spec.slot_bucket_caps))
+                             slot_caps=tuple(int(c) for c in self.spec.slot_bucket_caps),
+                             lead_slots=tuple(int(x) for x in self.spec.lead_slots))
         if self.spec.backend == "aot":
             from agents.inference.service import aot
 
@@ -518,6 +519,8 @@ class InferenceService:
         out["graphs"] = len(eng.graphs) if eng is not None else 0
         out["packages"] = len(eng.packages) if eng is not None else 0
         out["lanes"] = eng.n_lanes if eng is not None else 0
+        if self.spec.lead_slots:                # gen3_t2_lead_lanes_v1 (absent when OFF)
+            out["lead_slots"] = [int(x) for x in self.spec.lead_slots]
         out["startup_seconds"] = dict(self.startup_seconds)
         out["load_seconds"] = float(self.load_seconds)
         out["parity_paths"] = dict(self.parity_paths)

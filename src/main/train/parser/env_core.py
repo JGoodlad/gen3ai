@@ -88,6 +88,13 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "at N = 256 before). 0 = uncapped (every slot captures every bucket).")
     parser.add_argument("--t2-lanes", "--t2_lanes", dest="t2_lanes", type=int, default=None,
                         help="Inference lanes (CUDA streams); 0 (default) = min(slots, 8) on CUDA, 1 on CPU.")
+    parser.add_argument("--t2-lead-trainee", "--t2_lead_trainee", dest="t2_lead_trainee", action=BoolFlag,
+                        default=None,
+                        help="(T25 perf lever 4, default OFF; gen3_t2_lead_lanes_v1) the trainee's T2 slot(s) LEAD "
+                             "every flush: launched first, each on a CUDA lane of its own, the other slots "
+                             "round-robin over the remaining lanes. Launch order and lane binding only — every "
+                             "decision is the same forward on the same rows. Needs more lanes than trainee slots "
+                             "on CUDA; on CPU (one lane) only the order changes.")
     parser.add_argument("--t2-backend", "--t2_backend", dest="t2_backend", choices=("graph", "eager", "aot"),
                         default=None,
                         help="Inference backend; default 'graph' on CUDA, 'eager' on CPU.")

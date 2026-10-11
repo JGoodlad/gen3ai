@@ -22,6 +22,11 @@ order on its stream, so the rule holds by construction. Different lanes run conc
 is the only way several SMALL per-slot batches can share the GPU without changing the model (a
 single multi-slot forward over the stacked weights — ``torch.func.vmap`` — is blocked by the
 extractor's in-place writes into freshly created tensors; measured 2026-09-29, T2 PROGRESS).
+
+LEAD SLOTS (gen3_t2_lead_lanes_v1, ``ServiceSpec.lead_slots``; default EMPTY = the plan above). The
+declared lead slots (the trainee's) each get a lane of their own (lanes 0..k-1), every other slot
+round-robins over the rest in slot order, and step 3 LAUNCHES the lead slots' runs first. Packing (step
+1) is unchanged, so every output offset is too; each graph computes the same forward on the same rows.
 """
 from __future__ import annotations
 
@@ -36,6 +41,36 @@ from agents.training.lifecycle_decl import startup_builder
 
 # One request's rows, addressed to a slot: (global slot id, group index, slot-in-group, obs, mask).
 PlanItem = Tuple[int, int, int, np.ndarray, np.ndarray]
+
+
+def lane_plan(n_slots: int, n_lanes: int, lead: Sequence[int] = ()) -> List[int]:
+    """The lane of every global slot. No lead slots (or one lane): slot ``s`` on lane ``s % n_lanes`` — the
+    default plan. Lead slots (gen3_t2_lead_lanes_v1): the ``j``-th lead slot alone on lane ``j``, every
+    other slot, in slot order, round-robin over lanes ``k .. n_lanes - 1`` (``ServiceSpec.validate`` holds
+    ``n_lanes > k`` whenever ``n_lanes > 1``)."""
+    if not lead or n_lanes <= 1:
+        return [s % n_lanes for s in range(n_slots)]
+    k = len(lead)
+    if n_lanes <= k:
+        raise ValueError(f"lane_plan: {k} lead slot(s) need more than {n_lanes} lanes")
+    out = [-1] * n_slots
+    for j, s in enumerate(lead):
+        out[int(s)] = j
+    rest = [s for s in range(n_slots) if out[s] < 0]
+    for r, s in enumerate(rest):
+        out[s] = k + r % (n_lanes - k)
+    return out
+
+
+def launch_order(runs: Sequence[Tuple[int, int, int, int]], ends: Sequence[int],
+                 lead: Sequence[int] = ()) -> List[Tuple[Tuple[int, int, int, int], int]]:
+    """``(run, end)`` pairs in LAUNCH order: slot order (the packing order), the lead slots' runs moved to
+    the front in their declared order (gen3_t2_lead_lanes_v1). No lead slots: exactly ``zip(runs, ends)``."""
+    pairs = list(zip(runs, ends))
+    if not lead:
+        return pairs
+    rank = {int(s): j for j, s in enumerate(lead)}
+    return sorted(pairs, key=lambda p: (rank.get(int(p[0][0]), len(rank)),))
 
 
 def decide(module: torch.nn.Module, obs: torch.Tensor, mask: torch.Tensor
@@ -53,7 +88,7 @@ class Engine:
     def __init__(self, *, groups: List[SlotGroup], slots: List[Tuple[int, int]],
                  device: torch.device, buckets: Tuple[int, ...], backend: str, max_rows: int,
                  lanes: int, obs_dim: int, n_actions: int, artifact_dir: Optional[str] = None,
-                 slot_caps: Sequence[int] = ()):
+                 slot_caps: Sequence[int] = (), lead_slots: Sequence[int] = ()):
         self.groups, self.slots, self.device = groups, slots, device
         self.buckets, self.backend, self.R = buckets, backend, int(max_rows)
         # gen3_slot_bucket_caps_v1: the buckets each slot captures and serves (<= its cap, at least the
@@ -63,6 +98,9 @@ class Engine:
             tuple(b for b in buckets if b <= c) or (buckets[0],) for c in caps]
         self.cuda = device.type == "cuda"
         self.n_lanes = int(lanes) if self.cuda else 1
+        # gen3_t2_lead_lanes_v1: the lead slots launch first, each on its own lane (module docs).
+        self.lead: Tuple[int, ...] = tuple(int(s) for s in lead_slots)
+        self._lane: List[int] = lane_plan(len(slots), self.n_lanes, self.lead)
         R, D, A = self.R, int(obs_dim), int(n_actions)
         self.D, self.A = D, A
         pin = self.cuda
@@ -98,7 +136,7 @@ class Engine:
 
     # ------------------------------------------------------------------ build
     def lane_of(self, slot: int) -> int:
-        return int(slot) % self.n_lanes
+        return self._lane[int(slot)]
 
     def _on(self, lane: int) -> Any:
         import contextlib
@@ -228,11 +266,11 @@ class Engine:
             ev = torch.cuda.Event()
             ev.record(main)
             self.in_events[k] = ev
-        # 3. per slot, per chunk, on the slot's lane
+        # 3. per slot, per chunk, on the slot's lane (the lead slots' runs launched first)
         ends = [r[3] for r in runs[1:]] + [rows]
         per_bucket: Dict[int, int] = {}
         used = set()
-        for (s, gi, i, start), end in zip(runs, ends):
+        for (s, gi, i, start), end in launch_order(runs, ends, self.lead):
             lane = self.lane_of(s)
             if self.cuda and lane not in used:
                 self.streams[lane].wait_stream(main)

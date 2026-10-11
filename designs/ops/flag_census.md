@@ -14,8 +14,8 @@
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
 | DELETED by P11 (the whole census: B1-B5, P11b, P11c, P11d) | 37 | 0 | 37 |
-| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`; +1, `--obs-facts`, the X5 version break's part 3 2026-10-07; +1, `--allow-low-disk`, the disk guard 2026-10-09) | 168 | 9 | 177 |
-| verdicts NOW | KEEP 167 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
+| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`; +1, `--obs-facts`, the X5 version break's part 3 2026-10-07; +1, `--allow-low-disk`, the disk guard 2026-10-09; +1, `--t2-lead-trainee`, T25 perf lever 4 2026-10-10) | 169 | 9 | 178 |
+| verdicts NOW | KEEP 168 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -298,6 +298,7 @@
 | `--t2-buckets` | — | 0 / 0 | `--arch production`: `recipe.sizing.t2_buckets` = `null`; `recipe.sizing.t2_buckets` | **KEEP** |
 | `--t2-opponent-bucket-cap` | — | 0 / 0 | the T2 graph-pool memory cap (`gen3_slot_bucket_caps_v1`) | **KEEP** |
 | `--t2-lanes` | — | 0 / 0 | `--arch production`: `recipe.sizing.t2_lanes` = `null`; `recipe.sizing.t2_lanes` | **KEEP** |
+| `--t2-lead-trainee` | — | 0 / 0 | a registered T25 perf lever (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md` §1 row 6, `gen3_t2_lead_lanes_v1`): default OFF, adopted or deleted on its paired GPU read | **KEEP** |
 | `--t2-backend` | — | 0 / 0 | `graph` / `eager` / `aot` inference backends (`inference/service`) | **KEEP** |
 | `--rust-eval-envs` | — | 0 / 0 | the Rust eval core's env count (`rust_eval.build`) | **KEEP** |
 | `--behaviour-check` | — | 0 / 0 | K9(b), default `fatal` (`rust_rollout/consistency.py`) | **KEEP** |

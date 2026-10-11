@@ -112,7 +112,7 @@ SUBMODULE_PATHS = ("deps/pokemon-showdown",)
 #: flag forces a decision rather than slipping past the key.
 COMPILE_ARG_KEYS = ("batch_size", "compile_trainer", "device", "device_batch", "grad_checkpointing",
                     "learner_cudagraphs",
-                    "t2_backend", "t2_buckets", "t2_lanes", "t2_opponent_bucket_cap",
+                    "t2_backend", "t2_buckets", "t2_lanes", "t2_lead_trainee", "t2_opponent_bucket_cap",
                     "trunk_precision")      # R1 traces the trunk rounds' bf16 / fp32 classes (T25 lever A)
 NOT_COMPILE_ARG_KEYS = ("checkpoint_every_steps",)     # matched by the regex; a save cadence
 _ENV_PREFIXES = ("TORCHINDUCTOR_", "TORCHDYNAMO_", "TORCH_COMPILE", "TRITON_", "PYTORCH_",

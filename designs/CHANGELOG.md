@@ -13931,3 +13931,34 @@ read both cells for its end-of-turn rule and found them wrong.
      shared entry misses once.
 - **Docs.** `designs/training/compile_flags.md` "T25 perf levers on R1", the training leaf, `designs/ops/flag_census.md`,
   `PLAN.md` §1 / §2 / §5, the measurement's `README.md` (window D + F-PD-1..3), the ledger.
+## 2026-10-10 — T2 LEAD LANES: the trainee's replay launched first, on a lane of its own (`--t2-lead-trainee`, `gen3_t2_lead_lanes_v1`; T25 perf lever 4; default OFF; no config / obs / signature bump; decisions bit-identical)
+
+- **Why.** T2 is ~70 % of a rollout host step (21.5 of 31.1 ms at N = 256, the 2026-10-03 profile, P): 21 CUDA-graph
+  replays a step (20 pool slots + the trainee), ~590 kernels each, over 8 lanes. With the default plan (slot `s` on lane
+  `s % 8`, launched in slot order) production's trainee slot (24 of 31) shares lane 0 with pool slots 0, 8 and 16 and is
+  launched LAST, ~6 ms of host launches in — so the longest replay of the step (bucket 256; 6.38 ms alone vs 3.17 ms at
+  bucket 64, window C) queues behind three opponent replays: lane 0 carries ~16 ms of isolated replay time against
+  ~6–10 ms on every other lane (ESTIMATE from window C's single-slot times).
+- **What.** `ServiceSpec.lead_slots` (default `()`): each lead slot alone on lanes 0..k-1, every other slot round-robin
+  over the rest in slot order (`engine.lane_plan`), and the lead slots' runs launched first (`engine.launch_order`).
+  Packing is unchanged, so every output offset is; the graphs and rows are the same, so decisions are bit-identical by
+  construction. `RustEnvDecl.lead_trainee` (the trainee's slots lead), the trainer flag `--t2-lead-trainee` (BoolFlag,
+  default OFF; keyed in `compile_cache_shared.COMPILE_ARG_KEYS` beside `t2_lanes`, since it rebinds captures to
+  lanes), `env_core.t2.lead_trainee` in `metadata.json` when ON only, `stats()["lead_slots"]` when ON only. A typed
+  refusal for lead slots that are not distinct declared slots, or that leave no lane for the rest on CUDA.
+- **Tests** (`src/agents/inference/service/lead_lanes_test.py`, CPU, ~9 s): OFF = `s % lanes` and slot order; ON = the
+  dedicated lanes and lead-first order; ON's flush BIT-IDENTICAL to OFF's (offsets, logp, V, greedy) with the batches
+  only reordered; the validation; the flag reaching the decl, the spec slots and the stamp. Revert-checked: each of the
+  seven halves (launch order, lane plan, `lane_of`, validation, decl, stamp, stats) reverted alone fails the file.
+- **The paired GPU read** (`src/agents/inference/service/lead_lanes_benchmark.py`): two services at production's slot
+  layout (20 active + 4 spare pool slots, the trainee at 24, 8 lanes, buckets 8 / 64 / 256, opponents capped at 64),
+  one OFF and one ON, interleaved blocks of host-step flushes (a seeded multinomial of 212 opponent rows + 245 trainee
+  rows), the flush (host launch) and wait medians per arm, the per-block ON / OFF ratio, ON's max |Δ| against OFF. CPU
+  smoke: max |Δ| 0.0, ratio 1.00 (one lane: nothing to gain on CPU, as expected).
+- **FINDINGS.** (1) The GPU effect is UNMEASURED (no lease); ESTIMATE −0.4 to −1.6 s per production cycle. (2) The
+  levers priced alongside (the program doc's Decision record, 2026-10-10): the grouped forward stays the largest
+  (−4 to −6 s, ESTIMATE) and still needs the model-wide out-of-place rewrite; TIGHTER OPPONENT BUCKETS need no code
+  (`--t2-buckets 8,16,32,64,256`; at N = 256 70 % of pool slot-steps replay 9–16 real rows at bucket 64; ~−2 s ESTIMATE)
+  and want their own window read; a multi-slot CUDA graph is dominated (same kernel count; graph-launch host cost
+  scales with nodes); the env-step / inference overlap was measured at 0.855× (2026-10-02). (3) With more than one
+  trainee slot (`--trainee-slots`) every one leads and takes a lane, including one nothing plays (the census's FINDING on that flag).

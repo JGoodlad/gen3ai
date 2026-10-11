@@ -186,6 +186,12 @@ Decision record). PER-SLOT CAPS (`gen3_slot_bucket_caps_v1`, `--t2-opponent-buck
 trainee's slot(s) capture the N-row bucket; every other slot (opponents, eval's) captures the buckets <= 64, rows
 beyond chunked — each lane's CUDA-graph pool is sized by its largest capture (8 lanes x 232 MiB uncapped at
 N = 256; `learner_lifecycle.md` "The update fit check").
+LEAD LANES (`--t2-lead-trainee`, `gen3_t2_lead_lanes_v1`, T25 perf lever 4, default OFF): the trainee's slot(s) are
+T2's LEAD slots — launched first in every flush, each on a CUDA lane of its own, every other slot round-robin over the
+remaining lanes (`RustEnvDecl.lead_trainee` → `ServiceSpec.lead_slots`; the startup line says "the trainee LEADS";
+`metadata.json`'s `env_core.t2.lead_trainee` is present only when ON). Launch order and lane binding only — the same
+forward on the same rows, bit-identical decisions. Its GPU effect is UNMEASURED: the paired read is
+`src/agents/inference/service/lead_lanes_benchmark.py` (the program doc's Decision record, 2026-10-10).
 EVAL's slots (M5 Lane H) are appended after the trainee's (`build_collector(extra_slots=)`: the trainee's
 eval slot, the sentinel slots, fixed opponents the plan does not already serve) — in the trainee's group
 when the architecture matches, so they reuse its compiled buckets; `col.extra_slots` names them and
