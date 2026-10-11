@@ -1,0 +1,49 @@
+{
+ "state": "perturb05",
+ "behaviour": "bf16",
+ "learner": "bf16",
+ "bar": 0.2,
+ "eps": 0.0005,
+ "chunk": 2048,
+ "healthy": {
+  "fatal": false,
+  "behaviour/max_abs_dlogp_judged": 0.005596160888671875,
+  "behaviour/excluded_frac": 0.08203125,
+  "behaviour/excluded_frac_before_flip": 0.0986328125,
+  "behaviour/rows_judged": 1880.0,
+  "behaviour/rows_judged_by_flip": 34.0,
+  "behaviour/max_abs_dlogp_current": 0.005596160888671875
+ },
+ "stale_one_adam_step_lr2.8e-05": {
+  "fatal": false,
+  "behaviour/max_abs_dlogp_judged": 0.00694727897644043,
+  "behaviour/excluded_frac": 0.08349609375,
+  "behaviour/excluded_frac_before_flip": 0.09619140625,
+  "behaviour/rows_judged": 1877.0,
+  "behaviour/rows_judged_by_flip": 26.0,
+  "behaviour/max_abs_dlogp_current": 0.00694727897644043
+ },
+ "stale_one_adam_step_lr0.0003": {
+  "fatal": false,
+  "behaviour/max_abs_dlogp_judged": 0.017665863037109375,
+  "behaviour/excluded_frac": 0.08154296875,
+  "behaviour/excluded_frac_before_flip": 0.0947265625,
+  "behaviour/rows_judged": 1881.0,
+  "behaviour/rows_judged_by_flip": 27.0,
+  "behaviour/max_abs_dlogp_current": 0.017665863037109375
+ },
+ "one_wrong_action_row": {
+  "fatal": true,
+  "message": "[K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 0.824 NOT < 0.2, excluded_frac 0.082 < 0.15; judged 1880 of 2048 rows \u2014 168 excluded within a relative margin 0.0005 of a selection / ",
+  "row_margin": 0.33989761405839974
+ },
+ "healthy_after": {
+  "fatal": false,
+  "behaviour/max_abs_dlogp_judged": 0.005596160888671875,
+  "behaviour/excluded_frac": 0.08203125,
+  "behaviour/excluded_frac_before_flip": 0.0986328125,
+  "behaviour/rows_judged": 1880.0,
+  "behaviour/rows_judged_by_flip": 34.0,
+  "behaviour/max_abs_dlogp_current": 0.005596160888671875
+ }
+}

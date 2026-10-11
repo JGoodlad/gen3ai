@@ -1,0 +1,71 @@
+{
+ "backend": "eager",
+ "torch": "2.8.0+cu126",
+ "bf16_differs_from_fp32": {
+  "lp": true,
+  "full": true,
+  "m": false
+ },
+ "bf16_vs_fp32_max_abs_dlogp": 0.007723093032836914,
+ "A_precision_inside": "fp32",
+ "A_precision_after": "bf16",
+ "A_inside_equals_fp32": {
+  "lp": true,
+  "full": true,
+  "m": true
+ },
+ "A_after_equals_bf16_before": {
+  "lp": true,
+  "full": true,
+  "m": true
+ },
+ "B_flag_off_equals_bf16": {
+  "lp": true,
+  "full": true,
+  "m": true
+ },
+ "B_flag_on_equals_fp32": {
+  "lp": true,
+  "full": true,
+  "m": true
+ },
+ "B_after_equals_bf16": {
+  "lp": true,
+  "full": true,
+  "m": true
+ },
+ "set_trunk_precision_skips_foreign_subclass": true,
+ "trunk_precision_of_with_foreign_subclass": "fp32",
+ "restored_equals_bf16": {
+  "lp": true,
+  "full": true,
+  "m": true
+ },
+ "compiled": {
+  "eager_bf16_vs_fp32_max": 0.0969509482383728,
+  "A_class_swap": {
+   "graphs_after_first_call": 1,
+   "graphs_after_eager_scope_then_call": 1,
+   "graphs_after_compiled_call_inside_scope": 2,
+   "graphs_after_return": 2,
+   "compiled_bf16_equals_eager_bf16": true,
+   "compiled_bf16_vs_eager_bf16_max": 0.0,
+   "after_eager_scope_equals_first": true,
+   "inside_scope_output_is_fp32_class": 0.0,
+   "inside_scope_output_vs_stale_bf16": 0.0969509482383728,
+   "after_return_equals_first": true
+  },
+  "B_flag": {
+   "graphs_after_first_call": 3,
+   "graphs_after_eager_scope_then_call": 3,
+   "graphs_after_compiled_call_inside_scope": 4,
+   "graphs_after_return": 4,
+   "compiled_bf16_equals_eager_bf16": true,
+   "compiled_bf16_vs_eager_bf16_max": 0.0,
+   "after_eager_scope_equals_first": true,
+   "inside_scope_output_is_fp32_class": 0.0,
+   "inside_scope_output_vs_stale_bf16": 0.0969509482383728,
+   "after_return_equals_first": true
+  }
+ }
+}

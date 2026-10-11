@@ -1,0 +1,39 @@
+{
+ "state": "perturb05",
+ "behaviour": "fp32",
+ "learner": "fp32",
+ "bar": 0.0001,
+ "eps": 0.0002,
+ "chunk": 2048,
+ "healthy": {
+  "fatal": false,
+  "behaviour/max_abs_dlogp_judged": 8.344650268554688e-07,
+  "behaviour/excluded_frac": 0.083984375,
+  "behaviour/excluded_frac_before_flip": 0.09033203125,
+  "behaviour/rows_judged": 1876.0,
+  "behaviour/rows_judged_by_flip": 13.0,
+  "behaviour/max_abs_dlogp_current": 8.344650268554688e-07
+ },
+ "stale_one_adam_step_lr2.8e-05": {
+  "fatal": true,
+  "message": "[K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 0.00601 NOT < 0.0001, excluded_frac 0.0835 < 0.15; judged 1877 of 2048 rows \u2014 171 excluded within a relative margin 0.0002 of a select"
+ },
+ "stale_one_adam_step_lr0.0003": {
+  "fatal": true,
+  "message": "[K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 0.0174 NOT < 0.0001, excluded_frac 0.0835 < 0.15; judged 1877 of 2048 rows \u2014 171 excluded within a relative margin 0.0002 of a selecti"
+ },
+ "one_wrong_action_row": {
+  "fatal": true,
+  "message": "[K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 0.0182 NOT < 0.0001, excluded_frac 0.084 < 0.15; judged 1876 of 2048 rows \u2014 172 excluded within a relative margin 0.0002 of a selectio",
+  "row_margin": 0.33989761405839974
+ },
+ "healthy_after": {
+  "fatal": false,
+  "behaviour/max_abs_dlogp_judged": 8.344650268554688e-07,
+  "behaviour/excluded_frac": 0.083984375,
+  "behaviour/excluded_frac_before_flip": 0.09033203125,
+  "behaviour/rows_judged": 1876.0,
+  "behaviour/rows_judged_by_flip": 13.0,
+  "behaviour/max_abs_dlogp_current": 8.344650268554688e-07
+ }
+}

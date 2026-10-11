@@ -1,0 +1,416 @@
+{
+ "commit": "3545b868fc84350d8aeb3d41f59912d92f43de72",
+ "torch": "2.8.0+cu126",
+ "device": "cpu",
+ "t2_backend": "eager",
+ "threads": 4,
+ "state": "weights",
+ "weights_from": "/home/goodlad/gen3ai_archive/k9_bf16_2026-10-10/trained_u6.pt",
+ "behaviour": "bf16",
+ "rows": 4096,
+ "chunk": 2048,
+ "n_envs": 16,
+ "n_steps": 256,
+ "seed": 1001,
+ "run_seed": 1001,
+ "mu_sha256": "ba7661617832c39a",
+ "selection_free": false,
+ "eps_grid": [
+  0.0002,
+  0.0005,
+  0.001,
+  0.002,
+  0.005,
+  0.01,
+  0.02,
+  0.05,
+  0.1,
+  0.2
+ ],
+ "variants": {
+  "bf16_eval_b2048": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9998408363431613,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.007929163998417681,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_train_nograd_b2048": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9998408363431613,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.007929163998417681,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_eval_b48": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9998408363431613,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.007929163998417681,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_eval_b16": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9998408363431613,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.007929163998417681,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_eval_b8": {
+   "rows": 1024,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.9998408363431613,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.007929163998417681,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_jitter": {
+   "rows": 4096,
+   "max_diff": 1.6014305237350979e-06,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 1.591504705800162e-12,
+     "at_margin": 0.9999957808605631,
+     "p999_diff": 1.3153922395758855e-12,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 8.647260685279434e-11,
+     "at_margin": 0.9995690722022765,
+     "p999_diff": 6.832916010779646e-11,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 1.6014305237350979e-06,
+     "at_margin": 0.026761601222976817,
+     "p999_diff": 1.325198173491443e-06,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_compiled_rounds_b48": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9998408363431613,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.007929163998417681,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "fp32_eval_b48": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9998408363431613,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.007929163998417681,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "fp32_jitter": {
+   "rows": 4096,
+   "max_diff": 1.6014305237350979e-06,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 1.591504705800162e-12,
+     "at_margin": 0.9999957808605631,
+     "p999_diff": 1.3153922395758855e-12,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.6138996138996139,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 8.647260685279434e-11,
+     "at_margin": 0.9995690722022765,
+     "p999_diff": 6.832916010779646e-11,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 1.6014305237350979e-06,
+     "at_margin": 0.026761601222976817,
+     "p999_diff": 1.325198173491443e-06,
+     "one_side_masked": 0
+    },
+    "op_reduction.py:120 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  }
+ },
+ "timings_s": {
+  "learner_bf16_s": 13.79,
+  "learner_fp32_s": 13.77,
+  "bf16_eval_b2048_s": 10.47,
+  "bf16_train_nograd_b2048_s": 10.6,
+  "bf16_eval_b48_s": 26.92,
+  "bf16_eval_b16_s": 61.42,
+  "bf16_eval_b8_s": 29.3,
+  "bf16_jitter_s": 11.92,
+  "bf16_compiled_rounds_b48_s": 30.41,
+  "fp32_eval_b48_s": 21.55,
+  "fp32_jitter_s": 9.96,
+  "fp64_s": 2.09
+ },
+ "wall_s": 492.2
+}

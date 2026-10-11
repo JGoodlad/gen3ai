@@ -1,0 +1,40 @@
+{
+ "device": "cpu",
+ "torch": "2.8.0+cu126",
+ "round_0": {
+  "class": "Bf16BiasedEncoderLayer",
+  "grad_vs_nograd_max": 0.0,
+  "math_kernel_grad_vs_nograd_max": 0.0,
+  "default_vs_math_nograd_max": 0.024516582489013672,
+  "default_vs_math_grad_max": 0.024516582489013672,
+  "linears": [
+   "Linear",
+   "Linear",
+   "Linear",
+   "Linear"
+  ],
+  "linear_grad_vs_nograd_max": 0.0
+ },
+ "round_1": {
+  "class": "Bf16BiasedEncoderLayer",
+  "grad_vs_nograd_max": 0.0,
+  "math_kernel_grad_vs_nograd_max": 0.0,
+  "default_vs_math_nograd_max": 0.023805618286132812,
+  "default_vs_math_grad_max": 0.023805618286132812,
+  "linears": [
+   "Linear",
+   "Linear",
+   "Linear",
+   "Linear"
+  ],
+  "linear_grad_vs_nograd_max": 0.0
+ },
+ "round_2": {
+  "class": "Bf16IdentityInitRound",
+  "grad_vs_nograd_max": 0.0,
+  "math_kernel_grad_vs_nograd_max": 0.0,
+  "default_vs_math_nograd_max": 0.01953125,
+  "default_vs_math_grad_max": 0.01953125,
+  "linears": []
+ }
+}

@@ -1,0 +1,795 @@
+{
+ "commit": "3545b868fc84350d8aeb3d41f59912d92f43de72",
+ "torch": "2.8.0+cu126",
+ "device": "cpu",
+ "t2_backend": "eager",
+ "threads": 4,
+ "arch": "production",
+ "state": "weights",
+ "weights_from": "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2001/checkpoints/checkpoint_9000119_steps.zip",
+ "behaviour": "bf16",
+ "rows": 4096,
+ "chunk": 2048,
+ "n_envs": 16,
+ "n_steps": 256,
+ "seed": 1001,
+ "run_seed": 1001,
+ "mu_sha256": "4ac0cdbda3badb48",
+ "selection_free": false,
+ "eps_grid": [
+  0.0002,
+  0.0005,
+  0.001,
+  0.002,
+  0.005,
+  0.01,
+  0.02,
+  0.05,
+  0.1,
+  0.2
+ ],
+ "variants": {
+  "bf16_eval_b2048": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.601593625498008,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2658765498518418,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999522250621379,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2405071037283889,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.999993917703164,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.99983912508792,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.011594537927240783,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999999975000003,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_train_nograd_b2048": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.601593625498008,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2658765498518418,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999522250621379,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2405071037283889,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.999993917703164,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.99983912508792,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.011594537927240783,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999999975000003,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_eval_b48": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.601593625498008,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2658765498518418,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999522250621379,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2405071037283889,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.999993917703164,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.99983912508792,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.011594537927240783,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999999975000003,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_eval_b16": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.601593625498008,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2658765498518418,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999522250621379,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2405071037283889,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.999993917703164,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.99983912508792,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.011594537927240783,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999999975000003,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_eval_b8": {
+   "rows": 1024,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.601593625498008,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 1023,
+     "max_diff": 0.0,
+     "at_margin": 0.2658765498518418,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.9999522250621379,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 1023,
+     "max_diff": 0.0,
+     "at_margin": 0.2405071037283889,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.999993917703164,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.99983912508792,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.011594537927240783,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 1024,
+     "max_diff": 0.0,
+     "at_margin": 0.9999999975000003,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_jitter": {
+   "rows": 4096,
+   "max_diff": 8.766940393242773e-06,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 3.823386052204114e-12,
+     "at_margin": 0.9999979977130997,
+     "p999_diff": 2.597865256248625e-12,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 9.437180226168351e-08,
+     "at_margin": 0.6067841258290797,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 4074,
+     "max_diff": 4.476666397346812e-06,
+     "at_margin": 0.029322386246244163,
+     "p999_diff": 3.2221026059720953e-06,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 4096,
+     "max_diff": 3.637978807091713e-06,
+     "at_margin": 0.0037141515131224427,
+     "p999_diff": 1.275267210647811e-06,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 4074,
+     "max_diff": 5.733676777905372e-06,
+     "at_margin": 0.11282344282551597,
+     "p999_diff": 4.284432927508238e-06,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 4096,
+     "max_diff": 4.0720380622971675e-08,
+     "at_margin": 0.9788404995872451,
+     "p999_diff": 2.463796305307891e-09,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 9.539957712689784e-11,
+     "at_margin": 0.999863528609038,
+     "p999_diff": 7.833583670624512e-11,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 8.766940393242773e-06,
+     "at_margin": 0.01737987753732183,
+     "p999_diff": 6.656635216589276e-06,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 4096,
+     "max_diff": 6.661338147750939e-16,
+     "at_margin": 0.9999999974999999,
+     "p999_diff": 6.661338147750939e-16,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "bf16_compiled_rounds_b48": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.601593625498008,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2658765498518418,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999522250621379,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2405071037283889,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.999993917703164,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.99983912508792,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.011594537927240783,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999999975000003,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "fp32_eval_b48": {
+   "rows": 4096,
+   "max_diff": 0.0,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.601593625498008,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2658765498518418,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999522250621379,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 4074,
+     "max_diff": 0.0,
+     "at_margin": 0.2405071037283889,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.999993917703164,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.99983912508792,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.011594537927240783,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 4096,
+     "max_diff": 0.0,
+     "at_margin": 0.9999999975000003,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    }
+   }
+  },
+  "fp32_jitter": {
+   "rows": 4096,
+   "max_diff": 8.766940393242773e-06,
+   "per_site": {
+    "belief_heads.py:624 gt": {
+     "n": 4096,
+     "max_diff": 3.823386052204114e-12,
+     "at_margin": 0.9999979977130997,
+     "p999_diff": 2.597865256248625e-12,
+     "one_side_masked": 0
+    },
+    "damage_kinds.py:130 ge": {
+     "n": 4096,
+     "max_diff": 9.437180226168351e-08,
+     "at_margin": 0.6067841258290797,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1121 argmax": {
+     "n": 4074,
+     "max_diff": 4.476666397346812e-06,
+     "at_margin": 0.029322386246244163,
+     "p999_diff": 3.2221026059720953e-06,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1123 gt": {
+     "n": 4096,
+     "max_diff": 3.637978807091713e-06,
+     "at_margin": 0.0037141515131224427,
+     "p999_diff": 1.275267210647811e-06,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1127 argmax": {
+     "n": 4074,
+     "max_diff": 5.733676777905372e-06,
+     "at_margin": 0.11282344282551597,
+     "p999_diff": 4.284432927508238e-06,
+     "one_side_masked": 0
+    },
+    "damage_op.py:1129 gt": {
+     "n": 4096,
+     "max_diff": 4.0720380622971675e-08,
+     "at_margin": 0.9788404995872451,
+     "p999_diff": 2.463796305307891e-09,
+     "one_side_masked": 0
+    },
+    "damage_op_blocks.py:850 gt": {
+     "n": 4096,
+     "max_diff": 9.539957712689784e-11,
+     "at_margin": 0.999863528609038,
+     "p999_diff": 7.833583670624512e-11,
+     "one_side_masked": 0
+    },
+    "hypothesis_set.py:214 argsort": {
+     "n": 4096,
+     "max_diff": 8.766940393242773e-06,
+     "at_margin": 0.01737987753732183,
+     "p999_diff": 6.656635216589276e-06,
+     "one_side_masked": 0
+    },
+    "intent_conditional.py:199 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "intent_threshold.py:137 gt": {
+     "n": 4095,
+     "max_diff": 0.0,
+     "at_margin": 1.0,
+     "p999_diff": 0.0,
+     "one_side_masked": 0
+    },
+    "pair_reduce.py:53 gt": {
+     "n": 4096,
+     "max_diff": 6.661338147750939e-16,
+     "at_margin": 0.9999999974999999,
+     "p999_diff": 6.661338147750939e-16,
+     "one_side_masked": 0
+    }
+   }
+  }
+ },
+ "timings_s": {
+  "learner_bf16_s": 4.42,
+  "learner_fp32_s": 5.31,
+  "bf16_eval_b2048_s": 4.36,
+  "bf16_train_nograd_b2048_s": 5.15,
+  "bf16_eval_b48_s": 14.76,
+  "bf16_eval_b16_s": 26.44,
+  "bf16_eval_b8_s": 11.31,
+  "bf16_jitter_s": 4.72,
+  "bf16_compiled_rounds_b48_s": 17.59,
+  "fp32_eval_b48_s": 11.68,
+  "fp32_jitter_s": 4.66,
+  "fp64_s": 0.77
+ },
+ "wall_s": 214.4
+}
