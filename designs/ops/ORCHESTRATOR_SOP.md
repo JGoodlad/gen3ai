@@ -109,13 +109,15 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   follow-ups may be CHAINED autonomously as results land, including build agents that add live
   TensorBoard instrumentation so future runs surface what a post-hoc probe would otherwise have to
   excavate. The organizing question for every dispatch is *what is the binding constraint?*
-- **Concurrency: 2–3 agents at a time, at most, and 1–2 for a `Workflow` fan-out.** Cap it for
-  **token cost**, not for stall prevention: a retry restarts an agent from scratch, so a
-  four-attempt agent costs 4× tokens, and one workflow phase burned ~3.5 attempts per agent by
-  launching 4 reviewers and then 6 verifiers at once. The older "≥3 live streams starves the
-  account" explanation is DOWNGRADED — measured 2026-08-11 over 19,286 remote turns, slow turns
-  (>60 s) had *lower* mean concurrency (1.40) than fast ones (1.52) and the stall rate was flat
-  (~6%) across every idle bucket. Stall mechanics: §7.
+- **Concurrency: NO fixed agent count** (owner, 2026-10-11: "Why no more than 2 agents — we fixed the
+  stall issue"). The old cap (2–3 agents, 1–2 per `Workflow`) was for TOKEN COST from stall
+  RETRIES — a retry restarts an agent from scratch — and that cause is gone: the keep-alive latch
+  patch (2026-10-07) took watchdog aborts from 131 to 0 (§7). Size the fan-out by the RESOURCES that
+  actually bind, each with its own guard: ONE GPU lease (standing rule 5); ONE routine gate at a
+  time (`scripts/ops/gate_lock.sh`); while a training run is live, ≤ 2 heavy CPU jobs on ≤ 3 whole
+  physical cores (rule 5b); no two agents on the same files (separate worktrees, disjoint scopes);
+  and quota (frugal, not stingy). Re-impose a cap only if stalls return (check
+  `cc_keepalive_patch.py self`) — then measure, do not guess.
 - **Quota: the account is on the Max 20x plan — plenty, and never to be wasted** (owner,
   2026-09-06). That supersedes the old hard ceilings (≤70% of the 5-hour window, one heavy workflow
   per window) which came from a 2026-07-01 session where the owner had to say *"pace yourself on the
