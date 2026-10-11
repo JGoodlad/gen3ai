@@ -75,13 +75,14 @@ class EngineArch:
 
     @classmethod
     def of(cls, ref: PlayerRef, model: Any, side: str = "player") -> "EngineArch":
-        from agents.model.snapshot import arch_toggles_from_model, current_model_version
-        from agents.observation.state_encoder import load_mappings
+        from agents.model.snapshot import arch_toggles_from_model, recorded_model_version
         from agents.training.rust_rollout.build import _arch_key
 
+        # the RECORDED architecture (gen3_recorded_version_gate_v1): a built-module read says False for the seven
+        # blocks `--move-resolution on` retires, where every end-state checkpoint's config records True
         toggles = arch_toggles_from_model(model)
         sig, fp = _arch_key(model.policy)
-        return cls(source=ref.id, toggles=toggles, version=current_model_version(load_mappings(), **toggles),
+        return cls(source=ref.id, toggles=toggles, version=recorded_model_version(model),
                    signature=sig, fingerprint=fp, terminal=_terminal_of(ref) if side == "player" else None)
 
     def differs(self, ref: PlayerRef, model: Any) -> Optional[str]:

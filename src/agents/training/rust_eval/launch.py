@@ -46,16 +46,15 @@ def evaluator_of(model: Any) -> Any:
 
 def load_sentinels(pool: Any, model: Any, safe_point: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
     """Each SENTINEL item's snapshot, loaded as the eval worker loads it (``load_opponent_snapshot`` gated
-    against THIS run's architecture), on CPU — T2 copies it into its declared slot. ``safe_point`` (the
+    against THIS run's RECORDED architecture, ``recorded_model_version``), on CPU — T2 copies it into its declared slot. ``safe_point`` (the
     run's `DeferredAbort.safe_point`, P10-A2) runs before each load."""
-    from agents.model.snapshot import arch_toggles_from_model, current_model_version, load_opponent_snapshot
-    from agents.observation.state_encoder import load_mappings
+    from agents.model.snapshot import load_opponent_snapshot, recorded_model_version
     from agents.training.eval_sharding import SENTINEL
 
     items = [it for it in pool.items if it.kind == SENTINEL]
     if not items:
         return {}
-    version = current_model_version(load_mappings(), **arch_toggles_from_model(model))
+    version = recorded_model_version(model)
     out = {}
     for it in items:
         if safe_point is not None:

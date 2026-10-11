@@ -1630,22 +1630,25 @@ def test_current_model_version_threads_belief_toggle(mappings):
 
 
 def test_arch_toggles_from_model_extracts_flags():
-    """arch_toggles_from_model reads the live model's toggles for the worker cfg. EVERY toggle must be
-    pinned here: a missing key → the worker rebuilds current_model_version toggle-OFF → a feature-ON
-    self-play run FATALs on its own sentinels (exactly the bug the v23 damage_outgoing omission caused)."""
+    """arch_toggles_from_model reads the model's RECORDED toggles (its policy kwargs, gen3_recorded_version_gate_v1)
+    for the worker cfg. EVERY toggle must be pinned here: a missing key → the worker rebuilds current_model_version
+    toggle-OFF → a feature-ON self-play run FATALs on its own sentinels (exactly the bug the v23 damage_outgoing
+    omission caused)."""
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     import inspect
     import types
-    # Note: the fe attribute for the damage op is `damage_op_enabled`, the emitted key is `damage_op`.
-    fe = types.SimpleNamespace(attend_unrevealed_opponents=True, opp_belief_cls_k=0,
-                               opp_belief_slots=True,
-                               move_belief_mode="revealed",
-                               damage_op_enabled=True, damage_outgoing=True, move_candidate_floor=0.3,
-                               move_latent=True, move_prior_fusion=True,
-                               win_prob_mode="read_only",
-                               damage_topk_k=5, damage_matrices_outgoing=True,
-                               damage_matrices_incoming=True)
-    model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe))
+    # The RECORDED extractor kwargs (the built extractor is not read: `--move-resolution on` retires modules its
+    # config records ON — the rb_es_end_s2001 incident, recorded_version_gate_test).
+    fek = dict(attend_unrevealed_opponents=True, opp_belief_cls_k=0,
+               opp_belief_slots=True,
+               move_belief_mode="revealed",
+               damage_op=True, damage_outgoing=True, move_candidate_floor=0.3,
+               move_latent=True, move_prior_fusion=True,
+               win_prob_mode="read_only",
+               damage_topk_k=5, damage_matrices_outgoing=True,
+               damage_matrices_incoming=True)
+    model = types.SimpleNamespace(policy_kwargs={"features_extractor_kwargs": fek, "critic": "winprob"},
+                                  policy=types.SimpleNamespace(features_extractor=types.SimpleNamespace()))
     t = arch_toggles_from_model(model)
     assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
     assert "use_popart" not in t and "value_dist_mode" not in t   # deleted with PopArt / the dist head
@@ -1667,6 +1670,9 @@ def test_arch_toggles_from_model_extracts_flags():
     # Every emitted toggle MUST be an accepted current_model_version kwarg — else a future toggle that
     # isn't threaded fails here in a unit test, not only at a self-play load (TypeError).
     assert set(t) <= set(inspect.signature(current_model_version).parameters)
+    assert t["critic"] == "winprob"
+    # a toggle the recorded kwargs predate reads its current_model_version default (the extractor builds the same)
+    assert t["intent_move_cell"] is False and t["move_resolution"] == "off"
 
 
 def test_current_model_version_threads_move_belief_mode(mappings):
