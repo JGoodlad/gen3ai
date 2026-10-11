@@ -214,6 +214,9 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   `COMPILE_ARG_KEYS` (`compile_cache_shared_test` fails until it does). **A new `torch.compile` site must call
   `ensure_hermetic_cache()` first** (`compile_cache_test`; it also takes the shared entry's lease). HEAD runs
   torch >= 2.8 ONLY. Detail: `designs/training/compile_flags.md` "The SHARED compile cache, by KEY".
+- ⚠️ **`--learner-cudagraphs on` FAILS ON THE GPU** (window E, F-PE-1): its startup accumulation rung dies with an
+  untyped "CUDAGraphs output overwritten" `RuntimeError` (AccumulateGrad took a pool tensor as `.grad`). Do not launch
+  with it until the follow-up fix lands.
 - 🚨 **`--learner-cudagraphs on` (T25 lever C, default off, a RUNTIME knob) gives R1 a second, GRAPHED route**
   (cudagraph trees), served to every micro-step no retain_graph probe re-enters; the probe micro-steps (the per-term
   noise sampler, the grad-balance probe) keep the compiled route (`diagnostics_cadence.micro_retains_graph` →

@@ -213,6 +213,74 @@ harness now sorts them.
 - **What it still catches at fp32 strength:** non-finite gradients, mis-wired arms and a broken reference.
 - **Rule 8.** Every healthy read sits ≤ 25 % of the way to its bar.
 
+## Window E: the levers on their FLAG paths (22:43–23:18, file-based handoff; the last window during the closing test)
+
+**Method.** Every job ran on the extracted tree of `2652864e`, which holds levers A, C and 4. Load1 was 1.2–2.2 and no
+other GPU process ran. `E_base_e` is the paired baseline: its 53.21 s equals window D's `E_ride_after` (53.24 s).
+
+| job | argv beyond E | plain update (s) | 1-ep / 3-ep calls (s) | marginal epoch (s) | diagnostic 1-ep call (s) | peak reserved (MiB) | gate / canary |
+|---|---|---|---|---|---|---|---|
+| **E_base_e** | — | **53.21** | 6.27, 6.29 / 16.69, 16.73 | 5.214 | 14.63 | 6,718 | PASS / PASS (cosine 1.0000) |
+| **E_bf16_flag** | `--trunk-precision bf16` | **41.17 (−12.0 s, −22.6 %)** | 5.07, 5.07 / 13.08, 13.10 | 4.011 (−23.1 %) | 11.32 (−22.6 %) | 6,308 (−410) | **PASS under the bf16 rule** / PASS |
+| **E_cg** | `--learner-cudagraphs on` | — | — | — | — | — | **DIED in its own startup gate** (F-PE-1) |
+| **E_cg_bf16** | both | — | — | — | — | — | died the same way |
+
+**The bf16 rule's first GPU verdict** (startup, the bench's perturbed weights; trained regime):
+- drift: loss 1.18e-3 ≤ 0.014, gradient 9.69e-3 ≤ 0.68;
+- envelope: loss 2.13e-3 (eager 1.18e-3); gradient 1.18e-2 (eager 9.69e-3);
+- the worst per-parameter ratio is 1.94 ≤ 12;
+- the canary on trained weights PASSED, with gradient cosine 0.99943 against eager bf16.
+
+**Read.**
+- **bf16 on its real flag path cuts the end-state update by 22.6 %** (53.2 → 41.2 s), which is more than window B's
+  bench-switch read (−20 % per 1-epoch call). The R1 compile + gate + prewarm was 215 s vs 212 s fp32.
+- At 41.2 s the end-state update is now BELOW production's fp32 44.95 s.
+- ⚠️ **The bf16 profiled epoch read 51 % GPU-busy** (kernel time 4.66 s, the same 9,000-odd kernels per micro-batch,
+  over a 9.18 s profiled span vs a 5.07 s unprofiled call). The profiler roughly doubled the host time of the bf16
+  epoch alone. The likely cause is autocast's per-op casts recorded as host events (UNVERIFIED). Trust the
+  unprofiled walls. Whether a bf16 update is launch-bound is NOT settled by this profile (F-PE-3).
+
+**T2 lever 4, lead lanes** (`T2_lead`: `lead_lanes_benchmark`, the PRODUCTION policy, fresh-perturbed, production's
+slot layout of 25 slots, 8 lanes, buckets 8 / 64 / 256, 212 opponent + 245 trainee rows per step, 6 interleaved
+OFF/ON blocks × 50 steps):
+
+| | OFF | ON (`--t2-lead-trainee`) |
+|---|---|---|
+| host step (flush + wait), median | 29.94 ms | **28.25 ms** |
+| flush (host launch) / GPU wait | 1.23 / 28.69 ms | 1.24 / 27.00 ms |
+| ON/OFF per block | — | 0.934 – 0.947 (median **0.942**) |
+| slots on the trainee's lane | 0, 8, 16 | none |
+| decisions, ON vs OFF | — | **bit-identical** (max \|Δ\| 0.0); 0 compiles / captures after the freeze |
+
+**Read.**
+- −1.7 ms per host step (−5.8 % of T2's step), consistent in all 6 blocks. At ~400 host steps per production
+  rollout that is **≈ −0.7 s per cycle** (ESTIMATE from the per-step read; the end state's T2 is ~10 % heavier, so
+  slightly more).
+- A pure scheduling change: the same kernels, nothing else moved.
+
+## Findings from window E (standing rule 7)
+
+- **F-PE-1 (lever C fails on the GPU, loudly, at its own startup rung).** `--learner-cudagraphs on` died in the
+  graphed route's ACCUMULATION rung (`compile_regions._r1_accum_rule`).
+  - The error: "accessing tensor output of CUDAGraphs that has been overwritten by a subsequent run", raised in the
+    SECOND micro-batch's `backward()`. It named the embedding table's gradient-addition node (`static_tokens.py:191`,
+    `embeddings.move_embedding`, a tensor used more than once).
+  - The cause: the first replay's backward output became `.grad` (AccumulateGrad stole the graph-pool tensor). The
+    second replay then overwrote that pool slot before the accumulation read it. This is exactly the hazard the rung
+    was built to catch (the builder's FINDING 1); it caught it before any update.
+  - **Two defects:**
+    1. The rung raises a bare torch `RuntimeError`, not a typed `CompileTrainerError`. A real launch would see an
+       untyped crash, and the launcher may RESTART into it rather than stop FATAL_CONFIG.
+    2. The route itself needs `.grad` never to alias the pool. Candidate fixes, untested: materialise every
+       parameter's `.grad` (`zero_grad(set_to_none=False)`) before each accumulation group so AccumulateGrad adds in
+       place; or clone the graphed backward's grads out of the pool, at a cost.
+  - Not fixed in this phase (no GPU window left during the closing test).
+- **F-PE-2 (lever 4 is a small, clean win).** −5.8 % of the T2 step, bit-identical. Adoption is an operational call
+  (a runtime knob, not versioned).
+- **F-PE-3 (the bf16 profile is distorted).** Under torch.profiler the bf16 epoch's host time doubled while its
+  kernel time fell 21 %, so the profiled GPU-busy % (51 %) is an artifact. The CUDA-graphs lever's value under bf16
+  stays the open question that lever C's fix would answer.
+
 ## Findings (standing rule 7)
 
 - **F-PD-1 (the ride-along fix's gain).** It is −0.35 s per E update (−0.7 %), with host-blocked time 2.36 → 0.50 s
@@ -272,3 +340,5 @@ harness now sorts them.
   window C.
 - `results/window_D/{E_ride_before,E_ride_after,E_bf16_envelope}.json` + `logs/` + `window.log`: window D;
   `results/bf16_parity_bars.json`: the derived bf16 bars (`scripts/derive_bf16_bars.py`); `scripts/bf16_envelope.py`.
+- `results/window_E/{E_base_e,E_bf16_flag,E_cg,E_cg_bf16,T2_lead}.json` + `logs/` + `window.log`: window E (the pinned tree
+  `~/gen3ai_archive/perf_phase_2026-10-10/trees/at_lever_a` = `2652864e`).

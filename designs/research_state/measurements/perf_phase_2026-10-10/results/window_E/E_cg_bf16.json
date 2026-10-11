@@ -1,0 +1,25 @@
+{
+ "tag": "E_cg_bf16",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --learner-cudagraphs on --trunk-precision bf16",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_lever_a/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 1.26806640625,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 3.1182600329630077
+ },
+ "imports_from": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_lever_a/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5624179,
+  "diagnostics_every": 10
+ },
+ "learner_cudagraphs": true,
+ "grad_checkpointing": false
+}

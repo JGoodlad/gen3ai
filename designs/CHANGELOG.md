@@ -13962,3 +13962,20 @@ read both cells for its end-of-turn rule and found them wrong.
   and want their own window read; a multi-slot CUDA graph is dominated (same kernel count; graph-launch host cost
   scales with nodes); the env-step / inference overlap was measured at 0.855× (2026-10-02). (3) With more than one
   trainee slot (`--trainee-slots`) every one leads and takes a lane, including one nothing plays (the census's FINDING on that flag).
+## 2026-10-10 — T25 window E: the levers on their FLAG paths (docs + results only; no code change)
+
+- **`--trunk-precision bf16`**, the end-state update on the extracted tree of `2652864e`:
+  - **53.21 → 41.17 s (−22.6 %)**, marginal epoch 5.214 → 4.011 s, diagnostic call 14.63 → 11.32 s, peak −410 MiB.
+  - The bf16 parity rule PASSED at startup (drift loss 1.18e-3, gradient 9.69e-3; worst per-parameter envelope
+    ratio 1.94 ≤ 12), and the canary PASSED.
+  - NOT adopted: the strength A/B is mandatory (`perf_phase_2026-10-10/PLAN.md` §2d).
+- **`--t2-lead-trainee`:** the T2 host step 29.94 → 28.25 ms (−5.8 %, every block 0.934–0.947), decisions
+  bit-identical (≈ −0.7 s per cycle, ESTIMATE).
+- **`--learner-cudagraphs on` FAILS on the GPU** (F-PE-1). Its own startup accumulation rung died: "CUDAGraphs output
+  overwritten by a subsequent run" in the second micro-batch's backward (AccumulateGrad took a pool tensor as
+  `.grad`), raised as an UNTYPED `RuntimeError`. Documented as do-not-use in `designs/training/compile_flags.md` and
+  the training leaf; a follow-up unit fixes it.
+- **The bf16 profiled epoch's GPU-busy (51 %) is a profiler artifact** (F-PE-3): the host time doubled under the
+  profiler while kernel time fell.
+- **Docs.** The measurement README (window E, F-PE-1..3), `PLAN.md` §5, `designs/ops/TASK_BACKLOG.md` T25,
+  `compile_flags.md` Lever C, the training leaf.

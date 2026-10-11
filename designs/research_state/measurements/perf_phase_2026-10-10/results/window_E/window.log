@@ -1,0 +1,11 @@
+[window E] START E_cg at 22:43:04 (budget 13 min, 44 min left)
+[window E] END E_cg rc=1 at 22:49:29: 
+[window E] START E_bf16_flag at 22:49:29 (budget 12 min, 37 min left)
+[window E] END E_bf16_flag rc=0 at 22:55:10: [bench E_bf16_flag] DONE: marginal epoch 4.01s, update est 41.2s, gate PASS
+[window E] START T2_lead at 22:55:10 (budget 15 min, 31 min left)
+[window E] END T2_lead rc=0 at 23:05:29
+[window E] START E_base_e at 23:05:29 (budget 8 min, 21 min left)
+[window E] END E_base_e rc=0 at 23:11:26: [bench E_base_e] DONE: marginal epoch 5.21s, update est 53.2s, gate PASS
+[window E] START E_cg_bf16 at 23:11:26 (budget 13 min, 15 min left)
+[window E] END E_cg_bf16 rc=1 at 23:17:47: 
+[window E] FINISHED at 23:17:47

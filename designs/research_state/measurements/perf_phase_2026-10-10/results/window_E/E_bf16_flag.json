@@ -1,0 +1,254 @@
+{
+ "tag": "E_bf16_flag",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all --trunk-precision bf16",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_lever_a/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 1.35498046875,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 3.0757653740001842,
+  "compile_gate_prewarm": 215.02377130498644
+ },
+ "imports_from": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/trees/at_lever_a/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5624179,
+  "diagnostics_every": 10
+ },
+ "learner_cudagraphs": false,
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "PASS",
+  "lines": [
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+   "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.18e-03 <= 0.014, grad 9.69e-03 <= 0.68; envelope loss 2.13e-03 (eager 1.18e-03), grad 1.18e-02 (eager 9.69e-03); per-param worst ratio 1.94 <= 12 (features_extractor.entity_seats.tail_proj.weight: compiled 2.74e-02 vs eager 1.41e-02) over 232 params [the K9 learner golden's real labelled buffer]",
+   "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+   "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 215.0s",
+   "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "routes": [
+  {
+   "call": 0,
+   "epochs": 1,
+   "timed": "False",
+   "R1_compiled": 48
+  },
+  {
+   "call": 1,
+   "epochs": 1,
+   "timed": "True",
+   "R1_compiled": 48
+  },
+  {
+   "call": 2,
+   "epochs": 1,
+   "timed": "True",
+   "R1_compiled": 48
+  },
+  {
+   "call": 3,
+   "epochs": 3,
+   "timed": "True",
+   "R1_compiled": 144
+  },
+  {
+   "call": 4,
+   "epochs": 3,
+   "timed": "True",
+   "R1_compiled": 144
+  },
+  {
+   "call": 5,
+   "epochs": 1,
+   "timed": "diag",
+   "R1_compiled": 48
+  }
+ ],
+ "peak_reserved_mib": 6308.0,
+ "diag_1ep_s": 11.323347605066374,
+ "train": {
+  "walls_s": {
+   "1": [
+    5.065859702997841,
+    5.0718164729187265
+   ],
+   "3": [
+    13.082472279085778,
+    13.099141585058533
+   ]
+  },
+  "median_s": {
+   "1": 5.068838087958284,
+   "3": 13.090806932072155
+  },
+  "marginal_epoch_s": 4.010984422056936,
+  "update_s_est": 41.167697886470705,
+  "first_epoch_overhead_s": 1.057853665901348,
+  "per_micro_ms_marginal": 83.5621754595195,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 0.0026524917921051383,
+    "n": 15328
+   },
+   {
+    "epochs": 1,
+    "s": 0.002687364467419684,
+    "n": 15328
+   },
+   {
+    "epochs": 3,
+    "s": 0.0030838834354653955,
+    "n": 17568
+   },
+   {
+    "epochs": 3,
+    "s": 0.0030758040957152843,
+    "n": 17568
+   }
+  ]
+ },
+ "load1_end": 2.2041015625,
+ "gpu_others_end": [],
+ "profile_phase": "plain",
+ "profile": {
+  "n_micro": 48,
+  "trace": "/home/goodlad/gen3ai_archive/perf_phase_2026-10-10/traces/profile_E_bf16_flag.trace.json.gz",
+  "profiled_span_s": 9.175082058000001,
+  "gpu_busy_s": 4.703235762999912,
+  "gpu_busy_pct": 51.260966749600186,
+  "top_kernels": [
+   {
+    "name": "ampere_sgemm_32x128_tn",
+    "count": 5280,
+    "total_ms": 201.45227500002477,
+    "pct_of_kernel_time": 4.32020058961765
+   },
+   {
+    "name": "ampere_sgemm_128x128_nt",
+    "count": 384,
+    "total_ms": 194.7388950000145,
+    "pct_of_kernel_time": 4.176230270918752
+   },
+   {
+    "name": "fmha_cutlassB_f32_aligned_64x64_k32_sm80(PyTorchMemEffAttention::AttentionBackwardKernel<cutlass::arch::Sm80, float, true, false, false, 64, 64, 32, false>::Par",
+    "count": 96,
+    "total_ms": 154.777699999997,
+    "pct_of_kernel_time": 3.3192512261257336
+   },
+   {
+    "name": "ampere_sgemm_128x64_tn",
+    "count": 1296,
+    "total_ms": 145.8996539999803,
+    "pct_of_kernel_time": 3.1288590373856464
+   },
+   {
+    "name": "ampere_sgemm_128x64_nn",
+    "count": 1104,
+    "total_ms": 123.01544599999042,
+    "pct_of_kernel_time": 2.6381007727074386
+   },
+   {
+    "name": "triton_poi_fused__to_copy_add_clone_copy_slice_backward_zeros_like_298",
+    "count": 48,
+    "total_ms": 118.76407499999878,
+    "pct_of_kernel_time": 2.546928928155944
+   },
+   {
+    "name": "triton_red_fused__to_copy_add_clamp_cumsum_div_floor_ge_gt_index_le_lt_mul_round_rsub_sum_where_430",
+    "count": 48,
+    "total_ms": 108.18531500000294,
+    "pct_of_kernel_time": 2.320064450257146
+   },
+   {
+    "name": "fmha_cutlassB_bf16_aligned_64x64_k32_seqaligned_sm80(PyTorchMemEffAttention::AttentionBackwardKernel<cutlass::arch::Sm80, cutlass::bfloat16_t, true, false, true",
+    "count": 144,
+    "total_ms": 94.88281700000252,
+    "pct_of_kernel_time": 2.034788646332954
+   },
+   {
+    "name": "ampere_bf16_s1688gemm_bf16_128x128_ldg8_f2f_stages_32x1_nn",
+    "count": 576,
+    "total_ms": 81.23446500001309,
+    "pct_of_kernel_time": 1.7420959062899029
+   },
+   {
+    "name": "triton_poi_fused_add_clone_copy_slice_backward_zeros_like_342",
+    "count": 48,
+    "total_ms": 80.12767900000141,
+    "pct_of_kernel_time": 1.7183605698196125
+   }
+  ],
+  "kernels": 215161,
+  "memcpy_memset": 14536,
+  "kernel_time_s": 4.663030588999893,
+  "per_micro": {
+   "kernel_launch_calls": 4477.479166666667,
+   "device_kernels": 4482.520833333333,
+   "sync_calls": {
+    "cudaStreamSynchronize": 9.25,
+    "cudaDeviceSynchronize": 0.041666666666666664
+   },
+   "scalar_reads_local_scalar_dense": 319.4166666666667,
+   "memcpy_calls": {
+    "cudaMemcpyAsync": 133.33333333333334
+   }
+  },
+  "wall_s_profiled": 9.18329260905739,
+  "kernel_classes": {
+   "gemm": {
+    "count": 31948,
+    "s": 1.5150981910000736,
+    "pct": 32.49170602856847
+   },
+   "triton_pointwise": {
+    "count": 53568,
+    "s": 1.388281713999919,
+    "pct": 29.772091079026545
+   },
+   "aten_other": {
+    "count": 103245,
+    "s": 0.5986237909999294,
+    "pct": 12.837655245326587
+   },
+   "triton_reduction": {
+    "count": 16032,
+    "s": 0.4973623140000062,
+    "pct": 10.66607444466019
+   },
+   "attention": {
+    "count": 480,
+    "s": 0.3456294879999991,
+    "pct": 7.412121396229732
+   },
+   "triton_persistent_reduction": {
+    "count": 9696,
+    "s": 0.31761531799997483,
+    "pct": 6.811349656363609
+   },
+   "triton_other": {
+    "count": 192,
+    "s": 0.00041977300000115063,
+    "pct": 0.009002149824867026
+   }
+  }
+ },
+ "canary": {
+  "verdict": "PASS",
+  "out": {
+   "compile/canary_grad_cosine": 0.9994254888432459,
+   "compile/canary_unmoved_params": 0.0,
+   "compile/canary_ok": 1.0,
+   "compile/canary_unconfirmed_disagreements": 0.0,
+   "compile/canary_seconds": 1.1831561609869823
+  }
+ }
+}

@@ -1857,6 +1857,15 @@ hold only fresh head outputs; the capacity snapshot is read in the same micro-st
 risk that remains is the AccumulateGrad steal (`.grad` taking the backward's pool output on a group's first micro-step):
 the accumulation rung judges it at startup.
 
+⚠️ **ON FAILS ON THE GPU (window E, 2026-10-10, F-PE-1; `perf_phase_2026-10-10/README.md`).** The accumulation rung
+died at startup.
+- **The error:** "accessing tensor output of CUDAGraphs that has been overwritten by a subsequent run", in the second
+  micro-batch's `backward()`, at the embedding table's gradient-addition node.
+- **The cause:** AccumulateGrad took the first replay's pool output as `.grad`, and the second replay overwrote it.
+- **It surfaces as a bare `RuntimeError`, not a typed `CompileTrainerError`.**
+- **Do not launch with it** until a follow-up materialises `.grad` before each accumulation group (or clones the graphed
+  grads out of the pool) and types the rung's error. Off is unaffected.
+
 **OFF is byte-identical:** one `torch.compile` with the production kwargs, one cache entry, the same gate rules, prewarm,
 inventory line and canary; `r1_graphed_route_test.py` pins it. **The flag is a RUNTIME perf knob** like
 `--compile-trainer`: not versioned, not in `model_config.json`, never pickled (`hparams._excluded_save_params`), not

@@ -24243,3 +24243,19 @@ compiled bf16, eager bf16, and the fp32 eager reference under `fp32_scope`.
   construction, because bf16's own gradient error is the resolution.
 
 Tag: **MEASURED (GPU, n = 2 reps per arm) · ride-along fix −0.7 % per E update · BUILT · bf16 parity bars DERIVED (20 reads) · bf16 changes the gradient 1–18 % rel-L2 ⇒ strength A/B MANDATORY (PLAN.md §2d, not registered)**
+
+### 2026-10-10 · MEASURED · **T25 WINDOW E (the last during the closing test): `--trunk-precision bf16` on its FLAG path cuts the end-state update 22.6 % (53.21 → 41.17 s; the bf16 parity rule and the canary PASS); `--t2-lead-trainee` −5.8 % of the T2 host step, bit-identical; `--learner-cudagraphs on` FAILS at its own startup accumulation rung (a CUDAGraphs output overwritten before AccumulateGrad read it; an untyped RuntimeError)**
+
+The jobs ran on the extracted tree of `2652864e`, paired in one window (`perf_phase_2026-10-10/README.md` "Window E"):
+
+| job | result |
+|---|---|
+| `E_base_e` (the baseline) | 53.21 s per update; it reproduces window D's 53.24 s |
+| `E_bf16_flag` | 41.17 s per update, marginal epoch −23.1 %, peak −410 MiB. Gate: drift loss 1.18e-3 / gradient 9.69e-3, worst per-parameter envelope ratio 1.94 ≤ 12; canary cosine 0.99943, PASS |
+| `T2_lead` (the production policy, production's slot layout) | step 29.94 → 28.25 ms, ON/OFF 0.934–0.947 in 6 blocks; max \|Δ\| 0.0 |
+| `E_cg`, `E_cg_bf16` | DIED at startup (F-PE-1) |
+
+The bf16 speed is real, but the adoption question is STRENGTH, since bf16 moves the micro-batch gradient 1–18 %
+(F-PD-2). PLAN.md §2d's A/B is MANDATORY and NOT registered.
+
+Tag: **MEASURED (GPU, n = 2 reps per arm, one window) · bf16 −22.6 % per E update · lead lanes −5.8 % T2 step · lever C BROKEN on the GPU (follow-up) · bf16 adoption PENDING its strength A/B**
