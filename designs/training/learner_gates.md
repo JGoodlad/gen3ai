@@ -503,7 +503,11 @@ syncs to 22 (one per optimizer step + the rank probe + the episode-start calibra
 tie-margin recorder's per-MARGIN-call reads) are unchanged. `host_sync_guard_test.py` counts them on one CPU update
 with `host_sync_trace.HostSyncTrace` (a `TorchFunctionMode`, residency-aware: a read of a host tensor such as
 AdamW's `step` counter is not a sync) and holds them to the shape's bound — one transfer per optimizer step + 2 —
-so a per-micro-batch read fails the routine gate.
+so a per-micro-batch read fails the routine gate. **The ride-along heads follow the same rule** (T25 next lever 1;
+their ~120 reads per epoch-0 micro-batch were finding 3 of item 1): mirrors for the RND statistics' branches, device
+gates for the label guards, deferred meters, and ONE transfer per micro-batch for the finiteness verdicts —
+`designs/training/ridealong_heads.md` "The micro-batch path makes ONE host read"; `ridealong_host_sync_test.py` holds
+them (the golden update above has no heads attached, so `host_sync_guard_test` does not see them).
 
 **The exit side (cutover-prep, `743008c1`).** Every K9(c) raise is `main.exit_codes.NonFiniteLearnerError`
 (a `FloatingPointError`; `learner_gates.nonfinite(msg)` builds it) with its message tagged

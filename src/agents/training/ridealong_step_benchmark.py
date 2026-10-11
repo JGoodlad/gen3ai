@@ -9,7 +9,10 @@ GPU-lock unit twice on 2026-09-30 at load 30–80. The heads' cost is SEPARABLE 
 run eager, on `.detach()`ed stashes, with their own optimizer, before PPO's loss exists — so what
 they add to an update is exactly (their step's time) × (the minibatches they train on). This times
 that step directly, with CUDA synchronisation, on the REAL production policy and real-obs fixture
-rows tiled to the production minibatch, through the learner's own `_ridealong_update`.
+rows tiled to the production minibatch, through the learner's own `_ridealong_update`. A step's time
+includes its meters' fold (`acc.flush()`): since T25 next lever 1 the learner defers the fold to the first
+micro-batch past the ride-along epoch, so the per-step number is the cost of the step AND its own share of
+that one fold, while the pass number below pays the fold once, as an update does.
 
 What it reports, per configuration (`CONFIGS`: the four heads at the baseline spec, each RND variant
 added alone, all of them): ms per ride-along step (median of K, after warm-up) at batch `--batch`,
@@ -148,6 +151,7 @@ def run(device: str, batch: int, k: int, warmup: int,
             sync()
             t0 = time.perf_counter()
             learner._ridealong_update(rd, values, actions, 0, acc)
+            acc.flush()               # the meters are deferred (T25 next lever 1): a step's cost includes its fold
             sync()
             if i >= warmup:
                 times.append(time.perf_counter() - t0)

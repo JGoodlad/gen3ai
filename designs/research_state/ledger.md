@@ -24174,3 +24174,38 @@ owner's acceptance of exactly that. (2) The bisection table (§5) did not list t
 (3) The doc body still carried `c0f528b4` in §0 / §2.4 / §4.1 after the 2026-10-10 re-pin; updated to `95d014fa` here. (4) Two Markdown files under `src/rust_sim/` (`CLAUDE.md`, `README.md`, the 2026-10-10 leaf cut `6900a964`) are in the window; (D)'s "any change under `src/rust_sim/`" was read as compiled code, which they are not.
 
 Tag: **AMENDMENT (pre-data) · end-state arm + `move_set_closure on` · P_end `b132b099` · production identity A–D HOLD · E = the first seed's startup gates** · design: [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) Decision record · measurements: [`measurements/endstate_closing_test_2026-10-09/p_end_2026-10-10/`](measurements/endstate_closing_test_2026-10-09/p_end_2026-10-10/)
+
+### 2026-10-10 · BUILT · **T25 NEXT LEVER 1: the ride-along heads' micro-batch path makes ONE host read where it made ~120 (the one `.item()` at `ridealong_heads.py:466` was the FIRST of ~120): host mirrors for the RND statistics, device gates for the label guards, deferred + one-transfer meters, one transfer for the verdicts; every logged value, weight, Adam state and the RNG bit-identical to HEAD (2 ride-along surfaces × a real `train()`); GPU effect UNMEASURED**
+
+Window C (`perf_phase_2026-10-10/README.md`) put 1.75 s of the update's 2.2 s of host-blocked time on one site, the ride-along
+accumulator's epoch-0 `obs_count.item()`. A CPU trace (`HostSyncTrace`, the golden learner, every head and variant) showed it
+was the first of ~120 reads per epoch-0 micro-batch (490 over 4 micro-batches, Adam's host-side `step` reads excluded; ~5,800
+per production update at 48 micro-batches) — item 1's finding 3 (`gen3_batched_host_reads_v1`). Removing only the first would have moved the
+queue drain to the next read, so the whole path went:
+
+- **RND statistics:** `ridealong_heads._HostMirror` — a host copy of `obs_count` and `err_seen`, valid only for the same tensor
+  object, storage address and `Tensor._version`; one device read per process.
+- **Label guards:** `RideAlongHeads.losses_gated` — every loss plus a 0-d device gate for `ens` / `opp`.
+- **Meters:** `RideAlongAccumulator` snapshots and folds once past epoch 0 — statistics on the device, scalars queued on a
+  `HostReadQueue`, one transfer; masked sets compacted by one shared `nonzero` + `index_select`.
+- **Verdicts:** `_ridealong_step` enqueues the variants' and the heads' backward and clips, reads every norm and gate in ONE
+  transfer, then steps. A gate that is False (a head with no usable label in a whole micro-batch) takes a RARE path (retained
+  graph, backward redone over the valid keys) that reproduces HEAD's "no key, no gradient, Adam skips it".
+
+**Identity (the measurement that was possible).** A copy of the HEAD tree and this tree each ran `ridealong_update_test._build`
+(a real `train()`, production surface, flat-pointer labels, B ON): `--ridealong-*` all-heads-and-variants and four-heads
+surfaces. The policy, PPO's optimizer state, both ride-along Adam states, the RNG and every logged scalar (278 and 214; the
+`ridealong/*` 101 and 37 among them) are bit-equal. `ridealong_host_sync_test.py` holds the same in-tree, with HEAD's code
+kept as the oracle (a clean run, a micro-batch with no win labels, a NaN observation, an ensemble-only surface, a full
+`train()`, seven hand-built edges of the fold). Sync count on the golden plain update with every head on: **1,082 -> 50**; one
+read per ride-along micro-batch (HEAD's path: > 100).
+
+**FINDINGS.** (1) The GPU effect is UNMEASURED (no lease): expected epoch-0 GPU-busy ~86 % -> ~93 % and ~1 s of 53.8 s
+(ESTIMATE: the eager tail's CPU time stops being serialised behind the GPU); the paired A/B command is in the CHANGELOG entry. (2)
+The residual is the fold (~8 data-dependent reads per micro-batch + one transfer, ~440 per production update, once, with the
+GPU idle) and one verdict transfer per micro-batch (a non-finite norm must not be stepped; a device-conditional Adam step would
+remove it, but fused Adam's `found_inf` is CUDA-only). (3) No other per-micro-batch read is left in a PLAIN epoch (K9, the
+diagnostics probes, the calibration): the traced plain update shows only the ride-along verdict, the mirrors' priming, the
+learner's per-optimizer-step drain, the calibration columns and the rank probe.
+
+Tag: **BUILT · T25 next lever 1 · ride-along host reads ~120 -> 1 per epoch-0 micro-batch (count, CPU) · bit-identical to HEAD (2 surfaces, a real update) · GPU measurement DEFERRED**

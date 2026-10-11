@@ -15,6 +15,15 @@
     the whole rollout. The heads train and are read on epoch 0 only (`RIDEALONG_EPOCHS`): one
     policy, every row once, each scored before the step that trains on it.
 
+ONE HOST READ PER MICRO-BATCH (T25 next lever 1, 2026-10-10). The step used to make ~120 device reads
+per epoch-0 micro-batch — each a host sync on CUDA, the first draining the deep queue — which kept the eager
+tail from overlapping the GPU (window C: epoch 0 ran 85.6 % GPU-busy against ~95 % later). Now: the RND
+statistics branch on host MIRRORS (`ridealong_heads._HostMirror`), the label guards are device GATES
+(`RideAlongHeads.losses_gated`), the meters are DEFERRED snapshots folded once past the ride-along epoch
+(`RideAlongAccumulator`), and `_ridealong_step` reads every clip norm and gate in ONE transfer. Every number
+logged and every weight stepped is bit-identical to the old path (`ridealong_host_sync_test.py` runs HEAD's
+code as the oracle and counts the syncs; a read coming back fails it).
+
 THE RND VARIANTS (`gen3_ridealong_rnd_variants_v1`, v127) step right after the four heads, each on
 its OWN Adam (rate RIDEALONG_LR × its declared `lr_mult`), its OWN gradient clip and its OWN
 fail-closed switch (a non-finite variant stops alone; the four heads and PPO carry on). The `decay`
@@ -40,11 +49,14 @@ micro-batch, epoch 0, with its own optimizer region); it stays EAGER for now.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+import math
+import types
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch as th
 
+from agents.training.instrumented_ppo.host_reads import HostReadQueue
 from agents.training.lifecycle_decl import startup_builder
 
 #: The heads' own Adam. Upstream Adam defaults except eps (SB3's 1e-5); the rate is PPO's order of
@@ -117,8 +129,30 @@ def rnd_prefixes(out: Dict[str, Any]) -> List[str]:
     return [k for k in keys if f"{k}_err" in out and f"{k}_z" in out]
 
 
+#: The `out` keys `_observe_now` reads by PRESENCE only. A snapshot keeps the key and no tensor (None), so a
+#: future edit that reads their DATA raises instead of reading a stale or empty stand-in.
+_PRESENCE_ONLY = ("adv", "opp")
+#: The batch fields `_observe_now` reads (`b.<field>`); a snapshot carries exactly these.
+_OBSERVE_BATCH_FIELDS = ("values", "win_target", "win_mask", "actions", "advantages", "legal", "logits",
+                         "pi", "flat_target")
+
+
 class RideAlongAccumulator:
-    """Per-train() sink for the `ridealong/*` family."""
+    """Per-train() sink for the `ridealong/*` family.
+
+    **The meters are DEFERRED and READ ONCE** (T25 next lever 1). `observe` / `observe_identification` used
+    to read the device ~100 times per micro-batch (every `float(t)`, every `bool(t.any())`, every boolean-mask
+    index, every `.cpu()` of a column): on CUDA each is a host sync, and together they kept the eager
+    ride-along tail from overlapping the GPU queue (window C: epoch 0 ran 85.6 % GPU-busy against ~95 % in
+    later epochs). They now only SNAPSHOT the detached tensors they will read (device copies, no read).
+    `flush()` then folds every snapshot, in call order: the statistics are computed on the device, each
+    scalar is QUEUED (`host_reads.HostReadQueue`) with the host arithmetic that consumes it, and the whole
+    fold is read back in ONE transfer. What stays data-dependent is only the compaction of a masked set (one
+    `nonzero` per mask, shared by every statistic that uses it). Every logged number is the value it was, bit
+    for bit: the same ops on the same inputs, the same float32 values, the same host arithmetic in the same
+    order. The learner flushes at the first micro-batch past the ride-along epoch
+    (`RideAlongTerms._ridealong_update`), and `metrics()` flushes whatever is left. Read the accumulator only
+    through `metrics()` / after `flush()`."""
 
     def __init__(self) -> None:
         self.scalars: Dict[str, List[float]] = {}
@@ -128,56 +162,136 @@ class RideAlongAccumulator:
         self.update_begun = False
         #: [sum of real-row error, sum of chimera-row error] per RND key (`rnd` / `rndv_<name>`).
         self.ident: Dict[str, List[float]] = {}
+        #: Snapshots not yet folded, in call order: ("observe", args) / ("ident", args).
+        self._pending: List[Tuple[str, Tuple[Any, ...]]] = []
+        #: The fold's read queue while `flush()` runs (None otherwise: `col` then reads at once).
+        self._fold_q: Optional[HostReadQueue] = None
 
     def add(self, key: str, v: float) -> None:
         if v == v:                                    # a NaN is REPORTED by omission, never logged
             self.scalars.setdefault(key, []).append(float(v))
 
     def col(self, key: str, arr: th.Tensor) -> None:
-        self.cols.setdefault(key, []).append(arr.detach().float().cpu().numpy())
+        """Append a per-row column (host float32). During a fold the copy rides the fold's one transfer."""
+        flat = arr.detach().float()
+        q = self._fold_q
+        if q is None:
+            self.cols.setdefault(key, []).append(flat.cpu().numpy())
+            return
+        shape = tuple(flat.shape)
+        q.push(flat, lambda a: self.cols.setdefault(key, []).append(a.reshape(shape).copy()))
 
     def observe(self, out: Dict[str, th.Tensor], b: Any, losses: Dict[str, th.Tensor],
                 opp_class: Optional[th.Tensor], epoch: int) -> None:
-        from agents.model.opp_intent import OPP_CLASS_NAMES
+        """One micro-batch's readout, DEFERRED: snapshot now (no device read), fold at `flush()`.
+        The batch's fields and ``opp_class`` are COPIED (they are views of the rollout buffer, which a
+        staged device-batch mode refills); ``out`` and ``losses`` are fresh tensors of this step."""
+        snap_out: Dict[str, Optional[th.Tensor]] = {
+            k: (None if k in _PRESENCE_ONLY else v.detach()) for k, v in out.items()}
+        snap_b = types.SimpleNamespace(**{
+            f: (None if getattr(b, f, None) is None else getattr(b, f).detach().clone())
+            for f in _OBSERVE_BATCH_FIELDS})
+        snap_loss = {k: v.detach() for k, v in losses.items()}
+        snap_opp = None if opp_class is None else opp_class.detach().clone()
+        self._pending.append(("observe", (snap_out, snap_b, snap_loss, snap_opp)))
+
+    def discard_losses(self, keys: Tuple[str, ...]) -> None:
+        """Take ``keys`` out of the NEWEST pending `observe` snapshot's losses. A head with no usable
+        label in a micro-batch is not a loss there (`losses` omits its key, so HEAD never logged a
+        ``<key>_loss`` for it); the step learns that from the label gates it reads anyway, after the
+        snapshot was taken."""
+        if not keys:
+            return
+        for kind, args in reversed(self._pending):
+            if kind == "observe":
+                for k in keys:
+                    args[2].pop(k, None)
+                return
+
+    def observe_identification(self, out: Dict[str, th.Tensor], chim: Dict[str, th.Tensor]) -> None:
+        """Fold one minibatch's identification probe: the real rows' error (``out``) and the same
+        predictors' error on the rows' block chimeras (``chim``), summed per RND key. DEFERRED like
+        `observe`."""
+        pairs = [(pre, out[f"{pre}_err"].detach(), ec.detach()) for pre, ec in chim.items()
+                 if out.get(f"{pre}_err") is not None]
+        self._pending.append(("ident", (pairs,)))
+
+    def flush(self) -> None:
+        """Fold every pending snapshot, in call order, and read the whole fold back in ONE transfer.
+        The ONLY place the meters read the device."""
+        pending, self._pending = self._pending, []
+        if not pending:
+            return
+        rq = HostReadQueue()
+        self._fold_q = rq
+        try:
+            for kind, args in pending:
+                if kind == "observe":
+                    self._observe_now(*args, rq)
+                else:
+                    self._observe_identification_now(*args, rq)
+            rq.drain()
+        finally:
+            self._fold_q = None
+
+    def _observe_now(self, out: Dict[str, Any], b: Any, losses: Dict[str, th.Tensor],
+                     opp_class: Optional[th.Tensor], rq: HostReadQueue) -> None:
+        """One micro-batch's meters: HEAD's body, with every ``add(key, float(t))`` queued on ``rq`` (the
+        host arithmetic after a read rides in its callback) and every masked set compacted by ONE shared
+        ``nonzero`` + ``index_select`` (the elements `t[mask]` selects, in its order). An empty selection's
+        mean is NaN, which `add` omits — what HEAD's ``if mask.any()`` guards did."""
+        from agents.model.opp_intent import INTENT_IGNORE, OPP_CLASS_NAMES
+
+        add = self.add
+
+        def read(t: th.Tensor, apply: Callable[[np.ndarray], None]) -> None:
+            rq.push(t.detach().float().reshape(-1), apply)
+
+        def scalar(key: str, t: th.Tensor) -> None:                    # add(key, float(t))
+            read(t, lambda a: add(key, float(a[0])))
 
         for k, v in losses.items():
-            self.add(f"{k}_loss", float(v.detach()))
+            scalar(f"{k}_loss", v)
         with th.no_grad():
             v_ = b.values.float().reshape(-1) if b.values is not None else None
             z = b.win_target.float().reshape(-1) if b.win_target is not None else None
             zm = (b.win_mask.float().reshape(-1) > 0) if b.win_mask is not None else None
+            zi = zm.nonzero(as_tuple=True)[0] if zm is not None else None      # the rows `x[zm]` selects
             if "ens_std" in out:
-                self.add("ens_disagreement_mean", float(out["ens_std"].mean()))
-                if z is not None and zm is not None and bool(zm.any()):
-                    p = th.sigmoid(out["ens_logits"])[zm]
-                    brier = (p - z[zm][:, None]).pow(2).mean(0)
-                    for j, bj in enumerate(brier.tolist()):
-                        self.add(f"ens_brier_head_{j}", bj)
-                    self.add("ens_brier_mean_member", float(
-                        (out["ens_p"][zm] - z[zm]).pow(2).mean()))
+                scalar("ens_disagreement_mean", out["ens_std"].mean())
+                if z is not None and zi is not None:
+                    p = th.sigmoid(out["ens_logits"]).index_select(0, zi)
+                    zs = z.index_select(0, zi)
+                    brier = (p - zs[:, None]).pow(2).mean(0)
+                    read(brier, lambda a: [add(f"ens_brier_head_{j}", float(x)) for j, x in enumerate(a)])
+                    scalar("ens_brier_mean_member", (out["ens_p"].index_select(0, zi) - zs).pow(2).mean())
                     if v_ is not None:
-                        self.add("ens_brier_v", float((v_[zm] - z[zm]).pow(2).mean()))
+                        scalar("ens_brier_v", (v_.index_select(0, zi) - zs).pow(2).mean())
             # base (`rnd`) and every RND variant (`rndv_<name>`): the same per-row statistics.
+            class_rows: Dict[int, th.Tensor] = {}
+            oc = opp_class.long().reshape(-1) if opp_class is not None else None
             for pre in rnd_prefixes(out):
-                self.add(f"{pre}_err_mean", float(out[f"{pre}_err"].mean()))
-                self.add(f"{pre}_z_mean", float(out[f"{pre}_z"].mean()))
+                scalar(f"{pre}_err_mean", out[f"{pre}_err"].mean())
+                scalar(f"{pre}_z_mean", out[f"{pre}_z"].mean())
                 # every row's RAW error: the update's median / IQR (the saturation series)
                 self.col(f"{pre}_err_raw", out[f"{pre}_err"])
-                if opp_class is not None:
-                    oc = opp_class.long().reshape(-1)
+                if oc is not None:
                     names = OPP_CLASS_NAMES.items() if isinstance(OPP_CLASS_NAMES, dict) else \
                         enumerate(OPP_CLASS_NAMES)
                     for code, name in names:
-                        sel = oc == int(code)
-                        if bool(sel.any()):
-                            self.add(f"{pre}_z_{name}", float(out[f"{pre}_z"][sel].mean()))
+                        if int(code) not in class_rows:
+                            class_rows[int(code)] = (oc == int(code)).nonzero(as_tuple=True)[0]
+                        scalar(f"{pre}_z_{name}", out[f"{pre}_z"].index_select(0, class_rows[int(code)]).mean())
             if "adv" in out and b.actions is not None and b.advantages is not None:
                 a = b.actions.long().reshape(-1)
                 y = b.advantages.float().reshape(-1)
                 pred = out["adv_mean"].gather(-1, a[:, None]).squeeze(-1)
-                var_y = float(y.var(unbiased=False))
-                if var_y > 0:
-                    self.add("adv_explained_var", 1.0 - float((y - pred).var(unbiased=False)) / var_y)
+
+                def explained_var(h: np.ndarray) -> None:
+                    var_y = float(h[0])
+                    if var_y > 0:
+                        add("adv_explained_var", 1.0 - float(h[1]) / var_y)
+                read(th.stack([y.var(unbiased=False), (y - pred).var(unbiased=False)]), explained_var)
                 if b.legal is not None and b.logits is not None and b.pi is not None:
                     legal = b.legal.bool()
                     n_legal = legal.float().sum(-1, keepdim=True).clamp(min=1.0)
@@ -185,35 +299,46 @@ class RideAlongAccumulator:
                     am = th.where(legal, out["adv_mean"], th.zeros_like(out["adv_mean"]))
                     lc = th.where(legal, lg - lg.sum(-1, keepdim=True) / n_legal, th.zeros_like(lg))
                     ac = th.where(legal, am - am.sum(-1, keepdim=True) / n_legal, th.zeros_like(am))
-                    den = float(lc.pow(2).sum().sqrt() * ac.pow(2).sum().sqrt())
-                    if den > 0:
-                        self.add("adv_corr_logit", float((lc * ac).sum()) / den)
+
+                    def corr(h: np.ndarray) -> None:
+                        den = float(h[0])
+                        if den > 0:
+                            add("adv_corr_logit", float(h[1]) / den)
+                    read(th.stack([lc.pow(2).sum().sqrt() * ac.pow(2).sum().sqrt(), (lc * ac).sum()]), corr)
                     std = out["adv_std"]
                     starved = legal & (b.pi < STARVED_PI)
                     fed = legal & (b.pi >= STARVED_PI)
-                    if bool(starved.any()):
-                        self.add("adv_std_starved", float(std[starved].mean()))
-                    if bool(fed.any()):
-                        self.add("adv_std_fed", float(std[fed].mean()))
+                    scalar("adv_std_starved", std[starved].mean())
+                    scalar("adv_std_fed", std[fed].mean())
                     if v_ is not None:
                         q = v_[:, None] + out["adv_mean"]
-                        self.add("q_out_of_range", float(((q < 0) | (q > 1))[legal].float().mean()))
+                        scalar("q_out_of_range", ((q < 0) | (q > 1))[legal].float().mean())
             if "opp" in out and b.flat_target is not None:
-                from agents.model.opp_intent import INTENT_IGNORE
                 # X5 U4: the share of rows B trains on — OTHER rows included (a belief miss is a label)
-                self.add("opp_label_rate", float((b.flat_target != INTENT_IGNORE).float().mean()))
-            if v_ is not None and z is not None and zm is not None:
+                scalar("opp_label_rate", (b.flat_target != INTENT_IGNORE).float().mean())
+            if v_ is not None and z is not None and zi is not None:
                 err = (v_ - z).abs()
                 for key in ("ens_logit_std", *(f"{p}_z" for p in rnd_prefixes(out))):
                     if key in out:
-                        self.col(key, out[key][zm])
+                        self.col(key, out[key].index_select(0, zi))
                 # V's own binary entropy, so the reader of `ens_*_err` can tell whether the
                 # disagreement adds anything beyond V's own uncertainty (the level confound).
-                pv = v_[zm].clamp(1e-6, 1 - 1e-6)
+                pv = v_.index_select(0, zi).clamp(1e-6, 1 - 1e-6)
                 self.col("v_entropy", -(pv * pv.log() + (1 - pv) * (1 - pv).log()))
-                self.col("v_err", err[zm])
+                self.col("v_err", err.index_select(0, zi))
+
+    def _observe_identification_now(self, pairs: List[Tuple[str, th.Tensor, th.Tensor]],
+                                    rq: HostReadQueue) -> None:
+        for pre, er, ec in pairs:
+            acc = self.ident.setdefault(pre, [0.0, 0.0])
+
+            def fold(h: np.ndarray, acc: List[float] = acc) -> None:
+                acc[0] += float(h[0])
+                acc[1] += float(h[1])
+            rq.push(th.stack([er.detach().float().sum(), ec.detach().float().sum()]), fold)
 
     def metrics(self) -> Dict[str, float]:
+        self.flush()
         out = {k: float(np.mean(v)) for k, v in self.scalars.items() if v}
         cols = {k: np.concatenate(v) for k, v in self.cols.items() if v}
         err = cols.get("v_err")
@@ -242,18 +367,6 @@ class RideAlongAccumulator:
             if real > 0:
                 out[f"{pre}_ident_ratio"] = chim / real
         return out
-
-    def observe_identification(self, out: Dict[str, th.Tensor],
-                               chim: Dict[str, th.Tensor]) -> None:
-        """Fold one minibatch's identification probe: the real rows' error (``out``) and the same
-        predictors' error on the rows' block chimeras (``chim``), summed per RND key."""
-        for pre, ec in chim.items():
-            er = out.get(f"{pre}_err")
-            if er is None:
-                continue
-            acc = self.ident.setdefault(pre, [0.0, 0.0])
-            acc[0] += float(er.detach().float().sum())
-            acc[1] += float(ec.detach().float().sum())
 
 
 def preallocate_adam_state(opt: th.optim.Optimizer) -> None:
@@ -347,9 +460,16 @@ class RideAlongTerms:
     def _ridealong_update(self, rollout_data: Any, values: th.Tensor, actions: th.Tensor,
                           epoch: int, acc: RideAlongAccumulator) -> None:
         """One ride-along step on this minibatch's forward. A no-op (one attribute read) when the
-        policy has no heads."""
+        policy has no heads. **One host read on the micro-batch path** (T25 next lever 1): the RND
+        statistics branch on host mirrors, the meters are deferred snapshots (`RideAlongAccumulator`),
+        and the finiteness verdicts, the heads' label gates and the logged norms are read together in
+        `_ridealong_step`'s single transfer. The first micro-batch PAST the ride-along epoch folds the
+        deferred meters (`acc.flush()`)."""
         heads = self._ridealong_heads()
-        if heads is None or epoch >= RIDEALONG_EPOCHS or getattr(self, "_ridealong_disabled", False):
+        if epoch >= RIDEALONG_EPOCHS:
+            acc.flush()
+            return
+        if heads is None or getattr(self, "_ridealong_disabled", False):
             return
         from agents.model.ridealong_heads import RideAlongBatch
 
@@ -397,7 +517,7 @@ class RideAlongTerms:
                 variants["feat"].update_obs_stats(b.pooled)      # its OWN feature normalisation
         out = heads.readout(b, skip_variants=tuple(dead)) if variants is not None \
             else heads.readout(b)
-        losses = heads.losses(b, out, train_rnd=(epoch == 0))
+        losses, gates = heads.losses_gated(b, out, train_rnd=(epoch == 0))
         vlosses = heads.variant_losses(out) if variants is not None else {}
         if rnd is not None and epoch == 0 and "rnd_err" in out:
             rnd.update_err_stats(out["rnd_err"])
@@ -410,7 +530,8 @@ class RideAlongTerms:
                     out[f"rndv_{n}_z"] = vmod.zscore(out[f"rndv_{n}_err"])
         # The READ is epoch 0's: one policy over every rollout row once, and — for the losses —
         # each row scored BEFORE the heads trained on it this call. Later epochs only train, so the
-        # meters cost host syncs once per row, not n_epochs times.
+        # meters cost host syncs once per row, not n_epochs times — and since T25 next lever 1 not even
+        # once per micro-batch: `observe` snapshots, `acc.flush()` reads.
         if epoch == 0:
             acc.observe(out, b, {**losses, **vlosses}, obs.get("opp_class"), epoch)
             if variants is not None:
@@ -419,32 +540,7 @@ class RideAlongTerms:
                 chim = heads.identification_errors(b.obs)
                 acc.observe_identification(out, {k: v for k, v in chim.items()
                                                  if k[len("rndv_"):] not in dead})
-        if vlosses:
-            self._ridealong_variant_step(heads, vlosses, epoch, acc)
-        if losses:
-            opt = self._ridealong_optimizer(heads)
-            params = heads.trainable_parameters()
-            opt.zero_grad(set_to_none=True)
-            th.stack(list(losses.values())).sum().backward()
-            gn = th.nn.utils.clip_grad_norm_(params, RIDEALONG_MAX_GRAD_NORM)
-            if not bool(th.isfinite(gn)):
-                # FAIL-CLOSED FOR THE HEADS, NEVER FOR THE RUN. A non-finite ride-along loss or
-                # gradient is never stepped (the heads' weights stay finite, so no parameter scan
-                # can trip on them) and the heads STOP for the rest of this process, loudly. The
-                # run is not killed: the heads observe, and PPO never saw their numbers.
-                opt.zero_grad(set_to_none=True)
-                self._ridealong_disabled = True
-                print(f"🛑 [RIDE-ALONG] non-finite loss/gradient (grad norm {float(gn)}, losses "
-                      f"{ {k: float(v.detach()) for k, v in losses.items()} }) — the ride-along "
-                      "heads are DISABLED for the rest of this process; PPO is unaffected.",
-                      flush=True)
-                return
-            if epoch == 0:
-                acc.add("grad_norm", float(gn))
-            opt.step()
-            # Back to None, so no later reader of `policy.parameters()` in this minibatch — PPO's
-            # clip, the noise probes — can see a ride-along gradient.
-            opt.zero_grad(set_to_none=True)
+        acc.discard_losses(self._ridealong_step(heads, losses, gates, vlosses, epoch, acc))
 
     def _ridealong_variant_optimizer(self, heads: Any, name: str) -> th.optim.Optimizer:
         """The variant's OWN Adam (rate RIDEALONG_LR × its declared `lr_mult`), acquired at startup.
@@ -457,36 +553,107 @@ class RideAlongTerms:
                 "call _ridealong_acquire() after building or swapping policy.ridealong")
         return opts[name]
 
-    def _ridealong_variant_step(self, heads: Any, vlosses: Dict[str, th.Tensor], epoch: int,
-                                acc: RideAlongAccumulator) -> None:
-        """Every RND variant's own step. One backward over the SUM of the variants' losses (their
-        parameter sets are disjoint and every input is detached, so each predictor receives exactly
-        its own loss's gradient), then per variant: its own clip, its own finiteness check, its own
-        Adam step, its gradients back to None."""
+    def _ridealong_step(self, heads: Any, losses: Dict[str, th.Tensor], gates: Dict[str, th.Tensor],
+                        vlosses: Dict[str, th.Tensor], epoch: int, acc: RideAlongAccumulator
+                        ) -> Tuple[str, ...]:
+        """The RND variants' steps and the four heads' step, behind ONE device->host transfer.
+
+        (a) Enqueue, reading nothing: the variants' backward (ONE over the SUM of their losses: the
+        parameter sets are disjoint and every input is detached, so each predictor receives exactly its
+        own loss's gradient) and per-variant clip; then the four heads' backward and clip.
+        (b) ONE read — every clip's total norm and every label gate (`losses_gated`).
+        (c) Per variant, then the heads: a non-finite norm is never stepped (fail-closed, below); a
+        finite one logs its norm, steps its own Adam, and sets its grads back to None.
+
+        Nothing irreversible happens before (b): no Adam step, no flag. So the two verdicts that need a
+        host value — "is this norm finite" and "does this head have a usable label this batch" — cost one
+        transfer instead of ~10 syncs, and the host enqueues the whole eager tail before it first waits
+        on the GPU. The old order stepped the variants before the heads' backward; the two parameter sets
+        and their graphs are disjoint (nothing in either reads the other), so the result is the same.
+
+        Returns the loss keys whose gate was False (a head with no usable label in this micro-batch:
+        not a loss here), for the caller to take out of the snapshot of the meters."""
+        from agents.training.batched_reads import read_floats
+
         names = [k[len("rndv_"):] for k in vlosses]
-        opts = {n: self._ridealong_variant_optimizer(heads, n) for n in names}
-        for o in opts.values():
-            o.zero_grad(set_to_none=True)
-        th.stack(list(vlosses.values())).sum().backward()
+        vopts = {n: self._ridealong_variant_optimizer(heads, n) for n in names}
         dead = getattr(self, "_ridealong_variant_disabled", None)
         if dead is None:
             dead = set()
             self._ridealong_variant_disabled = dead
-        for n in names:
-            gn = th.nn.utils.clip_grad_norm_(heads.variant_parameters(n), RIDEALONG_MAX_GRAD_NORM)
-            if not bool(th.isfinite(gn)):
+        # (a) enqueue
+        norms: List[th.Tensor] = []
+        if vlosses:
+            for o in vopts.values():
+                o.zero_grad(set_to_none=True)
+            th.stack(list(vlosses.values())).sum().backward()
+            norms += [th.nn.utils.clip_grad_norm_(heads.variant_parameters(n), RIDEALONG_MAX_GRAD_NORM)
+                      for n in names]
+        opt = params = None
+        if losses:
+            opt = self._ridealong_optimizer(heads)
+            params = heads.trainable_parameters()
+            opt.zero_grad(set_to_none=True)
+            # The graph is kept only when a gate may overrule this backward (the rare path below).
+            th.stack(list(losses.values())).sum().backward(retain_graph=bool(gates))
+            norms.append(th.nn.utils.clip_grad_norm_(params, RIDEALONG_MAX_GRAD_NORM))
+        if not norms:
+            return ()
+        gate_keys = [k for k in losses if k in gates]
+        # (b) the one read
+        vals = read_floats(norms + [gates[k].float() for k in gate_keys])
+        # (c) the variants
+        for i, n in enumerate(names):
+            g = vals[i]
+            if not math.isfinite(g):
                 # FAIL-CLOSED FOR THIS VARIANT ONLY: never stepped, stopped for the rest of the
                 # process, loudly; the four heads, the other variants and PPO carry on.
-                opts[n].zero_grad(set_to_none=True)
+                vopts[n].zero_grad(set_to_none=True)
                 dead.add(n)
                 print(f"🛑 [RIDE-ALONG] RND variant {n!r}: non-finite loss/gradient (grad norm "
-                      f"{float(gn)}, loss {float(vlosses['rndv_' + n].detach())}) — DISABLED for "
+                      f"{g}, loss {float(vlosses['rndv_' + n].detach())}) — DISABLED for "
                       "the rest of this process; the other heads and PPO are unaffected.", flush=True)
                 continue
             if epoch == 0:
-                acc.add(f"rndv_{n}_grad_norm", float(gn))
-            opts[n].step()
-            opts[n].zero_grad(set_to_none=True)
+                acc.add(f"rndv_{n}_grad_norm", g)
+            vopts[n].step()
+            vopts[n].zero_grad(set_to_none=True)
+        if not losses or opt is None or params is None:
+            return ()
+        # (c) the four heads
+        g = vals[len(names)]
+        gate_vals = dict(zip(gate_keys, vals[len(names) + 1:]))
+        valid = {k: v for k, v in losses.items() if gate_vals.get(k, 1.0) > 0.0}
+        overruled = tuple(k for k in losses if k not in valid)
+        if overruled:
+            # RARE: a head had no usable label in this whole micro-batch, so it is NOT a loss (the key
+            # `losses` omits) and its parameters must see no gradient at all (Adam skips a None grad; a
+            # zero one would still move them). Redo the backward over the valid keys, off the retained
+            # graph, with the host verdicts the old path made. Nothing was stepped above.
+            opt.zero_grad(set_to_none=True)
+            if not valid:
+                return overruled
+            th.stack(list(valid.values())).sum().backward()
+            g = float(th.nn.utils.clip_grad_norm_(params, RIDEALONG_MAX_GRAD_NORM))
+        if not math.isfinite(g):
+            # FAIL-CLOSED FOR THE HEADS, NEVER FOR THE RUN. A non-finite ride-along loss or
+            # gradient is never stepped (the heads' weights stay finite, so no parameter scan
+            # can trip on them) and the heads STOP for the rest of this process, loudly. The
+            # run is not killed: the heads observe, and PPO never saw their numbers.
+            opt.zero_grad(set_to_none=True)
+            self._ridealong_disabled = True
+            print(f"🛑 [RIDE-ALONG] non-finite loss/gradient (grad norm {g}, losses "
+                  f"{ {k: float(v.detach()) for k, v in valid.items()} }) — the ride-along "
+                  "heads are DISABLED for the rest of this process; PPO is unaffected.",
+                  flush=True)
+            return overruled
+        if epoch == 0:
+            acc.add("grad_norm", g)
+        opt.step()
+        # Back to None, so no later reader of `policy.parameters()` in this minibatch — PPO's
+        # clip, the noise probes — can see a ride-along gradient.
+        opt.zero_grad(set_to_none=True)
+        return overruled
 
     def _record_ridealong_metrics(self, acc: RideAlongAccumulator) -> None:
         if self._ridealong_heads() is None:

@@ -13772,3 +13772,66 @@ read both cells for its end-of-turn rule and found them wrong.
 - **Docs.** Root `CLAUDE.md` (Node's one runtime job), the prober, web, rust_sim and gen3_data leaves,
   `designs/deleted_flags.md`, `designs/prober/`, `designs/rust_sim/search_and_replay_drivers.md` and its siblings,
   `src/utils/bridge/README.md`, `docs/RUNNING.md`, `docs/DEVELOPING.md`.
+## 2026-10-10 — the ride-along heads' micro-batch path makes ONE host read where it made ~120 (T25 next lever 1, window C's top item; no config / obs / signature bump; every logged value and weight bit-identical)
+
+- **Why.** Window C (`designs/research_state/measurements/perf_phase_2026-10-10/README.md`) found 1.75 s of the update's
+  2.2 s of host-blocked time in ONE site: `RndNovelty.update_obs_stats`'s `obs_count.item()`
+  (`ridealong_heads.py:466`), the first of the ride-along tail's device reads, blocking once per epoch-0 micro-batch on the
+  deep queue. Tracing the tail on CPU (`HostSyncTrace`, the golden learner with all heads and variants) showed it was
+  not one site: ~120 reads per epoch-0 micro-batch (490 over 4; ~5,800 per production update at 48), the finding-3 count of
+  item 1's ledger entry. Removing only the first would have moved the drain to the next read, so the whole path went.
+- **What.**
+  - `agents/model/ridealong_heads.py`: `_HostMirror`, a host copy of the RND statistics' two branch buffers
+    (`obs_count == 0`, `err_seen`); valid only for the same tensor object, storage address and `Tensor._version`, else
+    the one device read; a `deepcopy` / pickle starts empty. `RideAlongHeads.losses_gated` returns every loss plus a
+    0-d device gate for the two label guards (`ens`, `opp`); `losses` is its host-filtered form.
+  - `instrumented_ppo/ridealong_terms.py`: `RideAlongAccumulator.observe` / `observe_identification` DEFER (device
+    snapshots). `flush()`, at the first micro-batch past the ride-along epoch or in `metrics()`, folds them in call order:
+    the statistics on the device, every scalar queued on a `HostReadQueue` with its host arithmetic, the columns' copies
+    in the same queue, ONE transfer for the whole fold; each masked set is compacted by one shared `nonzero` +
+    `index_select` (an empty selection's NaN mean is omitted by `add`, as HEAD's `.any()` guards skipped it).
+    `discard_losses` drops a gated-off key. `_ridealong_step` replaces `_ridealong_variant_step` and the
+    heads' tail: variants' and heads' backward and clips are enqueued, then ONE transfer reads every norm and gate, then
+    the verdicts and Adam steps. A False gate (a head with no usable label in a whole micro-batch) takes the RARE path:
+    the heads' graph is retained, the backward is redone over the valid keys, and the old host verdict is made.
+  - `ridealong_step_benchmark.py` folds the meters inside its per-step timing.
+- **Identity.** A copy of the HEAD tree and this tree each ran `ridealong_update_test._build` (a real `train()`, the
+  production surface, flat-pointer labels, B ON) for the all-heads and four-heads surfaces: the policy, PPO's optimizer,
+  both Adam states, the RNG and every logged scalar (278 / 214, the `ridealong/*` 101 / 37 included) are the same bits.
+- **Tests.** NEW `src/agents/training/ridealong_host_sync_test.py` keeps HEAD's `_ridealong_update`, variant step and
+  three RND methods as the ORACLE and compares bit for bit: a clean run, a micro-batch with no win labels (the rare
+  path), a NaN observation, an ensemble-only surface with every label masked, a full `train()`, the mirrors across every
+  kind of outside write (`zero_`, `load_state_dict`, `deepcopy`, `.to(float64)`), the deferral against buffers
+  clobbered after `observe`, and the fold against HEAD's body on seven hand-built edges (an empty opponent class, no
+  win-labelled row, zero advantage variance, no starved action, a zero correlation denominator). `HostSyncTrace` counts 1 host read per ride-along micro-batch (HEAD's path: > 100); the
+  `train()`-level trace puts every meter read after the last micro-batch read (the golden plain update with every head on:
+  1,082 syncs -> 50). Revert-checked: an `.item()` put back in
+  `update_obs_stats` fails two of them.
+- **Not changed.** Other per-micro-batch reads of a PLAIN epoch (K9, the diagnostics probes, the calibration): none left —
+  the plain golden update with heads on traces `read_floats` (the ride-along verdict), the mirrors' priming, the learner's
+  per-optimizer-step drain, the calibration columns and the rank probe, nothing else. A diagnostics update keeps the
+  immediate reads item 1 documented.
+- **FINDINGS.**
+  1. **GPU effect NOT measured** (no lease). Window C's baseline is its `E_stack` (HEAD `15982f6c`: plain update 53.8 s,
+     92.1 % GPU-busy over 3 epochs, epoch 0 85.6 %, 1.75 s blocked at the one site). Paired A/B for the next window, under
+     the lease, from the repo root (`W=designs/research_state/measurements/perf_phase_2026-10-10`; `PARENT` = a tree of
+     this commit's parent, `git archive <parent> src data designs scripts | tar -x -C <dir>`, as `window.sh` does for its
+     pins):
+     `DIAG_SRC=<PARENT>/src scripts/ops/gpu_lock.sh scripts/ops/mem_cap.sh 40 python $W/scripts/update_bench.py --tag E_ride_before --out $W/results/window_D/E_ride_before.json --argv "$(python $W/scripts/configs.py --argv E)" --profile --profile-epochs 3 --sync-sites`
+     then the same line without `DIAG_SRC` (`--tag E_ride_after`). Budget ~11 min each (window C's `E_stack`). Read the
+     update estimate, GPU busy % (epoch 0 expected ~86 % -> ~93 %), the wrapped meter's blocked time at
+     `ridealong_heads.py` (expected ~1.75 s -> ~0) and the per-micro-batch `cudaStreamSynchronize` (expected ~40 over 3
+     epochs -> ~1 per epoch-0 micro-batch plus the fold's ~8 at epoch 1's first). The expected wall gain is ~1 s of 53.8
+     (ESTIMATE: the eager tail's CPU time, ~25 ms per epoch-0 micro-batch, stops being serialised behind the GPU).
+  2. **The fold is the residual**: ~8 data-dependent reads per micro-batch (the win-labelled rows, four opponent
+     classes, the starved / fed / legal sets) and one transfer, once, past epoch 0 — ~440 per production update where the
+     old path made ~5,800 interleaved with the GPU. One sort would cut the four class reads to one; build it only if the
+     A/B shows the fold matters.
+  3. **One transfer per micro-batch remains** (the finiteness verdicts: a non-finite norm must not be stepped). A
+     device-conditional Adam step would remove it; fused Adam's `found_inf` is CUDA-only, so the CPU tests could not hold it.
+  4. **The tracer must be given the heads' optimizers' `step` counters as host tensors** (`optimizer_host_tensors`), or the
+     CPU Adam's own `step.item()` reads count as 590 phantom syncs; on CUDA the heads' Adam is fused and keeps them on
+     the device. The perf-phase notes' "~58,000 syncs per update" counted all 10 epochs; the ride-along path runs in
+     epoch 0 only (RIDEALONG_EPOCHS = 1).
+- **Docs.** `designs/training/ridealong_heads.md` (the new section), `learner_gates.md`, `designs/model/readouts_and_value_routes.md`,
+  `designs/ops/testing.md`, `designs/ops/TASK_BACKLOG.md` T25's row, the training leaf `CLAUDE.md`.

@@ -396,6 +396,62 @@ class ValueEnsemble(torch.nn.Module):
                           for m, p in zip(self.members, self.priors)], dim=-1)   # [B, K]
 
 
+class _HostMirror:
+    """A HOST copy of one 0-d buffer, so a branch on it reads no device scalar (T25 next lever 1).
+
+    The RND statistics branch on two scalars — ``obs_count == 0`` (normalise) and ``err_seen`` (the
+    first batch seeds the z-score) — and both used to be ``.item()`` calls: on CUDA each blocks the
+    host until the GPU queue drains to it, once per micro-batch per RND head (window C: 1.75 s of the
+    update's 2.2 s host-blocked time was the first of them). Both buffers are written ONLY by their
+    own module's update (a count that gains the batch size, a flag that goes True), and every write
+    is a host-known number, so the host can hold the value and read the device exactly ONCE.
+
+    The copy can never go stale silently: it is valid only while the buffer is the SAME tensor object,
+    at the SAME storage address, at the SAME in-place-write count (``Tensor._version``, which every
+    ``fill_`` / ``copy_`` / ``zero_`` / ``load_state_dict`` copy bumps). Anything else — the buffer
+    moved to another device or dtype (a new tensor), reloaded, zeroed from outside
+    (`main.ridealong_read.rnd_choice` does), or a tensor made under ``inference_mode`` (no version
+    counter) — falls back to the one device read and re-records. A copy of the module (``deepcopy``,
+    pickle) starts with an EMPTY mirror (`__reduce__`), so it re-reads its own buffer."""
+
+    __slots__ = ("_buf", "_ptr", "_ver", "_val")
+
+    def __init__(self) -> None:
+        self._buf: Optional[torch.Tensor] = None
+        self._ptr = -1
+        self._ver = -1
+        self._val: Any = None
+
+    def __reduce__(self) -> Tuple[Any, Tuple[()]]:
+        return (_HostMirror, ())
+
+    @staticmethod
+    def _token(buf: torch.Tensor) -> Optional[Tuple[int, int]]:
+        try:
+            return int(buf.data_ptr()), int(buf._version)
+        except RuntimeError:                       # an inference tensor tracks no version: never cache
+            return None
+
+    def get(self, buf: torch.Tensor) -> Any:
+        """The buffer's value as a Python scalar: the mirror's, or ONE device read when it is not valid."""
+        tok = self._token(buf)
+        if tok is not None and self._buf is buf and (self._ptr, self._ver) == tok:
+            return self._val
+        val = buf.item()                           # THE read: first use, or after an outside write
+        self._remember(buf, tok, val)
+        return val
+
+    def set(self, buf: torch.Tensor, val: Any) -> None:
+        """Record ``val`` as ``buf``'s content — call right AFTER the in-place write that stored it."""
+        self._remember(buf, self._token(buf), val)
+
+    def _remember(self, buf: torch.Tensor, tok: Optional[Tuple[int, int]], val: Any) -> None:
+        if tok is None:
+            self._buf = None
+            return
+        self._buf, self._ptr, self._ver, self._val = buf, tok[0], tok[1], val
+
+
 class _RndErrStats(torch.nn.Module):
     """The error z-score's running statistics (an EMA of the batch mean and variance). Each RND
     head — base and every variant — owns ONE, because their error scales differ by construction."""
@@ -410,6 +466,7 @@ class _RndErrStats(torch.nn.Module):
         self.register_buffer("err_mean", torch.zeros(()))
         self.register_buffer("err_var", torch.ones(()))
         self.register_buffer("err_seen", torch.zeros((), dtype=torch.bool))
+        self._seen_mirror = _HostMirror()
 
     @torch.no_grad()
     def update_err_stats(self, err: torch.Tensor) -> None:
@@ -417,10 +474,11 @@ class _RndErrStats(torch.nn.Module):
         if e.numel() == 0:
             return
         m, v = e.mean(), e.var(unbiased=False)
-        if not bool(self.err_seen.item()):
+        if not bool(self._seen_mirror.get(self.err_seen)):
             self.err_mean.copy_(m)
             self.err_var.copy_(torch.clamp(v, min=1e-12))
             self.err_seen.fill_(True)
+            self._seen_mirror.set(self.err_seen, True)
             return
         self.err_mean.mul_(1 - RND_ERR_EMA).add_(RND_ERR_EMA * m)
         self.err_var.mul_(1 - RND_ERR_EMA).add_(RND_ERR_EMA * v)
@@ -452,6 +510,7 @@ class RndNovelty(_RndErrStats):
         self.register_buffer("obs_mean", torch.zeros(self.obs_dim))
         self.register_buffer("obs_var", torch.ones(self.obs_dim))
         self.register_buffer("obs_count", torch.zeros((), dtype=torch.float64))
+        self._count_mirror = _HostMirror()
         self._register_err_stats()
 
     @torch.no_grad()
@@ -463,15 +522,16 @@ class RndNovelty(_RndErrStats):
             return
         m_b = x.mean(0)
         v_b = x.var(0, unbiased=False)
-        n_a = float(self.obs_count.item())
+        n_a = float(self._count_mirror.get(self.obs_count))     # host copy: no device read (see _HostMirror)
         n = n_a + n_b
         delta = m_b - self.obs_mean
         self.obs_mean.add_(delta * (n_b / n))
         self.obs_var.copy_((self.obs_var * n_a + v_b * n_b + delta * delta * (n_a * n_b / n)) / n)
         self.obs_count.fill_(n)
+        self._count_mirror.set(self.obs_count, n)
 
     def normalise(self, obs: torch.Tensor) -> torch.Tensor:
-        if float(self.obs_count.item()) == 0.0:
+        if float(self._count_mirror.get(self.obs_count)) == 0.0:
             x = obs.float()
         else:
             x = (obs.float() - self.obs_mean) / torch.sqrt(self.obs_var + 1e-8)
@@ -823,20 +883,35 @@ class RideAlongHeads(torch.nn.Module):
     def losses(self, b: RideAlongBatch, out: Dict[str, torch.Tensor], *,
                train_rnd: bool = True) -> Dict[str, torch.Tensor]:
         """Per-head scalar losses (MSE / BCE, LINEAR in the labels' first moment — §5.1). A head
-        with no usable label this batch contributes no key."""
+        with no usable label this batch contributes no key. The host-side form of `losses_gated`:
+        it READS each gate (a device sync per guarded head) — the learner's micro-batch path reads
+        them inside its one verdict transfer instead."""
+        losses, gates = self.losses_gated(b, out, train_rnd=train_rnd)
+        return {k: v for k, v in losses.items() if k not in gates or bool(gates[k])}
+
+    def losses_gated(self, b: RideAlongBatch, out: Dict[str, torch.Tensor], *, train_rnd: bool = True
+                     ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        """``(losses, gates)``: `losses` without its two data-dependent HOST guards, so the call
+        reads no device scalar. Every head that can have a loss gets one, and ``gates[key]`` is a
+        0-d device bool saying whether the head has a usable label this batch — ``ens``: some
+        bootstrap-weighted row; ``opp``: some labelled row. A False gate means the key is NOT a loss
+        this batch (`losses` omits it): the caller reads the gates in a transfer it makes anyway and
+        drops those keys then. An ungated key (``rnd``, ``adv``) is always a loss. Dict order is
+        `losses`'s, key for key."""
         from agents.model.opp_intent import INTENT_IGNORE
 
         losses: Dict[str, torch.Tensor] = {}
+        gates: Dict[str, torch.Tensor] = {}
         h = state_hash(b.obs, self.hash_mult)
         if "ens_logits" in out and b.win_target is not None:
             z = _flat(b.win_target).float()
             m = (_flat(b.win_mask).float() if b.win_mask is not None
                  else torch.ones_like(z))
             w = bootstrap_mask(h, self.spec.ensemble, _BITS_V) * m[:, None]      # [B,K]
-            if bool((w.sum(0) > 0).any()):
-                bce = F.binary_cross_entropy_with_logits(
-                    out["ens_logits"], z[:, None].expand_as(out["ens_logits"]), reduction="none")
-                losses["ens"] = ((bce * w).sum(0) / w.sum(0).clamp(min=1.0)).sum()
+            gates["ens"] = (w.sum(0) > 0).any()
+            bce = F.binary_cross_entropy_with_logits(
+                out["ens_logits"], z[:, None].expand_as(out["ens_logits"]), reduction="none")
+            losses["ens"] = ((bce * w).sum(0) / w.sum(0).clamp(min=1.0)).sum()
         if "rnd_err" in out and train_rnd:
             losses["rnd"] = out["rnd_err"].mean()
         if "adv" in out and b.actions is not None and b.advantages is not None:
@@ -850,15 +925,15 @@ class RideAlongHeads(torch.nn.Module):
             # X5 U4: the label column is precomputed by `flat_intent_targets` (OTHER rows included).
             idx = b.flat_target.long().reshape(-1)
             ok = (idx != INTENT_IGNORE).float()
-            if bool(ok.any()):
-                safe = torch.where(idx == INTENT_IGNORE, torch.zeros_like(idx), idx)
-                pred = out["opp"].gather(
-                    -1, safe[:, None, None].expand(-1, self.spec.opp, 1)).squeeze(-1)
-                y = _flat(b.advantages).float()
-                w = bootstrap_mask(h, self.spec.opp, _BITS_B) * ok[:, None]
-                se = (pred - y[:, None]).pow(2)
-                losses["opp"] = ((se * w).sum(0) / w.sum(0).clamp(min=1.0)).sum()
-        return losses
+            gates["opp"] = ok.any()
+            safe = torch.where(idx == INTENT_IGNORE, torch.zeros_like(idx), idx)
+            pred = out["opp"].gather(
+                -1, safe[:, None, None].expand(-1, self.spec.opp, 1)).squeeze(-1)
+            y = _flat(b.advantages).float()
+            w = bootstrap_mask(h, self.spec.opp, _BITS_B) * ok[:, None]
+            se = (pred - y[:, None]).pow(2)
+            losses["opp"] = ((se * w).sum(0) / w.sum(0).clamp(min=1.0)).sum()
+        return losses, gates
 
 
 @startup_builder

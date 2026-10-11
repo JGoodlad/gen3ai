@@ -230,6 +230,11 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   prefix counted once, `--fork-crn dice_and_draws`) are `designs/training/forks.md`.
 - **The ride-along heads** (`--ridealong-*`) run OUTSIDE the fold order and must stay bit-identical ON vs OFF
   (`ridealong_update_test`); their optimizers are ACQUIRED AT STARTUP (`RideAlongLifecycleViolation` otherwise).
+  🚨 **Their micro-batch path makes ONE host read** (the finiteness verdicts, behind one transfer): the RND
+  statistics read host mirrors, the label guards are device gates, the meters are deferred snapshots folded once
+  past epoch 0. A new `.item()` / `float(t)` / `bool(t)` / boolean-mask index in `_ridealong_update`, the heads'
+  `readout` / `losses_gated` or `RideAlongAccumulator.observe` is a per-micro-batch host sync on CUDA —
+  `ridealong_host_sync_test.py` fails it (it keeps HEAD's path as the bit-for-bit oracle).
   🚨 **Only the TRAINEE acquires — an OPPONENT load is an `InferenceMaskablePPO`** (no optimizer, no buffer; refuses
   `learn` / `train` / `save`). 🚨 **Every checkpoint load is STRICT** (`StrictCheckpointLoad`; readers use
   `agents.model.snapshot.load_checkpoint_strict`; gate `src/strict_checkpoint_load_gate_test.py`). Detail:

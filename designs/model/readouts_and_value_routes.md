@@ -178,6 +178,14 @@ trainer's `_setup_model` with its Adam state pre-allocated. There is no lazy bui
 finds one missing raises `RideAlongLifecycleViolation`. The heads' step is the K8 inventory's candidate compile region R-ride; it stays eager
 for now.
 
+**Host reads (T25 next lever 1).** Nothing in the heads' module reads a device scalar per call. The RND
+statistics' two branches (`obs_count == 0`, `err_seen`) read `_HostMirror` copies of those buffers (valid only for
+the same tensor, address and `_version`; one device read per process); `losses_gated` returns every loss plus a 0-d
+device gate for the two label guards (`ens`: some bootstrap-weighted row; `opp`: some labelled row) and `losses` is
+its host-filtered form. The learner's micro-batch path (`designs/training/ridealong_heads.md`) reads the gates and
+every clip norm in one transfer. A new `.item()` / `bool(t)` in `readout`, `losses_gated`, `identification_errors` or
+the RND stat methods puts a host sync back on every epoch-0 micro-batch (`ridealong_host_sync_test.py`).
+
 ---
 
 ## Moved from the leaf (2026-10-10)
