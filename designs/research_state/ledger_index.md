@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,322-line file. **The ledger itself is append-only and is never edited by this**;
+24,340-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**844 headings · 789 dated · 2026-08-01 → 2026-10-11 · ledger 24,322 lines.**
+**845 headings · 790 dated · 2026-08-01 → 2026-10-11 · ledger 24,340 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -864,3 +864,4 @@ rename.
   - `L24247` · `2026-10-10` · MEASURED · **T25 WINDOW E (the last during the closing test): `--trunk-precision bf16` on its FLAG path cuts the end-state update 22.6 % (53.21 → 41.17 s; the bf16 parity rule and the canary PASS); `--t2-lead-trainee` −5.8 % of the T2 host step, bit-identical; `--learner-cudagraphs on` FAILS at its own startup accumulation rung (a CUDAGraphs output overwritten before AccumulateGrad read it; an untyped RuntimeError)**
   - `L24263` · `2026-10-11` · DESCRIPTIVE (POST-HOC, banked rows) · **VALUE DISCRIMINATION FOR SEARCH, the review's reads: DECISIONS, not resolved pairs. An 8-rollout ORACLE leaf's argmax over all legal actions beats the policy's own pick by +0.062 win probability per decision [+0.045, +0.079] (1 rollout +0.025, the critic +0.008 [−0.005, +0.021]); today's shared-seed pairing is worth VRF 1.057 [1.045, 1.072]; the old 2·SE acting rule resolved only 5–7 % of pairs at 4 rollouts, which is why the playout arm bought nothing**
   - `L24302` · `2026-10-11` · REGISTRATION · **THE VALUE-DISCRIMINATION PILOT (oracle world, CPU): decision improvement over the policy's own pick for the critic, rollout leaves (K 1–16), short rollouts (1/2/4 turns then the critic), an AIVAT-style luck-corrected leaf and a mix, under argmax / prior-aware (Gumbel) / sequential-halving / old 2·SE acting rules, on the closing test's end-state AND production seeds 2001, 600 own-trace states each**
+  - `L24323` · `2026-10-11` · REGISTRATION · **VALUE-DISCRIMINATION PILOT PHASE 2: DETERMINIZED (honest-information) worlds — 16 Smogon-prior samples of the opponent's hidden team per state, each rejected unless the searched side's observations replay byte-equal; the same leaf / short-rollout / critic scorers re-measured against the TRUE world's truth, to price how much of the oracle gain survives realistic information**

@@ -3,6 +3,7 @@
 # pin, never main), CPU only (CUDA hidden), nice 19, under a memory cap and a timeout.
 #
 #   run_at_pin.sh <end2|prod> <threads> <GB> <timeout> <script> [args...]
+# A <script> ending in .sh runs under bash (with $VDP_PY the interpreter), anything else under python.
 #
 # Pins: end2 = rb_es_end2_s2001 @ 62085750 (tag closing-test-pend2); prod = rb_es_prod_s2001 @
 # 95d014fa. The pin checkouts live at $VDP_PIN_ROOT/pin_<cp> (default ~/.cache/gen3ai/vdp; made with
@@ -23,6 +24,7 @@ HEAD_SHA="$(cat "$GITDIR/HEAD")"
 if [ "$HEAD_SHA" != "$WANT" ]; then echo "pin checkout $PIN is at $HEAD_SHA, not $WANT" >&2; exit 3; fi
 PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3
 export PYTHONPATH="$PIN/src" CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS="$THREADS" MKL_NUM_THREADS="$THREADS"
-export VDP_CP="$CP" VDP_PIN="$PIN" VDP_PIN_SHA="$HEAD_SHA" VDP_THREADS="$THREADS"
+export VDP_CP="$CP" VDP_PIN="$PIN" VDP_PIN_SHA="$HEAD_SHA" VDP_THREADS="$THREADS" VDP_PY="$PY"
 cd "$PIN"
-exec nice -n 19 "$REPO/scripts/ops/mem_cap.sh" --name "vdp_$CP" "$GB" timeout "$TO" "$PY" "$HERE/$SCRIPT" "$@"
+case "$SCRIPT" in *.sh) RUNNER=bash ;; *) RUNNER="$PY" ;; esac
+exec nice -n 19 "$REPO/scripts/ops/mem_cap.sh" --name "vdp_$CP" "$GB" timeout "$TO" "$RUNNER" "$HERE/$SCRIPT" "$@"

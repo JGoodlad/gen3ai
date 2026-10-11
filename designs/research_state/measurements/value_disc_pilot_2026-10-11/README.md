@@ -93,11 +93,30 @@ IMP(CRITIC) −0.01 to +0.02, R-LEAF LEAF-AHEAD; R-K UNRESOLVED or STILL CLIMBIN
 **Size rule.** The throughput pilot (4 end2 states, cost only, no outcome printed) measured 0.060 CPU-s per
 playout, ~15 CPU-s per state: ≈ 2.5 CPU-hours per checkpoint, far under the 12-hour cap. No state is dropped.
 
-## 6. Results
+## 6. Phase 1 results
 
 Not yet run.
 
-## 7. Files
+## 8. Phase 2: DETERMINIZED worlds (registered by the design doc's §7.10 Amendment 2)
+
+**In plain language.** Phase 1's rollouts cheat: they play from the true battle, so they know the opponent's
+whole team. Phase 2 plays the same rollouts in worlds a real player could believe in: for each decision, 16
+guesses of the opponent's hidden Pokémon and moves, drawn from Smogon usage statistics and thrown away unless the
+guess would have produced EXACTLY what our side saw so far. The referee is unchanged (the true world). The gap
+between Phase 1 and Phase 2 is the price of not knowing the opponent's team (part of it; see the leaks).
+
+| item | value |
+|---|---|
+| worlds | 16 per state; never-seen opponent slots sampled whole (species ∝ Smogon teammate co-occurrence with the revealed species, else usage; moves / item / ability / spread ∝ that species' usage; a Hidden Power sets its IVs), never-seen move slots of a seen mon re-drawn; only moves / items the pin's engine runs (`determinize.BANNED_*`, from `scan_move_probe`) |
+| gate | the world's log, cut at the root, replayed at the pin (`core_events --trackers --obs`): the searched side's obs rows at every decision up to the root must be byte-equal to the true log's; ≤ 30 tries per world; a state enters only with all 16 worlds |
+| leaks (counted) | a seen mon's item, ability, nature, EVs, IVs; an ambiguous unseen move choice kept by name; the opponent's root-turn choice when the log holds it (~1 %); the true pre-root dice (a world must match the true team's construction draws) |
+| playouts | world j, dice seed j (Phase 1's leaf seed j), all actions to the end, CP greedy both sides; the opponent's open root decision answered greedily in the world |
+| honest critic | one-ply successors in worlds 0–7 on seeds 40–47 |
+| referee | Phase 1's TRUE-world truth, seeds 16–39 |
+| rules | **R-HONEST (primary of Phase 2)**: IMP(det LEAF-K8) − IMP(det CRITIC), as R-LEAF. **R-INFO**: IMP(oracle LEAF-K8) − IMP(det LEAF-K8): INFO-COSTS / INFO-FREE (inside ±0.01) / NOT DETECTED. Retained share and strata by unrevealed slots, descriptive |
+| predictions | R-HONEST LEAF-AHEAD at about half the oracle's improvement; R-INFO INFO-COSTS; the gap largest with ≥ 2 unrevealed slots |
+
+## 9. Files
 
 | file | what |
 |---|---|
@@ -107,5 +126,9 @@ Not yet run.
 | `make_states.py` | the pool, gate ①, the root forward, the quintiles, the sample → archive `<cp>/bank/`, `<cp>/pool.npz`; here `states_<cp>.json` |
 | `run_playouts.py` | the driver: all actions × 40 seeds to the end with the value trace, plus the critic's one-ply successors → archive `<cp>/rows/shard_*.jsonl` |
 | `states_end2.json`, `states_prod.json` | the registered samples (edges, counts, ids, the per-(cycle, opponent) capture rates) |
+| `shards.sh` | W shards of one driver in one capped job (`--det` = Phase 2's) |
+| `score.py` | Phase 1's read: every scorer × rule, strata, costs, pairing, verdicts → `result.json`, `result.md` |
+| `determinize.py`, `det_worlds.py`, `det_debug.py` | Phase 2's sampler + gate, the per-state world builder (archive `<cp>/det/worlds_*.jsonl`), a debug aid |
+| `run_det_playouts.py`, `score_det.py` | Phase 2's lockstep driver (archive `<cp>/det/rows_*.jsonl`) and read → `result_det.json`, `result_det.md` |
 
 Bulk: `~/gen3ai_archive/value_disc_pilot/`.

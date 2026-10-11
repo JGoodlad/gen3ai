@@ -516,6 +516,38 @@ widens the pilot. The full text, with every number of the state build, is
 9. **Phase 2 (determinized worlds)** is NOT part of this registration; if built it is registered by its own
    amendment before its first playout.
 
+**Amendment 2 (2026-10-11, PHASE 2 REGISTERED: determinized worlds; committed before any determinized playout
+outcome was read: a 2-state smoke run of the driver printed cost and was deleted unread; the world builder was
+run on 16 + 24 states, which reads no outcome).** An offline measurement only; the owner's deferral of
+determinization on the training side and the ladder stands. Full text: the measurement README §8.
+
+1. **Worlds:** for every state, 16 opponent teams drawn from the SMOGON prior (`data/pokemon` at the pin: species
+   by teammate co-occurrence with the revealed species, sets by move / item / ability / spread usage; only moves
+   and items the pin's engine runs), each REJECTED unless the world's input log, replayed at the pin up to the
+   root, gives the searched side BYTE-EQUAL observation rows at every one of its decisions (≤ 30 tries per world;
+   a state enters only with all 16). What is sampled: every never-seen opponent slot whole, and every never-seen
+   move slot of a seen mon. What stays TRUE (named leaks): a seen mon's species, item, ability, nature, EVs, IVs;
+   a past opponent move choice the searched side never saw executed is rewritten to its SLOT (`move k`), a past
+   switch to a never-seen mon to the world's mon in that slot, except an ambiguous move (in several seen mons'
+   sets), kept by name and counted; the opponent's ROOT-turn choice when the log already holds it (~1 % of roots,
+   as in Phase 1); and, because the gate replays under the TRUE pre-root dice, a world must match the true team's
+   construction draws (the gender-draw class of each never-seen slot): a conditioning slightly stronger than the
+   observations alone.
+2. **Playouts:** world j with Phase 1's dice seed j (j = 0..15), every legal action to the end, CP greedy on both
+   sides; the opponent's open root decision is answered by CP greedy IN THE WORLD. The HONEST critic: one-ply
+   successors in worlds 0–7 on seeds 40–47. The referee is Phase 1's TRUE-world truth (seeds 16–39); the scorers,
+   rules and costs are Phase 1's, computed on the world rows.
+3. **Rules:** **R-HONEST (Phase 2's primary)** on IMP(det LEAF-K8) − IMP(det CRITIC): LEAF-AHEAD (lower > +0.0005)
+   / CRITIC-EQUIVALENT (inside ±0.01) / NOT DETECTED. **R-INFO** on IMP(oracle LEAF-K8) − IMP(det LEAF-K8), same
+   states: INFO-COSTS (lower > +0.0005) / INFO-FREE (inside ±0.01) / NOT DETECTED. Descriptive: the share of the
+   oracle improvement the honest leaf keeps (det / oracle, ratio of means on the same bootstrap draws), by the
+   count of unrevealed opponent slots.
+4. **Predictions:** R-HONEST LEAF-AHEAD with about half the oracle's improvement; R-INFO INFO-COSTS; the gap largest
+   where ≥ 2 opponent slots are unrevealed.
+5. **Build:** ≈ 0.5 agent-day (within the brief's ≤ 1 agent-day bound): `determinize.py`, `det_worlds.py`,
+   `run_det_playouts.py`, `score_det.py`. World building before registration: 16 prod states all reached 16 worlds
+   (mean 3.2 tries per world).
+
 ---
 
 ## 8. Build list
@@ -687,3 +719,4 @@ states over ≥ 300 battles should give about ±0.012, enough to detect a 2-poin
 | 2026-10-11 | **This doc CREATED at the owner's request** ("write the design doc, then have an agent review it and improve on it") | A measurement-first plan: the RNG read from the code (one stream per battle, alignment lost at the first differing draw); two counterfactual-only dice modes (S1 per-turn reseed, S2 counter-keyed split draws) proposed, each CONDITIONAL on the pilot; the pilot DRAFTED (frozen checkpoint, 500 torn states, K = 3, 32 shared seeds + an independent control, greedy continuation, M1–M4, R-PAIR and R-GAP); CPU only | building split streams first (unmeasured gain, a parity-critical crossing); brute-force rollout volume for the critic (excluded by the CRN label refit); a training-side label factory now (deferred by the one-ply scope rule) | §2.2; §5 (code at `c1fae513`); owner 2026-10-11 |
 | 2026-10-11 | **REVIEWED AND REVISED (independent review, owner request)** | The pilot's PRIMARY becomes DECISION IMPROVEMENT over the policy's own pick (R-LEAF), with R-TRUNC (truncated leaves), R-K (the "10×" question on the decision currency) and R-PAIR (now gating S1 only when no truncated leaf works); 600 states stratified by the policy's gap over ALL legal actions; the independent-seed arm dropped; the ORACLE-world asymmetry named as a fifth error source; truncated / mixed leaves, AIVAT-style control variates, a regret-aware acting rule and a sibling-level trunk signal added as levers; the RNG table corrected file by file (47 + 7 sites; Quick Claw at the end of the previous turn moves S1's hook; speed-tie and always-tied shuffles; any faint ends the turn's actions; the fork arm keeps its stream); training-side claims scoped to their provenance (v13-W, rb-blob readout refits; UNVERIFIED for a trunk and the end state); related work added | keeping pairwise accuracy and the separable share as the decision currency (equal accuracy hid unequal decisions on banked rows); a torn-only sample (the banked leaf value is larger on decided states); the independent-seed control (the derangement estimator reads 1.000 [0.996, 1.005]); building S1 on an S0 VRF the banked rows already put at 1.06–1.13 without first trying truncation | §2.3 and §12 (POST-HOC reads of banked rows, `research_state/measurements/value_disc_review_2026-10-11/`); §5 re-verified at `f56621db`; owner 2026-10-11 |
 | 2026-10-11 | **PILOT REGISTERED (§7.10 Amendment 1), owner brief "make any decisions to gather data useful for design or our roadmap"** | Both closing-test seeds 2001 (end2 at `62085750`, prod at `95d014fa`), each at its own pin and on its own eval-trace states (600 each, gap quintiles); seeds 0–15 leaf / 16–39 truth / 40–47 critic; added scorers LEAF-K16, TRUNC at K up to 16, the AIVAT-style branch-turn control variate CV-K; acting rules defined before any outcome (ARGMAX, PRIOR-k, GUMBEL with `mctx` defaults, PUCT, sequential halving at matched budgets, the old 2·SE gate); R-PRIOR and R-SH added as secondary rules | waiting for the closing-test verdict to pick one arm (both are read instead, so the end-state critic's decision value and production's are both measured); the Lane S bank (off-distribution); the per-turn AIVAT form (needs extra dice samples per turn: deferred) | `research_state/measurements/value_disc_pilot_2026-10-11/README.md`; ledger 2026-10-11 REGISTRATION |
+| 2026-10-11 | **PHASE 2 REGISTERED (§7.10 Amendment 2): determinized worlds, offline** | 16 Smogon-prior worlds per state, rejection by byte-equal replay of the searched side's observations; Phase 1's scorers re-measured against the true world's truth; R-HONEST (honest leaf vs honest critic) and R-INFO (oracle vs honest leaf) registered | the model's own belief (X5 hypothesis tokens) as the sampler (a decoder for sampling sets from the network's belief is a bigger build, and the Smogon prior is the owner's prior rule); a fresh state constructor in the Rust core (a parity-critical crossing; rejection over the true log needs none); full determinization of a seen mon's item / EVs / nature (they shape the observed history, so the byte-equal gate would reject almost every redraw) | `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §8; ledger 2026-10-11 REGISTRATION "PHASE 2" |

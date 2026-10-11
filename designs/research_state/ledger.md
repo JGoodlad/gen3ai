@@ -24319,3 +24319,21 @@ text: `measurements/value_disc_pilot_2026-10-11/README.md` §2–§5.
   CLIMBING; R-TRUNC d = 4; R-PAIR NO SIGNATURE; R-PRIOR NOT DETECTED or HELPS; R-SH HELPS.
 
 Tag: **REGISTRATION · CPU · oracle world · no outcome read**
+
+### 2026-10-11 · REGISTRATION · **VALUE-DISCRIMINATION PILOT PHASE 2: DETERMINIZED (honest-information) worlds — 16 Smogon-prior samples of the opponent's hidden team per state, each rejected unless the searched side's observations replay byte-equal; the same leaf / short-rollout / critic scorers re-measured against the TRUE world's truth, to price how much of the oracle gain survives realistic information**
+
+Registered by `design_value_discrimination.md` §7.10 Amendment 2 before any determinized playout outcome was read
+(a 2-state driver smoke run was deleted unread; the world builder reads no outcome). Offline measurement only: the
+owner's deferral of determinization for training and the ladder stands. Full text:
+`measurements/value_disc_pilot_2026-10-11/README.md` §8.
+
+- **Worlds:** never-seen opponent slots sampled whole and never-seen move slots of seen mons re-drawn, from the
+  Smogon priors at the pin (engine-supported moves / items only); gate = byte-equal searched-side obs rows up to
+  the root, ≤ 30 tries per world, all 16 worlds or the state is excluded. Named leaks: a seen mon's item, ability,
+  nature, EVs, IVs; ambiguous unseen move choices kept by name; the root-turn opponent choice when the log holds it
+  (~1 %); the true pre-root dice (construction-draw class).
+- **Rules:** R-HONEST (primary) IMP(det LEAF-K8) − IMP(det CRITIC); R-INFO IMP(oracle LEAF-K8) − IMP(det LEAF-K8)
+  (INFO-COSTS / INFO-FREE inside ±0.01 / NOT DETECTED). Predictions: LEAF-AHEAD at about half the oracle's gain;
+  INFO-COSTS; the gap largest with ≥ 2 unrevealed opponent slots.
+
+Tag: **REGISTRATION · CPU · offline · no outcome read**
