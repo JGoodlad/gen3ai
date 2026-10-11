@@ -607,7 +607,7 @@ Pilot (B1–B3): ≈ 1.5 agent-days of build plus ≈ 1 wall-day of CPU at low p
 8. **Corrected the "E|gap| ≈ 0.177, biased up by noise" reading**: it is noise-CORRECTED, and the Normal assumption
    behind E|gap| = sd·√(2/π) fails on the top-2 column (split-half deficit).
 9. **Fixed the build list**: the playoff acting rule was DELETED (`8b5c7e4d`); its constants are recorded and B3
-   re-implements it. Dropped the independent-seed arm. Fixed "rule 5b" (no such rule) to standing rule 5's heavy-job
+   re-implements it. Dropped the independent-seed arm. [Orchestrator correction 2026-10-11: rule 5b DOES exist in root CLAUDE.md (added `0cecbda7` / `38136597`, CPU work at `nice -n 19` uncapped while a run is live); the reviewer's worktree predated it] Fixed "rule 5b" to standing rule 5's heavy-job
    clause. Defined torn with the strict `<` the refit applied.
 10. **Tightened S1 / S2's design and gates**: S2's keys split by source, durations mon-keyed, shuffles event-keyed, a
     32-bit PRF output; a raw-draw uniformity gate added ahead of the downstream law gate, with bars wide enough that
