@@ -87,8 +87,7 @@ def build_models(dst: Path, *, n_sentinels: int, trainee: Optional[str] = None,
                     break
         return trainee, list(sentinels or []), str(cfg)
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
-    from agents.model.snapshot import arch_toggles_from_model, current_model_version
-    from agents.observation.state_encoder import load_mappings
+    from agents.model.snapshot import recorded_model_version
     from main.fresh_checkpoint import build_fresh_model
 
     with declared_torch_state(1):
@@ -99,7 +98,7 @@ def build_models(dst: Path, *, n_sentinels: int, trainee: Optional[str] = None,
             p = dst / f"snapshot_{(i + 1) * 1000:012d}.zip"
             model.save(str(p))
             out.append(str(p))
-    cfg.write_text(current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
+    cfg.write_text(recorded_model_version(model).to_json())
     return out[-1], out[:-1], str(cfg)
 
 
@@ -189,9 +188,8 @@ def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[s
               core_threads: int, torch_threads: int, forensic_root: Optional[Path], keep_games: bool,
               oracle_reveal: str, emit: Callable[[str], None]) -> Dict[str, Any]:
     from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
-    from agents.model.snapshot import (arch_toggles_from_model, current_model_version, historical_load_kwargs,
-                                       load_checkpoint_strict, load_foreign_opponent)
-    from agents.observation.state_encoder import load_mappings
+    from agents.model.snapshot import (arch_toggles_from_model, historical_load_kwargs, load_checkpoint_strict,
+                                       load_foreign_opponent, recorded_model_version)
     from agents.training.eval_quota import ForensicQuota
     from agents.training.eval_sharding import ShardedEvalPool
     from agents.training.fixed_opponent_pool import FixedOpponentEntry
@@ -207,7 +205,7 @@ def _run_rust(*, run_dir: Path, model_dir: Path, trainee: str, sentinels: List[s
         model = load_checkpoint_strict(trainee, device=device, **historical_load_kwargs(trainee))
         model.policy.eval()
         # FIXED opponents as `rust_env_setup` loads and declares them
-        version = current_model_version(load_mappings(), **arch_toggles_from_model(model)) if fixed else None
+        version = recorded_model_version(model) if fixed else None
         # on the CPU, as `rust_env_setup` loads them: a fixed opponent is only a weight source for its slots
         fixed_pol = {f["label"]: load_foreign_opponent(f["path"], current_version=version, device="cpu",
                                                        config_path=f["config_path"])[0].policy.eval() for f in fixed}

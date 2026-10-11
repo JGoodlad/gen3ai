@@ -1624,148 +1624,70 @@ def current_model_version(
     )
 
 
+#: `current_model_version` keywords that are NOT architecture toggles: the mappings, the loss coefficients
+#: and the reward block. Every OTHER keyword is a toggle, read by :func:`arch_toggles_from_model`.
+_NON_TOGGLE_KWARGS = frozenset({
+    "mappings", "opp_belief_aux_coef", "move_belief_coef", "move_belief_latent_coef", "spread_belief_coef",
+    "hp_type_belief_coef", "item_belief_coef", "vf_coef", "reward_config",
+})
+
+
+def recorded_policy_kwargs(model: Any) -> Dict[str, Any]:
+    """The policy kwargs THIS model was BUILT from, as SB3 records them (``model.policy_kwargs``: the trainer's
+    own dict on a fresh run, the zip's saved one on a load). Their ``features_extractor_kwargs`` carry every
+    architecture toggle the run RESOLVED (arch-arm overlays and implied fields included), which is exactly what
+    the run's ``model_config.json`` and every snapshot it wrote record. A model without them is refused (typed):
+    rebuilding the version any other way is the bug this replaces."""
+    pk = getattr(model, "policy_kwargs", None)
+    if not isinstance(pk, dict) or not isinstance(pk.get("features_extractor_kwargs"), dict):
+        raise ModelVersionError(
+            "this model records no policy_kwargs['features_extractor_kwargs'], so its RECORDED architecture is "
+            "unknown — a compat gate will not rebuild one from the built modules (gen3_recorded_version_gate_v1)")
+    return pk
+
+
 def arch_toggles_from_model(model: Any) -> dict:
-    """Extract THIS run's architecture TOGGLES from a live model, JSON-serializable for a worker
-    subprocess's cfg. The eval/self-play workers run in separate processes and rebuild a
-    ``current_model_version`` to gate sentinel/foreign snapshot loads; without the run's real toggles
-    that gate is toggle-OFF and FATALs on the run's own belief-ON / attend-unrevealed
-    snapshots. Pass this dict through the worker cfg and splat it into ``current_model_version``."""
-    fe = model.policy.features_extractor
-    return {
-        "attend_unrevealed_opponents": bool(getattr(fe, "attend_unrevealed_opponents", False)),
-        "opp_belief_cls_k": int(getattr(fe, "opp_belief_cls_k", 0)),
-        "opp_belief_slots": bool(getattr(fe, "opp_belief_slots", False)),
-        "move_belief_mode": str(getattr(fe, "move_belief_mode", "off")),
-        "damage_op": bool(getattr(fe, "damage_op_enabled", False)),
-        "damage_outgoing": bool(getattr(fe, "damage_outgoing", False)),
-        "move_candidate_floor": float(getattr(fe, "move_candidate_floor", _PRIOR_FLOOR)),
-        "move_latent": bool(getattr(fe, "move_latent", False)),
-        "spread_belief": bool(getattr(fe, "spread_belief_enabled", False)),
-        "spread_belief_nature": bool(getattr(fe, "spread_belief_nature", False)),
-        "move_prior_fusion": bool(getattr(fe, "move_prior_fusion", False)),
-        "damage_candidate_k": int(getattr(fe, "damage_candidate_k", 0)),
-        # v51 gen3_pointer_native_v1: no pointer toggle — the pointer head is unconditional (the
-        # cross-era break rides ARCH_SIGNATURE, not a kwarg).
-        # v71 gen3_tiered_pipeline_v1: no prefuse/reattend toggles either — the PRE-transformer
-        # placement is unconditional, so there is nothing for a worker to gate on.
-        # v54 gen3_entity_move_seats_v1: STRUCTURAL int (threat_seat_proj + seat count), gated in
-        # check_compatible — must reach the worker's gate.
-        "entity_topk_seats": int(getattr(fe, "entity_topk_seats", 0)),
-        "consequence_topk": int(getattr(fe, "consequence_topk", 6)),
-        # v56 gen3_edge_bias_trunk_v1: STRUCTURAL str (per-family bias maps + attention biases),
-        # gated in check_compatible — must reach the worker's gate.
-        "edge_bias_families": str(getattr(fe, "edge_bias_families", "off")),
-        "entity_tail_seats": bool(getattr(fe, "entity_tail_seats", False)),
-        "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
-        # gen3_ridealong_heads_v1 (v126): same category — the declarations the policy built from.
-        "ridealong_ensemble": int(getattr(fe, "ridealong_ensemble", 0) or 0),
-        "ridealong_rnd": bool(getattr(fe, "ridealong_rnd", False)),
-        "ridealong_adv": int(getattr(fe, "ridealong_adv", 0) or 0),
-        "ridealong_opp": int(getattr(fe, "ridealong_opp", 0) or 0),
-        "ridealong_rnd_variants": str(getattr(fe, "ridealong_rnd_variants", "off") or "off"),
-        # gen3_oracle_reveal_v1 (v137): the diagnostic observation mode the policy was built under.
-        "oracle_reveal": str(getattr(fe, "oracle_reveal", "off") or "off"),
-        # gen3_policy_readout_trunk_v1 (v138, audit F2): `trunk` retires the flat policy tower and builds
-        # the trunk state query — a state_dict delta, so a frozen opponent's gate must see it.
-        "policy_readout": str(getattr(fe, "policy_readout", "tower") or "tower"),
-        # gen3_static_tokens_v1 (v139): the per-Pokemon token encoding (a different state_dict under the
-        # same `pokemon_encoder` prefix), so a frozen opponent's gate must see it.
-        "token_encoding": str(getattr(fe, "token_encoding", "legacy") or "legacy"),
-        "move_resolution": str(getattr(fe, "move_resolution", "off") or "off"),
-        # gen3_speed_physics_v1 (v143): the op's P(act first) physics — no parameters, so a frozen opponent's
-        # gate must see it (nothing shape-based would).
-        "speed_physics": str(getattr(fe, "speed_physics", "off") or "off"),
-        # gen3_obs_facts_v1 (v144, part 3): `v1` builds `ObsFactsInject` (a state_dict delta).
-        "obs_facts": str(getattr(fe, "obs_facts", "off") or "off"),
-        # gen3_op_reduction_principled_v1 (v146): 'principled' re-means every op reduction over their believed moves
-        # and builds `op_worst_proj`, so a frozen opponent's gate must see it.
-        "op_reduction": str(getattr(fe, "op_reduction", "max") or "max"),
-        # gen3_static_port_v1 (v147): each `on` builds a zero-init projection, so a frozen opponent's gate must see it.
-        "mon_hazard_cost": str(getattr(fe, "mon_hazard_cost", "off") or "off"),
-        "move_actor_state": str(getattr(fe, "move_actor_state", "off") or "off"),
-        # gen3_static_recovery_v1 (v150): each builds parameters, so a frozen opponent's gate must see it.
-        "trunk_layers": int(getattr(fe, "trunk_layers", 2) or 2),
-        "switch_hazard_cost": str(getattr(fe, "switch_hazard_cost", "off") or "off"),
-        "eot_residual": str(getattr(fe, "eot_residual", "off") or "off"),
-        # gen3_endstate_facts_v1 (v152): each changes the forward, so a frozen opponent's gate must see it.
-        "move_resolution_facts": str(getattr(fe, "move_resolution_facts", "off") or "off"),
-        "status_facts": str(getattr(fe, "status_facts", "off") or "off"),
-        "ko_ramp": str(getattr(fe, "ko_ramp", "ramp") or "ramp"),
-        "drop_progress_clock": str(getattr(fe, "drop_progress_clock", "off") or "off"),
-        "g_ledger": str(getattr(fe, "g_ledger", "coarse") or "coarse"),
-        # gen3_probe_facts_v1 (v153): each builds a projection, so a frozen opponent's gate must see it.
-        "effective_stats": str(getattr(fe, "effective_stats", "off") or "off"),
-        "move_target_state": str(getattr(fe, "move_target_state", "off") or "off"),
-        # gen3_move_set_closure_v1 (v154): changes the forward, so a frozen opponent's gate must see it.
-        "move_set_closure": str(getattr(fe, "move_set_closure", "off") or "off"),
-        # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
-        # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
-        # gate must see it (else an inject-on run FATALs loading its own sentinels).
-        "value_threat_inject": bool(getattr(fe, "value_threat_inject", False)),
-        # gen3_opp_intent_v1 (v67): state_dict-changing heads, so a frozen opponent's gate must see them.
-        "opp_intent": bool(getattr(fe, "opp_intent", False)),
-        # gen3_species_prior_fusion_v1 (v68): the state_dict is identical either way, so this toggle is
-        # the ONLY carrier of what the species head's output MEANS — a frozen opponent's gate must see it.
-        "species_prior_fusion": bool(getattr(fe, "species_prior_fusion", False)),
-        # gen3_t0_species_prior_v1 (v72): same shape of toggle — no state_dict delta, so the
-        # recorded value is the only thing a resume can compare.
-        "t0_species_prior": bool(getattr(fe, "t0_species_prior", None) is not None),
-        "opp_intent_grad_mode": str(getattr(fe, "opp_intent_grad_mode", "detached")),
-        "intent_value_reduce": bool(getattr(fe, "intent_value_reduce", None) is not None),
-        # gen3_intent_move_cell_v1 (v77): widens the pointer move scorer (policy state_dict), so a
-        # frozen opponent's gate must see it (else a flag-on run FATALs loading its own sentinels).
-        "intent_move_cell": bool(getattr(fe, "intent_move_cell", None) is not None),
-        # gen3_unified_value_readout_v1 (v80): widens the value projection (state_dict), so a
-        # frozen opponent's gate must see it.
-        "value_entity_pool": bool(getattr(fe, "value_entity_pool", None) is not None),
-        # gen3_unified_value_readout_v2 (v82): the full row set grows source_emb (state_dict).
-        "value_entity_pool_full": bool(getattr(
-            getattr(fe, "value_entity_pool", None), "full", False)),
-        # gen3_event_window_v1 (v81): adds the EventSeats trunk modules (state_dict), gated.
-        "history_events": bool(getattr(fe, "history_events", None) is not None),
-        # gen3_item_belief_v1 (v83): adds the ItemBelief module (state_dict), gated.
-        "item_belief": bool(getattr(fe, "item_belief_head", None) is not None),
-        # gen3_intent_threshold_v1 (v84): the threshold operator's projections (state_dict), gated.
-        "intent_threshold": bool(getattr(fe, "intent_threshold_move", None) is not None),
-        # gen3_intent_conditional_v1 (v85): the mechanic-cell projection (state_dict), gated.
-        "intent_conditional": bool(getattr(fe, "intent_conditional", None) is not None),
-        # gen3_pair_outcome_v1 (v93): the unified outcome vector's move-cell projection
-        # (state_dict + pointer-move-cell width), gated.
-        "pair_outcome_cell": bool(getattr(fe, "pair_outcome_move", None) is not None),
-        # gen3_pair_outcome_switch_v1 / gen3_switch_branch_v1 (v94): the Phase B projections
-        # (state_dict + pointer switch/move cell widths), both gated.
-        "pair_outcome_switch": bool(getattr(fe, "pair_outcome_switch", None) is not None),
-        "switch_branch_cell": bool(getattr(fe, "switch_branch", None) is not None),
-        # gen3_conditional_threat_v1 (v95): the Phase C projection — OA1 widens the pointer SWITCH
-        # cell. Read off the BUILT module, never off a stored bool, so a config that lies about
-        # itself cannot survive.
-        "conditional_threat_cell": bool(getattr(fe, "conditional_threat", None) is not None),
-        # gen3_op_lean_forward_v1 (v86): out_gain shape / d3 forward math, both gated.
-        "op_drop_renders": bool(getattr(getattr(fe, "damage_op", None), "drop_renders", False)),
-        "op_believed_lean": bool(getattr(getattr(fe, "damage_op", None), "believed_lean", False)),
-        # gen3_value_direct_routes_v1 (v87): both widen the value projection (state_dict), gated.
-        "value_clock": bool(getattr(fe, "value_clock_route", None) is not None),
-        "value_intent": bool(getattr(fe, "value_intent_route", None) is not None),
-        # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
-        # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
-        "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),
-        # gen3_per_move_matrices_v1 (v32): the outgoing per-move damage matrix — STRUCTURAL bool (widens the
-        # op out_dim), gated in check_compatible, so it must reach the worker's gate.
-        "damage_matrices_outgoing": bool(getattr(fe, "damage_matrices_outgoing", False)),
-        # gen3_per_move_matrices_v1 (v33): the incoming per-move damage matrix — STRUCTURAL bool, gated.
-        "damage_matrices_incoming": bool(getattr(fe, "damage_matrices_incoming", False)),
-        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons → opp active) —
-        # STRUCTURAL bool (widens the op out_dim), gated in check_compatible, so it must reach the worker's gate.
-        # gen3_hp_belief_ablation_v1 (v53): 'composed' vs 'flat' changes both the state_dict (the
-        # HPTypeBelief head) and the forward, so it must reach the worker's check_compatible gate.
-        "hp_belief_mode": str(getattr(fe, "hp_belief_mode", "composed")),
-        # gen3_belief_grad_mode_v1 (v41): the belief-trunk-gradient knob. detach() is value-preserving so a
-        # frozen opponent's forward is identical regardless — it is NOT check_compatible-gated (resume-only).
-        # Threaded for the trainee's recorded config + so a worker rebuilds the SAME forward (no-op either way).
-        "belief_grad_mode": str(getattr(fe, "belief_grad_mode", "shaping")),
-        # gen3_winprob_critic_mode_v1: a policy attribute.
-        "critic": str(getattr(model.policy, "_critic_mode", "shaped")),
-    }
+    """THIS run's architecture TOGGLES, JSON-serializable for a worker cfg and splattable into
+    ``current_model_version`` — read from the RECORDED policy kwargs (:func:`recorded_policy_kwargs`), NEVER off
+    the built modules (gen3_recorded_version_gate_v1, 2026-10-11).
+
+    A built-module read is NOT the recorded configuration: under ``--move-resolution on`` the policy BUILDS the
+    seven per-action blocks (``intent_move_cell``, ``intent_threshold``, ``intent_conditional``,
+    ``pair_outcome_cell``, ``pair_outcome_switch``, ``switch_branch_cell``, ``conditional_threat_cell``) and then
+    RETIRES them (``retire_superseded_action_cells``), so a module read says False where the run's
+    ``model_config.json`` and every snapshot it wrote say True — the ``--arch endstate`` seed
+    ``rb_es_end_s2001`` FATALed loading its own sentinels at its first pool eval (``intent_move_cell mismatch:
+    saved=True, current=False``), and ``main.h2h`` could not declare an engine for its checkpoints.
+
+    The key set is DERIVED: every ``current_model_version`` keyword but :data:`_NON_TOGGLE_KWARGS`, each
+    defaulting to that keyword's default when the recorded kwargs predate it (the extractor builds the same
+    default) — a new toggle cannot be forgotten here. ``critic`` is a policy kwarg."""
+    import inspect
+
+    pk = recorded_policy_kwargs(model)
+    fek = pk["features_extractor_kwargs"]
+    out: Dict[str, Any] = {}
+    for k, p in inspect.signature(current_model_version).parameters.items():
+        if k in _NON_TOGGLE_KWARGS:
+            continue
+        d = p.default
+        v = fek.get(k, d)
+        out[k] = d if v is None else (type(d)(v) if d is not None else v)
+    out["critic"] = str(pk.get("critic", "shaped") or "shaped")
+    return out
+
+
+def recorded_model_version(model: Any, mappings: Optional[Dict[str, Any]] = None) -> ModelVersion:
+    """THE one helper every compat / version comparison against a LIVE model goes through: the ``ModelVersion``
+    the model's RECORDED policy kwargs build (``ModelVersion.from_layout_and_policy_kwargs`` over this tree's
+    layout, as the trainer builds the version it saves), never one rebuilt from built-module reads
+    (:func:`arch_toggles_from_model` docs). Its gated fields equal the run's ``model_config.json``'s."""
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    pk = recorded_policy_kwargs(model)
+    layout = Gen3ObservationEncoder(mappings if mappings is not None else load_mappings()) \
+        .get_features_extractor_kwargs()["layout"]
+    return ModelVersion.from_layout_and_policy_kwargs(layout, pk, vf_coef=float(getattr(model, "vf_coef", 0.5)))
 
 
 def _resolve_paths(model_path: str) -> tuple[str, str]:

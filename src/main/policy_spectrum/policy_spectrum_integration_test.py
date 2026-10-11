@@ -97,8 +97,7 @@ def test_gate_one_has_teeth():
 def test_the_reader_is_deterministic_on_an_x5_checkpoint(tmp_path, restore_torch_globals):
     """Two reads of one fresh production (X5) checkpoint on a slice of the bank are byte-identical (the
     recording policies in the archive predate the X5 version break, so the reader cannot load them at HEAD)."""
-    from agents.model.snapshot import arch_toggles_from_model, current_model_version
-    from agents.observation.state_encoder import load_mappings
+    from agents.model.snapshot import recorded_model_version
     from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
     from main.policy_spectrum.reader import load_probs, read_checkpoint, reencode
@@ -113,7 +112,7 @@ def test_the_reader_is_deterministic_on_an_x5_checkpoint(tmp_path, restore_torch
         snap = run / "snapshot_000000001000.zip"
         model.save(str(snap))
     (run / "model_config.json").write_text(
-        current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
+        recorded_model_version(model).to_json())
     rows, masks, gate = reencode(sub)
     r1 = read_checkpoint(sub, rows, masks, gate, snap, "a", tmp_path, threads=2)
     r2 = read_checkpoint(sub, rows, masks, gate, snap, "b", tmp_path, threads=2)

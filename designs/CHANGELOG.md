@@ -13979,3 +13979,30 @@ read both cells for its end-of-turn rule and found them wrong.
   profiler while kernel time fell.
 - **Docs.** The measurement README (window E, F-PE-1..3), `PLAN.md` §5, `designs/ops/TASK_BACKLOG.md` T25,
   `compile_flags.md` Lever C, the training leaf.
+
+## 2026-10-11 — gen3_recorded_version_gate_v1: every opponent / eval version gate compares against the RECORDED version
+
+- **The incident.** The closing test's `--arch endstate` seed `rb_es_end_s2001` (pinned `b132b099`) died at its first
+  self-play eval after the pool filled (~6M steps): `intent_move_cell mismatch: saved=True, current=False` in
+  `rust_eval/launch.load_sentinels`. `--move-resolution on` builds the seven per-action blocks (`intent_move_cell`,
+  `intent_threshold`, `intent_conditional`, `pair_outcome_cell`, `pair_outcome_switch`, `switch_branch_cell`,
+  `conditional_threat_cell`) and then RETIRES them; `snapshot.arch_toggles_from_model` read the BUILT modules, so it
+  said False where `model_config.json` and every snapshot record True. The same read made `main.h2h` reject every
+  end-state checkpoint (measured at `b132b099` on the real checkpoints: the end-state x production cross raised
+  `CellArchMismatch`).
+- **The fix (loading / compat code only).** `snapshot.recorded_model_version(model)` — the version the model's own
+  recorded policy kwargs build — is the one helper; `arch_toggles_from_model` reads the recorded kwargs (its key set
+  derived from `current_model_version`'s keywords). Routed: `load_sentinels`, `h2h.arch.EngineArch`,
+  `rust_eval/offline` (the fixed-opponent gate, and `build_models` now WRITES the recorded version), the h2h conftest
+  and three integration tests' config writers. Audited unchanged: `_run_arch_toggles(args)` (args = recorded),
+  `main.capacity` (reads the saved config), every `load_foreign_opponent` caller (arch_signature gate only), the
+  prober (no gate), `main.critic_gate` (loads no checkpoint), `main.plateau` (h2h's engine).
+- **Identity (CPU, the registered `graph_sha.py`).** Production `421c6b98ce7937f4` / `749c56159ab028f4` /
+  `51c02c6c6342a045` unchanged. The closing test's P_end moves to `62085750` (tag `closing-test-pend2`: `b132b099` +
+  this fix cherry-picked; end-state `42ee361b11fa5a8d` / `df71da47741a8a0f` / `5adfaa6c40a7a71e` unchanged, K9 golden
+  green, h2h `declare_engine` OK on the real `rb_es_end_s2001` @6,000,038 + @5,000,013 x `rb_es_prod_s2001`). On main
+  the end-state graph is `a1e771af47523746` with or without this fix (since `5eef9934`, `--ko-ramp exact` is the
+  closed form).
+- **Tests (fail on revert).** `agents/training/rust_eval/recorded_version_gate_test.py` (a pool eval's sentinel load
+  under `--arch endstate` / `static_recovery` / `production`), `main/h2h/recorded_version_cross_test.py` (the cross
+  shape with two end-state checkpoints).

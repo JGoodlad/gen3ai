@@ -864,7 +864,10 @@ run pinned its eval trainee team (`metadata.json` `matchup_history`) is REFUSED,
 variants, P11d, so such a checkpoint cannot be played as it was trained). Both players
 load through `load_checkpoint_strict` with `historical_load_kwargs` (a kwarg deleted since the checkpoint was written —
 PopArt, the value-dist head — is stripped, an ON one refused) and are gated against the live architecture
-(`check_opponent_snapshot_compatible`).
+(`check_opponent_snapshot_compatible`). A slot group's version and toggles are the checkpoint's RECORDED ones
+(`snapshot.recorded_model_version` / `arch_toggles_from_model`, read from its policy kwargs, never off the built
+modules — `gen3_recorded_version_gate_v1`: a built-module read rejected every `--arch endstate` checkpoint, whose
+`--move-resolution on` retires seven blocks its config records ON; `main/h2h/recorded_version_cross_test.py`).
 
 🚨 **THE MIRROR CANCELS TEAM LUCK, NOT SEAT LUCK, AND IT IS NOT AN EXACT MIRROR IMAGE.** A pair hands the teams over and
 KEEPS the player in seat p1 on one battle seed. So (1) a SEAT advantage `u` adds to every edge — a checkpoint against

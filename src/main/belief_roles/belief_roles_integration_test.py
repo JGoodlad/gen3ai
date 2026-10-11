@@ -18,8 +18,7 @@ BANKED_BLOB_EROW = ("designs", "research_state", "measurements", "x5ab_look3_202
 
 def _save(dst, seed: int, perturb: bool):
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
-    from agents.model.snapshot import arch_toggles_from_model, current_model_version
-    from agents.observation.state_encoder import load_mappings
+    from agents.model.snapshot import recorded_model_version
     from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
     from main.train.production_args import production_args
@@ -32,7 +31,7 @@ def _save(dst, seed: int, perturb: bool):
         path = dst / "snapshot_000000001000.zip"
         model.save(str(path))
     (dst / "model_config.json").write_text(
-        current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
+        recorded_model_version(model).to_json())
     return path
 
 

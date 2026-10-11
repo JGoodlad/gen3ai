@@ -32,8 +32,7 @@ def B_DIR() -> Path:
 @pytest.fixture(scope="module")
 def ckpt(tmp_path_factory) -> Path:
     """A fresh production (X5) checkpoint + its run-level ``model_config.json``."""
-    from agents.model.snapshot import arch_toggles_from_model, current_model_version
-    from agents.observation.state_encoder import load_mappings
+    from agents.model.snapshot import recorded_model_version
     from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
     from main.train.production_args import production_args
@@ -45,7 +44,7 @@ def ckpt(tmp_path_factory) -> Path:
         p = run / "checkpoints" / "final_model.zip"
         model.save(str(p))
     (run / "model_config.json").write_text(
-        current_model_version(load_mappings(), **arch_toggles_from_model(model)).to_json())
+        recorded_model_version(model).to_json())
     return p
 
 
