@@ -751,6 +751,34 @@ Phase 1's dice seeds, against Phase 1's TRUE-world truth. 578 / 579 states (22 /
   mismatches); a driver bug that refused states with a rewritten opponent move was fixed before any read
   (Amendment 4).
 
+### 7.13 Phase 3 RESULTS (the offline per-action value head, end2, 2026-10-11; README §12, `result_qhead.md`)
+
+A per-action head on the FROZEN end2 checkpoint, fit on K = 2 oracle playout labels of 9,629 states from 964
+battles disjoint from the evaluation's, acting with no rollout and no world at decision time; the 600 registered
+states, truth seeds 16–39.
+
+| read | value [95 %] |
+|---|---|
+| **R-QHEAD** (QHEAD − policy) | −0.004 [−0.016, +0.009] **NOT DETECTED** |
+| **R-QHEAD-CRITIC** (QHEAD − honest one-ply critic, 578 common) | −0.018 [−0.032, −0.004] **BEHIND** |
+| validation R² of the centred labels (25 / 50 / 100 % of the fit battles) | −0.004 / −0.001 / +0.002 (best epoch 1–2) |
+| the labels' dice-noise share (K = 2; POST-HOC, training states) | 83 % of the centred variance (R² ceiling 0.17 on these labels) |
+| one slope on the policy logit / the A head (validation R²) | +0.005 / +0.005 |
+| ride-along A head's argmax (descriptive, no rollout) | **+0.010 [+0.001, +0.020]** (moves off the policy's pick on 20 % of states) |
+
+**What it says.**
+- **Oracle labels are an unbiased honest target, but at K = 2 on ~10k states they are almost all noise for a
+  sibling-ranking head:** 83 % of the label spread between sibling actions is dice, and most of the rest is what the
+  hidden team decides (R-INFO), so the observation-predictable advantage is a few percent of the label variance; the
+  head over-fits within two epochs and ranks siblings worse than the policy's own logits (Spearman 0.10 vs 0.14). The
+  §13.8 route is not refuted, but it needs far more label signal per action (many more playouts or states) or a
+  TRAINED body, both outside this offline test.
+- **It agrees with the old CRN null** (a state-value readout refit on one-ply successors, older architecture): a
+  frozen body with a refit readout does not learn to separate siblings from oracle labels at these budgets.
+- **The network's own ride-along A head** (trained on-policy on the taken action's advantage, built for meters, never
+  for acting) improves the policy's pick by +0.010 at zero extra cost, as much as the honest one-ply critic search
+  (+0.013) that needs 8 worlds × one ply (descriptive; worth a registered replication on another checkpoint).
+
 ---
 
 ## 8. Build list
@@ -980,9 +1008,13 @@ equilibrium method (§14 prices what that gives up).
 3. **Approve Phase 2c (≈ 0.5–1 agent-day + ≈ 6 CPU-h):** honest worlds whose opponent MOVES come from the
    network's own per-slot move belief (X5); if it closes part of R-INFO's gap, rollout search becomes the bootstrap's
    engine again.
-4. **Rule on §13.8** (oracle playout labels as targets for a per-action value head: the training-side scope rule
-   defers playouts in the loop, and the guard "never the trainer's true state" is right for POLICY targets but not
-   needed for value regression targets).
+4. **§13.8 (oracle playout labels as targets for a per-action value head) is MEASURED offline and NULL at the cheap
+   budget (Phase 3, §7.13):** a per-action head on the frozen end-state body, fit on 2 oracle playouts per action of
+   ~9,600 states, does not beat the policy's pick (−0.004, NOT DETECTED) and is worse than the honest critic search
+   (−0.018, BEHIND); the labels are 83 % dice noise. The route stays open only with a TRAINED body or far more label
+   signal (GPU / many CPU-days), so no ruling is needed now. A free by-product: the network's own ride-along A head
+   (no rollout) improves the pick by +0.010 [+0.001, +0.020], about the honest critic search's +0.013: a zero-cost
+   scorer worth one registered replication before anything is built on it.
 
 ### 13.1 The loop, concretely
 
@@ -1106,6 +1138,14 @@ gain sibling ranking (`crn_label_refit_2026-10-06/`); a per-action head on the r
 untested. Cost: the label is a full or 4-turn oracle playout per action, the same factory and cost table, with no
 world sampling at all (the cheapest form). It conflicts with the owner's 2026-09-30 deferral of in-loop playouts and
 needs his ruling; an OFFLINE label factory over recorded decisions (S0c) is the in-scope first step.
+
+**MEASURED, offline (Phase 3, §7.13, 2026-10-11): null at the cheap budget.** The theory holds and was verified at the
+pin (the playout continuation acts on its own observations), but a per-action head on the FROZEN end-state body, fit
+on K = 2 oracle labels of 9,629 states, has validation R² +0.002 and does not beat the policy's pick (R-QHEAD NOT
+DETECTED, −0.004) or the honest critic search (R-QHEAD-CRITIC BEHIND, −0.018). The labels are 83 % dice noise and
+most of the rest is hidden information, so the observation-predictable part is small (a one-slope logit predictor
+explains ~0.5 % of the label variance). What remains untested: a TRAINED body (the aux loss shaping the trunk, as
+the in-loop form would) and a much larger label budget; neither is a CPU step.
 
 ### 13.9 The architecture end state, and the gaps from today's code
 
@@ -1284,3 +1324,4 @@ exploitability meters (§14.3) measure.
 | 2026-10-11 | **PHASE 2 / 2b READ (honest worlds) and the bootstrap brief (§13) + alternatives (§14) written** | R-HONEST NOT DETECTED and R-INFO INFO-COSTS on both seeds; R-HONEST-B and R-BELIEF NOT DETECTED on both: the oracle leaf's +0.07–0.08 is hidden information (mostly the opponent's moves). §13's brief: do NOT build the in-loop factory's policy-target path yet (S0 failed); read the one honest signal (end-state one-ply critic search +0.013) in games first (S0b battery, owner approval); Phase 2c (worlds from the network's MOVE belief) decides whether rollout search can pay; oracle playouts as per-action VALUE labels (§13.8) is the route the data favour and needs the owner's scope ruling. The search module's defaults moved to the measured best (uniform, c_scale 1.0, depth 4) | building the in-loop factory now (no honest gain to distil); oracle POLICY targets (strategy fusion; unexecutable); the Smogon-prior or species-belief samplers as sufficient (both measured null) | §7.12; README §7; ledger 2026-10-11 "PHASE 2"; `src/main/value_search/` |
 | 2026-10-11 | **PHASE 2c and PHASE 3 REGISTERED (§7.10 Amendments 6, 7), owner's standing data-gathering grant** | 2c: worlds whose hidden moves come from the network's OWN per-mon move belief (the X5 op roster's fixed-mass `move_w`, conditional-Poisson draws), plus a ceiling arm with the seen mons' TRUE sets; R-MOVES, R-HONEST-C, R-MOVES-CEILING. 3: an OFFLINE per-action Q head on the frozen end2 checkpoint, fit on oracle playout labels (K = 2) of 9,629 states from disjoint battles, acting with NO rollout at decision time; R-QHEAD, R-QHEAD-CRITIC | fine-tuning the body (GPU, later); training integration (needs the owner's §13.8 ruling); building the battery (option 2) before a fair scorer wins; item / ability beliefs in the worlds (a seen mon's item is already kept TRUE; never-seen slots stay Smogon) | §7.10 Amendments 6–7; README §10–§11 |
 | 2026-10-11 | **The "it is the MOVES" reading of §7.12 QUALIFIED** (by the adversarial follow-up's registered descriptive reads, not by a new playout) | §0, the status line and §7.12 now say the oracle's edge is hidden information about the opponent's TEAM, carried by the never-seen mons AND the seen mons' hidden moves: split by unseen slots, the honest leaf keeps about half the oracle's edge with all six seen and nothing with one unseen | keeping "moves, not species" (it pooled the 0- and 1-unseen-slot groups, and this pilot's worlds never hid a seen mon's item, ability or spread) | `design_hidden_info_binding.md` §16.1; `research_state/measurements/hidden_info_binding_2026-10-11/descriptive_reads.json` |
+| 2026-10-11 | **PHASE 3 READ (offline per-action value head)** | R-QHEAD NOT DETECTED (−0.004), R-QHEAD-CRITIC BEHIND (−0.018): a frozen-body head on K = 2 oracle labels of ~10k states learns nothing usable (validation R² +0.002; the labels are 83 % dice noise). §13.8's oracle-label route stays OPEN but is priced: it needs far more label signal per action or a trained body (GPU), so it is not the next CPU step. The ride-along A head's argmax (+0.010, clear of 0, no rollout) is recorded as a free scorer to replicate | more K = 2 states on the same frozen head (a simple observation-side predictor explains ~0.5 % of the label variance; the budget that would suffice is UNVERIFIED); fine-tuning the body now (GPU, and §13.8 needs the owner's ruling) | §7.13; README §12; ledger 2026-10-11 "PHASE 3" |

@@ -1,8 +1,8 @@
 # The value-discrimination pilot (2026-10-11): oracle-world decision improvement on the end-state and production seeds
 
-**Status: Phases 1, 2, 2b RUN AND READ (2026-10-11): Phase 1 (oracle world) §6; Phase 2 / 2b (honest worlds) §7.
-Phase 2c (worlds from the network's own MOVE belief) and Phase 3 (an offline per-action value head on oracle labels)
-REGISTERED, §10 and §11 (Amendments 6 and 7), not yet read.** This README also holds the pre-registration (a copy of
+**Status: Phases 1, 2, 2b and 3 RUN AND READ (2026-10-11): Phase 1 (oracle world) §6; Phase 2 / 2b (honest worlds)
+§7; Phase 3 (an offline per-action value head on oracle labels) §12. Phase 2c (worlds from the network's own MOVE
+belief) REGISTERED, §10 (Amendment 6), running.** This README also holds the pre-registration (a copy of
 `designs/endstate/design_value_discrimination.md` §7 as amended by §7.10 Amendments 1–7): §2–§5, §8, §10, §11.
 
 ## 1. In plain language
@@ -236,6 +236,8 @@ between Phase 1 and Phase 2 is the price of not knowing the opponent's team (par
 | `move_accuracy_read.py` | DESCRIPTIVE (no outcome): per sampler (A / B / C), how often a world holds the true hidden moves (slot and set recall) and species → `move_accuracy_read.json` |
 | `make_qstates.py`, `run_qlabels.py` | Phase 3's training states (every cycle minus the evaluation battles → archive `<cp>/qbank/`, here `qstates_<cp>.json`) and their oracle labels (K = 2 per action, states stepped in lockstep → archive `<cp>/qrows/`) |
 | `qfeatures.py`, `fit_qhead.py` | Phase 3's frozen-checkpoint root features (archive `<cp>/qfeat_<bank>.npz`) and the Q head's fit + read → `result_qhead.json`, `result_qhead.md` |
+| `qhead_noise_read.py` | POST-HOC (training states only): the labels' noise share and simple-predictor R² → `qhead_noise_read.json` |
+| `score_moves.py` | Phase 2c's read (C / CT / B / A / oracle worlds on common states) → `result_moves.json`, `result_moves.md` |
 
 `phase2.sh` also takes `--moves` (Phase 2c → `<cp>/det_c/`) and `--truemoves` (2c-T → `<cp>/det_ct/`), and
 `--worlds-only` / `--playouts-only`. Bulk: `~/gen3ai_archive/value_disc_pilot/`.
@@ -277,3 +279,56 @@ at all, and scores it with the same held-out referee.
 | rules | **R-QHEAD (primary):** QHEAD − policy: HELPS / HURTS / NOT DETECTED. **R-QHEAD-CRITIC:** QHEAD − honest one-ply CRITIC (Phase 2, common states): AHEAD / BEHIND / EQUIVALENT (±0.01) / NOT DETECTED. Descriptive: vs honest TRUNC-4-K4, oracle CRITIC, the ride-along A head; the label-size curve; validation R²; within-state Spearman; share moved off top1 |
 | predictions | R-QHEAD NOT DETECTED or HELPS ≤ +0.015; R-QHEAD-CRITIC NOT DETECTED; validation R² < 0.05; the A head ≈ 0 |
 | vs the old null | `crn_label_refit_2026-10-06/` refit a STATE-value readout on one-ply successor features (a search), older architecture, ~800 turns, sibling accuracy; this is a per-ACTION head at the root, end-state checkpoint, ~9,600 states, decision currency. Shared limit: a frozen body |
+
+## 12. Phase 3 results (read 2026-10-11 20:42; `result_qhead.md` / `.json`, `qhead_noise_read.json`)
+
+**In plain language.** The per-action value head learned nothing it could use. Trained on the oracle outcomes of
+9,629 other positions, it predicts which action is better no better than chance on held-out training battles
+(validation R² +0.002), and acting on it does not beat the network's own pick (−0.004 per decision, not clear of
+0) and is WORSE than the honest one-ply critic search (−0.018, clear). The reason is visible in the labels: with two
+playouts per action, 83 % of the spread between sibling actions' labels is dice noise, and of the rest most is what
+the hidden team decides, so the part a model that sees only our observations can learn is tiny; the small head
+over-fits it within two epochs. A surprise on the side: the network's OWN on-policy per-action readout (the
+ride-along A head, which nobody trained for this) improves the pick by +0.010 [+0.001, +0.020] at zero extra cost,
+close to the honest critic search (descriptive, not registered).
+
+Training 9,629 states / 964 battles (validation 145 battles); evaluation the 600 registered states (578 with Phase 2's
+honest rows); IMP on the win scale [95 %, battle-clustered]; "moved" = the share of states whose pick differs from the
+policy's.
+
+| scorer (argmax) | rollouts / worlds at decision time | IMP [95 %] | moved |
+|---|---|---|---|
+| **QHEAD** (5-seed ensemble, all fit battles) | none | **−0.004 [−0.016, +0.009]** | 0.40 |
+| QHEAD at 25 % / 50 % of the fit battles | none | −0.009 / −0.000 | 0.46 / 0.45 |
+| ride-along A head (`adv_mean`, the network's own) | none | **+0.010 [+0.001, +0.020]** | 0.20 |
+| honest CRITIC (Phase 2, Smogon worlds) | 8 worlds × one ply | +0.013 [+0.000, +0.025] | 0.44 |
+| honest TRUNC-4-K4 (Phase 2) | 4 worlds × 4 turns | +0.017 [+0.001, +0.031] | 0.55 |
+| oracle CRITIC / oracle LEAF-K8 (Phase 1) | true world | +0.026 / +0.081 | 0.47 / 0.51 |
+
+| rule | contrast | Δ [95 %] | verdict |
+|---|---|---|---|
+| **R-QHEAD (primary)** | QHEAD − policy | −0.004 [−0.016, +0.009] | **NOT DETECTED** |
+| **R-QHEAD-CRITIC** | QHEAD − honest CRITIC (578 common) | −0.018 [−0.032, −0.004] | **BEHIND** |
+| descriptive | QHEAD − honest TRUNC-4-K4 / − oracle CRITIC / − A head | −0.021 / −0.031 / −0.015 (all clear of 0) | — |
+
+- **Why (POST-HOC, training states only, `qhead_noise_read.json`):** the centred labels' variance is 0.066 per action,
+  of which the K = 2 dice noise is **83 %** (an R² ceiling of 0.17 on these labels, and that remaining 17 % includes
+  the advantage the hidden team decides). The head's validation R² is +0.002 (25 % / 50 %: −0.004 / −0.001; best
+  epoch 1–2, then over-fitting); one slope on the policy logit alone reaches +0.005, on the A head +0.005. Within a
+  state, the head's ranking correlates with the truth at Spearman ρ 0.10 against the policy logits' 0.14, the honest
+  critic's 0.15 and the oracle critic's 0.20.
+- **Predictions** (Amendment 7): R-QHEAD NOT DETECTED right; R-QHEAD-CRITIC predicted NOT DETECTED, read BEHIND;
+  validation R² < 0.05 right; the A head ≈ 0 WRONG (+0.010, clear of 0, descriptive).
+- **Against the old null:** the CRN refit (a state-value readout on one-ply successors, older architecture) and this
+  per-action head at the root agree: a FROZEN body with a readout refit on a few oracle labels per action does not
+  learn to separate siblings. What the two leave open is the label budget (labels with far less noise per action,
+  or many more states) and a TRAINED body (the GPU step, deferred); the noise read says the part of these labels a
+  simple observation-side predictor explains is ~0.5 % of their variance, so the signal a head must find is small
+  against the noise at this budget (how many more labels would suffice is UNVERIFIED).
+- **Validity:** the training states share no battle with the evaluation states (checked); every training label's
+  action set equals its state's mask (checked); the features' pointer hidden layer reproduces the policy's scores up
+  to the per-row normalisation (max |Δ| 1e-6). Disclosure: the "logit" scalar in the features is the distribution's
+  normalised log-probability, so the registered (logit, log π) pair is the same number twice.
+- **Cost:** a root forward the policy already makes plus a small MLP (≈ 0 extra), the cheapest scorer here; the
+  labels cost ≈ 14 worker-hours for 9,629 states (6 single-thread workers on 3 contended physical cores for 2.4 h,
+  states in lockstep groups of 16).

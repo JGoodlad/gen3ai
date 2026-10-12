@@ -1395,6 +1395,10 @@ The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the 
 
 [SIGNIFICANT (R-INFO, both seeds) · NOT DETECTED (R-HONEST, R-BELIEF, both seeds) · ledger 2026-10-11 MEASUREMENT "VALUE-DISCRIMINATION PILOT PHASE 2 / 2b"; `measurements/value_disc_pilot_2026-10-11/` README §7]
 
+**Oracle playouts as VALUE labels do not help a frozen body at a cheap budget (2026-10-11).** Regressing oracle playout outcomes on what we observe is an unbiased target for the honest information-set value (the playout continuation was verified to act on its own observations), but a per-action head on the frozen end-state body, fit on 2 oracle playouts per action of 9,629 states from disjoint battles, does not beat the policy's pick (−0.004 [−0.016, +0.009]) and is worse than the honest one-ply critic search (−0.018 [−0.032, −0.004]); its validation R² is +0.002 because 83 % of the labels' sibling spread is dice noise and most of the rest is hidden information. It agrees with the 2026-10-06 CRN refit null; a trained body and a much larger label budget stay untested. By-product: the network's own ride-along A head, used as a scorer with no rollout, gains +0.010 [+0.001, +0.020] (descriptive, one checkpoint).
+
+[NOT DETECTED (R-QHEAD) · SIGNIFICANT BEHIND (R-QHEAD-CRITIC) · DESCRIPTIVE (the A head) · end2 s2001 only · ledger 2026-10-11 MEASUREMENT "VALUE-DISCRIMINATION PILOT PHASE 3"; `measurements/value_disc_pilot_2026-10-11/` README §12]
+
 ---
 
 ## 5. Retired hypotheses

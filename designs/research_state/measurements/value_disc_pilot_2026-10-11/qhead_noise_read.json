@@ -1,0 +1,21 @@
+{
+ "cp": "end2",
+ "states": 9629,
+ "pairs": 70089,
+ "centred_label_var": 0.06633,
+ "noise_share_of_centred_var": 0.8273,
+ "r2_ceiling_on_these_labels": 0.1727,
+ "val_r2[logit]": 0.00523,
+ "slope[logit]": [
+  0.01297
+ ],
+ "val_r2[A head]": 0.00495,
+ "slope[A head]": [
+  1.1792
+ ],
+ "val_r2[logit + A head]": 0.00548,
+ "slope[logit + A head]": [
+  0.0092,
+  0.41389
+ ]
+}

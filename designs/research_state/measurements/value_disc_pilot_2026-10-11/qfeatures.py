@@ -8,7 +8,8 @@ the training states):
   order), ``team`` [6,D] / ``scell`` [6,Cs] (switches), ``mvalid`` [4];
 - ``hid`` [11,H]: the pointer head's per-action hidden layer (tanh(proj(entity ⊕ cells) + ctx_proj(latent_pi)),
   the layer its zero-init scorers read), recomputed from those inputs and CHECKED: the head's scorers applied to it
-  reproduce ``logits`` (max |Δ| ≤ 1e-4, else the script refuses);
+  reproduce ``logits`` up to one constant per row (``logits`` are the distribution's masked, normalised
+  log-probabilities, as in Phase 1) within 1e-4, else the script refuses;
 - ``adv`` [11]: the ride-along A head's member mean (π-centred; ``RideAlongHeads.readout``): the network's OWN
   per-action advantage readout, trained on-policy (a no-rollout comparator).
 
@@ -88,7 +89,11 @@ def main():
                 p = fe.last_pointer_inputs
                 hid, lg2 = pointer_hidden(pol.pointer_head, lat_pi, p)
                 legal = torch.from_numpy(mk.astype(bool))
-                worst = max(worst, float((torch.where(legal, lg2 - logits, torch.zeros_like(lg2))).abs().max()))
+                # the distribution's logits are the masked, NORMALISED log-probabilities: equal to the head's raw
+                # scores up to one constant per row over the legal actions
+                d = torch.where(legal, lg2 - logits, torch.zeros_like(lg2))
+                d = d - d.sum(1, keepdim=True) / legal.sum(1, keepdim=True)
+                worst = max(worst, float(torch.where(legal, d, torch.zeros_like(d)).abs().max()))
                 adv = torch.zeros_like(logits)
                 if heads is not None and getattr(heads, "adv", None) is not None:
                     pi = torch.from_numpy(masked_probs(logits.numpy(), mk).astype(np.float32))

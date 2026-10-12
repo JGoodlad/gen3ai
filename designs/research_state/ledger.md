@@ -24482,3 +24482,28 @@ groups; `design_value_discrimination.md` §0 / §7.12 and UNDERSTANDING §4 are 
 factorial must apportion U (the never-seen mons) against M.
 
 Tag: **DESCRIPTIVE · registered reads (no verdict) · pilot rows · CPU**
+### 2026-10-11 · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 3 (offline per-action VALUE HEAD on oracle labels): NULL — a head on the frozen end-state body, fit on 2 oracle playouts per action of 9,629 states, does not beat the policy's pick (−0.004 [−0.016, +0.009], R-QHEAD NOT DETECTED) and is worse than the honest one-ply critic search (−0.018 [−0.032, −0.004], R-QHEAD-CRITIC BEHIND); the labels are 83 % dice noise; the network's own ride-along A head, used as a scorer, gains +0.010 [+0.001, +0.020] at zero cost (descriptive)**
+
+Registered by `design_value_discrimination.md` §7.10 Amendment 7. Training: 9,629 states of `rb_es_end2_s2001`'s
+eval traces (7 cycles, 964 battles disjoint from the evaluation's 417), K = 2 oracle playouts per legal action to the
+end; head = per-action MLP on the frozen checkpoint's pointer inputs / hidden layer, `value_pooled`, log π and V,
+per-state centred squared error, 5-seed ensemble, early stopping on a 15 % battle split. Evaluation: the 600
+registered Phase-1 states, truth seeds 16–39, no rollout at decision time.
+
+| read | value [95 %] |
+|---|---|
+| IMP QHEAD (all fit battles; 25 % / 50 %: −0.009 / −0.000) | −0.004 [−0.016, +0.009] |
+| QHEAD − honest CRITIC (578 common) | −0.018 [−0.032, −0.004] |
+| QHEAD − honest TRUNC-4-K4 / − oracle CRITIC / − A head | −0.021 / −0.031 / −0.015 (all clear of 0) |
+| IMP ride-along A head (`adv_mean` argmax; moves 20 % of picks) | +0.010 [+0.001, +0.020] |
+| validation R² (centred labels) | +0.002; one slope on the logit +0.005, on the A head +0.005 |
+| label dice-noise share (POST-HOC, `qhead_noise_read.json`) | 83 % of the centred variance |
+| within-state Spearman vs truth: QHEAD / policy logits / honest critic / oracle critic | 0.10 / 0.14 / 0.15 / 0.20 |
+
+Predictions: R-QHEAD NOT DETECTED right; R-QHEAD-CRITIC predicted NOT DETECTED, read BEHIND; R² < 0.05 right; the A
+head ≈ 0 WRONG. Reading: oracle labels are an unbiased honest target (verified: the playout continuation acts on its
+own observations), but at this budget the observation-predictable sibling advantage is buried under dice noise and
+hidden-information variance; it agrees with the 2026-10-06 CRN refit null. Untested: a trained body, a much larger
+label budget.
+
+Tag: **NOT DETECTED (R-QHEAD) · SIGNIFICANT, BEHIND (R-QHEAD-CRITIC) · DESCRIPTIVE (A head) · one checkpoint (end2 s2001) · CPU · offline** · `measurements/value_disc_pilot_2026-10-11/` README §12
