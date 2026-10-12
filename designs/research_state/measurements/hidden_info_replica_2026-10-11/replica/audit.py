@@ -36,6 +36,27 @@ def main(argv=None) -> int:
     from replica import builder as B
     from replica import sampling as S
 
+    from main.policy_spectrum.truth import turn_seeds
+    from utils.rust_env.successors import SearchCore, SuccessorsError, play_out
+
+    core = SearchCore(path=env.lib_path(a.cp))
+
+    def replay_ok(prep, team, cmds):
+        d = prep.decision
+        b = prep.battle
+        teams = [None, None]
+        teams[0 if prep.opp == "p1" else 1] = team
+        teams[0 if prep.side == "p1" else 1] = prep.own_team
+        log = {"format_id": b.format_id, "seed": prep.world_seed, "names": [b.p1["name"], b.p2["name"]],
+               "teams": teams, "cmds": [f"CHOOSE {c[0]} {c[1]}" for c in cmds] + [f"CHOOSE {d['side']} {d['played']}"]}
+        try:
+            play_out(log, len(cmds), d["side"], policy=lambda r, m, w: [int(x.nonzero()[0][0]) for x in m],
+                     seeds=[turn_seeds(prep.sid, 1)[0]], actions=[int(next(iter(d["tokens"])))], core=core,
+                     max_turns=1, stall=None)
+            return True
+        except SuccessorsError:
+            return False
+
     bank = load_bank(env.ARCHIVE / a.cp / "bank")
     dec = {d["id"]: d for d in bank.decisions}
     ids = list(env.registered_states(a.cp))
@@ -55,6 +76,9 @@ def main(argv=None) -> int:
         w = B.assemble(prep, "ID", B.rng_for("audit", sid))
         g = B.gate_many(prep, [w], rows=True)[0]
         res["ID"]["pass" if g.ok else "FAIL"] += 1
+        cmds_id, changed_id = B.render(prep, w)
+        res["ID"]["rendered_changes" if changed_id else "rendered_identical"] += 1
+        res["ID"]["replay_ok" if replay_ok(prep, S.pack_team(w), cmds_id) else "REPLAY_REFUSED"] += 1
         if not g.ok and len(res["id_failures"]) < 10:
             res["id_failures"].append([sid, g.first_bad_line, g.error])
         # ---- parse audit

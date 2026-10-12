@@ -30,7 +30,7 @@ def main(argv=None) -> int:
 
     from replica import env
     env.setup(a.cp)
-    import numpy as np  # noqa: F401
+    import numpy as np
 
     from main.policy_spectrum.bank import load_bank
     from main.policy_spectrum.reader import inference_globals, load_checkpoint, policy_logits
@@ -38,7 +38,10 @@ def main(argv=None) -> int:
     from concurrent.futures import ThreadPoolExecutor
 
     from main.policy_spectrum.truth import MicroBatcher, to_log, turn_seeds
-    from utils.rust_env.successors import SearchCore, greedy, play_out
+    from utils.rust_env.successors import SearchCore, SuccessorsError, greedy, play_out
+
+    def first_legal(rows, masks, who):
+        return [int(np.flatnonzero(m)[0]) for m in masks]
 
     from replica import builder as B
     from replica import fair
@@ -99,7 +102,23 @@ def main(argv=None) -> int:
                                     "outcomes": outcomes, "other_open": res.root.get("other_open")})
                     else:
                         prep = B.prepare(bank, dec, sid)
-                        rec = fair.build(prep, a.arm)
+
+                        def validate(team, cmds_):
+                            teams_ = [None, None]
+                            teams_[0 if prep.opp == "p1" else 1] = team
+                            teams_[0 if prep.side == "p1" else 1] = prep.own_team
+                            log_ = {"format_id": b.format_id, "seed": prep.world_seed,
+                                    "names": [b.p1["name"], b.p2["name"]], "teams": teams_,
+                                    "cmds": [f"CHOOSE {c[0]} {c[1]}" for c in cmds_]
+                                    + [f"CHOOSE {d['side']} {d['played']}"]}
+                            try:
+                                play_out(log_, len(cmds_), d["side"], policy=first_legal, seeds=[seeds[0]],
+                                         actions=[int(next(iter(d["tokens"])))], core=core, max_turns=1, stall=None)
+                                return True
+                            except SuccessorsError:
+                                return False
+
+                        rec = fair.build(prep, a.arm, validate=validate)
                         row.update({"build": {k2: v for k2, v in rec.items() if k2 != "worlds"},
                                     "pending_dropped": prep.pending is not None, "gender_draws": prep.gender_draws,
                                     "seen": {n: {"species": m.species, "moves": m.moves, "item": m.item,

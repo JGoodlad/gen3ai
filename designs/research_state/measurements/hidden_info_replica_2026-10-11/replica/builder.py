@@ -242,6 +242,9 @@ def render(prep: Prep, world: List[S.MonSet], keep_pending: bool = False) -> Tup
             out.append(list(c))
             continue
         verb, _, arg = c[1].partition(" ")
+        if verb == "move" and arg in ("struggle", "recharge"):
+            out.append(list(c))              # not a set move: the request offered only this
+            continue
         if verb == "move":
             name = prep.opp_active.get(j)
             slot = next((i for i, t in enumerate(prep.true_opp) if t.name == name), None)
