@@ -1,8 +1,9 @@
 # The hidden-information binding study (2026-10-11): which hidden fact binds our decisions?
 
 **Status: REGISTERED (the design and every decision rule: [`../../../endstate/design_hidden_info_binding.md`](../../../endstate/design_hidden_info_binding.md)
-§12), before any arm of the study was run or read. The cheap parts run in this unit; their reads land in the design
-doc's §16 and below, each AFTER the registration commit.**
+§12, `e25a5240`), before any arm of the study was run or read. The CHEAP parts RAN AND ARE READ (below; the design
+doc's §16), each read after the registration; Amendment 1 (§12.12) after the audits. The playout-world factorial
+runs after the closing test, on the FIXED sampler.**
 
 ## In plain language
 
@@ -39,6 +40,24 @@ The model-input arms are written under opaque codes (`arm_key.json`); `score_mod
 code and was committed before any arm output was read; `unblind_model_input.py` applies the labels and the
 registered rules (design doc §12.8) afterwards.
 
-## Results
+## Results (read 2026-10-11; the full tables are the design doc's §16)
 
-*Not yet read* (filled in the commit that reads them).
+- **D1–D8** (`descriptive_reads.json`): the pilot's honest search keeps about HALF the oracle's edge with all six
+  opponent mons seen (pooled fair +0.035 vs oracle +0.066) and NOTHING with one unseen (−0.002 vs +0.068); the gap
+  lives in switch decisions; 40–55 % of it is already there at a 4-turn leaf; the exclusion and the loss-enrichment
+  cannot explain it. POST-HOC (`posthoc_reads.json`): with all six seen, the gap vanishes when ≥ 10 of the seen mons'
+  24 moves are revealed.
+- **D9** (`poolprior_read.json`): the Smogon prior predicts our pool's sets as well as real human sets (376,410
+  public gen-3 OU replays sampled); sets drawn from the prior itself are no more guessable: the move-guessing
+  difficulty is intrinsic.
+- **Maturity** (`policy_drift_summary.json`, `belief_maturity.json`): at 10–15M each policy still moves ≈ 0.1 nats
+  and flips 15–22 % of its top actions per 1M; the move belief still improves (end2 +0.017 recall per 5M) and barely
+  beats Smogon.
+- **Audits** (`audit_*_<cp>.json`, `audit_teeth_<cp>.json`): A1, A3, A5 PASS; A2 FAIL (≈ 4 % of worlds disagree with
+  the searched side's protocol; 6 event-window cells from a gender-draw dice shift); A4 FAIL (2–3 % clause-illegal
+  teams); teeth 6 / 6 after a text-level invariant was added to A1. R-GIGO = FAIL; the gap is unchanged when every
+  affected state is dropped (`gigo_sensitivity.json`, post-hoc).
+- **Model-input axis** (`result_model_input_blinded.json` → `result_model_input.json`): told the true seen-mon moves
+  at 95 %, the network flips 13 % of its picks and gains +0.001 [−0.003, +0.005] per decision (pooled); the wrong-moves
+  placebo flips 20 % and costs the critic search ≈ 0.8 points; R-NET NOT DETECTED, CRITIC-USES NOT DETECTED on end2,
+  prod, pooled and the replication network.

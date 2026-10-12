@@ -24507,3 +24507,44 @@ hidden-information variance; it agrees with the 2026-10-06 CRN refit null. Untes
 label budget.
 
 Tag: **NOT DETECTED (R-QHEAD) · SIGNIFICANT, BEHIND (R-QHEAD-CRITIC) · DESCRIPTIVE (A head) · one checkpoint (end2 s2001) · CPU · offline** · `measurements/value_disc_pilot_2026-10-11/` README §12
+
+### 2026-10-11 · MEASUREMENT · **HIDDEN-INFO STUDY: the model-input axis, the audits, D9 and maturity — telling the network the true moves does not improve its decisions (R-NET, CRITIC-USES NOT DETECTED); the world builder's gate is weaker than the protocol (R-GIGO FAILS by rule, the gap robust); the move-guessing difficulty is intrinsic; the 15M policies are not plateaued**
+
+Registered at `e25a5240` (`design_hidden_info_binding.md` §5, §7, §10.1–§10.2, §11 D9, §12.1, §12.8). All CPU, cores
+5–7 + SMT siblings, nice 19.
+
+**Model-input axis** (the true unseen moves of every SEEN opponent mon mixed into the network's ONE published typed
+move posterior, q' = (1 − p)σ(ℓ) + p·1[true]; scorer frozen at `1abcef60`, blinded result frozen at `2659cb3f` before
+unblinding; 600 states × end2 / prod / end2_s2002 on end2's states; p = 0 an exact identity, 0 top-1 mismatches, the
+successors reproduce Phase 1's critic within 4.6e-6). Pooled end2 + prod at p = 0.95: flip 13.3 %, KL 0.067; IMP of
+the policy's pick +0.001 [−0.003, +0.005]; TRUE − PLACEBO +0.004 [−0.002, +0.009]; TRUE − SELFMAP +0.003 [−0.001,
++0.007]; the one-ply critic search TRUE − base −0.002 [−0.007, +0.003]. PLACEBO (wrong moves) flips 19.6 % and drops
+the critic search +0.019 → +0.011. **R-NET NOT DETECTED and CRITIC-USES NOT DETECTED** on end2, prod, pooled and the
+replication (whose TRUE +0.010 is matched by its PLACEBO +0.008: not content). Prediction (NOT-DETECTED or
+CONFIDENCE-ONLY; critic NOT-DETECTED): right.
+
+**Audits** (A1–A6 + planted-defect teeth, both pins, ≈ 18,450 worlds): A1 builder identity PASS (150 states, 0
+mismatches; a text-level rendering invariant added after the off-by-one plant slipped the replay check, 0 violations
+over 600 states); A2 FAIL: every seen mon's hidden state is exact, but 6 event-window cells (a 1-HP past hit) differ
+via a turn-0 gender-draw dice shift, and ≈ 4 % of worlds disagree with the searched side's PROTOCOL (gender tokens,
+Focus Punch tightening, a Beat Up hit) which the row gate cannot see; A3 PASS; A4 FAIL (2–3 % of world teams break
+gen3ou clauses; learnability uncheckable at the pins); A5 PASS (post-root dice depend only on the seed,
+`bridge.rs:1858-1861`); A6: re-drawn moves unconditioned, the gate leaks the never-seen slots' gender class (98 % vs
+53 %). Teeth 6 / 6. **R-GIGO = FAIL** by its registered rule (the pilot's honest numbers formally VOID until a fixed
+builder re-runs them); POST-HOC, dropping every affected state leaves G at +0.071 / +0.068 and the D1 split unchanged.
+Amendment 1 makes the fixes (protocol-byte gate, all public move reveals, clause rejection, species-independent
+genders) preconditions of the factorial. Prediction (R-GIGO PASS): WRONG.
+
+**D9 pool-vs-prior:** the read reproduces the pilot's 16 % / 45 %; Smogon predicts real human sets no better than the
+pool's (top-4 recall human − pool −0.029 [−0.036, −0.021]); sets drawn from the prior itself are no more guessable
+(set hit 0.380 vs pool 0.389); spreads are the pool's least Smogon-like attribute (no honest human reference).
+
+**Maturity:** per 1M at 10–15M, KL ≈ 0.10 and flips 15.2 % (end2) / 22.3 % (prod), not falling; 10M-apart KL
+0.64–0.71 (part back-and-forth). Belief at 15M: move expected recall 0.459 / 0.419 (+0.017 / +0.006 per 5M; vs Smogon
++0.034 / −0.004), item P(true) 0.78 / 0.77 (+0.105 over Smogon), species 0.44 / 0.47 (+0.03 per 5M). M-BELIEF
+IMPROVING; the plateau yardstick is per-1M KL ≤ 0.049 and flips ≤ 7.6 %.
+
+Standing (§16.6): hidden TEAM information binds honest search (≈ 85 %); the moves are THE binding constraint ≈ 15 %
+(the author's); no multi-week move-inference programme on this evidence.
+
+Tag: **MEASURED · REGISTERED VERDICTS (R-NET, CRITIC-USES, R-GIGO) + DESCRIPTIVE (D9, maturity) · PROVISIONAL at 15M · CPU**

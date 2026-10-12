@@ -3,8 +3,8 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12), written at the owner's request before any arm of this study
-was run or read.** Only the CHEAP, CPU-light parts run in this unit (§16): the sampler audits (§5), the model-input
+**Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
+parts RUN AND READ (§16; Amendment 1 after the audits, §12.12).** The cheap parts: the sampler audits (§5), the model-input
 axis on banked states (§7), the registered descriptive reads of the pilot's existing rows (§11), and the maturity
 meters (§10.1–§10.2). The playout-world factorial (§6) runs after the closing test frees the box (≈ Mon 2026-10-12
 09:00–10:00). The GPU knock-in forks (§8) are QUEUED by the orchestrator (owner-delegated GPU scheduling) after the
@@ -60,8 +60,19 @@ then still feeling good about it."
    after the closing test (≈ 28–32 wall-hours, or ≈ 6–8 with a GPU-batched playout harness), ≈ 40 more for the
    plateau replication later; ≈ 14 GPU-hours for the knock-in forks.
 
-**The cheap results so far and the current confidence:** §16 (filled from the registered reads, in the same commit
-that reads them).
+**The cheap results so far (§16, read 2026-10-11 after the registration):**
+- The pilot's honest search keeps about HALF the oracle's edge when all six opponent Pokémon have been seen and
+  NOTHING when one is still unseen: the never-seen Pokémon and the seen ones' hidden moves BOTH carry the gap (§16.1).
+- Our pool's sets are as predictable from Smogon usage as real human sets; even sets drawn from the prior itself are
+  no easier to guess: the move-guessing difficulty is intrinsic, not a pool artefact (§16.2).
+- At 15M both policies are still changing fast and their beliefs still improving: every reading is PROVISIONAL (§16.3).
+- The world builder holds every seen Pokémon's hidden state exactly and the post-root dice are clean, but its check is
+  weaker than our own battle log in ≈ 4 % of worlds and 2–3 % of its teams break gen-3 OU clauses: R-GIGO FAILS by its
+  rule; dropping every affected state leaves the gap unchanged; the fixes gate the factorial (§16.4).
+- Told the true moves at 95 % confidence, the network changes one decision in eight and decides NO better (≤ +0.5
+  points per decision vs the oracle search's +7): R-NET and CRITIC-USES NOT DETECTED (§16.5).
+- **Honest confidence that the moves are THE binding constraint: ≈ 15 %**; that hidden TEAM information binds search:
+  ≈ 85 %. No multi-week move-inference programme on this evidence (§16.6).
 
 ---
 
@@ -969,8 +980,75 @@ conditions on construction draws: the A6 leak); (2) parse every public line that
 teams that break a gen3ou clause (`agents.gen3_data.format_spec`); (4) the independent implementation (§13.1) is built
 to the fixed spec. ≈ 0.5 agent-day.
 
-*Still to read in this unit:* the model-input axis (R-NET, CRITIC-USES), the audit teeth, and the author's honest
-confidence in "moves are binding".
+### 16.5 The MODEL-INPUT axis: R-NET and CRITIC-USES (read 2026-10-11; `result_model_input_blinded.json` frozen at `2659cb3f` before unblinding, `result_model_input.json`)
+
+**Plain language.** Told the TRUE moves of every opponent Pokémon it has seen, with 95 % confidence, the network
+changes its choice in about one decision in eight, but the changed choices are NOT better: +0.1 points of win
+probability per decision [−0.3, +0.5], against the oracle search's +7. A confidently WRONG set of moves changes even
+more decisions and does not help either; it makes the critic's one-ply search about a point worse, so the critic does
+read move content, but the true content does not improve it. The network, as trained, does not turn knowledge of the
+moves into better decisions.
+
+Validity: 600 states × 3 checkpoints, 0 refused; the regenerated one-ply successors reproduce Phase 1's critic values
+(worst 4.6e-6 / 1.1e-6); the base critic's one-ply IMP reproduces Phase 1's (+0.026 / +0.012); the hook at p = 0 is
+an exact identity on every state (identity_check PASS); 0 top-1 mismatches against the registered picks. Disclosure:
+the arm key was written by the harness agent and seen by the author before the blinded result existed; the blinding
+here protects the frozen scripts and rules, not the author's knowledge of the codes.
+
+| arm (pooled end2 + prod, 1,200 states) | flip rate | KL (nats) | IMP of the policy's pick | IMP of the one-ply critic search | critic top1 \| top2 accuracy |
+|---|---|---|---|---|---|
+| base (the network as trained) | — | — | 0 | +0.019 [+0.011, +0.028] | 0.583 |
+| TRUE p = 0.6 | 8.4 % | 0.029 | +0.004 [+0.001, +0.008] | +0.017 | 0.594 |
+| TRUE p = 0.8 | 11.4 % | 0.049 | +0.002 [−0.001, +0.007] | +0.017 | 0.603 |
+| **TRUE p = 0.95 (primary)** | **13.3 %** | 0.067 | **+0.001 [−0.003, +0.005]** | +0.017 | 0.600 |
+| TRUE p = 1.0 | 13.8 % | 0.074 | +0.002 [−0.003, +0.007] | +0.018 | 0.601 |
+| PLACEBO (wrong moves) p = 0.95 | 19.6 % | 0.159 | −0.003 [−0.008, +0.003] | +0.011 [+0.003, +0.020] | 0.572 |
+| SELFMAP (its own top moves) p = 0.95 | 10.3 % | 0.037 | −0.002 [−0.006, +0.002] | +0.021 | 0.593 |
+| TRUE-HYP p = 0.95 (also the true never-seen mons' moves where a hypothesis names one) | 13.9 % | 0.068 | +0.003 [−0.002, +0.008] | +0.017 | 0.600 |
+
+| registered contrast (p = 0.95) | end2 | prod | pooled | end2_s2002 (replication) |
+|---|---|---|---|---|
+| IMP_POL(TRUE) | +0.003 [−0.003, +0.009] | −0.001 [−0.007, +0.006] | +0.001 [−0.003, +0.005] | +0.010 [+0.004, +0.016] |
+| IMP_POL(TRUE) − IMP_POL(PLACEBO) | +0.004 [−0.004, +0.012] | +0.003 [−0.005, +0.010] | +0.004 [−0.002, +0.009] | +0.002 [−0.007, +0.010] |
+| IMP_POL(TRUE) − IMP_POL(SELFMAP) | +0.006 [+0.002, +0.011] | −0.000 [−0.006, +0.007] | +0.003 [−0.001, +0.007] | +0.004 [−0.001, +0.010] |
+| IMP_CRIT(TRUE) − IMP_CRIT(base) | −0.003 [−0.009, +0.003] | −0.001 [−0.008, +0.006] | −0.002 [−0.007, +0.003] | −0.001 [−0.007, +0.005] |
+| IMP_CRIT(TRUE) − IMP_CRIT(PLACEBO) | +0.007 [−0.002, +0.018] | +0.005 [−0.004, +0.014] | +0.006 [−0.000, +0.013] | −0.010 [−0.021, +0.001] |
+| **R-NET** | **NOT DETECTED** | **NOT DETECTED** | **NOT DETECTED** | NOT DETECTED |
+| **CRITIC-USES** | **NOT DETECTED** | **NOT DETECTED** | **NOT DETECTED** | NOT DETECTED |
+
+- **Neither IGNORES nor MISUSES nor CONFIDENCE-ONLY:** the network reacts (flips 12–15 %, well above 2 %), its picks
+  do not get worse, and the CIs are too wide to call TRUE ≡ PLACEBO ≡ SELFMAP inside ±0.005. The pooled upper bound
+  says perfect seen-mon move knowledge is worth at most ≈ +0.5 points per decision to the frozen policy (+0.65 at
+  p = 1): under a tenth of the oracle search's edge.
+- **The replication network's positive TRUE read is not content:** on end2's states `rb_es_end2_s2002`'s pick gains
+  +0.010 under TRUE but also +0.008 under the PLACEBO and +0.005 under SELFMAP (its own picks scored by end2's
+  referee: any nudge toward end2's choices pays). The placebo control did its job.
+- **Descriptive:** the smallest dose (0.6) is the only TRUE dose clear of 0 (+0.004 [+0.001, +0.008]); the effect
+  does not rise with confidence. The PLACEBO costs the critic search ≈ 0.8 points pooled (+0.019 → +0.011; at p =
+  1.0 TRUE − PLACEBO +0.009 [+0.002, +0.016]): the critic reads move content, and true content does not help it.
+- **For the claim:** C3 (usability) is NOT supported on the frozen network, in line with the X5 oracle arms (a
+  network TRAINED with the whole set gained nothing over species). Whether a network can LEARN to use the moves is
+  §8's question (the forks, queued).
+
+### 16.6 Where the claim stands after the cheap reads, and the author's honest confidence
+
+| part | evidence so far | standing |
+|---|---|---|
+| **C1 attribution (search)** | D1: with all six mons seen, honest search keeps half the oracle's edge, and the remaining half shrinks to ≈ 0 when enough of the seen mons' moves are revealed (post-hoc); ONE unseen mon wipes the honest edge. The pilot never hid a seen mon's item, ability or spread | **shared**: the seen mons' moves carry a real part (≈ 0.03 of ≈ 0.07 where everything else is known), the never-seen mons at least as much; items / abilities / spreads unmeasured. The factorial decides |
+| **C2 recoverability** | D9: Smogon sets are as guessable as human sets, and sets drawn from the prior itself are no more guessable (the difficulty is intrinsic); the network's own move belief beats Smogon by +0.03 (end2) / 0 (prod) and improves slowly | **unlikely on the ladder** for moves; on our pool, team identification (POOL) is untested |
+| **C3 usability (network)** | §16.5: told the true moves at 95 %, the frozen network's decisions are no better (≤ +0.5 points), its critic no better; X5: a trained oracle-set network +0 over species | **not supported** for the frozen network; the forks test learning |
+| maturity | policies still move ≈ 0.1 nats per 1M with 15–22 % flips; the beliefs still improve | every reading PROVISIONAL "at 15M" |
+| instrument | R-GIGO FAILS by its rule (≈ 4 % of worlds protocol-inconsistent; 2–3 % clause-illegal teams); the known defects cannot move G (post-hoc) | fix before the factorial (Amendment 1) |
+
+**Honest confidence (the author, 2026-10-11, before any factorial arm):** that the opponent's hidden MOVES are THE
+binding constraint in the owner's sense (C1 with a majority share AND a payable path through C2 or C3): **≈ 15 %**.
+That hidden information about the opponent's TEAM binds honest SEARCH: ≈ 85 % (the pilot's R-INFO, robust to the
+audits). That the moves are a major SHARE of it (≥ ¼) in the factorial: ≈ 60 %; the majority share by both sufficiency
+and necessity (MOVES-BINDING): ≈ 25 %. What would raise it: F+M closing ≥ half of the fully honest gap with a null
+placebo, and the MOVES fork learning to use them. What would kill it: O−M costing < ¼ of G, or the placebo buying as
+much. **Recommendation for the roadmap now:** do NOT open a multi-week move-inference programme on this evidence; run
+the factorial's Tier 1 with the fixed sampler after the closing test (≈ 50 CPU-h), the knock-in forks as queued, and
+keep the value-side work (Phase 3's per-action head, the hand evaluator) in parallel.
 
 ---
 
@@ -991,3 +1069,6 @@ confidence in "moves are binding".
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-11 | **This doc CREATED and PRE-REGISTERED at the owner's request** ("reproduce knowing the moves as being the critical link … and challenge that … give high mass to the known moves, but don't necessarily make them 100% … its own end state doc, full analysis, many tests, many countering tests"), with the orchestrator's additions the same day (maturity / adversarial robustness and the scope rule; the pool-vs-prior confound, belief maturity, blinding, the game-level check, the knock-in forks; Foul Play's evaluator as a scorer and the Foul Play / X5 counter-evidence; correctness over economy, the independent implementation and the red team) | The claim split into ATTRIBUTION / RECOVERABILITY / USABILITY; a five-class PARTITION of the hidden facts (M, U, I, A, S) with a FULLY honest base F, sufficiency and necessity arms, a move dose with a wrong-moves placebo and an honest MAP control, the pool posterior and pool sets as recoverability measurements, the hand evaluator, a width arm and a second referee; a frozen-network model-input axis (the true moves injected into the ONE published move posterior at 60–100 % mass, placebo and self-MAP controls); deterministic rules with pooled shares and per-checkpoint replication; a v8 guard and a plateau CONFIRM / REVOKE; blinded codes; the independent implementation and the red team as preconditions | attributing within the pilot's leaked base only (it could not see spreads, items or abilities); a 100 %-only reveal (the owner asked for high but not total mass); injecting into the OBSERVATION (out of distribution for a network trained without reveals: the X5 both-sided −8.1 pp); a full-factorial 2⁵ design (32 arms per checkpoint; the one-at-a-time sufficiency and necessity arms plus a targeted interaction follow-up answer the registered question at a sixth of the cost); dropping rival arms for cost (owner: no arm that kills a rival is cut) | §2 (the pilot's construction, `determinize.py`; the X5 oracle arms; the Foul Play axes); `move_accuracy_read.json`; owner and orchestrator 2026-10-11 |
+| 2026-10-11 | **The knock-in forks QUEUED (the orchestrator, under the owner's GPU-scheduling delegation) and designed to launch-ready detail** | §8: `--belief-oracle` from the training-only label keys with a startup gate, the pin precondition, the parent (the closing test's adopted seed-2001 final), 5 arms × 3 seeds × +3M with a no-change control and a wrong-moves placebo, the one-sided cross, the K-rules, ≈ 14 GPU-h | an observation-channel reveal (out of distribution for a network trained without it); training from scratch (the X5 arms did that; a fork asks the cheaper question "can it learn to use it from here") | orchestrator 2026-10-11 |
+| 2026-10-11 | **The hand evaluator BUILT** (§6.5) | `src/main/hidden_info_study/hand_eval.py` over the searched side's row (so it reads exactly the critic's information), its pinned twin and truncated-playout driver; screens corrected to Foul Play's per-turn counters | a full-state evaluator (more information than the critic: it would conflate evaluator with information) | 73 tests incl. 905 real decisions vs an independent tracker |
+| 2026-10-11 | **The cheap parts READ (§16) and AMENDMENT 1 (§12.12)** | D1–D8: one unseen opponent mon wipes the honest edge, all six seen keeps half (the never-seen mons and the seen moves share the gap); D9: the move-guessing difficulty is intrinsic (not a pool artefact); maturity: not plateaued at 15M; R-GIGO FAILS by its rule (protocol-inconsistent worlds, clause-illegal teams) with the gap robust to dropping them, so the sampler fixes become preconditions of the factorial and the pilot's base P is re-built; R-NET and CRITIC-USES NOT DETECTED (the frozen network does not use true move knowledge). The author's confidence that the moves are THE binding constraint: ≈ 15 %. Recommendation: no move-inference programme yet; Tier 1 with the fixed sampler after the closing test, the forks as queued | treating the pilot's honest numbers as unaffected by the audit (the rule says VOID until re-run; the post-hoc sensitivity is reported, not substituted); reading the replication network's positive TRUE read as content (its placebo bought as much) | `research_state/measurements/hidden_info_binding_2026-10-11/`; ledger 2026-10-11 |
