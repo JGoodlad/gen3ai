@@ -440,12 +440,20 @@ if [ "$IS_WORKTREE" -eq 0 ]; then
 fi
 
 # ══════════════════════════════════════════════════════════════ 6. rust simulator (optional)
+# TWO build sets, each into its OWN crate's target/ (CARGO_TARGET_DIR forced, exactly as the resolvers
+# force it — never another checkout's target, the 2026-09-09 symlink incident):
+#   * RELEASE  — what training's resolver execs (sim_bridge, search_driver);
+#   * SELFCHECK — what EVERY pytest session execs (the root conftest sets POKESIM_EMISSION_SELFCHECK=1):
+#     rust_sim's sim_bridge / search_driver / core_events and rust_env's cdylib + rust_env_proc + its test
+#     binaries. Without these the routine gate's first Rust-backed tests build them MID-GATE, on the gate's
+#     own cores, while other workers wait on cargo's lock. Measured 2026-10-12, cold, on the 3 agent cores
+#     beside a live training run (nice 19): ~34 s per crate x profile, ~2.5 min for the whole set.
 step "Rust simulator binaries (optional)" 6
-cost "~3-10 min of a FULLY SATURATED box on a cold build; near-instant when warm"
+cost "~2.5 min on 3 busy cores (~30 s per crate x profile) on a cold build; seconds when warm"
 if [ "$WITH_RUST" = "ask" ]; then
     if [ -t 0 ] && [ "$DRY_RUN" -eq 0 ]; then
         info "Training runs on the in-process Rust bridge (the only transport), and the FIRST Rust-backed test builds"
-        info "these anyway — mid-test, saturating every core, which is a known cause of"
+        info "these anyway — mid-test, on the gate's own cores, which is a known cause of"
         info "spurious timeout failures. Building now is strictly better if you have the time."
         read -r -p "      Build them now? [y/N] " reply
         case "$reply" in [yY]*) WITH_RUST="yes" ;; *) WITH_RUST="no" ;; esac
@@ -455,18 +463,27 @@ if [ "$WITH_RUST" = "ask" ]; then
     fi
 fi
 
+SIM_CRATE="$REPO_ROOT/src/rust_sim"
+ENV_CRATE="$REPO_ROOT/src/rust_env"
+SELFCHECK=(--profile selfcheck --features emission-selfcheck)
 if [ "$WITH_RUST" = "no" ]; then
     warn "SKIPPED. Your first Rust-backed test will pay for this build itself. To do it later:"
-    info "  cargo build --release --bin sim_bridge --bin search_driver \\"
-    info "      --manifest-path src/rust_sim/Cargo.toml"
+    info "  ./scripts/bootstrap.sh --skip-env --with-rust --no-check"
 elif ! command -v cargo >/dev/null 2>&1; then
     warn "cargo not found — skipping. Install Rust from https://rustup.rs and re-run with"
     warn "--with-rust. Training and the Rust-backed tests need the binaries; only the offline tools keep a node transport (--bridge node)."
 else
     info "cargo is incremental — a warm tree finishes in seconds"
-    run cargo build --release --bin sim_bridge --bin search_driver \
-        --manifest-path src/rust_sim/Cargo.toml
-    did "sim_bridge + search_driver built"
+    run env CARGO_TARGET_DIR="$SIM_CRATE/target" cargo build --release --bin sim_bridge --bin search_driver \
+        --manifest-path "$SIM_CRATE/Cargo.toml"
+    did "release: sim_bridge + search_driver built"
+    run env CARGO_TARGET_DIR="$SIM_CRATE/target" cargo build "${SELFCHECK[@]}" \
+        --bin sim_bridge --bin search_driver --bin core_events --manifest-path "$SIM_CRATE/Cargo.toml"
+    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build "${SELFCHECK[@]}" --lib --bin rust_env_proc \
+        --manifest-path "$ENV_CRATE/Cargo.toml"
+    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build "${SELFCHECK[@]}" --tests \
+        --manifest-path "$ENV_CRATE/Cargo.toml"
+    did "selfcheck (every pytest session's build): rust_sim bins, rust_env cdylib + rust_env_proc + test binaries"
 fi
 
 # ══════════════════════════════════════════════════════════════ 7. verify
