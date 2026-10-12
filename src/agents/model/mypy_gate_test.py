@@ -29,6 +29,9 @@ cache makes a no-change run essentially free. COLD (a fresh worktree, no `.mypy_
 budget: warm 0.26 s) — paid once per cache. A check must not pass or fail by whether a cache is warm, so
 the gate DECLARES the `static` tier (`pytestmark` below; `conftest._STATIC_BUDGET_BASE_S`, 180 s): it
 stays in the routine gate and the inner loop, under its own budget, with no cost marker that deselects it.
+Since 2026-10-12 a fresh checkout's EMPTY `.mypy_cache` is first SEEDED by a consistent copy of the newest
+sibling checkout's (`utils.mypy_cache_seed`; mypy re-validates every entry by content hash, so the seed only
+saves time): measured on the agent cores beside a live run, the static tier went 237 s cold -> 87 s warm.
 
 **A missing mypy FAILS rather than skips.** `mypy` is declared in `environment_torch28.yml` precisely so
 that it is present; if it is not, the honest report is "this gate did not run", not a green tick.
@@ -41,9 +44,11 @@ import configparser
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
+from utils.mypy_cache_seed import seed as seed_mypy_cache, sibling_checkout_caches
 from utils.paths import repo_root
 
 pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
@@ -94,6 +99,10 @@ def test_checked_packages_type_check_clean():
         f"change, so the reduction is a decision on the record rather than a silent one."
     )
 
+    # A FRESH checkout copies the newest sibling checkout's `.mypy_cache` first (`utils.mypy_cache_seed`:
+    # mypy re-validates every entry by content hash, so a seed saves the cold run — ~78 s on the agent
+    # cores beside a live run — and can never hide an error; GEN3AI_MYPY_CACHE_SEED=0 turns it off).
+    seed_mypy_cache(Path(_REPO_ROOT) / ".mypy_cache", sibling_checkout_caches(), log=print)
     proc = subprocess.run(
         [sys.executable, "-m", "mypy"],
         cwd=_REPO_ROOT, capture_output=True, text=True, timeout=900,

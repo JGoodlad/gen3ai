@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 
 from utils.paths import repo_path
-from utils.static_gates import NUMBER_WORDS, declares_static, number_word, static_gate_files
+from utils.static_gates import NUMBER_WORDS, declares_static, number_word, static_gate_files, stray_static_marks
 
 # Deliberately NOT `pytest.mark.static`: it reads six small text files, and a static-tier mark would make it
 # a member of the inventory it counts.
@@ -73,3 +73,16 @@ def test_readme_and_contributing_name_no_stale_count():
     words = "|".join(w.lower() for w in NUMBER_WORDS) + "|one|two|three|four|five|six|seven|eight|nine|\\d+"
     for doc in ("README.md", "CONTRIBUTING.md"):
         assert not re.search(rf"\b(?:{words})\s+(?:always-on\s+)?static gates", _text(doc), flags=re.I), doc
+
+
+def test_no_static_mark_outside_a_module_pytestmark(tmp_path, monkeypatch):
+    """`pytest $(python -m utils.static_gates --paths)` runs exactly what `-m static` selects only while
+    every static mark is a FILE's (module-level `pytestmark`); a decorator elsewhere would be run by one and
+    not the other. The scan has teeth: a planted decorated test is found, a module mark is not."""
+    assert stray_static_marks() == []
+    import utils.static_gates as SG
+
+    (tmp_path / "a_test.py").write_text("import pytest\npytestmark = [pytest.mark.static]\n")
+    (tmp_path / "b_test.py").write_text("import pytest\n\n\n@pytest.mark.static\ndef test_x():\n    pass\n")
+    monkeypatch.setattr(SG, "src_path", lambda: tmp_path)
+    assert SG.stray_static_marks() == ["src/b_test.py:4"]

@@ -133,8 +133,15 @@ _SKIP = pytest.mark.skipif(os.environ.get("GEN3AI_SKIP_STUB_GATE") == "1",
 
 
 @pytest.fixture(scope="module")
-def sites():
-    return scan_tree(_SRC_ROOT)
+def index():
+    """ONE consumer index per module run, shared by the scan and the meta test that proves it is not empty
+    (built twice before 2026-10-12: ~27 s of the static tier's longest file on the agent cores)."""
+    return consumer_index(_SRC_ROOT)
+
+
+@pytest.fixture(scope="module")
+def sites(index):
+    return scan_tree(_SRC_ROOT, index)
 
 
 @_SKIP
@@ -431,12 +438,12 @@ def test_meta_the_scan_engine_has_no_import_of_the_code_under_test():
 
 
 @_SKIP
-def test_meta_the_consumer_search_is_actually_finding_consumers():
+def test_meta_the_consumer_search_is_actually_finding_consumers(index):
     """If the index came back empty the gate would still pass — and would be reporting on nothing.
 
     This is the same failure direction as `test_the_scan_actually_walked_the_tree`: the expensive
-    half of the check has to prove it ran.
+    half of the check has to prove it ran. It reads THE index the scan was given (the `index` fixture), not
+    a second build of it.
     """
-    index = consumer_index(_SRC_ROOT)
     assert len(index) > 1000, f"the consumer index holds only {len(index)} qualified reads"
     assert "utils.paths.repo_root" in index, "a known cross-module read is missing from the index"

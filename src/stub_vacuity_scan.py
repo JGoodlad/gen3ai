@@ -469,9 +469,13 @@ def _judge(rel: str, lineno: int, spelling: str, shown: str, src_root: Path,
     return Site(rel, lineno, spelling, shown, dotted, attr, "ok")
 
 
-def scan_tree(src_root: Path) -> list[Site]:
+def scan_tree(src_root: Path, consumers: dict[str, set[str]] | None = None) -> list[Site]:
+    """Every patch site under ``src_root``. ``consumers`` is ``consumer_index(src_root)`` when the caller
+    already built it (the gate's module fixture shares ONE index with its meta test: the index parses every
+    non-test module, ~half the gate's cost)."""
     cache: dict = {}
-    consumers = consumer_index(src_root)
+    if consumers is None:
+        consumers = consumer_index(src_root)
     out: list[Site] = []
     for p in sorted(src_root.rglob("*_test.py")):
         if "rust_sim" in p.parts:

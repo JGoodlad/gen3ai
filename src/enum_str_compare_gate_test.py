@@ -28,6 +28,9 @@ accumulated in a day (~1.2 GB). So every run touches its own dir's ``.last_used`
 its siblings: any unused for ``CACHE_MAX_AGE_DAYS``, and all but the ``CACHE_MAX_KEYS`` most recently
 used. A sibling used within ``CACHE_IN_USE_GRACE_S`` is never pruned — a concurrent run in another
 worktree may be reading it. ``GEN3AI_MYPY_STRICT_EQ_CACHE_ROOT`` moves the root (the tests use it).
+A fresh checkout's EMPTY cache dir is first SEEDED by a consistent copy of the newest sibling's
+(``utils.mypy_cache_seed``, 2026-10-12: mypy re-validates each entry by content hash, so a seed can only
+save the cold run — 185 s on the agent cores beside a live training run — never hide a finding).
 
     GEN3AI_SKIP_ENUM_STR_GATE=1 pytest src/ -q
 """
@@ -46,6 +49,7 @@ from pathlib import Path
 
 import pytest
 
+from utils.mypy_cache_seed import seed as seed_mypy_cache
 from utils.paths import src_root
 
 pytestmark = [pytest.mark.static, pytest.mark.skipif(os.environ.get("GEN3AI_SKIP_ENUM_STR_GATE") == "1",
@@ -112,6 +116,9 @@ def owned_enum_names() -> set[str]:
 def run_mypy(targets: list[str], cwd: Path) -> list[str]:
     """``[comparison-overlap]`` lines from mypy ``--strict-equality`` over ``targets`` (argv form)."""
     cache = cache_dir_for(src_root())
+    # a FRESH checkout copies the newest sibling checkout's cache first (mypy re-validates every entry
+    # by content hash, so a seed only saves the cold ~24 s quiet / ~185 s on the agent cores):
+    seed_mypy_cache(cache, [d for d in cache_root().glob(CACHE_PREFIX + "*") if d != cache], log=print)
     cache.mkdir(parents=True, exist_ok=True)
     (cache / CACHE_MARKER).touch()
     prune_sibling_caches(cache)
