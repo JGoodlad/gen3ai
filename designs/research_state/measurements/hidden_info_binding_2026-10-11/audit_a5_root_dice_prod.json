@@ -1,0 +1,984 @@
+{
+ "audit": "A5 root dice (empirical)",
+ "cp": "prod",
+ "partB": [
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 2,
+     "line_index": 4,
+     "a": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Swampert|Swampert|401/401",
+      "|move|p2a: Tyranitar|Earthquake|p1a: Swampert",
+      "|-damage|p1a: Swampert|286/401",
+      "|"
+     ],
+     "b": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Swampert|Swampert|401/401",
+      "|move|p2a: Tyranitar|Earthquake|p1a: Swampert",
+      "|-damage|p1a: Swampert|295/401",
+      "|"
+     ]
+    },
+    {
+     "action": 3,
+     "line_index": 5,
+     "a": [
+      "|switch|p1a: Celebi|Celebi|404/404",
+      "|move|p2a: Tyranitar|Earthquake|p1a: Celebi",
+      "|-resisted|p1a: Celebi",
+      "|-damage|p1a: Celebi|338/404",
+      "|"
+     ],
+     "b": [
+      "|switch|p1a: Celebi|Celebi|404/404",
+      "|move|p2a: Tyranitar|Earthquake|p1a: Celebi",
+      "|-resisted|p1a: Celebi",
+      "|-damage|p1a: Celebi|343/404",
+      "|"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 2,
+    "branches_identical_incl_gender_tokens": 2,
+    "first_turn_identical": 2
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 4,
+     "a": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Swampert|Swampert|401/401",
+      "|move|p2a: Tyranitar|Earthquake|p1a: Swampert",
+      "|-damage|p1a: Swampert|273/401",
+      "|"
+     ],
+     "b": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Swampert|Swampert|401/401",
+      "|move|p2a: Tyranitar|Earthquake|p1a: Swampert",
+      "|-damage|p1a: Swampert|260/401",
+      "|"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 5,
+     "a": [
+      "|switch|p1a: Metagross|Metagross|343/343",
+      "|move|p2a: Tyranitar|Earthquake|p1a: Metagross",
+      "|-supereffective|p1a: Metagross",
+      "|-damage|p1a: Metagross|158/343",
+      "|"
+     ],
+     "b": [
+      "|switch|p1a: Metagross|Metagross|343/343",
+      "|move|p2a: Tyranitar|Earthquake|p1a: Metagross",
+      "|-supereffective|p1a: Metagross",
+      "|-damage|p1a: Metagross|140/343",
+      "|"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 0,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 1
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_003#p1#1",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 4,
+     "a": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Tyranitar|Tyranitar|387/387",
+      "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar",
+      "|move|p2a: Zapdos|Toxic|p1a: Tyranitar",
+      "|-status|p1a: Tyranitar|tox"
+     ],
+     "b": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Tyranitar|Tyranitar|387/387",
+      "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar",
+      "|move|p2a: Zapdos|Toxic|p1a: Tyranitar|[miss]",
+      "|-miss|p2a: Zapdos|p1a: Tyranitar"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 3,
+     "a": [
+      "|",
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Cloyster|Cloyster|241/241",
+      "|move|p2a: Zapdos|Toxic|p1a: Cloyster",
+      "|-status|p1a: Cloyster|tox"
+     ],
+     "b": [
+      "|",
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Cloyster|Cloyster|241/241",
+      "|move|p2a: Zapdos|Toxic|p1a: Cloyster|[miss]",
+      "|-miss|p2a: Zapdos|p1a: Cloyster"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 0,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 0
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 14,
+     "a": [
+      "|-boost|p2a: Suicune|spa|1",
+      "|-boost|p2a: Suicune|spd|1",
+      "|move|p1a: Swampert|Earthquake|p2a: Suicune",
+      "|-damage|p2a: Suicune|74/100",
+      "|"
+     ],
+     "b": [
+      "|-boost|p2a: Suicune|spa|1",
+      "|-boost|p2a: Suicune|spd|1",
+      "|move|p1a: Swampert|Earthquake|p2a: Suicune",
+      "|-damage|p2a: Suicune|73/100",
+      "|"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 16,
+     "a": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Heracross|Heracross|301/301",
+      "|move|p2a: Suicune|Surf|p1a: Heracross",
+      "|-damage|p1a: Heracross|168/301",
+      "|"
+     ],
+     "b": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Heracross|Heracross|301/301",
+      "|move|p2a: Suicune|Surf|p1a: Heracross",
+      "|-damage|p1a: Heracross|163/301",
+      "|"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 1,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 7
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s1_001#p1#12",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 56,
+     "a": [
+      "|switch|p1a: Regirock|Regirock|335/335",
+      "|move|p2a: Salamence|Flamethrower|p1a: Regirock",
+      "|-resisted|p1a: Regirock",
+      "|-crit|p1a: Regirock",
+      "|-damage|p1a: Regirock|228/335"
+     ],
+     "b": [
+      "|switch|p1a: Regirock|Regirock|335/335",
+      "|move|p2a: Salamence|Flamethrower|p1a: Regirock",
+      "|-resisted|p1a: Regirock",
+      "|-damage|p1a: Regirock|285/335",
+      "|"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 30,
+     "a": [
+      "|t:|<NORMALIZED>",
+      "|move|p2a: Magneton|Hidden Power|p1a: Swampert",
+      "|-supereffective|p1a: Swampert",
+      "|-damage|p1a: Swampert|39/403",
+      "|move|p1a: Swampert|Earthquake|p2a: Magneton"
+     ],
+     "b": [
+      "|t:|<NORMALIZED>",
+      "|move|p2a: Magneton|Hidden Power|p1a: Swampert",
+      "|-supereffective|p1a: Swampert",
+      "|-damage|p1a: Swampert|51/403",
+      "|move|p1a: Swampert|Earthquake|p2a: Magneton"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 0,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 8
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s1_002#p1#8",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 3,
+     "a": [
+      "|",
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Swampert|Swampert|401/401",
+      "|move|p2a: Tyranitar|Rock Slide|p1a: Swampert",
+      "|-resisted|p1a: Swampert"
+     ],
+     "b": [
+      "|",
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Swampert|Swampert|401/401",
+      "|move|p2a: Tyranitar|Rock Slide|p1a: Swampert|[miss]",
+      "|-miss|p2a: Tyranitar|p1a: Swampert"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 3,
+     "a": [
+      "|",
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Metagross|Metagross|343/343",
+      "|move|p2a: Tyranitar|Rock Slide|p1a: Metagross",
+      "|-resisted|p1a: Metagross"
+     ],
+     "b": [
+      "|",
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Metagross|Metagross|343/343",
+      "|move|p2a: Tyranitar|Rock Slide|p1a: Metagross|[miss]",
+      "|-miss|p2a: Tyranitar|p1a: Metagross"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 0,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 0
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s2_002#p1#8",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 48,
+     "a": [
+      "|-sidestart|p1: rhone|Spikes",
+      "|move|p1a: Forretress|Rapid Spin|p2a: Skarmory",
+      "|-resisted|p2a: Skarmory",
+      "|-damage|p2a: Skarmory|99/100",
+      "|-sideend|p1: rhone|Spikes|[from] move: Rapid Spin|[of] p1a: Forretress"
+     ],
+     "b": [
+      "|-sidestart|p1: rhone|Spikes",
+      "|move|p1a: Forretress|Rapid Spin|p2a: Skarmory",
+      "|-resisted|p2a: Skarmory",
+      "|-crit|p2a: Skarmory",
+      "|-damage|p2a: Skarmory|97/100"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 17,
+     "a": [
+      "|-sidestart|p1: rhone|Spikes",
+      "|move|p1a: Tyranitar|Flamethrower|p2a: Skarmory",
+      "|-supereffective|p2a: Skarmory",
+      "|-damage|p2a: Skarmory|43/100",
+      "|"
+     ],
+     "b": [
+      "|-sidestart|p1: rhone|Spikes",
+      "|move|p1a: Tyranitar|Flamethrower|p2a: Skarmory",
+      "|-supereffective|p2a: Skarmory",
+      "|-damage|p2a: Skarmory|46/100",
+      "|"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 1,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 8
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s3_002#p1#10",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 13,
+     "a": [
+      "|t:|<NORMALIZED>",
+      "|switch|p2a: Skarmory|Skarmory|100/100",
+      "|move|p1a: Dugtrio|Rock Slide|p2a: Skarmory",
+      "|-damage|p2a: Skarmory|77/100",
+      "|"
+     ],
+     "b": [
+      "|t:|<NORMALIZED>",
+      "|switch|p2a: Skarmory|Skarmory|100/100",
+      "|move|p1a: Dugtrio|Rock Slide|p2a: Skarmory",
+      "|-damage|p2a: Skarmory|78/100",
+      "|"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 6,
+     "a": [
+      "|-ability|p1a: Suicune|Pressure|[silent]",
+      "|move|p2a: Zapdos|Thunderbolt|p1a: Suicune",
+      "|-supereffective|p1a: Suicune",
+      "|-damage|p1a: Suicune|96/403",
+      "|"
+     ],
+     "b": [
+      "|-ability|p1a: Suicune|Pressure|[silent]",
+      "|move|p2a: Zapdos|Thunderbolt|p1a: Suicune",
+      "|-supereffective|p1a: Suicune",
+      "|-damage|p1a: Suicune|115/403",
+      "|"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 0,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 2
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_003#p1#3",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 4,
+     "a": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Skarmory|Skarmory|331/331",
+      "|move|p2a: Jirachi|Ice Punch|p1a: Skarmory",
+      "|-damage|p1a: Skarmory|262/331",
+      "|"
+     ],
+     "b": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Skarmory|Skarmory|331/331",
+      "|move|p2a: Jirachi|Ice Punch|p1a: Skarmory",
+      "|-damage|p1a: Skarmory|251/331",
+      "|-status|p1a: Skarmory|frz"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 4,
+     "a": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Gengar|Gengar|303/303",
+      "|move|p2a: Jirachi|Ice Punch|p1a: Gengar",
+      "|-damage|p1a: Gengar|224/303",
+      "|"
+     ],
+     "b": [
+      "|t:|<NORMALIZED>",
+      "|switch|p1a: Gengar|Gengar|303/303",
+      "|move|p2a: Jirachi|Ice Punch|p1a: Gengar",
+      "|-damage|p1a: Gengar|212/303",
+      "|-status|p1a: Gengar|frz"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "pending decisions differ",
+    "branches": 9,
+    "branches_identical": 0,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 1
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_004#p1#15",
+   "side": "p1",
+   "at": 0,
+   "root_rows_equal": true,
+   "seeded_first_diffs": [],
+   "seeded": {
+    "diverged": null,
+    "branches": 9,
+    "branches_identical": 9,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 9
+   },
+   "control_null_first_diffs": [
+    {
+     "action": 1,
+     "line_index": 6,
+     "a": [
+      "|move|p2a: Zapdos|Thunderbolt|p1a: Milotic",
+      "|-supereffective|p1a: Milotic",
+      "|-damage|p1a: Milotic|96/393",
+      "|-status|p1a: Milotic|par",
+      "|"
+     ],
+     "b": [
+      "|move|p2a: Zapdos|Thunderbolt|p1a: Milotic",
+      "|-supereffective|p1a: Milotic",
+      "|-damage|p1a: Milotic|96/393",
+      "|",
+      "|-weather|Sandstorm|[upkeep]"
+     ]
+    },
+    {
+     "action": 2,
+     "line_index": 5,
+     "a": [
+      "|switch|p1a: Blissey|Blissey|651/651",
+      "|move|p2a: Zapdos|Thunderbolt|p1a: Blissey",
+      "|-damage|p1a: Blissey|514/651",
+      "|-status|p1a: Blissey|par",
+      "|"
+     ],
+     "b": [
+      "|switch|p1a: Blissey|Blissey|651/651",
+      "|move|p2a: Zapdos|Thunderbolt|p1a: Blissey",
+      "|-damage|p1a: Blissey|514/651",
+      "|",
+      "|-weather|Sandstorm|[upkeep]"
+     ]
+    }
+   ],
+   "control_null": {
+    "diverged": "an action illegal in game B",
+    "branches": 9,
+    "branches_identical": 1,
+    "branches_identical_incl_gender_tokens": 0,
+    "first_turn_identical": 2
+   }
+  }
+ ],
+ "partA": [
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+   "swapped_slot": 2,
+   "true": "jirachi",
+   "world": "gengar",
+   "gate": false,
+   "skipped": "the swap changed the searched side's rows"
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_003#p1#1",
+   "swapped_slot": 1,
+   "true": "swampert",
+   "world": "tyranitar",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 4,
+    "root_turn_identical": 4,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 4,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 4,
+    "root_turn_identical": 4,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 4,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+   "swapped_slot": 1,
+   "true": "magneton",
+   "world": "tyranitar",
+   "gate": false,
+   "skipped": "the swap changed the searched side's rows"
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#7",
+   "swapped_slot": 1,
+   "true": "magneton",
+   "world": "starmie",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 8,
+    "root_turn_identical": 8,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 8,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 8,
+    "root_turn_identical": 8,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 8,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s1_001#p1#12",
+   "swapped_slot": 1,
+   "true": "cloyster",
+   "world": "zapdos",
+   "gate": false,
+   "skipped": "the swap changed the searched side's rows"
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s2_002#p1#8",
+   "swapped_slot": 2,
+   "true": "jirachi",
+   "world": "charizard",
+   "gate": false,
+   "skipped": "the swap changed the searched side's rows"
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s3_002#p1#10",
+   "swapped_slot": 1,
+   "true": "tyranitar",
+   "world": "skarmory",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 0,
+    "root_turn_identical": 0,
+    "excluded_opponent_switch_in_root_turn": 8,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 0,
+    "root_turn_identical": 0,
+    "excluded_opponent_switch_in_root_turn": 8,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_003#p1#3",
+   "swapped_slot": 2,
+   "true": "jolteon",
+   "world": "marowak",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 0,
+    "root_turn_identical": 0,
+    "excluded_opponent_switch_in_root_turn": 9,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 0,
+    "root_turn_identical": 0,
+    "excluded_opponent_switch_in_root_turn": 9,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_004#p1#15",
+   "swapped_slot": 3,
+   "true": "jirachi",
+   "world": "salamence",
+   "gate": false,
+   "skipped": "the swap changed the searched side's rows"
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_005#p1#7",
+   "swapped_slot": 1,
+   "true": "forretress",
+   "world": "machamp",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 7,
+    "root_turn_identical": 7,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 7,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 7,
+    "root_turn_identical": 7,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 7,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s2_004#p1#1",
+   "swapped_slot": 1,
+   "true": "breloom",
+   "world": "dugtrio",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 9,
+    "root_turn_identical": 9,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 9,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 9,
+    "root_turn_identical": 9,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 9,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s3_005#p1#22",
+   "swapped_slot": 5,
+   "true": "charizard",
+   "world": "skarmory",
+   "gate": true,
+   "seeded": {
+    "diverged": null,
+    "branches_compared": 4,
+    "root_turn_identical": 4,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 4,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": null,
+    "branches_compared": 4,
+    "root_turn_identical": 4,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 4,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s0_002#p1#4",
+   "swapped_slot": 1,
+   "true": "tyranitar",
+   "world": "gengar",
+   "gate": true,
+   "seeded": {
+    "diverged": "an action illegal in game B",
+    "branches_compared": 7,
+    "root_turn_identical": 7,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "an action illegal in game B",
+    "branches_compared": 5,
+    "root_turn_identical": 5,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s1_002#p1#11",
+   "swapped_slot": 3,
+   "true": "suicune",
+   "world": "raikou",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 9,
+    "root_turn_identical": 9,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 9,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 9,
+    "root_turn_identical": 9,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 9,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s2_001#p1#10",
+   "swapped_slot": 1,
+   "true": "skarmory",
+   "world": "hariyama",
+   "gate": true,
+   "seeded": {
+    "diverged": "an action illegal in game B",
+    "branches_compared": 6,
+    "root_turn_identical": 6,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "an action illegal in game B",
+    "branches_compared": 6,
+    "root_turn_identical": 6,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s3_001#p1#24",
+   "swapped_slot": 3,
+   "true": "starmie",
+   "world": "starmie",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 5,
+    "root_turn_identical": 5,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 5,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 5,
+    "root_turn_identical": 5,
+    "excluded_opponent_switch_in_root_turn": 0,
+    "identical_until_swapped_mon_appears": 5,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s3_002#p1#11",
+   "swapped_slot": 2,
+   "true": "celebi",
+   "world": "smeargle",
+   "gate": false,
+   "skipped": "the swap changed the searched side's rows"
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+   "swapped_slot": 1,
+   "true": "magneton",
+   "world": "claydol",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 0,
+    "root_turn_identical": 0,
+    "excluded_opponent_switch_in_root_turn": 8,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 0,
+    "root_turn_identical": 0,
+    "excluded_opponent_switch_in_root_turn": 8,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#5",
+   "swapped_slot": 1,
+   "true": "magneton",
+   "world": "zapdos",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 8,
+    "root_turn_identical": 8,
+    "excluded_opponent_switch_in_root_turn": 1,
+    "identical_until_swapped_mon_appears": 8,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 8,
+    "root_turn_identical": 8,
+    "excluded_opponent_switch_in_root_turn": 1,
+    "identical_until_swapped_mon_appears": 8,
+    "examples_differ": []
+   }
+  },
+  {
+   "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s1_003#p1#1",
+   "swapped_slot": 1,
+   "true": "swampert",
+   "world": "gengar",
+   "gate": true,
+   "seeded": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 0,
+    "root_turn_identical": 0,
+    "excluded_opponent_switch_in_root_turn": 7,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   },
+   "null_battle_stream": {
+    "diverged": "pending decisions differ",
+    "branches_compared": 0,
+    "root_turn_identical": 0,
+    "excluded_opponent_switch_in_root_turn": 7,
+    "identical_until_swapped_mon_appears": 0,
+    "examples_differ": []
+   }
+  }
+ ],
+ "partA_errors": [],
+ "summary": {
+  "partB_pairs": 10,
+  "partB_pairs_with_power (null control differs)": 10,
+  "partB_seeded_all_identical": true,
+  "partB_seeded_branches": 90,
+  "partB_seeded_identical": 90,
+  "partA_states": 14,
+  "partA_seeded_branches_compared": 67,
+  "partA_seeded_root_turn_identical": 67,
+  "partA_seeded_identical_until_swapped_mon_appears": 54,
+  "partA_null_battle_stream_branches_compared": 65,
+  "partA_null_battle_stream_root_turn_identical": 65,
+  "partA_null_battle_stream_identical_until_swapped_mon_appears": 54
+ },
+ "pass": true
+}

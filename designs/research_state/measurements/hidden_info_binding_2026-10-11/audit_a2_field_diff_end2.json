@@ -1,0 +1,652 @@
+{
+ "audit": "A2 field diff at the root (opponent's own row + its last request)",
+ "cp": "end2",
+ "every": 1,
+ "compared": "the opponent viewer's LAST obs-bearing decision in the prefix (cut at the searched side's open root request); opp_after_gap = root chunk index - that decision's chunk index",
+ "by_dir": {
+  "det": {
+   "states": 578,
+   "states_ok": 578,
+   "errors": [],
+   "worlds_compared": 4624,
+   "opp_after_gap_hist": {
+    "-1": 571,
+    "2": 7
+   },
+   "unexpected_cells_by_category": {
+    "UNEXPECTED|event_window|MAGNITUDE|gender_draws_DIFFER": 1
+   },
+   "unexpected_total": 1,
+   "states_with_unexpected": 1,
+   "separate_intent_cells": {
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": 22
+   },
+   "explained_move_derived": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": 2
+   },
+   "hidden_divergence_worlds": {
+    "HIDDEN|opp_protocol_differs|gender_draws_DIFFER": 6,
+    "HIDDEN|opp_protocol_differs|gender_draws_equal": 219
+   },
+   "worlds_whose_SEARCHED_side_protocol_differs_by_kind": {
+    "OBS_INCONSISTENT|searched_protocol|-singleturn": 58,
+    "OBS_INCONSISTENT|searched_protocol|gender_in_switch_details": 176
+   },
+   "worlds_whose_SEARCHED_side_protocol_differs": 224,
+   "states_with_any_such_world": 70,
+   "examples_searched_protocol": [
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 0,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 1,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 3,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 4,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 5,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 6,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s2_003#p1#25",
+     "world": 5,
+     "kinds": [
+      "-singleturn"
+     ],
+     "note": "SEARCHED protocol: +|-singleturn|p2a: Swampert|move: Focus Punch"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+     "world": 0,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+     "world": 1,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+     "world": 4,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+     "world": 5,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+     "world": 6,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+    }
+   ],
+   "worlds_by_gender_draws_x_opp_protocol": {
+    "gender_draws_DIFFER & opp_protocol_differs": 6,
+    "gender_draws_DIFFER & opp_protocol_same": 76,
+    "gender_draws_equal & opp_protocol_differs": 219,
+    "gender_draws_equal & opp_protocol_same": 4323
+   },
+   "expected_cells_by_category": {
+    "EXPECTED|obs_facts|seen_move_bits_positional|seen_same_count": 15204,
+    "EXPECTED|own_team|abilities|never_seen": 8866,
+    "EXPECTED|own_team|items|never_seen": 3481,
+    "EXPECTED|own_team|move0|never_seen": 55854,
+    "EXPECTED|own_team|move1|never_seen": 54960,
+    "EXPECTED|own_team|move2|never_seen": 56511,
+    "EXPECTED|own_team|move3|never_seen": 57068,
+    "EXPECTED|own_team|move_block_resorted.accuracy|seen_with_redrawn": 12840,
+    "EXPECTED|own_team|move_block_resorted.category|seen_with_redrawn": 26632,
+    "EXPECTED|own_team|move_block_resorted.current_pp|seen_with_redrawn": 36222,
+    "EXPECTED|own_team|move_block_resorted.id|seen_with_redrawn": 42436,
+    "EXPECTED|own_team|move_block_resorted.max_pp|seen_with_redrawn": 32211,
+    "EXPECTED|own_team|move_block_resorted.never_miss|seen_with_redrawn": 16871,
+    "EXPECTED|own_team|move_block_resorted.power|seen_with_redrawn": 35534,
+    "EXPECTED|own_team|move_block_resorted.recoil|seen_with_redrawn": 933,
+    "EXPECTED|own_team|move_block_resorted.secondary|seen_with_redrawn": 17801,
+    "EXPECTED|own_team|move_block_resorted.type|seen_with_redrawn": 38418,
+    "EXPECTED|own_team|species|never_seen": 60990,
+    "EXPECTED|own_team|spread|never_seen": 82109,
+    "EXPECTED|own_team|types|never_seen": 16672,
+    "EXPECTED|reactive|active_req_moves|seen_redrawn_slot": 19360
+   },
+   "checks": {
+    "CHECKED|own_team|kept_move_content|seen": 24784,
+    "CHECKED|request|seen_mon|-": 17904
+   },
+   "examples": {
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": [
+     {
+      "id": "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7",
+      "world": 6.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 94.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7",
+      "world": 142.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 94.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7",
+      "world": 214.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 94.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7",
+      "world": 260.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 94.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7",
+      "world": 229.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 94.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7",
+      "world": 251.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 94.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7",
+      "world": 242.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 94.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7",
+      "world": 323.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 94.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 121.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2434,
+      "name": "event_window.row21.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 121.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     }
+    ],
+    "UNEXPECTED|event_window|MAGNITUDE|gender_draws_DIFFER": [
+     {
+      "id": "rb_es_end2_s2001/step_12000157/sentinel_2/win_s1_003#p1#3",
+      "world": -0.1163366362452507,
+      "turn": 4,
+      "cat": "UNEXPECTED|event_window|MAGNITUDE|gender_draws_DIFFER",
+      "cell": 2586,
+      "name": "event_window.row26.5",
+      "species": null,
+      "true": -0.11881188303232193,
+      "notes": [
+       "opp protocol: -|-damage|p2a: Swampert|356/404 ~ +|-damage|p2a: Swampert|357/404 ~ -|-heal|p2a: Swampert|381/404|[from] item: Leftovers ~ +|-heal|p2a: Swampert|382/404|[from] item: Leftovers"
+      ]
+     }
+    ],
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": [
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_2/win_s2_003#p1#30",
+      "world": 0.45815691351890564,
+      "turn": 28,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.5781296491622925,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_4/win_s2_002#p1#30",
+      "world": 0.45815691351890564,
+      "turn": 30,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.5781296491622925,
+      "notes": []
+     }
+    ]
+   }
+  },
+  "det_b": {
+   "states": 568,
+   "states_ok": 568,
+   "errors": [],
+   "worlds_compared": 4544,
+   "opp_after_gap_hist": {
+    "-1": 561,
+    "2": 7
+   },
+   "unexpected_cells_by_category": {
+    "UNEXPECTED|event_window|MAGNITUDE|gender_draws_DIFFER": 1
+   },
+   "unexpected_total": 1,
+   "states_with_unexpected": 1,
+   "separate_intent_cells": {
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": 10
+   },
+   "explained_move_derived": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": 3
+   },
+   "hidden_divergence_worlds": {
+    "HIDDEN|opp_protocol_differs|gender_draws_DIFFER": 6,
+    "HIDDEN|opp_protocol_differs|gender_draws_equal": 238
+   },
+   "worlds_whose_SEARCHED_side_protocol_differs_by_kind": {
+    "OBS_INCONSISTENT|searched_protocol|-damage": 7,
+    "OBS_INCONSISTENT|searched_protocol|-singleturn": 57,
+    "OBS_INCONSISTENT|searched_protocol|gender_in_switch_details": 193
+   },
+   "worlds_whose_SEARCHED_side_protocol_differs": 245,
+   "states_with_any_such_world": 65,
+   "examples_searched_protocol": [
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 0,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 1,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 3,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 4,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 5,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 6,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_003#p1#11",
+     "world": 7,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s2_003#p1#25",
+     "world": 3,
+     "kinds": [
+      "-singleturn"
+     ],
+     "note": "SEARCHED protocol: +|-singleturn|p2a: Swampert|move: Focus Punch"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s2_003#p1#25",
+     "world": 5,
+     "kinds": [
+      "-singleturn"
+     ],
+     "note": "SEARCHED protocol: +|-singleturn|p2a: Swampert|move: Focus Punch"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+     "world": 4,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+     "world": 5,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+    },
+    {
+     "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#19",
+     "world": 7,
+     "kinds": [
+      "gender_in_switch_details"
+     ],
+     "note": "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+    }
+   ],
+   "worlds_by_gender_draws_x_opp_protocol": {
+    "gender_draws_DIFFER & opp_protocol_differs": 6,
+    "gender_draws_DIFFER & opp_protocol_same": 58,
+    "gender_draws_equal & opp_protocol_differs": 238,
+    "gender_draws_equal & opp_protocol_same": 4242
+   },
+   "expected_cells_by_category": {
+    "EXPECTED|obs_facts|seen_move_bits_positional|seen_same_count": 14848,
+    "EXPECTED|own_team|abilities|never_seen": 7627,
+    "EXPECTED|own_team|items|never_seen": 3007,
+    "EXPECTED|own_team|move0|never_seen": 52914,
+    "EXPECTED|own_team|move1|never_seen": 52252,
+    "EXPECTED|own_team|move2|never_seen": 53598,
+    "EXPECTED|own_team|move3|never_seen": 53652,
+    "EXPECTED|own_team|move_block_resorted.accuracy|seen_with_redrawn": 12748,
+    "EXPECTED|own_team|move_block_resorted.category|seen_with_redrawn": 26141,
+    "EXPECTED|own_team|move_block_resorted.current_pp|seen_with_redrawn": 35604,
+    "EXPECTED|own_team|move_block_resorted.id|seen_with_redrawn": 41729,
+    "EXPECTED|own_team|move_block_resorted.max_pp|seen_with_redrawn": 31622,
+    "EXPECTED|own_team|move_block_resorted.never_miss|seen_with_redrawn": 16536,
+    "EXPECTED|own_team|move_block_resorted.power|seen_with_redrawn": 34945,
+    "EXPECTED|own_team|move_block_resorted.recoil|seen_with_redrawn": 915,
+    "EXPECTED|own_team|move_block_resorted.secondary|seen_with_redrawn": 17385,
+    "EXPECTED|own_team|move_block_resorted.type|seen_with_redrawn": 37833,
+    "EXPECTED|own_team|species|never_seen": 51737,
+    "EXPECTED|own_team|spread|never_seen": 77554,
+    "EXPECTED|own_team|types|never_seen": 14194,
+    "EXPECTED|reactive|active_req_moves|seen_redrawn_slot": 19183
+   },
+   "checks": {
+    "CHECKED|own_team|kept_move_content|seen": 24384,
+    "CHECKED|request|seen_mon|-": 17640
+   },
+   "examples": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_005#p1#35",
+      "world": 0.0,
+      "turn": 34,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.28906482458114624,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_2/win_s2_003#p1#30",
+      "world": 0.45815691351890564,
+      "turn": 28,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.5781296491622925,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_2/win_s2_003#p1#30",
+      "world": 0.45815691351890564,
+      "turn": 28,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.5781296491622925,
+      "notes": []
+     }
+    ],
+    "UNEXPECTED|event_window|MAGNITUDE|gender_draws_DIFFER": [
+     {
+      "id": "rb_es_end2_s2001/step_12000157/sentinel_2/win_s1_003#p1#3",
+      "world": -0.1163366362452507,
+      "turn": 4,
+      "cat": "UNEXPECTED|event_window|MAGNITUDE|gender_draws_DIFFER",
+      "cell": 2586,
+      "name": "event_window.row26.5",
+      "species": null,
+      "true": -0.11881188303232193,
+      "notes": [
+       "opp protocol: -|-damage|p2a: Swampert|356/404 ~ +|-damage|p2a: Swampert|357/404 ~ -|-heal|p2a: Swampert|381/404|[from] item: Leftovers ~ +|-heal|p2a: Swampert|382/404|[from] item: Leftovers"
+      ]
+     }
+    ],
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": [
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 248.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2434,
+      "name": "event_window.row21.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 248.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 385.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2434,
+      "name": "event_window.row21.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 385.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 248.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2434,
+      "name": "event_window.row21.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 248.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 248.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2434,
+      "name": "event_window.row21.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 248.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 242.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2434,
+      "name": "event_window.row21.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_006#p1#6",
+      "world": 242.0,
+      "turn": 7,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2524,
+      "name": "event_window.row24.3",
+      "species": null,
+      "true": 260.0,
+      "notes": []
+     }
+    ]
+   }
+  }
+ },
+ "unexpected_total": 2,
+ "pass": false
+}

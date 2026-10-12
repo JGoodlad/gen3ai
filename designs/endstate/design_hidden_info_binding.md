@@ -707,6 +707,18 @@ written there.
   set over the species).
 - M-BELIEF IMPROVING; M-STABLE STABLE.
 
+### 12.12 Amendments (dated; each says what had been read)
+
+**Amendment 1 (2026-10-11, after the audits A1–A6 and the descriptive reads D1–D9 were read; no arm of §6 / §7 had
+been read).** The audits found the row gate weaker than the searched side's protocol (≈ 4 % of worlds), a
+construction-draw leak (A6), and clause-illegal world teams (A4); R-GIGO FAILS (§16.4). Changes: (a) every §6 sampler
+(F and its derivatives, P re-built, POOL, POOLSETS, the dose / placebo / MAP families) gates on the searched side's
+protocol bytes AND rows, parses every public line naming an opponent move as a reveal, rejects gen3ou-clause-illegal
+teams, and draws never-seen genders independently of species; (b) the pilot's Phase 2 base P is RE-BUILT with the
+fixed builder and re-played (≈ 2 × 2.6 CPU-h) before any share uses it, and the old P rows are reported beside it;
+(c) §13.1's hand-over spec gains the same three requirements; (d) R-GIGO is re-read on the fixed builder, with the
+teeth. Nothing else in §12 changes.
+
 ---
 
 ## 13. Independent replication and the red team (owner, 2026-10-11: "a GIGO in the instrument is the most likely way this goes wrong")
@@ -728,8 +740,10 @@ The orchestrator dispatches it with ONLY the following spec, the registered stat
 4. *A fair world (class F of §6.1):* the opponent team with every unrevealed fact re-drawn from the Smogon prior
    (`agents.gen3_data.priors` at the pin), the never-seen slots whole (species ∝ the teammate prior given the
    revealed species), and ACCEPTED only if replaying the world's command log to the root gives the searched side
-   byte-equal observation rows at every one of its decisions. Past opponent choices that name a re-drawn move or a
-   never-seen species must be rendered so the world can execute them (decide how; document it).
+   byte-equal observation rows at every one of its decisions AND a byte-equal protocol stream (everything that side
+   was sent), with no gen3ou clause broken (Amendment 1). A move is "seen" if any public line names it for that mon,
+   not only `|move|`. Past opponent choices that name a re-drawn move or a never-seen species must be rendered so the
+   world can execute them (decide how; document it).
 5. *The playouts:* every legal action × 8 worlds, world j with dice seed j of `truth.turn_seeds(id, 48)`, the
    checkpoint greedy on both sides to the end; IMP of LEAF-K8 = T(argmax of the world-mean outcome) − T(top1), ties
    toward the policy's order.
@@ -855,6 +869,10 @@ R-INFO exactly. Pooled over both seeds (1,157 states; g = oracle − fair LEAF-K
 - Phase 2b's belief-species worlds give the same pattern (`descriptive_reads_det_b.json`: D1 0 / 1 / 2 unrevealed G
   +0.032 / +0.068 / +0.097).
 
+**Caveat (added after §16.4):** these reads use the pilot's Phase 2 worlds, which R-GIGO marks formally VOID until the
+fixed builder re-builds them; the post-hoc sensitivity in §16.4 finds G and the D1 split unchanged when every state
+touched by a known defect is dropped.
+
 **What D1–D8 do to the hypotheses (descriptive, no verdict):** H-UNSEEN is very much alive (one unseen mon wipes the
 honest gain); H-MOVES is alive inside the all-seen stratum (about half the oracle's edge there, vanishing when enough
 moves are revealed, post-hoc); H-STAT's exclusion and reweighting arms are killed; H-HORIZON is unresolved. The
@@ -912,8 +930,47 @@ v8 worry: every verdict here is PROVISIONAL "at 15M".
   main checkout's byte-identical `validate_team.js` (`policy_drift_scripts/`); the two runs' probe sets differ (each
   from its own 4M policy), so drift compares within a run only; "item revealed" is approximated from protocol tags.
 
-*Still to read in this unit:* the audits (R-GIGO's ingredients), the model-input axis (R-NET, CRITIC-USES), and the
-author's honest confidence in "moves are binding".
+### 16.4 The sampler AUDITS and R-GIGO (read 2026-10-11; `audit_*_<cp>.json`, bulk `~/gen3ai_archive/hidden_info_binding/<cp>/audit/`)
+
+**Plain language.** The world builder holds exactly the right hidden state for every Pokémon our side has seen, and
+the dice after the decision depend only on the playout seed, as designed. But its consistency check compares our
+OBSERVATION ROWS, which is weaker than what our side actually saw: about 4 % of the played worlds disagree with our
+own battle log in small ways (a Pokémon's gender shown on switch-in, a Focus Punch "tightening" line, Beat Up hit
+sizes), and 2–3 % of world teams break gen-3 OU clauses (Speed Pass, One Boost Passer, Accuracy Trap). By the
+registered rule that is a FAIL. The defects are small and pull in both directions; dropping every affected state
+leaves the pilot's gap unchanged.
+
+| audit | end2 | prod | verdict |
+|---|---|---|---|
+| **A1** builder identity (the TRUE team through the builder: gate on try 1, rendered prefix replays identically for both sides, Phase 1 outcomes on seeds 0–7) | 150 states / 1,100 actions, 0 mismatches | 150 / 1,101, 0 | PASS |
+| **A2** field diff at the root (the opponent's own row + its last request, every played world of det and det_b, ≈ 18,450 worlds) | 1 + 1 states with UNEXPECTED cells | 1 + 1 (3 + 1 cells) | **FAIL** (registered: 0 unexpected) |
+| … of which: every SEEN mon's exact HP, status, stats, item, ability, kept moves and their PP | 0 differences (≈ 17–18k mon comparisons per run) | 0 | the hidden state that matters is clean |
+| … the UNEXPECTED cells | the event-window MAGNITUDE of a past hit on a seen mon off by 1 HP (326/331 vs 325/331): a never-seen slot of a different gender class changes the turn-0 gender draws (`rust_sim/src/turn/driver.rs:691`) and shifts the pre-root dice | same | — |
+| … worlds whose SEARCHED side's PROTOCOL differs from the truth (not caught by the row gate) | 224 + 245 (70 + 65 states): gender tokens in switch details; Focus Punch `-singleturn` (the mon fainted by the root in every end2 case); one Beat Up hit size | 162 + 150 (46 + 44 states) | FINDING |
+| **A3** re-gate determinism (100 worlds) | 100 % | 100 % | PASS |
+| **A4** legality of world teams | 0 Species Clause / multi-HP / engine-banned / HP-IV / EV violations; **≈ 2–3 % of teams break gen3ou clauses** (end2 det 116 of 4,624); learnability and abilities UNCHECKABLE (the pin's learnset lacks pre-evolution and egg moves: true teams "fail" it ≈ 2.2 times each; no ability lists) | prod det 127 of 4,632 | **FAIL** (> 1 % clause-illegal ⇒ fixed before §6) |
+| **A5** root dice: post-root dice depend ONLY on the playout seed (`search/playout.rs:372` → `game.rs:154-158` → `bridge.rs:1858-1861` replaces `st.prng` wholesale; a two-battle-seed control: 90 / 90 branches identical, the no-reseed control differs in every pair; a bench-mon swap leaves the root turn identical 61 / 61, 67 / 67) | PASS | PASS | PASS (caveat: durations rolled BEFORE the root, e.g. sleep, carry over from the prefix) |
+| **A6** the gate's conditioning (descriptive) | re-drawn seen-mon moves are effectively UNconditioned (KL 0.012 = the matched-noise floor); the gate LEAKS the never-seen slots' gender class: accepted worlds match the true count of random-gender mons 98.2 % vs 53 % ungated (toward the truth) | 97.5 % vs 51 % | — |
+| teeth (planted defects for A1–A3) | **not yet run** (requested) | | R-GIGO cannot PASS without them |
+
+**R-GIGO = FAIL** (A2's unexpected cells; A4's clause-illegal teams; the teeth outstanding). Under §12.1 the pilot's
+honest-world numbers are formally VOID until a fixed sampler re-runs them, and the factorial does not start on the
+current builder. **POST-HOC sensitivity** (`gigo_sensitivity.py`, labelled, no verdict): dropping every state with
+ANY protocol-inconsistent world or unexpected cell (end2 71 of 578, prod 47 of 579) leaves G at +0.071 [+0.055, +0.087]
+/ +0.068 [+0.055, +0.083] (was +0.072 / +0.066) and the D1 split unchanged (0 unrevealed: +0.039 / +0.018; 1: +0.066 /
++0.077). The defects are mixed in sign: the gender leak pulls worlds toward the truth (helps honest search), an
+unparsed Focus Punch reveal and clause-illegal teams make worlds worse. They are far too small to create or erase a
+7-point gap, so the pilot's qualitative reading survives; its numbers are re-confirmed only by the fixed sampler.
+
+**The fixes, now preconditions of §6 (Amendment 1, §12.12):** (1) gate on the searched side's PROTOCOL bytes as well as
+its rows (gender tokens included, or genders fixed per slot independently of the species draw so the gate no longer
+conditions on construction draws: the A6 leak); (2) parse every public line that names an opponent's move outside
+`|move|` (Focus Punch `-singleturn`, Taunt / Disable `cant`, Encore / Disable `-start`) as a reveal; (3) reject world
+teams that break a gen3ou clause (`agents.gen3_data.format_spec`); (4) the independent implementation (§13.1) is built
+to the fixed spec. ≈ 0.5 agent-day.
+
+*Still to read in this unit:* the model-input axis (R-NET, CRITIC-USES), the audit teeth, and the author's honest
+confidence in "moves are binding".
 
 ---
 

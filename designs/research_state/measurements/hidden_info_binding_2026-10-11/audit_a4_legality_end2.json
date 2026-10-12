@@ -1,0 +1,697 @@
+{
+ "audit": "A4 legality of played world teams",
+ "cp": "end2",
+ "node_validator": "SKIPPED: the pin checkouts' deps/pokemon-showdown is not initialised (empty); running validate_team.js would read the main checkout's build",
+ "species_with_ability_lists": 0,
+ "learnset_species": 386,
+ "by_dir": {
+  "det": {
+   "states": 578,
+   "world_teams": 4624,
+   "violations_in_SAMPLED_parts": {
+    "not_in_pin_learnset": 4513,
+    "not_learnable_unreferenced": 633,
+    "format_spec:Speed Pass Clause": 99,
+    "format_spec:One Boost Passer Clause": 15,
+    "format_spec:Accuracy Trap Clause": 1,
+    "format_spec:Baton Pass + Mean Look": 1
+   },
+   "violations_in_KEPT_parts": {
+    "not_in_pin_learnset": 3446
+   },
+   "control_true_teams_violations_per_state": {
+    "not_in_pin_learnset": 1293
+   },
+   "species_without_learnset_entry (unchecked)": {},
+   "examples": {
+    "not_in_pin_learnset|kept": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 0,
+      "slot": 3,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 3,
+      "slot": 3,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 4,
+      "slot": 3,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 6,
+      "slot": 3,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 0,
+      "slot": 2,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 0,
+      "slot": 5,
+      "detail": "charizard:beatup"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 1,
+      "slot": 2,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 2,
+      "slot": 2,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 2,
+      "slot": 5,
+      "detail": "charizard:beatup"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 3,
+      "slot": 5,
+      "detail": "charizard:beatup"
+     }
+    ],
+    "not_in_pin_learnset|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 0,
+      "slot": 4,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 1,
+      "slot": 5,
+      "detail": "charizard:beatup"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 3,
+      "slot": 4,
+      "detail": "swampert:refresh"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 4,
+      "slot": 3,
+      "detail": "tyranitar:pursuit"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 4,
+      "slot": 4,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 6,
+      "slot": 4,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 7,
+      "slot": 4,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 7,
+      "slot": 5,
+      "detail": "charizard:beatup"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 0,
+      "slot": 3,
+      "detail": "starmie:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 1,
+      "slot": 1,
+      "detail": "starmie:hydropump"
+     }
+    ],
+    "not_learnable_unreferenced|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s1_004#p1#38",
+      "world": 4,
+      "slot": 5,
+      "detail": "scizor:silverwind"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s1_004#p1#38",
+      "world": 4,
+      "slot": 5,
+      "detail": "scizor:reversal"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s1_004#p1#38",
+      "world": 6,
+      "slot": 5,
+      "detail": "weezing:painsplit"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_005#p1#4",
+      "world": 1,
+      "slot": 5,
+      "detail": "weezing:painsplit"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#16",
+      "world": 6,
+      "slot": 4,
+      "detail": "smeargle:bellydrum"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#18",
+      "world": 4,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#18",
+      "world": 7,
+      "slot": 4,
+      "detail": "hitmontop:machpunch"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s3_002#p1#13",
+      "world": 2,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s3_002#p1#13",
+      "world": 4,
+      "slot": 4,
+      "detail": "metagross:refresh"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s3_002#p1#13",
+      "world": 5,
+      "slot": 5,
+      "detail": "weezing:painsplit"
+     }
+    ],
+    "format_spec:Speed Pass Clause|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#15",
+      "world": 5,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#18",
+      "world": 3,
+      "slot": 4,
+      "detail": "ninjask has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s2_002#p1#21",
+      "world": 5,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/win_s2_001#p1#8",
+      "world": 3,
+      "slot": 4,
+      "detail": "swellow has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s0_005#p1#22",
+      "world": 5,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s2_003#p1#25",
+      "world": 6,
+      "slot": 2,
+      "detail": "smeargle has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s0_004#p1#6",
+      "world": 6,
+      "slot": 1,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s1_003#p1#2",
+      "world": 2,
+      "slot": 4,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_004#p1#8",
+      "world": 5,
+      "slot": 5,
+      "detail": "smeargle has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic2/win_s3_001#p1#4",
+      "world": 5,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     }
+    ],
+    "format_spec:One Boost Passer Clause|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic/win_s1_001#p1#3",
+      "world": 4,
+      "slot": 5,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#19",
+      "world": 3,
+      "slot": 2,
+      "detail": "lunatone has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s3_004#p1#30",
+      "world": 0,
+      "slot": 3,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s3_004#p1#30",
+      "world": 1,
+      "slot": 3,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_001#p1#32",
+      "world": 3,
+      "slot": 1,
+      "detail": "ninjask has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_2/loss_s3_005#p1#1",
+      "world": 0,
+      "slot": 5,
+      "detail": "smeargle has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_2/win_s1_002#p1#12",
+      "world": 3,
+      "slot": 3,
+      "detail": "scizor has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/setup_sweep_v2/win_s0_002#p1#15",
+      "world": 6,
+      "slot": 5,
+      "detail": "multiple Pokemon have Baton Pass and a way to boost their stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/staller/draw_s3_007#p1#10",
+      "world": 1,
+      "slot": 3,
+      "detail": "smeargle has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/heuristic/loss_s3_003#p1#16",
+      "world": 5,
+      "slot": 3,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     }
+    ],
+    "format_spec:Accuracy Trap Clause|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s3_001#p1#3",
+      "world": 3,
+      "slot": 2,
+      "detail": "magneton has an accuracy-lowering move ['flash'] and a trap"
+     }
+    ],
+    "format_spec:Baton Pass + Mean Look|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_1/win_s3_004#p1#17",
+      "world": 7,
+      "slot": 1,
+      "detail": "umbreon has the banned combination Baton Pass + Mean Look"
+     }
+    ]
+   }
+  },
+  "det_b": {
+   "states": 568,
+   "world_teams": 4544,
+   "violations_in_SAMPLED_parts": {
+    "not_in_pin_learnset": 4622,
+    "format_spec:Speed Pass Clause": 55,
+    "not_learnable_unreferenced": 408,
+    "format_spec:One Boost Passer Clause": 11,
+    "format_spec:Accuracy Trap Clause": 1
+   },
+   "violations_in_KEPT_parts": {
+    "not_in_pin_learnset": 3632
+   },
+   "control_true_teams_violations_per_state": {
+    "not_in_pin_learnset": 1271
+   },
+   "species_without_learnset_entry (unchecked)": {},
+   "examples": {
+    "not_in_pin_learnset|kept": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 0,
+      "slot": 3,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 3,
+      "slot": 3,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 4,
+      "slot": 3,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 6,
+      "slot": 3,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 0,
+      "slot": 2,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 2,
+      "slot": 2,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 3,
+      "slot": 2,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 4,
+      "slot": 2,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 5,
+      "slot": 2,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+      "world": 5,
+      "slot": 5,
+      "detail": "charizard:beatup"
+     }
+    ],
+    "not_in_pin_learnset|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 0,
+      "slot": 4,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 1,
+      "slot": 5,
+      "detail": "charizard:beatup"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 3,
+      "slot": 4,
+      "detail": "swampert:refresh"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 4,
+      "slot": 3,
+      "detail": "tyranitar:pursuit"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 4,
+      "slot": 4,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 6,
+      "slot": 4,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 7,
+      "slot": 4,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+      "world": 7,
+      "slot": 5,
+      "detail": "charizard:beatup"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_003#p1#23",
+      "world": 0,
+      "slot": 3,
+      "detail": "swampert:curse"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_003#p1#23",
+      "world": 2,
+      "slot": 3,
+      "detail": "swampert:hydropump"
+     }
+    ],
+    "format_spec:Speed Pass Clause|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#15",
+      "world": 3,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic2/win_s2_002#p1#7",
+      "world": 6,
+      "slot": 1,
+      "detail": "celebi has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/random/win_s1_002#p1#4",
+      "world": 0,
+      "slot": 3,
+      "detail": "jolteon has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/random/win_s2_002#p1#7",
+      "world": 0,
+      "slot": 4,
+      "detail": "celebi has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/loss_s1_004#p1#1",
+      "world": 6,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/loss_s1_004#p1#1",
+      "world": 7,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/loss_s2_005#p1#41",
+      "world": 0,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s0_002#p1#10",
+      "world": 5,
+      "slot": 1,
+      "detail": "smeargle has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s0_002#p1#10",
+      "world": 6,
+      "slot": 1,
+      "detail": "smeargle has Baton Pass and a way to boost its Speed"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_1/win_s3_003#p1#17",
+      "world": 1,
+      "slot": 0,
+      "detail": "zapdos has Baton Pass and a way to boost its Speed"
+     }
+    ],
+    "not_learnable_unreferenced|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#15",
+      "world": 5,
+      "slot": 1,
+      "detail": "swampert:mirrorcoat"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#18",
+      "world": 4,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_002#p1#14",
+      "world": 3,
+      "slot": 2,
+      "detail": "blissey:healbell"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_002#p1#14",
+      "world": 4,
+      "slot": 3,
+      "detail": "blissey:healbell"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_002#p1#14",
+      "world": 6,
+      "slot": 3,
+      "detail": "blissey:healbell"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s3_002#p1#13",
+      "world": 5,
+      "slot": 0,
+      "detail": "milotic:lightscreen"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s3_002#p1#19",
+      "world": 4,
+      "slot": 0,
+      "detail": "milotic:mirrorcoat"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s0_005#p1#26",
+      "world": 3,
+      "slot": 4,
+      "detail": "charizard:ancientpower"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s1_003#p1#20",
+      "world": 0,
+      "slot": 4,
+      "detail": "charizard:ancientpower"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s1_003#p1#20",
+      "world": 2,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     }
+    ],
+    "format_spec:One Boost Passer Clause|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s1_003#p1#2",
+      "world": 0,
+      "slot": 3,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s3_004#p1#30",
+      "world": 0,
+      "slot": 3,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s3_004#p1#30",
+      "world": 1,
+      "slot": 3,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/heuristic/loss_s3_003#p1#16",
+      "world": 5,
+      "slot": 3,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/heuristic2/loss_s1_004#p1#2",
+      "world": 4,
+      "slot": 1,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/sentinel_3/loss_s2_005#p1#18",
+      "world": 4,
+      "slot": 4,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/sentinel_3/win_s1_001#p1#7",
+      "world": 4,
+      "slot": 4,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_12000157/setup_sweep_v2/win_s1_002#p1#2",
+      "world": 0,
+      "slot": 4,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/aggressive_v2/win_s1_001#p1#2",
+      "world": 4,
+      "slot": 1,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     },
+     {
+      "id": "rb_es_end2_s2001/step_14000347/setup_sweep/loss_s0_002#p1#8",
+      "world": 0,
+      "slot": 2,
+      "detail": "celebi has Baton Pass and multiple ways to boost its stats"
+     }
+    ],
+    "format_spec:Accuracy Trap Clause|sampled": [
+     {
+      "id": "rb_es_end2_s2001/step_14000347/setup_sweep/loss_s2_005#p1#14",
+      "world": 3,
+      "slot": 1,
+      "detail": "magneton has an accuracy-lowering move ['flash'] and a trap"
+     }
+    ]
+   }
+  }
+ },
+ "violations_in_sampled_total": 1224,
+ "pass": false,
+ "pass_rule": "zero sampled-part violations, not counting not_in_pin_learnset (a pair some real bank team runs)"
+}

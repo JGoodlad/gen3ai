@@ -1,0 +1,1355 @@
+{
+ "audit": "A6 the gate's conditioning (descriptive)",
+ "cp": "prod",
+ "mc_per_mon": 400,
+ "by_dir": {
+  "det": {
+   "redrawn_slot_draws": 45352,
+   "species": 51,
+   "pooled_kl_obs_vs_proposal (draw-weighted, finite)": 0.0126,
+   "pooled_kl_obs_vs_proposal (same estimator as the null)": 0.0122,
+   "draws_outside_proposal_support": 2,
+   "null_pooled_kl (J ungated proposal draws per mon-world: the matched-noise floor)": 0.0121,
+   "per_species_top30": [
+    {
+     "species": "tyranitar",
+     "draws": 5320,
+     "mon_worlds": 2032,
+     "kl_obs_vs_proposal": 0.0045,
+     "outside_proposal": 0
+    },
+    {
+     "species": "swampert",
+     "draws": 4816,
+     "mon_worlds": 1816,
+     "kl_obs_vs_proposal": 0.0033,
+     "outside_proposal": 0
+    },
+    {
+     "species": "metagross",
+     "draws": 4144,
+     "mon_worlds": 1488,
+     "kl_obs_vs_proposal": 0.0053,
+     "outside_proposal": 0
+    },
+    {
+     "species": "zapdos",
+     "draws": 3288,
+     "mon_worlds": 1304,
+     "kl_obs_vs_proposal": 0.0035,
+     "outside_proposal": 0
+    },
+    {
+     "species": "salamence",
+     "draws": 2512,
+     "mon_worlds": 976,
+     "kl_obs_vs_proposal": 0.0052,
+     "outside_proposal": 0
+    },
+    {
+     "species": "skarmory",
+     "draws": 2208,
+     "mon_worlds": 808,
+     "kl_obs_vs_proposal": 0.0035,
+     "outside_proposal": 0
+    },
+    {
+     "species": "jirachi",
+     "draws": 2136,
+     "mon_worlds": 880,
+     "kl_obs_vs_proposal": 0.0082,
+     "outside_proposal": 0
+    },
+    {
+     "species": "suicune",
+     "draws": 1992,
+     "mon_worlds": 800,
+     "kl_obs_vs_proposal": Infinity,
+     "outside_proposal": 1
+    },
+    {
+     "species": "celebi",
+     "draws": 1672,
+     "mon_worlds": 672,
+     "kl_obs_vs_proposal": 0.0097,
+     "outside_proposal": 0
+    },
+    {
+     "species": "blissey",
+     "draws": 1576,
+     "mon_worlds": 656,
+     "kl_obs_vs_proposal": 0.0107,
+     "outside_proposal": 0
+    },
+    {
+     "species": "dugtrio",
+     "draws": 1568,
+     "mon_worlds": 480,
+     "kl_obs_vs_proposal": 0.0061,
+     "outside_proposal": 0
+    },
+    {
+     "species": "gengar",
+     "draws": 1520,
+     "mon_worlds": 552,
+     "kl_obs_vs_proposal": 0.0114,
+     "outside_proposal": 0
+    },
+    {
+     "species": "charizard",
+     "draws": 1472,
+     "mon_worlds": 536,
+     "kl_obs_vs_proposal": 0.0085,
+     "outside_proposal": 0
+    },
+    {
+     "species": "snorlax",
+     "draws": 1232,
+     "mon_worlds": 448,
+     "kl_obs_vs_proposal": 0.0175,
+     "outside_proposal": 0
+    },
+    {
+     "species": "jolteon",
+     "draws": 1152,
+     "mon_worlds": 424,
+     "kl_obs_vs_proposal": 0.0152,
+     "outside_proposal": 0
+    },
+    {
+     "species": "magneton",
+     "draws": 1144,
+     "mon_worlds": 392,
+     "kl_obs_vs_proposal": 0.0073,
+     "outside_proposal": 0
+    },
+    {
+     "species": "starmie",
+     "draws": 848,
+     "mon_worlds": 344,
+     "kl_obs_vs_proposal": 0.0133,
+     "outside_proposal": 0
+    },
+    {
+     "species": "claydol",
+     "draws": 736,
+     "mon_worlds": 272,
+     "kl_obs_vs_proposal": 0.0118,
+     "outside_proposal": 0
+    },
+    {
+     "species": "aerodactyl",
+     "draws": 704,
+     "mon_worlds": 224,
+     "kl_obs_vs_proposal": 0.0189,
+     "outside_proposal": 0
+    },
+    {
+     "species": "milotic",
+     "draws": 600,
+     "mon_worlds": 248,
+     "kl_obs_vs_proposal": 0.0175,
+     "outside_proposal": 0
+    },
+    {
+     "species": "forretress",
+     "draws": 560,
+     "mon_worlds": 192,
+     "kl_obs_vs_proposal": 0.0132,
+     "outside_proposal": 0
+    },
+    {
+     "species": "heracross",
+     "draws": 456,
+     "mon_worlds": 160,
+     "kl_obs_vs_proposal": 0.0147,
+     "outside_proposal": 0
+    },
+    {
+     "species": "gyarados",
+     "draws": 440,
+     "mon_worlds": 176,
+     "kl_obs_vs_proposal": 0.0277,
+     "outside_proposal": 0
+    },
+    {
+     "species": "flygon",
+     "draws": 368,
+     "mon_worlds": 136,
+     "kl_obs_vs_proposal": 0.0466,
+     "outside_proposal": 0
+    },
+    {
+     "species": "cloyster",
+     "draws": 360,
+     "mon_worlds": 120,
+     "kl_obs_vs_proposal": 0.0176,
+     "outside_proposal": 0
+    },
+    {
+     "species": "moltres",
+     "draws": 328,
+     "mon_worlds": 112,
+     "kl_obs_vs_proposal": 0.0406,
+     "outside_proposal": 0
+    },
+    {
+     "species": "hariyama",
+     "draws": 256,
+     "mon_worlds": 80,
+     "kl_obs_vs_proposal": 0.0873,
+     "outside_proposal": 0
+    },
+    {
+     "species": "steelix",
+     "draws": 152,
+     "mon_worlds": 48,
+     "kl_obs_vs_proposal": 0.0697,
+     "outside_proposal": 0
+    },
+    {
+     "species": "breloom",
+     "draws": 144,
+     "mon_worlds": 56,
+     "kl_obs_vs_proposal": 0.0464,
+     "outside_proposal": 0
+    },
+    {
+     "species": "medicham",
+     "draws": 144,
+     "mon_worlds": 56,
+     "kl_obs_vs_proposal": 0.0814,
+     "outside_proposal": 0
+    }
+   ],
+   "most_OVER_drawn_20": [
+    {
+     "species": "tyranitar",
+     "move": "earthquake",
+     "observed": 821,
+     "expected": 777.48,
+     "obs_minus_exp": 43.52,
+     "ratio": 1.056,
+     "z": 1.56
+    },
+    {
+     "species": "swampert",
+     "move": "roar",
+     "observed": 307,
+     "expected": 272.12,
+     "obs_minus_exp": 34.88,
+     "ratio": 1.128,
+     "z": 2.11
+    },
+    {
+     "species": "celebi",
+     "move": "recover",
+     "observed": 245,
+     "expected": 216.38,
+     "obs_minus_exp": 28.62,
+     "ratio": 1.132,
+     "z": 1.95
+    },
+    {
+     "species": "suicune",
+     "move": "icebeam",
+     "observed": 353,
+     "expected": 327.78,
+     "obs_minus_exp": 25.22,
+     "ratio": 1.077,
+     "z": 1.39
+    },
+    {
+     "species": "jirachi",
+     "move": "psychic",
+     "observed": 212,
+     "expected": 187.94,
+     "obs_minus_exp": 24.06,
+     "ratio": 1.128,
+     "z": 1.76
+    },
+    {
+     "species": "dugtrio",
+     "move": "beatup",
+     "observed": 177,
+     "expected": 154.1,
+     "obs_minus_exp": 22.9,
+     "ratio": 1.149,
+     "z": 1.84
+    },
+    {
+     "species": "tyranitar",
+     "move": "rockslide",
+     "observed": 703,
+     "expected": 680.54,
+     "obs_minus_exp": 22.46,
+     "ratio": 1.033,
+     "z": 0.86
+    },
+    {
+     "species": "jirachi",
+     "move": "wish",
+     "observed": 282,
+     "expected": 260.46,
+     "obs_minus_exp": 21.54,
+     "ratio": 1.083,
+     "z": 1.33
+    },
+    {
+     "species": "tyranitar",
+     "move": "hiddenpowerbug",
+     "observed": 179,
+     "expected": 159.74,
+     "obs_minus_exp": 19.26,
+     "ratio": 1.121,
+     "z": 1.52
+    },
+    {
+     "species": "zapdos",
+     "move": "agility",
+     "observed": 122,
+     "expected": 103.18,
+     "obs_minus_exp": 18.82,
+     "ratio": 1.182,
+     "z": 1.85
+    },
+    {
+     "species": "magneton",
+     "move": "toxic",
+     "observed": 219,
+     "expected": 201.12,
+     "obs_minus_exp": 17.88,
+     "ratio": 1.089,
+     "z": 1.26
+    },
+    {
+     "species": "zapdos",
+     "move": "rest",
+     "observed": 242,
+     "expected": 224.28,
+     "obs_minus_exp": 17.72,
+     "ratio": 1.079,
+     "z": 1.18
+    },
+    {
+     "species": "salamence",
+     "move": "dragondance",
+     "observed": 358,
+     "expected": 341.46,
+     "obs_minus_exp": 16.54,
+     "ratio": 1.048,
+     "z": 0.9
+    },
+    {
+     "species": "tyranitar",
+     "move": "crunch",
+     "observed": 401,
+     "expected": 384.62,
+     "obs_minus_exp": 16.38,
+     "ratio": 1.043,
+     "z": 0.84
+    },
+    {
+     "species": "snorlax",
+     "move": "selfdestruct",
+     "observed": 190,
+     "expected": 174.06,
+     "obs_minus_exp": 15.94,
+     "ratio": 1.092,
+     "z": 1.21
+    },
+    {
+     "species": "zapdos",
+     "move": "batonpass",
+     "observed": 599,
+     "expected": 583.36,
+     "obs_minus_exp": 15.64,
+     "ratio": 1.027,
+     "z": 0.65
+    },
+    {
+     "species": "blissey",
+     "move": "fireblast",
+     "observed": 54,
+     "expected": 39.86,
+     "obs_minus_exp": 14.14,
+     "ratio": 1.355,
+     "z": 2.24
+    },
+    {
+     "species": "jolteon",
+     "move": "roar",
+     "observed": 184,
+     "expected": 170.1,
+     "obs_minus_exp": 13.9,
+     "ratio": 1.082,
+     "z": 1.07
+    },
+    {
+     "species": "jolteon",
+     "move": "substitute",
+     "observed": 182,
+     "expected": 168.16,
+     "obs_minus_exp": 13.84,
+     "ratio": 1.082,
+     "z": 1.07
+    },
+    {
+     "species": "snorlax",
+     "move": "return",
+     "observed": 82,
+     "expected": 68.26,
+     "obs_minus_exp": 13.74,
+     "ratio": 1.201,
+     "z": 1.66
+    }
+   ],
+   "most_UNDER_drawn_20": [
+    {
+     "species": "zapdos",
+     "move": "thunderwave",
+     "observed": 335,
+     "expected": 368.24,
+     "obs_minus_exp": -33.24,
+     "ratio": 0.91,
+     "z": -1.73
+    },
+    {
+     "species": "tyranitar",
+     "move": "fireblast",
+     "observed": 353,
+     "expected": 376.52,
+     "obs_minus_exp": -23.52,
+     "ratio": 0.938,
+     "z": -1.21
+    },
+    {
+     "species": "tyranitar",
+     "move": "brickbreak",
+     "observed": 244,
+     "expected": 266.88,
+     "obs_minus_exp": -22.88,
+     "ratio": 0.914,
+     "z": -1.4
+    },
+    {
+     "species": "swampert",
+     "move": "toxic",
+     "observed": 337,
+     "expected": 357.28,
+     "obs_minus_exp": -20.28,
+     "ratio": 0.943,
+     "z": -1.07
+    },
+    {
+     "species": "charizard",
+     "move": "beatup",
+     "observed": 144,
+     "expected": 162.96,
+     "obs_minus_exp": -18.96,
+     "ratio": 0.884,
+     "z": -1.49
+    },
+    {
+     "species": "zapdos",
+     "move": "thunderbolt",
+     "observed": 226,
+     "expected": 244.9,
+     "obs_minus_exp": -18.9,
+     "ratio": 0.923,
+     "z": -1.21
+    },
+    {
+     "species": "jirachi",
+     "move": "icepunch",
+     "observed": 163,
+     "expected": 181.5,
+     "obs_minus_exp": -18.5,
+     "ratio": 0.898,
+     "z": -1.37
+    },
+    {
+     "species": "flygon",
+     "move": "toxic",
+     "observed": 49,
+     "expected": 67.36,
+     "obs_minus_exp": -18.36,
+     "ratio": 0.727,
+     "z": -2.24
+    },
+    {
+     "species": "gengar",
+     "move": "taunt",
+     "observed": 119,
+     "expected": 137.14,
+     "obs_minus_exp": -18.14,
+     "ratio": 0.868,
+     "z": -1.55
+    },
+    {
+     "species": "metagross",
+     "move": "earthquake",
+     "observed": 816,
+     "expected": 833.36,
+     "obs_minus_exp": -17.36,
+     "ratio": 0.979,
+     "z": -0.6
+    },
+    {
+     "species": "celebi",
+     "move": "swordsdance",
+     "observed": 62,
+     "expected": 77.72,
+     "obs_minus_exp": -15.72,
+     "ratio": 0.798,
+     "z": -1.78
+    },
+    {
+     "species": "celebi",
+     "move": "calmmind",
+     "observed": 164,
+     "expected": 179.56,
+     "obs_minus_exp": -15.56,
+     "ratio": 0.913,
+     "z": -1.16
+    },
+    {
+     "species": "salamence",
+     "move": "earthquake",
+     "observed": 345,
+     "expected": 360.22,
+     "obs_minus_exp": -15.22,
+     "ratio": 0.958,
+     "z": -0.8
+    },
+    {
+     "species": "jirachi",
+     "move": "thunderbolt",
+     "observed": 125,
+     "expected": 140.16,
+     "obs_minus_exp": -15.16,
+     "ratio": 0.892,
+     "z": -1.28
+    },
+    {
+     "species": "blissey",
+     "move": "icebeam",
+     "observed": 172,
+     "expected": 187.0,
+     "obs_minus_exp": -15.0,
+     "ratio": 0.92,
+     "z": -1.1
+    },
+    {
+     "species": "dugtrio",
+     "move": "rockslide",
+     "observed": 283,
+     "expected": 297.88,
+     "obs_minus_exp": -14.88,
+     "ratio": 0.95,
+     "z": -0.86
+    },
+    {
+     "species": "blissey",
+     "move": "aromatherapy",
+     "observed": 95,
+     "expected": 109.38,
+     "obs_minus_exp": -14.38,
+     "ratio": 0.869,
+     "z": -1.37
+    },
+    {
+     "species": "tyranitar",
+     "move": "doubleedge",
+     "observed": 208,
+     "expected": 221.54,
+     "obs_minus_exp": -13.54,
+     "ratio": 0.939,
+     "z": -0.91
+    },
+    {
+     "species": "snorlax",
+     "move": "earthquake",
+     "observed": 131,
+     "expected": 144.46,
+     "obs_minus_exp": -13.46,
+     "ratio": 0.907,
+     "z": -1.12
+    },
+    {
+     "species": "dugtrio",
+     "move": "aerialace",
+     "observed": 371,
+     "expected": 383.62,
+     "obs_minus_exp": -12.62,
+     "ratio": 0.967,
+     "z": -0.64
+    }
+   ],
+   "construction_gender_draw_conditioning": {
+    "accepted_worlds_with_true_gender_draw_count": 0.9745,
+    "accepted_n": 4632,
+    "ungated_proposal_with_true_gender_draw_count": 0.5093,
+    "proposal_n": 4632
+   },
+   "excluded_states": {
+    "n": 21,
+    "fails_total": {
+     "rows_differ": 2110,
+     "short": 249,
+     "refused": 2562
+    },
+    "first_diff_fraction_quantiles_10_25_50_75_90": [
+     0.071,
+     0.136,
+     0.2,
+     0.25,
+     0.5
+    ],
+    "strata": {
+     "unrevealed_slots": {
+      "0": 1,
+      "1": 2,
+      "2": 2,
+      "3": 4,
+      "4": 5,
+      "5": 7
+     },
+     "turn": {
+      "<=5": 4,
+      "6-15": 9,
+      "16-30": 7,
+      ">30": 1
+     }
+    },
+    "ids_errors": [
+     "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s3_004#p1#3",
+     "rb_es_prod_s2001/step_10000002/heuristic/win_s3_004#p1#1",
+     "rb_es_prod_s2001/step_10000002/heuristic2/loss_s1_003#p1#6",
+     "rb_es_prod_s2001/step_10000002/sentinel_0/loss_s3_004#p1#11",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s0_005#p1#13",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_005#p1#12",
+     "rb_es_prod_s2001/step_12000178/aggressive_v2/loss_s1_004#p1#1",
+     "rb_es_prod_s2001/step_12000178/heuristic2/loss_s0_005#p1#13",
+     "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#21",
+     "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+     "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_005#p1#43",
+     "rb_es_prod_s2001/step_12000178/sentinel_3/win_s2_001#p1#19",
+     "rb_es_prod_s2001/step_12000178/setup_sweep_v2/loss_s3_004#p1#18",
+     "rb_es_prod_s2001/step_12000178/staller_v2/loss_s3_004#p1#3",
+     "rb_es_prod_s2001/step_14000168/heuristic2/loss_s1_004#p1#6",
+     "rb_es_prod_s2001/step_14000168/sentinel_0/win_s0_004#p1#5",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/loss_s3_005#p1#23",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s1_001#p1#26",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s3_004#p1#14",
+     "rb_es_prod_s2001/step_14000168/staller/loss_s1_005#p1#20",
+     "rb_es_prod_s2001/step_14000168/staller_v2/win_s2_002#p1#7"
+    ]
+   },
+   "included_states": {
+    "n": 579,
+    "fails_total": {
+     "refused": 7557,
+     "rows_differ": 7092,
+     "short": 478
+    },
+    "first_diff_fraction_quantiles_10_25_50_75_90": [
+     0.059,
+     0.111,
+     0.2,
+     0.333,
+     0.5
+    ],
+    "strata": {
+     "unrevealed_slots": {
+      "0": 102,
+      "1": 115,
+      "2": 103,
+      "3": 91,
+      "4": 108,
+      "5": 60
+     },
+     "turn": {
+      "6-15": 253,
+      "<=5": 101,
+      "16-30": 180,
+      ">30": 45
+     }
+    }
+   }
+  },
+  "det_b": {
+   "redrawn_slot_draws": 45256,
+   "species": 50,
+   "pooled_kl_obs_vs_proposal (draw-weighted, finite)": 0.0122,
+   "pooled_kl_obs_vs_proposal (same estimator as the null)": 0.0115,
+   "draws_outside_proposal_support": 4,
+   "null_pooled_kl (J ungated proposal draws per mon-world: the matched-noise floor)": 0.0115,
+   "per_species_top30": [
+    {
+     "species": "tyranitar",
+     "draws": 5272,
+     "mon_worlds": 2016,
+     "kl_obs_vs_proposal": 0.0042,
+     "outside_proposal": 0
+    },
+    {
+     "species": "swampert",
+     "draws": 4808,
+     "mon_worlds": 1808,
+     "kl_obs_vs_proposal": 0.0024,
+     "outside_proposal": 0
+    },
+    {
+     "species": "metagross",
+     "draws": 4072,
+     "mon_worlds": 1464,
+     "kl_obs_vs_proposal": 0.0043,
+     "outside_proposal": 0
+    },
+    {
+     "species": "zapdos",
+     "draws": 3280,
+     "mon_worlds": 1296,
+     "kl_obs_vs_proposal": 0.0041,
+     "outside_proposal": 0
+    },
+    {
+     "species": "salamence",
+     "draws": 2560,
+     "mon_worlds": 984,
+     "kl_obs_vs_proposal": 0.0064,
+     "outside_proposal": 0
+    },
+    {
+     "species": "skarmory",
+     "draws": 2224,
+     "mon_worlds": 816,
+     "kl_obs_vs_proposal": 0.0025,
+     "outside_proposal": 0
+    },
+    {
+     "species": "jirachi",
+     "draws": 2112,
+     "mon_worlds": 872,
+     "kl_obs_vs_proposal": 0.008,
+     "outside_proposal": 0
+    },
+    {
+     "species": "suicune",
+     "draws": 2032,
+     "mon_worlds": 816,
+     "kl_obs_vs_proposal": Infinity,
+     "outside_proposal": 1
+    },
+    {
+     "species": "celebi",
+     "draws": 1672,
+     "mon_worlds": 672,
+     "kl_obs_vs_proposal": 0.0097,
+     "outside_proposal": 0
+    },
+    {
+     "species": "dugtrio",
+     "draws": 1592,
+     "mon_worlds": 488,
+     "kl_obs_vs_proposal": Infinity,
+     "outside_proposal": 1
+    },
+    {
+     "species": "blissey",
+     "draws": 1576,
+     "mon_worlds": 664,
+     "kl_obs_vs_proposal": 0.0119,
+     "outside_proposal": 0
+    },
+    {
+     "species": "charizard",
+     "draws": 1512,
+     "mon_worlds": 552,
+     "kl_obs_vs_proposal": 0.0103,
+     "outside_proposal": 0
+    },
+    {
+     "species": "gengar",
+     "draws": 1488,
+     "mon_worlds": 544,
+     "kl_obs_vs_proposal": 0.0124,
+     "outside_proposal": 0
+    },
+    {
+     "species": "snorlax",
+     "draws": 1272,
+     "mon_worlds": 456,
+     "kl_obs_vs_proposal": 0.0127,
+     "outside_proposal": 0
+    },
+    {
+     "species": "magneton",
+     "draws": 1144,
+     "mon_worlds": 392,
+     "kl_obs_vs_proposal": 0.0068,
+     "outside_proposal": 0
+    },
+    {
+     "species": "jolteon",
+     "draws": 1128,
+     "mon_worlds": 416,
+     "kl_obs_vs_proposal": 0.0124,
+     "outside_proposal": 0
+    },
+    {
+     "species": "starmie",
+     "draws": 872,
+     "mon_worlds": 352,
+     "kl_obs_vs_proposal": Infinity,
+     "outside_proposal": 1
+    },
+    {
+     "species": "aerodactyl",
+     "draws": 704,
+     "mon_worlds": 224,
+     "kl_obs_vs_proposal": 0.0343,
+     "outside_proposal": 0
+    },
+    {
+     "species": "claydol",
+     "draws": 688,
+     "mon_worlds": 256,
+     "kl_obs_vs_proposal": 0.016,
+     "outside_proposal": 0
+    },
+    {
+     "species": "milotic",
+     "draws": 592,
+     "mon_worlds": 240,
+     "kl_obs_vs_proposal": 0.0103,
+     "outside_proposal": 0
+    },
+    {
+     "species": "forretress",
+     "draws": 528,
+     "mon_worlds": 184,
+     "kl_obs_vs_proposal": 0.013,
+     "outside_proposal": 0
+    },
+    {
+     "species": "heracross",
+     "draws": 456,
+     "mon_worlds": 160,
+     "kl_obs_vs_proposal": 0.0164,
+     "outside_proposal": 0
+    },
+    {
+     "species": "gyarados",
+     "draws": 440,
+     "mon_worlds": 176,
+     "kl_obs_vs_proposal": 0.0296,
+     "outside_proposal": 0
+    },
+    {
+     "species": "cloyster",
+     "draws": 360,
+     "mon_worlds": 120,
+     "kl_obs_vs_proposal": 0.0152,
+     "outside_proposal": 0
+    },
+    {
+     "species": "flygon",
+     "draws": 352,
+     "mon_worlds": 128,
+     "kl_obs_vs_proposal": 0.0426,
+     "outside_proposal": 0
+    },
+    {
+     "species": "moltres",
+     "draws": 328,
+     "mon_worlds": 112,
+     "kl_obs_vs_proposal": 0.0273,
+     "outside_proposal": 0
+    },
+    {
+     "species": "hariyama",
+     "draws": 272,
+     "mon_worlds": 88,
+     "kl_obs_vs_proposal": 0.0553,
+     "outside_proposal": 0
+    },
+    {
+     "species": "steelix",
+     "draws": 152,
+     "mon_worlds": 48,
+     "kl_obs_vs_proposal": 0.0459,
+     "outside_proposal": 0
+    },
+    {
+     "species": "vaporeon",
+     "draws": 144,
+     "mon_worlds": 48,
+     "kl_obs_vs_proposal": Infinity,
+     "outside_proposal": 1
+    },
+    {
+     "species": "breloom",
+     "draws": 144,
+     "mon_worlds": 56,
+     "kl_obs_vs_proposal": 0.0882,
+     "outside_proposal": 0
+    }
+   ],
+   "most_OVER_drawn_20": [
+    {
+     "species": "tyranitar",
+     "move": "earthquake",
+     "observed": 826,
+     "expected": 767.5,
+     "obs_minus_exp": 58.5,
+     "ratio": 1.076,
+     "z": 2.11
+    },
+    {
+     "species": "celebi",
+     "move": "recover",
+     "observed": 251,
+     "expected": 213.48,
+     "obs_minus_exp": 37.52,
+     "ratio": 1.176,
+     "z": 2.57
+    },
+    {
+     "species": "charizard",
+     "move": "hiddenpowergrass",
+     "observed": 256,
+     "expected": 223.96,
+     "obs_minus_exp": 32.04,
+     "ratio": 1.143,
+     "z": 2.14
+    },
+    {
+     "species": "suicune",
+     "move": "icebeam",
+     "observed": 365,
+     "expected": 333.54,
+     "obs_minus_exp": 31.46,
+     "ratio": 1.094,
+     "z": 1.72
+    },
+    {
+     "species": "salamence",
+     "move": "dragonclaw",
+     "observed": 292,
+     "expected": 265.68,
+     "obs_minus_exp": 26.32,
+     "ratio": 1.099,
+     "z": 1.61
+    },
+    {
+     "species": "zapdos",
+     "move": "hiddenpowerice",
+     "observed": 161,
+     "expected": 137.66,
+     "obs_minus_exp": 23.34,
+     "ratio": 1.17,
+     "z": 1.99
+    },
+    {
+     "species": "tyranitar",
+     "move": "substitute",
+     "observed": 108,
+     "expected": 86.96,
+     "obs_minus_exp": 21.04,
+     "ratio": 1.242,
+     "z": 2.26
+    },
+    {
+     "species": "metagross",
+     "move": "agility",
+     "observed": 620,
+     "expected": 600.16,
+     "obs_minus_exp": 19.84,
+     "ratio": 1.033,
+     "z": 0.81
+    },
+    {
+     "species": "dugtrio",
+     "move": "beatup",
+     "observed": 177,
+     "expected": 157.9,
+     "obs_minus_exp": 19.1,
+     "ratio": 1.121,
+     "z": 1.52
+    },
+    {
+     "species": "tyranitar",
+     "move": "hiddenpowerbug",
+     "observed": 183,
+     "expected": 164.28,
+     "obs_minus_exp": 18.72,
+     "ratio": 1.114,
+     "z": 1.46
+    },
+    {
+     "species": "swampert",
+     "move": "surf",
+     "observed": 531,
+     "expected": 512.38,
+     "obs_minus_exp": 18.62,
+     "ratio": 1.036,
+     "z": 0.82
+    },
+    {
+     "species": "swampert",
+     "move": "refresh",
+     "observed": 345,
+     "expected": 327.38,
+     "obs_minus_exp": 17.62,
+     "ratio": 1.054,
+     "z": 0.97
+    },
+    {
+     "species": "gengar",
+     "move": "thunderbolt",
+     "observed": 248,
+     "expected": 230.7,
+     "obs_minus_exp": 17.3,
+     "ratio": 1.075,
+     "z": 1.14
+    },
+    {
+     "species": "magneton",
+     "move": "substitute",
+     "observed": 111,
+     "expected": 94.04,
+     "obs_minus_exp": 16.96,
+     "ratio": 1.18,
+     "z": 1.75
+    },
+    {
+     "species": "swampert",
+     "move": "earthquake",
+     "observed": 474,
+     "expected": 457.3,
+     "obs_minus_exp": 16.7,
+     "ratio": 1.037,
+     "z": 0.78
+    },
+    {
+     "species": "jirachi",
+     "move": "wish",
+     "observed": 277,
+     "expected": 260.48,
+     "obs_minus_exp": 16.52,
+     "ratio": 1.063,
+     "z": 1.02
+    },
+    {
+     "species": "salamence",
+     "move": "flamethrower",
+     "observed": 102,
+     "expected": 87.08,
+     "obs_minus_exp": 14.92,
+     "ratio": 1.171,
+     "z": 1.6
+    },
+    {
+     "species": "blissey",
+     "move": "healbell",
+     "observed": 46,
+     "expected": 32.04,
+     "obs_minus_exp": 13.96,
+     "ratio": 1.436,
+     "z": 2.47
+    },
+    {
+     "species": "zapdos",
+     "move": "agility",
+     "observed": 117,
+     "expected": 103.22,
+     "obs_minus_exp": 13.78,
+     "ratio": 1.134,
+     "z": 1.36
+    },
+    {
+     "species": "celebi",
+     "move": "psychic",
+     "observed": 205,
+     "expected": 191.32,
+     "obs_minus_exp": 13.68,
+     "ratio": 1.072,
+     "z": 0.99
+    }
+   ],
+   "most_UNDER_drawn_20": [
+    {
+     "species": "zapdos",
+     "move": "thunderwave",
+     "observed": 315,
+     "expected": 367.48,
+     "obs_minus_exp": -52.48,
+     "ratio": 0.857,
+     "z": -2.74
+    },
+    {
+     "species": "skarmory",
+     "move": "roar",
+     "observed": 565,
+     "expected": 588.82,
+     "obs_minus_exp": -23.82,
+     "ratio": 0.96,
+     "z": -0.98
+    },
+    {
+     "species": "swampert",
+     "move": "icebeam",
+     "observed": 700,
+     "expected": 722.12,
+     "obs_minus_exp": -22.12,
+     "ratio": 0.969,
+     "z": -0.82
+    },
+    {
+     "species": "tyranitar",
+     "move": "focuspunch",
+     "observed": 497,
+     "expected": 518.34,
+     "obs_minus_exp": -21.34,
+     "ratio": 0.959,
+     "z": -0.94
+    },
+    {
+     "species": "celebi",
+     "move": "calmmind",
+     "observed": 160,
+     "expected": 180.84,
+     "obs_minus_exp": -20.84,
+     "ratio": 0.885,
+     "z": -1.55
+    },
+    {
+     "species": "metagross",
+     "move": "protect",
+     "observed": 156,
+     "expected": 176.74,
+     "obs_minus_exp": -20.74,
+     "ratio": 0.883,
+     "z": -1.56
+    },
+    {
+     "species": "swampert",
+     "move": "focuspunch",
+     "observed": 289,
+     "expected": 308.98,
+     "obs_minus_exp": -19.98,
+     "ratio": 0.935,
+     "z": -1.14
+    },
+    {
+     "species": "tyranitar",
+     "move": "dragondance",
+     "observed": 670,
+     "expected": 689.34,
+     "obs_minus_exp": -19.34,
+     "ratio": 0.972,
+     "z": -0.74
+    },
+    {
+     "species": "dugtrio",
+     "move": "aerialace",
+     "observed": 371,
+     "expected": 389.6,
+     "obs_minus_exp": -18.6,
+     "ratio": 0.952,
+     "z": -0.94
+    },
+    {
+     "species": "zapdos",
+     "move": "drillpeck",
+     "observed": 156,
+     "expected": 174.58,
+     "obs_minus_exp": -18.58,
+     "ratio": 0.894,
+     "z": -1.41
+    },
+    {
+     "species": "jirachi",
+     "move": "icepunch",
+     "observed": 157,
+     "expected": 175.5,
+     "obs_minus_exp": -18.5,
+     "ratio": 0.895,
+     "z": -1.4
+    },
+    {
+     "species": "dugtrio",
+     "move": "rockslide",
+     "observed": 286,
+     "expected": 303.02,
+     "obs_minus_exp": -17.02,
+     "ratio": 0.944,
+     "z": -0.98
+    },
+    {
+     "species": "blissey",
+     "move": "aromatherapy",
+     "observed": 92,
+     "expected": 108.98,
+     "obs_minus_exp": -16.98,
+     "ratio": 0.844,
+     "z": -1.63
+    },
+    {
+     "species": "snorlax",
+     "move": "shadowball",
+     "observed": 234,
+     "expected": 250.2,
+     "obs_minus_exp": -16.2,
+     "ratio": 0.935,
+     "z": -1.02
+    },
+    {
+     "species": "gengar",
+     "move": "taunt",
+     "observed": 119,
+     "expected": 134.42,
+     "obs_minus_exp": -15.42,
+     "ratio": 0.885,
+     "z": -1.33
+    },
+    {
+     "species": "tyranitar",
+     "move": "pursuit",
+     "observed": 409,
+     "expected": 424.24,
+     "obs_minus_exp": -15.24,
+     "ratio": 0.964,
+     "z": -0.74
+    },
+    {
+     "species": "salamence",
+     "move": "earthquake",
+     "observed": 354,
+     "expected": 368.24,
+     "obs_minus_exp": -14.24,
+     "ratio": 0.961,
+     "z": -0.74
+    },
+    {
+     "species": "blissey",
+     "move": "thunderbolt",
+     "observed": 129,
+     "expected": 143.08,
+     "obs_minus_exp": -14.08,
+     "ratio": 0.902,
+     "z": -1.18
+    },
+    {
+     "species": "tyranitar",
+     "move": "doubleedge",
+     "observed": 208,
+     "expected": 221.96,
+     "obs_minus_exp": -13.96,
+     "ratio": 0.937,
+     "z": -0.94
+    },
+    {
+     "species": "tyranitar",
+     "move": "flamethrower",
+     "observed": 90,
+     "expected": 103.82,
+     "obs_minus_exp": -13.82,
+     "ratio": 0.867,
+     "z": -1.36
+    }
+   ],
+   "construction_gender_draw_conditioning": {
+    "accepted_worlds_with_true_gender_draw_count": 0.9781,
+    "accepted_n": 4648,
+    "ungated_proposal_with_true_gender_draw_count": null,
+    "proposal_n": 0
+   },
+   "excluded_states": {
+    "n": 19,
+    "fails_total": {
+     "rows_differ": 2729,
+     "refused": 3093,
+     "short": 96
+    },
+    "first_diff_fraction_quantiles_10_25_50_75_90": [
+     0.067,
+     0.143,
+     0.25,
+     0.278,
+     0.312
+    ],
+    "strata": {
+     "unrevealed_slots": {
+      "0": 1,
+      "1": 5,
+      "2": 1,
+      "3": 2,
+      "4": 7,
+      "5": 3
+     },
+     "turn": {
+      "<=5": 4,
+      "6-15": 8,
+      "16-30": 6,
+      ">30": 1
+     }
+    },
+    "ids_errors": [
+     "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s3_004#p1#3",
+     "rb_es_prod_s2001/step_10000002/heuristic2/loss_s1_003#p1#6",
+     "rb_es_prod_s2001/step_10000002/sentinel_0/win_s3_003#p1#15",
+     "rb_es_prod_s2001/step_10000002/sentinel_0/win_s3_003#p1#17",
+     "rb_es_prod_s2001/step_10000002/setup_sweep/loss_s0_004#p1#17",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_005#p1#12",
+     "rb_es_prod_s2001/step_10000002/staller/draw_s3_006#p1#25",
+     "rb_es_prod_s2001/step_12000178/aggressive/loss_s3_002#p1#9",
+     "rb_es_prod_s2001/step_12000178/aggressive_v2/loss_s0_005#p1#18",
+     "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_005#p1#43",
+     "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s1_002#p1#5",
+     "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s2_005#p1#18",
+     "rb_es_prod_s2001/step_12000178/setup_sweep_v2/loss_s3_004#p1#18",
+     "rb_es_prod_s2001/step_14000168/heuristic2/loss_s1_004#p1#3",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/loss_s3_005#p1#23",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/win_s0_001#p1#5",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s1_001#p1#26",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s2_001#p1#7",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s3_004#p1#14"
+    ]
+   },
+   "included_states": {
+    "n": 581,
+    "fails_total": {
+     "refused": 6189,
+     "rows_differ": 5789,
+     "short": 453
+    },
+    "first_diff_fraction_quantiles_10_25_50_75_90": [
+     0.062,
+     0.111,
+     0.2,
+     0.333,
+     0.5
+    ],
+    "strata": {
+     "unrevealed_slots": {
+      "0": 102,
+      "1": 112,
+      "2": 104,
+      "3": 93,
+      "4": 106,
+      "5": 64
+     },
+     "turn": {
+      "6-15": 254,
+      "<=5": 101,
+      "16-30": 181,
+      ">30": 45
+     }
+    }
+   }
+  }
+ }
+}

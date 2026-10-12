@@ -1,0 +1,34 @@
+{
+ "audit": "A1 builder identity",
+ "cp": "prod",
+ "states_selected": 150,
+ "states_done": 150,
+ "states_ok": 150,
+ "actions_compared": 1101,
+ "states_with_rewritten_cmds": 0,
+ "cmd_text_diffs": 0,
+ "rewrites": {
+  "moves": 45,
+  "switches": 0,
+  "ambiguous_kept_by_name": 8,
+  "root_choice_in_log": 0
+ },
+ "counts": {
+  "error": 0,
+  "gate_not_try1": 0,
+  "builder_team_not_true": 0,
+  "rows_differ": 0,
+  "chunks_differ": 0,
+  "outcome_mismatch": 0
+ },
+ "examples": {
+  "error": [],
+  "gate_not_try1": [],
+  "builder_team_not_true": [],
+  "rows_differ": [],
+  "chunks_differ": [],
+  "outcome_mismatch": []
+ },
+ "cpu_s_total": 2006.8,
+ "pass": true
+}

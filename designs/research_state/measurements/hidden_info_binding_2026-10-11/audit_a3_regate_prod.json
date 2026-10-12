@@ -1,0 +1,10 @@
+{
+ "audit": "A3 re-gate determinism",
+ "cp": "prod",
+ "worlds": 100,
+ "builder_try1_and_same_cmds": 100,
+ "direct_rows_equal": 100,
+ "direct_runs_identical": 100,
+ "failures": [],
+ "pass": true
+}

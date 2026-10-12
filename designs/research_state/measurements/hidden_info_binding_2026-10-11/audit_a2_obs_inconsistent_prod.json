@@ -1,0 +1,1657 @@
+{
+ "audit": "A2 follow-up: worlds inconsistent with the searched side's protocol",
+ "cp": "prod",
+ "by_dir": {
+  "det": {
+   "states_with_inconsistent_worlds": 46,
+   "worlds_inconsistent": 162,
+   "states_by_kind": {
+    "gender_in_switch_details": 32,
+    "-singleturn": 16
+   },
+   "focus_punch_states": 16,
+   "focus_punch_states_mon_alive_at_root": 1,
+   "states": [
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s1_002#p1#8",
+     "turn": 7,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, M|100/100 ~ +|switch|p2a: Gengar|Gengar, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, M|100/100 ~ +|switch|p2a: Gengar|Gengar, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_005#p1#7",
+     "turn": 6,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "-singleturn": 1,
+      "gender_in_switch_details": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Swampert|move: Focus Punch",
+      "SEARCHED protocol: -|switch|p2a: Flygon|Flygon, F|100/100 ~ +|switch|p2a: Flygon|Flygon, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s0_002#p1#4",
+     "turn": 5,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s0_002#p1#8",
+     "turn": 8,
+     "worlds_inconsistent": 7,
+     "kinds": {
+      "gender_in_switch_details": 7
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s2_001#p1#10",
+     "turn": 10,
+     "worlds_inconsistent": 7,
+     "kinds": {
+      "-singleturn": 7
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "tyranitar"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "tyranitar": false
+     },
+     "root_condition_of_those_mons": {
+      "tyranitar": "0 fnt"
+     },
+     "notes": [
+      "SEARCHED protocol: -|-singleturn|p2a: Tyranitar|move: Focus Punch",
+      "SEARCHED protocol: -|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+     "turn": 13,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "heracross",
+      "tyranitar"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "heracross": true,
+      "tyranitar": true
+     },
+     "root_condition_of_those_mons": {
+      "heracross": "363/363",
+      "tyranitar": "0 fnt"
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100 ~ -|switch|p2a: Flygon|Flygon, F|100/100 ~ +|switch|p2a: Flygon|Flygon, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100 ~ -|switch|p2a: Flygon|Flygon, F|100/100 ~ +|switch|p2a: Flygon|Flygon, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#5",
+     "turn": 6,
+     "worlds_inconsistent": 6,
+     "kinds": {
+      "gender_in_switch_details": 6
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "heracross",
+      "tyranitar"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "heracross": true,
+      "tyranitar": true
+     },
+     "root_condition_of_those_mons": {
+      "heracross": "363/363",
+      "tyranitar": "168/403"
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/heuristic2/loss_s0_005#p1#11",
+     "turn": 10,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Snorlax|Snorlax, M|100/100 ~ +|switch|p2a: Snorlax|Snorlax, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Snorlax|Snorlax, M|100/100 ~ +|switch|p2a: Snorlax|Snorlax, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/heuristic2/win_s2_001#p1#5",
+     "turn": 6,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "-singleturn": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "charizard"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "charizard": true
+     },
+     "root_condition_of_those_mons": {
+      "charizard": "120/297 par"
+     },
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch",
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_0/loss_s2_002#p1#6",
+     "turn": 6,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_1/loss_s3_004#p1#7",
+     "turn": 8,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_2/loss_s0_003#p1#14",
+     "turn": 12,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_2/loss_s0_003#p1#9",
+     "turn": 8,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_2/win_s2_003#p1#16",
+     "turn": 16,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Laggron|Swampert, M|100/100 ~ +|switch|p2a: Laggron|Swampert, F|100/100 ~ -|switch|p2a: Laggron|Swampert, M|100/100 ~ +|switch|p2a: Laggron|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Laggron|Swampert, M|100/100 ~ +|switch|p2a: Laggron|Swampert, F|100/100 ~ -|switch|p2a: Laggron|Swampert, M|100/100 ~ +|switch|p2a: Laggron|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/setup_sweep/loss_s3_002#p1#13",
+     "turn": 12,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "gender_in_switch_details": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "heracross",
+      "tyranitar"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "heracross": true,
+      "tyranitar": true
+     },
+     "root_condition_of_those_mons": {
+      "heracross": "181/301 brn",
+      "tyranitar": "0 fnt"
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, F|100/100 ~ +|switch|p2a: Salamence|Salamence, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/setup_sweep_v2/win_s3_001#p1#3",
+     "turn": 4,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "chapignon"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "chapignon": false
+     },
+     "root_condition_of_those_mons": {
+      "chapignon": null
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Chapignon|Breloom, M|100/100 ~ +|switch|p2a: Chapignon|Breloom, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Chapignon|Breloom, M|100/100 ~ +|switch|p2a: Chapignon|Breloom, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/staller/loss_s0_004#p1#6",
+     "turn": 7,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/staller/loss_s2_004#p1#17",
+     "turn": 14,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "-singleturn": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch",
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/staller/loss_s2_004#p1#27",
+     "turn": 23,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/staller_v2/win_s1_002#p1#5",
+     "turn": 6,
+     "worlds_inconsistent": 6,
+     "kinds": {
+      "gender_in_switch_details": 6
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "heracross"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "heracross": true
+     },
+     "root_condition_of_those_mons": {
+      "heracross": "211/300"
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Heracross|Heracross, F|100/100 ~ +|switch|p2a: Heracross|Heracross, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Heracross|Heracross, F|100/100 ~ +|switch|p2a: Heracross|Heracross, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/aggressive_v2/loss_s0_005#p1#18",
+     "turn": 15,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, F|100/100 ~ +|switch|p2a: Jolteon|Jolteon, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, F|100/100 ~ +|switch|p2a: Jolteon|Jolteon, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/aggressive_v2/loss_s2_004#p1#16",
+     "turn": 14,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Swampert|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/aggressive_v2/win_s0_001#p1#3",
+     "turn": 4,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 3,
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, F|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, F|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s2_003#p1#32",
+     "turn": 30,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s2_005#p1#5",
+     "turn": 5,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s3_003#p1#26",
+     "turn": 23,
+     "worlds_inconsistent": 6,
+     "kinds": {
+      "gender_in_switch_details": 6
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s3_003#p1#7",
+     "turn": 8,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_2/win_s0_003#p1#7",
+     "turn": 8,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Dugtrio|Dugtrio, F|100/100 ~ +|switch|p2a: Dugtrio|Dugtrio, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Dugtrio|Dugtrio, F|100/100 ~ +|switch|p2a: Dugtrio|Dugtrio, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_2/win_s1_003#p1#17",
+     "turn": 17,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Snorlax|move: Focus Punch ~ +|-singleturn|p2a: Snorlax|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_3/loss_s1_001#p1#3",
+     "turn": 4,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s0_001#p1#6",
+     "turn": 6,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/setup_sweep_v2/win_s1_001#p1#16",
+     "turn": 17,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/staller_v2/win_s3_003#p1#22",
+     "turn": 19,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Charizard|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/aggressive/win_s0_001#p1#10",
+     "turn": 9,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranocif|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/aggressive/win_s3_002#p1#29",
+     "turn": 26,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, F|100/100 ~ +|switch|p2a: Swampert|Swampert, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, F|100/100 ~ +|switch|p2a: Swampert|Swampert, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/heuristic/win_s2_003#p1#16",
+     "turn": 16,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/random/win_s3_002#p1#12",
+     "turn": 12,
+     "worlds_inconsistent": 8,
+     "kinds": {
+      "-singleturn": 8
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "breloom"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "breloom": false
+     },
+     "root_condition_of_those_mons": {
+      "breloom": "0 fnt"
+     },
+     "notes": [
+      "SEARCHED protocol: -|-singleturn|p2a: Breloom|move: Focus Punch",
+      "SEARCHED protocol: -|-singleturn|p2a: Breloom|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_1/loss_s0_005#p1#19",
+     "turn": 19,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_1/loss_s0_005#p1#24",
+     "turn": 23,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100 ~ -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100 ~ -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_1/loss_s2_004#p1#4",
+     "turn": 5,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "gender_in_switch_details": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_1/win_s1_004#p1#17",
+     "turn": 17,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "-singleturn": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Medicham|move: Focus Punch",
+      "SEARCHED protocol: +|-singleturn|p2a: Medicham|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_3/loss_s3_005#p1#32",
+     "turn": 33,
+     "worlds_inconsistent": 6,
+     "kinds": {
+      "gender_in_switch_details": 6
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Milotic|Milotic, F|100/100 ~ +|switch|p2a: Milotic|Milotic, M|100/100 ~ -|switch|p2a: Milotic|Milotic, F|88/100 psn ~ +|switch|p2a: Milotic|Milotic, M|88/100 psn",
+      "SEARCHED protocol: -|switch|p2a: Milotic|Milotic, F|100/100 ~ +|switch|p2a: Milotic|Milotic, M|100/100 ~ -|switch|p2a: Milotic|Milotic, F|88/100 psn ~ +|switch|p2a: Milotic|Milotic, M|88/100 psn"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_4/win_s3_002#p1#5",
+     "turn": 6,
+     "worlds_inconsistent": 7,
+     "kinds": {
+      "gender_in_switch_details": 7
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/setup_sweep/loss_s0_004#p1#8",
+     "turn": 8,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/staller_v2/win_s0_003#p1#11",
+     "turn": 11,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/staller_v2/win_s0_003#p1#15",
+     "turn": 15,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    }
+   ]
+  },
+  "det_b": {
+   "states_with_inconsistent_worlds": 44,
+   "worlds_inconsistent": 150,
+   "states_by_kind": {
+    "gender_in_switch_details": 30,
+    "-singleturn": 15
+   },
+   "focus_punch_states": 15,
+   "focus_punch_states_mon_alive_at_root": 1,
+   "states": [
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s1_002#p1#8",
+     "turn": 7,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, M|100/100 ~ +|switch|p2a: Gengar|Gengar, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, M|100/100 ~ +|switch|p2a: Gengar|Gengar, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s0_002#p1#4",
+     "turn": 5,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s0_002#p1#8",
+     "turn": 8,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s2_001#p1#10",
+     "turn": 10,
+     "worlds_inconsistent": 7,
+     "kinds": {
+      "-singleturn": 7
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "tyranitar"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "tyranitar": false
+     },
+     "root_condition_of_those_mons": {
+      "tyranitar": "0 fnt"
+     },
+     "notes": [
+      "SEARCHED protocol: -|-singleturn|p2a: Tyranitar|move: Focus Punch",
+      "SEARCHED protocol: -|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+     "turn": 13,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "heracross",
+      "tyranitar"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "heracross": true,
+      "tyranitar": true
+     },
+     "root_condition_of_those_mons": {
+      "heracross": "363/363",
+      "tyranitar": "0 fnt"
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100 ~ -|switch|p2a: Flygon|Flygon, F|100/100 ~ +|switch|p2a: Flygon|Flygon, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100 ~ -|switch|p2a: Flygon|Flygon, F|100/100 ~ +|switch|p2a: Flygon|Flygon, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#5",
+     "turn": 6,
+     "worlds_inconsistent": 7,
+     "kinds": {
+      "gender_in_switch_details": 7
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "heracross",
+      "tyranitar"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "heracross": true,
+      "tyranitar": true
+     },
+     "root_condition_of_those_mons": {
+      "heracross": "363/363",
+      "tyranitar": "168/403"
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/heuristic2/loss_s0_005#p1#11",
+     "turn": 10,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Snorlax|Snorlax, M|100/100 ~ +|switch|p2a: Snorlax|Snorlax, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Snorlax|Snorlax, M|100/100 ~ +|switch|p2a: Snorlax|Snorlax, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/heuristic2/win_s2_001#p1#5",
+     "turn": 6,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "charizard"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "charizard": true
+     },
+     "root_condition_of_those_mons": {
+      "charizard": "120/297 par"
+     },
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_0/loss_s2_002#p1#6",
+     "turn": 6,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, M|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_1/loss_s3_004#p1#7",
+     "turn": 8,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_2/loss_s0_003#p1#14",
+     "turn": 12,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_2/loss_s0_003#p1#9",
+     "turn": 8,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/sentinel_2/win_s2_003#p1#16",
+     "turn": 16,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Laggron|Swampert, M|100/100 ~ +|switch|p2a: Laggron|Swampert, F|100/100 ~ -|switch|p2a: Laggron|Swampert, M|100/100 ~ +|switch|p2a: Laggron|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Laggron|Swampert, M|100/100 ~ +|switch|p2a: Laggron|Swampert, F|100/100 ~ -|switch|p2a: Laggron|Swampert, M|100/100 ~ +|switch|p2a: Laggron|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/setup_sweep/loss_s3_002#p1#13",
+     "turn": 12,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "heracross",
+      "tyranitar"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "heracross": true,
+      "tyranitar": true
+     },
+     "root_condition_of_those_mons": {
+      "heracross": "181/301 brn",
+      "tyranitar": "0 fnt"
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, F|100/100 ~ +|switch|p2a: Salamence|Salamence, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, F|100/100 ~ +|switch|p2a: Salamence|Salamence, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/setup_sweep_v2/win_s3_001#p1#3",
+     "turn": 4,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "chapignon"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "chapignon": false
+     },
+     "root_condition_of_those_mons": {
+      "chapignon": null
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Chapignon|Breloom, M|100/100 ~ +|switch|p2a: Chapignon|Breloom, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Chapignon|Breloom, M|100/100 ~ +|switch|p2a: Chapignon|Breloom, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/staller/loss_s2_004#p1#17",
+     "turn": 14,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "-singleturn": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch",
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/staller/loss_s2_004#p1#27",
+     "turn": 23,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_10000002/staller_v2/win_s1_002#p1#5",
+     "turn": 6,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "heracross"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "heracross": true
+     },
+     "root_condition_of_those_mons": {
+      "heracross": "211/300"
+     },
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Heracross|Heracross, F|100/100 ~ +|switch|p2a: Heracross|Heracross, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Heracross|Heracross, F|100/100 ~ +|switch|p2a: Heracross|Heracross, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/aggressive_v2/loss_s2_004#p1#16",
+     "turn": 14,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "-singleturn": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Swampert|move: Focus Punch",
+      "SEARCHED protocol: +|-singleturn|p2a: Swampert|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/aggressive_v2/win_s0_001#p1#3",
+     "turn": 4,
+     "worlds_inconsistent": 6,
+     "kinds": {
+      "gender_in_switch_details": 6,
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, F|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Tyranitar|Tyranitar, F|100/100 ~ +|switch|p2a: Tyranitar|Tyranitar, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s2_003#p1#32",
+     "turn": 30,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s2_005#p1#5",
+     "turn": 5,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s3_003#p1#26",
+     "turn": 23,
+     "worlds_inconsistent": 7,
+     "kinds": {
+      "gender_in_switch_details": 7
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s3_003#p1#7",
+     "turn": 8,
+     "worlds_inconsistent": 5,
+     "kinds": {
+      "gender_in_switch_details": 5
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Jolteon|Jolteon, M|100/100 ~ +|switch|p2a: Jolteon|Jolteon, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_2/win_s0_003#p1#7",
+     "turn": 8,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Dugtrio|Dugtrio, F|100/100 ~ +|switch|p2a: Dugtrio|Dugtrio, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Dugtrio|Dugtrio, F|100/100 ~ +|switch|p2a: Dugtrio|Dugtrio, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/sentinel_3/loss_s1_001#p1#3",
+     "turn": 4,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s0_001#p1#6",
+     "turn": 6,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/setup_sweep_v2/win_s1_001#p1#16",
+     "turn": 17,
+     "worlds_inconsistent": 7,
+     "kinds": {
+      "gender_in_switch_details": 7
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_12000178/staller_v2/win_s3_003#p1#22",
+     "turn": 19,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Charizard|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/aggressive/win_s0_001#p1#10",
+     "turn": 9,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranocif|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/aggressive/win_s3_002#p1#29",
+     "turn": 26,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, F|100/100 ~ +|switch|p2a: Swampert|Swampert, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, F|100/100 ~ +|switch|p2a: Swampert|Swampert, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/aggressive_v2/win_s3_002#p1#6",
+     "turn": 6,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Laggron|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/heuristic/win_s2_003#p1#16",
+     "turn": 16,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/random/win_s3_002#p1#12",
+     "turn": 12,
+     "worlds_inconsistent": 8,
+     "kinds": {
+      "-singleturn": 8
+     },
+     "focus_punch_tightening_seen_by_searched_side": [
+      "breloom"
+     ],
+     "focuspunch_counted_as_revealed": {
+      "breloom": false
+     },
+     "root_condition_of_those_mons": {
+      "breloom": "0 fnt"
+     },
+     "notes": [
+      "SEARCHED protocol: -|-singleturn|p2a: Breloom|move: Focus Punch",
+      "SEARCHED protocol: -|-singleturn|p2a: Breloom|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_1/loss_s0_005#p1#19",
+     "turn": 19,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_1/loss_s0_005#p1#24",
+     "turn": 23,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100 ~ -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100 ~ -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_1/loss_s2_004#p1#4",
+     "turn": 5,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "gender_in_switch_details": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Skarmory|Skarmory, F|100/100 ~ +|switch|p2a: Skarmory|Skarmory, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_1/win_s1_004#p1#17",
+     "turn": 17,
+     "worlds_inconsistent": 2,
+     "kinds": {
+      "-singleturn": 2
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Medicham|move: Focus Punch",
+      "SEARCHED protocol: +|-singleturn|p2a: Medicham|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_3/loss_s3_005#p1#32",
+     "turn": 33,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Milotic|Milotic, F|100/100 ~ +|switch|p2a: Milotic|Milotic, M|100/100 ~ -|switch|p2a: Milotic|Milotic, F|88/100 psn ~ +|switch|p2a: Milotic|Milotic, M|88/100 psn",
+      "SEARCHED protocol: -|switch|p2a: Milotic|Milotic, F|100/100 ~ +|switch|p2a: Milotic|Milotic, M|100/100 ~ -|switch|p2a: Milotic|Milotic, F|88/100 psn ~ +|switch|p2a: Milotic|Milotic, M|88/100 psn"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/sentinel_4/win_s3_002#p1#5",
+     "turn": 6,
+     "worlds_inconsistent": 3,
+     "kinds": {
+      "gender_in_switch_details": 3
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Salamence|Salamence, M|100/100 ~ +|switch|p2a: Salamence|Salamence, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/setup_sweep/loss_s0_004#p1#8",
+     "turn": 8,
+     "worlds_inconsistent": 4,
+     "kinds": {
+      "gender_in_switch_details": 4
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100",
+      "SEARCHED protocol: -|switch|p2a: Gengar|Gengar, F|100/100 ~ +|switch|p2a: Gengar|Gengar, M|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/staller/win_s0_001#p1#9",
+     "turn": 9,
+     "worlds_inconsistent": 1,
+     "kinds": {
+      "-singleturn": 1
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: +|-singleturn|p2a: Tyranitar|move: Focus Punch"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/staller_v2/win_s0_003#p1#11",
+     "turn": 11,
+     "worlds_inconsistent": 6,
+     "kinds": {
+      "gender_in_switch_details": 6
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    },
+    {
+     "id": "rb_es_prod_s2001/step_14000168/staller_v2/win_s0_003#p1#15",
+     "turn": 15,
+     "worlds_inconsistent": 6,
+     "kinds": {
+      "gender_in_switch_details": 6
+     },
+     "focus_punch_tightening_seen_by_searched_side": [],
+     "focuspunch_counted_as_revealed": {},
+     "root_condition_of_those_mons": {},
+     "notes": [
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100",
+      "SEARCHED protocol: -|switch|p2a: Swampert|Swampert, M|100/100 ~ +|switch|p2a: Swampert|Swampert, F|100/100"
+     ]
+    }
+   ]
+  }
+ },
+ "public_lines_naming_an_opponent_move_outside_move_lines (all played states, det and det_b)": {
+  "-singleturn": 79,
+  "-start": 66,
+  "-heal": 15,
+  "-item": 4,
+  "-status": 74,
+  "-cureteam": 7,
+  "-enditem": 2
+ },
+ "examples_of_such_lines": {
+  "-singleturn": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s2_001#p1#10",
+    "line": "|-singleturn|p2a: Tyranitar|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+    "line": "|-singleturn|p2a: Heracross|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+    "line": "|-singleturn|p2a: Heracross|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+    "line": "|-singleturn|p2a: Tyranitar|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+    "line": "|-singleturn|p2a: Tyranitar|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   }
+  ],
+  "-start": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s3_003#p1#27",
+    "line": "|-start|p2a: Jolteon|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic2/win_s0_002#p1#8",
+    "line": "|-start|p2a: Jirachi|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/sentinel_0/win_s3_003#p1#15",
+    "line": "|-start|p2a: M\u00c3\u00a9talosse|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/sentinel_0/win_s3_003#p1#17",
+    "line": "|-start|p2a: M\u00c3\u00a9talosse|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/sentinel_1/win_s0_002#p1#16",
+    "line": "|-start|p2a: Blissey|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   }
+  ],
+  "-heal": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/random/win_s2_002#p1#39",
+    "line": "|-heal|p2a: Foretress|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/random/win_s2_002#p1#39",
+    "line": "|-heal|p2a: Jirachi|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/random/win_s2_002#p1#39",
+    "line": "|-heal|p2a: Tyranocif|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/random/win_s2_002#p1#4",
+    "line": "|-heal|p2a: Foretress|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/random/win_s3_002#p1#15",
+    "line": "|-heal|p2a: Ronflex|100/100|[from] move: Wish|[wisher] Voltali",
+    "key": "-heal|Wish"
+   }
+  ],
+  "-item": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/sentinel_2/win_s3_002#p1#31",
+    "line": "|-item|p2a: Airmure|Leftovers|[from] move: Thief|[of] p1a: Swampert",
+    "key": "-item|Thief"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep/win_s2_001#p1#23",
+    "line": "|-item|p2a: Skarmory|Leftovers|[from] move: Thief|[of] p1a: Metagross",
+    "key": "-item|Thief"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep/win_s2_001#p1#25",
+    "line": "|-item|p2a: Skarmory|Leftovers|[from] move: Thief|[of] p1a: Metagross",
+    "key": "-item|Thief"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/staller_v2/win_s2_002#p1#27",
+    "line": "|-item|p2a: Skarmory|Leftovers|[from] move: Thief|[of] p1a: Tyranitar",
+    "key": "-item|Thief"
+   }
+  ],
+  "-status": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_005#p1#26",
+    "line": "|-status|p2a: Zapdos|slp|[from] move: Spore",
+    "key": "-status|Spore"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep_v2/win_s0_003#p1#20",
+    "line": "|-status|p2a: Snorlax|slp|[from] move: Sleep Powder",
+    "key": "-status|Sleep Powder"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/staller_v2/loss_s3_004#p1#36",
+    "line": "|-status|p2a: Suicune|slp|[from] move: Rest",
+    "key": "-status|Rest"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/staller_v2/loss_s3_004#p1#36",
+    "line": "|-status|p2a: Suicune|slp|[from] move: Rest",
+    "key": "-status|Rest"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/staller_v2/loss_s3_004#p1#36",
+    "line": "|-status|p2a: Suicune|slp|[from] move: Rest",
+    "key": "-status|Rest"
+   }
+  ],
+  "-cureteam": [
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   }
+  ],
+  "-enditem": [
+   {
+    "id": "rb_es_prod_s2001/step_14000168/staller_v2/win_s0_003#p1#11",
+    "line": "|-enditem|p2a: Swampert|Leftovers|[silent]|[from] move: Thief|[of] p1a: Airmure",
+    "key": "-enditem|Thief"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_14000168/staller_v2/win_s0_003#p1#15",
+    "line": "|-enditem|p2a: Swampert|Leftovers|[silent]|[from] move: Thief|[of] p1a: Airmure",
+    "key": "-enditem|Thief"
+   }
+  ]
+ }
+}
