@@ -861,8 +861,59 @@ moves are revealed, post-hoc); H-STAT's exclusion and reweighting arms are kille
 pilot's sentence "it is the MOVES, not the species" is not supported as stated: the never-seen mons matter at least
 as much in this base, and the factorial (§6) must apportion U against M.
 
-*Still to read in this unit:* the audits (R-GIGO's ingredients), the model-input axis (R-NET, CRITIC-USES), D9,
-policy drift and belief maturity, and the author's honest confidence in "moves are binding".
+### 16.2 D9, the POOL-vs-PRIOR confound (read 2026-10-11; `poolprior_read.json`)
+
+**Plain language.** Our pool's sets are about as predictable from Smogon usage as real human sets are, so the
+pilot's low move-hit rate is NOT a pool artefact: guessing an opponent's hidden moves is genuinely hard in gen-3 OU.
+Even if every opponent's set were DRAWN from the Smogon prior itself, a guessed world would hold only about 40 % of
+the hidden moves: that is the prior's own spread, the game's intrinsic hidden information.
+
+- **Method check:** the read reproduces the pilot's numbers on its own 1,200 states (slot hit 0.159 / 0.161, set
+  recall 0.445 / 0.447).
+- **The prior-as-truth ceiling:** sets drawn from the Smogon prior are predicted NO better than the pool's (slot hit
+  with 2 revealed 0.193 vs pool 0.197; set hit 0.380 vs 0.389; top-4 recall with none revealed 0.609 vs 0.650).
+- **Real human sets** (a 40,000-log sample of 376,410 public gen-3 OU replays, 2026-05-18 → 09-23; 32,183 mons that
+  revealed all four moves): top-4 recall human − pool −0.029 [−0.036, −0.021] (the pool is the MORE predictable);
+  censored per revealed move +0.007 [+0.004, +0.011] usage-weighted (≥ 1500-rated players about the same). Items:
+  P(true | species) 0.802 pool vs 0.801 Metamon; abilities 0.918 vs 0.906.
+- **Spreads** are where the pool is less Smogon-like (exact-spread probability 0.049 vs the curated sample teams'
+  0.066); no honest human reference exists (replays never reveal spreads; the Metamon corpus fills them from usage).
+- **Teammates:** the prior predicts the pool's teammates BETTER than human teams' (mean rank of a true teammate 9.75
+  vs 15.8).
+- **For the hypotheses:** H-PRIOR-MISMATCH's D9 half is met against it (for moves and items the difference CI favours
+  the pool); the POOLSETS arm (§6.4) completes the kill test. For C2: a population prior is near its own ceiling, so
+  any recoverable part of G must come from game-conditioned inference (the network's belief, §16.3) or team
+  identification (POOL), which the ladder does not offer.
+
+### 16.3 MATURITY: policy drift and belief maturity, 1M–15M (read 2026-10-11; `policy_drift_summary.json`, `belief_maturity.json`)
+
+**Plain language.** At 15M both policies are still changing fast and their beliefs are still learning: per million
+steps each policy moves ≈ 0.1 nats of KL and changes its top action on 15–22 % of probe states, with no slowdown from
+5–10M to 10–15M (part of it is back-and-forth). These checkpoints are NOT plateaued, which is exactly the owner's
+v8 worry: every verdict here is PROVISIONAL "at 15M".
+
+| meter | end2 | prod |
+|---|---|---|
+| policy drift per 1M, 5–10M: KL mean / flip rate | 0.107 / 14.3 % | 0.095 / 22.1 % |
+| policy drift per 1M, 10–15M: KL mean / flip rate | 0.097 / 15.2 % | 0.104 / 22.3 % |
+| 15M vs ≈ 10M earlier: KL / flip (≈ 1.0 nats if the per-1M steps added up) | 0.64 / 52 % | 0.71 / 47 % |
+| move belief, expected recall at 15M (Δ 10M→15M) | 0.459 (+0.017 [+0.015, +0.020]) | 0.419 (+0.006 [+0.004, +0.008]) |
+| move belief vs the Smogon prior at 15M: expected / top-k recall | +0.034 / +0.022 | −0.004 / +0.041 |
+| item belief P(true item) at 15M (Δ; vs Smogon) | 0.779 (+0.001; +0.105) | 0.770 (+0.015; +0.105) |
+| species belief, mass on true hidden species (Δ) | 0.441 (+0.032) | 0.470 (+0.030) |
+
+- **M-BELIEF = IMPROVING** on both seeds (the 15M − 10M move-recall lower bounds +0.015 / +0.004 > 0): the v8 guard's
+  first condition holds; whether it fires waits for M-STABLE (the trajectory arm, §10.3).
+- The network's MOVE belief barely beats the Smogon prior (end2 +0.03, prod ≈ 0 in expected recall), consistent with
+  D9: per-game move inference is where any C2 gain would have to come from, and it is small today.
+- **The plateau yardstick (§10.5) is now numeric:** a plateaued checkpoint needs a per-1M KL ≤ 0.049 and a flip rate
+  ≤ 7.6 % (half of end2's 10–15M means) over three consecutive 1M steps.
+- FINDINGS: the pin checkouts have no Showdown build, so the drift collector's team validation was redirected to the
+  main checkout's byte-identical `validate_team.js` (`policy_drift_scripts/`); the two runs' probe sets differ (each
+  from its own 4M policy), so drift compares within a run only; "item revealed" is approximated from protocol tags.
+
+*Still to read in this unit:* the audits (R-GIGO's ingredients), the model-input axis (R-NET, CRITIC-USES), and the
+author's honest confidence in "moves are binding".
 
 ---
 
