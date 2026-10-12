@@ -24514,7 +24514,7 @@ Registered at `e25a5240` (`design_hidden_info_binding.md` §5, §7, §10.1–§1
 5–7 + SMT siblings, nice 19.
 
 **Model-input axis** (the true unseen moves of every SEEN opponent mon mixed into the network's ONE published typed
-move posterior, q' = (1 − p)σ(ℓ) + p·1[true]; scorer frozen at `1abcef60`, blinded result frozen at `2659cb3f` before
+move posterior, q' = (1 − p)σ(ℓ) + p·1[true]; scorer frozen at `1abcef60`, blinded result frozen at `8df724e0` before
 unblinding; 600 states × end2 / prod / end2_s2002 on end2's states; p = 0 an exact identity, 0 top-1 mismatches, the
 successors reproduce Phase 1's critic within 4.6e-6). Pooled end2 + prod at p = 0.95: flip 13.3 %, KL 0.067; IMP of
 the policy's pick +0.001 [−0.003, +0.005]; TRUE − PLACEBO +0.004 [−0.002, +0.009]; TRUE − SELFMAP +0.003 [−0.001,

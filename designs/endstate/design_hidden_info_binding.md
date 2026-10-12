@@ -980,7 +980,7 @@ conditions on construction draws: the A6 leak); (2) parse every public line that
 teams that break a gen3ou clause (`agents.gen3_data.format_spec`); (4) the independent implementation (§13.1) is built
 to the fixed spec. ≈ 0.5 agent-day.
 
-### 16.5 The MODEL-INPUT axis: R-NET and CRITIC-USES (read 2026-10-11; `result_model_input_blinded.json` frozen at `2659cb3f` before unblinding, `result_model_input.json`)
+### 16.5 The MODEL-INPUT axis: R-NET and CRITIC-USES (read 2026-10-11; `result_model_input_blinded.json` frozen at `8df724e0` before unblinding, `result_model_input.json`)
 
 **Plain language.** Told the TRUE moves of every opponent Pokémon it has seen, with 95 % confidence, the network
 changes its choice in about one decision in eight, but the changed choices are NOT better: +0.1 points of win
@@ -1048,7 +1048,10 @@ and necessity (MOVES-BINDING): ≈ 25 %. What would raise it: F+M closing ≥ ha
 placebo, and the MOVES fork learning to use them. What would kill it: O−M costing < ¼ of G, or the placebo buying as
 much. **Recommendation for the roadmap now:** do NOT open a multi-week move-inference programme on this evidence; run
 the factorial's Tier 1 with the fixed sampler after the closing test (≈ 50 CPU-h), the knock-in forks as queued, and
-keep the value-side work (Phase 3's per-action head, the hand evaluator) in parallel.
+the hand evaluator's arm (R-EVAL) beside it. (The pilot's Phase 3, read the same evening: a per-action value head on
+oracle labels does not help a FROZEN body at K = 2 labels, R-QHEAD NOT DETECTED −0.004, 83 % of the label spread dice
+noise; `design_value_discrimination.md` §7.13. The value side stays open only with a trained body or a far larger
+label budget, so the evaluator question, R-EVAL, matters more, not less.)
 
 ---
 
