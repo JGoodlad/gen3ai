@@ -183,10 +183,14 @@ def move_prior(species: str, exclude: Sequence[str], allow_hp: bool) -> Dict[str
 
 
 def draw_moves(species: str, revealed: Sequence[str], k: int, rng: np.random.Generator,
-               allow_hp: bool) -> List[str]:
+               allow_hp: bool, hp_only: Optional[str] = None) -> List[str]:
     """``k`` unrevealed moves by conditional Poisson over the prior renormalised to mass ``k`` on the unrevealed
-    candidates, at most one Hidden Power in the whole set (``allow_hp`` False when the set already holds one)."""
+    candidates, at most one Hidden Power in the whole set (``allow_hp`` False when the set already holds one).
+    ``hp_only``: a Hidden Power may only be of this type (the IVs are TRUE and fix it); the others leave the
+    candidate set before the renormalisation."""
     cand = move_prior(species, revealed, allow_hp)
+    if hp_only is not None:
+        cand = {m: v for m, v in cand.items() if not is_hp(m) or hp_type(m) == hp_only}
     for _ in range(500):
         got = cp_sample(cand, k, rng)
         if sum(1 for m in got if is_hp(m)) <= 1:

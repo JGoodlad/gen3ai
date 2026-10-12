@@ -351,7 +351,7 @@ def _seen_base(prep: Prep, m: V.SeenMon) -> S.MonSet:
 
 
 def seen_moves(prep: Prep, m: V.SeenMon, slot: int, arm: str, rng: np.random.Generator,
-               hp_t: Optional[str], hp_screened: bool = False) -> List[str]:
+               hp_t: Optional[str], hp_screened: bool = False, hp_only: Optional[str] = None) -> List[str]:
     """Slot-aligned moves of a seen mon: revealed moves in their true slots, the rest drawn (M sampled) or true.
 
     ``hp_screened`` (F): a mon with NO revealed Hidden Power has its unrevealed Hidden Power decided by the screen
@@ -381,7 +381,8 @@ def seen_moves(prep: Prep, m: V.SeenMon, slot: int, arm: str, rng: np.random.Gen
             have_hp = True
     k_draw = sum(1 for x in out if x is None)
     revealed_ids = [x for x in out if x is not None] + (["hiddenpower"] if have_hp else [])
-    drawn = S.draw_moves(m.species, revealed_ids, k_draw, rng, allow_hp=not have_hp and not hp_screened)
+    drawn = S.draw_moves(m.species, revealed_ids, k_draw, rng, allow_hp=not have_hp and not hp_screened,
+                         hp_only=hp_only)
     it = iter(drawn)
     filled = [x if x is not None else next(it, None) for x in out]
     return [x for x in filled if x is not None]
@@ -463,21 +464,16 @@ def assemble(prep: Prep, arm: str, rng: np.random.Generator, seen_draws: Optiona
             continue
         base = _seen_base(prep, m)
         if arm in ("P", "O-M"):
-            # S true; the bare-HP type follows the true IVs in P (S is true), is drawn in O-M (class M)
-            true_hp = next((S.hp_type(x) for x in t.moves if S.is_hp(x)), None)
-            hp_t = None
-            if "hiddenpower" in m.moves:
-                hp_t = true_hp if arm == "P" else S.weighted_pick(
-                    (hp_allowed or {}).get(name) or S.hp_type_prior(m.species), rng)
-            mv = fixed_moves[name] if fixed_moves else seen_moves(prep, m, slot, arm, rng, hp_t)
+            # S is TRUE (nature, EVs, IVs). In gen 3 a Hidden Power's type is a function of the IVs, so with the
+            # IVs true the type of a revealed bare Hidden Power is true too, and an unrevealed Hidden Power the M
+            # draw adds can only be of the IVs' type (spec ambiguity: §6.1's S and M overlap here; S wins).
+            iv_t = S.hp_type_of_ivs(t.ivs)
+            hp_t = iv_t if "hiddenpower" in m.moves else None
+            mv = fixed_moves[name] if fixed_moves else seen_moves(prep, m, slot, arm, rng, hp_t, hp_only=iv_t)
             base.moves = mv
             base.item = t.item
             base.ability = t.ability
             base.nature, base.evs, base.ivs = t.nature, t.evs, list(t.ivs)
-            whp = next((S.hp_type(x) for x in mv if S.is_hp(x)), None)
-            if whp is not None and whp != S.hp_type_of_ivs(t.ivs):
-                variant = "min" if t.ivs[1] <= 3 else "max"
-                base.ivs = S.ivs_for(whp, variant)
             base.origin = {"M": "drawn", "I": "true", "A": "true", "S": "true"}
         else:                                            # F, F+M
             sd = seen_draws[name]
