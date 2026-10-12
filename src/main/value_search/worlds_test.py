@@ -103,3 +103,89 @@ def test_opp_actives_pairs_each_command_with_its_own_request():
                                         {"side": {"pokemon": [{"details": f"{sp}, M", "active": True}]}})
     res = {"chunks": [[1, [rq("Tyranitar")]], [1, [rq("x", wait=True)]], [1, [rq("Skarmory"), rq("Skarmory")]]]}
     assert W.opp_actives(res, 1, 3) == ["tyranitar", "skarmory", "skarmory"]
+
+
+# ------------------------------------------------------------------------------------------------
+# the honest builder's pure parts (design_information_levers.md §7)
+# ------------------------------------------------------------------------------------------------
+
+def test_the_pad_lets_any_never_seen_mon_sit_on_a_true_draw_slot_and_pinned_slots_stay():
+    from utils.team_packing import GENDER_DRAW_PAD as PAD
+
+    rng = np.random.default_rng(5)
+    # the truth drew at 2 and 3; the world drew two mons that cannot draw (no pad: no world; with it: padded)
+    ents = [_NONE, _NONE, _NONE, _FIXED]
+    assert W.place_genders(rng, ents, [2, 3], {2, 3}) is None
+    for _ in range(20):
+        out = W.place_genders(rng, ents, [2, 3], {2, 3}, pad=PAD)
+        assert out is not None and W.gender_draw_slots("]".join(out)) & {2, 3} == {2, 3}
+        assert all(W.parse_set(e)[7].endswith(PAD) for e in out[2:])
+    # a PINNED slot (a lever put its mon there) keeps its mon; it draws iff the true slot drew
+    out = W.place_genders(rng, [_NONE, _RATIO, _FIXED], [1, 2], {1}, pinned={1, 2}, pad=PAD)
+    assert [W.toid(W.parse_set(e)[0]) for e in out] == ["metagross", "tyranitar", "blissey"]
+    assert W.gender_draw_slots("]".join(out)) == {1}
+
+
+def test_the_divergence_score_and_hint_point_the_search():
+    ref = ["|move|p2a: Swampert|Rock Slide|p1a: Zapdos", "|-damage|p1a: Zapdos|79/375", "|-damage|p2a: Swampert|50/100"]
+    soft = ["|move|p2a: Swampert|Rock Slide|p1a: Zapdos", "|-damage|p1a: Zapdos|177/375"]
+    assert 1.0 < W.divergence_score(soft, ref) < 2.0
+    assert W.divergence_score(soft, ref) < W.divergence_score(["|move|p2a: Swampert|Rock Slide|p1a: Zapdos",
+                                                               "|-damage|p1a: Zapdos|90/375"], ref)
+    assert W.divergence_hint(soft, ref, "p2") == ("power", 1)              # ours kept more HP: hit harder
+    bulky = ref[:2] + ["|-damage|p2a: Swampert|60/100"]
+    assert W.divergence_hint(bulky, ref, "p2") == ("bulk", 1)              # theirs kept more HP: less bulk
+    slow = ["|move|p1a: Zapdos|Thunderbolt|p2a: Swampert"]
+    assert W.divergence_hint(slow, ref, "p2") == ("speed", -1)             # ours acted first: too slow
+    assert W.divergence_hint(ref, ref, "p2") is None and W.divergence_score(ref, ref) == 3.0
+
+
+def test_draw_moves_follows_the_screened_hidden_power():
+    from agents.info_levers import spec as S
+
+    rng = np.random.default_rng(2)
+    prior = {"earthquake": 0.9, "rockslide": 0.6, "hiddenpowerice": 0.3, "hiddenpowergrass": 0.2, "protect": 0.4,
+             "toxic": 0.3}
+    for _ in range(30):
+        mv, _f = W.WD.draw_moves(rng, prior, {0: "earthquake"}, 4, None, [], "fire", hp_rule="force")
+        assert "hiddenpowerfire" in mv and sum(m.startswith("hiddenpower") for m in mv) == 1
+        mv, _f = W.WD.draw_moves(rng, prior, {0: "earthquake"}, 4, None, [], None, hp_rule="none")
+        assert not any(m.startswith("hiddenpower") for m in mv)
+    # a told move set matches the truth with its Hidden Power of ANOTHER type (the type is a SPREAD fact)
+    mv, f = W.WD.draw_moves(rng, prior, {}, 4, S.parse("moves:seen").lever("moves", "seen"),
+                            ["earthquake", "rockslide", "hiddenpowerice", "protect"], "fire", hp_rule="force")
+    assert f["true_hits"] == 4 and f["match"] and "hiddenpowerfire" in mv
+
+
+def test_align_to_truth_puts_true_moves_in_their_true_slots():
+    out = W.WD.align_to_truth(["a", "toxic", "x", "earthquake"], ["a", "earthquake", "rest", "toxic"], {0})
+    assert out == ["a", "earthquake", "x", "toxic"]
+
+
+def test_the_spread_prior_gives_every_legal_spread_mass_and_none_to_an_illegal_one():
+    from main.value_search import world_screen as WS
+
+    sp = WS.SpreadPrior({("adamant", (0, 252, 0, 0, 4, 252)): 0.7, ("jolly", (0, 252, 0, 0, 4, 252)): 0.3})
+    assert sp.logp("adamant", (0, 252, 0, 0, 4, 252)) > sp.logp("modest", (16, 0, 252, 176, 12, 52)) > float("-inf")
+    assert sp.logp("adamant", (252, 252, 252, 0, 0, 0)) == float("-inf")         # 756 EVs
+    rng = np.random.default_rng(0)
+    for _ in range(200):
+        nat, evs = sp.draw(rng)
+        assert sum(evs) <= 510 and all(0 <= e <= 252 for e in evs) and sp.logp(nat, evs) > float("-inf")
+
+
+def test_the_directed_move_goes_the_way_the_hint_says():
+    from main.value_search import world_screen as WS
+
+    m = WS.MonSampler(key=WS.ScreenKey(slot=0, hp="none"), sid="x", f_true=W.parse_set(_RATIO),
+                      items={"leftovers": 0.9, "choiceband": 0.1}, abilities={"sandstream": 1.0},
+                      spreads=WS.SpreadPrior({("adamant", (0, 252, 0, 0, 4, 252)): 1.0}), hp_prior={}, hp_any=0.0,
+                      rng=np.random.default_rng(4), needed=1)
+    s = ("leftovers", "sandstream", "adamant", (100, 100, 100, 100, 100, 0), None)
+    up = [m.guided(s, ("power", 1)) for _ in range(300)]
+    assert all(t[3][1] >= 100 and t[3][3] >= 100 for t in up)                  # never less Atk / SpA
+    assert any(t[0] == "choiceband" for t in up)                               # a Choice Band is a way to hit harder
+    down = [m.guided(s, ("bulk", 1)) for _ in range(300)]
+    assert all(t[3][0] <= 100 and t[3][2] <= 100 and t[3][4] <= 100 for t in down)
+    faster = [m.guided(s, ("speed", -1)) for _ in range(300)]
+    assert all(t[3][5] >= 0 for t in faster) and any(t[3][5] > 0 for t in faster)

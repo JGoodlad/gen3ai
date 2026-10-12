@@ -3,8 +3,9 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-12): the SPEC, the LOG SOURCE and the MODEL-INPUT INJECTION are BUILT (`src/agents/info_levers/`); the other two consumers, the
-gender pad and the audit suite are BUILDING (each section says which).** Owner, 2026-10-12: "I want a single dried
+**Status (2026-10-12): the SPEC, the LOG SOURCE, the SEARCH WORLD BUILDER (honest by default), the MODEL-INPUT
+INJECTION, the GENDER PAD and the AUDIT SUITE are BUILT; the TRAINING OBSERVATION's spec flag and the diagnostic-fork
+consent are BUILDING (§6).** Owner, 2026-10-12: "I want a single dried
 out implementation for giving both search and training additional information that would not generally be available
 so that we can understand what the ceilings are and what is our constraint and how much value there would be in
 improving determinization." It serves the hidden-information study ([`design_hidden_info_binding.md`](design_hidden_info_binding.md))
@@ -134,10 +135,10 @@ consumer can only ever give TRUE is its named **residual**, reported beside ever
 
 - **(a) The training observation** (§6): BUILDING. Today's `--oracle-reveal off|species|full` keeps its exact
   behaviour and bytes; the flag will accept any spec the OBS consumer honours.
-- **(b) The search world builder** (§7): BUILDING. Honest by default; the pilot's builder becomes the `pilot` preset.
+- **(b) The search world builder** (§7): BUILT — honest by default; the pilot's builder is the `pilot` preset.
 - **(c) The model-input injection** (§8): BUILT (`agents.info_levers.inject`), lifted from the study's `inject.py` into `src/` and driven by the spec.
-- **The gender pad** (§9): BUILDING (an engine-side marker; the builder's residual gender-count leak).
-- **The audit suite** (§10): BUILDING.
+- **The gender pad** (§9): BUILT (the engine marker `98146ddb`, wired into the builder).
+- **The audit suite** (§10): BUILT (`main.info_audit`); its read is §10.3.
 
 ---
 
@@ -185,30 +186,115 @@ successor rows, encoded WITHOUT the reveal) stays refused with any non-`off` spe
 
 ---
 
-## 7. (b) THE SEARCH WORLD BUILDER, honest by default (BUILDING)
+## 7. (b) THE SEARCH WORLD BUILDER, honest by default (BUILT: `main.value_search.worlds`, `world_draws`, `world_screen`)
 
-### 7.1 The leaks it fixes
+`WorldSampler(reveal=spec)` (default `off`: HONEST); `sample(log, at, side, J, key, screen_cache=…)`. `SearchConfig(oracle=
+True)` stays the cheap way to play the TRUE battle; the `oracle` preset through the builder reproduces it exactly (the
+audit's `oracle_identity`).
 
-The pilot's builder (v1 / v2, `main.value_search.worlds`) kept every SEEN opponent mon's item, ability and spread
-TRUE (hence its exact HP), because they shape the observed history and a joint redraw would almost never pass the
-gate. Honest by default, every unrevealed fact of a seen mon is SAMPLED from the Smogon prior and conditioned on the
-log by the same byte-equal protocol + row gate.
+### 7.1 The leaks it fixed (before = the pilot's builder, the `pilot` preset; after = `off`; measured, §10.3)
 
-### 7.2 How (the per-mon screen)
+The pilot's builder (v1 / v2) kept every SEEN opponent mon's item, ability and spread TRUE — hence its exact stats, its
+Hidden Power type and the exact HP its history leaves — because they shape the observed history and a joint redraw
+almost never passes the gate. Honest by default, each of them is DRAWN from the Smogon prior and conditioned on the log
+by the same byte-equal protocol + row gate; what play revealed (`agents.info_levers.revealed`) stays the truth's.
 
-A seen mon's (item, ability, spread) draw is SCREENED one mon at a time: the candidate is replayed with every other
-opponent mon at its true facts, and accepted only if the searched side's protocol and rows stay byte-equal; the
-accepted per-mon draws are then combined and the whole world passes the full gate again. If each observable event
-depends on one opponent mon's hidden facts (singles: true for damage, speed order, item and ability triggers), the
-screen draws exactly from P(facts of mon k | everything observed), so the true background leaks nothing; an event
-coupling two opponent mons' hidden facts is caught by the joint gate. The audit (§10) measures the leak instead of
-assuming it away.
+Truth-match rate of each fact in the worlds built for 8 committed-bank decisions × 4 worlds (`python -m main.info_audit`; a revealed fact is the truth's under both and is not counted here):
 
-### 7.3 The residual: hidden counters
+| fact | the pilot's builder (`pilot`) | the honest builder (`off`) |
+|---|---|---|
+| a seen mon's unrevealed item | 1.000 (told, n 48) | 0.750 (drawn, n 48) |
+| its unrevealed ability | 1.000 (told, n 96) | 1.000 (drawn, n 96) |
+| its spread (nature + EVs + IVs, exactly) | 1.000 (told, n 124) | 0.032 (drawn, n 124) |
+| its unrevealed move slots (all of them right) | 0.113 (drawn, n 124) | 0.097 (drawn, n 124) |
+| a never-seen slot's species | 0.000 (drawn, n 68) | 0.000 (drawn, n 68) |
+| a never-seen slot's item (when its species is right) | 0.044 (drawn, n 68) | 0.044 (drawn, n 68) |
+| a seen mon's EXACT HP at the root equals the truth's | 124 / 124 | 70 / 124 |
 
-The world replays the prefix on the TRUE battle seed, so a duration rolled BEFORE the root (sleep, confusion, Encore,
-a lock) is the truth's in every world (the study's A5 caveat). No honest world can hide it without a root-state
-resample in the playout core; it is the builder's named residual (`counters`), reported with every honest spec.
+Under `pilot` the seen mons' item, ability and spread are TOLD (the truth, every world); under `off` they are drawn and match the truth only as often as the log forces it (Leftovers on a mon whose healing showed; the one ability most species have) or the prior happens to.
+
+### 7.2 What each fact of a world is
+
+- **Revealed by play** (the ONE log source): the truth's. A reveal the source names that the true set does not hold is
+  the parser's error: counted (`leak["reveal_mismatch"]`) and drawn instead.
+- **A lever fires** (a categorical fact: with probability = its mass, decided once per world and mon; the MOVES lever is
+  no coin — its mass is the presence mixture of every candidate move, §1.2): its target — the truth, a placebo
+  (drawn ∝ the prior excluding the truth; for a seen mon's item / ability / spread, one the log allows), or the map
+  (the prior's mode; for a seen mon's item / ability / spread, the most probable state the screen found the log to
+  allow).
+- **Otherwise drawn**, honestly: a NEVER-SEEN slot's species ∝ the Smogon teammate co-occurrence with the revealed
+  species, then its whole set (moves by the conditional-Poisson presence draw, item, ability, spread); a SEEN mon's
+  unrevealed moves by the same presence draw (`mixture.mix_presence` + `cp_sample`: p = 0 is the honest draw exactly,
+  the study's §6.4 dose); a seen mon's item, ability and spread by the SCREEN (§7.3).
+- **Hidden Power**: its TYPE and whether a set carries one are SPREAD facts (the IVs: they move the exact stats the log
+  pins by a point). The screen draws them; the world's moves then hold a Hidden Power of exactly that type (or none);
+  a revealed bare Hidden Power's type is drawn the same way, and a past choice of it is rendered as the world's typed
+  move. A seen mon's moves that match the truth count modulo the Hidden Power's type.
+- **Genders** (§9): the never-seen mons are placed so the turn-0 gender draws fall on exactly the true team's draw
+  slots; with the engine's pad any of them may sit on a draw slot.
+- **Legality**: a world breaking a gen3ou rule the true team does not break is rejected (`clause`); the never-seen
+  draws and the genders are checked BEFORE the screen (cheap), each seen mon's set after its moves are drawn (a banned
+  set — e.g. a Baton Passer drawn a Salac Berry — is redrawn up to `MOVE_REDRAWS` times), the whole team last.
+
+### 7.3 The SCREEN: honest posterior draws of a seen mon's item, ability and spread (`world_screen`)
+
+- **The honest prior.** Item and ability ∝ the species' Smogon usage. The spread (nature, EVs) ∝ (1 − ε)·J + ε·N·Π M:
+  J the species' chaos spread table (every spread, not the top-25 cut), N its nature marginal, M each stat's EV
+  marginal floored by a uniform over 0, 4, …, 252 (`EPS` 0.25, `FLOOR` 0.15), an EV total over 510 impossible. J alone
+  is a coarse histogram: a pool spread Smogon never lists (a 16-HP-EV / 252-Def Vaporeon) has no consistent J
+  candidate, and an honest player then believes the EVs that fit; the smooth term gives every legal spread mass. The
+  Hidden Power: P(the set holds one) and P(type | one) from the moves prior.
+- **One sampler per (seen mon, constraint)** — the constraint being the facts a lever told, the Hidden Power rule, an
+  exact-HP requirement — serves every world of the decision, and, through `screen_cache`, every spec built at it: arms
+  that differ only in other levers (the move dose, the placebo, the map) take the SAME seen-mon draws (common random
+  numbers for their paired contrasts) and pay the screen once.
+- **The screening world** holds every OTHER opponent mon at its true facts (with each observable event depending on one
+  opponent mon's hidden facts — singles damage, speed order, item and ability triggers — the draw is then from P(facts
+  of mon k | everything observed) and the true background leaks nothing); the combined world must pass the STRICT
+  gate again (the `joint` count is the factorisation's measured residual).
+- **The sampler**: (1) REJECTION — independent prior draws, each replayed; an accepted one is an exact posterior draw.
+  (2) When the prior rarely hits the log, a CHAIN: a search phase climbs `divergence_score` (the number of leading
+  protocol lines that match the truth's, plus a closeness of the first differing HP number) with moves DIRECTED by the
+  first difference (`divergence_hint`: our mon's HP after their hit → their power, Atk / SpA, a Choice Band; their HP
+  after ours → their bulk, HP / Def / SpD; a two-sided order → their Speed, signed by who acted first), restarts after
+  `STALL` flat steps (from the best state shaken, or a fresh prior draw); once the log fits, Metropolis-Hastings on the
+  prior × the gate (symmetric local moves at the prior ratio, independence draws at ratio 1), burnt in and thinned. No
+  step reads the truth. Screening replays are LENIENT (`CHOOSEIF`: a recorded choice the diverged world no longer asks
+  for is skipped, so a wrong candidate still yields the protocol its score reads); the world returned is STRICT.
+  A sampler that never fits the log in `MAX_STEPS` makes the decision unbuildable (a `WorldError`: an EXCLUSION).
+- **Legality inside the screen**: when a seen mon's moves are TOLD (a mass-1 truth lever), a drawn item or ability
+  that breaks a clause with them is refused without a replay; never for drawn moves (it would filter by the truth's
+  unrevealed moves).
+
+### 7.4 Cost and exclusions (measured, §10.3)
+
+On 8 committed-bank decisions × 4 worlds, the box under a live training run (`nice -n 19`, three agent cores), one screen shared by every spec of a decision:
+
+| spec | built | excluded | screening replays | seconds |
+|---|---|---|---|---|
+| `D50` | 8 | 0 | 32 | 4 |
+| `F+M` | 8 | 0 | 1754 | 85 |
+| `W90` | 8 | 0 | 134 | 8 |
+| `off` | 8 | 0 | 3537 | 172 |
+| `oracle` | 8 | 0 | 8 | 5 |
+| `pilot` | 8 | 0 | 63 | 7 |
+
+No decision was excluded.
+
+The honest screen is the cost: a seen mon the prior fits is a few replays; one whose log pins a spread far from Smogon's table (a pool spread, a Choice Band at 0.5 % prior) takes the chain tens of steps × `SEARCH_WIDTH` replays. Specs that share the screen (`D50`, `W90`, …) cost almost nothing more.
+
+### 7.5 The residuals (named)
+
+- **Hidden counters** (`counters`, the builder's declared residual): the world replays the prefix on the TRUE battle
+  seed, so a duration rolled BEFORE the root (sleep, confusion, Encore, a lock) is the truth's in every world (the
+  study's A5 caveat). Hiding it needs a root-state resample in the playout core (not built).
+- **The factorisation** of §7.3: measured by the `joint` rejections, never assumed.
+- **Party-wide effects** (Beat Up's hit sizes read the party's base Attack, never-seen mons included): the log really
+  does constrain the never-seen species there; the joint gate conditions on it by rejection, correct but slow.
+- **A never-seen ratio'd mon on a true draw slot takes the truth's gender coin** (the draw's value, not its count):
+  unobservable before the root and not a fact of the taxonomy.
+- **The honest spread prior is a choice** (`EPS`, `FLOOR`): Smogon-derived (its joint table and marginals) with a
+  uniform floor; it shapes the posterior only where the log leaves the spread loose.
 
 ---
 
@@ -244,23 +330,107 @@ nothing in training reads it.
 
 ---
 
-## 9. THE GENDER PAD (BUILDING)
+## 9. THE GENDER PAD (BUILT: the engine `98146ddb`, the builder's wiring)
 
-The engine draws one gender at team construction for every mon of a gender-ratio species whose packed set names
-none, so a world needs at least as many such never-seen mons as the truth drew (m ≥ r): the gate conditions the
-never-seen species on that count (accepted P(m = r) 0.67 vs the honest 0.57, `design_value_discrimination.md`
-Amendment 8). The fix is a packed-set marker meaning "the gender is named, but consume the draw anyway", so any
-never-seen mon can sit on a true draw slot. The default (marker-free) path stays Showdown's exactly.
+The engine draws one gender at team construction for every mon of a gender-ratio species whose packed set names none,
+so the pre-root dice depend on which never-seen slots draw. The v2 builder placed ratio'd never-seen mons on the true
+draw slots, so a world needed at least as many as the truth drew (m ≥ r) and the gate conditioned the never-seen
+species on that count (accepted P(m = r) 0.67 vs the honest 0.57; `design_value_discrimination.md` Amendment 8). The
+engine's PAD — a packed gender `M*` / `F*` / `N*` keeps the named gender and still spends the one turn-0 draw
+(`utils.team_packing.GENDER_DRAW_PAD`; `designs/rust_sim/module_map.md`, the `team.rs` row; the marker-free path is
+Showdown's exactly, its Rust tests and differential / fuzz rungs green) — lets ANY never-seen mon sit on a true draw
+slot. HEAD's `place_genders` uses it: no world is rejected on its gender count any more, so that conditioning is gone
+by construction (the audit's `genders` check holds every world's draw slots to the truth's). A padded team is a SEARCH
+world only: it never reaches Node's validator or a live server (Showdown would read `M*` as unnamed).
 
 ---
 
-## 10. THE AUDIT SUITE (BUILDING)
+## 10. THE AUDIT SUITE (BUILT: `main.info_audit`)
 
-Against all three consumers: the planted-defect GIGO tests (the study's six plants plus the gender plants); `off`
-byte-identical to production; the presets reproducing X32's `species` / `full` rows byte for byte; honest worlds'
-per-class truth-match rate equal to the honest expectation; the log source agreeing with the Rust reading on every
-decision of real battles. Deterministic (rule 8): fixed seeds and fixed battles, decisions away from their
-thresholds. Cheap checks in the routine gate, the rest in the `slow` tier.
+ONE suite over all three consumers; every check passes or fails DETERMINISTICALLY (fixed committed-bank battles,
+fixed seeds; a statistical bound only where its planted defect sits far beyond it).
+
+### 10.1 The checks
+
+| consumer | check | what it catches | where |
+|---|---|---|---|
+| search | `template_identity` | the choice template rendered against the TRUE team reproduces the true prefix (a rewritten slot one off is invisible to a replay when the choice never executed) | `checks.py` |
+| search | `oracle_identity` | the `oracle` preset builds exactly the true team and prefix | `checks.py` |
+| search | `regate` | every returned world replays STRICTLY to the searched side's byte-equal rows and protocol (+ the seen mons' exact-HP match, descriptive) | `checks.py` |
+| search | `legality` | no world breaks a gen3ou rule the true team does not | `checks.py` |
+| search | `genders` | the never-seen slots that draw (or pad) are exactly the true team's draw slots | `checks.py` |
+| search | `provenance` | every fact is revealed / told / drawn exactly as the spec says (told without a lever, a mass-1 truth lever not the truth, a revealed fact not the truth, a placebo equal to the truth) | `checks.py` |
+| search | `leak:moves:seen:drawn` | a seen mon's DRAWN moves match the truth no more often than their exact conditional-Poisson inclusion predicts (z ≤ 4) | `checks.Leakage` |
+| search | `dose:moves:seen:told` | a TOLD move lever hits the truth exactly as often as its mixture says (\|z\| ≤ 4): the dose is the registered one, neither diluted nor sharpened | `checks.Leakage` |
+| search | `leak:{item,ability}:seen:proposals` | the screen's independent proposals match the truth no more often than the prior's own mass on it (z ≤ 4) | `checks.Leakage` |
+| log source | `log_consistency` | the Python source of what play revealed against the Rust reading the observation encodes, every decision: a fact the source claims that the reading does not show (the builder's leak direction) fails | `checks.py` |
+| injection | reach / pins / placebo / map / item / spread / `off` bit-identity | §8's teeth | `agents/info_levers/inject_integration_test.py` |
+| observation | `off` / `species` / `full` byte-identity, the declared-cell guard, label alignment, the mass Bernoulli | §6 | `rust_env/tests/oracle_reveal_test.rs`, `utils/rust_env/oracle_reveal_integration_test.py` |
+
+**Planted defects (each must flip its check):** a template slot rendered one off (`template_identity`); a seen mon's
+item swapped in a returned world (`regate`); a never-seen mon's gender flipped (`genders`); a world that copies a seen
+mon's true moves but reports a draw (`leak:moves`, z > 6 against an honest z < 2.5); a screen whose item proposals peek
+(`leak:item` proposals; the synthetic unit test, since a prior that already puts most mass on the true item gives the
+real-battle version little power); a source that claims a move play never named (`log_consistency`); an injection one
+move channel off (the reach check); provenance violations of each kind (unit). Plus the hidden-info study's six A1–A3
+plants and its gender plants, which these generalise.
+
+### 10.2 The tiers
+
+- **Routine gate:** the unit checks (`checks_test.py`, `spec_test.py`, `revealed_test.py`, `mixture_test.py`,
+  `worlds_test.py`) and two early-turn decisions under `oracle` / `pilot` / `off` / `F+M` with the teeth
+  (`info_audit_integration_test.py`); the injection's teeth.
+- **Slow tier:** twelve decisions under ten specs (`info_audit_slow_test.py`).
+- **By hand:** `python -m main.info_audit --n N --worlds J --specs … --out report.json` (one JSON report: every
+  verdict, the per-spec cost and exclusions, the per-class truth-match tables).
+
+### 10.3 The read (2026-10-12)
+
+8 committed-bank decisions × 4 worlds, specs `D50`, `F+M`, `W90`, `off`, `oracle`, `pilot`: **every check PASSES**.
+
+| check | verdict | counts |
+|---|---|---|
+| `dose:moves:seen:told[D50]` | PASS | expected 299.16, slots 396, true_hits 290, z -1.12 |
+| `dose:moves:seen:told[F+M]` | PASS | expected 396.0, slots 396, true_hits 396, z 0.0 |
+| `dose:moves:seen:told[W90]` | PASS | expected 25.97, slots 396, true_hits 24, z -0.46 |
+| `dose:moves:seen:told[oracle]` | PASS | expected 396.0, slots 396, true_hits 396, z 0.0 |
+| `genders[D50]` | PASS | mismatches 0, worlds 32 |
+| `genders[F+M]` | PASS | mismatches 0, worlds 32 |
+| `genders[W90]` | PASS | mismatches 0, worlds 32 |
+| `genders[off]` | PASS | mismatches 0, worlds 32 |
+| `genders[oracle]` | PASS | mismatches 0, worlds 32 |
+| `genders[pilot]` | PASS | mismatches 0, worlds 32 |
+| `leak:ability:seen:proposals[D50]` | PASS | expected 162.99, proposals 172, true_hits 164, z 0.34 |
+| `leak:ability:seen:proposals[F+M]` | PASS | expected 159.42, proposals 168, true_hits 159, z -0.15 |
+| `leak:ability:seen:proposals[W90]` | PASS | expected 210.66, proposals 221, true_hits 210, z -0.21 |
+| `leak:ability:seen:proposals[off]` | PASS | expected 162.99, proposals 172, true_hits 164, z 0.34 |
+| `leak:item:seen:proposals[D50]` | PASS | expected 58.5, proposals 82, true_hits 58, z -0.12 |
+| `leak:item:seen:proposals[F+M]` | PASS | expected 60.42, proposals 84, true_hits 59, z -0.35 |
+| `leak:item:seen:proposals[W90]` | PASS | expected 66.04, proposals 99, true_hits 66, z -0.01 |
+| `leak:item:seen:proposals[off]` | PASS | expected 58.5, proposals 82, true_hits 58, z -0.12 |
+| `leak:moves:seen:drawn[off]` | PASS | expected 203.66, slots 396, true_hits 202, z -0.18 |
+| `leak:moves:seen:drawn[pilot]` | PASS | expected 223.04, slots 396, true_hits 218, z -0.55 |
+| `legality[D50]` | PASS | violations 0, worlds 32 |
+| `legality[F+M]` | PASS | violations 0, worlds 32 |
+| `legality[W90]` | PASS | violations 0, worlds 32 |
+| `legality[off]` | PASS | violations 0, worlds 32 |
+| `legality[oracle]` | PASS | violations 0, worlds 32 |
+| `legality[pilot]` | PASS | violations 0, worlds 32 |
+| `log_consistency` | PASS | decisions 98, items_agree 139, items_obs_only 0, items_python_only 0, mons 246, moves_agree 217, moves_obs_only 0, moves_python_only 0 |
+| `oracle_identity` | PASS | mismatches 0, worlds 32 |
+| `provenance[D50]` | PASS | facts 768, violations 0 |
+| `provenance[F+M]` | PASS | facts 768, violations 0 |
+| `provenance[W90]` | PASS | facts 768, violations 0 |
+| `provenance[off]` | PASS | facts 768, violations 0 |
+| `provenance[oracle]` | PASS | facts 768, violations 0 |
+| `provenance[pilot]` | PASS | facts 768, violations 0 |
+| `regate[D50]` | PASS | failures 0, seen_exact_hp_equal 70, seen_mons 124, worlds 32 |
+| `regate[F+M]` | PASS | failures 0, seen_exact_hp_equal 69, seen_mons 124, worlds 32 |
+| `regate[W90]` | PASS | failures 0, seen_exact_hp_equal 70, seen_mons 124, worlds 32 |
+| `regate[off]` | PASS | failures 0, seen_exact_hp_equal 70, seen_mons 124, worlds 32 |
+| `regate[oracle]` | PASS | failures 0, seen_exact_hp_equal 124, seen_mons 124, worlds 32 |
+| `regate[pilot]` | PASS | failures 0, seen_exact_hp_equal 124, seen_mons 124, worlds 32 |
+| `template_identity` | PASS | commands 184, mismatches 0 |
 
 ---
 
@@ -283,7 +453,20 @@ For a decision-level score IMP (the study's: win probability per decision over t
 
 ## 12. Open risks
 
-- The per-mon screen's independence assumption (§7.2) is measured by the audit, not proven.
+- **The screen's factorisation** (§7.3: each seen mon screened with the others at their true facts) is measured by
+  the strict joint gate's rejections, not proven; a party-wide effect (Beat Up) is the known coupling.
+- **The chain is an approximate posterior sampler.** Rejection draws are exact; a chain started by the directed search
+  is Metropolis-Hastings after a short burn-in (`BURN` 6, `THIN` 2): a tightly pinned mon's draws may be correlated
+  across worlds. No step reads the truth; the leak reads (§10) check the proposals and the drawn moves, and a spread
+  that matches the truth EXACTLY stays rare (3.2 % in §10.3).
+- **The proposal check's power** is low where the prior already puts most of its mass on the true item (Leftovers);
+  the moves check is the strong one. Neither replaces the independent re-implementation the study registered (§13.1).
+- **Cost.** The honest screen dominates: ≈ 28 s per decision at 4 worlds on this contended box (§7.4), the hardest
+  decisions minutes. The study's F arm over 600 states × 2 checkpoints is hours of CPU, shared by every arm that keeps
+  the seen mons' item / ability / spread hidden (`screen_cache`). A decision the search cannot fit in `MAX_STEPS` is an
+  EXCLUSION, counted, never a silent leak.
+- **The honest spread prior is a choice** (`EPS`, `FLOOR`, §7.3): Smogon-derived with a uniform floor.
+- **Hidden counters** stay the builder's residual (§7.5) until a root-state resample exists.
 - The observation cannot state an exact HP, a hidden duration, a placebo or a map fact (§3): the knock-in forks'
   wrong-moves arm needs a placebo in the observation, which needs a prior sampler on the Rust side (not built).
 
@@ -294,3 +477,4 @@ For a decision-level score IMP (the study's: win probability per decision over t
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-12 | **This doc CREATED; the SPEC and the LOG SOURCE BUILT** (owner: "a single dried out implementation for giving both search and training additional information … so that we can understand what the ceilings are and what is our constraint and how much value there would be in improving determinization") | One declarative `InfoReveal` (seven classes × seen / unseen parts, a mass and a source per lever; presets for the X32 levels, the oracle, the pilot's builder and every study arm; canonical text + hash; per-consumer support tables that REFUSE what a consumer cannot honour and NAME its residual leaks); one protocol-derived source of what play revealed, conservative by design | three separate mechanisms (the status quo: incomparable, one leaked); a soft "known = p" cell in the observation (an input the network never sees in play; a Bernoulli keeps every row a possible observation); the observation rows as the reveal source (they miss protocol-only reveals: the study's A2) | `design_hidden_info_binding.md` §2.2, §16.4; `design_value_discrimination.md` Amendment 8 |
+| 2026-10-12 | **The SEARCH WORLD BUILDER made HONEST BY DEFAULT, the GENDER PAD wired, the AUDIT SUITE built** | `WorldSampler(reveal=…)`, default `off`: a seen mon's item, ability, spread (its IVs: the Hidden Power type and presence) and so its exact HP are DRAWN and screened against the log by a per-(seen mon, constraint) sampler — prior rejection, then a chain whose search is directed by the first differing line and scored on lenient replays, Metropolis-Hastings once the log fits — shared across a decision's worlds and specs; the pilot's builder is the `pilot` preset; any never-seen mon may sit on a true gender-draw slot (the engine pad); one audit suite (`main.info_audit`) over all three consumers, read on 8 committed-bank decisions × 6 specs: 41 checks PASS (the dose of the told move levers exact), no exclusion, a seen mon's item 1.000 → 0.750, exact spread 1.000 → 0.032, exact HP 124/124 → 70/124 | keeping the pilot's builder as the default (a search not honest by default measures the wrong thing whenever a caller forgets); joint rejection over every seen mon (hopeless: a log pins each attacker's stats to a window); a pure Smogon spread table as the prior (a pool spread outside it has no consistent candidate: the Vaporeon 16 HP / 252 Def case); starting the chain at the truth (a leak until it mixes); filtering a drawn item by the truth's unrevealed moves (a leak) | §7, §9, §10.3; `research_state/measurements/info_levers_2026-10-12/` |

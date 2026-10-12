@@ -1,0 +1,684 @@
+{
+ "checks": {
+  "dose:moves:seen:told[D50]": {
+   "check": "dose:moves:seen:told",
+   "expected": 299.16,
+   "pass": true,
+   "slots": 396,
+   "true_hits": 290,
+   "z": -1.12
+  },
+  "dose:moves:seen:told[F+M]": {
+   "check": "dose:moves:seen:told",
+   "expected": 396.0,
+   "pass": true,
+   "slots": 396,
+   "true_hits": 396,
+   "z": 0.0
+  },
+  "dose:moves:seen:told[W90]": {
+   "check": "dose:moves:seen:told",
+   "expected": 25.97,
+   "pass": true,
+   "slots": 396,
+   "true_hits": 24,
+   "z": -0.46
+  },
+  "dose:moves:seen:told[oracle]": {
+   "check": "dose:moves:seen:told",
+   "expected": 396.0,
+   "pass": true,
+   "slots": 396,
+   "true_hits": 396,
+   "z": 0.0
+  },
+  "genders[D50]": {
+   "check": "genders[D50]",
+   "examples": [],
+   "mismatches": 0,
+   "pass": true,
+   "worlds": 32
+  },
+  "genders[F+M]": {
+   "check": "genders[F+M]",
+   "examples": [],
+   "mismatches": 0,
+   "pass": true,
+   "worlds": 32
+  },
+  "genders[W90]": {
+   "check": "genders[W90]",
+   "examples": [],
+   "mismatches": 0,
+   "pass": true,
+   "worlds": 32
+  },
+  "genders[off]": {
+   "check": "genders[off]",
+   "examples": [],
+   "mismatches": 0,
+   "pass": true,
+   "worlds": 32
+  },
+  "genders[oracle]": {
+   "check": "genders[oracle]",
+   "examples": [],
+   "mismatches": 0,
+   "pass": true,
+   "worlds": 32
+  },
+  "genders[pilot]": {
+   "check": "genders[pilot]",
+   "examples": [],
+   "mismatches": 0,
+   "pass": true,
+   "worlds": 32
+  },
+  "leak:ability:seen:proposals[D50]": {
+   "check": "leak:ability:seen:proposals",
+   "expected": 162.99,
+   "pass": true,
+   "proposals": 172,
+   "true_hits": 164,
+   "z": 0.34
+  },
+  "leak:ability:seen:proposals[F+M]": {
+   "check": "leak:ability:seen:proposals",
+   "expected": 159.42,
+   "pass": true,
+   "proposals": 168,
+   "true_hits": 159,
+   "z": -0.15
+  },
+  "leak:ability:seen:proposals[W90]": {
+   "check": "leak:ability:seen:proposals",
+   "expected": 210.66,
+   "pass": true,
+   "proposals": 221,
+   "true_hits": 210,
+   "z": -0.21
+  },
+  "leak:ability:seen:proposals[off]": {
+   "check": "leak:ability:seen:proposals",
+   "expected": 162.99,
+   "pass": true,
+   "proposals": 172,
+   "true_hits": 164,
+   "z": 0.34
+  },
+  "leak:item:seen:proposals[D50]": {
+   "check": "leak:item:seen:proposals",
+   "expected": 58.5,
+   "pass": true,
+   "proposals": 82,
+   "true_hits": 58,
+   "z": -0.12
+  },
+  "leak:item:seen:proposals[F+M]": {
+   "check": "leak:item:seen:proposals",
+   "expected": 60.42,
+   "pass": true,
+   "proposals": 84,
+   "true_hits": 59,
+   "z": -0.35
+  },
+  "leak:item:seen:proposals[W90]": {
+   "check": "leak:item:seen:proposals",
+   "expected": 66.04,
+   "pass": true,
+   "proposals": 99,
+   "true_hits": 66,
+   "z": -0.01
+  },
+  "leak:item:seen:proposals[off]": {
+   "check": "leak:item:seen:proposals",
+   "expected": 58.5,
+   "pass": true,
+   "proposals": 82,
+   "true_hits": 58,
+   "z": -0.12
+  },
+  "leak:moves:seen:drawn[off]": {
+   "check": "leak:moves:seen:drawn",
+   "expected": 203.66,
+   "pass": true,
+   "slots": 396,
+   "true_hits": 202,
+   "z": -0.18
+  },
+  "leak:moves:seen:drawn[pilot]": {
+   "check": "leak:moves:seen:drawn",
+   "expected": 223.04,
+   "pass": true,
+   "slots": 396,
+   "true_hits": 218,
+   "z": -0.55
+  },
+  "legality[D50]": {
+   "check": "legality[D50]",
+   "examples": [],
+   "pass": true,
+   "violations": 0,
+   "worlds": 32
+  },
+  "legality[F+M]": {
+   "check": "legality[F+M]",
+   "examples": [],
+   "pass": true,
+   "violations": 0,
+   "worlds": 32
+  },
+  "legality[W90]": {
+   "check": "legality[W90]",
+   "examples": [],
+   "pass": true,
+   "violations": 0,
+   "worlds": 32
+  },
+  "legality[off]": {
+   "check": "legality[off]",
+   "examples": [],
+   "pass": true,
+   "violations": 0,
+   "worlds": 32
+  },
+  "legality[oracle]": {
+   "check": "legality[oracle]",
+   "examples": [],
+   "pass": true,
+   "violations": 0,
+   "worlds": 32
+  },
+  "legality[pilot]": {
+   "check": "legality[pilot]",
+   "examples": [],
+   "pass": true,
+   "violations": 0,
+   "worlds": 32
+  },
+  "log_consistency": {
+   "check": "log_consistency",
+   "decisions": 98,
+   "examples": [],
+   "items_agree": 139,
+   "items_obs_only": 0,
+   "items_python_only": 0,
+   "mons": 246,
+   "moves_agree": 217,
+   "moves_obs_only": 0,
+   "moves_python_only": 0,
+   "pass": true
+  },
+  "oracle_identity": {
+   "check": "oracle_identity",
+   "examples": [],
+   "mismatches": 0,
+   "pass": true,
+   "worlds": 32
+  },
+  "provenance[D50]": {
+   "check": "provenance[D50]",
+   "examples": [],
+   "facts": 768,
+   "pass": true,
+   "violations": 0
+  },
+  "provenance[F+M]": {
+   "check": "provenance[F+M]",
+   "examples": [],
+   "facts": 768,
+   "pass": true,
+   "violations": 0
+  },
+  "provenance[W90]": {
+   "check": "provenance[W90]",
+   "examples": [],
+   "facts": 768,
+   "pass": true,
+   "violations": 0
+  },
+  "provenance[off]": {
+   "check": "provenance[off]",
+   "examples": [],
+   "facts": 768,
+   "pass": true,
+   "violations": 0
+  },
+  "provenance[oracle]": {
+   "check": "provenance[oracle]",
+   "examples": [],
+   "facts": 768,
+   "pass": true,
+   "violations": 0
+  },
+  "provenance[pilot]": {
+   "check": "provenance[pilot]",
+   "examples": [],
+   "facts": 768,
+   "pass": true,
+   "violations": 0
+  },
+  "regate[D50]": {
+   "check": "regate[D50]",
+   "examples": [],
+   "failures": 0,
+   "pass": true,
+   "seen_exact_hp_equal": 70,
+   "seen_mons": 124,
+   "worlds": 32
+  },
+  "regate[F+M]": {
+   "check": "regate[F+M]",
+   "examples": [],
+   "failures": 0,
+   "pass": true,
+   "seen_exact_hp_equal": 69,
+   "seen_mons": 124,
+   "worlds": 32
+  },
+  "regate[W90]": {
+   "check": "regate[W90]",
+   "examples": [],
+   "failures": 0,
+   "pass": true,
+   "seen_exact_hp_equal": 70,
+   "seen_mons": 124,
+   "worlds": 32
+  },
+  "regate[off]": {
+   "check": "regate[off]",
+   "examples": [],
+   "failures": 0,
+   "pass": true,
+   "seen_exact_hp_equal": 70,
+   "seen_mons": 124,
+   "worlds": 32
+  },
+  "regate[oracle]": {
+   "check": "regate[oracle]",
+   "examples": [],
+   "failures": 0,
+   "pass": true,
+   "seen_exact_hp_equal": 124,
+   "seen_mons": 124,
+   "worlds": 32
+  },
+  "regate[pilot]": {
+   "check": "regate[pilot]",
+   "examples": [],
+   "failures": 0,
+   "pass": true,
+   "seen_exact_hp_equal": 124,
+   "seen_mons": 124,
+   "worlds": 32
+  },
+  "template_identity": {
+   "check": "template_identity",
+   "commands": 184,
+   "examples": [],
+   "mismatches": 0,
+   "pass": true
+  }
+ },
+ "decisions": 8,
+ "leakage": {
+  "D50": {
+   "samplers": {
+    "chain": 25,
+    "failed": 0,
+    "n": 31
+   },
+   "table": {
+    "seen:ability:drawn": {
+     "n": 96,
+     "truth_match": 1.0
+    },
+    "seen:ability:revealed": {
+     "n": 28,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 48,
+     "truth_match": 0.75
+    },
+    "seen:item:revealed": {
+     "n": 76,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 124,
+     "truth_match": 0.3306
+    },
+    "seen:spread:drawn": {
+     "n": 124,
+     "truth_match": 0.0323
+    },
+    "unseen:ability:drawn": {
+     "n": 68,
+     "truth_match": 0.0882
+    },
+    "unseen:item:drawn": {
+     "n": 68,
+     "truth_match": 0.0441
+    },
+    "unseen:moves:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:species:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:spread:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    }
+   }
+  },
+  "F+M": {
+   "samplers": {
+    "chain": 25,
+    "failed": 0,
+    "n": 31
+   },
+   "table": {
+    "seen:ability:drawn": {
+     "n": 96,
+     "truth_match": 0.9479
+    },
+    "seen:ability:revealed": {
+     "n": 28,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 48,
+     "truth_match": 0.8958
+    },
+    "seen:item:revealed": {
+     "n": 76,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 124,
+     "truth_match": 1.0
+    },
+    "seen:spread:drawn": {
+     "n": 124,
+     "truth_match": 0.0323
+    },
+    "unseen:ability:drawn": {
+     "n": 68,
+     "truth_match": 0.0882
+    },
+    "unseen:item:drawn": {
+     "n": 68,
+     "truth_match": 0.0441
+    },
+    "unseen:moves:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:species:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:spread:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    }
+   }
+  },
+  "W90": {
+   "samplers": {
+    "chain": 25,
+    "failed": 0,
+    "n": 31
+   },
+   "table": {
+    "seen:ability:drawn": {
+     "n": 96,
+     "truth_match": 0.9896
+    },
+    "seen:ability:revealed": {
+     "n": 28,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 48,
+     "truth_match": 0.7917
+    },
+    "seen:item:revealed": {
+     "n": 76,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 124,
+     "truth_match": 0.0
+    },
+    "seen:spread:drawn": {
+     "n": 124,
+     "truth_match": 0.0565
+    },
+    "unseen:ability:drawn": {
+     "n": 68,
+     "truth_match": 0.0882
+    },
+    "unseen:item:drawn": {
+     "n": 68,
+     "truth_match": 0.0441
+    },
+    "unseen:moves:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:species:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:spread:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    }
+   }
+  },
+  "off": {
+   "samplers": {
+    "chain": 25,
+    "failed": 0,
+    "n": 31
+   },
+   "table": {
+    "seen:ability:drawn": {
+     "n": 96,
+     "truth_match": 1.0
+    },
+    "seen:ability:revealed": {
+     "n": 28,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 48,
+     "truth_match": 0.75
+    },
+    "seen:item:revealed": {
+     "n": 76,
+     "truth_match": 1.0
+    },
+    "seen:moves:drawn": {
+     "n": 124,
+     "truth_match": 0.0968
+    },
+    "seen:spread:drawn": {
+     "n": 124,
+     "truth_match": 0.0323
+    },
+    "unseen:ability:drawn": {
+     "n": 68,
+     "truth_match": 0.0882
+    },
+    "unseen:item:drawn": {
+     "n": 68,
+     "truth_match": 0.0441
+    },
+    "unseen:moves:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:species:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:spread:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    }
+   }
+  },
+  "oracle": {
+   "samplers": {
+    "chain": 0,
+    "failed": 0,
+    "n": 31
+   },
+   "table": {
+    "seen:ability:revealed": {
+     "n": 28,
+     "truth_match": 1.0
+    },
+    "seen:ability:told": {
+     "n": 96,
+     "truth_match": 1.0
+    },
+    "seen:item:revealed": {
+     "n": 76,
+     "truth_match": 1.0
+    },
+    "seen:item:told": {
+     "n": 48,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 124,
+     "truth_match": 1.0
+    },
+    "seen:spread:told": {
+     "n": 124,
+     "truth_match": 1.0
+    },
+    "unseen:ability:told": {
+     "n": 68,
+     "truth_match": 1.0
+    },
+    "unseen:item:told": {
+     "n": 68,
+     "truth_match": 1.0
+    },
+    "unseen:moves:told": {
+     "n": 68,
+     "truth_match": 1.0
+    },
+    "unseen:species:told": {
+     "n": 68,
+     "truth_match": 1.0
+    },
+    "unseen:spread:told": {
+     "n": 68,
+     "truth_match": 1.0
+    }
+   }
+  },
+  "pilot": {
+   "samplers": {
+    "chain": 0,
+    "failed": 0,
+    "n": 31
+   },
+   "table": {
+    "seen:ability:revealed": {
+     "n": 28,
+     "truth_match": 1.0
+    },
+    "seen:ability:told": {
+     "n": 96,
+     "truth_match": 1.0
+    },
+    "seen:item:revealed": {
+     "n": 76,
+     "truth_match": 1.0
+    },
+    "seen:item:told": {
+     "n": 48,
+     "truth_match": 1.0
+    },
+    "seen:moves:drawn": {
+     "n": 124,
+     "truth_match": 0.1129
+    },
+    "seen:spread:told": {
+     "n": 124,
+     "truth_match": 1.0
+    },
+    "unseen:ability:drawn": {
+     "n": 68,
+     "truth_match": 0.0882
+    },
+    "unseen:item:drawn": {
+     "n": 68,
+     "truth_match": 0.0441
+    },
+    "unseen:moves:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:species:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    },
+    "unseen:spread:drawn": {
+     "n": 68,
+     "truth_match": 0.0
+    }
+   }
+  }
+ },
+ "pass": true,
+ "specs": {
+  "D50": {
+   "built": 8,
+   "excluded": [],
+   "screens": 32,
+   "seconds": 4.350749731063843
+  },
+  "F+M": {
+   "built": 8,
+   "excluded": [],
+   "screens": 1754,
+   "seconds": 84.64592599868774
+  },
+  "W90": {
+   "built": 8,
+   "excluded": [],
+   "screens": 134,
+   "seconds": 8.343956708908081
+  },
+  "off": {
+   "built": 8,
+   "excluded": [],
+   "screens": 3537,
+   "seconds": 172.4568808078766
+  },
+  "oracle": {
+   "built": 8,
+   "excluded": [],
+   "screens": 8,
+   "seconds": 4.54430627822876
+  },
+  "pilot": {
+   "built": 8,
+   "excluded": [],
+   "screens": 63,
+   "seconds": 6.745187759399414
+  }
+ },
+ "worlds_per_decision": 4
+}
