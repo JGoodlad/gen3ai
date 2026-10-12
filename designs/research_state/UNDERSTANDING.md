@@ -125,6 +125,10 @@ no pointer is not a measurement.
     while the mass on dominated moves falls only ~0.018; worst on switches, almost all at the
     N0 → C_fix step (confounded with +8M steps). It supports X23 and X25.
     [MEASURED · DETECTED · §4.4; ledger 2026-09-29 · *M5 LANE S GATE ④ AT SCALE*]
+19. **The END STATE passed its closing test and is adopted.** Static per-mon tokens + every recovery and
+    fact lever (8 seeds × 15M) vs the legacy production encoder (8 seeds): Δ̂ **+0.60 pp**, 90 % **[−0.72, +1.92]**
+    — not detectably worse AND precise to 2 pp (the owner's rule), not shown better. [PASS · §4.6b; ledger
+    2026-10-12 MEASUREMENT (MAJOR) *THE END-STATE CLOSING TEST: PASS*]
 
 ---
 
@@ -1369,7 +1373,7 @@ The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the 
 
 ### 4.6 The static-token screen, closed at look 3 (2026-10-09)
 
-**Static Pokémon tokens (`--token-encoding static`: a mon's fixed identity as one token, with the battle's dynamic state added to it) are slightly WEAKER than the legacy encoder: inside the 3.5 pp margin, but not provably within it. Per training cycle they are slightly faster.** The screen's final look, eight 15M seeds per arm in a mirrored head-to-head cross of 64 cells × 2,000 games, reads Δ̂ **−2.32 pp** (look 1 at three seeds −1.26; look 2 at five −2.70); 56 of 64 cells sit below 50. Non-inferiority needed t_NI ≥ 1.874; it reads **1.623** (Δ̂ would have had to be ≥ −2.14). The look-3 interval [−3.68, −0.95] straddles −3.5, so the registered outcome is **NOT DETECTED**: `static` is not adopted and legacy stays. Static is also detectably worse than legacy: t_SUP −3.184, with every interval below 0. The worst static seed (s1005, row mean 44.05) carries part of the gap; without it Δ̂ would be −1.80 (descriptive). Per training cycle `static` is about 2.1 % FASTER on quiet cycles (−2.1 to −2.7 % across readings), and the bot panel shows no harm (−0.59 pp). **The owner keeps legacy (no deletion) until a CLOSING test**, now REGISTERED (2026-10-09, before any seed) as the full END STATE (`--arch endstate`: static + the recovery levers + the bundle + the fact-completion levers) against PRODUCTION, 8 seeds per arm, under the owner's rule: PASS iff the 90 % interval includes 0 or lies above it AND its lower end > −2.0 pp; FAIL ⇒ a registered bisection ([`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md); ledger 2026-10-09 REGISTRATION "THE END-STATE CLOSING TEST"). DESCRIPTIVE ONLY: under that rule (90 % interval includes 0 or lies above it, lower end > −2.0) this cross would fail: its 90 % interval is [−3.60, −1.04].
+**Static Pokémon tokens (`--token-encoding static`: a mon's fixed identity as one token, with the battle's dynamic state added to it) are slightly WEAKER than the legacy encoder: inside the 3.5 pp margin, but not provably within it. Per training cycle they are slightly faster.** The screen's final look, eight 15M seeds per arm in a mirrored head-to-head cross of 64 cells × 2,000 games, reads Δ̂ **−2.32 pp** (look 1 at three seeds −1.26; look 2 at five −2.70); 56 of 64 cells sit below 50. Non-inferiority needed t_NI ≥ 1.874; it reads **1.623** (Δ̂ would have had to be ≥ −2.14). The look-3 interval [−3.68, −0.95] straddles −3.5, so the registered outcome is **NOT DETECTED**: `static` is not adopted and legacy stays. Static is also detectably worse than legacy: t_SUP −3.184, with every interval below 0. The worst static seed (s1005, row mean 44.05) carries part of the gap; without it Δ̂ would be −1.80 (descriptive). Per training cycle `static` is about 2.1 % FASTER on quiet cycles (−2.1 to −2.7 % across readings), and the bot panel shows no harm (−0.59 pp). **The owner kept legacy (no deletion) until a CLOSING test** — READ 2026-10-12: **PASS** (§4.6b), so the end state is adopted and legacy goes. The test was REGISTERED (2026-10-09, before any seed) as the full END STATE (`--arch endstate`: static + the recovery levers + the bundle + the fact-completion levers) against PRODUCTION, 8 seeds per arm, under the owner's rule: PASS iff the 90 % interval includes 0 or lies above it AND its lower end > −2.0 pp; FAIL ⇒ a registered bisection ([`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md); ledger 2026-10-09 REGISTRATION "THE END-STATE CLOSING TEST"). DESCRIPTIVE ONLY: under that rule (90 % interval includes 0 or lies above it, lower end > −2.0) this cross would fail: its 90 % interval is [−3.60, −1.04].
 
 [NOT DETECTED (final look; registered non-inferiority not reached, not INFERIOR) · ledger 2026-10-09 READ "STATIC-TOKEN SCREEN LOOK 3" (supersedes the LOOK 1 and LOOK 2 reads); `measurements/static_screen_look3_2026-10-09/`, `measurements/static_screen_look2_2026-10-09/`, `measurements/static_screen_look1_2026-10-08/`]
 
@@ -1380,6 +1384,25 @@ The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the 
 **What the network represents (the probe battery's first read, both arms).** On a fresh 25,000-decision bank from the screen arms' own games, with both sides' true state, a linear read finds five decision-relevant facts poorly represented where decisions are made, in BOTH encodings: the end-of-turn race (each active's net residual HP change, R² 0.18–0.22), the SIZE of a stat boost (Atk / Def / Spe stage R² ≤ 0.10, though "boosted" reads at AUC 0.97 and the policy uses boosts), the opponent's HP at our decision tokens (R² 0.26–0.34 in the policy state), the speed margin (0.41) and Spikes on THEIR side at our move seats (0.35 / 0.25). Static's Spikes and move-seat HP gaps reproduce on current-era games. Phazing: the model knows who can phaze, and USES the boost half of the phazing value (erasing a foe's boosts cuts the phaze mass by 6–9 pp); legacy uses the Spikes half a little and static not at all (+1.6 pp gap), though both critics value their Spikes; a boosted mon does not boost less into a known phazer. The second trunk round changes the action on ~40 % of states (depth saturated); tokens use ~20 effective dimensions of 128 with every head and FFN unit active (width not shown under-used).
 
 [DESCRIPTIVE (seed means over 8 + 7 finals, no registered test; linear decodability is not use) · ledger 2026-10-09 DESCRIPTIVE "THE REPRESENTATION PROBE BATTERY"; `measurements/probe_battery_2026-10-09/`]
+
+### 4.6b The END-STATE closing test: PASS (2026-10-12)
+
+**The full end state is NOT detectably worse than production, and is precise enough to say so: it is adopted.** The
+end state (`--arch endstate`: static per-mon tokens + the static-recovery levers incl. a third trunk round + move
+resolution, speed physics, the principled op reductions, the OBS-FACTS block, no critic threat injection + the
+fact-completion levers + the probe battery's two facts + the four-move closure), 8 seeds × 15M at P_end2 `62085750`,
+against production (legacy encoding), 8 seeds × 15M at `95d014fa`, in the registered 8 × 8 mirrored cross (64 cells ×
+1,000 pairs): Δ̂ **+0.596 pp**, √V̂ 0.749, two-sided 90 % interval **[−0.723, +1.915]**. Both clauses of the owner's
+rule hold (upper end > 0; lower end > −2.0 pp), so the outcome is **PASS**. It is NOT a superiority read (t_SUP 0.80;
+the interval includes 0). The end state's seeds spread more than production's (row means 47.68–52.36, s²_R 2.67 vs
+s²_C 1.82). Bot panel +1.21 pp (no harm). Where the static screen's look 3 left static −2.32 pp behind legacy, the full
+bundle of recovery and fact levers closes that gap to a point estimate of +0.6. Which levers carry the recovery is NOT
+known (no bisection was run; the PASS made it unnecessary). Note that what was TESTED is P_end2's build; HEAD's
+adopted end state differs by changes classified at adoption (ledger, the adoption entry).
+
+[PASS (registered non-detectably-worse rule; NOT superiority) · ledger 2026-10-12 MEASUREMENT (MAJOR) "THE END-STATE
+CLOSING TEST: PASS"; `measurements/endstate_closing_test_2026-10-09/cross/`; design
+[`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) §9]
 
 ### 4.7 Value discrimination for search: DECISIONS, not resolved pairs (2026-10-11)
 

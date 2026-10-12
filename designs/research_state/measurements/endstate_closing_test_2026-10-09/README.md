@@ -175,3 +175,4 @@ request `es_closing_steps`, label `es_closing`, the archive's eval COUNT ledger 
 | `read_cross.py` | `main.h2h.cross.look_cells` + `matrix_from_cells`, then `closing_rule.decide` → `h.json`, `cells.json`, `verdict.json` |
 | `h.json`, `cells.json`, `verdict.json` | the matrix, the per-cell W/L/D / pair counts, the rule's output |
 | `run.log`, `drive.out` | the play's log (family registration, every cell and batch line) and the driver's status lines |
+| `panel_bots.py` → `panel_bots.json` | §3.8's secondary panel (REPORTED, never gated), added 2026-10-12 with the ledger entry: each run's last in-loop eval (8 training bots, random excluded) + sentinel monotonicity; end state 90.83 vs production 89.62 pp (+1.21), no HARM note (threshold −4 pp). `python panel_bots.py` from this folder |

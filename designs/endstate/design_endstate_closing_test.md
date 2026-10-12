@@ -3,13 +3,15 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-09): REGISTERED, before any seed.** §3 is the pre-registration; the ledger entry
-`2026-10-09 · REGISTRATION · THE END-STATE CLOSING TEST` is its record. The PRODUCTION arm may launch at once (its pin is
-fixed below). The END-STATE arm is BLOCKED until §2.3's preconditions hold (the compiled-learner startup gate fails on
-the end-state graph today, §8 F-ES-1). Nothing has been read.
-**Amended before any end-state data (2026-10-10, Decision record):** P_prod re-pinned to `95d014fa`; the end-state
-overlay gains `--effective-stats on --move-target-state on` (v153) and `--move-set-closure on` (v154, the owner's "Do
-A"); **P_end = `b132b099`**; precondition E at P_end is the first end-state seed's own startup gates.
+**Status (2026-10-12): READ — PASS; §6: the END STATE is to be ADOPTED (§9; ledger 2026-10-12 MEASUREMENT (MAJOR) "THE
+END-STATE CLOSING TEST: PASS").** The 8 × 8 cross at P_end2 `62085750`: Δ̂ **+0.596 pp**, √V̂ 0.749, df 14, two-sided
+90 % interval **[−0.723, +1.915]**; upper end > 0 and lower end > −2.0 pp, near_boundary none. §6 applies: the adoption
+is its own unit (what HEAD's `--arch endstate` differs from the TESTED P_end2 build is classified there), and the
+deletion of legacy and the judgments is a later unit by `designs/ops/legacy_deletion_manifest_2026-10-12.md`.
+History of the status: REGISTERED 2026-10-09 before any seed (§3; ledger `2026-10-09 · REGISTRATION · THE END-STATE
+CLOSING TEST`); amended pre-data 2026-10-10 (P_prod re-pinned to `95d014fa`; the overlay gains `--effective-stats on
+--move-target-state on` (v153) and `--move-set-closure on` (v154); P_end `b132b099`); the end-state arm restarted at
+P_end2 = `62085750` on 2026-10-11 (an infrastructure defect, before any end-state data; Decision record).
 
 ## 0. Summary
 
@@ -22,6 +24,7 @@ A"); **P_end = `b132b099`**; precondition E at P_end is the first end-state seed
 | statistic | X5 §7.4's: Δ̂ = mean(h) − 50, V̂ = (s²_R + s²_C)/8 on 14 df; the two-sided 90 % interval Δ̂ ± 1.761 √V̂ |
 | **rule (owner)** | **PASS iff the interval includes 0 or lies above it AND its lower end > −2.0 pp; FAIL otherwise** |
 | on PASS | adopt the end state; delete legacy and the judgments (§6) |
+| **RESULT (2026-10-12)** | **PASS**: Δ̂ +0.596 pp, 90 % [−0.723, +1.915] (§9) |
 | on FAIL | BISECT along the registered ladder (§5) |
 | speed | reported, never decides (the owner's rule has no speed clause) |
 | cost | ≈ 47 GPU-h (§7) |
@@ -343,6 +346,34 @@ Production ≈ 2.6 h per seed (the screen's legacy end-to-end 2.557 h) ⇒ ≈ 2
 - **F-ES-5.** `data/` is frozen for the test's whole window (≈ 2 days of chain + the cross), because pinned children read
   `data/` from MAIN.
 
+## 9. Result (2026-10-12): PASS
+
+The registered cross (§3.1), played 2026-10-12 08:27–09:19 PDT at **P_end2 `62085750`** (tag `closing-test-pend2`)
+from a detached checkout; rows `rb_es_end2_s2001`–`s2008` (`--arch endstate`, trained at `62085750`), columns
+`rb_es_prod_s2001`–`s2008` (`--arch production`, trained at `95d014fa`), each run's 15M `final_model.zip`; 64 / 64
+cells × 1,000 mirrored pairs, 0 aborted. `closing_rule.py decide` (artifacts:
+`research_state/measurements/endstate_closing_test_2026-10-09/cross/`, `verdict.json`):
+
+| quantity | value |
+|---|---|
+| outcome | **PASS** (clause a: upper > 0 TRUE; clause b: lower > −2.0 TRUE; near_boundary none) |
+| Δ̂ = mean(h) − 50 | **+0.596 pp** (0.5960937500000014) |
+| √V̂ (se) / df | 0.749 pp (0.7489845013103577) / 14 |
+| two-sided 90 % interval (t 1.7613) | **[−0.723, +1.915] pp** |
+| s²_R (end-state rows) / s²_C (production columns) | 2.668 / 1.820 |
+| t_SUP | 0.796 (no superiority claim) |
+| row means, end-state seeds 2001–2008 | 50.68 / 52.36 / 48.56 / 51.41 / 50.80 / 51.62 / 47.68 / 51.66 |
+| column means, production seeds 2001–2008 | 50.79 / 51.04 / 50.68 / 49.54 / 48.33 / 52.99 / 50.19 / 51.20 |
+| cells above / below / at 50 | 36 / 27 / 1 |
+| bots panel (§3.8, reported) | end state 90.83 vs production 89.62 pp, **+1.21**; no HARM note (threshold −4 pp) |
+| speed (§3.6, reported) | NOT read with the verdict (FINDING in the ledger entry) |
+
+**What follows (§6).** (1) ADOPT: `--arch production` takes the end state's architecture; what HEAD's end state differs
+from the tested `62085750` build is classified in the adoption's ledger entry (math-equal changes only are allowed;
+a real behaviour change would have stopped the adoption). (2) DELETE legacy and the judgments: a later unit, ordered by
+`designs/ops/legacy_deletion_manifest_2026-10-12.md`. (3) X26 starts from the adopted end state. The bisection (§5) is
+not run.
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
@@ -358,3 +389,4 @@ Production ≈ 2.6 h per seed (the screen's legacy end-to-end 2.557 h) ⇒ ≈ 2
 | 2026-10-10 | **OWNER RULINGS: (1) precondition (D)'s standing interpretation; (2) the v153 levers get their own bisect rung** | Owner, 2026-10-10, "1 yes and 2 put it in". (1) Files that only RECORD or PARSE a new OFF-by-default flag (`model_version/*`, `snapshot.py`, the parser, `flag_registry.py`) do NOT void identity under (D) when (A) graph / state / outputs sha and (B) the K9 golden prove production unchanged; this is the STANDING reading of (D) for this test and future closing tests. Markdown under `src/rust_sim/` is docs, not compiled code, and does not void. (2) `effective_stats` + `move_target_state` become their own rung **B7 (probe-battery facts)**; obs facts move to **B8** (= `--arch endstate`). The search's B6-PASSES branch now tests B7 before attributing to obs facts; at most five arms | leaving the v153 levers in the top rung by default | owner, 2026-10-10 |
 | 2026-10-10 | **OWNER: COARSER bisect ladder — 'do more per rung and we can bisect after' (supersedes the B1–B8 ladder above and the B7 split of `dd841d64`)** | On FAIL, the first-level search uses THREE cumulative rungs: **C1 = `--arch static_recovery`** (encoding + recovery facts + trunk depth; already declared); **C2 = C1 + `move_resolution on` + `move_resolution_facts full` + `status_facts exact` + `speed_physics on` + `value_threat_inject off`** (declared in `arch_arms.py` before its first seed); **C3 = `--arch endstate`** (C2 + `op_reduction principled` + `ko_ramp exact` + `g_ledger eot` + `effective_stats on` + `move_target_state on` + `obs_facts v1` + `drop_progress_clock on` + `move_set_closure on`; the FAILED arm). Search: test **C1** first (FAILS ⇒ group 1; PASSES ⇒ test **C2**: FAILS ⇒ group 2, PASSES ⇒ group 3 by elimination). At most TWO new 8-seed arms. The culprit GROUP is then bisected lever by lever as its own later registration (the B1–B8 groupings above remain the reference for that within-group split). Same rule, same production seeds, §2.3 identity per arm | the finer B1–B8 ladder first (up to five arms before any adoption) | owner, 2026-10-10 |
 | 2026-10-11 | **END-STATE ARM RESTARTED at P_end2 = `62085750` (an infrastructure defect; no end-state data had been banked)** | `rb_es_end_s2001` at `b132b099` crash-LOOPED (3×, 03:27–03:34) at its first non-empty self-play POOL EVAL: `ModelVersionError: intent_move_cell mismatch: saved=True, current=False`. ROOT CAUSE: under `--move-resolution on` the policy RETIRES seven superseded per-action blocks after build (`retire_superseded_action_cells`), while compat sites rebuilt the 'current' version from toggles read off the BUILT modules (`arch_toggles_from_model`) instead of the run's RECORDED version; the same flaw made `main.h2h` at `b132b099` UNABLE to load end-state checkpoints (`CellArchMismatch`), i.e. the cross itself was blocked. Production (no move resolution) never hit it. FIX: every compat / version comparison uses the RECORDED ModelVersion (loading / compat code only). P_end2 = `b132b099` + that fix CHERRY-PICKED (branch `pend-b132b099-recorded-version`, tag `closing-test-pend2`; deliberately NOT main, whose end-state graph moved at `5eef9934`). Verified on P_end2 (CPU): end-state graph / state / outputs `42ee361b11fa5a8d` / `df71da47741a8a0f` / `5adfaa6c40a7a71e` (UNCHANGED from the registration); production `421c6b98ce7937f4` / `749c56159ab028f4` / `51c02c6c6342a045` + the K9 golden (UNCHANGED); `h2h` `declare_engine` succeeds for the end-state × production cross on real checkpoints; the pool-eval repro passes (fails on revert). Diff `b132b099..62085750`: 11 files, loading / compat + tests only (no extractor / policy / obs / Rust / `data/`). The end-state arm reruns as `rb_es_end2_s2001..s2008` (same seeds 2001–2008); `rb_es_end_s2001` is kept as EVIDENCE, not a seed. The production arm (`95d014fa`) stays valid; precondition E = `rb_es_end2_s2001`'s startup gates PLUS its first non-empty pool eval passing; the cross plays at P_end2 | (b) accepting crash-resume (it crash-loops, and the cross could not load) | orchestrator, under the owner's night delegation |
+| 2026-10-12 | **READ: PASS** (the one registered look) | Δ̂ +0.596 pp, √V̂ 0.749, df 14, 90 % [−0.723, +1.915]: upper > 0 and lower > −2.0 pp, near_boundary none ⇒ PASS by the owner's rule; §6 applies: ADOPT the end state (its own unit, with the `62085750..HEAD` diff classified), then delete legacy and the judgments by the 2026-10-12 deletion manifest; no bisection. Bots panel +1.21 pp (no HARM note) | FAIL ⇒ bisect (not taken: the rule passed) | §9; ledger 2026-10-12 MEASUREMENT (MAJOR); `cross/verdict.json` |

@@ -24600,3 +24600,62 @@ belief is barely sharper than Smogon's (51 % / 48 % of the hidden move set vs 45
 are a real lever for search but the network does not hold them; the never-seen mons carry the remaining +0.04–0.05.
 
 Tag: **SIGNIFICANT (R-MOVES, R-MOVES-CEILING, end2 only) · NOT DETECTED (R-HONEST-C both; R-MOVES, R-MOVES-CEILING prod) · CPU · offline · v2 builder** · `measurements/value_disc_pilot_2026-10-11/` README §14
+
+### 2026-10-12 · MEASUREMENT (MAJOR) · **THE END-STATE CLOSING TEST: PASS — `--arch endstate` (P_end2 `62085750`) vs `--arch production` (P_prod `95d014fa`), 8 × 8 mirrored cross, 64 / 64 cells × 1,000 pairs: Δ̂ +0.596 pp, √V̂ 0.749, df 14, two-sided 90 % interval [−0.723, +1.915]; clause a (upper > 0) TRUE, clause b (lower > −2.0) TRUE, near_boundary none ⇒ by the owner's registered rule the END STATE is ADOPTED; bots panel +1.21 pp (no HARM note)**
+
+The ONE registered look of `design_endstate_closing_test.md` §3 (registration: ledger 2026-10-09 REGISTRATION "THE
+END-STATE CLOSING TEST"; amendments 2026-10-10; the end-state arm restarted at P_end2 2026-10-11 for an infrastructure
+defect, before any end-state data). Artifacts: [`measurements/endstate_closing_test_2026-10-09/cross/`](measurements/endstate_closing_test_2026-10-09/cross/)
+(`verdict.json` = `closing_rule.py decide`'s output, verbatim; `h.json`, `cells.json`, `cells_plan.json`, `shas.json`,
+`run.log`, `drive_cross.sh`, `read_cross.py`; `panel_bots.py` → `panel_bots.json`, added with this entry). Played
+2026-10-12 08:27–09:19 PDT at P_end2 `62085750` (tag `closing-test-pend2`) from a detached checkout, both sides greedy,
+schedule seed 0, `--oracle-reveal-mode off`, purpose `ab`, family `es_closing_strength_steps`, request
+`es_closing_steps`; 0 aborted games. Rows = end-state seeds `rb_es_end2_s2001`–`s2008` (trained at `62085750`), columns
+= production seeds `rb_es_prod_s2001`–`s2008` (trained at `95d014fa`), each run's 15M `final_model.zip` (sha256 in
+`shas.json`). The numbers below are the orchestrator-verified `verdict.json`, copied, not re-derived.
+
+**The verdict (verbatim, `verdict.json`).** outcome **PASS**; `clause_a_includes_zero_or_above` true;
+`clause_b_lower_above_minus_2` true; `interval90_pp` [−0.7231002436962337, 1.9152877436962366]; `t_0.95`
+1.761310135774891; `delta_hat_pp` 0.5960937500000014; `se_pp` 0.7489845013103577; `df` 14; `s2_rows`
+2.6678201729910684; `s2_cols` 1.8200020926339333; `v_hat` 0.5609777832031252; `t_sup` 0.7958692722708254;
+`near_boundary` []; `ci95_pp` [−1.0103182378672086, 2.2025057378672113]; `n_cells_read` 64.
+
+**The matrix** h_ij (end-state row vs production column, pp; a draw ½):
+- s2001: 49.68 / 51.75 / 51.00 / 49.68 / 48.50 / 54.50 / 50.00 / 50.35
+- s2002: 52.45 / 52.52 / 51.38 / 52.33 / 49.88 / 54.97 / 52.62 / 52.75
+- s2003: 49.88 / 48.27 / 48.75 / 47.88 / 45.65 / 51.78 / 47.93 / 48.35
+- s2004: 52.30 / 52.55 / 50.62 / 50.95 / 49.02 / 52.50 / 49.80 / 53.52
+- s2005: 51.78 / 51.35 / 51.70 / 49.60 / 48.62 / 52.30 / 49.93 / 51.10
+- s2006: 51.23 / 51.92 / 52.50 / 50.52 / 49.00 / 53.75 / 52.68 / 51.38
+- s2007: 47.38 / 47.75 / 47.25 / 47.85 / 46.38 / 49.35 / 46.42 / 49.05
+- s2008: 51.68 / 52.20 / 52.28 / 47.50 / 49.60 / 54.75 / 52.18 / 53.10
+
+**Row means (end-state seeds 2001–2008, `row_means_pp`):** 50.68125 / 52.3625 / 48.559375 / 51.409375 / 50.796875 /
+51.621875 / 47.678125 / 51.659375. **Column means (production seeds 2001–2008, `col_means_pp`):** 50.79375 / 51.040625
+/ 50.684375 / 49.5375 / 48.33125 / 52.9875 / 50.19375 / 51.2. 36 of 64 cells above 50, 27 below, 1 at exactly 50.
+
+**Rule.** PASS iff upper end Δ̂ + 1.7613 √V̂ > 0 AND lower end Δ̂ − 1.7613 √V̂ > −2.0 pp (rule 8: an end within 1e-9 of
+its threshold fails its clause). Upper +1.915 > 0; lower −0.723 > −2.0; neither within 1e-9. **PASS.** §6 follows:
+adopt the end state (a separate unit, its own entry), then delete legacy and the judgments (a later unit, by the
+deletion manifest).
+
+**Secondary (REPORTED, never gated; §3.8).** Bots panel (`cross/panel_bots.py`, each run's last in-loop eval at ≈ 14.0M,
+the 8 training bots, random excluded): end state **90.83** vs production **89.62** pp, **+1.21 pp**; the §3.8 HARM note
+(end state below production by > 4 pp) does NOT fire. Sentinel monotonicity (Kendall τ newest → oldest, mean over 8):
+end state 0.800, production 0.925 (descriptive).
+
+**FINDINGS (standing rule 7).**
+1. **A PASS is NOT-WORSE, not BETTER.** The 90 % interval includes 0 (t_SUP 0.796); the point estimate favours the end
+   state by 0.6 pp. No superiority claim is made.
+2. **What was TESTED is P_end2's `--arch endstate`, not HEAD's.** HEAD's end state differs at least by the closed-form
+   exact KO (`5eef9934`, math-equal; its CPU graph sha moved). The adoption unit classifies the `62085750..HEAD`
+   diff and adopts HEAD's end state with that diff recorded; a REAL behaviour change found there stops the adoption.
+3. **Speed (§3.6) was NOT read in this entry** (the registered in-arm s by `speed_read.py` needs the arms' CPU-sampler
+   files; reported, never decides). The T25 windows measured the end-state update at ≈ 53 s fp32 (ledger 2026-10-10
+   "T25 WINDOW E"); production's at P_prod is not re-read here.
+4. **The seeds' deviations (§3.7 / §3.8 `deviations.py`) were not re-read here**; `plan_cross.py` checked §2.4's
+   preconditions (one `pin_history` entry at the arm's pin, ≥ 15M, equal `init_num_threads`) before any play.
+5. **Seed spread:** end-state row means span 47.68 (s2007) to 52.36 (s2002), s²_R 2.67 vs production's s²_C 1.82;
+   the end state's run-to-run spread is the larger, as the screen's was.
+
+Tag: **MEASUREMENT (MAJOR) · CLOSING TEST · PASS (Δ̂ +0.60, 90 % [−0.72, +1.92]; upper > 0, lower > −2.0) · END STATE ADOPTED by the registered rule · bots +1.21, no HARM · speed not read** · design: [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) · [`endstate_closing_test_2026-10-09/cross/`](measurements/endstate_closing_test_2026-10-09/cross/)

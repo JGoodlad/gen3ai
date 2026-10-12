@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,603-line file. **The ledger itself is append-only and is never edited by this**;
+24,662-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**857 headings · 802 dated · 2026-08-01 → 2026-10-12 · ledger 24,603 lines.**
+**858 headings · 803 dated · 2026-08-01 → 2026-10-12 · ledger 24,662 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -877,3 +877,4 @@ rename.
   - `L24552` · `2026-10-11` · STATUS · **VALUE-DISCRIMINATION PILOT: every HONEST-world read is PROVISIONAL (builder-defective) — the fair-world builder FAILED the hidden-info study's registered R-GIGO audit; Phase 3's R-QHEAD-CRITIC (BEHIND, −0.018) is PROVISIONAL; Phase 2c is not read and runs only on the FIXED builder; Phase 1 (oracle) and R-QHEAD (no world) stand**
   - `L24564` · `2026-10-11` · REGISTRATION + AUDIT · **THE FIXED FAIR-WORLD BUILDER (v2): R-GIGO re-read on its worlds = PASS (0 protocol-inconsistent worlds, was 469 / 312; 0 clause-illegal teams, was ≈ 2.5 %; teeth 6 / 6 + gender plants 20 / 20); the construction-draw gender leak REDUCED, not removed (accepted P(m = r) 0.67 / 0.64 vs the proposal's 0.57; v1 0.98 / 0.97); every honest arm (A′ Smogon, B′ belief species, C′ network move belief, CT′ true seen moves) re-run on it, registered before any v2 playout (Amendment 8)**
   - `L24578` · `2026-10-12` · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 2c + the v2 RE-READ (the FIXED world builder): worlds drawn from the network's OWN move belief help honest rollouts by at most 1–2 points (LEAF-K8 end2 +0.018, prod +0.009; R-MOVES HELPS on end2 +0.017 [+0.001, +0.031], NOT DETECTED on prod) and still do not beat the critic (R-HONEST-C NOT DETECTED, both); the seen mons' TRUE moves would close ½ / ⅕ of the oracle gap (R-MOVES-CEILING HELPS on end2 +0.024); every v1 honest verdict and Phase 3's R-QHEAD-CRITIC (BEHIND) hold on v2**
+  - `L24604` · `2026-10-12` · MEASUREMENT (MAJOR) · **THE END-STATE CLOSING TEST: PASS — `--arch endstate` (P_end2 `62085750`) vs `--arch production` (P_prod `95d014fa`), 8 × 8 mirrored cross, 64 / 64 cells × 1,000 pairs: Δ̂ +0.596 pp, √V̂ 0.749, df 14, two-sided 90 % interval [−0.723, +1.915]; clause a (upper > 0) TRUE, clause b (lower > −2.0) TRUE, near_boundary none ⇒ by the owner's registered rule the END STATE is ADOPTED; bots panel +1.21 pp (no HARM note)**
