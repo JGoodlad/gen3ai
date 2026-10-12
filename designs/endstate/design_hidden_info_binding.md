@@ -996,7 +996,7 @@ gender plants 20 / 20. v2 also fixes a defect these audits did not name: a past 
 to the mon that made it (v1 kept a choice by name when another mon had the move seen, so worlds whose actual chooser
 lacked it were refused). The gender leak is REDUCED, not removed: a world still needs at least as many gender-ratio
 never-seen mons as the true draws (accepted P(m = r) 0.67 / 0.64 vs the proposal's conditional 0.57; v1 0.98 / 0.97);
-only an engine-side draw pad removes it. Detail: `measurements/value_disc_pilot_2026-10-11/README.md` §13. The v2
+only an engine-side draw pad removes it (its ENGINE half is built 2026-10-12, packed gender `M*` / `F*` / `N*`; the builder's wiring is pending — `design_value_discrimination.md` §7.10 Amendment 8 item 1(d)). Detail: `measurements/value_disc_pilot_2026-10-11/README.md` §13. The v2
 worlds of every honest arm are `~/gen3ai_archive/value_disc_pilot/<cp>/det2*`. **2026-10-12: every arm is PLAYED on
 v2** (rows `det2*/rows_*.jsonl`; the pilot's Phase 2 base P re-built and re-played is `det2`, Amendment 1 (b)): the
 pilot's honest verdicts hold (G on v2 = oracle − A′ LEAF-K8 +0.070 / +0.065, was +0.072 / +0.067), and Phase 2c's

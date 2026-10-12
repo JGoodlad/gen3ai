@@ -154,6 +154,10 @@ the snapshot API contract and every gate: [`search_and_replay_drivers.md`](../..
   default is customgame.
 - 🚨 **Do NOT feed `search::volatile_names` to the obs layer** — it includes conditions the sim never
   announces. The one-sided `view.rs` projection is DELETED ([`one_sided_view.md`](../../designs/rust_sim/one_sided_view.md)).
+- 🚨 **The gender DRAW PAD (`M*` / `F*` / `N*` in the packed gender field) is OURS, offline only** — the search
+  world builder's: the named gender is kept and the turn-0 window still spends one gender draw on the mon. Showdown
+  reads `M*` as unnamed, so a padded team never goes to Node or a live server; no marker = Showdown's path exactly
+  (`module_map.md`, the `team.rs` row; `tests/gender_draw_pad_test.rs`).
 - `expand_many`'s optional `side` elides the half a search does not read (`gen3_expand_many_side_elision_v1`);
   Python's elided slot is a sentinel that RAISES on read, never an empty dict.
 - The node-vs-rust differentials `harness/search_impl_parity.py` / `replay_impl_parity.py` are DELETED

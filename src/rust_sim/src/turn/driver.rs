@@ -688,9 +688,27 @@ impl crate::state::BattleState {
     /// already specified the gender is untouched (no draw). This both advances the PRNG
     /// exactly as the sim does AND fills the gender the `|switch|` details render
     /// (`, M`/`, F`; a genderless `'N'` shows no suffix, like the sim's `'N' → ''`).
+    ///
+    /// The DRAW PAD (our extension, [`crate::team::GENDER_DRAW_PAD`], packed `M*`/`F*`/`N*`
+    /// — the offline search world builder's only): a mon whose set carries
+    /// `gender_draw_pad` consumes EXACTLY ONE `sample(['M','F'])` at its place in this order
+    /// and discards it, keeping its NAMED gender — whatever its species' gender class. So a
+    /// world may put any species on a true draw slot and the PRNG advances exactly as the
+    /// truth's. No marker ⇒ this loop is Showdown's, unchanged.
     fn draw_turn0_genders(&mut self, dex: &Dex) {
         for side in 0..self.sides.len() {
             for slot in 0..self.sides[side].pokemon.len() {
+                if self.sides[side].pokemon[slot].set.gender_draw_pad {
+                    let drawn = *self.prng.sample(&['M', 'F']); // the pad: one draw, always
+                    let mon = &mut self.sides[side].pokemon[slot];
+                    if mon.gender.is_none() {
+                        // Unreachable from `team::unpack` (the marker needs a named gender);
+                        // a hand-built set resolves as an unmarked one would, the draw spent.
+                        let fixed = dex.species(&mon.species_id).and_then(|s| s.gender);
+                        mon.gender = Some(fixed.unwrap_or(drawn));
+                    }
+                    continue;
+                }
                 if self.sides[side].pokemon[slot].gender.is_some() {
                     continue; // the packed set specified it — no draw
                 }

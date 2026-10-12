@@ -50,8 +50,26 @@
 //!   to its default instead of round-tripping. In-range values are byte-exact.
 //! - `gender` keeps only the first character (`'M'`/`'F'`/`'N'`); a multi-char
 //!   gender field would not round-trip. Real packed strings carry one char.
+//!
+//! ## The gender DRAW PAD (our extension — offline search worlds only)
+//!
+//! A gender field of a NAMED gender followed by [`GENDER_DRAW_PAD`] (`M*`, `F*`,
+//! `N*`) decodes to that gender plus [`PokemonSet::gender_draw_pad`] = `true`: the
+//! turn-0 construction window ([`crate::state::BattleState::run_turn0_construction`])
+//! then consumes ONE `sample(['M','F'])` for the mon at its place in the draw order
+//! and DISCARDS it, keeping the named gender. Its one consumer is the search world
+//! builder (`main.value_search.worlds`), which re-draws the opponent's never-seen
+//! mons and must keep the pre-root dice on exactly the true team's draw slots
+//! whatever species it drew. Showdown has no such marker (its `genders[set.gender]`
+//! lookup would read `M*` as unnamed), so a marked team is never fed to Node; with
+//! NO marker every path is byte-for-byte Showdown's. Any other field ending in `*`
+//! is refused.
 
 use crate::dex::{to_id, Dex};
+
+/// The packed gender field's DRAW-PAD marker (`M*` / `F*` / `N*`): the named gender is kept,
+/// and the turn-0 construction window still consumes (and discards) one gender draw for the mon.
+pub const GENDER_DRAW_PAD: char = '*';
 
 /// Per-stat order used throughout the packed format: HP, Atk, Def, SpA, SpD, Spe.
 pub const STAT_ORDER: [&str; 6] = ["hp", "atk", "def", "spa", "spd", "spe"];
@@ -84,6 +102,10 @@ pub struct PokemonSet {
     pub ivs: [u8; 6],
     /// Gender override (`'M'`/`'F'`/`'N'`), or `None` for species default.
     pub gender: Option<char>,
+    /// The gender DRAW PAD (packed `<g>*`, [`GENDER_DRAW_PAD`]): the gender is NAMED
+    /// (`gender` is `Some`), yet the turn-0 construction window consumes one
+    /// `sample(['M','F'])` for this mon and discards it. `false` on every Showdown team.
+    pub gender_draw_pad: bool,
     /// Shiny flag.
     pub shiny: bool,
     /// Level; defaults to 100.
@@ -107,6 +129,7 @@ impl Default for PokemonSet {
             evs: [0; 6],
             ivs: [31; 6],
             gender: None,
+            gender_draw_pad: false,
             shiny: false,
             level: 100,
             happiness: 255,
@@ -276,8 +299,22 @@ fn build_set(fields: &[&str], dex: &Dex) -> Result<PokemonSet, String> {
         }
     }
 
-    // 8. gender — verbatim first char if non-empty, else species default.
-    set.gender = fields[7].chars().next();
+    // 8. gender — verbatim first char if non-empty, else species default. A NAMED gender
+    //    followed by the draw-pad marker (`M*`/`F*`/`N*`) also sets `gender_draw_pad`;
+    //    any other field ending in the marker is malformed and refused.
+    match fields[7].strip_suffix(GENDER_DRAW_PAD) {
+        Some(named @ ("M" | "F" | "N")) => {
+            set.gender = named.chars().next();
+            set.gender_draw_pad = true;
+        }
+        Some(_) => {
+            return Err(format!(
+                "packed gender {:?}: the draw-pad marker `{GENDER_DRAW_PAD}` must follow exactly one of M / F / N",
+                fields[7]
+            ))
+        }
+        None => set.gender = fields[7].chars().next(),
+    }
 
     // 9. ivs — present field → per-slot. Showdown: `ivs[k] === '' ? 31 : Number(ivs[k])||0`.
     //    A LITERAL empty slot ('') → 31; a slot BEYOND a short field (undefined) → 0.
@@ -405,9 +442,12 @@ fn pack_set(buf: &mut String, set: &PokemonSet) {
     }
     buf.push('|');
 
-    // 8. gender — raw char else empty.
+    // 8. gender — raw char else empty; the draw-pad marker after a named gender.
     if let Some(g) = set.gender {
         buf.push(g);
+        if set.gender_draw_pad {
+            buf.push(GENDER_DRAW_PAD);
+        }
     }
     buf.push('|');
 

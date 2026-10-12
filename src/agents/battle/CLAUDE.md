@@ -37,6 +37,9 @@ What this package holds now:
   and every decision's tokens are its legal actions, the information boundary holds on the native record, and the
   golden RECORDS (`rust_core_parity_fixtures/records`) read, re-write byte-identically and re-parse. Contract:
   [`designs/rust_sim/core_events.md`](../../../designs/rust_sim/core_events.md).
+  `gender_draw_pad_core_test.py` (`sim`) holds the gender DRAW PAD (`<g>*`, the search world builder's marker) end
+  to end: a padded never-seen slot leaves the OTHER side's bytes and rows identical to the truth's on a Lane S bank
+  battle (`designs/rust_sim/module_map.md`, the `team.rs` row).
   `core_present_golden_test.py` freezes the core's whole `present()` answer on the 44 constructed scenarios the deleted
   present-parity tests used (recorded where core and poke-env still agreed).
 - **`faint_causes.py` — the faint-cause vocabulary.** `FAINT_CAUSE_VOCAB` / `FAINT_CAUSE_DIM` (8, the ARCHIVE
@@ -48,4 +51,5 @@ What this package holds now:
 `battle_event.py` to mirror any more — edit `schema.rs` (and `reading.rs`) directly; the cargo tests
 (`tests/core_events_test.rs`, `tracker_semantics_test.rs`, `window_record_test.rs`) are its gates.
 
-**Verification:** `live_view_test.py` (shape), `core_obs_test.py`, `core_corpus_test.py`, `core_present_golden_test.py`.
+**Verification:** `live_view_test.py` (shape), `core_obs_test.py`, `core_corpus_test.py`, `core_present_golden_test.py`,
+`gender_draw_pad_core_test.py`.

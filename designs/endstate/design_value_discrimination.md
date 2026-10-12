@@ -703,7 +703,7 @@ measurement README §13.
      engine's prior; the pre-root dice and every seen mon's gender are then the truth's whatever species were drawn.
      **Residual (named):** a world needs at least as many gender-ratio never-seen mons as the truth drew (m ≥ r); a
      world with fewer is rejected (`gender_count`). Removing it needs an engine-side draw pad (a construction draw for
-     a mon whose gender is named), a Rust change not made here. Measured by `gender_leak_read.py`;
+     a mon whose gender is named), a Rust change not made here. Measured by `gender_leak_read.py`. **UPDATE 2026-10-12: the ENGINE half of the pad is BUILT** (packed gender `M*` / `F*` / `N*`, `utils.team_packing.GENDER_DRAW_PAD`: the named gender is kept and the turn-0 window spends one gender draw on the mon; `designs/rust_sim/module_map.md`, the `team.rs` row); wiring it into `place_genders` (and re-reading the leak) is the builder owner's, NOT done by that change;
    - (e) a world whose team breaks a gen3ou rule (`agents.gen3_data.team_legality`) the true team does not break is
      rejected; (f) a never-seen slot that cannot be sampled fails the try instead of keeping its TRUE set.
 2. **The acceptance gate (before any v2 outcome is read):** the hidden-info study's audits re-run on the v2 worlds

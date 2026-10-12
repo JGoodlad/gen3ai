@@ -17,7 +17,12 @@ from typing import List, Optional
 
 from utils.showdown_id import to_id_str
 
-__all__ = ["STATS_TO_IDX", "TeambuilderPokemon", "Teambuilder", "ConstantTeambuilder"]
+__all__ = ["GENDER_DRAW_PAD", "STATS_TO_IDX", "TeambuilderPokemon", "Teambuilder", "ConstantTeambuilder"]
+
+#: The packed gender field's DRAW-PAD marker, after a named gender (``M*`` / ``F*`` / ``N*``): the engine keeps the
+#: named gender yet consumes (and discards) one turn-0 gender draw for the mon. Ours, not Showdown's: offline search
+#: worlds only (``team::GENDER_DRAW_PAD`` in ``src/rust_sim``; ``designs/rust_sim/module_map.md``, the ``team.rs`` row).
+GENDER_DRAW_PAD = "*"
 
 STATS_TO_IDX = {
     "hp": 0,
