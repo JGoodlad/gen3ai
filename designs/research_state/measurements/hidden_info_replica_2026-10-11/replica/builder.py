@@ -349,8 +349,12 @@ def _seen_base(prep: Prep, m: V.SeenMon) -> S.MonSet:
 
 
 def seen_moves(prep: Prep, m: V.SeenMon, slot: int, arm: str, rng: np.random.Generator,
-               hp_t: Optional[str]) -> List[str]:
-    """Slot-aligned moves of a seen mon: revealed moves in their true slots, the rest drawn (M sampled) or true."""
+               hp_t: Optional[str], hp_screened: bool = False) -> List[str]:
+    """Slot-aligned moves of a seen mon: revealed moves in their true slots, the rest drawn (M sampled) or true.
+
+    ``hp_screened`` (F): a mon with NO revealed Hidden Power has its unrevealed Hidden Power decided by the screen
+    (``hp_t``: the type, or None for none), because a Hidden Power sets IVs and the gate sees the stats: the draw
+    then places that Hidden Power among the unrevealed moves (or excludes one) and draws the rest."""
     truth = prep.true_opp[slot]
     if arm in ("F+M", "O", "ID"):
         return list(truth.moves)
@@ -368,9 +372,14 @@ def seen_moves(prep: Prep, m: V.SeenMon, slot: int, arm: str, rng: np.random.Gen
             if free:
                 out[free[0]] = real
     have_hp = any(x is not None and S.is_hp(x) for x in out)
+    if hp_screened and not have_hp and hp_t is not None:
+        free = [i for i in range(nslots) if out[i] is None]
+        if free:
+            out[free[0]] = "hiddenpower" + hp_t
+            have_hp = True
     k_draw = sum(1 for x in out if x is None)
     revealed_ids = [x for x in out if x is not None] + (["hiddenpower"] if have_hp else [])
-    drawn = S.draw_moves(m.species, revealed_ids, k_draw, rng, allow_hp=not have_hp)
+    drawn = S.draw_moves(m.species, revealed_ids, k_draw, rng, allow_hp=not have_hp and not hp_screened)
     it = iter(drawn)
     filled = [x if x is not None else next(it, None) for x in out]
     return [x for x in filled if x is not None]
@@ -470,7 +479,8 @@ def assemble(prep: Prep, arm: str, rng: np.random.Generator, seen_draws: Optiona
             base.origin = {"M": "drawn", "I": "true", "A": "true", "S": "true"}
         else:                                            # F, F+M
             sd = seen_draws[name]
-            mv = fixed_moves[name] if fixed_moves else seen_moves(prep, m, slot, arm, rng, sd.hp_t)
+            mv = fixed_moves[name] if fixed_moves else seen_moves(prep, m, slot, arm, rng, sd.hp_t,
+                                                                  hp_screened=(arm == "F"))
             base.moves = mv
             base.item, base.ability, base.nature, base.evs = sd.item, sd.ability, sd.nature, sd.evs
             whp = next((S.hp_type(x) for x in mv if S.is_hp(x)), None)

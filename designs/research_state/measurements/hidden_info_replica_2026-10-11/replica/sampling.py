@@ -165,7 +165,7 @@ _CP_CACHE: Dict[tuple, np.ndarray] = {}
 
 
 def weighted_pick(p: Dict[str, float], rng: np.random.Generator) -> str:
-    names = sorted(p)
+    names = sorted(p, key=lambda x: (x is None, str(x)))
     w = np.array([p[n] for n in names], dtype=float)
     return names[int(rng.choice(len(names), p=w / w.sum()))]
 
