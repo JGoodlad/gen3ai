@@ -49,7 +49,8 @@ def build(prep: B.Prep, arm: str) -> dict:
     if arm in B.SCREENED:
         from . import screen as SC
         scr = SC.screen(prep, arm)
-        rec["screen"] = {k: v for k, v in scr.items() if k not in ("pools", "context", "fixed_moves", "u_world")}
+        rec["screen"] = {k: v for k, v in scr.items()
+                         if k not in ("pools", "context", "fixed_moves", "u_world", "pool_hp_raw")}
         if scr.get("empty_pool"):
             rec.update({"ok": False, "reason": "empty_pool", "cpu_s": time.process_time() - t0})
             return rec
