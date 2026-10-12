@@ -24574,3 +24574,29 @@ sampled-part ban / clause violations (learnability uncheckable, as in v1). Rules
 re-read on A′ / B′ / C′ / CT′ with its own thresholds; prediction: each within ±0.01 of v1.
 
 Tag: **REGISTRATION · AUDIT PASS (R-GIGO v2) · residual gender conditioning named · no v2 outcome read**
+
+### 2026-10-12 · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 2c + the v2 RE-READ (the FIXED world builder): worlds drawn from the network's OWN move belief help honest rollouts by at most 1–2 points (LEAF-K8 end2 +0.018, prod +0.009; R-MOVES HELPS on end2 +0.017 [+0.001, +0.031], NOT DETECTED on prod) and still do not beat the critic (R-HONEST-C NOT DETECTED, both); the seen mons' TRUE moves would close ½ / ⅕ of the oracle gap (R-MOVES-CEILING HELPS on end2 +0.024); every v1 honest verdict and Phase 3's R-QHEAD-CRITIC (BEHIND) hold on v2**
+
+Registered by `design_value_discrimination.md` §7.10 Amendments 6 and 8; R-GIGO on the v2 worlds PASSED first
+(ledger 2026-10-11 "THE FIXED FAIR-WORLD BUILDER"). 8 v2 worlds per state, Phase 1's dice seeds and TRUE-world
+referee; common states end2 591 / prod 595.
+
+| LEAF-K8 IMP, end2 / prod | value |
+|---|---|
+| A′ Smogon / B′ network species / C′ species + MOVE belief / CT′ + seen mons' TRUE sets / oracle | +0.011 / +0.001 / **+0.018** / **+0.042** / +0.081 (end2); +0.007 / +0.005 / +0.009 / **+0.018** / +0.071 (prod) |
+| R-MOVES (C′ − B′) | +0.017 [+0.001, +0.031] HELPS / +0.004 [−0.009, +0.016] NOT DETECTED |
+| R-HONEST-C (C′ LEAF-K8 − C′ CRITIC) | +0.002 / +0.005, NOT DETECTED |
+| R-MOVES-CEILING (CT′ − C′) | +0.024 [+0.011, +0.039] HELPS / +0.010 [−0.003, +0.023] NOT DETECTED |
+| closed share of oracle − B′, C′ / CT′ | 0.21 / 0.51 (end2); 0.06 / 0.20 (prod) |
+| R-HONEST / R-INFO on A′ (v1) | −0.003 (−0.006) / +0.070 (+0.072) end2; +0.001 (+0.002) / +0.065 (+0.067) prod: same verdicts |
+| R-HONEST-B / R-BELIEF on B′ | NOT DETECTED / NOT DETECTED, both seeds (v1 the same) |
+| R-QHEAD-CRITIC (QHEAD − A′ CRITIC, end2) | −0.018 [−0.032, −0.004] BEHIND (v1 −0.018) |
+
+Descriptive: CT′ beats its own critic on end2 (+0.025 [+0.009, +0.040]); the v1 builder's 2c rows (end2, read after
+v2) give R-MOVES +0.004 [−0.010, +0.020], so the end2 HELPS is builder-sensitive. Predictions: R-MOVES NOT DETECTED
+right on prod, wrong on end2; R-HONEST-C right; R-MOVES-CEILING +0.01–0.03 right on end2; "v2 within ±0.01 of v1"
+right except R-HONEST-B / R-BELIEF on end2 (moves of 0.009 / 0.011, verdicts unchanged). Reading: the network's move
+belief is barely sharper than Smogon's (51 % / 48 % of the hidden move set vs 45 %); the moves of the revealed mons
+are a real lever for search but the network does not hold them; the never-seen mons carry the remaining +0.04–0.05.
+
+Tag: **SIGNIFICANT (R-MOVES, R-MOVES-CEILING, end2 only) · NOT DETECTED (R-HONEST-C both; R-MOVES, R-MOVES-CEILING prod) · CPU · offline · v2 builder** · `measurements/value_disc_pilot_2026-10-11/` README §14

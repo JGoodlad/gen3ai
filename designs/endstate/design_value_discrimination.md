@@ -7,7 +7,11 @@ doc updates it in the same commit, and the Decision record at the end says what 
 request; §12 lists every change and what remains disputed). **The pilot RAN and is READ (§7.11–§7.12): in the ORACLE
 world an 8-rollout leaf beats the policy's pick by +7–8 points per decision (R-LEAF LEAF-AHEAD, both closing-test
 seeds 2001); in HONEST (determinized) worlds that gain is gone (R-HONEST NOT DETECTED, R-INFO INFO-COSTS): it was
-hidden information about the opponent's team (moves AND the never-seen Pokémon; apportioned by `design_hidden_info_binding.md`). The bootstrap design is §13 (an in-loop search factory, decision
+hidden information about the opponent's team (moves AND the never-seen Pokémon; apportioned by `design_hidden_info_binding.md`).
+**2026-10-12: every honest read re-done on the FIXED world builder (v2, after the hidden-info study's R-GIGO FAIL;
+Amendment 8, §7.14) with the same verdicts; Phase 2c (worlds from the network's own MOVE belief) closes ~⅕ (end2) /
+~1⁄20 (prod) of the oracle gap and honest search still does not beat the critic; Phase 3 (an offline per-action value
+head on oracle labels) is null (§7.13).** The bootstrap design is §13 (an in-loop search factory, decision
 brief at its top), the alternatives and the theoretical best §14** (`research_state/measurements/value_disc_pilot_2026-10-11/`;
 the reusable search module `src/main/value_search/`). The only numbers measured under this doc
 are the review's POST-HOC reads of BANKED rows (`research_state/measurements/value_disc_review_2026-10-11/`, §12.2):
@@ -23,7 +27,7 @@ playouts to the end (a label factory feeding training) stays DEFERRED under the 
 |---|---|
 | question (owner, 2026-10-11) | "We need at least an order of magnitude more rollouts to enable discrimination for search, which we can't get in the current regime. **Do we really?**" |
 | short answer (revised) | **Probably not for DECISIONS; yes only for RESOLVING pairs, which is the wrong target.** On banked Rustboro-era rows (the X5 blob arm, the Rust core, off-distribution Lane S states, an ORACLE world), picking the action an 8-rollout leaf likes best among all legal actions beats the policy's own pick by **+0.062 win probability per decision [+0.045, +0.079]**; 1 rollout already buys **+0.025 [+0.012, +0.037]**; the critic buys **+0.008 [−0.005, +0.021]** (§2.3). The old playout arm bought nothing in games because its ACTING RULE demanded each pair be RESOLVED at 2 SE and so acted on ~5 % of pairs at 4 rollouts. More rollouts do still pay (8 vs 1: **+0.037 [+0.025, +0.050]**), so the curve is not flat, but the first few rollouts carry most of the value and cheaper multipliers exist (a truncated leaf, a luck-adjusting control variate, a regret-aware acting rule). **Pairing (CRN) is measured, not predicted, at VRF ≈ 1.06–1.13 in today's dice mode** (§5.2). The training side is separate: a frozen-trunk READOUT refit on de-noised labels does not help (one checkpoint); a TRUNK trained on sibling targets is untested |
-| **the pilot (2026-10-11, measured)** | ORACLE world, the closing test's end-state and production seeds, 600 own states each: LEAF-K8 +0.081 / +0.071 per decision, the critic +0.026 / +0.012, still climbing at K16. HONEST worlds (8 Smogon-prior or belief-sampled worlds that replay our observations byte-equal): the gain is GONE (LEAF-K8 +0.007 / +0.004, not clear of 0 or of the critic; R-INFO +0.07 on both): the oracle's edge was hidden information about the opponent's team (moves and the never-seen Pokémon both carry it: `design_hidden_info_binding.md` §16.1). The one honest signal: on the end-state seed the one-ply critic search +0.013 [+0.001, +0.026] and a 4-turn leaf +0.017–0.020, small and unproven in games (§7.11–§7.12, §13) |
+| **the pilot (2026-10-11, measured)** | ORACLE world, the closing test's end-state and production seeds, 600 own states each: LEAF-K8 +0.081 / +0.071 per decision, the critic +0.026 / +0.012, still climbing at K16. HONEST worlds (8 Smogon-prior or belief-sampled worlds that replay our observations byte-equal): the gain is GONE (LEAF-K8 +0.007 / +0.004, not clear of 0 or of the critic; R-INFO +0.07 on both): the oracle's edge was hidden information about the opponent's team (moves and the never-seen Pokémon both carry it: `design_hidden_info_binding.md` §16.1). The one honest signal: on the end-state seed the one-ply critic search +0.013 [+0.001, +0.026] and a 4-turn leaf +0.017–0.020, small and unproven in games (§7.11–§7.12, §13). **On the fixed builder (v2, §7.14), same verdicts** (end2 critic +0.014, 4-turn K8 +0.021); worlds from the network's MOVE belief: LEAF-K8 +0.018 / +0.009, not clear of their critic; with the seen mons' TRUE moves +0.042 / +0.018 (half / a fifth of the oracle gap). An offline per-action value head on oracle labels: −0.004, null (§7.13) |
 | the caveats that bound every number above | ORACLE world: the playouts know the opponent's real team and sets, and the critic does not (§3 row 5); determinization is DEFERRED (owner, 2026-09-23), so none of this transfers to the ladder yet. Off-distribution states for that checkpoint. A greedy-continuation truth, not Nash. A per-decision improvement is not a per-game win rate. POST-HOC on banked rows: the pilot re-measures it on the adopted end-state checkpoint's own states |
 | the RNG finding (re-verified) | ONE PRNG per battle (`BattleState.prng`, a port of Showdown's `prng.ts`); every die of both sides comes from it in execution order (47 direct call sites, 46 on the driver path, plus 7 `speed_sort` sites). A reseed at the branch shares the STREAM across siblings, not the roll-to-event MAPPING. Draw COUNTS depend on the action far more than the first draft said: speed-tie shuffles at every `eachEvent` when the two actives tie, two always-tied handler pairs, secondaries drawn into a KO, and in gen 3 ANY faint cancelling the rest of the turn (§5.1) |
 | the proposal | two COUNTERFACTUAL-ONLY dice modes, never reachable from training: **S1 per-turn reseed** (≈ 0.5–1 agent-day; the hook must sit BEFORE the end-of-turn Quick Claw roll) and **S2 counter-keyed draws** (≈ 2–3 agent-days; keys refined in §5.3). Both are equal IN LAW to normal play by construction (§5.4). **Demoted:** each is built only if the pilot says a FULL-length rollout leaf is still needed after the cheaper levers (§7.5 R-PAIR) |
@@ -749,6 +753,10 @@ win scale [95 %, battle-clustered], end2 / prod:
 
 ### 7.12 Phase 2 and 2b RESULTS (HONEST worlds, 2026-10-11; README §7, `result_det.md`, `result_belief.md`)
 
+> **v1 builder; SUPERSEDED by §7.14** (the fixed v2 builder, after the hidden-info study's R-GIGO FAIL): every verdict
+> below holds on v2 (R-HONEST NOT DETECTED, R-INFO INFO-COSTS, R-HONEST-B and R-BELIEF NOT DETECTED, both seeds); the
+> numbers move by ≤ 0.011.
+
 8 gate-passed worlds per state (Smogon-prior species and sets; Phase 2b: species from the network's own X5 belief),
 Phase 1's dice seeds, against Phase 1's TRUE-world truth. 578 / 579 states (22 / 21 lacked 8 worlds).
 
@@ -797,7 +805,7 @@ states, truth seeds 16–39.
 | read | value [95 %] |
 |---|---|
 | **R-QHEAD** (QHEAD − policy) | −0.004 [−0.016, +0.009] **NOT DETECTED** |
-| **R-QHEAD-CRITIC** (QHEAD − honest one-ply critic, 578 common) | −0.018 [−0.032, −0.004] **BEHIND — PROVISIONAL (builder-defective: the honest critic comes from the fair-world builder that FAILED R-GIGO, `design_hidden_info_binding.md` §16.4; re-read on the fixed builder)** |
+| **R-QHEAD-CRITIC** (QHEAD − honest one-ply critic, 578 common) | −0.018 [−0.032, −0.004] **BEHIND** (confirmed on the fixed v2 builder: −0.018 [−0.032, −0.004], §7.14) |
 | validation R² of the centred labels (25 / 50 / 100 % of the fit battles) | −0.004 / −0.001 / +0.002 (best epoch 1–2) |
 | the labels' dice-noise share (K = 2; POST-HOC, training states) | 83 % of the centred variance (R² ceiling 0.17 on these labels) |
 | one slope on the policy logit / the A head (validation R²) | +0.005 / +0.005 |
@@ -815,6 +823,47 @@ states, truth seeds 16–39.
 - **The network's own ride-along A head** (trained on-policy on the taken action's advantage, built for meters, never
   for acting) improves the policy's pick by +0.010 at zero extra cost, as much as the honest one-ply critic search
   (+0.013) that needs 8 worlds × one ply (descriptive; worth a registered replication on another checkpoint).
+
+### 7.14 Phase 2c and the v2 re-read RESULTS (the FIXED builder, 2026-10-12; README §13–§14, `result_moves.md`, `result_det_v2.md`, `result_qhead_v2.md`)
+
+R-GIGO on the v2 worlds PASSED before any v2 playout (README §13: 0 protocol-inconsistent worlds, was 469 / 312; 0
+clause-illegal teams; teeth 6 / 6 + gender plants 20 / 20; the gender leak reduced, accepted P(m = r) 0.67 / 0.64 vs
+the proposal's 0.57, v1 0.98 / 0.97). LEAF-K8 IMP on the states every world kind played (end2 591 / prod 595):
+
+| worlds | end2 | prod |
+|---|---|---|
+| A′ Smogon prior | +0.011 | +0.007 |
+| B′ network species belief | +0.001 | +0.005 |
+| **C′ network species AND move belief** | **+0.018 [+0.002, +0.033]** | +0.009 [−0.004, +0.022] |
+| **CT′ C′ + the seen mons' TRUE sets** | **+0.042 [+0.028, +0.058]** | **+0.018 [+0.004, +0.033]** |
+| oracle | +0.081 | +0.071 |
+| honest one-ply critic (A′ / C′) | +0.014 / +0.016 | +0.006 / +0.004 |
+
+| rule | end2 | prod |
+|---|---|---|
+| **R-MOVES** (C′ − B′) | +0.017 [+0.001, +0.031] **HELPS** | +0.004 [−0.009, +0.016] NOT DETECTED |
+| **R-HONEST-C** (C′ LEAF-K8 − C′ CRITIC) | +0.002 NOT DETECTED | +0.005 NOT DETECTED |
+| **R-MOVES-CEILING** (CT′ − C′) | +0.024 [+0.011, +0.039] **HELPS** | +0.010 [−0.003, +0.023] NOT DETECTED |
+| R-HONEST / R-INFO (A′) | −0.003 NOT DETECTED / +0.070 INFO-COSTS | +0.001 NOT DETECTED / +0.065 INFO-COSTS |
+| R-HONEST-B / R-BELIEF (B′) | −0.015 / −0.010, both NOT DETECTED | +0.001 / −0.002, both NOT DETECTED |
+| R-QHEAD-CRITIC (Phase 3 vs A′'s critic) | −0.018 [−0.032, −0.004] **BEHIND** (confirmed) | — |
+| closed share of the oracle − B′ gap: C′ / CT′ | 0.21 [0.02, 0.37] / 0.51 [0.38, 0.64] | 0.06 [−0.15, 0.22] / 0.20 [−0.02, 0.37] |
+
+**What it says.**
+- **The network's own move belief is a slightly better world sampler than Smogon usage, not a different one.** It
+  gets a world's set of hidden moves 51 % / 48 % right vs Smogon's 45 % (README §10), and buys honest rollouts at
+  most 1–2 points per decision: R-MOVES is a barely-clear HELPS on end2 that the v1 builder's own 2c rows do not
+  reproduce (+0.004 [−0.010, +0.020], descriptive) and that prod does not show. It closes ~⅕ / ~1⁄20 of the oracle gap.
+- **Perfect knowledge of the SEEN mons' moves is worth more** (CT′: +0.042 end2, +0.018 prod; half / a fifth of the
+  gap), and on end2 it is the first world kind short of the full oracle in which rollouts beat their critic (+0.025
+  [+0.009, +0.040], descriptive; CT′ is NOT honest: it knows the seen mons' sets). So the moves of the revealed mons are a real lever for search, but the network does not know
+  them much better than Smogon does, and the never-seen mons (with what v2 still keeps true) carry the remaining
+  +0.04–0.05.
+- **Every v1 honest verdict survives the fixed builder** (the numbers move ≤ 0.011): the R-GIGO defects did not
+  create or erase anything this doc concluded.
+- **For §13:** no honest scorer clears its critic on either seed, so the bootstrap's S0 go / no-go still FAILS; the
+  cheapest scorers with an honest gain remain the one-ply critic search (≈ 1.3–1.9 CPU-s per decision here) and, at
+  zero cost, the ride-along A head (§7.13).
 
 ---
 
@@ -999,22 +1048,31 @@ the one-ply critic search and a 4-turn leaf improve the policy's pick by +1.3 an
 of 0, barely), and no honest scorer is clearly better than the critic (R-HONEST NOT DETECTED); on production nothing
 is clear of 0. So the bootstrap's first stage FAILS its go / no-go for rollout search today, and the design below is
 kept as the vehicle for when a better opponent-set belief makes honest search pay, plus one cheap, in-scope signal
-worth a battery read now.
+worth a battery read now. **Re-measured on the FIXED world builder (2026-10-12, §7.14): unchanged.** Worlds drawn from
+the network's OWN move belief help honest rollouts by at most 1–2 points (end2 +0.018, prod +0.009; still not clear of
+the critic), because that belief is barely sharper than Smogon usage (51 % / 48 % of a world's hidden moves right vs
+45 %). Worlds that know the seen mons' TRUE moves would get +0.042 / +0.018 and beat the critic on end2: the lever is
+real, the network does not hold it. An offline per-action value head trained on oracle labels is null (−0.004).
 
 **PERFORMANCE (measured, this pilot).** Per decision, over the raw policy's own pick, against held-out truth
 [95 %]:
 
-| search (per decision) | ORACLE world end2 / prod | HONEST (8 Smogon-prior worlds) end2 / prod |
-|---|---|---|
-| critic one-ply (8 successors, ≈ 110 rows) | +0.026 / +0.012 | **+0.013 [+0.001, +0.026]** / +0.002 [−0.010, +0.014] |
-| 4-turn leaf, 1 playout per action (≈ 65 rows) | +0.027 / +0.028 | +0.005 [−0.011, +0.020] / −0.010 [−0.026, +0.005] |
-| 4-turn leaf, 4 per action (≈ 260 rows) | +0.052 / +0.037 | **+0.017 [+0.002, +0.031]** / +0.008 [−0.008, +0.023] |
-| full leaf, 8 per action (≈ 3,550 rows) | +0.081 / +0.071 | +0.007 [−0.008, +0.022] / +0.004 [−0.010, +0.019] |
+| search (per decision) | ORACLE world end2 / prod | HONEST, 8 Smogon-prior worlds, FIXED builder (v2) end2 / prod | HONEST, network species + MOVE belief (v2) end2 / prod |
+|---|---|---|---|
+| critic one-ply (8 successors, ≈ 110 rows; 1.3–1.9 CPU-s here) | +0.026 / +0.012 | **+0.014 [+0.002, +0.026]** / +0.005 [−0.006, +0.017] | +0.016 / +0.004 |
+| 4-turn leaf, 4 per action (≈ 260 rows; 1.1–1.6 CPU-s) | +0.052 / +0.037 | **+0.016 [+0.002, +0.029]** / +0.009 [−0.005, +0.024] | +0.014 / +0.007 |
+| 4-turn leaf, 8 per action (≈ 520 rows; 2.1–3.2 CPU-s) | +0.051 / +0.037 | **+0.021 [+0.008, +0.035]** / +0.007 [−0.007, +0.021] | +0.023 / +0.012 |
+| full leaf, 8 per action (≈ 3,550 rows; 13–22 CPU-s) | +0.081 / +0.071 | +0.011 [−0.002, +0.024] / +0.007 [−0.007, +0.021] | +0.018 [+0.002, +0.033] / +0.009 |
+| per-action value head on oracle labels (no search, ≈ 0 extra) | — | −0.004 [−0.016, +0.009] / — | — |
+| the network's ride-along A head (no search, 0 extra) | — | +0.010 [+0.001, +0.020] / — (descriptive) | — |
 
-Worlds drawn from the network's own species belief instead (Phase 2b, prod): no better (R-BELIEF NOT DETECTED,
-−0.003 [−0.016, +0.009]). With the species KNOWN (0–1 unrevealed), the honest full leaf keeps only ~¼ of the
-oracle's gain: the opponent's hidden MOVES carry it (a Smogon world guesses a hidden move slot right 16 % of the
-time).
+(v1 builder, superseded: the same verdicts within 0.011, §7.12.)
+
+Worlds drawn from the network's own species belief instead (Phase 2b): no better (R-BELIEF NOT DETECTED on both
+seeds, v1 and v2). The network's own MOVE belief (Phase 2c): R-MOVES HELPS on end2 by +0.017 [+0.001, +0.031] (not
+reproduced by the v1 builder's rows, not on prod), closing ~⅕ / ~1⁄20 of the oracle gap. The seen mons' TRUE moves
+(the ceiling): ~½ / ~⅕ of the gap. The never-seen mons and what the builder keeps true carry the rest
+(`design_hidden_info_binding.md` apportions it).
 
 **RELATIVE COST (§13.5; measured where marked, else ESTIMATE).** The one-ply critic search is ≈ 110 forward rows per
 decision (≈ 7–12 GPU-ms on the inference service: 0.063 ms per row MEASURED for production's slot layout, ×1.75 for
@@ -1030,10 +1088,10 @@ network is the next search's prior and critic. It improves rather than collapses
 target is a policy improvement (Gumbel MuZero's theorem), (ii) where search finds nothing the target EQUALS the
 prior and the aux loss goes quiet (the loop stalls, it does not corrupt), and (iii) every stage has a meter (§13.3).
 **The measured caveat:** step (i) needs search to beat the prior in FAIR worlds, and today it does so only at the
-critic's level on the end-state seed. Two routes can change that: a sharper opponent-SET belief (the moves), which
-this harness measures cheaply (Phase 2c), and ORACLE playout labels used as targets for a per-action VALUE head
-rather than as a policy target (a regressor on oracle labels learns E[Q | what we observed], the honest value, from
-the data's true posterior; §13.8). The search here is a one-ply best response to a MODELLED opponent, not an
+critic's level on the end-state seed. The two cheap routes were measured (2026-10-12) and neither changes that: the
+network's own move belief buys at most 1–2 points (Phase 2c, §7.14), and a per-action value head on oracle labels over
+a frozen body is null (Phase 3, §7.13). What remains is a SHARPER move belief than the network has (the ceiling says
+it would pay: CT′ beats the critic on end2), a trained body, or a bigger label budget. The search here is a one-ply best response to a MODELLED opponent, not an
 equilibrium method (§14 prices what that gives up).
 
 **THE ASK.**
@@ -1042,9 +1100,10 @@ equilibrium method (§14 prices what that gives up).
 2. **Approve the cheap read that decides whether the honest one-ply signal is real in games (S0b):** the end-state
    checkpoint with a one-ply honest critic search vs the same checkpoint raw, mirrored head-to-head, offline
    (≈ 1–2 CPU-days, or a short GPU window). The search is one ply, so it fits the owner's scope rule.
-3. **Approve Phase 2c (≈ 0.5–1 agent-day + ≈ 6 CPU-h):** honest worlds whose opponent MOVES come from the
-   network's own per-slot move belief (X5); if it closes part of R-INFO's gap, rollout search becomes the bootstrap's
-   engine again.
+3. **Phase 2c is DONE (§7.14):** the network's own move belief does not make honest rollout search beat the critic
+   (R-HONEST-C NOT DETECTED on both seeds); it closes ~⅕ (end2) / ~1⁄20 (prod) of the oracle gap. Rollout search
+   becomes the bootstrap's engine only with a move belief much closer to the truth than the network's (the
+   true-seen-moves ceiling beats the critic on end2 by +0.025). No ask.
 4. **§13.8 (oracle playout labels as targets for a per-action value head) is MEASURED offline and NULL at the cheap
    budget (Phase 3, §7.13):** a per-action head on the frozen end-state body, fit on 2 oracle playouts per action of
    ~9,600 states, does not beat the policy's pick (−0.004, NOT DETECTED) and is worse than the honest critic search
@@ -1108,7 +1167,7 @@ equilibrium method (§14 prices what that gives up).
 
 | stage | what | go / no-go | cost (ESTIMATE unless marked) |
 |---|---|---|---|
-| **S0** (DONE) | this pilot: oracle + honest IMP; `main.value_search` | honest search beats the critic at a realistic budget: **FAILED** (R-HONEST NOT DETECTED on both seeds; only end2's one-ply critic +0.013 and 4-turn K4 +0.017 are clear of 0, neither clear of the other) | ≈ 30 CPU-h, no GPU (MEASURED) |
+| **S0** (DONE) | this pilot: oracle + honest IMP; `main.value_search` | honest search beats the critic at a realistic budget: **FAILED** (R-HONEST NOT DETECTED on both seeds; only end2's one-ply critic +0.013 and 4-turn K4 +0.017 are clear of 0, neither clear of the other; re-confirmed on the FIXED builder and with the network's own move belief, R-HONEST-C NOT DETECTED, §7.14) | ≈ 30 CPU-h + ≈ 45 worker-h for 2c, Phase 3 and the v2 re-run, no GPU (MEASURED) |
 | **S0b** offline battery (OWNER approval) | the end-state checkpoint with the one-ply honest critic search (8 worlds) vs the same checkpoint raw, mirrored h2h | h2h gain lower bound > +4.57 pp (the replicate floor) | ≈ 1 CPU-day at f = 1 (every decision searched), or a GPU window |
 | **S0c** offline label factory | label N = 50k states of the adopted arm's own self-play on idle CPU; no training | held-out IMP of argmax π′ ≥ S0's; label throughput ≥ S2's need | ≈ 1 agent-day build (reuses the module) + idle CPU |
 | **S1 SHADOW** | the in-loop factory at f = 0.25 %, logs only (`search/*`) | `search/imp` lower bound > 0 over a 15M run; fps cost ≤ 5 % | build ≈ 3–5 agent-days (gaps G1–G6); one GPU run |
@@ -1362,4 +1421,5 @@ exploitability meters (§14.3) measure.
 | 2026-10-11 | **PHASE 2c and PHASE 3 REGISTERED (§7.10 Amendments 6, 7), owner's standing data-gathering grant** | 2c: worlds whose hidden moves come from the network's OWN per-mon move belief (the X5 op roster's fixed-mass `move_w`, conditional-Poisson draws), plus a ceiling arm with the seen mons' TRUE sets; R-MOVES, R-HONEST-C, R-MOVES-CEILING. 3: an OFFLINE per-action Q head on the frozen end2 checkpoint, fit on oracle playout labels (K = 2) of 9,629 states from disjoint battles, acting with NO rollout at decision time; R-QHEAD, R-QHEAD-CRITIC | fine-tuning the body (GPU, later); training integration (needs the owner's §13.8 ruling); building the battery (option 2) before a fair scorer wins; item / ability beliefs in the worlds (a seen mon's item is already kept TRUE; never-seen slots stay Smogon) | §7.10 Amendments 6–7; README §10–§11 |
 | 2026-10-11 | **The "it is the MOVES" reading of §7.12 QUALIFIED** (by the adversarial follow-up's registered descriptive reads, not by a new playout) | §0, the status line and §7.12 now say the oracle's edge is hidden information about the opponent's TEAM, carried by the never-seen mons AND the seen mons' hidden moves: split by unseen slots, the honest leaf keeps about half the oracle's edge with all six seen and nothing with one unseen | keeping "moves, not species" (it pooled the 0- and 1-unseen-slot groups, and this pilot's worlds never hid a seen mon's item, ability or spread) | `design_hidden_info_binding.md` §16.1; `research_state/measurements/hidden_info_binding_2026-10-11/descriptive_reads.json` |
 | 2026-10-11 | **THE FIXED WORLD BUILDER (v2), Amendment 8, after the hidden-info study's R-GIGO FAIL** | v2 gates on the searched side's protocol bytes as well as its rows, parses `-singleturn` / `cant` reveals, credits each past move choice to the mon that made it, places never-seen mons so the gender draws fall on the true draw slots, rejects gen3ou-illegal teams, never keeps a never-seen slot's TRUE set; R-GIGO re-read on its worlds PASS; every honest arm re-run on it | an engine-side construction-draw pad (removes the residual m ≥ r gender conditioning; a Rust change at the pins, not made); dropping the affected states (the study's sensitivity read: the gap unchanged, but the sampler stays wrong) | §7.10 Amendment 8; README §13; `design_hidden_info_binding.md` §16.4 |
+| 2026-10-12 | **PHASE 2c READ and every honest read RE-DONE on the fixed builder (v2)** | R-MOVES HELPS on end2 (+0.017 [+0.001, +0.031]; not reproduced by the v1 builder's rows) and NOT DETECTED on prod; R-HONEST-C NOT DETECTED on both; R-MOVES-CEILING HELPS on end2 (+0.024), not on prod; every v1 honest verdict and Phase 3's R-QHEAD-CRITIC hold on v2. §13: the S0 go / no-go still FAILS; the network's own move belief is not the lever (barely sharper than Smogon); a much better move belief would be (the ceiling beats the critic on end2). The battery (option 2) stays unbuilt: no fair rollout scorer beats the critic; its candidate stays the one-ply critic search | building the in-loop factory on the move-belief sampler (≤ 1–2 points, not clear of the critic); treating end2's barely-clear R-MOVES as a lever (one seed, builder-sensitive) | §7.14; README §14; ledger 2026-10-12 "PHASE 2c" |
 | 2026-10-11 | **PHASE 3 READ (offline per-action value head)** | R-QHEAD NOT DETECTED (−0.004), R-QHEAD-CRITIC BEHIND (−0.018): a frozen-body head on K = 2 oracle labels of ~10k states learns nothing usable (validation R² +0.002; the labels are 83 % dice noise). §13.8's oracle-label route stays OPEN but is priced: it needs far more label signal per action or a trained body (GPU), so it is not the next CPU step. The ride-along A head's argmax (+0.010, clear of 0, no rollout) is recorded as a free scorer to replicate | more K = 2 states on the same frozen head (a simple observation-side predictor explains ~0.5 % of the label variance; the budget that would suffice is UNVERIFIED); fine-tuning the body now (GPU, and §13.8 needs the owner's ruling) | §7.13; README §12; ledger 2026-10-11 "PHASE 3" |

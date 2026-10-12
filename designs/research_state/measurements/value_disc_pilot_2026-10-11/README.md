@@ -1,14 +1,11 @@
 # The value-discrimination pilot (2026-10-11): oracle-world decision improvement on the end-state and production seeds
 
-**Status: Phases 1, 2, 2b and 3 RUN AND READ (2026-10-11): Phase 1 (oracle world) §6; Phase 2 / 2b (honest worlds)
-§7; Phase 3 (an offline per-action value head on oracle labels) §12. Phase 2c (worlds from the network's own MOVE
-belief) REGISTERED, §10 (Amendment 6), NOT READ.** 🚨 **The fair-world builder FAILED the hidden-info study's
-registered GIGO audit (R-GIGO, `../../../endstate/design_hidden_info_binding.md` §16.4: ~4 % of worlds disagree
-with our own battle log, the gate leaks the never-seen mons' gender class toward the truth, 2–3 % of world teams
-break gen3ou clauses). Every HONEST-world number here (Phase 2 / 2b in §7, R-QHEAD-CRITIC in §12) is PROVISIONAL
-until the fixed builder re-runs it; Phase 2c runs only on the fixed builder. Phase 1 (oracle) and R-QHEAD (no world)
-do not use the builder and stand.** This README also holds the pre-registration (a copy of
-`designs/endstate/design_value_discrimination.md` §7 as amended by §7.10 Amendments 1–7): §2–§5, §8, §10, §11.
+**Status: ALL PHASES RUN AND READ (2026-10-11 / 12): Phase 1 (oracle world) §6; Phase 2 / 2b (honest worlds) §7;
+Phase 3 (an offline per-action value head on oracle labels) §12; the FIXED world builder (v2) after the hidden-info
+study's R-GIGO FAIL, its audits (PASS) §13; Phase 2c (worlds from the network's own MOVE belief) and every honest
+read re-done on v2 §14.** The v1 builder's honest numbers (§7, §12's honest rows) are SUPERSEDED by §14's v2 reads,
+which keep every verdict (R-QHEAD-CRITIC confirmed BEHIND). This README also holds the pre-registration (a copy of
+`designs/endstate/design_value_discrimination.md` §7 as amended by §7.10 Amendments 1–8): §2–§5, §8, §10, §11, §13.
 
 ## 1. In plain language
 
@@ -154,6 +151,9 @@ forward (6 logical CPUs; the forward is ~95 % of it).
 
 ## 7. Phase 2 and 2b results (HONEST worlds; `result_det.md` / `.json`, `result_belief.md` / `.json`)
 
+> **v1 builder; SUPERSEDED by §14** (the fixed v2 builder): every verdict below holds there (R-HONEST NOT DETECTED,
+> R-INFO INFO-COSTS, R-HONEST-B and R-BELIEF NOT DETECTED, on both seeds), the numbers move by ≤ 0.011.
+
 **In plain language.** When the rollouts may NOT peek at the opponent's real team — they play out in 8 guessed
 teams that agree with everything our side has seen — the rollout search's whole advantage disappears: it improves
 on the network's own pick by 0–2 points of win probability per decision, about what the critic alone does, and
@@ -245,6 +245,8 @@ between Phase 1 and Phase 2 is the price of not knowing the opponent's team (par
 | `score_moves.py` | Phase 2c's read (C / CT / B / A / oracle worlds on common states) → `result_moves.json`, `result_moves.md` |
 | `gender_leak_read.py` | DESCRIPTIVE (no outcome): the gate's construction-draw leak, v1 vs v2 builder → `gender_leak_read_<cp>.json` |
 | `teeth_v2_gender.py` | planted GENDER defects against the v2 gate → `teeth_v2_gender_<cp>.json` |
+| `score_moves_v1.py` | DESCRIPTIVE: R-MOVES on the v1 builder's Phase 2c rows (read after v2), printed |
+| `result_moves.*`, `result_det_v2.*`, `result_qhead_v2.*` | the v2 reads (§14): Phase 2c + 2b, Phase 2, Phase 3's comparator |
 
 `phase2.sh` also takes `--moves` (Phase 2c → `<cp>/det_c/`) and `--truemoves` (2c-T → `<cp>/det_ct/`), and
 `--worlds-only` / `--playouts-only`. Bulk: `~/gen3ai_archive/value_disc_pilot/`.
@@ -315,11 +317,11 @@ policy's.
 | rule | contrast | Δ [95 %] | verdict |
 |---|---|---|---|
 | **R-QHEAD (primary)** | QHEAD − policy | −0.004 [−0.016, +0.009] | **NOT DETECTED** |
-| **R-QHEAD-CRITIC** | QHEAD − honest CRITIC (578 common) | −0.018 [−0.032, −0.004] | **BEHIND — PROVISIONAL** (builder-defective, see below) |
+| **R-QHEAD-CRITIC** | QHEAD − honest CRITIC (578 common) | −0.018 [−0.032, −0.004] | **BEHIND** (v1 builder; confirmed on the fixed v2 builder, −0.018 [−0.032, −0.004], §14) |
 | descriptive | QHEAD − honest TRUNC-4-K4 / − oracle CRITIC / − A head | −0.021 / −0.031 / −0.015 (all clear of 0) | — |
 
-- **PROVISIONAL:** R-QHEAD-CRITIC and every "honest" row of the table come from the fair-world builder that FAILED
-  R-GIGO (status line); they are re-read on the fixed builder. R-QHEAD, the A head and the oracle rows use no world.
+- **Builder:** R-QHEAD-CRITIC and every "honest" row of the table came from the v1 fair-world builder that FAILED
+  R-GIGO; all are re-read on the fixed v2 builder in §14 (same verdicts). R-QHEAD, the A head and the oracle rows use no world.
 - **Why (POST-HOC, training states only, `qhead_noise_read.json`):** the centred labels' variance is 0.066 per action,
   of which the K = 2 dice noise is **83 %** (an R² ceiling of 0.17 on these labels, and that remaining 17 % includes
   the advantage the hidden team decides). The head's validation R² is +0.002 (25 % / 50 %: −0.004 / −0.001; best
@@ -383,3 +385,50 @@ same audit passes on the new worlds.
 the truth drew (the ungated proposal fails m ≥ r about 30 % of the time), and accepted worlds sit slightly above
 the proposal's conditional rate of m = r (0.67 / 0.64 vs 0.57). The pull toward the true never-seen species is now
 below v1's (20.2–20.8 % vs 21.6–21.7 %). Only an engine-side construction-draw pad removes it.
+
+## 14. RESULTS on the fixed builder (v2): Phase 2c, and every honest read re-done (read 2026-10-12 08:20; `result_moves.md` / `.json`, `result_det_v2.md` / `.json`, `result_qhead_v2.md` / `.json`)
+
+**In plain language.** Drawing the opponent's hidden moves from the network's own belief instead of Smogon usage
+helps honest rollout search a little on the end-state seed (+1.7 points of decision quality over the species-belief
+worlds, barely clear of zero) and not on production; it closes about a fifth (end2) or a twentieth (prod) of the gap
+to the cheating search, and honest rollouts still do not beat the network's own critic. If the worlds knew the TRUE
+moves of every opponent Pokémon already seen, honest rollouts would close about half (end2) or a fifth (prod) of the
+gap and would beat the critic on end2 (+2.5 points); the rest of the gap is the Pokémon not yet seen and what
+the fixed builder still keeps true. Every earlier honest-world verdict holds on the fixed builder, and Phase 3's
+"the value head is worse than the honest critic" is confirmed.
+
+IMP on the win scale [95 %, battle-clustered], on the states every world kind played (end2 591 / prod 595);
+"closed share" = (arm − B′) / (oracle − B′) at LEAF-K8.
+
+| scorer (ARGMAX), worlds → | C′ network moves | CT′ true seen moves | B′ belief species | A′ Smogon | oracle |
+|---|---|---|---|---|---|
+| CRITIC (one ply), end2 / prod | +0.016 / +0.004 | +0.018 / +0.005 | +0.016 / +0.004 | +0.014 / +0.006 | +0.026 / +0.013 |
+| TRUNC-4-K4 | +0.014 / +0.007 | +0.032 / +0.010 | +0.020 / +0.009 | +0.015 / +0.009 | +0.052 / +0.037 |
+| TRUNC-4-K8 | +0.023 / +0.012 | +0.038 / +0.014 | +0.028 / +0.009 | +0.021 / +0.007 | +0.051 / +0.037 |
+| **LEAF-K8** | **+0.018** [+0.002, +0.033] / +0.009 [−0.004, +0.022] | **+0.042** [+0.028, +0.058] / **+0.018** [+0.004, +0.033] | +0.001 / +0.005 | +0.011 / +0.007 | +0.081 / +0.071 |
+| closed share (LEAF-K8) | 0.21 [0.02, 0.37] / 0.06 [−0.15, 0.22] | 0.51 [0.38, 0.64] / 0.20 [−0.02, 0.37] | 0 | — | 1 |
+
+| rule (registered) | end2 | prod |
+|---|---|---|
+| **R-MOVES** (C′ − B′, LEAF-K8; primary of 2c) | +0.017 [+0.001, +0.031] **HELPS** | +0.004 [−0.009, +0.016] NOT DETECTED |
+| **R-HONEST-C** (C′ LEAF-K8 − C′ CRITIC) | +0.002 [−0.016, +0.018] NOT DETECTED | +0.005 [−0.010, +0.019] NOT DETECTED |
+| **R-MOVES-CEILING** (CT′ − C′) | +0.024 [+0.011, +0.039] **HELPS** | +0.010 [−0.003, +0.023] NOT DETECTED |
+| R-HONEST (A′ LEAF-K8 − A′ CRITIC; all A′ states) | −0.003 [−0.018, +0.012] NOT DETECTED (v1 −0.006) | +0.001 [−0.013, +0.016] NOT DETECTED (v1 +0.002) |
+| R-INFO (oracle − A′ LEAF-K8) | +0.070 [+0.056, +0.084] INFO-COSTS (v1 +0.072) | +0.065 [+0.053, +0.078] INFO-COSTS (v1 +0.067) |
+| R-HONEST-B (B′ LEAF-K8 − B′ CRITIC) | −0.015 [−0.029, −0.001] NOT DETECTED (v1 −0.006) | +0.001 [−0.013, +0.016] NOT DETECTED |
+| R-BELIEF (B′ − A′ LEAF-K8) | −0.010 [−0.024, +0.005] NOT DETECTED (v1 +0.001) | −0.002 [−0.014, +0.011] NOT DETECTED |
+| R-QHEAD-CRITIC (Phase 3: QHEAD − A′ CRITIC) | −0.018 [−0.032, −0.004] **BEHIND**, confirmed (v1 −0.018) | — |
+
+- **Descriptive:** CT′ beats its own critic on end2 (+0.025 [+0.009, +0.040]), not on prod (+0.013 [−0.002,
+  +0.028]); oracle − CT′ is still +0.039 / +0.053 (the never-seen mons, and what v2 keeps true: the seen mons'
+  items, abilities and spreads). By unrevealed slots, CT′ is largest where 0–1 opponent mons are unseen (+0.065 /
+  +0.031) and C′'s gain over B′ sits there too (+0.039 vs +0.019 end2).
+- **v1 beside (descriptive, read after v2):** the v1 builder's Phase 2c rows on end2 (565 states) give R-MOVES
+  +0.004 [−0.010, +0.020]: the end2 HELPS is not robust to the builder (v2's B′ reads lower, +0.001 vs v1 +0.006,
+  and C′ higher, +0.018 vs +0.011). Taken with prod, the network's move belief buys at most ~1–2 points.
+- **Predictions** (Amendment 6): R-MOVES NOT DETECTED, right on prod, wrong on end2 (a barely-clear HELPS);
+  R-HONEST-C NOT DETECTED, right; R-MOVES-CEILING HELPS +0.01 to +0.03, right on end2 (+0.024), prod +0.010 not
+  clear. (Amendment 8): every re-read within ±0.01 of v1, right except R-HONEST-B / R-BELIEF on end2 (−0.009 and
+  −0.011 moves; verdicts unchanged).
+- **Cost (measured, end2 / prod, CPU forward, contended):** honest one-ply critic 1.9 / 1.3 CPU-s per decision, 4-turn
+  K4 leaf 1.6 / 1.1, full K8 leaf 22 / 13, plus ≈ 0.1 CPU-s per world built (≈ 2 tries per world).

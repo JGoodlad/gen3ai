@@ -989,7 +989,11 @@ to the mon that made it (v1 kept a choice by name when another mon had the move 
 lacked it were refused). The gender leak is REDUCED, not removed: a world still needs at least as many gender-ratio
 never-seen mons as the true draws (accepted P(m = r) 0.67 / 0.64 vs the proposal's conditional 0.57; v1 0.98 / 0.97);
 only an engine-side draw pad removes it. Detail: `measurements/value_disc_pilot_2026-10-11/README.md` §13. The v2
-worlds of every honest arm are `~/gen3ai_archive/value_disc_pilot/<cp>/det2*`.
+worlds of every honest arm are `~/gen3ai_archive/value_disc_pilot/<cp>/det2*`. **2026-10-12: every arm is PLAYED on
+v2** (rows `det2*/rows_*.jsonl`; the pilot's Phase 2 base P re-built and re-played is `det2`, Amendment 1 (b)): the
+pilot's honest verdicts hold (G on v2 = oracle − A′ LEAF-K8 +0.070 / +0.065, was +0.072 / +0.067), and Phase 2c's
+true-seen-moves arm (`det2_ct`: the seen mons' TRUE sets on belief-species worlds; NOT this study's F+M, whose base hides more) closes ½ (end2) / ⅕ (prod) of the gap over
+the belief-species worlds (`value_disc_pilot` README §14).
 
 ### 16.5 The MODEL-INPUT axis: R-NET and CRITIC-USES (read 2026-10-11; `result_model_input_blinded.json` frozen at `8df724e0` before unblinding, `result_model_input.json`)
 
