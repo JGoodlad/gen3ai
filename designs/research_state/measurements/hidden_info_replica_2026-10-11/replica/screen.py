@@ -623,11 +623,12 @@ def screen(prep: B.Prep, arm: str) -> dict:
             for v in vals_:
                 st = dict(ctx)
                 new = replace(c, **{cls: v})
-                if cls == "hp_t":
+                if cls == "hp_t" and v != c.hp_t:
                     new = replace(new, variant=c.variant.split("|")[0])
                 st[n] = new
                 cands.append(st)
-            win[cls] = {v for v, s in zip(vals_, score(cands)) if s >= full}
+            # the context's own value always stands (the context passed the full gate)
+            win[cls] = {v for v, s in zip(vals_, score(cands)) if s >= full} | {getattr(c, cls)}
         keys = S.iv_keys(c.hp_t)
         cands = []
         for key in keys:
