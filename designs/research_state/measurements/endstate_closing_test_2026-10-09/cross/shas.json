@@ -1,0 +1,42 @@
+{
+ "rows": [
+  "3ddcfcf7e495bfed11eae55f0c315d35a20cfa591610a2550b7910a27f897849",
+  "01a6dd8deac5936d44b7d1f03a342f4f5bcf3b1c1a25106f61f40779e3779d1d",
+  "8c0dd0a599f0c7a170a54dda076b77a3f191945aeac0917e965ffb63c45c4f09",
+  "e0f9209083b49ed48fdb455509393d67ee1b0162c19fe57685cc6d36edbf2821",
+  "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b",
+  "e692ee5ecf9a039d12344d5564b0b87b18df622476f1aaf0d3090b998d6f222b",
+  "b9896df4899b4889444aba7cbfa306733f4534d244d6b324b36cf5f62ad1061f",
+  "902ec63f123c7ce962eaed239279300cad9235e36144b8c692920dde400062ec"
+ ],
+ "cols": [
+  "3d0605f5eafb5d3998250850ebdccf6b636630bdb4b84b554a296f99ffe03b1d",
+  "80e13b7ba6d4f9bb585de7810c7ee170f18013c30fe8079727b2328cd6880516",
+  "67985e501aa696926be0bf3c8e6a40f04d95c132e8fce92f2bcfe7d8dda92574",
+  "ac2ea1d4336f851d36f956170365c6417f550f9962368ee20ad8126e6a378f54",
+  "6af5706f6fd0a083a96b810be30d170fad9c353455b40dc54f90c0b418902361",
+  "e5ecdb299fe986933a8de3a5c570e4d1f37c3fa4e72c8868f0f245a7ee85776b",
+  "50b20c5cf366b1d3e46d66d4bf27b4378b32d8d30c6f9159da45f950ea5ff4de",
+  "2ed6ac692c3f8ee77f3c7650e974f093521fb787588491058432cbaf6a9de092"
+ ],
+ "row_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2002/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2003/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2004/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2005/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2006/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2007/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2008/final_model.zip"
+ ],
+ "col_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2001/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2002/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2003/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2004/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2005/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2006/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2007/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2008/final_model.zip"
+ ]
+}

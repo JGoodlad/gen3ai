@@ -1,0 +1,4 @@
+[2026-10-12T04:53:42-07:00] CROSS armed (pid 1158675): waits for the end-state chain's clean finish, then plays the 8x8 closing cross at P_end 62085750
+[2026-10-12T08:27:15-07:00] CROSS plan: 64 cells; registering family + playing (1000 pairs/cell, batches of 500, cuda)
+[2026-10-12T09:19:08-07:00] CROSS played; reading + applying the coded rule
+[2026-10-12T09:19:09-07:00] CROSS DONE: {"outcome": "PASS", "clause_a_includes_zero_or_above": true, "clause_b_lower_above_minus_2": true, "interval90_pp": [-0.7231002436962337, 1.9152877436962366], "t_0.95": 1.761310135774891, "delta_hat_pp": 0.5960937500000014, "se_pp": 0.7489845013103577, "df": 14, "s2_rows": 2.6678201729910684, "s2_co
