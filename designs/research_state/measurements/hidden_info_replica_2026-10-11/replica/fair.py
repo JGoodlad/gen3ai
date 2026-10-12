@@ -14,7 +14,7 @@ from . import builder as B
 from . import sampling as S
 
 
-def build(prep: B.Prep, arm: str) -> dict:
+def build(prep: B.Prep, arm: str, validate=None) -> dict:
     """Up to 8 accepted worlds for ``arm`` (``MAX_TRIES`` draws in all). Returns the worlds and the bookkeeping."""
     t0 = time.process_time()
     rec: dict = {"arm": arm, "id": prep.sid}
@@ -59,6 +59,11 @@ def build(prep: B.Prep, arm: str) -> dict:
         for w, g in zip(batch, B.gate_many(prep, batch, rows=True)):
             if g.ok and len(accepted) < B.N_WORLDS:
                 cmds, changed = B.render(prep, w)
+                # the playout tool replays STRICTER than the gate's core (a choice the sim would reject is refused,
+                # not skipped): a world it refuses is rejected here, so the 8 are the first 8 it can play
+                if validate is not None and not validate(S.pack_team(w), cmds):
+                    reasons["replay_refused"] = reasons.get("replay_refused", 0) + 1
+                    continue
                 accepted.append({"team": S.pack_team(w), "rendered": changed, "cmds": cmds,
                                  "origin": [x.origin for x in w]})
             elif not g.ok:
