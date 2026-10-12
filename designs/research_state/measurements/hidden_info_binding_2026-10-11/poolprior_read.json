@@ -1,0 +1,10265 @@
+{
+ "comparisons": {
+  "bank_prod - pool | moves.exp_recall_r0 | per_mon": {
+   "a": 0.5415,
+   "b": 0.5429,
+   "ci95": [
+    -0.0094,
+    0.0067
+   ],
+   "delta": -0.0014
+  },
+  "bank_prod - pool | moves.exp_recall_r0 | smogon_std": {
+   "a": 0.5666,
+   "b": 0.5658,
+   "ci95": [
+    -0.0052,
+    0.0066
+   ],
+   "delta": 0.0008
+  },
+  "bank_prod - pool | moves.mc_set_hit_r2 | per_mon": {
+   "a": 0.3926,
+   "b": 0.3889,
+   "ci95": [
+    -0.0034,
+    0.0111
+   ],
+   "delta": 0.0037
+  },
+  "bank_prod - pool | moves.mc_set_hit_r2 | smogon_std": {
+   "a": 0.4179,
+   "b": 0.4101,
+   "ci95": [
+    0.0017,
+    0.0135
+   ],
+   "delta": 0.0078
+  },
+  "bank_prod - pool | moves.top4_recall_r0 | per_mon": {
+   "a": 0.6492,
+   "b": 0.6505,
+   "ci95": [
+    -0.0136,
+    0.0108
+   ],
+   "delta": -0.0013
+  },
+  "bank_prod - pool | moves.top4_recall_r0 | smogon_std": {
+   "a": 0.6728,
+   "b": 0.6746,
+   "ci95": [
+    -0.0128,
+    0.01
+   ],
+   "delta": -0.0018
+  },
+  "metamon_hl0526 - pool | ability.p_true | per_mon": {
+   "a": 0.9062,
+   "b": 0.9183,
+   "ci95": [
+    -0.0228,
+    -0.0006
+   ],
+   "delta": -0.0121
+  },
+  "metamon_hl0526 - pool | ability.p_true | smogon_std": {
+   "a": 0.89,
+   "b": 0.913,
+   "ci95": [
+    -0.0292,
+    -0.0155
+   ],
+   "delta": -0.023
+  },
+  "metamon_hl0526 - pool | item.p_true | per_mon": {
+   "a": 0.8012,
+   "b": 0.8022,
+   "ci95": [
+    -0.0078,
+    0.0062
+   ],
+   "delta": -0.001
+  },
+  "metamon_hl0526 - pool | item.p_true | smogon_std": {
+   "a": 0.7901,
+   "b": 0.7925,
+   "ci95": [
+    -0.0093,
+    0.0019
+   ],
+   "delta": -0.0024
+  },
+  "metamon_hl0526 - pool | item.top1 | per_mon": {
+   "a": 0.9069,
+   "b": 0.9205,
+   "ci95": [
+    -0.0225,
+    -0.0043
+   ],
+   "delta": -0.0136
+  },
+  "metamon_hl0526 - pool | item.top1 | smogon_std": {
+   "a": 0.8947,
+   "b": 0.9037,
+   "ci95": [
+    -0.0201,
+    -0.0007
+   ],
+   "delta": -0.009
+  },
+  "metamon_hl0526 - pool | moves.exp_recall_r0 | per_mon": {
+   "a": 0.516,
+   "b": 0.5429,
+   "ci95": [
+    -0.0313,
+    -0.0226
+   ],
+   "delta": -0.0269
+  },
+  "metamon_hl0526 - pool | moves.exp_recall_r0 | smogon_std": {
+   "a": 0.5134,
+   "b": 0.5658,
+   "ci95": [
+    -0.0559,
+    -0.0491
+   ],
+   "delta": -0.0524
+  },
+  "metamon_hl0526 - pool | moves.exp_recall_r2 | per_mon": {
+   "a": 0.3743,
+   "b": 0.392,
+   "ci95": [
+    -0.0222,
+    -0.0134
+   ],
+   "delta": -0.0177
+  },
+  "metamon_hl0526 - pool | moves.exp_recall_r2 | smogon_std": {
+   "a": 0.3726,
+   "b": 0.4147,
+   "ci95": [
+    -0.0458,
+    -0.0388
+   ],
+   "delta": -0.0421
+  },
+  "metamon_hl0526 - pool | moves.mc_set_hit_r2 | per_mon": {
+   "a": 0.3862,
+   "b": 0.3889,
+   "ci95": [
+    -0.0069,
+    0.0013
+   ],
+   "delta": -0.0027
+  },
+  "metamon_hl0526 - pool | moves.mc_set_hit_r2 | smogon_std": {
+   "a": 0.3857,
+   "b": 0.4101,
+   "ci95": [
+    -0.0283,
+    -0.0212
+   ],
+   "delta": -0.0244
+  },
+  "metamon_hl0526 - pool | moves.mc_slot_hit_r2 | per_mon": {
+   "a": 0.1961,
+   "b": 0.1967,
+   "ci95": [
+    -0.0029,
+    0.0014
+   ],
+   "delta": -0.0006
+  },
+  "metamon_hl0526 - pool | moves.mc_slot_hit_r2 | smogon_std": {
+   "a": 0.1958,
+   "b": 0.2084,
+   "ci95": [
+    -0.0145,
+    -0.0109
+   ],
+   "delta": -0.0126
+  },
+  "metamon_hl0526 - pool | moves.top2_recall_r2 | per_mon": {
+   "a": 0.5064,
+   "b": 0.5918,
+   "ci95": [
+    -0.093,
+    -0.0775
+   ],
+   "delta": -0.0854
+  },
+  "metamon_hl0526 - pool | moves.top2_recall_r2 | smogon_std": {
+   "a": 0.5049,
+   "b": 0.6158,
+   "ci95": [
+    -0.1182,
+    -0.103
+   ],
+   "delta": -0.1109
+  },
+  "metamon_hl0526 - pool | moves.top4_recall_r0 | per_mon": {
+   "a": 0.6028,
+   "b": 0.6505,
+   "ci95": [
+    -0.0548,
+    -0.0409
+   ],
+   "delta": -0.0477
+  },
+  "metamon_hl0526 - pool | moves.top4_recall_r0 | smogon_std": {
+   "a": 0.6005,
+   "b": 0.6746,
+   "ci95": [
+    -0.0806,
+    -0.0669
+   ],
+   "delta": -0.0741
+  },
+  "metamon_hl0526 - pool | spread.p_coarse | per_mon": {
+   "a": 0.3652,
+   "b": 0.2758,
+   "ci95": [
+    0.0816,
+    0.097
+   ],
+   "delta": 0.0894
+  },
+  "metamon_hl0526 - pool | spread.p_coarse | smogon_std": {
+   "a": 0.3685,
+   "b": 0.3088,
+   "ci95": [
+    0.0534,
+    0.066
+   ],
+   "delta": 0.0597
+  },
+  "metamon_hl0526 - pool | spread.p_exact | per_mon": {
+   "a": 0.1269,
+   "b": 0.0493,
+   "ci95": [
+    0.0742,
+    0.081
+   ],
+   "delta": 0.0776
+  },
+  "metamon_hl0526 - pool | spread.p_exact | smogon_std": {
+   "a": 0.1299,
+   "b": 0.0631,
+   "ci95": [
+    0.063,
+    0.0709
+   ],
+   "delta": 0.0668
+  },
+  "metamon_hl0526 - pool | spread.top1 | per_mon": {
+   "a": 0.3301,
+   "b": 0.089,
+   "ci95": [
+    0.232,
+    0.2501
+   ],
+   "delta": 0.2411
+  },
+  "metamon_hl0526 - pool | spread.top1 | smogon_std": {
+   "a": 0.3325,
+   "b": 0.1158,
+   "ci95": [
+    0.2052,
+    0.2284
+   ],
+   "delta": 0.2167
+  },
+  "metamon_hl0526 - pool | spread.top1_coarse | per_mon": {
+   "a": 0.5332,
+   "b": 0.344,
+   "ci95": [
+    0.173,
+    0.2053
+   ],
+   "delta": 0.1892
+  },
+  "metamon_hl0526 - pool | spread.top1_coarse | smogon_std": {
+   "a": 0.5366,
+   "b": 0.3891,
+   "ci95": [
+    0.1336,
+    0.1641
+   ],
+   "delta": 0.1475
+  },
+  "metamon_hl0526 - pool | teammates.p_true | per_mon": {
+   "a": 0.0548,
+   "b": 0.0542,
+   "ci95": [
+    -0.0003,
+    0.0014
+   ],
+   "delta": 0.0006
+  },
+  "metamon_hl0526 - pool | teammates.p_true | smogon_std": {
+   "a": 0.0543,
+   "b": 0.054,
+   "ci95": [
+    -0.0007,
+    0.0011
+   ],
+   "delta": 0.0003
+  },
+  "metamon_hl0526 - pool | teammates.rank | per_mon": {
+   "a": 10.4835,
+   "b": 9.7516,
+   "ci95": [
+    0.4313,
+    1.005
+   ],
+   "delta": 0.7319
+  },
+  "metamon_hl0526 - pool | teammates.rank | smogon_std": {
+   "a": 10.6417,
+   "b": 9.7931,
+   "ci95": [
+    0.5505,
+    1.1543
+   ],
+   "delta": 0.8486
+  },
+  "prior_self_poolmix - pool | moves.exp_recall_r0 | per_mon": {
+   "a": 0.5153,
+   "b": 0.5429,
+   "ci95": [
+    -0.0306,
+    -0.0245
+   ],
+   "delta": -0.0276
+  },
+  "prior_self_poolmix - pool | moves.exp_recall_r0 | smogon_std": {
+   "a": 0.5338,
+   "b": 0.5658,
+   "ci95": [
+    -0.0355,
+    -0.0287
+   ],
+   "delta": -0.032
+  },
+  "prior_self_poolmix - pool | moves.exp_recall_r2 | per_mon": {
+   "a": 0.3588,
+   "b": 0.392,
+   "ci95": [
+    -0.0363,
+    -0.0301
+   ],
+   "delta": -0.0332
+  },
+  "prior_self_poolmix - pool | moves.exp_recall_r2 | smogon_std": {
+   "a": 0.3759,
+   "b": 0.4147,
+   "ci95": [
+    -0.0425,
+    -0.0354
+   ],
+   "delta": -0.0388
+  },
+  "prior_self_poolmix - pool | moves.mc_set_hit_r0 | per_mon": {
+   "a": 0.522,
+   "b": 0.5276,
+   "ci95": [
+    -0.0087,
+    -0.0025
+   ],
+   "delta": -0.0056
+  },
+  "prior_self_poolmix - pool | moves.mc_set_hit_r0 | smogon_std": {
+   "a": 0.5393,
+   "b": 0.5474,
+   "ci95": [
+    -0.0117,
+    -0.0048
+   ],
+   "delta": -0.0081
+  },
+  "prior_self_poolmix - pool | moves.mc_set_hit_r2 | per_mon": {
+   "a": 0.3803,
+   "b": 0.3889,
+   "ci95": [
+    -0.0118,
+    -0.0053
+   ],
+   "delta": -0.0086
+  },
+  "prior_self_poolmix - pool | moves.mc_set_hit_r2 | smogon_std": {
+   "a": 0.3987,
+   "b": 0.4101,
+   "ci95": [
+    -0.0155,
+    -0.008
+   ],
+   "delta": -0.0114
+  },
+  "prior_self_poolmix - pool | moves.mc_slot_hit_r0 | per_mon": {
+   "a": 0.1337,
+   "b": 0.1347,
+   "ci95": [
+    -0.002,
+    -0.0001
+   ],
+   "delta": -0.001
+  },
+  "prior_self_poolmix - pool | moves.mc_slot_hit_r0 | smogon_std": {
+   "a": 0.1386,
+   "b": 0.1407,
+   "ci95": [
+    -0.0033,
+    -0.0012
+   ],
+   "delta": -0.0021
+  },
+  "prior_self_poolmix - pool | moves.mc_slot_hit_r2 | per_mon": {
+   "a": 0.1932,
+   "b": 0.1967,
+   "ci95": [
+    -0.0053,
+    -0.0019
+   ],
+   "delta": -0.0035
+  },
+  "prior_self_poolmix - pool | moves.mc_slot_hit_r2 | smogon_std": {
+   "a": 0.203,
+   "b": 0.2084,
+   "ci95": [
+    -0.0076,
+    -0.0035
+   ],
+   "delta": -0.0054
+  },
+  "prior_self_poolmix - pool | moves.top2_recall_r2 | per_mon": {
+   "a": 0.4887,
+   "b": 0.5918,
+   "ci95": [
+    -0.111,
+    -0.0953
+   ],
+   "delta": -0.1031
+  },
+  "prior_self_poolmix - pool | moves.top2_recall_r2 | smogon_std": {
+   "a": 0.5091,
+   "b": 0.6158,
+   "ci95": [
+    -0.1146,
+    -0.0985
+   ],
+   "delta": -0.1067
+  },
+  "prior_self_poolmix - pool | moves.top4_recall_r0 | per_mon": {
+   "a": 0.6085,
+   "b": 0.6505,
+   "ci95": [
+    -0.049,
+    -0.0353
+   ],
+   "delta": -0.042
+  },
+  "prior_self_poolmix - pool | moves.top4_recall_r0 | smogon_std": {
+   "a": 0.6263,
+   "b": 0.6746,
+   "ci95": [
+    -0.0548,
+    -0.041
+   ],
+   "delta": -0.0483
+  },
+  "replays - pool | censored.item.p_true | per_mon": {
+   "a": 0.8353,
+   "b": 0.8067,
+   "ci95": [
+    0.0218,
+    0.0356
+   ],
+   "delta": 0.0286
+  },
+  "replays - pool | censored.item.p_true | smogon_std": {
+   "a": 0.7332,
+   "b": 0.7977,
+   "ci95": [
+    -0.071,
+    -0.0609
+   ],
+   "delta": -0.0645
+  },
+  "replays - pool | censored.item.top1 | per_mon": {
+   "a": 0.9284,
+   "b": 0.926,
+   "ci95": [
+    -0.0064,
+    0.0116
+   ],
+   "delta": 0.0024
+  },
+  "replays - pool | censored.item.top1 | smogon_std": {
+   "a": 0.8349,
+   "b": 0.9103,
+   "ci95": [
+    -0.0858,
+    -0.0675
+   ],
+   "delta": -0.0754
+  },
+  "replays - pool | censored.p_revealed_move_hpm | per_mon": {
+   "a": 0.5966,
+   "b": 0.5689,
+   "ci95": [
+    0.0236,
+    0.0317
+   ],
+   "delta": 0.0277
+  },
+  "replays - pool | censored.p_revealed_move_hpm | smogon_std": {
+   "a": 0.6038,
+   "b": 0.5964,
+   "ci95": [
+    0.0039,
+    0.0107
+   ],
+   "delta": 0.0074
+  },
+  "replays - pool | censored.revealed_in_top4_hpm | per_mon": {
+   "a": 0.6966,
+   "b": 0.6759,
+   "ci95": [
+    0.0139,
+    0.0273
+   ],
+   "delta": 0.0207
+  },
+  "replays - pool | censored.revealed_in_top4_hpm | smogon_std": {
+   "a": 0.7024,
+   "b": 0.7044,
+   "ci95": [
+    -0.0086,
+    0.005
+   ],
+   "delta": -0.002
+  },
+  "replays_full4 - pool | moves.exp_recall_r0_hpm | per_mon": {
+   "a": 0.5562,
+   "b": 0.5738,
+   "ci95": [
+    -0.0222,
+    -0.0128
+   ],
+   "delta": -0.0176
+  },
+  "replays_full4 - pool | moves.exp_recall_r0_hpm | smogon_std": {
+   "a": 0.5488,
+   "b": 0.5964,
+   "ci95": [
+    -0.0512,
+    -0.0438
+   ],
+   "delta": -0.0476
+  },
+  "replays_full4 - pool | moves.exp_recall_r2_hpm | per_mon": {
+   "a": 0.3985,
+   "b": 0.4141,
+   "ci95": [
+    -0.0203,
+    -0.0108
+   ],
+   "delta": -0.0156
+  },
+  "replays_full4 - pool | moves.exp_recall_r2_hpm | smogon_std": {
+   "a": 0.3918,
+   "b": 0.4372,
+   "ci95": [
+    -0.049,
+    -0.0415
+   ],
+   "delta": -0.0454
+  },
+  "replays_full4 - pool | moves.top2_recall_r2_hpm | per_mon": {
+   "a": 0.5741,
+   "b": 0.6135,
+   "ci95": [
+    -0.0478,
+    -0.0311
+   ],
+   "delta": -0.0394
+  },
+  "replays_full4 - pool | moves.top2_recall_r2_hpm | smogon_std": {
+   "a": 0.5557,
+   "b": 0.6396,
+   "ci95": [
+    -0.0917,
+    -0.0756
+   ],
+   "delta": -0.0839
+  },
+  "replays_full4 - pool | moves.top4_recall_r0_hpm | per_mon": {
+   "a": 0.6513,
+   "b": 0.6799,
+   "ci95": [
+    -0.036,
+    -0.0212
+   ],
+   "delta": -0.0286
+  },
+  "replays_full4 - pool | moves.top4_recall_r0_hpm | smogon_std": {
+   "a": 0.6375,
+   "b": 0.7044,
+   "ci95": [
+    -0.0737,
+    -0.0591
+   ],
+   "delta": -0.0669
+  },
+  "replays_ge1500 - pool | censored.item.p_true | per_mon": {
+   "a": 0.8444,
+   "b": 0.8067,
+   "ci95": [
+    0.0305,
+    0.0452
+   ],
+   "delta": 0.0377
+  },
+  "replays_ge1500 - pool | censored.item.p_true | smogon_std": {
+   "a": 0.7471,
+   "b": 0.7977,
+   "ci95": [
+    -0.0581,
+    -0.0457
+   ],
+   "delta": -0.0506
+  },
+  "replays_ge1500 - pool | censored.item.top1 | per_mon": {
+   "a": 0.9446,
+   "b": 0.926,
+   "ci95": [
+    0.0096,
+    0.0282
+   ],
+   "delta": 0.0186
+  },
+  "replays_ge1500 - pool | censored.item.top1 | smogon_std": {
+   "a": 0.8527,
+   "b": 0.9103,
+   "ci95": [
+    -0.0691,
+    -0.0486
+   ],
+   "delta": -0.0576
+  },
+  "replays_ge1500 - pool | censored.p_revealed_move_hpm | per_mon": {
+   "a": 0.6111,
+   "b": 0.5689,
+   "ci95": [
+    0.0375,
+    0.0468
+   ],
+   "delta": 0.0422
+  },
+  "replays_ge1500 - pool | censored.p_revealed_move_hpm | smogon_std": {
+   "a": 0.618,
+   "b": 0.5964,
+   "ci95": [
+    0.018,
+    0.0258
+   ],
+   "delta": 0.0216
+  },
+  "replays_ge1500 - pool | censored.revealed_in_top4_hpm | per_mon": {
+   "a": 0.7078,
+   "b": 0.6759,
+   "ci95": [
+    0.0244,
+    0.0393
+   ],
+   "delta": 0.0319
+  },
+  "replays_ge1500 - pool | censored.revealed_in_top4_hpm | smogon_std": {
+   "a": 0.7129,
+   "b": 0.7044,
+   "ci95": [
+    0.002,
+    0.0169
+   ],
+   "delta": 0.0085
+  },
+  "replays_team6 - pool | teammates.p_true | per_mon": {
+   "a": 0.0475,
+   "b": 0.0542,
+   "ci95": [
+    -0.0076,
+    -0.0059
+   ],
+   "delta": -0.0067
+  },
+  "replays_team6 - pool | teammates.p_true | smogon_std": {
+   "a": 0.0481,
+   "b": 0.054,
+   "ci95": [
+    -0.007,
+    -0.0052
+   ],
+   "delta": -0.0059
+  },
+  "replays_team6 - pool | teammates.rank | per_mon": {
+   "a": 15.8185,
+   "b": 9.7516,
+   "ci95": [
+    5.7412,
+    6.3699
+   ],
+   "delta": 6.0669
+  },
+  "replays_team6 - pool | teammates.rank | smogon_std": {
+   "a": 15.1017,
+   "b": 9.7931,
+   "ci95": [
+    5.0021,
+    5.6265
+   ],
+   "delta": 5.3086
+  },
+  "replays_team6 - pool | teammates.top5_recall | per_mon": {
+   "a": 0.3682,
+   "b": 0.4178,
+   "ci95": [
+    -0.0599,
+    -0.0396
+   ],
+   "delta": -0.0496
+  },
+  "replays_team6 - pool | teammates.top5_recall | smogon_std": {
+   "a": 0.3725,
+   "b": 0.4184,
+   "ci95": [
+    -0.0574,
+    -0.0353
+   ],
+   "delta": -0.0459
+  },
+  "sample - pool | item.p_true | per_mon": {
+   "a": 0.8048,
+   "b": 0.8022,
+   "ci95": [
+    -0.0227,
+    0.025
+   ],
+   "delta": 0.0026
+  },
+  "sample - pool | item.p_true | smogon_std": {
+   "a": 0.7987,
+   "b": 0.7925,
+   "ci95": [
+    -0.0132,
+    0.0245
+   ],
+   "delta": 0.0062
+  },
+  "sample - pool | moves.exp_recall_r0 | per_mon": {
+   "a": 0.5586,
+   "b": 0.5429,
+   "ci95": [
+    -0.0004,
+    0.0325
+   ],
+   "delta": 0.0157
+  },
+  "sample - pool | moves.exp_recall_r0 | smogon_std": {
+   "a": 0.5765,
+   "b": 0.5658,
+   "ci95": [
+    -0.0034,
+    0.0193
+   ],
+   "delta": 0.0107
+  },
+  "sample - pool | moves.mc_set_hit_r2 | per_mon": {
+   "a": 0.4026,
+   "b": 0.3889,
+   "ci95": [
+    -0.0013,
+    0.0286
+   ],
+   "delta": 0.0137
+  },
+  "sample - pool | moves.mc_set_hit_r2 | smogon_std": {
+   "a": 0.4205,
+   "b": 0.4101,
+   "ci95": [
+    -0.0034,
+    0.0184
+   ],
+   "delta": 0.0104
+  },
+  "sample - pool | moves.top4_recall_r0 | per_mon": {
+   "a": 0.673,
+   "b": 0.6505,
+   "ci95": [
+    -0.0006,
+    0.0466
+   ],
+   "delta": 0.0225
+  },
+  "sample - pool | moves.top4_recall_r0 | smogon_std": {
+   "a": 0.692,
+   "b": 0.6746,
+   "ci95": [
+    -0.0096,
+    0.0383
+   ],
+   "delta": 0.0174
+  },
+  "sample - pool | spread.p_coarse | per_mon": {
+   "a": 0.302,
+   "b": 0.2758,
+   "ci95": [
+    0.0025,
+    0.049
+   ],
+   "delta": 0.0262
+  },
+  "sample - pool | spread.p_coarse | smogon_std": {
+   "a": 0.3379,
+   "b": 0.3088,
+   "ci95": [
+    0.0056,
+    0.0424
+   ],
+   "delta": 0.0291
+  },
+  "sample - pool | spread.p_exact | per_mon": {
+   "a": 0.0656,
+   "b": 0.0493,
+   "ci95": [
+    0.0048,
+    0.0281
+   ],
+   "delta": 0.0163
+  },
+  "sample - pool | spread.p_exact | smogon_std": {
+   "a": 0.0803,
+   "b": 0.0631,
+   "ci95": [
+    0.0037,
+    0.0293
+   ],
+   "delta": 0.0172
+  }
+ },
+ "findings_counts": {},
+ "meta": {
+  "bank": {
+   "end2": {
+    "battles": 417,
+    "opp_class(states)": {
+     "bot": 337,
+     "pool_snapshot": 263
+    },
+    "opp_team_is_a_pool_team(states)": {
+     "True": 600
+    },
+    "states": 600,
+    "states_with_revealed": 600
+   },
+   "prod": {
+    "battles": 416,
+    "opp_class(states)": {
+     "bot": 360,
+     "pool_snapshot": 240
+    },
+    "opp_team_is_a_pool_team(states)": {
+     "True": 600
+    },
+    "states": 600,
+    "states_with_revealed": 600
+   }
+  },
+  "mc_draws": 200,
+  "metamon": {
+   "data_sha256": "231c73ee707513d97fffbaf82016d1b6e6eaaf6cd092b300188fc11ed062f01b",
+   "file": "src/utils/ladder_corpus/teams.jsonl.gz",
+   "n_teams": 22813,
+   "source": {
+    "archive": "~/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou",
+    "files": 22862,
+    "fingerprint_sha256": "b80ce5707b7ebb80ca6e5c0a3841b2a12d1b569accb1e9b5ece5d9bfd5698b8c",
+    "what": "Metamon hl_05_26 gen3ou teams (the public ladder), `teams` revision v5, downloaded 2026-09-24"
+   }
+  },
+  "n_boot": 2000,
+  "numpy": "2.4.3",
+  "pool": {
+   "by_collection": {
+    "giraffe": 345,
+    "johnnyg2": 90,
+    "mcmegan": 34,
+    "sample": 72,
+    "schmuck_nick": 15,
+    "yak_attack": 163
+   },
+   "loader": "utils.team_loader.TeamLoader(base_dir='data/teams').get_all_teams() (reproduced here with labels)",
+   "n_mons": 4314,
+   "n_teams": 719
+  },
+  "priors": "agents.gen3_data.priors (moves/items/ability/spreads/all_spreads/teammates/species_usage)",
+  "python": "3.11.15",
+  "replays": {
+   "date_folders_in_sample": [
+    "2026-05-18",
+    "2026-09-23"
+   ],
+   "dir": "/home/goodlad/dev/gen3ai/replays/showdown/gen3ou",
+   "files_total": 376410,
+   "high_rating_cut": 1500,
+   "item_reveal_counts_top": {
+    "aguavberry": 16,
+    "chestoberry": 411,
+    "choiceband": 566,
+    "ganlonberry": 15,
+    "leftovers": 241088,
+    "liechiberry": 1445,
+    "lumberry": 4992,
+    "machobrace": 35,
+    "magnet": 60,
+    "petayaberry": 621,
+    "salacberry": 5828,
+    "shellbell": 159,
+    "sitrusberry": 88,
+    "starfberry": 26,
+    "whiteherb": 172
+   },
+   "mean_revealed_moves_per_appeared_mon": 1.8267,
+   "n_date_folders": 109,
+   "replays": 40000,
+   "revealable_items_ge20": [
+    "chestoberry",
+    "choiceband",
+    "leftovers",
+    "liechiberry",
+    "lumberry",
+    "machobrace",
+    "magnet",
+    "petayaberry",
+    "salacberry",
+    "shellbell",
+    "sitrusberry",
+    "starfberry",
+    "whiteherb"
+   ],
+   "revealed_move_count_hist_per_appeared_mon": {
+    "0": 43920,
+    "1": 125860,
+    "2": 120721,
+    "3": 79590,
+    "4": 32203
+   },
+   "sample_seed": 20261011,
+   "sampled": 40000,
+   "team_sides": 80000,
+   "team_sides_hi": 8527,
+   "team_sides_rated": 78302
+  },
+  "script_sha256": "d592e2e8a190a5d8b0e6cfcbafbeaef28b67a3535ca70f288e5fc5e61fe5d7c1",
+  "seed": 20261011
+ },
+ "sources": {
+  "bank_end2": {
+   "n_teams": 417,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 723,
+     "n_species": 15,
+     "n_teams": 305,
+     "n_weight": 723.0,
+     "per_mon": {
+      "ci95": [
+       0.9141,
+       0.9398
+      ],
+      "est": 0.927
+     },
+     "per_species": {
+      "ci95": [
+       0.8533,
+       0.8853
+      ],
+      "est": 0.8714
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9213,
+       0.9293
+      ],
+      "est": 0.9256
+     }
+    },
+    "ability.top1": {
+     "n_rows": 723,
+     "n_species": 15,
+     "n_teams": 305,
+     "n_weight": 723.0,
+     "per_mon": {
+      "ci95": [
+       0.9344,
+       0.9728
+      ],
+      "est": 0.9544
+     },
+     "per_species": {
+      "ci95": [
+       0.906,
+       0.9633
+      ],
+      "est": 0.9425
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9486,
+       0.9733
+      ],
+      "est": 0.9614
+     }
+    },
+    "at_reveal.exp_recall": {
+     "n_rows": 2277,
+     "n_species": 55,
+     "n_teams": 416,
+     "n_weight": 2277.0,
+     "per_mon": {
+      "ci95": [
+       0.413,
+       0.4294
+      ],
+      "est": 0.4209
+     },
+     "per_species": {
+      "ci95": [
+       0.4701,
+       0.5042
+      ],
+      "est": 0.4834
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4441,
+       0.4586
+      ],
+      "est": 0.4503
+     }
+    },
+    "at_reveal.mc_set_hit": {
+     "n_rows": 2277,
+     "n_species": 55,
+     "n_teams": 416,
+     "n_weight": 6028.0,
+     "per_mon": {
+      "ci95": [
+       0.4393,
+       0.4543
+      ],
+      "est": 0.4466
+     },
+     "per_species": {
+      "ci95": [
+       0.4866,
+       0.5166
+      ],
+      "est": 0.4969
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4654,
+       0.4786
+      ],
+      "est": 0.471
+     }
+    },
+    "at_reveal.mc_slot_hit": {
+     "n_rows": 2277,
+     "n_species": 55,
+     "n_teams": 416,
+     "n_weight": 6028.0,
+     "per_mon": {
+      "ci95": [
+       0.1576,
+       0.1634
+      ],
+      "est": 0.1605
+     },
+     "per_species": {
+      "ci95": [
+       0.1856,
+       0.203
+      ],
+      "est": 0.1901
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1694,
+       0.1756
+      ],
+      "est": 0.1719
+     }
+    },
+    "at_reveal.topU_recall": {
+     "n_rows": 2277,
+     "n_species": 55,
+     "n_teams": 416,
+     "n_weight": 2277.0,
+     "per_mon": {
+      "ci95": [
+       0.5596,
+       0.5877
+      ],
+      "est": 0.5745
+     },
+     "per_species": {
+      "ci95": [
+       0.6397,
+       0.6918
+      ],
+      "est": 0.6681
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5953,
+       0.6235
+      ],
+      "est": 0.6099
+     }
+    },
+    "censored.p_revealed_move_hpm": {
+     "n_rows": 3080,
+     "n_species": 55,
+     "n_teams": 415,
+     "n_weight": 3080.0,
+     "per_mon": {
+      "ci95": [
+       0.6218,
+       0.6457
+      ],
+      "est": 0.6341
+     },
+     "per_species": {
+      "ci95": [
+       0.6564,
+       0.7051
+      ],
+      "est": 0.6746
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6494,
+       0.6697
+      ],
+      "est": 0.6591
+     }
+    },
+    "censored.revealed_in_top4_hpm": {
+     "n_rows": 3080,
+     "n_species": 55,
+     "n_teams": 415,
+     "n_weight": 3080.0,
+     "per_mon": {
+      "ci95": [
+       0.7417,
+       0.7808
+      ],
+      "est": 0.761
+     },
+     "per_species": {
+      "ci95": [
+       0.7531,
+       0.8198
+      ],
+      "est": 0.785
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7711,
+       0.807
+      ],
+      "est": 0.789
+     }
+    },
+    "item.p_true": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.7964,
+       0.8147
+      ],
+      "est": 0.8054
+     },
+     "per_species": {
+      "ci95": [
+       0.785,
+       0.8276
+      ],
+      "est": 0.7997
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7959,
+       0.8084
+      ],
+      "est": 0.8014
+     }
+    },
+    "item.top1": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.9151,
+       0.9378
+      ],
+      "est": 0.9264
+     },
+     "per_species": {
+      "ci95": [
+       0.8717,
+       0.9343
+      ],
+      "est": 0.8969
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9072,
+       0.9301
+      ],
+      "est": 0.9185
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.5423,
+       0.5535
+      ],
+      "est": 0.548
+     },
+     "per_species": {
+      "ci95": [
+       0.5937,
+       0.6181
+      ],
+      "est": 0.6064
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5664,
+       0.5745
+      ],
+      "est": 0.57
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.5732,
+       0.5842
+      ],
+      "est": 0.5787
+     },
+     "per_species": {
+      "ci95": [
+       0.6239,
+       0.647
+      ],
+      "est": 0.6354
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5972,
+       0.6052
+      ],
+      "est": 0.6008
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.3904,
+       0.4019
+      ],
+      "est": 0.3961
+     },
+     "per_species": {
+      "ci95": [
+       0.4404,
+       0.4674
+      ],
+      "est": 0.4552
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4148,
+       0.4231
+      ],
+      "est": 0.4186
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.4123,
+       0.4238
+      ],
+      "est": 0.418
+     },
+     "per_species": {
+      "ci95": [
+       0.4628,
+       0.4895
+      ],
+      "est": 0.4768
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4374,
+       0.4457
+      ],
+      "est": 0.4412
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.5364,
+       0.5458
+      ],
+      "est": 0.5411
+     },
+     "per_species": {
+      "ci95": [
+       0.5798,
+       0.6022
+      ],
+      "est": 0.5915
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5576,
+       0.565
+      ],
+      "est": 0.5611
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.3954,
+       0.4061
+      ],
+      "est": 0.4007
+     },
+     "per_species": {
+      "ci95": [
+       0.4428,
+       0.4684
+      ],
+      "est": 0.4566
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4191,
+       0.4272
+      ],
+      "est": 0.4229
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.1364,
+       0.1392
+      ],
+      "est": 0.1378
+     },
+     "per_species": {
+      "ci95": [
+       0.1474,
+       0.1536
+      ],
+      "est": 0.1507
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1425,
+       0.1448
+      ],
+      "est": 0.1436
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.1995,
+       0.2051
+      ],
+      "est": 0.2022
+     },
+     "per_species": {
+      "ci95": [
+       0.2247,
+       0.2381
+      ],
+      "est": 0.2323
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2125,
+       0.2165
+      ],
+      "est": 0.2145
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.5913,
+       0.6118
+      ],
+      "est": 0.6016
+     },
+     "per_species": {
+      "ci95": [
+       0.6505,
+       0.6931
+      ],
+      "est": 0.6761
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6163,
+       0.6353
+      ],
+      "est": 0.6261
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.6132,
+       0.6334
+      ],
+      "est": 0.6233
+     },
+     "per_species": {
+      "ci95": [
+       0.6751,
+       0.7172
+      ],
+      "est": 0.6991
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6417,
+       0.6608
+      ],
+      "est": 0.6513
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.6514,
+       0.6705
+      ],
+      "est": 0.661
+     },
+     "per_species": {
+      "ci95": [
+       0.7044,
+       0.7396
+      ],
+      "est": 0.7267
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6768,
+       0.6945
+      ],
+      "est": 0.6861
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.6799,
+       0.6989
+      ],
+      "est": 0.6895
+     },
+     "per_species": {
+      "ci95": [
+       0.7251,
+       0.7611
+      ],
+      "est": 0.7466
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7076,
+       0.7251
+      ],
+      "est": 0.7165
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.275,
+       0.2946
+      ],
+      "est": 0.285
+     },
+     "per_species": {
+      "ci95": [
+       0.3338,
+       0.3736
+      ],
+      "est": 0.3505
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3079,
+       0.3247
+      ],
+      "est": 0.3175
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.0465,
+       0.0561
+      ],
+      "est": 0.0512
+     },
+     "per_species": {
+      "ci95": [
+       0.0713,
+       0.0917
+      ],
+      "est": 0.0815
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0644,
+       0.0744
+      ],
+      "est": 0.0696
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.0566,
+       0.068
+      ],
+      "est": 0.0622
+     },
+     "per_species": {
+      "ci95": [
+       0.083,
+       0.1056
+      ],
+      "est": 0.0942
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0764,
+       0.0883
+      ],
+      "est": 0.0826
+     }
+    },
+    "spread.top1": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.0883,
+       0.1142
+      ],
+      "est": 0.1003
+     },
+     "per_species": {
+      "ci95": [
+       0.1309,
+       0.2007
+      ],
+      "est": 0.1726
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1234,
+       0.1547
+      ],
+      "est": 0.1406
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.3507,
+       0.3933
+      ],
+      "est": 0.3717
+     },
+     "per_species": {
+      "ci95": [
+       0.4537,
+       0.5306
+      ],
+      "est": 0.4936
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3943,
+       0.4336
+      ],
+      "est": 0.4169
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 18000,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 18000.0,
+     "per_mon": {
+      "ci95": [
+       0.0534,
+       0.0558
+      ],
+      "est": 0.0546
+     },
+     "per_species": {
+      "ci95": [
+       0.052,
+       0.0558
+      ],
+      "est": 0.0536
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0538,
+       0.0562
+      ],
+      "est": 0.0549
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 18000,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 18000.0,
+     "per_mon": {
+      "ci95": [
+       9.3165,
+       9.9892
+      ],
+      "est": 9.6519
+     },
+     "per_species": {
+      "ci95": [
+       8.749,
+       9.6067
+      ],
+      "est": 9.2055
+     },
+     "smogon_std": {
+      "ci95": [
+       9.2284,
+       9.9692
+      ],
+      "est": 9.6047
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 3600,
+     "n_species": 60,
+     "n_teams": 417,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.4082,
+       0.4368
+      ],
+      "est": 0.4223
+     },
+     "per_species": {
+      "ci95": [
+       0.4316,
+       0.4808
+      ],
+      "est": 0.4591
+     },
+     "smogon_std": {
+      "ci95": [
+       0.415,
+       0.4473
+      ],
+      "est": 0.4314
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 154,
+    "celebi": 173,
+    "charizard": 142,
+    "gengar": 155,
+    "jirachi": 195,
+    "metagross": 270,
+    "salamence": 184,
+    "skarmory": 180,
+    "suicune": 126,
+    "swampert": 359,
+    "tyranitar": 389,
+    "zapdos": 184
+   }
+  },
+  "bank_prod": {
+   "n_teams": 416,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 729,
+     "n_species": 15,
+     "n_teams": 300,
+     "n_weight": 729.0,
+     "per_mon": {
+      "ci95": [
+       0.9015,
+       0.9316
+      ],
+      "est": 0.917
+     },
+     "per_species": {
+      "ci95": [
+       0.7884,
+       0.8483
+      ],
+      "est": 0.8252
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8861,
+       0.9136
+      ],
+      "est": 0.9014
+     }
+    },
+    "ability.top1": {
+     "n_rows": 729,
+     "n_species": 15,
+     "n_teams": 300,
+     "n_weight": 729.0,
+     "per_mon": {
+      "ci95": [
+       0.9205,
+       0.9622
+      ],
+      "est": 0.9424
+     },
+     "per_species": {
+      "ci95": [
+       0.8319,
+       0.9078
+      ],
+      "est": 0.879
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9054,
+       0.9424
+      ],
+      "est": 0.9251
+     }
+    },
+    "at_reveal.exp_recall": {
+     "n_rows": 2184,
+     "n_species": 52,
+     "n_teams": 416,
+     "n_weight": 2184.0,
+     "per_mon": {
+      "ci95": [
+       0.4103,
+       0.4307
+      ],
+      "est": 0.4204
+     },
+     "per_species": {
+      "ci95": [
+       0.4627,
+       0.499
+      ],
+      "est": 0.4768
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4456,
+       0.4635
+      ],
+      "est": 0.4541
+     }
+    },
+    "at_reveal.mc_set_hit": {
+     "n_rows": 2184,
+     "n_species": 52,
+     "n_teams": 416,
+     "n_weight": 5805.0,
+     "per_mon": {
+      "ci95": [
+       0.4361,
+       0.4539
+      ],
+      "est": 0.4452
+     },
+     "per_species": {
+      "ci95": [
+       0.4746,
+       0.5086
+      ],
+      "est": 0.4909
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4634,
+       0.479
+      ],
+      "est": 0.4718
+     }
+    },
+    "at_reveal.mc_slot_hit": {
+     "n_rows": 2184,
+     "n_species": 52,
+     "n_teams": 416,
+     "n_weight": 5805.0,
+     "per_mon": {
+      "ci95": [
+       0.1555,
+       0.1619
+      ],
+      "est": 0.1588
+     },
+     "per_species": {
+      "ci95": [
+       0.1732,
+       0.1917
+      ],
+      "est": 0.1798
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1666,
+       0.1738
+      ],
+      "est": 0.1697
+     }
+    },
+    "at_reveal.topU_recall": {
+     "n_rows": 2184,
+     "n_species": 52,
+     "n_teams": 416,
+     "n_weight": 2184.0,
+     "per_mon": {
+      "ci95": [
+       0.5542,
+       0.5867
+      ],
+      "est": 0.5696
+     },
+     "per_species": {
+      "ci95": [
+       0.5969,
+       0.6592
+      ],
+      "est": 0.6269
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5921,
+       0.6249
+      ],
+      "est": 0.6079
+     }
+    },
+    "censored.p_revealed_move_hpm": {
+     "n_rows": 2931,
+     "n_species": 51,
+     "n_teams": 415,
+     "n_weight": 2931.0,
+     "per_mon": {
+      "ci95": [
+       0.6033,
+       0.6306
+      ],
+      "est": 0.6171
+     },
+     "per_species": {
+      "ci95": [
+       0.64,
+       0.6984
+      ],
+      "est": 0.6705
+     },
+     "smogon_std": {
+      "ci95": [
+       0.638,
+       0.6622
+      ],
+      "est": 0.6512
+     }
+    },
+    "censored.revealed_in_top4_hpm": {
+     "n_rows": 2931,
+     "n_species": 51,
+     "n_teams": 415,
+     "n_weight": 2931.0,
+     "per_mon": {
+      "ci95": [
+       0.7113,
+       0.7523
+      ],
+      "est": 0.7322
+     },
+     "per_species": {
+      "ci95": [
+       0.7082,
+       0.7902
+      ],
+      "est": 0.7485
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7432,
+       0.7811
+      ],
+      "est": 0.7628
+     }
+    },
+    "item.p_true": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.7921,
+       0.81
+      ],
+      "est": 0.8011
+     },
+     "per_species": {
+      "ci95": [
+       0.7542,
+       0.8009
+      ],
+      "est": 0.758
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7854,
+       0.8002
+      ],
+      "est": 0.7913
+     }
+    },
+    "item.top1": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.9087,
+       0.9324
+      ],
+      "est": 0.9206
+     },
+     "per_species": {
+      "ci95": [
+       0.8513,
+       0.9053
+      ],
+      "est": 0.8697
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8917,
+       0.9147
+      ],
+      "est": 0.9026
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.5352,
+       0.5483
+      ],
+      "est": 0.5415
+     },
+     "per_species": {
+      "ci95": [
+       0.5851,
+       0.6048
+      ],
+      "est": 0.5964
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5619,
+       0.5711
+      ],
+      "est": 0.5666
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.5652,
+       0.5778
+      ],
+      "est": 0.5713
+     },
+     "per_species": {
+      "ci95": [
+       0.6189,
+       0.6368
+      ],
+      "est": 0.6305
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5926,
+       0.6017
+      ],
+      "est": 0.5973
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.3827,
+       0.3957
+      ],
+      "est": 0.389
+     },
+     "per_species": {
+      "ci95": [
+       0.4331,
+       0.454
+      ],
+      "est": 0.4458
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4096,
+       0.4189
+      ],
+      "est": 0.4144
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.4038,
+       0.4167
+      ],
+      "est": 0.41
+     },
+     "per_species": {
+      "ci95": [
+       0.4582,
+       0.4783
+      ],
+      "est": 0.4712
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4319,
+       0.4413
+      ],
+      "est": 0.4367
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.5281,
+       0.5391
+      ],
+      "est": 0.5334
+     },
+     "per_species": {
+      "ci95": [
+       0.5716,
+       0.5899
+      ],
+      "est": 0.582
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5525,
+       0.5607
+      ],
+      "est": 0.5566
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.3868,
+       0.3988
+      ],
+      "est": 0.3926
+     },
+     "per_species": {
+      "ci95": [
+       0.4355,
+       0.4551
+      ],
+      "est": 0.4465
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4134,
+       0.4223
+      ],
+      "est": 0.4179
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.1348,
+       0.138
+      ],
+      "est": 0.1364
+     },
+     "per_species": {
+      "ci95": [
+       0.1461,
+       0.1517
+      ],
+      "est": 0.1492
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1417,
+       0.1444
+      ],
+      "est": 0.1431
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.1951,
+       0.2016
+      ],
+      "est": 0.1982
+     },
+     "per_species": {
+      "ci95": [
+       0.2209,
+       0.2319
+      ],
+      "est": 0.227
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2095,
+       0.2143
+      ],
+      "est": 0.2119
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.5789,
+       0.601
+      ],
+      "est": 0.5896
+     },
+     "per_species": {
+      "ci95": [
+       0.6222,
+       0.6594
+      ],
+      "est": 0.6417
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6046,
+       0.6259
+      ],
+      "est": 0.6153
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.6002,
+       0.6218
+      ],
+      "est": 0.6109
+     },
+     "per_species": {
+      "ci95": [
+       0.649,
+       0.6873
+      ],
+      "est": 0.6725
+     },
+     "smogon_std": {
+      "ci95": [
+       0.629,
+       0.65
+      ],
+      "est": 0.6395
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.6394,
+       0.6598
+      ],
+      "est": 0.6492
+     },
+     "per_species": {
+      "ci95": [
+       0.6794,
+       0.7109
+      ],
+      "est": 0.6976
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6636,
+       0.6821
+      ],
+      "est": 0.6728
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.6683,
+       0.6884
+      ],
+      "est": 0.6781
+     },
+     "per_species": {
+      "ci95": [
+       0.7069,
+       0.7387
+      ],
+      "est": 0.7273
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6953,
+       0.7135
+      ],
+      "est": 0.7042
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.2627,
+       0.2836
+      ],
+      "est": 0.2729
+     },
+     "per_species": {
+      "ci95": [
+       0.3235,
+       0.3584
+      ],
+      "est": 0.3353
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3007,
+       0.3203
+      ],
+      "est": 0.3108
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.0426,
+       0.0513
+      ],
+      "est": 0.047
+     },
+     "per_species": {
+      "ci95": [
+       0.0576,
+       0.0734
+      ],
+      "est": 0.0627
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0586,
+       0.0692
+      ],
+      "est": 0.0639
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.0527,
+       0.063
+      ],
+      "est": 0.0579
+     },
+     "per_species": {
+      "ci95": [
+       0.0683,
+       0.0863
+      ],
+      "est": 0.0742
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0704,
+       0.0827
+      ],
+      "est": 0.0764
+     }
+    },
+    "spread.top1": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.0801,
+       0.104
+      ],
+      "est": 0.0919
+     },
+     "per_species": {
+      "ci95": [
+       0.0902,
+       0.1372
+      ],
+      "est": 0.1046
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1084,
+       0.1373
+      ],
+      "est": 0.122
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.3238,
+       0.3717
+      ],
+      "est": 0.3475
+     },
+     "per_species": {
+      "ci95": [
+       0.3925,
+       0.462
+      ],
+      "est": 0.4204
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3753,
+       0.418
+      ],
+      "est": 0.3969
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 18000,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 18000.0,
+     "per_mon": {
+      "ci95": [
+       0.0534,
+       0.056
+      ],
+      "est": 0.0547
+     },
+     "per_species": {
+      "ci95": [
+       0.0495,
+       0.0541
+      ],
+      "est": 0.0508
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0537,
+       0.0563
+      ],
+      "est": 0.0549
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 18000,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 18000.0,
+     "per_mon": {
+      "ci95": [
+       9.1736,
+       10.0271
+      ],
+      "est": 9.5817
+     },
+     "per_species": {
+      "ci95": [
+       9.2773,
+       10.7521
+      ],
+      "est": 10.2016
+     },
+     "smogon_std": {
+      "ci95": [
+       9.1552,
+       10.0058
+      ],
+      "est": 9.5894
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 3600,
+     "n_species": 58,
+     "n_teams": 416,
+     "n_weight": 3600.0,
+     "per_mon": {
+      "ci95": [
+       0.4102,
+       0.44
+      ],
+      "est": 0.425
+     },
+     "per_species": {
+      "ci95": [
+       0.3979,
+       0.4578
+      ],
+      "est": 0.4169
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4141,
+       0.4476
+      ],
+      "est": 0.43
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 155,
+    "celebi": 162,
+    "charizard": 135,
+    "gengar": 152,
+    "jirachi": 221,
+    "metagross": 272,
+    "salamence": 184,
+    "skarmory": 172,
+    "suicune": 138,
+    "swampert": 339,
+    "tyranitar": 408,
+    "zapdos": 189
+   }
+  },
+  "metamon_hl0526": {
+   "n_teams": 22813,
+   "notes": {
+    "ability.p_true: species without a usage entry": 9,
+    "ability.top1: species without a usage entry": 9,
+    "mons without a Smogon move prior": 20,
+    "teammate: species without a teammate prior": 20
+   },
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 36945,
+     "n_species": 58,
+     "n_teams": 19634,
+     "n_weight": 36945.0,
+     "per_mon": {
+      "ci95": [
+       0.9042,
+       0.9082
+      ],
+      "est": 0.9062
+     },
+     "per_species": {
+      "ci95": [
+       0.7696,
+       0.8144
+      ],
+      "est": 0.7939
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8883,
+       0.8917
+      ],
+      "est": 0.89
+     }
+    },
+    "ability.top1": {
+     "n_rows": 36945,
+     "n_species": 58,
+     "n_teams": 19634,
+     "n_weight": 36945.0,
+     "per_mon": {
+      "ci95": [
+       0.933,
+       0.938
+      ],
+      "est": 0.9356
+     },
+     "per_species": {
+      "ci95": [
+       0.8106,
+       0.8817
+      ],
+      "est": 0.8478
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9192,
+       0.9248
+      ],
+      "est": 0.9221
+     }
+    },
+    "item.p_true": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.8,
+       0.8025
+      ],
+      "est": 0.8012
+     },
+     "per_species": {
+      "ci95": [
+       0.6661,
+       0.6916
+      ],
+      "est": 0.6715
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7894,
+       0.791
+      ],
+      "est": 0.7901
+     }
+    },
+    "item.top1": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.9054,
+       0.9085
+      ],
+      "est": 0.9069
+     },
+     "per_species": {
+      "ci95": [
+       0.7553,
+       0.7963
+      ],
+      "est": 0.7666
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8932,
+       0.8963
+      ],
+      "est": 0.8947
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.5152,
+       0.5167
+      ],
+      "est": 0.516
+     },
+     "per_species": {
+      "ci95": [
+       0.4884,
+       0.5007
+      ],
+      "est": 0.493
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5129,
+       0.514
+      ],
+      "est": 0.5134
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.5804,
+       0.5819
+      ],
+      "est": 0.5811
+     },
+     "per_species": {
+      "ci95": [
+       0.5565,
+       0.5698
+      ],
+      "est": 0.5598
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5821,
+       0.5832
+      ],
+      "est": 0.5826
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.3736,
+       0.375
+      ],
+      "est": 0.3743
+     },
+     "per_species": {
+      "ci95": [
+       0.3512,
+       0.3629
+      ],
+      "est": 0.3557
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3721,
+       0.3731
+      ],
+      "est": 0.3726
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.4204,
+       0.422
+      ],
+      "est": 0.4212
+     },
+     "per_species": {
+      "ci95": [
+       0.3997,
+       0.4126
+      ],
+      "est": 0.4032
+     },
+     "smogon_std": {
+      "ci95": [
+       0.422,
+       0.4231
+      ],
+      "est": 0.4225
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.5249,
+       0.5262
+      ],
+      "est": 0.5255
+     },
+     "per_species": {
+      "ci95": [
+       0.4966,
+       0.508
+      ],
+      "est": 0.5004
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5244,
+       0.5254
+      ],
+      "est": 0.5249
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.3855,
+       0.387
+      ],
+      "est": 0.3862
+     },
+     "per_species": {
+      "ci95": [
+       0.3625,
+       0.374
+      ],
+      "est": 0.3669
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3851,
+       0.3862
+      ],
+      "est": 0.3857
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.1346,
+       0.135
+      ],
+      "est": 0.1348
+     },
+     "per_species": {
+      "ci95": [
+       0.1264,
+       0.1297
+      ],
+      "est": 0.1273
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1345,
+       0.1348
+      ],
+      "est": 0.1346
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.1957,
+       0.1964
+      ],
+      "est": 0.1961
+     },
+     "per_species": {
+      "ci95": [
+       0.1837,
+       0.19
+      ],
+      "est": 0.1862
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1955,
+       0.1961
+      ],
+      "est": 0.1958
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.5051,
+       0.5077
+      ],
+      "est": 0.5064
+     },
+     "per_species": {
+      "ci95": [
+       0.5017,
+       0.5225
+      ],
+      "est": 0.512
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5037,
+       0.5061
+      ],
+      "est": 0.5049
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.5683,
+       0.5711
+      ],
+      "est": 0.5697
+     },
+     "per_species": {
+      "ci95": [
+       0.5614,
+       0.5855
+      ],
+      "est": 0.571
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5698,
+       0.5724
+      ],
+      "est": 0.5712
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.6018,
+       0.6039
+      ],
+      "est": 0.6028
+     },
+     "per_species": {
+      "ci95": [
+       0.587,
+       0.6063
+      ],
+      "est": 0.596
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5996,
+       0.6015
+      ],
+      "est": 0.6005
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.671,
+       0.6732
+      ],
+      "est": 0.6721
+     },
+     "per_species": {
+      "ci95": [
+       0.6611,
+       0.6817
+      ],
+      "est": 0.669
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6723,
+       0.6743
+      ],
+      "est": 0.6733
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.364,
+       0.3664
+      ],
+      "est": 0.3652
+     },
+     "per_species": {
+      "ci95": [
+       0.352,
+       0.3733
+      ],
+      "est": 0.3616
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3677,
+       0.3693
+      ],
+      "est": 0.3685
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.1261,
+       0.1276
+      ],
+      "est": 0.1269
+     },
+     "per_species": {
+      "ci95": [
+       0.1402,
+       0.157
+      ],
+      "est": 0.1518
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1292,
+       0.1306
+      ],
+      "est": 0.1299
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.167,
+       0.1688
+      ],
+      "est": 0.1679
+     },
+     "per_species": {
+      "ci95": [
+       0.1622,
+       0.179
+      ],
+      "est": 0.173
+     },
+     "smogon_std": {
+      "ci95": [
+       0.169,
+       0.1708
+      ],
+      "est": 0.1699
+     }
+    },
+    "spread.top1": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.3273,
+       0.3328
+      ],
+      "est": 0.3301
+     },
+     "per_species": {
+      "ci95": [
+       0.2811,
+       0.3204
+      ],
+      "est": 0.3015
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3299,
+       0.3352
+      ],
+      "est": 0.3325
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.5306,
+       0.5357
+      ],
+      "est": 0.5332
+     },
+     "per_species": {
+      "ci95": [
+       0.5057,
+       0.5512
+      ],
+      "est": 0.5264
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5344,
+       0.539
+      ],
+      "est": 0.5366
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 684290,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 684290.0,
+     "per_mon": {
+      "ci95": [
+       0.0546,
+       0.0549
+      ],
+      "est": 0.0548
+     },
+     "per_species": {
+      "ci95": [
+       0.0467,
+       0.0499
+      ],
+      "est": 0.0479
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0542,
+       0.0545
+      ],
+      "est": 0.0543
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 684290,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 684290.0,
+     "per_mon": {
+      "ci95": [
+       10.4114,
+       10.5585
+      ],
+      "est": 10.4835
+     },
+     "per_species": {
+      "ci95": [
+       13.9174,
+       17.5591
+      ],
+      "est": 16.8045
+     },
+     "smogon_std": {
+      "ci95": [
+       10.5679,
+       10.7134
+      ],
+      "est": 10.6417
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 136858,
+     "n_species": 176,
+     "n_teams": 22813,
+     "n_weight": 136858.0,
+     "per_mon": {
+      "ci95": [
+       0.4316,
+       0.4357
+      ],
+      "est": 0.4336
+     },
+     "per_species": {
+      "ci95": [
+       0.3822,
+       0.4122
+      ],
+      "est": 0.3928
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4309,
+       0.435
+      ],
+      "est": 0.4329
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 6846,
+    "celebi": 5822,
+    "dugtrio": 4446,
+    "gengar": 5907,
+    "metagross": 9816,
+    "salamence": 7580,
+    "skarmory": 9524,
+    "snorlax": 4872,
+    "suicune": 5575,
+    "swampert": 9183,
+    "tyranitar": 13113,
+    "zapdos": 6637
+   }
+  },
+  "pool": {
+   "n_teams": 719,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 913,
+     "n_species": 20,
+     "n_teams": 538,
+     "n_weight": 913.0,
+     "per_mon": {
+      "ci95": [
+       0.9067,
+       0.9288
+      ],
+      "est": 0.9183
+     },
+     "per_species": {
+      "ci95": [
+       0.8361,
+       0.8763
+      ],
+      "est": 0.8613
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9057,
+       0.9189
+      ],
+      "est": 0.913
+     }
+    },
+    "ability.top1": {
+     "n_rows": 913,
+     "n_species": 20,
+     "n_teams": 538,
+     "n_weight": 913.0,
+     "per_mon": {
+      "ci95": [
+       0.9296,
+       0.9594
+      ],
+      "est": 0.9452
+     },
+     "per_species": {
+      "ci95": [
+       0.8892,
+       0.9372
+      ],
+      "est": 0.9247
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9285,
+       0.9517
+      ],
+      "est": 0.9408
+     }
+    },
+    "censored.item.p_true": {
+     "n_rows": 4285,
+     "n_species": 67,
+     "n_teams": 719,
+     "n_weight": 4285.0,
+     "per_mon": {
+      "ci95": [
+       0.7997,
+       0.8135
+      ],
+      "est": 0.8067
+     },
+     "per_species": {
+      "ci95": [
+       0.7656,
+       0.8118
+      ],
+      "est": 0.775
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7944,
+       0.8042
+      ],
+      "est": 0.7977
+     }
+    },
+    "censored.item.top1": {
+     "n_rows": 4285,
+     "n_species": 67,
+     "n_teams": 719,
+     "n_weight": 4285.0,
+     "per_mon": {
+      "ci95": [
+       0.9169,
+       0.9347
+      ],
+      "est": 0.926
+     },
+     "per_species": {
+      "ci95": [
+       0.8585,
+       0.9192
+      ],
+      "est": 0.8798
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9028,
+       0.9211
+      ],
+      "est": 0.9103
+     }
+    },
+    "censored.p_revealed_move_hpm": {
+     "n_rows": 17256,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 7944.058,
+     "per_mon": {
+      "ci95": [
+       0.5649,
+       0.5729
+      ],
+      "est": 0.5689
+     },
+     "per_species": {
+      "ci95": [
+       0.6225,
+       0.6447
+      ],
+      "est": 0.6363
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5933,
+       0.5998
+      ],
+      "est": 0.5964
+     }
+    },
+    "censored.revealed_in_top4_hpm": {
+     "n_rows": 17256,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 7944.058,
+     "per_mon": {
+      "ci95": [
+       0.6694,
+       0.6827
+      ],
+      "est": 0.6759
+     },
+     "per_species": {
+      "ci95": [
+       0.723,
+       0.7564
+      ],
+      "est": 0.7456
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6974,
+       0.711
+      ],
+      "est": 0.7044
+     }
+    },
+    "item.p_true": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.7952,
+       0.809
+      ],
+      "est": 0.8022
+     },
+     "per_species": {
+      "ci95": [
+       0.7648,
+       0.8113
+      ],
+      "est": 0.7753
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7883,
+       0.7994
+      ],
+      "est": 0.7925
+     }
+    },
+    "item.top1": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.9112,
+       0.9293
+      ],
+      "est": 0.9205
+     },
+     "per_species": {
+      "ci95": [
+       0.858,
+       0.9182
+      ],
+      "est": 0.8802
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8954,
+       0.9146
+      ],
+      "est": 0.9037
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.5386,
+       0.5473
+      ],
+      "est": 0.5429
+     },
+     "per_species": {
+      "ci95": [
+       0.5911,
+       0.6152
+      ],
+      "est": 0.6061
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5625,
+       0.5693
+      ],
+      "est": 0.5658
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.5697,
+       0.5781
+      ],
+      "est": 0.5738
+     },
+     "per_species": {
+      "ci95": [
+       0.6225,
+       0.6447
+      ],
+      "est": 0.6363
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5933,
+       0.5998
+      ],
+      "est": 0.5964
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.3878,
+       0.3965
+      ],
+      "est": 0.392
+     },
+     "per_species": {
+      "ci95": [
+       0.4383,
+       0.4651
+      ],
+      "est": 0.4559
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4114,
+       0.4183
+      ],
+      "est": 0.4147
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.4097,
+       0.4185
+      ],
+      "est": 0.4141
+     },
+     "per_species": {
+      "ci95": [
+       0.4616,
+       0.4874
+      ],
+      "est": 0.4784
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4338,
+       0.4407
+      ],
+      "est": 0.4372
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.524,
+       0.5314
+      ],
+      "est": 0.5276
+     },
+     "per_species": {
+      "ci95": [
+       0.5652,
+       0.5875
+      ],
+      "est": 0.5777
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5444,
+       0.5509
+      ],
+      "est": 0.5474
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.385,
+       0.393
+      ],
+      "est": 0.3889
+     },
+     "per_species": {
+      "ci95": [
+       0.43,
+       0.4544
+      ],
+      "est": 0.4447
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4069,
+       0.4138
+      ],
+      "est": 0.4101
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.1335,
+       0.1359
+      ],
+      "est": 0.1347
+     },
+     "per_species": {
+      "ci95": [
+       0.1448,
+       0.1512
+      ],
+      "est": 0.1483
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1398,
+       0.1418
+      ],
+      "est": 0.1407
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.1946,
+       0.1989
+      ],
+      "est": 0.1967
+     },
+     "per_species": {
+      "ci95": [
+       0.2189,
+       0.232
+      ],
+      "est": 0.2269
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2067,
+       0.2103
+      ],
+      "est": 0.2084
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.5843,
+       0.5992
+      ],
+      "est": 0.5918
+     },
+     "per_species": {
+      "ci95": [
+       0.6392,
+       0.6816
+      ],
+      "est": 0.663
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6083,
+       0.6231
+      ],
+      "est": 0.6158
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.6058,
+       0.6213
+      ],
+      "est": 0.6135
+     },
+     "per_species": {
+      "ci95": [
+       0.6651,
+       0.7079
+      ],
+      "est": 0.6899
+     },
+     "smogon_std": {
+      "ci95": [
+       0.632,
+       0.6471
+      ],
+      "est": 0.6396
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.6439,
+       0.6576
+      ],
+      "est": 0.6505
+     },
+     "per_species": {
+      "ci95": [
+       0.6987,
+       0.7321
+      ],
+      "est": 0.7214
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6674,
+       0.681
+      ],
+      "est": 0.6746
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.6733,
+       0.6868
+      ],
+      "est": 0.6799
+     },
+     "per_species": {
+      "ci95": [
+       0.723,
+       0.7564
+      ],
+      "est": 0.7456
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6974,
+       0.711
+      ],
+      "est": 0.7044
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.2684,
+       0.2835
+      ],
+      "est": 0.2758
+     },
+     "per_species": {
+      "ci95": [
+       0.3301,
+       0.368
+      ],
+      "est": 0.344
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3025,
+       0.315
+      ],
+      "est": 0.3088
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.0459,
+       0.0527
+      ],
+      "est": 0.0493
+     },
+     "per_species": {
+      "ci95": [
+       0.0664,
+       0.0901
+      ],
+      "est": 0.0804
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0592,
+       0.0668
+      ],
+      "est": 0.0631
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.0553,
+       0.0632
+      ],
+      "est": 0.0592
+     },
+     "per_species": {
+      "ci95": [
+       0.0773,
+       0.1029
+      ],
+      "est": 0.0918
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0701,
+       0.079
+      ],
+      "est": 0.0745
+     }
+    },
+    "spread.top1": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.0804,
+       0.0978
+      ],
+      "est": 0.089
+     },
+     "per_species": {
+      "ci95": [
+       0.1067,
+       0.1677
+      ],
+      "est": 0.14
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1047,
+       0.1269
+      ],
+      "est": 0.1158
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.3285,
+       0.3595
+      ],
+      "est": 0.344
+     },
+     "per_species": {
+      "ci95": [
+       0.4265,
+       0.5092
+      ],
+      "est": 0.467
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3728,
+       0.4034
+      ],
+      "est": 0.3891
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 21570.0,
+     "per_mon": {
+      "ci95": [
+       0.0534,
+       0.0551
+      ],
+      "est": 0.0542
+     },
+     "per_species": {
+      "ci95": [
+       0.0498,
+       0.0535
+      ],
+      "est": 0.0513
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0532,
+       0.055
+      ],
+      "est": 0.054
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 21570.0,
+     "per_mon": {
+      "ci95": [
+       9.4821,
+       10.0418
+      ],
+      "est": 9.7516
+     },
+     "per_species": {
+      "ci95": [
+       9.3371,
+       10.466
+      ],
+      "est": 9.9528
+     },
+     "smogon_std": {
+      "ci95": [
+       9.4919,
+       10.0751
+      ],
+      "est": 9.7931
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 4314,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.408,
+       0.4278
+      ],
+      "est": 0.4178
+     },
+     "per_species": {
+      "ci95": [
+       0.4042,
+       0.4515
+      ],
+      "est": 0.4242
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4078,
+       0.4299
+      ],
+      "est": 0.4184
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 182,
+    "celebi": 212,
+    "charizard": 141,
+    "gengar": 182,
+    "jirachi": 239,
+    "metagross": 325,
+    "salamence": 241,
+    "skarmory": 203,
+    "suicune": 141,
+    "swampert": 423,
+    "tyranitar": 456,
+    "zapdos": 220
+   }
+  },
+  "pool:giraffe": {
+   "n_teams": 345,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 326,
+     "n_species": 11,
+     "n_teams": 219,
+     "n_weight": 326.0,
+     "per_mon": {
+      "ci95": [
+       0.9038,
+       0.9387
+      ],
+      "est": 0.9226
+     },
+     "per_species": {
+      "ci95": [
+       0.7801,
+       0.8711
+      ],
+      "est": 0.8226
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9048,
+       0.9262
+      ],
+      "est": 0.9151
+     }
+    },
+    "ability.top1": {
+     "n_rows": 326,
+     "n_species": 11,
+     "n_teams": 219,
+     "n_weight": 326.0,
+     "per_mon": {
+      "ci95": [
+       0.9071,
+       0.9607
+      ],
+      "est": 0.9356
+     },
+     "per_species": {
+      "ci95": [
+       0.7358,
+       0.9095
+      ],
+      "est": 0.8344
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9101,
+       0.9475
+      ],
+      "est": 0.9295
+     }
+    },
+    "item.p_true": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.8122,
+       0.8267
+      ],
+      "est": 0.8196
+     },
+     "per_species": {
+      "ci95": [
+       0.7932,
+       0.8512
+      ],
+      "est": 0.8061
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8164,
+       0.8296
+      ],
+      "est": 0.8196
+     }
+    },
+    "item.top1": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.9589,
+       0.9744
+      ],
+      "est": 0.9671
+     },
+     "per_species": {
+      "ci95": [
+       0.8593,
+       0.9369
+      ],
+      "est": 0.8801
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9444,
+       0.9642
+      ],
+      "est": 0.9495
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.5161,
+       0.5275
+      ],
+      "est": 0.5219
+     },
+     "per_species": {
+      "ci95": [
+       0.5815,
+       0.6088
+      ],
+      "est": 0.5939
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5589,
+       0.5685
+      ],
+      "est": 0.5638
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.5481,
+       0.5602
+      ],
+      "est": 0.5541
+     },
+     "per_species": {
+      "ci95": [
+       0.6151,
+       0.6426
+      ],
+      "est": 0.6272
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5897,
+       0.5993
+      ],
+      "est": 0.5946
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.3631,
+       0.3749
+      ],
+      "est": 0.369
+     },
+     "per_species": {
+      "ci95": [
+       0.4312,
+       0.4607
+      ],
+      "est": 0.4453
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4061,
+       0.4161
+      ],
+      "est": 0.4112
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.3857,
+       0.3981
+      ],
+      "est": 0.3919
+     },
+     "per_species": {
+      "ci95": [
+       0.4561,
+       0.4867
+      ],
+      "est": 0.4703
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4287,
+       0.4389
+      ],
+      "est": 0.4339
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.5037,
+       0.5141
+      ],
+      "est": 0.5089
+     },
+     "per_species": {
+      "ci95": [
+       0.5559,
+       0.579
+      ],
+      "est": 0.5644
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5368,
+       0.5458
+      ],
+      "est": 0.5412
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.3613,
+       0.3722
+      ],
+      "est": 0.3668
+     },
+     "per_species": {
+      "ci95": [
+       0.4214,
+       0.4458
+      ],
+      "est": 0.4315
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3977,
+       0.4071
+      ],
+      "est": 0.4025
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.126,
+       0.1292
+      ],
+      "est": 0.1276
+     },
+     "per_species": {
+      "ci95": [
+       0.1412,
+       0.1486
+      ],
+      "est": 0.1443
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1364,
+       0.1393
+      ],
+      "est": 0.1379
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.1809,
+       0.1865
+      ],
+      "est": 0.1837
+     },
+     "per_species": {
+      "ci95": [
+       0.2137,
+       0.227
+      ],
+      "est": 0.2194
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2005,
+       0.2052
+      ],
+      "est": 0.2028
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.566,
+       0.5876
+      ],
+      "est": 0.5766
+     },
+     "per_species": {
+      "ci95": [
+       0.6183,
+       0.6692
+      ],
+      "est": 0.6359
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6077,
+       0.6292
+      ],
+      "est": 0.6184
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.5853,
+       0.6083
+      ],
+      "est": 0.5967
+     },
+     "per_species": {
+      "ci95": [
+       0.6466,
+       0.7012
+      ],
+      "est": 0.6651
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6336,
+       0.6552
+      ],
+      "est": 0.6443
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.6226,
+       0.6434
+      ],
+      "est": 0.633
+     },
+     "per_species": {
+      "ci95": [
+       0.6799,
+       0.7145
+      ],
+      "est": 0.6947
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6633,
+       0.6827
+      ],
+      "est": 0.673
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.6549,
+       0.6767
+      ],
+      "est": 0.6658
+     },
+     "per_species": {
+      "ci95": [
+       0.7125,
+       0.7501
+      ],
+      "est": 0.7283
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6991,
+       0.7177
+      ],
+      "est": 0.7083
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.252,
+       0.275
+      ],
+      "est": 0.2639
+     },
+     "per_species": {
+      "ci95": [
+       0.3472,
+       0.3938
+      ],
+      "est": 0.3746
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3192,
+       0.3321
+      ],
+      "est": 0.3271
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.0433,
+       0.0527
+      ],
+      "est": 0.048
+     },
+     "per_species": {
+      "ci95": [
+       0.0694,
+       0.0919
+      ],
+      "est": 0.0823
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0723,
+       0.0819
+      ],
+      "est": 0.0777
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.0507,
+       0.0615
+      ],
+      "est": 0.0561
+     },
+     "per_species": {
+      "ci95": [
+       0.0794,
+       0.1039
+      ],
+      "est": 0.0929
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0837,
+       0.0947
+      ],
+      "est": 0.0898
+     }
+    },
+    "spread.top1": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.0725,
+       0.0952
+      ],
+      "est": 0.0836
+     },
+     "per_species": {
+      "ci95": [
+       0.102,
+       0.1628
+      ],
+      "est": 0.1349
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1272,
+       0.1555
+      ],
+      "est": 0.1418
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.2923,
+       0.3391
+      ],
+      "est": 0.3164
+     },
+     "per_species": {
+      "ci95": [
+       0.4593,
+       0.539
+      ],
+      "est": 0.5007
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3988,
+       0.4308
+      ],
+      "est": 0.4162
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 10350,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 10350.0,
+     "per_mon": {
+      "ci95": [
+       0.0538,
+       0.0559
+      ],
+      "est": 0.0549
+     },
+     "per_species": {
+      "ci95": [
+       0.0524,
+       0.0562
+      ],
+      "est": 0.0547
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0541,
+       0.0561
+      ],
+      "est": 0.0551
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 10350,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 10350.0,
+     "per_mon": {
+      "ci95": [
+       9.041,
+       9.7225
+      ],
+      "est": 9.3799
+     },
+     "per_species": {
+      "ci95": [
+       8.729,
+       9.5221
+      ],
+      "est": 9.094
+     },
+     "smogon_std": {
+      "ci95": [
+       8.9897,
+       9.6586
+      ],
+      "est": 9.3122
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 2070,
+     "n_species": 42,
+     "n_teams": 345,
+     "n_weight": 2070.0,
+     "per_mon": {
+      "ci95": [
+       0.4071,
+       0.4325
+      ],
+      "est": 0.4193
+     },
+     "per_species": {
+      "ci95": [
+       0.4252,
+       0.4631
+      ],
+      "est": 0.4491
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4079,
+       0.434
+      ],
+      "est": 0.4217
+     }
+    }
+   },
+   "top_species": {
+    "celebi": 129,
+    "charizard": 122,
+    "gengar": 75,
+    "jirachi": 154,
+    "jolteon": 79,
+    "metagross": 163,
+    "salamence": 125,
+    "skarmory": 80,
+    "suicune": 62,
+    "swampert": 259,
+    "tyranitar": 244,
+    "zapdos": 111
+   }
+  },
+  "pool:johnnyg2": {
+   "n_teams": 90,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 129,
+     "n_species": 12,
+     "n_teams": 70,
+     "n_weight": 129.0,
+     "per_mon": {
+      "ci95": [
+       0.9126,
+       0.9552
+      ],
+      "est": 0.9356
+     },
+     "per_species": {
+      "ci95": [
+       0.8683,
+       0.9029
+      ],
+      "est": 0.88
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9197,
+       0.9396
+      ],
+      "est": 0.9315
+     }
+    },
+    "ability.top1": {
+     "n_rows": 129,
+     "n_species": 12,
+     "n_teams": 70,
+     "n_weight": 129.0,
+     "per_mon": {
+      "ci95": [
+       0.975,
+       1.0
+      ],
+      "est": 0.9922
+     },
+     "per_species": {
+      "ci95": [
+       0.9848,
+       1.0
+      ],
+      "est": 0.996
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9758,
+       1.0
+      ],
+      "est": 0.9928
+     }
+    },
+    "item.p_true": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.7667,
+       0.8134
+      ],
+      "est": 0.7889
+     },
+     "per_species": {
+      "ci95": [
+       0.7808,
+       0.8327
+      ],
+      "est": 0.7985
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7446,
+       0.7803
+      ],
+      "est": 0.7614
+     }
+    },
+    "item.top1": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.8593,
+       0.9093
+      ],
+      "est": 0.8833
+     },
+     "per_species": {
+      "ci95": [
+       0.866,
+       0.9332
+      ],
+      "est": 0.8947
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8413,
+       0.8977
+      ],
+      "est": 0.8699
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.5472,
+       0.5727
+      ],
+      "est": 0.5596
+     },
+     "per_species": {
+      "ci95": [
+       0.582,
+       0.6128
+      ],
+      "est": 0.598
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5455,
+       0.5644
+      ],
+      "est": 0.5552
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.5746,
+       0.6
+      ],
+      "est": 0.5872
+     },
+     "per_species": {
+      "ci95": [
+       0.6115,
+       0.6417
+      ],
+      "est": 0.627
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5753,
+       0.5947
+      ],
+      "est": 0.585
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.3984,
+       0.4242
+      ],
+      "est": 0.4108
+     },
+     "per_species": {
+      "ci95": [
+       0.4308,
+       0.4642
+      ],
+      "est": 0.4476
+     },
+     "smogon_std": {
+      "ci95": [
+       0.399,
+       0.4166
+      ],
+      "est": 0.4077
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.4175,
+       0.4439
+      ],
+      "est": 0.4306
+     },
+     "per_species": {
+      "ci95": [
+       0.4523,
+       0.4862
+      ],
+      "est": 0.4694
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4207,
+       0.439
+      ],
+      "est": 0.4295
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.5248,
+       0.5463
+      ],
+      "est": 0.5351
+     },
+     "per_species": {
+      "ci95": [
+       0.5554,
+       0.5848
+      ],
+      "est": 0.57
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5249,
+       0.5426
+      ],
+      "est": 0.534
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.3885,
+       0.4124
+      ],
+      "est": 0.4002
+     },
+     "per_species": {
+      "ci95": [
+       0.4198,
+       0.4524
+      ],
+      "est": 0.4357
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3902,
+       0.4081
+      ],
+      "est": 0.399
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.1372,
+       0.1443
+      ],
+      "est": 0.1406
+     },
+     "per_species": {
+      "ci95": [
+       0.1447,
+       0.1534
+      ],
+      "est": 0.1488
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1384,
+       0.1438
+      ],
+      "est": 0.1412
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.1995,
+       0.2129
+      ],
+      "est": 0.206
+     },
+     "per_species": {
+      "ci95": [
+       0.2149,
+       0.2323
+      ],
+      "est": 0.223
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2017,
+       0.2114
+      ],
+      "est": 0.2066
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.5631,
+       0.6073
+      ],
+      "est": 0.5847
+     },
+     "per_species": {
+      "ci95": [
+       0.6152,
+       0.6741
+      ],
+      "est": 0.6475
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5539,
+       0.5943
+      ],
+      "est": 0.5747
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.583,
+       0.6275
+      ],
+      "est": 0.6052
+     },
+     "per_species": {
+      "ci95": [
+       0.6368,
+       0.6916
+      ],
+      "est": 0.6674
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5785,
+       0.6192
+      ],
+      "est": 0.5988
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.6319,
+       0.669
+      ],
+      "est": 0.6505
+     },
+     "per_species": {
+      "ci95": [
+       0.6775,
+       0.7286
+      ],
+      "est": 0.7042
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6215,
+       0.6603
+      ],
+      "est": 0.6414
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.6509,
+       0.6894
+      ],
+      "est": 0.6699
+     },
+     "per_species": {
+      "ci95": [
+       0.7007,
+       0.7473
+      ],
+      "est": 0.7265
+     },
+     "smogon_std": {
+      "ci95": [
+       0.647,
+       0.6847
+      ],
+      "est": 0.6659
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.2511,
+       0.2959
+      ],
+      "est": 0.2736
+     },
+     "per_species": {
+      "ci95": [
+       0.2929,
+       0.3488
+      ],
+      "est": 0.3184
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2687,
+       0.3028
+      ],
+      "est": 0.2867
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.0233,
+       0.037
+      ],
+      "est": 0.0296
+     },
+     "per_species": {
+      "ci95": [
+       0.041,
+       0.0613
+      ],
+      "est": 0.0511
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0288,
+       0.0405
+      ],
+      "est": 0.0343
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.0264,
+       0.0414
+      ],
+      "est": 0.0333
+     },
+     "per_species": {
+      "ci95": [
+       0.0461,
+       0.0688
+      ],
+      "est": 0.0571
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0321,
+       0.045
+      ],
+      "est": 0.0382
+     }
+    },
+    "spread.top1": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.0204,
+       0.05
+      ],
+      "est": 0.0352
+     },
+     "per_species": {
+      "ci95": [
+       0.0319,
+       0.0922
+      ],
+      "est": 0.0631
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0245,
+       0.0595
+      ],
+      "est": 0.0412
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.2667,
+       0.3463
+      ],
+      "est": 0.3056
+     },
+     "per_species": {
+      "ci95": [
+       0.3433,
+       0.4488
+      ],
+      "est": 0.4034
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2812,
+       0.3467
+      ],
+      "est": 0.3157
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 2700,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 2700.0,
+     "per_mon": {
+      "ci95": [
+       0.0475,
+       0.053
+      ],
+      "est": 0.0503
+     },
+     "per_species": {
+      "ci95": [
+       0.0463,
+       0.0538
+      ],
+      "est": 0.0494
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0484,
+       0.0534
+      ],
+      "est": 0.0509
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 2700,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 2700.0,
+     "per_mon": {
+      "ci95": [
+       10.3681,
+       12.3795
+      ],
+      "est": 11.3052
+     },
+     "per_species": {
+      "ci95": [
+       9.9873,
+       12.6739
+      ],
+      "est": 11.4947
+     },
+     "smogon_std": {
+      "ci95": [
+       10.3093,
+       12.1685
+      ],
+      "est": 11.2058
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 540,
+     "n_species": 53,
+     "n_teams": 90,
+     "n_weight": 540.0,
+     "per_mon": {
+      "ci95": [
+       0.3555,
+       0.4141
+      ],
+      "est": 0.3863
+     },
+     "per_species": {
+      "ci95": [
+       0.349,
+       0.438
+      ],
+      "est": 0.3907
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3609,
+       0.42
+      ],
+      "est": 0.3908
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 29,
+    "claydol": 21,
+    "gengar": 22,
+    "jirachi": 21,
+    "metagross": 35,
+    "salamence": 33,
+    "skarmory": 28,
+    "snorlax": 21,
+    "suicune": 23,
+    "swampert": 38,
+    "tyranitar": 35,
+    "zapdos": 33
+   }
+  },
+  "pool:mcmegan": {
+   "n_teams": 34,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 67,
+     "n_species": 8,
+     "n_teams": 32,
+     "n_weight": 67.0,
+     "per_mon": {
+      "ci95": [
+       0.8376,
+       0.944
+      ],
+      "est": 0.8987
+     },
+     "per_species": {
+      "ci95": [
+       0.7691,
+       0.9115
+      ],
+      "est": 0.845
+     },
+     "smogon_std": {
+      "ci95": [
+       0.789,
+       0.9356
+      ],
+      "est": 0.8612
+     }
+    },
+    "ability.top1": {
+     "n_rows": 67,
+     "n_species": 8,
+     "n_teams": 32,
+     "n_weight": 67.0,
+     "per_mon": {
+      "ci95": [
+       0.8704,
+       0.9867
+      ],
+      "est": 0.9403
+     },
+     "per_species": {
+      "ci95": [
+       0.8125,
+       0.9762
+      ],
+      "est": 0.9
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7962,
+       0.9732
+      ],
+      "est": 0.8871
+     }
+    },
+    "item.p_true": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.7581,
+       0.8322
+      ],
+      "est": 0.7944
+     },
+     "per_species": {
+      "ci95": [
+       0.8059,
+       0.8641
+      ],
+      "est": 0.8265
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7564,
+       0.8033
+      ],
+      "est": 0.7807
+     }
+    },
+    "item.top1": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.8333,
+       0.9216
+      ],
+      "est": 0.8775
+     },
+     "per_species": {
+      "ci95": [
+       0.8845,
+       0.9617
+      ],
+      "est": 0.9197
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8332,
+       0.9216
+      ],
+      "est": 0.8775
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.541,
+       0.5943
+      ],
+      "est": 0.5676
+     },
+     "per_species": {
+      "ci95": [
+       0.5488,
+       0.5811
+      ],
+      "est": 0.5714
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5215,
+       0.5528
+      ],
+      "est": 0.5371
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.5706,
+       0.6195
+      ],
+      "est": 0.5956
+     },
+     "per_species": {
+      "ci95": [
+       0.585,
+       0.6152
+      ],
+      "est": 0.6053
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5477,
+       0.5819
+      ],
+      "est": 0.5642
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.3921,
+       0.4424
+      ],
+      "est": 0.417
+     },
+     "per_species": {
+      "ci95": [
+       0.3965,
+       0.4295
+      ],
+      "est": 0.4184
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3714,
+       0.3996
+      ],
+      "est": 0.3855
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.4136,
+       0.4605
+      ],
+      "est": 0.4371
+     },
+     "per_species": {
+      "ci95": [
+       0.4222,
+       0.455
+      ],
+      "est": 0.4429
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3904,
+       0.4205
+      ],
+      "est": 0.4049
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.5213,
+       0.5615
+      ],
+      "est": 0.5413
+     },
+     "per_species": {
+      "ci95": [
+       0.5307,
+       0.562
+      ],
+      "est": 0.5527
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5039,
+       0.5344
+      ],
+      "est": 0.5202
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.3855,
+       0.427
+      ],
+      "est": 0.4062
+     },
+     "per_species": {
+      "ci95": [
+       0.3931,
+       0.4271
+      ],
+      "est": 0.4162
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3686,
+       0.3973
+      ],
+      "est": 0.3841
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.1341,
+       0.1453
+      ],
+      "est": 0.1398
+     },
+     "per_species": {
+      "ci95": [
+       0.1361,
+       0.1461
+      ],
+      "est": 0.1415
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1293,
+       0.139
+      ],
+      "est": 0.1337
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.1934,
+       0.2148
+      ],
+      "est": 0.204
+     },
+     "per_species": {
+      "ci95": [
+       0.1974,
+       0.2131
+      ],
+      "est": 0.2077
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1846,
+       0.1997
+      ],
+      "est": 0.192
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.5478,
+       0.6242
+      ],
+      "est": 0.5862
+     },
+     "per_species": {
+      "ci95": [
+       0.5456,
+       0.6058
+      ],
+      "est": 0.5845
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5123,
+       0.5763
+      ],
+      "est": 0.5448
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.5654,
+       0.6422
+      ],
+      "est": 0.6046
+     },
+     "per_species": {
+      "ci95": [
+       0.5741,
+       0.6319
+      ],
+      "est": 0.6111
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5268,
+       0.5934
+      ],
+      "est": 0.5602
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.6189,
+       0.685
+      ],
+      "est": 0.6532
+     },
+     "per_species": {
+      "ci95": [
+       0.6264,
+       0.6821
+      ],
+      "est": 0.6631
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5842,
+       0.6484
+      ],
+      "est": 0.6174
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.6385,
+       0.7071
+      ],
+      "est": 0.674
+     },
+     "per_species": {
+      "ci95": [
+       0.6514,
+       0.7117
+      ],
+      "est": 0.6905
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6008,
+       0.6733
+      ],
+      "est": 0.6386
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.2518,
+       0.3087
+      ],
+      "est": 0.2797
+     },
+     "per_species": {
+      "ci95": [
+       0.2678,
+       0.3266
+      ],
+      "est": 0.3043
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2333,
+       0.2863
+      ],
+      "est": 0.262
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.0363,
+       0.0619
+      ],
+      "est": 0.0485
+     },
+     "per_species": {
+      "ci95": [
+       0.037,
+       0.0684
+      ],
+      "est": 0.0548
+     },
+     "smogon_std": {
+      "ci95": [
+       0.032,
+       0.0537
+      ],
+      "est": 0.0434
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.0462,
+       0.0784
+      ],
+      "est": 0.0614
+     },
+     "per_species": {
+      "ci95": [
+       0.0462,
+       0.0828
+      ],
+      "est": 0.0668
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0413,
+       0.0655
+      ],
+      "est": 0.0546
+     }
+    },
+    "spread.top1": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.0588,
+       0.1275
+      ],
+      "est": 0.0931
+     },
+     "per_species": {
+      "ci95": [
+       0.0474,
+       0.1247
+      ],
+      "est": 0.0871
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0586,
+       0.1067
+      ],
+      "est": 0.0832
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.3332,
+       0.4461
+      ],
+      "est": 0.3873
+     },
+     "per_species": {
+      "ci95": [
+       0.3527,
+       0.4771
+      ],
+      "est": 0.4361
+     },
+     "smogon_std": {
+      "ci95": [
+       0.309,
+       0.4262
+      ],
+      "est": 0.367
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 1020,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 1020.0,
+     "per_mon": {
+      "ci95": [
+       0.0484,
+       0.0558
+      ],
+      "est": 0.052
+     },
+     "per_species": {
+      "ci95": [
+       0.0484,
+       0.0569
+      ],
+      "est": 0.0524
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0481,
+       0.0561
+      ],
+      "est": 0.0526
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 1020,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 1020.0,
+     "per_mon": {
+      "ci95": [
+       9.041,
+       11.8003
+      ],
+      "est": 10.3608
+     },
+     "per_species": {
+      "ci95": [
+       8.9782,
+       11.6975
+      ],
+      "est": 10.4377
+     },
+     "smogon_std": {
+      "ci95": [
+       9.1837,
+       11.9217
+      ],
+      "est": 10.4589
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 204,
+     "n_species": 33,
+     "n_teams": 34,
+     "n_weight": 204.0,
+     "per_mon": {
+      "ci95": [
+       0.3451,
+       0.4275
+      ],
+      "est": 0.3853
+     },
+     "per_species": {
+      "ci95": [
+       0.3721,
+       0.4624
+      ],
+      "est": 0.4213
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3251,
+       0.4237
+      ],
+      "est": 0.3808
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 18,
+    "claydol": 17,
+    "dugtrio": 11,
+    "forretress": 9,
+    "jirachi": 9,
+    "magneton": 9,
+    "metagross": 12,
+    "milotic": 7,
+    "salamence": 9,
+    "skarmory": 18,
+    "tyranitar": 20,
+    "zapdos": 8
+   }
+  },
+  "pool:sample": {
+   "n_teams": 72,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 102,
+     "n_species": 8,
+     "n_teams": 59,
+     "n_weight": 102.0,
+     "per_mon": {
+      "ci95": [
+       0.8945,
+       0.9607
+      ],
+      "est": 0.9301
+     },
+     "per_species": {
+      "ci95": [
+       0.8382,
+       0.9068
+      ],
+      "est": 0.8581
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8946,
+       0.941
+      ],
+      "est": 0.9171
+     }
+    },
+    "ability.top1": {
+     "n_rows": 102,
+     "n_species": 8,
+     "n_teams": 59,
+     "n_weight": 102.0,
+     "per_mon": {
+      "ci95": [
+       0.9091,
+       1.0
+      ],
+      "est": 0.9608
+     },
+     "per_species": {
+      "ci95": [
+       0.8333,
+       1.0
+      ],
+      "est": 0.9208
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9037,
+       1.0
+      ],
+      "est": 0.9524
+     }
+    },
+    "item.p_true": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.7814,
+       0.826
+      ],
+      "est": 0.8048
+     },
+     "per_species": {
+      "ci95": [
+       0.8004,
+       0.8622
+      ],
+      "est": 0.8238
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7818,
+       0.8177
+      ],
+      "est": 0.7987
+     }
+    },
+    "item.top1": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.8935,
+       0.9491
+      ],
+      "est": 0.9236
+     },
+     "per_species": {
+      "ci95": [
+       0.8804,
+       0.9629
+      ],
+      "est": 0.9094
+     },
+     "smogon_std": {
+      "ci95": [
+       0.885,
+       0.9423
+      ],
+      "est": 0.9108
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.5431,
+       0.5746
+      ],
+      "est": 0.5586
+     },
+     "per_species": {
+      "ci95": [
+       0.5945,
+       0.6266
+      ],
+      "est": 0.6123
+     },
+     "smogon_std": {
+      "ci95": [
+       0.563,
+       0.5846
+      ],
+      "est": 0.5765
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.5686,
+       0.5991
+      ],
+      "est": 0.5842
+     },
+     "per_species": {
+      "ci95": [
+       0.6231,
+       0.6551
+      ],
+      "est": 0.6399
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5902,
+       0.6118
+      ],
+      "est": 0.6037
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.3904,
+       0.4219
+      ],
+      "est": 0.4062
+     },
+     "per_species": {
+      "ci95": [
+       0.4419,
+       0.4778
+      ],
+      "est": 0.4609
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4119,
+       0.4337
+      ],
+      "est": 0.4256
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.4087,
+       0.44
+      ],
+      "est": 0.4245
+     },
+     "per_species": {
+      "ci95": [
+       0.463,
+       0.4996
+      ],
+      "est": 0.4817
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4315,
+       0.4538
+      ],
+      "est": 0.4454
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.5281,
+       0.5549
+      ],
+      "est": 0.5416
+     },
+     "per_species": {
+      "ci95": [
+       0.5703,
+       0.6009
+      ],
+      "est": 0.5867
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5453,
+       0.5648
+      ],
+      "est": 0.5575
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.3885,
+       0.4164
+      ],
+      "est": 0.4026
+     },
+     "per_species": {
+      "ci95": [
+       0.4344,
+       0.4693
+      ],
+      "est": 0.4529
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4075,
+       0.4279
+      ],
+      "est": 0.4205
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.1356,
+       0.1435
+      ],
+      "est": 0.1396
+     },
+     "per_species": {
+      "ci95": [
+       0.1456,
+       0.1543
+      ],
+      "est": 0.1489
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1406,
+       0.1469
+      ],
+      "est": 0.1438
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.1965,
+       0.2121
+      ],
+      "est": 0.2044
+     },
+     "per_species": {
+      "ci95": [
+       0.2211,
+       0.2382
+      ],
+      "est": 0.2299
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2077,
+       0.2179
+      ],
+      "est": 0.214
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.5882,
+       0.6391
+      ],
+      "est": 0.6128
+     },
+     "per_species": {
+      "ci95": [
+       0.6508,
+       0.7101
+      ],
+      "est": 0.6837
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6069,
+       0.6577
+      ],
+      "est": 0.6367
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.6032,
+       0.6547
+      ],
+      "est": 0.6287
+     },
+     "per_species": {
+      "ci95": [
+       0.6685,
+       0.7279
+      ],
+      "est": 0.7022
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6271,
+       0.6744
+      ],
+      "est": 0.6555
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.651,
+       0.6962
+      ],
+      "est": 0.673
+     },
+     "per_species": {
+      "ci95": [
+       0.6939,
+       0.747
+      ],
+      "est": 0.7211
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6655,
+       0.7108
+      ],
+      "est": 0.692
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.6748,
+       0.7188
+      ],
+      "est": 0.6968
+     },
+     "per_species": {
+      "ci95": [
+       0.7188,
+       0.7719
+      ],
+      "est": 0.7478
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6929,
+       0.7368
+      ],
+      "est": 0.7186
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.2795,
+       0.3233
+      ],
+      "est": 0.302
+     },
+     "per_species": {
+      "ci95": [
+       0.3518,
+       0.4228
+      ],
+      "est": 0.398
+     },
+     "smogon_std": {
+      "ci95": [
+       0.315,
+       0.3499
+      ],
+      "est": 0.3379
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.0549,
+       0.0771
+      ],
+      "est": 0.0656
+     },
+     "per_species": {
+      "ci95": [
+       0.0804,
+       0.1198
+      ],
+      "est": 0.1006
+     },
+     "smogon_std": {
+      "ci95": [
+       0.068,
+       0.0913
+      ],
+      "est": 0.0803
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.0695,
+       0.0962
+      ],
+      "est": 0.0825
+     },
+     "per_species": {
+      "ci95": [
+       0.0986,
+       0.1425
+      ],
+      "est": 0.1212
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0847,
+       0.1122
+      ],
+      "est": 0.0992
+     }
+    },
+    "spread.top1": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.1042,
+       0.169
+      ],
+      "est": 0.1366
+     },
+     "per_species": {
+      "ci95": [
+       0.1432,
+       0.2518
+      ],
+      "est": 0.1952
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1315,
+       0.1993
+      ],
+      "est": 0.1634
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.368,
+       0.4722
+      ],
+      "est": 0.4213
+     },
+     "per_species": {
+      "ci95": [
+       0.4577,
+       0.5912
+      ],
+      "est": 0.5415
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4145,
+       0.5058
+      ],
+      "est": 0.4691
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 2160,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 2160.0,
+     "per_mon": {
+      "ci95": [
+       0.0553,
+       0.061
+      ],
+      "est": 0.0581
+     },
+     "per_species": {
+      "ci95": [
+       0.0582,
+       0.0646
+      ],
+      "est": 0.0616
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0566,
+       0.0622
+      ],
+      "est": 0.0597
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 2160,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 2160.0,
+     "per_mon": {
+      "ci95": [
+       7.6643,
+       9.1626
+      ],
+      "est": 8.4134
+     },
+     "per_species": {
+      "ci95": [
+       6.7942,
+       8.1479
+      ],
+      "est": 7.3518
+     },
+     "smogon_std": {
+      "ci95": [
+       7.4384,
+       8.8958
+      ],
+      "est": 8.0962
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.4269,
+       0.4972
+      ],
+      "est": 0.4611
+     },
+     "per_species": {
+      "ci95": [
+       0.4794,
+       0.5698
+      ],
+      "est": 0.5312
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4415,
+       0.5153
+      ],
+      "est": 0.4835
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 21,
+    "celebi": 19,
+    "claydol": 17,
+    "gengar": 19,
+    "jirachi": 22,
+    "metagross": 35,
+    "salamence": 26,
+    "skarmory": 26,
+    "suicune": 26,
+    "swampert": 36,
+    "tyranitar": 44,
+    "zapdos": 19
+   }
+  },
+  "pool:schmuck_nick": {
+   "n_teams": 15,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 27,
+     "n_species": 9,
+     "n_teams": 13,
+     "n_weight": 27.0,
+     "per_mon": {
+      "ci95": [
+       0.794,
+       0.8913
+      ],
+      "est": 0.8375
+     },
+     "per_species": {
+      "ci95": [
+       0.7842,
+       0.8828
+      ],
+      "est": 0.8279
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8693,
+       0.9449
+      ],
+      "est": 0.9041
+     }
+    },
+    "ability.top1": {
+     "n_rows": 27,
+     "n_species": 9,
+     "n_teams": 13,
+     "n_weight": 27.0,
+     "per_mon": {
+      "ci95": [
+       0.8,
+       1.0
+      ],
+      "est": 0.8889
+     },
+     "per_species": {
+      "ci95": [
+       0.8333,
+       1.0
+      ],
+      "est": 0.8889
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8874,
+       1.0
+      ],
+      "est": 0.9252
+     }
+    },
+    "item.p_true": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.7767,
+       0.8678
+      ],
+      "est": 0.8239
+     },
+     "per_species": {
+      "ci95": [
+       0.7978,
+       0.839
+      ],
+      "est": 0.8255
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7802,
+       0.8309
+      ],
+      "est": 0.8037
+     }
+    },
+    "item.top1": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.8667,
+       0.9667
+      ],
+      "est": 0.9222
+     },
+     "per_species": {
+      "ci95": [
+       0.88,
+       0.9487
+      ],
+      "est": 0.9167
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9257,
+       0.9733
+      ],
+      "est": 0.9513
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.5375,
+       0.5926
+      ],
+      "est": 0.5677
+     },
+     "per_species": {
+      "ci95": [
+       0.5567,
+       0.5946
+      ],
+      "est": 0.5712
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5235,
+       0.5902
+      ],
+      "est": 0.5575
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.5635,
+       0.623
+      ],
+      "est": 0.5954
+     },
+     "per_species": {
+      "ci95": [
+       0.587,
+       0.6293
+      ],
+      "est": 0.6065
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5523,
+       0.6164
+      ],
+      "est": 0.5855
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.3818,
+       0.4357
+      ],
+      "est": 0.4111
+     },
+     "per_species": {
+      "ci95": [
+       0.3992,
+       0.4395
+      ],
+      "est": 0.4155
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3714,
+       0.437
+      ],
+      "est": 0.4048
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.4002,
+       0.4575
+      ],
+      "est": 0.4308
+     },
+     "per_species": {
+      "ci95": [
+       0.4202,
+       0.4642
+      ],
+      "est": 0.4401
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3916,
+       0.4548
+      ],
+      "est": 0.4243
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.5306,
+       0.5783
+      ],
+      "est": 0.5551
+     },
+     "per_species": {
+      "ci95": [
+       0.5464,
+       0.5822
+      ],
+      "est": 0.5616
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5196,
+       0.5804
+      ],
+      "est": 0.5507
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.3853,
+       0.4387
+      ],
+      "est": 0.4128
+     },
+     "per_species": {
+      "ci95": [
+       0.4029,
+       0.4439
+      ],
+      "est": 0.4204
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3723,
+       0.4405
+      ],
+      "est": 0.407
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.1357,
+       0.1497
+      ],
+      "est": 0.143
+     },
+     "per_species": {
+      "ci95": [
+       0.1372,
+       0.1502
+      ],
+      "est": 0.1427
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1321,
+       0.1525
+      ],
+      "est": 0.1423
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.1983,
+       0.2275
+      ],
+      "est": 0.2133
+     },
+     "per_species": {
+      "ci95": [
+       0.2064,
+       0.2282
+      ],
+      "est": 0.215
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1917,
+       0.2279
+      ],
+      "est": 0.21
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.5639,
+       0.675
+      ],
+      "est": 0.6259
+     },
+     "per_species": {
+      "ci95": [
+       0.5643,
+       0.6385
+      ],
+      "est": 0.583
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5464,
+       0.6718
+      ],
+      "est": 0.6015
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.5741,
+       0.6871
+      ],
+      "est": 0.6352
+     },
+     "per_species": {
+      "ci95": [
+       0.5812,
+       0.6618
+      ],
+      "est": 0.6101
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5613,
+       0.6788
+      ],
+      "est": 0.6157
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.6083,
+       0.7194
+      ],
+      "est": 0.6694
+     },
+     "per_species": {
+      "ci95": [
+       0.6003,
+       0.6907
+      ],
+      "est": 0.6302
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5822,
+       0.7255
+      ],
+      "est": 0.6488
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.6222,
+       0.7306
+      ],
+      "est": 0.6806
+     },
+     "per_species": {
+      "ci95": [
+       0.6231,
+       0.7149
+      ],
+      "est": 0.6594
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6002,
+       0.7336
+      ],
+      "est": 0.6632
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.1619,
+       0.2281
+      ],
+      "est": 0.1942
+     },
+     "per_species": {
+      "ci95": [
+       0.1881,
+       0.2473
+      ],
+      "est": 0.2143
+     },
+     "smogon_std": {
+      "ci95": [
+       0.123,
+       0.2487
+      ],
+      "est": 0.1877
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.0059,
+       0.0113
+      ],
+      "est": 0.0087
+     },
+     "per_species": {
+      "ci95": [
+       0.0071,
+       0.0135
+      ],
+      "est": 0.0095
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0041,
+       0.0135
+      ],
+      "est": 0.0102
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.007,
+       0.0138
+      ],
+      "est": 0.0105
+     },
+     "per_species": {
+      "ci95": [
+       0.0083,
+       0.0167
+      ],
+      "est": 0.0116
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0047,
+       0.0174
+      ],
+      "est": 0.0131
+     }
+    },
+    "spread.top1": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "est": 0.0
+     },
+     "per_species": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "est": 0.0
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "est": 0.0
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.1222,
+       0.2556
+      ],
+      "est": 0.1889
+     },
+     "per_species": {
+      "ci95": [
+       0.16,
+       0.2671
+      ],
+      "est": 0.2131
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1182,
+       0.3422
+      ],
+      "est": 0.2324
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 450,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 450.0,
+     "per_mon": {
+      "ci95": [
+       0.0358,
+       0.0493
+      ],
+      "est": 0.042
+     },
+     "per_species": {
+      "ci95": [
+       0.0373,
+       0.0474
+      ],
+      "est": 0.0416
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0362,
+       0.0521
+      ],
+      "est": 0.0455
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 450,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 450.0,
+     "per_mon": {
+      "ci95": [
+       11.6977,
+       16.1403
+      ],
+      "est": 14.0667
+     },
+     "per_species": {
+      "ci95": [
+       11.8337,
+       15.2392
+      ],
+      "est": 13.5504
+     },
+     "smogon_std": {
+      "ci95": [
+       10.954,
+       16.4092
+      ],
+      "est": 13.2896
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 90,
+     "n_species": 30,
+     "n_teams": 15,
+     "n_weight": 90.0,
+     "per_mon": {
+      "ci95": [
+       0.2578,
+       0.4
+      ],
+      "est": 0.3222
+     },
+     "per_species": {
+      "ci95": [
+       0.2722,
+       0.3886
+      ],
+      "est": 0.3189
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2642,
+       0.4202
+      ],
+      "est": 0.3526
+     }
+    }
+   },
+   "top_species": {
+    "breloom": 3,
+    "celebi": 4,
+    "dugtrio": 5,
+    "forretress": 4,
+    "gengar": 5,
+    "houndoom": 4,
+    "magneton": 4,
+    "metagross": 3,
+    "snorlax": 8,
+    "swampert": 8,
+    "tyranitar": 7,
+    "zapdos": 6
+   }
+  },
+  "pool:yak_attack": {
+   "n_teams": 163,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 262,
+     "n_species": 15,
+     "n_teams": 145,
+     "n_weight": 262.0,
+     "per_mon": {
+      "ci95": [
+       0.8904,
+       0.9348
+      ],
+      "est": 0.9131
+     },
+     "per_species": {
+      "ci95": [
+       0.7911,
+       0.8508
+      ],
+      "est": 0.8313
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9036,
+       0.9214
+      ],
+      "est": 0.913
+     }
+    },
+    "ability.top1": {
+     "n_rows": 262,
+     "n_species": 15,
+     "n_teams": 145,
+     "n_weight": 262.0,
+     "per_mon": {
+      "ci95": [
+       0.9053,
+       0.9634
+      ],
+      "est": 0.9351
+     },
+     "per_species": {
+      "ci95": [
+       0.7781,
+       0.8885
+      ],
+      "est": 0.8523
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9142,
+       0.9568
+      ],
+      "est": 0.9355
+     }
+    },
+    "item.p_true": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.7533,
+       0.7896
+      ],
+      "est": 0.771
+     },
+     "per_species": {
+      "ci95": [
+       0.7519,
+       0.8093
+      ],
+      "est": 0.7727
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7576,
+       0.784
+      ],
+      "est": 0.7683
+     }
+    },
+    "item.top1": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.8241,
+       0.8753
+      ],
+      "est": 0.8497
+     },
+     "per_species": {
+      "ci95": [
+       0.8298,
+       0.9045
+      ],
+      "est": 0.8666
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8266,
+       0.8679
+      ],
+      "est": 0.8441
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.5552,
+       0.5712
+      ],
+      "est": 0.5636
+     },
+     "per_species": {
+      "ci95": [
+       0.5978,
+       0.6223
+      ],
+      "est": 0.6116
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5571,
+       0.5687
+      ],
+      "est": 0.5636
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.5889,
+       0.6042
+      ],
+      "est": 0.5968
+     },
+     "per_species": {
+      "ci95": [
+       0.6326,
+       0.6568
+      ],
+      "est": 0.6449
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5927,
+       0.6043
+      ],
+      "est": 0.599
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.409,
+       0.4247
+      ],
+      "est": 0.4171
+     },
+     "per_species": {
+      "ci95": [
+       0.4464,
+       0.4742
+      ],
+      "est": 0.4618
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4107,
+       0.4219
+      ],
+      "est": 0.4168
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.433,
+       0.4487
+      ],
+      "est": 0.4409
+     },
+     "per_species": {
+      "ci95": [
+       0.4729,
+       0.5008
+      ],
+      "est": 0.4873
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4364,
+       0.4478
+      ],
+      "est": 0.4426
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.5448,
+       0.5581
+      ],
+      "est": 0.5515
+     },
+     "per_species": {
+      "ci95": [
+       0.5816,
+       0.6059
+      ],
+      "est": 0.5938
+     },
+     "smogon_std": {
+      "ci95": [
+       0.549,
+       0.5595
+      ],
+      "est": 0.5548
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.4104,
+       0.4245
+      ],
+      "est": 0.4175
+     },
+     "per_species": {
+      "ci95": [
+       0.444,
+       0.4713
+      ],
+      "est": 0.4578
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4135,
+       0.4245
+      ],
+      "est": 0.4194
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.1405,
+       0.1447
+      ],
+      "est": 0.1425
+     },
+     "per_species": {
+      "ci95": [
+       0.1494,
+       0.1571
+      ],
+      "est": 0.1529
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1422,
+       0.1459
+      ],
+      "est": 0.1441
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.2089,
+       0.2167
+      ],
+      "est": 0.2128
+     },
+     "per_species": {
+      "ci95": [
+       0.2272,
+       0.2418
+      ],
+      "est": 0.2345
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2117,
+       0.2175
+      ],
+      "est": 0.2147
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.5999,
+       0.6319
+      ],
+      "est": 0.6165
+     },
+     "per_species": {
+      "ci95": [
+       0.6443,
+       0.6929
+      ],
+      "est": 0.6709
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5894,
+       0.6209
+      ],
+      "est": 0.6073
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.6305,
+       0.6622
+      ],
+      "est": 0.6471
+     },
+     "per_species": {
+      "ci95": [
+       0.6804,
+       0.7303
+      ],
+      "est": 0.7085
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6237,
+       0.6545
+      ],
+      "est": 0.6412
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.661,
+       0.6889
+      ],
+      "est": 0.6754
+     },
+     "per_species": {
+      "ci95": [
+       0.705,
+       0.7488
+      ],
+      "est": 0.7293
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6558,
+       0.6827
+      ],
+      "est": 0.671
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.6961,
+       0.7216
+      ],
+      "est": 0.7091
+     },
+     "per_species": {
+      "ci95": [
+       0.7366,
+       0.7787
+      ],
+      "est": 0.7604
+     },
+     "smogon_std": {
+      "ci95": [
+       0.692,
+       0.7177
+      ],
+      "est": 0.7064
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.282,
+       0.3119
+      ],
+      "est": 0.2973
+     },
+     "per_species": {
+      "ci95": [
+       0.3663,
+       0.4123
+      ],
+      "est": 0.3935
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2993,
+       0.3235
+      ],
+      "est": 0.3142
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.0525,
+       0.0677
+      ],
+      "est": 0.0595
+     },
+     "per_species": {
+      "ci95": [
+       0.0786,
+       0.1134
+      ],
+      "est": 0.0992
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0572,
+       0.0727
+      ],
+      "est": 0.0646
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.0656,
+       0.0836
+      ],
+      "est": 0.0738
+     },
+     "per_species": {
+      "ci95": [
+       0.0947,
+       0.1314
+      ],
+      "est": 0.1155
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0702,
+       0.0885
+      ],
+      "est": 0.079
+     }
+    },
+    "spread.top1": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.0971,
+       0.138
+      ],
+      "est": 0.1166
+     },
+     "per_species": {
+      "ci95": [
+       0.1488,
+       0.2389
+      ],
+      "est": 0.1962
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1064,
+       0.1514
+      ],
+      "est": 0.1283
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.3661,
+       0.4223
+      ],
+      "est": 0.3947
+     },
+     "per_species": {
+      "ci95": [
+       0.4957,
+       0.5917
+      ],
+      "est": 0.5533
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3977,
+       0.4517
+      ],
+      "est": 0.43
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 4890,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 4890.0,
+     "per_mon": {
+      "ci95": [
+       0.0532,
+       0.0567
+      ],
+      "est": 0.0549
+     },
+     "per_species": {
+      "ci95": [
+       0.0522,
+       0.0559
+      ],
+      "est": 0.0535
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0534,
+       0.0566
+      ],
+      "est": 0.0549
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 4890,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 4890.0,
+     "per_mon": {
+      "ci95": [
+       9.1466,
+       10.3769
+      ],
+      "est": 9.7472
+     },
+     "per_species": {
+      "ci95": [
+       8.7819,
+       10.129
+      ],
+      "est": 9.5611
+     },
+     "smogon_std": {
+      "ci95": [
+       9.1788,
+       10.387
+      ],
+      "est": 9.8022
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 978,
+     "n_species": 52,
+     "n_teams": 163,
+     "n_weight": 978.0,
+     "per_mon": {
+      "ci95": [
+       0.4078,
+       0.4493
+      ],
+      "est": 0.4282
+     },
+     "per_species": {
+      "ci95": [
+       0.4268,
+       0.4789
+      ],
+      "est": 0.4505
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4097,
+       0.4482
+      ],
+      "est": 0.4287
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 58,
+    "celebi": 36,
+    "dugtrio": 40,
+    "gengar": 59,
+    "magneton": 47,
+    "metagross": 77,
+    "salamence": 46,
+    "skarmory": 49,
+    "snorlax": 41,
+    "swampert": 75,
+    "tyranitar": 106,
+    "zapdos": 43
+   }
+  },
+  "prior_self_poolmix": {
+   "n_teams": 719,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 4565,
+     "n_species": 20,
+     "n_teams": 538,
+     "n_weight": 913.0,
+     "per_mon": {
+      "ci95": [
+       0.9067,
+       0.9288
+      ],
+      "est": 0.9183
+     },
+     "per_species": {
+      "ci95": [
+       0.8361,
+       0.8763
+      ],
+      "est": 0.8613
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9057,
+       0.9189
+      ],
+      "est": 0.913
+     }
+    },
+    "ability.top1": {
+     "n_rows": 4565,
+     "n_species": 20,
+     "n_teams": 538,
+     "n_weight": 913.0,
+     "per_mon": {
+      "ci95": [
+       0.9296,
+       0.9594
+      ],
+      "est": 0.9452
+     },
+     "per_species": {
+      "ci95": [
+       0.8892,
+       0.9372
+      ],
+      "est": 0.9247
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9285,
+       0.9517
+      ],
+      "est": 0.9408
+     }
+    },
+    "item.p_true": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.7952,
+       0.809
+      ],
+      "est": 0.8022
+     },
+     "per_species": {
+      "ci95": [
+       0.7648,
+       0.8113
+      ],
+      "est": 0.7753
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7883,
+       0.7994
+      ],
+      "est": 0.7925
+     }
+    },
+    "item.top1": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.9112,
+       0.9293
+      ],
+      "est": 0.9205
+     },
+     "per_species": {
+      "ci95": [
+       0.858,
+       0.9182
+      ],
+      "est": 0.8802
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8954,
+       0.9146
+      ],
+      "est": 0.9037
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.512,
+       0.5186
+      ],
+      "est": 0.5153
+     },
+     "per_species": {
+      "ci95": [
+       0.5515,
+       0.5719
+      ],
+      "est": 0.565
+     },
+     "smogon_std": {
+      "ci95": [
+       0.532,
+       0.5356
+      ],
+      "est": 0.5338
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.5225,
+       0.5291
+      ],
+      "est": 0.5258
+     },
+     "per_species": {
+      "ci95": [
+       0.5613,
+       0.581
+      ],
+      "est": 0.5743
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5423,
+       0.546
+      ],
+      "est": 0.5441
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.3556,
+       0.362
+      ],
+      "est": 0.3588
+     },
+     "per_species": {
+      "ci95": [
+       0.3912,
+       0.4126
+      ],
+      "est": 0.4064
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3739,
+       0.3777
+      ],
+      "est": 0.3759
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.3629,
+       0.3694
+      ],
+      "est": 0.3661
+     },
+     "per_species": {
+      "ci95": [
+       0.3983,
+       0.4194
+      ],
+      "est": 0.4131
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3812,
+       0.3852
+      ],
+      "est": 0.3832
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.519,
+       0.525
+      ],
+      "est": 0.522
+     },
+     "per_species": {
+      "ci95": [
+       0.5508,
+       0.5698
+      ],
+      "est": 0.5629
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5377,
+       0.5412
+      ],
+      "est": 0.5393
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.3771,
+       0.3836
+      ],
+      "est": 0.3803
+     },
+     "per_species": {
+      "ci95": [
+       0.4101,
+       0.4318
+      ],
+      "est": 0.4248
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3966,
+       0.4005
+      ],
+      "est": 0.3987
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.1328,
+       0.1345
+      ],
+      "est": 0.1337
+     },
+     "per_species": {
+      "ci95": [
+       0.1417,
+       0.1469
+      ],
+      "est": 0.1453
+     },
+     "smogon_std": {
+      "ci95": [
+       0.138,
+       0.1391
+      ],
+      "est": 0.1386
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.1914,
+       0.1949
+      ],
+      "est": 0.1932
+     },
+     "per_species": {
+      "ci95": [
+       0.2082,
+       0.2197
+      ],
+      "est": 0.2161
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2018,
+       0.2041
+      ],
+      "est": 0.203
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.4843,
+       0.4935
+      ],
+      "est": 0.4887
+     },
+     "per_species": {
+      "ci95": [
+       0.5446,
+       0.571
+      ],
+      "est": 0.5637
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5051,
+       0.5127
+      ],
+      "est": 0.5091
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.4811,
+       0.4903
+      ],
+      "est": 0.4855
+     },
+     "per_species": {
+      "ci95": [
+       0.5357,
+       0.5626
+      ],
+      "est": 0.5547
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5017,
+       0.5093
+      ],
+      "est": 0.5056
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.6049,
+       0.6124
+      ],
+      "est": 0.6085
+     },
+     "per_species": {
+      "ci95": [
+       0.6536,
+       0.6749
+      ],
+      "est": 0.6684
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6233,
+       0.6292
+      ],
+      "est": 0.6263
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.6088,
+       0.6161
+      ],
+      "est": 0.6124
+     },
+     "per_species": {
+      "ci95": [
+       0.654,
+       0.6752
+      ],
+      "est": 0.6688
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6263,
+       0.6319
+      ],
+      "est": 0.6292
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.2684,
+       0.2835
+      ],
+      "est": 0.2758
+     },
+     "per_species": {
+      "ci95": [
+       0.3301,
+       0.368
+      ],
+      "est": 0.344
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3025,
+       0.315
+      ],
+      "est": 0.3088
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.0459,
+       0.0527
+      ],
+      "est": 0.0493
+     },
+     "per_species": {
+      "ci95": [
+       0.0664,
+       0.0901
+      ],
+      "est": 0.0804
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0592,
+       0.0668
+      ],
+      "est": 0.0631
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.0553,
+       0.0632
+      ],
+      "est": 0.0592
+     },
+     "per_species": {
+      "ci95": [
+       0.0773,
+       0.1029
+      ],
+      "est": 0.0918
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0701,
+       0.079
+      ],
+      "est": 0.0745
+     }
+    },
+    "spread.top1": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.0804,
+       0.0978
+      ],
+      "est": 0.089
+     },
+     "per_species": {
+      "ci95": [
+       0.1067,
+       0.1677
+      ],
+      "est": 0.14
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1047,
+       0.1269
+      ],
+      "est": 0.1158
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 21570,
+     "n_species": 69,
+     "n_teams": 719,
+     "n_weight": 4314.0,
+     "per_mon": {
+      "ci95": [
+       0.3285,
+       0.3595
+      ],
+      "est": 0.344
+     },
+     "per_species": {
+      "ci95": [
+       0.4265,
+       0.5092
+      ],
+      "est": 0.467
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3728,
+       0.4034
+      ],
+      "est": 0.3891
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 910,
+    "celebi": 1060,
+    "charizard": 705,
+    "gengar": 910,
+    "jirachi": 1195,
+    "metagross": 1625,
+    "salamence": 1205,
+    "skarmory": 1015,
+    "suicune": 705,
+    "swampert": 2115,
+    "tyranitar": 2280,
+    "zapdos": 1100
+   }
+  },
+  "replays": {
+   "n_teams": 80000,
+   "notes": {
+    "ability: conflicting / not-legal attribution (dropped)": 5,
+    "item reveals: aguavberry": 16,
+    "item reveals: apicotberry": 9,
+    "item reveals: charcoal": 8,
+    "item reveals: cheriberry": 5,
+    "item reveals: chestoberry": 411,
+    "item reveals: choiceband": 566,
+    "item reveals: ganlonberry": 15,
+    "item reveals: lansatberry": 8,
+    "item reveals: leftovers": 241088,
+    "item reveals: liechiberry": 1445,
+    "item reveals: lumberry": 4992,
+    "item reveals: machobrace": 35,
+    "item reveals: magnet": 60,
+    "item reveals: magoberry": 10,
+    "item reveals: mysticwater": 9,
+    "item reveals: petayaberry": 621,
+    "item reveals: salacberry": 5828,
+    "item reveals: scopelens": 8,
+    "item reveals: shellbell": 159,
+    "item reveals: sitrusberry": 88,
+    "item reveals: softsand": 6,
+    "item reveals: starfberry": 26,
+    "item reveals: thickclub": 10,
+    "item reveals: whiteherb": 172
+   },
+   "stats": {
+    "censored.ability.p_true": {
+     "n_rows": 10540,
+     "n_species": 51,
+     "n_teams": 9821,
+     "n_weight": 10540.0,
+     "per_mon": {
+      "ci95": [
+       0.9449,
+       0.9503
+      ],
+      "est": 0.9476
+     },
+     "per_species": {
+      "ci95": [
+       0.7623,
+       0.8132
+      ],
+      "est": 0.788
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8838,
+       0.9016
+      ],
+      "est": 0.8918
+     }
+    },
+    "censored.ability.top1": {
+     "n_rows": 10540,
+     "n_species": 51,
+     "n_teams": 9821,
+     "n_weight": 10540.0,
+     "per_mon": {
+      "ci95": [
+       0.9754,
+       0.9811
+      ],
+      "est": 0.9783
+     },
+     "per_species": {
+      "ci95": [
+       0.7917,
+       0.8676
+      ],
+      "est": 0.832
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9105,
+       0.9436
+      ],
+      "est": 0.9257
+     }
+    },
+    "censored.item.p_true": {
+     "n_rows": 255636,
+     "n_species": 207,
+     "n_teams": 74826,
+     "n_weight": 255636.0,
+     "per_mon": {
+      "ci95": [
+       0.8344,
+       0.8363
+      ],
+      "est": 0.8353
+     },
+     "per_species": {
+      "ci95": [
+       0.6202,
+       0.638
+      ],
+      "est": 0.6255
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7321,
+       0.7344
+      ],
+      "est": 0.7332
+     }
+    },
+    "censored.item.top1": {
+     "n_rows": 255636,
+     "n_species": 207,
+     "n_teams": 74826,
+     "n_weight": 255636.0,
+     "per_mon": {
+      "ci95": [
+       0.9273,
+       0.9294
+      ],
+      "est": 0.9284
+     },
+     "per_species": {
+      "ci95": [
+       0.7193,
+       0.7421
+      ],
+      "est": 0.7257
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8336,
+       0.8365
+      ],
+      "est": 0.8349
+     }
+    },
+    "censored.p_revealed_move_hpm": {
+     "n_rows": 734194,
+     "n_species": 215,
+     "n_teams": 78816,
+     "n_weight": 734194.0,
+     "per_mon": {
+      "ci95": [
+       0.5959,
+       0.5974
+      ],
+      "est": 0.5966
+     },
+     "per_species": {
+      "ci95": [
+       0.4918,
+       0.5065
+      ],
+      "est": 0.4985
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6031,
+       0.6045
+      ],
+      "est": 0.6038
+     }
+    },
+    "censored.revealed_in_top4_hpm": {
+     "n_rows": 734194,
+     "n_species": 215,
+     "n_teams": 78816,
+     "n_weight": 734194.0,
+     "per_mon": {
+      "ci95": [
+       0.6954,
+       0.6978
+      ],
+      "est": 0.6966
+     },
+     "per_species": {
+      "ci95": [
+       0.5684,
+       0.5873
+      ],
+      "est": 0.5772
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7014,
+       0.7036
+      ],
+      "est": 0.7024
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 17334,
+    "celebi": 16552,
+    "gengar": 19319,
+    "magneton": 12708,
+    "metagross": 23318,
+    "salamence": 19606,
+    "skarmory": 24001,
+    "snorlax": 13666,
+    "suicune": 13431,
+    "swampert": 21909,
+    "tyranitar": 31242,
+    "zapdos": 15575
+   }
+  },
+  "replays_full4": {
+   "n_teams": 25575,
+   "notes": {},
+   "stats": {
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 32183,
+     "n_species": 190,
+     "n_teams": 25575,
+     "n_weight": 32183.0,
+     "per_mon": {
+      "ci95": [
+       0.5543,
+       0.5581
+      ],
+      "est": 0.5562
+     },
+     "per_species": {
+      "ci95": [
+       0.4612,
+       0.4812
+      ],
+      "est": 0.4644
+     },
+     "smogon_std": {
+      "ci95": [
+       0.547,
+       0.5509
+      ],
+      "est": 0.5488
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 32183,
+     "n_species": 190,
+     "n_teams": 25575,
+     "n_weight": 32183.0,
+     "per_mon": {
+      "ci95": [
+       0.3967,
+       0.4003
+      ],
+      "est": 0.3985
+     },
+     "per_species": {
+      "ci95": [
+       0.3184,
+       0.3343
+      ],
+      "est": 0.3207
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3901,
+       0.3937
+      ],
+      "est": 0.3918
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 32183,
+     "n_species": 190,
+     "n_teams": 25575,
+     "n_weight": 32183.0,
+     "per_mon": {
+      "ci95": [
+       0.5709,
+       0.5775
+      ],
+      "est": 0.5741
+     },
+     "per_species": {
+      "ci95": [
+       0.4554,
+       0.4828
+      ],
+      "est": 0.4599
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5525,
+       0.5594
+      ],
+      "est": 0.5557
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 32183,
+     "n_species": 190,
+     "n_teams": 25575,
+     "n_weight": 32183.0,
+     "per_mon": {
+      "ci95": [
+       0.6485,
+       0.6543
+      ],
+      "est": 0.6513
+     },
+     "per_species": {
+      "ci95": [
+       0.5352,
+       0.5639
+      ],
+      "est": 0.5406
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6344,
+       0.6409
+      ],
+      "est": 0.6375
+     }
+    }
+   },
+   "top_species": {}
+  },
+  "replays_full4_ge1500": {
+   "n_teams": 3231,
+   "notes": {},
+   "stats": {
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 4102,
+     "n_species": 89,
+     "n_teams": 3231,
+     "n_weight": 4102.0,
+     "per_mon": {
+      "ci95": [
+       0.5596,
+       0.5694
+      ],
+      "est": 0.5644
+     },
+     "per_species": {
+      "ci95": [
+       0.559,
+       0.5892
+      ],
+      "est": 0.5672
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5491,
+       0.5596
+      ],
+      "est": 0.5543
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 4102,
+     "n_species": 89,
+     "n_teams": 3231,
+     "n_weight": 4102.0,
+     "per_mon": {
+      "ci95": [
+       0.4004,
+       0.4098
+      ],
+      "est": 0.4049
+     },
+     "per_species": {
+      "ci95": [
+       0.4047,
+       0.4342
+      ],
+      "est": 0.4134
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3927,
+       0.4021
+      ],
+      "est": 0.3973
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 4102,
+     "n_species": 89,
+     "n_teams": 3231,
+     "n_weight": 4102.0,
+     "per_mon": {
+      "ci95": [
+       0.5699,
+       0.587
+      ],
+      "est": 0.5783
+     },
+     "per_species": {
+      "ci95": [
+       0.5794,
+       0.6281
+      ],
+      "est": 0.597
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5485,
+       0.5663
+      ],
+      "est": 0.5571
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 4102,
+     "n_species": 89,
+     "n_teams": 3231,
+     "n_weight": 4102.0,
+     "per_mon": {
+      "ci95": [
+       0.6461,
+       0.6617
+      ],
+      "est": 0.6539
+     },
+     "per_species": {
+      "ci95": [
+       0.6415,
+       0.688
+      ],
+      "est": 0.6582
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6287,
+       0.6457
+      ],
+      "est": 0.6373
+     }
+    }
+   },
+   "top_species": {}
+  },
+  "replays_ge1500": {
+   "n_teams": 8527,
+   "notes": {
+    "item reveals: chestoberry": 15,
+    "item reveals: choiceband": 21,
+    "item reveals: deepseatooth": 1,
+    "item reveals: ganlonberry": 1,
+    "item reveals: lansatberry": 2,
+    "item reveals: leftovers": 30553,
+    "item reveals: liechiberry": 238,
+    "item reveals: lumberry": 402,
+    "item reveals: machobrace": 1,
+    "item reveals: magnet": 8,
+    "item reveals: mysticwater": 1,
+    "item reveals: petayaberry": 28,
+    "item reveals: salacberry": 764,
+    "item reveals: shellbell": 3,
+    "item reveals: thickclub": 2,
+    "item reveals: whiteherb": 11
+   },
+   "stats": {
+    "censored.ability.p_true": {
+     "n_rows": 1180,
+     "n_species": 23,
+     "n_teams": 1079,
+     "n_weight": 1180.0,
+     "per_mon": {
+      "ci95": [
+       0.9558,
+       0.969
+      ],
+      "est": 0.9626
+     },
+     "per_species": {
+      "ci95": [
+       0.7755,
+       0.8581
+      ],
+      "est": 0.7981
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8396,
+       0.9286
+      ],
+      "est": 0.879
+     }
+    },
+    "censored.ability.top1": {
+     "n_rows": 1180,
+     "n_species": 23,
+     "n_teams": 1079,
+     "n_weight": 1180.0,
+     "per_mon": {
+      "ci95": [
+       0.9793,
+       0.9928
+      ],
+      "est": 0.9864
+     },
+     "per_species": {
+      "ci95": [
+       0.7929,
+       0.92
+      ],
+      "est": 0.8339
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8663,
+       0.964
+      ],
+      "est": 0.8973
+     }
+    },
+    "censored.item.p_true": {
+     "n_rows": 32051,
+     "n_species": 122,
+     "n_teams": 8353,
+     "n_weight": 32051.0,
+     "per_mon": {
+      "ci95": [
+       0.8419,
+       0.8468
+      ],
+      "est": 0.8444
+     },
+     "per_species": {
+      "ci95": [
+       0.7137,
+       0.742
+      ],
+      "est": 0.7165
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7438,
+       0.7513
+      ],
+      "est": 0.7471
+     }
+    },
+    "censored.item.top1": {
+     "n_rows": 32051,
+     "n_species": 122,
+     "n_teams": 8353,
+     "n_weight": 32051.0,
+     "per_mon": {
+      "ci95": [
+       0.9418,
+       0.9474
+      ],
+      "est": 0.9446
+     },
+     "per_species": {
+      "ci95": [
+       0.847,
+       0.8905
+      ],
+      "est": 0.8554
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8487,
+       0.858
+      ],
+      "est": 0.8527
+     }
+    },
+    "censored.p_revealed_move_hpm": {
+     "n_rows": 88136,
+     "n_species": 139,
+     "n_teams": 8473,
+     "n_weight": 88136.0,
+     "per_mon": {
+      "ci95": [
+       0.6091,
+       0.6131
+      ],
+      "est": 0.6111
+     },
+     "per_species": {
+      "ci95": [
+       0.5992,
+       0.6231
+      ],
+      "est": 0.6023
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6164,
+       0.6202
+      ],
+      "est": 0.618
+     }
+    },
+    "censored.revealed_in_top4_hpm": {
+     "n_rows": 88136,
+     "n_species": 139,
+     "n_teams": 8473,
+     "n_weight": 88136.0,
+     "per_mon": {
+      "ci95": [
+       0.7048,
+       0.7111
+      ],
+      "est": 0.7078
+     },
+     "per_species": {
+      "ci95": [
+       0.7045,
+       0.7418
+      ],
+      "est": 0.7126
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7101,
+       0.7168
+      ],
+      "est": 0.7129
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 2003,
+    "celebi": 1851,
+    "gengar": 2275,
+    "metagross": 3273,
+    "salamence": 2573,
+    "skarmory": 2890,
+    "snorlax": 1823,
+    "starmie": 1662,
+    "suicune": 1667,
+    "swampert": 2749,
+    "tyranitar": 4252,
+    "zapdos": 2015
+   }
+  },
+  "replays_team6": {
+   "n_teams": 45073,
+   "notes": {
+    "teammate: species without a teammate prior": 317
+   },
+   "stats": {
+    "teammates.p_true": {
+     "n_rows": 1350605,
+     "n_species": 212,
+     "n_teams": 45069,
+     "n_weight": 1350605.0,
+     "per_mon": {
+      "ci95": [
+       0.0473,
+       0.0477
+      ],
+      "est": 0.0475
+     },
+     "per_species": {
+      "ci95": [
+       0.0277,
+       0.0303
+      ],
+      "est": 0.029
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0479,
+       0.0482
+      ],
+      "est": 0.0481
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 1350605,
+     "n_species": 212,
+     "n_teams": 45069,
+     "n_weight": 1350605.0,
+     "per_mon": {
+      "ci95": [
+       15.6783,
+       15.9411
+      ],
+      "est": 15.8185
+     },
+     "per_species": {
+      "ci95": [
+       40.708,
+       43.3203
+      ],
+      "est": 42.2061
+     },
+     "smogon_std": {
+      "ci95": [
+       15.0095,
+       15.1841
+      ],
+      "est": 15.1017
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 270121,
+     "n_species": 212,
+     "n_teams": 45069,
+     "n_weight": 270121.0,
+     "per_mon": {
+      "ci95": [
+       0.3664,
+       0.37
+      ],
+      "est": 0.3682
+     },
+     "per_species": {
+      "ci95": [
+       0.2043,
+       0.2202
+      ],
+      "est": 0.2118
+     },
+     "smogon_std": {
+      "ci95": [
+       0.3708,
+       0.3741
+      ],
+      "est": 0.3725
+     }
+    }
+   },
+   "top_species": {}
+  },
+  "replays_team6_ge1500": {
+   "n_teams": 5784,
+   "notes": {
+    "teammate: species without a teammate prior": 3
+   },
+   "stats": {
+    "teammates.p_true": {
+     "n_rows": 173505,
+     "n_species": 135,
+     "n_teams": 5784,
+     "n_weight": 173505.0,
+     "per_mon": {
+      "ci95": [
+       0.0525,
+       0.0533
+      ],
+      "est": 0.0529
+     },
+     "per_species": {
+      "ci95": [
+       0.0448,
+       0.048
+      ],
+      "est": 0.0457
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0523,
+       0.053
+      ],
+      "est": 0.0526
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 173505,
+     "n_species": 135,
+     "n_teams": 5784,
+     "n_weight": 173505.0,
+     "per_mon": {
+      "ci95": [
+       11.2098,
+       11.5411
+      ],
+      "est": 11.3757
+     },
+     "per_species": {
+      "ci95": [
+       13.2744,
+       15.3581
+      ],
+      "est": 14.72
+     },
+     "smogon_std": {
+      "ci95": [
+       11.2793,
+       11.593
+      ],
+      "est": 11.4513
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 34701,
+     "n_species": 135,
+     "n_teams": 5784,
+     "n_weight": 34701.0,
+     "per_mon": {
+      "ci95": [
+       0.4151,
+       0.4243
+      ],
+      "est": 0.4196
+     },
+     "per_species": {
+      "ci95": [
+       0.3647,
+       0.4016
+      ],
+      "est": 0.3779
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4141,
+       0.4227
+      ],
+      "est": 0.4182
+     }
+    }
+   },
+   "top_species": {}
+  },
+  "sample": {
+   "n_teams": 72,
+   "notes": {},
+   "stats": {
+    "ability.p_true": {
+     "n_rows": 102,
+     "n_species": 8,
+     "n_teams": 59,
+     "n_weight": 102.0,
+     "per_mon": {
+      "ci95": [
+       0.8945,
+       0.9607
+      ],
+      "est": 0.9301
+     },
+     "per_species": {
+      "ci95": [
+       0.8382,
+       0.9068
+      ],
+      "est": 0.8581
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8946,
+       0.941
+      ],
+      "est": 0.9171
+     }
+    },
+    "ability.top1": {
+     "n_rows": 102,
+     "n_species": 8,
+     "n_teams": 59,
+     "n_weight": 102.0,
+     "per_mon": {
+      "ci95": [
+       0.9091,
+       1.0
+      ],
+      "est": 0.9608
+     },
+     "per_species": {
+      "ci95": [
+       0.8333,
+       1.0
+      ],
+      "est": 0.9208
+     },
+     "smogon_std": {
+      "ci95": [
+       0.9037,
+       1.0
+      ],
+      "est": 0.9524
+     }
+    },
+    "censored.item.p_true": {
+     "n_rows": 429,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 429.0,
+     "per_mon": {
+      "ci95": [
+       0.7874,
+       0.8312
+      ],
+      "est": 0.8101
+     },
+     "per_species": {
+      "ci95": [
+       0.8045,
+       0.866
+      ],
+      "est": 0.8275
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7926,
+       0.8224
+      ],
+      "est": 0.8057
+     }
+    },
+    "censored.item.top1": {
+     "n_rows": 429,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 429.0,
+     "per_mon": {
+      "ci95": [
+       0.9021,
+       0.9555
+      ],
+      "est": 0.9301
+     },
+     "per_species": {
+      "ci95": [
+       0.8859,
+       0.9666
+      ],
+      "est": 0.9135
+     },
+     "smogon_std": {
+      "ci95": [
+       0.8958,
+       0.948
+      ],
+      "est": 0.9186
+     }
+    },
+    "censored.p_revealed_move_hpm": {
+     "n_rows": 1728,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 794.191,
+     "per_mon": {
+      "ci95": [
+       0.565,
+       0.594
+      ],
+      "est": 0.5797
+     },
+     "per_species": {
+      "ci95": [
+       0.6231,
+       0.6551
+      ],
+      "est": 0.6399
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5902,
+       0.6118
+      ],
+      "est": 0.6037
+     }
+    },
+    "censored.revealed_in_top4_hpm": {
+     "n_rows": 1728,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 794.191,
+     "per_mon": {
+      "ci95": [
+       0.6729,
+       0.7155
+      ],
+      "est": 0.6941
+     },
+     "per_species": {
+      "ci95": [
+       0.7188,
+       0.7719
+      ],
+      "est": 0.7478
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6929,
+       0.7368
+      ],
+      "est": 0.7186
+     }
+    },
+    "item.p_true": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.7814,
+       0.826
+      ],
+      "est": 0.8048
+     },
+     "per_species": {
+      "ci95": [
+       0.8004,
+       0.8622
+      ],
+      "est": 0.8238
+     },
+     "smogon_std": {
+      "ci95": [
+       0.7818,
+       0.8177
+      ],
+      "est": 0.7987
+     }
+    },
+    "item.top1": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.8935,
+       0.9491
+      ],
+      "est": 0.9236
+     },
+     "per_species": {
+      "ci95": [
+       0.8804,
+       0.9629
+      ],
+      "est": 0.9094
+     },
+     "smogon_std": {
+      "ci95": [
+       0.885,
+       0.9423
+      ],
+      "est": 0.9108
+     }
+    },
+    "moves.exp_recall_r0": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.5431,
+       0.5746
+      ],
+      "est": 0.5586
+     },
+     "per_species": {
+      "ci95": [
+       0.5945,
+       0.6266
+      ],
+      "est": 0.6123
+     },
+     "smogon_std": {
+      "ci95": [
+       0.563,
+       0.5846
+      ],
+      "est": 0.5765
+     }
+    },
+    "moves.exp_recall_r0_hpm": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.5686,
+       0.5991
+      ],
+      "est": 0.5842
+     },
+     "per_species": {
+      "ci95": [
+       0.6231,
+       0.6551
+      ],
+      "est": 0.6399
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5902,
+       0.6118
+      ],
+      "est": 0.6037
+     }
+    },
+    "moves.exp_recall_r2": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.3904,
+       0.4219
+      ],
+      "est": 0.4062
+     },
+     "per_species": {
+      "ci95": [
+       0.4419,
+       0.4778
+      ],
+      "est": 0.4609
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4119,
+       0.4337
+      ],
+      "est": 0.4256
+     }
+    },
+    "moves.exp_recall_r2_hpm": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.4087,
+       0.44
+      ],
+      "est": 0.4245
+     },
+     "per_species": {
+      "ci95": [
+       0.463,
+       0.4996
+      ],
+      "est": 0.4817
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4315,
+       0.4538
+      ],
+      "est": 0.4454
+     }
+    },
+    "moves.mc_set_hit_r0": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.5281,
+       0.5549
+      ],
+      "est": 0.5416
+     },
+     "per_species": {
+      "ci95": [
+       0.5703,
+       0.6009
+      ],
+      "est": 0.5867
+     },
+     "smogon_std": {
+      "ci95": [
+       0.5453,
+       0.5648
+      ],
+      "est": 0.5575
+     }
+    },
+    "moves.mc_set_hit_r2": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.3885,
+       0.4164
+      ],
+      "est": 0.4026
+     },
+     "per_species": {
+      "ci95": [
+       0.4344,
+       0.4693
+      ],
+      "est": 0.4529
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4075,
+       0.4279
+      ],
+      "est": 0.4205
+     }
+    },
+    "moves.mc_slot_hit_r0": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.1356,
+       0.1435
+      ],
+      "est": 0.1396
+     },
+     "per_species": {
+      "ci95": [
+       0.1456,
+       0.1543
+      ],
+      "est": 0.1489
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1406,
+       0.1469
+      ],
+      "est": 0.1438
+     }
+    },
+    "moves.mc_slot_hit_r2": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.1965,
+       0.2121
+      ],
+      "est": 0.2044
+     },
+     "per_species": {
+      "ci95": [
+       0.2211,
+       0.2382
+      ],
+      "est": 0.2299
+     },
+     "smogon_std": {
+      "ci95": [
+       0.2077,
+       0.2179
+      ],
+      "est": 0.214
+     }
+    },
+    "moves.top2_recall_r2": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.5882,
+       0.6391
+      ],
+      "est": 0.6128
+     },
+     "per_species": {
+      "ci95": [
+       0.6508,
+       0.7101
+      ],
+      "est": 0.6837
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6069,
+       0.6577
+      ],
+      "est": 0.6367
+     }
+    },
+    "moves.top2_recall_r2_hpm": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.6032,
+       0.6547
+      ],
+      "est": 0.6287
+     },
+     "per_species": {
+      "ci95": [
+       0.6685,
+       0.7279
+      ],
+      "est": 0.7022
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6271,
+       0.6744
+      ],
+      "est": 0.6555
+     }
+    },
+    "moves.top4_recall_r0": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.651,
+       0.6962
+      ],
+      "est": 0.673
+     },
+     "per_species": {
+      "ci95": [
+       0.6939,
+       0.747
+      ],
+      "est": 0.7211
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6655,
+       0.7108
+      ],
+      "est": 0.692
+     }
+    },
+    "moves.top4_recall_r0_hpm": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.6748,
+       0.7188
+      ],
+      "est": 0.6968
+     },
+     "per_species": {
+      "ci95": [
+       0.7188,
+       0.7719
+      ],
+      "est": 0.7478
+     },
+     "smogon_std": {
+      "ci95": [
+       0.6929,
+       0.7368
+      ],
+      "est": 0.7186
+     }
+    },
+    "spread.p_coarse": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.2795,
+       0.3233
+      ],
+      "est": 0.302
+     },
+     "per_species": {
+      "ci95": [
+       0.3518,
+       0.4228
+      ],
+      "est": 0.398
+     },
+     "smogon_std": {
+      "ci95": [
+       0.315,
+       0.3499
+      ],
+      "est": 0.3379
+     }
+    },
+    "spread.p_exact": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.0549,
+       0.0771
+      ],
+      "est": 0.0656
+     },
+     "per_species": {
+      "ci95": [
+       0.0804,
+       0.1198
+      ],
+      "est": 0.1006
+     },
+     "smogon_std": {
+      "ci95": [
+       0.068,
+       0.0913
+      ],
+      "est": 0.0803
+     }
+    },
+    "spread.p_exact_top25": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.0695,
+       0.0962
+      ],
+      "est": 0.0825
+     },
+     "per_species": {
+      "ci95": [
+       0.0986,
+       0.1425
+      ],
+      "est": 0.1212
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0847,
+       0.1122
+      ],
+      "est": 0.0992
+     }
+    },
+    "spread.top1": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.1042,
+       0.169
+      ],
+      "est": 0.1366
+     },
+     "per_species": {
+      "ci95": [
+       0.1432,
+       0.2518
+      ],
+      "est": 0.1952
+     },
+     "smogon_std": {
+      "ci95": [
+       0.1315,
+       0.1993
+      ],
+      "est": 0.1634
+     }
+    },
+    "spread.top1_coarse": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.368,
+       0.4722
+      ],
+      "est": 0.4213
+     },
+     "per_species": {
+      "ci95": [
+       0.4577,
+       0.5912
+      ],
+      "est": 0.5415
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4145,
+       0.5058
+      ],
+      "est": 0.4691
+     }
+    },
+    "teammates.p_true": {
+     "n_rows": 2160,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 2160.0,
+     "per_mon": {
+      "ci95": [
+       0.0553,
+       0.061
+      ],
+      "est": 0.0581
+     },
+     "per_species": {
+      "ci95": [
+       0.0582,
+       0.0646
+      ],
+      "est": 0.0616
+     },
+     "smogon_std": {
+      "ci95": [
+       0.0566,
+       0.0622
+      ],
+      "est": 0.0597
+     }
+    },
+    "teammates.rank": {
+     "n_rows": 2160,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 2160.0,
+     "per_mon": {
+      "ci95": [
+       7.6643,
+       9.1626
+      ],
+      "est": 8.4134
+     },
+     "per_species": {
+      "ci95": [
+       6.7942,
+       8.1479
+      ],
+      "est": 7.3518
+     },
+     "smogon_std": {
+      "ci95": [
+       7.4384,
+       8.8958
+      ],
+      "est": 8.0962
+     }
+    },
+    "teammates.top5_recall": {
+     "n_rows": 432,
+     "n_species": 41,
+     "n_teams": 72,
+     "n_weight": 432.0,
+     "per_mon": {
+      "ci95": [
+       0.4269,
+       0.4972
+      ],
+      "est": 0.4611
+     },
+     "per_species": {
+      "ci95": [
+       0.4794,
+       0.5698
+      ],
+      "est": 0.5312
+     },
+     "smogon_std": {
+      "ci95": [
+       0.4415,
+       0.5153
+      ],
+      "est": 0.4835
+     }
+    }
+   },
+   "top_species": {
+    "blissey": 21,
+    "celebi": 19,
+    "claydol": 17,
+    "gengar": 19,
+    "jirachi": 22,
+    "metagross": 35,
+    "salamence": 26,
+    "skarmory": 26,
+    "suicune": 26,
+    "swampert": 36,
+    "tyranitar": 44,
+    "zapdos": 19
+   }
+  }
+ }
+}

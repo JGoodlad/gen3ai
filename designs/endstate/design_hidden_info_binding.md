@@ -56,8 +56,9 @@ then still feeling good about it."
    and the other verdicts, with the power each needs, a blinded analysis, an independent re-implementation (§13.1),
    a red team (§13.2), a maturity guard against the "v8 gift" trap and a plateau replication (§10).
 6. It says what each verdict would mean for the roadmap and what each path costs (§14), and prices the compute
-   (§15): ≈ 15 CPU-hours now; ≈ 330 CPU-hours for the full factorial on the free box after the closing test
-   (≈ 30 wall-hours, or ≈ 6–8 with a GPU-batched playout harness); ≈ 14 GPU-hours for the knock-in forks.
+   (§15): ≈ 15 CPU-hours now; ≈ 270 CPU-hours for the factorial, its replication and maturity arms on the free box
+   after the closing test (≈ 28–32 wall-hours, or ≈ 6–8 with a GPU-batched playout harness), ≈ 40 more for the
+   plateau replication later; ≈ 14 GPU-hours for the knock-in forks.
 
 **The cheap results so far and the current confidence:** §16 (filled from the registered reads, in the same commit
 that reads them).
@@ -287,14 +288,22 @@ Foul Play's leaf, poke-engine's `gen3/evaluate.rs` (MIT, © 2024 pmariglia; the 
 port): per mon alive +30, HP fraction × 100, status penalties (freeze −40, sleep / paralysis / burn −25 with burn
 scaled by the physical-move count, Toxic −30, poison −10, Guts / Marvel Scale exceptions), an item +10, a low-PP
 penalty, a floor at 0, Spikes layers −12 / −16 / −25 on grounded mons, Leech Seed −30, Substitute +75, confusion
-−20, the active's boosts by a step table × 30 / 15, Reflect / Light Screen +20; side one minus side two.
+−20, the active's boosts by a step table × 30 / 15, Reflect / Light Screen +20 PER TURN LEFT (a fresh screen +100: the source keeps both as turn counters; corrected 2026-10-11 by the port's author); side one minus side two.
 
 - **Port:** a pure function over the SEARCHED side's observation row (its own exact HP and set; the opponent's HP
   bucket, status, boosts, revealed moves / PP and item state; hazards, screens, volatiles), so it reads exactly the
   information our critic reads in each world: the comparison is evaluator against evaluator, never evaluator
   against information. A full-state variant (the world's internal state) is secondary and only if the Rust state is
-  reachable at the pins without a build. Lives as `src/main/hidden_info_study/hand_eval.py` (HEAD, tested) with a
-  pinned twin in the measurement folder. **Build ≈ 1 agent-day**, including tests against hand-computed states.
+  reachable at the pins without a build. **BUILT 2026-10-11:** `src/main/hidden_info_study/hand_eval.py` (HEAD; 73
+  tests: every term, a side-swap symmetry, and 905 real Rust-core decisions checked term by term against an
+  independent protocol tracker with 0 mismatches, each layout field's one-cell shift caught); the pinned twin
+  `hand_eval_pin.py` loads the same source by path (the layouts at both pins resolve identically); the driver
+  `hand_eval_playouts.py --world O|P|F` re-plays to T + 4 and records the hand eval and V at every searched-side
+  decision (its critic traces reproduce the pilot's archived ones exactly). Named deviations, each forced by
+  reading the one-sided row (the module docstring): a never-seen opponent slot scores full HP, held item, grounded;
+  an unknown opponent item scores held; only KNOWN move slots get the low-PP term; an unrevealed ability is the
+  prior's mode; burn's halving uses base stats when the spread is unknown. Its leaf scale for MIX-type scorers is
+  Foul Play's own (σ(0.0125·(h − h_root)), 1 / 0 at a terminal); argmax scorers need no scale.
 - **Scorers:** HE-1PLY (the one-ply successors, seeds 40–47) and HE-TRUNC-d-K (d ∈ {1, 2, 4}, K ∈ {4, 8}: the hand
   eval at the searched side's first decision d turns on), in O, P and F worlds, beside CRITIC and TRUNC-d-K. The
   truncated playouts are re-played with a driver that records the eval (Phase 1 / 2 stored V only): k ≤ 4 turns, ≈
@@ -778,11 +787,11 @@ per-mon screening is estimated at ≤ 5 CPU-s per state, UNVERIFIED); an oracle 
 |---|---|---|
 | **now (this unit)** | audits A1–A6; the model-input axis (17 arms × 3 checkpoints, root + one-ply successors); policy drift; belief maturity; descriptive reads; the pool-vs-prior read | ≈ 15 |
 | **Tier 1 (decisive)** | on end2 and prod: F, F+M, O−M, D50, D90, W90, MAP100, POOLSETS, POOL (9 arms × 2) | ≈ 47 |
-| **Tier 2 (the rivals and the curve)** | F+U, F+I, F+A, F+S, F+Usp, O−U, O−I, O−A, O−S (9 × 2); D25, D75, W50, W100, MAP90 (5 × 2); P16 (2 × ≈ 2.6); the second referee (2 × ≈ 2); the hand eval: truncated re-plays in O, P, F (3 × 2 × ≈ 0.8) | ≈ 87 |
+| **Tier 2 (the rivals and the curve)** | F+U, F+I, F+A, F+S, F+Usp, O−U, O−I, O−A, O−S (9 × 2); D25, D75, W50, W100, MAP90 (5 × 2); P16 (2 × ≈ 2.6); the second referee (2 × ≈ 2); the hand eval: truncated re-plays in O, P, F (3 × 2 × 1.3–4.8, measured on the contended box) | ≈ 95–105 |
 | **Tier 3 (replication and maturity)** | the third checkpoint: Phase 1 + Tier-1 arms (≈ 27); the trajectory at 5M / 10M: Phase 1 + 6 arms each (≈ 2 × 20); the away bank: build + Phase 1 + 5 arms (≈ 18) | ≈ 85 |
 | **the independent implementation** | F, P, F+M on 2 checkpoints | ≈ 16 |
 | **plateau replication (later, on X26)** | §10.5's list | ≈ 40 |
-| **total before the plateau** | | **≈ 250** |
+| **total before the plateau** | | **≈ 260–270** |
 
 - **On 3 physical cores (6 logical, now):** Tier 1 alone ≈ 10–12 wall-hours; everything ≈ 50+ wall-hours. Only the
   "now" tier runs on them.

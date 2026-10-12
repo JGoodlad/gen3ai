@@ -24,6 +24,10 @@ the effect is a feature of a still-improving 15M policy.
 | the pool-vs-prior read D9 | §11 | `poolprior_read.py`, `poolprior_read.json` | — |
 | policy drift 1M–15M | §10.1 | `policy_drift_summary.json` | `~/gen3ai_archive/policy_drift/` |
 | belief maturity 1M–15M | §10.2 | `belief_maturity.py`, `belief_maturity.json` | — |
+| the root facts D2–D4 stratify on (protocol-derived, no outcome) | §11 | `root_facts.py`, `root_facts_<cp>.json` | — |
+| POST-HOC breakdowns of D1 (labelled, no verdict) | §16.1 | `posthoc_reads.py`, `posthoc_reads.json` | — |
+| the hand evaluator (BUILT; its playout arm runs with the factorial) | §6.5 | `src/main/hidden_info_study/hand_eval.py` (+ test), `hand_eval_pin.py`, `hand_eval_playouts.py`, `hand_eval_arm_key.json`, `hand_eval_pin_check_<cp>.json` | `~/gen3ai_archive/hidden_info_binding/<cp>/hand_eval/` |
+| policy drift helpers (the pin checkouts have no Showdown build; team validation redirected to main's byte-identical `validate_team.js`) | §10.1 | `policy_drift_scripts/` | — |
 
 `run_at_pin.sh` is the pilot's runner (a script runs at its checkpoint's OWN pin checkout, CUDA hidden, nice 19,
 mem cap, taskset 5-7,13-15). The checkpoints: end2 = `rb_es_end2_s2001` @ `62085750`, prod = `rb_es_prod_s2001` @

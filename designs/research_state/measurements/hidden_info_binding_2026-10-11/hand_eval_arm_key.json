@@ -1,0 +1,9 @@
+{
+ "codes": {
+  "H528ede2b": "HE@F",
+  "H8503aeeb": "HE@P",
+  "H8e895870": "HE@O"
+ },
+ "salt": "hib_arm_v1:",
+ "scheme": "code = \"H\" + sha256(salt + label)[:8]"
+}

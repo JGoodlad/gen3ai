@@ -1,0 +1,329 @@
+{
+ "agents_from": "/home/goodlad/.cache/gen3ai/vdp/pin_prod/src/agents",
+ "cp": "prod",
+ "missing": [],
+ "ok": true,
+ "paths": {
+  "global_layout.hazards.dim": 2,
+  "global_layout.hazards.offset": 7,
+  "global_layout.screens.dim": 8,
+  "global_layout.screens.offset": 12,
+  "obs_facts.screens.dim": 8,
+  "obs_facts.screens.offset": 76,
+  "obs_facts_dim": 84,
+  "obs_facts_offset": 2761,
+  "parts.context.reshape": [
+   2,
+   60
+  ],
+  "parts.context.start": 1464,
+  "parts.global.dim": 20,
+  "parts.global.start": 1584,
+  "parts.opp_team.reshape": [
+   6,
+   122
+  ],
+  "parts.opp_team.start": 732,
+  "parts.our_team.reshape": [
+   6,
+   122
+  ],
+  "parts.our_team.start": 0,
+  "pokemon.abilities.layout.id1.offset": 0,
+  "pokemon.abilities.offset": 12,
+  "pokemon.condition.offset": 16,
+  "pokemon.hp.offset": 67,
+  "pokemon.items.layout.consumed.offset": 2,
+  "pokemon.items.layout.id.offset": 0,
+  "pokemon.items.layout.known.offset": 1,
+  "pokemon.items.offset": 7,
+  "pokemon.moves.layout.slot_layout.category.offset": 5,
+  "pokemon.moves.layout.slot_layout.current_pp.offset": 7,
+  "pokemon.moves.layout.slot_layout.id.offset": 0,
+  "pokemon.moves.layout.slot_layout.known.offset": 6,
+  "pokemon.moves.layout.slot_layout.type.offset": 4,
+  "pokemon.moves.layout.slots": [
+   {
+    "dim": 11,
+    "offset": 0
+   },
+   {
+    "dim": 11,
+    "offset": 11
+   },
+   {
+    "dim": 11,
+    "offset": 22
+   },
+   {
+    "dim": 11,
+    "offset": 33
+   }
+  ],
+  "pokemon.moves.offset": 23,
+  "pokemon.species.layout.base_stats.offset": 1,
+  "pokemon.species.layout.species_id.offset": 0,
+  "pokemon.species.offset": 0,
+  "pokemon.spread.layout.evs.offset": 6,
+  "pokemon.spread.layout.ivs.offset": 0,
+  "pokemon.spread.layout.ivs.stats": [
+   "hp",
+   "atk",
+   "def",
+   "spa",
+   "spd",
+   "spe"
+  ],
+  "pokemon.spread.layout.nature.offset": 13,
+  "pokemon.spread.layout.nature.stats": [
+   "atk",
+   "def",
+   "spa",
+   "spd",
+   "spe"
+  ],
+  "pokemon.spread.layout.spread_known.offset": 12,
+  "pokemon.spread.offset": 71,
+  "pokemon.types.layout.type1.offset": 0,
+  "pokemon.types.layout.type2.offset": 1,
+  "pokemon.types.offset": 10,
+  "total_dim": 2845
+ },
+ "paths_checked": 45,
+ "pin": "95d014faeeb4d699703264a19094afee6f4eafc2",
+ "resolve_error": null,
+ "resolved": {
+  "ability_id1": 12,
+  "ability_num": [
+   [
+    "guts",
+    62
+   ],
+   [
+    "levitate",
+    26
+   ],
+   [
+    "marvelscale",
+    63
+   ]
+  ],
+  "active_flag": 121,
+  "base_stats": 1,
+  "boost_neg": [
+   [
+    "atk",
+    1
+   ],
+   [
+    "def",
+    3
+   ],
+   [
+    "spa",
+    5
+   ],
+   [
+    "spd",
+    7
+   ],
+   [
+    "spe",
+    9
+   ]
+  ],
+  "boost_pos": [
+   [
+    "atk",
+    0
+   ],
+   [
+    "def",
+    2
+   ],
+   [
+    "spa",
+    4
+   ],
+   [
+    "spd",
+    6
+   ],
+   [
+    "spe",
+    8
+   ]
+  ],
+  "boost_scale": 6.0,
+  "condition": 16,
+  "context_start": [
+   1464,
+   1524
+  ],
+  "flying_type": 10,
+  "hidden_power_num": 237,
+  "hp": 67,
+  "item_consumed": 9,
+  "item_id": 7,
+  "item_known": 8,
+  "iv_ev_stats": [
+   "hp",
+   "atk",
+   "def",
+   "spa",
+   "spd",
+   "spe"
+  ],
+  "max_pp": 64,
+  "max_spikes": 3,
+  "moves": [
+   23,
+   34,
+   45,
+   56
+  ],
+  "mv_category": 5,
+  "mv_current_pp": 7,
+  "mv_id": 0,
+  "mv_known": 6,
+  "mv_type": 4,
+  "nature_stats": [
+   "atk",
+   "def",
+   "spa",
+   "spd",
+   "spe"
+  ],
+  "obs_dim": 2845,
+  "physical_type_ids": [
+   7,
+   8,
+   9,
+   10,
+   12,
+   13,
+   14,
+   16
+  ],
+  "screen_present": [
+   [
+    [
+     "ours",
+     "light_screen"
+    ],
+    1598
+   ],
+   [
+    [
+     "ours",
+     "reflect"
+    ],
+    1596
+   ],
+   [
+    [
+     "theirs",
+     "light_screen"
+    ],
+    1599
+   ],
+   [
+    [
+     "theirs",
+     "reflect"
+    ],
+    1597
+   ]
+  ],
+  "screen_turn_scale": 5,
+  "screen_turns": [
+   [
+    [
+     "ours",
+     "light_screen"
+    ],
+    2838
+   ],
+   [
+    [
+     "ours",
+     "reflect"
+    ],
+    2837
+   ],
+   [
+    [
+     "theirs",
+     "light_screen"
+    ],
+    2842
+   ],
+   [
+    [
+     "theirs",
+     "reflect"
+    ],
+    2841
+   ]
+  ],
+  "slot_dim": 122,
+  "species_id": 0,
+  "spikes": [
+   1591,
+   1592
+  ],
+  "spread_evs": 77,
+  "spread_ivs": 71,
+  "spread_known": 83,
+  "spread_nature": 84,
+  "status_index": [
+   [
+    "brn",
+    1
+   ],
+   [
+    "frz",
+    4
+   ],
+   [
+    "par",
+    2
+   ],
+   [
+    "psn",
+    5
+   ],
+   [
+    "slp",
+    3
+   ],
+   [
+    "tox",
+    6
+   ]
+  ],
+  "team_size": 6,
+  "team_start": [
+   0,
+   732
+  ],
+  "type1": 10,
+  "type2": 11,
+  "vol_index": [
+   [
+    "confusion",
+    17
+   ],
+   [
+    "leechseed",
+    36
+   ],
+   [
+    "substitute",
+    49
+   ]
+  ]
+ },
+ "source": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a80c4703e73d9d0fa/src/main/hidden_info_study/hand_eval.py",
+ "source_sha256": "f74a77650f7966d119e5cf891b4946f3c663cb8ad7b0a74b4d1516de90df193c"
+}
