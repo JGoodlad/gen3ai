@@ -243,6 +243,8 @@ between Phase 1 and Phase 2 is the price of not knowing the opponent's team (par
 | `qfeatures.py`, `fit_qhead.py` | Phase 3's frozen-checkpoint root features (archive `<cp>/qfeat_<bank>.npz`) and the Q head's fit + read → `result_qhead.json`, `result_qhead.md` |
 | `qhead_noise_read.py` | POST-HOC (training states only): the labels' noise share and simple-predictor R² → `qhead_noise_read.json` |
 | `score_moves.py` | Phase 2c's read (C / CT / B / A / oracle worlds on common states) → `result_moves.json`, `result_moves.md` |
+| `gender_leak_read.py` | DESCRIPTIVE (no outcome): the gate's construction-draw leak, v1 vs v2 builder → `gender_leak_read_<cp>.json` |
+| `teeth_v2_gender.py` | planted GENDER defects against the v2 gate → `teeth_v2_gender_<cp>.json` |
 
 `phase2.sh` also takes `--moves` (Phase 2c → `<cp>/det_c/`) and `--truemoves` (2c-T → `<cp>/det_ct/`), and
 `--worlds-only` / `--playouts-only`. Bulk: `~/gen3ai_archive/value_disc_pilot/`.
@@ -339,3 +341,45 @@ policy's.
 - **Cost:** a root forward the policy already makes plus a small MLP (≈ 0 extra), the cheapest scorer here; the
   labels cost ≈ 14 worker-hours for 9,629 states (6 single-thread workers on 3 contended physical cores for 2.4 h,
   states in lockstep groups of 16).
+
+## 13. THE FIXED WORLD BUILDER (v2) and the honest re-run (registered by Amendment 8)
+
+**In plain language.** An independent audit (the hidden-info study) found that our "fair worlds" were not quite
+fair: about 4 % of them disagreed with something our side had actually seen (a Pokémon's gender, a Focus Punch
+warning, one damage number), the consistency check quietly preferred guesses whose hidden Pokémon matched the true
+ones in a dice-related way (their gender class), and a few guessed teams broke the format's rules. The fixed builder
+checks everything our side was sent (not only what the network reads), places the guessed Pokémon so the opening dice
+come out the same whatever they are, rejects illegal teams, and (a defect found while fixing) credits each past
+opponent move choice to the Pokémon that actually made it. Every honest-world number is re-measured on it, after the
+same audit passes on the new worlds.
+
+| item | value |
+|---|---|
+| v2 rules | (a) protocol bytes gated with the rows; (b) `-singleturn` / `cant` reveals; (c) a past move choice attributed to the opponent's active mon at that command (its own request); (d) `place_genders`: draws on the true draw slots, residual m ≥ r; (e) gen3ou legality; (f) no TRUE-set fallback for a never-seen slot |
+| acceptance | the study's audits on `det2*` with `HIB_AUDIT_TAG=_v2` (their files `../hidden_info_binding_2026-10-11/audit_*_<cp>_v2.json`) + `gender_leak_read_<cp>.json`; R-GIGO(v2) PASS before any v2 read |
+| arms | A′ `det2` (Smogon), B′ `det2_b` (belief species), C′ `det2_c` (network move belief), CT′ `det2_ct` (seen mons' true sets); 8 worlds per state, ≤ 60 tries |
+| rules | R-HONEST, R-INFO (A′); R-HONEST-B, R-BELIEF (B′ − A′); R-MOVES (C′ − B′), R-HONEST-C, R-MOVES-CEILING (CT′ − C′); R-QHEAD-CRITIC vs A′ |
+| prediction | every contrast within ±0.01 of v1's |
+| built (no outcome) | states with 8 worlds: end2 A′ 599 / B′ 593 / C′ 596 / CT′ 592; prod 598 / 597 / 596 / 597 (v1: 578 / 579); mean tries 1.9–2.2; the residual `gender_count` rejections ≈ 0.75–1.1 per accepted world; 8 attribution misses (end2, one state: `move struggle`, in no set, kept by name) |
+
+**R-GIGO on the v2 worlds (read 2026-10-11 23:15, before any v2 playout; the study's audits with
+`HIB_AUDIT_TAG=_v2`, files `../hidden_info_binding_2026-10-11/audit_*_<cp>_v2.json`; `gender_leak_read_<cp>.json`;
+`teeth_v2_gender_<cp>.json`): PASS.**
+
+| audit | end2 | prod | v1 (the study's §16.4) |
+|---|---|---|---|
+| A1 builder identity (the TRUE team through v2: gate on try 1, rows / chunks equal, Phase 1 outcomes on seeds 0–7, the text invariant) | 75 states / 556 actions, 0 mismatches; text invariant 0 violations on all 600 | 75 / 547, 0; 0 | PASS |
+| A2 field diff (every world of det2, det2_b, det2_c, det2_ct) | 0 unexpected cells; **0** worlds whose searched-side protocol differs | 0; **0** | FAIL (1 + 1 states with unexpected cells per checkpoint; 469 (end2) + 312 (prod) protocol-inconsistent worlds) |
+| A3 re-gate determinism (200 worlds) | 100 % | 100 % | PASS |
+| A4 legality: gen3ou bans / clauses in sampled parts | **0** (all four arms) | **0** | FAIL (end2 det 116 of 4,624 teams) |
+| A4 learnability | uncheckable, as in v1 (the pin's learnset lacks egg / pre-evolution moves) | same | same |
+| A5 root dice | unchanged (an engine property) | — | PASS |
+| teeth (the study's 6 plants) | 6 / 6 caught | 6 / 6 | 6 / 6 |
+| teeth, gender (`teeth_v2_gender.py`: a TRUE draw slot's mon given a named gender; a seen mon's gender flipped) | 10 / 10 and 10 / 10 caught (by refusal or rows: both plants also shift the dice) | 10 / 10, 10 / 10 | — |
+| the construction-draw leak (`gender_leak_read`; m = the world's ratio'd never-seen mons, r = the true never-seen draws) | v2 P(m = r) **0.67** (P(m ≥ r) = 1 by construction) vs the ungated proposal's P(m = r \| m ≥ r) 0.57; v1 0.98 vs ungated 0.40 | v2 **0.64** vs 0.57; v1 0.97 vs 0.40 | A6 leak |
+| never-seen world species that are a TRUE hidden species | v2 20.2 % (v1 21.7 %) | 20.8 % (21.6 %) | — |
+
+**Residual (FINDING, named in Amendment 8):** v2 still rejects a world with fewer gender-ratio never-seen mons than
+the truth drew (the ungated proposal fails m ≥ r about 30 % of the time), and accepted worlds sit slightly above
+the proposal's conditional rate of m = r (0.67 / 0.64 vs 0.57). The pull toward the true never-seen species is now
+below v1's (20.2–20.8 % vs 21.6–21.7 %). Only an engine-side construction-draw pad removes it.

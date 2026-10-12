@@ -1,4 +1,5 @@
-"""The world sampler's pure parts: Hidden Power IVs, the packed-set fields, the move draw."""
+"""The world sampler's pure parts: Hidden Power IVs, the packed-set fields, the move draw, the gender placement, the
+extra reveal lines and the choice attribution."""
 import numpy as np
 
 from main.value_search import worlds as W
@@ -47,3 +48,58 @@ def test_sample_moves_keeps_slots_and_never_draws_a_banned_move_or_two_hidden_po
         assert sum(m.startswith("hiddenpower") for m in mv) <= 1
         mv2 = W.sample_moves(rng, _FakePrior(), "x", {}, "grass")
         assert "hiddenpowerfire" not in mv2
+
+
+def _team(*entries):
+    return "]".join(entries)
+
+
+_RATIO = "Tyranitar||leftovers|sandstream|dragondance,rockslide,earthquake,hiddenpowerbug|Adamant|||||||"
+_RATIO2 = "Skarmory||leftovers|keeneye|spikes,whirlwind,drillpeck,rest|Impish|||||||"
+_NONE = "Metagross||leftovers|clearbody|meteormash,earthquake,explosion,agility|Adamant|||||||"
+_FIXED = "Blissey||leftovers|naturalcure|softboiled,seismictoss,toxic,aromatherapy|Bold|||||||"
+
+
+def test_gender_draw_slots_follow_the_engine_rule():
+    # a ratio'd species with no gender named draws; genderless / fixed-gender / named do not
+    named = _RATIO.split("|")
+    named[7] = "F"
+    t = _team(_RATIO, _NONE, _FIXED, "|".join(named), _RATIO2, _NONE)
+    assert W.gender_draw_slots(t) == {0, 4}
+
+
+def test_place_genders_puts_ratio_mons_on_the_true_draw_slots_and_names_every_other_gender():
+    rng = np.random.default_rng(3)
+    # never-seen slots 2..5; the truth drew at 3 and 5; the world drew two ratio'd mons and two that cannot draw
+    ents = [_NONE, _NONE, _NONE, _RATIO, _FIXED, _RATIO2]
+    for _ in range(50):
+        out = W.place_genders(rng, ents, [2, 3, 4, 5], {3, 5})
+        assert out is not None
+        assert sorted(W.toid(W.parse_set(e)[0]) for e in out[2:]) == sorted(
+            W.toid(W.parse_set(e)[0]) for e in ents[2:])                        # the same mons, permuted
+        assert W.gender_draw_slots("]".join(out)) & {2, 3, 4, 5} == {3, 5}     # draws exactly where the truth drew
+        for i in (2, 4):
+            f = W.parse_set(out[i])
+            sid = W.toid(f[0])
+            assert f[7] == {"metagross": "", "blissey": "F"}.get(sid, f[7]) and f[7] in ("", "M", "F")
+    # fewer ratio'd world mons than true draws: no world (the residual, counted by the caller)
+    assert W.place_genders(rng, [_NONE, _RATIO, _NONE], [0, 1, 2], {0, 1}) is None
+
+
+def test_reveals_reads_focus_punch_tightening_and_a_blocked_choice():
+    lines = ["|switch|p2a: Heracross|Heracross, M|100/100", "|-singleturn|p2a: Heracross|move: Focus Punch",
+             "|switch|p2a: Skarmory|Skarmory, F|100/100", "|cant|p2a: Skarmory|move: Taunt|Spikes",
+             "|-start|p2a: Skarmory|move: Leech Seed"]
+    res = {"chunks": [[0, lines]], "trackers": [[{"obs": {"b64": "x"}, "after": 0}], []]}
+    seen, _ = W.reveals(res, 0, 0)
+    assert seen == {"heracross": {"focuspunch"}, "skarmory": {"spikes"}}    # Leech Seed was used ON it
+
+
+def test_opp_actives_pairs_each_command_with_its_own_request():
+    import json
+
+    def rq(sp, wait=False):
+        return "|request|" + json.dumps({"wait": True} if wait else
+                                        {"side": {"pokemon": [{"details": f"{sp}, M", "active": True}]}})
+    res = {"chunks": [[1, [rq("Tyranitar")]], [1, [rq("x", wait=True)]], [1, [rq("Skarmory"), rq("Skarmory")]]]}
+    assert W.opp_actives(res, 1, 3) == ["tyranitar", "skarmory", "skarmory"]

@@ -4,9 +4,12 @@ A world is the battle's input log with the OPPONENT's hidden team replaced by a 
 prior (``agents.gen3_data.priors``), CONDITIONED on what the searched side observed by rejection: the
 world's log, cut at the root, is replayed through the core (``core_events --trackers --obs``) and is
 kept only if the searched side's observation row at EVERY one of its decisions up to and including the
-root is BYTE-EQUAL to the true log's. The value-discrimination pilot measured this sampler
-(`designs/endstate/design_value_discrimination.md` §7.10 Amendment 2; its pinned twin is
-`research_state/measurements/value_disc_pilot_2026-10-11/determinize.py`).
+root is BYTE-EQUAL to the true log's AND every protocol line the searched side was sent up to the root
+is byte-equal to the truth's (the rows alone missed gender tokens, a Focus Punch tightening line and a
+Beat Up hit: the hidden-info study's audit, `designs/endstate/design_hidden_info_binding.md` §16.4).
+The value-discrimination pilot measured this sampler (`design_value_discrimination.md` §7.10 Amendments 2
+and 8; its pinned twin is `research_state/measurements/value_disc_pilot_2026-10-11/determinize.py`,
+builder "v2").
 
 What is drawn: every opponent slot the searched side never saw (species ∝ the Smogon teammate
 co-occurrence with the revealed species, else species usage; never a species already on the team;
@@ -14,11 +17,22 @@ moves / item / ability / nature + EVs ∝ that species' usage; a Hidden Power se
 move slot of a seen mon whose move it never saw used.
 
 What stays TRUE (the named leaks, counted per call in ``Worlds.leak``): a seen mon's species, item,
-ability, nature, EVs and IVs (they shaped the observed history, so the gate would reject a redraw); a
-past opponent move choice never seen executed is rewritten to its SLOT (``move k``) and a past switch to
-a never-seen mon to the world's mon in that slot, except an AMBIGUOUS move (in several seen mons' sets)
-kept by name; the opponent's ROOT-turn choice when the log already holds it; and the TRUE pre-root dice
-(a world must reproduce the true team's construction draws, e.g. each slot's gender-draw class).
+ability, nature, EVs and IVs (they shaped the observed history, so the gate would reject a redraw); the
+opponent's ROOT-turn choice when the log already holds it; and the TRUE pre-root dice. A past opponent move
+choice is attributed to the mon that made it (the opponent's ACTIVE mon at that command, from its own
+request); when the searched side never saw that mon use it, it is rewritten to its SLOT (rendered as the
+world's move there), and a past switch to a never-seen mon to the world's mon in that slot.
+
+GENDERS (the audit's construction leak): the engine draws a gender at team construction for every mon of a
+gender-ratio species whose packed set names none (one uniform M / F sample, in team order), so the pre-root
+dice depend on how many such mons each team holds. The world's never-seen mons are placed so the draws happen
+at exactly the true team's draw slots (`place_genders`); every other never-seen mon gets an explicit gender
+from the engine's prior. The gate therefore conditions on the never-seen mons' gender classes only through
+the COUNT a world needs (at least as many ratio'd mons as the true draws; a world with fewer is rejected,
+counted as ``gender_count``: the residual, which only an engine-side draw pad would remove).
+
+LEGALITY: a world whose team breaks a gen3ou rule (`agents.gen3_data.team_legality`: the bans and clauses)
+that the true team does not break is rejected (``clause``).
 
 Only moves and items the engine runs are drawn (``BANNED_MOVES`` / ``BANNED_ITEMS``, the engine's
 ``scan_move_probe`` FAIL-LOUD lists, measured 2026-10-11); a FAIL-LOUD move panics the core.
@@ -187,7 +201,8 @@ def redraw_seen(rng, P: Prior, entry: str, seen_moves: Set[str]) -> Tuple[str, i
     return "|".join(f), len(mv) - len(keep)
 
 
-def sample_team(rng, P: Prior, team: str, kept: Dict[str, Set[str]]) -> Tuple[str, dict]:
+def sample_team(rng, P: Prior, team: str, kept: Dict[str, Set[str]],
+                draw_slots: Set[int] = frozenset()) -> Tuple[Optional[str], dict]:
     entries = team.split("]")
     ids = [toid(parse_set(e)[1] or parse_set(e)[0]) for e in entries]
     present = {s for s in ids if s in kept}
@@ -205,13 +220,15 @@ def sample_team(rng, P: Prior, team: str, kept: Dict[str, Set[str]]) -> Tuple[st
             w = np.array([P.usage.get(s, 0.0) for s in cand])
         s = _draw(rng, cand, w)
         ent = sample_new_set(rng, P, s) if s else None
-        if ent is None:
-            out.append(e)
-            continue
+        if ent is None:                  # never fall back to the never-seen slot's TRUE set
+            return None, {"fail": "sample"}
         present.add(s)
         out.append(ent)
         new += 1
-    return "]".join(out), {"new_slots": new, "redrawn_move_slots": redrawn}
+    out2 = place_genders(rng, out, [i for i, sid in enumerate(ids) if sid not in kept], set(draw_slots))
+    if out2 is None:
+        return None, {"fail": "gender_count"}
+    return "]".join(out2), {"new_slots": new, "redrawn_move_slots": redrawn}
 
 
 def reveals(res: dict, viewer: int, n: int) -> Tuple[Dict[str, Set[str]], List[str]]:
@@ -236,7 +253,90 @@ def reveals(res: dict, viewer: int, n: int) -> Tuple[Dict[str, Set[str]], List[s
                 seen.setdefault(nick[p[2]], set())
             elif p[1] == "move" and p[2] in nick:
                 seen[nick[p[2]]].add(toid(p[3]))
+            elif p[2] in nick and p[1] == "-singleturn" and p[3].startswith("move: "):
+                seen[nick[p[2]]].add(toid(p[3][len("move: "):]))      # Focus Punch's tightening
+            elif p[2] in nick and p[1] == "cant" and len(p) > 4 and p[4].strip():
+                seen[nick[p[2]]].add(toid(p[4].replace("move: ", "")))  # the move it chose and could not use
     return seen, [e["obs"]["b64"] for e in ent[: n + 1]]
+
+
+def protocol_lines(res: dict, viewer: int, n: int) -> List[str]:
+    """Every protocol line the viewer was sent up to its n-th decision (inclusive), in order."""
+    ent = [e for e in res["trackers"][viewer] if "obs" in e]
+    after = int(ent[n]["after"])
+    return [ln for side, lines in res["chunks"][: after + 1] if side == viewer for ln in lines]
+
+
+def opp_actives(res: dict, side_idx: int, n_cmds: int) -> List[Optional[str]]:
+    """The species id of side ``side_idx``'s ACTIVE mon at each of its first ``n_cmds`` commands (the k-th
+    command answers the side's k-th request asking for a choice), from that side's own request lines."""
+    import json
+
+    out: List[Optional[str]] = []
+    for side, lines in res["chunks"]:
+        if side != side_idx:
+            continue
+        for ln in lines:
+            if not ln.startswith("|request|") or not ln[len("|request|"):].strip():
+                continue
+            rq = json.loads(ln[len("|request|"):])
+            if rq.get("wait") or rq.get("teamPreview"):
+                continue
+            act = [p for p in rq.get("side", {}).get("pokemon", []) if p.get("active")]
+            out.append(toid(act[0]["details"].split(",")[0]) if act else None)
+    if len(out) < n_cmds:
+        raise WorldError(f"side {side_idx}: {len(out)} choice requests for {n_cmds} commands")
+    return out[:n_cmds]
+
+
+def species_draws_gender(sid: str) -> bool:
+    """The engine draws a gender for a mon iff its packed set names none AND its species has no fixed gender."""
+    from agents.gen3_data import species
+
+    sd = species.get(sid)
+    return sd is not None and sd.gender is None
+
+
+def gender_draw_slots(team: str) -> Set[int]:
+    return {i for i, e in enumerate(team.split("]"))
+            if not parse_set(e)[7] and species_draws_gender(toid(parse_set(e)[1] or parse_set(e)[0]))}
+
+
+def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Set[int]) -> Optional[List[str]]:
+    """The world's never-seen mons (an exchangeable sample) permuted among the never-seen slots so the true
+    team's draw slots hold gender-ratio mons with no gender named (they draw; the value is the true slot's fair
+    coin) and every other never-seen mon names a gender from the engine's prior (uniform M / F, or its fixed
+    gender), so it draws nothing. None when the world holds fewer ratio'd never-seen mons than the true draws."""
+    from agents.gen3_data import species
+
+    ns = sorted(never_seen)
+    need = sorted(s for s in draw_slots if s in ns)
+    sets = {i: parse_set(entries[i]) for i in ns}
+    ratio = [i for i in ns if species_draws_gender(toid(sets[i][1] or sets[i][0]))]
+    if len(ratio) < len(need):
+        return None
+    pick = [ratio[k] for k in rng.permutation(len(ratio))[: len(need)]]
+    rest = [i for i in ns if i not in pick]
+    rest = [rest[k] for k in rng.permutation(len(rest))]
+    out = list(entries)
+    for slot, src in zip(need, pick):
+        f = list(sets[src])
+        f[7] = ""
+        out[slot] = "|".join(f)
+    for slot, src in zip([s for s in ns if s not in need], rest):
+        f = list(sets[src])
+        sd = species.get(toid(f[1] or f[0]))
+        g = sd.gender if sd is not None else "N"
+        f[7] = ("M" if rng.random() < 0.5 else "F") if g is None else ("" if g == "N" else g)
+        out[slot] = "|".join(f)
+    return out
+
+
+def team_problems(team: str) -> Set[Tuple[str, int]]:
+    """(rule, slot) of every gen3ou format-spec violation of a packed team (bans and clauses)."""
+    from agents.gen3_data import team_legality as tl
+
+    return {(p.rule, int(p.slot)) for p in tl.validate_team(tl.parse_packed(team))}
 
 
 @dataclass
@@ -249,6 +349,7 @@ class Worlds:
     leak: dict
     revealed: Dict[str, List[str]]
     stats: List[dict] = field(default_factory=list)
+    fails: Dict[str, int] = field(default_factory=dict)   # pre-replay rejections: gender_count, clause, sample
 
 
 def key_rng(key: str, j: int):
@@ -285,35 +386,37 @@ class WorldSampler:
         if not true["ok"]:
             raise WorldError(f"{key}: the true prefix does not replay: {true.get('error')}")
         revealed, ref = reveals(true, viewer, n)
+        ref_proto = protocol_lines(true, viewer, n)
         team = log["teams"][oi]
         sets = [parse_set(e) for e in team.split("]")]
         sids = [toid(f[1] or f[0]) for f in sets]
         moves_of = [f[4].split(",") for f in sets]
         kept = {k: set(v) for k, v in revealed.items()}
-        leak = {"ambiguous_moves": [], "root_choice": None, "rewritten_moves": 0, "rewritten_switches": 0}
+        leak = {"attribution_miss": 0, "root_choice": None, "rewritten_moves": 0, "rewritten_switches": 0}
         last_opp = max((i for i, c in enumerate(cmds) if c[0] == opp_key), default=None)
+        actives = opp_actives(true, oi, sum(1 for c in cmds if c[0] == opp_key))
+        n_opp = 0
         tmpl: List[list] = []
         for i, (s_, t) in enumerate(cmds):
+            if s_ == opp_key:
+                n_opp += 1
             if s_ == opp_key and t.startswith("move ") and not t[5:].strip().isdigit():
                 m = toid(t[5:])
-                cand = [k for k in range(len(sets)) if sids[k] in kept and m in moves_of[k]]
-                seen_for = [k for k in cand if m in kept[sids[k]]
-                            or (m.startswith("hiddenpower") and "hiddenpower" in kept[sids[k]])]
-                if i == last_opp and root_choice_in_log:
-                    for k in cand:
-                        kept[sids[k]].add(m)
+                a_ = actives[n_opp - 1]            # the mon that made the choice
+                k = sids.index(a_) if a_ in sids else None
+                if k is None or m not in moves_of[k]:
+                    leak["attribution_miss"] += 1
+                    tmpl.append([s_, t])
+                elif i == last_opp and root_choice_in_log:
+                    kept.setdefault(a_, set()).add(m)
                     leak["root_choice"] = m
                     tmpl.append([s_, t])
-                elif seen_for:
+                elif m in kept.get(a_, set()) or (m.startswith("hiddenpower")
+                                                  and "hiddenpower" in kept.get(a_, set())):
                     tmpl.append([s_, t])
-                elif len(cand) == 1:
-                    tmpl.append([s_, ("MOVE", cand[0], moves_of[cand[0]].index(m))])
-                    leak["rewritten_moves"] += 1
                 else:
-                    for k in cand:
-                        kept[sids[k]].add(m)
-                        leak["ambiguous_moves"].append(f"{sids[k]}:{m}")
-                    tmpl.append([s_, t])
+                    tmpl.append([s_, ("MOVE", k, moves_of[k].index(m))])
+                    leak["rewritten_moves"] += 1
             elif s_ == opp_key and t.startswith("switch ") and not t[7:].strip().isdigit() \
                     and toid(t[7:]) not in kept and toid(t[7:]) in sids:
                 tmpl.append([s_, ("SLOT", sids.index(toid(t[7:])))])
@@ -340,14 +443,25 @@ class WorldSampler:
         teams: List[Optional[str]] = [None] * J
         stats: List[dict] = [{} for _ in range(J)]
         tries = [0] * J
+        draw_slots = gender_draw_slots(team) & {i for i, s in enumerate(sids) if s not in kept}
+        true_problems = team_problems(team)
+        fails: Dict[str, int] = {}
         for _ in range(self.max_tries):
             todo = [j for j in range(J) if teams[j] is None]
             if not todo:
                 break
             cand_ = {}
             for j in todo:
-                cand_[j] = sample_team(rngs[j], self.P, team, kept)
+                cand_[j] = sample_team(rngs[j], self.P, team, kept, draw_slots)
                 tries[j] += 1
+            for j in list(todo):
+                why = (cand_[j][1]["fail"] if cand_[j][0] is None
+                       else "clause" if team_problems(str(cand_[j][0])) - true_problems else None)
+                if why:
+                    fails[why] = fails.get(why, 0) + 1
+                    todo.remove(j)
+            if not todo:
+                continue
             out = run_core([rec(cand_[j][0], f"{key}#w{j}", world_cmds(cand_[j][0])) for j in todo],
                            trackers=True, obs=True)
             for j, r in zip(todo, out):
@@ -357,7 +471,7 @@ class WorldSampler:
                     _, rows = reveals(r, viewer, n)
                 except WorldError:
                     continue
-                if rows == ref:
+                if rows == ref and protocol_lines(r, viewer, n) == ref_proto:
                     teams[j], stats[j] = cand_[j]
         if any(t is None for t in teams):
             raise WorldError(f"{key}: {sum(t is None for t in teams)} of {J} worlds not built in {self.max_tries} tries")
@@ -368,4 +482,4 @@ class WorldSampler:
             pre = [f"FORCELOSE {tok}" if s_ == "forcelose" else f"CHOOSE {s_} {tok}" for s_, tok in world_cmds(t)]
             logs.append(dict(log, teams=tw, cmds=pre + list(log["cmds"][at:])))
         return Worlds(logs=logs, teams=[str(t) for t in teams], tries=tries, leak=leak,
-                      revealed={k: sorted(v) for k, v in kept.items()}, stats=stats)
+                      revealed={k: sorted(v) for k, v in kept.items()}, stats=stats, fails=fails)

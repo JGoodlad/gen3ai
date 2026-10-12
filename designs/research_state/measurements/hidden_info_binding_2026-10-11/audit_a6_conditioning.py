@@ -35,7 +35,7 @@ def main():
     bk = A.bank(c)
     P = A.priors()
     res = {"audit": "A6 the gate's conditioning (descriptive)", "cp": c, "mc_per_mon": a.mc, "by_dir": {}}
-    for det_dir in ("det", "det_b"):
+    for det_dir in A.AUDIT_DIRS:
         W = A.world_rows(c, det_dir)
         played = A.played_ids(c, det_dir)
         rng = np.random.default_rng(20261011)
@@ -129,7 +129,7 @@ def main():
             for j in range(J):
                 acc_eq += gdraws(wr["teams"][j]) == g0
                 acc_n += 1
-            if det_dir == "det":
+            if det_dir == A.AUDIT_DIRS[0]:
                 rv = {k: set(x) for k, x in wr["revealed"].items()}
                 for _ in range(J):
                     tm, _st = D.sample_world(rng, P, true_team, rv)

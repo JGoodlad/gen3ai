@@ -672,6 +672,43 @@ in-loop use needs the owner's ruling, §13.8). Full text: the measurement README
    end-state checkpoint, on ~9,600 states × 7.4 actions, read in decision currency. What it shares: a frozen body
    (if the body does not encode what separates siblings, no head can find it; fine-tuning is a GPU step, later).
 
+**Amendment 8 (2026-10-11, THE FIXED WORLD BUILDER (v2) and the RE-RUN of every honest arm; written after the
+hidden-info study's R-GIGO FAIL (`design_hidden_info_binding.md` §16.4) and BEFORE any v2 playout was played or read;
+Phase 2c's v1 playout rows (end2 complete, prod partial) were never read and are reported afterwards only beside the
+v2 read, descriptively; Phase 3's R-QHEAD-CRITIC stands PROVISIONAL until its comparator is re-read).** Full text: the
+measurement README §13.
+
+1. **Builder v2** (`determinize.build_worlds(builder="v2")`, now the default; the same rules in
+   `src/main/value_search/worlds.py`):
+   - (a) the gate ALSO requires every protocol line the searched side was sent up to the root to be byte-equal to the
+     truth's (the rows missed gender tokens, a Focus Punch tightening line, a Beat Up hit);
+   - (b) `reveals` also parses `|-singleturn|<mon>|move: M` and `|cant|<mon>|<reason>|M` (the mon's own move);
+   - (c) a past opponent move choice is attributed to the mon that MADE it (the opponent's active mon at that
+     command, from its own request) — a defect found while fixing: v1 kept a choice by name when ANOTHER mon had the
+     same move seen, so worlds whose actual chooser lacked it were refused (a rejection on an unseen fact; v1's
+     "ambiguous move" leak class disappears with it);
+   - (d) GENDERS: the world's never-seen mons (an exchangeable draw) are placed so the turn-0 gender draws fall on
+     exactly the true team's draw slots (`place_genders`), every other never-seen mon names a gender from the
+     engine's prior; the pre-root dice and every seen mon's gender are then the truth's whatever species were drawn.
+     **Residual (named):** a world needs at least as many gender-ratio never-seen mons as the truth drew (m ≥ r); a
+     world with fewer is rejected (`gender_count`). Removing it needs an engine-side draw pad (a construction draw for
+     a mon whose gender is named), a Rust change not made here. Measured by `gender_leak_read.py`;
+   - (e) a world whose team breaks a gen3ou rule (`agents.gen3_data.team_legality`) the true team does not break is
+     rejected; (f) a never-seen slot that cannot be sampled fails the try instead of keeping its TRUE set.
+2. **The acceptance gate (before any v2 outcome is read):** the hidden-info study's audits re-run on the v2 worlds
+   (`HIB_AUDIT_DIRS=det2,det2_b,det2_c,det2_ct`, `HIB_AUDIT_TAG=_v2`): A1 (the true team through the builder, text
+   invariant on every state, Phase 1 outcomes on a subset), A2 (0 unexpected cells; 0 worlds whose searched-side
+   protocol differs), A3 100 %, A4 (0 sampled-part violations), A6 + `gender_leak_read.py` (descriptive), the
+   planted-defect teeth. R-GIGO(v2) must PASS; a FAIL stops the re-run and is reported.
+3. **The re-run:** every honest arm with v2 on both checkpoints, 8 worlds per state (all played), ≤ 60 tries, Phase
+   1's dice seeds and referee: **A′** Smogon prior (`det2`), **B′** belief species (`det2_b`), **C′** the network's move
+   belief (`det2_c`), **CT′** the seen mons' true sets (`det2_ct`). Every registered rule re-read on them, with its own
+   thresholds: Phase 2's R-HONEST and R-INFO on A′; 2b's R-HONEST-B and R-BELIEF (B′ − A′); Amendment 6's R-MOVES
+   (C′ − B′), R-HONEST-C and R-MOVES-CEILING (CT′ − C′); Phase 3's R-QHEAD-CRITIC against A′'s CRITIC. The v1 numbers
+   are reported beside, descriptive.
+4. **Prediction:** every re-read contrast within ±0.01 of its v1 value (the audit's sensitivity read: the defects are
+   small and mixed in sign); Amendment 6's predictions stand.
+
 ### 7.11 Phase 1 RESULTS (oracle world, 2026-10-11; `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §6)
 
 600 own-trace states per checkpoint, every legal action, 40 shared seeds (16 leaf, 24 truth), all played. IMP on the
@@ -1324,4 +1361,5 @@ exploitability meters (§14.3) measure.
 | 2026-10-11 | **PHASE 2 / 2b READ (honest worlds) and the bootstrap brief (§13) + alternatives (§14) written** | R-HONEST NOT DETECTED and R-INFO INFO-COSTS on both seeds; R-HONEST-B and R-BELIEF NOT DETECTED on both: the oracle leaf's +0.07–0.08 is hidden information (mostly the opponent's moves). §13's brief: do NOT build the in-loop factory's policy-target path yet (S0 failed); read the one honest signal (end-state one-ply critic search +0.013) in games first (S0b battery, owner approval); Phase 2c (worlds from the network's MOVE belief) decides whether rollout search can pay; oracle playouts as per-action VALUE labels (§13.8) is the route the data favour and needs the owner's scope ruling. The search module's defaults moved to the measured best (uniform, c_scale 1.0, depth 4) | building the in-loop factory now (no honest gain to distil); oracle POLICY targets (strategy fusion; unexecutable); the Smogon-prior or species-belief samplers as sufficient (both measured null) | §7.12; README §7; ledger 2026-10-11 "PHASE 2"; `src/main/value_search/` |
 | 2026-10-11 | **PHASE 2c and PHASE 3 REGISTERED (§7.10 Amendments 6, 7), owner's standing data-gathering grant** | 2c: worlds whose hidden moves come from the network's OWN per-mon move belief (the X5 op roster's fixed-mass `move_w`, conditional-Poisson draws), plus a ceiling arm with the seen mons' TRUE sets; R-MOVES, R-HONEST-C, R-MOVES-CEILING. 3: an OFFLINE per-action Q head on the frozen end2 checkpoint, fit on oracle playout labels (K = 2) of 9,629 states from disjoint battles, acting with NO rollout at decision time; R-QHEAD, R-QHEAD-CRITIC | fine-tuning the body (GPU, later); training integration (needs the owner's §13.8 ruling); building the battery (option 2) before a fair scorer wins; item / ability beliefs in the worlds (a seen mon's item is already kept TRUE; never-seen slots stay Smogon) | §7.10 Amendments 6–7; README §10–§11 |
 | 2026-10-11 | **The "it is the MOVES" reading of §7.12 QUALIFIED** (by the adversarial follow-up's registered descriptive reads, not by a new playout) | §0, the status line and §7.12 now say the oracle's edge is hidden information about the opponent's TEAM, carried by the never-seen mons AND the seen mons' hidden moves: split by unseen slots, the honest leaf keeps about half the oracle's edge with all six seen and nothing with one unseen | keeping "moves, not species" (it pooled the 0- and 1-unseen-slot groups, and this pilot's worlds never hid a seen mon's item, ability or spread) | `design_hidden_info_binding.md` §16.1; `research_state/measurements/hidden_info_binding_2026-10-11/descriptive_reads.json` |
+| 2026-10-11 | **THE FIXED WORLD BUILDER (v2), Amendment 8, after the hidden-info study's R-GIGO FAIL** | v2 gates on the searched side's protocol bytes as well as its rows, parses `-singleturn` / `cant` reveals, credits each past move choice to the mon that made it, places never-seen mons so the gender draws fall on the true draw slots, rejects gen3ou-illegal teams, never keeps a never-seen slot's TRUE set; R-GIGO re-read on its worlds PASS; every honest arm re-run on it | an engine-side construction-draw pad (removes the residual m ≥ r gender conditioning; a Rust change at the pins, not made); dropping the affected states (the study's sensitivity read: the gap unchanged, but the sampler stays wrong) | §7.10 Amendment 8; README §13; `design_hidden_info_binding.md` §16.4 |
 | 2026-10-11 | **PHASE 3 READ (offline per-action value head)** | R-QHEAD NOT DETECTED (−0.004), R-QHEAD-CRITIC BEHIND (−0.018): a frozen-body head on K = 2 oracle labels of ~10k states learns nothing usable (validation R² +0.002; the labels are 83 % dice noise). §13.8's oracle-label route stays OPEN but is priced: it needs far more label signal per action or a trained body (GPU), so it is not the next CPU step. The ride-along A head's argmax (+0.010, clear of 0, no rollout) is recorded as a free scorer to replicate | more K = 2 states on the same frozen head (a simple observation-side predictor explains ~0.5 % of the label variance; the budget that would suffice is UNVERIFIED); fine-tuning the body now (GPU, and §13.8 needs the owner's ruling) | §7.13; README §12; ledger 2026-10-11 "PHASE 3" |

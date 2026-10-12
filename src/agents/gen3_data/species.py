@@ -33,6 +33,9 @@ class SpeciesData:
     # An in-battle-only forme (Castform-Sunny/Rainy/Snowy under Forecast): describable, but
     # never selectable in a team.
     battle_only: bool = False
+    # The species' FIXED gender: "M" / "F", "N" = genderless, ``None`` = a gender-ratio species (the engine draws
+    # its gender at team construction, ONE uniform M / F sample, unless the packed set names one).
+    gender: Optional[str] = None
 
 
 def _build(raw: Dict[str, dict]) -> Dict[str, SpeciesData]:
@@ -47,6 +50,7 @@ def _build(raw: Dict[str, dict]) -> Dict[str, SpeciesData]:
             types=tuple(str(t).upper() for t in v.get("types", ())),
             base_species=v.get("baseSpecies"),
             battle_only=bool(v.get("battleOnly")),
+            gender=v.get("gender"),
         )
     return dex
 

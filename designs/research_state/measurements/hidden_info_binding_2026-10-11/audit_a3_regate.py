@@ -28,7 +28,7 @@ def main():
     bk = A.bank(c)
     P = A.priors()
     pick = []
-    for det_dir in ("det", "det_b"):
+    for det_dir in A.AUDIT_DIRS:
         W = A.world_rows(c, det_dir)
         cand = [(det_dir, did, j) for did, r in W.items() if r.get("ok") for j, t in enumerate(r["teams"]) if t]
         cand.sort(key=lambda x: hashlib.sha256(f"a3:{x[0]}:{x[1]}:{x[2]}".encode()).hexdigest())

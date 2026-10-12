@@ -1,0 +1,218 @@
+{
+ "audit": "A2 follow-up: worlds inconsistent with the searched side's protocol",
+ "cp": "prod",
+ "by_dir": {
+  "det2": {
+   "states_with_inconsistent_worlds": 0,
+   "worlds_inconsistent": 0,
+   "states_by_kind": {},
+   "focus_punch_states": 0,
+   "focus_punch_states_mon_alive_at_root": 0,
+   "states": []
+  },
+  "det2_b": {
+   "states_with_inconsistent_worlds": 0,
+   "worlds_inconsistent": 0,
+   "states_by_kind": {},
+   "focus_punch_states": 0,
+   "focus_punch_states_mon_alive_at_root": 0,
+   "states": []
+  },
+  "det2_c": {
+   "states_with_inconsistent_worlds": 0,
+   "worlds_inconsistent": 0,
+   "states_by_kind": {},
+   "focus_punch_states": 0,
+   "focus_punch_states_mon_alive_at_root": 0,
+   "states": []
+  },
+  "det2_ct": {
+   "states_with_inconsistent_worlds": 0,
+   "worlds_inconsistent": 0,
+   "states_by_kind": {},
+   "focus_punch_states": 0,
+   "focus_punch_states_mon_alive_at_root": 0,
+   "states": []
+  }
+ },
+ "public_lines_naming_an_opponent_move_outside_move_lines (all played states, det and det_b)": {
+  "-singleturn": 79,
+  "-start": 66,
+  "-heal": 15,
+  "-item": 4,
+  "-status": 77,
+  "-cureteam": 7,
+  "-enditem": 2
+ },
+ "examples_of_such_lines": {
+  "-singleturn": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s2_001#p1#10",
+    "line": "|-singleturn|p2a: Tyranitar|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+    "line": "|-singleturn|p2a: Heracross|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+    "line": "|-singleturn|p2a: Heracross|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+    "line": "|-singleturn|p2a: Tyranitar|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+    "line": "|-singleturn|p2a: Tyranitar|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   }
+  ],
+  "-start": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s3_003#p1#27",
+    "line": "|-start|p2a: Jolteon|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/heuristic2/win_s0_002#p1#8",
+    "line": "|-start|p2a: Jirachi|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/sentinel_0/win_s3_003#p1#15",
+    "line": "|-start|p2a: M\u00c3\u00a9talosse|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/sentinel_0/win_s3_003#p1#17",
+    "line": "|-start|p2a: M\u00c3\u00a9talosse|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/sentinel_1/win_s0_002#p1#16",
+    "line": "|-start|p2a: Blissey|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   }
+  ],
+  "-heal": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/random/win_s2_002#p1#39",
+    "line": "|-heal|p2a: Foretress|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/random/win_s2_002#p1#39",
+    "line": "|-heal|p2a: Jirachi|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/random/win_s2_002#p1#39",
+    "line": "|-heal|p2a: Tyranocif|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/random/win_s2_002#p1#4",
+    "line": "|-heal|p2a: Foretress|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/random/win_s3_002#p1#15",
+    "line": "|-heal|p2a: Ronflex|100/100|[from] move: Wish|[wisher] Voltali",
+    "key": "-heal|Wish"
+   }
+  ],
+  "-item": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/sentinel_2/win_s3_002#p1#31",
+    "line": "|-item|p2a: Airmure|Leftovers|[from] move: Thief|[of] p1a: Swampert",
+    "key": "-item|Thief"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep/win_s2_001#p1#23",
+    "line": "|-item|p2a: Skarmory|Leftovers|[from] move: Thief|[of] p1a: Metagross",
+    "key": "-item|Thief"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep/win_s2_001#p1#25",
+    "line": "|-item|p2a: Skarmory|Leftovers|[from] move: Thief|[of] p1a: Metagross",
+    "key": "-item|Thief"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/staller_v2/win_s2_002#p1#27",
+    "line": "|-item|p2a: Skarmory|Leftovers|[from] move: Thief|[of] p1a: Tyranitar",
+    "key": "-item|Thief"
+   }
+  ],
+  "-status": [
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_005#p1#12",
+    "line": "|-status|p2a: Zapdos|slp|[from] move: Spore",
+    "key": "-status|Spore"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_005#p1#26",
+    "line": "|-status|p2a: Zapdos|slp|[from] move: Spore",
+    "key": "-status|Spore"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/setup_sweep_v2/win_s0_003#p1#20",
+    "line": "|-status|p2a: Snorlax|slp|[from] move: Sleep Powder",
+    "key": "-status|Sleep Powder"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/staller_v2/loss_s3_004#p1#36",
+    "line": "|-status|p2a: Suicune|slp|[from] move: Rest",
+    "key": "-status|Rest"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_10000002/staller_v2/loss_s3_004#p1#36",
+    "line": "|-status|p2a: Suicune|slp|[from] move: Rest",
+    "key": "-status|Rest"
+   }
+  ],
+  "-cureteam": [
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_12000178/setup_sweep/win_s0_002#p1#33",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   }
+  ],
+  "-enditem": [
+   {
+    "id": "rb_es_prod_s2001/step_14000168/staller_v2/win_s0_003#p1#11",
+    "line": "|-enditem|p2a: Swampert|Leftovers|[silent]|[from] move: Thief|[of] p1a: Airmure",
+    "key": "-enditem|Thief"
+   },
+   {
+    "id": "rb_es_prod_s2001/step_14000168/staller_v2/win_s0_003#p1#15",
+    "line": "|-enditem|p2a: Swampert|Leftovers|[silent]|[from] move: Thief|[of] p1a: Airmure",
+    "key": "-enditem|Thief"
+   }
+  ]
+ }
+}

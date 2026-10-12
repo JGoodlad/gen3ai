@@ -26,7 +26,7 @@ def main():
     unparsed = collections.Counter()
     unparsed_ex = collections.defaultdict(list)
     done_unparsed = set()
-    for det_dir in ("det", "det_b"):
+    for det_dir in A.AUDIT_DIRS:
         rows = C.read_rows(A.audit_dir(c) / f"a2_rows_{det_dir}.jsonl")
         W = A.world_rows(c, det_dir)
         states = []

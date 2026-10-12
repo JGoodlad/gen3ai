@@ -1,0 +1,23 @@
+{
+ "cp": "end2",
+ "det": {
+  "worlds": 3608,
+  "P(m==r)": 0.9773,
+  "P(m>=r)": 0.9886,
+  "E[m-r]": 0.0033,
+  "never_seen_species_hit": 0.2165
+ },
+ "ungated_proposal": {
+  "worlds": 3608,
+  "P(m==r)": 0.3969,
+  "P(m>=r)": 0.6907,
+  "P(m==r | m>=r)": 0.5746
+ },
+ "det2": {
+  "worlds": 3760,
+  "P(m==r)": 0.6715,
+  "P(m>=r)": 1.0,
+  "E[m-r]": 0.4146,
+  "never_seen_species_hit": 0.2024
+ }
+}

@@ -24560,3 +24560,17 @@ conditions on the never-seen species' classes, the clause check); it is register
 Phase 2c's playouts on the old builder (end2 complete, prod partial) are kept UNREAD and are not part of any verdict.
 
 Tag: **STATUS · PROVISIONAL (builder-defective) · no new outcome read**
+
+### 2026-10-11 · REGISTRATION + AUDIT · **THE FIXED FAIR-WORLD BUILDER (v2): R-GIGO re-read on its worlds = PASS (0 protocol-inconsistent worlds, was 469 / 312; 0 clause-illegal teams, was ≈ 2.5 %; teeth 6 / 6 + gender plants 20 / 20); the construction-draw gender leak REDUCED, not removed (accepted P(m = r) 0.67 / 0.64 vs the proposal's 0.57; v1 0.98 / 0.97); every honest arm (A′ Smogon, B′ belief species, C′ network move belief, CT′ true seen moves) re-run on it, registered before any v2 playout (Amendment 8)**
+
+`design_value_discrimination.md` §7.10 Amendment 8 (README §13). v2 (`determinize.build_worlds(builder="v2")`,
+`src/main/value_search/worlds.py`): the gate adds the searched side's protocol bytes; `-singleturn` / `cant` lines
+are reveals; a past opponent move choice is credited to the mon that made it (a v1 defect the audits did not name:
+v1 kept a choice by name when ANOTHER mon had the move seen, refusing worlds whose actual chooser lacked it); the
+never-seen mons are placed so the turn-0 gender draws fall on the true draw slots (residual: m ≥ r); gen3ou-illegal
+worlds are rejected; no TRUE-set fallback. States with 8 worlds: end2 592–599, prod 596–598 per arm (v1 578 / 579).
+The study's audits on the v2 worlds (`HIB_AUDIT_TAG=_v2`): A1 0 mismatches, A2 0 unexpected cells, A3 100 %, A4 0
+sampled-part ban / clause violations (learnability uncheckable, as in v1). Rules: every registered honest-world rule
+re-read on A′ / B′ / C′ / CT′ with its own thresholds; prediction: each within ±0.01 of v1.
+
+Tag: **REGISTRATION · AUDIT PASS (R-GIGO v2) · residual gender conditioning named · no v2 outcome read**

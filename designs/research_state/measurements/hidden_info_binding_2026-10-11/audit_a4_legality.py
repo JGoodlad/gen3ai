@@ -98,7 +98,7 @@ def main():
            "species_with_ability_lists": sum(1 for v in sp_json.values() if v.get("abilities")),
            "learnset_species": len(learn.raw()), "by_dir": {}}
     total_sampled = 0
-    for det_dir in ("det", "det_b"):
+    for det_dir in A.AUDIT_DIRS:
         W = A.world_rows(c, det_dir)
         ids = sorted(A.played_ids(c, det_dir))
         cnt, cnt_kept, ctrl = collections.Counter(), collections.Counter(), collections.Counter()

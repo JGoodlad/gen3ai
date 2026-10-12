@@ -19,6 +19,9 @@ KEYS = ("ARGMAX|CRITIC", "ARGMAX|LEAF-K1", "ARGMAX|LEAF-K4", "ARGMAX|LEAF-K8", "
         "ARGMAX|TRUNC-4-K4", "ARGMAX|TRUNC-4-K8", "ARGMAX|MIX-K8")
 ARMS = (("C (net moves)", "det_c"), ("CT (true seen moves)", "det_ct"), ("B (belief species)", "det_b"),
         ("A (Smogon)", "det"))
+#: Amendment 8: the same arms built by the fixed (v2) builder
+ARMS_V2 = (("C (net moves)", "det2_c"), ("CT (true seen moves)", "det2_ct"), ("B (belief species)", "det2_b"),
+           ("A (Smogon)", "det2"))
 
 
 def read(cp):
@@ -42,6 +45,8 @@ def read(cp):
            "R-HONEST-C: C LEAF-K8 - C CRITIC": arr(C, L8) - arr(C, "ARGMAX|CRITIC"),
            "R-MOVES-CEILING: CT LEAF-K8 - C LEAF-K8": arr(CT, L8) - arr(C, L8),
            "C LEAF-K8 - A LEAF-K8": arr(C, L8) - arr(A, L8),
+           "R-HONEST-B: B LEAF-K8 - B CRITIC": arr(B, L8) - arr(B, "ARGMAX|CRITIC"),
+           "R-BELIEF: B LEAF-K8 - A LEAF-K8": arr(B, L8) - arr(A, L8),
            "CT LEAF-K8 - CT CRITIC": arr(CT, L8) - arr(CT, "ARGMAX|CRITIC"),
            "oracle LEAF-K8 - CT LEAF-K8": arr(oracle, L8) - arr(CT, L8),
            "oracle LEAF-K8 - C LEAF-K8": arr(oracle, L8) - arr(C, L8),
@@ -70,7 +75,11 @@ def read(cp):
     res["verdicts"] = {
         "R-MOVES": S1.verdict3(c["R-MOVES: C LEAF-K8 - B LEAF-K8"]["ci"]),
         "R-HONEST-C": "LEAF-AHEAD" if lo > S1.EDGE else ("CRITIC-EQUIVALENT" if lo > -0.01 and hi < 0.01 else "NOT DETECTED"),
-        "R-MOVES-CEILING": S1.verdict3(c["R-MOVES-CEILING: CT LEAF-K8 - C LEAF-K8"]["ci"])}
+        "R-MOVES-CEILING": S1.verdict3(c["R-MOVES-CEILING: CT LEAF-K8 - C LEAF-K8"]["ci"]),
+        "R-BELIEF": S1.verdict3(c["R-BELIEF: B LEAF-K8 - A LEAF-K8"]["ci"])}
+    lo_b, hi_b = c["R-HONEST-B: B LEAF-K8 - B CRITIC"]["ci"]
+    res["verdicts"]["R-HONEST-B"] = ("LEAF-AHEAD" if lo_b > S1.EDGE else
+                                     ("CRITIC-EQUIVALENT" if lo_b > -0.01 and hi_b < 0.01 else "NOT DETECTED"))
     return res
 
 
@@ -104,7 +113,11 @@ def main():
     ap.add_argument("cps", nargs="+")
     ap.add_argument("--out-json", default=None)
     ap.add_argument("--out-md", default=None)
+    ap.add_argument("--v2", action="store_true", help="the fixed builder's worlds (Amendment 8)")
     a = ap.parse_args()
+    global ARMS
+    if a.v2:
+        ARMS = ARMS_V2
     res = [read(c) for c in a.cps]
     if a.out_json:
         Path(a.out_json).write_text(json.dumps(res, indent=1, sort_keys=True) + "\n")

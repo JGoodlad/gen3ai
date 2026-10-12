@@ -102,11 +102,12 @@ def test_worlds_pass_the_observation_gate_and_a_wrong_world_does_not(lib, turns)
                                        p1={"name": log["names"][0], "team": log["teams"][0]},
                                        p2={"name": log["names"][1], "team": log["teams"][1]},
                                        commands=W.log_commands(log, t["at"]))], trackers=True, obs=True)[0]
-        return W.reveals(res, viewer, n)[1] if res["ok"] else None
+        return (W.reveals(res, viewer, n)[1], W.protocol_lines(res, viewer, n)) if res["ok"] else None
 
     ref = rows_of(t["log"])
     for log in ws.logs:
-        assert rows_of(log) == ref                                         # the gate, re-checked outside
+        assert rows_of(log) == ref       # the gate, re-checked outside: rows AND the searched side's protocol bytes
+    assert all(not (W.team_problems(team) - W.team_problems(true_opp)) for team in ws.teams)   # gen3ou-legal
     # teeth: the opponent's SEEN lead with another species is not a consistent world
     oi = 1 - viewer
     ents = t["log"]["teams"][oi].split("]")

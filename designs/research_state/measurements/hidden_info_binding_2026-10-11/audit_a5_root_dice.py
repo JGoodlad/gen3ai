@@ -169,8 +169,8 @@ def main():
             out["partB"].append(rec)
             print("[a5 B]", rec, flush=True)
         # ---------------- part A: one never-seen bench slot swapped, same seed
-        W = A.world_rows(c, "det")
-        played = sorted(A.played_ids(c, "det"))
+        W = A.world_rows(c, A.AUDIT_DIRS[0])
+        played = sorted(A.played_ids(c, A.AUDIT_DIRS[0]))
         for did in played:
             if len(out["partA"]) >= a.na:
                 break

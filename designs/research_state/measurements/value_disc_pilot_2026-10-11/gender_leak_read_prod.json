@@ -1,0 +1,23 @@
+{
+ "cp": "prod",
+ "det": {
+  "worlds": 3816,
+  "P(m==r)": 0.9691,
+  "P(m>=r)": 0.9858,
+  "E[m-r]": 0.0086,
+  "never_seen_species_hit": 0.2159
+ },
+ "ungated_proposal": {
+  "worlds": 3816,
+  "P(m==r)": 0.4009,
+  "P(m>=r)": 0.7078,
+  "P(m==r | m>=r)": 0.5665
+ },
+ "det2": {
+  "worlds": 3960,
+  "P(m==r)": 0.6359,
+  "P(m>=r)": 1.0,
+  "E[m-r]": 0.4664,
+  "never_seen_species_hit": 0.2082
+ }
+}

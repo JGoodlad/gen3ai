@@ -20,6 +20,7 @@ the effect is a feature of a still-improving 15M policy.
 | part | design § | files (this folder) | archive |
 |---|---|---|---|
 | sampler audits A1–A6 | §5 | `audit_*.py`, `audit_*_<cp>.json` | `~/gen3ai_archive/hidden_info_binding/<cp>/audit/` |
+| the same audits on the FIXED (v2) builder's worlds | `design_value_discrimination.md` Amendment 8 | `HIB_AUDIT_DIRS=det2,det2_b,det2_c,det2_ct HIB_AUDIT_TAG=_v2` (`audit_lib`), `audit_*_<cp>_v2.json`: R-GIGO PASS | `~/gen3ai_archive/hidden_info_binding/<cp>/audit_v2/` |
 | the model-input axis (the true moves injected into the network's move belief) | §7 | `inject.py`, `model_input.py`, `score_model_input.py` (+ test), `unblind_model_input.py`, `arm_key.json`, `inject_teeth_<cp>.json` | `~/gen3ai_archive/hidden_info_binding/<cp>/` |
 | descriptive reads D1–D8 of the pilot's rows | §11 | `descriptive_reads.py`, `descriptive_reads.json` | — |
 | the pool-vs-prior read D9 | §11 | `poolprior_read.py`, `poolprior_read.json` | — |

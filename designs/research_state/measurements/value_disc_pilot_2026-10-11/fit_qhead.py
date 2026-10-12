@@ -212,6 +212,7 @@ def main():
     ap.add_argument("--out-md", default=None)
     ap.add_argument("--threads", type=int, default=2)
     ap.add_argument("--fit-only", action="store_true", help="fit and report the validation R² only (no evaluation)")
+    ap.add_argument("--det-dir", default="det", help="the honest comparators' world directory (det2 = the v2 builder)")
     a = ap.parse_args()
     import torch
 
@@ -267,6 +268,7 @@ def main():
     if a.fit_only:
         return
     st_doc, r1, _, _ = S1.load(cp, True)
+    SD.DET_DIR = a.det_dir
     rd = SD.det_rows(cp)
     E = st_doc["states"]
     # ---- score: IMP against the TRUE-world truth, beside the critic scorers on the same states

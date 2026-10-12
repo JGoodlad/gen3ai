@@ -1,0 +1,824 @@
+{
+ "audit": "A4 legality of played world teams",
+ "cp": "prod",
+ "node_validator": "SKIPPED: the pin checkouts' deps/pokemon-showdown is not initialised (empty); running validate_team.js would read the main checkout's build",
+ "species_with_ability_lists": 0,
+ "learnset_species": 386,
+ "by_dir": {
+  "det2": {
+   "states": 598,
+   "world_teams": 4784,
+   "violations_in_SAMPLED_parts": {
+    "not_learnable_unreferenced": 724,
+    "not_in_pin_learnset": 5045
+   },
+   "violations_in_KEPT_parts": {
+    "not_in_pin_learnset": 3249
+   },
+   "control_true_teams_violations_per_state": {
+    "not_in_pin_learnset": 1329
+   },
+   "species_without_learnset_entry (unchecked)": {},
+   "examples": {
+    "not_learnable_unreferenced|sampled": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 0,
+      "slot": 4,
+      "detail": "exeggutor:sleeppowder"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 4,
+      "detail": "smeargle:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 3,
+      "slot": 2,
+      "detail": "smeargle:leechseed"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 3,
+      "slot": 2,
+      "detail": "smeargle:roar"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 3,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_003#p1#1",
+      "world": 2,
+      "slot": 5,
+      "detail": "scizor:reversal"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 4,
+      "slot": 5,
+      "detail": "smeargle:whirlwind"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 4,
+      "slot": 5,
+      "detail": "smeargle:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#7",
+      "world": 0,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#7",
+      "world": 5,
+      "slot": 4,
+      "detail": "scizor:reversal"
+     }
+    ],
+    "not_in_pin_learnset|kept": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 3,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 4,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 3,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 6,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 0,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 4,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 5,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 6,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 7,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     }
+    ],
+    "not_in_pin_learnset|sampled": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 3,
+      "slot": 2,
+      "detail": "blissey:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 0,
+      "detail": "tyranitar:pursuit"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 4,
+      "detail": "smeargle:spikes"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 4,
+      "detail": "smeargle:spore"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 4,
+      "detail": "smeargle:encore"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 3,
+      "detail": "jolteon:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 3,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 4,
+      "detail": "salamence:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 7,
+      "slot": 2,
+      "detail": "breloom:spore"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 0,
+      "slot": 0,
+      "detail": "tyranitar:pursuit"
+     }
+    ]
+   }
+  },
+  "det2_b": {
+   "states": 597,
+   "world_teams": 4776,
+   "violations_in_SAMPLED_parts": {
+    "not_in_pin_learnset": 5183,
+    "not_learnable_unreferenced": 466
+   },
+   "violations_in_KEPT_parts": {
+    "not_in_pin_learnset": 3494
+   },
+   "control_true_teams_violations_per_state": {
+    "not_in_pin_learnset": 1328
+   },
+   "species_without_learnset_entry (unchecked)": {},
+   "examples": {
+    "not_in_pin_learnset|sampled": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 1,
+      "slot": 2,
+      "detail": "swampert:curse"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 1,
+      "slot": 2,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 3,
+      "slot": 4,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 0,
+      "detail": "tyranitar:pursuit"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 4,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 3,
+      "detail": "claydol:refresh"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 4,
+      "detail": "jolteon:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 0,
+      "slot": 0,
+      "detail": "tyranitar:pursuit"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 2,
+      "slot": 1,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 3,
+      "slot": 2,
+      "detail": "blissey:aromatherapy"
+     }
+    ],
+    "not_in_pin_learnset|kept": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 3,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 4,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 3,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 5,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 6,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_003#p1#1",
+      "world": 4,
+      "slot": 1,
+      "detail": "swampert:curse"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 0,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 4,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 6,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     }
+    ],
+    "not_learnable_unreferenced|sampled": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 7,
+      "slot": 4,
+      "detail": "blissey:healbell"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 5,
+      "slot": 3,
+      "detail": "charizard:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#7",
+      "world": 0,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s3_002#p1#10",
+      "world": 3,
+      "slot": 4,
+      "detail": "tyranitar:ancientpower"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_003#p1#3",
+      "world": 3,
+      "slot": 1,
+      "detail": "tyranitar:ancientpower"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_003#p1#3",
+      "world": 6,
+      "slot": 4,
+      "detail": "jynx:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s3_004#p1#3",
+      "world": 1,
+      "slot": 2,
+      "detail": "ludicolo:leechseed"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s3_004#p1#3",
+      "world": 2,
+      "slot": 5,
+      "detail": "ludicolo:leechseed"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s2_001#p1#10",
+      "world": 6,
+      "slot": 2,
+      "detail": "dugtrio:ancientpower"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s3_002#p1#11",
+      "world": 0,
+      "slot": 3,
+      "detail": "jolteon:bite"
+     }
+    ]
+   }
+  },
+  "det2_c": {
+   "states": 596,
+   "world_teams": 4768,
+   "violations_in_SAMPLED_parts": {
+    "not_in_pin_learnset": 5262,
+    "not_learnable_unreferenced": 351
+   },
+   "violations_in_KEPT_parts": {
+    "not_in_pin_learnset": 4077
+   },
+   "control_true_teams_violations_per_state": {
+    "not_in_pin_learnset": 1325
+   },
+   "species_without_learnset_entry (unchecked)": {},
+   "examples": {
+    "not_in_pin_learnset|sampled": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 0,
+      "slot": 3,
+      "detail": "jolteon:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 1,
+      "slot": 0,
+      "detail": "tyranitar:pursuit"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 1,
+      "slot": 4,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 3,
+      "detail": "jolteon:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 0,
+      "detail": "tyranitar:pursuit"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 0,
+      "slot": 1,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 2,
+      "slot": 0,
+      "detail": "tyranitar:pursuit"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 2,
+      "slot": 1,
+      "detail": "gengar:willowisp"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 5,
+      "slot": 4,
+      "detail": "blissey:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_003#p1#1",
+      "world": 0,
+      "slot": 1,
+      "detail": "tyranitar:pursuit"
+     }
+    ],
+    "not_in_pin_learnset|kept": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 2,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 3,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 3,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 5,
+      "slot": 1,
+      "detail": "swampert:curse"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 5,
+      "slot": 1,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 7,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_003#p1#1",
+      "world": 3,
+      "slot": 1,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 0,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 1,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#11",
+      "world": 2,
+      "slot": 0,
+      "detail": "jolteon:batonpass"
+     }
+    ],
+    "not_learnable_unreferenced|sampled": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 0,
+      "detail": "tyranitar:ancientpower"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#7",
+      "world": 5,
+      "slot": 5,
+      "detail": "cloyster:barrier"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s1_002#p1#8",
+      "world": 7,
+      "slot": 2,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_004#p1#15",
+      "world": 4,
+      "slot": 3,
+      "detail": "ludicolo:leechseed"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_005#p1#7",
+      "world": 2,
+      "slot": 5,
+      "detail": "blissey:healbell"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s1_002#p1#11",
+      "world": 0,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s3_002#p1#11",
+      "world": 4,
+      "slot": 5,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#13",
+      "world": 7,
+      "slot": 1,
+      "detail": "blissey:healbell"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s1_003#p1#1",
+      "world": 2,
+      "slot": 3,
+      "detail": "charizard:ancientpower"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s2_005#p1#4",
+      "world": 3,
+      "slot": 4,
+      "detail": "ludicolo:leechseed"
+     }
+    ]
+   }
+  },
+  "det2_ct": {
+   "states": 597,
+   "world_teams": 4776,
+   "violations_in_SAMPLED_parts": {
+    "not_learnable_unreferenced": 180,
+    "not_in_pin_learnset": 3085
+   },
+   "violations_in_KEPT_parts": {
+    "not_in_pin_learnset": 7054
+   },
+   "control_true_teams_violations_per_state": {
+    "not_in_pin_learnset": 1329
+   },
+   "species_without_learnset_entry (unchecked)": {},
+   "examples": {
+    "not_in_pin_learnset|kept": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 0,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 1,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 2,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 3,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 4,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 5,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 6,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 7,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 0,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 1,
+      "slot": 0,
+      "detail": "tyranitar:dragondance"
+     }
+    ],
+    "not_learnable_unreferenced|sampled": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 1,
+      "slot": 2,
+      "detail": "charizard:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s2_005#p1#7",
+      "world": 7,
+      "slot": 1,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/win_s1_002#p1#8",
+      "world": 0,
+      "slot": 5,
+      "detail": "ludicolo:leechseed"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s0_005#p1#7",
+      "world": 1,
+      "slot": 1,
+      "detail": "milotic:lightscreen"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s3_004#p1#3",
+      "world": 2,
+      "slot": 4,
+      "detail": "weezing:painsplit"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/loss_s3_004#p1#3",
+      "world": 5,
+      "slot": 5,
+      "detail": "weezing:painsplit"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive_v2/win_s0_002#p1#4",
+      "world": 0,
+      "slot": 1,
+      "detail": "charizard:dragondance"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s0_003#p1#5",
+      "world": 2,
+      "slot": 3,
+      "detail": "salamence:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s2_001#p1#18",
+      "world": 7,
+      "slot": 2,
+      "detail": "gengar:haze"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/heuristic/loss_s3_001#p1#3",
+      "world": 2,
+      "slot": 3,
+      "detail": "charizard:dragondance"
+     }
+    ],
+    "not_in_pin_learnset|sampled": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 1,
+      "slot": 3,
+      "detail": "swampert:hydropump"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 3,
+      "slot": 3,
+      "detail": "charizard:bellydrum"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 4,
+      "slot": 4,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 7,
+      "slot": 3,
+      "detail": "charizard:beatup"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s0_003#p1#9",
+      "world": 7,
+      "slot": 4,
+      "detail": "jolteon:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 2,
+      "slot": 1,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 3,
+      "slot": 1,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 4,
+      "slot": 1,
+      "detail": "jolteon:batonpass"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 4,
+      "slot": 1,
+      "detail": "jolteon:wish"
+     },
+     {
+      "id": "rb_es_prod_s2001/step_10000002/aggressive/loss_s1_004#p1#9",
+      "world": 5,
+      "slot": 1,
+      "detail": "jolteon:batonpass"
+     }
+    ]
+   }
+  }
+ },
+ "violations_in_sampled_total": 1721,
+ "pass": false,
+ "pass_rule": "zero sampled-part violations, not counting not_in_pin_learnset (a pair some real bank team runs)"
+}

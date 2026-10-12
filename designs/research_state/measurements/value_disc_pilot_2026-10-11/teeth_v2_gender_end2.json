@@ -1,0 +1,64 @@
+{
+ "cp": "end2",
+ "G1_draw_removed": {
+  "planted": 10,
+  "caught": 10,
+  "by": {
+   "refused": 7,
+   "rows": 3
+  }
+ },
+ "G2_seen_gender_flipped": {
+  "planted": 10,
+  "caught": 10,
+  "by": {
+   "refused": 9,
+   "rows": 1
+  }
+ },
+ "examples": [
+  {
+   "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+   "kind": "G2_seen_gender_flipped",
+   "slot": 3,
+   "gender": "F",
+   "caught_by": "refused"
+  },
+  {
+   "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+   "kind": "G2_seen_gender_flipped",
+   "slot": 2,
+   "gender": "M",
+   "caught_by": "rows"
+  },
+  {
+   "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s1_004#p1#38",
+   "kind": "G1_draw_removed",
+   "slot": 2,
+   "gender": "M",
+   "caught_by": "refused"
+  },
+  {
+   "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s1_004#p1#38",
+   "kind": "G2_seen_gender_flipped",
+   "slot": 1,
+   "gender": "F",
+   "caught_by": "refused"
+  },
+  {
+   "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_003#p1#23",
+   "kind": "G2_seen_gender_flipped",
+   "slot": 2,
+   "gender": "F",
+   "caught_by": "refused"
+  },
+  {
+   "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#15",
+   "kind": "G2_seen_gender_flipped",
+   "slot": 1,
+   "gender": "F",
+   "caught_by": "refused"
+  }
+ ],
+ "pass": true
+}

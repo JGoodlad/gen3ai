@@ -1,0 +1,824 @@
+{
+ "audit": "A2 field diff at the root (opponent's own row + its last request)",
+ "cp": "prod",
+ "every": 1,
+ "compared": "the opponent viewer's LAST obs-bearing decision in the prefix (cut at the searched side's open root request); opp_after_gap = root chunk index - that decision's chunk index",
+ "by_dir": {
+  "det2": {
+   "states": 598,
+   "states_ok": 598,
+   "errors": [],
+   "worlds_compared": 4784,
+   "opp_after_gap_hist": {
+    "-1": 598
+   },
+   "unexpected_cells_by_category": {},
+   "unexpected_total": 0,
+   "states_with_unexpected": 0,
+   "separate_intent_cells": {
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": 6
+   },
+   "explained_move_derived": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": 13
+   },
+   "hidden_divergence_worlds": {},
+   "worlds_whose_SEARCHED_side_protocol_differs_by_kind": {},
+   "worlds_whose_SEARCHED_side_protocol_differs": 0,
+   "states_with_any_such_world": 0,
+   "examples_searched_protocol": [],
+   "worlds_by_gender_draws_x_opp_protocol": {
+    "gender_draws_equal & opp_protocol_same": 4784
+   },
+   "expected_cells_by_category": {
+    "EXPECTED|obs_facts|seen_move_bits_positional|seen_same_count": 15560,
+    "EXPECTED|own_team|abilities|never_seen": 9845,
+    "EXPECTED|own_team|items|never_seen": 4212,
+    "EXPECTED|own_team|move0|never_seen": 62439,
+    "EXPECTED|own_team|move1|never_seen": 62064,
+    "EXPECTED|own_team|move2|never_seen": 63559,
+    "EXPECTED|own_team|move3|never_seen": 64472,
+    "EXPECTED|own_team|move_block_resorted.accuracy|seen_with_redrawn": 13088,
+    "EXPECTED|own_team|move_block_resorted.category|seen_with_redrawn": 26443,
+    "EXPECTED|own_team|move_block_resorted.current_pp|seen_with_redrawn": 36529,
+    "EXPECTED|own_team|move_block_resorted.id|seen_with_redrawn": 42803,
+    "EXPECTED|own_team|move_block_resorted.max_pp|seen_with_redrawn": 32564,
+    "EXPECTED|own_team|move_block_resorted.never_miss|seen_with_redrawn": 16609,
+    "EXPECTED|own_team|move_block_resorted.power|seen_with_redrawn": 35779,
+    "EXPECTED|own_team|move_block_resorted.recoil|seen_with_redrawn": 901,
+    "EXPECTED|own_team|move_block_resorted.secondary|seen_with_redrawn": 17857,
+    "EXPECTED|own_team|move_block_resorted.type|seen_with_redrawn": 38752,
+    "EXPECTED|own_team|species|never_seen": 67833,
+    "EXPECTED|own_team|spread|never_seen": 92584,
+    "EXPECTED|own_team|types|never_seen": 18391,
+    "EXPECTED|reactive|active_req_moves|seen_redrawn_slot": 20873
+   },
+   "checks": {
+    "CHECKED|own_team|kept_move_content|seen": 23384,
+    "CHECKED|request|seen_mon|-": 17568
+   },
+   "examples": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/staller_v2/loss_s3_004#p1#36",
+      "world": 0.0,
+      "turn": 34,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.28906482458114624,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s3_005#p1#36",
+      "world": 0.7472217082977295,
+      "turn": 34,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.8115075826644897,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s3_005#p1#38",
+      "world": 0.8115075826644897,
+      "turn": 36,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.8671944737434387,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     }
+    ],
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": [
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 205.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 143.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 143.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 227.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 65.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 260.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     }
+    ]
+   }
+  },
+  "det2_b": {
+   "states": 597,
+   "states_ok": 597,
+   "errors": [],
+   "worlds_compared": 4776,
+   "opp_after_gap_hist": {
+    "-1": 597
+   },
+   "unexpected_cells_by_category": {},
+   "unexpected_total": 0,
+   "states_with_unexpected": 0,
+   "separate_intent_cells": {
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": 5
+   },
+   "explained_move_derived": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": 13
+   },
+   "hidden_divergence_worlds": {},
+   "worlds_whose_SEARCHED_side_protocol_differs_by_kind": {},
+   "worlds_whose_SEARCHED_side_protocol_differs": 0,
+   "states_with_any_such_world": 0,
+   "examples_searched_protocol": [],
+   "worlds_by_gender_draws_x_opp_protocol": {
+    "gender_draws_equal & opp_protocol_same": 4776
+   },
+   "expected_cells_by_category": {
+    "EXPECTED|obs_facts|seen_move_bits_positional|seen_same_count": 15654,
+    "EXPECTED|own_team|abilities|never_seen": 8359,
+    "EXPECTED|own_team|items|never_seen": 3651,
+    "EXPECTED|own_team|move0|never_seen": 59491,
+    "EXPECTED|own_team|move1|never_seen": 59768,
+    "EXPECTED|own_team|move2|never_seen": 60969,
+    "EXPECTED|own_team|move3|never_seen": 61546,
+    "EXPECTED|own_team|move_block_resorted.accuracy|seen_with_redrawn": 13127,
+    "EXPECTED|own_team|move_block_resorted.category|seen_with_redrawn": 26391,
+    "EXPECTED|own_team|move_block_resorted.current_pp|seen_with_redrawn": 36587,
+    "EXPECTED|own_team|move_block_resorted.id|seen_with_redrawn": 42851,
+    "EXPECTED|own_team|move_block_resorted.max_pp|seen_with_redrawn": 32590,
+    "EXPECTED|own_team|move_block_resorted.never_miss|seen_with_redrawn": 16648,
+    "EXPECTED|own_team|move_block_resorted.power|seen_with_redrawn": 35770,
+    "EXPECTED|own_team|move_block_resorted.recoil|seen_with_redrawn": 877,
+    "EXPECTED|own_team|move_block_resorted.secondary|seen_with_redrawn": 17841,
+    "EXPECTED|own_team|move_block_resorted.type|seen_with_redrawn": 38804,
+    "EXPECTED|own_team|species|never_seen": 57210,
+    "EXPECTED|own_team|spread|never_seen": 88461,
+    "EXPECTED|own_team|types|never_seen": 15461,
+    "EXPECTED|reactive|active_req_moves|seen_redrawn_slot": 20795
+   },
+   "checks": {
+    "CHECKED|own_team|kept_move_content|seen": 23360,
+    "CHECKED|request|seen_mon|-": 17544
+   },
+   "examples": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/staller_v2/loss_s3_004#p1#36",
+      "world": 0.0,
+      "turn": 34,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.28906482458114624,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s3_005#p1#36",
+      "world": 0.7472217082977295,
+      "turn": 34,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.8115075826644897,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s3_005#p1#38",
+      "world": 0.8115075826644897,
+      "turn": 36,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.8671944737434387,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     }
+    ],
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": [
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 385.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 385.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 385.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 51.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 376.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     }
+    ]
+   }
+  },
+  "det2_c": {
+   "states": 596,
+   "states_ok": 596,
+   "errors": [],
+   "worlds_compared": 4768,
+   "opp_after_gap_hist": {
+    "-1": 596
+   },
+   "unexpected_cells_by_category": {},
+   "unexpected_total": 0,
+   "states_with_unexpected": 0,
+   "separate_intent_cells": {
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": 7
+   },
+   "explained_move_derived": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": 14
+   },
+   "hidden_divergence_worlds": {},
+   "worlds_whose_SEARCHED_side_protocol_differs_by_kind": {},
+   "worlds_whose_SEARCHED_side_protocol_differs": 0,
+   "states_with_any_such_world": 0,
+   "examples_searched_protocol": [],
+   "worlds_by_gender_draws_x_opp_protocol": {
+    "gender_draws_equal & opp_protocol_same": 4768
+   },
+   "expected_cells_by_category": {
+    "EXPECTED|obs_facts|seen_move_bits_positional|seen_same_count": 14512,
+    "EXPECTED|own_team|abilities|never_seen": 8320,
+    "EXPECTED|own_team|items|never_seen": 3528,
+    "EXPECTED|own_team|move0|never_seen": 59800,
+    "EXPECTED|own_team|move1|never_seen": 60391,
+    "EXPECTED|own_team|move2|never_seen": 61246,
+    "EXPECTED|own_team|move3|never_seen": 61595,
+    "EXPECTED|own_team|move_block_resorted.accuracy|seen_with_redrawn": 12721,
+    "EXPECTED|own_team|move_block_resorted.category|seen_with_redrawn": 24293,
+    "EXPECTED|own_team|move_block_resorted.current_pp|seen_with_redrawn": 34581,
+    "EXPECTED|own_team|move_block_resorted.id|seen_with_redrawn": 40426,
+    "EXPECTED|own_team|move_block_resorted.max_pp|seen_with_redrawn": 30702,
+    "EXPECTED|own_team|move_block_resorted.never_miss|seen_with_redrawn": 14541,
+    "EXPECTED|own_team|move_block_resorted.power|seen_with_redrawn": 33858,
+    "EXPECTED|own_team|move_block_resorted.recoil|seen_with_redrawn": 971,
+    "EXPECTED|own_team|move_block_resorted.secondary|seen_with_redrawn": 16848,
+    "EXPECTED|own_team|move_block_resorted.type|seen_with_redrawn": 35996,
+    "EXPECTED|own_team|species|never_seen": 56987,
+    "EXPECTED|own_team|spread|never_seen": 88137,
+    "EXPECTED|own_team|types|never_seen": 15437,
+    "EXPECTED|reactive|active_req_moves|seen_redrawn_slot": 20335
+   },
+   "checks": {
+    "CHECKED|own_team|kept_move_content|seen": 23328,
+    "CHECKED|request|seen_mon|-": 17528
+   },
+   "examples": {
+    "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs": [
+     {
+      "id": "rb_es_prod_s2001/step_10000002/staller_v2/loss_s3_004#p1#36",
+      "world": 0.0,
+      "turn": 34,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.28906482458114624,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s3_005#p1#38",
+      "world": 0.8115075826644897,
+      "turn": 36,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.8671944737434387,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s3_005#p1#38",
+      "world": 0.8115075826644897,
+      "turn": 36,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.8671944737434387,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s3_005#p1#38",
+      "world": 0.8115075826644897,
+      "turn": 36,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.8671944737434387,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_3/win_s1_003#p1#40",
+      "world": 0.5781296491622925,
+      "turn": 39,
+      "cat": "EXPLAINED|reactive|turns_since_progress|seen_mon_sleeptalk_presence_differs",
+      "cell": 1606,
+      "name": "reactive.turns_since_progress.0",
+      "species": null,
+      "true": 0.45815691351890564,
+      "notes": []
+     }
+    ],
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": [
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 385.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 82.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 248.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 248.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 91.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 297.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 385.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     }
+    ]
+   }
+  },
+  "det2_ct": {
+   "states": 597,
+   "states_ok": 597,
+   "errors": [],
+   "worlds_compared": 4776,
+   "opp_after_gap_hist": {
+    "-1": 597
+   },
+   "unexpected_cells_by_category": {},
+   "unexpected_total": 0,
+   "states_with_unexpected": 0,
+   "separate_intent_cells": {
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": 6
+   },
+   "explained_move_derived": {},
+   "hidden_divergence_worlds": {},
+   "worlds_whose_SEARCHED_side_protocol_differs_by_kind": {},
+   "worlds_whose_SEARCHED_side_protocol_differs": 0,
+   "states_with_any_such_world": 0,
+   "examples_searched_protocol": [],
+   "worlds_by_gender_draws_x_opp_protocol": {
+    "gender_draws_equal & opp_protocol_same": 4776
+   },
+   "expected_cells_by_category": {
+    "EXPECTED|own_team|abilities|never_seen": 8254,
+    "EXPECTED|own_team|items|never_seen": 3617,
+    "EXPECTED|own_team|move0|never_seen": 60194,
+    "EXPECTED|own_team|move1|never_seen": 60210,
+    "EXPECTED|own_team|move2|never_seen": 61011,
+    "EXPECTED|own_team|move3|never_seen": 62023,
+    "EXPECTED|own_team|species|never_seen": 56509,
+    "EXPECTED|own_team|spread|never_seen": 87944,
+    "EXPECTED|own_team|types|never_seen": 15276
+   },
+   "checks": {
+    "CHECKED|own_team|kept_move_content|seen": 23352,
+    "CHECKED|request|seen_mon|-": 17544
+   },
+   "examples": {
+    "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes": [
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 205.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 51.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 248.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 376.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 94.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     },
+     {
+      "id": "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s2_001#p1#28",
+      "world": 376.0,
+      "turn": 27,
+      "cat": "SEPARATE|event_window|TARGET_SPECIES|refers_to_never_seen_mon|rewrites=yes",
+      "cell": 2314,
+      "name": "event_window.row17.3",
+      "species": null,
+      "true": 344.0,
+      "notes": []
+     }
+    ]
+   }
+  }
+ },
+ "unexpected_total": 0,
+ "pass": true
+}

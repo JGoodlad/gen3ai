@@ -72,6 +72,7 @@ def main():
     ap.add_argument("--sampler", choices=("smogon", "belief", "moves", "truemoves"), default="smogon")
     ap.add_argument("--det-dir", default="det")
     ap.add_argument("--max-tries", type=int, default=D.MAX_TRIES)
+    ap.add_argument("--builder", choices=("v1", "v2"), default="v2", help="v2 = the fixed builder (Amendment 8)")
     a = ap.parse_args()
     c = C.cp()
     C.check_pin(c)
@@ -106,7 +107,7 @@ def main():
             try:
                 if did not in other_open:
                     raise RuntimeError("no Phase-1 row for this state (other_open unknown)")
-                w = D.build_worlds(b, d["side"], at, d["n"], did, P, a.J, max_tries=a.max_tries,
+                w = D.build_worlds(b, d["side"], at, d["n"], did, P, a.J, max_tries=a.max_tries, builder=a.builder,
                                    root_choice_in_log=not other_open[did],
                                    species_w=belief.get(did) if a.sampler != "smogon" else None,
                                    move_w=({**moves[did], "true_seen": a.sampler == "truemoves"}

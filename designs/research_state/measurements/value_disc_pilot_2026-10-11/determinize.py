@@ -243,8 +243,11 @@ def resample_revealed(rng, P: Priors, entry: str, seen_moves: Set[str],
 
 def sample_world(rng, P: Priors, team: str, revealed: Dict[str, Set[str]],
                  species_w: Optional[Dict[str, float]] = None,
-                 move_w: Optional[Dict[str, Dict[int, Dict[str, float]]]] = None) -> Tuple[str, dict]:
-    """The opponent's packed team with its hidden parts drawn. ``revealed``: {species id: seen move ids}.
+                 move_w: Optional[Dict[str, Dict[int, Dict[str, float]]]] = None,
+                 draw_slots: Optional[Set[int]] = None) -> Tuple[Optional[str], dict]:
+    """The opponent's packed team with its hidden parts drawn. ``draw_slots`` (v2, Amendment 8; None = v1): the
+    never-seen slots whose true mon drew a turn-0 gender (`place_genders`); a v2 world that cannot be built returns
+    (None, {"fail": ...}). ``revealed``: {species id: seen move ids}.
     ``species_w`` (Phase 2b, Amendment 5): never-seen slots draw their species ∝ these weights (the network's
     own X5 species presence π at the root) instead of the Smogon teammate prior; sets stay Smogon.
     ``move_w`` (Phase 2c, Amendment 6): the network's per-mon move presence keyed by species NUM, ``{"seen": {num:
@@ -284,6 +287,8 @@ def sample_world(rng, P: Priors, team: str, revealed: Dict[str, Set[str]],
             mw = None
         net_new += int(ent is not None and mw is not None)
         if ent is None:
+            if draw_slots is not None:     # v2: never fall back to the TRUE set of a never-seen slot (a leak)
+                return None, {"fail": "sample"}
             out.append(e)
             continue
         present.add(s)
@@ -292,12 +297,114 @@ def sample_world(rng, P: Priors, team: str, revealed: Dict[str, Set[str]],
     st = {"new_slots": new, "redrawn_move_slots": redrawn}
     if move_w is not None:
         st.update({"net_moves_seen_mons": net_seen, "net_moves_new_slots": net_new})
+    if draw_slots is not None:
+        out2 = place_genders(rng, P, out, [i for i, sid in enumerate(ids) if sid not in revealed], draw_slots)
+        if out2 is None:
+            return None, {"fail": "gender_count"}
+        out = out2
     return "]".join(out), st
 
 
-def reveals(res: dict, viewer: int, n: int) -> Tuple[Dict[str, Set[str]], List[str]]:
+def species_draws_gender(P: Priors, sid: str) -> bool:
+    """The engine draws a gender for a mon iff its packed set leaves the gender empty AND its species has no fixed
+    gender (`rust_sim` `draw_turn0_genders`: ONE uniform M / F sample; a fixed 'M' / 'F' / genderless 'N' is draw-free)."""
+    return P.species.get(sid, {}).get("gender") is None
+
+
+def gender_draw_slots(P: Priors, team: str) -> Set[int]:
+    """The team slots whose mon consumes a turn-0 gender draw."""
+    out = set()
+    for i, e in enumerate(team.split("]")):
+        f = parse_set(e)
+        if not f[7] and species_draws_gender(P, toid(f[1] or f[0])):
+            out.add(i)
+    return out
+
+
+def place_genders(rng, P: Priors, entries: List[str], never_seen: List[int], draw_slots: Set[int]) -> Optional[List[str]]:
+    """v2 (Amendment 8): the world's NEVER-SEEN mons placed so that the turn-0 gender draws happen at EXACTLY the true
+    team's draw slots, whatever species were drawn, so the pre-root dice (and every seen mon's drawn gender) are the
+    truth's and the gate never conditions on the never-seen species' gender classes beyond what the count requires.
+
+    ``draw_slots`` = the never-seen slots whose TRUE mon drew a gender. The world's never-seen mons are an exchangeable
+    sample, so they may be permuted among the never-seen slots: r = |draw_slots| of the world's gender-RATIO'd mons
+    (chosen uniformly) go to those slots with the gender left empty (they draw; the drawn value is the true slot's coin,
+    a fair M / F the searched side never saw); every other never-seen mon gets an EXPLICIT gender from the engine's
+    prior (uniform M / F for a ratio'd species; its fixed gender otherwise), so it draws nothing. Returns None when the
+    world holds fewer ratio'd never-seen mons than r (the RESIDUAL conditioning: such a world cannot reproduce the true
+    dice without an engine change; counted as ``gender_count``)."""
+    ns = sorted(never_seen)
+    need = sorted(s for s in draw_slots if s in ns)
+    sets = {i: parse_set(entries[i]) for i in ns}
+    ratio = [i for i in ns if species_draws_gender(P, toid(sets[i][1] or sets[i][0]))]
+    if len(ratio) < len(need):
+        return None
+    pick = [ratio[k] for k in rng.permutation(len(ratio))[: len(need)]]
+    rest = [i for i in ns if i not in pick]
+    rest = [rest[k] for k in rng.permutation(len(rest))]
+    others = [s for s in ns if s not in need]
+    out = list(entries)
+    for slot, src in zip(need, pick):
+        f = list(sets[src])
+        f[7] = ""
+        out[slot] = "|".join(f)
+    for slot, src in zip(others, rest):
+        f = list(sets[src])
+        sid = toid(f[1] or f[0])
+        g = P.species.get(sid, {}).get("gender")
+        f[7] = ("M" if rng.random() < 0.5 else "F") if g is None else ("" if g == "N" else g)
+        out[slot] = "|".join(f)
+    return out
+
+
+def team_problems(team: str) -> Set[Tuple[str, int]]:
+    """(rule, slot) of every gen3ou format-spec violation of a packed team (`agents.gen3_data.team_legality` at the
+    pin: the bans and the clauses, a ladder-only rule included)."""
+    from agents.gen3_data import team_legality as tl
+
+    return {(p.rule, int(p.slot)) for p in tl.validate_team(tl.parse_packed(team))}
+
+
+def opp_actives(res: dict, side_idx: int, n_cmds: int) -> List[Optional[str]]:
+    """The species id of side ``side_idx``'s ACTIVE mon at each of its first ``n_cmds`` commands: the k-th command
+    answers the side's k-th request that asks for a choice (``wait`` requests ask for none), read from that side's
+    OWN request lines (the truth's; used only to attribute a past move choice to the mon that made it)."""
+    import json as _json
+
+    out: List[Optional[str]] = []
+    for side, lines in res["chunks"]:
+        if side != side_idx:
+            continue
+        for ln in lines:
+            if not ln.startswith("|request|"):
+                continue
+            body = ln[len("|request|"):]
+            if not body.strip():
+                continue
+            rq = _json.loads(body)
+            if rq.get("wait") or rq.get("teamPreview"):
+                continue
+            act = [p for p in rq.get("side", {}).get("pokemon", []) if p.get("active")]
+            out.append(toid(act[0]["details"].split(",")[0]) if act else None)
+    if len(out) < n_cmds:
+        raise RuntimeError(f"side {side_idx}: {len(out)} choice requests for {n_cmds} commands")
+    return out[:n_cmds]
+
+
+def protocol_lines(res: dict, viewer: int, n: int) -> List[str]:
+    """Every protocol line the viewer was sent up to its n-th obs-bearing entry (inclusive), in order."""
+    ent = [e for e in res["trackers"][viewer] if "obs" in e]
+    after = int(ent[n]["after"])
+    return [ln for side, lines in res["chunks"][: after + 1] if side == viewer for ln in lines]
+
+
+def reveals(res: dict, viewer: int, n: int, extra: bool = False) -> Tuple[Dict[str, Set[str]], List[str]]:
     """The opponent species the viewer has seen, with the move ids seen used, up to its n-th
-    obs-bearing entry (inclusive), and the obs frames (b64) of entries 0..n."""
+    obs-bearing entry (inclusive), and the obs frames (b64) of entries 0..n. ``extra`` (v2, Amendment 8): also the
+    public lines that name the mon's OWN move outside ``|move|``: ``|-singleturn|<mon>|move: M`` (Focus Punch's
+    tightening; gen 3's other single-turn effects are the user's own moves too) and ``|cant|<mon>|<reason>|M`` (the move
+    it chose and could not use: Taunt, Disable, Imprison, a lost focus). Lines naming a move used ON the mon (Leech
+    Seed's ``-start``, a ``[from] move:`` tag of the other side's move) are not reveals and stay unparsed."""
     opp = f"p{2 - viewer}a: "
     chunks = res["chunks"]
     ent = [e for e in res["trackers"][viewer] if "obs" in e]
@@ -319,6 +426,10 @@ def reveals(res: dict, viewer: int, n: int) -> Tuple[Dict[str, Set[str]], List[s
                 seen.setdefault(sid, set())
             elif p[1] == "move" and p[2] in nick:
                 seen[nick[p[2]]].add(toid(p[3]))
+            elif extra and p[2] in nick and p[1] == "-singleturn" and p[3].startswith("move: "):
+                seen[nick[p[2]]].add(toid(p[3][len("move: "):]))
+            elif extra and p[2] in nick and p[1] == "cant" and len(p) > 4 and p[4].strip():
+                seen[nick[p[2]]].add(toid(p[4].replace("move: ", "")))
     return seen, [e["obs"]["b64"] for e in ent[: n + 1]]
 
 
@@ -329,9 +440,21 @@ def world_rng(did: str, j: int):
 def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int,
                  max_tries: int = MAX_TRIES, root_choice_in_log: bool = False,
                  species_w: Optional[Dict[str, float]] = None,
-                 move_w: Optional[Dict[str, Dict[int, Dict[str, float]]]] = None) -> dict:
+                 move_w: Optional[Dict[str, Dict[int, Dict[str, float]]]] = None,
+                 builder: str = "v2") -> dict:
     """J gate-passed worlds for one root. Returns {"teams": [packed or None] * J, "tries": [...],
-    "stats": [...], "revealed": ..., "true_rows": int}."""
+    "stats": [...], "revealed": ..., "true_rows": int}.
+
+    ``builder`` "v2" (Amendment 8, the default; the fix for the hidden-info study's R-GIGO FAIL): (1) the gate also
+    requires the searched side's PROTOCOL lines up to the root byte-equal to the truth's (the rows alone missed gender
+    tokens, a Focus Punch tightening line, a Beat Up hit); (2) ``reveals`` also parses the ``-singleturn`` / ``cant``
+    lines naming the mon's own move; (3) the never-seen mons are placed so the turn-0 gender draws happen at the true
+    draw slots (`place_genders`: no conditioning on their gender classes beyond the draw count); (4) a world whose team
+    breaks a gen3ou rule the true team does not break is rejected; a never-seen slot that cannot be sampled fails the
+    try instead of keeping its TRUE set. "v1" = the pilot's Phase 2 / 2b builder, byte-for-byte."""
+    v2 = builder == "v2"
+    if builder not in ("v1", "v2"):
+        raise ValueError(f"builder {builder!r}")
     from agents.battle.core_replay import RecordedBattle, run_core
 
     viewer = 0 if side == "p1" else 1
@@ -348,7 +471,8 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
     true = run_core([rec(None, f"{did}#true")], trackers=True, obs=True)[0]
     if not true["ok"]:
         raise RuntimeError(f"{did}: the true prefix does not replay: {true.get('error')}")
-    revealed, ref = reveals(true, viewer, n)
+    revealed, ref = reveals(true, viewer, n, extra=v2)
+    ref_proto = protocol_lines(true, viewer, n) if v2 else None
     team = (battle.p2 if side == "p1" else battle.p1)["team"]
     entries = team.split("]")
     sets = [parse_set(e) for e in entries]
@@ -364,11 +488,37 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
     kept = {k: set(v) for k, v in revealed.items()}
     leak = {"moves": [], "root_choice": None, "rewritten_moves": 0, "rewritten_switches": 0}
     last_opp = max((i for i, c in enumerate(cmds) if c[0] == opp_key), default=None)
+    n_opp_cmd = 0
+    actives = opp_actives(true, 1 - viewer, sum(1 for c in cmds if c[0] == opp_key)) if v2 else []
     tmpl: List[list] = []
     for i, (s_, t) in enumerate(cmds):
         if s_ != opp_key:
             tmpl.append([s_, t])
             continue
+        if v2 and t.startswith("move ") and not t[5:].strip().isdigit():
+            # v2: the choice belongs to the opponent's ACTIVE mon at that command (its own request), never to
+            # whichever mon happens to hold the same move (v1's rule kept a choice by name when ANOTHER mon had the
+            # move seen, so a world whose active mon lacked it was refused: a rejection on an unseen fact)
+            m = toid(t[5:])
+            hp = m.startswith("hiddenpower")
+            a_ = actives[n_opp_cmd]
+            k = sids.index(a_) if a_ in sids else None
+            if k is None or m not in moves_of[k]:
+                tmpl.append([s_, t])             # not in the active mon's true set: an attribution miss (counted)
+                leak["attribution_miss"] = leak.get("attribution_miss", 0) + 1
+            elif i == last_opp and root_choice_in_log:
+                kept.setdefault(a_, set()).add(m)
+                leak["root_choice"] = m
+                tmpl.append([s_, t])
+            elif m in kept.get(a_, set()) or (hp and "hiddenpower" in kept.get(a_, set())):
+                tmpl.append([s_, t])
+            else:
+                tmpl.append([s_, ("MOVE", k, moves_of[k].index(m))])
+                leak["rewritten_moves"] += 1
+            n_opp_cmd += 1
+            continue
+        if v2:
+            n_opp_cmd += 1
         if t.startswith("move ") and not t[5:].strip().isdigit():
             m = toid(t[5:])
             hp = m.startswith("hiddenpower")
@@ -417,14 +567,32 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
     tries = [0] * J
     stats: List[Optional[dict]] = [None] * J
     fails: Dict[str, int] = {}
+    if v2:
+        never_seen = {i for i, s in enumerate(sids) if s not in revealed}
+        draw_slots = gender_draw_slots(P, team) & never_seen
+        true_problems = team_problems(team)
     for _ in range(max_tries):
         todo = [j for j in range(J) if teams[j] is None]
         if not todo:
             break
         cand = {}
         for j in todo:
-            cand[j] = sample_world(rngs[j], P, team, revealed, species_w, move_w)
+            if v2:
+                cand[j] = sample_world(rngs[j], P, team, revealed, species_w, move_w, draw_slots=draw_slots)
+            else:
+                cand[j] = sample_world(rngs[j], P, team, revealed, species_w, move_w)
             tries[j] += 1
+        if v2:      # rejected before any replay: a world that cannot be built, or one breaking a gen3ou rule
+            for j in list(todo):
+                if cand[j][0] is None:
+                    k_ = cand[j][1]["fail"]
+                    fails[k_] = fails.get(k_, 0) + 1
+                    todo.remove(j)
+                elif team_problems(cand[j][0]) - true_problems:
+                    fails["clause"] = fails.get("clause", 0) + 1
+                    todo.remove(j)
+            if not todo:
+                continue
         out = run_core([rec(cand[j][0], f"{did}#w{j}", world_cmds(cand[j][0])) for j in todo],
                        trackers=True, obs=True)
         for j, r in zip(todo, out):
@@ -443,6 +611,9 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
                 k = next(i for i, (a, b) in enumerate(zip(rows, ref)) if a != b)
                 fails["rows_differ"] = fails.get("rows_differ", 0) + 1
                 fails.setdefault("first_diff_at", []).append(k)
+                continue
+            if v2 and protocol_lines(r, viewer, n) != ref_proto:
+                fails["protocol_differ"] = fails.get("protocol_differ", 0) + 1
                 continue
             teams[j] = cand[j][0]
             stats[j] = cand[j][1]

@@ -67,7 +67,7 @@ def main():
     ids_rw = [r["id"] for r in a1rows if r["leak"]["rewritten_moves"] > 0][: a.n]
     ids_any = [r["id"] for r in a1rows][: a.n]
     out = {"audit": "TEETH of A1-A3 (planted defects must be caught)", "cp": c}
-    WDET = A.world_rows(c, "det")
+    WDET = A.world_rows(c, A.AUDIT_DIRS[0])
 
     # the planted builder: the SAME source, the rewritten-slot render off by one (both expose the command template so
     # A1's TEXT invariant, ``audit_lib.text_invariant``, runs as part of the A1 checks)
@@ -170,8 +170,8 @@ def main():
     A2.MOVE_NUM.update({k: int(v["num"]) for k, v in json.loads(
         (Path(os.environ["VDP_PIN"]) / "data" / "pokemon" / "gen3_moves.json").read_text()).items()})
     names = A.cell_names()
-    W = A.world_rows(c, "det")
-    played = sorted(A.played_ids(c, "det"))[: a.n]
+    W = A.world_rows(c, A.AUDIT_DIRS[0])
+    played = sorted(A.played_ids(c, A.AUDIT_DIRS[0]))[: a.n]
     for key, fn, cell_f, req_f in (("A2_seen_item_swapped", swap_item, "items", "item"),
                                    ("A2_seen_evs_swapped", swap_evs, "spread", "stats")):
         n_w, caught_w, caught_cell, caught_req, per, any_w, cmp_w = 0, 0, 0, 0, [], 0, 0
@@ -183,7 +183,7 @@ def main():
             if not seen:
                 continue
             wr["teams"] = [replace_slot(t, seen[0], fn) for t in wr["teams"][: A2.J]]
-            row = A2.compare_state(names, P, b, d, wr, "det")
+            row = A2.compare_state(names, P, b, d, wr, A.AUDIT_DIRS[0])
             for w in row["worlds"]:
                 n_w += 1
                 cats = w["cats"]

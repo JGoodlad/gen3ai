@@ -1,0 +1,267 @@
+{
+ "audit": "A2 follow-up: worlds inconsistent with the searched side's protocol",
+ "cp": "end2",
+ "by_dir": {
+  "det2": {
+   "states_with_inconsistent_worlds": 0,
+   "worlds_inconsistent": 0,
+   "states_by_kind": {},
+   "focus_punch_states": 0,
+   "focus_punch_states_mon_alive_at_root": 0,
+   "states": []
+  },
+  "det2_b": {
+   "states_with_inconsistent_worlds": 0,
+   "worlds_inconsistent": 0,
+   "states_by_kind": {},
+   "focus_punch_states": 0,
+   "focus_punch_states_mon_alive_at_root": 0,
+   "states": []
+  },
+  "det2_c": {
+   "states_with_inconsistent_worlds": 0,
+   "worlds_inconsistent": 0,
+   "states_by_kind": {},
+   "focus_punch_states": 0,
+   "focus_punch_states_mon_alive_at_root": 0,
+   "states": []
+  },
+  "det2_ct": {
+   "states_with_inconsistent_worlds": 0,
+   "worlds_inconsistent": 0,
+   "states_by_kind": {},
+   "focus_punch_states": 0,
+   "focus_punch_states_mon_alive_at_root": 0,
+   "states": []
+  }
+ },
+ "public_lines_naming_an_opponent_move_outside_move_lines (all played states, det and det_b)": {
+  "-singleturn": 80,
+  "-start": 98,
+  "-status": 63,
+  "-heal": 6,
+  "-cureteam": 11,
+  "-enditem": 1,
+  "cant": 9,
+  "-end": 12,
+  "-activate": 2,
+  "-item": 1
+ },
+ "examples_of_such_lines": {
+  "-singleturn": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+    "line": "|-singleturn|p2a: Swampert|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+    "line": "|-singleturn|p2a: Swampert|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+    "line": "|-singleturn|p2a: Charizard|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_003#p1#23",
+    "line": "|-singleturn|p2a: Heracross|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_003#p1#23",
+    "line": "|-singleturn|p2a: Charizard|move: Focus Punch",
+    "key": "-singleturn|Focus Punch"
+   }
+  ],
+  "-start": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s0_005#p1#26",
+    "line": "|-start|p2a: Charizard|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic/win_s0_003#p1#16",
+    "line": "|-start|p2a: Salamence|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s0_003#p1#20",
+    "line": "|-start|p2a: Suicune|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_005#p1#35",
+    "line": "|-start|p2a: Suicune|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s0_002#p1#10",
+    "line": "|-start|p2a: Aerodactyl|move: Leech Seed",
+    "key": "-start|Leech Seed"
+   }
+  ],
+  "-status": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s0_005#p1#16",
+    "line": "|-status|p2a: Jirachi|slp|[from] move: Hypnosis",
+    "key": "-status|Hypnosis"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic2/win_s2_001#p1#12",
+    "line": "|-status|p2a: Suicune|slp|[from] move: Rest",
+    "key": "-status|Rest"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_0/loss_s1_004#p1#36",
+    "line": "|-status|p2a: Snorlax|slp|[from] move: Hypnosis",
+    "key": "-status|Hypnosis"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_002#p1#19",
+    "line": "|-status|p2a: Suicune|slp|[from] move: Rest",
+    "key": "-status|Rest"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_005#p1#28",
+    "line": "|-status|p2a: Zapdos|slp|[from] move: Rest",
+    "key": "-status|Rest"
+   }
+  ],
+  "-heal": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s1_003#p1#34",
+    "line": "|-heal|p2a: Jolteon|100/100|[from] move: Wish|[wisher] Jolteon",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/random/win_s0_001#p1#35",
+    "line": "|-heal|p2a: Jirachi|100/100 par|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/random/win_s0_001#p1#35",
+    "line": "|-heal|p2a: Metagross|100/100|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_2/loss_s3_005#p1#15",
+    "line": "|-heal|p2a: Skarmory|100/100|[from] move: Wish|[wisher] Blissey",
+    "key": "-heal|Wish"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_12000157/sentinel_0/loss_s2_003#p1#31",
+    "line": "|-heal|p2a: Jirachi|87/100 par|[from] move: Wish|[wisher] Jirachi",
+    "key": "-heal|Wish"
+   }
+  ],
+  "-cureteam": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_002#p1#16",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_002#p1#19",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_005#p1#28",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_005#p1#28",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_005#p1#35",
+    "line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "key": "-cureteam|Aromatherapy"
+   }
+  ],
+  "-enditem": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_2/loss_s1_004#p1#29",
+    "line": "|-enditem|p2a: Swampert|Leftovers|[from] move: Knock Off|[of] p1a: Hariyama",
+    "key": "-enditem|Knock Off"
+   }
+  ],
+  "cant": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|cant|p2a: Skarmory|move: Taunt|Spikes",
+    "key": "cant|Taunt"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|cant|p2a: Skarmory|move: Taunt|Spikes",
+    "key": "cant|Taunt"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|cant|p2a: Skarmory|move: Taunt|Spikes",
+    "key": "cant|Taunt"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|cant|p2a: Skarmory|move: Taunt|Spikes",
+    "key": "cant|Taunt"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|cant|p2a: Skarmory|move: Taunt|Spikes",
+    "key": "cant|Taunt"
+   }
+  ],
+  "-end": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|-end|p2a: Skarmory|move: Taunt|[silent]",
+    "key": "-end|Taunt"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|-end|p2a: Skarmory|move: Taunt|[silent]",
+    "key": "-end|Taunt"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|-end|p2a: Skarmory|move: Taunt|[silent]",
+    "key": "-end|Taunt"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|-end|p2a: Skarmory|move: Taunt|[silent]",
+    "key": "-end|Taunt"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28",
+    "line": "|-end|p2a: Skarmory|move: Taunt|[silent]",
+    "key": "-end|Taunt"
+   }
+  ],
+  "-activate": [
+   {
+    "id": "rb_es_end2_s2001/step_12000157/random/win_s3_002#p1#26",
+    "line": "|-activate|p2a: Gengar|move: Destiny Bond",
+    "key": "-activate|Destiny Bond"
+   },
+   {
+    "id": "rb_es_end2_s2001/step_12000157/random/win_s3_002#p1#28",
+    "line": "|-activate|p2a: Gengar|move: Destiny Bond",
+    "key": "-activate|Destiny Bond"
+   }
+  ],
+  "-item": [
+   {
+    "id": "rb_es_end2_s2001/step_12000157/sentinel_3/win_s2_002#p1#26",
+    "line": "|-item|p2a: Airmure|Leftovers|[from] move: Thief|[of] p1a: Swampert",
+    "key": "-item|Thief"
+   }
+  ]
+ }
+}

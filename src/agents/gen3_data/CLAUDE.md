@@ -158,7 +158,9 @@ invalid.)
 
 Reference data (deterministic) under `data/pokemon/`, all regenerable via
 `tools/pokemon_data_extractor/sync.py`:
-- `gen3_species.json` — species id → `{num, baseStats, name, types}` (`types` UPPERCASED to the TypeEncoder
+- `gen3_species.json` — species id → `{num, baseStats, name, types, gender}` (`gender`: a fixed "M" / "F", "N"
+  genderless, absent = a gender-ratio species the engine draws uniformly at construction; `SpeciesData.gender`)
+  (`types` UPPERCASED to the TypeEncoder
   axis — `gen3_bidir_threat_trunk_v1`, for the op's expected-latent read; the obs still reads revealed types live).
   **419 rows** = the 386 base forms + the 33 gen-3 ALTERNATE/COSMETIC FORMES (`gen3_species_formes_v1`:
   Deoxys-Attack/-Defense/-Speed with their own base stats, the 27 Unown letters, Castform's 3 weather

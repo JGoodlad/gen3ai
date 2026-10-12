@@ -25,6 +25,11 @@ import determinize as D  # noqa: E402
 assert Path(C.__file__).resolve().parent == PILOT, C.__file__
 ARCH = Path.home() / "gen3ai_archive" / "hidden_info_binding"
 SRC = Path.home() / "gen3ai_archive" / "value_disc_pilot"
+#: the world directories the audits read (the pilot archive's): default the v1 builder's ``det``, ``det_b``; the v2
+#: (fixed) builder's re-audit sets ``HIB_AUDIT_DIRS=det2,det2_b,...`` (Smogon first: A5 / A6 / teeth read the first)
+#: and ``HIB_AUDIT_TAG=_v2``, which suffixes every output file and the bulk audit directory so the v1 files stand
+AUDIT_DIRS = tuple(x for x in os.environ.get("HIB_AUDIT_DIRS", "det,det_b").split(",") if x)
+TAG = os.environ.get("HIB_AUDIT_TAG", "")
 
 
 def builder_ns(plant_off_by_one: bool = False) -> dict:
@@ -77,7 +82,7 @@ def cp() -> str:
 
 
 def audit_dir(c: str) -> Path:
-    d = ARCH / c / "audit"
+    d = ARCH / c / ("audit" + TAG)
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -100,8 +105,13 @@ def world_rows(c: str, det_dir: str) -> Dict[str, dict]:
 
 
 def played_ids(c: str, det_dir: str) -> set:
-    """States whose det playout row is ok (the played worlds = the first 8 of each)."""
-    return {r["id"] for q in sorted((SRC / c / det_dir).glob("rows_*.jsonl")) for r in C.read_rows(q) if r.get("ok")}
+    """States whose det playout row is ok (the played worlds = the first 8 of each). A directory with NO playout rows
+    yet (a re-audit before its playouts) falls back to every state with 8 built worlds (the worlds that would play)."""
+    rows = sorted((SRC / c / det_dir).glob("rows_*.jsonl"))
+    if not rows:
+        return {i for i, w in world_rows(c, det_dir).items()
+                if w.get("ok") and len(w["teams"]) >= 8 and all(t is not None for t in w["teams"][:8])}
+    return {r["id"] for q in rows for r in C.read_rows(q) if r.get("ok")}
 
 
 def decision(bk, did: str):
@@ -128,6 +138,8 @@ def row_of(e: dict) -> np.ndarray:
 
 
 def write_json(name: str, obj) -> Path:
+    if TAG and name.endswith(".json") and not name[:-5].endswith(TAG):
+        name = name[:-5] + TAG + ".json"
     p = HERE / name
     p.write_text(json.dumps(obj, indent=1, sort_keys=False, default=str) + "\n")
     return p

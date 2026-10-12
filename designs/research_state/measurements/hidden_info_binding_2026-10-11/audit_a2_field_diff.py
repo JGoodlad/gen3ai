@@ -36,7 +36,7 @@ import audit_lib as A
 
 C, D = A.C, A.D
 J = 8
-DIRS = ("det", "det_b")
+DIRS = A.AUDIT_DIRS
 MOVE_NUM = {}
 SLOT_SUBS = ["id", "power", "secondary", "recoil", "type", "category", "known", "current_pp", "max_pp", "accuracy",
              "never_miss"]

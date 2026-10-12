@@ -980,6 +980,17 @@ conditions on construction draws: the A6 leak); (2) parse every public line that
 teams that break a gen3ou clause (`agents.gen3_data.format_spec`); (4) the independent implementation (§13.1) is built
 to the fixed spec. ≈ 0.5 agent-day.
 
+**UPDATE 2026-10-11 23:15 (the pilot's builder owner; `design_value_discrimination.md` §7.10 Amendment 8): the FIXED
+builder (v2) is built and R-GIGO re-read on its worlds = PASS** (these audits re-run with `HIB_AUDIT_DIRS` /
+`HIB_AUDIT_TAG=_v2`, files `audit_*_<cp>_v2.json`): A1 0 mismatches, A2 0 unexpected cells and 0 protocol-inconsistent
+worlds (was 469 / 312), A3 100 %, A4 0 clause / ban violations in sampled parts (was ≈ 2.5 %), teeth 6 / 6 plus two
+gender plants 20 / 20. v2 also fixes a defect these audits did not name: a past opponent move choice is now credited
+to the mon that made it (v1 kept a choice by name when another mon had the move seen, so worlds whose actual chooser
+lacked it were refused). The gender leak is REDUCED, not removed: a world still needs at least as many gender-ratio
+never-seen mons as the true draws (accepted P(m = r) 0.67 / 0.64 vs the proposal's conditional 0.57; v1 0.98 / 0.97);
+only an engine-side draw pad removes it. Detail: `measurements/value_disc_pilot_2026-10-11/README.md` §13. The v2
+worlds of every honest arm are `~/gen3ai_archive/value_disc_pilot/<cp>/det2*`.
+
 ### 16.5 The MODEL-INPUT axis: R-NET and CRITIC-USES (read 2026-10-11; `result_model_input_blinded.json` frozen at `8df724e0` before unblinding, `result_model_input.json`)
 
 **Plain language.** Told the TRUE moves of every opponent Pokémon it has seen, with 95 % confidence, the network
