@@ -32,7 +32,9 @@ They differ almost always; a pinned run trains on its pin's code.
 
 **Now:** the Rustboro era (`rb_` runs, `src/utils/era.py`) on the Rust stack. Current design work
 lives in [`endstate/`](endstate/) (the search-enablement direction — value discrimination, the RNG alignment of
-counterfactual playouts, the label factory — is [`endstate/design_value_discrimination.md`](endstate/design_value_discrimination.md)); the ranked queues are `research_state/EXPERIMENT_BACKLOG.md`
+counterfactual playouts, the label factory — is [`endstate/design_value_discrimination.md`](endstate/design_value_discrimination.md);
+its adversarial follow-up, WHICH hidden information binds search and the network (moves, the never-seen mons, items,
+abilities, spreads), with its pre-registered rules, is [`endstate/design_hidden_info_binding.md`](endstate/design_hidden_info_binding.md)); the ranked queues are `research_state/EXPERIMENT_BACKLOG.md`
 (experiments), `ops/TASK_BACKLOG.md` (builds) and `ops/TECH_DEBT_BACKLOG.md` (debt). Production is
 what `--arch production` resolves — `production_config.json` (+ its sibling `production_config.README.md`
 for provenance) and the registry `baselines.json` — never a run named in prose. The `ai_vN` folders

@@ -24435,3 +24435,31 @@ evaluation states) HELPS / HURTS / NOT DETECTED; R-QHEAD-CRITIC (vs Phase 2's ho
 EQUIVALENT / NOT DETECTED. Predictions: R-QHEAD NOT DETECTED or HELPS ≤ +0.015; R-QHEAD-CRITIC NOT DETECTED.
 
 Tag: **REGISTRATION · CPU · offline · Phase 3 outcomes unread**
+
+### 2026-10-11 · REGISTRATION · **THE HIDDEN-INFORMATION BINDING STUDY: is "the opponent's moves are the binding constraint" true? An adversarial attribution of the oracle − honest search gap, registered before any arm was run or read**
+
+Registered by `designs/endstate/design_hidden_info_binding.md` §12 (owner request 2026-10-11: "reproduce knowing the
+moves as being the critical link … and challenge that … give high mass to the known moves, but don't necessarily
+make them 100%"; the orchestrator's additions the same day). The claim is split into ATTRIBUTION (C1: which hidden
+fact carries G = IMP_O(LEAF-K8) − IMP_F(LEAF-K8)), RECOVERABILITY (C2: could an honest belief recover it) and
+USABILITY (C3: would the network decide better if told). Audit of the pilot's evidence: its fair worlds kept every
+SEEN opponent mon's item, ability, nature, EVs and IVs TRUE (`determinize.py`), so its gap could only come from the
+seen mons' unseen moves and the never-seen mons; a FULLY honest gap was never measured. Prior counter-evidence named:
+the X5 oracle arms (the whole set +0 over species for a trained policy), Foul Play (Smogon-only sets beat our 75M
+policy; its knowledge delta +0.000 [−0.15, +0.15], n = 80), the pool-vs-Smogon confound. Design: sampler audits
+A1–A6 (R-GIGO gates everything); a five-class partition M / U / I / A / S of the hidden facts with sufficiency (F+X)
+and necessity (O−X) arms over a fully honest base F; a move DOSE (p ∈ {0, .25, .5, .75, .9, 1}), a wrong-moves
+PLACEBO, an honest MAP control, the POOL posterior and POOLSETS (measurements only), Foul Play's hand evaluator as a
+second leaf (R-EVAL), a width arm (R-WIDTH), a second referee; the MODEL-INPUT axis (the true moves mixed into the
+network's ONE published move posterior at p ∈ {0.6, 0.8, 0.95, 1.0}, PLACEBO and SELFMAP controls; R-NET,
+CRITIC-USES); launch-ready GPU knock-in forks (`--belief-oracle`, 5 arms × 3 seeds +3M, a no-change control; K-rules;
+≈ 14 GPU-h, queued by the orchestrator ≈ mid-week). Headline rule R-MOVES on pooled shares over three checkpoints:
+MOVES-BINDING needs sufficiency AND necessity shares ≥ 0.5 (lower ≥ 0.25), dominance, a rising dose, a null placebo
+and per-checkpoint replication; REFUTED / NECESSARY-NOT-SUFFICIENT / SHARED / NOT-DETECTED defined. Modifiers: the v8
+GUARD (TRANSIENT if the belief is still improving and the moves' share falls with training), CONDITION-DEPENDENT, and
+PROVISIONAL "at 15M" until a plateaued checkpoint (X26) CONFIRMS or REVOKES. Preconditions for any steering: an
+independent re-implementation agrees (R-REPLICATE), a red team has attacked it, the owner has read it. Blinded arm
+codes. Predictions: R-GIGO PASS; R-MOVES modal SHARED (≈ 45 %), BINDING ≈ 30 %; R-NET NOT-DETECTED or
+CONFIDENCE-ONLY; R-WIDTH FLAT; M-BELIEF IMPROVING.
+
+Tag: **REGISTRATION · CPU (cheap parts now; the factorial after the closing test) · GPU forks queued · no arm read**

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,438-line file. **The ledger itself is append-only and is never edited by this**;
+24,466-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**850 headings · 795 dated · 2026-08-01 → 2026-10-11 · ledger 24,438 lines.**
+**851 headings · 796 dated · 2026-08-01 → 2026-10-11 · ledger 24,466 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -870,3 +870,4 @@ rename.
   - `L24381` · `2026-10-11` · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 2 / 2b (HONEST worlds): the oracle rollout leaf's gain is HIDDEN INFORMATION — in determinized worlds that replay our observations byte-equal, LEAF-K8 improves the policy's pick by only +0.007 (end2) / +0.004 (prod), not clear of 0 or of the critic (R-HONEST NOT DETECTED); oracle − honest +0.072 / +0.067 (R-INFO INFO-COSTS); worlds from the network's own species belief are no better (R-BELIEF NOT DETECTED); the moves, not the species, carry it**
   - `L24411` · `2026-10-11` · REGISTRATION · **VALUE-DISCRIMINATION PILOT PHASE 2c: honest worlds whose hidden MOVES come from the network's OWN move belief (and a ceiling arm with the seen mons' TRUE sets) — can a better move belief make honest search pay?**
   - `L24425` · `2026-10-11` · REGISTRATION · **VALUE-DISCRIMINATION PILOT PHASE 3: an OFFLINE per-action VALUE HEAD on the frozen end-state checkpoint, fit on ORACLE playout labels (the honest information-set value in expectation), acting with NO rollout at decision time**
+  - `L24439` · `2026-10-11` · REGISTRATION · **THE HIDDEN-INFORMATION BINDING STUDY: is "the opponent's moves are the binding constraint" true? An adversarial attribution of the oracle − honest search gap, registered before any arm was run or read**

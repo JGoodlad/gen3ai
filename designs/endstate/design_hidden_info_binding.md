@@ -1,0 +1,825 @@
+# WHICH HIDDEN INFORMATION BINDS OUR DECISIONS: an adversarial study of "the opponent's moves are the binding constraint"
+
+🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
+doc updates it in the same commit, and the Decision record at the end says what changed and why.
+
+**Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12), written at the owner's request before any arm of this study
+was run or read.** Only the CHEAP, CPU-light parts run in this unit (§16): the sampler audits (§5), the model-input
+axis on banked states (§7), the registered descriptive reads of the pilot's existing rows (§11), and the maturity
+meters (§10.1–§10.2). The playout-world factorial (§6) runs after the closing test frees the box (≈ Mon 2026-10-12
+09:00–10:00). The GPU knock-in forks (§8) are QUEUED by the orchestrator (owner-delegated GPU scheduling) after the
+closing test's verdict branch and the bf16 strength A/B, ≈ mid-week. **No conclusion of this study may
+steer research until the independent replication (§13.1) agrees, the red team (§13.2) has attacked it, and, for
+anything bigger than cheap reversible work, the plateau replication (§10.5) has confirmed it.**
+
+Measurement folder: [`../research_state/measurements/hidden_info_binding_2026-10-11/`](../research_state/measurements/hidden_info_binding_2026-10-11/).
+The pilot this study interrogates: [`design_value_discrimination.md`](design_value_discrimination.md) §7.10–§7.12.
+
+---
+
+## 0. Summary, in plain language
+
+**The claim under test.** The value-discrimination pilot found that a search which plays each candidate action out
+to the end in the TRUE battle (it knows the opponent's real team: the "oracle" world) picks a better action than our
+policy by about **7 points of win probability per decision**, while the same search in "fair" worlds (opponent
+teams guessed from Smogon usage, kept only if they reproduce everything our side has seen) gains **nothing**. The
+pilot attributed the gap to the opponent's hidden MOVES. If that is right, the next research path is move inference
+(a better belief about the opponent's moves, for the network and for search). That is a multi-week commitment, so
+the owner asked for the claim to be reproduced AND attacked: "give high mass to the known moves, but don't
+necessarily make them 100% and see if that changes how the model behaves … many tests, many countering tests, and
+then still feeling good about it."
+
+**What this doc does.**
+1. It states the claim precisely, in three separable parts (§1): WHICH hidden fact carries the gap (attribution),
+   whether a better but still honest belief could recover it (recoverability), and whether the NETWORK itself would
+   decide better if told (usability).
+2. It audits the existing evidence for and against (§2). Two findings reframe the question before any new run:
+   - By construction, the pilot's fair worlds kept every SEEN opponent Pokémon's item, ability, nature, EVs and IVs
+     TRUE. So the pilot's gap could only ever have come from (a) the unseen moves of seen Pokémon and (b) the
+     never-seen Pokémon as a whole. Spreads, items and abilities were never in the comparison. A fully honest world
+     has a gap the pilot never measured.
+   - Three pieces of prior evidence cut AGAINST "moves bind": a network TRAINED with the opponent's full set
+     revealed was only +2.2 pp stronger than without, and the set (moves, item, spread) added nothing over the
+     species (−0.26 pp [−1.92, +1.40], the X5 oracle arms); Foul Play, which guesses sets from Smogon usage alone,
+     beat our 75M policy, and swapping its better set source for Smogon's changed nothing (+0.000 [−0.15, +0.15],
+     n = 80); and the eval opponents play OUR team pool, not Smogon's sets, so a low move-hit rate may partly measure
+     how un-Smogon-like the pool is.
+3. It lists the RIVAL explanations (§3), each with the result that would kill it: items, abilities, spreads, exact
+   HP, hidden counters, the never-seen Pokémon, a sampler bug, statistics, information no honest belief could have,
+   the Smogon-vs-pool mismatch, our evaluator rather than our information, search width, and a still-maturing policy.
+4. It designs four axes of tests: the sampler AUDITS (§5); the PLAYOUT-WORLD factorial (§6: reveal only X, reveal
+   all but X, a dose-response of move knowledge, a wrong-moves placebo, an honest sharpening control, the Bayes
+   posterior of our own pool, Foul Play's hand-written evaluator as a second leaf); the MODEL-INPUT axis (§7: hand the
+   network's move belief the true moves with 60–100 % mass and see whether its choices and its critic get better);
+   and the TRAINING axis (§8, GPU, queued ≈ mid-week: can a network LEARN to use the moves if it is given them?).
+5. It pre-registers deterministic decision rules (§12) for "moves are binding", "refuted", "shared", "transient",
+   and the other verdicts, with the power each needs, a blinded analysis, an independent re-implementation (§13.1),
+   a red team (§13.2), a maturity guard against the "v8 gift" trap and a plateau replication (§10).
+6. It says what each verdict would mean for the roadmap and what each path costs (§14), and prices the compute
+   (§15): ≈ 15 CPU-hours now; ≈ 330 CPU-hours for the full factorial on the free box after the closing test
+   (≈ 30 wall-hours, or ≈ 6–8 with a GPU-batched playout harness); ≈ 14 GPU-hours for the knock-in forks.
+
+**The cheap results so far and the current confidence:** §16 (filled from the registered reads, in the same commit
+that reads them).
+
+---
+
+## 1. The claim, stated precisely
+
+### 1.1 Notation (the pilot's, unchanged)
+
+- A STATE is one of the pilot's 600 registered decisions per checkpoint (`rb_es_end2_s2001`, `rb_es_prod_s2001`;
+  own eval traces, stratified by the policy's top-2 gap; `value_disc_pilot_2026-10-11/README.md` §2).
+- The REFEREE T(a) is the mean win-scale outcome of action a over 24 truth seeds (16–39), played in the TRUE world
+  by the checkpoint greedy on both sides. No scorer ever reads a truth seed.
+- **IMP_W(scorer)** = the mean over states of T(â) − T(top1): how much better (win probability per decision) the
+  scorer's argmax over ALL legal actions is than the policy's own pick, when the scorer's playouts run in world
+  kind W. Battle-clustered bootstrap, 2,000 draws, `default_rng(20261011)`, every contrast paired.
+- **LEAF-K8**: the mean outcome of 8 playouts to the end per action (8 worlds × one dice seed each in a fair arm; 8
+  dice seeds in the oracle). **TRUNC-4-K8**: the critic's value 4 turns later, averaged the same way. **CRITIC**: the
+  critic's one-ply value of the successor.
+- World kinds: **O** = the oracle (the true battle); **P** = the pilot's Phase 2 fair world (Smogon prior, the
+  named leaks); **F** = the FULLY honest world (§6.1, new).
+
+### 1.2 The claim in three parts (they can come apart)
+
+| part | statement | the axis that tests it |
+|---|---|---|
+| **C1 ATTRIBUTION** | Of the gap G = IMP_O(LEAF-K8) − IMP_F(LEAF-K8), the opponent's hidden MOVES carry the majority, both as the thing that SUFFICES to close it (reveal only the moves) and the thing that is NECESSARY (reveal everything but the moves) | §6 playout-world factorial |
+| **C2 RECOVERABILITY** | A better but still HONEST belief about the moves would recover a material part of G (it is belief error, not information no honest player can have) | §6.4 dose, MAP and the pool posterior |
+| **C3 USABILITY** | The NETWORK itself (policy and critic) would decide better if its move belief were right: it lacks the information, rather than being unable to use it | §7 model-input axis (frozen); §8 training axis (forks) |
+
+"Moves are THE binding constraint", the owner's phrase, needs C1 and at least one of C2 / C3. C1 alone says the
+information matters to search; it does not say any affordable work can buy it back.
+
+### 1.3 Why it is a huge call
+
+The two research paths it would choose between are weeks apart: move inference (belief training signals,
+set-level priors, opponent modelling, belief-sampled search) versus the alternatives (a better evaluator, value
+labels from oracle playouts (`design_value_discrimination.md` §13.8), information-set search, more width). A wrong
+attribution would spend the next research block on the wrong one. Hence the bar: every rival named, each with a
+kill test, an independent re-implementation, a red team, and a plateau replication before a multi-week commitment.
+
+---
+
+## 2. The evidence so far, audited
+
+### 2.1 What the pilot measured (both closing-test seeds 2001; `design_value_discrimination.md` §7.11–§7.12)
+
+| read | end2 | prod |
+|---|---|---|
+| IMP_O LEAF-K8 (oracle) | +0.081 | +0.071 |
+| IMP_P LEAF-K8 (Smogon worlds) | +0.007 [−0.008, +0.022] | +0.004 [−0.010, +0.019] |
+| R-INFO (oracle − fair, LEAF-K8) | **+0.072 [+0.057, +0.087]** | **+0.067 [+0.053, +0.080]** |
+| fair LEAF-K8 with 0–1 opponent slots unrevealed vs oracle | +0.019 vs +0.072 | +0.014 vs +0.062 |
+| R-BELIEF (worlds whose never-seen SPECIES come from the network's belief) | +0.001 [−0.014, +0.015] | −0.003 [−0.016, +0.009] |
+| a world's re-drawn move slot = the true move / a world's SET holds a true unseen move | 16.6 % / 45 % | 16.0 % / 45 % |
+
+### 2.2 What that evidence can and cannot support (the adversarial audit)
+
+1. **The pilot's fair world was not fully fair, and the leak decides what it could attribute.** `determinize.py`
+   kept every SEEN opponent mon's species, item, ability, nature, EVs and IVs TRUE (they shaped the observed
+   history, so the byte-equal gate would reject most redraws). In the pilot's world therefore only three things
+   differ from the truth: the unseen move slots of seen mons (≈ 10.2 per world: 45,640 slots over 4,464 end2
+   worlds, `move_accuracy_read.json`), every fact of the never-seen slots (≈ 2.1 per world), and the counted leaks.
+   Consequences: (a) the pilot's gap contains NO spread, item, ability or exact-HP component of a seen mon, so it
+   cannot rule those in or out; (b) the fully honest gap G (seen mons' item / ability / spread also guessed) is
+   UNMEASURED and may be larger; (c) within the pilot's design the only rival to "seen mons' moves" is "the
+   never-seen mons", and the 0–1-unrevealed stratum is the read that separates them (§11 D1 splits it into 0 and 1).
+2. **"With nearly all species seen, fair keeps ~¼" is a pooled 0–1 stratum, POST-HOC and descriptive**, with no CI
+   reported on the ratio. One unrevealed slot is a whole hidden set (species, four moves, item, spread).
+3. **The 16 % is a slot-POSITION metric**; the game-relevant set recall is 45 % (the network's belief: 51 % / 48 %).
+4. **The species-belief null (R-BELIEF) is consistent with "species don't matter" and with "the right species with
+   Smogon sets is still the wrong mon".** It does not by itself point at moves.
+5. **The referee rewards matching the referee's world, including its continuation.** The oracle leaf is the
+   referee's own estimator on disjoint dice: it knows the opponent's team AND, through it, exactly how the greedy
+   opponent continuation will play. Part of "information" may be "a model of this particular opponent policy".
+   §6.7 adds a second referee with a different continuation.
+6. **The gap is a value-of-information (VOI) quantity, partly IRREDUCIBLE.** Even an exact posterior over the
+   opponent's team leaves argmax_a E_w[Q(w, a)] ≠ argmax_a Q(s_true, a): no honest player can close that part.
+   The pilot cannot separate VOI under the exact posterior from posterior ERROR; only the second is a research path.
+   §6.4's pool-posterior arm (the Bayes posterior of the distribution the eval opponents actually draw from) does.
+
+### 2.3 Prior evidence AGAINST "moves bind" (owner and orchestrator, 2026-10-11)
+
+| evidence | what it says | how this design discriminates |
+|---|---|---|
+| **X5 oracle reference arms** (`design_x5_belief_tokens.md` §7.6–§7.7; UNDERSTANDING "Perfect information about the opponent's team buys little strength"): networks TRAINED 15M with the opponent's species (+2.44 pp [+0.31, +4.57]) or whole set (+2.18 pp [+0.53, +3.84]) revealed in the observation, one-sided clairvoyance, vs blob | For an AMORTIZED policy (no search), knowing the set added nothing over the species (−0.26 [−1.92, +1.40]): moves do NOT bind the trained policy at this budget | It is about the POLICY, not search. Three readings: (i) information × search interaction (moves matter only to an explicit rollout); (ii) the network cannot use the information (shortcut learning; the caveat registered then); (iii) a different architecture / era. §7 (frozen network told the truth) and §8 (forks trained with it) separate (i) from (ii) on the CURRENT architecture |
+| **Foul Play** (`foulplay_axes_and_frontend_validation_2026-09-16/`; UNDERSTANDING L659–L666): MCTS on a hand-written evaluator, sets from Smogon usage only, beat our 75M policy (our win rate 0.388 [0.288, 0.497], ~1.4M visits); its knowledge delta at matched width (full team datasets vs Smogon-only sets) +0.000 [−0.15, +0.15], n = 80 | Weakly against "moves bind" at huge search width; or WIDTH SUBSTITUTES for knowledge (many determinized worlds average to a robust choice); or its EVALUATOR is the edge | Three separators: R-WIDTH (§6.6: does fair-world IMP climb with the number of worlds at fixed knowledge?); the DOSE (§6.4: does it climb with knowledge at fixed width?); R-EVAL (§6.5: Foul Play's own evaluator as our leaf, in oracle AND fair worlds). The n = 80 CI (±15 pp) is too wide to weigh heavily; the per-decision dose is ~10× more precise |
+| **The POOL-vs-PRIOR confound**: the fair sampler draws Smogon sets, the opponents play our ~719-team pool | A low hit rate may measure the pool's un-Smogon-ness, not the game's difficulty; on the ladder the prior may fit far better | §6.4's POOLSETS arm (worlds drawn from the POOL's own per-species set distribution) and the descriptive read `poolprior_read.json` (§11 D9: the Smogon prior's hit rates on pool sets vs real human sets) |
+
+---
+
+## 3. The competing hypotheses, each with the test that would KILL it
+
+| id | hypothesis (an explanation of G) | its kill test (registered in §12) | first cheap read |
+|---|---|---|---|
+| **H-MOVES** | the seen opponent mons' unseen MOVES carry most of G | R-MOVES REFUTED (§12.3): both shares' upper bounds < 0.25; or the wrong-moves placebo buys as much as the truth; or another class clearly dominates | §11 D2–D3 (G by hidden move slots); §7 |
+| **H-UNSEEN** | the never-seen mons (species + whole set) carry it | s_U and n_U upper < 0.25 | §11 D1 (0 vs 1 unrevealed) |
+| **H-ITEMS** | unrevealed items (Choice Band, unused berries, Leftovers at full HP) | s_I and n_I upper < 0.25 | — |
+| **H-ABILITIES** | unrevealed abilities (two-ability species only) | s_A and n_A upper < 0.25 | — |
+| **H-SPREADS** | natures / EVs / IVs → exact stats, speed order, KO thresholds | s_S and n_S upper < 0.25 | the F sampler's gate acceptance on spreads (§6.1): if observations pin the spread, it is not really hidden |
+| **H-EXACT-HP** | the true integer HP inside the displayed 1 % bucket | in the PILOT's worlds: A2 (§5) shows a seen mon's exact HP equal to the truth ⇒ zero component by construction; in F worlds exact HP is nested in S (replay determines it), so s_S bounds it; a state-edit knock-out is DEFERRED unless s_S lower > 0.25 | §5 A2 |
+| **H-COUNTERS** | hidden counters and volatiles (sleep / Toxic counters, PP, choice lock, Substitute HP, Encore / Disable turns, Wish, Future Sight) | A2: zero counter / volatile differences beyond those CAUSED by a re-drawn move (those belong to M) | §5 A2 |
+| **H-ARTIFACT** | the fair worlds are mis-built though byte-consistent (GIGO) | R-GIGO PASS (§12.1): A1, A2, A3, A5 pass; each audit's teeth shown on a planted defect; the independent re-implementation agrees (§13.1) | §5 (running now) |
+| **H-STAT** | selection (the 3.5 % without 8 worlds), the loss-enriched quota, a few state types carrying the gap | D6 worst-case bound keeps R-INFO's lower bound > 0.04; the reweighted G within ±0.02 of raw; D5's split-half concentration (if the top 10 % of states carry > 80 % of G, the claim is restated for that state type) | §11 D5–D7 |
+| **H-VOI** | G is mostly information NO honest belief can have (irreducible) | r_POOL lower ≥ 0.5 kills it (the Bayes posterior of the eval distribution recovers half) | — |
+| **H-PRIOR-MISMATCH** | G is partly our Smogon prior's mismatch to the pool, not the game | r_POOLSETS upper < 0.10 AND D9's recall difference (human − pool) CI includes 0 or favours the pool | §11 D9 |
+| **H-EVALUATOR** | our critic / leaf, not our information, is the binding constraint | R-EVAL (§12.6): the hand evaluator is NOT better than our critic in fair worlds (upper < +0.005) and collapses oracle → fair like ours | — |
+| **H-WIDTH** | more fair worlds substitute for knowledge (Foul Play's reading) | R-WIDTH WIDTH-FLAT (§12.7) | — |
+| **H-HORIZON** | G is a full-length-rollout phenomenon (wrong worlds compound over ~26 turns) | G at TRUNC-4-K8 ≥ ½ G at LEAF-K8 (the pilot: about half on end2) | §11 D8 |
+| **H-REFEREE** | part of G is knowing the referee's own opponent continuation | G under the second referee (§6.7) ≥ 0.75 of G under the first | — |
+| **H-TRANSIENT** | G (or the moves' share of it) is a feature of a still-improving 15M policy / belief: the "v8 gift" trap | the maturity guard (§10.4) does not fire, and the plateau replication CONFIRMS (§10.5) | §10.1–§10.2 |
+
+---
+
+## 4. Design principles (owner, 2026-10-11)
+
+- **Correctness over economy.** The study outranks other agent work for quota. No arm is cut for cost if it is
+  needed to kill a rival; anything that cannot change a decision is cut.
+- **Register first, then read.** This section's commit lands before any arm of the study is read. The analysis
+  scripts are committed before the arm outputs exist; arms are written under OPAQUE CODES and unblinded only after
+  the blinded tables are frozen (§12.10).
+- **Independent replication of the instrument** (§13.1) and **a red team** (§13.2) before any conclusion steers.
+- **Provisional at 15M** (§10.5): a conclusion unlocks cheap reversible work only, until a plateaued checkpoint
+  replicates it.
+- **CPU constraints:** until the closing test ends (≈ Mon 09:00), cores 5–7 and their SMT siblings, ≤ 3 workers for
+  this study, `nice -n 19`, `mem_cap`; then the full box minus what the next GPU run needs. No GPU in this unit.
+
+---
+
+## 5. The sampler AUDITS (H-ARTIFACT; running in this unit)
+
+Each audit writes `audit_<name>_<cp>.json` with counts, PASS / FAIL and up to 10 examples per failure.
+
+| id | audit | PASS |
+|---|---|---|
+| **A1** | BUILDER IDENTITY through the builder: ≥ 150 states per checkpoint, every "world" = the TRUE team pushed through `build_worlds`' command-template rendering (slot rewrites, switch rewrites) and gate; the rendered commands replay to the same observation rows for BOTH sides; `run_det_playouts.one_state` reproduces Phase 1's outcomes on dice seeds 0–7 for every legal action (the pilot checked 12 states, bypassing the template) | 0 mismatches |
+| **A2** | FIELD DIFF AT THE ROOT: for every played world, the OPPONENT's own observation row (its exact HP, PP, item, ability, stats, status and counters, boosts, volatiles) in the world vs the truth, cell by cell, named through the pin's layout; classified by (block, field, slot, seen / never-seen). Expected: a seen mon's re-drawn move slots (identity, move features, that slot's PP); anything on a never-seen mon; the opponent's own last-action cells where a past unseen choice was rewritten (counted separately) | 0 UNEXPECTED cells (a seen mon's exact HP, status, counters, boosts, volatiles, item, ability, stats; the field; the opponent's view of our side) |
+| **A3** | RE-GATE DETERMINISM: 100 archived worlds per checkpoint replayed again | 100 % byte-equal |
+| **A4** | LEGALITY of world teams: Species Clause, ≤ 1 Hidden Power, no engine-banned move or item, learnset legality, Hidden Power type = the IVs' | counted; > 1 % of world teams in violation ⇒ FINDING, fixed before §6 |
+| **A5** | ROOT DICE: from the Rust source at both pins, whether the dice after the root depend ONLY on the playout seed (not on the replayed prefix's PRNG state, which could differ by world); a direct check if not | the dice depend on the seed only, or the check shows equality |
+| **A6** | THE GATE'S CONDITIONING (descriptive): the re-drawn moves' marginal vs the prior; why 3.5 % of states failed to build 8 worlds | — |
+
+**Teeth.** Each of A1–A3 is re-run once on a PLANTED defect (e.g. a world whose seen mon's item is swapped; a
+template that renders one slot index off) and must FAIL; a check that cannot fail is not a check.
+
+---
+
+## 6. The PLAYOUT-WORLD axis: what does SEARCH need to know? (the factorial; runs after the closing test)
+
+### 6.1 Attribute classes and the three bases
+
+The opponent's hidden facts at a root are PARTITIONED into five classes, so every hidden fact belongs to exactly one:
+
+| class | the facts | revealed when |
+|---|---|---|
+| **M** | the unseen move slots of SEEN mons (and the TYPE of a revealed bare Hidden Power) | the move is used in the searched side's view |
+| **U** | every fact of a NEVER-SEEN slot: species, moves, item, ability, spread | it switches in (then its facts move to M / I / A / S) |
+| **I** | the unrevealed item of a seen mon | `-item`, `-enditem`, `[from] item:` naming it |
+| **A** | the unrevealed ability of a seen mon (two-ability species only) | `-ability`, `[from] ability:` |
+| **S** | the nature, EVs and IVs of a seen mon (hence exact stats, speed, KO thresholds and its exact HP) | never directly; constrained by observed damage and speed order |
+
+- **O** (oracle): every class TRUE. Phase 1's rows, no new playouts.
+- **F** (fully honest, NEW sampler): every class SAMPLED from the Smogon prior and gate-conditioned. M by a
+  conditional-Poisson fixed-mass draw from the prior renormalised over the unrevealed candidates (`cp_sample`, so the
+  dose family's p = 0 IS F exactly); I, A, S of seen mons per mon: each candidate in the prior's support is screened
+  by a replay with the other mons at their F draws, then the world's combination passes the full gate (≤ 60 tries;
+  a state enters with 8 worlds). States without 8 F worlds are excluded and COUNTED; if > 10 % of states are
+  excluded, every F-based share is reported on the included states AND the P-based shares (§6.2) become co-primary.
+  The gate's acceptance per class is itself a read: a spread the observations pin down is not hidden from an honest
+  player.
+- **P** (the pilot's Phase 2): M and U sampled; I, A, S of seen mons TRUE. In this partition P = O − I − A − S... of
+  the HIDDEN classes, P samples exactly M + U.
+
+### 6.2 The arms (each: 8 worlds per state, all legal actions, LEAF-K1/K4/K8, TRUNC-d-K for d ∈ {1, 2, 4}, the honest one-ply CRITIC on the worlds, Phase 1's dice seeds and referee)
+
+| code family | arm | what it answers |
+|---|---|---|
+| base | **F** | the fully honest IMP |
+| SUFFICIENCY ("reveal ONLY X", from F) | **F+M**, **F+U**, **F+I**, **F+A**, **F+S**; **F+Usp** (the never-seen SPECIES only, their sets sampled) | is X alone enough to close G? |
+| NECESSITY ("reveal ALL BUT X", from O) | **O−M**, **O−U**, **O−I**, **O−A**, **O−S** | does hiding X alone open G? |
+| DOSE (§6.4) | **D25, D50, D75, D90** (the true unseen moves get presence mass p, the prior 1 − p; p = 0 is F, p = 1 is F+M) | how sharply must the move belief improve? |
+| PLACEBO | **W50, W90, W100**: equally confident WRONG but plausible moves | does any confident move set help, or the true one? |
+| HONEST SHARPENING | **MAP90, MAP100**: the prior's own top-(4 − r) moves at mass p | does reducing world diversity help on its own (an honest option)? |
+| POSTERIORS | **POOL**: worlds drawn from the training-pool teams consistent with the observation (gate-conditioned); **POOLSETS**: F with each species' moves / item / ability / spread drawn from the POOL's own per-species distribution instead of Smogon's | how much of G is recoverable by the Bayes posterior of the eval distribution, and how much is Smogon's mismatch to the pool? MEASUREMENTS only: the pool never ships as a prior (owner's rule, 2026-08-15) |
+| HAND EVALUATOR (§6.5) | **HE** scorers on O, P and F worlds | is our evaluator or our information binding? |
+| WIDTH (§6.6) | **P16**: the pilot's world kind with all 16 built worlds played | does width substitute for knowledge? |
+| REFEREE 2 (§6.7) | a second truth with a different opponent continuation, on 300 states | is part of G a model of the referee's opponent? |
+
+The pilot's Phase 2c ceiling arm (2c-T: sampler C with every seen mon's TRUE set, run by the pilot's own agent) is
+close to **O−U** with the never-seen slots drawn from the network's belief. It is read under ITS registration
+(`design_value_discrimination.md` §7.10 Amendment 6). Here it is corroboration only, with one registered prediction
+made before it is read: **under H-MOVES, (CT − B) / (oracle − B) at LEAF-K8 ≥ 0.5** on both seeds.
+
+### 6.3 The attribution arithmetic
+
+- G = IMP_O − IMP_F (LEAF-K8 primary; TRUNC-4-K8 secondary).
+- Sufficiency share s_X = (IMP_{F+X} − IMP_F) / G; necessity share n_X = (IMP_O − IMP_{O−X}) / G; ratios of means on
+  the same bootstrap draws. A share is computed only when G's lower bound > 0.02 (else "no gap to apportion").
+- With interactions s_X ≠ n_X; both are reported, and Σ_X s_X, Σ_X n_X say how additive the classes are. A class that
+  is necessary but not sufficient (high n, low s) is an INTERACTION; the follow-up pairs it with the class of the
+  next-largest n (F+M+X).
+- Pooled over checkpoints: Σ Δ / Σ G with states weighted equally, the bootstrap resampling battles within each
+  checkpoint.
+
+### 6.4 The dose-response, the placebo, honest sharpening and the posteriors
+
+- **Mixture.** For a seen mon with r revealed moves and true unseen set T (|T| = 4 − r), each unrevealed candidate m
+  gets presence π'_m = p·1[m ∈ T] + (1 − p)·π_prior(m), π_prior the Smogon inclusion probability renormalised to
+  mass 4 − r over the candidates (so Σ π' = 4 − r), then a conditional-Poisson fixed-size draw (`cp_sample`), ≤ 1
+  Hidden Power, then the gate. Every other class: F's draws. This is the owner's "high mass to the known moves, but
+  not 100 %".
+- **PLACEBO W_p:** the same with T replaced by a WRONG set W (|W| = 4 − r) drawn ∝ π_prior over the candidates
+  EXCLUDING T (deterministic per state and mon: `sha256("hib_wrong_v1:" + id + ":" + slot)`). Equally confident,
+  plausible, wrong.
+- **MAP_p:** T replaced by the prior's own top-(4 − r) candidates. Honest (no peeking); it isolates "fewer, sharper
+  worlds" from "the right worlds".
+- **POOL:** a world's opponent team = a pool team drawn uniformly among those whose species include every revealed
+  species and whose sets contain every revealed move, then the gate (the true team is in the pool, so POOL can be
+  the oracle when the observations identify the team). **POOLSETS:** F's structure, the pool's per-species set
+  frequencies instead of Smogon's.
+- Recoverability r_X = (IMP_X − IMP_F) / G for X ∈ {POOL, POOLSETS, MAP100, D25…D90}.
+
+### 6.5 The HAND EVALUATOR arm (backlog X3; owner, 2026-10-11): evaluator-bound or information-bound?
+
+Foul Play's leaf, poke-engine's `gen3/evaluate.rs` (MIT, © 2024 pmariglia; the licence notice travels with the
+port): per mon alive +30, HP fraction × 100, status penalties (freeze −40, sleep / paralysis / burn −25 with burn
+scaled by the physical-move count, Toxic −30, poison −10, Guts / Marvel Scale exceptions), an item +10, a low-PP
+penalty, a floor at 0, Spikes layers −12 / −16 / −25 on grounded mons, Leech Seed −30, Substitute +75, confusion
+−20, the active's boosts by a step table × 30 / 15, Reflect / Light Screen +20; side one minus side two.
+
+- **Port:** a pure function over the SEARCHED side's observation row (its own exact HP and set; the opponent's HP
+  bucket, status, boosts, revealed moves / PP and item state; hazards, screens, volatiles), so it reads exactly the
+  information our critic reads in each world: the comparison is evaluator against evaluator, never evaluator
+  against information. A full-state variant (the world's internal state) is secondary and only if the Rust state is
+  reachable at the pins without a build. Lives as `src/main/hidden_info_study/hand_eval.py` (HEAD, tested) with a
+  pinned twin in the measurement folder. **Build ≈ 1 agent-day**, including tests against hand-computed states.
+- **Scorers:** HE-1PLY (the one-ply successors, seeds 40–47) and HE-TRUNC-d-K (d ∈ {1, 2, 4}, K ∈ {4, 8}: the hand
+  eval at the searched side's first decision d turns on), in O, P and F worlds, beside CRITIC and TRUNC-d-K. The
+  truncated playouts are re-played with a driver that records the eval (Phase 1 / 2 stored V only): k ≤ 4 turns, ≈
+  1/7 of a full playout's cost.
+
+### 6.6 WIDTH at fixed knowledge (Foul Play's alternative reading)
+
+P16: the pilot's 16 built worlds per state all played (the pilot played 8). R-WIDTH reads IMP_P(LEAF-K16) −
+IMP_P(LEAF-K4); the dose reads knowledge at fixed width. If both rise, width can substitute for knowledge; if only
+the dose rises, knowledge is the lever and Foul Play's edge must lie in its evaluator or search shape (§6.5).
+
+### 6.7 A second referee
+
+On 300 states (every 2nd registered state of each checkpoint), 24 new truth seeds per action with a DIFFERENT
+opponent continuation: the checkpoint at temperature 1 (sampled, seeded) on the opponent side only. Every arm's
+picks are fixed; only T changes. G2 / G and the shares under both referees.
+
+### 6.8 Replication across checkpoints
+
+end2 and prod (seed 2001, both with Phase 1 truth), and a THIRD: `rb_es_end2_s2002` (same pin as end2) on its OWN 600
+states, which needs its own Phase 1 (≈ 4 CPU-h) and Phase 2 rows.
+
+---
+
+## 7. The MODEL-INPUT axis: does the NETWORK use the moves if told? (running in this unit)
+
+### 7.1 Where the truth goes in
+
+`_apply_move_belief` (`src/agents/model/extractor_forward.py`, T0) publishes ONE typed move posterior,
+`last_move_belief_logits` [B, 6, 400] (independent per-move sigmoids, Hidden Power typed at nums 355–370), and every
+consumer reads it: the move-identity reinjection into the opponent role tokens, the opponent active's move group (E4
+seats, the intent pointer's operands), the X5 op roster's fixed-mass `move_w` that prices every opponent mon as an
+ATTACKER in the damage operator, the edges and the cells (ARCHITECTURE.md §2.1 item 3, the X5 paragraph). The hook
+rewrites that posterior for each SEEN opponent slot: q' = (1 − p)·σ(ℓ) + p·1[m ∈ target], ℓ' = logit(clip(q')),
+revealed moves untouched; the observation is untouched. Production (`--move-set-closure off`) and end2 (`on`) then
+close it with their own readers. Teeth: p = 0 is BIT-IDENTICAL to the unhooked forward; at p = 1 the published
+posterior and the roster's `move_w` put ≥ 0.99 of the slot's unrevealed mass on the target.
+
+### 7.2 Arms (per state; coded opaquely, §12.10)
+
+| arm | target | doses p |
+|---|---|---|
+| **TRUE** | the true unseen moves of each seen mon | 0 (identity), 0.6, 0.8, 0.95, 1.0 |
+| **PLACEBO** | 4 − r WRONG moves per mon, drawn ∝ the network's own belief excluding the true ones | 0.8, 0.95, 1.0 |
+| **SELFMAP** | the network's own top-(4 − r) moves (an honest sharpening) | 0.8, 0.95, 1.0 |
+| **TRUE-HYP** (secondary) | TRUE, plus a hypothesis slot whose hypothesis species IS a true never-seen species gets that species' true moves | 0.95, 1.0 |
+
+Registered secondary arms if their hooks prove clean at the pins: ITEM (the item posterior → the true item for seen
+mons with an unrevealed item; its consumer is the op's P(Choice Band)) and SPREAD (the believed stats → the true
+stats). The OBSERVATION-channel reveal (`--oracle-reveal full` re-encoded at the pins) is DEFERRED: the pins'
+offline encoders do not take it, and a network never trained on revealed rows reads them out of distribution (the X5
+both-sided cells: −8.1 pp).
+
+### 7.3 Measures (per checkpoint: end2, prod, and `rb_es_end2_s2002` on end2's states)
+
+- **Policy shift:** mean masked KL(π_arm ‖ π_0) and the top-1 FLIP rate.
+- **The policy's own pick against the referee:** IMP_POL(arm) = mean[T(top1_arm) − T(top1_0)]. Free: T exists for
+  every legal action.
+- **The critic:** the one-ply successors (seeds 40–47, the TRUE world, the opponent answered by the UN-injected
+  network) regenerated once (teeth: p = 0 reproduces Phase 1's critic values within 1e-5), forwarded under every arm
+  with the injection recomputed at each successor; IMP_CRIT(arm), the pairwise sibling accuracy on non-tied pairs,
+  top1 | top2 accuracy, the ECE of the per-action value against T.
+- Strata: unrevealed slots (0–1 / 2–3 / 4–5), the number of targeted move slots.
+- For s2002 on end2's states, the referee is end2_s2001's continuation (stated; a third network's pick scored by
+  another's referee).
+
+### 7.4 How it reads
+
+| pattern | meaning |
+|---|---|
+| TRUE improves IMP_POL / IMP_CRIT, PLACEBO does not (or hurts), SELFMAP does not | the network USES move information it is given: it LACKS it. Better beliefs help the policy directly |
+| TRUE moves the policy (flips ≥ 2 %) but IMP ≤ 0 | it reacts without benefit: it cannot USE the information (or reads confident beliefs out of distribution) |
+| nothing moves (flips < 2 %, KL < 0.01) | the move channel barely reaches decisions |
+| TRUE ≈ SELFMAP ≈ PLACEBO | it reacts to CONFIDENCE, not content |
+
+**The frozen-network caveat.** A frozen network never saw confident correct move beliefs often in training; a null
+here does not show that a network TRAINED with good beliefs would not gain. That is §8's question, and the X5 oracle
+arms' +0 for the set over the species is its prior evidence.
+
+---
+
+## 8. The TRAINING axis: KNOCK-IN FORKS (GPU; QUEUED by the orchestrator 2026-10-11 after the closing test's verdict branch and the bf16 strength A/B, ≈ mid-week, CONDITIONAL on §8.6)
+
+**Question:** can the network LEARN to use each attribute when it is given it, and how much strength is each
+worth? The frozen axis (§7) cannot answer the first half; the X5 oracle arms answered it for the OBSERVATION channel
+(trained from scratch, blob architecture, +2.18 pp for the whole set, +0 over species).
+
+### 8.1 The mechanism: `--belief-oracle` (to build; ≈ 2–2.5 agent-days)
+
+- **Flags:** `--belief-oracle {off, moves, items, spreads, wrong_moves}` (default `off`) and `--belief-oracle-mass p`
+  (default 0.95). Class `resume_immutable` (no module, no weight: like `--oracle-reveal`), recorded in
+  `model_config.json` and `metadata.json`, refused if a same-run resume flips it, ALLOWED to differ from the parent on
+  a genuine fork (that is its use), printed by `checkargs` and the launch banner.
+- **What it does:** in `_apply_move_belief` / `_spread_hp_damage`, for the opponent's SEEN slots only, the published
+  posteriors are rewritten from the training-only LABEL keys the Rust env core already emits (ARCHITECTURE.md §7):
+  `moves` mixes the typed move posterior with the true set from `known_moves` (§7.1's rule: q' = (1 − p)·σ(ℓ) +
+  p·1[true], revealed moves untouched); `items` mixes the item posterior with `item_label`'s one-hot (consumers: the
+  op's P(Choice Band)); `spreads` mixes the believed stats with the true stats from `belief_spread`; `wrong_moves`
+  is `moves` with a deterministic WRONG set (per battle, slot and episode seed: 4 − r moves drawn ∝ the network's
+  own detached posterior excluding the true and revealed ones). Whether `known_moves` carries the full TRUE set (not
+  only the revealed moves) is verified first, against the packed team, by a test; if it does not, the build adds a
+  `true_moves` label key.
+- **Leak discipline:** the flag feeds a LABEL to the forward on purpose. Off is BYTE-INERT (a parity test on the K9
+  learner golden and the production / end-state graph identities). The offline tools (`main.anchors`, `main.play`,
+  `main.belief_roles`, `main.policy_spectrum`) REFUSE a non-off checkpoint; `main.h2h` plays one ONE-SIDED, with the
+  label keys emitted for the told side only (a per-side emission, the `--oracle-reveal-mode one_sided` pattern;
+  +0.5 agent-day of the build).
+- **STARTUP GATE (G-HIB, in the first update; a refusal is `FATAL_CONFIG` and no data counts):** on the update's first
+  minibatch, (a) the forward with the flag at mass 0 is BIT-IDENTICAL to the flag-off forward; (b) at the arm's mass,
+  on every targeted slot, the published posterior's σ on each true (or, for `wrong_moves`, each wrong) move is ≥ p
+  and the roster's fixed-mass `move_w` puts ≥ p − 0.01 of the unrevealed mass on the target; (c) the share of
+  opponent slots targeted is > 0 and is logged. TensorBoard rides `hib/targeted_slot_share`, `hib/mass_on_target`
+  and `hib/label_coverage` every rollout.
+
+### 8.2 The pin
+
+**P_hib** = the commit that lands §8.1, with this precondition checked on CPU before any fork (the closing test's
+identity method, `design_endstate_closing_test.md` §2.3): with the flag OFF, the parent loads and the end-state
+arm's graph / state / outputs hashes and the K9 learner golden at P_hib equal those at the parent's pin `62085750`.
+If they do not, the flag is built as a minimal patch on `62085750` instead, tagged `hib-forks-pin`, and that tag is
+P_hib.
+
+### 8.3 The arms, the parent and the argvs
+
+- **Parent:** the closing test's ADOPTED arm's seed 2001 final (the pilot's convention): on PASS
+  `models/rb_es_end2_s2001/final_model.zip` (15,047,835 steps, `lr_now` 3.6e-4, the KL controller adaptive), on FAIL
+  `models/rb_es_prod_s2001/final_model.zip` (`--arch production`, its own `lr_now` read with `python -m main.dose`).
+- **Arms × seeds (5 × 3 = 15 forks):** `moves`, `items`, `spreads`, `wrong_moves` (placebo, mass 0.95) and the
+  **NO-CHANGE control** (`--belief-oracle off`; the v8 guard: continued training is never credited to a lever).
+  Seeds 3101–3103 for every arm (the same seeds across arms, so arm × seed cells are paired). Run names
+  `rb_hib_<arm>_s310N`, `<arm>` ∈ {moves, items, spreads, wrongmoves, ctrl}.
+- **Budget:** +3M steps each (`--steps` is the ABSOLUTE target: 18,047,835 for the end2 parent). The SAME `--fork-lr`
+  for every arm (the parent's final 3.6e-4; the controller stays adaptive, the recipe's), so every arm starts at one
+  dose; `python -m main.dose` reads each fork's realised dose and a dose ratio outside [0.8, 1.25] vs the control is
+  a FINDING stamped on the read.
+- **The argv (end2 parent, the `moves` arm, seed 3101; the others change `--belief-oracle`, `--seed`, `--run-name`):**
+
+```bash
+cd /home/goodlad/dev/gen3ai && PYTHONPATH=src python -m main.launcher --restart-interval-hours 6 --pin-commit <P_hib> \
+  --model models/rb_es_end2_s2001/final_model.zip --arch endstate --steps 18047835 --seed 3101 \
+  --fork-lr 0.00036 --belief-oracle moves --belief-oracle-mass 0.95 \
+  --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all \
+  --snapshot-ladder-games 0 --checkpoint-every-steps 1000000 --device cuda --run-name rb_hib_moves_s3101
+```
+
+  The control: the same with `--belief-oracle off` (or the flag omitted) and `--run-name rb_hib_ctrl_s3101`. Each argv
+  is validated at P_hib before launch: `python -m main.checkargs --argv "…"` (the arch surface inherited from the
+  parent, the typed `--belief-oracle` the only lever) and `python -m main.launcher --dry-run …` (FORK, `+3,000,000
+  steps`, the pool auto-seeded from the parent). The training session launches; the orchestrator grants the lease.
+
+### 8.4 The evaluation
+
+- **Primary cross:** for each lever arm L, its 3 seeds × the control's 3 seeds, mirrored pairs on the pool teams,
+  1,000 pairs (2,000 games) per cell, ONE-SIDED (L told through its label keys; the control as trained), the X5 A/B's
+  cross statistic and interval (`design_x5_belief_tokens.md` §7.4; seeds as the units): **Δ_L** in pp.
+- **Honest-play cross (secondary):** L with the flag OFF at eval vs the control: did learning WITH the information
+  change its honest play (a dependence cost or a transfer)?
+- **The v8 read:** the control vs its parent (3 seeds × the parent, mirrored): what +3M of plain training buys.
+- **Meters per fork:** policy drift vs the parent; the belief maturity read (§10.2) of its own heads; §7's model-input
+  axis on the registered states with its own injection (IMP_POL(TRUE 0.95) of a network trained to read the truth vs
+  the frozen parent's).
+- **Cost:** end state ≈ 0.21 GPU-h per 1M steps (`design_endstate_closing_test.md` §7: 3.0–3.2 h per 15M) ⇒ ≈ 0.85
+  GPU-h per 3M fork with its start-up; 15 forks ≈ 13 GPU-h; the crosses (4 × 9 cells + 4 honest + 3 v8 cells ≈ 90,000
+  games, at the closing test's ≈ 1.2 GPU-h per 128,000) ≈ 1 GPU-h; **≈ 14 GPU-h**. The extension of §8.5 adds ≈ 6 GPU-h.
+
+### 8.5 Pre-registered rules for the forks (rule 8: a bound within ±0.05 pp of a boundary is not clear)
+
+- **K-VALID:** every fork passed G-HIB; the placebo is not a gain: Δ_WRONG upper ≤ +0.05 pp is NOT required, but if
+  **Δ_WRONG lower > +0.05 pp** every lever verdict below is VOID (a "told" gain that a wrong set also buys is not the
+  content).
+- **K-L-WORTH (per lever L):** Δ_L lower > +0.05 pp AND Δ_L − Δ_WRONG (paired by seed cell) lower > +0.05 pp: the
+  network LEARNS to turn attribute L into strength.
+- **K-L-NULL:** Δ_L's CI inside ±2.0 pp (the closing test's margin): knowing L buys no strength worth a programme.
+- **K-L-NOT-DETECTED:** otherwise. **Extension (registered):** if Δ_MOVES is NOT DETECTED with a CI wider than ±2.5
+  pp, the `moves` arm and the control extend to +6M (same seeds, ≈ 6 GPU-h) BEFORE the verdict is read.
+- **K-RANK:** Δ_MOVES − Δ_L (paired cells) for L ∈ {items, spreads}: MOVES-FIRST if each lower > +0.05 pp.
+- **Reading with the frozen axes:** K-MOVES-WORTH with NET-NOT-DETECTED (§12.8) = the network CAN learn to use the
+  moves but does not with today's belief (a belief-quality path); K-MOVES-NULL with MOVES-BINDING (§12.3) = moves
+  matter to SEARCH, not to an amortized policy (the X5 reading, now on the current architecture).
+- **Prediction (from the X5 arms):** K-MOVES NOT DETECTED or NULL; K-ITEMS and K-SPREADS NULL; Δ_WRONG ≤ 0.
+
+### 8.6 The condition for launching
+
+The forks launch (in the orchestrator's queue slot) unless the frozen reads make them moot: they are CANCELLED only if
+R-GIGO FAILS (the instrument must be fixed first) — every other frozen outcome leaves the training-level question
+open, so they run.
+
+---
+
+## 9. The GAME-LEVEL check (PLANNED only)
+
+A per-decision improvement is not a win rate. After the factorial, if a verdict says knowledge pays for search: a
+mirrored head-to-head battery on one checkpoint between a FAIR-search player (TRUNC-4-K4 argmax over F worlds), a
+MOVES-search player (the same over F+M worlds: the search told the seen mons' moves) and the POLICY (no search),
+with the ORACLE-search player as a cheating ceiling. ~1,000 mirrored games per pair; one honest search decision costs
+≈ 3 CPU-s (TRUNC-4-K4 in worlds, UNVERIFIED for the end state), ≈ 30 decisions per side per game ⇒ ≈ 200 CPU-s per
+game with one searching side ⇒ ≈ 55 CPU-h per pair on CPU (a GPU-batched forward would cut it several-fold).
+Build: a search player in `main.h2h` over `src/main/value_search/` (≈ 1 agent-day). Read: the moves-search − fair-search
+win-rate difference with a mirrored-pair CI; its relation to the per-decision dose.
+
+---
+
+## 10. MATURITY and ADVERSARIAL ROBUSTNESS (owner, 2026-10-11)
+
+The owner's precedent: the "v8 gift" looked like a lever's effect but was the policy still improving in a
+non-plateaued region. At 15M the policy and its belief may still be moving.
+
+### 10.1 How fast is the policy still changing? (running in this unit)
+
+`main.policy_drift` (collect → watch `--source both` → report) over `rb_es_end2_s2001` and `rb_es_prod_s2001`'s
+checkpoints, every 1M to 15M: the masked KL and greedy flip rate per 1M steps vs the previous checkpoint and the
+10M-back reference. Output: `policy_drift_summary.json`. Descriptive meter.
+
+### 10.2 BELIEF MATURITY (running in this unit)
+
+The network's OWN belief accuracy on the 600 registered states at end2 1M / 3M / 5M / 7M / 10M / 12M / 15M (and
+prod 5M / 10M / 15M): move expected set recall (Σ of the fixed-mass `move_w` on the true unseen moves / (4 − r)) and
+top-(4 − r) recall, vs the Smogon prior's; the item posterior's P(true item) and top-1; the species presence mass on
+true hidden species. Output `belief_maturity.json`. **M-BELIEF:** IMPROVING if the 15M − 10M move-recall difference's
+lower bound > 0; FLAT if its CI lies inside ±0.01; else UNRESOLVED. (The owner calls a belief that learns the pool a
+success milestone; it is also exactly the mechanism by which a moves gap could shrink with training.)
+
+### 10.3 The TRAJECTORY arm (with the factorial)
+
+`rb_es_end2_s2001` at 5M, 10M and 15M, each as the checkpoint CP (leaf continuation, critic and referee all that
+snapshot's), on the SAME 600 registered states: Phase 1 truth at 5M and 10M (≈ 4 CPU-h each); the core arms F, F+M,
+O−M, D50, D90, W90; the model-input axis TRUE 0.95 / 1.0, PLACEBO 0.95, SELFMAP 0.95. **M-STABLE** on s_M(15M) −
+s_M(5M): STABLE if the CI lies inside ±0.25; SHIFTING-DOWN if upper < 0; SHIFTING-UP if lower > 0; else UNRESOLVED.
+
+### 10.4 ADVERSARIAL conditions, and the maturity guard
+
+- **Off-distribution teams:** a new bank of 300 states from CP greedy self-play on the `away` team set (20 teams,
+  `designs/ops/anchors.json`), each side on away teams (the belief prior is weaker there); Phase 1 + F, F+M, O−M,
+  D90, W90 on it.
+- **Opponent class:** the registered states' traces were played against scripted bots (`aggressive`, `heuristic`,
+  `random`, `setup_sweep`, `staller` and their v2s) and frozen sentinels; s_M per class (the playout continuation is
+  CP on both sides either way). A self-play bank is part of the away bank above.
+- **Game phase:** turn 2–10 / 11–25 / 26–40.
+- **Long-term-planning states:** tagged at the root from the observation through the pin's layout: hazards up on
+  either side; a boosted mon on either side; a setup move legal to the searched side. s_M on tagged vs untagged.
+- **CONDITION-ROBUST** if B3 (s_M point ≥ 0.5) holds in every condition with ≥ 150 states; else
+  **CONDITION-DEPENDENT**, naming the condition.
+- **THE V8 GUARD (registered):** if M-BELIEF is IMPROVING and either M-STABLE is SHIFTING-DOWN or G(15M) − G(5M) has
+  upper < 0, a MOVES-BINDING verdict is DOWNGRADED to **TRANSIENT**: no steering until the plateau read (§10.5).
+
+### 10.5 THE SCOPE RULE (registered)
+
+Every verdict read at 15M is labelled **PROVISIONAL "at 15M, current architecture"**.
+- **It MAY unlock** cheap, reversible work: meters (the belief-accuracy meter on TensorBoard), sampler improvements,
+  builds of ≤ 2 agent-days, and the §8 forks if the owner queues them.
+- **It may NOT unlock** a multi-week research commitment (a move-inference programme, a new belief architecture, a
+  belief-sampled search build-out) until the core arms replicate on a **PLATEAUED** checkpoint: the X26 deep plateau
+  run's checkpoint once X26's own registered plateau criterion fires, AND `main.policy_drift`'s per-1M masked KL and
+  flip rate each ≤ ½ of `rb_es_end2_s2001`'s 10–15M means over three consecutive 1M steps.
+- **Re-run at plateau:** A1, A2, A5; Phase 1 truth on 600 of the plateau run's own states; F, F+M, O−M, the strongest
+  rival class's F+X / O−X, D50, D90, W90; the model-input axis (TRUE 0.95 / 1.0, PLACEBO 0.95, SELFMAP 0.95).
+- **CONFIRM:** B3, B4, B6, B7 of §12.3 hold at plateau AND s_M(plateau) − s_M(15M) has a CI inside ±0.25.
+  **REVOKE:** at plateau s_M upper < 0.25, or n_M upper < 0.25, or R-PLACEBO-EQUIVALENT fires. Otherwise
+  **PROVISIONAL STANDS** (unresolved), and the commitment stays locked.
+
+---
+
+## 11. Registered DESCRIPTIVE reads of the pilot's existing rows (running in this unit; no verdict)
+
+All on the pilot's Phase 1 (oracle) and Phase 2 / 2b (fair) rows, both seeds, LEAF-K8 unless stated; the per-state
+quantity g(s) = [T(â_O) − T(top1)] − [T(â_P) − T(top1)]; battle-clustered bootstrap CIs; raw and outcome-reweighted.
+
+| id | read |
+|---|---|
+| **D1** | G_P by unrevealed opponent slots 0 / 1 / 2 / 3 / 4–5 SEPARATELY (the pilot pooled 0–1) |
+| **D2** | G_P by the total unseen move slots of SEEN mons (0–2 / 3–5 / 6–8 / 9+), overall and within 0–1 unrevealed |
+| **D3** | G_P by the opponent ACTIVE's unseen move slots (0 / 1 / 2 / 3–4) |
+| **D4** | G_P by phase (2–10 / 11–25 / 26–40), by the trace's opponent class (bot / sentinel), by the trace's outcome |
+| **D5** | concentration, split-half: rank states by g on truth seeds 16–27, measure the share of G (on seeds 28–39) carried by the top 10 % / 25 % |
+| **D6** | the excluded 3.5 %: their oracle IMP vs the included; the worst-case R-INFO if each excluded state's fair IMP equalled its oracle IMP |
+| **D7** | G_P by the kind of the oracle's pick (move / switch) and whether the oracle and fair picks differ |
+| **D8** | H-HORIZON: G at TRUNC-4-K8 and TRUNC-4-K4 over G at LEAF-K8 |
+| **D9** | the POOL-vs-PRIOR confound: the Smogon prior's move / item / ability / spread hit rates on (a) the training pool's sets, (b) real human sets (human-built teams; ladder replays, censored to revealed moves, with the same censoring applied to the pool), (c) the 1,200 opponent teams met in the pilot's states; bootstrap over teams (`poolprior_read.json`) |
+
+**Pre-stated expectations under H-MOVES** (so a pattern can embarrass it): D2 increasing in hidden move slots
+within 0–1 unrevealed; D3 increasing in the active's hidden slots; D1's "0 unrevealed" stratum keeping a G_P of at
+least half the all-states G_P.
+
+---
+
+## 12. PRE-REGISTERED DECISION RULES (rule 8: deterministic; a bound within ±0.0005 of its boundary is a BOUNDARY result and counts as not clear)
+
+### 12.1 R-GIGO (the gate on everything that uses the fair-world builder)
+
+**PASS** iff A1 has 0 mismatches, A2 has 0 unexpected cells, A3 is 100 %, A5 shows post-root dice depend only on the
+seed (or its check shows equality), and each audit FAILS on its planted defect. **FAIL** otherwise: the pilot's
+honest numbers (Phase 2 / 2b / 2c) and every arm built on the sampler are VOID until the defect is fixed and re-run;
+§6 does not start. A4 violations above 1 % are fixed before §6 regardless.
+
+### 12.2 R-REPLICATE (the independent implementation, §13.1)
+
+For every state and arm both implementations ran: the world sets agree in DISTRIBUTION (the per-class marginals'
+total-variation distance < 0.02 on the pooled draws) and the IMP tables agree: every registered contrast's point
+estimates differ by < 0.005 and every verdict of §12.3–§12.9 is the same. A disagreement is a FINDING resolved
+before any verdict is reported as more than "computed".
+
+### 12.3 R-MOVES (the headline; on POOLED shares over the three checkpoints, LEAF-K8)
+
+**MOVES-BINDING** iff ALL of:
+- **B1** R-GIGO PASS and R-REPLICATE agree;
+- **B2** G's lower bound > 0.02;
+- **B3** sufficiency: s_M point ≥ 0.50 and lower ≥ 0.25;
+- **B4** necessity: n_M point ≥ 0.50 and lower ≥ 0.25;
+- **B5** dominance: s_M ≥ s_X and n_M ≥ n_X (points) for every other class X;
+- **B6** dose: IMP_{D90} − IMP_F lower > +0.0005, and the paired-bootstrap OLS slope of IMP on p over p ∈ {0, 0.25,
+  0.5, 0.75, 0.9, 1.0} has lower > 0;
+- **B7** placebo: IMP_{F+M@0.9} − IMP_{W90} lower > +0.0005, and IMP_{W90} − IMP_F upper < +0.01;
+- **B8** replication: on EACH checkpoint separately, IMP_{F+M} − IMP_F lower > +0.0005 and IMP_O − IMP_{O−M} lower >
+  +0.0005.
+
+**MOVES-REFUTED** iff ANY of:
+- **R1** s_M upper < 0.25 AND n_M upper < 0.25;
+- **R2 (R-PLACEBO-EQUIVALENT)** the CI of IMP_{D90} − IMP_{W90} lies inside ±0.01;
+- **R3** some class X dominates: s_X − s_M lower > 0 AND n_X − n_M lower > 0 (paired).
+
+**MOVES-NECESSARY-NOT-SUFFICIENT:** n_M lower ≥ 0.25 and s_M upper < 0.25 (an interaction: the follow-up runs F+M+X
+for the X with the largest n_X).
+**MOVES-SHARED:** none of the above, and s_M lower > 0 or n_M lower > 0 (a real but not majority or not unique share).
+**MOVES-NOT-DETECTED:** otherwise.
+Descriptive flag **NON-ADDITIVE:** Σ_X s_X upper < 0.5 (the classes' separate knock-ins do not account for the gap).
+
+Every verdict is then modified by §10: **TRANSIENT** (the v8 guard), **CONDITION-DEPENDENT**, and the PROVISIONAL
+label until the plateau CONFIRMS.
+
+### 12.4 R-RIVALS (one verdict per rival class X ∈ {U, I, A, S}, same thresholds)
+
+**X-BINDING** iff B2–B5 and B8 hold with X in place of M (no dose or placebo for X). **X-REFUTED** iff s_X upper <
+0.25 and n_X upper < 0.25. Otherwise **X-SHARED** / **X-NOT-DETECTED** as for M.
+
+### 12.5 R-RECOVER (C2, pooled)
+
+- **BELIEF-RECOVERABLE (on this distribution):** r_POOL lower ≥ 0.5.
+- **LARGELY-IRREDUCIBLE:** r_POOL upper < 0.25.
+- **PARTIAL:** otherwise.
+- **PRIOR-MISMATCH:** r_POOLSETS lower > 0.25 (a material part of G is the Smogon prior's mismatch to our pool).
+- **HONEST-SHARPENING-HELPS:** IMP_{MAP100} − IMP_F lower > +0.0005.
+- Descriptive **p½** = the smallest registered dose with r_p point ≥ 0.5.
+
+### 12.6 R-EVAL (evaluator-bound vs information-bound, §6.5)
+
+- **EVALUATOR-BOUND:** in fair worlds (F, and P), IMP(HE-TRUNC-4-K8) − IMP(TRUNC-4-K8) lower > +0.0005, OR
+  IMP(HE-1PLY) − IMP(CRITIC) lower > +0.0005: a hand-written evaluator beats our critic honestly, so our critic is a
+  binding constraint whatever the moves say.
+- **INFORMATION-BOUND (support):** the hand eval's own gap g_HE = IMP_O(HE-TRUNC-4-K8) − IMP_F(HE-TRUNC-4-K8) has
+  lower > +0.0005 and g_HE / g_CRIT (our TRUNC-4-K8's gap) point ≥ 0.5.
+- Both may hold. **EVALUATOR-NOT-BINDING:** the EVALUATOR-BOUND contrasts' upper < +0.005.
+
+### 12.7 R-WIDTH
+
+**WIDTH-HELPS:** IMP_P(LEAF-K16) − IMP_P(LEAF-K4) lower > +0.0005. **WIDTH-FLAT:** upper < +0.01. Else UNRESOLVED.
+
+### 12.8 R-NET (C3, the model-input axis; per checkpoint, then pooled over end2 + prod; s2002 as replication)
+
+At the primary dose p = 0.95 (1.0 secondary):
+- **NET-USES:** IMP_POL(TRUE) lower > +0.0005 AND IMP_POL(TRUE) − IMP_POL(PLACEBO) lower > +0.0005.
+- **NET-IGNORES:** TRUE's flip rate < 0.02 AND its mean KL < 0.01 nats.
+- **NET-MISUSES:** flip rate ≥ 0.02 and IMP_POL(TRUE) upper < −0.0005.
+- **NET-CONFIDENCE-ONLY:** flip rate ≥ 0.02, and the CIs of IMP_POL(TRUE) − IMP_POL(SELFMAP) and IMP_POL(TRUE) −
+  IMP_POL(PLACEBO) both lie inside ±0.005.
+- **NET-NOT-DETECTED:** otherwise.
+- **CRITIC-USES:** IMP_CRIT(TRUE) − IMP_CRIT(p = 0) lower > +0.0005 AND IMP_CRIT(TRUE) − IMP_CRIT(PLACEBO) lower >
+  +0.0005; **CRITIC-NOT-DETECTED** otherwise. Sibling accuracy, top1 | top2 accuracy and ECE deltas are descriptive.
+- Why 2 % and 0.01 nats: at 600 states 2 % is 12 flipped decisions; fewer cannot move IMP_POL beyond its ±0.01 CI.
+
+### 12.9 The maturity rules
+
+M-BELIEF (§10.2), M-STABLE (§10.3), the V8 GUARD and CONDITION-ROBUST (§10.4), CONFIRM / REVOKE (§10.5), as
+written there.
+
+### 12.10 Power, blinding and the size rule
+
+- **Power** (from the pilot's measured contrast widths: R-INFO ±0.015, R-BELIEF ±0.0145 at ≈ 580 states): a paired
+  two-arm contrast's 95 % half-width ≈ 0.015 per checkpoint, ≈ 0.0105 pooled over two, ≈ 0.0087 over three. With G ≈
+  0.07 a share's half-width at s = 0.5 is ≈ ±0.24 per checkpoint, ±0.17 over two, ±0.14 over three. B3 / B4 are
+  reachable pooled when the true share is ≳ 0.45; R1 when it is ≲ 0.10.
+- **Size rule:** after the Tier-1 arms (§15), if the pooled s_M or n_M half-width exceeds 0.20, 600 more states per
+  checkpoint are added (drawn by the pilot's procedure from the earlier eval-trace cycles not used, Phase 1 truth
+  built for them) BEFORE any verdict is read.
+- **Blinding:** every arm's raw outputs carry only an opaque code (`arm_key.json`: code = the rank of
+  `sha256("hib_arm_v1:" + label)`); the scoring scripts are committed before the first arm output exists; the
+  blinded tables are frozen (committed) before `unblind_*.py` maps codes to labels and applies these rules as code.
+  No stratum, exclusion or threshold changes after unblinding; any change is a disclosed amendment with both reads
+  reported.
+
+### 12.11 Predictions (written before any arm of this study was read)
+
+- R-GIGO: PASS (the pilot's 12-state identity held; A2 is the one that could surprise).
+- R-MOVES: **MOVES-SHARED** is my modal prediction (≈ 45 %), MOVES-BINDING ≈ 30 %, NECESSARY-NOT-SUFFICIENT ≈ 10 %,
+  REFUTED ≈ 10 %, NOT-DETECTED ≈ 5 %. Reason: the pilot's stratum read points at moves, but the fully honest base adds
+  spreads and items the pilot never hid, and the never-seen mons carry their own share.
+- G (fully honest) larger than the pilot's R-INFO by +0.005 to +0.02.
+- R-RECOVER: PARTIAL; PRIOR-MISMATCH not detected; HONEST-SHARPENING-HELPS not detected.
+- R-EVAL: EVALUATOR-NOT-BINDING in fair worlds, INFORMATION-BOUND support (the hand eval also collapses).
+- R-WIDTH: WIDTH-FLAT (the pilot's fair K-curve: −0.001 / +0.004 / +0.007 at K = 1 / 4 / 8).
+- R-NET: NET-NOT-DETECTED or NET-CONFIDENCE-ONLY for the policy; CRITIC-NOT-DETECTED (the X5 oracle arms' +0 for the
+  set over the species).
+- M-BELIEF IMPROVING; M-STABLE STABLE.
+
+---
+
+## 13. Independent replication and the red team (owner, 2026-10-11: "a GIGO in the instrument is the most likely way this goes wrong")
+
+### 13.1 The independent implementation (a separate agent, blind to this study's code and results)
+
+The orchestrator dispatches it with ONLY the following spec, the registered states and the pin checkouts.
+
+**Spec for the second implementation (hand-over text).**
+1. *Inputs:* for each checkpoint, the registered states (`value_disc_pilot_2026-10-11/states_<cp>.json`) and their
+   bank (`~/gen3ai_archive/value_disc_pilot/<cp>/bank`: each decision's battle, side, command index; the battle's
+   packed teams, seed and command log). The Phase 1 truth rows are an INPUT for the referee only.
+2. *The referee:* T(a) = mean over truth seeds 16–39 of the win-scale outcome (win 1, loss 0, tie or truncation ½)
+   of playing action a at the root then the checkpoint GREEDY on both sides to the end, in the TRUE battle. Re-derive
+   it from the rows' outcome strings yourself; do not reuse any scoring code.
+3. *What the searched side has seen at the root:* from its OWN protocol stream up to the root: the opponent species
+   that switched or were dragged in; for each, the moves it was seen to use; items / abilities named by `-item`,
+   `-enditem`, `-ability` or a `[from] item:` / `[from] ability:` tag.
+4. *A fair world (class F of §6.1):* the opponent team with every unrevealed fact re-drawn from the Smogon prior
+   (`agents.gen3_data.priors` at the pin), the never-seen slots whole (species ∝ the teammate prior given the
+   revealed species), and ACCEPTED only if replaying the world's command log to the root gives the searched side
+   byte-equal observation rows at every one of its decisions. Past opponent choices that name a re-drawn move or a
+   never-seen species must be rendered so the world can execute them (decide how; document it).
+5. *The playouts:* every legal action × 8 worlds, world j with dice seed j of `truth.turn_seeds(id, 48)`, the
+   checkpoint greedy on both sides to the end; IMP of LEAF-K8 = T(argmax of the world-mean outcome) − T(top1), ties
+   toward the policy's order.
+6. *Also:* class P (the pilot's Phase 2 base) and F+M (F with the true seen moves), so that G_P, G and s_M can be
+   compared with this study's.
+7. *Deliverable:* per state and arm, the 8 world teams, the outcomes, the IMP; the tables of §12.3's B2–B4 for M.
+8. *Forbidden:* reading `determinize.py`, `src/main/value_search/worlds.py`, this study's scripts or any result.
+
+### 13.2 The red team (after the results; the orchestrator's dispatch, at the highest tier)
+
+A fresh reviewer briefed with this doc, the raw rows and the scripts, NOT the author's write-up, with the mandate to
+break the conclusion. Its checklist:
+1. re-derive every verdict from the raw rows with its own code;
+2. GIGO: plant defects and confirm the audits catch them; probe the samplers' corners (Hidden Power, formes, a
+   Transform user, Baton Pass, a choice lock carried across a re-drawn slot);
+3. attribution: interactions (request F+M+X), the other scorers (TRUNC-4, the hand eval), the second referee, half
+   the truth seeds;
+4. statistics: per-checkpoint heterogeneity, the exclusions, the loss-enriched quota, multiplicity across the many
+   descriptive reads;
+5. meaning: the X5 oracle arms, Foul Play, the pool-vs-prior confound, the maturity guard;
+6. write its section into this doc: each attack and the data that answers it, or the downgrade.
+
+**A conclusion may steer research** (anything beyond §10.5's cheap unlocks) only when R-REPLICATE agrees, the red
+team's section is in this doc with every attack answered or the verdict downgraded, and the owner has read it.
+
+---
+
+## 14. What each conclusion would MEAN for the roadmap, and what each path costs
+
+| verdict pattern | meaning | the path | its cost |
+|---|---|---|---|
+| MOVES-BINDING + BELIEF-RECOVERABLE + NET-USES (and CONFIRMED at plateau) | knowing the moves pays for search AND the policy, and a better honest belief can buy much of it | MOVE INFERENCE: stronger move-belief supervision (weight, set-level / combinatorial targets), pool-aware learning (the model may learn the pool; priors stay Smogon), belief-sampled search worlds; the §8 MOVES fork as the training-level check | weeks: 2–4 agent-weeks of builds + GPU A/Bs (≈ 25–50 GPU-h) |
+| MOVES-BINDING + LARGELY-IRREDUCIBLE | the information matters but no honest belief can have it | stop investing in move inference beyond cheap wins; information-set-aware search (robust actions across worlds, the per-turn matrix game, `design_value_discrimination.md` §14.4), oracle playouts as per-action VALUE labels (§13.8) | the §13.8 / §14 builds (≈ 1–3 agent-weeks) |
+| MOVES-BINDING + NET-IGNORES or NET-MISUSES | search could use the moves, the network cannot | an ARCHITECTURE question first: route the move belief into decisions (the op's attacker pricing, the intent pointer); re-read the X5 oracle-full null as a network limit; the §8 fork decides whether training fixes it | §8 (≈ 14 GPU-h) then an architecture A/B |
+| PRIOR-MISMATCH | part of the gap is Smogon's mismatch to our pool; on the ladder it may be smaller | measure on ladder-like teams (the away bank, human teams) before investing; the training pool's realism becomes a research question | small (a re-run on another bank, ≈ 1 day CPU) |
+| S-BINDING (spreads) | exact stats / speed / KO thresholds bind | spread inference from observed damage and move order (an exact damage-calc posterior; the obs constrains it); `design_hand_computed_features.md` exact-fact rule | ≈ 1–2 agent-weeks |
+| I-BINDING (items) | Choice Band and unused berries bind | item inference (cheap: the item belief exists; P(CB) from damage) | days |
+| U-BINDING (the never-seen mons) | team identification binds | the species belief (R-BELIEF was null: the network's species belief does not help search today), the pool posterior as the measurement | ≈ 1–2 agent-weeks |
+| EVALUATOR-BOUND | our critic, not our information, is the constraint | value-side work: oracle-label per-action Q heads (Phase 3), a sibling-level trunk signal, the hand eval as a leaf now (X3) | ≈ 1–2 agent-weeks |
+| WIDTH-HELPS | width substitutes for knowledge | cheaper per-world search (truncated leaves, the GPU-batched harness, S1 pairing) | ≈ 1 agent-week |
+| MOVES-SHARED / NON-ADDITIVE / NOT-DETECTED | no single lever | general belief quality and the evaluator in parallel; search is not the next big step | — |
+| TRANSIENT (the v8 guard) | the gap is moving with training | nothing multi-week; re-read on X26 at plateau | the plateau replication (≈ 40 CPU-h) |
+| R-GIGO FAIL | the pilot's honest numbers are void | fix the sampler, re-run Phase 2 and the study | ≈ 1–2 days |
+
+---
+
+## 15. The COMPUTE PLAN
+
+**Unit costs (measured):** a fair-world playout to the end 0.245 CPU-s (Phase 2, prod: 14.5 CPU-s per state for 8
+worlds × all actions; no cross-world row dedup); world building 1.2 CPU-s per state for 16 Smogon worlds (F's
+per-mon screening is estimated at ≤ 5 CPU-s per state, UNVERIFIED); an oracle Phase 1 ≈ 4 CPU-h per checkpoint.
+**Per fair arm per checkpoint ≈ 600 × 14.5 s + worlds + the honest critic ≈ 2.6 CPU-h.**
+
+| tier | contents | CPU-h |
+|---|---|---|
+| **now (this unit)** | audits A1–A6; the model-input axis (17 arms × 3 checkpoints, root + one-ply successors); policy drift; belief maturity; descriptive reads; the pool-vs-prior read | ≈ 15 |
+| **Tier 1 (decisive)** | on end2 and prod: F, F+M, O−M, D50, D90, W90, MAP100, POOLSETS, POOL (9 arms × 2) | ≈ 47 |
+| **Tier 2 (the rivals and the curve)** | F+U, F+I, F+A, F+S, F+Usp, O−U, O−I, O−A, O−S (9 × 2); D25, D75, W50, W100, MAP90 (5 × 2); P16 (2 × ≈ 2.6); the second referee (2 × ≈ 2); the hand eval: truncated re-plays in O, P, F (3 × 2 × ≈ 0.8) | ≈ 87 |
+| **Tier 3 (replication and maturity)** | the third checkpoint: Phase 1 + Tier-1 arms (≈ 27); the trajectory at 5M / 10M: Phase 1 + 6 arms each (≈ 2 × 20); the away bank: build + Phase 1 + 5 arms (≈ 18) | ≈ 85 |
+| **the independent implementation** | F, P, F+M on 2 checkpoints | ≈ 16 |
+| **plateau replication (later, on X26)** | §10.5's list | ≈ 40 |
+| **total before the plateau** | | **≈ 250** |
+
+- **On 3 physical cores (6 logical, now):** Tier 1 alone ≈ 10–12 wall-hours; everything ≈ 50+ wall-hours. Only the
+  "now" tier runs on them.
+- **On the full box after the closing test** (16 logical; ≈ 12 workers at `nice -n 19` beside whatever the next GPU
+  run needs; ≈ 9 effective cores): Tier 1 ≈ 5 h, Tiers 1–3 + the replication ≈ 26–28 wall-hours.
+- **A GPU-batched playout harness** (every pending row of many states in one forward through the inference service):
+  the fair playout's 0.245 CPU-s is mostly the CPU forward of the end-state network; with the forward on the GPU a
+  playout costs its sim + encode, plausibly 0.02–0.05 CPU-s (UNVERIFIED: measure on 20 states first), i.e. a 5–10×
+  cut: Tiers 1–3 in ≈ 4–6 wall-hours plus ≈ 2–4 GPU-hours. **Build ≈ 1 agent-day. Recommended IF Tiers 2–3 are run in
+  full** (it pays back after ≈ 40 CPU-h); for Tier 1 alone, CPU suffices. The GPU window is the owner's queue call.
+- **Order after the closing test:** R-GIGO and the independent implementation's F / P first (they gate everything);
+  then Tier 1; read Tier 1 (blinded); the size rule; then Tiers 2–3; then the red team.
+
+---
+
+## 16. RESULTS SO FAR (the cheap parts; filled when read, each read after this registration landed)
+
+*Not yet read.* This section is replaced, in the commit that reads them, by: the audits (R-GIGO's ingredients), the
+model-input axis (R-NET, CRITIC-USES), the descriptive reads D1–D9, policy drift and belief maturity, and the
+author's honest confidence in "moves are binding".
+
+---
+
+## 17. Open questions for the owner
+
+1. ~~The §8 knock-in forks: queue them?~~ QUEUED by the orchestrator 2026-10-11 (≈ mid-week, after the closing
+   test's verdict branch and the bf16 A/B); the launch-ready design is §8.
+2. **POOL and POOLSETS** use the training pool as a MEASUREMENT of the eval opponents' posterior. The owner's rule
+   forbids the pool as a shipped prior; does it also forbid it as a measurement arm? (The study assumes not: nothing
+   it computes reaches a network or a search at play time.)
+3. **The full factorial vs Tier 1 only**, and the GPU-batched harness (≈ 1 agent-day + ≈ 2–4 GPU-h).
+4. **The hand-evaluator build (≈ 1 agent-day)** now, so its arm is ready for the post-verdict window?
+
+---
+
+## Decision record
+
+| date | decision | chosen | rejected / alternatives | evidence |
+|---|---|---|---|---|
+| 2026-10-11 | **This doc CREATED and PRE-REGISTERED at the owner's request** ("reproduce knowing the moves as being the critical link … and challenge that … give high mass to the known moves, but don't necessarily make them 100% … its own end state doc, full analysis, many tests, many countering tests"), with the orchestrator's additions the same day (maturity / adversarial robustness and the scope rule; the pool-vs-prior confound, belief maturity, blinding, the game-level check, the knock-in forks; Foul Play's evaluator as a scorer and the Foul Play / X5 counter-evidence; correctness over economy, the independent implementation and the red team) | The claim split into ATTRIBUTION / RECOVERABILITY / USABILITY; a five-class PARTITION of the hidden facts (M, U, I, A, S) with a FULLY honest base F, sufficiency and necessity arms, a move dose with a wrong-moves placebo and an honest MAP control, the pool posterior and pool sets as recoverability measurements, the hand evaluator, a width arm and a second referee; a frozen-network model-input axis (the true moves injected into the ONE published move posterior at 60–100 % mass, placebo and self-MAP controls); deterministic rules with pooled shares and per-checkpoint replication; a v8 guard and a plateau CONFIRM / REVOKE; blinded codes; the independent implementation and the red team as preconditions | attributing within the pilot's leaked base only (it could not see spreads, items or abilities); a 100 %-only reveal (the owner asked for high but not total mass); injecting into the OBSERVATION (out of distribution for a network trained without reveals: the X5 both-sided −8.1 pp); a full-factorial 2⁵ design (32 arms per checkpoint; the one-at-a-time sufficiency and necessity arms plus a targeted interaction follow-up answer the registered question at a sixth of the cost); dropping rival arms for cost (owner: no arm that kills a rival is cut) | §2 (the pilot's construction, `determinize.py`; the X5 oracle arms; the Foul Play axes); `move_accuracy_read.json`; owner and orchestrator 2026-10-11 |
