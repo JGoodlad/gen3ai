@@ -14,30 +14,6 @@ from . import builder as B
 from . import sampling as S
 
 
-def screen_hp_om(prep: B.Prep) -> Dict[str, Dict[str, float]]:
-    """O-M: the type of a revealed bare Hidden Power is class M (sampled); screen each type in the prior's support
-    with every other fact TRUE (spec §6.1's per-candidate screen), and draw from the prior restricted to the
-    consistent types (the full prior when none is consistent: the gate then rejects)."""
-    out: Dict[str, Dict[str, float]] = {}
-    for name, m in prep.seen.mons.items():
-        if "hiddenpower" not in m.moves:
-            continue
-        slot = prep.seen_slot[name]
-        prior = S.hp_type_prior(m.species)
-        worlds = []
-        types = sorted(prior)
-        for t in types:
-            w = B.assemble(prep, "ID", B.rng_for("om_hp", prep.sid))
-            x = w[slot]
-            x.moves = [("hiddenpower" + t) if S.is_hp(mv) else mv for mv in x.moves]
-            x.ivs = S.ivs_for(t, "min" if prep.true_opp[slot].ivs[1] <= 3 else "max")
-            worlds.append(w)
-        res = B.gate_many(prep, worlds, rows=False)
-        ok = {t: prior[t] for t, r in zip(types, res) if r.lines_equal}
-        out[name] = ok or prior
-    return out
-
-
 def build(prep: B.Prep, arm: str) -> dict:
     """Up to 8 accepted worlds for ``arm`` (``MAX_TRIES`` draws in all). Returns the worlds and the bookkeeping."""
     t0 = time.process_time()
@@ -57,9 +33,6 @@ def build(prep: B.Prep, arm: str) -> dict:
         if not scr["context_ok"]:
             rec.update({"ok": False, "reason": "no_consistent_context", "cpu_s": time.process_time() - t0})
             return rec
-    hp_allowed = screen_hp_om(prep) if arm == "O-M" else None
-    if hp_allowed is not None:
-        rec["hp_allowed"] = hp_allowed
     rng = B.rng_for("worlds", arm, prep.sid)
     accepted: List[dict] = []
     tries = 0
@@ -73,7 +46,7 @@ def build(prep: B.Prep, arm: str) -> dict:
                 dr = SC.draw_from_pools(scr, rng)
                 w = B.assemble(prep, arm, rng, seen_draws=dr)
             else:
-                w = B.assemble(prep, arm, rng, hp_allowed=hp_allowed)
+                w = B.assemble(prep, arm, rng)
             probs = S.legality(w, prep.true_opp)
             if probs:
                 reasons["illegal"] = reasons.get("illegal", 0) + 1
