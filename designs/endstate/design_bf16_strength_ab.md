@@ -20,6 +20,12 @@ Speed (the pooled quiet `train_ms` ratio) is REPORTED, never decides.
 - **Environment:** `gen3ai_torch28` (torch 2.8.0+cu126) for the whole experiment, both arms on one build. A CUDA 12.8
   environment being prepared elsewhere is NOT used by any seed or cross here. `GEN3AI_SHARED_COMPILE_CACHE=0` for every
   launch (the closing test's setup).
+- **CPU split** (orchestrator, 2026-10-12, arm-neutral): the TRAINING tree (launcher, trainer child, the Rust env core
+  and its workers, the eval core) is pinned to physical cores 0–4 (`taskset -c 0-4,8-12`; CPU n and n+8 are SMT
+  siblings), the agents' CPU work to 5–7 (`5-7,13-15`), so neither wanders onto the other's cores. In force from
+  `rb_bf_eb_s2001`'s first minutes (10:53, applied to its live tree, all threads) and the launch default for every
+  later seed and resume; `rb_bf_e_s2001` ran unpinned (affinity 0–15; contention factor p90 1.82). Affinity changes
+  only speed, never the training signal, so it is reported, never a validity condition.
 - **Arms** (the closing test's recipe, ride-along heads and launcher; only `--trunk-precision` differs):
 
 | arm | argv (each seed adds `--seed 200N --run-name <run>`) | runs |
@@ -43,7 +49,11 @@ Speed (the pooled quiet `train_ms` ratio) is REPORTED, never decides.
 - **Startup gates** on the first seed of EACH arm: R1 compile parity, the K6 freeze, K9(b) from update 1, UpdateFit
   headroom, the update-10 canary. EB's R1 gate and canary run at the bf16 parity rule's derived bars (a canary FATAL is
   INCONCLUSIVE for that seed, never a stop on strength).
-- **The first non-empty pool eval** of each arm's first seed passes and loads pool opponents (Pool % ≠ 0.0).
+- **The first non-empty pool eval** passes and loads pool opponents (Pool % ≠ 0.0). **Unmet BY CONSTRUCTION in
+  stage 1, deferred to stage 2** (orchestrator, 2026-10-12): at a 5M budget a seed's only pool eval is at 4M, and
+  the pool is empty going into it (`pool_snapshot_count` 0; the 4M eval seeds the first snapshot), so its Pool 0.0 %
+  is an empty pool, not a failure (`rb_bf_e_s2001`: Bots 81.8 %, Pool 0.0 %, Monotonicity 1.00). The check is read
+  on EVERY stage-2 seed's 6M eval.
 - **One pin, no fork:** every run's `pin_history` holds P_bf16 only; no run is a fork.
 - **K9(b) strict** at its fp32 bars in both arms, with the closing test's amendments 1–2 (§3.7 there) carried over.
 - A seed that fails (a run short of its budget, out of restarts after the amendments, a broken precondition) is
@@ -90,3 +100,4 @@ Speed (the pooled quiet `train_ms` ratio) is REPORTED, never decides.
 | date | decision | why |
 |---|---|---|
 | 2026-10-12 | REGISTERED before any seed, at P_bf16 `f45d0c27`; E re-run (not reused) | PLAN §2d's identity precondition fails at every candidate pin (§2); orchestrator's option (i): E at HEAD doubles as the adopted end state's reference seeds |
+| 2026-10-12 | §3's first-non-empty-pool-eval precondition read as unmet by construction in stage 1, checked at every stage-2 seed's 6M eval; the training tree pinned to 0-4,8-12 (§2 CPU split) from `rb_bf_eb_s2001` on | a 5M seed's only pool eval meets an empty pool; `rb_bf_e_s2001` showed contention p90 1.82 with the trainer free to run on the agents' cores (orchestrator's rulings) |
