@@ -152,11 +152,68 @@ def test_slot_count_is_declared_and_refuses_nonsense(monkeypatch):
 
 
 def test_a_live_training_run_is_WARNED_about_never_acted_on():
-    """The live-run caveat is mechanical: a gate taken while a `train_rl_agent.py --run-dir` lives
-    prints one line naming the run and recommending -n 4; with no live run it prints nothing."""
+    """The live-run caveat is mechanical (rule 5b): a gate taken while a `train_rl_agent.py --run-dir`
+    lives prints one line naming the run, the agent cores (every cpu the trainer is NOT pinned to), nice
+    19 and the measured -n — and names what is wrong with THIS gate's shape; with no live run, nothing."""
     assert GL.live_run_warning({}) is None
-    line = GL.live_run_warning({"/x/models/ai_v15_arm": 4242})
-    assert line is not None and "ai_v15_arm (pid 4242)" in line and "-n 4" in line
+    n = os.cpu_count() or 16
+    trainer = [c for c in range(n) if c not in (n - 3, n - 2, n - 1)]
+    ok = GL.live_run_warning({"/x/models/ai_v15_arm": 4242}, my_cpus=[n - 3, n - 2, n - 1], my_nice=19,
+                             trainer_cpus=trainer)
+    assert ok is not None and "ai_v15_arm (pid 4242)" in ok and "nice -n 19" in ok
+    assert f"taskset -c {n - 3}-{n - 1}" in ok and f"-n {GL.recommended_workers(3)}" in ok
+    assert "THIS gate" not in ok
+    bad = GL.live_run_warning({"/x/models/ai_v15_arm": 4242}, my_cpus=list(range(n)), my_nice=0,
+                              trainer_cpus=trainer)
+    assert bad is not None and "THIS gate" in bad and "nice 0" in bad and "OVERLAP" in bad
+
+
+def test_status_names_the_holder_its_worktree_and_the_queue_and_a_release_writes_history(tmp_path):
+    """A REAL holder writes its slot record (pid, worktree, -n, cpus, nice); `--status --json` reads it
+    while `/proc/locks` lists that pid holding the slot, and lists a REAL blocked taker as waiting; the
+    release removes the record and appends the gate's wall + exit code to the ETA history."""
+    import json
+
+    from utils import gate_lock_status as GS
+
+    d = tmp_path / "slots"
+    a = tmp_path / "a"
+    gate_cmd = [sys.executable, "-c",
+                f"import pathlib, time; pathlib.Path({str(a)!r}).touch(); time.sleep(120)",
+                "-m", "not slow and not e2e", "-n", "3", "pytest"]
+    h = subprocess.Popen([_SH, *gate_cmd], env=_env(d, 1), stderr=open(tmp_path / "h.err", "w"),
+                         cwd=str(tmp_path), start_new_session=True)
+    w = None
+    try:
+        _wait_for(a.exists, "the holder inside")
+        w = subprocess.Popen([_SH, "true"], env=_env(d, 1), stderr=open(tmp_path / "w.err", "w"),
+                             start_new_session=True)
+        _wait_for(lambda: P.waiters(P.file_key(str(GL.slot_path(0, d))) or ""), "the taker to block")
+        r = subprocess.run([_SH, "--status", "--json", "--sample-s", "0"], env=_env(d, 1),
+                           capture_output=True, text=True, timeout=scale_timeout(60))
+        assert r.returncode == 0, r
+        st = json.loads(r.stdout)
+        held = st["slots"][0]
+        assert held["pid"] == h.pid and held["since_source"] == "record", held
+        assert os.path.realpath(held["cwd"]) == os.path.realpath(tmp_path) and held["workers"] == 3 and held["cpus"] >= 1, held
+        assert [x["pid"] for x in st["waiters"]] == [w.pid], st["waiters"]
+        human = subprocess.run([_SH, "--status", "--sample-s", "0"], env=_env(d, 1), capture_output=True,
+                               text=True, timeout=scale_timeout(60)).stdout
+        assert f"HELD by pid {h.pid}" in human and "1 waiting" in human, human
+    finally:
+        _kill_tree(h)
+        if w is not None:
+            w.wait(timeout=scale_timeout(30))      # the waiter gets the freed slot, runs `true`, exits
+    # the SIGKILLed holder ran no release, so it wrote NO history line; the only one is the waiter's `true`
+    first = GS.read_history(d)
+    assert len(first) == 1 and first[0]["workers"] is None and not first[0]["routine"], first
+    ok = subprocess.run([_SH, *gate_cmd[:2], "pass", "-m", "not slow and not e2e", "-n", "3", "pytest"],
+                        env=_env(d, 1), capture_output=True, text=True, timeout=scale_timeout(60))
+    assert ok.returncode == 0, ok
+    rows = GS.read_history(d)
+    assert len(rows) == 2 and rows[-1]["rc"] == 0 and rows[-1]["workers"] == 3 and rows[-1]["routine"], rows
+    assert rows[0]["rc"] == 0 and rows[0]["workers"] is None            # the waiter's `true`
+    assert GS.read_record(d, 0) is None, "a clean release removes its record"
 
 
 def test_live_training_runs_reads_a_planted_proc(tmp_path):

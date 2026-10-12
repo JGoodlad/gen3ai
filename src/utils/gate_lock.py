@@ -3,7 +3,7 @@
 USAGE
     scripts/ops/gate_lock.sh python3 -m pytest src/ -m "not slow and not e2e" -q -n 6
     python -m utils.gate_lock [--timeout-s S] -- <cmd> [args...]    # the same, without the wrapper
-    python -m utils.gate_lock --status                               # who holds each slot now
+    python -m utils.gate_lock --status [--json] [--sample-s S]      # who holds it, since when, ETA, the queue
 
     from utils.gate_lock import gate_slot
     with gate_slot():                          # children inherit GEN3AI_GATE_LOCK_HELD=<pid>:<slot>
@@ -52,6 +52,7 @@ import time
 from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
+from utils import gate_lock_status as GS
 from utils import procfs
 
 GATE_SLOTS = 1
@@ -113,13 +114,10 @@ def verified_holder(d: Optional[Path] = None) -> Optional[Tuple[int, int]]:
     return (pid, slot) if pid in _holders(slot_path(slot, d)) else None
 
 
-def status(d: Optional[Path] = None) -> str:
-    lines = []
-    for i in range(slot_count()):
-        hs = _holders(slot_path(i, d))
-        who = ", ".join(f"pid {h} ({procfs.cmdline(h)[:120] or 'gone'!r})" for h in hs) or "free"
-        lines.append(f"slot {i}: {who}")
-    return "\n".join(lines)
+def status(d: Optional[Path] = None, *, sample_s: float = 0.0, compact: bool = False) -> str:
+    """Who holds each slot, since when, the ETA and the queue (``utils.gate_lock_status``)."""
+    state = GS.collect(d or lock_dir(), slot_count(), sample_s=sample_s)
+    return GS.format_compact(state) if compact else GS.format_human(state)
 
 
 def _try(fd: int) -> bool:
@@ -190,20 +188,24 @@ def _acquire(fds: List[int], paths: List[Path], *, report_every_s: float, poll_s
             checked_self = True
             if now >= next_report:
                 log(f"[gate_lock] waiting {now - t0:.0f} s for one of {n} gate slots: "
-                    + "; ".join(status(paths[0].parent).splitlines()))
+                    + status(paths[0].parent, compact=True))
                 next_report = now + report_every_s
         if timeout_s is not None and now - t0 >= timeout_s:
             if abandon():
                 raise TimeoutError(f"[gate_lock] gave up after {now - t0:.0f} s: "
-                                   + "; ".join(status(paths[0].parent).splitlines()))
+                                   + status(paths[0].parent, compact=True))
             return home, time.monotonic() - t0
 
 
 @contextlib.contextmanager
 def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
               timeout_s: Optional[float] = None, log: Callable[[str], None] = _stderr,
-              what: str = "") -> Iterator[int]:
-    """Hold one gate slot for the ``with`` body; yields the slot index (or the verified ancestor's)."""
+              what: str = "", cmd: Sequence[str] = (), outcome: Optional[dict] = None) -> Iterator[int]:
+    """Hold one gate slot for the ``with`` body; yields the slot index (or the verified ancestor's).
+
+    A FRESH take writes the slot's record (``utils.gate_lock_status``: pid, worktree, ``cmd``, cpus, nice,
+    acquired-at) and removes it on release; with ``cmd`` given, the release also appends the gate's wall
+    and ``outcome["rc"]`` to the history the ETA is read from. Records only report — the flock is the lock."""
     d = lock_dir()
     held = verified_holder(d)
     if held is not None:
@@ -223,6 +225,11 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
         t_acq = time.time()
         log(f"[gate_lock] acquired slot {slot} of {n}{what} at "
             f"{time.strftime('%H:%M:%S', time.localtime(t_acq))} after waiting {waited:.1f} s")
+        rec = GS.SlotRecord.mine(slot, cmd)
+        try:
+            GS.write_record(d, rec)
+        except OSError as exc:            # a record only reports; never stop a gate over it
+            log(f"[gate_lock] slot record NOT written ({exc!r}); --status falls back to /proc")
         before = os.environ.get(HELD_ENV)
         os.environ[HELD_ENV] = f"{os.getpid()}:{slot}"
         try:
@@ -232,17 +239,35 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
                 os.environ.pop(HELD_ENV, None)
             else:
                 os.environ[HELD_ENV] = before
+            held = time.time() - t_acq
+            if cmd:
+                try:
+                    GS.append_history(d, rec, held, (outcome or {}).get("rc"))
+                except OSError as exc:
+                    log(f"[gate_lock] history NOT appended ({exc!r})")
+            GS.clear_record(d, slot, rec.pid)
             fcntl.flock(fds[slot], fcntl.LOCK_UN)
-            log(f"[gate_lock] released slot {slot} of {n}{what} after holding "
-                f"{time.time() - t_acq:.0f} s")
+            log(f"[gate_lock] released slot {slot} of {n}{what} after holding {held:.0f} s")
     finally:
         for fd in fds:
             os.close(fd)
 
 
-def live_run_warning(runs: Optional[dict] = None) -> Optional[str]:
-    """One line naming the live training run(s), recommending ``-n 4`` — or None when none is live.
-    A WARNING only: the gate's command is never changed."""
+#: The routine gate's xdist workers per LOGICAL cpu of its affinity while a training run is live
+#: (rule 5b: the agent cores, nice 19). MEASURED, designs/ops/testing.md "Routine-gate wall time".
+LEASED_WORKERS_PER_CPU = 0.5
+
+
+def recommended_workers(ncpus: int) -> int:
+    return max(1, int(ncpus * LEASED_WORKERS_PER_CPU))
+
+
+def live_run_warning(runs: Optional[dict] = None, *, my_cpus: Optional[List[int]] = None,
+                     my_nice: Optional[int] = None, trainer_cpus: Optional[List[int]] = None) -> Optional[str]:
+    """One line naming the live training run(s) and the rule-5b shape (nice 19, the agent cores, the
+    measured ``-n``), plus what is WRONG with this gate's own shape — or None when no run is live.
+    A WARNING only: the gate's command is never changed. The ``my_*`` / ``trainer_cpus`` arguments
+    are for tests; by default they are read from this process and the first live trainer."""
     if runs is None:
         try:
             runs = procfs.live_training_runs()
@@ -251,8 +276,28 @@ def live_run_warning(runs: Optional[dict] = None) -> Optional[str]:
     if not runs:
         return None
     named = ", ".join(f"{os.path.basename(rd.rstrip('/'))} (pid {pid})" for rd, pid in sorted(runs.items()))
-    return (f"[gate_lock] ⚠️  a TRAINING RUN is live: {named}. Its env workers share this box's 8 cores — "
-            "run the routine gate at -n 4, not -n 6 (designs/ops/testing.md, the -n x gate_lock policy).")
+    mine = my_cpus if my_cpus is not None else sorted(os.sched_getaffinity(0))
+    nice = my_nice if my_nice is not None else os.getpriority(os.PRIO_PROCESS, 0)
+    if trainer_cpus is None:
+        trainer_cpus = []
+        for pid in runs.values():
+            trainer_cpus.extend(GS.affinity_of(pid) or [])
+    online = range(os.cpu_count() or 0)
+    agent = [c for c in online if c not in set(trainer_cpus)] if trainer_cpus else []
+    problems = []
+    if nice < 19:
+        problems.append(f"this gate runs at nice {nice}, not 19")
+    overlap = sorted(set(mine) & set(trainer_cpus))
+    if overlap:
+        problems.append(f"its cpus {GS.cpu_list(mine)} OVERLAP the trainer's ({GS.cpu_list(overlap)})")
+    where = f"taskset -c {GS.cpu_list(agent)}" if agent else "taskset -c <the agent cores>"
+    n = recommended_workers(len(agent) if agent else len(mine))
+    line = (f"[gate_lock] ⚠️  a TRAINING RUN is live: {named}. Rule 5b: the gate runs at LOW PRIORITY on the "
+            f"agent cores — `nice -n 19 {where} scripts/ops/gate_lock.sh … -n {n}` (designs/ops/testing.md, "
+            "the -n x gate_lock policy).")
+    if problems:
+        line += " THIS gate: " + "; ".join(problems) + "."
+    return line
 
 
 def run_under_slot(cmd: Sequence[str], **kw) -> int:
@@ -261,12 +306,14 @@ def run_under_slot(cmd: Sequence[str], **kw) -> int:
     warning = live_run_warning()
     if warning:
         _stderr(warning)
-    with gate_slot(what=" ".join(cmd)[:80], **kw):
+    outcome: dict = {}
+    with gate_slot(what=" ".join(cmd)[:80], cmd=cmd, outcome=outcome, **kw):
         child = subprocess.Popen(list(cmd))
         fwd = {s: signal.signal(s, lambda n, _f: child.send_signal(n))
                for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
         try:
             rc = child.wait()
+            outcome["rc"] = rc
         finally:
             for s, h in fwd.items():
                 signal.signal(s, h)
@@ -279,7 +326,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(__doc__)
         return 0 if args else 2
     if args[0] == "--status":
-        print(status())
+        rest = args[1:]
+        as_json = "--json" in rest
+        sample_s = float(rest[rest.index("--sample-s") + 1]) if "--sample-s" in rest else 1.0
+        state = GS.collect(lock_dir(), slot_count(), sample_s=sample_s)
+        print(GS.as_json(state) if as_json else GS.format_human(state))
         return 0
     kw: dict = {}
     while args and args[0] != "--":
