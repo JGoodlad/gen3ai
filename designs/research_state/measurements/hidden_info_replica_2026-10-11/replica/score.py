@@ -67,12 +67,18 @@ def leaf_argmax(outcomes: Dict[str, List[float]], k: int, order: List[str]) -> s
 
 
 def load_rows(rows_dir: Path, cp: str, arm: str) -> Dict[str, dict]:
+    """One row per state. A state run twice (a failed state RE-RUN after a builder fix that only turns failures
+    into worlds, e.g. the shiny flag) keeps its ok row; two ok rows for one state is an error."""
     out: Dict[str, dict] = {}
     for f in sorted(glob.glob(str(rows_dir / cp / arm / "*.jsonl"))):
         for line in open(f):
             if line.strip():
                 r = json.loads(line)
-                out[r["id"]] = r
+                old = out.get(r["id"])
+                if old is not None and old.get("ok") and r.get("ok"):
+                    raise RuntimeError(f"{cp} {arm} {r['id']}: two ok rows")
+                if old is None or not old.get("ok"):
+                    out[r["id"]] = r
     return out
 
 
