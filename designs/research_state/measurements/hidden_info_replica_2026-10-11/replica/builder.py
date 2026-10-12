@@ -344,8 +344,10 @@ def species_name(sp: str) -> str:
 
 def _seen_base(prep: Prep, m: V.SeenMon) -> S.MonSet:
     gender = gender_field(m.species, m.gender)
+    # the details' public flags: shiny and level (happiness is never shown; blank = the default 255)
+    tail = f"{'S' if m.shiny else ''}|{m.level if m.level is not None else ''}|"
     return S.MonSet(name=m.name, species_name=m.species_name, species=m.species, item="", ability="", moves=[],
-                    nature="", evs=(0,) * 6, ivs=[31] * 6, gender=gender, tail="||")
+                    nature="", evs=(0,) * 6, ivs=[31] * 6, gender=gender, tail=tail)
 
 
 def seen_moves(prep: Prep, m: V.SeenMon, slot: int, arm: str, rng: np.random.Generator,

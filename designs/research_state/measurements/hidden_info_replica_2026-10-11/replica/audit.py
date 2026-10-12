@@ -65,6 +65,11 @@ def main(argv=None) -> int:
                 res["parse"]["move_ok" if ok else "move_ERR"] += 1
                 if not ok and len(res["parse_errors"]) < 20:
                     res["parse_errors"].append([sid, name, "move", mv, t.moves])
+            tail = t.tail.split("|")
+            ok = m.shiny == (tail[0] == "S") and (m.level or 100) == (int(tail[1]) if tail[1:] and tail[1] else 100)
+            res["parse"]["details_ok" if ok else "details_ERR"] += 1
+            if not ok and len(res["parse_errors"]) < 20:
+                res["parse_errors"].append([sid, name, "details", [m.shiny, m.level], t.tail])
             if m.item is not None:
                 ok = m.item == S.to_id_safe(t.item)
                 res["parse"]["item_ok" if ok else "item_ERR"] += 1
