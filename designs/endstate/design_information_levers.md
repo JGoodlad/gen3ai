@@ -3,7 +3,7 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-12): the SPEC and the LOG SOURCE are BUILT (`src/agents/info_levers/`); the three consumers, the
+**Status (2026-10-12): the SPEC, the LOG SOURCE and the MODEL-INPUT INJECTION are BUILT (`src/agents/info_levers/`); the other two consumers, the
 gender pad and the audit suite are BUILDING (each section says which).** Owner, 2026-10-12: "I want a single dried
 out implementation for giving both search and training additional information that would not generally be available
 so that we can understand what the ceilings are and what is our constraint and how much value there would be in
@@ -135,7 +135,7 @@ consumer can only ever give TRUE is its named **residual**, reported beside ever
 - **(a) The training observation** (§6): BUILDING. Today's `--oracle-reveal off|species|full` keeps its exact
   behaviour and bytes; the flag will accept any spec the OBS consumer honours.
 - **(b) The search world builder** (§7): BUILDING. Honest by default; the pilot's builder becomes the `pilot` preset.
-- **(c) The model-input injection** (§8): BUILDING, lifted from the study's `inject.py` into `src/`.
+- **(c) The model-input injection** (§8): BUILT (`agents.info_levers.inject`), lifted from the study's `inject.py` into `src/` and driven by the spec.
 - **The gender pad** (§9): BUILDING (an engine-side marker; the builder's residual gender-count leak).
 - **The audit suite** (§10): BUILDING.
 
@@ -212,13 +212,35 @@ resample in the playout core; it is the builder's named residual (`counters`), r
 
 ---
 
-## 8. (c) THE MODEL-INPUT INJECTION (BUILDING)
+## 8. (c) THE MODEL-INPUT INJECTION (BUILT: `agents.info_levers.inject`)
 
-The study's hook (`measurements/hidden_info_binding_2026-10-11/inject.py`) lifted into `agents.info_levers.inject`
-at HEAD: it wraps the extractor INSTANCE's `_typed_hp_posterior` (the narrowest point every consumer of the move
-belief reads) and rewrites the opponent slots' typed move posterior q' = (1 − p)·σ(ℓ) + p·1[m ∈ target], revealed
-moves and their pinned channels untouched, the Hidden-Power presence and type posterior kept consistent; p = 0 is
-bit-identical. The item posterior and the believed stats are pushed the same way.
+The study's hook (`measurements/hidden_info_binding_2026-10-11/inject.py`, its §7.1) lifted into `src/` at HEAD and
+driven by the spec (`Injector(extractor)`; `inj.set(spec, decision_id, TrueTeam.of(opponent_packed_team))`; every
+forward inside `inj.installed()` is injected). For a FROZEN network, offline (the study's model-input axis, probes);
+nothing in training reads it.
+
+- **Moves** (`moves:seen` truth / placebo / map, `moves:unseen` truth): it wraps the extractor INSTANCE's
+  `_typed_hp_posterior` (the narrowest point every consumer of the move belief reads: the published
+  `last_move_belief_logits`, the active's move group, the reinjection, the damage op, the X5 roster, the E4 seats,
+  the edges and cells) and rewrites each targeted opponent slot's typed posterior q' = (1 − p)·σ(ℓ) + p·1[m ∈
+  target]; the revealed moves, the bookkeeping typeless Hidden Power and (once revealed) all 16 typed Hidden Power
+  channels keep their bytes; the clip never moves a channel against the injection; the Hidden Power presence and type
+  posterior stay consistent. The placebo is 4 − r moves drawn ∝ the network's own belief excluding the truth and the
+  pinned channels (deterministic per decision and slot); map is its own top 4 − r. An unseen lever applies on an X5
+  hypothesis slot whose hypothesised species is a true never-seen one (the study's TRUE-HYP).
+- **Item** (`item:seen`): a forward hook on `item_belief_head`: on a seen slot whose item the observation does not
+  state, the posterior becomes (1 − p)·softmax + p·one-hot(target) (its consumers: the op's P(Choice Band) /
+  P(Quick Claw)).
+- **Spread** (`spread:seen`, truth): a forward hook on `spread_belief`: the believed stats become (1 − p)·believed +
+  p·the true L100 stats (`priors.gen3_stat`, exact), and the head's token reinjection is recomputed from them. **Not
+  covered (named):** the nature posterior the op marginalises under `--spread-belief-nature-marginalize`.
+- **Teeth** (`inject_integration_test.py`, a production-config extractor on a real committed-bank battle): `off` /
+  the empty spec bit-identical to the unhooked forward; every targeted true move ≥ its mass; pinned channels
+  byte-equal; a placebo never a true move and deterministic per decision; map = the network's own top candidates; the
+  item and spread levers reach their consumers exactly; refusals by name; a planted off-by-one target is caught.
+- **Training-time injection** (the hidden-info study's §8 `--belief-oracle`, the label keys in the rollout) is NOT
+  built. The knock-in levers are offered on the OBSERVATION channel instead (§6: the `ki_*` presets with the
+  diagnostic-fork consent); which channel the study's forks take is the study's call.
 
 ---
 
