@@ -48,7 +48,8 @@ torch REFUSES (typed FATAL) rather than run a sentinel whose semantics may have 
 COMPILES — the compile preflight and every `CompileControl` — never at import: importing this module
 (the T2 service's graph counter does) checks nothing (P10-D). Each internal
 is exercised on the installed torch by `compile_control_test.py`'s CONTRACT tests. HEAD supports
-2.8.0+cu126 only (the 2.5.1 rows were deleted 2026-10-02), which locks with
+torch 2.8.0 only — the +cu126 build (the shared env) and the +cu128 build (Blackwell; the cloud-GPU
+benchmark, verified source-identical 2026-10-12) — (the 2.5.1 rows were deleted 2026-10-02), which locks with
 `torch.compiler.set_stance("fail_on_recompile")` (the `"stance"` mode), rejecting ANY cache miss at
 the call site. The start callback runs after the recompile check and so never sees a rejection;
 `wrap_compiled` (every region is installed through it) records rejections so a swallowed one is
@@ -158,6 +159,15 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
             "6ef2f0617932b76eea3d0a26571d5f6b5ea18cd4482d3e97e03691ca77707611",
     },
 }
+
+# torch 2.8.0+cu128 — the SAME torch release built against CUDA 12.8, the only 2.8 build with Blackwell
+# (sm_120) kernels; the cloud-GPU benchmark runs it on a rented RTX 5090 (designs/ops/cloud_gpu_benchmark.md).
+# Recorded 2026-10-12 ON that box: all 20 hashed internals IDENTICAL to the +cu126 row (0 drifted), both
+# compile-config keys present, `compile_control_test` + `compile_sentinel_scope_test` + `compile_cache_test`
+# 68 / 69 green (the one red was the test that used "2.8.0+cu128" as its unknown-version example), and the
+# end-state learner compiled + passed the R1 startup parity gate there. So the row is an exact copy.
+_SUPPORTED["2.8.0+cu128"] = _SUPPORTED["2.8.0+cu126"]
+_SOURCE_HASHES["2.8.0+cu128"] = dict(_SOURCE_HASHES["2.8.0+cu126"])
 
 # THE COMPILE CONFIG ROW (gen3_donated_buffer_off_v1, Lane K1b) lives in `agents.model.compile_config`
 # (data only, no check at import — the hermetic cache's stamp reads its hash in EVERY trainer; P10-D).

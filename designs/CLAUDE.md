@@ -67,7 +67,9 @@ about how a session operates is written into the owning section there, not into 
 here trained (Metamon's policies, Foul Play) — the tiers, the greedy-vs-greedy rule and why, the
 commands, the hazards; its box-specific paths are [`ops/anchors.json`](ops/anchors.json).
 [`ops/testing.md`](ops/testing.md) and [`ops/training_runbook.md`](ops/training_runbook.md) are the
-root's testing and training chapters. [`ops/TECH_DEBT_BACKLOG.md`](ops/TECH_DEBT_BACKLOG.md) is the one
+root's testing and training chapters. [`ops/cloud_gpu_benchmark.md`](ops/cloud_gpu_benchmark.md) is the
+cloud-GPU rental runbook (vast.ai: measured step times, cost model, the cu126 / cu128 caveat, safety rules;
+the kit is `tools/cloud/vast/`). [`ops/TECH_DEBT_BACKLOG.md`](ops/TECH_DEBT_BACKLOG.md) is the one
 tech-debt list (nothing on it is dispatched without the owner's word);
 [`ops/deletion_pass_manifest.md`](ops/deletion_pass_manifest.md) records the post-M5 deletion pass,
 each unit marked SHIPPED as it landed.

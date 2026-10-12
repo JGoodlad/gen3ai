@@ -821,6 +821,15 @@ refusal: `src/utils/torch_floor.py`, called first thing in the trainer's `main()
 `FATAL_CONFIG` on torch < 2.8 (so a 2.5.1 checkpoint under `--no-pin`, `--sync-to-main` or a bare
 `train_rl_agent.py --model` stops with the reason instead of running HEAD code that would miscompile).
 
+**torch 2.8.0+cu128 (2026-10-12, the cloud-GPU benchmark).** A Blackwell card (RTX 5090, sm_120) needs
+the CUDA 12.8 build — the +cu126 wheels' arch list stops at sm_90. The compile sentinel keys on the
+EXACT version string, so it first REFUSED `2.8.0+cu128` (`CompileSentinelError`, the rented box's first
+GPU sanity). On that box: all 20 hashed torch internals equal the +cu126 row, both compile-config keys
+exist, the compile contract tests pass (68 / 69; the red one used `2.8.0+cu128` as its unknown example),
+and the end-state learner compiled and passed the R1 parity gate. So `compile_control` / `compile_config`
+carry a +cu128 row that COPIES the +cu126 one. The shared env stays +cu126; the remote installs +cu128
+(`tools/cloud/vast/requirements.py`). Runbook: `designs/ops/cloud_gpu_benchmark.md`.
+
 **Which torch a run uses is RECORDED and ENFORCED.** Every save writes `metadata.json`'s
 `torch_version` (and a `torch` key per `pin_history` span); a run without one predates the record
 and trained on 2.5.1. The launcher (`src/main/launcher/torch_runtime.py`) resumes or forks a run

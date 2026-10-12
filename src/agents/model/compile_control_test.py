@@ -441,9 +441,13 @@ def test_the_launcher_classifies_the_sentinel_FATAL_as_non_restartable():
 # --------------------------------------------------------------------------- the version guard
 def test_an_unknown_torch_version_is_REFUSED():
     with pytest.raises(CompileSentinelError, match="does not support torch"):
-        cc.lock_mode("2.8.0+cu128")
+        cc.lock_mode("2.9.0+cu128")
     with pytest.raises(CompileSentinelError, match="no recorded torch-internals row"):
-        cc.verify_torch_internals("2.8.0+cu128")
+        cc.verify_torch_internals("2.9.0+cu128")
+    with pytest.raises(CompileSentinelError, match="does not support torch"):
+        cc.lock_mode("2.8.0+cu130")        # the local tag is part of the key: a new CUDA build is re-recorded
+    assert cc.lock_mode("2.8.0+cu128") == "stance"     # the Blackwell build, recorded on a 5090 (2026-10-12)
+    assert cc._SOURCE_HASHES["2.8.0+cu128"] == cc._SOURCE_HASHES["2.8.0+cu126"]
     with pytest.raises(CompileSentinelError, match="does not support torch"):
         cc.lock_mode("2.5.1+cu121")        # HEAD's 2.5.1 support was deleted (K1, 2026-10-02)
     assert cc.lock_mode("2.8.0+cu126") == "stance"

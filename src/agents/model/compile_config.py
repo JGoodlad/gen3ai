@@ -53,6 +53,10 @@ COMPILE_CONFIG: Dict[str, Dict[str, Any]] = {
     "2.8.0+cu126": {"torch._functorch.config.donated_buffer": False,
                     "torch.compiler.config.cache_key_tag": "gen3_donated_buffer_off_v1"},
 }
+# torch 2.8.0+cu128 (Blackwell; the cloud-GPU benchmark): the same torch source as +cu126 (compile_control's
+# row note, 2026-10-12), so the same pins. A separate KEY on purpose: the version string is part of the
+# hermetic cache stamp, so a cu126 cache is never served to a cu128 process.
+COMPILE_CONFIG["2.8.0+cu128"] = dict(COMPILE_CONFIG["2.8.0+cu126"])
 
 
 def _torch_version() -> str:

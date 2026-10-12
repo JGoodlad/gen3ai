@@ -21,6 +21,12 @@ reproducible rather than a hand edit. The runtime never imports `tools/`; it rea
 | `others_team_downloader/sync.py` | PokePaste dumps | `data/teams/others/` |
 | `replay_corpus_downloader/sync.py` | the PUBLIC replay archive (`replay.pokemonshowdown.com`) | `<main>/replays/showdown/<format>/<date>/battle-<id>.log` — NOT `data/`; a RE-WRITE of a lost script, never run against the live server (`replay_corpus_downloader/README.md`) |
 
+**One tree here is NOT acquisition:** `cloud/vast/` is the provisioning kit for the cloud-GPU benchmark (rent a
+vast.ai box, bootstrap our stack on it, destroy it, with a detached deadman). It writes nothing under `data/`
+and the runtime never imports it. 🚨 Its API key and its dedicated ssh key never leave this machine; one
+instance at a time; every create arms the deadman. Runbook (step times, cost model, the cu126 / cu128 caveat,
+offer criteria, safety rules): `designs/ops/cloud_gpu_benchmark.md`; usage: `cloud/vast/README.md`.
+
 ## Rules
 
 - 🚨 **A `data/` write is a DATA change.** No `data/` change while a pinned run is live or queued (a pin
