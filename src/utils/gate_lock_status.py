@@ -209,7 +209,7 @@ class Holder:
     slot: int
     pid: int
     since: Optional[float]               # acquisition (record) or process start (no record)
-    since_source: str                    # "record" | "process start (no slot record)"
+    since_source: str                    # "record", or the process start (no record: includes its queue wait)
     cwd: str
     cmd: str
     cpus: Optional[int]
@@ -293,7 +293,7 @@ def collect(d: Path, n_slots: int, *, sample_s: float = 0.0, now: Optional[float
             since, src = rec.acquired, "record"
             cwd, cmd, cpus, nice, workers = rec.cwd, shlex.join(rec.cmd), rec.cpus, rec.nice, rec.workers
         else:
-            since, src = _proc_start_epoch(pid), "process start (no slot record)"
+            since, src = _proc_start_epoch(pid), "process start, no slot record: includes its queue wait"
             argv = _gated_argv(pid)
             aff = affinity_of(pid)
             cwd, cmd, workers = _cwd(pid), shlex.join(argv), workers_of(argv)
