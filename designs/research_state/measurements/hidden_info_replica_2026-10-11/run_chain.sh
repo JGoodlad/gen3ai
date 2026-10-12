@@ -12,6 +12,6 @@ for arm in "$@"; do
   echo "== $cp $arm shard $shard/$nshards $(date -Is)"
   PYTHONPATH="$HERE" "$REPO/scripts/ops/mem_cap.sh" --name "hir-$cp-$shard" 6 \
     taskset -c "$cpus" nice -n 19 "$PY" -m replica.play --cp "$cp" --arm "$arm" \
-    --shard "$shard" --nshards "$nshards" --out "$OUT"
+    --shard "$shard" --nshards "$nshards" --out "$OUT" ${HIR_IDS:+--ids "$HIR_IDS"} ${HIR_TAG:+--tag "$HIR_TAG"}
   echo "== done $cp $arm $(date -Is) exit $?"
 done
