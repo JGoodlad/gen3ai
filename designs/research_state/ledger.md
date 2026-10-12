@@ -24377,3 +24377,33 @@ det-B CRITIC) and R-BELIEF (det-B LEAF-K8 − det-A LEAF-K8): HELPS / HURTS / NO
 HELPS; R-HONEST-B NOT DETECTED or a small LEAF-AHEAD.
 
 Tag: **REGISTRATION · CPU · offline · Phase 2b outcomes unread**
+
+### 2026-10-11 · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 2 / 2b (HONEST worlds): the oracle rollout leaf's gain is HIDDEN INFORMATION — in determinized worlds that replay our observations byte-equal, LEAF-K8 improves the policy's pick by only +0.007 (end2) / +0.004 (prod), not clear of 0 or of the critic (R-HONEST NOT DETECTED); oracle − honest +0.072 / +0.067 (R-INFO INFO-COSTS); worlds from the network's own species belief are no better (R-BELIEF NOT DETECTED); the moves, not the species, carry it**
+
+Registered by `design_value_discrimination.md` §7.10 Amendments 2–5 (Phase 2b's registration came after Phase 2's
+prod read, disclosed). 8 gate-passed worlds per state, Phase 1's dice seeds, Phase 1's TRUE-world truth (seeds
+16–39); 578 / 579 states (≈ 3.5 % lacked 8 worlds).
+
+| read | end2 | prod |
+|---|---|---|
+| honest IMP CRITIC (one-ply in the worlds) | +0.013 [+0.001, +0.026] | +0.002 [−0.010, +0.014] |
+| honest IMP LEAF-K8 / TRUNC-4-K4 / TRUNC-4-K8 | +0.007 / +0.017 [+0.002, +0.031] / +0.020 [+0.007, +0.035] | +0.004 / +0.008 / −0.001 |
+| R-HONEST (det LEAF-K8 − det CRITIC) | −0.006 [−0.022, +0.010] | +0.002 [−0.012, +0.016] |
+| R-INFO (oracle − det LEAF-K8) | +0.072 [+0.057, +0.087] | +0.067 [+0.053, +0.080] |
+| R-HONEST-B / R-BELIEF (belief worlds) | −0.006 [−0.020, +0.009] / +0.001 [−0.014, +0.015] | −0.003 [−0.018, +0.012] / −0.003 [−0.016, +0.009] |
+
+Verdicts (both seeds): R-HONEST **NOT DETECTED**, R-INFO **INFO-COSTS**, R-HONEST-B **NOT DETECTED**, R-BELIEF **NOT
+DETECTED**. Predictions (honest LEAF-AHEAD at half the oracle; belief HELPS) WRONG. Descriptive: with 0–1 opponent
+slots unrevealed the honest leaf is +0.019 / +0.014 vs the oracle's +0.072 / +0.062 (the hidden MOVES carry the
+edge; a Smogon world guesses a re-drawn move slot right 16 %, a hidden species 22 %; the network's species belief
+puts 47 % of its mass on true hidden species yet buys nothing); in wrong worlds shorter leaves beat the full leaf
+(end2 TRUNC-4-K8 − LEAF-K8 +0.016); the oracle critic itself was partly oracle (honest − oracle critic −0.014 /
+−0.011). Validity: the driver reproduces Phase 1 exactly with the true team (12 states, 93 actions, 0 mismatches); a
+driver bug was fixed before any read (Amendment 4).
+
+Implication (design doc §13): the bootstrap's first go / no-go (honest search beats the critic) FAILS today; the one
+honest signal is the end-state seed's one-ply critic search (+0.013) and 4-turn leaf (+0.017–0.020), to be read in
+games (S0b) before anything is built; a MOVE belief (Phase 2c) or oracle playouts as per-action VALUE labels (§13.8)
+are the routes that could change it.
+
+Tag: **MEASURED · REGISTERED VERDICTS · honest worlds · 2 checkpoints × ~580 states · CPU**

@@ -1,4 +1,10 @@
 {
+ "end2": {
+  "hidden_slot_species_in_true_hidden_set": 0.2199,
+  "hidden_slots": 10162,
+  "redrawn_move_slot_equals_true": 0.1653,
+  "redrawn_move_slots": 47709
+ },
  "prod": {
   "hidden_slot_species_in_true_hidden_set": 0.2201,
   "hidden_slots": 11041,

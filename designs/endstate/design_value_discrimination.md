@@ -4,10 +4,12 @@
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
 **Status (2026-10-11): DESIGN, REVIEWED AND REVISED the same day** (an independent adversarial review at the owner's
-request; §12 lists every change and what remains disputed). **The pilot RAN: Phase 1 (oracle world, both
-closing-test seeds 2001) is READ (§7.11: R-LEAF LEAF-AHEAD on both, +7–8 points per decision at 8 rollouts);
-Phase 2 (determinized worlds, §7.10 Amendments 2–3) is running** (`research_state/measurements/value_disc_pilot_2026-10-11/`);
-the reusable search module is `src/main/value_search/`. The only numbers measured under this doc
+request; §12 lists every change and what remains disputed). **The pilot RAN and is READ (§7.11–§7.12): in the ORACLE
+world an 8-rollout leaf beats the policy's pick by +7–8 points per decision (R-LEAF LEAF-AHEAD, both closing-test
+seeds 2001); in HONEST (determinized) worlds that gain is gone (R-HONEST NOT DETECTED, R-INFO INFO-COSTS): it was
+hidden information, mostly the opponent's moves. The bootstrap design is §13 (an in-loop search factory, decision
+brief at its top), the alternatives and the theoretical best §14** (`research_state/measurements/value_disc_pilot_2026-10-11/`;
+the reusable search module `src/main/value_search/`). The only numbers measured under this doc
 are the review's POST-HOC reads of BANKED rows (`research_state/measurements/value_disc_review_2026-10-11/`, §12.2):
 CPU, no playout run, no outcome of the pilot seen. §7 is the pilot's DRAFT pre-registration: it becomes a registration
 only when its own commit lands BEFORE the first playout and a ledger entry records it. §5's RNG findings are read from
@@ -21,6 +23,7 @@ playouts to the end (a label factory feeding training) stays DEFERRED under the 
 |---|---|
 | question (owner, 2026-10-11) | "We need at least an order of magnitude more rollouts to enable discrimination for search, which we can't get in the current regime. **Do we really?**" |
 | short answer (revised) | **Probably not for DECISIONS; yes only for RESOLVING pairs, which is the wrong target.** On banked Rustboro-era rows (the X5 blob arm, the Rust core, off-distribution Lane S states, an ORACLE world), picking the action an 8-rollout leaf likes best among all legal actions beats the policy's own pick by **+0.062 win probability per decision [+0.045, +0.079]**; 1 rollout already buys **+0.025 [+0.012, +0.037]**; the critic buys **+0.008 [−0.005, +0.021]** (§2.3). The old playout arm bought nothing in games because its ACTING RULE demanded each pair be RESOLVED at 2 SE and so acted on ~5 % of pairs at 4 rollouts. More rollouts do still pay (8 vs 1: **+0.037 [+0.025, +0.050]**), so the curve is not flat, but the first few rollouts carry most of the value and cheaper multipliers exist (a truncated leaf, a luck-adjusting control variate, a regret-aware acting rule). **Pairing (CRN) is measured, not predicted, at VRF ≈ 1.06–1.13 in today's dice mode** (§5.2). The training side is separate: a frozen-trunk READOUT refit on de-noised labels does not help (one checkpoint); a TRUNK trained on sibling targets is untested |
+| **the pilot (2026-10-11, measured)** | ORACLE world, the closing test's end-state and production seeds, 600 own states each: LEAF-K8 +0.081 / +0.071 per decision, the critic +0.026 / +0.012, still climbing at K16. HONEST worlds (8 Smogon-prior or belief-sampled worlds that replay our observations byte-equal): the gain is GONE (LEAF-K8 +0.007 / +0.004, not clear of 0 or of the critic; R-INFO +0.07 on both): the oracle's edge was hidden information, mostly the opponent's MOVES. The one honest signal: on the end-state seed the one-ply critic search +0.013 [+0.001, +0.026] and a 4-turn leaf +0.017–0.020, small and unproven in games (§7.11–§7.12, §13) |
 | the caveats that bound every number above | ORACLE world: the playouts know the opponent's real team and sets, and the critic does not (§3 row 5); determinization is DEFERRED (owner, 2026-09-23), so none of this transfers to the ladder yet. Off-distribution states for that checkpoint. A greedy-continuation truth, not Nash. A per-decision improvement is not a per-game win rate. POST-HOC on banked rows: the pilot re-measures it on the adopted end-state checkpoint's own states |
 | the RNG finding (re-verified) | ONE PRNG per battle (`BattleState.prng`, a port of Showdown's `prng.ts`); every die of both sides comes from it in execution order (47 direct call sites, 46 on the driver path, plus 7 `speed_sort` sites). A reseed at the branch shares the STREAM across siblings, not the roll-to-event MAPPING. Draw COUNTS depend on the action far more than the first draft said: speed-tie shuffles at every `eachEvent` when the two actives tie, two always-tied handler pairs, secondaries drawn into a KO, and in gen 3 ANY faint cancelling the rest of the turn (§5.1) |
 | the proposal | two COUNTERFACTUAL-ONLY dice modes, never reachable from training: **S1 per-turn reseed** (≈ 0.5–1 agent-day; the hook must sit BEFORE the end-of-turn Quick Claw roll) and **S2 counter-keyed draws** (≈ 2–3 agent-days; keys refined in §5.3). Both are equal IN LAW to normal play by construction (§5.4). **Demoted:** each is built only if the pilot says a FULL-length rollout leaf is still needed after the cheaper levers (§7.5 R-PAIR) |
@@ -619,9 +622,41 @@ win scale [95 %, battle-clustered], end2 / prod:
   the registered rule says build S1 (per-turn reseed). Its payoff is in pairwise comparisons (sequential halving,
   ranking two actions), less in an argmax over independent means.
 
-### 7.12 Phase 2 RESULTS (determinized worlds)
+### 7.12 Phase 2 and 2b RESULTS (HONEST worlds, 2026-10-11; README §7, `result_det.md`, `result_belief.md`)
 
-Running (2026-10-11); this section is filled when its rows are complete.
+8 gate-passed worlds per state (Smogon-prior species and sets; Phase 2b: species from the network's own X5 belief),
+Phase 1's dice seeds, against Phase 1's TRUE-world truth. 578 / 579 states (22 / 21 lacked 8 worlds).
+
+| read | end2 | prod |
+|---|---|---|
+| honest IMP CRITIC (one-ply in the worlds) | **+0.013 [+0.001, +0.026]** | +0.002 [−0.010, +0.014] |
+| honest IMP LEAF-K1 / K4 / K8 | −0.001 / +0.004 / +0.007 | −0.002 / −0.005 / +0.004 |
+| honest IMP TRUNC-4-K4 | **+0.017 [+0.002, +0.031]** | +0.008 [−0.008, +0.023] |
+| **R-HONEST** (det LEAF-K8 − det CRITIC) | −0.006 [−0.022, +0.010] **NOT DETECTED** | +0.002 [−0.012, +0.016] **NOT DETECTED** |
+| **R-INFO** (oracle − det LEAF-K8) | +0.072 [+0.057, +0.087] **INFO-COSTS** | +0.067 [+0.053, +0.080] **INFO-COSTS** |
+| retained share (det / oracle, K8) | 0.09 [−0.10, +0.26] | 0.05 [−0.17, +0.23] |
+| **R-HONEST-B** (belief worlds) | −0.006 [−0.020, +0.009] **NOT DETECTED** | −0.003 [−0.018, +0.012] **NOT DETECTED** |
+| **R-BELIEF** (belief − Smogon worlds, K8) | +0.001 [−0.014, +0.015] **NOT DETECTED** | −0.003 [−0.016, +0.009] **NOT DETECTED** |
+
+**What it says.**
+- **The oracle leaf's value is hidden information.** Honest rollouts keep ~5–9 % of it; R-INFO is clear on both
+  seeds. The prediction (R-HONEST LEAF-AHEAD at half the oracle) was wrong.
+- **It is the MOVES, not the species.** With 0–1 opponent slots unrevealed, the honest leaf is +0.019 / +0.014
+  against the oracle's +0.072 / +0.062; a Smogon world guesses a re-drawn move slot right 16 % of the time and a
+  hidden species 22 %; worlds whose species come from the network's own belief (47 % of its mass on true hidden
+  species) are no better (R-BELIEF NOT DETECTED on both seeds).
+- **In wrong worlds, shorter is better:** end2's 4-turn leaf beats its full leaf (+0.016 [+0.001, +0.031]; TRUNC-4-K8
+  honest +0.020 [+0.007, +0.035] under either sampler, the best honest read); the
+  critic, which reads only the TRUE observation, carries what is honestly knowable.
+- **The one honest signal:** on the END-STATE seed, the one-ply critic search (+0.013) and the 4-turn K4 leaf (+0.017)
+  improve the policy's pick with CIs just clear of 0; neither is clear of the other, and nothing is clear on
+  production. That is the "value + search beats the policy" signal the bootstrap needs, small and unproven in games
+  (§13.6, S0b).
+- **The oracle critic was also partly oracle:** its one-ply successor shows one turn of TRUE reveals; in honest worlds
+  the critic search loses −0.014 / −0.011 of its oracle value.
+- **Validity:** the Phase 2 driver reproduces Phase 1 exactly when handed the true team (12 states, 93 actions, 0
+  mismatches); a driver bug that refused states with a rewritten opponent move was fixed before any read
+  (Amendment 4).
 
 ---
 
@@ -798,36 +833,63 @@ collectors use, its worlds are sampled in the Rust core, and its outputs are ext
 buffer read by a SEPARATE auxiliary loss. PPO's objective and its behaviour policy are untouched: search changes
 LABELS, never the actions PPO learns from. The offline label factory is its stage-0 validation harness.
 
-**PERFORMANCE (measured, this pilot).** Per decision, over the raw policy's own pick, against held-out truth:
+**THE HEADLINE (read this first).** In FAIR worlds, search over our network does NOT yet clearly beat the network's
+own value. The large gains of rollout search (+7–8 points of win probability per decision) are HIDDEN INFORMATION:
+they vanish when the rollouts may not see the opponent's real team (R-INFO, both checkpoints), and mostly because
+they knew the opponent's MOVES. What survives honestly is small and sits at the critic's level: on the end-state seed
+the one-ply critic search and a 4-turn leaf improve the policy's pick by +1.3 and +1.7 points per decision (CIs clear
+of 0, barely), and no honest scorer is clearly better than the critic (R-HONEST NOT DETECTED); on production nothing
+is clear of 0. So the bootstrap's first stage FAILS its go / no-go for rollout search today, and the design below is
+kept as the vehicle for when a better opponent-set belief makes honest search pay, plus one cheap, in-scope signal
+worth a battery read now.
 
-| search (per decision) | ORACLE world end2 / prod | HONEST (determinized) end2 / prod |
+**PERFORMANCE (measured, this pilot).** Per decision, over the raw policy's own pick, against held-out truth
+[95 %]:
+
+| search (per decision) | ORACLE world end2 / prod | HONEST (8 Smogon-prior worlds) end2 / prod |
 |---|---|---|
-| critic one-ply (8 successors) | +0.026 / +0.012 | (pending: Phase 2 / 2b read) |
-| 4-turn leaf, 1 playout per action (≈ 65 rows) | +0.027 / +0.028 | (pending: Phase 2 / 2b read) |
-| 4-turn leaf, 4 per action (≈ 260 rows) | +0.052 / +0.037 | (pending: Phase 2 / 2b read) |
-| full leaf, 8 per action (≈ 3,550 rows) | +0.081 / +0.071 | (pending: Phase 2 / 2b read) |
+| critic one-ply (8 successors, ≈ 110 rows) | +0.026 / +0.012 | **+0.013 [+0.001, +0.026]** / +0.002 [−0.010, +0.014] |
+| 4-turn leaf, 1 playout per action (≈ 65 rows) | +0.027 / +0.028 | +0.005 [−0.011, +0.020] / −0.010 [−0.026, +0.005] |
+| 4-turn leaf, 4 per action (≈ 260 rows) | +0.052 / +0.037 | **+0.017 [+0.002, +0.031]** / +0.008 [−0.008, +0.023] |
+| full leaf, 8 per action (≈ 3,550 rows) | +0.081 / +0.071 | +0.007 [−0.008, +0.022] / +0.004 [−0.010, +0.019] |
 
-(pending: Phase 2 / 2b read)
+Worlds drawn from the network's own species belief instead (Phase 2b, prod): no better (R-BELIEF NOT DETECTED,
+−0.003 [−0.016, +0.009]). With the species KNOWN (0–1 unrevealed), the honest full leaf keeps only ~¼ of the
+oracle's gain: the opponent's hidden MOVES carry it (a Smogon world guesses a hidden move slot right 16 % of the
+time).
 
-**RELATIVE COST (§13.5; measured where marked, else ESTIMATE).** A 4-turn, 4-per-action search is ≈ 260 forward rows
-per decision: ≈ 16–29 GPU-ms on the inference service (0.063 ms per row MEASURED for production's T2 slot layout;
-×1.75 for the end state, ESTIMATE) plus ≈ 0.07 CPU-s of sim and glue and ≈ 0.08 CPU-s per determinized world
-(MEASURED with today's subprocess gate). Against ~1,700 training decisions per second, **f = 0.25 % adds ≈ 1,100
-rows/s ≈ +32 % of the inference service's rows (≈ +7–12 % of GPU time, ESTIMATE) and labels ≈ 37,000 decisions per
-15M-step run**; f = 1 % quadruples both. With today's subprocess world builder the CPU side (≈ 1.7 cores at f =
-0.25 % with 4 worlds per search) fits the 3 spare physical cores beside the trainer only at f ≤ 0.25 %; an in-Rust
-world builder (gap G5) is the precondition for f ≥ 0.5 %.
+**RELATIVE COST (§13.5; measured where marked, else ESTIMATE).** The one-ply critic search is ≈ 110 forward rows per
+decision (≈ 7–12 GPU-ms on the inference service: 0.063 ms per row MEASURED for production's slot layout, ×1.75 for
+the end state, ESTIMATE) plus 8 determinized worlds (≈ 0.08 CPU-s each with today's subprocess gate, MEASURED). The
+4-turn K4 leaf is ≈ 260 rows. Against ~1,700 training decisions per second, f = 0.25 % of decisions searched adds
+≈ 470 (critic) to 1,100 (4-turn K4) rows/s, +14 % to +32 % of the inference service's rows, ≈ +3 % to +12 % of GPU
+time (ESTIMATE), and labels ≈ 37,000 decisions per 15M-step run. Today's subprocess world builder fits the 3 spare
+physical cores beside the trainer only at f ≤ 0.25 %; an in-Rust builder (gap G5) is the precondition for more.
 
-**THE STORY (§13.2–13.4).** Search turns the network's own value into a better decision than its policy makes
-(measured above, in fair worlds); the completed-Q policy target and the search value are distilled into the network
-by an auxiliary loss; the stronger network is the next search's prior and critic, so the next targets are better.
-It improves rather than collapses because (i) with unbiased q the target is a policy improvement (Gumbel MuZero's
-theorem), (ii) where search cannot improve the prior the target EQUALS the prior and the aux loss goes quiet (the
-loop stalls, it does not corrupt), and (iii) every stage has a meter that catches the four ways it can degrade
-(§13.3) before the next stage costs anything. The search here is a one-ply best response to a MODELLED opponent, not
-an equilibrium method (§14 prices what that gives up).
+**THE STORY (§13.2–13.4).** Search turns the network's own value into a better decision than its policy makes; the
+completed-Q policy target (and a search value) are distilled into the network by an auxiliary loss; the stronger
+network is the next search's prior and critic. It improves rather than collapses because (i) with unbiased q the
+target is a policy improvement (Gumbel MuZero's theorem), (ii) where search finds nothing the target EQUALS the
+prior and the aux loss goes quiet (the loop stalls, it does not corrupt), and (iii) every stage has a meter (§13.3).
+**The measured caveat:** step (i) needs search to beat the prior in FAIR worlds, and today it does so only at the
+critic's level on the end-state seed. Two routes can change that: a sharper opponent-SET belief (the moves), which
+this harness measures cheaply (Phase 2c), and ORACLE playout labels used as targets for a per-action VALUE head
+rather than as a policy target (a regressor on oracle labels learns E[Q | what we observed], the honest value, from
+the data's true posterior; §13.8). The search here is a one-ply best response to a MODELLED opponent, not an
+equilibrium method (§14 prices what that gives up).
 
-**THE ASK.** (pending: Phase 2 / 2b read)
+**THE ASK.**
+1. **Do not build the in-loop factory's policy-target path yet**: its first go / no-go (honest rollout search beats
+   the critic) failed on both seeds.
+2. **Approve the cheap read that decides whether the honest one-ply signal is real in games (S0b):** the end-state
+   checkpoint with a one-ply honest critic search vs the same checkpoint raw, mirrored head-to-head, offline
+   (≈ 1–2 CPU-days, or a short GPU window). The search is one ply, so it fits the owner's scope rule.
+3. **Approve Phase 2c (≈ 0.5–1 agent-day + ≈ 6 CPU-h):** honest worlds whose opponent MOVES come from the
+   network's own per-slot move belief (X5); if it closes part of R-INFO's gap, rollout search becomes the bootstrap's
+   engine again.
+4. **Rule on §13.8** (oracle playout labels as targets for a per-action value head: the training-side scope rule
+   defers playouts in the loop, and the guard "never the trainer's true state" is right for POLICY targets but not
+   needed for value regression targets).
 
 ### 13.1 The loop, concretely
 
@@ -837,9 +899,11 @@ an equilibrium method (§14 prices what that gives up).
    belief + the Smogon set prior; the measured fallback is §7.10 Amendment 2's Smogon-prior sampler), gated by the
    byte-equal replay of the searched side's observations. **Never the trainer's true state:** an oracle label would
    teach the policy to act on information it cannot have.
-3. **Leaves:** per legal action, K playouts over the J worlds (sample k in world k mod J), greedy on both sides,
-   scored at the critic after d = 4 turns (§7.11: the cost-efficient leaf); uniform allocation (sequential halving
-   over the policy's top-4 measured no better at small budgets and worse at larger).
+3. **Leaves:** per legal action, the ONE-PLY critic over the J worlds (one successor per world; in the owner's
+   one-ply scope, and the only honest scorer clear of 0 on the end-state seed), or K playouts scored at the critic
+   after d = 4 turns (§7.11's cost-efficient leaf; honest +0.017 on end2, not clear of the critic; needs a ruling and
+   Phase 2c); uniform allocation (sequential halving over the policy's top-4 measured no better at small budgets and
+   worse at larger).
 4. **Targets:** π′ = softmax(logit + (50 + K)·c·q̃(completed)), c = 1.0 (the `mctx` default 0.1 under-trusts the leaf
    and lost 1–3 points; at c ≥ 1 sampling π′ recovers the full argmax gain, `target_scale_read.json`, post-hoc);
    v′ = Σ π′·completed q. Columns: π′ [11], v′, the budget, J, the weights version, a `searched` flag.
@@ -882,8 +946,8 @@ an equilibrium method (§14 prices what that gives up).
 
 | stage | what | go / no-go | cost (ESTIMATE unless marked) |
 |---|---|---|---|
-| **S0** (DONE) | this pilot: oracle + honest IMP; `main.value_search` | honest IMP lower bound > 0 at a realistic budget: (pending: Phase 2 / 2b read) | ≈ 30 CPU-h, no GPU (MEASURED) |
-| **S0b** offline battery (OWNER approval) | search-player vs raw-player, mirrored h2h, same checkpoint, honest worlds, 4-turn / 4-per-action | h2h gain lower bound > +4.57 pp (the replicate floor) | ≈ 1 CPU-day at f = 1 (every decision searched), or a GPU window |
+| **S0** (DONE) | this pilot: oracle + honest IMP; `main.value_search` | honest search beats the critic at a realistic budget: **FAILED** (R-HONEST NOT DETECTED on both seeds; only end2's one-ply critic +0.013 and 4-turn K4 +0.017 are clear of 0, neither clear of the other) | ≈ 30 CPU-h, no GPU (MEASURED) |
+| **S0b** offline battery (OWNER approval) | the end-state checkpoint with the one-ply honest critic search (8 worlds) vs the same checkpoint raw, mirrored h2h | h2h gain lower bound > +4.57 pp (the replicate floor) | ≈ 1 CPU-day at f = 1 (every decision searched), or a GPU window |
 | **S0c** offline label factory | label N = 50k states of the adopted arm's own self-play on idle CPU; no training | held-out IMP of argmax π′ ≥ S0's; label throughput ≥ S2's need | ≈ 1 agent-day build (reuses the module) + idle CPU |
 | **S1 SHADOW** | the in-loop factory at f = 0.25 %, logs only (`search/*`) | `search/imp` lower bound > 0 over a 15M run; fps cost ≤ 5 % | build ≈ 3–5 agent-days (gaps G1–G6); one GPU run |
 | **S2 LABELS** | the aux loss at f = 0.25–1 %, λ ramp gated on S1's meter | the pre-registered A/B (§13.7) | ≈ 1–2 agent-days more; the A/B's GPU |
@@ -910,30 +974,47 @@ At a 4-turn K4 search (260 rows, J = 4 worlds):
 | 0.25 % | 4.3 | 1,100 (+32 %) | ≈ +7–12 % | 1.7 → 0.4 cores | 37k |
 | 1 % | 17 | 4,400 (+130 %) | ≈ +28–48 % | 6.5 → 1.6 cores | 150k |
 
-(GPU time = extra rows × 0.063–0.11 ms; today's inference is ≈ 3,400 rows/s × 0.063 ms ≈ 21 % of GPU time, ESTIMATE. CPU = worlds (4 × 0.08 CPU-s per search, MEASURED subprocess; in-Rust assumed 10× cheaper, ESTIMATE) + 0.25 ms per row.) **Recommendation:** S1 SHADOW at f = 0.25 %, 4-turn K4,
-J = 4; S2 at f = 0.5 % once the in-Rust world builder (G5) lands; never f > 1 % without a fresh fps read. The
-trainer's 5 physical cores are respected at every row of the table only with G5.
+(GPU time = extra rows × 0.063–0.11 ms; today's inference is ≈ 3,400 rows/s × 0.063 ms ≈ 21 % of GPU time, ESTIMATE. CPU = worlds (4 × 0.08 CPU-s per search, MEASURED subprocess; in-Rust assumed 10× cheaper, ESTIMATE) + 0.25 ms per row.) **Recommendation:** S1 SHADOW with the one-ply honest critic search (≈ 110 rows, 8 worlds) at f = 0.25 %, after
+S0b reads a game-level gain; the 4-turn leaf only as a second shadow arm after the owner's ruling and Phase 2c; S2
+at f = 0.5 % once the in-Rust world builder (G5) lands; never f > 1 % without a fresh fps read. The trainer's 5
+physical cores are respected at every row of the table only with G5.
 
 ### 13.6 From per-decision improvement to win rate (UNVERIFIED projection; the battery measures it)
 
 Performance-difference lemma: V^{π′}(s₀) − V^{π}(s₀) = Σ_t E_{s_t ∼ π′}[Q^π(s_t, π′(s_t)) − V^π(s_t)], with the
-opponent fixed at π. The bracket is the per-decision IMP (relative to π's greedy pick). Summed over a game's ~25–30
-own decisions, an honest IMP of (pending: Phase 2 / 2b read) per decision is far beyond what a win probability can absorb: the
-projection SATURATES, so the honest search-player should win most mirrored games against the raw player — unless IMP
-on the search-player's own trajectories is much smaller than on these eval-trace states (it shrinks as positions
-become decided) or the honest q noise flips more decisions than measured. Wang's 80.9 % is the only public calibration
-point. **What IMP must be for distillation to pay:** the S0b battery's h2h gain must clear the 4.57 pp replicate floor
-(below it, no distilled fraction of it could be read in a strength A/B), and the S1 shadow IMP must stay > 0 on
-fresh checkpoints (search must keep beating the prior it is distilled into).
+opponent fixed at π. The bracket is the per-decision IMP (relative to π's greedy pick), so a search-player gains, over
+its game's ~25–30 own decisions, the SUM of its per-decision improvements, saturating at a won game. The oracle's
++0.07–0.08 per decision would saturate at once (a search that knows the opponent's team should crush the raw
+policy; Wang's 80.9 % is the public calibration point, with the same caveat). The HONEST +0.013 (end2, one-ply critic)
+summed over ~25 decisions projects to roughly +0.1–0.3 in head-to-head win probability before the shrinkage of IMP
+on the search-player's own trajectories, and the CI's lower end (+0.001) projects to almost nothing. That spread is
+why S0b measures it rather than this doc asserting it. **What IMP must be for distillation to pay:** S0b's mirrored
+h2h gain must clear the 4.57 pp replicate floor (below it, no distilled fraction could be read in a strength A/B),
+and the honest IMP must stay > 0 on fresh checkpoints (search must keep beating the prior it is distilled into).
 
 ### 13.7 The pre-registered first A/B (DRAFT; registered only when its commit lands before any seed)
 
-Factory ON (S2: f = 0.5 %, 4-turn K4, J = 4, λ_π ramped from 0 to 0.1 over 2M steps after the S1 gate, λ_v = 0)
+Factory ON (S2: f = 0.5 %, the search arm S0b and S1 passed (today: the one-ply honest critic search, J = 8), λ_π ramped from 0 to 0.1 over 2M steps after the S1 gate, λ_v = 0)
 vs OFF, ONE lever, on the adopted arm's recipe, 8 seeds per arm, 15M steps, read on the closing test's mirrored 8×8
 h2h cross and rule. Secondary: the raw policy's IMP gap (search's gain over the policy should SHRINK in the ON arm:
 the policy absorbed it); `main.best_response_gap` at matched exploiter budget; fps. Cost ≈ 16 seeds × ~3 GPU-h.
 
-### 13.8 The architecture end state, and the gaps from today's code
+### 13.8 The route the data favour: oracle playouts as VALUE labels (DESIGN, needs an owner ruling)
+
+Phase 2 shows the oracle's edge is hidden information, unusable at DECISION time. As a TRAINING target it is a
+different matter: a regressor trained on Q_oracle(s, a) = the outcome of action a played out from the TRUE state
+converges to E[Q_oracle(s, a) | the observation], which is exactly the honest one-ply value under the TRUE posterior
+of the game's own data (better than any sampler we have). So oracle playouts can teach a per-action value head
+(`design_q_head.md`; lever (j)) what the honest search cannot compute, without ever acting on hidden information: the
+network learns to EXPECT what the playouts know. A POLICY target from an oracle search is different (an average of
+per-world best responses, strategy fusion), which is why the factory's policy path stays honest-worlds-only. The
+one related test was null: a FROZEN-trunk readout refit on 8-rollout oracle labels of the critic's successors did not
+gain sibling ranking (`crn_label_refit_2026-10-06/`); a per-action head on the root with the trunk TRAINING is
+untested. Cost: the label is a full or 4-turn oracle playout per action, the same factory and cost table, with no
+world sampling at all (the cheapest form). It conflicts with the owner's 2026-09-30 deferral of in-loop playouts and
+needs his ruling; an OFFLINE label factory over recorded decisions (S0c) is the in-scope first step.
+
+### 13.9 The architecture end state, and the gaps from today's code
 
 **End state:** the factory is a CLIENT of the trainer's inference service (`agents/inference/service/`), not a
 separate process with a stale checkpoint (the deleted counterfactual producer's failure). Its requests enter the
@@ -1027,7 +1108,59 @@ BOTH strength (the h2h cross) and exploitability (`main.best_response_gap` at ma
 non-inferior strength AND a lower gap. It is the equilibrium-direction lever that fits our compute; it is not built
 and not registered.
 
-### 14.4 The decision-rationale table (the whole doc)
+### 14.4 The per-turn MATRIX-GAME solve (a simultaneous-move one-ply equilibrium; owner discussion 2026-10-11)
+
+**The idea.** Gen-3 turns are SIMULTANEOUS: both sides choose, then the turn resolves. Instead of best-responding to
+the modelled opponent's one predicted action (what this doc's search does: the opponent's open root decision is the
+network's greedy choice), estimate Q(our action a, their action b) for the joint pairs, prune each side to its top-k
+(Gumbel-style, e.g. 4 × 4 = 16 pairs) over belief-sampled worlds, and SOLVE the k × k zero-sum matrix game (an LP or
+regret matching: microseconds) for a MIXED strategy over our actions. Compare: the best response to the opponent-intent
+head's distribution over b, and the pure maximin ("safest").
+
+**Who has done it (verified 2026-10-11).**
+- **Foul Play shipped it in 2019** (pmariglia/foul-play, commits `c5e7a78` "nash" and `762195e` "configureable nash or
+  safest", `showdown/decide.py`, `showdown/engine/select_best_move.py`): `get_payoff_matrix` filled (our move, their
+  move) with a heuristic evaluation after a 1–2-turn expectiminimax; `DECISION_METHOD="safest"` took the pure maximin,
+  and `"nash"` solved each sampled world's matrix (Gambit's `gambit-enummixed`, nashpy), averaged our mixed strategy
+  across worlds and SAMPLED it. The author's own comment: "This is the WRONG way to find a Nash Equilibrium from
+  different potential games … should be modelled properly based on incomplete information (see Harsanyi
+  Transform)"; the README called it experimental and recommended "safest". The Nash bot was deleted in 2024
+  (`3b22d97`), the minimax bot in 2025 (`4a07757`); today's Foul Play is decoupled-UCB MCTS only. `poke-engine` exposes
+  expectiminimax with `pick_safest` (maximin) and MCTS, no Nash solver.
+- **Sarantinos 2022** ("Teamwork under extreme uncertainty: AI for Pokémon ranks 33rd in the world", arXiv
+  2212.13338): a 2-turn lookahead building a payoff matrix per node and pruning dominated strategies, then a
+  BEST RESPONSE to a regret-minimisation predictor of the opponent's move; no Nash solve.
+- A Radboud thesis ("Nash equilibrium estimation in competitive Pokémon using search and supervised learning")
+  reports a per-turn payoff matrix from search plus an evaluation network; its solver and results are UNVERIFIED
+  (full text unreachable).
+
+**The soundness limit.** A one-ply matrix solved over Q averaged across OUR sampled worlds is not an equilibrium of
+the real game: the opponent's information differs from ours (it knows its own team and has its own belief about
+ours), so the optimal strategy at this turn depends on parts of the game outside the one-ply subgame (non-locality;
+Brown & Sandholm 2017 on safe subgame solving), and averaging per-world solutions lets our strategy differ across
+worlds the opponent cannot tell apart (strategy fusion). It hedges the simultaneous-move guess within the turn; it
+does not make the policy unexploitable.
+
+**The framing (owner, 2026-10-11).** In extensive-form game theory a simultaneous move IS hidden information (each
+side moves without seeing the other's choice), so one formalism, and CFR, covers both. The scalable search
+methods patch one dimension each: SM-MCTS with regret matching handles the simultaneity, IS-MCTS the hidden
+state. ReBeL handles both soundly, and its crux is the SIZE of the private information it must carry in the public
+belief state: 1,326 hands per player in hold'em versus per-mon sets to the 6th power here (§14.2). A "factored ReBeL"
+over per-mon marginals (like X5's hypothesis tokens) is open research, not a build.
+
+**Cost vs this doc's search, and the measurement.** Our Phase 1 / 2 data hold ONE opponent root action per
+playout (the network's greedy answer), so no joint-action Q exists and the mixed-vs-pure gap cannot be read from
+them. A future measurement: on the same states, k × k = 16 joint pairs × K playouts per pair over J honest worlds
+(the playout core would need to accept a FORCED opponent root action; today it branches the searched side only).
+At K = 4, 4-turn leaves: 16 × 4 × ≈ 8–9 rows ≈ 550 rows per decision, ≈ 2× the recommended one-ply search (≈ 260
+rows); with full leaves ≈ 3,800 rows. Read: IMP of the mixed strategy (its expected truth under the opponent's
+GREEDY reply and under its intent-head distribution) vs the pure best response and the maximin. Cost ≈ 1 agent-day
+(the forced-opponent root in the playout API + the solver) + ≈ 2× Phase 1's CPU. Not built; it ranks below the
+belief-sampler work because the opponent here plays a fixed (greedy) policy, against which a best response is
+already optimal; a mixed strategy pays only against an ADAPTIVE opponent (people, exploiters), which the
+exploitability meters (§14.3) measure.
+
+### 14.5 The decision-rationale table (the whole doc)
 
 | decision | alternatives | why chosen | what we give up | trigger to revisit |
 |---|---|---|---|---|
@@ -1038,7 +1171,7 @@ and not registered.
 | rejection by byte-equal observation replay under the TRUE pre-root dice | a state constructor in the Rust core; marginalising the pre-root dice | no new parity-critical crossing; rejection IS conditioning on observations | residual leaks (a seen mon's hidden stats, the construction-draw class) | R-INFO's gap concentrated in leak classes, or acceptance collapsing |
 | one-ply best response to a modelled opponent | equilibrium search (ReBeL, Student of Games, SM-MCTS with regret matching) | fits one box and our PPO loop; measurably improves decisions now | exploitability; mixing; information hiding (§14.1) | `main.best_response_gap` stops falling, or exploiters find cheap, durable wins |
 | uniform allocation + argmax (Gumbel score at c = 1.0) | Gumbel MuZero's sequential halving over the top-k at `mctx` defaults | measured: the prior-aware rule lost 1–3 points and top-4 halving lost at B ≥ n·4 (§7.11) | budget concentration on contenders | a budget regime where SH over ALL legal actions wins (end2 at B = n·1: +0.017) |
-| a 4-turn leaf for the factory | the full leaf; the critic alone | half the full leaf's value at a seventh of the cost; 1–2 turns add nothing over the critic | the rest of the full leaf's value | honest-world R-TRUNC, or a cheaper GPU forward making the full leaf affordable |
+| the one-ply honest critic search for the factory's first arm; the 4-turn leaf second | the full rollout leaf | in honest worlds nothing beats the critic clearly, the one-ply form fits the owner's scope rule, and the full leaf's oracle value is hidden information (§7.12); in the oracle world the 4-turn leaf is the cost-efficient one | the oracle-world leaf value, which no honest player has | honest-world R-TRUNC, or a cheaper GPU forward making the full leaf affordable |
 | search changes LABELS, not actions, in training | acting with search (S3) | keeps PPO on-policy (no wrong importance ratios) and keeps the PPO objective separate from search's findings | stronger play during collection | never for training; evaluation and live play may act |
 | an IN-LOOP factory as a client of the inference service | an offline label factory; a separate producer process | the owner's shape: one batcher, current weights, a smooth knob; the separate producer's stale checkpoints were the failure | isolation from the trainer's throughput | an fps cost > 5 % at the chosen f |
 | no S1 / S2 dice modes yet | build S1 (R-PAIR's registered consequence) | an argmax over independent means gains little from pairing; the measured acting rule does not compare pairs | ~0.2–0.4 of a turn's luck in pairwise comparisons | adopting sequential halving or any pairwise rule |
@@ -1055,3 +1188,4 @@ and not registered.
 | 2026-10-11 | **PILOT REGISTERED (§7.10 Amendment 1), owner brief "make any decisions to gather data useful for design or our roadmap"** | Both closing-test seeds 2001 (end2 at `62085750`, prod at `95d014fa`), each at its own pin and on its own eval-trace states (600 each, gap quintiles); seeds 0–15 leaf / 16–39 truth / 40–47 critic; added scorers LEAF-K16, TRUNC at K up to 16, the AIVAT-style branch-turn control variate CV-K; acting rules defined before any outcome (ARGMAX, PRIOR-k, GUMBEL with `mctx` defaults, PUCT, sequential halving at matched budgets, the old 2·SE gate); R-PRIOR and R-SH added as secondary rules | waiting for the closing-test verdict to pick one arm (both are read instead, so the end-state critic's decision value and production's are both measured); the Lane S bank (off-distribution); the per-turn AIVAT form (needs extra dice samples per turn: deferred) | `research_state/measurements/value_disc_pilot_2026-10-11/README.md`; ledger 2026-10-11 REGISTRATION |
 | 2026-10-11 | **PHASE 2 REGISTERED (§7.10 Amendment 2): determinized worlds, offline** | 16 Smogon-prior worlds per state, rejection by byte-equal replay of the searched side's observations; Phase 1's scorers re-measured against the true world's truth; R-HONEST (honest leaf vs honest critic) and R-INFO (oracle vs honest leaf) registered | the model's own belief (X5 hypothesis tokens) as the sampler (a decoder for sampling sets from the network's belief is a bigger build, and the Smogon prior is the owner's prior rule); a fresh state constructor in the Rust core (a parity-critical crossing; rejection over the true log needs none); full determinization of a seen mon's item / EVs / nature (they shape the observed history, so the byte-equal gate would reject almost every redraw) | `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §8; ledger 2026-10-11 REGISTRATION "PHASE 2" |
 | 2026-10-11 | **PHASE 1 READ (oracle world)** | R-LEAF LEAF-AHEAD on both seeds (LEAF-K8 − CRITIC +0.055 / +0.059); R-K STILL CLIMBING; R-TRUNC NONE; R-PRIOR PRIOR HURTS; R-SH NOT DETECTED; R-PAIR ALIGNMENT-LOSS SIGNATURE. The search module's DEFAULT acting rule becomes a uniform-allocation ARGMAX (the measured best), with Gumbel's rule kept as an option; the 4-turn truncated leaf is the cost-efficient leaf (half the value at a seventh of the cost); S1 (per-turn reseed) is now indicated by the registered rule | Gumbel's prior-aware rule at the `mctx` defaults and top-k sequential halving as the default (both measured WORSE here); the AIVAT branch-turn CV (no gain); building S2 before S1 | §7.11; `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §6; ledger 2026-10-11 "PHASE 1" |
+| 2026-10-11 | **PHASE 2 / 2b READ (honest worlds) and the bootstrap brief (§13) + alternatives (§14) written** | R-HONEST NOT DETECTED and R-INFO INFO-COSTS on both seeds; R-HONEST-B and R-BELIEF NOT DETECTED on both: the oracle leaf's +0.07–0.08 is hidden information (mostly the opponent's moves). §13's brief: do NOT build the in-loop factory's policy-target path yet (S0 failed); read the one honest signal (end-state one-ply critic search +0.013) in games first (S0b battery, owner approval); Phase 2c (worlds from the network's MOVE belief) decides whether rollout search can pay; oracle playouts as per-action VALUE labels (§13.8) is the route the data favour and needs the owner's scope ruling. The search module's defaults moved to the measured best (uniform, c_scale 1.0, depth 4) | building the in-loop factory now (no honest gain to distil); oracle POLICY targets (strategy fusion; unexecutable); the Smogon-prior or species-belief samplers as sufficient (both measured null) | §7.12; README §7; ledger 2026-10-11 "PHASE 2"; `src/main/value_search/` |

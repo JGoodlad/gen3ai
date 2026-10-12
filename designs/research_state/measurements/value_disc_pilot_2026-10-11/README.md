@@ -1,8 +1,8 @@
 # The value-discrimination pilot (2026-10-11): oracle-world decision improvement on the end-state and production seeds
 
-**Status: REGISTERED, not yet run.** This README is the pilot's pre-registration (a copy of
-`designs/endstate/design_value_discrimination.md` §7 as amended by §7.10 Amendment 1). Results go in §6 and
-`result.md` once the rows exist. Nothing below §5 has been read.
+**Status: RUN AND READ (2026-10-11).** Phase 1 (oracle world) §6; Phase 2 / 2b (honest worlds) §7. This README
+also holds the pre-registration (a copy of `designs/endstate/design_value_discrimination.md` §7 as amended by §7.10
+Amendments 1–5): §2–§5 and §8.
 
 ## 1. In plain language
 
@@ -146,6 +146,54 @@ forward (6 logical CPUs; the forward is ~95 % of it).
 - **Cost (measured, contended CPU):** a full playout is ~28 turns and ~60 forward rows (both sides); all-in CPU per
   row 6.1 ms (end2) / 3.5 ms (prod); the critic's one-ply successors 0.66 / 0.44 CPU-s per decision.
 
+## 7. Phase 2 and 2b results (HONEST worlds; `result_det.md` / `.json`, `result_belief.md` / `.json`)
+
+**In plain language.** When the rollouts may NOT peek at the opponent's real team — they play out in 8 guessed
+teams that agree with everything our side has seen — the rollout search's whole advantage disappears: it improves
+on the network's own pick by 0–2 points of win probability per decision, about what the critic alone does, and
+nothing is clearly better than the critic. Guessing the opponent's Pokémon from the network's own belief instead of
+Smogon usage does not help. The oracle's 7–8 points were almost all knowledge of the opponent's real moves and
+sets: even when (nearly) every opponent Pokémon has been seen, honest rollouts recover only about a quarter of it.
+Shorter rollouts do better than long ones in guessed worlds (the further you play a wrong world, the more it is the
+wrong world that decides).
+
+IMP over the policy's pick against the TRUE world's 24 truth seeds; 8 worlds per state (Amendment 3); [95 %].
+
+| scorer (ARGMAX) | end2 honest (Smogon worlds) | end2 oracle, same states | prod honest (Smogon) | prod honest (BELIEF worlds, 2b) | prod oracle |
+|---|---|---|---|---|---|
+| CRITIC (one-ply, in the worlds) | **+0.013 [+0.001, +0.026]** | +0.027 | +0.002 [−0.010, +0.014] | +0.004 [−0.008, +0.016] | +0.012 |
+| LEAF-K1 | −0.001 [−0.011, +0.009] | +0.034 | −0.002 [−0.010, +0.006] | +0.002 [−0.007, +0.010] | +0.027 |
+| LEAF-K4 | +0.004 [−0.009, +0.019] | +0.067 | −0.005 [−0.016, +0.008] | +0.008 [−0.005, +0.020] | +0.058 |
+| LEAF-K8 | +0.007 [−0.008, +0.022] | +0.079 | +0.004 [−0.010, +0.019] | +0.001 [−0.013, +0.016] | +0.070 |
+| TRUNC-4-K1 | +0.005 [−0.011, +0.020] | +0.026 | −0.010 [−0.026, +0.005] | +0.003 [−0.012, +0.017] | +0.027 |
+| **TRUNC-4-K4** | **+0.017 [+0.002, +0.031]** | +0.052 | +0.008 [−0.008, +0.023] | +0.008 [−0.006, +0.023] | +0.036 |
+| MIX-K8 | +0.014 [−0.001, +0.029] | +0.087 | −0.001 [−0.016, +0.015] | −0.001 [−0.014, +0.014] | +0.075 |
+| GUMBEL∘LEAF-K8 (c 0.1) | +0.013 [+0.001, +0.025] | — | −0.001 [−0.011, +0.010] | +0.002 [−0.008, +0.012] | +0.040 |
+
+| rule | end2 | prod | verdict |
+|---|---|---|---|
+| **R-HONEST** (det LEAF-K8 − det CRITIC) | −0.006 [−0.022, +0.010] | +0.002 [−0.012, +0.016] | **NOT DETECTED** (both) |
+| **R-INFO** (oracle − det LEAF-K8) | +0.072 [+0.057, +0.087] | +0.067 [+0.053, +0.080] | **INFO-COSTS** (both) |
+| retained share (det / oracle, LEAF-K8) | 0.09 [−0.10, +0.26] | 0.05 [−0.17, +0.23] | descriptive |
+| det TRUNC-4-K8 − det LEAF-K8 | +0.016 [+0.001, +0.031] | −0.005 [−0.019, +0.008] | descriptive |
+| det CRITIC − oracle CRITIC (one turn of TRUE reveals in the oracle successor) | −0.014 [−0.025, −0.004] | −0.011 [−0.020, −0.000] | descriptive |
+| **R-HONEST-B** (belief worlds: LEAF-K8 − CRITIC) | −0.006 [−0.020, +0.009] | −0.003 [−0.018, +0.012] | **NOT DETECTED** (both) |
+| **R-BELIEF** (belief − Smogon worlds, LEAF-K8) | +0.001 [−0.014, +0.015] | −0.003 [−0.016, +0.009] | **NOT DETECTED** (both) |
+
+- **Where the oracle value lives:** by unrevealed opponent slots, honest LEAF-K8 vs oracle: 0–1 unrevealed +0.019 /
+  +0.072 (end2), +0.014 / +0.062 (prod); 4–5 unrevealed +0.008 / +0.082, −0.007 / +0.072. Even with the species
+  known, the honest leaf keeps ~¼: the hidden MOVES (≈ 10 move slots re-drawn per world) carry most of the oracle's
+  edge. A Smogon world puts a true hidden species in a never-seen slot 22 % of the time and the true move in a
+  re-drawn move slot 16 % of the time (`world_accuracy_read.json`); the network's own species belief puts 47 % of its
+  mass on true hidden species (`belief_accuracy_prod.json`) yet buys nothing in IMP (R-BELIEF), consistent with the
+  moves, not the species, being what matters.
+- **Validity:** the driver reproduces Phase 1's outcomes exactly when handed the TRUE team (12 prod states, 93
+  actions, 0 mismatches, `det_identity_check_prod.json`); 21–22 states per checkpoint lacked 8 gate-passed worlds and
+  are excluded (3.5 %). World building: ≈ 2.6 tries per world.
+- **Predictions:** R-HONEST predicted LEAF-AHEAD at half the oracle: WRONG (≈ 0); R-INFO INFO-COSTS: right; R-BELIEF
+  predicted HELPS: WRONG on both. End2's best honest scorer is TRUNC-4-K8, +0.020 [+0.007, +0.035] under either
+  sampler (descriptive).
+
 ## 8. Phase 2: DETERMINIZED worlds (registered by the design doc's §7.10 Amendment 2)
 
 **In plain language.** Phase 1's rollouts cheat: they play from the true battle, so they know the opponent's
@@ -179,5 +227,9 @@ between Phase 1 and Phase 2 is the price of not knowing the opponent's team (par
 | `score.py` | Phase 1's read: every scorer × rule, strata, costs, pairing, verdicts → `result.json`, `result.md` |
 | `determinize.py`, `det_worlds.py`, `det_debug.py` | Phase 2's sampler + gate, the per-state world builder (archive `<cp>/det/worlds_*.jsonl`), a debug aid |
 | `run_det_playouts.py`, `score_det.py` | Phase 2's lockstep driver (archive `<cp>/det/rows_*.jsonl`) and read → `result_det.json`, `result_det.md` |
+| `phase2.sh` | one checkpoint's worlds then playouts in one capped job (`--belief` = Phase 2b into `<cp>/det_b/`) |
+| `score_belief.py` | Phase 2b's read (belief vs Smogon vs oracle on common states) → `result_belief.json`, `result_belief.md` |
+| `det_identity_check.py` | the Phase 2 driver's teeth: the TRUE team as every world reproduces Phase 1 → `det_identity_check_prod.json` |
+| `target_scale_read.py`, `world_accuracy_read.py`, `belief_accuracy_read.py` | POST-HOC / descriptive reads (the Gumbel σ scale; how often a world guesses a hidden species / move; the network's species belief) → their `.json` |
 
 Bulk: `~/gen3ai_archive/value_disc_pilot/`.
