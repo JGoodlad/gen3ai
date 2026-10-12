@@ -71,6 +71,8 @@ Speed (the pooled quiet `train_ms` ratio) is REPORTED, never decides.
   Δ̂ ± t_{0.95,6} √V̂, t_{0.95,6} = 1.9432.
 - **STOP for futility iff the interval's upper end < −2.0 pp.** Rule 8: an upper end within 1e-9 pp of −2.0 does NOT stop.
 - No other stage-1 outcome is read (no early PASS).
+- **The coded rule** (2026-10-12, before any cell): [`futility_rule.py`](../research_state/measurements/bf16_strength_ab_2026-10-12/futility_rule.py)
+  `decide`, with its self-check (CONTINUE / STOP / the rule-8 tie on constructed matrices).
 
 ## 5. Stage 2, the READ (on no futility stop)
 
