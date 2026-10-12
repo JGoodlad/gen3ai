@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,485-line file. **The ledger itself is append-only and is never edited by this**;
+24,510-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**852 headings · 797 dated · 2026-08-01 → 2026-10-11 · ledger 24,485 lines.**
+**853 headings · 798 dated · 2026-08-01 → 2026-10-11 · ledger 24,510 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -872,3 +872,4 @@ rename.
   - `L24425` · `2026-10-11` · REGISTRATION · **VALUE-DISCRIMINATION PILOT PHASE 3: an OFFLINE per-action VALUE HEAD on the frozen end-state checkpoint, fit on ORACLE playout labels (the honest information-set value in expectation), acting with NO rollout at decision time**
   - `L24439` · `2026-10-11` · REGISTRATION · **THE HIDDEN-INFORMATION BINDING STUDY: is "the opponent's moves are the binding constraint" true? An adversarial attribution of the oracle − honest search gap, registered before any arm was run or read**
   - `L24467` · `2026-10-11` · DESCRIPTIVE · **HIDDEN-INFO STUDY, the registered descriptive reads D1–D8: the pilot's honest search keeps about HALF the oracle's edge when all six opponent mons are seen and NOTHING when one is unseen — the never-seen mons and the seen mons' hidden moves both carry the gap; "it is the MOVES, not the species" is QUALIFIED**
+  - `L24485` · `2026-10-11` · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 3 (offline per-action VALUE HEAD on oracle labels): NULL — a head on the frozen end-state body, fit on 2 oracle playouts per action of 9,629 states, does not beat the policy's pick (−0.004 [−0.016, +0.009], R-QHEAD NOT DETECTED) and is worse than the honest one-ply critic search (−0.018 [−0.032, −0.004], R-QHEAD-CRITIC BEHIND); the labels are 83 % dice noise; the network's own ride-along A head, used as a scorer, gains +0.010 [+0.001, +0.020] at zero cost (descriptive)**
