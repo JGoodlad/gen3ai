@@ -584,6 +584,94 @@ presence puts 47 % of its mass on the true hidden species (top-k recall 60 %; `b
 3. **Prediction:** R-BELIEF HELPS; R-HONEST-B NOT DETECTED or a small LEAF-AHEAD (the sets still come from the
    Smogon prior, and §7.12 found the move slots matter).
 
+**Amendment 6 (2026-10-11, PHASE 2c REGISTERED: worlds whose hidden MOVES come from the network's OWN move belief;
+written AFTER the Phase 2 / 2b reads (§7.12) and BEFORE any Phase 2c playout was played; the 2c worlds were built
+and a descriptive move-hit read that uses no outcome was run first, disclosed in 4).** Motivation: §7.12 found the
+oracle's edge is the opponent's hidden moves. Full text: the measurement README §10.
+
+1. **Sampler C** (archive `<cp>/det_c/`): a never-seen slot draws its species ∝ the network's X5 species presence
+   (Phase 2b's); a SEEN mon's unseen move slots, and a never-seen slot whose drawn species is one of the root's
+   HYPOTHESIS species, draw their moves from the network's own per-mon move presence: the X5 op roster's `move_w`
+   (`hypothesis_tokens.OpRoster`; π_m = σ(a + τ) over the species' legal moves minus its revealed ones, Σ π_m = 4 − r,
+   a = the composed move posterior: the Smogon prior fused with the network's learned correction), read from one CPU
+   forward per root at the pin (`move_belief.py`). The draw is a conditional-Poisson fixed-size sample (independent
+   presences conditioned on the count: the natural sampler for fixed-mass marginals); only moves the pin's engine
+   runs; at most one Hidden Power, and on a seen mon only of its kept IV type. A never-seen slot's item, ability and
+   spread stay Smogon; every Phase 2 leak stays. **8 worlds built per state (the 8 played), ≤ 60 tries each** (was 30:
+   more tries change only the attrition, not the conditional distribution). Gate, slot rewrites, dice seeds, the
+   honest critic's seeds, the referee and every scorer: Phase 2's.
+2. **Ceiling arm 2c-T** (archive `<cp>/det_ct/`): sampler C, but every SEEN mon keeps its TRUE set: a perfect move
+   belief for the revealed mons. It prices those moves (an upper bound on what any better belief about the revealed
+   mons' moves can buy here).
+3. **Rules** (states every compared arm played; Phase 1's rule-8 band):
+   - **R-MOVES (primary of 2c):** IMP(det-C LEAF-K8) − IMP(det-B LEAF-K8): HELPS (lower > +0.0005) / HURTS (upper <
+     −0.0005) / NOT DETECTED.
+   - **R-HONEST-C:** IMP(det-C LEAF-K8) − IMP(det-C CRITIC): LEAF-AHEAD / CRITIC-EQUIVALENT (inside ±0.01) / NOT
+     DETECTED.
+   - **R-MOVES-CEILING:** IMP(det-CT LEAF-K8) − IMP(det-C LEAF-K8): HELPS / HURTS / NOT DETECTED.
+   - Descriptive: CRITIC, TRUNC-4-K4, TRUNC-4-K8 and LEAF-K8 in the A / B / C / CT / oracle worlds on common states; the
+     CLOSED SHARE of the oracle − honest gap, (C − B) / (oracle − B) and (CT − B) / (oracle − B) at LEAF-K8 (ratio of
+     means on the same bootstrap draws); the move-hit read.
+4. **Disclosure (descriptive, no outcome; `move_accuracy_read.json`, the 558 end2 / 568 prod states where samplers A,
+   B and C all built 8 worlds):** the network's move belief is only slightly sharper than the Smogon prior. A re-drawn
+   move slot holds the true move **18.7 % / 17.2 %** of the time (Smogon 16.6 % / 16.0 %: Phase 2's "16 %", a
+   slot-POSITION metric); a world's set contains **51 % / 48 %** of the true unseen moves (Smogon 45 % / 45 %: the
+   game-relevant SET recall); the network's own expected share before the gate is 47 % / 43 %.
+5. **Predictions:** R-MOVES NOT DETECTED (+3–6 points of move recall is too little); R-HONEST-C NOT DETECTED;
+   R-MOVES-CEILING HELPS, +0.01 to +0.03 at LEAF-K8, with det-CT still clearly below the oracle (the never-seen slots'
+   sets, items and the critic's own errors remain).
+
+**Amendment 7 (2026-10-11, PHASE 3 REGISTERED: the OFFLINE per-action value head on ORACLE labels, the §13 brief's
+option 4; written BEFORE any Q head was fit or scored on an evaluation state; the training states were built and
+their oracle labels played first, which reads no evaluation outcome).** Offline only: no training integration (the
+in-loop use needs the owner's ruling, §13.8). Full text: the measurement README §11.
+
+1. **Theory.** An oracle playout of action a from the TRUE state s, with continuation policies that act on their
+   OWN observations, has expectation Q^π(s, a). Least-squares regression of such labels on (observation o, a), over
+   states drawn from a data distribution, converges to **E[Q^π(s, a) | o] = Σ_s P(s | o) Q^π(s, a)**: the
+   information-set value of a under the DATA's posterior over the hidden state. It never acts on hidden information:
+   the head sees only o. Using the same playouts to CHOOSE at decision time instead takes argmax_a Q^π(s, a) with s
+   known (the R-INFO gap, §7.12), and an oracle-world POLICY target averages per-world best responses (strategy
+   fusion). **Verified at the pins:** the playout core folds each side's OWN protocol stream with its OWN team
+   (`rust_env/src/search/game.rs`: one `SideStream` per side built from `log.teams[side]`, fed only the chunks
+   addressed to that side) and never sets the encoder's oracle-reveal input (`SideStream.oracle` stays `None` on the
+   playout path), and the continuation is CP greedy on each side's own row and mask; Phase 2's gate (byte-equal rows
+   across worlds with different hidden sets) is the same fact, measured. **Caveats:** the posterior is the TRAINING
+   data's (the eval roster's teams and play), so the head learns an honest value FOR THAT DISTRIBUTION; and the value
+   is under the CP-greedy-vs-CP-greedy continuation (the referee's own).
+2. **Data.** TRAINING (`make_qstates.py`): every eval-trace cycle of `rb_es_end2_s2001` (7, all recorded at the pin)
+   MINUS the 417 evaluation battles: 964 battles, gate ① on 30,139 decisions (0 failures), 20,719 eligible (Phase 1's
+   filter), ≤ 10 per battle in `sha256("vdp_qstates_v1:" + id)` order = **9,629 states**. Labels (`run_qlabels.py`):
+   **K_Q = 2 oracle playouts per legal action** to the end, seeds `turn_seeds("q:" + id, 2)` (disjoint from every
+   evaluation seed), Phase 1's continuation. EVALUATION: the 600 registered Phase-1 states, never in training (checked
+   by battle), scored on their truth seeds 16–39.
+3. **Features** (`qfeatures.py`): the FROZEN end2 checkpoint at its pin, one CPU forward per state: `value_pooled`,
+   the pointer head's per-action inputs (move token ⊕ op cells; team token ⊕ switch cells), its per-action hidden
+   layer (checked to reproduce the logits within 1e-4), the logit, log π and V. The body is not trained.
+4. **The head and the fit** (`fit_qhead.py`, fixed here): per action, family projection of its entity + projections
+   of `value_pooled`, the pointer hidden and (logit, log π, V) → ReLU → Linear(256, 256) → ReLU → Linear(256, 1);
+   inputs standardized on the fit split; loss = the per-state CENTRED squared error over the legal actions (the head
+   learns the action's advantage); AdamW 1e-3, weight decay 1e-4, 256 states per batch, ≤ 60 epochs, early stopping
+   (patience 8) on a 15 % battle-split validation part of the TRAINING states (`sha256("vdp_qsplit_v1:" + battle)`);
+   an ensemble of 5 seeds; â = the argmax of the members' mean centred q over the legal actions (ties within 1e-6
+   toward the policy's order). **No rollout and no world at decision time.**
+5. **Rules:**
+   - **R-QHEAD (primary of Phase 3):** IMP(QHEAD) over the policy's pick, all evaluation states: HELPS (lower >
+     +0.0005) / HURTS (upper < −0.0005) / NOT DETECTED.
+   - **R-QHEAD-CRITIC:** IMP(QHEAD) − IMP(the honest one-ply CRITIC, Phase 2's Smogon worlds), common states: AHEAD
+     (lower > +0.0005) / BEHIND (upper < −0.0005) / EQUIVALENT (inside ±0.01) / NOT DETECTED.
+   - Descriptive: vs honest TRUNC-4-K4, vs the oracle CRITIC, vs the ride-along A head (the network's own on-policy
+     per-action readout, `adv_mean`: a free no-rollout comparator); the label-size curve (25 / 50 / 100 % of the fit
+     battles); the validation R² of the centred labels; the mean within-state Spearman ρ against the truth; the share
+     of states moved off the policy's pick.
+6. **Predictions:** R-QHEAD NOT DETECTED or HELPS by ≤ +0.015; R-QHEAD-CRITIC NOT DETECTED; validation R² < 0.05 (two
+   playouts per label); the A head ≈ 0.
+7. **Against the old null** (`crn_label_refit_2026-10-06/`, NOT DETECTED): that refit a STATE-value readout on the
+   one-ply SUCCESSORS' features (a search at decision time) of an older architecture (the X5 blob), on ~800 training
+   turns, and read sibling accuracy. This fits a per-ACTION head at the ROOT (one forward, no successor), on the
+   end-state checkpoint, on ~9,600 states × 7.4 actions, read in decision currency. What it shares: a frozen body
+   (if the body does not encode what separates siblings, no head can find it; fine-tuning is a GPU step, later).
+
 ### 7.11 Phase 1 RESULTS (oracle world, 2026-10-11; `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §6)
 
 600 own-trace states per checkpoint, every legal action, 40 shared seeds (16 leaf, 24 truth), all played. IMP on the
@@ -1189,3 +1277,4 @@ exploitability meters (§14.3) measure.
 | 2026-10-11 | **PHASE 2 REGISTERED (§7.10 Amendment 2): determinized worlds, offline** | 16 Smogon-prior worlds per state, rejection by byte-equal replay of the searched side's observations; Phase 1's scorers re-measured against the true world's truth; R-HONEST (honest leaf vs honest critic) and R-INFO (oracle vs honest leaf) registered | the model's own belief (X5 hypothesis tokens) as the sampler (a decoder for sampling sets from the network's belief is a bigger build, and the Smogon prior is the owner's prior rule); a fresh state constructor in the Rust core (a parity-critical crossing; rejection over the true log needs none); full determinization of a seen mon's item / EVs / nature (they shape the observed history, so the byte-equal gate would reject almost every redraw) | `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §8; ledger 2026-10-11 REGISTRATION "PHASE 2" |
 | 2026-10-11 | **PHASE 1 READ (oracle world)** | R-LEAF LEAF-AHEAD on both seeds (LEAF-K8 − CRITIC +0.055 / +0.059); R-K STILL CLIMBING; R-TRUNC NONE; R-PRIOR PRIOR HURTS; R-SH NOT DETECTED; R-PAIR ALIGNMENT-LOSS SIGNATURE. The search module's DEFAULT acting rule becomes a uniform-allocation ARGMAX (the measured best), with Gumbel's rule kept as an option; the 4-turn truncated leaf is the cost-efficient leaf (half the value at a seventh of the cost); S1 (per-turn reseed) is now indicated by the registered rule | Gumbel's prior-aware rule at the `mctx` defaults and top-k sequential halving as the default (both measured WORSE here); the AIVAT branch-turn CV (no gain); building S2 before S1 | §7.11; `research_state/measurements/value_disc_pilot_2026-10-11/README.md` §6; ledger 2026-10-11 "PHASE 1" |
 | 2026-10-11 | **PHASE 2 / 2b READ (honest worlds) and the bootstrap brief (§13) + alternatives (§14) written** | R-HONEST NOT DETECTED and R-INFO INFO-COSTS on both seeds; R-HONEST-B and R-BELIEF NOT DETECTED on both: the oracle leaf's +0.07–0.08 is hidden information (mostly the opponent's moves). §13's brief: do NOT build the in-loop factory's policy-target path yet (S0 failed); read the one honest signal (end-state one-ply critic search +0.013) in games first (S0b battery, owner approval); Phase 2c (worlds from the network's MOVE belief) decides whether rollout search can pay; oracle playouts as per-action VALUE labels (§13.8) is the route the data favour and needs the owner's scope ruling. The search module's defaults moved to the measured best (uniform, c_scale 1.0, depth 4) | building the in-loop factory now (no honest gain to distil); oracle POLICY targets (strategy fusion; unexecutable); the Smogon-prior or species-belief samplers as sufficient (both measured null) | §7.12; README §7; ledger 2026-10-11 "PHASE 2"; `src/main/value_search/` |
+| 2026-10-11 | **PHASE 2c and PHASE 3 REGISTERED (§7.10 Amendments 6, 7), owner's standing data-gathering grant** | 2c: worlds whose hidden moves come from the network's OWN per-mon move belief (the X5 op roster's fixed-mass `move_w`, conditional-Poisson draws), plus a ceiling arm with the seen mons' TRUE sets; R-MOVES, R-HONEST-C, R-MOVES-CEILING. 3: an OFFLINE per-action Q head on the frozen end2 checkpoint, fit on oracle playout labels (K = 2) of 9,629 states from disjoint battles, acting with NO rollout at decision time; R-QHEAD, R-QHEAD-CRITIC | fine-tuning the body (GPU, later); training integration (needs the owner's §13.8 ruling); building the battery (option 2) before a fair scorer wins; item / ability beliefs in the worlds (a seen mon's item is already kept TRUE; never-seen slots stay Smogon) | §7.10 Amendments 6–7; README §10–§11 |

@@ -24407,3 +24407,31 @@ games (S0b) before anything is built; a MOVE belief (Phase 2c) or oracle playout
 are the routes that could change it.
 
 Tag: **MEASURED · REGISTERED VERDICTS · honest worlds · 2 checkpoints × ~580 states · CPU**
+
+### 2026-10-11 · REGISTRATION · **VALUE-DISCRIMINATION PILOT PHASE 2c: honest worlds whose hidden MOVES come from the network's OWN move belief (and a ceiling arm with the seen mons' TRUE sets) — can a better move belief make honest search pay?**
+
+Registered by `design_value_discrimination.md` §7.10 Amendment 6, AFTER the Phase 2 / 2b reads and before any 2c
+playout. Sampler C: never-seen species from the X5 species presence (2b's); a seen mon's unseen move slots, and a
+never-seen slot holding a hypothesis species, drawn from the network's per-mon fixed-mass move presence (the X5 op
+roster's `move_w`) as a conditional-Poisson sample; 8 worlds per state, ≤ 60 tries; everything else Phase 2's. Ceiling
+arm 2c-T: sampler C with every seen mon's TRUE set. Disclosed descriptive read (no outcome, `move_accuracy_read.json`):
+the network's belief gets a world's SET of hidden moves 51 % / 48 % right (end2 / prod) against Smogon's 45 % / 45 %
+(the README's earlier "16 %" is a slot-position metric). Rules: R-MOVES (det-C LEAF-K8 − det-B LEAF-K8), R-HONEST-C
+(det-C LEAF-K8 − det-C CRITIC), R-MOVES-CEILING (det-CT LEAF-K8 − det-C LEAF-K8). Predictions: R-MOVES NOT DETECTED;
+R-HONEST-C NOT DETECTED; R-MOVES-CEILING HELPS by +0.01 to +0.03.
+
+Tag: **REGISTRATION · CPU · offline · Phase 2c outcomes unread**
+
+### 2026-10-11 · REGISTRATION · **VALUE-DISCRIMINATION PILOT PHASE 3: an OFFLINE per-action VALUE HEAD on the frozen end-state checkpoint, fit on ORACLE playout labels (the honest information-set value in expectation), acting with NO rollout at decision time**
+
+Registered by `design_value_discrimination.md` §7.10 Amendment 7 before any head was fit or scored on an evaluation
+state. Theory: a regression of oracle playout outcomes on (observation, action) converges to E[Q^π(s, a) | o], the
+information-set value under the data's posterior, when the continuation acts on its own observations (verified at
+the pin: each playout side folds its own stream with its own team; no oracle-reveal encoder input). Training: 9,629
+states of `rb_es_end2_s2001`'s eval traces from 964 battles DISJOINT from the 600 evaluation states' 417; K = 2 oracle
+playouts per legal action. Head: per-action MLP on the frozen pointer inputs / hidden layer, `value_pooled`, logit,
+log π, V; per-state centred squared error; 5-seed ensemble; fixed recipe. Rules: R-QHEAD (IMP over the policy, all
+evaluation states) HELPS / HURTS / NOT DETECTED; R-QHEAD-CRITIC (vs Phase 2's honest one-ply critic) AHEAD / BEHIND /
+EQUIVALENT / NOT DETECTED. Predictions: R-QHEAD NOT DETECTED or HELPS ≤ +0.015; R-QHEAD-CRITIC NOT DETECTED.
+
+Tag: **REGISTRATION · CPU · offline · Phase 3 outcomes unread**

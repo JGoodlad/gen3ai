@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # W playout shards of one checkpoint in ONE capped job (run through run_at_pin.sh):
 #   run_at_pin.sh <cp> <threads per shard> <GB> <timeout> shards.sh <W> [--det] [driver args...]
-# Phase 1's driver (run_playouts.py) by default; --det runs Phase 2's (run_det_playouts.py).
+# Phase 1's driver (run_playouts.py) by default; --det runs Phase 2's (run_det_playouts.py), --worlds its world
+# builder (det_worlds.py), --qlabels Phase 3's training labels (run_qlabels.py).
 # Each shard is resumable (its own fsync'd JSONL); logs go to the archive's <cp>/logs/.
 set -uo pipefail
 W="$1"; shift
 DRIVER=run_playouts.py; TAG=""
 if [ "${1:-}" = "--det" ]; then DRIVER=run_det_playouts.py; TAG="det_"; shift; fi
 if [ "${1:-}" = "--worlds" ]; then DRIVER=det_worlds.py; TAG="worlds_"; shift; fi
+if [ "${1:-}" = "--qlabels" ]; then DRIVER=run_qlabels.py; TAG="qlabels_"; shift; fi
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOGS="$HOME/gen3ai_archive/value_disc_pilot/$VDP_CP/logs"
 mkdir -p "$LOGS"

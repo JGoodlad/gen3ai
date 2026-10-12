@@ -1,0 +1,31 @@
+{
+ "bank_content_sha256": "737c19dcd1b5b44ad3d8a7715f6fa7515cdf44edb743dd4acb851151215253fb",
+ "battles": 964,
+ "cp": "end2",
+ "cycles": [
+  "step_2000128",
+  "step_4000000",
+  "step_6000021",
+  "step_8000184",
+  "step_10000009",
+  "step_12000157",
+  "step_14000347"
+ ],
+ "disjoint_from_eval_bank": true,
+ "eligible_pool": 20719,
+ "eval_battles_dropped": 417,
+ "gate1": {
+  "battles_checked": 964,
+  "decisions_checked": 30139,
+  "encoder": {
+   "core_events": "/home/goodlad/.cache/gen3ai/vdp/pin_end2/src/rust_sim/target/release/core_events",
+   "core_events_sha256": "842887cbfabc3b00b040290a0bc0e4c3c95b55e88dd24105df26821de1e95ab8"
+  },
+  "failures": 0,
+  "refused": []
+ },
+ "pin": "62085750baab1ca275d810fbe0bb5a960904e183",
+ "run": "rb_es_end2_s2001",
+ "sampled": 9629,
+ "traces": 1381
+}

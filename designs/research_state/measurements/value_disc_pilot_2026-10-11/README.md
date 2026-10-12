@@ -1,8 +1,9 @@
 # The value-discrimination pilot (2026-10-11): oracle-world decision improvement on the end-state and production seeds
 
-**Status: RUN AND READ (2026-10-11).** Phase 1 (oracle world) §6; Phase 2 / 2b (honest worlds) §7. This README
-also holds the pre-registration (a copy of `designs/endstate/design_value_discrimination.md` §7 as amended by §7.10
-Amendments 1–5): §2–§5 and §8.
+**Status: Phases 1, 2, 2b RUN AND READ (2026-10-11): Phase 1 (oracle world) §6; Phase 2 / 2b (honest worlds) §7.
+Phase 2c (worlds from the network's own MOVE belief) and Phase 3 (an offline per-action value head on oracle labels)
+REGISTERED, §10 and §11 (Amendments 6 and 7), not yet read.** This README also holds the pre-registration (a copy of
+`designs/endstate/design_value_discrimination.md` §7 as amended by §7.10 Amendments 1–7): §2–§5, §8, §10, §11.
 
 ## 1. In plain language
 
@@ -231,5 +232,48 @@ between Phase 1 and Phase 2 is the price of not knowing the opponent's team (par
 | `score_belief.py` | Phase 2b's read (belief vs Smogon vs oracle on common states) → `result_belief.json`, `result_belief.md` |
 | `det_identity_check.py` | the Phase 2 driver's teeth: the TRUE team as every world reproduces Phase 1 → `det_identity_check_prod.json` |
 | `target_scale_read.py`, `world_accuracy_read.py`, `belief_accuracy_read.py` | POST-HOC / descriptive reads (the Gumbel σ scale; how often a world guesses a hidden species / move; the network's species belief) → their `.json` |
+| `move_belief.py`, `move_belief_probe.py` | Phase 2c: the network's per-mon move presence at a root (the X5 op roster's `move_w`, captured from one forward); a debug print beside the true sets |
+| `move_accuracy_read.py` | DESCRIPTIVE (no outcome): per sampler (A / B / C), how often a world holds the true hidden moves (slot and set recall) and species → `move_accuracy_read.json` |
+| `make_qstates.py`, `run_qlabels.py` | Phase 3's training states (every cycle minus the evaluation battles → archive `<cp>/qbank/`, here `qstates_<cp>.json`) and their oracle labels (K = 2 per action, states stepped in lockstep → archive `<cp>/qrows/`) |
+| `qfeatures.py`, `fit_qhead.py` | Phase 3's frozen-checkpoint root features (archive `<cp>/qfeat_<bank>.npz`) and the Q head's fit + read → `result_qhead.json`, `result_qhead.md` |
 
-Bulk: `~/gen3ai_archive/value_disc_pilot/`.
+`phase2.sh` also takes `--moves` (Phase 2c → `<cp>/det_c/`) and `--truemoves` (2c-T → `<cp>/det_ct/`), and
+`--worlds-only` / `--playouts-only`. Bulk: `~/gen3ai_archive/value_disc_pilot/`.
+
+## 10. Phase 2c: worlds from the network's own MOVE belief (registered by the design doc's §7.10 Amendment 6)
+
+**In plain language.** Phase 2 found that honest rollouts lose the oracle's edge because they guess the opponent's
+hidden MOVES wrong. The network has its own belief about those moves (it is trained to predict them). Phase 2c
+draws each world's hidden moves from that belief instead of from Smogon usage, and a ceiling arm (2c-T) gives the
+worlds the opponent's TRUE moves for every Pokémon already seen, to price how much a perfect move belief could buy.
+Before any playout, a read that uses no outcome already says the network's belief is only slightly sharper than
+Smogon's (half the hidden moves right instead of 45 %).
+
+| item | value |
+|---|---|
+| sampler C (`det_c`) | species of a never-seen slot ∝ the network's X5 species presence (2b's); a seen mon's unseen move slots, and a never-seen slot holding one of the root's hypothesis species, drawn from the network's per-mon move presence `move_w` (fixed mass 4 − r over the species' legal moves minus the revealed ones; the composed posterior = Smogon prior + learned correction) as a conditional-Poisson fixed-size sample; engine-runnable moves only; ≤ 1 Hidden Power, of the kept IV type on a seen mon; a never-seen slot's item / ability / spread from Smogon; every Phase 2 leak kept |
+| ceiling 2c-T (`det_ct`) | sampler C, but every SEEN mon keeps its TRUE set |
+| worlds | 8 built per state (the 8 played), ≤ 60 tries each (attrition only); gate, rewrites, seeds, honest critic and referee as Phase 2 |
+| rules | **R-MOVES (primary):** det-C LEAF-K8 − det-B LEAF-K8: HELPS / HURTS / NOT DETECTED. **R-HONEST-C:** det-C LEAF-K8 − det-C CRITIC: LEAF-AHEAD / CRITIC-EQUIVALENT / NOT DETECTED. **R-MOVES-CEILING:** det-CT LEAF-K8 − det-C LEAF-K8: HELPS / HURTS / NOT DETECTED. Descriptive: CRITIC / TRUNC-4-K4 / TRUNC-4-K8 / LEAF-K8 in every world kind; the closed share of the oracle − honest gap |
+| disclosure (no outcome) | `move_accuracy_read.json` (558 / 568 common states): re-drawn slot = true move 18.7 % / 17.2 % (Smogon 16.6 % / 16.0 %); SET recall of the true unseen moves 51 % / 48 % (Smogon 45 % / 45 %); the network's own expected share 47 % / 43 % |
+| predictions | R-MOVES NOT DETECTED; R-HONEST-C NOT DETECTED; R-MOVES-CEILING HELPS by +0.01 to +0.03, det-CT still clearly below the oracle |
+
+## 11. Phase 3: an OFFLINE per-action value head on oracle labels (registered by Amendment 7)
+
+**In plain language.** The oracle rollouts know the opponent's team, so they cannot CHOOSE moves honestly. But they
+can TEACH: a model that sees only what we see, trained to predict how each action played out from the true
+position, learns the average over every team the opponent could have had given what we saw, which is exactly the
+honest value. Phase 3 trains a small per-action head on top of the frozen end-state network (no fine-tuning) on
+oracle outcomes of ~9,600 OTHER positions, then plays its favourite action on the 600 test positions with no search
+at all, and scores it with the same held-out referee.
+
+| item | value |
+|---|---|
+| why unbiased | E[oracle playout of a | what we observed] = the information-set value of a under the data's own posterior, provided the playout continuation acts on its own observations: verified at the pin (each side folds its own stream with its own team; no oracle-reveal input on the playout path) |
+| training | `make_qstates.py`: all 7 cycles of `rb_es_end2_s2001` minus the 417 evaluation battles = 964 battles, gate ① 30,139 / 30,139, 20,719 eligible, ≤ 10 per battle = **9,629 states**; labels K = 2 oracle playouts per legal action (`run_qlabels.py`, seeds disjoint from every evaluation seed) |
+| features | the frozen end2 checkpoint at its pin: `value_pooled`, the pointer head's per-action inputs and hidden layer (reproduces the logits ≤ 1e-4), logit, log π, V |
+| head | family projection + context projections → ReLU → 256 → ReLU → 1; per-state CENTRED squared error; AdamW 1e-3, wd 1e-4; early stopping on a 15 % battle split of the training states; 5-seed ensemble; argmax, ties to the policy's order |
+| evaluation | the 600 registered states, truth seeds 16–39; no rollout or world at decision time |
+| rules | **R-QHEAD (primary):** QHEAD − policy: HELPS / HURTS / NOT DETECTED. **R-QHEAD-CRITIC:** QHEAD − honest one-ply CRITIC (Phase 2, common states): AHEAD / BEHIND / EQUIVALENT (±0.01) / NOT DETECTED. Descriptive: vs honest TRUNC-4-K4, oracle CRITIC, the ride-along A head; the label-size curve; validation R²; within-state Spearman; share moved off top1 |
+| predictions | R-QHEAD NOT DETECTED or HELPS ≤ +0.015; R-QHEAD-CRITIC NOT DETECTED; validation R² < 0.05; the A head ≈ 0 |
+| vs the old null | `crn_label_refit_2026-10-06/` refit a STATE-value readout on one-ply successor features (a search), older architecture, ~800 turns, sibling accuracy; this is a per-ACTION head at the root, end-state checkpoint, ~9,600 states, decision currency. Shared limit: a frozen body |

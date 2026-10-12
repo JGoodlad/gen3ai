@@ -42,6 +42,8 @@ frenzyplant grudge helpinghand hydrocannon ingrain lockon magiccoat magnitude me
 mist mudsport naturepower nightmare odorsleuth present psywave razorwind roleplay sketch skullbash skyattack
 snore spite spitup stockpile swallow teleport triplekick watersport""".split())
 BANNED_ITEMS = frozenset({"machobrace", "mail", "mentalherb", "shellbell"})
+#: Phase 2c: draws where the network's candidates could not fill the slots and the Smogon prior did (per state)
+NET_FALLBACK = {"seen": 0, "new": 0}
 
 
 def toid(s: str) -> str:
@@ -130,8 +132,73 @@ def sample_moves(rng, P: Priors, sid: str, keep: Dict[int, str], hp_type: Option
     return [m for m in slots]   # type: ignore[misc]
 
 
-def sample_new_set(rng, P: Priors, sid: str) -> Optional[str]:
-    moves = sample_moves(rng, P, sid, {}, None)
+def cp_sample(rng, keys: List[str], pis: Sequence[float], m: int) -> Optional[List[str]]:
+    """Phase 2c: a FIXED-SIZE subset of ``m`` keys drawn as INDEPENDENT presences π conditioned on the count = m
+    (the conditional-Poisson design: P(S) ∝ Π_{i∈S} π_i/(1−π_i); the natural sampler for the network's
+    fixed-mass marginals, which are the I-projection of independent presences onto that count). Exact sequential
+    draw from the elementary symmetric sums; returns the keys in a random order, or None if fewer than m."""
+    n = len(keys)
+    if m <= 0:
+        return []
+    if n < m:
+        return None
+    p = np.clip(np.asarray(pis, dtype=np.float64), 1e-9, 1 - 1e-9)
+    w = p / (1 - p)
+    w = w / w.max()
+    # E[i, j] = e_j(w[i:]) (the elementary symmetric sum of order j over the suffix)
+    E = np.zeros((n + 1, m + 1))
+    E[n, 0] = 1.0
+    for i in range(n - 1, -1, -1):
+        E[i, 0] = 1.0
+        for j in range(1, m + 1):
+            E[i, j] = E[i + 1, j] + w[i] * E[i + 1, j - 1]
+    out, need = [], m
+    for i in range(n):
+        if need == 0:
+            break
+        if E[i, need] <= 0:
+            return None
+        if rng.random() < w[i] * E[i + 1, need - 1] / E[i, need]:
+            out.append(keys[i])
+            need -= 1
+    if need:
+        return None
+    return [out[k] for k in rng.permutation(len(out))]
+
+
+def net_moves(rng, mw: Dict[str, float], keep: Dict[int, str], hp_type: Optional[str],
+              n_slots: int = 4) -> Optional[List[str]]:
+    """Phase 2c: fill the move slots not in ``keep`` from the NETWORK's move presence ``mw`` ({move id: π} over
+    the mon's unrevealed candidates; `move_belief.root_move_beliefs`). Only moves the pin's engine runs; at most
+    one Hidden Power, and only of type ``hp_type`` when the IVs are fixed (a seen mon). Returns the slots."""
+    have = set(keep.values())
+    has_hp = any(m.startswith("hiddenpower") for m in have)
+    keys, pis = [], []
+    for k in sorted(mw):
+        if k in have or k in BANNED_MOVES:
+            continue
+        if k.startswith("hiddenpower"):
+            if has_hp or k == "hiddenpower" or (hp_type is not None and k != f"hiddenpower{hp_type}"):
+                continue
+        keys.append(k)
+        pis.append(mw[k])
+    free = [i for i in range(n_slots) if i not in keep]
+    for _ in range(50):
+        got = cp_sample(rng, keys, pis, len(free))
+        if got is None:
+            return None
+        if sum(m.startswith("hiddenpower") for m in got) <= 1:
+            break
+    else:
+        return None
+    slots = [keep.get(i) for i in range(n_slots)]
+    for i, m in zip(free, got):
+        slots[i] = m
+    return slots   # type: ignore[return-value]
+
+
+def sample_new_set(rng, P: Priors, sid: str, mw: Optional[Dict[str, float]] = None) -> Optional[str]:
+    moves = sample_moves(rng, P, sid, {}, None) if mw is None else net_moves(rng, mw, {}, None)
     if moves is None:
         return None
     it = {k: v for k, v in P.items.get(sid, {}).items() if k not in BANNED_ITEMS}
@@ -148,8 +215,10 @@ def sample_new_set(rng, P: Priors, sid: str) -> Optional[str]:
                      nature, evs_s, "", ivs, "", "", ""])
 
 
-def resample_revealed(rng, P: Priors, entry: str, seen_moves: Set[str]) -> Tuple[str, int]:
-    """A revealed slot: its unseen move slots re-drawn. Returns (entry, slots re-drawn)."""
+def resample_revealed(rng, P: Priors, entry: str, seen_moves: Set[str],
+                      mw: Optional[Dict[str, float]] = None) -> Tuple[str, int]:
+    """A revealed slot: its unseen move slots re-drawn (from the Smogon prior, or, Phase 2c, from the network's
+    move presence ``mw``). Returns (entry, slots re-drawn)."""
     f = parse_set(entry)
     sid = toid(f[1] or f[0])
     mv = f[4].split(",")
@@ -159,7 +228,13 @@ def resample_revealed(rng, P: Priors, entry: str, seen_moves: Set[str]) -> Tuple
     if len(keep) == len(mv) or sid not in P.moves:
         return entry, 0
     ivs = set_ivs(f)
-    out = sample_moves(rng, P, sid, keep, hp_type_of(ivs))
+    if mw is not None:
+        out = net_moves(rng, mw, keep, hp_type_of(ivs), len(mv))
+        if out is None:          # the network's candidates cannot fill the slots: the Smogon prior (counted)
+            out = sample_moves(rng, P, sid, keep, hp_type_of(ivs))
+            NET_FALLBACK["seen"] += int(out is not None)
+    else:
+        out = sample_moves(rng, P, sid, keep, hp_type_of(ivs))
     if out is None:
         return entry, 0
     f[4] = ",".join(out)
@@ -167,19 +242,29 @@ def resample_revealed(rng, P: Priors, entry: str, seen_moves: Set[str]) -> Tuple
 
 
 def sample_world(rng, P: Priors, team: str, revealed: Dict[str, Set[str]],
-                 species_w: Optional[Dict[str, float]] = None) -> Tuple[str, dict]:
+                 species_w: Optional[Dict[str, float]] = None,
+                 move_w: Optional[Dict[str, Dict[int, Dict[str, float]]]] = None) -> Tuple[str, dict]:
     """The opponent's packed team with its hidden parts drawn. ``revealed``: {species id: seen move ids}.
     ``species_w`` (Phase 2b, Amendment 5): never-seen slots draw their species ∝ these weights (the network's
-    own X5 species presence π at the root) instead of the Smogon teammate prior; sets stay Smogon."""
+    own X5 species presence π at the root) instead of the Smogon teammate prior; sets stay Smogon.
+    ``move_w`` (Phase 2c, Amendment 6): the network's per-mon move presence keyed by species NUM, ``{"seen": {num:
+    {move: π}}, "hyp": {num: {move: π}}}``: a seen mon's unseen move slots, and a never-seen slot whose drawn species
+    is one of the root's HYPOTHESIS species, draw their moves from it (items, abilities, spreads stay Smogon)."""
     entries = team.split("]")
     ids = [toid(parse_set(e)[1] or parse_set(e)[0]) for e in entries]
     present = {s for s in ids if s in revealed}
-    out, new, redrawn = [], 0, 0
+    out, new, redrawn, net_seen, net_new = [], 0, 0, 0, 0
+    num = lambda s_: int(P.species.get(s_, {}).get("num") or 0)  # noqa: E731
     for e, sid in zip(entries, ids):
         if sid in revealed:
-            e2, k = resample_revealed(rng, P, e, revealed[sid])
+            if move_w is not None and move_w.get("true_seen"):    # Phase 2c-T: a seen mon keeps its TRUE set
+                out.append(e)
+                continue
+            mw = move_w["seen"].get(num(sid)) if move_w is not None else None
+            e2, k = resample_revealed(rng, P, e, revealed[sid], mw)
             out.append(e2)
             redrawn += k
+            net_seen += int(mw is not None and k > 0)
             continue
         cand = [s for s in P.pool if s not in present]
         if species_w is not None:
@@ -191,14 +276,23 @@ def sample_world(rng, P: Priors, team: str, revealed: Dict[str, Set[str]],
         if w.sum() <= 0:
             w = np.array([P.usage.get(s, 0.0) for s in cand])
         s = _draw(rng, cand, w)
-        ent = sample_new_set(rng, P, s) if s else None
+        mw = move_w["hyp"].get(num(s)) if (move_w is not None and s) else None
+        ent = sample_new_set(rng, P, s, mw) if s else None
+        if ent is None and mw is not None:         # the network's candidates cannot fill 4 slots: Smogon (counted)
+            ent = sample_new_set(rng, P, s)
+            NET_FALLBACK["new"] += int(ent is not None)
+            mw = None
+        net_new += int(ent is not None and mw is not None)
         if ent is None:
             out.append(e)
             continue
         present.add(s)
         out.append(ent)
         new += 1
-    return "]".join(out), {"new_slots": new, "redrawn_move_slots": redrawn}
+    st = {"new_slots": new, "redrawn_move_slots": redrawn}
+    if move_w is not None:
+        st.update({"net_moves_seen_mons": net_seen, "net_moves_new_slots": net_new})
+    return "]".join(out), st
 
 
 def reveals(res: dict, viewer: int, n: int) -> Tuple[Dict[str, Set[str]], List[str]]:
@@ -234,7 +328,8 @@ def world_rng(did: str, j: int):
 
 def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int,
                  max_tries: int = MAX_TRIES, root_choice_in_log: bool = False,
-                 species_w: Optional[Dict[str, float]] = None) -> dict:
+                 species_w: Optional[Dict[str, float]] = None,
+                 move_w: Optional[Dict[str, Dict[int, Dict[str, float]]]] = None) -> dict:
     """J gate-passed worlds for one root. Returns {"teams": [packed or None] * J, "tries": [...],
     "stats": [...], "revealed": ..., "true_rows": int}."""
     from agents.battle.core_replay import RecordedBattle, run_core
@@ -328,7 +423,7 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
             break
         cand = {}
         for j in todo:
-            cand[j] = sample_world(rngs[j], P, team, revealed, species_w)
+            cand[j] = sample_world(rngs[j], P, team, revealed, species_w, move_w)
             tries[j] += 1
         out = run_core([rec(cand[j][0], f"{did}#w{j}", world_cmds(cand[j][0])) for j in todo],
                        trackers=True, obs=True)
@@ -351,6 +446,9 @@ def build_worlds(battle, side: str, at: int, n: int, did: str, P: Priors, J: int
                 continue
             teams[j] = cand[j][0]
             stats[j] = cand[j][1]
+    if move_w is not None:
+        fails["net_fallback"] = dict(NET_FALLBACK)
+        NET_FALLBACK.update(seen=0, new=0)
     return {"teams": teams, "cmds": [world_cmds(t) if t else None for t in teams], "tries": tries,
             "stats": stats, "fails": fails, "leak": leak,
             "revealed": {k: sorted(v) for k, v in revealed.items()}, "n_rows": len(ref)}
