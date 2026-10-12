@@ -24463,3 +24463,22 @@ codes. Predictions: R-GIGO PASS; R-MOVES modal SHARED (≈ 45 %), BINDING ≈ 30
 CONFIDENCE-ONLY; R-WIDTH FLAT; M-BELIEF IMPROVING.
 
 Tag: **REGISTRATION · CPU (cheap parts now; the factorial after the closing test) · GPU forks queued · no arm read**
+
+### 2026-10-11 · DESCRIPTIVE · **HIDDEN-INFO STUDY, the registered descriptive reads D1–D8: the pilot's honest search keeps about HALF the oracle's edge when all six opponent mons are seen and NOTHING when one is unseen — the never-seen mons and the seen mons' hidden moves both carry the gap; "it is the MOVES, not the species" is QUALIFIED**
+
+Registered at `e25a5240` (`design_hidden_info_binding.md` §11); script `descriptive_reads.py` committed before it ran
+(`c12f9e96`). On the pilot's own rows (Phase 1 oracle vs Phase 2 Smogon worlds, LEAF-K8; both seeds). Reproduction:
+G = +0.072 [+0.057, +0.087] / +0.066 [+0.053, +0.080] = the pilot's R-INFO exactly. Pooled, by unrevealed opponent
+slots (D1): 0 → G +0.032 [+0.015, +0.051] (oracle +0.066, fair +0.035, n 229); 1 → +0.070 [+0.046, +0.096] (fair
+−0.002, n 224); 2 → +0.094; 3 → +0.074; 4–5 → +0.077. D7: the gap lives in SWITCH decisions (end2 +0.130 vs move
++0.043; prod +0.096 vs +0.050). D3 (the opponent active's unseen moves) rises on end2 (+0.025 → +0.088), flat on prod.
+D5: the top 10 % of states (split-half) carry 0.54 / 0.45 of G. D6: the excluded 3.5 % have a higher oracle IMP, but
+the worst case keeps R-INFO's lower bound > 0.05 (H-STAT exclusion killed); reweighting moves G < 0.02. D8: 40–55 % of
+the gap is already present at a 4-turn leaf (H-HORIZON unresolved). D2's registered bins could not read "within 0–1
+unrevealed" (every state there has 9+ hidden slots: a design miss); POST-HOC within 0 unrevealed: 11–14 hidden move
+slots G +0.001 [−0.009, +0.011] vs 15+ +0.043 [+0.020, +0.068] (`posthoc_reads.json`, no verdict). Phase 2b's worlds
+give the same pattern. Consequences: the pilot's "0–1 unrevealed keeps ~¼, so it is the moves" pooled two different
+groups; `design_value_discrimination.md` §0 / §7.12 and UNDERSTANDING §4 are qualified in the same commit; the
+factorial must apportion U (the never-seen mons) against M.
+
+Tag: **DESCRIPTIVE · registered reads (no verdict) · pilot rows · CPU**

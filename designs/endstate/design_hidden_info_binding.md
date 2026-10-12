@@ -800,9 +800,60 @@ per-mon screening is estimated at ≤ 5 CPU-s per state, UNVERIFIED); an oracle 
 
 ## 16. RESULTS SO FAR (the cheap parts; filled when read, each read after this registration landed)
 
-*Not yet read.* This section is replaced, in the commit that reads them, by: the audits (R-GIGO's ingredients), the
-model-input axis (R-NET, CRITIC-USES), the descriptive reads D1–D9, policy drift and belief maturity, and the
-author's honest confidence in "moves are binding".
+### 16.1 The registered descriptive reads D1–D8 (read 2026-10-11, after the registration `e25a5240`; `descriptive_reads.json`, `descriptive_reads_det_b.json`)
+
+**Plain language.** The pilot's honest search loses its whole edge as soon as ONE opponent Pokémon is still unseen;
+when all six have been seen it keeps about HALF of the oracle's edge. So the never-seen Pokémon carry a large part of
+the gap, and the seen Pokémon's hidden moves carry the rest. The pilot's "with nearly all species seen, fair keeps
+only ~¼" pooled two very different groups.
+
+Reproduction check: G (all states) is +0.072 [+0.057, +0.087] (end2) / +0.066 [+0.053, +0.080] (prod): the pilot's
+R-INFO exactly. Pooled over both seeds (1,157 states; g = oracle − fair LEAF-K8 improvement):
+
+| read | stratum | n | G [95 %] | oracle IMP | fair IMP |
+|---|---|---|---|---|---|
+| **D1** unrevealed opponent slots | **0** (all six seen) | 229 | **+0.032 [+0.015, +0.051]** | +0.066 | **+0.035** |
+| | **1** | 224 | **+0.070 [+0.046, +0.096]** | +0.068 | **−0.002** |
+| | 2 | 209 | +0.094 [+0.066, +0.123] | +0.097 | +0.003 |
+| | 3 | 183 | +0.074 [+0.051, +0.099] | +0.063 | −0.011 |
+| | 4–5 | 312 | +0.077 [+0.058, +0.096] | +0.077 | −0.000 |
+| **D3** the opponent active's unseen move slots | 0 / 1 / 2 / 3–4 | 16 / 103 / 311 / 727 | +0.049 / +0.046 / +0.060 / **+0.077** | | |
+| **D7** the oracle's pick | a SWITCH / a move | 400 / 757 | **+0.112** / +0.046 (end2 +0.130 / +0.043; prod +0.096 / +0.050) | | |
+| **D8** the gap at a 4-turn leaf, over the full leaf's | TRUNC-4-K8 / TRUNC-4-K4 / CRITIC | | 0.38 [0.19, 0.61] / 0.49 / 0.19 (end2); 0.54 [0.33, 0.76] / 0.43 / 0.16 (prod) | | |
+
+- **D2** (the seen mons' total unseen move slots): flat overall (+0.069 / +0.082 / +0.075 / +0.065 at 0–2 / 3–5 / 6–8
+  / 9+); within 0–1 unrevealed every state is in the 9+ bin, so the registered H-MOVES expectation "D2 rises within 0–1
+  unrevealed" COULD NOT BE READ with the registered bins (a design miss, named). POST-HOC finer bins within 0
+  unrevealed (`posthoc_reads.json`, labelled post-hoc, no verdict): 11–14 unseen slots G +0.001 [−0.009, +0.011] (n
+  61; the fair leaf matches the oracle) vs 15+ G +0.043 [+0.020, +0.068] (n 168): when enough of the seen mons' moves
+  are revealed, the all-seen gap vanishes. That is the H-MOVES signature inside the all-seen stratum, confounded with
+  game progress.
+- **D3** rises with the active's hidden moves on end2 (+0.025 → +0.088) and is flat on prod (+0.069 / +0.068 / +0.066):
+  mixed. Within 0 unrevealed (post-hoc) it is flat (+0.022 / +0.031 / +0.034).
+- **D4:** no difference by opponent class (bot +0.066 / +0.065 vs snapshot +0.079 / +0.068); larger in traced LOSSES
+  (+0.079 / +0.084) than wins (+0.065 / +0.048); smaller late (turns 26–40: +0.051 / +0.027).
+- **D5** concentration (split-half: ranked on truth seeds 16–27, measured on 28–39): the top 10 % of states carry
+  0.54 [0.41, 0.66] / 0.45 [0.33, 0.58] of G, the top 25 % 0.87 / 0.85. Concentrated, but below the registered 80 %-in-
+  the-top-10 % restatement bar.
+- **D6** the excluded 3.5 % have a HIGHER oracle IMP (+0.130 / +0.103 vs +0.079 / +0.070); counting them with g = 0
+  (worst case) R-INFO is still +0.069 [+0.055, +0.085] / +0.064 [+0.051, +0.077]: H-STAT's exclusion arm is KILLED
+  (lower bound > 0.04). Outcome-reweighted G +0.065 / +0.055 (within 0.02 of raw): the loss-enrichment arm is killed.
+- **D7:** the gap lives disproportionately in SWITCH decisions (≈ 60 % of G on end2 from a third of the states).
+  Which Pokémon to bring in depends on what the opponent can do and who else it has; consistent with moves AND with
+  the never-seen mons.
+- **D8 (H-HORIZON):** 40–55 % of the full-leaf gap is already present at a 4-turn leaf; the registered kill bar
+  (≥ ½) straddles: neither killed nor supported.
+- Phase 2b's belief-species worlds give the same pattern (`descriptive_reads_det_b.json`: D1 0 / 1 / 2 unrevealed G
+  +0.032 / +0.068 / +0.097).
+
+**What D1–D8 do to the hypotheses (descriptive, no verdict):** H-UNSEEN is very much alive (one unseen mon wipes the
+honest gain); H-MOVES is alive inside the all-seen stratum (about half the oracle's edge there, vanishing when enough
+moves are revealed, post-hoc); H-STAT's exclusion and reweighting arms are killed; H-HORIZON is unresolved. The
+pilot's sentence "it is the MOVES, not the species" is not supported as stated: the never-seen mons matter at least
+as much in this base, and the factorial (§6) must apportion U against M.
+
+*Still to read in this unit:* the audits (R-GIGO's ingredients), the model-input axis (R-NET, CRITIC-USES), D9,
+policy drift and belief maturity, and the author's honest confidence in "moves are binding".
 
 ---
 
