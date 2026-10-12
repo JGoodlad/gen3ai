@@ -2,7 +2,12 @@
 
 **Status: Phases 1, 2, 2b and 3 RUN AND READ (2026-10-11): Phase 1 (oracle world) §6; Phase 2 / 2b (honest worlds)
 §7; Phase 3 (an offline per-action value head on oracle labels) §12. Phase 2c (worlds from the network's own MOVE
-belief) REGISTERED, §10 (Amendment 6), running.** This README also holds the pre-registration (a copy of
+belief) REGISTERED, §10 (Amendment 6), NOT READ.** 🚨 **The fair-world builder FAILED the hidden-info study's
+registered GIGO audit (R-GIGO, `../../../endstate/design_hidden_info_binding.md` §16.4: ~4 % of worlds disagree
+with our own battle log, the gate leaks the never-seen mons' gender class toward the truth, 2–3 % of world teams
+break gen3ou clauses). Every HONEST-world number here (Phase 2 / 2b in §7, R-QHEAD-CRITIC in §12) is PROVISIONAL
+until the fixed builder re-runs it; Phase 2c runs only on the fixed builder. Phase 1 (oracle) and R-QHEAD (no world)
+do not use the builder and stand.** This README also holds the pre-registration (a copy of
 `designs/endstate/design_value_discrimination.md` §7 as amended by §7.10 Amendments 1–7): §2–§5, §8, §10, §11.
 
 ## 1. In plain language
@@ -308,9 +313,11 @@ policy's.
 | rule | contrast | Δ [95 %] | verdict |
 |---|---|---|---|
 | **R-QHEAD (primary)** | QHEAD − policy | −0.004 [−0.016, +0.009] | **NOT DETECTED** |
-| **R-QHEAD-CRITIC** | QHEAD − honest CRITIC (578 common) | −0.018 [−0.032, −0.004] | **BEHIND** |
+| **R-QHEAD-CRITIC** | QHEAD − honest CRITIC (578 common) | −0.018 [−0.032, −0.004] | **BEHIND — PROVISIONAL** (builder-defective, see below) |
 | descriptive | QHEAD − honest TRUNC-4-K4 / − oracle CRITIC / − A head | −0.021 / −0.031 / −0.015 (all clear of 0) | — |
 
+- **PROVISIONAL:** R-QHEAD-CRITIC and every "honest" row of the table come from the fair-world builder that FAILED
+  R-GIGO (status line); they are re-read on the fixed builder. R-QHEAD, the A head and the oracle rows use no world.
 - **Why (POST-HOC, training states only, `qhead_noise_read.json`):** the centred labels' variance is 0.066 per action,
   of which the K = 2 dice noise is **83 %** (an R² ceiling of 0.17 on these labels, and that remaining 17 % includes
   the advantage the hidden team decides). The head's validation R² is +0.002 (25 % / 50 %: −0.004 / −0.001; best

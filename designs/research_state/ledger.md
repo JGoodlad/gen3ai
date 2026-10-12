@@ -24548,3 +24548,15 @@ Standing (§16.6): hidden TEAM information binds honest search (≈ 85 %); the m
 (the author's); no multi-week move-inference programme on this evidence.
 
 Tag: **MEASURED · REGISTERED VERDICTS (R-NET, CRITIC-USES, R-GIGO) + DESCRIPTIVE (D9, maturity) · PROVISIONAL at 15M · CPU**
+
+### 2026-10-11 · STATUS · **VALUE-DISCRIMINATION PILOT: every HONEST-world read is PROVISIONAL (builder-defective) — the fair-world builder FAILED the hidden-info study's registered R-GIGO audit; Phase 3's R-QHEAD-CRITIC (BEHIND, −0.018) is PROVISIONAL; Phase 2c is not read and runs only on the FIXED builder; Phase 1 (oracle) and R-QHEAD (no world) stand**
+
+The audit (`design_hidden_info_binding.md` §16.4): ~4 % of played worlds disagree with the searched side's own
+protocol (gender tokens, a Focus Punch tightening line, a Beat Up hit), the gate leaks the never-seen mons'
+gender-draw class toward the truth (98 % vs 53 %), and 2–3 % of world teams break gen3ou clauses. By its §12.1 the
+pilot's honest numbers (Phase 2 / 2b, and Phase 3's honest-critic comparator) are VOID until a fixed builder re-runs
+them. The pilot owns the fix (protocol-byte gate, the extra reveal lines, a gender construction that no longer
+conditions on the never-seen species' classes, the clause check); it is registered as Amendment 8 before any re-run.
+Phase 2c's playouts on the old builder (end2 complete, prod partial) are kept UNREAD and are not part of any verdict.
+
+Tag: **STATUS · PROVISIONAL (builder-defective) · no new outcome read**

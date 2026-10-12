@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,551-line file. **The ledger itself is append-only and is never edited by this**;
+24,563-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**854 headings · 799 dated · 2026-08-01 → 2026-10-11 · ledger 24,551 lines.**
+**855 headings · 800 dated · 2026-08-01 → 2026-10-11 · ledger 24,563 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -874,3 +874,4 @@ rename.
   - `L24467` · `2026-10-11` · DESCRIPTIVE · **HIDDEN-INFO STUDY, the registered descriptive reads D1–D8: the pilot's honest search keeps about HALF the oracle's edge when all six opponent mons are seen and NOTHING when one is unseen — the never-seen mons and the seen mons' hidden moves both carry the gap; "it is the MOVES, not the species" is QUALIFIED**
   - `L24485` · `2026-10-11` · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 3 (offline per-action VALUE HEAD on oracle labels): NULL — a head on the frozen end-state body, fit on 2 oracle playouts per action of 9,629 states, does not beat the policy's pick (−0.004 [−0.016, +0.009], R-QHEAD NOT DETECTED) and is worse than the honest one-ply critic search (−0.018 [−0.032, −0.004], R-QHEAD-CRITIC BEHIND); the labels are 83 % dice noise; the network's own ride-along A head, used as a scorer, gains +0.010 [+0.001, +0.020] at zero cost (descriptive)**
   - `L24511` · `2026-10-11` · MEASUREMENT · **HIDDEN-INFO STUDY: the model-input axis, the audits, D9 and maturity — telling the network the true moves does not improve its decisions (R-NET, CRITIC-USES NOT DETECTED); the world builder's gate is weaker than the protocol (R-GIGO FAILS by rule, the gap robust); the move-guessing difficulty is intrinsic; the 15M policies are not plateaued**
+  - `L24552` · `2026-10-11` · STATUS · **VALUE-DISCRIMINATION PILOT: every HONEST-world read is PROVISIONAL (builder-defective) — the fair-world builder FAILED the hidden-info study's registered R-GIGO audit; Phase 3's R-QHEAD-CRITIC (BEHIND, −0.018) is PROVISIONAL; Phase 2c is not read and runs only on the FIXED builder; Phase 1 (oracle) and R-QHEAD (no world) stand**

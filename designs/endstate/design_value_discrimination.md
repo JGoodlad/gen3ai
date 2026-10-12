@@ -760,7 +760,7 @@ states, truth seeds 16–39.
 | read | value [95 %] |
 |---|---|
 | **R-QHEAD** (QHEAD − policy) | −0.004 [−0.016, +0.009] **NOT DETECTED** |
-| **R-QHEAD-CRITIC** (QHEAD − honest one-ply critic, 578 common) | −0.018 [−0.032, −0.004] **BEHIND** |
+| **R-QHEAD-CRITIC** (QHEAD − honest one-ply critic, 578 common) | −0.018 [−0.032, −0.004] **BEHIND — PROVISIONAL (builder-defective: the honest critic comes from the fair-world builder that FAILED R-GIGO, `design_hidden_info_binding.md` §16.4; re-read on the fixed builder)** |
 | validation R² of the centred labels (25 / 50 / 100 % of the fit battles) | −0.004 / −0.001 / +0.002 (best epoch 1–2) |
 | the labels' dice-noise share (K = 2; POST-HOC, training states) | 83 % of the centred variance (R² ceiling 0.17 on these labels) |
 | one slope on the policy logit / the A head (validation R²) | +0.005 / +0.005 |
