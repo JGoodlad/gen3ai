@@ -237,6 +237,15 @@ def _world(prep: B.Prep, arm: str, states: Dict[str, MonState], fixed_moves, fix
 
 
 def score_many(prep: B.Prep, worlds: Sequence[List[S.MonSet]], upto: Optional[int] = None) -> List[Tuple[int, int]]:
+    """``_score_chunk`` over chunks of 128 worlds, so only one chunk's core output is ever held in memory (a wide
+    round scores thousands of worlds; holding every stream at once ran a worker out of its 6 GB cap)."""
+    out: List[Tuple[int, int]] = []
+    for c0 in range(0, len(worlds), 128):
+        out += _score_chunk(prep, worlds[c0:c0 + 128], upto)
+    return out
+
+
+def _score_chunk(prep: B.Prep, worlds: Sequence[List[S.MonSet]], upto: Optional[int] = None) -> List[Tuple[int, int]]:
     """How far each world's searched-side stream matches the truth's: the first mismatching line index
     (len + 1 = every line matches). A world the core refuses part-way (a desync) is scored by the longest
     TRUNCATED command prefix that replays (3/4, 1/2, 1/4 of the commands)."""
