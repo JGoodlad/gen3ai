@@ -319,6 +319,8 @@ NEAR = 300           # support spreads proposed per round: the nearest in the st
 RANDOM = 32          # plus this many prior draws
 POOL_BATCH = 32
 POOL_BATCHES = 8
+ACCEPT_BATCHES = 4   # ≤ 128 joint draws per mon in the rejection step
+ACCEPT_TARGET = 24
 PERTURB = 8          # a stat moved by ± this many points that leaves the stream unchanged is IRRELEVANT
 
 
@@ -629,7 +631,35 @@ def screen(prep: B.Prep, arm: str) -> dict:
         if not pool or not items or not abil or not hpt:
             out.setdefault("empty_pool", []).append(n)
             continue
-        pools[n] = pool
+        # REJECTION step: joint draws (spread x IV key x item x ability x HP type) from the window-restricted
+        # prior, each replayed with the other mons at the context; the consistent ones are iid samples of this
+        # mon's gate-conditioned prior (the windows are local, so a draw outside a threshold they missed fails
+        # here rather than in the joint gate)
+        pw = np.array([x[1] for x in pool], dtype=float)
+        pw = pw / pw.sum()
+        accepted: List[B.SeenDraw] = []
+        tried = 0
+        for _b in range(ACCEPT_BATCHES):
+            cands, draws_ = [], []
+            for _ in range(POOL_BATCH):
+                nat, evs, var = pool[int(rng.choice(len(pool), p=pw))][0]
+                t = S.weighted_pick(hpt, rng) if len(hpt) > 1 else next(iter(hpt))
+                if t != c.hp_t:
+                    var = var.split("|")[0]
+                sd = B.SeenDraw(S.weighted_pick(items, rng), S.weighted_pick(abil, rng), nat, evs, var, t)
+                st = dict(ctx)
+                st[n] = Ctx(sd.item, sd.ability, t, nat, evs, var)
+                cands.append(st)
+                draws_.append(sd)
+            tried += len(cands)
+            accepted += [d for d, s in zip(draws_, score(cands)) if s >= full]
+            if len(accepted) >= ACCEPT_TARGET:
+                break
+        if not accepted:
+            out.setdefault("empty_pool", []).append(n)
+            continue
+        pools[n] = accepted
+        out.setdefault("accept", {})[n] = [len(accepted), tried]
         out.setdefault("pool_items", {})[n] = items
         out.setdefault("pool_abilities", {})[n] = abil
         out.setdefault("pool_hp", {})[n] = {str(k): v for k, v in hpt.items()}
@@ -642,17 +672,6 @@ def screen(prep: B.Prep, arm: str) -> dict:
 
 
 def draw_from_pools(scr: dict, rng: np.random.Generator) -> Dict[str, B.SeenDraw]:
-    out = {}
-    for n, pool in scr["pools"].items():
-        w = np.array([x[1] for x in pool], dtype=float)
-        nat, evs, var = pool[int(rng.choice(len(pool), p=w / w.sum()))][0]
-        item = S.weighted_pick(scr["pool_items"][n], rng)
-        ab = S.weighted_pick(scr["pool_abilities"][n], rng)
-        hp = scr["pool_hp_raw"][n]
-        keys = list(hp)
-        pw = np.array([hp[k] for k in keys], dtype=float)
-        t = keys[int(rng.choice(len(keys), p=pw / pw.sum()))]
-        if t != scr["context"][n].hp_t:
-            var = var.split("|")[0]          # the pattern belonged to the context's type
-        out[n] = B.SeenDraw(item, ab, nat, evs, var, t)
-    return out
+    """One world's seen-mon facts: per mon, a uniform pick among its accepted draws (each an iid draw of the
+    mon's gate-conditioned prior, so a uniform pick is a draw of that prior's empirical version)."""
+    return {n: pool[int(rng.integers(len(pool)))] for n, pool in scr["pools"].items()}
