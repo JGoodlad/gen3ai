@@ -25,8 +25,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--every", type=int, default=4)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--text-only", action="store_true", help="only the builder + the TEXT invariant (no playouts)")
     a = ap.parse_args()
     c = A.cp()
+    if a.text_only:
+        return text_only(c, a)
     import run_det_playouts as R
     from agents.battle.core_replay import run_core
     from main.policy_spectrum.reader import inference_globals
@@ -49,7 +52,8 @@ def main():
         TRUE["calls"] = TRUE.get("calls", 0) + 1
         return team, {"new_slots": 0, "redrawn_move_slots": 0}
 
-    D.sample_world = true_sampler
+    NS = A.builder_ns()                   # the pilot's build_worlds, also returning its command template
+    NS["sample_world"] = true_sampler
     lib = F.load(F.default_path("release"))
     cores = [SearchCore(lib=lib) for _ in range(R.J)]
     off = C.clock_offset()
@@ -68,7 +72,8 @@ def main():
                     if did not in p1:
                         raise RuntimeError("no Phase 1 row")
                     true_team = getattr(b, opp)["team"]
-                    w = D.build_worlds(b, side, at, d["n"], did, P, R.J, root_choice_in_log=not p1[did]["other_open"])
+                    w = NS["build_worlds"](b, side, at, d["n"], did, P, R.J, root_choice_in_log=not p1[did]["other_open"])
+                    row["text_invariant"] = A.text_invariant(w, b.commands[:at])
                     row["tries"] = w["tries"]
                     row["fails"] = w["fails"]
                     row["leak"] = w["leak"]
@@ -127,6 +132,7 @@ def summarize(c, ids, path):
         "rows_differ": [r for r in ok if not r["rows_equal_both_viewers"]],
         "chunks_differ": [r for r in ok if not r["chunks_equal"]],
         "outcome_mismatch": [r for r in ok if r["outcome_mismatch"]],
+        "text_invariant": [r for r in ok if not r.get("text_invariant", {"ok": True})["ok"]],
     }
     out = {
         "audit": "A1 builder identity", "cp": c, "states_selected": len(ids), "states_done": len(rows),
@@ -144,6 +150,42 @@ def summarize(c, ids, path):
     out["pass"] = len(rows) == len(ids) and all(len(v) == 0 for v in fail.values())
     A.write_json(f"audit_a1_builder_identity_{c}.json", out)
     print({k: out[k] for k in ("states_done", "states_ok", "actions_compared", "counts", "pass")}, flush=True)
+
+
+def text_only(c, a):
+    """A1's TEXT-LEVEL invariant alone (``audit_lib.text_invariant``) over the SAME states; merged into the A1 JSON."""
+    import json
+
+    from main.policy_spectrum.truth import cmd_index
+
+    bk = A.bank(c)
+    P = A.priors()
+    p1 = A.phase1_rows(c)
+    ids = sorted(d["id"] for d in bk.decisions)[:: a.every][: a.limit]
+    NS = A.builder_ns()
+    NS["sample_world"] = lambda rng, P_, team, rv, *x, **k: (team, {"new_slots": 0, "redrawn_move_slots": 0})
+    rows = []
+    for did in ids:
+        d, b = A.decision(bk, did)
+        side = d["side"]
+        at = cmd_index(b, side, d["n"])
+        w = NS["build_worlds"](b, side, at, d["n"], did, P, 1, root_choice_in_log=not p1[did]["other_open"])
+        rows.append({"id": did, **A.text_invariant(w, b.commands[:at])})
+    bad = [r for r in rows if not r["ok"]]
+    ti = {"rule": "true team: every rendered rewritten token == the original token up to toid; every other token "
+                  "byte-equal; template rewritten counts == leak counts",
+          "states": len(rows),
+          "states_with_rewrites": sum(r.get("rewritten_moves", 0) + r.get("rewritten_switches", 0) > 0 for r in rows),
+          "rewritten_moves": sum(r.get("rewritten_moves", 0) for r in rows),
+          "rewritten_switches": sum(r.get("rewritten_switches", 0) for r in rows),
+          "violations": len(bad), "examples": bad[:10], "pass": not bad}
+    pj = A.HERE / f"audit_a1_builder_identity_{c}.json"
+    out = json.loads(pj.read_text())
+    out["text_invariant"] = ti
+    out["pass_playouts_rows_gate"] = out.get("pass_playouts_rows_gate", out["pass"])
+    out["pass"] = bool(out["pass_playouts_rows_gate"] and ti["pass"])
+    A.write_json(pj.name, out)
+    print({k: v for k, v in ti.items() if k != "examples"}, out["pass"], flush=True)
 
 
 if __name__ == "__main__":

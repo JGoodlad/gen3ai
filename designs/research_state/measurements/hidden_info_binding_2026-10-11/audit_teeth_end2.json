@@ -1,0 +1,749 @@
+{
+ "audit": "TEETH of A1-A3 (planted defects must be caught)",
+ "cp": "end2",
+ "A1a_off_by_one_rewritten_slot": {
+  "planted": 10,
+  "caught": 10,
+  "caught_without_text_invariant": 1,
+  "errors": 0,
+  "states": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic/win_s3_002#p1#21",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 1,
+    "text_invariant_example": {
+     "i": 1,
+     "template": [
+      "MOVE",
+      0,
+      0
+     ],
+     "rendered": "move hiddenpowergrass",
+     "original": "move fireblast"
+    },
+    "cmd_text_diffs": 1,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/random/win_s3_001#p1#9",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 1,
+    "text_invariant_example": {
+     "i": 5,
+     "template": [
+      "MOVE",
+      0,
+      0
+     ],
+     "rendered": "move toxic",
+     "original": "move thunderwave"
+    },
+    "cmd_text_diffs": 1,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_0/loss_s2_003#p1#32",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 1,
+    "text_invariant_example": {
+     "i": 62,
+     "template": [
+      "MOVE",
+      5,
+      1
+     ],
+     "rendered": "move willowisp",
+     "original": "move icepunch"
+    },
+    "cmd_text_diffs": 1,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s0_005#p1#32",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 1,
+    "text_invariant_example": {
+     "i": 17,
+     "template": [
+      "MOVE",
+      1,
+      0
+     ],
+     "rendered": "move hiddenpowerfire",
+     "original": "move meteormash"
+    },
+    "cmd_text_diffs": 1,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/win_s1_003#p1#24",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/win_s2_003#p1#3",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 1,
+    "text_invariant_example": {
+     "i": 3,
+     "template": [
+      "MOVE",
+      2,
+      1
+     ],
+     "rendered": "move firepunch",
+     "original": "move icepunch"
+    },
+    "cmd_text_diffs": 1,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/setup_sweep/loss_s1_003#p1#17",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 1,
+    "text_invariant_example": {
+     "i": 16,
+     "template": [
+      "MOVE",
+      1,
+      1
+     ],
+     "rendered": "move hydropump",
+     "original": "move earthquake"
+    },
+    "cmd_text_diffs": 1,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/setup_sweep_v2/loss_s0_003#p1#22",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 5,
+    "text_invariant_example": {
+     "i": 12,
+     "template": [
+      "MOVE",
+      0,
+      0
+     ],
+     "rendered": "move firepunch",
+     "original": "move bodyslam"
+    },
+    "cmd_text_diffs": 5,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/setup_sweep_v2/win_s0_002#p1#15",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 1,
+    "text_invariant_example": {
+     "i": 4,
+     "template": [
+      "MOVE",
+      0,
+      0
+     ],
+     "rendered": "move brickbreak",
+     "original": "move dragonclaw"
+    },
+    "cmd_text_diffs": 1,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller/win_s2_002#p1#11",
+    "gate_try1": true,
+    "text_invariant_ok": false,
+    "text_invariant_mismatches": 1,
+    "text_invariant_example": {
+     "i": 12,
+     "template": [
+      "MOVE",
+      2,
+      3
+     ],
+     "rendered": "move rest",
+     "original": "move hiddenpowerfire"
+    },
+    "cmd_text_diffs": 1,
+    "rows_equal_both_viewers": true,
+    "chunks_equal": true,
+    "outcome_mismatch": 0,
+    "caught_without_text_invariant": false,
+    "caught": true
+   }
+  ]
+ },
+ "A1b_seen_mon_item_swapped": {
+  "planted": 10,
+  "caught": 10,
+  "errors": 0,
+  "states": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#15",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#18",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s2_001#p1#7",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s0_003#p1#24",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s1_004#p1#10",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s2_005#p1#6",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/win_s1_002#p1#15",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/win_s3_001#p1#13",
+    "gate_try1": false,
+    "caught_by": "gate (no world passed in 30 tries)",
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s0_005#p1#2",
+    "gate_try1": true,
+    "cmd_text_diffs": 0,
+    "rows_equal_both_viewers": false,
+    "chunks_equal": false,
+    "outcome_mismatch": 7,
+    "caught": true
+   }
+  ]
+ },
+ "A2_seen_item_swapped": {
+  "planted_worlds": 80,
+  "worlds_compared_cell_by_cell (prefix replayed)": 64,
+  "caught_worlds_in_the_planted_field": 64,
+  "caught_worlds_any_UNEXPECTED": 80,
+  "caught_by_own_team_items_cells": 64,
+  "caught_by_request_item": 64,
+  "states": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|items.id|seen": 8,
+     "UNEXPECTED|obs_facts|seen.item_public|seen": 8,
+     "UNEXPECTED|request|item|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+    "slot": 0,
+    "species": "metagross",
+    "unexpected": {
+     "UNEXPECTED|own_team|items.id|seen": 8,
+     "UNEXPECTED|request|item|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s1_004#p1#38",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|items.id|seen": 8,
+     "UNEXPECTED|obs_facts|seen.item_public|seen": 8,
+     "UNEXPECTED|request|item|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_003#p1#23",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|items.id|seen": 8,
+     "UNEXPECTED|obs_facts|seen.item_public|seen": 8,
+     "UNEXPECTED|request|item|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#15",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|items.id|seen": 8,
+     "UNEXPECTED|obs_facts|seen.item_public|seen": 8,
+     "UNEXPECTED|request|item|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#21",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|items.id|seen": 8,
+     "UNEXPECTED|obs_facts|seen.item_public|seen": 8,
+     "UNEXPECTED|request|item|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_005#p1#4",
+    "slot": 0,
+    "species": "tyranitar",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|items.id|seen": 8,
+     "UNEXPECTED|own_team|hp.|seen": 8,
+     "UNEXPECTED|obs_facts|seen.item_public|seen": 8,
+     "UNEXPECTED|request|condition|seen": 8,
+     "UNEXPECTED|request|item|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#16",
+    "slot": 0,
+    "species": "tyranitar",
+    "unexpected": {
+     "UNEXPECTED|replay|refused|-": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#18",
+    "slot": 0,
+    "species": "tyranitar",
+    "unexpected": {
+     "UNEXPECTED|replay|refused|-": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_002#p1#14",
+    "slot": 0,
+    "species": "suicune",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|items.id|seen": 8,
+     "UNEXPECTED|obs_facts|seen.item_public|seen": 8,
+     "UNEXPECTED|request|item|seen": 8
+    }
+   }
+  ]
+ },
+ "A2_seen_evs_swapped": {
+  "planted_worlds": 80,
+  "worlds_compared_cell_by_cell (prefix replayed)": 56,
+  "caught_worlds_in_the_planted_field": 56,
+  "caught_worlds_any_UNEXPECTED": 80,
+  "caught_by_own_team_spread_cells": 56,
+  "caught_by_request_stats": 56,
+  "states": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|replay|refused|-": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_004#p1#6",
+    "slot": 0,
+    "species": "metagross",
+    "unexpected": {
+     "UNEXPECTED|own_team|spread.evs[0]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[1]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[2]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[3]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[4]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[5]|seen": 8,
+     "UNEXPECTED|request|stats|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s1_004#p1#38",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|replay|refused|-": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_003#p1#23",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|replay|refused|-": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#15",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|spread.evs[0]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[1]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[3]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[4]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[5]|seen": 8,
+     "UNEXPECTED|event_window|MAGNITUDE|gender_draws_equal": 8,
+     "UNEXPECTED|request|stats|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_004#p1#21",
+    "slot": 0,
+    "species": "zapdos",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|spread.evs[0]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[1]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[3]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[4]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[5]|seen": 8,
+     "UNEXPECTED|request|stats|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s3_005#p1#4",
+    "slot": 0,
+    "species": "tyranitar",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|hp.|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[0]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[1]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[4]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[5]|seen": 8,
+     "UNEXPECTED|other_team|hp|gender_draws_equal": 8,
+     "UNEXPECTED|event_window|MAGNITUDE|gender_draws_equal": 24,
+     "UNEXPECTED|request|condition|seen": 8,
+     "UNEXPECTED|request|stats|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#16",
+    "slot": 0,
+    "species": "tyranitar",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|spread.evs[0]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[1]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[2]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[4]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[5]|seen": 8,
+     "UNEXPECTED|request|stats|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_001#p1#18",
+    "slot": 0,
+    "species": "tyranitar",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|spread.evs[0]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[1]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[2]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[4]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[5]|seen": 8,
+     "UNEXPECTED|request|stats|seen": 8
+    }
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/win_s1_002#p1#14",
+    "slot": 0,
+    "species": "suicune",
+    "unexpected": {
+     "UNEXPECTED|gate|searched_side_rows_differ|-": 8,
+     "UNEXPECTED|own_team|spread.evs[1]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[3]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[4]|seen": 8,
+     "UNEXPECTED|own_team|spread.evs[5]|seen": 8,
+     "UNEXPECTED|event_window|MAGNITUDE|gender_draws_equal": 8,
+     "UNEXPECTED|request|stats|seen": 8
+    }
+   }
+  ]
+ },
+ "A3_perturbed_command": {
+  "planted": 10,
+  "caught": 10,
+  "worlds": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+    "cmd_index": 1,
+    "from": "move thunderbolt",
+    "to": "move hiddenpowergrass",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s1_004#p1#10",
+    "cmd_index": 10,
+    "from": "move meteormash",
+    "to": "move explosion",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic/loss_s1_005#p1#16",
+    "cmd_index": 1,
+    "from": "move thunderbolt",
+    "to": "move hiddenpowerice",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+    "cmd_index": 1,
+    "from": "move icebeam",
+    "to": "move pursuit",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/random/win_s3_001#p1#9",
+    "cmd_index": 3,
+    "from": "move toxic",
+    "to": "move thunderbolt",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s2_002#p1#14",
+    "cmd_index": 1,
+    "from": "move toxic",
+    "to": "move protect",
+    "refused": false,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_002#p1#19",
+    "cmd_index": 3,
+    "from": "move thunderwave",
+    "to": "move aromatherapy",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_2/loss_s1_004#p1#29",
+    "cmd_index": 1,
+    "from": "move flamethrower",
+    "to": "move roar",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_2/win_s3_002#p1#22",
+    "cmd_index": 1,
+    "from": "move explosion",
+    "to": "move earthquake",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/setup_sweep_v2/loss_s2_005#p1#15",
+    "cmd_index": 3,
+    "from": "move hydropump",
+    "to": "move protect",
+    "refused": false,
+    "caught": true
+   }
+  ],
+  "caught_without_a_refusal": 2
+ },
+ "A3_perturbed_switch_target": {
+  "planted": 10,
+  "caught": 10,
+  "caught_without_a_refusal": 0,
+  "worlds": [
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive/loss_s0_003#p1#23",
+    "cmd_index": 18,
+    "from": "switch Metagross",
+    "to": "switch Charizard",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/aggressive_v2/loss_s1_004#p1#10",
+    "cmd_index": 8,
+    "from": "switch Metagross",
+    "to": "switch Gengar",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/heuristic2/loss_s2_003#p1#14",
+    "cmd_index": 9,
+    "from": "switch Swampert",
+    "to": "switch Skarmory",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/random/win_s3_001#p1#9",
+    "cmd_index": 6,
+    "from": "switch Metagross",
+    "to": "switch Salamence",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_0/win_s2_002#p1#14",
+    "cmd_index": 7,
+    "from": "switch Jolteon",
+    "to": "switch Alakazam",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s3_002#p1#19",
+    "cmd_index": 1,
+    "from": "switch Blissey",
+    "to": "switch Suicune",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_2/loss_s1_004#p1#29",
+    "cmd_index": 5,
+    "from": "switch Swampert",
+    "to": "switch Jirachi",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/sentinel_2/win_s3_002#p1#22",
+    "cmd_index": 2,
+    "from": "switch Swampert",
+    "to": "switch Charizard",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/setup_sweep_v2/loss_s2_005#p1#15",
+    "cmd_index": 11,
+    "from": "switch Tyranitar",
+    "to": "switch Blissey",
+    "refused": true,
+    "caught": true
+   },
+   {
+    "id": "rb_es_end2_s2001/step_10000009/staller/win_s2_002#p1#11",
+    "cmd_index": 8,
+    "from": "switch Magneton",
+    "to": "switch Aerodactyl",
+    "refused": true,
+    "caught": true
+   }
+  ]
+ },
+ "summary": {
+  "A1a_off_by_one_rewritten_slot": {
+   "planted": 10,
+   "caught": 10,
+   "caught_without_text_invariant": 1,
+   "errors": 0
+  },
+  "A1b_seen_mon_item_swapped": {
+   "planted": 10,
+   "caught": 10,
+   "errors": 0
+  },
+  "A2_seen_item_swapped": {
+   "planted_worlds": 80,
+   "worlds_compared_cell_by_cell (prefix replayed)": 64,
+   "caught_worlds_in_the_planted_field": 64,
+   "caught_worlds_any_UNEXPECTED": 80,
+   "caught_by_own_team_items_cells": 64,
+   "caught_by_request_item": 64
+  },
+  "A2_seen_evs_swapped": {
+   "planted_worlds": 80,
+   "worlds_compared_cell_by_cell (prefix replayed)": 56,
+   "caught_worlds_in_the_planted_field": 56,
+   "caught_worlds_any_UNEXPECTED": 80,
+   "caught_by_own_team_spread_cells": 56,
+   "caught_by_request_stats": 56
+  },
+  "A3_perturbed_command": {
+   "planted": 10,
+   "caught": 10,
+   "caught_without_a_refusal": 2
+  },
+  "A3_perturbed_switch_target": {
+   "planted": 10,
+   "caught": 10,
+   "caught_without_a_refusal": 0
+  }
+ }
+}

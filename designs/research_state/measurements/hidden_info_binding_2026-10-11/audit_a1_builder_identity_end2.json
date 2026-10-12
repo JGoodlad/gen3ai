@@ -30,5 +30,16 @@
   "outcome_mismatch": []
  },
  "cpu_s_total": 3274.1,
- "pass": true
+ "pass": true,
+ "text_invariant": {
+  "rule": "true team: every rendered rewritten token == the original token up to toid; every other token byte-equal; template rewritten counts == leak counts",
+  "states": 600,
+  "states_with_rewrites": 139,
+  "rewritten_moves": 187,
+  "rewritten_switches": 3,
+  "violations": 0,
+  "examples": [],
+  "pass": true
+ },
+ "pass_playouts_rows_gate": true
 }

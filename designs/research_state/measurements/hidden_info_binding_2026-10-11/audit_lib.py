@@ -27,6 +27,49 @@ ARCH = Path.home() / "gen3ai_archive" / "hidden_info_binding"
 SRC = Path.home() / "gen3ai_archive" / "value_disc_pilot"
 
 
+def builder_ns(plant_off_by_one: bool = False) -> dict:
+    """A namespace whose ``build_worlds`` is the pilot's, ALSO returning its command template ``tmpl`` (an
+    in-process re-compile; the pilot file is untouched). ``plant_off_by_one`` renders every rewritten move slot one
+    position off (the TEETH plant). Patch ``ns["sample_world"]`` to steer the sampler."""
+    import inspect
+    src = inspect.getsource(D.build_worlds)
+    ret = '    return {"teams": teams,'
+    assert src.count(ret) == 1, "build_worlds return drifted"
+    src = src.replace(ret, '    return {"tmpl": [[s_, list(t) if isinstance(t, tuple) else t] for s_, t in tmpl], "teams": teams,')
+    if plant_off_by_one:
+        assert src.count("[t[2]]") == 1, "render line drifted"
+        src = src.replace("[t[2]]", "[(t[2] + 1) % 4]")
+    ns = dict(vars(D))
+    exec(compile(src, "<build_worlds_tmpl%s>" % ("_off_by_one" if plant_off_by_one else ""), "exec"), ns)
+    return ns
+
+
+def text_invariant(w: dict, original_cmds) -> dict:
+    """A1's TEXT-LEVEL invariant, with the TRUE team as the world: every rendered token equals the ORIGINAL command
+    token up to ``toid`` (a rewritten ("MOVE", mon, slot) -> ``move <id>``, ("SLOT", k) -> ``switch <name>``; every
+    other token byte-equal), and the template's rewritten-token counts equal the builder's ``leak`` counts."""
+    tmpl, cm = w["tmpl"], w["cmds"][0]
+    orig = [list(x) for x in original_cmds]
+    if cm is None or len(cm) != len(orig) or len(tmpl) != len(orig):
+        return {"ok": False, "reason": "no world / length differs", "mismatches": []}
+    bad = []
+    n_move = n_slot = 0
+    for i, ((_s_t, t), (s_r, r), (s_o, o)) in enumerate(zip(tmpl, cm, orig)):
+        if isinstance(t, list):
+            n_move += t[0] == "MOVE"
+            n_slot += t[0] == "SLOT"
+            vr, _, ar = r.partition(" ")
+            vo, _, ao = o.partition(" ")
+            if not (s_r == s_o and vr == vo and D.toid(ar) == D.toid(ao)):
+                bad.append({"i": i, "template": t, "rendered": r, "original": o})
+        elif [s_r, r] != [s_o, o]:
+            bad.append({"i": i, "template": t, "rendered": r, "original": o})
+    counts_ok = n_move == w["leak"]["rewritten_moves"] and n_slot == w["leak"]["rewritten_switches"]
+    return {"ok": not bad and counts_ok, "rewritten_moves": n_move, "rewritten_switches": n_slot,
+            "leak_counts": [w["leak"]["rewritten_moves"], w["leak"]["rewritten_switches"]], "counts_match": counts_ok,
+            "n_mismatch": len(bad), "mismatches": bad[:5]}
+
+
 def cp() -> str:
     c = C.cp()
     C.check_pin(c)
