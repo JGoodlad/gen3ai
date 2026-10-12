@@ -26,6 +26,7 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--limit", type=int, default=0, help="only the first N registered states (a subset run)")
     ap.add_argument("--ids", default="", help="a file of state ids to run (one per line), in place of all")
+    ap.add_argument("--tag", default="", help="a suffix for the row file (a RE-RUN of failed states)")
     a = ap.parse_args(argv)
 
     from replica import env
@@ -57,7 +58,7 @@ def main(argv=None) -> int:
     ids = ids[a.shard::a.nshards]
     out_dir = Path(a.out) / a.cp / a.arm
     out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / f"shard_{a.shard}_of_{a.nshards}.jsonl"
+    out = out_dir / f"shard_{a.shard}_of_{a.nshards}{a.tag}.jsonl"
     done = set()
     if out.exists():
         for line in out.read_text().splitlines():
