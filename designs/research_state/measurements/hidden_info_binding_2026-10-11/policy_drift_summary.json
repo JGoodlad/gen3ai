@@ -1,0 +1,1645 @@
+{
+ "what": "POLICY DRIFT (main.policy_drift, a DESCRIPTOR) over the two closing-test seeds' periodic checkpoints, each loaded at its own pin; masked KL(current || ref) in nats over legal actions (single-legal states included in kl_mean/median, as the tool does; kl_mean_choice_states excludes them); flip = greedy action changed, over states with >= 2 legal actions, bucketed by the OLDER policy's top1-top2 margin; per_1M = value * 1e6 / delta_steps (a linear normalisation; consecutive checkpoints are ~1M apart so it is ~ the raw value). back_10M_nearest = the recorded checkpoint nearest step-10M (the tool's own 'back' ref is the latest at least 10M back, absent where the 1M checkpoint is a few hundred steps too late).",
+ "commands": {
+  "env": "PYTHONPATH=<pin>/src CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=1 MKL_NUM_THREADS=1, cwd=<pin>; pin = /home/goodlad/.cache/gen3ai/vdp/pin_end2 (rb_es_end2_s2001) or pin_prod (rb_es_prod_s2001); interpreter /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3",
+  "collect": "nice -n 19 /home/goodlad/dev/gen3ai/scripts/ops/mem_cap.sh --name hib_drift 8 timeout 7200 taskset -c 5-7,13-15 python3 /tmp/hib_drift/drift_entry.py collect /home/goodlad/dev/gen3ai/models/<run>/snapshots/snapshot_000004000000.zip --battles 40 --seed-base 0 --threads 1",
+  "collect_note": "drift_entry.py = the pin's main.policy_drift run via runpy with ONE redirect: utils.bridge.team_validator.__file__ set to the MAIN checkout's copy, so team validation runs main's validate_team.js (byte-identical to both pins') against main's built deps/pokemon-showdown (submodule commit e0551883 at both pins and main). The pin checkouts have an EMPTY deps/pokemon-showdown, so the plain collect refused (No valid teams found: Cannot find module .../deps/pokemon-showdown).",
+  "watch": "nice -n 19 /home/goodlad/dev/gen3ai/scripts/ops/mem_cap.sh --name hib_drift 8 timeout 10800 taskset -c 5-7,13-15 python3 -m main.policy_drift watch /home/goodlad/dev/gen3ai/models/<run> --source both --once --threads 1 --nice 19 --device cpu",
+  "report": "python3 -m main.policy_drift report <run>  (-> ~/gen3ai_archive/policy_drift/<run>/report.txt)",
+  "summary": "python3 /tmp/hib_drift/summarize.py /tmp/hib_drift/commands.json (numpy only, from rows.jsonl + probs/)"
+ },
+ "runs": {
+  "rb_es_end2_s2001": {
+   "pin": "62085750",
+   "out_dir": "/home/goodlad/gen3ai_archive/policy_drift/rb_es_end2_s2001",
+   "probe_sha256": "751c172de3817762684404ecfb862598e2f5fe1b9930209fedade3731690d518",
+   "probe_states": 1195,
+   "probe_choice_states": 1156,
+   "probe_source": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/snapshots/snapshot_000004000000.zip",
+   "probe_battles": 40,
+   "probe_seed_base": 0,
+   "steps_recorded": [
+    1000192,
+    2000128,
+    3000064,
+    4000000,
+    5000095,
+    6000021,
+    7000147,
+    8000184,
+    9000001,
+    10000009,
+    11000016,
+    12000157,
+    13000418,
+    14000347,
+    15000182
+   ],
+   "row_status": {
+    "1000192": "ok",
+    "2000128": "ok",
+    "3000064": "ok",
+    "4000000": "ok",
+    "5000095": "ok",
+    "6000021": "ok",
+    "7000147": "ok",
+    "8000184": "ok",
+    "9000001": "ok",
+    "10000009": "ok",
+    "11000016": "ok",
+    "12000157": "ok",
+    "13000418": "ok",
+    "14000347": "ok",
+    "15000182": "ok"
+   },
+   "anchor_step": 1000192,
+   "per_checkpoint": {
+    "5000095": {
+     "prev": {
+      "delta_steps": 1000095,
+      "kl_mean": 0.11974,
+      "kl_median": 0.04016,
+      "kl_mean_choice_states": 0.12378,
+      "kl_mean_per_1M": 0.11973,
+      "kl_median_per_1M": 0.04015,
+      "flip_rate": 0.1704,
+      "flip_rate_per_1M": 0.1704,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 218,
+        "flip_rate": 0.367
+       },
+       "0.1-0.3": {
+        "n": 289,
+        "flip_rate": 0.1626
+       },
+       ">0.3": {
+        "n": 649,
+        "flip_rate": 0.1079
+       }
+      },
+      "step": 4000000
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 3999903,
+      "kl_mean": 0.59214,
+      "kl_median": 0.56826,
+      "kl_mean_choice_states": 0.61211,
+      "kl_mean_per_1M": 0.14804,
+      "kl_median_per_1M": 0.14207,
+      "flip_rate": 0.4637,
+      "flip_rate_per_1M": 0.1159,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.5286
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.3153
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 0.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (hazard|useful +94pp (n=53), attack|legal -34pp (n=876), phazing|legal -26pp (n=225), status|legal +19pp (n=503), setup|useful +19pp (n=205), self_ko|legal +12pp (n=212))"
+    },
+    "6000021": {
+     "prev": {
+      "delta_steps": 999926,
+      "kl_mean": 0.11416,
+      "kl_median": 0.0474,
+      "kl_mean_choice_states": 0.11801,
+      "kl_mean_per_1M": 0.11417,
+      "kl_median_per_1M": 0.0474,
+      "flip_rate": 0.1721,
+      "flip_rate_per_1M": 0.1722,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 237,
+        "flip_rate": 0.3418
+       },
+       "0.1-0.3": {
+        "n": 215,
+        "flip_rate": 0.4372
+       },
+       ">0.3": {
+        "n": 704,
+        "flip_rate": 0.0341
+       }
+      },
+      "step": 5000095
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 4999829,
+      "kl_mean": 0.65588,
+      "kl_median": 0.67207,
+      "kl_mean_choice_states": 0.67801,
+      "kl_mean_per_1M": 0.13118,
+      "kl_median_per_1M": 0.13442,
+      "flip_rate": 0.5208,
+      "flip_rate_per_1M": 0.1042,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.5609
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.3695
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 100%, hazard|useful +96pp (n=53), attack|legal -41pp (n=876), setup|useful +32pp (n=205), phazing|legal -27pp (n=225), switch|legal +19pp (n=1101), status|legal +18pp (n=503), self_ko|legal +12pp (n=212))"
+    },
+    "7000147": {
+     "prev": {
+      "delta_steps": 1000126,
+      "kl_mean": 0.13337,
+      "kl_median": 0.06967,
+      "kl_mean_choice_states": 0.13787,
+      "kl_mean_per_1M": 0.13335,
+      "kl_median_per_1M": 0.06966,
+      "flip_rate": 0.1791,
+      "flip_rate_per_1M": 0.179,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 130,
+        "flip_rate": 0.3231
+       },
+       "0.1-0.3": {
+        "n": 384,
+        "flip_rate": 0.3828
+       },
+       ">0.3": {
+        "n": 642,
+        "flip_rate": 0.028
+       }
+      },
+      "step": 6000021
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 5999955,
+      "kl_mean": 0.7155,
+      "kl_median": 0.7232,
+      "kl_mean_choice_states": 0.73964,
+      "kl_mean_per_1M": 0.11925,
+      "kl_median_per_1M": 0.12053,
+      "flip_rate": 0.4974,
+      "flip_rate_per_1M": 0.0829,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.5561
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.3695
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 0.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (hazard|useful +96pp (n=53), attack|legal -40pp (n=876), setup|useful +32pp (n=205), phazing|legal -27pp (n=225), self_ko|legal +23pp (n=212), status|legal +19pp (n=503))"
+    },
+    "8000184": {
+     "prev": {
+      "delta_steps": 1000037,
+      "kl_mean": 0.07785,
+      "kl_median": 0.03268,
+      "kl_mean_choice_states": 0.08047,
+      "kl_mean_per_1M": 0.07784,
+      "kl_median_per_1M": 0.03268,
+      "flip_rate": 0.1471,
+      "flip_rate_per_1M": 0.1471,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 128,
+        "flip_rate": 0.5703
+       },
+       "0.1-0.3": {
+        "n": 258,
+        "flip_rate": 0.1667
+       },
+       ">0.3": {
+        "n": 770,
+        "flip_rate": 0.0701
+       }
+      },
+      "step": 7000147
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 6999992,
+      "kl_mean": 0.73073,
+      "kl_median": 0.70287,
+      "kl_mean_choice_states": 0.75539,
+      "kl_mean_per_1M": 0.10439,
+      "kl_median_per_1M": 0.10041,
+      "flip_rate": 0.5208,
+      "flip_rate_per_1M": 0.0744,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.5811
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.3898
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 0.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (hazard|useful +98pp (n=53), attack|legal -46pp (n=876), setup|useful +33pp (n=205), phazing|legal -27pp (n=225), self_ko|legal +22pp (n=212), switch|legal +20pp (n=1101), status|legal +19pp (n=503))"
+    },
+    "9000001": {
+     "prev": {
+      "delta_steps": 999817,
+      "kl_mean": 0.11764,
+      "kl_median": 0.04598,
+      "kl_mean_choice_states": 0.12161,
+      "kl_mean_per_1M": 0.11767,
+      "kl_median_per_1M": 0.04598,
+      "flip_rate": 0.1125,
+      "flip_rate_per_1M": 0.1125,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 237,
+        "flip_rate": 0.3376
+       },
+       "0.1-0.3": {
+        "n": 120,
+        "flip_rate": 0.2417
+       },
+       ">0.3": {
+        "n": 799,
+        "flip_rate": 0.0263
+       }
+      },
+      "step": 8000184
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 7999809,
+      "kl_mean": 0.76362,
+      "kl_median": 0.68238,
+      "kl_mean_choice_states": 0.78939,
+      "kl_mean_per_1M": 0.09546,
+      "kl_median_per_1M": 0.0853,
+      "flip_rate": 0.6038,
+      "flip_rate_per_1M": 0.0755,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.6408
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.4678
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 100%, hazard|useful +98pp (n=53), attack|legal -54pp (n=876), switch|legal +29pp (n=1101), phazing|legal -27pp (n=225), self_ko|legal +22pp (n=212), status|legal +20pp (n=503))"
+    },
+    "10000009": {
+     "prev": {
+      "delta_steps": 1000008,
+      "kl_mean": 0.09046,
+      "kl_median": 0.0405,
+      "kl_mean_choice_states": 0.09352,
+      "kl_mean_per_1M": 0.09046,
+      "kl_median_per_1M": 0.0405,
+      "flip_rate": 0.1038,
+      "flip_rate_per_1M": 0.1038,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 165,
+        "flip_rate": 0.4364
+       },
+       "0.1-0.3": {
+        "n": 253,
+        "flip_rate": 0.083
+       },
+       ">0.3": {
+        "n": 738,
+        "flip_rate": 0.0366
+       }
+      },
+      "step": 9000001
+     },
+     "back_10M_nearest": {
+      "delta_steps": 8999817,
+      "kl_mean": 0.82639,
+      "kl_median": 0.73347,
+      "kl_mean_choice_states": 0.85427,
+      "kl_mean_per_1M": 0.09182,
+      "kl_median_per_1M": 0.0815,
+      "flip_rate": 0.6393,
+      "flip_rate_per_1M": 0.071,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.6838
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.4847
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 8999817,
+      "kl_mean": 0.82639,
+      "kl_median": 0.73347,
+      "kl_mean_choice_states": 0.85427,
+      "kl_mean_per_1M": 0.09182,
+      "kl_median_per_1M": 0.0815,
+      "flip_rate": 0.6393,
+      "flip_rate_per_1M": 0.071,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.6838
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.4847
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 100%, hazard|useful +98pp (n=53), attack|legal -59pp (n=876), switch|legal +37pp (n=1101), phazing|legal -27pp (n=225), status|legal +22pp (n=503))"
+    },
+    "11000016": {
+     "prev": {
+      "delta_steps": 1000007,
+      "kl_mean": 0.07225,
+      "kl_median": 0.03682,
+      "kl_mean_choice_states": 0.07468,
+      "kl_mean_per_1M": 0.07225,
+      "kl_median_per_1M": 0.03682,
+      "flip_rate": 0.1107,
+      "flip_rate_per_1M": 0.1107,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 129,
+        "flip_rate": 0.3876
+       },
+       "0.1-0.3": {
+        "n": 234,
+        "flip_rate": 0.1496
+       },
+       ">0.3": {
+        "n": 793,
+        "flip_rate": 0.0542
+       }
+      },
+      "step": 10000009
+     },
+     "back_10M_nearest": {
+      "delta_steps": 9999824,
+      "kl_mean": 0.80186,
+      "kl_median": 0.67557,
+      "kl_mean_choice_states": 0.82892,
+      "kl_mean_per_1M": 0.08019,
+      "kl_median_per_1M": 0.06756,
+      "flip_rate": 0.6263,
+      "flip_rate_per_1M": 0.0626,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.6671
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.4814
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 9999824,
+      "kl_mean": 0.80186,
+      "kl_median": 0.67557,
+      "kl_mean_choice_states": 0.82892,
+      "kl_mean_per_1M": 0.08019,
+      "kl_median_per_1M": 0.06756,
+      "flip_rate": 0.6263,
+      "flip_rate_per_1M": 0.0626,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.6671
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.4814
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 100%, attack|legal -57pp (n=876), self_ko|legal +24pp (n=212), status|legal +22pp (n=503), setup|useful +11pp (n=205))"
+    },
+    "12000157": {
+     "prev": {
+      "delta_steps": 1000141,
+      "kl_mean": 0.08301,
+      "kl_median": 0.04463,
+      "kl_mean_choice_states": 0.08581,
+      "kl_mean_per_1M": 0.08299,
+      "kl_median_per_1M": 0.04462,
+      "flip_rate": 0.1237,
+      "flip_rate_per_1M": 0.1237,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 135,
+        "flip_rate": 0.2963
+       },
+       "0.1-0.3": {
+        "n": 308,
+        "flip_rate": 0.2273
+       },
+       ">0.3": {
+        "n": 713,
+        "flip_rate": 0.0463
+       }
+      },
+      "step": 11000016
+     },
+     "back_10M_nearest": {
+      "delta_steps": 10000029,
+      "kl_mean": 0.80158,
+      "kl_median": 0.54621,
+      "kl_mean_choice_states": 0.82862,
+      "kl_mean_per_1M": 0.08016,
+      "kl_median_per_1M": 0.05462,
+      "flip_rate": 0.6021,
+      "flip_rate_per_1M": 0.0602,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 418,
+        "flip_rate": 0.7632
+       },
+       "0.1-0.3": {
+        "n": 407,
+        "flip_rate": 0.5725
+       },
+       ">0.3": {
+        "n": 331,
+        "flip_rate": 0.435
+       }
+      },
+      "step": 2000128
+     },
+     "tool_back_ref_step": 2000128,
+     "anchor": {
+      "delta_steps": 10999965,
+      "kl_mean": 0.81416,
+      "kl_median": 0.68272,
+      "kl_mean_choice_states": 0.84162,
+      "kl_mean_per_1M": 0.07401,
+      "kl_median_per_1M": 0.06207,
+      "flip_rate": 0.6237,
+      "flip_rate_per_1M": 0.0567,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.648
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.5254
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (attack|legal -50pp (n=876), confident flips 44%, setup|useful +40pp (n=205), self_ko|legal +23pp (n=212), hazard|useful +13pp (n=53))"
+    },
+    "13000418": {
+     "prev": {
+      "delta_steps": 1000261,
+      "kl_mean": 0.08938,
+      "kl_median": 0.05433,
+      "kl_mean_choice_states": 0.09239,
+      "kl_mean_per_1M": 0.08936,
+      "kl_median_per_1M": 0.05432,
+      "flip_rate": 0.1687,
+      "flip_rate_per_1M": 0.1686,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 130,
+        "flip_rate": 0.4385
+       },
+       "0.1-0.3": {
+        "n": 316,
+        "flip_rate": 0.212
+       },
+       ">0.3": {
+        "n": 710,
+        "flip_rate": 0.1
+       }
+      },
+      "step": 12000157
+     },
+     "back_10M_nearest": {
+      "delta_steps": 10000354,
+      "kl_mean": 0.72919,
+      "kl_median": 0.39174,
+      "kl_mean_choice_states": 0.75379,
+      "kl_mean_per_1M": 0.07292,
+      "kl_median_per_1M": 0.03917,
+      "flip_rate": 0.5285,
+      "flip_rate_per_1M": 0.0529,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 471,
+        "flip_rate": 0.6093
+       },
+       "0.1-0.3": {
+        "n": 196,
+        "flip_rate": 0.6173
+       },
+       ">0.3": {
+        "n": 489,
+        "flip_rate": 0.4151
+       }
+      },
+      "step": 3000064
+     },
+     "tool_back_ref_step": 3000064,
+     "anchor": {
+      "delta_steps": 12000226,
+      "kl_mean": 0.7501,
+      "kl_median": 0.67471,
+      "kl_mean_choice_states": 0.7754,
+      "kl_mean_per_1M": 0.06251,
+      "kl_median_per_1M": 0.05622,
+      "flip_rate": 0.6912,
+      "flip_rate_per_1M": 0.0576,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.7387
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.5322
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "cycling? (closer to back, anchor)"
+    },
+    "14000347": {
+     "prev": {
+      "delta_steps": 999929,
+      "kl_mean": 0.11552,
+      "kl_median": 0.05078,
+      "kl_mean_choice_states": 0.11941,
+      "kl_mean_per_1M": 0.11552,
+      "kl_median_per_1M": 0.05078,
+      "flip_rate": 0.1739,
+      "flip_rate_per_1M": 0.1739,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 230,
+        "flip_rate": 0.4739
+       },
+       "0.1-0.3": {
+        "n": 267,
+        "flip_rate": 0.1311
+       },
+       ">0.3": {
+        "n": 659,
+        "flip_rate": 0.0865
+       }
+      },
+      "step": 13000418
+     },
+     "back_10M_nearest": {
+      "delta_steps": 10000347,
+      "kl_mean": 0.68972,
+      "kl_median": 0.34538,
+      "kl_mean_choice_states": 0.71299,
+      "kl_mean_per_1M": 0.06897,
+      "kl_median_per_1M": 0.03454,
+      "flip_rate": 0.4585,
+      "flip_rate_per_1M": 0.0458,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 218,
+        "flip_rate": 0.6376
+       },
+       "0.1-0.3": {
+        "n": 289,
+        "flip_rate": 0.436
+       },
+       ">0.3": {
+        "n": 649,
+        "flip_rate": 0.4083
+       }
+      },
+      "step": 4000000
+     },
+     "tool_back_ref_step": 4000000,
+     "anchor": {
+      "delta_steps": 13000155,
+      "kl_mean": 0.74606,
+      "kl_median": 0.72617,
+      "kl_mean_choice_states": 0.77123,
+      "kl_mean_per_1M": 0.05739,
+      "kl_median_per_1M": 0.05586,
+      "flip_rate": 0.6644,
+      "flip_rate_per_1M": 0.0511,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.7434
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.4136
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 41%, attack|legal -26pp (n=876), self_ko|legal +21pp (n=212), hazard|useful -19pp (n=53), switch|legal +12pp (n=1101), phazing|legal +7pp (n=225))"
+    },
+    "15000182": {
+     "prev": {
+      "delta_steps": 999835,
+      "kl_mean": 0.12303,
+      "kl_median": 0.06127,
+      "kl_mean_choice_states": 0.12719,
+      "kl_mean_per_1M": 0.12306,
+      "kl_median_per_1M": 0.06128,
+      "flip_rate": 0.1851,
+      "flip_rate_per_1M": 0.1852,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 213,
+        "flip_rate": 0.3192
+       },
+       "0.1-0.3": {
+        "n": 271,
+        "flip_rate": 0.2214
+       },
+       ">0.3": {
+        "n": 672,
+        "flip_rate": 0.128
+       }
+      },
+      "step": 14000347
+     },
+     "back_10M_nearest": {
+      "delta_steps": 10000087,
+      "kl_mean": 0.64327,
+      "kl_median": 0.30993,
+      "kl_mean_choice_states": 0.66497,
+      "kl_mean_per_1M": 0.06433,
+      "kl_median_per_1M": 0.03099,
+      "flip_rate": 0.519,
+      "flip_rate_per_1M": 0.0519,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 237,
+        "flip_rate": 0.6751
+       },
+       "0.1-0.3": {
+        "n": 215,
+        "flip_rate": 0.6372
+       },
+       ">0.3": {
+        "n": 704,
+        "flip_rate": 0.4304
+       }
+      },
+      "step": 5000095
+     },
+     "tool_back_ref_step": 5000095,
+     "anchor": {
+      "delta_steps": 13999990,
+      "kl_mean": 0.74678,
+      "kl_median": 0.65815,
+      "kl_mean_choice_states": 0.77198,
+      "kl_mean_per_1M": 0.05334,
+      "kl_median_per_1M": 0.04701,
+      "flip_rate": 0.686,
+      "flip_rate_per_1M": 0.049,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 838,
+        "flip_rate": 0.747
+       },
+       "0.1-0.3": {
+        "n": 295,
+        "flip_rate": 0.4881
+       },
+       ">0.3": {
+        "n": 23,
+        "flip_rate": 1.0
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 43%, setup|useful +25pp (n=205), hazard|useful -23pp (n=53), status|legal +10pp (n=503), phazing|legal +6pp (n=225))"
+    }
+   },
+   "max_abs_dev_kl_prev_vs_tool_row": 0.0,
+   "avg_10_15M_per_1M": {
+    "checkpoints": [
+     "11000016",
+     "12000157",
+     "13000418",
+     "14000347",
+     "15000182"
+    ],
+    "kl_mean": 0.09664,
+    "kl_median": 0.04956,
+    "flip_rate": 0.15242
+   },
+   "avg_5_10M_per_1M": {
+    "checkpoints": [
+     "6000021",
+     "7000147",
+     "8000184",
+     "9000001",
+     "10000009"
+    ],
+    "kl_mean": 0.1067,
+    "kl_median": 0.04724,
+    "flip_rate": 0.14292
+   }
+  },
+  "rb_es_prod_s2001": {
+   "pin": "95d014fa",
+   "out_dir": "/home/goodlad/gen3ai_archive/policy_drift/rb_es_prod_s2001",
+   "probe_sha256": "9bc2af9813a905663b09ca81137785659e4116742c51b19f80dc532a3b935e0d",
+   "probe_states": 876,
+   "probe_choice_states": 859,
+   "probe_source": "/home/goodlad/dev/gen3ai/models/rb_es_prod_s2001/snapshots/snapshot_000004000000.zip",
+   "probe_battles": 40,
+   "probe_seed_base": 0,
+   "steps_recorded": [
+    1000192,
+    2000128,
+    3000064,
+    4000000,
+    5000029,
+    6000225,
+    7000111,
+    8000046,
+    9000119,
+    10000002,
+    11000010,
+    12000178,
+    13000102,
+    14000168,
+    15000075
+   ],
+   "row_status": {
+    "1000192": "ok",
+    "2000128": "ok",
+    "3000064": "ok",
+    "4000000": "ok",
+    "5000029": "ok",
+    "6000225": "ok",
+    "7000111": "ok",
+    "8000046": "ok",
+    "9000119": "ok",
+    "10000002": "ok",
+    "11000010": "ok",
+    "12000178": "ok",
+    "13000102": "ok",
+    "14000168": "ok",
+    "15000075": "ok"
+   },
+   "anchor_step": 1000192,
+   "per_checkpoint": {
+    "5000029": {
+     "prev": {
+      "delta_steps": 1000029,
+      "kl_mean": 0.20389,
+      "kl_median": 0.1271,
+      "kl_mean_choice_states": 0.20793,
+      "kl_mean_per_1M": 0.20388,
+      "kl_median_per_1M": 0.1271,
+      "flip_rate": 0.2456,
+      "flip_rate_per_1M": 0.2456,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 216,
+        "flip_rate": 0.5324
+       },
+       "0.1-0.3": {
+        "n": 212,
+        "flip_rate": 0.3726
+       },
+       ">0.3": {
+        "n": 431,
+        "flip_rate": 0.0394
+       }
+      },
+      "step": 4000000
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 3999837,
+      "kl_mean": 0.65029,
+      "kl_median": 0.62507,
+      "kl_mean_choice_states": 0.66316,
+      "kl_mean_per_1M": 0.16258,
+      "kl_median_per_1M": 0.15627,
+      "flip_rate": 0.6193,
+      "flip_rate_per_1M": 0.1548,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.7001
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0227
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.25
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (attack|legal -29pp (n=658), confident flips 25%, switch|legal +23pp (n=794), self_ko|legal +17pp (n=131))"
+    },
+    "6000225": {
+     "prev": {
+      "delta_steps": 1000196,
+      "kl_mean": 0.10998,
+      "kl_median": 0.08744,
+      "kl_mean_choice_states": 0.11216,
+      "kl_mean_per_1M": 0.10996,
+      "kl_median_per_1M": 0.08743,
+      "flip_rate": 0.2817,
+      "flip_rate_per_1M": 0.2817,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 158,
+        "flip_rate": 0.7468
+       },
+       "0.1-0.3": {
+        "n": 262,
+        "flip_rate": 0.3893
+       },
+       ">0.3": {
+        "n": 439,
+        "flip_rate": 0.0501
+       }
+      },
+      "step": 5000029
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 5000033,
+      "kl_mean": 0.72891,
+      "kl_median": 0.72408,
+      "kl_mean_choice_states": 0.74334,
+      "kl_mean_per_1M": 0.14578,
+      "kl_median_per_1M": 0.14481,
+      "flip_rate": 0.7404,
+      "flip_rate_per_1M": 0.1481,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.8102
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.5
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (hazard|useful -79pp (n=80), confident flips 50%, attack|legal -48pp (n=658), switch|legal +36pp (n=794), self_ko|legal +18pp (n=131), status|legal +11pp (n=452), phazing|legal +8pp (n=210))"
+    },
+    "7000111": {
+     "prev": {
+      "delta_steps": 999886,
+      "kl_mean": 0.0941,
+      "kl_median": 0.05487,
+      "kl_mean_choice_states": 0.09596,
+      "kl_mean_per_1M": 0.09411,
+      "kl_median_per_1M": 0.05487,
+      "flip_rate": 0.2736,
+      "flip_rate_per_1M": 0.2736,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 256,
+        "flip_rate": 0.6367
+       },
+       "0.1-0.3": {
+        "n": 171,
+        "flip_rate": 0.4211
+       },
+       ">0.3": {
+        "n": 432,
+        "flip_rate": 0.0
+       }
+      },
+      "step": 6000225
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 5999919,
+      "kl_mean": 0.77379,
+      "kl_median": 0.73241,
+      "kl_mean_choice_states": 0.78911,
+      "kl_mean_per_1M": 0.12897,
+      "kl_median_per_1M": 0.12207,
+      "flip_rate": 0.6717,
+      "flip_rate_per_1M": 0.112,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.7593
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.25
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 25%, self_ko|legal +19pp (n=131), phazing|legal +8pp (n=210))"
+    },
+    "8000046": {
+     "prev": {
+      "delta_steps": 999935,
+      "kl_mean": 0.05142,
+      "kl_median": 0.02875,
+      "kl_mean_choice_states": 0.05244,
+      "kl_mean_per_1M": 0.05143,
+      "kl_median_per_1M": 0.02875,
+      "flip_rate": 0.1816,
+      "flip_rate_per_1M": 0.1816,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 200,
+        "flip_rate": 0.415
+       },
+       "0.1-0.3": {
+        "n": 174,
+        "flip_rate": 0.2356
+       },
+       ">0.3": {
+        "n": 485,
+        "flip_rate": 0.066
+       }
+      },
+      "step": 7000111
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 6999854,
+      "kl_mean": 0.76509,
+      "kl_median": 0.68343,
+      "kl_mean_choice_states": 0.78023,
+      "kl_mean_per_1M": 0.1093,
+      "kl_median_per_1M": 0.09764,
+      "flip_rate": 0.6484,
+      "flip_rate_per_1M": 0.0926,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.7318
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.25
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (hazard|useful -42pp (n=80), switch|legal +29pp (n=794), confident flips 25%, recovery|useful +20pp (n=20), self_ko|legal +18pp (n=131), phazing|legal +8pp (n=210))"
+    },
+    "9000119": {
+     "prev": {
+      "delta_steps": 1000073,
+      "kl_mean": 0.10681,
+      "kl_median": 0.04317,
+      "kl_mean_choice_states": 0.10893,
+      "kl_mean_per_1M": 0.10681,
+      "kl_median_per_1M": 0.04316,
+      "flip_rate": 0.1432,
+      "flip_rate_per_1M": 0.1432,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 181,
+        "flip_rate": 0.3425
+       },
+       "0.1-0.3": {
+        "n": 218,
+        "flip_rate": 0.2018
+       },
+       ">0.3": {
+        "n": 460,
+        "flip_rate": 0.037
+       }
+      },
+      "step": 8000046
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 7999927,
+      "kl_mean": 0.81067,
+      "kl_median": 0.67241,
+      "kl_mean_choice_states": 0.82671,
+      "kl_mean_per_1M": 0.10133,
+      "kl_median_per_1M": 0.08405,
+      "flip_rate": 0.6752,
+      "flip_rate_per_1M": 0.0844,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.7634
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.25
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (attack|legal -42pp (n=658), switch|legal +30pp (n=794), recovery|useful +25pp (n=20), confident flips 25%, self_ko|legal +20pp (n=131), setup|useful +10pp (n=100), phazing|legal +8pp (n=210))"
+    },
+    "10000002": {
+     "prev": {
+      "delta_steps": 999883,
+      "kl_mean": 0.11017,
+      "kl_median": 0.06398,
+      "kl_mean_choice_states": 0.11235,
+      "kl_mean_per_1M": 0.11018,
+      "kl_median_per_1M": 0.06399,
+      "flip_rate": 0.2258,
+      "flip_rate_per_1M": 0.2259,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 135,
+        "flip_rate": 0.4074
+       },
+       "0.1-0.3": {
+        "n": 235,
+        "flip_rate": 0.5872
+       },
+       ">0.3": {
+        "n": 489,
+        "flip_rate": 0.002
+       }
+      },
+      "step": 9000119
+     },
+     "back_10M_nearest": {
+      "delta_steps": 8999810,
+      "kl_mean": 0.83198,
+      "kl_median": 0.72323,
+      "kl_mean_choice_states": 0.84845,
+      "kl_mean_per_1M": 0.09244,
+      "kl_median_per_1M": 0.08036,
+      "flip_rate": 0.6531,
+      "flip_rate_per_1M": 0.0726,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.707
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.5
+       }
+      },
+      "step": 1000192
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 8999810,
+      "kl_mean": 0.83198,
+      "kl_median": 0.72323,
+      "kl_mean_choice_states": 0.84845,
+      "kl_mean_per_1M": 0.09244,
+      "kl_median_per_1M": 0.08036,
+      "flip_rate": 0.6531,
+      "flip_rate_per_1M": 0.0726,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.707
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.5
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 50%, attack|legal -44pp (n=658), switch|legal +39pp (n=794), hazard|useful -26pp (n=80), recovery|useful +20pp (n=20), self_ko|legal +19pp (n=131), status|legal -11pp (n=452), phazing|legal +8pp (n=210))"
+    },
+    "11000010": {
+     "prev": {
+      "delta_steps": 1000008,
+      "kl_mean": 0.13833,
+      "kl_median": 0.05527,
+      "kl_mean_choice_states": 0.14107,
+      "kl_mean_per_1M": 0.13833,
+      "kl_median_per_1M": 0.05527,
+      "flip_rate": 0.2456,
+      "flip_rate_per_1M": 0.2456,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 134,
+        "flip_rate": 0.2836
+       },
+       "0.1-0.3": {
+        "n": 251,
+        "flip_rate": 0.4701
+       },
+       ">0.3": {
+        "n": 474,
+        "flip_rate": 0.116
+       }
+      },
+      "step": 10000002
+     },
+     "back_10M_nearest": {
+      "delta_steps": 9999818,
+      "kl_mean": 0.88999,
+      "kl_median": 0.67632,
+      "kl_mean_choice_states": 0.9076,
+      "kl_mean_per_1M": 0.089,
+      "kl_median_per_1M": 0.06763,
+      "flip_rate": 0.6717,
+      "flip_rate_per_1M": 0.0672,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.729
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.5
+       }
+      },
+      "step": 1000192
+     },
+     "tool_back_ref_step": null,
+     "anchor": {
+      "delta_steps": 9999818,
+      "kl_mean": 0.88999,
+      "kl_median": 0.67632,
+      "kl_mean_choice_states": 0.9076,
+      "kl_mean_per_1M": 0.089,
+      "kl_median_per_1M": 0.06763,
+      "flip_rate": 0.6717,
+      "flip_rate_per_1M": 0.0672,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.729
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.5
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (confident flips 50%, attack|legal -42pp (n=658), recovery|useful +20pp (n=20), self_ko|legal +18pp (n=131))"
+    },
+    "12000178": {
+     "prev": {
+      "delta_steps": 1000168,
+      "kl_mean": 0.07979,
+      "kl_median": 0.03001,
+      "kl_mean_choice_states": 0.08137,
+      "kl_mean_per_1M": 0.07977,
+      "kl_median_per_1M": 0.03001,
+      "flip_rate": 0.2398,
+      "flip_rate_per_1M": 0.2398,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 125,
+        "flip_rate": 0.88
+       },
+       "0.1-0.3": {
+        "n": 186,
+        "flip_rate": 0.2581
+       },
+       ">0.3": {
+        "n": 548,
+        "flip_rate": 0.0876
+       }
+      },
+      "step": 11000010
+     },
+     "back_10M_nearest": {
+      "delta_steps": 10000050,
+      "kl_mean": 0.82081,
+      "kl_median": 0.55635,
+      "kl_mean_choice_states": 0.83706,
+      "kl_mean_per_1M": 0.08208,
+      "kl_median_per_1M": 0.05563,
+      "flip_rate": 0.5716,
+      "flip_rate_per_1M": 0.0572,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 407,
+        "flip_rate": 0.8747
+       },
+       "0.1-0.3": {
+        "n": 173,
+        "flip_rate": 0.5549
+       },
+       ">0.3": {
+        "n": 279,
+        "flip_rate": 0.1398
+       }
+      },
+      "step": 2000128
+     },
+     "tool_back_ref_step": 2000128,
+     "anchor": {
+      "delta_steps": 10999986,
+      "kl_mean": 0.87731,
+      "kl_median": 0.84752,
+      "kl_mean_choice_states": 0.89468,
+      "kl_mean_per_1M": 0.07976,
+      "kl_median_per_1M": 0.07705,
+      "flip_rate": 0.674,
+      "flip_rate_per_1M": 0.0613,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.762
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.0682
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.25
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (self_ko|legal -21pp (n=131), recovery|useful +20pp (n=20))"
+    },
+    "13000102": {
+     "prev": {
+      "delta_steps": 999924,
+      "kl_mean": 0.09169,
+      "kl_median": 0.03394,
+      "kl_mean_choice_states": 0.09351,
+      "kl_mean_per_1M": 0.0917,
+      "kl_median_per_1M": 0.03394,
+      "flip_rate": 0.1665,
+      "flip_rate_per_1M": 0.1665,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 90,
+        "flip_rate": 0.2333
+       },
+       "0.1-0.3": {
+        "n": 246,
+        "flip_rate": 0.4106
+       },
+       ">0.3": {
+        "n": 523,
+        "flip_rate": 0.0402
+       }
+      },
+      "step": 12000178
+     },
+     "back_10M_nearest": {
+      "delta_steps": 10000038,
+      "kl_mean": 0.72691,
+      "kl_median": 0.40716,
+      "kl_mean_choice_states": 0.74129,
+      "kl_mean_per_1M": 0.07269,
+      "kl_median_per_1M": 0.04072,
+      "flip_rate": 0.4692,
+      "flip_rate_per_1M": 0.0469,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 357,
+        "flip_rate": 0.6471
+       },
+       "0.1-0.3": {
+        "n": 133,
+        "flip_rate": 0.594
+       },
+       ">0.3": {
+        "n": 369,
+        "flip_rate": 0.252
+       }
+      },
+      "step": 3000064
+     },
+     "tool_back_ref_step": 3000064,
+     "anchor": {
+      "delta_steps": 11999910,
+      "kl_mean": 0.77965,
+      "kl_median": 0.6559,
+      "kl_mean_choice_states": 0.79508,
+      "kl_mean_per_1M": 0.06497,
+      "kl_median_per_1M": 0.05466,
+      "flip_rate": 0.6857,
+      "flip_rate_per_1M": 0.0571,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.7538
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.4318
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.25
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "cycling? (closer to anchor)"
+    },
+    "14000168": {
+     "prev": {
+      "delta_steps": 1000066,
+      "kl_mean": 0.13003,
+      "kl_median": 0.03355,
+      "kl_mean_choice_states": 0.1326,
+      "kl_mean_per_1M": 0.13002,
+      "kl_median_per_1M": 0.03354,
+      "flip_rate": 0.2375,
+      "flip_rate_per_1M": 0.2375,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 194,
+        "flip_rate": 0.7577
+       },
+       "0.1-0.3": {
+        "n": 176,
+        "flip_rate": 0.0966
+       },
+       ">0.3": {
+        "n": 489,
+        "flip_rate": 0.0818
+       }
+      },
+      "step": 13000102
+     },
+     "back_10M_nearest": {
+      "delta_steps": 10000168,
+      "kl_mean": 0.95914,
+      "kl_median": 0.51774,
+      "kl_mean_choice_states": 0.97813,
+      "kl_mean_per_1M": 0.09591,
+      "kl_median_per_1M": 0.05177,
+      "flip_rate": 0.5681,
+      "flip_rate_per_1M": 0.0568,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 216,
+        "flip_rate": 0.875
+       },
+       "0.1-0.3": {
+        "n": 212,
+        "flip_rate": 0.6651
+       },
+       ">0.3": {
+        "n": 431,
+        "flip_rate": 0.3666
+       }
+      },
+      "step": 4000000
+     },
+     "tool_back_ref_step": 4000000,
+     "anchor": {
+      "delta_steps": 12999976,
+      "kl_mean": 0.89114,
+      "kl_median": 0.68837,
+      "kl_mean_choice_states": 0.90878,
+      "kl_mean_per_1M": 0.06855,
+      "kl_median_per_1M": 0.05295,
+      "flip_rate": 0.7998,
+      "flip_rate_per_1M": 0.0615,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.8281
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.4318
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.75
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "shifting (attack|legal -42pp (n=658), confident flips 37%, switch|legal +34pp (n=794), phazing|legal +23pp (n=210), status|legal -12pp (n=452))"
+    },
+    "15000075": {
+     "prev": {
+      "delta_steps": 999907,
+      "kl_mean": 0.08057,
+      "kl_median": 0.05908,
+      "kl_mean_choice_states": 0.08216,
+      "kl_mean_per_1M": 0.08058,
+      "kl_median_per_1M": 0.05909,
+      "flip_rate": 0.2247,
+      "flip_rate_per_1M": 0.2247,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 210,
+        "flip_rate": 0.5
+       },
+       "0.1-0.3": {
+        "n": 145,
+        "flip_rate": 0.4345
+       },
+       ">0.3": {
+        "n": 504,
+        "flip_rate": 0.0496
+       }
+      },
+      "step": 14000168
+     },
+     "back_10M_nearest": {
+      "delta_steps": 10000046,
+      "kl_mean": 0.71382,
+      "kl_median": 0.27942,
+      "kl_mean_choice_states": 0.72795,
+      "kl_mean_per_1M": 0.07138,
+      "kl_median_per_1M": 0.02794,
+      "flip_rate": 0.468,
+      "flip_rate_per_1M": 0.0468,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 158,
+        "flip_rate": 0.943
+       },
+       "0.1-0.3": {
+        "n": 262,
+        "flip_rate": 0.5611
+       },
+       ">0.3": {
+        "n": 439,
+        "flip_rate": 0.2415
+       }
+      },
+      "step": 5000029
+     },
+     "tool_back_ref_step": 5000029,
+     "anchor": {
+      "delta_steps": 13999883,
+      "kl_mean": 0.86926,
+      "kl_median": 0.85756,
+      "kl_mean_choice_states": 0.88647,
+      "kl_mean_per_1M": 0.06209,
+      "kl_median_per_1M": 0.06125,
+      "flip_rate": 0.7672,
+      "flip_rate_per_1M": 0.0548,
+      "flip_by_old_margin": {
+       "<0.1": {
+        "n": 727,
+        "flip_rate": 0.7978
+       },
+       "0.1-0.3": {
+        "n": 44,
+        "flip_rate": 0.7955
+       },
+       ">0.3": {
+        "n": 88,
+        "flip_rate": 0.5
+       }
+      },
+      "step": 1000192
+     },
+     "tool_verdict": "cycling? (closer to back)"
+    }
+   },
+   "max_abs_dev_kl_prev_vs_tool_row": 0.0,
+   "avg_10_15M_per_1M": {
+    "checkpoints": [
+     "11000010",
+     "12000178",
+     "13000102",
+     "14000168",
+     "15000075"
+    ],
+    "kl_mean": 0.10408,
+    "kl_median": 0.04237,
+    "flip_rate": 0.22282
+   },
+   "avg_5_10M_per_1M": {
+    "checkpoints": [
+     "6000225",
+     "7000111",
+     "8000046",
+     "9000119",
+     "10000002"
+    ],
+    "kl_mean": 0.0945,
+    "kl_median": 0.05564,
+    "flip_rate": 0.2212
+   }
+  }
+ }
+}

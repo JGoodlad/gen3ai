@@ -1,0 +1,8 @@
+{
+ "env": "PYTHONPATH=<pin>/src CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=1 MKL_NUM_THREADS=1, cwd=<pin>; pin = /home/goodlad/.cache/gen3ai/vdp/pin_end2 (rb_es_end2_s2001) or pin_prod (rb_es_prod_s2001); interpreter /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3",
+ "collect": "nice -n 19 /home/goodlad/dev/gen3ai/scripts/ops/mem_cap.sh --name hib_drift 8 timeout 7200 taskset -c 5-7,13-15 python3 /tmp/hib_drift/drift_entry.py collect /home/goodlad/dev/gen3ai/models/<run>/snapshots/snapshot_000004000000.zip --battles 40 --seed-base 0 --threads 1",
+ "collect_note": "drift_entry.py = the pin's main.policy_drift run via runpy with ONE redirect: utils.bridge.team_validator.__file__ set to the MAIN checkout's copy, so team validation runs main's validate_team.js (byte-identical to both pins') against main's built deps/pokemon-showdown (submodule commit e0551883 at both pins and main). The pin checkouts have an EMPTY deps/pokemon-showdown, so the plain collect refused (No valid teams found: Cannot find module .../deps/pokemon-showdown).",
+ "watch": "nice -n 19 /home/goodlad/dev/gen3ai/scripts/ops/mem_cap.sh --name hib_drift 8 timeout 10800 taskset -c 5-7,13-15 python3 -m main.policy_drift watch /home/goodlad/dev/gen3ai/models/<run> --source both --once --threads 1 --nice 19 --device cpu",
+ "report": "python3 -m main.policy_drift report <run>  (-> ~/gen3ai_archive/policy_drift/<run>/report.txt)",
+ "summary": "python3 /tmp/hib_drift/summarize.py /tmp/hib_drift/commands.json (numpy only, from rows.jsonl + probs/)"
+}

@@ -1,0 +1,85 @@
+{
+ "PASS": true,
+ "a_bit_identical": 64,
+ "a_fail": [],
+ "b": {
+  "PLACEBO": {
+   "fail_slots": 0,
+   "other_max_sigma": 9.999997618214625e-07,
+   "pinned_or_untargeted_changed": 0,
+   "slots": 193,
+   "target_min_sigma": 0.9999990000002382
+  },
+  "SELFMAP": {
+   "fail_slots": 0,
+   "other_max_sigma": 9.999997618214625e-07,
+   "pinned_or_untargeted_changed": 0,
+   "slots": 193,
+   "target_min_sigma": 0.9999990000002382
+  },
+  "TRUE": {
+   "fail_slots": 0,
+   "other_max_sigma": 9.999997618214625e-07,
+   "pinned_or_untargeted_changed": 0,
+   "slots": 193,
+   "target_min_sigma": 0.9999990000002382
+  },
+  "TRUEHYP": {
+   "fail_slots": 0,
+   "other_max_sigma": 9.999997618214625e-07,
+   "pinned_or_untargeted_changed": 0,
+   "slots": 289,
+   "target_min_sigma": 0.9999990000002382
+  }
+ },
+ "c": {
+  "TRUE": {
+   "fail_slots": 0,
+   "min_ratio": 0.9999914169311523,
+   "slots": 193
+  },
+  "TRUEHYP": {
+   "fail_slots": 0,
+   "min_ratio": 0.9999914169311523,
+   "slots": 289
+  }
+ },
+ "calls_ok": true,
+ "clean_after": true,
+ "cp": "prod",
+ "d": {
+  "changed_any": 64,
+  "changed_gt_1e-3": 64,
+  "of": 64
+ },
+ "move_set_closure": "absent",
+ "pin": "prod",
+ "placebo": {
+  "gt1_hp": 0,
+  "of": 64,
+  "overlap_true_or_pinned": 0,
+  "repro_bytes_equal": 64,
+  "repro_targets_equal": 64,
+  "short": 0,
+  "slots": 193,
+  "untargeted_by_true": 0,
+  "wrong_count": 0
+ },
+ "seen_unmatched": 0,
+ "selfmap": {
+  "not_topk": 0,
+  "short": 0,
+  "slots": 193
+ },
+ "states_checked": 64,
+ "states_with_targets": 64,
+ "true_not_cand": 0,
+ "true_unrev_lt_k": 0,
+ "truehyp": {
+  "hyp_matched": 96,
+  "hyp_slots": 190,
+  "never_seen": 190,
+  "never_seen_covered": 96
+ },
+ "wall_s": 236.2
+}
