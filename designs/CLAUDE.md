@@ -34,7 +34,9 @@ They differ almost always; a pinned run trains on its pin's code.
 lives in [`endstate/`](endstate/) (the search-enablement direction — value discrimination, the RNG alignment of
 counterfactual playouts, the label factory — is [`endstate/design_value_discrimination.md`](endstate/design_value_discrimination.md);
 its adversarial follow-up, WHICH hidden information binds search and the network (moves, the never-seen mons, items,
-abilities, spreads), with its pre-registered rules, is [`endstate/design_hidden_info_binding.md`](endstate/design_hidden_info_binding.md)); the ranked queues are `research_state/EXPERIMENT_BACKLOG.md`
+abilities, spreads), with its pre-registered rules, is [`endstate/design_hidden_info_binding.md`](endstate/design_hidden_info_binding.md);
+the ONE spec that gives training, search and the model's inputs graded extra information — the INFORMATION LEVERS, how
+each consumer honours them and how to read ceilings with them — is [`endstate/design_information_levers.md`](endstate/design_information_levers.md)); the ranked queues are `research_state/EXPERIMENT_BACKLOG.md`
 (experiments), `ops/TASK_BACKLOG.md` (builds) and `ops/TECH_DEBT_BACKLOG.md` (debt). Production is
 what `--arch production` resolves — `production_config.json` (+ its sibling `production_config.README.md`
 for provenance) and the registry `baselines.json` — never a run named in prose. The `ai_vN` folders
