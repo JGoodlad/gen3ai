@@ -557,6 +557,9 @@ def screen(prep: B.Prep, arm: str) -> dict:
             moving.clear()
             moving.update(sensitivity(n, upto, cur_t))
             props = pair_proposals(n) if pair_mode else proposals(n)
+            if not props:
+                stuck.add(n)
+                continue
             cands = []
             for _lab, c, _lp in props:
                 st = dict(ctx)

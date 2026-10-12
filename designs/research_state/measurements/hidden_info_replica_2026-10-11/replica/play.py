@@ -85,54 +85,63 @@ def main(argv=None) -> int:
                 seeds = turn_seeds(sid, 48)
                 tokens = {str(x): y for x, y in d["tokens"].items()}
                 row: dict = {"id": sid, "cp": a.cp, "arm": a.arm, "schema": "hir_replica_rows_v1"}
-                if a.arm == "O":
-                    from main.policy_spectrum.truth import cmd_index
-                    at = cmd_index(b, d["side"], d["n"])
-                    res = play_out(to_log(b), at, d["side"], policy=policy, seeds=seeds[:8], core=core,
-                                   stall="production", max_turns=999)
-                    got = {str(x): y for x, y in sorted(res.tokens.items())}
-                    outcomes: dict = {}
-                    for br in sorted(res.branches, key=lambda x: (int(x["action"]), int(x["seed"]))):
-                        outcomes.setdefault(str(int(br["action"])), []).append(res.value(br))
-                    row.update({"ok": got == tokens, "reason": None if got == tokens else f"tokens {got}",
-                                "outcomes": outcomes, "other_open": res.root.get("other_open")})
-                else:
-                    prep = B.prepare(bank, dec, sid)
-                    rec = fair.build(prep, a.arm)
-                    row.update({"build": {k2: v for k2, v in rec.items() if k2 != "worlds"},
-                                "pending_dropped": prep.pending is not None, "gender_draws": prep.gender_draws,
-                                "seen": {n: {"species": m.species, "moves": m.moves, "item": m.item,
-                                             "ability": m.ability} for n, m in prep.seen.mons.items()}})
-                    if not rec.get("ok"):
-                        row.update({"ok": False, "reason": rec.get("reason")})
+                try:
+                    if a.arm == "O":
+                        from main.policy_spectrum.truth import cmd_index
+                        at = cmd_index(b, d["side"], d["n"])
+                        res = play_out(to_log(b), at, d["side"], policy=policy, seeds=seeds[:8], core=core,
+                                       stall="production", max_turns=999)
+                        got = {str(x): y for x, y in sorted(res.tokens.items())}
+                        outcomes: dict = {}
+                        for br in sorted(res.branches, key=lambda x: (int(x["action"]), int(x["seed"]))):
+                            outcomes.setdefault(str(int(br["action"])), []).append(res.value(br))
+                        row.update({"ok": got == tokens, "reason": None if got == tokens else f"tokens {got}",
+                                    "outcomes": outcomes, "other_open": res.root.get("other_open")})
                     else:
-                        outcomes = {}
-                        worlds = []
-                        bad = None
+                        prep = B.prepare(bank, dec, sid)
+                        rec = fair.build(prep, a.arm)
+                        row.update({"build": {k2: v for k2, v in rec.items() if k2 != "worlds"},
+                                    "pending_dropped": prep.pending is not None, "gender_draws": prep.gender_draws,
+                                    "seen": {n: {"species": m.species, "moves": m.moves, "item": m.item,
+                                                 "ability": m.ability} for n, m in prep.seen.mons.items()}})
+                        if not rec.get("ok"):
+                            row.update({"ok": False, "reason": rec.get("reason")})
+                        else:
+                            outcomes = {}
+                            worlds = []
+                            bad = None
 
-                        def one(jw):
-                            j, w = jw
-                            teams = [None, None]
-                            teams[0 if prep.opp == "p1" else 1] = w["team"]
-                            teams[0 if prep.side == "p1" else 1] = prep.own_team
-                            cmds = [f"CHOOSE {c[0]} {c[1]}" for c in w["cmds"]] + [f"CHOOSE {d['side']} {d['played']}"]
-                            log = {"format_id": b.format_id, "seed": prep.world_seed,
-                                   "names": [b.p1["name"], b.p2["name"]], "teams": teams, "cmds": cmds}
-                            return play_out(log, len(w["cmds"]), d["side"], policy=policy, seeds=[seeds[j]],
-                                            core=world_core(), stall="production", max_turns=999)
+                            def one(jw):
+                                j, w = jw
+                                teams = [None, None]
+                                teams[0 if prep.opp == "p1" else 1] = w["team"]
+                                teams[0 if prep.side == "p1" else 1] = prep.own_team
+                                cmds = [f"CHOOSE {c[0]} {c[1]}" for c in w["cmds"]] + [f"CHOOSE {d['side']} {d['played']}"]
+                                log = {"format_id": b.format_id, "seed": prep.world_seed,
+                                       "names": [b.p1["name"], b.p2["name"]], "teams": teams, "cmds": cmds}
+                                return play_out(log, len(w["cmds"]), d["side"], policy=policy, seeds=[seeds[j]],
+                                                core=world_core(), stall="production", max_turns=999)
 
-                        results = list(pool.map(one, list(enumerate(rec["worlds"]))))
-                        for j, (w, res) in enumerate(zip(rec["worlds"], results)):
-                            got = {str(x): y for x, y in sorted(res.tokens.items())}
-                            if got != tokens:
-                                bad = f"world {j}: root tokens {got} != {tokens}"
-                                break
-                            for br in res.branches:
-                                outcomes.setdefault(str(int(br["action"])), []).append(res.value(br))
-                            worlds.append({"team": w["team"], "rendered": w["rendered"], "origin": w["origin"],
-                                           "other_open": res.root.get("other_open")})
-                        row.update({"ok": bad is None, "reason": bad, "outcomes": outcomes if bad is None else {},
-                                    "worlds": worlds})
+                            results = list(pool.map(one, list(enumerate(rec["worlds"]))))
+                            for j, (w, res) in enumerate(zip(rec["worlds"], results)):
+                                got = {str(x): y for x, y in sorted(res.tokens.items())}
+                                if got != tokens:
+                                    bad = f"world {j}: root tokens {got} != {tokens}"
+                                    break
+                                for br in res.branches:
+                                    outcomes.setdefault(str(int(br["action"])), []).append(res.value(br))
+                                worlds.append({"team": w["team"], "rendered": w["rendered"], "origin": w["origin"],
+                                               "other_open": res.root.get("other_open")})
+                            row.update({"ok": bad is None, "reason": bad, "outcomes": outcomes if bad is None else {},
+                                        "worlds": worlds})
+                except Exception as exc:          # a state the builder or the core refuses: a FAILED row
+                    import traceback
+                    row.update({"ok": False, "reason": f"exception: {type(exc).__name__}: {str(exc)[:200]}",
+                                "trace": traceback.format_exc()[-1500:]})
+                    # a Rust panic poisons a handle: start every later state on fresh ones
+                    core = SearchCore(path=env.lib_path(a.cp))
+                    cores.append(core)
+                    local = threading.local()
                 row.update({"wall_s": round(time.monotonic() - t0, 3), "cpu_s": round(time.process_time() - c0, 3)})
                 f.write(json.dumps(row, sort_keys=True) + "\n")
                 f.flush()
