@@ -297,10 +297,17 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | **any exploratory or one-off HEAVY job** (a trace, a benchmark, a measurement driver, anything that loads many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`), a timeout INSIDE (`mem_cap.sh 24 timeout 2h python …`), composes with `gpu_lock.sh` in either order. The job gets its OWN scope (`MemoryMax=<GB>G`, swap 0, `OOMPolicy=stop`) inside `gen3ai-heavy.slice` (aggregate cap, default 64 GB of 89) at `oom_score_adj` +500, so an overrun kills only that job (exit 86). 2026-09-30: three global OOM kills of a 74-82 GB python3 each tore down the whole tmux scope (Claude + every agent) | — |
 
 ```bash
-# THE ROUTINE GATE — everything cheap, whatever it needs; -n 6 (-n 4 beside a live training run),
-# under THE gate slot (one gate at a time).
+# THE ROUTINE GATE — everything cheap, whatever it needs; -n 6 on a quiet box, under THE gate slot
+# (one gate at a time).
 export PYTHONPATH=$PYTHONPATH:src && scripts/ops/gate_lock.sh \
   /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 6
+# BESIDE A LIVE TRAINING RUN (rule 5b — the usual state): low priority on the agent cores, -n 3
+nice -n 19 taskset -c 5-7,13-15 scripts/ops/gate_lock.sh \
+  /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 3
+# Who holds the gate, since when, its ETA, and who is queued (no lock taken):
+scripts/ops/gate_lock.sh --status            # --json for an agent deciding whether to wait
+# THE STATIC TIER, fast form (no gate lock; the same 240 tests as `-m static` without collecting the tree):
+pytest $(python -m utils.static_gates --paths) -q -n 2
 ```
 
 **The gate SEMAPHORE** (`scripts/ops/gate_lock.sh`, `src/utils/gate_lock.py`, 2026-09-30): at most
@@ -312,10 +319,23 @@ plus a compile inventory and a GPU benchmark put load ~36 on 8 cores / 16 thread
 kernel while re-trying the rest; a crashed holder's slot frees when it dies. Re-entrant like the GPU
 lock (`GEN3AI_GATE_LOCK_HELD=<pid>:<slot>`, verified against `/proc/locks`); all slots held by
 ancestors is `GateLockSelfDeadlock` (exit 3); the timeout is inside (`--timeout-s`, exit 4). Wait and
-acquisition time go to stderr; `--status` names the holders. When a `train_rl_agent.py --run-dir`
-process is live, every take prints ONE line naming the run and recommending `-n 4`
-(`gate_lock.live_run_warning`, from `utils.procfs.live_training_runs` — the rule
-the retired cutover governor read); it never changes the command.
+acquisition time go to stderr. When a `train_rl_agent.py --run-dir` process is live, every take prints
+ONE line naming the run and the rule-5b shape — nice 19, `taskset -c` the agent cores (every cpu the
+trainer is NOT pinned to), `-n` = 0.5 x those cpus (`LEASED_WORKERS_PER_CPU`) — and what is wrong with
+THIS gate's shape (nice < 19, cpus overlapping the trainer's) (`gate_lock.live_run_warning`, from
+`utils.procfs.live_training_runs`); it never changes the command.
+
+**`--status` — who, since when, how long, who waits** (`src/utils/gate_lock_status.py`, 2026-10-12, after
+agents queued behind a 2 h+ gate with only a pid to go on). Every holder writes `slot<i>.json` beside its
+slot (pid, worktree, command, cpus, nice, `-n`, acquired-at) — trusted only while `/proc/locks` lists that
+pid holding the slot; a holder from an older `gate_lock` falls back to `/proc` and says its time includes
+its queue wait. Every release appends its wall and exit code to `history.jsonl`; the **ETA** is the median
+wall of the last 7 finished ROUTINE gates of the SAME shape (`-n` on the same cpu count, exit 0/1) — no
+comparable history, no number. It also prints the holder tree's CPU (average since acquisition, plus a 1 s
+sample: a tree under 0.05 cores is flagged IDLE — a possible deadlock to `py-spy dump`, never a licence to
+kill someone else's gate), OVERDUE past 1.5x the ETA, and every blocked taker with its wait (flock wakes
+waiters in no guaranteed order, so the list is not a promise). `--json` for agents. The waiting log line
+every 60 s carries the holder's age and ETA. The records only REPORT: the flock alone is the lock.
 
 ### Routine-gate wall time and the `-n` × gate_lock policy (measured 2026-09-30 / 10-01)
 
@@ -414,6 +434,17 @@ rots. Both carry `static` (the budget tier above — they run even in the fast i
 |---|---|---|---|
 | `src/agents/model/mypy_gate_test.py` | `python -m mypy` (**no path argument** — the scope comes from `mypy.ini`) | `src/agents/model` **+ `src/agents/observation`**, per `mypy.ini`'s `files =` | **0.28 s warm**, 19.6 s cold (32.6 s on a loaded box, 2026-10-02) |
 | `src/ruff_gate_test.py` | `ruff check src/agents src/main src/utils --select F,E9 --exclude src/rust_sim` | `agents/` + `main/` + `utils/` | **0.10 s** |
+
+**A fresh checkout's mypy caches are SEEDED, not built cold** (`src/utils/mypy_cache_seed.py`,
+2026-10-12). Both mypy-backed gates (this one and the enum-str gate) first copy the newest sibling
+checkout's cache into an EMPTY one — a consistent snapshot (SQLite's backup API per `cache.<n>.db` shard
++ `quick_check`, staged then renamed; any failure = a cold run, never a red gate). It is safe because
+mypy re-validates every entry against THIS checkout's source by content hash and options, and re-checks a
+module whose dependency's interface changed: `mypy_cache_seed_test.py` pins, on a real mypy, that an
+interface change made after the seed is still reported in the unchanged dependent. Measured on the agent
+cores beside a live run (nice 19, `-n 2`): the static tier from empty caches **237 s cold -> 105 s seeded**
+(87 s warm) — the enum-str gate is 185 s cold, the mypy gate 78 s. `GEN3AI_MYPY_CACHE_SEED=0` turns it off.
+Never SHARE one cache dir: mypy rewrites entries with its checkout's paths and two checkouts thrash.
 
 They are complementary, not overlapping: mypy is deep over a **declared short list** of packages
 (`mypy.ini` sets `files = src/agents/model, src/agents/observation` with `follow_imports = silent`,
@@ -847,7 +878,10 @@ saturates every core and can turn the contention-scaled per-battle timeouts into
 TIMEOUTs. Observed twice, both times misreading as a rust defect: `bridge_impl_parity` reported 8
 of 12 battles timed out and one transport error, and `better_line[rust]` reported a candidate
 divergence — **both passed on the warm tree with no code change.** Build the binaries first, or
-discount the first run in a new worktree. **The suite runs the EMISSION SELF-CHECK build** (the root
+discount the first run in a new worktree — `./scripts/bootstrap.sh --skip-env --with-rust --no-check`
+builds the release AND the self-check set (2026-10-12; measured cold on the 3 agent cores at nice 19:
+~34 s per crate x profile, ~2.5 min for the set — not the "40 min" once reported, which was builds
+contending mid-gate). **The suite runs the EMISSION SELF-CHECK build** (the root
 `conftest.py` sets `POKESIM_EMISSION_SELFCHECK=1`, so every rust child is `target/selfcheck/<bin>`:
 every emitted protocol line checked as it is emitted, a failure kills the child —
 `designs/rust_sim/emission_selfcheck.md`), so that is the build to warm:

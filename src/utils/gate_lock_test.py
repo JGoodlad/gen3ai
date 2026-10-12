@@ -84,10 +84,15 @@ def test_a_third_taker_waits_and_a_crashed_holders_slot_frees(tmp_path):
         _wait_for(lambda: a.exists() and b.exists(), "two holders inside")
         c = tmp_path / "c"
         third = _holder(d, 2, c, tmp_path)
-        time.sleep(1.5)
+
+        def third_waits():
+            return any(third.pid in P.waiters(P.file_key(str(GL.slot_path(i, d))) or "") for i in range(2))
+        # wait until it IS a kernel waiter, THEN hold it there >= 1 s: a fixed sleep raced a slow interpreter
+        # start on a loaded box (the taker reached the wait late and "waited" < 1 s — flaky, 2026-10-12)
+        _wait_for(third_waits, "the third taker to block in the kernel")
+        time.sleep(1.2)
         assert not c.exists(), "a THIRD gate ran while two slots were held"
-        waiting = [P.waiters(P.file_key(str(GL.slot_path(i, d))) or "") for i in range(2)]
-        assert any(third.pid in w for w in waiting), f"the third taker is not a kernel waiter: {waiting}"
+        assert third_waits(), "the third taker is not a kernel waiter"
         # CRASH one holder: SIGKILL, no cleanup. The kernel must free its slot.
         _kill_tree(ha)
         _wait_for(c.exists, "the third taker to get the crashed holder's slot")
