@@ -12,7 +12,7 @@ for job in "$@"; do
   IFS=: read -r cp arm first <<< "$job"
   first="${first:-0}"
   ids="$HOME/gen3ai_archive/hidden_info_replica/remaining_${cp}_${arm}${tag}_${first}.txt"
-  only=""; if [ "$first" = "interim" ]; then only="$HERE/interim_ids_${cp}.txt"; first=0; fi
+  only=""; case "$first" in interim*) only="$HERE/${first}_ids_${cp}.txt"; first=0;; esac
   PYTHONPATH="$HERE" "$PY" -m replica.remaining --cp "$cp" --arm "$arm" --rows "$ROWS" --out "$ids" --first "$first" ${only:+--only "$only"}
   echo "== $cp $arm $(date -Is)"
   PYTHONPATH="$HERE" "$REPO/scripts/ops/mem_cap.sh" --name "hir-$cp-seq" 6 \
