@@ -45,6 +45,8 @@ class SeenMon:
     species_name: str               # the details' species display name
     gender: Optional[str]           # 'M' / 'F' as shown in the details, None if not shown
     first_line: int                 # index of its first switch / drag line
+    shiny: bool = False             # ', shiny' in the details (public)
+    level: Optional[int] = None     # ', L<n>' in the details (public; None = 100)
     moves: List[str] = field(default_factory=list)     # revealed move ids, in reveal order ('hiddenpower' = bare)
     item: Optional[str] = None      # the ORIGINAL item, when revealed ('' = known to hold nothing)
     ability: Optional[str] = None   # the ORIGINAL ability, when revealed
@@ -159,9 +161,11 @@ def parse(lines: List[str], viewer: str, own_abilities: Dict[str, str], move_ids
             name = subj[1]
             det = args[1].split(", ")
             gender = next((d for d in det[1:] if d in ("M", "F")), None)
+            shiny = "shiny" in det[1:]
+            level = next((int(d[1:]) for d in det[1:] if re.match(r"^L\d+$", d)), None)
             if name not in seen.mons:
                 seen.mons[name] = SeenMon(name=name, species=to_id(det[0]), species_name=det[0], gender=gender,
-                                          first_line=i)
+                                          first_line=i, shiny=shiny, level=level)
             if active is not None:
                 transformed.discard(active)
             active = name
