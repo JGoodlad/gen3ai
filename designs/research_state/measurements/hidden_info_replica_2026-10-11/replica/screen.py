@@ -345,6 +345,7 @@ def active_at(prep: B.Prep, line: int) -> Optional[str]:
 
 NEAR = 300           # support spreads proposed per round: the nearest in the stats the mismatch does NOT move
 RANDOM = 32          # plus this many prior draws
+WIDE = 3000          # the stuck round's cap on distinct moving-stat combinations
 POOL_BATCH = 32
 POOL_BATCHES = 8
 ACCEPT_BATCHES = 6   # ≤ 192 joint draws per mon in the rejection step
@@ -438,6 +439,7 @@ def screen(prep: B.Prep, arm: str) -> dict:
         return score_many(prep, [world_of(c) for c in cands], upto)
 
     moving: set = set()
+    locked: set = set()
 
     def sensitivity(n: str, upto: Optional[int], cur_score) -> set:
         """The stats of mon n whose ±PERTURB move changes the score at the current mismatch."""
@@ -457,9 +459,11 @@ def screen(prep: B.Prep, arm: str) -> dict:
                 tests.append(st)
                 which.append(k)
         res = score(tests, upto) if tests else []
-        return {k for k, s in zip(which, res) if s != cur_score}
+        locked.clear()
+        locked.update(k for k, s in zip(which, res) if s[0] < cur_score[0])
+        return {k for k, s in zip(which, res) if s != cur_score and s[0] >= cur_score[0]}
 
-    def proposals(n: str) -> List[Tuple[str, Ctx, float]]:
+    def proposals(n: str, cap: int = NEAR) -> List[Tuple[str, Ctx, float]]:
         c = ctx[n]
         s = sup[n]
         out = []
@@ -482,7 +486,9 @@ def screen(prep: B.Prep, arm: str) -> dict:
         cur = np.array(realized(sp, c.nature, c.evs, c.iv()))
         keep = [k for k in range(6) if k not in moving]
         mv = sorted(moving)
-        d = np.abs(a[:, keep] - cur[keep]).sum(axis=1) if keep else np.zeros(len(a))
+        # a representative keeps the stats an earlier line pins (LOCKED) first, the free ones second
+        wts = np.array([1000.0 if k in locked else 1.0 for k in keep])
+        d = (np.abs(a[:, keep] - cur[keep]) * wts).sum(axis=1) if keep else np.zeros(len(a))
         if mv:
             # every distinct value of the stats the mismatch moves, each by the support row closest to the current
             # spread in the other stats (so the move changes what matters and little else)
@@ -492,15 +498,15 @@ def screen(prep: B.Prep, arm: str) -> dict:
                 if key not in reps:
                     reps[key] = int(i)
             keys_ = list(reps)
-            if len(keys_) > NEAR:
+            if len(keys_) > cap:
                 dd = np.array([sum(abs(x - int(cur[k])) for x, k in zip(kk, mv)) for kk in keys_])
-                near = [keys_[j] for j in np.argsort(dd, kind="stable")[:NEAR // 2]]
+                near = [keys_[j] for j in np.argsort(dd, kind="stable")[:cap // 2]]
                 rest = [kk for kk in keys_ if kk not in set(near)]
-                pick = rng.choice(len(rest), size=min(NEAR // 2, len(rest)), replace=False)
+                pick = rng.choice(len(rest), size=min(cap // 2, len(rest)), replace=False)
                 keys_ = near + [rest[j] for j in pick]
             idx = [reps[kk] for kk in keys_]
         else:
-            idx = list(np.argsort(d, kind="stable")[:NEAR + 1])
+            idx = list(np.argsort(d, kind="stable")[:cap + 1])
         idx += list(rng.choice(len(a), size=min(RANDOM, len(a)), p=sw[n] / sw[n].sum()))
         seen_ix = set()
         for i in idx:
@@ -524,7 +530,8 @@ def screen(prep: B.Prep, arm: str) -> dict:
         """TWO-coordinate moves for a mon a single move cannot fix (e.g. a Hidden Power's type AND the SpA behind
         it): each of the 6 likeliest values of every discrete class, combined with the spread moves."""
         c0 = ctx[n]
-        out = []
+        # first: EVERY distinct value combination of the stats the mismatch moves (not a sample of 300)
+        out = [(f"wide+{lab}", c, lp) for lab, c, lp in proposals(n, cap=WIDE) if lab.startswith("spread=")]
         for cls in ("hp_t", "item", "ability"):
             p = _norm(sup[n][cls])
             alts = sorted((v for v in p if v != getattr(c0, cls)), key=lambda v: -p[v])[:6]
@@ -539,7 +546,20 @@ def screen(prep: B.Prep, arm: str) -> dict:
                             out.append((f"{cls}={v}+{lab}", c, lp + float(np.log(max(p[v], 1e-300)))))
                 finally:
                     ctx[n] = c0
+        # the IV key (attack variant x Hidden Power pattern) with the spread moves: a one-point stat miss
+        w_iv = float(np.log(S.iv_key_weight(c0.hp_t)))
+        for key in S.iv_keys(c0.hp_t):
+            if key == c0.variant:
+                continue
+            ctx[n] = replace(c0, variant=key)
+            try:
+                for lab, c, lp in proposals(n):
+                    if lab.startswith("spread="):
+                        out.append((f"iv={key}+{lab}", c, lp + w_iv))
+            finally:
+                ctx[n] = c0
         return out
+
     pair_mode = False
     while cur < full and rounds < ROUNDS:
         rounds += 1
