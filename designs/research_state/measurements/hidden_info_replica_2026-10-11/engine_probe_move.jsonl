@@ -1,0 +1,357 @@
+{"id":"absorb","move":"absorb","verdict":"ran"}
+{"id":"acid","move":"acid","verdict":"ran"}
+{"id":"acidarmor","move":"acidarmor","verdict":"ran"}
+{"id":"aerialace","move":"aerialace","verdict":"ran"}
+{"id":"aeroblast","move":"aeroblast","verdict":"ran"}
+{"id":"agility","move":"agility","verdict":"ran"}
+{"id":"aircutter","move":"aircutter","verdict":"ran"}
+{"id":"amnesia","move":"amnesia","verdict":"ran"}
+{"id":"ancientpower","move":"ancientpower","verdict":"ran"}
+{"id":"armthrust","move":"armthrust","verdict":"ran"}
+{"id":"aromatherapy","move":"aromatherapy","verdict":"ran"}
+{"id":"astonish","move":"astonish","verdict":"ran"}
+{"id":"attract","move":"attract","verdict":"panic","detail":"status move \"attract\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"aurorabeam","move":"aurorabeam","verdict":"ran"}
+{"id":"barrage","move":"barrage","verdict":"ran"}
+{"id":"barrier","move":"barrier","verdict":"ran"}
+{"id":"batonpass","move":"batonpass","verdict":"ran"}
+{"id":"beatup","move":"beatup","verdict":"ran"}
+{"id":"bellydrum","move":"bellydrum","verdict":"ran"}
+{"id":"bide","move":"bide","verdict":"panic","detail":"unmodeled FIXED-DAMAGE move \"bide\" routed to run_fixed_damage_move — Psywave (variable RNG) / the OHKO moves (Fissure/Horn Drill/Guillotine) / Bide (a 2-turn accumulator) are DEFERRED. Model it bit-for-bit or keep it off the pickable set — do NOT let it silently no-op."}
+{"id":"bind","move":"bind","verdict":"ran"}
+{"id":"bite","move":"bite","verdict":"ran"}
+{"id":"blastburn","move":"blastburn","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the RECHARGE move \"blastburn\" is NOT modeled (only hyperbeam is) — fail-loud, not a silent recharge-less desync"}
+{"id":"blazekick","move":"blazekick","verdict":"ran"}
+{"id":"blizzard","move":"blizzard","verdict":"ran"}
+{"id":"block","move":"block","verdict":"ran"}
+{"id":"bodyslam","move":"bodyslam","verdict":"ran"}
+{"id":"boneclub","move":"boneclub","verdict":"ran"}
+{"id":"bonemerang","move":"bonemerang","verdict":"ran"}
+{"id":"bonerush","move":"bonerush","verdict":"ran"}
+{"id":"bounce","move":"bounce","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the CHARGE move \"bounce\" is NOT modeled (only solarbeam is) — fail-loud, not a silent one-turn collapse"}
+{"id":"brickbreak","move":"brickbreak","verdict":"ran"}
+{"id":"bubble","move":"bubble","verdict":"ran"}
+{"id":"bubblebeam","move":"bubblebeam","verdict":"ran"}
+{"id":"bulkup","move":"bulkup","verdict":"ran"}
+{"id":"bulletseed","move":"bulletseed","verdict":"ran"}
+{"id":"calmmind","move":"calmmind","verdict":"ran"}
+{"id":"camouflage","move":"camouflage","verdict":"panic","detail":"status move \"camouflage\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"charge","move":"charge","verdict":"ran"}
+{"id":"charm","move":"charm","verdict":"ran"}
+{"id":"clamp","move":"clamp","verdict":"ran"}
+{"id":"cometpunch","move":"cometpunch","verdict":"ran"}
+{"id":"confuseray","move":"confuseray","verdict":"ran"}
+{"id":"confusion","move":"confusion","verdict":"ran"}
+{"id":"constrict","move":"constrict","verdict":"ran"}
+{"id":"conversion","move":"conversion","verdict":"ran"}
+{"id":"conversion2","move":"conversion2","verdict":"ran"}
+{"id":"cosmicpower","move":"cosmicpower","verdict":"ran"}
+{"id":"cottonspore","move":"cottonspore","verdict":"ran"}
+{"id":"counter","move":"counter","verdict":"ran"}
+{"id":"covet","move":"covet","verdict":"ran"}
+{"id":"crabhammer","move":"crabhammer","verdict":"ran"}
+{"id":"crosschop","move":"crosschop","verdict":"ran"}
+{"id":"crunch","move":"crunch","verdict":"ran"}
+{"id":"crushclaw","move":"crushclaw","verdict":"ran"}
+{"id":"curse","move":"curse","verdict":"ran"}
+{"id":"cut","move":"cut","verdict":"ran"}
+{"id":"defensecurl","move":"defensecurl","verdict":"ran"}
+{"id":"destinybond","move":"destinybond","verdict":"ran"}
+{"id":"detect","move":"detect","verdict":"ran"}
+{"id":"dig","move":"dig","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the CHARGE move \"dig\" is NOT modeled (only solarbeam is) — fail-loud, not a silent one-turn collapse"}
+{"id":"disable","move":"disable","verdict":"ran"}
+{"id":"dive","move":"dive","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the CHARGE move \"dive\" is NOT modeled (only solarbeam is) — fail-loud, not a silent one-turn collapse"}
+{"id":"dizzypunch","move":"dizzypunch","verdict":"ran"}
+{"id":"doomdesire","move":"doomdesire","verdict":"ran"}
+{"id":"doubleedge","move":"doubleedge","verdict":"ran"}
+{"id":"doublekick","move":"doublekick","verdict":"ran"}
+{"id":"doubleslap","move":"doubleslap","verdict":"ran"}
+{"id":"dragonbreath","move":"dragonbreath","verdict":"ran"}
+{"id":"dragonclaw","move":"dragonclaw","verdict":"ran"}
+{"id":"dragondance","move":"dragondance","verdict":"ran"}
+{"id":"dragonrage","move":"dragonrage","verdict":"ran"}
+{"id":"dreameater","move":"dreameater","verdict":"ran"}
+{"id":"drillpeck","move":"drillpeck","verdict":"ran"}
+{"id":"dynamicpunch","move":"dynamicpunch","verdict":"ran"}
+{"id":"earthquake","move":"earthquake","verdict":"ran"}
+{"id":"eggbomb","move":"eggbomb","verdict":"ran"}
+{"id":"ember","move":"ember","verdict":"ran"}
+{"id":"encore","move":"encore","verdict":"ran"}
+{"id":"endeavor","move":"endeavor","verdict":"ran"}
+{"id":"endure","move":"endure","verdict":"ran"}
+{"id":"eruption","move":"eruption","verdict":"ran"}
+{"id":"explosion","move":"explosion","verdict":"ran"}
+{"id":"extrasensory","move":"extrasensory","verdict":"ran"}
+{"id":"extremespeed","move":"extremespeed","verdict":"ran"}
+{"id":"facade","move":"facade","verdict":"ran"}
+{"id":"fakeout","move":"fakeout","verdict":"ran"}
+{"id":"faketears","move":"faketears","verdict":"ran"}
+{"id":"falseswipe","move":"falseswipe","verdict":"ran"}
+{"id":"featherdance","move":"featherdance","verdict":"ran"}
+{"id":"feintattack","move":"feintattack","verdict":"ran"}
+{"id":"fireblast","move":"fireblast","verdict":"ran"}
+{"id":"firepunch","move":"firepunch","verdict":"ran"}
+{"id":"firespin","move":"firespin","verdict":"ran"}
+{"id":"flail","move":"flail","verdict":"ran"}
+{"id":"flamethrower","move":"flamethrower","verdict":"ran"}
+{"id":"flamewheel","move":"flamewheel","verdict":"ran"}
+{"id":"flash","move":"flash","verdict":"ran"}
+{"id":"flatter","move":"flatter","verdict":"panic","detail":"status move \"flatter\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"fly","move":"fly","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the CHARGE move \"fly\" is NOT modeled (only solarbeam is) — fail-loud, not a silent one-turn collapse"}
+{"id":"focusenergy","move":"focusenergy","verdict":"ran"}
+{"id":"focuspunch","move":"focuspunch","verdict":"ran"}
+{"id":"followme","move":"followme","verdict":"panic","detail":"status move \"followme\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"foresight","move":"foresight","verdict":"panic","detail":"status move \"foresight\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"frenzyplant","move":"frenzyplant","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the RECHARGE move \"frenzyplant\" is NOT modeled (only hyperbeam is) — fail-loud, not a silent recharge-less desync"}
+{"id":"frustration","move":"frustration","verdict":"ran"}
+{"id":"furyattack","move":"furyattack","verdict":"ran"}
+{"id":"furycutter","move":"furycutter","verdict":"ran"}
+{"id":"furyswipes","move":"furyswipes","verdict":"ran"}
+{"id":"futuresight","move":"futuresight","verdict":"ran"}
+{"id":"gigadrain","move":"gigadrain","verdict":"ran"}
+{"id":"glare","move":"glare","verdict":"ran"}
+{"id":"grasswhistle","move":"grasswhistle","verdict":"ran"}
+{"id":"growl","move":"growl","verdict":"ran"}
+{"id":"growth","move":"growth","verdict":"ran"}
+{"id":"grudge","move":"grudge","verdict":"panic","detail":"status move \"grudge\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"gust","move":"gust","verdict":"ran"}
+{"id":"hail","move":"hail","verdict":"ran"}
+{"id":"harden","move":"harden","verdict":"ran"}
+{"id":"haze","move":"haze","verdict":"ran"}
+{"id":"headbutt","move":"headbutt","verdict":"ran"}
+{"id":"healbell","move":"healbell","verdict":"ran"}
+{"id":"heatwave","move":"heatwave","verdict":"ran"}
+{"id":"helpinghand","move":"helpinghand","verdict":"panic","detail":"status move \"helpinghand\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"hiddenpowerbug","move":"hiddenpowerbug","verdict":"ran"}
+{"id":"hiddenpowerdark","move":"hiddenpowerdark","verdict":"ran"}
+{"id":"hiddenpowerdragon","move":"hiddenpowerdragon","verdict":"ran"}
+{"id":"hiddenpowerelectric","move":"hiddenpowerelectric","verdict":"ran"}
+{"id":"hiddenpowerfighting","move":"hiddenpowerfighting","verdict":"ran"}
+{"id":"hiddenpowerfire","move":"hiddenpowerfire","verdict":"ran"}
+{"id":"hiddenpowerflying","move":"hiddenpowerflying","verdict":"ran"}
+{"id":"hiddenpowerghost","move":"hiddenpowerghost","verdict":"ran"}
+{"id":"hiddenpowergrass","move":"hiddenpowergrass","verdict":"ran"}
+{"id":"hiddenpowerground","move":"hiddenpowerground","verdict":"ran"}
+{"id":"hiddenpowerice","move":"hiddenpowerice","verdict":"ran"}
+{"id":"hiddenpowerpoison","move":"hiddenpowerpoison","verdict":"ran"}
+{"id":"hiddenpowerpsychic","move":"hiddenpowerpsychic","verdict":"ran"}
+{"id":"hiddenpowerrock","move":"hiddenpowerrock","verdict":"ran"}
+{"id":"hiddenpowersteel","move":"hiddenpowersteel","verdict":"ran"}
+{"id":"hiddenpowerwater","move":"hiddenpowerwater","verdict":"ran"}
+{"id":"highjumpkick","move":"highjumpkick","verdict":"ran"}
+{"id":"hornattack","move":"hornattack","verdict":"ran"}
+{"id":"howl","move":"howl","verdict":"ran"}
+{"id":"hydrocannon","move":"hydrocannon","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the RECHARGE move \"hydrocannon\" is NOT modeled (only hyperbeam is) — fail-loud, not a silent recharge-less desync"}
+{"id":"hydropump","move":"hydropump","verdict":"ran"}
+{"id":"hyperbeam","move":"hyperbeam","verdict":"ran"}
+{"id":"hyperfang","move":"hyperfang","verdict":"ran"}
+{"id":"hypervoice","move":"hypervoice","verdict":"ran"}
+{"id":"hypnosis","move":"hypnosis","verdict":"ran"}
+{"id":"iceball","move":"iceball","verdict":"ran"}
+{"id":"icebeam","move":"icebeam","verdict":"ran"}
+{"id":"icepunch","move":"icepunch","verdict":"ran"}
+{"id":"iciclespear","move":"iciclespear","verdict":"ran"}
+{"id":"icywind","move":"icywind","verdict":"ran"}
+{"id":"imprison","move":"imprison","verdict":"ran"}
+{"id":"ingrain","move":"ingrain","verdict":"panic","detail":"status move \"ingrain\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"irondefense","move":"irondefense","verdict":"ran"}
+{"id":"irontail","move":"irontail","verdict":"ran"}
+{"id":"jumpkick","move":"jumpkick","verdict":"ran"}
+{"id":"karatechop","move":"karatechop","verdict":"ran"}
+{"id":"kinesis","move":"kinesis","verdict":"ran"}
+{"id":"knockoff","move":"knockoff","verdict":"ran"}
+{"id":"leafblade","move":"leafblade","verdict":"ran"}
+{"id":"leechlife","move":"leechlife","verdict":"ran"}
+{"id":"leechseed","move":"leechseed","verdict":"ran"}
+{"id":"leer","move":"leer","verdict":"ran"}
+{"id":"lick","move":"lick","verdict":"ran"}
+{"id":"lightscreen","move":"lightscreen","verdict":"ran"}
+{"id":"lockon","move":"lockon","verdict":"panic","detail":"status move \"lockon\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"lovelykiss","move":"lovelykiss","verdict":"ran"}
+{"id":"lowkick","move":"lowkick","verdict":"ran"}
+{"id":"machpunch","move":"machpunch","verdict":"ran"}
+{"id":"magicalleaf","move":"magicalleaf","verdict":"ran"}
+{"id":"magiccoat","move":"magiccoat","verdict":"panic","detail":"status move \"magiccoat\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"magnitude","move":"magnitude","verdict":"panic","detail":"status move \"magnitude\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"meanlook","move":"meanlook","verdict":"ran"}
+{"id":"meditate","move":"meditate","verdict":"ran"}
+{"id":"megadrain","move":"megadrain","verdict":"ran"}
+{"id":"megahorn","move":"megahorn","verdict":"ran"}
+{"id":"megakick","move":"megakick","verdict":"ran"}
+{"id":"megapunch","move":"megapunch","verdict":"ran"}
+{"id":"memento","move":"memento","verdict":"ran"}
+{"id":"metalclaw","move":"metalclaw","verdict":"ran"}
+{"id":"metalsound","move":"metalsound","verdict":"ran"}
+{"id":"meteormash","move":"meteormash","verdict":"ran"}
+{"id":"metronome","move":"metronome","verdict":"panic","detail":"status move \"metronome\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"milkdrink","move":"milkdrink","verdict":"ran"}
+{"id":"mimic","move":"mimic","verdict":"ran"}
+{"id":"mindreader","move":"mindreader","verdict":"panic","detail":"status move \"mindreader\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"mirrorcoat","move":"mirrorcoat","verdict":"ran"}
+{"id":"mirrormove","move":"mirrormove","verdict":"panic","detail":"status move \"mirrormove\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"mist","move":"mist","verdict":"panic","detail":"status move \"mist\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"moonlight","move":"moonlight","verdict":"ran"}
+{"id":"morningsun","move":"morningsun","verdict":"ran"}
+{"id":"muddywater","move":"muddywater","verdict":"ran"}
+{"id":"mudshot","move":"mudshot","verdict":"ran"}
+{"id":"mudslap","move":"mudslap","verdict":"ran"}
+{"id":"mudsport","move":"mudsport","verdict":"panic","detail":"status move \"mudsport\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"naturepower","move":"naturepower","verdict":"panic","detail":"status move \"naturepower\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"nightmare","move":"nightmare","verdict":"panic","detail":"status move \"nightmare\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"nightshade","move":"nightshade","verdict":"ran"}
+{"id":"octazooka","move":"octazooka","verdict":"ran"}
+{"id":"odorsleuth","move":"odorsleuth","verdict":"panic","detail":"status move \"odorsleuth\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"outrage","move":"outrage","verdict":"ran"}
+{"id":"overheat","move":"overheat","verdict":"ran"}
+{"id":"painsplit","move":"painsplit","verdict":"ran"}
+{"id":"payday","move":"payday","verdict":"ran"}
+{"id":"peck","move":"peck","verdict":"ran"}
+{"id":"perishsong","move":"perishsong","verdict":"ran"}
+{"id":"petaldance","move":"petaldance","verdict":"ran"}
+{"id":"pinmissile","move":"pinmissile","verdict":"ran"}
+{"id":"poisonfang","move":"poisonfang","verdict":"ran"}
+{"id":"poisongas","move":"poisongas","verdict":"ran"}
+{"id":"poisonpowder","move":"poisonpowder","verdict":"ran"}
+{"id":"poisonsting","move":"poisonsting","verdict":"ran"}
+{"id":"poisontail","move":"poisontail","verdict":"ran"}
+{"id":"pound","move":"pound","verdict":"ran"}
+{"id":"powdersnow","move":"powdersnow","verdict":"ran"}
+{"id":"present","move":"present","verdict":"panic","detail":"status move \"present\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"protect","move":"protect","verdict":"ran"}
+{"id":"psybeam","move":"psybeam","verdict":"ran"}
+{"id":"psychic","move":"psychic","verdict":"ran"}
+{"id":"psychoboost","move":"psychoboost","verdict":"ran"}
+{"id":"psychup","move":"psychup","verdict":"ran"}
+{"id":"psywave","move":"psywave","verdict":"panic","detail":"unmodeled FIXED-DAMAGE move \"psywave\" routed to run_fixed_damage_move — Psywave (variable RNG) / the OHKO moves (Fissure/Horn Drill/Guillotine) / Bide (a 2-turn accumulator) are DEFERRED. Model it bit-for-bit or keep it off the pickable set — do NOT let it silently no-op."}
+{"id":"pursuit","move":"pursuit","verdict":"ran"}
+{"id":"quickattack","move":"quickattack","verdict":"ran"}
+{"id":"rage","move":"rage","verdict":"ran"}
+{"id":"raindance","move":"raindance","verdict":"ran"}
+{"id":"rapidspin","move":"rapidspin","verdict":"ran"}
+{"id":"razorleaf","move":"razorleaf","verdict":"ran"}
+{"id":"razorwind","move":"razorwind","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the CHARGE move \"razorwind\" is NOT modeled (only solarbeam is) — fail-loud, not a silent one-turn collapse"}
+{"id":"recover","move":"recover","verdict":"ran"}
+{"id":"recycle","move":"recycle","verdict":"ran"}
+{"id":"reflect","move":"reflect","verdict":"ran"}
+{"id":"refresh","move":"refresh","verdict":"ran"}
+{"id":"rest","move":"rest","verdict":"ran"}
+{"id":"return","move":"return","verdict":"ran"}
+{"id":"revenge","move":"revenge","verdict":"ran"}
+{"id":"reversal","move":"reversal","verdict":"ran"}
+{"id":"roar","move":"roar","verdict":"ran"}
+{"id":"rockblast","move":"rockblast","verdict":"ran"}
+{"id":"rockslide","move":"rockslide","verdict":"ran"}
+{"id":"rocksmash","move":"rocksmash","verdict":"ran"}
+{"id":"rockthrow","move":"rockthrow","verdict":"ran"}
+{"id":"rocktomb","move":"rocktomb","verdict":"ran"}
+{"id":"roleplay","move":"roleplay","verdict":"panic","detail":"status move \"roleplay\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"rollingkick","move":"rollingkick","verdict":"ran"}
+{"id":"rollout","move":"rollout","verdict":"ran"}
+{"id":"sacredfire","move":"sacredfire","verdict":"ran"}
+{"id":"safeguard","move":"safeguard","verdict":"ran"}
+{"id":"sandattack","move":"sandattack","verdict":"ran"}
+{"id":"sandstorm","move":"sandstorm","verdict":"ran"}
+{"id":"sandtomb","move":"sandtomb","verdict":"ran"}
+{"id":"scaryface","move":"scaryface","verdict":"ran"}
+{"id":"scratch","move":"scratch","verdict":"ran"}
+{"id":"screech","move":"screech","verdict":"ran"}
+{"id":"secretpower","move":"secretpower","verdict":"ran"}
+{"id":"seismictoss","move":"seismictoss","verdict":"ran"}
+{"id":"selfdestruct","move":"selfdestruct","verdict":"ran"}
+{"id":"shadowball","move":"shadowball","verdict":"ran"}
+{"id":"shadowpunch","move":"shadowpunch","verdict":"ran"}
+{"id":"sharpen","move":"sharpen","verdict":"ran"}
+{"id":"shockwave","move":"shockwave","verdict":"ran"}
+{"id":"signalbeam","move":"signalbeam","verdict":"ran"}
+{"id":"silverwind","move":"silverwind","verdict":"ran"}
+{"id":"sing","move":"sing","verdict":"ran"}
+{"id":"sketch","move":"sketch","verdict":"panic","detail":"status move \"sketch\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"skillswap","move":"skillswap","verdict":"ran"}
+{"id":"skullbash","move":"skullbash","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the CHARGE move \"skullbash\" is NOT modeled (only solarbeam is) — fail-loud, not a silent one-turn collapse"}
+{"id":"skyattack","move":"skyattack","verdict":"panic","detail":"gen3_move_coverage_batch4c_v1: the CHARGE move \"skyattack\" is NOT modeled (only solarbeam is) — fail-loud, not a silent one-turn collapse"}
+{"id":"skyuppercut","move":"skyuppercut","verdict":"ran"}
+{"id":"slackoff","move":"slackoff","verdict":"ran"}
+{"id":"slam","move":"slam","verdict":"ran"}
+{"id":"slash","move":"slash","verdict":"ran"}
+{"id":"sleeppowder","move":"sleeppowder","verdict":"ran"}
+{"id":"sleeptalk","move":"sleeptalk","verdict":"ran"}
+{"id":"sludge","move":"sludge","verdict":"ran"}
+{"id":"sludgebomb","move":"sludgebomb","verdict":"ran"}
+{"id":"smellingsalts","move":"smellingsalts","verdict":"ran"}
+{"id":"smog","move":"smog","verdict":"ran"}
+{"id":"smokescreen","move":"smokescreen","verdict":"ran"}
+{"id":"snatch","move":"snatch","verdict":"ran"}
+{"id":"snore","move":"snore","verdict":"panic","detail":"unmodeled sleepUsable move 'snore' reached run_move — Snore's asleep-only onTry + the sleepUsable cant-then-proceed are NOT modeled (Sleep Talk is the only modeled sleepUsable move). Model it bit-for-bit or keep it off the pickable set — do NOT let it run as a plain bp-40 damaging move."}
+{"id":"softboiled","move":"softboiled","verdict":"ran"}
+{"id":"solarbeam","move":"solarbeam","verdict":"ran"}
+{"id":"sonicboom","move":"sonicboom","verdict":"ran"}
+{"id":"spark","move":"spark","verdict":"ran"}
+{"id":"spiderweb","move":"spiderweb","verdict":"ran"}
+{"id":"spikecannon","move":"spikecannon","verdict":"ran"}
+{"id":"spikes","move":"spikes","verdict":"ran"}
+{"id":"spite","move":"spite","verdict":"panic","detail":"status move \"spite\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"spitup","move":"spitup","verdict":"panic","detail":"status move \"spitup\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"splash","move":"splash","verdict":"ran"}
+{"id":"spore","move":"spore","verdict":"ran"}
+{"id":"steelwing","move":"steelwing","verdict":"ran"}
+{"id":"stockpile","move":"stockpile","verdict":"panic","detail":"status move \"stockpile\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"stomp","move":"stomp","verdict":"ran"}
+{"id":"strength","move":"strength","verdict":"ran"}
+{"id":"stringshot","move":"stringshot","verdict":"ran"}
+{"id":"stunspore","move":"stunspore","verdict":"ran"}
+{"id":"submission","move":"submission","verdict":"ran"}
+{"id":"substitute","move":"substitute","verdict":"ran"}
+{"id":"sunnyday","move":"sunnyday","verdict":"ran"}
+{"id":"superfang","move":"superfang","verdict":"ran"}
+{"id":"superpower","move":"superpower","verdict":"ran"}
+{"id":"supersonic","move":"supersonic","verdict":"ran"}
+{"id":"surf","move":"surf","verdict":"ran"}
+{"id":"swallow","move":"swallow","verdict":"panic","detail":"status move \"swallow\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"sweetkiss","move":"sweetkiss","verdict":"ran"}
+{"id":"sweetscent","move":"sweetscent","verdict":"ran"}
+{"id":"swift","move":"swift","verdict":"ran"}
+{"id":"swordsdance","move":"swordsdance","verdict":"ran"}
+{"id":"synthesis","move":"synthesis","verdict":"ran"}
+{"id":"tackle","move":"tackle","verdict":"ran"}
+{"id":"tailglow","move":"tailglow","verdict":"ran"}
+{"id":"tailwhip","move":"tailwhip","verdict":"ran"}
+{"id":"takedown","move":"takedown","verdict":"ran"}
+{"id":"taunt","move":"taunt","verdict":"ran"}
+{"id":"teeterdance","move":"teeterdance","verdict":"ran"}
+{"id":"teleport","move":"teleport","verdict":"panic","detail":"status move \"teleport\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"thief","move":"thief","verdict":"ran"}
+{"id":"thrash","move":"thrash","verdict":"ran"}
+{"id":"thunder","move":"thunder","verdict":"ran"}
+{"id":"thunderbolt","move":"thunderbolt","verdict":"ran"}
+{"id":"thunderpunch","move":"thunderpunch","verdict":"ran"}
+{"id":"thundershock","move":"thundershock","verdict":"ran"}
+{"id":"thunderwave","move":"thunderwave","verdict":"ran"}
+{"id":"tickle","move":"tickle","verdict":"ran"}
+{"id":"torment","move":"torment","verdict":"ran"}
+{"id":"toxic","move":"toxic","verdict":"ran"}
+{"id":"transform","move":"transform","verdict":"ran"}
+{"id":"triattack","move":"triattack","verdict":"ran"}
+{"id":"trick","move":"trick","verdict":"ran"}
+{"id":"triplekick","move":"triplekick","verdict":"panic","detail":"run_multihit: multiaccuracy move (triplekick) is unmodeled (per-strike accuracy re-roll + escalating BP — Triple Kick) — fail-loud rather than silently desync"}
+{"id":"twineedle","move":"twineedle","verdict":"ran"}
+{"id":"twister","move":"twister","verdict":"ran"}
+{"id":"uproar","move":"uproar","verdict":"ran"}
+{"id":"vinewhip","move":"vinewhip","verdict":"ran"}
+{"id":"visegrip","move":"visegrip","verdict":"ran"}
+{"id":"vitalthrow","move":"vitalthrow","verdict":"ran"}
+{"id":"volttackle","move":"volttackle","verdict":"ran"}
+{"id":"waterfall","move":"waterfall","verdict":"ran"}
+{"id":"watergun","move":"watergun","verdict":"ran"}
+{"id":"waterpulse","move":"waterpulse","verdict":"ran"}
+{"id":"watersport","move":"watersport","verdict":"panic","detail":"status move \"watersport\" is not modeled — its execution path (recovery / boost / phaze / hazard / field-target) would draw an unmodeled number/order of PRNG calls and silently desync. Model it (or exclude it from isModeledMove) before a battle can use it."}
+{"id":"waterspout","move":"waterspout","verdict":"ran"}
+{"id":"weatherball","move":"weatherball","verdict":"ran"}
+{"id":"whirlpool","move":"whirlpool","verdict":"ran"}
+{"id":"whirlwind","move":"whirlwind","verdict":"ran"}
+{"id":"willowisp","move":"willowisp","verdict":"ran"}
+{"id":"wingattack","move":"wingattack","verdict":"ran"}
+{"id":"wish","move":"wish","verdict":"ran"}
+{"id":"withdraw","move":"withdraw","verdict":"ran"}
+{"id":"wrap","move":"wrap","verdict":"ran"}
+{"id":"yawn","move":"yawn","verdict":"ran"}
+{"id":"zapcannon","move":"zapcannon","verdict":"ran"}
