@@ -49,11 +49,12 @@ Speed (the pooled quiet `train_ms` ratio) is REPORTED, never decides.
 - **Startup gates** on the first seed of EACH arm: R1 compile parity, the K6 freeze, K9(b) from update 1, UpdateFit
   headroom, the update-10 canary. EB's R1 gate and canary run at the bf16 parity rule's derived bars (a canary FATAL is
   INCONCLUSIVE for that seed, never a stop on strength).
-- **The first non-empty pool eval** passes and loads pool opponents (Pool % ≠ 0.0). **Unmet BY CONSTRUCTION in
-  stage 1, deferred to stage 2** (orchestrator, 2026-10-12): at a 5M budget a seed's only pool eval is at 4M, and
-  the pool is empty going into it (`pool_snapshot_count` 0; the 4M eval seeds the first snapshot), so its Pool 0.0 %
-  is an empty pool, not a failure (`rb_bf_e_s2001`: Bots 81.8 %, Pool 0.0 %, Monotonicity 1.00). The check is read
-  on EVERY stage-2 seed's 6M eval.
+- **The first non-empty pool eval** passes and loads pool opponents (Pool % ≠ 0.0). A seed evaluates at 2M and 4M;
+  its pool is seeded at the first eval whose bots win rate clears `--self-play-start-wr` 0.55, so a stage-1 seed meets
+  this precondition at 4M iff its 2M eval cleared 0.55 (`rb_bf_e_s2002`: Bots 55.9 % at 2M, then Pool 71.0 % at 4M —
+  met). Where the 2M eval stays below the gate (`rb_bf_e_s2001` 54.1 %, `rb_bf_eb_s2001` 52.6 %), the 4M eval meets an
+  empty pool and its Pool 0.0 % is not a failure: the precondition is **deferred to that seed's stage-2 6M eval**
+  (orchestrator, 2026-10-12). Stage 2 reads it on every seed whose first non-empty pool eval falls there.
 - **One pin, no fork:** every run's `pin_history` holds P_bf16 only; no run is a fork.
 - **K9(b) strict** at its fp32 bars in both arms, with the closing test's amendments 1–2 (§3.7 there) carried over.
 - A seed that fails (a run short of its budget, out of restarts after the amendments, a broken precondition) is
@@ -101,3 +102,4 @@ Speed (the pooled quiet `train_ms` ratio) is REPORTED, never decides.
 |---|---|---|
 | 2026-10-12 | REGISTERED before any seed, at P_bf16 `f45d0c27`; E re-run (not reused) | PLAN §2d's identity precondition fails at every candidate pin (§2); orchestrator's option (i): E at HEAD doubles as the adopted end state's reference seeds |
 | 2026-10-12 | §3's first-non-empty-pool-eval precondition read as unmet by construction in stage 1, checked at every stage-2 seed's 6M eval; the training tree pinned to 0-4,8-12 (§2 CPU split) from `rb_bf_eb_s2001` on | a 5M seed's only pool eval meets an empty pool; `rb_bf_e_s2001` showed contention p90 1.82 with the trainer free to run on the agents' cores (orchestrator's rulings) |
+| 2026-10-12 | CORRECTION to the row above: the precondition is not unmet by construction — a seed evaluates at 2M and 4M and is seeded at the first eval clearing `--self-play-start-wr` 0.55, so it is met at 4M when the 2M eval clears the gate (`rb_bf_e_s2002`) and deferred to 6M otherwise (`rb_bf_e_s2001`, `rb_bf_eb_s2001`) | the first bank's reading assumed one pool eval per 5M seed; `rb_bf_e_s2002`'s 4M eval (Pool 71.0 %) refuted it |
