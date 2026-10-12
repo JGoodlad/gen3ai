@@ -147,7 +147,7 @@ Without step 2 the root `conftest.py` REFUSES the test session with one message 
 |---|---|
 | **inner loop** | `"$PY" -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` |
 | **THE ROUTINE GATE** | `scripts/ops/gate_lock.sh "$PY" -m pytest src/ -m "not slow and not e2e" -q -n 6` — ONE gate at a time (`utils.gate_lock`), ~4.3 min quiet; `-n 4` beside a live training run |
-| **before `/gen3ai-ship`** | the routine gate, or a TARGETED set you choose + the static gates, scope and reason named in the commit body (owner, 2026-10-05). Shared infrastructure or any doubt ⇒ the routine gate. Never an automated test-selection framework |
+| **before `/gen3ai-ship`** | the routine gate, or a TARGETED set you choose + the static gates, scope and reason named in the commit body (owner, 2026-10-05). Shared infrastructure or any doubt ⇒ the routine gate. **While the GPU is LEASED (the usual state), prefer the targeted set + `pytest -m static` (no gate lock needed):** a full routine gate confined to rule 5b's three agent cores takes 1–2 h and queues every other agent behind the gate lock (2026-10-12). Never an automated test-selection framework |
 | everything / the slow tier | `"$PY" -m pytest src/ -q` (~47 min serial) / `"$PY" -m pytest src/ -m slow -q -n 2` |
 | anything on the GPU | only with a LEASE (standing rule 5): `scripts/ops/gpu_lock.sh <cmd>` with `GEN3AI_GPU_LEASE_TOKEN` set (Python: `utils.gpu_lock.gpu_lock()`) — **never a bare `flock …/gpu.lock`** |
 | a one-off HEAVY job | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`) — its own capped scope, so an overrun kills only that job, not the session |
