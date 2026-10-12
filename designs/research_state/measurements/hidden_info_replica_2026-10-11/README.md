@@ -22,6 +22,23 @@ spends dice without printing a line (Focus Band, King's Rock, a speed tie) be "s
 teams use Hidden Power IV patterns and spreads the Smogon top-25 spread table does not hold, so a faithful
 builder needs the full spread table and every max-power IV pattern, or it cannot rebuild about half the truths.
 
+## INTERIM REGISTRATION (2026-10-12 ~10:00, before any F / F+M outcome was read)
+
+The CPU allowance was cut to 3 workers (a GPU run took the box at 09:29), so the full 600 + 600 states will take
+about a day. On the orchestrator's instruction an INTERIM subset is registered here, and its numbers go out first:
+
+- **Subset:** per checkpoint, the first 40 states of each of the pilot's five gap quintiles, in the pilot's own
+  registered sampling order (`sha256("value_disc_pilot_2026:" + decision_id)`, `design_value_discrimination.md`
+  §7.2): 200 states per checkpoint, listed in `interim_ids_end2.txt` / `interim_ids_prod.txt`
+  (`replica/interim.py`). The states file lists states sorted by id, so a plain file-order prefix would hold one
+  cycle and a few opponents only; hence the stratified hash order.
+- **Read:** `replica/score.py` unchanged, run on these ids for every arm (O, P, F, F+M, O-M), and its
+  states-included rule unchanged (states where all five arms built 8 worlds).
+- **What had been seen when this was written:** O rows (the 8,914 / 8,914 match with Phase 1's seeds 0-7, no IMP
+  computed); P / O-M row COUNTS and failure reasons; F / F+M row counts and failure reasons only (no outcome,
+  no IMP, no contrast). The scorer was run once at ~23:30 on partial O rows only (own-set IMP of O; no other arm).
+- The final read uses all 600 states per checkpoint when they complete.
+
 RESULTS_PLACEHOLDER
 
 ## Blindness (what this agent read and did not read)

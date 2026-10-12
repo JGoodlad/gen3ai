@@ -82,8 +82,11 @@ def load_rows(rows_dir: Path, cp: str, arm: str) -> Dict[str, dict]:
     return out
 
 
-def per_state(rows_dir: Path, cp: str, ks=(1, 4, 8)) -> dict:
+def per_state(rows_dir: Path, cp: str, ks=(1, 4, 8), subset: str = "") -> dict:
     states = json.loads((STATES / f"states_{cp}.json").read_text())["states"]
+    if subset:                       # a REGISTERED subset (the interim read): interim_ids_<cp>.txt
+        keep = set((HERE / f"{subset}_ids_{cp}.txt").read_text().split())
+        states = {k: v for k, v in states.items() if k in keep}
     T = referee(cp)
     res: dict = {"imp": defaultdict(dict), "ok": defaultdict(set), "battle": {}, "excluded": defaultdict(dict)}
     for sid, st in states.items():
@@ -224,9 +227,10 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--rows", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--subset", default="", help="\"interim\": only the registered interim states")
     a = ap.parse_args(argv)
     rows = Path(os.path.expanduser(a.rows))
-    data = {cp: per_state(rows, cp) for cp in CPS}
+    data = {cp: per_state(rows, cp, subset=a.subset) for cp in CPS}
     result: dict = {"schema": "hir_replica_result_v1", "excluded": {}, "own_set": {}, "common": {}, "verdicts": {}}
     for cp in CPS:
         result["excluded"][cp] = {arm: {"n": len(v), "reasons": _count(v.values())}
