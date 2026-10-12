@@ -22,7 +22,6 @@ values). So the spread is screened through its REALIZED STATS, which is what the
 from __future__ import annotations
 
 import functools
-import itertools
 import time
 from dataclasses import dataclass, replace
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -179,16 +178,45 @@ def support(prep: B.Prep, name: str, arm: str) -> dict:
     out["item"] = {m.item: 1.0} if m.item is not None else S.item_prior(sp)
     ap = S.ability_prior(sp)
     out["ability"] = {m.ability: 1.0} if m.ability is not None else (ap or {"": 1.0})
-    if "hiddenpower" in m.moves:
-        if arm == "F":
-            out["hp_t"] = S.hp_type_prior(sp)
-        else:
-            slot = prep.seen_slot[name]
-            t = next(S.hp_type(x) for x in prep.true_opp[slot].moves if S.is_hp(x))
-            out["hp_t"] = {t: 1.0}
+    slot = prep.seen_slot[name]
+    true_hp = next((S.hp_type(x) for x in prep.true_opp[slot].moves if S.is_hp(x)), None)
+    if arm == "F+M":
+        out["hp_t"] = {true_hp: 1.0}                      # the moves are true, so is their Hidden Power
+    elif "hiddenpower" in m.moves:
+        out["hp_t"] = S.hp_type_prior(sp)
     else:
-        out["hp_t"] = {None: 1.0}
+        # no Hidden Power revealed: whether an UNREVEALED one exists (and its type) is part of M, and it sets the
+        # IVs the gate sees, so it is screened with S. Prior: each Hidden Power's inclusion probability in the
+        # conditional-Poisson draw of the 4 - r unrevealed moves; None = no Hidden Power.
+        k = max(0, 4 - len(m.moves))
+        sure, rest = S.cap_mass(S.move_prior(sp, m.moves, allow_hp=True), k) if k else ([], {})
+        p = {S.hp_type(x): (1.0 if x in sure else rest.get(x, 0.0)) for x in list(rest) + sure if S.is_hp(x)}
+        p = {t: v for t, v in p.items() if t is not None and v > 0}
+        tot = min(sum(p.values()), 1.0)
+        out["hp_t"] = {None: max(1.0 - tot, 0.0), **{t: v for t, v in p.items()}}
+        out["hp_t"] = {t: v for t, v in out["hp_t"].items() if v > 0} or {None: 1.0}
     out["spreads"] = S.spread_prior(sp)
+    return out
+
+
+def with_hp(moves: Sequence[str], revealed: Sequence[str], t: Optional[str]) -> List[str]:
+    """The screening context's moves with its Hidden Power set to type ``t`` (None: no Hidden Power, unless one
+    was revealed). An added Hidden Power replaces the last unrevealed move."""
+    rev = set(revealed)
+    out = [x for x in moves if not S.is_hp(x)]
+    if t is None:
+        return out if "hiddenpower" not in rev else list(moves)
+    hp = "hiddenpower" + t
+    had = [i for i, x in enumerate(moves) if S.is_hp(x)]
+    if had:
+        res = list(moves)
+        res[had[0]] = hp
+        return res
+    unrev = [i for i, x in enumerate(out) if x not in rev]
+    if len(out) < 4:
+        return out + [hp]
+    if unrev:
+        out[unrev[-1]] = hp
     return out
 
 
@@ -319,7 +347,7 @@ NEAR = 300           # support spreads proposed per round: the nearest in the st
 RANDOM = 32          # plus this many prior draws
 POOL_BATCH = 32
 POOL_BATCHES = 8
-ACCEPT_BATCHES = 4   # ≤ 128 joint draws per mon in the rejection step
+ACCEPT_BATCHES = 6   # ≤ 192 joint draws per mon in the rejection step
 ACCEPT_TARGET = 24
 PERTURB = 8          # a stat moved by ± this many points that leaves the stream unchanged is IRRELEVANT
 
@@ -385,8 +413,7 @@ def screen(prep: B.Prep, arm: str) -> dict:
         draws = {n: c.draw() for n, c in states.items()}
         mv = {}
         for n, moves in fixed_moves.items():
-            t = states[n].hp_t
-            mv[n] = [("hiddenpower" + t) if (S.is_hp(x) and t) else x for x in moves]
+            mv[n] = with_hp(moves, prep.seen.mons[n].moves, states[n].hp_t)
         return B.assemble(prep, arm, B.rng_for("unused"), seen_draws=draws, fixed_moves=mv, fixed_u=u_world)
 
     replays = 0
@@ -491,17 +518,45 @@ def screen(prep: B.Prep, arm: str) -> dict:
     cur = score([ctx])[0]
     rounds = 0
     stuck: set = set()
+    last_stuck: set = set()
+
+    def pair_proposals(n: str) -> List[Tuple[str, Ctx, float]]:
+        """TWO-coordinate moves for a mon a single move cannot fix (e.g. a Hidden Power's type AND the SpA behind
+        it): each of the 6 likeliest values of every discrete class, combined with the spread moves."""
+        c0 = ctx[n]
+        out = []
+        for cls in ("hp_t", "item", "ability"):
+            p = _norm(sup[n][cls])
+            alts = sorted((v for v in p if v != getattr(c0, cls)), key=lambda v: -p[v])[:6]
+            for v in alts:
+                alt = replace(c0, **{cls: v})
+                if cls == "hp_t":
+                    alt = replace(alt, variant=c0.variant.split("|")[0])
+                ctx[n] = alt
+                try:
+                    for lab, c, lp in proposals(n):
+                        if lab.startswith("spread="):
+                            out.append((f"{cls}={v}+{lab}", c, lp + float(np.log(max(p[v], 1e-300)))))
+                finally:
+                    ctx[n] = c0
+        return out
+    pair_mode = False
     while cur < full and rounds < ROUNDS:
         rounds += 1
         who = active_at(prep, max(cur[0], 0))
-        order = ([who] if who in ctx and who not in stuck else []) + [n for n in names if n != who and n not in stuck]
+        if pair_mode:
+            order = [w for w in [who] + names if w in ctx][:1] + [w for w in names if w != who][:0]
+            order = list(dict.fromkeys([who] if who in ctx else names[:1]))
+        else:
+            order = ([who] if who in ctx and who not in stuck else []) + [n for n in names
+                                                                         if n != who and n not in stuck]
         improved = False
         upto = upto_for(max(cur[0], 0))
         cur_t = score([ctx], upto)[0]
         for n in order:
             moving.clear()
             moving.update(sensitivity(n, upto, cur_t))
-            props = proposals(n)
+            props = pair_proposals(n) if pair_mode else proposals(n)
             cands = []
             for _lab, c, _lp in props:
                 st = dict(ctx)
@@ -526,10 +581,17 @@ def screen(prep: B.Prep, arm: str) -> dict:
                         break
                 if improved:
                     stuck.clear()
+                    last_stuck.discard(n)
                     break
             stuck.add(n)
+            last_stuck.add(n)
         if not improved:
-            break
+            if pair_mode:
+                break
+            pair_mode = True            # every single move failed: try two-coordinate moves on the implicated mon
+            stuck.clear()
+            continue
+        pair_mode = False
     out: dict = {"rounds": rounds, "score": list(cur), "n_lines": len(prep.truth_lines),
                  "fixed_moves": fixed_moves, "u_world": u_world}
     ok = False
@@ -592,16 +654,21 @@ def screen(prep: B.Prep, arm: str) -> dict:
         # group the support (x attack-IV variant in the window) by realized RELEVANT stats; test one per group,
         # nearest groups first, until a whole batch fails
         groups: Dict[tuple, list] = {}
-        groups_keys = keys
+        near: Dict[tuple, tuple] = {}          # each group's member nearest the context in ALL six stats
+        cur_all = np.array(cur_st)
         for var in sorted(win["variant"]):
             a = arr(n, c.hp_t, var)
+            dist = np.abs(a - cur_all).sum(axis=1)
             for i, row in enumerate(a):
                 key = tuple(int(row[k]) for k in relevant)
                 groups.setdefault(key, []).append((i, var))
+                if key not in near or dist[i] < near[key][0]:
+                    near[key] = (int(dist[i]), i, var)
         cur_key = tuple(cur_st[k] for k in relevant)
         keys = sorted(groups, key=lambda kk: sum(abs(x - y) for x, y in zip(kk, cur_key)))
-        _ = groups_keys
         good_keys = set()
+        if cur_key in groups:
+            good_keys.add(cur_key)             # the context itself passed the full gate
         b = 0
         pos = 0
         while pos < len(keys) and b < POOL_BATCHES:
@@ -610,7 +677,7 @@ def screen(prep: B.Prep, arm: str) -> dict:
             b += 1
             cands = []
             for kk in batch:
-                i, var = groups[kk][0]
+                _d, i, var = near[kk]
                 nat, evs, _w = spreads[n][i]
                 st = dict(ctx)
                 st[n] = replace(c, nature=nat, evs=tuple(evs), variant=var)
@@ -656,8 +723,10 @@ def screen(prep: B.Prep, arm: str) -> dict:
             if len(accepted) >= ACCEPT_TARGET:
                 break
         if not accepted:
-            out.setdefault("empty_pool", []).append(n)
-            continue
+            # no prior draw passed in 192: the mon's gate-conditioned prior is too narrow to sample this way. Fall
+            # back to the context (a consistent value found by search, not a prior draw) and FLAG it.
+            accepted = [c.draw()]
+            out.setdefault("context_only", []).append(n)
         pools[n] = accepted
         out.setdefault("accept", {})[n] = [len(accepted), tried]
         out.setdefault("pool_items", {})[n] = items

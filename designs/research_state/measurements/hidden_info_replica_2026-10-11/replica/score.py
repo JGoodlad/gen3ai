@@ -23,7 +23,7 @@ import json
 import os
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Sequence
 
 import numpy as np
 
