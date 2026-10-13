@@ -15,12 +15,149 @@ SECOND builder, written by a different agent from the spec text alone (§13.1), 
 builder, its scripts or any of its results. Its numbers go to a third party, who compares the two. This folder
 does NOT compare them.
 
-**What we found while building it (the short version):** see FINDINGS below. The most important for the third
+**What we found while building it (the short version):** see FINDINGS below. Finding 1 there was found at the
+finish, and the third party should read it first: the learnset table both builders can reach does not carry
+pre-evolution moves, so this builder's worlds never draw, for example, Tyranitar's Dragon Dance. The most important for the third
 party: (1) reusing the true battle's dice seed lets the turn-0 gender dice leak which never-seen species the
 opponent has, and we fixed that by aligning the seed; (2) the same seed reuse still lets any hidden fact that
 spends dice without printing a line (Focus Band, King's Rock, a speed tie) be "seen" by the gate; (3) the pool
 teams use Hidden Power IV patterns and spreads the Smogon top-25 spread table does not hold, so a faithful
 builder needs the full spread table and every max-power IV pattern, or it cannot rebuild about half the truths.
+
+## FINAL RESULTS (all 600 + 600 registered states; read 2026-10-13 ~14:10; `result.json`, `imp_per_state.json`)
+
+**COMPUTED, not a verdict.** §12.2 R-REPLICATE (the comparison with the first implementation) belongs to a third
+party; until it reads, nothing below is more than "computed". **This folder does not compare these numbers with the
+first implementation's.**
+
+The read is the registered one: LEAF-K8, IMP on the win scale, `replica/score.py` UNCHANGED from the interim read.
+CIs are battle-clustered percentile bootstraps (2,000 draws, `numpy.random.default_rng(20261011)`), every contrast
+paired on the same draws, the pooled read resampling battles within each checkpoint. The common set holds the
+states where all five arms built 8 worlds: **end2 545 states / 384 battles, prod 544 / 383.**
+
+| read | states (end2 / prod) | IMP_O | IMP_P | IMP_F | IMP_F+M | IMP_O-M |
+|---|---|---|---|---|---|---|
+| end2 | 545 | +0.0795 [+0.0653, +0.0953] | +0.0219 [+0.0088, +0.0343] | +0.0134 [+0.0003, +0.0274] | +0.0244 [+0.0106, +0.0385] | +0.0425 [+0.0274, +0.0578] |
+| prod | 544 | +0.0741 [+0.0583, +0.0914] | -0.0012 [-0.0162, +0.0145] | +0.0000 [-0.0152, +0.0155] | +0.0020 [-0.0129, +0.0187] | +0.0363 [+0.0208, +0.0529] |
+| pooled | 545 / 544 | +0.0768 [+0.0662, +0.0881] | +0.0103 [+0.0007, +0.0197] | +0.0067 [-0.0032, +0.0163] | +0.0132 [+0.0026, +0.0237] | +0.0394 [+0.0286, +0.0508] |
+
+| read | G = O - F | G_P = O - P | F+M - F | O - (O-M) | s_M | n_M | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|---|---|---|
+| end2 | +0.0661 [+0.0503, +0.0827] | +0.0576 [+0.0442, +0.0722] | +0.0109 [-0.0040, +0.0263] | +0.0370 [+0.0246, +0.0507] | +0.17 [-0.07, +0.36] | +0.56 [+0.39, +0.76] | yes | no | yes |
+| prod | +0.0740 [+0.0586, +0.0905] | +0.0753 [+0.0613, +0.0910] | +0.0020 [-0.0131, +0.0175] | +0.0377 [+0.0268, +0.0496] | +0.03 [-0.20, +0.22] | +0.51 [+0.37, +0.68] | yes | no | yes |
+| pooled | +0.0701 [+0.0591, +0.0811] | +0.0664 [+0.0566, +0.0762] | +0.0065 [-0.0039, +0.0166] | +0.0373 [+0.0290, +0.0463] | +0.09 [-0.06, +0.23] | +0.53 [+0.42, +0.65] | yes | no | yes |
+
+s_M / n_M to three places (`result.json`): end2 s_M +0.165 [-0.072, +0.358], n_M +0.559 [+0.393, +0.764]; prod
+s_M +0.027 [-0.196, +0.224], n_M +0.510 [+0.373, +0.679]; pooled s_M +0.092 [-0.060, +0.227], n_M +0.533
+[+0.419, +0.653]. **No quantity sits within ±0.0005 of a §12.3 boundary** (`boundary_flags` empty on every read).
+
+What the B rules say here, read mechanically and only for what this replication ran:
+- **B2** (G lower > 0.02): holds on end2, prod and pooled.
+- **B3** (s_M point ≥ 0.50, lower ≥ 0.25): fails on every read (pooled point +0.092).
+- **B4** (n_M point ≥ 0.50, lower ≥ 0.25): holds on every read (pooled +0.533, lower +0.419; prod's point
+  +0.510 is 0.0096 above the 0.50 line, outside the ±0.0005 boundary band).
+- **B8's two halves, per checkpoint:** IMP_F+M − IMP_F lower > +0.0005 FAILS on both (end2 −0.0040, prod
+  −0.0131); IMP_O − IMP_O-M lower > +0.0005 holds on both.
+- B1 needs R-GIGO and R-REPLICATE, B5 the rival classes U / I / A / S, B6 / B7 the dose and placebo arms: none of
+  those were in this replication's scope (§13.1 items 5-7), so no §12.3 verdict is issued here. Descriptively, the
+  pooled pattern (n_M lower +0.419 ≥ 0.25, s_M upper +0.227 < 0.25) is the shape §12.3 names
+  MOVES-NECESSARY-NOT-SUFFICIENT; end2 alone does not have it (s_M upper +0.358).
+
+**Own-set IMP** (each arm on all its own ok states, LEAF-K8; `result.json` `own_set`): end2 O +0.0806 (600),
+P +0.0279 (598), F +0.0141 (559), F+M +0.0217 (563), O-M +0.0454 (599); prod O +0.0714 (600), P −0.0036 (600),
+F −0.0019 (564), F+M +0.0029 (567), O-M +0.0340 (600).
+
+**Other scorers from the same playouts** (common set; reported, not registered):
+
+| scorer | read | IMP_O | IMP_P | IMP_F | IMP_F+M | IMP_O-M | G |
+|---|---|---|---|---|---|---|---|
+| LEAF-K1 | end2 | +0.0325 [+0.0217, +0.0439] | +0.0075 [-0.0017, +0.0166] | +0.0035 [-0.0053, +0.0122] | -0.0022 [-0.0110, +0.0064] | +0.0150 [+0.0050, +0.0253] | +0.0290 [+0.0167, +0.0409] |
+| LEAF-K1 | prod | +0.0285 [+0.0148, +0.0433] | +0.0012 [-0.0081, +0.0105] | -0.0044 [-0.0142, +0.0051] | -0.0024 [-0.0131, +0.0091] | +0.0078 [-0.0026, +0.0192] | +0.0329 [+0.0184, +0.0489] |
+| LEAF-K1 | pooled | +0.0305 [+0.0215, +0.0398] | +0.0044 [-0.0021, +0.0110] | -0.0004 [-0.0070, +0.0062] | -0.0023 [-0.0096, +0.0047] | +0.0114 [+0.0039, +0.0188] | +0.0310 [+0.0214, +0.0411] |
+| LEAF-K4 | end2 | +0.0677 [+0.0532, +0.0842] | +0.0119 [-0.0000, +0.0236] | +0.0062 [-0.0064, +0.0200] | +0.0170 [+0.0053, +0.0293] | +0.0304 [+0.0153, +0.0463] | +0.0614 [+0.0453, +0.0782] |
+| LEAF-K4 | prod | +0.0613 [+0.0467, +0.0774] | +0.0080 [-0.0046, +0.0206] | -0.0073 [-0.0212, +0.0072] | +0.0079 [-0.0057, +0.0223] | +0.0229 [+0.0093, +0.0363] | +0.0686 [+0.0531, +0.0850] |
+| LEAF-K4 | pooled | +0.0645 [+0.0542, +0.0758] | +0.0099 [+0.0014, +0.0185] | -0.0005 [-0.0098, +0.0091] | +0.0124 [+0.0030, +0.0222] | +0.0267 [+0.0163, +0.0375] | +0.0650 [+0.0543, +0.0765] |
+
+**Exclusions** (states without 8 accepted worlds; every arm under §6.1's 10 % line):
+
+| cp | O | P | F | F+M | O-M |
+|---|---|---|---|---|---|
+| end2 (of 600) | 0 | 2 (`only_0_worlds`) | 41 (6.8 %, `no_consistent_context`) | 37 (6.2 %, same) | 1 (`only_0_worlds`) |
+| prod (of 600) | 0 | 0 | 36 (6.0 %, same) | 33 (5.5 %, same) | 0 |
+
+The builder is seeded per (arm, state) (`builder.rng_for`), so re-running an excluded state reproduces its failure;
+the three P / O-M states were not re-run again (P's two had been re-run once already). The common set's 55 / 56
+lost states are mostly F / F+M screen failures (a state with no consistent world under the prior), which is a
+selection the third party should hold fixed when comparing.
+
+**AUDITS** (`audit_end2.json`, `audit_prod.json`; every registered state, `--rows`; run 2026-10-13 14:09 on the
+code that built the rows):
+
+| audit | end2 | prod |
+|---|---|---|
+| ID: the TRUE opponent team through this builder passes the gate (lines AND rows) | **599 / 600** (1 FAIL, below) | 600 / 600 |
+| ID: the rendering is the identity; the playout tool replays it | 599 / 600 | 600 / 600 |
+| T1 a revealed item swapped: caught | 542 / 542 | 541 / 541 |
+| T2 a past switch to the wrong slot: caught | 537 / 537 | 532 / 532 |
+| T3 a used, seen move removed: caught | 591 / 591 | 592 / 592 |
+| T4 the aligned seed one draw off: caught | 591 / 600 (9 not) | 580 / 600 (20 not) |
+| PARSE: a fact called revealed that the true set lacks | 0 of 3,120 moves, 1,539 items, 444 abilities, 2,302 details | 0 of 2,931 / 1,486 / 415 / 2,201 |
+| O vs Phase 1, dice seeds 0-7 (same battle, seeds, continuation) | 4,478 / 4,478 outcomes agree | 4,436 / 4,436 agree |
+| pending opponent root choices dropped (A3) | 7 | 1 |
+
+- **The ID failure** (`rb_es_end2_s2001/step_14000347/staller/loss_s3_004#p1#8`) is a RENDERER defect: the true
+  log's opponent choice 11 is the NUMERIC `move 1` (the Recharge turn after Hyper Beam at choice 9), and
+  `builder.render` rewrites it by name to `move dragondance`, which the engine refuses on a recharge turn. The
+  Struggle / Recharge guard covers only the NAMED forms. Every constructed arm (P, F, F+M, O-M) already failed on
+  this state, so it is outside the common set and moves no number; no other registered state has a numeric
+  opponent move choice (the identity rendering is unchanged on the other 1,199). The interim README's "the
+  identity audit passes on every state" is therefore 1,199 / 1,200 on the final audit.
+- **The T4 misses are states where the +1 offset does not change the searched side's view.** Re-run per missed
+  state at offsets +2, +3, +5, +9, +17, +101: 19 of the 29 (end2 7, prod 12) pass the gate at EVERY offset (the
+  prefix shows no dice: mostly the first one or two decisions), and the other 10 pass at +1 but fail at some other
+  offset (the view depends on the seed, coarsely enough that +1 coincides). The gate compares the searched side's
+  bytes, so a pass means the planted defect was not observable on that state; strictly, though, R-GIGO's "each
+  audit FAILS on its planted defect" is not met on those 29 states.
+
+**Marginals** for §12.2's total-variation check: `marginals.json` (per checkpoint and arm, the class U / M / I / A /
+S frequency tables over every included state's 8 worlds). **Deliverable rows** (§13.1 item 7: per state and arm the
+8 world teams, every action's 8 outcomes, the build bookkeeping): `rows/<cp>_<arm>.jsonl.gz` (`replica.pack`); the
+full rows stay in `~/gen3ai_archive/hidden_info_replica/rows/`.
+
+## FINDINGS (for the third party and the red team, §13.2)
+
+1. **The pinned learnset table drops every move a species inherits from its pre-evolution** (egg moves and
+   pre-evolution level-up moves): `agents.gen3_data.learnset.is_legal` says False for Breloom Spore, Tyranitar
+   Dragon Dance, Jolteon Baton Pass, Cloyster Rapid Spin, Swampert Hydro Pump, and True for Shroomish / Larvitar /
+   Eevee / Shellder / Mudkip (checked at the end2 pin AND at current main). This replication's move prior
+   (`sampling.move_ok`) filters on it, so its worlds can NEVER hold those moves although the Smogon prior gives
+   them heavy mass (Breloom Spore 0.98, Umbreon Wish 0.89, Jolteon Baton Pass 0.79, Cloyster Rapid Spin 0.75,
+   Swampert Hydro Pump 0.53, Tyranitar Dragon Dance 0.42). The TRUE opponent team holds at least one such move in
+   **560 / 600 end2 states and 561 / 600 prod states** (41 / 44 distinct species-move pairs; Swampert Hydro Pump
+   alone in 255 / 260 states, Tyranitar Dragon Dance in 203 / 207). So every arm that RE-DRAWS moves (P, F, O-M,
+   and F / F+M's never-seen slots) draws from a prior missing real support, and an unrevealed Dragon Dance on a
+   Tyranitar is never in a world. This bears directly on the M contrasts (s_M, n_M). Whether the first
+   implementation shares it is for the third party. **Outside this unit, and possibly larger:**
+   `agents/model/belief_tables.py` reads the same table (`get_legal_moves`) to give "illegal" moves about zero
+   prior probability, so the production model's move-belief prior may hold the same gap. Not verified here.
+2. **Renderer defect, one state** (the ID audit's only failure, above): a numeric `move N` opponent choice is
+   rewritten by name. Excluded from every constructed arm, so it moves no number.
+3. **T4 (seed one draw off) does not fail on 29 / 1,200 states** (above): 19 have a prefix that shows no dice; 10
+   coincide at +1 only.
+4. **Rows span two builder revisions.** P (both checkpoints, started 03:33-03:34 on 2026-10-12) was built by the
+   code of `9bf13b3e`. Every other constructed arm (O-M from 06:53, F / F+M from 09:00) was built after
+   `88e9b8df` (05:38), which (a) keeps a NAMED forced Struggle / Recharge unrendered and (b) rejects at build time
+   a world the playout tool refuses. Neither change can alter an accepted P world: under the old code (a) makes
+   every world of an affected state fail the gate, and (b) makes the state's playout raise. Both would show up as
+   a failed P row, and P failed on only 2 states, both re-run under the new code with the same result. Rows carry
+   a schema tag (`hir_replica_rows_v1`) but no code commit. This was argued from the diff and the row times; it
+   was not re-executed.
+5. Carried from the build (see the top and A1 / A2 / A7 / A8): the gender-dice leak (fixed by seed alignment), the
+   silent-dice leak (NOT fixed; inherent to replaying on the true seed), and the spread / IV-pattern coverage
+   (fixed with the full spread table and every max-power IV pattern).
+6. The common set drops 55 (end2) / 56 (prod) states, mostly F / F+M `no_consistent_context` failures: the read is
+   conditional on states for which the screen found a consistent world, and any comparison should hold that
+   selection fixed.
 
 ## INTERIM REGISTRATION (2026-10-12 ~10:00, before any F / F+M outcome was read)
 
@@ -64,6 +201,12 @@ end2 F+M 11, prod F 13, prod F+M 12. O, P and O-M lost no interim state. Every a
 
 ## STATUS AND HANDOFF (2026-10-12 ~20:05; the agent stopped under the quota rule; the workers keep running)
 
+> **DONE 2026-10-13** (a second agent finished the unit). The unattended workers all exited 0, none OOM-killed
+> (last: end2 O-M 02:41, end2 F 04:00). `replica.remaining` lists 0 remaining states for every (cp, arm); the 600 +
+> 600 rows per arm hold no state with two ok rows. Then `replica.audit` (both checkpoints, `--rows`),
+> `replica.score`, `replica.report`, `replica.marginals` and `replica.pack` ran with the code UNCHANGED; their
+> outputs are FINAL RESULTS above. The text below is the handoff as written.
+
 The full read (600 + 600) is IN PROGRESS. Three unattended, resumable workers run on cores 5-7 / 13-15 at nice 19,
 each under `mem_cap`, and write rows to `~/gen3ai_archive/hidden_info_replica/rows/<cp>/<arm>/*.jsonl`:
 
@@ -101,6 +244,15 @@ A state run twice keeps its ok row (`score.load_rows`); two ok rows for one stat
   (the first study's engine probe; this folder ran its own: `engine_probe_*.jsonl`).
 - The pin checkouts `~/.cache/gen3ai/vdp/pin_{end2,prod}` were used as built, after a byte check that every
   tracked file under `src/` and `data/` equals the pin commit.
+- **The finishing agent (2026-10-13)** read: this README, `replica/` (score, audit, report, pack, remaining,
+  marginals' header, fair's seeding), the logs and rows under `~/gen3ai_archive/hidden_info_replica/`, and
+  `design_hidden_info_binding.md` §12.1-§12.3 and §13.1. It also saw the doc's section HEADINGS once (a heading
+  list; §16's headings carry file names but no numbers) and read none of §16's text. It read nothing in the
+  forbidden list (`src/main/value_search/`, `src/main/hidden_info_study/`, `src/agents/info_levers/`, the
+  measurement folders `value_disc_pilot_2026-10-11/` other than `states_<cp>.json` through the scorer,
+  `hidden_info_binding_2026-10-11/`, `hidden_info_by_reveal_count_2026-10-12/`, `info_levers_2026-10-12/`, the
+  results sections of `design_hidden_info_binding.md` / `design_value_discrimination.md` / `search_ledger.md`, the
+  related ledger entries) and compared nothing with the first implementation.
 
 ## What was built (`replica/`)
 
@@ -137,6 +289,10 @@ A state run twice keeps its ok row (`score.load_rows`); two ok rows for one stat
 | A14 | the referee's tie / truncation | an outcome '0' in the Phase 1 strings is 1/2 |
 | A15 | "F+M (F with the true seen moves)" | the TRUE full movesets of the seen mons (class M revealed), everything else as F |
 | A16 | public details beyond the species | a seen mon's shown gender, shiny flag and level are carried into every world (a shiny seen mon otherwise fails every world's gate) |
+| A17 | §12.3 reads R-MOVES "on POOLED shares over the three checkpoints", but §13.1 hands over registered states for two (end2, prod) | the pooled read pools those two, battles resampled within each checkpoint, states weighted equally |
+| A18 | §12.3's "≥ 0.50" / "lower ≥ 0.25" under rule 8's boundary band | a threshold counts as met only when clear of the ±0.0005 band (`x ≥ thr + 0.0005`); none of this read's quantities fall in a band |
+| A19 | the common set when an arm lost a state | every contrast on the states where ALL five arms built 8 worlds (so a contrast never mixes state sets); each arm's own-set IMP reported beside it |
+| A20 | a state whose world build failed deterministically | excluded with its reason (§6.1's 10 % line per arm), never re-drawn with a new seed; the builder's seed is a function of (arm, state) |
 
 ## Reproduce
 
@@ -146,4 +302,6 @@ $D/run_chain.sh <cp> <shard> <nshards> <cpus> O P F F+M O-M        # rows -> ~/g
 PYTHONPATH=$D python -m replica.audit --cp <cp> --out $D --rows ~/gen3ai_archive/hidden_info_replica/rows
 PYTHONPATH=$D python -m replica.score --rows ~/gen3ai_archive/hidden_info_replica/rows --out $D
 PYTHONPATH=$D python -m replica.marginals --rows ~/gen3ai_archive/hidden_info_replica/rows --out $D
+python $D/replica/report.py $D/result.json                                  # the markdown tables above
+PYTHONPATH=$D python -m replica.pack --rows ~/gen3ai_archive/hidden_info_replica/rows --out $D/rows
 ```

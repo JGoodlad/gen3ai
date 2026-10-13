@@ -1,0 +1,49 @@
+{
+ "ID": {
+  "FAIL": 1,
+  "REPLAY_REFUSED": 1,
+  "pass": 599,
+  "rendered_changes": 1,
+  "rendered_identical": 599,
+  "replay_ok": 599
+ },
+ "O_vs_phase1_seeds0to7": {
+  "agree": 4478
+ },
+ "cp": "end2",
+ "id_failures": [
+  [
+   "rb_es_end2_s2001/step_14000347/staller/loss_s3_004#p1#8",
+   -1,
+   "bridge fatal: unresolvable choice for p2: MoveName(\"dragondance\") \u2014 active tyranitar has moves [\"Dragon Dance\", \"Rock Slide\", \"Earthquake\", \"Hyper Beam\"]; bench [\"celebi\", \"porygon2\", \"metagross\", \"salamence\"]. Re-requesting would loop forever, so this fails loud."
+  ]
+ ],
+ "n": 600,
+ "parse": {
+  "ability_ok": 444,
+  "details_ok": 2302,
+  "item_ok": 1539,
+  "move_ok": 3120
+ },
+ "parse_errors": [],
+ "pending": 7,
+ "prep_errors": [],
+ "teeth": {
+  "T1": {
+   "caught": 542
+  },
+  "T2": {
+   "caught": 537
+  },
+  "T3": {
+   "caught": 591
+  },
+  "T4": {
+   "MISSED": 9,
+   "caught": 591
+  }
+ },
+ "truth_legality": {
+  "learnset": 1347
+ }
+}

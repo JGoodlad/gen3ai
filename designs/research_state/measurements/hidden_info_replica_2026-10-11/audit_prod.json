@@ -1,0 +1,40 @@
+{
+ "ID": {
+  "pass": 600,
+  "rendered_identical": 600,
+  "replay_ok": 600
+ },
+ "O_vs_phase1_seeds0to7": {
+  "agree": 4436
+ },
+ "cp": "prod",
+ "id_failures": [],
+ "n": 600,
+ "parse": {
+  "ability_ok": 415,
+  "details_ok": 2201,
+  "item_ok": 1486,
+  "move_ok": 2931
+ },
+ "parse_errors": [],
+ "pending": 1,
+ "prep_errors": [],
+ "teeth": {
+  "T1": {
+   "caught": 541
+  },
+  "T2": {
+   "caught": 532
+  },
+  "T3": {
+   "caught": 592
+  },
+  "T4": {
+   "MISSED": 20,
+   "caught": 580
+  }
+ },
+ "truth_legality": {
+  "learnset": 1336
+ }
+}
