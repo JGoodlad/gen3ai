@@ -19,7 +19,10 @@ from main.h2h import play as PL
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
-COMPUTE = PL.Compute(device="cpu", backend="eager", n_envs=8, threads=2, torch_threads=2, front="ffi",
+#: ONE intra-op torch thread: the played bits are the 2-thread bits (the reveal file's recorded OFF_BITS reproduce
+#: at both), and a 2-thread eager CPU forward on a busy box waits in OpenMP barriers — designs/ops/testing.md
+#: "One torch thread for the CPU plays".
+COMPUTE = PL.Compute(device="cpu", backend="eager", n_envs=8, threads=2, torch_threads=1, front="ffi",
                      profile="selfcheck")
 SEED = 3
 FAMILY = "h2h_many_test_family"

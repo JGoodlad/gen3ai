@@ -74,7 +74,8 @@ def sentinel_games(tmp_path_factory):
             run_dir=md / ".eval_runs" / "step_2000", model_dir=md, trainee=trainee, sentinels=sentinels,
             items=OFF.plan_items([], sentinels, 6), shard_games=6, step=2000, cycle_seed=20261008,
             quota={"win": 0, "loss": 0, "draw": 0}, device="cpu", backend="eager", n_envs=2,
-            sentinel_greedy=greedy, self_play_temp=1.0)["games"]
+            sentinel_greedy=greedy, self_play_temp=1.0,
+            torch_threads=1)["games"]          # not the default 4: designs/ops/testing.md "One torch thread ..."
     return out
 
 

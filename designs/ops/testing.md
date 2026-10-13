@@ -864,6 +864,54 @@ serial when you need `-s`, a debugger, or a readable single failure.
 > the conftest pin, anyone trying `-n auto` would measure a slowdown and conclude parallelism does
 > not work here.
 
+### One torch thread for the CPU plays (2026-10-12)
+
+The tests that play REAL games on the eval engine on the CPU (`main/h2h/play_*_integration_test.py`,
+`main/h2h/plateau_integration_test.py`, `agents/training/snapshot_ladder_rust_integration_test.py`,
+`untaught_rust_integration_test.py`, `eval_sentinel_greedy_test.py`, `main/ops/eval_trace_gen_integration_test.py`)
+run their eager forward at **ONE intra-op torch thread** (`torch_threads=1`; they had 2, the sentinel test the
+offline default 4). The conftest's `OMP_NUM_THREADS=1` pin above does NOT reach them: the engine calls
+`torch.set_num_threads(compute.torch_threads)` itself.
+
+**Why.** The forward is the production policy at an 8-row bucket, eager: hundreds of small ops per decision, and at
+2 threads each one is an OpenMP fork / join. On a busy box (the 3 agent cores beside a live run) the main thread
+then waits at the barrier for a descheduled worker: py-spy (`--native`, 50 Hz) of the reveal file at 2 threads put
+97.6 % of its samples in the forward and **~75 % of ALL samples inside libgomp**; the Rust core's worker threads used
+~1 s of CPU each over the whole file. At 1 thread the libgomp share is 0 and the forward is the policy's own ops
+(the damage op's pairwise families lead: `extractor_forward.py` `_spread_hp_damage` / `_other_edge_cells`).
+
+**The played bits do not move.** The reveal file's recorded `OFF_BITS` / `OFF_OUTCOME_ALL` (every action, every p1
+margin and log-prob bit, every p2 decision of its 24-game OFF play) reproduce exactly at 1 thread and at 2; every
+other file compares plays inside one process at one compute, and passes.
+
+**Measured** (agent cores `taskset -c 5-7,13-15`, `nice 19`, a live training run on the other cores; one file alone
+per run, `-p no:xdist`, beside at most one other such run; each run's own `utils.cpu_meter` window over those 6
+logical cpus, its own process tree subtracted; the before / after of a file are DIFFERENT windows, hence the factor
+on each). "÷ factor" is wall divided by the window's contention factor: a rough quiet-equivalent, NOT a quiet-box
+measurement (none was possible) — and the 2-thread barrier waits grow faster than the factor, so the before column's
+÷ factor still over-reads a quiet box:
+
+| file / play | before (2 threads): wall / CPU @ factor (÷ factor) | after (1 thread): wall / CPU @ factor (÷ factor) |
+|---|---|---|
+| the reveal file's OFF play alone (24 games) | 713 s / 631 s @ x3.48 (205 s) | 221 s / 135 s @ x2.81 (79 s) |
+| `play_reveal_integration_test.py` | 6,799 s / 5,203 s @ x4.06 (1,675 s) | 1,736 s / 1,021 s @ x2.93 (592 s) |
+| `play_cross_integration_test.py` | 3,531 s / 3,398 s @ x3.17 (1,114 s) | 1,407 s / 869 s @ x2.80 (502 s) |
+| `play_many_integration_test.py` | 3,051 s / 3,041 s @ x3.06 (997 s) | 1,321 s / 796 s @ x2.83 (467 s) |
+| `play_mirror_integration_test.py` | 2,567 s / 2,279 s @ x3.51 (731 s) | 805 s / 503 s @ x2.79 (289 s) |
+| `snapshot_ladder_rust_integration_test.py` | 2,071 s / 1,845 s @ x3.48 (595 s) | 467 s / 284 s @ x2.86 (163 s) |
+| `eval_sentinel_greedy_test.py` (4 threads before) | 5,726 s / 7,284 s @ x4.57 (1,253 s) | 250 s / 159 s @ x2.72 (92 s) |
+| `play_edge_integration_test.py` (incl. its `slow` test: 421 s / 105 s) | 1,219 s / 1,087 s @ x3.44 (354 s) | 381 s / 237 s @ x2.81 (136 s) |
+| `plateau_integration_test.py` | 658 s / 592 s @ x3.45 (191 s) | 310 s / 192 s @ x2.80 (111 s) |
+| `untaught_rust_integration_test.py` | 566 s / 539 s @ x3.11 (182 s) | 241 s / 157 s @ x2.73 (88 s) |
+| `eval_trace_gen_integration_test.py` | 570 s / 487 s @ x3.50 (163 s) | 198 s / 121 s @ x2.94 (67 s) |
+
+⚠️ **They are still the routine gate's longest poles, and the per-call tier budget cannot see it.** Each keeps its
+plays in MODULE fixtures, so the cost lands in a SETUP phase (the reveal file: one 1,735 s setup, four calls under
+0.03 s) and the 30 s guard, which reads `call` durations only, never fires. At 1 thread the reveal file is still
+~1,000 CPU-seconds on a contended box; it plays 160 games (5 cells x 24 plus 5 ledger requests x 8) and every one of
+its four tests reads its OFF play, so no split cuts its pole without replaying that play in a second file. Whether
+these belong in `slow` is the owner's call; the numbers are here.
+
 ### Targeted sets before a ship (owner, 2026-10-05)
 The full serial suite is NOT required before every `/gen3ai-ship` — **"I prefer more targeted test suites."** An agent ships on the routine gate, or on a TARGETED set it chooses by judgment (the tests that cover what it changed, plus the static gates), **naming the scope and the reason in the commit body**. Shared infrastructure (conftest, the model, the training loop, compile, `data/`, the Rust core, the launcher) or any doubt means the full routine gate. The owner's 2026-09-30 rule still holds: the choice is the agent's, never an AUTOMATED test-selection framework.
 

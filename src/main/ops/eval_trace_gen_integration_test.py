@@ -47,9 +47,10 @@ def _a_run(root: Path) -> Path:
 
 
 def _gen(run: Path, out: Path, seed: int) -> dict:
+    # ONE intra-op torch thread: designs/ops/testing.md "One torch thread for the CPU plays"
     rc = ETG.main([f"{run}@{STEP}", "--games", "2", "--sentinels", "1", "--opponents", ",".join(BOTS),
                    "--out", str(out), "--seed", str(seed), "--shard-games", "2", "--n-envs", "2",
-                   "--threads", "2", "--torch-threads", "2", "--front", "ffi", "--profile", "selfcheck",
+                   "--threads", "2", "--torch-threads", "1", "--front", "ffi", "--profile", "selfcheck",
                    "--nice", "0"])
     assert rc == 0
     return json.loads((out / "eval_traces" / f"step_{STEP}" / "eval_manifest.json").read_text())

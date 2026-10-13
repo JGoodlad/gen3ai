@@ -14,7 +14,10 @@ from agents.training import snapshot_ladder_play as LP
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
-ENGINE = dict(n_envs=8, threads=2, torch_threads=2, front="ffi", profile="selfcheck")
+#: ONE intra-op torch thread: the played bits are the 2-thread bits (the reveal file's recorded OFF_BITS reproduce
+#: at both), and a 2-thread eager CPU forward on a busy box waits in OpenMP barriers — designs/ops/testing.md
+#: "One torch thread for the CPU plays".
+ENGINE = dict(n_envs=8, threads=2, torch_threads=1, front="ffi", profile="selfcheck")
 
 
 @pytest.fixture(scope="module")

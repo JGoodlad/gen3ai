@@ -32,9 +32,10 @@ SEED = 3
 
 
 def _compute():
+    # ONE intra-op torch thread: designs/ops/testing.md "One torch thread for the CPU plays"
     from main.h2h.play import Compute
 
-    return Compute(device="cpu", backend="eager", n_envs=8, threads=2, torch_threads=2, front="ffi",
+    return Compute(device="cpu", backend="eager", n_envs=8, threads=2, torch_threads=1, front="ffi",
                    profile="selfcheck")
 
 

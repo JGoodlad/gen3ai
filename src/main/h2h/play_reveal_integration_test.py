@@ -28,7 +28,10 @@ from main.h2h import reveal as RV
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
-COMPUTE = dict(device="cpu", backend="eager", threads=2, torch_threads=2, front="ffi", profile="selfcheck")
+#: ONE intra-op torch thread: the played bits are the 2-thread bits (the reveal file's recorded OFF_BITS reproduce
+#: at both), and a 2-thread eager CPU forward on a busy box waits in OpenMP barriers — designs/ops/testing.md
+#: "One torch thread for the CPU plays".
+COMPUTE = dict(device="cpu", backend="eager", threads=2, torch_threads=1, front="ffi", profile="selfcheck")
 SCHEDULE_KEY = "h2h:test"
 PAIRS, N_ENVS = 12, 8
 
