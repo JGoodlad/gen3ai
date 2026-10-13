@@ -367,10 +367,10 @@
   },
   "src/main/info_audit/info_audit_slow_test.py::test_the_suite_passes_on_twelve_decisions_and_every_spec": {
    "status": "pass",
-   "commit": "182d7c57a5aeda6110b1ad0d78d3a3b9f68b83ab",
-   "at": "2026-10-12T19:04:43Z",
-   "duration_s": 257.19,
-   "contention": 1.85,
+   "commit": "8328ba5105c4a7ee18bc9e7ee67c9e0c05cfaec9",
+   "at": "2026-10-13T01:13:11Z",
+   "duration_s": 584.21,
+   "contention": 3.81,
    "detail": ""
   },
   "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_the_whole_committed_bank": {
@@ -897,5 +897,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-12T19:04:43Z"
+ "last_written": "2026-10-13T01:13:11Z"
 }
