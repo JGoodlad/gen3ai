@@ -624,9 +624,18 @@ INCIDENT_LOST_KEYS = frozenset({
 })
 
 
+def _legacy_mirror():
+    """The 2026-09-06 incident and its relaunch are judged against the mirror THEY ran under: since the END STATE's
+    adoption (2026-10-12) that is the LEGACY surface (`arch_arms.legacy_production_config`), the mirror with the
+    nineteen end-state keys at their pre-adoption values. Against the adopted mirror every one of those runs would
+    differ in those nineteen too, which is the adoption, not the incident."""
+    from main.train.arch_arms import legacy_production_config
+    return legacy_production_config(arch_surface.load_production_config())
+
+
 def test_the_incident_RECORDED_config_names_exactly_the_keys_it_lost():
     ns = _recorded_config(INCIDENT_RUN)
-    got = {d.name for d in arch_surface.diff_against_production(ns)}
+    got = {d.name for d in arch_surface.diff_against_production(ns, _legacy_mirror())}
     assert got == INCIDENT_LOST_KEYS, (
         f"missing from the finding: {sorted(INCIDENT_LOST_KEYS - got)}; "
         f"unexpected: {sorted(got - INCIDENT_LOST_KEYS)}")
@@ -637,7 +646,7 @@ def test_the_CORRECTED_relaunch_reads_clean_against_the_mirror():
     config must show ZERO arch-surface drift — the same verdict the hand-rolled check reached over
     all 49 registry rows, from a guard that compares the 39 it declares."""
     ns = _recorded_config("ai_v12_02_winprob_critic")
-    diffs = arch_surface.diff_against_production(ns)
+    diffs = arch_surface.diff_against_production(ns, _legacy_mirror())
     assert not diffs, [d.line() for d in diffs]
 
 
@@ -655,7 +664,7 @@ def test_every_key_the_incident_lost_is_either_REFUSED_or_NAMED():
     """
     import types
     ns = _recorded_config(INCIDENT_RUN)
-    prod = arch_surface.load_production_config()
+    prod = _legacy_mirror()
     cfg = vars(ns)
     differing = {k for k in prod if k in cfg and cfg[k] != prod[k]}
     # The GENERATION STAMP. gen3_event_record_v2 (v121, the observation-architecture batch) moved
@@ -668,7 +677,7 @@ def test_every_key_the_incident_lost_is_either_REFUSED_or_NAMED():
     differing -= generation_stamp
     assert len(differing) == 31, sorted(differing)      # the ledger's count, re-measured
 
-    refused = {d.name for d in arch_surface.diff_against_production(types.SimpleNamespace(**cfg))}
+    refused = {d.name for d in arch_surface.diff_against_production(types.SimpleNamespace(**cfg), prod)}
     named = {f.lstrip("-").replace("-", "_")
              for f, _ in arch_surface.unapplied_production_keys(prod)}
     # K10(a): what the RECIPE surface compares (and refuses when untyped) is not silent either.

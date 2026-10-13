@@ -44,3 +44,20 @@ def _resolved_production_args():
     with contextlib.redirect_stdout(io.StringIO()):    # the launch banner; a refusal still exits
         resolve_config(a, parser)
     return a
+
+
+def legacy_production_args():
+    """``production_args()`` with the nineteen END-STATE keys at their PRE-ADOPTION values
+    (``main.train.arch_arms.PRE_ADOPTION_PRODUCTION``) — the LEGACY production surface, for the lever tests whose
+    base is the pre-adoption network (the end state became production 2026-10-12). Set after resolution: none of the
+    nineteen feeds a derived key in ``resolve_config`` (each is a plain ``_resolve``). Deleted with the legacy paths
+    (``designs/ops/legacy_deletion_manifest_2026-10-12.md``)."""
+    from main.train.arch_arms import PRE_ADOPTION_PRODUCTION
+
+    a = production_args()
+    for k, v in PRE_ADOPTION_PRODUCTION:
+        if not hasattr(a, k):
+            raise AttributeError(f"the resolved production namespace carries no {k!r}; PRE_ADOPTION_PRODUCTION is "
+                                 "out of step with the parser")
+        setattr(a, k, v)
+    return a

@@ -86,8 +86,12 @@ MODEL_SEED, PERTURB_SEED, UPDATE_SEED = 0, 1234, 123
 #: default's) gave the X5 surface NO row whose opponent active has all four moves revealed — OTHER_move dead —
 #: against design §6.4's coverage rule of >= 2 rows per case; 18, the first seed tried after it, gives
 #: OTHER_species live 36 / dead 28 and OTHER_move live 60 / dead 4. Chosen on those coverage counts alone,
-#: before any golden was recorded.
-RECORD_N_STEPS, RECORD_RUN_SEED, RECORD_P2_SEED = 32, 18, 5
+#: before any golden was recorded. The RUN SEED is 19 since the END STATE's ADOPTION as production (2026-10-12): the
+#: buffer is rebuilt because its behaviour log-probs follow the seeded learner (now the end-state network), and seed
+#: 18's rollout under that learner gave OTHER_move dead 0 rows (< MIN_CASE_ROWS); 19, the first seed tried after it,
+#: gives OTHER_species live 16 / dead 48 and OTHER_move live 58 / dead 6. Chosen on those coverage counts alone,
+#: before the end-state golden was recorded.
+RECORD_N_STEPS, RECORD_RUN_SEED, RECORD_P2_SEED = 32, 19, 5
 #: design §6.4: each X5 case must hold at least this many rows of the buffer (`coverage`).
 MIN_CASE_ROWS = 2
 

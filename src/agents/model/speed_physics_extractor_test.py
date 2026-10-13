@@ -1,4 +1,6 @@
-"""gen3_speed_physics_v1 (v143, `--speed-physics`; architecture audit F7b) inside a REAL production-config extractor.
+"""gen3_speed_physics_v1 (v143, `--speed-physics`; architecture audit F7b) inside a REAL extractor on the LEGACY base
+(`legacy_production_config`: the pre-adoption production config — production runs `--speed-physics on` since the END
+STATE's adoption, 2026-10-12, so `off` is reached only from the legacy base).
 
 What must hold, each failing on revert:
 
@@ -28,12 +30,14 @@ from agents.model.damage_tables import CHOICE_BAND_ITEM_NUM, QUICK_CLAW_ITEM_NUM
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.constants import POKEMON_CONDITION_OFFSET, TEAM_SIZE
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+from main.train.arch_arms import legacy_production_config
 from utils.paths import repo_path, src_path
 
 
 def _prod_kwargs(**over: Any) -> Dict[str, Any]:
     from agents.model.damage_tables import sanitize_historical_move_floor
-    cfg = json.load(open(repo_path("designs", "production_config.json")))
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): production now runs the speed rule ON.
+    cfg = legacy_production_config(json.load(open(repo_path("designs", "production_config.json"))))
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {k: v for k, v in cfg.items() if k in sig}
     sanitize_historical_move_floor(kw)
@@ -95,7 +99,7 @@ def test_on_adds_no_parameter(fe_on: Gen3FeaturesExtractor) -> None:
 
 
 def test_off_is_the_fixed_logistic(obs: torch.Tensor) -> None:
-    """`off` P(outspeed) for our active is sigmoid(Δspeed / 15) — the production read, untouched."""
+    """`off` P(outspeed) for our active is sigmoid(Δspeed / 15) — the legacy base's read, untouched."""
     from agents.model.damage_op_layout import _DMG_SPEED_SCALE
     assert _DMG_SPEED_SCALE == 15.0
     p = _p_out_preGain(_build(), obs)

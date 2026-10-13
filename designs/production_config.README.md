@@ -6,7 +6,8 @@ lives here.
 
 | | |
 |---|---|
-| **Run** | `models/ai_v12_02_winprob_critic/` — the WIN-PROB CRITIC era |
+| **ADOPTED 2026-10-12: THE END STATE** | the closing test PASSED (`designs/endstate/design_endstate_closing_test.md` §9; ledger 2026-10-12 MEASUREMENT (MAJOR)), so the mirror took the 19 keys of the `--arch endstate` overlay (`src/main/train/arch_arms.py`) at their arm values: `token_encoding` static, `mon_hazard_cost` / `move_actor_state` / `switch_hazard_cost` / `eot_residual` on, `trunk_layers` 3, `move_resolution` on, `speed_physics` on, `value_threat_inject` false, `op_reduction` principled, `obs_facts` v1, `move_resolution_facts` full, `status_facts` exact, `ko_ramp` exact, `drop_progress_clock` on, `g_ledger` eot, `effective_stats` / `move_target_state` / `move_set_closure` on. **Every other key, and the `recipe` block, is unchanged** (both closing-test arms trained on that one recipe). See § "The end-state adoption (2026-10-12)" below |
+| **Run** | `models/ai_v12_02_winprob_critic/` — the WIN-PROB CRITIC era (the base the pre-adoption surface was built from) |
 | **Built as** | `models/ai_v9_21_gen17_pfspoff_0820/model_config.json` (gen-17, v97) migrated to the v109 schema, with the **critic family alone** overridden |
 | **Critic rows changed from gen-17** | 13 (listed below) · **non-critic rows changed: 0** |
 | **Mirror updated** | 2026-09-06 |
@@ -37,6 +38,27 @@ One key of this file is NOT a `model_config.json` field: the nested `recipe` blo
   — reconcile the two in the same commit.
 - It changes the file's blob hash, so a recipe edit changes the `production_config@<hash>` tag that
   `arch_source` / `recipe_source` record — the tag names the file's CONTENT, recipe included.
+
+## The end-state adoption (2026-10-12)
+
+**CONSTRUCTED, then VERIFIED against the tested runs.** The mirror is the pre-adoption mirror with the 19 overlay keys
+of `--arch endstate` applied (the arm's own declaration, so the mirror and the arm cannot disagree on a value).
+Verification against the closing test's eight END-STATE runs' recorded `model_config.json`
+(`models/rb_es_end2_s2001`–`s2008`, trained at `62085750`): **every shared key is equal except** `config_version`
+(the runs record 154; the mirror keeps 145, the follow-the-code convention above) and the five `ridealong_*` keys
+(the runs typed `--ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5
+--ridealong-rnd-variants all`; the ride-along heads are DETACHED critic READOUTS outside the ARCH surface, so production
+keeps them at 0 / off, as the PRODUCTION arm's runs differed from the old mirror in exactly the same five keys). Keys
+only the runs carry (`arch_source`, the eval / fork / promotion knobs, `policy_gae_lambda`, `opp_intent_coef`, …) are
+run-level records, not mirror fields.
+
+**What HEAD's end state differs from the TESTED `62085750` build** is classified in the adoption's ledger entry
+(2026-10-12 BUILT "THE END STATE IS PRODUCTION"): one math-equal change (the closed-form exact KO, `5eef9934`,
+max |Δ| ≈ 1e-6 relative on the same weights, greedy agreement 136 / 136), every other file behaviour-identical under
+the production argv. `--arch endstate` stays as an ALIAS (its overlay now equals the mirror); `--arch static_recovery`
+is redeclared against the new mirror (the six recovery keys + the other thirteen end-state keys at their pre-adoption
+values), so it still names the same network. The pre-adoption production is reproducible by pinning `95d014fa`
+(`--pin-commit 95d014fa --arch production`), and its baseline is kept under a legacy name in `baselines.json`.
 
 ## Why it was CONSTRUCTED rather than copied from a run
 

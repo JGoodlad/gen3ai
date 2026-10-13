@@ -977,6 +977,19 @@ _MIRROR_EXEMPT_KEYS = frozenset({"config_version"})
 #: recipe, not a `model_config.json` field (:data:`RECIPE_BLOCK_KEY`). Without this exemption it
 #: would read as a mirror-only key, which passes today only because the entry declares a migration.
 _MIRROR_NON_CONFIG_KEYS = frozenset({RECIPE_BLOCK_KEY})
+#: RUN-LEVEL records a run's ``model_config.json`` carries and the mirror NEVER does, by construction: the launch's
+#: provenance tag (``arch_source``), the eval / diagnostics / promotion runtime knobs, the fork-injection knobs, the
+#: inert-reward record, and the two recipe knobs the mirror holds in its ``recipe.fresh`` block instead
+#: (``policy_gae_lambda``, ``opp_intent_coef``). Exempt ONLY from the key-set delta (a run-only key), never from the
+#: value comparison: a mirror that carries one of them is still compared. Declared at the end state's adoption
+#: (2026-10-12), when the ``production`` entry first named a run at the mirror's own schema instead of an older run
+#: the mirror was MIGRATED from (whose ``config_mirror_version`` declaration covered the delta).
+_RUN_RECORD_ONLY_KEYS = frozenset({
+    "arch_source", "diagnostics_every", "eval_mirrored_pairs", "eval_sentinel_greedy", "inert_reward_flags",
+    "oracle_reveal", "promote_threshold", "promotion_sprt",
+    "fork_branches", "fork_contested_absv", "fork_contested_gap", "fork_crn", "fork_fraction", "fork_max_per_battle",
+    "opp_intent_coef", "policy_gae_lambda",
+})
 
 
 def compare_production(run_cfg: Dict[str, Any], mirror: Dict[str, Any],
@@ -1013,7 +1026,7 @@ def compare_production(run_cfg: Dict[str, Any], mirror: Dict[str, Any],
             "deliberate — declare it in the entry's config_overrides so it is a stated part of the "
             "construction rather than drift.")
 
-    only_run = sorted(set(run_cfg) - set(mirror) - exempt)
+    only_run = sorted(set(run_cfg) - set(mirror) - exempt - _RUN_RECORD_ONLY_KEYS)
     only_mirror = sorted(set(mirror) - set(run_cfg) - exempt)
     if only_run or only_mirror:
         migrating = (b.config_mirror_version is not None

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,674-line file. **The ledger itself is append-only and is never edited by this**;
+24,763-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**859 headings · 804 dated · 2026-08-01 → 2026-10-12 · ledger 24,674 lines.**
+**860 headings · 805 dated · 2026-08-01 → 2026-10-12 · ledger 24,763 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -879,3 +879,4 @@ rename.
   - `L24578` · `2026-10-12` · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 2c + the v2 RE-READ (the FIXED world builder): worlds drawn from the network's OWN move belief help honest rollouts by at most 1–2 points (LEAF-K8 end2 +0.018, prod +0.009; R-MOVES HELPS on end2 +0.017 [+0.001, +0.031], NOT DETECTED on prod) and still do not beat the critic (R-HONEST-C NOT DETECTED, both); the seen mons' TRUE moves would close ½ / ⅕ of the oracle gap (R-MOVES-CEILING HELPS on end2 +0.024); every v1 honest verdict and Phase 3's R-QHEAD-CRITIC (BEHIND) hold on v2**
   - `L24604` · `2026-10-12` · MEASUREMENT (MAJOR) · **THE END-STATE CLOSING TEST: PASS — `--arch endstate` (P_end2 `62085750`) vs `--arch production` (P_prod `95d014fa`), 8 × 8 mirrored cross, 64 / 64 cells × 1,000 pairs: Δ̂ +0.596 pp, √V̂ 0.749, df 14, two-sided 90 % interval [−0.723, +1.915]; clause a (upper > 0) TRUE, clause b (lower > −2.0) TRUE, near_boundary none ⇒ by the owner's registered rule the END STATE is ADOPTED; bots panel +1.21 pp (no HARM note)**
   - `L24663` · `2026-10-12` · REGISTRATION + DESCRIPTIVE · **THE VALUE OF INFORMATION BY STAGE OF THE GAME and the BELIEF-QUALITY DOSE-RESPONSE (hidden-info study, Amendment 2): perfect information is worth most EARLY and with plenty of material left because the truth CHANGES the decision far more often there (78 % at 1–2 opponent mons seen vs 30 % with all six), not because more is at stake when it does (≈ 0.11 at every stage); giving the TRUE world a weight p in the search's average, the gain is concave (half by p ≈ 0.22) and our best honest belief is worth p ≈ 0.01; stage (k, turn, material), the K-world dose family and a maturity re-run on the X26 deep run are registered before any new arm**
+  - `L24674` · `2026-10-12` · BUILT (MAJOR) · **THE END STATE IS PRODUCTION: `designs/production_config.json` takes the `--arch endstate` overlay (19 keys); HEAD's end state = the TESTED `62085750` build modulo ONE math-equal change (the closed-form exact KO, max ≈1e-6 relative, greedy 136 / 136), every other file behaviour-identical; `--arch production` resolves the closing test's argv to the tested 204-key surface exactly (provenance tags + three off-by-default runtime knobs aside); `--arch endstate` an ALIAS, `--arch static_recovery` redeclared; the `production` baseline = `rb_es_end2_s2005/final_model.zip` (the lower-median row), the old entry kept as `production_pre_endstate`; CPU smoke PASSED**

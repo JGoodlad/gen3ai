@@ -9,8 +9,8 @@ Each test FAILS ON REVERT of one piece:
 * F6a — no value-reduction `amax` / `amin` / `max(dim)` is left in a forward module outside a declared list of
   sites that sit on no gradient path; `max_by_index` routes an exact tie to the FIRST maximum with a finite
   gradient;
-* F7a — the default (`--speed-physics off`) production forward reads no speed-spread sigma (an instrumented
-  `SPECIES_SPREAD_PRIOR`);
+* F7a — the `--speed-physics off` forward (the LEGACY base's: production runs `on` since the END STATE's adoption,
+  2026-10-12) reads no speed-spread sigma (an instrumented `SPECIES_SPREAD_PRIOR`), and neither does an `on` one;
 * F16b — the flat opponent pointer's shared scorer has no bias;
 * the blob leftovers — `BeliefSlots` / `AlphaIntentHead` / `BetaSwitchHead`, the alpha / beta stashes and
   `--beta-setvalued-coef` are gone (a typed flag is refused with its reason), and a RETIRED module's keys are
@@ -32,6 +32,17 @@ import torch
 def learner():
     from agents.training import learner_golden as LG
     m = LG.build_learner()
+    LG.load_buffer_into(m, LG.BUFFER_PATH)
+    return m
+
+
+@pytest.fixture(scope="module")
+def legacy_learner():
+    """The golden learner on the LEGACY base (`legacy_production_args`, the pre-adoption production surface) — the
+    `--speed-physics off` forward F7a's first check reads."""
+    from agents.training import learner_golden as LG
+    from main.train.production_args import legacy_production_args
+    m = LG.build_learner(args=legacy_production_args())
     LG.load_buffer_into(m, LG.BUFFER_PATH)
     return m
 
@@ -196,10 +207,13 @@ class _SigmaSpy(torch.Tensor):
             return func(*args, **(kwargs or {}))
 
 
-def test_the_default_forward_reads_no_speed_spread_sigma(learner):
+def test_the_default_forward_reads_no_speed_spread_sigma(legacy_learner):
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the subject is the `off` forward, which production
+    # no longer runs (the `on` forward is the next test's).
+    learner = legacy_learner
     pol = learner.policy
     op = pol.features_extractor.damage_op
-    assert op is not None and not op.speed_physics, "PRECONDITION: the production op, --speed-physics off"
+    assert op is not None and not op.speed_physics, "PRECONDITION: the legacy base's op, --speed-physics off"
     real = op._buffers["SPECIES_SPREAD_PRIOR"]
     _SigmaSpy.reads = []
     op._buffers["SPECIES_SPREAD_PRIOR"] = real.as_subclass(_SigmaSpy)

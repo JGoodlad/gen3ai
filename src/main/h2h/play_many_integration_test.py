@@ -141,7 +141,7 @@ def test_the_family_reads_across_the_cells_of_its_look(played):
 # ------------------------------------------------------------------------------------------------ refusals
 def test_a_third_architecture_cell_is_refused_before_any_engine_or_game(built, checkpoints, foreign, third,
                                                                         tmp_path):
-    """Two architectures (production and ``--token-encoding static``) make one engine (``play_cross_integration_test.py``); a
+    """Two architectures (production and the legacy pre-adoption network, ``conftest.foreign``) make one engine (``play_cross_integration_test.py``); a
     THIRD is refused in the pre-flight, naming it and what differs from each group, before anything plays."""
     a, b = checkpoints
     out = tmp_path / "ledger"

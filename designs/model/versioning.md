@@ -218,9 +218,9 @@ of the current-ability column. `_migrate_config` stamps every past config throug
 `ARCH_SIGNATURE` or floor change.
 
 **v150 (`gen3_static_recovery_v1`, 2026-10-09)** added three STRUCTURAL fields, each gated in `check_compatible`:
-`trunk_layers` (int, 2 = production; 3 / 4 append identity-init trunk rounds), `switch_hazard_cost` and `eot_residual`
+`trunk_layers` (int, 2 = the pre-adoption production; 3 = production since the end state's adoption, 2026-10-12; 3 / 4 append identity-init trunk rounds), `switch_hazard_cost` and `eot_residual`
 ({off,on}). A pre-v150 config migrates to 2 / off / off (the only possible past); no `ARCH_SIGNATURE` or floor change
-(production builds byte-identically). The NAMED ARM `--arch static_recovery` writes all three (and the v147 facts) as
+(production — then legacy — built byte-identically). The NAMED ARM `--arch static_recovery` writes all three (and the v147 facts) as
 recorded fields, so a launcher restart inherits them from `model_config.json`.
 
 **v151 (`gen3_toxic_stage_scale_v1` + `gen3_wish_flag_truth_v1`, 2026-10-09)** — two OBSERVATION-VALUE fixes with NO field and

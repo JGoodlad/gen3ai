@@ -144,9 +144,9 @@ species the slot holds — the flat pointer's candidate id for it, i.e. exactly 
 
 ## The nine α consumers
 
-Eight modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
+Eight modules contract α against the op's physics (in PRODUCTION only `IntentValueReduce` and `MoveResolutionCell` are built and kept; the seven pointer-cell consumers are the LEGACY family, INERT under move resolution, deleted by `../ops/legacy_deletion_manifest_2026-10-12.md`) — `IntentValueReduce`, `IntentMoveCell`,
 `IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, the v94 pair
-`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` — and, under `--move-resolution on` (v141, OFF in production), `MoveResolutionCell`, which REPLACES the seven pointer-cell consumers (they are retired on a built policy) and contracts α / β the same way (the publication, stop-grad, seats masked never renormalised, the unmodeled mass `1 − Σα − α_SWITCH` named rather than reassigned; it reads X5's flat pointer re-expression with OTHER priced, OTHER_move split into one seat per priority level). They share four conventions, and each one exists because breaking it fails
+`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` — and, under `--move-resolution on` (v141, ON in production since the end state's adoption, 2026-10-12), `MoveResolutionCell`, which REPLACES the seven pointer-cell consumers (they are retired on a built policy) and contracts α / β the same way (the publication, stop-grad, seats masked never renormalised, the unmodeled mass `1 − Σα − α_SWITCH` named rather than reassigned; it reads X5's flat pointer re-expression with OTHER priced, OTHER_move split into one seat per priority level). They share four conventions, and each one exists because breaking it fails
 silently:
 
 ## The two conventions `pair_outcome.py` added

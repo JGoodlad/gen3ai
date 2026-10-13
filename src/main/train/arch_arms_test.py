@@ -1,6 +1,11 @@
 """NAMED ARMS (`main.train.arch_arms`, gen3_static_recovery_v1): `--arch static_recovery` is production's ARCH surface
 plus a DECLARED overlay, on production's recipe, checked by the same guard as `--arch production`.
 
+Since the END STATE's adoption (2026-10-12, the closing test's PASS) production IS the end state: `--arch endstate` is
+an ALIAS (its overlay equals the mirror, so it differs from plain production in NO key), and `static_recovery` is
+REDECLARED against the new production — its six recovery keys plus the other thirteen end-state keys at their
+pre-adoption values — so it still names the same network (the closing test's bisection rung C1).
+
 What a revert breaks:
 
 * the overlay is the static encoding + every static-recovery lever, each key an ARCH-surface registry row the guard
@@ -24,10 +29,16 @@ from main.train.arch_surface_test import _namespace, _report
 ARGV = ["--steps", "15000000", "--device", "cuda"]
 STATIC_RECOVERY = {"token_encoding": "static", "mon_hazard_cost": "on", "move_actor_state": "on", "trunk_layers": 3,
                    "switch_hazard_cost": "on", "eot_residual": "on"}
+# The end-state levers ABOVE static_recovery, at their PRE-ADOPTION (legacy-production) values: the part of the
+# static_recovery arm that differs from the adopted production (2026-10-12).
+LEGACY_REST = {"move_resolution": "off", "speed_physics": "off", "value_threat_inject": True, "op_reduction": "max",
+               "obs_facts": "off", "move_resolution_facts": "off", "status_facts": "off", "ko_ramp": "ramp",
+               "drop_progress_clock": "off", "g_ledger": "coarse", "effective_stats": "off",
+               "move_target_state": "off", "move_set_closure": "off"}
 
 
 def test_the_static_recovery_arm_is_static_plus_every_recovery_lever():
-    assert arm_overlay("static_recovery") == STATIC_RECOVERY
+    assert arm_overlay("static_recovery") == {**STATIC_RECOVERY, **LEGACY_REST}
     surface = {f.name for f in arch_surface_flags()}
     for name in NAMED_ARMS:
         for key in arm_overlay(name):
@@ -41,9 +52,10 @@ def test_the_arm_applies_production_plus_its_overlay_and_passes_without_consent(
     assert not rep.refuses and not rep.diffs, "\n".join(arch_surface.report_lines(rep))
     for key, value in STATIC_RECOVERY.items():
         assert getattr(ns, BY_NAME[key].arg) == value, key
-    # judged against PLAIN production, the same namespace differs in exactly the overlay
+    # judged against PLAIN production (the adopted end state), the same namespace differs in exactly the levers
+    # static_recovery does NOT carry — the six recovery keys are production's own values now
     plain = arch_surface.diff_against_production(ns)
-    assert {d.name for d in plain} == set(STATIC_RECOVERY), [d.line() for d in plain]
+    assert {d.name for d in plain} == set(LEGACY_REST), [d.line() for d in plain]
     assert rep.source_tag.startswith("static_recovery@production_config@") and "+overlay@" in rep.source_tag
     assert ns.arch_source == rep.source_tag
     lines = "\n".join(arch_surface.report_lines(rep))
@@ -71,10 +83,10 @@ def test_the_drift_lines_name_the_arm_not_production_as_the_declared_surface():
     text = "\n".join(lines)
     assert "not the arm 'static_recovery''s" in text and "pass `--arch static_recovery`" in text, text
     assert "not production's" not in text
-    # the same key judged against PLAIN production keeps its label (production's value there is 2)
-    ns_prod, rep_prod = _report(ARGV + ["--arch", "production", "--trunk-layers", "3"])
+    # the same key judged against PLAIN production keeps its label (production's value there is 3)
+    ns_prod, rep_prod = _report(ARGV + ["--arch", "production", "--trunk-layers", "2"])
     prod_line = [ln for ln in arch_surface.report_lines(rep_prod) if ln.lstrip().startswith("trunk_layers ")]
-    assert len(prod_line) == 1 and "production: 2" in prod_line[0], prod_line
+    assert len(prod_line) == 1 and "production: 3" in prod_line[0], prod_line
     assert "arm" not in prod_line[0].split("production:")[0].split("(this argv")[-1], prod_line
 
 
@@ -123,13 +135,20 @@ def test_the_endstate_arm_is_static_recovery_plus_the_bundle_plus_every_fact_lev
     assert set(STATIC_RECOVERY.items()) <= set(arm_overlay("endstate").items())
 
 
-def test_the_endstate_arm_launches_without_consent_and_differs_from_production_in_its_overlay(capsys):
+def test_the_endstate_arm_is_an_alias_of_the_adopted_production(capsys):
+    """Since the 2026-10-12 adoption the mirror carries every endstate key at the arm's value: the arm launches
+    without consent and differs from PLAIN production in NO key (fails if the mirror and the arm drift apart, or if
+    the adoption is reverted in one of the two places only)."""
     ns, rep = _report(ARGV + ["--arch", "endstate"])
     assert not rep.refuses and not rep.diffs, "\n".join(arch_surface.report_lines(rep))
     for key, value in ENDSTATE.items():
         assert getattr(ns, BY_NAME[key].arg) == value, key
     plain = arch_surface.diff_against_production(ns)
-    assert {d.name for d in plain} == set(ENDSTATE), [d.line() for d in plain]
+    assert plain == [], [d.line() for d in plain]
+    ns_prod, rep_prod = _report(ARGV + ["--arch", "production"])
+    assert not rep_prod.refuses and not rep_prod.diffs
+    for key, value in ENDSTATE.items():
+        assert getattr(ns_prod, BY_NAME[key].arg) == value, key
     assert rep.source_tag.startswith("endstate@production_config@")
     _ns, drift = _report(ARGV + ["--arch", "endstate", "--ko-ramp", "ramp"])
     assert drift.refuses and [(d.name, d.resolved, d.production) for d in drift.diffs] == [("ko_ramp", "ramp", "exact")]

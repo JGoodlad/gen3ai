@@ -110,7 +110,7 @@ def test_the_extra_pre_ln_round_is_rebuilt_from_its_captured_weights():
 
 
 def test_capture_stacks_every_trunk_round_of_a_deeper_trunk():
-    """The REAL path: a production-arch policy at `--trunk-layers 3`, a non-zero extra round, `capture()` over real
+    """The REAL path: a static-encoding policy on the legacy base (`static_recovery_test._policy`) at `--trunk-layers 3`, a non-zero extra round, `capture()` over real
     parity rows. Three rounds are captured (two post-LN, then the pre-LN extra, in execution order) and the third is
     the extra round's own attention: recomputed from the input and bias the round actually USED (hooked), and it
     rebuilds the round's real output."""
@@ -166,7 +166,7 @@ def test_capture_summarises_every_belief_head_bounded_per_opponent_slot():
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     obs, mask = load_parity_rows(Gen3ObservationEncoder(load_mappings()).dimension)
     obs, mask = np.asarray(obs[:6], dtype=np.float32), np.asarray(mask[:6])
-    pol = _policy(trunk_layers=3)                               # the cached production-surface policy above
+    pol = _policy(trunk_layers=3)                               # the cached legacy-base static policy above
     space, was_training = pol.observation_space, pol.training
     pol.observation_space = gym.spaces.Dict({**space.spaces, "action_mask": gym.spaces.MultiBinary(mask.shape[1])})
     pol.eval()

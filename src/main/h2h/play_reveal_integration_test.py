@@ -54,8 +54,12 @@ PAIRS, N_ENVS = 12, 8
 #: RE-RECORDED 2026-10-09 for gen3_toxic_stage_scale_v1 + gen3_wish_flag_truth_v1 (config v151): the toxic cell and the
 #: Wish flag the checkpoints read, and the `g` ledger's toxic decoder, moved the played logits' low bits; the OUTCOMES
 #: (`OFF_OUTCOME_ALL`: every result, end turn, team and action) did not move; was fa189a94… for the bits.
-OFF_BITS = "dea7e96ee3f8ccdbc5759b559eb3f24868f6da663c726e687d823a0be69b201c"
-OFF_OUTCOME_ALL = "ee8512eeda767c34f9c9b186c31692943524389eab7131ce1dd6bff2fbfef9fc"
+#: RE-RECORDED 2026-10-12 for the END STATE's ADOPTION as production (the closing test's PASS): the conftest's
+#: checkpoints are built at the production architecture (`rust_eval.offline.build_models`), which is now the end-state
+#: network — another architecture, so other games (both digests moved); was dea7e96e… / ee8512ee…. Read off the
+#: routine gate's own failure line on this file (2026-10-12), nothing else changed between.
+OFF_BITS = "4534fcf41343b94695e6371ef70b77ea49c17335bbd18c2f50690eba896e0ec6"
+OFF_OUTCOME_ALL = "9559dac1468f100ddf4f83b6a8f7bbfcf1e031d98f1ed34cefbb16fc191a7f19"
 
 
 def bits_digest(games):

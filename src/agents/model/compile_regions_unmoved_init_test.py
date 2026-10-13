@@ -105,13 +105,13 @@ def _plant(monkeypatch, name: str, *, only_at_init: bool) -> None:
     monkeypatch.setattr(cr, "_r1_arm", arm)
 
 
-def _judged(model, name) -> bool:
-    """PRECONDITION: the golden rows put ``name``'s gradient above the per-parameter floor (it is judged
-    at all), and the model's regime is TRAINED."""
+def _judged(model, name, slice_: int = 0) -> bool:
+    """PRECONDITION: the golden rows (fixture slice ``slice_``) put ``name``'s gradient above the per-parameter
+    floor (it is judged at all), and the model's regime is TRAINED."""
     from agents.model.compile_gate_probe import per_param_grad_errors
     from agents.training.instrumented_ppo.micro_step import micro_step
     model.policy.set_training_mode(True)
-    e = cr._r1_arm(model, micro_step, cr._r1_args(model, cr.r1_batch(model, BATCH)))
+    e = cr._r1_arm(model, micro_step, cr._r1_args(model, cr.r1_batch(model, BATCH, slice_)))
     names = [n for n, _ in ct.grad_parameters(model, model.policy.features_extractor)]
     sizes = [int(x) for x in e["grad_sizes"].tolist()]
     judged = dict(per_param_grad_errors(e["grad"], e["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
@@ -188,5 +188,17 @@ def test_the_CANARY_passes_a_dead_ortho_heads_noise_and_FATALs_its_miscompile(de
     assert out["compile/canary_ok"] == 1.0 and out["compile/canary_unmoved_params"] == 2.0
     monkeypatch.undo()
     _plant(monkeypatch, MW, only_at_init=False)
-    with pytest.raises(CompileCanaryError, match="CONFIRMED"):
-        CompileCanary(dead_ortho_head, batch_size=BATCH, every=1, saver=lambda p: None).after_update()
+    canary = CompileCanary(dead_ortho_head, batch_size=BATCH, every=1, saver=lambda p: None)
+    # The canary FATALs a miscompile by one of two designed routes: CONFIRMED in the same update when the
+    # independent fixture slice also judges the parameter, else at the NEXT scheduled canary (two CONSECUTIVE
+    # disagreements). Which route applies is a property of the committed K9 buffer's rows, read here, not chosen:
+    # since the buffer's rebuild at the END STATE's adoption (2026-10-12, record seed 19) slice 1 leaves the moves
+    # head below the per-parameter floor (it did not at seed 18), so the miscompile is FATAL at the second canary.
+    if _judged(dead_ortho_head, MW, slice_=1):
+        with pytest.raises(CompileCanaryError, match="CONFIRMED"):
+            canary.after_update()
+    else:
+        first = canary.after_update()
+        assert first["compile/canary_ok"] == 0.0 and first["compile/canary_unconfirmed_disagreements"] == 1.0, first
+        with pytest.raises(CompileCanaryError, match="CONSECUTIVE"):
+            canary.after_update()

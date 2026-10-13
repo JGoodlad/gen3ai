@@ -238,12 +238,24 @@ def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
     cells = [e for e in graph["edges"]
              if e["type"] == "cell" and e["dst"].startswith("pointer.switch_logit")]
     assert cells
+    from agents.model.arch_constants import MOVE_RESOLUTION_SWITCH_DIM
+    from agents.model.static_facts import SWITCH_HAZARD_DIM
+
     cfg = json.load(open(delivery_graph._DEFAULT_CONFIG))
     expected = {15}                                    # the op's own incoming row + CB tail
-    if cfg.get("pair_outcome_switch"):
+    # RE-STATED for production (the END STATE's adoption, 2026-10-12, which moved this set from {4, 8, 15} to
+    # {2, 8, 15, 18}): `--move-resolution on` RETIRES pair_outcome_switch and conditional_threat on the built policy
+    # (the graph draws the deployed network) and its own switch cell rides instead; `--switch-hazard-cost on` adds the
+    # switch cell's Spikes block.
+    mr = cfg.get("move_resolution") == "on"
+    if cfg.get("pair_outcome_switch") and not mr:
         expected.add(PAIR_OUTCOME_SWITCH_DIM)
-    if cfg.get("conditional_threat_cell"):
+    if cfg.get("conditional_threat_cell") and not mr:
         expected.add(CONDITIONAL_THREAT_SWITCH_DIM)
+    if mr:
+        expected.add(MOVE_RESOLUTION_SWITCH_DIM)
+    if cfg.get("switch_hazard_cost") == "on":
+        expected.add(SWITCH_HAZARD_DIM)
     if cfg.get("opp_intent"):
         # the flat pointer's alpha RE-EXPRESSION: K seats + OTHER_move + the total SWITCH mass
         expected.add(int(cfg.get("entity_topk_seats", 0)) + 2)
@@ -418,10 +430,13 @@ def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
     assert len(live) > 25, live
     # BUILT by this config. A module the production run does not build is a property of the CONFIG,
     # not of the enumeration (see the buildable-declaration check below, where such a module's
-    # survival is asserted).
+    # survival is asserted). RE-STATED for production (the END STATE's adoption, 2026-10-12):
+    # `--move-resolution on` retires `intent_conditional` (and six more) on the built policy, so the
+    # BUILT list names the family that replaced them; `intent_conditional` stays in the buildable list.
     for expect in ("damage_op", "team_transformer", "hypothesis_builder", "flat_intent_head",
-                   "intent_conditional", "history_events"):
+                   "move_resolution_cell", "history_events"):
         assert expect in live, f"{expect} vanished from the extractor — update the declarations"
+    assert "intent_conditional" not in live, "a block --move-resolution on supersedes is drawn on the deployed network"
     # ...and the RETIRED ones are not: the graph describes the policy's model, in which the flat
     # pointer replaced α / β, and α / β / BeliefSlots are DELETED (the version break, part 2).
     for retired in ("alpha_head", "beta_head", "belief_slots"):

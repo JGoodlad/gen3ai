@@ -449,9 +449,17 @@ def test_pair_outcome_fallback_arch_compiles_to_one_graph():
     # constructor would refuse. The X5 version break made opp_intent and opp_belief_slots ONE switch (X5's
     # hypothesis tokens + flat pointer), so the no-intent fallback is the belief-OFF surface: both come off,
     # with every row that requires either.
+    # TRANSITIVELY (the END STATE's adoption, 2026-10-12): production now runs rows that require a row that
+    # requires opp_intent (`--move-resolution-facts full` requires `--move-resolution on`, which requires
+    # opp_intent), so a direct-requirement query alone left `full` on over an `off` family and was refused.
+    gone = {"opp_intent", "opp_belief_slots"}
+    while True:
+        more = {f.name for f in REGISTRY if gone & set(f.requires or ())} - gone
+        if not more:
+            break
+        gone |= more
     off = {f.name: (f.default if isinstance(f.default, str) else False)
-           for f in REGISTRY if {"opp_intent", "opp_belief_slots"} & set(f.requires or ())}
-    off.pop("opp_belief_slots", None)
+           for f in REGISTRY if f.name in gone - {"opp_intent", "opp_belief_slots"}}
     assert off, "no registry row requires opp_intent — this probe has lost its subject"
     fe, layout = _build_production_extractor(
         pair_outcome_cell=True, opp_intent=False, opp_belief_slots=False, **off)

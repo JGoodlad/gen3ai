@@ -82,7 +82,7 @@ carries, each forced by X5:
 | | the entry | why |
 |---|---|---|
 | perturbation | NAME-KEYED (`parity_probe._keyed_noise`: one generator per parameter, seeded by `sha256(seed:name)`; recorded as `"perturb": "name_keyed"`) | X5 adds groups and the policy retires α / β (and discards `belief_slots`); an order-keyed draw would move every later parameter's noise whenever a module is added or retired |
-| buffer | `learner_golden_buffer.npz` (sha `75c5a772…`, rebuilt at the X5 version break), the rollout recipe at run seed 18 (`RECORD_RUN_SEED`) | its behaviour log-probs are the X5 learner's (K9(b) judges them). Seed 17 (the deleted blob buffer's) gave no OTHER_move-dead row (design §6.4: ≥ 2 rows per X5 case) |
+| buffer | `learner_golden_buffer.npz` (sha `06585756…`, rebuilt at the END STATE's adoption as production, 2026-10-12), the rollout recipe at run seed 19 (`RECORD_RUN_SEED`) | its behaviour log-probs are the production (end-state) learner's (K9(b) judges them). Seed 18 (the X5-break buffer's, sha `75c5a772…`) gave zero OTHER_move-dead rows under the end state, and seed 17 none under X5 (design §6.4: ≥ 2 rows per X5 case) |
 | recorded extras | `init_group_sha256`, `fp64_reference`, `behaviour` (the K9(b) read), `coverage` | design §6: what proves a re-bake correct, not merely new |
 
 **The fp64 reference** (`learner_golden_fp64.py`).

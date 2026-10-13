@@ -266,9 +266,17 @@ _VALUE_CONTINUOUS = ("MAX_VALUE", "BISECT", "COUNT_CONTINUOUS")
 #: (MARGIN, or a new value-continuous reason) by the owner of K9(b)'s declarations; the X5 A/B trained under
 #: K9(b) `fatal` with them EXACT and never tripped it. Pinned EXACTLY: a new mover FAILS, and so does an
 #: entry that stops moving (the re-judgment landed — remove it).
+#: RE-STATED at the END STATE's ADOPTION (2026-10-12; this fixture's learner became the end-state surface):
+#: * `move_resolution`'s two `tm_a > 0` (declared TABLE) JOIN the set — production now runs `--move-resolution on`,
+#:   and `o.pair_type_mult` at our active is, on X5's hypothesis / OTHER rows, the tail-AVERAGED type multiplier
+#:   (the `eff > 0` class above: MEASURED 682 of 1,152 operands moved under the jitter, e.g. 0.77502275 ->
+#:   0.77502286; a flip needs an EXACT 0). Never jitter-tested before: move resolution was off in production.
+#: * `pair_outcome`'s `set_nums.long()` LEAVES it — not re-judged: `--move-resolution on` retires pair_outcome on
+#:   the production policy, so the site no longer runs here (it moved on the legacy surface until the adoption).
+#: Both are the same open FINDING for the owner of K9(b)'s declarations.
 _X5_WEIGHT_DEPENDENT_EXACT = frozenset({
     ("damage_kinds", "eff > 0"), ("damage_kinds", "tgt_cur_hp > 0"),
-    ("damage_op_pairwise", "mty_k.long()"), ("pair_outcome", "set_nums.long()")})
+    ("damage_op_pairwise", "mty_k.long()"), ("move_resolution", "tm_a > 0")})
 
 
 def _exact_reason(module: str, src: str) -> str:

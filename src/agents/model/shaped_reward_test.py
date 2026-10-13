@@ -30,7 +30,8 @@ def _production_v121() -> dict:
     break (v144) floors every older config, and the shaped-field POP / refusal is version-INDEPENDENT."""
     from agents.model.model_version import MIGRATION_FLOOR
     from agents.training.baselines import production_config
-    raw = dict(production_config())
+    from main.train.arch_arms import legacy_production_config
+    raw = legacy_production_config(production_config())  # the LEGACY base: this test's subject is the pre-adoption network (end state adopted 2026-10-12)
     raw.update(config_version=MIGRATION_FLOOR, arch_signature="gen3_x5_version_break_v1", hand_shaping=False, pbrs_material=True, pbrs_belief=True,
                all_shaping_pbrs=True, stall_pbrs=False, bias_redesign=False,
                bias_additivity=1.0, mat_alive_weight=1.25, no_progress_penalty=0.15,

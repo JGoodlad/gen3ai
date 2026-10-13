@@ -32,6 +32,7 @@ import torch as th
 
 from agents.action.constants import MOVE_START, N_MOVE_SLOTS
 from agents.model.arch_constants import D_MODEL, POINTER_HIDDEN, TRUNK_POINTER_HIDDEN
+from agents.model.board_tokens import BOARD_SEATS_STATIC, N_BOARD_TOKENS_STATIC
 from agents.model.pools import PolicyStateQuery
 from agents.observation.constants import TEAM_SIZE
 from agents.training import learner_golden as L
@@ -155,13 +156,18 @@ def test_trunk_policy_features_are_the_state_query_read():
         assert th.equal(pi, pol.features_extractor.policy_query(tokens, pad, klp))
         assert th.equal(pol.mlp_extractor.forward_actor(pi), pi)       # the actor branch is the identity
     fe = pol.features_extractor
-    # Every refined trunk token is a key: 12 team + global + every extra seat (+ the belief pool's K)
+    # Every refined trunk token is a key: 12 team + the board tokens + every extra seat (+ the belief pool's K)
     # (+ X5's OTHER_species token: the opponent-belief family is on in production since the version break).
+    # RE-STATED for production (the END STATE's adoption, 2026-10-12): production's encoding is `static`, whose
+    # board is THREE tokens (our side, their side, the field — gen3_static_board_v1) where legacy's was ONE global
+    # token; the count was `2 * TEAM_SIZE + 1 + …` (68 keys) before the adoption, 70 now.
     n_seats = fe.entity_seats.n_seats + (32 if fe.history_events is not None else 0)
     k = int(fe.hidden_opp_belief.k) if fe.hidden_opp_belief is not None else 0
     assert fe.hypothesis_builder is not None                       # PRECONDITION: production is X5
-    assert tokens.shape[1] == 2 * TEAM_SIZE + 1 + n_seats + k + 1
-    assert not bool(pad[:, 2 * TEAM_SIZE].any()), "the global token is never masked"
+    assert fe.team_transformer.static_board                        # PRECONDITION: production is static
+    assert tokens.shape[1] == 2 * TEAM_SIZE + N_BOARD_TOKENS_STATIC + n_seats + k + 1
+    for seat in BOARD_SEATS_STATIC:
+        assert not bool(pad[:, seat].any()), f"board token {seat} is never masked"
 
 
 def test_state_query_is_invariant_to_key_order_and_blind_to_a_masked_key():

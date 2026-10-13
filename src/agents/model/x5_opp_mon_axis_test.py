@@ -32,8 +32,8 @@ pytestmark = pytest.mark.integration
 @pytest.fixture(scope="module")
 def fm():
     from agents.model.hypothesis_set_test import _obs_from_golden, _unperturbed_learner
-    from main.train.production_args import production_args
-    a = production_args()
+    from main.train.production_args import legacy_production_args
+    a = legacy_production_args()  # the LEGACY base: this test's subject is the pre-adoption network (end state adopted 2026-10-12)
     m = _unperturbed_learner(a)
     fe = copy.deepcopy(m.policy).features_extractor.eval()
     obs = _obs_from_golden(64)

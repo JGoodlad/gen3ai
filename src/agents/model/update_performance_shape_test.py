@@ -19,7 +19,8 @@ the regression is planted through the same seam production reads and the pin mus
      cells: the CUDA cell asks the card's own dispatcher about the trunk layer (`_scaled_dot_product_
      efficient_attention`; GPU tier), and the CPU cell pins the ATTENTION PROFILE of R1's AOT forward graph
      (routine tier). On CPU a gradient-requiring bias is not eligible for the fused CPU kernel, so the
-     trunk's two calls are MATH there BY CONSTRUCTION and the two fused ops are other modules' — the profile
+     trunk's calls (three since `--trunk-layers 3` became production) are MATH there BY CONSTRUCTION and the
+     two fused ops are other modules' — the profile
      is a structural snapshot, and a change to it (a global flag, a hand-rolled attention, a forced MATH
      context) is a reviewed edit, not a silent one.
 
@@ -132,7 +133,12 @@ def test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager
 #: TRANSFERS, residency-aware). What is left is ALL `optimizer.step()`'s: the per-parameter `step` reads of the
 #: non-fused AdamW (MEASURED: 984 − 72 removed = the 984 the X5 part-2 note above attributes to the step sites), and
 #: those `step` counters are HOST tensors — not device syncs on CUDA.
-GOLDEN_UPDATE_HOST_SCALAR_READS = 984
+#: 984 → 1,120 (+136) at the END STATE's ADOPTION as production (2026-10-12): the golden learner became the end-state
+#: surface. MEASURED both surfaces on this test's own setup (`_real_update`, R1 locked): the LEGACY base
+#: (`legacy_production_args`) still reads exactly 984 = 4 × its 246 optimizer parameter tensors, the end state 1,120
+#: = 4 × 280 — the end-state network's NET +34 parameter tensors (the static encoder / board, the third trunk round,
+#: the move-resolution family and the fact projections, less the seven blocks it retires) at the same 4 reads each. No read was added to the micro-step (the TEETH below).
+GOLDEN_UPDATE_HOST_SCALAR_READS = 1120
 
 
 def test_a_real_update_makes_a_bounded_number_of_host_scalar_reads(learner, monkeypatch):
@@ -204,7 +210,11 @@ def plain_learner() -> Iterator[Any]:
 #: (`_scaled_dot_product_flash_attention_for_cpu`) and 2 MATH-path SDPA ops (`_safe_softmax`: the trunk's two
 #: `BiasedEncoderLayer` calls, whose bias requires grad). Under `sdpa_kernel(MATH)` it reads 0 / 4; with the
 #: trunk's attention hand-rolled, 2 / 0; with the fused kernels disabled by a global flag, 0 / 4.
-R1_CPU_ATTENTION_PROFILE = {"fused": 2, "math": 2}
+#: {fused 2, math 2} → {fused 2, math 3} at the END STATE's ADOPTION as production (2026-10-12): `--trunk-layers 3`
+#: adds a THIRD `BiasedEncoderLayer` call (the identity-init extra round), MATH on CPU for the same reason as the two.
+#: MEASURED on this module's trace: the legacy base 2 / 2, the legacy base + `--trunk-layers 3` alone 2 / 3, the end
+#: state 2 / 3 — the one new MATH op is the extra round, nothing else in the end state moved the lowering.
+R1_CPU_ATTENTION_PROFILE = {"fused": 2, "math": 3}
 
 
 @pytest.fixture(scope="module")

@@ -140,9 +140,10 @@ RNG is never added or deleted without re-recording what it moves (the K9 golden)
   candidates from `roster.move_order` / `move_w`. A new opponent-axis kernel branches the same way and gets
   a row in `x5_opp_mon_axis_test.py` (+ `EdgeBias.OTHER_FAMILIES` if OTHER should see it). A per-(seat, mon)
   cell is never multiplied by π.
-- **The static per-mon encoder** (`--token-encoding static`, `static_tokens.py`; `--arch static_recovery`
-  and `--arch endstate` likewise) is BUILT and OFF — NOT adopted; the legacy encoding stays until the
-  end-state closing test. Its rules, enforced by `static_tokens_test.py`, `static_board_tokens_test.py`,
+- **The static per-mon encoder** (`--token-encoding static`, `static_tokens.py`) is PRODUCTION's encoder since the
+  end state's adoption (2026-10-12, the closing test's PASS); the legacy encoding survives only as the OFF value
+  (`main.train.arch_arms.legacy_production_config`, the base of the lever tests) until the legacy deletion
+  (`designs/ops/legacy_deletion_manifest_2026-10-12.md`). Its rules, enforced by `static_tokens_test.py`, `static_board_tokens_test.py`,
   `static_port_test.py`, `obs_facts_inject_test.py`: a per-mon input goes to S (pure function of the SET
   fields) or D (the mon's own state) by class, and NO board fact goes to either; a new per-mon obs column
   is classified there in the same pass, a new OBS-FACTS sub-block in `obs_facts_inject.FACTS_TOKEN_CLASS`;

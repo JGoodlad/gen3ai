@@ -1,5 +1,7 @@
 """`gen3_endstate_facts_v1` (config v152) — the FACT-COMPLETION levers (`designs/endstate/design_hand_computed_features.md`
-§1's FACT / JUDGMENT test, §4 ranks 3-5, §5 rank 1, finding 7), each behind its own flag, OFF in production:
+§1's FACT / JUDGMENT test, §4 ranks 3-5, §5 rank 1, finding 7), each behind its own flag, OFF in the LEGACY base
+(ON in production since the END STATE's adoption, 2026-10-12 — so every "off vs on" here is built on
+`legacy_production_config`, the pre-adoption network, where each lever's OFF path still exists):
 
 * `--ko-ramp exact` (`ko_exact.py`): P(KO) over the 16 gen-3 rolls + the move's crit chance, each roll's KO resolved
   over the observed HP interval — at every site (`DamageOperator._rolls`, the Choice-Band `ko_cb`, intent_threshold's
@@ -40,6 +42,7 @@ from agents.model.pair_outcome import PAIR_OUTCOME_IDX, STATUS_FACT_COORDS
 from agents.model.static_port_test import _permute_ours
 from agents.model.status_facts import CURE_DIM, CURE_FACTS, CureFlags
 from agents.observation.constants import (POKEMON_CONDITION_OFFSET, POKEMON_ITEMS_OFFSET, TEAM_SIZE)
+from main.train.arch_arms import legacy_production_config
 from utils.paths import repo_path
 
 _LEVERS = ("move_resolution_facts", "status_facts", "ko_ramp", "drop_progress_clock", "g_ledger")
@@ -47,15 +50,17 @@ _ON = {"move_resolution_facts": "full", "status_facts": "exact", "ko_ramp": "exa
        "g_ledger": "eot"}
 _OFF = {"move_resolution_facts": "off", "status_facts": "off", "ko_ramp": "ramp", "drop_progress_clock": "off",
         "g_ledger": "coarse"}
-#: the move-resolution bundle the restored facts live in (production + `--move-resolution on`)
+#: the move-resolution bundle the restored facts live in (the legacy base + `--move-resolution on`)
 _MR = {"move_resolution": "on"}
 RMI = {n: i for i, n in enumerate(RMC)}
 CI = {n: i for i, n in enumerate(CURE_FACTS)}
 
 
 def _toggles(**over: Any) -> Dict[str, Any]:
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): every test here is "base ⊕ one lever" with the lever
+    # OFF in the base; production now carries all five ON, so the base is the PRE-ADOPTION network.
     with open(repo_path("designs", "production_config.json")) as fh:
-        cfg = json.load(fh)
+        cfg = legacy_production_config(json.load(fh))
     tog = {k: v for k, v in cfg.items() if not isinstance(v, (dict, list))}
     tog.update(over)
     return tog
@@ -247,7 +252,7 @@ def test_the_pair_status_swap_is_width_neutral_and_carries_the_two_facts(rows: t
     """`--status-facts exact`: the op's unified outcome grid keeps its width; positions 12-13 hold the expected
     burn damage lost (= P(this seat's burn lands) × our mon's burn loss — one ratio per mon, whatever the seat) and the
     expected outspeed lost (= P(paralysis lands) × Δ P(outspeed)); the first twelve are unchanged. Checked against
-    production's `neutralization` on every PURE-paralysis seat (its severity was 0.25 + 0.75 · Δ): the paralysis fact
+    the legacy base's `neutralization` on every PURE-paralysis seat (its severity was 0.25 + 0.75 · Δ): the paralysis fact
     is (neutralization − 0.25 · p_par) / 0.75 there. Fails on a revert of the swap, on a re-weighted sum, and if the
     burn column were not the per-mon loss."""
     with torch.no_grad():
@@ -539,7 +544,7 @@ def test_the_g_ledger_reads_the_one_end_of_turn_rule(rows: torch.Tensor) -> None
 
 
 def test_dropping_the_progress_clock_is_reading_it_as_zero(rows: torch.Tensor) -> None:
-    """`--drop-progress-clock on` builds the SAME parameters (bytes equal) and its forward equals the production
+    """`--drop-progress-clock on` builds the SAME parameters (bytes equal) and its forward equals the legacy base's
     forward on rows whose `turns_since_progress` cell is zeroed — and differs from it on the raw rows (the cell is
     live in the fixture). The observation layout is untouched. Fails if the mask hits another column or none."""
     off, on = _policy(), _policy(drop_progress_clock="on")

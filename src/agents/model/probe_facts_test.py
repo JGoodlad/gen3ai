@@ -1,6 +1,7 @@
 """`gen3_probe_facts_v1` (config v153) — the representation probe battery's two candidates
 (`designs/endstate/design_hand_computed_features.md` §4 rows 12-13, `measurements/probe_battery_2026-10-09/`), each its
-own flag, OFF in production:
+own flag, OFF in the LEGACY base (ON in production since the END STATE's adoption, 2026-10-12 — so each "off vs on"
+here is built on `legacy_production_config`, the pre-adoption network):
 
 * `--effective-stats on` (`static_facts.effective_stat_features`): each side's ACTIVE mon's stage-applied Atk / Def /
   SpA / SpD / Spe (Spe after paralysis) / 500 and its accuracy / evasion multipliers, as token content;
@@ -26,14 +27,19 @@ from agents.model.static_facts import (EFFECTIVE_STATS_DIM, EFFECTIVE_STATS_FACT
 from agents.model.static_port_test import _permute_ours
 from agents.observation.constants import (CONDITION_DIM, POKEMON_CONDITION_OFFSET, POKEMON_HP_OFFSET,
                                           POKEMON_SPREAD_DIM, POKEMON_SPREAD_OFFSET, TEAM_SIZE)
+from main.train.arch_arms import legacy_production_config
 from utils.paths import repo_path
 
 EI = {n: i for i, n in enumerate(EFFECTIVE_STATS_FACTS)}
 
 
-def _toggles(**over: Any) -> Dict[str, Any]:
+def _toggles(*, legacy: bool = True, **over: Any) -> Dict[str, Any]:
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the lever tests are "base ⊕ one lever" with both
+    # levers OFF in the base; production now carries both ON, so the base is the PRE-ADOPTION network.
     with open(repo_path("designs", "production_config.json")) as fh:
         cfg = json.load(fh)
+    if legacy:
+        cfg = legacy_production_config(cfg)
     tog = {k: v for k, v in cfg.items() if not isinstance(v, (dict, list))}
     tog.update(over)
     return tog
@@ -42,10 +48,10 @@ def _toggles(**over: Any) -> Dict[str, Any]:
 _CACHE: Dict[str, Any] = {}
 
 
-def _policy(**over: Any) -> Any:
-    key = json.dumps(over, sort_keys=True)
+def _policy(*, legacy: bool = True, **over: Any) -> Any:
+    key = json.dumps({"legacy": legacy, **over}, sort_keys=True)
     if key not in _CACHE:
-        _CACHE[key] = _build_real_policy(**_toggles(**over))[0].policy
+        _CACHE[key] = _build_real_policy(**_toggles(legacy=legacy, **over))[0].policy
     return _CACHE[key]
 
 
@@ -205,7 +211,12 @@ def test_versioning_migrates_and_gates_both() -> None:
         assert getattr(rec, n) == "on"
 
 
-def test_production_builds_neither() -> None:
+def test_the_legacy_base_builds_neither_and_production_builds_both() -> None:
+    # (a) the OFF path's identity, re-pointed at the legacy base; (b) re-stated for production, which carries both
+    # levers ON since the END STATE's adoption (2026-10-12; this test read "production builds neither" before).
     fe = _policy().features_extractor
     assert fe.effective_stats_proj is None and fe.move_target_proj is None
     assert fe.effective_stats == "off" and fe.move_target_state == "off"
+    prod = _policy(legacy=False).features_extractor
+    assert prod.effective_stats_proj is not None and prod.move_target_proj is not None
+    assert prod.effective_stats == "on" and prod.move_target_state == "on"

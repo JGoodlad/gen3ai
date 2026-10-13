@@ -218,14 +218,21 @@ DOC_SECTION = {
     "move_belief": "2.1 Order of operations",
     "hp_type_belief": "2.1 Order of operations",
 }
+#: The token-sequence heading: 62 tokens on the legacy encoding, 64 since the END STATE's adoption (2026-10-12) made
+#: the static board (three board tokens for legacy's one global) production.
+_SEQ_SECTION = "2.3 The 64-token sequence"
 DOC_SECTION_PREFIX = [
     ("pointer.", "3.3 The action head is the pointer head — there is no flat `action_net`"),
-    ("E3_move", "2.3 The 62-token sequence"),
-    ("E4_threat", "2.3 The 62-token sequence"),
-    ("E5_tail", "2.3 The 62-token sequence"),
-    ("our_mon", "2.3 The 62-token sequence"),
-    ("opp_mon", "2.3 The 62-token sequence"),
-    ("OTHER_species", "2.3 The 62-token sequence"),   # X5's tail token, typed THEIR_TEAM
+    ("E3_move", _SEQ_SECTION),
+    ("E4_threat", _SEQ_SECTION),
+    ("E5_tail", _SEQ_SECTION),
+    ("our_mon", _SEQ_SECTION),
+    ("opp_mon", _SEQ_SECTION),
+    ("OTHER_species", _SEQ_SECTION),   # X5's tail token, typed THEIR_TEAM
+    # gen3_static_board_v1's three board seats (production's encoding since the END STATE's adoption, 2026-10-12)
+    ("our_side", _SEQ_SECTION),
+    ("their_side", _SEQ_SECTION),
+    ("field", _SEQ_SECTION),
     ("history", "1.6 Turn history — 7 slots × 159 dims"),
     ("loss.", "7. Training-only obs keys — the leak-safety list"),
 ]

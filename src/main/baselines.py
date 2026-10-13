@@ -91,6 +91,15 @@ def build_parser() -> argparse.ArgumentParser:
                    help="checkpoint (a model .zip) or config (a model_config.json).")
     t.add_argument("--set-on", default=None, metavar="YYYY-MM-DD",
                    help="the date (default: today).")
+    t.add_argument("--era-checkout-only", choices=("yes", "no"), default=None,
+                   help="yes: the entry's weights load only at its own commit (era_checkout_only); no: they load "
+                        "at HEAD. Default: kept from the old entry (a NEW entry: no).")
+    t.add_argument("--config-overrides", default=None, metavar="JSON",
+                   help="(production) REPLACE the declared mirror-vs-run overrides with this JSON object "
+                        "('{}' clears them). Default: kept from the old entry. Needed when the entry moves to a "
+                        "run that records the old overrides natively (a stale override is an error).")
+    t.add_argument("--drop-pending", action="store_true",
+                   help="drop the old entry's `pending` block (a pending switch the new target resolves).")
     t.add_argument("--dry-run", action="store_true",
                    help="print the entry and the ledger line; write nothing.")
     return p
@@ -269,7 +278,9 @@ def split_ref(ref: str) -> "tuple[str, str]":
 
 def build_entry(name: str, ref: str, *, reason: str, purpose: Optional[str],
                 notes: Optional[str], kind: Optional[str], set_on: Optional[str],
-                registry: Optional[str]) -> Dict[str, Any]:
+                registry: Optional[str], era_checkout_only: Optional[bool] = None,
+                config_overrides: Optional[Dict[str, Any]] = None,
+                drop_pending: bool = False) -> Dict[str, Any]:
     """Resolve the target and build the entry, every field re-read from the run itself."""
     run, checkpoint = split_ref(ref)
     models = main_models_dir()
@@ -328,6 +339,16 @@ def build_entry(name: str, ref: str, *, reason: str, purpose: Optional[str],
                            ("pending", old.pending)):
             if value:
                 entry[key] = value
+    if era_checkout_only is not None:
+        entry.pop("era_checkout_only", None)
+        if era_checkout_only:
+            entry["era_checkout_only"] = True
+    if config_overrides is not None:
+        entry.pop("config_overrides", None)
+        if config_overrides:
+            entry["config_overrides"] = dict(config_overrides)
+    if drop_pending:
+        entry.pop("pending", None)
     return entry
 
 
@@ -377,8 +398,17 @@ def cmd_set(args, registry: Optional[str]) -> int:
         old: Optional[reg.Baseline] = reg.get(args.name, path)
     except reg.BaselineError:
         old = None
+    overrides: Optional[Dict[str, Any]] = None
+    if args.config_overrides is not None:
+        overrides = json.loads(args.config_overrides)
+        if not isinstance(overrides, dict):
+            raise SystemExit("[baselines] --config-overrides must be a JSON object")
     entry = build_entry(args.name, args.ref, reason=args.reason, purpose=args.purpose,
-                        notes=args.notes, kind=args.kind, set_on=args.set_on, registry=path)
+                        notes=args.notes, kind=args.kind, set_on=args.set_on, registry=path,
+                        era_checkout_only=(None if args.era_checkout_only is None
+                                           else args.era_checkout_only == "yes"),
+                        config_overrides=overrides,
+                        drop_pending=args.drop_pending)
     print(json.dumps({args.name: entry}, indent=1))
     line = ledger_line(args.name, entry, old)
     if args.dry_run:

@@ -127,6 +127,7 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "prefuse_proj": ("prefuse_proj",),
     "op_worst_proj": ("op_worst_proj",),
     "mon_hazard_proj": ("mon_hazard_proj",),
+    "op_content": ("OpContent",),                   # gen3_static_board_v1 (`--token-encoding static`)
     "move_actor_proj": ("move_actor_proj",),
     "move_target_proj": ("move_target_proj",),      # gen3_probe_facts_v1 (`--move-target-state on`)
     "effective_stats_proj": ("effective_stats_proj",),   # gen3_probe_facts_v1 (`--effective-stats on`)
@@ -263,6 +264,12 @@ def build_extractor(config_path: str = _DEFAULT_CONFIG) -> "tuple[Any, Dict[str,
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     # the ctor never reads the space (`observation_space: spaces.Space`, deliberately unread)
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
+    # The POLICY retires modules right after its build (`Gen3DualHeadMaskablePolicy._build`): the seven per-action
+    # blocks `--move-resolution on` supersedes (gen3_move_resolution_v1) and the critic's threat projection under
+    # `--value-threat-inject off` (gen3_value_threat_inject_off_v1). Do the same here, in the policy's order, so the
+    # graph, the tables and the viewer describe the DEPLOYED network, not modules no state_dict holds (no-ops when off).
+    fe.retire_superseded_action_cells()
+    fe.retire_value_threat_inject()
     return fe, cfg, layout
 
 
@@ -309,8 +316,18 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     # gen3_frame_deletion_v1: the HISTORY seats are gone with the lag frames. The trunk's
     # history is now the H-B event seats, which arrive through the `extra` seam and are drawn
     # below with the rest of it — so nothing is left undrawn by this deletion.
-    g_idx = 2 * T
-    nodes.append(_node("global", "seat", index=g_idx, token_type="GLOBAL"))
+    # The BOARD seats (`TeamTransformer.board_seats`): legacy's ONE global token, or under `--token-encoding static`
+    # (gen3_static_board_v1; production since the END STATE's adoption, 2026-10-12) THREE — our side, their side, the
+    # field — at seats 12 / 13 / 14. Undrawn (one `global` node at 12, nothing at 13 / 14) until the adoption.
+    static_board = bool(getattr(fe.team_transformer, "static_board", False))
+    if static_board:
+        from agents.model.board_tokens import BOARD_SEATS_STATIC
+        for _name, _idx, _tt in zip(("our_side", "their_side", "field"), BOARD_SEATS_STATIC,
+                                    ("OUR_SIDE", "THEIR_SIDE", "FIELD")):
+            nodes.append(_node(_name, "seat", index=_idx, token_type=_tt))
+    else:
+        g_idx = 2 * T
+        nodes.append(_node("global", "seat", index=g_idx, token_type="GLOBAL"))
 
     n_e3 = 4
     for k in range(n_e3):
@@ -476,12 +493,24 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             f"them there (and emit their seat nodes above), or the graph raises KeyError the day "
             f"a config first enables that family.")
 
+    def _board_cols(fam: str, src: str) -> List[str]:
+        """The board seat a `global`-routed family writes (`EdgeBias.forward`'s `board_seats`): legacy's one GLOBAL
+        seat; under static `x` goes to each mon's OWN side token, `g` / `c4` to the FIELD token."""
+        if not static_board:
+            return ["global"]
+        if fam == "x":
+            return ["our_side"] if src.startswith("our_mon") else ["their_side"]
+        if fam in ("g", "c4"):
+            return ["field"]
+        raise KeyError(f"delivery_graph: family {fam!r} routes to the board but names no static board seat — "
+                       "mirror EdgeBias.forward's board_seats write here")
+
     fams = sorted(fe.edge_bias.families) if fe.edge_bias is not None else []
     for fam in fams:
         cell = fx._EDGE_FAMILIES[fam]
         row_g, col_g = _ROUTES[fam]
         for src in _members(row_g):
-            for dst in _members(col_g):
+            for dst in (_members(col_g) if col_g != "global" else _board_cols(fam, src)):
                 edges.append(_edge(src, dst, "bias", cell, f"_EDGE_{fam.upper()}_CELL",
                                    family=fam, bidirectional=True,
                                    via="EdgeBias.forward (zero-init cell map -> a per-pair, "
@@ -505,6 +534,20 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     # --- CONTENT EDGES: what becomes / enters a token ------------------------------------------
     # Seat construction. These projections are ordinary trainable Linears (new information), not
     # the zero-init residual convention.
+    # gen3_static_board_v1: what BUILDS the three board tokens (`TeamTransformer._board_tokens`) — one shared
+    # `side_proj` over each side's SIDE_FACTS (the same columns for both sides), `field_proj` over FIELD_FACTS.
+    if static_board:
+        from agents.model.board_tokens import FIELD_DIM, SIDE_DIM
+        for _side_seat in ("our_side", "their_side"):
+            edges.append(_edge("obs_unpack", _side_seat, "content", SIDE_DIM, "SIDE_DIM",
+                               via="TeamTransformer.side_proj (ONE projection shared by both sides) + its token type",
+                               note="hazards, screens, Wish, the alive / fainted / revealed counts, Sleep Clause — "
+                                    "this side's own columns (`board_tokens.SIDE_FACTS`)"))
+        edges.append(_edge("obs_unpack", "field", "content", FIELD_DIM, "FIELD_DIM",
+                           via="TeamTransformer.field_proj + its token type",
+                           note="weather (+ permanence, turns left), the clocks, turns since progress (read as 0 under "
+                                "`--drop-progress-clock on`) "
+                                "(`board_tokens.FIELD_FACTS`)"))
     for k in range(n_e3):
         edges.append(_edge("pokemon_encoder.move_tokens", f"E3_move[{k}]", "content",
                            fx.MOVE_NET_HIDDEN[1], "MOVE_NET_HIDDEN[1]",
@@ -565,9 +608,10 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                     + "on the active its Encore / Taunt / Disable / Uproar / trap turns and the "
                                       "lock evidence"))
         if _side:
-            edges.append(_edge("obs_unpack", "global", "content", D, "D_MODEL",
-                               via="ObsFactsInject.side_rows (each side's screen turns -> its side board token)",
-                               zero_init=True, note="static: the SIDE-class facts reach the side tokens only"))
+            for _dst in (("our_side", "their_side") if static_board else ("global",)):
+                edges.append(_edge("obs_unpack", _dst, "content", D, "D_MODEL",
+                                   via="ObsFactsInject.side_rows (each side's screen turns -> its side board token)",
+                                   zero_init=True, note="static: the SIDE-class facts reach the side tokens only"))
     if fe.prefuse_proj is not None:
         for i in range(T):
             edges.append(_edge("damage_op", f"our_mon[{i}]", "content", dop._DMG_PER_MON,
@@ -591,6 +635,26 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    via="mon_hazard_proj", zero_init=True,
                                    note="[own side's Spikes layers / 3, the HP fraction lost switching in] — the op's "
                                         "ONE Spikes entry rule (`spikes_entry`)"))
+    # gen3_static_board_v1 (`--token-encoding static` with the op): the per-mon OP CONTENT (`board_tokens.OpContent`) —
+    # every mon's `x` (entry chip) ⊕ `g` (end-of-turn ledger) amounts, and on THEIR mons our moves' `d1` outgoing
+    # cells as a Deep-Sets set function. Undrawn until the end state's adoption made static the production encoding.
+    oc = getattr(fe, "op_content", None)
+    if oc is not None:
+        from agents.model.board_tokens import OPC_AMOUNT_DIM
+        for side in ("our_mon", "opp_mon"):
+            for i in range(T):
+                edges.append(_edge("damage_op", f"{side}[{i}]", "content", OPC_AMOUNT_DIM, "OPC_AMOUNT_DIM",
+                                   via="OpContent.amount_proj", zero_init=True,
+                                   note="this mon's `x` cell (Spikes chip on entry, Pursuit exposure, grounded) ⊕ "
+                                        "its `g` cell (end-of-turn ledger) — the SAME cells the edge families "
+                                        "deliver"))
+        if oc.outgoing_proj is not None:
+            for i in range(T):
+                edges.append(_edge("damage_op", f"opp_mon[{i}]", "content", D, "D_MODEL",
+                                   via="OpContent.outgoing_cell -> sum over our moves -> outgoing_proj",
+                                   zero_init=True,
+                                   note="what our active's moves do to this mon (`d1` outgoing cells), as a SET "
+                                        "(permutation-invariant over our request slots)"))
     # gen3_static_recovery_v1 (`--eot-residual on` only): every mon's end-of-turn HP change if it is on the field.
     if getattr(fe, "eot_residual_proj", None) is not None:
         from agents.model.eot_residual import EOT_DIM

@@ -17,6 +17,10 @@ What must hold, each failing on revert:
   * **it composes** with the four model flags already on main (`--token-encoding static`, `--policy-readout
     trunk`, `--move-resolution on`, `--belief-tokens fixed_mass`), each judged by the same three properties.
   * **production is untouched**: `on` keeps a LIVE projection and `retire_value_threat_inject` is a no-op.
+
+"Production" above is the network F10 was screened against: since the END STATE's adoption (2026-10-12) production
+itself runs `--value-threat-inject off`, so every pair here is built on the LEGACY base (`legacy_production_config`,
+the pre-adoption network, where the route is ON) — the lever's OFF-path identity is what this file pins.
 """
 from __future__ import annotations
 
@@ -32,6 +36,7 @@ from agents.model.arch_constants import D_MODEL
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.value_threat_inject import value_threat_inject_dim
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+from main.train.arch_arms import legacy_production_config
 from utils.paths import repo_path, src_path
 
 _ROUTE = "cls_pool.value_threat_proj."
@@ -39,7 +44,8 @@ _ROUTE = "cls_pool.value_threat_proj."
 
 def _prod_kwargs(**over: Any) -> Dict[str, Any]:
     from agents.model.damage_tables import sanitize_historical_move_floor
-    cfg = json.load(open(repo_path("designs", "production_config.json")))
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): production now runs the route OFF.
+    cfg = legacy_production_config(json.load(open(repo_path("designs", "production_config.json"))))
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {k: v for k, v in cfg.items() if k in sig}
     sanitize_historical_move_floor(kw)
@@ -65,7 +71,7 @@ def _policy(**over: Any):
 
 def _pair(**base: Any) -> Tuple[Any, Any]:
     """(ON, OFF) real policies on the same base config, ON being that config's production value."""
-    assert _prod_kwargs()["value_threat_inject"] is True, "production must carry the route for F10 to delete it"
+    assert _prod_kwargs()["value_threat_inject"] is True, "the legacy base must carry the route for F10 to delete it"
     return _policy(**base), _policy(**base, value_threat_inject=False)
 
 

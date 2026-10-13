@@ -120,32 +120,36 @@ def _fake(overrides, *, config_version=97, mirror_version=109) -> baselines.Base
 
 
 def test_production_declares_a_constructed_mirror():
+    """The END STATE's adoption (2026-10-12): `production` names a closing-test end-state final, the mirror is the
+    pre-adoption mirror + the `--arch endstate` overlay, and the ONLY declared overrides are the five detached
+    ride-along READOUT keys the closing test typed on (production keeps them off). Pinned by NAME so the block
+    cannot grow or shrink silently; the pre-adoption entry survives as `production_pre_endstate`."""
     b = _prod()
-    assert b.config_mirror_version == 109
-    assert b.config_version == 97, "the SURFACE run's own recorded version"
-    # The 13-key critic block (CHANGELOG 2026-09-06) PLUS the 3-key GENERATION STAMP that
-    # gen3_event_record_v2 (the observation-architecture batch, v121) moved the mirror onto: the
-    # surface run is gen-17 (gen3_critic_route_wave_v1, obs 2501), and the mirror follows the code.
-    # Pinned by NAME, so neither block can grow or shrink behind the other's count.
-    # The values are read off a FRESH current config (the mirror follows the code), never typed.
-    from agents.model.model_version import ModelVersion
-    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-    fresh = ModelVersion.from_layout_and_policy_kwargs(
-        Gen3ObservationEncoder(load_mappings()).get_layout(), {"net_arch": [512, 512]})
-    generation_stamp = {k: getattr(fresh, k)
-                        for k in ("arch_signature", "total_dim", "active_context_dim")}
-    for k, want in generation_stamp.items():
-        assert b.config_overrides.get(k) == want, (k, b.config_overrides.get(k), want)
-    critic_block = {k: v for k, v in b.config_overrides.items() if k not in generation_stamp}
-    # 13 keys on 2026-09-06; `hand_shaping` left it with the shaped-reward deletion (v122,
-    # 2026-09-26), and eight more (PopArt, the value-dist head's four, value_from_dist, the tail
-    # weight, the aux-BCE coefficient) with deletion pass L1 (v131) — those fields no longer exist,
-    # so there is nothing to override. What is left is the critic and the terminal's three values.
-    assert set(critic_block) == {"critic", "terminal_indicator", "victory_value", "draw_penalty"}, (
-        "the critic block (CHANGELOG 2026-09-06, less the fields deleted since)")
-    assert "hand_shaping" not in b.config_overrides
-    assert b.config_overrides["critic"] == "winprob"
-    assert b.pending.get("candidate") == "ai_v12_02_winprob_critic"
+    assert b.run.startswith("rb_es_end2_s") and b.checkpoint == "final_model.zip", (b.run, b.checkpoint)
+    assert not b.era_checkout_only, "the adopted production loads at HEAD (math-equal closed-form KO only)"
+    assert b.config_overrides == {"ridealong_adv": 0, "ridealong_ensemble": 0, "ridealong_opp": 0,
+                                  "ridealong_rnd": False, "ridealong_rnd_variants": "off"}, b.config_overrides
+    assert not b.pending, "the old `pending` switch (ai_v12_02) was resolved by the adoption"
+    from main.train.arch_arms import arm_overlay
+    mirror = baselines.production_config()
+    for k, v in arm_overlay("endstate").items():
+        assert mirror[k] == v, (k, mirror[k], v)
+    legacy = baselines.get("production_pre_endstate")
+    assert legacy.run == "ai_v9_21_gen17_pfspoff_0820" and legacy.era_checkout_only
+
+
+def test_run_level_record_keys_are_not_a_key_set_delta_but_other_run_only_keys_are():
+    """`_RUN_RECORD_ONLY_KEYS` (the adoption, 2026-10-12): a run's launch provenance / eval / fork records never sit
+    in the mirror, so they are not drift — but ONLY those: any other run-only key still fails without a declared
+    migration, and a record key the mirror DOES carry is still value-compared."""
+    b = _fake({}, mirror_version=None)
+    run = {"arch_source": "endstate@x", "policy_gae_lambda": 0.8, "fork_fraction": 0.0, "trunk_layers": 3}
+    mirror = {"trunk_layers": 3}
+    assert baselines.compare_production(run, mirror, b) == []
+    msgs = baselines.compare_production({**run, "token_encoding": "static"}, mirror, b)
+    assert any("KEYS" in m and "token_encoding" in m for m in msgs), msgs
+    msgs = baselines.compare_production(run, {**mirror, "policy_gae_lambda": 0.95}, b)
+    assert any("policy_gae_lambda" in m for m in msgs), msgs
 
 
 def test_a_surface_key_that_drifts_is_an_ERROR():
@@ -312,6 +316,35 @@ def test_the_ledger_line_names_the_reason_and_what_it_replaced():
              "sha256": "0" * 64, "set_on": "2026-09-07", "set_by": "THE LEDGER TITLE"}
     line = cli.ledger_line("v9_long_baseline", entry, old)
     assert "THE LEDGER TITLE" in line and old.run in line and "v9_long_baseline" in line
+
+
+def test_set_can_replace_overrides_drop_pending_and_set_the_era_flag(tmp_path, monkeypatch):
+    """`set --config-overrides / --drop-pending / --era-checkout-only` (the adoption's baseline move, 2026-10-12): the
+    carried-over construction fields can be REPLACED when the entry moves to a run that records them natively
+    (else the validator rightly calls them stale), and an entry can be marked loadable again."""
+    from main import baselines as cli
+    run = tmp_path / "r"
+    run.mkdir()
+    (run / "final_model.zip").write_bytes(b"x")
+    (run / "model_config.json").write_text(json.dumps({"config_version": 154, "arch_signature": "sig"}))
+    (run / "metadata.json").write_text(json.dumps({"git_hash": "abc"}))
+    monkeypatch.setattr(cli, "main_models_dir", lambda: tmp_path)
+    reg = tmp_path / "reg.json"
+    reg.write_text(json.dumps({"schema": "gen3_baselines_registry_v1", "baselines": {"p": {
+        "kind": "checkpoint", "run": "r", "checkpoint": "final_model.zip", "commit": "abc", "config_version": 154,
+        "arch_signature": "sig", "sha256": "0" * 64, "purpose": "p", "set_on": "2026-10-12", "set_by": "t",
+        "era_checkout_only": True, "config_overrides": {"critic": "winprob"}, "pending": {"candidate": "x"}}}}))
+    kept = cli.build_entry("p", "r/final_model.zip", reason="R", purpose=None, notes=None, kind=None, set_on=None,
+                           registry=str(reg))
+    assert kept["config_overrides"] == {"critic": "winprob"} and kept["pending"] and kept["era_checkout_only"]
+    moved = cli.build_entry("p", "r/final_model.zip", reason="R", purpose=None, notes=None, kind=None, set_on=None,
+                            registry=str(reg), era_checkout_only=False,
+                            config_overrides={"ridealong_ensemble": 0}, drop_pending=True)
+    assert moved["config_overrides"] == {"ridealong_ensemble": 0}
+    assert "pending" not in moved and "era_checkout_only" not in moved
+    cleared = cli.build_entry("p", "r/final_model.zip", reason="R", purpose=None, notes=None, kind=None,
+                              set_on=None, registry=str(reg), config_overrides={})
+    assert "config_overrides" not in cleared
 
 
 def test_every_help_string_renders():

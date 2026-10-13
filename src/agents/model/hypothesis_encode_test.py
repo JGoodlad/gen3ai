@@ -49,7 +49,8 @@ def _rows(model: Any, n: int = 0) -> Dict[str, torch.Tensor]:
 @pytest.fixture(scope="module")
 def fixed_mass() -> Any:
     from agents.training import learner_golden as LG
-    m = LG.build_learner()
+    from main.train.production_args import legacy_production_args
+    m = LG.build_learner(args=legacy_production_args())  # the LEGACY base: this test's subject is the pre-adoption network (end state adopted 2026-10-12)
     LG.load_buffer_into(m, LG.BUFFER_PATH)
     assert m.policy.features_extractor.hypothesis_builder is not None        # PRECONDITION: the X5 arm
     return m

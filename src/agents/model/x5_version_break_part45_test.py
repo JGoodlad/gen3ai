@@ -29,6 +29,7 @@ from agents.model.damage_op_layout import (_DMG_CB_PER_MON, _DMG_IMX_CELL, _DMG_
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.constants import TEAM_SIZE
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+from main.train.arch_arms import PRE_ADOPTION_PRODUCTION
 from utils.paths import repo_path, src_path
 
 
@@ -227,9 +228,12 @@ def _capture_intent_conditional(fe: Gen3FeaturesExtractor, x: torch.Tensor) -> T
 
 def test_intent_conditional_reads_the_pre_gain_values(obs: torch.Tensor) -> None:
     from agents.model.extractor_forward import _OUT_SEC_FLINCH_COL
-    fe = _build()
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the subject is intent_conditional's read under
+    # `--speed-physics off`, i.e. the pre-adoption network (production now runs the speed rule ON and retires the block).
+    fe = _build(**dict(PRE_ADOPTION_PRODUCTION))
     op = fe.damage_op
-    assert fe.intent_conditional is not None and not op.speed_physics, "PRECONDITION: production (intent_conditional on)"
+    assert fe.intent_conditional is not None and not op.speed_physics, \
+        "PRECONDITION: the legacy base (intent_conditional on, --speed-physics off)"
     args0, raw0 = _capture_intent_conditional(fe, obs)
     gained0 = fe.last_damage_block.detach().clone()
     t = _positions(op)

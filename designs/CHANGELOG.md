@@ -14017,3 +14017,51 @@ Owner, 2026-10-12: "PyTorch update". torch 2.8.0+cu126 has no sm_120 (Blackwell)
 - **The launcher's recorded-torch check is CUDA-BUILD aware.** It compared RELEASES only, so a `+cu126` run resumed under a `+cu128` interpreter was silently accepted ("carries the run's recorded torch", measured on main with a real run). `torch_runtime.carries`: same release AND the same build when both name one (a build-less record, e.g. an unrecorded legacy run, still matches any build of its release); `KNOWN_ENVS` selects the sibling env for an exact record. A mismatch is the `FATAL_CONFIG` refusal naming `--allow-torch-switch`; a fresh run records its build at its first save. Gate: `torch_runtime_test.py` (g).
 - **Learner golden: a `2.8.0+cu128` entry.** The golden is keyed by exact torch build and the five tests that read it failed on cu128. The CPU update under +cu128 is BYTE-IDENTICAL to the +cu126 entry (init, every pinned loss, every parameter group), recorded as a second entry with one history row; `learner_golden_test` reads the +cu126 history rows by their `torch` field and pins the equality. `extractor_compiles_test._CPU_BACKWARD_LOWERS` gains the cu128 row (the slow pin passes).
 - **`scripts/ops/cuda_build_validate.sh`** (`src/main/ops/cuda_build_validate.py`): the GPU validation (numerics cells + `update_bench.py` cells for the end state / production x fp32 / bf16 x both builds) through `gpu_lock.sh` + `mem_cap.sh`; refuses without a lease token. NOT yet run on the GPU (leased to the training session): the local cu126 -> cu128 delta is PENDING its window.
+## 2026-10-12 — THE END STATE IS PRODUCTION (the closing test's PASS; `designs/production_config.json` takes the `--arch endstate` overlay; no config / obs / signature bump)
+
+- **Why.** The registered end-state closing test PASSED (`designs/endstate/design_endstate_closing_test.md` §9;
+  ledger 2026-10-12 MEASUREMENT (MAJOR)): 8 × 8 mirrored cross at P_end2 `62085750`, Δ̂ +0.596 pp, two-sided 90 %
+  [−0.723, +1.915] (upper > 0, lower > −2.0). §6: adopt, then delete legacy and the judgments (a later unit).
+- **The mirror.** `designs/production_config.json` takes the 19 overlay keys of `--arch endstate` at the arm's values:
+  `token_encoding` legacy → static, `mon_hazard_cost` / `move_actor_state` / `switch_hazard_cost` / `eot_residual`
+  off → on, `trunk_layers` 2 → 3, `move_resolution` off → on, `speed_physics` off → on, `value_threat_inject` true →
+  false, `op_reduction` max → principled, `obs_facts` off → v1, `move_resolution_facts` off → full, `status_facts`
+  off → exact, `ko_ramp` ramp → exact, `drop_progress_clock` off → on, `g_ledger` coarse → eot, `effective_stats` /
+  `move_target_state` / `move_set_closure` off → on. Every other key and the `recipe` block unchanged. Verified against
+  the eight `rb_es_end2_s200N` runs' `model_config.json`: equal except `config_version` and the five `ridealong_*`
+  readout keys (`designs/production_config.README.md`, "The end-state adoption").
+- **What HEAD's end state differs from the TESTED build `62085750`** (classified, file by file, 114 non-test
+  files): ONE math-equal change, the closed-form exact KO (`6e0a1a7a` + `5eef9934`; same weights: max |Δ| ≈ 1e-6
+  relative, greedy 136 / 136); everything else behaviour-identical (flags off under the production argv:
+  `--trunk-precision` fp32, `--learner-cudagraphs` off, `--t2-lead-trainee` off; storage-only hard links; the
+  shared compile cache (where kernels come from, not what they compute); a bit-equal ride-along host-read refactor;
+  comments, offline tools, Node-driver deletion); `data/` and `src/rust_env` empty, `src/rust_sim/src` comments only.
+  `--arch production` at HEAD resolves the closing test's argv to the TESTED end state's 204 keys exactly, but for
+  the provenance tags and the three new off-by-default runtime knobs
+  (`research_state/measurements/endstate_adoption_2026-10-12/`).
+- **Production identity (CPU, `graph_sha.py`).** graph `a1e771af47523746`, state `df71da47741a8a0f`, outputs
+  `fb2134d54039c341`, 1 graph, 2,031,460 params (was `421c6b98ce7937f4` / `749c56159ab028f4` / `51c02c6c6342a045`,
+  1,937,942).
+- **Arms.** `--arch endstate` is an ALIAS of production (overlay = the mirror; only `arch_source` names it).
+  `--arch static_recovery` is REDECLARED against the new production: its six keys + the other thirteen at their
+  pre-adoption values (`arch_arms.PRE_ADOPTION_PRODUCTION`, one declared table; `legacy_production_config(mirror)`
+  builds the legacy network for code and tests that want it).
+- **Generated artifacts describe the DEPLOYED network.** `delivery_graph.build_extractor` now applies the policy's two
+  post-build retirements (`retire_superseded_action_cells`, `retire_value_threat_inject`); the graph draws
+  `op_content` (`OpContent`, new `MODULE_GRAPH_TOKENS` entry); `arch_tables` drops `non_matchup_rest` from the pi
+  concat under static (`ProjectionAssembler.board_bypass`; `pi_projection` 1177 → 1152) and marks the seven
+  per-action blocks' flags INERT under move resolution. Snapshot, `.dot`, viewer and ARCHITECTURE §2 / §3 / §6
+  regenerated.
+- **Registry.** `agents.training.baselines.compare_production` exempts declared RUN-LEVEL record keys
+  (`_RUN_RECORD_ONLY_KEYS`: `arch_source`, the eval / promotion / fork knobs, `policy_gae_lambda`, `opp_intent_coef`)
+  from the key-set delta only (never from the value comparison), so the `production` entry can name a run at the
+  mirror's own schema. The baseline itself is a separate unit (`python -m main.baselines set …`).
+- **Tests / goldens.** The lever tests written as "production ⊕ lever" on the legacy base build that base from
+  `arch_arms.legacy_production_config` / `production_args.legacy_production_args`. Production pins re-recorded for
+  the new production, each with the reason: the K9 learner golden (its buffer REBUILT at record seed 19, because the
+  seed-18 buffer had zero OTHER_move-dead rows under the end state, and the golden re-recorded); the update-shape pins
+  (host scalar reads 984 → 1,120 per golden update; R1's CPU attention profile `math` 2 → 3); the delivery-graph
+  seats (the static board's three seats); the h2h `foreign` fixture is now the LEGACY network (production +
+  `--token-encoding static` stopped being foreign); `play_reveal_integration_test`'s `OFF_BITS` / `OFF_OUTCOME_ALL`
+  re-recorded (the checkpoints are built at the production architecture).
+- **Legacy deletion:** NOT in this change; ordered by `designs/ops/legacy_deletion_manifest_2026-10-12.md`.

@@ -1,0 +1,5 @@
+[mem_cap] cap 24.00 GB (swap 0) · unit gen3ai-capped-adoptsmoke-1575060.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+🧪 [DEBUG SHAPE] --debug runs ONE env, which cannot fill this run's update of 98,304 rows — overriding the UNTYPED rollout shape so the smoke reaches its updates: --batch-size 384, --n-epochs 1, --rollout-target-samples 2304. A typed flag still wins (main.train.debug_shape).
+[ModelVersion] Round-trip smoke test PASSED (pi shape: (1, 512), vf shape: (1, 128))
+Training complete. Model saved to /tmp/adopt_scripts/smoke_models/rb_run_20261012_100303/final_model
+[mem_cap] done: gen3ai-capped-adoptsmoke-1575060.scope exit 0 · peak 2.78 GB of cap 24.00 GB (12%) · not OOM-killed

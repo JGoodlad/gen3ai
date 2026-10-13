@@ -27,20 +27,23 @@ def checkpoints(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def foreign(tmp_path_factory):
-    """A seeded PERTURBED-fresh checkpoint of ANOTHER architecture — the production surface with
-    ``--token-encoding static`` (a structural toggle: another state-dict signature and forward fingerprint) — in its
-    own ``run_h2h_foreign/`` beside its ``model_config.json``. The static-vs-legacy screen's own arm pair (the X5 A/B's
-    ``fixed_mass`` x ``blob`` pair was this fixture until the X5 version break deleted ``blob``)."""
+    """A seeded PERTURBED-fresh checkpoint of ANOTHER architecture — the LEGACY production network
+    (`legacy_production_args`: the nineteen end-state keys at their pre-adoption values, `--token-encoding legacy`
+    among them — another state-dict signature and forward fingerprint) — in its own ``run_h2h_foreign/`` beside its
+    ``model_config.json``. The closing test's own arm pair (end state vs legacy). Until the END STATE's adoption
+    (2026-10-12) this was production + ``--token-encoding static``, which production now IS (the same architecture,
+    so it stopped being foreign); the X5 A/B's ``fixed_mass`` x ``blob`` pair was this fixture until the X5 version
+    break deleted ``blob``)."""
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.model.snapshot import recorded_model_version
     from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
-    from main.train.production_args import production_args
+    from main.train.production_args import legacy_production_args
 
     dst = tmp_path_factory.mktemp("h2h_foreign") / "run_h2h_foreign"
     dst.mkdir()
-    args = production_args()
-    args.token_encoding = "static"
+    args = legacy_production_args()
+    assert args.token_encoding == "legacy"
     with PAR.declared_torch_state(1):
         model, _, _ = build_fresh_model(7, args=args)
         perturb_(model.policy, seed=2700, scale=PERTURB_SCALE)

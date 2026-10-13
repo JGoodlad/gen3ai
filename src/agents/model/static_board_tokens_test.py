@@ -15,7 +15,11 @@ Each test names what a revert would break:
 * the `x` edge writes each mon to its OWN side's seat and `g` / `c4` to FIELD (fails on revert to the global seat);
 * the readouts: `tower` drops the `non_matchup_rest` bypass (width and value); `trunk`'s state query attends over
   the three refined board tokens in the trunk's own seat order; the critic's pool reads the three board rows;
-* `legacy` builds none of it (its byte identity is the K9 goldens' and the compiled-region goldens', unchanged).
+* `legacy` builds none of it.
+
+Every learner here is built on the LEGACY base (`legacy_production_args`: the pre-adoption production surface) with
+the encoding set on top — production carries `static` and every other end-state lever since the END STATE's adoption
+(2026-10-12), so "static ⊕ nothing else" and the `legacy` control are reached only from the legacy base.
 """
 from __future__ import annotations
 
@@ -51,8 +55,9 @@ def _rows(model: Any, n: int = 0) -> Dict[str, torch.Tensor]:
 
 
 def _args(readout: str = "tower", encoding: str = "static") -> Any:
-    from main.train.production_args import production_args
-    a = production_args()
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the stage-2 build with no other end-state lever.
+    from main.train.production_args import legacy_production_args
+    a = legacy_production_args()
     a.token_encoding = encoding
     a.policy_readout = readout
     return a
@@ -83,7 +88,7 @@ def static_trunk() -> Any:
 @pytest.fixture(scope="module")
 def legacy() -> Any:
     from agents.training import learner_golden as LG
-    m = LG.build_learner()
+    m = LG.build_learner(args=_args(encoding="legacy"))     # the legacy base (was the golden's default learner)
     LG.load_buffer_into(m)
     return m
 

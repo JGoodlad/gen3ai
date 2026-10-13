@@ -1,5 +1,7 @@
-"""gen3_move_resolution_x5_v1 — the move-resolution family under X5 (production + `--move-resolution on`; X5's
-hypothesis tokens are the only belief representation since the version break, config v144).
+"""gen3_move_resolution_x5_v1 — the move-resolution family under X5 (the legacy base + `--move-resolution on`, built
+through `move_resolution_extractor_test._prod_kwargs`, re-pointed at the pre-adoption network when the END STATE —
+which runs the family ON — became production, 2026-10-12; X5's hypothesis tokens are the only belief representation
+since the version break, config v144).
 
 The family's RULES (`move_facts` / `switch_facts`) hold no belief-mode branch: under fixed_mass they read the flat
 opponent pointer's re-expression, with OTHER_move a PRICED seat set (one per priority level) and OTHER_species a PRICED 7th mon (the

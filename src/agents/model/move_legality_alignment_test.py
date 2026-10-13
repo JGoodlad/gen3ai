@@ -52,11 +52,11 @@ def fe_rows():
     from agents.model.compile_parity_fixture import load_parity_rows
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     from agents.training import learner_golden as LG
-    from main.train.production_args import production_args
+    from main.train.production_args import legacy_production_args
 
     obs_np, _mask = load_parity_rows(Gen3ObservationEncoder(load_mappings()).dimension)
     obs = torch.as_tensor(obs_np.astype(np.float32))
-    fe = LG.build_learner(args=production_args()).policy.eval().features_extractor
+    fe = LG.build_learner(args=legacy_production_args()).policy.eval().features_extractor  # the LEGACY base: this test's subject is the pre-adoption network (end state adopted 2026-10-12)
     o = row_offsets()
     rows = []                                  # misaligned rows: non-alphabetical order AND an illegal move
     for i in range(obs.shape[0]):

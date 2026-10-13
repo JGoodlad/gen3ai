@@ -24671,3 +24671,92 @@ Owner request 2026-10-12: *where does improved determinization make the most dif
 **FINDINGS.** (1) §15's costs were priced from the uncontended throughput pilot: the rows' own CPU fields give Phase 1 98 / 58 CPU-s per state (end2 / prod), a fair arm 24 / 15; Tier 1 ≈ 58–65 CPU-h, not 47. (2) p is a weight on the exact true world, not a probability any belief holds; the registered units are value units (hit rates overstate partial correctness: the species belief hit 2× more and bought nothing). (3) The axes are correlated (k–material −0.71): the sample balances them. (4) Post hoc, many cells, no multiplicity adjustment; the per-stage p* are hints. (5) The wording 'oracle edge similar all-seen vs unseen' holds at every stage: the information lives on the honest side. The stage-gated bootstrap proposal that consumes this is `design_value_discrimination.md` §13.10 (a design proposal; nothing built).
 
 Tag: **REGISTRATION + DESCRIPTIVE (POST HOC) · STAGE axes + K-world dose family + maturity battery registered before any new arm · PROVISIONAL at 15M · incremental ≈ +50 CPU-h, no GPU** · design: [`design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) §6.9, §12.13, §16.7 · [`design_value_discrimination.md`](../endstate/design_value_discrimination.md) §13.10 · [`hidden_info_by_reveal_count_2026-10-12/`](measurements/hidden_info_by_reveal_count_2026-10-12/)
+### 2026-10-12 · BUILT (MAJOR) · **THE END STATE IS PRODUCTION: `designs/production_config.json` takes the `--arch endstate` overlay (19 keys); HEAD's end state = the TESTED `62085750` build modulo ONE math-equal change (the closed-form exact KO, max ≈1e-6 relative, greedy 136 / 136), every other file behaviour-identical; `--arch production` resolves the closing test's argv to the tested 204-key surface exactly (provenance tags + three off-by-default runtime knobs aside); `--arch endstate` an ALIAS, `--arch static_recovery` redeclared; the `production` baseline = `rb_es_end2_s2005/final_model.zip` (the lower-median row), the old entry kept as `production_pre_endstate`; CPU smoke PASSED**
+
+The adoption §6 of `design_endstate_closing_test.md` orders on the PASS (ledger 2026-10-12 MEASUREMENT (MAJOR) "THE
+END-STATE CLOSING TEST: PASS"). Artifacts: [`measurements/endstate_adoption_2026-10-12/`](measurements/endstate_adoption_2026-10-12/).
+
+**1. What was TESTED vs what is ADOPTED (the classified `62085750..HEAD` diff, 114 non-test files under `src/` +
+`data/`).** `data/`, `src/rust_env/`, `Cargo.*` EMPTY; `src/rust_sim/src/{lib,search}.rs`, `turn/forecast.rs` `//!`
+comments only (the env's mechanics cannot change).
+- **(M) math-equal, not bit-equal — ONE:** `ko_exact.roll_ko_prob`, the 16-roll clamp sum replaced by its
+  arithmetic-series closed form (`6e0a1a7a` + `5eef9934`; the 16-roll sum stays the test's oracle, `ko_exact_test`
+  green). SAME weights (built at `62085750`, loaded strictly at HEAD), 136 rows (64 compile-parity + 64 K9-buffer + 8
+  random): max |Δ| pi features 3.8e-6 (≤ 6.1e-7 rel), vf 2.0e-6, move / switch cells 1.5e-6 / 5.1e-7, win-prob logits
+  1.8e-6, pointer logits 4.8e-7, value 3.0e-7, legal log-probs 4.8e-7; greedy action 136 / 136; control
+  (`62085750` reloading its own weights) bit-equal (`outdiff_head.json`, `outdiff_pend2_control.json`).
+- **(I) behaviour-identical, default ON:** the shared compile cache (`62c6165e` + `15982f6c`, `ef6f49aa`: where
+  Inductor / Triton artifacts come from, keyed on commit + clean tree + torch + GPU + compile surface; the startup
+  gate, canary and T2 parity gate unchanged); the hard-linked `best_model` / pool entries (`e071f5fa`, storage only,
+  sha-verified); the ride-along heads' one-host-read refactor (`3545b868`, bit-equal by its own oracle test).
+- **(I) gated OFF under the production argv (measured):** `--trunk-precision` fp32 (v155), `--learner-cudagraphs`
+  off, `--t2-lead-trainee` off.
+- **(I) other:** the retired `exact_closed` value's refusals and registry text; `selection_sites` declarations;
+  the Node-driver deletion (`505f16b5`, offline search / replay only); `species.gender` (read by `value_search`
+  only); `gen3_effects.py` comment strings (only the keys are read); the prober, `value_search`,
+  `hidden_info_study`, launcher / disk-guard / push-guard tooling; comments.
+- **Identity (CPU, `graph_sha.py`):** production at `62085750` and HEAD-before-adoption `421c6b98ce7937f4` /
+  `749c56159ab028f4` / `51c02c6c6342a045`, 1,937,942 params (unchanged); end state `62085750` `42ee361b11fa5a8d` /
+  `df71da47741a8a0f` / `5adfaa6c40a7a71e` → HEAD `a1e771af47523746` / `df71da47741a8a0f` (same init) /
+  `fb2134d54039c341`, 2,031,460 params, graph 35,662 → 31,480 lines (the 16-roll loop gone).
+- **VERDICT: NO real behaviour change beyond the declared math-equal one ⇒ adopt.**
+
+**2. The adoption.** `designs/production_config.json` = the pre-adoption mirror + the 19 `--arch endstate` keys
+(token_encoding static; mon_hazard_cost / move_actor_state / switch_hazard_cost / eot_residual on; trunk_layers 3;
+move_resolution on; speed_physics on; value_threat_inject false; op_reduction principled; obs_facts v1;
+move_resolution_facts full; status_facts exact; ko_ramp exact; drop_progress_clock on; g_ledger eot; effective_stats
+/ move_target_state / move_set_closure on); every other key and the `recipe` block unchanged. Verified against all
+eight `rb_es_end2_s200N/model_config.json`: equal but for `config_version` (154 vs the mirror's 145) and the five
+`ridealong_*` readouts (typed on by the closing test; production keeps the detached readouts off).
+`main.train.arch_arms`: `PRE_ADOPTION_PRODUCTION` (the 19 keys' old values, one declared table) and
+`legacy_production_config(mirror)`; `endstate` an ALIAS (overlay = the mirror); `static_recovery` = its six keys +
+the other thirteen at pre-adoption values (the same network as before). The generated artifacts now describe the
+DEPLOYED network: `delivery_graph.build_extractor` applies the policy's two post-build retirements (the seven
+per-action blocks, the threat projection), the graph draws `op_content` and the static board's three seats,
+`arch_tables` drops `non_matchup_rest` under static (pi_projection 1177 → 1152) and marks the seven blocks' flags
+INERT; ARCHITECTURE.md rewritten to the end state (its §0 production row, identity, 64 tokens, cell widths, INERT
+markings).
+
+**3. Evidence that `--arch production` IS the tested end state.** `cmp.py` of the closing test's own argv
+resolved at `62085750` (`--arch endstate`) vs the same argv with `--arch production` at the adopted tree: 204 keys,
+differences ONLY `arch` / `arch_source` / `recipe_source` (provenance tags) and the three new runtime knobs at their
+off defaults (`learner_cudagraphs` off, `t2_lead_trainee` false, `trunk_precision` fp32)
+(`resolved_tested_vs_production.out`). `python -m main.checkargs --argv "--arch production --steps 15000000 --seed
+2001 --device cuda"`: `✓ every ARCH-surface key matches the production mirror`, `✓ every RECIPE knob matches
+recipe.fresh (28 knobs)`, `✓ this command still launches` (`checkargs_production.out`); `python -m main.launcher
+--dry-run …`: `✓ DRY RUN — this command would launch` (disk 33.96 GiB required, the archive estimate now from an
+end-state run; `dryrun_production.out`). CPU smoke `--arch production --debug --steps 10000`: exit 0, "Training
+complete", the run records `token_encoding static`, `trunk_layers 3`, `move_resolution on`, `arch_source
+production_config@2603107a2bf9`; 42 min wall at nice 19 on six shared threads, peak 2.8 GB (`smoke_lines.out`).
+`golden_obs_core --check`: 991 / 991 (no obs path changed; the encoder benchmark not needed).
+
+**4. The baseline.** `python -m main.baselines set production rb_es_end2_s2005/final_model.zip` — chosen by a
+STATED RULE, never by score: the end-state seed whose cross ROW MEAN is the LOWER MEDIAN of the eight (sorted 47.68
+s2007, 48.56 s2003, 50.68 s2001, **50.80 s2005** | 51.41 s2004, 51.62 s2006, 51.66 s2008, 52.36 s2002); 15,047,521
+steps, commit `62085750`, config v154, sha256 `4047f4380661…`; declared overrides = the five ride-along readout keys;
+not era-only (`check --load` loads it at HEAD); `pending` dropped. The old entry (gen-17's surface,
+`ai_v9_21_gen17_pfspoff_0820/final_model.zip`) is kept as `production_pre_endstate` (era checkout only).
+- **baseline `production` re-set** on 2026-10-12: `rb_es_end2_s2005/final_model.zip` @15047521 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `4047f4380661…`. Was: `ai_v9_21_gen17_pfspoff_0820/final_model.zip` (set 2026-09-06, 2026-09-06 · BASELINES REGISTRY — the named baselines become first-class objects (gen3_baselines_registry_v1)). Reason: 2026-10-12 · BASELINE · production re-set to the adopted END STATE (rb_es_end2_s2005, the lower-median row).
+- **baseline `production_pre_endstate` re-set** on 2026-09-06: `ai_v9_21_gen17_pfspoff_0820/final_model.zip` @25067520 steps, commit `4b031887`, config v97 `gen3_critic_route_wave_v1`, sha256 `0a3b758ba837…`. Was: *(new baseline)*. Reason: 2026-10-12 · BASELINE · production re-set to the adopted END STATE (rb_es_end2_s2005, the lower-median row).
+Tooling for it: `main.baselines set` gains `--config-overrides`, `--drop-pending`, `--era-checkout-only {yes,no}`;
+`compare_production` exempts declared RUN-LEVEL record keys (`_RUN_RECORD_ONLY_KEYS`) from the key-set delta only.
+
+**5. The legacy deletion** is NOT in this change: `designs/ops/legacy_deletion_manifest_2026-10-12.md` (7 units,
+U0–U6; owner decisions D-LD1..; one lever per unit).
+
+**FINDINGS (standing rule 7).**
+1. **The shared compile cache is default ON at HEAD and was not at `62085750`**: seeds at HEAD reuse one key's
+   autotuned kernels; this can change fp32 summation order (autotune-variance size), not the math.
+   `GEN3AI_SHARED_COMPILE_CACHE=0` restores per-run compiles.
+2. **NOT verified on the GPU (no lease):** the closed form under CUDA / Inductor, the end-state R1 startup gate and
+   canary, the T2 parity gate at HEAD. The bf16 A/B's fp32 arm (E, re-run at `f45d0c27`) is the first GPU launch of
+   HEAD's end state; X26 inherits its reading.
+3. **The routine gate got much slower**: integration tests that build `production` checkpoints (h2h, rust_eval)
+   now play the end-state graph eagerly on CPU; the full gate at -n 2 on six shared threads did not finish in 5 h.
+   This ship's gate scope is targeted and named in its commit body.
+4. **Hard links:** `best_model.zip` / pool entries can be a second name of a checkpoint; the in-place save sites
+   `unshare()`, other writers (groom / retention) were not audited.
+5. **`designs/endstate/design_hand_computed_features.md`'s per-row statuses** ("OFF", "in `--arch endstate`") are
+   re-read by a new status note, not rewritten row by row.
+
+Tag: **BUILT (MAJOR) · END STATE ADOPTED AS PRODUCTION · math-equal to the tested build (one change) · baseline `production` = rb_es_end2_s2005 (lower-median row) · smoke PASS · legacy deletion manifest written, nothing deleted** · [`measurements/endstate_adoption_2026-10-12/`](measurements/endstate_adoption_2026-10-12/) · design: [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) §6, §9

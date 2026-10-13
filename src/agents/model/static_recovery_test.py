@@ -1,8 +1,9 @@
 """`gen3_static_recovery_v1` (config v150) — the three STATIC-RECOVERY levers (`designs/endstate/design_static_tokens.md`
 §13): `--trunk-layers N`, `--switch-hazard-cost`, `--eot-residual`.
 
-Built through a REAL SB3 policy (the construction path training uses, the identity_init_test rule) on the PRODUCTION
-toggles with `token_encoding='static'` (and legacy where a lever composes with it), over REAL observation rows (the
+Built through a REAL SB3 policy (the construction path training uses, the identity_init_test rule) on the LEGACY base
+(`legacy_production_config`: the pre-adoption production toggles — every lever here is ON in production since the END
+STATE's adoption, 2026-10-12, so each OFF path is reached only from the legacy base) with `token_encoding='static'` (and legacy where a lever composes with it), over REAL observation rows (the
 compile parity fixture), and on CONSTRUCTED boards for the physics.
 
 Each test names what a revert breaks:
@@ -47,6 +48,7 @@ from agents.observation.constants import (BOOSTS_DIM, POKEMON_CONDITION_OFFSET, 
                                           POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_OFFSET,
                                           TEAM_SIZE, TOXIC_STAGE_MAX)
 from agents.observation.gen3_effects import VOLATILE_SLOTS
+from main.train.arch_arms import legacy_production_config
 from utils.paths import repo_path
 
 #: fp32 bound on the same arithmetic in a different order (a permuted sum, a reassociated matmul).
@@ -56,8 +58,9 @@ _COL = {name: i for i, name in enumerate(EOT_FACTS)}
 
 
 def _toggles(encoding: str = "static", **over: Any) -> Dict[str, Any]:
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): "base ⊕ one lever" with every lever OFF in the base.
     with open(repo_path("designs", "production_config.json")) as fh:
-        cfg = json.load(fh)
+        cfg = legacy_production_config(json.load(fh))
     tog = {k: v for k, v in cfg.items() if not isinstance(v, (dict, list))}
     tog.update(token_encoding=encoding, **over)
     return tog

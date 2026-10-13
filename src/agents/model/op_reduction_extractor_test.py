@@ -38,8 +38,9 @@ _KEPT = ("pairwise_outgoing", "pairwise_bench_outgoing")
 
 
 def _production_toggles() -> Dict[str, Any]:
+    from main.train.arch_arms import legacy_production_config
     with open(repo_path("designs", "production_config.json")) as fh:
-        cfg = json.load(fh)
+        cfg = legacy_production_config(json.load(fh))  # the LEGACY base: this test's subject is the pre-adoption network (end state adopted 2026-10-12)
     return {k: v for k, v in cfg.items() if not isinstance(v, (dict, list))}
 
 

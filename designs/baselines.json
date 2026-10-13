@@ -4,35 +4,24 @@
  "baselines": {
   "production": {
    "kind": "checkpoint",
-   "run": "ai_v9_21_gen17_pfspoff_0820",
+   "run": "rb_es_end2_s2005",
    "checkpoint": "final_model.zip",
-   "commit": "4b031887ebc7926a6730f4c501023168f8960819",
-   "config_version": 97,
-   "arch_signature": "gen3_critic_route_wave_v1",
-   "num_timesteps": 25067520,
-   "sha256": "0a3b758ba8370da4395fcbf1985a645cd30656a2f6aea8e23f66eb73c77df7d3",
-   "purpose": "THE ARCHITECTURE SURFACE production runs. designs/production_config.json is CONSTRUCTED from this run's config \u2014 migrated v97 -> v109 with the critic override block below (13 keys at v109; the eight whose fields left the config with deletion pass L1 \u2014 PopArt, the value-dist head, value_from_dist, the tail weight, the aux-BCE coefficient \u2014 are gone from it) \u2014 and ARCHITECTURE.md, the delivery graph, the compile gate and the arch viewer are all generated from that mirror.",
-   "set_on": "2026-09-06",
-   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
-   "notes": "THE MIRROR IS CONSTRUCTED, NOT COPIED (CHANGELOG -> production_config_2026-09-06; provenance in designs/production_config.README.md). gen-17 supplies the whole architecture SURFACE; the critic block is overridden to the win-prob era. Non-critic keys changed: ZERO. The entry names gen-17 rather than the era arm because the SURFACE is the thing every derived artifact reads, and because ai_v12_02_winprob_critic had not written a model_config.json when the mirror was built. It moves to ai_v12_02_winprob_critic once that arm passes its critic gate \u2014 see `pending`. Why the surface half matters: the era's FIRST arm launched from a design-doc block with a 38-flag argv, and 31 architecture fields silently reverted to their OFF defaults; mirroring it would have redefined production BY OMISSION, with the delivery graph dropping 60 of 120 nodes and every derived artifact agreeing. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary). The mirror's arch_signature / total_dim / active_context_dim overrides are the gen3_event_record_v2 SIGNATURE-BUMP WINDOW (designs/production_config.README.md): the mirror follows the code until the first new-lineage run exists, then it is re-synced from that run and these three overrides go. At the X5 VERSION BREAK (2026-10-07, config v144, gen3_x5_version_break_v1) the mirror's arch_signature override moved to gen3_x5_version_break_v1 (and the mirror's config_version to 144; `belief_tokens` left the mirror with the field): the same follow-the-code window, until the first run at the new signature exists. The break's part 3 (the OBS-FACTS append) moved the total_dim override 2761 -> 2845 and added `obs_facts` (\"off\") to the mirror, in the same window. At v145 (2026-10-07, gen3_mon_tied_gain_v1: the op's out_gain tied across our team slots, MIGRATION_FLOOR 145) the arch_signature override moved to gen3_mon_tied_gain_v1 (the mirror's config_version to 145), in the same window.",
-   "config_mirror": "designs/production_config.json",
-   "config_mirror_readme": "designs/production_config.README.md",
-   "config_mirror_version": 109,
+   "purpose": "THE ARCHITECTURE SURFACE production runs: the END STATE (adopted 2026-10-12 on the closing test's PASS). designs/production_config.json is the pre-adoption mirror with the `--arch endstate` overlay applied, verified against this run's model_config.json (equal but for the declared ride-along readout overrides and config_version); ARCHITECTURE.md, the delivery graph, the compile gate and the arch viewer are generated from that mirror.",
+   "set_on": "2026-10-12",
+   "set_by": "2026-10-12 \u00b7 BASELINE \u00b7 production re-set to the adopted END STATE (rb_es_end2_s2005, the lower-median row)",
+   "commit": "62085750baab1ca275d810fbe0bb5a960904e183",
+   "config_version": 154,
+   "arch_signature": "gen3_mon_tied_gain_v1",
+   "sha256": "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b",
+   "num_timesteps": 15047521,
+   "notes": "Chosen by a STATED RULE, never by score: the closing test's end-state seed whose 8 x 8 cross ROW MEAN is the LOWER MEDIAN of the eight (row means 50.68 / 52.36 / 48.56 / 51.41 / 50.80 / 51.62 / 47.68 / 51.66 for s2001-s2008; sorted, the 4th of 8 is s2005 at 50.80). Trained at P_end2 62085750 (tag closing-test-pend2, --arch endstate, the closing test's ride-along heads typed on); HEAD's end state differs from that build only by the math-equal closed-form exact KO (5eef9934; research_state/measurements/endstate_adoption_2026-10-12/). The run's ridealong_* = 5 / on are DECLARED OVERRIDES: production keeps those detached critic readouts off. The previous entry (gen-17's surface) is kept as `production_pre_endstate`.",
    "config_overrides": {
-    "critic": "winprob",
-    "terminal_indicator": true,
-    "victory_value": 1.0,
-    "draw_penalty": 0.0,
-    "arch_signature": "gen3_mon_tied_gain_v1",
-    "total_dim": 2845,
-    "active_context_dim": 60
-   },
-   "pending": {
-    "candidate": "ai_v12_02_winprob_critic",
-    "condition": "passes its pre-registered read \u2014 `python -m main.critic_gate <run> --parent v9_fold_parent --control <G5 arms>` (designs/ai_v12/design_winprob_only_critic.md \u00a75.5)",
-    "note": "Until then the surface source is gen-17. Switch it with `python -m main.baselines set production <run>/<ckpt> --reason \"<ledger entry title>\"`, never by hand \u2014 and re-derive config_overrides at the same time, since a run that records the critic block natively needs FEWER of them."
-   },
-   "era_checkout_only": true
+    "ridealong_adv": 0,
+    "ridealong_ensemble": 0,
+    "ridealong_opp": 0,
+    "ridealong_rnd": false,
+    "ridealong_rnd_variants": "off"
+   }
   },
   "v9_long_baseline": {
    "kind": "checkpoint",
@@ -153,6 +142,21 @@
    "sha256": "8a387206cefd8da91a3788ed277da64c2549f8f7f5d5f56557dff040f19418c1",
    "num_timesteps": 24000000,
    "notes": "era checkout only since the X5 VERSION BREAK (2026-10-07, config v144, gen3_x5_version_break_v1): MIGRATION_FLOOR rose to 144, so this v121 blob-era checkpoint does NOT load under current code; read it from its own commit, or from f7567a9f (agents.model.model_version.version_break.LAST_BLOB_COMMIT, the last commit before the break). The untaught meter's DEFAULT opponent therefore needs a successor at the new signature (legacy manifest D-L3's Rustboro opponent).",
+   "era_checkout_only": true
+  },
+  "production_pre_endstate": {
+   "kind": "checkpoint",
+   "run": "ai_v9_21_gen17_pfspoff_0820",
+   "checkpoint": "final_model.zip",
+   "purpose": "The PRE-END-STATE production SURFACE source: gen-17's config with the critic block swapped, which designs/production_config.json was CONSTRUCTED from until the end state's adoption (2026-10-12). What `production` named from 2026-09-06 to 2026-10-12; kept for the record, era checkout only.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-10-12 \u00b7 BASELINE \u00b7 production re-set to the adopted END STATE (rb_es_end2_s2005, the lower-median row)",
+   "commit": "4b031887ebc7926a6730f4c501023168f8960819",
+   "config_version": 97,
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "sha256": "0a3b758ba8370da4395fcbf1985a645cd30656a2f6aea8e23f66eb73c77df7d3",
+   "num_timesteps": 25067520,
+   "notes": "Copied from the `production` entry when it moved to the adopted end state (2026-10-12). Its old purpose: THE ARCHITECTURE SURFACE production runs. designs/production_config.json is CONSTRUCTED from this run's config \u2014 migrated v97 -> v109 with the critic override block below (13 keys at v109; the eight whose fields left the config with deletion pass L1 \u2014 PopArt, the value-dist head, value_from_dist, the tail weight, the aux-BCE coefficient \u2014 are gone from it) \u2014 and ARCHITECTURE.md, the delivery graph, the compile gate and the arch viewer are all generated from that mirror. Its old notes: THE MIRROR IS CONSTRUCTED, NOT COPIED (CHANGELOG -> production_config_2026-09-06; provenance in designs/production_config.README.md). gen-17 supplies the whole architecture SURFACE; the critic block is overridden to the win-prob era. Non-critic keys changed: ZERO. The entry names gen-17 rather than the era arm because the SURFACE is the thing every derived artifact reads, and because ai_v12_02_winprob_critic had not written a model_config.json when the mirror was built. It moves to ai_v12_02_winprob_critic once that arm passes its critic gate \u2014 see `pending`. Why the surface half matters: the era's FIRST arm launched from a design-doc block with a 38-flag argv, and 31 architecture fields silently reverted to their OFF defaults; mirroring it would have redefined production BY OMISSION, with the delivery graph dropping 60 of 120 nodes and every derived artifact agreeing. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary). The mirror's arch_signature / total_dim / active_context_dim overrides are the gen3_event_record_v2 SIGNATURE-BUMP WINDOW (designs/production_config.README.md): the mirror follows the code until the first new-lineage run exists, then it is re-synced from that run and these three overrides go. At the X5 VERSION BREAK (2026-10-07, config v144, gen3_x5_version_break_v1) the mirror's arch_signature override moved to gen3_x5_version_break_v1 (and the mirror's config_version to 144; `belief_tokens` left the mirror with the field): the same follow-the-code window, until the first run at the new signature exists. The break's part 3 (the OBS-FACTS append) moved the total_dim override 2761 -> 2845 and added `obs_facts` (\"off\") to the mirror, in the same window. At v145 (2026-10-07, gen3_mon_tied_gain_v1: the op's out_gain tied across our team slots, MIGRATION_FLOOR 145) the arch_signature override moved to gen3_mon_tied_gain_v1 (the mirror's config_version to 145), in the same window. Its declared construction then: config_mirror_version 109, config_overrides {\"critic\": \"winprob\", \"terminal_indicator\": true, \"victory_value\": 1.0, \"draw_penalty\": 0.0, \"arch_signature\": \"gen3_mon_tied_gain_v1\", \"total_dim\": 2845, \"active_context_dim\": 60}. The pre-adoption production surface itself is `main.train.arch_arms.PRE_ADOPTION_PRODUCTION` over the mirror; its Rustboro-era trained instances are the closing test's PRODUCTION arm (rb_es_prod_s2001-s2008, pinned 95d014fa).",
    "era_checkout_only": true
   }
  },

@@ -2,7 +2,8 @@
 NARROW facts (`--mon-hazard-cost`, `--move-actor-state`; `designs/endstate/design_static_tokens.md` §12).
 
 Built through a REAL SB3 policy (the construction path training uses — the identity_init_test rule) on the
-PRODUCTION toggles with `token_encoding='static'`, over REAL observation rows (the compile parity fixture).
+LEGACY base (`legacy_production_config`: the pre-adoption production toggles, where both facts and every other end-state
+lever are OFF — production carries them ON since the END STATE's adoption, 2026-10-12) with `token_encoding='static'`, over REAL observation rows (the compile parity fixture).
 
 Each test names what a revert breaks:
 
@@ -42,7 +43,9 @@ from agents.model.damage_tables import _T2I
 from agents.model.extractor_ctx import POKEMON_ABILITY_KNOWN_OFFSET, ExtractorContext, active_request_sorted_match
 from agents.model.identity_init_test import _build_real_policy
 from agents.model.static_facts import MON_HAZARD_DIM, MOVE_ACTOR_DIM, mon_hazard_features, move_actor_features
-from agents.observation.constants import POKEMON_HP_OFFSET, TEAM_SIZE
+from agents.observation.constants import (FACTS_SEEN_DIM, FACTS_SEEN_OFFSET, FACTS_SEEN_ROW_DIM, POKEMON_HP_OFFSET,
+                                          TEAM_SIZE)
+from main.train.arch_arms import PRE_ADOPTION_PRODUCTION, legacy_production_config
 from utils.paths import repo_path
 
 #: fp32 bound on the same arithmetic in a different order (a permuted sum, a reassociated matmul).
@@ -52,8 +55,9 @@ _FACT_PROJ = ("mon_hazard_proj", "move_actor_proj")
 
 
 def _static_toggles(**over: Any) -> Dict[str, Any]:
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): "static ⊕ one fact" with both facts OFF in the base.
     with open(repo_path("designs", "production_config.json")) as fh:
-        cfg = json.load(fh)
+        cfg = legacy_production_config(json.load(fh))
     tog = {k: v for k, v in cfg.items() if not isinstance(v, (dict, list))}
     tog.update(token_encoding="static", **over)
     return tog
@@ -328,6 +332,14 @@ def _permute_ours(ctx: ExtractorContext, sig: torch.Tensor) -> ExtractorContext:
     ch["fainted_mask_ours"] = ctx.fainted_mask_ours[:, sig]
     if ctx.pair_history is not None:
         ch["pair_history"] = ctx.pair_history[:, :, sig]                              # (opp i, our j)
+    if ctx.obs_facts is not None:
+        # gen3_obs_facts_v1: the SEEN rows are per our mon (row i -> slot i); the rest of the block is per side.
+        # Added when the END STATE (`--obs-facts v1`) became production (2026-10-12): without it a ctx permutation
+        # left the seen rows in place and read as a broken equivariance (measured: max |Δ| 0.81 on our tokens).
+        B = ctx.obs_facts.shape[0]
+        lo, hi = FACTS_SEEN_OFFSET, FACTS_SEEN_OFFSET + FACTS_SEEN_DIM
+        seen = ctx.obs_facts[:, lo:hi].reshape(B, TEAM_SIZE, FACTS_SEEN_ROW_DIM)[:, sig].reshape(B, -1)
+        ch["obs_facts"] = torch.cat([ctx.obs_facts[:, :lo], seen, ctx.obs_facts[:, hi:]], dim=1)
     return dataclasses.replace(ctx, **ch)
 
 
@@ -360,9 +372,20 @@ def _trunk_inputs(fe: Any, x: torch.Tensor, sig: Any = None) -> Tuple[torch.Tens
     return seen[0]
 
 
+def _production_levers() -> Dict[str, Any]:
+    """Every end-state key at its PRODUCTION value — over this file's static legacy base, that IS the production
+    network (`token_encoding` is the base's own `static`)."""
+    with open(repo_path("designs", "production_config.json")) as fh:
+        cfg = json.load(fh)
+    assert cfg["token_encoding"] == "static"
+    return {k: cfg[k] for k, _v in PRE_ADOPTION_PRODUCTION if k != "token_encoding"}
+
+
+#: `production` (added at the END STATE's adoption, 2026-10-12): the same equivariance on the deployed network, every
+#: end-state lever on (the four legacy-base cells pin each fact alone).
 @pytest.mark.parametrize("flags", [{}, {"mon_hazard_cost": "on"}, {"move_actor_state": "on"},
-                                   {"mon_hazard_cost": "on", "move_actor_state": "on"}],
-                         ids=["static", "hazard", "actor", "both"])
+                                   {"mon_hazard_cost": "on", "move_actor_state": "on"}, _production_levers()],
+                         ids=["static", "hazard", "actor", "both", "production"])
 def test_permuting_our_team_slots_permutes_the_trunk_input_exactly(rows: torch.Tensor, flags: Dict[str, str]) -> None:
     import copy
     fe = copy.deepcopy(_policy(**flags)[0].policy.features_extractor)

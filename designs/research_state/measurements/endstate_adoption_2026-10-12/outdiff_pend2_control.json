@@ -1,0 +1,157 @@
+{
+ "src": "/tmp/adopt_diff/pend2/src/agents/model/extractor_build.py",
+ "sd_loaded_equal": true,
+ "parity_rows": {
+  "pi": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "vf": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "move_cells": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "switch_cells": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "win_prob_logits": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "logits": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "value": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "legal_logp": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "greedy_agree": "64/64"
+ },
+ "golden_buffer": {
+  "pi": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "vf": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "move_cells": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "switch_cells": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "win_prob_logits": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "logits": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "value": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "legal_logp": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "greedy_agree": "64/64"
+ },
+ "rand8": {
+  "pi": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "vf": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "move_cells": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "switch_cells": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "win_prob_logits": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "logits": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "value": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "legal_logp": {
+   "max_abs": 0.0,
+   "max_rel_to_maxabs": 0.0,
+   "bit_equal": true,
+   "n_diff": 0
+  },
+  "greedy_agree": "8/8"
+ }
+}

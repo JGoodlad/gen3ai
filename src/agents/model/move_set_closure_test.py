@@ -13,8 +13,9 @@ policy's masked log-probabilities and the value.
 
 * `on`: bit-identical, for a BENCHED and for the ACTIVE four-revealed mon (reverting the reinjection to the sigmoid
   weights fails the bench case);
-* `off` (production): the active case is bit-identical too (the move group), the bench case MOVES — the leak this
-  flag closes, pinned so the test cannot pass vacuously (a model whose reinjection reads nothing would pass `on`).
+* `off` (the legacy base; production is `on` since the 2026-10-12 adoption): the active case is bit-identical too
+  (the move group), the bench case MOVES — the leak this flag closes, pinned so the test cannot pass vacuously (a
+  model whose reinjection reads nothing would pass `on`).
 
 Plus the construction (`slot_move_presence(..., graph=True)`): the same values as the detached default, mass
 4 − r, exactly 0 off the revealed moves at r = 4, and a gradient into the move logits (the PPO route the sigmoid
@@ -171,7 +172,8 @@ def _board(fe: Any, hb: HypothesisBuilder, layout: dict, x: torch.Tensor,
 
 @pytest.fixture(scope="module")
 def perturbed() -> Any:
-    """The production surface with `--move-set-closure on`, perturbed (name-keyed, the K9 golden's) so the
+    """The LEGACY base (`probe_facts_test._policy`, re-pointed at the pre-adoption network on the END STATE's adoption,
+    2026-10-12) with `--move-set-closure on`, perturbed (name-keyed, the K9 golden's) so the
     zero-init heads — the pointer scorer, the move head's delta — carry signal."""
     pol = copy.deepcopy(_policy(move_set_closure="on"))
     perturb_(pol, seed=1234, scale=0.02, keyed=True)
@@ -222,7 +224,7 @@ def test_on_a_benched_four_revealed_mon_reinjects_nothing_else(perturbed: Any, b
 
 
 def test_off_the_bench_leak_is_real(perturbed: Any, boards: dict) -> None:
-    """Production (`off`): the same bump MOVES the outputs — the leak `on` closes (F-X5-33). Pins the test's
+    """`off` (the legacy base's value): the same bump MOVES the outputs — the leak `on` closes (F-X5-33). Pins the test's
     sensitivity: were the bench rows unread, the `on` test above would pass vacuously."""
     x, m = boards["bench"]
     dv, dl = _delta(perturbed, x, m, "off")
@@ -240,8 +242,8 @@ def test_the_active_was_already_closed(perturbed: Any, boards: dict, mode: str) 
 
 @pytest.fixture(scope="module")
 def endstate_arm() -> Any:
-    """The END-STATE arm as DECLARED (`main.train.arch_arms`'s `endstate` overlay over the production toggles: the static
-    token encoding and every fact lever), perturbed like `perturbed`. Owner 2026-10-10 ("Do A"): the closure is in
+    """The END-STATE arm as DECLARED (`main.train.arch_arms`'s `endstate` overlay over the legacy base: the static
+    token encoding and every fact lever — the PRODUCTION network since the 2026-10-12 adoption), perturbed like `perturbed`. Owner 2026-10-10 ("Do A"): the closure is in
     that arm, a pre-data amendment of the closing test (`design_endstate_closing_test.md` Decision record)."""
     from main.train.arch_arms import arm_overlay
     pol = copy.deepcopy(_policy(**arm_overlay("endstate")))

@@ -9,6 +9,11 @@ What must hold, each failing on revert:
   * **`gather_ops` reads the right observation fields** — a real observation edited to a constructed board
     (their Substitute up, our Confuse Ray) reaches the fact.
   * the dependency refusals and the version machinery (migration default, `check_compatible`, snapshot kwargs).
+
+"Production" in this file is the network the family was screened against: since the END STATE's adoption
+(2026-10-12) production runs `--move-resolution on` (with `--move-resolution-facts full`), so every build here is on
+the LEGACY base (`legacy_production_config`, the pre-adoption network) — the lever's OFF path and its one-lever
+property are reached only from there.
 """
 from __future__ import annotations
 
@@ -26,6 +31,7 @@ from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.move_resolution_rules import MOVE_RESOLUTION_MOVE_IDX as MI
 from agents.observation.gen3_effects import VOLATILE_SLOTS
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+from main.train.arch_arms import legacy_production_config
 from utils.paths import repo_path, src_path
 
 SEVEN = ("intent_move_cell", "intent_threshold_move", "intent_conditional", "pair_outcome_move", "switch_branch",
@@ -34,7 +40,8 @@ SEVEN = ("intent_move_cell", "intent_threshold_move", "intent_conditional", "pai
 
 def _prod_kwargs(**over: Any) -> Dict[str, Any]:
     from agents.model.damage_tables import sanitize_historical_move_floor
-    cfg = json.load(open(repo_path("designs", "production_config.json")))
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): production now runs the family ON.
+    cfg = legacy_production_config(json.load(open(repo_path("designs", "production_config.json"))))
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {k: v for k, v in cfg.items() if k in sig}
     sanitize_historical_move_floor(kw)
@@ -62,7 +69,7 @@ def test_off_builds_nothing_and_sets_no_op_seam():
     assert fe.move_resolution == "off" and fe.move_resolution_cell is None
     assert fe.damage_op.stash_species_post is False
     assert not any("move_resolution" in k for k in fe.state_dict())
-    assert all(getattr(fe, n) is not None for n in SEVEN)        # production keeps the seven blocks
+    assert all(getattr(fe, n) is not None for n in SEVEN)        # the legacy base keeps the seven blocks
     assert fe.retire_superseded_action_cells() is False
     assert all(getattr(fe, n) is not None for n in SEVEN)
 

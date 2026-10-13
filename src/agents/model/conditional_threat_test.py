@@ -428,7 +428,10 @@ def test_the_module_is_drawn_with_edges_when_it_is_ON():
     from agents.model.delivery_graph import (
         MODULE_GRAPH_TOKENS, _DEFAULT_CONFIG, build_graph)
     assert MODULE_GRAPH_TOKENS["conditional_threat"] == ("ConditionalThreatCell",)
-    cfg = json.load(open(_DEFAULT_CONFIG))
+    from main.train.arch_arms import legacy_production_config
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): production runs `--move-resolution on`, which
+    # RETIRES this block (the graph is built on the deployed network), so it is drawn on the pre-adoption base.
+    cfg = legacy_production_config(json.load(open(_DEFAULT_CONFIG)))
     cfg["conditional_threat_cell"] = True
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, "cfg.json")

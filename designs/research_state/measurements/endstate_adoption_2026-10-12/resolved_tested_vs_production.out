@@ -1,0 +1,9 @@
+A = resolved_tested_pend2.json
+B = resolved_production_head.json
+  DIFF arch: A='endstate' B='production'
+  DIFF arch_source: A='endstate@production_config@49cd523f38ee+overlay@2b359668' B='production_config@2603107a2bf9'
+  only in B: learner_cudagraphs = 'off'
+  DIFF recipe_source: A='production_config@49cd523f38ee' B='production_config@2603107a2bf9'
+  only in B: t2_lead_trainee = False
+  only in B: trunk_precision = 'fp32'
+compared 204 keys

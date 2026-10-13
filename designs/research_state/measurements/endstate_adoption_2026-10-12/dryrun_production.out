@@ -1,0 +1,49 @@
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FRESH
+  run dir     : /home/goodlad/dev/gen3ai/models/rb_adoption_dryrun   [would be created]
+  on restart  : RESUME role — drops FRESH-only --arch (inherited from model_config.json); --model → the run's latest checkpoint
+  pin         : 748f90e6fa9c23e548f787b8ed5f2963af9bce38  (source: head)
+                ↳ docs(research): THE END-STATE CLOSING TEST READ — PASS (Δ̂ +0.596 pp, 90 % [−0.723, +1.915], upper > 0 and lower > −2.0)
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  steps       : --steps 15,000,000 (fresh run, from 0)
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — FRESH launch; this torch is recorded at the run's first save
+  transport   : in-process bridge [rust] (no Showdown server)
+  restarts    : every 6.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  effective   : the argv IS the config (no --model, nothing to inherit)
+      --grad-accum-steps     32           (from the argv)
+      --fork-lr              None         (from the argv)
+      --fork-lr-freeze       False        (from the argv)
+  env core    : rust  [the only core]
+  (child-only: architecture compatibility (check_compatible against the checkpoint's model_config.json))
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  arch        : --arch production — 57 ARCH-surface key(s) applied from designs/production_config.json for every flag this argv leaves unset
+  ARCH SURFACE vs designs/production_config.json  [production_config@2603107a2bf9]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 0  --ridealong-rnd False  --ridealong-adv 0  --ridealong-opp 0  --ridealong-rnd-variants 'off'
+    ✓ every ARCH-surface key matches the production mirror (57 of 65 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@2603107a2bf9]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    ✓ every RECIPE knob matches recipe.fresh (28 knobs)
+  desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
+  disk space  : ✓ 451.34 GiB free on /home/goodlad/dev/gen3ai/models vs 33.96 GiB REQUIRED (checkpoint archive run rb_es_end2_s2008 (same ARCH_SIGNATURE) checkpoint_15000117_steps.zip)
+                the arithmetic:
+          periodic checkpoints     328.3 MiB   = 6 x 54.7 MiB  (steps 15,000,000 // 2,400,000 - resume 0 // 2,400,000)
+          final/best/aborted       164.1 MiB   = 3 x 54.7 MiB
+          eval traces              576.0 MiB   = 8 cycles x 72.0 MiB  (ceil(15,000,000 / 2,000,000))
+          pool snapshots           437.7 MiB   = 8 x 54.7 MiB  (cap 20)
+          compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
+          shared compile cache     20.00 GiB   = cap 20.00 GiB - 0.0 MiB in use at /home/goodlad/.cache/gen3ai/compile_shared (this filesystem: counted)
+          sidecar + tb + logs       90.0 MiB   = 15.0M steps x 6.0 MiB/M
+          fixed                     16.0 MiB   = metadata, ledgers, sidecar json
+          subtotal                 23.97 GiB
+          + margin 25%              5.99 GiB
+          + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
+          = REQUIRED               33.96 GiB
+  showdown deps : ✓ /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a6c7e7a013538e31e/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.

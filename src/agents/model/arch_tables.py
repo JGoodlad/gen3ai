@@ -74,6 +74,15 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "value_entity_pool": "value_entity_pool",
     "value_entity_pool_full": "value_entity_pool",
     "token_encoding": "pokemon_encoder.dynamic_encoder",
+    # the seven per-action blocks `--move-resolution on` RETIRES after build (`retire_superseded_action_cells`):
+    # recorded ON, built, then dropped — INERT under move resolution, ACTIVE without it.
+    "intent_move_cell": "intent_move_cell",
+    "intent_threshold": "intent_threshold_move",
+    "intent_conditional": "intent_conditional",
+    "pair_outcome_cell": "pair_outcome_move",
+    "pair_outcome_switch": "pair_outcome_switch",
+    "switch_branch_cell": "switch_branch",
+    "conditional_threat_cell": "conditional_threat",
 }
 
 # Training-loss coefficient -> the module that consumes it. THE INERT LOGIC LIVES HERE, in one
@@ -195,8 +204,11 @@ def head_input_parts(fe: Any) -> Tuple[List[Tuple[str, int, str]], List[Tuple[st
         ("`our_team_pooled`", D, "`CLSPool.our_cls` over our 6 refined tokens"),
         ("`their_team_pooled`", D, "`CLSPool.their_cls` over their 6"),
         ("`our_active_refined`", D, "our active slot's refined token"),
-        ("`non_matchup_rest`", nmr, "global env + board scalars (`_non_matchup_rest_dim`)"),
     ]
+    # gen3_static_board_v1: `--token-encoding static` drops the `non_matchup_rest` direct route (the board reaches
+    # the head through the side / field board tokens instead) — `ProjectionAssembler.board_bypass`.
+    if fe.assembler.board_bypass:
+        pi.append(("`non_matchup_rest`", nmr, "global env + board scalars (`_non_matchup_rest_dim`)"))
     vf: List[Tuple[str, int, str]] = [
         ("`value_pooled`", D, "`CLSPool.value_cls` over **all 12** team tokens"),
     ]
