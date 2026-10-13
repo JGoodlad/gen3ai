@@ -1,0 +1,40 @@
+{
+ "h_pp": [
+  [
+   48.3,
+   53.800000000000004,
+   54.974999999999994,
+   50.675000000000004
+  ],
+  [
+   45.050000000000004,
+   50.125,
+   51.975,
+   46.400000000000006
+  ],
+  [
+   46.300000000000004,
+   48.5,
+   53.1,
+   46.825
+  ],
+  [
+   46.675,
+   52.525,
+   54.1,
+   48.725
+  ]
+ ],
+ "rows": [
+  "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2001/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2002/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2003/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2004/final_model.zip"
+ ],
+ "cols": [
+  "/home/goodlad/dev/gen3ai/models/rb_bf_e_s2001/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_e_s2002/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_e_s2003/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_e_s2004/final_model.zip"
+ ]
+}

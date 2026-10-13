@@ -1,0 +1,26 @@
+{
+ "rows": [
+  "b78f79b003e8a836bb249ef7d27405884c7a0c73cb4ff382b8e6188665850625",
+  "812aa9de5c1e30cb16b87903785b41a4e80cb88c461a3753668cc844b979b30e",
+  "873a6910641937052965a6e762c0eb2ebe1f6e3e828ffff6ca5d8b4cbbf2582e",
+  "4ef9729e07180022b2fbf0c79be46a90abb8c7765ee7ed2adc55ec8df966d45b"
+ ],
+ "cols": [
+  "0a03950361023dc172becf1618475f9a104a41fc55f3db6a148ae09fe8b005c4",
+  "e13b55a87defccc2f880463c65dced1db5267abee2b1e267215c2f848e905259",
+  "f082fde9c5d2c8e2204aeff7af390c8f06aa67c339d1cfbf829756f01993d9c6",
+  "5f88d0c3af7de50986fa1aed688658a81f8835c8ce9a5236098bd73acfd341c9"
+ ],
+ "row_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2001/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2002/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2003/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2004/final_model.zip"
+ ],
+ "col_runs": [
+  "/home/goodlad/dev/gen3ai/models/rb_bf_e_s2001/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_e_s2002/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_e_s2003/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_bf_e_s2004/final_model.zip"
+ ]
+}
