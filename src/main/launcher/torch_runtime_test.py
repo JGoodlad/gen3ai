@@ -188,6 +188,97 @@ def test_f_dry_run_shows_the_selected_legacy_env(box, tmp_path, monkeypatch, cap
     assert f"interpreter : {box['old']}  (torch 2.5.1+cu121)" in out and "REFUSED (torch)" not in out
 
 
+# (g) two CUDA BUILDS of one release are two measurements (owner 2026-10-12, the cu128 twin env) ----
+
+@pytest.mark.parametrize("have, want, expected", [
+    ("2.8.0+cu126", "2.8.0+cu126", True),
+    ("2.8.0+cu128", "2.8.0+cu128", True),
+    ("2.8.0+cu128", "2.8.0+cu126", False),     # the case this exists for
+    ("2.8.0+cu126", "2.8.0+cu128", False),
+    ("2.8.0+cu128", "2.8.0", True),            # a build-less record matches any build of its release
+    ("2.8.0", "2.8.0+cu128", True),
+    ("2.5.1+cu121", "2.5.1", True),            # the unrecorded legacy run (reads plain 2.5.1)
+    ("2.8.0+cu128", "2.5.1", False),           # a different RELEASE never matches
+    ("2.8.0+cu128", "2.9.0+cu128", False),
+    (None, "2.8.0+cu128", False),              # an unreadable interpreter carries nothing
+    ("2.8.0+cu128", None, False),
+])
+def test_g_carries_compares_release_and_the_cuda_build_when_both_name_one(have, want, expected):
+    assert tr.carries(have, want) is expected
+
+
+def test_g_build_tag():
+    assert tr.build_tag("2.8.0+cu128") == "cu128"
+    assert tr.build_tag("2.8.0") is None and tr.build_tag(None) is None and tr.build_tag("2.8.0+") is None
+
+
+@pytest.fixture
+def box_cu128(tmp_path, monkeypatch):
+    """The launcher runs in the cu128 TWIN; the default env (cu126) and the legacy env are its siblings."""
+    envs = tmp_path / "conda" / "envs"
+    twin = _fake_python(envs / "gen3ai_torch28_cu128" / "bin" / "python3", "2.8.0+cu128")
+    default = _fake_python(envs / "gen3ai_torch28" / "bin" / "python3", "2.8.0+cu126")
+    monkeypatch.setattr(tr.sys, "prefix", str(envs / "gen3ai_torch28_cu128"))
+    monkeypatch.setattr(tr, "resolve_child_python", lambda: twin)
+    monkeypatch.delenv(PYTHON_ENV_VAR, raising=False)
+    monkeypatch.setattr(tr, "_probe_cache", {})
+    return {"twin": twin, "default": default, "envs": envs}
+
+
+def test_g_a_cu126_run_resumed_from_the_cu128_env_SELECTS_the_cu126_env(box_cu128, tmp_path):
+    res = tr.resolve_for_launch(_run(tmp_path, "2.8.0+cu126"))
+    assert res.refusal is None
+    assert res.python == box_cu128["default"] and "SELECTED" in res.how and "gen3ai_torch28" in res.how
+
+
+def test_g_a_cu126_run_with_the_cu126_env_ABSENT_REFUSES_without_the_consent_flag(box_cu128, tmp_path):
+    """THE behaviour the owner asked for: no env carries cu126, so the cu128 interpreter does not
+    silently take the run. The refusal names the cu126 record and the env that carries it."""
+    os.remove(box_cu128["default"])
+    res = tr.resolve_for_launch(_run(tmp_path, "2.8.0+cu126"))
+    assert res.refusal and "never switches torch silently" in res.refusal
+    assert "2.8.0+cu126" in res.refusal and "2.8.0+cu128" in res.refusal
+    assert "`gen3ai_torch28` env" in res.refusal and tr.ALLOW_FLAG in res.refusal
+
+
+def test_g_an_explicit_cu128_override_with_a_cu126_run_REFUSES(box_cu128, tmp_path, monkeypatch):
+    """`GEN3AI_PYTHON=<cu128 env>` is honoured, never replaced by a sibling: it simply does not carry the run."""
+    monkeypatch.setenv(PYTHON_ENV_VAR, box_cu128["twin"])
+    res = tr.resolve_for_launch(_run(tmp_path, "2.8.0+cu126"))
+    assert res.refusal and "pinned by $GEN3AI_PYTHON" in res.refusal
+
+
+def test_g_consent_switches_a_cu126_run_to_the_cu128_env_and_says_so(box_cu128, tmp_path):
+    os.remove(box_cu128["default"])
+    res = tr.resolve_for_launch(_run(tmp_path, "2.8.0+cu126"), allow_switch=True)
+    assert res.refusal is None and res.python == box_cu128["twin"] and "CONSENTED" in res.how
+
+
+def test_g_a_cu128_run_resumed_from_the_cu126_default_SELECTS_the_twin(box, tmp_path):
+    twin = _fake_python(box["envs"] / "gen3ai_torch28_cu128" / "bin" / "python3", "2.8.0+cu128")
+    res = tr.resolve_for_launch(_run(tmp_path, "2.8.0+cu128"))
+    assert res.refusal is None and res.python == twin and "SELECTED" in res.how
+
+
+def test_g_a_cu128_run_with_no_twin_env_REFUSES_from_the_cu126_default(box, tmp_path):
+    res = tr.resolve_for_launch(_run(tmp_path, "2.8.0+cu128"))
+    assert res.refusal and "gen3ai_torch28_cu128" in res.refusal
+
+
+def test_g_a_cu128_run_resumes_on_the_twin_and_a_buildless_record_takes_the_launchers_own(box_cu128, tmp_path):
+    res = tr.resolve_for_launch(_run(tmp_path, "2.8.0+cu128"))
+    assert (res.python, res.refusal) == (box_cu128["twin"], None)
+    res = tr.resolve_for_launch(_run(tmp_path, "2.8.0", name="r2"))      # a record with no build tag
+    assert (res.python, res.refusal) == (box_cu128["twin"], None)
+
+
+def test_g_a_FRESH_launch_in_the_cu128_env_runs_it_and_records_its_build_at_the_first_save(box_cu128):
+    """A fresh run takes the launcher's interpreter whatever its build (the snapshot writes
+    `torch.__version__`, `2.8.0+cu128`, as `metadata.json`'s `torch_version` — `snapshot.py`)."""
+    res = tr.resolve_for_launch(None)
+    assert (res.python, res.torch, res.refusal) == (box_cu128["twin"], "2.8.0+cu128", None)
+
+
 def test_the_real_box_probe_reads_this_interpreter():
     """The probe itself, unfaked: this interpreter's torch, read without importing torch."""
     import importlib.metadata

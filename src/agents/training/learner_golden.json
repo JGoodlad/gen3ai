@@ -204,6 +204,210 @@
    "torch": "2.8.0+cu126",
    "numpy": "2.4.3",
    "python": "3.11.15"
+  },
+  "2.8.0+cu128": {
+   "init_params_sha256": "60cb6e1cfc147b613c5496433f2f660fdd0a2b981123bb68660f54ccedeb8f5b",
+   "init_group_sha256": {
+    "features_extractor.belief_head": "8637badd937aaf57",
+    "features_extractor.cls_pool": "4c5edd7c47d6c2b0",
+    "features_extractor.conditional_threat": "d40496ad20d1a49b",
+    "features_extractor.damage_op": "fc674970ea05f075",
+    "features_extractor.edge_bias": "5b240a2c9b26a86a",
+    "features_extractor.embeddings": "020db3ded25c4b1e",
+    "features_extractor.entity_seats": "ac79a31e50b17694",
+    "features_extractor.flat_intent_head": "ba94a44eb29a86b3",
+    "features_extractor.hidden_opp_belief": "a8d37a1309593ce1",
+    "features_extractor.history_events": "d602b3cf18ff8c29",
+    "features_extractor.hp_type_belief_head": "d20ab81d230a8781",
+    "features_extractor.hypothesis_builder": "45371e1a9d5a285f",
+    "features_extractor.intent_conditional": "67f794ab365abe2b",
+    "features_extractor.intent_move_cell": "cb250c188504dbb0",
+    "features_extractor.intent_threshold_move": "3d1462c92d0b5dba",
+    "features_extractor.item_belief_head": "e4c8cd679ce17d13",
+    "features_extractor.move_belief": "ac1f40b5bfba5231",
+    "features_extractor.pair_outcome_move": "e696eddafeff3f60",
+    "features_extractor.pair_outcome_switch": "90e3a4a3b2f362ba",
+    "features_extractor.pokemon_encoder": "75ef3d3521efdbe3",
+    "features_extractor.pre_proj_norm": "5f1c962f68d6141a",
+    "features_extractor.prefuse_proj": "a7f2f21f9e8c1a24",
+    "features_extractor.projection": "1a5090e300e24b10",
+    "features_extractor.spread_belief": "50707f087eab135c",
+    "features_extractor.switch_branch": "cdf307945a532317",
+    "features_extractor.team_transformer": "fd6601f7fcacbca6",
+    "features_extractor.value_entity_pool": "f62d07aa1eb6424c",
+    "features_extractor.win_head": "3e038d2213870d83",
+    "mlp_extractor.policy_net": "6f28b9134458cfb1",
+    "pointer_head.ctx_proj": "81d3da9b98853ad4",
+    "pointer_head.move_proj": "d7bbde86d257abb7",
+    "pointer_head.move_score": "b741a653649aa90e",
+    "pointer_head.struggle_score": "e0aa35bc0215b140",
+    "pointer_head.switch_proj": "56442780e02a3330",
+    "pointer_head.switch_score": "8d7dc4a1a2fda3d3"
+   },
+   "post_params_sha256": "5171d83af811cbb6a6ce2ec16d4d58e17d4a4d32df1c4f16ed85bb9f8210481d",
+   "group_sha256": {
+    "features_extractor.belief_head": "c7897ed18e8cff35",
+    "features_extractor.cls_pool": "fc22e5d27271f464",
+    "features_extractor.conditional_threat": "d0838b5bad89d4d5",
+    "features_extractor.damage_op": "6dd515fde421be42",
+    "features_extractor.edge_bias": "9103a5cdc3e977c7",
+    "features_extractor.embeddings": "e6ac101a11fb7c76",
+    "features_extractor.entity_seats": "b6374f6a94390996",
+    "features_extractor.flat_intent_head": "957d891344474bd7",
+    "features_extractor.hidden_opp_belief": "86450336169cac9c",
+    "features_extractor.history_events": "fe216cb2834785c9",
+    "features_extractor.hp_type_belief_head": "20eee251afb62b78",
+    "features_extractor.hypothesis_builder": "5fd8f75c5e712d1d",
+    "features_extractor.intent_conditional": "1605385b4e4da54a",
+    "features_extractor.intent_move_cell": "4fb829e21991b6a7",
+    "features_extractor.intent_threshold_move": "3a6ae52d3245571b",
+    "features_extractor.item_belief_head": "8bd22b868fc74c4d",
+    "features_extractor.move_belief": "01b4682d5f24c8c5",
+    "features_extractor.pair_outcome_move": "6300d1053a900213",
+    "features_extractor.pair_outcome_switch": "277d18219f8c3c88",
+    "features_extractor.pokemon_encoder": "42fe177a036887c3",
+    "features_extractor.pre_proj_norm": "13d957ac5a5506fe",
+    "features_extractor.prefuse_proj": "81d847ebd4801bea",
+    "features_extractor.projection": "95a87be83979a3cd",
+    "features_extractor.spread_belief": "18940d314c584168",
+    "features_extractor.switch_branch": "7cec1bd65dd13ae7",
+    "features_extractor.team_transformer": "46a5ee8d8f5da71b",
+    "features_extractor.value_entity_pool": "c2f224bddc47391b",
+    "features_extractor.win_head": "65596583088b864b",
+    "mlp_extractor.policy_net": "a5107e6dc11b4c2a",
+    "pointer_head.ctx_proj": "84717615098cf78a",
+    "pointer_head.move_proj": "e735b423e9959a52",
+    "pointer_head.move_score": "5180d7d8eda79642",
+    "pointer_head.struggle_score": "3a2088f136d6f306",
+    "pointer_head.switch_proj": "d6cc98a307d24bc3",
+    "pointer_head.switch_score": "0d93754d86d84f7c"
+   },
+   "losses": {
+    "belief/hptype_loss": 0.8236247226595879,
+    "belief/item_loss": 0.8394970297813416,
+    "belief/move_loss": 0.01708706351928413,
+    "belief/movelatent_loss": 0.5037696696817875,
+    "belief/natureev_loss": 2.1375758051872253,
+    "belief/set_aux_loss": 6.184859275817871,
+    "belief/spread_loss": 0.045569689478725195,
+    "opp_intent/flat_loss": 0.5460954010486603,
+    "train/approx_kl": 0.0014199623838067055,
+    "train/clip_fraction": 0.0,
+    "train/entropy_loss": -1.919430896639824,
+    "train/explained_variance": 0.5033698678016663,
+    "train/loss": 0.7199307680130005,
+    "train/n_updates": 2.0,
+    "train/policy_gradient_loss": -0.0031627786811441183,
+    "train/value_loss": 0.03752137365518138,
+    "win_prob/loss": 1.340450532734394
+   },
+   "fp64_reference": {
+    "rows_judged": 63,
+    "rows_excluded": 1,
+    "min_margin": 0.00013576826789512097,
+    "terms_fp32": {
+     "policy": 3.4059798537100505e-08,
+     "entropy": -0.09588000178337097,
+     "species_belief_set": 0.31476646661758423,
+     "move_belief": 0.0008567348122596741,
+     "opp_intent": 0.02767031453549862,
+     "move_latent": 0.02512161247432232,
+     "spread_belief": 0.0022926973178982735,
+     "nature_ev": 0.1069064512848854,
+     "hp_type": 0.0413719043135643,
+     "item_belief": 0.04109179601073265,
+     "win_prob": 0.9431003928184509,
+     "loss": 1.4072983264923096
+    },
+    "terms_fp64": {
+     "policy": 1.7532701498736523e-08,
+     "entropy": -0.09587998948275914,
+     "species_belief_set": 0.31476662220959256,
+     "move_belief": 0.0008567352326534352,
+     "opp_intent": 0.027670316582065105,
+     "move_latent": 0.025121612151337448,
+     "spread_belief": 0.002292697229575594,
+     "nature_ev": 0.10690643682777588,
+     "hp_type": 0.04137190932745438,
+     "item_belief": 0.041091798948331516,
+     "win_prob": 0.9431004220771422,
+     "loss": 1.4072985786358705
+    },
+    "term_abs_err": {
+     "policy": 1.6527097038363983e-08,
+     "entropy": 1.2300611834659136e-08,
+     "species_belief_set": 1.5559200833292763e-07,
+     "move_belief": 4.2039376114359067e-10,
+     "opp_intent": 2.0465664857249877e-09,
+     "move_latent": 3.229848714869643e-10,
+     "spread_belief": 8.832267946526362e-11,
+     "nature_ev": 1.4457109523413614e-08,
+     "hp_type": 5.013890080896033e-09,
+     "item_belief": 2.937598865548896e-09,
+     "win_prob": 2.9258691247591173e-08,
+     "loss": 2.5214356091929346e-07
+    },
+    "grads": {
+     "features_extractor.hypothesis_builder.delta_out.weight": {
+      "norm_fp64": 0.17588989141064354,
+      "rel_err": 2.1788759279635804e-07
+     },
+     "features_extractor.hypothesis_builder.other_map.weight": {
+      "norm_fp64": 0.02809384427240221,
+      "rel_err": 3.3713543859551195e-07
+     },
+     "features_extractor.hypothesis_builder.hypothesis_marker": {
+      "norm_fp64": 0.006727953212489778,
+      "rel_err": 5.085073665535537e-07
+     },
+     "features_extractor.flat_intent_head.hidden.weight": {
+      "norm_fp64": 0.010647633361002488,
+      "rel_err": 6.044788721006886e-07
+     },
+     "features_extractor.belief_head.species_head.weight": {
+      "norm_fp64": 0.2744975538462535,
+      "rel_err": 3.1646993004605645e-07
+     },
+     "pointer_head.move_proj.weight": {
+      "norm_fp64": 0.06368218705610727,
+      "rel_err": 3.0297963580682644e-06
+     },
+     "features_extractor.win_head.net.3.weight": {
+      "norm_fp64": 5.136491213161016,
+      "rel_err": 1.668821892154785e-07
+     }
+    },
+    "grads_absent": [],
+    "tolerances": {
+     "term_atol": 5e-06,
+     "term_rtol": 1e-05,
+     "grad_rtol": 5e-05
+    }
+   },
+   "behaviour": {
+    "max_abs_dlogp_current": 2.384185791015625e-07,
+    "max_abs_dlogp_judged": 2.384185791015625e-07,
+    "excluded_frac": 0.0,
+    "rows_excluded": 0.0,
+    "rows_judged": 16.0,
+    "rows_current": 16.0,
+    "max_abs_dlogp_excluded": 0.0,
+    "tie_eps": 0.0002
+   },
+   "coverage": {
+    "other_species_live": 29,
+    "other_species_dead": 35,
+    "other_move_live": 61,
+    "other_move_dead": 3,
+    "hypothesis_rows": 29,
+    "near_tie_rows": 0
+   },
+   "recorded_at_commit": "5f03aef2f9c499406a345abb66c2711c137d8ae4",
+   "recorded_on": "2026-10-12",
+   "reason": "torch 2.8.0+cu128 (env gen3ai_torch28_cu128, owner 2026-10-12): the SAME pinned update recorded under the CUDA 12.8 build; no code change. Verified before recording: the CPU update under +cu128 is byte-identical to the +cu126 entry (init_params_sha256, every pinned loss, every parameter group's post-update bytes).",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.4.3",
+   "python": "3.11.15"
   }
  },
  "history": [
@@ -401,6 +605,18 @@
     "loss win_prob/loss: 1.340450458228588 -> 1.340450532734394 (delta 7.45e-08)",
     "parameter groups whose post-update bytes moved: ['features_extractor.belief_head', 'features_extractor.cls_pool', 'features_extractor.conditional_threat', 'features_extractor.edge_bias', 'features_extractor.embeddings', 'features_extractor.entity_seats', 'features_extractor.flat_intent_head', 'features_extractor.hidden_opp_belief', 'features_extractor.history_events', 'features_extractor.hp_type_belief_head', 'features_extractor.hypothesis_builder', 'features_extractor.intent_conditional', 'features_extractor.intent_threshold_move', 'features_extractor.item_belief_head', 'features_extractor.move_belief', 'features_extractor.pair_outcome_move', 'features_extractor.pair_outcome_switch', 'features_extractor.pokemon_encoder', 'features_extractor.pre_proj_norm', 'features_extractor.prefuse_proj', 'features_extractor.projection', 'features_extractor.spread_belief', 'features_extractor.switch_branch', 'features_extractor.team_transformer', 'features_extractor.value_entity_pool', 'features_extractor.win_head', 'mlp_extractor.policy_net', 'pointer_head.ctx_proj', 'pointer_head.move_proj', 'pointer_head.move_score', 'pointer_head.struggle_score', 'pointer_head.switch_proj', 'pointer_head.switch_score']",
     "post_params_sha256 1c404cde76961617 -> 5171d83af811cbb6"
+   ]
+  },
+  {
+   "recorded_at_commit": "5f03aef2f9c499406a345abb66c2711c137d8ae4",
+   "recorded_on": "2026-10-12",
+   "reason": "torch 2.8.0+cu128 (env gen3ai_torch28_cu128, owner 2026-10-12): the SAME pinned update recorded under the CUDA 12.8 build; no code change. Verified before recording: the CPU update under +cu128 is byte-identical to the +cu126 entry (init_params_sha256, every pinned loss, every parameter group's post-update bytes).",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.4.3",
+   "python": "3.11.15",
+   "post_params_sha256": "5171d83af811cbb6a6ce2ec16d4d58e17d4a4d32df1c4f16ed85bb9f8210481d",
+   "changed": [
+    "(first entry)"
    ]
   }
  ],

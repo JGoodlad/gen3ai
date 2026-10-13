@@ -495,7 +495,7 @@ def _assert_real_gradient(fe, grads, where):
 
 # Does the CPU forward+BACKWARD of the production extractor (belief_grad_mode `shaping`) lower in
 # Inductor? Per EXACT torch version; an unknown torch FAILS the pin below rather than guessing.
-_CPU_BACKWARD_LOWERS = {"2.5.1+cu121": False, "2.8.0+cu126": True}
+_CPU_BACKWARD_LOWERS = {"2.5.1+cu121": False, "2.8.0+cu126": True, "2.8.0+cu128": True}
 
 # gen3 test tiers (MEASURED 2026-08-14): 37-59 s, by far the slowest test in the routine gate and
 # ~20% of it on its own. It is slow for a structural reason that will not improve — it drives a

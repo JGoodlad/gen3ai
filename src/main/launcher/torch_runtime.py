@@ -4,13 +4,17 @@ Owner, 2026-09-30: torch 2.8 (`gen3ai_torch28`) is the DEFAULT interpreter; torc
 (`gen3ai_stable`) is LEGACY, kept so an old pinned run resumes on its own torch. Two torches
 compile the same code to different kernels (the 2.5.1 trunk split, `compile_control`'s per-version
 rows, the learner golden's per-version entries), so the torch a run trains under is part of the
-run, and switching it at a restart would change the experiment with nothing saying so.
+run, and switching it at a restart would change the experiment with nothing saying so. The same
+holds for two CUDA BUILDS of one release (2026-10-12: `2.8.0+cu126` vs `2.8.0+cu128`: different
+cuBLAS / cuFFT / NVRTC under the same torch source, so a different measurement), hence `carries`.
 
 THE RECORD. Every save writes `metadata.json`'s `torch_version` (and a `torch` key on each
 `pin_history` span — `agents.model.snapshot`). A run whose metadata has NO record predates it
 (2026-09-30) and every such run trained on `gen3ai_stable`, so an absent record READS AS 2.5.1.
-Versions are compared by RELEASE (`2.5.1+cu121` ≡ `2.5.1`): the CUDA tag is a build of the same
-torch, not a different one.
+Versions are compared by RELEASE, AND by CUDA BUILD whenever both sides name one (`carries`):
+`2.8.0+cu126` does NOT carry a run recorded at `2.8.0+cu128` (the same torch source, but a different
+measurement; a silent switch would spoil a cu126-vs-cu128 comparison), while a record with no build tag
+(an unrecorded legacy run reads `2.5.1`) matches any build of its release.
 
 THE RULE, decided ONCE per launcher session (`resolve_for_launch`) and held for every restart:
 * FRESH launch: the child runs `resolve_child_python()` (`$GEN3AI_PYTHON`, else the launcher's own
@@ -46,7 +50,11 @@ LEGACY_TORCH = "2.5.1"
 #: env is looked up beside the launcher's own env (`_sibling_python`), never at a machine path.
 KNOWN_ENVS: Dict[str, str] = {
     "2.5.1": "gen3ai_stable",     # LEGACY (owner 2026-09-30): old pinned runs resume here
-    "2.8.0": "gen3ai_torch28",    # the DEFAULT for new runs, gates and tooling
+    "2.8.0": "gen3ai_torch28",    # the DEFAULT for new runs, gates and tooling (a build-less record)
+    "2.8.0+cu126": "gen3ai_torch28",
+    # The CUDA 12.8 twin (owner 2026-10-12): Blackwell (sm_120) kernels, the same packages otherwise.
+    # NOT the default: that switches at a clean experiment boundary (environment_torch28_cu128.yml).
+    "2.8.0+cu128": "gen3ai_torch28_cu128",
 }
 
 _PROBE = "import importlib.metadata as m; print(m.version('torch'))"
@@ -56,6 +64,27 @@ _probe_cache: Dict[str, Optional[str]] = {}
 def release(version: Optional[str]) -> Optional[str]:
     """`2.8.0+cu126` → `2.8.0` (None stays None)."""
     return None if version is None else str(version).split("+", 1)[0].strip()
+
+
+def build_tag(version: Optional[str]) -> Optional[str]:
+    """`2.8.0+cu126` → `cu126`; None for a version without a local build tag (or None)."""
+    if version is None or "+" not in str(version):
+        return None
+    return str(version).split("+", 1)[1].strip() or None
+
+
+def carries(have: Optional[str], want: Optional[str]) -> bool:
+    """Does an interpreter whose torch is ``have`` carry a run whose torch was recorded as ``want``?
+
+    The same RELEASE, and the same CUDA BUILD when BOTH name one. A ``want`` without a build tag (an
+    unrecorded legacy run, read as plain ``2.5.1``) is satisfied by any build of its release; an
+    unreadable ``have`` (or ``want``) carries nothing."""
+    if have is None or want is None:
+        return False
+    if release(have) != release(want):
+        return False
+    hb, wb = build_tag(have), build_tag(want)
+    return hb is None or wb is None or hb == wb
 
 
 def interpreter_torch(python: str) -> Optional[str]:
@@ -129,14 +158,14 @@ def resolve_for_launch(model_path: Optional[str], *, allow_switch: bool = False)
         return TorchResolution(default, default_torch, None, "", f"FRESH launch{pinned}; this "
                                "torch is recorded at the run's first save")
     required, source = recorded_torch(model_path)
-    want = release(required)
-    if release(default_torch) == want:
+    if carries(default_torch, required):
         return TorchResolution(default, default_torch, required, source,
                                f"carries the run's recorded torch{pinned}")
+    # The exact record first (`2.8.0+cu128` -> the cu128 twin), then its release (`2.5.1`, a build-less record).
+    env_name = KNOWN_ENVS.get(required) or KNOWN_ENVS.get(release(required) or "")
     if not override:
-        env_name = KNOWN_ENVS.get(want or "")
         sib = _sibling_python(env_name) if env_name else None
-        if sib is not None and release(interpreter_torch(sib)) == want:
+        if sib is not None and carries(interpreter_torch(sib), required):
             return TorchResolution(sib, interpreter_torch(sib), required, source,
                                    f"SELECTED: the `{env_name}` env carries the run's recorded "
                                    f"torch (the launcher's own has {default_torch})")
@@ -146,8 +175,8 @@ def resolve_for_launch(model_path: Optional[str], *, allow_switch: bool = False)
         return TorchResolution(default, default_torch, required, source,
                                f"TORCH SWITCH CONSENTED ({ALLOW_FLAG}): {cause}; the new torch is "
                                "recorded at the child's first save")
-    hint = (f"set ${PYTHON_ENV_VAR} to an interpreter with torch {want}"
-            + (f" (the `{KNOWN_ENVS[want]}` env)" if want in KNOWN_ENVS else "")
+    hint = (f"set ${PYTHON_ENV_VAR} to an interpreter with torch {required}"
+            + (f" (the `{env_name}` env)" if env_name else "")
             + f", or pass {ALLOW_FLAG} to switch this run's torch deliberately")
     return TorchResolution(default, default_torch, required, source, "MISMATCH",
                            refusal=f"{cause}. A resume/fork never switches torch silently — {hint}.")

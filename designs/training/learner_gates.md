@@ -42,7 +42,7 @@ child interpreters must equal each other and the banked init; it FAILS on a reve
 with different `PYTHONHASHSEED` reproduce it bit for bit. **Across torch builds the INIT is identical but
 the update is not** (measured 2026-09-30: `gen3ai_torch28` vs `gen3ai_stable` — every pinned loss within
 1.2e-7, every parameter group's bytes different), so the golden is KEYED BY `torch.__version__`
-(`2.8.0+cu126` today). A build with no entry FAILS; it never skips and never records.
+(`2.8.0+cu126` and `2.8.0+cu128`). A build with no entry FAILS; it never skips and never records. **Two CUDA builds of one torch release are two keys, but their CPU bytes are identical** (measured 2026-10-12, env `gen3ai_torch28_cu128`: init, every pinned loss and every parameter group equal to the +cu126 entry, so the +cu128 entry was recorded with the same hashes; `learner_golden_test` pins the equality). A learner change must re-record under BOTH interpreters: `python -m agents.training.learner_golden record --reason ...` once per env.
 
 **Cost:** ~3 s (build ~1 s + one update), unmarked (routine tier).
 

@@ -66,19 +66,27 @@ def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
     FAILS if anyone re-records the golden without a new reason row, or restores an arm block."""
     g = L.load_golden()
     e = g["entries"]["2.8.0+cu126"]
+    # The +cu128 build (env gen3ai_torch28_cu128, 2026-10-12) appended its own entry and ONE history row; the break
+    # history below is the +cu126 build's (the row's `torch` field says whose).
+    hist = [h for h in g["history"] if h["torch"] == "2.8.0+cu126"]
+    cu128 = g["entries"].get("2.8.0+cu128")
+    if cu128 is not None:
+        assert [h["torch"] for h in g["history"]].count("2.8.0+cu128") == 1
+        assert cu128["post_params_sha256"] == e["post_params_sha256"] and cu128["init_params_sha256"] == e["init_params_sha256"], \
+            "the CPU update is byte-identical across the two CUDA builds (verified 2026-10-12): it no longer is"
     assert e["init_params_sha256"] == "60cb6e1cfc147b613c5496433f2f660fdd0a2b981123bb68660f54ccedeb8f5b"
     assert e["post_params_sha256"] == "5171d83af811cbb6a6ce2ec16d4d58e17d4a4d32df1c4f16ed85bb9f8210481d"
     assert g["buffer_sha256"] == "66a1439218721fca5f0ab20a9514ffd804012f45d04a86e51bef65f0ea937b29"
     assert g["perturb"] == "name_keyed" and "arms" not in g
     assert L.RECORD_RUN_SEED == 18
-    assert "MOVED VERBATIM" in g["history"][-4]["reason"]
-    brk = g["history"][-3]["reason"]
+    assert "MOVED VERBATIM" in hist[-4]["reason"]
+    brk = hist[-3]["reason"]
     assert brk.startswith("gen3_x5_version_break_v1 (config v144)") and "obs-facts appended (2845)" in brk
-    assert sum("gen3_x5_version_break_v1 (config v144)" in h["reason"] for h in g["history"]) == 1
-    assert g["history"][-2]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
-    assert sum(h["reason"].startswith("gen3_mon_tied_gain_v1") for h in g["history"]) == 1
-    assert g["history"][-1]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
-    assert sum(h["reason"].startswith("gen3_toxic_stage_scale_v1") for h in g["history"]) == 1
+    assert sum("gen3_x5_version_break_v1 (config v144)" in h["reason"] for h in hist) == 1
+    assert hist[-2]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
+    assert sum(h["reason"].startswith("gen3_mon_tied_gain_v1") for h in hist) == 1
+    assert hist[-1]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
+    assert sum(h["reason"].startswith("gen3_toxic_stage_scale_v1") for h in hist) == 1
 
 
 def test_record_requires_a_reason():

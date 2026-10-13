@@ -50,7 +50,12 @@ SHOWDOWN_DIR="$REPO_ROOT/deps/pokemon-showdown"
 DRY_RUN=0
 FORCE=0
 UPDATE_SHARED_ENV=0
+ADOPT_ENV=0
 SKIP_ENV=0
+#: `--variant cu128` (owner 2026-10-12): manage the CUDA 12.8 TWIN env instead (see the usage text). The stamp
+#: names carry the variant so the twin's stamp and the default env's never delete each other.
+VARIANT=""
+STAMP_PREFIX="env"
 WITH_RUST="ask"
 RUN_CHECK=1
 CURRENT_STEP="startup"
@@ -106,6 +111,15 @@ Usage: ./scripts/bootstrap.sh [options]
   --update-shared-env
                   from a linked WORKTREE, allow step 2 to update the SHARED conda env
                   (refused by default — see step 2; only when no live or pinned run uses it)
+  --adopt-env     the SAFE re-stamp after an env-file edit: verify, READ-ONLY, that the env already
+                  satisfies EVERY pin of the env file (src/utils/env_file.py), and if so write the
+                  stamp and change nothing; if any pin is unmet, refuse (exit 3) and list it. Use it
+                  when the edit only added pins the env already has (the 2026-10-12 scipy fix) —
+                  never needs --update-shared-env, never runs conda, keeps the other stamps
+  --variant cu128 manage the CUDA 12.8 TWIN env (gen3ai_torch28_cu128, environment_torch28_cu128.yml:
+                  the same packages, torch/torchvision/torchaudio at +cu128, for Blackwell cards and the
+                  cu126-vs-cu128 comparison). A MISSING env is created; an existing one follows the
+                  same stamp / refusal rules. The default env is untouched
   --skip-env      leave the conda env alone entirely (step 2 is skipped, nothing is checked
                   beyond a warning); the rest of the bootstrap runs as normal
   --no-check      skip the final verification (step 7)
@@ -121,6 +135,10 @@ while [ $# -gt 0 ]; do
         --dry-run)  DRY_RUN=1 ;;
         --force)    FORCE=1 ;;
         --update-shared-env) UPDATE_SHARED_ENV=1 ;;
+        --adopt-env) ADOPT_ENV=1 ;;
+        --variant) [ $# -ge 2 ] || { printf -- '--variant needs a value (cu128)\n\n' >&2; usage >&2; exit 2; }
+                   shift; VARIANT="$1" ;;
+        --variant=*) VARIANT="${1#--variant=}" ;;
         --skip-env) SKIP_ENV=1 ;;
         --with-rust) WITH_RUST="yes" ;;
         --no-rust)  WITH_RUST="no" ;;
@@ -130,6 +148,17 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
+
+case "$VARIANT" in
+    "") ;;
+    cu128)
+        ENV_NAME="gen3ai_torch28_cu128"
+        ENV_FILE="environment_torch28_cu128.yml"
+        STAMP_PREFIX="envcu128"
+        ;;
+    *) printf 'unknown --variant: %s (known: cu128)\n\n' "$VARIANT" >&2; usage >&2; exit 2 ;;
+esac
+VARIANT_ARG="${VARIANT:+ --variant $VARIANT}"       # echoed back in the refusal's suggestions
 
 cd "$REPO_ROOT"
 
@@ -191,6 +220,12 @@ did "git $(git --version | awk '{print $3}') · conda $(conda --version | awk '{
 #   no such stamp, run from a linked WORKTREE                 → print what would change and
 #                                                               REFUSE (exit 3), unless
 #                                                               --update-shared-env is given.
+#   --adopt-env (any checkout)                                → the SAFE re-stamp: prove READ-ONLY that the
+#                                                               env already satisfies every pin of the file
+#                                                               (src/utils/env_file.py), then add the stamp;
+#                                                               an unmet pin refuses (exit 3).
+#   --variant cu128                                           → the same rules for the CUDA 12.8 TWIN env
+#                                                               (own env, own env file, own stamp name).
 #
 # WHY REFUSE rather than warn-and-update or silently skip: an update that happens because someone
 # made a worktree is exactly the unasked mutation the standing rule forbids ("never mutate
@@ -209,7 +244,7 @@ cost "~5-15 min on a fresh machine (≈2 GB of wheels, most of it CUDA); seconds
 CONDA_BASE="$(conda info --base)"
 ENV_PREFIX="$CONDA_BASE/envs/$ENV_NAME"
 ENV_HASH="$(hash_of "$ENV_FILE")"
-ENV_STAMP="$STATE_DIR/env-$ENV_HASH"
+ENV_STAMP="$STATE_DIR/$STAMP_PREFIX-$ENV_HASH"
 ENV_CURRENT=0
 [ -f "$ENV_STAMP" ] && ENV_CURRENT=1
 
@@ -217,7 +252,7 @@ ENV_CURRENT=0
 # there is no common-dir stamp yet, and the NEWEST legacy stamp anywhere was written for THIS
 # $ENV_FILE, the last successful update was for exactly this file — adopt it rather than
 # refuse. The newest, not any: an older matching stamp may predate an update to something else.
-if [ ! -d "$STATE_DIR" ] || [ -z "$(ls -A "$STATE_DIR" 2>/dev/null | grep '^env-' || true)" ]; then
+if [ -z "$VARIANT" ] && { [ ! -d "$STATE_DIR" ] || [ -z "$(ls -A "$STATE_DIR" 2>/dev/null | grep '^env-' || true)" ]; }; then
     # shellcheck disable=SC2012  # names are env-<hex>; ls -t is the portable newest-first
     newest_legacy="$(ls -t "$GIT_COMMON_DIR"/worktrees/*/gen3ai-bootstrap/env-* 2>/dev/null | head -1 || true)"
     if [ -n "$newest_legacy" ] && [ "$(basename "$newest_legacy")" = "env-$ENV_HASH" ] && [ -d "$ENV_PREFIX" ]; then
@@ -232,13 +267,15 @@ fi
 # What would change: a diff against the $ENV_FILE the current stamp was written for.
 show_env_change() {
     local prev
-    prev="$(ls "$STATE_DIR"/env-* 2>/dev/null | head -1 || true)"
+    # the NEWEST stamp (`--adopt-env` keeps older ones beside it)
+    # shellcheck disable=SC2012  # names are <prefix>-<hex>; ls -t is the portable newest-first
+    prev="$(ls -t "$STATE_DIR"/"$STAMP_PREFIX"-* 2>/dev/null | head -1 || true)"
     if [ -n "$prev" ] && [ -s "$prev" ]; then
         info "$ENV_FILE vs the one $ENV_NAME was last built from ($(basename "$prev" | cut -c1-16)…):"
         diff -u --label "stamped (env is built from this)" --label "this checkout's $ENV_FILE" \
             "$prev" "$ENV_FILE" | sed 's/^/          /' || true
     elif [ -n "$prev" ]; then
-        info "the env was last built from $ENV_FILE with hash $(basename "$prev" | cut -c5-20)…,"
+        info "the env was last built from $ENV_FILE with hash $(basename "$prev" | sed "s/^$STAMP_PREFIX-//" | cut -c1-16)…,"
         info "whose contents were not recorded (an older stamp) — no diff available."
     else
         info "NO stamp records which $ENV_FILE $ENV_NAME was built from, so what an update"
@@ -246,13 +283,19 @@ show_env_change() {
     fi
 }
 
+# `write_env_stamp` REPLACES every other stamp (the env was just rebuilt from this file, so no older file
+# describes it); `write_env_stamp keep` ADDS one (`--adopt-env`: the env did not change, so every stamp that was
+# true stays true — a worktree still at the previous env file must not start refusing).
 write_env_stamp() {
     run mkdir -p "$STATE_DIR"
     if [ "$DRY_RUN" -eq 1 ]; then
-        printf '      %s[dry-run] replace the env stamp in %s with env-%s%s\n' "$DIM" "$STATE_DIR" "$ENV_HASH" "$RST"
+        printf '      %s[dry-run] %s the env stamp in %s with %s-%s%s\n' "$DIM" \
+            "$([ "${1:-}" = keep ] && echo add || echo replace)" "$STATE_DIR" "$STAMP_PREFIX" "$ENV_HASH" "$RST"
         return 0
     fi
-    find "$STATE_DIR" -maxdepth 1 -name 'env-*' ! -name "env-$ENV_HASH" -delete
+    if [ "${1:-}" != keep ]; then
+        find "$STATE_DIR" -maxdepth 1 -name "$STAMP_PREFIX-*" ! -name "$STAMP_PREFIX-$ENV_HASH" -delete
+    fi
     cp "$ENV_FILE" "$ENV_STAMP"
 }
 
@@ -263,6 +306,24 @@ if [ "$SKIP_ENV" -eq 1 ]; then
     fi
 elif [ -d "$ENV_PREFIX" ] && [ "$ENV_CURRENT" -eq 1 ] && [ "$FORCE" -eq 0 ]; then
     skip "$ENV_PREFIX is current for this $ENV_FILE (stamp in $STATE_DIR; --force to redo)"
+elif [ -d "$ENV_PREFIX" ] && [ "$ADOPT_ENV" -eq 1 ]; then
+    # THE SAFE RE-STAMP (2026-10-12). An env-file edit changes the stamp's hash, so every worktree bootstrap
+    # refuses until the shared env is re-stamped — but when the edit only added pins the env ALREADY HAS (the
+    # scipy / scikit-learn declarations), nothing needs installing, and `conda env update` would be a
+    # mutation of the shared env for no reason. So: PROVE the env satisfies every pin (read-only, no conda,
+    # no pip) and write the stamp. An unmet pin is a real update, which stays the explicit opt-in below.
+    info "--adopt-env: verifying, READ-ONLY, that $ENV_NAME already satisfies every pin of $ENV_FILE"
+    if adopt_out="$("$ENV_PREFIX/bin/python3" "$REPO_ROOT/src/utils/env_file.py" check --env-file "$ENV_FILE" 2>&1)"; then
+        printf '%s\n' "$adopt_out" | sed 's/^/      /'
+        write_env_stamp keep
+        did "adopted: the env is unchanged; the stamp for this $ENV_FILE was added (the other stamps are kept)"
+    else
+        printf '%s\n' "$adopt_out" | sed 's/^/      /'
+        printf '\n%s%s does NOT satisfy this %s, so there is nothing safe to adopt.%s\n' "$YEL" "$ENV_NAME" "$ENV_FILE" "$RST"
+        printf 'Updating it is a deliberate act (once no live or pinned run uses it):\n'
+        printf '    %s/scripts/bootstrap.sh%s --update-shared-env\n\n' "$MAIN_CHECKOUT" "${VARIANT:+ --variant $VARIANT}"
+        exit 3
+    fi
 elif [ -d "$ENV_PREFIX" ] && [ "$IS_WORKTREE" -eq 1 ] && [ "$UPDATE_SHARED_ENV" -eq 0 ]; then
     if [ "$FORCE" -eq 1 ]; then
         warn "--force asks to update the SHARED env from a linked worktree."
@@ -281,12 +342,15 @@ process, and a worktree bootstrap cannot see which runs are live, queued or pinn
 Standing rule: never mutate $ENV_NAME under live or pinned runs.
 
 Pick one:
+  * if the edit only added pins the env ALREADY HAS (check it read-only; nothing is installed, the
+    other stamps stay valid):
+        ./scripts/bootstrap.sh --adopt-env$VARIANT_ARG
   * update it deliberately, once no live or pinned run uses it — from the MAIN checkout:
-        cd $MAIN_CHECKOUT && ./scripts/bootstrap.sh
+        cd $MAIN_CHECKOUT && ./scripts/bootstrap.sh$VARIANT_ARG
     or from here, naming the intent:
-        ./scripts/bootstrap.sh --update-shared-env
+        ./scripts/bootstrap.sh --update-shared-env$VARIANT_ARG
   * leave the env alone and finish this worktree's setup (submodule, symlinks, checks):
-        ./scripts/bootstrap.sh --skip-env
+        ./scripts/bootstrap.sh --skip-env$VARIANT_ARG
 
 EOF
     exit 3
@@ -304,7 +368,7 @@ elif [ -d "$ENV_PREFIX" ]; then
 else
     # No env at all: creating one cannot disturb a process that uses it, so no refusal here.
     info "creating from $ENV_FILE"
-    info "the pip block carries --extra-index-url for the pytorch cu126 wheels; the"
+    info "the pip block carries --extra-index-url for the pytorch CUDA wheels (cu126, or cu128 for the twin); the"
     info "torch download alone is several hundred MB, so this looks idle for a while. It is not."
     run conda env create -f "$ENV_FILE"
     write_env_stamp

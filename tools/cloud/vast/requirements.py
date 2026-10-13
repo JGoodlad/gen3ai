@@ -46,10 +46,11 @@ def pip_block(env_yml_text: str) -> List[str]:
     return out
 
 
-#: Packages the CODE imports at runtime that ``environment_torch28.yml`` does NOT declare (FINDING 2026-10-12:
-#: the shared env got them from its clone of gen3ai_stable, so a fresh build from the file lacks them). The first
-#: rented box died in the training path's ``ridealong_terms.rank_auroc`` on ``from scipy.stats import rankdata``.
-#: Pinned at the shared env's versions (read 2026-10-12). The env file itself is not edited here (standing rule).
+#: Packages the CODE imports at runtime that ``environment_torch28.yml`` did NOT declare (FINDING 2026-10-12: the shared
+#: env got them from its clone of gen3ai_stable, so a fresh build from the file lacked them; the first rented box died in
+#: the training path's ``ridealong_terms.rank_auroc`` on ``from scipy.stats import rankdata``). The env file declares them
+#: since 2026-10-12 (and ``src/env_files_test.py`` fails on any undeclared import), so this belt is now redundant: ``derive``
+#: adds an entry only when the file lacks it. Pinned at the shared env's versions.
 UNDECLARED_RUNTIME = ("scipy==1.17.1", "scikit-learn==1.9.0")
 
 

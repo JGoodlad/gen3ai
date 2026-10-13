@@ -28,7 +28,8 @@ skipped), it fails loudly, and it announces what each step costs before spending
 | 7 | verify: the ruff and mypy gates, the two import-precedence gates, a ~10 s unit smoke | ~30-60 s |
 
 Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--no-rust`,
-`--force` (redo the conda step), `--update-shared-env`, `--skip-env`, `--no-check`, `--help`.
+`--force` (redo the conda step), `--update-shared-env`, `--adopt-env`, `--skip-env`, `--variant cu128`,
+`--no-check`, `--help`.
 
 **Say yes to the Rust build if you have ten minutes.** Training runs on the in-process Rust bridge,
 and the first Rust-backed test builds those binaries anyway: mid-test, saturating every core, which
@@ -68,9 +69,16 @@ stamp lives in the git **common** dir (one per clone, keyed by the sha256 of
 | the main checkout | nothing to do | updates the env in place, and warns that it is shared |
 | a linked worktree | nothing to do | prints the diff and refuses (exit 3) |
 
-A worktree refusal names both ways forward: `--update-shared-env` (update it anyway, only when no
-live or pinned run uses it), or `--skip-env` (leave the env alone and finish the rest of the setup).
-A missing env is simply created, from anywhere.
+A worktree refusal names its ways forward: `--adopt-env` (the SAFE one, when the edit only added pins the
+env already has: it verifies, read-only, that every pin of the file is met by the env, then adds the stamp and
+installs nothing; `src/utils/env_file.py`), `--update-shared-env` (update it anyway, only when no live or
+pinned run uses it), or `--skip-env` (leave the env alone and finish the rest of the setup). A missing env is
+simply created, from anywhere.
+
+**The CUDA 12.8 twin.** `--variant cu128` manages `gen3ai_torch28_cu128` (`environment_torch28_cu128.yml`: the
+same packages, torch at `+cu128`, the only torch with Blackwell sm_120 kernels; it also runs the local card). It
+has its own stamp and follows the same rules; the default env is untouched. The default switches only at a clean
+experiment boundary. A resume refuses to cross the two CUDA builds without `--allow-torch-switch`.
 
 **The legacy env.** `gen3ai_stable` (torch 2.5.1, `environment.yml`) is kept frozen only so a run
 trained on it resumes on it: the launcher reads the run's recorded torch (`metadata.json`

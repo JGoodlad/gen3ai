@@ -151,8 +151,9 @@ are stripped; everything else is forwarded verbatim to `train_rl_agent.py`.
 `child_env[$GEN3AI_PYTHON]`, so every restart spawns the same interpreter. FRESH:
 `child.resolve_child_python()` — `$GEN3AI_PYTHON`, else `sys.executable` (never a machine path;
 `interpreter_test.py` fails on one). RESUME / FORK: the interpreter carrying the run's RECORDED torch
-(`metadata.json` `torch_version`; none = 2.5.1), else the sibling env `KNOWN_ENVS` names (selected and
-announced), else `FATAL_CONFIG` unless `--allow-torch-switch`. HEAD's code runs torch >= 2.8 only
+(`metadata.json` `torch_version`; none = 2.5.1) — the same RELEASE, and the same CUDA BUILD when both
+name one (`torch_runtime.carries`: `2.8.0+cu126` does NOT carry a `+cu128` run), else the sibling env
+`KNOWN_ENVS` names (selected and announced), else `FATAL_CONFIG` unless `--allow-torch-switch`. HEAD's code runs torch >= 2.8 only
 (`utils/torch_floor.py`), so a 2.5.1 run resumes only PINNED — `--no-pin` / `--sync-to-main` make it
 refuse at startup. A bare `train_rl_agent.py --model …` is not checked by this. Detail:
 [`designs/launcher/interpreter.md`](../../../designs/launcher/interpreter.md).

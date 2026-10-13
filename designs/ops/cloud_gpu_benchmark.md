@@ -6,7 +6,7 @@ the GPU-upgrade decision (backlog T13; plan in the memory note `project_cloud_gp
 real rental, the cost model, the cu126 / cu128 caveat, the offer criteria and the safety rules. It is
 always-current: a later rental that measures differently updates the tables here.
 
-**Status (2026-10-12): provisioning DERISKED; the benchmark itself has NOT been run.** One rental of an RTX 5090
+**Status (2026-10-12): provisioning DERISKED; the benchmark itself has NOT been run. The LOCAL cu128 env exists and is CPU-validated; its GPU window (the cu126-vs-cu128 baseline, §3) is PENDING.** One rental of an RTX 5090
 went end to end (rent → bootstrap → torch sanity → CPU smoke → one compiled end-state update on sm_120 →
 checkpoint copy → destroy → zero instances verified) in 23.8 minutes for $0.24.
 
@@ -93,12 +93,43 @@ Triton versions are identical (2.8.0 / 3.4.0; the dynamo source is byte-identica
 What differs is the CUDA runtime under them: cuBLAS 12.8.4.1 vs 12.6.4.1, cuFFT, cuSPARSE, NVRTC, nvJitLink. A
 cuBLAS heuristic change can move a GEMM-bound update by a few percent either way (**UNVERIFIED** for our graphs).
 
-**To remove it:** measure the 3080 Ti baseline on cu128 too. sm_86 IS in the cu128 arch list (read on the box),
-so a LOCAL cu128 environment runs on the 3080 Ti:
-`uv venv -p 3.11.15 <scratch>/venv_cu128 && uv pip install -p <it> --index-strategy unsafe-best-match -r
-<(python -m tools.cloud.vast.requirements --lock-from $PY)`, outside conda, never touching `gen3ai_torch28` or the env
-files. Run the same `update_bench.py` configurations locally under BOTH envs (under a GPU lease): the cu126 → cu128
-delta on the 3080 Ti is the caveat's size, and the cu128 3080 Ti vs cu128 5090 ratio is the clean comparison.
+**To remove it:** measure the 3080 Ti baseline on cu128 too. sm_86 IS in the cu128 arch list (read on the box and
+locally: `sm_70 sm_75 sm_80 sm_86 sm_90 sm_100 sm_120`), so a LOCAL cu128 environment runs on the 3080 Ti. That env now
+EXISTS (2026-10-12): the conda env **`gen3ai_torch28_cu128`**, built from `environment_torch28_cu128.yml` (the twin of
+`environment_torch28.yml`; `./scripts/bootstrap.sh --variant cu128`). Its pip-visible package set equals the shared
+env's except the CUDA family (torch / torchvision / torchaudio `+cu128`, the 14 `nvidia-*-cu12` wheels at their cu128
+pins) and the deliberately absent `asyncio` backport; the conda layer differs by the CUDA header packages (12.8.1 label)
+and by patch-level drift of the `defaults` base libraries (the exact diff is in the table below). It was built beside
+`gen3ai_torch28`, which was never modified. The GPU measurement is ONE script, run under a lease:
+
+```bash
+GEN3AI_GPU_LEASE_TOKEN=<token> scripts/ops/cuda_build_validate.sh run      # ~70 min, resumable; `plan` prints the cells
+```
+
+**The exact package diff, `gen3ai_torch28` (cu126) -> `gen3ai_torch28_cu128`** (measured 2026-10-12 from `pip list` /
+`conda list` of both envs; `pip check` clean on the twin; both pass `python src/utils/env_file.py check` against their own
+file, and the twin fails the main file on exactly 17 of its 82 pins: 3 conda headers, 11 `nvidia-*` wheels, torch / torchvision / torchaudio):
+
+| layer | cu126 | cu128 |
+|---|---|---|
+| torch / torchvision / torchaudio | 2.8.0 / 0.23.0 / 2.8.0 `+cu126` | the same releases `+cu128` (arch list `sm_70 … sm_90, sm_100, sm_120`; cu126's is `sm_50 … sm_90`) |
+| `nvidia-*-cu12` wheels (pip) | cublas 12.6.4.1, cupti 12.6.80, nvrtc 12.6.77, cudart 12.6.77, cufft 11.3.0.4, cufile 1.11.1.6, curand 10.3.7.77, cusolver 11.7.1.2, cusparse 12.5.4.2, nvjitlink 12.6.85, nvtx 12.6.77 | cublas 12.8.4.1, cupti 12.8.90, nvrtc 12.8.93, cudart 12.8.90, cufft 11.3.3.83, cufile 1.13.1.3, curand 10.3.9.90, cusolver 11.7.3.90, cusparse 12.5.8.93, nvjitlink 12.8.93, nvtx 12.8.90 |
+| the same in both | cudnn 9.10.2.21, cusparselt 0.7.1, nccl 2.27.3, triton 3.4.0 | (identical) |
+| conda CUDA headers (AOTInductor) | `cuda-cccl` 12.6.77, `cuda-cudart(-dev/-static)` 12.6.77, `cuda-crt-dev_linux-64` 12.6.85, `cuda-version` 12.6 (10 packages, label `cuda-12.6.3`) | 12.8.90 / 12.8.90 / 12.8.93 / 12.8 (label `cuda-12.8.1`) |
+| every other pip package (123 in cu126) | identical versions, **except** `asyncio` 4.0.0 (the deprecated PyPI backport the env file says never to add: present in the shared env from its clone history, inert; ABSENT from the twin) and the editable `gen3ai` (same `.pth`, the main checkout's `src/`) | |
+| conda base libraries | not locked (patch-level drift of the `defaults` channel since the shared env was cloned; none touches a numeric path): ncurses 6.5 / sqlite 3.53.2 / xz 5.8.2 / tzdata 2026a / libexpat 2.8.4 / openssl 3.6.3 (conda-forge build) / ca-certificates 2026.8.13 / xorg-libx11 1.8.12, xorg-xorgproto 2024.1, libffi / libgcc / libstdcxx / pthread-stubs / `_openmp_mutex` build numbers, libgomp 15.2.0 | 6.6 / 3.53.4 / 5.8.4 / 2026c / 2.8.5 / 3.5.9 / 2026.9.25 / 1.8.13, 2025.1, newer build numbers (libgomp is folded into libgcc), the same python 3.11.15 and libstdc++ 15.2.0 |
+
+(`packaging` 26.0 and `wheel` 0.46.3 are pinned in the twin's conda block: a fresh build would otherwise take 26.3 / 0.47.0
+and the pip-visible diff would not be CUDA-only.)
+
+It runs, on the 3080 Ti, per build (cu126, cu128): the numerics cells (one eager micro-batch of the K9 golden's real
+rows from byte-identical weights: loss and gradient rel-L2 across builds against the same-build run-to-run noise;
+fp32 and bf16) and the update cells (`update_bench.py`, the perf phase's real `train()` at the production shape with
+the compile parity gate, for the end state `E` and production `P`, fp32 and bf16): `train_ms`, peak memory, compile
+time, the gate's verdict. Results go to `designs/research_state/measurements/cuda_build_<date>/` with a `SUMMARY.md`.
+**Local cu126 → cu128 delta (the caveat's size): PENDING the GPU window** (the GPU is leased to the training session's
+bf16 A/B; the orchestrator schedules the window). When it lands, this section holds the table, and the clean
+comparison for the cloud ladder is cu128 3080 Ti vs cu128 5090.
 
 Two smaller differences: `uv` installs python **3.11.15** (pinned in `remote_bootstrap.sh`; the first rental got
 3.11.17 from a bare `3.11`), and the rented CPU is a 7800X3D, not our 9800X3D (same Zen 4 / X3D class, lower
@@ -165,6 +196,9 @@ Formula: `cost ≈ 0.61 × (0.1 + N_configs × 0.13 + T_train_h + 0.1)` dollars.
   other processes) before and after every timed job; `update_bench.py` already records `gpu_others` and the load.
 - **Host variance:** a different machine of the same listing can differ (PCIe, clocks, thermals, a noisy neighbour
   CPU); for a buy decision, two boxes (or two sessions) per card, matched against the local cu128 baseline (§3).
-- **The undeclared scipy / scikit-learn in `environment_torch28.yml`** (§1) is a defect of the env file, not of
-  the cloud kit: a fresh `conda env create -f environment_torch28.yml` would fail the same way. Not fixed here (the
-  env files on main are out of this unit's scope).
+- **The undeclared scipy / scikit-learn in `environment_torch28.yml`** (§1) was a defect of the env file, not of
+  the cloud kit: a fresh `conda env create -f environment_torch28.yml` would have failed the same way. FIXED
+  2026-10-12 (both files declare them, with joblib / threadpoolctl); `src/env_files_test.py` now fails when any
+  third-party import of `src/` or `tools/` is declared by neither env file, and keeps the twin's pins equal to the
+  main file's except the CUDA family. `tools/cloud/vast/requirements.py` still derives the remote's list from the
+  env file (its `UNDECLARED_RUNTIME` belt is now redundant, harmless).
