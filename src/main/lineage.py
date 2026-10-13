@@ -50,7 +50,7 @@ from typing import Any, Dict, List, Optional
 from utils.era import era_label, read_run_era
 from agents.training.lineage import (
     ancestry_from_parent, build_lineage_from_command, check_links, fork_parent, read_block,
-    read_num_timesteps, read_original_command, role_of,
+    read_num_timesteps, read_original_command, role_of, diagnostic_fork_stamps,
 )
 
 
@@ -80,7 +80,7 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         "derived_self": False, "parent_derived": False, "role": None,
         "fork_step": None, "num_timesteps": None, "fork_parent": None, "teachers": [],
         "exploiter_target": None,
-        "ancestry": [], "ancestry_stop": None, "checks": [], "error": None,
+        "ancestry": [], "ancestry_stop": None, "checks": [], "error": None, "diagnostic_fork": [],
     }
     if not os.path.isdir(run_dir):
         out["error"] = "no such run directory"
@@ -135,6 +135,8 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         chain, stop = ancestry_from_parent(parent)
         out["ancestry"], out["ancestry_stop"] = chain, stop
     out["checks"] = check_links(run_dir)
+    # THE DIAGNOSTIC-FORK CONSENT(S) in this lineage (its own block's and every ancestor's)
+    out["diagnostic_fork"] = diagnostic_fork_stamps(run_dir)
     return out
 
 
@@ -231,6 +233,10 @@ def render(row: Dict[str, Any]) -> str:
     stop = row.get("ancestry_stop")
     if stop:
         lines.append(f"    ✖ chain ends at {stop.get('at')}: {stop.get('reason')}")
+    for stamp in row.get("diagnostic_fork") or []:
+        from main.train.diagnostic_fork import describe as _describe_fork
+        where = "this run" if stamp.get("self") else f"ancestor {stamp.get('run')}"
+        lines.append(f"    🧪 DIAGNOSTIC FORK ({where}): {_describe_fork(stamp)} — never a baseline")
     for problem in row["checks"]:
         lines.append(f"    ⚠ {problem}")
     return "\n".join(lines)

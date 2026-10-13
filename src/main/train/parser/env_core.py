@@ -59,9 +59,21 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "(an observed move's tracked PP, a consumed item) is the reading's, never overwritten. "
                              "SYMMETRIC: the trainee and its self-play opponents each see the other side's team; "
                              "scripted bots are unaffected. The eval core plays at the run's recorded mode. "
-                             "RESUME-IMMUTABLE (recorded, a flagless resume inherits it, a flip is refused). "
+                             "RESUME-IMMUTABLE (recorded, a flagless resume inherits it, a flip is refused — a FORK "
+                             "into a NEW run may change it only under --diagnostic-fork-consent). "
                              "Refused with the fork arm (--fork-fraction > 0: its successor rows are encoded "
                              "without the reveal).")
+    from main.train.diagnostic_fork import consent_reason as _consent_reason
+    parser.add_argument("--diagnostic-fork-consent", "--diagnostic_fork_consent", dest="diagnostic_fork_consent",
+                        type=_consent_reason, default=None, metavar="REASON",
+                        help="THE DIAGNOSTIC-FORK CONSENT (designs/endstate/design_information_levers.md §6): lets a "
+                             "FORK (a --model that is not a checkpoint of the run being written) change "
+                             "--oracle-reveal from its parent's recorded spec — the hidden-information study's "
+                             "knock-in forks. REASON is required and recorded. Refused: on a same-run resume that "
+                             "flips the spec, with no spec change (meaningless), and for a production lineage (a "
+                             "fork INTO a run the baselines registry names). STAMPED in the child's immutable "
+                             "metadata.json lineage block (parent spec, child spec, reason, date); a stamped run can "
+                             "never be registered as a baseline.")
     parser.add_argument("--rust-env-front", "--rust_env_front", dest="rust_env_front", choices=("proc", "ffi"),
                         default=None,
                         help="The Rust env's front end: 'proc' (DEFAULT, crash isolation: a core fault is a "

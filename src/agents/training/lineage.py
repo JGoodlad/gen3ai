@@ -602,6 +602,24 @@ def ancestry_stop(run_dir: str, *, max_depth: int = MAX_ANCESTRY_DEPTH,
     return stop
 
 
+def diagnostic_fork_stamps(run_dir: str, *, max_depth: int = MAX_ANCESTRY_DEPTH) -> List[Dict[str, Any]]:
+    """Every DIAGNOSTIC-FORK consent in this run's lineage (`main.train.diagnostic_fork`): its OWN block's
+    `diagnostic_fork` stamp (`"self": True`) and every ANCESTOR's (a plain fork of a consented run inherits its
+    observation mode, so it is a diagnostic lineage too), nearest first, each with `run` / `run_dir`. `[]` = none.
+    The registry refuses a run with any (`main.baselines`)."""
+    out: List[Dict[str, Any]] = []
+    own = (read_block(run_dir) or {}).get("diagnostic_fork")
+    if isinstance(own, dict):
+        out.append({**own, "run": os.path.basename(os.path.normpath(run_dir)), "run_dir": run_dir, "self": True})
+    for node in ancestry(run_dir, max_depth=max_depth, warn=False):
+        rdir = node.get("run_dir")
+        stamp = (read_block(rdir) or {}).get("diagnostic_fork") if rdir else None
+        if isinstance(stamp, dict):
+            out.append({**stamp, "run": node.get("run_name") or os.path.basename(os.path.normpath(rdir)),
+                        "run_dir": rdir, "self": False})
+    return out
+
+
 # --------------------------------------------------------------------------------------------
 # integrity
 # --------------------------------------------------------------------------------------------

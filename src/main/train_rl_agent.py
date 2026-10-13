@@ -199,6 +199,12 @@ async def main():
     # — the first moment `model_dir` is known — and BEFORE the directory is created, so a refusal
     # leaves nothing behind. `--allow-inherited-fork-lr` is the deliberate opt-in.
     enforce_inherited_fork_lr(args, model_dir)
+    # THE DIAGNOSTIC-FORK CONSENT (`main.train.diagnostic_fork`): a FORK may change --oracle-reveal from its parent's
+    # recorded spec only under `--diagnostic-fork-consent "<reason>"`, never on a same-run resume, never into a
+    # registry-named run. Decided HERE (model_dir known, not yet created): a refusal is FATAL_CONFIG and leaves nothing
+    # behind; the stamp rides on `args._diagnostic_fork` to the loader's gate and the lineage block.
+    from main.train.diagnostic_fork import enforce as _enforce_diagnostic_fork
+    _enforce_diagnostic_fork(args, model_dir)
     # THE DISK-SPACE PREFLIGHT (`utils.disk_guard`): the free space on the archive's filesystem must cover
     # what THIS run still writes (checkpoints, eval traces, compile cache, logs + a margin). The arithmetic
     # is printed; a refusal is FATAL_CONFIG (the launcher must not restart into it) and — placed before
@@ -265,6 +271,10 @@ async def main():
         from agents.model import oracle_reveal as _OR
         _rec = _OR.record(args.oracle_reveal)
         _told = _OR.describe(args.oracle_reveal) + " from turn 1, as already-known facts"
+        if getattr(args, "_diagnostic_fork", None):
+            from main.train.diagnostic_fork import describe as _describe_fork
+            emit(f"🧪 [DIAGNOSTIC FORK] {_describe_fork(args._diagnostic_fork)} — a consented change of the parent's "
+                 f"observation mode, stamped in this run's lineage (it can never be registered as a baseline)")
         emit(f"🔮 [ORACLE REVEAL] {_rec['label']} (canonical {_rec['canonical']}, hash {_rec['hash']}) — a DIAGNOSTIC "
              f"observation mode, NOT production: the observation's "
              f"opponent block states {_told}; the shared trunk reads it. SYMMETRIC: the self-play "

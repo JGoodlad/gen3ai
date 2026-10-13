@@ -979,6 +979,7 @@ def main(raw: List[str] | None = None) -> int:
 
     _print_resolution(res["resolution"])
     _print_oracle_reveal(res.get("ns"))
+    fork_fatal = _print_diagnostic_fork(res.get("ns"))
     _print_fork_lr_inheritance(res["resolution"])
     shaped_fatal = _print_shaped_reward(res.get("shaped_reward"), argv, a.pin)
     shaped_fatal = _print_retired_levers(res.get("retired_levers"), argv, a.pin) or shaped_fatal
@@ -1047,6 +1048,9 @@ def main(raw: List[str] | None = None) -> int:
         print(f"\n  ✗ this RESTART would be REFUSED at launch (FATAL_CONFIG): {res['recipe_refusal']}")
         return int(TrainExitCode.FATAL_CONFIG)
 
+    if fork_fatal:
+        print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {fork_fatal}")
+        return int(TrainExitCode.FATAL_CONFIG)
     if shaped_fatal:
         # A separate verdict: the parent's REWARD, not a flag. resolve_config exits FATAL_CONFIG on
         # it in any tree that no longer has the shaped path, whatever the parser says.
@@ -1247,6 +1251,34 @@ def _print_oracle_reveal(ns) -> None:
           "the trainee's team too; the in-loop eval plays at this mode). RESUME-IMMUTABLE: recorded in "
           "model_config.json, inherited on a flagless resume, a flip is refused.")
     print(f"      canonical {rec['canonical']}   hash {rec['hash']}")
+
+
+def _print_diagnostic_fork(ns) -> str | None:
+    """THE DIAGNOSTIC-FORK CONSENT the launch would decide (`main.train.diagnostic_fork.decide`, the trainer's own
+    call, over the effective namespace and run dir): the stamp it would record, or the refusal (returned, so the
+    verdict below says the launch would fail). Silent without the flag."""
+    from main.train import diagnostic_fork as DF
+
+    if ns is None or getattr(ns, "diagnostic_fork_consent", None) is None:
+        return None
+    run_dir = resolve_models_path(effective_run_dir(ns))
+    model = resolve_models_path(getattr(ns, "model", None))
+    try:
+        stamp = DF.decide(consent=ns.diagnostic_fork_consent, model_path=model, model_dir=run_dir,
+                          requested=getattr(ns, "oracle_reveal", None))
+    except DF.DiagnosticForkRefused as e:
+        print(f"  diagnostic fork                : ✗ REFUSED — {e}")
+        return str(e)
+    except Exception as e:  # noqa: BLE001 — an unreadable parent is a finding here, the trainer's own error later
+        print(f"  diagnostic fork                : ⚠️  could not be decided ({type(e).__name__}: {e})")
+        return None
+    if stamp is None:
+        print("  diagnostic fork                : a RESTART of a consented fork (its lineage records the consent)")
+        return None
+    print(f"  diagnostic fork                : {DF.describe(stamp)}")
+    print("      STAMPED in the child's metadata.json lineage (immutable); the child can never be registered as a "
+          "baseline")
+    return None
 
 
 def _print_resolution(resolution: dict | None) -> None:

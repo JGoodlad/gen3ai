@@ -887,6 +887,7 @@ def load_model_snapshot(
     enforce_belief_grad_mode: Optional[str] = None,
     allow_belief_grad_mode_change: bool = False,
     enforce_oracle_reveal: Optional[str] = None,
+    oracle_reveal_fork: Optional[Dict[str, Any]] = None,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -929,7 +930,9 @@ def load_model_snapshot(
             saved_version.check_belief_grad_mode(enforce_belief_grad_mode,
                                                  allow_change=allow_belief_grad_mode_change)
         if enforce_oracle_reveal is not None:
-            saved_version.check_oracle_reveal(enforce_oracle_reveal)   # v137: the observation's meaning is fixed
+            # v137: the observation's meaning is fixed — a FORK may change it only under the recorded
+            # DIAGNOSTIC-FORK consent (`oracle_reveal_fork`, the stamp `main.train.diagnostic_fork` decided)
+            saved_version.check_oracle_reveal(enforce_oracle_reveal, diagnostic_fork=oracle_reveal_fork)
         arch_validated = True
     else:
         print(

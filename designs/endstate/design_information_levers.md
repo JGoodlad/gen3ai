@@ -5,7 +5,7 @@ doc updates it in the same commit, and the Decision record at the end says what 
 
 **Status (2026-10-12): the SPEC, the LOG SOURCE, the SEARCH WORLD BUILDER (honest by default), the MODEL-INPUT
 INJECTION, the GENDER PAD and the AUDIT SUITE are BUILT; consumer (a), the TRAINING OBSERVATION's `--oracle-reveal
-<spec>`, is BUILT and its diagnostic-fork consent is BUILDING (§6).** Owner, 2026-10-12: "I want a single dried
+<spec>`, and its diagnostic-fork consent are BUILT (§6).** Owner, 2026-10-12: "I want a single dried
 out implementation for giving both search and training additional information that would not generally be available
 so that we can understand what the ceilings are and what is our constraint and how much value there would be in
 improving determinization." It serves the hidden-information study ([`design_hidden_info_binding.md`](design_hidden_info_binding.md))
@@ -142,7 +142,7 @@ consumer can only ever give TRUE is its named **residual**, reported beside ever
 
 - **(a) The training observation** (§6): BUILT (2026-10-12). `--oracle-reveal` accepts any spec the OBS consumer
   honours; `off` / `species` / `full` (and their clause texts) keep their exact behaviour and bytes (pinned). The
-  DIAGNOSTIC-FORK consent (§6) is BUILDING.
+  DIAGNOSTIC-FORK consent (§6) is BUILT.
 - **(b) The search world builder** (§7): BUILT — honest by default; the pilot's builder is the `pilot` preset.
 - **(c) The model-input injection** (§8): BUILT (`agents.info_levers.inject`), lifted from the study's `inject.py` into `src/` and driven by the spec.
 - **The gender pad** (§9): BUILT (the engine marker `98146ddb`, wired into the builder).
@@ -174,7 +174,7 @@ different PRIOR, not extra information) and the hand evaluator (a different leaf
 
 ---
 
-## 6. (a) THE TRAINING OBSERVATION (BUILT) and the DIAGNOSTIC-FORK consent (BUILDING)
+## 6. (a) THE TRAINING OBSERVATION and the DIAGNOSTIC-FORK consent (BUILT)
 
 **The flag (BUILT 2026-10-12).** `--oracle-reveal <spec>` accepts any spec the OBS consumer honours: a level (`off` /
 `species` / `full`), a preset (`ki_moves` = `moves:seen@0.95`, `ki_items`, `ki_spreads`, `F+M`, `D50`, …) or a clause
@@ -221,11 +221,37 @@ differential asserts every Hidden Power told without the spread is bare). `hp_re
 told. A seen
 mon that play revealed a move OUTSIDE its set gets only `4 − revealed` true moves, in set order (the four-slot bound).
 
-**The fork rule (to build).** `--oracle-reveal` is RESUME-IMMUTABLE (a same-run resume that flips it is refused). The
-knock-in forks need a reveal on a FORK of a non-reveal checkpoint, so a fork may change it only with an explicit,
-recorded DIAGNOSTIC-FORK consent: never a silent flip, refused on a same-run resume and for a production lineage, and
-stamped in the child's `metadata.json` lineage. The fork arm (`--fork-fraction > 0`, the collector's counterfactual
-successor rows, encoded WITHOUT the reveal) stays refused with any non-`off` spec.
+**The fork rule (BUILT 2026-10-12: `main.train.diagnostic_fork`).** `--oracle-reveal` is RESUME-IMMUTABLE (a same-run
+resume that flips it is refused). The knock-in forks need a reveal on a FORK of a non-reveal checkpoint, so a fork may
+change it only with an explicit, recorded DIAGNOSTIC-FORK consent, `--diagnostic-fork-consent "<reason>"` (the reason
+REQUIRED, non-empty):
+
+- *What counts as a fork.* A `--model` that is NOT a checkpoint of the run directory being written —
+  `main.train.fork_lr.is_same_run_checkpoint`, the ONE predicate the lineage block, the pool seeding, the idempotent-fork
+  swap and `main.launcher --dry-run`'s `FORK of` / `RESTART of` line read. The trainer decides the consent the moment
+  the run directory is known and BEFORE it is created (a refusal is `FATAL_CONFIG`, nothing left behind).
+- *Refused.* Without the flag, every change in MEANING is refused exactly as before (`check_oracle_reveal`). With it: a
+  same-run resume that flips the spec (consent or not); the consent with NO spec change (meaningless — except on a
+  same-run restart of a run whose own lineage already records a consent, which is the launcher restarting it with its
+  original argv); a consent without `--model`; and a PRODUCTION LINEAGE.
+- *Production lineage, as built.* (1) A consented fork INTO a run directory the baselines registry names is refused (a
+  registered PARENT is allowed: the knock-ins fork the adopted arm's own seed, and the child is the diagnostic, not the
+  parent). (2) A run whose lineage carries the stamp — its own block or ANY ancestor's, because a plain fork of a
+  consented run inherits its observation mode — can never be registered: `python -m main.baselines set` refuses it by
+  name and `check` reports one already in the registry (a hand edit). (3) So it can never become the `production`
+  entry, from which `designs/production_config.json` and hence `--arch production` are constructed. Rejected: refusing
+  `--arch production` / `--arch endstate` on a consented fork (the arch surface is orthogonal to the observation mode;
+  the knock-in argv types `--arch endstate`, which may become production), and refusing a registered parent.
+- *Stamped.* The child's IMMUTABLE `metadata.json` lineage block gets `diagnostic_fork` = {schema, reason, date, the
+  parent checkpoint, the parent's recorded spec and the child's spec as `InfoReveal.record()` blocks}; the loader's
+  gate accepts exactly that change and no other (`check_oracle_reveal(…, diagnostic_fork=stamp)`). `main.lineage`,
+  `main.sidecar_audit`, `main.checkargs` (which also prints the refusal as a launch verdict) and the launch banner show
+  it.
+- *The fork arm.* `--fork-fraction > 0` with a non-`off` spec stays refused (`combination_checks
+  .oracle_reveal_vs_fork_arm`: its successor rows are encoded WITHOUT the reveal). A fork inherits `fork_fraction` from
+  its parent's `model_config.json` like every unnamed flag; the knock-in parents `rb_es_end2_s2001` and
+  `rb_es_prod_s2001` both record `fork_fraction` 0.0, so a reveal fork of either is NOT refused and neither the reveal
+  arms nor the control need `--fork-fraction 0` typed (no recipe difference between them on this knob).
 
 ---
 
@@ -582,3 +608,4 @@ For a decision-level score IMP (the study's: win probability per decision over t
 | 2026-10-12 | **The SEARCH WORLD BUILDER made HONEST BY DEFAULT, the GENDER PAD wired, the AUDIT SUITE built** | `WorldSampler(reveal=…)`, default `off`: a seen mon's item, ability, spread (its IVs: the Hidden Power type and presence) and so its exact HP are DRAWN and screened against the log by a per-(seen mon, constraint) sampler — prior rejection, then a chain whose search is directed by the first differing line and scored on lenient replays, Metropolis-Hastings once the log fits — shared across a decision's worlds and specs; the pilot's builder is the `pilot` preset; any never-seen mon may sit on a true gender-draw slot (the engine pad); one audit suite (`main.info_audit`) over all three consumers, read on 8 committed-bank decisions × 6 specs: 41 checks PASS (the dose of the told move levers exact), no exclusion, a seen mon's item 1.000 → 0.750, exact spread 1.000 → 0.032, exact HP 124/124 → 70/124 | keeping the pilot's builder as the default (a search not honest by default measures the wrong thing whenever a caller forgets); joint rejection over every seen mon (hopeless: a log pins each attacker's stats to a window); a pure Smogon spread table as the prior (a pool spread outside it has no consistent candidate: the Vaporeon 16 HP / 252 Def case); starting the chain at the truth (a leak until it mixes); filtering a drawn item by the truth's unrevealed moves (a leak) | §7, §9, §10.3; `research_state/measurements/info_levers_2026-10-12/` |
 | 2026-10-12 | **The blind replica's three findings answered** (orchestrator relay) | (1) seed reuse through the turn-0 GENDER dice: closed by the engine pad, a `gender_independence` check and its plant (the builder without the pad); (2) DICE-SILENT facts: seed reuse kept, the leak NAMED (`SEARCH.partial`) and MEASURED by counterfactual flips (speed ties 5.0 % of seen mons / 20 % of decisions; King's Rock, Focus Band, contact abilities negligible on this pool); (3) every world OPENED by the playout tool before it is returned, a `playout_open` check and a planted numeric choice. Plus: the Hidden Power's TYPE is a SPREAD fact, its presence a MOVES fact, in all three consumers (§1.1); the screen's Hidden Power state spans every 30 / 31 IV pattern | avoiding seed reuse (needs a playout core that replays on fresh dice constrained to the printed outcomes — not built); refusing `moves` without `spread` on Hidden Power sets (the observation writes it bare instead, byte-safe); an IV prior below 30 (no Smogon source: the owner's call) | §1.1, §7.2, §7.5, §9, §10.1; `seed_reuse_200.json` |
 | 2026-10-12 | **(a) BUILT: `--oracle-reveal <spec>`** | The flag takes any spec OBS honours and records its LABEL; the Rust encoder's `OracleSpec` (mass per class × part, strict canonical parse, per-(episode, side, mon, class) Bernoulli by a pinned hash); `off` / `species` / `full` byte-identical (the three digests unchanged, the clause texts reproduce them); the resume gate compares meaning; `MODEL_CONFIG_VERSION` unchanged (no new field; the three levels' recorded values unchanged) | a soft "known = p" cell (a row the network never sees in play); per-DECISION draws (a fact flickering on and off within an episode is not a belief a player could hold); a lenient Rust parser (two spellings of one spec would be two env specs) | `src/rust_env/tests/oracle_reveal_test.rs`, `src/utils/rust_env/oracle_reveal_integration_test.py` |
+| 2026-10-12 | **The DIAGNOSTIC-FORK consent BUILT** | `--diagnostic-fork-consent "<reason>"`: a genuine fork (the ONE `is_same_run_checkpoint` predicate) may change `--oracle-reveal` from its parent's recorded spec; refused on a same-run flip, with no change, without `--model`, and into a registry-named run; stamped in the child's immutable lineage block; a stamped lineage (own or ancestor) is refused by `main.baselines set` and flagged by `check` | an allow-change flag on the resume check (`--allow-belief-grad-mode-change`'s shape: would also allow a same-run flip); refusing a registered PARENT (the knock-ins fork the adopted arm itself); refusing `--arch production` / `endstate` on the fork (orthogonal to the observation mode) | `src/main/train/diagnostic_fork_test.py`; `main.checkargs` / `main.launcher --dry-run` on the §8.3 argv with `--oracle-reveal ki_moves` |

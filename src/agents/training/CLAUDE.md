@@ -191,8 +191,10 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   equal the stored behaviour log-prob (|Δ| < 1e-4), DETERMINISTICALLY — rows within a rounding margin of a declared
   selection cutoff are excluded (`agents/model/selection_sites.py`), excluded share < 0.15. Detail:
   `designs/training/learner_gates.md`.
-- Stochastic actions are the KEYED DRAW (replayable; not a speed lever). `--oracle-reveal` is a resume-immutable
-  DIAGNOSTIC observation mode, never production. A launcher RESUME pins to the checkpoint's commit and builds that
+- Stochastic actions are the KEYED DRAW (replayable; not a speed lever). `--oracle-reveal <spec>` is a resume-immutable
+  DIAGNOSTIC observation mode, never production; a FORK may change it only under `--diagnostic-fork-consent
+  "<reason>"` (`main.train.diagnostic_fork`: never a same-run resume, never into a registry-named run; stamped in the
+  child's lineage block, so the run can never be registered as a baseline). A launcher RESUME pins to the checkpoint's commit and builds that
   checkout's env core at startup.
 - The trainee's `(observation_space, action_space)` has ONE builder, `agents.training.trainee_spaces`.
 
@@ -285,7 +287,8 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
 - 🚨 **Read the POLICY noise scale** (`train/noise_scale_ratio_policy`); never size a batch on the total.
   `--adaptive-batch policy` moves `--grad-accum-steps` only.
 - **LINEAGE** (`lineage.py`, `python -m main.lineage`): the `lineage` block is IMMUTABLE (a restart must not
-  re-point the parent); RECORDED and DERIVED are independent; a fork inherits its parent's TB as a TRUNCATED prefix
+  re-point the parent); its `diagnostic_fork` key records a consented `--oracle-reveal` change
+  (`diagnostic_fork_stamps` reads it for the run and every descendant); RECORDED and DERIVED are independent; a fork inherits its parent's TB as a TRUNCATED prefix
   (`--no-tb-inherit` opts out).
 
 ## Offline meters in this package

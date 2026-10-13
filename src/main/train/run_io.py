@@ -106,6 +106,10 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
     block = build_lineage(model_path=model_path, model_dir=model_dir,
                           exploiter=getattr(args, "exploiter", None),
                           fork_step=fork_step)
+    if block is not None and getattr(args, "_diagnostic_fork", None):
+        # THE DIAGNOSTIC-FORK CONSENT (`main.train.diagnostic_fork`): a sibling key of the immutable block, written
+        # once at fork creation — the parent's spec, the child's, the reason, the date.
+        block["diagnostic_fork"] = dict(args._diagnostic_fork)
     if block is not None:
         from agents.training.pool_seed import pool_dir_for, read_seed_record
         record = read_seed_record(pool_dir_for(model_dir))

@@ -135,7 +135,12 @@ def audit_run(run_dir: str) -> Dict[str, Any]:
         })
 
     mismatched = [s for s in sidecars if not s["matches_run"]]
+    # THE DIAGNOSTIC-FORK CONSENT(S) in the run's lineage (`agents.training.lineage.diagnostic_fork_stamps`): the
+    # metadata.json fact a reader of this audit must not miss — every sidecar of such a run was trained under a
+    # consented change of its parent's observation mode.
+    from agents.training.lineage import diagnostic_fork_stamps
     return {
+        "diagnostic_fork": diagnostic_fork_stamps(run_dir),
         "run_dir": run_dir,
         "run_name": os.path.basename(os.path.normpath(run_dir)),
         "git_hash": run_hash,
@@ -180,6 +185,10 @@ def print_run(rec: Dict[str, Any], *, verbose: bool) -> None:
             print(f"       [{i}] {_short(e.get('git_hash'))}{psrc}  "
                   f"steps {e.get('first_step')} → {e.get('last_step')}{derived}")
 
+    for stamp in rec.get("diagnostic_fork") or []:
+        from main.train.diagnostic_fork import describe as _describe_fork
+        where = "this run" if stamp.get("self") else f"ancestor {stamp.get('run')}"
+        print(f"   🧪 diagnostic fork : ({where}) {_describe_fork(stamp)}")
     n, m, u = rec["n_sidecars"], rec["n_mismatched"], rec["n_unexplained"]
     flag = "" if m == 0 else f", {m} differ from the run-level hash ({u} UNEXPLAINED)"
     print(f"   sidecars           : {n}{flag}")

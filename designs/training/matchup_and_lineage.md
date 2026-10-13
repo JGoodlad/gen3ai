@@ -160,8 +160,24 @@ lineage: {schema, role, fork_step, recorded_at,
           teachers: [ …same shape… ], exploiter_target: {…} | null,
           ancestry: [ {run_name, run_dir, git_hash, arch_signature, fork_step, role,
                        model_path, source} … ],
-          ancestry_stop: {at, reason}}
+          ancestry_stop: {at, reason},
+          pool_seeded_from: {…},                       # a sibling key, when the fork auto-seeded its pool
+          diagnostic_fork: {schema, reason, date, parent_model,
+                            parent_spec: {label, canonical, hash, levers},
+                            child_spec: {label, canonical, hash, levers}}}   # the DIAGNOSTIC-FORK consent
 ```
+
+**`diagnostic_fork` — the DIAGNOSTIC-FORK consent (`main.train.diagnostic_fork`,
+`designs/endstate/design_information_levers.md` §6).** `--oracle-reveal` is resume-immutable; a FORK may change it from
+its parent's recorded spec only under `--diagnostic-fork-consent "<reason>"`, and the decision (made before the run
+directory exists, on the ONE fork predicate `is_same_run_checkpoint`) is stamped here, once, as a sibling key: the
+reason, the date, the parent checkpoint and both specs' `InfoReveal.record()` blocks. Refused: a same-run resume that
+flips the spec (consent or not), the consent with no spec change (meaningless — except on a restart of a run whose own
+block already records one), and a fork INTO a run the baselines registry names. `agents.training.lineage
+.diagnostic_fork_stamps(run_dir)` returns the run's own stamp and every ANCESTOR's (a plain fork of a consented run is a
+diagnostic lineage too); `main.lineage` prints a `🧪 DIAGNOSTIC FORK` line per stamp, `main.sidecar_audit` likewise,
+and `main.baselines set` REFUSES a run that carries one (`check` reports one already registered), so a diagnostic
+lineage can never become the `production` entry `--arch production` resolves from.
 
 `role` is `fresh` / `fork` / `fold` / `exploiter` (`--exploiter`, which wins
 — a double-sided exploiter is an exploiter that also distilled, and its TARGET is what identifies

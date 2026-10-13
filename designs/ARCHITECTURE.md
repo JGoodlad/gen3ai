@@ -1843,7 +1843,8 @@ a `resume_immutable` OBSERVATION-MODE flag (config v137), `off` in production an
 observation cannot honour (`hp`, `counters`, a `~placebo` / `~map` source such as `ki_wrongmoves`), and is recorded as its
 LABEL (the level name, else the canonical text) in `model_config.json` and with its full record block (label, canonical
 text, hash, levers) in `metadata.json`; it is inherited by a flagless resume, refused if a resume flips its MEANING
-(`check_oracle_reveal`; `full` and its clause text are the same reveal), and shown — label, canonical text and hash — by
+(`check_oracle_reveal`; `full` and its clause text are the same reveal; a FORK may change it only under the recorded
+`--diagnostic-fork-consent`, never a production lineage), and shown — label, canonical text and hash — by
 `main.checkargs` and the launch banner. `main.anchors`, `main.play`, `main.belief_roles` and
 `main.policy_spectrum` refuse a checkpoint that records any non-`off` spec (they build observations without the reveal); `main.h2h`
 plays one at its recorded level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`) and refuses one under `off`.

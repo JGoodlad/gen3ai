@@ -291,6 +291,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 enforce_belief_grad_mode=args.belief_grad_mode,  # FATAL if the belief-trunk-grad mode drifts (v41)
                 allow_belief_grad_mode_change=args.allow_belief_grad_mode_change,  # intentional migration
                 enforce_oracle_reveal=args.oracle_reveal,  # FATAL if the observation mode drifts (v137)
+                # ... unless a DIAGNOSTIC-FORK consent decided this fork's change (`main.train.diagnostic_fork`)
+                oracle_reveal_fork=getattr(args, "_diagnostic_fork", None),
             )
             # gen3_belief_grad_mode_v1 MIGRATION FIX: SB3 reconstructs the extractor from the ZIP's
             # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor

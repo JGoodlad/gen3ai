@@ -53,7 +53,8 @@ evidence, gates — is the topic docs in [`designs/launcher/`](../../../designs/
 - 🚨 **Fork vs restart is ONE predicate, imported, never re-derived:**
   `main.train.fork_lr.is_same_run_checkpoint` (where the resumed checkpoint lives). `--fork-lr`, the
   fork's pool seeding, the idempotent-fork `--model` swap (`checkpoint.resolve_fork_resume_model`, run
-  FIRST) and the restart pin guard all key on it. A fork command is safe to re-run: it resumes its
+  FIRST), the restart pin guard and the DIAGNOSTIC-FORK consent (`--diagnostic-fork-consent`, the one way a fork
+  changes its parent's `--oracle-reveal`; `main.train.diagnostic_fork`) all key on it. A fork command is safe to re-run: it resumes its
   own progress instead of re-copying the source.
 - 🚨 **Run dirs resolve through `utils.paths.run_archive_dir()`** (`$GEN3AI_MODELS_DIR`, else the MAIN
   checkout's `models/`) and the child gets an ABSOLUTE `--run-dir`; a run dir inside a worktree's own

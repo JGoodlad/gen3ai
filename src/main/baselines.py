@@ -187,8 +187,40 @@ def loadability_findings(registry: Optional[str]) -> List[reg.Finding]:
     return out
 
 
+def diagnostic_fork_refusal(run_dir: str) -> Optional[str]:
+    """Why ``run_dir`` can never be a baseline, or None: its lineage carries a DIAGNOSTIC-FORK consent (its own or an
+    ancestor's; `main.train.diagnostic_fork`) — a run trained under a consented change of its parent's observation
+    mode is a diagnostic, never a production lineage or a comparator."""
+    from agents.training.lineage import diagnostic_fork_stamps
+
+    stamps = diagnostic_fork_stamps(run_dir)
+    if not stamps:
+        return None
+    where = ", ".join(("this run" if s.get("self") else f"ancestor {s.get('run')}") +
+                      f" ({(s.get('parent_spec') or {}).get('label')} -> {(s.get('child_spec') or {}).get('label')}: "
+                      f"\"{s.get('reason')}\")" for s in stamps)
+    return (f"its lineage carries the DIAGNOSTIC-FORK consent — {where}. A diagnostic fork is never a baseline "
+            "(designs/endstate/design_information_levers.md §6)")
+
+
+def diagnostic_fork_findings(registry: Optional[str]) -> List[reg.Finding]:
+    """An ERROR per registry entry whose run's lineage carries a diagnostic-fork stamp (a hand edit past `set`)."""
+    out: List[reg.Finding] = []
+    models = main_models_dir()
+    if models is None:
+        return out
+    for name in reg.names(registry):
+        b = reg.get(name, registry)
+        rdir = os.path.join(str(models), b.run)
+        if os.path.isdir(rdir):
+            why = diagnostic_fork_refusal(rdir)
+            if why:
+                out.append(reg.Finding("error", name, why))
+    return out
+
+
 def cmd_check(args, registry: Optional[str]) -> int:
-    findings = reg.validate(registry, verify_sha=not args.no_sha)
+    findings = reg.validate(registry, verify_sha=not args.no_sha) + diagnostic_fork_findings(registry)
     if getattr(args, "load", False):
         findings = findings + loadability_findings(registry)
     for f in findings:
@@ -247,6 +279,9 @@ def build_entry(name: str, ref: str, *, reason: str, purpose: Optional[str],
     run_dir = os.path.join(str(models), run)
     if not os.path.isdir(run_dir):
         raise SystemExit(f"[baselines] no run directory {run_dir}")
+    stamps = diagnostic_fork_refusal(run_dir)
+    if stamps:
+        raise SystemExit(f"[baselines] {name!r} -> {run!r} REFUSED: {stamps}")
 
     old: Optional[reg.Baseline]
     try:

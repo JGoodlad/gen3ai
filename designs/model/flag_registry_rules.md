@@ -165,7 +165,8 @@ weight: `--oracle-reveal <spec>` makes the Rust encoder write graded facts of th
 `designs/endstate/design_information_levers.md` §6; a DIAGNOSTIC for the X5 A/B's oracle arm and the hidden-information
 study's knock-ins, `designs/endstate/design_x5_belief_tokens.md` §7.6; never production). The parser stores the spec's
 LABEL (`utils.rust_env.protocol.oracle_reveal_label`: the level name, else the canonical text) and the extractor only
-stores it. It is recorded, inherited by a flagless resume and refused on a flip (`check_oracle_reveal`),
+stores it. It is recorded, inherited by a flagless resume and refused on a flip (`check_oracle_reveal`;
+a FORK may change it only under `--diagnostic-fork-consent`, `main.train.diagnostic_fork`),
 kept off the ARCH surface and out of `check_compatible` by its class, and `oracle_reveal.py` is the reader a tool
 uses to REFUSE such a checkpoint when it builds observations without the reveal (`main.anchors`, `main.play`,
 `main.belief_roles`, `main.policy_spectrum`). `main.h2h` PLAYS one, at its recorded level, through its per-side reveal

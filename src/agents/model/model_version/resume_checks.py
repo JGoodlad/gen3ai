@@ -122,7 +122,7 @@ class ModelVersionResumeChecks(ModelVersionFields):
                 "--allow-belief-grad-mode-change for an intentional migration, or start a fresh run."
             )
 
-    def check_oracle_reveal(self, requested: str) -> None:
+    def check_oracle_reveal(self, requested: str, *, diagnostic_fork: Any = None) -> None:
         """Raise ModelVersionError if `requested` (the resume `--oracle-reveal`) differs from this saved
         config's oracle_reveal. Call as: saved_version.check_oracle_reveal(args.oracle_reveal).
 
@@ -132,13 +132,25 @@ class ModelVersionResumeChecks(ModelVersionFields):
         the opponent's species is a different function of the observation — so, like vf_coef, it is fixed
         for a run's lifetime and enforced ONLY on the training-resume path: flipping it mid-run silently
         feeds the network a distribution it never trained on. No allow-change escape hatch: the oracle arms
-        start FRESH.
+        start FRESH — or a FORK under the recorded DIAGNOSTIC-FORK consent (`main.train.diagnostic_fork`): the
+        trainer decides it before the run directory exists (a genuine fork, a real change, never a production
+        lineage) and passes its stamp here, which must name exactly this change (the saved spec as its parent's,
+        the requested one as its child's).
 
         Since the information-lever spec (`designs/endstate/design_information_levers.md` §6) the comparison is by
         MEANING (`agents.info_levers.spec.same`): `full` and its clause text are the same reveal, not a flip."""
         from agents.model.oracle_reveal import same
 
-        if not same(str(self.oracle_reveal or "off"), str(requested or "off")):
+        saved_s, req_s = str(self.oracle_reveal or "off"), str(requested or "off")
+        if diagnostic_fork is not None:
+            parent = (diagnostic_fork.get("parent_spec") or {}).get("label")
+            child = (diagnostic_fork.get("child_spec") or {}).get("label")
+            if parent is None or child is None or not same(saved_s, parent) or not same(req_s, child):
+                raise ModelVersionError(
+                    f"oracle_reveal: the diagnostic-fork consent names {parent!r} -> {child!r}, but this load is "
+                    f"saved={saved_s!r} -> requested={req_s!r} — a consent covers exactly the change it recorded.")
+            return
+        if not same(saved_s, req_s):
             raise ModelVersionError(
                 f"oracle_reveal mismatch: saved={self.oracle_reveal!r}, requested={requested!r}.\n"
                 "The ORACLE REVEAL (a diagnostic observation mode: the opponent's true species written into "
