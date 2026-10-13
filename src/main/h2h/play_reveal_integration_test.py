@@ -58,8 +58,13 @@ PAIRS, N_ENVS = 12, 8
 #: checkpoints are built at the production architecture (`rust_eval.offline.build_models`), which is now the end-state
 #: network — another architecture, so other games (both digests moved); was dea7e96e… / ee8512ee…. Read off the
 #: routine gate's own failure line on this file (2026-10-12), nothing else changed between.
-OFF_BITS = "4534fcf41343b94695e6371ef70b77ea49c17335bbd18c2f50690eba896e0ec6"
-OFF_OUTCOME_ALL = "9559dac1468f100ddf4f83b6a8f7bbfcf1e031d98f1ed34cefbb16fc191a7f19"
+#: RE-RECORDED 2026-10-14 for gen3_learnset_prevo_chain_v1 (the legal-movepool table gains the pre-evolution chain + the
+#: Sketch pool: 1500 legal pairs; the checkpoints' forward reads the move prior's legality table and the X5 hypothesis
+#: candidate set, which now admit those moves; the observation and every weight are unchanged, `golden_obs_core --check`
+#: 991 / 991). The test PASSES on the old table (4 passed, adopted main `f01b9e51`) and fails on the new one; both
+#: digests moved; was 4534fcf4… / 9559dac1….
+OFF_BITS = "0c534e2ad2c56e995ab488c3e7014e68c251d2502be9493a4b2385a1aa65857b"
+OFF_OUTCOME_ALL = "71402a062ebd5368be43f4a771e427b110430970bc3ddb75823c63d3227a624b"
 
 
 def bits_digest(games):

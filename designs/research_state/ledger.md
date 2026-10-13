@@ -24760,3 +24760,60 @@ U0–U6; owner decisions D-LD1..; one lever per unit).
    re-read by a new status note, not rewritten row by row.
 
 Tag: **BUILT (MAJOR) · END STATE ADOPTED AS PRODUCTION · math-equal to the tested build (one change) · baseline `production` = rb_es_end2_s2005 (lower-median row) · smoke PASS · legacy deletion manifest written, nothing deleted** · [`measurements/endstate_adoption_2026-10-12/`](measurements/endstate_adoption_2026-10-12/) · design: [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) §6, §9
+
+### 2026-10-14 · GIGO FIX · **TRAINING-INPUT CHANGE: the legal-movepool table (`data/pokemon/gen3_learnset.json`) is now the union over the PRE-EVOLUTION chain + Smeargle's Sketch pool (`gen3_learnset_prevo_chain_v1`) and EQUALS Showdown's TeamValidator on every base species × gen-3 move (19,793 pairs, sha256 `c90202a1…`; the old table held 18,293). It was missing 1,500 legal (species, move) pairs over 183 species — 50 training-pool pairs (1,578 of the pools' 17,328 move uses) and 928 Smogon usage pairs read as ILLEGAL; Dragon Dance on Tyranitar is the named case. The move prior and X5's hypothesis candidates gain 754 legal cells (739 never-seen legal moves go from 1e-6 to the 0.02 floor, + 15 typed Hidden Power cells) and 1,238 prior cells move in all; the observation does not move (991 / 991)**
+
+The defect. `tools/pokemon_data_extractor/sync.py::build_learnset` read each species' OWN entry of the static learnset. Showdown's
+validator (`checkCanLearn` over `getFullLearnset`) lets a species keep what its PRE-EVOLUTIONS learn (Tyranitar's
+`dragondance` is `["9M","8M"]`; Larvitar's carries `3E` + `3S0`), and lets a Sketch learner (Smeargle) carry every move
+without the `nosketch` flag. Found by the hidden-information replica (the pool teams carry moves the table calls
+illegal). Measured against the validator on every base species × every gen-3 move (level 100): **1,500 pairs missing
+over 183 species (1,151 through a pre-evolution chain, 349 Smeargle's Sketch pool), none extra**. Reach: 1,578 of the
+training pools' 17,328 move uses (50 distinct pairs over 29 species, every pool) and 928 of the 10,864 Smogon usage pairs
+(Pupitar Dragon Dance at 99.95 %) read illegal.
+
+The fix. `build_learnset` unions each species' own `<gen>*` moves over `_prevo_chain` (the static pokedex's `prevo` link
+while the prevo is a gen-3 base species; Munchlax / Happiny / Chingling are gen 4 and cut the chain, as Showdown's
+`learnsetParent` cuts them) and gives a `sketch` learner every move without `nosketch` (never the typed Hidden Powers).
+Regenerated: `sync.py --datasets learnset` → sha256 `c90202a18dcafe72…`, 386 species, 19,793 pairs, +1,500 and −0 against
+the old table; `node src/rust_sim/harness/dump_gen3_learnset.js --check` (our table == the validator's verdicts):
+equal. Guards: the 15 new tests of `learnset_test.py` (Dragon Dance Tyranitar, the pre-evolution pairs, the gen-4
+cutoff, the Sketch pool, and the scans that EVERY training-pool move and EVERY Smogon usage move is legal for its
+species), `pokemon_data_extractor_test.py`, `learnset_showdown_integration_test.py` (the oracle).
+
+Production impact (measured on the production prior tables, `build_move_prior_logits` / `build_move_legality`, 400 × 400,
+old table vs new). Only the move-belief prior (hence `MoveBelief`, the X5 hypothesis candidate set and the
+information-lever injector's candidate row) and the belief-role meter read the table; the observation does not (the
+Rust dex reads it for `can_learn` and its parity golden only; team validation is Showdown's own; the Smogon priors are
+not derived from it): `golden_obs_core --check` 991 / 991. A recorded Smogon usage already OVERRODE the prior's legality
+gate, so 741 of the 1,500 pairs were at their true usage already. Of the other 759: **739 legal moves with no recorded
+usage sat at the ILLEGAL value (1e-6) instead of the 0.02 floor** (and 20 are format-banned moves, which stay
+illegal). **754 mask cells flip legal** (the 739 + 15 typed-Hidden-Power cells; 0 cells become illegal; `valid_moves`
+361 → 361) and **1,238 prior cells move** (754 from the illegal value to the 0.02 floor; 484 from a recorded usage below
+the floor up to it, because a legal move's recorded usage overrides the floor only when it is HIGHER; max |Δp| 0.02; no
+cell with a usage at or above the floor moves). The pools' moves were all inside the production mask before and after
+(a recorded usage overrode the gate), so the table error reached the model through the never-seen legal moves and the
+rare-usage cells — a small, one-sided shift of the move prior toward more candidates. The prior is a NON-persistent
+buffer recomputed from `data/` at load, so every existing checkpoint now reads the new prior at its next forward: a
+read taken across this commit compares two prior regimes (**UNVERIFIED** how much strength that moves; the K9 golden's
+update and the `play_reveal` off/off games moved — below — the observation did not).
+
+The belief-roles meter over-count (FINDING). `main.belief_roles.metrics.miss_breakdown` filed a missed move that the
+table does not list under `move_outside_learnset` ("copied by Transform / Mimic / Metronome, or a learnset-table gap").
+Every pre-evolution or Sketch move landed there, so that bucket OVER-COUNTED the copied moves in every reading made
+before this fix; `roles.prior_move_probs` (the prior column and OTHER's `P(m | s)`) moves with the 1,238 cells. No
+stored reading quotes the bucket (grep over `designs/`), so nothing is retracted; a reading taken after this change is
+not comparable with one before.
+
+Re-records (each PASSES on the old table and FAILS on the new one, on the adopted main `f01b9e51`; the stale re-records
+of the fix's first build, built before the end-state adoption, were dropped and redone on the adopted main).
+`dex_golden.txt` (`LEARNSET` lines; regenerated byte-identical to the one built with the fix); the K9 learner golden:
+init `d9c69eca…` unchanged, update `2618d640…` → `b132b440…` IDENTICAL under `gen3ai_torch28` (+cu126) and
+`gen3ai_torch28_cu128`, buffer REBUILT at the same run seed 19 (`06585756…` → `448715cc…`; the stored behaviour
+log-probs follow the move prior), coverage unchanged (OTHER_move live 58 / dead 6); the h2h
+`play_reveal_integration_test` off/off digest `OFF_BITS` / `OFF_OUTCOME_ALL` `4534fcf4…` / `9559dac1…` → `0c534e2a…` / `71402a06…` (both moved: the games' bits AND their outcome digest; PASSES on the old table, 4 passed, FAILS on the new, then 4 passed with the re-recorded digests).
+
+Landing: the commit that adds this entry (`git log -S'gen3_learnset_prevo_chain_v1' -- designs/research_state/ledger.md`);
+shipped as ONE unit (data + code + goldens). Gate scope: TARGETED (named in the commit body).
+
+Tag: **GIGO FIX · TRAINING-INPUT CHANGE (the move prior's legality; no ARCH_SIGNATURE / config bump; observation unchanged) · `data/` regenerated · three goldens re-recorded with causes**. Evidence: `designs/CHANGELOG.md` (2026-10-14), `designs/tools/pokemon_data_extractor.md`, `src/agents/gen3_data/CLAUDE.md`, `src/agents/gen3_data/learnset_test.py`, `src/rust_sim/harness/dump_gen3_learnset.js`.

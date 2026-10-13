@@ -1395,12 +1395,31 @@ def build_learnset(gen):
     (``gen3_data.priors.moves``, how OFTEN a legal move is run). Deliberately OVER-inclusive: any
     ``"<gen>*"`` code counts (incl. ``3S`` events), so the legality gate never wrongly prunes a
     legal coverage move (the exact failure the candidate-bounding exists to avoid); the ``<2%``
-    usage floor handles rarity separately."""
+    usage floor handles rarity separately.
+
+    **A species' movepool is the UNION over its whole PRE-EVOLUTION CHAIN** (``gen3_learnset_prevo_chain_v1``),
+    which is how Showdown's own validator resolves it: ``TeamValidator.checkCanLearn`` walks
+    ``dex.species.getFullLearnset`` (``learnsetParent`` -> ``prevo``, cut at a prevo newer than the target
+    generation), because a Pupitar / Tyranitar hatches as a Larvitar and keeps the egg moves (``3E``), event
+    moves (``3S``) and level-up moves its pre-evolutions learned. A species' OWN entry lists only what the
+    species itself learns: Tyranitar's own ``dragondance`` is ``["9M", "8M"]`` while Larvitar's is
+    ``[..., "3E", "3S0"]``, so a table built from the own entry alone called Dragon Dance on Tyranitar /
+    Pupitar ILLEGAL (the blind replica's finding; 1151 (species, move) pairs over 182 species). The chain is
+    read from the static pokedex's ``prevo`` field and stops at the first prevo that is not a gen-N base
+    species (Snorlax's Munchlax, Chansey's Happiny are gen 4: Showdown cuts them the same way).
+
+    **A species that learns Sketch** (Smeargle) can have ANY move that is not ``nosketch`` — Showdown's
+    ``checkCanLearn`` adds ``learnset['sketch']`` as a source for every move without the flag — so its
+    pool is every gen-N move except the ``nosketch``-flagged ones (Sketch, Struggle, ...)."""
     learnset_path = _static("learnset.json")
     if not os.path.exists(learnset_path):
         raise FileNotFoundError(f"Learnset source not found: {learnset_path}")
     with open(learnset_path, "r") as f:
         raw = json.load(f)
+    with open(_static("pokedex", f"gen{gen}pokedex.json"), "r") as f:
+        pokedex = json.load(f)
+    with open(_static("moves", f"gen{gen}moves.json"), "r") as f:
+        static_moves = json.load(f)
 
     gen_prefix = str(gen)
     # BASE FORMS ONLY (`gen3_species_formes_v1`): `build_species` also emits gen-N
@@ -1411,18 +1430,45 @@ def build_learnset(gen):
     # never "no moves"). Filtering here keeps the committed learnset byte-identical.
     legal_species = {sid for sid, e in build_species(gen).items() if "baseSpecies" not in e}
     legal_moves = set(build_moves(gen))       # gen-N movedex ids (no later-gen leak)
-    out = {}
+    # The species' OWN gen-N moves (what its static entry tags with a `<gen>*` source).
+    own = {}
     for species_id, entry in raw.items():
         if species_id not in legal_species:
             continue
         learnset = entry.get("learnset") or {}
-        moves = sorted(
+        own[species_id] = {
             mid for mid, codes in learnset.items()
             if mid in legal_moves and any(str(c).startswith(gen_prefix) for c in codes)
-        )
+        }
+    # The typed Hidden Powers are OUR ids (`_HP_TYPE_NUMS`: the type is an IV choice, not a learnset entry), so
+    # the table carries only the bare `hiddenpower` — a sketched pool must not add the 16 typed ids either.
+    sketchable = {mid for mid in legal_moves
+                  if mid not in _HP_TYPE_NUMS
+                  and not (static_moves.get(mid, {}).get("flags") or {}).get("nosketch")}
+    out = {}
+    for species_id in sorted(legal_species):
+        moves = set()
+        for link in _prevo_chain(species_id, pokedex, legal_species):
+            moves |= own.get(link, set())
+        if "sketch" in own.get(species_id, ()):
+            moves |= sketchable
         if moves:
-            out[species_id] = moves
-    return {sid: out[sid] for sid in sorted(out)}
+            out[species_id] = sorted(moves)
+    return out
+
+
+def _prevo_chain(species_id, pokedex, legal_species):
+    """``species_id`` and its pre-evolutions, nearest first, as Showdown's ``getFullLearnset`` walks them:
+    follow the pokedex ``prevo`` link while the prevo is itself a gen-N base species (``legal_species``) —
+    a prevo from a later generation (Munchlax, Happiny, ...) ends the chain, as ``learnsetParent`` returns
+    null for ``prevo.gen > max(2, gen)``. A cycle guard keeps a malformed row from looping."""
+    chain = []
+    current = species_id
+    while current in legal_species and current not in chain:
+        chain.append(current)
+        prevo = (pokedex.get(current) or {}).get("prevo")
+        current = to_id_str(prevo) if prevo else None
+    return chain
 
 
 def build_move_aliases(gen):

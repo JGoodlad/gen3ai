@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,763-line file. **The ledger itself is append-only and is never edited by this**;
+24,820-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**860 headings · 805 dated · 2026-08-01 → 2026-10-12 · ledger 24,763 lines.**
+**861 headings · 806 dated · 2026-08-01 → 2026-10-14 · ledger 24,820 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -880,3 +880,4 @@ rename.
   - `L24604` · `2026-10-12` · MEASUREMENT (MAJOR) · **THE END-STATE CLOSING TEST: PASS — `--arch endstate` (P_end2 `62085750`) vs `--arch production` (P_prod `95d014fa`), 8 × 8 mirrored cross, 64 / 64 cells × 1,000 pairs: Δ̂ +0.596 pp, √V̂ 0.749, df 14, two-sided 90 % interval [−0.723, +1.915]; clause a (upper > 0) TRUE, clause b (lower > −2.0) TRUE, near_boundary none ⇒ by the owner's registered rule the END STATE is ADOPTED; bots panel +1.21 pp (no HARM note)**
   - `L24663` · `2026-10-12` · REGISTRATION + DESCRIPTIVE · **THE VALUE OF INFORMATION BY STAGE OF THE GAME and the BELIEF-QUALITY DOSE-RESPONSE (hidden-info study, Amendment 2): perfect information is worth most EARLY and with plenty of material left because the truth CHANGES the decision far more often there (78 % at 1–2 opponent mons seen vs 30 % with all six), not because more is at stake when it does (≈ 0.11 at every stage); giving the TRUE world a weight p in the search's average, the gain is concave (half by p ≈ 0.22) and our best honest belief is worth p ≈ 0.01; stage (k, turn, material), the K-world dose family and a maturity re-run on the X26 deep run are registered before any new arm**
   - `L24674` · `2026-10-12` · BUILT (MAJOR) · **THE END STATE IS PRODUCTION: `designs/production_config.json` takes the `--arch endstate` overlay (19 keys); HEAD's end state = the TESTED `62085750` build modulo ONE math-equal change (the closed-form exact KO, max ≈1e-6 relative, greedy 136 / 136), every other file behaviour-identical; `--arch production` resolves the closing test's argv to the tested 204-key surface exactly (provenance tags + three off-by-default runtime knobs aside); `--arch endstate` an ALIAS, `--arch static_recovery` redeclared; the `production` baseline = `rb_es_end2_s2005/final_model.zip` (the lower-median row), the old entry kept as `production_pre_endstate`; CPU smoke PASSED**
+  - `L24764` · `2026-10-14` · GIGO FIX · **TRAINING-INPUT CHANGE: the legal-movepool table (`data/pokemon/gen3_learnset.json`) is now the union over the PRE-EVOLUTION chain + Smeargle's Sketch pool (`gen3_learnset_prevo_chain_v1`) and EQUALS Showdown's TeamValidator on every base species × gen-3 move (19,793 pairs, sha256 `c90202a1…`; the old table held 18,293). It was missing 1,500 legal (species, move) pairs over 183 species — 50 training-pool pairs (1,578 of the pools' 17,328 move uses) and 928 Smogon usage pairs read as ILLEGAL; Dragon Dance on Tyranitar is the named case. The move prior and X5's hypothesis candidates gain 754 legal cells (739 never-seen legal moves go from 1e-6 to the 0.02 floor, + 15 typed Hidden Power cells) and 1,238 prior cells move in all; the observation does not move (991 / 991)**

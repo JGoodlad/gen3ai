@@ -10,6 +10,10 @@ moves (a species can't run a move it can't learn) so the "guess unrevealed moves
 proposes learnable moves. The runtime reads only ``data/`` through here — the poke-env learnset
 source is acquisition-layer only (``tools/pokemon_data_extractor/sync.py::build_learnset``).
 
+A species' pool is the union over its whole PRE-EVOLUTION chain (Dragon Dance on Tyranitar comes from Larvitar's egg
+/ event sources) plus Sketch's pool for Smeargle, exactly Showdown's validator's verdict
+(``gen3_learnset_prevo_chain_v1``; ``src/rust_sim/harness/dump_gen3_learnset.js --check``).
+
 Tolerance contract (so the gate never *wrongly* prunes): an unknown species — one with no learnset
 entry — yields ``None`` from :func:`get_legal_moves` and ``True`` from :func:`is_legal`. The caller
 must read that as "no legality constraint" (fall back to the usage prior), NEVER as "no legal moves"

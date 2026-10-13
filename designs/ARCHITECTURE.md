@@ -641,7 +641,8 @@ The concrete steps:
    into the opp role tokens. Stash: `last_move_belief_logits` `[B,6,400]` — per-move independent sigmoids with NO
    four-move limit (only Hidden Power is ruled out by moveset exhaustion); every fixed-mass reader closes it itself.
    The prior buffer `[n_species, n_moves]` is **learnset-gated unconditionally**: a move the species
-   cannot learn is `logit(1e-6)` (impossible), a legal move keeps its **true** Smogon usage (no rarity
+   cannot learn (through its own entry, its pre-evolution chain, or Sketch — Showdown's validator is the
+   oracle, `dump_gen3_learnset.js --check`) is `logit(1e-6)` (impossible), a legal move keeps its **true** Smogon usage (no rarity
    cap — a surprise tech is never zeroed), a legal move absent from the usage data gets the
    `move_candidate_floor` base, and a row about which nothing is known (national-dex num 0 — the
    unknown-species sentinel an unrevealed slot carries — or a dex gap) is the **flat floor**, never

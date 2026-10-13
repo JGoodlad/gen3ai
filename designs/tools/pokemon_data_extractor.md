@@ -59,6 +59,17 @@ ignores them and they exist for the `src/rust_sim` port. The exceptions that ARE
   `build_learnset` filters to base forms for the same reason (a forme has no learnset of its own —
   poke-env ships `deoxysattack` with an EMPTY movepool, and an empty legality set would make the
   move-belief gate prune every candidate), so `gen3_learnset.json` is unchanged.
+- **`build_learnset`** is the UNION over the species' PRE-EVOLUTION chain (`gen3_learnset_prevo_chain_v1`, `_prevo_chain`):
+  it follows the static pokedex's `prevo` link while the prevo is a gen-N base species (Munchlax / Happiny / Chingling
+  are gen 4, so the chain stops there, as Showdown's `learnsetParent` does) and unions each link's OWN `<gen>*`-tagged
+  moves. A species whose own entry has `sketch` (Smeargle) also gets every gen-N move without the `nosketch` flag
+  (the typed Hidden Powers stay out: the table carries only the bare `hiddenpower`). Why: a species' own entry lists only
+  what it learns itself — Tyranitar's `dragondance` is `["9M","8M"]`, Larvitar's carries `3E` + `3S0` — so the own-entry
+  table called 1500 legal (species, move) pairs over 183 species illegal. The result EQUALS Showdown's validator for
+  every base species × every gen-3 move (`node src/rust_sim/harness/dump_gen3_learnset.js --check`, 386 species, 19,793
+  pairs; the old table: 18,293; sha256 `c90202a1…`). Landing it was a `data/` change (regenerate `--datasets
+  learnset`, then `src/rust_sim/harness/gen_dex_golden.py`, then the K9 learner golden and the h2h `play_reveal` digest
+  re-recorded): do that only while no pinned run is live.
 - **`build_items`** ALSO carries the **`gen3_item_mechanics_v1` structured mechanics fields**
   (only-when-present, obs-neutral like `critRatio` — the obs encodes items by per-id `num`
   lookup, so both new FIELDS and the 4 new ENTRIES change no existing value): `typeBoost

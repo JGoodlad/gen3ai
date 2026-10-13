@@ -74,6 +74,20 @@ unknown species yields `None`/`True` ("no constraint", never "no moves"), so the
 prune; the builder honours that by flattening any row it never wrote (national-dex num 0, dex gaps) to
 the legal-unobserved floor rather than the impossible default.
 
+🚨 **A species' movepool is the UNION over its whole PRE-EVOLUTION chain** (`gen3_learnset_prevo_chain_v1`),
+as Showdown's own validator resolves it (`checkCanLearn` → `getFullLearnset`): a Tyranitar hatches as a Larvitar,
+so Larvitar's gen-3 egg (`3E`) / event (`3S`) / level-up moves are Tyranitar's (Dragon Dance: Tyranitar's own entry
+is `["9M","8M"]`, Larvitar's carries `3E` + `3S0`). The chain stops at a pre-evolution newer than gen 3 (Munchlax,
+Happiny), and a Sketch learner (Smeargle) can carry every move without the `nosketch` flag. The table was once built
+from each species' OWN entry alone: 1500 (species, move) pairs over 183 species were missing (1151 through a
+pre-evolution, 349 Smeargle's Sketch pool) — 9 % of the training pools' move uses and 928 Smogon usage pairs read as
+illegal. Guards: `learnset_test.py` (the named Dragon Dance Tyranitar regression + a scan that EVERY training-pool
+team move and EVERY Smogon usage move is legal for its species), `pokemon_data_extractor_test.py` (the chain and the
+Sketch pool), and the oracle `node src/rust_sim/harness/dump_gen3_learnset.js --check` (the table EQUALS Showdown's
+validator for every base species × every gen-3 move; `learnset_showdown_integration_test.py`). A recorded Smogon
+usage already overrides the prior's legality gate (`build_move_prior_logits`), so the belief survived the gap
+except for the legal-but-never-seen cells.
+
 ## Species FORMES — `raw()` vs `base_form_ids()` (`gen3_species_formes_v1`)
 
 `gen3_species.json` carries **419** rows: the 386 base forms **plus 33 gen-3 alternate/cosmetic
@@ -184,8 +198,9 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
 - `gen3_abilities.json` — ability id → `{num, name}`
 - `gen3_type_chart.json` — `{DEF: {ATT: multiplier}}` effectiveness chart (was live `GenData`)
 - `gen3_natures.json` — nature → `{num, stat multipliers}` (was live `poke_env/.../natures.json`)
-- `gen3_learnset.json` — species id → `[move_id, ...]` gen3 legal movepool (the hard legality gate the
-  move-belief prior uses to prune impossible candidate moves; via `gen3_data.learnset`)
+- `gen3_learnset.json` — species id → `[move_id, ...]` gen3 legal movepool, the union over the species'
+  pre-evolution chain + Sketch's pool for Smeargle (the hard legality gate the move-belief prior uses to prune
+  impossible candidate moves; via `gen3_data.learnset`; bare `hiddenpower` only)
 - `gen3_move_aliases.json` — `{alias_id: canonical_move_id}` from Showdown's `aliases.ts`
   (`wisp`→`willowisp`, `sd`→`swordsdance`, …). Consumed by the `src/rust_sim` port (its dex resolves a
   packed-team move alias like the RL runtime never touches) and, through `gen3_data.moves.move_aliases()`,

@@ -238,6 +238,9 @@ Items / abilities are implemented as mechanic CLASSES with parameters extracted 
 
 - 🚨 **THE MOD-CHAIN LAW: never regex a single data file for a mechanic** — later mods replace and
   delete handlers (gen3 Light Ball is SpA-only ×2). The resolved dist and the probe are the oracle.
+- `node src/rust_sim/harness/dump_gen3_learnset.js --check` — the committed `data/pokemon/gen3_learnset.json` must
+  EQUAL Showdown's validator for every base species × every gen-3 move (pre-evolution egg / event / level-up moves and
+  Sketch count; `gen3_learnset_prevo_chain_v1`); the Rust dex golden's `LEARNSET` lines follow `gen_dex_golden.py`.
 - `node src/rust_sim/harness/dump_gen3_mechanics.js --check` — the drift gate on the committed
   `data/pokemon/gen3_items.json` / `gen3_abilities.json`; run it whenever either regenerates.
 - **The handler-completeness audit** (`gen3_handler_audit_v1`, `tests/handler_audit_test.rs`) FAILS

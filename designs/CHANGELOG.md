@@ -14065,3 +14065,50 @@ Owner, 2026-10-12: "PyTorch update". torch 2.8.0+cu126 has no sm_120 (Blackwell)
   `--token-encoding static` stopped being foreign); `play_reveal_integration_test`'s `OFF_BITS` / `OFF_OUTCOME_ALL`
   re-recorded (the checkpoints are built at the production architecture).
 - **Legacy deletion:** NOT in this change; ordered by `designs/ops/legacy_deletion_manifest_2026-10-12.md`.
+## 2026-10-14 — The legal-movepool table is the union over the PRE-EVOLUTION chain (`gen3_learnset_prevo_chain_v1`; TRAINING-INPUT BOUNDARY; `data/` change; no ARCH_SIGNATURE / config bump; LANDED WITH ITS `data/` REGENERATION)
+
+- **The incident.** The blind replica found that `gen3_data.learnset` rejects moves the pool teams carry (Dragon Dance on
+  Tyranitar). `build_learnset` read each species' OWN entry in the static learnset: Tyranitar's `dragondance` is
+  `["9M","8M"]`, Larvitar's is `[..., "3E", "3S0"]`, and Showdown's validator (`checkCanLearn` over `getFullLearnset`)
+  lets a Tyranitar keep what its pre-evolutions learn. Measured against the validator (every base species x every gen-3
+  move, level 100): the table was missing **1500** (species, move) pairs over 183 species — 1151 through a
+  pre-evolution chain, 349 as Smeargle's Sketch pool — and had none extra (18,293 of 19,793 pairs). Of the 17,328 move
+  uses of the team pools, 1,578 (50 distinct pairs over 29 species, every pool) read as illegal, and so did 928 of the
+  10,864 Smogon usage pairs (Pupitar Dragon Dance at 99.95 %).
+- **What.** `sync.build_learnset` unions each species' own `<gen>*` moves over `_prevo_chain` (the static pokedex's `prevo`
+  link while the prevo is a gen-N base species; Munchlax / Happiny / Chingling are gen 4, cut as Showdown's
+  `learnsetParent` cuts them) and gives a `sketch` learner every move without the `nosketch` flag (never the typed Hidden
+  Powers). The regenerated `data/pokemon/gen3_learnset.json` (sha256 `c90202a1…`, 19,793 pairs, 386 species) equals the
+  validator exactly (0 differences in either direction); every pool and every Smogon usage move is now legal.
+- **Consumers (what moved).** Only the move-belief prior (`belief_tables.build_move_prior_logits`, hence `MoveBelief`, the
+  X5 hypothesis candidate set `hypothesis_set.build_move_legality` and the information-lever injector's candidate row)
+  and the belief-role meter read it; the Rust dex reads the file for `can_learn` / its parity golden only (no engine or
+  encoder path); team validation is Showdown's own validator (unaffected); the Smogon priors are not derived from it.
+  A recorded Smogon usage already OVERRODE the prior's legality gate, so the production belief kept 741 of the 1500
+  pairs at their true usage. Of the other 759: 739 legal moves with no recorded usage sat at the ILLEGAL value (1e-6)
+  instead of the 0.02 floor, and 20 are format-banned moves (Assist, the OHKO moves, Minimize ...) that stay illegal.
+  Measured on the prior tables (`n_species` x `n_moves` = 400 x 400): **754 mask cells flip legal** (the 739 pairs plus
+  15 typed-Hidden-Power cells; 0 cells become illegal; the 361 `valid_moves` unchanged) and **1238 prior cells move**
+  (754 from the illegal value to the 0.02 floor, 484 from a recorded usage below the floor up to it; max |Δp| 0.02;
+  no cell with a usage at or above the floor moves). The pools' moves were all inside the production mask before and
+  after (a recorded usage overrode the gate): the table error reached the model through the never-seen legal moves
+  and the rare-usage cells. **The observation does not move** (`golden_obs_core --check` 991 / 991).
+- **The belief-roles meter.** `main.belief_roles.metrics.miss_breakdown` counted a missed move outside the table as
+  `move_outside_learnset` ("copied by Transform / Mimic / Metronome, or a learnset-table gap"): every pre-evolution
+  or Sketch move was in that bucket, so the bucket OVER-COUNTED the copied moves in every reading made before this
+  fix, and `roles.prior_move_probs` (the prior column and OTHER's `P(m | s)`) moves with the 1238 cells. No stored
+  reading quotes the bucket (grep over `designs/`); a reading taken after this change is not comparable with one before.
+- **Tests (fail on revert).** `learnset_test.py` (the named Dragon Dance Tyranitar regression, the pre-evolution pairs,
+  the cut at a gen-4 prevo, Smeargle's Sketch pool, and the scans that EVERY training-pool team move and EVERY Smogon
+  usage move is legal for its species: 15 of the new tests fail on the old table), `pokemon_data_extractor_test.py`
+  (`_prevo_chain`, the union, the Sketch pool), `learnset_showdown_integration_test.py` (the table equals the validator,
+  via `src/rust_sim/harness/dump_gen3_learnset.js --check`).
+- **Re-recorded with the data (each PASSES on the old table and FAILS on the new one, on the adopted main).**
+  `src/rust_sim/tests/vectors/dex_golden.txt` (`LEARNSET` lines only, `gen_dex_golden.py`); the K9 learner golden
+  (`learner_golden.json` + `learner_golden_buffer.npz`: the init hash `d9c69eca…` is unchanged, the update moved
+  `2618d640…` -> `b132b440…` identically under +cu126 and +cu128, and the buffer was REBUILT at the same run seed 19
+  (`06585756…` -> `448715cc…`) because the stored behaviour log-probs follow the move prior — a plain `record` dies in
+  K9(b) with a behaviour-policy mismatch, `rebuild-buffer` first; coverage unchanged); `learner_golden_test`'s history
+  pin gains the row; `play_reveal_integration_test`'s `OFF_BITS` / `OFF_OUTCOME_ALL` `OFF_BITS` / `OFF_OUTCOME_ALL` `4534fcf4…` / `9559dac1…` -> `0c534e2a…` / `71402a06…`: the test PASSES on the old table (4 passed, 30 min at nice 19) and fails on the new one, because the checkpoints' forward reads the move prior's legality table and the X5 hypothesis candidate set, which now admit the pre-evolution moves; the observation and every weight are unchanged. Order on
+  landing: `sync.py --datasets learnset` -> `gen_dex_golden.py` -> `learner_golden rebuild-buffer` -> `record` under BOTH
+  `gen3ai_torch28` and `gen3ai_torch28_cu128` (a changed update clears the other build's entry).

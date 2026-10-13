@@ -67,6 +67,11 @@ def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
     end-state network (init `60cb6e1c…` -> `d9c69eca…`, post `5171d83a…` -> `2618d640…`), and the buffer was rebuilt
     (`66a14392…` -> `06585756…`) because its behaviour log-probs follow the seeded learner — at RUN SEED 19, seed 18's
     end-state rollout holding no OTHER_move-dead row (`RECORD_RUN_SEED`'s comment).
+    Then `gen3_learnset_prevo_chain_v1` (2026-10-14: the move prior's legality table gains 1500 legal pairs, the
+    pre-evolution chain + Smeargle's Sketch pool; 754 mask cells flip legal, 1238 prior cells move) kept the init
+    (`d9c69eca…`) and moved the update (post `2618d640…` -> `b132b440…`, identical under +cu126 and +cu128), and the
+    buffer was rebuilt (`06585756…` -> `448715cc…`) at the SAME run seed 19 because its behaviour log-probs follow the
+    move prior (coverage unchanged: OTHER_move live 58 / dead 6).
     FAILS if anyone re-records the golden without a new reason row, or restores an arm block."""
     g = L.load_golden()
     e = g["entries"]["2.8.0+cu126"]
@@ -75,24 +80,26 @@ def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
     hist = [h for h in g["history"] if h["torch"] == "2.8.0+cu126"]
     cu128 = g["entries"].get("2.8.0+cu128")
     if cu128 is not None:
-        assert [h["torch"] for h in g["history"]].count("2.8.0+cu128") == 1
+        assert [h["torch"] for h in g["history"]].count("2.8.0+cu128") == 2   # the adoption's row + the learnset re-record
         assert cu128["post_params_sha256"] == e["post_params_sha256"] and cu128["init_params_sha256"] == e["init_params_sha256"], \
             "the CPU update is byte-identical across the two CUDA builds (verified 2026-10-12): it no longer is"
     assert e["init_params_sha256"] == "d9c69ecabc5d79aa563cad140271fe06c95dc30f7490b6a11fc376d1af0fbe5b"
-    assert e["post_params_sha256"] == "2618d640c7d311942c8b5dabcf68fb5ce86321f54350ae9e4a238f4accce62fa"
-    assert g["buffer_sha256"] == "06585756d927e4a48bbf26ba867e76c6555caf84290e29f5eeb8a5b6d3cef43b"
+    assert e["post_params_sha256"] == "b132b44054aa0d6e6a2eed16889698afdaa5d1205328138b71256aced6cd921c"
+    assert g["buffer_sha256"] == "448715ccaa1c73c8c23ec855319aa9aaa82304f2a61aea4e1465190f6e652304"
     assert g["perturb"] == "name_keyed" and "arms" not in g
     assert L.RECORD_RUN_SEED == 19
-    assert "MOVED VERBATIM" in hist[-5]["reason"]
-    brk = hist[-4]["reason"]
+    assert "MOVED VERBATIM" in hist[-6]["reason"]
+    brk = hist[-5]["reason"]
     assert brk.startswith("gen3_x5_version_break_v1 (config v144)") and "obs-facts appended (2845)" in brk
     assert sum("gen3_x5_version_break_v1 (config v144)" in h["reason"] for h in hist) == 1
-    assert hist[-3]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
+    assert hist[-4]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
     assert sum(h["reason"].startswith("gen3_mon_tied_gain_v1") for h in hist) == 1
-    assert hist[-2]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
+    assert hist[-3]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
     assert sum(h["reason"].startswith("gen3_toxic_stage_scale_v1") for h in hist) == 1
-    assert hist[-1]["reason"].startswith("the END STATE adopted as production (closing test PASS 2026-10-12)")
+    assert hist[-2]["reason"].startswith("the END STATE adopted as production (closing test PASS 2026-10-12)")
     assert sum(h["reason"].startswith("the END STATE adopted as production") for h in hist) == 1
+    assert hist[-1]["reason"].startswith("gen3_learnset_prevo_chain_v1")
+    assert sum(h["reason"].startswith("gen3_learnset_prevo_chain_v1") for h in hist) == 1
 
 
 def test_record_requires_a_reason():
