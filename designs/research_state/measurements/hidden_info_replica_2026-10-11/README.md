@@ -39,7 +39,49 @@ about a day. On the orchestrator's instruction an INTERIM subset is registered h
   no IMP, no contrast). The scorer was run once at ~23:30 on partial O rows only (own-set IMP of O; no other arm).
 - The final read uses all 600 states per checkpoint when they complete.
 
-RESULTS_PLACEHOLDER
+## INTERIM RESULTS (the registered subset, read 2026-10-12 17:10; `interim/result.json`, `interim/tables.md`)
+
+The read is LEAF-K8, with IMP on the win scale. CIs are battle-clustered bootstraps (2,000 draws, rng 20261011), with
+every contrast paired on the same draws. The common set holds the states where all five arms built 8 worlds:
+end2 180 states / 159 battles, prod 181 / 163. **This replication does not compare these numbers with the first
+implementation's; a third party does.**
+
+| read | states | IMP_O | IMP_P | IMP_F | IMP_F+M | IMP_O-M |
+|---|---|---|---|---|---|---|
+| end2 | 180 | +0.0569 [+0.0335, +0.0810] | +0.0037 [-0.0178, +0.0264] | +0.0147 [-0.0052, +0.0360] | +0.0116 [-0.0152, +0.0361] | +0.0237 [+0.0013, +0.0461] |
+| prod | 181 | +0.0642 [+0.0385, +0.0922] | -0.0218 [-0.0462, +0.0019] | -0.0152 [-0.0387, +0.0088] | +0.0132 [-0.0092, +0.0378] | +0.0363 [+0.0111, +0.0621] |
+| pooled | 180 / 181 | +0.0606 [+0.0430, +0.0787] | -0.0091 [-0.0258, +0.0081] | -0.0003 [-0.0159, +0.0157] | +0.0124 [-0.0045, +0.0298] | +0.0300 [+0.0124, +0.0476] |
+
+| read | G = O - F | G_P = O - P | F+M - F | O - (O-M) | s_M | n_M | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|---|---|---|
+| end2 | +0.0422 [+0.0182, +0.0659] | +0.0532 [+0.0285, +0.0783] | -0.0031 [-0.0252, +0.0180] | +0.0332 [+0.0113, +0.0566] | not computed (B2) | not computed (B2) | no | no | no |
+| prod | +0.0794 [+0.0503, +0.1106] | +0.0860 [+0.0592, +0.1110] | +0.0284 [+0.0047, +0.0544] | +0.0280 [+0.0113, +0.0447] | +0.358 [+0.065, +0.650] | +0.352 [+0.153, +0.630] | yes | no | no |
+| pooled | +0.0609 [+0.0422, +0.0797] | +0.0697 [+0.0517, +0.0881] | +0.0127 [-0.0036, +0.0295] | +0.0306 [+0.0170, +0.0453] | +0.209 [-0.067, +0.457] | +0.502 [+0.290, +0.758] | yes | no | yes (point 0.5024, only 0.0019 above the 0.5005 boundary) |
+
+LEAF-K1 / K4 and the own-set IMP of every arm are in `interim/tables.md` and `interim/result.json`.
+**Exclusions** (no consistent F world found by the screen, all with reason `no_consistent_context`): end2 F 17 / 200,
+end2 F+M 11, prod F 13, prod F+M 12. O, P and O-M lost no interim state. Every arm is under §6.1's 10 % line.
+
+## STATUS AND HANDOFF (2026-10-12 ~20:05; the agent stopped under the quota rule; the workers keep running)
+
+The full read (600 + 600) is IN PROGRESS. Three unattended, resumable workers run on cores 5-7 / 13-15 at nice 19,
+each under `mem_cap`, and write rows to `~/gen3ai_archive/hidden_info_replica/rows/<cp>/<arm>/*.jsonl`:
+
+| worker | now | then |
+|---|---|---|
+| W1 | prod F (rest) | end2 F, half A of the non-interim states (`interimRestA_ids_end2.txt`) |
+| W2 | end2 F+M (rest) | end2 O-M (rest) |
+| W3 | prod F+M (rest) | end2 F, half B (`interimRestB_ids_end2.txt`) |
+
+Done at 20:00: O 600 + 600; P 600 + 600 (end2: 2 failed states remain after one re-run); O-M prod 600, end2 316;
+F end2 257, prod 346; F+M end2 387, prod 430. At about 1.3 states a minute in all, roughly 15 h remain.
+**To finish:**
+1. When every arm holds 600 rows, run `replica.remaining` per (cp, arm). Any listed state is unfinished: run it with
+   `seq_remaining.sh <new tag> 5-7,13-15 <cp>:<arm>`.
+2. Run `replica.audit` per checkpoint with `--rows` (identity + playout replay, teeth, parser, harness vs Phase 1).
+3. Run `replica.score` (all states), `replica.report`, `replica.marginals` and `replica.pack --out <this folder>/rows`.
+4. Put the final tables here beside the interim ones. Do NOT compare with the first implementation.
+A state run twice keeps its ok row (`score.load_rows`); two ok rows for one state is an error by design.
 
 ## Blindness (what this agent read and did not read)
 
