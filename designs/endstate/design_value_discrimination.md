@@ -1174,7 +1174,7 @@ equilibrium method (§14 prices what that gives up).
 
 | stage | what | go / no-go | cost (ESTIMATE unless marked) |
 |---|---|---|---|
-| **S0** (DONE) | this pilot: oracle + honest IMP; `main.value_search` | honest search beats the critic at a realistic budget: **FAILED** (R-HONEST NOT DETECTED on both seeds; only end2's one-ply critic +0.013 and 4-turn K4 +0.017 are clear of 0, neither clear of the other; re-confirmed on the FIXED builder and with the network's own move belief, R-HONEST-C NOT DETECTED, §7.14) | ≈ 30 CPU-h + ≈ 45 worker-h for 2c, Phase 3 and the v2 re-run, no GPU (MEASURED) |
+| **S0** (DONE) | this pilot: oracle + honest IMP; `main.value_search` | honest search beats the critic at a realistic budget: **FAILED** (R-HONEST NOT DETECTED on both seeds; only end2's one-ply critic +0.013 and 4-turn K4 +0.017 are clear of 0, neither clear of the other; re-confirmed on the FIXED builder and with the network's own move belief, R-HONEST-C NOT DETECTED, §7.14). **Per stage: §13.10** (the aggregate failure hides a gradient; the gate is re-defined per stage there) | ≈ 30 CPU-h + ≈ 45 worker-h for 2c, Phase 3 and the v2 re-run, no GPU (MEASURED) |
 | **S0b** offline battery (OWNER approval) | the end-state checkpoint with the one-ply honest critic search (8 worlds) vs the same checkpoint raw, mirrored h2h | h2h gain lower bound > +4.57 pp (the replicate floor) | ≈ 1 CPU-day at f = 1 (every decision searched), or a GPU window |
 | **S0c** offline label factory | label N = 50k states of the adopted arm's own self-play on idle CPU; no training | held-out IMP of argmax π′ ≥ S0's; label throughput ≥ S2's need | ≈ 1 agent-day build (reuses the module) + idle CPU |
 | **S1 SHADOW** | the in-loop factory at f = 0.25 %, logs only (`search/*`) | `search/imp` lower bound > 0 over a 15M run; fps cost ≤ 5 % | build ≈ 3–5 agent-days (gaps G1–G6); one GPU run |
@@ -1283,6 +1283,46 @@ factory over the trainer's recorded decisions (S0c) → P2 G4 + G5 (Rust: batche
 The factory is subsample-eligible by construction (f). Its one-ply form (the critic scorer) FITS the rule as written
 but buys little (+0.012–0.026 oracle). The recommended 4-turn leaf is four turns of playout then the critic: not to
 terminal, but more than one ply, so it **needs the owner's ruling**. The full-rollout leaf stays deferred.
+
+### 13.10 STAGE-GATED BOOTSTRAP (a DESIGN PROPOSAL for the owner's review; nothing is built; owner, 2026-10-12: "this gives us a way to bootstrap, and it tells us the binding constraint to bootstrap more")
+
+**The S0 gate, per stage.** S0 (§13.4) failed IN AGGREGATE: honest search does not clearly beat the critic. The per-stage read
+([`design_hidden_info_binding.md`](design_hidden_info_binding.md) §16.7, post hoc, both seeds pooled) shows the aggregate hides
+a gradient. Early (1–2 opponent mons seen) honest search is at or below the policy (leaf −0.004; 3 seen −0.016) and the
+critic; it clears the critic only LATE (all six seen: the 4-turn leaf over the critic search +0.026 [+0.004, +0.051],
+beating the policy by +0.041 [+0.018, +0.066]; with ≤ 7 mons alive it beats the policy but not the critic). A PER-STAGE gate over
+the registered stage buckets (reveal count k, material remaining, turn; §12.13.1 there) with the pre-registered rule
+R-STAGE-SEARCH (rule 8): **GATE-OPEN(b)** iff honest TRUNC-4-K8 beats BOTH the policy and the critic search with
+lower95 > +0.0005 on EACH checkpoint separately and pooled (Bonferroni 99.6 % over the 13 buckets), n_b ≥ 150 per
+checkpoint. The set of GATE-OPEN buckets is the FRONTIER. The factory (§13.1) would then run its auxiliary search labels
+ONLY on decisions whose root falls in a GATE-OPEN bucket (k and the fainted counts are in the trainer's own rows: no oracle
+read), and the shadow meter `search/imp` (§13.3) would be kept PER STAGE. **Today no bucket is GATE-OPEN under the
+replicated rule** (k = 6 passes pooled only: GATE-WEAK); the descriptive read is the first reading of where the frontier
+sits: the late game, where the gap to the oracle is also smallest (G +0.035 at k = 6; +0.012 on production). The cheapest
+labels are in the stage with the least headroom; that is the honest caveat.
+
+**The flywheel.** Search labels where honest search works → the network improves (policy AND belief, through the
+auxiliary loss on the stage's completed-Q target) → honest search improves in the NEIGHBOURING stages → the frontier
+expands toward the early game, where the value of perfect information is largest (G +0.086 at k ≤ 2). The per-stage,
+per-class value of information names the knowledge class to improve next to push the frontier: **early (k ≤ 3, turn ≤ 7, all
+12 mons alive) the never-seen mons' species and sets** (the seen mons' moves explain 0.00–0.09 of the headroom there);
+**in the middle (k = 4, turns 15–21, 8–9 alive) the seen mons' moves** (share 0.55 [0.27, 0.81], 0.54, 0.43); little is left
+late. The belief-quality dose-response says how far: the rollout leaf needs ≈ 0.2–0.35 weight on the true world early (≈ 0.05
+late) to beat the critic search with confidence, and our best honest belief is worth ≈ 0.01 in the same units (§16.7 there).
+Whether the frontier actually moves as the network matures is measured by the maturity battery on the X26 deep run
+(`design_hidden_info_binding.md` §12.13.7: R-MATURITY FRONTIER-MOVES-EARLIER / -STATIC / -RECEDES).
+
+**The risks.** (1) A training-distribution SKEW: labels from the open stages only make the auxiliary loss a subset loss.
+It is auxiliary, so PPO's objective and behaviour policy stay untouched on every row (§13.1), but the labels' stage mix is
+not the data's: weight the loss (the inverse of each stage's label probability, or a λ ramp per stage), log the stage mix of
+searched rows, and watch the policy's shift on UNsearched stages; S1 SHADOW (logs only) runs before any λ. (2) PROVISIONAL:
+every stage verdict is 'at 15M, current architecture'; the frontier is a function of the network's maturity, so it may unlock
+only cheap reversible work until the plateau series confirms it (`design_hidden_info_binding.md` §10.5, §12.13.8). (3) The
+owner's standing deferral of in-training search (2026-09-30: in-loop additions ≤ one ply, playout to terminal deferred): the
+4-turn leaf the gate uses is more than one ply, and the one-ply critic search alone (in scope) beats the policy on end2 in
+some late buckets (k = 5 +0.023 [+0.001, +0.047]; turns 15–21 +0.035; ≤ 7 alive +0.028) but in no bucket on BOTH
+checkpoints (k = 6: end2 +0.023 [−0.000, +0.046], prod +0.006 [−0.005, +0.018]). **This section is a design
+proposal for the owner's review, not a build and not a request to lift the deferral.**
 
 ---
 
@@ -1431,3 +1471,4 @@ exploitability meters (§14.3) measure.
 | 2026-10-12 | **PHASE 2c READ and every honest read RE-DONE on the fixed builder (v2)** | R-MOVES HELPS on end2 (+0.017 [+0.001, +0.031]; not reproduced by the v1 builder's rows) and NOT DETECTED on prod; R-HONEST-C NOT DETECTED on both; R-MOVES-CEILING HELPS on end2 (+0.024), not on prod; every v1 honest verdict and Phase 3's R-QHEAD-CRITIC hold on v2. §13: the S0 go / no-go still FAILS; the network's own move belief is not the lever (barely sharper than Smogon); a much better move belief would be (the ceiling beats the critic on end2). The battery (option 2) stays unbuilt: no fair rollout scorer beats the critic; its candidate stays the one-ply critic search | building the in-loop factory on the move-belief sampler (≤ 1–2 points, not clear of the critic); treating end2's barely-clear R-MOVES as a lever (one seed, builder-sensitive) | §7.14; README §14; ledger 2026-10-12 "PHASE 2c" |
 | 2026-10-11 | **PHASE 3 READ (offline per-action value head)** | R-QHEAD NOT DETECTED (−0.004), R-QHEAD-CRITIC BEHIND (−0.018): a frozen-body head on K = 2 oracle labels of ~10k states learns nothing usable (validation R² +0.002; the labels are 83 % dice noise). §13.8's oracle-label route stays OPEN but is priced: it needs far more label signal per action or a trained body (GPU), so it is not the next CPU step. The ride-along A head's argmax (+0.010, clear of 0, no rollout) is recorded as a free scorer to replicate | more K = 2 states on the same frozen head (a simple observation-side predictor explains ~0.5 % of the label variance; the budget that would suffice is UNVERIFIED); fine-tuning the body now (GPU, and §13.8 needs the owner's ruling) | §7.13; README §12; ledger 2026-10-11 "PHASE 3" |
 | 2026-10-12 | **The world builder's information becomes a LEVER of the ONE information-lever spec** (owner: one DRY implementation for training, search and the model's inputs, to read ceilings and the value of better determinization) | `design_information_levers.md`: the builder takes an `InfoReveal`; this pilot's v1 / v2 behaviour is the `pilot` preset; the default becomes honest (a seen mon's item, ability, spread and exact HP drawn from the prior and conditioned on the log); hidden counters are the builder's named residual (the pre-root dice) | keeping the pilot's leaks as the default (a search that is not honest by default measures the wrong thing whenever a caller forgets); a separate builder per study arm | `design_hidden_info_binding.md` §2.2 item 1; `design_information_levers.md` §7 |
+| 2026-10-12 | **The bootstrap's S0 gate becomes PER STAGE: a STAGE-GATED BOOTSTRAP proposal (§13.10)** (owner: "this gives us a way to bootstrap, and it tells us the binding constraint to bootstrap more") | The aggregate S0 failure hides a gradient (honest search is at or below the critic early, clears it only with all six opponent mons seen); a per-stage gate R-STAGE-SEARCH over the registered stage buckets (k, material, turn), rule 8, replicated per checkpoint; search labels only where the gate is open; a flywheel whose next knowledge class is named by the per-stage VOI (the never-seen mons early, the seen mons' moves in the middle); the risks (a stage-skewed auxiliary loss, provisional at 15M, the owner's deferral of in-training search); a DESIGN PROPOSAL for the owner's review, nothing built | opening the factory on the aggregate (S0 failed); a per-stage gate on the oracle's edge (it is flat across stages: the information lives on the honest side) | `design_hidden_info_binding.md` §12.13.4, §16.7; `measurements/hidden_info_by_reveal_count_2026-10-12/` |

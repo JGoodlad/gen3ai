@@ -62,3 +62,9 @@ registered rules (design doc §12.8) afterwards.
   at 95 %, the network flips 13 % of its picks and gains +0.001 [−0.003, +0.005] per decision (pooled); the wrong-moves
   placebo flips 20 % and costs the critic search ≈ 0.8 points; R-NET NOT DETECTED, CRITIC-USES NOT DETECTED on end2,
   prod, pooled and the replication network.
+
+## Follow-up (2026-10-12): the value of information by STAGE and the belief-quality dose-response
+
+[`../hidden_info_by_reveal_count_2026-10-12/`](../hidden_info_by_reveal_count_2026-10-12/) re-reads this folder's pilot rows by
+reveal count, turn and material (post hoc, descriptive) and as a K-world belief dose; the registration it produced is
+`design_hidden_info_binding.md` §6.9 and §12.13 (Amendment 2).

@@ -1,0 +1,62 @@
+{
+ "end2": {
+  "det2_A": {
+   "crit_cpu_s_per_state": 1.94,
+   "play_cpu_s_per_state": 21.77,
+   "states": 599,
+   "total_cpu_s_per_state": 23.71
+  },
+  "det2_C": {
+   "crit_cpu_s_per_state": 1.94,
+   "play_cpu_s_per_state": 20.45,
+   "states": 596,
+   "total_cpu_s_per_state": 22.38
+  },
+  "det2_CT": {
+   "crit_cpu_s_per_state": 1.87,
+   "play_cpu_s_per_state": 18.8,
+   "states": 592,
+   "total_cpu_s_per_state": 20.67
+  },
+  "det2_worlds": {
+   "states": 600,
+   "world_build_cpu_s_per_state": 0.27
+  },
+  "phase1_oracle": {
+   "crit_cpu_s_per_state": 0.66,
+   "play_cpu_s_per_state": 97.62,
+   "states": 600,
+   "total_cpu_s_per_state": 98.27
+  }
+ },
+ "prod": {
+  "det2_A": {
+   "crit_cpu_s_per_state": 1.25,
+   "play_cpu_s_per_state": 13.33,
+   "states": 598,
+   "total_cpu_s_per_state": 14.58
+  },
+  "det2_C": {
+   "crit_cpu_s_per_state": 1.32,
+   "play_cpu_s_per_state": 12.65,
+   "states": 596,
+   "total_cpu_s_per_state": 13.97
+  },
+  "det2_CT": {
+   "crit_cpu_s_per_state": 1.28,
+   "play_cpu_s_per_state": 12.23,
+   "states": 597,
+   "total_cpu_s_per_state": 13.51
+  },
+  "det2_worlds": {
+   "states": 600,
+   "world_build_cpu_s_per_state": 0.31
+  },
+  "phase1_oracle": {
+   "crit_cpu_s_per_state": 0.44,
+   "play_cpu_s_per_state": 57.45,
+   "states": 600,
+   "total_cpu_s_per_state": 57.9
+  }
+ }
+}

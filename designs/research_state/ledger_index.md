@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,662-line file. **The ledger itself is append-only and is never edited by this**;
+24,674-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**858 headings · 803 dated · 2026-08-01 → 2026-10-12 · ledger 24,662 lines.**
+**859 headings · 804 dated · 2026-08-01 → 2026-10-12 · ledger 24,674 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -878,3 +878,4 @@ rename.
   - `L24564` · `2026-10-11` · REGISTRATION + AUDIT · **THE FIXED FAIR-WORLD BUILDER (v2): R-GIGO re-read on its worlds = PASS (0 protocol-inconsistent worlds, was 469 / 312; 0 clause-illegal teams, was ≈ 2.5 %; teeth 6 / 6 + gender plants 20 / 20); the construction-draw gender leak REDUCED, not removed (accepted P(m = r) 0.67 / 0.64 vs the proposal's 0.57; v1 0.98 / 0.97); every honest arm (A′ Smogon, B′ belief species, C′ network move belief, CT′ true seen moves) re-run on it, registered before any v2 playout (Amendment 8)**
   - `L24578` · `2026-10-12` · MEASUREMENT · **VALUE-DISCRIMINATION PILOT PHASE 2c + the v2 RE-READ (the FIXED world builder): worlds drawn from the network's OWN move belief help honest rollouts by at most 1–2 points (LEAF-K8 end2 +0.018, prod +0.009; R-MOVES HELPS on end2 +0.017 [+0.001, +0.031], NOT DETECTED on prod) and still do not beat the critic (R-HONEST-C NOT DETECTED, both); the seen mons' TRUE moves would close ½ / ⅕ of the oracle gap (R-MOVES-CEILING HELPS on end2 +0.024); every v1 honest verdict and Phase 3's R-QHEAD-CRITIC (BEHIND) hold on v2**
   - `L24604` · `2026-10-12` · MEASUREMENT (MAJOR) · **THE END-STATE CLOSING TEST: PASS — `--arch endstate` (P_end2 `62085750`) vs `--arch production` (P_prod `95d014fa`), 8 × 8 mirrored cross, 64 / 64 cells × 1,000 pairs: Δ̂ +0.596 pp, √V̂ 0.749, df 14, two-sided 90 % interval [−0.723, +1.915]; clause a (upper > 0) TRUE, clause b (lower > −2.0) TRUE, near_boundary none ⇒ by the owner's registered rule the END STATE is ADOPTED; bots panel +1.21 pp (no HARM note)**
+  - `L24663` · `2026-10-12` · REGISTRATION + DESCRIPTIVE · **THE VALUE OF INFORMATION BY STAGE OF THE GAME and the BELIEF-QUALITY DOSE-RESPONSE (hidden-info study, Amendment 2): perfect information is worth most EARLY and with plenty of material left because the truth CHANGES the decision far more often there (78 % at 1–2 opponent mons seen vs 30 % with all six), not because more is at stake when it does (≈ 0.11 at every stage); giving the TRUE world a weight p in the search's average, the gain is concave (half by p ≈ 0.22) and our best honest belief is worth p ≈ 0.01; stage (k, turn, material), the K-world dose family and a maturity re-run on the X26 deep run are registered before any new arm**

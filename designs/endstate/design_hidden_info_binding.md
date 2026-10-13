@@ -4,7 +4,12 @@
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
 **Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
-parts RUN AND READ (§16; Amendment 1 after the audits, §12.12).** The cheap parts: the sampler audits (§5), the model-input
+parts RUN AND READ (§16; Amendment 1 after the audits, §12.12). AMENDMENT 2 (2026-10-12, §12.13, before any new arm):
+the STAGE of the game (reveal count k, turn, material) becomes a registered dimension of Tier 1 with a k-stratified
+supplement, the K-world belief-quality dose-response is a Tier-1 arm family (§6.9, no extra playout), and a maturity
+re-run on the X26 deep run is a standing battery (§12.13.7); its post-hoc descriptive reads are §16.7. The value of
+perfect information per stage and its use for a stage-gated search factory: `design_value_discrimination.md` §13.10.**
+The cheap parts: the sampler audits (§5), the model-input
 axis on banked states (§7), the registered descriptive reads of the pilot's existing rows (§11), and the maturity
 meters (§10.1–§10.2). The playout-world factorial (§6) runs after the closing test frees the box (≈ Mon 2026-10-12
 09:00–10:00). The GPU knock-in forks (§8) are QUEUED by the orchestrator (owner-delegated GPU scheduling) after the
@@ -77,6 +82,12 @@ then still feeling good about it."
   points per decision vs the oracle search's +7): R-NET and CRITIC-USES NOT DETECTED (§16.5).
 - **Honest confidence that the moves are THE binding constraint: ≈ 15 %**; that hidden TEAM information binds search:
   ≈ 85 %. No multi-week move-inference programme on this evidence (§16.6).
+- **By stage (§16.7, read 2026-10-12, post hoc):** the value of perfect information is largest EARLY and with plenty of
+  material left (G +0.086 at 1–2 opponent mons seen, +0.035 with all six), because the truth changes the decision far more
+  often there (78 % vs 30 %), not because more is at stake when it does (s ≈ 0.11 everywhere); early the missing facts
+  are the never-seen mons, in the middle the seen mons' moves. Giving the TRUE world a weight p inside the search's average,
+  the gain is concave (half by p ≈ 0.22) and our best honest belief is worth p ≈ 0.01 in the same units: the registered
+  arms are §6.9 and §12.13.
 
 ---
 
@@ -340,6 +351,46 @@ picks are fixed; only T changes. G2 / G and the shares under both referees.
 
 end2 and prod (seed 2001, both with Phase 1 truth), and a THIRD: `rb_es_end2_s2002` (same pin as end2) on its OWN 600
 states, which needs its own Phase 1 (≈ 4 CPU-h) and Phase 2 rows.
+
+### 6.9 The BELIEF-QUALITY DOSE-RESPONSE: K competing worlds with variable mass on the true one (arm family DK; owner, 2026-10-12)
+
+**Question** (owner): *"determinize like five competing worlds and toss in variable probability masses to the correct one
+and see if this improves search … how far away are we from determinizing worlds improving all of search?"* It measures how
+good a belief must be before determinized search pays, in a unit that does not depend on how a belief is represented:
+the WEIGHT p that the search's average gives the TRUE world. (§6.4's D-family puts mass p on each FACT, so a sampled
+world is right about every fact only with probability ≈ p^n; DK puts p on the whole WORLD. They are different units;
+§12.13.4 places each D-arm on the DK curve.)
+
+**Design: one set of playouts, the whole curve.** The playouts do not depend on p. Per state and legal action the family
+reads what is already banked for Tier 1: the true world's outcomes (Phase 1: 16 leaf dice seeds, the referee's seeds
+16–39 untouched) and the F arm's 8 honest worlds (one playout each, dice seed j in world j), for three scorers: LEAF-K8,
+TRUNC-4-K8 and the honest one-ply CRITIC. Every score is a re-weighting, so **DK costs NO playout beyond Tier 1**:
+
+| estimator | score of action a | role |
+|---|---|---|
+| **M8** | p · mean(true world, seeds 0–7) + (1 − p) · mean(the 8 F worlds) | the 'belief mass' curve; its ends are the banked reads (p = 0: F; p = 1: the oracle leaf) |
+| **M5** | p · (the true world, ONE playout, dice seed s0) + (1 − p)/4 · (4 of the 8 F worlds, one playout each) | the LITERAL K = 5 design; the exact mean over all 16 × 70 (s0, subset) draws (a U-statistic, no Monte Carlo) |
+| **M5W** | M5 with ONE F world (a random draw of the belief) in the true world's place | the placebo for concentrating weight: M5 − M5W is the value of the world being TRUE |
+| **M5X** | M5 with the MOST WRONG of the 8 F worlds (the fewest correct hidden facts: the seen mons' moves and the never-seen species, counted from the world's team against the truth; fixed per state before any outcome is read) | the placebo for confident error: the cost of over-confidence |
+
+Grid p ∈ {0, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0} (the owner's) for the tables and the rules; a 0.05 grid for the interpolated
+break-even and p-equivalent (descriptive). **Estimator and variance.** IMP(p) is the plug-in of the argmax of the
+re-weighted score (ties toward the policy's order, the pilot's rule) minus the policy's pick, judged by the referee's 24
+truth seeds. All p share the same per-world outcomes, so the battle-clustered bootstrap resamples whole states ONCE and
+evaluates every p on the draw: differences across p, and between estimators at the same p, are paired and tight (the
+pilot's rows: M5 − M5W has a half-width of ±0.0025–0.004 at 1,186 states). The curve of the pilot's own rows is read
+in §16.7 (descriptive; its ends reproduce the pilot's banked reads to 1e-9).
+
+**Where today's belief sits (the 'effective p').** The p-EQUIVALENT of a world kind = the p at which the M8 LEAF curve
+equals that world kind's own measured IMP on the same states (value units). The kinds: **FN** (F with its species and
+move draws taken from the network's own belief, the pilot's C′ sampler on the fully honest base; one arm per
+checkpoint, run on every Tier-1S state), the knock-in ceilings F+M and F+U, and the D-family arms. Until FN runs, the
+pilot's C′ rows give it on the registered states (§16.7). Hit-rate units (a world's species hit 0.45 vs Smogon 0.21;
+move-set recall 0.48–0.51 vs 0.45) are reported beside it as a cross-check only: the pilot's belief-species worlds hit 2×
+more true species and bought nothing (R-BELIEF), so hit rate overstates the value of partial correctness.
+
+**Per stage.** Every curve, break-even and p-equivalent is also read per stage cell (§12.13.1), so a statement like "at
+k ≥ 5 we need p ≈ 0.3 and have 0.1" is a registered output; the rules are §12.13.4 R-DOSE. Cost: analysis only (minutes).
 
 ---
 
@@ -752,6 +803,207 @@ fixed builder and re-played (≈ 2 × 2.6 CPU-h) before any share uses it, and t
 (c) §13.1's hand-over spec gains the same three requirements; (d) R-GIGO is re-read on the fixed builder, with the
 teeth. Nothing else in §12 changes.
 
+### 12.13 Amendment 2 (2026-10-12): STAGE as a registered dimension, the belief-quality dose-response, the maturity re-run
+
+Owner, 2026-10-12: *"see how the values change based on what is revealed? E.g. 1 mon, 2, 3, 4, 5 … this will tell us where
+improved determinization would make the most difference and where search already adds the most"*; then: the value of
+information against the STAGE of the game ("do we need sampled worlds early?"), the K-world belief dose-response, and "I want
+to do this experiment again when we plateau so we know what that influences". Everything below is registered BEFORE any
+new arm is run; it extends Tier 1 (§15) and changes no rule of §12.1–§12.9 except where it says so.
+
+**What had been read.** The original study's cheap parts (§16.1–§16.6) and, in this unit, a POST-HOC per-stage read (A)
+and a belief-dose read (C) of the pilot's EXISTING rows (`measurements/hidden_info_by_reveal_count_2026-10-12/`, §16.7).
+No new arm has been run or read. (A) and (C) are descriptive and are not evidence for any rule below.
+
+**What (A) and (C) may and may not influence.** They fixed ONLY: the stage-bucket edges (quartiles of the 1,200 registered
+states' turn and material: facts about the states, no outcome), the k-merging rule (a k with fewer than 80 registered
+states in either checkpoint merges upward), the SIZE of the supplement (from the per-state standard deviations of the
+paired contrasts, 0.14–0.20) and the cost table. They did NOT choose: a threshold (each is 0.0005, 0.02, 0.25, ±0.01 as in
+§12.3–§12.8, or ±0.04 and X = 0.10, each justified where used), an arm, the direction of a rule, the sampling hash order,
+or the verdict vocabulary. The predictions in §12.13.9 were written AFTER (A) and (C) and say so: they check that (A)'s
+pattern replicates on fresh states and on the FULLY honest base F, they are not an independent prior, and no rule tests
+against them. A change to an edge, rule or threshold after the first new arm is read is a disclosed amendment with both
+reads reported (§12.10).
+
+#### 12.13.1 The stage axes (frozen definitions)
+
+Three axes, each derived from the SEARCHED side's own protocol stream up to its root (no model, no outcome):
+
+| axis | definition | buckets (frozen) |
+|---|---|---|
+| **k** (reveal count) | distinct opponent species seen to switch or be dragged in (= 6 − `unrevealed`) | **1–2**, 3, 4, 5, 6 |
+| **turn** | the root's turn (obs clock, gate-checked against the protocol) | ≤ 7, 8–14, 15–21, ≥ 22 |
+| **material** | unfainted mons, ours + theirs (2–12), from `faint` lines | ≤ 7, 8–9, 10–11, 12 |
+
+The edges are the quartiles of the 1,200 registered states (a proportional sample of the eligible pool). The axes are
+correlated (k–turn 0.66, k–material −0.71, turn–material −0.56), so every axis rule is also read with the other two as
+covariates (R-STAGE-AXIS). Joint cells (k × turn-half at turn ≤ 14 / ≥ 15, k × material) are descriptive; a cell with
+fewer than 30 states is shown by its n only. The remaining-HP fraction is recorded (`stage_facts_<cp>.json`) and not used.
+
+#### 12.13.2 The state sample: Tier-1S
+
+- **The registered 600 per checkpoint stay** (natural mix; the replication of the pilot; every Tier-1 arm runs on them).
+- **A k-stratified SUPPLEMENT** brings every k bin to **N_b ≥ 160 states per checkpoint** (320 pooled): end2 +7 / +61 / +52 / +49
+  / +31 and prod +0 / +65 / +55 / +43 / +57 at k = 1–2 / 3 / 4 / 5 / 6, i.e. **+200 and +220 states (800 and 820 per
+  checkpoint)**, drawn from the same pool (the checkpoint's last three eval cycles; free move round, turn 2–40, ≥ 3 legal
+  actions, gate ① passed; `pool.npz`), excluding registered states, at most 1 supplemental state per battle per k bin and
+  3 per battle in all, in `sha256("hib_stage_supp_v1:" + id)` order within each k bin.
+- **Step 0, the CENSUS** (replay only, no model, no playout; ≲ 0.5 CPU-h in all): k, turn and material for every pool
+  state, written beside `pool.npz`. The supplement ids are committed before any outcome of a supplement state is read.
+- **Weights.** Per-bucket reads use every state in the bucket. The natural-mix aggregates (the overall G and the
+  replication of R-INFO) are read on the registered 600 and, beside them, on all states with weight N_pool(bin) / N_sample(bin).
+- **Size rule** (extends §12.10): after the Tier-1S arms, if the pooled 95 % half-width of G_F in any primary k bin exceeds
+  0.025, that bin gets 80 more states per checkpoint (same procedure) BEFORE any verdict is read.
+
+#### 12.13.3 The arms (what runs on which states)
+
+| arm | what | states | cost class |
+|---|---|---|---|
+| **O** | Phase 1 truth (the oracle leaf) | supplement (registered: exists) | new for 420 states |
+| **F** | the fully honest base (§6.1) | all Tier-1S | in Tier 1 |
+| **F+M**, **O−M** | the seen mons' moves told / hidden (§6.2) | all Tier-1S | in Tier 1 |
+| **F+U**, **O−U** | the never-seen mons told / hidden (PROMOTED from Tier 2: they are the k-varying class) | all Tier-1S | new |
+| **FN** | F with species and move draws from the network's own belief (the pilot's C′ sampler on the F base) | all Tier-1S | new |
+| **DK** (§6.9) | the K-world mixture family M8 / M5 / M5W / M5X | all Tier-1S | NONE (reads O and F) |
+| D50, D90, W90, MAP100, POOLSETS, POOL | the rest of Tier 1 | the registered 600 only | in Tier 1 |
+| F+I/A/S, O−I/A/S | the rival classes (Tier 2) | the registered 600; per-stage reads use turn and material buckets only | Tier 2 |
+
+At k = 6 the never-seen class is empty by construction (F+U ≡ F, O−U ≡ O there; excluded from the M-vs-U comparisons).
+**FN is a BUILD item** (the network-belief source on the F builder: the pilot's C′ sampler re-based onto the information-lever
+builder, ≈ 0.5 agent-day, UNVERIFIED). Until it exists TODAY(b) is read from the pilot's C′ rows on the registered states
+only (the supplement states then carry no TODAY), and R-DOSE's DISTANCE verdicts are labelled 'C′ rows'.
+
+#### 12.13.4 Decision rules (rule 8: a bound within ±0.0005 of its boundary is a BOUNDARY result and counts as not clear)
+
+Unless stated: LEAF-K8, pooled over the two checkpoints with battles clustered, replicated per checkpoint (a verdict
+that does not hold in sign on each checkpoint separately is labelled NOT REPLICATED and does not steer); cells are the
+primary buckets of §12.13.1; paired bootstrap (the pilot's 2,000 draws, seed 20261011); G_F(b) = IMP_O − IMP_F on bucket b.
+
+- **R-STAGE-VOI (where is perfect information worth most).** On each axis: **PEAK(b)** iff lower95 [G_F(b) − G_F(b′)] >
+  +0.0005 for EVERY other bucket b′; **TREND-DOWN / TREND-UP** iff the slope of the per-state gap on the z-scored axis has
+  upper95 < −0.0005 / lower95 > +0.0005; **FLAT** iff neither and the interval of G_F(b_max) − G_F(b_min) lies inside ±0.04
+  (the smallest bin difference the sample detects, §12.13.5); else **NOT DETECTED**.
+- **R-STAGE-AXIS (which axis carries it).** The per-state gap regressed jointly on z-scored k, turn and material: an axis
+  **CARRIES** iff its partial slope's 95 % interval excludes 0 by 0.0005. (This tests, on fresh data, the pattern that
+  (A) found: material survives adjustment, k does not.)
+- **R-STAGE-MECH (frequency or stakes).** G = c × s exactly, c = the share of states on which the oracle's pick differs
+  from F's pick, s = the mean TRUE-value gain T(oracle pick) − T(F pick) over those states. For the contrasts k ≤ 3 vs
+  k ≥ 5, material ≥ 10 vs ≤ 7, turn ≤ 7 vs ≥ 22 (early minus late): **FREQUENCY-LED** iff lower95 [Δc] > +0.0005 and the
+  interval of Δs lies inside ±0.04 (a stakes difference below the smallest detectable G difference is not a mechanism);
+  **STAKES-LED** iff lower95 [Δs] > +0.0005 and Δc inside ±0.05; **BOTH** iff both lowers > +0.0005; else **NOT DETECTED**.
+  Reported with the split of ΔG into Δc · s̄ and c̄ · Δs.
+- **R-STAGE-CLASS (what is missing at stage b).** σ_X(b) = IMP_{F+X} − IMP_F and ν_X(b) = IMP_O − IMP_{O−X} for X ∈ {M, U}
+  (Tier 2 adds I, A, S on turn and material). **M-LED(b)** iff lower95 [σ_M − σ_U] > +0.0005 AND lower95 [ν_M − ν_U] >
+  +0.0005 (both sides agree); **U-LED(b)** iff both upper bounds < −0.0005; **MIXED(b)** iff both σ lowers > +0.0005
+  and neither LED; **SIDES-DISAGREE(b)** iff exactly one side is LED (an interaction); **NEITHER(b)** iff both σ uppers
+  < +0.01. Undefined at k = 6.
+- **R-STAGE-SEARCH (the per-stage S0 gate: where honest search already beats the critic).** Scorer TRUNC-4-K8 (the pilot's
+  best honest scorer, declared here) beside LEAF-K8. A bucket is **GATE-OPEN** iff, with n_b ≥ 150 per checkpoint, on EACH
+  checkpoint separately lower95 [IMP_F(TRUNC-4-K8) − IMP_F(CRITIC)] > +0.0005 AND lower95 [IMP_F(TRUNC-4-K8)] > +0.0005, and
+  both hold pooled at the 99.6 % level (Bonferroni over the 13 primary buckets). **GATE-WEAK** iff both hold pooled at
+  95 % only; else **GATE-CLOSED**. The set of GATE-OPEN buckets is the **FRONTIER**.
+- **R-DOSE (the belief-quality dose-response, §6.9; M8, the owner's 7-point grid).**
+  **P-STAR(b, comparator)** = the smallest grid p such that lower95 [IMP_p(LEAF-K8) − comparator] > +0.0005 at p and at every
+  larger grid p; comparators: the policy (0), the critic-only search at the SAME p, the critic-only search at p = 0 (today's);
+  NONE if no p qualifies. **TODAY(b)** = the p-equivalent of FN on bucket b (§6.9) with its upper95 bound.
+  **WITHIN-REACH(b)** iff P-STAR (critic at the same p) exists and ≤ TODAY_upper95 + X, **X = 0.10** (the whole value of the
+  network's move belief over Smogon's, in hit-rate-equivalent units, is 0.065–0.11: a gap that today's demonstrated
+  belief gain could cover); **FAR(b)** iff P-STAR is NONE or exceeds TODAY_upper95 by more than 0.25; else
+  **INTERMEDIATE**. **SHAPE**: Δ² = IMP_{0.5} − (IMP_0 + IMP_1)/2: **CONCAVE** iff lower95 > +0.0005 (partial belief pays),
+  **CONVEX** iff upper95 < −0.0005 (only near-certainty pays), else **LINEAR**; with p-half (the p covering half of the
+  rise). **CONTENT-MATTERS** iff lower95 [M5 − M5W] > +0.0005 at p = 0.35; **OVERCONFIDENCE-COSTS** iff upper95 [IMP_{M5X}(0.75)
+  − IMP_{M5X}(0)] < −0.0005. **CRITIC-INFO-LIMITED** iff lower95 [IMP_1(CRITIC) − IMP_0(CRITIC)] > +0.0005.
+  **DETERMINIZATION-FIRST(b)** (where a belief improvement of fixed size pays most): the payoff of the next δ = 0.10 of
+  belief, Π_b = IMP_{TODAY+δ}(b) − IMP_{TODAY}(b) on the M8 curve; DETERMINIZATION-FIRST(b) iff lower95 [Π_b − Π_{b′}] >
+  +0.0005 for every other bucket b′ of the axis.
+- **R-MATURITY (the trajectory, §12.13.7).** Over the battery's checkpoints, paired on the frozen states: **GAP-SHRINKS**
+  iff upper95 [G_F(last) − G_F(first)] < −0.0005 (all-state cell; per bucket likewise), **GAP-GROWS** the mirror;
+  **BELIEF-RISES** iff lower95 [TODAY(last) − TODAY(first)] > +0.0005; **FRONTIER-MOVES-EARLIER** iff the GATE-OPEN set at
+  the last checkpoint holds a bucket of the earlier-game side of an axis (lower k, lower turn, more material) that is
+  GATE-CLOSED at the first; **FRONTIER-RECEDES** the mirror; else **FRONTIER-STATIC**. The series is **CONVERGED** iff the
+  all-state G_F between the last two anchors changes by an interval inside ±0.01.
+
+#### 12.13.5 The power plan (from (A)'s per-state variances)
+
+The per-state standard deviation of the paired contrasts (G, O − C′, CT′ − C′, honest LEAF − CRITIC) is 0.14–0.20 per k
+bin pooled (end2 / prod separately 0.08–0.23; O − CT′ ≡ 0 at k = 6), the design effect ≈ 1.0 (≤ 2 states per battle), so use
+σ = 0.18. A bin of n pooled states gives a half-width of 1.96 σ / √n (n = 325, the current k = 1–2 bin: ±0.020; n = 192:
+±0.025); two bins differ detectably (80 % power, two-sided 5 %) by 2.8 σ √(2 / n) = **0.040 at n = 320 each**. Hence the
+target of 320 pooled (160 per checkpoint) per k bin, ±0.020 per bin, and the ±0.04 margins above. The pilot's current bins
+hold 325 / 192 / 209 / 228 / 232 pooled states on the oracle ∩ honest set; the supplement lifts the thin bins. Material
+and turn buckets then hold ≥ 230 pooled states each (±0.023). R-STAGE-CLASS contrasts (σ_M − σ_U) have the same per-state
+spread as CT′ − C′ (0.18), so the same ±0.04 applies. P-STAR resolution is the grid (0.05–0.15 steps near the origin),
+not the bootstrap. UNVERIFIED: F-based contrasts may have a different spread than the pilot's v2 arms.
+
+#### 12.13.6 The cost (CPU-h; the measured per-state costs are in `measurements/hidden_info_by_reveal_count_2026-10-12/costs.json`)
+
+Measured per state on the contended box (the rows' own `cost`): Phase 1 **98 s (end2) / 58 s (prod)**, an honest arm 24 s /
+15 s (+ the F sampler's screening, ≤ 5 s, UNVERIFIED). **§15's "≈ 4 CPU-h per Phase 1, 2.6 CPU-h per fair arm" was priced
+from the uncontended throughput pilot and from prod; re-priced here, Tier 1's 9 arms × 2 checkpoints ≈ 58–65 CPU-h, not 47.**
+
+| item | CPU-h |
+|---|---|
+| Step 0, the census (2 checkpoints) | ≲ 0.5 |
+| Phase 1 truth for the 420 supplement states (200 × 98 s + 220 × 58 s) | 9.0 |
+| F, F+M, O−M, F+U, O−U, FN on the supplement (6 arms: 200 × 6 × 28 s + 220 × 6 × 19 s) | 16.3 |
+| F+U, O−U, FN on the registered 600 (promoted / new: 3 arms × 600 × (28 + 19) s) | 23.5 |
+| DK family, all reads and tables | ≈ 0 (analysis) |
+| **incremental over Tier 1** | **≈ 50** |
+
+So the amendment is ≈ +50 CPU-h on a plan that was priced at ≈ 270 (more at the measured costs): about 6 wall-hours on the
+free box's 9 effective cores, or ≈ 17 wall-hours on the 3 cores it may use beside a live run (rule 5b). It adds no GPU. The census, the supplement ids and
+the supplement's Phase 1 truth do not wait for the F sampler or R-GIGO and may run first.
+
+#### 12.13.7 The MATURITY RE-RUN: a standing battery on the X26 deep run (owner, 2026-10-12)
+
+"I want to do this experiment again when we plateau so we know what that influences." (A) and (C) are re-run at fixed
+checkpoints along the X26 deep plateau run and read as a TRAJECTORY; this supersedes §10.5's re-run list for the stage and
+dose reads and is the answer to the v8 worry (§10) for them. As the policy and belief mature: does the oracle − honest gap
+shrink, does today's effective p rise toward p*, does the frontier where honest search beats the critic move earlier in the
+game? It measures what maturity CHANGES; it is not only a confirmation. It rides on the deep run's own checkpoints (no extra
+GPU): each checkpoint is loaded on CPU at the run's pin (the pilot's `run_at_pin.sh` method) beside the run, under rule 5b.
+
+**Frozen protocol.** (a) Checkpoints: the first at ≥ 25M steps, then every 25M, and the plateau checkpoint (§10.5's
+criterion); the 15M end2 / prod reads of Tier-1S are the t₀ reference. (b) States: ONE bank of 800 states drawn by
+§12.13.2 from the deep run's eval traces at its PLATEAU checkpoint (the last three cycles), frozen by id and content hash;
+every earlier checkpoint is scored on the SAME states (its own greedy continuation on both sides, its own top-1 as the
+baseline), so differences across checkpoints are paired. Secondary: each checkpoint's OWN-trace states (LEAN size) to
+separate the state-distribution effect. (c) Seeds: `truth.turn_seeds(id, 48)` with the pilot's partition (leaf 0–15,
+truth 16–39, critic 40–47). (d) Scorers: LEAF-K8, TRUNC-4-K8, CRITIC. (e) Arms: O, F, FN, F+M, F+U (the stage reads, DK and
+R-STAGE-CLASS's M / U on the sufficiency side). (f) The world builder, prior tables and `spec.PRESETS` are those at the
+registration commit (hash recorded in every output; a changed builder starts a new series). (g) Blinding and ordering as
+§12.10; the rules are R-MATURITY and the stage rules re-applied per checkpoint.
+
+**Cost per checkpoint, assuming the end-state architecture's cost per state (Phase 1 98 s, an arm 28 s; UNVERIFIED for
+the deep run's network):** FULL (800 states, O + F + FN + F+M + F+U) **≈ 47 CPU-h**; LEAN (320 states, O + F + FN)
+**≈ 14 CPU-h**. Schedule: FULL at the first anchor and at the plateau checkpoint, LEAN between: six checkpoints ≈ 2 × 47 +
+4 × 14 ≈ **150 CPU-h**, no GPU. Precision of a CHANGE between two checkpoints on the same states (per-state SD of the
+change taken as 0.25, ≈ √2 × 0.18, UNVERIFIED): LEAN ±0.027 all-state and ±0.061 per k bin (64 states); FULL ±0.017 all-state
+and ±0.039 per k bin (160 states).
+
+#### 12.13.8 How the per-stage view connects to credit and to maturity
+
+- **Shapley-style credit.** With classes M, U, I, A, S the knock-in σ_X (reveal X on the empty coalition F) and the
+  knock-out ν_X (hide X from the full coalition O) are the two EXTREME terms of X's Shapley sum; φ_X(b) = ½(σ_X + ν_X) is
+  the two-point credit of class X at stage b (exact for classes that do not interact; |σ_X − ν_X| is the interaction
+  read). Per stage it answers 'which knowledge class does the next unit of belief quality belong to here': U early, M in the middle
+  (the prediction of §12.13.9; (A)'s numbers are CT′ − C′ and O − CT′). The credit is a statement about one network at one maturity.
+- **The maturity rule (§10.5).** Every stage verdict read at 15M is PROVISIONAL "at 15M, current architecture" and unlocks
+  only cheap reversible work. The trajectory of §12.13.7 is the evidence that a stage verdict is stable: a verdict that
+  reverses along the trajectory (GAP-SHRINKS to inside ±0.01, a frontier that moves) is a statement about the network's
+  age, not about the game, and may not steer a multi-week commitment until the plateau reading CONFIRMS it (§10.5).
+
+#### 12.13.9 Predictions (written AFTER (A) and (C); informed by them, see above)
+
+R-STAGE-VOI: TREND-DOWN on k and on material, replicated; no PEAK among adjacent k bins. R-STAGE-AXIS: material CARRIES, k
+does not once material is in. R-STAGE-MECH: FREQUENCY-LED on all three contrasts. R-STAGE-CLASS: U-LED at k ≤ 3 (and
+turn ≤ 7, 12 alive), M-LED at k = 4 and at turn 15–21; I, A, S add to the gap at every stage (unmeasured; F hides them,
+the pilot did not). R-STAGE-SEARCH: GATE-CLOSED everywhere under the replicated rule; GATE-WEAK at k = 6. R-DOSE: CONCAVE
+(p-half ≈ 0.2), CONTENT-MATTERS, no OVERCONFIDENCE-COSTS larger than ≈ −0.005, CRITIC-INFO-LIMITED; P-STAR (critic, same p)
+≈ 0.05 pooled and 0.2–0.35 early; TODAY(FN) ≈ 0.01–0.03; WITHIN-REACH at k = 6 and material ≤ 7, FAR at k ≤ 3 and
+material ≥ 12; DETERMINIZATION-FIRST at the middle buckets (k = 4). R-MATURITY: GAP-SHRINKS ≈ 40 %, BELIEF-RISES ≈ 60 %,
+FRONTIER-MOVES-EARLIER ≈ 30 %.
+
 ---
 
 ## 13. Independent replication and the red team (owner, 2026-10-11: "a GIGO in the instrument is the most likely way this goes wrong")
@@ -838,7 +1090,15 @@ per-mon screening is estimated at ≤ 5 CPU-s per state, UNVERIFIED); an oracle 
 | **Tier 3 (replication and maturity)** | the third checkpoint: Phase 1 + Tier-1 arms (≈ 27); the trajectory at 5M / 10M: Phase 1 + 6 arms each (≈ 2 × 20); the away bank: build + Phase 1 + 5 arms (≈ 18) | ≈ 85 |
 | **the independent implementation** | F, P, F+M on 2 checkpoints | ≈ 16 |
 | **plateau replication (later, on X26)** | §10.5's list | ≈ 40 |
-| **total before the plateau** | | **≈ 260–270** |
+| **total before the plateau** | | **≈ 260–270** (as priced; see the re-pricing below) |
+| **Tier 1-S (Amendment 2, §12.13.6)** | the census; Phase 1 + 6 arms on the 420 k-stratified supplement states; F+U, O−U, FN on the registered 600; the DK family (analysis only) | ≈ 50 |
+| **maturity battery (§12.13.7, later, on X26's own checkpoints, no GPU)** | FULL ≈ 47 / LEAN ≈ 14 CPU-h per checkpoint; 2 FULL + 4 LEAN | ≈ 150 |
+
+**RE-PRICING (2026-10-12, measured; `measurements/hidden_info_by_reveal_count_2026-10-12/costs.json`).** The rows' own CPU
+fields on the contended box: Phase 1 truth **98 s (end2) / 58 s (prod) per state** (16.4 / 9.7 CPU-h per 600), an honest
+arm **24 s / 15 s** (4.0 / 2.4 CPU-h per 600) before the F sampler's screening. The unit costs above came from the
+uncontended throughput pilot and from prod. At the measured costs Tier 1's 9 arms × 2 checkpoints cost ≈ 58–65 CPU-h
+rather than ≈ 47, and every other row scales by the same ≈ 1.3–1.6×; the size rule and the order below are unchanged.
 
 - **On 3 physical cores (6 logical, now):** Tier 1 alone ≈ 10–12 wall-hours; everything ≈ 50+ wall-hours. Only the
   "now" tier runs on them.
@@ -1090,6 +1350,46 @@ oracle labels does not help a FROZEN body at K = 2 labels, R-QHEAD NOT DETECTED 
 noise; `design_value_discrimination.md` §7.13. The value side stays open only with a trained body or a far larger
 label budget, so the evaluator question, R-EVAL, matters more, not less.)
 
+### 16.7 The value of information by STAGE, and the belief-quality dose-response (read 2026-10-12; POST HOC, DESCRIPTIVE; `measurements/hidden_info_by_reveal_count_2026-10-12/`)
+
+Read after §16.1–§16.6 on the same 1,200 states (591 / 595 on which the oracle and all four v2 honest world kinds played;
+the means reproduce the pilot's `result_moves` to 5e-6); no new playout; Amendment 2 (§12.13) was written from it and
+says what it may and may not influence. **Plain language.** The value of perfect information is concentrated EARLY and in
+material-rich positions, because the truth would change the decision far more often there (c = 0.78 at k ≤ 2 vs 0.30 at
+k = 6), NOT because more is at stake when it does (s ≈ 0.11 at every stage). The oracle search's edge over the policy is
+about 7 points at every stage; what rises with the game is how much of it an honest search recovers. Early the missing
+facts are the never-seen Pokémon; in the middle, the seen Pokémon's moves; late, little is left. Honest search beats the
+critic only late (k = 6, pooled), and rollout search needs a weight of ≈ 0.2–0.35 on the true world early (≈ 0.05 late) to
+beat the critic search with confidence where our best belief is worth ≈ 0.01.
+
+| k (pooled, n) | oracle IMP | honest A′ IMP | **G = O − A′** | change rate c | stakes s | seen share of headroom | honest 4-turn − critic |
+|---|---|---|---|---|---|---|---|
+| 1–2 (325) | +0.081 | −0.004 | **+0.086** [+0.066, +0.104] | 0.78 | 0.109 | 0.04 [−0.25, 0.25] | +0.001 |
+| 3 (192) | +0.065 | −0.016 | **+0.081** [+0.057, +0.106] | 0.75 | 0.107 | 0.09 [−0.30, 0.39] | −0.008 |
+| 4 (209) | +0.099 | +0.023 | **+0.076** [+0.051, +0.102] | 0.68 | 0.111 | **0.55 [0.27, 0.81]** | −0.011 |
+| 5 (228) | +0.068 | +0.012 | **+0.056** [+0.036, +0.078] | 0.54 | 0.104 | 0.30 [−0.15, 0.61] | +0.009 |
+| 6 (232) | +0.066 | +0.031 | **+0.035** [+0.017, +0.055] | 0.30 | 0.115 | n/a (headroom +0.021 = the seen moves; O − CT′ ≡ 0) | **+0.026 [+0.004, +0.051]** |
+
+- **Axes.** G by turn ≤ 7 / 8–14 / 15–21 / ≥ 22: +0.091 / +0.066 / +0.074 / +0.039; by material 12 / 10–11 / 8–9 / ≤ 7 alive:
+  +0.087 / +0.086 / +0.073 / +0.031. Jointly (per SD, pooled) only material keeps a slope given k: k −0.002 [−0.017, +0.012],
+  material +0.022 [+0.010, +0.035]; at ≥ 8 alive k ≤ 3 vs k ≥ 5 differ by +0.013 [−0.019, +0.047]. The axes are correlated
+  (k–material −0.71): the registered sample balances them. Early − late: Δc +0.352 [+0.291, +0.413], Δs +0.001
+  [−0.037, +0.038] (k ≤ 3 vs k ≥ 5); material ≥ 10 vs ≤ 7: Δc +0.413 [+0.352, +0.478], Δs +0.024 [−0.017, +0.062].
+- **Frontier.** Honest 4-turn search − critic: k = 6 +0.026 [+0.004, +0.051] pooled (end2 +0.022 [−0.005, +0.052], prod +0.031
+  [−0.001, +0.075]); ≤ 7 alive +0.007 [−0.007, +0.021]. Under §12.13.4's replicated rule no bucket is GATE-OPEN today.
+- **Belief-quality dose-response (§6.9, M8; pooled leaf IMP at p = 0 / 0.1 / 0.2 / 0.35 / 0.5 / 0.75 / 1.0):** +0.009 / +0.034 /
+  +0.040 / +0.062 / +0.069 / +0.078 / +0.076 (the one-ply critic +0.010 → +0.019; the literal K = 5 design +0.007 → +0.032 →
+  +0.028). p-half 0.22 [0.17, 0.27] pooled (k 1–2 0.28, 3 0.23, 4 0.16, 5 0.25, 6 0.04). A random honest world at the true
+  world's weight: M5 − M5W = +0.012 [+0.009, +0.014] at p = 0.1 and +0.026 [+0.022, +0.030] at 0.35 (CONTENT-MATTERS).
+  Break-even p* (leaf over the critic search at the same p, point / 95 % lower): pooled 0.05 / 0.05; k 1–2 0.05 / 0.20, k 3
+  0.15 / 0.35, k 4 0 / 0.05, k 5 0 / 0.25, k 6 0 / 0.05; material 12: 0.05 / 0.35. Today's belief in value units: FN-like
+  C′ **0.010 [0.000, 0.029]**, B′ 0.000, CT′ 0.045 [0.027, 0.19] (hit-rate cross-check: species 0.30, move-set 0.065–0.11,
+  single slot 0.015–0.026; value units are the registered ones because the better species hit rate bought nothing).
+- **Caveats.** p is a weight on the exact true world, not a probability any belief holds; A′ keeps a seen mon's
+  item/ability/spread true, so p = 0 is not F; many cells, no multiplicity adjustment; the true and honest components
+  share dice seeds 0–7; both checkpoints are PROVISIONAL at 15M (§10). FINDING: the rows' own CPU fields re-price §15
+  (Phase 1 98 / 58 CPU-s per state, not ≈ 24; Tier 1 ≈ 58–65 CPU-h, not 47).
+
 ---
 
 ## 17. Open questions for the owner
@@ -1115,3 +1415,6 @@ label budget, so the evaluator question, R-EVAL, matters more, not less.)
 | 2026-10-12 | **The study's arms become presets of the ONE information-lever spec** (owner: one DRY implementation for training, search and the model's inputs) | `design_information_levers.md`: every §6 / §7 / §8 arm is a named preset (`spec.PRESETS`), its five-class partition is `spec.STUDY_CLASSES` (S = a seen mon's spread AND exact HP; `counters` told by O alone); the world builder, the training observation and the injection consume the same spec; nothing registered here changes | keeping each arm as bespoke code in the measurement folder (three incomparable mechanisms; the builder leaked) | `design_information_levers.md` §5 |
 | 2026-10-12 | **The model-input hook lifted into `src/` as the spec's injection consumer** (`agents.info_levers.inject`) | §7.1's hook at HEAD, driven by the information-lever spec (the §7.2 arms are its presets), extended to the item posterior and the believed stats, with its teeth on a production-config extractor. The knock-in levers are OFFERED on the observation channel (`ki_*` presets of `--oracle-reveal`, with a diagnostic-fork consent); a training-time `--belief-oracle` (§8.1) is NOT built, and which channel the §8 forks take stays this study's call | keeping the hook pinned in the measurement folder (a third mechanism outside the one spec); building `--belief-oracle` in this unit (≈ 2–2.5 agent-days) | `design_information_levers.md` §6, §8 |
 | 2026-10-12 | **§8.3's argv marked NOT LAUNCHABLE as written** (the information-lever build's validation) | A STATUS note under the argv: `--arch endstate` is refused on a fork, `--belief-oracle` is not built; the closest built lever (`--oracle-reveal ki_moves` + `--diagnostic-fork-consent`, `--pin-commit` at the commit carrying them) is given with its checkargs / dry-run validation, and the choice of channel stays this study's | silently rewriting the arms onto the observation channel (a study-design change: an observation reveal is not §8.1's belief-input injection) | §8.3 STATUS note; `design_information_levers.md` §6 |
+| 2026-10-12 | **AMENDMENT 2 (§12.13): STAGE (reveal count k, turn, material) becomes a registered dimension of Tier 1, with a k-stratified sample, per-stage arms and deterministic per-stage rules** (owner: "see how the values change based on what is revealed … this will tell us where improved determinization would make the most difference and where search already adds the most"; then the value of information against the stage of the game) | The registered 600 states per checkpoint stay; a k-stratified SUPPLEMENT (+200 end2, +220 prod) lifts every k bin to 160 states per checkpoint (±0.020 per bin, a 0.040 bin difference detectable at 80 % power, from (A)'s per-state SDs 0.14–0.20); frozen quartile buckets for turn and material; F+U, O−U and FN promoted into Tier 1 for every state; rules R-STAGE-VOI / -AXIS / -MECH (G = frequency × stakes) / -CLASS (two-point Shapley credit, M vs U) / -SEARCH (the per-stage S0 gate, replicated per checkpoint and Bonferroni-pooled) / -DOSE; the amendment states that the post-hoc read (A) and (C) fixed only edges, the merge rule, the sample size and the cost; Tier 1 re-priced from the rows' measured CPU (Phase 1 98 / 58 CPU-s per state) | reading k alone (the post-hoc read found material is the axis that survives adjustment); a fresh sample drawn by k from scratch (the registered states and their Phase 1 truth already exist); running every Tier-1 arm on the supplement (the dose / placebo / posterior arms answer other questions; ≈ +25 CPU-h); letting the post-hoc read choose thresholds | `hidden_info_by_reveal_count_2026-10-12/` (`by_reveal_count.json`, `costs.json`); §16.7; ledger 2026-10-12 |
+| 2026-10-12 | **The BELIEF-QUALITY DOSE-RESPONSE registered as a Tier-1 arm family (§6.9, DK)** (owner: "determinize like five competing worlds and toss in variable probability masses to the correct one … how far away are we from determinizing worlds improving all of search?") | K-world mixtures with weight p on the TRUE world: M8 (the 'belief mass' curve, ends = the banked reads), the literal M5 (K = 5, one playout per world, exact U-statistic), the placebos M5W (a random honest world) and M5X (the most wrong honest world); one set of playouts gives the whole p-curve; p* against the policy / the critic search at the same p / today's critic search, TODAY = the p-equivalent of the network-belief worlds in VALUE units, per stage; shape, content and over-confidence rules; zero playouts beyond Tier 1 | per-fact doses only (§6.4: a world is right about every fact only w.p. ≈ p^n, a different unit); hit-rate units for 'today's p' (the pilot's species belief hit 2× more true species and bought nothing); playing each p as its own arm (7 × the cost for the same information) | §6.9; §16.7 (the descriptive curve; its ends reproduce the pilot's banked reads to 1e-9) |
+| 2026-10-12 | **A MATURITY RE-RUN registered as a standing battery on the X26 deep run's own checkpoints (§12.13.7)** (owner: "I want to do this experiment again when we plateau so we know what that influences") | The per-stage VOI (A) and the dose-response (C) re-run at every 25M steps and at the plateau checkpoint, on ONE frozen 800-state bank drawn at the plateau (paired across checkpoints), the same seeds and scorers, a frozen builder; FULL (≈ 47 CPU-h) at the first and plateau anchors, LEAN (≈ 14) between, ≈ 150 CPU-h, no GPU; R-MATURITY reads the trajectory (does the gap shrink, does today's p rise toward p*, does the frontier move earlier); a verdict that reverses along the trajectory may not steer a multi-week commitment (§10.5) | re-drawing states per checkpoint (confounds maturity with the state distribution; kept as a LEAN secondary); a single plateau read (cannot say what maturity changes) | `design_value_discrimination.md` §13.10 (the stage-gated bootstrap that consumes the trajectory) |
