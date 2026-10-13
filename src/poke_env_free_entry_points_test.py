@@ -234,7 +234,7 @@ _EDGE = """
     tmp = Path(tempfile.mkdtemp(prefix="p1_h2h_"))
     with PAR.declared_torch_state(1):
         trainee, sentinels, _cfg = PAR.build_models(tmp / "run_h2h_test", n_sentinels=1)
-    compute = PL.Compute(device="cpu", backend="eager", n_envs=8, threads=2, torch_threads=2, front="ffi",
+    compute = PL.Compute(device="cpu", backend="eager", n_envs=8, threads=2, torch_threads=1, front="ffi",
                          profile="selfcheck")
     stats = PL.play_edge(str(tmp / "ledger"), PL.resolve_player(trainee), PL.resolve_player(sentinels[0]), pairs=2,
                          batch_pairs=2, schedule_seed=3, run_label="p1-blocked", compute=compute, emit=lambda _m: None)
