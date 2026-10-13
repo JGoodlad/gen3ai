@@ -20,6 +20,10 @@ spread kept TRUE) is the ``pilot`` preset.
 
 THE RESIDUAL (named, reported in ``Worlds.leak["residual"]``): the world replays the prefix on the TRUE battle seed, so
 a hidden duration rolled before the root (sleep, confusion, Encore, a lock) is the truth's in every world (``counters``).
+The PARTIAL leaks (``Worlds.leak["partial"]``, design §7.5, measured): for the same reason a hidden fact that spends a
+die without printing a line — a speed tie, King's Rock, Focus Band, a contact ability's roll — must spend the truth's
+dice. Every world is also OPENED by the playout tool before it is returned (the gate's ``core_events`` replay accepts
+some choice logs the playout tool refuses).
 
 The template: a past opponent move choice is attributed to the mon that made it (the opponent's ACTIVE mon at that
 command, from its own request); when the searched side never saw that mon use it, it is rewritten to its SLOT
@@ -434,14 +438,45 @@ class WorldSampler:
     a world cannot be built in ``max_tries``). ``reveal``: an information-lever spec (a preset name or clause text;
     validated against the SEARCH consumer); ``off`` is honest. ``key`` seeds every draw (deterministic)."""
 
-    def __init__(self, prior: Optional[Prior] = None, max_tries: int = MAX_TRIES, reveal="off"):
+    def __init__(self, prior: Optional[Prior] = None, max_tries: int = MAX_TRIES, reveal="off",
+                 playout_check: bool = True, playout_lib=None):
         self.P = prior or Prior()
         self.max_tries = max_tries
         self.spec: InfoReveal = SEARCH.validate(reveal)
         self.pad = _gender_pad()
         self._spreads: Dict[str, WS.SpreadPrior] = {}
+        #: every world is also OPENED by the playout tool (``rust_env_playout_open``) before it is returned: the
+        #: core_events replay the gate runs accepts some choice logs the playout tool refuses (a numeric ``move k``, a
+        #: Struggle the world does not force; the blind replica's finding), and a world search cannot play is no world
+        self.playout_check = playout_check
+        self._playout_lib = playout_lib
+        self._playout_core = None
         #: set to a list to record why joint gates fail (the first divergent line), for diagnosis
         self.debug: Optional[List[dict]] = None
+
+    def playout_refusal(self, log: dict, at: int, side: str) -> Optional[str]:
+        """None when the playout tool opens ``log`` at ``at`` for ``side`` (the search's own replay), else its refusal."""
+        if not self.playout_check:
+            return None
+        if self._playout_core is None:
+            from utils.rust_env import ffi as F
+            from utils.rust_env.build import ensure_built
+            from utils.rust_env.successors import SearchCore
+
+            lib = self._playout_lib
+            if lib is None:
+                import os
+
+                profile = "selfcheck" if os.environ.get("POKESIM_EMISSION_SELFCHECK") == "1" else "release"
+                lib = F.load(ensure_built(profile)[1])
+            self._playout_core = SearchCore(lib=lib)
+        req = {"log": log, "at": int(at), "side": side, "actions": None, "seeds": [None], "stall": None,
+               "max_turns": 999, "keep_cmds": False}
+        try:
+            self._playout_core._cstr(self._playout_core.lib.rust_env_playout_open, json.dumps(req).encode())
+        except Exception as e:                       # the tool's typed refusal: the world is rejected, named
+            return f"{type(e).__name__}: {str(e)[:300]}"
+        return None
 
     def _spread_prior(self, sid: str) -> WS.SpreadPrior:
         if sid not in self._spreads:
@@ -460,7 +495,8 @@ class WorldSampler:
         rec, rv, ref, ref_proto, ref_cond = root.rec, root.rv, root.ref, root.ref_proto, root.ref_cond
         team, entries, sets, sids, moves_of = root.team, root.entries, root.sets, root.sids, root.moves_of
         kept, tmpl = root.kept, root.tmpl
-        leak = dict(root.leak, residual=["%s:%s" % k for k in SEARCH.residual_of(spec)])
+        leak = dict(root.leak, residual=["%s:%s" % k for k in SEARCH.residual_of(spec)],
+                    partial=["%s:%s" % k for k in SEARCH.partial_of(spec)])
 
         def world_cmds(team_w: str) -> List[list]:
             return render(tmpl, team_w)
@@ -637,6 +673,7 @@ class WorldSampler:
             return (rng, placed, facts, keys, need_hp, pinned), None
 
         rev_hp: Dict[int, Optional[int]] = {}
+        refusals: List[str] = []
         used: Dict[WS.ScreenKey, int] = {}
         teams: List[Optional[str]] = [None] * J
         stats: List[dict] = [{} for _ in range(J)]
@@ -679,7 +716,7 @@ class WorldSampler:
                     used[k] = used.get(k, 0) + 1
                     # the moves AFTER the screen: the drawn IVs say whether the set holds a Hidden Power, and its type
                     keep, mv_lv = facts[i].pop("_plan")
-                    hpt = st[4]
+                    hpt = WS.hp_split(st[4])[0]                  # the Hidden Power TYPE the screened IVs carry
                     e_w = None
                     for _r in range(MOVE_REDRAWS):         # a set the format bans (Speed Pass, …) is redrawn
                         got = WD.draw_moves(rng, self.P.moves(sids[i]), keep, len(moves_of[i]), mv_lv, moves_of[i],
@@ -709,6 +746,14 @@ class WorldSampler:
             oks = run_gate([(t, frozenset(c)) for t, _, c in final.values()])
             for (j, (tw, fl, _)), (ok, _ln, _h) in zip(final.items(), oks):
                 if ok:
+                    lw = dict(log, teams=[tw if s_ == oi else t_ for s_, t_ in enumerate(log["teams"])],
+                              cmds=[f"FORCELOSE {tok}" if c0 == "forcelose" else f"CHOOSE {c0} {tok}"
+                                    for c0, tok in world_cmds(tw)] + list(log["cmds"][at:]))
+                    why = self.playout_refusal(lw, at, side)
+                    if why is not None:
+                        fails["playout_refused"] = fails.get("playout_refused", 0) + 1
+                        refusals.append(why)
+                        continue
                     teams[j] = tw
                     wfacts[j] = fl
                     stats[j] = {"attempt": attempt}
@@ -726,6 +771,8 @@ class WorldSampler:
                                            "team": tw, "true_team": team})
             attempt += 1
         if any(t is None for t in teams):
+            if refusals:
+                fails["playout_refusal_example"] = refusals[0]          # type: ignore[assignment]
             raise WorldError(f"{key}: {sum(t is None for t in teams)} of {J} worlds not built in {self.max_tries} "
                              f"tries ({fails})")
         logs = []

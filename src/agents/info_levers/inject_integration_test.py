@@ -180,3 +180,34 @@ def test_refusals_and_a_planted_off_by_one_target_is_caught(fe, battle):
     miss = sum(float(q[b, s, t].min()) < 0.5 for b, row in enumerate(st["moves"]["targets"])
                for s, t in enumerate(row) if t)
     assert miss > 0, "the planted off-by-one target leaves the true moves unpushed: the reach check sees it"
+
+
+def test_the_hidden_power_type_is_a_spread_fact_and_its_presence_a_moves_fact(fe, battle):
+    """Taxonomy (design §1.1): ``moves`` tells THAT a seen mon holds a Hidden Power, ``spread`` (the IVs) tells its
+    TYPE. A moves lever alone leaves the network's type posterior as it was; a spread lever moves only the type."""
+    rows, team = battle
+    _, base, _, _ = _run(fe, rows)
+    T = list(I.TYPED)
+
+    def split(mb):
+        qt = torch.sigmoid(mb.double()[..., T])
+        pres = qt.sum(-1)
+        return pres, qt / pres.unsqueeze(-1)
+
+    p0, t0 = split(base)
+    _, mb, _, st = _run(fe, rows, "TRUE@1.0", team=team)
+    on = torch.from_numpy(st["moves"]["hp_on"])
+    assert int(on.sum()) > 0, "the fixture battle has a seen mon with an unrevealed true Hidden Power"
+    p1, t1 = split(mb)
+    assert float((p1[on] - 1.0).abs().max()) < 1e-4, "the moves lever pushes the Hidden Power's presence"
+    assert float((t1[on] - t0[on]).abs().max()) < 1e-4, "...and leaves its TYPE to the network"
+    _, mb2, _, st2 = _run(fe, rows, "spread:seen", team=team)
+    ht = torch.from_numpy(st2["moves"]["hp_type"])
+    sel = ht >= 0
+    assert bool(sel.any()) and not bool(torch.from_numpy(st2["moves"]["hp_on"]).any())
+    p2, t2 = split(mb2)
+    assert float((p2[sel] - p0[sel]).abs().max()) < 1e-4, "the spread lever leaves the presence"
+    assert float(t2[sel].gather(-1, ht[sel].unsqueeze(-1)).min()) > 1.0 - 1e-4, "...and tells the type"
+    _, mb3, _, _ = _run(fe, rows, "moves:seen,spread:seen", team=team)
+    q3 = torch.sigmoid(mb3.double()[..., T])
+    assert float(q3[on].gather(-1, ht[on].unsqueeze(-1)).min()) > 1.0 - 1e-4, "both levers: the true typed id"

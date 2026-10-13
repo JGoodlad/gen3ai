@@ -12,6 +12,28 @@ def test_hp_ivs_round_trip_every_type_at_max_power():
         assert all(x in (30, 31) for x in ivs)        # bit 1 set everywhere ⇒ power 70
 
 
+def test_every_hidden_power_iv_pattern_is_enumerated_canonical_first_and_the_screen_state_round_trips():
+    from agents.info_levers.packed import hp_iv_masks
+    from main.value_search import world_screen as WS
+
+    seen = set()
+    for t in W.HP_TYPES:
+        masks = hp_iv_masks(t)
+        assert masks[0] == W.hp_ivs(t) and len(set(map(tuple, masks))) == len(masks)
+        assert all(W.hp_type_of(m) == t and all(x in (30, 31) for x in m) for m in masks)
+        seen |= {tuple(m) for m in masks}
+        for k in range(len(masks)):
+            name = t if k == 0 else f"{t}/{k}"
+            assert WS.hp_split(name) == (t, k) and list(WS.ivs_of(name)) == masks[k]
+    assert len(seen) == 64, "the 16 types partition all 64 30/31 patterns"
+    # a pool set's NON-canonical Hidden Power IVs (HP Grass with 30 HP, not the canonical 30 Atk / 30 SpA) are a state
+    f = W.parse_set("Jolteon||leftovers|voltabsorb|thunderbolt,hiddenpower,batonpass,substitute|Timid|"
+                    "4,,,252,,252||30,31,30,30,31,30|||")
+    st = WS.true_state(f)
+    ty, k = WS.hp_split(st[4])
+    assert ty == W.hp_type_of(W.set_ivs(f)) and k > 0 and list(WS.ivs_of(st[4])) == W.set_ivs(f)
+
+
 def test_hp_type_of_known_spreads():
     # the classic gen-3 HP Grass (30 Atk / 30 SpA) and HP Ice (30 Atk / 30 Def) spreads, packed order
     assert W.hp_type_of([31, 30, 31, 30, 31, 31]) == "grass"

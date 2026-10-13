@@ -184,8 +184,9 @@ class Injector:
         def typed_wrap(opp_tokens, sctx, raw):
             out = orig_typed(opp_tokens, sctx, raw)
             self.calls += 1
-            if self.call is None or self.call.spec.lever("moves", "seen") is None and \
-                    self.call.spec.lever("moves", "unseen") is None:
+            if self.call is None or (self.call.spec.lever("moves", "seen") is None
+                                     and self.call.spec.lever("moves", "unseen") is None
+                                     and self.call.spec.lever("spread", "seen") is None):
                 return out
             if "ctx" not in self._box:
                 raise RuntimeError("_typed_hp_posterior called outside _apply_move_belief")
@@ -218,7 +219,9 @@ class Injector:
 
     # ---------------------------------------------------------------- the MOVES rewrite
     def move_targets(self, ctx, hs, base_logits) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
-        """(target [B,6,M] bool, per-slot mass [B,6] (0 = untouched), pinned [B,6,M] bool, hp revealed [B,6], stats)."""
+        """(target [B,6,M] bool, per-slot mass [B,6] (0 = untouched), pinned [B,6,M] bool, hp revealed [B,6], stats).
+        A TRUE Hidden Power is not a typed target: its PRESENCE is (``stats["hp_on"]``), its TYPE is a spread fact
+        (``stats["hp_type"]``: the true type index where a ``spread:seen`` lever tells it, else -1)."""
         import torch
 
         c = self.call
@@ -238,8 +241,11 @@ class Injector:
         mass = np.zeros((B, T))
         pinned = np.zeros((B, T, M), bool)
         hp_rev_a = np.zeros((B, T), bool)
+        hp_on = np.zeros((B, T), bool)
+        hp_type = np.full((B, T), -1, dtype=np.int64)
+        lv_sp = c.spec.lever("spread", "seen")
         st = {"rows": B, "seen_slots": 0, "seen_unmatched": 0, "slots": 0, "moves": 0, "short": 0,
-              "hyp_slots": 0, "hyp_matched": 0, "targets": []}
+              "hyp_slots": 0, "hyp_matched": 0, "hp_on_slots": 0, "targets": []}
         true_nums = set(c.team.mons)
         for b in range(B):
             seen_nums = {int(species[b, s]) for s in range(T) if not believed[b, s] and species[b, s] > 0}
@@ -252,6 +258,11 @@ class Injector:
                 M_s: List[int] = []
                 num = int(species[b, s])
                 p = 0.0
+                if not believed[b, s] and num > 0 and lv_sp is not None and not hp_rev:
+                    tm_sp = c.team.mons.get(num)
+                    t_hp = [n for n in (tm_sp.moves if tm_sp is not None else ()) if TYPED_LO <= n <= TYPED_HI]
+                    if t_hp:
+                        hp_type[b, s] = t_hp[0] - TYPED_LO          # the SPREAD lever tells the Hidden Power's type
                 if not believed[b, s] and num > 0 and lv_s is not None:
                     st["seen_slots"] += 1
                     tm = c.team.mons.get(num)
@@ -280,13 +291,20 @@ class Injector:
                         st["hyp_matched"] += 1
                         M_s = sorted(n for n in c.team.mons[h].moves if n not in pins)
                         p = lv_u.mass
-                if M_s and p > 0:
+                lv_here = lv_s if not believed[b, s] else lv_u
+                if p > 0 and lv_here is not None and lv_here.source == "truth" and any(is_hp(n) for n in M_s):
+                    hp_on[b, s] = True                      # the moves tell THAT it holds a Hidden Power, not its type
+                    M_s = [n for n in M_s if not is_hp(n)]
+                if (M_s or hp_on[b, s]) and p > 0:
                     tgt[b, s, M_s] = True
                     mass[b, s] = p
-                    st["slots"] += 1
-                    st["moves"] += len(M_s)
+                    st["hp_on_slots"] += int(hp_on[b, s])
+                    if M_s:
+                        st["slots"] += 1
+                        st["moves"] += len(M_s)
                 row.append(M_s)
             st["targets"].append(row)
+        st["hp_on"], st["hp_type"], st["spread_mass"] = hp_on, hp_type, (lv_sp.mass if lv_sp is not None else 0.0)
         return tgt, mass, pinned, hp_rev_a, st
 
     def _rewrite_moves(self, out, ctx, hs):
@@ -296,8 +314,10 @@ class Injector:
         tgt_np, mass_np, pin_np, hprev_np, st = self.move_targets(ctx, hs, logits)
         assert self.call is not None
         self.call.stats["moves"] = st
+        hp_on_np, hp_type_np = st["hp_on"], st["hp_type"]
         on_np = mass_np > 0
-        if not on_np.any():
+        hp_np = (hp_on_np | (hp_type_np >= 0)) & ~hprev_np
+        if not on_np.any() and not hp_np.any():
             return logits, presence, hp_post, hp_logits
         dev, dt = logits.device, logits.dtype
         tgt = torch.from_numpy(tgt_np).to(dev)
@@ -309,7 +329,24 @@ class Injector:
         lc = torch.logit(qn.clamp(CLIP, 1.0 - CLIP))
         new = torch.where(tgt, torch.maximum(l64, lc), torch.minimum(l64, lc))
         logits2 = torch.where(sel, new.to(dt), logits)
-        hp_sel = torch.from_numpy(on_np & ~hprev_np).to(dev)
+        if hp_np.any():
+            # the Hidden Power's 16 typed channels: presence' = (1 - p)·presence + p (a moves lever telling it holds
+            # one), type' = (1 - ps)·type + ps·true (a spread lever telling its type); q'(HP_t) = presence'·type'(t)
+            qt = torch.sigmoid(l64[..., TYPED_LO:TYPED_HI + 1])
+            pres = qt.sum(-1, keepdim=True)
+            typ = qt / pres.clamp_min(1e-300)
+            hon = torch.from_numpy(hp_on_np).to(dev).unsqueeze(-1)
+            pres2 = torch.where(hon, (1.0 - p) * pres + p, pres)
+            ht = torch.from_numpy(np.maximum(hp_type_np, 0)).to(dev)
+            onehot = torch.nn.functional.one_hot(ht, TYPED_HI - TYPED_LO + 1).double()
+            ps = float(st["spread_mass"])
+            hty = torch.from_numpy(hp_type_np >= 0).to(dev).unsqueeze(-1)
+            typ2 = torch.where(hty, (1.0 - ps) * typ + ps * onehot, typ)
+            lt = torch.logit((pres2 * typ2).clamp(CLIP, 1.0 - CLIP))
+            hsel = torch.from_numpy(hp_np).to(dev).unsqueeze(-1)
+            logits2 = logits2.clone()
+            logits2[..., TYPED_LO:TYPED_HI + 1] = torch.where(hsel, lt.to(dt), logits2[..., TYPED_LO:TYPED_HI + 1])
+        hp_sel = torch.from_numpy((on_np & ~hprev_np) | hp_np).to(dev)
         if presence is not None and hp_post is not None and bool(hp_sel.any()):
             qt = torch.sigmoid(logits2[..., TYPED_LO:TYPED_HI + 1].double())
             pres2 = qt.sum(-1)

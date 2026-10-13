@@ -1,0 +1,4089 @@
+{
+ "decisions": {
+  "decisions": 169,
+  "with_ability_rejection": 0,
+  "with_any": 91,
+  "with_item_dice_pinned": 0,
+  "with_item_dice_rejection": 75,
+  "with_speed_pinned": 34
+ },
+ "per_decision": [
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "vaporeon",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_36000000/random/win_s0_002#p1#7",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "8"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_36000000/random/win_s2_001#p1#28",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 4,
+   "item_honest": 1,
+   "item_mass_removed": 8.2e-05,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 20,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "27"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_36000000/random/win_s2_001#p1#42",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 4,
+   "item_honest": 1,
+   "item_mass_removed": 8.2e-05,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 20,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "39"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_36000000/heuristic/loss_s1_003#p1#14",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 6,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "12"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_36000000/staller/loss_s1_003#p1#15",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "13"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "charizard",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_36000000/staller_v2/loss_s0_004#p1#26",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.000107,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "22"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_36000000/staller_v2/win_s0_002#p1#20",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "21"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_36000000/aggressive/win_s0_001#p1#22",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 3,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000126,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "23"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_36000000/sentinel_1/loss_s2_001#p1#16",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "flygon",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_36000000/sentinel_1/win_s0_004#p1#25",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 6.2e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "22"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_36000000/sentinel_2/loss_s0_005#p1#29",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "26"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "suicune",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "suicune",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_36000000/sentinel_3/loss_s0_004#p1#5",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 1e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 2,
+   "speed_pinned": 1,
+   "turn": "5"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_36000000/sentinel_4/win_s0_002#p1#6",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 6,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "7"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_46000032/random/win_s1_001#p1#15",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "medicham",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/heuristic/win_s0_002#p1#14",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 5,
+   "item_dice_tested": 6,
+   "item_honest": 0,
+   "item_mass_removed": 0.000282,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "12"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_46000032/heuristic/loss_s3_003#p1#18",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 2,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "19"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/staller/win_s0_001#p1#20",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 4,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000178,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "21"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_46000032/staller/draw_s2_004#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "10"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/staller_v2/win_s0_001#p1#6",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9e-06,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "7"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/aggressive/win_s0_001#p1#11",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 4,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000178,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "12"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/aggressive_v2/win_s0_001#p1#5",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9e-06,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/aggressive_v2/win_s0_001#p1#18",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 2.9e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "19"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_46000032/aggressive_v2/loss_s0_005#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 3,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "zapdos",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "metagross",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/aggressive_v2/draw_s1_004#p1#9",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 1,
+   "item_mass_removed": 2.7e-05,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 3,
+   "speed_pinned": 1,
+   "turn": "8"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_46000032/setup_sweep_v2/loss_s1_003#p1#12",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "11"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "flygon",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/sentinel_0/win_s1_004#p1#16",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 2e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "15"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "flygon",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/sentinel_0/win_s1_004#p1#24",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000117,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "23"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "speed_pinned": [
+      "1",
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/sentinel_3/loss_s1_003#p1#27",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 5,
+   "speed_pinned": 1,
+   "turn": "24"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/sentinel_4/win_s0_001#p1#18",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "blissey",
+     "speed_pinned": [
+      "1",
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_46000032/sentinel_4/loss_s0_005#p1#31",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "29"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_46000032/sentinel_4/win_s0_002#p1#18",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "18"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/random/win_s0_001#p1#14",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 16,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "14"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/random/win_s0_002#p1#2",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 6,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "3"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "swampert",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/random/win_s1_001#p1#12",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 1.4e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "12"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/heuristic/win_s0_001#p1#9",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9e-06,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "10"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "jolteon",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/heuristic/loss_s0_004#p1#21",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "17"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/heuristic/loss_s3_003#p1#3",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 3,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "4"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "1"
+     ]
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/heuristic2/loss_s0_005#p1#7",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9e-06,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 2,
+   "speed_pinned": 1,
+   "turn": "7"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/heuristic2/loss_s0_005#p1#21",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 1,
+   "turn": "18"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/staller/win_s0_001#p1#15",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 4,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000178,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/staller/win_s0_001#p1#17",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 4,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000178,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "18"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "heracross",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "jolteon",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "jolteon",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "salamence",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "salamence",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/staller/loss_s1_003#p1#9",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 5,
+   "item_dice_tested": 6,
+   "item_honest": 0,
+   "item_mass_removed": 0.000698,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/staller/win_s0_002#p1#31",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.000105,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "29"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "zapdos",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/staller_v2/win_s0_002#p1#11",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 4e-06,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "12"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "zapdos",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/staller_v2/win_s0_002#p1#29",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 4e-06,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "27"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/aggressive/loss_s3_003#p1#11",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/aggressive/draw_s3_004#p1#5",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/aggressive_v2/win_s0_001#p1#37",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 3,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000126,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "38"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/setup_sweep/win_s0_001#p1#34",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "31"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/setup_sweep/loss_s1_003#p1#7",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "7"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/setup_sweep/loss_s0_005#p1#7",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "7"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "jolteon",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/setup_sweep_v2/loss_s1_003#p1#19",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/sentinel_0/win_s0_001#p1#33",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "34"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/sentinel_0/loss_s1_003#p1#5",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/sentinel_1/win_s0_001#p1#33",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9e-06,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "34"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/sentinel_1/win_s0_001#p1#38",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9e-06,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "39"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "venusaur",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/sentinel_1/loss_s0_005#p1#29",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 4,
+   "speed_pinned": 1,
+   "turn": "27"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "charizard",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/sentinel_3/loss_s1_003#p1#19",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.000107,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "17"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "flygon",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_56000016/sentinel_4/win_s1_004#p1#17",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 2e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/sentinel_4/loss_s0_005#p1#28",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "25"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_56000016/sentinel_4/loss_s2_002#p1#6",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/heuristic/loss_s0_005#p1#27",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 3,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 8.7e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 16,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "23"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "celebi",
+     "speed_pinned": [
+      "1",
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/heuristic/loss_s0_004#p1#11",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 4,
+   "speed_pinned": 1,
+   "turn": "11"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "zapdos",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/heuristic2/win_s0_002#p1#18",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 2.2e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 5,
+   "speed_pinned": 1,
+   "turn": "18"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_66000000/heuristic2/loss_s3_003#p1#20",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "17"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "gengar",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/staller/loss_s2_002#p1#20",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.00021,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "17"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "gengar",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/staller/loss_s2_002#p1#23",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.00021,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "19"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_66000000/staller_v2/loss_s0_004#p1#2",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 5,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "3"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/staller_v2/win_s3_003#p1#4",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 4.3e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 6,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "5"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "suicune",
+     "speed_pinned": [
+      "-1"
+     ]
+    },
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/setup_sweep_v2/win_s0_001#p1#18",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.000105,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "15"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/setup_sweep_v2/loss_s1_003#p1#16",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 3,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 8.5e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "14"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/sentinel_0/win_s0_001#p1#43",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "40"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_66000000/sentinel_0/loss_s0_004#p1#9",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_66000000/sentinel_1/draw_s1_003#p1#9",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_66000000/sentinel_2/loss_s0_005#p1#2",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 5,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "3"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_66000000/sentinel_4/win_s0_001#p1#27",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "24"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_66000000/sentinel_4/loss_s0_002#p1#22",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "21"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "swampert",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "gengar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/random/win_s0_001#p1#9",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 6,
+   "item_honest": 0,
+   "item_mass_removed": 0.000224,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 18,
+   "speed_mons": 5,
+   "speed_pinned": 1,
+   "turn": "10"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "gengar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/random/win_s0_001#p1#12",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.00021,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 16,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "13"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/heuristic/loss_s3_003#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/heuristic2/loss_s1_003#p1#15",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 3,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000172,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "12"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/staller_v2/loss_s0_005#p1#31",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 2.3e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "25"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "zapdos",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "celebi",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/staller_v2/win_s0_002#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 6,
+   "item_honest": 0,
+   "item_mass_removed": 5e-06,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 16,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "11"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "speed_pinned": [
+      "1"
+     ]
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/aggressive/win_s0_001#p1#20",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 3,
+   "speed_pinned": 1,
+   "turn": "21"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "medicham",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/aggressive/win_s0_002#p1#11",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000195,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "10"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "flygon",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/setup_sweep/win_s0_002#p1#13",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 0.000104,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "13"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_0/win_s0_001#p1#40",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "38"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_0/loss_s1_003#p1#8",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 5,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "8"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_0/loss_s0_002#p1#21",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "20"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_1/win_s0_001#p1#5",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_1/loss_s2_002#p1#16",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_01_base/step_74000016/sentinel_1/loss_s2_002#p1#30",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "30"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_3/win_s0_002#p1#21",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "20"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_3/draw_s0_006#p1#22",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 6,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "22"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_4/win_s0_001#p1#13",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 6,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "14"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_4/loss_s0_005#p1#18",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "19"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_01_base/step_74000016/sentinel_4/loss_s0_004#p1#16",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "17"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "swampert",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "gengar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/random/win_s0_001#p1#17",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000224,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 16,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "18"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "gengar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/random/win_s0_001#p1#25",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.00021,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "26"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "skarmory",
+     "speed_pinned": [
+      "1"
+     ]
+    },
+    {
+     "mon": "dugtrio",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/random/win_s1_002#p1#17",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 6.3e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "17"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "blissey",
+     "speed_pinned": [
+      "1"
+     ]
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/random/win_s1_001#p1#12",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "13"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/heuristic/win_s0_001#p1#3",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 1,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "4"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "swampert",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/heuristic/loss_s1_003#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 3,
+   "speed_pinned": 1,
+   "turn": "8"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/heuristic/loss_s0_004#p1#23",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "22"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "jolteon",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/heuristic/loss_s3_003#p1#5",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 3,
+   "speed_mons": 2,
+   "speed_pinned": 1,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/heuristic2/loss_s1_002#p1#6",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 6.5e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/aggressive/loss_s1_003#p1#2",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 2,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "3"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "speed_pinned": [
+      "1"
+     ]
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/aggressive_v2/win_s0_001#p1#37",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "38"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/aggressive_v2/loss_s1_002#p1#26",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "24"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/setup_sweep/loss_s2_003#p1#2",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 6.5e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "3"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/setup_sweep_v2/loss_s0_003#p1#9",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 2.3e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/sentinel_0/loss_s0_005#p1#7",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "8"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/sentinel_1/win_s0_001#p1#39",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "36"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/sentinel_1/draw_s1_006#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 6,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "10"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/sentinel_2/win_s0_001#p1#28",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "28"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/sentinel_2/loss_s0_004#p1#16",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "14"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/sentinel_3/loss_s0_005#p1#27",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "26"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/sentinel_3/loss_s0_005#p1#36",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "35"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/random/win_s0_001#p1#16",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 16,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "17"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "swampert",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/heuristic/loss_s1_003#p1#9",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 1.4e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "10"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/heuristic/loss_s0_002#p1#22",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 2.3e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "19"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "speed_pinned": [
+      "1"
+     ]
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/staller/win_s0_001#p1#5",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 1,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/staller/loss_s1_003#p1#22",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "20"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "salamence",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "salamence",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/staller/win_s0_002#p1#20",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 3,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000143,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "19"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "speed_pinned": [
+      "1",
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/staller/loss_s3_003#p1#19",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "15"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "gengar",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/staller_v2/loss_s0_004#p1#38",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 0.00021,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "33"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/aggressive/loss_s1_003#p1#6",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 2,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/aggressive/draw_s3_004#p1#11",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "speed_pinned": [
+      "1"
+     ]
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/aggressive_v2/win_s0_001#p1#14",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 4,
+   "speed_pinned": 1,
+   "turn": "15"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "medicham",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/aggressive_v2/win_s0_002#p1#8",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 6,
+   "item_honest": 0,
+   "item_mass_removed": 0.000113,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "8"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "medicham",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/aggressive_v2/win_s0_002#p1#12",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000135,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "12"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "metagross",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_0/loss_s0_002#p1#29",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 3,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000202,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 17,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "26"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_0/loss_s0_004#p1#7",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "7"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_2/win_s0_001#p1#20",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 4,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "21"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_2/loss_s0_002#p1#25",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "22"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_3/win_s0_001#p1#25",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "24"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "blissey",
+     "speed_pinned": [
+      "1",
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_3/loss_s0_005#p1#25",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "21"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_4/win_s0_001#p1#6",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "7"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_4/win_s0_001#p1#8",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_4/draw_s0_005#p1#19",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "18"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_07_g0p_k2/step_90000000/sentinel_4/win_s0_003#p1#23",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "23"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/random/win_s1_001#p1#7",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "8"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/heuristic/win_s2_001#p1#2",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "3"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "jynx",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "swampert",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/heuristic/win_s2_001#p1#6",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 6,
+   "item_honest": 0,
+   "item_mass_removed": 0.000251,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "7"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/heuristic2/win_s0_002#p1#28",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 2.2e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "25"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/heuristic2/loss_s1_004#p1#17",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 5,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "speed_pinned": [
+      "1"
+     ]
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/staller/win_s0_001#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 1,
+   "turn": "11"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/staller/draw_s1_002#p1#31",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "28"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/staller_v2/loss_s1_003#p1#3",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 2,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "4"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/staller_v2/win_s0_002#p1#33",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "32"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "swampert",
+     "speed_pinned": [
+      "-1"
+     ]
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/staller_v2/loss_s3_003#p1#24",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 6.5e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 13,
+   "speed_mons": 6,
+   "speed_pinned": 1,
+   "turn": "20"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "speed_pinned": [
+      "1"
+     ]
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/aggressive/win_s0_001#p1#36",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 9.7e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 5,
+   "speed_pinned": 1,
+   "turn": "37"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_0/win_s0_001#p1#19",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "16"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_0/win_s0_001#p1#30",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 12,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "27"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "suicune",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "suicune",
+     "speed_pinned": [
+      "-1"
+     ]
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_0/loss_s0_004#p1#4",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 2,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.000107,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 2,
+   "speed_pinned": 1,
+   "turn": "4"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_0/draw_s2_006#p1#23",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 9,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "22"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_2/loss_s0_005#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 14,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "10"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_2/win_s0_004#p1#10",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "10"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "dugtrio",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_3/loss_s1_003#p1#27",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 6.3e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 11,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "27"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_4/win_s0_001#p1#21",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 3,
+   "speed_mons": 2,
+   "speed_pinned": 0,
+   "turn": "22"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "donphan",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_4/loss_s0_005#p1#8",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 5.2e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 10,
+   "speed_mons": 4,
+   "speed_pinned": 0,
+   "turn": "9"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_4/loss_s0_004#p1#14",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 1,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "13"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "metagross",
+     "rejected": "kingsrock"
+    }
+   ],
+   "id": "ai_v14_08_g0p_k3/step_98000016/sentinel_4/win_s0_002#p1#15",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 4,
+   "item_honest": 1,
+   "item_mass_removed": 2.3e-05,
+   "item_mons": 3,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 20,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "15"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "tyranitar",
+     "rejected": "focusband"
+    }
+   ],
+   "id": "ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/loss_s1_004#p2#26",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 2.2e-05,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 15,
+   "speed_mons": 6,
+   "speed_pinned": 0,
+   "turn": "25"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "celebi",
+     "speed_pinned": [
+      "1",
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/loss_s3_001#p2#11",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 4,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 2,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 16,
+   "speed_mons": 5,
+   "speed_pinned": 1,
+   "turn": "11"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "salamence",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "salamence",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "id": "ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/loss_s3_004#p2#6",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 1,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 2.9e-05,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 7,
+   "speed_mons": 3,
+   "speed_pinned": 1,
+   "turn": "6"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/loss_s3_005#p2#2",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 2,
+   "speed_mons": 1,
+   "speed_pinned": 0,
+   "turn": "3"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/win_s0_001#p2#37",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 0,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 0,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 5,
+   "speed_pinned": 0,
+   "turn": "33"
+  },
+  {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [],
+   "id": "ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/win_s3_003#p2#5",
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 0,
+   "item_dice_tested": 2,
+   "item_honest": 0,
+   "item_mass_removed": 0.0,
+   "item_mons": 1,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 8,
+   "speed_mons": 3,
+   "speed_pinned": 0,
+   "turn": "6"
+  }
+ ],
+ "seconds": 197.2,
+ "selection": {
+  "max_turn": 40,
+  "min_opp_alive": 1,
+  "min_turn": 3,
+  "n": 200
+ },
+ "totals": {
+  "ability_mons": 0,
+  "ability_rejected": 0,
+  "check": "seed_reuse",
+  "examples": [
+   {
+    "mon": "vaporeon",
+    "rejected": "focusband"
+   },
+   {
+    "mon": "metagross",
+    "rejected": "focusband"
+   },
+   {
+    "mon": "metagross",
+    "rejected": "focusband"
+   },
+   {
+    "mon": "charizard",
+    "rejected": "focusband"
+   },
+   {
+    "mon": "skarmory",
+    "rejected": "kingsrock"
+   },
+   {
+    "mon": "skarmory",
+    "rejected": "focusband"
+   },
+   {
+    "mon": "magneton",
+    "rejected": "focusband"
+   },
+   {
+    "mon": "tyranitar",
+    "rejected": "kingsrock"
+   },
+   {
+    "mon": "flygon",
+    "rejected": "focusband"
+   },
+   {
+    "mon": "suicune",
+    "rejected": "kingsrock"
+   }
+  ],
+  "item_dice_pinned": 0,
+  "item_dice_rejected": 125,
+  "item_dice_tested": 318,
+  "item_honest": 27,
+  "item_mass_removed": 0.007479999999999998,
+  "item_mons": 186,
+  "item_truth_dice": 0,
+  "pass": true,
+  "replays": 1662,
+  "speed_mons": 674,
+  "speed_pinned": 34
+ }
+}

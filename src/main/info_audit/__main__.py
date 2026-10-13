@@ -61,6 +61,7 @@ def run(decisions: Sequence[dict], specs: Sequence[str], n_worlds: int, z_max: f
         root = W.prepare_root(log_, at, d["side"], item["id"])
         add(C.template_identity(root))
         add(C.log_consistency(root.true, root.viewer, item["id"]))
+        add(C.seed_reuse(root, samplers[specs[0]].P))
         cache: dict = {}                    # one screen per decision, shared by every spec (common random numbers)
         for s in specs:
             t0 = time.time()
@@ -75,7 +76,8 @@ def run(decisions: Sequence[dict], specs: Sequence[str], n_worlds: int, z_max: f
             spec_stats[s]["built"] += 1
             spec_stats[s]["screens"] += w.screens
             spec = samplers[s].spec
-            for v in (C.provenance(spec, w), C.legality(root, w), C.genders(root, w), C.regate(root, w)):
+            for v in (C.provenance(spec, w), C.legality(root, w), C.genders(root, w), C.regate(root, w),
+                      C.gender_independence(w, samplers[s].pad), C.playout_open(root, w, samplers[s])):
                 add(dict(v, check=f"{v['check']}[{s}]"))
             if spec == PRESETS["oracle"]:
                 add(C.oracle_identity(root, w))

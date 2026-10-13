@@ -61,6 +61,13 @@ at that slot IS a true opponent mon** (its species is right: told by a `species`
 happens to be right): the obs's tail slot of a told species, the world's never-seen slot holding a true species, the
 injection's X5 hypothesis slot whose species is a true never-seen one.
 
+**The Hidden Power belongs to TWO classes, split (the blind replica's note, 2026-10-12).** In gen 3 its type is set
+by the IVs, so `moves` and `spread` overlap there. The split every consumer follows: **`moves` tells THAT a set holds
+a Hidden Power** (one untyped slot); **`spread` tells its TYPE** (the IVs that carry it). The search builder screens
+the type with the spread (§7.2); the injection pushes the presence with the moves lever and the type with the spread
+lever (§8); the observation writes a Hidden Power told without the spread BARE (§6). `full` tells both, so its bytes
+are X32's.
+
 ### 1.2 A lever: (class, part, mass, source)
 
 - **mass p ∈ (0, 1]**, a whole multiple of 1/10,000 (exact text, the same integer in Rust). The consumer's belief about
@@ -229,17 +236,27 @@ Under `pilot` the seen mons' item, ability and spread are TOLD (the truth, every
 - **Hidden Power**: its TYPE and whether a set carries one are SPREAD facts (the IVs: they move the exact stats the log
   pins by a point). The screen draws them; the world's moves then hold a Hidden Power of exactly that type (or none);
   a revealed bare Hidden Power's type is drawn the same way, and a past choice of it is rendered as the world's typed
-  move. A seen mon's moves that match the truth count modulo the Hidden Power's type.
+  move. A seen mon's moves that match the truth count modulo the Hidden Power's type. The state is (type, IV
+  PATTERN): any of the type's 30 / 31 patterns (`packed.hp_iv_masks`; the canonical one, the most 31s, at `HP_CANON`
+  0.8, the others sharing the rest), because pool sets use non-canonical ones (the blind replica's note) and a
+  pattern moves the exact stats by a point, which the log pins. IVs below 30 are outside the support (§7.5).
 - **Genders** (§9): the never-seen mons are placed so the turn-0 gender draws fall on exactly the true team's draw
   slots; with the engine's pad any of them may sit on a draw slot.
 - **Legality**: a world breaking a gen3ou rule the true team does not break is rejected (`clause`); the never-seen
   draws and the genders are checked BEFORE the screen (cheap), each seen mon's set after its moves are drawn (a banned
   set — e.g. a Baton Passer drawn a Salac Berry — is redrawn up to `MOVE_REDRAWS` times), the whole team last.
+- **The playout tool opens it** (the blind replica's finding 3): a world that passed the gate is also opened by
+  `rust_env_playout_open`, the search's own replay, before it is returned. The gate's `core_events` replay accepts
+  some choice logs the playout tool refuses (a numeric `move k`; a Struggle the world does not force); such a world is
+  rejected (`fails["playout_refused"]`, the refusal named), never handed to a search that cannot play it. The audit's
+  `playout_open` re-checks every returned world; the planted numeric choice is gated green by `core_events` and
+  refused here (`info_audit_integration_test.py`).
 
 ### 7.3 The SCREEN: honest posterior draws of a seen mon's item, ability and spread (`world_screen`)
 
 - **The honest prior.** Item and ability ∝ the species' Smogon usage. The spread (nature, EVs) ∝ (1 − ε)·J + ε·N·Π M:
-  J the species' chaos spread table (every spread, not the top-25 cut), N its nature marginal, M each stat's EV
+  J the species' chaos spread table (every spread, not the top-25 cut, which covers only ~49 % of the pool's true
+  spreads: the blind replica's measure), N its nature marginal, M each stat's EV
   marginal floored by a uniform over 0, 4, …, 252 (`EPS` 0.25, `FLOOR` 0.15), an EV total over 510 impossible. J alone
   is a coarse histogram: a pool spread Smogon never lists (a 16-HP-EV / 252-Def Vaporeon) has no consistent J
   candidate, and an honest player then believes the EVs that fit; the smooth term gives every legal spread mass. The
@@ -281,6 +298,11 @@ On 8 committed-bank decisions × 4 worlds, the box under a live training run (`n
 
 No decision was excluded.
 
+A wider read under `off` alone (40 decisions × 2 worlds, turns 3–40, after the playout-tool check and the Hidden
+Power IV patterns landed; `audit_off_40.json`): **39 built, 1 EXCLUDED** — a Tyranitar on a pool spread (184 HP / 104
+Atk / 220 Spe, Adamant; its IVs inside the support) the chain did not fit in `MAX_STEPS` — every check PASS
+(`playout_open`: 0 of 78 worlds refused; `gender_independence`: 0 gender-count rejections), 1,298 s contended.
+
 The honest screen is the cost: a seen mon the prior fits is a few replays; one whose log pins a spread far from Smogon's table (a pool spread, a Choice Band at 0.5 % prior) takes the chain tens of steps × `SEARCH_WIDTH` replays. Specs that share the screen (`D50`, `W90`, …) cost almost nothing more.
 
 ### 7.5 The residuals (named)
@@ -295,6 +317,35 @@ The honest screen is the cost: a seen mon the prior fits is a few replays; one w
   unobservable before the root and not a fact of the taxonomy.
 - **The honest spread prior is a choice** (`EPS`, `FLOOR`): Smogon-derived (its joint table and marginals) with a
   uniform floor; it shapes the posterior only where the log leaves the spread loose.
+- **Dice-silent facts under SEED REUSE** (the blind replica's finding 2; `SEARCH.partial`, reported in every world's
+  `leak["partial"]`). The prefix is replayed on the TRUE seed, so a world must spend the truth's dice; a hidden fact
+  that spends a die WITHOUT printing a line is then visible to the gate though no honest player sees it. Verified in
+  `deps/pokemon-showdown`: King's Rock (a 10 % flinch roll added to most damaging moves, per hit), Focus Band (a
+  1-in-10 roll on EVERY move damage its holder takes, before the lethal check), the contact abilities Static, Flame
+  Body, Poison Point, Effect Spore, Cute Charm (a roll per contact hit taken), Shed Skin (a roll per statused turn),
+  and a SPEED TIE (speedSort shuffles a tied group: a die only when a tie exists). Not one: Quick Claw (gen 3 rolls
+  it battle-wide every turn). **Measured** (`main.info_audit`'s `seed_reuse`: COUNTERFACTUAL FLIPS of the true team,
+  one hidden fact of one seen mon changed and gated exactly as a world is, against a passing unflipped control; 169
+  committed-bank decisions, turns 3–40, 1,662 replays; `research_state/measurements/info_levers_2026-10-12/
+  seed_reuse_200.json`):
+
+  | fact | flips | the gate rejects | what that removes |
+  |---|---|---|---|
+  | a seen mon's Speed ±1 point (Spe EVs only: at ±1 only a tie changes anything) | 674 (decision, seen mon) | 34 (5.0 %), in 34 of 169 decisions (20.1 %): 6 both neighbours (the truth at a tie: its exact Speed pinned), 28 one (a neighbour would tie) | the honest posterior's mass on those Speed values |
+  | a hidden item → King's Rock / Focus Band (truth not one; a neutral-item swap accepted) | 318 (159 mons) | 125 (39 %) | the prior's mass on them: 0.0075 summed, 4.7·10⁻⁵ per mon |
+  | a hidden item that IS King's Rock / Focus Band → a neutral item | 0 | — | none of the bank's 1,386 pool mons (231 teams) holds one |
+  | a hidden ability ↔ its dice-rolling alternative | 0 | — | no seen mon in the corpus had one unrevealed |
+
+  So the item and ability legs are negligible on this pool; the SPEED-TIE leg is the real one: a fifth of decisions
+  have a seen mon whose Speed the gate pins a point tighter than honest play could. Removing it needs a playout core
+  that replays the prefix on fresh dice constrained to the printed outcomes (not built).
+- **IVs outside the screen's support** (measured on the bank's 231 teams, 1,386 mons): of 609 Hidden Power sets, 146
+  use the canonical 30 / 31 pattern, 253 another 30 / 31 pattern (both in the support), **210 (34 %) IVs below 30**
+  (mostly a minimised Attack, e.g. 31 / 2 / 31 / 30 / 31 / 31 for Hidden Power Fire); of 777 other sets, 258 (33 %)
+  are not all 31 (mostly 0 Attack IVs). The screen draws neither: where the log pins such a stat (a Rapid Spin, a
+  confusion hit) no world fits and the decision is EXCLUDED (counted), never misbuilt; where it does not, the world
+  holds a different but log-consistent value. An IV prior beyond 30 / 31 has no Smogon source (a judgment for the
+  owner, `design_hand_computed_features.md`'s fact-vs-judgment test).
 
 ---
 
@@ -311,7 +362,9 @@ nothing in training reads it.
   the edges and cells) and rewrites each targeted opponent slot's typed posterior q' = (1 − p)·σ(ℓ) + p·1[m ∈
   target]; the revealed moves, the bookkeeping typeless Hidden Power and (once revealed) all 16 typed Hidden Power
   channels keep their bytes; the clip never moves a channel against the injection; the Hidden Power presence and type
-  posterior stay consistent. The placebo is 4 − r moves drawn ∝ the network's own belief excluding the truth and the
+  posterior stay consistent. A TRUE Hidden Power is no typed target (§1.1): the moves lever pushes its PRESENCE,
+  presence' = (1 − p)·presence + p, and leaves the network's type posterior; a `spread:seen` lever pushes its TYPE,
+  type' = (1 − p_s)·type + p_s·δ(true type); the 16 typed channels become presence'·type'. The placebo is 4 − r moves drawn ∝ the network's own belief excluding the truth and the
   pinned channels (deterministic per decision and slot); map is its own top 4 − r. An unseen lever applies on an X5
   hypothesis slot whose hypothesised species is a true never-seen one (the study's TRUE-HYP).
 - **Item** (`item:seen`): a forward hook on `item_belief_head`: on a seen slot whose item the observation does not
@@ -340,7 +393,10 @@ engine's PAD — a packed gender `M*` / `F*` / `N*` keeps the named gender and s
 (`utils.team_packing.GENDER_DRAW_PAD`; `designs/rust_sim/module_map.md`, the `team.rs` row; the marker-free path is
 Showdown's exactly, its Rust tests and differential / fuzz rungs green) — lets ANY never-seen mon sit on a true draw
 slot. HEAD's `place_genders` uses it: no world is rejected on its gender count any more, so that conditioning is gone
-by construction (the audit's `genders` check holds every world's draw slots to the truth's). A padded team is a SEARCH
+by construction (the audit's `genders` check holds every world's draw slots to the truth's; `gender_independence`
+fails any world rejected on its gender count, and its PLANT — the builder with the pad switched off, at a decision
+where the pilot's builder needed it — must record such rejections: the blind replica's finding 1, seed reuse through
+the turn-0 gender dice, is closed by the pad and caught without it). A padded team is a SEARCH
 world only: it never reaches Node's validator or a live server (Showdown would read `M*` as unnamed).
 
 ---
@@ -359,6 +415,9 @@ fixed seeds; a statistical bound only where its planted defect sits far beyond i
 | search | `regate` | every returned world replays STRICTLY to the searched side's byte-equal rows and protocol (+ the seen mons' exact-HP match, descriptive) | `checks.py` |
 | search | `legality` | no world breaks a gen3ou rule the true team does not | `checks.py` |
 | search | `genders` | the never-seen slots that draw (or pad) are exactly the true team's draw slots | `checks.py` |
+| search | `gender_independence` | no world was rejected on its turn-0 gender-draw count (seed reuse through the gender dice; the pad closes it) | `checks.py` |
+| search | `playout_open` | every returned world opens in the playout tool (`rust_env_playout_open`), not only in the gate's `core_events` replay | `checks.py` |
+| search | `seed_reuse` | DESCRIPTIVE: the dice-silent residual's size by counterfactual flips (§7.5); fails only if its unflipped control does | `checks.py` |
 | search | `provenance` | every fact is revealed / told / drawn exactly as the spec says (told without a lever, a mass-1 truth lever not the truth, a revealed fact not the truth, a placebo equal to the truth) | `checks.py` |
 | search | `leak:moves:seen:drawn` | a seen mon's DRAWN moves match the truth no more often than their exact conditional-Poisson inclusion predicts (z ≤ 4) | `checks.Leakage` |
 | search | `dose:moves:seen:told` | a TOLD move lever hits the truth exactly as often as its mixture says (\|z\| ≤ 4): the dose is the registered one, neither diluted nor sharpened | `checks.Leakage` |
@@ -372,7 +431,10 @@ item swapped in a returned world (`regate`); a never-seen mon's gender flipped (
 mon's true moves but reports a draw (`leak:moves`, z > 6 against an honest z < 2.5); a screen whose item proposals peek
 (`leak:item` proposals; the synthetic unit test, since a prior that already puts most mass on the true item gives the
 real-battle version little power); a source that claims a move play never named (`log_consistency`); an injection one
-move channel off (the reach check); provenance violations of each kind (unit). Plus the hidden-info study's six A1–A3
+move channel off (the reach check); provenance violations of each kind (unit); the builder without the gender pad
+(`gender_independence`); a numeric choice token `core_events` gates green (`playout_open`'s refusal); a control gate
+that rejects everything (`seed_reuse`); an injection's Hidden Power type moved by the moves lever (§1.1; the
+injection's `the_hidden_power_type_is_a_spread_fact` test). Plus the hidden-info study's six A1–A3
 plants and its gender plants, which these generalise.
 
 ### 10.2 The tiers
@@ -467,6 +529,10 @@ For a decision-level score IMP (the study's: win probability per decision over t
   EXCLUSION, counted, never a silent leak.
 - **The honest spread prior is a choice** (`EPS`, `FLOOR`, §7.3): Smogon-derived with a uniform floor.
 - **Hidden counters** stay the builder's residual (§7.5) until a root-state resample exists.
+- **Seed reuse** leaks dice-silent facts (§7.5, measured): speed ties in 20 % of decisions; King's Rock / Focus Band
+  and the contact abilities negligible on this pool. Same cure as the counters (a fresh-dice prefix replay).
+- **IVs below 30** (a third of pool sets) are outside the screen's support (§7.5): an exclusion risk where the log
+  pins the stat.
 - The observation cannot state an exact HP, a hidden duration, a placebo or a map fact (§3): the knock-in forks'
   wrong-moves arm needs a placebo in the observation, which needs a prior sampler on the Rust side (not built).
 
@@ -478,3 +544,4 @@ For a decision-level score IMP (the study's: win probability per decision over t
 |---|---|---|---|---|
 | 2026-10-12 | **This doc CREATED; the SPEC and the LOG SOURCE BUILT** (owner: "a single dried out implementation for giving both search and training additional information … so that we can understand what the ceilings are and what is our constraint and how much value there would be in improving determinization") | One declarative `InfoReveal` (seven classes × seen / unseen parts, a mass and a source per lever; presets for the X32 levels, the oracle, the pilot's builder and every study arm; canonical text + hash; per-consumer support tables that REFUSE what a consumer cannot honour and NAME its residual leaks); one protocol-derived source of what play revealed, conservative by design | three separate mechanisms (the status quo: incomparable, one leaked); a soft "known = p" cell in the observation (an input the network never sees in play; a Bernoulli keeps every row a possible observation); the observation rows as the reveal source (they miss protocol-only reveals: the study's A2) | `design_hidden_info_binding.md` §2.2, §16.4; `design_value_discrimination.md` Amendment 8 |
 | 2026-10-12 | **The SEARCH WORLD BUILDER made HONEST BY DEFAULT, the GENDER PAD wired, the AUDIT SUITE built** | `WorldSampler(reveal=…)`, default `off`: a seen mon's item, ability, spread (its IVs: the Hidden Power type and presence) and so its exact HP are DRAWN and screened against the log by a per-(seen mon, constraint) sampler — prior rejection, then a chain whose search is directed by the first differing line and scored on lenient replays, Metropolis-Hastings once the log fits — shared across a decision's worlds and specs; the pilot's builder is the `pilot` preset; any never-seen mon may sit on a true gender-draw slot (the engine pad); one audit suite (`main.info_audit`) over all three consumers, read on 8 committed-bank decisions × 6 specs: 41 checks PASS (the dose of the told move levers exact), no exclusion, a seen mon's item 1.000 → 0.750, exact spread 1.000 → 0.032, exact HP 124/124 → 70/124 | keeping the pilot's builder as the default (a search not honest by default measures the wrong thing whenever a caller forgets); joint rejection over every seen mon (hopeless: a log pins each attacker's stats to a window); a pure Smogon spread table as the prior (a pool spread outside it has no consistent candidate: the Vaporeon 16 HP / 252 Def case); starting the chain at the truth (a leak until it mixes); filtering a drawn item by the truth's unrevealed moves (a leak) | §7, §9, §10.3; `research_state/measurements/info_levers_2026-10-12/` |
+| 2026-10-12 | **The blind replica's three findings answered** (orchestrator relay) | (1) seed reuse through the turn-0 GENDER dice: closed by the engine pad, a `gender_independence` check and its plant (the builder without the pad); (2) DICE-SILENT facts: seed reuse kept, the leak NAMED (`SEARCH.partial`) and MEASURED by counterfactual flips (speed ties 5.0 % of seen mons / 20 % of decisions; King's Rock, Focus Band, contact abilities negligible on this pool); (3) every world OPENED by the playout tool before it is returned, a `playout_open` check and a planted numeric choice. Plus: the Hidden Power's TYPE is a SPREAD fact, its presence a MOVES fact, in all three consumers (§1.1); the screen's Hidden Power state spans every 30 / 31 IV pattern | avoiding seed reuse (needs a playout core that replays on fresh dice constrained to the printed outcomes — not built); refusing `moves` without `spread` on Hidden Power sets (the observation writes it bare instead, byte-safe); an IV prior below 30 (no Smogon source: the owner's call) | §1.1, §7.2, §7.5, §9, §10.1; `seed_reuse_200.json` |

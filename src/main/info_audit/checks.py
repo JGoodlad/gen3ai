@@ -113,6 +113,172 @@ def genders(root: "W.Root", worlds: "W.Worlds") -> dict:
     return _verdict("genders", not bad, worlds=len(worlds.teams), mismatches=len(bad), examples=bad[:10])
 
 
+def gender_independence(worlds: "W.Worlds", pad: Optional[str]) -> dict:
+    """SEED REUSE through the turn-0 GENDER dice (the blind replica's finding 1): a world is replayed on the true seed,
+    so the never-seen species would be conditioned if any world were REJECTED for spending different gender draws.
+    With the engine's pad every world spends exactly the truth's draws whatever its species: no world may have been
+    rejected on its gender count."""
+    n = int(worlds.fails.get("gender_count", 0) or 0)
+    return _verdict("gender_independence", pad is not None and n == 0, gender_count_rejections=n,
+                    pad=pad is not None, examples=[])
+
+
+def playout_open(root: "W.Root", worlds: "W.Worlds", sampler: "W.WorldSampler") -> dict:
+    """Every returned world OPENS in the playout tool (``rust_env_playout_open``), the search's own replay — the
+    core_events gate accepts some choice logs the playout tool refuses (the blind replica's finding 3)."""
+    bad = []
+    for j, lg in enumerate(worlds.logs):
+        why = sampler.playout_refusal(lg, root.at, root.side)
+        if why is not None:
+            bad.append({"world": j, "refusal": why[:200]})
+    return _verdict("playout_open", not bad, worlds=len(worlds.logs), refused=len(bad), examples=bad[:10])
+
+
+#: Hidden facts that SPEND A DIE WITHOUT PRINTING A LINE (the blind replica's finding 2; verified in
+#: deps/pokemon-showdown 2026-10-12). A world is replayed on the TRUE seed, so it must spend the truth's dice: the gate
+#: then sees these although an honest player cannot. ITEMS: King's Rock (a 10 % flinch secondary added to most damaging
+#: moves — one roll per hit, data/mods/gen3/items.ts), Focus Band (a 1-in-10 roll on EVERY move damage its holder takes,
+#: evaluated before the lethal check, data/items.ts). ABILITIES: Cute Charm, Effect Spore, Flame Body, Poison Point,
+#: Static (a roll per contact hit taken, data/mods/gen3/abilities.ts), Shed Skin (a roll per turn while statused).
+#: SPEED TIES: speedSort shuffles a tied group (sim/battle.ts), a die only when a tie exists. NOT one: Quick Claw (gen 3
+#: rolls it battle-wide every turn, sim/battle.ts, so holding it spends nothing; its effect is the printed move order).
+SILENT_DICE_ITEMS = ("King's Rock", "Focus Band")
+SILENT_DICE_ABILITIES = frozenset({"cutecharm", "effectspore", "flamebody", "poisonpoint", "static", "shedskin"})
+#: an item with no battle effect for the mon holding it (Ditto's only), the honest baseline of an item swap
+NEUTRAL_ITEMS = ("Metal Powder", "Lucky Punch")
+
+
+def _speed_evs(f: List[str], delta: int) -> Optional[List[str]]:
+    """``f`` with its Speed EVs moved so the L100 Speed changes by EXACTLY ``delta`` (±1), else None."""
+    from agents.gen3_data import natures, priors, species
+    from agents.info_levers.packed import Spread
+
+    sd = species.get(W.toid(f[1] or f[0]))
+    if sd is None or "spe" not in sd.base_stats:
+        return None
+    sp = Spread.of(f)
+    nm = sp.nature[:1].upper() + sp.nature[1:].lower() if sp.nature else ""
+    mult = float(natures.multipliers().get(nm, {}).get("spe", 1.0))
+    base, ev, iv = int(sd.base_stats["spe"]), int(sp.evs[5]), int(sp.ivs[5])
+    now = priors.gen3_stat(base, ev, mult, iv)
+    for step in range(4, 256, 4):
+        e2 = ev + step * (1 if delta > 0 else -1)
+        if not 0 <= e2 <= 252:
+            return None
+        got = priors.gen3_stat(base, e2, mult, iv) - now
+        if got == delta:
+            evs = list(sp.evs)
+            evs[5] = e2
+            g = list(f)
+            Spread(sp.nature, tuple(evs), sp.ivs).write(g)
+            return g
+        if abs(got) > abs(delta):
+            return None
+    return None
+
+
+def seed_reuse(root: "W.Root", prior: Optional["W.Prior"] = None) -> dict:
+    """The MEASURED size of the seed-reuse residual at one decision (design §7.5), by COUNTERFACTUAL
+    FLIPS of the TRUE team: one hidden fact of one SEEN opponent mon changed, everything else true, gated exactly as a
+    world is (rows and protocol byte-equal on the true seed). A rejected flip is a value the gate removes.
+
+    ITEM (the mon's item play has not revealed it): swapped to a NEUTRAL item and to each dice item. Truth not a dice
+    item: a dice item the gate rejects while it ACCEPTS the neutral one is a dice-only rejection (``item_dice_rejected``;
+    weighted by the prior's mass on that item: ``item_mass_removed``). Truth a dice item: the neutral swap rejected =
+    the gate tells the dice item (``item_dice_pinned``). A rejected neutral swap is honest inference (``item_honest``).
+    ABILITY (not revealed; the species has another ability in the prior and one of the two rolls dice): the swap
+    rejected (``ability_rejected``; an UPPER bound — some may be honest inference). SPEED: ±1 Speed point (Spe EVs
+    only) can change no printed order except through a tie, so a rejected ±1 is a tie's die (``speed_pinned``).
+    Descriptive, except its CONTROL: the unflipped true team must pass the same gate (else the check fails)."""
+    from agents.battle.core_replay import run_core
+
+    P = prior or W.Prior()
+    ents = list(root.entries)
+    # the CONTROL: the unflipped true team must pass the same gate, or every "rejection" below is the instrument's
+    jobs: List[Tuple[str, int, str, str]] = [("truth", -1, "", root.team)]     # (kind, mon, value, team text)
+
+    def team_with(i: int, f: List[str]) -> str:
+        e = list(ents)
+        e[i] = "|".join(f)
+        return "]".join(e)
+
+    for i, sid in enumerate(root.sids):
+        if sid not in root.kept:
+            continue
+        mr = root.rv.mons.get(sid)
+        f = W.parse_set(ents[i])
+        if mr is not None and mr.item is None:
+            neutral = NEUTRAL_ITEMS[1] if sid == "ditto" else NEUTRAL_ITEMS[0]
+            for it in (neutral,) + SILENT_DICE_ITEMS:
+                if W.toid(it) != W.toid(f[2]):
+                    g = list(f)
+                    g[2] = it
+                    jobs.append(("item", i, it, team_with(i, g)))
+        if mr is not None and mr.ability is None:
+            alts = [a for a in P.ability(sid) if a != W.toid(f[3])]
+            if alts and ({W.toid(f[3]), *alts} & SILENT_DICE_ABILITIES):
+                for a in alts:
+                    g = list(f)
+                    g[3] = a
+                    jobs.append(("ability", i, a, team_with(i, g)))
+        for d in (1, -1):
+            g2 = _speed_evs(f, d)
+            if g2 is not None:
+                jobs.append(("speed", i, str(d), team_with(i, g2)))
+    res = run_core([root.rec(t, f"seed_reuse#{k}", W.render(root.tmpl, t)) for k, (_, _, _, t) in enumerate(jobs)],
+                   trackers=True, obs=True)
+    ok: Dict[Tuple[str, int, str], bool] = {}
+    for (kind, i, val, _t), r in zip(jobs, res):
+        good = bool(r["ok"])
+        if good:
+            try:
+                _, rows = W.reveals(r, root.viewer, root.n)
+                good = rows == root.ref and W.protocol_lines(r, root.viewer, root.n) == root.ref_proto
+            except W.WorldError:                    # the flipped battle ended before the root: diverged
+                good = False
+        ok[(kind, i, val)] = good
+    out = {"item_mons": 0, "item_honest": 0, "item_dice_rejected": 0, "item_dice_tested": 0, "item_mass_removed": 0.0,
+           "item_truth_dice": 0, "item_dice_pinned": 0, "ability_mons": 0, "ability_rejected": 0,
+           "speed_mons": 0, "speed_pinned": 0}
+    ex = []
+    for i, sid in enumerate(root.sids):
+        f = W.parse_set(ents[i])
+        neutral = NEUTRAL_ITEMS[1] if sid == "ditto" else NEUTRAL_ITEMS[0]
+        if ("item", i, neutral) in ok:
+            out["item_mons"] += 1
+            truth_dice = W.toid(f[2]) in {W.toid(x) for x in SILENT_DICE_ITEMS}
+            if truth_dice:
+                out["item_truth_dice"] += 1
+                if not ok[("item", i, neutral)]:
+                    out["item_dice_pinned"] += 1
+                    ex.append({"mon": sid, "pinned": W.toid(f[2])})
+            elif not ok[("item", i, neutral)]:
+                out["item_honest"] += 1
+            else:
+                items = P.items(sid)
+                tot = sum(items.values()) or 1.0
+                for it in SILENT_DICE_ITEMS:
+                    out["item_dice_tested"] += 1
+                    if not ok[("item", i, it)]:
+                        out["item_dice_rejected"] += 1
+                        out["item_mass_removed"] += items.get(W.toid(it), 0.0) / tot
+                        ex.append({"mon": sid, "rejected": W.toid(it)})
+        abil = [k for k in ok if k[0] == "ability" and k[1] == i]
+        if abil:
+            out["ability_mons"] += 1
+            if any(not ok[k] for k in abil):
+                out["ability_rejected"] += 1
+                ex.append({"mon": sid, "ability_told": W.toid(f[3])})
+        sp = [k for k in ok if k[0] == "speed" and k[1] == i]
+        if sp:
+            out["speed_mons"] += 1
+            if any(not ok[k] for k in sp):
+                out["speed_pinned"] += 1
+                ex.append({"mon": sid, "speed_pinned": [k[2] for k in sp if not ok[k]]})
+    out["item_mass_removed"] = round(out["item_mass_removed"], 6)
+    return _verdict("seed_reuse", ok[("truth", -1, "")], replays=len(jobs) - 1, examples=ex[:10], **out)
+
+
 def provenance(spec: InfoReveal, worlds: "W.Worlds") -> dict:
     bad = []
 

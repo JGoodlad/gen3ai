@@ -31,7 +31,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from agents.info_levers import mixture as MX
-from agents.info_levers.packed import HP_TYPES, Spread, hp_ivs, hp_type_of, typed_moves
+from agents.info_levers.packed import HP_TYPES, Spread, hp_iv_masks, hp_type_of, typed_moves
 
 EPS = 0.25
 FLOOR = 0.15
@@ -45,6 +45,9 @@ NATURE_EFFECT = {"lonely": ("atk", "def"), "brave": ("atk", "spe"), "adamant": (
                  "timid": ("spe", "atk"), "hasty": ("spe", "def"), "jolly": ("spe", "spa"), "naive": ("spe", "spd"),
                  "modest": ("spa", "atk"), "mild": ("spa", "def"), "quiet": ("spa", "spe"), "rash": ("spa", "spd"),
                  "calm": ("spd", "atk"), "gentle": ("spd", "def"), "sassy": ("spd", "spe"), "careful": ("spd", "spa")}
+#: the prior on a Hidden Power's IV pattern: the canonical one (the most 31s) has this mass, the type's other 30/31
+#: patterns share the rest (pool sets use non-canonical ones: the blind replica's note)
+HP_CANON = 0.8
 REJECT_ROUNDS = 2          # independent draws per needed sample, before a chain
 MAX_STEPS = 200
 SEARCH_WIDTH = 8
@@ -201,13 +204,18 @@ class MonSampler:
             return 0.0 if hpt is None else -math.inf
         if hpt is None:
             return -math.inf if self.key.hp == "must" else math.log(max(1.0 - self.hp_any, 1e-12))
-        p = self.hp_prior.get(hpt, 0.0) * (1.0 if self.key.hp == "must" else self.hp_any)
-        return math.log(p) if p > 0 else -math.inf
+        ty, k = hp_split(hpt)
+        assert ty is not None
+        p = self.hp_prior.get(ty, 0.0) * (1.0 if self.key.hp == "must" else self.hp_any)
+        return (math.log(p) + _mask_logp(ty, k)) if p > 0 else -math.inf
 
     def _hp_draw(self) -> Optional[str]:
         if self.key.hp == "none" or (self.key.hp == "free" and self.rng.random() >= self.hp_any):
             return None
-        return MX.draw(self.rng, self.hp_prior) or HP_TYPES[-1]
+        ty = MX.draw(self.rng, self.hp_prior) or HP_TYPES[-1]
+        n = len(hp_iv_masks(ty))
+        k = 0 if (n <= 1 or self.rng.random() < HP_CANON) else 1 + int(self.rng.integers(n - 1))
+        return _hp_name(ty, k)
 
     def draw(self) -> State:
         r = self.rng
@@ -256,8 +264,10 @@ class MonSampler:
             e[a] += 4 * int(r.choice([1, 2, 4, 8, 16])) * (1 if r.random() < 0.5 else -1)
         elif k == "nature":
             nat = NATURES[int(r.integers(len(NATURES)))]
-        elif k == "hp":                          # uniform over the allowed values: symmetric
-            opts: List[Optional[str]] = list(HP_TYPES) + ([None] if self.key.hp == "free" else [])
+        elif k == "hp":                          # uniform over the allowed (type, IV pattern) values: symmetric
+            opts: List[Optional[str]] = [_hp_name(ty, i) for ty in HP_TYPES for i in range(len(hp_iv_masks(ty)))]
+            if self.key.hp == "free":
+                opts.append(None)
             hpt = opts[int(r.integers(len(opts)))]
         elif k == "item":
             item = MX.draw(r, self.items, [self._excl("item")]) or item
@@ -318,7 +328,7 @@ class MonSampler:
         if self._fixed("spread") == "TRUE":
             ivs = tuple(t_spread.ivs)
         else:
-            ivs = tuple(hp_ivs(hpt)) if hpt is not None else (31,) * 6
+            ivs = ivs_of(hpt)
             sp = Spread(nat[:1].upper() + nat[1:], tuple(evs), ivs)
             if not sp.same(t_spread):
                 sp.write(f)
@@ -334,15 +344,47 @@ class MonSampler:
         return self.failed or len(self.samples) >= self.needed
 
 
+def hp_split(hpt: Optional[str]) -> Tuple[Optional[str], int]:
+    """``"fire/2"`` → (``fire``, 2); ``"fire"`` → (``fire``, 0: the canonical pattern); None → (None, 0)."""
+    if hpt is None:
+        return None, 0
+    ty, _, k = hpt.partition("/")
+    return ty, int(k) if k else 0
+
+
+def ivs_of(hpt: Optional[str]) -> Tuple[int, ...]:
+    """The IVs a state's Hidden Power fixes (all 31 when the set holds none)."""
+    ty, k = hp_split(hpt)
+    if ty is None:
+        return (31,) * 6
+    masks = hp_iv_masks(ty)
+    return tuple(masks[min(k, len(masks) - 1)])
+
+
+def _hp_name(ty: str, k: int) -> str:
+    return ty if k == 0 else f"{ty}/{k}"
+
+
+def _mask_logp(ty: str, k: int) -> float:
+    n = len(hp_iv_masks(ty))
+    p = HP_CANON if k == 0 else (1.0 - HP_CANON) / max(1, n - 1)
+    return math.log(p) if n > 1 or k == 0 else 0.0
+
+
 def _id(s: str) -> str:
     return "".join(ch for ch in s.lower() if ch.isalnum())
 
 
 def true_state(f: Sequence[str]) -> State:
-    """The TRUE (item, ability, nature, EVs, Hidden Power type) — the type None when the set holds no Hidden Power."""
+    """The TRUE (item, ability, nature, EVs, Hidden Power) — None when the set holds no Hidden Power; its IV pattern's
+    index when the true IVs are one of the type's 30/31 patterns (else the canonical one stands for them)."""
     sp = Spread.of(f)
-    hpt = hp_type_of(sp.ivs) if any(m.startswith("hiddenpower") for m in typed_moves(f)) else None
-    return _id(f[2]), _id(f[3]), _id(sp.nature), tuple(sp.evs), hpt
+    if not any(m.startswith("hiddenpower") for m in typed_moves(f)):
+        return _id(f[2]), _id(f[3]), _id(sp.nature), tuple(sp.evs), None
+    ty = hp_type_of(sp.ivs)
+    masks = hp_iv_masks(ty)
+    k = masks.index(list(sp.ivs)) if list(sp.ivs) in masks else 0
+    return _id(f[2]), _id(f[3]), _id(sp.nature), tuple(sp.evs), _hp_name(ty, k)
 
 
 #: ``gate(jobs)`` → per job (passed, matched length): a job is (opponent team text, slot whose exact HP must match).
@@ -477,7 +519,7 @@ def facts_of(s: State, f_true: Sequence[str], how: Dict[str, Tuple[str, str]]) -
     t_item, t_ab, t_nat, t_evs, _ = true_state(f_true)
     item, ab, nat, evs, hpt = s
     t_ivs = tuple(Spread.of(f_true).ivs)
-    ivs = tuple(hp_ivs(hpt)) if hpt is not None else (31,) * 6
+    ivs = ivs_of(hpt)
     told_true = how["spread"] == ("told", "truth")
     match = {"item": item == t_item, "ability": ab == t_ab,
              "spread": told_true or (nat == t_nat and tuple(evs) == tuple(t_evs) and ivs == t_ivs)}

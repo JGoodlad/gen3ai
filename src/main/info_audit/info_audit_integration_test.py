@@ -121,3 +121,86 @@ def test_teeth_log_consistency_catches_an_over_reveal(corpus, monkeypatch):
     monkeypatch.setattr(RV._Reader, "_own_move", over)
     v = C.log_consistency(root.true, root.viewer)
     assert not v["pass"] and v["moves_python_only"] > 0
+
+
+#: a decision whose never-seen gender draws CANNOT be matched without the engine's pad (the pilot's builder rejected
+#: worlds on their gender count there: the smoke of 2026-10-12)
+GENDER_DECISION = "ai_v14_01_base/step_46000032/aggressive_v2/win_s0_001#p1#18"
+
+
+def _decision(did):
+    from main.policy_spectrum import bank as B
+    from main.policy_spectrum.bank_test import BANK_V1
+    from main.policy_spectrum.truth import cmd_index, to_log
+
+    bank = B.load_bank(BANK_V1)
+    d = next(x for x in bank.decisions if x["id"] == did)
+    bat = bank.battles[bank.battle_index[d["battle"]]]
+    return to_log(bat), cmd_index(bat, d["side"], d["n"]), d["side"]
+
+
+def test_teeth_seed_reuse_through_the_gender_dice_is_closed_by_the_pad_and_caught_without_it():
+    from main.value_search import worlds as W
+
+    log, at, side = _decision(GENDER_DECISION)
+    s = W.WorldSampler(reveal="pilot")
+    assert s.pad is not None, "the engine's gender draw pad is in this build"
+    w = s.sample(log, at, side, 4, GENDER_DECISION)
+    assert C.gender_independence(w, s.pad)["pass"]
+    # PLANT: the builder without the pad must reject worlds on their gender count — conditioning the never-seen species
+    s.pad = None
+    w2 = s.sample(log, at, side, 4, GENDER_DECISION)
+    v = C.gender_independence(w2, s.pad)
+    assert not v["pass"] and v["gender_count_rejections"] > 0, v
+
+
+def test_teeth_a_choice_log_core_events_accepts_but_the_playout_tool_refuses_is_rejected(corpus):
+    """The blind replica's finding 3: the playout tool resolves a replayed choice BY NAME, core_events also takes a
+    numeric ``move k``. A world rendered so is gated green by core_events and must be refused by the builder."""
+    from agents.battle.core_replay import run_core
+    from main.policy_spectrum.truth import cmd_index, to_log
+    from main.value_search import worlds as W
+
+    item = corpus[1]
+    d, bat = item["decision"], item["battle"]
+    log, at = to_log(bat), cmd_index(bat, d["side"], d["n"])
+    root = W.prepare_root(log, at, d["side"], item["id"])
+    s = W.WorldSampler(reveal="oracle")
+    cmds = W.render(root.tmpl, root.team)
+    opp = "p2" if d["side"] == "p1" else "p1"
+    opp_idx = [i for i, (c, _t) in enumerate(cmds) if c == opp]
+    actives = W.opp_actives(root.true, root.oi, len(opp_idx))
+    k, slot = next((i, root.moves_of[root.sids.index(a)].index(W.toid(cmds[i][1][5:])) + 1)
+                   for i, a in zip(opp_idx, actives)
+                   if cmds[i][1].startswith("move ") and a in root.sids
+                   and W.toid(cmds[i][1][5:]) in root.moves_of[root.sids.index(a)])
+    planted = [list(c) for c in cmds]
+    planted[k][1] = f"move {slot}"                               # PLANT: the SAME move as a numeric choice token
+    res = run_core([root.rec(root.team, "planted", planted)], trackers=True, obs=True)[0]
+    assert res["ok"] and W.protocol_lines(res, root.viewer, root.n) == root.ref_proto, \
+        "precondition: core_events gates the numeric choice green"
+    lg = dict(log, cmds=[f"FORCELOSE {t}" if c == "forcelose" else f"CHOOSE {c} {t}" for c, t in planted]
+              + list(log["cmds"][at:]))
+    assert s.playout_refusal(lg, at, d["side"]) is not None, "the playout tool refuses it: the builder rejects it"
+    good = dict(log, cmds=[f"FORCELOSE {t}" if c == "forcelose" else f"CHOOSE {c} {t}" for c, t in cmds]
+                + list(log["cmds"][at:]))
+    assert s.playout_refusal(good, at, d["side"]) is None
+
+
+#: a decision whose gate rejects both a dice item and a ±1 Speed point of a seen mon (the 2026-10-12 measurement,
+#: ``designs/research_state/measurements/info_levers_2026-10-12/seed_reuse_200.json``)
+SEED_REUSE_DECISION = "ai_v14_01_base/step_36000000/sentinel_3/loss_s0_004#p1#5"
+
+
+def test_the_seed_reuse_residual_is_measured_by_counterfactual_flips_against_a_passing_control():
+    from main.value_search import worlds as W
+
+    log, at, side = _decision(SEED_REUSE_DECISION)
+    root = W.prepare_root(log, at, side, SEED_REUSE_DECISION)
+    v = C.seed_reuse(root)
+    assert v["pass"], "the unflipped true team passes the gate (the instrument's control)"
+    assert v["item_dice_rejected"] >= 1 and v["speed_pinned"] >= 1, v
+    assert v["item_honest"] == 0 and v["item_truth_dice"] == 0, "the neutral item swap is accepted there"
+    # TEETH of the control: a gate that rejects everything is caught
+    bad = W.Root(**{**root.__dict__, "ref_proto": root.ref_proto + ["|planted|"]})
+    assert not C.seed_reuse(bad)["pass"]

@@ -36,6 +36,9 @@ OBS = Consumer(
 #: world replays the prefix on the TRUE battle seed, so a duration rolled BEFORE the root (sleep, confusion, Encore,
 #: a lock) is the truth's in every world (the hidden-info study's A5 caveat); no honest world can hide it without a
 #: root-state resample in the playout core.
+#: Its PARTIAL leaks have the same cause (the blind replica's finding 2): a hidden fact that spends a die WITHOUT
+#: printing a line must spend the truth's dice in every world (design §7.5, measured by ``main.info_audit``'s
+#: ``seed_reuse`` counterfactual flips).
 SEARCH = Consumer(
     name="the search world builder",
     tells={("species", "unseen"): _TPM,
@@ -47,6 +50,14 @@ SEARCH = Consumer(
            ("counters", "seen"): _T},
     residual=(("counters", "seen"),),
     why={},
+    partial={
+        ("spread", "seen"): "a SPEED TIE spends a die: replayed on the true seed, a world's Speed may not make or "
+                            "break a tie the truth did not (measured: 5.0 % of seen mons, 20 % of decisions; §7.5)",
+        ("item", "seen"): "King's Rock / Focus Band spend a die per hit: the gate tells whether the mon holds one "
+                          "(measured: prior mass removed 4.7e-5 per mon; no pool mon holds one; §7.5)",
+        ("ability", "seen"): "a contact ability's roll (Static, Flame Body, Poison Point, Effect Spore, Cute Charm) "
+                             "and Shed Skin's spend a die (measured: no case in the corpus; §7.5)",
+    },
 )
 
 #: (c) The MODEL-INPUT injection (``agents.info_levers.inject``): the network's own belief inputs are pushed toward

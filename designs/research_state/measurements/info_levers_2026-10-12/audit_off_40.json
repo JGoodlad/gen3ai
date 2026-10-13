@@ -1,0 +1,226 @@
+{
+ "checks": {
+  "gender_independence[off]": {
+   "check": "gender_independence[off]",
+   "examples": [],
+   "gender_count_rejections": 0,
+   "pass": true
+  },
+  "genders[off]": {
+   "check": "genders[off]",
+   "examples": [],
+   "mismatches": 0,
+   "pass": true,
+   "worlds": 78
+  },
+  "leak:ability:seen:proposals[off]": {
+   "check": "leak:ability:seen:proposals",
+   "expected": 396.44,
+   "pass": true,
+   "proposals": 410,
+   "true_hits": 397,
+   "z": 0.15
+  },
+  "leak:item:seen:proposals[off]": {
+   "check": "leak:item:seen:proposals",
+   "expected": 87.07,
+   "pass": true,
+   "proposals": 122,
+   "true_hits": 84,
+   "z": -0.61
+  },
+  "leak:moves:seen:drawn[off]": {
+   "check": "leak:moves:seen:drawn",
+   "expected": 334.3,
+   "pass": true,
+   "slots": 730,
+   "true_hits": 325,
+   "z": -0.75
+  },
+  "legality[off]": {
+   "check": "legality[off]",
+   "examples": [],
+   "pass": true,
+   "violations": 0,
+   "worlds": 78
+  },
+  "log_consistency": {
+   "check": "log_consistency",
+   "decisions": 614,
+   "examples": [],
+   "items_agree": 1069,
+   "items_obs_only": 0,
+   "items_python_only": 0,
+   "mons": 1654,
+   "moves_agree": 1962,
+   "moves_obs_only": 0,
+   "moves_python_only": 0,
+   "pass": true
+  },
+  "playout_open[off]": {
+   "check": "playout_open[off]",
+   "examples": [],
+   "pass": true,
+   "refused": 0,
+   "worlds": 78
+  },
+  "provenance[off]": {
+   "check": "provenance[off]",
+   "examples": [],
+   "facts": 1872,
+   "pass": true,
+   "violations": 0
+  },
+  "regate[off]": {
+   "check": "regate[off]",
+   "examples": [],
+   "failures": 0,
+   "pass": true,
+   "seen_exact_hp_equal": 180,
+   "seen_mons": 276,
+   "worlds": 78
+  },
+  "seed_reuse": {
+   "ability_mons": 0,
+   "ability_rejected": 0,
+   "check": "seed_reuse",
+   "examples": [
+    {
+     "mon": "vaporeon",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "tyranitar",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "flygon",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "skarmory",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "kingsrock"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "flygon",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "magneton",
+     "rejected": "focusband"
+    },
+    {
+     "mon": "tyranitar",
+     "speed_pinned": [
+      "-1"
+     ]
+    }
+   ],
+   "item_dice_pinned": 0,
+   "item_dice_rejected": 30,
+   "item_dice_tested": 70,
+   "item_honest": 4,
+   "item_mass_removed": 0.001322,
+   "item_mons": 39,
+   "item_truth_dice": 0,
+   "pass": true,
+   "replays": 365,
+   "speed_mons": 144,
+   "speed_pinned": 4
+  },
+  "template_identity": {
+   "check": "template_identity",
+   "commands": 1166,
+   "examples": [],
+   "mismatches": 0,
+   "pass": true
+  }
+ },
+ "decisions": 40,
+ "leakage": {
+  "off": {
+   "samplers": {
+    "chain": 109,
+    "failed": 0,
+    "n": 138
+   },
+   "table": {
+    "seen:ability:drawn": {
+     "n": 220,
+     "truth_match": 0.9773
+    },
+    "seen:ability:revealed": {
+     "n": 56,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 74,
+     "truth_match": 0.8514
+    },
+    "seen:item:revealed": {
+     "n": 202,
+     "truth_match": 1.0
+    },
+    "seen:moves:drawn": {
+     "n": 274,
+     "truth_match": 0.0657
+    },
+    "seen:moves:revealed": {
+     "n": 2,
+     "truth_match": 1.0
+    },
+    "seen:spread:drawn": {
+     "n": 276,
+     "truth_match": 0.0254
+    },
+    "unseen:ability:drawn": {
+     "n": 192,
+     "truth_match": 0.1406
+    },
+    "unseen:item:drawn": {
+     "n": 192,
+     "truth_match": 0.1146
+    },
+    "unseen:moves:drawn": {
+     "n": 192,
+     "truth_match": 0.0104
+    },
+    "unseen:species:drawn": {
+     "n": 192,
+     "truth_match": 0.0312
+    },
+    "unseen:spread:drawn": {
+     "n": 192,
+     "truth_match": 0.0052
+    }
+   }
+  }
+ },
+ "pass": true,
+ "specs": {
+  "off": {
+   "built": 39,
+   "excluded": [
+    {
+     "id": "ai_v14_06_lbat_ctrl_fix/step_82000032/random/win_s0_001#p1#17",
+     "why": "ai_v14_06_lbat_ctrl_fix/step_82000032/random/win_s0_001#p1#17: no honest draw of tyranitar (slot 3) fits the log in 200 chain steps ({'screen': 2})"
+    }
+   ],
+   "screens": 12149,
+   "seconds": 1298.0261373519897
+  }
+ },
+ "worlds_per_decision": 2
+}

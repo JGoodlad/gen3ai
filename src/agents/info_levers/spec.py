@@ -368,14 +368,16 @@ Support = Mapping[Tuple[str, str], Tuple[str, ...]]
 class Consumer:
     """A consumer's declared support: ``tells`` = (class, part) → sources it honours; ``residual`` = (class, part)
     facts it can only ever give TRUE (a named leak it cannot remove, reported with every honest spec it runs);
-    ``needs`` = (class, part) → the (class, part) lever without which that one can never apply (refused, so a
-    spec cannot be a silent no-op)."""
+    ``partial`` = (class, part) → a NARROW leak in a fact it otherwise draws honestly (named and measured, reported
+    the same way); ``needs`` = (class, part) → the (class, part) lever without which that one can never apply
+    (refused, so a spec cannot be a silent no-op)."""
 
     name: str
     tells: Support
     residual: Tuple[Tuple[str, str], ...] = ()
     needs: Mapping[Tuple[str, str], Tuple[str, str]] = field(default_factory=dict)
     why: Mapping[Tuple[str, str], str] = field(default_factory=dict)
+    partial: Mapping[Tuple[str, str], str] = field(default_factory=dict)
 
     def validate(self, spec: "str | InfoReveal") -> InfoReveal:
         """``spec`` parsed and checked against this consumer: :class:`InfoRevealError` names the first lever it
@@ -399,6 +401,11 @@ class Consumer:
         """The facts this consumer gives TRUE although ``spec`` does not tell them (its named residual leaks)."""
         s = parse(spec)
         return tuple(k for k in self.residual if s.lever(*k) is None)
+
+    def partial_of(self, spec: "str | InfoReveal") -> Tuple[Tuple[str, str], ...]:
+        """The facts ``spec`` leaves honest in which this consumer still leaks narrowly (``partial``)."""
+        s = parse(spec)
+        return tuple(k for k in self.partial if s.lever(*k) is None)
 
 
 def facts() -> Iterable[Tuple[str, str]]:

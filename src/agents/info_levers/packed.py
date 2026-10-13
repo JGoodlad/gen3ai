@@ -42,6 +42,21 @@ def hp_ivs(t: str) -> List[int]:
     return [iv[k] for k in STATS]
 
 
+def hp_iv_masks(t: str) -> List[List[int]]:
+    """EVERY 30/31 IV pattern (packed order) giving Hidden Power type ``t`` at 70 power — the canonical one
+    (:func:`hp_ivs`, the most 31s) first, then by fewer 31s; a pool set may use any of them."""
+    out: List[Tuple[int, List[int]]] = []
+    for mask in range(64):
+        b = [(mask >> i) & 1 for i in range(6)]          # hp, atk, def, spe, spa, spd
+        v = sum(x << i for i, x in enumerate(b))
+        if HP_TYPES[v * 15 // 63] == t:
+            iv = dict(zip(("hp", "atk", "def", "spe", "spa", "spd"), (30 + x for x in b)))
+            out.append((-sum(b), [iv[k] for k in STATS]))
+    out.sort(key=lambda x: (x[0], x[1][::-1]))
+    canon = hp_ivs(t)
+    return [canon] + [m for _, m in out if m != canon]
+
+
 def parse_set(entry: str) -> List[str]:
     f = entry.split("|")
     return f + [""] * (12 - len(f)) if len(f) < 12 else f
