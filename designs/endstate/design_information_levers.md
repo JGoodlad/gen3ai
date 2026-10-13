@@ -406,8 +406,9 @@ The honest screen is the cost: a seen mon the prior fits is a few replays; one w
   (mostly a minimised Attack, e.g. 31 / 2 / 31 / 30 / 31 / 31 for Hidden Power Fire); of 777 other sets, 258 (33 %)
   are not all 31 (mostly 0 Attack IVs). The screen draws neither: where the log pins such a stat (a Rapid Spin, a
   confusion hit) no world fits and the decision is EXCLUDED (counted), never misbuilt; where it does not, the world
-  holds a different but log-consistent value. An IV prior beyond 30 / 31 has no Smogon source (a judgment for the
-  owner, `design_hand_computed_features.md`'s fact-vs-judgment test).
+  holds a different but log-consistent value. **Owner's ruling (2026-10-12): no IV prior below 30** — a minimised
+  Attack is taken as full Attack ("0 attack adds so little value. It only matters when a pokemon is confused and
+  hurts itself in confusion or in a struggle end game"); those decisions stay excluded, counted.
 
 ---
 
@@ -593,8 +594,8 @@ For a decision-level score IMP (the study's: win probability per decision over t
 - **Hidden counters** stay the builder's residual (§7.5) until a root-state resample exists.
 - **Seed reuse** leaks dice-silent facts (§7.5, measured): speed ties in 20 % of decisions; King's Rock / Focus Band
   and the contact abilities negligible on this pool. Same cure as the counters (a fresh-dice prefix replay).
-- **IVs below 30** (a third of pool sets) are outside the screen's support (§7.5): an exclusion risk where the log
-  pins the stat.
+- **IVs below 30** (a third of pool sets) are outside the screen's support (§7.5), by the owner's ruling: an
+  exclusion where the log pins the Attack (a confusion self-hit, a Struggle endgame), counted.
 - The observation cannot state an exact HP, a hidden duration, a placebo or a map fact (§3): the knock-in forks'
   wrong-moves arm needs a placebo in the observation, which needs a prior sampler on the Rust side (not built).
 
@@ -609,3 +610,4 @@ For a decision-level score IMP (the study's: win probability per decision over t
 | 2026-10-12 | **The blind replica's three findings answered** (orchestrator relay) | (1) seed reuse through the turn-0 GENDER dice: closed by the engine pad, a `gender_independence` check and its plant (the builder without the pad); (2) DICE-SILENT facts: seed reuse kept, the leak NAMED (`SEARCH.partial`) and MEASURED by counterfactual flips (speed ties 5.0 % of seen mons / 20 % of decisions; King's Rock, Focus Band, contact abilities negligible on this pool); (3) every world OPENED by the playout tool before it is returned, a `playout_open` check and a planted numeric choice. Plus: the Hidden Power's TYPE is a SPREAD fact, its presence a MOVES fact, in all three consumers (§1.1); the screen's Hidden Power state spans every 30 / 31 IV pattern | avoiding seed reuse (needs a playout core that replays on fresh dice constrained to the printed outcomes — not built); refusing `moves` without `spread` on Hidden Power sets (the observation writes it bare instead, byte-safe); an IV prior below 30 (no Smogon source: the owner's call) | §1.1, §7.2, §7.5, §9, §10.1; `seed_reuse_200.json` |
 | 2026-10-12 | **(a) BUILT: `--oracle-reveal <spec>`** | The flag takes any spec OBS honours and records its LABEL; the Rust encoder's `OracleSpec` (mass per class × part, strict canonical parse, per-(episode, side, mon, class) Bernoulli by a pinned hash); `off` / `species` / `full` byte-identical (the three digests unchanged, the clause texts reproduce them); the resume gate compares meaning; `MODEL_CONFIG_VERSION` unchanged (no new field; the three levels' recorded values unchanged) | a soft "known = p" cell (a row the network never sees in play); per-DECISION draws (a fact flickering on and off within an episode is not a belief a player could hold); a lenient Rust parser (two spellings of one spec would be two env specs) | `src/rust_env/tests/oracle_reveal_test.rs`, `src/utils/rust_env/oracle_reveal_integration_test.py` |
 | 2026-10-12 | **The DIAGNOSTIC-FORK consent BUILT** | `--diagnostic-fork-consent "<reason>"`: a genuine fork (the ONE `is_same_run_checkpoint` predicate) may change `--oracle-reveal` from its parent's recorded spec; refused on a same-run flip, with no change, without `--model`, and into a registry-named run; stamped in the child's immutable lineage block; a stamped lineage (own or ancestor) is refused by `main.baselines set` and flagged by `check` | an allow-change flag on the resume check (`--allow-belief-grad-mode-change`'s shape: would also allow a same-run flip); refusing a registered PARENT (the knock-ins fork the adopted arm itself); refusing `--arch production` / `endstate` on the fork (orthogonal to the observation mode) | `src/main/train/diagnostic_fork_test.py`; `main.checkargs` / `main.launcher --dry-run` on the §8.3 argv with `--oracle-reveal ki_moves` |
+| 2026-10-12 | **IVs below 30: taken as full Attack** (owner's ruling on the builder's finding 4: "0 attack adds so little value. It only matters when a pokemon is confused and hurts itself in confusion or in a struggle end game. You can toss those in as full attack.") | No new IV prior: the screen keeps every IV at 30 / 31 (the Hidden Power's patterns, else 31), so a minimised-Attack set is built and believed at full Attack; a decision whose log pins the Attack stays an EXCLUSION, counted and reported | an IV prior below 30 (no Smogon source; little value) | §7.5, §12; `world_screen.ivs_of` |

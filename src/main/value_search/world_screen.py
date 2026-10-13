@@ -353,7 +353,10 @@ def hp_split(hpt: Optional[str]) -> Tuple[Optional[str], int]:
 
 
 def ivs_of(hpt: Optional[str]) -> Tuple[int, ...]:
-    """The IVs a state's Hidden Power fixes (all 31 when the set holds none)."""
+    """The IVs a state's Hidden Power fixes (all 31 when the set holds none). IVs below 30 are never drawn: a
+    minimised Attack (0 Atk, or 2 / 3 under a Hidden Power) is taken as full Attack — the owner's ruling of
+    2026-10-12 ("0 attack adds so little value … toss those in as full attack"); a decision whose log pins the Attack
+    (a confusion self-hit, a Struggle endgame) stays an EXCLUSION, counted (design §7.5)."""
     ty, k = hp_split(hpt)
     if ty is None:
         return (31,) * 6
