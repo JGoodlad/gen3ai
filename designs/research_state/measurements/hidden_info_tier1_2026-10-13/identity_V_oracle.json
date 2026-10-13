@@ -1,0 +1,31 @@
+{
+ "code": "V_oracle",
+ "cps": {
+  "end2": {
+   "actions": 88,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.0000000000287557e-06,
+   "max_dv": 1.0000000000065512e-05,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 12,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  },
+  "prod": {
+   "actions": 93,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.0000000000287557e-06,
+   "max_dv": 1.0000000000065512e-05,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 12,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  }
+ },
+ "states": "registered",
+ "verdict": "PASS"
+}

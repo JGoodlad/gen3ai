@@ -1,0 +1,152 @@
+{
+ "census_npz": "/home/goodlad/gen3ai_archive/hidden_info_tier1/prod/census.npz",
+ "census_sha256": "a4c08c876664cf1e207f908d3563e3c0e5d03b02c67fe6d1191d6416a8312bd2",
+ "cost": {
+  "cpu_s_incl_children": 50.8,
+  "wall_s": 42.0,
+  "workers": 2
+ },
+ "cp": "prod",
+ "cross_checks_descriptive": {
+  "alive_ours_vs_request": 14231,
+  "alive_theirs_vs_stamp_opp_alive": 12918,
+  "of": 16099
+ },
+ "cycles": [
+  "step_10000002",
+  "step_12000178",
+  "step_14000168"
+ ],
+ "eligible_pool": {
+  "k_bin": {
+   "1-2": 4682,
+   "3": 2762,
+   "4": 2812,
+   "5": 2996,
+   "6": 2847
+  },
+  "k_raw": {
+   "0": 0,
+   "1": 1899,
+   "2": 2783,
+   "3": 2762,
+   "4": 2812,
+   "5": 2996,
+   "6": 2847
+  },
+  "mat_bin": {
+   "10-11": 4957,
+   "12": 3211,
+   "8-9": 3655,
+   "<=7": 4276
+  },
+  "n": 16099,
+  "turn_bin": {
+   "15-21": 3642,
+   "8-14": 4717,
+   "<=7": 4112,
+   ">=22": 3628
+  }
+ },
+ "fields": [
+  "alive_ours",
+  "alive_theirs",
+  "battle",
+  "ids",
+  "k",
+  "material",
+  "n_legal",
+  "opp_alive_stamp",
+  "req_alive_ours",
+  "turn"
+ ],
+ "not_registered": {
+  "k_bin": {
+   "1-2": 4502,
+   "3": 2667,
+   "4": 2707,
+   "5": 2879,
+   "6": 2744
+  },
+  "k_raw": {
+   "0": 0,
+   "1": 1832,
+   "2": 2670,
+   "3": 2667,
+   "4": 2707,
+   "5": 2879,
+   "6": 2744
+  },
+  "mat_bin": {
+   "10-11": 4779,
+   "12": 3099,
+   "8-9": 3523,
+   "<=7": 4098
+  },
+  "n": 15499,
+  "turn_bin": {
+   "15-21": 3509,
+   "8-14": 4536,
+   "<=7": 3955,
+   ">=22": 3499
+  }
+ },
+ "pin": "95d014faeeb4d699703264a19094afee6f4eafc2",
+ "registered": {
+  "k_bin": {
+   "1-2": 180,
+   "3": 95,
+   "4": 105,
+   "5": 117,
+   "6": 103
+  },
+  "k_raw": {
+   "0": 0,
+   "1": 67,
+   "2": 113,
+   "3": 95,
+   "4": 105,
+   "5": 117,
+   "6": 103
+  },
+  "mat_bin": {
+   "10-11": 178,
+   "12": 112,
+   "8-9": 132,
+   "<=7": 178
+  },
+  "n": 600,
+  "turn_bin": {
+   "15-21": 133,
+   "8-14": 181,
+   "<=7": 157,
+   ">=22": 129
+  }
+ },
+ "run": "rb_es_prod_s2001",
+ "teeth": {
+  "examples": [],
+  "gate1": {
+   "battles_checked": 679,
+   "decisions_checked": 23392,
+   "failures": 0,
+   "refused": 0
+  },
+  "mismatches": {
+   "alive_ours": 0,
+   "alive_theirs": 0,
+   "k": 0,
+   "material": 0,
+   "missing": 0,
+   "turn": 0
+  },
+  "pass": true,
+  "pool_ids_equal_in_order": true,
+  "registered_states": 600,
+  "turn_decode_gate": {
+   "agree": 23392,
+   "decisions": 23392
+  }
+ },
+ "traces": 679
+}
