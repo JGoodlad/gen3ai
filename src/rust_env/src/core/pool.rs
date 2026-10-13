@@ -28,7 +28,7 @@ use std::sync::Arc;
 use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::bridge::{parse_choice, BridgeSession, Cmd};
 use pokesim::dex::Dex;
-use pokesim::encoder::oracle::{Level, Oracle};
+use pokesim::encoder::oracle::{EpisodeKey, Oracle};
 use pokesim::present;
 use pokesim::prng::Prng;
 use pokesim::version::BattleVersion;
@@ -180,12 +180,14 @@ impl Env {
                 BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(&self.log.teams[side]), Default::default())
                     .map_err(core_err(&format!("root p{}", side + 1)))?;
             // The ORACLE REVEAL (a diagnostic observation mode, `pokesim::encoder::oracle`): each side's
-            // chain is told the OTHER side's team at ITS side's level (`Spec::oracle_reveal.of(side)`): a run's
-            // recorded mode is one level for both sides (the trainee and a policy opponent are symmetric); the
+            // chain is told the OTHER side's team at ITS side's spec (`Spec::oracle_reveal.of(side)`): a run's
+            // recorded mode is one spec for both sides (the trainee and a policy opponent are symmetric); the
             // head-to-head engine may split it (one-sided clairvoyance, X5 A/B §7.7(a)). A side at `off` builds
-            // nothing — its chain is the one the build without the reveal made.
-            if spec.oracle_reveal.of(side) != Level::Off {
-                let oracle = Oracle::new(spec.oracle_reveal.of(side), &self.log.teams[1 - side], &ctx.dex)
+            // nothing — its chain is the one the build without the reveal made. A lever of mass below 1 fires per
+            // (THIS episode's seed words, side, mon, class): the episode key.
+            if !spec.oracle_reveal.of(side).is_off() {
+                let key = EpisodeKey { seed: words, side };
+                let oracle = Oracle::new(spec.oracle_reveal.of(side), &self.log.teams[1 - side], &ctx.dex, key)
                     .map_err(core_err(&format!("oracle p{}", side + 1)))?;
                 chain = chain.with_oracle(side, Arc::new(oracle)).map_err(core_err(&format!("oracle p{}", side + 1)))?;
             }
@@ -461,10 +463,12 @@ impl Pool {
                 BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(t), Default::default())
                     .map_err(|e| format!("spec: team {i}: the reading refuses it as p{}: {}", side + 1, e.message()))?;
             }
-            // ... and, under the ORACLE REVEAL, the observation can be told it as the opponent's team.
-            for level in spec.oracle_reveal.0 {
-                if level != Level::Off {
-                    Oracle::new(level, t, &dex)
+            // ... and, under the ORACLE REVEAL, the observation can be told it as the opponent's team: at the spec
+            // SATURATED (every lever of positive mass fired for every mon), so every slot an episode's draw could
+            // build is built and checked here, before the run starts.
+            for r in spec.oracle_reveal.0 {
+                if !r.is_off() {
+                    Oracle::new(r.saturated(), t, &dex, EpisodeKey::default())
                         .map_err(|e| format!("spec: team {i}: the oracle reveal refuses it: {}", e.message()))?;
                 }
             }

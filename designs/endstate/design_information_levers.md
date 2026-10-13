@@ -4,8 +4,8 @@
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
 **Status (2026-10-12): the SPEC, the LOG SOURCE, the SEARCH WORLD BUILDER (honest by default), the MODEL-INPUT
-INJECTION, the GENDER PAD and the AUDIT SUITE are BUILT; the TRAINING OBSERVATION's spec flag and the diagnostic-fork
-consent are BUILDING (§6).** Owner, 2026-10-12: "I want a single dried
+INJECTION, the GENDER PAD and the AUDIT SUITE are BUILT; consumer (a), the TRAINING OBSERVATION's `--oracle-reveal
+<spec>`, is BUILT and its diagnostic-fork consent is BUILDING (§6).** Owner, 2026-10-12: "I want a single dried
 out implementation for giving both search and training additional information that would not generally be available
 so that we can understand what the ceilings are and what is our constraint and how much value there would be in
 improving determinization." It serves the hidden-information study ([`design_hidden_info_binding.md`](design_hidden_info_binding.md))
@@ -124,24 +124,25 @@ consumer can only ever give TRUE is its named **residual**, reported beside ever
 
 | fact | (a) training observation | (b) search world builder | (c) model-input injection |
 |---|---|---|---|
-| `species:unseen` | truth (a tail slot per told mon) | truth / placebo / map | refused (the X5 hypotheses are the network's own guesses) |
-| `moves:seen` | truth | truth / placebo / map | truth / placebo / map (the typed move posterior) |
+| `species:unseen` | truth (a tail slot per told mon; BUILT) | truth / placebo / map | refused (the X5 hypotheses are the network's own guesses) |
+| `moves:seen` | truth (WHICH moves; a Hidden Power written bare — its type is `spread`'s) | truth / placebo / map | truth / placebo / map (the typed move posterior) |
 | `moves:unseen` | truth (needs `species:unseen`) | truth / placebo / map | truth (a hypothesis slot whose species is a true never-seen one) |
 | `item:seen` | truth | truth / placebo / map | truth / placebo / map (the item posterior: the op's P(Choice Band)) |
 | `item:unseen` | truth (needs `species:unseen`) | truth / placebo / map | refused |
 | `ability:seen` / `:unseen` | truth (unseen needs `species:unseen`) | truth / placebo / map | refused (no ability belief input) |
-| `spread:seen` | truth | truth / placebo / map | truth (the believed stats) |
+| `spread:seen` | truth (nature, EVs, IVs, hence the Hidden Power type) | truth / placebo / map | truth (the believed stats) |
 | `spread:unseen` | truth (needs `species:unseen`) | truth / placebo / map | refused |
 | `hp:seen` | refused (no exact-HP cell; a layout change) | truth (the world must reproduce the true exact HP) | refused |
 | `counters:seen` | refused (no hidden-duration cell) | truth — **RESIDUAL**: always the truth's (§7.3) | refused |
-| mass p | a per-(episode, side, mon, class) Bernoulli: the observation can only state a fact or not | a per-world draw from the mixture | the mixed marginals, written |
+| mass p | a per-(episode, side, mon, class) Bernoulli: the observation can only state a fact or not (BUILT: `encoder::oracle::uniform_bp`) | a per-world draw from the mixture | the mixed marginals, written |
 
 ---
 
 ## 4. Status of each consumer
 
-- **(a) The training observation** (§6): BUILDING. Today's `--oracle-reveal off|species|full` keeps its exact
-  behaviour and bytes; the flag will accept any spec the OBS consumer honours.
+- **(a) The training observation** (§6): BUILT (2026-10-12). `--oracle-reveal` accepts any spec the OBS consumer
+  honours; `off` / `species` / `full` (and their clause texts) keep their exact behaviour and bytes (pinned). The
+  DIAGNOSTIC-FORK consent (§6) is BUILDING.
 - **(b) The search world builder** (§7): BUILT — honest by default; the pilot's builder is the `pilot` preset.
 - **(c) The model-input injection** (§8): BUILT (`agents.info_levers.inject`), lifted from the study's `inject.py` into `src/` and driven by the spec.
 - **The gender pad** (§9): BUILT (the engine marker `98146ddb`, wired into the builder).
@@ -173,17 +174,52 @@ different PRIOR, not extra information) and the hand evaluator (a different leaf
 
 ---
 
-## 6. (a) THE TRAINING OBSERVATION and the DIAGNOSTIC-FORK consent (BUILDING)
+## 6. (a) THE TRAINING OBSERVATION (BUILT) and the DIAGNOSTIC-FORK consent (BUILDING)
 
-**The flag.** `--oracle-reveal` accepts any spec the OBS consumer honours; `off` / `species` / `full` keep their exact
-behaviour. Symmetric as today (each side's chain is told the other side's team at the run's spec; scripted bots read
-the view, not the row); the in-loop eval core plays at the run's RECORDED spec; `main.h2h`'s per-side reveal takes
-the recorded label. Recorded in `model_config.json` (`oracle_reveal` = the label) and `metadata.json` (the
-`InfoReveal.record()` block).
+**The flag (BUILT 2026-10-12).** `--oracle-reveal <spec>` accepts any spec the OBS consumer honours: a level (`off` /
+`species` / `full`), a preset (`ki_moves` = `moves:seen@0.95`, `ki_items`, `ki_spreads`, `F+M`, `D50`, …) or a clause
+list. The parser stores the spec's LABEL (`utils.rust_env.protocol.oracle_reveal_label` = `OBS.validate(spec).label`)
+and refuses, BY NAME and at parse time, every lever OBS cannot honour (`hp`, `counters`, a `~placebo` / `~map` source —
+so `ki_wrongmoves`, `W90`, `MAP90`, `oracle`, every `O-*` — and an unseen set-class part without `species:unseen`).
+Symmetric as before (each side's chain is told the other side's team at the run's spec; scripted bots read the view,
+not the row); the in-loop eval core and `rust_eval.offline` play at the run's RECORDED label; `main.h2h`'s per-side
+reveal takes each checkpoint's recorded label. Recorded in `model_config.json` (`oracle_reveal` = the label, so a run
+that recorded a level reads exactly as before) and in every checkpoint's `metadata.json` hparams (`oracle_reveal` + the
+`InfoReveal.record()` block as `oracle_reveal_record`); `main.checkargs` and the launch banner print the label, the
+canonical text and the hash. The resume gate (`check_oracle_reveal`) compares MEANING (`spec.same`): `full` and its
+clause text are not a flip. `MODEL_CONFIG_VERSION` did NOT move: no field was added, the field's recorded values for
+the three levels are unchanged, and a new label is written only by code that reads it (an older pinned commit refuses
+it as "not one of" the levels rather than misreading it).
+
+**The Rust side (BUILT).** `encoder::oracle::OracleSpec` = a mass in 1/10,000ths per (class, part), parsed STRICTLY
+from a level name or the canonical clause text (`OracleSpec::parse` re-renders what it parsed and refuses any input
+that is not its own canonical text; it refuses the same levers by name), rendered back as the label; the env spec key
+`oracle_reveal` keeps its shape (a string, or a `[p1, p2]` pair of labels). A never-seen mon's tail slot is
+`hypothesis_slot` when only its species is told and `told_slot` (an own mon's row holding exactly its told facts)
+otherwise; a seen mon is overlaid with its told, unrevealed facts (`Oracle::overlay`: nothing play revealed is
+overwritten); `slot_cells(told)` declares every cell for each of the sixteen told / untold set-class combinations and
+`check_slot` throws on a hidden fact, with teeth per block. The label writers follow `Oracle::tail` (only TOLD tail
+mons), so an unstated mon stays a belief target. Byte identity: `off_is_inert`, `species_bytes_are_pinned`,
+`full_bytes_are_pinned` unchanged, and `the_level_clause_texts_reproduce_the_level_bytes`; the partial-spec differential
+`a_partial_spec_tells_exactly_its_fired_levers` (`src/rust_env/tests/oracle_reveal_test.rs`; detail:
+`designs/rust_sim/encoder.md` §11).
 
 **Mass in the observation.** The observation can only state a fact or not: a lever of mass p tells its fact for a
 whole episode with probability p, decided per (episode seed, side, mon, class) by a hash, so the episode-averaged
 belief is p·truth + (1 − p)·the network's own. A never-seen mon's tail slot exists only where its species is told.
+BUILT as ONE uniform draw per (episode seed words, side, the mon's packed index, class) (`uniform_bp`: splitmix64,
+pinned by its count over a fixed draw set, `PINNED_HALF_MASS_FIRES`, and from Python by a mass-0.5 `species:unseen`
+lever's count over a fixed corpus), compared with the mass of the part that applies — so a class told at equal seen /
+unseen masses stays told when its mon is revealed; mass 1 needs no hash. **The Hidden Power TYPE is a
+SPREAD fact, never a `moves` one** (the IVs determine it; the search builder follows the same split, §7.2): with the
+spread told, a Hidden Power is written as the owner's TYPED move (an own mon's row, so `full` keeps X32's bytes); with
+only `moves` told (`moves:seen`, `ki_moves`, …) it is the BARE `hiddenpower`, exactly as a Hidden Power play revealed is
+written (no type; `hp_revealed` and the type probabilities as play left them) — chosen over refusing `moves` without
+`spread` because it is byte-safe (`full` tells both) and keeps the knock-in lever usable on every team
+(`encoder::oracle::told_move_id`; `the_hidden_power_type_is_a_spread_fact_never_a_moves_one`, and the partial-spec
+differential asserts every Hidden Power told without the spread is bare). `hp_revealed` is 1 exactly when the spread is
+told. A seen
+mon that play revealed a move OUTSIDE its set gets only `4 − revealed` true moves, in set order (the four-slot bound).
 
 **The fork rule (to build).** `--oracle-reveal` is RESUME-IMMUTABLE (a same-run resume that flips it is refused). The
 knock-in forks need a reveal on a FORK of a non-reveal checkpoint, so a fork may change it only with an explicit,
@@ -545,3 +581,4 @@ For a decision-level score IMP (the study's: win probability per decision over t
 | 2026-10-12 | **This doc CREATED; the SPEC and the LOG SOURCE BUILT** (owner: "a single dried out implementation for giving both search and training additional information … so that we can understand what the ceilings are and what is our constraint and how much value there would be in improving determinization") | One declarative `InfoReveal` (seven classes × seen / unseen parts, a mass and a source per lever; presets for the X32 levels, the oracle, the pilot's builder and every study arm; canonical text + hash; per-consumer support tables that REFUSE what a consumer cannot honour and NAME its residual leaks); one protocol-derived source of what play revealed, conservative by design | three separate mechanisms (the status quo: incomparable, one leaked); a soft "known = p" cell in the observation (an input the network never sees in play; a Bernoulli keeps every row a possible observation); the observation rows as the reveal source (they miss protocol-only reveals: the study's A2) | `design_hidden_info_binding.md` §2.2, §16.4; `design_value_discrimination.md` Amendment 8 |
 | 2026-10-12 | **The SEARCH WORLD BUILDER made HONEST BY DEFAULT, the GENDER PAD wired, the AUDIT SUITE built** | `WorldSampler(reveal=…)`, default `off`: a seen mon's item, ability, spread (its IVs: the Hidden Power type and presence) and so its exact HP are DRAWN and screened against the log by a per-(seen mon, constraint) sampler — prior rejection, then a chain whose search is directed by the first differing line and scored on lenient replays, Metropolis-Hastings once the log fits — shared across a decision's worlds and specs; the pilot's builder is the `pilot` preset; any never-seen mon may sit on a true gender-draw slot (the engine pad); one audit suite (`main.info_audit`) over all three consumers, read on 8 committed-bank decisions × 6 specs: 41 checks PASS (the dose of the told move levers exact), no exclusion, a seen mon's item 1.000 → 0.750, exact spread 1.000 → 0.032, exact HP 124/124 → 70/124 | keeping the pilot's builder as the default (a search not honest by default measures the wrong thing whenever a caller forgets); joint rejection over every seen mon (hopeless: a log pins each attacker's stats to a window); a pure Smogon spread table as the prior (a pool spread outside it has no consistent candidate: the Vaporeon 16 HP / 252 Def case); starting the chain at the truth (a leak until it mixes); filtering a drawn item by the truth's unrevealed moves (a leak) | §7, §9, §10.3; `research_state/measurements/info_levers_2026-10-12/` |
 | 2026-10-12 | **The blind replica's three findings answered** (orchestrator relay) | (1) seed reuse through the turn-0 GENDER dice: closed by the engine pad, a `gender_independence` check and its plant (the builder without the pad); (2) DICE-SILENT facts: seed reuse kept, the leak NAMED (`SEARCH.partial`) and MEASURED by counterfactual flips (speed ties 5.0 % of seen mons / 20 % of decisions; King's Rock, Focus Band, contact abilities negligible on this pool); (3) every world OPENED by the playout tool before it is returned, a `playout_open` check and a planted numeric choice. Plus: the Hidden Power's TYPE is a SPREAD fact, its presence a MOVES fact, in all three consumers (§1.1); the screen's Hidden Power state spans every 30 / 31 IV pattern | avoiding seed reuse (needs a playout core that replays on fresh dice constrained to the printed outcomes — not built); refusing `moves` without `spread` on Hidden Power sets (the observation writes it bare instead, byte-safe); an IV prior below 30 (no Smogon source: the owner's call) | §1.1, §7.2, §7.5, §9, §10.1; `seed_reuse_200.json` |
+| 2026-10-12 | **(a) BUILT: `--oracle-reveal <spec>`** | The flag takes any spec OBS honours and records its LABEL; the Rust encoder's `OracleSpec` (mass per class × part, strict canonical parse, per-(episode, side, mon, class) Bernoulli by a pinned hash); `off` / `species` / `full` byte-identical (the three digests unchanged, the clause texts reproduce them); the resume gate compares meaning; `MODEL_CONFIG_VERSION` unchanged (no new field; the three levels' recorded values unchanged) | a soft "known = p" cell (a row the network never sees in play); per-DECISION draws (a fact flickering on and off within an episode is not a belief a player could hold); a lenient Rust parser (two spellings of one spec would be two env specs) | `src/rust_env/tests/oracle_reveal_test.rs`, `src/utils/rust_env/oracle_reveal_integration_test.py` |

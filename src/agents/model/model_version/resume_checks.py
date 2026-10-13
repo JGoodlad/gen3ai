@@ -132,8 +132,13 @@ class ModelVersionResumeChecks(ModelVersionFields):
         the opponent's species is a different function of the observation — so, like vf_coef, it is fixed
         for a run's lifetime and enforced ONLY on the training-resume path: flipping it mid-run silently
         feeds the network a distribution it never trained on. No allow-change escape hatch: the oracle arms
-        start FRESH."""
-        if self.oracle_reveal != requested:
+        start FRESH.
+
+        Since the information-lever spec (`designs/endstate/design_information_levers.md` §6) the comparison is by
+        MEANING (`agents.info_levers.spec.same`): `full` and its clause text are the same reveal, not a flip."""
+        from agents.model.oracle_reveal import same
+
+        if not same(str(self.oracle_reveal or "off"), str(requested or "off")):
             raise ModelVersionError(
                 f"oracle_reveal mismatch: saved={self.oracle_reveal!r}, requested={requested!r}.\n"
                 "The ORACLE REVEAL (a diagnostic observation mode: the opponent's true species written into "

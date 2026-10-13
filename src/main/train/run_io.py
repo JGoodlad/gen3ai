@@ -200,6 +200,10 @@ def _model_hparams(model) -> dict:
     # a reader of metadata.json sees beside `env_core`. The extractor holds the mode the policy was built under.
     out["oracle_reveal"] = str(getattr(getattr(getattr(model, "policy", None), "features_extractor", None),
                                        "oracle_reveal", "off") or "off")
+    # the information-lever spec's RECORD of that mode (`design_information_levers.md` §6): label, canonical text,
+    # hash and the levers — what a reader needs to know exactly which facts, at which mass, the rows were told
+    from agents.model.oracle_reveal import record as _reveal_record
+    out["oracle_reveal_record"] = _reveal_record(out["oracle_reveal"])
     return out
 
 

@@ -1235,15 +1235,18 @@ def _print_oracle_reveal(ns) -> None:
     """The ORACLE REVEAL mode the launch would run at (gen3_oracle_reveal_v1, v137) — stated on every argv, the
     way the critic and the eval regime are: a diagnostic observation mode changes what every metric MEANS and
     nothing in a scalar's name would say so. The EFFECTIVE value: a flagless resume inherits the parent's."""
+    from agents.model import oracle_reveal as OR
+
     mode = getattr(ns, "oracle_reveal", None) or "off"
     if mode == "off":
         print("  oracle reveal                  : off (the production observation)")
         return
-    told = "TRUE species" if mode == "species" else "TRUE SET (moves, item, ability, spread)"
-    print(f"  oracle reveal                  : {mode}  ⚠️  DIAGNOSTIC observation mode, NOT production — the "
-          f"observation states the opponent's {told} from turn 1 (symmetric: the self-play opponents see "
+    rec = OR.record(mode)
+    print(f"  oracle reveal                  : {rec['label']}  ⚠️  DIAGNOSTIC observation mode, NOT production — the "
+          f"observation states {OR.describe(mode)} (symmetric: the self-play opponents see "
           "the trainee's team too; the in-loop eval plays at this mode). RESUME-IMMUTABLE: recorded in "
           "model_config.json, inherited on a flagless resume, a flip is refused.")
+    print(f"      canonical {rec['canonical']}   hash {rec['hash']}")
 
 
 def _print_resolution(resolution: dict | None) -> None:

@@ -40,7 +40,7 @@ from agents.training.rust_rollout import store as S
 from agents.training.rust_rollout.collector import CollectorConfig, RustCollector
 from agents.training.rust_rollout.teams import TeamStager, TeamTable
 from agents.training.rust_rollout.trigger import trigger_for
-from utils.rust_env.protocol import ORACLE_REVEAL_LEVELS
+from utils.rust_env.protocol import oracle_reveal_label
 
 FRONTS = ("proc", "ffi")
 PROFILES = ("release", "selfcheck")
@@ -82,8 +82,8 @@ class RustEnvDecl:
     #: the fork arm's declaration (``fork.ForkDecl``; ``designs/training/forks.md`` §14). None = OFF —
     #: nothing of the arm is built, and the arena, the obs keys and the FIFO are exactly as without it.
     fork: Any = None
-    #: the ORACLE REVEAL level (``--oracle-reveal``; ``encoder::oracle``) the core's observations are built at:
-    #: the run's RECORDED mode, shared by the training pool and the eval core (``build_eval_core`` reads its
+    #: the ORACLE REVEAL spec (``--oracle-reveal``; ``encoder::oracle``; its LABEL) the core's observations are built
+    #: at: the run's RECORDED mode, shared by the training pool and the eval core (``build_eval_core`` reads its
     #: ``collector_decl``). ``off`` = the production observation, byte-identical.
     oracle_reveal: str = "off"
 
@@ -92,8 +92,8 @@ class RustEnvDecl:
             raise ValueError(f"RustEnvDecl.front {self.front!r} not in {FRONTS}")
         if self.profile not in PROFILES:
             raise ValueError(f"RustEnvDecl.profile {self.profile!r} not in {PROFILES}")
-        if self.oracle_reveal not in ORACLE_REVEAL_LEVELS:
-            raise ValueError(f"RustEnvDecl.oracle_reveal {self.oracle_reveal!r} not in {ORACLE_REVEAL_LEVELS}")
+        # any spec the training observation honours, normalised to its LABEL (a refused lever raises, by name)
+        object.__setattr__(self, "oracle_reveal", oracle_reveal_label(self.oracle_reveal))  # frozen
         if self.oracle_reveal != "off" and self.fork is not None:
             raise ValueError("RustEnvDecl: the fork arm's successor rows are encoded by chains WITHOUT the oracle reveal, "
                              "so --oracle-reveal != off cannot combine with --fork-fraction > 0")

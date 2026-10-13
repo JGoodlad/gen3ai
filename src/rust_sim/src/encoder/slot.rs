@@ -54,7 +54,7 @@ pub(super) fn team(inp: &Inputs, t: &Tables, own: bool, out: &mut [f32; OBS_DIM]
     };
     let la = last_action(inp, t, rel);
     // The ORACLE REVEAL (`encoder::oracle`): after the SEEN opponent mons, one slot per mon the
-    // viewer has not seen, in dex-num order. `None` (the mode `off`) leaves every such slot zero.
+    // viewer has not seen whose species is TOLD, in dex-num order. `None` (the mode `off`) leaves every such slot zero.
     let tail = match (own, inp.oracle) {
         (false, Some(o)) => o.tail(roster)?,
         _ => Vec::new(),
@@ -64,16 +64,18 @@ pub(super) fn team(inp: &Inputs, t: &Tables, own: bool, out: &mut [f32; OBS_DIM]
         let s = &mut out[start..start + POKEMON_FULL_DIM];
         let Some((_, mon)) = roster.get(i) else {
             match tail.get(i - roster.len()) {
-                Some(unseen) => s.copy_from_slice(unseen.slot()),
+                Some(unseen) => s.copy_from_slice(
+                    unseen.slot().ok_or_else(|| fault(format!("encode: the oracle tail holds {} with no slot", unseen.species)))?,
+                ),
                 None => zero(s, 0, POKEMON_FULL_DIM),
             }
             continue;
         };
         let live = live_get(side_view, &mon.species)
             .ok_or_else(|| fault(format!("encode: no view mon for {} slot {i} ({})", rel.as_str(), mon.species)))?;
-        // The ORACLE REVEAL's `full` level: a SEEN opponent mon carries the true set's facts the play has not
-        // revealed yet — and nothing the play HAS revealed is overwritten (`Oracle::overlay`). `None` is every
-        // other mode: the mon and its view are the reading's own.
+        // The ORACLE REVEAL's `seen` levers: a SEEN opponent mon carries the told classes of its true set's facts the
+        // play has not revealed yet — and nothing the play HAS revealed is overwritten (`Oracle::overlay`). `None`
+        // (no seen lever fired for it, or no reveal): the mon and its view are the reading's own.
         let overlaid = match (own, inp.oracle) {
             (false, Some(o)) => o.overlay(mon, live)?,
             _ => None,
@@ -155,8 +157,8 @@ fn mon_vector(trk: &SideTrackers, t: &Tables, mon: &PMon, live: &MonView, own: b
     }
     put(v, POKEMON_PROTECT_OFFSET, protect_success_probability(live.protect_counter as i64));
     // The spread block and `hp_revealed` follow what the VIEW knows of the spread: an own mon always (`spread_known`),
-    // an opponent mon never — except under the ORACLE REVEAL's `full` level, which tells the observation the true set
-    // (`encoder::oracle`), so an opponent slot is then written exactly like an own one.
+    // an opponent mon never — except under an ORACLE REVEAL that tells its spread (`spread:*`, e.g. the `full` level;
+    // `encoder::oracle`), so an opponent slot is then written exactly like an own one.
     if live.spread_known {
         spread(t, live, &mut v[POKEMON_SPREAD_OFFSET..POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]);
         v[POKEMON_HP_REVEALED_OFFSET] = 1.0;

@@ -968,10 +968,10 @@ class ExtractorBuild(torch.nn.Module):
         # under (`encoder::oracle`, written into the observation by the Rust env core). INERT here: the forward
         # reads the observation and nothing else, so no module is built and no weight moves. It is stored so the
         # snapshot records it (`ModelVersion.oracle_reveal`) and every offline tool can read the run's own mode.
-        from utils.rust_env.protocol import ORACLE_REVEAL_LEVELS
-        if oracle_reveal not in ORACLE_REVEAL_LEVELS:
-            raise ValueError(f"oracle_reveal must be one of {ORACLE_REVEAL_LEVELS}, got {oracle_reveal!r}")
-        self.oracle_reveal = oracle_reveal
+        # Any spec the training observation honours (the information-lever spec, `design_information_levers.md` §6),
+        # stored as its LABEL (`off` / `species` / `full` for the X32 levels).
+        from utils.rust_env.protocol import oracle_reveal_label
+        self.oracle_reveal = oracle_reveal_label(oracle_reveal)
         self.hypothesis_builder: Optional[HypothesisBuilder] = None
         _x5_fix = ("there is no belief path without it — the blob path that built one was DELETED at the X5 "
                    "version break (config v144)")

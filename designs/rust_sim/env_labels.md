@@ -99,10 +99,11 @@ core just encoded, as the Python env reads it from `obs["observation"]`. The rev
 `board_reading.opp` in encoder slot order: the encoder's `get_team_list(is_opponent=True)` order is
 reveal order, and the Rust encoder indexes `reading.opp` directly.
 
-**Under the ORACLE REVEAL (`--oracle-reveal species` / `full`, a diagnostic mode; `encoder.md` §11) the row also states the
-unseen species**, so the stated slots are the seen mons (`reading.opp`) followed by the oracle's unseen tail in dex-num
-order (`labels::belief::revealed_nums(own, truth, oracle)` calls the SAME `Oracle::tail` the encoder calls). With
-every species stated there is no believed slot: `belief_species` / `belief_moves` are PAD, and `known_moves`,
+**Under the ORACLE REVEAL (`--oracle-reveal` with a `species:unseen` lever, e.g. `species` / `full`, a diagnostic mode;
+`encoder.md` §11) the row also states the unseen species whose lever fired**, so the stated slots are the seen mons
+(`reading.opp`) followed by the oracle's TOLD unseen tail in dex-num order (`labels::belief::revealed_nums(own, truth,
+oracle)` calls the SAME `Oracle::tail` the encoder calls, so a mass-below-1 spec's unstated mons stay belief targets,
+`oracle_reveal_test.rs::a_partial_spec_tells_exactly_its_fired_levers`). With every species stated there is no believed slot: `belief_species` / `belief_moves` are PAD, and `known_moves`,
 `hp_type`, `item` and the three spread families label EVERY stated slot (seen first, then the tail) with the
 species' true value. `belief::write` THROWS when the row's stated-species count differs from what the reading plus the
 oracle give. `opp_switch_slot` is unchanged (the switch-slot target stays in the seen frame; a switch to a mon not

@@ -35,12 +35,19 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "--n-steps x --n-envs, today's rollout size. Must be a multiple of lcm("
                              "--batch-size, --n-envs) (no ragged micro-batch, and the buffer keeps its "
                              "[n_steps, n_envs] shape).")
-    from utils.rust_env.protocol import ORACLE_REVEAL_LEVELS
-    parser.add_argument("--oracle-reveal", "--oracle_reveal", dest="oracle_reveal", choices=ORACLE_REVEAL_LEVELS,
-                        default=None,
+    parser.add_argument("--oracle-reveal", "--oracle_reveal", dest="oracle_reveal", type=_oracle_reveal_arg,
+                        default=None, metavar="SPEC",
                         help="DIAGNOSTIC observation mode, never production (gen3_oracle_reveal_v1, v137; "
-                             "designs/endstate/design_x5_belief_tokens.md §7.6, backlog X32): how much of the "
-                             "opponent's TRUE team the OBSERVATION states from turn 1. 'off' (default): the "
+                             "designs/endstate/design_x5_belief_tokens.md §7.6, backlog X32; generalised to the "
+                             "information-lever spec, designs/endstate/design_information_levers.md §6): what of the "
+                             "opponent's TRUE team the OBSERVATION states from turn 1. SPEC is a level (off / species / "
+                             "full), a preset (ki_moves = moves:seen@0.95, ki_items, ki_spreads, F+M, …: "
+                             "agents.info_levers.spec.PRESETS) or a clause list class:scope[@mass] over species:unseen, "
+                             "moves / item / ability / spread : seen / unseen / both — a lever of mass p tells its fact "
+                             "for a whole episode with probability p, per (episode, side, mon, class). Refused by name: "
+                             "hp, counters, a ~placebo / ~map source (ki_wrongmoves), an unseen set-class part without "
+                             "species:unseen. Recorded as its LABEL (the level name, else the canonical text). "
+                             "'off' (default): the "
                              "production observation, byte-identical. 'species': the six opponent species "
                              "(team-preview semantics) — written by the Rust encoder into the opponent team "
                              "block of the observation itself (the shared trunk, not a side input to any head): "
@@ -112,3 +119,16 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "rust_rollout/consistency.BEHAVIOUR_GATE). Default 'fatal' on both env "
                              "cores: under rust Lane G's pre-loop probe (per-row policy versions), under python the "
                              "first micro-batch's own forward (K9, M5 Lane K — no extra forward).")
+
+
+def _oracle_reveal_arg(text: str) -> str:
+    """``--oracle-reveal``'s argparse type: the spec's LABEL, validated against the training observation's support
+    (``utils.rust_env.protocol.oracle_reveal_label``); a lever it cannot honour is a parse error naming it."""
+    import argparse
+
+    from utils.rust_env.protocol import oracle_reveal_label
+
+    try:
+        return oracle_reveal_label(text)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from None

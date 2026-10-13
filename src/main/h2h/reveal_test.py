@@ -23,6 +23,9 @@ TS = "ts:" + "0" * 16
     ("one_sided", "off", "full", ("off", "full")),
     ("both_sided", "species", "off", ("species", "species")),
     ("both_sided", "off", "full", ("full", "full")),
+    # any information-lever spec the observation honours plays as its recorded LABEL (design_information_levers.md §6)
+    ("one_sided", "moves:seen@0.95", "off", ("moves:seen@0.95", "off")),
+    ("both_sided", "off", "item:seen@0.95", ("item:seen@0.95", "item:seen@0.95")),
 ])
 def test_the_cell_levels_follow_the_mode_and_the_recorded_levels(mode, player, opponent, want):
     assert RV.side_levels(mode, player, opponent) == want
@@ -85,6 +88,33 @@ def test_the_spec_writes_a_symmetric_reveal_as_the_string_and_a_split_one_as_the
     assert json.loads(P.spec_json(**kw, oracle_reveal="species"))["oracle_reveal"] == "species"
     assert json.loads(P.spec_json(**kw, oracle_reveal=("species", "off")))["oracle_reveal"] == ["species", "off"]
     assert json.loads(P.spec_json(**kw, oracle_reveal=("full", "full")))["oracle_reveal"] == "full"
-    for bad in ("x", ("off",), ("off", "x"), ("off", "off", "off")):
+    for bad in ("x", ("off",), ("off", "x"), ("off", "off", "off"), "ki_wrongmoves", ("hp:seen", "off")):
         with pytest.raises(ValueError, match="oracle_reveal"):
             P.spec_json(**kw, oracle_reveal=bad)
+    # a spec label round-trips per side; a level given as its clause text is written as the level
+    assert json.loads(P.spec_json(**kw, oracle_reveal=("moves:seen@0.95", "off")))["oracle_reveal"] == ["moves:seen@0.95", "off"]
+    assert P.spec_json(**kw, oracle_reveal="species:unseen") == P.spec_json(**kw, oracle_reveal="species")
+
+
+def test_a_recorded_spec_label_is_the_level_the_engine_plays_a_side_at(tmp_path):
+    """The h2h engine reads each checkpoint's RECORDED label (`recorded_level`) and plays its side at it: a run that
+    recorded a knock-in spec is one_sided-playable at exactly that label."""
+    import dataclasses
+
+    from agents.model.model_version import ModelVersion
+    from agents.model.snapshot import save_model_snapshot
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    v = ModelVersion.from_layout_and_policy_kwargs(Gen3ObservationEncoder(load_mappings()).get_layout(),
+                                                   {"net_arch": [512, 512]})
+    (tmp_path / "final_model.zip").write_bytes(b"")
+    save_model_snapshot(str(tmp_path), dataclasses.replace(v, oracle_reveal="moves:seen@0.95"), git_hash="t")
+
+    class Ref:
+        zip_path = str(tmp_path / "final_model.zip")
+
+    rec = RV.recorded_level(Ref())
+    assert rec == "moves:seen@0.95"
+    assert RV.side_levels("one_sided", rec, "off") == ("moves:seen@0.95", "off")
+    with pytest.raises(RV.RevealModeError):
+        RV.side_levels("off", rec, "off")

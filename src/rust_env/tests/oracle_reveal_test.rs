@@ -10,6 +10,13 @@
 //!   slots and EVERY cell outside the opponent block's unseen tail are bit-identical; the unseen tail is
 //!   the true team's unseen species, in dex-num order, each equal to `hypothesis_slot` (the encoder's
 //!   own row for a never-seen mon); and the label columns agree on the seen slots and cover the tail.
+//! * `the_level_clause_texts_reproduce_the_level_bytes` — the information-lever spec's clause texts of the two X32
+//!   levels (`species:unseen`, `species:unseen,moves:both,item:both,ability:both,spread:both`) reproduce the pinned
+//!   `species` / `full` digests: the generalised reveal is the X32 levels, byte for byte.
+//! * `a_partial_spec_tells_exactly_its_fired_levers` — the DIFFERENTIAL for PARTIAL specs and masses below 1 (`off`
+//!   against the spec, real battles): every opponent slot's every block is `off`'s, the never-seen row's or the opposing
+//!   chain's own row of that mon, exactly as the lever that fired for that (episode, side, mon, class) says; the tail
+//!   holds exactly the told species; and the label columns stay aligned with the told slots.
 //! * the edge cases (formes share a dex num; Species Clause; a slot revealed in play after the preview
 //!   leaves the tail exactly once; a revealed mon the oracle team lacks is a FAULT).
 
@@ -22,7 +29,7 @@ use pokesim::encoder::layout::{
     POKEMON_FULL_DIM, POKEMON_HP_REVEALED_OFFSET, POKEMON_ITEMS_OFFSET, POKEMON_MOVES_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET, POKEMON_SPECIES_OFFSET, POKEMON_SPREAD_OFFSET, POKEMON_TYPES_OFFSET, TEAM_SIZE,
 };
-use pokesim::encoder::oracle::{species_num, Level, Oracle};
+use pokesim::encoder::oracle::{fires, species_num, Class, EpisodeKey, Oracle, OracleSpec, Part};
 use pokesim::present::dex::to_id;
 use pokesim::present::mon::PMon;
 use pokesim::team::{pack, PokemonSet};
@@ -50,7 +57,7 @@ fn digest_into(h: &mut u64, cols: &OwnedCols) {
 
 pub const FAMILIES: [&str; 6] = ["belief", "spread", "hp_type", "item", "intent", "margin"];
 
-fn spec_with(n: usize, threads: usize, teams: Vec<String>, level: Level) -> pokesim_env::core::Spec {
+fn spec_with(n: usize, threads: usize, teams: Vec<String>, level: OracleSpec) -> pokesim_env::core::Spec {
     let mut spec = common::spec(n, threads, teams);
     spec.labels = pokesim_env::labels::declare(&FAMILIES.map(String::from)).expect("labels");
     spec.oracle_reveal = pokesim_env::core::spec::Reveal::both(level);
@@ -60,11 +67,11 @@ fn spec_with(n: usize, threads: usize, teams: Vec<String>, level: Level) -> poke
 /// Play `steps` ops of a seeded random policy over `n` envs and return the digest of everything
 /// the model reads.
 fn off_corpus_digest(n: usize, threads: usize, seed: u64, steps: usize) -> u64 {
-    corpus_digest(Level::Off, n, threads, seed, steps)
+    corpus_digest(OracleSpec::OFF, n, threads, seed, steps)
 }
 
 /// [`off_corpus_digest`] at any level: the digest of everything the model reads over a corpus of real battles.
-fn corpus_digest(level: Level, n: usize, threads: usize, seed: u64, steps: usize) -> u64 {
+fn corpus_digest(level: OracleSpec, n: usize, threads: usize, seed: u64, steps: usize) -> u64 {
     let teams = common::corpus_teams();
     let nt = teams.len();
     let mut core = Core::new(spec_with(n, threads, teams, level)).expect("core");
@@ -123,7 +130,7 @@ const SPECIES_DIGEST: [u64; 3] = [0x71246ab6e7a116b8, 0x696f20607029b1c5, 0x1822
 
 #[test]
 fn species_bytes_are_pinned() {
-    let got = [11u64, 12, 13].map(|s| corpus_digest(Level::Species, 8, 2, s, 600));
+    let got = [11u64, 12, 13].map(|s| corpus_digest(OracleSpec::SPECIES, 8, 2, s, 600));
     assert_eq!(got, SPECIES_DIGEST, "the `species` level's obs / mask / label bytes moved");
 }
 
@@ -135,8 +142,20 @@ const FULL_DIGEST: [u64; 3] = [0xcdd895a69a8a8c14, 0x363aa2e5c1b79a73, 0x2e08941
 
 #[test]
 fn full_bytes_are_pinned() {
-    let got = [11u64, 12, 13].map(|s| corpus_digest(Level::Full, 8, 2, s, 600));
+    let got = [11u64, 12, 13].map(|s| corpus_digest(OracleSpec::FULL, 8, 2, s, 600));
     assert_eq!(got, FULL_DIGEST, "the `full` level's obs / mask / label bytes moved");
+}
+
+/// The information-lever spec's CLAUSE TEXTS of the X32 levels (what `agents.info_levers.spec` writes as their canonical
+/// text) parse to the levels and reproduce their pinned bytes on the same corpus (the hard byte-identity requirement of
+/// `design_information_levers.md` §6), seed 11 of each pin.
+#[test]
+fn the_level_clause_texts_reproduce_the_level_bytes() {
+    let sp = OracleSpec::parse("species:unseen").expect("species clause");
+    let fl = OracleSpec::parse("species:unseen,moves:both,item:both,ability:both,spread:both").expect("full clause");
+    assert_eq!((sp, fl), (OracleSpec::SPECIES, OracleSpec::FULL));
+    assert_eq!(corpus_digest(sp, 8, 2, 11, 600), SPECIES_DIGEST[0], "`species:unseen` is not the `species` level's bytes");
+    assert_eq!(corpus_digest(fl, 8, 2, 11, 600), FULL_DIGEST[0], "the `full` clause text is not the `full` level's bytes");
 }
 
 // ------------------------------------------------------------------ the differential fuzz
@@ -162,6 +181,12 @@ struct Seen {
     seen_slots_checked: u64,
     /// unseen (tail) slots compared against the opposing chain's own row.
     tail_slots_checked: u64,
+    // ---- partial-spec coverage
+    /// rows with an unseen mon whose species was NOT told (a mass below 1).
+    unstated_rows: u64,
+    /// set blocks checked as TOLD / as UNTOLD.
+    told_blocks: u64,
+    untold_blocks: u64,
 }
 
 fn slot_of(row: &[f32], k: usize) -> &[f32] {
@@ -429,13 +454,13 @@ fn compare_row_full(env: usize, side: usize, a: &OwnedCols, b: &OwnedCols, core_
 /// Play `steps` ops of ONE seeded policy over `off` and `species` cores built from `teams` and compare
 /// every decision. Returns what the corpus covered.
 fn differential(n: usize, seed: u64, steps: usize, teams: Vec<String>) -> Seen {
-    differential_at(Level::Species, n, seed, steps, teams)
+    differential_at(OracleSpec::SPECIES, n, seed, steps, teams)
 }
 
-fn differential_at(level: Level, n: usize, seed: u64, steps: usize, teams: Vec<String>) -> Seen {
+fn differential_at(level: OracleSpec, n: usize, seed: u64, steps: usize, teams: Vec<String>) -> Seen {
     let nt = teams.len();
     let dex = Dex::for_gen(3);
-    let mut ca = Core::new(spec_with(n, 1, teams.clone(), Level::Off)).expect("off core");
+    let mut ca = Core::new(spec_with(n, 1, teams.clone(), OracleSpec::OFF)).expect("off core");
     let mut cb = Core::new(spec_with(n, 1, teams, level)).expect("revealing core");
     let (mut a, mut b) = (OwnedCols::new(n), OwnedCols::new(n));
     let mut stage_rng = common::Rng(seed ^ 0x5157_A6E5);
@@ -464,10 +489,12 @@ fn differential_at(level: Level, n: usize, seed: u64, steps: usize, teams: Vec<S
         for env in 0..n {
             for side in 0..SIDES {
                 if a.slice::<u8>(col::NEED)[env * SIDES + side] == 1 {
-                    if level == Level::Full {
+                    if level == OracleSpec::FULL {
                         compare_row_full(env, side, a, b, ca, &dex, seen);
-                    } else {
+                    } else if level == OracleSpec::SPECIES {
                         compare_row(env, side, a, b, ca, &dex, &mut prev, seen);
+                    } else {
+                        compare_row_spec(level, env, side, a, b, ca, &dex, seen);
                     }
                 }
             }
@@ -511,7 +538,7 @@ fn species_differs_from_off_only_in_the_declared_cells() {
 fn full_differs_from_off_only_in_the_opponent_block_and_tells_the_true_set() {
     let mut total = Seen::default();
     for seed in [41u64, 42, 43] {
-        let s = differential_at(Level::Full, 8, seed, 500, common::corpus_teams());
+        let s = differential_at(OracleSpec::FULL, 8, seed, 500, common::corpus_teams());
         total.rows += s.rows;
         total.tail_rows += s.tail_rows;
         total.item_known += s.item_known;
@@ -525,6 +552,248 @@ fn full_differs_from_off_only_in_the_opponent_block_and_tells_the_true_set() {
     assert!(total.rows > 20_000 && total.tail_rows > 5_000, "{total:?}");
     assert!(total.tail_slots_checked > 10_000 && total.seen_slots_checked > 20_000, "{total:?}");
     assert!(total.item_known > 1_000 && total.moves_added > 1_000, "{total:?}");
+}
+
+// ------------------------------------------------------------------ PARTIAL specs and masses below 1
+
+/// The episode key of `env`'s current episode for `side`'s chain (the seed words the battle started with).
+fn episode_key(core: &Core, env: usize, side: usize) -> EpisodeKey {
+    let seed = &core.inline_env(env).expect("inline pool").log.seed;
+    let w: Vec<u32> = seed.split(',').map(|x| x.parse().expect("seed word")).collect();
+    EpisodeKey { seed: [w[0], w[1], w[2], w[3]], side }
+}
+
+/// The (class, block lo, block hi) of the four set classes' cells (the spread block includes the Hidden-Power block:
+/// `hp_revealed` follows the told spread).
+const SET_BLOCKS: [(Class, usize, usize); 4] = [
+    (Class::Item, POKEMON_ITEMS_OFFSET, POKEMON_TYPES_OFFSET),
+    (Class::Ability, POKEMON_ABILITIES_OFFSET, POKEMON_CONDITION_OFFSET),
+    (Class::Moves, POKEMON_MOVES_OFFSET, POKEMON_MOVES_OFFSET + 4 * MOVE_SLOT_DIM),
+    (Class::Spread, POKEMON_SPREAD_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET),
+];
+
+/// The BARE Hidden Power's move num; a TYPED one (`hiddenpower<type>`) has its own, 355..=370 (`data/pokemon/gen3_moves.json`).
+const HIDDEN_POWER_NUM: f32 = 237.0;
+
+fn is_hidden_power(num: f32) -> bool {
+    num == HIDDEN_POWER_NUM || (355.0..=370.0).contains(&num)
+}
+
+/// Move groups with each Hidden Power (bare or typed) reduced to one token: without the SPREAD class the Hidden Power
+/// TYPE is not told (`encoder::oracle::told_move_id` writes the BARE move), so a told-moves block matches the true set's
+/// up to the Hidden Power's type; that it is bare is asserted separately ([`assert_bare_hidden_power`]).
+fn hp_neutral(groups: &[Vec<u32>]) -> Vec<Vec<u32>> {
+    let mut out: Vec<Vec<u32>> = groups
+        .iter()
+        .map(|g| if is_hidden_power(f32::from_bits(g[0])) { vec![HIDDEN_POWER_NUM.to_bits()] } else { g.clone() })
+        .collect();
+    out.sort();
+    out
+}
+
+fn assert_bare_hidden_power(ctx: &str, groups: &[Vec<u32>]) {
+    for g in groups.iter().filter(|g| is_hidden_power(f32::from_bits(g[0]))) {
+        assert!(f32::from_bits(g[0]) == HIDDEN_POWER_NUM && f32::from_bits(g[4]) == 0.0,
+                "{ctx}: a Hidden Power told without the spread carries a TYPE (num {}, type {})", f32::from_bits(g[0]), f32::from_bits(g[4]));
+    }
+}
+
+/// What a partial-spec differential covered.
+#[derive(Default, Debug)]
+struct PartialSeen {
+    /// tail slots stated / unseen mons left unstated (the species lever fired / did not).
+    tail_told: u64,
+    tail_untold: u64,
+    /// per set class: blocks checked as TOLD (the true set's, or the reading's where play revealed it) / as UNTOLD.
+    told: [u64; 4],
+    untold: [u64; 4],
+}
+
+/// Compare one decision row of `off` (A) against a PARTIAL spec (B). The levers that fired for this episode are
+/// recomputed from the public draw ([`fires`] over the episode key, the mon's packed index and the class) — NOT from
+/// the oracle the core holds — and every block is checked against what that decision says it must be.
+#[allow(clippy::too_many_arguments)]
+fn compare_row_spec(spec: OracleSpec, env: usize, side: usize, a: &OwnedCols, b: &OwnedCols, core_a: &Core, dex: &Dex, seen: &mut Seen) {
+    let k = env * SIDES + side;
+    let ko = env * SIDES + (1 - side);
+    let ra = &a.slice::<f32>(col::OBS)[k * OBS_DIM..(k + 1) * OBS_DIM];
+    let rb = &b.slice::<f32>(col::OBS)[k * OBS_DIM..(k + 1) * OBS_DIM];
+    let ro = &b.slice::<f32>(col::OBS)[ko * OBS_DIM..(ko + 1) * OBS_DIM];
+    let both = b.slice::<u8>(col::NEED)[ko] == 1;
+    let ctx = format!("{} env {env} p{} episode {} turn {}", spec.label(), side + 1, a.slice::<u32>(col::EPISODE)[env], a.slice::<u32>(col::TURN)[env]);
+    let key = episode_key(core_a, env, side);
+    let told = |mon: usize, c: Class, p: Part| fires(spec.mass(c, p), &key, mon, c);
+    let r = (0..TEAM_SIZE).filter(|&j| slot_of(ra, j)[POKEMON_SPECIES_KNOWN_OFFSET] >= 0.5).count();
+    let (blk_lo, blk_hi) = (OFFSET_OPP_TEAM, OFFSET_OPP_TEAM + TEAM_SIZE * POKEMON_FULL_DIM);
+    for i in (0..blk_lo).chain(blk_hi..OBS_DIM) {
+        assert_eq!(ra[i].to_bits(), rb[i].to_bits(), "{ctx}: cell {i} ({}) differs outside the opponent block", pokesim::encoder::cell_name(i));
+    }
+    let own_slot = |num: i64| -> Option<&[f32]> {
+        (0..TEAM_SIZE)
+            .map(|j| &ro[OFFSET_OUR_TEAM + j * POKEMON_FULL_DIM..OFFSET_OUR_TEAM + (j + 1) * POKEMON_FULL_DIM])
+            .find(|sl| sl[POKEMON_SPECIES_KNOWN_OFFSET] >= 0.5 && sl[POKEMON_SPECIES_OFFSET] as i64 == num)
+    };
+    let team = true_team(core_a, env, side, dex);
+    let mut ps = PartialSeen::default();
+    // ---- the SEEN slots: each set block is `off`'s unless its `seen` lever fired for that mon (the first team mon of
+    // that num, the oracle's match), and then the true set's wherever play has not revealed it
+    let mut left: Vec<usize> = (0..team.len()).collect();
+    for j in 0..r {
+        let (sa, sb) = (slot_of(ra, j), slot_of(rb, j));
+        let num = sa[POKEMON_SPECIES_OFFSET] as i64;
+        let at = left.iter().position(|&m| team[m].1 == num).unwrap_or_else(|| panic!("{ctx}: seen slot {j} num {num} is not on the true team"));
+        left.remove(at);
+        let mon = team.iter().position(|(_, n)| *n == num).expect("on the team");
+        for c in (0..POKEMON_FULL_DIM).filter(|&c| !is_fact_cell(c)) {
+            assert_eq!(sa[c].to_bits(), sb[c].to_bits(), "{ctx}: seen slot {j} cell {c} (not a set fact) differs from off");
+        }
+        for (ci, &(c, lo, hi)) in SET_BLOCKS.iter().enumerate() {
+            if !told(mon, c, Part::Seen) {
+                assert_eq!(block(sb, lo, hi), block(sa, lo, hi), "{ctx}: seen slot {j}: the UNTOLD {} block is not off's", c.as_str());
+                ps.untold[ci] += 1;
+                continue;
+            }
+            ps.told[ci] += 1;
+            let Some(own) = (if both { own_slot(num) } else { None }) else { continue };
+            match c {
+                Class::Item | Class::Ability => {
+                    let flag = if c == Class::Item { POKEMON_ITEMS_OFFSET + ITEM_ID_DIM } else { POKEMON_CONDITION_OFFSET - 1 };
+                    let want = if sa[flag] >= 0.5 { block(sa, lo, hi) } else { block(own, lo, hi) };
+                    assert_eq!(block(sb, lo, hi), want, "{ctx}: seen slot {j}: the told {} block", c.as_str());
+                }
+                Class::Moves => {
+                    let (ga, gb) = (move_groups(sa), move_groups(sb));
+                    for g in &ga {
+                        assert!(gb.contains(g), "{ctx}: seen slot {j} lost a move play revealed");
+                    }
+                    let spread_told = told(mon, Class::Spread, Part::Seen);
+                    if !spread_told {
+                        // a Hidden Power PLAY revealed is the reading's (typed when the reading typed it); only an added one is checked
+                        let added: Vec<Vec<u32>> = gb.iter().filter(|g| !ga.iter().any(|x| x[0] == g[0])).cloned().collect();
+                        assert_bare_hidden_power(&format!("{ctx}: seen slot {j}"), &added);
+                    }
+                    if !ga.iter().any(|g| f32::from_bits(g[0]) == HIDDEN_POWER_NUM) {
+                        let mut want = ga.clone();
+                        for g in move_groups(own) {
+                            if !ga.iter().any(|x| x[0] == g[0]) {
+                                want.push(g);
+                            }
+                        }
+                        if want.len() <= 4 {
+                            let (mut got, mut want) = (gb, want);
+                            if !spread_told {
+                                got = hp_neutral(&got);
+                                want = hp_neutral(&want);
+                            }
+                            got.sort();
+                            want.sort();
+                            assert_eq!(got, want, "{ctx}: seen slot {j}: the told moves are not (revealed + true)");
+                        } else {
+                            // play revealed a move OUTSIDE the true set (the reading learned it): the overlay keeps every
+                            // revealed slot and fills the rest from the set, in SET order, up to four — the slot row is
+                            // sorted by move id, so the test checks the bound, not which true moves made it
+                            let (gb, want) = if spread_told { (gb, want) } else { (hp_neutral(&gb), hp_neutral(&want)) };
+                            assert!(gb.len() == 4 && gb.iter().all(|g| want.contains(g)), "{ctx}: seen slot {j}: a full move block is not revealed + true");
+                        }
+                    }
+                }
+                _ => assert_eq!(block(sb, lo, hi), block(own, lo, hi), "{ctx}: seen slot {j}: the told spread / hp block"),
+            }
+        }
+    }
+    // ---- the TAIL: exactly the unseen mons whose species lever fired, dex-num order; each set block the never-seen
+    // row's (untold) or the opposing chain's own row of that mon (told)
+    let mut tail: Vec<usize> = left.iter().copied().filter(|&m| told(m, Class::Species, Part::Unseen)).collect();
+    ps.tail_told += tail.len() as u64;
+    ps.tail_untold += (left.len() - tail.len()) as u64;
+    tail.sort_by_key(|&m| team[m].1);
+    for (j, &m) in tail.iter().enumerate() {
+        let (sp, num) = &team[m];
+        let got = slot_of(rb, r + j);
+        assert_eq!(got[POKEMON_SPECIES_OFFSET] as i64, *num, "{ctx}: tail slot {j} is not the told unseen species {sp}");
+        let hyp = hypothesis_slot(sp).unwrap();
+        for c in (0..POKEMON_FULL_DIM).filter(|&c| !is_fact_cell(c)) {
+            assert_eq!(got[c].to_bits(), hyp[c].to_bits(), "{ctx}: tail slot {j} ({sp}) cell {c} (not a set fact) is not a never-seen mon's");
+        }
+        for (ci, &(c, lo, hi)) in SET_BLOCKS.iter().enumerate() {
+            if !told(m, c, Part::Unseen) {
+                assert_eq!(block(got, lo, hi), block(&hyp, lo, hi), "{ctx}: tail slot {j} ({sp}): the UNTOLD {} block is not the never-seen row's", c.as_str());
+                ps.untold[ci] += 1;
+            } else {
+                ps.told[ci] += 1;
+                if c == Class::Moves && !told(m, Class::Spread, Part::Unseen) {
+                    assert_bare_hidden_power(&format!("{ctx}: tail slot {j} ({sp})"), &move_groups(got));
+                }
+                if let Some(own) = if both { own_slot(*num) } else { None } {
+                    if c == Class::Moves && !told(m, Class::Spread, Part::Unseen) {
+                        assert_eq!(hp_neutral(&move_groups(got)), hp_neutral(&move_groups(own)),
+                                   "{ctx}: tail slot {j} ({sp}): the told moves (no spread) are not the true set's");
+                    } else {
+                        assert_eq!(block(got, lo, hi), block(own, lo, hi), "{ctx}: tail slot {j} ({sp}): the told {} block is not the true set's", c.as_str());
+                    }
+                }
+            }
+        }
+    }
+    for j in r + tail.len()..TEAM_SIZE {
+        assert!(slot_of(rb, j).iter().all(|x| x.to_bits() == 0), "{ctx}: slot {j} past the told team is not zero");
+    }
+    // ---- the LABELS follow the told slots: the seen slots' are off's, every stated slot is labelled with its true
+    // value, and exactly the UNSTATED mons (unseen, species untold) are the belief targets, in dex-num order
+    let t = TEAM_SIZE;
+    let i64s = |c: &OwnedCols, name: usize, per: usize| c.slice::<i64>(name)[k * t * per..(k + 1) * t * per].to_vec();
+    for (name, per) in [(col::KNOWN_MOVES, 4), (col::HP_TYPE_LABEL, 1), (col::ITEM_LABEL, 1), (col::BELIEF_NATURE, 1)] {
+        assert_eq!(i64s(a, name, per)[..r * per], i64s(b, name, per)[..r * per], "{ctx}: label column {name} differs on the seen slots");
+    }
+    let km = i64s(b, col::KNOWN_MOVES, 4);
+    let im = &b.slice::<f32>(col::ITEM_MASK)[k * t..(k + 1) * t];
+    let sm = &b.slice::<f32>(col::BELIEF_SPREAD_MASK)[k * t..(k + 1) * t];
+    let n_b = r + tail.len();
+    for j in 0..n_b {
+        assert!(km[j * 4] >= 1 && im[j] == 1.0 && sm[j] == 1.0, "{ctx}: stated slot {j} is not labelled");
+    }
+    for j in n_b..t {
+        assert_eq!(km[j * 4], -1, "{ctx}: slot {j} past the stated team has a known_moves label");
+    }
+    let mut hidden: Vec<i64> = left.iter().copied().filter(|&m| !told(m, Class::Species, Part::Unseen)).map(|m| team[m].1).collect();
+    hidden.sort_unstable();
+    let bs: Vec<i64> = i64s(b, col::BELIEF_SPECIES, 1).into_iter().filter(|&x| x != -1).collect();
+    assert_eq!(bs, hidden, "{ctx}: the belief targets are not exactly the unstated mons");
+    for name in [col::OPP_ACTION_KIND, col::OPP_ACTION_NUM, col::OPP_SWITCH_SLOT, col::OPP_SWITCH_SPECIES] {
+        assert_eq!(a.slice::<i64>(name)[k], b.slice::<i64>(name)[k], "{ctx}: intent column {name}");
+    }
+    // ---- coverage
+    seen.rows += 1;
+    seen.tail_rows += (ps.tail_told > 0) as u64;
+    seen.unstated_rows += (ps.tail_untold > 0) as u64;
+    seen.tail_slots_checked += ps.tail_told;
+    seen.told_blocks += ps.told.iter().sum::<u64>();
+    seen.untold_blocks += ps.untold.iter().sum::<u64>();
+}
+
+#[test]
+fn a_partial_spec_tells_exactly_its_fired_levers() {
+    // a mixed spec: masses below 1 on both parts, a class told on one part only, an untold class (ability)
+    let spec = OracleSpec::parse("species:unseen@0.5,moves:seen@0.5,moves:unseen,item:seen@0.75,spread:unseen@0.5").expect("spec");
+    let mut total = Seen::default();
+    for seed in [51u64, 52] {
+        let s = differential_at(spec, 8, seed, 400, common::corpus_teams());
+        total.rows += s.rows;
+        total.tail_rows += s.tail_rows;
+        total.unstated_rows += s.unstated_rows;
+        total.tail_slots_checked += s.tail_slots_checked;
+        total.told_blocks += s.told_blocks;
+        total.untold_blocks += s.untold_blocks;
+    }
+    eprintln!("partial differential ({}): {total:?}", spec.label());
+    // NON-VACUITY: rows with told AND with unstated tail mons, told and untold set blocks
+    assert!(total.rows > 10_000 && total.tail_rows > 2_000 && total.unstated_rows > 2_000, "{total:?}");
+    assert!(total.tail_slots_checked > 3_000 && total.told_blocks > 50_000 && total.untold_blocks > 100_000, "{total:?}");
+    // the knock-in lever (seen moves only, mass 0.95): no tail, the seen mons' moves told in ~95 % of the episodes
+    let ki = OracleSpec::parse("moves:seen@0.95").expect("ki_moves");
+    let s = differential_at(ki, 8, 53, 300, common::corpus_teams());
+    eprintln!("partial differential ({}): {s:?}", ki.label());
+    assert!(s.rows > 3_000 && s.tail_slots_checked == 0 && s.told_blocks > 10_000 && s.untold_blocks > 30_000, "{s:?}");
 }
 
 // ------------------------------------------------------------------ the PER-SIDE reveal (main.h2h, X5 A/B §7.7(a))
@@ -548,12 +817,12 @@ fn row_bytes(cols: &OwnedCols, c: usize, n: usize, k: usize) -> &[u8] {
 /// `split` — and require, at every decision row of every side, the split core's row (obs, mask and every label
 /// column) to be BIT-identical to the symmetric core of THAT side's level: a side at `level` is written exactly as
 /// the training core writes it, a side at `off` exactly as `off` writes it. Returns (rows, revealed rows) compared.
-fn per_side_differential(level: Level, split: [Level; 2], n: usize, seed: u64, steps: usize) -> (u64, u64) {
+fn per_side_differential(level: OracleSpec, split: [OracleSpec; 2], n: usize, seed: u64, steps: usize) -> (u64, u64) {
     use pokesim_env::core::spec::Reveal;
     let teams = common::corpus_teams();
     let nt = teams.len();
     let spec_at = |r: Reveal| {
-        let mut s = spec_with(n, 1, teams.clone(), Level::Off);
+        let mut s = spec_with(n, 1, teams.clone(), OracleSpec::OFF);
         s.oracle_reveal = r;
         s
     };
@@ -608,7 +877,7 @@ fn per_side_differential(level: Level, split: [Level; 2], n: usize, seed: u64, s
                 if cols[2].slice::<u8>(col::NEED)[k] != 1 {
                     continue;
                 }
-                let want = if split[side] == Level::Off { 0 } else { 1 };
+                let want = if split[side].is_off() { 0 } else { 1 };
                 for c in ROW_COLS {
                     assert!(
                         row_bytes(&cols[2], c, n, k) == row_bytes(&cols[want], c, n, k),
@@ -618,7 +887,7 @@ fn per_side_differential(level: Level, split: [Level; 2], n: usize, seed: u64, s
                     );
                 }
                 *rows += 1;
-                if split[side] != Level::Off {
+                if !split[side].is_off() {
                     *revealed += 1;
                 }
             }
@@ -636,8 +905,8 @@ fn per_side_differential(level: Level, split: [Level; 2], n: usize, seed: u64, s
 
 #[test]
 fn a_per_side_reveal_writes_each_side_exactly_as_the_symmetric_core_of_its_level() {
-    for level in [Level::Species, Level::Full] {
-        for (i, split) in [[level, Level::Off], [Level::Off, level]].into_iter().enumerate() {
+    for level in [OracleSpec::SPECIES, OracleSpec::FULL] {
+        for (i, split) in [[level, OracleSpec::OFF], [OracleSpec::OFF, level]].into_iter().enumerate() {
             let (rows, revealed) = per_side_differential(level, split, 6, 61 + i as u64, 300);
             eprintln!("per-side {split:?}: {rows} rows, {revealed} at the revealed side");
             // NON-VACUITY: both sides decided many times, and the revealed side is about half of them
@@ -650,12 +919,12 @@ fn a_per_side_reveal_writes_each_side_exactly_as_the_symmetric_core_of_its_level
 fn the_symmetric_core_differs_from_off_so_the_per_side_comparison_has_teeth() {
     // the reveal changes the rows it reaches (else "the split side equals the symmetric core" would hold for an
     // inert reveal too): the first decision's opponent block at every level differs from off's
-    for level in [Level::Species, Level::Full] {
+    for level in [OracleSpec::SPECIES, OracleSpec::FULL] {
         let teams = common::corpus_teams();
         let nt = teams.len();
         let mut obs = Vec::new();
-        for r in [pokesim_env::core::spec::Reveal::OFF, pokesim_env::core::spec::Reveal([level, Level::Off])] {
-            let mut s = spec_with(2, 1, teams.clone(), Level::Off);
+        for r in [pokesim_env::core::spec::Reveal::OFF, pokesim_env::core::spec::Reveal([level, OracleSpec::OFF])] {
+            let mut s = spec_with(2, 1, teams.clone(), OracleSpec::OFF);
             s.oracle_reveal = r;
             let mut core = Core::new(s).expect("core");
             let mut cols = OwnedCols::new(2);
@@ -696,7 +965,7 @@ fn seen_mon(species: &str) -> (String, PMon) {
 }
 
 fn oracle(sets: &[PokemonSet]) -> Oracle {
-    Oracle::new(Level::Species, &packed(sets), &Dex::for_gen(3)).expect("oracle")
+    Oracle::new(OracleSpec::SPECIES, &packed(sets), &Dex::for_gen(3), EpisodeKey::default()).expect("oracle")
 }
 
 fn tail_species(o: &Oracle, revealed: &[(String, PMon)]) -> Vec<String> {
@@ -759,11 +1028,11 @@ fn a_revealed_mon_the_oracle_team_does_not_hold_is_a_fault() {
 #[test]
 fn the_oracle_refuses_what_it_cannot_render() {
     let dex = Dex::for_gen(3);
-    assert!(Oracle::new(Level::Off, &packed(&trio()), &dex).is_err(), "Off builds no oracle");
-    let e = Oracle::new(Level::Species, "", &dex).unwrap_err().message().to_string();
+    assert!(Oracle::new(OracleSpec::OFF, &packed(&trio()), &dex, EpisodeKey::default()).is_err(), "off builds no oracle");
+    let e = Oracle::new(OracleSpec::SPECIES, "", &dex, EpisodeKey::default()).unwrap_err().message().to_string();
     assert!(e.contains("0 mons"), "{e}");
     let seven: Vec<PokemonSet> = (0..7).map(|_| set("skarmory", &["spikes"], "leftovers", "keeneye")).collect();
-    assert!(Oracle::new(Level::Species, &packed(&seven), &dex).is_err(), "more than six");
+    assert!(Oracle::new(OracleSpec::SPECIES, &packed(&seven), &dex, EpisodeKey::default()).is_err(), "more than six");
 }
 
 /// REAL battles with a forme change: Castform (Forecast) against a Rain Dance team, so Castform's forme
@@ -786,7 +1055,7 @@ fn a_real_forecast_battle_keeps_the_team_exact_through_a_forme_change() {
     eprintln!("forecast differential: {s:?}");
     assert!(s.rows > 2_000 && s.reveals > 100, "{s:?}");
     // ... and at `full`: Castform's forme change leaves its set facts exact (a forme shares its base species' num)
-    let f = differential_at(Level::Full, 8, 32, 400, vec![a, b]);
+    let f = differential_at(OracleSpec::FULL, 8, 32, 400, vec![a, b]);
     eprintln!("forecast differential (full): {f:?}");
     assert!(f.rows > 2_000 && f.seen_slots_checked > 5_000 && f.tail_slots_checked > 500, "{f:?}");
 }

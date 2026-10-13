@@ -96,11 +96,30 @@ SPEC_KEYS: Tuple[str, ...] = (
     "terminal", "refusal_budget", "bank_dir", "labels", "opponents", "oracle_reveal",
 )
 
-#: The ORACLE REVEAL levels (``--oracle-reveal``; ``encoder::oracle::Level``): how much of the opponent's
-#: team the observation row is told. ``off`` is the production mode (the row is byte-identical to the
-#: build that had no reveal); the others are DIAGNOSTIC (``designs/endstate/design_x5_belief_tokens.md``
-#: §7.6). The ONE Python list — ``model_version`` / the parser read it, and a test pins it to Rust's.
+#: The ORACLE REVEAL's X32 LEVEL names (``--oracle-reveal``; ``encoder::oracle::OracleSpec::LEVELS``): ``off`` is the
+#: production mode (the row is byte-identical to the build that had no reveal); ``species`` / ``full`` are the two
+#: DIAGNOSTIC levels X32 built (``designs/endstate/design_x5_belief_tokens.md`` §7.6). Since the information-lever
+#: spec (``designs/endstate/design_information_levers.md`` §6) the flag takes ANY spec the training observation honours
+#: (:func:`oracle_reveal_label`); these three stay the LABELS of their specs, so a run that recorded one reads exactly
+#: as before. A test pins the list to Rust's.
 ORACLE_REVEAL_LEVELS: Tuple[str, ...] = ("off", "species", "full")
+
+
+def oracle_reveal_label(spec: str) -> str:
+    """The LABEL of an ``--oracle-reveal`` spec text (a preset such as ``ki_moves``, a level, or a clause list),
+    validated against the TRAINING OBSERVATION's support (``agents.info_levers.consumers.OBS``): the level name for
+    ``off`` / ``species`` / ``full`` (whichever text it was given as), else the canonical text — exactly what the Rust
+    core parses (``OracleSpec::parse``). A lever the observation cannot honour (``hp``, ``counters``, a ``~placebo`` /
+    ``~map`` source, an unseen set-class part without ``species:unseen``) is refused BY NAME (``ValueError``)."""
+    from agents.info_levers.consumers import OBS
+    from agents.info_levers.spec import InfoRevealError
+
+    if not isinstance(spec, str):
+        raise ValueError(f"oracle_reveal {spec!r} is not a spec text")
+    try:
+        return OBS.validate(spec).label
+    except InfoRevealError as e:
+        raise ValueError(f"oracle_reveal {spec!r}: {e}") from None
 
 
 def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, str]",
@@ -119,19 +138,23 @@ def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, st
     ``opponents`` (M5 Lane E) is the OPPONENT ROUTE TABLE the ``ep_opp`` column indexes
     (``{"kind": "external"}`` / ``{"kind": "policy", "slot": k}`` / ``{"kind": "bot", "bot": name}``);
     default one EXTERNAL route, so a zeroed ``ep_opp`` is Lane 0's shape (the caller answers p2).
-    ``oracle_reveal`` is the ORACLE REVEAL level (:data:`ORACLE_REVEAL_LEVELS`): ``off`` is the production
-    observation; a diagnostic level writes the opponent's true species into every side's opponent block
-    from turn 1 — the run's recorded mode, so the training pool and its eval core must be given the SAME one. A
-    ``(p1, p2)`` PAIR is a PER-SIDE level (each side's chain told the other side's team at its own level): only the
-    head-to-head engine declares one (``main.h2h``, X5 A/B §7.7(a)). A pair whose two levels agree is written as the
-    string, so a symmetric spec's text is exactly what it was before the per-side form existed."""
+    ``oracle_reveal`` is the ORACLE REVEAL spec (any spec the training observation honours, written as its LABEL:
+    :func:`oracle_reveal_label`): ``off`` is the production observation; a diagnostic spec tells every side's opponent
+    block graded facts of the other side's true team — the run's recorded mode, so the training pool and its eval core
+    must be given the SAME one. A ``(p1, p2)`` PAIR is a PER-SIDE spec (each side's chain told the other side's team at
+    its own spec): only the head-to-head engine declares one (``main.h2h``, X5 A/B §7.7(a)). A pair whose two labels
+    agree is written as the string, so a symmetric spec's text is exactly what it was before the per-side form existed
+    (and an ``off`` / ``species`` / ``full`` spec's text exactly what it was before the information-lever spec)."""
     import json
 
-    levels = (oracle_reveal, oracle_reveal) if isinstance(oracle_reveal, str) else tuple(oracle_reveal)
-    if len(levels) != 2 or any(lv not in ORACLE_REVEAL_LEVELS for lv in levels):
-        raise ValueError(f"oracle_reveal {oracle_reveal!r} is not one of {ORACLE_REVEAL_LEVELS} or a (p1, p2) pair "
-                         "of them")
-    reveal: "Union[str, list[str]]" = levels[0] if levels[0] == levels[1] else list(levels)
+    if isinstance(oracle_reveal, str):
+        levels = (oracle_reveal, oracle_reveal)
+    else:
+        levels = tuple(oracle_reveal)
+        if len(levels) != 2:
+            raise ValueError(f"oracle_reveal {oracle_reveal!r} is not a spec text or a (p1, p2) pair of them")
+    reveal_labels = tuple(oracle_reveal_label(lv) for lv in levels)
+    reveal: "Union[str, list[str]]" = reveal_labels[0] if reveal_labels[0] == reveal_labels[1] else list(reveal_labels)
 
     from utils.rust_env import episode as EP
 

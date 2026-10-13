@@ -170,9 +170,13 @@ once the species is narrowed or its four revealed moves hold no Hidden Power (pr
 Exposure (2026-09-25, `hp_belief` fix): 0 of the training pool's 1,912 HP users carry a type their
 row gives 0, 289 of the ladder corpus's 52,007 (all HP Dark).
 
-**The opponent block under `--oracle-reveal {species,full}` (a DIAGNOSTIC mode, NOT production; `off` is the production row).**
+**The opponent block under `--oracle-reveal <spec>` (a DIAGNOSTIC mode, NOT production; `off` is the production row).**
 The Rust env core can write the opponent's TRUE team into this block from turn 1 (team-preview semantics; the X5 A/B's
-oracle reference arms, `endstate/design_x5_belief_tokens.md` §7.6). The seen opponent mons keep their reveal-order
+oracle reference arms, `endstate/design_x5_belief_tokens.md` §7.6), at the X32 levels `species` / `full` or at any spec of
+the information-lever spec the observation honours (`endstate/design_information_levers.md` §6: per class `species`,
+`moves`, `item`, `ability`, `spread` and part seen / unseen, a mass p; a lever of mass p tells its fact for a whole episode
+with probability p, per episode, side, mon and class; an unseen mon's slot exists only where its `species:unseen` lever
+fires, and a slot carries exactly the facts whose lever fired — the X32 levels are two such specs, byte for byte). The seen opponent mons keep their reveal-order
 slots; after them come one slot per UNSEEN mon, in dex-num order. At `species` the seen slots keep `off`'s bytes and each
 unseen slot is the encoder's own row for a never-seen mon (`species_known` 1, full HP, "never seen" recency, the dex row's
 stats / types and the ability prior; item, status, moves, spread, Hidden-Power block, sleep belief, last action, trapped and
@@ -1833,11 +1837,15 @@ does nothing given another setting.
 | `vf_coef` | `0.5` | ACTIVE |
 <!-- END GENERATED: flag-table -->
 
-**`--oracle-reveal {off,species,full}` is not a row of the generated table above:** it builds no module and moves no weight, so it is
-a `resume_immutable` OBSERVATION-MODE flag (config v137), `off` in production and never on the ARCH surface. It is recorded in
-`model_config.json` and `metadata.json`, inherited by a flagless resume, refused if a resume flips it (`check_oracle_reveal`),
-and shown by `main.checkargs` and the launch banner. `main.anchors`, `main.play`, `main.belief_roles` and
-`main.policy_spectrum` refuse a checkpoint that records `species` or `full` (they build observations without the reveal); `main.h2h`
+**`--oracle-reveal <spec>` is not a row of the generated table above:** it builds no module and moves no weight, so it is
+a `resume_immutable` OBSERVATION-MODE flag (config v137), `off` in production and never on the ARCH surface. It takes a level
+(`off` / `species` / `full`), a preset (`ki_moves` = `moves:seen@0.95`, …) or a clause list, refuses by name every lever the
+observation cannot honour (`hp`, `counters`, a `~placebo` / `~map` source such as `ki_wrongmoves`), and is recorded as its
+LABEL (the level name, else the canonical text) in `model_config.json` and with its full record block (label, canonical
+text, hash, levers) in `metadata.json`; it is inherited by a flagless resume, refused if a resume flips its MEANING
+(`check_oracle_reveal`; `full` and its clause text are the same reveal), and shown — label, canonical text and hash — by
+`main.checkargs` and the launch banner. `main.anchors`, `main.play`, `main.belief_roles` and
+`main.policy_spectrum` refuse a checkpoint that records any non-`off` spec (they build observations without the reveal); `main.h2h`
 plays one at its recorded level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`) and refuses one under `off`.
 It is refused with the fork arm. See §1.2 for what the row carries.
 

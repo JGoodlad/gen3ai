@@ -18,19 +18,23 @@
 //!  "refusal_budget": <int>, "bank_dir": null | "<abs path>",
 //!  "labels": ["<family>", …],
 //!  "opponents": [{"kind": "external"} | {"kind": "policy", "slot": <int>} | {"kind": "bot", "bot": "<name>"}, …],
-//!  "oracle_reveal": "off" | "species" | "full" | [<p1 level>, <p2 level>]}
+//!  "oracle_reveal": "<spec label>" | [<p1 label>, <p2 label>]}
 //! ```
 //!
-//! `oracle_reveal` is the ORACLE REVEAL level (`pokesim::encoder::oracle`, a DIAGNOSTIC observation
-//! mode, `--oracle-reveal`): `off` is the production row; `species` / `full` tell a side's observation
-//! the other side's true team from turn 1. A STRING is one level for BOTH sides — the run's recorded mode,
-//! which the training pool and its eval core take. A two-element ARRAY is a PER-SIDE level (p1's chain,
-//! p2's chain: `[Reveal]`), which only the head-to-head engine declares (`main.h2h`, X5 A/B §7.7(a): the
-//! one-sided clairvoyance cells). The canonical JSON writes a string whenever the two sides agree, so a
-//! symmetric spec's text is exactly what it was before the per-side form existed.
+//! `oracle_reveal` is the ORACLE REVEAL (`pokesim::encoder::oracle`, a DIAGNOSTIC observation mode,
+//! `--oracle-reveal <spec>`; the training observation's consumer of the information-lever spec,
+//! `designs/endstate/design_information_levers.md` §6): a level name (`off` / `species` / `full`) or the CANONICAL
+//! clause text of an `agents.info_levers.spec.InfoReveal` (`moves:seen@0.95`, …; `OracleSpec::parse`, strict). `off`
+//! is the production row; any other spec tells a side's observation graded facts of the other side's true team. A
+//! STRING is one spec for BOTH sides — the run's recorded mode, which the training pool and its eval core take. A
+//! two-element ARRAY is a PER-SIDE spec (p1's chain, p2's chain: `[Reveal]`), which only the head-to-head engine
+//! declares (`main.h2h`, X5 A/B §7.7(a): the one-sided clairvoyance cells). The canonical JSON writes each spec as its
+//! LABEL (the level name when it is one, else the canonical text) and a string whenever the two sides agree, so a
+//! symmetric `off` / `species` / `full` spec's text is exactly what it was before the spec existed.
 
 use std::path::PathBuf;
 
+use pokesim::encoder::oracle::OracleSpec;
 use pokesim::json::Json;
 
 /// See the module docs.
@@ -64,57 +68,57 @@ pub struct Spec {
     pub labels: Vec<&'static str>,
     /// The OPPONENT ROUTE TABLE (M5 Lane E; `crate::opponents`): the `ep_opp` column indexes it.
     pub opponents: crate::opponents::Routes,
-    /// The ORACLE REVEAL level PER SIDE: how much of the other side's team each side's observation row is
-    /// told (`pokesim::encoder::oracle`). `Off` leaves that side's rows byte-identical to the build without it.
+    /// The ORACLE REVEAL spec PER SIDE: what of the other side's team each side's observation row is told
+    /// (`pokesim::encoder::oracle`). `off` leaves that side's rows byte-identical to the build without it.
     pub oracle_reveal: Reveal,
 }
 
-/// The ORACLE REVEAL level of each side's chain (index = side: p1, p2). `Reveal::both(l)` is the symmetric
-/// mode a training run records; a split level is the head-to-head engine's per-side reveal.
+/// The ORACLE REVEAL spec of each side's chain (index = side: p1, p2). `Reveal::both(s)` is the symmetric
+/// mode a training run records; a split spec is the head-to-head engine's per-side reveal.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Reveal(pub [pokesim::encoder::oracle::Level; 2]);
+pub struct Reveal(pub [OracleSpec; 2]);
 
 impl Reveal {
     /// No reveal on either side (the production observation).
-    pub const OFF: Reveal = Reveal([pokesim::encoder::oracle::Level::Off; 2]);
+    pub const OFF: Reveal = Reveal([OracleSpec::OFF; 2]);
 
-    /// One level for both sides (the run's recorded mode).
-    pub const fn both(level: pokesim::encoder::oracle::Level) -> Reveal {
-        Reveal([level; 2])
+    /// One spec for both sides (the run's recorded mode).
+    pub const fn both(spec: OracleSpec) -> Reveal {
+        Reveal([spec; 2])
     }
 
-    /// Side `side`'s level (0 = p1, 1 = p2).
-    pub fn of(self, side: usize) -> pokesim::encoder::oracle::Level {
+    /// Side `side`'s spec (0 = p1, 1 = p2).
+    pub fn of(self, side: usize) -> OracleSpec {
         self.0[side]
     }
 
-    /// The canonical JSON: a string when both sides agree (the symmetric spec's text, unchanged), else
-    /// `[p1, p2]`.
+    /// The canonical JSON: each spec's LABEL, a string when both sides agree (the symmetric spec's text,
+    /// unchanged), else `[p1, p2]`.
     pub fn to_json(self) -> String {
         let q = crate::core::refusal::json_str;
         if self.0[0] == self.0[1] {
-            q(self.0[0].as_str())
+            q(&self.0[0].label())
         } else {
-            format!("[{},{}]", q(self.0[0].as_str()), q(self.0[1].as_str()))
+            format!("[{},{}]", q(&self.0[0].label()), q(&self.0[1].label()))
         }
     }
 
-    /// Parse a string (both sides) or a two-element array of strings (p1, p2).
+    /// Parse a string (both sides) or a two-element array of strings (p1, p2); each a level name or a canonical
+    /// spec text (`OracleSpec::parse`, which refuses everything else by name).
     pub fn from_json(v: Option<&Json>) -> Result<Reveal, String> {
-        use pokesim::encoder::oracle::Level;
-        let bad = "spec: `oracle_reveal` must be a level string or an array of two level strings [p1, p2]";
+        let bad = "spec: `oracle_reveal` must be a spec string or an array of two spec strings [p1, p2]";
         let v = v.ok_or(bad)?;
         if let Some(s) = v.as_str() {
-            return Ok(Reveal::both(Level::parse(s).map_err(|e| format!("spec: {e}"))?));
+            return Ok(Reveal::both(OracleSpec::parse(s).map_err(|e| format!("spec: {e}"))?));
         }
         let a = v.as_array().ok_or(bad)?;
         if a.len() != 2 {
             return Err(bad.into());
         }
-        let lv = |j: &Json| -> Result<Level, String> {
-            Level::parse(j.as_str().ok_or(bad)?).map_err(|e| format!("spec: {e}"))
+        let sp = |j: &Json| -> Result<OracleSpec, String> {
+            OracleSpec::parse(j.as_str().ok_or(bad)?).map_err(|e| format!("spec: {e}"))
         };
-        Ok(Reveal([lv(&a[0])?, lv(&a[1])?]))
+        Ok(Reveal([sp(&a[0])?, sp(&a[1])?]))
     }
 }
 
@@ -271,7 +275,7 @@ mod tests {
                 crate::opponents::Route::External,
                 crate::opponents::Route::Policy { slot: 2 },
             ]),
-            oracle_reveal: Reveal::both(pokesim::encoder::oracle::Level::Species),
+            oracle_reveal: Reveal::both(OracleSpec::SPECIES),
         }
     }
 
@@ -287,20 +291,29 @@ mod tests {
 
     #[test]
     fn the_per_side_reveal_round_trips_and_a_symmetric_one_is_a_string() {
-        use pokesim::encoder::oracle::Level;
         let mut s = sample();
         // symmetric: the text is the string form, exactly as before the per-side form existed
         s.oracle_reveal = Reveal::OFF;
         assert!(s.to_json().ends_with(",\"oracle_reveal\":\"off\"}"), "{}", s.to_json());
-        for (a, b) in [(Level::Species, Level::Off), (Level::Off, Level::Full), (Level::Full, Level::Species)] {
+        let ki = OracleSpec::parse("moves:seen@0.95").unwrap();
+        for (a, b) in [(OracleSpec::SPECIES, OracleSpec::OFF), (OracleSpec::OFF, OracleSpec::FULL), (OracleSpec::FULL, OracleSpec::SPECIES), (ki, OracleSpec::OFF)] {
             s.oracle_reveal = Reveal([a, b]);
             let j = s.to_json();
-            assert!(j.contains(&format!("\"oracle_reveal\":[\"{}\",\"{}\"]", a.as_str(), b.as_str())), "{j}");
+            assert!(j.contains(&format!("\"oracle_reveal\":[\"{}\",\"{}\"]", a.label(), b.label())), "{j}");
             assert_eq!(Spec::from_json(&j).unwrap(), s);
+        }
+        // a symmetric spec is its LABEL: the level name for a level (whichever text it was given as), else the canonical text
+        for (given, label) in [("\"full\"", "full"), ("\"species:unseen,moves:both,item:both,ability:both,spread:both\"", "full"),
+                               ("\"species:unseen\"", "species"), ("\"moves:seen@0.95\"", "moves:seen@0.95")] {
+            let mut p: Vec<_> = pairs().into_iter().filter(|(k, _)| *k != "oracle_reveal").collect();
+            p.push(("oracle_reveal", given));
+            let sp = Spec::from_json(&text(&p)).unwrap();
+            assert!(sp.to_json().ends_with(&format!(",\"oracle_reveal\":\"{label}\"}}")), "{given}: {}", sp.to_json());
         }
         let base: Vec<_> = pairs().into_iter().filter(|(k, _)| *k != "oracle_reveal").collect();
         for (v, ok) in [("[\"species\",\"off\"]", true), ("[\"off\"]", false), ("[\"off\",\"off\",\"off\"]", false),
-                        ("[\"off\",\"x\"]", false), ("[\"off\",1]", false), ("1", false)] {
+                        ("[\"off\",\"x\"]", false), ("[\"off\",1]", false), ("1", false), ("\"hp:seen\"", false),
+                        ("\"moves:seen@0.95~placebo\"", false), ("\"moves:unseen\"", false), ("\"moves:seen@0.950\"", false)] {
             let mut p = base.clone();
             p.push(("oracle_reveal", v));
             assert_eq!(Spec::from_json(&text(&p)).is_ok(), ok, "{v}");

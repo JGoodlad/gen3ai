@@ -9,7 +9,11 @@ the Python plumbing a wrong default would break silently:
   gates every load incl. a frozen opponent of the same run — does NOT read it (resume-immutable class);
 * an offline tool that builds its observations without the reveal REFUSES an oracle checkpoint, by name (`main.h2h`
   plays one through its per-side reveal and refuses it under its `off` mode);
-* the extractor stores the mode (inert in the forward) and rejects an unknown level.
+* the extractor stores the mode (inert in the forward) and rejects an unknown level;
+* the information-lever spec (``designs/endstate/design_information_levers.md`` §6): the flag takes any spec the
+  training observation honours and records its LABEL (``ki_moves`` -> ``moves:seen@0.95``; the X32 levels keep their
+  names whichever text they were given as), refuses every lever it cannot honour BY NAME, and the resume gate compares
+  MEANING (``full`` vs its clause text is not a flip).
 """
 import dataclasses
 import json
@@ -125,3 +129,84 @@ def test_the_h2h_engine_refuses_an_oracle_checkpoint_under_its_off_mode_before_l
 
     with pytest.raises(RevealModeError, match="one_sided"):
         declare_engine([(Ref(), Ref())], host)
+
+
+# ------------------------------------------------------------------ the information-lever spec
+
+def _parse(argv):
+    from main.train.parser import build_parser
+
+    return build_parser().parse_args(argv)
+
+
+def test_the_flag_takes_any_spec_the_observation_honours_and_stores_its_label():
+    assert _parse([]).oracle_reveal is None, "default None: the _resolve line supplies 'off' (and a resume inherits)"
+    for typed, want in (("off", "off"), ("species", "species"), ("full", "full"), ("species:unseen", "species"),
+                        ("species:unseen,moves:both,item:both,ability:both,spread:both", "full"),
+                        ("ki_moves", "moves:seen@0.95"), ("ki_items", "item:seen@0.95"),
+                        ("ki_spreads", "spread:seen@0.95"), ("moves:seen@0.950", "moves:seen@0.95"),
+                        ("F+M", "moves:seen"), ("D50", "moves:seen@0.5"), ("species,moves:unseen", "species:unseen,moves:unseen")):
+        assert _parse(["--oracle-reveal", typed]).oracle_reveal == want, typed
+
+
+@pytest.mark.parametrize("typed,named", [
+    ("ki_wrongmoves", "placebo"), ("W90", "placebo"), ("MAP90", "map"), ("hp:seen", "hp:seen"),
+    ("counters", "counters:seen"), ("oracle", "hp:seen"), ("O-M", "hp:seen"), ("moves:unseen", "species:unseen"),
+    ("everything", "everything"),
+])
+def test_the_flag_refuses_every_lever_the_observation_cannot_honour_by_name(typed, named, capsys):
+    with pytest.raises(SystemExit):
+        _parse(["--oracle-reveal", typed])
+    err = capsys.readouterr().err
+    assert "--oracle-reveal" in err and named in err, err
+
+
+def test_the_resume_gate_compares_meaning_not_text(version):
+    full = dataclasses.replace(version, oracle_reveal="full")
+    full.check_oracle_reveal("species:unseen,moves:both,item:both,ability:both,spread:both")   # the same reveal
+    full.check_oracle_reveal("full")
+    ki = dataclasses.replace(version, oracle_reveal="moves:seen@0.95")
+    ki.check_oracle_reveal("ki_moves")
+    for flip in ("off", "moves:seen@0.9", "moves:seen", "item:seen@0.95"):
+        with pytest.raises(ModelVersionError, match="oracle_reveal mismatch"):
+            ki.check_oracle_reveal(flip)
+    with pytest.raises(ModelVersionError):
+        version.check_oracle_reveal("ki_moves")
+
+
+def test_a_recorded_spec_label_round_trips_and_its_record_names_the_levers(tmp_path, version):
+    from agents.model import oracle_reveal as OR
+
+    (tmp_path / "final_model.zip").write_bytes(b"")
+    save_model_snapshot(str(tmp_path), dataclasses.replace(version, oracle_reveal="moves:seen@0.95"), git_hash="t")
+    assert json.loads((tmp_path / "model_config.json").read_text())["oracle_reveal"] == "moves:seen@0.95"
+    assert recorded_oracle_reveal(str(tmp_path / "final_model.zip")) == "moves:seen@0.95"
+    with pytest.raises(OracleRevealRefused, match="moves:seen@0.95"):
+        refuse_if_revealed(str(tmp_path / "final_model.zip"), tool="main.anchors")
+    rec = OR.record("ki_moves")
+    assert rec["label"] == rec["canonical"] == "moves:seen@0.95" and len(rec["hash"]) == 16
+    assert rec["levers"] == [{"class": "moves", "part": "seen", "mass": 0.95, "source": "truth"}]
+    assert OR.record("full")["label"] == "full" and OR.record("off")["levers"] == []
+    assert "TRUE MOVES of the seen mons" in OR.describe("ki_moves") and "95.00%" in OR.describe("ki_moves")
+
+
+def test_the_checkpoint_hparams_carry_the_label_and_the_reveal_record():
+    """``metadata.json``'s per-checkpoint hparams (``run_io._model_hparams``) carry the extractor's LABEL and the spec's
+    record block (label, canonical text, hash, levers)."""
+    import types
+
+    from main.train.run_io import _model_hparams
+
+    def saveable(mode):
+        return types.SimpleNamespace(
+            gamma=1.0, gae_lambda=0.95, ent_coef=0.0, vf_coef=0.5, batch_size=64, n_steps=2048, grad_accum_steps=1,
+            clip_range=lambda _: 0.2, clip_range_vf=None,
+            policy=types.SimpleNamespace(optimizer=types.SimpleNamespace(param_groups=[{"weight_decay": 0.0}]),
+                                         features_extractor=types.SimpleNamespace(oracle_reveal=mode)))
+
+    h = _model_hparams(saveable("moves:seen@0.95"))
+    assert h["oracle_reveal"] == "moves:seen@0.95"
+    assert h["oracle_reveal_record"]["canonical"] == "moves:seen@0.95" and h["oracle_reveal_record"]["levers"]
+    off = _model_hparams(saveable("off"))
+    assert off["oracle_reveal"] == "off" and off["oracle_reveal_record"]["levers"] == []
+

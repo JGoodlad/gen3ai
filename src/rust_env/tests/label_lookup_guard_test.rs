@@ -13,7 +13,7 @@
 
 use pokesim::dex::Dex;
 use pokesim::encoder::layout::{OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_SPECIES_KNOWN_OFFSET, TEAM_SIZE};
-use pokesim::encoder::oracle::{Level, Oracle};
+use pokesim::encoder::oracle::{EpisodeKey, Oracle, OracleSpec};
 use pokesim::present::board_reading::BoardReading;
 use pokesim::present::mon::PMon;
 use pokesim::team::{pack, PokemonSet};
@@ -84,7 +84,7 @@ fn oracle_of_team() -> Oracle {
             ..Default::default()
         })
         .collect();
-    Oracle::new(Level::Species, &pack(&sets, &dex), &dex).expect("oracle")
+    Oracle::new(OracleSpec::SPECIES, &pack(&sets, &dex), &dex, EpisodeKey::default()).expect("oracle")
 }
 
 fn snum(id: &str) -> i64 {

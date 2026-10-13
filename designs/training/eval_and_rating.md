@@ -978,7 +978,7 @@ and builds no engine when nothing is left.
 - The host copies of the checkpoints (the load SOURCE, never served) go through `load_checkpoint_strict` on the CPU, an LRU of 4.
 - 🚨 **THE PER-SIDE ORACLE REVEAL (`--oracle-reveal-mode {off,one_sided,both_sided}`, `main/h2h/reveal.py`; X5 A/B
   §7.7(a), 2026-10-05).** `main.h2h` is the one offline tool that PLAYS an oracle checkpoint (one whose run recorded
-  `--oracle-reveal species|full`). A plan declares ONE mode, and each cell's `(p1, p2)` levels follow from it and the
+  any non-`off` `--oracle-reveal` spec, played at its recorded LABEL). A plan declares ONE mode, and each cell's `(p1, p2)` levels follow from it and the
   two checkpoints' RECORDED levels — never typed: `off` = no reveal (an oracle checkpoint is REFUSED, typed
   `RevealModeError`, before anything loads); `one_sided` = the oracle side at its recorded level, the other side `off`
   (clairvoyance, the primary read); `both_sided` = the other side told the oracle's team too, at the same level

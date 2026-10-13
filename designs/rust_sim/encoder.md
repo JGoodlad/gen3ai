@@ -319,9 +319,11 @@ the sleep belief, recency, last action, the active flag — the mon's state on t
 
 ## 11. The ORACLE REVEAL — a diagnostic observation mode, never production (`gen3_oracle_reveal_v1`)
 
-`--oracle-reveal {off,species,full}` (`designs/endstate/design_x5_belief_tokens.md` §7.6 "As built"; backlog X32) writes
-the opponent's TRUE species (`species`) or whole SET (`full`) into the opponent team block of the observation from turn 1,
-as if the game had a team preview. It enters the shared trunk through the row; it is not a side input to any head. The code is
+`--oracle-reveal <spec>` (`designs/endstate/design_x5_belief_tokens.md` §7.6 "As built"; backlog X32; generalised
+2026-10-12 to the information-lever spec, `designs/endstate/design_information_levers.md` §6) writes graded facts of the
+opponent's TRUE team into the opponent team block of the observation from turn 1: at the X32 levels the species
+(`species`, as if the game had a team preview) or the whole SET (`full`); in general any spec the OBS consumer honours
+(`agents.info_levers.consumers.OBS`). It enters the shared trunk through the row; it is not a side input to any head. The code is
 `src/rust_sim/src/encoder/oracle.rs`; the mode is the Rust env core's `Spec.oracle_reveal` (a REQUIRED spec key,
 `protocol.SPEC_KEYS`), and `off` leaves every row byte-identical to the encoder that had no reveal. The key takes ONE level
 (a string: both sides, the run's recorded mode) or a PER-SIDE pair `[p1, p2]` (`core::spec::Reveal`; each side's chain told
@@ -330,13 +332,36 @@ both-sided oracle cells, X5 A/B §7.7(a)); a symmetric spec is always written as
 `oracle_reveal_test.rs::a_per_side_reveal_writes_each_side_exactly_as_the_symmetric_core_of_its_level` pins that a split
 core's side rows (obs, mask, every label column) are bit-identical to the symmetric core of that side's level.
 
+**The spec (`OracleSpec`).** Per (class ∈ `species`, `moves`, `item`, `ability`, `spread`) × (part ∈ seen, unseen) a
+mass in 1/10,000ths (0 = not told), source `truth` only. `OracleSpec::parse` accepts EXACTLY the level names `off` /
+`species` / `full` and the CANONICAL clause text `agents.info_levers.spec.InfoReveal.canonical` writes (strict: the input
+must equal the parser's own canonical rendering of what it parsed); it refuses by name `hp` / `counters` (no cell), a
+`~placebo` / `~map` source (no prior sampler), an unseen set-class part without `species:unseen`, and anything else. The
+spec key carries each side's LABEL (`OracleSpec::label`: the level name for a level, whichever text it was given as, else
+the canonical text), so an `off` / `species` / `full` spec's JSON text is unchanged. `species` = `species:unseen`, `full`
+= `species:unseen,moves:both,item:both,ability:both,spread:both`; `the_level_clause_texts_reproduce_the_level_bytes` pins
+that the clause texts reproduce the levels' pinned digests.
+
+**Mass: a per-episode Bernoulli.** The row can only state a fact or not: a lever of mass p fires for a WHOLE episode with
+probability p, decided at `Oracle::new` per (episode seed words, side, the mon's packed index, class) by `uniform_bp`
+(splitmix64; ONE draw per (mon, class), compared with the mass of the part that applies, so a class told at equal masses
+stays told when the mon is revealed); mass 1 needs no hash. `PINNED_HALF_MASS_FIRES` pins the draw's count over a fixed
+set (a change to the hash moves which episodes a recorded run was told). A never-seen mon has a tail slot only where its
+`species:unseen` lever FIRES; its slot carries the set facts whose `(class, unseen)` lever fires (`told_slot`; with none
+fired it is `hypothesis_slot`); a SEEN mon is overlaid with the unrevealed facts whose `(class, seen)` lever fires
+(`Oracle::overlay`; none fired = the reading's own, no lookup at all when the spec tells no seen part). The Hidden Power
+TYPE is a SPREAD fact (the IVs determine it), not a `moves` one (`told_move_id`): with the spread told a Hidden Power is
+the owner's typed move (an own mon's row; `full`'s bytes unchanged), with only `moves` told it is the BARE `hiddenpower`,
+written exactly as a Hidden Power play revealed (type 0, the Hidden-Power belief cells as play left them); `hp_revealed`
+is 1 exactly when the spread is told.
+
 | piece | is |
 |---|---|
 | `Oracle` | the OTHER side's packed team (`team::unpack`, species ids by `to_id`), built per episode and side by `rust_env`'s `Env::start` and held on that side's `SideStream` (`BattleVersion::with_oracle`; an `Arc`, so a fork shares it); `Inputs.oracle` carries it into `encode` |
 | the tail | `slot::team`, for the OPPONENT block only: after the seen mons (reveal order, `off`'s bytes) one slot per unseen mon in dex-num order, each `hypothesis_slot(species)` — the row the encoder writes for a never-seen mon, §10 — copied from the `OracleMon` built at episode start |
-| `Oracle::tail(revealed)` | the unseen mons: one oracle entry consumed per revealed mon, matched by DEX NUM (a forme shares its base species' num), a revealed mon the oracle team does not hold is a FAULT. The encoder AND the label writers call it, so the row and the labels share one slot order |
-| `SPECIES_SLOT_CELLS` / `FULL_SLOT_CELLS` + `check_slot` | the producer's THROWING guard, per level: all 122 cells declared (`SpeciesDerived` / `SetFact` / `Zero` / `One`; each declaration tiles the slot) and every built tail slot checked bit for bit |
-| `full_slot` / `Oracle::overlay` | the `full` level: an UNSEEN mon's slot is the row of an OWN mon of that set (the same `populated_slot`, a `PMon` built like an own mon's reading, a view with `spread_known`); a SEEN mon's slot is the reading's with only the facts play has not revealed written on top |
+| `Oracle::tail(revealed)` | the unseen mons whose species is TOLD: one oracle entry consumed per revealed mon over the WHOLE team (told or not), matched by DEX NUM (a forme shares its base species' num), a revealed mon the oracle team does not hold is a FAULT; then the untold ones dropped. The encoder AND the label writers call it, so the row and the labels share one slot order (an unstated mon stays a belief target) |
+| `slot_cells(told)` + `check_slot` | the producer's THROWING guard, per told / untold set-class combination (all sixteen): all 122 cells declared (`SpeciesDerived` / `SetFact` / `Zero` / `One`; each declaration tiles the slot; an untold item / moves / spread is `Zero`, an untold ability the species' prior, `hp_revealed` `One` iff the spread is told) and every built tail slot checked bit for bit |
+| `told_slot` / `Oracle::overlay` | an UNSEEN told mon's slot is the row of an OWN mon at full HP holding exactly its told facts (the same `populated_slot`, a `PMon` built like an own mon's reading, a view with `spread_known` only when the spread is told); at all four classes it is the X32 `full` slot byte for byte. A SEEN mon's slot is the reading's with only its told facts play has not revealed written on top |
 
 **What a tail slot carries.** The species' dex row (num, base stats, types) and the ability block (the Smogon prior,
 or the one ability of a one-ability species) — derived from the species alone — plus the pristine state of a mon that
@@ -357,8 +382,16 @@ DIFFERENTIALS `species_differs_from_off_only_in_the_declared_cells` and `full_di
 (real battles, `off` against the level, every decision, both sides; `full` also against the opposing chain's own row), the
 edge cases (formes, Species-Clause duplicates, a reveal in play, a revealed mon off the oracle team, a real Forecast battle
 through a forme change at both levels);
-`encoder::oracle::tests` (the cells tile the slot, the guard's teeth per block); `label_lookup_guard_test.rs` (the
-labels' consumer guard); `src/utils/rust_env/oracle_reveal_integration_test.py` (the real core from Python).
+`the_level_clause_texts_reproduce_the_level_bytes` (the X32 levels' clause texts give the pinned digests),
+`a_partial_spec_tells_exactly_its_fired_levers` (the PARTIAL-spec differential: a mixed spec with masses below 1 and the
+`ki_moves` lever, every block of every opponent slot equal to `off`'s, the never-seen row's or the opposing chain's own row
+exactly as the lever that fired for that (episode, side, mon, class) says — recomputed from the public `fires`, not read
+off the core's oracle — and the label columns aligned with the stated slots);
+`encoder::oracle::tests` (the cells tile the slot for every combination, the guard's teeth per block, partial overlays,
+the spec text's round trips and named refusals, the pinned mass-0.5 count); `label_lookup_guard_test.rs` (the
+labels' consumer guard); `src/utils/rust_env/oracle_reveal_integration_test.py` (the real core from Python: every
+canonical text Python writes is one the core parses, a preset reaches it as its label, a mass-0.5 `species:unseen`
+lever's pinned count over a fixed corpus with the belief labels on exactly the unstated mons).
 
 ## 12. The OBS-FACTS block — the row's LAST block (`gen3_obs_facts_v1`)
 
@@ -408,7 +441,7 @@ gates: [`designs/rust_sim/encoder.md`](encoder.md).
 | `src/agents/battle/core_corpus_test.py` (`sim`) | the core's rows over the COMMIT corpus are fully WRITTEN (no NaN from the self-check build's prefill, no `-0.0`), every obs block is nonzero somewhere, and each decision's choice tokens are exactly its legal actions (slice O's Python-row comparison was DELETED in P6 slice 6c, `designs/rust_sim/encoder.md` §6a) |
 | `src/agents/training/golden_obs_core_test.py` (`sim`; `python -m agents.training.golden_obs_core --check`) | the core, replaying the banked golden battles, writes rows that hash to `training/golden_obs_fixture.json` exactly, in order |
 | `tests/hypothesis_dex_rows_test.rs` (`cargo test`; also run by `agents/model/hypothesis_dex_rows_sim_test.py`, `sim`) | X5's hypothesis row (`encoder::hypothesis::hypothesis_slot`, the ONE synthetic input the encoder takes — "species s present, unrevealed set, full HP, no status", through the same `slot::populated_slot` writer) equals the slot the encoder writes at the REAL first appearance of every base-form species (and every corpus mon), byte for byte, outside the DECLARED `on_field` / field-revealed blocks of `hypothesis::CELLS`; the committed table it feeds (`agents/model/hypothesis_dex_rows.json`, via `core_events --dex-rows`) is byte-gated by the same sim test — [`designs/rust_sim/encoder.md`](encoder.md) §10 |
-| `src/rust_env/tests/oracle_reveal_test.rs` (`cargo test` in `src/rust_env`) | the diagnostic ORACLE REVEAL (`encoder/oracle.rs`, `--oracle-reveal`; [`encoder.md`](encoder.md) §11): `off` is byte-identical (the obs / mask / label bytes pinned to a digest recorded before the build); `species` differs from `off` ONLY in the opponent block's unseen tail (real battles, both sides, every decision), which is the true unseen species' `hypothesis_slot` in dex-num order; `full` additionally tells the set, checked against the OPPOSING chain's own-team slot of the same mon; `off`, `species` and `full` each byte-pinned; formes, Species-Clause duplicates, a reveal in play, a real Forecast battle |
+| `src/rust_env/tests/oracle_reveal_test.rs` (`cargo test` in `src/rust_env`) | the diagnostic ORACLE REVEAL (`encoder/oracle.rs`, `--oracle-reveal`; [`encoder.md`](encoder.md) §11): `off` is byte-identical (the obs / mask / label bytes pinned to a digest recorded before the build); `species` differs from `off` ONLY in the opponent block's unseen tail (real battles, both sides, every decision), which is the true unseen species' `hypothesis_slot` in dex-num order; `full` additionally tells the set, checked against the OPPOSING chain's own-team slot of the same mon; `off`, `species` and `full` each byte-pinned, and the levels' clause texts reproduce those pins; a PARTIAL spec (masses below 1) tells exactly its fired levers, labels aligned; formes, Species-Clause duplicates, a reveal in play, a real Forecast battle |
 | `tests/encoder_test.rs` (`cargo test`) | no NaN left at any decision; step-built == parse-built bytes; the trackerless and wrong-length refusals; `version::parse_encode_matches_step` refuses a parse chain whose trackers fold differently |
 | `core_events --obs` (every replay, `core_corpus_test.py` included) — the PARSE-chain gate (`gen3_core_parse_obs_gate_v1`) | each side's parse chain (trackers on, the same `note_choice` tokens) decides at exactly the step chain's decisions, one per write, and encodes a BYTE-identical row, mask and tokens — the encode path `sim_bridge`'s `core_obs` ships |
 | `tests/sim_bridge_core_obs_test.rs` (`cargo test`) | `sim_bridge`'s `__OBS__` rows == `core_events --obs`'s, byte for byte, one per decision, before the request chunk; recycled child == fresh child; OFF byte-identical; the bridge rows equal an in-process parse chain's and the `POKESIM_SIM_BRIDGE_TEETH=clock_start` hook reaches them; a malformed key (incl. the deleted clock booleans) refused; the parse-chain gate refuses (`POKESIM_CORE_EVENTS_TEETH=parse_clock`, a test-build hook that starts the parse chain's clock at another `n`) |

@@ -476,16 +476,25 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               requires=("ridealong_rnd",),
               family=Family.CRITIC),
     ModelFlag("oracle_reveal", "off", Tier.CLI, Klass.RESUME_IMMUTABLE, 137,
-              "DIAGNOSTIC observation mode (X32; X5 A/B §7.6): how much of the opponent's true team the "
-              "OBSERVATION states from turn 1 ('off' = production; 'species' = the six species, "
-              "team-preview semantics; 'full' = the whole set: moves, item, ability, spread)",
+              "DIAGNOSTIC observation mode (X32; X5 A/B §7.6; the information-lever spec, "
+              "design_information_levers.md §6): what of the opponent's true team the OBSERVATION states "
+              "from turn 1 — any spec the observation honours ('off' = production; 'species' = the six "
+              "species, team-preview semantics; 'full' = the whole set: moves, item, ability, spread; a "
+              "preset such as ki_moves = moves:seen@0.95; or a clause list class:scope[@mass]), recorded as "
+              "its LABEL",
               note="Never production. The Rust encoder writes the facts into the opponent team block of "
                    "the observation itself (the shared trunk), not a side input to any head: the seen mons keep their "
                    "reveal-order slots and bytes, the unseen ones follow in dex-num order as the encoder's own row "
                    "for a never-seen mon (`encoder::oracle`); at 'full' the set's facts are written too (an unseen "
                    "mon's slot is the row of an OWN mon of that set; a seen mon gains only the facts play has not "
-                   "revealed). 'off' is byte-identical to the build without it, and 'species' to the build that "
-                   "shipped it. "
+                   "revealed). 'off' is byte-identical to the build without it, and 'species' / 'full' (and their "
+                   "clause texts) to the build that shipped them. A PARTIAL spec tells only its classes and parts "
+                   "(an unseen mon's slot exists only where `species:unseen` fires); a lever of mass p fires for a "
+                   "whole episode with probability p per (episode seed, side, mon, class), a deterministic hash. "
+                   "Refused by name: `hp` / `counters` (no cell), a `~placebo` / `~map` source (no prior sampler: "
+                   "`ki_wrongmoves`), an unseen set-class part without `species:unseen`. Recorded as the LABEL "
+                   "(`model_config.json`), the full `InfoReveal.record()` block in `metadata.json`; the resume gate "
+                   "compares MEANING. "
                    "SYMMETRIC (the trainee and its self-play opponents each see the other side's team), the eval "
                    "core uses the run's recorded mode, scripted bots are unaffected. RESUME_IMMUTABLE: the forward "
                    "is bit-identical (no module, no weight) but what the input MEANS differs, so a resume that "
