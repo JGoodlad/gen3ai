@@ -16,6 +16,7 @@
 | write or tier a test, run a benchmark, check a static gate | `designs/ops/testing.md`; the gate table is `docs/DEVELOPING.md` |
 | reason about the model | `designs/ARCHITECTURE.md` **first**, then `src/agents/model/CLAUDE.md` → `designs/model/` |
 | reason about the research | `designs/research_state/UNDERSTANDING.md`; `ledger.md` wins any disagreement |
+| reason about search (where it works, where it does not, how far we are) | `designs/endstate/search_ledger.md` (always-current; update it with any search result), then the designs it points at |
 | give training, search or the model's inputs EXTRA information (oracle reveals, honest worlds, ceilings) | `designs/endstate/design_information_levers.md` (the ONE spec, `agents.info_levers`) |
 | touch a training flag, or quote an offline meter / ELO | `src/agents/training/CLAUDE.md` → `designs/training/<topic>.md`; the meter index + ELO rules: `designs/ops/training_runbook.md` |
 | touch the rust port | `src/rust_sim/CLAUDE.md`, then its `designs/rust_sim/<topic>.md` |

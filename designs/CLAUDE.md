@@ -36,7 +36,10 @@ counterfactual playouts, the label factory — is [`endstate/design_value_discri
 its adversarial follow-up, WHICH hidden information binds search and the network (moves, the never-seen mons, items,
 abilities, spreads), with its pre-registered rules, is [`endstate/design_hidden_info_binding.md`](endstate/design_hidden_info_binding.md);
 the ONE spec that gives training, search and the model's inputs graded extra information — the INFORMATION LEVERS, how
-each consumer honours them and how to read ceilings with them — is [`endstate/design_information_levers.md`](endstate/design_information_levers.md)); the ranked queues are `research_state/EXPERIMENT_BACKLOG.md`
+each consumer honours them and how to read ceilings with them — is [`endstate/design_information_levers.md`](endstate/design_information_levers.md); and the ONE always-current
+ledger of what we know about SEARCH — what works, what does not, the frontier by stage of the game, how far we are, the
+instruments' limits and the open questions — is [`endstate/search_ledger.md`](endstate/search_ledger.md): read it before
+reasoning about search, and update it in the same commit as any search-related result); the ranked queues are `research_state/EXPERIMENT_BACKLOG.md`
 (experiments), `ops/TASK_BACKLOG.md` (builds) and `ops/TECH_DEBT_BACKLOG.md` (debt). Production is
 what `--arch production` resolves — `production_config.json` (+ its sibling `production_config.README.md`
 for provenance) and the registry `baselines.json` — never a run named in prose. The `ai_vN` folders
