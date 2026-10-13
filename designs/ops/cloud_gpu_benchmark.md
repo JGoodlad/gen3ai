@@ -202,3 +202,12 @@ Formula: `cost ≈ 0.61 × (0.1 + N_configs × 0.13 + T_train_h + 0.1)` dollars.
   third-party import of `src/` or `tools/` is declared by neither env file, and keeps the twin's pins equal to the
   main file's except the CUDA family. `tools/cloud/vast/requirements.py` still derives the remote's list from the
   env file (its `UNDECLARED_RUNTIME` belt is now redundant, harmless).
+
+
+## Local cu126 vs cu128 on the RTX 3080 Ti (MEASURED 2026-10-12, a 42-min GPU window; `designs/research_state/measurements/cuda_build_2026-10-12/SUMMARY.md`)
+
+The CUDA 12.8 build is **interchangeable** with 12.6 on our card, so the cloud ladder's cu126 / cu128 caveat is closed:
+- Update time ratios (cu128 / cu126): end state fp32 **0.991**, end state bf16 **1.001**, production fp32 **1.001**, production bf16 **0.999**. Peak memory is identical, and every cell's compile parity gate PASSes.
+- Numerics: same weights, same batch, eager. The loss is identical, and the gradient rel-L2 across builds (1.4e-9 fp32, 2.1e-9 bf16) sits at same-build noise (2.4e-9 / 2.2e-9).
+- **The local baseline the cloud ladder compares against** (update s = train_ms / 1000): end state fp32 **53.0–53.5**, end state bf16 **41.2–41.3**, production fp32 **45.5–45.6**, production bf16 **37.7**. Peak memory: 6.7 / 6.4 / 6.6 / 6.1 GiB.
+- Raw logs: `~/gen3ai_archive/cuda_build_2026-10-12/logs/`.

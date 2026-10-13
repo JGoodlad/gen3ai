@@ -1,0 +1,39 @@
+{
+ "build": "cu126",
+ "prec": "bf16",
+ "device": "cuda",
+ "torch": "2.8.0+cu126",
+ "cuda": "12.6",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "done": true,
+ "load1_start": 13.01953125,
+ "gpu": "NVIDIA GeForce RTX 3080 Ti",
+ "capability": [
+  8,
+  6
+ ],
+ "arch_list": [
+  "sm_50",
+  "sm_60",
+  "sm_70",
+  "sm_75",
+  "sm_80",
+  "sm_86",
+  "sm_90"
+ ],
+ "init_params_sha256": "b0a82e8fa9537820c4a871b77d607b60257bf125bb3ba98f7389fcd941a1b3a8",
+ "trunk_rounds_set": 3,
+ "rows": 2048,
+ "batch_source": "the K9 learner golden's real labelled buffer",
+ "losses": [
+  0.741915762424469,
+  0.741915762424469,
+  0.741915762424469
+ ],
+ "grad_norm": 12.301228147742059,
+ "finite": true,
+ "noise_grad_rel_l2": 2.1340951060881606e-09,
+ "noise_loss_rel": 0.0,
+ "seconds": 5.903298962977715,
+ "load1_end": 13.017578125
+}

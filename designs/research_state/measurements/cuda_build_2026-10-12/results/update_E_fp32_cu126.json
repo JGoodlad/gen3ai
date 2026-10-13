@@ -1,0 +1,121 @@
+{
+ "tag": "update_E_fp32_cu126",
+ "argv": "--arch endstate --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "fp32",
+ "r1_preset": "default",
+ "src": "/home/goodlad/.claude/jobs/4b7f33cf/tmp/cudaval/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 13.017578125,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 4.288974474999122,
+  "compile_gate_prewarm": 272.72767863201443
+ },
+ "imports_from": "/home/goodlad/.claude/jobs/4b7f33cf/tmp/cudaval/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5624179,
+  "diagnostics_every": 10
+ },
+ "learner_cudagraphs": false,
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "PASS",
+  "lines": [
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+   "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 1.19e-07 <= 0.0001; train features: fp32 max|compiled-eager| 1.19e-07 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.46e-05 (features_extractor.history_events.denial_emb.weight) over 232 params <= 0.00988 [the K9 learner golden's real labelled buffer]",
+   "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+   "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 272.7s",
+   "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "routes": [
+  {
+   "call": 0,
+   "epochs": 1,
+   "timed": "False",
+   "R1_compiled": 48
+  },
+  {
+   "call": 1,
+   "epochs": 1,
+   "timed": "True",
+   "R1_compiled": 48
+  },
+  {
+   "call": 2,
+   "epochs": 1,
+   "timed": "True",
+   "R1_compiled": 48
+  },
+  {
+   "call": 3,
+   "epochs": 3,
+   "timed": "True",
+   "R1_compiled": 144
+  },
+  {
+   "call": 4,
+   "epochs": 3,
+   "timed": "True",
+   "R1_compiled": 144
+  },
+  {
+   "call": 5,
+   "epochs": 1,
+   "timed": "diag",
+   "R1_compiled": 48
+  }
+ ],
+ "peak_reserved_mib": 6718.0,
+ "diag_1ep_s": 19.60318853892386,
+ "train": {
+  "walls_s": {
+   "1": [
+    6.413236864027567,
+    6.423812752938829
+   ],
+   "3": [
+    16.86530813598074,
+    16.885313392966054
+   ]
+  },
+  "median_s": {
+   "1": 6.418524808483198,
+   "3": 16.875310764473397
+  },
+  "marginal_epoch_s": 5.2283929779950995,
+  "update_s_est": 53.474061610439094,
+  "first_epoch_overhead_s": 1.1901318304880988,
+  "per_micro_ms_marginal": 108.92485370823124,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 0.0034052564296871424,
+    "n": 15328
+   },
+   {
+    "epochs": 1,
+    "s": 0.00337564991787076,
+    "n": 15328
+   },
+   {
+    "epochs": 3,
+    "s": 0.0038830029079690576,
+    "n": 17568
+   },
+   {
+    "epochs": 3,
+    "s": 0.0038066511042416096,
+    "n": 17568
+   }
+  ]
+ },
+ "load1_end": 13.01318359375,
+ "gpu_others_end": []
+}

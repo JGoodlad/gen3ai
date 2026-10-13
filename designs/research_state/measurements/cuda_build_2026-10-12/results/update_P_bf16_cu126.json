@@ -1,0 +1,122 @@
+{
+ "tag": "update_P_bf16_cu126",
+ "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "trunk_precision": "bf16",
+ "r1_preset": "default",
+ "src": "/home/goodlad/.claude/jobs/4b7f33cf/tmp/cudaval/src",
+ "torch": "2.8.0+cu126",
+ "load1_start": 9.9296875,
+ "gpu_others_start": [],
+ "phases_s": {
+  "build": 1.583035137038678,
+  "compile_gate_prewarm": 202.59396688709967
+ },
+ "imports_from": "/home/goodlad/.claude/jobs/4b7f33cf/tmp/cudaval/src/agents/training/instrumented_ppo/micro_step.py",
+ "optimizers_moved": 6,
+ "shape": {
+  "rows": 98304,
+  "batch_size": 2048,
+  "accum": 32,
+  "n_epochs_full": 10,
+  "params": 5537133,
+  "diagnostics_every": 10
+ },
+ "trunk_rounds_set": 2,
+ "learner_cudagraphs": false,
+ "grad_checkpointing": false,
+ "gate": {
+  "verdict": "PASS",
+  "lines": [
+   "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+   "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.34e-03 <= 0.014, grad 1.06e-02 <= 0.68; envelope loss 1.86e-03 (eager 1.34e-03), grad 9.09e-03 (eager 1.06e-02); per-param worst ratio 1.61 <= 12 (features_extractor.edge_bias.x_map.weight: compiled 2.43e-02 vs eager 1.51e-02) over 197 params [the K9 learner golden's real labelled buffer]",
+   "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+   "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 202.5s",
+   "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+  ]
+ },
+ "fixture_source": "the K9 learner golden's real labelled buffer",
+ "routes": [
+  {
+   "call": 0,
+   "epochs": 1,
+   "timed": "False",
+   "R1_compiled": 48
+  },
+  {
+   "call": 1,
+   "epochs": 1,
+   "timed": "True",
+   "R1_compiled": 48
+  },
+  {
+   "call": 2,
+   "epochs": 1,
+   "timed": "True",
+   "R1_compiled": 48
+  },
+  {
+   "call": 3,
+   "epochs": 3,
+   "timed": "True",
+   "R1_compiled": 144
+  },
+  {
+   "call": 4,
+   "epochs": 3,
+   "timed": "True",
+   "R1_compiled": 144
+  },
+  {
+   "call": 5,
+   "epochs": 1,
+   "timed": "diag",
+   "R1_compiled": 48
+  }
+ ],
+ "peak_reserved_mib": 6076.0,
+ "diag_1ep_s": 10.940454944968224,
+ "train": {
+  "walls_s": {
+   "1": [
+    4.868214881978929,
+    4.882595882983878
+   ],
+   "3": [
+    12.187090561026707,
+    12.176816298044287
+   ]
+  },
+  "median_s": {
+   "1": 4.875405382481404,
+   "3": 12.181953429535497
+  },
+  "marginal_epoch_s": 3.6532740235270467,
+  "update_s_est": 37.754871594224824,
+  "first_epoch_overhead_s": 1.222131358954357,
+  "per_micro_ms_marginal": 76.1098754901468,
+  "scalar_reads": [
+   {
+    "epochs": 1,
+    "s": 0.003224217100068927,
+    "n": 15192
+   },
+   {
+    "epochs": 1,
+    "s": 0.003244999097660184,
+    "n": 15192
+   },
+   {
+    "epochs": 3,
+    "s": 0.0036997963907197118,
+    "n": 17160
+   },
+   {
+    "epochs": 3,
+    "s": 0.0036766448756679893,
+    "n": 17160
+   }
+  ]
+ },
+ "load1_end": 10.63525390625,
+ "gpu_others_end": []
+}
