@@ -1,0 +1,1154 @@
+[
+ {
+  "player": "rb_bf_eb_s2001@15055235",
+  "opponent": "rb_bf_e_s2001@15054436",
+  "n_pairs": 1000,
+  "w": 1143,
+  "l": 843,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   156,
+   2,
+   530,
+   10,
+   302
+  ],
+  "score_pp": 57.49999999999999,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2001@15055235",
+  "opponent": "rb_bf_e_s2002@15052441",
+  "n_pairs": 1000,
+  "w": 1058,
+  "l": 930,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   199,
+   4,
+   528,
+   8,
+   261
+  ],
+  "score_pp": 53.2,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2001@15055235",
+  "opponent": "rb_bf_e_s2003@15052543",
+  "n_pairs": 1000,
+  "w": 1126,
+  "l": 862,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   164,
+   4,
+   530,
+   8,
+   294
+  ],
+  "score_pp": 56.599999999999994,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2001@15055235",
+  "opponent": "rb_bf_e_s2004@15053204",
+  "n_pairs": 1000,
+  "w": 1046,
+  "l": 944,
+  "d": 10,
+  "aborted": 0,
+  "pairs": [
+   212,
+   1,
+   519,
+   9,
+   259
+  ],
+  "score_pp": 52.55,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2001@15055235",
+  "opponent": "rb_bf_e_s2005@15048730",
+  "n_pairs": 1000,
+  "w": 1024,
+  "l": 964,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   224,
+   9,
+   507,
+   3,
+   257
+  ],
+  "score_pp": 51.5,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2001@15055235",
+  "opponent": "rb_bf_e_s2006@15047213",
+  "n_pairs": 1000,
+  "w": 1068,
+  "l": 922,
+  "d": 10,
+  "aborted": 0,
+  "pairs": [
+   206,
+   2,
+   508,
+   8,
+   276
+  ],
+  "score_pp": 53.65,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2001@15055235",
+  "opponent": "rb_bf_e_s2007@15047396",
+  "n_pairs": 1000,
+  "w": 1141,
+  "l": 845,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   163,
+   5,
+   515,
+   7,
+   310
+  ],
+  "score_pp": 57.4,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2001@15055235",
+  "opponent": "rb_bf_e_s2008@15047528",
+  "n_pairs": 1000,
+  "w": 1098,
+  "l": 894,
+  "d": 8,
+  "aborted": 0,
+  "pairs": [
+   173,
+   4,
+   544,
+   4,
+   275
+  ],
+  "score_pp": 55.1,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2002@15052428",
+  "opponent": "rb_bf_e_s2001@15054436",
+  "n_pairs": 1000,
+  "w": 1090,
+  "l": 900,
+  "d": 10,
+  "aborted": 0,
+  "pairs": [
+   172,
+   5,
+   551,
+   5,
+   267
+  ],
+  "score_pp": 54.75,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2002@15052428",
+  "opponent": "rb_bf_e_s2002@15052441",
+  "n_pairs": 1000,
+  "w": 1090,
+  "l": 889,
+  "d": 21,
+  "aborted": 0,
+  "pairs": [
+   172,
+   12,
+   533,
+   9,
+   274
+  ],
+  "score_pp": 55.025,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2002@15052428",
+  "opponent": "rb_bf_e_s2003@15052543",
+  "n_pairs": 1000,
+  "w": 1092,
+  "l": 891,
+  "d": 17,
+  "aborted": 0,
+  "pairs": [
+   172,
+   8,
+   540,
+   7,
+   273
+  ],
+  "score_pp": 55.025,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2002@15052428",
+  "opponent": "rb_bf_e_s2004@15053204",
+  "n_pairs": 1000,
+  "w": 1059,
+  "l": 917,
+  "d": 24,
+  "aborted": 0,
+  "pairs": [
+   181,
+   12,
+   544,
+   10,
+   253
+  ],
+  "score_pp": 53.55,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2002@15052428",
+  "opponent": "rb_bf_e_s2005@15048730",
+  "n_pairs": 1000,
+  "w": 979,
+  "l": 996,
+  "d": 25,
+  "aborted": 0,
+  "pairs": [
+   227,
+   7,
+   537,
+   14,
+   215
+  ],
+  "score_pp": 49.575,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2002@15052428",
+  "opponent": "rb_bf_e_s2006@15047213",
+  "n_pairs": 1000,
+  "w": 1070,
+  "l": 920,
+  "d": 10,
+  "aborted": 0,
+  "pairs": [
+   181,
+   6,
+   552,
+   4,
+   257
+  ],
+  "score_pp": 53.75,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2002@15052428",
+  "opponent": "rb_bf_e_s2007@15047396",
+  "n_pairs": 1000,
+  "w": 1127,
+  "l": 854,
+  "d": 19,
+  "aborted": 0,
+  "pairs": [
+   158,
+   9,
+   530,
+   8,
+   295
+  ],
+  "score_pp": 56.825,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2002@15052428",
+  "opponent": "rb_bf_e_s2008@15047528",
+  "n_pairs": 1000,
+  "w": 1107,
+  "l": 878,
+  "d": 15,
+  "aborted": 0,
+  "pairs": [
+   162,
+   8,
+   546,
+   7,
+   277
+  ],
+  "score_pp": 55.725,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2003@15053549",
+  "opponent": "rb_bf_e_s2001@15054436",
+  "n_pairs": 1000,
+  "w": 1020,
+  "l": 962,
+  "d": 18,
+  "aborted": 0,
+  "pairs": [
+   201,
+   3,
+   557,
+   15,
+   224
+  ],
+  "score_pp": 51.449999999999996,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2003@15053549",
+  "opponent": "rb_bf_e_s2002@15052441",
+  "n_pairs": 1000,
+  "w": 990,
+  "l": 996,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   217,
+   8,
+   554,
+   6,
+   215
+  ],
+  "score_pp": 49.85,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2003@15053549",
+  "opponent": "rb_bf_e_s2003@15052543",
+  "n_pairs": 1000,
+  "w": 1014,
+  "l": 974,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   208,
+   5,
+   554,
+   5,
+   228
+  ],
+  "score_pp": 51.0,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2003@15053549",
+  "opponent": "rb_bf_e_s2004@15053204",
+  "n_pairs": 1000,
+  "w": 948,
+  "l": 1040,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   233,
+   10,
+   564,
+   2,
+   191
+  ],
+  "score_pp": 47.699999999999996,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2003@15053549",
+  "opponent": "rb_bf_e_s2005@15048730",
+  "n_pairs": 1000,
+  "w": 929,
+  "l": 1051,
+  "d": 20,
+  "aborted": 0,
+  "pairs": [
+   254,
+   11,
+   534,
+   5,
+   196
+  ],
+  "score_pp": 46.949999999999996,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2003@15053549",
+  "opponent": "rb_bf_e_s2006@15047213",
+  "n_pairs": 1000,
+  "w": 976,
+  "l": 1011,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   230,
+   3,
+   549,
+   8,
+   210
+  ],
+  "score_pp": 49.125,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2003@15053549",
+  "opponent": "rb_bf_e_s2007@15047396",
+  "n_pairs": 1000,
+  "w": 1030,
+  "l": 954,
+  "d": 16,
+  "aborted": 0,
+  "pairs": [
+   201,
+   10,
+   542,
+   6,
+   241
+  ],
+  "score_pp": 51.9,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2003@15053549",
+  "opponent": "rb_bf_e_s2008@15047528",
+  "n_pairs": 1000,
+  "w": 1009,
+  "l": 972,
+  "d": 19,
+  "aborted": 0,
+  "pairs": [
+   212,
+   12,
+   536,
+   7,
+   233
+  ],
+  "score_pp": 50.925,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2004@15053221",
+  "opponent": "rb_bf_e_s2001@15054436",
+  "n_pairs": 1000,
+  "w": 1026,
+  "l": 961,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   206,
+   8,
+   541,
+   5,
+   240
+  ],
+  "score_pp": 51.625,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2004@15053221",
+  "opponent": "rb_bf_e_s2002@15052441",
+  "n_pairs": 1000,
+  "w": 946,
+  "l": 1045,
+  "d": 9,
+  "aborted": 0,
+  "pairs": [
+   249,
+   3,
+   544,
+   6,
+   198
+  ],
+  "score_pp": 47.525,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2004@15053221",
+  "opponent": "rb_bf_e_s2003@15052543",
+  "n_pairs": 1000,
+  "w": 1028,
+  "l": 960,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   187,
+   6,
+   580,
+   6,
+   221
+  ],
+  "score_pp": 51.7,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2004@15053221",
+  "opponent": "rb_bf_e_s2004@15053204",
+  "n_pairs": 1000,
+  "w": 918,
+  "l": 1062,
+  "d": 20,
+  "aborted": 0,
+  "pairs": [
+   255,
+   10,
+   543,
+   8,
+   184
+  ],
+  "score_pp": 46.400000000000006,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2004@15053221",
+  "opponent": "rb_bf_e_s2005@15048730",
+  "n_pairs": 1000,
+  "w": 894,
+  "l": 1093,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   263,
+   5,
+   562,
+   8,
+   162
+  ],
+  "score_pp": 45.025,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2004@15053221",
+  "opponent": "rb_bf_e_s2006@15047213",
+  "n_pairs": 1000,
+  "w": 974,
+  "l": 1013,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   218,
+   5,
+   572,
+   8,
+   197
+  ],
+  "score_pp": 49.025,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2004@15053221",
+  "opponent": "rb_bf_e_s2007@15047396",
+  "n_pairs": 1000,
+  "w": 1004,
+  "l": 978,
+  "d": 18,
+  "aborted": 0,
+  "pairs": [
+   212,
+   9,
+   546,
+   7,
+   226
+  ],
+  "score_pp": 50.64999999999999,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2004@15053221",
+  "opponent": "rb_bf_e_s2008@15047528",
+  "n_pairs": 1000,
+  "w": 971,
+  "l": 1020,
+  "d": 9,
+  "aborted": 0,
+  "pairs": [
+   231,
+   3,
+   555,
+   6,
+   205
+  ],
+  "score_pp": 48.775,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2005@15046852",
+  "opponent": "rb_bf_e_s2001@15054436",
+  "n_pairs": 1000,
+  "w": 1022,
+  "l": 963,
+  "d": 15,
+  "aborted": 0,
+  "pairs": [
+   205,
+   6,
+   547,
+   9,
+   233
+  ],
+  "score_pp": 51.475,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2005@15046852",
+  "opponent": "rb_bf_e_s2002@15052441",
+  "n_pairs": 1000,
+  "w": 978,
+  "l": 1014,
+  "d": 8,
+  "aborted": 0,
+  "pairs": [
+   225,
+   3,
+   561,
+   5,
+   206
+  ],
+  "score_pp": 49.1,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2005@15046852",
+  "opponent": "rb_bf_e_s2003@15052543",
+  "n_pairs": 1000,
+  "w": 971,
+  "l": 1017,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   226,
+   6,
+   559,
+   6,
+   203
+  ],
+  "score_pp": 48.85,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2005@15046852",
+  "opponent": "rb_bf_e_s2004@15053204",
+  "n_pairs": 1000,
+  "w": 924,
+  "l": 1064,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   239,
+   8,
+   579,
+   2,
+   172
+  ],
+  "score_pp": 46.5,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2005@15046852",
+  "opponent": "rb_bf_e_s2005@15048730",
+  "n_pairs": 1000,
+  "w": 904,
+  "l": 1083,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   270,
+   7,
+   536,
+   6,
+   181
+  ],
+  "score_pp": 45.525,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2005@15046852",
+  "opponent": "rb_bf_e_s2006@15047213",
+  "n_pairs": 1000,
+  "w": 911,
+  "l": 1084,
+  "d": 5,
+  "aborted": 0,
+  "pairs": [
+   274,
+   3,
+   533,
+   2,
+   188
+  ],
+  "score_pp": 45.675,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2005@15046852",
+  "opponent": "rb_bf_e_s2007@15047396",
+  "n_pairs": 1000,
+  "w": 937,
+  "l": 1052,
+  "d": 11,
+  "aborted": 0,
+  "pairs": [
+   251,
+   5,
+   545,
+   6,
+   193
+  ],
+  "score_pp": 47.125,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2005@15046852",
+  "opponent": "rb_bf_e_s2008@15047528",
+  "n_pairs": 1000,
+  "w": 958,
+  "l": 1031,
+  "d": 11,
+  "aborted": 0,
+  "pairs": [
+   234,
+   5,
+   558,
+   6,
+   197
+  ],
+  "score_pp": 48.175000000000004,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2006@15046768",
+  "opponent": "rb_bf_e_s2001@15054436",
+  "n_pairs": 1000,
+  "w": 1106,
+  "l": 881,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   167,
+   6,
+   541,
+   7,
+   279
+  ],
+  "score_pp": 55.625,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2006@15046768",
+  "opponent": "rb_bf_e_s2002@15052441",
+  "n_pairs": 1000,
+  "w": 1022,
+  "l": 963,
+  "d": 15,
+  "aborted": 0,
+  "pairs": [
+   198,
+   7,
+   561,
+   6,
+   228
+  ],
+  "score_pp": 51.475,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2006@15046768",
+  "opponent": "rb_bf_e_s2003@15052543",
+  "n_pairs": 1000,
+  "w": 1098,
+  "l": 889,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   172,
+   6,
+   540,
+   5,
+   277
+  ],
+  "score_pp": 55.225,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2006@15046768",
+  "opponent": "rb_bf_e_s2004@15053204",
+  "n_pairs": 1000,
+  "w": 1012,
+  "l": 978,
+  "d": 10,
+  "aborted": 0,
+  "pairs": [
+   201,
+   6,
+   570,
+   4,
+   219
+  ],
+  "score_pp": 50.849999999999994,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2006@15046768",
+  "opponent": "rb_bf_e_s2005@15048730",
+  "n_pairs": 1000,
+  "w": 982,
+  "l": 1001,
+  "d": 17,
+  "aborted": 0,
+  "pairs": [
+   228,
+   10,
+   536,
+   5,
+   221
+  ],
+  "score_pp": 49.525000000000006,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2006@15046768",
+  "opponent": "rb_bf_e_s2006@15047213",
+  "n_pairs": 1000,
+  "w": 992,
+  "l": 994,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   214,
+   8,
+   558,
+   6,
+   214
+  ],
+  "score_pp": 49.95,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2006@15046768",
+  "opponent": "rb_bf_e_s2007@15047396",
+  "n_pairs": 1000,
+  "w": 1094,
+  "l": 897,
+  "d": 9,
+  "aborted": 0,
+  "pairs": [
+   174,
+   3,
+   546,
+   6,
+   271
+  ],
+  "score_pp": 54.925000000000004,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2006@15046768",
+  "opponent": "rb_bf_e_s2008@15047528",
+  "n_pairs": 1000,
+  "w": 1074,
+  "l": 912,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   168,
+   8,
+   568,
+   6,
+   250
+  ],
+  "score_pp": 54.05,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2007@15047934",
+  "opponent": "rb_bf_e_s2001@15054436",
+  "n_pairs": 1000,
+  "w": 987,
+  "l": 1002,
+  "d": 11,
+  "aborted": 0,
+  "pairs": [
+   219,
+   4,
+   561,
+   5,
+   211
+  ],
+  "score_pp": 49.625,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2007@15047934",
+  "opponent": "rb_bf_e_s2002@15052441",
+  "n_pairs": 1000,
+  "w": 961,
+  "l": 1029,
+  "d": 10,
+  "aborted": 0,
+  "pairs": [
+   227,
+   2,
+   574,
+   6,
+   191
+  ],
+  "score_pp": 48.3,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2007@15047934",
+  "opponent": "rb_bf_e_s2003@15052543",
+  "n_pairs": 1000,
+  "w": 980,
+  "l": 1004,
+  "d": 16,
+  "aborted": 0,
+  "pairs": [
+   237,
+   6,
+   524,
+   10,
+   223
+  ],
+  "score_pp": 49.4,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2007@15047934",
+  "opponent": "rb_bf_e_s2004@15053204",
+  "n_pairs": 1000,
+  "w": 889,
+  "l": 1096,
+  "d": 15,
+  "aborted": 0,
+  "pairs": [
+   268,
+   7,
+   553,
+   8,
+   164
+  ],
+  "score_pp": 44.824999999999996,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2007@15047934",
+  "opponent": "rb_bf_e_s2005@15048730",
+  "n_pairs": 1000,
+  "w": 824,
+  "l": 1157,
+  "d": 19,
+  "aborted": 0,
+  "pairs": [
+   321,
+   11,
+   505,
+   6,
+   157
+  ],
+  "score_pp": 41.675000000000004,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2007@15047934",
+  "opponent": "rb_bf_e_s2006@15047213",
+  "n_pairs": 1000,
+  "w": 930,
+  "l": 1056,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   254,
+   6,
+   543,
+   6,
+   191
+  ],
+  "score_pp": 46.85,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2007@15047934",
+  "opponent": "rb_bf_e_s2007@15047396",
+  "n_pairs": 1000,
+  "w": 1017,
+  "l": 974,
+  "d": 9,
+  "aborted": 0,
+  "pairs": [
+   215,
+   4,
+   540,
+   5,
+   236
+  ],
+  "score_pp": 51.075,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2007@15047934",
+  "opponent": "rb_bf_e_s2008@15047528",
+  "n_pairs": 1000,
+  "w": 949,
+  "l": 1038,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   253,
+   7,
+   526,
+   4,
+   210
+  ],
+  "score_pp": 47.775,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2008@15047320",
+  "opponent": "rb_bf_e_s2001@15054436",
+  "n_pairs": 1000,
+  "w": 1078,
+  "l": 910,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   187,
+   4,
+   533,
+   6,
+   270
+  ],
+  "score_pp": 54.2,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2008@15047320",
+  "opponent": "rb_bf_e_s2002@15052441",
+  "n_pairs": 1000,
+  "w": 1103,
+  "l": 888,
+  "d": 9,
+  "aborted": 0,
+  "pairs": [
+   164,
+   4,
+   556,
+   5,
+   271
+  ],
+  "score_pp": 55.375,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2008@15047320",
+  "opponent": "rb_bf_e_s2003@15052543",
+  "n_pairs": 1000,
+  "w": 1083,
+  "l": 903,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   173,
+   6,
+   551,
+   8,
+   262
+  ],
+  "score_pp": 54.50000000000001,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2008@15047320",
+  "opponent": "rb_bf_e_s2004@15053204",
+  "n_pairs": 1000,
+  "w": 981,
+  "l": 1006,
+  "d": 13,
+  "aborted": 0,
+  "pairs": [
+   236,
+   6,
+   529,
+   5,
+   224
+  ],
+  "score_pp": 49.375,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2008@15047320",
+  "opponent": "rb_bf_e_s2005@15048730",
+  "n_pairs": 1000,
+  "w": 970,
+  "l": 1009,
+  "d": 21,
+  "aborted": 0,
+  "pairs": [
+   224,
+   8,
+   554,
+   11,
+   203
+  ],
+  "score_pp": 49.025,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2008@15047320",
+  "opponent": "rb_bf_e_s2006@15047213",
+  "n_pairs": 1000,
+  "w": 1038,
+  "l": 950,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   205,
+   2,
+   539,
+   8,
+   246
+  ],
+  "score_pp": 52.2,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2008@15047320",
+  "opponent": "rb_bf_e_s2007@15047396",
+  "n_pairs": 1000,
+  "w": 1086,
+  "l": 905,
+  "d": 9,
+  "aborted": 0,
+  "pairs": [
+   193,
+   4,
+   515,
+   5,
+   283
+  ],
+  "score_pp": 54.525,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_bf_eb_s2008@15047320",
+  "opponent": "rb_bf_e_s2008@15047528",
+  "n_pairs": 1000,
+  "w": 1070,
+  "l": 915,
+  "d": 15,
+  "aborted": 0,
+  "pairs": [
+   176,
+   6,
+   558,
+   7,
+   253
+  ],
+  "score_pp": 53.87499999999999,
+  "verdict": "OK"
+ }
+]
