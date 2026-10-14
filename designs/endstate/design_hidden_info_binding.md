@@ -3,7 +3,7 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
+**Status (2026-10-13): TIER 1 RUNNING (`measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output; AMENDMENT 3, §12.14, per-class dose curves, registered before any outcome was unblinded). Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
 parts RUN AND READ (§16; Amendment 1 after the audits, §12.12). AMENDMENT 2 (2026-10-12, §12.13, before any new arm):
 the STAGE of the game (reveal count k, turn, material) becomes a registered dimension of Tier 1 with a k-stratified
 supplement, the K-world belief-quality dose-response is a Tier-1 arm family (§6.9, no extra playout), and a maturity
@@ -1004,6 +1004,47 @@ the pilot did not). R-STAGE-SEARCH: GATE-CLOSED everywhere under the replicated 
 material ≥ 12; DETERMINIZATION-FIRST at the middle buckets (k = 4). R-MATURITY: GAP-SHRINKS ≈ 40 %, BELIEF-RISES ≈ 60 %,
 FRONTIER-MOVES-EARLIER ≈ 30 %.
 
+### 12.14 Amendment 3 (2026-10-13): PER-CLASS dose curves by re-weighting (reads only; registered before any Tier-1 outcome was unblinded)
+
+Owner, 2026-10-13 (relayed by the orchestrator): *"understand how p varies by what is revealed"*. **What existed when this
+was written:** the Tier-1 scripts and the sealed key were committed (`67bee8d6`); arm OUTPUTS for part of the registered
+states existed on disk (written by code blind to them); NO arm output had been read, scored or unblinded (no blinded table
+had been frozen). This amendment adds READS of rows Tier 1 already plays; it adds no arm and no playout, and changes no
+rule of §12.1–§12.13.
+
+**The curves.** For each class X that has a reveal-only-X arm in Tier 1 — **M** (`F+M`, the seen mons' moves) and **U**
+(`F+U`, the never-seen mons); I, A and S are Tier 2 and get none — per state and per action:
+score_p(a) = p · mean(the 8 F+X worlds) + (1 − p) · mean(the 8 F worlds), for LEAF-K8, TRUNC-4-K8 and the one-ply CRITIC
+(the per-world critic re-weighted the same way); IMP_X(p) = T(argmax, ties toward the policy) − T(top1). p = 0 is F, p = 1 is
+F+X exactly. **Unit:** p is the weight the search's average gives worlds in which class X is TRUE (every other class
+drawn honestly); it is NOT §6.9's p (the weight on the whole true world) and p_M and p_U are not interchangeable belief
+units (p_U = worlds holding the whole never-seen team; p_M = worlds holding every seen mon's true moves).
+
+**Variance argument.** Every p re-weights ONE fixed set of playouts (F's and F+X's 8 worlds each, world j on dice seed j in
+both arms, F+X's seen-mon screen = F's: common random numbers), so all p, both classes and every stage cell are evaluated
+on the same bootstrap draws: differences across p, and between M and U at the same p (they share F's worlds), are paired
+and far tighter than separate-arm contrasts; the points of one curve are not independent.
+
+**Reads (per class; pooled, per checkpoint, and per stage cell of §12.13.1's k / turn / material buckets):**
+- **the curve** IMP_X(p) on the owner's 7-point grid (0, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0), with the 0.05 grid for interpolation;
+- **P-STAR_X(b, comparator)** = the smallest grid p with lower95 [IMP_X(p) − comparator] > +0.0005 at p and at every larger
+  grid p (rule 8; NONE if no p qualifies), comparators: the policy (0), the critic search at the SAME p (the critic mixed
+  the same way), today's critic search (F's critic, p = 0);
+- **SHAPE_X** (Δ² = IMP(0.5) − (IMP(0) + IMP(1))/2: CONCAVE lower95 > +0.0005, CONVEX upper95 < −0.0005, else LINEAR) and
+  p-half;
+- **TODAY_X:** no per-class network-belief arm exists (FN draws species AND moves from the network jointly), so today's p
+  per class is a DESCRIPTIVE PROXY, labelled as such: (hit_FN − hit_F) / (1 − hit_F) in hit-rate units (M: the seen mons'
+  unrevealed true moves the worlds hold; U: never-seen slots holding a true never-seen species), from the builder's
+  provenance; beside it, the JOINT FN arm's IMP located on each class curve (an upper-bound-like read, labelled JOINT);
+- **CLASS-FIRST(b)** (the owner's read: which revealed class gives the most search value per unit of its OWN belief
+  improvement, at which stage): Π_X(b) = IMP_X(p0 + 0.10) − IMP_X(p0) on the 0.05 grid, p0 = TODAY_X's proxy point
+  (rounded, capped at 0.9; negative read as 0) and, as a robustness read, p0 = 0; **M-FIRST(b)** iff lower95 [Π_M − Π_U] >
+  +0.0005, **U-FIRST(b)** iff upper95 < −0.0005, else NOT DETECTED; undefined at k = 6 (no never-seen mon).
+
+**Status.** Registered before unblinding; computed by `unblind_t1.class_dose` from the frozen blinded table (which now
+also holds every world source's per-world arrays); anything decided after unblinding is labelled POST HOC. Every read is
+PROVISIONAL "at 15M" (§10.5).
+
 ---
 
 ## 13. Independent replication and the red team (owner, 2026-10-11: "a GIGO in the instrument is the most likely way this goes wrong")
@@ -1418,3 +1459,4 @@ beat the critic search with confidence where our best belief is worth ≈ 0.01.
 | 2026-10-12 | **AMENDMENT 2 (§12.13): STAGE (reveal count k, turn, material) becomes a registered dimension of Tier 1, with a k-stratified sample, per-stage arms and deterministic per-stage rules** (owner: "see how the values change based on what is revealed … this will tell us where improved determinization would make the most difference and where search already adds the most"; then the value of information against the stage of the game) | The registered 600 states per checkpoint stay; a k-stratified SUPPLEMENT (+200 end2, +220 prod) lifts every k bin to 160 states per checkpoint (±0.020 per bin, a 0.040 bin difference detectable at 80 % power, from (A)'s per-state SDs 0.14–0.20); frozen quartile buckets for turn and material; F+U, O−U and FN promoted into Tier 1 for every state; rules R-STAGE-VOI / -AXIS / -MECH (G = frequency × stakes) / -CLASS (two-point Shapley credit, M vs U) / -SEARCH (the per-stage S0 gate, replicated per checkpoint and Bonferroni-pooled) / -DOSE; the amendment states that the post-hoc read (A) and (C) fixed only edges, the merge rule, the sample size and the cost; Tier 1 re-priced from the rows' measured CPU (Phase 1 98 / 58 CPU-s per state) | reading k alone (the post-hoc read found material is the axis that survives adjustment); a fresh sample drawn by k from scratch (the registered states and their Phase 1 truth already exist); running every Tier-1 arm on the supplement (the dose / placebo / posterior arms answer other questions; ≈ +25 CPU-h); letting the post-hoc read choose thresholds | `hidden_info_by_reveal_count_2026-10-12/` (`by_reveal_count.json`, `costs.json`); §16.7; ledger 2026-10-12 |
 | 2026-10-12 | **The BELIEF-QUALITY DOSE-RESPONSE registered as a Tier-1 arm family (§6.9, DK)** (owner: "determinize like five competing worlds and toss in variable probability masses to the correct one … how far away are we from determinizing worlds improving all of search?") | K-world mixtures with weight p on the TRUE world: M8 (the 'belief mass' curve, ends = the banked reads), the literal M5 (K = 5, one playout per world, exact U-statistic), the placebos M5W (a random honest world) and M5X (the most wrong honest world); one set of playouts gives the whole p-curve; p* against the policy / the critic search at the same p / today's critic search, TODAY = the p-equivalent of the network-belief worlds in VALUE units, per stage; shape, content and over-confidence rules; zero playouts beyond Tier 1 | per-fact doses only (§6.4: a world is right about every fact only w.p. ≈ p^n, a different unit); hit-rate units for 'today's p' (the pilot's species belief hit 2× more true species and bought nothing); playing each p as its own arm (7 × the cost for the same information) | §6.9; §16.7 (the descriptive curve; its ends reproduce the pilot's banked reads to 1e-9) |
 | 2026-10-12 | **A MATURITY RE-RUN registered as a standing battery on the X26 deep run's own checkpoints (§12.13.7)** (owner: "I want to do this experiment again when we plateau so we know what that influences") | The per-stage VOI (A) and the dose-response (C) re-run at every 25M steps and at the plateau checkpoint, on ONE frozen 800-state bank drawn at the plateau (paired across checkpoints), the same seeds and scorers, a frozen builder; FULL (≈ 47 CPU-h) at the first and plateau anchors, LEAN (≈ 14) between, ≈ 150 CPU-h, no GPU; R-MATURITY reads the trajectory (does the gap shrink, does today's p rise toward p*, does the frontier move earlier); a verdict that reverses along the trajectory may not steer a multi-week commitment (§10.5) | re-drawing states per checkpoint (confounds maturity with the state distribution; kept as a LEAN secondary); a single plateau read (cannot say what maturity changes) | `design_value_discrimination.md` §13.10 (the stage-gated bootstrap that consumes the trajectory) |
+| 2026-10-13 | **AMENDMENT 3 (§12.14): PER-CLASS dose curves by re-weighting, registered before any Tier-1 outcome was unblinded** (owner via the orchestrator: "understand how p varies by what is revealed") | For each class with a reveal-only arm in Tier 1 (M: `F+M`; U: `F+U`): F+X worlds at weight p, F worlds at 1 − p, per state and action, from the SAME per-world outcomes (zero playouts; every p and both classes paired on one set of bootstrap draws); per class and stage: the curve, P-STAR (vs the policy / the critic at the same p / today's critic, rule 8), SHAPE, p-half, today's p as a labelled hit-rate PROXY (no per-class network-belief arm exists; FN is joint) beside FN's joint location on each curve, and CLASS-FIRST(b) = which class pays most for the next 0.10 of its own belief at stage b | per-class network-belief arms (FN-M, FN-U: new playouts, not registered in Tier 1); mixing a class arm with the TRUE world (§6.9's unit, which the DK family already reads); a hit-rate p as the primary unit (§6.9: the species belief hit 2× more and bought nothing) | §12.14; `hidden_info_tier1_2026-10-13/unblind_t1.class_dose` |

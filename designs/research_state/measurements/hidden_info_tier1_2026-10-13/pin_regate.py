@@ -4,9 +4,11 @@ searched side byte-equal observation frames at every one of its decisions up to 
 (everything that side was sent) vs the TRUE prefix replayed by the same binary. This is what makes "built at HEAD, played
 at the pin" sound (README §2): the HEAD gate and the pin engine agree on every accepted world.
 
-TEETH (planted, each must FAIL the same comparison): (a) every gender-PAD marker stripped (``M*`` → ``M``: the named
-gender kept, the turn-0 draw no longer spent — the dice shift whenever the slot drew); (b) a seen opponent mon's
-item replaced by another item (a world that is not log-consistent).
+TEETH (planted): REQUIRED — a seen opponent mon's REVEALED move replaced by Splash (play named it, so the searched side
+saw it: always observable; every plant must be caught). DESCRIPTIVE — (a) every gender-PAD marker stripped (``M*`` →
+``M``: the named gender kept, the turn-0 draw no longer spent; the dice shift whenever the slot drew); (b) a seen mon's
+item replaced by another item (caught only when the item acted or was named before the root: on the first read 18 of 19,
+the uncaught one an item that never showed, as it should be).
 
     run_pin.sh <cp>_pad 1 6 2h pin_regate.py --code Tnn [--states registered] [--n 60] [--out pin_regate_<cp>_<code>.json]
 """
@@ -54,6 +56,24 @@ def swap_seen_item(team: str, seen: set) -> str:
             done = True
         out.append("|".join(f))
     return "]".join(out)
+
+
+def swap_revealed_move(team: str, revealed: dict):
+    """A seen mon's REVEALED move (play named it, so the searched side saw it) replaced by Splash: always observable.
+    None when no seen mon has a revealed move held under that id in the world's set."""
+    out, done = [], False
+    for e in team.split("]"):
+        f = e.split("|")
+        sid = "".join(ch for ch in (f[1] or f[0]).lower() if ch.isalnum())
+        mv = f[4].split(",") if len(f) > 4 else []
+        rev = set(revealed.get(sid, []))
+        hit = next((i for i, m in enumerate(mv) if m in rev and m != "splash"), None)
+        if not done and hit is not None:
+            mv[hit] = "splash"
+            f[4] = ",".join(mv)
+            done = True
+        out.append("|".join(f))
+    return "]".join(out) if done else None
 
 
 def main():
@@ -104,6 +124,10 @@ def main():
             if j == 0:
                 jobs.append(rec(swap_seen_item(tw, set(w["revealed"])), cw, f"{did}#w{j}#item"))
                 kinds.append(("item", j))
+                mv = swap_revealed_move(tw, w["revealed"])
+                if mv is not None:
+                    jobs.append(rec(mv, cw, f"{did}#w{j}#move"))
+                    kinds.append(("move", j))
         out = run_core(jobs, trackers=True, obs=True)
         ref = viewer_view(out[0], viewer, d["n"]) if out[0]["ok"] else None
         if ref is None:
@@ -119,10 +143,13 @@ def main():
                     if len(res["examples"]) < 10:
                         res["examples"].append(f"{did} world {kind[1]}: {'refused ' + str(r.get('error'))[:200] if not r['ok'] else 'differs'}")
             else:
-                key = "plant_strip" if kind[0] == "strip" else "plant_item"
+                key = f"plant_{kind[0]}"
+                res.setdefault(key, {"tried": 0, "caught": 0})
                 res[key]["tried"] += 1
                 res[key]["caught"] += int(not same)
-    res["verdict"] = "PASS" if res["worlds"] and res["fail"] == 0 and res["plant_item"]["caught"] == res["plant_item"]["tried"] else "FAIL"
+    mv = res.get("plant_move", {"tried": 0, "caught": 0})
+    res["verdict"] = "PASS" if (res["worlds"] and res["fail"] == 0 and mv["tried"] and mv["caught"] == mv["tried"]) \
+        else "FAIL"
     s = json.dumps(res, indent=1, sort_keys=True)
     print(s)
     if a.out:

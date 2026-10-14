@@ -749,6 +749,122 @@ def natural_mix(fr_all: Dict[str, Frame], name: Dict[str, str]) -> dict:
     return out
 
 
+# ------------------------------------------------------------------------------------------------
+# Amendment 3 (§12.14, owner 2026-10-13): PER-CLASS DOSE CURVES by re-weighting, zero extra playouts
+# ------------------------------------------------------------------------------------------------
+
+CLASSES = {"M": "F+M", "U": "F+U"}          # the classes with a reveal-only-X arm in Tier 1 (I, A, S are Tier 2)
+DELTA = 0.10
+
+
+def class_curves(F: Frame, name: Dict[str, str], X: str):
+    """Per state, IMP of the X-mixture on the 0.05 grid: score_p(a) = p·mean(F+X worlds) + (1 − p)·mean(F worlds),
+    for LEAF-K8, TRUNC-4-K8 and CRITIC (the per-world critic re-weighted the same way). NaN rows where either arm is
+    missing. Returns {scorer: [n, 21]}."""
+    from score_blind import imp_of
+
+    fc, xc = name["F"], name[CLASSES[X]]
+    out = {z: np.full((F.n, len(PF)), np.nan) for z in ("LEAF-K8", "TRUNC-4-K8", "CRITIC")}
+    for i, r in enumerate(F.recs):
+        wf, wx = r["w"].get(fc), r["w"].get(xc)
+        if wf is None or wx is None:
+            continue
+        for z, k in (("LEAF-K8", "W"), ("TRUNC-4-K8", "X4"), ("CRITIC", "crit")):
+            a, b = wx[k].astype(np.float64).mean(1), wf[k].astype(np.float64).mean(1)
+            out[z][i] = imp_of(PF[:, None] * a[None, :] + (1 - PF)[:, None] * b[None, :], r["Tp"])
+    return out
+
+
+def hit_proxy(F: Frame, name: Dict[str, str], X: str, sel: np.ndarray) -> dict:
+    """DESCRIPTIVE 'today's p' proxy (Amendment 3): the share of the honest-to-true gap in hit-rate units that the
+    network's belief (FN) closes for class X: (hit_FN − hit_F) / (1 − hit_F); M = the seen mons' unrevealed true moves
+    held, U = never-seen slots holding a true never-seen species. Labelled a PROXY: hit rates overstate partial
+    correctness (§6.9)."""
+    j = (0, 1) if X == "M" else (2, 3)
+    fc, nc = name["F"], name["FN"]
+    hf = np.array([r["hits"].get(fc, [0, 0, 0, 0]) for r in F.recs], dtype=np.float64)
+    hn = np.array([r["hits"].get(nc, [0, 0, 0, 0]) for r in F.recs], dtype=np.float64)
+    m = sel & F.ok(fc, nc) & (hf[:, j[1]] > 0) & (hn[:, j[1]] > 0)
+    rf = F.bt.ratio(hf[:, j[0]], hf[:, j[1]], m)
+    rn = F.bt.ratio(hn[:, j[0]], hn[:, j[1]], m)
+    p = (rn[0] - rf[0]) / (1 - rf[0]) if rf[0] < 1 else float("nan")
+    pv = (rn[1] - rf[1]) / (1 - rf[1])
+    return {"n": int(m.sum()), "hit_F": S(*rf), "hit_FN": S(*rn), "p_proxy": S(p, pv)}
+
+
+def class_cell(F: Frame, name: Dict[str, str], X: str, cur: dict, sel: np.ndarray) -> dict:
+    L, C = cur["LEAF-K8"], cur["CRITIC"]
+    m = sel & np.isfinite(L[:, 0])
+    res = {"n": int(m.sum())}
+    if m.sum() < 20:
+        return res
+    gi7 = P7_IN_PF
+    pts = {}
+    for gi, p in zip(gi7, P7):
+        pts[p] = {"leaf": F.bt.mean(L[:, gi], m), "crit": F.bt.mean(C[:, gi], m),
+                  "leaf_minus_crit": F.bt.mean(L[:, gi] - C[:, gi], m),
+                  "leaf_minus_crit0": F.bt.mean(L[:, gi] - C[:, 0], m)}
+    res["curve"] = {f"{p:g}": {k: S(*v) for k, v in d.items()} for p, d in pts.items()}
+
+    def pstar(k):
+        i = persistent_first(np.array([ST.gt(lo(pts[p][k][1]), 0.0005) for p in P7]))
+        return None if i is None else float(P7[i])
+
+    res["P-STAR"] = {"vs_policy": pstar("leaf"), "vs_critic_same_p": pstar("leaf_minus_crit"),
+                     "vs_critic_today": pstar("leaf_minus_crit0")}
+    d2 = F.bt.mean(L[:, 10] - 0.5 * (L[:, 0] + L[:, 20]), m)
+    res["SHAPE"] = {"delta2": S(*d2), "verdict": "CONCAVE" if ST.gt(lo(d2[1]), 0.0005) else
+                    "CONVEX" if ST.lt(hi(d2[1]), -0.0005) else "LINEAR"}
+    full = np.array([F.bt.mean(L[:, i], m)[0] for i in range(len(PF))])
+    half = full[0] + 0.5 * (full[-1] - full[0])
+    res["p_half"] = next((float(PF[i]) for i in range(len(PF)) if full[i] >= half), None)
+    hp = hit_proxy(F, name, X, m)
+    res["TODAY_proxy"] = hp
+    fe, fv = F.bt.mean(F.imp(name["FN"]), m & F.ok(name["FN"]))
+    res["FN_joint_p_eq_on_this_curve"] = {"p_eq": eq_p(full, fe, PF),
+                                          "note": "FN draws species AND moves from the belief: a JOINT read, not X's"}
+    p0 = hp["p_proxy"]["mean"]
+    p0 = 0.0 if (p0 is None or not np.isfinite(p0) or p0 < 0) else min(0.9, p0)
+    i0 = int(round(p0 / 0.05))
+    res["PI"] = {"from_today_proxy": S(*F.bt.mean(L[:, i0 + 2] - L[:, i0], m)), "p0": round(i0 * 0.05, 2),
+                 "from_zero": S(*F.bt.mean(L[:, 2] - L[:, 0], m))}
+    res["_PI"] = (F.bt.mean(L[:, i0 + 2] - L[:, i0], m), F.bt.mean(L[:, 2] - L[:, 0], m))
+    return res
+
+
+def class_dose(fr_all: Dict[str, Frame], name: Dict[str, str]) -> dict:
+    P = fr_all["pooled"]
+    curves = {X: class_curves(P, name, X) for X in CLASSES}
+    out = {"classes_run": list(CLASSES), "classes_not_in_tier1": ["I", "A", "S"], "all": {}, "per_cp": {}, "axes": {}}
+    for X in CLASSES:
+        out["all"][X] = class_cell(P, name, X, curves[X], np.ones(P.n, bool))
+        out["per_cp"][X] = {}
+        for cp in T.CPS:
+            out["per_cp"][X][cp] = class_cell(P, name, X, curves[X], P.sel(lambda r, cp=cp: r["cp"] == cp))
+    for ax, (fld, bins) in STAGE_AXES.items():
+        cells = {}
+        for b in bins:
+            sel = P.sel(lambda r, b=b: r[fld] == b)
+            cells[b] = {X: class_cell(P, name, X, curves[X], sel) for X in CLASSES}
+            # which class pays most for the next 0.10 of ITS belief here (paired: the curves share F's worlds)
+            if all("_PI" in cells[b][X] for X in CLASSES) and not (ax == "k" and b == "6"):
+                verdict = {}
+                for which, idx in (("from_today_proxy", 0), ("from_zero", 1)):
+                    d = cells[b]["M"]["_PI"][idx][1] - cells[b]["U"]["_PI"][idx][1]
+                    e = cells[b]["M"]["_PI"][idx][0] - cells[b]["U"]["_PI"][idx][0]
+                    v = "M-FIRST" if ST.gt(lo(d), 0.0005) else "U-FIRST" if ST.lt(hi(d), -0.0005) else "NOT DETECTED"
+                    verdict[which] = {"PI_M_minus_PI_U": S(e, d), "verdict": v}
+                cells[b]["CLASS-FIRST"] = verdict
+            for X in CLASSES:
+                cells[b][X].pop("_PI", None)
+        out["axes"][ax] = cells
+    for X in CLASSES:
+        out["all"][X].pop("_PI", None)
+        for cp in T.CPS:
+            out["per_cp"][X][cp].pop("_PI", None)
+    return out
+
+
 def root_choice_sensitivity(fr_reg: Dict[str, Frame], name: Dict[str, str]) -> dict:
     """README §6 item 9: G and the M / U shares with the states whose opponent root-turn choice is RECORDED before the
     searched side's (Phase 1 ``other_open`` false) dropped."""
@@ -785,6 +901,7 @@ def main():
            "R-STAGE-VOI": stage_voi(fr_all, name), "R-STAGE-AXIS": stage_axis(fr_all, name),
            "R-STAGE-MECH": stage_mech(fr_all, name), "R-STAGE-CLASS": stage_class(fr_all, name),
            "R-STAGE-SEARCH": stage_search(fr_all, name), "R-DOSE": dose(fr_all, name),
+           "CLASS-DOSE (Amendment 3)": class_dose(fr_all, name),
            "per_cp_shares": {cp: {X: {k: v for k, v in d.items() if not k.startswith("_")}
                                   for X, d in gap_and_shares(fr_reg[cp], name)["shares"].items()}
                              for cp in T.CPS},

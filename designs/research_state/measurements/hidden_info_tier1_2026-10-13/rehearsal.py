@@ -24,6 +24,10 @@ HE_MAP = {"HE-TRUNC-1-K4": "TRUNC-1-K4", "HE-TRUNC-1-K8": "TRUNC-1-K8", "HE-TRUN
 
 
 def main():
+    import t1_data as D
+
+    D.coded_dirs = lambda cp: []          # never load a real Tier-1 arm output (they may exist by now)
+    D.he_rows = lambda cp, code: {}
     tab = {cp: SB.score_cp(cp, partial=True) for cp in T.CPS}
     name = {"O": "O", "P": "P", "HE@O": "H8e895870", "HE@P": "H8503aeeb", "HE@F": "H528ede2b"}
     for i, lab in enumerate(T.ARMS):
@@ -38,6 +42,8 @@ def main():
                 d = dict(r["dk"]["P"])
                 d.update({f"M5X|{z}": d[f"M5W|{z}"] for z in SB.DK_SCORERS})
                 r["dk"][name[lab]] = d
+                r["w"][name[lab]] = r["w"]["P"]
+                r["hits"][name[lab]] = [int(x) for x in rng.integers(1, 9, size=4)]
             for h in ("HE@O", "HE@P", "HE@F"):
                 base = r["src"]["O" if h == "HE@O" else "P"]
                 r["src"][name[h]] = {"ok": True, "imp": {k: base["imp"][v] for k, v in HE_MAP.items()},
@@ -57,6 +63,9 @@ def main():
     out["determinization_first"] = {ax: v["DETERMINIZATION-FIRST"] for ax, v in dz["axes"].items()}
     out["natural_mix"] = U.natural_mix(fr_all, name)
     out["root_choice_dropped"] = U.root_choice_sensitivity(fr_reg, name)["states_dropped"]
+    cd = U.class_dose(fr_all, name)
+    out["class_dose_k"] = {b: v.get("CLASS-FIRST") for b, v in cd["axes"]["k"].items()}
+    out["class_dose_all_M"] = {k: cd["all"]["M"][k] for k in ("P-STAR", "SHAPE", "p_half", "TODAY_proxy")}
     U.describe(fr_reg, name)
     print(json.dumps(out, indent=1, sort_keys=True, default=str)[:6000])
     print("REHEARSAL OK (every arm is a copy of P: the numbers mean nothing)")

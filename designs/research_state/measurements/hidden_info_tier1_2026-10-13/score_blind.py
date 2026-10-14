@@ -72,6 +72,24 @@ def dk_family(S1: dict, Sb: dict, worst: int | None) -> dict:
     return out
 
 
+def fact_hits(wr: dict) -> list:
+    """Amendment 3's descriptive belief proxy, from the builder's provenance (no outcome), summed over the worlds:
+    [seen mons' unrevealed TRUE moves held, their slots, never-seen slots holding a TRUE never-seen species, never-seen
+    slots]."""
+    mh = ms = sh = sn = 0
+    for fl in wr.get("facts") or []:
+        for f in fl:
+            if f.get("seen"):
+                mv = f.get("moves", {})
+                if "true_hits" in mv:
+                    mh += int(mv["true_hits"])
+                    ms += int(mv.get("slots", 0))
+            else:
+                sn += 1
+                sh += int(bool(f.get("species_fact", {}).get("match")))
+    return [mh, ms, sh, sn]
+
+
 def score_cp(cp: str, partial: bool) -> dict:
     meta = D.stage_meta(cp)
     r1 = {**D.phase1_rows(cp, "registered"), **D.phase1_rows(cp, "supp")}
@@ -98,7 +116,7 @@ def score_cp(cp: str, partial: bool) -> dict:
         rec = {k: m[k] for k in ("set", "battle", "k", "turn", "material", "k_bin", "turn_bin", "mat_bin", "outcome",
                                  "opp_class", "cycle_opp")}
         rec.update({"id": did, "cp": cp, "n_legal": len(S1["acts"]), "upper": float(Tv.max() - Tv[t1]), "src": {},
-                    "dk": {}, "other_open": bool(r.get("other_open"))})
+                    "dk": {}, "w": {}, "hits": {}, "other_open": bool(r.get("other_open"))})
 
         def put(name, vals):
             rec["src"][name] = {"ok": True,
@@ -140,8 +158,15 @@ def score_cp(cp: str, partial: bool) -> dict:
             corr = wr.get("correct")
             worst = int(np.argmin(corr)) if corr else None              # ties: the lowest world index
             world_sources.append((c, Sc, worst))
+            rec["hits"][c] = fact_hits(wr)
+        ordr = np.array(S1["order"])
+        rec["Tp"] = S1["T"][ordr]
         for name, Sb, worst in world_sources:
             rec["dk"][name] = {k: np.asarray(v, dtype=np.float64) for k, v in dk_family(S1, Sb, worst).items()}
+            # Amendment 3 (§12.14): every world source's per-world arrays in POLICY order, so the per-class dose
+            # curves (two arms' worlds re-weighted) are computed after unblinding from this frozen table
+            rec["w"][name] = {"W": Sb["W"][ordr].astype(np.float32), "X4": Sb["Xd"][4][ordr].astype(np.float32),
+                              "crit": Sb["crit"][ordr].astype(np.float32)}
         for h in D.HE_CODES:
             rh = he[h].get(did)
             if rh is None:

@@ -126,6 +126,16 @@ knows the codes; the blinding protects the frozen scripts, rules and table, not 
    choice by SLOT (the world's move there), while O plays the true choice. Counted and read as a sensitivity (those
    states dropped).
 
+10. **Amendment 3 (§12.14, registered 2026-10-13 before any outcome was unblinded; arm outputs for part of the states
+    existed, unread):** per-class dose curves for M and U by re-weighting F+X and F worlds (`unblind_t1.class_dose`; the
+    blinded table now also stores every world source's per-world arrays in policy order and the builder's per-state hit
+    counts, `score_blind.fact_hits`). TODAY per class is a labelled hit-rate PROXY; CLASS-FIRST(b) compares Π_M and Π_U
+    from the proxy point and from p = 0.
+11. **Operations (no read).** `queue_play.py` keeps the playout workers busy in the registered priority order;
+    `build_chain.sh` / `build_after.sh` run one world builder at a time (3 workers beside the live GPU run: 1 builder +
+    2 playout shards); `pin_regate.py`'s REQUIRED tooth is a seen mon's REVEALED move replaced (always observable; the
+    item swap is descriptive: an item that never acted is invisible, 18 of 19 caught on the first read).
+
 ## 7. Results
 
 (filled when read)
