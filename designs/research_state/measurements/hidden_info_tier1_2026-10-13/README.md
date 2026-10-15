@@ -136,6 +136,65 @@ knows the codes; the blinding protects the frozen scripts, rules and table, not 
     2 playout shards); `pin_regate.py`'s REQUIRED tooth is a seen mon's REVEALED move replaced (always observable; the
     item swap is descriptive: an item that never acted is invisible, 18 of 19 caught on the first read).
 
-## 7. Results
+## 7. Results (read 2026-10-15; the table frozen at `c6f71d9a`, sha `fc3aced3…`, then unblinded)
 
-(filled when read)
+Full tables: [`result_t1.md`](result_t1.md) (rendered from `result_t1.json`); the key: [`arm_key.json`](arm_key.json) (its sha256
+matches the sealed `arm_key.sha256`). Every read is PROVISIONAL "at 15M, current architecture" (§10.5 of the registration)
+and COMPUTED, not replicated: R-REPLICATE (the blind replica) is a third party's comparison.
+
+**In plain language.** Hidden information about the opponent's team costs honest search 7 points of win probability per
+decision, as the pilot said, and the fully honest builder (which also hides items, abilities and spreads) did not make
+the gap larger. Most of it is the opponent's NEVER-SEEN Pokémon, not the seen ones' hidden moves: telling the search the
+never-seen Pokémon closes a third of the gap and hiding them opens four fifths of it, against an eighth and two fifths for
+the seen Pokémon's moves. By the registered rules **"the moves are THE binding constraint" is REFUTED** (rule R3: the
+never-seen class dominates on both sides). The moves still matter (a confident wrong move set HURTS; the move dose
+helps a little), and the Bayes posterior of our own team pool recovers 80 % of the gap (it nearly identifies the team, which
+the ladder would not allow). Foul Play's hand evaluator is no better than our critic in honest worlds. No stage of the game
+has an honest search that clearly beats the critic on both checkpoints.
+
+**Validity (no outcome):** the cross-commit identity (`identity_V_oracle.json`) PASS; every world re-gated at the engine that
+played it (`pin_regate_*.json`: 16,800 worlds, 0 failures, every planted revealed-move swap caught); R-GIGO for the Tier-1
+worlds (`world_audit.json`) PASS: 0 provenance / legality violations, every leak and dose check |z| ≤ 1.4; the k = 6
+identities F+U ≡ F and O−U ≡ O hold on every state (0 of 276 / 320 differ); the hand-eval re-plays' critic scorers equal
+the arms' own (0 of 1,097 / 1,200 differ). Exclusions (states the honest builder cannot fit): F 8.8 % (< §6.1's 10 %),
+MAP100 27.6 %, POOLSETS 5.1 %, O−M / POOL 0. Size rules (§12.10, §12.13.2): not triggered (s_M / n_M half-widths 0.133 /
+0.113; G_F per k bin ≤ 0.024).
+
+| registered rule | verdict | the numbers (pooled end2 + prod, 95 %) |
+|---|---|---|
+| **R-MOVES** (§12.3) | **MOVES-REFUTED (R3)** | G = IMP_O − IMP_F **+0.070** [+0.060, +0.081]; s_M **0.13** [−0.02, 0.25], n_M **0.42** [0.31, 0.54]; s_U 0.31 [0.18, 0.43], n_U **0.82** [0.70, 0.96]; s_U − s_M +0.19 [+0.03, +0.35], n_U − n_M +0.41 [+0.26, +0.55] (R3); B2, B6 (D90 − F +0.011 [+0.001, +0.021]; slope over p ∈ {0, .5, .9, 1} +0.010 [+0.001, +0.019]) and B7 (D90 − W90 +0.025 [+0.013, +0.036]; W90 − F **−0.013** [−0.024, −0.003]) hold; B1, B3, B4, B5, B8 fail |
+| R-RIVALS U (§12.4) | **U-SHARED** | B2, B4, B5 (vs M), B8 hold (F+U − F end2 +0.015 [+0.001, +0.030], prod +0.029 [+0.015, +0.043]; O − O−U +0.046 / +0.066); B3 fails (s_U point 0.31) |
+| R-RECOVER (§12.5) | **BELIEF-RECOVERABLE (on this distribution)**; PRIOR-MISMATCH no; HONEST-SHARPENING-HELPS no; p½ none | r_POOL **0.80** [0.73, 0.87]; r_POOLSETS −0.02 [−0.19, 0.13]; MAP100 − F −0.002 [−0.014, +0.009]; r_D50 0.11, r_D90 0.16, r_F+M 0.13 |
+| R-EVAL (§12.6) | **not EVALUATOR-BOUND** (F and P); EVALUATOR-NOT-BINDING not shown; **INFORMATION-BOUND (support)** | F: HE-TRUNC-4-K8 − TRUNC-4-K8 +0.007 [−0.001, +0.016], HE-1PLY − CRITIC −0.002 [−0.011, +0.006]; P: +0.003 / −0.005; g_HE +0.028 [+0.018, +0.037] vs g_CRIT +0.037, ratio 0.75 [0.52, 1.06] |
+| NON-ADDITIVE | no | Σ s (M + U) 0.45 [0.22, 0.65] |
+| CONDITION (§10.4, partial) | moot (no class reaches s ≥ 0.5) | s_M by opponent class / phase 0.08–0.23 |
+| V8 guard (§10.4) | UNRESOLVED | needs the trajectory arm (Tier 3) |
+| **R-STAGE-VOI** (§12.13.4) | k **TREND-DOWN**, turn **TREND-DOWN**, material **TREND-UP** (each replicated in sign) | G by k 1–2 / 3 / 4 / 5 / 6: +0.087 / +0.093 / +0.076 / +0.061 / +0.025; by turn ≤ 7 … ≥ 22: +0.095 / +0.078 / +0.069 / +0.033 |
+| R-STAGE-AXIS | **turn CARRIES**; k and material do not once the others are in | partial slopes per SD: turn −0.014 [−0.024, −0.003], k −0.010 [−0.023, +0.003], material +0.003 [−0.009, +0.014] |
+| R-STAGE-MECH | NOT DETECTED on all three (Δc clear, Δs not bounded within ±0.04) | k: c 0.78 → 0.42, s 0.116 → 0.103 (Δs +0.013 [−0.021, +0.045]); split Δc·s̄ +0.039 vs c̄·Δs +0.008: frequency carries the difference descriptively |
+| R-STAGE-CLASS | **U-LED** at k = 1–2, 3, 4 and turn ≤ 7, 8–14; SIDES-DISAGREE at k = 5 and every material bucket; NOT DETECTED at turn ≥ 15 | two-point Shapley φ (pooled all states): see the CLASS table in `result_t1.md`; on the registered 600: φ_M = ½(σ + ν) = 0.019, φ_U = 0.040 (of G 0.070) |
+| **R-STAGE-SEARCH** | **FRONTIER EMPTY**; k = 6 GATE-WEAK (pooled 95 % only) | k = 6: TRUNC-4-K8 − CRITIC +0.024 [+0.006, +0.044] pooled; per checkpoint n 145 / 131 (< 150 after exclusions) and bounds straddle 0 |
+| R-DOSE (§6.9, M8 on F) | CONCAVE; CONTENT-MATTERS; CRITIC-INFO-LIMITED; OVERCONFIDENCE-COSTS no; P-STAR 0.1 (all three comparators); TODAY(FN) 0.009 [≤ 0.032]; WITHIN-REACH; DETERMINIZATION-FIRST k = 4, turn 15–21 | **read with the post-hoc FINDING below: the step to p = 0.1 is TIE-BREAKING** |
+| Amendment 3 (§12.14) | M: P-STAR vs policy 0.75, vs critic search NONE, LINEAR; U: P-STAR 0.2 / 0.35, CONCAVE; TODAY proxies M 0.011, U 0.12; CLASS-FIRST from 0: U-FIRST at k 1–2, 3, 4 and alive 10–11, else NOT DETECTED | M curve +0.001 (p 0) … +0.013 (p 0.75–1); U +0.002 … +0.031 (0.75) |
+
+**POST-HOC FINDING (`posthoc_tiebreak.py`, `posthoc_tiebreak.json`; read after unblinding, descriptive).** An 8-world
+LEAF-K8 score is a mean of 8 win / loss / draw outcomes, so the honest argmax is TIED in **60 %** [58 %, 63 %] of states and
+the registered tie rule picks the policy's first. ANY positive weight on a second component breaks those ties by it: the
+M8 curve jumps from +0.002 (p = 0) to **+0.021 at p = 0.001** and is flat to p = 0.1 (+0.0004 more), then rises (+0.032 at
+0.2, +0.053 at 0.35, +0.062 at 0.5, +0.072 at 1). So the registered "P-STAR = 0.1", "TODAY = 0.009" and "WITHIN-REACH" sit on a
+lexicographic tie-break step, not on a dose: beyond the step the curve needs **p ≈ 0.2–0.35** of weight on the TRUE world
+before it rises, half its further rise by p ≈ 0.30, and the network's own belief (FN, +0.006 ≈ F's +0.006) does not even
+reach the step. The class curves show the same effect (U +0.007 at 0.001; M none) and rise only from p ≈ 0.2 (U) / 0.75 (M).
+The pilot's descriptive curve (§16.7 of the registration) carries the same step.
+
+**Other FINDINGS.** (1) FN, the network-belief worlds on the honest base, buy nothing at LEAF-K8 (+0.006 vs F +0.006; its
+4-turn leaf +0.013 vs +0.005): the network's move belief hits 0.513 of the hidden moves vs Smogon's 0.508; its species belief
+0.172 vs 0.058 of the never-seen species, and that buys no value either. (2) The fully honest gap equals the pilot's (P, the
+v2 builder that told items / abilities / spreads true: IMP_P +0.009 vs IMP_F +0.006): items, abilities and spreads add
+≈ 0.003, far less than registered prediction (+0.005 to +0.02). (3) POOL's 0.80 is team IDENTIFICATION within our 719-team
+pool, which a ladder opponent does not offer; POOLSETS (the pool's per-species sets) recovers nothing, so the Smogon prior's
+per-species mismatch is not the gap. (4) A confidently WRONG move set (W90) costs −0.013 [−0.024, −0.003] against F.
+(5) k = 6 cannot be GATE-OPEN as registered: after F's exclusions its per-checkpoint n is 145 / 131 < 150.
+(6) Opponent root-turn choice recorded before the root: 8 registered states; dropping them changes nothing (G +0.070, s_M
+0.13, n_M 0.41). (7) Operations: the run held 3 processes (1 world builder + 2 playout shards) for ~24 h, within the brief's
+3-worker allowance but above root rule 5b's "≤ 2 heavy jobs"; the GPU lease never read FREE, so the run never widened.

@@ -25044,3 +25044,74 @@ same record; the readers flag them by the disagreement, not by name.
 
 Tag: **GIGO FIX · provenance only · class fix (every `--model` load re-applies the resume-immutable attributes) + a throwing guard + known-bad readers · 0 affected conclusions** ·
 evidence: `src/agents/model/reveal_provenance_test.py`, `designs/CHANGELOG.md` (2026-10-15), `designs/endstate/design_information_levers.md` §6
+
+### 2026-10-13 · REGISTRATION + BUILT · **HIDDEN-INFO STUDY TIER 1: the BLINDED read committed before any arm output (every registered rule of §12.3–§12.7 and §12.13.4 as code, `unblind_t1.py`), the arm key SEALED (its sha256 committed, the key kept in the archive), the stage CENSUS and the k-stratified SUPPLEMENT drawn (+200 end2, +220 prod, every k bin filled under the registered rule), FN / POOLSETS / POOL world sources built, and a cross-commit identity PASS (worlds built at HEAD, played at PAD pins)**
+
+What was built (`designs/research_state/measurements/hidden_info_tier1_2026-10-13/`, shipped `67bee8d6`): the read (`t1_data.py`,
+`t1_stats.py` — battle-clustered bootstrap, pooled WITHIN each checkpoint per §6.3, rule 8 —, `score_blind.py`, `unblind_t1.py`), the
+harness (`build_worlds.py` at HEAD on the information-lever builder; `play_worlds.py` = the pilot's Phase 2 driver at a PAD PIN = the
+checkpoint's pin + the code of `98146ddb`, the engine's gender draw pad, end2 `67f3f7fa` / prod `9a698801`), the census (teeth: 0
+mismatches on the registered 600) and the supplement bank (gate ①: 0 failures). FN = F with species and move draws from the network's
+own belief (the pilot's C′ read at the pin; F's seen-mon screen reproduced exactly even in a fresh process); POOLSETS = F with the
+training pool's per-species sets; POOL = the pool teams consistent with the observation, gated (every candidate gated, uniform among
+passing ones). Validity before any outcome: `oracle` worlds through the HEAD builder played at the pad pins reproduce Phase 1 exactly
+(12 + 12 states, 0 outcome mismatches). README §6 lists every reading of an ambiguous rule fixed before outputs (B1 needs R-REPLICATE,
+B5 / R3 / NON-ADDITIVE on M and U only, B6's slope on the Tier-1 dose grid, R-EVAL read in F and P separately, …).
+
+Tag: **REGISTRATION · blinded read before outputs · sealed key · no outcome read** · evidence: the folder's README §1–§6, `identity_V_oracle.json`, `census_<cp>.json`, `supplement_<cp>.json`
+
+### 2026-10-13 · REGISTRATION · **HIDDEN-INFO STUDY AMENDMENT 3 (§12.14): PER-CLASS dose curves by re-weighting (owner: "understand how p varies by what is revealed"), registered before any Tier-1 outcome was unblinded: for M (F+M) and U (F+U), F+X worlds at weight p and F worlds at 1 − p from the same per-world outcomes, per class and stage the curve, P-STAR (rule 8), SHAPE, p-half, today's p as a labelled hit-rate PROXY (FN is joint) and CLASS-FIRST(b); zero extra playouts**
+
+Disclosed: arm outputs for part of the states existed on disk (unread; no blinded table frozen). I, A, S have no reveal-only arm in
+Tier 1 and get no curve. Shipped `f01b9e51` with a Decision row in `design_hidden_info_binding.md`.
+
+Tag: **REGISTRATION · reads only · before unblinding** · evidence: `design_hidden_info_binding.md` §12.14; `unblind_t1.class_dose`
+
+### 2026-10-15 · MEASUREMENT (MAJOR) · **HIDDEN-INFO STUDY TIER 1: "the opponent's hidden MOVES are THE binding constraint on search" is REFUTED (registered rule R3: the NEVER-SEEN Pokémon dominate on both sufficiency and necessity); on the FULLY honest builder the value of hidden information is +0.070 [+0.060, +0.081] (the pilot's size); the network's belief worlds buy nothing; our closed team pool's posterior recovers 0.80; Foul Play's hand evaluator is no better than our critic; no stage's honest search clears the gate; POST-HOC: the dose curves' first step is tie-breaking**
+
+Design: `design_hidden_info_binding.md` §6, §12, §12.13 (Amendment 2), §12.14 (Amendment 3); read §16.8. Checkpoints `rb_es_end2_s2001`
+(pin `62085750`) and `rb_es_prod_s2001` (`95d014fa`), 15M; the registered 600 + the supplement per checkpoint; 12 coded arms (F, F+M, O−M,
+F+U, O−U, FN on all states; D50, D90, W90, MAP100, POOLSETS, POOL on the registered 600), the supplement's truth, the hand-eval re-plays
+(HE@O / HE@P / HE@F; identity vs the archived rows 100 % on every O and P run). The blinded table was frozen (`c6f71d9a`, sha `fc3aced3…`)
+before the key was opened; the size rules came back clear (s_M / n_M half-widths 0.133 / 0.113; G_F per k bin ≤ 0.024).
+
+**R-GIGO for the Tier-1 worlds: PASS** — 16,800 worlds re-gated at the PAD pin that played them (0 failures, every planted revealed-move
+swap caught); 0 provenance and 0 legality violations over every stored world; every leak / dose check |z| ≤ 1.4; the k = 6 identities
+(F+U ≡ F, O−U ≡ O) exact on every state. Exclusions: F 8.8 % (< §6.1's 10 %), MAP100 27.6 %, POOLSETS 5.1 %, O−M / POOL 0.
+
+**Verdicts (pooled, 95 %):**
+- **R-MOVES: MOVES-REFUTED (R3).** G +0.070 [+0.060, +0.081]; s_M 0.13 [−0.02, 0.25], n_M 0.42 [0.31, 0.54]; s_U 0.31 [0.18, 0.43], n_U 0.82
+  [0.70, 0.96]; s_U − s_M +0.19 [+0.03, +0.35], n_U − n_M +0.41 [+0.26, +0.55]. B2, B6 (D90 − F +0.011 [+0.001, +0.021], slope +0.010
+  [+0.001, +0.019]) and B7 (D90 − W90 +0.025 [+0.013, +0.036]; W90 − F −0.013 [−0.024, −0.003]) hold; B1 (no replication), B3, B4, B5, B8 fail.
+- **R-RIVALS U: U-SHARED** (B3 fails: s_U 0.31). **R-RECOVER: BELIEF-RECOVERABLE on this distribution** (r_POOL 0.80 [0.73, 0.87]);
+  PRIOR-MISMATCH no (r_POOLSETS −0.02); HONEST-SHARPENING-HELPS no (MAP100 − F −0.002); p½ none (r_D90 0.16).
+- **R-EVAL: not EVALUATOR-BOUND** (F: HE − critic +0.007 [−0.001, +0.016] four-turn, −0.002 [−0.011, +0.006] one ply; P alike);
+  EVALUATOR-NOT-BINDING not shown; **INFORMATION-BOUND support** (g_HE / g_CRIT 0.75 [0.52, 1.06]).
+- **Stage:** R-STAGE-VOI TREND-DOWN (k, turn), TREND-UP (material left), each replicated in sign; R-STAGE-AXIS: the TURN carries;
+  R-STAGE-MECH NOT DETECTED (Δc clear, k: 0.78 → 0.42; Δs +0.013 [−0.021, +0.045] not inside ±0.04); R-STAGE-CLASS U-LED at k ≤ 4 and
+  turn ≤ 14, SIDES-DISAGREE at k = 5 and every material bucket; **R-STAGE-SEARCH: FRONTIER EMPTY** (k = 6 GATE-WEAK: +0.024 [+0.006, +0.044]
+  pooled; per checkpoint n 145 / 131 < 150).
+- **R-DOSE (M8 on F):** CONCAVE, CONTENT-MATTERS (+0.028 [+0.024, +0.032] at 0.35), CRITIC-INFO-LIMITED (+0.014 [+0.008, +0.021]),
+  OVERCONFIDENCE-COSTS not shown; P-STAR 0.1, TODAY(FN) 0.009 [≤ 0.032], WITHIN-REACH — qualified by the finding below.
+- **Amendment 3:** M rises only at p ≥ 0.75 and never beats the critic search (LINEAR); U: P-STAR 0.2 (policy) / 0.35 (critic), CONCAVE;
+  TODAY proxies (hit-rate units) M 0.011, U 0.12; CLASS-FIRST (from p = 0) U-FIRST at k ≤ 4.
+- V8 guard UNRESOLVED (needs the trajectory, Tier 3); CONDITION moot (no class reaches s ≥ 0.5).
+
+**FINDINGS (standing rule 7).**
+1. **POST HOC: the dose curves' first step is TIE-BREAKING.** The honest 8-world LEAF-K8 argmax is tied in 60 % [58, 63] of states; any
+   positive weight on a second component breaks the ties by it: M8 jumps +0.002 → +0.021 at p = 0.001 and is flat to 0.1. The registered
+   P-STAR = 0.1 / TODAY = 0.009 / WITHIN-REACH sit on that step; beyond it a search needs ≈ 0.2–0.35 of weight on the TRUE world. The pilot's
+   descriptive curve (2026-10-12 entry) carries the same step (`posthoc_tiebreak.json`).
+2. FN (the network's belief on the honest base) = F (+0.006 vs +0.006 LEAF-K8): move hit 0.513 vs Smogon 0.508; species 0.172 vs 0.058.
+3. The fully honest gap ≈ the pilot's (IMP_F +0.006 vs IMP_P +0.009): items, abilities, spreads add ≈ 0.003, below the registered
+   prediction (+0.005 to +0.02).
+4. POOL's 0.80 is team IDENTIFICATION inside our 719-team pool (not available on an open ladder); POOLSETS recovers nothing.
+5. Not run (out of scope; each disclosed): Tier 2 (F+I/A/S, O−I/A/S, D25 / D75, W50 / W100, MAP90, P16 = R-WIDTH, the second referee),
+   Tier 3 (`end2_s2002`, the trajectory, the away bank); R-REPLICATE is the third party's.
+6. k = 6 cannot reach GATE-OPEN as registered: F's exclusions leave n < 150 per checkpoint.
+7. Operations: 1 world builder + 2 playout shards ran for ~24 h (the brief's 3-worker allowance; above root rule 5b's "≤ 2 heavy jobs");
+   the GPU lease never read FREE, so the run never widened; Tier 1 + Tier-1S cost ≈ 1.5 days on 3 agent cores.
+8. The opponent's root-turn choice was recorded before the searched side's on 8 registered states; dropping them changes nothing.
+
+Tag: **MEASUREMENT (MAJOR) · REFUTED (R-MOVES, R3) · SHARED (U) · BELIEF-RECOVERABLE on this distribution · not EVALUATOR-BOUND · FRONTIER EMPTY · PROVISIONAL at 15M · computed, not replicated** ·
+evidence: `designs/research_state/measurements/hidden_info_tier1_2026-10-13/` (README §7, `result_t1.md`, `result_t1.json`, `world_audit.json`, `posthoc_tiebreak.json`, `arm_key.json`), `designs/endstate/design_hidden_info_binding.md` §16.8, `designs/endstate/search_ledger.md`

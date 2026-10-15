@@ -3,7 +3,7 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-13): TIER 1 RUNNING (`measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output; AMENDMENT 3, §12.14, per-class dose curves, registered before any outcome was unblinded). Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
+**Status (2026-10-15): TIER 1 READ (§16.8; `measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output, AMENDMENT 3 (§12.14, per-class dose curves) before any outcome was unblinded, the table frozen `c6f71d9a`): R-MOVES = MOVES-REFUTED (R3: the never-seen Pokémon dominate the seen mons' moves on both sides); computed, not yet replicated or red-teamed. Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
 parts RUN AND READ (§16; Amendment 1 after the audits, §12.12). AMENDMENT 2 (2026-10-12, §12.13, before any new arm):
 the STAGE of the game (reveal count k, turn, material) becomes a registered dimension of Tier 1 with a k-stratified
 supplement, the K-world belief-quality dose-response is a Tier-1 arm family (§6.9, no extra playout), and a maturity
@@ -88,6 +88,18 @@ then still feeling good about it."
   are the never-seen mons, in the middle the seen mons' moves. Giving the TRUE world a weight p inside the search's average,
   the gain is concave (half by p ≈ 0.22) and our best honest belief is worth p ≈ 0.01 in the same units: the registered
   arms are §6.9 and §12.13.
+
+**TIER 1, the registered read (§16.8, 2026-10-15; PROVISIONAL at 15M, computed, not replicated):**
+- On the FULLY honest base the value of hidden information is the same 7 points (G +0.070 [+0.060, +0.081]); hiding items,
+  abilities and spreads too adds ≈ 0.003.
+- **"The moves are THE binding constraint" is REFUTED (rule R3):** the never-seen Pokémon carry more on both sides (reveal-only
+  share 0.31 vs 0.13; hide-only share 0.82 vs 0.42); the moves are a real minority share (a confident wrong move set costs
+  −0.013; the move dose helps +0.011 at 0.9).
+- The network's own belief worlds (FN) buy nothing; the Bayes posterior of our closed team pool recovers 80 % (it identifies
+  the team); Foul Play's hand evaluator is no better than our critic in honest worlds; no stage's honest search clearly beats
+  the critic on both policies (the frontier is empty).
+- POST-HOC FINDING: the dose curves' first step (p 0 → 0.1) is TIE-BREAKING among the 60 % of states whose honest 8-world leaf
+  ties; beyond it the search needs ≈ 0.2–0.35 of weight on the true world.
 
 ---
 
@@ -1434,6 +1446,61 @@ beat the critic search with confidence where our best belief is worth ≈ 0.01.
   share dice seeds 0–7; both checkpoints are PROVISIONAL at 15M (§10). FINDING: the rows' own CPU fields re-price §15
   (Phase 1 98 / 58 CPU-s per state, not ≈ 24; Tier 1 ≈ 58–65 CPU-h, not 47).
 
+### 16.8 TIER 1 (+ Tier-1S, Amendment 3): the REGISTERED READ (2026-10-15; `measurements/hidden_info_tier1_2026-10-13/`)
+
+Read after the blinded table was frozen (`c6f71d9a`, sha `fc3aced3…`) and the size rules came back clear; every rule applied as
+committed code (`unblind_t1.py`, `67bee8d6` / `f01b9e51`, before any outcome was read). Two checkpoints (`end2_s2001`, `prod_s2001`,
+at their pins; worlds built at HEAD and played at PAD pins = the pin + the gender pad's engine code), the registered 600 + the
+k-stratified supplement (+200 / +220). Every verdict is COMPUTED, not replicated (R-REPLICATE is the third party's), and
+PROVISIONAL "at 15M, current architecture". Full tables: that folder's `result_t1.md`; its README §7 is the narrative.
+
+**Plain language.** Hidden information about the opponent's team costs honest search about 7 points of win probability per
+decision, as the pilot found; hiding items, abilities and spreads as well (the fully honest base F) barely adds to it. The
+larger part is the opponent's NEVER-SEEN Pokémon, not the hidden moves of the seen ones: revealing only the never-seen
+Pokémon closes a third of the gap and hiding only them opens four fifths of it, against an eighth and two fifths for the
+seen Pokémon's moves. **By the registered rules the claim "the opponent's moves are THE binding constraint" is REFUTED (R3:
+the never-seen class dominates on both sufficiency and necessity).** The moves are a real but minority share (a confident
+WRONG move set hurts; the move dose helps a little). A hand-written evaluator does no better than our critic in honest worlds.
+No stage of the game has an honest search clearly beating the critic on both policies.
+
+| rule | verdict | numbers (pooled, 95 %) |
+|---|---|---|
+| R-GIGO (Tier-1 worlds) | **PASS** | 16,800 worlds re-gated at the engine that played them, 0 failures; 0 provenance / legality violations; leak / dose \|z\| ≤ 1.4; identity and the k = 6 identities exact |
+| **R-MOVES** | **MOVES-REFUTED (R3)** | G **+0.070** [+0.060, +0.081]; s_M 0.13 [−0.02, 0.25], n_M 0.42 [0.31, 0.54]; s_U 0.31 [0.18, 0.43], n_U 0.82 [0.70, 0.96]; s_U − s_M +0.19 [+0.03, +0.35], n_U − n_M +0.41 [+0.26, +0.55]; B6 and B7 HOLD (D90 − F +0.011 [+0.001, +0.021]; D90 − W90 +0.025 [+0.013, +0.036]; W90 − F −0.013 [−0.024, −0.003]) |
+| R-RIVALS (U) | **U-SHARED** | B3 fails (s_U 0.31 < 0.5); B2, B4, B5 (vs M), B8 hold |
+| R-RECOVER | **BELIEF-RECOVERABLE on this distribution** (POOL); PRIOR-MISMATCH no; HONEST-SHARPENING no | r_POOL 0.80 [0.73, 0.87] (team identification inside our 719-team pool); r_POOLSETS −0.02; MAP100 − F −0.002 |
+| R-EVAL | **not EVALUATOR-BOUND**; **INFORMATION-BOUND support** | HE − critic in F: +0.007 [−0.001, +0.016] (4-turn), −0.002 [−0.011, +0.006] (one ply); g_HE / g_CRIT 0.75 [0.52, 1.06] |
+| R-STAGE-VOI / AXIS / MECH | k, turn TREND-DOWN; material TREND-UP; **turn carries**; MECH NOT DETECTED (Δc clear: k 0.78 → 0.42; Δs not bounded inside ±0.04) | G by k 1–2 … 6: +0.087 / +0.093 / +0.076 / +0.061 / +0.025 |
+| R-STAGE-CLASS | **U-LED** at k ≤ 4 and turn ≤ 14; SIDES-DISAGREE at k = 5 and every material bucket; NOT DETECTED late | φ_M 0.019, φ_U 0.040 (registered 600) |
+| **R-STAGE-SEARCH** | **FRONTIER EMPTY**; k = 6 GATE-WEAK | +0.024 [+0.006, +0.044] pooled; per checkpoint n 145 / 131 (< 150 after exclusions) |
+| R-DOSE (M8 on F) | CONCAVE, CONTENT-MATTERS, CRITIC-INFO-LIMITED; P-STAR 0.1; TODAY(FN) 0.009; WITHIN-REACH | **qualified by the post-hoc tie-break FINDING below** |
+| Amendment 3 (per class) | M: rises only at p ≥ 0.75, never beats the critic search; U: P-STAR 0.2 (policy) / 0.35 (critic), CONCAVE; CLASS-FIRST (from p = 0): U-FIRST at k ≤ 4 | TODAY proxies (hit-rate units): M 0.011, U 0.12 |
+
+**POST-HOC FINDING (descriptive, `posthoc_tiebreak.json`): the dose curves' first step is tie-breaking.** The honest LEAF-K8
+argmax is tied in 60 % of states (a mean of 8 win / loss outcomes), and ANY positive weight on a second component breaks the
+ties by it: M8 jumps +0.002 → +0.021 between p = 0 and p = 0.001 and is flat to 0.1, then rises (+0.032 at 0.2, +0.053 at 0.35,
++0.072 at 1). The registered P-STAR = 0.1, TODAY = 0.009 and WITHIN-REACH sit on that step; beyond it the search needs ≈ 0.2–0.35
+of weight on the TRUE world, and the network's belief (FN +0.006 ≈ F +0.006) does not reach the step. §16.7's pilot curve carries
+the same step. Other findings: FN buys nothing (move hit 0.513 vs Smogon 0.508; species 0.172 vs 0.058); the fully honest gap ≈
+the pilot's (items / abilities / spreads add ≈ 0.003, below §12.11's +0.005 to +0.02); MAP100 excluded 27.6 % of states (its
+prior-mode move set often cannot make a legal world).
+
+**Predictions (§12.11, §12.13.9) against the read.** R-GIGO PASS: right. R-MOVES modal SHARED (REFUTED 10 %): wrong, REFUTED
+by R3. G larger than the pilot's by +0.005 to +0.02: wrong (≈ equal). R-RECOVER PARTIAL: wrong (POOL recovers 0.80; its
+distribution is the reason). R-EVAL NOT-BINDING + INFORMATION-BOUND: right on the second; NOT-BINDING not shown (upper bounds
+> +0.005). R-STAGE-VOI TREND-DOWN on k and material: right on k, wrong on material's sign (TREND-UP: the gap GROWS with material
+left, i.e. falls as mons faint, which is the predicted pattern in the other direction of the axis). R-STAGE-AXIS material carries:
+wrong (turn carries). R-STAGE-MECH FREQUENCY-LED: not met (Δs not bounded). R-STAGE-CLASS U-LED early: right; M-LED at k = 4: wrong
+(U-LED). GATE-CLOSED everywhere, GATE-WEAK at k = 6: right.
+
+**What it means (the author, 2026-10-15; PROVISIONAL, not yet replicated or red-teamed).** Confidence that the hidden MOVES are THE
+binding constraint: **≈ 5 %** (was ≈ 15 %); that hidden TEAM information binds honest search: ≈ 90 % (G +0.070, robust to the honest
+builder); that the never-seen Pokémon are its largest single class: ≈ 80 % (U dominates M on both sides, replicated in sign on both
+policies). The roadmap reading (§14): **no move-inference programme**; the payable path is not visible either — team
+identification (POOL) is a property of our closed pool, the network's species belief buys nothing, and the dose beyond the tie-break
+step needs ≈ 0.2–0.35 weight on the true world. Nothing here steers a multi-week commitment until the replica comparison, the red team
+(§13.2) and the plateau replication (§10.5) are in.
+
 ---
 
 ## 17. Open questions for the owner
@@ -1463,3 +1530,4 @@ beat the critic search with confidence where our best belief is worth ≈ 0.01.
 | 2026-10-12 | **The BELIEF-QUALITY DOSE-RESPONSE registered as a Tier-1 arm family (§6.9, DK)** (owner: "determinize like five competing worlds and toss in variable probability masses to the correct one … how far away are we from determinizing worlds improving all of search?") | K-world mixtures with weight p on the TRUE world: M8 (the 'belief mass' curve, ends = the banked reads), the literal M5 (K = 5, one playout per world, exact U-statistic), the placebos M5W (a random honest world) and M5X (the most wrong honest world); one set of playouts gives the whole p-curve; p* against the policy / the critic search at the same p / today's critic search, TODAY = the p-equivalent of the network-belief worlds in VALUE units, per stage; shape, content and over-confidence rules; zero playouts beyond Tier 1 | per-fact doses only (§6.4: a world is right about every fact only w.p. ≈ p^n, a different unit); hit-rate units for 'today's p' (the pilot's species belief hit 2× more true species and bought nothing); playing each p as its own arm (7 × the cost for the same information) | §6.9; §16.7 (the descriptive curve; its ends reproduce the pilot's banked reads to 1e-9) |
 | 2026-10-12 | **A MATURITY RE-RUN registered as a standing battery on the X26 deep run's own checkpoints (§12.13.7)** (owner: "I want to do this experiment again when we plateau so we know what that influences") | The per-stage VOI (A) and the dose-response (C) re-run at every 25M steps and at the plateau checkpoint, on ONE frozen 800-state bank drawn at the plateau (paired across checkpoints), the same seeds and scorers, a frozen builder; FULL (≈ 47 CPU-h) at the first and plateau anchors, LEAN (≈ 14) between, ≈ 150 CPU-h, no GPU; R-MATURITY reads the trajectory (does the gap shrink, does today's p rise toward p*, does the frontier move earlier); a verdict that reverses along the trajectory may not steer a multi-week commitment (§10.5) | re-drawing states per checkpoint (confounds maturity with the state distribution; kept as a LEAN secondary); a single plateau read (cannot say what maturity changes) | `design_value_discrimination.md` §13.10 (the stage-gated bootstrap that consumes the trajectory) |
 | 2026-10-13 | **AMENDMENT 3 (§12.14): PER-CLASS dose curves by re-weighting, registered before any Tier-1 outcome was unblinded** (owner via the orchestrator: "understand how p varies by what is revealed") | For each class with a reveal-only arm in Tier 1 (M: `F+M`; U: `F+U`): F+X worlds at weight p, F worlds at 1 − p, per state and action, from the SAME per-world outcomes (zero playouts; every p and both classes paired on one set of bootstrap draws); per class and stage: the curve, P-STAR (vs the policy / the critic at the same p / today's critic, rule 8), SHAPE, p-half, today's p as a labelled hit-rate PROXY (no per-class network-belief arm exists; FN is joint) beside FN's joint location on each curve, and CLASS-FIRST(b) = which class pays most for the next 0.10 of its own belief at stage b | per-class network-belief arms (FN-M, FN-U: new playouts, not registered in Tier 1); mixing a class arm with the TRUE world (§6.9's unit, which the DK family already reads); a hit-rate p as the primary unit (§6.9: the species belief hit 2× more and bought nothing) | §12.14; `hidden_info_tier1_2026-10-13/unblind_t1.class_dose` |
+| 2026-10-15 | **TIER 1 READ (§16.8): R-MOVES = MOVES-REFUTED (R3)**; R-RIVALS U-SHARED; R-RECOVER BELIEF-RECOVERABLE on this distribution (POOL 0.80); R-EVAL not evaluator-bound, information-bound support; frontier EMPTY; the dose curves' first step is tie-breaking (post hoc) | The registered rules applied as committed code to the frozen blinded table (2 checkpoints × the registered 600 + the k-stratified supplement; 12 coded arms + Phase 1 truth + the hand-eval re-plays; R-GIGO for the Tier-1 worlds PASS); the author's confidence that the moves are THE binding constraint ≈ 5 %; no move-inference programme; nothing steers a multi-week commitment until the replica comparison, the red team and the plateau replication | reading the dose-response's registered P-STAR = 0.1 / TODAY = 0.009 as a dose (they sit on a tie-break step: the post-hoc read is reported beside them); widening the unit to Tier 2's I / A / S arms (out of scope: B5 and NON-ADDITIVE are read on M and U only, disclosed) | `measurements/hidden_info_tier1_2026-10-13/` (`result_t1.md`, `world_audit.json`, `posthoc_tiebreak.json`); ledger 2026-10-15 |

@@ -1,0 +1,78 @@
+{
+ "codes": {
+  "T01": {
+   "kind": "pool",
+   "label": "POOL",
+   "spec": "off",
+   "states": "registered"
+  },
+  "T02": {
+   "kind": "fn",
+   "label": "FN",
+   "spec": "off",
+   "states": "all"
+  },
+  "T03": {
+   "kind": "spec",
+   "label": "O-M",
+   "spec": "O-M",
+   "states": "all"
+  },
+  "T04": {
+   "kind": "spec",
+   "label": "F+M",
+   "spec": "F+M",
+   "states": "all"
+  },
+  "T05": {
+   "kind": "spec",
+   "label": "MAP100",
+   "spec": "MAP100",
+   "states": "registered"
+  },
+  "T06": {
+   "kind": "poolsets",
+   "label": "POOLSETS",
+   "spec": "off",
+   "states": "registered"
+  },
+  "T07": {
+   "kind": "spec",
+   "label": "F+U",
+   "spec": "F+U",
+   "states": "all"
+  },
+  "T08": {
+   "kind": "spec",
+   "label": "W90",
+   "spec": "W90",
+   "states": "registered"
+  },
+  "T09": {
+   "kind": "spec",
+   "label": "D50",
+   "spec": "D50",
+   "states": "registered"
+  },
+  "T10": {
+   "kind": "spec",
+   "label": "O-U",
+   "spec": "O-U",
+   "states": "all"
+  },
+  "T11": {
+   "kind": "spec",
+   "label": "D90",
+   "spec": "D90",
+   "states": "registered"
+  },
+  "T12": {
+   "kind": "spec",
+   "label": "F",
+   "spec": "off",
+   "states": "all"
+  }
+ },
+ "salt": "hib_arm_v1:",
+ "scheme": "code = 'T' + the 1-based rank (2 digits) of sha256('hib_arm_v1:' + label) among the Tier-1 labels"
+}

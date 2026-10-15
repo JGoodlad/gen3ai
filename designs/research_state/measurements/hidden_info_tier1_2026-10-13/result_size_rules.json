@@ -1,0 +1,13 @@
+{
+ "G_F_halfwidth_by_k": {
+  "1-2": 0.021,
+  "3": 0.0228,
+  "4": 0.0243,
+  "5": 0.0183,
+  "6": 0.0161
+ },
+ "n_M_halfwidth": 0.1134,
+ "rule_12_10_triggered": false,
+ "rule_12_13_2_bins_triggered": [],
+ "s_M_halfwidth": 0.1333
+}
