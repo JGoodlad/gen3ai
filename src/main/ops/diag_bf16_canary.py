@@ -36,6 +36,14 @@ through the run's own `MicroStatic`, on the run's own checkpoints, built at THIS
     python -m main.ops.diag_bf16_canary gpu --run rb_toy_ent_s4001 --out D        # under the lease: scripts/ops/diag_bf16_canary.sh
     python -m main.ops.diag_bf16_canary verdict --out D                           # VERDICT.md from D/*.json
 
+AFTER THE FIX (T36, `gen3_r1_clip_margin_v1`). The arms above still read the golden's RAW rows (the defect's
+reproduction). Two reads now run PRODUCTION's fixed code instead: `relocated` (and the null's `relocated` half) moves
+the rows through `compile_regions.clip_relocation` at `R1_CLIP_MARGIN`, and `canary_replay` is the canary's own
+`_check`, which relocates on every rung — so at the FATAL's weights the replay must PASS, the relocated null must read
+P(ratio > K) = 0 for the Ebf pairs AND for Cbf, Cbf must switch no relocated row, and `forward_vs_E32.Cbf.
+log_prob_max_abs` must stay within `compile_regions.R1_LOGPROB_SHIFT_MAX` (the margin's provisional, CPU-only input).
+The canary's confirmation is the two DISJOINT halves (slices 2 and 1), no longer slice 0 again + slice 1.
+
 INCREMENTAL: each checkpoint's read is its own JSON (`<out>/<mode>_<label>.json`), written as soon as it finishes; a
 finished one is skipped on a re-run unless `--force`. A WALL BUDGET (`--budget-min`) stops starting new checkpoints
 (never a semantic outcome: the summary says INCOMPLETE). Nothing here trains or writes under `models/`.
@@ -46,7 +54,6 @@ import argparse
 import contextlib
 import io
 import json
-import math
 import os
 import re
 import sys
@@ -527,36 +534,33 @@ def ratio_stats(arm: ArmOut, old: torch.Tensor, st: Any, uniq: Sequence[int],
                                        "adv_norm": float(adv[i]), "active": bool(active[i])} for i in order]}
 
 
-#: THE PROPOSED CANARY FIX's margin, in log-prob units: R1_BAR_K (4) x the largest |log pi_bf16 - log pi_fp32| any
-#: arm read on the fixture's rows at a trained state (0.125, eager bf16 at 66M on the CPU; the GPU read records the
-#: compiled arms' own in `forward_vs_E32`)
-RELOCATE_MARGIN = 0.5
+#: THE CANARY FIX's margin, in log-prob units — PRODUCTION's (`compile_regions.R1_CLIP_MARGIN`, T36: R1_BAR_K x the
+#: largest |log pi_bf16 - log pi_fp32| measured; the GPU read records the compiled arms' own in `forward_vs_E32`). The
+#: diagnostic's first reads (2026-10-15, before T36) used 0.5.
+def _relocate_margin() -> float:
+    from agents.model import compile_regions as cr
+    return float(cr.R1_CLIP_MARGIN)
 
 
 def relocate_old_log_prob(ref: ArmOut, old: torch.Tensor, st: Any,
-                          margin: float = RELOCATE_MARGIN) -> Tuple[torch.Tensor, Dict[str, Any]]:
-    """THE PROPOSED CANARY FIX (standing rule 8: exclude inputs within a rounding error of a decision boundary),
-    applied to a COPY of the batch: every row whose fp32 REFERENCE ratio sits within ``margin`` (log-prob units) of
-    the clip boundary that switches its gradient (A > 0: 1 + clip; A < 0: 1 - clip) gets its old log-prob moved so
-    the reference ratio sits 2 x ``margin`` inside the ACTIVE side — its full gradient is judged by every arm, and no
-    arm's rounding can switch it off. A row far from its boundary keeps the golden's old log-prob. Deterministic: a
-    function of the reference's own forward on the same rows. Returns (the new old log-probs on ``old``'s device,
-    {"moved_batch_rows", "margin"})."""
-    a = ref.adv.double()
-    lp = ref.log_prob.double()
-    o = old.detach().double().cpu()
-    logb = torch.where(a > 0, torch.full_like(a, math.log(1.0 + float(st.clip_range))),
-                       torch.full_like(a, math.log(1.0 - float(st.clip_range))))
-    near = ((lp - o) - logb).abs().lt(margin) & a.ne(0)
-    target = torch.where(a > 0, logb - 2.0 * margin, logb + 2.0 * margin)
-    new = torch.where(near, lp - target, o)
-    return new.float().to(old.device), {"moved_batch_rows": int(near.sum()), "margin": float(margin)}
+                          margin: Optional[float] = None) -> Tuple[torch.Tensor, Dict[str, Any]]:
+    """THE CANARY FIX (T36, standing rule 8), applied to a COPY of the batch through PRODUCTION's own function
+    (`compile_regions.clip_relocation`, which the startup gate and the canary run on every rung): every row whose fp32
+    REFERENCE ratio sits within ``margin`` (log-prob units; default production's) of the clip boundary that switches its
+    gradient (A > 0: 1 + clip; A < 0: 1 - clip) gets its old log-prob moved so the reference ratio sits 2 x ``margin``
+    inside the ACTIVE side. A row far from its boundary keeps the golden's old log-prob. Returns (the new old log-probs
+    on ``old``'s device, {"moved_batch_rows", "margin", "nearest_unmoved"})."""
+    from agents.model import compile_regions as cr
+    m = _relocate_margin() if margin is None else float(margin)
+    fix = cr.clip_relocation(ref.log_prob, old, ref.adv, float(st.clip_range), m)
+    return fix.old_log_prob, {"moved_batch_rows": int(fix.moved.sum()), "margin": m,
+                              "nearest_unmoved": fix.nearest_unmoved}
 
 
 def relocated_read(ctx: "Context", slice_: int, arms: Dict[str, ArmOut], call_args: Tuple[Any, ...],
                    regime: str) -> Tuple[Dict[str, Any], Dict[str, ArmOut]]:
     """Every arm again on the RELOCATED batch: the canary's statistic and verdict, the branch flips (expected 0) and
-    the watched parameters' distances — the proposed fix, validated on the same weights."""
+    the watched parameters' distances — the T36 fix (production's relocation), validated on the same weights."""
     st = call_args[-1]
     new_old, info = relocate_old_log_prob(arms["E32"], call_args[4], st)
     arms_r, args_r = ctx.run_arms(slice_, old_override=new_old)
@@ -644,26 +648,30 @@ def dithered(models: Sequence[Any], seed: int, rel: float = DITHER_REL) -> Itera
 def null_summary(per_seed: List[Dict[str, Dict[str, float]]], k: float, floor: float) -> Dict[str, Any]:
     """From per-seed ``{arm: {param: d(arm, E32_seed)}}``: per arm and head parameter the error quantiles; and the
     canary statistic's null — for the ``Ebf`` pairs (i != j: d_Ebf_i / max(d_Ebf_j, floor)), and when ``Cbf`` is
-    present its own per-seed statistic d_Cbf_i / max(d_Ebf_i, floor) — with the share above ``k``."""
+    present its own per-seed statistic d_Cbf_i / max(d_Ebf_i, floor) — with the share above ``k``. A parameter a seed
+    does not carry (`_dither` records only the parameters the canary JUDGES on that seed: above the per-parameter
+    floor of its own reference) is left out of that seed's numbers — the canary never compares it there."""
     out: Dict[str, Any] = {"seeds": len(per_seed), "k": k, "floor": floor, "errors": {}, "ratio_null": {}}
     if not per_seed:
         return out
     arms = list(per_seed[0])
-    params = list(per_seed[0][arms[0]])
+    params = sorted({n for s in per_seed for a in s for n in s[a]})
     for a in arms:
-        out["errors"][a] = {n: _q(torch.tensor([s[a][n] for s in per_seed]), (0.0, 0.1, 0.5, 0.9, 1.0))
-                            for n in params}
+        out["errors"][a] = {n: _q(torch.tensor(v), (0.0, 0.1, 0.5, 0.9, 1.0)) for n in params
+                            if (v := [s[a][n] for s in per_seed if n in s.get(a, {})])}
     for n in params:
-        e = [s["Ebf"][n] for s in per_seed] if "Ebf" in arms else []
+        e = [s["Ebf"][n] for s in per_seed if n in s.get("Ebf", {})] if "Ebf" in arms else []
         pairs = [e[i] / max(e[j], floor) for i in range(len(e)) for j in range(len(e)) if i != j]
-        rec: Dict[str, Any] = {}
+        rec: Dict[str, Any] = {"seeds_judged": len(e)}
         if pairs:
             rec["Ebf_pairs"] = {"n": len(pairs), "p_over_k": float(np.mean(np.array(pairs) > k)),
                                 "quantiles": _q(torch.tensor(pairs), (0.5, 0.9, 0.99, 1.0))}
         if "Cbf" in arms:
-            r = [s["Cbf"][n] / max(s["Ebf"][n], floor) for s in per_seed]
-            rec["Cbf_vs_Ebf"] = {"n": len(r), "p_over_k": float(np.mean(np.array(r) > k)),
-                                 "quantiles": _q(torch.tensor(r), (0.5, 0.9, 0.99, 1.0))}
+            r = [s["Cbf"][n] / max(s["Ebf"][n], floor) for s in per_seed
+                 if n in s.get("Cbf", {}) and n in s.get("Ebf", {})]
+            if r:
+                rec["Cbf_vs_Ebf"] = {"n": len(r), "p_over_k": float(np.mean(np.array(r) > k)),
+                                     "quantiles": _q(torch.tensor(r), (0.5, 0.9, 0.99, 1.0))}
         out["ratio_null"][n] = rec
     return out
 
@@ -912,10 +920,13 @@ def _dither(ctx: Context, n: int, regime: str) -> Dict[str, Any]:
             _, arms_r = relocated_read(ctx, 0, arms, call_args, regime)
         sp = {k: split(v.grad, ctx.names, ctx.sizes) for k, v in arms.items()}
         spr = {k: split(v.grad, ctx.names, ctx.sizes) for k, v in arms_r.items()}
-        per_seed.append({a: {nm: rel_l2(sp[a][nm], sp["E32"][nm]) for nm in sp[a] if nm.startswith(WATCH)}
-                         for a in arms if a != "E32"})
-        per_seed_r.append({a: {nm: rel_l2(spr[a][nm], spr["E32"][nm]) for nm in spr[a] if nm.startswith(WATCH)}
-                           for a in arms_r if a != "E32"})
+        # only what the canary JUDGES on this seed (above the per-parameter floor of its own reference): a head
+        # parameter below it (the struggle score, ~1e-9 of the largest gradient) reads pure rounding as a ratio
+        jd, jdr = judged_params(arms["E32"], ctx.names, ctx.sizes), judged_params(arms_r["E32"], ctx.names, ctx.sizes)
+        per_seed.append({a: {nm: rel_l2(sp[a][nm], sp["E32"][nm]) for nm in sp[a]
+                             if nm.startswith(WATCH) and nm in jd} for a in arms if a != "E32"})
+        per_seed_r.append({a: {nm: rel_l2(spr[a][nm], spr["E32"][nm]) for nm in spr[a]
+                               if nm.startswith(WATCH) and nm in jdr} for a in arms_r if a != "E32"})
         raw.append({a: {"flips": int((ppo_active(arms[a], old, st) != act_ref).sum()),
                         "err": {nm: rel_l2(sp[a][nm], sp["E32"][nm]) for nm in _RAW_PARAMS},
                         "err_frozen_branch": {nm: rel_l2(gf[a][nm], gf["E32"][nm]) for nm in _RAW_PARAMS}}
@@ -1017,7 +1028,7 @@ def render_verdict(out_dir: Path) -> str:
               "- [ ] **(iii) a yardstick unusually small**: d(Ebf,E32) at the FATAL vs `null.errors.Ebf` (its no-flip "
               "mode): ...",
               "- [ ] **(iv) the fixture**: the rows within rounding of their switching clip boundary "
-              "(`ratio.switching_margin_logp`); the RELOCATED fixture (the proposed fix) passes and its null has "
+              "(`ratio.switching_margin_logp`); the RELOCATED fixture (the T36 fix, production's) passes and its null has "
               "P(ratio > K) = 0: ...",
               "- [ ] **Recommendation for X26**: ...", ""]
     return "\n".join(lines)

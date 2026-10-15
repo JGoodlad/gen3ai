@@ -14593,3 +14593,36 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **Corrected:** the readiness doc's "TensorBoard keeps ~1 in 10 K9(b) shares" — every update is recorded (a 15M run
   has ≈ 153 updates of 98,304 rows). Docs: `designs/endstate/design_x26_readiness.md`, `designs/training/ridealong_heads.md`,
   `designs/training/learner_gates.md`, `designs/ops/TASK_BACKLOG.md`; ledger 2026-10-15 REGISTRATION AMENDMENT.
+## 2026-10-15 — GIGO FIX (T36): R1's startup gate and canary judge rows OFF the PPO clip boundary, and the canary confirms on two DISJOINT halves (`gen3_r1_clip_margin_v1`; the compile gate's fixture only; no model / config / obs / signature change, no training-math change)
+
+- **The defect** (the X26 blocker I30, the `rb_toy_ent_s4001` canary FATAL at 72.66M): R1 is judged on the K9 golden's
+  64 rows, whose old log-probs are a near-uniform policy's; on trained weights a row can sit within rounding of the clip
+  bound that switches its whole policy gradient, so the per-parameter statistic was a 0/1 lottery — two HEALTHY eager
+  bf16 arms read the canary's ratio above K = 12 in 18–21 % of dithered pairs (max 31–42×). The canary's
+  "independent" confirmation slice (rows 32–63) was a subset of the scheduled check's rows, and its same-rows re-run the
+  same arithmetic, so one boundary row confirmed itself. The startup gate had the same exposure, single-shot.
+- **The fix, standing rule 8**: `compile_regions.relocate_clip_boundary` / `clip_relocation` — before every rung of the
+  startup gate and of the canary (live, fresh-perturbed, unmoved-perturbed, the graphed accumulation rung, the judged-set
+  reference), under the bf16 AND the fp32 rule, one fp32 eager forward on that rung's weights reads each row's ratio,
+  and a row within `R1_CLIP_MARGIN` (0.72 log-prob = `R1_BAR_K` 4 × `R1_LOGPROB_SHIFT_MAX` 0.18, the largest measured
+  eager-bf16 shift rounded up; PROVISIONAL until the compiled arm's CUDA shift is read) of its switching bound has its OLD
+  log-prob moved so the reference sits 2 × the margin inside its ACTIVE side (moved, not excluded: the batch keeps its
+  shape, every row and its advantage normalisation). `_clip_margin_rule` CHECKS the precondition on every rung — an arm
+  whose |Δ log π| exceeds the margin, or that switches any row's clip branch, is refused by name — and every R1 rule
+  line and canary record (`watch.*.clip_margin`) carries each arm's shift. `compile_trainer.fixture_index` gained slice
+  2 (the first half; `FIXTURE_HALVES` = (2, 1)); the canary confirms a disagreement on BOTH disjoint halves (watch keys
+  `confirm_slice2` / `confirm_slice1`), the scheduled check keeping all 64 rows.
+- **Evidence (CPU, the FATAL's weights)**: 32-seed dithered null at B = 64, healthy pairs above K 212 / 992 → 0 / 992
+  (max 3.65×); a 10 % backward plant on `pointer_head.move_proj.weight` still FATAL at the fp32 rule.
+- **Also**: `main.ops.diag_bf16_canary.relocate_old_log_prob` delegates to production's relocation (its default margin
+  is now production's, 0.72; the diagnostic's first reads used 0.5), and its dithered null reads only the parameters
+  each seed's reference JUDGES (it had read the never-judged `struggle_score.*`, ~1e-9 of the largest gradient, as a
+  12,000× "ratio"); the gate tests' "is it judged" preconditions and
+  `compile_regions_resolution_test.gate_resolution` read the relocated rows, as the gate does.
+- Tests: `compile_regions_clip_margin_test.py` (new: the switch is autograd's, a row AT its bound moves deterministically,
+  the threshold is safe on both sides, the margin rule, every rung relocates on its own weights, the 10 % pointer-head
+  plant), `compile_regions_clip_margin_fatal_test.py` (new, slow, the run archive: the null 0 / 992, the FATAL's boundary
+  rows 4 and 35 relocated, the plant on these weights), `compile_canary_test.py` (the halves disjoint; a one-row
+  disagreement no longer confirms itself). Docs: `designs/training/compile_flags.md` "THE FIX (T36)" (+ what the GPU
+  window must show), `learner_lifecycle.md`, `design_x26_readiness.md` I30 / F18 / Decision record, `TASK_BACKLOG.md`
+  T36, `UNDERSTANDING.md` item 20, `scripts/ops/README.md`; ledger 2026-10-15 GIGO FIX *T36*.

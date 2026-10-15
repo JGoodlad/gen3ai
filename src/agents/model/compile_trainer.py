@@ -138,15 +138,25 @@ _PARAM_GRAD_FLOOR = 1e-3
 
 
 def fixture_index(batch: int, n_rows: int, slice_: int = 0) -> "np.ndarray":
-    """Which committed fixture rows a batch of ``batch`` takes: slice 0 = every row in order, tiled;
-    slice 1 = the SECOND HALF of the rows, tiled — an independent batch of the same shape (the
-    canary's confirmation re-run, `compile_canary`)."""
+    """Which committed fixture rows a batch of ``batch`` takes, tiled to the same shape: slice 0 = every
+    row in order (the startup gate and the canary's scheduled check); slice 1 = the SECOND half of the rows;
+    slice 2 = the FIRST half. Slices 1 and 2 share NO row (`FIXTURE_HALVES`): the canary confirms a
+    disagreement on both (`compile_canary`, T36), so no single row can carry a confirmation."""
     import numpy as np
 
-    if int(slice_) == 0 or n_rows < 2:
+    s = int(slice_)
+    if s not in (0, 1, 2):
+        raise ValueError(f"fixture slice {slice_!r}: 0 (all rows), 1 (second half) or 2 (first half)")
+    if s == 0 or n_rows < 2:
         return np.arange(int(batch)) % n_rows
     half = n_rows // 2
+    if s == 2:
+        return np.arange(int(batch)) % half
     return half + np.arange(int(batch)) % (n_rows - half)
+
+
+#: The two DISJOINT fixture slices (`fixture_index`): the first half and the second half of the rows.
+FIXTURE_HALVES: Tuple[int, int] = (2, 1)
 
 
 def _parity_obs(obs_dim: int, batch: int, device: Any,

@@ -25837,3 +25837,71 @@ evidence: `designs/research_state/measurements/ridealong_baseline/PREREGISTRATIO
 `checkargs` / dry-run log), `src/agents/training/ridealong_update_test.py`,
 `src/agents/training/diagnostics_cadence_test.py`, `designs/endstate/design_x26_readiness.md` (I11 / I12 / I19, E9,
 F5, F19–F22, Decision record)
+### 2026-10-15 · GIGO FIX · **T36: R1's startup gate and in-run canary now judge the K9 golden's rows MOVED OFF the PPO clip boundary (on every rung's own weights, both the bf16 and the fp32 rule), the margin is a CHECKED precondition, and the canary confirms on two DISJOINT halves of the rows — at the `rb_toy_ent_s4001` FATAL's weights healthy pairs above the bar fall 212 / 992 → 0 / 992 on CPU; the CUDA confirmation is PENDING (`gen3_r1_clip_margin_v1`)**
+
+The fix the FINDING above recommended (X26 blocker I30, F18), built. Standing rule 8: a check passes or fails
+DETERMINISTICALLY — exclude inputs within a rounding error of a decision boundary rather than tolerating them by chance.
+The compile gate's fixture only: no model, config, observation or signature change, and training math is untouched.
+
+**What changed.**
+1. **Relocation** (`compile_regions.relocate_clip_boundary` → `clip_relocation`). Before each rung's arms run, one fp32
+   eager forward of R1 on that rung's weights reads every row's log-prob and normalised advantage; a row within
+   `R1_CLIP_MARGIN` of (or AT) the clip bound that switches ITS gradient (A > 0: 1 + clip; A < 0: 1 − clip) has its old
+   log-prob moved so the reference sits 2 × the margin inside the ACTIVE side. Moved rather than excluded: the batch
+   keeps its declared shape, every row, and its advantage normalisation, and the moved row's whole gradient is judged
+   by every arm. The threshold is not itself a verdict boundary (just inside → 2M away; just outside → > M away).
+   Every rung: the live weights, the fresh launch's seeded perturbation, the unmoved parameters' perturbation, the
+   graphed route's accumulation rung, the judged-set rule's golden-alone reference.
+2. **The margin**: `R1_CLIP_MARGIN = R1_BAR_K (4) × R1_LOGPROB_SHIFT_MAX (0.18) = 0.72` log-prob. 0.18 = the largest
+   eager-bf16-vs-fp32 |Δ log π| read so far, rounded up to 2 significant digits: the s4001 census 0.161, the production
+   census 0.055, **the 32-seed dithered null at the FATAL's weights 0.173** (a new read here, above the census — so the
+   row above's "≈ 0.65" became 0.72). **PROVISIONAL: CPU and eager only**; the compiled arm's CUDA shift is the GPU
+   window's read.
+3. **The precondition, checked** (`_clip_margin_rule`): every judged arm's largest |Δ log π| ≤ the margin and no arm
+   switches any row's clip branch, else a typed refusal naming the arm; every R1 rule line and every canary record
+   (`watch.*.clip_margin`) carries each arm's shift, so the margin's input is read at every launch and canary.
+4. **The confirmation**: the two DISJOINT halves (`compile_trainer.FIXTURE_HALVES`, slices 2 = rows 0–31 and 1 = rows
+   32–63); CONFIRMED only if both disagree. The scheduled check and the startup gate keep all 64 rows, because a half
+   can leave a parameter below the per-parameter floor (the moves head on slice 1). The same-rows re-run is gone.
+
+**Evidence (CPU, the FATAL's weights loaded strict at this checkout, B = 64 untiled, torch threads 1;
+`compile_regions_clip_margin_fatal_test.py`).** 32 seeded weight dithers (σ 2^-9 relative), each against its own fp32
+reference, the canary's statistic between two healthy eager bf16 arms over the pointer head: raw rows 212 of 992 ordered
+pairs above K = 12 (21 %, max 41.5×; 15 of 32 seeds switch a row), relocated rows **0 of 992** (max 3.65×); every
+dither passes the margin rule. 21–22 rows of 64 move, the FATAL's boundary rows 4 and 35 among them. A planted 10 %
+backward error on `pointer_head.move_proj.weight` is still FATAL at the fp32 rule (these weights' relocated rows and the
+K9 learner's). Tests that fail on revert: the null test (an identity relocation → it raises / reads > 0), the canary's
+one-row test (the old (0, 1) confirmation → CONFIRMED by one row), and the gate's rule-line test.
+**The diagnostic re-read at this checkout** (`python -m main.ops.diag_bf16_canary cpu`, B = 2,048 tiled, its
+`relocated` reads now production's relocation at M = 0.72). FATAL (32 dithers): undithered, 704 of 2,048 batch rows
+(22 of 64 fixture rows) move, the nearest unmoved row sits 0.754 from its bound, eager bf16 switches 0 rows and its
+`move_proj.weight` error is 0.036 (raw 0.028); the null on `move_proj.weight` P(ratio > K) 0.178 (max 31.4×) → 0
+(max 2.62×), and 0 over K with max 3.67× on every JUDGED head parameter. 66M (eager's own flip, 8 dithers): eager's
+undithered error 0.29 / 0.34 (slices 0 / 1) → 0.033 relocated; the null 14 % → 0 (max 1.87×). 15M (8 dithers): 21 % →
+0 (max 2.07×). Eager's largest |Δ log π| at the three states: 0.082 / 0.107 / 0.043, all under 0.18. **A diagnostic
+defect found and fixed on the way:** the null read EVERY pointer-head parameter, including two the canary never
+judges — `struggle_score.{weight,bias}`, whose reference gradient is ~1e-9 of the largest (six orders below the
+per-parameter floor) — and so printed "relocated P(ratio > K) 0.117, max 1.2e4" for pure rounding; `_dither` now
+records, per seed, only the parameters that seed's reference judges (`judged_params`), and `null_summary` reads each
+over the seeds that judge it.
+
+**What the GPU window must show** (the Training session, under its lease, at the T36 commit): `scripts/ops/
+verify_compile_gate_cuda.sh` all four CUDA tests PASS on the relocated rows (summary.json PASS); `scripts/ops/
+diag_bf16_canary.sh rb_toy_ent_s4001`: the canary's own replay (`canary_replay`) PASSES at the FATAL's weights, Cbf
+switches no relocated row, the relocated null reads P(ratio > K) = 0 for the Ebf pairs and `Cbf_vs_Ebf`,
+`forward_vs_E32.Cbf.log_prob_max_abs` ≤ 0.18 at every checkpoint read (else raise `R1_LOGPROB_SHIFT_MAX`), and the fp32
+rule's `over_bar` is empty. A Cbf disagreement with no branch switch, or C32 off at the fp32 bar, means the fixture was
+not the whole story: the fp32 trunk for X26 and the localisation arms.
+
+**FINDINGS (standing rule 7).**
+1. **The margin is PROVISIONAL** until the compiled CUDA arm's shift is read; a healthy compiled arm beyond 0.72 now
+   refuses by name (deterministically) instead of reading a lottery — X26 must not launch before the GPU window.
+2. **The bf16 bars were derived on the RAW rows** (window D, 20 reads). They stay valid only if those reads were
+   flip-free (their max per-parameter ratio 2.94 is in the no-flip mode); `verify_compile_gate_cuda.sh` re-reads the
+   healthy ratios on the relocated rows.
+3. **A miscompile that only ONE half judges now takes two scheduled canaries (~1 h) to FATAL** instead of confirming in
+   the same update — the cost of a confirmation no single row can carry.
+4. **The value clip is the same class but unreachable on production**: `value_mode` is `clipped` only when the critic
+   is not win-prob, and the win-prob critic is a constant; the relocation covers the policy clip only.
+5. **`main.ops.cuda_build_validate`'s numerics cell** reads the same raw rows (cu126 vs cu128, fp32): the same boundary
+   at fp32's ~10^4× smaller odds; not changed here (out of scope).

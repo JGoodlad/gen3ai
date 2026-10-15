@@ -70,6 +70,18 @@ def test_the_null_counts_the_share_of_HEALTHY_pairs_above_K():
     assert s["ratio_null"]["p"]["Cbf_vs_Ebf"]["p_over_k"] == pytest.approx(1 / 3)
 
 
+def test_the_null_reads_a_parameter_only_on_the_seeds_that_JUDGE_it():
+    """`_dither` records only the parameters the canary judges on each seed (above its per-parameter floor); the null
+    reads a parameter over those seeds only. Without the filter the never-judged struggle score (~1e-9 of the largest
+    gradient at the FATAL's weights) read 'P(ratio > K) 0.117, max 1.2e4' on the relocated rows — rounding, not a
+    verdict the canary makes."""
+    per_seed = [{"Ebf": {"p": 0.02, "q": 0.03}}, {"Ebf": {"p": 0.04}}, {"Ebf": {"p": 0.02, "q": 900.0}}]
+    s = D.null_summary(per_seed, k=12.0, floor=0.01)
+    assert s["ratio_null"]["p"]["seeds_judged"] == 3 and s["ratio_null"]["p"]["Ebf_pairs"]["n"] == 6
+    assert s["ratio_null"]["q"]["seeds_judged"] == 2 and s["ratio_null"]["q"]["Ebf_pairs"]["n"] == 2
+    assert set(s["errors"]["Ebf"]) == {"p", "q"}
+
+
 def _arm(grad, loss=1.0):
     z = torch.zeros(1)
     return D.ArmOut(loss, torch.tensor(grad), z, z, z, z)

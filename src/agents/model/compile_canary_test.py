@@ -212,7 +212,8 @@ def test_a_FATAL_record_carries_the_watch_of_the_scheduled_check_and_of_BOTH_con
         can.after_update()
     (rec,) = _records(tmp_path)
     assert rec["verdict"] == "fatal"
-    assert set(rec["watch"]) == {"scheduled", "confirm_slice0", "confirm_slice1"}
+    # the confirmations are the two DISJOINT halves (T36): slice 2 (first half) and slice 1 (second half)
+    assert set(rec["watch"]) == {"scheduled", "confirm_slice2", "confirm_slice1"}
     for w in rec["watch"].values():
         # the planted x3 backward: compiled is ~2.0 from the reference on every judged pointer-head parameter
         ratios = [v["ratio"] for v in w["params"].values() if "ratio" in v]
@@ -250,3 +251,81 @@ def test_the_fp32_rule_fills_the_watch_with_its_own_numbers():
     p = rec["params"]["pointer_head.move_score.weight"]
     assert p["bar"] == pytest.approx(cr.R1_PARAM_BAR["trained"], rel=1e-3)
     assert 0 < p["compiled_vs_eager"] < 1e-5
+
+
+# --------------------------------------------- T36: the confirmation is two DISJOINT halves of the rows
+def test_the_confirmation_halves_are_DISJOINT_and_together_cover_every_row():
+    """`FIXTURE_HALVES` (slice 2 = the first half, slice 1 = the second) share no row and cover every row, at the
+    production batch and at the fixture's own size, for an even and an odd row count; slice 0 is every row."""
+    import numpy as np
+    from agents.model import compile_trainer as ct
+    assert ct.FIXTURE_HALVES == (2, 1)
+    for n in (64, 63):
+        for batch in (n, 2048):
+            a, b = (set(ct.fixture_index(batch, n, s).tolist()) for s in ct.FIXTURE_HALVES)
+            assert not (a & b), (n, batch)
+            assert a | b == set(range(n)) == set(ct.fixture_index(batch, n, 0).tolist())
+            assert all(len(ct.fixture_index(batch, n, s)) == batch for s in (0, 1, 2))
+    assert np.array_equal(ct.fixture_index(8, 64, 2), np.arange(8))
+    with pytest.raises(ValueError):
+        ct.fixture_index(8, 64, 3)
+
+
+@pytest.fixture
+def full_rows_learner(tmp_path):
+    """`regions_learner` at B = the fixture's row count, so the scheduled check (slice 0) holds EVERY row — the
+    production case (B = 2,048 tiles all 64), where the old confirmation slice 1 was a SUBSET of it."""
+    from agents.model import compile_control as cc
+    from agents.model import compile_regions as cr
+    from agents.training import learner_golden as LG
+    cc._reset_control_for_tests()
+    torch._dynamo.reset()
+    m = LG.build_learner()
+    LG.load_buffer_into(m)
+    m.behaviour_dump_dir = str(tmp_path)
+    m.batch_size = _n_rows()
+    cc.control().install()
+    cr.install(m, backend="eager")
+    try:
+        yield m
+    finally:
+        cr.uninstall(m)
+        cc._reset_control_for_tests()
+        torch._dynamo.config.error_on_recompile = False
+        torch._dynamo.reset()
+
+
+def _n_rows():
+    import numpy as np
+    from agents.training.learner_golden import BUFFER_PATH
+    with np.load(BUFFER_PATH) as z:
+        return int(z["actions"].reshape(-1).shape[0])
+
+
+def test_a_disagreement_carried_by_ONE_row_does_NOT_confirm_itself(full_rows_learner, tmp_path):
+    """The `rb_toy_ent_s4001` shape: a disagreement carried by ONE second-half row (row 35 there). The scheduled
+    check (every row) and the second half see it; the first half does not, so it is NOT confirmed — training
+    continues and the next scheduled canary decides. Fails on revert: the old confirmation (the same rows + slice 1,
+    both containing the row) CONFIRMED it in the same update — a FATAL carried by one row."""
+    from agents.model import compile_regions as cr
+    m = full_rows_learner
+    n = _n_rows()
+    row = n // 2 + 3                                                     # a second-half row (35 of 64)
+    obs_all = cr.r1_batch(m, n, 0).obs
+    key = "observation"
+    target = obs_all[key][row]
+    assert int((obs_all[key] == target).all(dim=-1).sum()) == 1, "PRECONDITION: the row's observation is unique"
+    real = m._compiled_micro_step
+
+    def faulty(*a):
+        out = real(*a)
+        if bool((a[1][key] == target).all(dim=-1).any()):               # the batch holds the row
+            return out._replace(loss=_ScaleGrad.apply(out.loss))
+        return out
+    m._compiled_micro_step = faulty
+    can = CompileCanary(m, batch_size=n, every=1, saver=lambda p: None)
+    out = can.after_update()                                             # no raise: one half only
+    assert out["compile/canary_ok"] == 0.0 and out["compile/canary_unconfirmed_disagreements"] == 1.0, out
+    assert _verdicts(tmp_path) == ["unconfirmed"]
+    with pytest.raises(CompileCanaryError, match="two CONSECUTIVE"):     # a persistent one still ends the run
+        can.after_update()

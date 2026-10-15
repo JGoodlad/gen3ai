@@ -105,12 +105,63 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/model/compile_regions_clip_margin_fatal_test.py::test_a_planted_10pct_POINTER_HEAD_miscompile_is_refused_at_the_fp32_rule_on_these_weights": {
+   "status": "pass",
+   "commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
+   "at": "2026-10-15T18:46:37Z",
+   "duration_s": 3.07,
+   "contention": 2.48,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_clip_margin_fatal_test.py::test_the_FATALs_two_boundary_rows_are_RELOCATED": {
+   "status": "pass",
+   "commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
+   "at": "2026-10-15T18:46:37Z",
+   "duration_s": 0.47,
+   "contention": 3.61,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_clip_margin_fatal_test.py::test_the_dithered_null_at_the_FATALs_weights_drops_from_about_a_fifth_to_ZERO": {
+   "status": "pass",
+   "commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
+   "at": "2026-10-15T18:46:37Z",
+   "duration_s": 23.73,
+   "contention": 3.43,
+   "detail": ""
+  },
   "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda": {
    "status": "pass",
    "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
    "at": "2026-10-06T05:50:22Z",
    "duration_s": 175.22,
    "contention": 1.11,
+   "detail": "",
+   "last_skipped_at": "2026-10-15T18:46:37Z",
+   "last_skipped_commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
+   "last_skip_detail": ""
+  },
+  "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_under_the_bf16_rule_on_cuda_passes_names_a_NaN_and_has_its_measured_resolution": {
+   "status": "skip",
+   "commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
+   "at": "2026-10-15T18:46:37Z",
+   "duration_s": 0.0,
+   "contention": 6.84,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_trained_cuda_test.py::test_the_production_baselines_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": {
+   "status": "skip",
+   "commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
+   "at": "2026-10-15T18:46:37Z",
+   "duration_s": 0.0,
+   "contention": 6.84,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_trained_cuda_test.py::test_the_production_baselines_trained_weights_pass_the_R1_gate_under_the_bf16_rule_on_cuda": {
+   "status": "skip",
+   "commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
+   "at": "2026-10-15T18:46:37Z",
+   "duration_s": 0.0,
+   "contention": 6.84,
    "detail": ""
   },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cpu": {
@@ -195,8 +246,8 @@
    "duration_s": 0.63,
    "contention": 1.0,
    "detail": "",
-   "last_skipped_at": "2026-10-09T00:57:07Z",
-   "last_skipped_commit": "73408d02db7bb209525a876ed02dd9233f41a819",
+   "last_skipped_at": "2026-10-15T18:46:37Z",
+   "last_skipped_commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
    "last_skip_detail": ""
   },
   "src/agents/training/cycle_ledger_integration_test.py::test_the_cycles_ledger_rows_are_its_games_and_the_ledger_changes_no_game": {
@@ -367,10 +418,10 @@
   },
   "src/main/ops/diag_bf16_canary_test.py::test_EVERY_route_of_the_GPU_read_RUNS_through_a_smoke_backend_on_cpu": {
    "status": "pass",
-   "commit": "ffe2961b9e72450f0c6c85f1ce41966f1b32c1a4",
-   "at": "2026-10-15T17:12:53Z",
-   "duration_s": 215.7,
-   "contention": 1.39,
+   "commit": "ba8f59c1fb2e2091730f3c2e4fa57073f27b2eb4",
+   "at": "2026-10-15T18:56:38Z",
+   "duration_s": 545.27,
+   "contention": 3.26,
    "detail": ""
   },
   "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_the_whole_committed_bank": {
@@ -897,5 +948,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-15T18:00:00Z"
+ "last_written": "2026-10-15T18:56:38Z"
 }

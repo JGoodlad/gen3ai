@@ -86,7 +86,9 @@ def test_the_fixed_mass_gate_PASSES_honest_arms_and_judges_the_encoder(fixed_mas
     rules = cr.gate_regions(fixed_mass, batch_size=BATCH, say=lambda _m: None)
     assert rules and all("R1" in r for r in rules), rules
     fixed_mass.policy.set_training_mode(True)
-    e = cr._r1_arm(fixed_mass, micro_step, cr._r1_args(fixed_mass, cr.r1_batch(fixed_mass, BATCH)))
+    # the gate's rows: relocated off the PPO clip boundary as `_r1_judge` does (T36)
+    args = cr.relocate_clip_boundary(fixed_mass, cr._r1_args(fixed_mass, cr.r1_batch(fixed_mass, BATCH)))[0]
+    e = cr._r1_arm(fixed_mass, micro_step, args)
     names = [n for n, _ in ct.grad_parameters(fixed_mass, fixed_mass.policy.features_extractor)]
     sizes = [int(x) for x in e["grad_sizes"].tolist()]
     judged = dict(per_param_grad_errors(e["grad"], e["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))

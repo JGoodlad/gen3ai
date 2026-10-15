@@ -111,7 +111,9 @@ def _judged(model, name, slice_: int = 0) -> bool:
     from agents.model.compile_gate_probe import per_param_grad_errors
     from agents.training.instrumented_ppo.micro_step import micro_step
     model.policy.set_training_mode(True)
-    e = cr._r1_arm(model, micro_step, cr._r1_args(model, cr.r1_batch(model, BATCH, slice_)))
+    # the gate's rows: relocated off the PPO clip boundary as `_r1_judge` does (T36)
+    args = cr.relocate_clip_boundary(model, cr._r1_args(model, cr.r1_batch(model, BATCH, slice_)))[0]
+    e = cr._r1_arm(model, micro_step, args)
     names = [n for n, _ in ct.grad_parameters(model, model.policy.features_extractor)]
     sizes = [int(x) for x in e["grad_sizes"].tolist()]
     judged = dict(per_param_grad_errors(e["grad"], e["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))

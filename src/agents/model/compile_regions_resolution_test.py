@@ -187,8 +187,11 @@ def gate_resolution(model: Any, batch_size: int) -> Dict[str, Any]:
             args = cr._r1_args(model, cr.r1_batch(model, int(batch_size)))
             for rung in gate_rungs(model, names, regime):
                 with rung.ctx:
-                    comp, eager = cr._r1_pair(model, args)
-                    ref = cr._r1_reference(model, args)
+                    # the gate's own rows ON THIS RUNG'S WEIGHTS: relocated off the PPO clip boundary exactly as
+                    # `_r1_judge` does (T36, gen3_r1_clip_margin_v1) — the resolution is the gate's, not the raw rows'
+                    rung_args, _ = cr.relocate_clip_boundary(model, args)
+                    comp, eager = cr._r1_pair(model, rung_args)
+                    ref = cr._r1_reference(model, rung_args)
                 out["rungs"][rung.label] = bf16_rung_resolution(comp, eager, ref, names, rung.regime, rung.over)
     finally:
         policy.set_training_mode(was)

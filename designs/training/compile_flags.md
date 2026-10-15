@@ -1839,8 +1839,8 @@ The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.
       build `trunk_precision="fp32"` explicitly since the bf16 adoption).
   - 🚨 **A FALSE-FATAL mode, found 2026-10-15** (`rb_toy_ent_s4001`): the rule's per-parameter statistic crosses the
     PPO CLIP BOUNDARY of any fixture row whose ratio sits within rounding of it, so two healthy arms can read 30× apart
-    (CPU: 18 % of healthy pairs above K at that FATAL's weights). Diagnosis, the GPU read and the proposed fixture
-    fix (T36): "The bf16 canary FATAL on trained weights" below.
+    (CPU: 18 % of healthy pairs above K at that FATAL's weights). Diagnosis, the GPU read and the fixture fix
+    (T36, BUILT 2026-10-15; its CUDA confirmation PENDING): "The bf16 canary FATAL on trained weights" below.
   - **Decision record — the bf16 gate's reference.**
 
     | Date | Decision | Why | Evidence |
@@ -1855,8 +1855,9 @@ The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.
     judges a graph that does not train.
   - **Pinned by** `trunk_precision_test.py` (the region itself), `trunk_precision_flag_test.py` (the flag surface,
     `fp32_scope`, the K9(b) probe), `compile_regions_bf16_test.py` (the rule: refused without bars, a healthy
-    pass, a planted compiled error, a planted drift, a mis-wired reference, an fp32 learner untouched) and
-    `compile_regions_resolution_test.py` (the resolution, above).
+    pass, a planted compiled error, a planted drift, a mis-wired reference, an fp32 learner untouched),
+    `compile_regions_resolution_test.py` (the resolution, above) and `compile_regions_clip_margin_test.py` +
+    `compile_regions_clip_margin_fatal_test.py` (the fixture off the PPO clip boundary, T36, below).
 
 A preset gets its CLI flag, flag-registry row and recipe surface in its ADOPTION commit, after its paired GPU benchmark
 and the R1 gate and canary are green. `--trunk-precision` had its flag already, because its parity rule needs a run
@@ -1865,7 +1866,7 @@ is the measurement's `scripts/update_bench.py`. ⚠️ The `cudagraphs` PRESET a
 the first (diagnostic) update (F-PB-2); lever C's route is `--learner-cudagraphs` (below), and `install` refuses the
 preset combined with it.
 
-### 🚨 The bf16 canary FATAL on trained weights (`rb_toy_ent_s4001`, 2026-10-15) — an X26 BLOCKER: diagnosed on CPU, the GPU read PENDING
+### 🚨 The bf16 canary FATAL on trained weights (`rb_toy_ent_s4001`, 2026-10-15) — diagnosed on CPU; the FIXTURE FIXED (T36), its GPU confirmation PENDING
 
 **The event.** The toy control `rb_toy_ent_s4001` (`--arch production` + 44 ablations: entity tokens and attention, no
 damage op, no move resolution; bf16 trunk; `--compile-trainer`; pinned `3899277a`) ended FATAL at 72,658,984 steps
@@ -1899,7 +1900,8 @@ never switches it) carries its whole policy gradient in one arm and none in the 
   one row switching moves it by tens of percent. The trunk's gradients also carry the value / win-prob losses, so the
   same row is a small share there, and the global gradient check passed.
 - **Why the confirmation could not catch it**: slice 1 (rows 32–63) is a SUBSET of slice 0 (all 64), and the
-  same-rows re-run is the same deterministic arithmetic; row 35 is in both.
+  same-rows re-run is the same deterministic arithmetic; row 35 is in both. (Since T36 the confirmation is the two
+  DISJOINT halves, below.)
 - **Not "trained weights" as such — a per-STATE lottery**: at 15M a row sat 0.0014 from its boundary and 23 % of
   healthy pairs read above 12. The CENSUS of every 1M checkpoint 1M–62M (all before the last passing canary, 62.83M;
   B = 64 untiled, so the clip decisions are exact): a row sits within 0.01 of its switching boundary at 14 of 62, and
@@ -1961,24 +1963,71 @@ reads that underlie this section: `python -m main.ops.diag_bf16_canary cpu --ckp
 | recalibrate the bar on trained states | — | **NO**: (iii) is not shown; a bimodal statistic has no bar with teeth (healthy flips read up to 31×) |
 | fp32 trunk for X26 | `train_ms` +29 % (42.1 → 54.3 s); leaves the adopted, A/B-passed recipe | a working STOPGAP: fp32 arms differ by ~1e-6 in log-prob, so flips are ~10^4× rarer — but the same latent boundary sits in the fp32 rule |
 | an eager learner | the whole compiled speedup (not measured for this surface; UNVERIFIED) | NO: it removes the canary's subject, not the defect |
-| **fix the canary's FIXTURE (standing rule 8)** | ~0.5–1 agent-day + this GPU window to validate + a `verify_compile_gate_cuda.sh` re-run | **RECOMMENDED** (below) |
+| **fix the canary's FIXTURE (standing rule 8)** | ~0.5–1 agent-day + this GPU window to validate + a `verify_compile_gate_cuda.sh` re-run | **BUILT (T36, below)**; the CUDA confirmation PENDING |
 
-**The recommended fix** (task T36, `designs/ops/TASK_BACKLOG.md`; NOT built here): before judging, read the fp32
-reference's ratio on every row and RELOCATE each row within M of its switching boundary to 2M inside the ACTIVE side
-(its old log-prob only; `diag_bf16_canary.relocate_old_log_prob`; M = 0.5 in these reads. T36 sets M = R1_BAR_K ×
-the largest |Δ log π| ANY arm reads, the compiled ones on the GPU included: on CPU, eager bf16's maximum over the
-62-checkpoint census is 0.161, so M ≈ 0.65). It is deterministic (a function of the reference's own forward on the same rows),
-keeps every far row's golden label, and judges the moved rows' FULL gradient in every arm. It applies to the startup
-gate too: `gate_regions` judges the same rows at every 6-hourly restart, where a FATAL is equally final. Also make the
-confirmation slice DISJOINT (rows 0–31 vs 32–63). **Validated on CPU at the FATAL's weights**: relocation moves 20 of
-the 64 rows (640 of 2,048 batch rows; M = 0.5), no arm flips a branch, eager bf16's `move_proj.weight` error turns
-unimodal (32 dithers: median 0.026, max 0.042, against 0.029 / 0.42 unrelocated), and the share of HEALTHY pairs above K
-falls from 18 % to **0 of 992** on every pointer-head parameter (max ratio 2.5–3.6, the order of window D's healthy max
-2.94); 0 at 66M and 15M too, and over the 62-checkpoint census the relocated eager error's maximum is 0.036. The bars stay valid if window D's 20 reads were flip-free (their max per-parameter ratio 2.94 is in the no-flip
-mode); the GPU window's `relocated` reads (verdict PASS at the FATAL's weights, null P(ratio > K) ≈ 0 for Cbf too) and
-`verify_compile_gate_cuda.sh` (the planted-miscompile teeth on the relocated rows) validate it on CUDA. **Order: the GPU diagnostic → T36 → X26 on the production bf16 compiled learner.** If the GPU contradicts
-(1) — Cbf off the reference with no branch flip, or C32 off at the fp32 bar — X26 takes the fp32 trunk and the
-miscompile is hunted with the localisation arms.
+**THE FIX (T36, `gen3_r1_clip_margin_v1`, BUILT 2026-10-15; the CUDA confirmation PENDING).** Standing rule 8 —
+*exclude inputs within a rounding error of a decision boundary rather than tolerating them by chance* — applied to the
+gate's own fixture. Three parts, in `compile_regions` / `compile_canary`, for the STARTUP GATE and the CANARY alike
+(they share `r1_rungs` → `_r1_judge`), under the bf16 rule and the fp32 rule alike (the fp32 rule has the same
+boundary at ~10⁴ smaller odds: its arms differ by ~1e-6 in log-prob):
+
+1. **Relocate the boundary rows, on every rung's own weights** (`relocate_clip_boundary` → `clip_relocation`). Before
+   the compiled / eager / reference arms run, one fp32 eager forward of R1 (`fp32_scope`; a no-op on an fp32 trunk)
+   reads every row's log-prob and normalised advantage; a row whose reference log-ratio is within `R1_CLIP_MARGIN` of
+   (or AT) the bound that switches ITS gradient (A > 0: log 1.15; A < 0: log 0.85; A = 0 rows carry no policy
+   gradient and are left alone) gets its OLD log-prob moved so the reference sits 2 × the margin inside the ACTIVE
+   side. **Moved, not excluded**: the batch keeps its declared shape (no new signature) and every row; excluding a
+   row would change the batch's advantage normalisation and drop its whole policy gradient from the check, while a
+   moved row's gradient is judged IN FULL by every arm; a row far from its bound keeps the golden's label.
+   Deterministic: a function of the reference's own forward on the same rows. The threshold itself is no verdict
+   boundary: a row just inside it is moved to 2M, one just outside stays at > M, and either way an arm shift ≤ M
+   switches nothing. Every rung relocates on ITS weights — the live rung, the fresh launch's seeded perturbation,
+   the unmoved parameters' perturbation, the graphed route's accumulation rung (both micro-batches) and the
+   judged-set rule's golden-alone reference.
+2. **The margin's precondition, CHECKED** (`_clip_margin_rule`, on every rung): every judged arm's largest |Δ log π|
+   from the reference is ≤ the margin, and — its consequence, checked rather than assumed — no arm switches any row's
+   clip branch. An arm that breaks it is refused BY NAME as a forward this far from the reference (≥ 4× the healthy
+   maximum), never read through a gradient ratio. Every R1 rule line prints `clip margin: <n>/<B> boundary rows
+   relocated (M …; nearest unmoved …); max |dlogp| compiled …, eager …, fp32 reference … <= M, 0 clip-branch
+   switches`, and every canary record carries it (`watch.*.clip_margin`).
+   **The margin**: `R1_CLIP_MARGIN = R1_BAR_K × R1_LOGPROB_SHIFT_MAX = 4 × 0.18 = 0.72` (log-prob). 0.18 is the largest
+   |Δ log π| of a judged arm measured so far, rounded UP to 2 significant digits as the bf16 bars are: eager bf16 vs
+   eager fp32, the s4001 census max 0.161 (62 checkpoints), the production census max 0.055 (10 states), the
+   32-seed dithered null at the FATAL's weights 0.173. **PROVISIONAL — CPU and eager only**: the COMPILED bf16 arm's
+   shift on CUDA is the GPU window's `forward_vs_E32.Cbf.log_prob_max_abs` (and every gate line); if it exceeds 0.18,
+   `R1_LOGPROB_SHIFT_MAX` rises with it.
+3. **The canary's confirmation on two DISJOINT halves** (`compile_trainer.FIXTURE_HALVES`: slice 2 = rows 0–31, slice
+   1 = rows 32–63). The halves share no row, so no single row can confirm a disagreement: independence by
+   construction. The scheduled check (and the startup gate) keep ALL 64 rows — a half can leave a parameter below
+   the per-parameter floor (the moves head on slice 1, `compile_regions_unmoved_init_test`) — and a miscompile only
+   one half judges is FATAL at the next scheduled canary (two consecutive disagreements). The old "same rows again"
+   re-run is gone: it re-ran the same deterministic arithmetic.
+
+**The evidence (CPU, the FATAL's weights loaded strict at this checkout, B = 64 untiled;
+`compile_regions_clip_margin_fatal_test`).** 32 seeded dithers, each against its own fp32 reference, two healthy
+eager bf16 arms per ordered pair: on the RAW rows 212 of 992 pairs read the canary's ratio above K = 12 on a
+pointer-head parameter (21 %, max 41.5×; 15 of 32 seeds switch a row's clip branch); on the RELOCATED rows **0 of 992**
+(max 3.65× — the order of window D's healthy max 2.94), every dither passing the margin rule (largest eager shift
+0.173 against M = 0.72). 21–22 of the 64 rows move, the FATAL's two boundary rows (4 and 35) among them. A planted
+10 % backward error on `pointer_head.move_proj.weight` is still refused at the fp32 rule on these weights' relocated
+rows (and on the K9 learner's, `compile_regions_clip_margin_test`); the bf16 resolution test re-pins nothing (it now
+relocates per rung as `_r1_judge` does, so its resolution is the gate's). The diagnostic's CPU re-read at this
+checkout (B = 2,048, production's relocation): at the FATAL's weights 22 of 64 rows move, eager switches none, the
+32-dither null on every judged head parameter 0 over K (max 3.67×; raw up to 20 %); at 66M eager's own flip (0.29 /
+0.34) reads 0.033 relocated and the null 14 % → 0; at 15M 21 % → 0. Eager's largest |Δ log π| there 0.082 / 0.107 /
+0.043. ⚠️ The diagnostic's null had read the never-judged `struggle_score.*` (~1e-9 of the largest gradient) as a
+"ratio"; it now reads only the parameters each seed's reference judges, as the canary does.
+
+**What the GPU window must show** (the training session's window, at this commit, under the lease):
+`scripts/ops/verify_compile_gate_cuda.sh` — all four CUDA tests PASS on the relocated rows (the fp32 gate's 10 %
+plant FATAL, the bf16 rule's pass / NaN / resolution confirmed at 0.5× / 2×), `summary.json` verdict PASS; and
+`scripts/ops/diag_bf16_canary.sh rb_toy_ent_s4001` — at the FATAL's weights `canary_replay` (the canary's own `_check`,
+now relocating) PASSES; `relocated.branch_flips.Cbf` = 0 and the relocated null reads P(ratio > K) = 0 for the Ebf
+pairs AND `Cbf_vs_Ebf`; `forward_vs_E32.Cbf.log_prob_max_abs` ≤ `R1_LOGPROB_SHIFT_MAX` (0.18) at every checkpoint
+read; `fp32_rule.over_bar` empty. If Cbf's shift exceeds 0.18, raise the constant (the margin is 4× it) and re-run; if
+Cbf is off the reference with NO branch flip, or C32 is off at the fp32 bar, the fixture was not the whole story —
+X26 takes the fp32 trunk and the miscompile is hunted with the localisation arms. **Order: T36 (built) → the GPU
+window → X26 on the production bf16 compiled learner.**
 
 **The watch-list record** (`gen3_canary_watch_v1`, this change): every canary record now carries the pointer head's
 per-check ratio, compiled distance and eager yardstick (`designs/training/learner_lifecycle.md`), so the next run's
@@ -2093,8 +2142,9 @@ While locked, any recompile, late first compile or cache-limit hit exits `[Compi
 `FATAL_CONFIG` (not restarted), and the message NAMES the failing guard (`UNDECLARED SIGNATURE — the
 failing guard(s): …`). At update 10 and then every 100 updates the IN-RUN PARITY CANARY (`agents/model/compile_canary.py`) holds
 R1 (the compiled micro-step) to eager on the K9 golden's real labelled rows at the startup gate's bars
-(loss + every policy gradient — EVERY canary; there is no decision-only canary). A disagreement is CONFIRMED in the same update (the same rows + an
-independent slice of them, eager recomputed): confirmed ⇒ checkpoint + `[CompileCanary] FATAL` naming the safe
+(loss + every policy gradient — EVERY canary; there is no decision-only canary), on rows moved off the PPO clip boundary (T36,
+`compile_regions.relocate_clip_boundary`, as the startup gate). A disagreement is CONFIRMED in the same update on BOTH
+disjoint halves of the rows (`compile_trainer.FIXTURE_HALVES`, eager recomputed): confirmed ⇒ checkpoint + `[CompileCanary] FATAL` naming the safe
 rollback point (`<run_dir>/canary_verdicts.jsonl`); unconfirmed ⇒ counted, and two consecutive ⇒ FATAL. The rank probe is HOOK-FREE (a forward
 hook on a compiled module is a guard — the iteration-1 signature `8fc297a2` used to absorb). 🚨 **The learner compiles ONLY as its DECLARED REGION** (K8, `agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"): R1 the micro-step, `fullgraph=True` at ONE declared signature (`batch_size` rows: a ragged micro-batch is REFUSED by the dispatcher, `gen3_r1_no_ragged_v1` — the collector refuses an update that does not divide by the micro-batch, and `check_shape_stability` judges the REAL update size, `--rollout-target-samples`, at startup). The compiled rollout region R0, its eager batch-1 route and `install_rollout_region` are DELETED (P10-E, owner-approved 2026-10-03: the Rust collector serves rollouts through T2, so R0 was never called, yet it was compiled, gated, prewarmed and canaried every launch); the rank probe reads R1's stashes (no second forward, the spectra on the device); on a CUDA buffer every micro-batch is STAGED to the device by a prefetch thread (`--device-batch staged`, the default since 2026-10-01; `resident` = one device copy of the whole flattened buffer per update, +~1.1 GB of update peak; `instrumented_ppo/device_batches.py`, bit-identical batches in every mode, the same permutation). 🚨 **Startup RUNS one dry update** (`agents/training/update_fit.py`, `gen3_update_fit_v1`): one real `train()` epoch on a fixture rollout of the buffer's full shape, the learner restored bit-identically, and a first update that would not leave 1,024 MiB of device headroom (or OOMs) is `UpdateWontFit` (FATAL_CONFIG) — `designs/training/learner_lifecycle.md` "The update fit check". ONE startup gate per region (`gen3_one_gate_per_region_v1`); the trainer's compile step (`compile_trainer.preflight_compile_trainer`) compiles nothing and refuses a learner without the micro-step. 🚨 **No region runs eager silently** (`gen3_no_silent_eager_v1`): a compiled-route call whose Python body executes, a ragged micro-batch, or dynamo disabled / errors suppressed / the stance moved under the lock is a typed FATAL; every update logs `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`, `lifecycle/eager_share`, `lifecycle/update_wall_s` (`designs/training/compile_flags.md`). R1's startup gate and the canary judge its per-parameter gradient by WEIGHT REGIME (`compile_regions.weights_regime`: fresh vs trained, measured bars — `designs/training/compile_flags.md`), through the SAME rungs (`compile_regions.r1_rungs`); a parameter training never moved — bit-identical to its fresh-build value in the init record every checkpoint carries (`compile_regions.record_param_init`, a `@startup_builder` in the fresh construction), or exactly 0.0, the only rule on a checkpoint with no record (the oracle arm's belief head, its labels all PAD) — is judged at the FRESH bar on the live weights and on its own perturbed rung at the TRAINED bar (`gen3_r1_unmoved_param_v1`, `gen3_r1_unmoved_init_v1`). 🚨 **Every R1 comparison PROVES its two arms independent and names a non-finite gradient** (F-XC-4, 2026-10-05): `compile_regions._r1_pair` reads `region_calls`' counters — the compiled arm dispatched the compiled route once and ran R1's Python body zero times, the eager arm the reverse — else a typed refusal (`gen3_gate_independent_arms_v1`); a NaN / inf gradient on either arm is `NonFiniteGateArmError` naming the parameters, never a cosine (`gen3_gate_nonfinite_named_v1`; `_cos` returns NaN, not 0.0, on a non-finite side). Code inside R1 must stay a static-shape program (the fold contract above). 🚨 **Every lever R1 reads is DECLARED at startup from the resolved config** (`gen3_r1_declared_levers_v1`): R1's declaration is its static flags (`MicroStatic`, resolved by `TrainSetup._micro_static`) plus the observation key set (never a rollout's data; R1 takes no per-update tensor dict), and every compiled update is held to the declaration (`compile_regions.check_r1_declared`, a typed FATAL naming the field or key). A new R1 lever is declared in that static, never by relaxing the lock (`compile_flags.md` "R1's DECLARATION"). A NEW compiled signature is added to the region table (`compile_regions.REGIONS`)
 and its prewarm, never absorbed after the lock; a learner-process caller OUTSIDE the regions runs the

@@ -57,7 +57,8 @@ def _eager_arm(model, b):
     was = model.policy.training
     model.policy.set_training_mode(True)
     try:
-        return cr._r1_arm(model, micro_step, cr._r1_args(model, b))
+        # the gate's rows: relocated off the PPO clip boundary as `_r1_judged_set_rule` does (T36)
+        return cr._r1_arm(model, micro_step, cr.relocate_clip_boundary(model, cr._r1_args(model, b))[0])
     finally:
         model.policy.set_training_mode(was)
 

@@ -26,14 +26,23 @@ A real miscompile is deterministic and disagrees every time; a healthy graph's r
 property of one batch on one weight state. So a disagreement is CONFIRMED IN THE SAME UPDATE:
 
   1. warn, dump the verdict (`<run_dir>/canary_disagreements.jsonl`), and re-run the whole check —
-     compiled AND eager, so the confirmation is not the same arithmetic repeated — on the SAME rows
-     and on an INDEPENDENT slice of the golden rows (`compile_trainer.fixture_index` slice 1: the
-     second half of the rows, tiled, the same declared shape);
-  2. CONFIRMED (it disagrees again on both) — checkpoint (`final_model_canary_fatal.zip`), then
+     compiled AND eager — on the two DISJOINT halves of the golden rows (`compile_trainer.FIXTURE_HALVES`:
+     slice 2 = the first half, slice 1 = the second half, each tiled to the same declared shape);
+  2. CONFIRMED (it disagrees on BOTH halves) — checkpoint (`final_model_canary_fatal.zip`), then
      `CompileCanaryError` (FATAL_CONFIG, not restarted);
   3. not confirmed — `compile/canary_unconfirmed_disagreements` counts it, training continues, and
      the NEXT scheduled canary decides: a disagreement at TWO CONSECUTIVE scheduled canaries is
      FATAL even when neither confirmed.
+
+WHY TWO DISJOINT HALVES (T36, 2026-10-15). Until T36 the confirmation re-ran the SAME rows (the same deterministic
+arithmetic: it reproduces whatever the first check read) and "slice 1", the second half — a SUBSET of the scheduled
+check's rows. A disagreement carried by ONE row (the `rb_toy_ent_s4001` FATAL: a row at the PPO clip boundary, row 35,
+in both) therefore "confirmed" itself. The halves share no row, so a confirmation needs two row-disjoint sets to
+disagree: independence by construction, not by chance. The scheduled check keeps ALL rows (a half can leave a
+parameter below the per-parameter floor — the moves head on slice 1 since the 2026-10-12 golden rebuild — so the
+halves alone would judge less); a miscompile only one half judges is FATAL by the consecutive rule below. Every check
+also runs on the fixture moved off the PPO clip boundary (`compile_regions.relocate_clip_boundary`, the startup gate's
+rows exactly), so no verdict depends on a row's 0/1 clip switch (standing rule 8).
 
 Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 `<run_dir>/canary_verdicts.jsonl` WITH THE WATCH-LIST RECORD (`WATCH_PREFIXES`, `gen3_canary_watch_v1`): every
@@ -237,25 +246,25 @@ class CompileCanary:
                         "disagreement)", first, compared=False)
             raise                                            # unreachable: _fatal raises
         except ct.CompileTrainerError as first:
-            # (1) warn + dump, then CONFIRM in the same update: the same rows again and an
-            # independent slice, compiled and eager both re-computed.
+            # (1) warn + dump, then CONFIRM in the same update on the two DISJOINT halves of the rows,
+            # compiled and eager both re-computed (no row is in both, so no single row confirms itself).
             _append(_run_dir(self.model), DISAGREEMENTS_FILE,
                     {"update": self.updates, "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
                      "verdict": str(first)[:4000]})
             self._say(f"⚠️  [CompileCanary] update {self.updates}: compiled DISAGREES with eager — "
-                      f"confirming now (the same rows + an independent slice). {str(first)[:300]}")
+                      f"confirming now (the two disjoint halves of the rows). {str(first)[:300]}")
             again = []
             watches: Dict[str, Any] = {"scheduled": w0.record()}
-            for sl in (0, 1):
+            for sl in ct.FIXTURE_HALVES:
                 wc = self._new_watch()
                 try:
                     self._check(sl, {}, wc)
                 except ct.CompileTrainerError as exc:
                     again.append((sl, exc))
                 watches[f"confirm_slice{sl}"] = wc.record()
-            if len(again) == 2:                              # (2) confirmed on both
-                self._fatal("the disagreement is CONFIRMED (it reproduced on the same rows and on an "
-                            "independent fixture slice in the same update)", first, watch=watches)
+            if len(again) == len(ct.FIXTURE_HALVES):        # (2) confirmed on both disjoint halves
+                self._fatal("the disagreement is CONFIRMED (it reproduced on BOTH disjoint halves of the "
+                            "fixture rows in the same update)", first, watch=watches)
             if self.prev_disagreed:                          # (4) two consecutive scheduled canaries
                 self._fatal("the previous scheduled canary disagreed too — two CONSECUTIVE "
                             "disagreements, each unconfirmed", first, watch=watches)
@@ -263,10 +272,11 @@ class CompileCanary:
             self.unconfirmed += 1
             self.prev_disagreed = True
             self.runs += 1
-            self._record("unconfirmed", f"reproduced on slice(s) {[sl for sl, _ in again]} of [0, 1]; {first}",
+            halves = list(ct.FIXTURE_HALVES)
+            self._record("unconfirmed", f"reproduced on slice(s) {[sl for sl, _ in again]} of {halves}; {first}",
                          watches)
             self._say(f"⚠️  [CompileCanary] update {self.updates}: the disagreement did NOT confirm "
-                      f"(reproduced on slice(s) {[sl for sl, _ in again]} of [0, 1]) — training "
+                      f"(reproduced on slice(s) {[sl for sl, _ in again]} of the halves {halves}) — training "
                       f"continues; {self.unconfirmed} unconfirmed so far; a disagreement at the NEXT "
                       f"scheduled canary is FATAL.")
             out = {"compile/canary_ok": 0.0,
@@ -289,7 +299,7 @@ class CompileCanary:
     # ------------------------------------------------------------------ the compiled region
     def _regions(self, model: Any, out: Dict[str, float], slice_: int = 0, watch: Optional[Any] = None) -> list:
         """K8's declared region: R1 (compiled micro-step vs eager: loss + every policy gradient) on the
-        same real labelled batch the startup gate uses (``slice_`` 1 = the independent half). ``watch`` is filled
+        same real labelled batch the startup gate uses (``slice_`` 2 / 1 = the disjoint halves). ``watch`` is filled
         by the FIRST route's live rung (`compile_regions.r1_rungs`)."""
         from agents.model import compile_regions as cr
         policy = model.policy

@@ -58,7 +58,9 @@ parameter set is ALSO held to the golden rows' own (the same weights, the filled
 static resolved without them): a parameter the golden judges CLEARLY that this run's rows do not judge
 is a FATAL (`judged_set_shrinkage`). R1's loss and the gradient over
 every policy parameter (cosine ≥ 0.9999 and the per-parameter rule; on a FRESH launch also on a seeded
-perturbation, whose legal log-probs are not constant). The gate runs at fp32 matmul precision 'highest' only — the one precision (TF32 was retired, deletion pass
+perturbation, whose legal log-probs are not constant). Every rung judges the golden rows MOVED OFF THE PPO
+CLIP BOUNDARY on its own weights (`relocate_clip_boundary`, `gen3_r1_clip_margin_v1`, T36; standing rule 8), so no
+verdict depends on one row's 0/1 clip switch. The gate runs at fp32 matmul precision 'highest' only — the one precision (TF32 was retired, deletion pass
 K2); a process at any other precision is refused. A disagreement is a `CompileTrainerError`
 (FATAL_CONFIG).
 """
@@ -66,6 +68,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import math
 from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Tuple
 
 import numpy as np
@@ -516,7 +519,8 @@ def _r1_arm(model: Any, fn: Callable[..., Any], args: Tuple[Any, ...]) -> Dict[s
     # `.clone()`: on the graphed route the loss is cudagraph-pool memory the next replay overwrites
     # (`gen3_r1_graphed_route_v1`); the flat gradient is a fresh `cat` already.
     return {"loss": out.loss.detach().float().reshape(1).clone(), "grad": torch.cat(gs),
-            "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long)}
+            "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long),
+            "log_prob": out.log_prob.detach().float().reshape(-1).clone()}
 
 
 def _r1_accum_arm(model: Any, fn: Callable[..., Any], args_list: List[Tuple[Any, ...]]) -> Dict[str, torch.Tensor]:
@@ -526,18 +530,19 @@ def _r1_accum_arm(model: Any, fn: Callable[..., Any], args_list: List[Tuple[Any,
     params = [p for _, p in names_params]
     for p in params:
         p.grad = None
-    losses = []
+    losses, lps = [], []
     for args in args_list:
         out = fn(*args)
         out.loss.backward()
         losses.append(out.loss.detach().float().reshape(1).clone())
+        lps.append(out.log_prob.detach().float().reshape(-1).clone())
     gs = [(p.grad if p.grad is not None else torch.zeros_like(p)).detach().float().flatten()
           for p in params]
     flat = torch.cat(gs)
     for p in params:
         p.grad = None
     return {"loss": torch.stack(losses).sum().reshape(1), "grad": flat,
-            "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long)}
+            "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long), "log_prob": torch.cat(lps)}
 
 
 def _routes() -> Tuple[int, int]:
@@ -664,7 +669,13 @@ def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -
         raise ct.GateArmsNotIndependentError(
             "--learner-cudagraphs on but no graphed R1 route is installed — mis-wired "
             "(gen3_r1_graphed_route_v1)")
-    args_list = [_r1_args(model, r1_batch(model, int(batch_size), s)) for s in (0, 1)]
+    fixes = [relocate_clip_boundary(model, _r1_args(model, r1_batch(model, int(batch_size), s))) for s in (0, 1)]
+    args_list = [a for a, _ in fixes]
+    # the accumulated arms' log-probs are the two micro-batches' concatenated: so is the fixture's record
+    parts = [x for _, x in fixes]
+    fix = ClipRelocation(torch.cat([x.old_log_prob for x in parts]), torch.cat([x.moved for x in parts]),
+                         torch.cat([x.ref_log_prob for x in parts]), torch.cat([x.advantages for x in parts]),
+                         parts[0].clip_range, parts[0].margin, min(x.nearest_unmoved for x in parts))
     e0, g0 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
     graphed = _r1_accum_arm(model, g, args_list)
     e1, g1 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
@@ -690,9 +701,12 @@ def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -
             raise ct.GateArmsNotIndependentError(
                 f"--compile-trainer region R1[graphed] (bf16 rule): the accumulation rung's fp32 REFERENCE arm ran "
                 f"the eager body {e3 - e2}x / the graphed route {g3 - g2}x (want 2 / 0)")
+        margin = _clip_margin_rule(fix, {"graphed": graphed, "eager": eager, "fp32 reference": ref})
         return "R1[graphed] " + _r1_verdict_bf16(eager, graphed, ref, names, regime, label=label,
-                                                 bar_by_index=excepted)
-    return "R1[graphed] " + _r1_verdict(eager, graphed, names, regime, bar_by_index=excepted, label=label)
+                                                 bar_by_index=excepted) + "; " + margin
+    margin = _clip_margin_rule(fix, {"graphed": graphed, "eager": eager})
+    return ("R1[graphed] " + _r1_verdict(eager, graphed, names, regime, bar_by_index=excepted, label=label)
+            + "; " + margin)
 
 
 # ------------------------------------------------------------- R1's judged set vs the golden's own
@@ -758,7 +772,9 @@ def _r1_judged_set_rule(model: Any, b: R1Batch, run: Dict[str, torch.Tensor], na
     key of (never on the production surface). Returns the gate-line rule."""
     from agents.training.instrumented_ppo.micro_step import micro_step
     try:
-        ref = _r1_arm(model, micro_step, _r1_reference_args(model, b))
+        # the golden rows alone, relocated off the clip boundary like the run's arm (`relocate_clip_boundary`), so the
+        # two judged sets differ only by the filled keys
+        ref = _r1_arm(model, micro_step, relocate_clip_boundary(model, _r1_reference_args(model, b))[0])
     except ct.CompileTrainerError:
         raise
     except Exception as exc:
@@ -924,13 +940,33 @@ def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
     RULE (`_r1_verdict_bf16`, with the fp32 eager REFERENCE arm `_r1_reference`). Returns (eager, compiled,
     the rule line). ``fn``: the R1 route under judgement (`r1_routes`; None = the installed compiled route)."""
     from agents.model.trunk_precision import trunk_precision_of
+    args, fix = relocate_clip_boundary(model, args)          # rule 8: the rows off the PPO clip boundary (T36)
     comp, eager = _r1_pair(model, args, fn)
-    if trunk_precision_of(model.policy) == "bf16":
-        ref = _r1_reference(model, args)
-        return eager, comp, _r1_verdict_bf16(eager, comp, ref, names, regime, label=label,
-                                             bar_by_index=bar_by_index, watch=watch)
-    return eager, comp, _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index,
+    arms: Dict[str, Dict[str, torch.Tensor]] = {"compiled": comp, "eager": eager}
+    line, err = "", None
+    try:
+        if trunk_precision_of(model.policy) == "bf16":
+            ref = _r1_reference(model, args)
+            arms["fp32 reference"] = ref
+            line = _r1_verdict_bf16(eager, comp, ref, names, regime, label=label, bar_by_index=bar_by_index,
                                     watch=watch)
+        else:
+            line = _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index, watch=watch)
+    except (ct.NonFiniteGateArmError, ct.GateArmsNotIndependentError):
+        raise                                                 # named precisely already
+    except ct.CompileTrainerError as exc:
+        err = exc
+    # the margin's precondition is read whatever the verdict (the watch record is complete), and an arm that broke
+    # it is named as ITSELF — its gradient verdict would be the 0/1 switch this fixture exists to exclude
+    try:
+        margin = _clip_margin_rule(fix, arms, watch)
+    except ct.CompileTrainerError as m_err:
+        if err is not None:
+            raise m_err from err                              # the verdict's own refusal rides as the cause
+        raise
+    if err is not None:
+        raise err
+    return eager, comp, line + "; " + margin
 
 
 def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
@@ -1012,6 +1048,153 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], n
     return f"[{label or regime + ' weights'}] {loss_rule}; {grad_rule}"
 
 
+# --------------------------------------------- R1's FIXTURE off the PPO CLIP BOUNDARY (standing rule 8, T36)
+#: THE DEFECT IT REMOVES (`gen3_r1_clip_margin_v1`, T36; the 2026-10-15 `rb_toy_ent_s4001` canary FATAL,
+#: `designs/training/compile_flags.md` "The bf16 canary FATAL on trained weights"). R1 is judged on the K9 golden's
+#: committed rows, whose OLD log-probs are a near-uniform policy's; on trained weights their PPO ratios spread
+#: 0.002 … 6.9. The clipped surrogate SWITCHES a row's whole policy gradient on or off at the clip boundary that bites
+#: its advantage's sign (A > 0 at ρ = 1 + clip, A < 0 at ρ = 1 − clip; the other boundary never switches it). A row
+#: within rounding of that boundary carries its full gradient in one arm and none in the other, so the per-parameter
+#: statistic becomes a 0/1 lottery: two HEALTHY eager bf16 arms read the canary's ratio above its bar of 12 in 18 % of
+#: 992 dithered pairs (max 31x) at the FATAL's weights. A verdict is never allowed to depend on that (rule 8).
+#:
+#: THE FIX: before judging, every row whose fp32 REFERENCE ratio sits within `R1_CLIP_MARGIN` (log-prob units) of its
+#: switching boundary gets its OLD log-prob moved so the reference sits 2 x the margin INSIDE the ACTIVE side
+#: (`clip_relocation`). Every rung of the startup gate and of the canary does it on its own weights
+#: (`relocate_clip_boundary`, in `_r1_judge` and the graphed accumulation rung). MOVED, not excluded: the batch keeps
+#: its declared shape and every row (excluding one would change the advantage normalisation and drop that row's
+#: whole policy gradient from the check), each moved row's gradient is judged IN FULL by every arm, and a row far from
+#: its boundary keeps the golden's label. Deterministic: a function of the reference's own forward on the same rows.
+#: The relocation's own threshold is not a verdict boundary: a row just inside it is moved to 2 M, a row just outside
+#: stays at >= M, and either way no arm whose shift is <= M can switch it.
+#:
+#: THE PRECONDITION, checked on every rung (`_clip_margin_rule`): every judged arm's largest |Δ log π| from the
+#: reference is <= the margin. Then no row can switch (moved rows sit 2 M away, the others > M), and that is a
+#: CATEGORICAL statement; an arm that moves a log-prob farther is refused by name (a forward disagreement of
+#: >= 4x the measured healthy maximum — never a lottery read through a gradient ratio).
+#:
+#: The largest |Δ log π| (the taken action's log-prob) a JUDGED arm has been measured to move a fixture row from the
+#: fp32 eager reference. PROVISIONAL — CPU and EAGER only (2026-10-15): eager bf16 vs eager fp32, max over (a) the
+#: `rb_toy_ent_s4001` census (62 checkpoints 1M-62M, B = 64 untiled, `main.ops.diag_bf16_canary cpu`) 0.161 (median of
+#: the per-checkpoint max 0.063), (b) the production-surface census (10 states) 0.055, (c) the 32-seed dithered null at
+#: the FATAL's weights (`compile_regions_clip_margin_fatal_test`) 0.173 — rounded UP to 2 significant digits as the
+#: bf16 bars are; fp32 arms ~1e-6. The COMPILED bf16 arm's shift on CUDA is read by the GPU diagnostic
+#: (`forward_vs_E32.Cbf.log_prob_max_abs`) and printed on every R1 rule line (`clip margin: … max |dlogp|`): if it
+#: exceeds this value, raise it here (and the margin with it).
+R1_LOGPROB_SHIFT_MAX = 0.18
+#: THE MARGIN = R1_BAR_K (the gate's safety factor over a healthy maximum, as every R1 bar) x that shift = 0.72.
+R1_CLIP_MARGIN = R1_BAR_K * R1_LOGPROB_SHIFT_MAX
+
+
+class ClipRelocation(NamedTuple):
+    """One rung's relocated fixture: the new old log-probs, which batch rows moved, the reference's log-prob and its
+    clip-switching side per row (True = the row's policy gradient is ACTIVE), the nearest UNMOVED row's distance."""
+    old_log_prob: torch.Tensor
+    moved: torch.Tensor                 # bool, per batch row
+    ref_log_prob: torch.Tensor          # float64, CPU
+    advantages: torch.Tensor            # float64, CPU: the micro-step's own (normalised) advantages
+    clip_range: float
+    margin: float
+    nearest_unmoved: float              # log-prob distance of the closest row left in place (inf when none)
+
+    def line(self) -> str:
+        n, b = int(self.moved.sum()), int(self.moved.numel())
+        near = f"{self.nearest_unmoved:.3f}" if np.isfinite(self.nearest_unmoved) else "-"
+        return (f"clip margin: {n}/{b} boundary rows relocated (M {self.margin:.3f}; nearest unmoved {near})")
+
+
+def _switch_log_bound(adv: torch.Tensor, clip_range: float) -> torch.Tensor:
+    """Per row, log of the clip boundary that SWITCHES its policy gradient: log(1 + clip) for A > 0, log(1 - clip)
+    otherwise (A = 0 rows carry no policy gradient, so their bound is never read)."""
+    return torch.where(adv > 0, torch.full_like(adv, math.log(1.0 + clip_range)),
+                       torch.full_like(adv, math.log(1.0 - clip_range)))
+
+
+def clip_active(log_prob: torch.Tensor, old_log_prob: torch.Tensor, adv: torch.Tensor,
+                clip_range: float) -> torch.Tensor:
+    """Per row: does the clipped surrogate pass this row's policy gradient? (A > 0: ρ <= 1 + clip; A < 0: ρ >= 1 - clip
+    — `clamp` passes its gradient AT its bounds; A = 0: False.) `micro_step`'s ``min(ρA, clip(ρ)A)`` branch, read in
+    log space in float64 (the fixture never holds a row within the margin of a bound, so the log-vs-ratio rounding
+    cannot decide it)."""
+    lr = log_prob.detach().double().cpu().reshape(-1) - old_log_prob.detach().double().cpu().reshape(-1)
+    a = adv.detach().double().cpu().reshape(-1)
+    logb = _switch_log_bound(a, clip_range)
+    return torch.where(a > 0, lr <= logb, torch.where(a < 0, lr >= logb, torch.zeros_like(lr, dtype=torch.bool)))
+
+
+def clip_relocation(ref_log_prob: torch.Tensor, old_log_prob: torch.Tensor, adv: torch.Tensor, clip_range: float,
+                    margin: float = R1_CLIP_MARGIN) -> ClipRelocation:
+    """The pure relocation (module comment above): a row whose reference log-ratio is within ``margin`` of (or AT)
+    its switching boundary — ``|log ρ − log b| <= margin`` — and whose advantage is non-zero gets ``old`` = ref − target,
+    so its reference log-ratio is ``target`` = log b ∓ 2 margin, inside the ACTIVE side. Every other row keeps ``old``.
+    The returned old log-probs are on ``old_log_prob``'s device and dtype."""
+    lp = ref_log_prob.detach().double().cpu().reshape(-1)
+    o = old_log_prob.detach().double().cpu().reshape(-1)
+    a = adv.detach().double().cpu().reshape(-1)
+    if not (lp.shape == o.shape == a.shape):
+        raise ct.CompileTrainerError(f"--compile-trainer region R1: the clip relocation's inputs disagree in shape "
+                                     f"(log-prob {tuple(lp.shape)}, old {tuple(o.shape)}, advantages {tuple(a.shape)})")
+    logb = _switch_log_bound(a, float(clip_range))
+    dist = ((lp - o) - logb).abs()
+    near = dist.le(float(margin)) & a.ne(0)
+    target = torch.where(a > 0, logb - 2.0 * float(margin), logb + 2.0 * float(margin))
+    new = torch.where(near, lp - target, o)
+    rest = dist[~near & a.ne(0)]
+    return ClipRelocation(new.to(dtype=old_log_prob.dtype, device=old_log_prob.device).reshape(old_log_prob.shape),
+                          near, lp, a, float(clip_range), float(margin),
+                          float(rest.min()) if rest.numel() else float("inf"))
+
+
+def relocate_clip_boundary(model: Any, args: Tuple[Any, ...], margin: float = R1_CLIP_MARGIN
+                           ) -> Tuple[Tuple[Any, ...], ClipRelocation]:
+    """R1's arguments with the fixture moved off the clip boundary on ``model``'s CURRENT weights, and the record.
+    The reference is R1's own eager body at the fp32 base classes (`trunk_precision.fp32_scope`; a no-op on an fp32
+    trunk) — one forward, gradient mode as the arms run it, no backward; it runs R1's eager body once, outside every
+    arm's independence window. ``args`` is `_r1_args`' tuple (old log-probs at index 4, the static last)."""
+    from agents.model.trunk_precision import fp32_scope
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    st = args[-1]
+    with fp32_scope(model.policy):
+        out = micro_step(*args)
+    fix = clip_relocation(out.log_prob.detach(), args[4], out.advantages.detach(), float(st.clip_range), margin)
+    del out
+    return args[:4] + (fix.old_log_prob,) + args[5:], fix
+
+
+def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tensor]],
+                      watch: Optional["GradWatch"] = None) -> str:
+    """The precondition (module comment above): every judged arm's largest |Δ log π| from the relocation's
+    reference is <= the margin, and — its consequence, checked rather than assumed — no arm's clip branch differs from
+    the reference's on any row. Raises `CompileTrainerError` naming the arm; returns the rule-line fragment."""
+    act_ref = clip_active(fix.ref_log_prob, fix.old_log_prob, fix.advantages, fix.clip_range)
+    shifts: Dict[str, float] = {}
+    for name, arm in arms.items():
+        lp = arm["log_prob"].detach().double().cpu().reshape(-1)
+        if lp.shape != fix.ref_log_prob.shape:
+            raise ct.CompileTrainerError(f"--compile-trainer region R1: the {name} arm's log-probs "
+                                         f"{tuple(lp.shape)} do not match the fixture's {tuple(fix.ref_log_prob.shape)}")
+        d = (lp - fix.ref_log_prob).abs()
+        shift = float(d.max()) if d.numel() else 0.0
+        shift = shift if np.isfinite(shift) else float("inf")
+        shifts[name] = shift
+        flips = int((clip_active(lp, fix.old_log_prob, fix.advantages, fix.clip_range) != act_ref).sum())
+        if not shift <= fix.margin or flips:
+            if watch is not None:
+                watch.fill_margin(fix, shifts)
+            raise ct.CompileTrainerError(
+                f"--compile-trainer region R1: the {name} arm moved a fixture row's log-prob by up to {shift:.3g} "
+                f"from the fp32 eager reference and switched {flips} row(s)' PPO clip branch (the clip margin is "
+                f"{fix.margin:.3g} = {R1_BAR_K:g} x the largest healthy shift measured, R1_LOGPROB_SHIFT_MAX "
+                f"{R1_LOGPROB_SHIFT_MAX:g}). The gate's rows are relocated off the clip boundary by that margin so no verdict depends "
+                f"on a 0/1 switch (standing rule 8, gen3_r1_clip_margin_v1): a forward this far from the reference is "
+                f"refused as itself. If this arm is HEALTHY, the margin is too small — re-measure "
+                f"(main.ops.diag_bf16_canary) and raise R1_LOGPROB_SHIFT_MAX; never judge across a switch.")
+    if watch is not None:
+        watch.fill_margin(fix, shifts)
+    return fix.line() + "; max |dlogp| " + ", ".join(f"{k} {v:.2e}" for k, v in shifts.items()) + \
+        f" <= {fix.margin:.3f}, 0 clip-branch switches"
+
+
 # ------------------------------------------------------------------ the canary's WATCH-LIST record
 class GradWatch:
     """A DECLARED watch-list of parameters (name prefixes) whose per-check numbers R1's live rung records whatever
@@ -1027,6 +1210,15 @@ class GradWatch:
         self.params: Dict[str, Dict[str, Any]] = {}
         self.worst: Optional[Dict[str, Any]] = None
         self.globals: Dict[str, float] = {}
+        self.margin: Optional[Dict[str, Any]] = None
+
+    def fill_margin(self, fix: "ClipRelocation", shifts: Dict[str, float]) -> None:
+        """The rung's clip-boundary fixture (`gen3_r1_clip_margin_v1`): rows relocated, the margin, the nearest unmoved
+        row's distance and every arm's largest |Δ log π| from the reference — so a run's records carry the compiled
+        arm's shift (the margin's provisional input) at every canary."""
+        self.margin = {"relocated_rows": int(fix.moved.sum()), "rows": int(fix.moved.numel()),
+                       "margin": float(fix.margin), "nearest_unmoved": float(fix.nearest_unmoved),
+                       "max_abs_dlogp": {k: float(v) for k, v in shifts.items()}}
 
     def wants(self, name: str) -> bool:
         return bool(self.prefixes) and name.startswith(self.prefixes)
@@ -1072,7 +1264,8 @@ class GradWatch:
             if isinstance(v, dict):
                 return {k: r(x) for k, x in v.items()}
             return v
-        return {"rule": self.rule, "params": r(self.params), "worst": r(self.worst), "global": r(self.globals)}
+        return {"rule": self.rule, "params": r(self.params), "worst": r(self.worst), "global": r(self.globals),
+                "clip_margin": r(self.margin)}
 
 
 # ------------------------------------------------------------------ THE bf16 PARITY RULE

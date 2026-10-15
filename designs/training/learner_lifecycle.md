@@ -157,14 +157,20 @@ miscompile is deterministic and disagrees every time. A healthy graph's rare exc
 batch on one weight state. Waiting for the next scheduled canary would mean ~1 h of training on a bad
 graph, so a disagreement is confirmed IN THE SAME UPDATE:
 - **Warn and dump** to `<run_dir>/canary_disagreements.jsonl`.
-- **Re-run the whole comparison**, compiled AND eager recomputed, on the same rows and on a SECOND slice of
-  the golden rows (`compile_trainer.fixture_index` slice 1: the second half of the rows, tiled, the same
-  declared shape). ⚠️ **The second slice is NOT independent of the first** (2026-10-15): slice 0 is all 64
-  rows, so slice 1's 32 rows are a SUBSET of it, and the same-rows re-run is the same deterministic arithmetic.
-  A disagreement carried by one row of rows 32–63 "confirms" on both — exactly what the
-  `rb_toy_ent_s4001` FATAL did (a PPO clip-boundary row, [`compile_flags.md`](compile_flags.md) "The bf16
-  canary FATAL on trained weights").
-- **Confirmed** (it disagrees again on both): checkpoint to `<run_dir>/final_model_canary_fatal.zip`
+- **Re-run the whole comparison**, compiled AND eager recomputed, on the two DISJOINT HALVES of the golden
+  rows (`compile_trainer.FIXTURE_HALVES`: slice 2 = rows 0–31, slice 1 = rows 32–63, each tiled to the same
+  declared shape; T36, `gen3_r1_clip_margin_v1`, 2026-10-15). **Independence by construction:** the halves share
+  no row, so no single row can carry a confirmation. Until T36 the confirmation was the same rows again (the same
+  deterministic arithmetic) plus slice 1, a SUBSET of the scheduled check's 64 rows — a disagreement carried by
+  one row of rows 32–63 "confirmed" itself, exactly what the `rb_toy_ent_s4001` FATAL did (a PPO clip-boundary
+  row, [`compile_flags.md`](compile_flags.md) "The bf16 canary FATAL on trained weights"). The scheduled check
+  keeps ALL 64 rows: a half can leave a parameter below the per-parameter floor (the moves head on slice 1 since
+  the 2026-10-12 golden rebuild), so a miscompile only one half judges is FATAL by the consecutive rule below.
+- **Every check runs on the fixture moved off the PPO clip boundary** (`compile_regions.relocate_clip_boundary`,
+  the startup gate's rows exactly; standing rule 8): a row within `R1_CLIP_MARGIN` of the clip bound that switches
+  its gradient is moved 2 × the margin inside its active side, and an arm that moves a log-prob past the margin is
+  refused by name (`compile_flags.md` "The fix (T36)").
+- **Confirmed** (it disagrees on BOTH halves): checkpoint to `<run_dir>/final_model_canary_fatal.zip`
   (forensics only; `latest.txt` is not moved), then `CompileCanaryError` (FATAL_CONFIG, not restarted).
 - **Not confirmed:** `compile/canary_unconfirmed_disagreements` counts it and training continues.
 - **Two consecutive scheduled canaries that disagree are FATAL**, even when neither confirmed.
@@ -173,10 +179,12 @@ Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 `<run_dir>/canary_verdicts.jsonl`; the run dir is `model.behaviour_dump_dir`, which K9(b) also uses.
 **Every record carries the WATCH-LIST** (`compile_canary.WATCH_PREFIXES` = `pointer_head.*`,
 `compile_regions.GradWatch`, `gen3_canary_watch_v1`, 2026-10-15): `watch.scheduled` (and on a disagreement
-`confirm_slice0` / `confirm_slice1`) holds, per watched parameter, the bf16 rule's `ratio`, the `compiled`
+`confirm_slice2` / `confirm_slice1`, the two halves) holds, per watched parameter, the bf16 rule's `ratio`, the `compiled`
 distance from the fp32 reference, eager bf16's `eager` yardstick and the `floor` (under the fp32 rule:
 `compiled_vs_eager` and its `bar`; an unjudged parameter `{"judged": false}`), the check's `worst` parameter
-and its `global` drift / envelope numbers — filled before any check can refuse. The `rb_toy_ent_s4001` FATAL
+and its `global` drift / envelope numbers, plus `clip_margin` (rows relocated, the margin, the nearest unmoved
+row's distance and every arm's largest |Δ log π| from the fp32 reference — the margin's provisional input, read at
+every canary) — filled before any check can refuse. The `rb_toy_ent_s4001` FATAL
 logged only each check's worst parameter, so the pointer head's ratio at its six passing canaries is
 unrecoverable; the next run's growth curve is in its JSONL. No extra compute: the rule computes these numbers
 anyway. Pinned by `compile_canary_test` (a pass and a FATAL record carry it; a global refusal still fills it;
@@ -196,7 +204,8 @@ is untouched (pinned). TB scalars, written on canary updates only:
 (R1's loss and gradient cosine cannot see it; the per-parameter rule does); a planted persistent R1 fault
 (FATAL in the same update, with the checkpoint and the rollback point); a
 one-shot blip that FATALs instead of counting; two consecutive unconfirmed disagreements that do not
-FATAL; and a wrong rollback-point choice.
+FATAL; a wrong rollback-point choice; confirmation halves that overlap; and a disagreement carried by ONE
+second-half row that confirms itself (it must stay unconfirmed, then FATAL at the next canary).
 ## The memory half — the CUDA memory TREND, wired (`gen3_cuda_memory_trend_v1`)
 
 The detector itself (what it reads, the floor / demand / ceiling, SUSTAINED / STOP / WARN, the
