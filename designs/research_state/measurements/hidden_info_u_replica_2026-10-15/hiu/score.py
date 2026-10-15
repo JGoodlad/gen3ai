@@ -196,8 +196,11 @@ def identities(data: Dict[str, dict]) -> dict:
             for a, b, eq, ne, miss in (("F+U", "F", "FU_eq_F", "FU_ne_F", "FU_or_F_missing"),
                                        ("O-U", "O", "OU_eq_O", "OU_ne_O", "OU_or_O_missing")):
                 ra, rb = d["rows"][a].get(sid), d["rows"][b].get(sid)
-                if not (ra and rb and ra.get("ok") and rb.get("ok")):
-                    if bool(ra and ra.get("ok")) != bool(rb and rb.get("ok")):
+                if ra is None or rb is None:      # not run yet
+                    rec[miss] += 1
+                    continue
+                if not (ra.get("ok") and rb.get("ok")):
+                    if bool(ra.get("ok")) != bool(rb.get("ok")):
                         ne_reason = f"ok differs: {a} {bool(ra and ra.get('ok'))} {b} {bool(rb and rb.get('ok'))}"
                         rec[ne].append([sid, ne_reason])
                     else:

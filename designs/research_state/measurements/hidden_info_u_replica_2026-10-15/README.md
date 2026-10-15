@@ -23,7 +23,8 @@ before any arm output existed). **This folder does not compare.**
 
 ## Status
 
-RUNNING (see "Runner and handoff" below). The read is not done; the sections marked PENDING fill in when it is.
+RUNNING (see "Runner and handoff" below). The read is not done. **Results: PENDING** (`hiu.score`, then this
+section).
 
 ## What was built (`hiu/`)
 
@@ -73,12 +74,42 @@ therefore re-run here, paired with F+U and O-U on the same states, so every shar
 ## Identities (the build is invalid unless they hold)
 
 At k = 6 (every opponent mon seen) F+U ≡ F and O-U ≡ O, outcome for outcome (every action, every world).
-`hiu.score` checks them on every k = 6 state and records each mismatch. PENDING (the verification run's result is
-in "Runner and handoff").
+`hiu.score` checks them on every k = 6 state and records each mismatch (`result.json` `identities`; the build is
+INVALID if `HOLD` is false on either checkpoint). The k = 6 states: end2 129 / 600 (one with a pending choice),
+prod 103 / 600.
+
+**Verification run (2026-10-15 03:05-03:20, code identical to `21e7bb38`'s runner (built as `db8f6f30` before the rebase; same tree); 13 registered states chosen for
+k = 6, a pending choice, low and mid k):** at the time of this commit, 4 k = 6 states had finished: F+U = F on all
+4 (end2 1, prod 3) and O-U = O on all 3 that had O-U (prod), outcome for outcome. Every arm built 8 worlds on every
+finished state; the guard checked every world (contract and engine) and raised NOTHING after one fix (below). The
+end2 pending k = 6 state was still running; its identity is read by `hiu.score` with everything else.
+
+**Guard finding during the build:** the first test raised on O-U because the engine's request names Return by its
+happiness power (`return102`); the guard now strips that power for Return / Frustration (a guard false positive,
+not a world defect).
 
 ## Runner and handoff
 
-PENDING.
+- **Rows:** `~/gen3ai_archive/hidden_info_u_replica/rows/<cp>/<arm>/w<pid>.jsonl` (one JSON line per state and arm:
+  the 8 world teams, every action's 8 outcomes, the build bookkeeping, the guard's counts).
+  **Done-markers:** `~/gen3ai_archive/hidden_info_u_replica/done/<cp>/` (one file per state). **Claims:**
+  `.../claims/<cp>/`.
+- **Code:** the workers run from the snapshot `~/gen3ai_archive/hidden_info_u_replica/code_db8f6f30/` (the tree of `21e7bb38`, named for its pre-rebase sha; made by
+  `snapshot.sh`), not from any worktree. Two workers, one per checkpoint, each chained after its verification
+  worker (`~/gen3ai_archive/hidden_info_u_replica/chain_full.sh`), each `run_worker.sh` (cores 5-7 / 13-15,
+  nice 19, an 8 GB `mem_cap` scope, re-run up to 6 times after a crash). Logs: `full_<cp>.log`,
+  `verify_<cp>.log` in the same folder.
+- **More workers:** safe at any time (claims are exclusive): `setsid nohup <code>/hidden_info_u_replica_2026-10-15/run_worker.sh <cp> <code> ~/gen3ai_archive/hidden_info_u_replica > <log> 2>&1 &`
+  — mind rule 5b's two-heavy-jobs cap while the GPU is leased.
+- **Status:** `cd designs/research_state/measurements/hidden_info_u_replica_2026-10-15 && python -m hiu.status`.
+- **Cost:** 50-480 s of wall per state for the six arms on a shared core (median about 2.5 min); 1,200 states at two
+  workers is about 30-45 h of wall, about twice the brief's estimate (the six arms' playouts dominate: every legal
+  action x 8 worlds to the end of the game, one torch thread).
+- **The read (when every state has a done-marker):**
+  `cd designs/research_state/measurements/hidden_info_u_replica_2026-10-15 && python -m hiu.score --root ~/gen3ai_archive/hidden_info_u_replica --out .`
+  writes `result.json` (identities, exclusions, every read: end2 / prod / pooled, per population, LEAF-K8 / K4 /
+  K1), `imp_per_state.json` and `marginals.json`; `hiu.score.tv_permutation_test` is the permutation-null TV test
+  for a third party's marginal comparison. Then fill "Results" here. Do NOT compare with the first implementation.
 
 ## Blindness (what this build read and did not read)
 
