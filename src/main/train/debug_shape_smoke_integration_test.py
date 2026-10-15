@@ -53,6 +53,16 @@ def test_arch_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run_archive, a
     updates = [int(m) for m in re.findall(r"\|\s+n_updates\s+\|\s+(\d+)", text)]
     assert updates and max(updates) >= 1, text[-3000:]
     assert "Training complete." in text
+    # gen3_metric_key_collision_v1: >= 2 `dump_logs` tables, the post-update one carrying the production network's
+    # `cell/*` liveness rows — the 2026-10-15 crash (every production run at a commit >= 65b71f6a died at its FIRST
+    # dump holding them: '   move_resolution_restored_move_weight_norm' and its `grad_norm` twin cut alike, and sb3's
+    # table raised). Both rows now render as two distinct rows (in full: the column is 48). Fails on revert (the run
+    # crashes at that dump).
+    from agents.training.train_logger import truncate_label
+    assert text.count("total_timesteps") >= 2, text[-3000:]
+    for half in ("weight_norm", "grad_norm"):
+        label = truncate_label(f"   move_resolution_restored_move_{half}")
+        assert re.search(re.escape(f"| {label}") + r" *\|", text), (label, text[-3000:])
     # the bf16 trunk is the production RECIPE (2026-10-14): `--arch <umbrella>` applied it, the trainer announced it
     # and the run recorded it (the CPU path runs the bf16 autocast rounds: this box's CPU bf16 update is as fast as fp32)
     assert "[TRUNK PRECISION] bf16" in text, text[-3000:]

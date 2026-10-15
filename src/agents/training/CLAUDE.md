@@ -57,6 +57,11 @@ run's tags of the same name**; read the run's `🎯 [CRITIC]` line first. PopArt
 dead source leaves a GAP, not a confident number. ⚠️ A run pinned before `gen3_obs_margin_unconditional_v1` has a
 degenerate `win_margin`: read its `win_prob/*contested*` family as absent. Detail: `designs/training/telemetry_scalars.md`. ⚠️ `edge/*` / `cell/*` liveness and `grad/*_share` are NOT effect sizes
 (zero-init families look dead and working alike; read `weight_norm` and `grad_norm` as a pair).
+🚨 **A metric key must stay DISTINCT in every output** (`gen3_metric_key_collision_v1`): sb3's stdout table cut long
+keys alike and RAISED mid-run — twice it killed every run of an architecture at its first dump (F-XC-5; every production
+run at ≥ `65b71f6a`). The table is now collision-proof and `metric_keys.check_startup_metric_keys` refuses a colliding
+key set at STARTUP (`MetricKeyCollisionError`, FATAL_CONFIG). A test of a new key pushes it through the REAL logger,
+not just a dict. Detail: `designs/training/telemetry_scalars.md` "Metric keys stay DISTINCT".
 
 ### What to watch on a WIN-PROB run — the 28-tag dashboard
 

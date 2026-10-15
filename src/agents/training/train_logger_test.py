@@ -9,6 +9,7 @@ the launcher, plot_tb) and of the bus (the metrics pipe, the K9 golden, `logger_
 from __future__ import annotations
 
 import io
+import re
 from typing import Any, List, Tuple
 
 import numpy as np
@@ -18,7 +19,10 @@ import torch as th
 from agents.training import train_logger as TL
 
 
-def _records(log: Any) -> None:
+LONG_KEY = "train/a_very_long_key_name_that_will_be_truncated_by_the_table"
+
+
+def _records(log: Any, long_key: bool = True) -> None:
     log.record("train/approx_kl", 0.0123456)
     log.record("train/n_updates", 7, exclude="tensorboard")
     log.record("time/fps", 812)
@@ -26,21 +30,24 @@ def _records(log: Any) -> None:
     log.record("rollout/ep_rew_mean", np.float32(0.25))
     log.record("rust_env/version", 3.0)
     log.record("note/text", "hello")
-    log.record("train/a_very_long_key_name_that_will_be_truncated_by_the_table", 1.5)
+    if long_key:
+        log.record(LONG_KEY, 1.5)
     log.record("loose_key", np.int64(4))
     log.record("hist/param", th.arange(4.0))
     log.record_mean("train/m", 2.0)
     log.record_mean("train/m", 4.0)
 
 
-def test_the_stdout_table_is_sb3s_byte_for_byte():
+def test_the_stdout_table_is_sb3s_byte_for_byte_for_every_key_that_fits():
+    """sb3's table, text for text — for keys within the 36-column key width. A LONGER key is the one
+    deliberate departure (`gen3_metric_key_collision_v1`; the next test)."""
     from stable_baselines3.common.logger import HumanOutputFormat, Logger
 
     mine, ref = io.StringIO(), io.StringIO()
     a = TL.Logger(None, [TL.HumanOutputFormat(mine)])
     b = Logger(None, [HumanOutputFormat(ref)])
     for log in (a, b):
-        _records(log)
+        _records(log, long_key=False)
     assert dict(a.name_to_value).keys() == dict(b.name_to_value).keys()
     assert a.name_to_value["train/m"] == b.name_to_value["train/m"] == 3.0
     assert a.name_to_excluded == b.name_to_excluded and a.name_to_count == b.name_to_count
@@ -129,3 +136,89 @@ def test_configure_serves_stdout_and_tensorboard_only(tmp_path, capsys):
     tb.dump(10)
     tb.close()
     assert any(p.name.startswith("events.out.tfevents") for p in (tmp_path / "tb").iterdir())
+
+
+# ── gen3_metric_key_collision_v1: no metric key collides in ANY output format ─────────────────────
+#: The pair that killed every production run at a commit >= 65b71f6a at its first dump (2026-10-15):
+#: under the `cell/` tag both rows were cut to '   move_resolution_restored_move_...' and sb3's table RAISED.
+CRASH_PAIR = ("cell/move_resolution_restored_move_weight_norm", "cell/move_resolution_restored_move_grad_norm")
+#: F-XC-5's pair (fixed then by renaming the key): it killed every fixed_mass self-play run the same way.
+FXC5_PAIR = ("opp_intent/flat_switch_target_recall_top1_bot", "opp_intent/flat_switch_target_recall_top1_pool")
+#: The LATENT case the survey found (2026-10-15): a stable opponent's eval keys carry its run label, so two seeds of
+#: one arm share a head — rows past even the 48-character column, shortened by `truncate_label`.
+STABLE_PAIR = ("eval/mean_ep_len_vs_ext_rb_hib_species_moves_s3101@15000000",
+               "eval/mean_ep_len_vs_ext_rb_hib_species_moves_s3102@15000000")
+
+
+@pytest.mark.parametrize("pair", [CRASH_PAIR, FXC5_PAIR, STABLE_PAIR])
+def test_two_long_keys_with_one_head_render_as_two_distinct_rows_and_never_raise(pair):
+    """THE CRASH, at the unit: sb3's `key[:33] + "..."` gave both keys one label and the dump raised
+    ``ValueError`` mid-run. Fails on revert (the dump raises). The first two now print in full (48
+    columns); the third is shortened, distinctly."""
+    out = io.StringIO()
+    log = TL.Logger(None, [TL.HumanOutputFormat(out)])
+    for i, k in enumerate(pair):
+        log.record(k, float(i))
+    log.dump(step=1)
+    text = out.getvalue()
+    tag = pair[0][: pair[0].index("/") + 1]
+    labels = [TL.truncate_label("   " + k[len(tag):]) for k in pair]
+    assert labels[0] != labels[1]
+    for lab in labels:
+        assert re.search(re.escape(f"| {lab}") + r" *\|", text), (lab, text)
+    assert TL.metric_key_collisions(pair) == []
+    assert all(len("   " + k[len(tag):]) > 36 for k in pair)              # each one sb3 would have cut
+
+
+def test_a_shortened_label_is_stable_exact_width_and_keeps_head_and_tail():
+    k = "   mean_ep_len_vs_ext_rb_hib_species_moves_s3101@15000000"
+    lab = TL.truncate_label(k)
+    assert lab == TL.truncate_label(k) and len(lab) == TL.STDOUT_MAX_LENGTH
+    assert lab.startswith(k[:10]) and lab.endswith("s3101@15000000") and TL.key_digest(k) in lab
+    every_production_cell_row = "   move_resolution_restored_switch_weight_norm"        # the longest, 46
+    assert TL.truncate_label(every_production_cell_row) == every_production_cell_row
+    assert TL.key_digest(k) == TL.key_digest(str(k))                       # blake2s: process-independent
+    assert TL.truncate_label("short") == "short"
+    assert TL.truncate_label("x" * TL.STDOUT_MAX_LENGTH) == "x" * TL.STDOUT_MAX_LENGTH
+
+
+def test_a_residual_clash_prints_the_full_key_and_the_startup_check_refuses_it(monkeypatch):
+    """Should two labels still meet (here a forced digest clash), the table prints the later key IN FULL —
+    a display never stops a run — and `check_metric_keys` refuses the key set (typed, FATAL_CONFIG)."""
+    monkeypatch.setattr(TL, "key_digest", lambda key, n=TL.LABEL_DIGEST_HEX: "0" * n)
+    keys = ("train/" + "a" * 24 + "_middle_one_" + "z" * 32, "train/" + "a" * 24 + "_middle_two_" + "z" * 32)
+    assert TL.truncate_label("   " + keys[0][6:]) == TL.truncate_label("   " + keys[1][6:])
+    out = io.StringIO()
+    log = TL.Logger(None, [TL.HumanOutputFormat(out)])
+    for k in keys:
+        log.record(k, 1.0)
+    log.dump(step=1)
+    assert f"| {keys[1]} |" in out.getvalue()
+    with pytest.raises(TL.MetricKeyCollisionError, match="stdout"):
+        TL.check_metric_keys(keys, where="test")
+
+
+def test_the_check_refuses_two_producers_of_one_key_and_a_tensorboard_text_clash():
+    with pytest.raises(TL.MetricKeyCollisionError, match="identity"):
+        TL.check_metric_keys(["cell/a_weight_norm", "cell/a_weight_norm"], where="test")
+    with pytest.raises(TL.MetricKeyCollisionError, match="tensorboard"):
+        TL.check_metric_keys(["note/text", "note/text/text_summary"], where="test")
+    TL.check_metric_keys([*CRASH_PAIR, *FXC5_PAIR, "train/loss", LONG_KEY], where="test")
+
+
+def test_a_collision_is_FATAL_CONFIG_and_still_a_ValueError():
+    from main.exit_codes import TrainExitCode, exit_code_for
+    err = TL.MetricKeyCollisionError("x")
+    assert isinstance(err, ValueError)
+    assert exit_code_for(err) == int(TrainExitCode.FATAL_CONFIG)
+
+
+def test_tensorboard_tags_are_the_keys_verbatim_however_long(tmp_path):
+    """Dashboards read the TB tags BY NAME: the fix changes only the stdout ROW, never a tag."""
+    ours = TL.TensorBoardOutputFormat.__new__(TL.TensorBoardOutputFormat)
+    ours.writer, ours._is_closed = _FakeWriter(), False
+    log = TL.Logger(None, [ours])
+    for k in CRASH_PAIR:
+        log.record(k, 1.0)
+    log.dump(step=3)
+    assert {c[1] for c in ours.writer.calls if c[0] == "scalar"} == set(CRASH_PAIR)

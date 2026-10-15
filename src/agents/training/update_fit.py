@@ -82,6 +82,9 @@ class FitReading:
     oom: Optional[str] = None
     #: the peak of each `train()` segment (`phase_hook` names): where the demand lives
     phase_peaks: Optional[Dict[str, Dict[str, float]]] = None
+    #: every key the dry update put on the logger's bus — the startup metric-key check's input
+    #: (`agents.training.metric_keys`, gen3_metric_key_collision_v1)
+    metric_keys: Tuple[str, ...] = ()
 
     def as_dict(self) -> Dict[str, Any]:
         return dict(self.__dict__)
@@ -327,6 +330,7 @@ def dry_update(model: Any, *, epochs: int = 1) -> FitReading:
     import tempfile
     dump_dir = tempfile.mkdtemp(prefix="update_fit_dump_")
     oom: Optional[str] = None
+    recorded: Tuple[str, ...] = ()
     phases = _PhasePeaks(dev)
     if cuda:
         torch.cuda.synchronize(dev)
@@ -350,6 +354,7 @@ def dry_update(model: Any, *, epochs: int = 1) -> FitReading:
             from agents.training.instrumented_ppo import phase_hook as PH
             with PH.installed(phases.mark) if cuda else contextlib.nullcontext():
                 model.train()
+            recorded = tuple(getattr(model._logger, "name_to_value", {}) or {})
         except torch.cuda.OutOfMemoryError as exc:
             oom = str(exc).splitlines()[0]
         finally:
@@ -364,7 +369,7 @@ def dry_update(model: Any, *, epochs: int = 1) -> FitReading:
     secs = time.perf_counter() - t0
     if not cuda:
         return FitReading(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, secs, int(live_buf.buffer_size * live_buf.n_envs),
-                          source, oom)
+                          source, oom, metric_keys=recorded)
     torch.cuda.synchronize(dev)
     # the hook resets the peak counters at every mark: the update's peak is the max over its segments
     # and whatever ran after the last mark
@@ -374,7 +379,7 @@ def dry_update(model: Any, *, epochs: int = 1) -> FitReading:
     free = torch.cuda.mem_get_info(dev)[0] / MiB
     card = reserved + free
     return FitReading(demand, peak, reserved, free, card, card - demand, floor / MiB, secs,
-                      int(live_buf.buffer_size * live_buf.n_envs), source, oom, phases.table())
+                      int(live_buf.buffer_size * live_buf.n_envs), source, oom, phases.table(), recorded)
 
 
 def verdict(r: FitReading, mode: str = "?", run_dir: Optional[str] = None) -> str:
@@ -408,7 +413,13 @@ def verdict(r: FitReading, mode: str = "?", run_dir: Optional[str] = None) -> st
 
 
 def check_update_fits(model: Any, run_dir: Optional[str] = None) -> Optional[str]:
-    """The startup gate: `dry_update`, then `verdict`. None off CUDA (inert)."""
+    """The startup gate: `dry_update`, the METRIC-KEY check over every key it recorded (+ the network's
+    derived families; `agents.training.metric_keys` — `MetricKeyCollisionError`, FATAL_CONFIG), then
+    `verdict`. Off CUDA: the key check over the derived families only, then None (no dry update)."""
+    from agents.training.metric_keys import check_startup_metric_keys
     if next(model.policy.parameters()).device.type != "cuda":
+        check_startup_metric_keys(model)
         return None
-    return verdict(dry_update(model), str(getattr(model, "device_batch_mode", "?")), run_dir)
+    reading = dry_update(model)
+    check_startup_metric_keys(model, reading.metric_keys)
+    return verdict(reading, str(getattr(model, "device_batch_mode", "?")), run_dir)

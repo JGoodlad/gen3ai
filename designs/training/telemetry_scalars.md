@@ -386,6 +386,38 @@ two-opponent-CLASS fixture where the pooled row INVERTS the bot verdict (the eco
 test) and a loss-enriched-quota fixture where the reweighting moves the base rate onto the cycle's
 and takes reliability from 0.32 to 0.
 
+## Metric keys stay DISTINCT in every output (`gen3_metric_key_collision_v1`, 2026-10-15)
+
+The learner's logger (`agents/training/train_logger.py`) writes every pending key to two outputs: the stdout table
+(the child log the launcher shows) and TensorBoard. **TensorBoard tags are the keys VERBATIM**, however long (dashboards
+and `main.ops.*` read them by name; a text value is written under `<key>/text_summary`). The stdout table groups keys
+under their `<tag>/` and shows each as three spaces + the rest, in a 48-character column (sb3's was 36).
+
+- 🚨 **The incident class.** sb3's table cut a longer row to 33 characters + `...` and RAISED `ValueError` when two rows
+  cut alike — mid-run, at the first dump holding both. It happened twice: F-XC-5 (`opp_intent/flat_switch_target_recall_top1_{bot,pool}`,
+  every fixed_mass self-play run) and 2026-10-15 (`cell/move_resolution_restored_move_{weight,grad}_norm`, and the
+  `restored_switch` / `status_switch` pairs: **every production run at a commit ≥ `65b71f6a` died at its first post-update dump**,
+  step ~202k on the GPU, with no checkpoint to restart from). Both times the tests had checked the metric DICT, never
+  the formatter.
+- **The formatter is collision-proof.** The column is 48, so every row the production network writes today prints IN
+  FULL (the longest, `cell/move_resolution_restored_switch_weight_norm`, is 46). A longer row (e.g. a stable opponent's
+  `eval/*_vs_ext_<run label>`) renders as `truncate_label`'s `<head 13>~<6-hex blake2s digest of the whole row>~<tail 27>`
+  (stable across processes and dumps; the tail gets the room because our keys end in their distinguishing part).
+  Should two rows still meet (a digest clash, or sb3's tag quirk for a key with no `/`), the later row prints its FULL
+  key. **A display never stops a run.** A table whose rows all fit 36 is sb3's, byte for byte (`train_logger_test.py`).
+- **The STARTUP check** (`agents/training/metric_keys.py`, called by `update_fit.check_update_fits` on both startup
+  paths) refuses, with `MetricKeyCollisionError` (a `ValueError`; FATAL_CONFIG, exit 3, never restarted), a key set
+  that collides in ANY output: one key with two producers (one TB series silently overwritten), one stdout row for
+  two keys, one TB tag for two keys. Its input is the network-derived families (`grad_balance.cell_family_keys` /
+  `edge_family_keys`, both halves of every pair, one entry per producer) and, on CUDA, every key the dry first update
+  recorded (a diagnostic update, so every gated probe's tags). Off CUDA there is no dry update; the CPU production
+  smoke (`main/train/debug_shape_smoke_integration_test.py`, slow) asserts ≥ 2 dumps and the formerly crashing pair
+  rendered as two rows.
+- **Naming a new key:** no length limit is needed. Do not rely on the table to tell two long keys apart at a glance;
+  put the distinguishing part at the END. A key a test checks must go through the REAL logger
+  (`diagnostics_cadence_test.py::test_the_production_networks_full_metric_set_dumps_through_stdout_and_tensorboard`
+  is the pattern), not just appear in a dict.
+
 ## TensorBoard export census — the counts, the group table and the ERA-RELEVANCE classification
 
 > The census's currency table, its `gen3_tb_relevance_v1` headline and the 28-tag WIN-PROB dashboard

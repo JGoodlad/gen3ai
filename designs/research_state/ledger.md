@@ -25481,3 +25481,63 @@ Tag: **BUILD · legacy deletion U1 · load boundary moved (pre-adoption configs 
 obs change** ·
 evidence: `src/agents/model/model_version/adopted_levers.py` + `_test.py`, `designs/deleted_flags.md` §1,
 `designs/ops/legacy_deletion_manifest_2026-10-12.md` §8, `designs/CHANGELOG.md` (2026-10-15 U1)
+### 2026-10-15 · CRASH FIX · **Every PRODUCTION run at a commit ≥ `65b71f6a` died at its FIRST post-update dump (step ~202k on the GPU): sb3's stdout table cut `cell/move_resolution_restored_move_{weight,grad}_norm` (and the `restored_switch` / `status_switch` pairs) to one 33-character label and RAISED; the table is now collision-proof (48 columns, a digest label past them, never a raise) and a key set that collides in ANY output is refused at STARTUP (`MetricKeyCollisionError`, FATAL_CONFIG) — `gen3_metric_key_collision_v1`**
+
+**The crash.** The Training session's fresh `--arch production` CUDA smoke at `6f6b7f90`
+(`~/.claude/jobs/hib_forks/cross/post_smoke_child.log`) crashed at its first `dump_logs` after an update:
+`ValueError: Key '   move_resolution_restored_move_weight_norm' truncated to '   move_resolution_restored_move_...' that
+already exists` (`train_logger.py:87`, `max_length` 36, from `instrumented_ppo/loop.py:344`). No checkpoint existed, so
+the launcher could not restart it. **Reproduced on CPU** at the same HEAD: `--arch production --debug --steps 6000` dies at
+its SECOND dump (the first after an update), same message, exit 1.
+
+**Root cause.** `65b71f6a` (2026-10-14) added `MoveResolutionCell`'s six zero-init projections to
+`grad_balance.CELL_FAMILIES`; `cell_family_metrics` emits `cell/<name>_weight_norm` and `cell/<name>_grad_norm`, and
+under the `cell/` tag three pairs share their first 33 row characters. The table (sb3's `HumanOutputFormat`, kept
+operation for operation by the owned logger) RAISED on a truncation collision instead of rendering. **Reach: any
+network with move resolution and the facts levers, i.e. every production / end-state run (and fork) at a commit ≥
+`65b71f6a`; the legacy / toy surfaces never built those cells.** Nothing trained past the first dump, so no run's data
+is affected; TensorBoard was never the problem (its tags are the keys verbatim).
+
+**Why it escaped.** (1) `65b71f6a`'s tests checked the metric DICT (`diagnostics_cadence_test`'s ON arm) and never pushed
+it through the stdout logger. (2) No production smoke ran after it: `65b71f6a`'s gate was targeted and `-m "not slow"`,
+and the slow tier's last `debug_shape` production PASS was at `89d258af` (2026-10-15T02:58Z), which does NOT contain
+`65b71f6a`. `--debug` DOES reach the crashing dump (its second), so the slow smoke would have caught it. (3) It is the
+SECOND incident of the class: F-XC-5 (`opp_intent/flat_switch_target_recall_top1_{bot,pool}`) killed every fixed_mass
+self-play run the same way, and was fixed by renaming the key, not the formatter.
+
+**The fix (the class).** `agents/training/train_logger.py`: the key column is 48 (every production row, the longest 46,
+prints in full); a longer row prints `truncate_label`'s `<head>~<6-hex blake2s digest>~<tail>` (stable, collision-proof);
+a residual clash prints the full key — a display never stops a run. A table whose rows fit 36 is sb3's byte for byte.
+`agents/training/metric_keys.py` + `update_fit.check_update_fits` (both startup paths): one key with two producers, one
+stdout row for two keys, or one TB tag for two keys is refused at STARTUP over the network-derived `cell/*` / `edge/*`
+keys (`grad_balance.cell_family_keys` / `edge_family_keys`) and, on CUDA, every key the dry first update recorded.
+TensorBoard tags are unchanged.
+
+**The survey** (every metric family, HEAD code + the TB tags of all 91 `rb_*` runs + 525 child logs + a captured CPU
+production run's 328 distinct dumped keys): the old rule's ONLY current collisions are the three `cell/move_resolution_*`
+pairs. One LATENT case: a stable opponent's `eval/{win_rate,mean_reward,mean_ep_len,elo}_vs_ext_<run label>` keys collide
+under the old rule for two seeds of one arm (no `rb_` run has hit it; now harmless). Near-collisions (rows of 34–37
+characters) in `cell/`, `opp_intent/`, `ridealong/`, `eval/`, `compile/` — all now print in full. No odd characters
+except the free-text stable-opponent labels (`@`, possibly spaces).
+
+**FINDINGS (standing rule 7).**
+1. **Three pre-existing IDENTITY collisions (one key, two producers; the later write wins silently — not a crash; read from the code, not run):**
+   `fork/*` (`rust_rollout/fork.py:626` during collection, NaNs kept, and `instrumented_ppo/ppo.py:325` in `train()`);
+   `train/effective_batch` (`run_io.DoseLogCallback` and `AdaptiveBatchCallback`, under `--adaptive-batch`: the latter's
+   post-decision value wins while `train/dose_rate` used the old K); `lifecycle/cuda_streams_after_freeze`
+   (`cuda_memory_trend` overwrites the per-sample reading with a windowed running max). Not fixed here (out of scope).
+2. **`grad/species_belief_*` is never produced at HEAD** (read from code, not run): the bank registers the hypothesis-set
+   term as `species_belief_set`, while `ppo.py:497` / `_R1_PROBE_TERMS` look for `species_belief`.
+3. **The startup check cannot see eval-cycle keys** (the stable-opponent family); the formatter makes them harmless.
+   Off CUDA there is no dry update, so the CPU startup check covers the derived families only.
+4. **CPU smokes beside a live run need one torch thread.** A production `--debug` smoke pinned to rule 5b's six logical
+   CPUs at load ~22 took 1,311 s to bring T2 up (27 s on a quieter box); with `OMP_NUM_THREADS=1` it took 39 s. The
+   `debug_shape` slow smoke's subprocess inherits the environment and does not pin it.
+5. The toy capture (`--debug`, no `--arch`) was stopped before its first update: the toy surface's keys were read
+   statically only.
+
+Tag: **CRASH FIX · GIGO (a logging defect that killed runs) · reach: every production run at a commit ≥ `65b71f6a`; no
+run data affected** · evidence: `src/agents/training/train_logger.py`, `metric_keys.py`, `train_logger_test.py`,
+`diagnostics_cadence_test.py`, `update_fit_test.py`, `src/main/train/debug_shape_smoke_integration_test.py`,
+`designs/training/telemetry_scalars.md` "Metric keys stay DISTINCT", `designs/endstate/design_x26_readiness.md` I28,
+`designs/CHANGELOG.md`

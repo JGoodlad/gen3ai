@@ -265,9 +265,14 @@ def _one_update(model, pristine, state0, *, skip: bool):
 
 
 @pytest.fixture(scope="module")
-def three_arms():
+def real_model():
+    return _real_gen3_ppo()
+
+
+@pytest.fixture(scope="module")
+def three_arms(real_model):
     from agents.training.instrumented_ppo.noise_scale_terms import NOISE_TERM_GROUPS
-    model = _real_gen3_ppo()
+    model = real_model
     # Prime both noise-scale EMA families to a post-warm-up state (value AND count), as the
     # per-term test does: one sample on a 16-row toy can read negative, which the emit gate
     # correctly withholds — and then the ON arm could not show that the per-term probe ran.
@@ -344,3 +349,74 @@ def test_a_skipped_update_writes_NONE_of_the_gated_tags_and_every_per_update_one
     assert _gated(off[2]) == [], f"a skipped update wrote {_gated(off[2])}"
     for tag in EVERY_UPDATE_TAGS:
         assert tag in off[2], tag
+
+
+
+# ── gen3_metric_key_collision_v1: the production network's metric set through the REAL logger ─────────
+#: The keys `InstrumentedMaskablePPO.dump_logs` adds at every dump (`instrumented_ppo/loop.py`).
+LOOP_DUMP_KEYS = ("time/iterations", "rollout/ep_rew_mean", "rollout/ep_len_mean", "time/fps",
+                  "time/time_elapsed", "time/total_timesteps", "rollout/success_rate")
+
+
+def test_the_production_networks_full_metric_set_dumps_through_stdout_and_tensorboard(three_arms, tmp_path):
+    """THE 2026-10-15 CRASH at the unit (every production run at a commit >= 65b71f6a died at its first dump,
+    step ~202k): the ON arm is a DIAGNOSTIC update of the real production network, so it records every key a
+    production update can — and 65b71f6a's tests checked that DICT, never the stdout logger it is dumped
+    through. Here the whole set goes through the REAL `train_logger` (stdout table + a real TensorBoard event
+    file): every key one distinct row, every key its own tag VERBATIM. Fails on revert of the formatter
+    (`ValueError: Key '   move_resolution_restored_move_weight_norm' truncated to ... already exists`)."""
+    import io
+
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+    from agents.training import train_logger as TL
+    _, on, _, _ = three_arms
+    logged = dict(on[2])
+    crash_pair = ("cell/move_resolution_restored_move_weight_norm", "cell/move_resolution_restored_move_grad_norm")
+    assert set(crash_pair) <= set(logged), "the ON arm no longer records the crash pair — the test is vacuous"
+    # ... and that pair DID collide under sb3's truncation (key[:33] + "..." under its tag): the bug's input
+    assert len({("   " + k[len("cell/"):])[:33] for k in crash_pair}) == 1
+    values = {**logged, **{k: 1.0 for k in LOOP_DUMP_KEYS}}
+    TL.check_metric_keys(values, where="the production ON arm")
+    out = io.StringIO()
+    log = TL.Logger(None, [TL.HumanOutputFormat(out), TL.TensorBoardOutputFormat(str(tmp_path / "tb"))])
+    for k, v in values.items():
+        log.record(k, v)
+    log.dump(step=1)
+    log.close()
+    rows = [ln.split("|")[1].strip() for ln in out.getvalue().splitlines() if ln.startswith("| ")]
+    tags = {k[: k.index("/") + 1] for k in values if k.find("/") > 0}
+    assert len(rows) == len(values) + len(tags) and len(set(rows)) == len(rows)
+    acc = EventAccumulator(str(tmp_path / "tb"), size_guidance={"scalars": 0})
+    acc.Reload()
+    scalars = {k for k, v in values.items() if isinstance(v, (int, float, np.floating, np.integer))}
+    assert set(acc.Tags()["scalars"]) == scalars
+
+
+def test_the_startup_gate_passes_the_production_network_and_refuses_a_planted_collision(real_model, monkeypatch):
+    """The startup half (`update_fit.check_update_fits` -> `metric_keys.check_startup_metric_keys`): the
+    production network's derived `cell/*` / `edge/*` keys pass; a PLANTED second producer of one `cell/*`
+    key (a `CELL_FAMILIES` row reusing a metric name) is refused AT STARTUP with the typed error. Fails on
+    revert of the check (the gate returns None)."""
+    from agents.training import grad_balance as GB
+    from agents.training import update_fit as UF
+    from agents.training.metric_keys import network_metric_keys
+    from agents.training.train_logger import MetricKeyCollisionError
+    keys = network_metric_keys(real_model)
+    assert "cell/move_resolution_restored_switch_grad_norm" in keys and any(k.startswith("edge/") for k in keys)
+    assert UF.check_update_fits(real_model) is None                    # CPU: the derived families pass
+    monkeypatch.setattr(GB, "CELL_FAMILIES",
+                        GB.CELL_FAMILIES + (("move_resolution_move", "move_resolution_cell", "restored_move_proj"),))
+    with pytest.raises(MetricKeyCollisionError, match="identity.*cell/move_resolution_move_grad_norm"):
+        UF.check_update_fits(real_model)
+
+
+def test_the_derived_key_list_covers_every_key_the_liveness_probes_write(three_arms, real_model):
+    """`grad_balance.cell_family_keys` / `edge_family_keys` (what the startup check reads) list every key
+    `cell_family_metrics` / `edge_family_metrics` wrote in the real ON update — a renamed key cannot slip
+    past the check."""
+    from agents.training.metric_keys import network_metric_keys
+    _, on, _, _ = three_arms
+    derived = set(network_metric_keys(real_model))
+    written = {k for k in on[2] if k.startswith(("cell/", "edge/"))}
+    assert written and written <= derived, sorted(written - derived)

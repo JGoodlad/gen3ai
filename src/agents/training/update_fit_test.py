@@ -105,6 +105,24 @@ def test_the_check_is_inert_off_cuda():
     assert UF.check_update_fits(_learner()) is None
 
 
+def test_the_dry_update_hands_every_recorded_key_to_the_startup_metric_key_check(monkeypatch):
+    """gen3_metric_key_collision_v1: the reading carries every key the dry update recorded, and on CUDA
+    `check_update_fits` refuses a colliding set (typed, FATAL_CONFIG) BEFORE the verdict — the CUDA branch
+    driven here by a stand-in model and reading (no card needed)."""
+    import types
+
+    from agents.training.train_logger import MetricKeyCollisionError
+    r = UF.dry_update(_learner())
+    assert "train/loss" in r.metric_keys and "train/approx_kl" in r.metric_keys
+    planted = UF.FitReading(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 64, "stub",
+                            metric_keys=("note/text", "note/text/text_summary"))
+    monkeypatch.setattr(UF, "dry_update", lambda m: planted)
+    cuda_model = types.SimpleNamespace(policy=types.SimpleNamespace(
+        parameters=lambda: iter([types.SimpleNamespace(device=types.SimpleNamespace(type="cuda"))])))
+    with pytest.raises(MetricKeyCollisionError, match="dry first update"):
+        UF.check_update_fits(cuda_model)
+
+
 def test_the_trainer_runs_the_check_on_both_startup_paths():
     from main.train import model_build
     src = inspect.getsource(model_build)

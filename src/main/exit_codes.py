@@ -105,6 +105,9 @@ _FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
                   # inside a linked worktree's own models/) — a restart meets the same refusal.
                   "RunArchiveError": TrainExitCode.FATAL_CONFIG,
                   "ParityFailure": TrainExitCode.FATAL_CONFIG,
+                  # `agents.training.train_logger.MetricKeyCollisionError` (gen3_metric_key_collision_v1): two
+                  # metric keys collide in an output format — the key set is the code's, a restart replays it.
+                  "MetricKeyCollisionError": TrainExitCode.FATAL_CONFIG,
                   # T28: a live session's parse panic (`main.live.halt.LiveParseHalt`) — never retried.
                   "LiveParseHalt": TrainExitCode.FATAL_LIVE_PARSE}
 

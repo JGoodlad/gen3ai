@@ -330,3 +330,26 @@ def cell_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
             keys.append(f"cell/{name}_grad_norm")
             norms.append(w.grad.detach().norm())
     return dict(zip(keys, read_floats(norms)))     # ONE host read (gen3_batched_host_reads_v1)
+
+
+def edge_family_keys(features_extractor: nn.Module) -> List[str]:
+    """EVERY key `edge_family_metrics` can write for this extractor — each family's ``weight_norm`` AND its
+    ``grad_norm`` (written only once a backward has run, so absent from a pre-update read). Reads no value;
+    the startup metric-key check's input (`agents.training.metric_keys`, gen3_metric_key_collision_v1)."""
+    eb = getattr(features_extractor, "edge_bias", None)
+    if eb is None:
+        return []
+    fams = [f for f in sorted(getattr(eb, "families", ()) or ())
+            if getattr(getattr(eb, f"{f}_map", None), "weight", None) is not None]
+    return [k for f in fams for k in (f"edge/{f}_weight_norm", f"edge/{f}_grad_norm")]
+
+
+def cell_family_keys(features_extractor: nn.Module) -> List[str]:
+    """EVERY key `cell_family_metrics` can write for this extractor (both halves of each `CELL_FAMILIES`
+    row it carries), one entry per PRODUCER — a metric name two rows share is listed twice, which the
+    startup check refuses (`agents.training.metric_keys`, gen3_metric_key_collision_v1)."""
+    out: List[str] = []
+    for name, attr, proj in CELL_FAMILIES:
+        if getattr(getattr(getattr(features_extractor, attr, None), proj, None), "weight", None) is not None:
+            out += [f"cell/{name}_weight_norm", f"cell/{name}_grad_norm"]
+    return out

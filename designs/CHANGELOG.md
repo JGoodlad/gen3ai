@@ -14471,3 +14471,23 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   mirror hash and the registry count, 65 → 57 toggles). Tests re-pointed: the OFF-side cases of the lever tests deleted,
   the numeric op tests re-derived for the adopted physics (`beatup_damage_test`, `hp_type_belief_test`, …), the toy
   vacuity re-proven on a pinned-toy-shaped record (`adopted_levers_test`).
+## 2026-10-15 — CRASH FIX: metric keys stay distinct in every output (`gen3_metric_key_collision_v1`; logging only; no model / config / obs / signature change, TensorBoard tags unchanged)
+
+- **The crash.** Every production run at a commit ≥ `65b71f6a` died at its first post-update dump (step ~202k on the
+  GPU; reproduced on CPU by `--arch production --debug` at its second dump): `65b71f6a` added the six
+  `move_resolution_*` projections to `grad_balance.CELL_FAMILIES`, and sb3's stdout table (`train_logger.HumanOutputFormat`)
+  cut `cell/move_resolution_restored_move_{weight,grad}_norm` (and the `restored_switch` / `status_switch` pairs) to one
+  33-character label and RAISED. The second incident of the class (F-XC-5 was the first).
+- **The fix.** The table's key column is 48 (sb3's 36; every production row fits), and a longer row's label is
+  `train_logger.truncate_label`'s `<head>~<digest>~<tail>` (collision-proof, stable); a residual clash prints the full
+  key and never raises. A table whose rows all fit 36 is sb3's, byte for byte.
+  `agents/training/metric_keys.py` refuses a key set that collides in ANY output (two producers of one key, one stdout
+  row, one TB tag) at STARTUP — `MetricKeyCollisionError` (FATAL_CONFIG), from `update_fit.check_update_fits` on both
+  startup paths, over the network-derived `cell/*` / `edge/*` keys (`grad_balance.cell_family_keys` / `edge_family_keys`)
+  and, on CUDA, every key the dry first update recorded.
+- Tests: `train_logger_test.py` (both incident pairs, the label, the residual clash, the check, the exit code, TB tags
+  verbatim), `diagnostics_cadence_test.py` (the production network's full ON-arm metric set through the REAL stdout + TB
+  logger; a planted collision refused by the startup gate), `update_fit_test.py` (the dry update's keys reach the
+  check; the CUDA branch), and the slow `debug_shape_smoke_integration_test.py` (≥ 2 dumps, the crash pair rendered).
+  Docs: `designs/training/telemetry_scalars.md` "Metric keys stay DISTINCT", `src/agents/training/CLAUDE.md`,
+  `designs/endstate/design_x26_readiness.md` I28; ledger 2026-10-15 CRASH FIX.
