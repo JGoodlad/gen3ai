@@ -241,3 +241,24 @@ def test_the_per_row_decomposition_SUMS_BACK_to_the_heads_gradient(golden_arms):
     (g,) = D.head_grads(model, inputs, [dz])
     n = D.WATCH + "move_proj.weight"
     assert rows["params"][n]["sum_norm"] == pytest.approx(float(g[n].norm()), rel=1e-6)
+
+
+def test_the_rows_judged_are_the_runs_PINNED_rows_when_committed(tmp_path, monkeypatch):
+    """`select_buffer`: 'auto' reads `testdata/k9_golden_buffer_<run>_pin.npz` when it exists (the FATAL's own rows;
+    U3 rebuilt the committed golden after it), else the committed golden; 'golden' forces the committed one; a missing
+    path refuses. It installs the choice as `learner_golden.BUFFER_PATH` (what `compile_regions.golden_rows` reads)."""
+    from agents.training import learner_golden as LG
+    monkeypatch.setattr(LG, "BUFFER_PATH", LG.BUFFER_PATH)            # restored after the test
+    golden = LG.BUFFER_PATH
+    s4001 = tmp_path / "rb_toy_ent_s4001"
+    s4001.mkdir()
+    pinned = D.select_buffer(s4001, "auto")
+    assert pinned.name == "k9_golden_buffer_rb_toy_ent_s4001_pin.npz" and pinned.is_file()
+    assert LG.BUFFER_PATH == pinned
+    other = tmp_path / "rb_other"
+    other.mkdir()
+    LG.BUFFER_PATH = golden
+    assert D.select_buffer(other, "auto") == golden
+    assert D.select_buffer(s4001, "golden") == golden
+    with pytest.raises(D.DiagError, match="no such file"):
+        D.select_buffer(s4001, str(tmp_path / "missing.npz"))

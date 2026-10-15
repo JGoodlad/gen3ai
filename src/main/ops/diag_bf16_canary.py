@@ -43,6 +43,9 @@ the rows through `compile_regions.clip_relocation` at `R1_CLIP_MARGIN`, and `can
 P(ratio > K) = 0 for the Ebf pairs AND for Cbf, Cbf must switch no relocated row, and `forward_vs_E32.Cbf.
 log_prob_max_abs` must stay within `compile_regions.R1_LOGPROB_SHIFT_MAX` (the margin's provisional, CPU-only input).
 The canary's confirmation is the two DISJOINT halves (slices 2 and 1), no longer slice 0 again + slice 1.
+THE ROWS (`--buffer`, default `auto`): a FATAL is a property of a (weights, rows) state, and legacy deletion U3 rebuilt
+the committed K9 golden after `rb_toy_ent_s4001`'s FATAL; `auto` reads the run's PINNED rows when they are committed
+(`src/agents/model/testdata/k9_golden_buffer_<run>_pin.npz` — s4001's are), so the raw reads reproduce the FATAL's state.
 
 INCREMENTAL: each checkpoint's read is its own JSON (`<out>/<mode>_<label>.json`), written as soon as it finishes; a
 finished one is skipped on a re-run unless `--force`. A WALL BUDGET (`--budget-min`) stops starting new checkpoints
@@ -1045,6 +1048,33 @@ def _write(path: Path, obj: Any) -> None:
     os.replace(tmp, path)
 
 
+def pinned_rows_dir() -> Path:
+    """Where a run's PINNED K9 rows live (the buffer its canary judged, when the committed golden has since been
+    rebuilt): `src/agents/model/testdata/`."""
+    from utils.paths import src_path
+    return src_path("agents", "model", "testdata")
+
+
+def select_buffer(run: Path, spec: str) -> Path:
+    """The K9 golden buffer every read of this process judges, installed as `learner_golden.BUFFER_PATH` (which
+    `compile_regions.golden_rows` reads). The FATAL is a property of a (weights, ROWS) state: legacy deletion U3 rebuilt
+    the committed golden (`33a1c3b9`) after `rb_toy_ent_s4001`'s canary FATAL'd on the rows of its pin, and on the new
+    rows those weights hold no boundary row as close. ``auto`` reads the run's pinned rows when committed
+    (`testdata/k9_golden_buffer_<run>_pin.npz`), else the committed golden."""
+    from agents.training import learner_golden as LG
+    if spec == "auto":
+        pinned = pinned_rows_dir() / f"k9_golden_buffer_{run.name}_pin.npz"
+        path = pinned if pinned.is_file() else Path(LG.BUFFER_PATH)
+    elif spec == "golden":
+        path = Path(LG.BUFFER_PATH)
+    else:
+        path = Path(spec)
+    if not path.is_file():
+        raise DiagError(f"--buffer {spec!r}: no such file {path}")
+    LG.BUFFER_PATH = path
+    return path
+
+
 def run_mode(mode: str, a: argparse.Namespace) -> int:
     global ALLOW_FP32_RUN, RUN_BATCH
     ALLOW_FP32_RUN = bool(getattr(a, "allow_fp32_run", False))
@@ -1057,6 +1087,8 @@ def run_mode(mode: str, a: argparse.Namespace) -> int:
             raise DiagError("the gpu mode needs CUDA (run it through scripts/ops/diag_bf16_canary.sh under the lease)")
         torch.cuda.set_device(0)
     run = resolve_run(a.run)
+    buffer = select_buffer(run, getattr(a, "buffer", "auto") or "auto")
+    _say(f"[diag] the rows judged: {buffer}")
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     specs = [s for s in a.ckpts.split(",") if s.strip()]
@@ -1073,7 +1105,7 @@ def run_mode(mode: str, a: argparse.Namespace) -> int:
     meta = {"mode": mode, "run": str(run), "torch": torch.__version__, "cuda": torch.version.cuda,
             "device_name": torch.cuda.get_device_name(0) if mode == "gpu" else "cpu",
             "threads": torch.get_num_threads(), "batch": RUN_BATCH, "dither_rel": DITHER_REL,
-            "commit": _commit(), "argv": sys.argv[1:], "started": time.time()}
+            "commit": _commit(), "argv": sys.argv[1:], "started": time.time(), "buffer": str(buffer)}
     _write(out / f"{mode}_meta.json", meta)
     done, skipped, incomplete = [], [], []
     for i, (label, zp) in enumerate(ckpts):
@@ -1132,6 +1164,10 @@ def build_parser() -> argparse.ArgumentParser:
         s.add_argument("--allow-fp32-run", action="store_true",
                        help="judge an fp32-trained run's weights under the bf16 rule (as the production baseline's "
                             "gate read does)")
+        s.add_argument("--buffer", default="auto",
+                       help="the K9 golden buffer whose rows every read judges: 'auto' = the run's PINNED rows when "
+                            "src/agents/model/testdata/k9_golden_buffer_<run>_pin.npz exists, else the committed "
+                            "golden; 'golden' = the committed golden; or an .npz path")
     v = sub.add_parser("verdict")
     v.add_argument("--out", required=True)
     return p

@@ -1,6 +1,12 @@
-"""THE T36 FIX AT THE FATAL'S OWN WEIGHTS (`gen3_r1_clip_margin_v1`): `rb_toy_ent_s4001`'s
+"""THE T36 FIX AT THE FATAL'S OWN WEIGHTS AND ROWS (`gen3_r1_clip_margin_v1`): `rb_toy_ent_s4001`'s
 `final_model_canary_fatal.zip` (read-only, from the run archive), CPU, B = 64 untiled (the fixture's 64 rows once each,
 so every clip decision is exact; the canary's B = 2,048 tiles the same rows and reads the same mean gradient).
+
+THE ROWS ARE THE ONES THE FATAL JUDGED: `testdata/k9_golden_buffer_rb_toy_ent_s4001_pin.npz` is the K9 golden buffer
+at the run's pin `3899277a` (byte-identical through `ba8f59c1`, where the diagnosis ran). The committed buffer was
+rebuilt since (legacy deletion U3, `33a1c3b9`, run seed 22), and on THOSE rows these weights hold no boundary row as
+close (2 of 32 dithers switch a row, none reads above K) — the defect is a property of a (weights, rows) STATE, so the
+test pins both.
 
 * THE NULL (the diagnostic's read, through PRODUCTION's own relocation): 32 seeded weight dithers (sigma 2^-9
   relative, `main.ops.diag_bf16_canary.dithered`), each read against its OWN fp32 reference. On the golden's raw rows
@@ -31,6 +37,8 @@ from agents.model.compile_gate_probe import per_param_grad_errors
 pytestmark = pytest.mark.slow
 
 RUN = "rb_toy_ent_s4001"
+#: the K9 golden buffer the run's canary judged (its pin's), committed beside this test
+FATAL_ROWS = Path(__file__).with_name("testdata") / "k9_golden_buffer_rb_toy_ent_s4001_pin.npz"
 ZIP = "final_model_canary_fatal.zip"
 ROWS = 64
 SEEDS = 32
@@ -44,6 +52,14 @@ def _zip() -> Path:
     if p is None or not p.is_file():
         pytest.skip(f"the run archive does not hold {RUN}/{ZIP}")
     return p
+
+
+@pytest.fixture(autouse=True)
+def the_fatals_rows(monkeypatch):
+    """`compile_regions.golden_rows` (and the diagnostic's row count) read the buffer the FATAL was judged on."""
+    from agents.training import learner_golden as LG
+    assert FATAL_ROWS.is_file(), f"PRECONDITION: the committed fixture {FATAL_ROWS}"
+    monkeypatch.setattr(LG, "BUFFER_PATH", FATAL_ROWS)
 
 
 @pytest.fixture

@@ -25864,8 +25864,13 @@ The compile gate's fixture only: no model, config, observation or signature chan
    32–63); CONFIRMED only if both disagree. The scheduled check and the startup gate keep all 64 rows, because a half
    can leave a parameter below the per-parameter floor (the moves head on slice 1). The same-rows re-run is gone.
 
-**Evidence (CPU, the FATAL's weights loaded strict at this checkout, B = 64 untiled, torch threads 1;
-`compile_regions_clip_margin_fatal_test.py`).** 32 seeded weight dithers (σ 2^-9 relative), each against its own fp32
+**Evidence (CPU, the FATAL's weights loaded strict at this checkout, B = 64 untiled, torch threads 1, on the rows the
+FATAL was judged on; `compile_regions_clip_margin_fatal_test.py`).** The K9 golden buffer was REBUILT by legacy deletion
+U3 (`33a1c3b9`, run seed 22) while T36 was being built; the test pins the FATAL's rows (the buffer at the run's pin
+`3899277a`, committed as `src/agents/model/testdata/k9_golden_buffer_rb_toy_ent_s4001_pin.npz`). On the NEW rows the same
+weights hold no boundary row as close (2 of 32 dithers switch a row, none reads above K, raw max 8.1×; relocated max
+3.0×) — the defect is a property of the (weights, rows) STATE, which is why the census found it in 14 of 62 checkpoints
+and not all. 32 seeded weight dithers (σ 2^-9 relative), each against its own fp32
 reference, the canary's statistic between two healthy eager bf16 arms over the pointer head: raw rows 212 of 992 ordered
 pairs above K = 12 (21 %, max 41.5×; 15 of 32 seeds switch a row), relocated rows **0 of 992** (max 3.65×); every
 dither passes the margin rule. 21–22 rows of 64 move, the FATAL's boundary rows 4 and 35 among them. A planted 10 %
@@ -25905,3 +25910,8 @@ not the whole story: the fp32 trunk for X26 and the localisation arms.
    is not win-prob, and the win-prob critic is a constant; the relocation covers the policy clip only.
 5. **`main.ops.cuda_build_validate`'s numerics cell** reads the same raw rows (cu126 vs cu128, fp32): the same boundary
    at fp32's ~10^4× smaller odds; not changed here (out of scope).
+6. **The committed K9 buffer changed under this unit** (U3's rebuild): the canary FATAL is not reproducible on the
+   current golden rows at the FATAL's weights, so the FATAL test carries its own copy of the pinned rows, and the
+   diagnostic gained `--buffer` (default `auto`: a run's committed pinned rows, `testdata/k9_golden_buffer_<run>_pin.npz`,
+   else the golden), so `diag_bf16_canary.sh rb_toy_ent_s4001` re-reads the FATAL on ITS rows with no new argument.
+   `verify_compile_gate_cuda.sh` reads the CURRENT golden (it judges the gate as production runs it).

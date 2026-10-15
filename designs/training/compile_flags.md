@@ -2003,8 +2003,9 @@ boundary at ~10⁴ smaller odds: its arms differ by ~1e-6 in log-prob):
    one half judges is FATAL at the next scheduled canary (two consecutive disagreements). The old "same rows again"
    re-run is gone: it re-ran the same deterministic arithmetic.
 
-**The evidence (CPU, the FATAL's weights loaded strict at this checkout, B = 64 untiled;
-`compile_regions_clip_margin_fatal_test`).** 32 seeded dithers, each against its own fp32 reference, two healthy
+**The evidence (CPU, the FATAL's weights loaded strict at this checkout, B = 64 untiled, on the rows the FATAL was
+judged on — the K9 buffer at the run's pin, committed as `src/agents/model/testdata/k9_golden_buffer_rb_toy_ent_s4001_pin.npz`,
+because legacy deletion U3 rebuilt the committed golden since; `compile_regions_clip_margin_fatal_test`).** 32 seeded dithers, each against its own fp32 reference, two healthy
 eager bf16 arms per ordered pair: on the RAW rows 212 of 992 pairs read the canary's ratio above K = 12 on a
 pointer-head parameter (21 %, max 41.5×; 15 of 32 seeds switch a row's clip branch); on the RELOCATED rows **0 of 992**
 (max 3.65× — the order of window D's healthy max 2.94), every dither passing the margin rule (largest eager shift
@@ -2021,7 +2022,8 @@ checkout (B = 2,048, production's relocation): at the FATAL's weights 22 of 64 r
 **What the GPU window must show** (the training session's window, at this commit, under the lease):
 `scripts/ops/verify_compile_gate_cuda.sh` — all four CUDA tests PASS on the relocated rows (the fp32 gate's 10 %
 plant FATAL, the bf16 rule's pass / NaN / resolution confirmed at 0.5× / 2×), `summary.json` verdict PASS; and
-`scripts/ops/diag_bf16_canary.sh rb_toy_ent_s4001` — at the FATAL's weights `canary_replay` (the canary's own `_check`,
+`scripts/ops/diag_bf16_canary.sh rb_toy_ent_s4001` (its `--buffer auto` reads the FATAL's own rows, the committed
+pinned copy, since U3 rebuilt the golden) — at the FATAL's weights `canary_replay` (the canary's own `_check`,
 now relocating) PASSES; `relocated.branch_flips.Cbf` = 0 and the relocated null reads P(ratio > K) = 0 for the Ebf
 pairs AND `Cbf_vs_Ebf`; `forward_vs_E32.Cbf.log_prob_max_abs` ≤ `R1_LOGPROB_SHIFT_MAX` (0.18) at every checkpoint
 read; `fp32_rule.over_bar` empty. If Cbf's shift exceeds 0.18, raise the constant (the margin is 4× it) and re-run; if

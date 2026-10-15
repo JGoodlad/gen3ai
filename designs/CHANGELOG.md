@@ -14617,12 +14617,15 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **Also**: `main.ops.diag_bf16_canary.relocate_old_log_prob` delegates to production's relocation (its default margin
   is now production's, 0.72; the diagnostic's first reads used 0.5), and its dithered null reads only the parameters
   each seed's reference JUDGES (it had read the never-judged `struggle_score.*`, ~1e-9 of the largest gradient, as a
-  12,000× "ratio"); the gate tests' "is it judged" preconditions and
+  12,000× "ratio"), and `--buffer` (default `auto`) reads a run's committed PINNED K9 rows, so the GPU window re-reads
+  s4001's FATAL on the rows it was judged on (U3 rebuilt the golden after it); the gate tests' "is it judged" preconditions and
   `compile_regions_resolution_test.gate_resolution` read the relocated rows, as the gate does.
 - Tests: `compile_regions_clip_margin_test.py` (new: the switch is autograd's, a row AT its bound moves deterministically,
   the threshold is safe on both sides, the margin rule, every rung relocates on its own weights, the 10 % pointer-head
   plant), `compile_regions_clip_margin_fatal_test.py` (new, slow, the run archive: the null 0 / 992, the FATAL's boundary
-  rows 4 and 35 relocated, the plant on these weights), `compile_canary_test.py` (the halves disjoint; a one-row
+  rows 4 and 35 relocated, the plant on these weights — on the FATAL's own rows, the K9 buffer at the run's pin
+  committed as `testdata/k9_golden_buffer_rb_toy_ent_s4001_pin.npz`, since U3 rebuilt the golden),
+  `compile_canary_test.py` (the halves disjoint; a one-row
   disagreement no longer confirms itself). Docs: `designs/training/compile_flags.md` "THE FIX (T36)" (+ what the GPU
   window must show), `learner_lifecycle.md`, `design_x26_readiness.md` I30 / F18 / Decision record, `TASK_BACKLOG.md`
   T36, `UNDERSTANDING.md` item 20, `scripts/ops/README.md`; ledger 2026-10-15 GIGO FIX *T36*.
