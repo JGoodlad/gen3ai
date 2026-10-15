@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-25,677-line file. **The ledger itself is append-only and is never edited by this**;
+25,747-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**877 headings · 822 dated · 2026-08-01 → 2026-10-15 · ledger 25,677 lines.**
+**878 headings · 823 dated · 2026-08-01 → 2026-10-15 · ledger 25,747 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -897,3 +897,4 @@ rename.
   - `L25484` · `2026-10-15` · CRASH FIX · **Every PRODUCTION run at a commit ≥ `65b71f6a` died at its FIRST post-update dump (step ~202k on the GPU): sb3's stdout table cut `cell/move_resolution_restored_move_{weight,grad}_norm` (and the `restored_switch` / `status_switch` pairs) to one 33-character label and RAISED; the table is now collision-proof (48 columns, a digest label past them, never a raise) and a key set that collides in ANY output is refused at STARTUP (`MetricKeyCollisionError`, FATAL_CONFIG) — `gen3_metric_key_collision_v1`**
   - `L25544` · `2026-10-15` · MEASUREMENT · **T33: Tier 1 of the plateau meter VALIDATED on a real run, with 10 checks on the T-ENT toy (25M–70M, Δ 5M / W 20M), all GAIN and no CONFLICT; status CLIMBING. Its cost was MEASURED: the production net plays 0.62 games/s on the crowded agent cores (1.16 with one large batch), so an X26 near-plateau check takes 1.5–5 h against a 53-min Δ 5M cadence. The proposal is X26 at the registered Δ 10M with pipelined batches, and no in-process or SCHED_IDLE eval built for X26. The toy died at ≈ 72M on a CompileCanary FATAL, which voids its 65M / 70M checks**
   - `L25588` · `2026-10-15` · GIGO FIX · **One producer per metric key: three silent double producers fixed (`fork/*`, `train/effective_batch` with a stale `train/dose_rate`, `lifecycle/cuda_streams_after_freeze` and three siblings), `grad/species_belief_*` produced again after four weeks absent, and the class guarded in the logger's record path (`DuplicateProducerError` under pytest / `--debug`, counted + reported in production) — `gen3_metric_producer_guard_v1`**
+  - `L25678` · `2026-10-15` · FINDING · **The bf16 CANARY FATAL of `rb_toy_ent_s4001` (72.66M, update 700; X26 BLOCKER I30) is, on CPU evidence, a DECISION BOUNDARY inside the canary's own statistic, not a miscompile. The PPO clip on the K9 golden's 64 off-policy rows switches a boundary row's whole gradient on or off by rounding, so two HEALTHY arms can disagree up to 31× (18 % of healthy pairs above the 12× bar at the FATAL's weights). Relocating the boundary rows by the fp32 reference's own ratio makes it 0 of 992. The GPU read is PENDING**
