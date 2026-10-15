@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-25,971-line file. **The ledger itself is append-only and is never edited by this**;
+26,007-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**882 headings · 827 dated · 2026-08-01 → 2026-10-15 · ledger 25,971 lines.**
+**883 headings · 828 dated · 2026-08-01 → 2026-10-15 · ledger 26,007 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -902,3 +902,4 @@ rename.
   - `L25792` · `2026-10-15` · REGISTRATION AMENDMENT · **X26's ride-along registration re-based on the END STATE (Amendment 2, BEFORE any X26 data): the argv now passes `checkargs` and the launcher dry-run at HEAD, the heads are proven BIT-IDENTICAL-neutral under the bf16 trunk, the K9(b) tie-share handling is declared and its every-update record pinned — and the readiness doc's "TensorBoard keeps ~1 in 10 shares" was a 10× update-count error**
   - `L25840` · `2026-10-15` · GIGO FIX · **T36: R1's startup gate and in-run canary now judge the K9 golden's rows MOVED OFF the PPO clip boundary (on every rung's own weights, both the bf16 and the fp32 rule), the margin is a CHECKED precondition, and the canary confirms on two DISJOINT halves of the rows — at the `rb_toy_ent_s4001` FATAL's weights healthy pairs above the bar fall 212 / 992 → 0 / 992 on CPU; the CUDA confirmation is PENDING (`gen3_r1_clip_margin_v1`)**
   - `L25919` · `2026-10-15` · MEASUREMENT · **The X26 EXIT CHECK assembled at `87e493c3`: 7 of 12 rows PASS, E3 DEFERRED, E5 / E6 / E7 / E11's announcement OPEN; T36's canary fix CONFIRMED on CUDA (I30 CLOSED); the compiled bf16 arm's TAKEN-action log-prob shift on the toy grew 0.050 (15M) → 0.110 (72.66M), 61 % of `R1_LOGPROB_SHIFT_MAX` 0.18 and 6.5× below the refusal at 0.72, and is now WATCHED in-run; P_X26 = main after the CPU-Inductor fix; R-60 DROPPED; earliest X26 launch Fri 10-16 ≈ 00:00–01:00 PDT**
+  - `L25971` · `2026-10-15` · MEASUREMENT · **T33 on seed 4002: the T-ENT toy does NOT plateau by its 100M cap. `rb_toy_ent_s4002`'s 16 Tier-1 checks (25M–100M, Δ 5M / W 20M) all read GAIN, with no CONFLICT; the newest node still scores 52.6–53.8 % against the node 20M back from 80M on. Under the §3.4 rule it is a CAP stop, so §3.5's "plateau against plateau" becomes production at plateau against a still-climbing toy**

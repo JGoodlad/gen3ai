@@ -25968,3 +25968,39 @@ not the whole story: the fp32 trunk for X26 and the localisation arms.
   produces its other outputs within ~10 GPU-h. R-T1c reads X26 instead.
 - **E6 rides on E7.**
 - **T-MLP goes after X26.** This departs from the 10-09 roadmap order, so it goes to the owner (F27).
+### 2026-10-15 · MEASUREMENT · **T33 on seed 4002: the T-ENT toy does NOT plateau by its 100M cap. `rb_toy_ent_s4002`'s 16 Tier-1 checks (25M–100M, Δ 5M / W 20M) all read GAIN, with no CONFLICT; the newest node still scores 52.6–53.8 % against the node 20M back from 80M on. Under the §3.4 rule it is a CAP stop, so §3.5's "plateau against plateau" becomes production at plateau against a still-climbing toy**
+
+**What ran.** T33's procedure and scripts (`tick_loop.sh`, `py.sh`), unchanged except the scratch dir, run
+retrospectively on the finished `rb_toy_ent_s4002` (T-ENT, seed 4002, pin `3899277a`, 100M cap reached cleanly; all
+11 `CompileCanary` checks PASS, the last at 98.31M, so no node is suspect). `python -m main.plateau tick
+rb_toy_ent_s4002 --delta-steps 5000000 --lag 4`, one check per invocation, on CPU on the agent cores under rule 5b
+(`taskset -c 5-7,13-15`, nice 19, `mem_cap` 12 GB, one heavy job). It wrote 16 `plateau_t1` requests and decisions
+to `models/_ledger`, where the meter writes by design. 29.5 min wall, 58 CPU-min.
+
+**Result.** Verdicts and the newest node's score ((W + D/2) / games; descriptive):
+
+| check | 25M | 30M | 35M | 40M | 45M | 50M | 55M | 60M | 65M | 70M | 75M | 80M | 85M | 90M | 95M | 100M |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| s4002 pairs | 80 | 120 | 160 | 160 | 200 | 320 | 400 | 280 | 680 | 400 | 440 | 880 | 720 | 1,200 | 760 | 600 |
+| s4002 score % | 88.4 | 81.7 | 65.0 | 63.6 | 61.1 | 58.5 | 55.0 | 56.9 | 53.6 | 55.2 | 55.3 | 52.9 | 53.6 | 52.6 | 53.4 | 53.8 |
+| s4001 score % | 91.9 | 77.5 | 69.2 | 66.2 | 59.5 | 57.3 | 59.0 | 56.5 | 56.1 † | 60.8 † | — | — | — | — | — | — |
+
+Every check is GAIN (LLR +2.95 to +4.14). † s4001's post-canary nodes, void (F17); s4001 died at 72.66M. The two
+seeds agree at 25M–60M (same verdicts, scores within 0.4–4.2 pp).
+
+**Reading.**
+- **Neither toy seed plateaued.** s4002 is a `CAP` stop at 100M; s4001 has neither a plateau nor a cap checkpoint.
+- **Why a slow climb never reads FLAT:** H1 is 0.52, so a FLAT needs the true score near 0.51 (≈ +7 Elo per W) or
+  below. s4002 holds at ≈ 53 % (≈ +18 to +27 Elo per 20M).
+- **The §3.7 estimate "30–60M to a plateau" is refuted** for T-ENT; s4002 took ≈ 5.7 h wall to its 100M cap.
+
+**FINDINGS (standing rule 7; `design_x26_readiness.md` F32–F35).**
+1. **G_p is biased toward production** when R-T2 uses a toy that is still climbing at its cap: a CEILING verdict
+   then reads "production's plateau beats the toy at 100M steps", not "at each one's plateau". SPEED ONLY and
+   NOTHING MEASURABLE stay conservative.
+2. **The CAP-for-plateau substitution is implied, not registered** (§3.4 vs §3.5); register it before R-T2 is read.
+3. **Tier 1's FLAT dead zone (≈ +7 Elo per W) means a slow climber reaches any cap**; whether X26 (same H1, W 50M,
+   500M cap) flattens before its cap is UNVERIFIED.
+4. **s4001 needs a ruling** (resume to 100M into a new run directory, or out of R-T2).
+
+Evidence: `research_state/measurements/t33_plateau_cost_2026-10-15/s4002/`; `design_x26_readiness.md` §3.8.

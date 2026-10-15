@@ -1,0 +1,22 @@
+[plateau] rb_toy_ent_s4002: TIER 1 = head-to-head GSPRT newest vs W-back, Δ 5,000,000, W 20,000,000 steps; rule plateau_t1_gsprt
+  ledger /home/goodlad/dev/gen3ai/models/_ledger
+          check  newest                             w-back                             state          pairs      LLR  note
+     20,000,000  rb_toy_ent_s4002@20000048          -                                  MISSING_NODE                   no node at 0
+     25,000,000  rb_toy_ent_s4002@25000048          rb_toy_ent_s4002@5000192           GAIN              80   +3.036  
+     30,000,000  rb_toy_ent_s4002@30000227          rb_toy_ent_s4002@10000187          GAIN             120   +4.139  
+     35,000,000  rb_toy_ent_s4002@35000117          rb_toy_ent_s4002@15000120          GAIN             160   +3.536  
+     40,000,000  rb_toy_ent_s4002@40000130          rb_toy_ent_s4002@20000048          GAIN             160   +3.381  
+     45,000,000  rb_toy_ent_s4002@45000211          rb_toy_ent_s4002@25000048          GAIN             200   +3.463  
+     50,000,000  rb_toy_ent_s4002@50000083          rb_toy_ent_s4002@30000227          GAIN             320   +3.723  
+     55,000,000  rb_toy_ent_s4002@55000150          rb_toy_ent_s4002@35000117          GAIN             400   +3.159  
+     60,000,000  rb_toy_ent_s4002@60000219          rb_toy_ent_s4002@40000130          GAIN             280   +2.952  
+     65,000,000  rb_toy_ent_s4002@65000038          rb_toy_ent_s4002@45000211          GAIN             680   +3.071  
+     70,000,000  rb_toy_ent_s4002@70000183          rb_toy_ent_s4002@50000083          GAIN             400   +3.068  
+     75,000,000  rb_toy_ent_s4002@75000090          rb_toy_ent_s4002@55000150          GAIN             440   +3.146  
+     80,000,000  rb_toy_ent_s4002@80000019          rb_toy_ent_s4002@60000219          GAIN             880   +2.967  
+     85,000,000  rb_toy_ent_s4002@85000202          rb_toy_ent_s4002@65000038          GAIN             720   +3.175  
+     90,000,000  rb_toy_ent_s4002@90000134          rb_toy_ent_s4002@70000183          GAIN            1200   +3.420  
+     95,000,000  rb_toy_ent_s4002@95000212          rb_toy_ent_s4002@75000090          GAIN             760   +3.286  
+    100,000,000  rb_toy_ent_s4002@100000118         rb_toy_ent_s4002@80000019          GAIN             600   +3.015  
+TIER 1 STATUS: CLIMBING (as of the 100,000,000 check)
+⚠️  Tier 1 ONLY: a PLATEAU (design_evaluation.md §8.3) also needs the cycle monitor NONE and the panel FLAT at the same two checks — Tier 2 (U5) and the panel are NOT BUILT, so this is not a plateau declaration

@@ -48,6 +48,9 @@ Units and terms:
 - **The toy controls need no build for the first toy.** T-ENT (entity tokens and attention only) launches today
   from flags (§3.2; `checkargs` exit 0, verified for this doc before U1 — since U1 the argv runs PINNED, §3.2). T-MLP (a flat MLP) needs a build of about 1.5
   agent-days.
+- **The toy does NOT plateau by its 100M cap** (§3.8): T-ENT s4002's 16 Tier-1 checks, 25M–100M, all read GAIN
+  (52.6–53.8 % against the node 20M back from 80M on), so it is a `CAP` stop, and s4001 died at 72.66M still
+  climbing. §3.5's "plateau against plateau" becomes production at plateau against a toy at its cap (F32, F33).
 - **The T-ENT seeds:**
   - s4001 died at 72.66M on the canary FATAL (I30).
   - s4002 reached its 100M cap at 14:44 PDT 10-15 (about 5.7 GPU-h, ≈ 4,900 steps/s).
@@ -457,6 +460,8 @@ The toy is cheap and should plateau early, so it uses a SCALED Tier 1:
 > - An `INCONCLUSIVE` or `CONFLICT` check is a finding and does not stop the run; the run continues to the next
 >   check.
 
+**Measured (§3.8): neither seed plateaued under this rule; s4002 is a `CAP` stop at 100M, still reading GAIN.**
+
 Running this rule on the toys is also **T33, the first real validation of Tier 1**. It exercises the full
 `main.plateau` path on current-architecture checkpoints, with its CPU cost timed beside a live run, before X26
 depends on it.
@@ -534,10 +539,58 @@ For T-MLP the same classes apply with G_m′ / G_p′, and the question becomes 
 - **Estimated (UNVERIFIED; T-ENT s4001's first hour measures it):** T-ENT at ~3,000–5,000 fps. The learner update
   dominates and shrinks 3–5×, but a small model on the GPU is limited by kernel launches, and the Rust core stays
   at ~5.5 s per cycle. That gives about 0.8–1.4 GPU-h per 15M.
-- **Per seed:** 30–60M to a plateau ≈ 2–6 GPU-h; to the 100M cap ≤ 9 GPU-h.
+- **Per seed:** 30–60M to a plateau ≈ 2–6 GPU-h; to the 100M cap ≤ 9 GPU-h. **MEASURED (§3.8): no seed plateaued
+  by 70M / 100M, so the cap binds; s4002 took ≈ 5.7 h wall to 100M.**
 - **Three T-ENT seeds:** ≈ 8–18 GPU-h expected, ≤ 27 GPU-h at the cap. T-MLP is about the same.
 - **The crosses:** R-T1 is 12,000 pairs. Its GPU time is UNVERIFIED; the Training session schedules it in a
   window.
+
+### 3.8 The toy seeds' plateau status (the §3.4 rule, measured 2026-10-15)
+
+Tier 1 at the §3.4 toy plan (Δ 5M, lag 4, W 20M), by T33's procedure and scripts on the agent cores under rule 5b.
+Every verdict is in `models/_ledger` (`plateau_t1` requests). Evidence: s4001 in
+`../research_state/measurements/t33_plateau_cost_2026-10-15/` (§2.6), s4002 in its `s4002/` subfolder (run
+retrospectively on the finished run; 16 checks in 29.5 min wall, 58 CPU-min). The score is the newest node's
+(W + D/2) / games against the node 20M back. It is descriptive; the verdict is the registered quantity.
+
+| check | s4001 verdict (pairs) | s4001 score | s4002 verdict (pairs) | s4002 score |
+|---|---|---|---|---|
+| 25M | GAIN (80) | 91.9 % | GAIN (80) | 88.4 % |
+| 30M | GAIN (120) | 77.5 % | GAIN (120) | 81.7 % |
+| 35M | GAIN (120) | 69.2 % | GAIN (160) | 65.0 % |
+| 40M | GAIN (120) | 66.2 % | GAIN (160) | 63.6 % |
+| 45M | GAIN (200) | 59.5 % | GAIN (200) | 61.1 % |
+| 50M | GAIN (320) | 57.3 % | GAIN (320) | 58.5 % |
+| 55M | GAIN (200) | 59.0 % | GAIN (400) | 55.0 % |
+| 60M | GAIN (320) | 56.5 % | GAIN (280) | 56.9 % |
+| 65M | GAIN (400) † | 56.1 % | GAIN (680) | 53.6 % |
+| 70M | GAIN (200) † | 60.8 % | GAIN (400) | 55.2 % |
+| 75M | — (died ≈ 72.66M) | — | GAIN (440) | 55.3 % |
+| 80M | — | — | GAIN (880) | 52.9 % |
+| 85M | — | — | GAIN (720) | 53.6 % |
+| 90M | — | — | GAIN (1,200) | 52.6 % |
+| 95M | — | — | GAIN (760) | 53.4 % |
+| 100M | — | — | GAIN (600) | 53.8 % |
+| **status** | **CLIMBING at 70M; no cap reached** (F17) | | **CLIMBING at 100M → `CAP`** | |
+
+† post-canary nodes, VOID pending the training session's ruling (F17).
+
+- **Neither seed plateaued.** Every one of 26 checks is GAIN; there is no FLAT, CONFLICT or INCONCLUSIVE. s4002, the
+  only seed to reach the cap, is a **`CAP` stop at 100M**, not a plateau, under §3.4.
+- **The two seeds agree where both exist** (25M–60M): the same verdicts, and scores within 0.4–4.2 pp of each other
+  on the same downward path.
+- **The toy is still improving at 100M, slowly.** From 80M on, s4002's newest node scores 52.6–53.8 % against the
+  node 20M back, about +18 to +27 Elo per 20M. The GSPRT's H1 is 0.52, so a FLAT needs the true score at about 0.51 or
+  below. A score that flattens at ≈ 53 % reads GAIN at every check, and the 100M cap binds.
+- **What the registered rule implies for §3.5.** The cap binds, so the toy's checkpoint for R-T2 ("plateau against
+  plateau") is its **100M `CAP` checkpoint**. §3.4 records a cap stop "as `CAP`, not as a plateau", and §3.5 names only
+  "each toy plateau checkpoint", so that substitution is IMPLIED, not registered (F33). G_p is then **production at
+  plateau against a toy still climbing**, which biases G_p toward production by the toy's unrealised gain. Only
+  CEILING is exposed: it would need the reading "production's machinery beats the toy at 100M steps", not "at each
+  one's plateau". SPEED ONLY and NOTHING MEASURABLE stay conservative, because the bias can only widen the gap (F32).
+- **The §3.7 estimate "30–60M to a plateau" is REFUTED** by both seeds: no plateau by 70M (s4001) or 100M (s4002).
+  The per-seed cost is therefore the cap's: s4002 took ≈ 5.7 h wall to 100M (from its canary timestamps: 97.3M steps
+  in 5.52 h between the update-10 and update-1000 canaries).
 
 ## 4. The EXIT CHECK
 
@@ -932,6 +985,24 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 - **F31. The shared compile cache sits at 18.56 of its 20 GiB cap** (the E10 dry-run). It prunes itself by design
   (`compile_cache_shared.prune`), so X26's first compile may evict other runs' entries and cost them a cold compile.
   Informational.
+- **F32 (T33 s4002). The toy is still climbing at its 100M cap, so §3.5's G_p is biased toward production.** Both
+  seeds read GAIN at every Tier-1 check (§3.8), and s4002 ends as a `CAP` stop with its newest node at 53.8 % against
+  the node 20M back. R-T2 then compares production at plateau with a toy that has not plateaued, so G_p over-states
+  what the machinery buys "at plateau" by the toy's unrealised gain. A CEILING verdict can no longer be read as "the
+  machinery raises how strong the model gets"; it reads "production's plateau beats the toy at 100M steps". SPEED
+  ONLY and NOTHING MEASURABLE stay conservative (the bias only widens the gap). The orchestrator decides whether
+  §3.6's sentence is re-worded for a capped toy, or the cap is raised before R-T2.
+- **F33 (T33 s4002). The substitution of a `CAP` checkpoint for the toy's plateau checkpoint is IMPLIED, not
+  registered.** §3.4 records a cap stop "as `CAP`, not as a plateau"; §3.5 names only "each toy plateau checkpoint".
+  Close it before R-T2 is read: register the 100M `CAP` checkpoint as R-T2's toy node, labelled G_p(cap).
+- **F34 (T33 s4002). Tier 1's FLAT has a small dead zone, so a slowly-climbing run can reach any cap.** H0 0.50 / H1
+  0.52 reads GAIN whenever the true score against the node W back is above ≈ 0.51, which is about +7 Elo per W.
+  s4002 read GAIN at 52.6–53.8 % (≈ +18 to +27 Elo per 20M) with 600–1,200 pairs per check. X26's registered plan has
+  the same H1 over W 50M, so it plateaus only once its gain per 50M falls to about the same size. **UNVERIFIED** whether
+  the production net flattens faster than the toy; the 500M cap may bind for X26 too.
+- **F35 (T33 s4002). `rb_toy_ent_s4001` has neither a plateau nor a cap checkpoint.** It died at 72.66M (F17) while
+  CLIMBING, so under §3.4 it has no R-T2 node. It needs the training session's ruling: resume it to 100M into a new run
+  directory (F17's sha256 hazard), or declare it out of R-T2 and record why.
 
 ## 8. Decision record
 

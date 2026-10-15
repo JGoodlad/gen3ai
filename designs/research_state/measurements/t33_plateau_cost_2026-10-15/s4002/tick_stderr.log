@@ -1,0 +1,482 @@
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3269435.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [25000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 25,000,000: rb_toy_ent_s4002@25000048 vs rb_toy_ent_s4002@5000192 (request plateau_t1:rb_toy_ent_s4002:25000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 16.6 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 6.1s: rb_toy_ent_s4002@25000048 vs rb_toy_ent_s4002@5000192; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 6.7s (11.91 games/s); W/L/D 70/10/0; pair counts [1, 0, 8, 0, 31]; near-tie games 0; digest 467594909916
+[plateau] plateau_t1:rb_toy_ent_s4002:25000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 7.3s (11.00 games/s); W/L/D 71/8/1; pair counts [0, 0, 8, 1, 31]; near-tie games 0; digest 03b85525d9d0
+[plateau] plateau_t1:rb_toy_ent_s4002:25000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:25000000:w20000000: GAIN (upper_bound) at 80 pairs, LLR +3.036; decision 20261015T214759Z.0-goodlad_desktop-3269455-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3269435.scope exit 0 · peak 0.81 GB of cap 12.00 GB (7%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3275726.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [30000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 30,000,000: rb_toy_ent_s4002@30000227 vs rb_toy_ent_s4002@10000187 (request plateau_t1:rb_toy_ent_s4002:30000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.8s: rb_toy_ent_s4002@30000227 vs rb_toy_ent_s4002@10000187; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 5.3s (14.99 games/s); W/L/D 65/15/0; pair counts [2, 0, 11, 0, 27]; near-tie games 0; digest 54cf793aec96
+[plateau] plateau_t1:rb_toy_ent_s4002:30000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 7.8s (10.30 games/s); W/L/D 63/17/0; pair counts [3, 0, 11, 0, 26]; near-tie games 0; digest b7e718fecfd9
+[plateau] plateau_t1:rb_toy_ent_s4002:30000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 5.1s (15.62 games/s); W/L/D 68/12/0; pair counts [0, 0, 12, 0, 28]; near-tie games 0; digest 401777ea75ae
+[plateau] plateau_t1:rb_toy_ent_s4002:30000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:30000000:w20000000: GAIN (upper_bound) at 120 pairs, LLR +4.139; decision 20261015T214838Z.0-goodlad_desktop-3275742-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3275726.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3277944.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [35000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 35,000,000: rb_toy_ent_s4002@35000117 vs rb_toy_ent_s4002@15000120 (request plateau_t1:rb_toy_ent_s4002:35000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 6.8s: rb_toy_ent_s4002@35000117 vs rb_toy_ent_s4002@15000120; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 8.1s (9.88 games/s); W/L/D 52/28/0; pair counts [6, 0, 16, 0, 18]; near-tie games 0; digest 2dad4b75204a
+[plateau] plateau_t1:rb_toy_ent_s4002:35000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 5.6s (14.30 games/s); W/L/D 58/22/0; pair counts [3, 0, 16, 0, 21]; near-tie games 0; digest b95ef70f7999
+[plateau] plateau_t1:rb_toy_ent_s4002:35000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 5.6s (14.27 games/s); W/L/D 47/33/0; pair counts [5, 0, 23, 0, 12]; near-tie games 0; digest 5b16247df36f
+[plateau] plateau_t1:rb_toy_ent_s4002:35000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 6.4s (12.55 games/s); W/L/D 51/29/0; pair counts [3, 0, 23, 0, 14]; near-tie games 0; digest 1126a4efcdea
+[plateau] plateau_t1:rb_toy_ent_s4002:35000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:35000000:w20000000: GAIN (upper_bound) at 160 pairs, LLR +3.536; decision 20261015T214905Z.0-goodlad_desktop-3277978-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3277944.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3286488.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [40000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 40,000,000: rb_toy_ent_s4002@40000130 vs rb_toy_ent_s4002@20000048 (request plateau_t1:rb_toy_ent_s4002:40000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.7s: rb_toy_ent_s4002@40000130 vs rb_toy_ent_s4002@20000048; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 9.5s (8.41 games/s); W/L/D 47/32/1; pair counts [4, 0, 24, 1, 11]; near-tie games 0; digest 5d0b314b3bb7
+[plateau] plateau_t1:rb_toy_ent_s4002:40000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 7.9s (10.07 games/s); W/L/D 49/30/1; pair counts [8, 0, 14, 1, 17]; near-tie games 0; digest 11ff279a5dd7
+[plateau] plateau_t1:rb_toy_ent_s4002:40000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 5.2s (15.40 games/s); W/L/D 49/31/0; pair counts [5, 0, 21, 0, 14]; near-tie games 0; digest 40bc2c3ae23f
+[plateau] plateau_t1:rb_toy_ent_s4002:40000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 12.0s (6.69 games/s); W/L/D 56/21/3; pair counts [0, 0, 22, 1, 17]; near-tie games 1; digest ba2d148b59d9
+[plateau] plateau_t1:rb_toy_ent_s4002:40000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:40000000:w20000000: GAIN (upper_bound) at 160 pairs, LLR +3.381; decision 20261015T214941Z.0-goodlad_desktop-3286497-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3286488.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3288892.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [45000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 45,000,000: rb_toy_ent_s4002@45000211 vs rb_toy_ent_s4002@25000048 (request plateau_t1:rb_toy_ent_s4002:45000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.5s: rb_toy_ent_s4002@45000211 vs rb_toy_ent_s4002@25000048; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 7.1s (11.33 games/s); W/L/D 43/36/1; pair counts [8, 1, 19, 0, 12]; near-tie games 0; digest 24112bb0a489
+[plateau] plateau_t1:rb_toy_ent_s4002:45000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 9.4s (8.51 games/s); W/L/D 55/25/0; pair counts [4, 0, 17, 0, 19]; near-tie games 0; digest 861e36e8aec2
+[plateau] plateau_t1:rb_toy_ent_s4002:45000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 8.0s (9.96 games/s); W/L/D 41/38/1; pair counts [7, 1, 23, 0, 9]; near-tie games 0; digest 79ed904d8fcc
+[plateau] plateau_t1:rb_toy_ent_s4002:45000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 8.2s (9.78 games/s); W/L/D 49/30/1; pair counts [3, 1, 23, 0, 13]; near-tie games 0; digest 043a83ec7466
+[plateau] plateau_t1:rb_toy_ent_s4002:45000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 8.3s (9.61 games/s); W/L/D 54/24/2; pair counts [2, 1, 19, 1, 17]; near-tie games 0; digest 36a469812e2e
+[plateau] plateau_t1:rb_toy_ent_s4002:45000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:45000000:w20000000: GAIN (upper_bound) at 200 pairs, LLR +3.463; decision 20261015T215024Z.0-goodlad_desktop-3288901-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3288892.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3289587.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [50000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 50,000,000: rb_toy_ent_s4002@50000083 vs rb_toy_ent_s4002@30000227 (request plateau_t1:rb_toy_ent_s4002:50000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.8s: rb_toy_ent_s4002@50000083 vs rb_toy_ent_s4002@30000227; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 7.2s (11.19 games/s); W/L/D 53/27/0; pair counts [4, 0, 19, 0, 17]; near-tie games 0; digest 419635b72bae
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 12.3s (6.53 games/s); W/L/D 33/45/2; pair counts [12, 2, 19, 0, 7]; near-tie games 0; digest 2a460a5cdae0
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 12.5s (6.39 games/s); W/L/D 44/35/1; pair counts [6, 1, 22, 0, 11]; near-tie games 0; digest 34a378013b15
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 14.3s (5.60 games/s); W/L/D 43/37/0; pair counts [8, 0, 21, 0, 11]; near-tie games 0; digest f183de72720f
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 6.2s (12.97 games/s); W/L/D 46/34/0; pair counts [10, 0, 14, 0, 16]; near-tie games 0; digest ada4bf63bef9
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 9.3s (8.61 games/s); W/L/D 54/26/0; pair counts [4, 0, 18, 0, 18]; near-tie games 0; digest 0ef3db05a454
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 7.6s (10.57 games/s); W/L/D 44/36/0; pair counts [9, 0, 18, 0, 13]; near-tie games 0; digest 39a955c963df
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 5.5s (14.49 games/s); W/L/D 56/24/0; pair counts [2, 0, 20, 0, 18]; near-tie games 0; digest 1a52c715b329
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:50000000:w20000000: GAIN (upper_bound) at 320 pairs, LLR +3.723; decision 20261015T215113Z.0-goodlad_desktop-3289596-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3289587.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3307482.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [55000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 55,000,000: rb_toy_ent_s4002@55000150 vs rb_toy_ent_s4002@35000117 (request plateau_t1:rb_toy_ent_s4002:55000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.8s: rb_toy_ent_s4002@55000150 vs rb_toy_ent_s4002@35000117; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 7.9s (10.18 games/s); W/L/D 45/34/1; pair counts [4, 1, 25, 0, 10]; near-tie games 1; digest 4cee2ab5517d
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 7.8s (10.32 games/s); W/L/D 46/34/0; pair counts [6, 0, 22, 0, 12]; near-tie games 0; digest 831cc00da056
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 11.1s (7.23 games/s); W/L/D 43/35/2; pair counts [7, 1, 20, 1, 11]; near-tie games 0; digest d5380ae80966
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 9.6s (8.36 games/s); W/L/D 40/38/2; pair counts [7, 0, 24, 2, 7]; near-tie games 0; digest 6adfb497f134
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 6.7s (12.02 games/s); W/L/D 37/43/0; pair counts [11, 0, 21, 0, 8]; near-tie games 0; digest d9dec75d5ff4
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 6.1s (13.16 games/s); W/L/D 48/32/0; pair counts [6, 0, 20, 0, 14]; near-tie games 0; digest 0b41160cffb3
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 9.0s (8.84 games/s); W/L/D 40/39/1; pair counts [5, 1, 28, 0, 6]; near-tie games 0; digest ca8b13367337
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 8.3s (9.64 games/s); W/L/D 44/35/1; pair counts [6, 0, 23, 1, 10]; near-tie games 0; digest 1cfcb0445789
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 9.3s (8.62 games/s); W/L/D 44/35/1; pair counts [6, 0, 23, 1, 10]; near-tie games 0; digest 1ab77d32b401
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 5.9s (13.53 games/s); W/L/D 49/31/0; pair counts [3, 0, 25, 0, 12]; near-tie games 0; digest 0b4bfb7c4412
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:55000000:w20000000: GAIN (upper_bound) at 400 pairs, LLR +3.159; decision 20261015T215237Z.0-goodlad_desktop-3307491-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3307482.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3314730.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [60000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 60,000,000: rb_toy_ent_s4002@60000219 vs rb_toy_ent_s4002@40000130 (request plateau_t1:rb_toy_ent_s4002:60000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.6s: rb_toy_ent_s4002@60000219 vs rb_toy_ent_s4002@40000130; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 5.0s (15.91 games/s); W/L/D 46/34/0; pair counts [5, 0, 24, 0, 11]; near-tie games 0; digest 113a86c428c4
+[plateau] plateau_t1:rb_toy_ent_s4002:60000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 6.9s (11.55 games/s); W/L/D 40/39/1; pair counts [9, 0, 21, 1, 9]; near-tie games 0; digest 4d3532104458
+[plateau] plateau_t1:rb_toy_ent_s4002:60000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 25.8s (3.11 games/s); W/L/D 46/33/1; pair counts [7, 0, 19, 1, 13]; near-tie games 0; digest f8b24f9ea7b8
+[plateau] plateau_t1:rb_toy_ent_s4002:60000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 27.0s (2.96 games/s); W/L/D 48/30/2; pair counts [6, 0, 18, 2, 14]; near-tie games 0; digest 8f92f47ec1aa
+[plateau] plateau_t1:rb_toy_ent_s4002:60000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 7.8s (10.24 games/s); W/L/D 44/35/1; pair counts [6, 0, 23, 1, 10]; near-tie games 0; digest a7524edf921f
+[plateau] plateau_t1:rb_toy_ent_s4002:60000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 9.3s (8.60 games/s); W/L/D 44/36/0; pair counts [6, 0, 24, 0, 10]; near-tie games 0; digest 732ad44eb57d
+[plateau] plateau_t1:rb_toy_ent_s4002:60000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 4.7s (17.20 games/s); W/L/D 48/32/0; pair counts [5, 0, 22, 0, 13]; near-tie games 1; digest 069d946141e6
+[plateau] plateau_t1:rb_toy_ent_s4002:60000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:60000000:w20000000: GAIN (upper_bound) at 280 pairs, LLR +2.952; decision 20261015T215408Z.0-goodlad_desktop-3314740-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3314730.scope exit 0 · peak 0.64 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3316786.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [65000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 65,000,000: rb_toy_ent_s4002@65000038 vs rb_toy_ent_s4002@45000211 (request plateau_t1:rb_toy_ent_s4002:65000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.4s: rb_toy_ent_s4002@65000038 vs rb_toy_ent_s4002@45000211; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 6.3s (12.72 games/s); W/L/D 37/43/0; pair counts [9, 0, 25, 0, 6]; near-tie games 0; digest 62ef571654a7
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 9.6s (8.30 games/s); W/L/D 45/35/0; pair counts [9, 0, 17, 0, 14]; near-tie games 0; digest b19600ad2746
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 7.0s (11.51 games/s); W/L/D 46/32/2; pair counts [7, 0, 19, 0, 14]; near-tie games 0; digest f43dbc783215
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 7.2s (11.10 games/s); W/L/D 39/41/0; pair counts [10, 0, 21, 0, 9]; near-tie games 0; digest 343c90152503
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 12.2s (6.58 games/s); W/L/D 42/38/0; pair counts [10, 0, 18, 0, 12]; near-tie games 0; digest 6b4d6d79081e
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 9.9s (8.11 games/s); W/L/D 41/39/0; pair counts [9, 0, 21, 0, 10]; near-tie games 0; digest 547d679d3e21
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 8.6s (9.28 games/s); W/L/D 42/37/1; pair counts [9, 0, 19, 1, 11]; near-tie games 0; digest cf6562920a0e
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 7.1s (11.34 games/s); W/L/D 43/35/2; pair counts [7, 1, 20, 1, 11]; near-tie games 0; digest a933fd84bb0f
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 7.9s (10.15 games/s); W/L/D 40/39/1; pair counts [7, 0, 25, 1, 7]; near-tie games 0; digest 8dd27449f442
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 7.5s (10.72 games/s); W/L/D 46/33/1; pair counts [5, 1, 22, 0, 12]; near-tie games 1; digest e93ddd864574
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[h2h] batch 11/11: 40 pairs / 80 games in 5.6s (14.35 games/s); W/L/D 45/35/0; pair counts [3, 0, 29, 0, 8]; near-tie games 0; digest e091b5e4ebc9
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 10 recorded; n_pairs 440 so far
+[h2h] batch 12/12: 40 pairs / 80 games in 11.5s (6.93 games/s); W/L/D 39/40/1; pair counts [9, 1, 21, 0, 9]; near-tie games 0; digest 5de888f9337c
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 11 recorded; n_pairs 480 so far
+[h2h] batch 13/13: 40 pairs / 80 games in 4.9s (16.26 games/s); W/L/D 47/33/0; pair counts [7, 0, 19, 0, 14]; near-tie games 1; digest 12809f15324d
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 12 recorded; n_pairs 520 so far
+[h2h] batch 14/14: 40 pairs / 80 games in 5.8s (13.91 games/s); W/L/D 43/37/0; pair counts [8, 0, 21, 0, 11]; near-tie games 0; digest 784c16056e6b
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 13 recorded; n_pairs 560 so far
+[h2h] batch 15/15: 40 pairs / 80 games in 8.6s (9.29 games/s); W/L/D 40/40/0; pair counts [8, 0, 24, 0, 8]; near-tie games 0; digest 01bc16d9d258
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 14 recorded; n_pairs 600 so far
+[h2h] batch 16/16: 40 pairs / 80 games in 9.4s (8.55 games/s); W/L/D 43/37/0; pair counts [10, 0, 17, 0, 13]; near-tie games 0; digest 2a4842cf210e
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 15 recorded; n_pairs 640 so far
+[h2h] batch 17/17: 40 pairs / 80 games in 8.1s (9.85 games/s); W/L/D 47/33/0; pair counts [5, 0, 23, 0, 12]; near-tie games 1; digest 97007e246116
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: batch 16 recorded; n_pairs 680 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:65000000:w20000000: GAIN (upper_bound) at 680 pairs, LLR +3.071; decision 20261015T215543Z.0-goodlad_desktop-3316799-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3316786.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3327596.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [70000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 70,000,000: rb_toy_ent_s4002@70000183 vs rb_toy_ent_s4002@50000083 (request plateau_t1:rb_toy_ent_s4002:70000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 7.2s: rb_toy_ent_s4002@70000183 vs rb_toy_ent_s4002@50000083; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 6.6s (12.18 games/s); W/L/D 47/33/0; pair counts [5, 0, 23, 0, 12]; near-tie games 0; digest c9c8a42a6d02
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 8.2s (9.73 games/s); W/L/D 36/44/0; pair counts [12, 0, 20, 0, 8]; near-tie games 0; digest cf690e22c9ca
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 9.8s (8.17 games/s); W/L/D 51/28/1; pair counts [4, 1, 19, 0, 16]; near-tie games 0; digest 7516ad2ae2e2
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 7.5s (10.64 games/s); W/L/D 45/34/1; pair counts [5, 1, 23, 0, 11]; near-tie games 0; digest aac31a04fee7
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 8.2s (9.74 games/s); W/L/D 39/41/0; pair counts [11, 0, 19, 0, 10]; near-tie games 0; digest 4720c1dc77bd
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 12.6s (6.34 games/s); W/L/D 45/32/3; pair counts [8, 1, 15, 2, 14]; near-tie games 1; digest 213c64d7cd89
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 9.1s (8.84 games/s); W/L/D 48/31/1; pair counts [2, 0, 27, 1, 10]; near-tie games 0; digest fe3b70e2c24f
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 7.4s (10.78 games/s); W/L/D 39/41/0; pair counts [6, 0, 29, 0, 5]; near-tie games 0; digest 1f0f01b30951
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 12.4s (6.45 games/s); W/L/D 46/33/1; pair counts [7, 1, 18, 0, 14]; near-tie games 0; digest 4124906e921c
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 6.3s (12.60 games/s); W/L/D 42/38/0; pair counts [6, 0, 26, 0, 8]; near-tie games 0; digest f9aa122555db
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:70000000:w20000000: GAIN (upper_bound) at 400 pairs, LLR +3.068; decision 20261015T215809Z.0-goodlad_desktop-3327605-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3327596.scope exit 0 · peak 0.64 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3335492.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [75000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 75,000,000: rb_toy_ent_s4002@75000090 vs rb_toy_ent_s4002@55000150 (request plateau_t1:rb_toy_ent_s4002:75000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.6s: rb_toy_ent_s4002@75000090 vs rb_toy_ent_s4002@55000150; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 5.4s (14.72 games/s); W/L/D 45/35/0; pair counts [7, 0, 21, 0, 12]; near-tie games 0; digest 9be020d7cccf
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 6.3s (12.77 games/s); W/L/D 48/32/0; pair counts [4, 0, 24, 0, 12]; near-tie games 0; digest 0bea221f1454
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 4.5s (17.64 games/s); W/L/D 42/38/0; pair counts [7, 0, 24, 0, 9]; near-tie games 1; digest 0294825649e3
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 5.2s (15.39 games/s); W/L/D 45/35/0; pair counts [7, 0, 21, 0, 12]; near-tie games 0; digest c5f9c26c6fe6
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 7.3s (10.91 games/s); W/L/D 45/34/1; pair counts [7, 0, 20, 1, 12]; near-tie games 0; digest 5ccff036c3ae
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 6.9s (11.67 games/s); W/L/D 40/40/0; pair counts [11, 0, 18, 0, 11]; near-tie games 0; digest c9afc23c2f62
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 6.6s (12.20 games/s); W/L/D 43/37/0; pair counts [10, 0, 17, 0, 13]; near-tie games 0; digest be51e9cabcea
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 6.4s (12.43 games/s); W/L/D 46/33/1; pair counts [8, 0, 17, 1, 14]; near-tie games 0; digest fc50bfbd0816
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 7.2s (11.19 games/s); W/L/D 42/38/0; pair counts [7, 0, 24, 0, 9]; near-tie games 0; digest 775df95c2229
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 6.8s (11.82 games/s); W/L/D 45/35/0; pair counts [9, 0, 17, 0, 14]; near-tie games 0; digest 22a5b0399c9d
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[h2h] batch 11/11: 40 pairs / 80 games in 5.7s (13.92 games/s); W/L/D 45/35/0; pair counts [7, 0, 21, 0, 12]; near-tie games 0; digest 50a14060237f
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: batch 10 recorded; n_pairs 440 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:75000000:w20000000: GAIN (upper_bound) at 440 pairs, LLR +3.146; decision 20261015T215949Z.0-goodlad_desktop-3335501-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3335492.scope exit 0 · peak 0.64 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3337050.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [80000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 80,000,000: rb_toy_ent_s4002@80000019 vs rb_toy_ent_s4002@60000219 (request plateau_t1:rb_toy_ent_s4002:80000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.1s: rb_toy_ent_s4002@80000019 vs rb_toy_ent_s4002@60000219; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 4.6s (17.29 games/s); W/L/D 40/40/0; pair counts [11, 0, 18, 0, 11]; near-tie games 0; digest e22c27977c90
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 9.6s (8.38 games/s); W/L/D 43/36/1; pair counts [8, 0, 20, 1, 11]; near-tie games 0; digest ddfff0227a59
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 5.4s (14.71 games/s); W/L/D 41/39/0; pair counts [8, 0, 23, 0, 9]; near-tie games 0; digest 67813810c581
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 8.2s (9.71 games/s); W/L/D 37/42/1; pair counts [12, 0, 18, 1, 9]; near-tie games 0; digest d89e512f9382
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 9.2s (8.69 games/s); W/L/D 44/34/2; pair counts [3, 1, 27, 1, 8]; near-tie games 0; digest 5c8a79083f4e
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 6.9s (11.52 games/s); W/L/D 41/39/0; pair counts [7, 0, 25, 0, 8]; near-tie games 0; digest 2a13fae5e61b
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 8.7s (9.25 games/s); W/L/D 45/35/0; pair counts [7, 0, 21, 0, 12]; near-tie games 0; digest 0ee70f7e5e2b
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 7.7s (10.34 games/s); W/L/D 49/31/0; pair counts [4, 0, 23, 0, 13]; near-tie games 0; digest 779ce08952e4
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 9.4s (8.50 games/s); W/L/D 36/42/2; pair counts [8, 2, 24, 0, 6]; near-tie games 1; digest 204499cf1464
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 6.9s (11.59 games/s); W/L/D 43/37/0; pair counts [10, 0, 17, 0, 13]; near-tie games 0; digest 8ae5f790b3da
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[h2h] batch 11/11: 40 pairs / 80 games in 6.1s (13.22 games/s); W/L/D 42/38/0; pair counts [7, 0, 24, 0, 9]; near-tie games 0; digest 5c8ac32e2ef4
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 10 recorded; n_pairs 440 so far
+[h2h] batch 12/12: 40 pairs / 80 games in 12.6s (6.33 games/s); W/L/D 35/45/0; pair counts [11, 0, 23, 0, 6]; near-tie games 0; digest 3e6271b9678f
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 11 recorded; n_pairs 480 so far
+[h2h] batch 13/13: 40 pairs / 80 games in 13.5s (5.94 games/s); W/L/D 35/44/1; pair counts [12, 1, 19, 0, 8]; near-tie games 0; digest 06fc253219ab
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 12 recorded; n_pairs 520 so far
+[h2h] batch 14/14: 40 pairs / 80 games in 8.1s (9.83 games/s); W/L/D 43/37/0; pair counts [6, 0, 25, 0, 9]; near-tie games 0; digest 8ceb16e79327
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 13 recorded; n_pairs 560 so far
+[h2h] batch 15/15: 40 pairs / 80 games in 8.8s (9.05 games/s); W/L/D 43/35/2; pair counts [5, 1, 24, 1, 9]; near-tie games 0; digest 57256f2db2e1
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 14 recorded; n_pairs 600 so far
+[h2h] batch 16/16: 40 pairs / 80 games in 13.9s (5.75 games/s); W/L/D 42/37/1; pair counts [9, 0, 19, 1, 11]; near-tie games 0; digest 267eeffe00ac
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 15 recorded; n_pairs 640 so far
+[h2h] batch 17/17: 40 pairs / 80 games in 14.4s (5.57 games/s); W/L/D 41/39/0; pair counts [10, 0, 19, 0, 11]; near-tie games 0; digest 86f3618c3a1d
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 16 recorded; n_pairs 680 so far
+[h2h] batch 18/18: 40 pairs / 80 games in 14.3s (5.59 games/s); W/L/D 38/41/1; pair counts [9, 0, 23, 1, 7]; near-tie games 0; digest 23a2c129ac3a
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 17 recorded; n_pairs 720 so far
+[h2h] batch 19/19: 40 pairs / 80 games in 12.6s (6.35 games/s); W/L/D 51/28/1; pair counts [3, 0, 22, 1, 14]; near-tie games 0; digest b00eb2c7594c
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 18 recorded; n_pairs 760 so far
+[h2h] batch 20/20: 40 pairs / 80 games in 9.3s (8.58 games/s); W/L/D 45/35/0; pair counts [6, 0, 23, 0, 11]; near-tie games 0; digest 032de8cc37f0
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 19 recorded; n_pairs 800 so far
+[h2h] batch 21/21: 40 pairs / 80 games in 7.0s (11.46 games/s); W/L/D 44/36/0; pair counts [6, 0, 24, 0, 10]; near-tie games 0; digest d7d1f9b32d76
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 20 recorded; n_pairs 840 so far
+[h2h] batch 22/22: 40 pairs / 80 games in 10.2s (7.85 games/s); W/L/D 46/33/1; pair counts [7, 1, 18, 0, 14]; near-tie games 0; digest 08abf248d799
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: batch 21 recorded; n_pairs 880 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:80000000:w20000000: GAIN (upper_bound) at 880 pairs, LLR +2.967; decision 20261015T220106Z.0-goodlad_desktop-3337062-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3337050.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3343668.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [85000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 85,000,000: rb_toy_ent_s4002@85000202 vs rb_toy_ent_s4002@65000038 (request plateau_t1:rb_toy_ent_s4002:85000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 6.4s: rb_toy_ent_s4002@85000202 vs rb_toy_ent_s4002@65000038; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 9.0s (8.86 games/s); W/L/D 49/30/1; pair counts [4, 1, 21, 0, 14]; near-tie games 0; digest e785366d591d
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 5.8s (13.88 games/s); W/L/D 41/39/0; pair counts [9, 0, 21, 0, 10]; near-tie games 0; digest 873d476b4ec7
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 5.9s (13.52 games/s); W/L/D 41/39/0; pair counts [7, 0, 25, 0, 8]; near-tie games 0; digest 5ee76f204668
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 8.7s (9.25 games/s); W/L/D 41/39/0; pair counts [8, 0, 23, 0, 9]; near-tie games 0; digest 6f3b698b937e
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 6.6s (12.21 games/s); W/L/D 38/42/0; pair counts [11, 0, 20, 0, 9]; near-tie games 1; digest 35c240475d7b
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 7.4s (10.86 games/s); W/L/D 48/32/0; pair counts [9, 0, 14, 0, 17]; near-tie games 1; digest 2e48a22044f8
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 15.3s (5.21 games/s); W/L/D 46/32/2; pair counts [6, 0, 21, 0, 13]; near-tie games 0; digest b9003f427dfd
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 7.6s (10.57 games/s); W/L/D 39/41/0; pair counts [10, 0, 21, 0, 9]; near-tie games 0; digest 23396dc56577
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 7.3s (10.92 games/s); W/L/D 41/38/1; pair counts [7, 1, 23, 0, 9]; near-tie games 0; digest a4685a8d5718
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 7.1s (11.23 games/s); W/L/D 36/44/0; pair counts [12, 0, 20, 0, 8]; near-tie games 0; digest c8ef80d95308
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[h2h] batch 11/11: 40 pairs / 80 games in 10.9s (7.36 games/s); W/L/D 44/36/0; pair counts [5, 0, 26, 0, 9]; near-tie games 0; digest bd6abb85b165
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 10 recorded; n_pairs 440 so far
+[h2h] batch 12/12: 40 pairs / 80 games in 5.1s (15.60 games/s); W/L/D 44/36/0; pair counts [7, 0, 22, 0, 11]; near-tie games 0; digest 174ad4bf5437
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 11 recorded; n_pairs 480 so far
+[h2h] batch 13/13: 40 pairs / 80 games in 5.9s (13.48 games/s); W/L/D 37/43/0; pair counts [12, 0, 19, 0, 9]; near-tie games 0; digest e45ab8d3fb61
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 12 recorded; n_pairs 520 so far
+[h2h] batch 14/14: 40 pairs / 80 games in 5.8s (13.83 games/s); W/L/D 42/38/0; pair counts [7, 0, 24, 0, 9]; near-tie games 0; digest 50bae8e2df3f
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 13 recorded; n_pairs 560 so far
+[h2h] batch 15/15: 40 pairs / 80 games in 9.0s (8.91 games/s); W/L/D 49/31/0; pair counts [5, 0, 21, 0, 14]; near-tie games 1; digest 968b9c90be50
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 14 recorded; n_pairs 600 so far
+[h2h] batch 16/16: 40 pairs / 80 games in 6.5s (12.33 games/s); W/L/D 45/35/0; pair counts [8, 0, 19, 0, 13]; near-tie games 0; digest 5603a6c64634
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 15 recorded; n_pairs 640 so far
+[h2h] batch 17/17: 40 pairs / 80 games in 8.9s (9.02 games/s); W/L/D 43/36/1; pair counts [10, 1, 15, 0, 14]; near-tie games 0; digest 75ef09c01d0e
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 16 recorded; n_pairs 680 so far
+[h2h] batch 18/18: 40 pairs / 80 games in 4.2s (19.11 games/s); W/L/D 46/34/0; pair counts [9, 0, 16, 0, 15]; near-tie games 0; digest b138fa274f6d
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: batch 17 recorded; n_pairs 720 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:85000000:w20000000: GAIN (upper_bound) at 720 pairs, LLR +3.175; decision 20261015T220443Z.0-goodlad_desktop-3343677-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3343668.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3345787.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [90000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 90,000,000: rb_toy_ent_s4002@90000134 vs rb_toy_ent_s4002@70000183 (request plateau_t1:rb_toy_ent_s4002:90000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 5.3s: rb_toy_ent_s4002@90000134 vs rb_toy_ent_s4002@70000183; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 7.9s (10.18 games/s); W/L/D 45/35/0; pair counts [8, 0, 19, 0, 13]; near-tie games 0; digest c360e0544bdc
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 8.4s (9.50 games/s); W/L/D 47/33/0; pair counts [6, 0, 21, 0, 13]; near-tie games 0; digest d4d7a48ddd01
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 5.7s (14.09 games/s); W/L/D 37/43/0; pair counts [10, 0, 23, 0, 7]; near-tie games 0; digest 39932a59641f
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 10.7s (7.48 games/s); W/L/D 33/45/2; pair counts [11, 1, 22, 1, 5]; near-tie games 0; digest c5130dc45010
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 5.9s (13.47 games/s); W/L/D 41/39/0; pair counts [9, 0, 21, 0, 10]; near-tie games 0; digest 98902484eb3c
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 6.9s (11.53 games/s); W/L/D 39/41/0; pair counts [6, 0, 29, 0, 5]; near-tie games 0; digest 04387e3327f0
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 10.3s (7.77 games/s); W/L/D 43/36/1; pair counts [9, 0, 18, 1, 12]; near-tie games 1; digest 3890a6c55796
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 7.8s (10.24 games/s); W/L/D 40/40/0; pair counts [10, 0, 20, 0, 10]; near-tie games 0; digest 10d6946728e1
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 6.9s (11.63 games/s); W/L/D 46/34/0; pair counts [7, 0, 20, 0, 13]; near-tie games 0; digest 999b8a7ce554
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 6.0s (13.28 games/s); W/L/D 37/43/0; pair counts [12, 0, 19, 0, 9]; near-tie games 0; digest cfe4068c7715
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[h2h] batch 11/11: 40 pairs / 80 games in 12.6s (6.36 games/s); W/L/D 42/37/1; pair counts [8, 0, 21, 1, 10]; near-tie games 0; digest aa68ed3840da
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 10 recorded; n_pairs 440 so far
+[h2h] batch 12/12: 40 pairs / 80 games in 8.1s (9.91 games/s); W/L/D 37/40/3; pair counts [8, 2, 22, 1, 7]; near-tie games 0; digest 036f03300956
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 11 recorded; n_pairs 480 so far
+[h2h] batch 13/13: 40 pairs / 80 games in 14.7s (5.44 games/s); W/L/D 46/32/2; pair counts [6, 0, 21, 0, 13]; near-tie games 0; digest da87115b4b39
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 12 recorded; n_pairs 520 so far
+[h2h] batch 14/14: 40 pairs / 80 games in 6.0s (13.29 games/s); W/L/D 50/30/0; pair counts [3, 0, 24, 0, 13]; near-tie games 0; digest 49325740f4a6
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 13 recorded; n_pairs 560 so far
+[h2h] batch 15/15: 40 pairs / 80 games in 7.4s (10.81 games/s); W/L/D 39/41/0; pair counts [10, 0, 21, 0, 9]; near-tie games 0; digest cc73664471c3
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 14 recorded; n_pairs 600 so far
+[h2h] batch 16/16: 40 pairs / 80 games in 9.6s (8.33 games/s); W/L/D 54/26/0; pair counts [3, 0, 20, 0, 17]; near-tie games 0; digest c0e49240a633
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 15 recorded; n_pairs 640 so far
+[h2h] batch 17/17: 40 pairs / 80 games in 11.9s (6.70 games/s); W/L/D 40/40/0; pair counts [6, 0, 28, 0, 6]; near-tie games 0; digest 5b958de7c91a
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 16 recorded; n_pairs 680 so far
+[h2h] batch 18/18: 40 pairs / 80 games in 6.4s (12.42 games/s); W/L/D 41/39/0; pair counts [9, 0, 21, 0, 10]; near-tie games 0; digest 51b0d90b246a
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 17 recorded; n_pairs 720 so far
+[h2h] batch 19/19: 40 pairs / 80 games in 11.0s (7.28 games/s); W/L/D 37/43/0; pair counts [10, 0, 23, 0, 7]; near-tie games 0; digest f4199c61e771
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 18 recorded; n_pairs 760 so far
+[h2h] batch 20/20: 40 pairs / 80 games in 6.9s (11.58 games/s); W/L/D 36/44/0; pair counts [13, 0, 18, 0, 9]; near-tie games 0; digest 829881a84c5c
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 19 recorded; n_pairs 800 so far
+[h2h] batch 21/21: 40 pairs / 80 games in 6.6s (12.11 games/s); W/L/D 47/32/1; pair counts [5, 0, 22, 1, 12]; near-tie games 0; digest d2e6464c47f7
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 20 recorded; n_pairs 840 so far
+[h2h] batch 22/22: 40 pairs / 80 games in 7.9s (10.09 games/s); W/L/D 37/43/0; pair counts [12, 0, 19, 0, 9]; near-tie games 0; digest 330242a38f04
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 21 recorded; n_pairs 880 so far
+[h2h] batch 23/23: 40 pairs / 80 games in 9.4s (8.51 games/s); W/L/D 46/34/0; pair counts [5, 0, 24, 0, 11]; near-tie games 0; digest 1c626ecbcbc4
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 22 recorded; n_pairs 920 so far
+[h2h] batch 24/24: 40 pairs / 80 games in 8.7s (9.24 games/s); W/L/D 42/38/0; pair counts [9, 0, 20, 0, 11]; near-tie games 0; digest 39a592bfe3de
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 23 recorded; n_pairs 960 so far
+[h2h] batch 25/25: 40 pairs / 80 games in 6.7s (11.91 games/s); W/L/D 41/39/0; pair counts [9, 0, 21, 0, 10]; near-tie games 0; digest b7108059e75d
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 24 recorded; n_pairs 1000 so far
+[h2h] batch 26/26: 40 pairs / 80 games in 8.5s (9.37 games/s); W/L/D 41/39/0; pair counts [10, 0, 19, 0, 11]; near-tie games 0; digest 2a0e9c5bbaa4
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 25 recorded; n_pairs 1040 so far
+[h2h] batch 27/27: 40 pairs / 80 games in 12.2s (6.53 games/s); W/L/D 46/34/0; pair counts [9, 0, 16, 0, 15]; near-tie games 0; digest 7fd02c3b1c1a
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 26 recorded; n_pairs 1080 so far
+[h2h] batch 28/28: 40 pairs / 80 games in 10.2s (7.82 games/s); W/L/D 40/40/0; pair counts [8, 0, 24, 0, 8]; near-tie games 0; digest 44d37afd9294
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 27 recorded; n_pairs 1120 so far
+[h2h] batch 29/29: 40 pairs / 80 games in 14.2s (5.64 games/s); W/L/D 39/40/1; pair counts [8, 1, 23, 0, 8]; near-tie games 0; digest 2a8fd5412f29
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 28 recorded; n_pairs 1160 so far
+[h2h] batch 30/30: 40 pairs / 80 games in 10.0s (7.98 games/s); W/L/D 48/31/1; pair counts [3, 0, 25, 1, 11]; near-tie games 0; digest 53cf10812a43
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: batch 29 recorded; n_pairs 1200 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:90000000:w20000000: GAIN (upper_bound) at 1200 pairs, LLR +3.420; decision 20261015T220710Z.0-goodlad_desktop-3345796-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3345787.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3349160.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [95000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 95,000,000: rb_toy_ent_s4002@95000212 vs rb_toy_ent_s4002@75000090 (request plateau_t1:rb_toy_ent_s4002:95000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 6.6s: rb_toy_ent_s4002@95000212 vs rb_toy_ent_s4002@75000090; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 9.0s (8.86 games/s); W/L/D 43/37/0; pair counts [7, 0, 23, 0, 10]; near-tie games 0; digest 82b462a16e53
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 9.3s (8.64 games/s); W/L/D 42/38/0; pair counts [7, 0, 24, 0, 9]; near-tie games 0; digest 76a961bd73e6
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 10.2s (7.87 games/s); W/L/D 38/42/0; pair counts [10, 0, 22, 0, 8]; near-tie games 0; digest c9db0bf2136a
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 9.1s (8.77 games/s); W/L/D 42/38/0; pair counts [6, 0, 26, 0, 8]; near-tie games 0; digest b90c203bf21a
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 11.2s (7.16 games/s); W/L/D 45/34/1; pair counts [6, 0, 22, 1, 11]; near-tie games 0; digest 33906e3e35ae
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 6.7s (11.86 games/s); W/L/D 45/35/0; pair counts [6, 0, 23, 0, 11]; near-tie games 0; digest 3ba461add083
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 7.0s (11.45 games/s); W/L/D 36/44/0; pair counts [10, 0, 24, 0, 6]; near-tie games 0; digest 2d2b79e50276
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 5.8s (13.87 games/s); W/L/D 41/39/0; pair counts [6, 0, 27, 0, 7]; near-tie games 0; digest ad675fbd28c5
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 7.9s (10.11 games/s); W/L/D 35/45/0; pair counts [16, 0, 13, 0, 11]; near-tie games 0; digest e4a02184c1ab
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 13.1s (6.12 games/s); W/L/D 48/30/2; pair counts [3, 0, 25, 0, 12]; near-tie games 1; digest ed52ddc82ec2
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[h2h] batch 11/11: 40 pairs / 80 games in 7.6s (10.48 games/s); W/L/D 46/34/0; pair counts [8, 0, 18, 0, 14]; near-tie games 0; digest dd7622a94e50
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 10 recorded; n_pairs 440 so far
+[h2h] batch 12/12: 40 pairs / 80 games in 7.4s (10.75 games/s); W/L/D 39/41/0; pair counts [10, 0, 21, 0, 9]; near-tie games 0; digest b49202c4ab54
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 11 recorded; n_pairs 480 so far
+[h2h] batch 13/13: 40 pairs / 80 games in 7.7s (10.33 games/s); W/L/D 48/31/1; pair counts [4, 0, 23, 1, 12]; near-tie games 0; digest eb8d4db0f1e2
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 12 recorded; n_pairs 520 so far
+[h2h] batch 14/14: 40 pairs / 80 games in 14.0s (5.70 games/s); W/L/D 40/40/0; pair counts [10, 0, 20, 0, 10]; near-tie games 0; digest 03b4a99bb0d9
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 13 recorded; n_pairs 560 so far
+[h2h] batch 15/15: 40 pairs / 80 games in 11.6s (6.91 games/s); W/L/D 48/31/1; pair counts [5, 0, 21, 1, 13]; near-tie games 0; digest 16980d5ed7ca
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 14 recorded; n_pairs 600 so far
+[h2h] batch 16/16: 40 pairs / 80 games in 7.3s (11.00 games/s); W/L/D 39/41/0; pair counts [11, 0, 19, 0, 10]; near-tie games 0; digest 3628412803b2
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 15 recorded; n_pairs 640 so far
+[h2h] batch 17/17: 40 pairs / 80 games in 9.5s (8.43 games/s); W/L/D 43/37/0; pair counts [5, 0, 27, 0, 8]; near-tie games 0; digest 377b3eb2add4
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 16 recorded; n_pairs 680 so far
+[h2h] batch 18/18: 40 pairs / 80 games in 8.6s (9.27 games/s); W/L/D 44/36/0; pair counts [6, 0, 24, 0, 10]; near-tie games 0; digest d450632e6f7e
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 17 recorded; n_pairs 720 so far
+[h2h] batch 19/19: 40 pairs / 80 games in 6.5s (12.40 games/s); W/L/D 47/33/0; pair counts [7, 0, 19, 0, 14]; near-tie games 0; digest 3d510c461fb3
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: batch 18 recorded; n_pairs 760 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:95000000:w20000000: GAIN (upper_bound) at 760 pairs, LLR +3.286; decision 20261015T221147Z.0-goodlad_desktop-3349169-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3349160.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33s4002tick-3351396.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_toy_ent_s4002: 1 due check(s): [100000000] (ledger /home/goodlad/dev/gen3ai/models/_ledger)
+[plateau] check 100,000,000: rb_toy_ent_s4002@100000118 vs rb_toy_ent_s4002@80000019 (request plateau_t1:rb_toy_ent_s4002:100000000:w20000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a8adbe902a21cfdb9/src/rust_env/target/release)
+[h2h] engine up in 7.4s: rb_toy_ent_s4002@100000118 vs rb_toy_ent_s4002@80000019; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 10.1s (7.96 games/s); W/L/D 47/33/0; pair counts [5, 0, 23, 0, 12]; near-tie games 0; digest 9c516eae5886
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 7.2s (11.05 games/s); W/L/D 44/36/0; pair counts [8, 0, 20, 0, 12]; near-tie games 0; digest 9bddde737035
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 11.5s (6.96 games/s); W/L/D 40/40/0; pair counts [9, 0, 22, 0, 9]; near-tie games 0; digest 44028e9359a1
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 2 recorded; n_pairs 120 so far
+[h2h] batch 4/4: 40 pairs / 80 games in 12.1s (6.63 games/s); W/L/D 37/43/0; pair counts [8, 0, 27, 0, 5]; near-tie games 0; digest 301d7838b96b
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 3 recorded; n_pairs 160 so far
+[h2h] batch 5/5: 40 pairs / 80 games in 10.7s (7.51 games/s); W/L/D 49/31/0; pair counts [6, 0, 19, 0, 15]; near-tie games 1; digest e8efe660ec44
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 4 recorded; n_pairs 200 so far
+[h2h] batch 6/6: 40 pairs / 80 games in 7.1s (11.31 games/s); W/L/D 45/35/0; pair counts [7, 0, 21, 0, 12]; near-tie games 0; digest 70bb5e4349eb
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 5 recorded; n_pairs 240 so far
+[h2h] batch 7/7: 40 pairs / 80 games in 7.4s (10.87 games/s); W/L/D 42/38/0; pair counts [8, 0, 22, 0, 10]; near-tie games 0; digest 01fbca335a10
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 6 recorded; n_pairs 280 so far
+[h2h] batch 8/8: 40 pairs / 80 games in 7.6s (10.50 games/s); W/L/D 42/38/0; pair counts [8, 0, 22, 0, 10]; near-tie games 0; digest 5e1d52400a84
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 7 recorded; n_pairs 320 so far
+[h2h] batch 9/9: 40 pairs / 80 games in 7.9s (10.11 games/s); W/L/D 47/33/0; pair counts [6, 0, 21, 0, 13]; near-tie games 0; digest b13a156aac07
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 8 recorded; n_pairs 360 so far
+[h2h] batch 10/10: 40 pairs / 80 games in 8.5s (9.36 games/s); W/L/D 41/39/0; pair counts [7, 0, 25, 0, 8]; near-tie games 0; digest 13a62aaf84e6
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 9 recorded; n_pairs 400 so far
+[h2h] batch 11/11: 40 pairs / 80 games in 7.5s (10.70 games/s); W/L/D 40/39/1; pair counts [8, 0, 23, 1, 8]; near-tie games 0; digest 27b933fb8660
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 10 recorded; n_pairs 440 so far
+[h2h] batch 12/12: 40 pairs / 80 games in 12.2s (6.55 games/s); W/L/D 39/40/1; pair counts [9, 0, 22, 1, 8]; near-tie games 0; digest 96a5401b23e8
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 11 recorded; n_pairs 480 so far
+[h2h] batch 13/13: 40 pairs / 80 games in 8.4s (9.49 games/s); W/L/D 43/37/0; pair counts [8, 0, 21, 0, 11]; near-tie games 0; digest 084f911a683d
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 12 recorded; n_pairs 520 so far
+[h2h] batch 14/14: 40 pairs / 80 games in 31.7s (2.52 games/s); W/L/D 43/37/0; pair counts [9, 0, 19, 0, 12]; near-tie games 0; digest ca4b00f42b69
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 13 recorded; n_pairs 560 so far
+[h2h] batch 15/15: 40 pairs / 80 games in 9.0s (8.89 games/s); W/L/D 46/34/0; pair counts [7, 0, 20, 0, 13]; near-tie games 0; digest 0f1956937863
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: batch 14 recorded; n_pairs 600 so far
+[plateau] plateau_t1:rb_toy_ent_s4002:100000000:w20000000: GAIN (upper_bound) at 600 pairs, LLR +3.015; decision 20261015T221449Z.0-goodlad_desktop-3351406-h2h:d0
+[mem_cap] done: gen3ai-capped-t33s4002tick-3351396.scope exit 0 · peak 0.65 GB of cap 12.00 GB (5%) · not OOM-killed

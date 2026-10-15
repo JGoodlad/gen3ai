@@ -42,6 +42,10 @@ This is the evidence directory for `designs/endstate/design_x26_readiness.md` §
 - The operator stopped the loop at 08:39, because nothing further was due.
 - `tick_stderr.log` holds every batch line. `status_final.json` is the machine-readable status.
 
+### Seed 4002 (`s4002/`)
+
+The same procedure, run retrospectively on the finished `rb_toy_ent_s4002`: 16 checks, 25M–100M, all GAIN, status CLIMBING at 100M, so a `CAP` stop and no plateau. See `s4002/README.md` and the readiness doc §3.8.
+
 ### Cost of a check
 
 | network | games | wall | CPU-s | games/s |
