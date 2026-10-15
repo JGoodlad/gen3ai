@@ -173,7 +173,7 @@ def test_each_row_has_exactly_one_restart_route():
 def test_a_same_run_restart_resolves_every_untyped_row_by_its_route(tmp_path):
     run = _run(tmp_path, "launcher --steps 9 --arch production --run-name x", _LAUNCH_CLI)
     ns = _restart_ns(run, "--ent-coef", "0.03")
-    got = {d: (v, s) for d, v, s in rs.inherit_on_restart(ns, str(run), _SAVED)}
+    got = {d: (v, s) for d, v, s in rs.inherit_recorded_recipe(ns, str(run), _SAVED)}
     assert ns.ent_coef == 0.03 and "ent_coef" not in got                 # typed wins
     assert got["n_envs"] == (48, "metadata.json:cli_args") and ns.n_epochs == 10
     assert ns.clip_range_vf is None and not hasattr(ns, "beta_setvalued_coef")
@@ -186,24 +186,24 @@ def test_a_same_run_restart_resolves_every_untyped_row_by_its_route(tmp_path):
     # recorded tri-state fields are the resume's own inheritance:
     assert ns.critic == "winprob" and ns.move_belief_coef is None      # a constant; the tri-state ones inherit
     rep = rs.report(ns, fresh=False, restart=True)
-    assert rep.restart_inherited and not rep.refuses and rep.kind == "fresh"
+    assert rep.record_inherited and not rep.refuses and rep.kind == "fresh"
 
 
 def test_a_missing_value_REFUSES_by_name_never_a_default(tmp_path):
     cli = dict(_LAUNCH_CLI)
     del cli["ent_coef"]
     run = _run(tmp_path / "a", "launcher --arch production", cli)
-    with pytest.raises(rs.RecipeRestartError, match="--ent-coef"):
-        rs.inherit_on_restart(_restart_ns(run), str(run), _SAVED)
+    with pytest.raises(rs.RecipeRecordError, match="--ent-coef"):
+        rs.inherit_recorded_recipe(_restart_ns(run), str(run), _SAVED)
     no_cli = _run(tmp_path / "b", "launcher --arch production", None)
-    with pytest.raises(rs.RecipeRestartError, match="--n-envs"):
-        rs.inherit_on_restart(_restart_ns(no_cli), str(no_cli), _SAVED)
+    with pytest.raises(rs.RecipeRecordError, match="--n-envs"):
+        rs.inherit_recorded_recipe(_restart_ns(no_cli), str(no_cli), _SAVED)
     run_c = _run(tmp_path / "c", "launcher --arch production", _LAUNCH_CLI)
-    with pytest.raises(rs.RecipeRestartError, match="--vf-coef"):
-        rs.inherit_on_restart(_restart_ns(run_c), str(run_c), None)
+    with pytest.raises(rs.RecipeRecordError, match="--vf-coef"):
+        rs.inherit_recorded_recipe(_restart_ns(run_c), str(run_c), None)
     # …and a typed value closes the gap it names
     ns = _restart_ns(run, "--ent-coef", "0.05")
-    assert rs.inherit_on_restart(ns, str(run), _SAVED)
+    assert rs.inherit_recorded_recipe(ns, str(run), _SAVED)
 
 
 def test_checkargs_reports_the_restart_refusal(tmp_path, capsys):
@@ -216,13 +216,117 @@ def test_checkargs_reports_the_restart_refusal(tmp_path, capsys):
     assert rc == 3 and "--n-envs" in capsys.readouterr().out
 
 
-def test_no_restoration_on_a_fork_or_a_run_not_launched_with_the_umbrella(tmp_path):
-    run = _run(tmp_path, "launcher --steps 9 --run-name x", _LAUNCH_CLI)
-    ns = _restart_ns(run)
-    assert rs.inherit_on_restart(ns, str(run), _SAVED) == [] and ns.ent_coef == 0.02
-    run2 = _run(tmp_path / "b", "launcher --arch production", _LAUNCH_CLI)
-    fork = build_parser().parse_args(["--steps", "1", "--model", str(run / "checkpoints" / "c.zip")])
-    assert rs.inherit_on_restart(fork, str(run2), _SAVED) == []
+# ------------------------------------------- THE 2026-10-14 FORK-RECIPE GIGO: every --model launch inherits
+#: A recorded 256-env SELF-PLAY parent — the end-state runs' shape (`rb_es_end2_s2001`: n_envs 256, K 32, ent 0.05,
+#: self-play on). Every value differs from the parser default, so a fork that fell to the parser cannot pass.
+_PARENT_CLI = {**_LAUNCH_CLI, "n_envs": 256, "rollout_target_samples": 98304, "trainee_slots": 1, "t2_lanes": 0,
+               "t2_buckets": None}
+#: A fork's own `original_command`: no `--arch` (a resume / fork never carries it).
+_FORK_CMD = "launcher --model /x/parent/final_model.zip --fork-lr 0.00036 --steps 9 --run-name the_fork"
+
+
+def _fork_ns(parent_run, *extra):
+    """A fork argv: `--model` is the PARENT's checkpoint, and the run dir is elsewhere (none given)."""
+    return build_parser().parse_args(["--steps", "1", "--model", str(parent_run / "checkpoints" / "c.zip"),
+                                      "--fork-lr", "3.6e-4", *extra])
+
+
+def test_a_FORK_restores_its_PARENTs_recorded_recipe_not_the_parsers(tmp_path):
+    """THE DEFECT (Training Oct, 2026-10-14): a fork's untyped recipe knobs fell to the PARSER (n_envs 32, K 1, ent
+    0.02, self-play off, …) — the parent's record was read only for a same-run restart of an `--arch production`
+    run. Fails on revert (the old function returned [] for a fork)."""
+    parent = _run(tmp_path, "launcher --steps 9 --run-name parent", _PARENT_CLI)   # NOT an --arch launch either
+    ns = _fork_ns(parent)
+    got = {d: (v, s) for d, v, s in rs.inherit_recorded_recipe(ns, str(tmp_path / "the_fork"), _SAVED)}
+    assert (ns.n_envs, ns.self_play, ns.grad_accum_steps, ns.ent_coef) == (256, True, 32, 0.05)
+    assert ns.rollout_target_samples == 98304 and ns.clip_range_vf is None and ns.n_epochs == 10
+    assert got["n_envs"] == (256, "parent metadata.json:cli_args") and ns._recipe_record_role == "fork"
+    assert got["vf_coef"] == (0.5, "model_config.json")
+    # INERT on a resume (SB3 restores them from the zip) and the typed fork LR: untouched
+    assert (ns.lr, ns.batch_size, ns.n_steps, ns.fork_lr) == (3e-4, 4096, 2048, 3.6e-4)
+    assert not {"lr", "batch_size", "n_steps", "fork_lr"} & set(got)
+    # the report judges a fork against recipe.fork, INFO only, and says where the knobs came from
+    rep = rs.report(ns, fresh=False)
+    assert rep.kind == "fork" and not rep.refuses and rep.record_role == "fork"
+    assert not {"n_envs", "self_play", "grad_accum_steps", "ent_coef"} & {d.dest for d in rep.diffs}
+    assert any("PARENT run's record" in line for line in rs.report_lines(rep))
+
+
+def test_a_typed_knob_still_wins_on_a_fork_and_the_precision_stays_the_resumes_own(tmp_path):
+    parent = _run(tmp_path, "launcher --steps 9", _PARENT_CLI)
+    ns = _fork_ns(parent, "--n-envs", "64", "--no-self-play")
+    got = {d for d, _v, _s in rs.inherit_recorded_recipe(ns, None, _SAVED)}
+    assert (ns.n_envs, ns.self_play) == (64, False) and not {"n_envs", "self_play"} & got
+    # `trunk_precision` is a recorded tri-state field (route `resume`): `_resolve` inherits it, never this
+    assert "trunk_precision" not in got and ns.trunk_precision is None
+
+
+def test_a_MANUAL_resume_of_a_fork_restores_the_forks_own_record(tmp_path):
+    """The second shape of the defect: a same-run resume of a run launched WITHOUT `--arch` (a fork) used to get
+    the parser's recipe too (the restart path keyed on the umbrella in `original_command`)."""
+    fork = _run(tmp_path, _FORK_CMD, _PARENT_CLI)
+    ns = _restart_ns(fork)
+    got = {d: s for d, _v, s in rs.inherit_recorded_recipe(ns, str(fork), _SAVED)}
+    assert (ns.n_envs, ns.self_play, ns.grad_accum_steps) == (256, True, 32)
+    assert got["n_envs"] == "metadata.json:cli_args" and ns._recipe_record_role == "restart"
+    assert rs.report(ns, fresh=False, restart=True).kind == "fresh"
+
+
+def test_a_fork_of_a_checkpoint_with_NO_record_REFUSES_by_name(tmp_path):
+    """No metadata.json (a bare zip, a foreign checkpoint): every cli_args-route knob is NAMED, never defaulted."""
+    lone = tmp_path / "lone"
+    (lone / "checkpoints").mkdir(parents=True)
+    ns = _fork_ns(lone)
+    with pytest.raises(rs.RecipeRecordError, match="--n-envs") as e:
+        rs.inherit_recorded_recipe(ns, None, _SAVED)
+    assert "--self-play" in str(e.value) and "--ent-coef" in str(e.value) and "PARENT" in str(e.value)
+    # …and typing every one of them closes it (a typed value is a deliberate choice)
+    typed = []
+    for d in ("n_envs", "grad_accum_steps", "n_epochs", "min_lr", "weight_decay", "clip_range", "ent_coef"):
+        typed += [rs._ROW[d].flag, str(_PARENT_CLI[d])]
+    typed += ["--clip-range-vf", "none", "--self-play", "true", "--max-lr", "1e-3", "--anneal-lr-start-steps", "0",
+              "--rollout-target-samples", "98304"]           # the update size; T2's serving sizes are derived
+    assert [d for d, _v, _s in rs.inherit_recorded_recipe(_fork_ns(lone, *typed), None, _SAVED)] == ["vf_coef"]
+
+
+def test_the_launcher_passes_the_restored_recipe_TYPED_so_a_PRE_FIX_child_trains_it(tmp_path):
+    """A fork runs PINNED, by default to the checkpoint's own commit — a commit from BEFORE the fix, whose trainer
+    resolves an untyped knob to the parser default. `materialize_recorded_recipe` writes the restored knobs into the
+    child argv as TYPED tokens, so a plain parse (no inheritance at all: the pre-fix child) trains the parent's."""
+    parent = _run(tmp_path, "launcher --steps 9", _PARENT_CLI)
+    argv = ["--steps", "1", "--model", str(parent / "checkpoints" / "c.zip"), "--fork-lr", "3.6e-4",
+            "--n-epochs", "5"]
+    out, added = rs.materialize_recorded_recipe(argv, str(tmp_path / "the_fork"))
+    assert out[:len(argv)] == argv
+    child = build_parser().parse_args(out)                       # the pre-fix child: argv only
+    assert (child.n_envs, child.self_play, child.grad_accum_steps, child.ent_coef) == (256, True, 32, 0.05)
+    assert child.rollout_target_samples == 98304 and child.clip_range_vf is None
+    assert child.n_epochs == 5                                   # typed: never overwritten
+    assert {"n_envs", "self_play", "clip_range_vf"} <= rs.typed_dests(child)
+    # INERT rows and the value-checked model_config row are never written; a None default is not spelled
+    assert not {"lr", "batch_size", "n_steps", "vf_coef", "max_lr", "t2_buckets"} & {d for d, _v, _s in added}
+    # a FRESH argv is untouched, and a fork with no record is refused before anything exists
+    assert rs.materialize_recorded_recipe(["--steps", "1", "--arch", "production"], None) == (
+        ["--steps", "1", "--arch", "production"], [])
+    lone = tmp_path / "lone"
+    (lone / "checkpoints").mkdir(parents=True)
+    with pytest.raises(rs.RecipeRecordError, match="--n-envs"):
+        rs.materialize_recorded_recipe(["--steps", "1", "--model", str(lone / "checkpoints" / "c.zip")], None)
+
+
+def test_resolve_config_trains_a_FORK_on_its_PARENTs_recipe_end_to_end(tmp_path):
+    """The child's own resolution, end to end (`resolve_config`), on a REAL recorded parent: a fresh
+    `--arch production` run is saved, then FORKED with only `--model` + `--fork-lr` typed. Every non-INERT recipe
+    row resolves to what the parent trained. Fails on revert (n_envs 32, self_play False, K 1, …)."""
+    from main.train.derived_toggle_resume_test import _resolve, _run_dir, _saved_version
+    fresh = _resolve(["--arch", "production", "--steps", "1000"])
+    assert fresh.n_envs == 256 and fresh.self_play is True and fresh.grad_accum_steps == 32
+    _run, ckpt = _run_dir(tmp_path, _saved_version(fresh),
+                          cli_args=json.loads(json.dumps(vars(fresh), default=str)))
+    forked = _resolve(["--model", ckpt, "--fork-lr", "3.6e-4", "--steps", "2000"])
+    drift = {r.dest: (getattr(fresh, r.dest), getattr(forked, r.dest)) for r in rs.ROWS
+             if r.dest not in rs.INERT_ON_RESUME and not rs._agree(getattr(fresh, r.dest), getattr(forked, r.dest))}
+    assert not drift, f"a FORK trained a recipe its parent did not: {drift}"
 
 
 def test_arch_production_is_still_refused_beside_model():
@@ -330,7 +434,7 @@ def test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recip
     """fresh `--arch production` (NO recipe token typed) → save → the launcher's OWN restart argv
     (`resume_child_args`, which strips `--arch`) → `resolve_config`. Every non-INERT recipe row comes
     back as launched: the recorded ones through the resume's inheritance (`_resolve`, cutover-prep's
-    v125 `opp_intent_coef` included), the rest through `inherit_on_restart`, each announced."""
+    v125 `opp_intent_coef` included), the rest through `inherit_recorded_recipe`, each announced."""
     from main.launcher.checkpoint import resume_child_args
     from main.train.derived_toggle_resume_test import _resolve, _run_dir, _saved_version
 
@@ -407,5 +511,5 @@ def test_a_same_run_restart_leaves_the_precision_to_the_resume_s_own_inheritance
     assert rs.restart_route("trunk_precision", p.get_default("trunk_precision"), rs._model_version_fields()) == "resume"
     run = _run(tmp_path, "launcher --steps 9 --arch production --run-name x", _LAUNCH_CLI)
     ns = _restart_ns(run)
-    got = {d for d, _v, _s in rs.inherit_on_restart(ns, str(run), _SAVED)}
+    got = {d for d, _v, _s in rs.inherit_recorded_recipe(ns, str(run), _SAVED)}
     assert "trunk_precision" not in got and ns.trunk_precision is None

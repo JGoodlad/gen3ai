@@ -160,7 +160,10 @@ answers one of the two questions; do both.
    arm and OOMed at iteration 1 on the full surface; the full-surface shape on the 12 GB card is
    **2048 × K**). The desktop compositor holds ~1.1 GB of that card.
 9. On a FORK: `--lr`, `--batch-size`, `--n-steps` are INERT (inherited); pin the rate with
-   `--fork-lr`; the self-play pool auto-seeds from the parent. On a RESTART nothing re-pins.
+   `--fork-lr`; the self-play pool auto-seeds from the parent. Every other untyped RECIPE knob (`--n-envs`,
+   `--self-play`, `--grad-accum-steps`, `--ent-coef`, …) is the PARENT's, restored from its `metadata.json` and
+   passed to the child typed (since 2026-10-14 — before it, a fork trained the parser's recipe unless the full
+   recipe was typed; check the `--dry-run` `recipe :` line). On a RESTART nothing re-pins.
 10. Register the read BEFORE launch: endpoints, comparator baseline by name, matched snapshot count,
     the floor (max pairwise difference among replicates), the kill conditions and the successor arm.
     The read is not renegotiated after launch. **A rule that is not in the ledger is not registered:**

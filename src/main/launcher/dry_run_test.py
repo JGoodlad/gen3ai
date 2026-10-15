@@ -117,6 +117,9 @@ def _make_run(root_dir, git_hash, name="ai_v9_171", steps=28_115_184, pool=0):
     # (`torch_runtime`, its own test file) is satisfied on any box, with or without a legacy env.
     (run_dir / "metadata.json").write_text(json.dumps(
         {"git_hash": git_hash, "torch_version": importlib.metadata.version("torch")}))
+    # …and the recorded RECIPE every real run's metadata.json carries (a --model launch restores from it).
+    from main.train.recipe_testkit import write_recorded_recipe
+    write_recorded_recipe(run_dir)
     (run_dir / "model_config.json").write_text(json.dumps({"obs_dim": 2501}))
     (run_dir / "latest.txt").write_text(f"checkpoints/checkpoint_{steps}_steps.zip")
     if pool:
@@ -553,21 +556,27 @@ def test_i_a_restart_dry_run_shows_the_restored_recipe_value_and_its_source(
     out = capsys.readouterr().out
     line = _grad_accum_line(out)
     assert " 32 " in line, line                       # the checkpoint's K, not the parser default 1
-    assert "RESTORED at restart from metadata.json:cli_args" in line, line
-    assert "from the argv" not in line, line
+    assert "RESTORED from metadata.json:cli_args" in line and "passed to the child TYPED" in line, line
+    assert "(from the argv)" not in line, line
     if not readable_config:
         assert "could NOT be read under THIS tree" in out
     assert _snapshot_tree(run_dir) == before
 
 
-def test_i_a_fork_dry_run_still_labels_an_untyped_value_from_the_argv(isolated, monkeypatch, capsys):
-    """The label changes only for a value a same-run restart restored; a FORK keeps the old one."""
+def test_i_a_FORK_dry_run_restores_the_PARENTs_recipe_and_passes_it_typed(isolated, monkeypatch, capsys):
+    """THE 2026-10-14 FORK-RECIPE GIGO: a fork used to take every untyped recipe knob from the PARSER (K 1, 32
+    envs, no self-play). Now the PARENT's record is restored and the launcher passes it to the child TYPED, so a
+    child pinned to a pre-fix commit trains it too. Fails on revert (the line read `1 (from the argv)`)."""
     _root, (first, _second), work = isolated
     _run_dir, ckpt = _production_restart_run(work, first, readable_config=False)
     _dry_run(["--model", ckpt, "--run-name", "a_fork_of_it", "--steps", "30000000", *_ARCH_OK],
              monkeypatch)
-    line = _grad_accum_line(capsys.readouterr().out)
-    assert " 1 " in line and "(from the argv)" in line, line
+    out = capsys.readouterr().out
+    line = _grad_accum_line(out)
+    assert " 32 " in line and "RESTORED from parent metadata.json:cli_args" in line, line
+    rec = [ln for ln in out.splitlines() if ln.startswith("  recipe      :")]
+    assert rec and "PARENT's record" in rec[0], out
+    assert "n_envs=48" in out and "self_play=True" in out and "ent_coef=0.05" in out, out
 
 
 # ---------------------------------------------------------------------------------------

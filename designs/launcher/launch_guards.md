@@ -93,7 +93,7 @@ command cannot launch at all" must reach the reader before a question about its 
 | **FRESH**, un-pinned or pinned to HEAD | prints the diff and **REFUSES** (`FATAL_CONFIG`), naming every differing key with both values |
 | FRESH + `--allow-nonproduction-arch` | prints the diff, launches, and stamps `arch_source` in `model_config.json` |
 | FRESH + `--arch production` | applies the whole surface first, so there is usually nothing to print |
-| **FORK / RESTART** | prints the diff as **INFO** — a resume INHERITS its parent's surface through `config.inherit_saved_flag`, so its silence is the parent's architecture. A same-run RESTART also keeps the run's `arch_source` / `recipe_source` (`arch_surface.inherit_arch_source_on_restart`, `recipe_surface.inherit_on_restart`) — the stripped `--arch` no longer nulls them at the first restart |
+| **FORK / RESTART** | prints the diff as **INFO** — a resume INHERITS its parent's surface through `config.inherit_saved_flag`, so its silence is the parent's architecture. A same-run RESTART also keeps the run's `arch_source` / `recipe_source` (`arch_surface.inherit_arch_source_on_restart`, `recipe_surface.inherit_recorded_recipe`) — the stripped `--arch` no longer nulls them at the first restart. Every untyped RECIPE knob of a `--model` launch is restored from the checkpoint's run (a fork: its PARENT's) and passed to the child TYPED — `--dry-run` prints them on a `recipe :` line (`designs/launcher/restarts_and_resume.md`); a knob with no record is REFUSED by name |
 | **PINNED to a non-HEAD commit** | prints the diff as **ADVISORY** — see below |
 
 **The ADVISORY rung is `gen3_pinned_argv_parser_v1`'s lesson applied a second time.**
@@ -139,7 +139,7 @@ applied none of them. `main.train.recipe_surface` holds the declared rows; the v
 | FRESH, every differing knob TYPED | INFO — a typed value is the arm's lever |
 | FRESH + `--allow-nonproduction-recipe` | prints the block and launches |
 | FRESH + `--arch production` | applies every untyped `recipe.fresh` knob first (N0's measured recipe) |
-| **FORK** | INFO, compared with `recipe.fork` (E5: 5 epochs at a frozen 5.6e-5) — a fork's recipe is its ARGV plus what it inherits from its parent's config |
+| **FORK** | INFO, compared with `recipe.fork` (E5: 5 epochs at a frozen 5.6e-5) — a fork's recipe is its ARGV plus its PARENT's record (`model_config.json` + `metadata.json:cli_args`, restored by `inherit_recorded_recipe` and passed to the child typed since 2026-10-14) |
 | **same-run RESTART** of an `--arch production` run | the child resolves each untyped knob by ONE route (INERT / `model_config.json` / `metadata.json:cli_args`), announced; a MISSING value REFUSES by name (`checkargs` / `--dry-run` report it) |
 | **PINNED to a non-HEAD commit** | ADVISORY, for the ARCH guard's reason |
 

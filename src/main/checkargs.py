@@ -350,18 +350,17 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
         except Exception as e:                       # noqa: BLE001 — unreadable is not a crash
             ns._saved_config_present = False
             # The config is unreadable under THIS tree (typically a run PINNED to an older commit),
-            # but a same-run restart's recipe values live in metadata.json:cli_args, not in the
-            # config: restore those (partial=True) so the display shows what the resume will use,
+            # but a --model launch's recipe values live in metadata.json:cli_args, not in the
+            # config: restore those (partial=True) so the display shows what the launch will use,
             # not the parser default (2026-10-08: `--grad-accum-steps 1 (from the argv)` for a run
-            # whose real resumes kept K=32).
-            from main.train.recipe_surface import RecipeRestartError, inherit_on_restart
+            # whose real resumes kept K=32; 2026-10-14: the same for a FORK).
+            from main.train.recipe_surface import RecipeRecordError, inherit_recorded_recipe
             recipe_refusal = None
-            if same_run:
-                try:
-                    with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
-                        inherit_on_restart(ns, run_dir, None, model=model, partial=True)
-                except RecipeRestartError as re_:
-                    recipe_refusal = str(re_)
+            try:
+                with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
+                    inherit_recorded_recipe(ns, run_dir, None, model=model, partial=True)
+            except RecipeRecordError as re_:
+                recipe_refusal = str(re_)
             _critic()
             return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
                     "inherited": {}, "same_run": same_run, "read_error": str(e),
@@ -370,15 +369,16 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     ns._saved_config_present = saved is not None
     inherited: Dict[str, Any] = {}
     derived_refusal = None
-    # K10(a): the launch's own same-run-restart resolution of the RECIPE knobs, in the launch's
-    # order (after the desugars, before the inheritance sweep) — so a restart argv is judged as the
-    # child resolves it, and one the child would REFUSE is reported as refused.
-    from main.train.recipe_surface import RecipeRestartError, inherit_on_restart
+    # K10(a): the launch's own resolution of the RECIPE knobs from the record of the run that wrote the
+    # checkpoint (a restart's own, a fork's PARENT's), in the launch's order (after the desugars, before the
+    # inheritance sweep) — so a --model argv is judged as the child resolves it, and one the child would
+    # REFUSE is reported as refused.
+    from main.train.recipe_surface import RecipeRecordError, inherit_recorded_recipe
     recipe_refusal = None
     try:
         with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
-            inherit_on_restart(ns, run_dir, saved, model=model)
-    except RecipeRestartError as e:
+            inherit_recorded_recipe(ns, run_dir, saved, model=model)
+    except RecipeRecordError as e:
         recipe_refusal = str(e)
     # Deletion pass D4: a shaped-critic checkpoint is REFUSED (FATAL_CONFIG) by the launch's own
     # record-keyed check (same order as the child) — reported here.
@@ -1044,9 +1044,11 @@ def main(raw: List[str] | None = None) -> int:
             print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {res['env_core_refusal']}")
             return int(TrainExitCode.FATAL_CONFIG)
     if res.get("recipe_refusal"):
-        # The child's own same-run-restart refusal (a recipe value missing from its route).
-        print(f"\n  ✗ this RESTART would be REFUSED at launch (FATAL_CONFIG): {res['recipe_refusal']}")
-        return int(TrainExitCode.FATAL_CONFIG)
+        # The --model launch's recipe refusal (a recipe value missing from its record). The launch defers it to
+        # just after the combination sweep, so a refused COMBINATION keeps its own verdict (below) first.
+        print(f"\n  ✗ this --model launch would be REFUSED (FATAL_CONFIG): {res['recipe_refusal']}")
+        if not (res["unknown"] or res["unsatisfiable"] or res["combinations"]):
+            return int(TrainExitCode.FATAL_CONFIG)
 
     if fork_fatal:
         print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {fork_fatal}")

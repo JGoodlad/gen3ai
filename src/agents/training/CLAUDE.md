@@ -279,8 +279,11 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
 
 - **`--arch production`** writes every `recipe.fresh` knob (`designs/production_config.json`) the argv did not TYPE
   (incl. `trunk_precision` bf16); a fresh argv differing on an UNTYPED knob is refused (`--allow-nonproduction-recipe`
-  consents). `recipe.fork` (E5) is never applied by `--arch`. 🚨 **A same-run RESTART strips `--arch`** and resolves each untyped knob by exactly one
-  route; a missing value REFUSES (`RecipeRestartError`), never a parser default. Values: `src/recipe_doc_gate_test.py`
+  consents). `recipe.fork` (E5) is never applied by `--arch`. 🚨 **EVERY `--model` launch (a restart, a FORK, a fork's resume)
+  restores each untyped recipe knob from the record of the run that wrote the checkpoint** (a fork: its PARENT's;
+  `inherit_recorded_recipe`, by exactly one route) and the launcher passes them to the child TYPED, so a pre-fix
+  pinned child trains them too; a missing value REFUSES (`RecipeRecordError`), never a parser default (before
+  2026-10-14 a fork trained the PARSER's recipe — 32 envs, no self-play, K 1). Values: `src/recipe_doc_gate_test.py`
   holds `designs/endstate/design_learner_recipe.md` §3.22 to the block.
 - 🚨 **`--lr`, `--batch-size`, `--n-steps` are INERT on a resume**; `--fork-lr` pins a genuine fork's LR. **A FORK
   inherits the parent's LR but not its freeze** — forking a `--fork-lr-freeze` run without a `--fork-lr` is `[ForkLR]

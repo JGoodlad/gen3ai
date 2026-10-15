@@ -16,6 +16,9 @@ def _resolved(argv, saved=None, monkeypatch=None):
     parser = build_parser()
     if saved is not None:
         monkeypatch.setattr(cfg_mod, "_load_saved_version", lambda path: saved)
+        # a stand-in parent with no run dir on disk: its recorded recipe (the 2026-10-14 fork-recipe fix)
+        from main.train.recipe_testkit import fake_record
+        fake_record(monkeypatch)
         argv = ["--model", "models/parent/checkpoints/checkpoint_10_steps.zip"] + argv
     with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
         args = parser.parse_args(["--steps", "100", "--allow-nonproduction-arch"] + argv)
@@ -37,7 +40,7 @@ def test_the_flag_turns_it_on():
 
 
 def test_a_flagless_resume_keeps_the_recorded_regime(monkeypatch):
-    saved = SimpleNamespace(eval_mirrored_pairs=True, critic="winprob")   # a shaped parent is refused (D4)
+    saved = SimpleNamespace(eval_mirrored_pairs=True, critic="winprob", vf_coef=0.5)   # a shaped parent is refused (D4)
     args = _resolved([], saved=saved, monkeypatch=monkeypatch)
     assert args.eval_mirrored_pairs is True and args.eval_mirrored_pairs_source == "inherited"
     args = _resolved(["--no-eval-mirrored-pairs"], saved=saved, monkeypatch=monkeypatch)
@@ -69,7 +72,7 @@ def test_sprt_promotion_is_off_by_default_recorded_and_inherited(monkeypatch):
     assert build_parser().parse_args([]).promotion_sprt is None
     args = _resolved([])
     assert args.promotion_sprt is False and args.promotion_sprt_source == "default"
-    args = _resolved(["--self-play"], saved=SimpleNamespace(promotion_sprt=True, critic="winprob"), monkeypatch=monkeypatch)
+    args = _resolved(["--self-play"], saved=SimpleNamespace(promotion_sprt=True, critic="winprob", vf_coef=0.5), monkeypatch=monkeypatch)
     assert args.promotion_sprt is True and args.promotion_sprt_source == "inherited"
 
 

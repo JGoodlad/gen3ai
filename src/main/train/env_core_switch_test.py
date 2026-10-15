@@ -128,7 +128,7 @@ def test_a_restart_of_an_arch_production_run_restores_no_env_core(tmp_path):
     full["env_core"] = "python"                              # a pre-P11b run's cli_args still carries it
     run, ckpt = _run(tmp_path, original="launcher --steps 9 --arch production --run-name x", cli=full)
     ns = build_parser().parse_args(["--steps", "1", "--model", str(ckpt), "--run-dir", str(run)])
-    got = {d for d, _v, _s in rs.inherit_on_restart(ns, str(run), _saved())}
+    got = {d for d, _v, _s in rs.inherit_recorded_recipe(ns, str(run), _saved())}
     assert "env_core" not in got and not hasattr(ns, "env_core")
 
 

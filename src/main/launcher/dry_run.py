@@ -132,14 +132,17 @@ def _pool_line(run_dir: str, child_args: List[str]) -> Optional[str]:
     return f"{len(zips)} snapshot(s) in {pool_dir}, win_rate_vs_bots {wr_txt}"
 
 
-def _value_source(ns, dest: str, inherited: dict) -> str:
+def _value_source(ns, dest: str, inherited: dict, materialized: "dict | None" = None) -> str:
     """Where the value the child WILL use comes from. A same-run restart of an `--arch production`
-    run restores its untyped recipe rows (`recipe_surface.inherit_on_restart`) from the run's own
-    record, which `inherited` (the model_config.json sweep) does not list - labelling those
-    "from the argv" read as if the resume would train at the parser default."""
-    for d, _v, source in getattr(ns, "_recipe_restart_inherited", ()) or ():
+    run restores its untyped recipe rows (`recipe_surface.inherit_recorded_recipe`) from the record of the
+    run that wrote the checkpoint, which `inherited` (the model_config.json sweep) does not list - labelling
+    those "from the argv" read as if the launch would train at the parser default."""
+    if materialized and dest in materialized:
+        return (f"RESTORED from {materialized[dest]} - passed to the child TYPED by the launcher; "
+                "the argv leaves it unset")
+    for d, _v, source in getattr(ns, "_recipe_record_inherited", ()) or ():
         if d == dest:
-            return f"RESTORED at restart from {source} - the argv leaves it unset"
+            return f"RESTORED from {source} - the argv leaves it unset"
     return "INHERITED" if dest in inherited else "from the argv"
 
 
@@ -234,6 +237,21 @@ def dry_run(
         role = f"FORK of {run_dir_for_checkpoint(model_path)}"
 
     out(f"  role        : {role}")
+    # 2a. THE RECORDED RECIPE (2026-10-14 fork-recipe fix), exactly as `_prepare_session` does it: every untyped
+    #     recipe knob of a `--model` launch is restored from the record of the run that wrote the checkpoint and
+    #     passed to the child TYPED, so a child pinned to a pre-fix commit trains it too. Before the pin check, which
+    #     validates the argv the child will actually receive.
+    from main.train.recipe_surface import RecipeRecordError, materialize_recorded_recipe
+    try:
+        child_args, _materialized = materialize_recorded_recipe(child_args, run_dir)
+    except RecipeRecordError as e:
+        out(f"  ✗ REFUSED (recipe record): {e}")
+        out("  ✗ DRY RUN — this command would NOT launch. Nothing was created or modified.")
+        return int(TrainExitCode.FATAL_CONFIG)
+    if _materialized:
+        out(f"  recipe      : {len(_materialized)} untyped recipe knob(s) restored from the "
+            f"{'run' if role.startswith('RESTART') else 'PARENT'}'s record and passed to the child TYPED:")
+        out("                " + "  ".join(f"{d}={v!r}" for d, v, _s in _materialized))
     if fork_resume is not None:
         out(f"                ♻️  this fork already has progress — --model swapped to "
             f"{os.path.basename(fork_resume)} (idempotent)")
@@ -349,7 +367,7 @@ def dry_run(
             if not hasattr(ns, dest):
                 continue
             out(f"      --{dest.replace('_', '-'):<20} {getattr(ns, dest)!r:<12} "
-                f"({_value_source(ns, dest, inherited)})")
+                f"({_value_source(ns, dest, inherited, {d: s for d, _v, s in _materialized})})")
 
     # 6b. The ENV CORE: the Rust core is the only one (no `--env-core` flag since deletion pass P11b); what a
     # `--model` launch can add is a CORE SWITCH — a python-era checkpoint moving onto it, keyed on the record.
@@ -412,7 +430,7 @@ def dry_run(
         for line in recipe_surface.report_lines(recipe):
             out(f"  {line}")
     if res.get("recipe_refusal"):
-        out(f"  ✗ REFUSED (same-run restart): {res['recipe_refusal']}")
+        out(f"  ✗ REFUSED (recipe record): {res['recipe_refusal']}")
     # Deletion pass D4: a shaped-critic checkpoint. A PINNED child runs its own commit's resolve_config
     # (which still has the shaped path) — the way out the refusal names — so there it is advisory.
     _d4_advisory = pinned is not None and pinned.available

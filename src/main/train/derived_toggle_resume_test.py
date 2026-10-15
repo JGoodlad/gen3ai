@@ -101,7 +101,10 @@ def test_a_launcher_restart_of_a_fresh_arch_production_run_resolves_back_to_its_
 
     fresh = _resolve(_FRESH)
     assert fresh.opp_intent_coef and fresh.opp_intent_coef > 0          # the umbrella turned it on
-    run, ckpt = _run_dir(tmp_path, _saved_version(fresh))                # NO metadata.json: the field alone
+    # metadata.json carries ONLY the recorded RECIPE rows (cli_args-route; every real run has them): the derived
+    # toggle's dose is a model_config.json FIELD, so it still comes from the field alone.
+    from main.train.recipe_testkit import recorded_cli_args
+    run, ckpt = _run_dir(tmp_path, _saved_version(fresh), cli_args=recorded_cli_args())
     argv, stripped = resume_child_args(list(_FRESH), ckpt, run)
     assert stripped and "--arch" not in argv
     restarted = _resolve(argv)

@@ -48,8 +48,12 @@ evidence, gates — is the topic docs in [`designs/launcher/`](../../../designs/
   `--arch`), add `--model <latest checkpoint>` + `--run-dir`. Never re-pass the original argv
   (`ai_v14_01_base` crash-looped out at its first restart, 2026-09-26). A FRESH launch into a dir
   holding a checkpoint or `model_config.json` is REFUSED (`FreshRunDirHasProgress`, `FATAL_CONFIG`).
-  On restart the CHILD restores an `--arch production` run's untyped recipe knobs
-  (`recipe_surface.inherit_on_restart`); a missing value refuses, never guesses.
+  🚨 **Every `--model` launch (restart, FORK, a fork's resume) inherits its RECIPE from the record of the run
+  that wrote the checkpoint** (a fork: the PARENT's `metadata.json:cli_args` + `model_config.json`;
+  `recipe_surface.inherit_recorded_recipe`), and `_prepare_session` passes those knobs to the child TYPED
+  (`materialize_recorded_recipe`, before the pin check) because a child PINNED to a pre-2026-10-14 commit
+  resolves an untyped knob to the PARSER default (32 envs, no self-play, K 1 — the fork-recipe GIGO). A missing
+  value refuses by name, never guesses; `--lr` / `--batch-size` / `--n-steps` stay INERT.
 - 🚨 **Fork vs restart is ONE predicate, imported, never re-derived:**
   `main.train.fork_lr.is_same_run_checkpoint` (where the resumed checkpoint lives). `--fork-lr`, the
   fork's pool seeding, the idempotent-fork `--model` swap (`checkpoint.resolve_fork_resume_model`, run

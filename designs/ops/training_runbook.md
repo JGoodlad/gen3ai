@@ -92,7 +92,7 @@ independent questions**, and passing the first says nothing about the second:
    the same three readers) against the mirror's `recipe` block (`recipe.fresh` = N0's measured
    recipe; `recipe.fork` = E5, the comparison for a fork). On a FRESH
    argv a differing knob the argv did NOT type **REFUSES** unless `--allow-nonproduction-recipe`; a
-   TYPED difference is INFO (it is the arm's lever); a FORK is INFO — its recipe is its argv.
+   TYPED difference is INFO (it is the arm's lever); a FORK is INFO — its recipe is its argv plus its PARENT's record (restored, passed typed).
    Values and sources: `designs/endstate/design_learner_recipe.md` §3.22.
 
 🚨 **The two failures are not interchangeable.** A refused flag combination is LOUD and pre-launch —
@@ -132,7 +132,10 @@ Three resolution rules the tool applies, each of which has burned a launch:
   through the one choke point `fixed_opponent_pool.resolve_model_ref`. Name the `.zip` or `@step`
   to pin a file. Detail: `src/agents/training/CLAUDE.md` → *WHICH FILE a run spec names*.
 - 🚨 **AN ARGV IS NOT A CONFIG** — with `--model`, every unnamed flag is INHERITED from the
-  checkpoint's `model_config.json`, so the thing that launches is the argv OVERLAID ON THE PARENT.
+  checkpoint's `model_config.json`, so the thing that launches is the argv OVERLAID ON THE PARENT. The
+  TRAINING RECIPE knobs `model_config.json` does not record (`--n-envs`, `--self-play`, `--grad-accum-steps`,
+  `--ent-coef`, …) come from the checkpoint run's `metadata.json:cli_args` — on a fork, the PARENT's — and the
+  launcher passes them to the child TYPED (since 2026-10-14; before it a fork trained the PARSER's recipe).
   `checkargs` builds that effective namespace and labels each finding argv-vs-`INHERITED`.
 - 🚨 **A PINNED argv is judged by the PINNED commit's parser** — a flag whose ARITY changed is
   invisible to a presence check. The commit comes from the launcher's own `resolve_pin`.
@@ -699,6 +702,7 @@ Look for `🎯 [CRITIC] winprob`, `🦀 [ENV CORE] rust`, `[ModelVersion] Round-
 - **Disk** (2026-10-09: the root filesystem hit 100 % under a screen chain, ~4.2 GB per 15M-step run): `FATAL_CONFIG` printing the arithmetic (checkpoints still to write, eval traces, compile cache, logs, margin; derived from the run) from the launcher BEFORE anything exists (so a PINNED child is covered), the trainer, and `--dry-run` (`disk space :` line); in flight, free < 1 x the next checkpoint exits `FATAL_DISK` (8, never restarted). `--allow-low-disk` is the recorded dev / short-run opt-out; `--debug` is exempt from the preflight (`src/utils/disk_guard.py`, `designs/ops/TRAINING_RUN_SOP.md` §1 0c).
 - **Showdown submodule** (2026-10-10: the first end-state GPU-check launch from an un-bootstrapped agent worktree linked an empty `deps/pokemon-showdown` into its pinned worktree and died minutes later in team validation): `FATAL_CONFIG` from the launcher BEFORE anything exists, naming the files team validation reads that are missing (`utils/showdown_deps.py`) and the fix — `git submodule update --init`, then `./scripts/bootstrap.sh --skip-env`; `--dry-run` prints the same verdict (`showdown deps :` line); never advisory, no opt-out (`src/main/launcher/submodule_gate.py`; `designs/ops/TRAINING_RUN_SOP.md` §1 0d).
 - **`--lr`, `--batch-size` and `--n-steps` are INERT on a resume** — SB3 restores the checkpoint's own values (its discount too: `gamma` is a constant of the namespace, not a flag), so a FORK inherits whatever the parent's KL controller had annealed to. **`--fork-lr`** pins it; the quantity that predicts a fold's collateral is the **DOSE** (`lr × n_epochs × optimizer steps per epoch / rollout rows` — `lr × n_epochs / (batch_size × grad_accum_steps)` when the rollout divides evenly; a ragged last group is a FULL step, K10(c)), read with `python -m main.dose <run>`.
+- 🚨 **A FORK trains its PARENT's RECIPE; a resume its OWN** (fixed 2026-10-14). Every recipe knob the argv does not type — `--n-envs`, `--rollout-target-samples`, `--grad-accum-steps`, `--n-epochs`, `--ent-coef`, `--self-play`, `--clip-range(-vf)`, `--min-lr`, `--weight-decay`, … — is restored from the checkpoint run's `metadata.json:cli_args` (`recipe_surface.inherit_recorded_recipe`), and the launcher passes it to the child TYPED (a child pinned to an older commit would otherwise take the parser default). `--dry-run` prints them on its `recipe :` line. **Before the fix a fork, and a manual resume of one, trained the PARSER's recipe** (`--n-envs` 32, `--self-play` False, `--grad-accum-steps` 1, `--ent-coef` 0.02 for a 256-env self-play parent) — the workaround was to type the full recipe; it is no longer needed, and still harmless. A knob with no record is REFUSED by name; `recipe.fork` (E5's 5 epochs at a frozen LR) is never applied — type it if the arm means it. Audit of every `rb_` fork: `designs/research_state/measurements/fork_recipe_audit_2026-10-14/`.
 - **A FORK starts with an EMPTY self-play pool, and an empty pool does not disable `--self-play` — it falls back to the BOT pool.** A genuine fork auto-seeds its parent's pool and exits `FATAL_CONFIG` if it still has none, and ANY run whose pool is still empty after 3 eval cycles exits `FATAL_SUPPLY` (5) — one of the declared lever supplies, `designs/training/supply_guards.md`.
 - **A restart RESUMES; a FRESH argv never lands on a run.** The launcher's interval/crash restart strips the trainer's FRESH-only flags (`--arch`) before adding `--model` (2026-09-26: `ai_v14_01_base` crash-looped out at its first restart), and a FRESH launch into a dir holding a checkpoint or `model_config.json` is REFUSED (`FATAL_CONFIG`) — pass `--model` or a new `--run-name`.
 

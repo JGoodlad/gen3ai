@@ -1,0 +1,2511 @@
+{
+ "parser_defaults": {
+  "n_envs": 32,
+  "n_steps": 2048,
+  "rollout_target_samples": null,
+  "trainee_slots": null,
+  "t2_buckets": null,
+  "t2_lanes": null,
+  "batch_size": 4096,
+  "grad_accum_steps": 1,
+  "n_epochs": 5,
+  "lr": 0.0003,
+  "min_lr": 1e-05,
+  "max_lr": null,
+  "anneal_lr_start_steps": null,
+  "weight_decay": 1e-05,
+  "clip_range": 0.15,
+  "clip_range_vf": 0.5,
+  "ent_coef": 0.02,
+  "policy_gae_lambda": null,
+  "self_play": false,
+  "vf_coef": 0.5,
+  "opp_belief_aux_coef": null,
+  "opp_intent_coef": null,
+  "move_belief_coef": null,
+  "move_belief_latent_coef": null,
+  "spread_belief_coef": null,
+  "hp_type_belief_coef": null,
+  "item_belief_coef": null,
+  "intent_label_bot_weight": null,
+  "trunk_precision": null,
+  "fork_lr": null,
+  "fork_lr_freeze": false
+ },
+ "audit_rows": [
+  "n_envs",
+  "rollout_target_samples",
+  "trainee_slots",
+  "t2_buckets",
+  "t2_lanes",
+  "grad_accum_steps",
+  "n_epochs",
+  "min_lr",
+  "max_lr",
+  "anneal_lr_start_steps",
+  "weight_decay",
+  "clip_range",
+  "clip_range_vf",
+  "ent_coef",
+  "policy_gae_lambda",
+  "self_play",
+  "vf_coef",
+  "opp_belief_aux_coef",
+  "opp_intent_coef",
+  "move_belief_coef",
+  "move_belief_latent_coef",
+  "spread_belief_coef",
+  "hp_type_belief_coef",
+  "item_belief_coef",
+  "intent_label_bot_weight",
+  "trunk_precision"
+ ],
+ "runs": [
+  {
+   "run": "rb_bf_e_s2001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_e_s2002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_e_s2003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_e_s2004",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_e_s2005",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_e_s2006",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_e_s2007",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_e_s2008",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_eb_s2001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_eb_s2002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_eb_s2003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_eb_s2004",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_eb_s2005",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_eb_s2006",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_eb_s2007",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_bf_eb_s2008",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end2_s2001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end2_s2002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end2_s2003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end2_s2004",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end2_s2005",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end2_s2006",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end2_s2007",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end2_s2008",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_end_s2001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 6,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_gpucheck_end",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 1,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_prod_s2001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_prod_s2002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_prod_s2003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_prod_s2004",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_prod_s2005",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_prod_s2006",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_prod_s2007",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_es_prod_s2008",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_hib_ctrl_s3101",
+   "role": "fork",
+   "parent_run": "rb_es_end2_s2001",
+   "parent_file": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip",
+   "original_has_arch_recipe": false,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 3,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [
+    {
+     "knob": "clip_range_vf",
+     "run": 0.5,
+     "parent": null,
+     "typed": false,
+     "eq_parser_default": true,
+     "parser_default": 0.5,
+     "class": "BUG_SHAPE",
+     "inert": "INERT under the win-prob critic: instrumented_ppo/train_setup.py takes value_mode='plain' when critic_winprob (the only critic); it is only logged"
+    },
+    {
+     "knob": "trunk_precision",
+     "run": "bf16",
+     "parent": null,
+     "typed": true,
+     "eq_parser_default": false,
+     "parser_default": null,
+     "class": "TYPED",
+     "inert": null
+    }
+   ],
+   "trainer_vs_parent": {
+    "available": true,
+    "diffs_fork_first_vs_parent": {
+     "clip_range_vf": [
+      0.5,
+      -1.0
+     ]
+    }
+   },
+   "bug_shape": true,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": true,
+   "research_refs": [
+    "ledger: 2026-10-11 \u00b7 REGISTRATION \u00b7 **THE HIDDEN-INFORMATION BINDING STUDY: is \"the opponent's moves are the binding constraint\" true? An adversarial attribution of the oracle \u2212 honest search gap, registered ",
+    "ledger: 2026-10-14 \u00b7 MEASUREMENT (MAJOR) \u00b7 **THE bf16 STRENGTH A/B: PASS \u2014 `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 \u00d7 4 at 5M, futility screen) CONTINUE",
+    "ledger: 2026-10-14 \u00b7 BUILT (MAJOR) \u00b7 **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `\"bf16\"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR))"
+   ]
+  },
+  {
+   "run": "rb_hib_items_s3101",
+   "role": "fork",
+   "parent_run": "rb_es_end2_s2001",
+   "parent_file": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip",
+   "original_has_arch_recipe": false,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 3,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [
+    {
+     "knob": "clip_range_vf",
+     "run": 0.5,
+     "parent": null,
+     "typed": false,
+     "eq_parser_default": true,
+     "parser_default": 0.5,
+     "class": "BUG_SHAPE",
+     "inert": "INERT under the win-prob critic: instrumented_ppo/train_setup.py takes value_mode='plain' when critic_winprob (the only critic); it is only logged"
+    },
+    {
+     "knob": "trunk_precision",
+     "run": "bf16",
+     "parent": null,
+     "typed": true,
+     "eq_parser_default": false,
+     "parser_default": null,
+     "class": "TYPED",
+     "inert": null
+    }
+   ],
+   "trainer_vs_parent": {
+    "available": true,
+    "diffs_fork_first_vs_parent": {
+     "clip_range_vf": [
+      0.5,
+      -1.0
+     ]
+    }
+   },
+   "bug_shape": true,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": true,
+   "research_refs": [
+    "ledger: 2026-10-11 \u00b7 REGISTRATION \u00b7 **THE HIDDEN-INFORMATION BINDING STUDY: is \"the opponent's moves are the binding constraint\" true? An adversarial attribution of the oracle \u2212 honest search gap, registered ",
+    "ledger: 2026-10-14 \u00b7 MEASUREMENT (MAJOR) \u00b7 **THE bf16 STRENGTH A/B: PASS \u2014 `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 \u00d7 4 at 5M, futility screen) CONTINUE",
+    "ledger: 2026-10-14 \u00b7 BUILT (MAJOR) \u00b7 **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `\"bf16\"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR))"
+   ]
+  },
+  {
+   "run": "rb_hib_moves_s3101",
+   "role": "fork",
+   "parent_run": "rb_es_end2_s2001",
+   "parent_file": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip",
+   "original_has_arch_recipe": false,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 3,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [
+    {
+     "knob": "clip_range_vf",
+     "run": 0.5,
+     "parent": null,
+     "typed": false,
+     "eq_parser_default": true,
+     "parser_default": 0.5,
+     "class": "BUG_SHAPE",
+     "inert": "INERT under the win-prob critic: instrumented_ppo/train_setup.py takes value_mode='plain' when critic_winprob (the only critic); it is only logged"
+    },
+    {
+     "knob": "trunk_precision",
+     "run": "bf16",
+     "parent": null,
+     "typed": true,
+     "eq_parser_default": false,
+     "parser_default": null,
+     "class": "TYPED",
+     "inert": null
+    }
+   ],
+   "trainer_vs_parent": {
+    "available": true,
+    "diffs_fork_first_vs_parent": {
+     "clip_range_vf": [
+      0.5,
+      -1.0
+     ]
+    }
+   },
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "clip_range_vf",
+    "vf_coef"
+   ],
+   "bug_shape": true,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": true,
+   "flagged": true,
+   "research_refs": [
+    "ledger: 2026-10-11 \u00b7 REGISTRATION \u00b7 **THE HIDDEN-INFORMATION BINDING STUDY: is \"the opponent's moves are the binding constraint\" true? An adversarial attribution of the oracle \u2212 honest search gap, registered ",
+    "ledger: 2026-10-14 \u00b7 MEASUREMENT (MAJOR) \u00b7 **THE bf16 STRENGTH A/B: PASS \u2014 `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 \u00d7 4 at 5M, futility screen) CONTINUE",
+    "ledger: 2026-10-14 \u00b7 BUILT (MAJOR) \u00b7 **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `\"bf16\"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR))"
+   ]
+  },
+  {
+   "run": "rb_hib_moves_s3102",
+   "role": "fork",
+   "parent_run": "rb_es_end2_s2001",
+   "parent_file": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip",
+   "original_has_arch_recipe": false,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 2,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [
+    {
+     "knob": "clip_range_vf",
+     "run": 0.5,
+     "parent": null,
+     "typed": false,
+     "eq_parser_default": true,
+     "parser_default": 0.5,
+     "class": "BUG_SHAPE",
+     "inert": "INERT under the win-prob critic: instrumented_ppo/train_setup.py takes value_mode='plain' when critic_winprob (the only critic); it is only logged"
+    },
+    {
+     "knob": "trunk_precision",
+     "run": "bf16",
+     "parent": null,
+     "typed": true,
+     "eq_parser_default": false,
+     "parser_default": null,
+     "class": "TYPED",
+     "inert": null
+    }
+   ],
+   "trainer_vs_parent": {
+    "available": true,
+    "diffs_fork_first_vs_parent": {
+     "clip_range_vf": [
+      0.5,
+      -1.0
+     ]
+    }
+   },
+   "bug_shape": true,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": true,
+   "research_refs": [
+    "ledger: 2026-10-11 \u00b7 REGISTRATION \u00b7 **THE HIDDEN-INFORMATION BINDING STUDY: is \"the opponent's moves are the binding constraint\" true? An adversarial attribution of the oracle \u2212 honest search gap, registered ",
+    "ledger: 2026-10-14 \u00b7 MEASUREMENT (MAJOR) \u00b7 **THE bf16 STRENGTH A/B: PASS \u2014 `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 \u00d7 4 at 5M, futility screen) CONTINUE",
+    "ledger: 2026-10-14 \u00b7 BUILT (MAJOR) \u00b7 **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `\"bf16\"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR))"
+   ]
+  },
+  {
+   "run": "rb_hib_species_s3101",
+   "role": "fork",
+   "parent_run": "rb_es_end2_s2001",
+   "parent_file": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip",
+   "original_has_arch_recipe": false,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 3,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [
+    {
+     "knob": "clip_range_vf",
+     "run": 0.5,
+     "parent": null,
+     "typed": false,
+     "eq_parser_default": true,
+     "parser_default": 0.5,
+     "class": "BUG_SHAPE",
+     "inert": "INERT under the win-prob critic: instrumented_ppo/train_setup.py takes value_mode='plain' when critic_winprob (the only critic); it is only logged"
+    },
+    {
+     "knob": "trunk_precision",
+     "run": "bf16",
+     "parent": null,
+     "typed": true,
+     "eq_parser_default": false,
+     "parser_default": null,
+     "class": "TYPED",
+     "inert": null
+    }
+   ],
+   "trainer_vs_parent": {
+    "available": true,
+    "diffs_fork_first_vs_parent": {
+     "clip_range_vf": [
+      0.5,
+      -1.0
+     ]
+    }
+   },
+   "bug_shape": true,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": true,
+   "research_refs": [
+    "ledger: 2026-10-11 \u00b7 REGISTRATION \u00b7 **THE HIDDEN-INFORMATION BINDING STUDY: is \"the opponent's moves are the binding constraint\" true? An adversarial attribution of the oracle \u2212 honest search gap, registered ",
+    "ledger: 2026-10-14 \u00b7 MEASUREMENT (MAJOR) \u00b7 **THE bf16 STRENGTH A/B: PASS \u2014 `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 \u00d7 4 at 5M, futility screen) CONTINUE",
+    "ledger: 2026-10-14 \u00b7 BUILT (MAJOR) \u00b7 **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `\"bf16\"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR))"
+   ]
+  },
+  {
+   "run": "rb_hib_spreads_s3101",
+   "role": "fork",
+   "parent_run": "rb_es_end2_s2001",
+   "parent_file": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip",
+   "original_has_arch_recipe": false,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 3,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [
+    {
+     "knob": "clip_range_vf",
+     "run": 0.5,
+     "parent": null,
+     "typed": false,
+     "eq_parser_default": true,
+     "parser_default": 0.5,
+     "class": "BUG_SHAPE",
+     "inert": "INERT under the win-prob critic: instrumented_ppo/train_setup.py takes value_mode='plain' when critic_winprob (the only critic); it is only logged"
+    },
+    {
+     "knob": "trunk_precision",
+     "run": "bf16",
+     "parent": null,
+     "typed": true,
+     "eq_parser_default": false,
+     "parser_default": null,
+     "class": "TYPED",
+     "inert": null
+    }
+   ],
+   "trainer_vs_parent": {
+    "available": true,
+    "diffs_fork_first_vs_parent": {
+     "clip_range_vf": [
+      0.5,
+      -1.0
+     ]
+    }
+   },
+   "bug_shape": true,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": true,
+   "research_refs": [
+    "ledger: 2026-10-11 \u00b7 REGISTRATION \u00b7 **THE HIDDEN-INFORMATION BINDING STUDY: is \"the opponent's moves are the binding constraint\" true? An adversarial attribution of the oracle \u2212 honest search gap, registered ",
+    "ledger: 2026-10-14 \u00b7 MEASUREMENT (MAJOR) \u00b7 **THE bf16 STRENGTH A/B: PASS \u2014 `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 \u00d7 4 at 5M, futility screen) CONTINUE",
+    "ledger: 2026-10-14 \u00b7 BUILT (MAJOR) \u00b7 **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `\"bf16\"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR))"
+   ]
+  },
+  {
+   "run": "rb_st_legacy_s1001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_legacy_s1002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_legacy_s1003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_legacy_s1004",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_legacy_s1005",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_legacy_s1006",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_legacy_s1007",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_legacy_s1008",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_static_s1001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 15,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_static_s1002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 15,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_static_s1003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": true,
+   "last_launch_manual_same_run_resume": true,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 11,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "relaunch_untyped_at_parser_default": [
+    "min_lr",
+    "weight_decay",
+    "clip_range",
+    "vf_coef"
+   ],
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_static_s1004",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_static_s1005",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_static_s1006",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": true,
+   "pin_history_len": 1,
+   "n_sidecars": 15,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_static_s1007",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_st_static_s1008",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_blob_s1001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_blob_s1002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_blob_s1003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_blob_s1004",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_blob_s1005",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_blob_s1006",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_blob_s1007",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_blob_s1008",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1004",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1005",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1006",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 0,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1006b",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1007",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_fm_s1008",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_oracle_full_s1001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 0,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_oracle_full_s1001b",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_oracle_full_s1002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_oracle_full_s1003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_oracle_sp_s1001",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 0,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_oracle_sp_s1001b",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_oracle_sp_s1002",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  },
+  {
+   "run": "rb_x5ab_oracle_sp_s1003",
+   "role": "fresh",
+   "parent_run": null,
+   "parent_file": null,
+   "original_has_arch_recipe": true,
+   "launcher_differs_from_original": false,
+   "last_launch_manual_same_run_resume": false,
+   "recipe_restart_inherited_recorded": false,
+   "pin_history_len": 1,
+   "n_sidecars": 16,
+   "mid_run_changes": [],
+   "matchup": {
+    "entries": 1,
+    "mix_kinds": [
+     "self_play"
+    ],
+    "changes": []
+   },
+   "fork_diffs": [],
+   "trainer_vs_parent": null,
+   "bug_shape": false,
+   "bug_shape_training_affecting": [],
+   "manual_resume_uninherited": false,
+   "flagged": false,
+   "research_refs": []
+  }
+ ]
+}

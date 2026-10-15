@@ -342,6 +342,21 @@ def _prepare_session(
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
     state.add_event(_deps.lines()[0])        # the verdict line (✓ ...)
 
+    # THE RECORDED RECIPE (2026-10-14 fork-recipe fix): every UNTYPED recipe knob of a `--model` launch (a fork, a
+    # restart, a fork's resume) is restored from the record of the run that WROTE the checkpoint and passed to the
+    # child TYPED — after the fork swap (the model is final) and the three preflights, before the pin and its parser check (which then
+    # validate the argv the child really receives). A child pinned to a commit from before the fix would otherwise
+    # train the PARSER's recipe (`--n-envs` 32, `--self-play` False, …). A knob with no record REFUSES by name.
+    from main.train.recipe_surface import RecipeRecordError, materialize_recorded_recipe
+    try:
+        child_args, _materialized = materialize_recorded_recipe(child_args, run_dir)
+    except RecipeRecordError as e:
+        print(f"[launcher] ERROR: {e}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+    if _materialized:
+        state.add_event(f"♻️  recipe: {len(_materialized)} untyped knob(s) restored from the record and passed "
+                        "TYPED: " + "  ".join(f"{d}={v!r}" for d, v, _s in _materialized))
+
     #: Set below once the pin is resolved: True when the child will run a commit that is NOT this
     #: tree's HEAD, which makes the arch-surface comparison informational (see the gate's docstring).
     pinned_differs = False

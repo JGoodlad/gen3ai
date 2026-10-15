@@ -212,6 +212,8 @@ def _parent_run(tmp_path, name="parent", *, write_config=True, **recorded):
     if write_config:
         (run / "model_config.json").write_text(json.dumps(_minimal_model_config(**recorded)))
     (run / "metadata.json").write_text(json.dumps({"original_command": "x.py --steps 1"}))
+    from main.train.recipe_testkit import write_recorded_recipe
+    write_recorded_recipe(run)                       # the recorded recipe a --model launch restores
     return str(run / "checkpoints" / "checkpoint_10_steps.zip"), str(run)
 
 
@@ -290,7 +292,9 @@ def test_a_parent_with_no_recorded_config_WARNS_and_still_checks_the_argv(tmp_pa
     assert "could not read the FORK PARENT's recorded config" in out
     assert "ARGV-ONLY" in out
     assert out.count("tried: ") == 2, out          # the checkpoint's dir AND the run root
-    assert rc == 0                                 # nothing in the ARGV itself is wrong
+    # Nothing in the ARGV itself is wrong — but with no recorded config the launch cannot restore the
+    # value-checked `--vf-coef` (the 2026-10-14 record rule: never a parser default), and says so by name.
+    assert rc == 3 and "--vf-coef" in out and "would be REFUSED" in out, out
 
 
 def test_no_model_still_builds_a_namespace_and_runs_the_combination_checks():

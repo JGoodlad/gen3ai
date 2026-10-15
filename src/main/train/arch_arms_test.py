@@ -19,12 +19,15 @@ What a revert breaks:
 
 Run: python -m pytest src/main/train/arch_arms_test.py -q
 """
+import types
+
 import pytest
 
 from agents.model.flag_registry import BY_NAME, Tier, arch_surface_flags
 from main.train import arch_surface
 from main.train.arch_arms import NAMED_ARMS, arm_overlay
 from main.train.arch_surface_test import _namespace, _report
+from main.train.parser import build_parser
 
 ARGV = ["--steps", "15000000", "--device", "cuda"]
 STATIC_RECOVERY = {"token_encoding": "static", "mon_hazard_cost": "on", "move_actor_state": "on", "trunk_layers": 3,
@@ -106,7 +109,9 @@ def test_checkargs_accepts_the_arm(capsys):
     assert "every RECIPE knob matches recipe.fresh" in out
 
 
-def test_the_arm_trains_on_the_production_recipe_and_a_restart_restores_it():
+def test_the_arm_trains_on_the_production_recipe_and_a_restart_restores_it(tmp_path):
+    import json
+
     from main.train import recipe_surface
     arm = _namespace(ARGV + ["--arch", "static_recovery"])
     prod = _namespace(ARGV + ["--arch", "production"])
@@ -114,8 +119,19 @@ def test_the_arm_trains_on_the_production_recipe_and_a_restart_restores_it():
     assert rows and all(getattr(arm, d, None) == getattr(prod, d, None) for d in rows), \
         [(d, getattr(arm, d, None), getattr(prod, d, None)) for d in rows if getattr(arm, d, None) != getattr(prod, d, None)]
     assert arm.recipe_source == prod.recipe_source
-    assert recipe_surface._is_production_launch("train.py --steps 1 --arch static_recovery")
-    assert not recipe_surface._is_production_launch("train.py --steps 1")
+    # A restart restores the arm's recipe from the run's own record (every --model launch does, since 2026-10-14;
+    # it no longer keys on the umbrella in `original_command`).
+    run = tmp_path / "run"
+    (run / "checkpoints").mkdir(parents=True)
+    (run / "metadata.json").write_text(json.dumps({
+        "original_command": "train.py --steps 1 --arch static_recovery",
+        "cli_args": {d: getattr(arm, d, None) for d in rows}}))
+    restart = build_parser().parse_args(["--steps", "1", "--model", str(run / "checkpoints" / "c.zip"),
+                                         "--run-dir", str(run)])
+    got = {d: v for d, v, _s in recipe_surface.inherit_recorded_recipe(
+        restart, str(run), types.SimpleNamespace(vf_coef=arm.vf_coef))}
+    assert got and all(getattr(restart, d) == getattr(arm, d) for d in got), got
+    assert restart.n_envs == arm.n_envs and restart.self_play == arm.self_play
 
 
 # gen3_endstate_facts_v1: the END-STATE arm (owner 2026-10-09: "run all of them speculatively together, then bisect").

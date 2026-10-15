@@ -391,21 +391,20 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _coef_explicit = args.opp_belief_aux_coef is not None
 
     desugar_umbrella_flags(args)
-    # K10(a): a launcher RESTART strips `--arch` (fresh-only). On a same-run restart of an
-    # `--arch production` run, every untyped recipe knob is resolved by exactly one route
-    # (`recipe_surface.restart_route`: INERT / the resume's own inheritance / the checkpoint's
-    # model_config.json / the run's metadata.json:cli_args), announced; a MISSING value REFUSES by
-    # name — never a parser default. A fork into a new run dir is untouched.
-    from main.train.recipe_surface import RecipeRestartError, inherit_on_restart
+    # K10(a) + the 2026-10-14 fork-recipe fix: EVERY `--model` launch (a same-run restart — which strips the
+    # fresh-only `--arch` —, a FORK, a fork's own resume) resolves every untyped recipe knob by exactly one route
+    # (`recipe_surface.restart_route`: INERT / the resume's own inheritance / the checkpoint's model_config.json /
+    # the source run's metadata.json:cli_args — the PARENT's on a fork), announced; a MISSING value REFUSES by
+    # name — never a parser default. The refusal is DEFERRED to just after the combination sweep: a broken
+    # command (a D4 shaped parent, a refused flag combination) is reported first, as `main.checkargs` reports it.
+    from main.train.recipe_surface import RecipeRecordError, inherit_recorded_recipe
+    _recipe_refusal = None
     try:
-        _restored = inherit_on_restart(args, getattr(args, "run_dir", None), _saved_ver)
-    except RecipeRestartError as e:
-        from main.exit_codes import TrainExitCode
-        print(f"\n[Recipe] FATAL: {e}", file=sys.stderr, flush=True)
-        emit(f"[Recipe] FATAL: {e}")
-        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+        _restored = inherit_recorded_recipe(args, getattr(args, "run_dir", None), _saved_ver)
+    except RecipeRecordError as e:
+        _restored, _recipe_refusal = [], str(e)
     for _d, _v, _src in _restored:
-        emit(f"[Recipe] same-run restart of an --arch production run: {_d}={_v!r} from {_src}")
+        emit(f"[Recipe] --model launch ({getattr(args, '_recipe_record_role', '?')}): {_d}={_v!r} from {_src}")
     # Deletion pass D4: a checkpoint that trained the SHAPED critic is REFUSED (run it pinned) — read off the
     # checkpoint's RECORD (there is no `--env-core` / `--critic` to type any more, deletion pass P11b). A
     # python-era checkpoint that trained winprob moves onto the Rust core, announced as a CORE SWITCH
@@ -706,6 +705,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `combination_checks_test.py` AST-scans this file and fails if a cross-flag
     # `parser.error` reappears outside the list.
     refuse_first(args, parser)
+    if _recipe_refusal is not None:       # the deferred record refusal (above): never a parser default
+        from main.exit_codes import TrainExitCode
+        print(f"\n[Recipe] FATAL: {_recipe_refusal}", file=sys.stderr, flush=True)
+        emit(f"[Recipe] FATAL: {_recipe_refusal}")
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
     # M5 Lane G: the collector flags' defaults, AFTER the sweep (which must see "untyped" as None).
     from main.train.rust_env_setup import env_core_switch_line, resolve_env_core_args
     resolve_env_core_args(args)
@@ -746,13 +750,13 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     try:
         _recipe_report = recipe_surface.report(
             args, fresh=not bool(args.model),
-            restart=bool(getattr(args, "_recipe_restart_inherited", ())),
+            restart=bool(getattr(args, "_recipe_record_inherited", ())),
             allowed=bool(getattr(args, "allow_nonproduction_recipe", False)),
             umbrella=getattr(args, "arch", None))
     except recipe_surface.RecipeError as _e:    # reported, never a crash in the child
         emit(f"⚠️  RECIPE SURFACE unavailable: {_e}")
     else:
-        if ((_recipe_report.fresh or _recipe_report.restart_inherited)
+        if ((_recipe_report.fresh or _recipe_report.record_inherited)
                 and not getattr(args, "debug", False)):
             for _line in recipe_surface.report_lines(_recipe_report):
                 emit(_line)

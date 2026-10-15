@@ -41,24 +41,27 @@ win-prob critic's settings). "Typed" is a fact the parser records (`record_typed
 **THE REFUSAL.** A FRESH argv that differs on an UNTYPED knob refuses (`checkargs`, `--dry-run`, the
 launcher); a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-recipe` consents.
 
-**THE RESTART** (`inherit_on_restart`). A launcher restart strips the fresh-only `--arch`. Converged
-with the general rule that a resume inherits its surface from the CHECKPOINT: on a same-run restart
-of an `--arch production` run, every untyped row is resolved by exactly one route —
+**EVERY `--model` LAUNCH** (`inherit_recorded_recipe`) — a same-run restart (a launcher restart strips the
+fresh-only `--arch`), a FORK, a fork's own resume — resolves every UNTYPED row by exactly one route from the
+record of the run that WROTE the checkpoint (the run itself on a restart, the PARENT on a fork):
 
   1. `--lr`, `--batch-size`, `--n-steps`: INERT on a resume (SB3 restores the
      checkpoint's own values) — never re-applied here, whatever the argv says;
   2. a recorded tri-state field (the doses, `opp_intent_coef` from config v125,
-     `policy_gae_lambda`, …): the general restart mechanism (`_resolve` /
+     `policy_gae_lambda`, `trunk_precision`, …): the general resume mechanism (`_resolve` /
      `config.inherit_derived_enable_coefs`, `68850f27`) inherits it — untouched here;
   3. a recorded field with a concrete parser default (`vf_coef` — value-CHECKED, so the default would
-     FATAL): from the checkpoint's
-     `model_config.json`, ANNOUNCED;
-  4. a knob recorded nowhere else (`n_envs`, `n_epochs`, `ent_coef`, …): from the run's own
-     `metadata.json:cli_args`, ANNOUNCED.
+     FATAL): from the checkpoint's `model_config.json`, ANNOUNCED;
+  4. a knob recorded nowhere else (`n_envs`, `n_epochs`, `ent_coef`, `self_play`, …): from the source
+     run's `metadata.json:cli_args`, ANNOUNCED.
 
 A value MISSING from its route (no `cli_args`, no key, no field) REFUSES by name
-(`RecipeRestartError`, `FATAL_CONFIG`) — never a parser or registry default. A fork into a new run
-dir inherits nothing from here: its recipe is its argv, as always, and the report says so.
+(`RecipeRecordError`, `FATAL_CONFIG`) — never a parser or registry default. Until 2026-10-14 this ran only on
+a same-run restart of an `--arch production` run, and a fork (or a manual resume of one) trained the PARSER's
+recipe (`--n-envs` 32, `--self-play` False, `--grad-accum-steps` 1, …) — the class this closes. The LAUNCHER
+writes the restored rows into a `--model` child's argv as TYPED tokens (`materialize_recorded_recipe`), so a
+child pinned to a commit from before the fix trains the same recipe. ``recipe.fork`` is never applied: a
+fork's recipe is its argv plus its parent's record, compared with ``recipe.fork`` as INFO.
 """
 
 from __future__ import annotations
@@ -67,7 +70,6 @@ import argparse
 import dataclasses
 import json
 import os
-import shlex
 from typing import Any, Dict, FrozenSet, List, NamedTuple, Optional, Sequence, Tuple
 
 #: The namespace attribute the recording actions write: the dests the argv TYPED.
@@ -103,9 +105,9 @@ class RecipeError(ValueError):
     block value that contradicts the same recorded field at the mirror's top level."""
 
 
-class RecipeRestartError(ValueError):
-    """A same-run restart whose recipe value cannot be found where it must come from. Re-running
-    cannot change it — `FATAL_CONFIG`."""
+class RecipeRecordError(ValueError):
+    """A `--model` launch (a same-run restart, a fork, a fork's resume) whose untyped recipe value cannot be
+    found in the record it must come from. Re-running cannot change it — `FATAL_CONFIG`."""
 
 
 class RecipeRow(NamedTuple):
@@ -131,6 +133,9 @@ SIZING_ROWS: Tuple[RecipeRow, ...] = (
 #: The sizing rows the Rust collector alone reads: a ``null`` value means "the collector derives it" and
 #: the row is left UNTYPED.
 COLLECTOR_ROWS = frozenset({"rollout_target_samples", "trainee_slots", "t2_buckets", "t2_lanes"})
+#: The collector rows that size the INFERENCE SERVICE only (T2's slots / buckets / lanes) — derived at startup when
+#: unrecorded; they change throughput, never the rows a learner update sees.
+SERVING_ROWS = frozenset({"trainee_slots", "t2_buckets", "t2_lanes"})
 
 #: ``recipe.fresh`` — N0's launch (the sizing rows above come from ``recipe.sizing``).
 FRESH_ROWS: Tuple[RecipeRow, ...] = (
@@ -308,30 +313,19 @@ def apply_production_recipe(ns: Any, mirror: Optional[Dict[str, Any]] = None) ->
     return applied
 
 
-# ---------------------------------------------------------------------------- the restart path
-def _is_production_launch(original_command: Optional[str]) -> bool:
-    from main.train.arch_surface import argv_umbrella
-    if not original_command:
-        return False
-    try:
-        # a NAMED ARM (`main.train.arch_arms`) applies production's recipe too (gen3_static_recovery_v1)
-        from main.train.arch_surface import UMBRELLA_VALUES
-        return argv_umbrella(shlex.split(original_command)) in UMBRELLA_VALUES
-    except ValueError:
-        return False
-
-
+# ---------------------------------------------------------------- the record path (every --model launch)
 def _model_version_fields() -> FrozenSet[str]:
     from agents.model.model_version import ModelVersion
     return frozenset(f.name for f in dataclasses.fields(ModelVersion))
 
 
 def restart_route(dest: str, parser_default: Any, fields: FrozenSet[str]) -> str:
-    """WHERE a same-run restart takes an untyped row from — exactly one route per row:
-    ``inert`` (SB3 restores it; never re-applied), ``resume`` (a recorded tri-state field —
-    `_resolve` inherits it), ``model_config`` (a recorded field with a
-    concrete default — value-checked, so its default would FATAL) or ``cli_args`` (recorded nowhere
-    else)."""
+    """WHERE a `--model` launch (a same-run restart, a fork, a fork's own resume) takes an UNTYPED row
+    from — exactly one route per row: ``inert`` (SB3 restores it from the zip; never re-applied),
+    ``resume`` (a recorded tri-state field — `_resolve` inherits it from the checkpoint's
+    `model_config.json`), ``model_config`` (a recorded field with a concrete default — value-checked,
+    so its default would FATAL) or ``cli_args`` (recorded nowhere else: the source run's
+    `metadata.json:cli_args`)."""
     if dest in INERT_ON_RESUME:
         return "inert"
     if dest in fields:
@@ -339,42 +333,69 @@ def restart_route(dest: str, parser_default: Any, fields: FrozenSet[str]) -> str
     return "cli_args"
 
 
-def inherit_on_restart(ns: Any, run_dir: Optional[str], saved_ver: Any = None,
-                       parser_defaults: Optional[Dict[str, Any]] = None,
-                       *, model: Optional[str] = None,
-                       partial: bool = False) -> List[Tuple[str, Any, str]]:
-    """On a SAME-RUN restart of an `--arch production` run, resolve every untyped row by its one
-    route (`restart_route`), ANNOUNCED through the return value `[(dest, value, source), …]`.
+class RecordSource(NamedTuple):
+    """Where a `--model` launch's recipe record lives: the run that WROTE the checkpoint."""
+    role: str                 # "restart" (the checkpoint is this run's own) or "fork" (another run's)
+    run_dir: Optional[str]    # the checkpoint's run dir (`agents.training.lineage.run_dir_of`)
+    meta_path: Optional[str]
+    meta: Optional[Dict[str, Any]]
 
-    `[]` unless `--model` is a checkpoint INSIDE `run_dir` (`fork_lr.is_same_run_checkpoint`) and
-    the run's immutable `original_command` carried `--arch production`. A value MISSING from its
-    route raises `RecipeRestartError` naming the flag — never a default. `model` overrides
-    `ns.model` for a caller (`main.checkargs`) that resolved a relative `models/…` path.
 
-    `partial=True` is for an OFFLINE reader that could not parse the checkpoint's `model_config.json`
-    under THIS tree (a run pinned to an older commit: `ModelVersion` refuses its config version, so
-    `saved_ver` is `None`): the `model_config`-route rows are SKIPPED rather than reported missing,
-    and every other row is still restored from `metadata.json:cli_args`, so the dry run / `checkargs`
-    show `--grad-accum-steps 32 (restored at restart)` instead of the parser default 1. The child,
-    which runs the pinned commit, reads the config itself and resolves the full set."""
+def record_source(model: str, run_dir: Optional[str]) -> RecordSource:
+    """The run whose record a `--model` launch inherits from — ONE predicate for the role
+    (`fork_lr.is_same_run_checkpoint`) and ONE resolver for the checkpoint's run
+    (`agents.training.lineage.run_dir_of`, `load_model_snapshot`'s own convention)."""
+    from agents.training.lineage import run_dir_of
     from main.train.fork_lr import is_same_run_checkpoint
+    same = bool(run_dir) and is_same_run_checkpoint(model, str(run_dir))
+    src = str(run_dir) if same else run_dir_of(model)
+    meta_path = os.path.join(src, "metadata.json") if src else None
+    meta: Optional[Dict[str, Any]] = None
+    if meta_path:
+        try:
+            with open(meta_path) as fh:
+                loaded = json.load(fh)
+            meta = loaded if isinstance(loaded, dict) else None
+        except (OSError, ValueError):
+            meta = None
+    return RecordSource("restart" if same else "fork", src, meta_path, meta)
+
+
+def inherit_recorded_recipe(ns: Any, run_dir: Optional[str], saved_ver: Any = None,
+                            parser_defaults: Optional[Dict[str, Any]] = None,
+                            *, model: Optional[str] = None,
+                            partial: bool = False) -> List[Tuple[str, Any, str]]:
+    """EVERY `--model` launch — a same-run restart, a FORK, a fork's own resume — resolves every UNTYPED
+    recipe row by its one route (`restart_route`) from the record of the run that WROTE the checkpoint
+    (`record_source`), ANNOUNCED through the return value `[(dest, value, source), …]`.
+
+    THE CLASS IT CLOSES (2026-10-14, P1 GIGO). This used to run only on a same-run restart of a run whose
+    `original_command` carried `--arch production`; a FORK (`--model <parent ckpt> --fork-lr …`) and a manual
+    resume of a fork took every untyped recipe knob from the PARSER — `--n-envs` 32 (parent 256),
+    `--grad-accum-steps` 1 (32), `--ent-coef` 0.02 (0.05), `--self-play` False (True),
+    `--rollout-target-samples` 0 (98304), `--clip-range-vf` 0.5 (none) — against the documented contract
+    ("with `--model`, every flag you do not name is INHERITED"). Now a fork trains its PARENT's recipe and a
+    resume its OWN, unless a knob is TYPED (`recipe.fork` stays an INFO comparison, never applied).
+
+    A value MISSING from its route (no `metadata.json`, no `cli_args`, no key, no config field) raises
+    `RecipeRecordError` naming the flag — never a parser or registry default. `[]` without a `--model`.
+    `model` overrides `ns.model` for a caller (`main.checkargs`) that resolved a relative `models/…` path.
+
+    `partial=True` is for a reader that could not parse the checkpoint's `model_config.json` under THIS tree
+    (a run pinned to an older commit: `saved_ver` is `None`) and for the launcher's materialization: the
+    `model_config`-route rows are SKIPPED rather than reported missing (the child reads the config itself,
+    and a wrong `vf_coef` FATALs there), every other row is still restored."""
     model = model or getattr(ns, "model", None)
-    if not model or not run_dir or not is_same_run_checkpoint(model, run_dir):
+    if not model:
         return []
-    meta_path = os.path.join(run_dir, "metadata.json")
-    try:
-        with open(meta_path) as fh:
-            meta = json.load(fh)
-    except (OSError, ValueError):
-        meta = None
-    if not isinstance(meta, dict) or not _is_production_launch(meta.get("original_command")):
-        return []
+    src = record_source(model, run_dir)
     if parser_defaults is None:
         from main.train.parser import build_parser
         p = build_parser()
         parser_defaults = {r.dest: p.get_default(r.dest) for r in ROWS}
     fields = _model_version_fields()
-    cli = meta.get("cli_args")
+    meta = src.meta
+    cli = meta.get("cli_args") if isinstance(meta, dict) else None
     typed = typed_dests(ns)
     out: List[Tuple[str, Any, str]] = []
     missing: List[str] = []
@@ -393,27 +414,78 @@ def inherit_on_restart(ns: Any, run_dir: Optional[str], saved_ver: Any = None,
             value, source = getattr(saved_ver, r.dest), "model_config.json"
         else:
             if not isinstance(cli, dict) or r.dest not in cli:
-                if r.dest in COLLECTOR_ROWS:
-                    continue               # untyped there too (a run from before the flag): derived
-                missing.append(f"{r.flag} ({meta_path}:cli_args)")
+                if r.dest in COLLECTOR_ROWS and (isinstance(cli, dict) or r.dest in SERVING_ROWS):
+                    # untyped there too (a run from before the flag): derived. The SERVING sizes are derived at
+                    # startup whatever the record says; the update size (`rollout_target_samples`) is not, so
+                    # with NO record at all it is named below like any training knob.
+                    continue
+                missing.append(f"{r.flag} ({src.meta_path or 'no run dir'}:cli_args)")
                 continue
-            value, source = cli[r.dest], "metadata.json:cli_args"
+            value, source = cli[r.dest], f"{'parent ' if src.role == 'fork' else ''}metadata.json:cli_args"
         setattr(ns, r.dest, value)
         out.append((r.dest, value, source))
     if missing:
-        raise RecipeRestartError(
-            "a same-run RESTART of an --arch production run (the restart strips the fresh-only "
-            "--arch) cannot find the recipe value it trained with for: " + ", ".join(missing)
-            + ". Pass each flag with the value the run trained with — a training recipe value is "
-              "never guessed, and a parser default would silently change the run mid-flight.")
-    ns._recipe_restart_inherited = tuple(out)
-    # The PROVENANCE tag rides with the knobs: `recipe_source` is stamped only by the `--arch` branch
-    # the restart stripped, and `cli_args` is re-recorded from the namespace at every save, so the
-    # first restart used to drop it. Kept from the run's own record; absent there (a run launched
-    # before K10(a)) it stays unset — a provenance string gates nothing, so nothing is refused.
+        who = "its own run" if src.role == "restart" else f"its PARENT run ({src.run_dir})"
+        raise RecipeRecordError(
+            f"a --model launch ({src.role}: {model}) cannot find the recipe value {who} trained with "
+            "for: " + ", ".join(missing)
+            + ". Pass each flag with the value you mean — a training recipe value is never guessed, and a "
+              "parser default would silently train a different recipe (the 2026-10-14 fork-recipe GIGO class).")
+    ns._recipe_record_inherited = tuple(out)
+    ns._recipe_record_role = src.role
+    # The PROVENANCE tag rides with the knobs: `recipe_source` is stamped only by the `--arch` branch (fresh-only),
+    # and `cli_args` is re-recorded from the namespace at every save, so a first restart used to drop it. Kept from
+    # the source run's record (a fork's knobs ARE its parent's); absent there it stays unset — it gates nothing.
     if not getattr(ns, "recipe_source", None) and isinstance(cli, dict) and cli.get("recipe_source"):
         ns.recipe_source = cli["recipe_source"]
     return out
+
+
+def _token(action: Any, value: Any) -> Optional[str]:
+    """`value` spelled for `action`'s parser, or None when it cannot be spelled (a None the type cannot parse)."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "none" if getattr(getattr(action, "type", None), "__name__", "") == "optional_float" else None
+    return str(value)
+
+
+def materialize_recorded_recipe(child_args: Sequence[str], run_dir: Optional[str]
+                                ) -> Tuple[List[str], List[Tuple[str, Any, str]]]:
+    """THE LAUNCHER'S HALF of `inherit_recorded_recipe`: the child argv with every UNTYPED `cli_args`-route
+    recipe row of a `--model` launch appended as a TYPED `--flag value`, plus the rows it added.
+
+    Why the launcher writes them rather than trusting the child: a resume or fork runs PINNED, by default to
+    the checkpoint's own commit, and every commit before this fix resolves an untyped knob to the PARSER
+    default. A typed token is honoured by every trainer, so the recipe a `--model` launch trains is decided
+    HERE, by this tree's one resolver, whatever the pinned child's age. INERT rows (`--lr`, `--batch-size`,
+    `--n-steps`; SB3 restores them) and `model_config`-route rows (the child's own value check) are never
+    added; a fresh argv, or a `--model` launch with nothing untyped to restore, comes back unchanged.
+    Raises `RecipeRecordError` naming every knob it cannot resolve (`FATAL_CONFIG` at the launcher)."""
+    from main.train.parser import build_parser
+    args = list(child_args)
+    p = build_parser()
+    ns, _rest = p.parse_known_args(args)
+    if not getattr(ns, "model", None):
+        return args, []
+    restored = inherit_recorded_recipe(ns, run_dir, None, model=ns.model, partial=True)
+    by_dest = {a.dest: a for a in p._actions}
+    added: List[Tuple[str, Any, str]] = []
+    unspellable: List[str] = []
+    for dest, value, source in restored:
+        r = _ROW[dest]
+        if value is None and p.get_default(dest) is None:
+            continue                       # the parser's own None: nothing to write
+        tok = _token(by_dest.get(dest), value)
+        if tok is None:
+            unspellable.append(f"{r.flag} (recorded {value!r})")
+            continue
+        args += [r.flag, tok]
+        added.append((dest, value, source))
+    if unspellable:
+        raise RecipeRecordError("the recorded recipe value cannot be passed to the child on its command line for: "
+                                + ", ".join(unspellable) + ". Pass each flag with the value you mean.")
+    return args, added
 
 
 # ------------------------------------------------------------------------------- the comparison
@@ -423,12 +495,14 @@ class RecipeDiff(NamedTuple):
     resolved: Any
     production: Any
     #: "argv" (TYPED — a deliberate deviation), "default" (the silent kind), "debug" (the
-    #: `--debug` smoke shape, `main.train.debug_shape`), "restart" (resolved
-    #: by `inherit_on_restart`) or "inherited" (a fork's value from its parent's config).
+    #: `--debug` smoke shape, `main.train.debug_shape`), "recorded" (restored from the source run's
+    #: record by `inherit_recorded_recipe`), "inherited" (a fork's value from its parent's config) or "inert"
+    #: (an untyped `--lr` / `--batch-size` / `--n-steps` on a `--model` launch: the zip's value trains, not this).
     source: str
 
     def line(self) -> str:
-        how = {"argv": "TYPED", "default": "untyped default", "restart": "restored at restart",
+        how = {"argv": "TYPED", "default": "untyped default", "recorded": "restored from the record",
+               "inert": "INERT on a resume: SB3 restores the checkpoint's own",
                "debug": "--debug smoke shape",
                "inherited": "inherited"}.get(self.source, self.source)
         return f"{self.dest:<24} {self.resolved!r:<10} ({how})   production: {self.production!r}"
@@ -443,7 +517,9 @@ class RecipeReport(NamedTuple):
     advisory: bool = False
     #: "fresh" or "fork" — which recipe the argv was compared with.
     kind: str = FRESH_KEY
-    restart_inherited: Tuple[Tuple[str, Any, str], ...] = ()
+    #: The untyped rows `inherit_recorded_recipe` restored, `(dest, value, source)`, and the launch's role.
+    record_inherited: Tuple[Tuple[str, Any, str], ...] = ()
+    record_role: Optional[str] = None
     #: The trunk-round precision this argv RESOLVES to (``"bf16"`` / ``"fp32"``): printed on every surface, so the
     #: adopted bf16 default is visible in the report and not only as a refusal when it is missing.
     trunk_precision: Optional[str] = None
@@ -492,7 +568,7 @@ def diff_against_production(ns: Any, mirror: Optional[Dict[str, Any]] = None,
     rows = ALL_ROWS if kind == FORK_KEY else ROWS
     defaults = _parser_defaults()
     typed = typed_dests(ns)
-    restored = {d for d, *_ in getattr(ns, "_recipe_restart_inherited", ()) or ()}
+    restored = {d for d, *_ in getattr(ns, "_recipe_record_inherited", ()) or ()}
     from main.train.debug_shape import OVERRIDE_ATTR
     debug = frozenset(getattr(ns, OVERRIDE_ATTR, None) or ())
     out: List[RecipeDiff] = []
@@ -503,8 +579,9 @@ def diff_against_production(ns: Any, mirror: Optional[Dict[str, Any]] = None,
         if _agree(have, want[r.dest]):
             continue
         src = ("argv" if r.dest in typed else "debug" if r.dest in debug
-               else "restart" if r.dest in restored
-               else "inherited" if r.dest in inherited else "default")
+               else "recorded" if r.dest in restored
+               else "inherited" if r.dest in inherited
+               else "inert" if (r.dest in INERT_ON_RESUME and getattr(ns, "model", None)) else "default")
         out.append(RecipeDiff(r.dest, r.flag, have, want[r.dest], src))
     return out
 
@@ -514,14 +591,15 @@ def report(ns: Any, *, fresh: bool, restart: bool = False, allowed: bool = False
            mirror: Optional[Dict[str, Any]] = None,
            inherited: FrozenSet[str] = frozenset()) -> RecipeReport:
     """THE one entry point — `main.checkargs`, `--dry-run`, the launcher and `resolve_config`.
-    A fresh argv, or a restart of an `--arch production` run, is compared with ``recipe.fresh``;
-    any other `--model` argv (a fork, or a restart of one) with ``recipe.fork``."""
-    restored = tuple(getattr(ns, "_recipe_restart_inherited", ()) or ())
-    kind = FRESH_KEY if (fresh or (restart and restored)) else FORK_KEY
+    A fresh argv, or a same-run restart (its recipe IS the run's own), is compared with ``recipe.fresh``;
+    a fork, or a fork's own resume, with ``recipe.fork``."""
+    restored = tuple(getattr(ns, "_recipe_record_inherited", ()) or ())
+    role = getattr(ns, "_recipe_record_role", None)
+    kind = FRESH_KEY if (fresh or (restart and role == "restart" and restored)) else FORK_KEY
     return RecipeReport(
         diffs=tuple(diff_against_production(ns, mirror, kind=kind, inherited=inherited)),
         fresh=bool(fresh), allowed=bool(allowed), umbrella=umbrella, source_tag=source_tag(),
-        advisory=bool(advisory), kind=kind, restart_inherited=restored,
+        advisory=bool(advisory), kind=kind, record_inherited=restored, record_role=role,
         trunk_precision=str(_resolved(_ROW["trunk_precision"], ns, _parser_defaults())))
 
 
@@ -558,10 +636,11 @@ def report_lines(rep: RecipeReport) -> List[str]:
             why = ("the learner's trunk rounds run in fp32 — a fork / restart KEEPS its parent's recorded "
                    "precision; type `--trunk-precision bf16` to train it at the production precision")
         out.append(f"  trunk       : {rep.trunk_precision} — {why}")
-    if rep.restart_inherited:
-        out.append("  ♻️  same-run RESTART of an --arch production run (--arch stripped): "
-                   "resolved from the run's own record — "
-                   + "  ".join(f"{d}={v!r} [{s}]" for d, v, s in rep.restart_inherited))
+    if rep.record_inherited:
+        whose = "the PARENT run's" if rep.record_role == "fork" else "the run's own"
+        out.append(f"  ♻️  --model launch ({rep.record_role or '?'}): every untyped recipe knob restored from "
+                   f"{whose} record — "
+                   + "  ".join(f"{d}={v!r} [{s}]" for d, v, s in rep.record_inherited))
         out.append("      (--lr / --batch-size / --n-steps are INERT on a resume — SB3 "
                    "restores them — and are never re-applied here)")
     n = len(ROWS) if rep.kind == FRESH_KEY else len(ALL_ROWS)
@@ -572,9 +651,9 @@ def report_lines(rep: RecipeReport) -> List[str]:
     out.append(f"  {len(rep.diffs)} of {n} RECIPE knob(s) {verb} from recipe.{rep.kind}:")
     out += [f"      {d.line()}" for d in rep.diffs]
     if not rep.fresh:
-        out.append("  ℹ️  INFO only — a FORK/RESTART. A fork's recipe is its ARGV plus what it "
-                   "inherits from its parent's model_config.json; a same-run restart of an "
-                   "--arch production run resolves its knobs from the run's own record (above).")
+        out.append("  ℹ️  INFO only — a FORK/RESTART. Its recipe is its ARGV plus the record of the run that "
+                   "wrote the checkpoint (a fork: its PARENT's model_config.json + metadata.json:cli_args; a "
+                   "restart: its own) — recipe.fork is never applied.")
         return out
     if not rep.silent:
         out.append("  ℹ️  every differing knob was TYPED — a deliberate deviation, recorded in "

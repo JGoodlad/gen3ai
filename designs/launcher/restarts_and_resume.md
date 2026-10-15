@@ -94,14 +94,23 @@
   recorded field. (b) Fresh → save → this function's argv → resolve returns every surface value unchanged.
   🚨 **The umbrella's RECIPE half (K10(a)) writes knobs `model_config.json` does NOT record**
   (`n_envs`, `n_epochs`, `ent_coef`, `self_play`, …) plus value-CHECKED recorded fields with concrete
-  parser defaults (the reward values, `vf_coef`) that `_resolve` cannot inherit. For a run whose
-  `original_command` carried `--arch production`, the CHILD resolves each untyped one on a same-run
-  restart (`main.train.recipe_surface.inherit_on_restart`): `--lr` / `--batch-size` / `--n-steps`
-  untouched (INERT — SB3 restores them); recorded tri-state fields left to `_resolve` (the
-  mechanism above — `opp_intent_coef` included); value-checked fields from `model_config.json`; the rest
-  from `metadata.json:cli_args` — each announced `[Recipe] … from <source>`, and a MISSING value
-  REFUSED (`FATAL_CONFIG`, naming the flag). The launcher's restart argv is unchanged. Test:
-  `recipe_surface_test.py::test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recipe`.
+  parser defaults (the reward values, `vf_coef`) that `_resolve` cannot inherit. On EVERY `--model` launch —
+  a same-run restart, a FORK, a fork's own resume (until 2026-10-14 only a same-run restart of an `--arch
+  production` run) — each untyped one is resolved from the record of the run that WROTE the checkpoint (the
+  run itself, or the fork's PARENT; `main.train.recipe_surface.inherit_recorded_recipe`): `--lr` /
+  `--batch-size` / `--n-steps` untouched (INERT — SB3 restores them); recorded tri-state fields left to
+  `_resolve` (the mechanism above — `opp_intent_coef`, `trunk_precision` included); value-checked fields from
+  `model_config.json`; the rest from `metadata.json:cli_args` — each announced `[Recipe] … from <source>`,
+  and a MISSING value REFUSED (`RecipeRecordError`, `FATAL_CONFIG`, naming the flag).
+  🚨 **The LAUNCHER passes the restored `cli_args` rows to the child TYPED** (`materialize_recorded_recipe`,
+  after the fork swap and the preflights, before the pin and its pinned-parser check): a resume / fork runs
+  PINNED, by default to the checkpoint's own commit, and a trainer from before 2026-10-14 resolves an
+  untyped knob to the PARSER default (the knock-in forks' `--dry-run` showed `--n-envs` 32, `--self-play`
+  False, `--grad-accum-steps` 1, `--ent-coef` 0.02 for a 256-env self-play parent). The restart argv keeps
+  those tokens. Tests: `recipe_surface_test.py` (the fork, the fork's resume, the no-record refusal, the
+  materialized argv parsed by a plain parser, `resolve_config` end to end), `dry_run_test.py::
+  test_i_a_FORK_dry_run_restores_the_PARENTs_recipe_and_passes_it_typed`, and
+  `test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recipe`.
 
 ## A Rust-core run under the launcher (M5; F-LG-6, closed 2026-09-30)
 

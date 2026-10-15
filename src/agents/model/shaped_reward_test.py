@@ -131,7 +131,9 @@ def test_resolve_config_ACCEPTS_a_production_v121_parent(tmp_path, capsys):
     # A real production run's metadata.json carries its resolved namespace (`cli_args`); a pre-v125
     # config records `opp_intent` but not its dose, which a resume migrates from there
     # (`config.inherit_derived_enable_coefs`; ai_v14_01_base / ai_v14_06 both record 0.05).
-    (tmp_path / "run_shaped" / "metadata.json").write_text(json.dumps({"cli_args": {"opp_intent_coef": 0.05}}))
+    # (…and the recorded recipe every real run carries: a --model launch restores it, 2026-10-14)
+    from main.train.recipe_testkit import write_recorded_recipe
+    write_recorded_recipe(tmp_path / "run_shaped", opp_intent_coef=0.05)
     # (the parent is a win-prob run: the critic and the terminal are constants of the namespace, so a
     # flagless resume of it passes)
     _resolve(["--model", zip_path])                        # no SystemExit

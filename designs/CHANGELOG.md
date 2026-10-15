@@ -14209,3 +14209,33 @@ adoption (2026-10-12, `ed58a3ad`) introduced.
   `status_*` pairs). Tests: the ON arm on the real production network (fails on revert), and two `grad_balance_test` tests, one on
   the stub shape and one on the REAL class's projection names and zero init.
 - Docs: `designs/training/telemetry_scalars.md` (per-cell liveness), `designs/production_config.README.md`, `designs/ARCHITECTURE.md`.
+
+## 2026-10-14 — GIGO FIX: a FORK, or a manual resume of one, trains its RECORDED recipe, not the parser's (`recipe_surface.inherit_recorded_recipe` + the launcher's `materialize_recorded_recipe`; no model / config / obs / signature change)
+
+**The defect (P1).** `recipe_surface.inherit_on_restart` restored untyped recipe knobs only on a SAME-RUN restart of a run
+whose `original_command` carried `--arch production`. A fork (`--model <parent ckpt> --fork-lr …`) and a manual resume of a
+fork therefore took every untyped knob that `model_config.json` does not record from the PARSER: the knock-in forks'
+`--dry-run` from `rb_es_end2_s2001` showed `--n-envs` 32 (parent 256), `--rollout-target-samples` 0 (98304),
+`--grad-accum-steps` 1 (32), `--ent-coef` 0.02 (0.05), `--self-play` False (True), `--clip-range-vf` 0.5 (none). On a
+resume SB3 restores only `lr` / `batch_size` / `n_steps` from the zip; the trainer sets `n_epochs`, the clip ranges,
+`ent_coef` and `grad_accum_steps` from the args, and builds the envs and the opponent mix from them.
+
+- **The class, closed.** `inherit_recorded_recipe` (renamed from `inherit_on_restart`; `RecipeRestartError` →
+  `RecipeRecordError`) runs on EVERY `--model` launch and reads the record of the run that WROTE the checkpoint
+  (`record_source`: the run itself on a restart, the PARENT on a fork, via `agents.training.lineage.run_dir_of`), by the
+  same four routes (INERT / `_resolve` / `model_config.json` / `metadata.json:cli_args`). A knob with no record REFUSES by
+  name (`FATAL_CONFIG`, deferred in `resolve_config` to just after the combination sweep so a broken command keeps its own
+  verdict). T2's serving sizes (`trainee_slots`, `t2_buckets`, `t2_lanes`) are derived when unrecorded.
+- **The launcher passes the restored knobs TYPED** (`materialize_recorded_recipe`, in `_prepare_session` after the fork swap
+  and the preflights, before the pin and its pinned-parser check; the same in `--dry-run`, which prints a `recipe :` line):
+  a fork runs PINNED, by default to the checkpoint's commit, and every trainer before this fix resolves an untyped knob to
+  the parser default. Typed tokens are honoured by every commit.
+- Kept: `--fork-lr`; `--lr` / `--batch-size` / `--n-steps` INERT (now labelled `INERT on a resume` in the report);
+  `trunk_precision` inherited through `_resolve` (the bf16 adoption's fork rule); `recipe.fork` never applied (INFO).
+- Tests: `recipe_surface_test.py` (fork, fork's manual resume, no-record refusal, the materialized argv parsed by a plain
+  parser, `resolve_config` end to end on a 256-env self-play parent), `dry_run_test.py::test_i_a_FORK_dry_run_restores_the_PARENTs_recipe_and_passes_it_typed`;
+  fixtures across 12 test files gain the recorded recipe every real run carries (`main.train.recipe_testkit`).
+- Audit of every `rb_` run (`designs/research_state/measurements/fork_recipe_audit_2026-10-14/`): 81 runs, 6 forks (the
+  `rb_hib_*` knock-ins, which typed the full recipe), no training-affecting knob fell to a default; ledger 2026-10-14 GIGO FIX.
+- Docs: `src/main/launcher/CLAUDE.md`, `src/agents/training/CLAUDE.md`, root `CLAUDE.md`, `designs/launcher/{restarts_and_resume,launch_guards}.md`,
+  `designs/training/step_size_and_batch.md`, `designs/ops/training_runbook.md` (Launch hazards), `designs/ops/TRAINING_RUN_SOP.md`.

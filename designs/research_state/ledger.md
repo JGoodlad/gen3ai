@@ -24957,3 +24957,48 @@ was NOT run: it does not finish at `-n 2` on six shared threads): ~75 files, lis
    carries both commits, and the next landing / `scripts/land.sh` pull brings the main checkout up.
 
 Tag: **BUILT (MAJOR) · bf16 TRUNK ADOPTED INTO THE PRODUCTION RECIPE · forks inherit · K9 golden re-recorded under both torch envs (fp32 opt-out pinned byte-identical) · two latent fp32_scope defects fixed** · evidence: `designs/CHANGELOG.md` (2026-10-14 "THE bf16 TRUNK IS PRODUCTION"), `src/main/train/recipe_surface_test.py`, `src/agents/training/learner_golden_test.py`
+
+### 2026-10-14 · GIGO FIX · **A FORK, or a manual resume of one, trained the PARSER's recipe, not its recorded one — fixed for every `--model` launch (`recipe_surface.inherit_recorded_recipe`, and the launcher passes the restored knobs to the child TYPED so a pre-fix pinned child trains them too); AUDIT of all 81 `rb_` runs: 6 forks (the `rb_hib_*` knock-ins), NONE trained a different recipe — they typed it; the only untyped-default knob was `clip_range_vf` (0.5 vs none), INERT under the win-prob critic; NO research conclusion is affected**
+
+**The defect.** Building the knock-in forks from `rb_es_end2_s2001` (Training Oct), `--dry-run` showed every untyped recipe
+knob at the PARSER default — `--n-envs` 32 (parent 256), `--rollout-target-samples` 0 (98304), `--grad-accum-steps` 1 (32),
+`--ent-coef` 0.02 (0.05), `--self-play` False (True), `--clip-range-vf` 0.5 (none) — and the same on a manual same-run resume of
+a fork. Root cause: `recipe_surface.inherit_on_restart` returned `[]` unless the checkpoint was the run's OWN and the run's
+`original_command` carried `--arch production`; a fork's recipe was "its argv". `model_config.json` records none of these knobs,
+SB3 restores only `lr` / `batch_size` / `n_steps` from the zip, and the trainer sets the rest from its args. The launcher's
+auto-restarts were safe (they re-pass the typed argv). Training Oct worked around it by typing the full recipe.
+
+**The fix** (detail: `designs/CHANGELOG.md` 2026-10-14 "GIGO FIX: a FORK …"): every `--model` launch restores each untyped
+knob from the record of the run that WROTE the checkpoint (a fork: the PARENT's `metadata.json:cli_args` + `model_config.json`),
+a knob with no record REFUSES by name (`RecipeRecordError`, `FATAL_CONFIG`), and the launcher writes the restored knobs into
+the child argv as typed tokens — a fork pins by default to the checkpoint's commit, whose trainer predates the fix. Evidence:
+`measurements/fork_recipe_audit_2026-10-14/dry_run_fork_BEFORE.txt` (11 of 31 knobs at parser defaults) vs
+`dry_run_fork_AFTER.txt` (12 knobs restored from the parent and passed typed: `n_envs=256 … self_play=True`) and
+`checkargs_fork_AFTER.txt`; every `rb_` run with a checkpoint resolves as a fork parent and as a restart with no refusal
+(78 / 78, all n_envs 256 + self-play on).
+
+**The audit** (`measurements/fork_recipe_audit_2026-10-14/audit.py` → `audit.json`, `audit_table.md`; lineage via
+`agents.training.lineage`, the trainer's own per-checkpoint sidecars as the cross-check): 81 `rb_*` runs, 6 forks, 75 clean.
+- The 6 forks (`rb_hib_{ctrl,items,moves,species,spreads}_s3101`, `rb_hib_moves_s3102`, all of `rb_es_end2_s2001/final_model.zip`)
+  typed n_envs, n_steps, rollout target, batch, K, epochs, ent_coef and self-play; their only untyped-default difference from the
+  parent is `clip_range_vf` 0.5 vs none, which the trainer does not use under the win-prob critic (`train_setup.py`'s
+  `value_mode = "plain"` at the forks' pin `64a695dc` — read from the code, not measured). Each fork's first sidecar matches the
+  parent's final on ent_coef, K, epochs, rollout rows and the LR bounds.
+- 10 manual same-run resumes: 9 restored their recipe (the 8 `rb_bf_e*` 5M → 15M extensions, `rb_st_static_s1003`); 1
+  (`rb_hib_moves_s3101`, relaunched from its `final_model_exception.zip`) left `min_lr`, `weight_decay`, `clip_range`,
+  `clip_range_vf`, `vf_coef` untyped — all equal the production value or are inert / value-checked; its LR held at 3.6e-4.
+- 0 runs changed a trainer knob between checkpoints.
+- Research dependence: the matches are the 2026-10-11 hidden-information study's REGISTRATION and the two 2026-10-14 bf16 entries,
+  which cite the knock-in forks only for a mechanical parity read; `UNDERSTANDING.md` names none. **No conclusion depends on a
+  defaulted knob.**
+
+**FINDINGS (standing rule 7).**
+1. `metadata.json` is overwritten at every save, so `cli_args` describes a run's LAST launch; a recipe change in a launch that
+   wrote no checkpoint before the next relaunch would be invisible to this audit.
+2. The audit covers `rb_*` only; pre-Rustboro forks were not re-checked (their checkpoints are skeletoned).
+3. `--batch-size` / `--n-steps` stay INERT on a resume (SB3 restores them), but the argv-level values (parser defaults when
+   untyped) are still what the startup shape checks (`combination_checks`' rollout divisibility, the compile-trainer auto
+   decision) read on a `--model` launch — now labelled `INERT on a resume` in the report, not changed.
+
+Tag: **GIGO FIX + AUDIT · every `--model` launch inherits its recorded recipe; the launcher passes it typed · 0 affected conclusions** ·
+evidence: `designs/research_state/measurements/fork_recipe_audit_2026-10-14/`, `src/main/train/recipe_surface_test.py`

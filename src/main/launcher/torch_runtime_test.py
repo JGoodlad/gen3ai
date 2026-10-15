@@ -57,6 +57,8 @@ def _run(tmp_path, torch_version=None, name="run"):
     if torch_version is not None:
         meta["torch_version"] = torch_version
     (run_dir / "metadata.json").write_text(json.dumps(meta))
+    from main.train.recipe_testkit import write_recorded_recipe
+    write_recorded_recipe(run_dir)                   # the recorded recipe a --model launch restores
     (run_dir / "model_config.json").write_text(json.dumps({"obs_dim": 1}))
     (run_dir / "latest.txt").write_text("checkpoints/checkpoint_1000_steps.zip")
     return str(ckpt)

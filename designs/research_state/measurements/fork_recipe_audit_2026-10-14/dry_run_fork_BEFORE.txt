@@ -1,0 +1,60 @@
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_es_end2_s2001
+  run dir     : /home/goodlad/dev/gen3ai/models/rb_zz_dryrun_fork_probe   [would be created]
+  --model     : /home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip
+  on restart  : RESUME role — --model → the run's latest checkpoint
+  pin         : 62085750baab1ca275d810fbe0bb5a960904e183  (source: checkpoint)
+                ↳ fix(compat): every opponent / eval version gate compares against the run's RECORDED ModelVersion, never toggles read off the built modules (gen3_recorded_version_gate_v1)
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  ✅ argv validated against PINNED parser @62085750 via the pinned build_parser() [mode=build_parser, 411 options, 3.8s]
+  steps       : --steps 20,000,000 vs checkpoint at 15,047,835 (sidecar) → +4,952,165 steps
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — carries the run's recorded torch
+  run torch   : 2.8.0+cu126  (recorded in /home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/metadata.json)
+  transport   : in-process bridge [rust] (no Showdown server)
+  restarts    : every 6.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  effective   : argv overlaid on /home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/model_config.json (86 unset flag(s) INHERITED)
+      --grad-accum-steps     1            (from the argv)
+      --fork-lr              0.00036      (from the argv)
+      --fork-lr-freeze       False        (from the argv)
+  env core    : rust  [the only core]  (the checkpoint was produced on rust)
+  (child-only: architecture compatibility (check_compatible against the checkpoint's model_config.json))
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  ARCH SURFACE vs designs/production_config.json  [production_config@26976f95e433]
+    ✓ every ARCH-surface key matches the production mirror (57 of 65 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+  RECIPE SURFACE vs designs/production_config.json recipe.fork  [production_config@26976f95e433]
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : fp32 — the learner's trunk rounds run in fp32 — a fork / restart KEEPS its parent's recorded precision; type `--trunk-precision bf16` to train it at the production precision
+    11 of 31 RECIPE knob(s) differ from recipe.fork:
+        n_envs                   32         (untyped default)   production: 256
+        n_steps                  2048       (untyped default)   production: 384
+        rollout_target_samples   0          (untyped default)   production: 98304
+        batch_size               4096       (untyped default)   production: 2048
+        grad_accum_steps         1          (untyped default)   production: 32
+        clip_range_vf            0.5        (untyped default)   production: None
+        ent_coef                 0.02       (untyped default)   production: 0.05
+        self_play                False      (untyped default)   production: True
+        trunk_precision          'fp32'     (inherited)   production: 'bf16'
+        fork_lr                  0.00036    (TYPED)   production: 5.6e-05
+        fork_lr_freeze           False      (untyped default)   production: True
+    ℹ️  INFO only — a FORK/RESTART. A fork's recipe is its ARGV plus what it inherits from its parent's model_config.json; a same-run restart of an --arch production run resolves its knobs from the run's own record (above).
+  desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
+  disk space  : ✓ 348.66 GiB free on /home/goodlad/dev/gen3ai/models vs 13.58 GiB REQUIRED (checkpoint the fork source final_model.zip)
+                the arithmetic:
+          periodic checkpoints     109.4 MiB   = 2 x 54.7 MiB  (steps 20,000,000 // 2,400,000 - resume 15,047,835 // 2,400,000)
+          final/best/aborted+fork   218.9 MiB   = 4 x 54.7 MiB
+          eval traces              216.0 MiB   = 3 cycles x 72.0 MiB  (ceil(4,952,165 / 2,000,000))
+          pool snapshots             0.0 MiB   = 0 x 54.7 MiB  (cap 20, fork re-seeds the pool)
+          compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
+          shared compile cache      4.69 GiB   = cap 20.00 GiB - 15.31 GiB in use at /home/goodlad/.cache/gen3ai/compile_shared (this filesystem: counted)
+          sidecar + tb + logs       29.7 MiB   = 5.0M steps x 6.0 MiB/M
+          fixed                     16.0 MiB   = metadata, ledgers, sidecar json
+          subtotal                  7.66 GiB
+          + margin 25%              1.92 GiB
+          + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
+          = REQUIRED               13.58 GiB
+  showdown deps : ✓ /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a0e011b18df442eb7/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.

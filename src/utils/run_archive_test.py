@@ -372,6 +372,8 @@ def _archived_run(main, name="live_run", steps=5):
     ck = run / "checkpoints" / f"checkpoint_{steps}_steps.zip"
     ck.write_text("x")
     (run / "metadata.json").write_text(json.dumps({"torch_version": version("torch")}))
+    from main.train.recipe_testkit import write_recorded_recipe
+    write_recorded_recipe(run)                       # the recorded recipe a --model launch restores
     (run / "model_config.json").write_text("{}")
     (run / "latest.txt").write_text(f"checkpoints/checkpoint_{steps}_steps.zip")
     return run, ck

@@ -589,17 +589,24 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
   98,304 — takes `--rollout-target-samples` 2,304 (rounded up to lcm(batch, n_envs)), `--batch-size`
   384 and `--n-epochs` 1, each only if UNTYPED, printed as `[DEBUG SHAPE]`; the recipe surface
   reports them as source `debug`, never as silent drift. A resume is untouched.
-- 🚨 **A same-run RESTART strips `--arch`.** For a run whose immutable `original_command` carried
-  `--arch production`, `inherit_on_restart` resolves each untyped knob by exactly one route
-  (`restart_route`), announced as `[Recipe] … from <source>`:
+- 🚨 **EVERY `--model` LAUNCH inherits its RECIPE from the record** (a same-run restart — which strips `--arch` —, a
+  FORK, a fork's own resume; until 2026-10-14 only a same-run restart of an `--arch production` run, so a fork and
+  a manual resume of one trained the PARSER's recipe: `--n-envs` 32, `--self-play` False, `--grad-accum-steps` 1,
+  `--ent-coef` 0.02, `--clip-range-vf` 0.5 — the fork-recipe GIGO, audit
+  `designs/research_state/measurements/fork_recipe_audit_2026-10-14/`). `inherit_recorded_recipe` resolves each
+  untyped knob by exactly one route (`restart_route`) from the run that WROTE the checkpoint (the run itself, or the
+  fork's PARENT), announced as `[Recipe] … from <source>`, and the launcher passes the `cli_args` rows to the child
+  TYPED (`materialize_recorded_recipe`) so a child pinned to a pre-fix commit trains the same recipe:
   - `--lr` / `--batch-size` / `--n-steps` are INERT on a resume (SB3 restores them, and a checkpoint's own gamma) —
     never re-applied;
   - a recorded tri-state field (critic, doses incl. `opp_intent_coef`, `policy_gae_lambda`) is `_resolve`'s to inherit;
   - a recorded value-checked field (`vf_coef`; the reward fields `terminal_indicator` / `victory_value` / `draw_penalty` are no recipe rows now) comes from the checkpoint's `model_config.json`;
-  - a knob recorded nowhere else comes from the run's `metadata.json:cli_args`.
+  - a knob recorded nowhere else comes from the source run's `metadata.json:cli_args` (T2's serving sizes —
+    `trainee_slots` / `t2_buckets` / `t2_lanes` — are derived at startup when unrecorded).
 
-  A value MISSING from its route REFUSES by name (`RecipeRestartError` → `FATAL_CONFIG`; `checkargs`
-  and `--dry-run` report it) — never a parser or registry default. The restart also KEEPS the
+  A value MISSING from its route REFUSES by name (`RecipeRecordError` → `FATAL_CONFIG`, after the combination
+  sweep; `checkargs` and `--dry-run` report it) — never a parser or registry default. `recipe.fork` (E5) is never
+  applied: a fork's recipe is its argv plus its parent's record, compared with `recipe.fork` as INFO. The restart also KEEPS the
   provenance tags the stripped `--arch` would have stamped — `recipe_source` from `cli_args`, and (any
   same-run restart, `arch_surface.inherit_arch_source_on_restart`) `arch_source` from the
   checkpoint's `model_config.json` — which the first restart used to null. It sits ON TOP of the general

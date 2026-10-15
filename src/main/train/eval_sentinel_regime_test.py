@@ -43,6 +43,9 @@ def _resolved(argv, saved=None, monkeypatch=None):
     parser = build_parser()
     if saved is not None:
         monkeypatch.setattr(cfg_mod, "_load_saved_version", lambda path: saved)
+        # a stand-in parent with no run dir on disk: its recorded recipe (the 2026-10-14 fork-recipe fix)
+        from main.train.recipe_testkit import fake_record
+        fake_record(monkeypatch)
         argv = ["--model", "models/parent/checkpoints/checkpoint_10_steps.zip"] + argv
     with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
         args = parser.parse_args(["--steps", "100", "--allow-nonproduction-arch"] + argv)
@@ -54,7 +57,8 @@ def _saved(greedy, threshold):
     """A stand-in for the parent's `ModelVersion`. `inherit_saved_flag` reads it by `getattr`, so
     the attribute set is the whole contract — the same duck-typing `checkargs` relies on."""
     # `critic`: a modern (win-prob) parent — a shaped one is REFUSED on resume (deletion pass D4)
-    return SimpleNamespace(eval_sentinel_greedy=greedy, promote_threshold=threshold, critic="winprob")
+    return SimpleNamespace(eval_sentinel_greedy=greedy, promote_threshold=threshold, critic="winprob",
+                           vf_coef=0.5)
 
 
 # ---------------------------------------------------------------- 1. the fresh-run default
@@ -226,6 +230,8 @@ def _parent_tree(tmp_path, greedy, threshold):
         _LAYOUT, {**_POLICY_KWARGS, "critic": "winprob"}, eval_sentinel_greedy=greedy,
         promote_threshold=threshold)
     (run / "model_config.json").write_text(ver.to_json())
+    from main.train.recipe_testkit import write_recorded_recipe
+    write_recorded_recipe(run)                       # the run's recorded recipe, as every real run carries
     ckpt = run / "checkpoints" / "checkpoint_100_steps.zip"
     ckpt.write_bytes(b"")
     return str(ckpt)
@@ -267,6 +273,7 @@ class _ParentStub:
         self.eval_sentinel_greedy = data["eval_sentinel_greedy"]
         self.promote_threshold = data["promote_threshold"]
         self.critic = data["critic"]
+        self.vf_coef = data["vf_coef"]
 
 
 class _DirectMonkey:

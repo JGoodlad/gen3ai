@@ -734,6 +734,10 @@ def _ckpt_recording(tmp_path, sha, name="r"):
     ckpt = run / "checkpoints" / "checkpoint_10_steps.zip"
     ckpt.write_text("x")
     (run / "checkpoints" / "checkpoint_10_steps.json").write_text(json.dumps({"git_hash": sha}))
+    from main.train.recipe_testkit import write_recorded_recipe
+    write_recorded_recipe(run, opp_intent_coef=0.05)  # the recorded recipe (+ the dose the mirror omits)
+    from agents.training.baselines import production_config
+    (run / "model_config.json").write_text(json.dumps(production_config()))   # a loadable modern record
     return str(ckpt)
 
 
