@@ -271,9 +271,12 @@ def test_the_bare_load_that_started_this_STILL_fails_where_baselines_load_succee
     """Why `baselines.load` exists, pinned against real bytes.
 
     The original form loaded `production` and `v9_long_baseline` from the archive. Since
-    gen3_event_record_v2 (the observation-architecture batch, v121) both are PRE-GENERATION and
+    gen3_event_record_v2 (the observation-architecture batch, v121) both were PRE-GENERATION and
     marked `era_checkout_only`, so on this tree they refuse by name at the era wall BEFORE any
     loader runs — pinned first, because a by-name load that got past the wall would be the bug.
+    Since the end state's adoption (2026-10-12) the name `production` names a CURRENT-generation run
+    (`rb_es_end2_s2005`, v154) and LOADS; the incident's checkpoint lives on under
+    `production_pre_endstate` (gen-17's surface, v97, era-only), which is the name pinned here.
     The loader contrast is then re-measured on a CURRENT-generation checkpoint built fresh and
     saved through the project's own path, whose pickled extractor kwargs carry the incident's
     exact deleted flag (`threat_prob_outspeed`): the bare `MaskablePPO.load` must still die on it,
@@ -281,7 +284,7 @@ def test_the_bare_load_that_started_this_STILL_fails_where_baselines_load_succee
     point and the real sanitizing loader — must still return a model. No stub stands in for either
     loader.
     """
-    for name in ("production", "v9_long_baseline"):
+    for name in ("production_pre_endstate", "v9_long_baseline"):
         with pytest.raises(baselines.BaselineLoadError) as exc:
             baselines.load(name)
         assert exc.value.reason == "pre_generation", (name, exc.value.reason)
