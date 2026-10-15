@@ -531,6 +531,23 @@ TensorBoard file; mutation-checked by gating the probe on the diagnostics plan).
 (`samples_per_plugin` default), so on X26's ≈ 5,100 updates its plot shows ≈ 1 in 5: never read a per-update maximum
 off the UI.
 
+**Dated note, 2026-10-15 (the X26 exit check). This is an operational note, not a change to any registered rule.
+It covers the bf16 CANARY beside K9(b).** X26 runs the compiled bf16 learner, so the R1 canary (every 100 updates)
+and the startup gate (every restart) judge it on the K9 golden's rows, relocated off the PPO clip boundary (T36,
+confirmed on CUDA at `87e493c3`).
+- The rule refuses only an arm whose taken-action |Δ log π| from the fp32 reference exceeds the margin
+  M = 0.72, or an arm that switches a row's clip branch.
+- On the toy's checkpoints, the compiled arm's shift grew from 0.050 (15M) to 0.110 (72.66M), with eager bf16
+  growing alike.
+- The X26 Training session watches `canary_verdicts.jsonl` `.watch.scheduled.clip_margin.max_abs_dlogp.compiled` at
+  every read point above and before every planned restart. The bands and actions are in
+  [`design_x26_readiness.md`](../../../endstate/design_x26_readiness.md) §4.2: GREEN ≤ 0.144; AMBER ≤ 0.18 means
+  stage a raised constant; RED ≤ 0.72 means deliver it at the next planned restart, never stopping the run for it;
+  REFUSED means the documented FATAL procedure.
+- As with item 3 above, a canary FATAL is NOT a tie-share false alarm and is never resumed blind. A move to the fp32
+  trunk would be an Amendment 3. A constant raised under §4.2 changes only the check's fixture, never training, so
+  it is banked as a deviation in the run's notes, like the `warn` switch of item 2.
+
 ### A2.8 The owner's open questions: the orchestrator's defaults, recorded
 
 The owner's Q1, Q2 and Q4 (readiness §6.2) are unanswered at registration. Under the 15-minute standing rule the

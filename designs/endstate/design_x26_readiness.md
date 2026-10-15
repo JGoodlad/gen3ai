@@ -3,8 +3,13 @@
 🚨 **ALWAYS-CURRENT (an `endstate/` doc).** A decision or build that differs from this plan updates it in the
 same commit, saying what changed and why. It ends with a **Decision record**.
 
-**Status: PLAN 2026-10-15 (orchestrator brief; inventory read at `9ada3604`).** Nothing has been built or launched
-from this plan yet. The owner's roadmap (2026-10-09, after the closing test and the perf phase) has three steps
+**Status: EXIT CHECK ASSEMBLED 2026-10-15 15:45 PDT at `87e493c3` (§4's status column, the launch plan §4.1, the
+bf16 headroom watch §4.2).** Built since this plan was written (inventory read at `9ada3604`): the legacy deletion's
+X26 path (U0 / U1 / U3), T31, T32 (Amendment 2), T33 (Tier 1 validated), T36 (the canary's clip-margin fixture,
+CONFIRMED on CUDA at `87e493c3`), the I28 / I29 fixes and the post-U3 test sweep. T-ENT: s4001 died at 72.66M (I30),
+s4002 reached its 100M cap, s4003 is training (to about 20:45 PDT). **Seven of twelve exit rows PASS; E3 is
+DEFERRED; E5, E6, E7 and E11's data-freeze announcement are OPEN.** Every open row needs P_X26 to exist (§4.1).
+X26 has not launched. The owner's roadmap (2026-10-09, after the closing test and the perf phase) has three steps
 left: **the toy controls, then the exit check, then X26** (the deep run to plateau). This doc covers all three:
 - §1 is the inventory: every prerequisite of X26, with its state and evidence.
 - §2 is the X26 recipe this plan proposes.
@@ -43,17 +48,23 @@ Units and terms:
 - **The toy controls need no build for the first toy.** T-ENT (entity tokens and attention only) launches today
   from flags (§3.2; `checkargs` exit 0, verified for this doc before U1 — since U1 the argv runs PINNED, §3.2). T-MLP (a flat MLP) needs a build of about 1.5
   agent-days.
-- **The first GPU job tonight is T-ENT seed 4001**, launched by the Training session after its checkargs /
-  dry-run validation (§5.1).
-- **🚨 NEW BLOCKER (I30, 2026-10-15): the bf16 canary FATAL on the toy `rb_toy_ent_s4001` at 72.66M.** Diagnosed on
+- **The T-ENT seeds:**
+  - s4001 died at 72.66M on the canary FATAL (I30).
+  - s4002 reached its 100M cap at 14:44 PDT 10-15 (about 5.7 GPU-h, ≈ 4,900 steps/s).
+  - s4003 started at 15:01 PDT. All three are pinned at `3899277a`, which predates T36 (FINDING F25).
+  - T-MLP (T34) is not built, and it no longer goes before X26 (§4.1).
+- **BLOCKER I30, CLOSED 2026-10-15: the bf16 canary FATAL on the toy `rb_toy_ent_s4001` at 72.66M.** Diagnosed on
   CPU as a false alarm built into the canary itself: the PPO clip on its fixture rows is a decision boundary, so
   two healthy arms can disagree 30×. Not shown to be a miscompile. **The fixture fix T36 is BUILT**
   (`gen3_r1_clip_margin_v1`, 2026-10-15: boundary rows relocated on every rung, the margin checked, the confirmation
-  on two disjoint halves; at the FATAL's weights healthy pairs above K fall 21 % → 0 of 992 on CPU). X26 now waits
-  only for the GPU window at the T36 commit: `scripts/ops/verify_compile_gate_cuda.sh` + `scripts/ops/diag_bf16_canary.sh`
-  (≤ 20 min each; what they must show: `compile_flags.md` "THE FIX (T36)").
-- **The X26 launch estimate is about Mon 10-19 to Tue 10-20.** It is set by the deletion chain and the exit check,
-  not by the GPU. The GPU runs the toys and a production scout until then (about 40–55 GPU-h).
+  on two disjoint halves; at the FATAL's weights healthy pairs above K fall 21 % → 0 of 992 on CPU). **CONFIRMED on
+  CUDA at `87e493c3` (2026-10-15):** `verify_compile_gate_cuda` PASS 4/4 and `diag_bf16_canary` on `rb_toy_ent_s4001`
+  with all five criteria met (I30). I30 is CLOSED. Its remaining exposure, the compiled arm's log-prob shift growing
+  with training, is WATCHED in-run (§4.2).
+- **The X26 launch estimate is now Fri 10-16, about 00:00–01:00 PDT, at the EARLIEST** (§4.1). That assumes P_X26
+  lands before toy s4003 ends, at about 20:45 Thu. After that, the GPU needs about 2.75 GPU-h at P_X26 (E7 with
+  E6 riding on it, plus the crosses). The production scout R-60 (G3) is DROPPED (§4.1). The deletion chain no longer
+  sets the date; P_X26 does.
 
 ## 1. INVENTORY — every prerequisite of X26
 
@@ -70,7 +81,7 @@ that X26 reaches later (**later**).
 | I5 | **Legacy deletion U0** (the refusal machinery, `RetiredLever` rows, the `pre-legacy-deletion` tag, `--arch static_recovery` deleted) | **SHIPPED 2026-10-15** (D-LD1–D-LD7 adopted as the orchestrator's default; the vacuity rule built and tested with a real toy build) | the manifest's §7 / §8 | L (U3 depends on it) | the owner's D-LD1–D-LD7; the unit itself (~0.5 agent-day) |
 | I6 | **Legacy deletion U1** (the op judgments D1–D6) | **LANDED 2026-10-15** (config v156: `--status-facts`, `--ko-ramp`, `--g-ledger`, `--op-reduction`, `--speed-physics`, `--eot-residual`, `--switch-hazard-cost`, `--effective-stats` deleted; adopted behaviour unconditional behind `damage_op`; K9 golden byte-identical) | as I5 | L (U3 depends on it) | — |
 | I7 | **Legacy deletion U3** (`--move-resolution off` and the seven per-action blocks; `--value-threat-inject`). **It changes the fresh-init random stream (D-LD7)** | **LANDED 2026-10-15** (config v157: `--move-resolution`, `--move-resolution-facts`, `--value-threat-inject` and the seven block flags deleted; move resolution DERIVED from its prerequisites; the trained network's shape unchanged; the fresh-init stream CHANGED) | manifest §0 D-LD7, §3, §8; the ledger's U3 entry; `research_state/measurements/legacy_deletion_u3_init_2026-10-15/` | **L** | the K9 golden re-recorded once |
-| I8 | Legacy deletion U2, U4 (observation levers; the legacy token encoding) | NOT STARTED | as I5 | no, **if** each proves production's fresh init is byte-identical before and after | either lands before the exit check with that proof, or lands after X26 |
+| I8 | Legacy deletion U2, U4 (observation levers; the legacy token encoding) | NOT STARTED | as I5 | no, **if** each proves production's fresh init is byte-identical before and after | **DEFERRED past P_X26 (2026-10-15).** They may land DURING X26, which is pinned and never runs them, but only under §4.1's four conditions. Every offline reader of X26's checkpoints runs at HEAD, so the conditions add a FORWARD-identity proof on a v157 production checkpoint |
 | I9 | Legacy deletion U5 (optional Rust progress clock), U6 (close-out) | NOT STARTED | manifest §3 | no (U6 waits for X26's argv, by its own text) | — |
 | I10 | **The ride-along heads attach to the end state** | DONE | `checkargs --argv "--arch production … --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all"` exit 0; the launcher dry-run from main "would launch"; B rebased onto the flat pointer (`350fb83b`, refused without it at `ridealong_heads.py:280-310`); RND reads `obs_dim` at build (2845); all 16 bf16 A/B runs and the 8 `rb_es_end2_*` typed these flags (`metadata.json`); `ridealong/disabled` max 0.0 in `rb_bf_eb_s2005`'s TB | L | — |
 | I11 | **The ride-along registration** ([`PREREGISTRATION.md`](../research_state/measurements/ridealong_baseline/PREREGISTRATION.md)) | **DONE 2026-10-15 (T32, `ed2b9f82`): Amendment 2** — every stale clause below fixed (its §A2.1 table), X26's argv with every non-default flag and why, `checkargs` exit 0 + launcher `--dry-run` "would launch" at `264a35e3` pasted, R1–R5 + Amendment 1 restated on the end state, read points 10M / every 25M / plateau / FINAL, the §2.4 stop rule, the K9(b) handling, the Q1 / Q2 / Q4 defaults. Was: STALE | its literal argv fails `checkargs` (exit 1: `--critic winprob`, `--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`, `--env-core rust` are deleted constants); restart interval 3 h (now 6 h); the K10(a) recipe clause; "FIRST GPU run on the M5 core"; read points 10M / 25M / FINAL; the overhead basis 67.05 s; the checkpoint cadence "50,000 vec-calls × 48 envs"; B on α's support; the 2761-dim memory estimate; `feat`'s drift prediction from fp32 legacy features | L | **Amendment 2** (unit T32), committed before the launch |
@@ -82,7 +93,7 @@ that X26 reaches later (**later**).
 | I17 | **The X26 recipe** (§2) | PARTIAL: production resolves; the run-specific choices are this doc's proposal | dry-run: FRESH, restarts every 6 h, 3 crash restarts | L | the owner's Q1 (seeds) and Q4 (promotion), then Amendment 2 |
 | I18 | **The checkpoint cadence for Tier 1** | DECISION | the default `--checkpoint-every-steps` is 2.4M (`hyperparameters.py:79`). Tier 1's node must fall in [grid, grid + 500k), so a 2.4M cadence misses most grid points (`MISSING_NODE`) | L | type `--checkpoint-every-steps 1000000` (as the closing test and the bf16 A/B did) |
 | I19 | **The K9(b) tie-share margin** (the behaviour-check's excluded share; ceiling `FP32_EXCLUDED_CEILING` 0.15, single-shot FATAL under the default `--behaviour-check fatal`) | MARGIN OK for the MEAN; **the handling DECLARED and the per-update record PINNED — DONE 2026-10-15 (T32, `ed2b9f82`)** | §1.1 below; Amendment 2 §A2.7 (the closing test's Amendment 1 / 2, adapted: a tie-only stop resumes without limit, then `warn` once the crash budget is spent, any judged \|d log π\| ≥ 1e-4 is a GIGO stop). The share was ALREADY on every update in TensorBoard (F5 was wrong: 153 of 153 updates in `rb_bf_eb_s2005`'s raw events); `diagnostics_cadence_test::test_the_K9b_excluded_share_reaches_TENSORBOARD_on_EVERY_update_not_on_the_diagnostics_cadence` now pins it; read it with `main.ops.tb_read` (the TB web UI keeps 1,000 points per tag, ≈ 1 in 5 at X26's length) | L (as a declared handling) | — |
-| I20 | **Disk** | OK | `df`: 341 GB free of 1003 GB; an end-state 15M run is 4.2–4.8 GB, of which 3.2–3.3 GB is a fixed compile cache and 55 MB per checkpoint | L (≥ 100 GB free at launch) | no pruner exists for long rb_ runs (none needed: §2.3) |
+| I20 | **Disk** | OK | `df`: 341 GB free of 1003 GB (330 GB at the exit check, 2026-10-15 15:10 PDT); an end-state 15M run is 4.2–4.8 GB, of which 3.2–3.3 GB is a fixed compile cache and 55 MB per checkpoint | L (≥ 100 GB free at launch) | no pruner exists for long rb_ runs (none needed: §2.3) |
 | I21 | **The plateau battery's harness** (the per-stage VOI + belief-quality dose re-run on X26's checkpoints, `design_hidden_info_binding.md` §12.13.7) | PARTIAL: the world builder, FN beliefs, the dose family and blind scoring are BUILT; the battery exists only as measurement scripts | `t1_common.py` CHECKPOINTS = {end2, prod}; `run_pin.sh` takes only those; no plateau-drawn bank sampler; no snapshot trigger; the R-MATURITY rules are not code | later (first read at ≥ 25M; it reads retained checkpoints offline, so it can land during the run) | T35 (~1.5 agent-days); cost FULL ≈ 47 CPU-h / LEAN ≈ 14 CPU-h per checkpoint, no GPU |
 | I22 | **Own PPO loop stage 2** ("lands before the X26 ride-along baseline") | DONE | `design_own_ppo_loop.md` status: stage 2 and stage 3 BUILT | — | — |
 | I23 | **The `--unified-moves` umbrella silently overrides a typed `--damage-op false`** (and `move_prior_fusion`, `damage_outgoing`) | **DONE 2026-10-15 (T31)**: the conflict is REFUSED (`config.UmbrellaOverride`, FATAL_CONFIG; `checkargs` prints the same refusal and exits 3); `--unified-damage` now defaults to None so a typed `off` is seen; a typed `--damage-topk 0` beside an incoming matrix is refused too. The toy argv's `checkargs` report and resolved namespace are byte-identical before / after; so is `--arch production`'s | `src/main/train/umbrella_override_test.py` (fails on revert) | before T-MLP and any later ablation; not X26 (production sets them on) | T31 (~2–3 h) |
@@ -90,9 +101,9 @@ that X26 reaches later (**later**).
 | I25 | **The training-input changes since the reference seeds**: the learnset (legal movepool) fix `gen3_learnset_prevo_chain_v1` (2026-10-14: priors and X5 candidates move, the observation does not) and the fork-recipe fix (2026-10-14) | DONE at HEAD | ledger 2026-10-14 GIGO FIX ×2 | — | none for a FRESH X26. They are why X26 is not a continuation of an EB seed (§2.1) |
 | I26 | `--promotion-sprt` and `--eval-mirrored-pairs` "flip at X26" (2026-10-01) | DECISION OPEN | `design_model_management.md:38`, `design_league_decisions.md:32`, TASK_BACKLOG T6 / T17 | L (as a decision) | owner Q4 |
 | I27 | The KL early stop for X26 | DECIDED OFF (2026-10-03); `era_plan_post_m5.md` row 0 said "KL early stop ON" (STALE; corrected in this commit) | `EXPERIMENT_BACKLOG.md` X5 decisions | — | — (finding F7) |
-| I28 | **The metric-key collision crash**: every production run at a commit ≥ `65b71f6a` died at its FIRST post-update dump (step ~202k on the GPU; the training session's fresh `--arch production` CUDA smoke at `6f6b7f90`): sb3's stdout table cut `cell/move_resolution_restored_move_{weight,grad}_norm` (and the `restored_switch` / `status_switch` pairs) to one label and raised | **FIXED `109c4256`** (`gen3_metric_key_collision_v1`, ledger 2026-10-15 CRASH FIX): a collision-proof table + a STARTUP key check (`MetricKeyCollisionError`, FATAL_CONFIG) | `src/agents/training/train_logger.py`, `metric_keys.py`; the CPU production smoke reaches its dumps clean | L | the Training session's CUDA re-smoke in a GPU window |
+| I28 | **The metric-key collision crash**: every production run at a commit ≥ `65b71f6a` died at its FIRST post-update dump (step ~202k on the GPU; the training session's fresh `--arch production` CUDA smoke at `6f6b7f90`): sb3's stdout table cut `cell/move_resolution_restored_move_{weight,grad}_norm` (and the `restored_switch` / `status_switch` pairs) to one label and raised | **FIXED `109c4256`** (`gen3_metric_key_collision_v1`, ledger 2026-10-15 CRASH FIX): a collision-proof table + a STARTUP key check (`MetricKeyCollisionError`, FATAL_CONFIG) | `src/agents/training/train_logger.py`, `metric_keys.py`; the CPU production smoke reaches its dumps clean | L | DONE: the Training session's production CUDA smoke PASSED at `ffe2961b` |
 | I29 | **Silent double producers and a never-produced metric** (found by the I28 fix's survey): `fork/*`, `train/effective_batch` (+ `train/dose_rate` one decision stale under `--adaptive-batch`) and `lifecycle/cuda_streams_after_freeze` each had TWO producers (the later write won silently); `grad/species_belief_*` was never produced (the bank registered `species_belief_set`, the probe looked up `species_belief`) | **FIXED `af6bc0eb`** (`gen3_metric_producer_guard_v1`, ledger 2026-10-15 GIGO FIX): one producer per quantity + a logger guard (`DuplicateProducerError` under pytest / `--debug`; counted + reported in production) + `_R1_PROBE_TERMS` derived from the bank | `src/agents/training/train_logger.py`, `metric_producers_test.py` | L | none |
-| I30 | **🚨 BLOCKER: the bf16 CANARY FATAL on trained weights** — the toy `rb_toy_ent_s4001` ended FATAL at 72,658,984 steps (update 700): the compiled bf16 learner's `pointer_head.move_proj.weight` gradient read 4.03e-1 from the fp32 reference vs eager bf16's 2.82e-2 (14× > K = 12), confirmed on both slices. A canary or startup-gate FATAL is FATAL_CONFIG (never restarted), so X26 (thousands of updates, a startup gate at every 6-hourly restart) cannot launch on a check that fires this way | **FIXED on CPU (T36, `gen3_r1_clip_margin_v1`, 2026-10-15); the GPU confirmation PENDING.** The fix: before judging, every rung of the startup gate and the canary moves each fixture row within `R1_CLIP_MARGIN` = 0.72 (log-prob; 4 × the largest measured arm shift 0.18, PROVISIONAL until the compiled arm's CUDA shift is read) of its switching clip bound to 2× the margin inside its active side, refuses by name an arm that moves a log-prob past the margin, and the canary confirms on two DISJOINT halves; CPU at the FATAL's weights: healthy pairs above K 212 / 992 → 0 / 992 (max 3.65×). THE DIAGNOSIS: the canary's per-parameter statistic contains a DECISION BOUNDARY: the PPO clip on the fixture's 64 OFF-POLICY rows. A row whose ratio sits within rounding of the clip boundary that switches its gradient carries its whole policy gradient in one arm and none in the other; at the FATAL's weights two rows sit 0.005–0.007 (log-prob) from theirs, eager bf16 moves log-probs by up to 0.08, and two HEALTHY eager arms read a ratio above 12 in 18 % of 992 dithered pairs. With the branch held fixed the error never exceeds 0.020; eager bf16 itself flips at 66M (0.29). Census: a boundary row (within 0.01) at 14 of the toy's 62 pre-suspect checkpoints and at 2 of 10 production-surface states (the bf16 A/B's seeds), eager flips at 4 / 62 and 1 / 10 — X26 can draw it, and the startup gate (every restart) is SINGLE-SHOT. The production baseline's CUDA PASS (ratio 1.55) is a state with no boundary row (nearest 0.074). Not shown to be a miscompile | [`../training/compile_flags.md`](../training/compile_flags.md) "The bf16 canary FATAL on trained weights"; `src/main/ops/diag_bf16_canary.py` (CPU reads); ledger 2026-10-15 FINDING | **L** | (1) ~~**T36**: the canary's fixture made rule-8-clean~~ BUILT 2026-10-15; (2) the GPU window AT THE T36 COMMIT (the Training session under its lease): `scripts/ops/verify_compile_gate_cuda.sh` (all four CUDA tests PASS on the relocated rows) and `scripts/ops/diag_bf16_canary.sh rb_toy_ent_s4001` (the canary's own replay PASSES at the FATAL's weights; relocated null P(ratio > K) = 0 for Ebf pairs and Cbf; Cbf switches no relocated row; Cbf's max \|Δ log π\| ≤ 0.18; the fp32 rule clean). Fallback if the GPU contradicts: the fp32 trunk for X26 (+29 % `train_ms`) |
+| I30 | **🚨 BLOCKER: the bf16 CANARY FATAL on trained weights** — the toy `rb_toy_ent_s4001` ended FATAL at 72,658,984 steps (update 700): the compiled bf16 learner's `pointer_head.move_proj.weight` gradient read 4.03e-1 from the fp32 reference vs eager bf16's 2.82e-2 (14× > K = 12), confirmed on both slices. A canary or startup-gate FATAL is FATAL_CONFIG (never restarted), so X26 (thousands of updates, a startup gate at every 6-hourly restart) cannot launch on a check that fires this way | **FIXED (T36, `gen3_r1_clip_margin_v1`, 2026-10-15) and **CONFIRMED on CUDA at `87e493c3`** (`verify_compile_gate_cuda` PASS 4/4; `diag_bf16_canary` on `rb_toy_ent_s4001`: the replay passes at the FATAL's weights (relocated ratio 0.655), the relocated null reads 0 for the Ebf pairs and for Cbf at all 8 checkpoints, no arm switches a relocated row (`relocated.branch_flips` 0 everywhere), `fp32_rule.over_bar` is empty, C32 sits within 4e-6 of E32, and Cbf's taken-action \|Δ log π\| peaks at 0.110 ≤ 0.18; `../research_state/measurements/x26_exit_check_2026-10-15/gpu_t36_87e493c3/`). **CLOSED**; the shift's growth is watched in-run (§4.2).** The fix: before judging, every rung of the startup gate and the canary moves each fixture row within `R1_CLIP_MARGIN` = 0.72 (log-prob; 4 × the largest measured arm shift 0.18, PROVISIONAL until the compiled arm's CUDA shift is read) of its switching clip bound to 2× the margin inside its active side, refuses by name an arm that moves a log-prob past the margin, and the canary confirms on two DISJOINT halves; CPU at the FATAL's weights: healthy pairs above K 212 / 992 → 0 / 992 (max 3.65×). THE DIAGNOSIS: the canary's per-parameter statistic contains a DECISION BOUNDARY: the PPO clip on the fixture's 64 OFF-POLICY rows. A row whose ratio sits within rounding of the clip boundary that switches its gradient carries its whole policy gradient in one arm and none in the other; at the FATAL's weights two rows sit 0.005–0.007 (log-prob) from theirs, eager bf16 moves log-probs by up to 0.08, and two HEALTHY eager arms read a ratio above 12 in 18 % of 992 dithered pairs. With the branch held fixed the error never exceeds 0.020; eager bf16 itself flips at 66M (0.29). Census: a boundary row (within 0.01) at 14 of the toy's 62 pre-suspect checkpoints and at 2 of 10 production-surface states (the bf16 A/B's seeds), eager flips at 4 / 62 and 1 / 10 — X26 can draw it, and the startup gate (every restart) is SINGLE-SHOT. The production baseline's CUDA PASS (ratio 1.55) is a state with no boundary row (nearest 0.074). Not shown to be a miscompile | [`../training/compile_flags.md`](../training/compile_flags.md) "The bf16 canary FATAL on trained weights"; `src/main/ops/diag_bf16_canary.py` (CPU reads); ledger 2026-10-15 FINDING | **L** | — (CLOSED 2026-10-15). Was: (1) ~~**T36**: the canary's fixture made rule-8-clean~~ BUILT 2026-10-15; (2) ~~the GPU window AT THE T36 COMMIT~~ DONE at `87e493c3` (the Training session under its lease): `scripts/ops/verify_compile_gate_cuda.sh` (all four CUDA tests PASS on the relocated rows) and `scripts/ops/diag_bf16_canary.sh rb_toy_ent_s4001` (the canary's own replay PASSES at the FATAL's weights; relocated null P(ratio > K) = 0 for Ebf pairs and Cbf; Cbf switches no relocated row; Cbf's max \|Δ log π\| ≤ 0.18; the fp32 rule clean). Fallback if the GPU contradicts: the fp32 trunk for X26 (+29 % `train_ms`) |
 
 ### 1.1 The K9(b) tie-share margin, read from the end-state runs
 
@@ -472,6 +483,20 @@ two-sided 90 % interval and the rule-8 band of 1e-9.
 | R-T3, external units: each toy plateau against Metamon SmallRL, greedy vs greedy, `main.anchors` | 3 | 200 games | descriptive; the regime stated with every number |
 | R-T4, cost: GPU-h to plateau, params, FLOPs / row, measured fps | — | — | the price side |
 
+> **Dated note, 2026-10-15 (the exit check), before any R-T read was played.** Two references changed. No rule,
+> estimator or bar changed.
+> - **R-T1b's EB 5M references:** only s2001–s2004 carry `final_model_stage1_5M.zip`. Seeds s2005–s2008 ran fresh
+>   to 15M, so their 5M reference is `checkpoints/checkpoint_5000*_steps.zip`. The same substitution applies to E7.
+>   The budget changes no schedule at P_bf16 (`design_bf16_strength_ab.md` §5), so a 5M checkpoint of a 15M run and
+>   a 5M final are the same kind of state.
+> - **R-T1c's production reference is X26 at 30M and 60M, not R-60.** R-60 is dropped (§4.1). X26 is the
+>   post-deletion, post-learnset-fix production recipe, so it is a better matched-step reference than a pre-U3
+>   continuation. It is still one production seed, and R-T1c stays descriptive.
+> - **Load check at `87e493c3`** (strict loader, CPU, 2026-10-15; a SAMPLE, not all of them). These four load:
+>   `rb_bf_eb_s2001/final_model_stage1_5M.zip`, `rb_bf_eb_s2008/checkpoints/checkpoint_5000214_steps.zip`, and
+>   `rb_toy_ent_s4002`'s 15M checkpoint and its final model. The cells plan must load every reference before any
+>   cell is played.
+
 **Loadability across the deletion (requirement on T30-U0).** R-T2 plays a pre-deletion T-ENT checkpoint against a
 post-deletion X26 checkpoint. Under D-LD1, a recorded OFF value of a deleted lever is refused at HEAD.
 - **Requirement:** U0's `RetiredLever.active` treats a lever as INACTIVE when the recorded config lacks the lever's
@@ -519,20 +544,180 @@ For T-MLP the same classes apply with G_m′ / G_p′, and the question becomes 
 The exit check is PASS only when every row passes. X26 launches only after it. The commit at which it passes is
 **P_X26**, and X26 is pinned there.
 
-| # | item | PASS criterion | evidence to record |
-|---|---|---|---|
-| E1 | **The bounded list** (the 2026-10-06 exact refactors, behaviour screens and perf) | every item landed or explicitly DROPPED with a reason in this doc's Decision record. Already done: refactors (version break 2026-10-07), screens (end state ADOPTED 2026-10-12), perf (bf16 ADOPTED 2026-10-14). Explicitly deferred past X26, each a future arm with its own A/B: T26 overlap and CUDA graphs | this table |
-| E2 | **Legacy deletion U0, U1, U3 landed** | each a separate `/gen3ai-ship` with green gates; the K9 golden re-recorded exactly once (at U3); the ledger line "fresh-init stream changed at `<U3 sha>`" | commits + ledger |
-| E3 | **U2 / U4 either landed with an init-identity proof or deferred** | for each unit that lands before P_X26, a test that FAILS on revert: production's fresh state_dict at a fixed seed is byte-identical before and after the unit | the test name per unit |
-| E4 | **The umbrella GIGO fixed (T31)** | a typed key the umbrella would override is REFUSED, typed, with a test that fails on revert; production's resolution unchanged (`checkargs --arch production` byte-identical report) | commit |
-| E5 | **The routine gate and the slow-tier status** at P_X26 | routine gate green (or the targeted set + static tier, scope named, per the testing rules); `slow_tier_status.json` has no recorded FAIL | gate log |
-| E6 | **Cost re-measured at P_X26** | a production run's quiet-window `train_ms` and fps over ≥ 20 updates within ±7 % of `rb_bf_eb`'s 42.07 s / 1,631 fps. A regression beyond that is investigated before launch (it changes nothing about strength but sizes the run) | the numbers + their run |
-| E7 | **The sanity screen at P_X26** | TWO fresh production seeds (`rb_xs_s2701`, `s2702`) to 5M (~1.8 GPU-h), crossed against the 8 EB `final_model_stage1_5M.zip`, 500 mirrored pairs per cell (2 × 8). **PASS iff the pooled Δ̂ (sanity − EB) ≥ −3.0 pp AND neither seed's own Δ̂ < −6.0 pp**, with no crash, no NaN, and no K9(b) stop that is not a tie-share false alarm. A value within 1e-9 of a bound is not a crossing (rule 8). **FAIL ⇒ STOP and bisect the deletion units**: it is a screen for breakage, not an equivalence test. (Seed-to-seed SD at 5M is ~3 pp, from the stage-1 cross's s2_cols 9.7 pp²) | `verdict.json` from a coded rule committed before the cross |
-| E8 | **Plateau meter at launch** | (a) the stop rule of §2.4 written into Amendment 2; (b) T33 PASSED: at least one `main.plateau tick` decided, with no CONFLICT, on a real current-architecture run (a T-ENT seed or R-60), with its CPU minutes per check recorded | the ledger `plateau_t1` rows |
-| E9 | **The ride-along registration** | Amendment 2 committed (T32): every stale clause of I11 fixed, read points every 25M + plateau, bf16 head-identity test green, the K9(b) handling declared, per-update excluded-share logging live. **MET 2026-10-15 at `ed2b9f82`** (re-check the two tests green at P_X26) | commit |
-| E10 | **The argv** | `python -m main.checkargs --argv "<X26 argv>"` exit 0 at P_X26; `python -m main.launcher --dry-run …` "would launch" (from the MAIN checkout); torch 2.8.0+cu126 | both outputs in the launch note |
-| E11 | **Disk and data** | ≥ 100 GB free on `models/`; the `data/` freeze announced to every session for X26's duration | `df`; the announcement |
-| E12 | **The owner's answers** | Q1 (seeds), Q2 (meter scope), Q3 (D-LD decisions), Q4 (promotion) recorded in this doc's Decision record, or the recommendation adopted under the 15-minute standing rule | Decision record |
+| # | item | PASS criterion | evidence to record | **status at `87e493c3` (2026-10-15 15:45 PDT)** |
+|---|---|---|---|---|
+| E1 | **The bounded list** (the 2026-10-06 exact refactors, behaviour screens and perf) | every item landed or explicitly DROPPED with a reason in this doc's Decision record. Already done: refactors (version break 2026-10-07), screens (end state ADOPTED 2026-10-12), perf (bf16 ADOPTED 2026-10-14). Explicitly deferred past X26, each a future arm with its own A/B: T26 overlap and CUDA graphs | this table | **PASS.** Every item has landed or is deferred with its reason (T26 overlap and CUDA graphs: Decision record 2026-10-15) |
+| E2 | **Legacy deletion U0, U1, U3 landed** | each a separate `/gen3ai-ship` with green gates; the K9 golden re-recorded exactly once (at U3); the ledger line "fresh-init stream changed at `<U3 sha>`" | commits + ledger | **PASS.** U0 `6f6b7f90`, U1 `38a21c0f`, U3 `882a3f86` (the K9 golden re-recorded ONCE, at `33a1c3b9`; docs `264a35e3`). The ledger has the line: 2026-10-15 BUILD (MAJOR), "the FRESH-INIT STREAM changed at `882a3f86`". The `pre-legacy-deletion` tag is `0a0d9e1d` |
+| E3 | **U2 / U4 either landed with an init-identity proof or deferred** | for each unit that lands before P_X26, a test that FAILS on revert: production's fresh state_dict at a fixed seed is byte-identical before and after the unit | the test name per unit | **DEFERRED** past P_X26. Neither unit has started, and neither is needed by X26. They may land DURING X26 only under §4.1's conditions (init identity + FORWARD identity + X26's checkpoints still load + no `data/` change) |
+| E4 | **The umbrella GIGO fixed (T31)** | a typed key the umbrella would override is REFUSED, typed, with a test that fails on revert; production's resolution unchanged (`checkargs --arch production` byte-identical report) | commit | **PASS.** `0a0d9e1d` (`umbrella_override_test.py`, 14 tests, 9 fail on revert; the toy argv's and `--arch production`'s `checkargs` reports byte-identical) |
+| E5 | **The routine gate and the slow-tier status** at P_X26 | routine gate green (or the targeted set + static tier, scope named, per the testing rules); `slow_tier_status.json` has no recorded FAIL | gate log | **OPEN.** `slow_tier_status.json` (last written 2026-10-15 21:32Z) has 119 rows: 114 pass, 5 skip, **no recorded FAIL**. 🚨 **But it HIDES a red:** `compiled_first_update_test` (CPU) fails at every commit since `ed58a3ad` (an Inductor C++ codegen error; the post-U3 sweep `87e493c3`). Its row still reads the 2026-10-09 pass (`73408d02`), because a recorded FAIL would fail the static tier for every agent. The fix is in flight in another worktree. The CUDA twin's last recorded pass is 2026-10-04 (`174f5e62`), before the end state became production (W1 in §4.1). The 3 compile-gate CUDA rows read `skip` (an agent run at `19d840cc` without a GPU), while `verify_compile_gate_cuda` PASSED 4/4 at `87e493c3`. That script does not write this file (F26). PASS needs the fix landed, its row re-recorded PASS, and the targeted set + static tier at P_X26 |
+| E6 | **Cost re-measured at P_X26** | a production run's quiet-window `train_ms` and fps over ≥ 20 updates within ±7 % of `rb_bf_eb`'s 42.07 s / 1,631 fps. A regression beyond that is investigated before launch (it changes nothing about strength but sizes the run) | the numbers + their run | **OPEN; it RIDES ON E7** (§4.1 W2). A 5M seed has ≈ 51 updates. Read updates 10–50 of `rb_xs_s2701` with T33's `phase_stats.py` (`../research_state/measurements/t33_plateau_cost_2026-10-15/`). E7's argv matches EB's surface (heads typed, `--snapshot-ladder-games 0`), so the comparison is like for like. No separate GPU time |
+| E7 | **The sanity screen at P_X26** | TWO fresh production seeds (`rb_xs_s2701`, `s2702`) to 5M (~1.8 GPU-h), crossed against the 8 EB 5M models (*2026-10-15: s2001–s2004 `final_model_stage1_5M.zip`, s2005–s2008 `checkpoints/checkpoint_5000*_steps.zip`; those four have no stage-1 file, §3.5's note*), 500 mirrored pairs per cell (2 × 8). **PASS iff the pooled Δ̂ (sanity − EB) ≥ −3.0 pp AND neither seed's own Δ̂ < −6.0 pp**, with no crash, no NaN, and no K9(b) stop that is not a tie-share false alarm. A value within 1e-9 of a bound is not a crossing (rule 8). **FAIL ⇒ STOP and bisect the deletion units**: it is a screen for breakage, not an equivalence test. (Seed-to-seed SD at 5M is ~3 pp, from the stage-1 cross's s2_cols 9.7 pp²) | `verdict.json` from a coded rule committed before the cross | **OPEN** (it needs P_X26). **The coded rule is COMMITTED with this status, before any seed:** [`sanity_rule.py`](../research_state/measurements/x26_exit_check_2026-10-15/sanity_rule.py) (`decide`; `self-check` OK on seven constructed cases, including both rule-8 ties and a dirty run gate) |
+| E8 | **Plateau meter at launch** | (a) the stop rule of §2.4 written into Amendment 2; (b) T33 PASSED: at least one `main.plateau tick` decided, with no CONFLICT, on a real current-architecture run (a T-ENT seed or R-60), with its CPU minutes per check recorded | the ledger `plateau_t1` rows | **PASS.** (a) Amendment 2 §A2.6 (`ed2b9f82`). (b) T33 `8ea4592d`: 10 checks on `rb_toy_ent_s4001`, all decided GAIN, no CONFLICT, CPU cost in §2.6 (the 65M / 70M verdicts are void, F17; the eight before them stand) |
+| E9 | **The ride-along registration** | Amendment 2 committed (T32): every stale clause of I11 fixed, read points every 25M + plateau, bf16 head-identity test green, the K9(b) handling declared, per-update excluded-share logging live. **MET 2026-10-15 at `ed2b9f82`** (re-check the two tests green at P_X26) | commit | **PASS at `87e493c3`:** both launch-gate tests green (2 passed in 52 s, CPU, rule 5b; `x26_exit_check_2026-10-15/e9_tests_87e493c3.log`). Re-run them at P_X26 if P_X26 ≠ `87e493c3` |
+| E10 | **The argv** | `python -m main.checkargs --argv "<X26 argv>"` exit 0 at P_X26; `python -m main.launcher --dry-run …` "would launch" (from the MAIN checkout); torch 2.8.0+cu126 | both outputs in the launch note | **PASS at `87e493c3`** (agent worktree, `GEN3AI_MODELS_DIR` scratch, CPU): `checkargs` exit 0, and the report is identical to Amendment 2 §A2.3's; dry-run exit 0, "would launch", FRESH, pin `87e493c3`, torch 2.8.0+cu126, restarts every 6 h (`x26_exit_check_2026-10-15/e10_*`). **Re-run both at P_X26 from the MAIN checkout** before the launch (F22: a scratch dir sizes checkpoints at 0) |
+| E11 | **Disk and data** | ≥ 100 GB free on `models/`; the `data/` freeze announced to every session for X26's duration | `df`; the announcement | **Disk PASS:** 330 GB free of 1003 GB (`df`, 15:10 PDT). X26 at 500M on the 1M cadence needs ≈ 36–60 GB (§2.3, F22). **The `data/` freeze announcement is OPEN**: it is made AT the launch |
+| E12 | **The owner's answers** | Q1 (seeds), Q2 (meter scope), Q3 (D-LD decisions), Q4 (promotion) recorded in this doc's Decision record, or the recommendation adopted under the 15-minute standing rule | Decision record | **PASS (the orchestrator's defaults, recorded under the 15-minute rule; no owner answer has arrived).** Q1: one seed, plus `rb_x26_s2602` at seed 1's first Tier-1 FLAT, pinned at P_X26. Q2: the stop rule plus a validated Tier 1. Q4: `--promotion-sprt` / `--eval-mirrored-pairs` OFF. All three are in Amendment 2 §A2.8 and the Decision record's T32 row. Q3: D-LD1–D-LD7 adopted (the Decision record's T30-U0 row). An owner answer before the launch supersedes them through an Amendment 3 |
+
+**Tally at `87e493c3`:** 7 PASS (E1, E2, E4, E8, E9, E10, E12), 1 DEFERRED (E3), 4 OPEN (E5, E6, E7, plus E11's
+announcement). Every OPEN row is closed by §4.1's GPU window at P_X26, except E5, which needs the CPU-Inductor fix to land.
+
+### 4.1 Launch plan (2026-10-15, the exit check)
+
+**P_X26 = current `main` once the CPU-Inductor fix for `compiled_first_update_test` has landed** (proposed by the
+exit check; the orchestrator fixes the sha). The fix is in flight in another worktree. P_X26 is FIXED when E7's
+first seed launches. Anything that lands on `main` after that is outside X26 and outside the screen.
+- **Why not `87e493c3` now?** The failing test is in the compiled learner's area, the code X26 runs every update.
+  - If the fix changes production code (a compiled region, the micro-step), X26 must run that code and E7 must
+    screen it, so the fix has to be inside P_X26.
+  - If the fix is test-only, `87e493c3`'s code would do. P_X26 still takes the later commit, so that E5 holds a
+    RECORDED green row rather than the stale 2026-10-09 one.
+- **Why not wait for more?** Nothing else that X26 runs is pending. Every other open unit is offline (below).
+
+**What must land BEFORE P_X26:**
+1. **The CPU-Inductor fix**, with its `slow_tier_status.json` row re-recorded PASS (E5).
+2. **RECOMMENDED: a check-only override of the canary's margin constant** that a same-run resume may change. This is
+   the delivery mechanism for §4.2's RED action. Without it, raising `R1_LOGPROB_SHIFT_MAX` mid-run means a FORK,
+   because the launcher REFUSES to move a run's pin at a restart (`worktree.resolve_pin`), and `--sync-to-main` would
+   walk X26 onto all of HEAD.
+   - Scope: a small build in T36's area, about 2–3 h, opus-high. It may proceed in parallel with item 1.
+   - What it must do: a typed trainer flag, inherited through `model_config.json` like `--behaviour-check` (Amendment 2 §A2.7 item 2
+     is the precedent: a check-only flag changed at a resume), printed on every R1 rule line. It must never touch
+     training math, and it needs a test that fails on revert.
+   - It is the orchestrator's call. If it is skipped, §4.2's RED action becomes a fork, and that path is written
+     there.
+3. This commit: §4's status, the E7 coded rule (`sanity_rule.py`, committed before any seed) and §4.2. A pinned run
+   does not need documentation inside its pin, but E7's rule must exist before the cross.
+
+**What may land DURING X26 (offline, or code the pin never runs):**
+- **The R1×R2 and R5 reader code** (A2-F2 / F20). These are offline readers of X26's checkpoints at HEAD. They must
+  land before the FINAL read, not before the launch.
+- **The plateau meter's parallel batches (F14 / T33-2).** This is offline `main.plateau` code.
+  - It must keep the GSPRT rule unchanged (batches judged in batch order), with a test that replays a RECORDED
+    check (a T-ENT ledger request) to the same decision.
+  - Land it BETWEEN checks, never while a `plateau_t1` request is open. Land it before X26 nears 70M, its first
+    possible `TIER1_PLATEAU` (about 12 GPU-h after launch). Before that every check is a cheap GAIN check.
+- **U5 / U9, T35 (the maturity battery), T20.** These are offline, as already planned (§2.4, §5.3).
+- **Legacy deletion U2 / U4: yes, they may land during X26. They need not wait for its end, but four conditions
+  apply.** X26 and its seed 2 run at P_X26 and never execute U2 / U4. But every OFFLINE consumer of X26's
+  checkpoints runs at HEAD: Tier 1's h2h, the ride-along reader, the maturity battery, the R-T1c / R-T2 toy crosses
+  and the prober. A deletion that changed how HEAD plays a v157 production checkpoint would silently change what
+  every one of those reads measures. So each unit lands only with:
+  - **(a)** E3's init-identity test, which fails on revert;
+  - **(b)** a FORWARD-identity test on a real v157 production checkpoint: the same logits and value, byte for byte,
+    before and after the unit at HEAD. Use `rb_xs_s2701`'s 5M final, or an X26 checkpoint once one exists;
+  - **(c)** proof that X26's latest checkpoint still LOADS at HEAD (the adoption rule);
+  - **(d)** no `data/` change (standing rule 6).
+  If (b) cannot hold, that unit waits for X26's FINAL. U6 (close-out) waits for X26's argv by its own text, which is
+  fixed at launch.
+- **Never during X26:** a `data/` change (rule 6, I24), or a checkpoint pruner (F9).
+
+**THE GPU ORDER from now to the launch** (every job runs under the Training session's lease; any P0.1 hidden-info GPU
+need preempts all of it):
+
+| # | job | GPU-h | when (PDT, earliest) | what it buys |
+|---|---|---|---|---|
+| W0 | **T-ENT s4003** (running since 15:01 10-15, pin `3899277a`) to its toy plateau, or more likely its 100M cap (s4001 and s4002 never read FLAT) | ≤ 5.7 (≈ 5.6 left) | → ≈ 20:45 Thu | the third T-ENT replicate. Not preempted: X26 gains ~5 h at the cost of a lost replicate, and the date is set by P_X26 anyway |
+| W1 | **The GPU checks of what P_X26 changed:** `compiled_first_update_test`'s CUDA variant (last recorded pass 2026-10-04, pre-end-state); plus `scripts/ops/verify_compile_gate_cuda.sh` IF the CPU-Inductor fix or the margin override touches `src/agents/model/compile*` or the micro-step | ≤ 0.25 | 20:50 | E5 on CUDA; the gate at P_X26 |
+| W2 | **E7 seed `rb_xs_s2701`** at P_X26 to 5M; **E6 is read from its updates 10–50** | ≈ 1.0 | 21:05 | E7, E6 |
+| W3 | **E7 seed `rb_xs_s2702`** at P_X26 to 5M | ≈ 1.0 | 22:10 | E7 |
+| W4 | **ONE h2h window:** E7's cross (2 × 8 × 500 pairs) + R-T1 (the 3 toys at 15M vs the 8 EB 15M finals, 3 × 8 × 500) + R-T1b (5M vs 5M, 3 × 8 × 250) = 26,000 pairs. The bf16 A/B's 8 × 8 cross (64,000 pairs) took ≈ 1 GPU-h at 75 games/s per cell | ≈ 0.4–0.5 | 23:15 | E7's verdict, G_m (the toys' primary matched-step read), R-T1b |
+| — | CPU, beside W4: E7's `decide`, E6's `phase_stats.py`, E10 re-run at P_X26 from the MAIN checkout, the `data/` freeze announcement | 0 | 23:45 | E5–E7, E10, E11 closed |
+| W5 | **X26 launch** (`rb_x26_s2601`) | 17 per 100M; ≤ 86 at the cap | **≈ Fri 10-16 00:00–01:00** | the deep run |
+
+- **E7 and E6 argv:** X26's argv (Amendment 2 §A2.2) with `--steps 5000000 --seed 2701` (then 2702),
+  `--run-name rb_xs_s2701` / `rb_xs_s2702`, `--snapshot-ladder-games 0` (EB's recorded value, so E6 compares like for
+  like) and `--pin-commit <P_X26>`. Run the two seeds one at a time, never two on the GPU at once (E6 needs a quiet
+  window). The Training session builds and validates it (`checkargs`, `--dry-run`). A design-doc line is not a
+  launch command.
+- **The R-T1 / R-T1b cells play at ONE commit, named in their cells plan before any cell.** Use either P_X26, where
+  the toy loads through the vacuity rule and EB through the adoption rule (checked by sample, §3.5's note), or
+  `pre-legacy-deletion` (`0a0d9e1d`). The Training session decides and records which.
+- **G3, R-60 (the production scout, 7.7 GPU-h), is DROPPED from the pre-launch order.** Today's canary findings
+  REMOVE the case for it.
+  - **It cannot run the long-run bf16 exposure test it would now be wanted for.** Its pin `f45d0c27` predates T36
+    and the canary watch record, so its canary records no shift and still carries the clip-boundary false FATAL.
+    The production-surface census put a boundary row in 2 of 10 states. A 45M continuation (≈ 7.7 h) draws about 5 canaries
+    and 1–2 restart gates, so a false FATAL could end the scout before it reads anything.
+  - **X26 is that exposure test,** on the current code, with the watch of §4.2.
+  - **Every other thing R-60 bought, X26 produces within about 10 GPU-h of launch, on current code and data:** the
+    matched-step references (R-T1c now reads X26, §3.5's note), the first production Tier-1 check, the K9(b) share
+    past 15M, and T24's restart telemetry.
+  - 7.7 GPU-h is about 45M of X26.
+- **T-MLP (G5) does not go before X26.** T34 is not built (≈ 1.5 agent-days), and its seeds cost 8–18 GPU-h. They run
+  after X26's plateau, or in GPU windows the orchestrator opens during X26 (the file-handoff PAUSE / GO protocol).
+  This departs from the order of the owner's 10-09 roadmap ("toy controls, then the exit check, then X26"), so it
+  goes to the owner as FINDING F27. T-ENT's three seeds do finish before X26.
+- **Earliest realistic launch: Fri 10-16, about 00:00–01:00 PDT,** IF P_X26 has landed by about 20:45 Thu. Otherwise
+  the launch is about 3.2 h of wall time after whichever comes later, P_X26 landing or s4003 finishing (W1–W4 ≈ 2.75 GPU-h, then the
+  reads). An E7 FAIL stops everything: bisect U0 / U1 / U3 on CPU first (the K9 golden, the init records), and on
+  the GPU only with the orchestrator's go.
+
+### 4.2 The bf16 HEADROOM WATCH (from the T36 GPU confirmation, 2026-10-15)
+
+**What grew.** On `rb_toy_ent_s4001`'s checkpoints, the GPU diagnostic at `87e493c3` read how far the COMPILED bf16
+learner (Cbf) moves a fixture row's log-probability from the fp32 eager reference. The canary's margin rule
+judges exactly this number (`compile_regions._clip_margin_rule`).
+
+| checkpoint | 15M | 30M | 45M | 60M | 66M | 70M | 72M | FATAL (72.66M) |
+|---|---|---|---|---|---|---|---|---|
+| Cbf, TAKEN action (all 64 rows) | 0.050 | 0.060 | 0.051 | 0.068 | 0.059 | **0.107** | 0.086 | **0.110** |
+| Ebf (eager bf16), taken action | 0.043 | 0.055 | 0.064 | 0.049 | 0.107 | 0.086 | 0.076 | 0.082 |
+| Cbf, max over EVERY legal action | 0.059 | 0.082 | 0.078 | 0.072 | 0.076 | 0.117 | **0.136** | 0.110 |
+
+Source: `../research_state/measurements/x26_exit_check_2026-10-15/canary_shift_87e493c3.json`, extracted by
+`canary_shift_extract.py` from `~/.cache/gen3ai/diag_bf16_canary/87e493c35e6a/gpu_*.json`, slice 0 = all 64 rows.
+C32 (compiled fp32) reads ≤ 4e-6 everywhere.
+
+**How to read it.**
+- **The quantity the rule judges is the TAKEN action's shift.** The PPO clip reads only the taken action's ratio.
+  So the headroom today is **0.110 = 61 % of `R1_LOGPROB_SHIFT_MAX` 0.18**, not 76 %. The 0.136 figure is the
+  all-legal-actions maximum, a superset (F24).
+- **0.18 is not the refusal.** The rule refuses an arm only past the MARGIN M = 4 × 0.18 = **0.72**, or on any
+  clip-branch switch. 0.18 is the largest healthy shift measured so far, and the 4× safety factor rests on it. Today's
+  read sits 6.5× below the refusal.
+- **The growth follows the WEIGHTS, not the compiler.** Eager bf16 grows with it (0.043 → 0.107 at 66M), and
+  Cbf / Ebf stays between 0.5× and 1.4× on the 64 rows. The pre-activation p99 grew from 6.3 to 11 over the same
+  checkpoints (the diag's `pre-act p99`).
+- **This is the toy. Production's compiled shift past 15M has never been read.** The CPU eager census on 10
+  production states read ≤ 0.055.
+- A straight line through the toy's taken-action reads (≈ +0.001 per 1M steps) would cross 0.18 at about 140M and
+  0.72 at about 650M. X26's cap is 500M. That line is an ILLUSTRATION (UNVERIFIED for production), not a forecast.
+  It says a RED read during X26 is plausible, and a refusal is possible but not expected.
+
+**The field, and the reader** (the canary record `gen3_canary_watch_v1`, at P_X26 since T36). Each canary, at
+update 10 and then every 100 updates (≈ 9.8M steps ≈ 1.7 h of X26), appends one line to
+`models/rb_x26_s2601/canary_verdicts.jsonl`:
+- `.watch.scheduled.clip_margin.max_abs_dlogp.compiled` is THE WATCHED NUMBER, the compiled learner's taken-action
+  shift on all 64 rows at the live weights.
+- Beside it: `.eager`, the eager bf16 yardstick; `."fp32 reference"`, ≈ 0; and `.margin`, 0.72.
+- An unconfirmed or FATAL record also carries `.watch.confirm_slice1` and `.watch.confirm_slice2`.
+
+The startup gate at every 6-hourly restart prints the same numbers on its R1 rule line in `launcher_child.log`.
+
+```
+jq -r 'select(.watch.scheduled.clip_margin != null) | [.update, .num_timesteps, .verdict,
+  .watch.scheduled.clip_margin.max_abs_dlogp.compiled, .watch.scheduled.clip_margin.max_abs_dlogp.eager,
+  .watch.scheduled.clip_margin.margin] | @tsv' models/rb_x26_s2601/canary_verdicts.jsonl
+grep -o 'max |dlogp| compiled [^,]*, eager [^,]*' models/rb_x26_s2601/launcher_child.log    # the restart gates
+```
+
+The `jq` line was validated on records written through the REAL writer (`CompileCanary._record` +
+`GradWatch.record` + `clip_relocation`, 2026-10-15). No live run carries the record yet: the toys and R-60 are
+pinned before it.
+
+**Who reads it:** the X26 Training session, at every 25M read point, before every planned 6-hourly restart, and on any
+`[CompileCanary]` warning. It is one `jq` line. Write s for the largest `compiled` value read so far.
+
+| band | s (compiled, taken action) | action |
+|---|---|---|
+| **GREEN** | s ≤ 0.144 (80 % of 0.18) | none |
+| **AMBER** | 0.144 < s ≤ 0.18 | the orchestrator STAGES the raise: a commit that sets `R1_LOGPROB_SHIFT_MAX` to s rounded UP to 2 significant digits, with headroom (≥ 1.25 s), so M = 4× it; and the delivery (the override flag of §4.1 item 2, or the fork below). Queue `scripts/ops/diag_bf16_canary.sh rb_x26_s2601` (≤ 20 min, GPU) for the next restart window: it confirms the shift is shared by eager (Ebf of the same order) and that C32 is still ≈ 0, i.e. weight growth, not compiler drift |
+| **RED** | 0.18 < s ≤ 0.72 | the 4× premise is broken, but the run is still categorically safe (no row can switch while s ≤ M). **Do not stop the run.** At the NEXT planned 6-h restart window, deliver the raised constant and run the diag in the same window. With the override: stop the run at its restart, then resume `--model <its latest checkpoint>` with the raised value, at the SAME pin, verified by `--dry-run`. Without it: fork X26's latest checkpoint into a new run dir at P_X26 + the one-constant commit. The fork carries the fork hazards (pool auto-seeded, `--lineage-run` for Tier 1, read points continue on the fork), so it is a deviation banked in Amendment 2's notes. **Never `--sync-to-main`** (it walks X26 onto all of HEAD) |
+| **REFUSED** | s > 0.72, or any clip-branch switch, or any canary FATAL / startup-gate refusal | FATAL_CONFIG, not restarted. Follow the documented procedure, `../training/compile_flags.md` "The bf16 canary FATAL on trained weights": the diag on the run's own checkpoints in a GPU window. A healthy-but-large shift (Ebf similar, C32 ≈ 0) means raise the constant, re-run the gate, and resume from the latest checkpoint. Cbf off the reference with NO branch flip, or C32 off at the fp32 bar, means the fixture was not the whole story: X26 continues on the fp32 trunk through an **Amendment 3** (never silently), from the SAFE ROLLBACK POINT the FATAL prints |
+
+**A second, descriptive trigger:** if `compiled` exceeds 2 × `eager` on two consecutive canaries, run the diag in the
+next restart window. The ratio on the toy's 64 rows stayed ≤ 1.4, so 2× would point at the compiler, not the weights.
 
 ## 5. The GPU SCHEDULE from tonight to the X26 launch
 
@@ -545,17 +730,21 @@ per the owner's P0.1 quota priority.
 
 ### 5.1 The order
 
+> **SUPERSEDED 2026-10-15 (the exit check) by §4.1's W0–W5.** The deletion chain landed three days early, so
+> the order is now: G1 and G2 DONE or running; G3 DROPPED; G4 rides in W4; G5 goes after X26; G6 becomes W1–W4.
+> The table below is the plan as written, kept for its reasons.
+
 | # | job | needs a build? | GPU-h | what it buys |
 |---|---|---|---|---|
-| **G1** | **T-ENT seed 4001**, fresh at HEAD, to its toy plateau (§3.4). Its first ~20 minutes are the toy's GPU check: the compiled path plus bf16 on a flag combination never compiled before | **no** | 2–6 expected, ≤ 9 | the first toy; the measured toy fps; the first real Tier-1 ticks (T33) |
-| G2 | T-ENT seed 4002, then seed 4003 | no | 4–12, ≤ 18 | the 3 replicates |
-| G3 | **R-60, the production scout:** continue `rb_bf_eb_s2001` (pre-declared as the lowest seed index, not chosen by strength) from 15M to 60M in its own lineage, at its recorded pin (`f45d0c27`) and recipe | no | ≈ 7.7 | the only production curve past 15M before X26: matched-step references at 30M / 60M (R-T1c); the first production Tier-1 check (60M vs the 10M W-back); the K9(b) share at 4× the longest horizon so far; restart telemetry for T24. **It is a scout, never a comparator for X26** (pre-fix learnset, pre-U3 init) |
-| G4 | The R-T1 / R-T1b crosses (toy 15M and 5M against EB), in a GPU window | no | UNVERIFIED (≤ ~2) | G_m |
-| G5 | **T-MLP** GPU check (20 min), then seeds 4101–4103 to their plateau | **yes** (T34, after T31) | ~0.3 + 8–18 | G_m′, G_p′ |
-| G6 | **The exit-check sanity screen** (E7): 2 fresh production seeds × 5M at P_X26, then the 2 × 8 cross | yes (P_X26 = after T30-U3) | ≈ 1.8 + the cross | E7 |
+| **G1** ✅ (died 72.66M, I30) | **T-ENT seed 4001**, fresh at HEAD, to its toy plateau (§3.4). Its first ~20 minutes are the toy's GPU check: the compiled path plus bf16 on a flag combination never compiled before | **no** | 2–6 expected, ≤ 9 | the first toy; the measured toy fps; the first real Tier-1 ticks (T33) |
+| G2 (s4002 ✅ 100M cap; s4003 running) | T-ENT seed 4002, then seed 4003 | no | 4–12, ≤ 18 | the 3 replicates |
+| G3 ❌ DROPPED 2026-10-15 (§4.1) | **R-60, the production scout:** continue `rb_bf_eb_s2001` (pre-declared as the lowest seed index, not chosen by strength) from 15M to 60M in its own lineage, at its recorded pin (`f45d0c27`) and recipe | no | ≈ 7.7 | the only production curve past 15M before X26: matched-step references at 30M / 60M (R-T1c); the first production Tier-1 check (60M vs the 10M W-back); the K9(b) share at 4× the longest horizon so far; restart telemetry for T24. **It is a scout, never a comparator for X26** (pre-fix learnset, pre-U3 init) |
+| G4 → W4 | The R-T1 / R-T1b crosses (toy 15M and 5M against EB), in a GPU window | no | UNVERIFIED (≤ ~2) | G_m |
+| G5 → after X26 (F27) | **T-MLP** GPU check (20 min), then seeds 4101–4103 to their plateau | **yes** (T34, after T31) | ~0.3 + 8–18 | G_m′, G_p′ |
+| G6 → W1–W4 | **The exit-check sanity screen** (E7): 2 fresh production seeds × 5M at P_X26, then the 2 × 8 cross | yes (P_X26 = after T30-U3) | ≈ 1.8 + the cross | E7 |
 | G7 | **X26 launch** (`rb_x26_s2601`) | — | 17 per 100M; ≤ 86 at the cap | the deep run |
 
-**The expected timeline.** G1–G4 fill Thu 10-15 to Sat 10-17 (about 20–35 GPU-h). T34 should land by about
+**The expected timeline (as planned at `3899277a`; superseded by §4.1).** G1–G4 fill Thu 10-15 to Sat 10-17 (about 20–35 GPU-h). T34 should land by about
 Sat 10-17, so G5 runs Sat to Sun. G6 runs when U3 lands, about Sun 10-18 to Mon 10-19. X26 launches about Mon 10-19
 to Tue 10-20. If the deletion chain slips, the GPU is never idle: more T-ENT or T-MLP seeds, or extend R-60 toward
 100M (each 10M ≈ 1.7 GPU-h). The rented-card cloud benchmark (weekend of 10-17) does not use the local GPU.
@@ -612,6 +801,9 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
   those sessions stage `data/` changes on a branch.
 - **R5. Tier 1 misbehaves on its first real use.** *Mitigation:* T33 runs it on the toys first.
 - **R6. A toy needs the pre-deletion code for a later re-run.** *Mitigation:* the `pre-legacy-deletion` tag (U0).
+- **R7. The compiled bf16 learner's log-prob shift grows with training until the canary refuses** (the toy: 0.050 → 0.110
+  over 15M → 72.66M; the refusal is at 0.72). *Mitigation:* §4.2's watch, with its bands and actions, and T37's
+  check-only override so a RED read is fixed at a restart without a fork.
 
 ### 6.2 Questions for the owner (strategic only)
 
@@ -707,6 +899,39 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
   holds either way.
 - **F22 (T32, A2-F4). The launcher dry-run under a scratch `GEN3AI_MODELS_DIR` sizes checkpoints at 0** (no sized
   run there): REQUIRED 32.65 GiB vs ≈ 60 GB real at 500M on the 1M cadence. E10's dry-run runs from the main checkout.
+- **F23. The slow-tier record HIDES a known red.** `compiled_first_update_test` (CPU) fails at every commit since
+  `ed58a3ad` (an Inductor C++ codegen error; the post-U3 sweep `87e493c3`). Its row still reads the 2026-10-09 pass,
+  because a recorded FAIL fails the static tier for every agent. So "no recorded FAIL" (E5) is not "no known red"
+  today. The class: the file has no state for "known red, fix in flight", visible but not blocking others. That is
+  TECH DEBT, owner-gated, and is not dispatched by this doc.
+- **F24. The brief's headroom figure read the wrong column.** "0.136, 76 % of 0.18" is the compiled arm's maximum over
+  EVERY legal action (`legal_logp_max_abs`). The margin rule judges the TAKEN action (`log_prob_max_abs`): 0.110 at
+  most, which is 61 %. And 0.18 is not the refusal: the refusal is at M = 0.72, 6.5× above today's read (§4.2).
+- **F25. All three T-ENT seeds are pinned at `3899277a`, BEFORE T36.** Their canary is the pre-fix,
+  boundary-sensitive one: s4001 died of it, and s4002 survived to its cap. Their canaries record no shift (no watch
+  record). If s4003 draws a canary FATAL, read it as I30's class first: run the diag on its checkpoints, then resume
+  into a NEW run dir from the printed rollback point (F17). It is not evidence against the compiler until the diag
+  says so.
+- **F26. The T36 CUDA confirmation lived only in `~/.cache`.** `verify_compile_gate_cuda.sh` does not write
+  `slow_tier_status.json`, so the three compile-gate CUDA rows still read `skip` (`19d840cc`) beside a 4/4 PASS at
+  `87e493c3`. The diag's `VERDICT.md` checklist was left unfilled. This commit copies the summaries into
+  `../research_state/measurements/x26_exit_check_2026-10-15/gpu_t36_87e493c3/`. The five criteria were re-verified from
+  the `gpu_*.json` (I30's row), and `compile_flags.md` and the ledger now record the confirmation.
+- **F27. T-MLP goes after X26: a departure from the owner's 10-09 roadmap order** ("toy controls, then the exit check,
+  then X26"). T34 is unbuilt (≈ 1.5 agent-days), and its seeds cost 8–18 GPU-h, so holding X26 for it costs about
+  2–3 days of the deep run. T-ENT's three seeds finish first. **For the owner** (the 15-minute rule; the
+  recommendation is X26 first).
+- **F28. A live run's pin cannot move at a restart** (`worktree.resolve_pin` refuses it, by design), and
+  `--sync-to-main` moves it to all of HEAD. So any mid-run change to a CHECK constant (the canary margin) needs either a
+  check-only override flag (T37) or a fork. This should be decided before P_X26.
+- **F29. Amendment 2 §A2.5's "~25 launcher restarts at 6 h (≈ 3–4 days)" is off by about 2×.** 500M at ≈ 10.3 min
+  per 1M is ≈ 86 h, about 14 restarts. It is a declared-limit sentence, not a rule, so the registration is not edited.
+  Its claim (Adam state resets at each restart) is unaffected.
+- **F30. The E7 and R-T1b references "the 8 EB `final_model_stage1_5M.zip`" exist for s2001–s2004 only.**
+  s2005–s2008 use their 5M checkpoints (§3.5's dated note), recorded before any cell.
+- **F31. The shared compile cache sits at 18.56 of its 20 GiB cap** (the E10 dry-run). It prunes itself by design
+  (`compile_cache_shared.prune`), so X26's first compile may evict other runs' entries and cost them a cold compile.
+  Informational.
 
 ## 8. Decision record
 
@@ -733,3 +958,11 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-15 | **T30-U3 landed (config v157): move resolution DERIVED, the seven per-action blocks and the critic's threat injection DELETED; the fresh-init stream CHANGED (D-LD7).** I7 is DONE; the T30 critical path (U0 → U1 → U3) is complete. Every X26 seed (and G6's exit-check seeds) starts at or after U3; a pre-U3 seed replicated at HEAD is not "same pin + seed". T-ENT checkpoints keep loading (vacuous: no op, no move resolution) | an RNG burn that replays the deleted modules' draws (rejected in D-LD7) | the ledger's U3 entry; `research_state/measurements/legacy_deletion_u3_init_2026-10-15/` |
 | 2026-10-15 | **T32: X26's ride-along registration is AMENDED (Amendment 2) before any X26 data; the K9(b) share's every-update record is PINNED by a test, not duplicated into a jsonl** — the closing test's tie-share handling adopted for X26 (adapted: a real mismatch is a GIGO stop, not a replaced seed); read points 10M / every 25M / plateau / FINAL; R1's USABLE threshold never looser than registered (max of 0.56 and the same-checkpoint floor); (d)'s offline-prediction label DESCRIPTIVE; Q1 one seed + a second at the first FLAT, Q4 SPRT / mirrored OFF, Q2 rule + validated Tier 1 recorded as the orchestrator's defaults | a per-update jsonl beside TB (F5's premise was wrong: TB already holds every update, and a second writer of one quantity is a second producer to keep in sync); re-measuring the heads' overhead before launch (inside every measured end-state throughput) | `ridealong_baseline/PREREGISTRATION.md` Amendment 2; `ridealong_update_test.py`, `diagnostics_cadence_test.py`; `smoke_endstate_2026-10-15/`; ledger 2026-10-15 REGISTRATION AMENDMENT |
 | 2026-10-15 | **T36 BUILT, two refinements of the row above.** (a) **M = 0.72, not ≈ 0.65**: the 32-seed dithered null at the FATAL's weights read an eager bf16 shift of 0.173, above the census max 0.161, so `R1_LOGPROB_SHIFT_MAX` = 0.18 (rounded up to 2 significant digits, as the bf16 bars are) and M = 4 × 0.18; PROVISIONAL until the compiled arm's CUDA shift is read. (b) **The confirmation is the two DISJOINT HALVES (rows 0–31 and 32–63), and the scheduled check and the startup gate keep all 64 rows** — "slice 0 = rows 0–31" would have cut the scheduled check's coverage (a half leaves the moves head below the per-parameter floor). Added: the margin is a CHECKED precondition on every rung (an arm whose \|Δ log π\| exceeds M, or that switches any row, is refused by name), and every rule line / canary record carries the compiled arm's shift | moving rows only to M (no headroom for a provisional margin); EXCLUDING boundary rows (changes the advantage normalisation and drops their policy gradient from the check); halving the scheduled check | `compile_regions_clip_margin_test.py`, `compile_regions_clip_margin_fatal_test.py` (212 / 992 → 0 / 992 at B = 64, fails on revert), `compile_canary_test.py` (a one-row disagreement no longer confirms itself, fails on revert); ledger 2026-10-15 GIGO FIX |
+| 2026-10-15 | **THE EXIT CHECK ASSEMBLED at `87e493c3`** (§4's status column): E1, E2, E4, E8, E9, E10, E12 PASS; E3 DEFERRED; E5, E6, E7, E11 (the freeze announcement) OPEN. E9 re-checked (both launch-gate tests green at `87e493c3`), E10 re-run (`checkargs` exit 0, the dry-run "would launch", the report identical to §A2.3's) | — | `../research_state/measurements/x26_exit_check_2026-10-15/` (`e9_*`, `e10_*`) |
+| 2026-10-15 | **I30 CLOSED: the T36 fixture fix CONFIRMED on CUDA at `87e493c3`**; X26 keeps the production bf16 compiled learner; `R1_LOGPROB_SHIFT_MAX` stays 0.18 (the compiled arm's taken-action shift peaks at 0.110 on the toy) | the fp32-trunk fallback (its trigger, a branch-free compiled disagreement or a C32 error, did not occur: C32 ≤ 4e-6, 0 relocated flips in every arm) | `gpu_t36_87e493c3/` (the summaries), `canary_shift_87e493c3.json`; ledger 2026-10-15 MEASUREMENT |
+| 2026-10-15 | **P_X26 = `main` once the CPU-Inductor fix of `compiled_first_update_test` lands** (proposed; the orchestrator fixes the sha), FIXED when E7's first seed launches. T37 (the check-only margin override) is RECOMMENDED inside it | `87e493c3` now: the fix is in the compiled learner's area, so if it touches production code, E7 must screen it, and either way E5 needs a recorded green row. Waiting for U2 / U4, T38 or T39: X26 never runs them, or they are offline | §4.1 |
+| 2026-10-15 | **U2 / U4 may land DURING X26**, each with (a) E3's init identity, (b) a FORWARD identity on a v157 production checkpoint at HEAD, (c) X26's latest checkpoint still loading at HEAD, and (d) no `data/` change; else after X26's FINAL | holding them for X26's end (unneeded: the pin never runs them); landing them with the init proof alone (every offline reader of X26 runs at HEAD, so a forward change would silently move Tier 1, the ride-along reads and the toy crosses) | §4.1 |
+| 2026-10-15 | **G3 (R-60) DROPPED; R-T1c reads X26 at 30M / 60M instead** | spending 7.7 GPU-h on it before X26 | R-60's pin `f45d0c27` predates T36 and the canary watch record: it cannot measure the compiled shift (the bf16 exposure question) and carries the false-FATAL fixture. X26 produces every other product within ~10 GPU-h on current code and data |
+| 2026-10-15 | **The GPU order W0–W5** (§4.1): s4003 finishes; then the CUDA checks of what P_X26 changed; E7's two seeds, one at a time, with **E6 read from seed 2701's updates 10–50** (no separate GPU time); ONE h2h window for E7's cross + R-T1 + R-T1b; then X26. Earliest launch Fri 10-16 ≈ 00:00–01:00 PDT | preempting s4003 (gains ~5 h, loses the third replicate); a separate E6 run; T-MLP before X26 (F27, to the owner) | §4.1; the bf16 A/B's 8 × 8 cross ≈ 1 GPU-h for 64,000 pairs |
+| 2026-10-15 | **E7's coded rule committed before any seed** (`sanity_rule.py`: PASS iff pooled Δ̂ ≥ −3.0 and each seed's ≥ −6.0, with clean run gates; rule 8: within 1e-9 of a bound is not a crossing; INCONCLUSIVE on a missing cell or gate); E7's argv = X26's with `--steps 5000000`, its own seed / name, `--snapshot-ladder-games 0`, `--pin-commit P_X26`; the s2005–s2008 references are their 5M checkpoints | `cross_stat` (it needs a square matrix; E7 is 2 × 8 and its rule is a point screen, not an interval test) | `sanity_rule.py self-check` OK (7 cases) |
+| 2026-10-15 | **THE bf16 HEADROOM WATCH** (§4.2): the watched number is `canary_verdicts.jsonl` `.watch.scheduled.clip_margin.max_abs_dlogp.compiled` (the TAKEN action's shift, the one the margin rule judges), read with one `jq` line at every 25M read point and before every planned restart. GREEN ≤ 0.144; AMBER ≤ 0.18 → stage the raised constant + the diag; RED ≤ 0.72 → deliver it at the next planned restart (the T37 override, else a fork), never stopping the run for it; REFUSED → the documented FATAL procedure, the fp32 trunk only through an Amendment 3 | "> 0.18 ⇒ re-pin at the next restart" as briefed (the launcher refuses a pin move at a restart, F28); watching the all-legal-actions maximum (not what the rule judges, F24); stopping X26 at 0.18 (the run is categorically safe below M = 0.72) | `compile_regions._clip_margin_rule`, `GradWatch.fill_margin`; the reader validated on records written by the real writer |

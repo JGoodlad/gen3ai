@@ -1833,14 +1833,15 @@ The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.
       `compile_regions_resolution_test.py` (CPU mechanics; `test_a_10pc_…` pins the limit, so a sharper gate fails
       it and updates this bullet). The CUDA numbers at HEAD — the K9 golden's fresh weights and the `production`
       baseline's trained weights, four representative parameters — come from
-      `scripts/ops/verify_compile_gate_cuda.sh` (`summary.json`, "resolution"). **PENDING its first GPU run.**
+      `scripts/ops/verify_compile_gate_cuda.sh` (`summary.json`, "resolution"). **First GPU run 2026-10-15 at `87e493c3`: PASS 4/4**; its
+      `summary.json` is committed at `designs/research_state/measurements/x26_exit_check_2026-10-15/gpu_t36_87e493c3/`.
     - The fp32 gate's teeth are unchanged and still pinned: a 10 % plant is FATAL on an fp32 learner
       (`compile_regions_independence_test.py` on CPU, `compile_regions_fixed_mass_cuda_test.py` on CUDA — both
       build `trunk_precision="fp32"` explicitly since the bf16 adoption).
   - 🚨 **A FALSE-FATAL mode, found 2026-10-15** (`rb_toy_ent_s4001`): the rule's per-parameter statistic crosses the
     PPO CLIP BOUNDARY of any fixture row whose ratio sits within rounding of it, so two healthy arms can read 30× apart
     (CPU: 18 % of healthy pairs above K at that FATAL's weights). Diagnosis, the GPU read and the fixture fix
-    (T36, BUILT 2026-10-15; its CUDA confirmation PENDING): "The bf16 canary FATAL on trained weights" below.
+    (T36, BUILT 2026-10-15; CONFIRMED on CUDA at `87e493c3`): "The bf16 canary FATAL on trained weights" below.
   - **Decision record — the bf16 gate's reference.**
 
     | Date | Decision | Why | Evidence |
@@ -1866,7 +1867,7 @@ is the measurement's `scripts/update_bench.py`. ⚠️ The `cudagraphs` PRESET a
 the first (diagnostic) update (F-PB-2); lever C's route is `--learner-cudagraphs` (below), and `install` refuses the
 preset combined with it.
 
-### 🚨 The bf16 canary FATAL on trained weights (`rb_toy_ent_s4001`, 2026-10-15) — diagnosed on CPU; the FIXTURE FIXED (T36), its GPU confirmation PENDING
+### 🚨 The bf16 canary FATAL on trained weights (`rb_toy_ent_s4001`, 2026-10-15) — diagnosed on CPU; the FIXTURE FIXED (T36), CONFIRMED on CUDA at `87e493c3`
 
 **The event.** The toy control `rb_toy_ent_s4001` (`--arch production` + 44 ablations: entity tokens and attention, no
 damage op, no move resolution; bf16 trunk; `--compile-trainer`; pinned `3899277a`) ended FATAL at 72,658,984 steps
@@ -1963,9 +1964,9 @@ reads that underlie this section: `python -m main.ops.diag_bf16_canary cpu --ckp
 | recalibrate the bar on trained states | — | **NO**: (iii) is not shown; a bimodal statistic has no bar with teeth (healthy flips read up to 31×) |
 | fp32 trunk for X26 | `train_ms` +29 % (42.1 → 54.3 s); leaves the adopted, A/B-passed recipe | a working STOPGAP: fp32 arms differ by ~1e-6 in log-prob, so flips are ~10^4× rarer — but the same latent boundary sits in the fp32 rule |
 | an eager learner | the whole compiled speedup (not measured for this surface; UNVERIFIED) | NO: it removes the canary's subject, not the defect |
-| **fix the canary's FIXTURE (standing rule 8)** | ~0.5–1 agent-day + this GPU window to validate + a `verify_compile_gate_cuda.sh` re-run | **BUILT (T36, below)**; the CUDA confirmation PENDING |
+| **fix the canary's FIXTURE (standing rule 8)** | ~0.5–1 agent-day + this GPU window to validate + a `verify_compile_gate_cuda.sh` re-run | **BUILT (T36, below)**; CONFIRMED on CUDA at `87e493c3` |
 
-**THE FIX (T36, `gen3_r1_clip_margin_v1`, BUILT 2026-10-15; the CUDA confirmation PENDING).** Standing rule 8 —
+**THE FIX (T36, `gen3_r1_clip_margin_v1`, BUILT 2026-10-15; CONFIRMED on CUDA at `87e493c3`, see "The CUDA confirmation" below).** Standing rule 8 —
 *exclude inputs within a rounding error of a decision boundary rather than tolerating them by chance* — applied to the
 gate's own fixture. Three parts, in `compile_regions` / `compile_canary`, for the STARTUP GATE and the CANARY alike
 (they share `r1_rungs` → `_r1_judge`), under the bf16 rule and the fp32 rule alike (the fp32 rule has the same
@@ -2030,6 +2031,23 @@ read; `fp32_rule.over_bar` empty. If Cbf's shift exceeds 0.18, raise the constan
 Cbf is off the reference with NO branch flip, or C32 is off at the fp32 bar, the fixture was not the whole story —
 X26 takes the fp32 trunk and the miscompile is hunted with the localisation arms. **Order: T36 (built) → the GPU
 window → X26 on the production bf16 compiled learner.**
+
+**The CUDA confirmation (2026-10-15, `87e493c3`, the Training session's window).**
+- `verify_compile_gate_cuda.sh`: PASS 4/4.
+- `diag_bf16_canary.sh rb_toy_ent_s4001` (8 checkpoints, 15M to the FATAL) met every criterion of the paragraph above:
+  - the canary's replay passes at the FATAL's weights (relocated ratio 0.655);
+  - `relocated.branch_flips` is 0 for every arm at every checkpoint;
+  - the relocated null reads P(ratio > K) = 0 for the Ebf pairs and for Cbf;
+  - `fp32_rule.over_bar` is empty, and C32 sits within 4e-6 of E32;
+  - Cbf's `forward_vs_E32.Cbf.log_prob_max_abs` peaks at **0.110** (FATAL) ≤ 0.18, so `R1_LOGPROB_SHIFT_MAX` stays.
+- The UNRELOCATED canary would have refused at 15M too (ratio 19.5, 32 flips): the same boundary class, at another
+  checkpoint.
+- **The shift GROWS with training:** taken action 0.050 (15M) → 0.107 (70M) → 0.110 (FATAL). Eager bf16 grows alike, so
+  the growth is the weights', not the compiler's.
+- X26 watches it in-run: `canary_verdicts.jsonl` `.watch.scheduled.clip_margin.max_abs_dlogp.compiled`, with bands and
+  actions in `designs/endstate/design_x26_readiness.md` §4.2.
+- The per-checkpoint table is `designs/research_state/measurements/x26_exit_check_2026-10-15/canary_shift_87e493c3.json`.
+  The diagnostic's own `VERDICT.md` checklist was left unfilled; the criteria above were re-read from its `gpu_*.json`.
 
 **The watch-list record** (`gen3_canary_watch_v1`, this change): every canary record now carries the pointer head's
 per-check ratio, compiled distance and eager yardstick (`designs/training/learner_lifecycle.md`), so the next run's

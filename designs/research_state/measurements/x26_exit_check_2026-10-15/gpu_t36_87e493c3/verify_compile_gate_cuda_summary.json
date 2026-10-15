@@ -1,0 +1,135 @@
+{
+ "verdict": "PASS",
+ "commit": "87e493c35e6a",
+ "tree": "clean",
+ "pytest_exit": 0,
+ "elapsed_s": 718,
+ "tests": {
+  "src.agents.model.compile_regions_fixed_mass_cuda_test::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda": "pass",
+  "src.agents.model.compile_regions_fixed_mass_cuda_test::test_fixed_mass_R1_under_the_bf16_rule_on_cuda_passes_names_a_NaN_and_has_its_measured_resolution": "pass",
+  "src.agents.model.compile_regions_trained_cuda_test::test_the_production_baselines_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": "pass",
+  "src.agents.model.compile_regions_trained_cuda_test::test_the_production_baselines_trained_weights_pass_the_R1_gate_under_the_bf16_rule_on_cuda": "pass"
+ },
+ "junit_unreadable": null,
+ "resolution": {
+  "bf16_fresh": {
+   "what": "fixed_mass K9 golden learner, FRESH weights, production bf16 recipe, CUDA Inductor, B=2048",
+   "regime": "fresh",
+   "gate_resolution": {
+    "n_judged": 230,
+    "median": 0.22884903901880319,
+    "p90": 0.6975540964668323,
+    "max": 1.211007784903377,
+    "min": 0.11610501642932881
+   },
+   "confirmed": {
+    "features_extractor.pokemon_encoder.move_network.0.weight": {
+     "resolution": 0.34501400335538757,
+     "passes_at": 0.17250700167769378,
+     "refused_at": 0.6900280067107751
+    },
+    "features_extractor.team_transformer.transformer_layers.0.linear1.weight": {
+     "resolution": 0.21787301934105907,
+     "passes_at": 0.10893650967052954,
+     "refused_at": 0.43574603868211814
+    },
+    "features_extractor.projection.weight": {
+     "resolution": 0.6895672581895854,
+     "passes_at": 0.3447836290947927,
+     "refused_at": 1.3791345163791708
+    },
+    "pointer_head.move_proj.weight": {
+     "resolution": 0.250628226859833,
+     "passes_at": 0.1253141134299165,
+     "refused_at": 0.501256453719666
+    }
+   },
+   "per_rung": {
+    "live": {
+     "resolution": {
+      "median": 1.2067126251198679,
+      "p90": 1.2120606581403393,
+      "max": 1.2196885861090616,
+      "min": 0.22227091680464983
+     },
+     "same_precision": {
+      "d_compiled_vs_eager_bf16": {
+       "median": 0.0007382036681670186,
+       "p90": 0.0015919100277559258,
+       "max": 0.008038722207230743
+      },
+      "d_eager_bf16_vs_fp32": {
+       "median": 0.009909016569685692,
+       "p90": 0.015090294843604664,
+       "max": 0.04882023504879748
+      },
+      "ratio_ce_over_max_er_floor_max": 0.08006695425528629
+     }
+    },
+    "perturbed scale=0.05 seed+0": {
+     "resolution": {
+      "median": 0.2167515818242746,
+      "p90": 0.43812327893154207,
+      "max": 1.9671154962730821,
+      "min": 0.11610501642932881
+     },
+     "same_precision": {
+      "d_compiled_vs_eager_bf16": {
+       "median": 0.011573869031683767,
+       "p90": 0.02581658466367062,
+       "max": 0.09260389632867895
+      },
+      "d_eager_bf16_vs_fp32": {
+       "median": 0.017956737187587186,
+       "p90": 0.0372465761325564,
+       "max": 0.16092753550637123
+      },
+      "ratio_ce_over_max_er_floor_max": 1.437813073652792
+     }
+    }
+   }
+  },
+  "bf16_trained": {
+   "what": "the 'production' baseline's trained weights (ridealong.* dropped as declared), production bf16 recipe, CUDA Inductor, B=2048",
+   "regime": "trained",
+   "gate_resolution": {
+    "n_judged": 259,
+    "median": 0.24599634712081309,
+    "p90": 0.5085959284652025,
+    "max": 1.2121525322268336,
+    "min": 0.11503859848724712
+   },
+   "confirmed": {
+    "features_extractor.pokemon_encoder.move_network.0.weight": {
+     "resolution": 0.3712515073821928,
+     "passes_at": 0.1856257536910964,
+     "refused_at": 0.7425030147643856
+    }
+   },
+   "per_rung": {
+    "live": {
+     "resolution": {
+      "median": 0.24599634712081309,
+      "p90": 0.5085959284652025,
+      "max": 1.2121525322268336,
+      "min": 0.11503859848724712
+     },
+     "same_precision": {
+      "d_compiled_vs_eager_bf16": {
+       "median": 0.023280492375741507,
+       "p90": 0.04404829011150615,
+       "max": 0.08576087948604755
+      },
+      "d_eager_bf16_vs_fp32": {
+       "median": 0.020962610669975134,
+       "p90": 0.04284527994488225,
+       "max": 0.10107242568515801
+      },
+      "ratio_ce_over_max_er_floor_max": 2.8545674167982398
+     }
+    }
+   }
+  }
+ },
+ "read_me": "designs/training/compile_flags.md 'The bf16 gate's resolution' says what these numbers mean"
+}

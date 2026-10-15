@@ -1,0 +1,22 @@
+{
+ "mode": "gpu",
+ "run": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001",
+ "torch": "2.8.0+cu126",
+ "cuda": "12.6",
+ "device_name": "NVIDIA GeForce RTX 3080 Ti",
+ "threads": 8,
+ "batch": 2048,
+ "dither_rel": 0.001953125,
+ "commit": "unknown",
+ "argv": [
+  "gpu",
+  "--run",
+  "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001",
+  "--out",
+  "/home/goodlad/.cache/gen3ai/diag_bf16_canary/87e493c35e6a",
+  "--budget-min",
+  "14"
+ ],
+ "started": 1792101446.9712825,
+ "buffer": "/home/goodlad/dev/gen3ai/src/agents/model/testdata/k9_golden_buffer_rb_toy_ent_s4001_pin.npz"
+}

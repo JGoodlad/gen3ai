@@ -25915,3 +25915,56 @@ not the whole story: the fp32 trunk for X26 and the localisation arms.
    diagnostic gained `--buffer` (default `auto`: a run's committed pinned rows, `testdata/k9_golden_buffer_<run>_pin.npz`,
    else the golden), so `diag_bf16_canary.sh rb_toy_ent_s4001` re-reads the FATAL on ITS rows with no new argument.
    `verify_compile_gate_cuda.sh` reads the CURRENT golden (it judges the gate as production runs it).
+
+### 2026-10-15 · MEASUREMENT · **The X26 EXIT CHECK assembled at `87e493c3`: 7 of 12 rows PASS, E3 DEFERRED, E5 / E6 / E7 / E11's announcement OPEN; T36's canary fix CONFIRMED on CUDA (I30 CLOSED); the compiled bf16 arm's TAKEN-action log-prob shift on the toy grew 0.050 (15M) → 0.110 (72.66M), 61 % of `R1_LOGPROB_SHIFT_MAX` 0.18 and 6.5× below the refusal at 0.72, and is now WATCHED in-run; P_X26 = main after the CPU-Inductor fix; R-60 DROPPED; earliest X26 launch Fri 10-16 ≈ 00:00–01:00 PDT**
+
+**What was read (CPU only, rule 5b, no GPU).**
+- E10: `checkargs` on X26's argv (Amendment 2 §A2.2) exits 0, and its report is identical to §A2.3's. The launcher
+  `--dry-run` "would launch" FRESH, pinned at `87e493c3`, torch 2.8.0+cu126.
+- E9: both launch-gate tests are green at `87e493c3`.
+- E11: 330 GB free.
+- E5: `slow_tier_status.json` has no recorded FAIL, but it hides one known red, `compiled_first_update_test` on CPU
+  (FINDING F23 of the readiness doc).
+- E7's coded rule (`sanity_rule.py`) is committed before any seed.
+- A sample of the EB and T-ENT references loads at `87e493c3`.
+- Evidence: `designs/research_state/measurements/x26_exit_check_2026-10-15/`.
+
+**T36 on CUDA** (the Training session's window at `87e493c3`; the summaries are copied into that folder):
+- `verify_compile_gate_cuda` PASS 4/4.
+- `diag_bf16_canary` on `rb_toy_ent_s4001` (8 checkpoints):
+  - the relocated replay passes at the FATAL's weights (0.655);
+  - 0 relocated clip-branch flips in every arm;
+  - the relocated null is 0 for the Ebf pairs and for Cbf;
+  - the fp32 rule is clean (C32 ≤ 4e-6 from E32);
+  - Cbf's taken-action shift is ≤ 0.110.
+- The fp32-trunk fallback is NOT triggered, and `R1_LOGPROB_SHIFT_MAX` stays 0.18.
+
+**The headroom read.**
+
+| | 15M | 30M | 45M | 60M | 66M | 70M | 72M | FATAL |
+|---|---|---|---|---|---|---|---|---|
+| Cbf taken | .050 | .060 | .051 | .068 | .059 | .107 | .086 | .110 |
+| Ebf taken | .043 | .055 | .064 | .049 | .107 | .086 | .076 | .082 |
+
+- These are the 64 rows, against fp32 eager. Eager grows with the compiled arm, so the growth is the weights', not
+  the compiler's.
+- The "0.136 = 76 %" in the brief was the all-legal-actions maximum (0.136 at 72M). The margin rule judges the
+  taken action.
+- This is the TOY. Production's compiled shift past 15M has never been read.
+
+**Decisions** (the readiness doc's §4.1 / §4.2 and its Decision record):
+- **The headroom watch.** X26's Training session reads `canary_verdicts.jsonl`
+  `.watch.scheduled.clip_margin.max_abs_dlogp.compiled` at every 25M read point and before every planned restart:
+  - GREEN ≤ 0.144;
+  - AMBER ≤ 0.18: stage a raised constant and the GPU diag;
+  - RED ≤ 0.72: deliver the raised constant at the next planned restart, never stopping the run for it;
+  - REFUSED: the documented FATAL procedure.
+- **Delivery (FINDING F28).** The launcher refuses to move a live run's pin at a restart, so delivering a raised
+  constant needs a check-only override flag (T37, recommended before P_X26) or a fork.
+- **P_X26 = `main` once the CPU-Inductor fix lands**, fixed when E7's first seed launches.
+- **U2 / U4 may land DURING X26** with init AND forward identity on a v157 production checkpoint, a load check of
+  X26's latest checkpoint, and no `data/` change.
+- **R-60 is DROPPED.** Its pin predates T36 and the watch record, so it cannot read the bf16 exposure, and X26
+  produces its other outputs within ~10 GPU-h. R-T1c reads X26 instead.
+- **E6 rides on E7.**
+- **T-MLP goes after X26.** This departs from the 10-09 roadmap order, so it goes to the owner (F27).
