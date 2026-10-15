@@ -1,6 +1,6 @@
 # The LEGACY + JUDGMENT DELETION after the end state's adoption — manifest
 
-**Status: PROPOSED 2026-10-12, pending the owner's decisions in §0. A document only: nothing is deleted by it.**
+**Status: IN PROGRESS (2026-10-15).** §0's decisions D-LD1–D-LD7 ADOPTED at their recommendations as the orchestrator's default (§7; the owner may override before U3 lands). **U0 SHIPPED** (the refusal machinery, the tag `pre-legacy-deletion`, `--arch static_recovery` deleted); progress and the handoff are §8. Proposed 2026-10-12.
 Scoped at `748f90e6` plus the ADOPTION working tree (`designs/production_config.json` carrying the `--arch endstate`
 overlay, `arch_arms.py` with `endstate` an alias and `static_recovery` redeclared with explicit OFF values). Line
 numbers are at that tree; `≈` is an estimate from a line range, and each unit re-measures at its own commit. Format
@@ -215,3 +215,57 @@ Runs already below the floor (`rb_st_*` v143, `rb_x5ab_*` v137) were pinned-only
 | **F-LD-9** | `ExtractorApi.retire_value_threat_inject`'s docstring and the flag note say the OFF build "CONSTRUCTS the projection … so every other parameter's initial bytes equal production's" — after adoption production IS the OFF build, so that sentence is now about the deleted legacy production; harmless until U3 deletes it | U3 |
 | **F-LD-10** | **UNVERIFIED by execution**: that U1 / U2 / U4 leave the K9 golden byte-identical (argued from "OFF builds nothing new / zero-init IsolatedLinears built LAST, no RNG draw" in each flag's registry note and from the static encoder being production already). The units make it a deterministic gate, so a counterexample fails loudly | U1, U2, U4 |
 | **F-LD-11** | `main/visualize_arch.py` imports `PokemonEncoder` (L27, L54); whether the tool still runs at HEAD is UNVERIFIED — delete or repoint it in U4 | U4 |
+
+---
+
+## 7. Decision record
+
+| date | decision | rejected | evidence |
+|---|---|---|---|
+| 2026-10-15 | **D-LD1–D-LD7 ADOPTED at their §0 recommendations** — orchestrator default, owner may override before U3 lands: no floor raise / no signature bump, a `RetiredLever` row per deleted field (D-LD1); DERIVED-on behind each lever's prerequisites (D-LD2); delete `--arch static_recovery` in U0, keep `--arch endstate` to U6 (D-LD3); no bisection, later ablations run pinned at `pre-legacy-deletion` (D-LD4); `turns_since_progress` model-only (A) in U2, (B) optional as U5, never (C) alone (D-LD5); keep `--trunk-layers`, registry default 2 (D-LD6); accept the init-stream break ONCE, in U3, before any X26 / reference seed (D-LD7) | each decision's alternatives in §0 | the closing test's PASS program ("adopt, then delete legacy and the judgments"); `design_x26_readiness.md` Q3 |
+| 2026-10-15 | **D-LD1 + the VACUITY rule** (`design_x26_readiness.md` §3.5, the U0 requirement): a lever whose PREREQUISITES the recorded config lacks is INACTIVE whatever value it recorded, so a TOY checkpoint (`rb_toy_ent_*`: no damage op, no move resolution, every op lever OFF) still loads after every unit. One predicate for the config and the zip (`model_version/adopted_levers.py`); the seven blocks are inert beside `move_resolution on` (F-LD-4) | a plain per-field "recorded ≠ adopted" refusal (refuses every toy); a `_DEAD_FEK_JUDGED` row per block (refuses X26) | `adopted_levers_test.py`: a REAL toy build passes the config and zip judges with all four units in force; the archived `rb_es_end2_s2001` (v154) and `rb_bf_eb_s2001` (v155) are inactive on every lever, `rb_es_prod_s2001` (v153) active on 22 |
+| 2026-10-15 | **The tag `pre-legacy-deletion` = `0a0d9e1d`** (T31's umbrella fix, the tip when U0 branched) | the adoption commit `ed58a3ad` (§2's wording) | every lever AND its OFF path still exist at `0a0d9e1d`, plus the provenance and umbrella GIGO fixes a pinned ablation should not lose; `--arch static_recovery` also still exists there |
+| 2026-10-15 | **The h2h `foreign` fixture, `recorded_version_cross_test` and `play_many_integration_test` cross production with production + `--trunk-layers 2`** (U0's "example that survives") | the legacy pre-adoption network (stops building after U1 / U3 / U4) | trunk depth is KEPT (D-LD6) and changes the state-dict signature; the recorded-version failure those tests pin is on the end-state side, unchanged |
+
+## 8. Progress and the HANDOFF
+
+| unit | state | commit | evidence |
+|---|---|---|---|
+| U0 | **SHIPPED 2026-10-15** | see `git log --grep "legacy-deletion U0"` | `adopted_levers.py` (+ `_test`, 15 tests, 9 fail when the vacuity / inert checks are reverted); `retired_levers._adopted_rows`; `snapshot.sanitize_dead_extractor_kwargs` → `judge_pickled_kwargs`; `--arch static_recovery` refused at parse time (`arch_arms.DELETED_ARMS`, `deleted_flags.md` §1b); tag `pre-legacy-deletion` pushed. F-LD-1 was already fixed at adoption (`delivery_graph.build_extractor` retires both). K9, the obs golden and the delivery graph untouched (no model change) |
+| U1 | NOT STARTED | — | — |
+| U2, U3, U4, U5, U6 | NOT STARTED | — | — |
+
+**The exact next step (U1, lane OP: D1–D6, eight fields).** In a fresh worktree on main:
+1. Delete the eight flags (`--status-facts`, `--ko-ramp`, `--g-ledger`, `--op-reduction`, `--speed-physics`,
+   `--eot-residual`, `--switch-hazard-cost`, `--effective-stats`; each `_` alias) from `main/train/parser/clean_world.py`,
+   their `_resolve` lines in `main/train/config.py`, `extractor_arch.ARCH_ARG_KEYS`, `snapshot.current_model_version`'s
+   keywords, the `ModelVersion` fields (`model_version/fields.py`), `check_compatible` clauses (`compat.py`), the
+   `construct.py` plumbing, the registry rows (`flag_registry.py`; regenerate `designs/flag_registry.md`), the `endstate`
+   overlay keys (`arch_arms.py`) and `PRE_ADOPTION_PRODUCTION` / `legacy_production_config` entries, and the eight keys of
+   `designs/production_config.json` (+ its README).
+2. Make the adopted branch unconditional behind `damage_op` (D-LD2) in `damage_op.py`, `damage_op_pairwise.py`,
+   `damage_op_blocks.py`, `op_reduction.py`, `pointer_head.py`, `extractor_build.py`, `move_resolution.py`; keep
+   `PAIR_OUTCOME_COORDS`' WIDTH (F-LD-7); `_DMG_SPEED_SCALE` and its re-exports go; `RETIRED_VALUES`' `ko_ramp`
+   row is subsumed (move `deleted_flags.md` §4's row to §1 and update `ko_exact_test`).
+3. `adopted_levers.LANDED_UNITS = {"U1"}`, `UNIT_VERSIONS["U1"] = <bumped MODEL_CONFIG_VERSION>` (a stamp-only
+   `_migrate_config` block); `deleted_flags.md` §1 rows for every flag spelling; `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96`
+   LAST.
+4. Re-point every test that builds `legacy_production_config` / `legacy_production_args` with one of these eight keys
+   (grep; `op_reduction_extractor_test`, `speed_physics_extractor_test`, `damage_op_index_max_test`,
+   `endstate_facts_test`, `probe_facts_test`, `static_recovery_test`, `tie_identity_integration_test`'s `max_reduction`
+   fixture …): delete the OFF-side cases, keep the adopted-side ones.
+   At U0's commit, `grep -rlwE` of the eight field names (and their dashed flags) hits 61 files under `src/`: the
+   op (`damage_op.py`, `damage_op_pairwise.py`, `damage_op_blocks.py`, `damage_op_speed.py`, `op_reduction.py`,
+   `move_order.py`, `ko_exact.py`, `eot_residual.py`, `status_facts.py`, `static_facts.py`, `pair_outcome.py`,
+   `intent_threshold.py`, `conditional_threat.py`, `move_resolution*.py`, `hypothesis_tokens.py`, `pointer_head.py`,
+   `policy.py`, `selection_sites.py`, `tier_contract.py`, `delivery_graph.py`, `damage_tables.py`, `belief_tables.py`,
+   `arch_constants.py`), the extractor (`extractor_build.py`, `extractor_forward.py`, `extractor_api.py`), the five
+   synced surfaces (`flag_registry.py`, `model_version/{fields,compat,construct,migrations,constants}.py`,
+   `snapshot.py`, `main/train/config.py`, `main/train/parser/{clean_world,distillation}.py`), `grad_balance.py`, and
+   the tests. Budget the gates: on the three agent cores beside a live run, the `main/h2h` integration tests alone
+   took > 30 min at U0 (they play real games on CPU).
+5. Gates: K9 `learner_golden` BYTE-IDENTICAL (`--check`), `delivery_graph --check`, `arch_tables_test`,
+   `selection_sites_test`, `flag_registry --check`, `mode_flag_doc_gate_test`, `recipe_doc_gate_test`, the toy test in
+   `adopted_levers_test.py`, the static tier, and `checkargs --argv "--arch production …"` byte-identical.
+   🚨 After U1 the toy argv `/tmp/x26_rd/toy_argv.txt` NO LONGER PARSES at HEAD (it types the deleted OFF values): that
+   is expected — the toy runs PINNED (D-LD4), and its checkpoints still LOAD (the vacuity rule).

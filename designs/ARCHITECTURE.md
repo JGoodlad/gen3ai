@@ -596,13 +596,9 @@ Curse, Nightmare × P(stays asleep), and the HP-clamped net (11 columns, `agents
 `EotResidualRule`, on the op's context) — through a zero-init bias-free `IsolatedLinear(11, 128)` beside
 `mon_hazard_proj`; **`--switch-hazard-cost on`** appends each switch target's [our side's Spikes layers / 3, its
 switch-in HP fraction] (the same `spikes_entry` values) LAST to the switch pointer cell (§3.3). Production also runs
-**`--trunk-layers 3`** (step 9). The named arm **`--arch static_recovery`** (`main/train/arch_arms.py`) is the closing
-test's bisection rung C1 (not run: the test passed): `static` with these five levers and `--trunk-layers 3` — production
-MINUS the end state's bundle and fact levers, spelled as those six keys at production's values plus the other thirteen
-end-state keys at their legacy values (`--move-resolution off`, `--speed-physics off`, `--value-threat-inject` on,
-`--op-reduction max`, `--obs-facts off`, every fact-completion and probe-battery lever off / `ramp` / `coarse`,
-`--move-set-closure off`), on the production recipe; the legacy deletion manifest proposes deleting it in its first
-unit (D-LD3, pending the owner). The
+**`--trunk-layers 3`** (step 9). The named arm `--arch static_recovery` (the closing test's bisection rung C1, not run: the test passed) was
+DELETED by the legacy deletion's U0 (`ops/legacy_deletion_manifest_2026-10-12.md`, D-LD3: it was defined by the
+OFF values the deletion units remove); it runs only PINNED at the tag `pre-legacy-deletion`. The
 static screen trained `static` PINNED at `6c6d2e09` (pre-break, design note §8.2); at
 HEAD it is the port (`gen3_static_port_v1`, design note §12), which reproduces the pin's static forward on mapped
 weights up to the type-sum's fp32 rounding (`research_state/measurements/static_port_identity_2026-10-09/`).

@@ -829,8 +829,11 @@ clean. Not included: partial trapping (its last turn deals nothing and the timer
 Sight / Doom Desire, Dig / Dive's semi-invulnerable turn. The production `g` ledger is the older, coarser rule for the
 same quantity (`design_hand_computed_features.md` §7 finding 7).
 
-**13.4 The combined arm, `--arch static_recovery`** (`src/main/train/arch_arms.py`, a NAMED ARM: the production ARCH
-surface + a declared overlay, applied as if typed, with production's RECIPE). Exactly:
+**13.4 The combined arm, `--arch static_recovery`** — **DELETED 2026-10-15** by the legacy deletion's U0
+(`designs/ops/legacy_deletion_manifest_2026-10-12.md`, D-LD3; Decision record): after the end state's adoption the arm
+was defined by OFF values the deletion units remove, and the closing test passed without its rung. It is refused at
+parse time with that reason and runs only PINNED at the tag `pre-legacy-deletion`. As it was (`src/main/train/arch_arms.py`,
+a NAMED ARM: the production ARCH surface + a declared overlay, applied as if typed, with production's RECIPE):
 
 ```
 --arch static_recovery
@@ -944,3 +947,4 @@ against E at the same commit.
 | 2026-10-09 | **The CLOSING TEST registered** (pointer) | `--arch endstate` vs `--arch production` (P_prod `c0f528b4`), 8 seeds per arm, fixed n, the 8 × 8 mirrored cross; the OWNER's rule: PASS iff the 90 % interval for Δ includes 0 or lies above it AND its lower end > −2.0 pp; on PASS adopt and delete legacy + the judgments, on FAIL bisect (B2 = `static_recovery` first). Legacy stays until it reads. Owned by [`design_endstate_closing_test.md`](design_endstate_closing_test.md) | the screen's δ-margin non-inferiority for the closing read (owner: stricter) | owner 2026-10-09; ledger REGISTRATION 2026-10-09 |
 | 2026-10-10 | **`--arch endstate` gains `--move-set-closure on`** (v154, the four-move fact in the move belief's reinjection; owner 2026-10-10 "Do A", a PRE-DATA amendment of the closing test) | §14's arm = the previous overlay + `move_set_closure on`; no parameter (2,031,460 extractor params, state sha unchanged), one dynamo graph (`42ee361b11fa5a8d`), no undeclared K9(b) op | a separate screen of the closure after the closing test | `design_endstate_closing_test.md` Decision record; `measurements/endstate_closing_test_2026-10-09/p_end_2026-10-10/` |
 | 2026-10-12 | **ADOPTED as part of the END STATE (the closing test's PASS)** | `--token-encoding static` with every recovery lever (§13) and the end-state levers (§14) is PRODUCTION: `designs/production_config.json` took the `--arch endstate` overlay (Δ̂ +0.596 pp, 90 % [−0.723, +1.915], `design_endstate_closing_test.md` §9). `--arch endstate` is an alias of production; `--arch static_recovery` is redeclared against the new production (its six keys + the other thirteen at their pre-adoption values, `arch_arms.PRE_ADOPTION_PRODUCTION`). The legacy encoding stays in code only until the legacy deletion (`designs/ops/legacy_deletion_manifest_2026-10-12.md`). Which recovery lever carries the screen's −2.32 pp back is NOT known (no bisection: the bundle passed) | keeping legacy as production; adopting `static` alone (its screen read NOT DETECTED) | ledger 2026-10-12 MEASUREMENT (MAJOR) + BUILT "THE END STATE IS PRODUCTION" |
+| 2026-10-15 | **`--arch static_recovery` DELETED** (legacy deletion U0, `designs/ops/legacy_deletion_manifest_2026-10-12.md` G1 / D-LD3, the orchestrator's default under the owner's PASS program, owner may override before U3 lands) | keeping the arm (it can only be expressed while every OFF value it names exists, F-LD-3) | the closing test PASSED without its bisection rung C1 (§13.4); `main.train.arch_arms.DELETED_ARMS` refuses it with the reason |

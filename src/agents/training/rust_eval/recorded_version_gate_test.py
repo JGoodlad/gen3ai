@@ -63,7 +63,7 @@ def write_arm_snapshot(dst: Any, arm: str, seed: int) -> Tuple[Any, str]:
 
 def write_snapshot(dst: Any, args: Any, seed: int) -> Tuple[Any, str]:
     """``write_arm_snapshot`` for an explicit resolved training namespace ``args`` (an architecture that is no
-    ``--arch`` arm: ``main.train.production_args.legacy_production_args``, the pre-adoption production network)."""
+    ``--arch`` arm, e.g. production + ``--trunk-layers 2`` in ``main/h2h/recorded_version_cross_test.py``)."""
     from agents.model.model_version import ModelVersion
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.training.rust_eval import offline as PAR
@@ -81,7 +81,7 @@ def write_snapshot(dst: Any, args: Any, seed: int) -> Tuple[Any, str]:
     return model, str(path)
 
 
-@pytest.mark.parametrize("arm", ["endstate", "static_recovery", "production"])
+@pytest.mark.parametrize("arm", ["endstate", "production"])     # `static_recovery` was deleted (legacy deletion U0)
 def test_a_pool_eval_loads_the_runs_own_sentinel_under_every_named_arm(tmp_path, arm):
     from agents.model.model_version import ModelVersion
     from agents.model.snapshot import arch_toggles_from_model, recorded_model_version

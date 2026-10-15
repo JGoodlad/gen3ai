@@ -14412,3 +14412,27 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   `world_guard_test.py`, `worlds_test.py`, `src/agents/gen3_data/moves_test.py`.
 - Docs: `designs/endstate/design_information_levers.md` (§7.6, new §7.7, Decision record), `designs/endstate/search_ledger.md`,
   `src/agents/gen3_data/CLAUDE.md`; ledger 2026-10-15 GIGO FIX (packed tokens).
+## 2026-10-15 — GIGO FIX (T31): an umbrella flag never silently overrides a set sub-flag (`gen3_umbrella_no_silent_override_v1`; config resolution only; no model / config / obs / signature change)
+
+- **The bug.** Under the fresh-run default `--unified-moves both`, a typed `--damage-op false` was turned back ON (with
+  `move_prior_fusion` and `damage_outgoing`), and `main.checkargs` reported "every ARCH-surface key matches".
+- **The fix.** `main.train.config.UmbrellaOverride`: an umbrella write over a value already set to a DIFFERENT value is
+  REFUSED (`FATAL_CONFIG`; `checkargs` exits 3 with the same text). Also `--unified-damage` defaults to None (a typed
+  `off` is visible) and a typed `--damage-topk 0` beside an incoming matrix is refused. Tests:
+  `src/main/train/umbrella_override_test.py`. The toy argv and `--arch production` resolve byte-identically.
+
+## 2026-10-15 — LEGACY DELETION U0: the refusal machinery, the tag `pre-legacy-deletion`, `--arch static_recovery` deleted (no model / config / obs / signature change)
+
+- **The mechanism** (`designs/ops/legacy_deletion_manifest_2026-10-12.md` §2; D-LD1–D-LD7 adopted at their
+  recommendations, §7). `src/agents/model/model_version/adopted_levers.py`: the table of all 25 end-state fields the
+  units U1–U4 delete, and ONE predicate — a recorded value is refused iff it differs from the ADOPTED value in a network
+  that BUILT the lever (prerequisites enabled, not inert). A config lacking the prerequisites is VACUOUS (a TOY loads);
+  the seven blocks are inert beside move resolution (every adopted checkpoint records them True). The config side is
+  `retired_levers.RETIRED` (one STRUCTURAL row per landed field), the zip side `snapshot.sanitize_dead_extractor_kwargs`
+  → `judge_pickled_kwargs`. Nothing is refused yet (`LANDED_UNITS` is empty).
+- **The tag** `pre-legacy-deletion` → `0a0d9e1d`; every refusal names it; later ablations run pinned there (D-LD4).
+- **`--arch static_recovery` DELETED** (G1 / D-LD3): refused at parse time with its reason (`arch_arms.DELETED_ARMS`,
+  `deleted_flags.md` §1b). The h2h cross fixtures moved from the legacy network to production + `--trunk-layers 2`.
+- Tests: `src/agents/model/model_version/adopted_levers_test.py` (a real toy build judged with all four units in
+  force; the archived E / EB / P configs), `src/main/train/arch_arms_test.py`.
+

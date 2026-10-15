@@ -1,6 +1,7 @@
 """The TWO-ARCHITECTURE head-to-head engine (``main.h2h.arch``; F-U6-1) on the REAL engine (CPU, tiny): a cross — a
-checkpoint of another architecture (``fx``: the legacy pre-adoption network, ``conftest.foreign`` — production + ``--token-encoding
-static`` until the END STATE's adoption, 2026-10-12; the X5 A/B's
+checkpoint of another architecture (``fx``: production + ``--trunk-layers 2``, ``conftest.foreign``, since the legacy
+deletion's U0; the legacy pre-adoption network before that, production + ``--token-encoding static`` until the END
+STATE's adoption, 2026-10-12; the X5 A/B's
 ``fixed_mass`` x ``blob`` cross until the X5 version break deleted ``blob``) against two production checkpoints (``b1``,
 ``b2``: the BASE architecture) — plays on ONE engine and writes valid v2 rows; a
 same-architecture cell on the two-group engine plays the games a single-group engine plays (rows, outcome digests over

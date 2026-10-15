@@ -30,8 +30,8 @@ class ArmDecl(NamedTuple):
 
 #: THE PRE-ADOPTION PRODUCTION SURFACE (until 2026-10-12): the value each of the nineteen END-STATE keys had in
 #: `designs/production_config.json` before the closing test's PASS made the end state production. ONE declared table,
-#: read by `static_recovery` below (its non-recovery half) and by tests that build the LEGACY network on purpose
-#: (`legacy_production_config`). Deleted with the legacy paths it names (`designs/ops/legacy_deletion_manifest_2026-10-12.md`).
+#: read by tests that build the LEGACY network on purpose (`legacy_production_config`; the `static_recovery` arm that
+#: also read it was deleted in legacy-deletion U0). Deleted with the legacy paths it names (`designs/ops/legacy_deletion_manifest_2026-10-12.md`).
 PRE_ADOPTION_PRODUCTION: Tuple[Tuple[str, Any], ...] = (
     ("token_encoding", "legacy"),
     ("mon_hazard_cost", "off"),
@@ -54,32 +54,21 @@ PRE_ADOPTION_PRODUCTION: Tuple[Tuple[str, Any], ...] = (
     ("move_set_closure", "off"),
 )
 
-#: The six static-recovery keys (`static_recovery`'s own levers).
-_STATIC_RECOVERY_KEYS: Tuple[Tuple[str, Any], ...] = (
-    ("token_encoding", "static"),
-    ("mon_hazard_cost", "on"),
-    ("move_actor_state", "on"),
-    ("trunk_layers", 3),
-    ("switch_hazard_cost", "on"),
-    ("eot_residual", "on"),
-)
+#: --arch values that were DELETED, with the reason the parser refuses them by (never a bare "invalid choice").
+#: `designs/deleted_flags.md` §1b carries the same rows.
+DELETED_ARMS: Dict[str, str] = {
+    # legacy deletion U0 (designs/ops/legacy_deletion_manifest_2026-10-12.md G1 / D-LD3, 2026-10-15): the arm was
+    # DEFINED by OFF values (`move_resolution off`, `value_threat_inject True`, `op_reduction max`, ...) that the
+    # deletion units remove, so it could not survive the first of them.
+    "static_recovery": (
+        "deleted by the legacy deletion's U0 (designs/ops/legacy_deletion_manifest_2026-10-12.md, D-LD3): the arm "
+        "was the static encoding + the six static-recovery levers WITHOUT the end state's other levers, i.e. defined "
+        "by OFF values the deletion removes; the closing test PASSED without needing it (its bisection rung C1). "
+        "Run it PINNED at the tag `pre-legacy-deletion` (0a0d9e1d)"),
+}
 
 #: The named arms. Keys are `--arch` values; `production` is not one of them (it is the mirror itself).
 NAMED_ARMS: Dict[str, ArmDecl] = {
-    # gen3_static_recovery_v1 (owner 2026-10-09: "run all of them speculatively together and then we can bisect them
-    # out"): the static token encoding with EVERY static-recovery lever on, on the production recipe — the closing
-    # test's coarse-ladder rung C1. Since the END STATE's ADOPTION (2026-10-12, the closing test's PASS) production
-    # already carries those six keys, so the arm is REDECLARED against the new production: the same network as before,
-    # spelled as the six static-recovery keys PLUS every other end-state lever at its PRE-ADOPTION value. A
-    # legacy-deletion candidate (`designs/ops/legacy_deletion_manifest_2026-10-12.md`).
-    "static_recovery": ArmDecl(
-        overlay=_STATIC_RECOVERY_KEYS + tuple(
-            (k, v) for k, v in PRE_ADOPTION_PRODUCTION if k not in dict(_STATIC_RECOVERY_KEYS)),
-        purpose="the static encoding + every static-recovery lever (trunk depth 3, the per-mon Spikes fact, the "
-                "actor's state on its move seats, the switch-cell hazard, the end-of-turn residual) WITHOUT the "
-                "end state's bundle / fact levers; the closing test's bisection rung C1 (not run: the test passed)",
-        design="designs/endstate/design_static_tokens.md §13",
-    ),
     # gen3_endstate_facts_v1 (owner 2026-10-09: "run all of them speculatively together, then bisect"): the END-STATE
     # arm — `static_recovery` + the bundle's four levers (move resolution, speed physics, the principled reductions,
     # the OBS-FACTS block) with the critic's threat injection off, + every fact-completion lever (v152), the probe
@@ -122,8 +111,20 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
 }
 
 
+def arch_value(value: str) -> str:
+    """The `--arch` argparse TYPE: a DELETED arm is refused WITH its reason (argparse prints it after
+    `argument --arch:`); every other value goes on to the parser's own `choices` check."""
+    import argparse
+
+    if value in DELETED_ARMS:
+        raise argparse.ArgumentTypeError(f"--arch {value} was DELETED — {DELETED_ARMS[value]}")
+    return value
+
+
 def arm_overlay(name: str) -> Dict[str, Any]:
     """The overlay of arm ``name`` as a dict (KeyError naming the known arms for an unknown name)."""
+    if name in DELETED_ARMS:
+        raise KeyError(f"--arch {name!r} was DELETED: {DELETED_ARMS[name]}")
     if name not in NAMED_ARMS:
         raise KeyError(f"unknown --arch arm {name!r}; the named arms are {sorted(NAMED_ARMS)}")
     return dict(NAMED_ARMS[name].overlay)

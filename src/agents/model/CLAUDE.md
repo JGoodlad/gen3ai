@@ -206,7 +206,10 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
 - 🚨 **DELETING an extractor kwarg** has no automatic gate: SB3 rebuilds the extractor from the ZIP's
   pickled kwargs, so the deleted name `TypeError`s every resume / pool opponent / eval worker. Judge it
   (`_DEAD_FEK_INERT` vs `_DEAD_FEK_JUDGED` in `snapshot.py`), add the matching `_migrate_config` entry, then
-  update `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96` LAST — the procedure is in `versioning.md`. A bare
+  update `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96` LAST — the procedure is in `versioning.md`. 🚨 **An END-STATE lever
+  the legacy deletion removes is NOT judged there** but by `model_version/adopted_levers.py` (one predicate for config
+  and zip: a non-adopted value in a network that BUILT the lever is refused, a vacuous / inert one pops — so toys and
+  every adopted checkpoint keep loading); a unit lands by adding itself to `LANDED_UNITS`. A bare
   `MaskablePPO.load` of an old zip TypeErrors; loaders go through `snapshot.historical_load_kwargs`.
 - **Parameter ORDER:** the optimizer state saves by position; `main/train/checkpoint_state._validate_or_reset_optimizer_state`
   remaps it BY NAME on every resume (`src/main/resume_optimizer_realign_test.py`). Appending new params

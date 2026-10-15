@@ -1215,6 +1215,12 @@ def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
     from agents.model.model_version.version_break import refuse_pickled_belief_tokens
     changed = refuse_pickled_belief_tokens(fek)     # v144: blob REFUSED with its own reason; fixed_mass pops
     refuse_retired_values(fek)                      # gen3_ko_exact_closed_v1: a retired VALUE, refused with its reason
+    # THE LEGACY DELETION (legacy_deletion_manifest_2026-10-12.md, U0): every landed unit's end-state levers are
+    # judged by the SAME predicate the config refusal uses (`adopted_levers.lever_active`: a non-adopted value in a
+    # network that BUILT the lever is refused; a vacuous / inert / adopted one pops). NOT a `_DEAD_FEK_JUDGED` row —
+    # that table holds one supported value per kwarg, and the seven blocks are True in every adopted zip (F-LD-4).
+    from agents.model.model_version.adopted_levers import judge_pickled_kwargs
+    changed = judge_pickled_kwargs(fek) or changed
     for dead, supported in _DEAD_FEK_JUDGED:
         if dead in fek:
             # Compare on TYPE, not truthiness: the v78 entries are mode STRINGS, and `bool("off")`

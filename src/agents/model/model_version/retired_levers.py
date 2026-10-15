@@ -293,6 +293,29 @@ RETIRED: tuple = (
                  "frequency row weights)", LAST_COMMIT_P11C, "P11c", P11C_DELETION_VERSION),
 )
 
+
+def _adopted_rows() -> tuple:
+    """THE LEGACY + JUDGMENT DELETION (`designs/ops/legacy_deletion_manifest_2026-10-12.md`, U0's mechanism): one
+    STRUCTURAL row per deleted end-state lever of every LANDED unit (`adopted_levers.landed()`). Its predicate is
+    `adopted_levers.lever_active` — the recorded value differs from the ADOPTED one in a network that built the lever
+    (vacuous when the config lacks the lever's prerequisites, inert for the seven blocks under move resolution) — so
+    an adopted-surface config (the E arm, the bf16 runs, X26) and a TOY that never built the lever keep loading."""
+    from agents.model.model_version import adopted_levers as AL
+
+    import functools
+
+    rows: List[RetiredLever] = []
+    for lever in AL.landed():
+        active: Callable[[Dict[str, Any]], bool] = functools.partial(AL.lever_active, lever)
+        rows.append(RetiredLever(
+            lever.field, lever.flag, active, True, lever.what,
+            AL.LAST_COMMIT_PRE_LEGACY_DELETION, lever.unit, AL.UNIT_VERSIONS[lever.unit]))
+    return tuple(rows)
+
+
+#: The legacy deletion's rows, appended to :data:`RETIRED` (empty until U1 lands).
+RETIRED = RETIRED + _adopted_rows()
+
 #: Recorded fields that left the config but are INERT without one of the levers above (an atom count,
 #: a support, a loss weight for a head that no longer exists): popped silently, any value.
 INERT_RETIRED_FIELDS: tuple = ("value_dist_bins", "value_dist_vmin", "value_dist_vmax",
@@ -394,7 +417,15 @@ def retired_lever_evidence(raw: Dict[str, Any], *, structural_only: bool = False
 def refuse_structural(raw: Dict[str, Any]) -> None:
     """`_migrate_config`'s half: refuse, on EVERY load, a config whose recorded ON lever named
     parameters or a critic route this code cannot rebuild."""
-    for r in retired_lever_evidence(raw, structural_only=True):
+    from agents.model.model_version import adopted_levers as AL
+
+    evidence = retired_lever_evidence(raw, structural_only=True)
+    adopted = [r for r in evidence if r.last_commit == AL.LAST_COMMIT_PRE_LEGACY_DELETION]
+    if adopted:
+        # the legacy deletion's rows: every active one named at once, with the pin TAG
+        by_field = {lv.field: lv for lv in AL.landed()}
+        raise ModelVersionError(AL.refusal_text([by_field[r.field] for r in adopted], "this model_config.json"))
+    for r in evidence:
         raise ModelVersionError(
             f"{r.what} is no longer supported: the lever was DELETED (deletion pass {r.unit}, config v"
             f"{r.version}; --{r.flag}), and its ON value named parameters or a critic route "
@@ -409,9 +440,11 @@ def refusal_message(evidence: List[RetiredLever], config_path: Optional[str]) ->
     lines = "\n".join(f"  · {e.what}  (--{e.flag})" for e in evidence)
     pin = evidence[0].last_commit
     commits = sorted({e.last_commit[:8] for e in evidence})
+    manifests = sorted({"designs/ops/legacy_deletion_manifest_2026-10-12.md" if e.unit.startswith("U")
+                        else "deletion pass, designs/ops/deletion_pass_manifest.md §1-2" for e in evidence})
     return (
         f"this checkpoint was TRAINED WITH A DELETED LEVER ({where}):\n{lines}\n"
-        "These levers were DELETED (deletion pass, designs/ops/deletion_pass_manifest.md §1-2). "
+        f"These levers were DELETED ({'; '.join(manifests)}). "
         "Resuming or forking it on this code would continue it WITHOUT the lever — a different "
         "objective or different numerics under the same run name — so it is refused rather than "
         "silently switched.\n"

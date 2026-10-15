@@ -270,6 +270,33 @@ the old one" made the closed form what `exact` computes and RETIRED the value. T
   byte-identical. A checkpoint trained under the 16-roll `exact` (the closing test's end-state arm, pinned at
   `b132b099`) loads here and evaluates its KO cells to that rounding bound.
 
+## The LEGACY + JUDGMENT DELETION's refusal rule (`model_version/adopted_levers.py`, U0 2026-10-15)
+
+The end state's adoption (2026-10-12) leaves every lever of the `--arch endstate` overlay with ONE value; the units
+U1-U4 of [`../ops/legacy_deletion_manifest_2026-10-12.md`](../ops/legacy_deletion_manifest_2026-10-12.md) delete the
+other value (flag, field, OFF path). **No `MIGRATION_FLOOR` raise and no `ARCH_SIGNATURE` bump** (D-LD1): the forward
+of the adopted surface does not change, so the E arm, the bf16 A/B runs and X26 keep loading. Instead:
+
+* **ONE table, ONE predicate.** `adopted_levers.PLANNED` holds every row of the manifest's inventory (25 fields: the
+  18 overlay keys other than `--trunk-layers`, plus the seven per-action blocks) with its ADOPTED value, its absent-field
+  OFF default and a FROZEN copy of the registry's `requires`. `lever_active(lever, raw)` is True iff the lever's
+  prerequisites are ENABLED in the recorded config (an absent one reads OFF), it is not INERT there (the seven blocks
+  beside `move_resolution on`), and the recorded value differs from the adopted one.
+* **VACUITY (the X26 readiness doc §3.5).** A config that LACKS a lever's prerequisites never built it, whatever it
+  recorded, so the lever is vacuous there: a TOY checkpoint (`rb_toy_ent_*`: no damage operator, no move resolution,
+  every op lever recorded OFF) keeps loading after every unit. `adopted_levers_test.py` builds the toy for real and
+  judges it with every unit's rows in force.
+* **The config side.** `retired_levers.RETIRED` gains one STRUCTURAL row per field of every LANDED unit
+  (`adopted_levers.LANDED_UNITS`, `UNIT_VERSIONS`), so `_migrate_config` → `refuse_structural` refuses it on every load
+  and `check_no_retired_levers` refuses a resume / fork, both naming the tag `pre-legacy-deletion`
+  (`LAST_COMMIT_PRE_LEGACY_DELETION`). **The zip side.** `snapshot.sanitize_dead_extractor_kwargs` calls
+  `adopted_levers.judge_pickled_kwargs`, the same predicate over the pickled kwargs, judging every row before popping
+  any. NOT a `_DEAD_FEK_JUDGED` row: that table holds one supported value per kwarg, and every adopted zip records the
+  seven blocks True (inert), so a plain `(<block>, False)` row would refuse X26 (F-LD-4).
+* **Landing a unit** = add it to `LANDED_UNITS` and its new `MODEL_CONFIG_VERSION` to `UNIT_VERSIONS`, delete the flag /
+  field / OFF path, and `adopted_levers_test.test_a_unit_is_landed_exactly_when_its_fields_left_model_version` checks
+  the two agree. U0 landed the machinery only: nothing is refused yet.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

@@ -26,11 +26,11 @@ _RUNNER = ("import runpy, sys; sys.argv = ['trainer'] + sys.argv[1:]; "
            "runpy.run_module('main.train_rl' '_agent', run_name='__main__', alter_sys=True)")
 
 
-@pytest.mark.parametrize("arch", ["production", "static_recovery", "endstate"])
+@pytest.mark.parametrize("arch", ["production", "endstate"])
 def test_arch_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run_archive, arch):
-    """`production` and the NAMED ARMS `static_recovery` (gen3_static_recovery_v1: static + every static-recovery
-    lever) and `endstate` (gen3_endstate_facts_v1: static_recovery + the bundle + every fact-completion lever;
-    `main.train.arch_arms`) — an arm's run records every lever in its `model_config.json`."""
+    """`production` and the NAMED ARM `endstate` (gen3_endstate_facts_v1, an alias of production since the 2026-10-12
+    adoption; `main.train.arch_arms`) — an arm's run records every lever in its `model_config.json`. (`static_recovery`
+    was deleted by the legacy deletion's U0.)"""
     log = tmp_path / "trainer.log"
     with open(log, "wb") as fh:
         proc = subprocess.Popen(
