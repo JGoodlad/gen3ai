@@ -235,7 +235,9 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   scope — a test or tool that computes the *behaviour* log-probs from the learner's own policy (`update_fit`'s fixture,
   `learner_gates_test._fill`) wraps it in `fp32_scope`, or a bf16 learner reads a spurious K9(b) mismatch. The compiled
   bf16 R1 is judged by the bf16 PARITY RULE (DRIFT vs the fp32 eager reference + the ENVELOPE), its bars DERIVED from
-  committed GPU reads (`compile_regions_bf16_test` re-derives them). `--arch production` writes bf16;
+  committed GPU reads (`compile_regions_bf16_test` re-derives them). ⚠️ Its per-parameter RESOLUTION is coarse (a 10 %
+  backward error passes; `compile_regions_resolution_test`), so a test of the fp32 gate's teeth builds
+  `trunk_precision="fp32"` explicitly. `--arch production` writes bf16;
   `--trunk-precision fp32` is the explicit opt-out; a FORK or restart INHERITS its parent's recorded precision (an fp32
   parent's fork stays fp32 unless it types bf16). The K9 learner golden is the bf16 update and pins the fp32 opt-out
   beside it (`fp32_opt_out`). Detail: `designs/training/compile_flags.md` "T25 perf levers on R1".

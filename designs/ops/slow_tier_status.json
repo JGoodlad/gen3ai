@@ -113,14 +113,6 @@
    "contention": 1.11,
    "detail": ""
   },
-  "src/agents/model/compile_regions_trained_cuda_test.py::test_arm_Cs_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": {
-   "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 147.3,
-   "contention": 1.63,
-   "detail": ""
-  },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cpu": {
    "status": "pass",
    "commit": "73408d02db7bb209525a876ed02dd9233f41a819",

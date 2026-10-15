@@ -1666,7 +1666,10 @@ How the bars are set:
   A NEW max over candidates on a gradient path uses it; a NaN FATAL of this shape elsewhere (a reduction
   this rule missed) gets the same cure, never a looser bar.
 
-`compile_regions_trained_cuda_test` (GPU tier) runs C's real weights through the real gate. The
+`compile_regions_trained_cuda_test` (GPU tier) runs real TRAINED weights through the real gate — arm C's until
+2026-10-15, when that pre-era checkpoint stopped loading (23 size mismatches after the end-state adoption); now the
+`production` baseline, read by name through `agents.training.baselines`, at fp32 and under the bf16 rule, with a
+CPU test that loads it STRICT into the learner golden so a stale fixture is caught without a GPU. The
 fp64-REFERENCED form of the gate (compiled no worse than k x eager's own error vs float64,
 self-calibrating) was weighed and deferred to `designs/ops/TASK_BACKLOG.md` T16. One fp64 R1 pass at
 B = 2048 costs ~11 s on the CPU, so time is not the obstacle. Two other things are:
@@ -1813,12 +1816,43 @@ The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.
     - DRIFT: loss 0.014, gradient rel-L2 0.68.
     - ENVELOPE K: loss 5.4, gradient 6.4, per parameter 12.
     - A `None` table refuses a bf16 R1 ("no measured bars").
-  - ⚠️ **The per-parameter teeth are COARSE.** bf16 moves the micro-batch gradient 1–18 % rel-L2 from fp32's, so the
-    median refusal threshold is 0.2–1.3 relative error. A dropped or sign-flipped path is refused; a 10 % one is
-    not. The derivation and the teeth are in PLAN.md §2a.
+  - ⚠️ **The bf16 gate's resolution — a KNOWN LIMIT, measured** (`gen3_r1_bf16_resolution_v1`, 2026-10-15). A
+    parameter's backward miscompile is refused only above K = 12 × max(that parameter's own bf16 error, the fp32
+    bar); bf16 moves the micro-batch gradient 1–18 % rel-L2 from fp32's, so the refusal threshold is coarse:
+    - window D's 20 GPU reads (B = 2,048; `results/bf16_parity_bars.json` "teeth"): on perturbed / bf16-trained
+      weights (18 reads) the MEDIAN parameter is refused above 0.22–1.29 relative error, the p90 above 0.53–3.07, the
+      worst above 1.27–10.2; on FRESH weights the live rung's floor makes it 1.20 for every parameter, so on a fresh
+      launch the seeded-perturbation rung is the one that judges.
+    - So a 10 % backward error is NOT refused (the 2026-10-15 CUDA run: a planted 10 % on
+      `pokemon_encoder.move_network.0.weight` passed). A DROPPED (error 1.0) or sign-flipped (2.0) gradient is
+      refused on MOST parameters, not all: one passes on a parameter whose own bf16 error is above 1/12 ≈ 8.3 %
+      (resp. 1/6). A NaN is always named (`NonFiniteGateArmError`, unchanged).
+    - The resolution is COMPUTED exactly from the gate's arms (the larger root of |C_p − R_p + m|C_p| ŝ| = T per
+      check, the minimum over the checks and the rungs; a one-off CPU read split pass / refuse at 0.97 / 1.03 m* on
+      all four representative parameters) and CONFIRMED by plants at 0.5 m* (passes) and 2 m* (refused):
+      `compile_regions_resolution_test.py` (CPU mechanics; `test_a_10pc_…` pins the limit, so a sharper gate fails
+      it and updates this bullet). The CUDA numbers at HEAD — the K9 golden's fresh weights and the `production`
+      baseline's trained weights, four representative parameters — come from
+      `scripts/ops/verify_compile_gate_cuda.sh` (`summary.json`, "resolution"). **PENDING its first GPU run.**
+    - The fp32 gate's teeth are unchanged and still pinned: a 10 % plant is FATAL on an fp32 learner
+      (`compile_regions_independence_test.py` on CPU, `compile_regions_fixed_mass_cuda_test.py` on CUDA — both
+      build `trunk_precision="fp32"` explicitly since the bf16 adoption).
+  - **Decision record — the bf16 gate's reference.**
+
+    | Date | Decision | Why | Evidence |
+    |---|---|---|---|
+    | 2026-10-15 | **Keep the fp32 eager reference; do NOT add a same-precision (compiled bf16 vs EAGER bf16) miscompile rule.** The resolution above stands as a documented limit. | A miscompile is a compiler defect, so judging compiled bf16 against eager bf16 looked like it would leave only fusion / reassociation rounding and tighten the teeth. It does not: under autocast Inductor's fused kernels keep fp32 intermediates where eager rounds every op's output to bf16, so the two bf16 arms ALSO differ by bf16 rounding. Derived exactly as the envelope is (R1_BAR_K × the healthy max of d(C, E_bf16)_p / max(d(E_bf16, ref)_p, floor)), its K is 4 × 2.96 = 11.8 — the envelope's 12, the same teeth; as one absolute bar per regime (the fp32 rule's form) it is 4 × max d(C, E_bf16)_p = 0.29 fresh / 1.6 trained, coarser than the envelope's median teeth. "Clearly better" was taken as ≥ 2× sharper (K ≤ 6). The check would cost nothing at launch (both bf16 arms are already computed), but a rule with the same teeth is a second bar to maintain for no gain. | Window D, `results/window_D/E_bf16_envelope.json` (`Cbf_vs_Ebf`, `Ebf_vs_E32`): per-parameter d(C, E_bf16) median 0.9–6.2 % vs d(E_bf16, ref) 1.2–10.7 % by read, ratio median 0.55, max 2.96. Pinned by `compile_regions_resolution_test::test_a_SAME_PRECISION_rule_would_not_be_sharper_on_the_committed_GPU_reads`; re-read at HEAD by the verification script's `same_precision` block per rung. |
+
+    Levers NOT taken here, each a separate GPU-measured decision: (a) Inductor's `emulate_precision_casts` (round
+    intermediates where eager does) would make compiled-vs-eager bf16 a reassociation-only difference — a
+    same-precision rule could then be tight, but it changes the production graph and its speed; (b) a SHADOW fp32
+    compile of R1 judged by the fp32 rule at launch would catch the precision-independent miscompile classes (a wrong
+    index, a dropped path, a NaN backward) at fp32's teeth, for a second compile per launch and restart — but it
+    judges a graph that does not train.
   - **Pinned by** `trunk_precision_test.py` (the region itself), `trunk_precision_flag_test.py` (the flag surface,
-    `fp32_scope`, the K9(b) probe) and `compile_regions_bf16_test.py` (the rule: refused without bars, a healthy
-    pass, a planted compiled error, a planted drift, a mis-wired reference, an fp32 learner untouched).
+    `fp32_scope`, the K9(b) probe), `compile_regions_bf16_test.py` (the rule: refused without bars, a healthy
+    pass, a planted compiled error, a planted drift, a mis-wired reference, an fp32 learner untouched) and
+    `compile_regions_resolution_test.py` (the resolution, above).
 
 A preset gets its CLI flag, flag-registry row and recipe surface in its ADOPTION commit, after its paired GPU benchmark
 and the R1 gate and canary are green. `--trunk-precision` had its flag already, because its parity rule needs a run

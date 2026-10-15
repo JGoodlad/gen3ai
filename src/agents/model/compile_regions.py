@@ -1033,7 +1033,11 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], n
 #:
 #: THE TEETH, stated (PLAN.md §2a): a backward miscompile on a parameter is refused only when it exceeds K x that
 #: parameter's own bf16 error — bf16's gradient noise is the resolution limit, coarser than the fp32 rule's by the
-#: ratio of the two errors (`results/bf16_parity_bars.json` "teeth"). `None` would mean NOT MEASURED: a bf16 R1 REFUSED.
+#: ratio of the two errors (`results/bf16_parity_bars.json` "teeth"). A 10 % backward error is NOT refused; the exact
+#: per-parameter resolution, its confirmation by planted faults, and the 2026-10-15 decision to keep the fp32 reference
+#: (a same-precision compiled-vs-eager-bf16 rule measured NO sharper: Inductor's fused kernels round differently from
+#: eager bf16, so the two bf16 arms differ by bf16 rounding too) are `designs/training/compile_flags.md` "The bf16
+#: gate's resolution" and `compile_regions_resolution_test`. `None` would mean NOT MEASURED: a bf16 R1 REFUSED.
 #: DERIVED (window D, 2026-10-10, `E_bf16_envelope`: RTX 3080 Ti, torch 2.8, `--arch endstate`, B = 2,048 of the gate's
 #: rows, 20 reads = fresh + 6 ladder-perturbed + 3 bf16-trained states x 2 slices, each arm twice — both bf16 arms were
 #: run-to-run bit-identical): healthy max drift loss 3.26e-3, gradient rel-L2 0.169; healthy max envelope ratio loss
