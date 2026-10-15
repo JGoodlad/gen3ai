@@ -295,8 +295,9 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     the parent's config could not be read — the paths tried, so the caller can WARN instead of
     passing silently.
     """
-    from main.train.config import (UnrecordedEnableCoef, desugar_umbrella_flags, inherit_derived_enable_coefs,
-                                   inherit_saved_flag, resolve_critic_mode, resolve_eval_sentinel_regime)
+    from main.train.config import (UmbrellaOverride, UnrecordedEnableCoef, desugar_umbrella_flags,
+                                   inherit_derived_enable_coefs, inherit_saved_flag, resolve_critic_mode,
+                                   resolve_eval_sentinel_regime)
     from main.train.fork_lr import is_same_run_checkpoint
     from main.train_rl_agent import build_parser
 
@@ -318,8 +319,15 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     # snapshot, before inheritance). A flagless run resolves `--unified-moves` to 'both', which
     # turns --damage-op / --move-latent / --damage-topk ON — so skipping this would report every
     # damage-family dependency as unsatisfied on commands that launch fine.
-    with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
-        desugar_umbrella_flags(ns)
+    # gen3_umbrella_no_silent_override_v1 (T31): an umbrella that would overwrite a sub-flag already set to
+    # a DIFFERENT value is refused by the launch (FATAL_CONFIG) — reported here as the same refusal, with no
+    # namespace: the config it would have built is not the one either flag asked for.
+    try:
+        with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
+            desugar_umbrella_flags(ns)
+    except UmbrellaOverride as e:
+        return {"ns": None, "umbrella_refusal": str(e), "model": getattr(ns, "model", None),
+                "config_path": None, "tried": [], "inherited": {}, "same_run": False}
 
     # THE CRITIC MODE'S ONE IMPLICATION (gen3_winprob_critic_mode_v1) is resolved where the launch resolves it:
     # `--win-prob-mode shaping` when untyped. The critic, the discount and the whole terminal are no flags any
@@ -605,6 +613,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "unsatisfiable": unsatisfiable_pairs(argv),
            "resolution": None, "combinations": [], "ns": None,
            "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
+           "umbrella_refusal": None,
            "shaped_reward": shaped_reward_finding(argv),
            "retired_levers": retired_levers_finding(argv),
            "version_break": version_break_finding(argv)}
@@ -624,6 +633,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
 
     resolution = resolve_against_parent(effective_argv)
     res["resolution"] = resolution
+    res["umbrella_refusal"] = (resolution or {}).get("umbrella_refusal")
     if not resolution or resolution.get("ns") is None:
         return res
     ns, inherited = resolution["ns"], resolution["inherited"]
@@ -1027,6 +1037,11 @@ def main(raw: List[str] | None = None) -> int:
         print()
         for line in recipe_surface.report_lines(recipe):
             print(f"  {line}")
+    if res.get("umbrella_refusal"):
+        # gen3_umbrella_no_silent_override_v1 (T31): resolve_config exits FATAL_CONFIG on it, before any
+        # other check — so no ARCH / RECIPE report is printed for a namespace the launch never builds.
+        print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {res['umbrella_refusal']}")
+        return int(TrainExitCode.FATAL_CONFIG)
     derived_refusal = (res.get("resolution") or {}).get("derived_refusal")
     if derived_refusal:
         # Same verdict class as the shaped parent: resolve_config exits FATAL_CONFIG on it.
@@ -1292,6 +1307,8 @@ def _print_resolution(resolution: dict | None) -> None:
         print("  ⚠️  WARNING: the argv does not parse, so no inherited value could be resolved: "
               + "; ".join(resolution["parse_error"]))
         return
+    if resolution.get("umbrella_refusal"):
+        return                     # its own ✗ verdict, printed by `main` (gen3_umbrella_no_silent_override_v1)
     if resolution.get("no_parent"):
         # No `--model` at all: nothing to inherit, and that is the FULL truth rather than a
         # failure to read something — the combination checks below still ran, on the argv's own

@@ -166,6 +166,46 @@ def inherit_derived_enable_coefs(args, saved_ver, model_path, *, announce: bool 
     return out
 
 
+class UmbrellaOverride(ValueError):
+    """gen3_umbrella_no_silent_override_v1 (T31, 2026-10-15): an umbrella flag would OVERWRITE a sub-flag
+    value that was already set — typed on the argv, or written by `--arch` / an arm before the umbrella
+    ran — with a DIFFERENT value. Refused, typed (`FATAL_CONFIG`), never resolved silently.
+
+    The incident: under the fresh-run default `--unified-moves both`, a typed `--damage-op false` was turned
+    back ON (with `move_prior_fusion` and `damage_outgoing`), and `main.checkargs` — which judges the
+    RESOLVED namespace — then reported "every ARCH-surface key matches", so the operator's ablation was
+    production with no trace on any surface.
+
+    WHY A REFUSAL, not "the typed value wins with a note": the sub-flag and the umbrella state two
+    incompatible intents, and either reading builds a network the operator may not have meant. Letting
+    the typed `--damage-op false` win still leaves the umbrella's other writes (`--damage-topk 5`, the
+    outgoing block, prior fusion) — a combination `combination_checks` then refuses under a message
+    about a DIFFERENT flag. The refusal names the conflict and the one-token fix (`--unified-moves off`
+    and compose the pieces, or drop the typed sub-flag). `conflicts` is
+    ``[(flag, held_value, umbrella_value, umbrella_name), …]``."""
+
+    def __init__(self, conflicts):
+        self.conflicts = list(conflicts)
+        lines = [f"{flag} is {held!r}, but {umb} would set it to {want!r}"
+                 for flag, held, want, umb in self.conflicts]
+        super().__init__(
+            "an umbrella flag would silently override an explicitly-set sub-flag (gen3_umbrella_no_silent_"
+            "override_v1): " + "; ".join(lines) + ". Pass --unified-moves off (and compose the pieces you "
+            "want: --damage-op, --move-prior-fusion, --damage-outgoing, --damage-topk, …), or drop the "
+            "conflicting sub-flag so the umbrella's value is the one you meant.")
+
+
+def _umbrella_write(args, dest: str, flag: str, value, umbrella: str, conflicts: list) -> None:
+    """Write `value` onto `dest` for `umbrella` — or, if `dest` already holds a DIFFERENT non-None value
+    (typed, or set by `--arch` before the umbrella ran), record the conflict and leave it alone. The caller
+    raises `UmbrellaOverride` once every write is judged, so the refusal names every conflict at once."""
+    held = getattr(args, dest, None)
+    if held is not None and held != value:
+        conflicts.append((flag, held, value, umbrella))
+        return
+    setattr(args, dest, value)
+
+
 def desugar_umbrella_flags(args) -> None:
     """The UMBRELLA desugars, in one place: `--unified-moves` -> `--unified-damage` -> the
     component toggles, and `--damage-matrices` -> its two bools.
@@ -181,7 +221,9 @@ def desugar_umbrella_flags(args) -> None:
     # only fills `move_latent` / `damage_topk_k` when they are still None, and `--damage-matrices`'
     # else-branch preserves whatever is already set. Running it first therefore makes the umbrella a
     # DEFAULT that the sugar and every explicit flag alike still override — precedence in one
-    # direction, top to bottom, with no special cases.
+    # direction, top to bottom, with no special cases. The --unified-* umbrellas below are the one
+    # place a desugar WRITES over a set value; there a different set value is REFUSED
+    # (`UmbrellaOverride`, gen3_umbrella_no_silent_override_v1), never overwritten.
     #
     # A resume is REFUSED (`combination_checks`' `arch_umbrella_is_fresh_only`, which both surfaces
     # read) rather than handled here: a fork INHERITS its parent's surface through `_resolve`, and
@@ -223,6 +265,11 @@ def desugar_umbrella_flags(args) -> None:
     #     follows), so a resume can never be version-FATALed by a default. A launcher restart that
     #     forwarded the original explicit flag is likewise unchanged.
     # An EXPLICIT 'off' still works (fresh ablation baselines need it) but is DEPRECATED and warns.
+    # gen3_umbrella_no_silent_override_v1 (T31): every umbrella write below goes through `_umbrella_write`,
+    # which refuses (UmbrellaOverride, after every write is judged) rather than overwrite a sub-flag that
+    # already holds a DIFFERENT value. Writes that were already "only if None" stay as they were.
+    conflicts: list = []
+    _um_typed = args.unified_moves is not None
     if args.unified_moves is None:
         if args.model:
             args.unified_moves = "off"     # no desugar — inherit the saved component toggles via _resolve
@@ -234,9 +281,16 @@ def desugar_umbrella_flags(args) -> None:
         print("[Arch] DEPRECATED: --unified-moves off — the non-unified path is an ablation baseline "
               "only (no move belief, no damage op, no discrete move-space). It keeps working, but new "
               "features target the unified system.")
+    _um_name = (f"--unified-moves {args.unified_moves}" if _um_typed
+                else f"--unified-moves {args.unified_moves} (the fresh-run default)")
     if getattr(args, "unified_moves", "off") != "off":
-        if getattr(args, "unified_damage", "off") == "off":
+        # `--unified-damage` defaults to None (= 'off'), so a TYPED 'off' is distinguishable from the
+        # default and is refused rather than raised to the umbrella's level. A typed non-off level wins
+        # (it is what the umbrella hands down unless told otherwise; e.g. `--unified-damage incoming`).
+        if getattr(args, "unified_damage", None) is None:
             args.unified_damage = args.unified_moves
+        elif args.unified_damage == "off":
+            conflicts.append(("--unified-damage", "off", args.unified_moves, _um_name))
         if args.move_latent is None:
             args.move_latent = True
         if args.move_belief_latent_coef is None:
@@ -253,12 +307,17 @@ def desugar_umbrella_flags(args) -> None:
     # saved version). When not 'off' it forces damage_op + prior fusion + (for 'both') the outgoing block,
     # and defaults the move-belief mode to 'revealed' unless the user set it explicitly (so
     # `--unified-damage both --move-belief-mode both` still guesses unrevealed mons' moves).
-    if getattr(args, "unified_damage", "off") != "off":
+    if getattr(args, "unified_damage", None) is None:
+        args.unified_damage = "off"       # the resolved value every reader (and metadata.json:cli_args) sees
+    if args.unified_damage != "off":
+        _ud_name = (_um_name if getattr(args, "unified_moves", "off") == args.unified_damage
+                    else f"--unified-damage {args.unified_damage}")
         if args.move_belief_mode is None:
             args.move_belief_mode = "revealed"
-        args.damage_op = True
-        args.move_prior_fusion = True
-        args.damage_outgoing = (args.unified_damage == "both")
+        _umbrella_write(args, "damage_op", "--damage-op", True, _ud_name, conflicts)
+        _umbrella_write(args, "move_prior_fusion", "--move-prior-fusion", True, _ud_name, conflicts)
+        _umbrella_write(args, "damage_outgoing", "--damage-outgoing", args.unified_damage == "both",
+                        _ud_name, conflicts)
 
     # gen3_per_move_matrices_v1: --damage-matrices desugars to the two bool toggles BEFORE _resolve (so a
     # resume inherits them). None ⇒ let _resolve inherit/default; an explicit value wins. The INCOMING matrix
@@ -268,14 +327,20 @@ def desugar_umbrella_flags(args) -> None:
     if getattr(args, "damage_matrices", None) is not None:
         args.damage_matrices_outgoing = args.damage_matrices in ("outgoing", "both")
         args.damage_matrices_incoming = args.damage_matrices in ("incoming", "both")
-        if args.damage_matrices_incoming and not args.damage_topk_k:
+        if args.damage_matrices_incoming and args.damage_topk_k is None:
             from agents.model.features_extractor import _DMG_TOPK_DEFAULT_K   # local: needed without --unified-moves
             args.damage_topk_k = _DMG_TOPK_DEFAULT_K     # the matrix's K = --damage-topk (default 5)
+        elif args.damage_matrices_incoming and not args.damage_topk_k:
+            # A typed `--damage-topk 0` beside an incoming matrix (whose K it IS): refused, never raised to 5.
+            conflicts.append(("--damage-topk", args.damage_topk_k, "> 0 (the incoming matrix's K)",
+                              f"--damage-matrices {args.damage_matrices}"))
     else:
         if not hasattr(args, "damage_matrices_outgoing"):
             args.damage_matrices_outgoing = None
         if not hasattr(args, "damage_matrices_incoming"):
             args.damage_matrices_incoming = None
+    if conflicts:
+        raise UmbrellaOverride(conflicts)
 
 
 def resolve_critic_mode(args) -> None:
@@ -390,7 +455,13 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     args._saved_config_present = _saved_ver is not None
     _coef_explicit = args.opp_belief_aux_coef is not None
 
-    desugar_umbrella_flags(args)
+    try:
+        desugar_umbrella_flags(args)
+    except UmbrellaOverride as e:
+        from main.exit_codes import TrainExitCode
+        print(f"\n[Arch] FATAL: {e}", file=sys.stderr, flush=True)
+        emit(f"[Arch] FATAL: {e}")
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
     # K10(a) + the 2026-10-14 fork-recipe fix: EVERY `--model` launch (a same-run restart — which strips the
     # fresh-only `--arch` —, a FORK, a fork's own resume) resolves every untyped recipe knob by exactly one route
     # (`recipe_surface.restart_route`: INERT / the resume's own inheritance / the checkpoint's model_config.json /

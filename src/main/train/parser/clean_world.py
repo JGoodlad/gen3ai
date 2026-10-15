@@ -139,14 +139,16 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "REQUIRES --move-belief-mode revealed|both (it reads the opp active's "
                              "predicted logits, supervised only for a revealed mon). Off by default.")
     parser.add_argument("--unified-damage", "--unified_damage", dest="unified_damage",
-                        choices=["off", "incoming", "both"], default="off",
+                        choices=["off", "incoming", "both"], default=None,
                         help="ONE knob for the unified damage system (desugars into the component flags at "
                              "parse time): 'off' = baseline; 'incoming' = move belief (revealed) + prior "
                              "fusion + the GPU damage op (opp active → our 6 mons, incl. the safe-switch "
                              "bench rows); 'both' = also the OUTGOING per-move block (our active → opp "
-                             "active, action-aligned — the equal-effectiveness tie-break). Overrides "
-                             "--move-belief-mode / --damage-op / --move-prior-fusion / --damage-outgoing "
-                             "when not 'off'. Pair with --move-candidate-floor (the learnset/rarity gate) "
+                             "active, action-aligned — the equal-effectiveness tie-break). Sets "
+                             "--damage-op / --move-prior-fusion / --damage-outgoing when not 'off', and "
+                             "--move-belief-mode when it is untyped; a sub-flag typed to a DIFFERENT value "
+                             "is REFUSED, never overridden (gen3_umbrella_no_silent_override_v1). Default: "
+                             "the --unified-moves level ('off' when that is off). Pair with --move-candidate-floor (the learnset/rarity gate) "
                              "and --move-belief-mode both (to also guess unrevealed mons' moves).")
     parser.add_argument("--damage-outgoing", "--damage_outgoing", dest="damage_outgoing",
                         action=BoolFlag, default=None,
