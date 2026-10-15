@@ -25115,3 +25115,70 @@ swap caught); 0 provenance and 0 legality violations over every stored world; ev
 
 Tag: **MEASUREMENT (MAJOR) · REFUTED (R-MOVES, R3) · SHARED (U) · BELIEF-RECOVERABLE on this distribution · not EVALUATOR-BOUND · FRONTIER EMPTY · PROVISIONAL at 15M · computed, not replicated** ·
 evidence: `designs/research_state/measurements/hidden_info_tier1_2026-10-13/` (README §7, `result_t1.md`, `result_t1.json`, `world_audit.json`, `posthoc_tiebreak.json`, `arm_key.json`), `designs/endstate/design_hidden_info_binding.md` §16.8, `designs/endstate/search_ledger.md`
+
+### 2026-10-15 · MEASUREMENT · **HIDDEN-INFO STUDY: the THIRD-PARTY REPLICA COMPARISON (R-REPLICATE, §12.2 / §13.1). On the 978 states where both independent implementations built every shared arm, the value of hidden information REPLICATES (G +0.0696 vs +0.0715) and so do the moves' minority shares (s_M 0.11 / 0.12, n_M 0.39 / 0.47) and the post-hoc tie-break step; R3's never-seen dominance, the stage, recover, eval and dose / placebo rules are NOT REPLICATED (the replica ran no such arms); R-REPLICATE as registered NOT MET**
+
+A third party, which ran neither implementation, compared the original Tier 1 (the frozen table `fc3aced3…`) with the blind
+replica (`measurements/hidden_info_replica_2026-10-11/`, `34ee1d6c`, built from §13.1's spec alone). The script is
+`replica_compare.py`, which uses one battle-clustered bootstrap for both, so every cross-implementation difference is paired.
+
+**Like with like.** The replica ran O, P, F, F+M and O−M on the registered 600 per checkpoint, with LEAF scorers only, because
+§13.1 asked for no more. The comparison set C holds the states where BOTH built all five arms: 978 states (491 end2 / 487 prod),
+711 battles. The pre-stated criterion: the 95 % intervals overlap AND the R-rule conditions read the same. Registered §12.2
+asks for point differences < 0.005 (rule 8), per-class TV < 0.02, and the same verdicts.
+
+**The instrument is identical.**
+- IMP_O is equal on all 1,200 registered states.
+- The replica's truth rows equal Phase 1's seeds 0–7 (1,200 / 1,200).
+- One scorer reproduces every IMP of both implementations (0 differences).
+- The searched side's view (the seen mons and their revealed moves) is equal on 1,164 / 1,164 states.
+
+**The reads (pooled on C; original / replica; paired difference):**
+- **G:** +0.0696 [+0.0591, +0.0806] / +0.0715 [+0.0602, +0.0834]; −0.0019 [−0.0128, +0.0093]. AGREE (B2 holds on both).
+- **σ_M:** +0.0079 / +0.0086. AGREE.
+- **ν_M:** +0.0273 / +0.0340; −0.0067 [−0.0160, +0.0025]. The intervals AGREE, but §12.2's point rule FAILS.
+- **s_M:** 0.114 [−0.025, 0.240] / 0.120 [−0.044, 0.261]. DISAGREE on one condition only: s upper < 0.25. B3 fails on both.
+- **n_M:** 0.392 [0.280, 0.510] / 0.475 [0.366, 0.601]. AGREE (B4 fails on both).
+- **P − F:** +0.001 / +0.006. BOUNDARY on the point rule.
+- **Ties:** the honest LEAF-K8 argmax ties on 0.61 / 0.60 of states. The M8 dose jumps +0.019 / +0.024 between p = 0 and
+  p = 0.001 and is flat to 0.1. **The tie-break artifact REPLICATES on the replica's own worlds.**
+- **A stage sub-read DIFFERS:** G's slope on reveal count is −0.023 [−0.033, −0.013] in the original and −0.011 [−0.022, +0.0003]
+  in the replica.
+
+**FINDINGS (standing rule 7).**
+1. **R3's never-seen dominance has NO independent replication.** §13.1's spec named no U arm. The red team's first target is an
+   independent F+U / O−U.
+2. **§12.2's TV < 0.02 is unmeetable at this sample size.** Split-half TV inside ONE implementation is 0.04–0.19. Against that
+   noise, the replica's seen-mon move marginals and never-seen move marginals differ; every other class sits at or below noise.
+3. **The honest builders' exclusions are not missing at random.** On the 111 states only the replica could fit, its n_M is 1.17
+   [0.76, 1.99]. They alone make the published B4 reads disagree (replica 0.533, original 0.416). Common-set shares probably
+   understate n_M in both implementations.
+4. **The M-only cascade's NECESSARY-NOT-SUFFICIENT / SHARED call flips** between the implementations and between state sets:
+   s_M's upper bound is 0.23–0.26 in every read. R3, which is checked first, is unaffected.
+5. **The replica's LEARNSET HANDICAP** (its move prior filtered on the table before `64a695dc`):
+   - **Scope:** a seen mon's HIDDEN true move is a missing pair on 63 % of states in C, and a never-seen mon's set holds one on
+     54 %. The replica's worlds hold 0 % of those moves against the original's 33 % (overall hit rate on hidden moves 0.486
+     vs 0.510).
+   - **Direction:** every effect pushes the replica's move shares UP, so its agreement that the moves are a minority share is
+     conservative.
+   - **Size:** ≈ +0.02 on n_M mechanistically; empirically at most +0.10 (point) / +0.23 (upper).
+   - **Location:** it is not detectable per state (the difference-in-differences contain 0 or flip sign).
+6. **A definitional difference:** the original's F+M re-draws Hidden Power's TYPE with the spread (16.5 % of seen-mon sets);
+   the replica tells the true type. σ_M agrees anyway.
+
+**Rule 1 / B1 / §13.2, per verdict:**
+- **MET:** G.
+- **PARTLY MET:**
+  - R-MOVES REFUTED (the M half yes, R3's U half no);
+  - R-GIGO at the instrument level;
+  - R-DOSE and the tie-break finding (descriptive);
+  - items / abilities / spreads add little.
+- **NOT MET:** R-RIVALS U, R-RECOVER, R-EVAL, the stage rules, B6 / B7, Amendment 3, FN.
+
+§16.8's verdicts are unchanged. **Nothing resting on U, the stage rules, R-RECOVER or R-EVAL may steer research under §13.2.** The
+third party's confidence that hidden TEAM information binds honest search rises to ≈ 95 % (G is now replicated). The moves as
+THE constraint stay at ≈ 5 %. The never-seen Pokémon as the largest class stay at ≈ 80 %, as a single-implementation claim.
+Operations: CPU only, no new playouts (rule 5b: nice 19, cores 5–7 / 13–15, `mem_cap` 8 GB, peak 1.3 GB).
+
+Tag: **MEASUREMENT · REPLICATED (G; the moves' minority shares; the tie-break step) · NOT REPLICATED (R3's never-seen half, U, stage, recover, eval, dose / placebo) · R-REPLICATE NOT MET as registered · PROVISIONAL at 15M** ·
+evidence: `designs/research_state/measurements/hidden_info_tier1_2026-10-13/replica_comparison.md`, `replica_comparison.json`, `replica_compare.py`; `designs/research_state/measurements/hidden_info_replica_2026-10-11/`; `designs/endstate/design_hidden_info_binding.md` §16.9; `designs/endstate/search_ledger.md`

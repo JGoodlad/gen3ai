@@ -13,7 +13,9 @@ replaying the game so far shows the searched side exactly what it really saw.
 The owner's worry was that a bug in the fair-world builder would quietly BE the result. So this folder is a
 SECOND builder, written by a different agent from the spec text alone (§13.1), without looking at the first
 builder, its scripts or any of its results. Its numbers go to a third party, who compares the two. This folder
-does NOT compare them.
+does NOT compare them. **The third party's comparison (2026-10-15) is
+[`../hidden_info_tier1_2026-10-13/replica_comparison.md`](../hidden_info_tier1_2026-10-13/replica_comparison.md).** Nothing in
+this folder was changed by it.
 
 **What we found while building it (the short version):** see FINDINGS below. Finding 1 there was found at the
 finish, and the third party should read it first: the learnset table both builders can reach does not carry

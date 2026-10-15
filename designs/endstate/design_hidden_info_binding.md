@@ -3,7 +3,7 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-15): TIER 1 READ (§16.8; `measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output, AMENDMENT 3 (§12.14, per-class dose curves) before any outcome was unblinded, the table frozen `c6f71d9a`): R-MOVES = MOVES-REFUTED (R3: the never-seen Pokémon dominate the seen mons' moves on both sides); computed, not yet replicated or red-teamed. Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
+**Status (2026-10-15): TIER 1 READ (§16.8; `measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output, AMENDMENT 3 (§12.14, per-class dose curves) before any outcome was unblinded, the table frozen `c6f71d9a`): R-MOVES = MOVES-REFUTED (R3: the never-seen Pokémon dominate the seen mons' moves on both sides); computed, not yet red-teamed. **REPLICA COMPARISON READ (§16.9, 2026-10-15, a third party):** G replicated on the same states (+0.070 vs +0.072), the moves' shares replicate in size (s_M 0.11 / 0.12, n_M 0.39 / 0.47), the tie-break step replicates; R3's never-seen half, the stage, recover, eval and dose / placebo rules are NOT replicated (the replica ran no such arms); R-REPLICATE as registered NOT MET. Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
 parts RUN AND READ (§16; Amendment 1 after the audits, §12.12). AMENDMENT 2 (2026-10-12, §12.13, before any new arm):
 the STAGE of the game (reveal count k, turn, material) becomes a registered dimension of Tier 1 with a k-stratified
 supplement, the K-world belief-quality dose-response is a Tier-1 arm family (§6.9, no extra playout), and a maturity
@@ -89,7 +89,7 @@ then still feeling good about it."
   the gain is concave (half by p ≈ 0.22) and our best honest belief is worth p ≈ 0.01 in the same units: the registered
   arms are §6.9 and §12.13.
 
-**TIER 1, the registered read (§16.8, 2026-10-15; PROVISIONAL at 15M, computed, not replicated):**
+**TIER 1, the registered read (§16.8, 2026-10-15; PROVISIONAL at 15M; the replica comparison §16.9 replicates G and the moves' shares, not R3's never-seen half):**
 - On the FULLY honest base the value of hidden information is the same 7 points (G +0.070 [+0.060, +0.081]); hiding items,
   abilities and spreads too adds ≈ 0.003.
 - **"The moves are THE binding constraint" is REFUTED (rule R3):** the never-seen Pokémon carry more on both sides (reveal-only
@@ -1501,6 +1501,93 @@ identification (POOL) is a property of our closed pool, the network's species be
 step needs ≈ 0.2–0.35 weight on the true world. Nothing here steers a multi-week commitment until the replica comparison, the red team
 (§13.2) and the plateau replication (§10.5) are in.
 
+### 16.9 The REPLICA COMPARISON: R-REPLICATE, read by a third party (2026-10-15; `measurements/hidden_info_tier1_2026-10-13/replica_comparison.md` / `.json`)
+
+A third party ran neither implementation. It compared the original Tier 1 (above) with the blind replica
+(`measurements/hidden_info_replica_2026-10-11/`, `34ee1d6c`, built from §13.1's spec alone). The comparison script is
+`replica_compare.py`, using one battle-clustered bootstrap for both. **Every verdict of §16.8 stands as computed; this
+section adds each verdict's replication status.**
+
+**Like with like.** The replica ran only O, P, F, F+M and O−M on the registered 600 per checkpoint, with LEAF scorers only.
+§13.1's spec named no more. So the comparison is made on **C**: the 978 states (491 end2 / 487 prod, 711 battles) where
+BOTH implementations built all five arms.
+
+**The instrument agrees exactly.**
+- IMP_O is identical state by state (1,200 / 1,200).
+- The replica's truth rows equal Phase 1.
+- One scorer reproduces every IMP of both implementations.
+- The searched side's view (the seen mons and their revealed moves) is identical on 1,164 / 1,164 states.
+
+**The agreement table** (pooled on C; original / replica; the criterion is overlapping 95 % intervals AND the same rule
+conditions):
+
+| quantity | original | replica | paired orig − rep | agreement |
+|---|---|---|---|---|
+| **G = O − F** | +0.0696 [+0.0591, +0.0806] | +0.0715 [+0.0602, +0.0834] | −0.0019 [−0.0128, +0.0093] | **AGREE** (B2 both; §12.2 point rule met) |
+| P − F (items / abilities / spreads told) | +0.001 | +0.006 | −0.005 [−0.021, +0.011] | AGREE; BOUNDARY on §12.2's point rule |
+| σ_M = F+M − F | +0.0079 | +0.0086 | −0.0007 [−0.0155, +0.0144] | AGREE |
+| ν_M = O − O−M | +0.0273 [+0.0189, +0.0358] | +0.0340 [+0.0256, +0.0432] | −0.0067 [−0.0160, +0.0025] | AGREE by intervals; **§12.2 point rule FAILS** (0.0067 > 0.005; the learnset handicap's direction) |
+| **s_M** | 0.114 [−0.025, 0.240] | 0.120 [−0.044, 0.261] | −0.007 [−0.21, +0.20] | **DISAGREE on one condition**: s upper < 0.25 (the NECESSARY-NOT-SUFFICIENT / SHARED edge); B3 fails on both |
+| **n_M** | 0.392 [0.280, 0.510] | 0.475 [0.366, 0.601] | −0.083 [−0.23, +0.07] | **AGREE** (B4 fails on both; lower ≥ 0.25 on both) |
+| tied honest LEAF-K8 argmax; M8 jump p 0 → 0.001 | 0.61; +0.019 | 0.60; +0.024 | every curve point's difference contains 0 | **the tie-break step REPLICATES** on the replica's own worlds (post hoc for both) |
+
+**Not replicated** (the replica has no such arm or scorer):
+- R3 and everything else about the never-seen class U (s_U, n_U, R-RIVALS, Amendment 3);
+- the dose and placebo arms (B6, B7);
+- FN, POOL, POOLSETS and MAP100 (R-RECOVER);
+- the critic, TRUNC and the hand evaluator (R-EVAL);
+- the supplement and the stage rules.
+
+A stage SUB-read on C DIFFERS. G's slope on reveal count is −0.023 [−0.033, −0.013] per SD in the original and −0.011
+[−0.022, +0.0003] in the replica (not clear); the difference itself is −0.012 [−0.022, −0.002].
+
+**The learnset handicap.** The replica's move prior used the table before `64a695dc`.
+- **Scope:** 63 % of states on C have a seen mon whose HIDDEN true move is a missing pair; 54 % have one on a never-seen mon.
+  The replica's worlds hold 0 % of those moves against the original's 33 %. Overall they hold 0.486 vs 0.510 of the seen
+  mons' hidden true moves.
+- **Direction:** every effect pushes the replica's move shares UP (G, s_M, n_M). So its agreement that the moves are a
+  MINORITY share is conservative.
+- **Size:** ≈ +0.02 on n_M mechanistically. Empirically at most the measured ν_M difference: +0.0067, upper +0.016, i.e.
+  n_M +0.10 / +0.23.
+- **Where:** it explains most of the seen-mon move-marginal difference (TV 0.14 → 0.10, against a noise floor of
+  ≈ 0.08–0.09). It is not locatable per state.
+
+**Why the published B4 reads differ** (the replica holds B4 at 0.533 on its own set; the original fails it at 0.416): the
+cause is SELECTION.
+- On the 111 states only the replica could fit, its n_M is 1.17 [0.76, 1.99].
+- The honest builders' exclusions are therefore not missing at random, and every common-set n_M is probably understated.
+
+**Rule 1 / B1 / §13.2's replication condition, per verdict:**
+- **MET:** G.
+- **PARTLY MET:**
+  - R-MOVES = REFUTED (R3): the M half replicates, the U half does not;
+  - R-GIGO at the instrument level;
+  - R-DOSE and its tie-break finding (descriptive);
+  - "items / abilities / spreads add little".
+- **NOT MET:** R-RIVALS U, R-RECOVER, R-EVAL, every stage rule, B6 / B7, Amendment 3, FN.
+
+**R-REPLICATE (§12.2) as a whole is NOT MET:**
+- the point rule fails on ν_M;
+- TV < 0.02 fails on most classes, but two halves of ONE implementation fail it too (the split-half floors are 0.04–0.19),
+  so the threshold is unmeetable at this sample size;
+- the replica issues no verdict.
+
+**Consequences for this doc.** §13.2's gate stays SHUT for anything resting on U, the stage rules, R-RECOVER or R-EVAL. The
+honest gap G (+0.07) and the moves' minority sufficiency share (s_M ≈ 0.11–0.12, B3 failing) now have an independent second
+measurement on the same states. The red team's first targets (ordered in the comparison's §9):
+1. an independent F+U / O−U;
+2. the not-missing-at-random exclusions;
+3. the NECESSARY-NOT-SUFFICIENT / SHARED knife edge;
+4. the instruments' common-mode parts (the same truth rows, seed reuse, the same written spec);
+5. the tie-dominated honest scorer.
+
+**Confidence after the comparison (the third party; the author's figures in §16.8 are left as written):**
+- that hidden TEAM information binds honest search (G ≈ +0.07): **raised**, to ≈ 95 %, since it is now replicated on the same
+  states;
+- that the moves are THE binding constraint: **unchanged**, ≈ 5 % (both implementations put s_M near 0.1);
+- that the never-seen Pokémon are the largest single class: **unchanged**, ≈ 80 %, and still a single-implementation
+  claim.
+
 ---
 
 ## 17. Open questions for the owner
@@ -1531,3 +1618,4 @@ step needs ≈ 0.2–0.35 weight on the true world. Nothing here steers a multi-
 | 2026-10-12 | **A MATURITY RE-RUN registered as a standing battery on the X26 deep run's own checkpoints (§12.13.7)** (owner: "I want to do this experiment again when we plateau so we know what that influences") | The per-stage VOI (A) and the dose-response (C) re-run at every 25M steps and at the plateau checkpoint, on ONE frozen 800-state bank drawn at the plateau (paired across checkpoints), the same seeds and scorers, a frozen builder; FULL (≈ 47 CPU-h) at the first and plateau anchors, LEAN (≈ 14) between, ≈ 150 CPU-h, no GPU; R-MATURITY reads the trajectory (does the gap shrink, does today's p rise toward p*, does the frontier move earlier); a verdict that reverses along the trajectory may not steer a multi-week commitment (§10.5) | re-drawing states per checkpoint (confounds maturity with the state distribution; kept as a LEAN secondary); a single plateau read (cannot say what maturity changes) | `design_value_discrimination.md` §13.10 (the stage-gated bootstrap that consumes the trajectory) |
 | 2026-10-13 | **AMENDMENT 3 (§12.14): PER-CLASS dose curves by re-weighting, registered before any Tier-1 outcome was unblinded** (owner via the orchestrator: "understand how p varies by what is revealed") | For each class with a reveal-only arm in Tier 1 (M: `F+M`; U: `F+U`): F+X worlds at weight p, F worlds at 1 − p, per state and action, from the SAME per-world outcomes (zero playouts; every p and both classes paired on one set of bootstrap draws); per class and stage: the curve, P-STAR (vs the policy / the critic at the same p / today's critic, rule 8), SHAPE, p-half, today's p as a labelled hit-rate PROXY (no per-class network-belief arm exists; FN is joint) beside FN's joint location on each curve, and CLASS-FIRST(b) = which class pays most for the next 0.10 of its own belief at stage b | per-class network-belief arms (FN-M, FN-U: new playouts, not registered in Tier 1); mixing a class arm with the TRUE world (§6.9's unit, which the DK family already reads); a hit-rate p as the primary unit (§6.9: the species belief hit 2× more and bought nothing) | §12.14; `hidden_info_tier1_2026-10-13/unblind_t1.class_dose` |
 | 2026-10-15 | **TIER 1 READ (§16.8): R-MOVES = MOVES-REFUTED (R3)**; R-RIVALS U-SHARED; R-RECOVER BELIEF-RECOVERABLE on this distribution (POOL 0.80); R-EVAL not evaluator-bound, information-bound support; frontier EMPTY; the dose curves' first step is tie-breaking (post hoc) | The registered rules applied as committed code to the frozen blinded table (2 checkpoints × the registered 600 + the k-stratified supplement; 12 coded arms + Phase 1 truth + the hand-eval re-plays; R-GIGO for the Tier-1 worlds PASS); the author's confidence that the moves are THE binding constraint ≈ 5 %; no move-inference programme; nothing steers a multi-week commitment until the replica comparison, the red team and the plateau replication | reading the dose-response's registered P-STAR = 0.1 / TODAY = 0.009 as a dose (they sit on a tie-break step: the post-hoc read is reported beside them); widening the unit to Tier 2's I / A / S arms (out of scope: B5 and NON-ADDITIVE are read on M and U only, disclosed) | `measurements/hidden_info_tier1_2026-10-13/` (`result_t1.md`, `world_audit.json`, `posthoc_tiebreak.json`); ledger 2026-10-15 |
+| 2026-10-15 | **REPLICA COMPARISON READ (§16.9) by a third party: R-REPLICATE NOT MET as registered; G MET; R-MOVES PARTLY MET (the M half replicates, R3's never-seen half is not replicated); everything resting on U, the stage rules, R-RECOVER or R-EVAL stays single-implementation** | Compared on C = the 978 states where both implementations built O, P, F, F+M and O−M, with one bootstrap for both: the instrument identical (IMP_O, truth rows, scorer, the searched side's view); G +0.0696 / +0.0715; s_M 0.11 / 0.12; n_M 0.39 / 0.47; the tie-break step reproduces on the replica's own worlds. The replica's learnset handicap (pre-`64a695dc` table) is scoped (63 % of states have a hidden seen-mon true move it could never draw) and directed (it inflates the replica's move shares), and its size is bounded (n_M ≤ +0.10 at the point). §12.2's TV < 0.02 is recorded as unmeetable at this sample size (two halves of one implementation fail it). The red team's first target is an independent F+U / O−U | comparing each implementation's PUBLISHED set (different selections: the 111 states only the replica could fit carry n_M 1.17 and alone flip B4); a cross-implementation R3 (the replica's n_M against the original's n_U: not a replication); editing §16.8's verdicts or the author's confidences (left as written; the third party's confidences are stated in §16.9) | `measurements/hidden_info_tier1_2026-10-13/replica_comparison.md` / `.json`, `replica_compare.py`; `measurements/hidden_info_replica_2026-10-11/`; ledger 2026-10-15 |

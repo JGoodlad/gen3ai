@@ -140,7 +140,10 @@ knows the codes; the blinding protects the frozen scripts, rules and table, not 
 
 Full tables: [`result_t1.md`](result_t1.md) (rendered from `result_t1.json`); the key: [`arm_key.json`](arm_key.json) (its sha256
 matches the sealed `arm_key.sha256`). Every read is PROVISIONAL "at 15M, current architecture" (§10.5 of the registration)
-and COMPUTED, not replicated: R-REPLICATE (the blind replica) is a third party's comparison.
+and COMPUTED, not replicated: R-REPLICATE (the blind replica) is a third party's comparison. **That comparison has since been READ
+(2026-10-15): [`replica_comparison.md`](replica_comparison.md) / `.json`, produced by `replica_compare.py`.** On the 978 states where
+both implementations built every shared arm, G and the moves' shares replicate. R3's never-seen half and every U / stage / recover /
+eval / dose read are NOT replicated. R-REPLICATE as registered is NOT MET. The verdicts below are unchanged.
 
 **In plain language.** Hidden information about the opponent's team costs honest search 7 points of win probability per
 decision, as the pilot said, and the fully honest builder (which also hides items, abilities and spreads) did not make

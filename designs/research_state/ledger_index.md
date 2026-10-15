@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-25,118-line file. **The ledger itself is append-only and is never edited by this**;
+25,185-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**868 headings · 813 dated · 2026-08-01 → 2026-10-15 · ledger 25,118 lines.**
+**869 headings · 814 dated · 2026-08-01 → 2026-10-15 · ledger 25,185 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -888,3 +888,4 @@ rename.
   - `L25048` · `2026-10-13` · REGISTRATION + BUILT · **HIDDEN-INFO STUDY TIER 1: the BLINDED read committed before any arm output (every registered rule of §12.3–§12.7 and §12.13.4 as code, `unblind_t1.py`), the arm key SEALED (its sha256 committed, the key kept in the archive), the stage CENSUS and the k-stratified SUPPLEMENT drawn (+200 end2, +220 prod, every k bin filled under the registered rule), FN / POOLSETS / POOL world sources built, and a cross-commit identity PASS (worlds built at HEAD, played at PAD pins)**
   - `L25063` · `2026-10-13` · REGISTRATION · **HIDDEN-INFO STUDY AMENDMENT 3 (§12.14): PER-CLASS dose curves by re-weighting (owner: "understand how p varies by what is revealed"), registered before any Tier-1 outcome was unblinded: for M (F+M) and U (F+U), F+X worlds at weight p and F worlds at 1 − p from the same per-world outcomes, per class and stage the curve, P-STAR (rule 8), SHAPE, p-half, today's p as a labelled hit-rate PROXY (FN is joint) and CLASS-FIRST(b); zero extra playouts**
   - `L25070` · `2026-10-15` · MEASUREMENT (MAJOR) · **HIDDEN-INFO STUDY TIER 1: "the opponent's hidden MOVES are THE binding constraint on search" is REFUTED (registered rule R3: the NEVER-SEEN Pokémon dominate on both sufficiency and necessity); on the FULLY honest builder the value of hidden information is +0.070 [+0.060, +0.081] (the pilot's size); the network's belief worlds buy nothing; our closed team pool's posterior recovers 0.80; Foul Play's hand evaluator is no better than our critic; no stage's honest search clears the gate; POST-HOC: the dose curves' first step is tie-breaking**
+  - `L25119` · `2026-10-15` · MEASUREMENT · **HIDDEN-INFO STUDY: the THIRD-PARTY REPLICA COMPARISON (R-REPLICATE, §12.2 / §13.1). On the 978 states where both independent implementations built every shared arm, the value of hidden information REPLICATES (G +0.0696 vs +0.0715) and so do the moves' minority shares (s_M 0.11 / 0.12, n_M 0.39 / 0.47) and the post-hoc tie-break step; R3's never-seen dominance, the stage, recover, eval and dose / placebo rules are NOT REPLICATED (the replica ran no such arms); R-REPLICATE as registered NOT MET**

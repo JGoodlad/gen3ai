@@ -5,13 +5,17 @@ this doc updates it in the same commit, and the Decision record at the end says 
 
 **Status (2026-10-15): the hidden-info study's TIER 1 has been READ on the FULLY honest base** (`design_hidden_info_binding.md`
 §16.8; registered rules, frozen blinded table, computed not replicated): §1, §2–§5 and §7 now carry its numbers; the pilot's
-descriptive stage reads stay in their owners. **Status (2026-10-12): ESTABLISHED at the owner's request** ("try and build a ledger of what we know about search, what
+descriptive stage reads stay in their owners. **Status (2026-10-15, later): the BLIND REPLICA has been COMPARED by a third
+party** (`design_hidden_info_binding.md` §16.9; `measurements/hidden_info_tier1_2026-10-13/replica_comparison.md`). On the 978
+states where both implementations built every shared arm, G and the moves' minority shares REPLICATE and so does the post-hoc
+tie-break step. R3's never-seen half, the stage, recover, eval and dose / placebo rules are NOT replicated: the replica ran no such
+arms. §1, §5.2, §6.1 and §7 Q2 carry this. **Status (2026-10-12): ESTABLISHED at the owner's request** ("try and build a ledger of what we know about search, what
 we know about where it's working, where it's not working, how much we need to improve for it to work … establish the
 ledger now"). This is an INDEX-AND-VERDICT doc: it holds no measurement of its own. Every row points at the ledger
 entry, design section or measurement folder that owns the number, and the owner wins any disagreement
 (`research_state/ledger.md` wins over everything; `design_hidden_info_binding.md` and `design_value_discrimination.md`
-own the pilot's detail). Not read in writing it: the BLIND REPLICA's code and results
-(`src/main/hidden_info_replica/`, `measurements/hidden_info_replica_2026-10-11/`); its comparison is an open item (§7).
+own the pilot's detail). The BLIND REPLICA's results (`measurements/hidden_info_replica_2026-10-11/`) enter this doc only
+through the third party's comparison (§16.9 of the study).
 
 **Scope.** "Search" here is what a player does at a decision: try each legal action, estimate how good the position
 after it is (the critic, or rollouts, or a short rollout then the critic), and play the best. It is OFFLINE / evaluation
@@ -37,11 +41,14 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
   (the seen mons' items, abilities and spreads included) and kept only if it replays everything our side saw, an
   8-rollout leaf gains **+0.006** [−0.004, +0.017] (critic search on the same worlds +0.000); the whole oracle edge is
   hidden information about the opponent's TEAM (G = oracle − honest **+0.070** [+0.060, +0.081], pooled). MEASURED
-  (Tier 1, registered), PROVISIONAL at 15M, computed not replicated.
+  (Tier 1, registered), PROVISIONAL at 15M. **REPLICATED** by the blind re-implementation on the same 978 states
+  (+0.0696 vs +0.0715; paired difference −0.002 [−0.013, +0.009]; study §16.9).
 - **The NEVER-SEEN Pokémon carry the gap, not the seen mons' hidden moves.** Revealing only the never-seen closes 0.31 of
   G, hiding only them opens 0.82; for the seen mons' moves 0.13 and 0.42. By the registered rule (R3) "the moves are THE
   binding constraint" is **REFUTED**; the moves are a real minority share (a confident WRONG move set costs −0.013; the
-  move dose +0.011 at 0.9). Items, abilities and spreads together add ≈ 0.003. MEASURED.
+  move dose +0.011 at 0.9). Items, abilities and spreads together add ≈ 0.003. MEASURED. The replica reproduces the MOVES'
+  shares (s_M 0.11 / 0.12, n_M 0.39 / 0.47 on the same states). It ran NO never-seen arm, so U's dominance (R3) is still a
+  SINGLE-IMPLEMENTATION claim.
 - **It falls as the game goes on.** G by opponent mons seen 1–2 … 6: +0.087 / +0.093 / +0.076 / +0.061 / +0.025 (TREND-DOWN,
   replicated); the axis that carries it once the others are in is the TURN; the truth changes the decision 78 % → 42 % of
   the time (k ≤ 3 vs ≥ 5) at about the same stakes. MEASURED (the mechanism rule itself is NOT DETECTED: the stakes
@@ -58,7 +65,8 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
   turn, a privileged critic, telling the frozen network the true moves (+0.001), the network's belief as a world sampler,
   the honest sharpening (prior-mode moves), the pool's per-species sets, and Foul Play's hand evaluator as the leaf in
   honest worlds (no better than the critic).
-- **Open, in order of cost:** the replica's third-party comparison and the red team, the knock-in forks' read, Tier 2
+- **Open, in order of cost:** an independent F+U / O−U (the replica comparison left R3's never-seen half unreplicated) and the
+  red team, the knock-in forks' read, Tier 2
   (items / abilities / spreads arms), the maturity battery at plateau (§7).
 
 ---
@@ -75,7 +83,7 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
 | W6 | **Late, honest search beats the policy (and, pooled, the critic search).** | PROVISIONAL, DESCRIPTIVE | all six seen: TRUNC-4 over the critic search **+0.026** [+0.004, +0.051], over the policy **+0.041** [+0.018, +0.066]; per checkpoint end-state +0.022 [−0.005, +0.052], production +0.031 [−0.001, +0.075]. ≤ 7 mons alive: leaf over the policy +0.022 [+0.007, +0.038] but not over the critic search | `hidden_info_by_reveal_count_2026-10-12/` README §1, `tables.md`; ledger 2026-10-12 L24663 |
 | W7 | **A zero-cost scorer exists:** the network's own ride-along A head, argmax, no rollout | PROVISIONAL, DESCRIPTIVE, end-state only | +0.010 [+0.001, +0.020]; one registered replication owed before anything is built on it | pilot README §12; ledger 2026-10-11 L24485 |
 | W8 | **The lever is real if the worlds knew the truth:** worlds with the seen mons' TRUE moves (CT′) | PROVISIONAL | LEAF-K8 +0.042 [+0.028, +0.058] / +0.018 [+0.004, +0.033]; beats its own critic on end-state by +0.025 [+0.009, +0.040] (DESCRIPTIVE); closes ½ / ⅕ of the oracle gap | pilot README §14 |
-| W9 | **Partial truth in the belief is worth a lot, once it is more than a tie-breaker.** Weight p on the true world among the honest ones | MEASURED (Tier 1, M8 on F; CONCAVE, CONTENT-MATTERS, CRITIC-INFO-LIMITED), with a POST-HOC qualifier | on F: +0.002 (p = 0) → +0.021 (0.1) → +0.032 (0.2) → +0.053 (0.35) → +0.062 (0.5) → +0.072 (1.0); the true world beats a random honest world at the same weight (M5 − M5W +0.028 [+0.024, +0.032] at 0.35). POST HOC: the whole step to p = 0.1 is reached at p = 0.001 (TIE-BREAKING, §5.1), so the dose proper runs from ≈ 0.1 to 0.75 | `design_hidden_info_binding.md` §16.8; `hidden_info_tier1_2026-10-13/` README §7; the pilot's curve: `hidden_info_by_reveal_count_2026-10-12/` README §4 |
+| W9 | **Partial truth in the belief is worth a lot, once it is more than a tie-breaker.** Weight p on the true world among the honest ones | MEASURED (Tier 1, M8 on F; CONCAVE, CONTENT-MATTERS, CRITIC-INFO-LIMITED), with a POST-HOC qualifier | on F: +0.002 (p = 0) → +0.021 (0.1) → +0.032 (0.2) → +0.053 (0.35) → +0.062 (0.5) → +0.072 (1.0); the true world beats a random honest world at the same weight (M5 − M5W +0.028 [+0.024, +0.032] at 0.35). POST HOC: the whole step to p = 0.1 is reached at p = 0.001 (TIE-BREAKING, §5.1), so the dose proper runs from ≈ 0.1 to 0.75. The step and the curve REPLICATE on the blind replica's own F worlds (ties 0.60, a jump of +0.024 at p = 0.001; every point's difference from the original's contains 0; post hoc, §16.9) | `design_hidden_info_binding.md` §16.8, §16.9; `hidden_info_tier1_2026-10-13/` README §7; the pilot's curve: `hidden_info_by_reveal_count_2026-10-12/` README §4 |
 | W10 | **An existence proof that determinised search wins here (PRE-ERA, a width meter).** Foul Play (decoupled UCT over a hand-written evaluator, Smogon-determinised sets) vs the 75M policy | MEASURED, PRE-ERA | our win rate **0.388** [0.288, 0.497], n = 80, ~1.4M visits per decision; width and opponent-set knowledge NOT SEPARABLE (width slope +0.027 per ln-visit, CI covers 0; knowledge delta +0.000 [−0.15, +0.15]). Later (PRE-ERA Kakuna, greedy vs Foul Play at 1000 ms): 0.490 [0.422, 0.559], NOT DETECTED | `UNDERSTANDING.md` §3.1; ledger 2026-09-14 L18248, 2026-09-17 L18964, 2026-09-29 L21447 |
 | W11 | **A rollout leaf out-ranks the learned critic head (PRE-ERA).** K = 1/2/4/8/16: 0.543 / 0.580 / 0.613 / 0.652 / 0.671 vs 0.574 | MEASURED, PRE-ERA | DETECTED at K ≥ 8 (+0.078 [+0.027, +0.128]); the single-rollout label itself mis-orders the top1\|top2 pair 39.7 % of the time (so any pairwise level is compressed toward 0.5) | ledger 2026-09-19 L19881, L19663 |
 | W12 | **Identifying the opponent's TEAM recovers most of the gap, on our closed pool.** Worlds drawn from the training-pool teams consistent with the observation (POOL), gated | MEASURED (Tier 1, R-RECOVER BELIEF-RECOVERABLE on this distribution) | r_POOL **0.80** [0.73, 0.87]: POOL IMP +0.063 vs oracle +0.076; the pool's per-species SETS alone (POOLSETS) recover −0.02: what pays is knowing WHICH TEAM, not the set priors. Not available on the ladder (an open population) | `design_hidden_info_binding.md` §16.8 |
@@ -112,7 +120,9 @@ F's TRUNC-4-K8 over F's one-ply critic search (the R-STAGE-SEARCH contrast); the
 two-point Shapley credit φ_X = ½(reveal-only gain + hide-only cost) of the never-seen mons (U) and the seen mons' moves (M);
 the dose column is M8 LEAF-K8 at p = 0 → 0.35 → 1 (the true world at weight p, F's worlds at 1 − p). Pooled over both
 policies, registered 600 + the k-stratified supplement (≥ 160 per k bin per policy before exclusions), battle-clustered 95 %.
-MEASURED, PROVISIONAL at 15M, computed not replicated. The axes are correlated (k–material −0.71, k–turn +0.66); jointly only
+MEASURED, PROVISIONAL at 15M, NOT replicated. The replica holds no supplement, no U arm and no critic scorer. Its sub-read of
+the k-gradient on the registered states DIFFERS: −0.011 [−0.022, +0.0003] per SD, against the original's −0.023 [−0.033, −0.013]
+on the same states (study §16.9). The axes are correlated (k–material −0.71, k–turn +0.66); jointly only
 the TURN keeps a slope (R-STAGE-AXIS). The pilot's earlier descriptive version (on its leakier builder) is
 `hidden_info_by_reveal_count_2026-10-12/` (§16.7 of the study).
 
@@ -195,8 +205,9 @@ holds**; "today's p" is the p-EQUIVALENT in value units. Registered read on the 
 
 The two-point Shapley credit over the registered 600: φ_U = ½(0.022 + 0.058) = **0.040**, φ_M = ½(0.009 + 0.029) = **0.019** of
 G = 0.070; Σ s = 0.45 [0.22, 0.65] (not NON-ADDITIVE), Σ n = 1.24 (the hide-only costs overlap). Nothing from the study may steer
-a multi-week programme until the replica agrees, the red team has attacked it and the plateau replication confirms it
-(`design_hidden_info_binding.md` §10.5); the author's confidence that the seen mons' MOVES are THE binding constraint is now ≈ 5 %.
+a multi-week programme until the replica agrees, the red team has attacked it and the plateau replication confirms it. The replica
+comparison (§16.9, 2026-10-15) agrees on the M row and on G. It is silent on the U row, because the replica built no U arm.
+The plateau replication is `design_hidden_info_binding.md` §10.5. The author's confidence that the seen mons' MOVES are THE binding constraint is now ≈ 5 %.
 
 ### 5.3 The honest builder's leaks, fixed 2026-10-12: earlier "fair" numbers were OPTIMISTIC
 
@@ -250,7 +261,15 @@ no in-Rust builder exists. The pilot's builder cost ≈ 0.08 CPU-s per world (ca
   (accepted P(m = r) 0.67 / 0.64 vs the ungated proposal's 0.57); a never-seen ratio'd mon on a true draw slot still takes the
   truth's gender coin (unobservable before the root).
 - **The independent re-implementation:** the blind replica's findings were relayed and answered (gender dice, dice-silent
-  facts, `playout_open`); its third-party comparison is OPEN (§7).
+  facts, `playout_open`). Its third-party comparison was READ on 2026-10-15 (study §16.9).
+  - **What agrees:** the truth, the referee and the scorer are identical, and the searched side's view is equal on 1,164 /
+    1,164 states.
+  - **Common-mode parts it CANNOT check:** the same Phase 1 rows, the reuse of the true dice seed (the dice-silent leak is in
+    BOTH builders), and the same written spec.
+  - **Its own handicap:** the replica's move prior used the learnset table before `64a695dc`. That inflates its move shares,
+    bounded at n_M ≤ +0.10.
+  - **§12.2's TV < 0.02 test is unmeetable at this sample size:** two halves of one builder fail it.
+  - **The honest builders' exclusions are not missing at random.** On the states only the replica could fit, n_M is 1.17.
 
 ### 6.2 The IMP metric and its disjoint referee
 
@@ -282,7 +301,7 @@ Rust side, not built); the training-time `--belief-oracle` of the study's §8.1 
 | # | question | the experiment | cost / status |
 |---|---|---|---|
 | Q1 | Does a FULLY honest search beat the critic anywhere, and which class of fact carries the gap? | **Tier 1 of the hidden-info study** — READ 2026-10-15 (§16.8): no (FRONTIER EMPTY; k = 6 GATE-WEAK); the never-seen Pokémon (R-MOVES REFUTED by R3). **Tier 2** (F+I/A/S, O−I/A/S, D25 / D75, W50 / W100, MAP90, P16 = R-WIDTH, the second referee) is the open remainder | Tier 1 cost ≈ 1.5 days on 3 agent cores (FN built; the honest screen ≈ 20–60 CPU-s per state). Tier 2 not queued |
-| Q2 | Is the pilot's oracle − honest gap an artifact of our instrument? | **The blind replica's third-party comparison** (R-REPLICATE, then the red team, `design_hidden_info_binding.md` §13) | PENDING. Not read here. Its three relayed findings are answered (§6.1) |
+| Q2 | Is the pilot's oracle − honest gap an artifact of our instrument? | **The blind replica's third-party comparison** (R-REPLICATE, then the red team, `design_hidden_info_binding.md` §13) | **PARTLY ANSWERED 2026-10-15 (§16.9):** the gap is NOT an artifact of one builder (G replicates on the same states). R-REPLICATE as registered is NOT MET: the ν_M point rule fails, and TV < 0.02 is below the noise floor. R3's never-seen half is unreplicated. Next: an independent F+U / O−U, then the red team |
 | Q3 | Can a network LEARN to use told information, and what is each class worth in strength? | **The knock-in forks**: `--oracle-reveal ki_moves` (etc.) with `--diagnostic-fork-consent`, 5 arms × 3 seeds × +3M from the adopted end state, a no-change control (the v8 guard) and a wrong-moves placebo; `main.dose` for the dose match | ≈ 14 GPU-h; QUEUED behind the bf16 A/B. The study's §8.3 argv is NOT launchable as written (`--arch endstate` is refused on a fork; `--belief-oracle` not built) |
 | Q4 | What do maturity and plateau change: does G shrink, does today's p rise toward p\*, does the frontier move earlier? | **The maturity battery** on the X26 deep run (`design_hidden_info_binding.md` §12.13.7): O, F, FN, F+M, F+U re-run at ≥ 25M then every 25M and at the plateau checkpoint, ONE frozen 800-state bank, rules R-MATURITY (GAP-SHRINKS / BELIEF-RISES / FRONTIER-MOVES-EARLIER / -STATIC / -RECEDES) | ≈ 150 CPU-h for six checkpoints (FULL ≈ 47 at the first and plateau anchors, LEAN ≈ 14 between), no GPU. Every claim in this ledger is PROVISIONAL until it runs |
 | Q5 | Does the honest ONE-PLY critic search pay in GAMES? | **S0b** (`design_value_discrimination.md` §13.4): the end-state checkpoint with an 8-world one-ply critic search vs the same checkpoint raw, mirrored head-to-head; pass = lower bound > the +4.57 pp replicate floor | ≈ 1 CPU-day. NOT run as far as the ledger records; OWNER approval requested (§13.0 ask 2) |
@@ -319,3 +338,4 @@ Rust side, not built); the training-time `--belief-oracle` of the study's §8.1 
 |---|---|---|---|---|
 | 2026-10-12 | **This doc CREATED at the owner's request** ("try and build a ledger of what we know about search, what we know about where it's working, where it's not working, how much we need to improve for it to work … establish the ledger now") | ONE always-current index-and-verdict doc: a one-screen summary; what works / what does not (each with an evidence tag, its interval and a pointer); the FRONTIER MAP by stage (reveal count, turn, MATERIAL); how far we are (the belief-quality dose-response against today's effective p, the per-class value of information, and the honest builder's 2026-10-12 leaks); the instruments and their limits; the open questions each with its settling experiment; a maintenance rule that every search result updates it in the same commit. It holds no measurement of its own | scattering the verdict across `design_value_discrimination.md`, `design_hidden_info_binding.md` and `UNDERSTANDING.md` §4.7 (no one place says where search stands); folding it into `UNDERSTANDING.md` (that file is the research view; a search-specific frontier table and the instrument limits would swamp it); reading the blind replica's code or results to fill Q2 (the owner's rule: its comparison is third-party and pending) | `design_value_discrimination.md` §7.11–§7.14, §13.10; `design_hidden_info_binding.md` §12.13, §16; `design_information_levers.md` §7, §10; `measurements/value_disc_pilot_2026-10-11/`, `hidden_info_binding_2026-10-11/`, `hidden_info_by_reveal_count_2026-10-12/`, `info_levers_2026-10-12/`; `UNDERSTANDING.md` §3.1, §4.5, §4.7, §4.x; ledger 2026-10-11 L24263 / L24341 / L24381 / L24485 / L24511, 2026-10-12 L24578 / L24604 / L24663 |
 | 2026-10-15 | **TIER 1 READ (the hidden-info study's registered factorial on the FULLY honest base)** | §1, §2 (W9 qualified, W12 POOL), §3 (N13 hand evaluator current era, N14 R-MOVES REFUTED, N15 FN), §4 (the registered Tier-1S frontier map replaces the pilot's descriptive one: FRONTIER EMPTY, U-LED early), §5.1 (the dose on F with the POST-HOC tie-break FINDING: the step to p = 0.1 is reached at p = 0.001; Amendment 3's per-class curves), §5.2 (class shares), §5.3 (c), §7 Q1 / Q8 / Q9 updated | keeping the pilot's descriptive frontier as the map (it ran on the leakier builder; it stays in its owners); quoting the registered P-STAR = 0.1 / TODAY = 0.009 without the tie-break qualifier (a 10 % belief would look sufficient) | `design_hidden_info_binding.md` §16.8; `hidden_info_tier1_2026-10-13/` README §7, `result_t1.md`, `posthoc_tiebreak.json`; ledger 2026-10-15 |
+| 2026-10-15 | **REPLICA COMPARISON READ (a third party; the study's §16.9)** | Status line; §1 (G REPLICATED; the moves' shares replicated, U's dominance single-implementation; the open list now leads with an independent F+U / O−U); W9 (the tie-break step replicates on the replica's own worlds); §4 header (the stage table NOT replicated, and the replica's k-gradient sub-read differs); §5.2 note; §6.1 (what the comparison can and cannot check: common-mode parts, the replica's learnset handicap, §12.2's unmeetable TV threshold, the not-missing-at-random exclusions); §7 Q2 PARTLY ANSWERED | marking R3 / U as replicated because the M half agrees (the replica built no U arm); dropping the "computed" caveats wholesale (only G and the M shares gained a second implementation) | `design_hidden_info_binding.md` §16.9; `hidden_info_tier1_2026-10-13/replica_comparison.md` / `.json`; ledger 2026-10-15 |
