@@ -332,8 +332,11 @@ no in-Rust builder exists. The pilot's builder cost ≈ 0.08 CPU-s per world (ca
   after the gender placement permuted the mons (46 % of the stored Tier-1 never-seen records at another mon's slot). The
   WORLDS were right (whole entries moved), so no playout and no registered verdict changed; the records and the
   set-vs-slot species hit did. Every returned world is now checked slot ↔ species ↔ facts ↔ the ENGINE's view and a
-  mismatch raises (`world_guard`, `design_information_levers.md` §7.6). It also caught 7 POOLSETS worlds (of ~1,140
-  states) with Will-O-Wisp twice (a pool alias `wisp`; r_POOLSETS −0.02 is not moved by 7 worlds).
+  mismatch raises (`world_guard`, `design_information_levers.md` §7.6). It also caught 7 POOLSETS worlds (of 9,112)
+  with Will-O-Wisp twice: one pool team packs the move as a Showdown name variant, `wisp`, and the packed-set reader
+  compared the raw token (FIXED 2026-10-15, one reader + throwing guards, §7.7). Past reads: 0 states with a variant in the
+  TRUE team, so F / FN / O−* / D* / W90 / MAP100 and POOL are unmoved; the exact leave-one-out of the 7 POOLSETS worlds
+  moves the arm-mean IMP by ≤ 3.3e-4 (r_POOLSETS −0.02 [−0.19, +0.13]); stamped, not re-run.
 
 ### 6.2 The IMP metric and its disjoint referee
 

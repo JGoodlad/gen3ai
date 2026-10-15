@@ -2,11 +2,21 @@
 
 A packed team is ``]``-joined entries ``name|species|item|ability|moves|nature|evs|gender|ivs|shiny|level|happiness``
 (``evs`` / ``ivs`` comma lists in HP, Atk, Def, SpA, SpD, Spe order; an empty EV is 0, an empty IV 31).
+
+THE ONE READER (GIGO 2026-10-15): a packed token is NOT an id until it is resolved. The engine resolves a move token
+through Showdown's name-variant table (``wisp`` -> ``willowisp``), so a team may spell one; a reader that compared the
+raw token with an id from play (a protocol line, a prior, a log) saw a different move, and a world carrying both
+spellings ran Will-O-Wisp twice. Every consumer of a packed team's species / item / ability / moves reads them through
+:func:`species_id`, :func:`item_id`, :func:`ability_id` and :func:`typed_moves` (never ``toid(f[4])`` / a raw split), and
+a token the gen-3 data does not know is a THROWING defect (:func:`require_known`), never a silent miss.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
+
+from agents.gen3_data import abilities, items, moves, species
+from utils.showdown_id import to_id_str
 
 HP_TYPES = ("fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water",
             "grass", "electric", "psychic", "ice", "dragon", "dark")
@@ -18,7 +28,13 @@ class PackedError(ValueError):
 
 
 def toid(s: str) -> str:
-    return "".join(ch for ch in s.lower() if ch.isalnum())
+    """The Showdown id of a name (``utils.showdown_id.to_id_str``: the ONE definition)."""
+    return to_id_str(s)
+
+
+def move_id(m: str) -> str:
+    """A packed move token as its canonical move id (``wisp`` -> ``willowisp``; ``agents.gen3_data.moves``)."""
+    return moves.canonical_id(m)
 
 
 def hp_type_of(ivs: Sequence[int]) -> str:
@@ -80,15 +96,57 @@ def species_id(f: Sequence[str]) -> str:
     return toid(f[1] or f[0])
 
 
+def item_id(f: Sequence[str]) -> str:
+    """The packed set's item id ("" = no item)."""
+    return toid(f[2])
+
+
+def ability_id(f: Sequence[str]) -> str:
+    """The packed set's ability id ("" = the engine's default)."""
+    return toid(f[3])
+
+
 def typed_moves(f: Sequence[str]) -> List[str]:
-    """The packed set's move ids, a bare ``hiddenpower`` typed by its IVs (what the engine runs)."""
+    """The packed set's move ids as the engine runs them: each token resolved through the name-variant table
+    (:func:`move_id`: ``wisp`` -> ``willowisp``), a bare ``hiddenpower`` typed by the set's IVs."""
     out = []
     for m in f[4].split(","):
-        mid = toid(m)
+        mid = move_id(m)
         if mid == "hiddenpower":
             mid = "hiddenpower" + hp_type_of(set_ivs(f))
         out.append(mid)
     return out
+
+
+def unknown_ids(f: Sequence[str]) -> List[str]:
+    """What the gen-3 data does not know of a packed set (empty = every id canonical): the species, a non-empty item or
+    ability, and each move once resolved. The data carries a name-variant table for MOVES only, so a species / item /
+    ability variant (Showdown's ``cb`` for Choice Band, ``deon`` for Deoxys) is unknown here, never silently read as a
+    different id."""
+    out = []
+    if species.get(species_id(f)) is None:
+        out.append(f"species {species_id(f)!r}")
+    if item_id(f) and items.get(item_id(f)) is None:
+        out.append(f"item {item_id(f)!r}")
+    if ability_id(f) and abilities.get(ability_id(f)) is None:
+        out.append(f"ability {ability_id(f)!r}")
+    for m in typed_moves(f):
+        if m and m != "hiddenpower" and moves.get(m) is None:
+            out.append(f"move {m!r}")
+    return out
+
+
+def require_known(team: str, where: str = "") -> None:
+    """THROWING: :class:`PackedError` when any set of the packed ``team`` holds an id the gen-3 data does not know
+    (:func:`unknown_ids`). A true team enters the search builder and the lever injector through this check."""
+    bad = []
+    for i, e in enumerate(x for x in team.split("]") if x.strip()):
+        f = parse_set(e)
+        if unknown_ids(f):
+            bad.append(f"slot {i} {species_id(f)}: {', '.join(unknown_ids(f))}")
+    if bad:
+        raise PackedError(f"{where + ': ' if where else ''}a packed team holds ids the gen-3 data does not know "
+                          f"({'; '.join(bad)})")
 
 
 @dataclass(frozen=True)

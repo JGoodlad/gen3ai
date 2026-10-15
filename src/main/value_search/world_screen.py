@@ -31,7 +31,8 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from agents.info_levers import mixture as MX
-from agents.info_levers.packed import HP_TYPES, Spread, hp_iv_masks, hp_type_of, typed_moves
+from agents.info_levers.packed import (HP_TYPES, Spread, ability_id, hp_iv_masks, hp_type_of, item_id, toid,
+                                       typed_moves)
 
 EPS = 0.25
 FLOOR = 0.15
@@ -321,9 +322,9 @@ class MonSampler:
         item, ab, nat, evs, hpt = s
         f = list(self.f_true if f_base is None else f_base)
         t_spread = Spread.of(self.f_true)
-        if item != _id(self.f_true[2]):
+        if item != item_id(self.f_true):
             f[2] = item
-        if ab != _id(self.f_true[3]):
+        if ab != ability_id(self.f_true):
             f[3] = ab
         if self._fixed("spread") == "TRUE":
             ivs = tuple(t_spread.ivs)
@@ -374,20 +375,16 @@ def _mask_logp(ty: str, k: int) -> float:
     return math.log(p) if n > 1 or k == 0 else 0.0
 
 
-def _id(s: str) -> str:
-    return "".join(ch for ch in s.lower() if ch.isalnum())
-
-
 def true_state(f: Sequence[str]) -> State:
     """The TRUE (item, ability, nature, EVs, Hidden Power) — None when the set holds no Hidden Power; its IV pattern's
     index when the true IVs are one of the type's 30/31 patterns (else the canonical one stands for them)."""
     sp = Spread.of(f)
     if not any(m.startswith("hiddenpower") for m in typed_moves(f)):
-        return _id(f[2]), _id(f[3]), _id(sp.nature), tuple(sp.evs), None
+        return item_id(f), ability_id(f), toid(sp.nature), tuple(sp.evs), None
     ty = hp_type_of(sp.ivs)
     masks = hp_iv_masks(ty)
     k = masks.index(list(sp.ivs)) if list(sp.ivs) in masks else 0
-    return _id(f[2]), _id(f[3]), _id(sp.nature), tuple(sp.evs), _hp_name(ty, k)
+    return item_id(f), ability_id(f), toid(sp.nature), tuple(sp.evs), _hp_name(ty, k)
 
 
 #: ``gate(jobs)`` → per job (passed, matched length): a job is (opponent team text, slot whose exact HP must match).

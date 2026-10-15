@@ -242,3 +242,22 @@ def test_boost_covers_gen3_setup_excludes_memento_and_stockpile():
     assert "stockpile" not in boost       # gen3 Stockpile does NOT raise Def/SpD (gen4 addition)
     assert movedex.move_data("curse").is_boost is False  # static flag stays off (live-resolved)
 
+
+
+def test_canonical_id_resolves_a_name_variant_the_way_the_engine_does():
+    """GIGO 2026-10-15: one of the 719 pool teams packs Will-O-Wisp as ``wisp``; a reader that compared the raw token
+    with an id from play saw a different move (and a world drew Will-O-Wisp twice)."""
+    for token in ("wisp", "wow", "Will-O-Wisp", "willowisp", " WISP "):
+        assert movedex.canonical_id(token) == "willowisp", token
+    assert movedex.canonical_id("sd") == "swordsdance"
+    assert movedex.canonical_id("hpice") == "hiddenpowerice"      # a typed shorthand keeps its type
+    assert movedex.canonical_id("hiddenpower") == "hiddenpower"   # bare stays bare: the IVs type it (packed.typed_moves)
+    assert movedex.canonical_id("") == "" and movedex.canonical_id(None) == ""
+    assert movedex.canonical_id("notamove") == "notamove"          # unknown: normalised, never raised on
+
+
+def test_every_name_variant_resolves_to_a_move_the_dex_knows_and_no_variant_shadows_a_canonical_id():
+    for variant, canonical in movedex.move_aliases().items():
+        assert movedex.get(canonical) is not None, (variant, canonical)
+        assert movedex.get(variant) is None, f"{variant!r} is both a name variant and a dex id"
+        assert movedex.canonical_id(variant) == canonical

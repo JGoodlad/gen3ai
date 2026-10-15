@@ -27,8 +27,8 @@ from agents.info_levers import mixture as MX
 from agents.info_levers.spec import InfoReveal, Lever
 
 from agents.info_levers.packed import (  # noqa: F401  (re-exported for the sampler and its tests)
-    HP_TYPES, STATS, Spread, hp_ivs, hp_type_of, is_hp, parse_set, set_evs, set_ivs, species_id, toid,
-    typed_moves)
+    HP_TYPES, STATS, PackedError, Spread, ability_id, hp_ivs, hp_type_of, is_hp, item_id, move_id, parse_set,
+    require_known, set_evs, set_ivs, species_id, toid, typed_moves)
 
 #: the engine's FAIL-LOUD moves and items (``scan_move_probe``, PROBE_KIND=move|item, 2026-10-11, at
 #: 62085750 and 95d014fa): drawing one would panic the core.
@@ -124,6 +124,9 @@ def draw_moves(rng: np.random.Generator, prior: Dict[str, float], keep: Dict[int
     world's IVs say the set holds none); ``force`` — exactly one, of ``hp_type`` (the world's IVs say it holds one).
     Returns the slots and the provenance (how many target / true moves the world holds, and the honest
     expectation of the true ones: their exact CP inclusion)."""
+    spelled = {m: c for m in prior if (c := move_id(m)) != m}
+    if spelled:      # a table naming a move by a name variant draws it TWICE beside its canonical spelling (2026-10-15)
+        raise PackedError(f"the move table names moves by a name variant, not the canonical id: {spelled}")
     have = set(keep.values())
     free = [i for i in range(n_slots) if i not in keep]
     k = len(free)
@@ -268,8 +271,8 @@ def new_set(rng: np.random.Generator, P: Prior, sid: str, f_true: Optional[List[
     if f_true is None:
         facts["moves"]["match"] = False
     items, abil = P.items(sid), P.ability(sid)
-    t_item = toid(f_true[2]) if f_true is not None else None
-    t_ab = toid(f_true[3]) if f_true is not None else None
+    t_item = item_id(f_true) if f_true is not None else None
+    t_ab = ability_id(f_true) if f_true is not None else None
     vals = {}
     for cls, truth, w in (("item", t_item, items), ("ability", t_ab, abil)):
         lv = lever(cls)

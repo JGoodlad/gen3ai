@@ -232,3 +232,29 @@ def test_place_genders_reports_the_permutation_it_applied_and_reporting_it_chang
             assert W.parse_set(out[slot])[0] == W.parse_set(ents[src])[0]
         moved += any(s != d for s, d in src_of.items())
     assert moved > 0, "the fixture must exercise a real permutation"
+
+
+def test_a_prior_naming_a_move_by_a_name_variant_is_refused_not_drawn_twice():
+    """POOLSETS (2026-10-15): its move table held ``wisp`` beside ``willowisp``; a world drew Will-O-Wisp twice. The
+    draw refuses such a table at the seam, whoever built it."""
+    import pytest
+
+    from agents.info_levers.packed import PackedError
+
+    table = {"willowisp": 0.5, "wisp": 0.1, "thunderbolt": 0.9, "icepunch": 0.6, "explosion": 0.3}
+    with pytest.raises(PackedError, match="wisp"):
+        W.WD.draw_moves(np.random.default_rng(1), table, {}, 4, None, [], None)
+    ok = {k: v for k, v in table.items() if k != "wisp"}
+    got, _ = W.WD.draw_moves(np.random.default_rng(1), ok, {}, 4, None, [], None)
+    assert len(set(got)) == 4
+
+
+def test_the_true_team_is_read_through_packed_and_an_unresolvable_id_throws_before_any_replay():
+    import pytest
+
+    from agents.info_levers.packed import PackedError
+
+    bad = "Gengar||cb|levitate|icepunch|Timid|||||||"
+    log = {"teams": ["Skarmory||leftovers|keeneye|spikes|Impish|||||||", bad], "cmds": []}
+    with pytest.raises(PackedError, match="item 'cb'"):
+        W.prepare_root(log, 0, "p1", "k")

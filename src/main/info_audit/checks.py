@@ -167,7 +167,7 @@ def _speed_evs(f: List[str], delta: int) -> Optional[List[str]]:
     from agents.gen3_data import natures, priors, species
     from agents.info_levers.packed import Spread
 
-    sd = species.get(W.toid(f[1] or f[0]))
+    sd = species.get(W.species_id(f))
     if sd is None or "spe" not in sd.base_stats:
         return None
     sp = Spread.of(f)
@@ -224,13 +224,13 @@ def seed_reuse(root: "W.Root", prior: Optional["W.Prior"] = None) -> dict:
         if mr is not None and mr.item is None:
             neutral = NEUTRAL_ITEMS[1] if sid == "ditto" else NEUTRAL_ITEMS[0]
             for it in (neutral,) + SILENT_DICE_ITEMS:
-                if W.toid(it) != W.toid(f[2]):
+                if W.toid(it) != W.item_id(f):
                     g = list(f)
                     g[2] = it
                     jobs.append(("item", i, it, team_with(i, g)))
         if mr is not None and mr.ability is None:
-            alts = [a for a in P.ability(sid) if a != W.toid(f[3])]
-            if alts and ({W.toid(f[3]), *alts} & SILENT_DICE_ABILITIES):
+            alts = [a for a in P.ability(sid) if a != W.ability_id(f)]
+            if alts and ({W.ability_id(f), *alts} & SILENT_DICE_ABILITIES):
                 for a in alts:
                     g = list(f)
                     g[3] = a
@@ -260,12 +260,12 @@ def seed_reuse(root: "W.Root", prior: Optional["W.Prior"] = None) -> dict:
         neutral = NEUTRAL_ITEMS[1] if sid == "ditto" else NEUTRAL_ITEMS[0]
         if ("item", i, neutral) in ok:
             out["item_mons"] += 1
-            truth_dice = W.toid(f[2]) in {W.toid(x) for x in SILENT_DICE_ITEMS}
+            truth_dice = W.item_id(f) in {W.toid(x) for x in SILENT_DICE_ITEMS}
             if truth_dice:
                 out["item_truth_dice"] += 1
                 if not ok[("item", i, neutral)]:
                     out["item_dice_pinned"] += 1
-                    ex.append({"mon": sid, "pinned": W.toid(f[2])})
+                    ex.append({"mon": sid, "pinned": W.item_id(f)})
             elif not ok[("item", i, neutral)]:
                 out["item_honest"] += 1
             else:
@@ -282,7 +282,7 @@ def seed_reuse(root: "W.Root", prior: Optional["W.Prior"] = None) -> dict:
             out["ability_mons"] += 1
             if any(not ok[k] for k in abil):
                 out["ability_rejected"] += 1
-                ex.append({"mon": sid, "ability_told": W.toid(f[3])})
+                ex.append({"mon": sid, "ability_told": W.ability_id(f)})
         sp = [k for k in ok if k[0] == "speed" and k[1] == i]
         if sp:
             out["speed_mons"] += 1

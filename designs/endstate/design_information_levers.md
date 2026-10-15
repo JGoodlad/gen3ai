@@ -496,8 +496,8 @@ byte for byte, before and after on 24 decision × spec cells); the builder moves
 **The guard (THROWING).** Before a `Worlds` is returned, ONE `core_events` replay of the J world teams with no command
 gives the ENGINE's view of each (the opponent's first request: team order). Per slot: the record's slot and species,
 the entry's species and the engine's are one; a seen mon sits in its true slot and is recorded seen; the engine's item,
-ability, moves (a packed alias such as `wisp` resolved through the engine's own table; no move twice once resolved)
-and EXACT stats (max HP included) are the entry's; every `match` flag (item, ability, spread, moves, the never-seen
+ability, moves (as `packed.typed_moves` reads the entry, §7.7: a packed name variant such as `wisp` resolved; no move
+twice) and EXACT stats (max HP included) are the entry's; every `match` flag (item, ability, spread, moves, the never-seen
 species, `true_mon`) recomputed from the entry against the truth OF THAT MON equals the record's. A disagreement raises
 `WorldConsistencyError` (never a `WorldError`: a defect is not an exclusion). Validated on 9,656 archived Tier-1
 worlds (120 states, every builder arm): with the records re-paired by species, 0 false positives on species, items,
@@ -505,9 +505,61 @@ abilities, moves, stats and flags; the 1 world it flagged is a real defect (belo
 check as a verdict (`consistency`, §10.1), so a world from another builder or a tampered one is read too.
 
 **What it found beyond the mis-pairing.** POOLSETS (the Tier-1 measurement's pool-set prior) built 7 worlds (7 of ~1,140
-states) whose Gengar holds `wisp` AND `willowisp` — Will-O-Wisp twice: one pool team packs the move as the alias
-`wisp`, and `agents.info_levers.packed.typed_moves` does not resolve aliases (the same gap makes a TRUE `wisp` slot
-unrecognised as revealed). Not fixed here (it would change worlds; 1 of 719 pool teams): `TECH_DEBT`-class, reported.
+states) whose Gengar holds `wisp` AND `willowisp` — Will-O-Wisp twice: one pool team packs the move as the Showdown name
+variant `wisp`, and `packed.typed_moves` did not resolve it. Fixed the same day: §7.7.
+
+**A builder that records no provenance (POOL).** A world that IS a pool team carries no fact records, so it never reached
+`WorldSampler.sample`'s guard. `world_guard.check_teams(root, teams, key)` is THE guard for such a builder: it derives the
+records from the entries (`derived_facts`; the `match` flags then hold by construction and are NOT an independent check)
+and runs the checks that stay independent — shape, slot ↔ species ↔ engine, a seen mon in its true slot, a never-seen
+slot's species, entry ↔ engine (item, ability, moves, exact stats, no move twice). Validated on 120 archived POOL states
+(960 worlds, both checkpoints): 0 false positives; and it flags all 7 defective POOLSETS worlds (§7.7). POOL's builder
+(`measurements/hidden_info_tier1_2026-10-13/pool_worlds.py`, a frozen measurement script) is to call it on the worlds
+`pool_sample` returns (`WG.check_teams(root, teams, key)` before `return PoolWorlds(...)`). **NOT WIRED (2026-10-15)**: the
+script lives in a measurement folder the unit that built the guard was told not to edit; the hunk is in the ledger entry
+of that day (GIGO FIX, packed tokens, FINDING 1). Any new builder with no records calls it from day one.
+
+### 7.7 The packed-token reader (BUILT 2026-10-15, a GIGO class fix: `agents.info_levers.packed`)
+
+**The defect.** A packed team may spell a move by one of Showdown's name variants (`wisp` for `willowisp`, `sd`, `hpice`,
+… 44 in `data/pokemon/gen3_move_aliases.json`): the engine resolves it on its own, so the battle is the same. A reader that
+compared the RAW token with an id from play (a protocol line, a prior, the log) saw another move. `typed_moves` was that
+reader for the whole search / lever stack, so: a TRUE `wisp` slot was not recognised as revealed when Will-O-Wisp was
+used (the choice attribution missed, the slot was redrawn and the gate conditioned it back), and POOLSETS' per-species
+move table held `wisp` beside `willowisp`, so 7 worlds of the Tier-1 study ran Will-O-Wisp twice. Exactly ONE of the 719
+pool teams spells a variant (team 555, Gengar `wisp`, from `data/teams/others/giraffe/dc99ab0afa2b1da9.txt`); no pool
+team and no `data/` file spells a variant of a species, item, ability or any other move (the census, below).
+
+**The fix (the class).** A packed token is not an id until it is resolved, and there is ONE reader:
+`agents.gen3_data.moves.canonical_id` (the Showdown id, then the variant table — the same table the Rust dex resolves a
+packed move with) behind `packed.move_id`; `packed.typed_moves` (variants resolved, a bare Hidden Power typed by the IVs),
+`species_id`, `item_id`, `ability_id`, and `utils.showdown_id.to_id_str` as the one normaliser (the duplicate `toid` /
+`_id` of `packed`, `revealed` and `world_screen` now delegate). Every read of a packed team's species / item / ability /
+moves in `info_levers`, `value_search`, `info_audit` and `team_legality` goes through them. **Three throwing guards:**
+`packed.require_known` (a species / item / ability / move the gen-3 data cannot resolve raises `PackedError`; called on
+the TRUE team by `worlds.prepare_root` and `inject.TrueTeam.of` — an unknown item used to read as "no item", num 0), the
+move draw refuses a prior table that names a move by a variant (`draw_moves`: it would draw the move twice), and
+`world_guard` compares the reader with the ENGINE (it no longer re-resolves variants itself). The data carries a variant
+table for MOVES only; Showdown has species (506 in `aliases.ts`), item (`cb`, `band`, `lefties`, `nmi`, `bj`, `bjuice`)
+and ability (`intim`, `stag`, `vabs`, `wabs`) variants too, which the data does NOT carry and the Rust dex does not
+resolve: a team that spells one raises at `require_known` rather than reading as another id.
+**Resolved at READ time, not at load/pack time:** canonicalising team 555 in `utils.team_packing` would change the pool's
+packed bytes (the pool's sha256 `4083c86bdffa…` that every Tier-1 POOL row records, and the raw-equality of the 600
+registered opponent teams per checkpoint to a pool team that POOL's `true_indices` and the identity checks rest on) to
+repair a spelling the engine already reads correctly.
+
+**Impact on past reads** (stored Tier-1 archive, 2026-10-15; `designs/research_state/ledger.md`): the true-team branch
+(an F / FN / O-* world built for a state whose TRUE opponent team spells a variant) touches **0 states** (0 of the
+registered + supplement states of both checkpoints and 0 of the 20,712 `BANK_V1` decisions spell one on the opponent's
+side): F, F+M, F+U, O−M, O−U, FN, D50, D90, W90, MAP100 and the oracle identity are unmoved. POOL: 4 worlds in 3 rows
+hold team 555's `wisp` (a legitimate world, same game); no POOL candidate set changes (recomputed with the old and the
+new reader on all 1,200 stored rows, 35 of which reveal Gengar's Will-O-Wisp: identical in every row); unmoved. POOLSETS: **7 worlds (7 of 9,112; 4 end2, 3 prod) held Will-O-Wisp
+twice** and 2 more held `wisp` once; the reader also shifts the Gengar table (pool Gengar sets 182: Will-O-Wisp 118 → 119,
+i.e. inclusion 0.648 → 0.654, and the 1-set `wisp` mass is gone), which touches the 2,208 POOLSETS worlds (728 rows) that
+hold a Gengar. Exact leave-one-out of the 7 defective worlds (their state's scorers recomputed on the other 7 worlds): 6 of
+the 7 states are scored (the 7th POOLSETS row was refused by the playout), an IMP changes in 3 of them, and the largest
+change of the POOLSETS arm-mean IMP over any scorer is 3.3e-4 (LEAF-K8: +4e-5) over 1,138 scored states, against the
+r_POOLSETS interval [−0.19, +0.13]: **stamped, not re-run** (a rebuild would re-draw only the Gengar-holding worlds).
 
 ---
 
@@ -715,3 +767,4 @@ For a decision-level score IMP (the study's: win probability per decision over t
 | 2026-10-15 | **The REVEAL PROVENANCE contract BUILT (`gen3_reveal_provenance_v1`; GIGO FIX)**: the knock-in forks' `metadata.json` recorded `oracle_reveal: off` beside a `model_config.json` that said `moves:seen@0.95` | The resolved run config is the ONE source; `metadata.json` copies it from the env core's declaration (`env_core.oracle_reveal`); a post-load table re-applies every `resume_immutable` extractor attribute (`agents.model.resume_reapply`); `save_model_snapshot` / `record_checkpoint` raise `RevealProvenanceError` and the trainer exits `FATAL_CONFIG` on a record that disagrees; the readers (`oracle_reveal.run_provenance`, `main.lineage`, `main.sidecar_audit`) prefer `model_config.json` and flag the 11 existing knock-in forks KNOWN-BAD (files untouched). Impact verdict: PROVENANCE ONLY (the attribute is read by `run_io` alone; training and eval observations come from the resolved config) | rewriting the forks' `metadata.json` (`models/` is read-only; blocks are immutable); writing the true reveal into the policy's pickled `features_extractor_kwargs` (it is the forward-identity `forward_fingerprint` / `EngineArch` read: a fork would split from its plain control and the fork-vs-control h2h cell would be refused); reading the mode from the extractor and fixing only its re-apply (one witness, no cross-check) | `src/agents/model/reveal_provenance_test.py` (each assertion fails on revert), the CPU parent-then-fork smoke, `python -m main.lineage models/rb_hib_moves_s3101` |
 | 2026-10-12 | **IVs below 30: taken as full Attack** (owner's ruling on the builder's finding 4: "0 attack adds so little value. It only matters when a pokemon is confused and hurts itself in confusion or in a struggle end game. You can toss those in as full attack.") | No new IV prior: the screen keeps every IV at 30 / 31 (the Hidden Power's patterns, else 31), so a minimised-Attack set is built and believed at full Attack; a decision whose log pins the Attack stays an EXCLUSION, counted and reported | an IV prior below 30 (no Smogon source; little value) | §7.5, §12; `world_screen.ivs_of` |
 | 2026-10-15 | **The world CONSISTENCY GUARD BUILT, after a GIGO in `Worlds.facts` (§7.6)**: the gender placement permuted the drawn never-seen mons but their provenance records stayed at the slot each was DRAWN for (46 % of the never-seen records of the stored Tier-1 worlds named another slot's mon), and the never-seen species `match` compared a species with the truth of its draw slot | Each record moves with its mon (`place_genders(src_of=…)`, `drawn_slot`; the worlds byte-identical); the species flags read at the returned slot (`match` = a TRUE never-seen species, set-based; `slot_match` = the truth's species at this slot); every returned world checked slot ↔ species ↔ facts ↔ the ENGINE's view (item, ability, moves with aliases resolved and none twice, exact stats, every match flag recomputed) and a mismatch RAISES `WorldConsistencyError`; the audit's `consistency` verdict | keeping slot-based `match` (it measures neither the slot the mon holds nor whether the team holds a true species); matching records by species in each READER (the Tier-1 FN provenance does; every other reader would have to know); an exclusion instead of a raise (a record that is not its world is a defect) | `main/value_search/world_guard.py` (+ `_test.py`, `_integration_test.py`); impact: no world, playout or registered verdict changed; the Tier-1 Amendment-3 U hit-rate proxy and the FN species hit move (ledger 2026-10-15) |
+| 2026-10-15 | **The PACKED-TOKEN READER BUILT, a GIGO class fix (§7.7)**: `packed.typed_moves` compared a packed team's RAW move token with ids from play, so the one pool team that spells Will-O-Wisp `wisp` (team 555) made a TRUE `wisp` slot unrecognised as revealed and POOLSETS' move table hold `wisp` beside `willowisp` (7 of its 9,112 Tier-1 worlds ran the move twice) | ONE reader: `gen3_data.moves.canonical_id` (the Showdown id through the variant table the Rust dex uses) behind `packed.move_id` / `typed_moves`, with `species_id` / `item_id` / `ability_id` and `to_id_str` as the one normaliser, used by every packed-field read of `info_levers`, `value_search`, `info_audit` and `team_legality`; THROWING guards: `packed.require_known` (an id the data cannot resolve, on the TRUE team in `prepare_root` and `TrueTeam.of`), `draw_moves` refuses a prior that names a move by a variant, `world_guard` compares the reader with the engine; `world_guard.check_teams` / `derived_facts` for a builder with no provenance records (POOL) | canonicalising at load / pack time in `utils.team_packing` (it changes the pool's packed bytes and sha256 that POOL's `true_indices` and the identity checks rest on, to repair a spelling the engine already reads); resolving variants in `world_guard` only (the reader stays wrong everywhere else); editing `data/` (rule 6: the team file stays as contributed) | `agents/info_levers/packed.py`, `agents/gen3_data/moves.py`, `main/value_search/{world_draws,worlds,world_guard,world_screen}.py` (+ `packed_test.py`, `inject_true_team_test.py`, `name_variant_integration_test.py`, `world_guard_test.py`, `worlds_test.py`, `moves_test.py`); impact: 0 states with a variant in the TRUE team (F / FN / O−* / D* / W90 / MAP100 unmoved), POOL unmoved, POOLSETS 7 worlds + a 1-set Gengar table shift, exact leave-one-out arm-mean IMP change ≤ 3.3e-4 (ledger 2026-10-15) |

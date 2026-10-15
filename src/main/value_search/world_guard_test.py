@@ -114,3 +114,35 @@ def test_a_packed_alias_is_the_engine_move_and_a_move_twice_is_caught():
 def test_exact_stats_follow_the_gen3_formula():
     st = G.expected_stats(TRUE[1])                    # Skarmory 65/80/140/40/70/70, Impish, 252 HP / 252 Def
     assert st == {"hp": 334, "atk": 196, "def": 416, "spa": 104, "spd": 177, "spe": 176}
+
+
+def test_derived_facts_make_a_builder_with_no_provenance_checkable_and_the_independent_checks_still_bite():
+    """POOL builds worlds that carry no records (a world IS a pool team): ``check_teams`` derives them from the entries,
+    so the flag checks hold by construction, and everything the engine can contradict still bites."""
+    ok = G.derived_facts(ROOT, "]".join(WORLD))
+    assert G.world_problems(ROOT, "]".join(WORLD), ok, _view(WORLD)) == []
+    # a seen mon off its true slot: named (the records follow the entries, the slot rule does not move)
+    moved = [WORLD[1], WORLD[0], WORLD[2], WORLD[3]]
+    assert any("moved from its true slot" in b for b in
+               G.world_problems(ROOT, "]".join(moved), G.derived_facts(ROOT, "]".join(moved)), _view(moved)))
+    # the engine built another item than the entry names
+    view = _view(WORLD)
+    view[2] = dict(view[2], item="choiceband")
+    assert any("item entry" in b for b in G.world_problems(ROOT, "]".join(WORLD), ok, view))
+    # Will-O-Wisp twice (the 2026-10-15 POOLSETS defect): the entry names it under both spellings
+    gengar = "Gengar||leftovers|levitate|thunderbolt,icepunch,wisp,willowisp|Timid|,,,252,4,252|M||||"
+    twice = [TRUE[0], TRUE[1], gengar, TRUE[2]]
+    view = _view(twice)
+    view[2] = dict(view[2], moves=["thunderbolt", "icepunch", "willowisp", "willowisp"])
+    assert any("a move twice" in b for b in
+               G.world_problems(ROOT, "]".join(twice), G.derived_facts(ROOT, "]".join(twice)), view))
+
+
+def test_the_move_reader_resolves_a_name_variant_so_the_variant_world_is_not_a_phantom_duplicate():
+    """The reader and the engine agree on ``wisp``: the entry is read as Will-O-Wisp, equal to the engine's list."""
+    gengar = "Gengar||leftovers|levitate|thunderbolt,icepunch,wisp,explosion|Timid|,,,252,4,252|M||||"
+    world = [TRUE[0], TRUE[1], gengar, TRUE[2]]
+    view = _view(world)
+    assert view[2]["moves"] == ["thunderbolt", "icepunch", "willowisp", "explosion"]      # NOT hand-patched here
+    assert not [b for b in G.world_problems(ROOT, "]".join(world), G.derived_facts(ROOT, "]".join(world)), view)
+                if "move" in b]

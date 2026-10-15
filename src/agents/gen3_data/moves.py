@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
 from agents.enums import MoveCategory, PokemonType
+from utils.showdown_id import to_id_str
 
 from . import _base
 
@@ -217,3 +218,16 @@ def is_damaging(move_id: Optional[str]) -> bool:
 #: (``utils.bridge.reconstruction.decode_packed_team``), which used to dump the table LIVE from the
 #: Showdown dist through a ``node`` subprocess (deleted 2026-10-10).
 move_aliases = _base.singleton(lambda: dict(_base.load_json("gen3_move_aliases.json")))
+
+
+def canonical_id(name: Optional[str]) -> str:
+    """A move NAME or id as its CANONICAL id: the Showdown id (``to_id_str``) resolved through
+    :func:`move_aliases` (``"Will-O-Wisp"`` / ``"wisp"`` / ``"wow"`` → ``willowisp``; ``"hpice"`` →
+    ``hiddenpowerice``), the way the engine resolves a packed-team move token. THE one resolver for any code that
+    READS a packed team's move field and compares it with an id from play (a protocol line, a prior, the log): a
+    raw ``to_id_str`` token is not a move id when the team spelled an alias (one of the 719 pool teams packs
+    Will-O-Wisp as ``wisp``, 2026-10-15 GIGO). A bare ``hiddenpower`` stays bare (typing it by the set's IVs is the
+    reader's job, ``agents.info_levers.packed.typed_moves``); an unknown token comes back normalised, never raised
+    on (use :func:`get` to test membership)."""
+    mid = to_id_str(name or "")
+    return str(move_aliases().get(mid, mid))

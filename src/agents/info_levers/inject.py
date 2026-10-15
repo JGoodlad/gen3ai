@@ -76,25 +76,25 @@ class TrueTeam:
     @staticmethod
     def of(packed: str) -> "TrueTeam":
         from agents.gen3_data import items, moves, natures, priors, species
-        from agents.info_levers.packed import Spread, parse_set, toid, typed_moves
+        from agents.info_levers.packed import Spread, item_id, parse_set, require_known, species_id, typed_moves
 
+        require_known(packed, "TrueTeam.of")     # an id the gen-3 data cannot resolve: a defect, never a silent 0
         mult = natures.multipliers()
         out: Dict[int, TrueMon] = {}
         for entry in packed.split("]"):
             if not entry.strip():
                 continue
             f = parse_set(entry)
-            sid = toid(f[1] or f[0])
-            sd = species.get(sid)
+            sd = species.get(species_id(f))
             if sd is None:
-                raise ValueError(f"unknown species {sid!r}")
+                raise ValueError(f"unknown species {species_id(f)!r}")
             nums = set()
             for mid in typed_moves(f):
                 md = moves.get(mid)
                 if md is None:
                     raise ValueError(f"unknown move {mid!r}")
                 nums.add(int(md.num))
-            it = items.get(toid(f[2])) if f[2] else None
+            it = items.get(item_id(f)) if f[2] else None
             sp = Spread.of(f)
             nat = mult.get(sp.nature[:1].upper() + sp.nature[1:].lower(), {}) if sp.nature else {}
             base = dict(zip(("hp", "atk", "def", "spa", "spd", "spe"), sd.base_stats)) if isinstance(

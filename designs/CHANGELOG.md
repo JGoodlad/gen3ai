@@ -14373,3 +14373,42 @@ aliases — reported, not fixed here).
 - Docs: `designs/endstate/design_information_levers.md` (§7.2, §7.6, §10.1, Decision record), `designs/endstate/search_ledger.md`
   (N15, §5.1, §6.1, Decision record), `designs/endstate/design_hidden_info_binding.md` (§16.8 table and findings, Decision
   record); ledger 2026-10-15 GIGO FIX (world records).
+
+## 2026-10-15 — GIGO FIX: a packed team's move token was compared RAW with ids from play (`wisp` ≠ `willowisp`); ONE packed-token reader (`gen3_data.moves.canonical_id` behind `packed.typed_moves`) + throwing guards (offline search / lever stack and `team_legality`; no model / config / obs / signature / `data/` change)
+
+**The defect.** A packed team may spell a move by one of Showdown's name variants (44 in `data/pokemon/gen3_move_aliases.json`;
+the engine resolves them, so the battle is unchanged). `agents.info_levers.packed.typed_moves` compared the RAW token, so
+for the ONE pool team that does (team 555, Gengar `wisp`, from `data/teams/others/giraffe/dc99ab0afa2b1da9.txt`; 1 of 719,
+and no species / item / ability / other move in the pool or in any `data/` file is a variant — a census of every token) a
+TRUE `wisp` slot was not recognised as revealed when Will-O-Wisp was used (the choice attribution missed and the slot was
+redrawn), and POOLSETS' per-species move table (built from `typed_moves`) held `wisp` beside `willowisp`, so 7 of its
+9,112 Tier-1 worlds ran Will-O-Wisp twice (found by `world_guard`, `8702a56f`).
+
+**Impact (stored Tier-1 archive, read-only).** 0 states whose TRUE opponent team spells a variant (registered + supplement,
+both checkpoints; 0 of 20,712 `BANK_V1` decisions): F, F+M, F+U, O−M, O−U, FN, D50, D90, W90, MAP100 and the oracle
+identity are unmoved. POOL: 4 worlds in 3 rows hold team 555's `wisp` (a legitimate world), no candidate set changes (old vs
+new reader, all 1,200 rows). POOLSETS: 7 defective worlds (4 end2, 3 prod) + 2 holding `wisp` once, and the Gengar table
+shifts by one set of 182 (Will-O-Wisp 118 → 119) for the 2,208 POOLSETS worlds (728 rows) that hold a Gengar. Exact
+leave-one-out of the 7 worlds: 6 of the 7 states scored, 3 with an IMP change, largest POOLSETS arm-mean IMP change over
+any scorer 3.3e-4 (LEAF-K8 +4e-5) over 1,138 scored states, against r_POOLSETS −0.02 [−0.19, +0.13]. Stamped, not re-run.
+
+**The fix.** ONE reader: `agents.gen3_data.moves.canonical_id` (the Showdown id through the variant table the Rust dex
+reads) behind `packed.move_id` / `typed_moves`; `packed.species_id` / `item_id` / `ability_id`; `utils.showdown_id.to_id_str`
+as the one normaliser (the duplicate `toid` / `_id` of `packed`, `revealed` and `world_screen` delegate). Every read of a
+packed team's fields in `info_levers`, `value_search` and `info_audit` goes through them, and `agents.gen3_data.team_legality`
+resolves its move tokens too (a variant such as `sd` / `bp` would have hidden a Swords Dance / Baton Pass from the One Boost
+Passer clause). Resolved at READ time: canonicalising at pack time would change the pool's packed bytes / sha256 that POOL
+and the identity checks rest on. **Throwing guards:** `packed.require_known` (an id the gen-3 data cannot resolve raises
+`PackedError`; on the TRUE team in `worlds.prepare_root` and `inject.TrueTeam.of`, where an unknown item used to read as "no
+item"), `draw_moves` refuses a prior table that names a move by a variant, `world_guard` compares the reader with the ENGINE
+(it no longer re-resolves variants itself), and `world_guard.check_teams` / `derived_facts` check a builder that records no
+provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 defective POOLSETS worlds flagged; POOL's frozen
+`pool_worlds.py` is to call it, NOT yet wired: it lives in a measurement folder this unit was told not to edit — see the ledger).
+
+- Tests (each fails on revert, verified by restoring the raw-token reader, with and without the throwing guard):
+  `src/agents/info_levers/packed_test.py` (the reader, the throwing cases, the 719-team census),
+  `inject_true_team_test.py`, `src/main/value_search/name_variant_integration_test.py` (a REAL banked decision whose opponent's
+  Gengar used Will-O-Wisp, the true team rewritten to `wisp`: read exactly as the canonical team, no move twice),
+  `world_guard_test.py`, `worlds_test.py`, `src/agents/gen3_data/moves_test.py`.
+- Docs: `designs/endstate/design_information_levers.md` (§7.6, new §7.7, Decision record), `designs/endstate/search_ledger.md`,
+  `src/agents/gen3_data/CLAUDE.md`; ledger 2026-10-15 GIGO FIX (packed tokens).

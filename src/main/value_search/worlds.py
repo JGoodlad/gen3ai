@@ -52,8 +52,8 @@ from agents.info_levers import revealed as RV
 from agents.info_levers.consumers import SEARCH
 from agents.info_levers.spec import InfoReveal
 from main.value_search.world_draws import (  # noqa: F401  (re-exported: the sampler's public helpers)
-    BANNED_ITEMS, BANNED_MOVES, HP_TYPES, STATS, Prior, Spread, WorldError, fires, hp_ivs, hp_type_of, is_hp,
-    never_seen_species, new_set, parse_set, set_ivs, toid, typed_moves)
+    BANNED_ITEMS, BANNED_MOVES, HP_TYPES, STATS, Prior, Spread, WorldError, ability_id, fires, hp_ivs, hp_type_of,
+    is_hp, item_id, never_seen_species, new_set, parse_set, require_known, set_ivs, species_id, toid, typed_moves)
 from main.value_search import world_draws as WD
 from main.value_search import world_guard as WG
 from main.value_search import world_screen as WS
@@ -188,7 +188,7 @@ def _draws(entry: str) -> bool:
     pad = _gender_pad()
     if pad and f[7].endswith(pad):
         return True
-    return not f[7] and species_draws_gender(toid(f[1] or f[0]))
+    return not f[7] and species_draws_gender(species_id(f))
 
 
 def gender_draw_slots(team: str) -> Set[int]:
@@ -225,7 +225,7 @@ def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Se
     sets = {i: parse_set(entries[i]) for i in ns}
 
     def named(f: List[str]) -> List[str]:
-        sd = species.get(toid(f[1] or f[0]))
+        sd = species.get(species_id(f))
         g = sd.gender if sd is not None else "N"
         f = list(f)
         f[7] = ("M" if rng.random() < 0.5 else "F") if g is None else ("" if g == "N" else g)
@@ -234,7 +234,7 @@ def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Se
     def padded(f: List[str]) -> Optional[List[str]]:
         if pad is None:
             return None
-        sd = species.get(toid(f[1] or f[0]))
+        sd = species.get(species_id(f))
         g = (f[7] or "")[:1] or (sd.gender if sd is not None and sd.gender is not None else "M")
         f = list(f)
         f[7] = ("N" if g in ("", "N") else g) + pad
@@ -242,7 +242,7 @@ def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Se
 
     out = list(entries)
     need = sorted(s for s in draw_slots if s in free)
-    ratio = [i for i in free if species_draws_gender(toid(sets[i][1] or sets[i][0]))]
+    ratio = [i for i in free if species_draws_gender(species_id(sets[i]))]
     if len(ratio) < len(need) and pad is None:
         return None
     pick = [ratio[k] for k in rng.permutation(len(ratio))[: len(need)]]
@@ -254,7 +254,7 @@ def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Se
     for slot, src in zip(need, srcs):
         moved[slot] = src
         f = list(sets[src])
-        if species_draws_gender(toid(f[1] or f[0])):
+        if species_draws_gender(species_id(f)):
             f[7] = ""
         else:
             g = padded(f)
@@ -269,7 +269,7 @@ def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Se
         f = list(sets[slot])
         draws = _draws("|".join(f))
         if slot in draw_slots and not draws:
-            if species_draws_gender(toid(f[1] or f[0])):
+            if species_draws_gender(species_id(f)):
                 f[7] = ""                            # a ratio'd mon with a named gender: let it draw
                 out[slot] = "|".join(f)
                 continue
@@ -387,6 +387,9 @@ def prepare_root(log: dict, at: int, side: str, key: str, root_choice_in_log: bo
     viewer = 0 if side == "p1" else 1
     oi = 1 - viewer
     opp_key = "p2" if side == "p1" else "p1"
+    # the TRUE team is read through ``packed`` (a name variant resolved, ``wisp`` -> ``willowisp``); a token the gen-3
+    # data cannot resolve is a defect that raises here, never a silent miss further down (GIGO 2026-10-15)
+    require_known(log["teams"][oi], f"{key}: the TRUE team")
     cmds = log_commands(log, at)
     n = sum(1 for s, _ in cmds if s == side)
     root = Root(log=log, at=at, side=side, viewer=viewer, oi=oi, n=n, cmds=cmds, true={}, rv=RV.Reveals(), ref=[],
@@ -407,7 +410,7 @@ def prepare_root(log: dict, at: int, side: str, key: str, root_choice_in_log: bo
     team = log["teams"][oi]
     entries = team.split("]")
     sets = [parse_set(e) for e in entries]
-    sids = [toid(f[1] or f[0]) for f in sets]
+    sids = [species_id(f) for f in sets]
     moves_of = [typed_moves(f) for f in sets]
     kept: Dict[str, Set[str]] = root.rv.moves()
     leak = {"attribution_miss": 0, "root_choice": None, "rewritten_moves": 0, "rewritten_switches": 0}
@@ -616,15 +619,15 @@ class WorldSampler:
                 revd = {"item": mr.item if mr is not None else None, "ability": mr.ability if mr is not None else None}
                 # a reveal that names a fact the true set does not hold is the PARSER's error: counted, and the
                 # fact is drawn (never kept true on a reveal that did not happen)
-                for cls, fi in (("item", 2), ("ability", 3)):
-                    if revd[cls] is not None and revd[cls] != toid(f[fi]):
+                for cls in ("item", "ability"):
+                    if revd[cls] is not None and revd[cls] != (item_id(f) if cls == "item" else ability_id(f)):
                         leak["reveal_mismatch"] = leak.get("reveal_mismatch", 0) + 1
                         revd[cls] = None
                 fixed: Dict[str, object] = {}
                 excl: Dict[str, object] = {}
                 maps: List[str] = []
                 how: Dict[str, Tuple[str, str]] = {}
-                truth_of = {"item": toid(f[2]), "ability": toid(f[3]), "spread": "TRUE"}
+                truth_of = {"item": item_id(f), "ability": ability_id(f), "spread": "TRUE"}
                 for cls in ("item", "ability", "spread"):
                     lv = spec.lever(cls, "seen")
                     if cls != "spread" and revd[cls] is not None:

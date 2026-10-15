@@ -127,3 +127,14 @@ def test_the_training_pool_is_legal_on_the_ladder():
     bad = [(r.path, r.problems) for r in training if r.illegal]
     assert bad == []
     assert all(not r.illegal for r in recs if r.pool in ("smogon_sample", "specialist"))
+
+
+def test_a_move_name_variant_is_the_move_it_names():
+    """A team may spell moves by Showdown's name variants (`bp`, `cm`, `sd`); the validator resolves them as the engine
+    does, so the One Boost Passer clause still sees Baton Pass + two ways to boost (it read the raw tokens before)."""
+    variant = tl.parse_packed("|celebi|leftovers|naturalcure|bp,cm,sd,recover|Calm|||||")
+    canonical = tl.parse_packed("|celebi|leftovers|naturalcure|batonpass,calmmind,swordsdance,recover|Calm|||||")
+    assert variant == canonical
+    assert [p.rule for p in tl.validate_team(variant)] == ["One Boost Passer Clause"]
+    paste = tl.parse_paste("Celebi @ Leftovers\nAbility: Natural Cure\n- bp\n- cm\n- sd\n- Recover")
+    assert paste == canonical

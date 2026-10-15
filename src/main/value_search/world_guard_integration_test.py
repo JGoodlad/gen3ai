@@ -55,3 +55,25 @@ def test_the_guard_raises_on_a_record_paired_with_the_wrong_slot(built):
     with pytest.raises(WG.WorldConsistencyError, match="fact record"):
         WG.check_worlds(root, w.teams[:1], [fl], "planted")
     assert not issubclass(WG.WorldConsistencyError, W.WorldError), "a defect is never an exclusion"
+
+
+def test_check_teams_guards_a_builder_with_no_records_and_each_planted_defect_raises(built):
+    """POOL builds worlds that ARE teams (no provenance records): ``check_teams`` derives the records from the entries and
+    still catches what the engine can contradict — validated on 120 archived POOL states (960 worlds: 0 false positives)
+    and on the 7 defective POOLSETS worlds (7 / 7 flagged), 2026-10-15."""
+    root, w = built
+    WG.check_teams(root, w.teams, "real")                       # a real honest world is consistent
+    seen = [i for i, s in enumerate(root.sids) if s in root.kept]
+    assert len(seen) >= 2
+    ents = w.teams[0].split("]")
+    swapped = list(ents)
+    swapped[seen[0]], swapped[seen[1]] = ents[seen[1]], ents[seen[0]]
+    with pytest.raises(WG.WorldConsistencyError, match="moved from its true slot"):
+        WG.check_teams(root, ["]".join(swapped)], "planted")
+    f = W.parse_set(ents[seen[0]])
+    mv = f[4].split(",")
+    f[4] = ",".join([mv[0], mv[0]] + mv[2:])                    # one move twice
+    twice = list(ents)
+    twice[seen[0]] = "|".join(f)
+    with pytest.raises(WG.WorldConsistencyError, match="a move twice"):
+        WG.check_teams(root, ["]".join(twice)], "planted")

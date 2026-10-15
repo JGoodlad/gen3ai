@@ -14,10 +14,12 @@ The checks, per world and opponent slot ``i`` (:func:`world_problems`):
 * SLOT ↔ SPECIES — the packed entry's species, ``facts[i]["species"]`` and the species the ENGINE built at slot ``i``
   (its first request to that side, team order) are one; a SEEN mon sits in its TRUE slot; a never-seen slot holds a
   species play never showed;
-* ENTRY ↔ ENGINE — the engine's item, ability, moves (Hidden Power typed by the IVs, a packed alias such as ``wisp``
-  resolved through the engine's own table, and no move twice once resolved: a POOLSETS world of the Tier-1 study held
-  ``wisp`` AND ``willowisp``, Will-O-Wisp twice) and EXACT stats (max HP included, from the species' base stats, the
-  EVs, IVs, nature and level) are the packed entry's: the world the playouts run is the world the text names;
+* ENTRY ↔ ENGINE — the engine's item, ability, moves (as ``packed.typed_moves`` reads the entry: Hidden Power typed by
+  the IVs, a packed name variant such as ``wisp`` resolved through the data's table — the ENGINE resolves it on its own,
+  so a reader that missed it is caught here — and no move twice: a POOLSETS world of the Tier-1 study held ``wisp`` AND
+  ``willowisp``, Will-O-Wisp twice, because the reader did not resolve the variant, 2026-10-15) and EXACT stats (max HP
+  included, from the species' base stats, the EVs, IVs, nature and level) are the packed entry's: the world the
+  playouts run is the world the text names;
 * FACTS ↔ ENTRY — every ``match`` flag of the record is recomputed from the entry against the truth OF THAT MON (a seen
   mon: its true set; a never-seen mon: the true set of the same species when it is a true never-seen species, else
   no truth: every flag false): item, ability, spread, moves (Hidden Power one move whatever its type), and the
@@ -31,7 +33,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
 
-from agents.info_levers.packed import Spread, is_hp, parse_set, set_evs, set_ivs, toid, typed_moves
+from agents.info_levers.packed import (Spread, ability_id, is_hp, item_id, parse_set, set_evs, set_ivs, species_id, toid,
+                                       typed_moves)
 
 if TYPE_CHECKING:  # pragma: no cover
     from main.value_search.worlds import Root
@@ -42,8 +45,7 @@ class WorldConsistencyError(RuntimeError):
 
 
 def species_of(entry: str) -> str:
-    f = parse_set(entry)
-    return toid(f[1] or f[0])
+    return species_id(parse_set(entry))
 
 
 def engine_view(root: "Root", teams: Sequence[str], label: str = "guard") -> List[Optional[List[dict]]]:
@@ -91,14 +93,6 @@ def _engine_move(m: str) -> str:
     return base if base in ("return", "frustration") else mid
 
 
-def _resolved(m: str) -> str:
-    """A packed move id through the engine's alias table (``wisp`` → ``willowisp``: the SAME table the Rust dex
-    resolves a packed-team alias with)."""
-    from agents.gen3_data import moves
-
-    return str(moves.move_aliases().get(m, m))
-
-
 def _canon(m: str) -> str:
     return "hiddenpower" if is_hp(m) else m
 
@@ -109,6 +103,16 @@ def _true_set_of(root: "Root", sid: str) -> Optional[List[str]]:
         if s == sid:
             return list(f)
     return None
+
+
+def _recomputed(f: Sequence[str], truth: Optional[Sequence[str]]) -> Dict[str, bool]:
+    """Each class's ``match`` flag recomputed from the entry ``f`` against the truth of that mon (None: no truth)."""
+    return {
+        "item": truth is not None and item_id(f) == item_id(truth),
+        "ability": truth is not None and ability_id(f) == ability_id(truth),
+        "spread": truth is not None and Spread.of(f).same(Spread.of(truth)),
+        "moves": truth is not None and sorted(map(_canon, typed_moves(f))) == sorted(map(_canon, typed_moves(truth))),
+    }
 
 
 def world_problems(root: "Root", team: str, facts: Sequence[dict], view: Optional[List[dict]]) -> List[str]:
@@ -136,15 +140,18 @@ def world_problems(root: "Root", team: str, facts: Sequence[dict], view: Optiona
         if seen and root.sids[i] != sid:
             bad.append(f"slot {i}: the seen {sid} moved from its true slot {root.sids.index(sid)}")
         # ---- the entry is what the engine runs
-        if toid(str(pv.get("item", ""))) != toid(f[2]):
-            bad.append(f"slot {i} {sid}: item entry {toid(f[2])!r}, engine {pv.get('item')!r}")
-        if f[3] and toid(str(pv.get("baseAbility", ""))) != toid(f[3]):
-            bad.append(f"slot {i} {sid}: ability entry {toid(f[3])!r}, engine {pv.get('baseAbility')!r}")
-        named = [_resolved(m) for m in typed_moves(f)]
+        if toid(str(pv.get("item", ""))) != item_id(f):
+            bad.append(f"slot {i} {sid}: item entry {item_id(f)!r}, engine {pv.get('item')!r}")
+        if f[3] and toid(str(pv.get("baseAbility", ""))) != ability_id(f):
+            bad.append(f"slot {i} {sid}: ability entry {ability_id(f)!r}, engine {pv.get('baseAbility')!r}")
+        # ``typed_moves`` resolves a packed name variant (``wisp`` -> ``willowisp``) through the data's table; the
+        # ENGINE resolves it on its own, so this compares the reader with the engine: a reader that missed a variant
+        # (the 2026-10-15 GIGO) is caught here, not re-resolved here
+        named = typed_moves(f)
         if [_engine_move(m) for m in pv.get("moves", [])] != named:
             bad.append(f"slot {i} {sid}: moves entry {named}, engine {pv.get('moves')}")
         if len(set(named)) != len(named):
-            bad.append(f"slot {i} {sid}: a move twice once aliases resolve: {typed_moves(f)}")
+            bad.append(f"slot {i} {sid}: a move twice: {named}")
         want = expected_stats(e)
         cond = str(pv.get("condition", "")).split(" ")[0]
         got = dict(pv.get("stats", {}), hp=int(cond.split("/")[1]) if "/" in cond else None)
@@ -161,13 +168,7 @@ def world_problems(root: "Root", team: str, facts: Sequence[dict], view: Optiona
                 bad.append(f"slot {i} {sid}: species slot_match={sf['slot_match']}, true here: {root.sids[i]}")
             if bool(fa.get("true_mon")) != (truth is not None):
                 bad.append(f"slot {i} {sid}: true_mon={fa.get('true_mon')}, the truth holds it: {truth is not None}")
-        recomputed = {
-            "item": truth is not None and toid(f[2]) == toid(truth[2]),
-            "ability": truth is not None and toid(f[3]) == toid(truth[3]),
-            "spread": truth is not None and Spread.of(f).same(Spread.of(truth)),
-            "moves": truth is not None and sorted(map(_canon, typed_moves(f))) == sorted(map(_canon, typed_moves(truth))),
-        }
-        for cls, ok in recomputed.items():
+        for cls, ok in _recomputed(f, truth).items():
             rec = fa.get(cls)
             if rec is not None and bool(rec.get("match")) != ok:
                 bad.append(f"slot {i} {sid}: {cls} match={rec.get('match')}, recomputed from the entry {ok}")
@@ -193,3 +194,35 @@ def check_worlds(root: "Root", teams: Sequence[str], facts: Sequence[Sequence[di
     if bad:
         first = "; ".join(f"world {j}: {', '.join(p[:3])}" for j, p in list(bad.items())[:3])
         raise WorldConsistencyError(f"{key}: {len(bad)} of {len(teams)} worlds inconsistent ({first})")
+
+
+# ---- a builder with no provenance records of its own (POOL: a world IS a pool team) --------------------------------
+def derived_facts(root: "Root", team: str) -> List[dict]:
+    """The fact records of a world team that carries none, DERIVED from its entries against the truth. The ``match``
+    flags are recomputed by the same function the guard checks them with, so they hold by construction and are NOT an
+    independent check here; the checks that stay independent are the shape, slot ↔ species ↔ engine, a seen mon in its
+    true slot, a never-seen slot's species, and entry ↔ engine (item, ability, moves, exact stats)."""
+    true_never = {s for s in root.sids if s not in root.kept}
+    out = []
+    for i, e in enumerate(team.split("]")):
+        f, sid = parse_set(e), species_of(e)
+        seen = sid in root.kept
+        truth = (list(root.sets[i]) if i < len(root.sets) else None) if seen else (
+            _true_set_of(root, sid) if sid in true_never else None)
+        fa: dict = {"slot": i, "species": sid, "seen": seen}
+        for cls, ok in _recomputed(f, truth).items():
+            fa[cls] = {"how": "derived", "source": "team", "match": ok}
+        if not seen:
+            fa["species_fact"] = {"how": "derived", "source": "team", "match": sid in true_never,
+                                  "slot_match": i < len(root.sids) and sid == root.sids[i]}
+            fa["true_mon"] = truth is not None
+        out.append(fa)
+    return out
+
+
+def check_teams(root: "Root", teams: Sequence[str], key: str = "") -> None:
+    """THROWING, for a builder that records no provenance: :func:`check_worlds` on ``teams`` with their
+    :func:`derived_facts`. POOL's worlds (``designs/research_state/measurements/hidden_info_tier1_2026-10-13/
+    pool_worlds.py``: pool sets placed at the seen mons' true slots, the others in the never-seen slots, then the
+    gender placement) call it on the worlds they return; ``WorldSampler.sample`` calls ``check_worlds`` with its own."""
+    check_worlds(root, teams, [derived_facts(root, t) for t in teams], key)

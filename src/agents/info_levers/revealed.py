@@ -30,6 +30,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
+from utils.showdown_id import to_id_str
+
 #: A move line CALLED from someone else's set (not a reveal of the user's own move).
 NOT_OWN_CALLERS = frozenset({"assist", "snatch", "magiccoat", "metronome", "mirrormove", "naturepower",
                              "copycat", "mefirst"})
@@ -46,7 +48,9 @@ OWNER_OF_FROM_ABILITY: Dict[str, str] = {
 
 
 def toid(s: str) -> str:
-    return "".join(ch for ch in s.lower() if ch.isalnum())
+    """The Showdown id of a protocol token (``utils.showdown_id.to_id_str``: the ONE definition). A protocol line
+    speaks canonical ids, so this normalises and nothing more; a packed TEAM's tokens go through ``packed``."""
+    return to_id_str(s)
 
 
 def _side_and_name(ident: str) -> Optional[Tuple[str, str]]:

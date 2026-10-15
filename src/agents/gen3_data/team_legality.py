@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Dict, FrozenSet, List, Optional, Sequence, Tuple
 
 from . import format_spec as fs
+from . import moves as moves_dex
 from . import species as species_dex
 
 
@@ -68,7 +69,7 @@ def parse_paste(text: str) -> List[TeamSet]:
             elif ln.startswith("-"):
                 moves.append(ln[1:].strip())
         sets.append(TeamSet(fs.to_id(species), fs.to_id(item), fs.to_id(ability),
-                            tuple(fs.to_id(mv) for mv in moves if fs.to_id(mv))))
+                            tuple(m for m in (moves_dex.canonical_id(mv) for mv in moves) if m)))
     return sets
 
 
@@ -83,7 +84,7 @@ def parse_packed(packed: str) -> List[TeamSet]:
             continue
         species = f[1] or f[0]
         sets.append(TeamSet(fs.to_id(species), fs.to_id(f[2]), fs.to_id(f[3]),
-                            tuple(fs.to_id(m) for m in f[4].split(",") if fs.to_id(m))))
+                            tuple(c for c in (moves_dex.canonical_id(m) for m in f[4].split(",")) if c)))
     return sets
 
 

@@ -29,6 +29,7 @@ gen3_data.moves.get(move_id)            # MoveData(num, base_power, type, catego
                                         #   target — the dex target class, verbatim (R4), …)
 gen3_data.species.get(species_id)       # SpeciesData(num, base_stats, types, base_species, battle_only)
 gen3_data.species.base_form_ids()       # BASE forms only — one id per national-dex num
+gen3_data.moves.canonical_id(token)     # a move NAME / packed token as its canonical id ("wisp" -> "willowisp"; below)
 gen3_data.items.get(item_id)            # ItemData(num, name)
 gen3_data.abilities.get(ability_id)     # AbilityData(num, name)
 gen3_data.natures.get(nature_name)      # NatureData(multipliers); .multipliers() for the dict form
@@ -207,6 +208,15 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
   by review tooling's packed-team decode (`utils.bridge.reconstruction.decode_packed_team`, the prober's
   `team_details`; it replaced a live `node -e` dump of Showdown's alias table, 2026-10-10). The
   observation path never reads it, so it is obs-neutral. `gen3_move_alias_resolution_v1`.
+  🚨 **A packed team's move token is NOT an id until it is resolved** (GIGO 2026-10-15: one of the 719 pool teams packs
+  Will-O-Wisp as `wisp`; a reader that compared the raw token with an id from play saw another move, and 7 Tier-1 POOLSETS
+  worlds ran the move twice): read every packed move through **`gen3_data.moves.canonical_id`** (the Showdown id, then
+  this table) — `agents.info_levers.packed.typed_moves` and `team_legality` do. The table is MOVES only: Showdown also
+  has species / item / ability name variants (`deon`, `cb`, `intim`, …) that the data does not carry and the Rust dex
+  does not resolve, so a packed species / item / ability the facade does not know is a THROWING defect
+  (`packed.require_known`), never a silent miss. Measured 2026-10-15: every id in the prior / learnset / archetype /
+  usage files of `data/` is canonical, and the pool's only variant is that one `wisp` (a census test over the 719 teams,
+  `info_levers/packed_test.py`).
 
 Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/` (`sync.py` merges 12
 months of chaos JSONs → `compute_priors.py` derives six committed artifacts). **ALL priors must be
