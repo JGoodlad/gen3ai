@@ -272,6 +272,27 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
    `compile_trainer`'s per-parameter rule is the one that bites.
    `compile_gate_probe_test` pins the per-parameter rule.
 
+### A fixture that needs a SPECIFIC row to exist is keyed to the fresh-init stream (2026-10-15)
+
+A test that builds a fresh network and needs one of its real rows to land somewhere particular — a flippable tie that
+moves log pi, a decisive top-2 margin, a printed `max 0.0003` — is keyed to the **fresh-init stream**: any change that
+adds or removes a construction-time RNG draw (legacy-deletion U3 deleted modules that were built and retired) moves
+every such row. Four tests went red at once this way and each was found only by the sweep that ran the integration
+tier (`consistency_test`'s flip-judge pair, `service_test`'s decisive-row gate, `tie_identity_integration_test`'s
+planted-mismatch regex). The rules that fix the class (root `CLAUDE.md`: a test asserts its precondition and passes
+or fails DETERMINISTICALLY):
+
+- **Re-pick a (seed, parameter) pair by a scan and ASSERT the precondition in the fixture**, with a margin band to
+  every decision boundary the fixture straddles (`consistency_test.FLIP_PERTURB_SEED` / `FLIP_EPS` /
+  `FLIP_EPS_BAND`: seed 1 at epsilon 1e-2, the nearest margin 1.6e-3 from the epsilon, the largest flipped move 6.7e-3
+  against a 1e-3 requirement). Record the scan in the fixture's comment so the next re-pick starts from it.
+- **Derive a threshold from the judge, never retype it** (`service_test`: the row of the WIDEST top-2 margin, asserted
+  past `10 * NEAR_TIE_BAND`, not "any row over a typed 1e-3" that sat inside the judge's own 2e-3 band).
+- **Never regex the digits of a rounded measurement at its own rounding edge** (`_PLANTED_3E4`: a 3e-4 plant reads
+  3e-4 +- the row's float residual and prints at 3 significant digits).
+- **A test that walks an archive asserts every outcome exactly** (`ai_v12_intersection_test`: a config is refused
+  with the pin tag iff `retired_lever_evidence` finds a legacy-deletion row on it, and migrates otherwise).
+
 ### Test file naming conventions
 
 | Pattern | Requires | Marker |

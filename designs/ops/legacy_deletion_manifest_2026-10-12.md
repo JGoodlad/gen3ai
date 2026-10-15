@@ -236,6 +236,24 @@ Runs already below the floor (`rb_st_*` v143, `rb_x5ab_*` v137) were pinned-only
 | U3 | **SHIPPED 2026-10-15** | `882a3f86` (code) + `33a1c3b9` (K9) | the seven block flags, `--move-resolution`, `--move-resolution-facts` and `--value-threat-inject` (+ `_` aliases, `--no-` forms) deleted with their fields, `_resolve` lines, registry rows, `check_compatible` clauses, snapshot keywords, modules (`intent_move_cell`, `intent_threshold`, `intent_conditional`, `switch_branch`, `conditional_threat`, `value_threat_inject`; `pair_outcome` / `pair_reduce` partial) and the two retire hooks; move resolution DERIVED (built iff opp_intent + damage_op + damage_outgoing + both matrices + damage_topk_k > 0), its restored facts unconditional; `MODEL_CONFIG_VERSION` 157 (stamp-only); `LANDED_UNITS = {U1, U3}`. `FlatConsumerOps` KEPT (Finding 5) minus its four block-only fields (`topk_w`, `pair_cells`, `out_pko`, `opp_p_ghost`; `topk_w` was block-only too, not only the three the U1 agent named). 🚨 **D-LD7**: `init_post_u3_882a3f86.json` vs `init_pre_u3_4801b956.json` — same 280 tensors / 2,609,183 elements, 64 tensors change value for every seed (the same 64), 216 bit-identical; the init forward's masked log-probs and entropy bit-identical, `pi_features` / `vf_features` / the value changed. K9 golden RE-RECORDED once (shown passing at the pre-U3 tree and failing at U3's, `init_params_sha256` moved). The ledger's U3 entry is MAJOR. |
 | U2, U4, U5, U6 | NOT STARTED | — | — |
 
+**The post-U3 INTEGRATION SWEEP (2026-10-15, at `264a35e3`, an X26 prerequisite).** U3 shipped on a targeted unit set and its
+integration run timed out on the agent cores; the sweep ran every integration / sim / slow file that builds the production
+network, FILE BY FILE, at `OMP_NUM_THREADS=1` (the move-resolution, status-landing and speed-physics bridges take 23-33 s at one
+thread, not a timeout), plus the unit tier of every directory U3's targeted set had not run. All green except nine tests in seven
+files, none a regression of U3's code: **all nine were stale**, fixed with their intent kept (the fresh-init stream moved
+at U3 — D-LD7 — or an earlier change was never carried into the test): `consistency_test`'s flip-judge pair (the fixture's
+seed-77 net no longer holds a flippable tie that moves log pi: re-picked as seed 1, the precondition asserted with a margin
+band), `tie_identity_integration_test`'s planted-3e-4 regex (matched the printed digits `0.0003` and read `0.000301`),
+`service_test`'s decisive-row gate (a typed 1e-3 sat inside the judge's own 2e-3 near-tie band), `ai_v12_intersection_test`
+(the archive walk met the eight `rb_es_prod_s200N` v153 runs, REFUSED by design: a third, exactly-asserted leg),
+`game_integration_test` (move resolution is BUILT in production, `trunk_layers` is 3), `play_reveal_integration_test`'s
+`OFF_BITS` / `OFF_OUTCOME_ALL` (re-recorded: both digests are a function of the checkpoints' init), `lever_supply_integration_test` (a `slow` test that never took the `run_archive` fixture: the sealed test archive refused the trainer child's run directory, exit 3 instead of the pinned 5). **One real, pre-existing,
+NOT-U3 failure, left to the T36 owner**: `compiled_first_update_test` on CPU (an Inductor C++ codegen error, `tmp8` undeclared in
+a `transpose_mxn` kernel) — bisected by exporting four commits: `ed58a3ad~1` passes, `ed58a3ad` (the end state becoming
+production) and every commit after it, including U3's parent, fail with the SAME kernel hash. The CUDA twin is skipped
+without a lease, so its status at the end-state graph is unread. Its red is NOT banked in `slow_tier_status.json` (a recorded red fails the static tier for every agent): the row stays at its 2026-10-09 pass until the T36 owner decides. The coverage table, the unrun files and the verdicts are in
+`designs/ops/slow_tier_status.json` (the `slow` rows) and the sweep's report.
+
 **The exact next steps (after U3; none is on X26's critical path).** Land them ONE at a time, rebasing each on the last
 (they share `extractor_build.py`, `flag_registry.py`, `model_version/*`, `snapshot.py`, `main/train/config.py`):
 1. **U2 (lane OBS: E1 `--obs-facts`, E2 `--drop-progress-clock` (J), E3 `--move-target-state`, E4

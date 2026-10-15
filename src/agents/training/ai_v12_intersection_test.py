@@ -124,14 +124,22 @@ def test_the_chain_runs_on_EVERY_real_archived_config_of_this_generation():
     the diagnosis, never half-migrated (the floor moved to 121 at gen3_event_record_v2, so until a
     new-lineage run exists the refusal leg is where the archive's teeth are).
 
+    THE THIRD LEG (legacy deletion U0 / U1 / U3, 2026-10-15): a current-generation config that recorded a
+    lever the legacy deletion removed (the closing test's PRODUCTION-arm runs, `rb_es_prod_s200N`, v153: the
+    legacy encoding) is REFUSED on every load, naming the pin tag — also by design, never half-migrated. The
+    outcome of every config is asserted EXACTLY, from the evidence table, independent of the exception: it is
+    refused with the tag iff `retired_lever_evidence` finds an adopted row on it, and migrates otherwise.
+
     SKIPS when there is no models archive (another machine, CI) — `main_models_dir` returns None
     there, and a test that silently passes on an empty set is the failure this docstring names."""
     from agents.model.model_version import MIGRATION_FLOOR, ModelVersionError
+    from agents.model.model_version import adopted_levers as AL
+    from agents.model.model_version.retired_levers import retired_lever_evidence
     from utils.paths import main_models_dir
     root = main_models_dir()
     if root is None:
         pytest.skip("no models archive on this box")
-    seen = refused = 0
+    seen = refused = legacy_refused = 0
     for name in sorted(os.listdir(root)):
         path = os.path.join(root, name, "model_config.json")
         if not os.path.isfile(path):
@@ -145,11 +153,20 @@ def test_the_chain_runs_on_EVERY_real_archived_config_of_this_generation():
                 _migrate_config(dict(cfg))
             refused += 1
             continue
+        removed = [r for r in retired_lever_evidence(cfg, structural_only=True)
+                   if r.last_commit == AL.LAST_COMMIT_PRE_LEGACY_DELETION]
+        if removed:                                                # a lever the legacy deletion removed: refused
+            with pytest.raises(ModelVersionError, match="LEGACY DELETION") as refusal:
+                _migrate_config(dict(cfg))
+            assert AL.PRE_LEGACY_DELETION_TAG in str(refusal.value), name
+            assert all(f"--{r.flag}" in str(refusal.value) for r in removed), name   # every active row is named
+            legacy_refused += 1
+            continue
         out = _migrate_config(dict(cfg))
         assert out["config_version"] == MODEL_CONFIG_VERSION, name
         missing = [f.name for f in dataclasses.fields(ModelVersion) if f.name not in out]
         assert not missing, f"{name}: {missing}"
         ModelVersion(**out)
         seen += 1
-    if seen == 0 and refused == 0:
+    if seen == 0 and refused == 0 and legacy_refused == 0:
         pytest.skip("no readable configs in the archive")

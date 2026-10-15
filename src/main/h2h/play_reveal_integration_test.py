@@ -63,8 +63,13 @@ PAIRS, N_ENVS = 12, 8
 #: candidate set, which now admit those moves; the observation and every weight are unchanged, `golden_obs_core --check`
 #: 991 / 991). The test PASSES on the old table (4 passed, adopted main `f01b9e51`) and fails on the new one; both
 #: digests moved; was 4534fcf4… / 9559dac1….
-OFF_BITS = "0c534e2ad2c56e995ab488c3e7014e68c251d2502be9493a4b2385a1aa65857b"
-OFF_OUTCOME_ALL = "71402a062ebd5368be43f4a771e427b110430970bc3ddb75823c63d3227a624b"
+#: RE-RECORDED 2026-10-15 for legacy-deletion U3 (config v157, D-LD7: the FRESH-INIT STREAM changed — the deleted
+#: modules were constructed and retired, so their RNG draws left the stream): the conftest's perturbed-fresh checkpoints
+#: are a different network, so both digests moved (was 0c534e2a… / 71402a06…); the engine, the observation and the
+#: reveal path did not change. Read off the post-U3 sweep's failure line on this file (the same digests at the one torch
+#: thread this file now runs at); the learner golden was re-recorded for the same cause (`33a1c3b9`).
+OFF_BITS = "94eaba7cc5e6deaf838d3c8bb6334c6e3faab32b56a0fc63d2ab09516fd6dc29"
+OFF_OUTCOME_ALL = "268772129d021a41524eebeca76ec6ead7191a847a3c9cfba396de26dc7aae6f"
 
 
 def bits_digest(games):

@@ -122,9 +122,9 @@ def test_a_planted_behaviour_mismatch_on_a_judged_row_is_FATAL_at_every_arm(arm,
     i = int(np.argmax(g))
     assert g[i] >= K.FP32_TIE_EPS
     keep = buf.log_probs[t[i], e[i]].copy()
-    buf.log_probs[t[i], e[i]] += 3e-4
+    buf.log_probs[t[i], e[i]] += 3e-4       # read back as 3e-4 +- the row's float residual (3 sig. digits printed)
     try:
-        with pytest.raises(K.BehaviourMismatch, match=r"max 0\.0003 NOT < 0\.0001"):
+        with pytest.raises(K.BehaviourMismatch, match=r"max 0\.000(?:3|30[1-5]|29[5-9]) NOT < 0\.0001"):
             K.behaviour_probe(model)
     finally:
         buf.log_probs[t[i], e[i]] = keep

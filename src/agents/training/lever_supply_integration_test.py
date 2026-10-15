@@ -18,9 +18,11 @@ from main.train.fatal_config_exits_integration_test import _trainer
 pytestmark = [pytest.mark.integration, pytest.mark.slow, pytest.mark.sim]
 
 
-def test_a_self_play_run_whose_pool_never_seeds_exits_FATAL_SUPPLY(tmp_path):
+def test_a_self_play_run_whose_pool_never_seeds_exits_FATAL_SUPPLY(tmp_path, run_archive):
     """The `ai_v12_27` shape end to end: `--self-play` with a seeding gate the run cannot reach
-    (`--self-play-start-wr 1.01`), so every eval cycle leaves the pool EMPTY."""
+    (`--self-play-start-wr 1.01`), so every eval cycle leaves the pool EMPTY. Takes the `run_archive` fixture: the
+    trainer child inherits `$GEN3AI_MODELS_DIR` from it — without it the sealed test archive refuses the child's run
+    directory (`RunArchiveError`, exit 3 = FATAL_CONFIG, not the 5 this test pins)."""
     rc, text = _trainer(tmp_path, "--debug-eval", "--self-play", "--self-play-start-wr", "1.01",
                         "--steps", "60000", "--supply-starve-cycles", "self_play_pool=2",
                         "--run-dir", str(tmp_path / "run"), timeout=1200)

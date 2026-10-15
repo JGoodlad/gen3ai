@@ -10,6 +10,7 @@ Needs the rust env cdylib and `core_events` (built on first use) — `sim`.
 """
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -102,11 +103,19 @@ def test_the_readout_re_runs_the_policy_and_reads_every_panel(run, sess):
     got = np.array([[a["p"] for a in d["policy"]] for d in r["decisions"]])
     assert np.allclose(got, probs, atol=1e-5)
     assert all(r["has"][k] for k in ("attention", "intent_p", "slot_species", "op", "scores", "win_prob"))
-    assert r["has"]["mr_move"] is False                     # move-resolution is off in production
+    # move resolution is BUILT on the production surface (adopted 2026-10-12 with the end state; DERIVED since the
+    # legacy deletion's U3), so the capture carries its facts and the operator view reads P(resolve) from them
+    assert r["has"]["mr_move"] is True
     d = r["decisions"][0]
+    assert d["operator"]["move_resolution_built"] and d["operator"]["moves"]
+    assert all(0.0 <= m["p_resolve"] <= 1.0 for m in d["operator"]["moves"])
     assert sum(c["p"] for c in d["intent"]["candidates"]) == pytest.approx(1.0, abs=1e-4)
     assert len(d["hypotheses"]["slots"]) == 6
-    assert d["attention"]["n_layers"] == 2 and d["attention"]["rows"]
+    # one attention map per trunk layer: the production depth (3 since the end state's adoption), read from the config
+    # the checkpoint was built on rather than typed here, so the next depth change cannot stale this line again
+    from utils.paths import repo_path
+    depth = json.load(open(repo_path("designs", "production_config.json")))["trunk_layers"]
+    assert depth >= 1 and d["attention"]["n_layers"] == depth and d["attention"]["rows"]
     assert r["layout"]["ok"] and r["layout"]["n_tokens"] >= 30
     labelled = [x for x in r["decisions"] if x["intent"] and x["intent"]["actual_col"] is not None]
     assert labelled, "a real battle against a bot must carry opponent labels"

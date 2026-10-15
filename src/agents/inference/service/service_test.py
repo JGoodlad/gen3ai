@@ -319,11 +319,15 @@ def test_the_gate_fails_a_log_prob_drift_a_value_drift_and_a_broken_mask(policie
 def test_the_gate_fails_a_wrong_greedy_action_on_a_decisive_row(policies):
     p = policies[0]
     o, m, logp, value = _judge_inputs(p)
+    from agents.model.parity_probe import NEAR_TIE_BAND
     top2 = logp.topk(2, dim=-1)
-    decisive = (top2.values[:, 0] - top2.values[:, 1]) > 1e-3
-    assert bool(decisive.any())
+    # the row of the WIDEST top-2 margin, and a margin well past the judge's own near-tie band: a row inside the band
+    # (the test's old fixed 1e-3 let one at 1.7e-3 through, under the band's 2e-3, once the fresh-init stream moved at
+    # legacy-deletion U3) is one the judge rightly does NOT call decisive, so it fails nothing by design
+    margin = top2.values[:, 0] - top2.values[:, 1]
+    row = int(margin.argmax())
+    assert float(margin[row]) > 10 * NEAR_TIE_BAND, (float(margin[row]), NEAR_TIE_BAND)
     greedy = logp.argmax(-1).clone()
-    row = int(torch.nonzero(decisive)[0])
     greedy[row] = top2.indices[row, 1]
     with pytest.raises(ParityFailure, match="greedy"):
         judge(where="t", policy=p, obs=o, mask=m, served=(logp, value, greedy))

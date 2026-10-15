@@ -16,7 +16,14 @@ import torch as th
 from agents.training.rust_rollout import consistency as K
 
 
-def _model(n_steps=16, n_envs=4):
+#: The probe prints a statistic at 3 significant digits. A row shifted by 3e-4 reads 3e-4 PLUS OR MINUS that row's own
+#: float-rounding residual (7e-7 on the legacy-deletion U3 fixture: "max 0.000301"; the other sign would print 0.000299),
+#: so a regex on the digits "0.0003" passed or failed on the init stream. The pattern accepts every print of a shift
+#: within +-5e-6 (1.7 %) of 3e-4: 7x the residual seen, and far from both the 1e-4 bar and a 6e-4 mis-shift.
+_PLANTED_3E4 = r"max 0\.000(?:3|30[1-5]|29[5-9])"
+
+
+def _model(n_steps=16, n_envs=4, perturb_seed=77):
     import gymnasium as gym
     from sb3_contrib import MaskablePPO
     from stable_baselines3.common.vec_env import DummyVecEnv
@@ -44,7 +51,7 @@ def _model(n_steps=16, n_envs=4):
     th.manual_seed(0)
     m = MaskablePPO(Gen3DualHeadMaskablePolicy, DummyVecEnv([_E] * n_envs), n_steps=n_steps, batch_size=32,
                     policy_kwargs=pk, verbose=0, device="cpu", seed=0)
-    perturb_(m.policy, seed=77, scale=PERTURB_SCALE)
+    perturb_(m.policy, seed=perturb_seed, scale=PERTURB_SCALE)
     obs, mask = load_parity_rows(dim)
     n = n_steps * n_envs
     idx = np.arange(n) % len(obs)
@@ -265,7 +272,7 @@ def test_a_violating_row_NOT_at_a_tie_is_FATAL_on_the_first_update():
     i = int(np.argmax(g))
     assert g[i] > 100 * K.FP32_TIE_EPS
     m.rollout_buffer.log_probs[t[i], e[i]] += 3e-4                      # 3x the bar, one row
-    with pytest.raises(K.BehaviourMismatch, match=r"max 0\.0003 NOT < 0\.0001.*judged.*FATAL at once"):
+    with pytest.raises(K.BehaviourMismatch, match=_PLANTED_3E4 + r" NOT < 0\.0001.*judged.*FATAL at once"):
         K.behaviour_probe(m)
 
 
@@ -394,7 +401,7 @@ def test_under_zero_scorers_every_row_is_judged_and_a_planted_mismatch_on_a_tied
     assert out["behaviour/selection_free"] == 1.0 and out["behaviour/rows_excluded"] == 0.0
     assert out["behaviour/rows_judged"] == out["behaviour/rows_current"]
     m.rollout_buffer.log_probs[t[i], e[i]] += 3e-4
-    with pytest.raises(K.BehaviourMismatch, match=r"max 0\.0003 NOT < 0\.0001"):
+    with pytest.raises(K.BehaviourMismatch, match=_PLANTED_3E4 + r" NOT < 0\.0001"):
         K.behaviour_probe(m)
 
 
@@ -427,15 +434,21 @@ def test_the_warn_scan_is_a_bounded_sample_and_the_fatal_scan_reads_every_row(tm
 
 
 # ---------------------------- the FLIP-JUDGE (gen3_behaviour_tie_flip_judge_v1, 2026-10-08)
-#: The tie the flip-judge tests plant: epsilon widened to 1e-2 puts seven of the fixture's real rows at ONE isolated near
-#: pair of X5's sort (the op's per-mon cut), one of whose other resolutions moves log pi by 1.8e-3 (> 10x the bar), beside
-#: seven excluded rows the flip cannot judge (more than one near call). The value is the FIXTURE's, re-derived at the END
-#: STATE's adoption (2026-10-12): the principled op reduction (production) makes a near-tied cut pair's other resolution
-#: matter far less than the `max` reduction's ~0.02, so the earlier 1e-3 now holds ONE isolated pair whose other
-#: resolution moves log pi by exactly 0. The scan over the fixture's 64 real rows (excluded / isolated / the flip's
-#: largest |d log pi|): 2e-4: 4 / 0 / -; 1e-3: 5 / 1 / 0; 3e-3: 9 / 4 / 1e-5; 1e-2: 14 / 7 / 1.8e-3; 3e-2: 29 / 9 /
-#: 1.7e-4; 1e-1: 57 / 9 / 1.6e-3 (57 of 64 excluded breaks the fixture's 0.5 ceiling). 1e-2 is the one that works.
+#: The tie the flip-judge tests plant: epsilon widened to 1e-2 puts 25 of the fixture's 64 real rows near a tie, sixteen of
+#: them at ONE isolated near pair of X5's sort (the op's per-mon cut), two of whose other resolutions move log pi by more
+#: than 10x the bar (up to 6.7e-3), beside nine excluded rows the flip cannot judge (more than one near call). THE FIXTURE IS A (perturbation seed,
+#: epsilon) PAIR, and BOTH are re-derived whenever the fresh-init stream moves (the perturbation lands on that init):
+#: first at the END STATE's adoption (2026-10-12), then at legacy-deletion U3 (2026-10-15, the deleted modules' RNG draws
+#: left the stream: the earlier seed 77 then held 11 isolated pairs none of which moved log pi by more than 5.5e-5, and
+#: both flip tests failed their precondition). The scan over the fixture's 64 real rows at seed `FLIP_PERTURB_SEED` = 1
+#: (excluded / isolated / the flip's largest |d log pi|): 1e-3: 6 / 1 / 4.8e-7; 3e-3: 8 / 3 / 4.7e-5; 1e-2: 25 / 16 /
+#: 6.7e-3; 3e-2: 37 / 16 / 6.7e-3. Other seeds at 1e-2 that also qualify: 4 (22 / 16 / 3.5e-3), 6 (24 / 11 / 2.3e-3); seeds
+#: 77, 2, 3, 5, 7 do not (largest move 5.5e-5 .. 6.6e-4). The fixture asserts its own precondition, including that no
+#: row's margin sits within `FLIP_EPS_BAND` of the epsilon (seed 1's nearest is 1.6e-3 away), so a rounding-error
+#: flip of a row across the epsilon can never change what the test judges.
 FLIP_EPS = 1e-2
+FLIP_PERTURB_SEED = 1
+FLIP_EPS_BAND = 1e-4
 
 
 def _flip_fixture(monkeypatch):
@@ -443,7 +456,7 @@ def _flip_fixture(monkeypatch):
     row's recorded resolution (``new``) and its OTHER resolution (``alt``, `TieFlip` on every flippable row)."""
     from agents.training.rust_rollout.tie_margins import TieFlip, TieMargins
 
-    m = _with_provenance(_model())
+    m = _with_provenance(_model(perturb_seed=FLIP_PERTURB_SEED))
     b = m.rollout_buffer
     n = b.log_probs.size
     m.batch_size = n
@@ -461,6 +474,8 @@ def _flip_fixture(monkeypatch):
     mode.check_applied()
     moves = flippable[np.abs(alt - new)[flippable] > 10 * K.BEHAVIOUR_BAR]
     excluded = int((rec.margin < FLIP_EPS).sum())
+    assert np.abs(np.asarray(rec.margin, dtype=np.float64) - FLIP_EPS).min() > FLIP_EPS_BAND, \
+        "a row's tie margin sits within a rounding error of the epsilon: whether it is excluded would be chance"
     assert moves.size >= 1 and excluded > flippable.size, \
         "the fixture needs a flippable tie that moves log pi, beside excluded rows the flip cannot judge"
     return m, t, e, new, alt, int(moves[0]), flippable.size, excluded

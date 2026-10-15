@@ -179,24 +179,40 @@
    "duration_s": 88.24,
    "contention": 1.01,
    "detail": "",
-   "last_skipped_at": "2026-10-09T00:57:07Z",
-   "last_skipped_commit": "73408d02db7bb209525a876ed02dd9233f41a819",
+   "last_skipped_at": "2026-10-15T20:10:00Z",
+   "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "last_skip_detail": ""
+  },
+  "src/agents/model/dense_attn_bias_test.py::test_cuda_inductor_n64_bias_reproduction": {
+   "status": "skip",
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:04:21Z",
+   "duration_s": 0.0,
+   "contention": 1.65,
+   "detail": ""
+  },
+  "src/agents/model/dense_attn_bias_test.py::test_cuda_inductor_n64_bias_training_gradients_match_eager": {
+   "status": "skip",
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:04:21Z",
+   "duration_s": 1.22,
+   "contention": 1.65,
+   "detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_cpu_backward_still_does_not_compile": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 86.77,
-   "contention": 1.0,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:00:08Z",
+   "duration_s": 340.8,
+   "contention": 1.58,
    "detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_h_tier_arch_compiles_without_suppression": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 7.46,
-   "contention": 1.0,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:00:08Z",
+   "duration_s": 21.16,
+   "contention": 1.81,
    "detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_intent_threshold_arch_compiled_output_matches_eager": {
@@ -213,7 +229,10 @@
    "at": "2026-10-04T06:43:39Z",
    "duration_s": 65.9,
    "contention": 1.0,
-   "detail": ""
+   "detail": "",
+   "last_skipped_at": "2026-10-15T20:00:08Z",
+   "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "last_skip_detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_production_arch_compiles_on_cuda": {
    "status": "pass",
@@ -221,22 +240,25 @@
    "at": "2026-10-04T06:43:39Z",
    "duration_s": 47.42,
    "contention": 1.0,
-   "detail": ""
+   "detail": "",
+   "last_skipped_at": "2026-10-15T20:00:08Z",
+   "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "last_skip_detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_production_arch_compiles_without_suppression": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 62.45,
-   "contention": 1.0,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:00:08Z",
+   "duration_s": 335.05,
+   "contention": 1.64,
    "detail": ""
   },
   "src/agents/model/move_resolution_x5_test.py::test_debug_smoke_under_fixed_mass_with_the_family_on": {
    "status": "pass",
-   "commit": "f0d673fd10a127d002b8a3d6b39c6b1a2d83f43e",
-   "at": "2026-10-07T16:28:07Z",
-   "duration_s": 323.67,
-   "contention": 1.0,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T19:47:21Z",
+   "duration_s": 787.81,
+   "contention": 2.63,
    "detail": ""
   },
   "src/agents/model/update_performance_shape_test.py::test_on_cuda_the_trunk_layer_dispatches_a_fused_sdpa_kernel_not_math": {
@@ -246,8 +268,8 @@
    "duration_s": 0.63,
    "contention": 1.0,
    "detail": "",
-   "last_skipped_at": "2026-10-15T19:36:26Z",
-   "last_skipped_commit": "19d840cc8108dc28419a801fc887e38fd652bea2",
+   "last_skipped_at": "2026-10-15T20:03:12Z",
+   "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "last_skip_detail": ""
   },
   "src/agents/training/cycle_ledger_integration_test.py::test_the_cycles_ledger_rows_are_its_games_and_the_ledger_changes_no_game": {
@@ -265,8 +287,8 @@
    "duration_s": 2.47,
    "contention": 1.01,
    "detail": "",
-   "last_skipped_at": "2026-10-09T00:52:41Z",
-   "last_skipped_commit": "73408d02db7bb209525a876ed02dd9233f41a819",
+   "last_skipped_at": "2026-10-15T20:11:42Z",
+   "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "last_skip_detail": ""
   },
   "src/agents/training/instrumented_ppo_device_batches_test.py::test_on_cuda_the_device_batches_equal_the_host_batches": {
@@ -276,16 +298,16 @@
    "duration_s": 0.56,
    "contention": 1.0,
    "detail": "",
-   "last_skipped_at": "2026-10-09T00:52:41Z",
-   "last_skipped_commit": "73408d02db7bb209525a876ed02dd9233f41a819",
+   "last_skipped_at": "2026-10-15T20:11:42Z",
+   "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "last_skip_detail": ""
   },
   "src/agents/training/lever_supply_integration_test.py::test_a_self_play_run_whose_pool_never_seeds_exits_FATAL_SUPPLY": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 114.78,
-   "contention": 1.15,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T21:32:05Z",
+   "duration_s": 211.3,
+   "contention": 1.5,
    "detail": ""
   },
   "src/agents/training/optimizer_state_cuda_test.py::test_the_K6_declaration_is_bit_identical_to_lazy_init_on_cuda[adam_foreach]": {
@@ -339,17 +361,17 @@
   "src/agents/training/tb_relevance_test.py::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag": {
    "status": "pass",
    "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
-   "at": "2026-10-15T18:00:00Z",
-   "duration_s": 413.88,
-   "contention": 2.14,
+   "at": "2026-10-15T20:53:37Z",
+   "duration_s": 276.93,
+   "contention": 1.4,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-live]": {
    "status": "pass",
-   "commit": "a6c0beb0ffc103f5beaa6e9eecd21a6f6f2afe32",
-   "at": "2026-10-08T18:24:48Z",
-   "duration_s": 21.85,
-   "contention": 1.06,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:19:51Z",
+   "duration_s": 36.21,
+   "contention": 1.73,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-poke-env]": {
@@ -370,18 +392,18 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]": {
    "status": "pass",
-   "commit": "a6c0beb0ffc103f5beaa6e9eecd21a6f6f2afe32",
-   "at": "2026-10-08T18:24:48Z",
-   "duration_s": 19.85,
-   "contention": 1.0,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:19:51Z",
+   "duration_s": 30.29,
+   "contention": 1.38,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-live]": {
    "status": "pass",
-   "commit": "a6c0beb0ffc103f5beaa6e9eecd21a6f6f2afe32",
-   "at": "2026-10-08T18:24:48Z",
-   "duration_s": 21.54,
-   "contention": 1.0,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:19:51Z",
+   "duration_s": 31.61,
+   "contention": 1.4,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-poke-env]": {
@@ -402,10 +424,18 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_with_a_RUST_BOT_as_our_side": {
    "status": "pass",
-   "commit": "a6c0beb0ffc103f5beaa6e9eecd21a6f6f2afe32",
-   "at": "2026-10-08T18:24:48Z",
-   "duration_s": 19.61,
-   "contention": 1.0,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:19:51Z",
+   "duration_s": 29.82,
+   "contention": 1.38,
+   "detail": ""
+  },
+  "src/main/h2h/play_edge_integration_test.py::test_each_rows_digest_is_the_digest_of_the_games_it_played": {
+   "status": "pass",
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:27:10Z",
+   "duration_s": 85.21,
+   "contention": 2.28,
    "detail": ""
   },
   "src/main/info_audit/info_audit_slow_test.py::test_the_suite_passes_on_twelve_decisions_and_every_spec": {
@@ -418,9 +448,9 @@
   },
   "src/main/ops/diag_bf16_canary_test.py::test_EVERY_route_of_the_GPU_read_RUNS_through_a_smoke_backend_on_cpu": {
    "status": "pass",
-   "commit": "19d840cc8108dc28419a801fc887e38fd652bea2",
-   "at": "2026-10-15T19:53:26Z",
-   "duration_s": 232.13,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T20:15:49Z",
+   "duration_s": 234.62,
    "contention": 1.61,
    "detail": ""
   },
@@ -431,8 +461,8 @@
    "duration_s": 38.96,
    "contention": 1.0,
    "detail": "",
-   "last_skipped_at": "2026-10-09T14:57:35Z",
-   "last_skipped_commit": "ea8470c5ca8a4ee4507c05de2b5e7f4351f7ea08",
+   "last_skipped_at": "2026-10-15T21:10:17Z",
+   "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "last_skip_detail": ""
   },
   "src/main/prober/web/render_integration_test.py::test_a_404_page_still_renders_the_shell": {
@@ -837,10 +867,10 @@
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[production]": {
    "status": "pass",
-   "commit": "ffe2961b9e72450f0c6c85f1ce41966f1b32c1a4",
-   "at": "2026-10-15T16:43:09Z",
-   "duration_s": 2930.21,
-   "contention": 12.0,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T18:06:26Z",
+   "duration_s": 1639.5,
+   "contention": 5.77,
    "detail": ""
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[static_recovery]": {
@@ -853,26 +883,26 @@
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_the_artifact_carries_the_rust_eval_transport_stamp": {
    "status": "pass",
-   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
-   "at": "2026-10-08T11:54:06Z",
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T21:16:39Z",
    "duration_s": 0.0,
-   "contention": 1.0,
+   "contention": 1.2,
    "detail": ""
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_the_shard_split_cannot_move_a_number": {
    "status": "pass",
-   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
-   "at": "2026-10-08T11:54:06Z",
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T21:16:39Z",
    "duration_s": 0.0,
-   "contention": 1.19,
+   "contention": 1.75,
    "detail": ""
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_two_sharded_runs_of_the_meter_are_byte_identical": {
    "status": "pass",
-   "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
-   "at": "2026-10-08T11:54:06Z",
-   "duration_s": 213.44,
-   "contention": 1.15,
+   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
+   "at": "2026-10-15T21:16:39Z",
+   "duration_s": 347.4,
+   "contention": 1.51,
    "detail": ""
   },
   "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
@@ -948,5 +978,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-15T19:53:26Z"
+ "last_written": "2026-10-15T21:32:05Z"
 }
