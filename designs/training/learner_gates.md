@@ -88,7 +88,7 @@ carries, each forced by X5:
 | | the entry | why |
 |---|---|---|
 | perturbation | NAME-KEYED (`parity_probe._keyed_noise`: one generator per parameter, seeded by `sha256(seed:name)`; recorded as `"perturb": "name_keyed"`) | X5 adds groups and the policy retires α / β (and discards `belief_slots`); an order-keyed draw would move every later parameter's noise whenever a module is added or retired |
-| buffer | `learner_golden_buffer.npz` (sha `06585756…`, rebuilt at the END STATE's adoption as production, 2026-10-12), the rollout recipe at run seed 19 (`RECORD_RUN_SEED`) | its behaviour log-probs are the production (end-state) learner's (K9(b) judges them). Seed 18 (the X5-break buffer's, sha `75c5a772…`) gave zero OTHER_move-dead rows under the end state, and seed 17 none under X5 (design §6.4: ≥ 2 rows per X5 case) |
+| buffer | `learner_golden_buffer.npz` (sha `a782af44…`, rebuilt at legacy deletion U3, config v157, 2026-10-15, when the fresh-init stream moved — D-LD7), the rollout recipe at run seed 22 (`RECORD_RUN_SEED`; 19 / 20 missed the OTHER_move-dead coverage under the post-U3 learner, 21 failed K9(b) on rule-8 exclusions) | its behaviour log-probs are the production (end-state) learner's (K9(b) judges them). Seed 18 (the X5-break buffer's, sha `75c5a772…`) gave zero OTHER_move-dead rows under the end state, and seed 17 none under X5 (design §6.4: ≥ 2 rows per X5 case) |
 | recorded extras | `init_group_sha256`, `fp64_reference`, `behaviour` (the K9(b) read), `coverage` | design §6: what proves a re-bake correct, not merely new |
 
 **The fp64 reference** (`learner_golden_fp64.py`).

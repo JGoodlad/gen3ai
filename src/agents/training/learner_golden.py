@@ -94,8 +94,13 @@ MODEL_SEED, PERTURB_SEED, UPDATE_SEED = 0, 1234, 123
 #: buffer is rebuilt because its behaviour log-probs follow the seeded learner (now the end-state network), and seed
 #: 18's rollout under that learner gave OTHER_move dead 0 rows (< MIN_CASE_ROWS); 19, the first seed tried after it,
 #: gives OTHER_species live 16 / dead 48 and OTHER_move live 58 / dead 6. Chosen on those coverage counts alone,
-#: before the end-state golden was recorded.
-RECORD_N_STEPS, RECORD_RUN_SEED, RECORD_P2_SEED = 32, 19, 5
+#: before the end-state golden was recorded. The RUN SEED is 22 since legacy deletion U3 (config v157, 2026-10-15): the
+#: fresh-init stream changed (D-LD7), so the seeded learner — and the games it serves — moved; seed 19 then gave
+#: OTHER_move dead 1 row and seed 20 gave 0 (< MIN_CASE_ROWS); 21 met the coverage but K9(b) refused it (20 rule-8
+#: near-tie rows, excluded_frac 0.375 >= 0.15); 22, the next, gives OTHER_species live 37 / dead 27, OTHER_move live 59
+#: / dead 5, no near-tie row and K9(b) max |dlogp| 4.8e-07. Chosen on those two checks alone, before the post-U3
+#: golden was recorded.
+RECORD_N_STEPS, RECORD_RUN_SEED, RECORD_P2_SEED = 32, 22, 5
 #: design §6.4: each X5 case must hold at least this many rows of the buffer (`coverage`).
 MIN_CASE_ROWS = 2
 
