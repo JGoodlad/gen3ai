@@ -222,7 +222,10 @@ def test_the_live_stamps_are_the_mon_tie() -> None:
     assert ARCH_SIGNATURE == MON_TIE_SIGNATURE == "gen3_mon_tied_gain_v1"
     assert SIGNATURE_FIRST_VERSION[ARCH_SIGNATURE] == 145
     cfg = json.load(open(repo_path("designs", "production_config.json")))
-    assert (cfg["config_version"], cfg["arch_signature"]) == (145, "gen3_mon_tied_gain_v1")
+    # The mirror is stamped at the tie's signature, at a version between the floor and the live one: since
+    # 2026-10-14 it records the end-state runs' 154 (a `static` mirror at 145 is refused by the v147 static port).
+    assert cfg["arch_signature"] == "gen3_mon_tied_gain_v1"
+    assert MON_TIE_CONFIG <= cfg["config_version"] <= MODEL_CONFIG_VERSION, cfg["config_version"]
 
 
 def test_a_v144_config_is_refused_naming_the_tie_and_the_pin(tmp_path: Any) -> None:

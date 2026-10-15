@@ -9,7 +9,7 @@
   "capacity_telemetry": false,
   "capacity_velocity_every": 50,
   "conditional_threat_cell": true,
-  "config_version": 145,
+  "config_version": 154,
   "consequence_topk": 6,
   "critic": "winprob",
   "damage_candidate_k": 0,

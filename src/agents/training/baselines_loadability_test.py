@@ -110,6 +110,30 @@ def test_the_generation_verdict_is_registry_data_only():
     assert baselines.is_pre_generation(_entry(arch_signature="gen3_some_other_family_v1"))
 
 
+def test_the_production_MIRROR_is_a_loadable_config_at_HEAD(tmp_path):
+    """`designs/production_config.json` is read as a RECORDED config (`main.checkargs`' parent
+    resolution, the diagnostics-cadence inheritance test), so it must pass THIS tree's migration chain.
+
+    The defect this pins (2026-10-14): the end-state adoption (2026-10-12) moved `token_encoding` to
+    `static` but left the mirror's `config_version` at 145 — and the static port (v147) REFUSES a pre-v147
+    config recording `static` ("its state_dict has no home here"). The mirror was then a config no loader
+    accepts, caught only by `diagnostics_cadence_test`. The mirror's version is the end-state runs' own
+    (154, `rb_es_end2_s2001`-`s2008`), ≥ every version-gated refusal its keys trip."""
+    import json
+
+    from agents.model.model_version import MIGRATION_FLOOR, ModelVersion
+
+    mirror = baselines.production_config()
+    assert mirror["config_version"] >= MIGRATION_FLOOR
+    if mirror.get("token_encoding") == "static":
+        assert mirror["config_version"] >= 147, "a pre-static-port version recording `static` is refused"
+    p = tmp_path / "model_config.json"
+    p.write_text(json.dumps(mirror))
+    loaded = ModelVersion.from_json_file(str(p))       # raises ModelVersionError on a stale stamp
+    assert loaded.token_encoding == mirror["token_encoding"]
+    assert loaded.trunk_layers == mirror["trunk_layers"]
+
+
 def test_every_registry_entry_declares_its_era_honestly():
     """`era_checkout_only` is the registry's public claim that a by-name load works here.
 

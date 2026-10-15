@@ -336,9 +336,14 @@ def test_cell_grad_norm_appears_only_after_a_backward():
 def test_cell_families_names_match_the_extractor_attributes():
     """The list is DECLARED, not duck-typed, so a renamed cell must break here rather than go
     quietly unmonitored. These four attribute names are what `Gen3FeaturesExtractor` assigns."""
-    assert [attr for _n, attr in CELL_FAMILIES] == [
-        "switch_branch", "pair_outcome_move", "pair_outcome_switch", "conditional_threat"]
-    assert all(name == attr for name, attr in CELL_FAMILIES)
+    assert [(attr, proj) for _n, attr, proj in CELL_FAMILIES] == [
+        ("switch_branch", "proj"), ("pair_outcome_move", "proj"), ("pair_outcome_switch", "proj"),
+        ("conditional_threat", "proj"),
+        ("move_resolution_cell", "move_proj"), ("move_resolution_cell", "switch_proj"),
+        ("move_resolution_cell", "restored_move_proj"), ("move_resolution_cell", "restored_switch_proj"),
+        ("move_resolution_cell", "status_move_proj"), ("move_resolution_cell", "status_switch_proj")]
+    assert all(name == attr for name, attr, _p in CELL_FAMILIES[:4])
+    assert len({name for name, _a, _p in CELL_FAMILIES}) == len(CELL_FAMILIES), "a metric name is reused"
 
 
 def test_the_REAL_cells_expose_the_zero_init_proj_this_metric_reads():
@@ -360,5 +365,51 @@ def test_the_REAL_cells_expose_the_zero_init_proj_this_metric_reads():
             self.conditional_threat = ConditionalThreatCell(8)
 
     m = cell_family_metrics(_RealCells())
-    assert set(m) == {f"cell/{n}_weight_norm" for n, _a in CELL_FAMILIES}
+    assert set(m) == {f"cell/{n}_weight_norm" for n, a, _p in CELL_FAMILIES if a != "move_resolution_cell"}
     assert all(v == pytest.approx(0.0) for v in m.values()), "every cell ships zero-init"
+
+
+class _FakeMoveResolution(th.nn.Module):
+    """The END STATE's pointer cell shape: one module, SEVERAL zero-init projections, the facts pairs optional."""
+    def __init__(self, facts: bool):
+        super().__init__()
+        from agents.model.hypothesis_set import IsolatedLinear
+        self.move_proj = IsolatedLinear(4, 8, zero=True)
+        self.switch_proj = IsolatedLinear(4, 8, zero=True)
+        self.restored_move_proj = IsolatedLinear(3, 8, zero=True, bias=False) if facts else None
+        self.restored_switch_proj = IsolatedLinear(3, 8, zero=True, bias=False) if facts else None
+        self.status_move_proj = None
+        self.status_switch_proj = None
+
+
+def test_the_END_STATE_move_resolution_cell_is_monitored_projection_by_projection():
+    """The production network since 2026-10-12 (`--move-resolution on`) RETIRES the four `proj` cells and enters
+    the pointer through `MoveResolutionCell`'s zero-init projections; before 2026-10-14 `CELL_FAMILIES` named none
+    of them, so the production run emitted NO `cell/*` tag at all. Each BUILT projection is reported; an unbuilt
+    facts pair (None) is absent, never a zero."""
+    fe = th.nn.Module()
+    fe.move_resolution_cell = _FakeMoveResolution(facts=True)
+    m = cell_family_metrics(fe)
+    assert set(m) == {f"cell/move_resolution_{k}_weight_norm"
+                      for k in ("move", "switch", "restored_move", "restored_switch")}
+    assert all(v == pytest.approx(0.0) for v in m.values())
+    fe.move_resolution_cell = _FakeMoveResolution(facts=False)
+    fe.move_resolution_cell.move_proj(th.ones(2, 4)).sum().backward()
+    m = cell_family_metrics(fe)
+    assert set(m) == {"cell/move_resolution_move_weight_norm", "cell/move_resolution_switch_weight_norm",
+                      "cell/move_resolution_move_grad_norm"}
+    assert m["cell/move_resolution_move_grad_norm"] > 0.0
+
+
+def test_the_REAL_move_resolution_cell_exposes_every_declared_projection_zero_init():
+    """Pins the six names against the REAL class: a rename of any projection would otherwise keep every stub test
+    green while the production run's liveness tag silently vanished."""
+    import inspect
+
+    from agents.model.move_resolution import MoveResolutionCell
+    src = inspect.getsource(MoveResolutionCell.__init__)
+    for _n, attr, proj in CELL_FAMILIES:
+        if attr == "move_resolution_cell":
+            assert f"self.{proj} = IsolatedLinear(" in src, proj
+            call = src.split(f"self.{proj} = IsolatedLinear(", 1)[1].split("self.", 1)[0]
+            assert "zero=True" in call, f"{proj} is not built zero-init"

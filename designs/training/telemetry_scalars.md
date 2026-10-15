@@ -711,6 +711,13 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   an effect size. `CELL_FAMILIES` is DECLARED, not duck-typed, so a renamed cell breaks the test
   rather than going quietly unmonitored. Nothing is emitted for a cell that is off — it is absent
   from the extractor, and a zero would read as "enabled but dead", a different claim.
+  🚨 **On the END STATE (production since 2026-10-12) the four cells above are RETIRED** — `--move-resolution on`
+  drops them after the build — and the pointer's zero-init entry is `MoveResolutionCell`'s projections, reported as
+  `cell/move_resolution_{move,switch}_*` plus `cell/move_resolution_{restored,status}_{move,switch}_*` (the facts
+  levers' pairs, built under `--move-resolution-facts full` / `--status-facts exact`). `CELL_FAMILIES` declares
+  `(metric, extractor attribute, projection attribute)`. Before 2026-10-14 it named none of them, so **an
+  end-state run (every `rb_es_*` run and its forks) logged NO `cell/*` tag at all** — read that gap as "not
+  monitored", never as "no cell".
 - **Value scale.** From the full rollout buffer: `train/return_mean` / `train/return_std`
   / `train/return_abs_max` (the return `(μ, σ)` + tail) and `train/value_pred_std` (the value head's actual output spread). Watch these to SEE
   the non-stationary value-scale drift (reward annealing / policy improvement) that a static `vf_coef`

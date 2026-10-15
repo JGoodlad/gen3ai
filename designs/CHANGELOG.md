@@ -14190,3 +14190,22 @@ interval [−1.186, +3.311], both clauses true; `train_ms` 54.3 s → 42.1 s (�
   `design_bf16_strength_ab.md` §7–§8, `designs/training/{compile_flags,learner_gates,step_size_and_batch}.md`,
   `designs/ops/{flag_census,TASK_BACKLOG,training_runbook}.md`, `designs/model/file_layout.md`, `designs/production_config.README.md`,
   `src/agents/training/CLAUDE.md`, the root `CLAUDE.md`.
+
+## 2026-10-14 — Two red `diagnostics_cadence_test` tests: both REAL defects of the end-state adoption (the mirror's stale `config_version`; `cell/*` liveness dark on the production network) (no ARCH_SIGNATURE / config / obs bump)
+
+Both tests were red on pristine `415eb7f5` and `10b3a6b6`; neither was a stale test — each caught a defect the end-state
+adoption (2026-10-12, `ed58a3ad`) introduced.
+
+- **`test_checkargs_reports_the_inherited_cadence`** — `designs/production_config.json` recorded `config_version` 145 beside
+  `token_encoding` `static`, and the static port (v147, `gen3_static_port_v1`) REFUSES a pre-v147 config recording `static`. The
+  mirror was therefore no loadable config (`ModelVersion.from_json_file` raised). The mirror's `config_version` is now **154**,
+  what the tested end-state runs record (`rb_es_end2_s2001`–`s2008`). `config_version` is exempt from the registry's mirror
+  comparison and no key moved, so the ARCH surface is unchanged (the mirror's provenance tag moves with its blob). Guard:
+  `baselines_loadability_test::test_the_production_MIRROR_is_a_loadable_config_at_HEAD` (fails on revert).
+- **`test_the_ON_arm_really_runs_every_gated_probe`** — `--move-resolution on` RETIRES the four zero-init pointer cells that
+  `grad_balance.CELL_FAMILIES` named, and enters the pointer through `MoveResolutionCell`'s zero-init projections, which it did not
+  name. So **every end-state run logged NO `cell/*` tag**. `CELL_FAMILIES` is now `(metric, extractor attribute, projection
+  attribute)` and adds the six `move_resolution_*` projections (`move` / `switch`, plus the facts levers' `restored_*` /
+  `status_*` pairs). Tests: the ON arm on the real production network (fails on revert), and two `grad_balance_test` tests, one on
+  the stub shape and one on the REAL class's projection names and zero init.
+- Docs: `designs/training/telemetry_scalars.md` (per-cell liveness), `designs/production_config.README.md`, `designs/ARCHITECTURE.md`.
