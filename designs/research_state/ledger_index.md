@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-25,342-line file. **The ledger itself is append-only and is never edited by this**;
+25,453-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**872 headings · 817 dated · 2026-08-01 → 2026-10-15 · ledger 25,342 lines.**
+**873 headings · 818 dated · 2026-08-01 → 2026-10-15 · ledger 25,453 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -892,3 +892,4 @@ rename.
   - `L25185` · `2026-10-15` · GIGO FIX · **The search world builder's never-seen fact RECORDS (`Worlds.facts`) named another slot's mon after the gender placement permuted the drawn never-seen mons (46 % of the stored Tier-1 never-seen records); the WORLDS were right, so NO playout and NO registered verdict moves; the one quantity built on the records — Tier 1's Amendment-3 U hit-rate proxy (0.12 → 0.28) and FN's species hit (0.172 vs 0.058 → 0.411 vs 0.180) — is corrected, and CLASS-FIRST from that proxy point turns U-FIRST at k 1–2, k 3 and 12 mons alive; a THROWING slot ↔ species ↔ facts ↔ engine guard now checks every returned world**
   - `L25238` · `2026-10-15` · MEASUREMENT · **HIDDEN-INFO STUDY: the RED TEAM (§13.2). "The opponent's moves are NOT the binding constraint" SURVIVES every attack; R3's "the never-seen Pokémon dominate the moves" is WEAKENED (it survives tie-free scoring, the exclusions, the mis-keyed records and a U-leak check, but is NOT detected on the states from games against the network's own snapshots, nor on the end-state checkpoint alone, and per hidden fact the classes are equal); "the dose needs 0.2–0.35" is the 8-rollout leaf's quantisation (BROKEN); the network's species belief is 2.3× Smogon's (BROKEN "FN ≈ Smogon" for species)**
   - `L25321` · `2026-10-15` · GIGO FIX · **A packed team's move token was compared RAW with ids from play (`wisp` ≠ `willowisp`): the one pool team that spells Will-O-Wisp as a Showdown name variant made 7 of POOLSETS' 9,112 Tier-1 worlds run the move twice; ONE packed-token reader (`gen3_data.moves.canonical_id` behind `packed.typed_moves`) and throwing guards now cover the whole search / lever stack — the TRUE team of no Tier-1 state spells a variant, so no registered verdict moves and the exact leave-one-out of the 7 worlds moves POOLSETS' arm-mean IMP by ≤ 3.3e-4**
+  - `L25342` · `2026-10-15` · MEASUREMENT (MAJOR) · **THE KNOCK-IN FORKS (hidden-info study §8.4 / §8.5), INTERPRETED: told the opponent's true moves, items or never-seen species in its observation for +3M steps, the end state is NO stronger than a no-change control — K-MOVES NULL (Δ −0.38 pp [−1.86, +1.10]), K-ITEMS NULL (+0.13 [−1.61, +1.86]), species NULL (−0.59 [−1.77, +0.58]), K-SPREADS NOT DETECTED (+0.34 [−2.51, +3.18], half-width 2.84); no moves extension; MOVES-FIRST false; K-L-WORTH not declarable (no placebo). DESCRIPTIVE: withheld at play, the moves and species forks are ≈ 2.4–2.6 pp BELOW the control (told − withheld ≈ +1.9 pp on every seed): a DEPENDENCE cost, not a gain; the control gained +4.375 pp over its parent (CONFOUNDED). Information is a SEARCH lever, not a POLICY lever, at this maturity (PROVISIONAL)**

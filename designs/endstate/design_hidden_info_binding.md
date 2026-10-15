@@ -3,7 +3,7 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-15): TIER 1 READ (§16.8; `measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output, AMENDMENT 3 (§12.14, per-class dose curves) before any outcome was unblinded, the table frozen `c6f71d9a`): R-MOVES = MOVES-REFUTED (R3: the never-seen Pokémon dominate the seen mons' moves on both sides); computed, not yet red-teamed. **REPLICA COMPARISON READ (§16.9, 2026-10-15, a third party):** G replicated on the same states (+0.070 vs +0.072), the moves' shares replicate in size (s_M 0.11 / 0.12, n_M 0.39 / 0.47), the tie-break step replicates; R3's never-seen half, the stage, recover, eval and dose / placebo rules are NOT replicated (the replica ran no such arms); R-REPLICATE as registered NOT MET. **RED TEAM READ (§16.10, 2026-10-15; post hoc, no registered verdict changed):** "the moves are not THE binding constraint" SURVIVES every attack; R3's never-seen dominance is WEAKENED (it survives tie-free scoring, the exclusions, the mis-keyed records and a U-leak check, but is not detected on the states from games against the network's own snapshots, nor on end2 alone, and per hidden fact the classes are equal); C5's "0.2–0.35" and "FN ≈ Smogon" (for species) are BROKEN; R-EVAL and the empty frontier are WEAKENED; POOL = identification SURVIVES. Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
+**Status (2026-10-15, latest): the KNOCK-IN FORKS READ (§8.7; `measurements/hidden_info_forks_2026-10-14/`, banked `ffd2280e`; PROVISIONAL: +3M steps from one 15M parent, no placebo):** K-MOVES NULL (Δ −0.38 pp [−1.86, +1.10]), K-ITEMS NULL, species NULL (an arm added by decision (b)), K-SPREADS NOT DETECTED (half-width 2.84); no moves extension; MOVES-FIRST false; K-L-WORTH not declarable (no placebo). DESCRIPTIVE: withheld at play, the moves and species forks are ≈ 2.4–2.6 pp below the control (a dependence cost; told − withheld ≈ +1.9 pp); the control gained +4.4 pp over its parent (CONFOUNDED). Reading: information matters to SEARCH, not to the amortized policy at this maturity; privileged information, if ever used in training, belongs in the critic only. **Status (2026-10-15): TIER 1 READ (§16.8; `measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output, AMENDMENT 3 (§12.14, per-class dose curves) before any outcome was unblinded, the table frozen `c6f71d9a`): R-MOVES = MOVES-REFUTED (R3: the never-seen Pokémon dominate the seen mons' moves on both sides); computed, not yet red-teamed. **REPLICA COMPARISON READ (§16.9, 2026-10-15, a third party):** G replicated on the same states (+0.070 vs +0.072), the moves' shares replicate in size (s_M 0.11 / 0.12, n_M 0.39 / 0.47), the tie-break step replicates; R3's never-seen half, the stage, recover, eval and dose / placebo rules are NOT replicated (the replica ran no such arms); R-REPLICATE as registered NOT MET. **RED TEAM READ (§16.10, 2026-10-15; post hoc, no registered verdict changed):** "the moves are not THE binding constraint" SURVIVES every attack; R3's never-seen dominance is WEAKENED (it survives tie-free scoring, the exclusions, the mis-keyed records and a U-leak check, but is not detected on the states from games against the network's own snapshots, nor on end2 alone, and per hidden fact the classes are equal); C5's "0.2–0.35" and "FN ≈ Smogon" (for species) are BROKEN; R-EVAL and the empty frontier are WEAKENED; POOL = identification SURVIVES. Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
 parts RUN AND READ (§16; Amendment 1 after the audits, §12.12). AMENDMENT 2 (2026-10-12, §12.13, before any new arm):
 the STAGE of the game (reveal count k, turn, material) becomes a registered dimension of Tier 1 with a k-stratified
 supplement, the K-world belief-quality dose-response is a Tier-1 arm family (§6.9, no extra playout), and a maturity
@@ -60,7 +60,7 @@ then still feeling good about it."
    all but X, a dose-response of move knowledge, a wrong-moves placebo, an honest sharpening control, the Bayes
    posterior of our own pool, Foul Play's hand-written evaluator as a second leaf); the MODEL-INPUT axis (§7: hand the
    network's move belief the true moves with 60–100 % mass and see whether its choices and its critic get better);
-   and the TRAINING axis (§8, GPU, queued ≈ mid-week: can a network LEARN to use the moves if it is given them?).
+   and the TRAINING axis (§8, GPU, run and READ 2026-10-15, §8.7: can a network LEARN to use the moves if it is given them?).
 5. It pre-registers deterministic decision rules (§12) for "moves are binding", "refuted", "shared", "transient",
    and the other verdicts, with the power each needs, a blinded analysis, an independent re-implementation (§13.1),
    a red team (§13.2), a maturity guard against the "v8 gift" trap and a plateau replication (§10).
@@ -100,6 +100,15 @@ then still feeling good about it."
   the critic on both policies (the frontier is empty).
 - POST-HOC FINDING: the dose curves' first step (p 0 → 0.1) is TIE-BREAKING among the 60 % of states whose honest 8-world leaf
   ties; beyond it the search needs ≈ 0.2–0.35 of weight on the true world.
+
+**The KNOCK-IN FORKS, read (§8.7, 2026-10-15; PROVISIONAL: +3M steps from one 15M parent, no placebo):**
+- Told the opponent's true moves, items or never-seen species in its observation for 3M more steps, the network is NO
+  stronger than a control trained the same way without them. K-MOVES, K-ITEMS and species read NULL (every interval
+  inside ±2 pp); spreads NOT DETECTED (too noisy); MOVES-FIRST false.
+- Withheld at play, the moves and species forks are ≈ 2.4–2.6 pp WORSE than the control. They learned to rely on the
+  told facts, not to gain from them (descriptive, no rule).
+- The control gained +4.4 pp over its parent in the same 3M steps (CONFOUNDED by the learnset fix and the bf16 switch).
+- Reading: hidden information matters to SEARCH (G +0.07), not to the amortized policy at this maturity.
 
 ---
 
@@ -467,7 +476,7 @@ arms' +0 for the set over the species is its prior evidence.
 
 ---
 
-## 8. The TRAINING axis: KNOCK-IN FORKS (GPU; QUEUED by the orchestrator 2026-10-11 after the closing test's verdict branch and the bf16 strength A/B, ≈ mid-week, CONDITIONAL on §8.6)
+## 8. The TRAINING axis: KNOCK-IN FORKS (GPU; queued by the orchestrator 2026-10-11, RUN 2026-10-14/15, READ 2026-10-15: §8.7)
 
 **Question:** can the network LEARN to use each attribute when it is given it, and how much strength is each
 worth? The frozen axis (§7) cannot answer the first half; the X5 oracle arms answered it for the OBSERVATION channel
@@ -589,6 +598,179 @@ cd /home/goodlad/dev/gen3ai && PYTHONPATH=src python -m main.launcher --restart-
 The forks launch (in the orchestrator's queue slot) unless the frozen reads make them moot: they are CANCELLED only if
 R-GIGO FAILS (the instrument must be fixed first) — every other frozen outcome leaves the training-level question
 open, so they run.
+
+### 8.7 RESULTS: the knock-in crosses, READ (2026-10-15; `measurements/hidden_info_forks_2026-10-14/`, banked `ffd2280e`)
+
+**What ran** (the forks' README "As played"; the orchestrator's decisions (a)–(f), 2026-10-14):
+- **15 forks** of `rb_es_end2_s2001/final_model.zip` (15,047,835 steps) to 18.05M steps, at P_hib `64a695dc`.
+  - The arms: `moves` (`ki_moves` = `moves:seen@0.95`), `items` (`ki_items`), `spreads` (`ki_spreads`),
+    `species` (`species:unseen@0.95`) and the no-change control `ctrl`.
+  - Seeds 3101–3103 per arm.
+  - bf16 trunk on every arm, `--behaviour-check warn` uniformly (decision (f)).
+- **The lever is an OBSERVATION reveal, not §8.1's belief injection.** The true facts are written into the observation's
+  cells, so the whole network reads them: the trunk and every head behind it.
+- **`species` replaced the wrong-moves placebo** (decision (b), before any cell was played). The training observation
+  refuses a placebo source, so there is NO placebo arm (decision (a)).
+- **Validity checks.**
+  - K-VALID audit `invalid=[]` (`bank_hib.py`: every live K9(b) probe of every fork under 1e-4; max |d log π| ≤ 3.95e-5).
+  - The dose matches across arms (`python -m main.dose`, read 2026-10-15 for this section): all 15 forks train at
+    `lr_median` 3.6e-4 (pinned by `--fork-lr`) and dose rate 7.324e-08. The ratio to the control is 1.00, inside
+    §8.3's [0.8, 1.25].
+- **The crosses.** 36 primary cells (one-sided: the lever told, the control as trained), 3 v8 cells and 12 honest cells
+  (the lever WITHHELD at eval, `main.h2h --oracle-reveal-mode withheld`, played at `8272c6cb`). Each cell is 1,000
+  mirrored pairs, greedy vs greedy, on the pool teams.
+- **The rules** are §8.5's, coded in `read_hib.py` (`4ffb8824` / `f68f686b`) before any cell was played, and applied by
+  `crosses/read_cross_hib.py`.
+
+**The registered verdicts, as read** (`crosses/result/verdict.json`; two-sided 95 % Student-t, df 4; rule 8 at ±0.05 pp; no
+`near_boundary` flag anywhere):
+
+| lever | Δ_L (told lever − control) | 95 % interval | half-width | verdict | K-RANK: Δ_MOVES − Δ_L |
+|---|---|---|---|---|---|
+| **moves** | **−0.38 pp** | [−1.86, +1.10] | 1.48 | **K-MOVES-NULL** | — |
+| items | +0.13 pp | [−1.61, +1.86] | 1.73 | **K-ITEMS-NULL** | −0.51 [−3.60, +2.59] |
+| spreads | +0.34 pp | [−2.51, +3.18] | 2.84 | **K-SPREADS-NOT-DETECTED** | −0.72 [−4.24, +2.80] |
+| species (decision (b): an arm added after §8's registration, read by the same coded rule) | −0.59 pp | [−1.77, +0.58] | 1.17 | NULL | +0.21 [−0.85, +1.27] (a declared descriptive extension) |
+
+- **Extension:** none. Δ_MOVES is NULL, and its half-width 1.48 is under the ±2.5 trigger.
+- **K-RANK:** MOVES-FIRST is **false**. Neither registered contrast has its lower bound above +0.05.
+- **K-L-WORTH:** **not declarable** for any lever, because there is no placebo (decision (a)). This costs no verdict in this
+  batch: no lever passes even K-L-WORTH's first clause (Δ_L lower > +0.05; the highest lower bound is items' −1.61).
+- **K-VALID:** its placebo clause is UNREADABLE. What remains open is whether a confident WRONG set would also have bought
+  a gain, which would void the verdicts.
+- **v8** (descriptive, stamped CONFOUNDED): the control beats its parent in all three cells (55.15 / 52.63 / 55.35), mean
+  **+4.375 pp**.
+- **The honest cross** (descriptive, no rule; the lever's seed i WITHHELD vs the control's seed i; told − withheld is
+  measured on the same seed-paired cells):
+
+  | lever | withheld − 50, mean (cells) | told − withheld, mean (per seed) |
+  |---|---|---|
+  | moves | **−2.35 pp** (46.75 / 47.93 / 48.28) | **+1.88** (+1.88 / +2.10 / +1.68) |
+  | species | **−2.58 pp** (47.78 / 46.25 / 48.25) | **+1.85** (+0.93 / +2.93 / +1.70) |
+  | items | +0.58 pp (51.50 / 50.38 / 49.85) | −0.21 (−0.10 / −0.13 / −0.40) |
+  | spreads | −0.43 pp (49.13 / 48.78 / 50.80) | +0.35 (+0.88 / −0.30 / +0.48) |
+
+**In plain words.** We gave the end-state network the opponent's true hidden facts in its observation for 3M more steps: the
+seen Pokémon's unseen moves, their items, their spreads, or the never-seen Pokémon's species. Each fork then played the
+fork trained on the same games without them.
+- **No reveal made the network stronger.** Told the moves, it is −0.4 pp, and the interval rules out any gain or loss
+  bigger than 2 pp. Items and species read the same way. Spreads are too noisy to call either way.
+- **Two forks became DEPENDENT on what they were told.** Take the reveal away and the moves and species forks play
+  about 2.4–2.6 pp worse than the control, on all three seeds each.
+- **So the network learned to READ the moves and the species, but not to GAIN from them.** It swapped its own inference
+  for the told facts and ended where the control ended without them.
+- **The control itself gained +4.4 pp over its parent in the same 3M steps.** That is ten times anything a reveal bought.
+  It is confounded, see below.
+
+**Against the registered prediction** (§8.5: "K-MOVES NOT DETECTED or NULL; K-ITEMS and K-SPREADS NULL; Δ_WRONG ≤ 0"):
+- K-MOVES NULL: **right**.
+- K-ITEMS NULL: **right**.
+- K-SPREADS: **wrong**. It reads NOT DETECTED, because its interval (half-width 2.84) is wider than the ±2.0 margin.
+  Its point (+0.34) is near 0. The control's seed 3103 drives the noise: its column mean is 52.07 against the spreads
+  forks, against 49.8–50.5 against every other lever.
+- Δ_WRONG ≤ 0: not run.
+
+**Reading with the frozen axes** (§8.5's registered bullet; the frozen reads are §16.5, §16.8–§16.10):
+- **Neither registered combination applies as written.**
+  - "K-MOVES-WORTH with NET-NOT-DETECTED" (a belief-quality path) needs K-MOVES-WORTH. The read is NULL.
+  - "K-MOVES-NULL with MOVES-BINDING" (moves matter to SEARCH, not to an amortized policy) needs MOVES-BINDING. Tier 1
+    REFUTED it (§16.8, R3). "The moves are not THE binding constraint" survived every red-team attack (§16.10).
+- **What the three axes say together for the MOVES.** The frozen network told the true moves decides no better (R-NET NOT
+  DETECTED, §16.5). A network trained 3M steps with them is no stronger (K-MOVES-NULL). For search, the moves are a real
+  but minority share of the gap (s_M ≈ 0.11–0.13, n_M ≈ 0.39–0.47, replicated, §16.9).
+  - The red team found the moves matter MORE to search on states from games against our own snapshots (n_M 0.58,
+    §16.10).
+  - These crosses ARE network-vs-network games: competent opponents.
+  - So the training NULL holds in the very population where the moves matter most to search.
+- **The X5 reading, generalised (an interpretation, NOT a registered clause).** Hidden TEAM information matters to
+  SEARCH: G +0.070, replicated. The class that carries the most of it on the registered mix is the never-seen Pokémon
+  (U; single-implementation, WEAKENED by the red team). Telling the POLICY that class (the `species` arm) buys nothing
+  either. The 2026-10-15 record fix (`8702a56f`, carried into Amendment 3 by `7f0e719a`) and the red team put the network's own
+  never-seen species belief at a true species 2.3× as often as Smogon usage (0.41 vs 0.18). That points (an
+  interpretation) to a policy limit that is not missing species information.
+
+**What it does NOT show:**
+- **3M steps only.** Whether a longer exposure turns reading into gain is open. A NULL at +3M bounds what a reveal buys in
+  3M steps, not at convergence. The X5 oracle arms, trained from scratch to 15M, bought +2.18 / +2.44 pp, below the floor
+  (UNDERSTANDING §4.5).
+- **A 15M parent that has not plateaued** (§10.1, §16.3), and ONE parent seed (s2001). The fork seeds vary the
+  continuation only, so the result is about this parent.
+- **No placebo.** Content cannot be told from confidence, and K-VALID's void clause cannot be checked.
+- **p = 0.95 TOLD, not a realistic belief.** The reveal is the truth in 95 % of rows. The network's own move belief hits
+  about half the hidden moves (0.513, §16.8). A NULL for the truth bounds a realistic belief improvement only if the
+  benefit is monotone in belief quality: UNVERIFIED for training.
+- **The whole-network observation route, not critic-only.** The reveal reached the actor, so a dependence cost was
+  possible by construction. A critic-only route was not tested here.
+- **The v8 confound.** The control-vs-parent read mixes +3M steps with the learnset data fix `64a695dc` (the move prior and
+  X5's hypothesis candidates gained 754 legal cells; the parent trained before it). It also mixes a code pin change
+  (`62085750` → `64a695dc`) and an fp32 → **bf16** trunk switch mid-lineage (decision (d)).
+  - `verdict.json`'s stamp names only the data change. The precision switch is one more confound (a FINDING, below).
+  - The bf16 A/B covered fresh runs, not switching a lineage (UNDERSTANDING §4.6c).
+  - The lever-vs-control crosses are not affected: every fork shares the pin, the data and the precision.
+- **§8.4's per-fork meters were NOT run:** the policy drift vs the parent, the belief maturity of the forks' own heads, and
+  §7's model-input axis on each fork.
+- **§8.1's startup gate G-HIB was NOT run as defined.** It was a gate for the unbuilt `--belief-oracle`. The K-VALID audit
+  applied was K9(b) strict-by-read, and the reveal's per-row coverage was not gated (`hib/*` scalars were never built).
+- **One fork took a different path.** `rb_hib_moves_s3101` had two strict tie-only stops and a SIGTERM switch to `warn`
+  at 15,259,653, and it ran with the shared compile cache OFF (decisions (e), (f)). Its primary row mean is the lowest of
+  the moves seeds (48.79). This is descriptive; no rule reads it.
+
+**The HONEST dependence cost: descriptive, no rule.** Told − withheld ≈ +1.9 pp for moves and species, on every seed, and
+≈ 0 for items and spreads. The told moves and species forks are no better than the control, and withheld they are
+≈ 2.4–2.6 pp worse.
+- **The withheld path is not the cause.** `main.h2h`'s withheld mode is tested to play `off`'s games bit for bit
+  (`play_reveal_integration_test.py`). The items and spreads arms, played the same way, show no cost.
+- **Candidate mechanisms** (none measured):
+  1. **Distribution shift on the withheld observation.** For its last 3M steps the fork saw revealed-move (or
+     revealed-species) cells in ~95 % of rows. Withheld, its inputs look like the parent's, which it trained on for 15M
+     steps but not recently. The cost would be a shallow re-calibration that a short exposure undoes.
+  2. **Learned reliance.** The fork stopped using its own inference path, and the reveal made the inference's training
+     signal vanish: the belief heads' targets became visible inputs, so their losses collapse (X32's registered caveat
+     (3)). Withheld, the inference it no longer maintains has to stand in.
+  3. **Capacity reallocation.** Trunk capacity moved toward the told content at the expense of other skills. That would
+     cost told and withheld play ALIKE (told − withheld ≈ 0). The +1.9 pp contrast says most of the cost is not this.
+     At most it is the told deficit itself (−0.38 / −0.59 pp, inside the NULL band).
+- **What would separate them** (each CPU or a few GPU-h; none queued):
+  - **(a) Resume each withheld fork briefly WITHOUT the reveal** (e.g. +0.25M and +1M steps), with the control
+    continued equally, and re-cross. Recovery within ~0.25M ⇒ (1). Recovery that takes on the order of the 3M exposure
+    ⇒ (2).
+  - **(b) The forks' belief heads on honest rows** (the §10.2 belief-maturity read, CPU): move / species log loss of a
+    withheld fork vs the control on the same states. Degraded heads ⇒ (2).
+  - **(c) Told-vs-withheld policy divergence** on the same states (flip rate, KL): how much of the policy rides on the
+    reveal.
+  - **(d) A critic-only privileged-information arm**: the reveal reaches the value pathway only. This is the asymmetric
+    actor-critic (Pinto et al. 2017, "Asymmetric Actor Critic for Image-Based Robot Learning", arXiv:1710.06542). Baisero
+    & Amato (AAMAS 2022, "Unbiased Asymmetric Reinforcement Learning under Partial Observability") show a critic on the
+    state ALONE is biased, and that the unbiased form conditions on the history AND the state. The actor never sees the
+    reveal, so it cannot depend on it at play time.
+    - This is a BUILD: our extractor feeds one shared trunk to both heads, so the reveal cannot reach the critic alone
+      today.
+    - Our one pre-era privileged-critic arm (`truevalue`, search ledger N7) bought no discrimination and was optimistic.
+  - **(e) An annealed or dropped-out reveal**: reveal probability decaying to 0 over the exposure. This is Suphx's
+    "oracle guiding" (Li et al. 2020, arXiv:2003.13590). The idea of training with perfect information and acting without
+    it is also PerfectDou's (Guan et al., NeurIPS 2022). It tests whether told information can leave a durable honest
+    gain rather than a dependence. (The citations are from memory and were not re-checked against the papers in this
+    unit.)
+
+**Implications (all PROVISIONAL at 15M + 3M, one parent, `feedback_strong_claims_need_plateau`):**
+- **For the amortized POLICY, better beliefs are not a strength lever at this maturity.** The truth itself at 95 %, for
+  3M steps, buys no strength beyond ±2 pp for moves, items or never-seen species. Any realistic belief improvement is
+  bounded by that, assuming monotonicity (UNVERIFIED). This agrees with R-NET (frozen) and the X5 oracle arms (from
+  scratch, below the floor). No belief-for-the-policy programme on this evidence.
+- **Information matters for SEARCH.** G = +0.070 per decision, replicated (§16.8–§16.9). The value of belief work, if any,
+  is as a world sampler for search, where Tier 1 and the red team locate it: the never-seen Pokémon on the registered
+  mix, the moves on competent-opponent states.
+- **Privileged information, if it is ever used in training, belongs in the CRITIC ONLY.** On the shared observation
+  route the actor learns to depend on it: a ≈ 2.4–2.6 pp honest cost, descriptive. A critic-only route needs a build,
+  conditions on the history as well as the state, and has a pre-era null against it (N7). It is the right PLACE, not a
+  recommended lever.
+- **The 15M policy is still improving fast.** The control gained +4.4 pp in 3M steps, all three cells above 52.6 (v8,
+  CONFOUNDED with the learnset fix, the bf16 switch and the pin). This matches §16.3's maturity read. It supports the X26
+  deep run and keeps every 15M reading of this study PROVISIONAL.
+- **Training dynamics: the moves reveal raises K9(b)'s near-tie excluded share** to a median of 0.158–0.160 on all three
+  seeds (per-update max 0.198–0.223). Of the live probes, 22 / 22 / 19 had a share > 0.15. Every other arm and the
+  control sit at 0.005–0.036. It is a step from the first update, not a drift. The data point is in
+  `design_x26_readiness.md` §1.1; the mechanism is UNVERIFIED.
 
 ---
 
@@ -1709,3 +1891,4 @@ on U, E1 and E2 are the remaining preconditions.
 | 2026-10-15 | **REPLICA COMPARISON READ (§16.9) by a third party: R-REPLICATE NOT MET as registered; G MET; R-MOVES PARTLY MET (the M half replicates, R3's never-seen half is not replicated); everything resting on U, the stage rules, R-RECOVER or R-EVAL stays single-implementation** | Compared on C = the 978 states where both implementations built O, P, F, F+M and O−M, with one bootstrap for both: the instrument identical (IMP_O, truth rows, scorer, the searched side's view); G +0.0696 / +0.0715; s_M 0.11 / 0.12; n_M 0.39 / 0.47; the tie-break step reproduces on the replica's own worlds. The replica's learnset handicap (pre-`64a695dc` table) is scoped (63 % of states have a hidden seen-mon true move it could never draw) and directed (it inflates the replica's move shares), and its size is bounded (n_M ≤ +0.10 at the point). §12.2's TV < 0.02 is recorded as unmeetable at this sample size (two halves of one implementation fail it). The red team's first target is an independent F+U / O−U | comparing each implementation's PUBLISHED set (different selections: the 111 states only the replica could fit carry n_M 1.17 and alone flip B4); a cross-implementation R3 (the replica's n_M against the original's n_U: not a replication); editing §16.8's verdicts or the author's confidences (left as written; the third party's confidences are stated in §16.9) | `measurements/hidden_info_tier1_2026-10-13/replica_comparison.md` / `.json`, `replica_compare.py`; `measurements/hidden_info_replica_2026-10-11/`; ledger 2026-10-15 |
 | 2026-10-15 | **Tier 1's Amendment-3 U hit-rate PROXY and FN's species hit CORRECTED (a builder-record GIGO; no outcome re-read)** | The world builder kept each never-seen mon's provenance record at the slot it was DRAWN for after the gender placement permuted the mons, so `score_blind.fact_hits`'s U count was "the species equals the truth of its DRAW slot", not §12.14's "a never-seen slot holding a TRUE never-seen species". Recomputed set-based with `unblind_t1.class_dose` on the frozen table (the original reproduces the published block exactly): U TODAY proxy 0.12 → **0.28 [0.27, 0.30]** (hit F 0.058 → 0.180, FN 0.172 → 0.411), U p0 0.10 → 0.30, `PI.from_today_proxy` +0.003 → +0.005; CLASS-FIRST from the proxy point NOT DETECTED → **U-FIRST** at k 1–2, k 3 and material 12. Unchanged: every world and playout (whole entries moved), R-MOVES, G, s / n per class, R-STAGE-*, R-DOSE, R-RECOVER, the M class, P-STAR, SHAPE, the from-p = 0 verdicts (none reads `hits`) | re-running any arm (the worlds were right); editing the measurement folder in that unit (another agent's replica comparison was in flight there; the folder's own correction unit later added the corrected block beside the published one, README §7 / `result_t1.*` / `amend3_corrected.py`) | `design_information_levers.md` §7.6; ledger 2026-10-15 GIGO FIX (world records) |
 | 2026-10-15 | **RED TEAM READ (§16.10; §13.2's mandate: break the Tier-1 conclusions)**: C1 WEAKENED (moves-not-binding SURVIVES; U's dominance holds on the registered mix only: not detected on the snapshot-opponent states or on end2 alone, and equal per hidden fact), C2 SURVIVES (scoped to the 8-rollout leaf), C3 WEAKENED, C4 WEAKENED, C5 BROKEN in its two quantitative parts, C6 SURVIVES | A post-hoc re-read of the frozen table with its own code: tie-free LEAF-K8 (three tie rules) and the continuous scorers; R3 on its absolute numerators (the n-side needs no F) with the exclusions imputed; a U-class leak check and a team-text check of the U arms; the information-volume normalisation; the opponent-population split (§10.4's registered axis, read post hoc for R3); the R-true 2 × 2; the referee's seed halves; seven settling experiments sized, E1 (the blind U-arm build) written ready to dispatch. Confidence (red team): U the largest class on the registered mix ≈ 70 %, on competent-opponent states ≈ 35 %; the moves THE constraint ≈ 5 % | editing §16.8's verdicts or the author's / third party's confidences (they stand as written; the red team's numbers are its own); a re-play (every attack was answerable from the stored per-world arrays); fixing `worlds.py` (a separate unit, `8702a56f`; its records never touched a world) | `measurements/hidden_info_tier1_2026-10-13/red_team.md` / `.json`, `red_team.py`; ledger 2026-10-15 |
+| 2026-10-15 | **THE KNOCK-IN FORKS READ (§8.7): K-MOVES NULL, K-ITEMS NULL, species NULL, K-SPREADS NOT DETECTED; no extension; MOVES-FIRST false; K-L-WORTH not declarable; the honest dependence cost recorded DESCRIPTIVELY** | §8.5's coded rules (`read_hib.py`, `f68f686b`) applied to the 36 primary cells as banked (`ffd2280e`), quoted verbatim from `verdict.json`; the v8 read kept descriptive and its confound list extended (the stamp names the learnset data fix; the fp32 → bf16 trunk switch and the pin change are added here); the honest cross read as a dependence cost (told − withheld ≈ +1.9 pp for moves and species, ≈ 0 for items and spreads) with three candidate mechanisms (distribution shift, learned reliance, capacity reallocation) and five separating experiments, none queued; the dose match read with `main.dose` (ratio 1.00 on all 15 forks); the registered "reading with the frozen axes" stated as NOT FIRING as written (K-MOVES-NULL meets R-MOVES REFUTED, not MOVES-BINDING) and the generalised X5 reading labelled an interpretation; implications for the search ledger and the roadmap (no belief-for-the-policy programme; information is a SEARCH lever; privileged information critic-only if ever; the 15M policy still improving) | treating told − withheld as a registered verdict (§8.4 registered the honest cross as a secondary read with no rule); reading K-L-WORTH without the placebo (decision (a)); folding species into K-RANK's registered verdict (the arm postdates the registration); quoting the v8 +4.4 pp as a maturity measurement (three confounds) | `measurements/hidden_info_forks_2026-10-14/` (README Results, `crosses/result/verdict.json`, `h.json`); the forks' K9(b) banks (`bank_hib.py`); `main.dose`; ledger 2026-10-15 MEASUREMENT (MAJOR) "THE KNOCK-IN FORKS" |

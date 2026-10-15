@@ -25339,3 +25339,114 @@ Consumers of packed teams (the survey): `packed.typed_moves` was the one raw-tok
 Tag: **GIGO FIX · class fix + throwing guards · past reads: 0 TRUE-team states, POOLSETS 7 worlds (exact leave-one-out ≤ 3.3e-4 on the arm mean) · no registered verdict affected** ·
 evidence: `src/agents/info_levers/packed.py`, `packed_test.py`, `inject_true_team_test.py`, `src/main/value_search/name_variant_integration_test.py`, `world_guard_test.py`, `src/agents/gen3_data/moves_test.py`, `team_legality_test.py`,
 `designs/endstate/design_information_levers.md` §7.6–§7.7, `designs/endstate/search_ledger.md`, `designs/CHANGELOG.md`
+### 2026-10-15 · MEASUREMENT (MAJOR) · **THE KNOCK-IN FORKS (hidden-info study §8.4 / §8.5), INTERPRETED: told the opponent's true moves, items or never-seen species in its observation for +3M steps, the end state is NO stronger than a no-change control — K-MOVES NULL (Δ −0.38 pp [−1.86, +1.10]), K-ITEMS NULL (+0.13 [−1.61, +1.86]), species NULL (−0.59 [−1.77, +0.58]), K-SPREADS NOT DETECTED (+0.34 [−2.51, +3.18], half-width 2.84); no moves extension; MOVES-FIRST false; K-L-WORTH not declarable (no placebo). DESCRIPTIVE: withheld at play, the moves and species forks are ≈ 2.4–2.6 pp BELOW the control (told − withheld ≈ +1.9 pp on every seed): a DEPENDENCE cost, not a gain; the control gained +4.375 pp over its parent (CONFOUNDED). Information is a SEARCH lever, not a POLICY lever, at this maturity (PROVISIONAL)**
+
+The registered read of the 15 knock-in forks (`designs/research_state/measurements/hidden_info_forks_2026-10-14/`, banked
+`ffd2280e` by the Training session with no interpretation). The interpretation is `design_hidden_info_binding.md` §8.7.
+
+**What ran.**
+- 15 forks of `rb_es_end2_s2001/final_model.zip` (15,047,835 steps) to 18.05M steps at P_hib `64a695dc`. The arms are
+  `moves` (`moves:seen@0.95`), `items`, `spreads`, `species` (`species:unseen@0.95`, replacing the wrong-moves placebo by
+  the orchestrator's decision (b)) and `ctrl`, seeds 3101–3103.
+- The training ran with a bf16 trunk and `--behaviour-check warn` uniformly.
+- The lever is an OBSERVATION reveal (`--oracle-reveal`), not §8.1's `--belief-oracle` (never built).
+- No placebo arm (decision (a): the training observation refuses a placebo source).
+- The checks: K-VALID audit `invalid=[]`. The dose is matched: `python -m main.dose` (read for this entry) gives
+  `lr_median` 3.6e-4 and dose rate 7.324e-08 on all 15 forks, a ratio of 1.00 to the control.
+- The crosses: 36 primary one-sided cells, 3 v8 cells and 12 honest WITHHELD cells (at `8272c6cb`), each 1,000 mirrored
+  pairs. The rules are `read_hib.py` (`f68f686b`), coded before any cell was played.
+
+**The registered verdicts** (`crosses/result/verdict.json`, verbatim numbers; two-sided 95 % t, df 4; no
+`near_boundary`):
+
+| lever | Δ_L pp | 95 % | verdict | K-RANK Δ_MOVES − Δ_L |
+|---|---|---|---|---|
+| moves | −0.381 | [−1.862, +1.101] | NULL | — |
+| items | +0.125 | [−1.610, +1.860] | NULL | −0.506 [−3.601, +2.590] |
+| spreads | +0.339 | [−2.506, +3.183] | NOT_DETECTED | −0.719 [−4.239, +2.800] |
+| species | −0.594 | [−1.769, +0.580] | NULL | +0.214 [−0.846, +1.274] (descriptive extension) |
+
+- **Extension:** false (moves' half-width 1.48 < 2.5).
+- **MOVES_FIRST:** false.
+- **K-L-WORTH:** NOT DECLARABLE for every lever. No lever passes its first clause anyway: the highest lower bound is
+  −1.61.
+- **v8** (descriptive): cells 55.15 / 52.625 / 55.35, mean +4.375 pp.
+- **Honest** (descriptive):
+
+  | lever | withheld − 50 | told − withheld (mean) |
+  |---|---|---|
+  | moves | −2.35 | +1.88 (+1.88 / +2.10 / +1.68) |
+  | species | −2.575 | +1.85 (+0.93 / +2.93 / +1.70) |
+  | items | +0.575 | −0.21 |
+  | spreads | −0.43 | +0.35 |
+
+**Against the registered prediction** ("K-MOVES NOT DETECTED or NULL; K-ITEMS and K-SPREADS NULL; Δ_WRONG ≤ 0"):
+- moves: right.
+- items: right.
+- spreads: wrong (NOT DETECTED, too wide; the control's seed 3103 column is the outlier at 52.07).
+- Δ_WRONG: not run.
+
+**Reading with the frozen axes.**
+- §8.5's two registered combinations do NOT fire as written: K-MOVES is not WORTH, and MOVES-BINDING was REFUTED by
+  Tier 1 (R3).
+- What holds on all three axes for the moves:
+  - the frozen network told the moves decides no better (R-NET NOT DETECTED);
+  - a network trained 3M steps with them is no stronger (K-MOVES NULL);
+  - for search they are a replicated minority share (s_M 0.11–0.13).
+- These crosses are network-vs-network games: the competent-opponent population, where the red team found the moves
+  matter MORE to search (n_M 0.58). So the training NULL holds where the moves matter most.
+- The generalised X5 reading is an INTERPRETATION: hidden TEAM information matters to SEARCH (G +0.070, replicated), not to
+  the amortized policy at this maturity.
+
+**The dependence cost** (descriptive, no rule).
+- The network learns to READ moves and species (removing them costs ≈ 1.9 pp) but not to GAIN from them.
+- The withheld path is identity-tested (`play_reveal_integration_test.py`). Items and spreads, played the same way, show
+  no cost.
+- The candidate mechanisms:
+  1. distribution shift on the withheld observation;
+  2. learned reliance (the belief heads' targets become visible inputs, so their training signal vanishes);
+  3. capacity reallocation. The +1.9 pp told − withheld contrast says most of the cost is not this.
+- What would separate them (none queued):
+  - (a) withheld forks resumed briefly without the reveal, re-crossed;
+  - (b) the forks' belief-head log loss on honest rows;
+  - (c) told-vs-withheld policy divergence;
+  - (d) a critic-only privileged-information arm (asymmetric actor-critic: Pinto et al. 2017; Baisero & Amato 2022 for
+    the history-and-state critic; a BUILD, because our extractor feeds one shared trunk);
+  - (e) an annealed or dropped-out reveal (Suphx's oracle guiding, Li et al. 2020).
+- The citations are from memory, not re-checked.
+
+**Implications** (PROVISIONAL at 15M + 3M, one parent; `feedback_strong_claims_need_plateau`):
+- Better beliefs are not a strength lever for the amortized POLICY at this maturity. There is no belief-for-the-policy
+  programme on this evidence.
+- Information matters for SEARCH (Tier 1).
+- Privileged information, if ever used in training, belongs in the critic only. That is the right place, not a
+  recommended lever: the pre-era `truevalue` critic, N7, bought nothing.
+- The 15M policy is still improving fast (v8 +4.4 pp in 3M steps; CONFOUNDED). This supports X26 and keeps every 15M
+  reading of the study PROVISIONAL.
+
+**Training-side observation.** The moves reveal raises K9(b)'s near-tie excluded share to a median of
+0.159 / 0.160 / 0.158 (per-update max 0.198–0.223; 22 / 22 / 19 live messages > 0.15). The other arms and the control sit
+at 0.005–0.036, and spreads LOWERS it (0.005 vs the control's 0.028–0.036). Every fork is strict-by-read PASS (live max
+|d log π| ≤ 3.95e-5). This is recorded in `design_x26_readiness.md` §1.1. Both mechanisms are UNVERIFIED.
+
+**FINDINGS (standing rule 7).**
+1. **The v8 confound is wider than `verdict.json`'s stamp.** The stamp names the learnset data change (`64a695dc`). The
+   control ALSO switched its trunk fp32 → bf16 mid-lineage (decision (d); the bf16 A/B covered fresh runs only) and moved
+   pin `62085750` → `64a695dc`. The +4.375 pp mixes +3M steps with three changes. The lever-vs-control crosses are not
+   affected.
+2. **§8.4's per-fork meters were NOT run:** policy drift vs the parent, the forks' belief maturity, and §7's model-input axis
+   on each fork.
+3. **§8.1's G-HIB startup gate was NOT run as defined.** It belonged to the unbuilt `--belief-oracle`. The K-VALID audit
+   applied was K9(b) strict-by-read, and the reveal's per-row coverage was not gated.
+4. **One parent seed.** Every fork descends from `rb_es_end2_s2001`, so the result is about that parent.
+5. **`rb_hib_moves_s3101` ran a different path** from the other 14: two strict tie-only stops, a SIGTERM switch to `warn`
+   at 15,259,653, and the shared compile cache OFF. Its primary row mean is the lowest moves row (48.79). This is
+   descriptive.
+6. **The banks and stop logs live outside the repo** (`~/.claude/jobs/hib_forks/`: `bank_hib.py`, `DECISIONS.md`,
+   `rb_hib_moves_s3101_stops.md`). The numbers above were re-read from the forks' own logs for this entry.
+
+Operations: no GPU, no new games. CPU reads only (`bank_hib.py`, `main.dose`) at nice 19 on cores 5–7 / 13–15, one at a
+time (rule 5b).
+
+Tag: **MEASUREMENT (MAJOR) · K-MOVES NULL · K-ITEMS NULL · species NULL (an added arm) · K-SPREADS NOT DETECTED · MOVES-FIRST false · K-L-WORTH NOT DECLARABLE · DESCRIPTIVE (honest dependence cost; v8 CONFOUNDED) · PROVISIONAL (+3M from one 15M parent)** ·
+evidence: `designs/research_state/measurements/hidden_info_forks_2026-10-14/` (README Results, `crosses/result/verdict.json`, `h.json`), `designs/endstate/design_hidden_info_binding.md` §8.7, `designs/endstate/search_ledger.md`, `designs/research_state/UNDERSTANDING.md` §4.5, `designs/endstate/design_x26_readiness.md` §1.1

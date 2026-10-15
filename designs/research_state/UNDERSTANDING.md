@@ -134,6 +134,12 @@ no pointer is not a measurement.
     Δ̂ **+1.06 pp**, 90 % **[−1.19, +3.31]** — the closing test's rule holds (upper > 0, lower > −2.0); NOT a
     superiority read (the interval includes 0). It buys **−22.5 % `train_ms`** (54.3 s → 42.1 s per update), the GPU being
     the bottleneck. [PASS · §4.6c; ledger 2026-10-14 MEASUREMENT (MAJOR) *THE bf16 STRENGTH A/B: PASS*]
+21. **Telling the policy the opponent's hidden facts does not make it stronger; it makes it dependent.** The end state forked
+    for 3M steps with the true moves / items / never-seen species in its observation is no stronger than its control (moves
+    **−0.38 pp [−1.86, +1.10]**, all three NULL; spreads NOT DETECTED), and withheld at play the moves and species forks are
+    ≈ 2.4–2.6 pp worse (descriptive). Hidden information is a SEARCH lever (G +0.07 per decision), not a policy lever, at this
+    maturity. [NULL · PROVISIONAL (+3M, one 15M parent, no placebo) · §4.5; ledger 2026-10-15 MEASUREMENT (MAJOR) *THE
+    KNOCK-IN FORKS*]
 
 ---
 
@@ -1375,6 +1381,10 @@ The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the 
 **Handing an untrained network a revealed team hurts it** (the both-sided cells, descriptive): blob told the opponent's full set fell −8.1 pp. This confirms the registered out-of-distribution caveat; information a network never trained with is not free.
 
 [DESCRIPTIVE · same entry]
+
+**Training the end state WITH the opponent's hidden facts for 3M more steps buys no strength; it buys a dependence (2026-10-15, the hidden-information study's knock-in forks).** Fifteen forks of the adopted end state's seed-2001 final (15M) trained to 18M with the truth in 95 % of rows of their observation. The arms told the seen mons' unseen moves, their items, their spreads, or the never-seen mons' species, plus a no-change control, 3 seeds each. In the registered one-sided cross against the control (1,000 mirrored pairs per cell), told moves read **−0.38 pp [−1.86, +1.10]**, items +0.13 [−1.61, +1.86] and species −0.59 [−1.77, +0.58], all NULL (inside ±2 pp). Spreads read +0.34 [−2.51, +3.18], NOT DETECTED. Moves do not out-rank items or spreads. With the reveal WITHHELD at play, the moves and species forks are ≈ 2.4–2.6 pp below the control on all three seeds, and items and spreads ≈ 0. So the network learns to READ the told moves and species (removing them costs ≈ 1.9 pp) but not to GAIN from them: it swaps its own inference for the told facts. Which mechanism carries the cost is open: distribution shift, learned reliance (the belief heads lose their training signal when their targets are visible) or capacity. With the frozen-network read (§4.7) and the X5 oracle arms above, the view is that **better beliefs are not a strength lever for the amortized policy at this maturity; hidden information matters to SEARCH** (§4.7, the Tier-1 paragraph). Privileged information, if ever used in training, belongs in the critic only. Limits: +3M steps, one 15M parent that has not plateaued, no wrong-moves placebo, the truth at 95 % rather than a realistic belief, the whole-network observation route. The control itself gained **+4.4 pp** over its parent in those 3M steps (all three cells ≥ 52.6), confounded by the learnset data fix, an fp32 → bf16 trunk switch and a pin change: the 15M policy is still improving fast. Detail: [`../endstate/design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) §8.7.
+
+[NULL (registered K-MOVES, K-ITEMS; species by the same coded rule, an arm added before any cell was played) · NOT DETECTED (K-SPREADS) · K-L-WORTH NOT DECLARABLE (no placebo) · DESCRIPTIVE (the honest dependence cost; v8 +4.375 pp, CONFOUNDED) · PROVISIONAL (+3M from 15M, one parent) · ledger 2026-10-15 MEASUREMENT (MAJOR) "THE KNOCK-IN FORKS"; `measurements/hidden_info_forks_2026-10-14/`]
 
 ### 4.6 The static-token screen, closed at look 3 (2026-10-09)
 

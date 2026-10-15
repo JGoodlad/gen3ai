@@ -105,8 +105,25 @@ of zero. A straight line from 2M would cross 0.15 at about 110–120M. That line
 slope is a third of the early one. Fits to the late half reach 0.15 at about 230–450M, and a log fit gives about
 0.06 at 300M.
 
-**The knock-in forks.** Revealing moves is a step change, not a drift: all three `rb_hib_moves` forks sit at a
-median of 0.157–0.161 from their first update, while control, items, species and spreads stay at 0.006–0.036.
+**The knock-in forks.** Revealing moves is a step change, not a drift. The per-update table of each fork's own log
+(`bank_hib.py`, re-read 2026-10-15; 29–31 updates per fork over +3M steps):
+
+| arm (seeds 3101 / 3102 / 3103) | median excluded share | per-update max | live K9(b) messages > 0.15 |
+|---|---|---|---|
+| `moves` (`moves:seen@0.95`) | **0.159 / 0.160 / 0.158** | 0.198 / 0.212 / 0.223 | 22 / 22 / 19 |
+| `items` | 0.030 / 0.029 / 0.032 | ≤ 0.058 | 0 |
+| `species` (`species:unseen@0.95`) | 0.029 / 0.027 / 0.027 | ≤ 0.065 | 0 |
+| `spreads` | 0.006 / 0.005 / 0.005 | ≤ 0.019 | 0 |
+| `ctrl` (no reveal) | 0.036 / 0.031 / 0.028 | ≤ 0.057 | 0 |
+
+- **Every fork passes strict-by-read.** The live max |d log π| is ≤ 3.95e-5 on all 15, so every moves stop was a
+  tie-share false alarm. `rb_hib_moves_s3101` stopped twice under `fatal` (0.165 and 0.151) before the uniform
+  switch to `warn` (decision (f)).
+- **The spreads reveal LOWERS the share** below the control's (0.005 vs 0.03). The mechanism is UNVERIFIED: the exact
+  stats may remove near-ties at a threshold or `topk` cutoff.
+- **The moves step's mechanism is UNVERIFIED too.** A candidate is more exact or near ties among the told seen mons'
+  move candidates at the damage op's `topk`.
+- The same forks' strength read: none of the reveals bought strength (`design_hidden_info_binding.md` §8.7).
 
 **Verdict:**
 - The MEAN is unlikely to threaten the ceiling before about 200M steps, and may never.
@@ -504,3 +521,4 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-15 | **R-60, the production scout**, is pre-declared as `rb_bf_eb_s2001` (the lowest seed index) | choosing the strongest EB seed | a selection by strength would bias the matched-step references |
 | 2026-10-15 | **T31: an umbrella that would overwrite a sub-flag already set to a DIFFERENT value REFUSES (`UmbrellaOverride`, FATAL_CONFIG), it never resolves silently.** Audit of every umbrella in `main/train/config.py`: `--unified-damage` → `damage_op` / `move_prior_fusion` / `damage_outgoing` (the bug), `--unified-moves` → a typed `--unified-damage off` (the same class, hidden by an `"off"` default, now None), `--damage-matrices incoming` → a typed `--damage-topk 0` (silently raised to 5); every other umbrella write was already "only if None" (`move_latent`, `move_belief_latent_coef`, `damage_topk_k`, `move_belief_mode`, `--arch`'s surface, the recipe, `--debug`'s shape). The coefficient auto-zeroes in `resolve_config` (`hp_type_belief_coef`, `item_belief_coef`) are printed and zero an INERT dose, not an umbrella | "the typed value wins with a note": the umbrella's other writes (`--damage-topk`, the outgoing block, prior fusion) then form a combination `combination_checks` refuses under a message about a DIFFERENT flag, and an ambiguous intent should not be guessed | `src/main/train/umbrella_override_test.py` (14 tests, 9 fail on revert); toy argv `checkargs` byte-identical |
 | 2026-10-15 | **T30-U0 shipped; D-LD1–D-LD7 adopted at their recommendations** (orchestrator default under Q3's 15-minute rule; owner may override before U3 lands). The U0 vacuity requirement (§3.5) is MET: R-T2 can play a pre-deletion T-ENT checkpoint at post-deletion HEAD, so the EB bridge fallback is not needed | the EB bridge | `adopted_levers_test.py` (a real toy build passes the config and zip judges with all four units in force) |
+| 2026-10-15 | **§1.1's knock-in-fork data point re-read per seed** (the hidden-info study's §8.7 read) | the per-fork table (median / max excluded share, messages over 0.15) from each fork's own log; every fork strict-by-read PASS; the spreads reveal lowers the share; both mechanisms UNVERIFIED | the one-line range alone (it said 0.006–0.036 for the other arms; the spreads medians read 0.005) | `bank_hib.py` on the 15 `rb_hib_*` forks; `design_hidden_info_binding.md` §8.7 |
