@@ -236,10 +236,15 @@ Runs already below the floor (`rb_st_*` v143, `rb_x5ab_*` v137) were pinned-only
 | U2, U3, U4, U5, U6 | NOT STARTED | — | — |
 
 **The exact next step (U3, lanes MR + VTI: B1, B2, C1).** On main after U1:
-1. **F-LD-6 FIRST:** port the op-side PRODUCER coverage out of the seven blocks' tests (`pair_outcome_test`,
-   `pair_outcome_switch_test`, `switch_branch_test`, `conditional_threat_test`, `intent_*_test`) into op-level tests
-   (`pair_outcome_coords`, `pointer_intent_status_operands`, `discrete_*_status`, the `last_pair_*` stashes move
-   resolution still reads), then delete the seven test files with their modules.
+1. **F-LD-6 is DONE (landed after U1):** `src/agents/model/op_pair_producers_test.py` (19 tests, surviving code only)
+   holds the op-side PRODUCER coverage the seven blocks' tests carried; the per-producer inventory (what was ported,
+   what surviving tests already cover, what goes with the blocks) is
+   `designs/research_state/measurements/legacy_deletion_u3_init_2026-10-15/F-LD-6_inventory.md`. Its findings for U3:
+   `ExtractorForward._flat_consumer_ops` / `FlatConsumerOps` (`extractor_forward.py`, `flat_intent.py`) is a SURVIVING
+   reader of the op's stashes under X5 (incl. `pair_in_other`, `pair_type_mult_other`, `pair_cells_other`) — keep it;
+   three of its fields (`pair_cells`, `out_pko`, `opp_p_ghost`) look block-only (UNVERIFIED). If U3 removes
+   `arch_constants._PAIR_OUTCOME_*` or `damage_op_test`'s shared fixtures, update that file's imports. Delete the seven
+   test files with their modules.
 2. Delete `--move-resolution` (DERIVED on iff opp_intent + damage_op + damage_outgoing + both matrices, D-LD2),
    `--move-resolution-facts` (derived `full` with it), the seven block flags (+ `--no-` / `_` spellings) and
    `--value-threat-inject`; their fields, `_resolve` lines, registry rows, `check_compatible` clauses, snapshot keywords;
@@ -250,8 +255,9 @@ Runs already below the floor (`rb_st_*` v143, `rb_x5ab_*` v137) were pinned-only
 3. `LANDED_UNITS |= {"U3"}`, `UNIT_VERSIONS["U3"] = <the bumped MODEL_CONFIG_VERSION>`; deleted_flags rows; the
    `endstate` overlay and `PRE_ADOPTION_PRODUCTION` lose the keys; the mirror and `baselines.json`'s
    `config_mirror_version` move to the new version.
-4. 🚨 **D-LD7 — the init stream.** Run `designs/research_state/measurements/legacy_deletion_u3_init_2026-10-15/init_probe.py
-   dump` at U1's commit and at U3's, then `compare`: state which tensors change for the same seed and whether the init
+4. 🚨 **D-LD7 — the init stream.** The PRE-U3 record is committed: `init_pre_u3_4801b956.json` (seeds 1001 / 2001 /
+   4001 at U1's tip `4801b956`; 280 parameters, 2,609,183 elements, reproducible bit for bit). Run `init_probe.py dump`
+   at U3's commit, then `compare` against it: state which tensors change for the same seed and whether the init
    forward changes. Re-record the K9 golden (`learner_golden record --reason …`) ONLY after showing it passes at U1's
    commit and fails at U3's; the ledger entry is MAJOR ("fresh-init stream changed at `<U3 sha>`").
 5. Gates as U1's, plus `identity_init_test`, `extractor_compiles_test` (CPU), `tier_contract_test`, the `critic_route_audit`
