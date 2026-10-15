@@ -164,7 +164,7 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
     from agents.training.reward_term_stats import term_class_map as _tcm
     reward_term_callback = RewardTermMetricsCallback(
         term_class=_tcm(_rcc(_RewardConfig.from_args(args))))
-    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), DoseLogCallback(), graceful_restart_callback, signal_callback, reward_term_callback]
+    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback, signal_callback, reward_term_callback]
     # ADAPTIVE BATCH (gen3_adaptive_batch_v1): the second controller — it holds a gradient-noise-scale
     # ratio near a target by moving `--grad-accum-steps` K, the one batch lever with no shape change
     # and no memory cost. Registered only when the flag is on, so an `off` run adds no callback and
@@ -195,6 +195,12 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
             ),
             resume_accum=_resumed_accum,
         ))
+    # THE DOSE LOG (`train/dose_rate` + `train/effective_batch`) is registered AFTER the adaptive-batch callback
+    # on purpose (gen3_metric_producer_guard_v1): it reads the K the `train()` that follows will run, so it must
+    # come after the controller's decision. It used to sit before it, and the controller re-recorded
+    # `train/effective_batch` with the new K — two producers, the later one winning, while `train/dose_rate`
+    # still used the OLD K. `DoseLogCallback` is now the ONLY producer of both keys.
+    callbacks.append(DoseLogCallback())
     # RANK TRIPWIRE (gen3_distill_target_gate_v1):
     # watchdog over the EXISTING rank/policy_pr probe — EMA vs the run's own early baseline, with
     # a persistence rule. Default "warn" (no fold runs blind again); pure diagnostic bookkeeping —

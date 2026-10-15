@@ -14491,3 +14491,38 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   check; the CUDA branch), and the slow `debug_shape_smoke_integration_test.py` (≥ 2 dumps, the crash pair rendered).
   Docs: `designs/training/telemetry_scalars.md` "Metric keys stay DISTINCT", `src/agents/training/CLAUDE.md`,
   `designs/endstate/design_x26_readiness.md` I28; ledger 2026-10-15 CRASH FIX.
+
+## 2026-10-15 — GIGO FIX: one producer per metric key, and `grad/species_belief_*` exists (`gen3_metric_producer_guard_v1`; telemetry only; no model / config / obs / signature change, no training-math change)
+
+- **Three keys had TWO producers and the later write won silently** (found by the metric-key collision survey): `fork/*`
+  (`rust_rollout/fork.py` at collection AND `train()`; the collection pass is the producer now, a NaN is omitted),
+  `train/effective_batch` (`DoseLogCallback` AND `AdaptiveBatchCallback`; the dose log is the only producer now and
+  `build_callbacks` registers it AFTER the controller, so `train/dose_rate` — stale by one decision under
+  `--adaptive-batch` — reads the K the next update runs), and `lifecycle/cuda_{reserved_mib, device_free_mib,
+  reserved_after_freeze_mib, streams_after_freeze}` (a per-sample reading overwritten at a window close by the CLOSED
+  window's; the per-sample dict owns the four tags, the windowed high-water mark is the new
+  `lifecycle/cuda_streams_after_freeze_max`).
+- A fourth, found by the guard in a unit test (not a production double): `rank/tripwire_fired` was recorded from three
+  lines of `RankTripwireCallback._on_rollout_end`; they now share one method.
+- **The class guard.** `train_logger.Logger.record` / `record_mean` remember the caller's (file, line) per pending key; a
+  DIFFERENT site writing a still-pending key is a duplicate producer: `DuplicateProducerError` (a
+  `MetricKeyCollisionError`, FATAL_CONFIG) under pytest, `--debug` (the trainer sets `GEN3AI_STRICT_METRIC_PRODUCERS=1`)
+  or the env var; otherwise (production) it is COUNTED, reported once per key on stdout and carried by the dump as
+  `telemetry/duplicate_producer_keys` — a production run never stops on it. `logger_scope.hold` / `restore` and
+  `update_fit`'s snapshot carry the sites with the values.
+- **`grad/species_belief_{share,norm_shared,policy_cosine}` is produced again.** The belief bank registered the X5
+  hidden-team row's probe term as `species_belief_set` while `ppo.py` / `_R1_PROBE_TERMS` looked up `species_belief`, so
+  the family was absent from the X5 version break on. The row is `species_belief`; `_R1_PROBE_TERMS` is derived from
+  `belief_bank.ROWS` (+ `win_prob`) through `select_probe_terms`, never retyped; the K9 learner golden's fp64 reference
+  keys follow (`learner_golden.json` `terms_*` / `term_abs_err`, values unchanged). The probe now also names this term
+  in K9(c)'s finiteness verdict and in the grad-balance sampling gate (`belief_present`), which affects WHICH minibatch of
+  an update the diagnostic samples — never the loss or the weights. **Cost:** one more `autograd.grad` pass through the
+  shared trunk per grad-balance sample (one `diagnostics_every` update), the same as each other aux term.
+- **The slow `--debug` smoke** (`debug_shape_smoke_integration_test.py`) spawns the trainer at one torch / BLAS / OpenMP
+  thread (`debug_shape.SMOKE_THREAD_ENV`), so it is slow rather than hung-looking beside a live run.
+- Tests: `metric_producers_test.py` (the class file: each fix on its REAL producers under a strict logger — raises on a
+  revert; the real learner-golden update produces every registered probe term's `grad/` family),
+  `train_logger_test.py` (the guard), `cuda_memory_trend_test.py` (the two dicts are disjoint), `update_fit_test.py`
+  (sites restored with values), `debug_shape_test.py` (the smoke's env pin). Docs: `designs/training/telemetry_scalars.md`
+  "ONE producer per key", `belief_losses.md`, `step_size_and_batch.md`, `forks.md`, `designs/ops/testing.md`,
+  `src/agents/training/CLAUDE.md`, `designs/endstate/design_x26_readiness.md` I29; ledger 2026-10-15 GIGO FIX.

@@ -25584,3 +25584,93 @@ is where the meter writes by design.
 
 Tag: **MEASUREMENT · TIER 1 VALIDATED (toy; CLIMBING at 70M) · COST MEASURED · PROPOSAL (Δ 10M + pipelining for X26; no (b) / (c) for X26) · FINDING (toy CompileCanary FATAL)** ·
 evidence: `designs/research_state/measurements/t33_plateau_cost_2026-10-15/`, `designs/endstate/design_x26_readiness.md` §2.6 and F13–F17
+
+### 2026-10-15 · GIGO FIX · **One producer per metric key: three silent double producers fixed (`fork/*`, `train/effective_batch` with a stale `train/dose_rate`, `lifecycle/cuda_streams_after_freeze` and three siblings), `grad/species_belief_*` produced again after four weeks absent, and the class guarded in the logger's record path (`DuplicateProducerError` under pytest / `--debug`, counted + reported in production) — `gen3_metric_producer_guard_v1`**
+
+The metric-key collision fix (`109c4256`, the entry above) listed these as FINDINGS 1-2, read from the code and not run;
+this unit fixes them and the CLASS. Telemetry only: no model, config, observation or signature change, and no training
+math moves (the loss, the gradients and the weights are bit-identical; `learner_golden`'s update hashes did not change).
+
+**What was wrong, and what it did to the DATA already on disk.**
+1. **`fork/*`** — `rust_rollout/fork.py` (`RustForkPass.record`, at collection) and `instrumented_ppo/ppo.py` (`train()`)
+   recorded the same stash; the collection write (NaNs kept) always won. *Reach:* the fork arm is declared and OFF, so
+   no run is affected.
+2. **`train/effective_batch`** — `run_io.DoseLogCallback` and `AdaptiveBatchCallback`, and with `--adaptive-batch` the dose
+   log (registered FIRST) computed `train/dose_rate` from the OLD K while the controller had already chosen the new one.
+   *Reach:* a run launched with `--adaptive-batch` (default `off`, not production): its `train/effective_batch` was right
+   (the controller's write won) and its `train/dose_rate` was ONE DECISION STALE after every K move. Read such a run's
+   dose from `python -m main.dose` / the sidecars, not that tag.
+3. **`lifecycle/cuda_{streams_after_freeze, reserved_mib, device_free_mib, reserved_after_freeze_mib}`** — the per-sample
+   dict and the window-close dict both wrote them, and the close dict reads the CLOSED window: the sample BEFORE the
+   closing one for the three reserved readings, and the running HIGH-WATER mark for the streams. *Reach:* every CUDA run;
+   at each window close the four TB series show those other values (a sawtooth on `streams_after_freeze`). Nothing
+   consumes the tags (the leak rule reads the trend object, not TB).
+4. **`grad/species_belief_*` was never produced** from the commit that registered X5's hidden-team row (`7b46d62f`,
+   `hidden_team_set`) to now: the bank registered the term as `species_belief_set` and the probe looked up
+   `species_belief`. *Reach:* every run whose hidden-team supervision is that row (`--belief-tokens fixed_mass`, i.e. every
+   production / end-state run). 🚨 **The hidden-team term was absent from the grad-balance probe's
+   COMMON DENOMINATOR**, so on those runs `grad/policy_share`, `value_share`, `aux_share` and every per-aux share were
+   computed over a total that left out the biggest auxiliary — each share is inflated by `1 / (1 − s_species)`.
+   `grad/value_policy_logratio` and `grad/policy_value_cosine` are ratios between policy and value only and are
+   unaffected. **One measured instance** (NOT a production reading): the K9 learner golden's fixed-seed update (64 rows,
+   perturbed init) now reads `species_belief_share` 0.199, `aux_share` 0.252 (≈ 0.067 without the term),
+   `policy_share` 0.159 (≈ 0.199 without it), `value_share` 0.588 (≈ 0.734). Read an `rb_` run's `grad/*_share` family as
+   the pre-fix, term-less decomposition and do not compare it with a post-fix run's; the size on a production run is not
+   measured here. The term also joins K9(c)'s finiteness verdict (the NAMED terms) and the probe's "wait for a scored
+   minibatch" gate (`belief_present`), so WHICH minibatch of an update the diagnostic samples can change — never the loss.
+
+**The fixes.** One producer per quantity: the collection pass records `fork/*` (a NaN is omitted); the dose log records
+`train/effective_batch` AND `train/dose_rate`, registered AFTER the controller in `build_callbacks`; the per-sample dict
+owns the four `lifecycle/cuda_*` tags and the high-water mark is its own tag, `lifecycle/cuda_streams_after_freeze_max`.
+The bank row is `species_belief`, `_R1_PROBE_TERMS` is DERIVED from `belief_bank.ROWS` (+ `win_prob`) through
+`select_probe_terms`, and the K9 golden's fp64 reference keys follow the rename (values unchanged).
+
+**The guard** (`train_logger.Logger._claim`): `record` / `record_mean` remember the caller's (file, line) per pending key;
+a DIFFERENT site writing a still-pending key is a duplicate producer. **Strict** (pytest via `PYTEST_CURRENT_TEST`, a
+`--debug` run — the trainer sets `GEN3AI_STRICT_METRIC_PRODUCERS=1` — or the env var): `DuplicateProducerError` naming the
+key and both sites, at the second write. **Lenient** (a production run): the later write wins as before, the key is counted
+(`Logger.duplicate_producers`), reported once per key on stdout (`[metric-producers] WARNING`, ≤ 20 keys) and the dump
+carries `telemetry/duplicate_producer_keys` (absent on a clean interval). *Why not raise in production:* a duplicate costs
+one wrong number, a raise costs the run. *The same site writing again* (a loop, a per-minibatch record) is one producer;
+`record_mean` from many sites is the running mean by contract. `logger_scope.hold` / `restore` and `update_fit`'s snapshot
+carry the sites with the values. **Limits:** two producers merged into one call site (a loop over a dict two probes both
+filled) are invisible to it — the startup `identity` check of `metric_keys` covers the derived families.
+
+**Evidence.** `metric_producers_test.py` runs each fix on its real producers under a strict logger and each FAILS on a
+revert (checked one by one: the fork `train()` re-record, the controller's `train/effective_batch`, the dose log moved
+before the controller, the window dict re-writing `streams_after_freeze`, the bank registered `species_belief_set`, the
+retyped lookup tuple); the learner-golden update (every X5 case present) asserts each registered probe term's
+`grad/<term>_{share,norm_shared,policy_cosine}` exists, plus the three tags the launcher panel reads. The slow `--arch production --debug` CPU smoke — which arms the strict guard itself —
+PASSED (2,930 s at contention 12, exit 0, ≥ 2 dumps; recorded in `designs/ops/slow_tier_status.json`): the production
+network's first updates write no key from two sites.
+
+**FINDINGS (standing rule 7).**
+1. **Coordination:** `learner_golden.json` `terms_*` / `term_abs_err` keys are renamed `species_belief_set` → `species_belief`
+   (values unchanged). Legacy-deletion U3 is re-recording the golden's buffer (`rebuild-buffer`) in parallel: whoever lands
+   second must keep the `species_belief` key (a regenerated file from a pre-rename checkout carries the old one and
+   `learner_golden_fixed_mass_test` fails on it).
+2. **Dead panel rows:** `launcher/format.py` lists `grad/latent_*` (the term is `move_latent` now) and `grad/win_prob_*`
+   (de-duplicated into `grad/value_*` under the win-prob critic by design); no run produces either. Display only, not fixed.
+3. **The guard cannot see eval-cycle or cross-process keys the unit tests do not reach.** A real `--arch production` CUDA
+   run is the remaining check: a lenient logger prints `[metric-producers] WARNING` lines and
+   `telemetry/duplicate_producer_keys` if one exists.
+4. **A fourth, found by the guard in a unit test (not a production double):** `rank/tripwire_fired` was recorded from three
+   lines of `RankTripwireCallback._on_rollout_end` — mutually exclusive within one rollout, so a production dump interval
+   never held two, but a test that skips the dump between rollouts did. They now share one method. The convention: a key
+   is written from ONE line (a helper), because the unit of identity is the call site.
+5. **GATE SCOPE (targeted; rule 5b: nice 19, the 3 agent cores, `-n 2`, `-m "not slow and not e2e and not sim and not
+   integration"`).** 74 priority files (the logger, callbacks, ppo, fork, cadence, update_fit, lifecycle, golden,
+   ridealong, `main/train`): 1,307 passed, 1 skipped. 36 further files that build a real learner or logger (model, loop,
+   pool, ledger): 591 passed, 3 skipped, 1 failed (finding 4, fixed). The final re-run of every touched test file plus
+   the cadence / golden / lifecycle / dose set: 239 passed. The static tier: 240 passed. **NOT RUN:** the 131 remaining
+   files that import a touched module but never build a real logger (stopped at 2 % after 10 min on contended cores) and
+   every `integration` / `sim` / `slow` test except the debug smoke (e.g. `fork_crn_integration_test`, the Rust-core
+   collector integration tests). The guard is armed under pytest there too, so a hidden second producer on those paths
+   would fail them: look for `DuplicateProducerError` on the next full routine gate.
+
+Tag: **GIGO FIX (silent double producers; a registered metric never produced) · reach: `grad/*_share` of every X5 /
+production run (term-less denominator); `train/dose_rate` of `--adaptive-batch` runs; `lifecycle/cuda_*` windowed tags of
+CUDA runs; no loss / weight / checkpoint affected** · evidence: `src/agents/training/train_logger.py`,
+`metric_producers_test.py`, `train_logger_test.py`, `cuda_memory_trend_test.py`, `update_fit_test.py`,
+`src/main/train/debug_shape_test.py`, `designs/training/telemetry_scalars.md` "ONE producer per key",
+`designs/endstate/design_x26_readiness.md` I29, `designs/CHANGELOG.md`

@@ -187,7 +187,8 @@ def preserved_learner(model: Any) -> Iterator[None]:
     log_snap = None
     if logger is not None:
         log_snap = {k: copy.copy(getattr(logger, k)) for k in ("name_to_value", "name_to_count",
-                                                              "name_to_excluded") if hasattr(logger, k)}
+                                                              "name_to_excluded", "name_to_site")
+                    if hasattr(logger, k)}
     training = bool(getattr(model.policy, "training", False))
     try:
         yield

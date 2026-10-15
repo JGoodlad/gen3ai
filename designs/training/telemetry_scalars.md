@@ -418,6 +418,62 @@ under their `<tag>/` and shows each as three spaces + the rest, in a 48-characte
   (`diagnostics_cadence_test.py::test_the_production_networks_full_metric_set_dumps_through_stdout_and_tensorboard`
   is the pattern), not just appear in a dict.
 
+## ONE producer per key, per dump interval (`gen3_metric_producer_guard_v1`, 2026-10-15)
+
+`Logger.record` REPLACES a pending key, so two code sites writing one key between two dumps lose the earlier
+site's value SILENTLY — no crash, a plausible number, the wrong one. The metric-key collision fix found three by
+reading the code; all three are fixed, and the class is now guarded in the logger's record path.
+
+- **The three found by reading the code, fixed** (each pinned by `agents/training/metric_producers_test.py`, which raises on a revert):
+  * `fork/*` — `rust_rollout/fork.py` (`RustForkPass.record`, at collection) AND `train()` recorded the stash.
+    The collection pass is THE producer now (the family is a fact about the COLLECTION, stamped at its step; a NaN
+    — an empty slice — is omitted); `train()` records none. Effective change: the NaN keys the later collection
+    write used to log are gone.
+  * `train/effective_batch` — `DoseLogCallback` AND `AdaptiveBatchCallback`; with `--adaptive-batch` the dose log
+    (registered first) also computed `train/dose_rate` from the OLD K. The dose log is the only producer of both keys
+    now and `build_callbacks` registers it AFTER the controller, so both read the K the next `train()` runs.
+  * `lifecycle/cuda_streams_after_freeze` (and `cuda_reserved_mib`, `cuda_device_free_mib`,
+    `cuda_reserved_after_freeze_mib`) — `MemoryTrend.sample_scalars` (every sample) AND `tb_scalars` (a window
+    close, from the CLOSED window: the sample BEFORE the closing one, and for the streams the running HIGH-WATER
+    mark — a different quantity). The per-sample dict owns those four tags; the windowed dict no longer repeats
+    them, and the high-water mark is its own tag, `lifecycle/cuda_streams_after_freeze_max`.
+- **The fourth, found by the guard itself:** `rank/tripwire_fired` (`rank_tripwire.py`) was written from THREE lines
+  of one rollout hook (the latch's no-reading branch, its reading branch, the trip itself). They are mutually
+  exclusive within one rollout, so a production dump interval (one rollout) never held two — but a test that skips
+  the dump between two rollouts did, and the logger sees three SITES. They now go through one method
+  (`RankTripwireCallback._record_fired`). **The convention this makes:** a key is written from ONE line (a helper),
+  never from several branches — the guard's unit of identity is the call site, and that is also what makes the
+  `lifecycle` pair visible (two loops in one function).
+- **The guard** (`train_logger.Logger._claim`, called by `record` / `record_mean`): the logger remembers the CALLER
+  (file and line) that wrote each pending key (`name_to_site`, cleared at a dump, carried by `logger_scope.hold` /
+  `restore` and `update_fit`'s snapshot beside the values). A DIFFERENT site writing a still-pending key is a
+  duplicate producer. The same site writing it again (a loop, a per-minibatch record) is ONE producer, and
+  `record_mean` from many sites is the running mean by contract (mixing `record` with `record_mean` IS a duplicate).
+  * **STRICT** — pytest (via `PYTEST_CURRENT_TEST`), a `--debug` run (the trainer sets
+    `GEN3AI_STRICT_METRIC_PRODUCERS=1`) or the env var itself: a duplicate raises `DuplicateProducerError` (a
+    `MetricKeyCollisionError`, FATAL_CONFIG) naming the key and BOTH call sites, at the second write.
+  * **LENIENT** (every other process: a production run) — the later write wins as it always did, the key is COUNTED
+    (`Logger.duplicate_producers`), REPORTED once per key per process on stdout (`[metric-producers] WARNING …`,
+    capped at 20 keys) and the dumps that carried one add the scalar `telemetry/duplicate_producer_keys` (ABSENT on a
+    clean interval, so a clean run's tag set is unchanged). **Why not raise in production:** a duplicate costs one
+    wrong number, a raise costs the run (and the unattended night the GPU is queued for); the strict tiers catch the
+    class where a stop is free.
+  * **What it cannot see:** two producers merged into ONE call site (a loop over a dict that two probes both
+    filled), and a wrapper that records on its callers' behalf — those are the startup `identity` check's job
+    (`metric_keys`, over the derived families). A test of a new probe runs the real `train()` on the real logger
+    (`diagnostics_cadence_test.py`, `metric_producers_test.py`), which is where the guard is armed.
+- **The other half of the class — a registered metric that is never produced.** `grad/species_belief_*` was absent
+  from the X5 version break to 2026-10-15: the belief bank registered the hidden-team term as `species_belief_set`
+  while the grad-balance probe looked up `species_belief`. The bank's row name is now `species_belief`, the probe's
+  lookup list (`_R1_PROBE_TERMS`) is DERIVED from `belief_bank.ROWS` (a registered row is looked up by construction),
+  and `metric_producers_test.py::test_a_real_update_produces_the_grad_family_of_every_registered_probe_term` runs a
+  real update on the learner golden's buffer (every X5 case present) and asserts each registered term's
+  `grad/<term>_{share,norm_shared,policy_cosine}` exists, plus the three tags the launcher's panel reads for it. The
+  term key also names the K9 golden's fp64 reference (`learner_golden.json` `terms_*`; values unchanged).
+- **Known dead panel rows (display only, not fixed here):** `launcher/format.py` still lists `grad/latent_*`
+  (the term is `move_latent` now) and `grad/win_prob_*` (de-duplicated into `grad/value_*` under the win-prob critic by
+  design, `grad_balance_metrics`); no run produces either.
+
 ## TensorBoard export census — the counts, the group table and the ERA-RELEVANCE classification
 
 > The census's currency table, its `gen3_tb_relevance_v1` headline and the 28-tag WIN-PROB dashboard

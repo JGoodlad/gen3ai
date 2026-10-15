@@ -208,9 +208,27 @@ def test_tb_scalars_and_window_cadence():
     assert sc[M.TB_PREFIX + "level"] == 0.0
     assert sc[M.TB_PREFIX + "floor_mib"] == pytest.approx(3 * 1024)
     for k in ("ceiling_mib", "demand_mib", "slope_mib_per_update", "updates_to_ceiling", "segments",
-              "alloc_retries", "reserved_mib", "device_free_mib", "segments_after_freeze", "sustained",
-              "reserved_after_freeze_mib", "streams_after_freeze", "streams"):
+              "alloc_retries", "segments_after_freeze", "sustained", "streams_after_freeze_max", "streams"):
         assert M.TB_PREFIX + k in sc
+
+
+def test_the_per_sample_and_the_per_window_tags_are_DISJOINT():
+    """`gen3_metric_producer_guard_v1`: `lifecycle/cuda_{reserved_mib, device_free_mib, reserved_after_freeze_mib,
+    streams_after_freeze}` were written by BOTH dicts, and at a window close the later (windowed) write replaced the
+    sample's own reading with the closed window's — for `streams_after_freeze`, with the running HIGH-WATER mark, a
+    different quantity. One producer per tag; the high-water mark is `streams_after_freeze_max`."""
+    t = MemoryTrend()
+    sample = None
+    for u in range(40):
+        for ph in ("post_rollout", "post_update"):
+            sample = _s(u, 3 * GiB, phase=ph)
+            t.observe(sample)
+    assert t.windows, "the fixture must close a window"
+    per_sample, per_window = t.sample_scalars(sample), t.tb_scalars()
+    assert set(per_sample) == {M.TB_PREFIX + k for k in
+                               ("reserved_mib", "device_free_mib", "reserved_after_freeze_mib",
+                                "streams_after_freeze")}
+    assert not set(per_sample) & set(per_window), sorted(set(per_sample) & set(per_window))
 
 
 def test_alloc_retries_warn_never_stop():
@@ -285,8 +303,8 @@ def test_the_counters_read_the_leak_where_segments_read_zero():
     _run(_arm_b(40, leak=True), t)
     sc = t.tb_scalars()
     assert sc[M.TB_PREFIX + "segments_after_freeze"] == 0.0       # what B's TB showed: blind
-    assert sc[M.TB_PREFIX + "reserved_after_freeze_mib"] == pytest.approx(66 * 31)
-    assert sc[M.TB_PREFIX + "streams_after_freeze"] == 31.0
+    assert t.reserved_after_freeze() / M.MiB == pytest.approx(66 * 31)   # the per-sample tag's windowed twin
+    assert sc[M.TB_PREFIX + "streams_after_freeze_max"] == 31.0
 
 
 def test_a_flat_run_raises_neither_counter():

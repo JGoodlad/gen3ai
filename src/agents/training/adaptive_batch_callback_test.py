@@ -278,7 +278,8 @@ def test_the_series_are_recorded_every_rollout():
     cb = _attach(AdaptiveBatchCallback(_ctl(every=99), verbose=0), model)
     cb.on_rollout_end()
     assert model.logger.vals["train/grad_accum_steps"] == 4
-    assert model.logger.vals["train/effective_batch"] == 4096
+    # `train/effective_batch` is the DOSE LOG's (ONE producer; `metric_producers_test.py` drives both in order)
+    assert "train/effective_batch" not in model.logger.vals
     assert model.logger.vals["train/adaptive_batch_ratio_used"] == pytest.approx(3.0)
 
 

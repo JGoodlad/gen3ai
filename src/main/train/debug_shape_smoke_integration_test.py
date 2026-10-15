@@ -6,7 +6,10 @@ Measured with the override (2026-10-07, CPU, beside other agents' jobs): 5 updat
 wall. On a revert the bounded wait below times out instead (or exits with no update).
 
 The trainer is started through `runpy` with its module name split, so no argv on this box carries the
-trainer's literal name (watchers key on it). ``slow``: minutes of CPU.
+trainer's literal name (watchers key on it). ``slow``: minutes of CPU. It runs at ONE torch / BLAS / OpenMP thread
+(`debug_shape.SMOKE_THREAD_ENV`, pinned by `debug_shape_test.py`) so that beside a live run it is slow, not hung — and
+under the STRICT metric-producer guard (`PYTEST_CURRENT_TEST` reaches the child, and `--debug` arms it itself):
+a metric key with two producers fails the smoke (`gen3_metric_producer_guard_v1`).
 """
 from __future__ import annotations
 
@@ -17,6 +20,7 @@ import sys
 
 import pytest
 
+from main.train.debug_shape import SMOKE_THREAD_ENV
 from utils.contention import scale_timeout
 from utils.paths import repo_root, src_root
 
@@ -36,7 +40,7 @@ def test_arch_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run_archive, a
         proc = subprocess.Popen(
             [sys.executable, "-c", _RUNNER, "--arch", arch, "--debug", "--steps", "10000"],
             stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=str(repo_root()),
-            env={**os.environ, "PYTHONPATH": str(src_root()), "CUDA_VISIBLE_DEVICES": ""})
+            env={**os.environ, "PYTHONPATH": str(src_root()), "CUDA_VISIBLE_DEVICES": "", **SMOKE_THREAD_ENV})
         try:
             # 1800 s: `endstate` (a 3-round trunk + the exact P(KO)) ran 884-1039 s on a quiet box, within 13 % of a
             # 1200 s bound (timed out beside the routine gate, 2026-10-09); a timeout is never the semantic outcome.

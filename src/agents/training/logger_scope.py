@@ -26,25 +26,33 @@ F = TypeVar("F", bound=Callable[..., Any])
 #: Set on every method `isolated_dump` wraps — the structural pin reads it.
 ISOLATED_ATTR = "_gen3_isolated_dump"
 
-Held = Tuple[Dict[str, Any], Dict[str, int], Dict[str, Any]]
+Held = Tuple[Dict[str, Any], Dict[str, int], Dict[str, Any], Dict[str, Any]]
 
 
 def hold(logger: Any) -> Held:
-    """Take everything pending off `logger` (sb3's `Logger`: value, mean-count and exclusion per key)."""
-    held = (dict(logger.name_to_value), dict(logger.name_to_count), dict(logger.name_to_excluded))
+    """Take everything pending off `logger` (value, mean-count, exclusion and PRODUCER SITE per key — the
+    last so a held key keeps its one-producer record, `train_logger.Logger._claim`)."""
+    sites = getattr(logger, "name_to_site", None)
+    held = (dict(logger.name_to_value), dict(logger.name_to_count), dict(logger.name_to_excluded),
+            dict(sites) if sites is not None else {})
     logger.name_to_value.clear()
     logger.name_to_count.clear()
     logger.name_to_excluded.clear()
+    if sites is not None:
+        sites.clear()
     return held
 
 
 def restore(logger: Any, held: Held) -> None:
     """Put the held values back. A key the scope itself left pending (recorded, not yet dumped) keeps the
     held value — the held one is the update's, which is what the next dump must carry."""
-    values, counts, excluded = held
+    values, counts, excluded, sites = held
     logger.name_to_value.update(values)
     logger.name_to_count.update(counts)
     logger.name_to_excluded.update(excluded)
+    live_sites = getattr(logger, "name_to_site", None)
+    if live_sites is not None:
+        live_sites.update(sites)
 
 
 def isolated_dump(fn: F) -> F:

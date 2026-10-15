@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import re
+import types
 from typing import Any, List, Tuple
 
 import numpy as np
@@ -222,3 +223,103 @@ def test_tensorboard_tags_are_the_keys_verbatim_however_long(tmp_path):
         log.record(k, 1.0)
     log.dump(step=3)
     assert {c[1] for c in ours.writer.calls if c[0] == "scalar"} == set(CRASH_PAIR)
+
+
+# ── gen3_metric_producer_guard_v1: ONE producer per key per dump interval ────────────────────────
+def _site_a(log: Any, key: str = "train/x", value: float = 1.0) -> None:
+    log.record(key, value)
+
+
+def _site_b(log: Any, key: str = "train/x", value: float = 2.0) -> None:
+    log.record(key, value)
+
+
+def test_a_strict_logger_raises_when_a_second_call_site_writes_a_pending_key():
+    log = TL.Logger(None, [], strict_producers=True)
+    _site_a(log)
+    with pytest.raises(TL.DuplicateProducerError) as ei:
+        _site_b(log)
+    msg = str(ei.value)
+    assert "'train/x'" in msg and "train_logger_test.py" in msg and "gen3_metric_producer_guard_v1" in msg
+    assert log.name_to_value["train/x"] == 1.0, "a refused write must not replace the pending value"
+    assert isinstance(ei.value, TL.MetricKeyCollisionError)
+
+
+def test_the_same_site_may_write_a_key_again_and_a_dump_frees_it_for_another_site():
+    log = TL.Logger(None, [], strict_producers=True)
+    for v in (1.0, 2.0, 3.0):          # a loop / a per-minibatch record: ONE producer
+        _site_a(log, value=v)
+    assert log.name_to_value["train/x"] == 3.0
+    log.dump(step=1)
+    _site_b(log)                       # a new interval: the key is free
+    assert log.name_to_value["train/x"] == 2.0 and set(log.name_to_site) == {"train/x"}
+
+
+def test_record_mean_from_many_sites_is_the_running_mean_by_contract_but_mixing_with_record_is_a_duplicate():
+    log = TL.Logger(None, [], strict_producers=True)
+    log.record_mean("train/m", 2.0)
+    log.record_mean("train/m", 4.0)    # a different line: still the running mean, not a duplicate
+    assert log.name_to_value["train/m"] == 3.0
+    with pytest.raises(TL.DuplicateProducerError):
+        log.record("train/m", 9.0)
+
+
+def test_a_lenient_logger_counts_reports_once_and_never_stops(capsys):
+    """Production: the later write wins as before, the key is counted, reported ONCE, and the dump carries
+    `telemetry/duplicate_producer_keys` (absent on a clean interval)."""
+    seen: List[dict] = []
+    sink = types.SimpleNamespace(write=lambda kv, ex, step=0: seen.append(dict(kv)),
+                                 write_sequence=lambda s: None, close=lambda: None)
+    log = TL.Logger(None, [sink], strict_producers=False)
+    for key in ("train/x", "train/y", "train/z"):
+        _site_a(log, key)
+        _site_b(log, key)
+    out = capsys.readouterr().out
+    assert out.count("[metric-producers] WARNING") == 3 and "'train/x'" in out
+    assert log.name_to_value["train/x"] == 2.0                 # the later write won (unchanged behaviour)
+    log.dump(step=1)
+    assert seen[0][TL.DUPLICATE_PRODUCERS_KEY] == 3.0
+    assert set(log.duplicate_producers) == {"train/x", "train/y", "train/z"}
+    _site_a(log)
+    _site_b(log)                       # the same key again: counted in the next dump, NOT reported again
+    assert "[metric-producers]" not in capsys.readouterr().out
+    log.dump(step=2)
+    assert seen[1][TL.DUPLICATE_PRODUCERS_KEY] == 1.0
+    _site_a(log)
+    log.dump(step=3)                   # a clean interval carries no such key
+    assert TL.DUPLICATE_PRODUCERS_KEY not in seen[2]
+
+
+def test_the_strictness_comes_from_the_env_then_pytest(monkeypatch):
+    assert TL.producer_guard_strict() is True                  # under pytest
+    monkeypatch.setenv(TL.STRICT_PRODUCERS_ENV, "0")
+    assert TL.producer_guard_strict() is False and TL.Logger(None, []).strict_producers is False
+    monkeypatch.setenv(TL.STRICT_PRODUCERS_ENV, "1")
+    assert TL.producer_guard_strict() is True
+    monkeypatch.delenv(TL.STRICT_PRODUCERS_ENV)
+    monkeypatch.delenv("PYTEST_CURRENT_TEST")
+    assert TL.producer_guard_strict() is False                 # a production process: lenient
+
+
+def test_a_debug_trainer_arms_the_strict_guard():
+    """`--debug` is a smoke: `train_rl_agent` sets the env var (a typed `=0` still wins via setdefault)."""
+    import inspect
+    from main import train_rl_agent
+    src = inspect.getsource(train_rl_agent)
+    assert 'setdefault("GEN3AI_STRICT_METRIC_PRODUCERS", "1")' in src and "if args.debug:" in src
+    assert TL.STRICT_PRODUCERS_ENV == "GEN3AI_STRICT_METRIC_PRODUCERS"
+
+
+def test_a_held_key_keeps_its_producer_through_an_isolated_dump():
+    """`logger_scope.hold` / `restore` carry the producer site with the value: an eval cycle's own dump must not
+    make a held key forget (or invent) its producer."""
+    from agents.training import logger_scope as LS
+    log = TL.Logger(None, [], strict_producers=True)
+    _site_a(log)
+    held = LS.hold(log)
+    _site_b(log)                       # the eval's own scope writes the key: nothing is pending, no clash
+    log.dump(step=1)
+    LS.restore(log, held)
+    _site_a(log)                       # the held producer again: fine
+    with pytest.raises(TL.DuplicateProducerError):
+        _site_b(log)

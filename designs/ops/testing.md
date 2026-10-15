@@ -871,7 +871,11 @@ The tests that play REAL games on the eval engine on the CPU (`main/h2h/play_*_i
 `untaught_rust_integration_test.py`, `eval_sentinel_greedy_test.py`, `main/ops/eval_trace_gen_integration_test.py`)
 run their eager forward at **ONE intra-op torch thread** (`torch_threads=1`; they had 2, the sentinel test the
 offline default 4). The conftest's `OMP_NUM_THREADS=1` pin above does NOT reach them: the engine calls
-`torch.set_num_threads(compute.torch_threads)` itself.
+`torch.set_num_threads(compute.torch_threads)` itself. The slow `--debug` smoke
+(`main/train/debug_shape_smoke_integration_test.py`) spawns the TRAINER and pins it the same way, by environment
+(`debug_shape.SMOKE_THREAD_ENV`: `OMP` / `MKL` / `OPENBLAS` threads = 1, so it is slow, not hung-looking, beside a
+live run); `debug_shape_test.py` pins that the spawn env carries it. That smoke also runs under the STRICT
+metric-producer guard (`designs/training/telemetry_scalars.md` "ONE producer per key").
 
 **Why.** The forward is the production policy at an 8-row bucket, eager: hundreds of small ops per decision, and at
 2 threads each one is an OpenMP fork / join. On a busy box (the 3 agent cores beside a live run) the main thread

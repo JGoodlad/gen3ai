@@ -68,3 +68,16 @@ def test_the_recipe_surface_reports_the_override_as_debug_never_a_silent_drift()
     debug = {d.dest for d in rep.diffs if d.source == "debug"}
     assert debug == {"rollout_target_samples", "batch_size", "n_epochs"}, rep.diffs
     assert not rep.silent and not rep.refuses
+
+
+def test_the_real_process_smoke_pins_one_thread_so_it_is_slow_not_hung_beside_a_live_run():
+    """The slow `--debug` smoke spawns the trainer with `SMOKE_THREAD_ENV` (root CLAUDE.md: a test's CPU play runs
+    `torch_threads=1`). A revert that drops the pin from the spawn env — or loosens a value — fails here, in the
+    routine tier, rather than as a smoke that looks hung beside a live run 30 minutes later."""
+    import inspect
+
+    from main.train import debug_shape_smoke_integration_test as smoke
+    assert D.SMOKE_THREAD_ENV == {"OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1"}
+    assert smoke.SMOKE_THREAD_ENV is D.SMOKE_THREAD_ENV
+    src = inspect.getsource(smoke.test_arch_debug_smoke_reaches_an_update_and_exits_0)
+    assert "**SMOKE_THREAD_ENV" in src.split("env=", 1)[1], "the pin must reach the spawned trainer's env"

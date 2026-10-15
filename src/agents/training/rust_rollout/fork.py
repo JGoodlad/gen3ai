@@ -622,8 +622,11 @@ class RustForkPass:
         model._fork_metrics = m
         if logger is None:
             return
+        # THE producer of the whole `fork/*` family (`train()` records none: `gen3_metric_producer_guard_v1`).
+        # A NaN is an empty slice: omitted, never logged.
         for k, v in m.items():
-            logger.record(f"fork/{k}", float(v))
+            if float(v) == float(v):
+                logger.record(f"fork/{k}", float(v))
         logger.record("supply/fork_dry_streak", float(self.guard.streak))
 
     def close(self) -> None:

@@ -62,6 +62,16 @@ keys alike and RAISED mid-run — twice it killed every run of an architecture a
 run at ≥ `65b71f6a`). The table is now collision-proof and `metric_keys.check_startup_metric_keys` refuses a colliding
 key set at STARTUP (`MetricKeyCollisionError`, FATAL_CONFIG). A test of a new key pushes it through the REAL logger,
 not just a dict. Detail: `designs/training/telemetry_scalars.md` "Metric keys stay DISTINCT".
+🚨 **A metric key has ONE producer per dump interval** (`gen3_metric_producer_guard_v1`): `Logger.record` replaces a
+pending key, so a second call site silently wins (it did for `fork/*`, `train/effective_batch`,
+`lifecycle/cuda_streams_after_freeze`). The logger remembers each pending key's call site: a second one raises
+`DuplicateProducerError` under pytest / `--debug` and is counted + reported (`telemetry/duplicate_producer_keys`)
+in production. One producer per quantity, or two names for two quantities — never an exemption, and a key is written from ONE line
+(a helper), not from several branches (the unit of identity is the call site; `rank/tripwire_fired` had three). The mirror failure, a
+registered probe term nobody looks up (`grad/species_belief_*` was never produced), is pinned by
+`metric_producers_test.py`; `_R1_PROBE_TERMS` derives from `belief_bank.ROWS`. A callback that publishes a quantity
+another callback's decision changes is registered AFTER it (`build_callbacks`: the dose log follows `--adaptive-batch`).
+Detail: `designs/training/telemetry_scalars.md` "ONE producer per key".
 
 ### What to watch on a WIN-PROB run — the 28-tag dashboard
 

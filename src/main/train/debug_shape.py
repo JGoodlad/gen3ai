@@ -41,6 +41,14 @@ DEBUG_N_EPOCHS = 1
 #: The namespace attribute naming the dests this module overrode (read by `recipe_surface`).
 OVERRIDE_ATTR = "_debug_shape_override"
 
+#: What a real-process `--debug` SMOKE pins on the trainer it spawns (`debug_shape_smoke_integration_test.py`): ONE
+#: intra-op thread for torch / BLAS / OpenMP. The smoke is CPU-bound for 15-30 minutes; at the library default of one
+#: thread per core, beside a live run on the agent cores (root CLAUDE.md rule 5b: 3 physical cores), its OpenMP
+#: fork / join waits on descheduled workers and the run LOOKS hung (the same cliff as `designs/ops/testing.md` "One
+#: torch thread for the CPU plays"). The conftest's own pin does not reach a child when `GEN3AI_TEST_ALLOW_THREADS`
+#: is set, so the smoke names it.
+SMOKE_THREAD_ENV = {"OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1"}
+
 
 def _untyped_update_rows(args: Any) -> int:
     t = int(getattr(args, "rollout_target_samples", 0) or 0)

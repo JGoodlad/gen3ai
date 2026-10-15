@@ -83,6 +83,13 @@ class RankTripwireCallback(BaseCallback):
         # learn() returns cleanly, so the run's normal final save still happens.
         return not self._abort
 
+    def _record_fired(self) -> None:
+        """THE one call site that publishes `rank/tripwire_fired` (the latch, three branches of the rollout
+        hook): a metric key has ONE producer per dump interval (`gen3_metric_producer_guard_v1`), and three
+        `logger.record` lines are three sites to the logger's guard — which a test that skips the dump between
+        two rollouts sees as a duplicate."""
+        self.logger.record("rank/tripwire_fired", 1.0)
+
     def _on_rollout_end(self) -> None:
         raw = self.model.logger.name_to_value.get(self.SIGNAL)
         if raw is None or not math.isfinite(float(raw)):
@@ -90,7 +97,7 @@ class RankTripwireCallback(BaseCallback):
             # any train()): counters do not advance and do not reset; the EMA does not move.
             self.logger.record("rank/tripwire_no_reading", 1.0)
             if self._fired:
-                self.logger.record("rank/tripwire_fired", 1.0)
+                self._record_fired()
             return
         reading = float(raw)
         i = self._n_readings            # 0-based reading index
@@ -103,7 +110,7 @@ class RankTripwireCallback(BaseCallback):
             if len(self._window) == self.W_BASE:
                 self._baseline = float(statistics.median(self._window))
         if self._fired:
-            self.logger.record("rank/tripwire_fired", 1.0)
+            self._record_fired()
         if self._baseline is None or self._baseline <= 0.0:
             return                      # no baseline yet → nothing to judge against
         ratio = self._ema / self._baseline
@@ -115,7 +122,7 @@ class RankTripwireCallback(BaseCallback):
             self._warned = False        # recovered → a fresh degradation warns again
         if self._trip_streak >= self.PERSISTENCE and not self._fired:
             self._fired = True
-            self.logger.record("rank/tripwire_fired", 1.0)
+            self._record_fired()
             emit(f"🚨 [RankTripwire] TRIP: rank/policy_pr EMA {self._ema:.2f} < "
                  f"{self.trip_threshold:.2f}× baseline {self._baseline:.2f} (ratio {ratio:.3f}) "
                  f"for {self.PERSISTENCE} consecutive readings — the five-arm collapse signature "

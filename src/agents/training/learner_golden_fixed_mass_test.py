@@ -108,7 +108,7 @@ def test_the_fp32_micro_step_agrees_with_fp64_within_the_declared_tolerances_and
     # one torch build, one thread: both precisions reproduce exactly (a rounding-level wobble is a change)
     assert ref["terms_fp32"] == rec["terms_fp32"] and ref["terms_fp64"] == rec["terms_fp64"]
     assert ref["rows_excluded"] == rec["rows_excluded"] and ref["rows_judged"] >= 0.9 * L.N_STEPS * L.N_ENVS
-    for k in ("species_belief_set", "opp_intent", "win_prob", "policy", "entropy"):
+    for k in ("species_belief", "opp_intent", "win_prob", "policy", "entropy"):
         assert k in ref["terms_fp64"], k
 
 

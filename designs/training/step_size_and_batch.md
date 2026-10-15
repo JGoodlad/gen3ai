@@ -527,7 +527,11 @@ behaviour, not a gap: a cold EMA is not a reading.
 **The three series to read**: `train/grad_accum_steps` (K in force for the `train()` that follows),
 `train/effective_batch` (`batch_size·K`), `train/adaptive_batch_ratio_used` (the exact number each
 decision was made on). Every move also emits one Events line naming the ratio, the direction, the
-old and new effective batch, and that the dose moved.
+old and new effective batch, and that the dose moved. 🚨 **`train/effective_batch` (and `train/dose_rate`) are the DOSE
+LOG's, not this callback's** (`gen3_metric_producer_guard_v1`): `build_callbacks` registers `DoseLogCallback` AFTER
+`AdaptiveBatchCallback`, so the one record of both keys reads the K this rollout's decision left for the `train()` that
+follows. (Before 2026-10-15 both callbacks recorded `train/effective_batch` and the dose log, registered first, computed
+`train/dose_rate` from the OLD K — a run with `--adaptive-batch` read a dose rate one decision stale.)
 
 **⚠️ Like the two `--compile-*` flags, it is NOT inherited on a flagless resume** — a bare
 `--model … --steps …` gets `off`. The launcher forwards its own recorded argv verbatim, so a

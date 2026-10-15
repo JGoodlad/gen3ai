@@ -61,10 +61,13 @@ default. Two pieces live here:
   (`belief_bank_test.py::test_sites_partition_the_registry` pins the partition). The learner folds the
   STATIC twins (`belief_bank_static.compute_static`, region R1); `belief_bank_static_test.py` pins each
   static row equal to its `belief_bank` function.
-- **Balance.** The row's term is registered under the probe name `species_belief_set`, which the
-  shared-trunk grad-balance probe's term list (`instrumented_ppo/ppo.py`: `species_belief`,
-  `move_belief`, …) does not name — so no `grad/species_belief*_share` is emitted for it; the
-  combined non-RL draw is still `grad/aux_share`.
+- **Balance.** The row's term is registered under the probe name `species_belief`, so the shared-trunk grad-balance
+  probe emits `grad/species_belief_{share,norm_shared,policy_cosine}` for it, beside `grad/aux_share` (the combined
+  non-RL draw). The probe's lookup list (`instrumented_ppo/ppo.py` `_R1_PROBE_TERMS`) is DERIVED from the bank's
+  rows (`belief_bank.ROWS` probe names + `win_prob`), never retyped. (From the X5 version break to 2026-10-15 the row
+  was registered `species_belief_set`, the retyped list said `species_belief`, and the family was never produced —
+  `gen3_metric_producer_guard_v1`; `metric_producers_test.py` pins that every registered probe term publishes its
+  `grad/` family on a real update.)
 - **Coefficients.** `--opp-belief-aux-coef` and `--opp-belief-moves-weight` are **training-only**
   (like `ent_coef`, NOT version-locked); the `opp_belief_slots` arch toggle they imply IS
   version-checked, and `--opp-belief-aux-coef` is **read back from the saved config on a flagless

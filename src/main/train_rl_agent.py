@@ -159,6 +159,11 @@ async def main():
 
     _cfg = resolve_config(args, parser)
     annealing_mode, log_level = _cfg.annealing_mode, _cfg.log_level
+    if args.debug:
+        # gen3_metric_producer_guard_v1: a `--debug` run is a smoke, so a metric key with two producers RAISES
+        # there (a production run counts and reports it; `agents.training.train_logger`). An explicit
+        # `GEN3AI_STRICT_METRIC_PRODUCERS=0` still wins.
+        _os.environ.setdefault("GEN3AI_STRICT_METRIC_PRODUCERS", "1")
 
     # T23 — THE DESKTOP-GPU REFUSAL: a CUDA run does not start while a display process holds the card
     # (`utils.desktop_gpu`; NVML read, no CUDA context). Before any directory exists, so a refusal

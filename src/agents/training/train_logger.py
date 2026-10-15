@@ -20,6 +20,16 @@ NAME — ``main.ops.killbar`` / ``tb_read`` / ``restart_startup`` / ``stall_exhi
 ``format.py``, ``utils/plot_tb.py``, ``tb_curate`` / ``tb_inherit`` — read the event files, never this
 class.
 
+ONE PRODUCER PER KEY, PER DUMP INTERVAL (`gen3_metric_producer_guard_v1`). ``record`` replaces a pending key, so
+two code sites that write one key between two dumps lose the earlier site's value SILENTLY (2026-10-15 survey:
+`fork/*`, `train/effective_batch`, `lifecycle/cuda_streams_after_freeze`, all fixed). ``record`` /
+``record_mean`` therefore remember WHICH CALL SITE (file and line of the caller) wrote each pending key, and a
+different site writing it before the dump is a `DuplicateProducerError` when the logger is STRICT (tests, a
+``--debug`` run, ``GEN3AI_STRICT_METRIC_PRODUCERS=1``: `producer_guard_strict`) and otherwise COUNTED and loudly
+REPORTED (one stdout line per key per process, ``duplicate_producers`` on the logger, and a
+``telemetry/duplicate_producer_keys`` scalar on the dumps that carried one) — a production run never stops on it.
+The same site writing a key again (a loop, a per-minibatch ``record_mean``) is one producer, not two.
+
 The writers pair ``name_to_value`` with ``name_to_excluded`` KEY FOR KEY (:func:`paired`): the two key
 sets must be EQUAL, or the dump raises ``ValueError`` naming the keys that are in one and not the other.
 A key that reaches ``name_to_value`` without ``record`` (an indexing READ of the defaultdict inserts 0.0)
@@ -57,6 +67,32 @@ LABEL_DIGEST_HEX = 6
 #: (`torch.utils.tensorboard.summary.text`); scalars and histograms are written under the key verbatim.
 TB_TEXT_SUFFIX = "/text_summary"
 
+#: Forces the one-producer guard strict ("1") or lenient ("0"). Unset: strict under pytest (it sets
+#: ``PYTEST_CURRENT_TEST``) and under ``--debug`` (the trainer sets this variable), lenient otherwise.
+STRICT_PRODUCERS_ENV = "GEN3AI_STRICT_METRIC_PRODUCERS"
+#: The scalar a dump carries when a lenient logger counted a key with two producers in that interval
+#: (ABSENT otherwise, so a clean run's tag set is unchanged).
+DUPLICATE_PRODUCERS_KEY = "telemetry/duplicate_producer_keys"
+#: A lenient logger prints at most this many distinct duplicate keys (the count scalar keeps counting).
+MAX_REPORTED_DUPLICATE_KEYS = 20
+
+#: One call site: the caller's ``(file, line, is it a `record_mean` call)``.
+Site = Tuple[str, int, bool]
+
+
+def producer_guard_strict() -> bool:
+    """Is the one-producer guard STRICT for a logger built now? (`STRICT_PRODUCERS_ENV`; else pytest.)"""
+    v = os.environ.get(STRICT_PRODUCERS_ENV, "").strip().lower()
+    if v:
+        return v not in ("0", "false", "off", "no")
+    return "PYTEST_CURRENT_TEST" in os.environ
+
+
+def site_str(site: Site) -> str:
+    """``path/under/src.py:123`` — a call site as a reader wants it."""
+    path = site[0].replace("\\", "/")
+    return f"{path.split('/src/')[-1]}:{site[1]}"
+
 
 class MetricKeyCollisionError(ValueError):
     """Two DISTINCT metric keys become ONE name in an output format (or one key has two producers) —
@@ -68,6 +104,14 @@ class MetricKeyCollisionError(ValueError):
     commit >= 65b71f6a (2026-10-15: ``cell/move_resolution_restored_move_{weight,grad}_norm``, at step
     ~202k). The table's labels are now collision-proof (`truncate_label`), and a key set that still
     collides in ANY format is refused here, before the first rollout."""
+
+
+class DuplicateProducerError(MetricKeyCollisionError):
+    """Two DIFFERENT call sites wrote one metric key between two dumps (`Logger.record`): the later write
+    replaced the earlier silently. Raised by a STRICT logger (`producer_guard_strict`: tests, ``--debug``);
+    a production logger counts and reports it instead and never stops (`gen3_metric_producer_guard_v1`).
+    FATAL_CONFIG like its parent. The fix is ALWAYS one producer per quantity, or two names for two
+    quantities — never an exemption."""
 
 
 def key_digest(key: str, n: int = LABEL_DIGEST_HEX) -> str:
@@ -269,10 +313,19 @@ Writer = Union[HumanOutputFormat, TensorBoardOutputFormat]
 class Logger:
     """The pending scalars + their writers (module docstring)."""
 
-    def __init__(self, folder: Optional[str], output_formats: List[Any]):
+    def __init__(self, folder: Optional[str], output_formats: List[Any],
+                 strict_producers: Optional[bool] = None):
         self.name_to_value: Dict[str, Any] = defaultdict(float)
         self.name_to_count: Dict[str, int] = defaultdict(int)
         self.name_to_excluded: Dict[str, Excluded] = {}
+        #: the call site that last wrote each PENDING key (cleared at a dump; `hold` / `restore` and
+        #: `update_fit` carry it with the values, so a held key keeps its producer)
+        self.name_to_site: Dict[str, Site] = {}
+        #: STRICT: a second call site writing a pending key raises `DuplicateProducerError`; else it is counted
+        self.strict_producers = producer_guard_strict() if strict_producers is None else bool(strict_producers)
+        #: key -> (first site, second site), for the life of this logger (a lenient logger's record of them)
+        self.duplicate_producers: Dict[str, Tuple[Site, Site]] = {}
+        self._duplicates_pending: set = set()
         self.level = INFO
         self.dir = folder
         self.output_formats = output_formats
@@ -285,9 +338,41 @@ class Logger:
             return string_or_tuple
         return (string_or_tuple,)
 
+    def _claim(self, key: str, mean: bool = False) -> None:
+        """The one-producer guard (module docstring): remember the CALLER of ``record`` / ``record_mean`` as
+        ``key``'s producer, and a DIFFERENT site claiming a key that is still pending is a duplicate. (Two
+        ``record_mean`` calls are NOT: pending the running mean of records from anywhere is that method's
+        contract.) Call it BEFORE the key is written (it reads ``name_to_value`` for membership only)."""
+        try:
+            frame = sys._getframe(2)             # _claim <- record / record_mean <- the producer
+            site: Site = (frame.f_code.co_filename, frame.f_lineno, mean)
+        except ValueError:                       # called with no Python caller (a C-level thread target): a guard
+            site = ("<no python caller>", 0, mean)   # never stops a run — an unknown site equals itself, so no clash
+        prev = self.name_to_site.get(key)
+        if (prev is not None and prev[:2] != site[:2] and not (prev[2] and mean)
+                and key in self.name_to_value):
+            self._duplicate(key, prev, site)
+        self.name_to_site[key] = site
+
+    def _duplicate(self, key: str, first: Site, second: Site) -> None:
+        msg = (f"metric key {key!r} has TWO producers within one dump interval: {site_str(first)} and "
+               f"{site_str(second)} — the later write replaces the earlier one silently "
+               "(gen3_metric_producer_guard_v1). Give the quantity ONE producer, or two names if they are "
+               "two quantities.")
+        if self.strict_producers:
+            raise DuplicateProducerError(msg)
+        new = key not in self.duplicate_producers
+        self.duplicate_producers.setdefault(key, (first, second))
+        self._duplicates_pending.add(key)
+        if new and len(self.duplicate_producers) <= MAX_REPORTED_DUPLICATE_KEYS:
+            print(f"[metric-producers] WARNING: {msg} (counted in {DUPLICATE_PRODUCERS_KEY}; "
+                  "reported once per key)", flush=True)
+
     def record(self, key: str, value: Any, exclude: Union[str, Excluded, None] = None) -> None:
-        """Pend ``value`` under ``key`` until the next dump (a later record of the key replaces it);
+        """Pend ``value`` under ``key`` until the next dump (a later record of the key replaces it — from the
+        SAME call site; a different site writing a pending key is a duplicate producer, `_claim`);
         ``exclude`` names the outputs that skip it (``"tensorboard"`` / ``"stdout"``)."""
+        self._claim(key)
         self.name_to_value[key] = value
         self.name_to_excluded[key] = self.to_tuple(exclude)
 
@@ -295,6 +380,7 @@ class Logger:
         """``record``, but repeated records of the key pend their running mean."""
         if value is None:
             return
+        self._claim(key, mean=True)
         old_val, count = self.name_to_value[key], self.name_to_count[key]
         self.name_to_value[key] = old_val * count / (count + 1) + value / (count + 1)
         self.name_to_count[key] = count + 1
@@ -304,11 +390,16 @@ class Logger:
         """Write everything pending at ``step`` to every output, then clear it."""
         if self.level == DISABLED:
             return
+        if self._duplicates_pending:             # a lenient logger's count (absent on a clean interval)
+            self.name_to_value[DUPLICATE_PRODUCERS_KEY] = float(len(self._duplicates_pending))
+            self.name_to_excluded[DUPLICATE_PRODUCERS_KEY] = self.to_tuple(None)
+            self._duplicates_pending = set()
         for fmt in self.output_formats:
             fmt.write(self.name_to_value, self.name_to_excluded, step)
         self.name_to_value.clear()
         self.name_to_count.clear()
         self.name_to_excluded.clear()
+        self.name_to_site.clear()
 
     def log(self, *args: Any, level: int = INFO) -> None:
         if self.level <= level:

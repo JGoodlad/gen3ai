@@ -503,7 +503,10 @@ class MemoryTrend:
         """The PER-SAMPLE TB dict — written at EVERY sample, whatever the window state, so a run of
         any length (a 3-update probe included) carries the same tags: reserved and device free now,
         and the two after-freeze counters measured on THIS sample (`gen3_reserved_after_freeze_v1`).
-        At a window close the windowed `tb_scalars` writes the same tags with the same values."""
+        THE ONLY PRODUCER of these four tags (`gen3_metric_producer_guard_v1`): `tb_scalars` used to write them
+        again at a window close, from the CLOSED window (= the sample BEFORE this one for the reserved readings,
+        and the high-water mark for the streams), and the later write silently replaced this sample's own
+        reading. The windowed high-water now has its own name (`streams_after_freeze_max`)."""
         out = {TB_PREFIX + "reserved_mib": s.reserved / MiB, TB_PREFIX + "device_free_mib": s.device_free / MiB}
         if self._reserved_at_freeze is not None:
             out[TB_PREFIX + "reserved_after_freeze_mib"] = max(0, s.reserved - self._reserved_at_freeze) / MiB
@@ -515,7 +518,8 @@ class MemoryTrend:
 
     def tb_scalars(self) -> Dict[str, float]:
         """The per-window TB dict (``lifecycle/cuda_*``). Absent numbers are -1 so a reader can tell
-        "no projection" from zero."""
+        "no projection" from zero. Disjoint from `sample_scalars` (the per-sample dict) BY CONSTRUCTION: a key
+        in both would have two producers in one dump interval (`gen3_metric_producer_guard_v1`)."""
         v = self._last
         out: Dict[str, float] = {}
         if v is None:
@@ -536,11 +540,10 @@ class MemoryTrend:
                                                  math.isfinite(v.updates_to_ceiling) else 1e9)
         out[TB_PREFIX + "sustained"] = 1.0 if v.sustained else 0.0
         out[TB_PREFIX + "segments_after_freeze"] = float(self.segments_after_freeze())
-        out[TB_PREFIX + "reserved_after_freeze_mib"] = self.reserved_after_freeze() / MiB
-        out[TB_PREFIX + "streams_after_freeze"] = float(self.streams_after_freeze())
+        # the HIGH-WATER mark of streams beyond the freeze's count over the closed windows (what the leak rule
+        # reads); the per-sample reading keeps the plain name (`sample_scalars`)
+        out[TB_PREFIX + "streams_after_freeze_max"] = float(self.streams_after_freeze())
         if lw is not None:
-            out[TB_PREFIX + "reserved_mib"] = lw.reserved_last / MiB
-            out[TB_PREFIX + "device_free_mib"] = lw.device_free_last / MiB
             out[TB_PREFIX + "segments"] = float(lw.segments_max)
             out[TB_PREFIX + "streams"] = float(lw.streams_max)
             out[TB_PREFIX + "alloc_retries"] = float(lw.retries_last)

@@ -352,7 +352,12 @@ than silent:
 ## 11. THE `fork/` TB FAMILY
 
 The prefix is dropped in the table. **An absent `fork/*` family means `--fork-fraction 0.0`** (or
-the arm disabled itself, which announces itself once) and nothing else.
+the arm disabled itself, which announces itself once) and nothing else. 🚨 **ONE producer**
+(`gen3_metric_producer_guard_v1`): the whole family is recorded by the collection pass itself
+(`rust_rollout/fork.py` `RustForkPass.record`, stamped at the collection's step; a NaN — an empty slice — is
+omitted, never logged). `train()` used to record the stashed `model._fork_metrics` a second time, so every key had
+two producers and the later write won; it records nothing for the arm now (the stash stays for the benchmark and the
+tests).
 
 | scalar | what it says |
 |---|---|

@@ -55,6 +55,17 @@ def test_a_dry_update_leaves_the_learner_bit_identical():
     assert got[1] == ref[1]                             # ... and the same logged losses
 
 
+def test_a_dry_update_restores_the_loggers_producer_sites_with_its_values():
+    """`gen3_metric_producer_guard_v1`: the snapshot carries `name_to_site` beside the values, or the dry update's own
+    producers would stay behind as a stale site for every key it wrote (a false duplicate on the next real record)."""
+    m = _learner()
+    m.logger.record("zz/pending", 1.0)
+    sites = dict(m.logger.name_to_site)
+    assert set(sites) == {"zz/pending"}
+    UF.dry_update(m)
+    assert dict(m.logger.name_to_site) == sites and set(m.logger.name_to_value) == {"zz/pending"}
+
+
 def test_the_dry_update_really_trains_on_its_fixture():
     """Teeth for the test above: inside the dry update the weights DO move (it is a real update)."""
     from agents.training import learner_golden as LG

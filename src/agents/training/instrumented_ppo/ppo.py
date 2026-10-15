@@ -34,6 +34,7 @@ import torch as th
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.utils import explained_variance
 
+from agents.training.belief_bank import ROWS as _BELIEF_ROWS
 from agents.training.grad_balance import (
     cell_family_metrics,
     edge_family_metrics,
@@ -109,9 +110,18 @@ def train_step_source() -> str:
 
 
 # ------------------------------------------------------------------ the deferred host reads' callbacks
-#: R1's probe terms in the inline fold's REGISTRATION order (the grad-balance probe's and K9(c)'s names).
-_R1_PROBE_TERMS = ("species_belief", "move_belief", "move_latent", "spread_belief",
-                   "nature_ev", "hp_type", "item_belief", "win_prob")
+#: R1's probe terms in the inline fold's REGISTRATION order (the grad-balance probe's and K9(c)'s names):
+#: the belief bank's rows' `probe` names, then the win-prob head. DERIVED from `belief_bank.ROWS`, never retyped —
+#: a row registered under a name this tuple does not hold is never looked up, so its `grad/<name>_*` family is
+#: never produced. (That is how `hidden_team_set`, registered `species_belief_set`, lost `grad/species_belief_*`
+#: from the X5 version break to 2026-10-15: `gen3_metric_producer_guard_v1`.)
+_R1_PROBE_TERMS = tuple(_row.probe for _row in _BELIEF_ROWS) + ("win_prob",)
+
+
+def select_probe_terms(terms, present):
+    """The R1 terms the grad-balance probe and K9(c)'s finiteness verdict see: every `_R1_PROBE_TERMS` name the
+    micro-batch REGISTERED (`terms`) and SCORED (`present`), in registration order."""
+    return {name: terms[name] for name in _R1_PROBE_TERMS if name in terms and present.get(name, False)}
 
 
 def _micro_reader(packed, sink, last, box, *, epoch, approx_kl_divs, deferred):
@@ -135,10 +145,10 @@ def _micro_reader(packed, sink, last, box, *, epoch, approx_kl_divs, deferred):
         if not deferred:
             return
         t, pres = rd.terms, rd.present
-        terms = {"policy": t["policy"], "entropy": t["entropy"], "value": t.get("value", 0.0)}
-        for name in _R1_PROBE_TERMS + ("opp_intent",):
-            if name in t and pres.get(name, False):
-                terms[name] = t[name]
+        terms = {"policy": t["policy"], "entropy": t["entropy"], "value": t.get("value", 0.0),
+                 **select_probe_terms(t, pres)}
+        if "opp_intent" in t and pres.get("opp_intent", False):
+            terms["opp_intent"] = t["opp_intent"]
         check_loss_finite_read(rd.loss_finite, rd.loss, terms, epoch=epoch,
                                micro=len(sink["pg_losses"]) - 1)
         kl = np.float32(approx_kl)
@@ -310,19 +320,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         belief_aux_on, move_belief_on = _f.belief_aux_on, _f.move_belief_on
         move_latent_on = _f.move_latent_on
         critic_winprob, win_prob_on = _f.critic_winprob, _f.win_prob_on
-        # +FORK ARM (gen3_fork_v1) — computed in the Rust collector's fork pass
-        # (`rust_rollout/fork.py`, which BLOCKS on the branch continuations before the epochs
-        # begin) and stashed on the model. Recorded under its OWN `fork/` prefix rather than
-        # folded into `win_prob/`: these are facts about the COLLECTION, not about the head's loss,
-        # and the two families are read at different times by different people. Only when a pass
-        # actually RAN: an absent `fork/*` family means --fork-fraction is 0.0 (or the arm
-        # disabled itself, which announces itself once) and nothing else. Cleared at every
-        # `_on_rollout_start`, so it can never be a stale rollout's.
-        _fork_metrics = getattr(self, "_fork_metrics", None)
-        if _fork_metrics:
-            for _fk, _fv in _fork_metrics.items():
-                if float(_fv) == float(_fv):      # a NaN is an empty slice; omit, never log it
-                    self.logger.record(f"fork/{_fk}", float(_fv))
+        # +FORK ARM (gen3_fork_v1): the `fork/*` family is recorded ONCE, by the collector's own pass
+        # (`rust_rollout/fork.py` `RustForkPass.record`, at the collection's step: these are facts about the
+        # COLLECTION, not about this update). `train()` used to record the same stash again, so every key had
+        # TWO producers and the later write won silently (`gen3_metric_producer_guard_v1`); it records
+        # nothing for the arm now. The stash (`model._fork_metrics`) stays for the benchmark and the tests.
         # +RIDE-ALONG (gen3_ridealong_heads_v1): the detached heads' `ridealong/*` sink.
         ridealong_acc = RideAlongAccumulator()
 
@@ -494,10 +496,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 aux_probe_terms: dict[str, th.Tensor] = {}
                 # R1's terms (gen3_learner_micro_step_v1), in the inline fold's registration order;
                 # a term is registered exactly when the inline fold had one (`present`).
-                for _pn in ("species_belief", "move_belief", "move_latent", "spread_belief",
-                            "nature_ev", "hp_type", "item_belief", "win_prob"):
-                    if _pn in _mo.terms and _mpres.get(_pn, False):
-                        aux_probe_terms[_pn] = _mo.terms[_pn]
+                aux_probe_terms.update(select_probe_terms(_mo.terms, _mpres))
                 win_prob_term = aux_probe_terms.get("win_prob")
                 opp_intent_term = (_mo.terms["opp_intent"]
                                    if "opp_intent" in _mo.terms and _mpres.get("opp_intent", False)

@@ -401,7 +401,7 @@ ROWS: Tuple[BeliefHeadRow, ...] = (
     # gen3_x5_hypothesis_set_v1 (X5 U2): the hidden-team supervision — X5's set BCE over the hypothesis
     # set (the order-invariant Hungarian `hidden_team` row it replaced was deleted at the X5 version break).
     BeliefHeadRow(
-        name="hidden_team_set", probe="species_belief_set", prefix="set_", gate="hidden_team_set",
+        name="hidden_team_set", probe="species_belief", prefix="set_", gate="hidden_team_set",
         coef="opp_belief_aux_coef", loss_fn=hypothesis_set_loss, site="hidden_move",
         loss_key="aux_loss",
         args=(("attr", "last_hypothesis"), ("attr", "last_belief_logits"), ("obs", "belief_species"),

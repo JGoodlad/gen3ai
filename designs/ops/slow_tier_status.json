@@ -778,9 +778,9 @@
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[production]": {
    "status": "pass",
-   "commit": "31b1d213f1eb9b9db06731fdc2fd61a4ed88d40f",
-   "at": "2026-10-15T14:40:48Z",
-   "duration_s": 1696.37,
+   "commit": "ffe2961b9e72450f0c6c85f1ce41966f1b32c1a4",
+   "at": "2026-10-15T16:43:09Z",
+   "duration_s": 2930.21,
    "contention": 12.0,
    "detail": ""
   },
@@ -889,5 +889,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-15T14:40:48Z"
+ "last_written": "2026-10-15T16:43:09Z"
 }

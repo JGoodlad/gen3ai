@@ -212,8 +212,11 @@ class AdaptiveBatchCallback(BaseCallback):
     three series an operator reads the loop by:
 
       `train/grad_accum_steps`            K in force for the `train()` that follows.
-      `train/effective_batch`             `batch_size * K`.
       `train/adaptive_batch_ratio_used`   the exact ratio the decision was made on.
+
+    (`train/effective_batch` = `batch_size * K` is the DOSE LOG's (`main.train.run_io.DoseLogCallback`), the ONE
+    producer of it and of `train/dose_rate`; `build_callbacks` registers that callback AFTER this one so both read
+    the K decided here — `gen3_metric_producer_guard_v1`.)
 
     PERSISTENCE across a launcher restart is free and deliberately so: `_model_hparams` already
     writes `grad_accum_steps` into every checkpoint's sidecar, straight off the model attribute
@@ -304,7 +307,6 @@ class AdaptiveBatchCallback(BaseCallback):
                        + _no_move_message(d.reason, self.controller, samples))
         k = self._accum()
         self.logger.record("train/grad_accum_steps", int(k))
-        self.logger.record("train/effective_batch", self._batch_size() * k)
         if d.ratio is not None:
             self.logger.record("train/adaptive_batch_ratio_used", float(d.ratio))
 
