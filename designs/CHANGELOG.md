@@ -14284,3 +14284,53 @@ never trained on) and no mode played an oracle side BELOW its recorded level.
   knock-in checkpoint", Decision record), `design_evaluation.md`, `design_hidden_info_binding.md` §8.4,
   `designs/ARCHITECTURE.md`, `designs/model/flag_registry_rules.md` + the generated `designs/flag_registry.md`,
   `src/agents/training/CLAUDE.md`.
+
+## 2026-10-15 — GIGO FIX: a diagnostic fork's `metadata.json` recorded its PARENT's reveal (`gen3_reveal_provenance_v1`; PROVENANCE ONLY; no model / config / obs / signature change)
+
+**The defect (the FINDING of the `withheld` entry above, now fixed).** Every knock-in fork (`rb_hib_*`,
+`--oracle-reveal moves:seen@0.95 --diagnostic-fork-consent …`) wrote `oracle_reveal: off` / `oracle_reveal_record: off`
+into `metadata.json`, every checkpoint sidecar and every `snapshot_history` entry, beside a `model_config.json`, a
+`cli_args` and an env declaration that said `moves:seen@0.95`. SB3 rebuilds the extractor from the PARENT zip's
+`policy_kwargs`; `model_build` re-applied `belief_grad_mode` to the live extractor after a `--model` load but not
+`oracle_reveal`; `run_io._model_hparams` wrote the record from the extractor attribute.
+
+**Impact (verified before the fix).** PROVENANCE ONLY. Every reader of the extractor/policy attribute was inventoried
+(`grep` of `.oracle_reveal` / `getattr(…, "oracle_reveal")` over `src/`): `run_io._model_hparams` is the only one; the
+forward builds nothing from it (`reveal_provenance_test.py::test_the_attribute_is_provenance_only…` executes that: re-applying
+it moves no weight and no output bit). The observation of training and eval comes from `RustEnvDecl.oracle_reveal`
+(`rust_env_setup`, declared from the resolved args) and the recorded `model_config.json` (`eval_trace_gen`, `h2h.reveal`,
+`refuse_if_revealed`, `check_oracle_reveal`); the version gates (`check_compatible`, `check_opponent_snapshot_compatible`)
+never read the field. The one other copy of the stale value is the PARENT's `oracle_reveal: off` in the fork's pickled
+`policy_kwargs`, which `forward_fingerprint` and `main.h2h`'s `EngineArch` read as forward identity — benign, and kept (below).
+
+- **The class fix.** `agents.model.resume_reapply.SETTERS` = the ONE table of the registry's `resume_immutable` flags the
+  loaded extractor carries as an attribute (`belief_grad_mode`, `oracle_reveal`; every other row is `structural`, refused by
+  `check_compatible` before a load returns, so a fork cannot differ there). `model_build` applies it from the resolved args
+  after EVERY `--model` load (replacing the lone `set_belief_grad_mode`), via the new `ExtractorApi.set_oracle_reveal`
+  (attribute only). A test fails when a `resume_immutable` registry row has no setter. DECIDED: the policy's pickled
+  `features_extractor_kwargs` are NOT rewritten — they are the forward identity, and a fork's forward IS its parent's;
+  rewriting them would split a fork from its plain control into two slot groups and refuse the registered fork-vs-control
+  `main.h2h` cell (`EngineArch.differs`).
+- **The record.** `metadata.json` copies the reveal from the env core's declaration (`env_core_stamp` gains
+  `oracle_reveal`; `run_io.run_reveal`), else — a save with no collector — the extractor.
+- **The guard.** `save_model_snapshot` and `record_checkpoint` raise `RevealProvenanceError` (before a byte is written)
+  unless metadata's `oracle_reveal`, `oracle_reveal_record.label` and `env_core.oracle_reveal` all equal `model_config.json`'s;
+  `run_io.require_reveal_provenance` adds the env declaration and the extractor attribute before the FIRST snapshot of the
+  resume and fresh paths and exits `FATAL_CONFIG` (3).
+- **The readers (existing runs are NOT rewritten).** `oracle_reveal.run_provenance` reads `model_config.json` first and flags
+  a disagreeing `metadata.json` KNOWN-BAD; `main.lineage` (`reveal` in `--json`, a line + warning) and `main.sidecar_audit`
+  (`reveal`, `n_reveal_mismatched`, a summary count) show it. Affected on disk: the 11 knock-ins `rb_hib_{items,moves}_s310{1,2,3}`,
+  `rb_hib_species_s310{1,2}`, `rb_hib_spreads_s310{1,2,3}` (the two `rb_hib_ctrl_*` are `off` and correct; no descendant of a
+  knock-in fork exists in `models/`); a fork launched under a commit older than the fix is the same and is flagged by the same read.
+- **Evidence.** A CPU parent-then-fork smoke (`--debug`, plain parent 10k steps, then `--oracle-reveal ki_moves
+  --diagnostic-fork-consent`): the fork's log prints `oracle_reveal APPLIED at runtime -> 'moves:seen@0.95'` and its ENV CORE
+  line names the reveal; `model_config.json`, `metadata.json`, `record.label`, `env_core.oracle_reveal` and `cli_args` all say
+  `moves:seen@0.95`. The same fork with ONLY the re-apply reverted stopped in 6 s with `[RevealProvenance] FATAL … extractor
+  attribute = 'off'`, exit 3, and wrote neither file.
+- Tests (each fails on revert; verified by reverting each in turn): `src/agents/model/reveal_provenance_test.py` (the readers,
+  both save guards, the startup guard's exit, the env stamp, the source of the record, the registry-derived completeness of
+  `SETTERS`, the AST wiring of `build_and_train`, the real fork of a plain parent, the stale attribute refused, the forward-inertness
+  of the attribute).
+- Docs: `designs/endstate/design_information_levers.md` (§6 "THE PROVENANCE CONTRACT", Decision record), `designs/ARCHITECTURE.md`,
+  `designs/model/{flag_registry_rules,file_layout}.md`, `designs/training/eval_and_rating.md`, `src/agents/model/CLAUDE.md`;
+  ledger 2026-10-15 GIGO FIX.

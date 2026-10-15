@@ -24,6 +24,11 @@ touch the run, not the code that ran most of it. A sidecar written under an earl
 therefore *expected* to differ — which is why ``metadata.json`` now also carries an
 append-only ``pin_history``. A mismatch whose hash appears in that history is EXPLAINED; one
 that appears nowhere is unexplained and is the shape the 2026-09-05 defect leaves behind.
+
+THE REVEAL MODE (gen3_reveal_provenance_v1, 2026-10-15). The same JSON-only read also states each run's
+``--oracle-reveal`` mode FROM ``model_config.json`` (authoritative) and flags a run whose ``metadata.json`` /
+sidecars name a DIFFERENT mode as a KNOWN-BAD record (``reveal.known_bad``): every diagnostic knock-in fork written
+before the fix (``rb_hib_*``) copied its PARENT's extractor mode (``off``). The run's files are never rewritten.
 """
 
 from __future__ import annotations
@@ -118,14 +123,24 @@ def audit_run(run_dir: str) -> Dict[str, Any]:
     if run_hash:
         known.add(str(run_hash))
 
+    # THE REVEAL MODE (gen3_reveal_provenance_v1): `model_config.json` is authoritative; `metadata.json` and every
+    # sidecar only COPY it, and a diagnostic fork written before the fix copied its PARENT's extractor (`off`).
+    from agents.model.oracle_reveal import run_provenance, same_label
+    reveal = run_provenance(run_dir)
+
     sidecars: List[Dict[str, Any]] = []
     for path in _sidecar_paths(run_dir):
         entry = _load_json(path) or {}
         h = entry.get("git_hash")
         matches = (h == run_hash)
+        sc_reveal = entry.get("oracle_reveal")
         sidecars.append({
             "path": os.path.relpath(path, run_dir),
             "git_hash": h,
+            # the reveal mode this sidecar states (None = it states none) and whether it is the run's own
+            "oracle_reveal": sc_reveal,
+            "reveal_matches_config": (sc_reveal is None or reveal["config"] is None
+                                      or same_label(sc_reveal, reveal["config"])),
             # HOW FAR THE RUN HAD TRAINED at this checkpoint. `None` on every pre-2026-09-05
             # sidecar and rendered as `steps=?`: absent is UNKNOWN, never 0.
             "num_timesteps": entry.get("num_timesteps"),
@@ -141,6 +156,8 @@ def audit_run(run_dir: str) -> Dict[str, Any]:
     from agents.training.lineage import diagnostic_fork_stamps
     return {
         "diagnostic_fork": diagnostic_fork_stamps(run_dir),
+        "reveal": reveal,
+        "n_reveal_mismatched": sum(1 for s in sidecars if not s["reveal_matches_config"]),
         "run_dir": run_dir,
         "run_name": os.path.basename(os.path.normpath(run_dir)),
         "git_hash": run_hash,
@@ -189,6 +206,12 @@ def print_run(rec: Dict[str, Any], *, verbose: bool) -> None:
         from main.train.diagnostic_fork import describe as _describe_fork
         where = "this run" if stamp.get("self") else f"ancestor {stamp.get('run')}"
         print(f"   🧪 diagnostic fork : ({where}) {_describe_fork(stamp)}")
+    reveal = rec.get("reveal") or {}
+    if reveal.get("label") not in (None, "off") or reveal.get("known_bad"):
+        print(f"   🔭 reveal mode     : {reveal.get('label')}  (from {reveal.get('source')})")
+    if reveal.get("known_bad"):
+        print(f"   ⚠️  {reveal.get('note')}")
+        print(f"       {rec.get('n_reveal_mismatched', 0)} of {rec['n_sidecars']} sidecar(s) state a different mode")
     n, m, u = rec["n_sidecars"], rec["n_mismatched"], rec["n_unexplained"]
     flag = "" if m == 0 else f", {m} differ from the run-level hash ({u} UNEXPLAINED)"
     print(f"   sidecars           : {n}{flag}")
@@ -239,10 +262,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         runs_mis = sum(1 for r in records if r["n_mismatched"])
         runs_split = sum(1 for r in records if r["pin_split"])
         runs_nohist = sum(1 for r in records if not r["pin_history"])
+        runs_badreveal = sum(1 for r in records if (r.get("reveal") or {}).get("known_bad"))
         print(f"\nSUMMARY: {len(records)} run(s) · {n_side} sidecar(s) · "
               f"{n_mis} differing from their run hash in {runs_mis} run(s) "
               f"({n_unexp} UNEXPLAINED by any recorded span) · "
-              f"{runs_split} run(s) PIN-SPLIT · {runs_nohist} run(s) with no pin_history")
+              f"{runs_split} run(s) PIN-SPLIT · {runs_nohist} run(s) with no pin_history · "
+              f"{runs_badreveal} run(s) with a KNOWN-BAD reveal record")
 
     if args.strict and any(r["n_unexplained"] for r in records):
         return 1

@@ -112,3 +112,100 @@ def refuse_if_revealed(model_path: str, *, tool: str, reason: Optional[str] = No
         "X5 A/B §7.7(a)) or `withheld` (the honest-play read, the reveal declared OFF), or read its own in-loop eval "
         "(the run's recorded mode)."
     )
+
+
+# ------------------------------------------------------------------------------------------------------------------
+# THE PROVENANCE CONTRACT (gen3_reveal_provenance_v1, GIGO FIX 2026-10-15). A run's reveal mode has ONE authoritative
+# source -- the RESOLVED run config (`args.oracle_reveal`), which `model_config.json` records and which the env core is
+# DECLARED from (`RustEnvDecl.oracle_reveal`) -- and `metadata.json` (`oracle_reveal`, `oracle_reveal_record`,
+# `env_core.oracle_reveal`, every sidecar and `snapshot_history` entry) only COPIES it. The extractor attribute is not
+# a source: SB3 rebuilds the extractor from the PARENT zip's saved `policy_kwargs`, so a diagnostic fork's attribute
+# read the parent's mode (`off`) and, written to `metadata.json` from there, every knock-in fork recorded
+# `oracle_reveal: off` beside a `model_config.json` that said `moves:seen@0.95`.
+# ------------------------------------------------------------------------------------------------------------------
+
+#: The tag the GIGO fix carries in code, docs, the changelog and the ledger (`git log --grep` finds the commit).
+REVEAL_PROVENANCE_FIX = "gen3_reveal_provenance_v1"
+
+
+class RevealProvenanceError(ValueError):
+    """A save was about to record a reveal mode that disagrees with the run's own `model_config.json` (or the env's
+    declared mode): the record would be wrong, so the save is refused (typed; the trainer exits FATAL_CONFIG)."""
+
+
+def same_label(a: Any, b: Any) -> bool:
+    """Do two recorded reveal texts name the same reveal? Label equality first (the common case), else the spec's
+    meaning (`same`); a text the training observation does not honour is never equal to anything."""
+    try:
+        la, lb = label(str(a)), label(str(b))
+    except ValueError:
+        return False
+    return la == lb or same(la, lb)
+
+
+def check_provenance(*, config: Any, witnesses: Dict[str, Any], where: str) -> None:
+    """Raise :class:`RevealProvenanceError` unless every witness equals `config` (the run's recorded
+    `model_config.json` mode). `witnesses` maps a human name ("metadata oracle_reveal", "env core declaration", ...) to
+    the mode it states; a witness that is `None` states nothing and is skipped. Every disagreeing witness is named."""
+    bad = [f"{name} = {value!r}" for name, value in witnesses.items()
+           if value is not None and not same_label(value, config)]
+    if bad:
+        raise RevealProvenanceError(
+            f"{where}: the reveal record disagrees with the run's model_config.json (oracle_reveal = {config!r}): "
+            + "; ".join(bad) + f". [{REVEAL_PROVENANCE_FIX}] The resolved run config is the ONE source a record may "
+            "copy: a metadata.json that names another mode is a wrong provenance (a diagnostic fork once recorded "
+            "its PARENT's `off`). Refused rather than written.")
+
+
+def hparams_witnesses(hparams: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """The reveal statements a metadata/sidecar `hparams` block makes (`run_io._model_hparams`): its label, its
+    `oracle_reveal_record`'s label and the env core stamp's declared mode. Absent keys are absent witnesses."""
+    h = hparams or {}
+    rec = h.get("oracle_reveal_record")
+    env = h.get("env_core")
+    return {
+        "metadata oracle_reveal": h.get("oracle_reveal"),
+        "metadata oracle_reveal_record.label": rec.get("label") if isinstance(rec, dict) else None,
+        "metadata env_core.oracle_reveal": env.get("oracle_reveal") if isinstance(env, dict) else None,
+    }
+
+
+def _read_json(path: str) -> Optional[Dict[str, Any]]:
+    try:
+        with open(path) as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def run_provenance(run_dir: str) -> Dict[str, Any]:
+    """What a run's files say about its reveal mode, `model_config.json` FIRST (offline, JSON only, no torch).
+
+    `label` is the AUTHORITATIVE mode (the config's; `metadata.json`'s only when the run has no config); `known_bad`
+    is True when `metadata.json` names a DIFFERENT mode (`disagrees` names which statements) -- the record of a run
+    written before `gen3_reveal_provenance_v1` (every diagnostic knock-in fork, `rb_hib_*`), whose `metadata.json`
+    copied its PARENT's extractor. `note` says so in words, for a reader to print."""
+    cfg = _read_json(os.path.join(run_dir, "model_config.json"))
+    meta = _read_json(os.path.join(run_dir, "metadata.json"))
+    config_label = str(cfg.get("oracle_reveal", "off")) if cfg is not None else None
+    wit = hparams_witnesses(meta)
+    meta_label = wit["metadata oracle_reveal"]
+    out: Dict[str, Any] = {
+        "config": config_label, "metadata": meta_label, "record": wit["metadata oracle_reveal_record.label"],
+        "env_core": wit["metadata env_core.oracle_reveal"],
+        "label": config_label if config_label is not None else (str(meta_label) if meta_label is not None else "off"),
+        "source": "model_config.json" if config_label is not None else ("metadata.json" if meta_label else "default"),
+        "known_bad": False, "disagrees": [], "note": "",
+    }
+    if config_label is None:
+        return out
+    out["disagrees"] = [name for name, value in wit.items()
+                        if value is not None and not same_label(value, config_label)]
+    if out["disagrees"]:
+        out["known_bad"] = True
+        out["note"] = (f"KNOWN-BAD reveal record: model_config.json says {config_label!r} but "
+                       + ", ".join(f"{n} = {wit[n]!r}" for n in out["disagrees"])
+                       + f" -- written before {REVEAL_PROVENANCE_FIX} (a diagnostic fork copied its PARENT's extractor "
+                       "mode); model_config.json is authoritative")
+    return out

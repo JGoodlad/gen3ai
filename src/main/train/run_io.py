@@ -201,14 +201,52 @@ def _model_hparams(model) -> dict:
                        else {"env_core": "rust"})
     # gen3_oracle_reveal_v1 (v137) — the OBSERVATION MODE this process's rows were built at (a diagnostic: `off` is
     # production). model_config.json carries it as the version-gated field; this is the per-checkpoint provenance
-    # a reader of metadata.json sees beside `env_core`. The extractor holds the mode the policy was built under.
-    out["oracle_reveal"] = str(getattr(getattr(getattr(model, "policy", None), "features_extractor", None),
-                                       "oracle_reveal", "off") or "off")
+    # a reader of metadata.json sees beside `env_core`. 🚨 gen3_reveal_provenance_v1: read from the ENV CORE's own
+    # declaration (`_env_core_stamp["oracle_reveal"]`, `RustEnvDecl`, resolved from the run config), NEVER from the
+    # extractor attribute first: a fork's extractor is rebuilt from the PARENT's zip and read the parent's `off`.
+    out["oracle_reveal"] = run_reveal(model)
     # the information-lever spec's RECORD of that mode (`design_information_levers.md` §6): label, canonical text,
     # hash and the levers — what a reader needs to know exactly which facts, at which mass, the rows were told
     from agents.model.oracle_reveal import record as _reveal_record
     out["oracle_reveal_record"] = _reveal_record(out["oracle_reveal"])
     return out
+
+
+def run_reveal(model) -> str:
+    """The reveal mode THIS run's rollouts were built at, from its authoritative source: the env core's declaration
+    (``model._env_core_stamp["oracle_reveal"]``, written by ``rust_env_setup.env_core_stamp`` from ``RustEnvDecl``,
+    which is declared from the resolved run config), else — a save with no collector (a fresh-checkpoint tool) — the
+    extractor attribute, which such a model was built with from the same config."""
+    stamp = getattr(model, "_env_core_stamp", None)
+    if isinstance(stamp, dict) and stamp.get("oracle_reveal") is not None:
+        return str(stamp["oracle_reveal"])
+    ext = getattr(getattr(model, "policy", None), "features_extractor", None)
+    return str(getattr(ext, "oracle_reveal", "off") or "off")
+
+
+def require_reveal_provenance(model, version) -> None:
+    """The STARTUP guard (before a run's first snapshot): the reveal the run will RECORD (``metadata.json`` via
+    :func:`_model_hparams`), the env core's declaration and the loaded extractor's attribute must all equal
+    ``model_config.json``'s (``version.oracle_reveal``, written from the resolved run config) -- else
+    ``os._exit(FATAL_CONFIG)`` (a restart would hit the identical mismatch). ``save_model_snapshot`` /
+    ``record_checkpoint`` re-check every record they write (typed ``RevealProvenanceError``)."""
+    from agents.model.oracle_reveal import RevealProvenanceError, check_provenance, hparams_witnesses
+
+    stamp = getattr(model, "_env_core_stamp", None)
+    ext = getattr(getattr(model, "policy", None), "features_extractor", None)
+    witnesses = {
+        **hparams_witnesses(_model_hparams(model)),
+        "env core declaration": stamp.get("oracle_reveal") if isinstance(stamp, dict) else None,
+        "extractor attribute": getattr(ext, "oracle_reveal", None),
+    }
+    try:
+        check_provenance(config=version.oracle_reveal, witnesses=witnesses, where="startup")
+    except RevealProvenanceError as e:
+        from main.exit_codes import TrainExitCode
+
+        print(f"\n🛑 [RevealProvenance] FATAL: {e}", flush=True)
+        sys.stdout.flush()
+        os._exit(int(TrainExitCode.FATAL_CONFIG))
 
 
 def _write_latest_txt(model_dir: str, name: str) -> None:

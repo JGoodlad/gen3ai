@@ -171,6 +171,29 @@ class ExtractorApi(ExtractorBuild):
                   f"(detach_read={'on' if self._belief_detach else 'off'}, "
                   f"publish_detach={'on' if self._belief_label_only else 'off'} across the belief heads)")
 
+    def set_oracle_reveal(self, spec: str) -> None:
+        """Apply the RUN's resolved reveal mode to the live extractor after a load (gen3_reveal_provenance_v1).
+
+        SB3's load rebuilds the extractor from the ZIP's saved ``policy_kwargs`` -- the PARENT's, on a fork -- so a
+        diagnostic knock-in fork's ``oracle_reveal`` attribute read the parent's ``off`` while its observation (the env
+        core's, declared from ``RustEnvDecl``) carried the reveal. The attribute is INERT in the forward (no module is
+        built from it, no weight moves: ``__init__``) and ``metadata.json`` used to copy it, so the fork recorded the
+        wrong mode. This is the ONE setter that fixes it; ``main.train.model_build`` calls it on every ``--model`` load
+        through ``agents.model.resume_reapply`` (the same call that applies ``belief_grad_mode``).
+
+        It deliberately touches ONLY the attribute, never the policy's constructor kwargs
+        (``features_extractor_kwargs``): those are the forward-identity of the network (``forward_fingerprint``,
+        ``main.h2h``'s ``EngineArch`` toggles), and a fork's forward IS its parent's -- rewriting them would split the
+        fork from its plain control into two slot groups for no behavioural reason."""
+        from utils.rust_env.protocol import oracle_reveal_label
+
+        new = oracle_reveal_label(spec)
+        changed = new != getattr(self, "oracle_reveal", None)
+        self.oracle_reveal = new
+        if changed:
+            print(f"[Gen3FeaturesExtractor] oracle_reveal APPLIED at runtime -> {new!r} "
+                  "(the loaded extractor carried the zip's mode; the observation itself is the env core's)")
+
     def _stamp_belief_grad_flags(self) -> None:
         """Push `belief_grad_mode` down onto the heads — the ONE place either per-head flag is set.
 

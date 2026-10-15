@@ -304,8 +304,12 @@ def env_core_stamp(decl: Any, col: Any) -> Dict[str, Any]:
                **({"lead_trainee": True} if decl.lead_trainee else {})},     # gen3_t2_lead_lanes_v1: ON only
         "opponent_sampling": "keyed", "keyed_draw": "gen3_keyed_draw_v1",
         "run_seed": decl.run_seed,
+        # gen3_reveal_provenance_v1: the reveal the ENV CORE was DECLARED at (`RustEnvDecl.oracle_reveal`, resolved from
+        # the run config) -- the authoritative source `metadata.json`'s `oracle_reveal` copies (`run_io.run_reveal`)
+        "oracle_reveal": decl.oracle_reveal,
         "summary": (f"{decl.n_envs} envs x {decl.threads} threads, {decl.front}/{decl.profile}, "
-                    f"{col.cfg.trigger.describe()}, T2 {decl.backend} buckets {decl.resolved_buckets}"),
+                    f"{col.cfg.trigger.describe()}, T2 {decl.backend} buckets {decl.resolved_buckets}"
+                    + (f", oracle_reveal {decl.oracle_reveal}" if decl.oracle_reveal != "off" else "")),
     }
 
 

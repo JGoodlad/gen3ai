@@ -17,6 +17,7 @@ from agents.model.extractor_arch import build_extractor_arch_kwargs
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.policy import Gen3DualHeadMaskablePolicy, POLICY_ACTIVATION_FN
+from agents.model.resume_reapply import reapply_resume_immutable, resolved_run_level
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
 import agents.training.cuda_ledger as _cuda_ledger
 import agents.training.update_fit as _update_fit
@@ -35,7 +36,7 @@ from main.train.lifecycle import (
     _setup_signal_handlers,
 )
 from main.train.run_io import (
-    _attach_run_tb_logger, _model_hparams, _run_lineage, _write_latest_txt,
+    _attach_run_tb_logger, _model_hparams, _run_lineage, _write_latest_txt, require_reveal_provenance,
 )
 from utils.logging.levels import LogLevel
 from utils.torch_state_guard import INIT_NUM_THREADS_ATTR, single_thread_build
@@ -298,7 +299,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor
             # post-load (else --allow-belief-grad-mode-change is a silent no-op — the 2026-07-21
             # incident, visible as grad/*_norm_shared == 0 under 'shaping'). No-op when unchanged.
-            model.policy.features_extractor.set_belief_grad_mode(args.belief_grad_mode)
+            # gen3_reveal_provenance_v1: the SAME call re-applies EVERY resume-immutable run-level attribute
+            # (`agents.model.resume_reapply.SETTERS`), `oracle_reveal` included — a fork's extractor was rebuilt from
+            # the PARENT's zip and read the parent's mode, which `metadata.json` then copied.
+            reapply_resume_immutable(model.policy.features_extractor, resolved_run_level(args))
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log
@@ -456,6 +460,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # `None` on a same-run restart, which is what keeps the recorded parent immutable.
         _lineage = _run_lineage(args, model_dir, model_path=_fork_source_model,
                                 fork_step=int(getattr(model, "num_timesteps", 0) or 0))
+        require_reveal_provenance(model, current_version)   # gen3_reveal_provenance_v1: FATAL_CONFIG on a wrong record
         save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
                             reward_composition=reward_composition, lineage=_lineage)
         # gen3_tb_inherit_v1 — a FORK inherits its parent's scalar curves (steps <= fork_step),
@@ -635,6 +640,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # role: "fresh"`), because "no block" and "no parent" are different facts.
         _lineage = _run_lineage(args, model_dir, model_path=None,
                                 fork_step=int(getattr(model, "num_timesteps", 0) or 0))
+        require_reveal_provenance(model, version)   # gen3_reveal_provenance_v1: FATAL_CONFIG on a wrong record
         save_model_snapshot(model_dir, version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
 

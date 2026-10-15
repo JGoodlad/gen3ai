@@ -126,6 +126,16 @@ def _update_pin_history(
     return hist
 
 
+def _read_run_json(path: str) -> Optional[dict]:
+    """A run-level JSON file as a dict, or ``None`` when it is absent or unreadable."""
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def _read_pin_history(model_dir: str) -> Optional[list]:
     """The run-level ``pin_history`` as it stands right now, for stamping into a sidecar."""
     try:
@@ -180,6 +190,14 @@ def save_model_snapshot(
     creation and then preserved verbatim across all subsequent saves/restarts: the existing value
     always wins. The caller may pass it explicitly; otherwise it is derived here.
     """
+    # THE REVEAL PROVENANCE GUARD (gen3_reveal_provenance_v1): metadata.json copies the run's reveal mode and must
+    # agree with the model_config.json this call is about to write (and the env core's declared mode) -- refused typed
+    # BEFORE either file is touched. Only a block that states a mode is judged (`hparams` is optional and partial).
+    from agents.model.oracle_reveal import check_provenance, hparams_witnesses
+    _stated = hparams_witnesses(hparams)
+    if any(v is not None for v in _stated.values()):
+        check_provenance(config=version.oracle_reveal, witnesses=_stated, where=f"save {model_dir}")
+
     os.makedirs(model_dir, exist_ok=True)
 
     # `model_config.json` = the recorded config, PLUS one DERIVED annotation.
@@ -772,6 +790,13 @@ def record_checkpoint(
     # inside `_build_snapshot_entry` too: every sidecar and every snapshot_history entry
     # recorded main's HEAD while metadata.json recorded the pin.
     resolved_hash = resolve_git_hash(git_hash)
+    # gen3_reveal_provenance_v1: the sidecar copies the run's reveal mode too; judge it against the run's own
+    # model_config.json (a run root without one -- a history-only dir, a test double -- states nothing to judge).
+    _cfg = _read_run_json(os.path.join(model_dir, "model_config.json"))
+    if _cfg is not None and hparams:
+        from agents.model.oracle_reveal import check_provenance, hparams_witnesses
+        check_provenance(config=_cfg.get("oracle_reveal", "off"), witnesses=hparams_witnesses(hparams),
+                         where=f"checkpoint {checkpoint_path}")
     eval_block = _read_latest_eval(model_dir)
     matchup_hash = _read_matchup_hash(model_dir)
     pin_history = _read_pin_history(model_dir)

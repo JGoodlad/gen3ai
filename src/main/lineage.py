@@ -137,6 +137,10 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     out["checks"] = check_links(run_dir)
     # THE DIAGNOSTIC-FORK CONSENT(S) in this lineage (its own block's and every ancestor's)
     out["diagnostic_fork"] = diagnostic_fork_stamps(run_dir)
+    # THE REVEAL MODE, from `model_config.json` (gen3_reveal_provenance_v1): `metadata.json` of a fork written before
+    # the fix names its PARENT's mode, so a mismatch is reported as a KNOWN-BAD record, never read as the mode
+    from agents.model.oracle_reveal import run_provenance
+    out["reveal"] = run_provenance(run_dir)
     return out
 
 
@@ -237,6 +241,11 @@ def render(row: Dict[str, Any]) -> str:
         from main.train.diagnostic_fork import describe as _describe_fork
         where = "this run" if stamp.get("self") else f"ancestor {stamp.get('run')}"
         lines.append(f"    🧪 DIAGNOSTIC FORK ({where}): {_describe_fork(stamp)} — never a baseline")
+    reveal = row.get("reveal") or {}
+    if reveal.get("label") not in (None, "off") or reveal.get("known_bad"):
+        lines.append(f"    🔭 reveal mode: {reveal.get('label')}  (from {reveal.get('source')})")
+    if reveal.get("known_bad"):
+        lines.append(f"    ⚠ {reveal.get('note')}")
     for problem in row["checks"]:
         lines.append(f"    ⚠ {problem}")
     return "\n".join(lines)

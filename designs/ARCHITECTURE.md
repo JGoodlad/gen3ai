@@ -1932,6 +1932,16 @@ text, hash, levers) in `metadata.json`; it is inherited by a flagless resume, re
 plays one at its recorded level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`), BELOW it by declaration under `withheld` (the honest-play read), and refuses one under `off`.
 It is refused with the fork arm. See §1.2 for what the row carries.
 
+**Where the run's reveal is recorded, and which copy is the source.** The resolved run config is the ONE source:
+`model_config.json` records it, the env core is declared from it (`RustEnvDecl.oracle_reveal`, stamped into `metadata.json`'s
+`env_core.oracle_reveal`), and `metadata.json`'s `oracle_reveal` / `oracle_reveal_record` (and each sidecar's) copy it from
+that declaration. The loaded extractor's own `oracle_reveal` attribute is re-applied from the resolved config after every
+`--model` load (`agents.model.resume_reapply`) and is inert in the forward. A save whose `metadata.json` would disagree with
+`model_config.json` is refused (`RevealProvenanceError`; the trainer exits `FATAL_CONFIG`). The 11 knock-in forks written
+before `gen3_reveal_provenance_v1` (`rb_hib_{items,moves,species,spreads}_*`) carry the PARENT's `off` in `metadata.json`;
+`main.lineage` / `main.sidecar_audit` read `model_config.json` first and flag them KNOWN-BAD
+(`designs/endstate/design_information_levers.md` §6).
+
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)
 
 **The production reward is ONE TERMINAL TERM.** `terminal_indicator` **true** · `victory_value`

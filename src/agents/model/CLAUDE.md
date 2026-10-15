@@ -183,7 +183,11 @@ A model toggle is one `ModelFlag` row in `flag_registry.py` **plus five hand-syn
 `flag_registry_test.py` names the missing site. Three TIERS (`cli` / `config_only` / `constructor_only`;
 a `config_only` default is what every CLI run gets), four CLASSES (`structural` / `resume_immutable` /
 `training_coef` / `runtime`), `requires=` as the dependency data (`flag_requires_test.py`; `main.checkargs`
-reads it). `oracle_reveal` is the one OBSERVATION-MODE row (a diagnostic, never production). All of it:
+reads it). `oracle_reveal` is the one OBSERVATION-MODE row (a diagnostic, never production). 🚨 **A `resume_immutable`
+flag the extractor carries as an attribute is re-applied after EVERY `--model` load** (`resume_reapply.SETTERS`; SB3 rebuilds
+the extractor from the PARENT's zip on a fork — `metadata.json` once recorded the parent's `off` for every knock-in fork),
+and a run's reveal is COPIED into `metadata.json` from the resolved config, never read off the extractor
+(`oracle_reveal.check_provenance` refuses a disagreeing save). All of it:
 `flag_registry_rules.md`; the current table: `designs/flag_registry.md` (GENERATED; `--check` is the gate).
 
 ## Model versioning — the playbooks

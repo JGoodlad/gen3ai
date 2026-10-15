@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-25,005-line file. **The ledger itself is append-only and is never edited by this**;
+25,047-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**864 headings · 809 dated · 2026-08-01 → 2026-10-14 · ledger 25,005 lines.**
+**865 headings · 810 dated · 2026-08-01 → 2026-10-15 · ledger 25,047 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -884,3 +884,4 @@ rename.
   - `L24821` · `2026-10-14` · MEASUREMENT (MAJOR) · **THE bf16 STRENGTH A/B: PASS — `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 × 4 at 5M, futility screen) CONTINUE (Δ̂ −0.12 pp, 90 % interval [−3.55, +3.31]); stage 2 (8 × 8 mirrored cross of the 15M finals, 64 / 64 cells × 1,000 pairs): Δ̂ +1.0625 pp, SE 1.277, df 14, two-sided 90 % interval [−1.186, +3.311]; clause a (upper > 0) TRUE, clause b (lower > −2.0) TRUE, near_boundary none ⇒ by the closing test's coded rule the bf16 trunk is NOT WORSE and §5 of the registration ADOPTS it; `train_ms` 54.3 s fp32 → 42.1 s bf16 (−22.5 %), 16 runs / 24 legs, 0 crashes**
   - `L24886` · `2026-10-14` · BUILT (MAJOR) · **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `"bf16"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR)); `--arch production` writes `--trunk-precision bf16`, `--trunk-precision fp32` is the explicit opt-out, a FORK inherits its parent's recorded precision (`recipe.fork` has no precision row); the K9 learner golden is now the bf16 update, re-recorded under BOTH torch envs, with the fp32 update pinned beside it BYTE-IDENTICAL; no ARCH_SIGNATURE / config / observation change**
   - `L24961` · `2026-10-14` · GIGO FIX · **A FORK, or a manual resume of one, trained the PARSER's recipe, not its recorded one — fixed for every `--model` launch (`recipe_surface.inherit_recorded_recipe`, and the launcher passes the restored knobs to the child TYPED so a pre-fix pinned child trains them too); AUDIT of all 81 `rb_` runs: 6 forks (the `rb_hib_*` knock-ins), NONE trained a different recipe — they typed it; the only untyped-default knob was `clip_range_vf` (0.5 vs none), INERT under the win-prob critic; NO research conclusion is affected**
+  - `L25006` · `2026-10-15` · GIGO FIX · **A diagnostic fork's `metadata.json` recorded its PARENT's reveal (`oracle_reveal: off`) beside a `model_config.json` that said `moves:seen@0.95` — 11 of the 13 `rb_hib_*` knock-in forks on disk — fixed at the class (`gen3_reveal_provenance_v1`); impact verified PROVENANCE ONLY: the stale attribute is read by `run_io` alone, training's and eval's observation come from the resolved config, so NO fork's training or eval and NO research read is affected**

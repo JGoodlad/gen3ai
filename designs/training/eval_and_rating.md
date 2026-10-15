@@ -1002,7 +1002,8 @@ and builds no engine when nothing is left.
   names: `{mode: withheld, player: off, opponent: off, withheld_level: moves:seen@0.95, …}`). `oracle` is the oracle
   checkpoint's PROVENANCE (`reveal.oracle_side`): `side`, `run`, its recorded `level`, the `canonical` clause text and
   the `reveal_hash` (derived from the RECORDED label — `model_config.json` — never from `metadata.json`'s per-checkpoint
-  `oracle_reveal_record`, which a diagnostic fork writes from its PARENT's extractor mode), and `diagnostic_fork` /
+  `oracle_reveal_record`, which a diagnostic fork written before `gen3_reveal_provenance_v1` took from its PARENT's
+  extractor mode — the 11 `rb_hib_*` knock-ins, flagged KNOWN-BAD by `main.lineage` / `main.sidecar_audit`), and `diagnostic_fork` /
   `fork_consent` (the NEAREST `--diagnostic-fork-consent` stamp in its lineage, the run's own or an ancestor's: run,
   `self`, schema, reason, date, the parent and child spec hashes; `False` / null for a checkpoint trained fresh under the
   reveal). A lineage whose consent contradicts the recorded level is `RevealProvenanceMismatch` (the cell is refused).

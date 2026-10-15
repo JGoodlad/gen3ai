@@ -71,7 +71,8 @@ table exists to prevent:
 | `extractor_stashes.py` | `ExtractorStashes` — the per-forward side-value container (`gen3_extractor_stashes_v1`) |
 | `projection.py` | `compute_projection_widths` (the STATIC width arithmetic) + `ProjectionAssembler` (the concat it describes) |
 | `extractor_build.py` | `ExtractorBuild` — `Gen3FeaturesExtractor.__init__`: every flag validation, every module, in construction ORDER |
-| `extractor_api.py` | `ExtractorApi` — the `last_*` stash reads, the pointer-cell widths, the debugger/ortho-init/belief-grad-mode setters |
+| `extractor_api.py` | `ExtractorApi` — the `last_*` stash reads, the pointer-cell widths, the debugger/ortho-init/belief-grad-mode/oracle-reveal setters |
+| `resume_reapply.py` | the ONE table (`SETTERS`) of the `resume_immutable` flags re-applied to a freshly LOADED extractor from the resolved run config (`belief_grad_mode`, `oracle_reveal`), and `reapply_resume_immutable` (called by `main.train.model_build` after every `--model` load); a test fails when a `resume_immutable` registry row has no setter (`gen3_reveal_provenance_v1`) |
 | `extractor_forward.py` | `ExtractorForward` — `forward_internal`, the T0/T1 belief+physics stack, `_value_pooled_routes` |
 | `features_extractor.py` | the `Gen3FeaturesExtractor` class + `forward`; **the re-export HUB for every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor(model, enabled, label, hide_cuda)` — the CPU compile of ONE frozen extractor, used by the offline readers (split out of `snapshot.py`; the trainer-side opponent compile, its strict mode and revert quorum were deleted in U3) |

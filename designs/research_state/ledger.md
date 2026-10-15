@@ -25002,3 +25002,45 @@ the child argv as typed tokens — a fork pins by default to the checkpoint's co
 
 Tag: **GIGO FIX + AUDIT · every `--model` launch inherits its recorded recipe; the launcher passes it typed · 0 affected conclusions** ·
 evidence: `designs/research_state/measurements/fork_recipe_audit_2026-10-14/`, `src/main/train/recipe_surface_test.py`
+
+### 2026-10-15 · GIGO FIX · **A diagnostic fork's `metadata.json` recorded its PARENT's reveal (`oracle_reveal: off`) beside a `model_config.json` that said `moves:seen@0.95` — 11 of the 13 `rb_hib_*` knock-in forks on disk — fixed at the class (`gen3_reveal_provenance_v1`); impact verified PROVENANCE ONLY: the stale attribute is read by `run_io` alone, training's and eval's observation come from the resolved config, so NO fork's training or eval and NO research read is affected**
+
+**The defect.** `metadata.json` `oracle_reveal` / `oracle_reveal_record`, every checkpoint sidecar and every `snapshot_history`
+entry of each knock-in fork read `off`; `model_config.json`, `cli_args`, the consent stamp and the env declaration read the
+fork's spec (`moves:seen@0.95`, `item:seen@0.95`, `species:unseen@0.95`, `spread:seen@0.95`). Mechanism: SB3 rebuilds the extractor
+from the PARENT zip's `policy_kwargs`; `model_build` re-applied `belief_grad_mode` after a load, not `oracle_reveal`;
+`run_io._model_hparams` wrote the record from the extractor attribute. (First reported as the FINDING of the `main.h2h … withheld`
+entry, 2026-10-14.)
+
+**Impact, checked BEFORE the fix** (the brief's gate: a behaviour impact would have stopped the fix and gone to the orchestrator).
+Every reader of the attribute, by `grep` over `src/`: `run_io._model_hparams` only. The extractor builds no module from it
+(`extractor_build.py`: "INERT here") and `reveal_provenance_test.py` executes that — re-applying the reveal on a loaded production
+extractor changes no weight and no output bit. The observation: the rollout collector and the in-loop eval core are declared from
+`RustEnvDecl.oracle_reveal` (`rust_env_setup` ← `args.oracle_reveal`); offline eval (`eval_trace_gen`), `main.h2h` (`reveal.py`),
+`refuse_if_revealed` and the resume gate (`check_oracle_reveal`) read `model_config.json`; the version gates never read the field.
+The only other stale copy is the parent's `off` in the fork's pickled `policy_kwargs` — the forward identity `forward_fingerprint`
+and `main.h2h`'s `EngineArch` read — which is benign (a fork's forward IS its parent's, so a fork shares a slot group with its
+plain control) and deliberately kept. `main.sidecar_audit` over the 13 runs: 11 KNOWN-BAD (3 of each fork's 4 sidecars state `off`;
+the 4th, `best_model`, states none), 0 differing run hashes; the two `rb_hib_ctrl_*` are `off` and correct.
+
+**The fix** (detail: `designs/CHANGELOG.md` 2026-10-15): the resolved run config is the ONE source of a run's reveal;
+`agents.model.resume_reapply` re-applies every `resume_immutable` extractor attribute after each `--model` load (a test fails on
+a row with no setter); `metadata.json` copies the reveal from the env core's declaration; `save_model_snapshot` / `record_checkpoint`
+refuse a disagreeing record typed (`RevealProvenanceError`) and the trainer exits `FATAL_CONFIG` at startup on one; `main.lineage`
+and `main.sidecar_audit` read `model_config.json` first and flag a disagreeing `metadata.json` KNOWN-BAD. `models/` is not rewritten.
+
+**The audit.** Affected runs (read from disk 2026-10-15): `rb_hib_items_s310{1,2,3}`, `rb_hib_moves_s310{1,2,3}`,
+`rb_hib_species_s310{1,2}`, `rb_hib_spreads_s310{1,2,3}`; controls `rb_hib_ctrl_s310{1,2}` unaffected; descendants of a knock-in fork: none
+in `models/`; no other run of the 367 with a `model_config.json` disagrees with its `metadata.json` (the 8 `rb_x5ab_oracle_*` fresh
+oracle runs record their mode correctly). Forks launched under a pre-fix pin (a resumed run runs its checkpoint's commit) will carry the
+same record; the readers flag them by the disagreement, not by name.
+
+**FINDINGS (standing rule 7).**
+1. A knock-in fork's pickled `features_extractor_kwargs.oracle_reveal` is the PARENT's `off`, while a FRESH oracle run (`rb_x5ab_oracle_*`)
+   pickles its own; so `forward_fingerprint` / `EngineArch` toggles split a fresh oracle run from a plain model but not a fork from its
+   parent. Left as is (rewriting it would refuse the registered fork-vs-control h2h cell); the registered reads depend on it.
+2. Every live `rb_hib_*` run is pinned to an older commit and keeps writing the wrong record on each save; only the readers fix it.
+3. `main.lineage --json` / `main.sidecar_audit --json` gain a `reveal` key (additive).
+
+Tag: **GIGO FIX · provenance only · class fix (every `--model` load re-applies the resume-immutable attributes) + a throwing guard + known-bad readers · 0 affected conclusions** ·
+evidence: `src/agents/model/reveal_provenance_test.py`, `designs/CHANGELOG.md` (2026-10-15), `designs/endstate/design_information_levers.md` §6

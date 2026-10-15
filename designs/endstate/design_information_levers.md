@@ -269,8 +269,44 @@ Rows never pool across modes (each is its own protocol and regime). Every row of
 `compute.oracle_reveal` = `{mode, player, opponent, oracle}`, a `withheld` row also `withheld_level` (the recorded spec
 the side did not play at); `oracle` is the checkpoint's recorded spec (label, canonical text, `InfoReveal` hash) and
 whether it is a DIAGNOSTIC fork (its nearest `--diagnostic-fork-consent` stamp: reason, date, the parent and child spec
-hashes). The hash is derived from `model_config.json`'s recorded label: a knock-in fork's `metadata.json`
-`oracle_reveal_record` reads the PARENT's `off` (the extractor attribute it was rebuilt with), so it is never the source.
+hashes). The hash is derived from `model_config.json`'s recorded label: a knock-in fork written BEFORE
+`gen3_reveal_provenance_v1` has a `metadata.json` `oracle_reveal_record` that reads the PARENT's `off` (the extractor
+attribute it was rebuilt with), so `metadata.json` is never the source (the contract below).
+
+**THE PROVENANCE CONTRACT (BUILT 2026-10-15, `gen3_reveal_provenance_v1`; GIGO FIX).** A run's reveal mode has ONE
+authoritative source: the RESOLVED run config (`args.oracle_reveal`: the typed flag, else the checkpoint run's
+`model_config.json`). `model_config.json` is written from it, and the env core is DECLARED from it
+(`RustEnvDecl.oracle_reveal`, stamped into `metadata.json`'s `env_core.oracle_reveal`). `metadata.json` (`oracle_reveal`,
+`oracle_reveal_record`, `env_core.oracle_reveal`, every checkpoint sidecar and `snapshot_history` entry) only COPIES it.
+The extractor attribute is NOT a source: SB3 rebuilds the extractor from the PARENT zip's `policy_kwargs`, so a fork's
+attribute read the parent's mode. The incident: every diagnostic knock-in fork recorded `oracle_reveal: off` /
+`oracle_reveal_record: off` beside a `model_config.json` that said `moves:seen@0.95` (`model_build` re-applied
+`belief_grad_mode` after a load, not `oracle_reveal`; `run_io` wrote the record from the attribute). **Provenance only,
+verified:** the attribute is read by `run_io` alone (`grep` of every `.oracle_reveal` reader; the forward builds nothing
+from it, and `reveal_provenance_test.py` executes that: re-applying it moves no weight and no output bit); training's
+and eval's observations come from `RustEnvDecl` / the recorded config, never the attribute.
+
+- *The class fix.* `agents.model.resume_reapply.SETTERS` is the ONE table of the registry's `resume_immutable` flags the
+  loaded extractor carries as an attribute (`belief_grad_mode`, `oracle_reveal`), applied by `model_build` after EVERY
+  `--model` load from the resolved config; a test fails the day a `resume_immutable` row has no setter. Deliberately the
+  ATTRIBUTE only: the policy's constructor kwargs (`features_extractor_kwargs`) stay the parent's, because they are the
+  forward-identity `forward_fingerprint` and `main.h2h`'s `EngineArch` toggles read, and a fork's forward IS its parent's
+  (rewriting them would split a fork from its plain control into two slot groups and refuse the registered fork-vs-control
+  cross). So a fork's zip still records `oracle_reveal: off` in its pickled kwargs; `model_config.json` is the record.
+- *The record.* `metadata.json`'s `oracle_reveal` / `oracle_reveal_record` are taken from the env core's declaration
+  (`run_io.run_reveal`), the extractor attribute only for a save with no collector (a fresh-checkpoint tool).
+- *The guard.* `save_model_snapshot` and `record_checkpoint` raise the typed `oracle_reveal.RevealProvenanceError` (before
+  a byte is written) unless metadata's `oracle_reveal`, `oracle_reveal_record.label` and `env_core.oracle_reveal` all equal
+  `model_config.json`'s; the trainer's `run_io.require_reveal_provenance` runs the same check, plus the env declaration
+  and the extractor attribute, before the FIRST snapshot of the resume and the fresh path and exits `FATAL_CONFIG`.
+- *The readers.* `oracle_reveal.run_provenance(run_dir)` reads `model_config.json` first and flags a `metadata.json` that
+  names another mode as a KNOWN-BAD record; `main.lineage` (`reveal` in `--json`, a `reveal mode` line + warning) and
+  `main.sidecar_audit` (`reveal`, `n_reveal_mismatched`, a summary count) show it. `main.h2h` already read the recorded
+  label from `model_config.json`. **Existing runs are NOT rewritten** (`models/` is read-only): the 11 knock-in forks written
+  before the fix, `rb_hib_{items,moves}_s310{1,2,3}`, `rb_hib_species_s310{1,2}`, `rb_hib_spreads_s310{1,2,3}`, carry the
+  wrong `oracle_reveal` / `oracle_reveal_record` in `metadata.json`, every sidecar and `snapshot_history` entry (the two
+  controls `rb_hib_ctrl_*` are `off` and correct; no descendant of a knock-in fork exists in `models/`). Any fork launched
+  under a commit older than the fix (a run is PINNED to its checkpoint's commit) is the same: read it through the readers.
 
 ---
 
@@ -630,4 +666,5 @@ For a decision-level score IMP (the study's: win probability per decision over t
 | 2026-10-12 | **(a) BUILT: `--oracle-reveal <spec>`** | The flag takes any spec OBS honours and records its LABEL; the Rust encoder's `OracleSpec` (mass per class × part, strict canonical parse, per-(episode, side, mon, class) Bernoulli by a pinned hash); `off` / `species` / `full` byte-identical (the three digests unchanged, the clause texts reproduce them); the resume gate compares meaning; `MODEL_CONFIG_VERSION` unchanged (no new field; the three levels' recorded values unchanged) | a soft "known = p" cell (a row the network never sees in play); per-DECISION draws (a fact flickering on and off within an episode is not a belief a player could hold); a lenient Rust parser (two spellings of one spec would be two env specs) | `src/rust_env/tests/oracle_reveal_test.rs`, `src/utils/rust_env/oracle_reveal_integration_test.py` |
 | 2026-10-12 | **The DIAGNOSTIC-FORK consent BUILT** | `--diagnostic-fork-consent "<reason>"`: a genuine fork (the ONE `is_same_run_checkpoint` predicate) may change `--oracle-reveal` from its parent's recorded spec; refused on a same-run flip, with no change, without `--model`, and into a registry-named run; stamped in the child's immutable lineage block; a stamped lineage (own or ancestor) is refused by `main.baselines set` and flagged by `check` | an allow-change flag on the resume check (`--allow-belief-grad-mode-change`'s shape: would also allow a same-run flip); refusing a registered PARENT (the knock-ins fork the adopted arm itself); refusing `--arch production` / `endstate` on the fork (orthogonal to the observation mode) | `src/main/train/diagnostic_fork_test.py`; `main.checkargs` / `main.launcher --dry-run` on the §8.3 argv with `--oracle-reveal ki_moves` |
 | 2026-10-14 | **`main.h2h --oracle-reveal-mode withheld` BUILT: the honest-play read of a knock-in fork** (Training Oct's spec for the §8.4 secondary cross) | A fourth mode: the oracle-trained checkpoint of a cell plays at `off` BY DECLARATION against a plain one; its own protocol `gen3_eval_protocol_v1_h2h_oracle_withheld` (in `PROTOCOL_OF_MODE`, `eval_ledger.schema.PROTOCOLS`, the design's closed-list table that the reader gate reads), never pooled; `(off, off)` accepted for an oracle cell ONLY under it (`off` still refuses an oracle checkpoint); the stamp `{mode: withheld, player: off, opponent: off, withheld_level: <recorded spec>}`; every oracle row (all three modes) gains an `oracle` provenance block (recorded spec, canonical text, reveal hash, diagnostic-fork consent). Oracle-vs-oracle REFUSED under it | no mode for it (a plain `off` over an oracle checkpoint is the silent dependence read the refusal exists to stop); loosening `off`; permitting a both-withheld cell (two dependence costs, one `withheld_level`; a cross of two knock-in forks is not a registered cell; cheap to add later as a deliberate stamp change); reading the hash off `metadata.json` (a fork's says `off`) | `src/main/h2h/reveal_test.py`, `play_test.py`, `play_reveal_integration_test.py` (withheld = `off`'s games bit for bit in either seat); CPU smoke `rb_hib_moves_s3101` vs `rb_hib_ctrl_s3101` |
+| 2026-10-15 | **The REVEAL PROVENANCE contract BUILT (`gen3_reveal_provenance_v1`; GIGO FIX)**: the knock-in forks' `metadata.json` recorded `oracle_reveal: off` beside a `model_config.json` that said `moves:seen@0.95` | The resolved run config is the ONE source; `metadata.json` copies it from the env core's declaration (`env_core.oracle_reveal`); a post-load table re-applies every `resume_immutable` extractor attribute (`agents.model.resume_reapply`); `save_model_snapshot` / `record_checkpoint` raise `RevealProvenanceError` and the trainer exits `FATAL_CONFIG` on a record that disagrees; the readers (`oracle_reveal.run_provenance`, `main.lineage`, `main.sidecar_audit`) prefer `model_config.json` and flag the 11 existing knock-in forks KNOWN-BAD (files untouched). Impact verdict: PROVENANCE ONLY (the attribute is read by `run_io` alone; training and eval observations come from the resolved config) | rewriting the forks' `metadata.json` (`models/` is read-only; blocks are immutable); writing the true reveal into the policy's pickled `features_extractor_kwargs` (it is the forward-identity `forward_fingerprint` / `EngineArch` read: a fork would split from its plain control and the fork-vs-control h2h cell would be refused); reading the mode from the extractor and fixing only its re-apply (one witness, no cross-check) | `src/agents/model/reveal_provenance_test.py` (each assertion fails on revert), the CPU parent-then-fork smoke, `python -m main.lineage models/rb_hib_moves_s3101` |
 | 2026-10-12 | **IVs below 30: taken as full Attack** (owner's ruling on the builder's finding 4: "0 attack adds so little value. It only matters when a pokemon is confused and hurts itself in confusion or in a struggle end game. You can toss those in as full attack.") | No new IV prior: the screen keeps every IV at 30 / 31 (the Hidden Power's patterns, else 31), so a minimised-Attack set is built and believed at full Attack; a decision whose log pins the Attack stays an EXCLUSION, counted and reported | an IV prior below 30 (no Smogon source; little value) | §7.5, §12; `world_screen.ivs_of` |

@@ -172,3 +172,11 @@ uses to REFUSE such a checkpoint when it builds observations without the reveal 
 `main.belief_roles`, `main.policy_spectrum`). `main.h2h` PLAYS one, at its recorded level, through its per-side reveal
 (`--oracle-reveal-mode one_sided|both_sided`, `main.h2h.reveal`), BELOW it by declaration under `withheld` (the
 honest-play read of a knock-in fork), and refuses one under its default `off`.
+
+🚨 **A `resume_immutable` flag the loaded extractor carries as an ATTRIBUTE must be re-applied after every `--model` load**
+(`agents.model.resume_reapply.SETTERS`, called by `model_build`; a test fails when a `resume_immutable` row has no setter).
+SB3 rebuilds the extractor from the ZIP's `policy_kwargs`, which on a FORK are the PARENT's: `belief_grad_mode` was
+re-applied (the 2026-07-21 incident) and `oracle_reveal` was not, so every knock-in fork's `metadata.json` recorded the
+parent's `off` (GIGO FIX `gen3_reveal_provenance_v1`, 2026-10-15; the contract: `designs/endstate/design_information_levers.md`
+§6 "THE PROVENANCE CONTRACT"). Only the attribute is re-applied, never the policy's pickled constructor kwargs (those are
+the forward identity `forward_fingerprint` / `main.h2h`'s `EngineArch` read).
