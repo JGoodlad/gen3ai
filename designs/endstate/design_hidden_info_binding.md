@@ -544,7 +544,10 @@ cd /home/goodlad/dev/gen3ai && PYTHONPATH=src python -m main.launcher --restart-
   1,000 pairs (2,000 games) per cell, ONE-SIDED (L told through its label keys; the control as trained), the X5 A/B's
   cross statistic and interval (`design_x5_belief_tokens.md` §7.4; seeds as the units): **Δ_L** in pp.
 - **Honest-play cross (secondary):** L with the flag OFF at eval vs the control: did learning WITH the information
-  change its honest play (a dependence cost or a transfer)?
+  change its honest play (a dependence cost or a transfer)? **BUILT 2026-10-14: `python -m main.h2h play-many
+  --oracle-reveal-mode withheld`** (the fork plays at `off` by declaration, its own protocol
+  `gen3_eval_protocol_v1_h2h_oracle_withheld`, rows stamped with the level withheld and the fork's consent record;
+  `design_information_levers.md` §6, `designs/training/eval_and_rating.md`).
 - **The v8 read:** the control vs its parent (3 seeds × the parent, mirrored): what +3M of plain training buys.
 - **Meters per fork:** policy drift vs the parent; the belief maturity read (§10.2) of its own heads; §7's model-input
   axis on the registered states with its own injection (IMP_POL(TRUE 0.95) of a network trained to read the truth vs

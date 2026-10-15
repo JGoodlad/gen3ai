@@ -194,7 +194,10 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
 - Stochastic actions are the KEYED DRAW (replayable; not a speed lever). `--oracle-reveal <spec>` is a resume-immutable
   DIAGNOSTIC observation mode, never production; a FORK may change it only under `--diagnostic-fork-consent
   "<reason>"` (`main.train.diagnostic_fork`: never a same-run resume, never into a registry-named run; stamped in the
-  child's lineage block, so the run can never be registered as a baseline). A launcher RESUME pins to the checkpoint's commit and builds that
+  child's lineage block, so the run can never be registered as a baseline). `main.h2h` plays an oracle checkpoint only under
+  a DECLARED `--oracle-reveal-mode` (`one_sided` / `both_sided` at its recorded level, `withheld` below it at `off` — the
+  honest-play read of a knock-in fork; each its own eval protocol, `designs/training/eval_and_rating.md`); `off` refuses
+  it. A launcher RESUME pins to the checkpoint's commit and builds that
   checkout's env core at startup.
 - The trainee's `(observation_space, action_space)` has ONE builder, `agents.training.trainee_spaces`.
 

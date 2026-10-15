@@ -46,8 +46,10 @@ def _common(p: argparse.ArgumentParser, request_help: Optional[str] = None) -> N
                    help="the PER-SIDE oracle reveal (X5 A/B §7.7(a); module main.h2h.reveal): off = no reveal (an "
                         "oracle checkpoint is REFUSED); one_sided = the oracle side told the other team at its own "
                         "recorded level, the other side as trained (the primary read); both_sided = the other side "
-                        "told the oracle's team too (descriptive: out of distribution for it). Each mode is its own "
-                        "eval protocol, stamped on every row")
+                        "told the oracle's team too (descriptive: out of distribution for it); withheld = the "
+                        "HONEST-PLAY read: the one oracle-trained checkpoint of a cell plays at off BY DECLARATION, "
+                        "below its recorded level, against a plain checkpoint (the declared exception to off's "
+                        "refusal). Each mode is its own eval protocol, stamped on every row")
 
 
 def _compute(a: argparse.Namespace) -> PL.Compute:
@@ -96,6 +98,11 @@ H2H_READ_BOTH_SIDED = L.ReaderDecl(
     name="main.h2h.read_oracle_both_sided", purposes=L.ALL_PURPOSES,
     regime=L.RegimeFilter(protocol=PL.PROTOCOL_BOTH_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
     requests="any", selection="include", flags_ok=frozenset(), inference="conditional")
+#: ... the withheld (honest-play) mode's rows.
+H2H_READ_WITHHELD = L.ReaderDecl(
+    name="main.h2h.read_oracle_withheld", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PL.PROTOCOL_WITHHELD, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="any", selection="include", flags_ok=frozenset(), inference="conditional")
 
 
 def cmd_play(a: argparse.Namespace) -> int:
@@ -137,11 +144,12 @@ def cmd_read(a: argparse.Namespace) -> int:
     if not root.exists():
         print(f"[h2h] no such directory: {root}", file=sys.stderr)
         return 2
-    # every protocol main.h2h plays: `off` (with its v1 rows), then the two oracle reveal modes — never pooled (each
+    # every protocol main.h2h plays: `off` (with its v1 rows), then the three oracle reveal modes — never pooled (each
     # regime is its own key)
     reads = dict(L.read_by_regime(H2H_READ, root=root))
     reads.update(L.read_by_regime(H2H_READ_ONE_SIDED, root=root))
     reads.update(L.read_by_regime(H2H_READ_BOTH_SIDED, root=root))
+    reads.update(L.read_by_regime(H2H_READ_WITHHELD, root=root))
     if a.regime is not None:
         reads = {k: v for k, v in reads.items() if k == a.regime}
     rows = [r for got in reads.values() for r in got.rows]

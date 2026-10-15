@@ -4,7 +4,7 @@
         [--label <run label>] [--seed 0] [--schedule-key K] [--batch-pairs 500] [--purpose audit] \\
         [--request ID] [--family F] [--request-kind K] \\
         [--device cpu|cuda] [--backend eager|graph] [--n-envs 64] [--threads 4] [--torch-threads 4] \\
-        [--oracle-reveal-mode off|one_sided|both_sided]
+        [--oracle-reveal-mode off|one_sided|both_sided|withheld]
   python -m main.h2h play-many (--cells <cells.json> | --players P… --opponents O…) --pairs N [the play flags]
   python -m main.h2h read [<root>] [--json] [--regime ID]
 
@@ -18,7 +18,8 @@ at a time, through a declared read (a legacy flat directory of v1 rows is read u
 load byte-checked and parity-gated), each cell exactly as ``play`` plays it — the same games, the same rows. An engine
 serves up to TWO architectures (module ``arch``: one slot group each, the X5 cross), so ``play`` and ``play-many`` both
 play a ``fixed_mass``-vs-``blob`` cell. An ORACLE checkpoint plays only under a reveal mode (module ``reveal``: the
-PER-SIDE oracle reveal, one-sided clairvoyance or both-sided, each its own eval protocol stamped on every row). Run from the repo root (the team pool is read cwd-relative; elsewhere refused). ``runfloor`` (module) turns a round-robin of edges into the run-to-run SD on this scale. ``cross`` (module) is the
+PER-SIDE oracle reveal, one-sided clairvoyance, both-sided, or ``withheld`` — the honest-play read, an oracle checkpoint
+played BELOW its recorded level by declaration — each its own eval protocol stamped on every row). Run from the repo root (the team pool is read cwd-relative; elsewhere refused). ``runfloor`` (module) turns a round-robin of edges into the run-to-run SD on this scale. ``cross`` (module) is the
 X5 A/B's REGISTERED seed × seed cross statistic and decision rule (§7.4: Δ̂, V̂, t on 2(n − 1) df, the look
 boundaries, rule 8, the outcome table) plus the oracle reads (C, C_full − C_species, the floor, H) and the declared
 family reads that build its matrix from the ledger.

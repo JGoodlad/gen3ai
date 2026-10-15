@@ -976,26 +976,42 @@ and builds no engine when nothing is left.
   and after every cycle the engine checks both slots bit-exact against THIS cell's checkpoints (`H2HEngine.verify_slots`):
   a skipped load and a copy that did nothing are both caught before the batch is scored, and no row is written (tested).
 - The host copies of the checkpoints (the load SOURCE, never served) go through `load_checkpoint_strict` on the CPU, an LRU of 4.
-- 🚨 **THE PER-SIDE ORACLE REVEAL (`--oracle-reveal-mode {off,one_sided,both_sided}`, `main/h2h/reveal.py`; X5 A/B
+- 🚨 **THE PER-SIDE ORACLE REVEAL (`--oracle-reveal-mode {off,one_sided,both_sided,withheld}`, `main/h2h/reveal.py`; X5 A/B
   §7.7(a), 2026-10-05).** `main.h2h` is the one offline tool that PLAYS an oracle checkpoint (one whose run recorded
   any non-`off` `--oracle-reveal` spec, played at its recorded LABEL). A plan declares ONE mode, and each cell's `(p1, p2)` levels follow from it and the
   two checkpoints' RECORDED levels — never typed: `off` = no reveal (an oracle checkpoint is REFUSED, typed
   `RevealModeError`, before anything loads); `one_sided` = the oracle side at its recorded level, the other side `off`
   (clairvoyance, the primary read); `both_sided` = the other side told the oracle's team too, at the same level
-  (DESCRIPTIVE: out of distribution for that side). A reveal mode needs exactly ONE oracle side per cell (none, or an
-  oracle vs an oracle, is `RevealModeError`); a side at a level other than its checkpoint's / the mode's is
+  (DESCRIPTIVE: out of distribution for that side); `withheld` = the HONEST-PLAY read (2026-10-14, the hidden-information
+  study's knock-in forks, `design_hidden_info_binding.md` §8.4): the oracle-trained checkpoint plays at `off` BY
+  DECLARATION, BELOW its recorded level, against a plain checkpoint (did learning WITH the information change its play
+  WITHOUT it: a dependence cost, or a transfer?) — both seats `off`, so the OBSERVATIONS are `off`'s and a withheld cell
+  plays bit-for-bit the `off` games of the same weights (`play_reveal_integration_test.py`); it is the one explicit
+  exception to `off`'s refusal, which stays the default. A reveal mode needs exactly ONE oracle side per cell (none, or an
+  oracle vs an oracle, is `RevealModeError`; for `withheld` that is: nothing to withhold, and a row's stamp names ONE
+  withheld level — a fork-vs-fork honest-play cell would carry two dependence costs that could not be told apart, so
+  it is not a declared cell; lifting it is a deliberate change of the stamp, not a flag); a side at a level other than its checkpoint's / the mode's is
   `RevealLevelMismatch` (checked per cell against the core it plays on). The reveal reaches the observation through
   the Rust encoder exactly as in training: the eval core's spec carries the levels per SEAT (`Spec.oracle_reveal` as
   `[p1, p2]`, `core::spec::Reveal`; `build_eval_core(oracle_reveal=(p1, p2))`), each side's chain told the OTHER
   side's team at its own side's level, and the engine declares one eval core per (player group, opponent group,
-  levels). **Rows:** each mode is its own eval PROTOCOL (`gen3_eval_protocol_v1_h2h_oracle_one_sided` /
-  `..._both_sided`, so its own regime — never pooled with `off`), and every revealed row carries
-  `compute.oracle_reveal = {mode, player, opponent}`. A family pins ONE protocol, so an A/B look's oracle cells are a
-  request and a family per mode. **`off` is byte-identical** to the engine before the reveal (recorded at `c7b4d03e`
+  levels; `(off, off)` is accepted for an oracle cell ONLY under `withheld`). **Rows:** each mode is its own eval
+  PROTOCOL (`gen3_eval_protocol_v1_h2h_oracle_one_sided` / `..._both_sided` / `..._withheld`, so its own regime — never
+  pooled with `off` nor with each other), and every revealed row carries `compute.oracle_reveal = {mode, player,
+  opponent, oracle}` — a `withheld` row also `withheld_level` (the oracle side's RECORDED level, which its `off` no longer
+  names: `{mode: withheld, player: off, opponent: off, withheld_level: moves:seen@0.95, …}`). `oracle` is the oracle
+  checkpoint's PROVENANCE (`reveal.oracle_side`): `side`, `run`, its recorded `level`, the `canonical` clause text and
+  the `reveal_hash` (derived from the RECORDED label — `model_config.json` — never from `metadata.json`'s per-checkpoint
+  `oracle_reveal_record`, which a diagnostic fork writes from its PARENT's extractor mode), and `diagnostic_fork` /
+  `fork_consent` (the NEAREST `--diagnostic-fork-consent` stamp in its lineage, the run's own or an ancestor's: run,
+  `self`, schema, reason, date, the parent and child spec hashes; `False` / null for a checkpoint trained fresh under the
+  reveal). A lineage whose consent contradicts the recorded level is `RevealProvenanceMismatch` (the cell is refused).
+  A family pins ONE protocol, so an A/B look's oracle cells are a request and a family per mode. **`off` is byte-identical** to the engine before the reveal (recorded at `c7b4d03e`
   and reproduced: every action, margin and log-prob bit of a 24-game play, and the row's every non-volatile field —
   pinned in `play_reveal_integration_test.py`). Tests: `reveal_test.py` (the level matrix, every refusal, the stamp,
-  the protocols, the spec's form), `play_reveal_integration_test.py` (real games: the off pin; one-sided moves only
-  the oracle side's turn-1 decision in either seat; both-sided moves both; every row stamped), and the Rust
+  the protocols, the withheld mode's refusals / stamp / provenance, the spec's form), `play_reveal_integration_test.py`
+  (real games: the off pin; one-sided moves only the oracle side's turn-1 decision in either seat; both-sided moves
+  both; withheld is `off`'s games bit for bit in either seat; every row stamped), and the Rust
   `oracle_reveal_test.rs::a_per_side_reveal_writes_each_side_exactly_as_the_symmetric_core_of_its_level` (a split
   core's side rows — obs, mask, every label — are bit-identical to the training core's at that side's level).
 - **Cost (CPU, measured 2026-10-04 on the P0 finals):** a swap to the next cell is 0.27 s (both checkpoints cached) to 1.1 s

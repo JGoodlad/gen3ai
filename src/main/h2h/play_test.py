@@ -151,13 +151,14 @@ def test_team_source_check_refuses_a_pinned_team_run(tmp_path):
 TEAM_SET = L.team_set_id({"test": "teams"})
 
 
-def _row(writer, a, b, batch, n, req, key="h2h:k", seed=0, regime=None):
+def _row(writer, a, b, batch, n, req, key="h2h:k", seed=0, regime=None, mode="off", levels=("off", "off"),
+         oracle=None):
     sc = PL.score_games(toy_games(n), TEAMS, n)
 
     eng = types.SimpleNamespace(compute=PL.Compute(device="cpu"),    # only what build_row reads
-                                regime=regime or PL.regime_for(TL, TEAM_SET), torch_version="t",
+                                regime=regime or PL.regime_for(TL, TEAM_SET, mode=mode), torch_version="t",
                                 core_stamp="s", team_check={"a": "x"}, historical={"a": []},
-                                mode="off", levels=("off", "off"))
+                                mode=mode, levels=levels, oracle=oracle)
     return PL.build_row(writer=writer, run_label="study", commit="c0ffee", a=a, b=b, eng=eng, purpose="audit",
                         key=key, sched_seed=seed, batch=batch, cseed=PL.cycle_seed(seed, key, batch), score=sc,
                         t_start=L.utc_now(), t_end=L.utc_now(), wall_s=2.0,
@@ -169,6 +170,36 @@ def _players(tmp_path):
     cfg.write_text(json.dumps({"progress_decision_tense": False, "progress_switch_freeze": False}))
     mk = lambda c: PL.PlayerRef(c, f"/{c}.zip", str(cfg), "/r", f"run_{c}", "explicit_zip", 10, c * 64)  # noqa: E731
     return mk("a"), mk("b")
+
+
+def test_a_withheld_row_validates_stamps_the_recorded_level_and_is_its_own_declared_read(tmp_path):
+    """The ledger accepts the withheld protocol (writer + validator), the row's stamp carries the oracle side's
+    RECORDED level beside its `off` / `off`, and the declared reads see it under its own regime ONLY."""
+    from main.h2h import cli as CLI
+    from main.h2h import many as MANY
+    from main.h2h import reveal as RV
+
+    a, b = _players(tmp_path)
+    oracle = {"side": "player", "run": "rb_hib_moves_s3101", "level": "moves:seen@0.95",
+              "canonical": "moves:seen@0.95", "reveal_hash": "b82fd2fa64fc67e8", "diagnostic_fork": True,
+              "fork_consent": {"run": "rb_hib_moves_s3101", "self": True}}
+    root = tmp_path / "ledger"
+    w = L.LedgerWriter(root, producer="h2h")
+    req = w.open_request("rq", kind="adhoc", purpose="audit", protocol=PL.PROTOCOL_WITHHELD)
+    row = _append(w, a, b, 0, 10, req, mode="withheld", oracle=oracle)
+    assert L.validate_row(row) == []
+    assert row["regime"]["protocol"] == RV.PROTOCOL_OF_MODE["withheld"] == "gen3_eval_protocol_v1_h2h_oracle_withheld"
+    assert row["compute"]["oracle_reveal"] == {"mode": "withheld", "player": "off", "opponent": "off",
+                                               "withheld_level": "moves:seen@0.95", "oracle": oracle}
+    rid = row["regime"]["regime_id"]
+    for read in (lambda **kw: PL.read_own(PL.PROTOCOL_WITHHELD, **kw),
+                 lambda **kw: MANY._read_cell(PL.PROTOCOL_WITHHELD, **kw)):
+        assert len(read(root=root, request_id="rq", regime_id=rid).rows) == 1
+    assert [len(got.rows) for got in L.read_by_regime(CLI.H2H_READ_WITHHELD, root=root).values()] == [1]
+    # never pooled: the off / one-sided / both-sided declared reads of the same ledger see nothing of it
+    for decl in (CLI.H2H_READ, CLI.H2H_READ_ONE_SIDED, CLI.H2H_READ_BOTH_SIDED):
+        assert not L.read_by_regime(decl, root=root)
+    assert len(PL.read_own(PL.PROTOCOL, root=root, request_id="rq", regime_id=rid)) == 0
 
 
 def _append(w, a, b, batch, n, req, **kw):

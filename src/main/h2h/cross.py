@@ -344,6 +344,12 @@ FAMILY_READ_BOTH_SIDED = L.ReaderDecl(
                           opponent_play="greedy", mirrored=True),
     requests="family", selection="include", flags_ok=frozenset(), inference="across_runs",
     decision_kind="ab_verdict")
+FAMILY_READ_WITHHELD = L.ReaderDecl(
+    name="main.h2h.cross.family_oracle_withheld", purposes=frozenset({"ab"}),
+    regime=L.RegimeFilter(protocol="gen3_eval_protocol_v1_h2h_oracle_withheld", play="greedy",
+                          opponent_play="greedy", mirrored=True),
+    requests="family", selection="include", flags_ok=frozenset(), inference="across_runs",
+    decision_kind="ab_verdict")
 
 
 def look_cells(root: Any, family: str, request_id: str, protocol: str) -> List[Any]:
@@ -354,6 +360,8 @@ def look_cells(root: Any, family: str, request_id: str, protocol: str) -> List[A
         got = L.read(FAMILY_READ_ONE_SIDED, root=root, family=family)
     elif protocol == "gen3_eval_protocol_v1_h2h_oracle_both_sided":
         got = L.read(FAMILY_READ_BOTH_SIDED, root=root, family=family)
+    elif protocol == "gen3_eval_protocol_v1_h2h_oracle_withheld":
+        got = L.read(FAMILY_READ_WITHHELD, root=root, family=family)
     else:
         raise ValueError(f"protocol {protocol!r} is not one main.h2h plays")
     looks = dict(L.looks(got))

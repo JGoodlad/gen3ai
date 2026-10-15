@@ -103,10 +103,12 @@ EXPECTED_GAMES_PER_S = 4.0
 
 TEAM_SOURCE = "eval_builders default_biased(bias_prob=0.1): both sides draw from the player's eval team builder"
 
-#: The protocols of the two ORACLE REVEAL modes (``main.h2h.reveal``, X5 A/B §7.7(a)): the same games as
-#: :data:`PROTOCOL`, with the per-side reveal in the observations.
+#: The protocols of the three ORACLE REVEAL modes (``main.h2h.reveal``, X5 A/B §7.7(a)): the same games as
+#: :data:`PROTOCOL`, with the per-side reveal in the observations (``withheld``: the same OBSERVATIONS as ``off``, an
+#: oracle checkpoint played below its recorded level by declaration).
 PROTOCOL_ONE_SIDED = RV.PROTOCOL_OF_MODE["one_sided"]
 PROTOCOL_BOTH_SIDED = RV.PROTOCOL_OF_MODE["both_sided"]
+PROTOCOL_WITHHELD = RV.PROTOCOL_OF_MODE["withheld"]
 assert RV.PROTOCOL_OF_MODE["off"] == PROTOCOL, "the off mode IS the h2h protocol"
 
 #: The resume read: THIS request's rows (any purpose — a request has one), at this tool's protocol.
@@ -124,6 +126,11 @@ H2H_RESUME_BOTH_SIDED = L.ReaderDecl(
     name="main.h2h.resume_oracle_both_sided", purposes=L.ALL_PURPOSES,
     regime=L.RegimeFilter(protocol=PROTOCOL_BOTH_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
     requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+#: ... at the withheld (honest-play) mode's protocol.
+H2H_RESUME_WITHHELD = L.ReaderDecl(
+    name="main.h2h.resume_oracle_withheld", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PROTOCOL_WITHHELD, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
 
 
 def read_own(protocol: str, **kw: Any) -> Any:
@@ -134,6 +141,8 @@ def read_own(protocol: str, **kw: Any) -> Any:
         return L.read(H2H_RESUME_ONE_SIDED, **kw)
     if protocol == PROTOCOL_BOTH_SIDED:
         return L.read(H2H_RESUME_BOTH_SIDED, **kw)
+    if protocol == PROTOCOL_WITHHELD:
+        return L.read(H2H_RESUME_WITHHELD, **kw)
     raise H2HError(f"protocol {protocol!r} is not one main.h2h plays ({sorted(RV.PROTOCOL_OF_MODE.values())})")
 
 
@@ -622,8 +631,12 @@ class H2HEngine:
                                    f"the engine declared {list(self.decl.cores)}; declare the plan's cells when the "
                                    "engine is built")
         RV.check_side_levels(key[2], self.mode, rec[0], rec[1], cell)
+        # the cell's oracle checkpoint's PROVENANCE (its recorded level and reveal hash, whether it is a DIAGNOSTIC
+        # fork), stamped on every row of the cell — resolved BEFORE the cell becomes current, so a lineage that
+        # contradicts the recorded level refuses the cell like any other mismatch
+        oracle = RV.cell_oracle(self.mode, player, opponent, rec[0], rec[1], cell)
         self.player, self.opponent, self.pm, self.om, self.combo = player, opponent, pm, om, combo
-        self.core_key, self.levels = key, levels
+        self.core_key, self.levels, self.oracle = key, levels, oracle
         self.team_check = team_check
         self.historical = {player.id: _historical(player), opponent.id: _historical(opponent)}
         return time.perf_counter() - t0
@@ -724,9 +737,10 @@ def build_row(*, writer: L.LedgerWriter, run_label: str, commit: str, a: PlayerR
                "p2_policy_decisions": executor.get("p2_policy_decisions"),
                "outcome_digest": score.outcome_digest, "near_tie_games": list(score.near_tie_idx or []),
                "digest_margin": DIGEST_MARGIN, "outcome_digest_all": score.outcome_digest_all}
-    stamp = RV.row_block(eng.mode, eng.levels)
+    stamp = RV.row_block(eng.mode, eng.levels, eng.oracle)
     if stamp is not None:
-        # the per-side ORACLE REVEAL the games were played at (absent on an `off` row: the row of before the reveal)
+        # the per-side ORACLE REVEAL the games were played at, the oracle checkpoint's provenance, and (`withheld`) the
+        # level it recorded and did NOT play at (absent on an `off` row: the row of before the reveal)
         compute["oracle_reveal"] = stamp
     return {
         "schema": L.SCHEMA, "row_id": writer.next_row_id(), "supersedes": None, "ts": L.utc_now(),

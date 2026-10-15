@@ -17,7 +17,8 @@ naming it: :func:`refuse_if_revealed`.
 
 `main.h2h` is the one offline tool that PLAYS an oracle checkpoint: its eval cores take a PER-SIDE reveal
 (`main.h2h.reveal`; the one-sided clairvoyance and both-sided cells of the X5 A/B, §7.7(a)), and it refuses an oracle
-checkpoint under its `off` mode itself (`main.h2h.reveal.RevealModeError`).
+checkpoint under its `off` mode itself (`main.h2h.reveal.RevealModeError`); its `withheld` mode is the one declared
+exception, playing the oracle side at `off` BELOW its recorded level (the honest-play read of a knock-in fork).
 """
 from __future__ import annotations
 
@@ -108,5 +109,6 @@ def refuse_if_revealed(model_path: str, *, tool: str, reason: Optional[str] = No
         + (reason or "This tool builds its observations without the reveal, so the checkpoint would be fed "
                      "inputs it never trained on — silently.")
         + " Play it with `python -m main.h2h --oracle-reveal-mode one_sided|both_sided` (the per-side reveal, "
-        "X5 A/B §7.7(a)), or read its own in-loop eval (the run's recorded mode)."
+        "X5 A/B §7.7(a)) or `withheld` (the honest-play read, the reveal declared OFF), or read its own in-loop eval "
+        "(the run's recorded mode)."
     )

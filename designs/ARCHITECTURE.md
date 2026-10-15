@@ -1929,7 +1929,7 @@ text, hash, levers) in `metadata.json`; it is inherited by a flagless resume, re
 `--diagnostic-fork-consent`, never a production lineage), and shown — label, canonical text and hash — by
 `main.checkargs` and the launch banner. `main.anchors`, `main.play`, `main.belief_roles` and
 `main.policy_spectrum` refuse a checkpoint that records any non-`off` spec (they build observations without the reveal); `main.h2h`
-plays one at its recorded level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`) and refuses one under `off`.
+plays one at its recorded level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`), BELOW it by declaration under `withheld` (the honest-play read), and refuses one under `off`.
 It is refused with the fork arm. See §1.2 for what the row carries.
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)

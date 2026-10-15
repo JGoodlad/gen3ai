@@ -14239,3 +14239,48 @@ resume SB3 restores only `lr` / `batch_size` / `n_steps` from the zip; the train
   `rb_hib_*` knock-ins, which typed the full recipe), no training-affecting knob fell to a default; ledger 2026-10-14 GIGO FIX.
 - Docs: `src/main/launcher/CLAUDE.md`, `src/agents/training/CLAUDE.md`, root `CLAUDE.md`, `designs/launcher/{restarts_and_resume,launch_guards}.md`,
   `designs/training/step_size_and_batch.md`, `designs/ops/training_runbook.md` (Launch hazards), `designs/ops/TRAINING_RUN_SOP.md`.
+
+## 2026-10-14 — `main.h2h --oracle-reveal-mode withheld`: the HONEST-PLAY read of a knock-in fork (a 4th reveal mode and eval protocol; no model / config / obs / signature change)
+
+**Why.** The hidden-information study's knock-in forks (`design_hidden_info_binding.md` §8.4) were trained WITH an oracle
+reveal (`--oracle-reveal moves:seen@0.95` …, `--diagnostic-fork-consent`). The registered honest-play cross plays such a
+fork with its reveal OFF at eval, against the plain control: did learning WITH the information change its honest play (a
+dependence cost, or a transfer)? `off` REFUSES an oracle checkpoint (a correct default: it would be fed observations it
+never trained on) and no mode played an oracle side BELOW its recorded level.
+
+- **The mode (`main/h2h/reveal.py`).** `withheld`: the one oracle-trained checkpoint of a cell plays at level `off` BY
+  DECLARATION (both seats `off`, so the OBSERVATIONS are `off`'s: a withheld cell plays bit for bit the `off` games of
+  the same weights, `play_reveal_integration_test.py`). Allowed only for a cell with EXACTLY ONE oracle side and a plain
+  other side; none (nothing to withhold) and oracle-vs-oracle are `RevealModeError`. DECIDED: a both-withheld
+  (fork-vs-fork) cell is NOT permitted, because a row's stamp names ONE `withheld_level` and two dependence costs in one
+  cell could not be told apart; the registered cross is each fork against the plain control, and lifting the refusal
+  later is a deliberate stamp change. `off` still refuses an oracle checkpoint (its message now names `withheld` as the
+  declared exception); `check_side_levels` accepts `(off, off)` for an oracle cell ONLY under `withheld`.
+- **Its own protocol, never pooled.** `gen3_eval_protocol_v1_h2h_oracle_withheld` in `PROTOCOL_OF_MODE`,
+  `eval_ledger.schema.PROTOCOLS` and the closed-list table of `design_evaluation.md` §0b.2 that
+  `eval_ledger_reader_gate_test.py` compares in both directions; a declared reader of each kind
+  (`H2H_RESUME_WITHHELD`, `MANY_CELL_WITHHELD`, `H2H_READ_WITHHELD`, `FAMILY_READ_WITHHELD`); `main.h2h read` lists it
+  as its own regime.
+- **The row stamp.** `compute.oracle_reveal` = `{mode: withheld, player: off, opponent: off, withheld_level: <the
+  recorded level>, oracle: {…}}`. EVERY row of a cell with an oracle side (`one_sided`, `both_sided`, `withheld`) now
+  carries `oracle`: the checkpoint's `side`, `run`, recorded `level`, `canonical` text and `reveal_hash`, and
+  `diagnostic_fork` / `fork_consent` (the NEAREST `--diagnostic-fork-consent` stamp in its lineage, the run's own or an
+  ancestor's: run, `self`, schema, reason, date, parent and child spec hashes; `False` / null for a checkpoint trained
+  fresh under the reveal). The hash is derived from the RECORDED label (`model_config.json`), never `metadata.json`'s
+  `oracle_reveal_record`; a lineage whose consent contradicts the recorded level is `RevealProvenanceMismatch`.
+  `one_sided` / `both_sided` rows written before this entry carry no `oracle` key (readers treat it as absent).
+- **FINDING (not fixed here; reported to the orchestrator).** The knock-in forks' `metadata.json` records
+  `oracle_reveal: off` / `oracle_reveal_record: off` (e.g. `rb_hib_moves_s3101`) while `model_config.json` and the
+  trainer's observation say `moves:seen@0.95`: SB3 rebuilds the extractor from the parent zip's `policy_kwargs`
+  (`off`), `model_build` applies `belief_grad_mode` to the live extractor after the load but not `oracle_reveal`, and
+  `run_io` writes `metadata.json` from the extractor attribute. Provenance only (training reads `RustEnvDecl`), but
+  every reader of that per-checkpoint field gets the parent's mode.
+- Tests (each fails on revert): `reveal_test.py` (off still refuses; withheld refuses no-oracle and oracle-vs-oracle;
+  `(off, off)` only under withheld; the stamp carries the recorded level, hash and consent; a descendant's ancestor
+  consent; a contradicting lineage refused; the distinct protocol), `play_test.py` (the ledger validates, writes and
+  reads a withheld row under its own declared reads and no other), `play_reveal_integration_test.py` (withheld = `off`'s
+  games bit for bit in either seat; every row stamped).
+- Docs: `designs/training/eval_and_rating.md`, `designs/endstate/design_information_levers.md` (§4, §6 "The eval reads of a
+  knock-in checkpoint", Decision record), `design_evaluation.md`, `design_hidden_info_binding.md` §8.4,
+  `designs/ARCHITECTURE.md`, `designs/model/flag_registry_rules.md` + the generated `designs/flag_registry.md`,
+  `src/agents/training/CLAUDE.md`.

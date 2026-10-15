@@ -83,8 +83,13 @@ FLAGS = ("draws_folded", "teams_unrecorded", "seed_unrecorded", "sha_unrecorded"
 #: (X5 A/B §7.7(a)): one-sided clairvoyance (only the oracle checkpoint's side is told the other team, at its own
 #: recorded level) and both-sided (the other side is told the oracle's team too, at the same level). Same seats, teams,
 #: seeds and turn limit as ``v1_h2h``; what differs is what an observation carries, so they never pool with it.
+#: ``v1_h2h_oracle_withheld`` is the HONEST-PLAY read (hidden-information study §8.4): an oracle-trained checkpoint played
+#: at reveal ``off`` BY DECLARATION against a plain one. Its observations are ``v1_h2h``'s; what differs is the
+#: declaration (the checkpoint trained WITH the information, played WITHOUT it), so it never pools with ``v1_h2h`` nor
+#: with the two reveal modes.
 PROTOCOLS = ("gen3_eval_protocol_v1_h2h", "gen3_eval_protocol_v1_bot_rr", "gen3_eval_protocol_v1_inloop",
-             "gen3_eval_protocol_v1_h2h_oracle_one_sided", "gen3_eval_protocol_v1_h2h_oracle_both_sided")
+             "gen3_eval_protocol_v1_h2h_oracle_one_sided", "gen3_eval_protocol_v1_h2h_oracle_both_sided",
+             "gen3_eval_protocol_v1_h2h_oracle_withheld")
 #: The protocol a v1 row is upgraded to, by its writer (§0b.2's upgrade rule).
 V1_WRITER_PROTOCOL = {"h2h": "gen3_eval_protocol_v1_h2h", "bot_rr": "gen3_eval_protocol_v1_bot_rr"}
 

@@ -170,4 +170,5 @@ a FORK may change it only under `--diagnostic-fork-consent`, `main.train.diagnos
 kept off the ARCH surface and out of `check_compatible` by its class, and `oracle_reveal.py` is the reader a tool
 uses to REFUSE such a checkpoint when it builds observations without the reveal (`main.anchors`, `main.play`,
 `main.belief_roles`, `main.policy_spectrum`). `main.h2h` PLAYS one, at its recorded level, through its per-side reveal
-(`--oracle-reveal-mode one_sided|both_sided`, `main.h2h.reveal`) and refuses one under its default `off`.
+(`--oracle-reveal-mode one_sided|both_sided`, `main.h2h.reveal`), BELOW it by declaration under `withheld` (the
+honest-play read of a knock-in fork), and refuses one under its default `off`.

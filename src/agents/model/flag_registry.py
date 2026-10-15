@@ -506,7 +506,7 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "(`main.anchors`, `main.play`) REFUSE a recorded non-'off' mode "
                    "(`agents.model.oracle_reveal.refuse_if_revealed`); `main.h2h` plays it at its recorded "
                    "level through a PER-SIDE reveal (`--oracle-reveal-mode one_sided|both_sided`, "
-                   "`main.h2h.reveal`)."),
+                   "`main.h2h.reveal`), or BELOW it, by declaration, under `withheld` (the honest-play read)."),
     ModelFlag("policy_readout", "tower", Tier.CLI, Klass.STRUCTURAL, 138,
               "where the pointer head's decision context comes from: 'tower' (the flat SB3 policy "
               "tower: projection 1177->512 + mlp_extractor.policy_net 512->512->512 tanh -> latent_pi) "

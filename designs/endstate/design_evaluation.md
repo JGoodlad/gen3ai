@@ -243,7 +243,7 @@ the owner's or the orchestrator's to add, in both places in one commit.
 | `PLAYER_KINDS` | `checkpoint`, `bot`, `external` |
 | `SEAT_RULES` | `fixed_p1`, `balanced` |
 | `FLAGS` | `draws_folded`, `teams_unrecorded`, `seed_unrecorded`, `sha_unrecorded`, `eval_core_unrecorded`, `digest_unrecorded` |
-| `PROTOCOLS` | `gen3_eval_protocol_v1_h2h`, `gen3_eval_protocol_v1_bot_rr`, `gen3_eval_protocol_v1_inloop`, `gen3_eval_protocol_v1_h2h_oracle_one_sided`, `gen3_eval_protocol_v1_h2h_oracle_both_sided` |
+| `PROTOCOLS` | `gen3_eval_protocol_v1_h2h`, `gen3_eval_protocol_v1_bot_rr`, `gen3_eval_protocol_v1_inloop`, `gen3_eval_protocol_v1_h2h_oracle_one_sided`, `gen3_eval_protocol_v1_h2h_oracle_both_sided`, `gen3_eval_protocol_v1_h2h_oracle_withheld` |
 | `DECISION_KINDS` | `promotion`, `eviction`, `plateau`, `ab_verdict`, `cycle_flag` |
 | `GROUP_SEQUENTIAL_KINDS` | `ab_verdict`, `plateau` |
 | `EVENT_KINDS` | `open`, `family`, `claim`, `void`, `row`, `done`, `cancel` |
@@ -255,8 +255,13 @@ the owner's or the orchestrator's to add, in both places in one commit.
   level) and `..._v1_h2h_oracle_both_sided` (the other side is told the oracle's team too, same level). Seats, teams,
   seeds and turn limit are `v1_h2h`'s; the observation differs, so each is its own regime, and the per-side levels
   are stamped on every row's `compute.oracle_reveal` (absent on a `v1_h2h` row). A family pins ONE protocol, so the
-  oracle cells of an A/B look are a family (and a request) per mode. The `gen3_eval_protocol_v2` in §0b.7's example
-  is illustrative.
+  oracle cells of an A/B look are a family (and a request) per mode. A third, `..._v1_h2h_oracle_withheld`
+  (2026-10-14, the hidden-information study's HONEST-PLAY read, `design_hidden_info_binding.md` §8.4), plays the one
+  oracle-trained checkpoint of a cell at reveal `off` BY DECLARATION, below its recorded level, against a plain
+  checkpoint: the observations are `v1_h2h`'s but the declaration (trained WITH the information, played WITHOUT it)
+  is not, so it never pools with `v1_h2h` nor with the two reveal modes; its rows stamp `{mode: withheld, player: off,
+  opponent: off, withheld_level: <the recorded level>}` and every oracle row (all three modes) carries the oracle
+  checkpoint's provenance. The `gen3_eval_protocol_v2` in §0b.7's example is illustrative.
 - **`EVENT_KINDS` adds two to the design's five** (`open` / `claim` / `void` / `done` / `cancel`): `family`
   registers a request family (its group-sequential decision kind, its rule, its pinned protocol and optional pinned
   commit), and `row` records, under the lock, that a claimed unit's row is on disk. The fold then knows every

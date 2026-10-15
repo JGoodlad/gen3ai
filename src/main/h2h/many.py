@@ -60,6 +60,11 @@ MANY_CELL_BOTH_SIDED = L.ReaderDecl(
     name="main.h2h.many.cell_oracle_both_sided", purposes=L.ALL_PURPOSES,
     regime=L.RegimeFilter(protocol=PL.PROTOCOL_BOTH_SIDED, play="greedy", opponent_play="greedy", mirrored=True),
     requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
+#: ... at the withheld (honest-play) mode's protocol.
+MANY_CELL_WITHHELD = L.ReaderDecl(
+    name="main.h2h.many.cell_oracle_withheld", purposes=L.ALL_PURPOSES,
+    regime=L.RegimeFilter(protocol=PL.PROTOCOL_WITHHELD, play="greedy", opponent_play="greedy", mirrored=True),
+    requests="own", selection="include", flags_ok=frozenset(), inference="conditional")
 
 
 def _read_cell(protocol: str, **kw: Any) -> Any:
@@ -70,6 +75,8 @@ def _read_cell(protocol: str, **kw: Any) -> Any:
         return L.read(MANY_CELL_ONE_SIDED, **kw)
     if protocol == PL.PROTOCOL_BOTH_SIDED:
         return L.read(MANY_CELL_BOTH_SIDED, **kw)
+    if protocol == PL.PROTOCOL_WITHHELD:
+        return L.read(MANY_CELL_WITHHELD, **kw)
     raise PL.H2HError(f"protocol {protocol!r} is not one main.h2h plays")
 
 

@@ -135,11 +135,13 @@ def plays(built, checkpoints, tmp_path_factory):
     a_sp = oracle_copy(a, root, "species")
     ledger = root / "ledger"
     ledger.mkdir()
-    specs = {"off": [], "one_sided": [], "both_sided": []}
+    specs = {"off": [], "one_sided": [], "both_sided": [], "withheld": []}
     off, _ = run_engine([(a, b), (b, a)], "off", specs["off"], ledger=ledger)
     one, one_decl = run_engine([(a_sp, b), (b, a_sp)], "one_sided", specs["one_sided"], ledger=ledger)
     both, _ = run_engine([(a_sp, b)], "both_sided", specs["both_sided"], ledger=ledger)
-    return dict(a=a, b=b, a_sp=a_sp, off=off, one=one, both=both, specs=specs, ledger=ledger, one_decl=one_decl)
+    held, held_decl = run_engine([(a_sp, b), (b, a_sp)], "withheld", specs["withheld"], ledger=ledger)
+    return dict(a=a, b=b, a_sp=a_sp, off=off, one=one, both=both, held=held, held_decl=held_decl, specs=specs,
+                ledger=ledger, one_decl=one_decl)
 
 
 def first_wave(games):
@@ -210,6 +212,37 @@ def test_both_sided_reaches_both_sides_and_the_oracle_side_reads_what_it_reads_o
         assert p1 == first(one[k])[0], f"game {k}: p1's turn-1 observation is the same in both modes"
 
 
+def test_withheld_plays_the_oracle_checkpoint_exactly_as_off_does_in_either_seat(plays):
+    """`withheld` is `off`'s OBSERVATIONS under another DECLARATION: the oracle checkpoint (A's weights beside a config
+    recording `species`) plays BELOW its recorded level, so every game (every action, margin and log-prob bit) is the
+    plain A-vs-B game of `off`, in either seat. (`one_sided` moved the oracle side's turn-1 decision in every game:
+    the contrast that makes this read non-vacuous.)"""
+    a, b, a_sp = plays["a"], plays["b"], plays["a_sp"]
+    assert plays["specs"]["withheld"] == ["off"], "no reveal reaches either seat: one core, the spec's string form"
+    assert [lv for _gp, _go, lv in plays["held_decl"].cores] == [RV.OFF_OFF]
+    for cell, off_cell in (((a_sp, b), (a, b)), ((b, a_sp), (b, a))):
+        games, levels = plays["held"][cell]
+        ref, _ = plays["off"][off_cell]
+        assert levels == RV.OFF_OFF
+        assert sorted(games) == sorted(ref) == list(range(2 * PAIRS))
+        assert bits_digest(list(games.values())) == bits_digest(list(ref.values())), \
+            f"the withheld play of {cell[0]} vs {cell[1]} differs from off's"
+    assert bits_digest(list(plays["held"][(a_sp, b)][0].values())) == OFF_BITS
+    # the contrast: the same checkpoint one-sided DOES see the other team, in every game
+    one, _ = plays["one"][(a_sp, b)]
+    held = plays["held"][(a_sp, b)][0]
+    assert all(first(one[k])[0] != first(held[k])[0] for k in one)
+
+
+def _oracle_block(side, level="species"):
+    """The provenance an oracle copy's row carries: a run dir with a config and no lineage (trained fresh, not a fork)."""
+    from agents.model.oracle_reveal import record
+
+    rec = record(level)
+    return {"side": side, "run": f"run_h2h_oracle_{level}", "level": level, "canonical": rec["canonical"],
+            "reveal_hash": rec["hash"], "diagnostic_fork": False, "fork_consent": None}
+
+
 def test_every_row_is_stamped_with_its_protocol_and_per_side_levels(plays):
     from main.h2h import cli as CLI
 
@@ -217,15 +250,23 @@ def test_every_row_is_stamped_with_its_protocol_and_per_side_levels(plays):
     sha = {p: PL.resolve_player(p).sha256 for p in (a, b)}       # a_sp's bytes are a's
     want = {
         ("off", sha[a], sha[b]): None, ("off", sha[b], sha[a]): None,
-        ("one_sided", sha[a], sha[b]): {"mode": "one_sided", "player": "species", "opponent": "off"},
-        ("one_sided", sha[b], sha[a]): {"mode": "one_sided", "player": "off", "opponent": "species"},
-        ("both_sided", sha[a], sha[b]): {"mode": "both_sided", "player": "species", "opponent": "species"},
+        ("one_sided", sha[a], sha[b]): {"mode": "one_sided", "player": "species", "opponent": "off",
+                                        "oracle": _oracle_block("player")},
+        ("one_sided", sha[b], sha[a]): {"mode": "one_sided", "player": "off", "opponent": "species",
+                                        "oracle": _oracle_block("opponent")},
+        ("both_sided", sha[a], sha[b]): {"mode": "both_sided", "player": "species", "opponent": "species",
+                                         "oracle": _oracle_block("player")},
+        # withheld: both sides `off`, the oracle side's RECORDED level beside them
+        ("withheld", sha[a], sha[b]): {"mode": "withheld", "player": "off", "opponent": "off",
+                                       "withheld_level": "species", "oracle": _oracle_block("player")},
+        ("withheld", sha[b], sha[a]): {"mode": "withheld", "player": "off", "opponent": "off",
+                                       "withheld_level": "species", "oracle": _oracle_block("opponent")},
     }
     reads = {}
-    for decl in (CLI.H2H_READ, CLI.H2H_READ_ONE_SIDED, CLI.H2H_READ_BOTH_SIDED):
+    for decl in (CLI.H2H_READ, CLI.H2H_READ_ONE_SIDED, CLI.H2H_READ_BOTH_SIDED, CLI.H2H_READ_WITHHELD):
         reads.update(L.read_by_regime(decl, root=plays["ledger"]))
     rows = [r for got in reads.values() for r in got.rows]
-    assert len(reads) == 3 and len(rows) == 5, f"{len(reads)} regimes, {len(rows)} rows"
+    assert len(reads) == 4 and len(rows) == 7, f"{len(reads)} regimes, {len(rows)} rows"
     mode_of = {pr: m for m, pr in RV.PROTOCOL_OF_MODE.items()}
     got = {}
     for r in rows:
