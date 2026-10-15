@@ -211,6 +211,8 @@ ARGVS: dict[str, list[str]] = {
     "promotion_sprt_ignores_the_threshold": ["--promotion-sprt", "--self-play", "--promote-threshold", "0.6"],
     # T25 lever C (gen3_r1_graphed_route_v1): the graphed route needs a compiled CUDA learner
     "learner_cudagraphs_needs_the_compiled_cuda_learner": ["--learner-cudagraphs", "on", "--device", "cpu"],
+    # T37 (gen3_canary_shift_max_v1): a typed margin input needs the compiled CUDA learner whose gate it moves
+    "canary_shift_max_needs_the_compiled_cuda_learner": ["--canary-shift-max", "0.3", "--device", "cpu"],
 }
 
 

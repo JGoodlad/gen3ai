@@ -599,7 +599,13 @@ from typing import Any, Dict
 #   the deleted modules were constructed and retired), no MIGRATION_FLOOR change (D-LD1). 🚨 THE FRESH-INIT STREAM
 #   CHANGED (D-LD7): the blocks and the threat projection no longer draw at construction or at SB3's orthogonal
 #   re-init, so a fresh seed at or after this version builds a DIFFERENT initial network than the same seed before.
-MODEL_CONFIG_VERSION = 157
+# v158 (gen3_canary_shift_max_v1, T37): one CHECK-ONLY field, `canary_shift_max` (`--canary-shift-max`, optional float):
+#   the log-prob shift the compile gate's and the canary's clip margin (4 x it) is built from, default None = the code's
+#   `compile_regions.R1_LOGPROB_SHIFT_MAX`. A same-run resume may RAISE it (the launcher refuses to move a live run's pin,
+#   so a code change cannot reach it; readiness F28); it can never lower it. Never read by the forward, a loss or an
+#   optimizer, never compared by check_compatible; RECORDED and `_resolve`-inherited. A pre-v158 config migrates to None.
+#   No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 158
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

@@ -49,7 +49,10 @@ Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 watched parameter's per-check numbers — under the bf16 rule its ratio, the compiled distance and eager bf16's
 yardstick; under the fp32 rule its compiled-vs-eager error and bar — plus the check's worst parameter and global
 numbers, for the scheduled check and each confirmation, so a parameter family's growth curve is recoverable from the
-run (the 2026-10-15 `rb_toy_ent_s4001` FATAL had logged only each check's worst parameter). The FATAL names the SAFE
+run (the 2026-10-15 `rb_toy_ent_s4001` FATAL had logged only each check's worst parameter). Every record also carries
+`canary_shift_max` {value, source, margin}: the shift the clip margin was built from (`--canary-shift-max`, T37: the
+code's `R1_LOGPROB_SHIFT_MAX`, or a RAISED value a same-run resume typed), so a record read alone says what bar it
+judged by. The FATAL names the SAFE
 ROLLBACK POINT: the newest checkpoint
 written at or before the last PASSING canary's step (`rollback_point`; restarts included — the file
 is the run's, not the process's).
@@ -192,12 +195,21 @@ class CompileCanary:
     def _record(self, verdict: str, detail: str = "", watch: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         rec: Dict[str, Any] = {"verdict": verdict, "update": self.updates,
                                "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
-                               "time": time.time(), "detail": detail[:4000]}
+                               "time": time.time(), "detail": detail[:4000],
+                               "canary_shift_max": self._shift_max_record()}
         if watch:
             rec["watch"] = watch
         _append(_run_dir(self.model), VERDICTS_FILE, {k: v for k, v in rec.items() if k != "detail"}
                 if verdict == "pass" else rec)
         return rec
+
+    def _shift_max_record(self) -> Dict[str, Any]:
+        """THE JUDGEMENT INPUT every record carries (`--canary-shift-max`, T37): the shift the margin was built from, where
+        it came from (``default`` | ``--canary-shift-max``) and the margin (`R1_BAR_K` x it) — so a record read alone
+        says what bar the check judged by, whichever verdict it carries and whether or not it reached the margin rule."""
+        from agents.model import compile_regions as cr
+        return {"value": cr.shift_max_of(self.model), "source": cr.shift_max_source(self.model),
+                "margin": cr.clip_margin_of(self.model)}
 
     @staticmethod
     def _new_watch() -> Any:

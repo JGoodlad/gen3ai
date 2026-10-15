@@ -163,6 +163,9 @@ class PpoHyperparameters:
         # `_compiled_micro_step_graphed` and the RUNTIME switch that declares it, `_learner_cudagraphs`
         # (`--learner-cudagraphs`, gen3_r1_graphed_route_v1: set by every process's own argv, so a
         # checkpoint never carries it into a process that did not ask), with its startup counter.
+        # `_canary_shift_max` (`--canary-shift-max`, gen3_canary_shift_max_v1, T37) is the compile gate's / canary's CHECK-ONLY
+        # margin input, set by every process's own RESOLVED argv (`apply_training_hparams`); the run's record of it is the
+        # ModelVersion field in model_config.json, so a pickled copy could only disagree with it.
         # `_rust_collector` (M5 Lane G, the Rust env core) is the live env core + inference service
         # + row arena (locks, a child process, GPU slot storage): process-local by construction and
         # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
@@ -188,5 +191,5 @@ class PpoHyperparameters:
                                                   "train", "learn", "_compile_control",
                                                   "_learner_freeze", "_compiled_micro_step",
                                                   "_compiled_micro_step_graphed", "_learner_cudagraphs",
-                                                  "_cudagraph_skips_at_install",
+                                                  "_cudagraph_skips_at_install", "_canary_shift_max",
                                                   "rollout_buffer_class", "_loop_hooks"]

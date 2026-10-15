@@ -992,6 +992,9 @@ _RUN_RECORD_ONLY_KEYS = frozenset({
     # the learner's trunk precision (config v155): a TRAINING-numerics record that is a `recipe.fresh` row, not a
     # mirror field, so every run from v155 on (the bf16 recipe's, from 2026-10-14) carries a key the mirror does not
     "trunk_precision",
+    # the compile gate's / canary's CHECK-ONLY margin input (config v158, T37): a per-run record (None = the code's
+    # constant) that a same-run resume may raise; the mirror never carries it
+    "canary_shift_max",
 })
 
 

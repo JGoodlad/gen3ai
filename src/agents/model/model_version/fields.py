@@ -552,3 +552,12 @@ class ModelVersionFields:
     # TRAINING numerics, so RECORDED (which gradients a run's weights came from) and `_resolve`-inherited: a
     # flagless resume of a bf16 run stays bf16. A pre-v155 config migrates to "fp32" — the only possible past.
     trunk_precision: str = "fp32"
+    # ---- gen3_canary_shift_max_v1 (config v158) — THE CANARY / GATE MARGIN'S INPUT (T37) --------------------------
+    # `--canary-shift-max V`: a CHECK-ONLY override of `compile_regions.R1_LOGPROB_SHIFT_MAX` (0.18), the log-prob shift
+    # the compile gate's and the canary's clip margin (4 x it) is built from. It moves where the gate relocates its
+    # fixture rows and where it refuses an arm; it is NEVER read by the forward, a loss, an optimizer or a bar of the
+    # parity rule, so it is not compared by check_compatible and a frozen opponent does not read it. None = the code's
+    # constant (the only value a run that never typed it records); a number is a RAISE above it (the flag refuses a
+    # lower one). RECORDED (which bar a run's gate judged by) and `_resolve`-inherited, so a launcher restart, a
+    # flagless resume and a fork all keep the value a same-run resume once typed. A pre-v158 config migrates to None.
+    canary_shift_max: Optional[float] = None

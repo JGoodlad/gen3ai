@@ -1854,7 +1854,14 @@ core, every snapshot and the K9(b) behaviour probe run the fp32 function. `--tru
 opt-out, and a fork keeps its parent's recorded precision. Evidence: the strength A/B (8 seeds × 15M per arm, the 8 × 8
 mirrored cross, `measurements/bf16_strength_ab_2026-10-12/stage2_cross/result/verdict.json`) read Δ̂ +1.06 pp, 90 %
 interval [−1.19, +3.31] (not worse; not shown better), and the TensorBoard `train_ms` fell from 54.3 s to 42.1 s per update
-(median of the eight seeds' medians per arm). **The CUDA learner
+(median of the eight seeds' medians per arm). **The compile gate's and the canary's clip margin has ONE
+CHECK-ONLY input beside the code's constant: `--canary-shift-max`** (`ModelVersion.canary_shift_max`, config v158;
+default None = `compile_regions.R1_LOGPROB_SHIFT_MAX` 0.18, so the margin is 4 × 0.18 = 0.72 log-prob). A same-run resume
+may RAISE it (a value below the constant is refused, typed) because a live run's code pin cannot move at a restart; it is
+recorded in `model_config.json` and inherited by a launcher restart, a flagless resume and a fork, never compared by
+`check_compatible`, never read by a loss, an optimizer or a bar of the parity rule (one update is bit-identical at any
+value, `canary_shift_max_test`), and printed on every R1 rule line and every canary record
+(`designs/training/compile_flags.md` "The check-only margin override"). **The CUDA learner
 compile is ONE DECLARED REGION** — R1, the micro-step (`evaluate_actions` + the fold), `fullgraph=True`
 at its one declared signature, `batch_size` rows (`agents/model/compile_regions.py`,
 `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"; the rollout forward is NOT a

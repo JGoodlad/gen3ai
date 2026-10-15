@@ -256,6 +256,16 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   `--trunk-precision fp32` is the explicit opt-out; a FORK or restart INHERITS its parent's recorded precision (an fp32
   parent's fork stays fp32 unless it types bf16). The K9 learner golden is the bf16 update and pins the fp32 opt-out
   beside it (`fp32_opt_out`). Detail: `designs/training/compile_flags.md` "T25 perf levers on R1".
+- 🚨 **`--canary-shift-max V` (T37, config v158) is a CHECK-ONLY, RAISE-ONLY override of the compile gate's / canary's
+  margin input** `compile_regions.R1_LOGPROB_SHIFT_MAX` (0.18; the clip margin is 4 × it). It exists because a live run's
+  pin cannot move at a restart: X26's headroom-watch RED action (`design_x26_readiness.md` §4.2) is a same-run RESUME with
+  the flag, not a fork. Recorded in `model_config.json` (`ModelVersion.canary_shift_max`, None = the code's constant) and
+  inherited like `--trunk-precision` (typed wins; a restart, flagless resume or fork keeps it); a value below 0.18 is
+  REFUSED, typed; a TYPED value needs the compiled CUDA learner. The model reads it only through
+  `compile_regions.clip_margin_of(model)` (`model._canary_shift_max`, set by `apply_training_hparams`, never pickled):
+  **nothing in a loss, an optimizer or a parity bar may read it** (`main/train/canary_shift_max_test.py` holds one update
+  bit-identical at two values). Every R1 rule line and every `canary_verdicts.jsonl` record prints it. Detail:
+  `designs/training/compile_flags.md` "The check-only margin override".
 
 ## The critic, the value side and the auxiliaries
 

@@ -14655,3 +14655,37 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **Docs.** `designs/training/compile_flags.md` "The CPU Inductor tile2d codegen bug", `designs/ops/testing.md` (a red slow test
   is fixed or declared, never hidden behind a stale PASS), the model leaf, `measurements/cpu_inductor_tile2d_2026-10-15/`;
   ledger 2026-10-15 GIGO FIX.
+## 2026-10-15 — X26 READINESS T37: `--canary-shift-max`, a CHECK-ONLY, RAISE-ONLY override of the compile gate's / canary's margin constant (`gen3_canary_shift_max_v1`; config v158, one recorded field; no ARCH_SIGNATURE / MIGRATION_FLOOR / obs change; no training-math change)
+
+- **Why**: the bf16 HEADROOM WATCH (`design_x26_readiness.md` §4.2) raises `compile_regions.R1_LOGPROB_SHIFT_MAX` (0.18; the clip
+  margin of the startup gate and the canary is 4 × it = 0.72, T36) when the compiled bf16 arm's taken-action shift passes
+  it. The launcher REFUSES to move a live run's code pin at a restart (`worktree.resolve_pin`, readiness F28) and
+  `--sync-to-main` would walk X26 onto all of HEAD, so a code change could reach X26 only through a FORK. The flag carries the
+  same number through a same-run RESUME.
+- **The flag**: `--canary-shift-max V` (argparse default None; `type` = `compile_regions.resolve_shift_max`). RAISE-ONLY: a
+  value below 0.18, or a non-number / NaN / ±inf, is refused typed (`CanaryShiftMaxError`: an argparse error at parse, a
+  `parser.error` for an INHERITED value, and the gate refuses a model carrying one). A TYPED value on a launch with no
+  compiled CUDA learner is refused (`canary_shift_max_needs_the_compiled_cuda_learner`); an inherited one is carried.
+- **Recorded and inherited like `--trunk-precision`**: `ModelVersion.canary_shift_max` (Optional[float], None = the code's
+  constant), config v158, a stamp-and-default migration (`setdefault(None)`), never compared by `check_compatible`,
+  `_resolve`d in `resolve_config` (a typed value wins and is what the next save records; an untyped launcher restart,
+  flagless resume or fork inherits it), passed at both `model_build` save sites, and also in `metadata.json:cli_args`.
+  `baselines._RUN_RECORD_ONLY_KEYS` names it (the mirror never carries it). The model attribute `_canary_shift_max` is set by
+  `apply_training_hparams` on both build paths and excluded from the pickle (`_excluded_save_params`).
+- **The judgement**: `compile_regions.clip_margin_of(model)` = `R1_BAR_K` × `shift_max_of(model)` is what
+  `relocate_clip_boundary` (every rung's relocation) and `_clip_margin_rule` use; `ClipRelocation` gained `shift_source`
+  and a `shift_max` property. Every R1 rule line reads `clip margin: n/B boundary rows relocated (M 0.720 = 4 x shift_max
+  0.18 [default]; nearest unmoved …)` (`[--canary-shift-max]` when typed); every canary record carries
+  `canary_shift_max` {value, source, margin} (pass, unconfirmed and fatal), and `watch.*.clip_margin` carries `shift_max` /
+  `shift_max_source`. The margin rule's refusal names the effective value and says how to raise it.
+- **Never touches training**: the margin is the gate's judgement input only. `canary_shift_max_test` runs the K9 golden's one
+  update with the flag at None, 0.72 and 25.0 and compares every parameter's bytes, the group hashes and every pinned loss
+  scalar (bit-identical), with a control showing the same harness moves for a real hyperparameter change.
+- **Tests** (each fails on revert): `src/main/train/canary_shift_max_test.py` (the parser's raise-only refusals; resolution
+  through a fresh launch, a same-run resume with the typed value winning and recorded, a launcher restart, a fork, an
+  inherited value below the constant; `main.checkargs`; the combination check; the save sites; the pickle exclusion; the
+  bit-identity), `src/agents/model/canary_shift_max_gate_test.py` (the resolver; the margin follows the model; a raised
+  shift turns the default margin's refusal of a healthy-large shift into a pass; the rule lines and every record carry the
+  value), the `combination_checks_test` table row. Docs: `designs/training/compile_flags.md` "The check-only margin
+  override", `design_x26_readiness.md` §4.1 item 2 / §4.2 (AMBER stages a number; RED = resume the SAME run with the flag) /
+  F28 / R7 / Decision record, `TASK_BACKLOG.md` X26-7, `flag_census.md`, the training leaf, `ARCHITECTURE.md` §6.4.

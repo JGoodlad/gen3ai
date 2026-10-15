@@ -24,6 +24,17 @@ def _rnd_variants_arg(value: str) -> str:
         raise argparse.ArgumentTypeError(str(e)) from e
 
 
+def _canary_shift_max_arg(value: str) -> float:
+    """argparse ``type`` for --canary-shift-max: a finite number AT LEAST the code's `R1_LOGPROB_SHIFT_MAX` (the flag only
+    RAISES the margin's input); anything else is an argparse error naming why (`compile_regions.resolve_shift_max`)."""
+    from agents.model import compile_regions as cr
+
+    try:
+        return cr.resolve_shift_max(value)
+    except cr.CanaryShiftMaxError as e:
+        raise argparse.ArgumentTypeError(str(e)) from e
+
+
 def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
     # --- gen3_winprob_critic_mode_v1 (ai_v12, designs/ai_v12/design_winprob_only_critic.md): WHICH readout is
@@ -304,6 +315,22 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "PERF KNOB like --compile-trainer: not versioned, not recorded in "
                              "model_config.json; the launcher's restarts forward it with the argv. A "
                              "MEASUREMENT lever until its paired benchmark (PLAN.md lever C) adopts it.")
+    parser.add_argument("--canary-shift-max", "--canary_shift_max", dest="canary_shift_max",
+                        type=_canary_shift_max_arg, default=None, metavar="V",
+                        help="T37 (gen3_canary_shift_max_v1, config v158): a CHECK-ONLY override of the compile gate's "
+                             "and the in-run canary's margin constant, compile_regions.R1_LOGPROB_SHIFT_MAX (0.18, "
+                             "log-prob): the largest |d log pi| a healthy compiled-bf16 arm moves a fixture row from the "
+                             "fp32 reference. The clip margin is 4 x it (0.72); the rule refuses an arm that moves a "
+                             "row past it. A live run's code pin cannot move at a restart, so this is how a RED read of "
+                             "the X26 headroom watch (designs/endstate/design_x26_readiness.md 4.2) reaches the run: "
+                             "resume the SAME run with --canary-shift-max V at the next planned restart. It can only "
+                             "RAISE the constant (a value below 0.18 is refused, typed: a lower bar has no measured "
+                             "basis). It affects ONLY the gate's judgement, never training (one update is "
+                             "bit-identical at any value, canary_shift_max_test). Default None = the constant. RECORDED "
+                             "in model_config.json and inherited by a flagless resume, a launcher restart and a fork "
+                             "(typed wins); printed on every R1 rule line and every canary record "
+                             "(canary_verdicts.jsonl 'canary_shift_max'). REQUIRES the compiled CUDA learner when "
+                             "typed (refused on cpu, under --debug and with --no-compile-trainer).")
     parser.add_argument("--consequence-topk", "--consequence_topk", dest="consequence_topk",
                         type=int, default=None,
                         help="v59: the CONSEQUENCE kernels' believed-candidate axis — C1b/C2/C3's "

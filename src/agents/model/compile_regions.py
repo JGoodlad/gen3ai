@@ -716,7 +716,8 @@ def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -
     parts = [x for _, x in fixes]
     fix = ClipRelocation(torch.cat([x.old_log_prob for x in parts]), torch.cat([x.moved for x in parts]),
                          torch.cat([x.ref_log_prob for x in parts]), torch.cat([x.advantages for x in parts]),
-                         parts[0].clip_range, parts[0].margin, min(x.nearest_unmoved for x in parts))
+                         parts[0].clip_range, parts[0].margin, min(x.nearest_unmoved for x in parts),
+                         parts[0].shift_source)
     e0, g0 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
     graphed = _r1_accum_arm(model, g, args_list)
     e1, g1 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
@@ -1121,10 +1122,63 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], n
 #: the FATAL's weights (`compile_regions_clip_margin_fatal_test`) 0.173 — rounded UP to 2 significant digits as the
 #: bf16 bars are; fp32 arms ~1e-6. The COMPILED bf16 arm's shift on CUDA is read by the GPU diagnostic
 #: (`forward_vs_E32.Cbf.log_prob_max_abs`) and printed on every R1 rule line (`clip margin: … max |dlogp|`): if it
-#: exceeds this value, raise it here (and the margin with it).
+#: exceeds this value, raise it here (and the margin with it) — for a LIVE run, whose pin cannot move, `--canary-shift-max`
+#: (T37, below) carries the raise through a same-run resume.
 R1_LOGPROB_SHIFT_MAX = 0.18
 #: THE MARGIN = R1_BAR_K (the gate's safety factor over a healthy maximum, as every R1 bar) x that shift = 0.72.
 R1_CLIP_MARGIN = R1_BAR_K * R1_LOGPROB_SHIFT_MAX
+
+
+#: THE CHECK-ONLY OVERRIDE (`--canary-shift-max`, T37, `gen3_canary_shift_max_v1`; `designs/endstate/design_x26_readiness.md`
+#: §4.1 item 2, §4.2, F28). A LIVE run's code pin cannot move at a restart (`worktree.resolve_pin` refuses it), so a
+#: raised `R1_LOGPROB_SHIFT_MAX` in code can reach a run only through a FORK; this flag carries the same number through
+#: a same-run RESUME instead. It is the margin's INPUT and nothing else: it moves where the gate relocates its fixture
+#: rows and where it refuses an arm, never a bar of the parity rule, never the training update (`canary_shift_max_test`
+#: holds one update bit-identical at two values). It can only RAISE the shift above `R1_LOGPROB_SHIFT_MAX`: a lower
+#: margin has no measured basis (0.18 is the largest healthy shift measured), and `resolve_shift_max` refuses one.
+SHIFT_MAX_FLAG = "--canary-shift-max"
+
+
+class CanaryShiftMaxError(ValueError):
+    """A `--canary-shift-max` value the gate cannot honour: not a finite number, or BELOW `R1_LOGPROB_SHIFT_MAX` (the
+    flag only raises it; a lower bar has no measured basis). Typed so the parser, `resolve_config` and the gate
+    refuse it with one reason."""
+
+
+def resolve_shift_max(value: Any) -> float:
+    """The shift (log-prob) the margin is built from: ``None`` is the code's `R1_LOGPROB_SHIFT_MAX`; a typed value
+    is returned as a float if it is finite and at least that constant, else `CanaryShiftMaxError` naming why."""
+    if value is None:
+        return float(R1_LOGPROB_SHIFT_MAX)
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        raise CanaryShiftMaxError(f"{SHIFT_MAX_FLAG} {value!r} is not a number") from None
+    if not math.isfinite(v):
+        raise CanaryShiftMaxError(f"{SHIFT_MAX_FLAG} {value!r} is not finite")
+    if v < R1_LOGPROB_SHIFT_MAX:
+        raise CanaryShiftMaxError(
+            f"{SHIFT_MAX_FLAG} {v:g} is BELOW the code's R1_LOGPROB_SHIFT_MAX {R1_LOGPROB_SHIFT_MAX:g}, the largest "
+            f"healthy shift measured: the flag only RAISES the margin (4 x it) — a lower bar has no measured basis, "
+            f"and it would make the gate refuse arms the measurements call healthy")
+    return v
+
+
+def shift_max_of(model: Any) -> float:
+    """The effective shift on ``model``: its `_canary_shift_max` (set by `apply_training_hparams` from the RESOLVED
+    flag, never pickled), else the code's default. A model without the attribute (a duck-typed double, a reader)
+    reads the default."""
+    return resolve_shift_max(getattr(model, "_canary_shift_max", None))
+
+
+def shift_max_source(model: Any) -> str:
+    """Where `shift_max_of` came from, for the rule line and the canary record."""
+    return "default" if getattr(model, "_canary_shift_max", None) is None else SHIFT_MAX_FLAG
+
+
+def clip_margin_of(model: Any) -> float:
+    """The margin on ``model``: `R1_BAR_K` x `shift_max_of(model)` (= `R1_CLIP_MARGIN` unless overridden)."""
+    return R1_BAR_K * shift_max_of(model)
 
 
 class ClipRelocation(NamedTuple):
@@ -1137,11 +1191,18 @@ class ClipRelocation(NamedTuple):
     clip_range: float
     margin: float
     nearest_unmoved: float              # log-prob distance of the closest row left in place (inf when none)
+    shift_source: str = "default"       # where the shift behind `margin` came from: "default" | "--canary-shift-max"
+
+    @property
+    def shift_max(self) -> float:
+        """The shift the margin was built from (`margin` = `R1_BAR_K` x it)."""
+        return self.margin / R1_BAR_K
 
     def line(self) -> str:
         n, b = int(self.moved.sum()), int(self.moved.numel())
         near = f"{self.nearest_unmoved:.3f}" if np.isfinite(self.nearest_unmoved) else "-"
-        return (f"clip margin: {n}/{b} boundary rows relocated (M {self.margin:.3f}; nearest unmoved {near})")
+        return (f"clip margin: {n}/{b} boundary rows relocated (M {self.margin:.3f} = {R1_BAR_K:g} x shift_max "
+                f"{self.shift_max:.4g} [{self.shift_source}]; nearest unmoved {near})")
 
 
 def _switch_log_bound(adv: torch.Tensor, clip_range: float) -> torch.Tensor:
@@ -1164,7 +1225,7 @@ def clip_active(log_prob: torch.Tensor, old_log_prob: torch.Tensor, adv: torch.T
 
 
 def clip_relocation(ref_log_prob: torch.Tensor, old_log_prob: torch.Tensor, adv: torch.Tensor, clip_range: float,
-                    margin: float = R1_CLIP_MARGIN) -> ClipRelocation:
+                    margin: float = R1_CLIP_MARGIN, shift_source: str = "default") -> ClipRelocation:
     """The pure relocation (module comment above): a row whose reference log-ratio is within ``margin`` of (or AT)
     its switching boundary — ``|log ρ − log b| <= margin`` — and whose advantage is non-zero gets ``old`` = ref − target,
     so its reference log-ratio is ``target`` = log b ∓ 2 margin, inside the ACTIVE side. Every other row keeps ``old``.
@@ -1183,12 +1244,13 @@ def clip_relocation(ref_log_prob: torch.Tensor, old_log_prob: torch.Tensor, adv:
     rest = dist[~near & a.ne(0)]
     return ClipRelocation(new.to(dtype=old_log_prob.dtype, device=old_log_prob.device).reshape(old_log_prob.shape),
                           near, lp, a, float(clip_range), float(margin),
-                          float(rest.min()) if rest.numel() else float("inf"))
+                          float(rest.min()) if rest.numel() else float("inf"), shift_source)
 
 
-def relocate_clip_boundary(model: Any, args: Tuple[Any, ...], margin: float = R1_CLIP_MARGIN
+def relocate_clip_boundary(model: Any, args: Tuple[Any, ...], margin: Optional[float] = None
                            ) -> Tuple[Tuple[Any, ...], ClipRelocation]:
     """R1's arguments with the fixture moved off the clip boundary on ``model``'s CURRENT weights, and the record.
+    ``margin`` None (every caller in the gate) is the model's own, `clip_margin_of` (`--canary-shift-max`, T37).
     The reference is R1's own eager body at the fp32 base classes (`trunk_precision.fp32_scope`; a no-op on an fp32
     trunk) — one forward, gradient mode as the arms run it, no backward; it runs R1's eager body once, outside every
     arm's independence window. ``args`` is `_r1_args`' tuple (old log-probs at index 4, the static last)."""
@@ -1197,7 +1259,8 @@ def relocate_clip_boundary(model: Any, args: Tuple[Any, ...], margin: float = R1
     st = args[-1]
     with fp32_scope(model.policy):
         out = micro_step(*args)
-    fix = clip_relocation(out.log_prob.detach(), args[4], out.advantages.detach(), float(st.clip_range), margin)
+    fix = clip_relocation(out.log_prob.detach(), args[4], out.advantages.detach(), float(st.clip_range),
+                          clip_margin_of(model) if margin is None else margin, shift_max_source(model))
     del out
     return args[:4] + (fix.old_log_prob,) + args[5:], fix
 
@@ -1225,11 +1288,14 @@ def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tenso
             raise ct.CompileTrainerError(
                 f"--compile-trainer region R1: the {name} arm moved a fixture row's log-prob by up to {shift:.3g} "
                 f"from the fp32 eager reference and switched {flips} row(s)' PPO clip branch (the clip margin is "
-                f"{fix.margin:.3g} = {R1_BAR_K:g} x the largest healthy shift measured, R1_LOGPROB_SHIFT_MAX "
-                f"{R1_LOGPROB_SHIFT_MAX:g}). The gate's rows are relocated off the clip boundary by that margin so no verdict depends "
+                f"{fix.margin:.3g} = {R1_BAR_K:g} x the shift {fix.shift_max:.4g} [{fix.shift_source}]; the largest "
+                f"healthy shift measured is R1_LOGPROB_SHIFT_MAX {R1_LOGPROB_SHIFT_MAX:g}). The gate's rows are "
+                f"relocated off the clip boundary by that margin so no verdict depends "
                 f"on a 0/1 switch (standing rule 8, gen3_r1_clip_margin_v1): a forward this far from the reference is "
                 f"refused as itself. If this arm is HEALTHY, the margin is too small — re-measure "
-                f"(main.ops.diag_bf16_canary) and raise R1_LOGPROB_SHIFT_MAX; never judge across a switch.")
+                f"(main.ops.diag_bf16_canary) and raise the shift: {SHIFT_MAX_FLAG} <v> on a RESUME of this run "
+                f"(check-only, it can only raise; T37), or R1_LOGPROB_SHIFT_MAX in code for the next pin; never "
+                f"judge across a switch.")
     if watch is not None:
         watch.fill_margin(fix, shifts)
     return fix.line() + "; max |dlogp| " + ", ".join(f"{k} {v:.2e}" for k, v in shifts.items()) + \
@@ -1258,7 +1324,8 @@ class GradWatch:
         row's distance and every arm's largest |Δ log π| from the reference — so a run's records carry the compiled
         arm's shift (the margin's provisional input) at every canary."""
         self.margin = {"relocated_rows": int(fix.moved.sum()), "rows": int(fix.moved.numel()),
-                       "margin": float(fix.margin), "nearest_unmoved": float(fix.nearest_unmoved),
+                       "margin": float(fix.margin), "shift_max": float(fix.shift_max),
+                       "shift_max_source": str(fix.shift_source), "nearest_unmoved": float(fix.nearest_unmoved),
                        "max_abs_dlogp": {k: float(v) for k, v in shifts.items()}}
 
     def wants(self, name: str) -> bool:

@@ -5,7 +5,7 @@ between the field block and the gates.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Self
+from typing import Any, Dict, Optional, Self
 
 from agents.model.model_version.constants import ARCH_SIGNATURE, MODEL_CONFIG_VERSION
 from agents.model.model_version.fields import ModelVersionFields
@@ -50,6 +50,7 @@ class ModelVersionConstruction(ModelVersionFields):
         eval_mirrored_pairs: bool = False,
         promotion_sprt: bool = False,
         trunk_precision: str = "fp32",
+        canary_shift_max: Optional[float] = None,
     ) -> Self:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -260,6 +261,7 @@ class ModelVersionConstruction(ModelVersionFields):
             eval_mirrored_pairs=bool(eval_mirrored_pairs),
             promotion_sprt=bool(promotion_sprt),
             trunk_precision=str(trunk_precision or "fp32"),
+            canary_shift_max=None if canary_shift_max is None else float(canary_shift_max),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
             move_belief_latent_coef=float(move_belief_latent_coef),

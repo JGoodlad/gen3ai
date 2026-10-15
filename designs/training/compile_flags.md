@@ -1996,7 +1996,7 @@ boundary at ~10⁴ smaller odds: its arms differ by ~1e-6 in log-prob):
    eager fp32, the s4001 census max 0.161 (62 checkpoints), the production census max 0.055 (10 states), the
    32-seed dithered null at the FATAL's weights 0.173. **PROVISIONAL — CPU and eager only**: the COMPILED bf16 arm's
    shift on CUDA is the GPU window's `forward_vs_E32.Cbf.log_prob_max_abs` (and every gate line); if it exceeds 0.18,
-   `R1_LOGPROB_SHIFT_MAX` rises with it.
+   `R1_LOGPROB_SHIFT_MAX` rises with it (on a LIVE run, whose pin cannot move, `--canary-shift-max`: below).
 3. **The canary's confirmation on two DISJOINT halves** (`compile_trainer.FIXTURE_HALVES`: slice 2 = rows 0–31, slice
    1 = rows 32–63). The halves share no row, so no single row can confirm a disagreement: independence by
    construction. The scheduled check (and the startup gate) keep ALL 64 rows — a half can leave a parameter below
@@ -2052,6 +2052,50 @@ window → X26 on the production bf16 compiled learner.**
 **The watch-list record** (`gen3_canary_watch_v1`, this change): every canary record now carries the pointer head's
 per-check ratio, compiled distance and eager yardstick (`designs/training/learner_lifecycle.md`), so the next run's
 growth curve is recoverable; s4001's six passing canaries logged only their worst parameter.
+
+### The check-only margin override (`--canary-shift-max`, `gen3_canary_shift_max_v1`, config v158, T37, 2026-10-15)
+
+**Why.** The clip margin of the startup gate and of the canary is `R1_CLIP_MARGIN` = `R1_BAR_K` 4 × `R1_LOGPROB_SHIFT_MAX`
+0.18 = 0.72 log-prob (T36, above). The bf16 HEADROOM WATCH (`design_x26_readiness.md` §4.2) raises 0.18 when the compiled
+bf16 arm's taken-action shift passes it. A constant in code reaches a run only through its code pin, and **the launcher
+REFUSES to move a live run's pin at a restart** (`worktree.resolve_pin`; readiness F28), while `--sync-to-main` would walk
+X26 onto all of HEAD. So the delivery is a flag a same-run RESUME may change.
+
+**What it is.** `--canary-shift-max V` (argparse default None; `type` = `compile_regions.resolve_shift_max`):
+- **Check-only.** It is the margin's INPUT and nothing else: `compile_regions.clip_margin_of(model)` = `R1_BAR_K` × the
+  shift, read by `relocate_clip_boundary` (where the gate moves its fixture rows) and `_clip_margin_rule` (where it refuses
+  an arm). No loss, no optimizer, no seed, no bar of the parity rule (loss 5.4 / gradient 6.4 / per-parameter 12) reads it.
+  **Proven**: `main/train/canary_shift_max_test.py::test_one_update_is_BIT_IDENTICAL_with_the_flag_at_two_values` runs
+  the K9 golden's one update with the flag at None, 0.72 and 25.0 and compares every parameter's bytes, the per-group
+  hashes and every pinned loss scalar; `…::test_the_fingerprint_has_teeth_…` shows the same harness moves when a real
+  hyperparameter does.
+- **Raise-only.** A value below the code's `R1_LOGPROB_SHIFT_MAX` (0.18), or a non-number / NaN / ±inf, is REFUSED, typed
+  (`CanaryShiftMaxError`; an argparse error at parse, a `parser.error` in `resolve_config` for an INHERITED value, and the
+  gate itself refuses a model carrying one): 0.18 is the largest healthy shift measured, so a lower margin has no measured
+  basis and would make the gate refuse arms the measurements call healthy.
+- **A typed value needs the gate it moves.** `combination_checks.canary_shift_max_needs_the_compiled_cuda_learner` refuses
+  a TYPED value on `--no-compile-trainer` / `--device cpu` / `--debug` (silently inert otherwise, like `--learner-cudagraphs`);
+  an INHERITED value is carried, never refused (a CPU smoke of an X26 fork still launches).
+- **Recorded and inherited like `--trunk-precision`** (config v158, `ModelVersion.canary_shift_max`, Optional[float], default
+  None = the code's constant; a pre-v158 config migrates to None). `resolve_config`'s `_resolve` gives: a TYPED value wins and is what
+  the next save records; an untyped launcher restart, flagless resume or FORK inherits the recorded one; a fresh run is None.
+  The resolved value is also in `metadata.json:cli_args`. Never compared by `check_compatible` (no weight shape, no served
+  forward reads it). The model attribute `_canary_shift_max` is set by `apply_training_hparams` on both build paths and is
+  never pickled (`_excluded_save_params`).
+- **Printed.** The launch prints `🐤 [CANARY SHIFT MAX] V …` when a value is set; every R1 rule line prints `clip margin: n/B
+  boundary rows relocated (M 2.000 = 4 x shift_max 0.5 [--canary-shift-max]; nearest unmoved …)` (`[default]` when
+  untouched); every canary record in `canary_verdicts.jsonl` (pass, unconfirmed, fatal) carries `canary_shift_max`
+  {value, source, margin}, and `watch.*.clip_margin` carries `shift_max` / `shift_max_source` beside the margin. The
+  margin rule's refusal names the effective value and says how to raise it.
+
+**The headroom watch's RED action uses it** (`design_x26_readiness.md` §4.2): when the compiled bf16 shift passes 0.18 but
+stays under the margin, **stop the run at its next planned restart and resume the SAME run** — `--model <its latest
+checkpoint>` at the SAME pin (verified with `--dry-run`; never `--sync-to-main`) — with `--canary-shift-max <v>`, v the
+largest `compiled` value read rounded UP to 2 significant digits with ≥ 1.25× headroom. The flag must exist in the run's
+pinned tree: it does for any pin at or after the T37 commit (X26's P_X26 is after it), and a pinned parser that lacks it
+refuses the argv (`pinned_argv.pinned_parser_check`: `✗ NOT IN PINNED TREE`). The raise survives the launcher's later 6-hourly
+restarts through the recorded field. It does not replace the diag (`scripts/ops/diag_bf16_canary.sh <run>`), which says
+whether the shift is shared by eager bf16 and C32 is still ≈ 0; it replaces the FORK that a code-only raise would have forced.
 
 ### Lever C: R1's GRAPHED route (`--learner-cudagraphs {off,on}`, `gen3_r1_graphed_route_v1`, 2026-10-10)
 

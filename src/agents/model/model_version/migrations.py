@@ -552,6 +552,11 @@ def _migrate_config(data: dict) -> dict:
     # `move_resolution_facts`, `value_threat_inject` and the seven per-action blocks), judged exactly as U1's.
     if version < 157:
         data["config_version"] = 157
+    # v158 (gen3_canary_shift_max_v1, T37) — the canary / compile gate's CHECK-ONLY margin input: every run before v158
+    # judged by the code's own constant, which is `None`.
+    if version < 158:
+        data.setdefault("canary_shift_max", None)
+        data["config_version"] = 158
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

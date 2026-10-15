@@ -183,8 +183,11 @@ Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 distance from the fp32 reference, eager bf16's `eager` yardstick and the `floor` (under the fp32 rule:
 `compiled_vs_eager` and its `bar`; an unjudged parameter `{"judged": false}`), the check's `worst` parameter
 and its `global` drift / envelope numbers, plus `clip_margin` (rows relocated, the margin, the nearest unmoved
-row's distance and every arm's largest |Δ log π| from the fp32 reference — the margin's provisional input, read at
-every canary) — filled before any check can refuse. The `rb_toy_ent_s4001` FATAL
+row's distance, the `shift_max` / `shift_max_source` the margin was built from and every arm's largest |Δ log π| from
+the fp32 reference — the margin's provisional input, read at every canary) — filled before any check can refuse. Every
+record also carries the top-level `canary_shift_max` {value, source, margin} (`--canary-shift-max`, T37: the code's
+`R1_LOGPROB_SHIFT_MAX` 0.18 with source `default`, or a RAISED value a same-run resume typed), whatever its verdict
+(`designs/training/compile_flags.md` "The check-only margin override"). The `rb_toy_ent_s4001` FATAL
 logged only each check's worst parameter, so the pointer head's ratio at its six passing canaries is
 unrecoverable; the next run's growth curve is in its JSONL. No extra compute: the rule computes these numbers
 anyway. Pinned by `compile_canary_test` (a pass and a FATAL record carry it; a global refusal still fills it;

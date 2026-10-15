@@ -531,6 +531,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.trunk_precision != "fp32":
         emit(f"🧮 [TRUNK PRECISION] {args.trunk_precision}: the learner's trunk rounds run under bf16 autocast in "
              f"R1 (T2 / eval / the K9(b) probe stay fp32; the compile gate applies the bf16 parity rule)")
+    # gen3_canary_shift_max_v1 (T37): the compile gate's / canary's CHECK-ONLY margin input. Typed wins (a same-run RESUME
+    # may raise it: the launcher cannot move a live run's pin, so a code change cannot reach it); an untyped launch
+    # inherits the recorded value (a launcher restart, a flagless resume, a FORK); a fresh run is None = the code's
+    # `R1_LOGPROB_SHIFT_MAX`. Never a training quantity — `apply_training_hparams` hands it to the gate alone.
+    _resolve("canary_shift_max", None)
     # T17 (gen3_mirrored_pairs_v1): the in-loop eval's PAIRING REGIME. A fresh run takes OFF (the
     # orchestrator flips it at an era start); a flagless resume keeps the regime its checkpoint recorded,
     # so a live run's win_rate_vs_pool / eval/elo never cross the boundary unless the flag is NAMED.
@@ -683,6 +688,17 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--intent-label-bot-weight must be >= 0 (0 = train on no bot rows; 1 = off)")
     if args.diagnostics_every < 1:
         parser.error("--diagnostics-every must be >= 1 (1 = the optional telemetry every update)")
+    if args.canary_shift_max is not None:
+        # A TYPED value was judged at parse; this judges the INHERITED one too (the code's constant may have risen
+        # since the run recorded it), so the gate never reads a bar below the measured healthy shift.
+        from agents.model import compile_regions as _cr
+        try:
+            _cr.resolve_shift_max(args.canary_shift_max)
+        except _cr.CanaryShiftMaxError as _e:
+            parser.error(str(_e))
+        emit(f"🐤 [CANARY SHIFT MAX] {args.canary_shift_max:g} (the code's R1_LOGPROB_SHIFT_MAX is "
+             f"{_cr.R1_LOGPROB_SHIFT_MAX:g}): the compile gate's and the canary's clip margin is {_cr.R1_BAR_K:g} x it = "
+             f"{_cr.R1_BAR_K * args.canary_shift_max:g}. CHECK-ONLY: it moves no training quantity.")
     if not (0.0 <= args.policy_gae_lambda <= 1.0):
         # A single-value RANGE check. GAE's λ weights the n-step advantage estimators by
         # (1-λ)λ^(n-1): outside [0, 1] that is not an average of estimators at all.

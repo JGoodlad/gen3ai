@@ -629,16 +629,24 @@ first seed launches. Anything that lands on `main` after that is outside X26 and
 
 **What must land BEFORE P_X26:**
 1. **The CPU-Inductor fix**, with its `slow_tier_status.json` row re-recorded PASS (E5).
-2. **RECOMMENDED: a check-only override of the canary's margin constant** that a same-run resume may change. This is
-   the delivery mechanism for §4.2's RED action. Without it, raising `R1_LOGPROB_SHIFT_MAX` mid-run means a FORK,
-   because the launcher REFUSES to move a run's pin at a restart (`worktree.resolve_pin`), and `--sync-to-main` would
-   walk X26 onto all of HEAD.
-   - Scope: a small build in T36's area, about 2–3 h, opus-high. It may proceed in parallel with item 1.
-   - What it must do: a typed trainer flag, inherited through `model_config.json` like `--behaviour-check` (Amendment 2 §A2.7 item 2
-     is the precedent: a check-only flag changed at a resume), printed on every R1 rule line. It must never touch
-     training math, and it needs a test that fails on revert.
-   - It is the orchestrator's call. If it is skipped, §4.2's RED action becomes a fork, and that path is written
-     there.
+2. **BUILT (T37, 2026-10-15, `--canary-shift-max`): a check-only override of the canary's margin constant** that a
+   same-run resume may change. This is the delivery mechanism for §4.2's RED action. Without it, raising
+   `R1_LOGPROB_SHIFT_MAX` mid-run would mean a FORK, because the launcher REFUSES to move a run's pin at a restart
+   (`worktree.resolve_pin`), and `--sync-to-main` would walk X26 onto all of HEAD.
+   - What it is: a typed trainer flag (`--canary-shift-max V`, `ModelVersion.canary_shift_max`, config v158), recorded in
+     `model_config.json` and inherited like `--trunk-precision` (a typed value wins and is what the next save records; an
+     untyped launcher restart, flagless resume or fork inherits it; a fresh run is None = the code's 0.18). It is printed
+     on every R1 rule line (`M 0.720 = 4 x shift_max 0.18 [default]`) and in every `canary_verdicts.jsonl` record
+     (`canary_shift_max` {value, source, margin}; `watch.*.clip_margin.shift_max`).
+   - It never touches training math (the K9 golden's one update is bit-identical at None, 0.72 and 25.0) and it can only
+     RAISE the constant: a value below 0.18 is refused, typed. A typed value on a launch with no compiled CUDA learner is
+     refused too (it would be silently inert).
+   - Tests (each fails on revert): `src/main/train/canary_shift_max_test.py` (resolution through a fresh launch, a same-run
+     resume, a launcher restart, a fork; the parser's refusals; the bit-identity), `src/agents/model/canary_shift_max_gate_test.py`
+     (the margin follows the model; a raised shift turns the default's refusal of a healthy-large shift into a pass; the rule
+     lines and the records carry the value). Detail: `../training/compile_flags.md` "The check-only margin override".
+   - It lands BEFORE P_X26 (the pinned tree must contain it: a pinned parser that lacks the flag refuses a resume that
+     types it, `✗ NOT IN PINNED TREE`).
 3. This commit: §4's status, the E7 coded rule (`sanity_rule.py`, committed before any seed) and §4.2. A pinned run
    does not need documentation inside its pin, but E7's rule must exist before the cross.
 
@@ -765,8 +773,8 @@ pinned before it.
 | band | s (compiled, taken action) | action |
 |---|---|---|
 | **GREEN** | s ≤ 0.144 (80 % of 0.18) | none |
-| **AMBER** | 0.144 < s ≤ 0.18 | the orchestrator STAGES the raise: a commit that sets `R1_LOGPROB_SHIFT_MAX` to s rounded UP to 2 significant digits, with headroom (≥ 1.25 s), so M = 4× it; and the delivery (the override flag of §4.1 item 2, or the fork below). Queue `scripts/ops/diag_bf16_canary.sh rb_x26_s2601` (≤ 20 min, GPU) for the next restart window: it confirms the shift is shared by eager (Ebf of the same order) and that C32 is still ≈ 0, i.e. weight growth, not compiler drift |
-| **RED** | 0.18 < s ≤ 0.72 | the 4× premise is broken, but the run is still categorically safe (no row can switch while s ≤ M). **Do not stop the run.** At the NEXT planned 6-h restart window, deliver the raised constant and run the diag in the same window. With the override: stop the run at its restart, then resume `--model <its latest checkpoint>` with the raised value, at the SAME pin, verified by `--dry-run`. Without it: fork X26's latest checkpoint into a new run dir at P_X26 + the one-constant commit. The fork carries the fork hazards (pool auto-seeded, `--lineage-run` for Tier 1, read points continue on the fork), so it is a deviation banked in Amendment 2's notes. **Never `--sync-to-main`** (it walks X26 onto all of HEAD) |
+| **AMBER** | 0.144 < s ≤ 0.18 | the orchestrator STAGES the raise: the value v = s rounded UP to 2 significant digits with headroom (≥ 1.25 s), so M = 4 v. It is a NUMBER for the run to be resumed with (`--canary-shift-max v`, §4.1 item 2, T37), not a code commit: a commit that raises `R1_LOGPROB_SHIFT_MAX` serves only FUTURE pins. Queue `scripts/ops/diag_bf16_canary.sh rb_x26_s2601` (≤ 20 min, GPU) for the next restart window: it confirms the shift is shared by eager (Ebf of the same order) and that C32 is still ≈ 0, i.e. weight growth, not compiler drift |
+| **RED** | 0.18 < s ≤ 0.72 | the 4× premise is broken, but the run is still categorically safe (no row can switch while s ≤ M). **Do not stop the run.** At the NEXT planned 6-h restart window, **resume the SAME run with `--canary-shift-max <v>`** (v as in AMBER) and run the diag in the same window: stop the run at its restart, then resume `--model <its latest checkpoint>` at the SAME pin with the flag typed, verified by `--dry-run` (it must show the pin unchanged and the flag in the child argv). The value is recorded in `model_config.json` and inherited, so every later restart keeps it; the startup gate's R1 line and every canary record then read `shift_max <v> [--canary-shift-max]`. No fork, no code commit, no pin move. (Only if the flag were unavailable in the pinned tree, the fallback is a fork of X26's latest checkpoint into a new run dir at P_X26 + the one-constant commit, with the fork hazards — pool auto-seeded, `--lineage-run` for Tier 1, read points continue on the fork — banked as a deviation in Amendment 2's notes.) **Never `--sync-to-main`** (it walks X26 onto all of HEAD) |
 | **REFUSED** | s > 0.72, or any clip-branch switch, or any canary FATAL / startup-gate refusal | FATAL_CONFIG, not restarted. Follow the documented procedure, `../training/compile_flags.md` "The bf16 canary FATAL on trained weights": the diag on the run's own checkpoints in a GPU window. A healthy-but-large shift (Ebf similar, C32 ≈ 0) means raise the constant, re-run the gate, and resume from the latest checkpoint. Cbf off the reference with NO branch flip, or C32 off at the fp32 bar, means the fixture was not the whole story: X26 continues on the fp32 trunk through an **Amendment 3** (never silently), from the SAFE ROLLBACK POINT the FATAL prints |
 
 **A second, descriptive trigger:** if `compiled` exceeds 2 × `eager` on two consecutive canaries, run the diag in the
@@ -856,7 +864,7 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 - **R6. A toy needs the pre-deletion code for a later re-run.** *Mitigation:* the `pre-legacy-deletion` tag (U0).
 - **R7. The compiled bf16 learner's log-prob shift grows with training until the canary refuses** (the toy: 0.050 → 0.110
   over 15M → 72.66M; the refusal is at 0.72). *Mitigation:* §4.2's watch, with its bands and actions, and T37's
-  check-only override so a RED read is fixed at a restart without a fork.
+  check-only override (`--canary-shift-max`, BUILT) so a RED read is fixed at a restart without a fork.
 
 ### 6.2 Questions for the owner (strategic only)
 
@@ -976,7 +984,8 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
   recommendation is X26 first).
 - **F28. A live run's pin cannot move at a restart** (`worktree.resolve_pin` refuses it, by design), and
   `--sync-to-main` moves it to all of HEAD. So any mid-run change to a CHECK constant (the canary margin) needs either a
-  check-only override flag (T37) or a fork. This should be decided before P_X26.
+  check-only override flag or a fork. **RESOLVED 2026-10-15 (T37): the flag exists** (`--canary-shift-max`, config v158;
+  §4.1 item 2) and lands before P_X26, so the RED action is a resume, not a fork.
 - **F29. Amendment 2 §A2.5's "~25 launcher restarts at 6 h (≈ 3–4 days)" is off by about 2×.** 500M at ≈ 10.3 min
   per 1M is ≈ 86 h, about 14 restarts. It is a declared-limit sentence, not a rule, so the registration is not edited.
   Its claim (Adam state resets at each restart) is unaffected.
@@ -1037,3 +1046,4 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-15 | **The GPU order W0–W5** (§4.1): s4003 finishes; then the CUDA checks of what P_X26 changed; E7's two seeds, one at a time, with **E6 read from seed 2701's updates 10–50** (no separate GPU time); ONE h2h window for E7's cross + R-T1 + R-T1b; then X26. Earliest launch Fri 10-16 ≈ 00:00–01:00 PDT | preempting s4003 (gains ~5 h, loses the third replicate); a separate E6 run; T-MLP before X26 (F27, to the owner) | §4.1; the bf16 A/B's 8 × 8 cross ≈ 1 GPU-h for 64,000 pairs |
 | 2026-10-15 | **E7's coded rule committed before any seed** (`sanity_rule.py`: PASS iff pooled Δ̂ ≥ −3.0 and each seed's ≥ −6.0, with clean run gates; rule 8: within 1e-9 of a bound is not a crossing; INCONCLUSIVE on a missing cell or gate); E7's argv = X26's with `--steps 5000000`, its own seed / name, `--snapshot-ladder-games 0`, `--pin-commit P_X26`; the s2005–s2008 references are their 5M checkpoints | `cross_stat` (it needs a square matrix; E7 is 2 × 8 and its rule is a point screen, not an interval test) | `sanity_rule.py self-check` OK (7 cases) |
 | 2026-10-15 | **THE bf16 HEADROOM WATCH** (§4.2): the watched number is `canary_verdicts.jsonl` `.watch.scheduled.clip_margin.max_abs_dlogp.compiled` (the TAKEN action's shift, the one the margin rule judges), read with one `jq` line at every 25M read point and before every planned restart. GREEN ≤ 0.144; AMBER ≤ 0.18 → stage the raised constant + the diag; RED ≤ 0.72 → deliver it at the next planned restart (the T37 override, else a fork), never stopping the run for it; REFUSED → the documented FATAL procedure, the fp32 trunk only through an Amendment 3 | "> 0.18 ⇒ re-pin at the next restart" as briefed (the launcher refuses a pin move at a restart, F28); watching the all-legal-actions maximum (not what the rule judges, F24); stopping X26 at 0.18 (the run is categorically safe below M = 0.72) | `compile_regions._clip_margin_rule`, `GradWatch.fill_margin`; the reader validated on records written by the real writer |
+| 2026-10-15 | **T37 BUILT, before P_X26: `--canary-shift-max V`, a check-only RAISE of the canary's margin constant, recorded in `model_config.json` (config v158) and inherited; the headroom watch's AMBER stages a NUMBER and its RED action is a same-run RESUME with the flag, not a fork** (resolves F28) | a code-only raise of `R1_LOGPROB_SHIFT_MAX` delivered by a fork of X26's latest checkpoint (new run dir, pool auto-seeded, Tier-1 lineage, a banked deviation); `--sync-to-main` (walks X26 onto all of HEAD); a flag that may LOWER the constant (no measured basis: 0.18 is the largest healthy shift measured); a `runtime`-class flag that is never recorded (a launcher restart would drop the raise, and a fork would not carry it) | `src/main/train/canary_shift_max_test.py` (fresh / same-run resume / launcher restart / fork; raise-only; one K9-golden update bit-identical at None, 0.72 and 25.0, with a control that moves), `src/agents/model/canary_shift_max_gate_test.py` (a raised shift turns the default margin's refusal of a healthy-large shift into a pass; the rule lines and every record carry the value); `../training/compile_flags.md` "The check-only margin override" |

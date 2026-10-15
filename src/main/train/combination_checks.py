@@ -468,6 +468,21 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "would be silently inert. Drop --learner-cudagraphs, or launch with --compile-trainer on cuda.",
         exit_style="fatal_config"),
 
+    CombinationCheck(
+        # T37 (gen3_canary_shift_max_v1): a TYPED `--canary-shift-max` moves the compiled learner's gate/canary margin. A launch
+        # with no compiled CUDA learner runs neither, so the value would be silently inert — refused, like the lever
+        # above. Only a TYPED value is judged: a value INHERITED from the parent's record (a CPU smoke of an X26 fork)
+        # is carried, not asked for.
+        "canary_shift_max_needs_the_compiled_cuda_learner",
+        ("canary_shift_max", "compile_trainer", "device", "debug"),
+        lambda a: (getattr(a, "canary_shift_max", None) is not None and _typed(a, "canary_shift_max")
+                   and (getattr(a, "compile_trainer", None) is False
+                        or _val(a, "device", "auto") == "cpu" or bool(getattr(a, "debug", False)))),
+        "--canary-shift-max moves the margin of the COMPILED learner's gate and canary on CUDA, but this launch has no "
+        "compiled CUDA learner (--no-compile-trainer, --device cpu or --debug) — the value would be silently inert. "
+        "Drop --canary-shift-max, or launch with --compile-trainer on cuda.",
+        exit_style="fatal_config"),
+
     # ---- the env core (M5 Lane G): what the Rust env core serves, refused by name -------------
     CombinationCheck(
         "rollout_target_on_the_quantum", ("rollout_target_samples", "batch_size", "n_envs"),
