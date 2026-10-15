@@ -272,7 +272,7 @@ def edge_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
 #: The END STATE (production since 2026-10-12) builds `--move-resolution on`, which RETIRES the first four
 #: cells after the build (`extractor_api.retire_superseded_action_cells`) and enters the pointer through the
 #: move-resolution family's own zero-init projections instead — the six `move_resolution_*` rows (the
-#: restored / status pairs exist only under `--move-resolution-facts full` / `--status-facts exact`, both
+#: restored / status pairs exist only under `--move-resolution-facts full` / the exact status facts, both
 #: production). Without them every `cell/*` tag went dark on the production network (2026-10-14,
 #: `diagnostics_cadence_test`).
 CELL_FAMILIES = (

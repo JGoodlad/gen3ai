@@ -160,9 +160,6 @@ SUB_HP_FRACTION = 0.25
 BELLY_DRUM_HP_FRACTION = 0.5
 #: Pursuit on a switching target: ×2 base power, and it always hits.
 PURSUIT_SWITCH_MULT = 2.0
-#: The op's own modal-roll window (`DamageOperator._rolls`: P(KO | hit) = clamp((dmg − hp) / (0.15·dmg))) — a
-#: uniform roll over [0.85, 1.0] of the max roll, the gen-3 damage rule, not a tuned threshold.
-ROLL_WINDOW = 0.15
 
 #: Abilities whose fact the family reads (revealed exactly; the Smogon species prior otherwise).
 ABILITY_INNER_FOCUS = "innerfocus"           # blocks flinch
@@ -205,7 +202,8 @@ MOVE_RESOLUTION_SWITCH_COORDS: Tuple[str, ...] = (
 MOVE_RESOLUTION_SWITCH_IDX: Dict[str, int] = {n: i for i, n in enumerate(MOVE_RESOLUTION_SWITCH_COORDS)}
 
 #: The pair-outcome coordinates the family keeps (the first 12 of `pair_outcome.PAIR_OUTCOME_COORDS`: the damage
-#: prefix and the six status identities). `neutralization` and `tempo_cost` are the two JUDGMENTS it drops.
+#: prefix and the six status identities); the two status FACTS after them reach the family through its own status
+#: projections (`MoveResolutionCell.status_move_proj`).
 PAIR_FACT_COORDS: Tuple[str, ...] = (
     "low", "high", "crit", "ko_ramp", "acc", "is_phys", "p_par", "p_brn", "p_frz", "p_slp", "p_psn", "p_tox")
 

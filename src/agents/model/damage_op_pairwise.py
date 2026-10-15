@@ -15,7 +15,6 @@ from agents.observation.constants import (
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
     POKEMON_CONDITION_OFFSET,
-    POKEMON_COUNTER_OFFSET,
 )
 from agents.model.damage_tables import (LEECH_SEED_CAT,
                                         _SLP_CAT as _SLP_STATUS_CAT)
@@ -49,7 +48,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _DMG_OAX_IDX_PKO, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MON, _DMG_OAX_PER_MOVE, _DMG_OMX,
     _DMG_OMX_CELL, _DMG_OMX_IDX_CRIT, _DMG_OMX_IDX_HIGH, _DMG_OMX_IDX_LOW, _DMG_OMX_IDX_MULT,
     _DMG_OMX_IDX_PKO, _DMG_OUTGOING, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_OUT_SEC,
-    _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN, _DMG_SPEED_SCALE,
+    _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN,
     _DMG_SPEED_STD_K, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_STATUS_REFINE, _DMG_TOPK_DEFAULT_K,
     _ELECTRIC_TIDX, _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
@@ -76,7 +75,8 @@ def toxic_next_tick(counter_cell: torch.Tensor) -> torch.Tensor:
     ``floor(maxhp/16) · stage`` — so with ``n`` ticks taken the next tick is ``min(n + 1, 15) / 16``: a fresh Toxic
     reads 1/16, the 9th tick 9/16, and the 15th-and-later 15/16 (NOT 16/16). The cell is the engine's stage over its
     true cap, so ``n`` is read exactly (it saturated at 8 before: every tick from the 9th on read as the 8th). The `g`
-    ledger (`pairwise_schedule`) and `--eot-residual` (`eot_residual.py`) both decode the cell with this one function.
+    ledger and the per-mon residual (both `eot_residual.py` since the legacy deletion's U1) decode the cell with this one
+    function.
     (It lives here, not in `damage_op_layout`: the forward's torch ops may only run from `selection_sites.FORWARD_MODULES`.)"""
     cap = float(TOXIC_STAGE_MAX)
     return torch.clamp(counter_cell * cap + 1.0, max=cap) / 16.0
@@ -111,7 +111,6 @@ class DamageOperatorPairwise:
         _damage_rolls: Callable[..., Tuple[torch.Tensor, ...]]
         _crit_p: Callable[..., Optional[torch.Tensor]]
         _crit_p_at: Callable[..., Optional[torch.Tensor]]
-        ko_exact: bool
         eot_rule: Any
         _boost_mult: Callable[..., torch.Tensor]
         _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]
@@ -119,7 +118,6 @@ class DamageOperatorPairwise:
         _sport_mult: Callable[..., torch.Tensor]
         _field_bp_mult: Callable[..., torch.Tensor]
         _chan_max: Callable[..., torch.Tensor]
-        _p_outspeed: Callable[..., torch.Tensor]
         _opp_candidate_weights: Callable[..., torch.Tensor]
         # Methods the SIBLING mixin (`damage_op_blocks.DamageOperatorBlocks`) owns — the pairwise
         # cells are built on the block kernels, so the call goes sideways across the composition.
@@ -273,32 +271,10 @@ class DamageOperatorPairwise:
         base_high = max_by_index(base[..., 1], dim=1)                                         # [B,6]
         base_pko = max_by_index(base[..., 3], dim=1)                                          # [B,6]
         # --- speed: our ACTIVE's real-spread spe (the pairwise_speed recipe) × its live stage ---
-        d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                     # [B,6,6]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE,
-                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spread[..., 0:6] * 31.0
-        ev = spread[..., 6:12] * 252.0
-        nat = spread[..., 13:18]
-        our_spe_all = (2.0 * d_base[..., _BS_SPE] + iv[..., _BS_SPE] + ev[..., _BS_SPE] / 4.0
-                       + 5.0) * nat[..., _NAT_SPE]     # FIXED 2026-08-06: was SpD (the V GIGO)
-        our_para = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
-        act_spe = (our_spe_all * (1.0 - 0.75 * our_para))[ar, ctx.our_active_idx]    # [B]
         cur_spe_stage = self._boost_stages(ctx.our_ctx_raw)[4]                       # [B]
-        opp_species = ctx.species_ids[:, opp]
-        if spread_belief is not None:
-            opp_spe = spread_belief[..., _SB_SPE]
-        else:
-            opp_spe = 2.0 * self.BASE_STATS[opp_species][..., _BS_SPE] + 31.0 + 5.0  # neutral 0-EV
-        opp_spe = self._x5_avg(opp_spe, "spe")                                      # X5: OTHER's averaged speed
-        opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
-        opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                  # [B,6]
-        if self.speed_physics:
-            # gen3_speed_physics_v1: our active's EXACT speed at its live stage (+ slot k's speed delta below) vs
-            # their six speed mixtures — the one rule (`damage_op_speed`).
-            p_base = self._p_first_active_at_stage(ctx, spread_belief, cur_spe_stage)  # [B,6]
-        else:
-            p_base = self._p_outspeed((act_spe * self._boost_mult(cur_spe_stage))[:, None],
-                                      opp_spe)                                       # [B,6]
+        # gen3_speed_physics_v1: our active's EXACT speed at its live stage (+ slot k's speed delta below) vs their
+        # six speed mixtures — the one rule (`damage_op_speed`).
+        p_base = self._p_first_active_at_stage(ctx, spread_belief, cur_spe_stage)      # [B,6]
         revealed = (~ctx.opp_believed_mask).float()                                  # [B,6]
         alive_j = (ctx.hp_and_active[:, opp, 0] > 0).float()
         _x5 = self.stash.x5
@@ -314,11 +290,7 @@ class DamageOperatorPairwise:
                                              species_probs=sp_probs)                # [B,4,6,6]
             d_high = max_by_index(boosted[..., 1], dim=1) - base_high                         # [B,6]
             d_pko = max_by_index(boosted[..., 3], dim=1) - base_pko
-            if self.speed_physics:
-                p_k = self._p_first_active_at_stage(ctx, spread_belief, cur_spe_stage + dk[:, 4])
-            else:
-                p_k = self._p_outspeed(
-                    (act_spe * self._boost_mult(cur_spe_stage + dk[:, 4]))[:, None], opp_spe)
+            p_k = self._p_first_active_at_stage(ctx, spread_belief, cur_spe_stage + dk[:, 4])
             d_spd = (p_k - p_base) * spd_gate
             ib = is_boost[:, k:k + 1].expand_as(d_high)
             hc = hp_cost[:, k:k + 1].expand_as(d_high)         # Belly Drum's half-max-HP price
@@ -337,7 +309,7 @@ class DamageOperatorPairwise:
         (selection detached, weights differentiable), de-timid offense, revealed+alive gate.
         → (w_k, bp_k, mty_k, phys_k, acc_k [B,6,K]; atk_j, spa_j, att_gate [B,6]; nf_k = 3×[B,6,K]
         (fixed, target_frac, endeavor); atk_cur_j [B,6]; bu_k [B,6,K] the 0/1 Beat Up flag; crit_k [B,6,K] the
-        candidates' crit chance under `--ko-ramp exact`, else None). `bp_k` is the
+        candidates' crit chance under the exact P(KO), else None). `bp_k` is the
         EFFECTIVE BP (each mon's HP resolved) and `nf_k` / `atk_cur_j` feed `damage_kinds.nonformula_rolls` —
         gen3_nonformula_damage_v1; `bu_k` feeds `damage_kinds.beatup_swap` — gen3_beatup_exact_v1.
 
@@ -373,18 +345,16 @@ class DamageOperatorPairwise:
         if _x5 is not None:
             att_gate = _x5.alive
         bu_k = gather_beatup(self, topk_idx)                                         # [B,6,K]
-        # gen3_endstate_facts_v1 (`--ko-ramp exact`): each candidate's crit chance (None under `ramp`).
-        crit_k = self._crit_p(topk_idx)                                              # [B,6,K] | None
+        # gen3_endstate_facts_v1 (the exact P(KO)): each candidate's crit chance.
+        crit_k = self._crit_p(topk_idx)                                              # [B,6,K]
         return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate, nf_k, atk_cur_j, bu_k, crit_k
 
     def _attacker_total(self, ctx: 'ExtractorContext',
-                        move_belief_logits: torch.Tensor) -> Optional[torch.Tensor]:
+                        move_belief_logits: torch.Tensor) -> torch.Tensor:
         """gen3_op_reduction_principled_v1: each opp mon's TOTAL move presence over the whole move axis `[B,6]`
         — the denominator of its α (`op_reduction.believed_reduce`), so a candidate cut off the kernels' top-K is
-        unpriced mass, never renormalised away. None under `--op-reduction max` (the legacy hard max needs none).
-        X5: the roster's fixed-mass presence (Σ = 4 on a full set); else the sigmoid posterior the kernels gather."""
-        if not self.op_principled:
-            return None
+        unpriced mass, never renormalised away. X5: the roster's fixed-mass presence (Σ = 4 on a full set); else
+        the sigmoid posterior the kernels gather."""
         _x5 = self.stash.x5
         if _x5 is not None:
             tot: torch.Tensor = _x5.move_w.sum(dim=-1)                                   # [B,6]
@@ -459,36 +429,18 @@ class DamageOperatorPairwise:
         is_psn = ((sidx == 5).float() - is_tox).clamp(min=0.0)                       # plain poison
         land = self.discrete_outgoing_status(ctx, per_pair=True)[..., 0]             # [B,4,6]
         # --- paralysis: their speed ×0.25 → Δ P(we outspeed) (the pairwise_speed recipe) ---
-        d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE,
-                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spread[..., 0:6] * 31.0; ev = spread[..., 6:12] * 252.0; nat = spread[..., 13:18]
-        our_spe_all = (2.0 * d_base[..., _BS_SPE] + iv[..., _BS_SPE] + ev[..., _BS_SPE] / 4.0
-                       + 5.0) * nat[..., _NAT_SPE]
-        our_para = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
-        act_spe = (our_spe_all * (1.0 - 0.75 * our_para))[ar, ctx.our_active_idx]    # [B]
-        act_spe = act_spe * self._boost_mult(self._boost_stages(ctx.our_ctx_raw)[4])
-        opp_species = ctx.species_ids[:, opp]
-        if spread_belief is not None:
-            opp_spe = spread_belief[..., _SB_SPE]
-        else:
-            opp_spe = 2.0 * self.BASE_STATS[opp_species][..., _BS_SPE] + 31.0 + 5.0
         opp_para = ctx.pokemon_part[:, opp, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
-        if self.speed_physics:
-            # gen3_speed_physics_v1: their speed mixture now vs with them paralysed (the stage stays on their
-            # active), our active's EXACT speed — the one rule (`damage_op_speed`).
-            _ours = self._our_speeds_exact(ctx)[ar, ctx.our_active_idx]                # [B]
-            _qc_u = self._our_quick_claw(ctx)[ar, ctx.our_active_idx]
-            p_now = self._p_first_vs_six(ctx, _ours, _qc_u)                              # [B,6]
-            p_par = self._p_first_vs_six(ctx, _ours, _qc_u, para=torch.ones_like(opp_para))   # [B,6]
-        else:
-            p_now = self._p_outspeed(act_spe[:, None], opp_spe * (1.0 - 0.75 * opp_para))
-            p_par = self._p_outspeed(act_spe[:, None], opp_spe * 0.25)               # [B,6]
+        # gen3_speed_physics_v1: their speed mixture now vs with them paralysed (the stage stays on their active), our
+        # active's EXACT speed — the one rule (`damage_op_speed`).
+        _ours = self._our_speeds_exact(ctx)[ar, ctx.our_active_idx]                    # [B]
+        _qc_u = self._our_quick_claw(ctx)[ar, ctx.our_active_idx]
+        p_now = self._p_first_vs_six(ctx, _ours, _qc_u)                                # [B,6]
+        p_par = self._p_first_vs_six(ctx, _ours, _qc_u, para=torch.ones_like(opp_para))   # [B,6]
         d_outspeed = (p_par - p_now)[:, None, :] * is_par[:, :, None]                # [B,4,6]
         # --- burn: mon j's worst believed PHYSICAL hit on our active, Atk halved ---
         (w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j,
          att_gate, nf_k, atk_cur_j, bu_k, crit_k) = self._believed_attackers(ctx, move_belief_logits, k_cand)
-        w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6] | None (max)
+        w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6]
         def_c, spd_c, maxhp, cur_hp, at1, at2, amul = self._active_defender(ctx)
         # gen3_beatup_exact_v1: the opp party's Σ base Atk / hit count vs OUR active's BASE Def.
         bu_S, bu_N = beatup_party_opp(self, ctx, species_probs)                      # [B], [B]
@@ -757,8 +709,7 @@ class DamageOperatorPairwise:
                               maxhp[:, None, None, None], atk_cur_j[:, None, :, None],
                               eff[:, None], acc_k[:, None], eps)
         high, _low, _crit, ko = override_rolls((high, _low, _crit, ko), nf)
-        w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6] | None (max)
-        w_tot = None if w_tot is None else w_tot[:, None]                            # [B,1,6]
+        w_tot = self._attacker_total(ctx, move_belief_logits)[:, None]               # [B,1,6]
         worst_high = believed_reduce(w_k[:, None] * high, w_tot)                    # [B,W,6]
         worst_pko = believed_reduce(w_k[:, None] * ko, w_tot)
         d_high = worst_high[:, 1:] - worst_high[:, 0:1]                              # [B,4,6]
@@ -851,7 +802,7 @@ class DamageOperatorPairwise:
                               maxhp[:, None, None, None], atk_cur_j[:, None, :, None],
                               eff[:, None], acc_k[:, None], eps)
         _h, _l, _c, ko_w = override_rolls((_h, _l, _c, ko_w), nf)
-        w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6] | None (max)
+        w_tot = self._attacker_total(ctx, move_belief_logits)                        # [B,6]
         worst_pko = believed_reduce(w_k[:, None] * ko_w,
                                     None if w_tot is None else w_tot[:, None])      # [B,W,6]
         d_pko = worst_pko[:, 1:] - worst_pko[:, 0:1]                                 # [B,4,6]
@@ -919,46 +870,15 @@ class DamageOperatorPairwise:
 
     def pairwise_speed(self, ctx: 'ExtractorContext',
                        spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """gen3_edge_bias_trunk_v1 (V): the full mon↔mon speed edge — P(our mon i outspeeds opp mon j)
-        for every (i, j) pair, `[B, TEAM_SIZE, TEAM_SIZE, 3]` = `[p_outspeed, both_alive, revealed_j]`.
-        v1 conventions (lean, mirroring `discrete_incoming`'s coarse-signal contract): NO stage boosts
-        either side (gen3 resets on switch — the active's live boost is the authoritative incoming
-        block's job), PARA folded per-mon ×0.25 from the PUBLIC condition one-hot BOTH sides. Our
-        speeds from the REAL spread reconstruction; opp speeds from the believed spread when given
-        (the prefuse SpreadBelief) else the neutral sentinel-free estimate; the uncertainty-aware
-        sigmoid (`prob_outspeed`) divides by the believed per-species speed STD. Unrevealed opp slots
-        carry the `revealed_j` channel so the head can discount the guess."""
-        # --- our 6: real spread reconstruction (the _incoming_rolls defender recipe) ---
-        d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                          # [B,6,6]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE,
-                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spread[..., 0:6] * 31.0
-        ev = spread[..., 6:12] * 252.0
-        nat = spread[..., 13:18]
-        # FIXED 2026-08-06 (the SpD-as-speed GIGO): these reads shipped as index 4 / nat[...,3]
-        # — Special Defense — so the V edge priced "outspeed" off bulk for both trained
-        # generations. Named indices now; guarded by the Aerodactyl-vs-Snorlax regression test.
-        our_spe = (2.0 * d_base[..., _BS_SPE] + iv[..., _BS_SPE] + ev[..., _BS_SPE] / 4.0
-                   + 5.0) * nat[..., _NAT_SPE]                                             # [B,6]
-        our_para = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
-        our_spe = our_spe * (1.0 - 0.75 * our_para)                                       # gen3 para ×0.25
-        # --- opp 6: believed spread else the neutral sentinel-free estimate ---
-        opp_species = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                          # [B,6]
-        if spread_belief is not None:
-            opp_spe = spread_belief[..., _SB_SPE]                                          # [B,6]
-        else:
-            opp_base = self.BASE_STATS[opp_species]                                        # [B,6,6]
-            opp_spe = 2.0 * opp_base[..., _BS_SPE] + 31.0 + 5.0                            # neutral 0-EV
-        opp_spe = self._x5_avg(opp_spe, "spe")                                             # X5: OTHER's averaged speed
-        opp_para = ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
-                                    POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]
-        opp_spe = opp_spe * (1.0 - 0.75 * opp_para)                                        # [B,6]
-        if self.speed_physics:
-            # gen3_speed_physics_v1: every (our i, their j) pair by the one rule — paralysis on every row, the
-            # stage on each side's ACTIVE row only (a bench mon's stages are reset), Quick Claw folded.
-            p = self._p_first_pairs(ctx)                                                     # [B,6,6]
-        else:
-            p = self._p_outspeed(our_spe[:, :, None], opp_spe[:, None, :])                   # [B,6,6]
+        """gen3_edge_bias_trunk_v1 (V): the full mon↔mon speed edge — P(our mon i moves first vs opp mon j)
+        for every (i, j) pair, `[B, TEAM_SIZE, TEAM_SIZE, 3]` = `[p_first, both_alive, revealed_j]`. P(first) is
+        the one speed rule (gen3_speed_physics_v1, `damage_op_speed._p_first_pairs`; the fixed-scale logistic it
+        replaced was deleted by the legacy deletion's U1). `spread_belief` is kept in the signature for the callers;
+        the rule reads the speed mixture itself. Unrevealed opp slots carry the `revealed_j` channel so the head can
+        discount the guess."""
+        # gen3_speed_physics_v1: every (our i, their j) pair by the one rule — paralysis on every row, the stage on
+        # each side's ACTIVE row only (a bench mon's stages are reset), Quick Claw folded (`damage_op_speed`).
+        p = self._p_first_pairs(ctx)                                                       # [B,6,6]
         alive_i = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()                        # [B,6]
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()           # [B,6]
         _x5 = self.stash.x5
@@ -1068,8 +988,7 @@ class DamageOperatorPairwise:
         high, _low, _crit, ko = override_rolls((high, _low, _crit, ko), nf)
         wb = w_k[:, None, :, :]
         pm = phys_k[:, None, :, :]
-        w_tot = self._attacker_total(ctx, move_belief_logits)                          # [B,6j] | None (max)
-        w_tot = None if w_tot is None else w_tot[:, None, :]                           # [B,1,6j]
+        w_tot = self._attacker_total(ctx, move_belief_logits)[:, None, :]              # [B,1,6j]
         cells = torch.stack([
             believed_reduce(wb * high * pm, w_tot), believed_reduce(wb * high * (1.0 - pm), w_tot),
             believed_reduce(wb * ko * pm, w_tot), believed_reduce(wb * ko * (1.0 - pm), w_tot),
@@ -1077,76 +996,20 @@ class DamageOperatorPairwise:
         return cells * def_alive[:, :, None, None] * att_gate[:, None, :, None]
 
     def pairwise_schedule(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor]:
-        """gen3_edge_bias_trunk_v1 (G): the per-mon END-OF-TURN HP LEDGER — what a mon bleeds or
-        heals per turn while active, delivered at the (mon, GLOBAL seat) pair like X. → `(our_cells
-        [B,6,4], opp_cells [B,6,4])`, cell (signed maxhp fractions; heal +, chip −):
+        """gen3_edge_bias_trunk_v1 (G): the per-mon END-OF-TURN HP LEDGER — what a mon bleeds or heals per turn
+        while active, delivered at the (mon, GLOBAL seat) pair like X. → `(our_cells [B,6,4], opp_cells [B,6,4])`.
 
-          * leftovers  — +1/16 (our item exact; opp REVEALED item exact, unrevealed 0 — the
-            leftovers usage prior is a documented follow-up, the CB p_cb pattern)
-          * weather    — −1/16 sand (Rock/Ground/Steel immune) / hail (Ice immune), from the live
-            weather one-hot [NONE, SUN, RAIN, SAND, HAIL]
-          * status     — −1/8 burn/poison; Toxic charged FLAT −1/8 in v1 (the ramp needs the toxic
-            STAGE, an E2 follow-up — documented approximation)
-          * leech      — −1/8 for the mon CURRENTLY seeded (ACTIVES only, correctly: Leech Seed is
-            an active volatile and clears on switch; the drained credit side is deliberately NOT
-            cross-charged — cross-mon maxhp scaling is a GIGO trap, the head composes it)
-        Alive-gated; opp weather/status legs revealed-gated (unknown types/condition provenance)."""
-        if self.eot_rule is not None:
-            # gen3_endstate_facts_v1 (`--g-ledger eot`): THE end-of-turn rule (`eot_residual.EotResidualRule`, the one
-            # `--eot-residual` reads) grouped into the ledger's four columns (`eot_residual.g_cells`). Their side is
-            # gated as the rule gates it: alive × concrete (X5: the roster's), and the roster's alive under X5.
-            from agents.model.eot_residual import g_cells
-            _x5g = self.stash.x5
-            our_g, opp_g = g_cells(self.eot_rule(ctx, self, None if _x5g is None else _x5g.concrete))
-            if _x5g is not None:
-                opp_g = opp_g * _x5g.alive[:, :, None]
-            return our_g, opp_g
-        B, device = ctx.batch_size, ctx.device
-        ar = torch.arange(B, device=device)
-        from agents.model.damage_tables import _T2I
-        LEFTOVERS_NUM = 234
-        sand = ctx.weather_feature[:, 3:4]                                        # [B,1]
-        hail = ctx.weather_feature[:, 4:5]
-
-        def _side(sl: slice, ctx_raw: torch.Tensor, active_local: torch.Tensor,
-                  exact_side: bool) -> torch.Tensor:
-            types1 = ctx.type1_ids[:, sl]
-            types2 = ctx.type2_ids[:, sl]
-            def _has(tname: str) -> torch.Tensor:
-                ti = _T2I[tname]
-                return ((types1 == ti) | (types2 == ti)).float()                  # [B,6]
-            sand_immune = (_has("ROCK") + _has("GROUND") + _has("STEEL")).clamp(max=1.0)
-            hail_immune = _has("ICE")
-            weather = -(1.0 / 16.0) * (sand * (1.0 - sand_immune) + hail * (1.0 - hail_immune))
-            items = ctx.item_ids[:, sl]
-            lefties = (items == LEFTOVERS_NUM).float() * (1.0 / 16.0)             # revealed-exact
-            cond = ctx.pokemon_part[:, sl,
-                                    POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7]
-            # Burn/poison flat −1/8; TOXIC now carries its RAMP (owner-prioritized 2026-08-06):
-            # the obs toxic counter (min(stage,15)/15, PUBLIC both sides; it saturated at 8 until config v151) →
-            # the NEXT tick costs min(stage+1, 15)/16 — a fresh Toxic reads −1/16, a 5-turn one −6/16, a 12-turn
-            # one −13/16. The old flat −1/8 under-priced late-stall Toxic 3-4× (the CurseLax/stall war fact).
-            tox_next = toxic_next_tick(ctx.pokemon_part[:, sl, POKEMON_COUNTER_OFFSET + 1])    # [B,6]
-            status = (-(1.0 / 8.0) * (cond[..., _COND_BRN_IDX] + cond[..., 5])
-                      - cond[..., 6] * tox_next)
-            leech_active = ctx_raw[:, _BOOSTS_DIM + _LEECH_SEED_CTX_SLOT]         # [B] active volatile
-            leech = torch.zeros(B, TEAM_SIZE, device=device)
-            leech[ar, active_local] = -(1.0 / 8.0) * (leech_active > 0.5).float()
-            alive = (ctx.hp_and_active[:, sl, 0] > 0).float()
-            cells = torch.stack([lefties, weather.expand(-1, TEAM_SIZE) if weather.shape[1] == 1
-                                 else weather, status, leech], dim=-1)            # [B,6,4]
-            if not exact_side:
-                revealed = (1.0 - ctx.opp_believed_mask.float())[:, :, None]
-                _x5 = self.stash.x5
-                if _x5 is not None:      # X5 (U3 part 3): a hypothesis's types are its species'
-                    revealed, alive = _x5.concrete[:, :, None], _x5.alive
-                cells = cells * revealed
-            return cells * alive[:, :, None]
-
-        our_cells = _side(slice(0, TEAM_SIZE), ctx.our_ctx_raw, ctx.our_active_idx, True)
-        opp_cells = _side(slice(TEAM_SIZE, 2 * TEAM_SIZE), ctx.opp_ctx_raw,
-                          ctx.opp_active_local, False)
-        return our_cells, opp_cells
+        gen3_endstate_facts_v1: THE end-of-turn rule (`eot_residual.EotResidualRule`, the one the per-mon residual
+        fact reads) grouped into the ledger's four columns (`eot_residual.g_cells`). Their side is gated as the rule
+        gates it: alive × concrete (X5: the roster's), and the roster's alive under X5. (The op's own coarser ledger
+        — flat weather / status / Leech legs — was a second end-of-turn rule; the legacy deletion's U1 deleted it.)"""
+        from agents.model.eot_residual import g_cells
+        _x5g = self.stash.x5
+        our_g, opp_g = g_cells(self.eot_rule(ctx, self, None if _x5g is None else _x5g.concrete,
+                                             None if _x5g is None else _x5g.alive))
+        if _x5g is not None:
+            opp_g = opp_g * _x5g.alive[:, :, None]
+        return our_g, opp_g
 
     _PROTECT_NUMS = (182, 197, 203)   # protect / detect / endure (pinned by trap_edges_test)
 
@@ -1235,8 +1098,9 @@ class DamageOperatorPairwise:
           * entry_chip — gen3 Spikes on the mon's OWN entry side (1/2/3 layers → 1/8, 1/6, 1/4 of
             maxhp), grounded-gated (Flying / Levitate immune; opp Levitate revealed-exact else the
             SPECIES_TRAP_PRIOR levitate column — the T-family fold, reused).
-          * pursuit_p — P(the OTHER side carries Pursuit): vs OUR mons the belief-composed max over
-            alive opp slots (revealed rides pinned ≈1); vs OPP mons exact (our movesets are known).
+          * pursuit_p — P(the OTHER side carries Pursuit): vs OUR mons the noisy-OR over the alive opp slots'
+            believed Pursuit presence (revealed rides pinned ≈1; X5: × each mon's presence, and OTHER); vs OPP mons
+            exact (our movesets are known).
           * pursuit_eff — Dark effectiveness at the victim's types (decorrelated from p).
         Victim-alive-gated; opp cells revealed-gated (unknown types). The "switching is not free"
         facts, attention-composable with every mon token via the global seat."""
@@ -1251,23 +1115,15 @@ class DamageOperatorPairwise:
         _x5 = self.stash.x5
         if _x5 is None:
             w_all = torch.sigmoid(move_belief_logits) * self.HP_CAND_MASK[None, None, :]  # [B,6,M]
-            p_pur_vs_us = (noisy_or(w_all[:, :, pur] * alive_j, keepdim=True) if self.op_principled
-                           else max_by_index(w_all[:, :, pur] * alive_j, keepdim=True))     # [B,1]
+            p_pur_vs_us = noisy_or(w_all[:, :, pur] * alive_j, keepdim=True)                 # [B,1]
         else:
-            # X5 (U3 part 3): a class-M max over the opponent MONS (§9 M2 = C) — each live mon's Pursuit
-            # presence (its fixed-mass move presence; 1 revealed) scaled by the MON's presence (1 revealed,
-            # π a hypothesis).
+            # X5 (U3 part 3) + gen3_op_reduction_principled_v1: P(SOME mon of theirs holds Pursuit) — the noisy-OR
+            # over the opponent MONS (and OTHER, presence 1 − Π(1 − π)) of each live mon's Pursuit presence (its
+            # fixed-mass move presence; 1 revealed) scaled by the MON's presence (1 revealed, π a hypothesis).
             alive_j = _x5.alive
-            if self.op_principled:
-                # gen3_op_reduction_principled_v1: P(SOME mon of theirs holds Pursuit) — the noisy-OR over the
-                # mons (and OTHER) of the same presence products the max read; max kept the likeliest holder's.
-                p_pur_vs_us = noisy_or(_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j, keepdim=True)
-                if _x5.other_any is not None:
-                    p_pur_vs_us = 1.0 - (1.0 - p_pur_vs_us) * (1.0 - (_x5.other_any * _x5.other_pursuit)[:, None])
-            else:
-                p_pur_vs_us = max_by_index(_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j, keepdim=True)
-                if _x5.other_any is not None:   # OTHER enters the max with presence 1 − Π(1 − π) (F4 (b))
-                    p_pur_vs_us = torch.maximum(p_pur_vs_us, (_x5.other_any * _x5.other_pursuit)[:, None])
+            p_pur_vs_us = noisy_or(_x5.slot_pi * _x5.move_w[:, :, pur] * alive_j, keepdim=True)
+            if _x5.other_any is not None:
+                p_pur_vs_us = 1.0 - (1.0 - p_pur_vs_us) * (1.0 - (_x5.other_any * _x5.other_pursuit)[:, None])
         we_have_pur = ((ctx.all_move_ids[:, :TEAM_SIZE] == pur).any(-1).float()
                        * alive_i).amax(dim=-1, keepdim=True)                      # [B,1]
         eff_i = self.CHART[ctx.type1_ids[:, :TEAM_SIZE]][..., dark]                 * self.CHART[ctx.type2_ids[:, :TEAM_SIZE]][..., dark]             # [B,6]

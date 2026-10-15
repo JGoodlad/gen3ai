@@ -12,7 +12,9 @@ about 1–4 pp, inside δ. Per the owner, legacy is KEPT (no deletion) until a C
 equivariant (`gen3_static_port_v1`, config v147, §12), with two narrow facts behind their own flags (`--mon-hazard-cost`,
 `--move-actor-state`, OFF), for the bundle screen after the perf phase.** **The static-RECOVERY levers are built
 (`gen3_static_recovery_v1`, config v150, §13: `--trunk-layers`, `--switch-hazard-cost`, `--eot-residual`, OFF) with ONE
-combined arm, `--arch static_recovery`, the closing-test candidate, to be bisected lever by lever.** Stage 1 (`gen3_static_tokens_v1`, config v139: the per-mon encoder, S + D,
+combined arm, `--arch static_recovery`, the closing-test candidate, to be bisected lever by lever.** (All of this is
+PRODUCTION since the end state's adoption, 2026-10-12; the arm was deleted in legacy deletion U0 and
+`--switch-hazard-cost` / `--eot-residual` in U1, 2026-10-15 — their facts are built whenever the damage op is.) Stage 1 (`gen3_static_tokens_v1`, config v139: the per-mon encoder, S + D,
 and the X5 table gather) takes board context OUT of the per-mon tokens. Stage 2 (`gen3_static_board_v1`, config
 v140, §4: the three board tokens SIDE ×2 + FIELD, the edge retargets, the readers, and the per-mon op content
 on both sides, from the entity-coverage audit) gives that context its new home. **`static` is now buildable
@@ -782,7 +784,9 @@ commit as the proof. Cost, R vs legacy (production): `train_ms` +14.8 %, `Update
 
 The owner kept legacy until a CLOSING test (Decision record, 2026-10-09) and asked for the static RECOVERY levers to be
 tried first: *"run all of them speculatively together and then we can bisect them out."* This section is the as-built
-arm. Every lever is its own flag, OFF in production; with all of them off the build is byte-identical (§13.5).
+arm as it was built: every lever its own flag, OFF in production then; with all of them off the build was byte-identical
+(§13.5). **Status now:** production since the end state's adoption (2026-10-12); since legacy deletion U1 (2026-10-15)
+§13.2 and §13.3 have NO flag — built whenever the damage op is — and `--trunk-layers` is kept as a capacity knob (D-LD6).
 
 **13.1 Trunk depth, `--trunk-layers N`** (`agents/model/trunk_depth.py`; N ∈ {2, 3, 4}, production 2). The diagnostic's
 H3: under `static` board facts reach a mon token mostly at the LAST of two rounds, leaving no round to combine them
@@ -891,7 +895,12 @@ finding 7, each behind its own flag, OFF in production (ARCHITECTURE "the FACT-C
 | `--move-target-state on` (v153) | their active's HP + status onto our E3 seats (row 13; `--move-actor-state`'s sibling) | +1,024 |
 | `--move-set-closure on` (v154) | every non-active opponent slot's move-belief reinjection reads its fixed-mass presence at k = 4 − revealed (the four-move fact; `design_hand_computed_features.md` §4 rank 15; added 2026-10-10, a pre-data amendment of the closing test) | 0 |
 
-**`--arch endstate`** = `static_recovery` + `--move-resolution on --speed-physics on --value-threat-inject off
+**Status now (legacy deletion U1, 2026-10-15):** `--status-facts`, `--ko-ramp`, `--g-ledger` and `--effective-stats`
+(with `--speed-physics` and `--op-reduction` of the bundle) are DELETED flags — their adopted behaviour is built whenever
+the damage op is, and the table above is the as-built record. `--arch endstate` is an alias of `--arch production`
+whose overlay holds the 11 keys that still have a flag (`designs/ops/legacy_deletion_manifest_2026-10-12.md`).
+
+**`--arch endstate` (as declared 2026-10-09)** = `static_recovery` + `--move-resolution on --speed-physics on --value-threat-inject off
 --op-reduction principled --obs-facts v1` + the five + `--effective-stats on --move-target-state on` (v153) +
 `--move-set-closure on` (v154), on the production recipe. Measured (CPU; `research_state/
 measurements/endstate_facts_2026-10-09/`): flags off, production / `static` / `static_recovery` / E keep the parent's
@@ -948,3 +957,4 @@ against E at the same commit.
 | 2026-10-10 | **`--arch endstate` gains `--move-set-closure on`** (v154, the four-move fact in the move belief's reinjection; owner 2026-10-10 "Do A", a PRE-DATA amendment of the closing test) | §14's arm = the previous overlay + `move_set_closure on`; no parameter (2,031,460 extractor params, state sha unchanged), one dynamo graph (`42ee361b11fa5a8d`), no undeclared K9(b) op | a separate screen of the closure after the closing test | `design_endstate_closing_test.md` Decision record; `measurements/endstate_closing_test_2026-10-09/p_end_2026-10-10/` |
 | 2026-10-12 | **ADOPTED as part of the END STATE (the closing test's PASS)** | `--token-encoding static` with every recovery lever (§13) and the end-state levers (§14) is PRODUCTION: `designs/production_config.json` took the `--arch endstate` overlay (Δ̂ +0.596 pp, 90 % [−0.723, +1.915], `design_endstate_closing_test.md` §9). `--arch endstate` is an alias of production; `--arch static_recovery` is redeclared against the new production (its six keys + the other thirteen at their pre-adoption values, `arch_arms.PRE_ADOPTION_PRODUCTION`). The legacy encoding stays in code only until the legacy deletion (`designs/ops/legacy_deletion_manifest_2026-10-12.md`). Which recovery lever carries the screen's −2.32 pp back is NOT known (no bisection: the bundle passed) | keeping legacy as production; adopting `static` alone (its screen read NOT DETECTED) | ledger 2026-10-12 MEASUREMENT (MAJOR) + BUILT "THE END STATE IS PRODUCTION" |
 | 2026-10-15 | **`--arch static_recovery` DELETED** (legacy deletion U0, `designs/ops/legacy_deletion_manifest_2026-10-12.md` G1 / D-LD3, the orchestrator's default under the owner's PASS program, owner may override before U3 lands) | keeping the arm (it can only be expressed while every OFF value it names exists, F-LD-3) | the closing test PASSED without its bisection rung C1 (§13.4); `main.train.arch_arms.DELETED_ARMS` refuses it with the reason |
+| 2026-10-15 | **Legacy deletion U1: eight op levers lose their flag** (config v156; `designs/ops/legacy_deletion_manifest_2026-10-12.md` lane OP) | §13.2 / §13.3 (`--switch-hazard-cost`, `--eot-residual`), §14's `--status-facts`, `--ko-ramp`, `--g-ledger`, `--effective-stats` and the bundle's `--speed-physics` / `--op-reduction` are DELETED with their OFF paths; the adopted facts are built whenever the damage op is (D-LD2). `--arch endstate`'s overlay shrinks to 11 keys. §13 / §14 stay as the as-built record | keeping the OFF paths for a bisection (D-LD4: any ablation runs pinned at `pre-legacy-deletion`) | K9 learner golden byte-identical |

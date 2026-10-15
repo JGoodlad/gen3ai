@@ -36,20 +36,31 @@ ALL_UNITS = frozenset({"U1", "U2", "U3", "U4"})
 SEVEN = ("intent_move_cell", "intent_threshold", "intent_conditional", "pair_outcome_cell", "pair_outcome_switch",
          "switch_branch_cell", "conditional_threat_cell")
 
-#: The T-ENT toy's ablation set (`design_x26_readiness.md` §3.2, `rb_toy_ent_s4001`), on CPU for a test build.
+#: The T-ENT toy's ablation set (`design_x26_readiness.md` §3.2, `rb_toy_ent_s4001`), on CPU for a test build — as it
+#: parses at HEAD: U1 deleted eight of its flags (`--speed-physics off --op-reduction max --switch-hazard-cost off
+#: --eot-residual off --status-facts off --ko-ramp ramp --g-ledger coarse --effective-stats off`), which the PINNED toy
+#: still types; `PRE_U1_TOY_OFF` re-adds their recorded values to simulate a checkpoint the pinned toy wrote.
 TOY_ARGV = (
     "--arch production --allow-nonproduction-arch --steps 1 --device cpu "
     "--unified-moves off --no-damage-op --no-damage-outgoing --damage-matrices off --damage-topk 0 "
     "--move-belief-mode off --no-move-prior-fusion --no-move-latent --opp-belief-aux-coef 0 --opp-belief-cls-k 0 "
     "--opp-intent-coef 0 --no-item-belief --no-spread-belief --no-spread-belief-nature --no-t0-species-prior "
     "--no-species-prior-fusion --entity-topk-seats 0 --no-entity-tail-seats --edge-bias-families off "
-    "--no-history-events --no-value-entity-pool --no-value-entity-pool-full --move-resolution off --speed-physics off "
-    "--op-reduction max --mon-hazard-cost off --trunk-layers 2 --switch-hazard-cost off --eot-residual off "
-    "--move-resolution-facts off --status-facts off --ko-ramp ramp --g-ledger coarse --effective-stats off "
+    "--no-history-events --no-value-entity-pool --no-value-entity-pool-full --move-resolution off "
+    "--mon-hazard-cost off --trunk-layers 2 "
+    "--move-resolution-facts off "
     "--move-set-closure off --no-intent-move-cell --no-intent-threshold --no-intent-conditional "
     "--no-pair-outcome-cell --no-pair-outcome-switch --no-switch-branch-cell --no-conditional-threat-cell "
     "--no-op-drop-renders --no-op-believed-lean --move-belief-coef 0 --move-belief-latent-coef 0 "
     "--spread-belief-coef 0 --item-belief-coef 0 --hp-type-belief-coef 0").split()
+
+
+#: The U1 fields as every PRE-U1 non-adopted config recorded them (the pre-adoption production surface and the pinned
+#: toy alike): their OFF values. Frozen here because U1 deleted them from the mirror, the registry and
+#: `PRE_ADOPTION_PRODUCTION`.
+PRE_U1_TOY_OFF: Dict[str, Any] = {
+    "speed_physics": "off", "op_reduction": "max", "switch_hazard_cost": "off", "eot_residual": "off",
+    "status_facts": "off", "ko_ramp": "ramp", "g_ledger": "coarse", "effective_stats": "off"}
 
 
 def _mirror() -> Dict[str, Any]:
@@ -58,9 +69,10 @@ def _mirror() -> Dict[str, Any]:
 
 
 def _legacy_raw() -> Dict[str, Any]:
-    """The PRE-ADOPTION production surface (the closing test's P arm) as a recorded config."""
+    """The PRE-ADOPTION production surface (the closing test's P arm, config v153) as a recorded config: the mirror at
+    `PRE_ADOPTION_PRODUCTION` + the U1 fields at their OFF values, stamped v153."""
     from main.train.arch_arms import legacy_production_config
-    return legacy_production_config(_mirror())
+    return dict(legacy_production_config(_mirror()), **PRE_U1_TOY_OFF, config_version=153)
 
 
 @functools.lru_cache(maxsize=None)
@@ -83,7 +95,9 @@ def test_the_table_is_the_manifests_25_fields_at_the_mirrors_values():
     assert len(fields) == len(set(fields)) == 25
     overlay = arm_overlay("endstate")
     assert set(overlay) - set(fields) == {"trunk_layers"}, "D-LD6: trunk depth is KEPT, every other key is deleted"
-    assert set(fields) - set(overlay) == set(SEVEN)
+    landed = {r.field for r in AL.landed()}
+    assert not landed & set(overlay), "a landed unit's keys leave the `endstate` overlay (D-LD3)"
+    assert set(fields) - set(overlay) == set(SEVEN) | landed
     mirror = _mirror()
     for r in AL.PLANNED:
         if r.field in mirror:          # a landed unit's field leaves the mirror
@@ -153,12 +167,46 @@ def test_the_pre_adoption_surface_is_refused_on_every_lever_its_network_built():
 
 
 def test_an_absent_field_reads_as_the_pre_version_off_value():
-    raw = _mirror()
+    raw = dict(_mirror(), **PRE_U1_TOY_OFF, config_version=155)
+    for f in PRE_U1_TOY_OFF:
+        raw[f] = next(r.adopted for r in AL.PLANNED if r.field == f)   # a pre-U1 ADOPTED config (the E arm, v154)
+    assert AL.active_levers(raw, units=ALL_UNITS) == []
     del raw["status_facts"]                    # a config older than the lever
     assert [r.field for r in AL.active_levers(raw, units=ALL_UNITS)] == ["status_facts"]
     raw = _mirror()
     del raw["value_threat_inject"]             # absent = False = adopted: nothing to refuse
     assert AL.active_levers(raw, units=ALL_UNITS) == []
+
+
+def test_an_absent_field_in_a_config_written_after_its_unit_reads_as_adopted():
+    """U1's landing: a v156 config cannot record a U1 field (that code builds only the adopted value), so an absent one
+    reads ADOPTED — reading it as the pre-version OFF value refused every post-U1 checkpoint that built the op (the
+    production mirror itself). Fails if `absent_value` stops consulting `UNIT_VERSIONS`."""
+    raw = _mirror()
+    assert raw["config_version"] >= AL.UNIT_VERSIONS["U1"] and raw["damage_op"] is True
+    assert not set(PRE_U1_TOY_OFF) & set(raw), "the mirror no longer records U1's fields"
+    assert AL.active_levers(raw) == []
+    old = dict(raw, config_version=AL.UNIT_VERSIONS["U1"] - 1)       # the same record claiming to be pre-U1
+    assert {r.field for r in AL.active_levers(old)} == set(PRE_U1_TOY_OFF)
+    # the ZIP side carries no version: an absent kwarg is left to the config judge (no refusal, nothing to pop)
+    fek = {k: v for k, v in raw.items() if k != "config_version"}
+    assert AL.judge_pickled_kwargs(fek) is False
+
+
+def test_the_production_mirror_loads_through_the_migration():
+    """The full config path (`_migrate_config` -> `ModelVersion(**data)`, what `from_json_file` runs) on the post-U1
+    mirror: no refusal."""
+    mv = _load(_mirror())
+    assert mv.config_version >= AL.UNIT_VERSIONS["U1"]
+
+
+def _load(raw: Dict[str, Any]) -> Any:
+    """`ModelVersion.from_json_file`'s body on a dict (the mirror's hand-edited `recipe` block is not a field)."""
+    from agents.model.model_version import ModelVersion
+    from agents.model.model_version.migrations import _migrate_config
+    data = copy.deepcopy(raw)
+    data.pop("recipe", None)
+    return ModelVersion(**_migrate_config(data))
 
 
 def test_a_lever_without_its_prerequisites_is_vacuous_whatever_it_recorded():
@@ -172,9 +220,11 @@ def test_a_lever_without_its_prerequisites_is_vacuous_whatever_it_recorded():
 def test_the_toy_t_ent_resolved_config_is_inactive_on_every_lever():
     """The readiness doc's U0 requirement: a pre-deletion T-ENT checkpoint loads at post-deletion HEAD."""
     a = _toy_args()
-    assert a.damage_op is False and a.move_resolution == "off" and a.speed_physics == "off"    # the toy as declared
+    assert a.damage_op is False and a.move_resolution == "off"                                # the toy as declared
     raw = {k: v for k, v in vars(a).items() if not k.startswith("_")}
     assert AL.active_levers(raw, units=ALL_UNITS) == []
+    # the PINNED toy's own record (it still types the eight U1 flags at their OFF values): vacuous, never refused
+    assert AL.active_levers(dict(raw, **PRE_U1_TOY_OFF, config_version=155), units=ALL_UNITS) == []
 
 
 @pytest.fixture(scope="module")
@@ -188,17 +238,24 @@ def toy_snapshot(tmp_path_factory):
 
 def test_a_toy_checkpoint_loads_with_every_unit_judged(toy_snapshot, monkeypatch):
     """A REAL toy build: its model_config.json passes the config refusal and its pickled extractor kwargs pass the zip
-    judge, with every unit's rows in force; the same judge refuses the pre-adoption surface."""
+    judge, with every unit's rows in force — both as HEAD wrote them and as the PINNED toy (`rb_toy_ent_s4001` @
+    `3899277a`, which records U1's eight fields at their OFF values) writes them (the VACUITY rule: no damage op, so
+    none of U1's levers was built); the same judge refuses the pre-adoption surface."""
     model, _zp, cfg = toy_snapshot
     monkeypatch.setattr(AL, "LANDED_UNITS", ALL_UNITS)
     monkeypatch.setattr(AL, "UNIT_VERSIONS", {u: 999 for u in ALL_UNITS})
     monkeypatch.setattr(RL, "RETIRED", RL.RETIRED + RL._adopted_rows())
     raw = json.loads(cfg.read_text())
-    assert raw["damage_op"] is False and raw["speed_physics"] == "off"
+    assert raw["damage_op"] is False and "speed_physics" not in raw
     RL.refuse_structural(raw)                                    # no raise
     RL.check_no_retired_levers(str(cfg))                         # no raise: a resume / fork is not refused either
-    fek = dict(model.policy_kwargs["features_extractor_kwargs"])
-    assert fek.get("op_reduction") == "max"
+    pinned = dict(raw, **PRE_U1_TOY_OFF, config_version=155)     # the pinned toy's record
+    RL.refuse_structural(pinned)                                 # no raise
+    pinned_cfg = cfg.parent / "pinned_model_config.json"
+    pinned_cfg.write_text(json.dumps(pinned))
+    RL.check_no_retired_levers(str(pinned_cfg))                  # no raise
+    _load(pinned)                                                # the full migration: the eight fields pop
+    fek = dict(model.policy_kwargs["features_extractor_kwargs"], **PRE_U1_TOY_OFF)
     assert AL.judge_pickled_kwargs(fek) is True and "op_reduction" not in fek and "speed_physics" not in fek
     from agents.model.model_version import ModelVersionError
     with pytest.raises(ModelVersionError, match="pre-legacy-deletion"):

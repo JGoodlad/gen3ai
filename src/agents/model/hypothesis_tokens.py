@@ -37,7 +37,6 @@ import torch
 
 from agents.model.extractor_ctx import ExtractorContext, slice_pokemon_categoricals
 from agents.model.hypothesis_set import HypothesisSet
-from agents.model.index_max import max_by_index
 from agents.model.op_reduction import believed_reduce
 from agents.observation.constants import TEAM_SIZE
 
@@ -215,23 +214,18 @@ def fixed_mass_moves(moves: Any, active_typed_logits: torch.Tensor) -> FixedMass
 
 
 def other_move_cells(fm: FixedMassMoves, move_bp: torch.Tensor, move_acc: torch.Tensor,
-                     move_phys: torch.Tensor, principled: bool = False) -> torch.Tensor:
+                     move_phys: torch.Tensor) -> torch.Tensor:
     """[B,4] the opponent ACTIVE's E5 tail seat as OTHER_move (§3.1): ``[p_tail, worst_phys,
     worst_spec, revealed]`` with ``p_tail`` = OTHER_move's mass Σ_beyond π_m (no clamp — an expected
-    count) and the worst-case features a PRESENCE-SCALED max over OTHER_move's members (class M,
-    §9 M2 = C): max_m π_m · BP/150 · acc on each category channel. ``revealed`` = 1 (the active is).
-    ``principled`` (`--op-reduction principled`, gen3_op_reduction_principled_v1): the two features are the tail's
-    α-weighted EXPECTATION instead, ``Σ_m u_m · BP/150 · acc`` on each channel with ``u`` the tail presence
-    renormalised (OTHER_move's pricing weights; ``p_tail`` carries the mass)."""
+    count) and the two "worst" features the tail's α-weighted EXPECTATION (gen3_op_reduction_principled_v1),
+    ``Σ_m u_m · BP/150 · acc`` on each category channel with ``u`` the tail presence renormalised (OTHER_move's
+    pricing weights; ``p_tail`` carries the mass). ``revealed`` = 1 (the active is). (The presence-scaled max
+    these read before was deleted by the legacy deletion's U1.)"""
     score = torch.where(fm.beyond, fm.w_all, torch.zeros_like(fm.w_all)) \
         * (move_bp / 150.0) * move_acc                                            # [B,M]
-    if principled:
-        w_tot = torch.where(fm.beyond, fm.w_all, torch.zeros_like(fm.w_all)).sum(dim=-1)
-        worst_phys = believed_reduce(score * move_phys, w_tot)
-        worst_spec = believed_reduce(score * (1.0 - move_phys), w_tot)
-    else:
-        worst_phys = max_by_index(score * move_phys)
-        worst_spec = max_by_index(score * (1.0 - move_phys))
+    w_tot = torch.where(fm.beyond, fm.w_all, torch.zeros_like(fm.w_all)).sum(dim=-1)
+    worst_phys = believed_reduce(score * move_phys, w_tot)
+    worst_spec = believed_reduce(score * (1.0 - move_phys), w_tot)
     return torch.stack([fm.other_mass.to(score.dtype), worst_phys, worst_spec,
                         torch.ones_like(worst_phys)], dim=-1)
 
@@ -397,24 +391,20 @@ def build_op_roster(hb: Any, ctx: ExtractorContext, hctx: ExtractorContext, hs: 
 
 
 def bench_tail_cells(ro: OpRoster, K: int, move_bp: torch.Tensor, move_acc: torch.Tensor,
-                     move_phys: torch.Tensor, principled: bool = False) -> torch.Tensor:
+                     move_phys: torch.Tensor) -> torch.Tensor:
     """[B,6,4] every opponent mon's E5 tail seat under fixed_mass (§3.1: "the bench mons' E5 seats keep
     their features, from their own slot's move posterior"), made presence-aware: the tail is the mon's
     moves BEYOND rank ``K`` of its one order (the E4 cut), ``p_tail`` their summed presence (an expected
-    count, unclamped — OTHER_move's rule), ``worst_*`` a presence-scaled max over them (class M, §9 M2 =
-    C), ``revealed`` the slot's revealed bit is filled by the caller. (The active's row is OTHER_move,
-    `other_move_cells`.) ``principled`` (`--op-reduction principled`): ``worst_*`` are the tail's α-weighted
-    EXPECTATION, ``Σ_m u_m · BP/150 · acc`` per channel with ``u`` the mon's tail presence renormalised."""
+    count, unclamped — OTHER_move's rule), ``worst_*`` the tail's α-weighted EXPECTATION
+    (gen3_op_reduction_principled_v1), ``Σ_m u_m · BP/150 · acc`` per channel with ``u`` the mon's tail presence
+    renormalised, ``revealed`` the slot's revealed bit is filled by the caller. (The active's row is OTHER_move,
+    `other_move_cells`.)"""
     tail = ro.move_rank >= K                                                        # [B,6,M]
     tw = torch.where(tail, ro.move_w, torch.zeros_like(ro.move_w))
     score = tw * (move_bp / 150.0) * move_acc
-    if principled:
-        w_tot = tw.sum(dim=-1)
-        worst_phys = believed_reduce(score * move_phys, w_tot)
-        worst_spec = believed_reduce(score * (1.0 - move_phys), w_tot)
-    else:
-        worst_phys = max_by_index(score * move_phys)
-        worst_spec = max_by_index(score * (1.0 - move_phys))
+    w_tot = tw.sum(dim=-1)
+    worst_phys = believed_reduce(score * move_phys, w_tot)
+    worst_spec = believed_reduce(score * (1.0 - move_phys), w_tot)
     return torch.stack([tw.sum(-1), worst_phys, worst_spec], dim=-1)               # [B,6,3]
 
 
@@ -430,7 +420,7 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
       defender's KO is a threshold of averaged stats — exactly the blob);
     * attacker: ``att_base`` = E[base stats] (atk / spa / max-HP are linear in them, so f(E[base]) = E[f]),
       ``has_type`` = E[STAB indicator] per move type, ``spe`` = E over the spread prior's mean (audit F7a, completed
-      at the version break's part 5: no speed-SPREAD average — `--speed-physics on` reads the tail's discrete
+      at the version break's part 5: no speed-SPREAD average — the speed rule reads the tail's discrete
       Smogon speed mixture, `gen3_speed_mixture_v1`, and `off` the mean alone);
     * moves: the PARAMETER-FREE E10 mixture over ``P_tail`` (`MoveBelief.hidden_slot_prior_logits`, the
       blob's hidden-slot prior) through the same k = 4 fixed-size construction and one order as every mon.

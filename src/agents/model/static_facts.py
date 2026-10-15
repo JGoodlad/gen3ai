@@ -46,8 +46,8 @@ MON_HAZARD_DIM = 2
 #: [current HP fraction] ⊕ the status one-hot [None, BRN, PAR, SLP, FRZ, PSN, TOX].
 MOVE_ACTOR_DIM = 1 + CONDITION_DIM
 
-#: `--effective-stats` / `--move-target-state` (`gen3_probe_facts_v1`, config v153): the legal values (``off`` builds nothing).
-EFFECTIVE_STATS_MODES = ("off", "on")
+#: `--move-target-state` (`gen3_probe_facts_v1`, config v153): the legal values (``off`` builds nothing). (Its sibling
+#: `--effective-stats` was DELETED by the legacy deletion's U1: the effective stats are built whenever the op is.)
 MOVE_TARGET_STATE_MODES = ("off", "on")
 #: The effective-stat columns of an ACTIVE mon: its Atk / Def / SpA / SpD / Spe after the stat stages (Spe also after
 #: paralysis), ÷ `STATIC_STAT_SCALE`, then its accuracy and evasion stage multipliers.
@@ -56,9 +56,9 @@ EFFECTIVE_STATS_DIM = len(EFFECTIVE_STATS_FACTS)
 #: [their active's current HP fraction] ⊕ its status one-hot — the TARGET of our 4 E3 seats.
 MOVE_TARGET_DIM = 1 + CONDITION_DIM
 
-#: `--switch-hazard-cost` (`gen3_static_recovery_v1`): the legal values (``off`` builds nothing) and the width of the
-#: switch pointer cell's new trailing block, [our side's Spikes layers / 3, the switch-in HP fraction].
-SWITCH_HAZARD_COST_MODES = ("off", "on")
+#: The width of the switch pointer cell's trailing hazard block (`gen3_static_recovery_v1`; built whenever the op is
+#: since the legacy deletion's U1 deleted `--switch-hazard-cost`), [our side's Spikes layers / 3, the switch-in HP
+#: fraction].
 SWITCH_HAZARD_DIM = MON_HAZARD_DIM
 
 
@@ -77,7 +77,7 @@ def mon_hazard_features(op: Any, ctx: 'ExtractorContext', opp_concrete: Optional
 
 
 def switch_hazard_features(op: Any, ctx: 'ExtractorContext') -> torch.Tensor:
-    """[B, 6, SWITCH_HAZARD_DIM] (`--switch-hazard-cost on`, `gen3_static_recovery_v1`): per switch target j (OUR team
+    """[B, 6, SWITCH_HAZARD_DIM] (built with the op, `gen3_static_recovery_v1`): per switch target j (OUR team
     slot j), ``[our side's Spikes layers / 3, the HP fraction j loses switching in]`` — EXACTLY our half of
     `mon_hazard_features` (the op's ONE entry rule, ``op.spikes_entry``; our mons are always known), so the switch cell,
     the per-mon fact and the `x` edge cell can never disagree. Appended LAST to the switch pointer cell. Not alive-gated:
@@ -110,7 +110,7 @@ def _acc_stage_mult(stage: torch.Tensor) -> torch.Tensor:
 
 def effective_stat_features(op: Any, ctx: 'ExtractorContext', spread_belief: Optional[torch.Tensor] = None
                             ) -> torch.Tensor:
-    """[B, 12, EFFECTIVE_STATS_DIM] (`--effective-stats on`, `gen3_probe_facts_v1`): each side's ACTIVE mon's
+    """[B, 12, EFFECTIVE_STATS_DIM] (built with the op, `gen3_probe_facts_v1`): each side's ACTIVE mon's
     STAGE-APPLIED stats — Atk / Def / SpA / SpD / Spe × the gen-3 stage multiplier (Spe × 1/4 more when paralysed,
     `data/mods/gen4/conditions.ts` par ``onModifySpe``), ÷ `STATIC_STAT_SCALE` — and its accuracy / evasion stage
     multipliers; a benched mon reads 0 (a switch resets the stages). OURS from the observed spread, exact (the op's

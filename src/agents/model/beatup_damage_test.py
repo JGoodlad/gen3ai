@@ -31,6 +31,18 @@ _BEATUP = gen3_data.moves.get("beatup").num
 _STATUS_COL = {"brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6}
 
 
+def _believe_only(op, name):
+    """A belief that the opponent active holds `name` and NOTHING else: presence sigmoid(+1e4) = 1 on it and
+    sigmoid(-1e4) = 0 (exactly, in fp32) on every other move. Under the adopted reduction (the alpha-weighted
+    EXPECTATION, alpha = w / the attacker's total presence: `op_reduction.incoming_principled` /
+    `believed_reduce`) alpha is then exactly 1 on `name`, so every incoming cell IS that move's own value — the
+    hand-computed Beat Up number below. (`damage_op_test._believe_op`'s +-12 logits leave ~6e-6 presence on every
+    other move, which the expectation prices at ~0.25 % of the cell; the deleted per-channel max ignored it.)"""
+    lg = torch.full((1, TEAM_SIZE, op.MOVE_BP.shape[0]), -1.0e4)
+    lg[:, :, gen3_data.moves.get(name).num] = 1.0e4
+    return lg
+
+
 def _num(species: str) -> int:
     return gen3_data.species.get(species).num
 
@@ -241,7 +253,7 @@ def _incoming_ctx(op, *, opp_party, opp_hp=None, opp_status=None, hidden=(), our
 
 
 def _incoming_spec_high(op, ctx) -> float:
-    pm = op(ctx, _believe_op(op, "beatup"))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    pm = op(ctx, _believe_only(op, "beatup"))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     return pm[0, 0, _DMG_IDX_SPEC_HIGH].item() * _DMG_CHIP_CAP * _BLISSEY_MAXHP
 
 
@@ -264,12 +276,12 @@ def test_incoming_is_typeless_and_ignores_our_stat_stages_and_the_believed_sprea
     ctx = _incoming_ctx(op, opp_party=_PARTY, our_def="gengar")             # a Ghost: Dark would be 2x
     ctx.type1_ids[:, 0], ctx.type2_ids[:, 0] = _T2I["GHOST"], _T2I["POISON"]
     gengar_maxhp = 2.0 * _base("gengar", "hp") + 31.0 + 110.0
-    pm = op(ctx, _believe_op(op, "beatup"))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    pm = op(ctx, _believe_only(op, "beatup"))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     got = pm[0, 0, _DMG_IDX_SPEC_HIGH].item() * _DMG_CHIP_CAP * gengar_maxhp
     assert got == pytest.approx(_expect_mean(_PARTY_ATK, float(_base("gengar", "def"))), rel=1e-4)
     ctx.our_ctx_raw[:, 2] = 1.0        # our active's +6 Def ... and +6 SpD (Beat Up reads neither)
     ctx.our_ctx_raw[:, 6] = 1.0
-    pm2 = op(ctx, _believe_op(op, "beatup"))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    pm2 = op(ctx, _believe_only(op, "beatup"))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     assert pm2[0, 0, _DMG_IDX_SPEC_HIGH].item() == pytest.approx(pm[0, 0, _DMG_IDX_SPEC_HIGH].item(), rel=1e-6)
 
 
@@ -315,14 +327,14 @@ def test_hidden_attackers_follow_the_t0_species_belief_when_one_is_handed_in(op)
     S2, N2 = dk.beatup_party_opp(op, ctx, per_slot)
     assert N2.item() == 6 and S2.item() == pytest.approx(sum(_PARTY_ATK[:3]) + 10 + 134 + 135)
     # and the op's forward prices exactly that belief
-    pm = op(ctx, _believe_op(op, "beatup"), species_probs=team)[:, :TEAM_SIZE * _DMG_PER_MON]
+    pm = op(ctx, _believe_only(op, "beatup"), species_probs=team)[:, :TEAM_SIZE * _DMG_PER_MON]
     got = pm.reshape(1, TEAM_SIZE, _DMG_PER_MON)[0, 0, _DMG_IDX_SPEC_HIGH].item() * _DMG_CHIP_CAP * _BLISSEY_MAXHP
     assert got == pytest.approx(_expect_mean(_PARTY_ATK[:3] + [10, 10, 10], 10.0), rel=1e-4)
 
 
 # ----------------------------------------------- the pairwise / refine kernels carry it too (d3 c1b c2 c3 d4)
 def _beatup_logits(op, B=1):
-    return _believe_op(op, "beatup")
+    return _believe_only(op, "beatup")
 
 
 def _their_party_ctx(op, defender: str = "blissey"):
@@ -350,20 +362,36 @@ def test_d4_bench_incoming_kernel(op):
     assert got.tolist() == pytest.approx([_want_incoming_hp()] * 5, rel=1e-3)
 
 
-def test_c3_recovery_kernel_prices_the_ko_ramp_from_the_summed_damage(op):
-    """d_in_pko = -P(KO) before the heal when the heal fully removes the threat; P(KO) = clamp((dmg - hp) /
-    (0.15 dmg)) is the op's ramp, so it pins the SUMMED damage."""
+def _p_ko_by_hand(mean_dmg: float, hp: float) -> float:
+    """The adopted EXACT P(KO | hit) for OUR mon, by hand (`ko_exact`'s rule, spelled as its 16-roll reference sum,
+    not through the module): roll r in 85..100 deals top * r / 100 with top = mean / 0.925; a crit (1/16 — Beat Up's
+    critRatio is 1) doubles the pre-screen top; OUR HP is exact, each roll's KO resolved over [hp - 1/2, hp + 1/2]."""
+    top = mean_dmg / 0.925
+
+    def rolls(t):
+        return sum(min(max((t * r / 100.0 - (hp - 0.5)) / 1.0, 0.0), 1.0) for r in range(85, 101)) / 16.0
+    return (15.0 / 16.0) * rolls(top) + (1.0 / 16.0) * rolls(2.0 * top)
+
+
+def test_c3_recovery_kernel_prices_the_exact_ko_from_the_summed_damage(op):
+    """d_in_pko = P(KO after the heal) - P(KO before), each the EXACT 16-roll + crit P(KO) of the SUMMED Beat Up
+    damage (511.49 mean, top 552.96): at HP = the mean damage, rolls 93..100 KO (8 of 16 — the nearest rolls,
+    92 / 93, sit 2.8 HP either side of it, far outside the +-1/2 HP resolution window, so no roll is near its
+    boundary) and every crit KOs (>= 940 HP) -> P_before = 15/16 * 1/2 + 1/16. Soft-Boiled heals to the 651 cap:
+    no plain roll reaches it, every crit still does -> P_after = 1/16. A one-hit price (~9 HP) would read 0 / 0."""
     dmg = _want_incoming_hp()                                                # 511.49 HP
-    hp_frac = (dmg * (1.0 - 0.075)) / _BLISSEY_MAXHP                          # the ramp's midpoint: P(KO) = 0.5
+    hp_frac = dmg / _BLISSEY_MAXHP
     ctx = _their_party_ctx(op)
     ctx.hp_and_active[:, 0, 0] = hp_frac
     ctx.our_active_req_move_ids = torch.tensor([[gen3_data.moves.get("softboiled").num, 0, 0, 0]])
     cells = op.pairwise_recovery(ctx, _beatup_logits(op).expand(1, TEAM_SIZE, -1).contiguous(), k_cand=3)
     # cells [B,4 our slot,6 opp j,(is_rec, d_in_pko, rest)] ; j = 0 is the opp active (revealed + alive)
     assert cells[0, 0, 0, 0].item() == 1.0
-    p_ko_before = -cells[0, 0, 0, 1].item()
-    ramp = (dmg - hp_frac * _BLISSEY_MAXHP) / (0.15 * dmg)
-    assert p_ko_before == pytest.approx(ramp, rel=2e-3) and p_ko_before == pytest.approx(0.5, abs=1e-3)
+    p_before = _p_ko_by_hand(dmg, dmg)
+    p_after = _p_ko_by_hand(dmg, min(_BLISSEY_MAXHP, dmg + 0.5 * _BLISSEY_MAXHP))
+    assert p_before == pytest.approx(15.0 / 16.0 * 0.5 + 1.0 / 16.0, abs=1e-12)
+    assert p_after == pytest.approx(1.0 / 16.0, abs=1e-12)
+    assert cells[0, 0, 0, 1].item() == pytest.approx(p_after - p_before, abs=1e-4)
 
 
 def test_c2_status_consequence_kernel_sleep_leg(op):
@@ -389,7 +417,7 @@ def test_c1b_a_defensive_setup_move_does_not_move_beat_up(op):
     for setup, control in (("irondefense", "bodyslam"), ("amnesia", "surf")):
         ctx = _their_party_ctx(op, "snorlax")
         ctx.our_active_req_move_ids = torch.tensor([[gen3_data.moves.get(setup).num, 0, 0, 0]])
-        ctrl = op.pairwise_boost_incoming(ctx, _believe_op(op, control).expand(1, TEAM_SIZE, -1).contiguous(),
+        ctrl = op.pairwise_boost_incoming(ctx, _believe_only(op, control).expand(1, TEAM_SIZE, -1).contiguous(),
                                           k_cand=3)
         assert ctrl[0, 0, 0, 0].item() < 0.0, (setup, control)                # the control DOES move
 

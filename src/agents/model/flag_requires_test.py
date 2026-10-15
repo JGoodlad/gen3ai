@@ -54,25 +54,15 @@ _ON_OVERRIDE: Dict[str, object] = {
     "token_encoding": "static",
     # gen3_move_resolution_v1 (v141): a two-value mode string; 'off' is OFF.
     "move_resolution": "on",
-    # gen3_speed_physics_v1 (v143): a two-value mode string; 'off' is OFF.
-    "speed_physics": "on",
-    # gen3_op_reduction_principled_v1 (v146): a two-value mode string; 'max' is OFF.
-    "op_reduction": "principled",
     # gen3_static_port_v1 (v147): two-value mode strings; 'off' is OFF.
     "mon_hazard_cost": "on",
     "move_actor_state": "on",
-    # gen3_static_recovery_v1 (v150): an int depth (2 is production) and two two-value mode strings.
+    # gen3_static_recovery_v1 (v150): an int depth (2 is the bare network).
     "trunk_layers": 3,
-    "switch_hazard_cost": "on",
-    "eot_residual": "on",
-    # gen3_endstate_facts_v1 (v152): five two-value mode strings; each default is OFF.
+    # gen3_endstate_facts_v1 (v152): two two-value mode strings; each default is OFF.
     "move_resolution_facts": "full",
-    "status_facts": "exact",
-    "ko_ramp": "exact",
     "drop_progress_clock": "on",
-    "g_ledger": "eot",
     # gen3_probe_facts_v1 (v153)
-    "effective_stats": "on",
     "move_target_state": "on",
     # gen3_move_set_closure_v1 (v154)
     "move_set_closure": "on",

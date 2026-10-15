@@ -160,9 +160,10 @@ cells need a GPU lease). Diagnoses: `op_contracts.md`, `designs/training/compile
 - `BeliefHead.species_posterior` is **`log_softmax(...).exp()`, not `torch.softmax`** — do not simplify.
 - 🚨 **Every gradient-path value-reduction max is `index_max.max_by_index`, never `amax`** (Inductor's
   recomputed backward made `amax`'s gradient 0/0 = NaN on CUDA). `amax` / `amin` only OFF a gradient path.
-  **A max over THEIR believed candidates is spelled `op_reduction.believed_reduce(...)`** (else
-  `--op-reduction principled` silently keeps your max); keep the expression VERBATIM — dynamo names graph
-  nodes after locals.
+  **A reduction over THEIR believed candidates is spelled `op_reduction.believed_reduce(...)`** — the op's ONE
+  reduction (the α-weighted expectation; the hard-max path was deleted with `--op-reduction` in legacy deletion
+  U1), so a hand-written max there reintroduces the deleted incoherent reduction; keep the expression VERBATIM —
+  dynamo names graph nodes after locals.
 - 🚨 **Every FLOAT attention bias reaches SDPA through `dense_attn_bias`** (`dense_attn_bias_test.py`).
 - 🚨 **A forward reads PLAIN INTS precomputed in `__init__`, never a module attribute holding a sub-dict of
   `layout`** (an aliasing guard recompiled after the compile lock: `[CompileSentinel] FATAL`).
@@ -209,7 +210,10 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
   update `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96` LAST — the procedure is in `versioning.md`. 🚨 **An END-STATE lever
   the legacy deletion removes is NOT judged there** but by `model_version/adopted_levers.py` (one predicate for config
   and zip: a non-adopted value in a network that BUILT the lever is refused, a vacuous / inert one pops — so toys and
-  every adopted checkpoint keep loading); a unit lands by adding itself to `LANDED_UNITS`. A bare
+  every adopted checkpoint keep loading); a unit lands by adding itself to `LANDED_UNITS` AND its first config
+  version to `UNIT_VERSIONS` — a config written at or after that version cannot record the unit's fields, so an
+  ABSENT field there reads ADOPTED (`absent_value`; before it, the pre-version OFF value). U1 (the eight op levers)
+  has landed. A bare
   `MaskablePPO.load` of an old zip TypeErrors; loaders go through `snapshot.historical_load_kwargs`.
 - **Parameter ORDER:** the optimizer state saves by position; `main/train/checkpoint_state._validate_or_reset_optimizer_state`
   remaps it BY NAME on every resume (`src/main/resume_optimizer_realign_test.py`). Appending new params

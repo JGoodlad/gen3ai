@@ -1,7 +1,9 @@
-"""The op's PRINCIPLED REDUCTIONS over the opponent's believed moves (`--op-reduction principled`,
-`gen3_op_reduction_principled_v1`; architecture audit F6b, owner 2026-10-08).
+"""The op's PRINCIPLED REDUCTIONS over the opponent's believed moves (`gen3_op_reduction_principled_v1`;
+architecture audit F6b, owner 2026-10-08) — the op's ONLY reductions since the END STATE's adoption (2026-10-12):
+the legacy deletion's U1 deleted `--op-reduction` and its ``max`` side (`designs/ops/legacy_deletion_manifest_2026-10-12.md`
+D4).
 
-**The defect.** Under ``max`` (production) the damage operator collapses the opponent's believed-move axis
+**The defect it fixed.** Under ``max`` (the legacy production) the damage operator collapsed the opponent's believed-move axis
 with a hard maximum taken SEPARATELY per channel: ``max_c(w_c · low_c)``, ``max_c(w_c · high_c)``, … per
 physical / special channel and per defender, with ``acc`` and ``provenance`` read at the argmax of yet another
 channel (`design_pair_reduction.md` §2, defects D1 / D2). Each channel may describe a DIFFERENT move, so the
@@ -37,13 +39,8 @@ from typing import Optional, Tuple
 
 import torch
 
-from agents.model.index_max import max_by_index
 
-#: The `--op-reduction` modes. ``max`` = the legacy per-channel hard maximum (production, byte-identical);
-#: ``principled`` = the α-weighted expectation + the noisy-OR worst case (this module).
-OP_REDUCTION_MODES: Tuple[str, ...] = ("max", "principled")
-
-#: The width of the incoming per-mon WORST-CASE row under ``principled``: ``[P(some physical move KOs),
+#: The width of the incoming per-mon WORST-CASE row: ``[P(some physical move KOs),
 #: P(some special move KOs)]`` per our mon — the noisy-OR facts the expectation row cannot carry. Delivered to
 #: our mon tokens by the extractor's zero-init `op_worst_proj` (never in the flat op block, so the block's
 #: layout, its `out_gain` and every slicer are unchanged).
@@ -78,16 +75,12 @@ def noisy_or(p: torch.Tensor, dim: int = -1, keepdim: bool = False) -> torch.Ten
     return out
 
 
-def believed_reduce(wv: torch.Tensor, w_total: Optional[torch.Tensor]) -> torch.Tensor:
+def believed_reduce(wv: torch.Tensor, w_total: torch.Tensor) -> torch.Tensor:
     """THE reduction over an attacker's believed candidates (the LAST dim) at the op's per-attacker kernels
-    (C1b / C2 / C3 / D4): ``wv`` = presence × value per candidate.
-
-    ``w_total`` None (``max``, production): ``max_by_index(wv)`` — the legacy presence-scaled hard maximum,
-    the expression the kernels always took (bit-identical). ``w_total`` given (``principled``): the attacker's
-    total presence, broadcastable to the reduced shape — ``Σ_c wv_c / w_total`` = ``Σ_c α_c · value_c``, the
-    α-weighted EXPECTATION with ``α = w / w_total`` (top-K-cut mass unpriced, never renormalised away)."""
-    if w_total is None:
-        return max_by_index(wv)
+    (C1b / C2 / C3 / D4) and the E5 tail seats: ``wv`` = presence × value per candidate, ``w_total`` the
+    attacker's total presence, broadcastable to the reduced shape — ``Σ_c wv_c / w_total`` = ``Σ_c α_c · value_c``,
+    the α-weighted EXPECTATION with ``α = w / w_total`` (top-K-cut mass unpriced, never renormalised away). (The
+    presence-scaled hard maximum this replaced under `--op-reduction max` was deleted by the legacy deletion's U1.)"""
     return wv.sum(dim=-1) / w_total.clamp_min(_TINY)
 
 
@@ -132,5 +125,5 @@ def incoming_principled(w: torch.Tensor, w_total: Optional[torch.Tensor], low: t
     return (*out, provenance, high_cb_e, ko_cb_e, worst)
 
 
-__all__ = ["OP_REDUCTION_MODES", "OP_WORST_DIM", "OP_WORST_COORDS", "presence_alpha", "expectation",
+__all__ = ["OP_WORST_DIM", "OP_WORST_COORDS", "presence_alpha", "expectation",
            "noisy_or", "believed_reduce", "incoming_principled"]

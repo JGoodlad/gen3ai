@@ -4,8 +4,9 @@ What must hold (design_opponent_intent.md §5.1/§5.3, design_pair_reduction.md 
 
   * **The coordinates are what they claim to be**, per coordinate, on constructed inputs: the
     status columns carry the seat's IDENTITY (and keep tox apart from psn, which `MOVE_STATUS_CAT`
-    cannot), `neutralization` scales with the DEFENDER's own profile, `tempo_cost` with its own
-    moveset.
+    cannot), and an immune pivot reads zero in the status columns AND in the two status FACTS
+    (columns 12-13). (`neutralization` / `tempo_cost`, the JUDGMENTS those columns held, were deleted
+    by the legacy deletion's U1 with their tests; the facts' values are gated in `endstate_facts_test`.)
   * **The reduction contract**: ONE α over the move axis, shared across EVERY channel. The
     load-bearing test plants the D2 violation — a per-channel maximum — and asserts the contract
     catches it, because a reduction that quietly took a max per channel would pass every shape
@@ -18,7 +19,7 @@ What must hold (design_opponent_intent.md §5.1/§5.3, design_pair_reduction.md 
     only on a directly-built extractor is not an invariant, because SB3's ortho pass runs on the
     path production uses and not on that one).
   * The §9a motivating case, through the FULL op forward: Swampert vs a believed Will-O-Wisp reads
-    **0.0 in every damage coordinate** and a nonzero burn/neutralization — the currency failure
+    **0.0 in every damage coordinate** and a nonzero burn probability — the currency failure
     §2.1 names, closed.
   * The v93 version machinery + the delivery-graph edges.
 """
@@ -39,7 +40,7 @@ from agents.model.model_version import (
 )
 from agents.model.pair_outcome import (
     PAIR_OUTCOME_COORDS, PAIR_OUTCOME_IDX, PairOutcomeMoveCell, alpha_belief_mean, pair_alpha,
-    reduce_pair_in,
+    STATUS_FACT_COORDS, reduce_pair_in,
 )
 from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
@@ -77,7 +78,8 @@ def test_the_coordinate_table_is_the_single_spelling_of_the_layout():
     # component 1 is that damage and status share one tensor rather than being re-derived.
     assert PAIR_OUTCOME_COORDS[:_PAIR_OUTCOME_DMG] == (
         "low", "high", "crit", "ko_ramp", "acc", "is_phys")
-    assert PAIR_OUTCOME_COORDS[-2:] == ("neutralization", "tempo_cost")
+    # the two status FACTS hold the judgments' width (F-LD-7; `neutralization` / `tempo_cost` deleted by U1)
+    assert PAIR_OUTCOME_COORDS[-2:] == STATUS_FACT_COORDS == ("e_burn_dmg_lost", "e_par_outspeed_lost")
     assert PAIR_OUTCOME_IDX["high"] == 1
 
 
@@ -193,7 +195,7 @@ def test_alpha_from_the_publication_is_the_unrenormalized_move_slice():
 
 def test_certain_switch_zeroes_the_whole_outcome_vector():
     """The unrenormalized slice's semantics: a switching opponent applies no outcome to us this
-    turn, so every coordinate — damage AND status AND neutralization AND tempo — shrinks to zero
+    turn, so every coordinate — damage AND status AND the status facts — shrinks to zero
     together. That coherence is only expressible because they share one α."""
     K = 3
     lg = torch.zeros(1, K + 1)
@@ -304,8 +306,7 @@ def test_g0_the_currency_failure_is_closed_swampert_into_will_o_wisp():
     Swampert (Water/Ground, base Atk 110 / SpA 85) against a Gengar believed to hold Will-O-Wisp
     and Thunderbolt. On damage alone it reads **0.0 in both branches** — immune to one, and burn
     deals none — so damage-only scoring picks it forever and the hedge is unreachable. The unified
-    vector must show a nonzero burn probability AND a nonzero neutralization on exactly the branch
-    the damage numbers cannot see.
+    vector must show a nonzero burn probability on exactly the branch the damage numbers cannot see.
     """
     op, layout, DT = _real_op()
     from agents.observation.types import TypeEncoder
@@ -319,30 +320,11 @@ def test_g0_the_currency_failure_is_closed_swampert_into_will_o_wisp():
     # every damage coordinate is zero — the premise of the whole argument
     for name in ("low", "high", "crit", "ko_ramp"):
         assert float(cell[PAIR_OUTCOME_IDX[name]]) == 0.0, f"{name} should be 0 for Will-O-Wisp"
-    # and the status/neutralization coordinates are not
+    # and the status coordinate is not
     assert float(cell[PAIR_OUTCOME_IDX["p_brn"]]) > 0.5
-    assert float(cell[PAIR_OUTCOME_IDX["neutralization"]]) > 0.0
     # the burn lands on the BURN column and nowhere else
     for other in ("p_par", "p_frz", "p_slp", "p_psn", "p_tox"):
         assert float(cell[PAIR_OUTCOME_IDX[other]]) == 0.0
-
-
-def test_g0_neutralization_scales_with_the_defenders_own_physical_share():
-    """Burn's severity is `0.5 · base_atk/(base_atk+base_spa)` — read off the DEFENDER's stats, not
-    assumed. A physical attacker must read strictly higher than a special one facing the same
-    believed Will-O-Wisp, which is the ordering the coordinate exists to create."""
-    from agents.observation.types import TypeEncoder
-    T = TypeEncoder.TYPE_TO_IDX
-    wow = None
-    reads = {}
-    for label, spec in (("physical", (260, T["WATER"], T["GROUND"])),      # Swampert  110/85
-                        ("special", (196, T["PSYCHIC"], T["PSYCHIC"]))):   # Espeon     65/130
-        op, layout, DT = _real_op()
-        wow = DT._move_num("willowisp")
-        _run(op, DT, layout, [wow], [spec] + [(0, 0, 0)] * 5)
-        k = op.last_topk_idx[0].tolist().index(wow)
-        reads[label] = float(op.last_pair_in[0, 0, k, PAIR_OUTCOME_IDX["neutralization"]])
-    assert reads["physical"] > reads["special"] > 0.0, reads
 
 
 def test_g0_toxic_and_poison_powder_land_on_DIFFERENT_columns():
@@ -365,7 +347,9 @@ def test_g0_toxic_and_poison_powder_land_on_DIFFERENT_columns():
 
 def test_g0_an_immune_pivot_reads_zero_status_risk():
     """The landing physics is `_incoming_status_lands` verbatim, so the per-pivot immunity read
-    survives into the new coordinates: Thunder Wave into a GROUND pivot is 0, not merely small."""
+    survives into the new coordinates: Thunder Wave into a GROUND pivot is 0, not merely small — and
+    so are both status FACTS (each is P(that status lands) × its effect, so a status that cannot land
+    costs nothing: `e_par_outspeed_lost` = p_par × ΔP(first) = 0, and Thunder Wave burns nobody)."""
     op, layout, DT = _real_op()
     from agents.observation.types import TypeEncoder
     T = TypeEncoder.TYPE_TO_IDX
@@ -375,148 +359,9 @@ def test_g0_an_immune_pivot_reads_zero_status_risk():
     k = op.last_topk_idx[0].tolist().index(tw)
     pin = op.last_pair_in[0]
     assert float(pin[0, k, PAIR_OUTCOME_IDX["p_par"]]) == 0.0, "Ground is immune to Thunder Wave"
-    assert float(pin[0, k, PAIR_OUTCOME_IDX["neutralization"]]) == 0.0
+    for name in STATUS_FACT_COORDS:
+        assert float(pin[0, k, PAIR_OUTCOME_IDX[name]]) == 0.0, name
     assert float(pin[1, k, PAIR_OUTCOME_IDX["p_par"]]) > 0.5, "a Normal pivot is not immune"
-
-
-def test_g0_tempo_is_paid_only_by_a_mon_that_can_undo_the_status():
-    """`tempo_cost` is read off THIS mon's OWN moveset — the receiver is fully observed. A mon
-    carrying Refresh pays a turn; the same mon without it pays nothing (its loss is
-    `neutralization`'s to carry, and the two ride decorrelated rather than pre-blended)."""
-    from agents.observation.types import TypeEncoder
-    T = TypeEncoder.TYPE_TO_IDX
-    reads = {}
-    for label, our_moves in (("cure", ["refresh"]), ("nocure", ["surf"])):
-        op, layout, DT = _real_op()
-        wow = DT._move_num("willowisp")
-        ctx = DT._topk_ctx(op, defenders=[(260, T["WATER"], T["GROUND"])] + [(0, 0, 0)] * 5)
-        ctx.all_move_ids[0, 0, 0] = DT._move_num(our_moves[0])
-        op(ctx, DT._logits_moves(layout["max_moves"], [wow]), None, DT._synth_latent(layout))
-        k = op.last_topk_idx[0].tolist().index(wow)
-        reads[label] = float(op.last_pair_in[0, 0, k, PAIR_OUTCOME_IDX["tempo_cost"]])
-    assert reads["cure"] > 0.5, reads
-    assert reads["nocure"] == 0.0, reads
-
-
-def test_g0_rest_prices_the_undo_higher_than_a_dedicated_cure():
-    """Rest undoes any status too, but at the op's OWN `rest_sleep_noeb` price (2 lost turns,
-    derived from the verified sleep hazard table) rather than one — so the two are not the same
-    answer and the coordinate says so."""
-    from agents.observation.types import TypeEncoder
-    T = TypeEncoder.TYPE_TO_IDX
-    reads = {}
-    for label, mv in (("refresh", "refresh"), ("rest", "rest")):
-        op, layout, DT = _real_op()
-        wow = DT._move_num("willowisp")
-        ctx = DT._topk_ctx(op, defenders=[(260, T["WATER"], T["GROUND"])] + [(0, 0, 0)] * 5)
-        ctx.all_move_ids[0, 0, 0] = DT._move_num(mv)
-        op(ctx, DT._logits_moves(layout["max_moves"], [wow]), None, DT._synth_latent(layout))
-        k = op.last_topk_idx[0].tolist().index(wow)
-        reads[label] = float(op.last_pair_in[0, 0, k, PAIR_OUTCOME_IDX["tempo_cost"]])
-    assert reads["rest"] > reads["refresh"] > 0.0, reads
-
-
-# ------------------------------------------------ gen3_status_economy_v1 (v95): the UNDO PATHS
-#
-# `tempo_cost = P(any major status lands) · undo_turns(j)`, and every case below reads BOTH factors
-# off the same vector — `p_major` is the sum of the six status-identity coordinates — so each
-# assertion is the exact product rather than an inequality. That matters here because the amendment
-# is a change of NUMBER, not of sign: Natural Cure moved 0.0 → 1.0 and the cleric 0.0 → 2.0, and an
-# ">0" test would have passed on any positive constant.
-
-
-def _tempo_case(*, our_moves=("surf",), ability=None, team=None):
-    """Run the FULL op forward against a believed Will-O-Wisp on a Water/Ground mon 0 and return
-    `(p_major, tempo)` for that mon. `team` is an optional list of `(moves, alive)` for slots 1..5
-    (the cleric axis); `ability` is an ability id for mon 0."""
-    from agents import gen3_data
-    from agents.observation.types import TypeEncoder
-    T = TypeEncoder.TYPE_TO_IDX
-    op, layout, DT = _real_op()
-    wow = DT._move_num("willowisp")
-    ctx = DT._topk_ctx(op, defenders=[(260, T["WATER"], T["GROUND"])]
-                       + [(242, T["NORMAL"], T["NORMAL"])] * 5)
-    for k, mv in enumerate(our_moves):
-        ctx.all_move_ids[0, 0, k] = DT._move_num(mv)
-    if ability is not None:
-        ctx.ability1_ids[0, 0] = int(gen3_data.abilities.get(ability).num)
-    for j, (moves, alive) in enumerate(team or [], start=1):
-        for k, mv in enumerate(moves):
-            ctx.all_move_ids[0, j, k] = DT._move_num(mv)
-        ctx.hp_and_active[0, j, 0] = 1.0 if alive else 0.0
-    op(ctx, DT._logits_moves(layout["max_moves"], [wow]), None, DT._synth_latent(layout))
-    k = op.last_topk_idx[0].tolist().index(wow)
-    row = op.last_pair_in[0, 0, k]
-    p_major = float(sum(row[PAIR_OUTCOME_IDX[c]] for c in
-                        ("p_par", "p_brn", "p_frz", "p_slp", "p_psn", "p_tox")))
-    return p_major, float(row[PAIR_OUTCOME_IDX["tempo_cost"]])
-
-
-def test_g0_natural_cure_is_an_undo_path_and_no_longer_reads_like_no_answer():
-    """THE Phase-A defect this closes. A Natural Cure mon sheds the status on switch-out — it HAS
-    an answer — but Phase A read only the moveset, so it was priced at exactly 0.0, which is the
-    number a mon with no answer at all reads. Two opposite facts arriving as one number is the
-    currency failure the module exists to close, one level down.
-
-    The switch that fires the ability consumes exactly one of our actions, so the price is 1.0 —
-    the same single turn a cure move costs, and stated as the exact product here rather than as
-    ">0" (the amendment moved a NUMBER, and any positive constant would satisfy an inequality)."""
-    p_none, t_none = _tempo_case()
-    p_nc, t_nc = _tempo_case(ability="naturalcure")
-    assert p_nc == pytest.approx(p_none, abs=1e-6) and p_nc > 0.0, (
-        "the two boards must differ ONLY in the undo path — the burn lands identically")
-    assert t_none == 0.0, "no move, no ability, no cleric ⇒ no path ⇒ the 0.0 sentinel"
-    assert t_nc == pytest.approx(p_nc * 1.0, rel=1e-6), (t_nc, p_nc)
-
-
-def test_g0_natural_cure_prices_exactly_what_a_cure_move_does():
-    """One switch and one cure both consume one of our actions, so the two paths tie at 1.0. The
-    ability is NOT cheaper: reading it as free (`0.0`, "you were pivoting anyway") would be a claim
-    about our own POLICY rather than about gen 3, and it would collide with the no-path sentinel."""
-    p_nc, t_nc = _tempo_case(ability="naturalcure")
-    p_ref, t_ref = _tempo_case(our_moves=("refresh",))
-    assert p_nc == pytest.approx(p_ref, abs=1e-6)
-    assert t_nc == pytest.approx(t_ref, rel=1e-6) == pytest.approx(p_nc, rel=1e-6)
-
-
-def test_g0_the_undo_price_is_the_CHEAPEST_path_not_the_most_expensive():
-    """Phase A reduced with `max(cure, rest)` — a pick-the-nonzero idiom, not a claim — so a mon
-    carrying BOTH Refresh and Rest was priced at 2.0, the move it would not click. The amendment
-    makes it a min over available paths; Rest ALONE still prices at 2.0, so this is not a
-    regression of the Rest coordinate but a correction of the combination."""
-    p_both, t_both = _tempo_case(our_moves=("refresh", "rest"))
-    p_rest, t_rest = _tempo_case(our_moves=("rest",))
-    p_ref, t_ref = _tempo_case(our_moves=("refresh",))
-    assert t_rest == pytest.approx(p_rest * 2.0, rel=1e-6)
-    assert t_both == pytest.approx(p_both * 1.0, rel=1e-6) == pytest.approx(t_ref, rel=1e-6)
-
-
-def test_g0_a_live_cleric_on_the_bench_is_an_undo_path_for_every_teammate():
-    """Heal Bell / Aromatherapy are PARTY-WIDE in gen 3, so the cure reaches mon 0 while mon 0 sits
-    on the bench: switch to the cleric (1 turn) + click it (1 turn) = 2.0. Kill the cleric and the
-    path is gone — the coordinate returns to the 0.0 sentinel, which is what makes it a statement
-    about the board rather than about the team list."""
-    p_live, t_live = _tempo_case(team=[(("healbell",), True)] + [((), True)] * 4)
-    p_dead, t_dead = _tempo_case(team=[(("healbell",), False)] + [((), True)] * 4)
-    assert p_live == pytest.approx(p_dead, abs=1e-6) and p_live > 0.0
-    assert t_live == pytest.approx(p_live * 2.0, rel=1e-6), (t_live, p_live)
-    assert t_dead == 0.0, "a fainted cleric is not a plan"
-
-
-def test_g0_a_mon_that_carries_the_cleric_move_ITSELF_pays_the_one_turn_price():
-    """The cleric path must not be counted against its own carrier: Heal Bell on mon 0 is the
-    ONE-turn self-cure (it cures the user as part of the party), not the two-turn switch-and-cure.
-    Getting this wrong would price a mon's own answer at the number for reaching someone else's."""
-    p, t = _tempo_case(our_moves=("healbell",))
-    assert t == pytest.approx(p * 1.0, rel=1e-6), (t, p)
-
-
-def test_g0_aromatherapy_is_the_same_path_as_heal_bell():
-    """Both are party-wide cures in gen 3; the table is keyed on the FACADE's `cures_team_status`,
-    so the two cannot drift apart by being spelled separately anywhere."""
-    _, t_hb = _tempo_case(team=[(("healbell",), True)] + [((), True)] * 4)
-    _, t_ar = _tempo_case(team=[(("aromatherapy",), True)] + [((), True)] * 4)
-    assert t_hb > 0.0 and t_hb == pytest.approx(t_ar, rel=1e-6)
 
 
 def test_the_op_stashes_nothing_when_the_seam_flag_is_off():

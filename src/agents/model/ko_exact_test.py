@@ -1,7 +1,9 @@
-"""`--ko-ramp exact` (`ko_exact.roll_ko_prob`) is the 16-roll P(KO) sum in CLOSED FORM (`gen3_ko_exact_closed_v1`;
+"""The exact P(KO) (`ko_exact.roll_ko_prob`; the op's only P(KO) since the legacy deletion's U1 deleted `--ko-ramp`) is
+the 16-roll P(KO) sum in CLOSED FORM (`gen3_ko_exact_closed_v1`;
 owner 2026-10-10: "optimise the 16 rolls, since it's a known formula with a crit chance", then "remove the old one").
 The 16-roll sum itself survives HERE only, as the REFERENCE ORACLE (`_sum16`, the shipped loop of config v152 verbatim);
-`--ko-ramp exact_closed`, the value that briefly carried the closed form beside it, is RETIRED (last test section).
+`--ko-ramp exact_closed`, the value that briefly carried the closed form beside it, was RETIRED and then subsumed when
+U1 deleted the flag (last test section).
 
 The op's damage is CONTINUOUS (no per-roll floor — `ko_exact`'s docstring), so the 16 terms
 ``x_r = (top · r/100 − lo) / w`` are an exact arithmetic sequence and ``Σ clamp(x_r, 0, 1)`` has an exact closed form:
@@ -368,19 +370,17 @@ _POLICIES: Dict[str, Any] = {}
 #: Where each exact-KO site runs: the END-STATE arm (the closing test's overlay — PRODUCTION since the 2026-10-12
 #: adoption) prices the op's KO and move resolution's Pursuit / Substitute; `--move-resolution on` retires
 #: intent_threshold, so its Substitute break is reached on the LEGACY base (`endstate_facts_test._toggles`, the
-#: pre-adoption network; this surface was named "production" before the adoption) + `--ko-ramp exact` alone.
+#: pre-adoption network; this surface was named "production" before the adoption), whose op prices P(KO) exactly too.
 SURFACE_SITES = {"endstate": {"_ko_exact", "_exact_ko_ours"}, "legacy": {"_ko_exact", "sub_break_given_hit"}}
 
 
 def _policy(surface: str) -> Any:
-    """A real SB3 policy on ``surface`` ('endstate' = the arm's overlay; 'legacy' = the pre-adoption base) at
-    `--ko-ramp exact`."""
+    """A real SB3 policy on ``surface`` ('endstate' = the arm's overlay; 'legacy' = the pre-adoption base)."""
     if surface not in _POLICIES:
         from agents.model.endstate_facts_test import _toggles
         from agents.model.identity_init_test import _build_real_policy
         from main.train.arch_arms import arm_overlay
         over = dict(arm_overlay("endstate")) if surface == "endstate" else {}
-        over["ko_ramp"] = "exact"
         _POLICIES[surface] = _build_real_policy(**_toggles(**over))[0].policy
     return _POLICIES[surface]
 
@@ -396,10 +396,10 @@ def rows() -> torch.Tensor:
 @pytest.mark.parametrize("surface", sorted(SURFACE_SITES))
 def test_every_ko_site_of_the_forward_meets_the_oracle_within_the_bound(
         surface: str, rows: torch.Tensor, monkeypatch: pytest.MonkeyPatch) -> None:
-    """On the compile-parity fixture's real rows at `--ko-ramp exact`: every P(KO) call goes through `roll_ko_prob`
+    """On the compile-parity fixture's real rows: every P(KO) call goes through `roll_ko_prob`
     (a spy on the module global `ko_given_hit` reads at call time), from every site the surface runs — the op's
     `_ko_exact` (`_rolls` and the Choice-Band `ko_cb`), move resolution's `_exact_ko_ours` (Pursuit, Substitute;
-    END-STATE) and intent_threshold's `sub_break_given_hit` (the LEGACY base + the flag) — and on each call's REAL operands
+    END-STATE) and intent_threshold's `sub_break_given_hit` (the LEGACY base) — and on each call's REAL operands
     the value is within 8 eps32 k1 of the 16-roll ORACLE. Fails if a site prices its KO by anything else."""
     real = KE.roll_ko_prob
     calls: List[Tuple[str, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]] = []
@@ -422,7 +422,7 @@ def test_every_ko_site_of_the_forward_meets_the_oracle_within_the_bound(
 
 
 def test_the_tie_recorder_is_clean_on_the_endstate_arm(rows: torch.Tensor) -> None:
-    """K9(b): the END-STATE forward at `--ko-ramp exact` runs NO undeclared discrete op, and the closed form's counts
+    """K9(b): the END-STATE forward runs NO undeclared discrete op, and the closed form's counts
     (float floor / ceil, declared COUNT_CONTINUOUS) are never a recorded site — they exclude no row."""
     from agents.training.rust_rollout.tie_margins import TieMargins
     fe = _policy("endstate").features_extractor
@@ -434,38 +434,35 @@ def test_the_tie_recorder_is_clean_on_the_endstate_arm(rows: torch.Tensor) -> No
 
 
 # ===================================================================================== THE RETIRED VALUE
-def test_the_retired_exact_closed_value_is_refused_with_its_reason_everywhere() -> None:
-    """`--ko-ramp exact_closed` (legal only at 6e0a1a7a) is refused WITH its reason at every door a value can come
-    through: the parser (before argparse's bare "invalid choice"), a `model_config.json` (`_migrate_config`), a zip's
-    pickled extractor kwargs (`sanitize_dead_extractor_kwargs`) and the constructor — never a KeyError or a bare
-    "one of". `exact` and `ramp` pass every door."""
+def test_the_retired_exact_closed_value_is_subsumed_by_the_flags_deletion() -> None:
+    """`--ko-ramp exact_closed` (legal only at 6e0a1a7a) went with the whole flag in the legacy deletion's U1: the
+    parser refuses `--ko-ramp` itself WITH its reason (`deleted_flags.md` §1), and a recorded `exact_closed` beside the
+    op is "not the adopted `exact`" — refused on every load naming the pin tag (`adopted_levers`). `RETIRED_VALUES`
+    is empty."""
     import argparse
 
     from agents.model.model_version import ModelVersionError
+    from agents.model.model_version.adopted_levers import PRE_LEGACY_DELETION_TAG
     from agents.model.model_version.migrations import _migrate_config
-    from agents.model.model_version.retired_levers import RETIRED_VALUES, refuse_retired_values
+    from agents.model.model_version.retired_levers import RETIRED_VALUES
     from agents.model.snapshot import sanitize_dead_extractor_kwargs
+    from main.train.parser.base import deleted_flag_reasons
     from main.train.parser.clean_world import add_clean_world_flags
 
-    assert [(r.field, r.value) for r in RETIRED_VALUES] == [("ko_ramp", "exact_closed")]
+    assert RETIRED_VALUES == ()
     p = argparse.ArgumentParser(exit_on_error=False)
     add_clean_world_flags(p)
-    with pytest.raises(argparse.ArgumentError, match="exact_closed was RETIRED .*pass --ko-ramp exact"):
-        p.parse_args(["--ko-ramp", "exact_closed"])
-    assert p.parse_args(["--ko-ramp", "exact"]).ko_ramp == "exact"
-    with pytest.raises(ModelVersionError, match="exact_closed was RETIRED"):
-        refuse_retired_values({"ko_ramp": "exact_closed"})
-    with pytest.raises(ModelVersionError, match="exact_closed was RETIRED"):
-        _migrate_config({"config_version": 154, "ko_ramp": "exact_closed"})
-    with pytest.raises(ModelVersionError, match="exact_closed was RETIRED"):
-        sanitize_dead_extractor_kwargs({"ko_ramp": "exact_closed"})
-    for ok in ("exact", "ramp"):
-        refuse_retired_values({"ko_ramp": ok})
-        sanitize_dead_extractor_kwargs({"ko_ramp": ok})
-    from agents.model.endstate_facts_test import _toggles
-    from agents.model.identity_init_test import _build_real_policy
-    with pytest.raises(ValueError, match="exact_closed was RETIRED"):
-        _build_real_policy(**_toggles(ko_ramp="exact_closed"))
+    with pytest.raises((argparse.ArgumentError, SystemExit)):
+        p.parse_args(["--ko-ramp", "exact"])
+    assert any("legacy deletion U1" in r for r in deleted_flag_reasons(["--ko-ramp"]))
+    for bad in ("exact_closed", "ramp"):
+        with pytest.raises(ModelVersionError, match=PRE_LEGACY_DELETION_TAG):
+            _migrate_config({"config_version": 154, "damage_op": True, "ko_ramp": bad})
+        with pytest.raises(ModelVersionError, match=PRE_LEGACY_DELETION_TAG):
+            sanitize_dead_extractor_kwargs({"damage_op": True, "ko_ramp": bad})
+    fek = {"damage_op": True, "ko_ramp": "exact"}
+    sanitize_dead_extractor_kwargs(fek)
+    assert "ko_ramp" not in fek
 
 
 def test_the_history_doc_lists_exactly_the_retired_values() -> None:

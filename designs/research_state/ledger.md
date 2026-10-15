@@ -25450,3 +25450,34 @@ time (rule 5b).
 
 Tag: **MEASUREMENT (MAJOR) · K-MOVES NULL · K-ITEMS NULL · species NULL (an added arm) · K-SPREADS NOT DETECTED · MOVES-FIRST false · K-L-WORTH NOT DECLARABLE · DESCRIPTIVE (honest dependence cost; v8 CONFOUNDED) · PROVISIONAL (+3M from one 15M parent)** ·
 evidence: `designs/research_state/measurements/hidden_info_forks_2026-10-14/` (README Results, `crosses/result/verdict.json`, `h.json`), `designs/endstate/design_hidden_info_binding.md` §8.7, `designs/endstate/search_ledger.md`, `designs/research_state/UNDERSTANDING.md` §4.5, `designs/endstate/design_x26_readiness.md` §1.1
+
+### 2026-10-15 · BUILD · LEGACY DELETION U1 landed: eight op levers deleted (config v156) — what stopped loading at HEAD, and the pin to read it from
+
+**What changed.** Unit U1 of `designs/ops/legacy_deletion_manifest_2026-10-12.md` (lane OP) deleted `--status-facts`,
+`--ko-ramp`, `--g-ledger`, `--op-reduction`, `--speed-physics`, `--eot-residual`, `--switch-hazard-cost` and
+`--effective-stats` with their OFF paths: the JUDGMENT coordinates `neutralization` / `tempo_cost`, the 15 %-window KO
+ramp, the op's second end-of-turn ledger, the per-channel hard maxima, the `sigmoid(dSpe / 15)` speed constant, and the
+three facts' "not handed to the network" builds. The adopted value of each is the damage operator's only physics.
+
+**What stopped loading at HEAD** (refused on every load, typed, naming the tag `pre-legacy-deletion` = `0a0d9e1d`): every
+config / zip that recorded a non-adopted value of one of the eight in a network that BUILT the op — the closing test's P
+arm `rb_es_prod_s2001`–`s2008` (v153), `rb_es_gpucheck_end` and every other pre-adoption config ≥ v145. Read them PINNED
+(`git worktree add --detach pre-legacy-deletion`, or each run's own recorded commit; a resume / fork pins itself). Still
+loading: the E arm (`rb_es_end2_*`, `rb_es_end_s2001`, v154), the bf16 A/B runs (v155), every post-U1 run, and every TOY
+without the op (vacuous; `rb_toy_ent_*` — its pinned argv no longer PARSES at HEAD, expected under D-LD4).
+
+**Not changed:** the forward of the adopted surface (K9 learner golden IDENTICAL, bf16 and its fp32 opt-out), the
+observation, the fresh-init stream (that break is U3's, D-LD7), `ARCH_SIGNATURE`, `MIGRATION_FLOOR`.
+
+**GIGO fixed in passing (the adopted path):** the one end-of-turn rule (`EotResidualRule`) gated THEIR side alive by
+the HP cell, so an X5 hypothesis slot whose HP cell read 0 would lose its `g` columns and per-mon residual; it now reads
+the roster's addressability (`opp_alive`). Live hypothesis rows read HP 1.0, so no live forward moved (K9 IDENTICAL).
+
+**FINDING fixed in passing:** U0's predicate read an ABSENT field as the pre-version OFF value whatever wrote the config,
+so the first post-U1 config that builds the op (the production mirror itself) would have been refused; an absent field
+now reads ADOPTED in a config written at or after its unit's version (`adopted_levers.absent_value`).
+
+Tag: **BUILD · legacy deletion U1 · load boundary moved (pre-adoption configs ≥ v145 now pinned-only) · no forward / init /
+obs change** ·
+evidence: `src/agents/model/model_version/adopted_levers.py` + `_test.py`, `designs/deleted_flags.md` §1,
+`designs/ops/legacy_deletion_manifest_2026-10-12.md` §8, `designs/CHANGELOG.md` (2026-10-15 U1)

@@ -9,7 +9,8 @@ On a REAL fixed_mass policy and the K9 golden buffer (deterministic: fixed rows,
   HP cell (zeroing the HP cell moves no gate; dropping addressability zeroes its column);
 * the per-mon candidates are each mon's ONE order over its fixed-mass move presence (the active's row
   IS the move group's `w_all`), and the cut joins the rule-8 exclusion;
-* `p_pur_vs_us` is a presence-scaled max over the mons (§9 M2 = C); Beat Up's opponent party sum reads
+* `p_pur_vs_us` is the noisy-OR over the mons and OTHER (gen3_op_reduction_principled_v1; the presence-scaled
+  max of §9 M2 = C it replaced was deleted by the legacy deletion's U1); Beat Up's opponent party sum reads
   the hidden-team marginal π / k over EVERY candidate; the bench E5 seats are presence-aware;
 * the opponent active's move reinjection reads its DETACHED fixed-mass presence (F-X5-26).
 
@@ -174,24 +175,34 @@ def test_attacker_candidates_are_each_mons_one_order_over_its_fixed_mass_presenc
     assert torch.allclose(s[no_hp], torch.full_like(s[no_hp], 4.0), atol=1e-4)
 
 
-def test_p_pur_vs_us_is_a_presence_scaled_max_over_the_opponent_mons(fm):
-    """§9 M2 = C over MONS: max_j slot_pi_j · P(Pursuit | j) · alive_j. Revert to the blob's sigmoid
-    max and a hypothesis counts as a whole mon."""
+def _pursuit_noisy_or_ref(x5, move_w=None, with_other=True):
+    """The fp64 reference of `p_pur_vs_us` under the adopted rule (gen3_op_reduction_principled_v1): P(SOME mon
+    of theirs holds Pursuit) = 1 − Π_j (1 − slot_pi_j · P(Pursuit | j) · alive_j) · (1 − other_any · P(Pursuit |
+    OTHER)) — each mon an independent Bernoulli at its presence × its Pursuit presence, OTHER one more."""
     from agents.model.damage_tables import _pursuit_num
+    mw = x5.move_w if move_w is None else move_w
+    p_j = (x5.slot_pi.double() * mw[:, :, _pursuit_num()].double() * x5.alive.double())          # [B,6]
+    none = (1.0 - p_j).prod(-1)                                                                   # [B]
+    if with_other:
+        none = none * (1.0 - x5.other_any.double() * x5.other_pursuit.double())
+    return 1.0 - none
+
+
+def test_p_pur_vs_us_is_a_noisy_or_over_the_opponent_mons(fm):
+    """REWRITTEN by the legacy deletion's U1 (its subject, §9 M2 = C's presence-scaled max over MONS, was
+    deleted): the noisy-OR over the mons, slot_pi_j · P(Pursuit | j) · alive_j each, and OTHER_species at
+    presence 1 − Π(1 − π) (F4 (b), `889add9d`). Revert to the blob's sigmoid and a hypothesis counts as a whole
+    mon; drop OTHER and the rows where it holds Pursuit mass read low."""
     op, hctx, x5, fe = fm["op"], fm["hctx"], fm["x5"], fm["fe"]
-    pur = _pursuit_num()
     with torch.no_grad():
         our, _ = _with_roster(op, x5).pairwise_entry(hctx, fe.last_move_belief_logits)
-    want = (x5.slot_pi * x5.move_w[:, :, pur] * x5.alive).amax(-1)
-    # OTHER_species enters the max with presence 1 − Π(1 − π) (F4 (b), `889add9d`). The K9 buffer's seed-18 rows
-    # (the golden's default since the X5 version break) hold rows where OTHER's Pursuit mass IS the max — the
-    # blob buffer's rows never did, which is how this expectation went without the term.
     assert x5.other_any is not None
-    other = (x5.other_any * x5.other_pursuit)
-    assert bool((other > want).any()), "PRECONDITION: no row where OTHER's Pursuit is the max — the term is untested"
-    want = torch.maximum(want, other)
-    alive_i = (hctx.hp_and_active[:, :6, 0] > 0).float()
-    assert torch.equal(our[..., 1], want[:, None] * alive_i)
+    want = _pursuit_noisy_or_ref(x5)
+    without_other = _pursuit_noisy_or_ref(x5, with_other=False)
+    assert bool(((want - without_other) > 1e-3).any()), \
+        "PRECONDITION: no row where OTHER's Pursuit term moves the read — the term is untested"
+    alive_i = (hctx.hp_and_active[:, :6, 0] > 0).double()
+    assert torch.allclose(our[..., 1].double(), want[:, None] * alive_i, atol=1e-6, rtol=0.0)
     # presence matters: with every hypothesis at presence 1 the read can only rise
     with torch.no_grad():
         our1, _ = _with_roster(op, dataclasses.replace(x5, slot_pi=torch.ones_like(x5.slot_pi))).pairwise_entry(
@@ -288,10 +299,10 @@ def _other_cells(fm):
     return fe._other_edge_cells(fm["hctx"], fm["x5"], fe.last_spread_belief, fe.edge_bias.families)
 
 
-def test_other_any_is_one_minus_the_product_and_enters_the_pursuit_max(fm):
-    """F4 (b): OTHER's max-site presence is 1 − Π_tail(1 − π) (fp64 reference), in [0, 1], 0 when masked;
-    `p_pur_vs_us` takes it with OTHER's averaged Pursuit presence. Revert to the mass and it leaves [0,1]."""
-    from agents.model.damage_tables import _pursuit_num
+def test_other_any_is_one_minus_the_product_and_enters_the_pursuit_noisy_or(fm):
+    """F4 (b): OTHER's presence is 1 − Π_tail(1 − π) (fp64 reference), in [0, 1], 0 when masked;
+    `p_pur_vs_us`'s noisy-OR takes it with OTHER's averaged Pursuit presence. Revert to the mass and it leaves
+    [0,1]."""
     hs, x5, op, fe = fm["hs"], fm["x5"], fm["op"], fm["fe"]
     sp = hs.species
     in_tail = sp.cand & (hs.rank >= sp.k.unsqueeze(-1)) & (sp.k > 0).unsqueeze(-1)
@@ -302,10 +313,9 @@ def test_other_any_is_one_minus_the_product_and_enters_the_pursuit_max(fm):
     assert bool((hs.other_mass[hs.other_live] > 1).any())             # the mass is NOT a presence
     with torch.no_grad():
         our, _ = _with_roster(op, x5).pairwise_entry(fm["hctx"], fe.last_move_belief_logits)
-    alive_i = (fm["hctx"].hp_and_active[:, :6, 0] > 0).float()
-    want = torch.maximum((x5.slot_pi * x5.move_w[:, :, _pursuit_num()] * x5.alive).amax(-1),
-                         x5.other_any * x5.other_pursuit)
-    assert torch.equal(our[..., 1], want[:, None] * alive_i)
+    alive_i = (fm["hctx"].hp_and_active[:, :6, 0] > 0).double()
+    want = _pursuit_noisy_or_ref(x5)
+    assert torch.allclose(our[..., 1].double(), want[:, None] * alive_i, atol=1e-6, rtol=0.0)
 
 
 def test_other_defender_is_the_averaged_tail_construction_and_never_immune(fm):
@@ -389,9 +399,9 @@ def test_other_is_a_strict_refinement_one_hot_tail_equals_the_species_column(fm)
     assert torch.equal(x5.other.concrete[~x5.hyp], torch.ones_like(x5.other.concrete[~x5.hyp]))
 
 
-def test_other_alone_can_carry_the_pursuit_max(fm):
-    """With no slot carrying Pursuit, `p_pur_vs_us` IS OTHER's other_any · P(Pursuit | OTHER). Revert
-    (OTHER out of the max) and it reads 0."""
+def test_other_alone_can_carry_the_pursuit_cell(fm):
+    """With no slot carrying Pursuit, `p_pur_vs_us` IS OTHER's other_any · P(Pursuit | OTHER) (the noisy-OR of
+    one live term: 1 − (1 − 0)·(1 − o) = o). Revert (OTHER out of the noisy-OR) and it reads 0."""
     from agents.model.damage_tables import _pursuit_num
     op, hctx, x5, fe = fm["op"], fm["hctx"], fm["x5"], fm["fe"]
     pur = _pursuit_num()
@@ -402,7 +412,7 @@ def test_other_alone_can_carry_the_pursuit_max(fm):
     _with_roster(op, x5)
     alive_i = (hctx.hp_and_active[:, :6, 0] > 0).float()
     want = (x5.other_any * x5.other_pursuit)[:, None] * alive_i
-    assert torch.equal(our[..., 1], want) and float(want.max()) > 0
+    assert torch.allclose(our[..., 1], want, atol=1e-6, rtol=0.0) and float(want.max()) > 1e-3
 
 
 def test_other_edges_are_written_at_the_other_seat_and_gated_by_liveness():

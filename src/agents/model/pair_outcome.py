@@ -230,17 +230,17 @@ PAIR_OUTCOME_COORDS: Tuple[str, ...] = (
     "low", "high", "crit", "ko_ramp", "acc", "is_phys",
     # --- NEW: status, per IDENTITY (SECONDARY_COLS' major prefix order) ---
     "p_par", "p_brn", "p_frz", "p_slp", "p_psn", "p_tox",
-    # --- NEW: the two coordinates design_pair_reduction.md §2.1 names as missing ---
-    "neutralization", "tempo_cost",
+    # --- the two exact status FACTS (`STATUS_FACT_COORDS`; the JUDGMENTS `neutralization` / `tempo_cost` that held
+    #     these positions were deleted by the legacy deletion's U1) ---
+    "e_burn_dmg_lost", "e_par_outspeed_lost",
 )
-#: gen3_endstate_facts_v1 (`--status-facts exact`): the two coordinates that REPLACE `neutralization` / `tempo_cost`
+#: gen3_endstate_facts_v1 (the exact status facts): the two coordinates that REPLACED `neutralization` / `tempo_cost`
 #: in the same two positions (a width-neutral swap: `PAIR_OUTCOME_COORDS[12:14]`), each a FACT in its own unit —
 #: the expected HP fraction (of the target's max HP) a burn from this seat costs our mon j's physical damage, and the
 #: expected loss of P(j outspeeds their active) a paralysis from this seat costs. `DamageOperatorBlocks.
 #: pair_outcome_coords` is the producer; the cure availability rides `status_facts.cure_flags` on the mon tokens.
 STATUS_FACT_COORDS: Tuple[str, ...] = ("e_burn_dmg_lost", "e_par_outspeed_lost")
-#: `--status-facts`'s legal values: ``off`` = the two judgments (production, byte-identical); ``exact`` = the facts.
-STATUS_FACTS_MODES: Tuple[str, ...] = ("off", "exact")
+assert PAIR_OUTCOME_COORDS[12:14] == STATUS_FACT_COORDS
 #: Name → index over `PAIR_OUTCOME_COORDS`. The op reads `"high"` off it when building the vector,
 #: so a coordinate reorder cannot silently feed the status physics the wrong damage column.
 PAIR_OUTCOME_IDX = {name: i for i, name in enumerate(PAIR_OUTCOME_COORDS)}

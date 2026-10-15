@@ -10,9 +10,9 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | **THE END STATE** — adopted 2026-10-12 on the end-state closing test's PASS (ledger 2026-10-12 "THE END-STATE CLOSING TEST: PASS"; [`endstate/design_endstate_closing_test.md`](endstate/design_endstate_closing_test.md) §9: 8 × 8 mirrored cross, Δ̂ +0.596 pp, two-sided 90 % interval [−0.723, +1.915] against the legacy production). "Production" is what `--arch production` resolves: the mirror `designs/production_config.json` (`config_version` **154**, `arch_signature` **`gen3_mon_tied_gain_v1`**) plus its `recipe` block. Its surface: the STATIC per-mon tokens with three board tokens, trunk depth 3, the static-recovery facts (each mon's Spikes cost, our active's and their active's state on our move seats, the switch cell's hazard, the end-of-turn residual), MOVE RESOLUTION in place of the seven per-action α blocks, the speed PHYSICS, the PRINCIPLED op reductions, the OBS-FACTS block read, NO critic threat injection, the exact status facts and cure flags, the exact (closed-form) P(KO), the progress clock NOT read, ONE end-of-turn rule (`g_ledger` `eot`), the active mons' effective stats, and the four-move closure in the move belief — on gen-17's substrate (all 17 edge families, the entity seats, the event window, the belief stack, X5's hypothesis tokens) and the win-prob critic. **No Rustboro-era run is the mirror's sync source yet:** the mirror is CONSTRUCTED — the pre-adoption mirror (gen-17's surface with the critic swapped, last synced from `ai_v12_02_winprob_critic`, 2026-09-06, pre-era history, then FOLLOWING THE CODE — the row below) ⊕ the `--arch endstate` overlay's 19 keys — and VERIFIED against the eight closing-test end-state runs' `model_config.json` (`rb_es_end2_s2001`–`s2008`, trained at `62085750`): equal except the five `ridealong_*` readout keys (and, until 2026-10-14, `config_version`: the mirror kept 145, a stamp the static port's migration REFUSES beside `token_encoding` `static`, so it was moved to the runs' 154) ([`production_config.README.md`](production_config.README.md) "The end-state adoption"). The registry's `production` baseline names `rb_es_end2_s2005/final_model.zip` (`designs/baselines.json`). HEAD's end state differs from the TESTED build `62085750` by one math-equal change, the closed-form exact KO (max ≈ 1e-6 relative on the same weights, greedy agreement 136 / 136); every other file is behaviour-identical under the production argv. The pre-adoption (LEGACY) production is reproducible pinned (`--pin-commit 95d014fa --arch production`). Every §4 / §5 measurement below was taken on gen-17 `models/ai_v9_21_gen17_pfspoff_0820/` (v97) or earlier — the LEGACY surface, not this one |
+| Production run | **THE END STATE** — adopted 2026-10-12 on the end-state closing test's PASS (ledger 2026-10-12 "THE END-STATE CLOSING TEST: PASS"; [`endstate/design_endstate_closing_test.md`](endstate/design_endstate_closing_test.md) §9: 8 × 8 mirrored cross, Δ̂ +0.596 pp, two-sided 90 % interval [−0.723, +1.915] against the legacy production). "Production" is what `--arch production` resolves: the mirror `designs/production_config.json` (`config_version` **156**, `arch_signature` **`gen3_mon_tied_gain_v1`**) plus its `recipe` block. Its surface: the STATIC per-mon tokens with three board tokens, trunk depth 3, the static-recovery facts (each mon's Spikes cost, our active's and their active's state on our move seats, the switch cell's hazard, the end-of-turn residual), MOVE RESOLUTION in place of the seven per-action α blocks, the speed PHYSICS, the PRINCIPLED op reductions, the OBS-FACTS block read, NO critic threat injection, the exact status facts and cure flags, the exact (closed-form) P(KO), the progress clock NOT read, ONE end-of-turn rule, the active mons' effective stats, and the four-move closure in the move belief — on gen-17's substrate (all 17 edge families, the entity seats, the event window, the belief stack, X5's hypothesis tokens) and the win-prob critic. **No Rustboro-era run is the mirror's sync source yet:** the mirror is CONSTRUCTED — the pre-adoption mirror (gen-17's surface with the critic swapped, last synced from `ai_v12_02_winprob_critic`, 2026-09-06, pre-era history, then FOLLOWING THE CODE — the row below) ⊕ the `--arch endstate` overlay's 19 keys (eight of which — the op levers — have since LEFT the mirror with their fields, legacy deletion U1, 2026-10-15: their adopted behaviour is unconditional wherever the op is built) — and VERIFIED against the eight closing-test end-state runs' `model_config.json` (`rb_es_end2_s2001`–`s2008`, trained at `62085750`): equal except the five `ridealong_*` readout keys (and `config_version`: the mirror kept 145 until 2026-10-14, a stamp the static port's migration REFUSES beside `token_encoding` `static`, so it was moved to the runs' 154; since legacy deletion U1 (2026-10-15) it is stamped 156; the runs still record 154 and load, because each recorded the ADOPTED value of every field U1 deleted — `model_version/adopted_levers.py` refuses only a non-adopted value in a network that built the op) ([`production_config.README.md`](production_config.README.md) "The end-state adoption"). The registry's `production` baseline names `rb_es_end2_s2005/final_model.zip` (`designs/baselines.json`). HEAD's end state differs from the TESTED build `62085750` by one math-equal change, the closed-form exact KO (max ≈ 1e-6 relative on the same weights, greedy agreement 136 / 136); every other file is behaviour-identical under the production argv. The pre-adoption (LEGACY) production is reproducible pinned (`--pin-commit 95d014fa --arch production`). Every §4 / §5 measurement below was taken on gen-17 `models/ai_v9_21_gen17_pfspoff_0820/` (v97) or earlier — the LEGACY surface, not this one |
 | Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose |
-| `designs/production_config.json` | the production config **carried forward to HEAD's schema** — written by `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited (bar the `recipe` block), its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax). A **signature-bump window is OPEN** (opened 2026-09-26 by the observation-architecture batch; moved forward by the X5 version break, 2026-10-07, and v145's tied `out_gain`): the last synced run records `gen3_critic_route_wave_v1`, so the mirror follows the CODE until it is re-synced from a run at the new signature — then the window closes and the mirror tracks that run. Such runs now exist (the closing test's end-state runs record `gen3_mon_tied_gain_v1` at config v154), but the adopted mirror was CONSTRUCTED from the overlay rather than synced (row above), so the window stays open until a `--sync-config`; the mirror's `config_version` is the runs' 154 (since 2026-10-14 — at 145 it was no loadable config, `baselines_loadability_test`). (Inside such a window the compile gate needs the mirror to match live code and the drift gate needs it to mirror the newest run, so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
+| `designs/production_config.json` | the production config **carried forward to HEAD's schema** — written by `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited (bar the `recipe` block), its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax). A **signature-bump window is OPEN** (opened 2026-09-26 by the observation-architecture batch; moved forward by the X5 version break, 2026-10-07, and v145's tied `out_gain`): the last synced run records `gen3_critic_route_wave_v1`, so the mirror follows the CODE until it is re-synced from a run at the new signature — then the window closes and the mirror tracks that run. Such runs now exist (the closing test's end-state runs record `gen3_mon_tied_gain_v1` at config v154), but the adopted mirror was CONSTRUCTED from the overlay rather than synced (row above), so the window stays open until a `--sync-config`; the mirror's `config_version` is 156 (the runs record 154; the mirror took the runs' 154 on 2026-10-14 — at 145 it was no loadable config, `baselines_loadability_test` — and HEAD's 156 with legacy deletion U1 on 2026-10-15, when eight op fields left it). (Inside such a window the compile gate needs the mirror to match live code and the drift gate needs it to mirror the newest run, so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
 machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
@@ -480,8 +480,8 @@ adds log π of each opponent key (detached; FLOAT key masks in the three `nn` po
 active's MOVE axis reads the move group (`FixedMassMoves`): ONE order (revealed first, then the top
 unrevealed by π_m) gives the E4 seats, the op's top-K seat axis (pair cells, α's seats), the D3 / S3
 cells and the intent operands (no `torch.topk`); the op's incoming maxes weight each candidate by its
-DETACHED fixed-mass presence (production `--op-reduction principled`: that presence normalised is the α of an
-expectation, §4; the legacy `max` takes the presence-scaled max); a revealed Hidden Power's seat is priced as its
+DETACHED fixed-mass presence (that presence normalised is the α of an expectation, §4 — the PRINCIPLED reduction, the
+only one since legacy deletion U1); a revealed Hidden Power's seat is priced as its
 typed mixture; the active's E5 seat is OTHER_move — and the active's move REINJECTION soft-embeds its
 row by that detached presence. **`--move-set-closure on`** (production; config v154, `gen3_move_set_closure_v1`) gives
 every OTHER slot its own fixed-mass presence at k = 4 − revealed through the move head's graph
@@ -586,15 +586,15 @@ cell reads, on the mon's BASE types; on the context the op prices with, so an X5
 and before the trunk; **`--move-actor-state on`** adds our active's HP fraction and status one-hot to its four VALID E3
 seats through a zero-init bias-free `IsolatedLinear(8, 128)` (equivalently zero-init input columns of
 `move_seat_proj`). Both are built LAST with no RNG draw, so each flag's ON build starts byte-equal to its OFF build
-plus one zero matrix. Two more levers (config v150, `gen3_static_recovery_v1`, both ON in production; design note §13)
-compose with either encoding: **`--eot-residual on`** adds every mon's (both sides) END-OF-TURN HP change if it is the mon on its
+plus one zero matrix. Two more facts (config v150, `gen3_static_recovery_v1`; design note §13; FLAGLESS since legacy deletion U1 — built
+whenever the damage op is) compose with either encoding: the **END-OF-TURN RESIDUAL** adds every mon's (both sides) END-OF-TURN HP change if it is the mon on its
 side's field at the end of this turn — Leftovers (known item, else the species' Smogon prior), sand / hail chip (types,
 Sand Veil; none on a timed weather's last turn; × P(no Cloud Nine / Air Lock)), Rain Dish, the next status tick (burn /
 poison 1/8, Toxic min(n+1, 15)/16, × (1 − P(Shed Skin)/3)), Leech Seed's drain on the seeded active and its heal to every mon of
 the other side (scaled by max HP; Liquid Ooze inverts it), Wish +1/2 (half the RECIPIENT's max HP in gen 3), Ingrain,
 Curse, Nightmare × P(stays asleep), and the HP-clamped net (11 columns, `agents/model/eot_residual.py`'s
 `EotResidualRule`, on the op's context) — through a zero-init bias-free `IsolatedLinear(11, 128)` beside
-`mon_hazard_proj`; **`--switch-hazard-cost on`** appends each switch target's [our side's Spikes layers / 3, its
+`mon_hazard_proj`; the **SWITCH-HAZARD COST** appends each switch target's [our side's Spikes layers / 3, its
 switch-in HP fraction] (the same `spikes_entry` values) LAST to the switch pointer cell (§3.3). Production also runs
 **`--trunk-layers 3`** (step 9). The named arm `--arch static_recovery` (the closing test's bisection rung C1, not run: the test passed) was
 DELETED by the legacy deletion's U0 (`ops/legacy_deletion_manifest_2026-10-12.md`, D-LD3: it was defined by the
@@ -688,12 +688,12 @@ The concrete steps:
    X5's hypothesis moves read these tables too (they come from the move prior's legality).
 5. **`DamageOperator`** — the full 660-dim block (§4), computed on the pre-attention tokens.
 6. **`prefuse_proj`** — the op's per-our-mon incoming rows `[B,6,12]` projected to `d_model` and
-   **added** to our 6 role tokens. Zero-init ⇒ exactly 0 at init. Beside it, production (`--op-reduction
-   principled`) adds `op_worst_proj`'s noisy-OR worst-case rows (§4).
+   **added** to our 6 role tokens. Zero-init ⇒ exactly 0 at init. Beside it, the op adds `op_worst_proj`'s noisy-OR
+   worst-case rows (§4; unconditional with the op since legacy deletion U1).
    **6b. The production pre-trunk residuals**, each zero-init and added to the mon tokens before the trunk: the
-   per-mon OP CONTENT (`op_content`), `mon_hazard_proj` (`--mon-hazard-cost on`), `eot_residual_proj`
-   (`--eot-residual on`), `status_cure_proj` (`--status-facts exact`, §3.2) and `effective_stats_proj`
-   (`--effective-stats on`, the two actives only); on the E3 seats, `move_actor_proj` (`--move-actor-state on`) and
+   per-mon OP CONTENT (`op_content`), `mon_hazard_proj` (`--mon-hazard-cost on`), `eot_residual_proj`,
+   `status_cure_proj` (§3.2) and `effective_stats_proj` (the two actives only) — these three built whenever the
+   op is (flagless since legacy deletion U1); on the E3 seats, `move_actor_proj` (`--move-actor-state on`) and
    `move_target_proj` (`--move-target-state on`). All are described above and in §3.2.
 7. **`EntityMoveSeats`** — builds 16 extra seats (§2.3).
 8. **Edge cells** — 15 per-pair physics tensors computed here, pre-transformer (§5).
@@ -851,7 +851,7 @@ blocks described next — `intent_move_cell`, `intent_threshold`, `intent_condit
 recorded `true` in the mirror and each is **INERT in production** (§6: the module is `None` on a built model — the
 extractor constructs it and the policy RETIRES it after SB3's re-init, before the optimizer, so it holds no parameter,
 key or optimizer slot). What they computed is either restored as a FACT by the move-resolution family (with
-`--move-resolution-facts full` and `--status-facts exact`) or dropped as a JUDGMENT (the list is below). They are
+`--move-resolution-facts full` and the exact status facts) or dropped as a JUDGMENT (the list is below). They are
 described because the code still builds them live under `--move-resolution off` — the legacy path, pending deletion
 (`designs/ops/legacy_deletion_manifest_2026-10-12.md` lane MR) — and because every gen-17-era measurement read them.
 
@@ -882,8 +882,9 @@ gated on gen-12's `intent_move_cell` audit (the G3 verdict); the pre-build G2 us
 **LIVE (ON in the gen-17 base): `pair_outcome_cell`** (v93, `gen3_pair_outcome_v1` — component 1 + 3 of
 `design_opponent_intent.md`, §2.1/§9a of `design_pair_reduction.md`) — INERT in production (`pair_outcome_move` is
 `None`: move resolution retires it). The op's `pair_in` grid it introduced IS production's: the move-resolution
-family reads its α-reduced rows, and under production's `--status-facts exact` positions 12–13 carry the exact status
-FACTS instead of the two judgments in the table below (`neutralization`, `tempo_cost` — the legacy reading). It closes a **currency**
+family reads its α-reduced rows, and positions 12–13 carry the exact status FACTS (the table below; the two JUDGMENTS
+they held until legacy deletion U1, `neutralization` and `tempo_cost`, are deleted — their definitions survive at the
+tag `pre-legacy-deletion`). It closes a **currency**
 failure, not a reduction failure: incoming status reaches the policy only through the `s3` edge
 family, i.e. as a softmax-normalised RATIO, so "35% of my HP" and "80% chance of burn" never meet
 in one vector and no reducer can trade them. When on, the op builds ONE **`pair_in[their believed
@@ -893,8 +894,8 @@ seat k, our mon j, :]`** of width `_PAIR_OUTCOME_RAW` = **14** — the six exist
 | # | coordinate | source |
 |---|---|---|
 | 6-11 | `p_par p_brn p_frz p_slp p_psn p_tox` | `_incoming_status_lands` (the per-pivot immunity physics × the side / clause rules of §4's status-landing paragraph, applied per identity) SPLIT by the seat's status IDENTITY — `MOVE_STATUS_IDENT` for a dedicated status move (read from the raw `status_inflicted`, so **tox and psn stay apart** where `MOVE_STATUS_CAT` folds them), `MOVE_SECONDARY`'s L1-normalised major prefix for a damaging move's secondary |
-| 12 | `neutralization` | fraction of this mon's per-turn contribution destroyed WITHOUT a KO: burn → `0.5·base_atk/(base_atk+base_spa)`, paralysis → `0.25 + 0.75·Δp_outspeed` (the op's OWN P(outspeed) re-evaluated with this mon paralysed: the logistic at ×0.25 speed, or under `--speed-physics on` the speed rule with paralysis applied once), freeze/sleep → 1.0, psn/tox → the 1/8 and 1/16 residual ticks. Every scalar is a gen3 RULE; no tuned prior |
-| 13 | `tempo_cost` | `P(any major status) × undo_turns(j)`, where `undo_turns` is the **CHEAPEST available undo path**: 1 turn for a cure MOVE (`MOVE_CURES_SELF_STATUS`: Refresh / Heal Bell / Aromatherapy), **1 for the Natural Cure ABILITY** (the status is shed on switch-out and a switch consumes exactly one of our actions), the op's own `rest_sleep_noeb` (**2**) for Rest, **2 for the bench-CLERIC path** (switch to an ALIVE teammate carrying a party-wide Heal Bell / Aromatherapy, then click it), else **0**. `0` means *no path exists* — never *the path is free* — which is why Natural Cure is priced at its literal switch. Every input is OUR mon's (moveset, ability, HP), so all of it is exact and no marginalisation arises on this axis. `neutralization` deliberately does NOT read the ability: it is a per-TURN rate and Natural Cure changes DURATION, which this reduction refuses to model without a rule to source a number from |
+| 12 | `e_burn_dmg_lost` | P(this seat's burn lands on our mon j) × the exact damage a burn costs j's moves against their active (the same kernel with Attack halved; the FACT the deleted `neutralization` judgment mixed into a weighted sum) — see the fact-completion levers below |
+| 13 | `e_par_outspeed_lost` | P(paralysis lands) × Δ P(j outspeeds their active) under the speed physics (the FACT; the deleted `tempo_cost` judgment assumed OUR cure plan). Cure AVAILABILITY rides the mon tokens as `CureFlags` instead (below) |
 
 ONE α over the move axis then reduces it — **Contract W**: α has no defender axis and no channel
 axis, so the flat block's nine-independent-maxima incoherence (D2) and a per-defender α (D3) are
@@ -907,9 +908,8 @@ testable apart from the DISTRIBUTION claim. A seat closed by the meaningful-K ga
 mass not reassigned. The reduced row for our ACTIVE defender rides every move cell as decorrelated
 context through a zero-init `Linear(14, 14)`.
 
-Known limits of the coordinate table, named rather than approximated: status DURATION (which is
-also why the Natural Cure ability rides `tempo_cost` and not `neutralization`), physics mutation
-(Marvel Scale), and a held berry's auto-cure.
+Known limits of the coordinate table, named rather than approximated: status DURATION and physics mutation (Marvel
+Scale). (A held Lum / Chesto Berry and Natural Cure are CURE facts on the mon tokens, `CureFlags`, not grid coordinates.)
 
 **LIVE (ON in the gen-17 base): `pair_outcome_switch`** (v94, `gen3_pair_outcome_switch_v1`) — INERT in production
 (`pair_outcome_switch` is `None`: move resolution retires it; its switch-cell row is the family's). The same
@@ -983,50 +983,53 @@ Rapid Spin also clears Leech Seed and partial-trap from its user, and a Ghost KO
 denies nothing.
 
 **ON in production: the FACT-COMPLETION levers** (config v152, `gen3_endstate_facts_v1`;
-`endstate/design_hand_computed_features.md` §4 ranks 3-5, §5 rank 1, finding 7). Five flags, each its own lever, each
-at its adopted value in production; each one's OFF value (below, "legacy") is pending deletion
-(`designs/ops/legacy_deletion_manifest_2026-10-12.md` lane OP / OBS), and each was byte-identical at OFF when built
-(graph, state_dict and outputs, `research_state/measurements/endstate_facts_2026-10-09/`):
+`endstate/design_hand_computed_features.md` §4 ranks 3-5, §5 rank 1, finding 7). Five facts, each built as its own
+lever and each byte-identical at OFF when built (graph, state_dict and outputs,
+`research_state/measurements/endstate_facts_2026-10-09/`). THREE are FLAGLESS since legacy deletion U1 (config v156,
+`designs/ops/legacy_deletion_manifest_2026-10-12.md` lane OP): the exact P(KO), the exact status facts and the one
+end-of-turn rule are the damage op's only physics, built whenever the op is; a config that recorded their legacy
+value beside the op is refused, read pinned at the tag `pre-legacy-deletion`. The other two keep a flag whose OFF
+value is pending deletion (lane MR / OBS):
 
-* **`--ko-ramp exact`** (production; `agents/model/ko_exact.py`; legacy `ramp`): every P(KO) the op prices — `_rolls`
+* **Exact P(KO)** (`agents/model/ko_exact.py`; flagless since U1, was `--ko-ramp exact`): every P(KO) the op prices — `_rolls`
   (every kernel), the Choice-Band tail's inlined `ko_cb`, the Substitute break (move resolution's `sub_survives`; the
   INERT legacy `intent_threshold` block's under `--move-resolution off`) and move resolution's
   Pursuit KO — is the exact probability over the 16 gen-3 damage rolls (r uniform on 85 … 100, applied last) plus the
   move's crit chance (`critRatio` 1 → 1/16, 2 → 1/8; ×2 after the `+2`, ignoring the screens), each roll's KO
   resolved over the observed HP interval (ours exact: ±½ HP; theirs HP Percentage Mod's bin, a reported p < 100 %
-  being (p − 1 %, p]). The `ramp` it replaces anchored a 15 %-wide line at the op's MEAN roll (0.925 of the top),
-  so a hit whose mean roll equals the HP read 0 where 8 of 16 rolls KO, and it omitted the crit. Continuous and
+  being (p − 1 %, p]). The deleted legacy ramp anchored a 15 %-wide line at the op's MEAN roll (0.925 of the
+  top), so a hit whose mean roll equals the HP read 0 where 8 of 16 rolls KO, and it omitted the crit. Continuous and
   differentiable; no parameters. It is computed in CLOSED FORM (`ko_exact.roll_ko_prob`, `gen3_ko_exact_closed_v1`):
   the op's damage is continuous, so the 16 roll terms are an exact arithmetic sequence — two run counts and one
   arithmetic-series sum per cell, not 16 passes; equal to the 16-roll sum (the test oracle, `ko_exact_test.py`) within
   a derived rounding bound of 8 eps (1 + (|top| + |hp_lo|) / w), its two counts declared `COUNT_CONTINUOUS` in
   `selection_sites` (the sum is continuous across each count's step). The value `exact_closed` that carried this
-  form beside the sum at `6e0a1a7a` is RETIRED (refused with its reason, `designs/deleted_flags.md` §4).
-* **`--status-facts exact`** (production; legacy `off`): the pair-outcome grid's positions 12-13 (the legacy
-  judgments `neutralization`, `tempo_cost`) carry `e_burn_dmg_lost` = P(this seat's burn lands on our mon j) × the exact damage a burn costs j's
+  form beside the sum at `6e0a1a7a` went with the flag (`designs/deleted_flags.md` §1).
+* **The exact status facts** (flagless since U1, was `--status-facts exact`): the pair-outcome grid's positions 12-13
+  (which held the deleted judgments `neutralization`, `tempo_cost`) carry `e_burn_dmg_lost` = P(this seat's burn lands on our mon j) × the exact damage a burn costs j's
   moves against their active (`DamageOperatorBlocks.our_burn_loss`: the same kernel with Attack halved, the
   expectation over j's held moves; 0 for a special move, a non-formula move, Guts or an already-burned mon) and
   `e_par_outspeed_lost` = P(paralysis lands) × Δ P(j outspeeds their active) (width-neutral). P(full paralysis) = 1/4
   is the rule constant times the delivered `p_par`. Every mon, BOTH sides, gets its cure-availability FACTS as token
   content (`agents/model/status_facts.py`, `CureFlags`; zero-init bias-free `IsolatedLinear(5, 128)` beside
   `eot_residual_proj`): a live Heal Bell / Aromatherapy user on its side, Natural Cure, Rest, a Lum / Chesto Berry —
-  ours exact, theirs the move / ability / item beliefs. Under `--move-resolution on` (production) the two pair facts
+  ours exact, theirs the move / ability / item beliefs; built whenever the op is. Under `--move-resolution on` (production) the two pair facts
   also reach its cells (α-reduced at our active and per mon) through their own zero-init projections.
 * **`--move-resolution-facts full`** (production; requires `--move-resolution on`; legacy `off`): the restored facts on the
   move-resolution cells through zero-init bias-free projections onto the same blocks — move cell `fp_survives`
-  (1 − Σ α·P(a seat's hit lands on us), a hit on our Substitute excepted), `sub_survives` (the exact break under
-  `--ko-ramp exact`, else the ramp at 25 %), `endure_p_ko`, `endeavor_survives`, `spin_value_lost` (1 − p_resolve)
+  (1 − Σ α·P(a seat's hit lands on us), a hit on our Substitute excepted), `sub_survives` (the exact break), `endure_p_ko`, `endeavor_survives`, `spin_value_lost` (1 − p_resolve)
   × our Spikes layers / 3; switch cell `spin_denied_stake` (P(their spin fails on our Ghost j) × their layers / 3).
 * **`--drop-progress-clock on`** (production; legacy `off`): the model reads the observation's `turns_since_progress`
   (a hand definition of progress, a JUDGMENT) as 0 — at `ObsUnpack`, for every reader of the board scalars; the Rust
   layout is unchanged.
-* **`--g-ledger eot`** (production; legacy `coarse`): the op's `g` cell (and `c4`'s nets, the static op content) reads
-  THE end-of-turn rule `--eot-residual` reads (`eot_residual.g_cells`: [Leftovers + Rain Dish + Wish + Ingrain, weather,
-  status + Curse + Nightmare, Leech drain + heal]) instead of a second, coarser ledger of its own (the legacy
-  `coarse`). No parameters.
+* **ONE end-of-turn rule** (flagless since U1, was `--g-ledger eot`): the op's `g` cell (and `c4`'s nets, the static
+  op content) reads THE end-of-turn rule the end-of-turn residual reads (`eot_residual.g_cells`: [Leftovers + Rain
+  Dish + Wish + Ingrain, weather, status + Curse + Nightmare, Leech drain + heal]); the op's second, coarser ledger
+  (the legacy `coarse`) is deleted. No parameters.
 
 Two more facts (config v153, `gen3_probe_facts_v1`, both ON in production; the representation probe battery's candidates,
-`endstate/design_hand_computed_features.md` §4 rows 12-13): **`--effective-stats on`** adds to each side's ACTIVE mon's
+`endstate/design_hand_computed_features.md` §4 rows 12-13): the **EFFECTIVE STATS** (flagless since U1, built whenever
+the op is; was `--effective-stats on`) add to each side's ACTIVE mon's
 token (zero-init bias-free `IsolatedLinear(7, 128)`) its Atk / Def / SpA / SpD / Spe after the gen-3 stat stages (Spe
 also after paralysis) / 500 — ours from the observed spread, theirs the believed spread — and its accuracy / evasion
 stage multipliers (a benched mon reads 0); **`--move-target-state on`** adds THEIR active's HP fraction and status
@@ -1034,9 +1037,10 @@ one-hot to our four VALID E3 seats (zero-init `IsolatedLinear(8, 128)`; `--move-
 encoding).
 
 The named arm **`--arch endstate`** (`main/train/arch_arms.py`) is an ALIAS of `--arch production`: its overlay —
-`static_recovery`'s six keys + `--move-resolution on`, `--speed-physics on`, `--value-threat-inject off`,
-`--op-reduction principled`, `--obs-facts v1` + all five fact-completion levers + `--effective-stats on
---move-target-state on` + `--move-set-closure on` — equals the mirror, so it builds the same network on the same recipe
+`--token-encoding static`, `--mon-hazard-cost on`, `--move-actor-state on`, `--trunk-layers 3`, `--move-resolution on`,
+`--value-threat-inject off`, `--obs-facts v1`, `--move-resolution-facts full`, `--drop-progress-clock on`,
+`--move-target-state on`, `--move-set-closure on` (11 keys; the eight op levers left it with their fields in legacy
+deletion U1) — equals the mirror, so it builds the same network on the same recipe
 (only its `arch_source` provenance tag names the arm); it stays so the closing test's and the bf16 A/B's argvs resolve.
 
 **ON in production: `move_resolution`** (v141, `gen3_move_resolution_v1`, `--move-resolution {off,on}` —
@@ -1067,8 +1071,8 @@ Not in the base family: `tempo_cost`, `neutralization`, `wasted_ko`, `spin_value
 `spin_denied`, and the Focus Punch / Substitute / Endure / Endeavor coordinates. By the owner's 2026-10-09
 classification test (`endstate/design_hand_computed_features.md` §1: a FACT is an event's probability or magnitude in
 its own unit; a JUDGMENT mixes units with a chosen weight, assumes our later plan, or grades with a threshold) only
-`neutralization` (as implemented) and `tempo_cost` are judgments — their facts are `--status-facts exact`'s (above,
-ON in production);
+`neutralization` (as implemented) and `tempo_cost` were judgments — their facts are the exact status facts (above,
+flagless since U1), and the judgments themselves are deleted;
 `wasted_ko` is a fact but an interaction of two delivered columns; the rest are FACTS and come back behind
 **`--move-resolution-facts full`** (above, ON in production). The op itself now applies
 the incoming side / clause rules and reads an opponent's ability through its `known` flag (§4), so the family's
@@ -1194,8 +1198,8 @@ own zero-init block — `intent_move_cell` (+`INTENT_MOVE_CELL_DIM`), `intent_th
 (+`CONDITIONAL_THREAT_SWITCH_DIM` = 4), appended in that order — 34 wide with both (MEASURED 2026-10-12, CPU, on the
 main checkout's pre-adoption production build: `move_proj` 190 = 128 + 62, `switch_proj` 162 = 128 + 34). `pointer_move_cell_dim` /
 `pointer_switch_cell_dim` is the single sum the policy sizes each scorer's `in_features` from — a missing block
-narrows the `Linear` rather than silently feeding it zeros at a learned weight. **`--switch-hazard-cost on`**
-(production; `gen3_static_recovery_v1`, config v150) appends `SWITCH_HAZARD_DIM` = 2 LAST, after every other
+narrows the `Linear` rather than silently feeding it zeros at a learned weight. The **switch-hazard cost**
+(`gen3_static_recovery_v1`, config v150; flagless since legacy deletion U1, built whenever the op is) appends `SWITCH_HAZARD_DIM` = 2 LAST, after every other
 block: switch target *j*'s [our side's Spikes layers / 3, the HP fraction it loses switching in] from the op's ONE entry
 rule (`DamageOperator.spikes_entry`; `static_facts.switch_hazard_features`). The head reads that trailing block through
 its own zero-init bias-free `IsolatedLinear(2, 64)` (`switch_extra_proj`, built last, sized by
@@ -1453,14 +1457,11 @@ Explosion `pko`), and the `incoming_matrix` call is where `last_topk_idx` / `las
 — the seat axis α aligns to — are selected. Turning either matrix flag off deletes those; turning
 `op_drop_renders` off re-widens the flat block to 660 and changes nothing else.
 
-**P(we act first) — the speed PHYSICS in production (`--speed-physics on`); the logistic is the legacy path** (v143,
-`gen3_speed_physics_v1`, architecture audit F7b; `off` pending deletion, the manifest's lane OP). Every op site that
+**P(we act first) — the speed PHYSICS** (v143, `gen3_speed_physics_v1`, architecture audit F7b; FLAGLESS since legacy
+deletion U1, config v156: the op's only speed rule). Every op site that
 prices who moves first — the incoming per-mon `p_outspeed`, the outgoing `p_outspeed`, the outgoing attacker matrix,
-the pair outcome's paralysis severity / `e_par_outspeed_lost`, C1's boost `d_outspeed`, C2's `d_their_outspeed` and
-the V edge — reads, under the legacy `off`, `sigmoid((our_spe − their_spe) / _DMG_SPEED_SCALE)` with
-`_DMG_SPEED_SCALE = 15.0` (hand-chosen, "about one stage"; no per-species speed-spread lookup is made — audit F7a
-deleted the discarded ones). Under `on` (production; no parameters; the `off` build was byte-identical when the lever
-landed — the extractor's compiled graph, state_dict and outputs) each site builds its inputs in
+the pair outcome's `e_par_outspeed_lost`, C1's boost `d_outspeed`, C2's `d_their_outspeed` and
+the V edge — builds its inputs in
 `damage_op_speed.py` and calls ONE rule, `move_order.p_first_same_priority`: OUR speeds EXACT (Showdown's integer
 stat, stage-floor and paralysis arithmetic: the stage applies on the active row only, paralysis on every row,
 `modify(spe, 0.25)` rounds half down); THEIR speed the species' DISCRETE Smogon distribution over the Speed stat
@@ -1472,12 +1473,14 @@ speed. Quick Claw (gen 3: ONE shared 1-in-5 roll per turn, holders at 65535) is 
 (`move_order.p_first_quick_claw`) and FORMAT-GATED OFF: it is BANNED in gen3ou (Showdown master's banlist, owner
 2026-10-07; `move_order.quick_claw_live`). The PRIORITY bracket is the same module's `p_seat_first`, read by the
 move-resolution family (and by the legacy `intent_conditional` block, INERT in production), and both read the
-PRE-gain P(first) in either mode (the op's live `last_raw_tensors` view). Real battles (the Lane S bank, 580 battles,
+PRE-gain P(first) (the op's live `last_raw_tensors` view). Real battles (the Lane S bank, 580 battles,
 23,598 equal-priority turn rows; the mixture's numbers are the same for cold-start and trained beliefs): Brier
 0.0440 vs the logistic's 0.0425 (cold-start; 0.0369 on the trained `rb_x5ab_blob_s1007`), log loss 0.1308 vs
 0.1341 (0.1208), ECE 0.0184 vs 0.0157 (0.0235), 0 rows certain and wrong; 3,428 unequal-priority rows, 0
-contradicted (`designs/research_state/measurements/speed_physics_f7b_2026-10-07/`) — NOT better calibrated
-overall: the upper-middle bins are over-confident. Named residuals: Swift Swim / Chlorophyll / Macho Brace are
+contradicted (`designs/research_state/measurements/speed_physics_f7b_2026-10-07/`; the logistic is the DELETED legacy rule
+`sigmoid(Δspe / 15)`, a hand constant "about one stage") — NOT better calibrated overall: the upper-middle bins are
+over-confident. (No parameters; when the lever landed its `off` build was byte-identical — the extractor's compiled
+graph, state_dict and outputs.) Named residuals: Swift Swim / Chlorophyll / Macho Brace are
 not modelled, and the mixture is the Smogon usage prior alone — nothing this battle has shown (an observed move
 order) conditions it.
 
@@ -1591,22 +1594,20 @@ roll, P(first), the flinch chance; INERT in production) read it in both speed mo
 **Every gradient-path max is `max_by_index`** (`agents/model/index_max.py`, a leaf module; `damage_op`
 re-exports it; architecture audit F6a): `max_by_index(x, dim, keepdim)` gathers `x` at
 `x.detach().argmax(dim)`, so its value equals `amax`'s bit for bit and on an exact tie the WHOLE gradient goes
-to the FIRST maximum (the declared convention; `amax` splits it). It is the spelling of the op's ten incoming
-channel maxima in every configuration (belief on or off), the pairwise kernels (setup deltas, worst/best
-cells, the four channel maxima, `p_pur_vs_us`), the status-landing maxima, the E5 tail's worst-phys/spec and
-`pair_reduce`'s inert deepsets pool — under the legacy `--op-reduction max`; production's `principled` replaces every
-one of them that reduces THEIR believed moves with an expectation / noisy-OR (no index, no tie) and keeps the rest. `amax` / `amin` remain only off any gradient path: the provenance gate
+to the FIRST maximum (the declared convention; `amax` splits it). It is the spelling of every hard
+maximum the op still takes — the reductions over OUR moves and over a move's own secondary-status columns (below)
+and `pair_reduce`'s inert deepsets pool; every reduction over THEIR believed moves is the principled expectation /
+noisy-OR (no index, no tie; the legacy per-channel maxima went with `--op-reduction max` in legacy deletion U1). `amax` / `amin` remain only off any gradient path: the provenance gate
 operand (a comparison), the cure/cleric table lookups, the cheapest-undo path minimum (constants), the
 `we_have_pur` observation indicator, `fixed_size_tau`'s `no_grad` bracket and the move-tie-gap diagnostics.
 `selection_sites` declares the one `MAX_VALUE` EXACT site at `index_max`.
 
-**`--op-reduction` — the op's reductions over THEIR believed moves** (`gen3_op_reduction_principled_v1`, config
-v146, architecture audit F6b, `agents/model/op_reduction.py`; **production `principled`**; `max` is the legacy path,
-pending deletion — the manifest's lane OP). Under the legacy `max` every reduction of the
-opponent's believed-move axis is the presence-scaled hard maximum `max_c(w_c · v_c)`, taken separately per channel
-and per defender, with `acc` and `provenance` read at the argmax of the high roll — so one row can describe several
-moves at once (`design_pair_reduction.md` defect D2). Under `principled` (production) each such site reads TWO
-coherent facts:
+**The op's reductions over THEIR believed moves — the PRINCIPLED reduction** (`gen3_op_reduction_principled_v1`,
+config v146, architecture audit F6b, `agents/model/op_reduction.py`; FLAGLESS since legacy deletion U1, config v156:
+the op's only reduction). It replaced the presence-scaled hard maximum `max_c(w_c · v_c)` taken separately per channel
+and per defender, with `acc` and `provenance` read at the argmax of the high roll — so one row could describe several
+moves at once (`design_pair_reduction.md` defect D2; that `max` path is deleted). Each such site reads TWO coherent
+facts:
 
 * the **α-weighted EXPECTATION** `Σ_c α_c · v_c` with ONE α per attacker, shared by every channel and every
   defender: `α = w / Σ_m w_m`, the attacker's presence normalised by its presence over the WHOLE move axis (the R1
@@ -1626,10 +1627,10 @@ coherent facts:
   per our mon `[P(some physical move of theirs KOs it), P(some special move KOs it)]` (`op.last_worst_rows`
   `[B,6,2]`, NOT in the flat block — the block, its 29 `out_gain` entries and every slicer are unchanged), carried
   onto our mon tokens beside `prefuse_proj` by ONE zero-init, bias-free `IsolatedLinear` `op_worst_proj` (2 → 128,
-  256 parameters, built LAST with no RNG draw, so every other initial byte equals `max`'s); and `p_pur_vs_us`
+  256 parameters, built LAST with no RNG draw, so every other initial byte equalled the legacy `max` build's); and `p_pur_vs_us`
   becomes P(SOME mon of theirs holds Pursuit) = the noisy-OR over the mons (and OTHER) of the same presence products.
 
-Kept as maxima under both modes (not a reduction over THEIR moves): the reductions over OUR moves (C1's
+Kept as maxima (not a reduction over THEIR moves): the reductions over OUR moves (C1's
 `d_best_*`, D2's `best_*`, the outgoing status-landing's `p_major` / `p_immob` — we choose, so the max is our best
 response) and the per-move maximum over a move's own secondary-status columns. Not built: a crit-KO noisy-OR, a
 noisy-OR at the edge kernels, a learned E5 pool. When the lever landed, `max` was byte-identical (the then-production
@@ -1756,7 +1757,7 @@ Seat indices as in §2.3 (production): our mons `[0:6]`, opp mons `[6:12]`, OUR 
 | **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 3 | `[is_actor, is_target, is_rel]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C; `is_rel` added by `gen3_event_record_v2`): event *e*'s recorded actor/target/REL mon IS mon *m* (species-num equality, side-gated against mirror false-links — actor on the row's side, target on the other, REL on its own `REL_SIDE`; `_event_reference_cells`, pure). **IN the production string** — requires `--history-events`, which is ON (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
 | **x** | each mon × its OWN **side** token (both sides; 12 / 13; the global token under the legacy encoding) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` — `entry_chip` and `grounded` from `DamageOperator.spikes_entry`, the ONE gen-3 Spikes entry rule (1/8, 1/6, 1/4; Flying / Levitate immune, Flying AND Levitate are read from the SPECIES (base types; the species' Smogon P(Levitate), exactly 0 or 1 in gen 3), never the current type / ability columns, because a switch-in reverts Color Change / Transform / Conversion / Trace / Role Play / Skill Swap) |
-| **g** | each mon × **FIELD** (both sides; 14; the global token under the legacy encoding) | 4 | production (`--g-ledger eot`): THE end-of-turn rule's four groups `[Leftovers + Rain Dish + Wish + Ingrain, weather, status + Curse + Nightmare, Leech drain + heal]` (`eot_residual.g_cells`); the legacy `coarse` ledger: `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |
+| **g** | each mon × **FIELD** (both sides; 14; the global token under the legacy encoding) | 4 | THE end-of-turn rule's four groups `[Leftovers + Rain Dish + Wish + Ingrain, weather, status + Curse + Nightmare, Leech drain + heal]` (`eot_residual.g_cells`; the op's second, coarse ledger was deleted in legacy deletion U1) — signed maxhp fractions |
 
 **No family targets the E5 tail seats** — they are token content only.
 
@@ -1852,18 +1853,14 @@ does nothing given another setting.
 | `damage_topk_k` | `6` | ACTIVE |
 | `drop_progress_clock` | `"on"` | ACTIVE |
 | `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r"` | ACTIVE |
-| `effective_stats` | `"on"` | ACTIVE |
 | `entity_tail_seats` | `true` | ACTIVE |
 | `entity_topk_seats` | `6` | ACTIVE |
-| `eot_residual` | `"on"` | ACTIVE |
-| `g_ledger` | `"eot"` | ACTIVE |
 | `history_events` | `true` | ACTIVE |
 | `hp_belief_mode` | `"composed"` | ACTIVE |
 | `intent_conditional` | `true` | INERT — `intent_conditional` is None |
 | `intent_move_cell` | `true` | INERT — `intent_move_cell` is None |
 | `intent_threshold` | `true` | INERT — `intent_threshold_move` is None |
 | `item_belief` | `true` | ACTIVE |
-| `ko_ramp` | `"exact"` | ACTIVE |
 | `mon_hazard_cost` | `"on"` | ACTIVE |
 | `move_actor_state` | `"on"` | ACTIVE |
 | `move_belief_mode` | `"both"` | ACTIVE |
@@ -1877,7 +1874,6 @@ does nothing given another setting.
 | `obs_facts` | `"v1"` | ACTIVE |
 | `op_believed_lean` | `true` | ACTIVE |
 | `op_drop_renders` | `true` | ACTIVE |
-| `op_reduction` | `"principled"` | ACTIVE |
 | `opp_belief_cls_k` | `6` | ACTIVE |
 | `opp_belief_slots` | `true` | ACTIVE |
 | `opp_intent` | `true` | ACTIVE |
@@ -1891,12 +1887,9 @@ does nothing given another setting.
 | `ridealong_rnd` | `false` | OFF |
 | `ridealong_rnd_variants` | `"off"` | OFF |
 | `species_prior_fusion` | `true` | ACTIVE |
-| `speed_physics` | `"on"` | ACTIVE |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
-| `status_facts` | `"exact"` | ACTIVE |
 | `switch_branch_cell` | `true` | INERT — `switch_branch` is None |
-| `switch_hazard_cost` | `"on"` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
 | `token_encoding` | `"static"` | ACTIVE |
 | `trunk_layers` | `3` | ACTIVE |

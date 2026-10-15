@@ -542,15 +542,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "(the renormalised tail), never excluded.",
               requires=("opp_intent", "damage_op", "damage_outgoing", "damage_matrices_incoming",
                         "damage_matrices_outgoing")),
-    ModelFlag("speed_physics", "off", Tier.CLI, Klass.STRUCTURAL, 143,
-              "Architecture audit F7b's SPEED PHYSICS ('off' = the op's P(we act first) as a fixed logistic over the "
-              "speed gap, production; 'on' = their speed as the species' discrete Smogon spreads mixture plus the exact "
-              "gen-3 order rules)",
-              note="Owner 2026-10-06 (F7b IN). No parameters: 'off' runs nothing new (byte-identical: graph, "
-                   "state_dict, outputs); 'on' builds its inputs in `damage_op_speed` and calls ONE rule "
-                   "(`move_order.p_first_same_priority`) at every op site that prices who moves first. Quick Claw "
-                   "is format-gated (banned in gen3ou). The string compare in check_compatible is the only gate.",
-              requires=("damage_op",)),
     ModelFlag("obs_facts", "off", Tier.CLI, Klass.STRUCTURAL, 144,
               "whether the model READS the observation's OBS-FACTS block ('off' = production, builds nothing; "
               "'v1' = the zero-init ObsFactsInject: what the opponent has seen of our team, the opponent "
@@ -564,19 +555,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "(no RNG draw); under --token-encoding static the SIDE-class facts (screens) go to the side board "
                    "tokens, never a per-mon token (`obs_facts_inject.FACTS_TOKEN_CLASS`). STRUCTURAL: the module is "
                    "the state_dict delta, so check_compatible compares the value. OFF on the production surface."),
-    ModelFlag("op_reduction", "max", Tier.CLI, Klass.STRUCTURAL, 146,
-              "Architecture audit F6b's PRINCIPLED OPERATOR REDUCTIONS ('max' = the op's per-channel hard maxima over "
-              "the opponent's believed moves, production; 'principled' = the alpha-weighted EXPECTATION in every "
-              "channel (one mixture per attacker, no channel from another move) + the noisy-OR P(some move KOs) "
-              "worst case)",
-              note="Owner 2026-10-08 ('compute the FACTS exactly; the trunk's attention does the judgment'). "
-                   "`op_reduction.py`. alpha = the attacker's presence / its total presence (R1 belief_mean: the "
-                   "flat pointer's alpha is T2 and cannot weight the T1 op). Width-neutral flat block; 'principled' "
-                   "adds ONE zero-init bias-free IsolatedLinear `op_worst_proj` (2 -> 128, built LAST, no RNG draw) "
-                   "carrying the noisy-OR KO row onto our mon tokens, so every other initial byte equals 'max''s. "
-                   "'max' is byte-identical (graph, state_dict, outputs). Screened in the bundle with "
-                   "--token-encoding static, --move-resolution on, --speed-physics on as NON-INFERIORITY.",
-              requires=("damage_op",)),
     ModelFlag("mon_hazard_cost", "off", Tier.CLI, Klass.STRUCTURAL, 147,
               "a NARROW per-mon fact for --token-encoding static ('off' = nothing built, production; 'on' = every "
               "mon's token, both sides, gets its own side's Spikes layers and the fraction of max HP it would lose "
@@ -607,30 +585,10 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "are IsolatedLinears built from a PRIVATE seed (TRUNK_EXTRA_INIT_SEED), so no other initial byte "
                    "moves. A post-LN round with zero outputs would NOT be the identity (LN of an LN output moves values "
                    "by ~eps), hence the pre-LN form. 2 builds nothing (byte-identical)."),
-    ModelFlag("switch_hazard_cost", "off", Tier.CLI, Klass.STRUCTURAL, 150,
-              "the switch pointer cell's entry-hazard cost ('off' = nothing built, production; 'on' = each switch "
-              "target's [our side's Spikes layers / 3, the HP fraction it loses switching in: 1/8, 1/6, 1/4, 0 for "
-              "Flying / Levitate] appended LAST to its switch cell)",
-              note="gen3_static_recovery_v1 (`static_facts.switch_hazard_features`; design_hand_computed_features.md "
-                   "§4 ADD rank 1, entity audit B3: the switch logit had no entry-chip coordinate). The values are the "
-                   "op's ONE entry rule (`DamageOperator.spikes_entry`), our half of --mon-hazard-cost's fact. The "
-                   "pointer head reads the block through its own zero-init bias-free IsolatedLinear "
-                   "(`switch_extra_proj`, built LAST: zero-init input columns of `switch_proj`, whose own init is "
-                   "unchanged). Composes with either token encoding.",
-              requires=("damage_op",)),
-    ModelFlag("eot_residual", "off", Tier.CLI, Klass.STRUCTURAL, 150,
-              "every mon's END-OF-TURN HP change if it is the one on the field at the end of this turn ('off' = "
-              "nothing built, production; 'on' = Leftovers, weather, Rain Dish, the status tick, Leech Seed drain / "
-              "heal, Wish, Ingrain, Curse, Nightmare and the HP-clamped net, both sides, added to the mon tokens)",
-              note="gen3_static_recovery_v1 (`eot_residual.py`; design_hand_computed_features.md §4 ADD rank 2: the "
-                   "stall residual race static loses most). Mechanics verified in deps/pokemon-showdown (gen 3 Wish "
-                   "heals half the RECIPIENT's max HP; burn 1/8; Toxic (n+1)/16 reset on switch; Liquid Ooze inverts "
-                   "the seeder's heal; a timed weather's last turn has no chip). Unrevealed items / abilities are the "
-                   "species' Smogon priors. Zero-init bias-free IsolatedLinear (11 -> 128) built LAST, no RNG draw; "
-                   "the rule itself holds only constant tables. Composes with either token encoding.",
-              requires=("damage_op",)),
     # gen3_endstate_facts_v1 (config v152; design_hand_computed_features.md §1's FACT / JUDGMENT test, §4 ranks 3-5,
-    # §5 rank 1, finding 7): the FACT-COMPLETION levers, each OFF in production (byte-identical).
+    # §5 rank 1, finding 7): the FACT-COMPLETION levers. (`status_facts`, `ko_ramp` and `g_ledger` were DELETED by the
+    # legacy deletion's U1 with `speed_physics`, `op_reduction`, `switch_hazard_cost`, `eot_residual` and
+    # `effective_stats`: their adopted value is the op's only physics, built whenever `damage_op` is.)
     ModelFlag("move_resolution_facts", "off", Tier.CLI, Klass.STRUCTURAL, 152,
               "move resolution's RESTORED facts ('off' = the family as built on the 2026-10-06 list, production; "
               "'full' = + Focus Punch survives, the Substitute survives, Endure x P(KO), Endeavor x P(not KO'd), "
@@ -639,53 +597,14 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "bias-free IsolatedLinears inside MoveResolutionCell (the zero-init input columns of its "
                    "move_proj / switch_proj, built LAST, no RNG draw). Requires --move-resolution on.",
               requires=("move_resolution",)),
-    ModelFlag("status_facts", "off", Tier.CLI, Klass.STRUCTURAL, 152,
-              "the pair-outcome STATUS coordinates ('off' = neutralization / tempo_cost, production; 'exact' = the "
-              "expected burn damage lost and the expected outspeed lost to paralysis in the same two positions, and "
-              "every mon's cure-availability flags as token content)",
-              note="Owner 2026-10-09: neutralization (a weighted sum across units) and tempo_cost (our cure plan) are "
-                   "JUDGMENTS by §1's test. The swap is width-neutral (pair_outcome.STATUS_FACT_COORDS); the cure flags "
-                   "(status_facts.CureFlags: a live Heal Bell / Aromatherapy user on the side, Natural Cure, Rest, Lum / "
-                   "Chesto Berry; ours exact, theirs the move / ability / item beliefs) ride a zero-init bias-free "
-                   "IsolatedLinear (5 -> 128) built LAST; under --move-resolution on the two facts also reach its "
-                   "cells through their own zero-init projections. P(full para) = 1/4 is the rule constant times the "
-                   "delivered p_par column.",
-              requires=("damage_op",)),
-    ModelFlag("ko_ramp", "ramp", Tier.CLI, Klass.STRUCTURAL, 152,
-              "how every P(KO) is priced ('ramp' = the op's mean-roll 15%-window ramp with no crit, production, an "
-              "APPROXIMATE fact; 'exact' = over the 16 gen-3 rolls and the move's crit chance, each roll's KO "
-              "resolved over the observed HP interval, computed in closed form)",
-              note="ko_exact.py: one shared function at every site (DamageOperator._rolls, the inlined Choice-Band "
-                   "ko_cb, intent_threshold's Substitute break, move resolution's Pursuit KO). Continuous and "
-                   "differentiable; 'exact' is the arithmetic-series CLOSED FORM of the 16-roll sum "
-                   "(gen3_ko_exact_closed_v1), its two run counts declared COUNT_CONTINUOUS in selection_sites. No "
-                   "parameters; the string compare in check_compatible is the only gate. The value 'exact_closed' "
-                   "(briefly legal at 6e0a1a7a) is RETIRED: refused at parse time and on any load "
-                   "(retired_levers.RETIRED_VALUES).",
-              requires=("damage_op",)),
     ModelFlag("drop_progress_clock", "off", Tier.CLI, Klass.STRUCTURAL, 152,
               "whether the model reads the observation's turns_since_progress ('off' = it does, production; 'on' = "
               "it reads 0 there)",
               note="§5 rank 1: a hand definition of 'progress' (3% thresholds, eight reset conditions) is a JUDGMENT. "
                    "Zeroed at the model input (ObsUnpack), never in the Rust observation layout. The threshold-free "
                    "fact alternative ('turns since either side lost HP') is not built."),
-    ModelFlag("g_ledger", "coarse", Tier.CLI, Klass.STRUCTURAL, 152,
-              "which end-of-turn rule the op's g cell reads ('coarse' = the op's own older ledger, production; 'eot' = "
-              "the ONE rule --eot-residual reads)",
-              note="Finding 7 (two end-of-turn rules): under 'eot' the g cell, c4's nets and the static op content read "
-                   "eot_residual.EotResidualRule grouped into the ledger's four columns (eot_residual.g_cells). No "
-                   "parameters.",
-              requires=("damage_op",)),
     # gen3_probe_facts_v1 (config v153; design_hand_computed_features.md §4 rows 12-13, the representation probe
-    # battery's two candidates `measurements/probe_battery_2026-10-09/`), each OFF in production (byte-identical).
-    ModelFlag("effective_stats", "off", Tier.CLI, Klass.STRUCTURAL, 153,
-              "each side's ACTIVE mon's STAGE-APPLIED stats as token content ('off' = nothing built, production; 'on' = "
-              "Atk / Def / SpA / SpD / Spe after the gen-3 stage multipliers (Spe after paralysis) / 500, and the "
-              "accuracy / evasion multipliers; ours exact, theirs the believed spread)",
-              note="The probe battery: a boost's SIZE reads at R2 <= 0.10 while 'is boosted' reads at AUC 0.97 (the role "
-                   "network squashes the stage columns). static_facts.effective_stat_features; one zero-init bias-free "
-                   "IsolatedLinear (7 -> 128) built LAST, no RNG draw. Composes with either token encoding.",
-              requires=("damage_op",)),
+    # battery's two candidates `measurements/probe_battery_2026-10-09/`; `effective_stats` deleted by U1, above).
     ModelFlag("move_target_state", "off", Tier.CLI, Klass.STRUCTURAL, 153,
               "THEIR active's HP fraction + status one-hot onto our 4 E3 move seats ('off' = nothing built, production; "
               "'on' = through a zero-init projection)",
@@ -730,10 +649,10 @@ OFF_VALUES = (False, 0, "off", "none")
 
 #: The OFF spellings of a MODE string. ``'tower'`` is `policy_readout`'s (audit F2, v138): today's flat
 #: policy tower, nothing new built. ``'legacy'`` is `token_encoding`'s OFF state (v139): today's
-#: `PokemonEncoder`. ``'max'`` is `op_reduction`'s (v146, audit F6b): the op's legacy per-channel hard maxima.
-#: (``'blob'``, `belief_tokens`' OFF state, left with the flag at the X5 version break.) ``'ramp'`` is `ko_ramp`'s and
-#: ``'coarse'`` `g_ledger`'s (v152, gen3_endstate_facts_v1): the op's legacy KO ramp / end-of-turn ledger.
-OFF_STRINGS: Tuple[str, ...] = ("off", "none", "tower", "legacy", "max", "ramp", "coarse")
+#: `PokemonEncoder`. (``'blob'``, `belief_tokens`' OFF state, left with the flag at the X5 version break; ``'max'``
+#: / ``'ramp'`` / ``'coarse'``, the OFF states of `op_reduction` / `ko_ramp` / `g_ledger`, left with those flags at the
+#: legacy deletion's U1.)
+OFF_STRINGS: Tuple[str, ...] = ("off", "none", "tower", "legacy")
 
 
 def is_enabled(value: Any) -> bool:

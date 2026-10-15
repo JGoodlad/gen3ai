@@ -95,9 +95,10 @@ def _payload_violations(source: str, sel_src: str, payload: Tuple[str, ...]) -> 
 
 
 def test_every_payload_sites_index_is_read_only_by_a_gather_of_its_declared_payload() -> None:
-    """A payload rule (identity clearance) is sound only if the payload is EVERYTHING the index reaches."""
+    """A payload rule (identity clearance) is sound only if the payload is EVERYTHING the index reaches. No payload
+    rule is declared since the legacy deletion's U1 deleted the op's `max` reduction (its two dominant-move argmaxes
+    were the only payload sites); the checker stays, its teeth pinned below on planted source, for the next one."""
     rules = [(k, r) for k, r in SS.MARGIN.items() if r.payload]
-    assert rules, "no payload rule is declared — the identity clearance would be vacuous"
     bad: List[str] = []
     for (module, src), r in rules:
         assert r.kind == "argmax", (module, src)

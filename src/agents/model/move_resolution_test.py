@@ -94,7 +94,9 @@ def ops(moves: Sequence[str] = ("bodyslam",), seats: Sequence[str] = ("growl", "
         seat_phys=torch.tensor([[s["phys"] for s in ss]]), seat_flinch=torch.zeros(1, K),
         pair_in=torch.zeros(1, 6, K, 14), pair_gate=torch.ones(1, 6, 1), pair_type_mult=torch.ones(1, 6, K),
         p_out=torch.tensor([[0.5]]), out_cells=torch.zeros(1, 4, 6, 5), c2_base=torch.zeros(1, 4, 4),
-        d_burn_k=torch.zeros(1, K), d_slp_k=torch.zeros(1, K), is_brn=torch.zeros(1, 4), is_slp=torch.zeros(1, 4))
+        d_burn_k=torch.zeros(1, K), d_slp_k=torch.zeros(1, K), is_brn=torch.zeros(1, 4), is_slp=torch.zeros(1, 4),
+        # the exact P(KO)'s operands (required since U1 deleted the ramp): our active's max HP, each seat's crit chance
+        our_maxhp=torch.tensor([400.0]), seat_crit=torch.full((1, K), 1.0 / 16.0))
     base.update(over)
     return MoveResolutionOps(**base)
 
@@ -119,10 +121,12 @@ def cond(slot: int, col_: int, *, n: int = 6) -> torch.Tensor:
     return c
 
 
-def hit_grid(high: float = 0.3, ko: float = 0.0, acc: float = 1.0, seat: int = 0, j: int = 0) -> torch.Tensor:
+def hit_grid(high: float = 0.3, ko: float = 0.0, acc: float = 1.0, seat: int = 0, j: int = 0,
+             crit: float = 0.0) -> torch.Tensor:
     p = torch.zeros(1, 6, K, 14)
     p[0, j, seat, 1] = high
     p[0, j, seat, 0] = 0.85 * high
+    p[0, j, seat, 2] = crit
     p[0, j, seat, 3] = ko
     p[0, j, seat, 4] = acc
     return p
@@ -440,11 +444,23 @@ def test_spin_denied_keeps_the_fact_and_drops_the_stake():
 
 
 def test_a_pursuit_ko_on_the_departing_mon_means_the_switch_does_not_resolve():
+    """P(KO) is exact (`ko_exact.ko_given_hit`: the 16 rolls of the MEAN-roll damage / 0.925, mixed with the crit
+    branch by the seat's crit chance; our HP exact ±½ HP at the fixture's max HP 400). The crit column is the op's
+    physical one, 2 × the mean-roll damage, and Pursuit doubles both on a switching target (×2 BP, always hits).
+    p_switch_resolves = 1 − α_pursuit · P(KO | hit), α_pursuit = 0.5; every case sits far from a roll boundary."""
+    # mean 0.4 → ×2 = 0.8: the LOWEST roll 0.85 · 0.8 / 0.925 = 0.735 ≥ 0.5 + 1/800, and the crit (1.6) KOs too
+    # ⇒ P(KO | hit) = 1 ⇒ 1 − 0.5
     o = ops(("tackle",), seats=("pursuit", "growl", "growl"), alpha=(0.5, 0.2, 0.2),
-            pair_in=hit_grid(seat=0, high=0.4), our_hp=torch.tensor([0.5]))
-    assert sf(o, "p_switch_resolves", 2) == pytest.approx(0.5)     # 2 × 0.4 ≥ 0.5 on every roll
+            pair_in=hit_grid(seat=0, high=0.4, crit=0.8), our_hp=torch.tensor([0.5]))
+    assert sf(o, "p_switch_resolves", 2) == pytest.approx(0.5)
+    # mean 0.2 → ×2 = 0.4: the HIGHEST roll 0.4 / 0.925 = 0.432 < 0.5 − 1/800, so no plain roll KOs; the crit
+    # (2 × 0.2 × 2 = 0.8, lowest roll 0.735) KOs on every roll ⇒ P(KO | hit) = the crit chance 1/16 ⇒ 1 − 0.5 / 16
     o = ops(("tackle",), seats=("pursuit", "growl", "growl"), alpha=(0.5, 0.2, 0.2),
-            pair_in=hit_grid(seat=0, high=0.2), our_hp=torch.tensor([0.5]))
+            pair_in=hit_grid(seat=0, high=0.2, crit=0.4), our_hp=torch.tensor([0.5]))
+    assert sf(o, "p_switch_resolves", 2) == pytest.approx(1.0 - 0.5 / 16.0)
+    # no damage from the seat at all (a growl-only board) ⇒ the switch always resolves
+    o = ops(("tackle",), seats=("pursuit", "growl", "growl"), alpha=(0.5, 0.2, 0.2),
+            pair_in=hit_grid(seat=0, high=0.0, crit=0.0), our_hp=torch.tensor([0.5]))
     assert sf(o, "p_switch_resolves", 2) == pytest.approx(1.0)
 
 

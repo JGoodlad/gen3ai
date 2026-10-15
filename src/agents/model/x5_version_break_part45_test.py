@@ -228,12 +228,13 @@ def _capture_intent_conditional(fe: Gen3FeaturesExtractor, x: torch.Tensor) -> T
 
 def test_intent_conditional_reads_the_pre_gain_values(obs: torch.Tensor) -> None:
     from agents.model.extractor_forward import _OUT_SEC_FLINCH_COL
-    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the subject is intent_conditional's read under
-    # `--speed-physics off`, i.e. the pre-adoption network (production now runs the speed rule ON and retires the block).
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the subject is intent_conditional's read, i.e. the
+    # pre-adoption network (production retires the block). (Its `--speed-physics off` half was deleted by U1: the speed
+    # rule is the op's only P(first).)
     fe = _build(**dict(PRE_ADOPTION_PRODUCTION))
     op = fe.damage_op
-    assert fe.intent_conditional is not None and not op.speed_physics, \
-        "PRECONDITION: the legacy base (intent_conditional on, --speed-physics off)"
+    assert fe.intent_conditional is not None and op is not None, \
+        "PRECONDITION: the legacy base (intent_conditional on)"
     args0, raw0 = _capture_intent_conditional(fe, obs)
     gained0 = fe.last_damage_block.detach().clone()
     t = _positions(op)
@@ -254,11 +255,11 @@ def test_intent_conditional_reads_the_pre_gain_values(obs: torch.Tensor) -> None
     assert torch.equal(raw0, raw1), "intent_conditional's raw cell moved with the learned gain"
 
 
-@pytest.mark.parametrize("mode", ["off", "on"])
-def test_both_speed_modes_read_p_first_from_the_live_pre_gain_view(obs: torch.Tensor, mode: str) -> None:
+def test_intent_conditional_reads_p_first_from_the_live_pre_gain_view(obs: torch.Tensor) -> None:
     """ONE read path: the tensor `intent_conditional` receives as P(first) IS the op's `last_raw_tensors` view (the
-    same storage — never the post-gain `last_tensors` one, never a detached copy), in BOTH speed modes."""
-    fe = _build(speed_physics=mode).train()
+    same storage — never the post-gain `last_tensors` one, never a detached copy). (Pinned in both speed modes until
+    the legacy deletion's U1 deleted the logistic one.)"""
+    fe = _build().train()
     op = fe.damage_op
     ic = fe.intent_conditional
     cap: Dict[str, Any] = {}

@@ -28,28 +28,23 @@ class ArmDecl(NamedTuple):
     design: str
 
 
-#: THE PRE-ADOPTION PRODUCTION SURFACE (until 2026-10-12): the value each of the nineteen END-STATE keys had in
+#: THE PRE-ADOPTION PRODUCTION SURFACE (until 2026-10-12): the value each END-STATE key that still EXISTS had in
 #: `designs/production_config.json` before the closing test's PASS made the end state production. ONE declared table,
 #: read by tests that build the LEGACY network on purpose (`legacy_production_config`; the `static_recovery` arm that
-#: also read it was deleted in legacy-deletion U0). Deleted with the legacy paths it names (`designs/ops/legacy_deletion_manifest_2026-10-12.md`).
+#: also read it was deleted in legacy-deletion U0). Shrinks unit by unit with the legacy paths it names
+#: (`designs/ops/legacy_deletion_manifest_2026-10-12.md`): U1 removed its eight op keys (`switch_hazard_cost`,
+#: `eot_residual`, `speed_physics`, `op_reduction`, `status_facts`, `ko_ramp`, `g_ledger`, `effective_stats`), whose
+#: OFF values no longer build — the "legacy" network after U1 carries the adopted op physics.
 PRE_ADOPTION_PRODUCTION: Tuple[Tuple[str, Any], ...] = (
     ("token_encoding", "legacy"),
     ("mon_hazard_cost", "off"),
     ("move_actor_state", "off"),
     ("trunk_layers", 2),
-    ("switch_hazard_cost", "off"),
-    ("eot_residual", "off"),
     ("move_resolution", "off"),
-    ("speed_physics", "off"),
     ("value_threat_inject", True),
-    ("op_reduction", "max"),
     ("obs_facts", "off"),
     ("move_resolution_facts", "off"),
-    ("status_facts", "off"),
-    ("ko_ramp", "ramp"),
     ("drop_progress_clock", "off"),
-    ("g_ledger", "coarse"),
-    ("effective_stats", "off"),
     ("move_target_state", "off"),
     ("move_set_closure", "off"),
 )
@@ -82,19 +77,11 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
             ("mon_hazard_cost", "on"),
             ("move_actor_state", "on"),
             ("trunk_layers", 3),
-            ("switch_hazard_cost", "on"),
-            ("eot_residual", "on"),
             ("move_resolution", "on"),
-            ("speed_physics", "on"),
             ("value_threat_inject", False),
-            ("op_reduction", "principled"),
             ("obs_facts", "v1"),
             ("move_resolution_facts", "full"),
-            ("status_facts", "exact"),
-            ("ko_ramp", "exact"),
             ("drop_progress_clock", "on"),
-            ("g_ledger", "eot"),
-            ("effective_stats", "on"),
             ("move_target_state", "on"),
             # gen3_move_set_closure_v1 (config v154; owner 2026-10-10 "Do A", a PRE-DATA amendment of the closing
             # test): the four-move FACT in every opponent slot's MoveBelief reinjection.
@@ -107,6 +94,8 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
                 "active's state on our move seats, the four-move closure in the move belief's reinjection); the end "
                 "state, which PASSED its closing test and is production",
         design="designs/endstate/design_hand_computed_features.md §4 / §5 (and design_static_tokens.md §13)",
+        # (the overlay shrinks as the legacy deletion lands, D-LD3: U1 removed the eight op keys, which have no other
+        # value to overlay.)
     ),
 }
 

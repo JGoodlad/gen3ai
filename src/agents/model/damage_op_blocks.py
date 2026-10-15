@@ -46,11 +46,9 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _DMG_OAX_IDX_PKO, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MON, _DMG_OAX_PER_MOVE, _DMG_OMX,
     _DMG_OMX_CELL, _DMG_OMX_IDX_CRIT, _DMG_OMX_IDX_HIGH, _DMG_OMX_IDX_LOW, _DMG_OMX_IDX_MULT,
     _DMG_OMX_IDX_PKO, _DMG_OUTGOING, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_OUT_SEC,
-    _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN, _DMG_SPEED_SCALE,
+    _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN,
     _DMG_SPEED_STD_K, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_STATUS_REFINE, _DMG_TOPK_DEFAULT_K,
     _ELECTRIC_TIDX, _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
-    _NEUTRAL_BRN_ATK_LOSS, _NEUTRAL_PAR_FULL, _NEUTRAL_PSN_TICK, _NEUTRAL_TOX_FIRST_TICK,
-    _TEMPO_CLERIC_TURNS, _TEMPO_CURE_TURNS, _TEMPO_NATURAL_CURE_TURNS,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
     _PAIR_REDUCE_N_CHANNELS, _PTR_MOVE_CELL, _PTR_SWITCH_CELL_IN, _SB_ATK, _SB_DEF, _SB_SPA,
     _SB_SPD, _SB_SPE, _SECONDARY_MAJOR_N, _SECONDARY_TO_STATUS_CAT, _SUBSTITUTE_CTX_IDX, _YAWN_CTX_IDX, _COND_FRZ_IDX,
@@ -100,7 +98,6 @@ class DamageOperatorBlocks:
         _damage_rolls: Callable[..., Tuple[torch.Tensor, ...]]
         _crit_p: Callable[..., Optional[torch.Tensor]]
         _crit_p_at: Callable[..., Optional[torch.Tensor]]
-        ko_exact: bool
         guts_num: int
         _boost_mult: Callable[..., torch.Tensor]
         _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]
@@ -108,7 +105,6 @@ class DamageOperatorBlocks:
         _sport_mult: Callable[..., torch.Tensor]
         _field_bp_mult: Callable[..., torch.Tensor]
         _chan_max: Callable[..., torch.Tensor]
-        _p_outspeed: Callable[..., torch.Tensor]
         _opp_candidate_weights: Callable[..., torch.Tensor]
         # The damage TABLES (`damage_tables.build_damage_buffers`) are registered in a LOOP, so
         # they exist only dynamically; declaring them keeps every read a `Tensor` instead of the
@@ -240,13 +236,11 @@ class DamageOperatorBlocks:
         nat = spread[:, 13:18]                                     # [B,5] [atk,def,spa,spd,spe]
         our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]   # [B]
         our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]   # [B]
-        our_spe = (2.0 * a_base[:, 5] + iv[:, 5] + ev[:, 5] / 4.0 + 5.0) * nat[:, 4]   # [B]
         our_cur_hp = our_hp_frac * (2.0 * a_base[:, 0] + iv[:, 0] + ev[:, 0] / 4.0 + 110.0)  # [B] (Endeavor)
-        # gen3_unified_op_physics_v1: OUR active's offensive + speed stat-stage boosts (we attack here) +
-        # BURN (½ phys atk) + PARALYSIS (×0.25 speed).
+        # gen3_unified_op_physics_v1: OUR active's offensive stat-stage boosts (we attack here) + BURN (½ phys atk).
+        # (Speed: `_p_first_vs_opp_active` below, the one rule.)
         o_b_atk, o_b_def, o_b_spa, o_b_spd, o_b_spe = self._boost_stages(ctx.our_ctx_raw)
         our_burn = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B]
-        our_para = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B]
         # gen3_unified_choice_band_v1: OUR Choice Band ×1.5 physical Atk (our item is KNOWN → deterministic,
         # not a belief). Composes multiplicatively with boosts/burn below; physical only (CB doesn't touch SpA).
         our_cb = (ctx.item_ids[ar, our_act] == self.cb_item_num).float()                     # [B]
@@ -255,8 +249,6 @@ class DamageOperatorBlocks:
         our_atk = our_atk * self._boost_mult(o_b_atk) * torch.where(
             our_burn > 0.5, our_atk.new_tensor(0.5), our_atk.new_tensor(1.0))
         our_spa = our_spa * self._boost_mult(o_b_spa)
-        our_spe = our_spe * self._boost_mult(o_b_spe) * torch.where(
-            our_para > 0.5, our_spe.new_tensor(_DMG_PARA_SPEED), our_spe.new_tensor(1.0))
         at1 = ctx.type1_ids[ar, our_act]                          # [B] our types (STAB)
         at2 = ctx.type2_ids[ar, our_act]
 
@@ -269,15 +261,10 @@ class DamageOperatorBlocks:
         opp_def = bs[:, _SB_DEF] if bs is not None else (2.0 * d_base[:, 2] + 31.0 + 5.0)    # [B]
         opp_spd = bs[:, _SB_SPD] if bs is not None else (2.0 * d_base[:, 4] + 31.0 + 5.0)
         opp_maxhp = 2.0 * d_base[:, 0] + 31.0 + 110.0
-        opp_spe = bs[:, _SB_SPE] if bs is not None else (2.0 * d_base[:, 5] + 31.0 + 5.0)   # believed / neutral
-        # gen3_unified_op_physics_v1: OPP active's DEFENSIVE + speed boosts (it's the defender here) + its
-        # paralysis (×0.25 speed, for p_outspeed).
+        # gen3_unified_op_physics_v1: OPP active's DEFENSIVE boosts (it's the defender here).
         p_b_atk, p_b_def, p_b_spa, p_b_spd, p_b_spe = self._boost_stages(ctx.opp_ctx_raw)
-        opp_para = ctx.pokemon_part[ar, opp_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B]
         opp_def = opp_def * self._boost_mult(p_b_def)
         opp_spd = opp_spd * self._boost_mult(p_b_spd)
-        opp_spe = opp_spe * self._boost_mult(p_b_spe) * torch.where(
-            opp_para > 0.5, opp_spe.new_tensor(_DMG_PARA_SPEED), opp_spe.new_tensor(1.0))
         opp_cur_hp = ctx.hp_and_active[ar, opp_act, 0] * opp_maxhp  # [B] obs HP frac × est. max HP
         t1d = ctx.type1_ids[ar, opp_act]                          # [B]
         t2d = ctx.type2_ids[ar, opp_act]
@@ -306,20 +293,17 @@ class DamageOperatorBlocks:
         screen = 1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys))             # [B,4]
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None], opp_cur_hp[:, None], acc, eps,
                                           crit_p=self._crit_p(move_ids),
-                                          opp_hp_frac=(ctx.hp_and_active[ar, opp_act, 0][:, None]
-                                                       if self.ko_exact else None))
+                                          opp_hp_frac=ctx.hp_and_active[ar, opp_act, 0][:, None])
         # gen3_nonformula_damage_v1: OUR non-formula moves (Seismic Toss / Night Shade 100, Super Fang ½,
         # Endeavor, OHKO …) replace the rolls — immunity-gated; × usable gates an illegal one (a formula
         # cell is already 0 there, so the multiply is exact for it).
         nf = nonformula_rolls(gather_nonformula(self, move_ids), opp_cur_hp[:, None], opp_maxhp[:, None],
                               our_cur_hp[:, None], eff, acc, eps)
         high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
-        if self.speed_physics:     # gen3_speed_physics_v1: our active's EXACT speed vs their active's belief
-            p_outspeed = self._p_first_vs_opp_active(
-                ctx, spread_belief, self._our_speeds_exact(ctx)[ar, our_act],
-                self._our_quick_claw(ctx)[ar, our_act])                                # [B]
-        else:
-            p_outspeed = self._p_outspeed(our_spe, opp_spe)                           # [B]
+        # gen3_speed_physics_v1: our active's EXACT speed vs their active's belief
+        p_outspeed = self._p_first_vs_opp_active(
+            ctx, spread_belief, self._our_speeds_exact(ctx)[ar, our_act],
+            self._our_quick_claw(ctx)[ar, our_act])                                    # [B]
 
         # gen3_unified_move_system_v1: per OUR move, "what status can it cause + with what probability".
         # realized P(effect k | move) = chance_mk × acc_m × Serene Grace(our active) × Shield Dust(opp
@@ -502,8 +486,7 @@ class DamageOperatorBlocks:
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, :],
                                           opp_cur_hp[:, None, :], acc[:, :, None], eps,
                                           crit_p=self._crit_p_at(move_ids, 2),
-                                          opp_hp_frac=(opp_hp_frac[:, None, :] if self.ko_exact
-                                                       else None))    # each [B,4,6]
+                                          opp_hp_frac=opp_hp_frac[:, None, :])    # each [B,4,6]
         # gen3_nonformula_damage_v1: non-formula moves into each defender — immunity + legality gated, CB-invariant.
         nf = nonformula_rolls(tuple(t[:, :, None] for t in gather_nonformula(self, move_ids)),
                               opp_cur_hp[:, None, :], opp_maxhp[:, None, :], our_cur_hp[:, None, None],
@@ -568,7 +551,6 @@ class DamageOperatorBlocks:
         nat = spread[..., 13:18]                                     # [B,6,5] [atk,def,spa,spd,spe]
         our_atk = (2.0 * a_base[..., 1] + iv[..., 1] + ev[..., 1] / 4.0 + 5.0) * nat[..., 0]   # [B,6]
         our_spa = (2.0 * a_base[..., 3] + iv[..., 3] + ev[..., 3] / 4.0 + 5.0) * nat[..., 2]   # [B,6]
-        our_spe = (2.0 * a_base[..., 5] + iv[..., 5] + ev[..., 5] / 4.0 + 5.0) * nat[..., 4]   # [B,6]
         our_cur_hp = our_hp_frac * (2.0 * a_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0)  # [B,6]
         # Boosts: the ACTIVE row carries our_ctx_raw's stages; bench rows neutral (mult 1.0) — gen3 resets on
         # switch (mirrors _outgoing_matrix's defender-boost handling exactly). `inherit_stages`
@@ -578,24 +560,19 @@ class DamageOperatorBlocks:
         if inherit_stages:
             atk_boost = self._boost_mult(o_b_atk)[:, None].expand(B, TEAM_SIZE)
             spa_boost = self._boost_mult(o_b_spa)[:, None].expand(B, TEAM_SIZE)
-            spe_boost = self._boost_mult(o_b_spe)[:, None].expand(B, TEAM_SIZE)
         else:
             atk_boost = torch.ones(B, TEAM_SIZE, device=device); atk_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_atk)
             spa_boost = torch.ones(B, TEAM_SIZE, device=device); spa_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spa)
-            spe_boost = torch.ones(B, TEAM_SIZE, device=device); spe_boost[ar, ctx.our_active_idx] = self._boost_mult(o_b_spe)
         # Burn / Choice Band compose PER MON (each mon's own KNOWN condition/item).
         our_burn = ctx.pokemon_part[:, our, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B,6]
         if force_burn:
-            # gen3_endstate_facts_v1 (`--status-facts exact`): the HYPOTHETICAL world in which every one of our mons
+            # gen3_endstate_facts_v1 (the exact status facts): the HYPOTHETICAL world in which every one of our mons
             # is burned — the burn-loss fact is this world's damage subtracted from the real one (one kernel).
             our_burn = torch.ones_like(our_burn)
-        our_para = ctx.pokemon_part[:, our, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B,6]
         our_cb = (ctx.item_ids[:, our] == self.cb_item_num).float()                     # [B,6]
         our_atk = our_atk * torch.where(our_cb > 0.5, our_atk.new_tensor(self.cb_phys_mult), our_atk.new_tensor(1.0))
         our_atk = our_atk * atk_boost * torch.where(our_burn > 0.5, our_atk.new_tensor(0.5), our_atk.new_tensor(1.0))
         our_spa = our_spa * spa_boost
-        our_spe = our_spe * spe_boost * torch.where(our_para > 0.5, our_spe.new_tensor(_DMG_PARA_SPEED),
-                                                    our_spe.new_tensor(1.0))
         at1 = ctx.type1_ids[:, our]; at2 = ctx.type2_ids[:, our]                        # [B,6] (STAB)
         A = phys * our_atk[:, :, None] + (1.0 - phys) * our_spa[:, :, None]             # [B,6,4]
 
@@ -605,13 +582,9 @@ class DamageOperatorBlocks:
         opp_def = bs[:, _SB_DEF] if bs is not None else (2.0 * d_base[:, 2] + 31.0 + 5.0)     # [B]
         opp_spd = bs[:, _SB_SPD] if bs is not None else (2.0 * d_base[:, 4] + 31.0 + 5.0)
         opp_maxhp = 2.0 * d_base[:, 0] + 31.0 + 110.0
-        opp_spe = bs[:, _SB_SPE] if bs is not None else (2.0 * d_base[:, 5] + 31.0 + 5.0)
         _pa, p_b_def, _ps, p_b_spd, p_b_spe = self._boost_stages(ctx.opp_ctx_raw)
-        opp_para = ctx.pokemon_part[ar, opp_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]   # [B]
         opp_def = opp_def * self._boost_mult(p_b_def)
         opp_spd = opp_spd * self._boost_mult(p_b_spd)
-        opp_spe = opp_spe * self._boost_mult(p_b_spe) * torch.where(
-            opp_para > 0.5, opp_spe.new_tensor(_DMG_PARA_SPEED), opp_spe.new_tensor(1.0))
         opp_cur_hp = ctx.hp_and_active[ar, opp_act, 0] * opp_maxhp    # [B]
         t1d = ctx.type1_ids[ar, opp_act]; t2d = ctx.type2_ids[ar, opp_act]   # [B]
         abl_mult = self.opp_ability_damage_mult(ctx)[ar, ctx.opp_active_local]   # [B,T] known or prior
@@ -647,22 +620,19 @@ class DamageOperatorBlocks:
         high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, None],
                                           opp_cur_hp[:, None, None], acc, eps,
                                           crit_p=self._crit_p(move_ids),
-                                          opp_hp_frac=(ctx.hp_and_active[ar, opp_act, 0][:, None, None]
-                                                       if self.ko_exact else None))      # each [B,6,4]
+                                          opp_hp_frac=ctx.hp_and_active[ar, opp_act, 0][:, None, None])  # each [B,6,4]
         # gen3_nonformula_damage_v1: non-formula moves into the opp active — immunity + legality gated, CB-invariant.
         nf = nonformula_rolls(gather_nonformula(self, move_ids), opp_cur_hp[:, None, None],
                               opp_maxhp[:, None, None], our_cur_hp[:, :, None], eff, acc, eps)
         high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
 
-        # --- p_outspeed per attacker (our_spe [B,6] vs the shared believed opp speed) ---
-        if self.speed_physics:     # gen3_speed_physics_v1: C5's inherited stages ride as the stage override
-            _rows = (self._boost_stages(ctx.our_ctx_raw)[4][:, None].expand(B, TEAM_SIZE).clone()
-                     if inherit_stages else None)
-            p_outspeed = self._p_first_vs_opp_active(
-                ctx, spread_belief, self._our_speeds_exact(ctx, stage_rows=_rows),
-                self._our_quick_claw(ctx))                                                   # [B,6]
-        else:
-            p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None].expand(B, TEAM_SIZE))  # [B,6]
+        # --- p_outspeed per attacker (each of our six vs their active's speed belief) ---
+        # gen3_speed_physics_v1: C5's inherited stages ride as the stage override
+        _rows = (self._boost_stages(ctx.our_ctx_raw)[4][:, None].expand(B, TEAM_SIZE).clone()
+                 if inherit_stages else None)
+        p_outspeed = self._p_first_vs_opp_active(
+            ctx, spread_belief, self._our_speeds_exact(ctx, stage_rows=_rows),
+            self._our_quick_claw(ctx))                                                       # [B,6]
 
         # --- assemble + gate ---
         per_move = torch.stack([low, high, crit, ko], dim=-1)                           # [B,6,4,4]
@@ -854,7 +824,7 @@ class DamageOperatorBlocks:
 
     def our_burn_loss(self, ctx: 'ExtractorContext', spread_belief: Optional[torch.Tensor] = None
                       ) -> torch.Tensor:
-        """gen3_endstate_facts_v1 (`--status-facts exact`): ``[B,6]`` per OUR mon j, the EXACT expected damage a burn
+        """gen3_endstate_facts_v1 (the exact status facts): ``[B,6]`` per OUR mon j, the EXACT expected damage a burn
         costs it — the damage its moves deal THEIR ACTIVE now minus the damage with its Attack burned, as a fraction
         of the target's max HP, under the op's principled expectation over j's moves (α = presence / total presence;
         our movesets are known, so each held move weighs 1 / the number held). Gen 3 (`data/mods/gen3/scripts.ts`
@@ -877,80 +847,42 @@ class DamageOperatorBlocks:
         return out
 
     def pair_outcome_coords(self, ctx: 'ExtractorContext', real_idx: torch.Tensor,
-                            pair_high: torch.Tensor, our_spe: torch.Tensor,
-                            opp_spe: torch.Tensor, d_base: torch.Tensor,
-                            burn_loss: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """gen3_pair_outcome_v1 — the EIGHT non-damage coordinates of the unified outcome vector,
-        per (our defender j, their believed seat k). `[B, 6, K, _PAIR_OUTCOME_NEW]`, in
-        `PAIR_OUTCOME_COORDS` order after the damage prefix:
+                            pair_high: torch.Tensor, burn_loss: torch.Tensor) -> torch.Tensor:
+        """gen3_pair_outcome_v1 + gen3_endstate_facts_v1 — the EIGHT non-damage coordinates of the unified outcome
+        vector, per (our defender j, their believed seat k). `[B, 6, K, _PAIR_OUTCOME_NEW]`, in `PAIR_OUTCOME_COORDS`
+        order after the damage prefix:
 
-            [p_par, p_brn, p_frz, p_slp, p_psn, p_tox, neutralization, tempo_cost]
+            [p_par, p_brn, p_frz, p_slp, p_psn, p_tox, e_burn_loss, e_outspeed_loss]
 
-        `real_idx` `[B,K]` are the top-K move NUMS (α's seat axis); `pair_high` `[B,6,K]` is the
-        already-aligned MEAN-roll fraction (×0.925, not the max roll) (the same tensor `last_pair_cells[..., 1]` carries, passed
-        in rather than re-derived); the speed/stat args are the op forward's own locals, so the
-        physics here is the SAME physics the rest of the block was computed from.
+        `real_idx` `[B,K]` are the top-K move NUMS (α's seat axis); `pair_high` `[B,6,K]` is the already-aligned
+        MEAN-roll fraction (×0.925, not the max roll) (the same tensor `last_pair_cells[..., 1]` carries, passed in
+        rather than re-derived); `burn_loss` `[B,6]` is the op forward's `our_burn_loss` (once per forward).
 
-        **Nothing is invented.** The landing probability reuses `_incoming_status_lands` verbatim —
-        the oracle-gated per-pivot immunity physics (type @ our defender's types, ability block,
-        already-statused, damage-gated secondaries) — and this method only ever SPLITS it by
-        identity and multiplies it by quantities read off the defender's own stats. Every scalar
-        constant below is a gen3 RULE (burn halves Atk; paralysis is ×0.25 speed with a 25%
-        full-para roll; poison ticks 1/8, toxic starts at 1/16), never a tuned prior — the owner
-        rule is *provide facts, do not bake priors*.
+        **Nothing is invented.** The landing probability reuses `_incoming_status_lands` verbatim — the
+        oracle-gated per-pivot immunity physics (type @ our defender's types, ability block, already-statused,
+        damage-gated secondaries) — and this method only ever SPLITS it by identity and multiplies it by EXACT
+        effects of OUR defender.
 
         ### The identity split, and why `MOVE_STATUS_CAT` could not do it
-        A seat inflicts a status by one of two mutually-exclusive routes, and `_incoming_status_lands`
-        takes their max:
+        A seat inflicts a status by one of two mutually-exclusive routes, and `_incoming_status_lands` takes their
+        max:
           * a DEDICATED status move → `MOVE_STATUS_IDENT` is its exact one-hot (built from the raw
-            `status_inflicted`, so **Toxic and Poison Powder stay apart** — `MOVE_STATUS_CAT` folds
-            both into category 5, since they share the Steel/Poison immunity);
-          * a DAMAGING move's major SECONDARY → the identity is `MOVE_SECONDARY`'s major prefix,
-            L1-normalized into a distribution (it is being used as an IDENTITY here; the magnitude
-            already rides `p_land`).
-        For every gen3 move that actually has a major secondary the normalized vector is a one-hot
-        (Body Slam para, Ice Beam freeze, …), so the split is EXACT in practice; a hypothetical
-        two-major-secondary move would split proportionally, which is the honest marginal.
+            `status_inflicted`, so **Toxic and Poison Powder stay apart** — `MOVE_STATUS_CAT` folds both into
+            category 5, since they share the Steel/Poison immunity);
+          * a DAMAGING move's major SECONDARY → the identity is `MOVE_SECONDARY`'s major prefix, L1-normalized into
+            a distribution (it is being used as an IDENTITY here; the magnitude already rides `p_land`).
+        For every gen3 move that actually has a major secondary the normalized vector is a one-hot (Body Slam para,
+        Ice Beam freeze, …), so the split is EXACT in practice; a hypothetical two-major-secondary move would split
+        proportionally, which is the honest marginal.
 
-        ### `neutralization` — "how much of this mon is destroyed WITHOUT a KO"
-        `Σ_s p_s · sev_s(j)`, in units of *fraction of this mon's per-turn contribution lost*:
-          * **burn** → `0.5 · phys_share(j)`, `phys_share = base_atk/(base_atk+base_spa)`. Halving
-            Atk costs a special attacker nothing and a physical one half its offense; the split is
-            read off base stats, not assumed.
-          * **paralysis** → `0.25 + 0.75 · Δp_outspeed(j)`. The 25% is the full-para roll (a flat
-            action loss); the rest is how much of this mon's value rested on being fast, measured as
-            the op's OWN outspeed logistic evaluated at ×0.25 speed. A slow wall reads ~0.25; a
-            sweeper that was winning the speed tie reads ~1.0.
-          * **freeze / sleep** → 1.0. Total action denial while it lasts.
-          * **poison / toxic** → the first-turn residual fraction (1/8, 1/16).
-        ⚠️ **DURATION is not modelled** (see `pair_outcome.py`): this is a per-turn rate, so sleep
-        and freeze are equal here even though gen3 freeze does not self-thaw. Fixing that needs an
-        expected-duration number that is not a rule, so it is named rather than guessed.
-
-        ### `tempo_cost` — "turns of MY clock spent undoing it"
-        `P(any major status lands) · undo_turns(j)`, where `undo_turns` is the CHEAPEST available
-        undo path for mon `j`. Every input is fully observed (`j` indexes OUR six — our movesets,
-        our abilities and our HP are all on the team sheet), so there is no marginalization question
-        on this axis at all. **gen3_status_economy_v1 completes the path set** — Phase A read only
-        the moveset, so a Natural Cure mon and a mon with no answer at all were the same number:
-
-        | path | condition | turns | the gen3 rule it comes from |
-        |---|---|---|---|
-        | self-cure move | mon j knows Refresh / Heal Bell / Aromatherapy | **1.0** | the cure consumes exactly the turn it is used on |
-        | **Natural Cure** | mon j's ABILITY is Natural Cure | **1.0** | the status is shed ON SWITCH-OUT, and a switch consumes exactly one of our actions — the same single turn, needing no moveslot and no teammate |
-        | Rest | mon j knows Rest | `rest_sleep_noeb` (**2.0**) | DERIVED from the verified sleep-hazard table, not a constant written here |
-        | **cleric** | ANY OTHER ALIVE mon of ours carries a PARTY-WIDE cure | **2.0** | switch to the cleric (1) + click Heal Bell (1); the party-wide scope is what lets it reach mon j on the BENCH |
-        | none | — | **0.0** | nothing is spent because nothing is undone |
-
-        Two consequences worth stating rather than discovering:
-          * the reduction is a **min over available paths**, not the old `max(cure, rest)` — a mon
-            carrying BOTH Refresh and Rest used to be priced at the move it would not click;
-          * `0.0` remains the "no path" sentinel, so it can never also mean "the path is free". That
-            is why Natural Cure is priced at its literal switch and not at 0.0, and why the ability
-            does NOT touch `neutralization` — see `pair_outcome.py`'s limits.
-        The permanent loss stays `neutralization`'s job, and the two ride DECORRELATED rather than
-        pre-blended (§9's anti-pattern list). A Lum Berry would cure at zero tempo and near-zero
-        neutralization; items are not read here, so a berry-holder reads as if it had no answer.
+        ### The two FACTS (`pair_outcome.STATUS_FACT_COORDS`, columns 12–13 of the grid)
+        The expected burn damage lost and the expected outspeed lost, each = P(this seat's burn / paralysis lands
+        on j) × its exact effect. P(full paralysis) = 1/4 per turn (`data/mods/gen4/conditions.ts`
+        par.onBeforeMove, inherited by gen 3) is the rule constant × the delivered `p_par` column, so it is carried
+        there; the cure availability rides the mon tokens (`status_facts.cure_flags`); a sleep's wake odds are the
+        observation's sleep belief. (The JUDGMENT coordinates these columns held — `neutralization`, a weighted sum
+        of severities across units, and `tempo_cost`, our cure PLAN — were deleted by the legacy deletion's U1,
+        `designs/ops/legacy_deletion_manifest_2026-10-12.md` D1; the grid's WIDTH is unchanged, F-LD-7.)
         """
         from agents.model.arch_constants import _PAIR_OUTCOME_NEW
         B, eps = ctx.batch_size, 1e-8
@@ -969,83 +901,14 @@ class DamageOperatorBlocks:
         # a 0/1 mask, so a no-op where `p_land` already carries it).
         _mask, _sub_row, _drowsy = self._incoming_status_mask(ctx)
         p_ident = p_ident * _mask[:, :, None, :]                                    # [B,6,K,6]
-
-        # --- neutralization: the per-(defender, status) severity, all gen3 rules ---
-        phys = d_base[..., 1]                                                       # [B,6] base Atk
-        spec = d_base[..., 3]                                                       # [B,6] base SpA
-        phys_share = phys / (phys + spec).clamp_min(eps)                            # [B,6]
-        # How much of this mon's value rested on OUTSPEEDING — the op's own logistic, re-evaluated
-        # at paralysis speed. Nothing new is assumed about speed; the same estimator answers twice.
-        if self.speed_physics:
-            # gen3_speed_physics_v1: the forward's own pair (P(first), P(first | this mon paralysed)), from the
-            # one rule (`damage_op_speed`) — never a second estimator.
-            assert self.stash.speed_fast_pair is not None, "the op forward stashes it under --speed-physics on"
-            p_fast, p_fast_par = self.stash.speed_fast_pair                                 # [B,6] each
-        else:
-            p_fast = self._p_outspeed(our_spe, opp_spe[:, None])                            # [B,6]
-            p_fast_par = self._p_outspeed(our_spe * _DMG_PARA_SPEED, opp_spe[:, None])      # [B,6]
-        d_fast = (p_fast - p_fast_par).clamp(min=0.0, max=1.0)                              # [B,6]
-        ones = torch.ones_like(phys_share)
-        sev = torch.stack([
-            _NEUTRAL_PAR_FULL + (1.0 - _NEUTRAL_PAR_FULL) * d_fast,   # par
-            _NEUTRAL_BRN_ATK_LOSS * phys_share,                       # brn
-            ones,                                                     # frz — total action denial
-            ones,                                                     # slp — total action denial
-            ones * _NEUTRAL_PSN_TICK,                                 # psn
-            ones * _NEUTRAL_TOX_FIRST_TICK,                           # tox
-        ], dim=-1)                                                                  # [B,6,6]
-        if burn_loss is not None:
-            # gen3_endstate_facts_v1 (`--status-facts exact`, `pair_outcome.STATUS_FACT_COORDS`): the two JUDGMENTS
-            # leave and two FACTS take their positions (width-neutral): the expected burn damage lost and the
-            # expected outspeed lost, each = P(this seat's burn / paralysis lands on j) × its exact effect. P(full
-            # paralysis) = 1/4 per turn (`data/mods/gen4/conditions.ts` par.onBeforeMove, inherited by gen 3) is
-            # the rule constant × the delivered `p_par` column, so it is carried there; the cure availability rides
-            # the mon tokens (`status_facts.cure_flags`); a sleep's wake odds are the observation's sleep belief.
-            e_brn = p_ident[..., 1] * burn_loss[:, :, None]                              # [B,6,K]
-            e_par = p_ident[..., 0] * d_fast[:, :, None]                                 # [B,6,K]
-            out = torch.cat([p_ident, e_brn[..., None], e_par[..., None]], dim=-1)
-            assert out.shape[-1] == _PAIR_OUTCOME_NEW and out.shape[:3] == (B, TEAM_SIZE, K)
-            return out
-        neutral = torch.einsum("bjks,bjs->bjk", p_ident, sev)                       # [B,6,K]
-
-        # --- tempo: P(any major status) x the turns THIS mon spends undoing it ---
-        # gen3_status_economy_v1: FOUR paths, and the price is the CHEAPEST available one. The old
-        # form was `max(cure, rest)`, which was a "pick the non-zero" idiom rather than a claim —
-        # and it read 2.0 for a mon carrying BOTH Refresh and Rest, i.e. it priced the undo at the
-        # move you would not click. A min-over-available-paths says what it means; 0.0 stays the
-        # sentinel for "no path exists", which is a DIFFERENT statement from "the path is free"
-        # (see the pair_outcome.py note on why Natural Cure could not be modelled as 0.0).
-        our_moves = ctx.all_move_ids[:, :TEAM_SIZE]                                 # [B,6,max_moves]
-        has_cure = self.MOVE_CURES_SELF_STATUS[our_moves].amax(dim=-1)              # [B,6]
-        has_rest = (our_moves == self.rest_num).any(dim=-1).to(has_cure.dtype)      # [B,6]
-        # The ABILITY path. OUR six are fully observed (the team sheet), so `ability1_ids` holds the
-        # exact ability and no marginalization question arises on this axis — the same reason
-        # `tempo_cost` may read our own moveset directly.
-        has_nc = self.ABILITY_NATURAL_CURE[ctx.ability1_ids[:, :TEAM_SIZE]]         # [B,6]
-        # The CLERIC path: some OTHER mon of ours, ALIVE, carrying a PARTY-WIDE cure. `alive` is
-        # required because a fainted cleric is not a plan; `other` is required because a mon that
-        # carries Heal Bell ITSELF already has the 1-turn self-cure path above, and counting it
-        # twice would price its own answer at the more expensive number.
-        carries_cleric = self.MOVE_CURES_TEAM_STATUS[our_moves].amax(dim=-1)        # [B,6]
-        alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).to(has_cure.dtype)        # [B,6]
-        live_cleric = carries_cleric * alive                                        # [B,6]
-        has_other_cleric = (live_cleric.sum(dim=-1, keepdim=True)
-                            - live_cleric > 0.5).to(has_cure.dtype)                 # [B,6]
-        _INF = torch.full_like(has_cure, float('inf'))
-        paths = torch.stack([
-            torch.where(has_cure > 0.5, has_cure.new_full((), _TEMPO_CURE_TURNS), _INF),
-            torch.where(has_nc > 0.5, has_nc.new_full((), _TEMPO_NATURAL_CURE_TURNS), _INF),
-            torch.where(has_rest > 0.5, has_rest.new_full((), self.rest_sleep_noeb), _INF),
-            torch.where(has_other_cleric > 0.5,
-                        has_cure.new_full((), _TEMPO_CLERIC_TURNS), _INF),
-        ], dim=-1)                                                                  # [B,6,4]
-        cheapest = paths.amin(dim=-1)                                               # [B,6]
-        undo_turns = torch.where(torch.isfinite(cheapest), cheapest,
-                                 torch.zeros_like(cheapest))                        # [B,6]
-        p_major = p_ident.sum(dim=-1)                                               # [B,6,K]
-        tempo = p_major * undo_turns[:, :, None]                                    # [B,6,K]
-
-        out = torch.cat([p_ident, neutral[..., None], tempo[..., None]], dim=-1)
+        # How much of this mon's value rested on moving FIRST: the forward's own pair (P(first), P(first | this mon
+        # paralysed)), from the one speed rule (`damage_op_speed`) — never a second estimator.
+        assert self.stash.speed_fast_pair is not None, "the op forward stashes it before the pair outcome"
+        p_fast, p_fast_par = self.stash.speed_fast_pair                             # [B,6] each
+        d_fast = (p_fast - p_fast_par).clamp(min=0.0, max=1.0)                      # [B,6]
+        e_brn = p_ident[..., 1] * burn_loss[:, :, None]                             # [B,6,K]
+        e_par = p_ident[..., 0] * d_fast[:, :, None]                                # [B,6,K]
+        out = torch.cat([p_ident, e_brn[..., None], e_par[..., None]], dim=-1)
         if out.shape[-1] != _PAIR_OUTCOME_NEW:
             raise AssertionError(
                 f"pair_outcome_coords emitted {out.shape[-1]} coordinates but _PAIR_OUTCOME_NEW is "

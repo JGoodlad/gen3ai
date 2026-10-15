@@ -14436,3 +14436,38 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - Tests: `src/agents/model/model_version/adopted_levers_test.py` (a real toy build judged with all four units in
   force; the archived E / EB / P configs), `src/main/train/arch_arms_test.py`.
 
+
+## 2026-10-15 — LEGACY DELETION U1 (lane OP): eight op levers deleted, their adopted value unconditional behind the damage operator (config v156; no ARCH_SIGNATURE bump, no MIGRATION_FLOOR change, no obs change; K9 byte-identical)
+
+- **Deleted** (`designs/ops/legacy_deletion_manifest_2026-10-12.md` §1.4 D1–D6), each with its flag (+ `_` alias),
+  `ModelVersion` field, `_resolve` line, registry row, `check_compatible` clause, snapshot keyword and OFF path:
+  `--status-facts` (the pair-outcome JUDGMENTS `neutralization` / `tempo_cost` and their `_NEUTRAL_*` / `_TEMPO_*`
+  constants; columns 12–13 always hold the two exact status facts, width unchanged), `--ko-ramp` (the 15 %-window ramp;
+  `exact_closed`'s `RETIRED_VALUES` row subsumed, `deleted_flags.md` §4 now empty; `move_resolution_rules.ROLL_WINDOW`
+  deleted), `--g-ledger` (the op's coarse end-of-turn ledger), `--op-reduction` (the per-channel hard maxima and their
+  two dominant-move argmax PAYLOAD sites; `believed_reduce` takes a total always), `--speed-physics`
+  (`sigmoid(dSpe / 15)`: `_DMG_SPEED_SCALE`, `DamageOperator._p_outspeed` and the dead speed estimators that fed it),
+  `--eot-residual`, `--switch-hazard-cost`, `--effective-stats`. `DamageOperator.__init__` takes none of them; the
+  extractor builds `op_worst_proj`, `eot_residual_proj`, `status_cure_proj`, `effective_stats_proj` and the switch
+  cell's hazard block whenever `damage_op` is (D-LD2: DERIVED). `MoveResolutionCell` always builds its status
+  projections; `MoveResolutionOps.our_maxhp` / `seat_crit` are required.
+- **The refusal** (`adopted_levers.LANDED_UNITS = {"U1"}`, `UNIT_VERSIONS["U1"] = 156`): a config / zip that recorded a
+  non-adopted value of one of the eight in a network that built the op is refused on every load naming the tag
+  `pre-legacy-deletion` (`rb_es_prod_*` and every other pre-adoption config ≥ v145 now run PINNED); a toy without the op
+  is vacuous and loads. **Fixed in U0's rule:** an ABSENT field read as the pre-version OFF value whatever wrote the
+  config, which would have refused every post-U1 config that builds the op (the mirror itself); now an absent field in
+  a config written at or after its unit's version reads ADOPTED (`adopted_levers.absent_value`), and an absent pickled
+  kwarg (no version) is left to the config judge.
+- **GIGO fix in the adopted path (surfaced by U1):** `EotResidualRule.forward` gated THEIR side alive by the HP cell, so
+  under X5 a hypothesis slot whose HP cell read 0 lost its `g` columns and its per-mon residual (the coarse ledger it
+  replaced gated by the roster's `alive`). It now takes `opp_alive` (the roster's addressability) from
+  `pairwise_schedule` and the extractor; live rows' hypothesis HP cells read 1.0, so no live forward moved (K9
+  IDENTICAL). Pinned by `x5_opp_mon_axis_test::test_no_hidden_mon_is_dropped_by_an_hp_gate` (failed before the fix).
+- `designs/production_config.json` lost the eight keys and is stamped v156 (`baselines.json`'s production entry declares
+  `config_mirror_version: 156`); the `--arch endstate` overlay and `PRE_ADOPTION_PRODUCTION` lost them. `selection_sites`:
+  the stale declarations went; no PAYLOAD rule remains (the checker stays, its teeth pinned on planted source).
+- Gates: K9 `learner_golden check` IDENTICAL; the delivery graph structurally unchanged (meta `config_version` only);
+  `checkargs --argv "--arch production …"` / `--arch endstate` resolve the same network (their reports differ only in the
+  mirror hash and the registry count, 65 → 57 toggles). Tests re-pointed: the OFF-side cases of the lever tests deleted,
+  the numeric op tests re-derived for the adopted physics (`beatup_damage_test`, `hp_type_belief_test`, …), the toy
+  vacuity re-proven on a pinned-toy-shaped record (`adopted_levers_test`).

@@ -1,4 +1,5 @@
-"""REAL-BATTLE check of the SPEED PHYSICS (`--speed-physics on`, gen3_speed_physics_v1, audit F7b) on the RUST core —
+"""REAL-BATTLE check of the SPEED PHYSICS (gen3_speed_physics_v1, audit F7b; the op's only P(we act first) since the
+legacy deletion's U1 deleted `--speed-physics` and its logistic) on the RUST core —
 no poke-env.
 
 Replays banked real battles (the M5 Lane S turn bank: trained-policy games, inputs only) through the Rust core
@@ -7,11 +8,11 @@ before every move — not a speed question). The truth is who ACTED first: the f
 bounce's ``[from]`` line excluded) or ``|cant|`` line of either active after the decision (a full paralysis or
 sleep still reveals the order at the mon's own action time). For each qualifying turn, BOTH viewers' rows are run
 through a production-config extractor; the op's PRE-gain P(we act first at equal priority) for our active vs
-theirs is read with the physics OFF (the logistic) and ON, and the order rule (`move_order.p_seat_first`)
-completes it with the two moves' priorities.
+theirs is read, and the order rule (`move_order.p_seat_first`) completes it with the two moves' priorities. (The
+report's `off` arm — the deleted logistic — is gone with it.)
 
 * **Priority bracket** (unequal priorities): the rule says P = 0 / 1 — every one is checked against the protocol.
-* **Within a bracket** (equal priorities): the reliability table, the Brier score and the log loss of each arm.
+* **Within a bracket** (equal priorities): the reliability table, the Brier score and the log loss.
 * **Quick Claw** is BANNED in gen3ou (the op's term is off); a turn where either active truly holds one (the
   vendored simulator predates the ban, so the bank can contain them) is counted separately and left out of the
   calibration — an illegal-on-the-ladder state.
@@ -61,7 +62,6 @@ def _extractor() -> Any:
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {k: v for k, v in cfg.items() if k in sig}
     sanitize_historical_move_floor(kw)
-    kw["speed_physics"] = "on"
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
@@ -70,36 +70,27 @@ def _extractor() -> Any:
 
 
 def _ckpt_extractor(zip_path: str) -> Any:
-    """A checkpoint's extractor with the physics switched ON in place (no parameter differs between the arms; the
-    Quick Claw term is off in gen3ou; the speed mixture's non-persistent table is added by `_p_first`)."""
+    """A checkpoint's extractor (its op builds the speed rule; the Quick Claw term is off in gen3ou)."""
     from main.policy_spectrum.reader import load_checkpoint
     fe = load_checkpoint(Path(zip_path)).policy.features_extractor
     fe.eval()
     return fe
 
 
-def _p_first(fe: Any, rows: np.ndarray, on: bool, batch: int = 256) -> Tuple[np.ndarray, np.ndarray]:
+def _p_first(fe: Any, rows: np.ndarray, batch: int = 256) -> Tuple[np.ndarray, np.ndarray]:
     """Per row: (the op's PRE-gain P(we act first at equal priority) for our active, our active's TRUE Quick Claw)."""
     from agents.model.damage_tables import QUICK_CLAW_ITEM_NUM
     op = fe.damage_op
-    if on and not hasattr(op, "SPEED_MIX"):             # a checkpoint built `off`: its mixture table, non-persistent
-        from agents.model.belief_tables import build_species_speed_mix
-        op.register_buffer("SPEED_MIX", build_species_speed_mix(int(op.BASE_STATS.shape[0])), persistent=False)
-    prev = op.speed_physics
-    op.speed_physics = on
     ps: List[np.ndarray] = []
     qc: List[np.ndarray] = []
-    try:
-        with torch.no_grad():
-            for i in range(0, len(rows), batch):
-                x = torch.as_tensor(rows[i:i + batch], dtype=torch.float32)
-                fe({"observation": x})
-                ps.append(op.tensors_from_block(op.last_raw_block).out_p_outspeed[:, 0].double().numpy())
-                ctx = fe.unpack({"observation": x})
-                ar = torch.arange(ctx.batch_size)
-                qc.append((ctx.item_ids[ar, ctx.our_active_idx] == QUICK_CLAW_ITEM_NUM).numpy())
-    finally:
-        op.speed_physics = prev
+    with torch.no_grad():
+        for i in range(0, len(rows), batch):
+            x = torch.as_tensor(rows[i:i + batch], dtype=torch.float32)
+            fe({"observation": x})
+            ps.append(op.tensors_from_block(op.last_raw_block).out_p_outspeed[:, 0].double().numpy())
+            ctx = fe.unpack({"observation": x})
+            ar = torch.arange(ctx.batch_size)
+            qc.append((ctx.item_ids[ar, ctx.our_active_idx] == QUICK_CLAW_ITEM_NUM).numpy())
     return np.concatenate(ps), np.concatenate(qc)
 
 
@@ -211,8 +202,7 @@ def check(n_battles: int, ckpt: Optional[str] = None) -> Dict[str, Any]:
     data = collect(n_battles)
     meta = data["meta"]
     fe = _ckpt_extractor(ckpt) if ckpt else _extractor()
-    p_off, qc = _p_first(fe, data["rows"], on=False)
-    p_on, _ = _p_first(fe, data["rows"], on=True)
+    p_on, qc = _p_first(fe, data["rows"])
     prio_us = np.array([m["prio_us"] for m in meta])
     prio_them = np.array([m["prio_them"] for m in meta])
     y = np.array([float(m["we_first"]) for m in meta])
@@ -232,7 +222,7 @@ def check(n_battles: int, ckpt: Optional[str] = None) -> Dict[str, Any]:
                       "examples": [meta[i] for i in np.nonzero(wrong)[0][:10]]}
     eq = (prio_us == prio_them) & ~qc_turn
     out["within_bracket_rows"] = int(eq.sum())
-    for name, p in (("off", p_off), ("on", p_on)):
+    for name, p in (("on", p_on),):
         tab = reliability(p[eq], y[eq])
         out[name] = {"brier": _brier(p[eq], y[eq]), "logloss": _logloss(p[eq], y[eq]),
                      "ece": _ece(tab, int(eq.sum())), "table": tab,
@@ -241,7 +231,7 @@ def check(n_battles: int, ckpt: Optional[str] = None) -> Dict[str, Any]:
                          eq & (((p == 1.0) & (y == 0)) | ((p == 0.0) & (y == 1))))[0][:10]]}
     # the two viewers of one turn must agree: P(p1 first) + P(p2 first) = 1 within a bracket (a consistency read
     # of each arm, not a truth): the mean |sum − 1| over the turns both rows are in
-    for name, p in (("off", p_off), ("on", p_on)):
+    for name, p in (("on", p_on),):
         s = [abs(p[i] + p[i + 1] - 1.0) for i in range(0, len(meta) - 1, 2) if eq[i] and eq[i + 1]]
         out[name]["viewer_asymmetry_mean"] = float(np.mean(s)) if s else float("nan")
     return out
@@ -259,7 +249,7 @@ def test_the_priority_bracket_is_never_contradicted_and_the_physics_is_calibrate
     assert tab["[0.95,1.00]"]["n"] > 0 and tab["[0.95,1.00]"]["observed"] >= 0.95, tab
     assert tab["[0.00,0.05)"]["n"] > 0 and tab["[0.00,0.05)"]["observed"] <= 0.05, tab
     # the two viewers of one turn price the same order: a physics that read the two sides asymmetrically would
-    # break this (the logistic is symmetric by construction too; both are reported by the script)
+    # break this
     assert r["on"]["viewer_asymmetry_mean"] < 0.25, r["on"]
 
 
@@ -267,12 +257,11 @@ def _fmt(r: Dict[str, Any]) -> str:
     lines = [f"battles {r['battles']} · rows {r['rows']} · within-bracket rows {r['within_bracket_rows']} · "
              f"Quick Claw rows (excluded) {r['quick_claw_rows']} · skipped {r['skipped']} · beliefs: {r['beliefs']}",
              f"priority bracket: {r['bracket']['rows']} rows, {r['bracket']['contradicted']} contradicted", "",
-             "| bin | n | off mean P | off observed | on n | on mean P | on observed |", "|---|---|---|---|---|---|---|"]
-    for a, b in zip(r["off"]["table"], r["on"]["table"]):
+             "| bin | n | mean P | observed |", "|---|---|---|---|"]
+    for b in r["on"]["table"]:
         f = (lambda x: "—" if x is None else f"{x:.3f}")
-        lines.append(f"| {a['bin']} | {a['n']} | {f(a['mean_p'])} | {f(a['observed'])} | {b['n']} | "
-                     f"{f(b['mean_p'])} | {f(b['observed'])} |")
-    for k in ("off", "on"):
+        lines.append(f"| {b['bin']} | {b['n']} | {f(b['mean_p'])} | {f(b['observed'])} |")
+    for k in ("on",):
         lines.append(f"{k}: Brier {r[k]['brier']:.4f} · log loss {r[k]['logloss']:.4f} · ECE {r[k]['ece']:.4f} · "
                      f"certain-and-wrong {r[k]['certain_wrong']} · viewer asymmetry {r[k]['viewer_asymmetry_mean']:.4f}")
     return "\n".join(lines)

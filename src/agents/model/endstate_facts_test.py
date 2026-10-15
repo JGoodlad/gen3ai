@@ -1,17 +1,17 @@
-"""`gen3_endstate_facts_v1` (config v152) — the FACT-COMPLETION levers (`designs/endstate/design_hand_computed_features.md`
-§1's FACT / JUDGMENT test, §4 ranks 3-5, §5 rank 1, finding 7), each behind its own flag, OFF in the LEGACY base
-(ON in production since the END STATE's adoption, 2026-10-12 — so every "off vs on" here is built on
-`legacy_production_config`, the pre-adoption network, where each lever's OFF path still exists):
+"""`gen3_endstate_facts_v1` (config v152) — the FACT-COMPLETION facts (`designs/endstate/design_hand_computed_features.md`
+§1's FACT / JUDGMENT test, §4 ranks 3-5, §5 rank 1, finding 7). Three are the damage operator's only physics since the
+legacy deletion's U1 deleted their flags and OFF paths (`designs/ops/legacy_deletion_manifest_2026-10-12.md` D1-D3);
+two are still flags, OFF in the LEGACY base (`legacy_production_config`, the pre-adoption network; ON in production):
 
-* `--ko-ramp exact` (`ko_exact.py`): P(KO) over the 16 gen-3 rolls + the move's crit chance, each roll's KO resolved
-  over the observed HP interval — at every site (`DamageOperator._rolls`, the Choice-Band `ko_cb`, intent_threshold's
-  Substitute break, move resolution's Pursuit KO);
-* `--status-facts exact`: `neutralization` / `tempo_cost` (judgments) replaced in place by the expected burn damage
-  lost and the expected outspeed lost to paralysis, and every mon's cure-availability flags as token content;
+* the exact P(KO) (`ko_exact.py`; was `--ko-ramp exact`): over the 16 gen-3 rolls + the move's crit chance, each
+  roll's KO resolved over the observed HP interval — at every site (`DamageOperator._rolls`, the Choice-Band `ko_cb`,
+  intent_threshold's Substitute break, move resolution's Pursuit KO);
+* the exact status facts (was `--status-facts exact`): the expected burn damage lost and the expected outspeed lost to
+  paralysis in the pair-outcome grid's columns 12-13, and every mon's cure-availability flags as token content;
 * `--move-resolution-facts full`: the facts move resolution dropped (Focus Punch / Substitute / Endure / Endeavor,
   `spin_value_lost`, the spin-denial stake), restored;
 * `--drop-progress-clock on`: the model reads `turns_since_progress` as 0;
-* `--g-ledger eot`: the op's `g` cell reads the ONE end-of-turn rule.
+* the ONE end-of-turn rule (was `--g-ledger eot`): the op's `g` cell reads `eot_residual.EotResidualRule`.
 
 What a revert breaks, test by test, is in each docstring. Real SB3 policies (the construction path training uses) over
 the compile-parity fixture's real rows, plus constructed boards / constructed `MoveResolutionOps` for the physics.
@@ -45,11 +45,9 @@ from agents.observation.constants import (POKEMON_CONDITION_OFFSET, POKEMON_ITEM
 from main.train.arch_arms import legacy_production_config
 from utils.paths import repo_path
 
-_LEVERS = ("move_resolution_facts", "status_facts", "ko_ramp", "drop_progress_clock", "g_ledger")
-_ON = {"move_resolution_facts": "full", "status_facts": "exact", "ko_ramp": "exact", "drop_progress_clock": "on",
-       "g_ledger": "eot"}
-_OFF = {"move_resolution_facts": "off", "status_facts": "off", "ko_ramp": "ramp", "drop_progress_clock": "off",
-        "g_ledger": "coarse"}
+_LEVERS = ("move_resolution_facts", "drop_progress_clock")
+_ON = {"move_resolution_facts": "full", "drop_progress_clock": "on"}
+_OFF = {"move_resolution_facts": "off", "drop_progress_clock": "off"}
 #: the move-resolution bundle the restored facts live in (the legacy base + `--move-resolution on`)
 _MR = {"move_resolution": "on"}
 RMI = {n: i for i, n in enumerate(RMC)}
@@ -57,8 +55,8 @@ CI = {n: i for i, n in enumerate(CURE_FACTS)}
 
 
 def _toggles(**over: Any) -> Dict[str, Any]:
-    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): every test here is "base ⊕ one lever" with the lever
-    # OFF in the base; production now carries all five ON, so the base is the PRE-ADOPTION network.
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the flag tests are "base ⊕ one lever" with the lever
+    # OFF in the base; production carries both ON, so the base is the PRE-ADOPTION network.
     with open(repo_path("designs", "production_config.json")) as fh:
         cfg = legacy_production_config(json.load(fh))
     tog = {k: v for k, v in cfg.items() if not isinstance(v, (dict, list))}
@@ -177,11 +175,11 @@ def test_the_crit_table_reads_each_moves_gen3_crit_ratio() -> None:
 
 
 def test_every_op_ko_site_reads_the_one_rule(rows: torch.Tensor) -> None:
-    """`DamageOperator._rolls` under `--ko-ramp exact` IS `ko_exact.ko_given_hit` (ours ±½ HP; theirs the percentage
-    bin), and the op's KO columns move off the ramp on real rows (the lever reaches the incoming grid). Fails if a
-    site keeps its private ramp or the flag never reaches the op."""
-    op = _policy(ko_ramp="exact").features_extractor.damage_op
-    assert op.ko_exact and hasattr(op, "MOVE_CRIT_P")
+    """`DamageOperator._rolls` IS `ko_exact.ko_given_hit` (ours ±½ HP; theirs the percentage bin) — the op's only
+    P(KO) since U1 — and the stashed incoming KO column is a probability on real rows. Fails if a site keeps a
+    private ramp."""
+    op = _policy().features_extractor.damage_op
+    assert hasattr(op, "MOVE_CRIT_P") and not hasattr(op, "ko_exact")
     g = torch.Generator().manual_seed(3)
     dmg_ns = torch.rand(4, 6, 5, generator=g) * 400.0
     screen = torch.where(torch.rand(4, 1, 5, generator=g) > 0.5, 0.5, 1.0)
@@ -197,19 +195,16 @@ def test_every_op_ko_site_reads_the_one_rule(rows: torch.Tensor) -> None:
     _h, _l, _c, ko_o = op._rolls(dmg_ns, screen, maxhp, cur, acc, crit_p=crit, opp_hp_frac=frac)
     lo, hi = opp_hp_bounds(cur, frac, maxhp, 1.0)
     assert torch.allclose(ko_o, acc * ko_given_hit(dmg_ns * screen, 2.0 * dmg_ns, lo, hi, crit), atol=1e-6)
-    # the real forward: the stashed incoming KO column differs from the ramp's on real rows
-    base = _policy().features_extractor
+    # the real forward: the stashed incoming KO column (acc · P(KO | hit)) is a live probability on real rows
+    fe = _policy().features_extractor
     with torch.no_grad():
-        base({"observation": rows})
-        ko_ramp = base.damage_op.last_pair_cells[..., PAIR_OUTCOME_IDX["ko_ramp"]].clone()
-        fe = _policy(ko_ramp="exact").features_extractor
         fe({"observation": rows})
         ko_ex = fe.damage_op.last_pair_cells[..., PAIR_OUTCOME_IDX["ko_ramp"]]
-    assert float((ko_ex - ko_ramp).abs().max()) > 1e-3
+    assert float(ko_ex.min()) >= 0.0 and float(ko_ex.max()) <= 1.0 and float(ko_ex.max()) > 0.0
 
 
 def test_the_substitute_break_is_exact_at_the_subs_floor_hp() -> None:
-    """intent_threshold (P8) under `--ko-ramp exact`: P(their hit breaks our sub | hit) at the sub's exact HP
+    """intent_threshold (P8) with the exact P(KO): P(their hit breaks our sub | hit) at the sub's exact HP
     floor(maxhp / 4) over the rolls + crit. A 601-HP mon's sub holds 150 HP; a 171.5-HP top hit deals 149.2 on roll 87
     and 150.9 on roll 88 (both > ½ HP from the threshold), so it breaks on rolls 88 … 100 and on every crit. Fails on
     the ramp, on a sub at 25 % of max HP read as a fraction without the floor, and on a dropped crit."""
@@ -248,29 +243,21 @@ def test_intent_threshold_reads_the_exact_break_when_given_the_operands() -> Non
 
 
 # ====================================================================================== THE STATUS FACTS
-def test_the_pair_status_swap_is_width_neutral_and_carries_the_two_facts(rows: torch.Tensor) -> None:
-    """`--status-facts exact`: the op's unified outcome grid keeps its width; positions 12-13 hold the expected
-    burn damage lost (= P(this seat's burn lands) × our mon's burn loss — one ratio per mon, whatever the seat) and the
-    expected outspeed lost (= P(paralysis lands) × Δ P(outspeed)); the first twelve are unchanged. Checked against
-    the legacy base's `neutralization` on every PURE-paralysis seat (its severity was 0.25 + 0.75 · Δ): the paralysis fact
-    is (neutralization − 0.25 · p_par) / 0.75 there. Fails on a revert of the swap, on a re-weighted sum, and if the
-    burn column were not the per-mon loss."""
+def test_the_pair_status_columns_carry_the_two_facts(rows: torch.Tensor) -> None:
+    """The op's unified outcome grid keeps its width; positions 12-13 hold the expected burn damage lost (= P(this
+    seat's burn lands) × our mon's burn loss — one ratio per mon, whatever the seat) and the expected outspeed lost
+    (= P(paralysis lands) × Δ P(we act first), the forward's own speed pair). The JUDGMENTS these columns held
+    (`neutralization`, `tempo_cost`) were deleted by U1. Fails on a re-weighted sum, a severity, or a burn column that
+    is not the per-mon loss."""
     with torch.no_grad():
-        off = _policy().features_extractor
-        off({"observation": rows})
-        pin_off = off.damage_op.last_pair_in.clone()
-        on = _policy(status_facts="exact").features_extractor
+        on = _policy().features_extractor
         on({"observation": rows})
         pin_on = on.damage_op.last_pair_in
-    assert pin_on.shape == pin_off.shape
-    assert torch.equal(pin_on[..., :12], pin_off[..., :12])
+        p_fast, p_fast_par = on.damage_op.stash.speed_fast_pair
     p_par, p_brn = pin_on[..., PAIR_OUTCOME_IDX["p_par"]], pin_on[..., PAIR_OUTCOME_IDX["p_brn"]]
-    others = pin_on[..., 6:12].clone()
-    others[..., 0] = 0.0
-    pure_par = (p_par > 1e-3) & (others.abs().sum(-1) == 0)
-    assert int(pure_par.sum()) > 0, "no pure-paralysis seat in the fixture: the cross-check has no element"
-    want = (pin_off[..., 12] - 0.25 * p_par) / 0.75
-    assert torch.allclose(pin_on[..., 13][pure_par], want[pure_par], atol=1e-5)
+    assert int((p_par > 1e-3).sum()) > 0, "no paralysis-landing seat in the fixture"
+    d_fast = (p_fast - p_fast_par).clamp(0.0, 1.0)
+    assert int(((p_par > 1e-3) & (d_fast[:, :, None] > 1e-3)).sum()) > 0, "PRECONDITION: a live paralysis cost"
     burned = p_brn > 1e-3
     assert int(burned.sum()) > 0, "no burn-landing seat in the fixture"
     with torch.no_grad():
@@ -304,7 +291,7 @@ def test_the_burn_loss_on_a_mixed_attacker_is_its_physical_moves_halved(rows: to
     and an already-burned mon lose nothing (Showdown gen-3 `modifyDamage`: the halving skips Guts; a burned mon is
     halved in both worlds). Fails if the special move were halved, if the expectation were a max, or on a dropped
     Guts / already-burned case."""
-    fe = _policy(status_facts="exact").features_extractor
+    fe = _policy().features_extractor
     op = fe.damage_op
     with torch.no_grad():
         ctx = fe.unpack({"observation": rows[:8]})
@@ -352,7 +339,7 @@ def test_the_cure_flags_on_constructed_boards(rows: torch.Tensor) -> None:
     """Each flag in isolation: a live Heal Bell user marks its WHOLE side (a fainted one does not); Natural Cure,
     Rest, a known Lum / Chesto Berry on the mon itself (a consumed one reads 0); THEIR unrevealed item reads the
     species' Smogon prior. Fails on a side mix-up, a dropped alive gate, a consumed berry read as held."""
-    fe = _policy(status_facts="exact").features_extractor
+    fe = _policy().features_extractor
     rule: CureFlags = fe.status_cure_rule
     op = copy.copy(fe.damage_op)
     from agents.model.damage_op import OpStashes
@@ -400,7 +387,7 @@ def test_the_cure_flags_on_constructed_boards(rows: torch.Tensor) -> None:
 
 def test_the_cure_flags_and_the_burn_loss_permute_with_our_team_slots(rows: torch.Tensor) -> None:
     """Equivariance: permuting our six slots permutes our cure flags and our burn losses (one formula per mon)."""
-    fe = _policy(status_facts="exact").features_extractor
+    fe = _policy().features_extractor
     sig = torch.tensor([3, 0, 5, 1, 4, 2])
     with torch.no_grad():
         fe({"observation": rows[:16]})                               # leaves the X5 roster on the op's stash
@@ -433,13 +420,9 @@ def test_focus_punch_survives_unless_a_seat_hits_us_and_not_through_our_sub() ->
     assert float(_restored(ops(("tackle",), **kw))[0, 0, RMI["fp_survives"]]) == 0.0
 
 
-def test_the_substitute_survives_the_ramp_or_the_exact_break() -> None:
-    """`sub_survives` = 1 − Σ α_k · acc_k · P(dmg ≥ sub | hit): P8's ramp re-thresholded at 25 % (an AF) under
-    `ramp`, the exact roll count at floor(maxhp / 4) under `--ko-ramp exact` (`our_maxhp` / `seat_crit` set)."""
-    kw = dict(seats=("bodyslam", "growl", "growl"), alpha=(0.5, 0.2, 0.2),
-              pair_in=hit_grid(seat=0, high=0.30, acc=1.0))
-    ramp = float(_restored(ops(("substitute",), **kw))[0, 0, RMI["sub_survives"]])
-    assert ramp == pytest.approx(1.0 - 0.5 * min(1.0, (0.30 - 0.25) / (0.15 * 0.30)))
+def test_the_substitute_survives_the_exact_break() -> None:
+    """`sub_survives` = 1 − Σ α_k · acc_k · P(dmg ≥ sub | hit): the exact roll count at floor(maxhp / 4) (the ramp
+    re-thresholded at 25 % it replaced was deleted by U1)."""
     pin = hit_grid(seat=0, high=171.5 * MEAN_ROLL / 601.0, acc=1.0)
     pin[0, 0, 0, 2] = 2.0 * 171.5 * MEAN_ROLL / 601.0
     o = ops(("substitute",), seats=("bodyslam", "growl", "growl"), alpha=(0.5, 0.2, 0.2), pair_in=pin,
@@ -505,16 +488,21 @@ def test_the_status_facts_reach_the_move_resolution_cells() -> None:
 
 @pytest.mark.parametrize("lever", ["move_resolution_facts", "status_facts"])
 def test_the_restored_and_status_facts_reach_the_pointer(rows: torch.Tensor, lever: str) -> None:
-    """The new blocks reach the policy ONLY through their zero-init projections: at init the pointer's logits equal
-    the lever-off build's bit for bit; with the projections planted, the move cells (and logits) move. Fails if a
-    block bypasses its projection or never reaches the pointer."""
-    off = _policy(**_MR)
-    on = copy.deepcopy(_policy(**_MR, **{lever: _ON[lever]}))
-    for a, b in zip(_record(off, rows), _record(on, rows)):
-        assert torch.equal(a, b)
+    """The new blocks reach the policy ONLY through their zero-init projections: the restored facts at init equal the
+    lever-off build's pointer bit for bit; with either projection planted, the move cells (and logits) move. (The
+    status facts have no off build since U1: their projection is zero-init and the planted copy moves the cells.)
+    Fails if a block bypasses its projection or never reaches the pointer."""
+    if lever == "move_resolution_facts":
+        off = _policy(**_MR)
+        on = copy.deepcopy(_policy(**_MR, **{lever: _ON[lever]}))
+        for a, b in zip(_record(off, rows), _record(on, rows)):
+            assert torch.equal(a, b)
+    else:
+        off = _policy(**_MR)
+        on = copy.deepcopy(off)
     cell: MoveResolutionCell = on.features_extractor.move_resolution_cell
     proj = cell.restored_move_proj if lever == "move_resolution_facts" else cell.status_move_proj
-    assert proj is not None
+    assert proj is not None and float(proj.weight.abs().max()) == 0.0
     _plant_live(proj)
     rec_on = _record(on, rows)
     assert not torch.equal(rec_on[4], _record(off, rows)[4]), "the planted block never reached the move cells"
@@ -522,25 +510,25 @@ def test_the_restored_and_status_facts_reach_the_pointer(rows: torch.Tensor, lev
 
 # ====================================================================================== ONE RULE / NO CLOCK
 def test_the_g_ledger_reads_the_one_end_of_turn_rule(rows: torch.Tensor) -> None:
-    """`--g-ledger eot`: the op's `g` cells ARE `eot_residual.g_cells` of THE rule `--eot-residual` reads (its four
-    groups summing to the rule's unclamped total), not the coarse ledger. Fails on a revert to the ledger or a dropped
+    """The op's `g` cells ARE `eot_residual.g_cells` of THE rule the per-mon residual reads (its four groups summing to
+    the rule's unclamped total) — the op's own coarse ledger was deleted by U1. Fails on a second ledger or a dropped
     component."""
     from agents.model.eot_residual import EOT_FACTS, g_cells
-    fe = _policy(g_ledger="eot").features_extractor
+    fe = _policy().features_extractor
     with torch.no_grad():
         fe({"observation": rows})
         ctx = fe.unpack({"observation": rows})
         our_g, opp_g = fe.damage_op.pairwise_schedule(ctx)
         x5 = fe.damage_op.stash.x5
-        eot = fe.damage_op.eot_rule(ctx, fe.damage_op, None if x5 is None else x5.concrete)
+        eot = fe.damage_op.eot_rule(ctx, fe.damage_op, None if x5 is None else x5.concrete,
+                                    None if x5 is None else x5.alive)
         want_our, want_opp = g_cells(eot)
         if x5 is not None:
             want_opp = want_opp * x5.alive[:, :, None]
     assert torch.allclose(our_g, want_our) and torch.allclose(opp_g, want_opp)
     net_unclamped = eot[..., :len(EOT_FACTS) - 1].sum(-1)
     assert torch.allclose(torch.cat([our_g, opp_g], 1).sum(-1), net_unclamped, atol=1e-6)
-    coarse_our, _ = _policy().features_extractor.damage_op.pairwise_schedule(ctx)
-    assert not torch.equal(coarse_our, our_g) or float(our_g.abs().sum()) == 0.0
+    assert float(our_g.abs().sum()) > 0.0, "PRECONDITION: some end-of-turn HP change on our side in the fixture"
 
 
 def test_dropping_the_progress_clock_is_reading_it_as_zero(rows: torch.Tensor) -> None:
@@ -564,25 +552,22 @@ def test_dropping_the_progress_clock_is_reading_it_as_zero(rows: torch.Tensor) -
 
 
 # ====================================================================================== IDENTITY / INIT / VERSION
-def test_flags_off_builds_nothing() -> None:
-    """Production builds none of the levers: no crit table, no op end-of-turn rule, no restored / status / cure
-    projection, the clock read live — so its forward, graph and state_dict are the parent's (pinned also by the K9
-    learner golden and `measurements/endstate_facts_2026-10-09/`)."""
+def test_flags_off_builds_nothing_and_the_op_builds_its_facts() -> None:
+    """The legacy base builds neither remaining flag (no restored projection, the clock read live); the op always holds
+    the crit table, the one end-of-turn rule and the status / cure facts (U1)."""
     fe = _policy().features_extractor
-    assert not hasattr(fe.damage_op, "MOVE_CRIT_P") and fe.damage_op.eot_rule is None
-    assert fe.status_cure_rule is None and fe.status_cure_proj is None
+    assert hasattr(fe.damage_op, "MOVE_CRIT_P") and fe.damage_op.eot_rule is not None
+    assert fe.status_cure_rule is not None and fe.status_cure_proj is not None
     assert fe.unpack.drop_progress_clock is False
     for n in _LEVERS:
         assert getattr(fe, n) == _OFF[n]
     mr = _policy(**_MR).features_extractor.move_resolution_cell
-    assert mr.restored_move_proj is None and mr.status_move_proj is None
+    assert mr.restored_move_proj is None and mr.status_move_proj is not None
 
 
 @pytest.mark.parametrize("over,extra", [
-    ({"status_facts": "exact"}, ("status_cure_proj",)),
-    ({**_MR, "status_facts": "exact"}, ("status_cure_proj", "status_move_proj", "status_switch_proj")),
     ({**_MR, "move_resolution_facts": "full"}, ("restored_move_proj", "restored_switch_proj")),
-], ids=["status", "status+mr", "facts"])
+], ids=["facts"])
 def test_one_lever_init(rows: torch.Tensor, over: Dict[str, str], extra: tuple) -> None:
     """ON = OFF + exactly the lever's zero-init keys; every other initial byte equal; the init forward bit-identical."""
     base = {k: v for k, v in over.items() if k in _MR}
@@ -597,15 +582,8 @@ def test_one_lever_init(rows: torch.Tensor, over: Dict[str, str], extra: tuple) 
         assert torch.equal(a, b)
 
 
-@pytest.mark.parametrize("lever", ["ko_ramp", "g_ledger"])
-def test_the_parameter_free_levers_add_no_parameter(lever: str) -> None:
-    off, on = _policy(), _policy(**{lever: _ON[lever]})
-    so, sn = off.state_dict(), on.state_dict()
-    assert set(so) == set(sn) and all(torch.equal(so[k], sn[k]) for k in so)
-
-
 def test_a_pre_v152_config_migrates_to_off_and_a_mismatch_is_refused() -> None:
-    """A pre-v152 config migrates to the five OFF values (the only possible past); each lever's flip is refused by
+    """A pre-v152 config migrates to the remaining levers' OFF values (the only possible past); each flip is refused by
     `check_compatible` naming it; the kwarg reaches the recorded field and `current_model_version`."""
     from agents.model.model_version import MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError
     from agents.model.model_version.migrations import _migrate_config

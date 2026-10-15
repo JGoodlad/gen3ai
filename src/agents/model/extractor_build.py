@@ -117,20 +117,12 @@ class ExtractorBuild(torch.nn.Module):
                  policy_readout: str = "tower",
                  token_encoding: str = "legacy",
                  move_resolution: str = "off",
-                 speed_physics: str = "off",
-                 op_reduction: str = "max",
                  obs_facts: str = "off",
                  mon_hazard_cost: str = "off",
                  move_actor_state: str = "off",
                  trunk_layers: int = TRANSFORMER_N_LAYERS,
-                 switch_hazard_cost: str = "off",
-                 eot_residual: str = "off",
                  move_resolution_facts: str = "off",
-                 status_facts: str = "off",
-                 ko_ramp: str = "ramp",
                  drop_progress_clock: str = "off",
-                 g_ledger: str = "coarse",
-                 effective_stats: str = "off",
                  move_target_state: str = "off",
                  move_set_closure: str = "off",
                  ):
@@ -350,27 +342,11 @@ class ExtractorBuild(torch.nn.Module):
                 "reproduce the de-timid fiction it exists to remove.")
         if op_believed_lean and not damage_op:
             raise ValueError("op_believed_lean=True requires damage_op=True.")
-        # gen3_speed_physics_v1 (v143, `--speed-physics`; architecture audit F7b): P(we act first) from the speed
-        # BELIEF + the exact gen-3 order rules (`move_order`) instead of the op's fixed logistic. No parameters;
-        # 'off' (production) is byte-identical. It is the OP's physics, so it needs the op.
-        from agents.model.move_order import SPEED_PHYSICS_MODES
-        if speed_physics not in SPEED_PHYSICS_MODES:
-            raise ValueError(f"speed_physics must be one of {SPEED_PHYSICS_MODES}, got {speed_physics!r}")
-        if speed_physics == "on" and not damage_op:
-            raise ValueError("speed_physics='on' requires damage_op=True — it is the damage operator's "
-                             "P(outspeed) that it replaces; without the op there is nothing to price.")
-        self.speed_physics = speed_physics
-        # gen3_op_reduction_principled_v1 (`--op-reduction`; architecture audit F6b): the op's reductions over THEIR
-        # believed moves. 'max' (production) is the legacy per-channel hard maximum, byte-identical; 'principled'
-        # replaces each with the α-weighted expectation and adds the noisy-OR KO worst case (`op_reduction.py`),
-        # delivered to our mon tokens by the zero-init `op_worst_proj` built LAST below.
-        from agents.model.op_reduction import OP_REDUCTION_MODES
-        if op_reduction not in OP_REDUCTION_MODES:
-            raise ValueError(f"op_reduction must be one of {OP_REDUCTION_MODES}, got {op_reduction!r}")
-        if op_reduction == "principled" and not damage_op:
-            raise ValueError("op_reduction='principled' requires damage_op=True — it is the damage operator's "
-                             "reductions over the opponent's believed moves that it replaces.")
-        self.op_reduction = op_reduction
+        # THE ADOPTED OP PHYSICS (legacy deletion U1, `designs/ops/legacy_deletion_manifest_2026-10-12.md` lane OP):
+        # the speed physics, the principled reductions, the exact P(KO), the one end-of-turn rule and the exact status
+        # facts are unconditional INSIDE the op (`DamageOperator.__init__`), and the facts it hands the network (the
+        # noisy-OR worst case, the end-of-turn residual, the switch cell's hazard cost, the cure flags, the active
+        # mons' stage-applied stats) are built below whenever the op is (D-LD2: DERIVED from `damage_op`).
         self.intent_conditional = None
         if intent_conditional:
             self.intent_conditional = IntentConditionalMoveCell(INTENT_COND_MOVE_DIM)
@@ -681,11 +657,7 @@ class ExtractorBuild(torch.nn.Module):
                                          candidate_k=self.damage_candidate_k,
                                          reduce_how=_reduce_how,
                                          drop_renders=op_drop_renders,
-                                         believed_lean=op_believed_lean,
-                                         speed_physics=(speed_physics == "on"),
-                                         op_reduction=op_reduction,
-                                         # gen3_endstate_facts_v1: three op-level fact levers (validated below)
-                                         ko_ramp=ko_ramp, g_ledger=g_ledger, status_facts=status_facts)
+                                         believed_lean=op_believed_lean)
                           if damage_op else None)
         # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
         # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the
@@ -1075,8 +1047,7 @@ class ExtractorBuild(torch.nn.Module):
             self.damage_op.stash_pair_outcome = True
             self.damage_op.stash_pair_type_mult = True
             self.damage_op.stash_species_post = True
-            self.move_resolution_cell = MoveResolutionCell(self.damage_op, facts=move_resolution_facts,
-                                                           status_facts=status_facts)
+            self.move_resolution_cell = MoveResolutionCell(self.damage_op, facts=move_resolution_facts)
 
         # gen3_obs_facts_v1 (`--obs-facts`, the X5 version break's part 3, config v144): the OBS-FACTS block's
         # consumer. The observation ALWAYS carries the block (its last 84 dims); `off` (production) builds
@@ -1095,15 +1066,14 @@ class ExtractorBuild(torch.nn.Module):
                                  "block (gen3_obs_facts_v1): this layout predates it")
             self.obs_facts_inject = ObsFactsInject(layout, token_encoding=token_encoding)
 
-        # gen3_op_reduction_principled_v1 (`--op-reduction principled`, architecture audit F6b): the noisy-OR
-        # WORST-CASE row per our mon (`op.last_worst_rows`, [B,6,OP_WORST_DIM]: P(some physical / special move of
-        # theirs KOs it)) joins `prefuse_proj`'s incoming row on our mon tokens through ONE zero-init, bias-free
-        # `IsolatedLinear` — built LAST and drawing no RNG (SB3's orthogonal re-init skips it), so every other
-        # parameter's initial bytes equal the 'max' build's and ON-at-init adds exactly 0. 'max' builds nothing.
+        # gen3_op_reduction_principled_v1 (architecture audit F6b): the noisy-OR WORST-CASE row per our mon
+        # (`op.last_worst_rows`, [B,6,OP_WORST_DIM]: P(some physical / special move of theirs KOs it)) joins
+        # `prefuse_proj`'s incoming row on our mon tokens through ONE zero-init, bias-free `IsolatedLinear` — built
+        # LAST and drawing no RNG (SB3's orthogonal re-init skips it), so it adds exactly 0 at init. Built with the op.
         from agents.model.hypothesis_set import IsolatedLinear as _IsoLin
         from agents.model.op_reduction import OP_WORST_DIM
         self.op_worst_proj: Optional[_IsoLin] = (_IsoLin(OP_WORST_DIM, D_MODEL, zero=True, bias=False)
-                                                 if op_reduction == "principled" else None)
+                                                 if damage_op else None)
 
         # gen3_static_port_v1 (`--mon-hazard-cost`, `--move-actor-state`; `static_facts.py`): two NARROW facts for the
         # static encoder, from the static diagnostic. Each `on` builds ONE zero-init, bias-free `IsolatedLinear` LAST
@@ -1132,83 +1102,53 @@ class ExtractorBuild(torch.nn.Module):
         self.move_actor_proj: Optional[_IsoLin] = (_IsoLin(MOVE_ACTOR_DIM, D_MODEL, zero=True, bias=False)
                                                    if move_actor_state == "on" else None)
 
-        # gen3_static_recovery_v1 (`--switch-hazard-cost`, `--eot-residual`; `design_static_tokens.md` §13). The
-        # switch-cell hazard adds the target's entry-hazard cost (the op's ONE rule) as the switch pointer cell's LAST
-        # block, read by the POLICY's pointer head through its own zero-init projection (`pointer_switch_extra_dim`;
-        # nothing is built here). The end-of-turn residual builds its rule (constant tables only: no parameter, no RNG)
-        # and ONE zero-init, bias-free `IsolatedLinear` LAST, so ON adds exactly 0 at init and moves no other byte.
-        from agents.model.eot_residual import EOT_DIM, EOT_RESIDUAL_MODES, EotResidualRule
-        from agents.model.static_facts import SWITCH_HAZARD_COST_MODES
-        if switch_hazard_cost not in SWITCH_HAZARD_COST_MODES:
-            raise ValueError(f"switch_hazard_cost must be one of {SWITCH_HAZARD_COST_MODES}, got {switch_hazard_cost!r}")
-        if eot_residual not in EOT_RESIDUAL_MODES:
-            raise ValueError(f"eot_residual must be one of {EOT_RESIDUAL_MODES}, got {eot_residual!r}")
-        if switch_hazard_cost == "on" and not damage_op:
-            raise ValueError("switch_hazard_cost='on' requires damage_op=True: the cost is the damage operator's ONE "
-                             "Spikes entry rule (`DamageOperator.spikes_entry`), never a second copy.")
-        if eot_residual == "on" and not damage_op:
-            raise ValueError("eot_residual='on' requires damage_op=True: the residual reads the op's context (the X5 "
-                             "hypothesis context) and its base-stat table, the op's max-HP convention.")
-        self.switch_hazard_cost = switch_hazard_cost
-        self.eot_residual = eot_residual
-        self.eot_residual_rule: Optional[EotResidualRule] = (EotResidualRule(layout) if eot_residual == "on"
-                                                             else None)
+        # gen3_static_recovery_v1 (`design_static_tokens.md` §13), built with the op. The switch-cell hazard adds the
+        # target's entry-hazard cost (the op's ONE rule) as the switch pointer cell's LAST block, read by the POLICY's
+        # pointer head through its own zero-init projection (`pointer_switch_extra_dim`; nothing is built here). The
+        # end-of-turn residual builds its rule (constant tables only: no parameter, no RNG) and ONE zero-init,
+        # bias-free `IsolatedLinear` LAST, so it adds exactly 0 at init and moves no other byte. The residual reads the
+        # op's context (the X5 hypothesis context) and its base-stat table; the hazard cost is the op's ONE Spikes
+        # entry rule (`DamageOperator.spikes_entry`).
+        from agents.model.eot_residual import EOT_DIM, EotResidualRule
+        self.switch_hazard_cost = bool(damage_op)
+        self.eot_residual_rule: Optional[EotResidualRule] = EotResidualRule(layout) if damage_op else None
         self.eot_residual_proj: Optional[_IsoLin] = (_IsoLin(EOT_DIM, D_MODEL, zero=True, bias=False)
-                                                     if eot_residual == "on" else None)
+                                                     if damage_op else None)
 
         # gen3_endstate_facts_v1 (`designs/endstate/design_hand_computed_features.md` §4 ranks 3-5, §5 rank 1, finding
-        # 7): five FACT-completion levers, each OFF in production and byte-identical there. Requirements are enforced
-        # HERE, where `flag_requires_test` can see them. Parameters only where a lever adds an input: the restored /
-        # status move-resolution blocks (built inside `MoveResolutionCell`, above) and the cure flags' projection,
-        # each a zero-init bias-free `IsolatedLinear` built LAST (no RNG draw; ON adds exactly 0 at init).
-        from agents.model.ko_exact import KO_RAMP_MODES
+        # 7): the FACT-completion levers. Requirements are enforced HERE, where `flag_requires_test` can see them.
+        # Parameters only where a lever adds an input: the restored / status move-resolution blocks (built inside
+        # `MoveResolutionCell`, above) and the cure flags' projection (built with the op), each a zero-init bias-free
+        # `IsolatedLinear` built LAST (no RNG draw; it adds exactly 0 at init).
         from agents.model.model_version.retired_levers import refuse_retired_value
-        from agents.model.eot_residual import G_LEDGER_MODES
         from agents.model.move_resolution_rules import MOVE_RESOLUTION_FACTS_MODES
-        from agents.model.pair_outcome import STATUS_FACTS_MODES
         from agents.model.status_facts import CURE_DIM, CureFlags
         for _name, _val, _modes in (("move_resolution_facts", move_resolution_facts, MOVE_RESOLUTION_FACTS_MODES),
-                                    ("status_facts", status_facts, STATUS_FACTS_MODES),
-                                    ("ko_ramp", ko_ramp, KO_RAMP_MODES),
-                                    ("drop_progress_clock", drop_progress_clock, DROP_PROGRESS_CLOCK_MODES),
-                                    ("g_ledger", g_ledger, G_LEDGER_MODES)):
+                                    ("drop_progress_clock", drop_progress_clock, DROP_PROGRESS_CLOCK_MODES)):
             refuse_retired_value(_name, _val, ValueError)
             if _val not in _modes:
                 raise ValueError(f"{_name} must be one of {_modes}, got {_val!r}")
         if move_resolution_facts == "full" and move_resolution != "on":
             raise ValueError("move_resolution_facts='full' requires move_resolution='on': it restores facts INSIDE the "
                              "move-resolution family's cells (production's seven blocks still carry them).")
-        for _name, _val, _off in (("status_facts", status_facts, "off"), ("ko_ramp", ko_ramp, "ramp"),
-                                  ("g_ledger", g_ledger, "coarse")):
-            if _val != _off and not damage_op:
-                raise ValueError(f"{_name}={_val!r} requires damage_op=True: it is the damage operator's physics.")
         self.move_resolution_facts = move_resolution_facts
-        self.status_facts = status_facts
-        self.ko_ramp = ko_ramp
         self.drop_progress_clock = drop_progress_clock
-        self.g_ledger = g_ledger
         self.unpack.drop_progress_clock = drop_progress_clock == "on"
-        self.status_cure_rule: Optional[CureFlags] = CureFlags(layout) if status_facts == "exact" else None
+        self.status_cure_rule: Optional[CureFlags] = CureFlags(layout) if damage_op else None
         self.status_cure_proj: Optional[_IsoLin] = (_IsoLin(CURE_DIM, D_MODEL, zero=True, bias=False)
-                                                    if status_facts == "exact" else None)
+                                                    if damage_op else None)
 
         # gen3_probe_facts_v1 (config v153; `design_hand_computed_features.md` §4 rows 12-13, the probe battery's two
-        # candidates): `--effective-stats on` = each ACTIVE mon's stage-applied stats as token content (both sides),
-        # `--move-target-state on` = their active's HP + status onto our 4 E3 seats (`--move-actor-state`'s sibling).
-        # Each builds ONE zero-init, bias-free `IsolatedLinear` LAST (no RNG draw; ON adds exactly 0 at init).
-        from agents.model.static_facts import (EFFECTIVE_STATS_DIM, EFFECTIVE_STATS_MODES, MOVE_TARGET_DIM,
-                                               MOVE_TARGET_STATE_MODES)
-        if effective_stats not in EFFECTIVE_STATS_MODES:
-            raise ValueError(f"effective_stats must be one of {EFFECTIVE_STATS_MODES}, got {effective_stats!r}")
+        # candidates): each ACTIVE mon's stage-applied stats as token content (both sides; built with the op, whose
+        # base-stat table and spread belief it reads), and `--move-target-state on` = their active's HP + status onto
+        # our 4 E3 seats (`--move-actor-state`'s sibling). Each builds ONE zero-init, bias-free `IsolatedLinear` LAST
+        # (no RNG draw; it adds exactly 0 at init).
+        from agents.model.static_facts import EFFECTIVE_STATS_DIM, MOVE_TARGET_DIM, MOVE_TARGET_STATE_MODES
         if move_target_state not in MOVE_TARGET_STATE_MODES:
             raise ValueError(f"move_target_state must be one of {MOVE_TARGET_STATE_MODES}, got {move_target_state!r}")
-        if effective_stats == "on" and not damage_op:
-            raise ValueError("effective_stats='on' requires damage_op=True: the stats are read with the op's base-stat "
-                             "table and its spread belief, the op's own stat convention.")
-        self.effective_stats = effective_stats
         self.move_target_state = move_target_state
         self.effective_stats_proj: Optional[_IsoLin] = (_IsoLin(EFFECTIVE_STATS_DIM, D_MODEL, zero=True, bias=False)
-                                                        if effective_stats == "on" else None)
+                                                        if damage_op else None)
         self.move_target_proj: Optional[_IsoLin] = (_IsoLin(MOVE_TARGET_DIM, D_MODEL, zero=True, bias=False)
                                                     if move_target_state == "on" else None)
 

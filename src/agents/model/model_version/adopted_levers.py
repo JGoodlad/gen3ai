@@ -22,8 +22,12 @@ checkpoint trained a forward this code no longer builds — iff
    resolution, …) still loads after the deletion (`design_x26_readiness.md` §3.5, R-T2);
 2. the lever is not INERT in that config (`inert_when`: the seven per-action blocks are constructed and then retired
    under move resolution, so a recorded True beside `move_resolution on` built nothing that survives);
-3. the recorded value (an ABSENT field reads as `off_default`, the value every config before the lever's version
-   built) differs from the ADOPTED value.
+3. the recorded value differs from the ADOPTED value. An ABSENT field reads by WHO wrote the record
+   (:func:`absent_value`): a config written AFTER the lever's unit landed (`config_version >= UNIT_VERSIONS[unit]`)
+   cannot record it — that code builds only the adopted value — so it reads ADOPTED; a config written before the
+   lever's version reads `off_default`, the value every such config built. The PICKLED kwargs carry no version, so an
+   absent kwarg there reads ADOPTED (no evidence either way): the config judge, which every load runs on the
+   checkpoint's `model_config.json`, decides it.
 
 The adopted value of a deleted lever is unconditional once its prerequisites are built (D-LD2 "DERIVED"), so a
 config that recorded the adopted surface (the closing test's E arm, the bf16 A/B, X26) keeps loading at HEAD and
@@ -136,10 +140,10 @@ PLANNED: Tuple[AdoptedLever, ...] = (
 )
 
 #: The units that have LANDED (their fields are gone from `ModelVersion`). U0 lands the machinery only.
-LANDED_UNITS: FrozenSet[str] = frozenset()
+LANDED_UNITS: FrozenSet[str] = frozenset({"U1"})
 
 #: unit -> the first `MODEL_CONFIG_VERSION` written without its fields (filled as each unit lands).
-UNIT_VERSIONS: Dict[str, int] = {}
+UNIT_VERSIONS: Dict[str, int] = {"U1": 156}
 
 
 def _enabled(value: Any) -> bool:
@@ -160,14 +164,38 @@ def prerequisites_built(lever: AdoptedLever, raw: Mapping[str, Any]) -> bool:
     return all(_enabled(raw.get(r)) for r in lever.requires)
 
 
-def lever_active(lever: AdoptedLever, raw: Mapping[str, Any]) -> bool:
+def absent_value(lever: AdoptedLever, raw: Mapping[str, Any], *, pickled: bool = False) -> Any:
+    """What an ABSENT `lever.field` in `raw` means (module docstring, rule 3). U1's first landing showed the need: a
+    v156 config (written after U1) records none of U1's fields, and reading them as `off_default` refused every
+    post-U1 checkpoint that built the op, the production mirror included."""
+    if pickled:
+        return lever.adopted
+    first = UNIT_VERSIONS.get(lever.unit)
+    v = raw.get("config_version")
+    if first is not None and isinstance(v, int) and not isinstance(v, bool) and v >= first:
+        return lever.adopted
+    return lever.off_default
+
+
+def _below_floor(raw: Mapping[str, Any]) -> bool:
+    """A config recording a version below `MIGRATION_FLOOR` (refused at the floor on every load and resume)."""
+    from agents.model.model_version.migrations import MIGRATION_FLOOR
+    v = raw.get("config_version")
+    return isinstance(v, int) and not isinstance(v, bool) and v < MIGRATION_FLOOR
+
+
+def lever_active(lever: AdoptedLever, raw: Mapping[str, Any], *, pickled: bool = False) -> bool:
     """THE predicate (module docstring): did the config / kwargs `raw` record a NON-adopted value of `lever` in a
-    network that BUILT it? False whenever the lever is vacuous (prerequisites lacking) or inert."""
+    network that BUILT it? False whenever the lever is vacuous (prerequisites lacking) or inert. ``pickled``: `raw`
+    is a zip's pickled extractor kwargs (no version; an absent kwarg is left to the config judge)."""
     if not prerequisites_built(lever, raw):
         return False
+    if not pickled and _below_floor(raw):
+        return False     # refused by the MIGRATION FLOOR with its own (pre-generation) reason; this rule never pre-empts it
     if lever.inert_when is not None and lever.inert_when(raw):
         return False
-    return not _same(raw.get(lever.field, lever.off_default), lever.adopted)
+    recorded = raw[lever.field] if lever.field in raw else absent_value(lever, raw, pickled=pickled)
+    return not _same(recorded, lever.adopted)
 
 
 def landed(units: Optional[FrozenSet[str]] = None) -> Tuple[AdoptedLever, ...]:
@@ -198,7 +226,7 @@ def judge_pickled_kwargs(fek: Dict[str, Any], *, units: Optional[FrozenSet[str]]
     from agents.model.model_version.constants import ModelVersionError
 
     rows = landed(units)
-    active = [r for r in rows if lever_active(r, fek)]
+    active = [r for r in rows if lever_active(r, fek, pickled=True)]
     if active:
         raise ModelVersionError(refusal_text(active, "this checkpoint's pickled extractor kwargs"))
     changed = False

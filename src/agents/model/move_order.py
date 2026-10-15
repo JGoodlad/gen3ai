@@ -1,7 +1,7 @@
 """THE gen-3 MOVE-ORDER rule — who acts first in a turn — torch-free, ONE declaration for every reader.
 
 Architecture audit F7b (`designs/endstate/design_arch_audit.md` F7; owner 2026-10-06, "F7b IN"): P(we move first)
-from PHYSICS instead of the hand-picked logistic ``sigmoid(Δspeed / _DMG_SPEED_SCALE)``. The order rule has two
+from PHYSICS instead of the hand-picked logistic ``sigmoid(Δspeed / 15)`` (deleted by the legacy deletion's U1). The order rule has two
 layers, and both live here so no reader can fork either:
 
 * **the priority bracket** (:func:`p_seat_first`) — the higher-priority action always goes first; only at EQUAL
@@ -72,8 +72,6 @@ def quick_claw_live() -> bool:
     return not format_spec.active().is_banned("item", "quickclaw")
 
 
-#: The modes of `--speed-physics` (gen3_speed_physics_v1). 'off' is the logistic, production.
-SPEED_PHYSICS_MODES = ("off", "on")
 
 
 # ------------------------------------------------------------------------------------- the priority bracket
@@ -150,6 +148,6 @@ def p_first_quick_claw(p_speed: Any, our_qc: Any, opp_qc: Any) -> Any:
 
 def p_first_same_priority(ours: Any, their_final: Any, cum: Any, our_qc: Any, opp_qc: Any) -> Any:
     """THE within-bracket rule: the speed mixture (:func:`p_outspeed_mixture`), then Quick Claw. Every reader of
-    P(we act first at equal priority) under `--speed-physics on` goes through this one function. ``our_qc`` /
+    P(we act first at equal priority) goes through this one function. ``our_qc`` /
     ``opp_qc`` broadcast against the ``[..., Q]`` result."""
     return p_first_quick_claw(p_outspeed_mixture(ours, their_final, cum), our_qc, opp_qc)

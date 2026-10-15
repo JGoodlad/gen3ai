@@ -1,4 +1,4 @@
-"""THE END-OF-TURN RESIDUAL per mon — `--eot-residual on` (`gen3_static_recovery_v1`, config v150;
+"""THE END-OF-TURN RESIDUAL per mon — built with the op (`gen3_static_recovery_v1`, config v150;
 `designs/endstate/design_static_tokens.md` §13, `design_hand_computed_features.md` N4).
 
 For EVERY mon on BOTH sides: the HP it gains or loses at the END OF THIS TURN **if it is the mon on its side's field at
@@ -66,12 +66,10 @@ from agents.observation.gen3_effects import VOLATILE_SLOTS
 if TYPE_CHECKING:
     from agents.model.extractor_ctx import ExtractorContext
 
-#: `--eot-residual`'s legal values (``off`` builds nothing).
-EOT_RESIDUAL_MODES = ("off", "on")
-#: `--g-ledger`'s legal values (`gen3_endstate_facts_v1`): ``coarse`` = the op's own older `g` ledger
-#: (`DamageOperatorPairwise.pairwise_schedule`, production, byte-identical); ``eot`` = the `g` cell (and every reader
-#: of it: `c4`'s nets, the static op content) reads THIS rule through `g_cells`, so the model holds ONE end-of-turn rule.
-G_LEDGER_MODES = ("coarse", "eot")
+#: (`--eot-residual` and `--g-ledger`, the flags that chose this rule beside the op's own older `g` ledger, were
+#: DELETED by the legacy deletion's U1: the per-mon residual is built whenever the op is, and the `g` cell (and every
+#: reader of it: `c4`'s nets, the static op content) reads THIS rule through `g_cells` — the model holds ONE
+#: end-of-turn rule.)
 
 #: The per-mon columns, in order (signed fractions of the mon's own max HP).
 EOT_FACTS: Tuple[str, ...] = ("leftovers", "weather", "rain_dish", "status", "leech_drain", "leech_gain", "wish",
@@ -165,15 +163,20 @@ class EotResidualRule(torch.nn.Module):
         off = board_offsets(layout)
         self._wish_our, self._wish_opp = int(off.wish_our), int(off.wish_opp)
 
-    def forward(self, ctx: 'ExtractorContext', op: Any, opp_concrete: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, ctx: 'ExtractorContext', op: Any, opp_concrete: Optional[torch.Tensor] = None,
+                opp_alive: Optional[torch.Tensor] = None) -> torch.Tensor:
         """[B, 12, EOT_DIM] (`EOT_FACTS`): ours slots 0–5, theirs 6–11. ``opp_concrete`` [B,6] (1 = the slot's
-        species is known or hypothesised); None ⇒ revealed = not believed."""
+        species is known or hypothesised); None ⇒ revealed = not believed. ``opp_alive`` [B,6] (X5: the roster's
+        `alive`, i.e. ADDRESSABILITY): their side's alive gate — a hypothesis slot's HP cell is not its liveness
+        (`x5_opp_mon_axis_test`); None ⇒ the HP cell (> 0), both sides."""
         pp = ctx.pokemon_part
         dt = pp.dtype
         B = ctx.batch_size
         hp = ctx.hp_and_active[:, :, 0]                                                    # [B,12]
         active = ctx.hp_and_active[:, :, -1]                                               # [B,12] 0/1
         alive = (hp > 0).to(dt)
+        if opp_alive is not None:
+            alive = torch.cat([alive[:, :6], opp_alive.to(dt)], dim=1)
         if opp_concrete is None:
             opp_concrete = (~ctx.opp_believed_mask).to(dt)
         gate = alive * torch.cat([torch.ones_like(opp_concrete), opp_concrete.to(dt)], dim=1)   # [B,12]
@@ -278,12 +281,12 @@ G_FROM_EOT: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
 
 
 def g_cells(eot: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-    """`--g-ledger eot` (`gen3_endstate_facts_v1`): the `g` ledger's ``(our_cells [B,6,4], opp_cells [B,6,4])`` —
+    """the one end-of-turn rule (`gen3_endstate_facts_v1`): the `g` ledger's ``(our_cells [B,6,4], opp_cells [B,6,4])`` —
     ``[heal, weather, status, leech]`` per mon, signed max-HP fractions — from THE end-of-turn rule's per-mon
     components ``eot`` ``[B,12,EOT_DIM]`` (`EotResidualRule.forward`). The coarse ledger's four columns are
     Leftovers / weather / status / Leech Seed drain; here each column also carries the rule's other components of its
     kind (Rain Dish, Wish and Ingrain heal; Curse and Nightmare tick with the status; the seeder's heal with the
-    drain), so `g`, `c4` and the static op content price the end of the turn by the SAME rule as `--eot-residual`."""
+    drain), so `g`, `c4` and the static op content price the end of the turn by the SAME rule as the per-mon residual."""
     idx = {n: i for i, n in enumerate(EOT_FACTS)}
     cols = [torch.stack([eot[..., idx[c]] for c in comps], dim=-1).sum(-1) for _name, comps in G_FROM_EOT]
     g = torch.stack(cols, dim=-1)                                                       # [B,12,4]

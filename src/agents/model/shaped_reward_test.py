@@ -37,6 +37,11 @@ def _production_v121() -> dict:
                bias_additivity=1.0, mat_alive_weight=1.25, no_progress_penalty=0.15,
                switch_bias_weight=0.0, self_ko_hp_penalty=0.0, drop_redundant_bias=False,
                drop_switch_bias=False, no_progress_tax_armed=False)
+    # legacy deletion U1+: a pre-unit config that BUILT the op recorded each landed lever; record the ADOPTED value so
+    # this test's subject (the shaped fields) is the only thing judged (`adopted_levers` refuses a pre-unit OFF value).
+    from agents.model.model_version import adopted_levers as AL
+    for r in AL.landed():
+        raw[r.field] = r.adopted
     return raw
 
 

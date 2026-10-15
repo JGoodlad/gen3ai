@@ -246,15 +246,37 @@ def test_revealed_hp_is_never_priced_as_immune_before_it_fires():
                     attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["DARK"])
     defenders = [(gen3_data.species.get("salamence").num, _T2I["DRAGON"], _T2I["FLYING"])] + [(0, 0, 0)] * 5
     ctx = _DT._fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16, **attacker)
-    # Maximally unsure (uniform over 16 types): each candidate carries 1/16 of the presence, so the
-    # threat is discounted — but it is emphatically NOT zero, which is the whole point.
+    # Maximally unsure (uniform over 16 types): each typed candidate carries 1/16 of the presence — and the
+    # threat is emphatically NOT zero, which is the whole point.
     flat, _ = head.compose_typed_hp(_raw_logits(), torch.full((1, TEAM_SIZE, 16), 1.0 / 16),
                                     _no_obs(), _move_ids(HIDDEN_POWER_MOVE_NUM))
     assert _op_high(op, ctx, flat) > 0.02
-    # …and once the belief concentrates on Ice, the 4x threat is priced at close to full weight.
-    post = torch.zeros(1, TEAM_SIZE, 16); post[:, :, _hp_idx("ICE")] = 1.0
-    sharp, _ = head.compose_typed_hp(_raw_logits(), post, _no_obs(), _move_ids(HIDDEN_POWER_MOVE_NUM))
-    assert _op_high(op, ctx, sharp) > 10 * _op_high(op, ctx, flat)
+
+    def _chans(lg):
+        out = op(ctx, lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+        return float(out[0, 0, _DMG_IDX_PHYS_HIGH]), float(out[0, 0, _DMG_IDX_SPEC_HIGH])
+
+    sharp = []                                       # the belief concentrated on each type in turn
+    for t in range(16):
+        post = torch.zeros(1, TEAM_SIZE, 16); post[:, :, t] = 1.0
+        sharp.append(_chans(head.compose_typed_hp(_raw_logits(), post, _no_obs(),
+                                                  _move_ids(HIDDEN_POWER_MOVE_NUM))[0]))
+    # The adopted reduction is the α-weighted EXPECTATION over the believed moves (α = w / the attacker's total
+    # presence, `op_reduction.incoming_principled`), LINEAR in α. The flat belief is the uniform mixture of the 16
+    # concentrated ones at the SAME total presence, so each channel of the flat read is the MEAN of the 16
+    # concentrated reads: an HP of unknown type is priced at its expected damage, not discounted by 1/16 (the
+    # deleted per-channel max read 1/16 of the best type). Residual: compose's 1e-9 floor on the 15 off types
+    # (~1e-8 relative) and fp32 summation.
+    got_flat = _chans(flat)
+    for ch in (0, 1):
+        assert got_flat[ch] == pytest.approx(sum(sh[ch] for sh in sharp) / 16.0, rel=1e-4), ch
+    # …and once the belief concentrates on Ice, the 4x threat is priced in full: HP Ice is the ONLY 4x special
+    # type into Dragon/Flying, HP Dragon the only 2x one (same BP 70, same SpA, neither STAB for Tyranitar), so
+    # the special read halves from Ice to Dragon (up to the ~1.8 % belief floor of the other moves).
+    ice, dragon = sharp[_hp_idx("ICE")][1], sharp[_hp_idx("DRAGON")][1]
+    assert ice == max(sh[1] for sh in sharp)
+    assert dragon == pytest.approx(0.5 * ice, rel=1e-2)
+    assert ice > 2.0 * got_flat[1]                   # 0.714 vs 0.120 at this commit (the mean of 16)
 
 
 def test_op_has_no_hp_type_source_of_its_own():

@@ -1,4 +1,4 @@
-"""THE EXACT P(KO) — `--ko-ramp exact` (`gen3_endstate_facts_v1`, config v152; `design_hand_computed_features.md`
+"""THE EXACT P(KO) — the exact P(KO) (`gen3_endstate_facts_v1`, config v152; `design_hand_computed_features.md`
 D9 / §4 rank 3, an APPROXIMATE FACT made exact), computed in CLOSED FORM (`gen3_ko_exact_closed_v1`, 2026-10-10).
 
 **What it replaces.** Every P(KO) the damage operator hands the model was the continuous ramp
@@ -69,9 +69,8 @@ from typing import Dict, Optional, Tuple, Union
 
 import torch
 
-#: `--ko-ramp`'s legal values. ``ramp`` = the legacy mean-anchored 15 %-window ramp, no crit (production;
-#: byte-identical — every site keeps its own inline expression); ``exact`` = this module (the closed form).
-KO_RAMP_MODES: Tuple[str, ...] = ("ramp", "exact")
+#: (`--ko-ramp`, which chose this module beside the legacy mean-anchored 15 %-window ramp, was DELETED by the legacy
+#: deletion's U1: this module is the op's only P(KO).)
 
 #: The 16 gen-3 damage rolls (percent of the 100-roll damage), `sim/battle.ts` ``randomizer``.
 ROLLS: Tuple[int, ...] = tuple(range(85, 101))
@@ -183,6 +182,6 @@ def crit_p_table(n_moves: int) -> torch.Tensor:
     return out
 
 
-__all__ = ["KO_RAMP_MODES", "ROLLS", "N_ROLLS", "MEAN_ROLL", "CRIT_P_BY_RATIO", "CRIT_P_BASE",
+__all__ = ["ROLLS", "N_ROLLS", "MEAN_ROLL", "CRIT_P_BY_RATIO", "CRIT_P_BASE",
            "OPP_HP_PERCENT", "roll_ko_prob", "run_counts", "closed_sum", "ko_given_hit",
            "ours_hp_bounds", "opp_hp_bounds", "crit_p_table"]

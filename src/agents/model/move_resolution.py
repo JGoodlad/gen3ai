@@ -88,7 +88,7 @@ from agents.model.move_resolution_rules import (
     ABILITY_INNER_FOCUS, ABILITY_OWN_TEMPO, ABILITY_SLEEP_BLOCK, ABILITY_SOUNDPROOF, BELLY_DRUM_HP_FRACTION,
     MOVE_RESOLUTION_MOVE_COORDS, MOVE_RESOLUTION_MOVE_IDX, MOVE_RESOLUTION_SWITCH_COORDS,
     MOVE_RESOLUTION_SWITCH_IDX, P_CONFUSION_SELF_HIT, P_FULL_PARA,
-    P_INFATUATION, P_THAW, PAIR_FACT_COORDS, PRIORITY_MAX, PRIORITY_MIN, PURSUIT_SWITCH_MULT, ROLL_WINDOW,
+    P_INFATUATION, P_THAW, PAIR_FACT_COORDS, PRIORITY_MAX, PRIORITY_MIN, PURSUIT_SWITCH_MULT,
     SUB_HP_FRACTION)
 from agents.model.move_order import p_seat_first
 from agents.model.status_rules import incoming_status_mask
@@ -197,10 +197,10 @@ class MoveResolutionOps(NamedTuple):
     d_slp_k: torch.Tensor          # [B,K']
     is_brn: torch.Tensor           # [B,4]
     is_slp: torch.Tensor           # [B,4]
-    # --- gen3_endstate_facts_v1 (`--ko-ramp exact`; None under `ramp`): our ACTIVE's exact max HP (HP points) and
+    # --- gen3_endstate_facts_v1 (the exact P(KO)): our ACTIVE's exact max HP (HP points) and
     #     each seat's crit chance (an OTHER_move level: the base 1/16) — the exact Substitute break and Pursuit KO
-    our_maxhp: Optional[torch.Tensor] = None   # [B]
-    seat_crit: Optional[torch.Tensor] = None   # [B,K']
+    our_maxhp: torch.Tensor        # [B]
+    seat_crit: torch.Tensor        # [B,K']
 
 
 def _g(t: torch.Tensor, idx: torch.Tensor) -> torch.Tensor:
@@ -542,11 +542,8 @@ def switch_facts(o: MoveResolutionOps, seat_spin: Optional[torch.Tensor] = None)
     m_crit = torch.einsum("bk,bjk->bj", alpha, o.pair_in[..., 2].to(dt)) - hp
     pin_a = o.pair_in[ar, o.our_active]                                               # [B,K,14]
     h2 = PURSUIT_SWITCH_MULT * pin_a[..., 1]
-    if o.our_maxhp is None:
-        ko2 = torch.clamp((h2 - o.our_hp[:, None]) / (ROLL_WINDOW * h2 + _EPS), 0.0, 1.0)
-    else:
-        # gen3_endstate_facts_v1 (`--ko-ramp exact`): the 16 rolls + the crit, our HP exact (±½ HP)
-        ko2 = _exact_ko_ours(h2, PURSUIT_SWITCH_MULT * pin_a[..., 2], o.our_hp[:, None], o.our_maxhp, o.seat_crit)
+    # gen3_endstate_facts_v1 (the exact P(KO)): the 16 rolls + the crit, our HP exact (±½ HP)
+    ko2 = _exact_ko_ours(h2, PURSUIT_SWITCH_MULT * pin_a[..., 2], o.our_hp[:, None], o.our_maxhp, o.seat_crit)
     pur = o.seat_kind[..., SEAT_KIND_IDX["pursuit"]].to(dt)
     p_sw = 1.0 - (alpha * pur * ko2).sum(-1, keepdim=True)                            # [B,1]
     per = torch.stack([p_spin_denied, e_pko, e_type, m_high, m_crit], dim=-1) * gate  # [B,6,5]
@@ -555,7 +552,7 @@ def switch_facts(o: MoveResolutionOps, seat_spin: Optional[torch.Tensor] = None)
 
 def _exact_ko_ours(mean_dmg: torch.Tensor, crit_dmg: torch.Tensor, our_hp: torch.Tensor, our_maxhp: torch.Tensor,
                    seat_crit: Optional[torch.Tensor]) -> torch.Tensor:
-    """gen3_endstate_facts_v1 (`--ko-ramp exact`): P(the hit deals ≥ ``our_hp`` | it hits) on OUR active, exact over
+    """gen3_endstate_facts_v1 (the exact P(KO)): P(the hit deals ≥ ``our_hp`` | it hits) on OUR active, exact over
     the 16 rolls and the seat's crit chance (`ko_exact.ko_given_hit`), our HP exact (±½ HP). Fractions of max HP."""
     from agents.model.ko_exact import ko_given_hit, ours_hp_bounds
     lo, hi = ours_hp_bounds(our_hp, 1.0 / our_maxhp[:, None])
@@ -574,8 +571,8 @@ def restored_move_facts(o: MoveResolutionOps, m: torch.Tensor, kind_t: torch.Ten
       ``hits_k`` the family's own P(seat k's damaging hit lands on us) — a hit on OUR Substitute does not break the
       focus (`data/mods/gen4/moves.ts` focuspunch: ``lostFocus`` is set by damage to the USER), so it is excluded;
     * ``sub_survives`` — is Substitute × P(their hit does NOT break the 25 % sub): ``1 − Σ_k α_k · acc_k ·
-      P(dmg ≥ sub | hit)``; under `--ko-ramp exact` the break is exact (16 rolls + crit at ``floor(maxhp/4)``), else
-      P8's ramp re-thresholded at 25 % (an AF);
+      P(dmg ≥ sub | hit)``, the break exact (16 rolls + crit at ``floor(maxhp/4)``; the ramp re-thresholded at 25 %
+      it replaced was deleted by the legacy deletion's U1);
     * ``endure_p_ko``  — is Endure × P(they KO us this turn) (``p_ko_us``, no threshold);
     * ``endeavor_survives`` — is Endeavor × P(we are NOT KO'd this turn) (1 − ``p_ko_us``);
     * ``spin_value_lost`` — is Rapid Spin × P(the spin does not resolve) × OUR side's Spikes layers / 3: the
@@ -594,11 +591,8 @@ def restored_move_facts(o: MoveResolutionOps, m: torch.Tensor, kind_t: torch.Ten
     hits_k = seat_dmg * acc_k * (tm_a > 0).to(dt)                                     # P(seat k's hit lands on us)
     our_sub = o.our_vol[:, VOL["substitute"]].to(dt)[:, None]                         # [B,1]
     p_fp_broken = (alpha * hits_k).sum(-1, keepdim=True) * (1.0 - our_sub)            # [B,1]
-    if o.our_maxhp is None:
-        brk = torch.clamp((high_k - SUB_HP_FRACTION) / (ROLL_WINDOW * high_k + _EPS), 0.0, 1.0)
-    else:
-        sub_frac = torch.floor(o.our_maxhp / 4.0) / o.our_maxhp                       # [B] the sub's exact HP
-        brk = _exact_ko_ours(high_k, pin_a[..., _PAIR["crit"]], sub_frac[:, None], o.our_maxhp, o.seat_crit)
+    sub_frac = torch.floor(o.our_maxhp / 4.0) / o.our_maxhp                           # [B] the sub's exact HP
+    brk = _exact_ko_ours(high_k, pin_a[..., _PAIR["crit"]], sub_frac[:, None], o.our_maxhp, o.seat_crit)
     p_sub_broken = (alpha * acc_k * brk).sum(-1, keepdim=True)                        # [B,1]
     p_resolve = m[..., MOVE_RESOLUTION_MOVE_IDX["p_resolve"]]                         # [B,4]
     p_ko_us = m[..., MOVE_RESOLUTION_MOVE_IDX["p_ko_us"]]                             # [B,4] (already gated)
@@ -623,7 +617,7 @@ def restored_switch_facts(o: MoveResolutionOps, s: torch.Tensor) -> torch.Tensor
 
 
 def status_move_facts(o: MoveResolutionOps) -> torch.Tensor:
-    """``[B,4,2]`` — `--status-facts exact` under move resolution: the α-reduced pair-outcome STATUS FACTS at OUR
+    """``[B,4,2]`` — the exact status facts under move resolution: the α-reduced pair-outcome STATUS FACTS at OUR
     active, ``[e_burn_dmg_lost, e_par_outspeed_lost]`` (the op's `pair_outcome_coords` emits them in the two columns
     that held `neutralization` / `tempo_cost`), broadcast over our request slots."""
     dt = o.alpha.dtype
@@ -662,8 +656,7 @@ class MoveResolutionCell(torch.nn.Module):
     ENDEAVOR_NUM: torch.Tensor
 
     def __init__(self, damage_op: Any, out_move: int = MOVE_RESOLUTION_MOVE_DIM,
-                 out_switch: int = MOVE_RESOLUTION_SWITCH_DIM, facts: str = "off",
-                 status_facts: str = "off") -> None:
+                 out_switch: int = MOVE_RESOLUTION_SWITCH_DIM, facts: str = "off") -> None:
         super().__init__()
         from agents.model.hypothesis_set import IsolatedLinear
         n_moves = int(damage_op.MOVE_BP.shape[0])
@@ -677,8 +670,8 @@ class MoveResolutionCell(torch.nn.Module):
         self.register_buffer("PRIO_W", build_priority_table(damage_op.MOVE_PRIORITY), persistent=False)
         self.move_proj = IsolatedLinear(_MOVE_RESOLUTION_MOVE_RAW, int(out_move), zero=True)
         self.switch_proj = IsolatedLinear(_MOVE_RESOLUTION_SWITCH_RAW, int(out_switch), zero=True)
-        # gen3_endstate_facts_v1: the RESTORED facts (`--move-resolution-facts full`) and the STATUS facts
-        # (`--status-facts exact`), each through its OWN zero-init bias-free IsolatedLinear onto the SAME output
+        # gen3_endstate_facts_v1: the RESTORED facts (`--move-resolution-facts full`) and the STATUS facts (the pair
+        # outcome's exact status columns), each through its OWN zero-init bias-free IsolatedLinear onto the SAME output
         # block — the zero-init input columns of `move_proj` / `switch_proj`, whose shapes and init are unchanged
         # (no RNG draw: the `off` build is this build minus these matrices, and ON adds exactly 0 at init).
         from agents.model.move_resolution_rules import (MOVE_RESOLUTION_FACTS_MODES,
@@ -687,7 +680,6 @@ class MoveResolutionCell(torch.nn.Module):
         if facts not in MOVE_RESOLUTION_FACTS_MODES:
             raise ValueError(f"move_resolution facts must be one of {MOVE_RESOLUTION_FACTS_MODES}, got {facts!r}")
         self.facts = facts
-        self.status_facts = status_facts
         self.restored_move_proj: Optional[IsolatedLinear] = None
         self.restored_switch_proj: Optional[IsolatedLinear] = None
         if facts == "full":
@@ -700,12 +692,9 @@ class MoveResolutionCell(torch.nn.Module):
                                                      zero=True, bias=False)
             self.restored_switch_proj = IsolatedLinear(len(MOVE_RESOLUTION_RESTORED_SWITCH_COORDS), int(out_switch),
                                                        zero=True, bias=False)
-        self.status_move_proj: Optional[IsolatedLinear] = None
-        self.status_switch_proj: Optional[IsolatedLinear] = None
-        if status_facts == "exact":
-            from agents.model.pair_outcome import STATUS_FACT_COORDS
-            self.status_move_proj = IsolatedLinear(len(STATUS_FACT_COORDS), int(out_move), zero=True, bias=False)
-            self.status_switch_proj = IsolatedLinear(len(STATUS_FACT_COORDS), int(out_switch), zero=True, bias=False)
+        from agents.model.pair_outcome import STATUS_FACT_COORDS
+        self.status_move_proj = IsolatedLinear(len(STATUS_FACT_COORDS), int(out_move), zero=True, bias=False)
+        self.status_switch_proj = IsolatedLinear(len(STATUS_FACT_COORDS), int(out_switch), zero=True, bias=False)
 
     def raw(self, ops: MoveResolutionOps) -> Tuple[torch.Tensor, torch.Tensor]:
         """The un-projected facts ``([B,4,RAW_M], [B,6,RAW_S])`` (what the tests and the fuzz read)."""
@@ -714,30 +703,25 @@ class MoveResolutionCell(torch.nn.Module):
     def extras(self, ops: MoveResolutionOps, m: torch.Tensor, s: torch.Tensor
                ) -> Dict[str, torch.Tensor]:
         """gen3_endstate_facts_v1: the un-projected EXTRA blocks the flags build (``restored_move`` /
-        ``restored_switch`` under `--move-resolution-facts full`, ``status_move`` / ``status_switch`` under
-        `--status-facts exact`); empty with both off. ``m`` / ``s`` are `raw`'s outputs."""
+        ``restored_switch`` under `--move-resolution-facts full`; ``status_move`` / ``status_switch`` always, the exact
+        status facts). ``m`` / ``s`` are `raw`'s outputs."""
         out: Dict[str, torch.Tensor] = {}
         if self.restored_move_proj is not None:
             out["restored_move"] = restored_move_facts(ops, m, self.KIND, self.FLAG, self.ENDEAVOR_NUM)
             out["restored_switch"] = restored_switch_facts(ops, s)
-        if self.status_move_proj is not None:
-            out["status_move"] = status_move_facts(ops)
-            out["status_switch"] = status_switch_facts(ops)
+        out["status_move"] = status_move_facts(ops)
+        out["status_switch"] = status_switch_facts(ops)
         return out
 
     def forward(self, ops: MoveResolutionOps) -> Tuple[torch.Tensor, torch.Tensor]:
         m, s = self.raw(ops)
-        if self.restored_move_proj is None and self.status_move_proj is None:
-            # VERBATIM (dynamo names graph nodes after locals: the flags-off graph stays the parent's, hash for hash)
-            return self.move_proj(m), self.switch_proj(s)
         mo, so = self.move_proj(m), self.switch_proj(s)
         ex = self.extras(ops, m, s)
         if self.restored_move_proj is not None and self.restored_switch_proj is not None:
             mo = mo + self.restored_move_proj(ex["restored_move"])
             so = so + self.restored_switch_proj(ex["restored_switch"])
-        if self.status_move_proj is not None and self.status_switch_proj is not None:
-            mo = mo + self.status_move_proj(ex["status_move"])
-            so = so + self.status_switch_proj(ex["status_switch"])
+        mo = mo + self.status_move_proj(ex["status_move"])
+        so = so + self.status_switch_proj(ex["status_switch"])
         return mo, so
 
 
@@ -801,7 +785,7 @@ def split_other_move(o: MoveResolutionOps, other_u: torch.Tensor, tables: Dict[s
                                                       * flinch_mult[:, None]).to(o.seat_flinch.dtype)], dim=-1),
         pair_in=lev(o.pair_in, 2), pair_type_mult=lev(o.pair_type_mult, 2),
         d_burn_k=lev(o.d_burn_k, 1), d_slp_k=lev(o.d_slp_k, 1),
-        seat_crit=None if o.seat_crit is None else lev(o.seat_crit, 1))
+        seat_crit=lev(o.seat_crit, 1))
 
 
 def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_logits: Optional[torch.Tensor],
@@ -981,9 +965,9 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
         pair_in=pair_in, pair_gate=op.last_pair_gate, pair_type_mult=pair_type_mult,
         p_out=p_out, out_cells=out_cells, c2_base=base, d_burn_k=d_burn_k, d_slp_k=d_slp_k,
         is_brn=is_brn, is_slp=is_slp,
-        # gen3_endstate_facts_v1 (`--ko-ramp exact`): our active's exact max HP and each seat's crit chance
-        our_maxhp=(op._active_defender(ctx)[2] if op.ko_exact else None),
-        seat_crit=(_seat_crit(op, seat_nums, other_u is not None) if op.ko_exact else None))
+        # gen3_endstate_facts_v1 (the exact P(KO)): our active's exact max HP and each seat's crit chance
+        our_maxhp=op._active_defender(ctx)[2],
+        seat_crit=_seat_crit(op, seat_nums, other_u is not None))
     if other_u is None:
         return ops
     # X5: OTHER_move (α's last seat) → one seat per PRIORITY level (`split_other_move`).
@@ -994,7 +978,7 @@ def gather_ops(fe: Any, ctx: Any, alpha_logits: Optional[torch.Tensor], beta_log
 
 
 def _seat_crit(op: Any, seat_nums: torch.Tensor, has_other: bool) -> torch.Tensor:
-    """Each seat's crit chance (`--ko-ramp exact`); X5's OTHER_move seat (the last, num 0, a SET) the base 1/16 —
+    """Each seat's crit chance (the exact P(KO)); X5's OTHER_move seat (the last, num 0, a SET) the base 1/16 —
     `split_other_move` then gives every priority level of it that same base chance."""
     from agents.model.ko_exact import CRIT_P_BASE
     c: torch.Tensor = op.MOVE_CRIT_P[seat_nums]

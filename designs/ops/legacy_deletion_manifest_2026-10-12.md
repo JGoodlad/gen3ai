@@ -1,6 +1,6 @@
 # The LEGACY + JUDGMENT DELETION after the end state's adoption — manifest
 
-**Status: IN PROGRESS (2026-10-15).** §0's decisions D-LD1–D-LD7 ADOPTED at their recommendations as the orchestrator's default (§7; the owner may override before U3 lands). **U0 SHIPPED** (the refusal machinery, the tag `pre-legacy-deletion`, `--arch static_recovery` deleted); progress and the handoff are §8. Proposed 2026-10-12.
+**Status: IN PROGRESS (2026-10-15).** §0's decisions D-LD1–D-LD7 ADOPTED at their recommendations as the orchestrator's default (§7; the owner may override before U3 lands). **U0 SHIPPED** (the refusal machinery, the tag `pre-legacy-deletion`, `--arch static_recovery` deleted); **U1 SHIPPED** (lane OP, config v156); progress and the handoff are §8. Proposed 2026-10-12.
 Scoped at `748f90e6` plus the ADOPTION working tree (`designs/production_config.json` carrying the `--arch endstate`
 overlay, `arch_arms.py` with `endstate` an alias and `static_recovery` redeclared with explicit OFF values). Line
 numbers are at that tree; `≈` is an estimate from a line range, and each unit re-measures at its own commit. Format
@@ -232,40 +232,27 @@ Runs already below the floor (`rb_st_*` v143, `rb_x5ab_*` v137) were pinned-only
 | unit | state | commit | evidence |
 |---|---|---|---|
 | U0 | **SHIPPED 2026-10-15** | see `git log --grep "legacy-deletion U0"` | `adopted_levers.py` (+ `_test`, 15 tests, 9 fail when the vacuity / inert checks are reverted); `retired_levers._adopted_rows`; `snapshot.sanitize_dead_extractor_kwargs` → `judge_pickled_kwargs`; `--arch static_recovery` refused at parse time (`arch_arms.DELETED_ARMS`, `deleted_flags.md` §1b); tag `pre-legacy-deletion` pushed. F-LD-1 was already fixed at adoption (`delivery_graph.build_extractor` retires both). K9, the obs golden and the delivery graph untouched (no model change) |
-| U1 | NOT STARTED | — | — |
+| U1 | **SHIPPED 2026-10-15** | see `git log --grep "legacy-deletion U1"` | the eight flags (+ `_` aliases) deleted with their fields, `_resolve` lines, registry rows, `check_compatible` clauses, snapshot keywords and OFF paths; `MODEL_CONFIG_VERSION` 156 (stamp-only); `LANDED_UNITS = {"U1"}`. K9 `learner_golden check` IDENTICAL (bf16 + fp32 opt-out); `delivery_graph --check` structurally unchanged (meta `config_version` only; regenerated with the viewer); `arch_tables`, `flag_registry`, `selection_sites`, mode / recipe / freshness / flag-census doc gates green; the static tier green; `checkargs --argv "--arch production …"` and `--arch endstate` resolve the same network (reports differ only in the mirror hash and the registry count 65 → 57). The toy rule re-proven on a pinned-toy-shaped record (`adopted_levers_test`). **U0's absent-field rule FIXED** (`absent_value`: an absent field in a config written at or after its unit's version reads ADOPTED; an absent pickled kwarg is left to the config judge) — without it the mirror itself was refused. The mirror stamped v156 with `baselines.json`'s production entry declaring `config_mirror_version: 156` (hand-added: `main.baselines set` has no option for it). |
 | U2, U3, U4, U5, U6 | NOT STARTED | — | — |
 
-**The exact next step (U1, lane OP: D1–D6, eight fields).** In a fresh worktree on main:
-1. Delete the eight flags (`--status-facts`, `--ko-ramp`, `--g-ledger`, `--op-reduction`, `--speed-physics`,
-   `--eot-residual`, `--switch-hazard-cost`, `--effective-stats`; each `_` alias) from `main/train/parser/clean_world.py`,
-   their `_resolve` lines in `main/train/config.py`, `extractor_arch.ARCH_ARG_KEYS`, `snapshot.current_model_version`'s
-   keywords, the `ModelVersion` fields (`model_version/fields.py`), `check_compatible` clauses (`compat.py`), the
-   `construct.py` plumbing, the registry rows (`flag_registry.py`; regenerate `designs/flag_registry.md`), the `endstate`
-   overlay keys (`arch_arms.py`) and `PRE_ADOPTION_PRODUCTION` / `legacy_production_config` entries, and the eight keys of
-   `designs/production_config.json` (+ its README).
-2. Make the adopted branch unconditional behind `damage_op` (D-LD2) in `damage_op.py`, `damage_op_pairwise.py`,
-   `damage_op_blocks.py`, `op_reduction.py`, `pointer_head.py`, `extractor_build.py`, `move_resolution.py`; keep
-   `PAIR_OUTCOME_COORDS`' WIDTH (F-LD-7); `_DMG_SPEED_SCALE` and its re-exports go; `RETIRED_VALUES`' `ko_ramp`
-   row is subsumed (move `deleted_flags.md` §4's row to §1 and update `ko_exact_test`).
-3. `adopted_levers.LANDED_UNITS = {"U1"}`, `UNIT_VERSIONS["U1"] = <bumped MODEL_CONFIG_VERSION>` (a stamp-only
-   `_migrate_config` block); `deleted_flags.md` §1 rows for every flag spelling; `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96`
-   LAST.
-4. Re-point every test that builds `legacy_production_config` / `legacy_production_args` with one of these eight keys
-   (grep; `op_reduction_extractor_test`, `speed_physics_extractor_test`, `damage_op_index_max_test`,
-   `endstate_facts_test`, `probe_facts_test`, `static_recovery_test`, `tie_identity_integration_test`'s `max_reduction`
-   fixture …): delete the OFF-side cases, keep the adopted-side ones.
-   At U0's commit, `grep -rlwE` of the eight field names (and their dashed flags) hits 61 files under `src/`: the
-   op (`damage_op.py`, `damage_op_pairwise.py`, `damage_op_blocks.py`, `damage_op_speed.py`, `op_reduction.py`,
-   `move_order.py`, `ko_exact.py`, `eot_residual.py`, `status_facts.py`, `static_facts.py`, `pair_outcome.py`,
-   `intent_threshold.py`, `conditional_threat.py`, `move_resolution*.py`, `hypothesis_tokens.py`, `pointer_head.py`,
-   `policy.py`, `selection_sites.py`, `tier_contract.py`, `delivery_graph.py`, `damage_tables.py`, `belief_tables.py`,
-   `arch_constants.py`), the extractor (`extractor_build.py`, `extractor_forward.py`, `extractor_api.py`), the five
-   synced surfaces (`flag_registry.py`, `model_version/{fields,compat,construct,migrations,constants}.py`,
-   `snapshot.py`, `main/train/config.py`, `main/train/parser/{clean_world,distillation}.py`), `grad_balance.py`, and
-   the tests. Budget the gates: on the three agent cores beside a live run, the `main/h2h` integration tests alone
-   took > 30 min at U0 (they play real games on CPU).
-5. Gates: K9 `learner_golden` BYTE-IDENTICAL (`--check`), `delivery_graph --check`, `arch_tables_test`,
-   `selection_sites_test`, `flag_registry --check`, `mode_flag_doc_gate_test`, `recipe_doc_gate_test`, the toy test in
-   `adopted_levers_test.py`, the static tier, and `checkargs --argv "--arch production …"` byte-identical.
-   🚨 After U1 the toy argv `/tmp/x26_rd/toy_argv.txt` NO LONGER PARSES at HEAD (it types the deleted OFF values): that
-   is expected — the toy runs PINNED (D-LD4), and its checkpoints still LOAD (the vacuity rule).
+**The exact next step (U3, lanes MR + VTI: B1, B2, C1).** On main after U1:
+1. **F-LD-6 FIRST:** port the op-side PRODUCER coverage out of the seven blocks' tests (`pair_outcome_test`,
+   `pair_outcome_switch_test`, `switch_branch_test`, `conditional_threat_test`, `intent_*_test`) into op-level tests
+   (`pair_outcome_coords`, `pointer_intent_status_operands`, `discrete_*_status`, the `last_pair_*` stashes move
+   resolution still reads), then delete the seven test files with their modules.
+2. Delete `--move-resolution` (DERIVED on iff opp_intent + damage_op + damage_outgoing + both matrices, D-LD2),
+   `--move-resolution-facts` (derived `full` with it), the seven block flags (+ `--no-` / `_` spellings) and
+   `--value-threat-inject`; their fields, `_resolve` lines, registry rows, `check_compatible` clauses, snapshot keywords;
+   the seven modules (`pair_outcome.py` PARTIAL: `pair_alpha_full`, `PAIR_OUTCOME_IDX`, `STATUS_FACT_COORDS`,
+   `GHOST_TYPE_IDX` stay), `value_threat_inject.py`, `pair_reduce.py` but `alpha_belief_mean` / `reduce_with_alpha`,
+   `ExtractorApi.retire_superseded_action_cells` / `retire_value_threat_inject` and their policy calls, the CLSPool
+   threat projection, `stash_opp_ghost`, `thresh_probs`, the `intent_threshold` exact-KO operands.
+3. `LANDED_UNITS |= {"U3"}`, `UNIT_VERSIONS["U3"] = <the bumped MODEL_CONFIG_VERSION>`; deleted_flags rows; the
+   `endstate` overlay and `PRE_ADOPTION_PRODUCTION` lose the keys; the mirror and `baselines.json`'s
+   `config_mirror_version` move to the new version.
+4. 🚨 **D-LD7 — the init stream.** Run `designs/research_state/measurements/legacy_deletion_u3_init_2026-10-15/init_probe.py
+   dump` at U1's commit and at U3's, then `compare`: state which tensors change for the same seed and whether the init
+   forward changes. Re-record the K9 golden (`learner_golden record --reason …`) ONLY after showing it passes at U1's
+   commit and fails at U3's; the ledger entry is MAJOR ("fresh-init stream changed at `<U3 sha>`").
+5. Gates as U1's, plus `identity_init_test`, `extractor_compiles_test` (CPU), `tier_contract_test`, the `critic_route_audit`
+   tests and `move_resolution_bridge_integration_test` (sim; record its slow-tier verdict).

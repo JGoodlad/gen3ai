@@ -173,9 +173,14 @@ def test_extractor_stashes_op_cells_when_the_op_is_on():
     with torch.no_grad():
         fe(_obs(batch=2))
     _, _, _, mcells, scells = fe.last_pointer_inputs
+    # The switch cell = the op's 15 (12 incoming + the 3 Choice-Band columns) + the entry-hazard block
+    # (`static_facts.SWITCH_HAZARD_DIM` = 2: our Spikes layers / 3, the switch-in HP fraction), which the legacy
+    # deletion's U1 builds WHENEVER the op is (`--switch-hazard-cost` deleted; manifest D6, D-LD2).
+    from agents.model.static_facts import SWITCH_HAZARD_DIM
+    assert SWITCH_HAZARD_DIM == 2 and fe.pointer_switch_extra_dim == SWITCH_HAZARD_DIM
     assert tuple(mcells.shape) == (2, 4, 13)
-    assert tuple(scells.shape) == (2, 6, 15)
-    assert fe.pointer_move_cell_dim == 13 and fe.pointer_switch_cell_dim == 15
+    assert tuple(scells.shape) == (2, 6, 15 + 2)
+    assert fe.pointer_move_cell_dim == 13 and fe.pointer_switch_cell_dim == 15 + 2
 
 
 # ------------------------------------------------------- the REAL policy (the M1 rule)

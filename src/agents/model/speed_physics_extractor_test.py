@@ -1,18 +1,19 @@
-"""gen3_speed_physics_v1 (v143, `--speed-physics`; architecture audit F7b) inside a REAL extractor on the LEGACY base
-(`legacy_production_config`: the pre-adoption production config — production runs `--speed-physics on` since the END
-STATE's adoption, 2026-10-12, so `off` is reached only from the legacy base).
+"""gen3_speed_physics_v1 (v143; architecture audit F7b) inside a REAL extractor on the LEGACY base
+(`legacy_production_config`: the pre-adoption production config). The speed rule is the op's ONLY P(we act first)
+since the legacy deletion's U1 deleted `--speed-physics` and its fixed logistic `sigmoid(dSpe / 15)`
+(`designs/ops/legacy_deletion_manifest_2026-10-12.md` D5), so every op build runs it.
 
 What must hold, each failing on revert:
 
-  * **`off` runs nothing new** — no buffer, no stash, the same state_dict as `on` (no parameters), and the speed
-    rule is never called (a raising stub on `damage_op_speed.p_first_same_priority` lets `off` through);
-  * **`on` replaces the logistic at the op's sites** — every outspeed read differs from `off` and is the ONE rule;
+  * **the rule runs at the op's sites** — a raising stub on `damage_op_speed.p_first_same_priority` stops every
+    forward; the op holds its speed-mixture buffer, stashes the (P(first), P(first | paralysed)) pair, and every
+    outspeed read is a probability;
   * on a REAL observation edited to a constructed board: their paralysis raises P(we first), our +2 stage raises
     it, a Choice Band on our active changes nothing, a mixture exactly at our speed reads ½ (the coin flip), the
     learned spread belief is not read, and Quick Claw is OFF in gen3ou (and priced when a format allows it);
   * the speed mixture is the FULL Smogon spreads mixture (gen3_speed_mixture_v1): Blissey's max-Speed sets keep
     their mass (the Gaussian's 2026-10-07 certain-and-wrong row);
-  * the version machinery (migration default, `check_compatible`, snapshot kwargs) and the dependency refusal.
+  * the deleted flag stays deleted: the constructor takes no `speed_physics` and the op has no logistic.
 """
 from __future__ import annotations
 
@@ -36,7 +37,6 @@ from utils.paths import repo_path, src_path
 
 def _prod_kwargs(**over: Any) -> Dict[str, Any]:
     from agents.model.damage_tables import sanitize_historical_move_floor
-    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): production now runs the speed rule ON.
     cfg = legacy_production_config(json.load(open(repo_path("designs", "production_config.json"))))
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {k: v for k, v in cfg.items() if k in sig}
@@ -61,7 +61,7 @@ def obs() -> torch.Tensor:
 
 @pytest.fixture(scope="module")
 def fe_on() -> Gen3FeaturesExtractor:
-    return _build(speed_physics="on")
+    return _build()
 
 
 def _p_out_preGain(fe: Gen3FeaturesExtractor, obs: torch.Tensor) -> torch.Tensor:
@@ -71,50 +71,34 @@ def _p_out_preGain(fe: Gen3FeaturesExtractor, obs: torch.Tensor) -> torch.Tensor
     return op.tensors_from_block(op.last_raw_block).out_p_outspeed[:, 0].clone()
 
 
-# ------------------------------------------------------------------------------------------------ off
-def test_off_builds_nothing_and_never_calls_the_rule(obs: torch.Tensor, monkeypatch: pytest.MonkeyPatch) -> None:
+# --------------------------------------------------------------------------------------------- the rule
+def test_every_op_build_runs_the_speed_rule(obs: torch.Tensor, fe_on: Gen3FeaturesExtractor,
+                                            monkeypatch: pytest.MonkeyPatch) -> None:
     import agents.model.damage_op_speed as dos
 
-    def boom(*a: Any, **k: Any) -> Any:
-        raise AssertionError("the speed rule ran under --speed-physics off")
-    monkeypatch.setattr(dos, "p_first_same_priority", boom)
-    fe = _build()
-    assert fe.speed_physics == "off" and fe.damage_op.speed_physics is False
-    assert not hasattr(fe.damage_op, "SPECIES_QC_PRIOR")
-    assert not hasattr(fe.damage_op, "SPEED_MIX")
-    with torch.no_grad():
-        fe({"observation": obs[:8]})                      # off: the stub is never reached
-    assert fe.damage_op.stash.speed_fast_pair is None and fe.damage_op.stash.item_qc_prob is None
-    on = _build(speed_physics="on")
-    with pytest.raises(AssertionError, match="speed rule ran"):
-        with torch.no_grad():
-            on({"observation": obs[:8]})
-
-
-def test_on_adds_no_parameter(fe_on: Gen3FeaturesExtractor) -> None:
-    off = _build()
-    a, b = off.state_dict(), fe_on.state_dict()
-    assert a.keys() == b.keys()
-    assert all(torch.equal(a[k], b[k]) for k in a)
-
-
-def test_off_is_the_fixed_logistic(obs: torch.Tensor) -> None:
-    """`off` P(outspeed) for our active is sigmoid(Δspeed / 15) — the legacy base's read, untouched."""
-    from agents.model.damage_op_layout import _DMG_SPEED_SCALE
-    assert _DMG_SPEED_SCALE == 15.0
-    p = _p_out_preGain(_build(), obs)
-    assert ((p > 0) & (p < 1)).any()
-
-
-# ------------------------------------------------------------------------------------------------- on
-def test_on_replaces_the_logistic_and_stays_a_probability(obs: torch.Tensor, fe_on: Gen3FeaturesExtractor) -> None:
-    off = _p_out_preGain(_build(), obs)
-    on = _p_out_preGain(fe_on, obs)
-    assert torch.isfinite(on).all() and (on >= 0).all() and (on <= 1).all()
-    assert (on - off).abs().max() > 0.05
+    op = fe_on.damage_op
+    assert hasattr(op, "SPEED_MIX") and not hasattr(op, "_p_outspeed")
     with torch.no_grad():
         out = fe_on({"observation": obs})
     assert all(torch.isfinite(t).all() for t in out)
+    assert op.stash.speed_fast_pair is not None
+    p = _p_out_preGain(fe_on, obs)
+    assert torch.isfinite(p).all() and (p >= 0).all() and (p <= 1).all() and ((p > 0) & (p < 1)).any()
+
+    def boom(*a: Any, **k: Any) -> Any:
+        raise AssertionError("the speed rule ran")
+    monkeypatch.setattr(dos, "p_first_same_priority", boom)
+    with pytest.raises(AssertionError, match="speed rule ran"):
+        with torch.no_grad():
+            fe_on({"observation": obs[:8]})
+
+
+def test_the_deleted_flag_is_not_a_kwarg() -> None:
+    from agents.model.damage_op import DamageOperator
+    assert "speed_physics" not in inspect.signature(Gen3FeaturesExtractor.__init__).parameters
+    assert "speed_physics" not in inspect.signature(DamageOperator.__init__).parameters
+    from agents.model.snapshot import current_model_version
+    assert "speed_physics" not in inspect.signature(current_model_version).parameters
 
 
 # --------------------------------------------------------------------------- edited real observations
@@ -181,7 +165,7 @@ def test_choice_band_does_not_touch_speed(obs: torch.Tensor, fe_on: Gen3Features
 
 def test_a_mixture_at_our_exact_speed_is_a_coin_flip(obs: torch.Tensor) -> None:
     """Neither side boosted nor paralysed, their species' mixture set to a POINT at our active's exact speed: ½."""
-    fe = _build(speed_physics="on")
+    fe = _build()
     op = fe.damage_op
     ctx = _ctx(fe, obs)
     ar = torch.arange(ctx.batch_size)
@@ -217,7 +201,7 @@ def test_the_speed_mix_is_the_full_smogon_spreads_mixture() -> None:
     is NOT certain to move first; and the mixture's support is lumpy (most mass at the uninvested speeds)."""
     from agents import gen3_data
     from agents.model.belief_tables import SPEED_LATTICE, build_species_speed_mix
-    n = int(_build(speed_physics="on").damage_op.BASE_STATS.shape[0])
+    n = int(_build().damage_op.BASE_STATS.shape[0])
     mix = build_species_speed_mix(n)
     assert mix.shape == (n, SPEED_LATTICE)
     assert torch.allclose(mix.sum(-1), torch.ones(n), atol=1e-5)
@@ -229,7 +213,7 @@ def test_the_speed_mix_is_the_full_smogon_spreads_mixture() -> None:
 
 
 def test_quick_claw_is_off_in_gen3ou_and_priced_where_a_format_allows_it(obs: torch.Tensor) -> None:
-    fe = _build(speed_physics="on")
+    fe = _build()
     op = fe.damage_op
     assert op.quick_claw_live is False                          # BANNED in gen3ou (owner + Showdown master)
     ctx = _ctx(fe, obs)
@@ -248,35 +232,3 @@ def test_quick_claw_is_off_in_gen3ou_and_priced_where_a_format_allows_it(obs: to
     p0 = _p_active(fe, _with(ctx, item_ids=torch.where(items2 == QUICK_CLAW_ITEM_NUM, 1, items2)))
     p1 = _p_active(fe, _with(ctx, item_ids=items2))
     assert torch.allclose(p1, 0.8 * p0 + 0.2, atol=1e-6)
-
-
-# ------------------------------------------------------------------------------- versions / refusals
-def test_requires_the_op_and_rejects_an_unknown_mode() -> None:
-    with pytest.raises(ValueError, match="requires damage_op"):
-        _build(speed_physics="on", damage_op=False, **{k: False for k in (
-            "damage_outgoing", "damage_matrices_outgoing", "damage_matrices_incoming", "op_believed_lean")})
-    with pytest.raises(ValueError, match="speed_physics must be one of"):
-        _build(speed_physics="yes")
-
-
-def test_version_machinery() -> None:
-    from agents.model.model_version import ModelVersion, ModelVersionError
-    from agents.model.model_version.migrations import MIGRATION_FLOOR, _migrate_config
-    # the v143 branch (a pre-v143 config defaults to `off`) is unreachable since the X5 version break raised
-    # MIGRATION_FLOOR to 144: such a config is refused at the floor; a RECORDED mode migrates verbatim
-    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
-        _migrate_config({"config_version": 142})
-    for mode in ("off", "on"):
-        m = _migrate_config({"config_version": MIGRATION_FLOOR, "speed_physics": mode})
-        assert m["speed_physics"] == mode and m["config_version"] >= 143
-    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
-    a = ModelVersion.from_layout_and_policy_kwargs(layout, {"features_extractor_kwargs": {}})
-    assert a.speed_physics == "off"
-    on = ModelVersion.from_layout_and_policy_kwargs(layout, {"features_extractor_kwargs": {"speed_physics": "on"}})
-    assert on.speed_physics == "on"
-    b = dataclasses.replace(a, speed_physics="on")
-    with pytest.raises(ModelVersionError, match="speed_physics mismatch"):
-        b.check_compatible(a)
-    from agents.model.snapshot import current_model_version
-    sig = inspect.signature(current_model_version).parameters
-    assert sig["speed_physics"].default == "off"

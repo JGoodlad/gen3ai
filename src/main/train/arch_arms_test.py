@@ -30,8 +30,9 @@ from main.train.arch_surface_test import _namespace, _report
 from main.train.parser import build_parser
 
 ARGV = ["--steps", "15000000", "--device", "cuda"]
-STATIC_RECOVERY = {"token_encoding": "static", "mon_hazard_cost": "on", "move_actor_state": "on", "trunk_layers": 3,
-                   "switch_hazard_cost": "on", "eot_residual": "on"}
+#: the static-recovery levers that still have a flag (`switch_hazard_cost` / `eot_residual` were deleted by the legacy
+#: deletion's U1: built with the op)
+STATIC_RECOVERY = {"token_encoding": "static", "mon_hazard_cost": "on", "move_actor_state": "on", "trunk_layers": 3}
 
 
 def test_every_arms_overlay_is_an_arch_surface_row_and_a_deleted_arm_is_named():
@@ -124,11 +125,12 @@ def test_the_arm_trains_on_the_production_recipe_and_a_restart_restores_it(tmp_p
 
 
 # gen3_endstate_facts_v1: the END-STATE arm (owner 2026-10-09: "run all of them speculatively together, then bisect").
-ENDSTATE = {**STATIC_RECOVERY, "move_resolution": "on", "speed_physics": "on", "value_threat_inject": False,
-            "op_reduction": "principled", "obs_facts": "v1", "move_resolution_facts": "full", "status_facts": "exact",
-            "ko_ramp": "exact", "drop_progress_clock": "on", "g_ledger": "eot",
-            # gen3_probe_facts_v1 (v153): the probe battery's two facts
-            "effective_stats": "on", "move_target_state": "on",
+#: (U1 deleted the arm's eight op keys — speed physics, the principled reductions, the exact status facts / P(KO), the
+#: one end-of-turn rule, the effective stats, the switch hazard, the end-of-turn residual: the op's only physics now.)
+ENDSTATE = {**STATIC_RECOVERY, "move_resolution": "on", "value_threat_inject": False,
+            "obs_facts": "v1", "move_resolution_facts": "full", "drop_progress_clock": "on",
+            # gen3_probe_facts_v1 (v153): the probe battery's surviving fact
+            "move_target_state": "on",
             # gen3_move_set_closure_v1 (v154; owner 2026-10-10 "Do A", a pre-data amendment of the closing test)
             "move_set_closure": "on"}
 
@@ -154,8 +156,9 @@ def test_the_endstate_arm_is_an_alias_of_the_adopted_production(capsys):
     for key, value in ENDSTATE.items():
         assert getattr(ns_prod, BY_NAME[key].arg) == value, key
     assert rep.source_tag.startswith("endstate@production_config@")
-    _ns, drift = _report(ARGV + ["--arch", "endstate", "--ko-ramp", "ramp"])
-    assert drift.refuses and [(d.name, d.resolved, d.production) for d in drift.diffs] == [("ko_ramp", "ramp", "exact")]
+    _ns, drift = _report(ARGV + ["--arch", "endstate", "--move-resolution-facts", "off"])
+    assert drift.refuses and [(d.name, d.resolved, d.production) for d in drift.diffs] == [
+        ("move_resolution_facts", "off", "full")]
     from main.checkargs import main as checkargs_main
     rc = checkargs_main(["--argv", " ".join(ARGV + ["--arch", "endstate"])])
     out = capsys.readouterr().out

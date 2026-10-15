@@ -230,8 +230,8 @@ it; the flipped gaps were 5e-8 to 1.7e-7 in fp64 (`TECH_DEBT_BACKLOG.md` §2(b))
    `topk`'s k-th vs (k+1)-th, an `argmax`'s top-1 vs top-2, a threshold's distance — the minimum over
    every MARGIN site. An EXACT tie is 0. **A tie between VALUE-IDENTICAL candidates is no tie**
    (`gen3_behaviour_tie_identity_v1`, 2026-10-05, below): an `argmax` that declares its PAYLOAD (the
-   tensors its index gathers — `Rule.payload`; the two dominant-move `argmax`es: the move's accuracy, the
-   move's belief weight) takes its margin to the nearest candidate whose payload DIFFERS.
+   tensors its index gathers — `Rule.payload`) takes its margin to the nearest candidate whose payload DIFFERS.
+   No site declares one today (below).
 3. **A row whose margin is below `FP32_TIE_EPS` = 2e-4 is EXCLUDED**; exact ties always — except while the
    forward is SELECTION-FREE (`consistency.selection_free`: every action-head scorer weight exactly zero,
    a fresh run's first update), when no row is excluded, and except a row the FLIP-JUDGE can judge
@@ -272,17 +272,18 @@ DECLARED, deterministic rules decide (the third, CONSUMPTION, below the measurem
 - **PAYLOAD IDENTITY** (`selection_sites.Rule.payload`, `tie_margins._payload_gap`). Two candidates whose
   every gathered payload value is bit-identical select the same values, so the order between them is no
   hazard; the margin is the gap to the nearest candidate whose payload DIFFERS, so a genuinely distinct
-  near-tie is still excluded. Declared on the two dominant-move `argmax`es (payload `acc_exp`, `w_all`).
-  Its soundness rests on the payload being EVERYTHING the index reaches: `selection_sites_test` reads the
+  near-tie is still excluded. **NO site declares a payload since legacy deletion U1 (2026-10-15):** the only two
+  were the op's dominant-move `argmax`es (payload `acc_exp`, `w_all`), reached only under the hard-max op reduction,
+  and they were deleted with `--op-reduction` (with `tie_identity_integration_test`'s `max_reduction` fixture and its
+  payload-clearing test); the machinery stays for a future site. Its soundness rests on the payload being EVERYTHING the index reaches: `selection_sites_test` reads the
   source and fails when a payload site's index is read anywhere but a `gather` of a declared payload, and
   `tie_identity_integration_test` flips every cleared tie on real rollout rows and requires the full masked
   log-probs bit-identical (and that flipping a still-excluded tie moves them). A NaN payload never clears.
   The `topk` sites gather many per-candidate tables, so they declare none: a tie between two distinct
-  moves stays a tie. 🚨 **Since the END STATE's adoption (2026-10-12) production's op reduction is `principled`,
-  which has no argmax and no max, so the forward reaches NO payload site** (`tie_margins_test` and
-  `test_the_production_reduction_reaches_no_payload_argmax` pin it); the integration test flips the cleared ties
-  on the `--op-reduction max` surface, the only one that reaches them, and the rule is deleted with that path
-  (`designs/ops/legacy_deletion_manifest_2026-10-12.md`, lane OP).
+  moves stays a tie. 🚨 **The op's only reduction (the principled expectation / noisy-OR, flagless since U1) has no
+  argmax and no max, so no forward reaches a payload site** (`tie_margins_test` and
+  `test_the_production_reduction_reaches_no_payload_argmax` pin the no-argmax production reduction;
+  `designs/ops/legacy_deletion_manifest_2026-10-12.md`, lane OP D4).
 - **SELECTION-FREE** (`consistency.selection_free`). While every action-head scorer WEIGHT is exactly zero
   (the zero-init cold start, i.e. a fresh run's first update; one optimizer step ends it) the logits are
   the scorers' biases times the observation's exact `move_valid`, so no MARGIN site reaches log pi and

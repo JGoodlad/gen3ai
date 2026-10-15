@@ -73,7 +73,6 @@ _DMG_EFFECT = 6
 _DMG_CB_PER_MON = 2                          # phys_high_cb, phys_pko_cb (physical channel only — CB is phys)
 _DMG_CB = _DMG_CB_PER_MON * TEAM_SIZE + 1    # + the shared p_cb scalar = 13
 _DMG_CRIT_P = 1.0 / 16.0   # gen3 base crit rate (×2 damage) — the crit roll is exposed as crit_frac
-_DMG_SPEED_SCALE = 15.0    # logistic scale for P(outspeed) over the speed-stat difference (~one stage)
 # NAMED stat indices — two DIFFERENT layouts coexist and a bare integer silently crosses them
 # (the 2026-08-06 GIGO: pairwise_speed/pairwise_boost read index 4 = SPD as "speed" — both
 # generations trained their V edge on Special Defense; the main op's index-5 paths were right).
@@ -287,29 +286,8 @@ _DMG_TOPK_DEFAULT_K = 6         # default K when enabled (owner 2026-08-06: K=6 
 # files); note the fold is LOSSY on the last pair, which is exactly why MOVE_STATUS_IDENT exists.
 _SECONDARY_TO_STATUS_CAT = (1, 2, 3, 4, 5, 5)
 
-# gen3_pair_outcome_v1: the `neutralization` / `tempo_cost` coordinates' scalars. EVERY ONE IS A
-# GEN3 RULE, not a tuned prior — that distinction is the owner constraint ("provide facts, do not
-# bake priors"), and it is what lets these ship without a calibration artifact. Sleep and freeze
-# take severity 1.0 inline in the producer (total action denial) rather than a named constant,
-# because there is no rule to name: 1.0 is the definition of "denied".
-_NEUTRAL_BRN_ATK_LOSS = 0.5        # burn halves Attack (the same 0.5 the damage path applies)
-_NEUTRAL_PAR_FULL = 0.25           # P(fully paralyzed) — a flat action loss, on top of _DMG_PARA_SPEED
-_NEUTRAL_PSN_TICK = 1.0 / 8.0      # poison residual, fraction of maxhp per turn
-_NEUTRAL_TOX_FIRST_TICK = 1.0 / 16.0   # toxic's FIRST tick; its escalation is a multi-turn fact the
-                                       # one-ply reduction does not represent (named in pair_outcome.py)
-_TEMPO_CURE_TURNS = 1.0            # a dedicated cure move costs exactly the turn it is used on.
-                                   # (REST's price is the op's own `rest_sleep_noeb`, not a constant.)
-# gen3_status_economy_v1 — the two undo paths Phase A did not price. Both are TURN COUNTS derived
-# from one gen3 rule each; neither is a tuned prior, which is what lets them ship beside the block
-# above without a calibration artifact.
-_TEMPO_NATURAL_CURE_TURNS = 1.0    # Natural Cure sheds the status ON SWITCH-OUT, and a switch
-                                   # consumes exactly one of our actions — the SAME single turn a
-                                   # cure move costs. It needs no moveslot and no teammate, which is
-                                   # why it is a separate path and not a re-spelling of the cure one.
-_TEMPO_CLERIC_TURNS = 2.0          # the CLERIC path: switch to the teammate holding Heal Bell /
-                                   # Aromatherapy (1 turn) + click it (1 turn). Two actions, so 2.0.
-                                   # It exists at all only because the gen3 rule is PARTY-WIDE: the
-                                   # cure reaches mon j while mon j sits on the bench.
+# (gen3_pair_outcome_v1's `neutralization` / `tempo_cost` severity and undo-turn constants `_NEUTRAL_*` / `_TEMPO_*`
+# were deleted with those JUDGMENT coordinates by the legacy deletion's U1.)
 
 
 # gen3_iterative_damage_v1: the ITERATIVE damage-refinement primitive. The full op runs ONCE post-transformer

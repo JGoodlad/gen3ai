@@ -352,19 +352,14 @@ class RetiredValue(NamedTuple):
     last_commit: str
 
 
-#: The last commit whose tree accepts `--ko-ramp exact_closed` (the commit that introduced it, on main).
-LAST_COMMIT_KO_EXACT_CLOSED = "6e0a1a7a674e4b0b9d3a1458819387b30a429e97"
-
 #: Every retired VALUE, refused WITH its reason at parse time (`main/train/parser`), on every config load
 #: (`_migrate_config` → :func:`refuse_retired_values`), on every zip load (`snapshot.sanitize_dead_extractor_kwargs`)
 #: and at construction (:func:`refuse_retired_value`). `designs/deleted_flags.md` §4 lists the same rows
 #: (`retired_levers_test` pins the two equal). Later units APPEND here.
-RETIRED_VALUES: tuple = (
-    RetiredValue("ko_ramp", "exact_closed", "ko-ramp", "gen3_ko_exact_closed_v1 (2026-10-10)",
-                 "the closed-form P(KO) it selected beside the 16-roll sum is now what 'exact' computes — one "
-                 "implementation (owner 2026-10-10: 'remove the old one'); pass --ko-ramp exact",
-                 LAST_COMMIT_KO_EXACT_CLOSED),
-)
+#: EMPTY since the legacy deletion's U1 (2026-10-15): its one row, `--ko-ramp exact_closed` (gen3_ko_exact_closed_v1,
+#: legal only at `6e0a1a7a`), was SUBSUMED when U1 deleted the whole `--ko-ramp` flag — a recorded `exact_closed`
+#: beside the op is "not the adopted `exact`", refused by `adopted_levers` with the pin tag (`deleted_flags.md` §1).
+RETIRED_VALUES: tuple = ()
 
 
 def retired_value(field: str, value: Any) -> Optional[RetiredValue]:

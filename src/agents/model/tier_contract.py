@@ -153,14 +153,14 @@ UNTIERED_CHILDREN = frozenset({
     "embeddings",           # shared tables — a resource, not a phase
     "unpack",               # ObsUnpack: produces the tier-0 INPUT, ahead of every tier
     "prefuse_proj",         # the T1->trunk residual, owned by the root rather than by a phase
-    "op_worst_proj",        # `--op-reduction principled`: its noisy-OR twin beside `prefuse_proj` (same seam)
+    "op_worst_proj",        # the principled reduction: its noisy-OR twin beside `prefuse_proj` (same seam)
     "mon_hazard_proj",      # `--mon-hazard-cost on`: the per-mon Spikes fact, the root's pre-trunk residual (same seam)
     "move_actor_proj",      # `--move-actor-state on`: the actor's state onto the E3 seats, the root's pre-trunk residual
-    "eot_residual_rule",    # `--eot-residual on`: the end-of-turn rule (tables only), read on the op's context pre-trunk
-    "eot_residual_proj",    # `--eot-residual on`: its zero-init projection, the root's pre-trunk residual (same seam)
-    "status_cure_rule",     # `--status-facts exact`: the cure-availability rule (tables only), on the op's context pre-trunk
-    "status_cure_proj",     # `--status-facts exact`: its zero-init projection, the root's pre-trunk residual (same seam)
-    "effective_stats_proj", # `--effective-stats on`: the active mons' stage-applied stats, the root's pre-trunk residual
+    "eot_residual_rule",    # with the op: the end-of-turn rule (tables only), read on the op's context pre-trunk
+    "eot_residual_proj",    # with the op: its zero-init projection, the root's pre-trunk residual (same seam)
+    "status_cure_rule",     # the exact status facts: the cure-availability rule (tables only), on the op's context pre-trunk
+    "status_cure_proj",     # the exact status facts: its zero-init projection, the root's pre-trunk residual (same seam)
+    "effective_stats_proj", # with the op: the active mons' stage-applied stats, the root's pre-trunk residual
     "move_target_proj",     # `--move-target-state on`: their active's HP + status onto the E3 seats, pre-trunk residual
     "pre_proj_norm", "projection", "activation",
     "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths

@@ -123,8 +123,10 @@ production ⊕ the overlay (no consent needed for the arm itself; a drift from t
 deletion's U6. **`--arch static_recovery` was DELETED** by the legacy deletion's U0
 (`designs/ops/legacy_deletion_manifest_2026-10-12.md`, D-LD3: it was defined by OFF values the deletion removes); it is
 refused at parse time with its reason and runs only PINNED at the tag `pre-legacy-deletion`. A bisection arm is the named arm plus ONE typed lever and
-`--allow-nonproduction-arch`. (`--ko-ramp exact` is computed in closed form since 2026-10-10; the briefly-legal value
-`exact_closed` is refused at parse time with its reason, `designs/deleted_flags.md` §4.)
+`--allow-nonproduction-arch`. (Since the legacy deletion's U1, 2026-10-15, eight of the end state's op levers have NO flag — `--speed-physics`,
+`--op-reduction`, `--switch-hazard-cost`, `--eot-residual`, `--status-facts`, `--ko-ramp`, `--g-ledger`,
+`--effective-stats`: their adopted behaviour is built whenever the damage op is, and a typed one is refused at parse
+time with its reason, `designs/deleted_flags.md` §1; an ablation of one runs PINNED at `pre-legacy-deletion`.)
 
 Three resolution rules the tool applies, each of which has burned a launch:
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`) —

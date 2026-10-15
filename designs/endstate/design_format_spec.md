@@ -209,7 +209,7 @@ Claw** — ladder-illegal. The prior filter removes Quick Claw from the item pri
 
 ### 5.4 Format-gated mechanics
 
-`--speed-physics` (F7b, `d02aded6`, OFF in production) implements Quick Claw's shared 1-in-5 roll and gates it
+The speed physics (F7b, `d02aded6`; production since the end state's adoption, flagless since legacy deletion U1, 2026-10-15) implements Quick Claw's shared 1-in-5 roll and gates it
 on ONE read, `move_order.quick_claw_live()`, which is now `not format_spec.active().is_banned("item",
 "quickclaw")` — the spec is the one source (it landed with a hard-coded `False` waiting for this spec). Quick Claw
 is banned, so the term stays OFF and nothing changes; a planted spec without the ban turns it on

@@ -1,4 +1,4 @@
-"""The DamageOperator's SPEED PHYSICS — P(we act first at equal priority) under `--speed-physics on`
+"""The DamageOperator's SPEED PHYSICS — P(we act first at equal priority) under the speed rule
 (gen3_speed_physics_v1, config v143; architecture audit F7b).
 
 A MIXIN, not a module: `DamageOperator` inherits this class (no parameters live here). Every op site that prices
@@ -43,7 +43,6 @@ class DamageOperatorSpeed:
     if TYPE_CHECKING:
         # MIXIN (see `damage_op_pairwise.DamageOperatorPairwise`): every `self.*` is owned by `DamageOperator`.
         def __getattr__(self, name: str) -> Any: ...
-        speed_physics: bool
         quick_claw_live: bool
         qc_item_num: int
         _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]

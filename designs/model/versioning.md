@@ -219,9 +219,9 @@ of the current-ability column. `_migrate_config` stamps every past config throug
 
 **v150 (`gen3_static_recovery_v1`, 2026-10-09)** added three STRUCTURAL fields, each gated in `check_compatible`:
 `trunk_layers` (int, 2 = the pre-adoption production; 3 = production since the end state's adoption, 2026-10-12; 3 / 4 append identity-init trunk rounds), `switch_hazard_cost` and `eot_residual`
-({off,on}). A pre-v150 config migrates to 2 / off / off (the only possible past); no `ARCH_SIGNATURE` or floor change
-(production — then legacy — built byte-identically). The NAMED ARM `--arch static_recovery` writes all three (and the v147 facts) as
-recorded fields, so a launcher restart inherits them from `model_config.json`.
+({off,on}). A pre-v150 config migrated to 2 / off / off (the only possible past); no `ARCH_SIGNATURE` or floor change
+(production — then legacy — built byte-identically). (HISTORY: `switch_hazard_cost` and `eot_residual` LEFT the config
+at v156, legacy deletion U1, below; the named arm `--arch static_recovery` that wrote them was deleted in U0.)
 
 **v151 (`gen3_toxic_stage_scale_v1` + `gen3_wish_flag_truth_v1`, 2026-10-09)** — two OBSERVATION-VALUE fixes with NO field and
 no weight shape. (1) The per-mon toxic counter cell is `min(stage, 15) / 15` (the engine's `tox` stage over its cap), where
@@ -236,13 +236,15 @@ one flag). The obs golden moved on 107 of 991 decisions, all on those two cells.
 **v152 (`gen3_endstate_facts_v1`, 2026-10-09)** added five STRUCTURAL fields, each gated in `check_compatible`:
 `move_resolution_facts` ({off,full}), `status_facts` ({off,exact}), `ko_ramp` ({ramp,exact}), `drop_progress_clock`
 ({off,on}) and `g_ledger` ({coarse,eot}). A pre-v152 config migrates to off / off / ramp / off / coarse (the only
-possible past); no `ARCH_SIGNATURE` or floor change (production builds byte-identically). Three of them build no
-parameter (`ko_ramp`, `drop_progress_clock`, `g_ledger`: the string compare is the only gate, as for `speed_physics`);
-the NAMED ARM `--arch endstate` writes all five (and the static-recovery / bundle levers) as recorded fields.
+possible past); no `ARCH_SIGNATURE` or floor change (production builds byte-identically). Three of them built no
+parameter (`ko_ramp`, `drop_progress_clock`, `g_ledger`: the string compare was the only gate). (HISTORY: `status_facts`,
+`ko_ramp` and `g_ledger` LEFT the config at v156, legacy deletion U1, below; `move_resolution_facts` and
+`drop_progress_clock` remain, the NAMED ARM `--arch endstate` writing both.)
 
 **v153 (`gen3_probe_facts_v1`, 2026-10-09)** added two STRUCTURAL fields, each gated in `check_compatible`:
 `effective_stats` and `move_target_state` ({off,on}; each builds one zero-init projection). A pre-v153 config migrates
-to off / off; no `ARCH_SIGNATURE` or floor change. `--arch endstate` records both.
+to off / off; no `ARCH_SIGNATURE` or floor change. (HISTORY: `effective_stats` LEFT the config at v156, legacy deletion
+U1, below; `--arch endstate` records `move_target_state`.)
 
 **v154 (`gen3_move_set_closure_v1`, 2026-10-10)** added one STRUCTURAL field gated in `check_compatible`:
 `move_set_closure` ({off,on}; no parameter — `on` changes what every non-active opponent slot's MoveBelief reinjection
@@ -250,23 +252,26 @@ reads, so the string compare is the only gate). A pre-v154 config migrates to of
 The NAMED ARM `--arch endstate` records it `on` (owner 2026-10-10, a pre-data amendment of the closing test); no
 config bump came with that: an arm's overlay is a launch surface, and the field already existed.
 
-**`ko_ramp = 'exact'` is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`, 2026-10-10), with NO config, obs-semantics
-or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
+**The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
+2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove
-the old one" made the closed form what `exact` computes and RETIRED the value. The judgment, rule by rule:
+the old one" made the closed form what `exact` computes and RETIRED the value (since U1 the whole `ko_ramp` field is
+deleted and `exact_closed` is listed with it in `designs/deleted_flags.md` §1; `retired_levers.RETIRED_VALUES` is
+empty). The judgment at the time, rule by rule:
 
 * **`MODEL_CONFIG_VERSION`: no bump.** No field is added, removed or defaulted differently; every recorded `ko_ramp`
   keeps its meaning (`exact` = THE exact P(KO) over the 16 rolls + crit, resolved over the observed HP interval — the
   same real function, now in closed form). The retired value is refused VERSION-INDEPENDENTLY, like
   `refuse_structural`: `_migrate_config` → `retired_levers.refuse_retired_values` (config), `snapshot.
   sanitize_dead_extractor_kwargs` (zip), the extractor build / `DamageOperator` (constructor) and the parser — each with
-  the reason (`retired_levers.RETIRED_VALUES`, mirrored in `designs/deleted_flags.md` §4). No run recorded it.
+  the reason (then `retired_levers.RETIRED_VALUES`, mirrored in `designs/deleted_flags.md` §4; subsumed by U1's field
+deletion). No run recorded it.
 * **`OBS_SEMANTICS_VERSION`: no bump.** No observation cell moved.
 * **`ARCH_SIGNATURE`: no bump — a judgment against the letter of "any forward-math change bumps it".** The real
   function the `exact` forward computes is unchanged; only its floating-point evaluation is (the closed form and the
   sum differ by ≤ 8 eps (1 + (|top| + |hp_lo|) / w), measured ≤ 1.2e-6 on the op's fp32 KO column over the
   compile-parity rows, the class of difference a compile or a device change makes). A signature bump would refuse
-  every checkpoint, production's included, whose forward did not change at all. Production (`ramp`) is
+  every checkpoint, production's included, whose forward did not change at all. Production (then `ramp`) was
   byte-identical. A checkpoint trained under the 16-roll `exact` (the closing test's end-state arm, pinned at
   `b132b099`) loads here and evaluates its KO cells to that rounding bound.
 
@@ -295,7 +300,30 @@ of the adopted surface does not change, so the E arm, the bf16 A/B runs and X26 
   seven blocks True (inert), so a plain `(<block>, False)` row would refuse X26 (F-LD-4).
 * **Landing a unit** = add it to `LANDED_UNITS` and its new `MODEL_CONFIG_VERSION` to `UNIT_VERSIONS`, delete the flag /
   field / OFF path, and `adopted_levers_test.test_a_unit_is_landed_exactly_when_its_fields_left_model_version` checks
-  the two agree. U0 landed the machinery only: nothing is refused yet.
+  the two agree. U0 landed the machinery only.
+* **The ABSENT-field rule (fixed in U1).** An absent field reads by WHO wrote the record (`adopted_levers.absent_value`):
+  a config written at or after its unit's version (`config_version >= UNIT_VERSIONS[unit]`) cannot record the field —
+  that code builds only the adopted value — so it reads ADOPTED; a config written before reads the pre-version OFF
+  value (`off_default`), the value every such config built. Pickled kwargs carry no version, so an absent kwarg there
+  reads ADOPTED and the config judge (which every load runs on the checkpoint's `model_config.json`) decides. U0's
+  first rule read EVERY absent field as `off_default`, which would have refused every post-U1 config that built the
+  op, the production mirror included.
+
+**v156 (legacy deletion U1, lane OP, 2026-10-15) — LANDED.** Eight fields LEFT `ModelVersion` with their flags, their
+`_resolve` lines, their registry rows and their OFF paths: `speed_physics` (v143), `op_reduction` (v146),
+`switch_hazard_cost` / `eot_residual` (v150), `status_facts` / `ko_ramp` / `g_ledger` (v152) and `effective_stats`
+(v153). Their adopted behaviour (the speed physics, the principled reduction, the switch-cell hazard, the end-of-turn
+residual, the exact status facts + cure flags, the exact P(KO), the one end-of-turn rule, the effective stats) is
+UNCONDITIONAL behind `damage_op` (D-LD2 "DERIVED"). `LANDED_UNITS = {"U1"}`, `UNIT_VERSIONS["U1"] = 156`.
+* **What is refused:** a config (or zip) that recorded a NON-adopted value of one of the eight in a network that BUILT
+  the damage op — on every load, and a resume / fork — naming the tag `pre-legacy-deletion`; such a checkpoint runs
+  PINNED there. A pre-v156 config that recorded the adopted values (the closing test's E arm at v154, the bf16 A/B at
+  v155) loads; a toy without the op is VACUOUS and loads whatever it recorded; a config written before a field existed
+  (e.g. a v145 config with the op has no `op_reduction`) reads its OFF value and is refused (it built the legacy path).
+* **Migration:** stamp-only (`if version < 156`); the older branches' `setdefault`s of the eight fields are gone (their
+  version stamps remain). No `ARCH_SIGNATURE` bump (only dead branches went; the adopted forward is unchanged: the K9
+  learner golden is byte-identical) and no `MIGRATION_FLOOR` change (D-LD1). The retired VALUE `exact_closed` of
+  `--ko-ramp` is subsumed by the field's deletion (`RETIRED_VALUES` empty).
 
 ## Where the per-version entries went
 

@@ -24,11 +24,11 @@ Units and terms:
 
 ## 0. One screen
 
-- **X26 is BLOCKED by the legacy deletion, and none of that deletion has started.** The manifest
-  ([`../ops/legacy_deletion_manifest_2026-10-12.md`](../ops/legacy_deletion_manifest_2026-10-12.md)) is still
-  PROPOSED, with its owner decisions D-LD1–D-LD7 open. Lane **U3** changes the fresh-seed random stream, so it must
-  land before any X26 seed. It depends on U0 and U1. The chain is U0 → U1 → U3, about 3 agent-days, landed one
-  unit at a time with green gates.
+- **X26 is BLOCKED by the legacy deletion's U3.** The manifest
+  ([`../ops/legacy_deletion_manifest_2026-10-12.md`](../ops/legacy_deletion_manifest_2026-10-12.md)) has D-LD1–D-LD7
+  ADOPTED (the orchestrator's default, 2026-10-15); **U0 and U1 have LANDED** (2026-10-15; U1 = config v156, the eight
+  op levers flagless). Lane **U3** changes the fresh-seed random stream, so it must land before any X26 seed. The
+  chain is U0 → U1 → U3, landed one unit at a time with green gates.
 - **The plateau meter is partly built.** Tier 1 is BUILT and run offline (`main.plateau`, `131f3412`), but has
   NEVER run on a real run. The cycle monitor (U5), the outside panel and the two-tier decision (U9) are NOT
   STARTED, and U9 waits on the owner's Q8. Every meter component runs OFFLINE over checkpoints, so the deep run
@@ -36,7 +36,7 @@ Units and terms:
 - **The ride-along heads still attach** to the end state. They have already ridden on 32 end-state runs. Their
   registration is stale (its literal argv fails `checkargs`) and needs an Amendment 2.
 - **The toy controls need no build for the first toy.** T-ENT (entity tokens and attention only) launches today
-  from flags (§3.2; `checkargs` exit 0, verified for this doc). T-MLP (a flat MLP) needs a build of about 1.5
+  from flags (§3.2; `checkargs` exit 0, verified for this doc before U1 — since U1 the argv runs PINNED, §3.2). T-MLP (a flat MLP) needs a build of about 1.5
   agent-days.
 - **The first GPU job tonight is T-ENT seed 4001**, launched by the Training session after its checkargs /
   dry-run validation (§5.1).
@@ -56,7 +56,7 @@ that X26 reaches later (**later**).
 | I3 | **Perf phase** (host syncs, bf16, compile cache) | DONE for X26's purposes | ledger 2026-10-10 T25 windows D/E; bf16 `train_ms` 42.1 s vs 54.3 s fp32 | — | T26 (overlap) and CUDA graphs stay future arms with their own A/B |
 | I4 | **Torch build: cu126 vs cu128** | cu128 env BUILT, NOT the default; the local cu126-vs-cu128 baseline is PENDING | `designs/ops/cloud_gpu_benchmark.md` L9; the dry-run resolves torch 2.8.0+cu126 | L (as a DECISION) | **Decision (§2): X26 runs on cu126** (`gen3ai_torch28`). The launcher refuses a cross-build resume, and the default switches only at an experiment boundary |
 | I5 | **Legacy deletion U0** (the refusal machinery, `RetiredLever` rows, the `pre-legacy-deletion` tag, `--arch static_recovery` deleted) | **SHIPPED 2026-10-15** (D-LD1–D-LD7 adopted as the orchestrator's default; the vacuity rule built and tested with a real toy build) | the manifest's §7 / §8 | L (U3 depends on it) | the owner's D-LD1–D-LD7; the unit itself (~0.5 agent-day) |
-| I6 | **Legacy deletion U1** (the op judgments D1–D6) | NOT STARTED | as I5 | L (U3 depends on it) | ~1.0 agent-day |
+| I6 | **Legacy deletion U1** (the op judgments D1–D6) | **LANDED 2026-10-15** (config v156: `--status-facts`, `--ko-ramp`, `--g-ledger`, `--op-reduction`, `--speed-physics`, `--eot-residual`, `--switch-hazard-cost`, `--effective-stats` deleted; adopted behaviour unconditional behind `damage_op`; K9 golden byte-identical) | as I5 | L (U3 depends on it) | — |
 | I7 | **Legacy deletion U3** (`--move-resolution off` and the seven per-action blocks; `--value-threat-inject`). **It changes the fresh-init random stream (D-LD7)** | NOT STARTED | manifest §0 D-LD7, §3 | **L** | ~1.5 agent-days; the K9 golden re-recorded once; the ledger line "fresh-init stream changed at `<U3 sha>`" |
 | I8 | Legacy deletion U2, U4 (observation levers; the legacy token encoding) | NOT STARTED | as I5 | no, **if** each proves production's fresh init is byte-identical before and after | either lands before the exit check with that proof, or lands after X26 |
 | I9 | Legacy deletion U5 (optional Rust progress clock), U6 (close-out) | NOT STARTED | manifest §3 | no (U6 waits for X26's argv, by its own text) | — |
@@ -255,6 +255,12 @@ Notes on the set:
 - **Rejected: a one-line `--arch toy_ent` entry.** `ArmDecl` has no recipe overlay, and the umbrella reverts five
   keys (a simulated arm was refused). A clean named arm costs ~2–4 agent-hours and buys only a shorter argv, so the
   typed set with `--allow-nonproduction-arch` is used.
+- 🚨 **Since legacy deletion U1 (2026-10-15) this argv NO LONGER PARSES at HEAD** — EXPECTED (D-LD4): `--speed-physics`,
+  `--op-reduction`, `--switch-hazard-cost`, `--eot-residual`, `--status-facts`, `--ko-ramp`, `--g-ledger` and
+  `--effective-stats` are deleted flags. A T-ENT seed launched before U1 resumes PINNED to its own launch commit (a
+  pinned argv is judged by the pin's parser); a NEW T-ENT seed launches pinned at `pre-legacy-deletion` or with those
+  eight flags dropped (they are vacuous without the damage op). A T-ENT checkpoint still LOADS at HEAD: the toy built
+  no damage op, so every deleted lever is VACUOUS there (`model_version/adopted_levers.py`, §3.5's requirement).
 - **Rejected: depth below 2 and a no-trunk mode.** `TRUNK_LAYERS_CHOICES` is (2, 3, 4), so no network below two
   rounds exists without a build. T-MLP is that build.
 
@@ -268,8 +274,9 @@ Notes on the set:
   need.
 - `--checkpoint-every-steps 1000000` (the Tier-1 nodes), `--snapshot-ladder-games 0`, default eval.
 - **Seeds:** T-ENT `s4001`–`s4003`, T-MLP `s4101`–`s4103`. Three per toy is the audit's replicate design.
-- **Where it runs:** T-ENT at HEAD, now, before the deletion. Its levers' OFF values exist only before U1 / U3,
-  and D-LD4 says any later ablation of an adopted lever runs PINNED at `pre-legacy-deletion`. T-MLP runs at HEAD
+- **Where it runs:** T-ENT was launched at HEAD before the deletion. Its levers' OFF values existed only before U1 /
+  U3 (U1 has landed: the eight op flags are gone), and D-LD4 says any later ablation of an adopted lever runs PINNED at
+  `pre-legacy-deletion`. T-MLP runs at HEAD
   after its build. As a new mode, it survives the deletion.
 - **Data:** T-ENT reads no prior, belief or X5 candidate, so the 10-14 learnset fix cannot reach it. The
   observation did not move under that fix (991 / 991).
@@ -522,3 +529,4 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-15 | **T31: an umbrella that would overwrite a sub-flag already set to a DIFFERENT value REFUSES (`UmbrellaOverride`, FATAL_CONFIG), it never resolves silently.** Audit of every umbrella in `main/train/config.py`: `--unified-damage` → `damage_op` / `move_prior_fusion` / `damage_outgoing` (the bug), `--unified-moves` → a typed `--unified-damage off` (the same class, hidden by an `"off"` default, now None), `--damage-matrices incoming` → a typed `--damage-topk 0` (silently raised to 5); every other umbrella write was already "only if None" (`move_latent`, `move_belief_latent_coef`, `damage_topk_k`, `move_belief_mode`, `--arch`'s surface, the recipe, `--debug`'s shape). The coefficient auto-zeroes in `resolve_config` (`hp_type_belief_coef`, `item_belief_coef`) are printed and zero an INERT dose, not an umbrella | "the typed value wins with a note": the umbrella's other writes (`--damage-topk`, the outgoing block, prior fusion) then form a combination `combination_checks` refuses under a message about a DIFFERENT flag, and an ambiguous intent should not be guessed | `src/main/train/umbrella_override_test.py` (14 tests, 9 fail on revert); toy argv `checkargs` byte-identical |
 | 2026-10-15 | **T30-U0 shipped; D-LD1–D-LD7 adopted at their recommendations** (orchestrator default under Q3's 15-minute rule; owner may override before U3 lands). The U0 vacuity requirement (§3.5) is MET: R-T2 can play a pre-deletion T-ENT checkpoint at post-deletion HEAD, so the EB bridge fallback is not needed | the EB bridge | `adopted_levers_test.py` (a real toy build passes the config and zip judges with all four units in force) |
 | 2026-10-15 | **§1.1's knock-in-fork data point re-read per seed** (the hidden-info study's §8.7 read) | the per-fork table (median / max excluded share, messages over 0.15) from each fork's own log; every fork strict-by-read PASS; the spreads reveal lowers the share; both mechanisms UNVERIFIED | the one-line range alone (it said 0.006–0.036 for the other arms; the spreads medians read 0.005) | `bank_hib.py` on the 15 `rb_hib_*` forks; `design_hidden_info_binding.md` §8.7 |
+| 2026-10-15 | **T30-U1 landed (config v156): the eight op levers are flagless; the T-ENT argv no longer parses at HEAD (expected, D-LD4), and T-ENT checkpoints keep loading through the vacuity rule.** An absent deleted field in a config written at v156+ reads ADOPTED (`adopted_levers.absent_value`, a fix made in U1: U0's rule would have refused the production mirror itself) | keeping the eight flags until the toys finish | `adopted_levers_test.py`; the manifest §1.4 D1–D6 |

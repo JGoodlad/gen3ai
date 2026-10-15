@@ -1,5 +1,5 @@
-"""`op_reduction.py` — the PRINCIPLED reductions (`--op-reduction principled`, architecture audit F6b) on
-CONSTRUCTED rows, every expected number written out by hand.
+"""`op_reduction.py` — the PRINCIPLED reductions (architecture audit F6b; the op's only reductions since the legacy
+deletion's U1 deleted `--op-reduction`) on CONSTRUCTED rows, every expected number written out by hand.
 
 Each test names what a revert breaks:
 
@@ -12,7 +12,7 @@ Each test names what a revert breaks:
   `pair_reduce.reduce_with_alpha`) — fails if any channel is re-selected per channel;
 * PERMUTATION invariance over the candidate axis, and SMOOTHNESS at a tie: two tied candidates swapped leave
   every output unchanged and split the gradient evenly (the max hands the whole gradient to the first);
-* ``believed_reduce`` with no total IS ``max_by_index`` (the `max` identity at the per-attacker kernels).
+* ``believed_reduce`` is the α-weighted expectation over the attacker's whole-axis total (it has no max form left).
 """
 from __future__ import annotations
 
@@ -20,8 +20,9 @@ import pytest
 import torch
 
 from agents.model.index_max import max_by_index
-from agents.model.op_reduction import (OP_REDUCTION_MODES, believed_reduce, expectation, incoming_principled,
-                                       noisy_or, presence_alpha)
+from agents.model import op_reduction as OR
+from agents.model.op_reduction import (believed_reduce, expectation, incoming_principled, noisy_or,
+                                       presence_alpha)
 from agents.model.pair_reduce import reduce_with_alpha
 
 _NAMES = ("phys_low", "phys_high", "phys_crit", "phys_pko", "phys_acc", "spec_low", "spec_high", "spec_crit",
@@ -48,8 +49,9 @@ def _out(r):
     return dict(zip(_NAMES, o[:13])), o[13]
 
 
-def test_the_modes_are_max_then_principled():
-    assert OP_REDUCTION_MODES == ("max", "principled")
+def test_the_max_mode_is_deleted():
+    """Legacy deletion U1: `OP_REDUCTION_MODES` (and its `max` side) is gone — nothing selects a reduction."""
+    assert not hasattr(OR, "OP_REDUCTION_MODES")
 
 
 def test_the_expectation_is_the_hand_computed_alpha_weighted_sum():
@@ -196,10 +198,9 @@ def test_a_tie_is_no_tie_swapped_tied_candidates_leave_everything_unchanged_and_
     assert bool((gm[:, 1] != gm[:, 2]).any()), "PRECONDITION: the max splits a tie unevenly (first wins)"
 
 
-def test_believed_reduce_without_a_total_is_the_legacy_max_bit_for_bit():
+def test_believed_reduce_is_the_expectation_over_the_whole_axis_total():
     g = torch.Generator().manual_seed(11)
     wv = torch.rand(3, 6, 7, generator=g)
-    assert torch.equal(believed_reduce(wv, None), max_by_index(wv))
     total = torch.rand(3, 6, generator=g) + 1.0
     torch.testing.assert_close(believed_reduce(wv, total), wv.sum(-1) / total)
 

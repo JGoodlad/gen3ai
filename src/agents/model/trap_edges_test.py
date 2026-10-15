@@ -112,18 +112,44 @@ def test_entry_edge_kernel_invariants():
 
 def test_schedule_ledger_kernel_invariants():
     """G family: forcing sand — a Rock mon takes no chip while a Water mon bleeds 1/16; a forced
-    Leftovers reads +1/16; leech lands only on the ACTIVE slot."""
+    Leftovers reads +1/16; leech lands only on the ACTIVE slot.
+
+    The ledger IS the end-of-turn rule's grouping (`eot_residual.g_cells` of `EotResidualRule`; the coarse flat
+    ledger was deleted by the legacy deletion's U1), so the scenario pins every input that rule reads: the sand is
+    PERMANENT (a timed weather's turns-remaining read 0 here = its last turn, which the rule correctly zeroes —
+    `sim/battle.ts` expires it before the chip), every ability is CONFIRMED neutral (ability id 0: no Sand Veil,
+    no Cloud Nine / Air Lock on either active), mon 2's Leftovers is a known, unconsumed item, and the random obs'
+    Wish flags and active volatiles (Ingrain lands in the heal column) are cleared. Then by hand: the Water mon's
+    weather column = −1/16, the Leftovers mon's heal column = +1/16, each × alive."""
     fe = _make(**_T_TOGGLES).eval()
     obs = _obs(seed=51)
     with torch.no_grad():
         fe(obs)
     ctx = fe.unpack(obs)
     from agents.model.damage_tables import _T2I
+    from agents.model.extractor_ctx import POKEMON_ABILITY_KNOWN_OFFSET
+    from agents.observation.constants import POKEMON_ITEMS_OFFSET, WEATHER_ONEHOT_DIM
     ctx.weather_feature[:, :] = 0.0
     ctx.weather_feature[:, 3] = 1.0                          # sand up
+    ctx.weather_feature[:, WEATHER_ONEHOT_DIM] = 1.0         # … permanently (Sand Stream)
+    ctx.ability1_ids[:, :] = 0                               # the neutral ability row, CONFIRMED on all 12
+    ctx.pokemon_part[..., POKEMON_ABILITY_KNOWN_OFFSET] = 1.0
     ctx.type1_ids[:, 0] = _T2I["ROCK"]; ctx.type2_ids[:, 0] = _T2I["ROCK"]
     ctx.type1_ids[:, 1] = _T2I["WATER"]; ctx.type2_ids[:, 1] = _T2I["WATER"]
-    ctx.item_ids[:, 2] = 234                                 # leftovers on our mon 2
+    ctx.item_ids[:, 2] = 234                                 # leftovers on our mon 2 …
+    ctx.pokemon_part[:, 2, POKEMON_ITEMS_OFFSET + 1] = 1.0   # … known
+    ctx.pokemon_part[:, 2, POKEMON_ITEMS_OFFSET + 2] = 0.0   # … not consumed
+    rule = fe.damage_op.eot_rule
+    ctx.non_matchup_rest[:, rule._wish_our] = 0.0            # no pending Wish on either side
+    ctx.non_matchup_rest[:, rule._wish_opp] = 0.0
+    ctx.our_ctx_raw[:, :] = 0.0                              # no active volatiles (Ingrain / Curse / Leech Seed)
+    ctx.opp_ctx_raw[:, :] = 0.0
+    from agents.model.eot_residual import _VOL
+    ctx.our_ctx_raw[:, _VOL["leechseed"]] = 1.0              # OUR active is seeded (theirs is not)
+    ar = torch.arange(2)
+    ctx.hp_and_active[:, :, -1] = 0.0                        # the random obs' active flags are not 0 / 1:
+    ctx.hp_and_active[ar, ctx.our_active_idx, -1] = 1.0      # mark exactly the two actives
+    ctx.hp_and_active[ar, TEAM_SIZE + ctx.opp_active_local, -1] = 1.0
     with torch.no_grad():
         our_c, opp_c = fe.damage_op.pairwise_schedule(ctx)
     alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
@@ -131,10 +157,12 @@ def test_schedule_ledger_kernel_invariants():
     exp_chip = -(1.0 / 16.0) * alive[:, 1]
     assert torch.allclose(our_c[:, 1, 1], exp_chip, atol=1e-6), "Water mon bleeds 1/16 in sand"
     assert torch.allclose(our_c[:, 2, 0], (1.0 / 16.0) * alive[:, 2], atol=1e-6)
-    # Leech lands only at the active slot (channel 3).
+    # Leech lands only at the active slot (channel 3): our seeded active drains −1/8; a benched mon carries no
+    # volatile, and their active is unseeded, so no Leech heal reaches our side.
     nonactive = torch.ones(2, TEAM_SIZE, dtype=torch.bool)
-    nonactive[torch.arange(2), ctx.our_active_idx] = False
+    nonactive[ar, ctx.our_active_idx] = False
     assert float(our_c[:, :, 3][nonactive].abs().sum()) == 0.0
+    assert torch.allclose(our_c[ar, ctx.our_active_idx, 3], -(1.0 / 8.0) * alive[ar, ctx.our_active_idx], atol=1e-6)
 
 
 def test_protect_consequence_kernel_invariants():

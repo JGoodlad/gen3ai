@@ -419,46 +419,31 @@ class ModelVersionFields:
     # 'on' builds `MoveResolutionCell` (the state_dict delta) and retires the seven per-action blocks; 'off' builds
     # nothing. Both arms build at one commit, so the string compare in check_compatible is the gate.
     move_resolution: str = "off"
-    # gen3_speed_physics_v1 (config v143): `--speed-physics {off,on}` — architecture audit F7b. STRUCTURAL with NO
-    # parameters: 'on' prices the op's P(we act first) from the speed belief + the exact gen-3 order rules, 'off'
-    # the fixed logistic. The string compare in check_compatible is the only gate (no shape changes).
-    speed_physics: str = "off"
     # gen3_obs_facts_v1 (config v144, the X5 version break's part 3): `--obs-facts {off,v1}`. STRUCTURAL: `v1`
     # builds the zero-init T0 `ObsFactsInject` (the OBS-FACTS block as token content — the state_dict delta);
     # `off` (production) builds nothing. The observation carries the block either way (obs 2761 -> 2845, the
     # `total_dim` break).
     obs_facts: str = "off"
-    # gen3_op_reduction_principled_v1 (config v146): `--op-reduction {max,principled}` — architecture audit F6b.
-    # STRUCTURAL: 'principled' replaces the op's per-channel hard maxima over the opponent's believed moves with the
-    # alpha-weighted expectation and builds the zero-init `op_worst_proj` (the noisy-OR KO row; a state_dict delta).
-    op_reduction: str = "max"
     # gen3_static_port_v1 (config v147): `--mon-hazard-cost {off,on}` / `--move-actor-state {off,on}` — two narrow facts
     # for `--token-encoding static` (`static_facts.py`). STRUCTURAL: each `on` builds one zero-init projection (a
     # state_dict delta) and changes the trained forward.
     mon_hazard_cost: str = "off"
     move_actor_state: str = "off"
-    # gen3_static_recovery_v1 (config v150): `--trunk-layers N` (2 = production; N > 2 appends identity-init rounds),
-    # `--switch-hazard-cost {off,on}` (the switch pointer cell's entry-hazard block) and `--eot-residual {off,on}` (every
-    # mon's end-of-turn HP change as token content). STRUCTURAL: each builds parameters (a state_dict delta) and changes
-    # the trained forward.
+    # gen3_static_recovery_v1 (config v150): `--trunk-layers N` (2 = the bare network; N > 2 appends identity-init
+    # rounds). STRUCTURAL: it builds parameters (a state_dict delta) and changes the trained forward.
     trunk_layers: int = 2
-    switch_hazard_cost: str = "off"
-    eot_residual: str = "off"
     # gen3_endstate_facts_v1 (config v152): the FACT-COMPLETION levers (`design_hand_computed_features.md` §4 ranks
-    # 3-5, §5 rank 1, finding 7). `--move-resolution-facts {off,full}` (the facts move resolution dropped, restored),
-    # `--status-facts {off,exact}` (neutralization / tempo_cost replaced by exact facts + the cure flags),
-    # `--ko-ramp {ramp,exact}` (P(KO) exact over the 16 rolls + the crit), `--drop-progress-clock {off,on}` (the
-    # model reads turns_since_progress as 0) and `--g-ledger {coarse,eot}` (the op's `g` cell reads the ONE
-    # end-of-turn rule). STRUCTURAL: each changes the trained forward (two also add parameters).
+    # 3-5, §5 rank 1, finding 7). `--move-resolution-facts {off,full}` (the facts move resolution dropped, restored)
+    # and `--drop-progress-clock {off,on}` (the model reads turns_since_progress as 0). STRUCTURAL.
     move_resolution_facts: str = "off"
-    status_facts: str = "off"
-    ko_ramp: str = "ramp"
     drop_progress_clock: str = "off"
-    g_ledger: str = "coarse"
-    # gen3_probe_facts_v1 (config v153): the probe battery's two candidates (`design_hand_computed_features.md` §4 rows
-    # 12-13): `--effective-stats {off,on}` (the active mons' stage-applied stats as token content) and
-    # `--move-target-state {off,on}` (their active's HP + status on our E3 seats). STRUCTURAL (each builds a projection).
-    effective_stats: str = "off"
+    # gen3_probe_facts_v1 (config v153): `--move-target-state {off,on}` (their active's HP + status on our E3 seats).
+    # STRUCTURAL (it builds a projection).
+    # LEGACY DELETION U1 (config v156, `designs/ops/legacy_deletion_manifest_2026-10-12.md` lane OP): EIGHT fields left
+    # the config — `speed_physics` (v143), `op_reduction` (v146), `switch_hazard_cost` / `eot_residual` (v150),
+    # `status_facts` / `ko_ramp` / `g_ledger` (v152) and `effective_stats` (v153). Their adopted value is the op's only
+    # physics (built whenever `damage_op` is); a recorded other value in a network that built the op is REFUSED on
+    # every load (`adopted_levers`, `retired_levers._adopted_rows`), and the field pops otherwise.
     move_target_state: str = "off"
     # gen3_move_set_closure_v1 (config v154): `--move-set-closure {off,on}` — every opponent slot's MoveBelief
     # reinjection reads its fixed-mass move presence (k = 4 − revealed). STRUCTURAL (it changes the forward).

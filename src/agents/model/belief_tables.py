@@ -63,7 +63,7 @@ def build_species_speed_mix(n_species: int) -> torch.Tensor:
     """``[n_species, SPEED_LATTICE]`` — each species' DISCRETE Smogon distribution of its level-100 Speed STAT:
     ``mix[s, v]`` = Σ over the species' chaos spreads (nature × Speed EVs, IV 31) of the spread's weight where
     ``priors.gen3_stat(base_spe, ev, nature)`` = v. The speed physics' belief over THEIR speed
-    (gen3_speed_mixture_v1, `--speed-physics on`): real Speed investment is LUMPY (max or none), which the
+    (gen3_speed_mixture_v1, the speed rule): real Speed investment is LUMPY (max or none), which the
     moment-matched Gaussian of `build_opp_spread_prior` cannot hold — a Timid 252-Speed Blissey sat 15 of its
     σ above the Smogon mean and read P = 1.0 wrong (2026-10-07). EVERY chaos spread is read
     (`gen3_data.priors.all_spreads`, not the top-25 cut), so such a set keeps its real weight.
@@ -71,7 +71,7 @@ def build_species_speed_mix(n_species: int) -> torch.Tensor:
     Every row sums to 1. A species with no chaos record: uniform over every legal Speed investment (the 25
     natures × Speed EVs 0, 4, …, 252) — no usage, so no preference. A num no species owns (0 = unknown / pad):
     a point mass at speed 0 — the step the Gaussian's zero row gave (we are faster than an unknown).
-    Non-persistent, zero params; registered only under `--speed-physics on`."""
+    Non-persistent, zero params; registered only under the speed rule."""
     mix = torch.zeros(n_species, SPEED_LATTICE, dtype=torch.float64)
     filled = torch.zeros(n_species, dtype=torch.bool)
     nature_spe = [float(m.get("spe", 1.0)) for m in gen3_data.natures.multipliers().values()]

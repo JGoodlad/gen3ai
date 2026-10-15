@@ -580,7 +580,15 @@ from typing import Any, Dict
 #   K9(b) probe stay fp32. Never compared by check_compatible (the served forward and every weight shape are
 #   unchanged); RECORDED and `_resolve`-inherited. A pre-v155 config migrates to fp32. No ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 155
+# v156 (legacy deletion U1, `designs/ops/legacy_deletion_manifest_2026-10-12.md` lane OP; the end state adopted
+#   2026-10-12): EIGHT fields LEFT the config — `speed_physics`, `op_reduction`, `switch_hazard_cost`, `eot_residual`,
+#   `status_facts`, `ko_ramp`, `g_ledger`, `effective_stats` — with their flags and OFF paths. The adopted value of each
+#   is the damage operator's only physics, built whenever `damage_op` is (D-LD2). A config that recorded another value
+#   in a network that BUILT the op is REFUSED on every load naming the tag `pre-legacy-deletion`
+#   (`model_version.adopted_levers`; a config without the op — a toy — is VACUOUS and loads). Stamp-only migration. No
+#   ARCH_SIGNATURE bump (the adopted forward math is unchanged: only dead branches went), no MIGRATION_FLOOR change
+#   (D-LD1).
+MODEL_CONFIG_VERSION = 156
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

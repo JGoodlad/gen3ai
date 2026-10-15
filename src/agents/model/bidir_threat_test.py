@@ -1,10 +1,13 @@
 """Unit tests for the DamageOperator's discrete OUTGOING + STATUS kernels
-(gen3_bidir_threat_trunk_v1 / gen3_status_trunk_v1) and `_p_outspeed`.
+(gen3_bidir_threat_trunk_v1 / gen3_status_trunk_v1).
 
     (E[mult] via SPECIES_EXP_MULT, P(KO) nulled) when `species_probs` is supplied
   * `discrete_incoming_status` / `discrete_outgoing_status` — per-defender
     [P(major), P(immobilize)] (the physics the S1/S3 edge families deliver)
-  * `_p_outspeed` — the fixed-scale logistic over the speed gap
+
+(`_p_outspeed`, the fixed-scale logistic sigmoid(dSpe / 15) this file also pinned, was DELETED by the legacy
+deletion's U1 with `--speed-physics`: P(we act first) is the speed-mixture rule — `damage_op_speed` /
+`move_order` — pinned by their own tests.)
 
 Correctness is exercised on hand-built ctxs (controllable revealed/unrevealed slots + belief),
 so the kernels are pinned independently of which consumer happens to read them.
@@ -15,7 +18,7 @@ import torch
 
 from agents import gen3_data
 from agents.model.features_extractor import (
-    DamageOperator, TEAM_SIZE, _DMG_SPEED_SCALE,
+    DamageOperator, TEAM_SIZE,
     _DMG_STATUS_REFINE,
 )
 from agents.observation.constants import (
@@ -89,27 +92,6 @@ def _ctx_out(*, our_species, our_t1, our_t2, our_moves, our_move_types, move_mas
 
 def _eq():
     return gen3_data.moves.get("earthquake")   # Ground, physical, BP 100
-
-
-# ------------------------------------------------------------------------------- P(outspeed)
-def test_p_outspeed_is_the_fixed_scale_logistic_and_takes_no_std():
-    """The uncertainty-aware variant (`threat_prob_outspeed`, gen3_bidir_threat_trunk_v1 #3) is
-    DELETED by gen3_dead_flag_purge_v2, so one behaviour survives — and since the version break's part 2
-    (architecture audit F7a) `_p_outspeed` no longer even ACCEPTS the std it ignored, so no call site can
-    compute the speed-spread lookups that fed it (`x5_version_break_part2_test` instruments the forward)."""
-    import inspect
-    op, _ = _op()
-    our = torch.tensor([200.0, 100.0, 300.0])
-    opp = torch.tensor([180.0, 180.0, 180.0])
-    expected = torch.sigmoid((our - opp) / _DMG_SPEED_SCALE)
-
-    assert torch.allclose(op._p_outspeed(our, opp), expected)
-    assert list(inspect.signature(op._p_outspeed).parameters) == ["our_spe", "opp_spe"]
-
-    assert torch.all((expected >= 0.0) & (expected <= 1.0))
-    assert expected[2] > expected[0] > expected[1]          # monotonic in our speed
-    tie = op._p_outspeed(torch.tensor([180.0]), torch.tensor([180.0]))
-    assert abs(tie.item() - 0.5) < 1e-5                     # ~0.5 when speeds tie
 
 
 # ------------------------------------------------------------------------ gradient flow

@@ -194,13 +194,16 @@ def test_defender_ability_immunity():
     ttar = (248, _T2I["ROCK"], _T2I["DARK"])              # Tyranitar: 2× weak to Ground
     ctx = _ctx(defenders=[ttar, ttar] + [(0, 0, 0)] * 4, def_abilities=[levi, 0],
                opp_species=248, opp_t1=_T2I["GROUND"], opp_t2=0)
-    permon = op(ctx, _belief_logits(("earthquake",)))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    # Levitate nullifies the believed Earthquake (eff=0). The residual ~sigmoid(-10)≈4.5e-5 is the
-    # belief-floor weight on the ~399 OTHER physical candidates (this test's base=-10), not an immunity
-    # leak — the >0.1 on the non-Levitate slot below proves the channel works.
-    assert permon[0, 0, 1].item() < 1e-4                  # Levitate → ~0 incoming Ground (phys high-roll)
+    # A belief in Earthquake ALONE (presence sigmoid(±1e4) = exactly 1 / 0 in fp32). The adopted reduction is the
+    # α-weighted EXPECTATION over every believed move (`op_reduction.incoming_principled`), so a ±10 belief floor
+    # (4.5e-5 on each of ~399 other moves, ~1.8 % of the attacker's total presence) would price their damage into
+    # the Levitate slot (~1.2e-3 here) — the deleted per-channel max saw only the largest floor term. With the
+    # floor at exactly 0 the immunity is EXACT: Earthquake's eff is 0, every other move's weight is 0.
+    permon = op(ctx, _belief_logits(("earthquake",), base=-1.0e4, hi=1.0e4))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(
+        1, TEAM_SIZE, _DMG_PER_MON)
+    assert permon[0, 0, 1].item() == 0.0                  # Levitate → no incoming Ground (phys high-roll)
     assert permon[0, 1, 1].item() > 0.1                   # no Levitate → real Ground threat
-    assert permon[0, 0, 3].item() < 1e-4                  # and ~0 phys P(KO) (slot 3)
+    assert permon[0, 0, 3].item() == 0.0                  # and no phys P(KO) (slot 3)
 
 
 def test_thick_fat_halves_fire():

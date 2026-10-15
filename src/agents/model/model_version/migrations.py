@@ -485,14 +485,12 @@ def _migrate_config(data: dict) -> dict:
     # no init, so every past config stamps through.
     if version < 142:
         data["config_version"] = 142
-    # v143 (gen3_speed_physics_v1, F7b) — `speed_physics`, defaulted: "off" is the only possible past.
+    # v143 (gen3_speed_physics_v1, F7b) / v146 (gen3_op_reduction_principled_v1, audit F6b) — their fields
+    # (`speed_physics`, `op_reduction`) LEFT the config at v156 (legacy deletion U1): an absent field reads as its
+    # pre-version OFF value in `adopted_levers` (refused beside the op, popped otherwise), so only the stamps remain.
     if version < 143:
-        data.setdefault("speed_physics", "off")
         data["config_version"] = 143
-    # v146 (gen3_op_reduction_principled_v1, audit F6b) — `op_reduction`, defaulted: "max" is the only possible
-    # past (reachable: a v145 config sits at the floor).
     if version < 146:
-        data.setdefault("op_reduction", "max")
         data["config_version"] = 146
     # v147 (gen3_static_port_v1) — the static port: `static`'s per-mon S reads the type SET (summed; one fewer 16-wide
     # input block) and its op content's outgoing route is a Deep Sets module (new keys), so a v145 / v146 `static`
@@ -516,29 +514,25 @@ def _migrate_config(data: dict) -> dict:
     # forward fix; the state_dict is unchanged), so every past config stamps through.
     if version < 149:
         data["config_version"] = 149
-    # v150 (gen3_static_recovery_v1) — three structural levers, each absent before: the 2-round trunk, no switch-cell
-    # hazard block, no end-of-turn residual (the only possible past).
+    # v150 (gen3_static_recovery_v1) — the 2-round trunk, absent before (the only possible past). Its two sibling fields
+    # (`switch_hazard_cost`, `eot_residual`) LEFT the config at v156 (legacy deletion U1; see v143 above).
     if version < 150:
         data.setdefault("trunk_layers", 2)
-        data.setdefault("switch_hazard_cost", "off")
-        data.setdefault("eot_residual", "off")
         data["config_version"] = 150
     # v151 (gen3_toxic_stage_scale_v1 + gen3_wish_flag_truth_v1) — no field: the toxic counter cell's SCALE (min(stage, 15) /
     # 15, was min(stage, 8) / 8) and the board Wish flag's PHASE (a Wish landing at the NEXT end-of-turn residual); two
     # observation-value fixes, the state_dict is unchanged, so every past config stamps through.
     if version < 151:
         data["config_version"] = 151
-    # v152 (gen3_endstate_facts_v1) — five structural fact levers, each absent before (the only possible past).
+    # v152 (gen3_endstate_facts_v1) — the fact levers, each absent before (the only possible past). `status_facts`,
+    # `ko_ramp` and `g_ledger` LEFT the config at v156 (legacy deletion U1; see v143 above).
     if version < 152:
         data.setdefault("move_resolution_facts", "off")
-        data.setdefault("status_facts", "off")
-        data.setdefault("ko_ramp", "ramp")
         data.setdefault("drop_progress_clock", "off")
-        data.setdefault("g_ledger", "coarse")
         data["config_version"] = 152
-    # v153 (gen3_probe_facts_v1) — two structural facts, each absent before (the only possible past).
+    # v153 (gen3_probe_facts_v1) — `move_target_state`, absent before (the only possible past). `effective_stats` LEFT
+    # the config at v156 (legacy deletion U1; see v143 above).
     if version < 153:
-        data.setdefault("effective_stats", "off")
         data.setdefault("move_target_state", "off")
         data["config_version"] = 153
     # v154 (gen3_move_set_closure_v1) — one structural field, absent before (the only possible past).
@@ -549,6 +543,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 155:
         data.setdefault("trunk_precision", "fp32")
         data["config_version"] = 155
+    # v156 (legacy deletion U1, `designs/ops/legacy_deletion_manifest_2026-10-12.md` lane OP) — THE STAMP ONLY: eight
+    # fields LEFT the config; their refusal / pop is version-independent (`refuse_structural` + `RETIRED_FIELDS` above,
+    # judged by `adopted_levers` against each config's own prerequisites — the toy VACUITY rule).
+    if version < 156:
+        data["config_version"] = 156
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

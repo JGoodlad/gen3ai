@@ -125,20 +125,11 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
         "topk", why="the opp active's top-K candidates (the per-move matrix, the seat refine)"),
     ("damage_op", "w_all.detach().topk(self.damage_candidate_k, dim=-1)"): Rule(
         "topk", why="the candidate-axis truncation (damage_candidate_k > 0 only)"),
-    # --- the dominant-move ARGMAX (accuracy / provenance read at the max belief-weighted high roll)
-    #     gen3_behaviour_tie_identity_v1: each gathers ONE payload at its index (the move's accuracy; the
-    #     move's belief weight), so a tie between two moves with bit-identical payloads is not a hazard.
-    #     Reached under `--op-reduction max` ONLY: production's `principled` reduction (since the END STATE's adoption,
-    #     2026-10-12) has no argmax, so no forward of the production surface runs these two.
-    ("damage_op", "wfc.argmax(dim=-1, keepdim=True)"): Rule(
-        "argmax", gate=1e-6, why="per-channel dominant move; masked when chan_max <= eps", payload=("acc_exp",)),
-    ("damage_op", "wh.argmax(dim=-1, keepdim=True)"): Rule(
-        "argmax", gate=1e-6, why="overall dominant move; masked when wh.amax <= eps", payload=("w_all",)),
+    # --- (the op's two dominant-move ARGMAX payload sites, reached only under `--op-reduction max`, were deleted with
+    #     that reduction by the legacy deletion's U1: the principled reduction has no argmax.)
     ("pair_reduce", "(w * ref).argmax(dim=-1, keepdim=True)"): Rule(
         "argmax", why="alpha_hard_max (Contract-W reducer; not the production path)"),
     # --- THRESHOLDS on scores
-    ("damage_op", "chan_max > eps"): Rule("threshold", zero_exact=True, why="the 858 argmax's gate"),
-    ("damage_op", "wh.amax(dim=-1) > eps"): Rule("threshold", zero_exact=True, why="the 864 argmax's gate"),
     ("damage_op_blocks", "high_topk > eps"): Rule(
         "threshold", zero_exact=True, why="a status secondary needs the damage to land"),
     ("belief_heads", "narrowed.sum(-1, keepdim=True) > 1e-06"): Rule(
@@ -148,7 +139,7 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
         "threshold", zero_exact=True, why="learned reducer"),
     ("intent_conditional", "high_k > 0"): Rule(
         "threshold", zero_exact=True, why="damaging seat (0 exactly for a status / immune move)"),
-    # gen3_op_reduction_principled_v1 (`--op-reduction principled` only): the incoming row's "this candidate
+    # gen3_op_reduction_principled_v1 (the op's only reduction since U1): the incoming row's "this candidate
     # damages this mon" test, which its α-weighted accuracy / provenance read (0 exactly for a status / immune move)
     ("op_reduction", "high > 0"): Rule(
         "threshold", zero_exact=True, why="a damaging candidate on this mon (0 exactly for a status / immune move)"),
@@ -195,7 +186,7 @@ REASONS: Dict[str, str] = {
               "log pi jump",
     "COUNT_CONTINUOUS": "a floor / ceil that COUNTS the terms of an arithmetic sequence on one side of a clamp "
                         "edge, read only by the closed-form sum over the counted runs (`ko_exact.roll_ko_prob`, "
-                        "`--ko-ramp exact`): the term that changes class at the count's step sits ON the edge "
+                        "the exact P(KO)): the term that changes class at the count's step sits ON the edge "
                         "(0 or 1) to the quotient's rounding, so a count off by one moves the sum by that rounding — "
                         "continuous, never a log pi jump. It returns a FLOAT (the runtime recorder never sees it) and "
                         "its operands are detached; `ko_exact_test` pins the continuity (the sum at both "
@@ -213,12 +204,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "INT": ("n_revealed >= opp_move_ids.shape[-1]", "opp_move_ids == HIDDEN_POWER_MOVE_NUM", "opp_move_ids > 0"),
     },
     "damage_op": {
-        "OBS": ("hp_frac > 0", "opp_burn > 0.5", "opp_para > 0.5", "our_para > 0.5", "s >= 0"),
+        "OBS": ("hp_frac > 0", "opp_burn > 0.5", "s >= 0"),
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
-        "PYTHON": ("op_reduction == 'principled'",   # gen3_op_reduction_principled_v1: the constructor's mode
-                   # gen3_endstate_facts_v1: the constructor's `--ko-ramp` / `--status-facts` modes
-                   "ko_ramp == 'exact'", "status_facts == 'exact'"),
         "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
                 "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
@@ -228,44 +216,39 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("(opp_slp * (1.0 - opp_rest)).sum(-1) > 0.5", "ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0",
                 "ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0", "ctx.hp_and_active[:, our, 0] > 0",
                 "ctx.hp_and_active[ar, our_act, 0] > 0", "ctx.opp_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5",
-                "has_nc > 0.5", "has_rest > 0.5", "hp_frac > 0",
-                "opp_cond.sum(-1) > 0.5", "opp_hp_frac > 0", "opp_para > 0.5",
-                # gen3_op_status_rules_v1: their / our Safeguard, Yawn's drowsy volatile, our Substitute
+                "hp_frac > 0",
+                "opp_cond.sum(-1) > 0.5", "opp_hp_frac > 0", # gen3_op_status_rules_v1: their / our Safeguard, Yawn's drowsy volatile, our Substitute
                 "ctx.screen_feature[:, S_SG_OPP] > 0.5", "ctx.screen_feature[:, S_SG_OURS] > 0.5",
                 "ctx.opp_ctx_raw[:, _YAWN_CTX_IDX] > 0.5", "ctx.our_ctx_raw[:, _YAWN_CTX_IDX] > 0.5",
                 "ctx.our_ctx_raw[:, _SUBSTITUTE_CTX_IDX] > 0.5", "ctx.hp_and_active[:, ours, 0] > 0",
-                "our_burn > 0.5", "our_cb > 0.5", "our_cond.sum(-1) > 0.5", "our_para > 0.5",
-                "(~ctx.opp_believed_mask).long()"),
-        "TABLE": ("has_cure > 0.5", "has_other_cleric > 0.5", "ident.sum(-1) > 0.5", "self.MOVE_TYPE_IDX.long()",
-                  "live_cleric.sum(dim=-1, keepdim=True) - live_cleric > 0.5"),
+                "our_burn > 0.5", "our_cb > 0.5", "our_cond.sum(-1) > 0.5", "(~ctx.opp_believed_mask).long()"),
+        "TABLE": ("ident.sum(-1) > 0.5", "self.MOVE_TYPE_IDX.long()"),
         "SELECTED": ("bp_k > 0", "ded.sum(dim=-1, keepdim=True) > 0.5", "sec_tot > eps"),
         "INT": ("ctx.all_move_ids[ar, opp_act] > 0", "ctx.item_ids[:, our] == self.cb_item_num",
-                # gen3_endstate_facts_v1 (`--status-facts exact`, `our_burn_loss`): the held-move count and our
+                # gen3_endstate_facts_v1 (the exact status facts, `our_burn_loss`): the held-move count and our
                 # mon's Guts — integer move nums / ability ids
                 "ctx.all_move_ids[:, :TEAM_SIZE] > 0", "ctx.ability1_ids[:, :TEAM_SIZE] == self.guts_num",
                 "ctx.item_ids[ar, our_act] == self.cb_item_num", "move_ids == self.hp_num",
                 "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX", "move_ty == _WATER_TIDX",
                 "move_ty == at1[:, :, None]", "move_ty == at1[:, None]", "move_ty == at2[:, :, None]",
                 "move_ty == at2[:, None]", "move_ty.long()", "mty_k == at1[:, None]", "mty_k == at2[:, None]",
-                "n_revealed[:, None] < 4", "our_moves == self.rest_num", "sidx == c",
+                "n_revealed[:, None] < 4", "sidx == c",
                 "torch.arange(K, device=device)[None, :] < 4"),
     },
     "damage_op_pairwise": {
         "OBS": ("(ctx.spikes_feature * 3.0).round()", "(ctx.spikes_feature * 3.0).round().long()",
                 "ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0", "ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0",
-                "ctx.hp_and_active[:, opp, 0] > 0", "ctx.hp_and_active[:, sl, 0] > 0",
-                "ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0", "hp_frac > 0",
-                "hp_frac[:, None] > hp_cost", "hp_j > 0", "leech_active > 0.5", "opp_burn > 0.5"),
+                "ctx.hp_and_active[:, opp, 0] > 0", "ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0", "hp_frac > 0",
+                "hp_frac[:, None] > hp_cost", "hp_j > 0", "opp_burn > 0.5"),
         "TABLE": ("deltas.abs().sum(-1) > 0", "frac > 0", "hp_cost <= 0",
                   "self.TYPE_IS_GHOST[_at1] + self.TYPE_IS_GHOST[_at2] > 0.0", "wh > 0"),
         "SELECTED": ("bp_k > 0", "nf_k[0] + nf_k[1] + nf_k[2] > 0"),
         "INT": ("ctx.all_move_ids[:, :TEAM_SIZE] == pur", "ctx.our_active_req_move_ids == self.baton_num",
                 "ctx.our_active_req_move_ids == self.curse_num", "ctx.our_active_req_move_ids == self.rest_num",
-                "ctx.our_active_req_move_ids.long()", "ids == self.toxic_num", "items == LEFTOVERS_NUM",
-                "move_ids == n", "mty_k == at1[:, :, None]", "mty_k == at2[:, :, None]", "mty_k.long()",
+                "ctx.our_active_req_move_ids.long()", "ids == self.toxic_num", "move_ids == n", "mty_k == at1[:, :, None]", "mty_k == at2[:, :, None]", "mty_k.long()",
                 "mty_k == ctx.type1_ids[:, opp][:, :, None]", "mty_k == ctx.type2_ids[:, opp][:, :, None]",
                 "sidx != LEECH_SEED_CAT", "sidx == 1", "sidx == 2", "sidx == 5",
-                "sidx == _SLP_STATUS_CAT", "sidx > 0", "types1 == ti", "types2 == ti"),
+                "sidx == _SLP_STATUS_CAT", "sidx > 0"),
     },
     "damage_kinds": {
         # gen3_nonformula_damage_v1: the declared non-formula / HP-dependent-BP kinds (the attacker's
@@ -337,7 +320,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "intent_threshold": {
         "INT": ("req_move_ids[..., None] == self.mech_nums",),
-        # `--ko-ramp exact`'s Substitute HP floor(maxhp / 4): our active's max HP is table + observed-spread arithmetic
+        # the exact P(KO)'s Substitute HP floor(maxhp / 4): our active's max HP is table + observed-spread arithmetic
         # (`_active_defender`; no weight reaches it) — the function spelling the 2026-10-10 scan fix exposed
         "OBS": ("torch.floor(maxhp / 4.0)",),
     },
@@ -373,7 +356,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # resolves the same way; a stage is a multiple of 1 and the ±5.5 cut sits half a stage from either side.
     "move_resolution": {
         "OBS": ("ctx.hp_and_active[..., 0] > 0", "ctx.hp_and_active[ar, our_act, 0] > 0",
-                # `--ko-ramp exact`'s Substitute HP floor(maxhp / 4) (as intent_threshold's; the 2026-10-10 scan fix)
+                # the exact P(KO)'s Substitute HP floor(maxhp / 4) (as intent_threshold's; the 2026-10-10 scan fix)
                 "torch.floor(o.our_maxhp / 4.0)",
                 "o.beatup_n <= 0.5", "o.opp_alive_total > 1.5", "o.opp_cond[..., 1:].sum(-1) > 0.5",
                 "o.opp_hp > SUB_HP_FRACTION", "o.our_alive.sum(-1) - o.our_alive[ar, o.our_active] > 0.5",
@@ -439,9 +422,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("known > 0.5",),
         "INT": ("ids['all_move_ids'] == HIDDEN_POWER_MOVE_NUM", "slot_species.long()"),
     },
-    # gen3_static_recovery_v1 (`--eot-residual on`): the alive gate (an observed HP fraction against 0) and the weather's
+    # gen3_static_recovery_v1 (built with the op): the alive gate (an observed HP fraction against 0) and the weather's
     # turns remaining (an observed k / 5 rounded back to the integer k it encodes).
-    # gen3_endstate_facts_v1 (`--ko-ramp exact`): THEIR reported HP fraction against "full" (an observation read; the
+    # gen3_endstate_facts_v1 (the exact P(KO)): THEIR reported HP fraction against "full" (an observation read; the
     # HP Percentage Mod bin is exact at 100 %). The exact P(KO) is the CLOSED FORM (`roll_ko_prob`,
     # gen3_ko_exact_closed_v1): its two run COUNTS (the terms reading 0, the terms reading at most 1) are a ceil / floor
     # of a score whose sum is continuous across each step.
@@ -449,11 +432,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("hp_frac >= 1.0",),
         "COUNT_CONTINUOUS": ("(-xs / sd).ceil()", "((1.0 - xs) / sd).floor()"),
     },
-    # gen3_endstate_facts_v1 (`--status-facts exact`): the alive gate (an observed HP fraction against 0).
+    # gen3_endstate_facts_v1 (the exact status facts): the alive gate (an observed HP fraction against 0).
     "status_facts": {
         "OBS": ("ctx.hp_and_active[:, :, 0] > 0",),
     },
-    # gen3_probe_facts_v1 (`--effective-stats on`): the stage sign (an observed stage, k / 6 × 6) and the alive gate.
+    # gen3_probe_facts_v1 (built with the op): the stage sign (an observed stage, k / 6 × 6) and the alive gate.
     "static_facts": {
         "OBS": ("s >= 0", "ctx.hp_and_active[:, :, 0] > 0"),
     },

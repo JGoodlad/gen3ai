@@ -114,17 +114,35 @@ def _fake_ctx(op, *, attacker_num, attacker_t1, attacker_t2,
     )
 
 
-def _logits_hp_only(n_moves, type_probs=None, B=1):
+def _logits_hp_only(n_moves, type_probs=None, B=1, rest=-10.0):
     """Belief logits in the COMPOSED shape the op now consumes (gen3_typed_hp_belief_v1): ~all mass on
     Hidden Power, spread over the 16 TYPED nums 355-370 per `type_probs` (default uniform), with the bare
     typeless 237 hard-off. That is exactly what `HPTypeBelief.compose_typed_hp` emits — the op does no HP
-    reasoning of its own any more, so a test that pinned mass on 237 would now (correctly) see nothing."""
-    lg = torch.full((B, TEAM_SIZE, n_moves), -10.0)
+    reasoning of its own any more, so a test that pinned mass on 237 would now (correctly) see nothing.
+    `rest` is the logit on every non-HP move: the default -10 leaves sigmoid(-10) ~ 4.5e-5 presence on each,
+    which the adopted α-weighted EXPECTATION prices (~0.1 % of a cell); `_SHARP` makes it exactly 0."""
+    lg = torch.full((B, TEAM_SIZE, n_moves), float(rest))
     lg[:, :, dt.HIDDEN_POWER_NUM] = -30.0                        # the masked presence channel
     probs = torch.full((16,), 1.0 / 16) if type_probs is None else torch.as_tensor(
         type_probs, dtype=torch.float32)
     nums = torch.tensor(list(dt._hp_typed_nums()), dtype=torch.long)
     lg[:, :, nums] = torch.logit(probs.clamp(1e-9, 1 - 1e-6))
+    return lg
+
+
+#: A SHARP belief logit: sigmoid(±1e4) is exactly 1 / 0 in fp32. Where a test means "the opponent holds exactly
+#: this move", the other moves must carry presence 0 — the adopted reduction is the α-weighted EXPECTATION over
+#: the attacker's whole move axis (`op_reduction.believed_reduce` / `incoming_principled`), which prices a ±10 / ±12
+#: logit belief's ~1e-5 tail on every other move (the deleted presence-scaled max never saw it).
+_SHARP = 1.0e4
+
+
+def _believe_sharp(n_moves, *names):
+    """Belief logits: presence exactly 1 on `names` (move ids), exactly 0 on every other move, every opp slot."""
+    from agents import gen3_data
+    lg = torch.full((1, TEAM_SIZE, n_moves), -_SHARP)
+    for nm in names:
+        lg[:, :, gen3_data.moves.get(nm).num] = _SHARP
     return lg
 
 
@@ -180,15 +198,17 @@ def test_typed_hp_distinct_effectiveness():
     ice = [0.0] * 16; ice[_hp_slot("ICE")] = 1.0
 
     ctx = _fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16, **attacker)
-    g = op(ctx, _logits_hp_only(layout["max_moves"], grass))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
-    i = op(ctx, _logits_hp_only(layout["max_moves"], ice))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    g = op(ctx, _logits_hp_only(layout["max_moves"], grass, rest=-_SHARP))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
+    i = op(ctx, _logits_hp_only(layout["max_moves"], ice, rest=-_SHARP))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     # feature order per mon: [phys_low,high,crit,pko,acc, spec_low,high,crit,pko,acc, outspeed, prov].
     # HP Grass/Ice are SPECIAL → read the spec high-roll (index 6).
     grass_spec = g[0, 0, 6].item()
     ice_spec = i[0, 0, 6].item()
     assert grass_spec > 2.5 * ice_spec > 0.0, (grass_spec, ice_spec)
-    # HP is special → the physical channel stays ~0 (no believed physical candidate).
-    assert g[0, 0, 1].item() < 1e-3
+    # HP Grass is special and the belief holds no physical candidate beyond the PHYSICAL typed HPs' 1e-9 floor
+    # (`_logits_hp_only` clamps each type's probability at 1e-9; every non-HP move sits at presence 0 here) →
+    # the physical channel's expectation is that floor's share (~1e-9), far below 1e-6.
+    assert g[0, 0, 1].item() < 1e-6
 
 
 def test_typed_hp_channel_and_effectiveness_ranking():
@@ -200,12 +220,12 @@ def test_typed_hp_channel_and_effectiveness_ranking():
         (126, _T2I["FIRE"], 0),                 # Magmar — ½× Grass (resists)
     ] + [(0, 0, 0)] * 4
     grass = [0.0] * 16; grass[_hp_slot("GRASS")] = 1.0
-    lg = _logits_hp_only(layout["max_moves"], grass)
+    lg = _logits_hp_only(layout["max_moves"], grass, rest=-_SHARP)   # no physical candidate at all
     out = op(_fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16,
                        attacker_num=248, attacker_t1=_T2I["NORMAL"], attacker_t2=0),
              lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
     assert out[0, 0, 6].item() > out[0, 1, 6].item() > 0.0   # spec high-roll: Water/Ground > Fire
-    assert out[0, 0, 1].item() < 1e-3 and out[0, 1, 1].item() < 1e-3   # phys high-roll ~0 (HP is special)
+    assert out[0, 0, 1].item() < 1e-6 and out[0, 1, 1].item() < 1e-6   # phys high-roll ~1e-9 floor (HP is special)
 
 
 def test_immune_defender_reads_zero():
@@ -1277,7 +1297,6 @@ def test_op_field_sports_halve_electric_and_fire_from_either_active():
     such move on the field, the holder's own included); neither touches another type."""
     from agents.model.features_extractor import _DMG_IDX_SPEC_HIGH
     from agents.model.damage_op_layout import _MUD_SPORT_CTX_IDX, _WATER_SPORT_CTX_IDX
-    from agents import gen3_data
     op = DamageOperator(_make_layout())
 
     def inc(move, *, ours=None, theirs=None):
@@ -1287,8 +1306,9 @@ def test_op_field_sports_halve_electric_and_fire_from_either_active():
             ctx.our_ctx_raw[:, ours] = 1.0
         if theirs is not None:
             ctx.opp_ctx_raw[:, theirs] = 1.0
-        lg = torch.full((1, TEAM_SIZE, op.MOVE_BP.shape[0]), -10.0)
-        lg[:, :, gen3_data.moves.get(move).num] = 10.0
+        # sharp: the cell IS `move`'s own value — a ±10 belief's tail on other ELECTRIC / FIRE moves would be
+        # halved by a Sport under the expectation and blur the "neither touches another type" pin.
+        lg = _believe_sharp(op.MOVE_BP.shape[0], move)
         return op(ctx, lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)[0, 0, _DMG_IDX_SPEC_HIGH].item()
 
     tb0, ft0 = inc("thunderbolt"), inc("flamethrower")
@@ -1558,13 +1578,13 @@ def test_choice_band_prior_buffer_values():
 def test_choice_band_incoming_fixed_damage_invariant():
     """A fixed-damage move (Seismic Toss = 100) is CB-INVARIANT: the CB-conditional physical high equals the
     modal physical high (CB scales Atk, fixed damage ignores Atk). Pins the override-vs-CB-scale ordering."""
-    from agents import gen3_data
     from agents.model.features_extractor import decode_damage_block
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     op = DamageOperator(layout, outgoing=False)
-    st = gen3_data.moves.get("seismictoss")                                       # Fighting (phys), fixed 100
     defenders = [(143, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5                       # our Snorlax (not Ghost → hit)
-    lg = torch.full((1, TEAM_SIZE, layout["max_moves"]), -10.0); lg[:, :, st.num] = 10.0
+    # sharp: Seismic Toss ALONE — a ±10 belief's tail on Atk-scaled physical moves is CB-scaled under the
+    # α-weighted expectation, which is not the invariant this test pins.
+    lg = _believe_sharp(layout["max_moves"], "seismictoss")                        # Fighting (phys), fixed 100
     ctx = _fake_ctx(op, attacker_num=68, attacker_t1=_T2I["FIGHTING"], attacker_t2=0,  # Machamp
                     defenders=defenders, hp_probs_active=[0.0] * 16)
     op(ctx, lg)

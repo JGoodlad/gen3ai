@@ -6,12 +6,12 @@ lives here.
 
 | | |
 |---|---|
-| **ADOPTED 2026-10-12: THE END STATE** | the closing test PASSED (`designs/endstate/design_endstate_closing_test.md` §9; ledger 2026-10-12 MEASUREMENT (MAJOR)), so the mirror took the 19 keys of the `--arch endstate` overlay (`src/main/train/arch_arms.py`) at their arm values: `token_encoding` static, `mon_hazard_cost` / `move_actor_state` / `switch_hazard_cost` / `eot_residual` on, `trunk_layers` 3, `move_resolution` on, `speed_physics` on, `value_threat_inject` false, `op_reduction` principled, `obs_facts` v1, `move_resolution_facts` full, `status_facts` exact, `ko_ramp` exact, `drop_progress_clock` on, `g_ledger` eot, `effective_stats` / `move_target_state` / `move_set_closure` on. **Every other key, and the `recipe` block, is unchanged** (both closing-test arms trained on that one recipe). See § "The end-state adoption (2026-10-12)" below |
+| **ADOPTED 2026-10-12: THE END STATE** | the closing test PASSED (`designs/endstate/design_endstate_closing_test.md` §9; ledger 2026-10-12 MEASUREMENT (MAJOR)), so the mirror took the 19 keys of the `--arch endstate` overlay (`src/main/train/arch_arms.py`) at their arm values: `token_encoding` static, `mon_hazard_cost` / `move_actor_state` / `switch_hazard_cost` / `eot_residual` on, `trunk_layers` 3, `move_resolution` on, `speed_physics` on, `value_threat_inject` false, `op_reduction` principled, `obs_facts` v1, `move_resolution_facts` full, `status_facts` exact, `ko_ramp` exact, `drop_progress_clock` on, `g_ledger` eot, `effective_stats` / `move_target_state` / `move_set_closure` on. **Every other key, and the `recipe` block, is unchanged** (both closing-test arms trained on that one recipe). See § "The end-state adoption (2026-10-12)" below. **Eight of those keys have since LEFT the mirror** with their fields (`switch_hazard_cost`, `eot_residual`, `speed_physics`, `op_reduction`, `status_facts`, `ko_ramp`, `g_ledger`, `effective_stats`; legacy deletion U1, 2026-10-15): their adopted behaviour is unconditional wherever the damage op is built — § "The legacy deletion's U1 (2026-10-15)" |
 | **Run** | `models/ai_v12_02_winprob_critic/` — the WIN-PROB CRITIC era (the base the pre-adoption surface was built from) |
 | **Built as** | `models/ai_v9_21_gen17_pfspoff_0820/model_config.json` (gen-17, v97) migrated to the v109 schema, with the **critic family alone** overridden |
 | **Critic rows changed from gen-17** | 13 (listed below) · **non-critic rows changed: 0** |
 | **Mirror updated** | 2026-09-06 |
-| **`config_version` / `arch_signature`** | **154 / `gen3_mon_tied_gain_v1`** — 154 since 2026-10-14: the end-state adoption moved `token_encoding` to `static` but left 145, and the static port (v147) REFUSES a pre-v147 config recording `static`, so the mirror was no loadable config (caught by `diagnostics_cadence_test`; pinned by `baselines_loadability_test::test_the_production_MIRROR_is_a_loadable_config_at_HEAD`). 154 is what the tested end-state runs record (`rb_es_end2_s2001`–`s2008`). Before that, v145 (2026-10-07, the op's `out_gain` tied across our team slots; `MIGRATION_FLOOR` 145) moved only these two keys (144 → 145, `gen3_x5_version_break_v1` → `gen3_mon_tied_gain_v1`), in the same follow-the-code window the break opened. The window: the X5 VERSION BREAK (2026-10-07, `designs/endstate/design_x5_belief_tokens.md` Decision record): `MIGRATION_FLOOR` rose to 144, so the mirror follows the CODE until the first run at the new signature exists (a mirror stamped below the floor is not a loadable config). Keys moved at the break: `arch_signature` (`gen3_event_record_v2` → `gen3_x5_version_break_v1`), `config_version` (122 → 144), `belief_tokens` LEFT the file with the field (X5's hypothesis tokens — the old `fixed_mass` — are the only belief representation; the mirror recorded `blob`), and part 3 (the OBS-FACTS append) moved `total_dim` 2761 → 2845 (the `production` entry's `total_dim` override with it) and added `obs_facts` (`"off"`: production reads none of the block). Every other key is unchanged. The previous window (2026-09-26, `gen3_event_record_v2`: 109 → 121, `total_dim` 2501 → 2761, `active_context_dim` 58 → 60) is history. When the first new-lineage run lands, re-sync from ITS `model_config.json` (`--sync-config`) and delete this note |
+| **`config_version` / `arch_signature`** | **156 / `gen3_mon_tied_gain_v1`** — 156 since 2026-10-15 (legacy deletion U1: eight fields left the config, a stamp-only migration with no signature or floor change; `designs/baselines.json`'s `production` entry declares `config_mirror_version: 156`). 154 from 2026-10-14: the end-state adoption moved `token_encoding` to `static` but left 145, and the static port (v147) REFUSES a pre-v147 config recording `static`, so the mirror was no loadable config (caught by `diagnostics_cadence_test`; pinned by `baselines_loadability_test::test_the_production_MIRROR_is_a_loadable_config_at_HEAD`). 154 is what the tested end-state runs record (`rb_es_end2_s2001`–`s2008`). Before that, v145 (2026-10-07, the op's `out_gain` tied across our team slots; `MIGRATION_FLOOR` 145) moved only these two keys (144 → 145, `gen3_x5_version_break_v1` → `gen3_mon_tied_gain_v1`), in the same follow-the-code window the break opened. The window: the X5 VERSION BREAK (2026-10-07, `designs/endstate/design_x5_belief_tokens.md` Decision record): `MIGRATION_FLOOR` rose to 144, so the mirror follows the CODE until the first run at the new signature exists (a mirror stamped below the floor is not a loadable config). Keys moved at the break: `arch_signature` (`gen3_event_record_v2` → `gen3_x5_version_break_v1`), `config_version` (122 → 144), `belief_tokens` LEFT the file with the field (X5's hypothesis tokens — the old `fixed_mass` — are the only belief representation; the mirror recorded `blob`), and part 3 (the OBS-FACTS append) moved `total_dim` 2761 → 2845 (the `production` entry's `total_dim` override with it) and added `obs_facts` (`"off"`: production reads none of the block). Every other key is unchanged. The previous window (2026-09-26, `gen3_event_record_v2`: 109 → 121, `total_dim` 2501 → 2761, `active_context_dim` 58 → 60) is history. When the first new-lineage run lands, re-sync from ITS `model_config.json` (`--sync-config`) and delete this note |
 | **Before the window** | 109 / `gen3_critic_route_wave_v1` (the run's own schema) |
 | **Previously** | gen-17's config verbatim (v97), from 2026-08-22 |
 
@@ -50,11 +50,11 @@ predates the flag and trained fp32); its source is the A/B, cited in `design_lea
 
 ## The end-state adoption (2026-10-12)
 
-**CONSTRUCTED, then VERIFIED against the tested runs.** The mirror is the pre-adoption mirror with the 19 overlay keys
-of `--arch endstate` applied (the arm's own declaration, so the mirror and the arm cannot disagree on a value).
+**CONSTRUCTED, then VERIFIED against the tested runs.** The mirror was the pre-adoption mirror with the 19 overlay keys
+of `--arch endstate` applied (eight of them left with U1, below) (the arm's own declaration, so the mirror and the arm cannot disagree on a value).
 Verification against the closing test's eight END-STATE runs' recorded `model_config.json`
 (`models/rb_es_end2_s2001`–`s2008`, trained at `62085750`): **every shared key is equal except** `config_version`
-(the runs record 154; the mirror kept 145 until 2026-10-14, when it moved to 154 — see the table above) and the five `ridealong_*` keys
+(the runs record 154; the mirror kept 145 until 2026-10-14, when it moved to 154, and is 156 since U1 — see the table above) and the five `ridealong_*` keys
 (the runs typed `--ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5
 --ridealong-rnd-variants all`; the ride-along heads are DETACHED critic READOUTS outside the ARCH surface, so production
 keeps them at 0 / off, as the PRODUCTION arm's runs differed from the old mirror in exactly the same five keys). Keys
@@ -64,10 +64,22 @@ run-level records, not mirror fields.
 **What HEAD's end state differs from the TESTED `62085750` build** is classified in the adoption's ledger entry
 (2026-10-12 BUILT "THE END STATE IS PRODUCTION"): one math-equal change (the closed-form exact KO, `5eef9934`,
 max |Δ| ≈ 1e-6 relative on the same weights, greedy agreement 136 / 136), every other file behaviour-identical under
-the production argv. `--arch endstate` stays as an ALIAS (its overlay now equals the mirror); `--arch static_recovery`
-is redeclared against the new mirror (the six recovery keys + the other thirteen end-state keys at their pre-adoption
-values), so it still names the same network. The pre-adoption production is reproducible by pinning `95d014fa`
+the production argv. `--arch endstate` stays as an ALIAS (its overlay equals the mirror; 11 keys since U1).
+`--arch static_recovery`, redeclared against the new mirror at the adoption, was DELETED by the legacy deletion's U0
+(2026-10-15). The pre-adoption production is reproducible by pinning `95d014fa`
 (`--pin-commit 95d014fa --arch production`), and its baseline is kept under a legacy name in `baselines.json`.
+
+## The legacy deletion's U1 (2026-10-15)
+
+**Eight keys LEFT the mirror, and `config_version` moved 154 → 156** (`designs/ops/legacy_deletion_manifest_2026-10-12.md`
+lane OP, D1–D6): `switch_hazard_cost` / `eot_residual` (`on`), `speed_physics` (`on`), `op_reduction` (`principled`),
+`status_facts` (`exact`), `ko_ramp` (`exact`), `g_ledger` (`eot`), `effective_stats` (`on`). Their fields are gone from
+`ModelVersion`; the values the mirror held are now the damage op's only physics, built whenever `damage_op` is (D-LD2
+"DERIVED"), so the network the mirror describes did not change (the K9 learner golden is byte-identical; the delivery
+graph moved only its meta `config_version`). The tested end-state runs still record the eight keys at v154 and still
+load — they recorded the adopted values; a run that recorded another value with the op is refused, read pinned at the
+tag `pre-legacy-deletion` (`model_version/adopted_levers.py`). An ABSENT key in a config written at v156+ (this mirror)
+reads as the adopted value. Every other key, and the `recipe` block, is unchanged.
 
 ## Why it was CONSTRUCTED rather than copied from a run
 

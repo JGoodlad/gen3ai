@@ -7,7 +7,6 @@ Lifted VERBATIM out of the old single-file `parser.py` (lines 329-649); the flag
 keep their original relative order, which is the order `--help` renders.
 """
 import argparse
-from typing import Callable
 
 from agents.training.value_sidecar import DEFAULT_SIDECAR_FRACTION
 from main.train.constants import CLIP_RANGE_DEFAULT
@@ -23,20 +22,6 @@ def _rnd_variants_arg(value: str) -> str:
         return canonical_rnd_variants(value)
     except ValueError as e:
         raise argparse.ArgumentTypeError(str(e)) from e
-
-
-def _not_retired(field: str) -> Callable[[str], str]:
-    """An argparse ``type`` that refuses a RETIRED value of a surviving flag WITH its reason
-    (`retired_levers.RETIRED_VALUES`; argparse applies ``type`` before ``choices``, so the reason replaces the bare
-    "invalid choice"). Every other value passes through unchanged for the ``choices`` check."""
-    def check(value: str) -> str:
-        from agents.model.model_version.retired_levers import retired_value_message
-        msg = retired_value_message(field, value)
-        if msg is not None:
-            raise argparse.ArgumentTypeError(msg)
-        return value
-    check.__name__ = field
-    return check
 
 
 def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
@@ -213,17 +198,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "(tempo_cost, wasted_ko, the hand thresholds) dropped; the seven blocks are retired. "
                              "STRUCTURAL, version-checked, fresh-only. Requires --opp-intent-coef > 0, "
                              "--damage-op, --damage-outgoing and both per-move matrices.")
-    from agents.model.move_order import SPEED_PHYSICS_MODES
-    parser.add_argument("--speed-physics", "--speed_physics", dest="speed_physics",
-                        choices=SPEED_PHYSICS_MODES, default=None,
-                        help="Architecture audit F7b's SPEED PHYSICS (gen3_speed_physics_v1, v143; "
-                             "designs/endstate/design_arch_audit.md F7). 'off' (default; production): the damage "
-                             "operator's P(we act first) is a fixed logistic over the speed gap, byte-identical. "
-                             "'on': the integral over the speed BELIEF (the spread belief's believed speed and the "
-                             "Smogon prior's spread) plus the exact gen-3 rules (speed tie = coin flip, paralysis, "
-                             "stat stages, our exact stat arithmetic; Quick Claw format-gated, banned in gen3ou), "
-                             "at every op site. No parameters. STRUCTURAL, version-checked, fresh-only. Requires "
-                             "--damage-op.")
     from agents.model.obs_facts_inject import OBS_FACTS_MODES
     parser.add_argument("--obs-facts", "--obs_facts", dest="obs_facts",
                         choices=OBS_FACTS_MODES, default=None,
@@ -234,17 +208,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "turns. 'off' (default; production): builds nothing. 'v1': the zero-init "
                              "ObsFactsInject adds each fact to its entity's token (under --token-encoding static "
                              "the screens go to the side board tokens). STRUCTURAL, version-checked, fresh-only.")
-    from agents.model.op_reduction import OP_REDUCTION_MODES
-    parser.add_argument("--op-reduction", "--op_reduction", dest="op_reduction",
-                        choices=OP_REDUCTION_MODES, default=None,
-                        help="Architecture audit F6b's PRINCIPLED OPERATOR REDUCTIONS (gen3_op_reduction_principled_v1, "
-                             "v146; designs/endstate/design_arch_audit.md F6). 'max' (default; production): the damage "
-                             "operator collapses the opponent's believed moves with a hard maximum taken separately per "
-                             "channel (each channel may describe a different move), byte-identical. 'principled': every "
-                             "such maximum becomes the alpha-weighted EXPECTATION (alpha = each attacker's move "
-                             "presence normalised; one mixture for every channel), and the noisy-OR P(some move of "
-                             "theirs KOs this mon) is added to our mon tokens through a zero-init projection. "
-                             "STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
     from agents.model.static_facts import MON_HAZARD_COST_MODES, MOVE_ACTOR_STATE_MODES
     parser.add_argument("--mon-hazard-cost", "--mon_hazard_cost", dest="mon_hazard_cost",
                         choices=MON_HAZARD_COST_MODES, default=None,
@@ -260,9 +223,8 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "(default; production): builds nothing. 'on': our active's 4 move seats (E3) get its "
                              "current HP fraction and status one-hot, through a zero-init projection. STRUCTURAL, "
                              "version-checked, fresh-only. Requires --token-encoding static.")
-    # gen3_static_recovery_v1 (v150; designs/endstate/design_static_tokens.md §13): the static-recovery levers.
-    from agents.model.eot_residual import EOT_RESIDUAL_MODES
-    from agents.model.static_facts import SWITCH_HAZARD_COST_MODES
+    # gen3_static_recovery_v1 (v150; designs/endstate/design_static_tokens.md §13): the trunk depth (the static-recovery
+    # levers `--switch-hazard-cost` / `--eot-residual` were DELETED by the legacy deletion's U1: built with the op).
     from agents.model.trunk_depth import TRUNK_LAYERS_CHOICES
     parser.add_argument("--trunk-layers", "--trunk_layers", dest="trunk_layers", type=int,
                         choices=TRUNK_LAYERS_CHOICES, default=None,
@@ -270,27 +232,11 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "production): the two post-LN layers. 3 / 4: append 1 / 2 IDENTITY-INIT pre-LN residual "
                              "rounds (zero attention out-proj and FFN output), so the network starts exactly equal to "
                              "the 2-round one. STRUCTURAL, version-checked, fresh-only.")
-    parser.add_argument("--switch-hazard-cost", "--switch_hazard_cost", dest="switch_hazard_cost",
-                        choices=SWITCH_HAZARD_COST_MODES, default=None,
-                        help="The switch pointer cell's ENTRY-HAZARD cost (gen3_static_recovery_v1, v150). 'off' "
-                             "(default; production): nothing built. 'on': each switch target's [our side's Spikes "
-                             "layers / 3, the HP fraction it loses switching in] (the damage operator's one Spikes "
-                             "entry rule) appended to its switch cell, read through a zero-init projection. "
-                             "STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
-    parser.add_argument("--eot-residual", "--eot_residual", dest="eot_residual",
-                        choices=EOT_RESIDUAL_MODES, default=None,
-                        help="Every mon's END-OF-TURN HP change if it is on the field at the end of the turn "
-                             "(gen3_static_recovery_v1, v150). 'off' (default; production): nothing built. 'on': "
-                             "Leftovers, weather, Rain Dish, the status tick, Leech Seed drain / heal, Wish, Ingrain, "
-                             "Curse, Nightmare and the HP-clamped net, both sides, added to the mon tokens through a "
-                             "zero-init projection. STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
     # gen3_endstate_facts_v1 (v152; designs/endstate/design_hand_computed_features.md §4 ranks 3-5, §5 rank 1): the
-    # fact-completion levers. Each OFF in production (byte-identical); STRUCTURAL, version-checked, fresh-only.
+    # fact-completion levers; STRUCTURAL, version-checked, fresh-only. (`--status-facts`, `--ko-ramp` and `--g-ledger`
+    # were DELETED by the legacy deletion's U1: their adopted value is the op's only physics.)
     from agents.model.extractor_ctx import DROP_PROGRESS_CLOCK_MODES
-    from agents.model.eot_residual import G_LEDGER_MODES
-    from agents.model.ko_exact import KO_RAMP_MODES
     from agents.model.move_resolution_rules import MOVE_RESOLUTION_FACTS_MODES
-    from agents.model.pair_outcome import STATUS_FACTS_MODES
     parser.add_argument("--move-resolution-facts", "--move_resolution_facts", dest="move_resolution_facts",
                         choices=MOVE_RESOLUTION_FACTS_MODES, default=None,
                         help="The FACTS move resolution dropped as judgments (gen3_endstate_facts_v1, v152). 'off' "
@@ -298,38 +244,14 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "Substitute survives, Endure x P(KO), Endeavor x P(not KO'd), the Rapid Spin layers a "
                              "failed spin leaves, and the Spikes layers our Ghost switch-in preserves, through "
                              "zero-init projections. Requires --move-resolution on.")
-    parser.add_argument("--status-facts", "--status_facts", dest="status_facts",
-                        choices=STATUS_FACTS_MODES, default=None,
-                        help="Replace the pair-outcome judgments neutralization / tempo_cost with EXACT status FACTS "
-                             "(gen3_endstate_facts_v1, v152). 'off' (default; production). 'exact': the expected "
-                             "burn damage lost and the expected outspeed lost to paralysis (the same two positions), "
-                             "and every mon's cure-availability flags (a live cleric on its side, Natural Cure, Rest, "
-                             "Lum / Chesto Berry) as zero-init token content. Requires --damage-op.")
-    parser.add_argument("--ko-ramp", "--ko_ramp", dest="ko_ramp", choices=KO_RAMP_MODES, default=None,
-                        type=_not_retired("ko_ramp"),
-                        help="How the damage operator prices P(KO) (gen3_endstate_facts_v1, v152). 'ramp' (default; "
-                             "production): the mean-roll 15%%-window ramp, no crit. 'exact': over the 16 gen-3 rolls + "
-                             "the move's crit chance (1/16, high-crit 1/8), each roll's KO resolved over the observed HP "
-                             "interval (ours exact, theirs the HP-percentage bin), in closed form. ('exact_closed', briefly "
-                             "legal, is RETIRED: it is now what 'exact' computes.) Requires --damage-op.")
     parser.add_argument("--drop-progress-clock", "--drop_progress_clock", dest="drop_progress_clock",
                         choices=DROP_PROGRESS_CLOCK_MODES, default=None,
                         help="The model reads the observation's turns_since_progress as 0 (gen3_endstate_facts_v1, "
                              "v152; a hand definition of progress, a JUDGMENT). 'off' (default; production). The "
                              "observation layout is unchanged.")
-    parser.add_argument("--g-ledger", "--g_ledger", dest="g_ledger", choices=G_LEDGER_MODES, default=None,
-                        help="Which end-of-turn rule the op's g cell (and c4's nets, the static op content) reads "
-                             "(gen3_endstate_facts_v1, v152). 'coarse' (default; production): the op's own ledger. "
-                             "'eot': the ONE rule --eot-residual reads (eot_residual.EotResidualRule). Requires "
-                             "--damage-op.")
     # gen3_probe_facts_v1 (v153; design_hand_computed_features.md §4 rows 12-13, the probe battery's candidates).
-    from agents.model.static_facts import EFFECTIVE_STATS_MODES, MOVE_TARGET_STATE_MODES
-    parser.add_argument("--effective-stats", "--effective_stats", dest="effective_stats",
-                        choices=EFFECTIVE_STATS_MODES, default=None,
-                        help="Each side's ACTIVE mon's STAGE-APPLIED stats (gen3_probe_facts_v1, v153). 'off' (default; "
-                             "production). 'on': Atk / Def / SpA / SpD / Spe after the gen-3 stage multipliers (Spe after "
-                             "paralysis; ours exact, theirs the believed spread) and the accuracy / evasion multipliers, "
-                             "as zero-init token content. STRUCTURAL, version-checked, fresh-only. Requires --damage-op.")
+    # (`--effective-stats` was DELETED by the legacy deletion's U1: built with the op.)
+    from agents.model.static_facts import MOVE_TARGET_STATE_MODES
     parser.add_argument("--move-target-state", "--move_target_state", dest="move_target_state",
                         choices=MOVE_TARGET_STATE_MODES, default=None,
                         help="THEIR active's HP fraction + status one-hot onto our 4 E3 move seats (gen3_probe_facts_v1, "

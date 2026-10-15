@@ -170,11 +170,11 @@ def test_the_recorder_gives_every_production_row_a_finite_margin_and_leaves_the_
     assert th.equal(ref, got), "the recorder must not change what the forward computes"
     assert np.isfinite(rec.margin).all() and all(rec.site)
     # X5 (production since the version break): the E4 seats come from THE one stable order (`hypothesis_set`'s
-    # argsort), not the pointer head's top-K the blob surface ran. The principled op reduction (production since the
-    # END STATE's adoption, 2026-10-12) has NO argmax and no max ("a tie between candidates is no tie here"): the
-    # dominant-move argmaxes of `damage_op` (the `max` reduction's, the only PAYLOAD sites) are no longer reached, and
-    # the incoming row's "this candidate damages this mon" threshold (`op_reduction`) is the op's selection site.
-    assert model.policy.features_extractor.op_reduction == "principled"       # the precondition of what follows
+    # argsort), not the pointer head's top-K the blob surface ran. The principled op reduction (the op's only one since
+    # the legacy deletion's U1) has NO argmax and no max ("a tie between candidates is no tie here"): the dominant-move
+    # argmaxes of the deleted `max` reduction are gone, and the incoming row's "this candidate damages this mon"
+    # threshold (`op_reduction`) is the op's selection site.
+    assert model.policy.features_extractor.op_worst_proj is not None          # the precondition: the op is built
     assert any("hypothesis_set.py" in s for s in rec.sites_seen) and any("op_reduction.py" in s for s in rec.sites_seen)
     assert not any("damage_op.py" in s and "argmax" in s for s in rec.sites_seen), \
         "the production reduction must reach no dominant-move argmax (those are the `max` reduction's)"
@@ -182,8 +182,7 @@ def test_the_recorder_gives_every_production_row_a_finite_margin_and_leaves_the_
 
 def test_an_undeclared_discrete_op_in_the_forward_is_refused(production, monkeypatch):
     model, obs, acts, masks = production
-    # a site the PRODUCTION forward reaches (the principled op reduction's threshold; the `max` reduction's argmaxes are
-    # not reached any more, so deleting THEIR declaration would refuse nothing)
+    # a site the PRODUCTION forward reaches (the principled op reduction's threshold)
     key = ("op_reduction", "high > 0")
     SS.line_map.cache_clear()
     monkeypatch.delitem(SS.MARGIN, key)

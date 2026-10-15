@@ -1,9 +1,9 @@
-"""THE STATUS FACTS' cure half — `--status-facts exact` (`gen3_endstate_facts_v1`, config v152;
+"""THE STATUS FACTS' cure half — the exact status facts (`gen3_endstate_facts_v1`, config v152;
 `design_hand_computed_features.md` P2 → §4 rank 4).
 
 `tempo_cost` (production's pair-outcome coordinate) priced a status in TURNS OF OUR CLOCK by the cheapest cure
 path it assumed WE would take — our plan, a JUDGMENT by the owner's 2026-10-09 classification test. Whether a
-cure path EXISTS is a fact, and so is it on THEIR side (whether our status will stick). `--status-facts exact`
+cure path EXISTS is a fact, and so is it on THEIR side (whether our status will stick). the exact status facts
 removes `tempo_cost` (and `neutralization`, replaced by the exact burn / paralysis facts in the same two pair
 positions, `pair_outcome.STATUS_FACT_COORDS`) and hands every mon, BOTH sides, its cure-availability flags as token
 content (zero-init, bias-free `IsolatedLinear(CURE_DIM → D_MODEL)`, built LAST: one-lever init):

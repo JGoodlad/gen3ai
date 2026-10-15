@@ -246,7 +246,7 @@ def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
     # RE-STATED for production (the END STATE's adoption, 2026-10-12, which moved this set from {4, 8, 15} to
     # {2, 8, 15, 18}): `--move-resolution on` RETIRES pair_outcome_switch and conditional_threat on the built policy
     # (the graph draws the deployed network) and its own switch cell rides instead; `--switch-hazard-cost on` adds the
-    # switch cell's Spikes block.
+    # switch cell's Spikes block (built with the op since the legacy deletion's U1 deleted that flag).
     mr = cfg.get("move_resolution") == "on"
     if cfg.get("pair_outcome_switch") and not mr:
         expected.add(PAIR_OUTCOME_SWITCH_DIM)
@@ -254,7 +254,7 @@ def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
         expected.add(CONDITIONAL_THREAT_SWITCH_DIM)
     if mr:
         expected.add(MOVE_RESOLUTION_SWITCH_DIM)
-    if cfg.get("switch_hazard_cost") == "on":
+    if cfg.get("damage_op"):                           # the switch cell's Spikes block: built with the op (U1)
         expected.add(SWITCH_HAZARD_DIM)
     if cfg.get("opp_intent"):
         # the flat pointer's alpha RE-EXPRESSION: K seats + OTHER_move + the total SWITCH mass

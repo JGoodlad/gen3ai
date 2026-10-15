@@ -714,7 +714,8 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   🚨 **On the END STATE (production since 2026-10-12) the four cells above are RETIRED** — `--move-resolution on`
   drops them after the build — and the pointer's zero-init entry is `MoveResolutionCell`'s projections, reported as
   `cell/move_resolution_{move,switch}_*` plus `cell/move_resolution_{restored,status}_{move,switch}_*` (the facts
-  levers' pairs, built under `--move-resolution-facts full` / `--status-facts exact`). `CELL_FAMILIES` declares
+  levers' pairs, built under `--move-resolution-facts full` / always with the op for the exact status facts, flagless
+  since legacy deletion U1). `CELL_FAMILIES` declares
   `(metric, extractor attribute, projection attribute)`. Before 2026-10-14 it named none of them, so **an
   end-state run (every `rb_es_*` run and its forks) logged NO `cell/*` tag at all** — read that gap as "not
   monitored", never as "no cell".

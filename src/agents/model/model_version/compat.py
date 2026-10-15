@@ -532,16 +532,6 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "the move-resolution family (different parameters, different cell widths).\n"
                 "Resume with the matching --move-resolution setting (a flagless resume inherits it), or "
                 "start a fresh training run.")
-        # gen3_speed_physics_v1 (v143, architecture audit F7b): the op's P(we act first). NO parameter differs
-        # between 'off' and 'on', so no shape error or strict load can catch a flip — this compare is the only gate.
-        if self.speed_physics != saved.speed_physics:
-            raise ModelVersionError(
-                f"speed_physics mismatch: saved={saved.speed_physics!r}, current={self.speed_physics!r}.\n"
-                "The op's P(we act first) is fixed for a run's lifetime: 'off' is the fixed logistic over the speed "
-                "gap, 'on' the speed belief's integral + the exact gen-3 order rules — the same weights read a "
-                "different input under each.\n"
-                "Resume with the matching --speed-physics setting (a flagless resume inherits it), or start a "
-                "fresh training run.")
         # gen3_obs_facts_v1 (v144, the X5 version break's part 3): `v1` adds `ObsFactsInject`'s parameters
         # (zero-init, so a v1 run starts as the off network and nothing in the output SHAPE differs) — a strict
         # load would fail on the keys, but a frozen-opponent gate must name the cause; this compare is the gate.
@@ -551,17 +541,6 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "The OBS-FACTS consumer is fixed for a run's lifetime: `v1` builds ObsFactsInject.\n"
                 "Resume with the matching --obs-facts setting (a flagless resume inherits it), or start "
                 "a fresh training run.")
-        # gen3_op_reduction_principled_v1 (v146, architecture audit F6b): 'principled' changes what every op
-        # reduction over the opponent's believed moves MEANS (expectation vs hard max — same widths) and adds
-        # `op_worst_proj`; a frozen-opponent gate must name the cause, so this compare is the gate.
-        if self.op_reduction != saved.op_reduction:
-            raise ModelVersionError(
-                f"op_reduction mismatch: saved={saved.op_reduction!r}, current={self.op_reduction!r}.\n"
-                "The op's reductions over the opponent's believed moves are fixed for a run's lifetime: 'max' is the "
-                "per-channel hard maximum, 'principled' the alpha-weighted expectation + the noisy-OR KO worst case "
-                "(the same widths read a different quantity).\n"
-                "Resume with the matching --op-reduction setting (a flagless resume inherits it), or start a fresh "
-                "training run.")
         # gen3_static_port_v1 (v147): the static encoder's two narrow facts — each `on` builds a zero-init projection
         # and adds a fact to the trained forward; a frozen opponent's gate must name the cause.
         if self.mon_hazard_cost != saved.mon_hazard_cost:
@@ -578,36 +557,17 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "adds the fact to every forward).\n"
                 "Resume with the matching --move-actor-state setting (a flagless resume inherits it), or start a fresh "
                 "training run.")
-        # gen3_static_recovery_v1 (v150): the three static-recovery levers — each builds parameters and changes the
-        # trained forward; a frozen opponent's gate must name the cause rather than fail a strict load on key names.
+        # gen3_static_recovery_v1 (v150): the trunk depth — it builds parameters and changes the trained forward; a
+        # frozen opponent's gate must name the cause rather than fail a strict load on key names. (The other two
+        # static-recovery levers and the six other op levers of the legacy deletion's U1 left the config at v156:
+        # their recorded values are judged on load by `adopted_levers`, never compared here.)
         if self.trunk_layers != saved.trunk_layers:
             raise ModelVersionError(
                 f"trunk_layers mismatch: saved={saved.trunk_layers!r}, current={self.trunk_layers!r}.\n"
                 "The trunk's depth is fixed for a run's lifetime (each extra round is its own parameters).\n"
                 "Resume with the matching --trunk-layers setting (a flagless resume inherits it), or start a fresh "
                 "training run.")
-        if self.switch_hazard_cost != saved.switch_hazard_cost:
-            raise ModelVersionError(
-                f"switch_hazard_cost mismatch: saved={saved.switch_hazard_cost!r}, "
-                f"current={self.switch_hazard_cost!r}.\n"
-                "The switch pointer cell's entry-hazard block is fixed for a run's lifetime ('on' widens the cell and "
-                "builds the pointer head's projection).\n"
-                "Resume with the matching --switch-hazard-cost setting (a flagless resume inherits it), or start a "
-                "fresh training run.")
-        if self.eot_residual != saved.eot_residual:
-            raise ModelVersionError(
-                f"eot_residual mismatch: saved={saved.eot_residual!r}, current={self.eot_residual!r}.\n"
-                "The per-mon end-of-turn residual is fixed for a run's lifetime ('on' builds a projection and adds the "
-                "fact to every forward).\n"
-                "Resume with the matching --eot-residual setting (a flagless resume inherits it), or start a fresh "
-                "training run.")
-        # gen3_probe_facts_v1 (v153): each builds a projection and adds a fact to every forward.
-        if self.effective_stats != saved.effective_stats:
-            raise ModelVersionError(
-                f"effective_stats mismatch: saved={saved.effective_stats!r}, current={self.effective_stats!r}.\n"
-                "This probe-battery fact (gen3_probe_facts_v1) is fixed for a run's lifetime: it builds a projection "
-                "and changes what the network reads.\n"
-                "Resume with the matching --effective-stats setting (a flagless resume inherits it), or start a fresh training run.")
+        # gen3_probe_facts_v1 (v153): it builds a projection and adds a fact to every forward.
         if self.move_target_state != saved.move_target_state:
             raise ModelVersionError(
                 f"move_target_state mismatch: saved={saved.move_target_state!r}, current={self.move_target_state!r}.\n"
@@ -621,8 +581,8 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "This four-move fact (gen3_move_set_closure_v1) is fixed for a run's lifetime: it changes the weights "
                 "every opponent slot's MoveBelief reinjection reads.\n"
                 "Resume with the matching --move-set-closure setting (a flagless resume inherits it), or start a fresh training run.")
-        # gen3_endstate_facts_v1 (v152): the five fact-completion levers — each changes the trained forward (two also
-        # build parameters), so a frozen opponent's gate must name the cause rather than read a different input.
+        # gen3_endstate_facts_v1 (v152): the surviving fact-completion levers — each changes the trained forward, so a
+        # frozen opponent's gate must name the cause rather than read a different input.
         if self.move_resolution_facts != saved.move_resolution_facts:
             raise ModelVersionError(
                 f"move_resolution_facts mismatch: saved={saved.move_resolution_facts!r}, current={self.move_resolution_facts!r}.\n"
@@ -630,33 +590,12 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "the network reads.\n"
                 "Resume with the matching --move-resolution-facts setting (a flagless resume inherits it), or start a fresh training "
                 "run.")
-        if self.status_facts != saved.status_facts:
-            raise ModelVersionError(
-                f"status_facts mismatch: saved={saved.status_facts!r}, current={self.status_facts!r}.\n"
-                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
-                "the network reads.\n"
-                "Resume with the matching --status-facts setting (a flagless resume inherits it), or start a fresh training "
-                "run.")
-        if self.ko_ramp != saved.ko_ramp:
-            raise ModelVersionError(
-                f"ko_ramp mismatch: saved={saved.ko_ramp!r}, current={self.ko_ramp!r}.\n"
-                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
-                "the network reads.\n"
-                "Resume with the matching --ko-ramp setting (a flagless resume inherits it), or start a fresh training "
-                "run.")
         if self.drop_progress_clock != saved.drop_progress_clock:
             raise ModelVersionError(
                 f"drop_progress_clock mismatch: saved={saved.drop_progress_clock!r}, current={self.drop_progress_clock!r}.\n"
                 "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
                 "the network reads.\n"
                 "Resume with the matching --drop-progress-clock setting (a flagless resume inherits it), or start a fresh training "
-                "run.")
-        if self.g_ledger != saved.g_ledger:
-            raise ModelVersionError(
-                f"g_ledger mismatch: saved={saved.g_ledger!r}, current={self.g_ledger!r}.\n"
-                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
-                "the network reads.\n"
-                "Resume with the matching --g-ledger setting (a flagless resume inherits it), or start a fresh training "
                 "run.")
         # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
         # delta and nothing downstream consumes their output, so no shape error would catch a flip —

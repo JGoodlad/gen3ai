@@ -321,6 +321,13 @@ def test_their_spikes_reach_their_mons_as_content_only_through_op_content(static
     # version break's part-2 init: one of the 32 rows, two hidden slots at π 0.3297 vs 0.3295). A row whose
     # hypothesis assignment changed is EXCLUDED (deterministic: an integer comparison), and must stay rare.
     dead = _with_op_content(static_tower)
+    # Since the legacy deletion's U1 the op always builds the cure flags' token content (`status_cure_proj`, perturbed
+    # by the golden build): THEIR mons' flags read the move / ability / item BELIEFS, which X5 conditions on the board,
+    # so their Spikes moves them by ~4e-6 (probed 2026-10-15: zeroing `status_cure_proj` alone, and no other U1
+    # projection, makes this control exactly 0). A board-conditioned belief, the `pursuit_p` exemption above — not a
+    # route of the hazard fact; drop it so the control isolates the hazard's own route.
+    with torch.no_grad():
+        dead.status_cure_proj.weight.zero_()
     t0 = _trunk_input(dead, obs0)
     sp0 = dead.last_hypothesis.slot_species.clone()
     t3 = _trunk_input(dead, obs3)

@@ -10,8 +10,8 @@ two disagree, ARCHITECTURE.md wins.
 ## The op's SIDE VALUES have ONE container (`gen3_op_stashes_v1`)
 
 Every per-forward stash the op exposes (`last_topk_idx`, `last_pair_cells`, `last_w_all`,
-`last_out_pko`, `last_raw_block`, `last_raw_tensors`, `last_tensors`, `last_worst_rows` (`--op-reduction
-principled` only), …) lives in ONE `OpStashes` dataclass that the
+`last_out_pko`, `last_raw_block`, `last_raw_tensors`, `last_tensors`, `last_worst_rows` (the noisy-OR
+worst-case rows), …) lives in ONE `OpStashes` dataclass that the
 forward replaces at ENTRY — so no stash can carry a previous batch, uniformly (three different
 clearing conventions used to coexist, and the top-K trio had none). **Reads** use the `last_*`
 properties (the documented surface); **writes** go through `op.stash.<field>` — writing a
@@ -32,7 +32,7 @@ channels through **`last_raw_tensors`** — the `OpTensors` views over the PRE-g
 op's upstream gradient, like every other pre-gain stash). `last_raw_block` is the same block DETACHED, for the
 prober / forensic decode only; never feed it to a training-path consumer (it would cut that route's gradient).
 Readers today: `intent_conditional` (our moves' high roll, P(first), the flinch chance) and the move-resolution
-family (P(first)), in both `--speed-physics` modes. Tests: `x5_version_break_part45_test.py`.
+family (P(first)). Tests: `x5_version_break_part45_test.py`.
 
 **The EXTRACTOR's side values follow the same contract (`gen3_extractor_stashes_v1`).** Every
 per-forward stash `Gen3FeaturesExtractor` exposes — `last_pointer_inputs`, the α/β intent trio,
@@ -71,23 +71,21 @@ gate operand (a comparison), a TABLE lookup (cure / cleric), a constant (the che
 observation indicator (`we_have_pur`), a `no_grad` bracket (`fixed_size_tau`) or a diagnostic (the move-tie
 gaps). `selection_sites` declares the one `MAX_VALUE` EXACT site at `index_max`.
 
-## The op's reductions over THEIR believed moves have ONE switch (`--op-reduction`, audit F6b)
+## The op's reductions over THEIR believed moves have ONE form (the PRINCIPLED reduction, audit F6b)
 
-`gen3_op_reduction_principled_v1` (config v146; ARCHITECTURE §4 states the facts). `agents/model/op_reduction.py` is
-the one home of the principled forms — `presence_alpha` (α = presence / the attacker's TOTAL presence over the whole
-move axis), `expectation`, `noisy_or` (`1 − Π(1 − p)`, a product, exact and finite at p = 1),
-`believed_reduce(wv, w_total)` (the per-attacker kernels' ONE reduction: `w_total` None → `max_by_index(wv)`, the
-legacy expression bit for bit; given → `Σ wv / w_total`) and `incoming_principled` (the incoming per-mon row). Four
+`gen3_op_reduction_principled_v1` (config v146; ARCHITECTURE §4 states the facts); the op's ONLY reduction over their
+believed moves since legacy deletion U1 deleted `--op-reduction` and its hard-max side (config v156;
+`designs/ops/legacy_deletion_manifest_2026-10-12.md` D4). `agents/model/op_reduction.py` is the one home of the
+principled forms — `presence_alpha` (α = presence / the attacker's TOTAL presence over the whole move axis),
+`expectation`, `noisy_or` (`1 − Π(1 − p)`, a product, exact and finite at p = 1), `believed_reduce(wv, w_total)` (the
+per-attacker kernels' ONE reduction, `Σ wv / w_total`) and `incoming_principled` (the incoming per-mon row). Three
 rules:
 
 * **A NEW reduction over an opponent's believed candidates goes through `believed_reduce` (or `incoming_principled`'s
-  pattern), never a bare `max_by_index`** — so both modes reach it. The attacker's total comes from
-  `DamageOperator._attacker_total` (None under `max`).
+  pattern), never a bare `max_by_index`** — a hard max there reintroduces the deleted incoherent reduction (defect
+  D2). The attacker's total comes from `DamageOperator._attacker_total`.
 * **A reduction over OUR moves stays a max** (we choose: C1's `d_best_*`, D2's `best_*`, the outgoing status
-  landing). `op_reduction_extractor_test.py` fails if one of those moves with the mode.
-* **`max` must stay byte-identical, and dynamo names graph nodes after LOCAL VARIABLES.** A new local on the `max`
-  path (even `tw = torch.where(...)` then `tw * x` for the same ops) renames nodes and changes the production graph's
-  hash; keep the `max` expression verbatim and put the `principled` arithmetic in its own branch or helper.
+  landing). `op_reduction_extractor_test.py` pins them.
 * **The noisy-OR row never enters the flat block** (`op.stash.worst_rows`, read by the extractor's zero-init
   `op_worst_proj`): the block's layout, `out_gain` and every slicer are mode-independent. Its one discrete op (`high
   > 0`, "this candidate damages this mon") is a declared MARGIN threshold (`selection_sites`, `zero_exact`).
@@ -109,20 +107,19 @@ Two input contracts every op kernel follows (2026-10-07; ARCHITECTURE §4 states
   the side / clause mask itself being `status_rules.incoming_status_mask`, which the move-resolution family shares.
   A new status rule goes there, not into a consumer. Tests: `op_status_rules_test.py`.
 * **Move ORDER has ONE rule** (`gen3_speed_physics_v1`, v143, audit F7b): `move_order.py` — the priority bracket
-  (`p_seat_first`, read by the move-resolution family and `intent_conditional`) and, under `--speed-physics on`,
-  the within-bracket rule (`p_first_same_priority`: their speed as the species' DISCRETE Smogon spreads mixture
+  (`p_seat_first`, read by the move-resolution family and `intent_conditional`) and the within-bracket rule (`p_first_same_priority`: their speed as the species' DISCRETE Smogon spreads mixture
   over the Speed stat — `SPEED_MIX`, gen3_speed_mixture_v1 — each support point through the same exact stage /
   paralysis arithmetic as our exact speed, the coin-flip tie, Quick Claw format-gated by `quick_claw_live`). Every
-  op site that prices who moves first keeps its `off` code verbatim and, under `on`, builds its inputs in
+  op site that prices who moves first builds its inputs in
   `damage_op_speed.py` (`_our_speeds_exact`, `_opp_speed_mix`, `_our_quick_claw` / `_opp_quick_claw`, `_p_first*`;
   an X5 OTHER slot reads the tail's mixture, `P_tail @ SPEED_MIX`) — a site's
   hypothetical (C1's post-setup stage, C5's inherited stages, a paralysis it prices) is an override ARGUMENT,
-  never a second formula. Two `on`-only stashes: `item_qc_prob` (the item belief's P(Quick Claw); never set while
+  never a second formula. Two stashes of the rule: `item_qc_prob` (the item belief's P(Quick Claw); never set while
   the format bans it) and `speed_fast_pair` (the forward's P(first) and P(first | this mon paralysed), which
-  `pair_outcome_coords` reads instead of re-deriving). The order rule reads the PRE-gain P(first) in both modes
-  (`last_raw_tensors`, below).
-  A Python closure inside an op method changes `off`'s dynamo graph (its captured locals become cell variables
-  and are renamed) — put an `on`-only helper on `damage_op_speed`, never nested in a site. Tests:
+  `pair_outcome_coords` reads instead of re-deriving). The order rule reads the PRE-gain P(first)
+  (`last_raw_tensors`, below). FLAGLESS since legacy deletion U1 (`--speed-physics` and the logistic
+  `sigmoid(Δspe / 15)` it replaced are deleted). A Python closure inside an op method renames dynamo graph nodes
+  (its captured locals become cell variables) — put a helper on `damage_op_speed`, never nested in a site. Tests:
   `move_order_test.py`, `speed_physics_extractor_test.py`, `speed_physics_bridge_integration_test.py`.
 
 ## Why the species posterior is spelled `log_softmax(...).exp()` — the whole diagnosis
@@ -252,7 +249,7 @@ weights, or is float arithmetic a rounding error can push across the cutoff), an
 otherwise (observation / table / integer / gathered at a declared selection). Three EXACT reasons cover a SCORE
 operand whose flip cannot reach log π because the value is continuous across it — `MAX_VALUE` (an argmax read only
 through a gather of its own operand), `BISECT` (a fixed-step bisection's direction test) and `COUNT_CONTINUOUS`
-(`--ko-ramp exact`'s two run counts: the closed-form sum does not jump at a count's step) — and each is exempt
+(the exact P(KO)'s two run counts, `ko_exact`: the closed-form sum does not jump at a count's step) — and each is exempt
 from the jitter check below, its own test pinning the continuity. A STEP function counts as a cast in BOTH spellings —
 the method (`x.floor()`, `x.sign()`, ...) and the torch FUNCTION (`torch.floor(x)`, `th.sign(x)`, `torch.heaviside(x,
 v)`; `selection_sites.STEP_FUNCS`, the 2026-10-10 scan-gap fix: the function spelling used to read as no node at all).
@@ -264,7 +261,9 @@ editing a declared line means re-declaring it. 🚨 **An `argmax` MARGIN rule ma
 (`gen3_behaviour_tie_identity_v1`: the frame-local tensors its index gathers — a tie between candidates
 whose payloads are bit-identical is then no tie). The payload must be EVERYTHING the index reaches:
 `selection_sites_test` fails when the index is read anywhere but a `gather` of a declared payload, so a
-new consumer of a payload site's index means extending the declaration (or dropping it). 🚨 **Every
+new consumer of a payload site's index means extending the declaration (or dropping it). **No rule declares a
+payload today:** the only two (the op's dominant-move `wfc.argmax` / `wh.argmax`, reached only under the hard-max
+reduction) were deleted with `--op-reduction` in legacy deletion U1; the machinery stays. 🚨 **Every
 `hypothesis_set.stable_order` caller declares how it READS the order** (`consumed`,
 `gen3_behaviour_tie_consumed_v1`): a `SetCuts` (a set before each cut: the op's per-mon move orders), a long
 count (in order up to it: the species order), or None (every pair: the move group). A new reader of an order
@@ -287,19 +286,18 @@ for the CUDA cells, only under a GPU lease). The Inductor diagnosis:
 no element equals the saved max and the compiled gradient is 0/0 = NaN (CUDA, 41 parameters, 2026-10-05).
 `max_by_index(x, dim, keepdim)` gathers at the detached argmax: the same value bit for bit, a scatter
 backward, and on an exact tie the WHOLE gradient goes to the FIRST maximum (the declared convention). It covers
-the op's ten incoming channel maxima in EVERY configuration (belief on or off), the pairwise kernels, the
-status-landing maxima, the E5 tail's worst-phys/spec and `pair_reduce`'s inert pool; a NEW max over candidates on
-a gradient path uses it. `amax` / `amin` are legal only OFF any gradient path (a comparison operand, a table
+every hard maximum the op still takes on a gradient path — the reductions over OUR moves, a move's own
+secondary-status columns and `pair_reduce`'s inert pool (every reduction over THEIR believed moves is the principled
+expectation / noisy-OR since legacy deletion U1); a NEW max over candidates on a gradient path uses it. `amax` / `amin` are legal only OFF any gradient path (a comparison operand, a table
 lookup, a constant, an observation indicator, a `no_grad` bracket, a diagnostic) — the list:
 [`designs/model/op_contracts.md`](op_contracts.md) "The op's MAXIMA". Its argmax is
 K9(b)'s one `MAX_VALUE` EXACT site (`selection_sites`; the index may only gather its own operand —
 `selection_sites_test` pins it). Detail: `designs/training/compile_flags.md`.
-**A max over THEIR believed candidates is a `--op-reduction` site** (`gen3_op_reduction_principled_v1`, audit F6b):
-spell it `op_reduction.believed_reduce(w · v, w_total)` (`max` → this same `max_by_index`, bit for bit;
-`principled` → the α-weighted expectation), never a bare `max_by_index`, or the `principled` arm silently keeps
-your max. A max over OUR moves stays a max. Keep the `max` expression VERBATIM — dynamo names graph nodes after
-local variables, so a renamed temporary changes the production graph hash
-([`designs/model/op_contracts.md`](op_contracts.md) "ONE switch").
+**A reduction over THEIR believed candidates is the principled reduction** (`gen3_op_reduction_principled_v1`,
+audit F6b; the only form since legacy deletion U1): spell it `op_reduction.believed_reduce(w · v, w_total)` (the
+α-weighted expectation), never a bare `max_by_index`. A max over OUR moves stays a max. Dynamo names graph nodes
+after local variables, so a renamed temporary changes the production graph hash
+([`designs/model/op_contracts.md`](op_contracts.md) "ONE form").
 
 🚨 **A third: every FLOAT attention bias reaches SDPA through `dense_attn_bias`** (`gen3_dense_attn_bias_v1`,
 F-ST-8). Under Inductor, a bias built by in-place slice writes (`EdgeBias._write_block`'s head-innermost

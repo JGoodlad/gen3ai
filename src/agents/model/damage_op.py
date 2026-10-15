@@ -56,7 +56,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _DMG_OMX_CELL, _DMG_OMX_IDX_CRIT, _DMG_OMX_IDX_HIGH, _DMG_OMX_IDX_LOW, _DMG_OMX_IDX_MULT,
     _MUD_SPORT_CTX_IDX, _WATER_SPORT_CTX_IDX,
     _DMG_OMX_IDX_PKO, _DMG_OUTGOING, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_OUT_SEC,
-    _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN, _DMG_SPEED_SCALE,
+    _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN,
     _DMG_SPEED_STD_K, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_STATUS_REFINE, _DMG_TOPK_DEFAULT_K,
     _ELECTRIC_TIDX, _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
@@ -127,12 +127,12 @@ class OpStashes:
     # (`unrevealed_species_probs`) the move-resolution family marginalises its per-slot immunity / type /
     # ability tables through — the SAME belief every other unrevealed read uses. None when off.
     opp_species_post: Optional[torch.Tensor] = None  # [B,S] | [B,6,S]
-    # gen3_speed_physics_v1 (v143, `--speed-physics on` only): the ITEM belief's P(Quick Claw) per opp slot (the
-    # extractor's publication; None → the Smogon species prior) and the forward's (P(first), P(first | we are
-    # paralysed)) against their active per our mon, which the pair outcome's paralysis severity reads. None when off.
+    # gen3_speed_physics_v1 (v143): the ITEM belief's P(Quick Claw) per opp slot (the extractor's publication; None →
+    # the Smogon species prior) and the forward's (P(first), P(first | we are paralysed)) against their active per
+    # our mon, which the pair outcome's paralysis severity reads.
     item_qc_prob: Optional[torch.Tensor] = None      # [B,6]
     speed_fast_pair: Optional[Tuple[torch.Tensor, torch.Tensor]] = None   # ([B,6], [B,6])
-    # gen3_op_reduction_principled_v1 (`--op-reduction principled` only): the incoming WORST-CASE row per our mon —
+    # gen3_op_reduction_principled_v1: the incoming WORST-CASE row per our mon —
     # `[P(some physical move KOs), P(some special move KOs)]`, the noisy-OR over their believed moves (presence ×
     # the accuracy-folded KO), alive x has_opp gated. NOT in the flat block; the extractor's `op_worst_proj` reads it.
     worst_rows: Optional[torch.Tensor] = None        # [B,6,OP_WORST_DIM]
@@ -214,12 +214,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                  candidate_k: int = 0,
                  reduce_how: str = "hard_max",
                  drop_renders: bool = False,
-                 believed_lean: bool = False,
-                 speed_physics: bool = False,
-                 op_reduction: str = "max",
-                 ko_ramp: str = "ramp",
-                 g_ledger: str = "coarse",
-                 status_facts: str = "off"):
+                 believed_lean: bool = False):
         super().__init__()
         # gen3_op_lean_forward_v1 (v86, design_op_tensors step 3): `drop_renders` removes the three
         # RENDER regions (outgoing matrix / incoming matrix / OAX) from the flat forward block — they
@@ -302,65 +297,37 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         self.rest_sleep_noeb = float(expected_free_turns(True, 0.0))     # 2.0 exactly
         self.rest_sleep_eb = float(expected_free_turns(True, 1.0))       # 1.0 exactly
         self.baton_num = BATON_PASS_MOVE_NUM                             # C5's receiver-axis edge
-        # gen3_speed_physics_v1 (v143, architecture audit F7b): P(we act first) from the speed MIXTURE + the exact
-        # gen-3 order rules (`move_order`, `damage_op_speed`) instead of `_DMG_SPEED_SCALE`'s logistic. Off (the
-        # production default) registers nothing and runs nothing new: byte-identical.
-        self.speed_physics = bool(speed_physics)
-        # gen3_op_reduction_principled_v1 (`--op-reduction`, architecture audit F6b): `max` (production) keeps every
-        # per-channel hard maximum over THEIR believed moves; `principled` replaces each with the α-weighted
-        # EXPECTATION (one mixture per attacker, every channel) and adds the noisy-OR KO worst case
-        # (`op_reduction.py`). No parameter here; `max` runs nothing new (byte-identical).
-        from agents.model.op_reduction import OP_REDUCTION_MODES
-        if op_reduction not in OP_REDUCTION_MODES:
-            raise ValueError(f"DamageOperator op_reduction={op_reduction!r} — one of {OP_REDUCTION_MODES}")
-        self.op_reduction = op_reduction
-        self.op_principled = op_reduction == "principled"
-        # gen3_endstate_facts_v1 (`--ko-ramp exact`, `ko_exact.py`): every P(KO) the op prices is the exact one over
-        # the 16 rolls + the move's crit chance (its `critRatio`), resolved over the observed HP interval. `ramp`
-        # (production) registers nothing and runs every site's legacy expression: byte-identical.
-        # (`exact` is computed in closed form, `gen3_ko_exact_closed_v1`; the retired `exact_closed` value is refused
-        # WITH its reason, `retired_levers.refuse_retired_value`.)
-        from agents.model.ko_exact import KO_RAMP_MODES, crit_p_table
-        from agents.model.model_version.retired_levers import refuse_retired_value
-        refuse_retired_value("ko_ramp", ko_ramp, ValueError)
-        if ko_ramp not in KO_RAMP_MODES:
-            raise ValueError(f"DamageOperator ko_ramp={ko_ramp!r} — one of {KO_RAMP_MODES}")
-        self.ko_ramp = ko_ramp
-        self.ko_exact = ko_ramp == "exact"
-        if self.ko_exact:
-            self.register_buffer("MOVE_CRIT_P", crit_p_table(layout['max_moves']), persistent=False)
-        # gen3_endstate_facts_v1 (`--g-ledger eot`): the `g` end-of-turn ledger (and `c4`'s nets, the static op
-        # content) read the ONE end-of-turn rule `eot_residual.EotResidualRule` instead of the coarser ledger.
-        # `coarse` (production) builds nothing: byte-identical.
-        from agents.model.eot_residual import G_LEDGER_MODES, EotResidualRule
-        if g_ledger not in G_LEDGER_MODES:
-            raise ValueError(f"DamageOperator g_ledger={g_ledger!r} — one of {G_LEDGER_MODES}")
-        self.g_ledger = g_ledger
-        self.eot_rule: Optional[EotResidualRule] = EotResidualRule(layout) if g_ledger == "eot" else None
-        # gen3_endstate_facts_v1 (`--status-facts exact`): `pair_outcome_coords` emits the two status FACTS in the
-        # positions of `neutralization` / `tempo_cost` (`pair_outcome.STATUS_FACT_COORDS`); `off` is byte-identical.
-        from agents.model.pair_outcome import STATUS_FACTS_MODES
-        if status_facts not in STATUS_FACTS_MODES:
-            raise ValueError(f"DamageOperator status_facts={status_facts!r} — one of {STATUS_FACTS_MODES}")
-        self.status_facts = status_facts
-        self.status_exact = status_facts == "exact"
-        if self.status_exact:
-            from agents import gen3_data
-            _guts = gen3_data.abilities.get("guts")
-            if _guts is None:
-                raise ValueError("DamageOperator: 'guts' does not resolve in gen3_data.abilities")
-            self.guts_num = int(_guts.num)
+        # THE ADOPTED END-STATE PHYSICS (legacy deletion U1, `designs/ops/legacy_deletion_manifest_2026-10-12.md` lane
+        # OP): the op's levers have ONE value since the 2026-10-12 adoption, so each is unconditional here —
+        # * P(we act first) from the speed MIXTURE + the exact gen-3 order rules (`move_order`, `damage_op_speed`;
+        #   gen3_speed_physics_v1, audit F7b; the `sigmoid(dSpe / 15)` hand constant is deleted);
+        # * the reductions over THEIR believed moves are the α-weighted EXPECTATION per channel + the noisy-OR KO worst
+        #   case (`op_reduction.py`; gen3_op_reduction_principled_v1, audit F6b; the per-channel hard maxima deleted);
+        # * every P(KO) is the exact one over the 16 rolls + the move's crit chance (its `critRatio`), resolved over
+        #   the observed HP interval (`ko_exact.py`, closed form; the mean-roll 15 %-window ramp deleted);
+        # * the `g` end-of-turn ledger (and `c4`'s nets) read the ONE end-of-turn rule `eot_residual.EotResidualRule`
+        #   (the op's own coarser ledger deleted);
+        # * `pair_outcome_coords` emits the two exact status FACTS in the columns the JUDGMENT coordinates
+        #   `neutralization` / `tempo_cost` held (`pair_outcome.STATUS_FACT_COORDS`; the judgments deleted).
+        from agents.model.ko_exact import crit_p_table
+        self.register_buffer("MOVE_CRIT_P", crit_p_table(layout['max_moves']), persistent=False)
+        from agents.model.eot_residual import EotResidualRule
+        self.eot_rule: EotResidualRule = EotResidualRule(layout)
+        from agents import gen3_data
+        _guts = gen3_data.abilities.get("guts")
+        if _guts is None:
+            raise ValueError("DamageOperator: 'guts' does not resolve in gen3_data.abilities")
+        self.guts_num = int(_guts.num)
         self.qc_item_num = QUICK_CLAW_ITEM_NUM
         # Quick Claw is BANNED in gen3ou (`move_order.quick_claw_live` reads the format spec; owner + master 2026-10-07):
         # the rule stays implemented, and is OFF for the format the model plays.
         from agents.model.move_order import quick_claw_live
         self.quick_claw_live = quick_claw_live()
-        if self.speed_physics:
-            # gen3_speed_mixture_v1: their speed as the species' DISCRETE Smogon spreads mixture (the Gaussian it
-            # replaced could not hold a max-or-none Speed investment). Non-persistent: no state_dict change.
-            from agents.model.belief_tables import build_species_speed_mix
-            self.register_buffer("SPEED_MIX", build_species_speed_mix(layout['max_species']), persistent=False)
-        if self.speed_physics and self.quick_claw_live:
+        # gen3_speed_mixture_v1: their speed as the species' DISCRETE Smogon spreads mixture (the Gaussian it
+        # replaced could not hold a max-or-none Speed investment). Non-persistent: no state_dict change.
+        from agents.model.belief_tables import build_species_speed_mix
+        self.register_buffer("SPEED_MIX", build_species_speed_mix(layout['max_species']), persistent=False)
+        if self.quick_claw_live:
             from agents.model.damage_tables import build_species_qc_prior
             self.register_buffer("SPECIES_QC_PRIOR", build_species_qc_prior(layout['max_species']),
                                  persistent=False)
@@ -650,10 +617,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         accuracy and the roll are independent events). ⚠️ The op's damage is the MEAN roll: every kernel
         multiplies the formula by 0.925, the mean of the 16 rolls, so ``high`` is the MEAN-roll damage (not the max
         roll), and ``low`` = 0.85 × the mean sits BELOW the true minimum roll (0.786 of the top) — an approximate
-        fact, ``design_hand_computed_features.md`` D28. ⚠️ The KO term is an APPROXIMATION, not the exact
-        realized probability: a continuous linear ramp across the ``[0.85, 1.0]·dmg`` roll window (the 16
-        discrete rolls smoothed) that omits the 1/16 crit KO — an approximate FACT whose fix is exactness
-        (``designs/endstate/design_hand_computed_features.md`` D9 / §4 rank 3)."""
+        fact, ``design_hand_computed_features.md`` D28. The KO term is EXACT (`ko_exact.ko_given_hit`: the 16
+        rolls + the crit, resolved over the observed HP interval; the mean-roll 15 %-window ramp it replaced was
+        deleted by the legacy deletion's U1)."""
         # `screen=None` means "no screen multiplier" — skips a full-tensor multiply by an all-ones
         # tensor (the coarse refine path allocated one every round). `x * 1.0 == x` exactly in IEEE-754
         # for every finite value, so the two forms are bit-identical.
@@ -662,19 +628,15 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         high = (dmg * inv).clamp(max=_DMG_CHIP_CAP)
         low = (_DMG_ROLL_MIN * dmg * inv).clamp(max=_DMG_CHIP_CAP)
         crit = (2.0 * dmg_ns * inv).clamp(max=_DMG_CRIT_CAP)
-        if self.ko_exact:
-            # gen3_endstate_facts_v1 (`--ko-ramp exact`, `ko_exact.py`): the 16 rolls + the crit, each roll's KO
-            # resolved over the observed HP interval (ours ±½ HP; theirs the reported percentage bin) — the
-            # caller names a THEIR-side defender by its reported fraction ``opp_hp_frac``.
-            return high, low, crit, acc * self._ko_exact(dmg, 2.0 * dmg_ns, maxhp, cur_hp, crit_p, opp_hp_frac)
-        ko = acc * torch.clamp((dmg - cur_hp) / (0.15 * dmg + eps), 0.0, 1.0)
-        return high, low, crit, ko
+        # gen3_endstate_facts_v1 (`ko_exact.py`): the 16 rolls + the crit, each roll's KO resolved over the observed
+        # HP interval (ours ±½ HP; theirs the reported percentage bin) — the caller names a THEIR-side defender by
+        # its reported fraction ``opp_hp_frac``.
+        return high, low, crit, acc * self._ko_exact(dmg, 2.0 * dmg_ns, maxhp, cur_hp, crit_p, opp_hp_frac)
 
     def _crit_p(self, nums: Optional[torch.Tensor], batch: Optional[int] = None) -> Optional[torch.Tensor]:
-        """gen3_endstate_facts_v1: the crit chance of each move num in ``nums`` under `--ko-ramp exact` (None under
-        `ramp`, where no site reads it; None ``nums`` → None, the base 1/16). ``batch`` expands a 1-D candidate axis
-        to ``[batch, C]`` (the incoming kernel's broadcast contract)."""
-        if not self.ko_exact or nums is None:
+        """gen3_endstate_facts_v1: the crit chance of each move num in ``nums`` (None ``nums`` → None, the base
+        1/16). ``batch`` expands a 1-D candidate axis to ``[batch, C]`` (the incoming kernel's broadcast contract)."""
+        if nums is None:
             return None
         c: torch.Tensor = self.MOVE_CRIT_P[nums]
         if batch is not None:
@@ -682,7 +644,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         return c
 
     def _crit_p_at(self, nums: Optional[torch.Tensor], dim: int) -> Optional[torch.Tensor]:
-        """`_crit_p` with one broadcast axis inserted at ``dim`` (None under `ramp`)."""
+        """`_crit_p` with one broadcast axis inserted at ``dim`` (None for None ``nums``)."""
         c = self._crit_p(nums)
         return None if c is None else c.unsqueeze(dim)
 
@@ -798,15 +760,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             * eff_pre * screen[:, None, :]                              # [B,n,C] post-screen (reuses eff_pre)
         inv_cb = 1.0 / (maxhp[:, :, None] + eps)
         high_cb = (dmg_cb * inv_cb).clamp(max=_DMG_CHIP_CAP)
-        if self.ko_exact:
-            # gen3_endstate_facts_v1 (`--ko-ramp exact`): the SAME exact rule (`_ko_exact`), its crit at 2 × the
-            # PRE-screen Band damage (a crit ignores the screens).
-            ko_cb = acc_all[:, None, :] * self._ko_exact(
-                dmg_cb, 2.0 * dmg_cb / screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
-                None if crit_all is None else crit_all[:, None, :], None)
-        else:
-            ko_cb = acc_all[:, None, :] * torch.clamp(
-                (dmg_cb - cur_hp[:, :, None]) / (0.15 * dmg_cb + eps), 0.0, 1.0)
+        # gen3_endstate_facts_v1: the SAME exact rule (`_ko_exact`), its crit at 2 × the PRE-screen Band damage (a
+        # crit ignores the screens).
+        ko_cb = acc_all[:, None, :] * self._ko_exact(
+            dmg_cb, 2.0 * dmg_cb / screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
+            None if crit_all is None else crit_all[:, None, :], None)
         # gen3_nonformula_damage_v1: the declared non-formula kinds (fixed / level, fraction of the
         # target's current HP, Endeavor) REPLACE the rolls — immunity-gated, CB- and screen-invariant.
         nf = nonformula_rolls(tuple(t[:, None, :] for t in nf_all),
@@ -816,19 +774,6 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         high_cb = torch.where(nf[0], nf[1], high_cb)
         ko_cb = torch.where(nf[0], nf[3], ko_cb)
         return high, low, crit, ko, high_cb, ko_cb
-
-    def _p_outspeed(self, our_spe: torch.Tensor, opp_spe: torch.Tensor) -> torch.Tensor:
-        """P(our mon outspeeds the opp active): a logistic over the speed gap at a FIXED scale — the `off` form
-        of `--speed-physics` (production). All args broadcast together. Under `on` no site calls this: each
-        builds its inputs in `damage_op_speed` and calls `_p_first` (the discrete Smogon speed mixture + the
-        exact gen-3 rules, `move_order`).
-
-        gen3_x5_version_break_v1 part 2 (architecture audit F7a): the `opp_spe_std` argument it once accepted and
-        IGNORED is DELETED, with the ~6 `SPECIES_SPREAD_PRIOR[..., _SB_SPE, 1]` lookups that fed it on this path
-        every forward only to be discarded (the deleted uncertainty-aware variant's input,
-        `gen3_dead_flag_purge_v2`; banked in `designs/research_state/flag_census_2026-09-06.md`). The `on` path
-        computes its own spread where it consumes it; this path computes none."""
-        return torch.sigmoid((our_spe - opp_spe) / _DMG_SPEED_SCALE)
 
     # ------------------------------------------------------------------ pointer-native action head cells
     @property
@@ -928,8 +873,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         """Compute the full post-gain damage block [B, out_dim] from the beliefs. `move_belief_logits`
         [B,6,M] (already typed-HP composed), `spread_belief` [B,6,5] believed opp stats, `move_latent_all`
         [n_moves,MOVE_LATENT_DIM] (top-K identity source), `species_probs` [B,6,S] the T0 species prior,
-        `item_cb_prob` [B,6] P(Choice Band); `item_qc_prob` [B,6] P(Quick Claw) (`--speed-physics on` only — the
-        item belief's publication, None → the Smogon species prior). Also populates every per-forward stash on
+        `item_cb_prob` [B,6] P(Choice Band); `item_qc_prob` [B,6] P(Quick Claw) (the item belief's publication,
+        None → the Smogon species prior). Also populates every per-forward stash on
         `self.stash`.
 
         `fixed_moves` (gen3_x5_belief_tokens_v1, X5 only — a
@@ -944,8 +889,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         `opp_addressable`, per-mon fixed-mass candidates. None (the belief family off): nothing added."""
         self.stash = OpStashes()          # gen3_op_stashes_v1: ONE reset, no stash can go stale
         self.stash.x5 = x5_roster
-        if self.speed_physics:
-            self.stash.item_qc_prob = item_qc_prob
+        self.stash.item_qc_prob = item_qc_prob
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -1019,8 +963,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                  else fixed_moves.w_all * self.HP_CAND_MASK[None, :])                           # [B, n_moves]
         self.stash.w_all = w_all                     # gen3_op_candidate_dedup_v1: same-forward reuse
         # gen3_op_reduction_principled_v1: the attacker's TOTAL presence over the WHOLE move axis, taken before any
-        # top-K cut (a cut candidate is unpriced mass, never renormalised away). None under `max`.
-        w_total = w_all.sum(dim=-1, keepdim=True) if self.op_principled else None              # [B,1]
+        # top-K cut (a cut candidate is unpriced mass, never renormalised away).
+        w_total = w_all.sum(dim=-1, keepdim=True)                                              # [B,1]
 
         # gen3_topk_candidates_v1: TRUNCATE the candidate axis to the top-K of the MOVE BELIEF, no
         # tail bound. The op used to price ALL ~400 move-nums per defender even though the opponent
@@ -1068,89 +1012,26 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             bp_all, mty_all, phys_all, acc_all, nf_all, opp_cur_hp_att, bu_all, bu_party,
             weather_mult, eps, crit_all=self._crit_p(cand_all, bp_all.shape[0]))
 
-        # --- per (defender, channel): HARD max of the belief-weighted roll/KO over the candidates ---
-        # The dominant believed move owns each channel (the candidate-count-robust max, NOT a diluting
-        # soft-max over ~400 moves). low/high/crit are monotone in damage → the same dominant move; pko is
-        # its KO probability. Each feature is `max_c w_c · value_c` on the channel.
-        wb = w_all[:, None, :]                                           # [B,1,C] (belief, broadcast over defenders)
+        # --- per (defender, channel): the α-weighted reductions over THEIR believed candidates ---
+        # gen3_op_reduction_principled_v1 (architecture audit F6b; the only reduction since the legacy deletion's U1
+        # deleted the per-channel hard maxima): ONE mixture per channel family — the α-weighted EXPECTATION
+        # (α = w / the attacker's total presence) in every channel, the α-weighted accuracy and provenance of the
+        # DAMAGING moves, and the noisy-OR P(some move KOs) per channel as the worst case (stashed, delivered by the
+        # extractor's `op_worst_proj`). No argmax, no max: a tie between candidates is no tie here.
         phys_mask = phys_all[:, None, :]                                 # [B,1,C]
-        spec_mask = 1.0 - phys_mask
-        # Hoist the belief-weighted rolls ONCE. Each `wb * <roll>` was previously computed TWICE (once
-        # per channel on its own line) and `wb * high_frac` a THIRD time below as `wf` — 5 redundant
-        # [B,6,C] multiplies per forward. Keeping the per-channel MASKED tensors additionally lets
-        # `_chan_acc` reuse the exact tensor its channel max was taken from. Same operands, same order,
-        # same masks ⇒ bit-identical.
-        if self.op_principled:
-            # gen3_op_reduction_principled_v1 (architecture audit F6b): ONE mixture per channel family — the
-            # α-weighted EXPECTATION (α = w / the attacker's total presence) in every channel, the α-weighted
-            # accuracy and provenance of the DAMAGING moves where max read them at another channel's argmax, and
-            # the noisy-OR P(some move KOs) per channel as the worst case (stashed, delivered by the extractor's
-            # `op_worst_proj`). No argmax, no max: a tie between candidates is no tie here.
-            (phys_low, phys_high, phys_crit, phys_pko, phys_acc, spec_low, spec_high, spec_crit, spec_pko,
-             spec_acc, provenance, phys_high_cb, phys_pko_cb, worst_rows) = incoming_principled(
-                w_all, w_total, low_frac, high_frac, crit_frac, ko_ramp, acc_all, phys_all, high_cb, ko_cb)
-            self.stash.worst_rows = (worst_rows * defender_alive[:, :, None]
-                                     * has_opp[:, None, None])                                     # [B,6,2]
-            acc_exp = acc_all[:, None, :].expand(-1, TEAM_SIZE, -1)                              # [B,6,C]
-        else:
-            wl, wh, wc, wk = wb * low_frac, wb * high_frac, wb * crit_frac, wb * ko_ramp   # [B,6,C] each
-            wh_p, wh_s = wh * phys_mask, wh * spec_mask
-            # gen3_fm_index_max_v1 (X5) + audit F6a (every configuration since the version break, config v144, part 2):
-            # the ten channel maxima, each selected BY INDEX (`max_by_index`: the value is bit-identical to `amax`,
-            # the backward is a scatter at the argmax, never an equality with a recomputed tensor — the compiled
-            # backward of the `amax` spelling was NaN, F-XC-4). gen3_unified_choice_band_v1: the CB-CONDITIONAL
-            # physical tail — the PHYSICAL-channel high-roll + P(OHKO) computed with the opp Atk ×1.5 (special is
-            # CB-invariant, so only the physical max is exposed, paired with p_cb below).
-            phys_low, spec_low = max_by_index(wl * phys_mask), max_by_index(wl * spec_mask)
-            phys_high, spec_high = max_by_index(wh_p), max_by_index(wh_s)
-            phys_crit, spec_crit = max_by_index(wc * phys_mask), max_by_index(wc * spec_mask)
-            phys_pko, spec_pko = max_by_index(wk * phys_mask), max_by_index(wk * spec_mask)
-            phys_high_cb = max_by_index((wb * high_cb) * phys_mask)                                  # [B,6]
-            phys_pko_cb = max_by_index((wb * ko_cb) * phys_mask)                                     # [B,6]
-            # PER-CHANNEL accuracy + PROVENANCE of the dominant (max belief-weighted high-roll) believed move.
-            # accuracy is gathered COHERENTLY at the channel's dominant-damage move (the one the rolls describe),
-            # so {pko, accuracy} parameterize that threat's full outcome distribution. provenance is the dominant
-            # move's belief weight (1.0 ≈ a REVEALED/pinned move, <1.0 = a usage-prior GUESS). argmax detached;
-            # the gathered (acc fixed-buffer / belief weight) values carry the right gradient.
-            acc_exp = acc_all[:, None, :].expand(-1, TEAM_SIZE, -1)                                  # [B,6,C]
-
-            # `wfc` is the SAME masked tensor whose amax already produced this channel's `phys_high`/
-            # `spec_high` above, so both are passed in rather than recomputed (the old form rebuilt the
-            # product AND re-ran the amax per channel).
-            def _chan_acc(wfc: torch.Tensor, chan_max: torch.Tensor) -> torch.Tensor:
-                dom = wfc.argmax(dim=-1, keepdim=True)                                               # [B,6,1]
-                acc = torch.gather(acc_exp, -1, dom).squeeze(-1)                                     # [B,6]
-                return torch.where(chan_max > eps, acc, torch.zeros_like(acc))                       # 0 if no threat
-            phys_acc = _chan_acc(wh_p, phys_high)
-            spec_acc = _chan_acc(wh_s, spec_high)
-
-            dom_idx = wh.argmax(dim=-1, keepdim=True)                                                # [B,6,1] (overall)
-            provenance = torch.gather(w_all[:, None, :].expand(-1, TEAM_SIZE, -1), -1, dom_idx).squeeze(-1)
-            provenance = torch.where(wh.amax(dim=-1) > eps, provenance, torch.zeros_like(provenance))
-        # P(outspeed): our mon's REAL speed vs the opp active's fast-tail speed (252/+nat) — a per-mon
-        # point estimate (paralysis/boosts not modelled in v1). Logistic over the stat difference.
-        our_spe = (2.0 * d_base[..., 5] + iv[..., 5] + ev[..., 5] / 4.0 + 5.0) * nat[..., 4]     # [B,6]
-        opp_spe = sb[:, _SB_SPE] if sb is not None else (2.0 * a_base[:, 5] + off_const) * 1.1   # [B] believed/legacy
-        # gen3_unified_op_physics_v1: SPEED boosts (Agility / DD) + PARALYSIS (×0.25) on the active mons fold
-        # into p_outspeed — so "I set up DD → I outspeed" / "I paralyze them → I outspeed" are both priced.
-        opp_para = ctx.pokemon_part[ar, opp_act, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]       # [B]
-        opp_spe = opp_spe * self._boost_mult(opp_b_spe) * torch.where(
-            opp_para > 0.5, opp_spe.new_tensor(_DMG_PARA_SPEED), opp_spe.new_tensor(1.0))
-        our_para = ctx.pokemon_part[ar, ctx.our_active_idx, POKEMON_CONDITION_OFFSET + _COND_PAR_IDX]  # [B]
-        our_spe_mult = torch.ones_like(our_spe)                                                  # [B,6]
-        our_spe_mult[ar, ctx.our_active_idx] = self._boost_mult(our_b_spe) * torch.where(
-            our_para > 0.5, our_para.new_tensor(_DMG_PARA_SPEED), our_para.new_tensor(1.0))
-        our_spe = our_spe * our_spe_mult
-        if self.speed_physics:
-            # gen3_speed_physics_v1: our six EXACT speeds (paralysis on every row, the stage on the active's) vs
-            # their active's speed belief, Quick Claw folded — and the same with each of ours paralysed (the
-            # pair outcome's paralysis severity reads both; one rule, never a second estimator).
-            _our_qc = self._our_quick_claw(ctx)
-            p_outspeed = self._p_first_vs_opp_active(ctx, spread_belief, self._our_speeds_exact(ctx), _our_qc)
-            self.stash.speed_fast_pair = (p_outspeed, self._p_first_vs_opp_active(
-                ctx, spread_belief, self._our_speeds_exact(ctx, para=torch.ones_like(our_spe)), _our_qc))
-        else:
-            p_outspeed = self._p_outspeed(our_spe, opp_spe[:, None])                             # [B,6]
+        (phys_low, phys_high, phys_crit, phys_pko, phys_acc, spec_low, spec_high, spec_crit, spec_pko,
+         spec_acc, provenance, phys_high_cb, phys_pko_cb, worst_rows) = incoming_principled(
+            w_all, w_total, low_frac, high_frac, crit_frac, ko_ramp, acc_all, phys_all, high_cb, ko_cb)
+        self.stash.worst_rows = (worst_rows * defender_alive[:, :, None]
+                                 * has_opp[:, None, None])                                     # [B,6,2]
+        acc_exp = acc_all[:, None, :].expand(-1, TEAM_SIZE, -1)                              # [B,6,C]
+        # P(we act first), gen3_speed_physics_v1: our six EXACT speeds (paralysis on every row, the stage on the
+        # active's) vs their active's speed belief, Quick Claw folded — and the same with each of ours paralysed (the
+        # pair outcome's expected-outspeed-loss fact reads both; one rule, never a second estimator).
+        _our_qc = self._our_quick_claw(ctx)
+        p_outspeed = self._p_first_vs_opp_active(ctx, spread_belief, self._our_speeds_exact(ctx), _our_qc)
+        self.stash.speed_fast_pair = (p_outspeed, self._p_first_vs_opp_active(
+            ctx, spread_belief, self._our_speeds_exact(ctx, para=ctx.pokemon_part.new_ones(B, TEAM_SIZE)), _our_qc))
 
         # Slot order == the named _DMG_IDX_* offsets: [phys_low, phys_high, phys_crit, phys_pko, phys_acc,
         #               spec_low, spec_high, spec_crit, spec_pko, spec_acc, outspeed, prov]
@@ -1308,21 +1189,19 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                         "stash_pair_outcome is on but no top-K move-num selection was recorded — "
                         "the status coordinates have no seat axis to be computed on. Requires "
                         "damage_topk_k>0 (and the incoming matrix that computes it).")
-                # gen3_endstate_facts_v1 (`--status-facts exact`): our six mons' burn loss, ONCE per forward
-                _bl = self.our_burn_loss(ctx, spread_belief) if self.status_exact else None
+                # gen3_endstate_facts_v1 (the exact status facts): our six mons' burn loss, ONCE per forward
+                _bl = self.our_burn_loss(ctx, spread_belief)
                 if _mix is None:
                     _dmg = self.stash.pair_cells
                     _extra = self.pair_outcome_coords(
-                        ctx, _ti, _dmg[..., PAIR_OUTCOME_IDX["high"]],
-                        our_spe, opp_spe, d_base, burn_loss=_bl)
+                        ctx, _ti, _dmg[..., PAIR_OUTCOME_IDX["high"]], burn_loss=_bl)
                     self.stash.pair_in = torch.cat([_dmg, _extra], dim=-1)     # [B,J,K,RAW]
                 else:
                     # X5: the status / tempo coordinates on the EXTENDED axis (num-keyed), then the
                     # whole outcome vector contracted onto the K seats.
                     assert fixed_moves is not None and self.stash.seat_ext_idx is not None
                     _ext = self.pair_outcome_coords(
-                        ctx, self.stash.seat_ext_idx, _dmg_g[..., PAIR_OUTCOME_IDX["high"]],
-                        our_spe, opp_spe, d_base, burn_loss=_bl)
+                        ctx, self.stash.seat_ext_idx, _dmg_g[..., PAIR_OUTCOME_IDX["high"]], burn_loss=_bl)
                     self.stash.pair_in = fixed_moves.mix_seats(
                         torch.cat([_dmg_g, _ext], dim=-1), dim=2)              # [B,J,K,RAW]
                     if _ou is not None and self.stash.pair_cells_other is not None:
@@ -1332,7 +1211,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                                              ).expand(_pr_cells_raw.shape[0], -1)
                         _ext_f = self.pair_outcome_coords(
                             ctx, _full, _pr_cells_raw[..., PAIR_OUTCOME_IDX["high"]],
-                            our_spe, opp_spe, d_base, burn_loss=_bl)  # [B,J,M,8]
+                            burn_loss=_bl)  # [B,J,M,8]
                         _co = torch.einsum("bjcf,bc->bjf", _ext_f, _ou.to(_ext_f.dtype))
                         self.stash.pair_in_other = torch.cat(
                             [self.stash.pair_cells_other[:, :, 0], _co], dim=-1).unsqueeze(2)

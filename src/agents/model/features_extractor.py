@@ -215,7 +215,6 @@ from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     _DMG_PER_MON,
     _DMG_REFINE_K,
     _DMG_ROLL_MIN,
-    _DMG_SPEED_SCALE,
     _DMG_SPEED_STD_K,
     _DMG_STATUS,
     _DMG_STATUS_N_MOVES,

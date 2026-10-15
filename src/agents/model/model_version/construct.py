@@ -231,46 +231,28 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_move_resolution_v1 (v141): F11's move-resolution family.
             move_resolution=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution", "off")),
-            # gen3_speed_physics_v1 (v143): the op's P(we act first) physics.
-            speed_physics=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("speed_physics", "off")),
             # gen3_obs_facts_v1 (v144, part 3): the OBS-FACTS consumer (structural).
             obs_facts=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("obs_facts", "off")),
-            # gen3_op_reduction_principled_v1 (v146): the op's reductions over their believed moves (audit F6b).
-            op_reduction=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("op_reduction", "max")),
             # gen3_static_port_v1 (v147): the static encoder's two narrow facts.
             mon_hazard_cost=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("mon_hazard_cost", "off")),
             move_actor_state=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_actor_state", "off")),
-            # gen3_static_recovery_v1 (v150): the three static-recovery levers.
+            # gen3_static_recovery_v1 (v150): the trunk depth.
             trunk_layers=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("trunk_layers", 2)),
-            switch_hazard_cost=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("switch_hazard_cost", "off")),
-            eot_residual=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("eot_residual", "off")),
-            # gen3_probe_facts_v1 (v153): the probe battery's two facts.
-            effective_stats=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("effective_stats", "off")),
+            # gen3_probe_facts_v1 (v153): their active's state on our move seats.
             move_target_state=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_target_state", "off")),
             # gen3_move_set_closure_v1 (v154): the four-move fact in the bench / hidden reinjection.
             move_set_closure=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_set_closure", "off")),
-            # gen3_endstate_facts_v1 (v152): the five fact-completion levers.
+            # gen3_endstate_facts_v1 (v152): the surviving fact-completion levers.
             move_resolution_facts=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution_facts", "off")),
-            status_facts=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("status_facts", "off")),
-            ko_ramp=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("ko_ramp", "ramp")),
             drop_progress_clock=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("drop_progress_clock", "off")),
-            g_ledger=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("g_ledger", "coarse")),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),

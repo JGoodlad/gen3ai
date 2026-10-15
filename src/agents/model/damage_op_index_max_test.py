@@ -10,8 +10,9 @@ detached argmax: bit-identical to `amax`, and its backward is a scatter at a sav
 These CPU tests pin the SCOPE and the ARITHMETIC; the CUDA fact (the compiled gradient is finite, the
 real gate passes) is `compile_regions_fixed_mass_cuda_test.py` (GPU tier).
 
-* the production (X5) forward selects by index, ten times per forward (fails on revert); the `amax`
-  spelling stays for an op without X5's move axis (`fixed_moves is None`, the belief-off ablation);
+* (the ten incoming channel maxima this pinned — "selected by index ten times per forward" — were the `max`
+  reduction's; the legacy deletion's U1 deleted that reduction, so the incoming row takes no max at all and the
+  count test went with it. `max_by_index` stays for the op's reductions over OUR moves);
 * `max_by_index` is `amax` bit for bit in value, its gradient equals `amax`'s off ties, and on a tie it
   goes whole to the FIRST maximal element (`argmax`'s documented tie rule; `amax` splits it);
 * the fixed_mass FORWARD is bit-identical to the `amax` spelling on the K9 golden's real rows."""
@@ -50,24 +51,6 @@ def fixed_mass() -> Any:
     LG.load_buffer_into(m, LG.BUFFER_PATH)
     assert m.policy.features_extractor.hypothesis_builder is not None        # PRECONDITION: the X5 arm
     return m
-
-
-def _counting(monkeypatch: Any) -> List[int]:
-    calls = [0]
-    real = DO.max_by_index
-
-    def counted(x: torch.Tensor) -> torch.Tensor:
-        calls[0] += 1
-        return real(x)
-    monkeypatch.setattr(DO, "max_by_index", counted)
-    return calls
-
-
-def test_the_fixed_mass_forward_selects_its_ten_incoming_channel_maxima_by_index(fixed_mass, monkeypatch):
-    """Fails on revert (the `amax` spelling: 0 calls)."""
-    calls = _counting(monkeypatch)
-    _evaluate(fixed_mass, _forward_rows(fixed_mass))
-    assert calls[0] == 10, f"max_by_index ran {calls[0]}x in one fixed_mass forward (want the 10 channel maxima)"
 
 
 def test_the_fixed_mass_forward_is_bit_identical_to_the_amax_spelling(fixed_mass, monkeypatch):

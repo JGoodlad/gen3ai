@@ -115,7 +115,7 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
     ``seat_live`` `[B,K]` (X5 U4, F-X5-15): the meaningful-K gate `pair_alpha` applies — mask, never
     renormalise. Passed under X5 only.
 
-    ``exact`` (`gen3_endstate_facts_v1`, `--ko-ramp exact`): the Substitute break becomes the EXACT P(their hit deals
+    ``exact`` (`gen3_endstate_facts_v1`, the exact P(KO)): the Substitute break becomes the EXACT P(their hit deals
     ≥ the sub's HP) — `ko_exact.ko_given_hit` over the 16 rolls and the seat's crit chance, at the sub's exact HP
     ``floor(maxhp / 4)`` (Showdown `data/moves.ts` substitute ``Math.floor(target.maxhp / 4)``) resolved over ±½ HP.
     None (production): the legacy re-thresholded ramp, byte-identical.
@@ -152,7 +152,7 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
 
 
 class ExactKo(NamedTuple):
-    """`--ko-ramp exact`'s operands for a threshold on OUR active (`gen3_endstate_facts_v1`): its exact max HP
+    """the exact P(KO)'s operands for a threshold on OUR active (`gen3_endstate_facts_v1`): its exact max HP
     ``maxhp`` [B] (HP points) and each seat's crit chance ``crit_p`` [B,K'] (an OTHER seat: the base 1/16)."""
     maxhp: torch.Tensor
     crit_p: torch.Tensor

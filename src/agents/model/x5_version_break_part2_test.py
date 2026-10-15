@@ -113,15 +113,8 @@ def test_a_non_winprob_critic_is_refused_at_construction(learner):
 #: The value-reduction max sites that STAY `amax` / `amin` / `max(dim)`, each on NO gradient path. A new
 #: entry needs that reason; a reduction on a gradient path is `index_max.max_by_index`.
 _NON_GRADIENT_MAXES: Dict[Tuple[str, str], str] = {
-    ("damage_op", "wh.amax(dim=-1)"): "the provenance gate's operand: a comparison (> eps), no gradient",
-    ("damage_op_blocks", "self.MOVE_CURES_SELF_STATUS[our_moves].amax(dim=-1)"): "a constant TABLE gathered "
-                                                                                 "at integer move ids",
-    ("damage_op_blocks", "self.MOVE_CURES_TEAM_STATUS[our_moves].amax(dim=-1)"): "a constant TABLE gathered "
-                                                                                 "at integer move ids",
     ("damage_op_pairwise", "((ctx.all_move_ids[:, :TEAM_SIZE] == pur).any(-1).float() * alive_i)"
                            ".amax(dim=-1, keepdim=True)"): "an observation indicator x an observation mask",
-    ("damage_op_blocks", "paths.amin(dim=-1)"): "the cheapest status-undo path: constants selected by "
-                                                "observation / table masks",
     ("hypothesis_set", "gaps.amin(-1)"): "boundary_gap: the move-order TIE-MARGIN diagnostic (K9(b)'s near-tie "
                                          "read), never in a loss",
     ("hypothesis_tokens", "torch.where(ctx.opp_addressable, gap, torch.full_like(gap, float('inf'))).amin(-1)"):
@@ -208,12 +201,13 @@ class _SigmaSpy(torch.Tensor):
 
 
 def test_the_default_forward_reads_no_speed_spread_sigma(legacy_learner):
-    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the subject is the `off` forward, which production
-    # no longer runs (the `on` forward is the next test's).
+    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12); the op's speed rule is its only one since the
+    # legacy deletion's U1 (the logistic this test first pinned is deleted), so this is the legacy base's speed-rule
+    # forward (the next test's is production's).
     learner = legacy_learner
     pol = learner.policy
     op = pol.features_extractor.damage_op
-    assert op is not None and not op.speed_physics, "PRECONDITION: the legacy base's op, --speed-physics off"
+    assert op is not None, "PRECONDITION: the legacy base builds the op"
     real = op._buffers["SPECIES_SPREAD_PRIOR"]
     _SigmaSpy.reads = []
     op._buffers["SPECIES_SPREAD_PRIOR"] = real.as_subclass(_SigmaSpy)
@@ -231,9 +225,9 @@ def test_the_default_forward_reads_no_speed_spread_sigma(legacy_learner):
 
 
 def test_the_speed_physics_forward_reads_no_speed_spread_sigma_either():
-    """F7a COMPLETED (the version break's part 5, after `gen3_speed_mixture_v1`): `--speed-physics on` reads the
-    discrete Smogon speed mixture, so the X5 OTHER roster's speed-SPREAD average (`OpRoster.spe_std`, built only
-    under `on`) had no reader in either mode — it is deleted, and an `on` forward reads no sigma at all."""
+    """F7a COMPLETED (the version break's part 5, after `gen3_speed_mixture_v1`): the speed rule reads the discrete
+    Smogon speed mixture, so the X5 OTHER roster's speed-SPREAD average (`OpRoster.spe_std`) had no reader — it is
+    deleted, and the production forward reads no sigma at all."""
     import dataclasses
     import inspect
     import json
@@ -249,14 +243,13 @@ def test_the_speed_physics_forward_reads_no_speed_spread_sigma_either():
     cfg = json.load(open(repo_path("designs", "production_config.json")))
     kw = {k: v for k, v in cfg.items() if k in set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)}
     sanitize_historical_move_floor(kw)
-    kw["speed_physics"] = "on"
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     torch.manual_seed(0)
     fe = Gen3FeaturesExtractor(gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32),
                                layout=layout, mappings=mappings, **kw).eval()
     op = fe.damage_op
-    assert op.speed_physics and fe.hypothesis_builder is not None, "PRECONDITION: `on`, the X5 OTHER roster built"
+    assert op is not None and fe.hypothesis_builder is not None, "PRECONDITION: the op and the X5 OTHER roster built"
     obs = torch.as_tensor(np.load(src_path("agents", "model", "compile_parity_obs.npz"))["obs"])[:16]
     real = op._buffers["SPECIES_SPREAD_PRIOR"]
     _SigmaSpy.reads = []

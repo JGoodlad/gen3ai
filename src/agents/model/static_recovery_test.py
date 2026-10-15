@@ -1,5 +1,6 @@
-"""`gen3_static_recovery_v1` (config v150) — the three STATIC-RECOVERY levers (`designs/endstate/design_static_tokens.md`
-§13): `--trunk-layers N`, `--switch-hazard-cost`, `--eot-residual`.
+"""`gen3_static_recovery_v1` (config v150) — the three STATIC-RECOVERY facts (`designs/endstate/design_static_tokens.md`
+§13): `--trunk-layers N`, the switch-cell hazard and the end-of-turn residual (the last two built whenever the damage
+operator is since the legacy deletion's U1 deleted `--switch-hazard-cost` / `--eot-residual`).
 
 Built through a REAL SB3 policy (the construction path training uses, the identity_init_test rule) on the LEGACY base
 (`legacy_production_config`: the pre-adoption production toggles — every lever here is ON in production since the END
@@ -15,17 +16,17 @@ Each test names what a revert breaks:
   once non-zero); permuting our team slots permutes the trunk's output with the extra round live.
 * SWITCH-CELL HAZARD on constructed boards (0–3 layers, Flying, Levitate known / by its species, our side's layers):
   the block equals [our layers / 3, the switch-in fraction]; it IS the op's ONE entry rule (a planted `spikes_entry`
-  moves it) and our half of `--mon-hazard-cost`'s fact; it reaches the policy only through the pointer head's zero-init
-  projection (init logits bit-identical; planted, only SWITCH logits move); it permutes with our slots.
+  moves it) and our half of `--mon-hazard-cost`'s fact; it is APPENDED last to the switch cell and reaches the policy
+  only through the pointer head's zero-init projection (planted, only SWITCH logits move); it permutes with our slots.
 * END-OF-TURN RESIDUAL, each component on a constructed board in isolation: Leftovers (known / consumed / the species'
   prior), sand (types, Sand Veil), hail, a timed weather's LAST turn (no chip), Cloud Nine suppression, Rain Dish, burn /
   poison 1/8, Toxic (n+1)/16 for the active and 1/16 for a benched toxic mon, Shed Skin's 1/3 cure, Leech Seed drain on
   the seeded ACTIVE only and its heal to EVERY mon of the other side scaled by max HP (Liquid Ooze inverts it), Wish
   +1/2 to every mon of its side, Ingrain, Curse, Nightmare × P(stays asleep), the net's HP clamp, the alive and
-  concreteness gates; the rule permutes with our slots; ON at init is bit-identical.
-* FLAGS-OFF / one-lever init: each lever ON adds only its own parameters (zero where the identity needs it), every
+  concreteness gates; the rule permutes with our slots; its projection is zero-init and reaches the trunk once live.
+* one-lever init: each remaining lever ON adds only its own parameters (zero where the identity needs it), every
   other initial byte equals the OFF build's, and the init forward is bit-identical.
-* VERSIONING: a pre-v150 config migrates to 2 / off / off; a mismatch of any lever is refused by `check_compatible`.
+* VERSIONING: a pre-v150 config migrates to trunk depth 2; a depth mismatch is refused by `check_compatible`.
 """
 from __future__ import annotations
 
@@ -192,7 +193,7 @@ def test_trunk_layers_refuses_an_unknown_depth() -> None:
 
 # ============================================================================================ SWITCH-CELL HAZARD
 def test_the_switch_cell_hazard_on_constructed_boards(rows: torch.Tensor) -> None:
-    fe = _policy(switch_hazard_cost="on").features_extractor
+    fe = _policy().features_extractor
     ctx, grounded = _constructed_board(fe, rows)
     with torch.no_grad():
         f = switch_hazard_features(fe.damage_op, ctx)                                  # [4,6,2]
@@ -209,7 +210,7 @@ def test_the_switch_cell_hazard_on_constructed_boards(rows: torch.Tensor) -> Non
 
 
 def test_the_switch_cell_reads_the_ops_one_entry_rule(rows: torch.Tensor, monkeypatch: Any) -> None:
-    fe = _policy(switch_hazard_cost="on").features_extractor
+    fe = _policy().features_extractor
     ctx = fe.unpack({"observation": rows[:4]})
     planted = torch.full((4, TEAM_SIZE), 0.3125)
     monkeypatch.setattr(type(fe.damage_op), "spikes_entry",
@@ -220,19 +221,16 @@ def test_the_switch_cell_reads_the_ops_one_entry_rule(rows: torch.Tensor, monkey
 
 
 def test_the_switch_hazard_reaches_only_the_switch_logits_through_a_zero_init_projection(rows: torch.Tensor) -> None:
-    off, on = _policy(), _policy(switch_hazard_cost="on")
-    extra = _one_lever(off, on, ("pointer_head.switch_extra_proj.",))
-    assert extra == ["pointer_head.switch_extra_proj.weight"], extra
-    assert float(on.state_dict()[extra[0]].abs().max()) == 0.0
-    a, b = _forward_record(off, rows), _forward_record(on, rows)
-    assert b[5].shape[-1] == a[5].shape[-1] + SWITCH_HAZARD_DIM
-    assert torch.equal(b[5][..., :-SWITCH_HAZARD_DIM], a[5]), "the block is not APPENDED last"
+    on = _policy()
+    key = "pointer_head.switch_extra_proj.weight"
+    assert key in on.state_dict() and float(on.state_dict()[key].abs().max()) == 0.0
+    b = _forward_record(on, rows)
     fe = on.features_extractor
+    assert fe.pointer_switch_extra_dim == SWITCH_HAZARD_DIM
     with torch.no_grad():
         want = switch_hazard_features(fe.damage_op, fe.unpack({"observation": rows}))
-    assert torch.equal(b[5][..., -SWITCH_HAZARD_DIM:], want)
+    assert torch.equal(b[5][..., -SWITCH_HAZARD_DIM:], want), "the block is not APPENDED last"
     assert bool((want[..., 0] > 0).any()), "PRECONDITION: some row with Spikes on our side"
-    assert torch.equal(a[-1], b[-1]), "ON at init moved the logits"
     pol = copy.deepcopy(on)
     g = torch.Generator().manual_seed(2)
     with torch.no_grad():                       # the three scorers are zero-init too: make every logit live first
@@ -248,7 +246,7 @@ def test_the_switch_hazard_reaches_only_the_switch_logits_through_a_zero_init_pr
 
 
 def test_the_switch_cell_hazard_permutes_with_our_slots(rows: torch.Tensor) -> None:
-    fe = _policy(switch_hazard_cost="on").features_extractor
+    fe = _policy().features_extractor
     ctx = fe.unpack({"observation": rows})
     sig = torch.tensor([3, 0, 5, 1, 4, 2])
     with torch.no_grad():
@@ -281,7 +279,7 @@ def _types(*names: str) -> Tuple[int, int]:
 
 @pytest.fixture(scope="module")
 def eot_fe() -> Any:
-    return _policy(eot_residual="on").features_extractor
+    return _policy().features_extractor
 
 
 def _blank(fe: Any, rows: torch.Tensor) -> ExtractorContext:
@@ -539,44 +537,44 @@ def test_the_residual_permutes_with_our_slots(eot_fe: Any, rows: torch.Tensor) -
 
 
 def test_the_residual_reaches_the_trunk_through_its_zero_init_projection(rows: torch.Tensor) -> None:
-    off, on = _policy(), _policy(eot_residual="on")
-    extra = _one_lever(off, on, ("eot_residual_proj.",))
-    assert all(k.endswith("eot_residual_proj.weight") for k in extra), extra
-    assert all(float(on.state_dict()[k].abs().max()) == 0.0 for k in extra)
-    for a, b in zip(_forward_record(off, rows), _forward_record(on, rows)):
-        assert torch.equal(a, b), "ON at init is not the OFF forward"
+    on = copy.deepcopy(_policy())
+    proj = on.features_extractor.eot_residual_proj
+    assert proj is not None and proj.bias is None and float(proj.weight.abs().max()) == 0.0
+    base = _forward_record(on, rows)
+    with torch.no_grad():
+        proj.weight.copy_(torch.randn(proj.weight.shape, generator=torch.Generator().manual_seed(2)) * 0.1)
+    live = _forward_record(on, rows)
+    assert not torch.equal(base[2], live[2]), "a live projection did not reach the team tokens"
+    # (no op, no residual: `extractor_build` builds it `if damage_op`; the no-op build is the toy, whose load path
+    # `model_version/adopted_levers_test.py` exercises)
 
 
 # ============================================================================== THE COMBINED ARM'S LEVERS TOGETHER
 def test_all_levers_together_start_as_the_static_network(rows: torch.Tensor) -> None:
-    """The combined arm (`--arch static_recovery`'s overlay over `static`): every lever on, at init, equals `static`
-    with every lever off — each lever's parameters are its own, zero where its identity needs it."""
+    """The static-recovery levers that still have an OFF value (the two static facts and the trunk depth; the hazard
+    block and the residual are built with the op since U1), on together, at init equal `static` with them off — each
+    lever's parameters are its own, zero where its identity needs it."""
     off = _policy()
-    on = _policy(mon_hazard_cost="on", move_actor_state="on", trunk_layers=3, switch_hazard_cost="on",
-                 eot_residual="on")
-    _one_lever(off, on, ("mon_hazard_proj.", "move_actor_proj.", "extra_rounds.0.", "switch_extra_proj.",
-                         "eot_residual_proj."))
+    on = _policy(mon_hazard_cost="on", move_actor_state="on", trunk_layers=3)
+    _one_lever(off, on, ("mon_hazard_proj.", "move_actor_proj.", "extra_rounds.0."))
     a, b = _forward_record(off, rows), _forward_record(on, rows)
     for i, (x, y) in enumerate(zip(a, b)):
-        if i == 5:
-            assert torch.equal(x, y[..., :-SWITCH_HAZARD_DIM]), "switch cells"
-        else:
-            assert torch.equal(x, y), f"record {i}"
+        assert torch.equal(x, y), f"record {i}"
 
 
 # ===================================================================================================== VERSIONING
-def test_versioning_migrates_and_gates_all_three_levers() -> None:
+def test_versioning_migrates_and_gates_the_trunk_depth() -> None:
     from agents.model.model_version import MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError
     from agents.model.model_version.migrations import _migrate_config
     from agents.model.snapshot import current_model_version
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     assert MODEL_CONFIG_VERSION >= 150
     out = _migrate_config({"config_version": 149, "token_encoding": "static"})
-    assert (out["trunk_layers"], out["switch_hazard_cost"], out["eot_residual"]) == (2, "off", "off")
+    assert out["trunk_layers"] == 2 and "switch_hazard_cost" not in out and "eot_residual" not in out
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     mv = ModelVersion.from_layout_and_policy_kwargs(layout, {"features_extractor_kwargs": {}})
-    assert (mv.trunk_layers, mv.switch_hazard_cost, mv.eot_residual) == (2, "off", "off")
-    for name, val in (("trunk_layers", 3), ("switch_hazard_cost", "on"), ("eot_residual", "on")):
+    assert mv.trunk_layers == 2
+    for name, val in (("trunk_layers", 3),):
         with pytest.raises(ModelVersionError, match=name):
             mv.check_compatible(dataclasses.replace(mv, **{name: val}))
         rec = ModelVersion.from_layout_and_policy_kwargs(layout, {"features_extractor_kwargs": {name: val}})

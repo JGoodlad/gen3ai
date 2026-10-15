@@ -130,9 +130,9 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "op_content": ("OpContent",),                   # gen3_static_board_v1 (`--token-encoding static`)
     "move_actor_proj": ("move_actor_proj",),
     "move_target_proj": ("move_target_proj",),      # gen3_probe_facts_v1 (`--move-target-state on`)
-    "effective_stats_proj": ("effective_stats_proj",),   # gen3_probe_facts_v1 (`--effective-stats on`)
+    "effective_stats_proj": ("effective_stats_proj",),   # gen3_probe_facts_v1 (built with the op)
     "eot_residual_proj": ("eot_residual_proj",),
-    "status_cure_proj": ("status_cure_proj",),      # gen3_endstate_facts_v1 (`--status-facts exact`)
+    "status_cure_proj": ("status_cure_proj",),      # gen3_endstate_facts_v1 (the exact status facts)
     "obs_facts_inject": ("ObsFactsInject",),
     "assembler": ("ProjectionAssembler",),
     "value_entity_pool": ("UnifiedValueReadout",),
@@ -618,7 +618,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                "_DMG_PER_MON", via="prefuse_proj", zero_init=True,
                                note="per-our-mon incoming row; the ONE absolute-magnitude route "
                                     "into the trunk"))
-    # gen3_op_reduction_principled_v1 (`--op-reduction principled` only): the noisy-OR KO worst case per our mon.
+    # gen3_op_reduction_principled_v1 (built with the op): the noisy-OR KO worst case per our mon.
     if getattr(fe, "op_worst_proj", None) is not None:
         from agents.model.op_reduction import OP_WORST_DIM
         for i in range(T):
@@ -655,7 +655,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    zero_init=True,
                                    note="what our active's moves do to this mon (`d1` outgoing cells), as a SET "
                                         "(permutation-invariant over our request slots)"))
-    # gen3_static_recovery_v1 (`--eot-residual on` only): every mon's end-of-turn HP change if it is on the field.
+    # gen3_static_recovery_v1 (built with the op only): every mon's end-of-turn HP change if it is on the field.
     if getattr(fe, "eot_residual_proj", None) is not None:
         from agents.model.eot_residual import EOT_DIM
         for side in ("our_mon", "opp_mon"):
@@ -665,7 +665,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    note="the end-of-turn residual if this mon is on the field: Leftovers, weather, "
                                         "Rain Dish, the status tick, Leech Seed drain / heal, Wish, Ingrain, Curse, "
                                         "Nightmare, and the HP-clamped net (`eot_residual.EotResidualRule`)"))
-    # gen3_probe_facts_v1 (`--effective-stats on` only): each side's ACTIVE mon's stage-applied stats.
+    # gen3_probe_facts_v1 (built with the op only): each side's ACTIVE mon's stage-applied stats.
     if getattr(fe, "effective_stats_proj", None) is not None:
         from agents.model.static_facts import EFFECTIVE_STATS_DIM
         for side in ("our_mon", "opp_mon"):
@@ -674,7 +674,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    via="effective_stats_proj", zero_init=True,
                                    note="the active's Atk / Def / SpA / SpD / Spe after the stat stages (Spe after "
                                         "paralysis) / 500 + its accuracy / evasion multipliers (0 on a bench)"))
-    # gen3_endstate_facts_v1 (`--status-facts exact` only): every mon's cure-availability facts.
+    # gen3_endstate_facts_v1 (the exact status facts only): every mon's cure-availability facts.
     if getattr(fe, "status_cure_proj", None) is not None:
         from agents.model.status_facts import CURE_DIM
         for side in ("our_mon", "opp_mon"):
@@ -924,9 +924,9 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                    "margins, and P(the switch resolves))",
                                zero_init=True,
                                note="the judgments (neutralization, tempo_cost, the spin stake) dropped"))
-    # gen3_static_recovery_v1 (`--switch-hazard-cost on`): the switch cell's LAST block, read by the pointer head's own
+    # gen3_static_recovery_v1 (built with the op): the switch cell's LAST block, read by the pointer head's own
     # zero-init `switch_extra_proj`.
-    if getattr(fe, "switch_hazard_cost", "off") == "on":
+    if getattr(fe, "switch_hazard_cost", False):
         from agents.model.static_facts import SWITCH_HAZARD_DIM
         for j in range(T):
             edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",

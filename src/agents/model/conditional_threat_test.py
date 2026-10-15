@@ -35,6 +35,7 @@ from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
 from agents.model.pair_outcome import PAIR_OUTCOME_IDX, pair_alpha
+from agents.model.static_facts import SWITCH_HAZARD_DIM
 from agents.model.x5_surface_fixture import x5_kwargs
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -304,19 +305,27 @@ def test_on_forward_runs_and_contributes_exactly_zero_at_init():
     fe(_obs(layout))
     cells = fe.last_pointer_inputs.switch_cells
     assert cells.shape[2] == fe.pointer_switch_cell_dim
-    assert float(cells[..., -CONDITIONAL_THREAT_SWITCH_DIM:].abs().max()) == 0.0
+    # The switch cell's TRAILING `pointer_switch_extra_dim` columns are the entry-hazard FACTS (built with the op
+    # since U1; raw inputs, non-zero by design, read by the pointer head's own zero-init `switch_extra_proj`), so
+    # this module's projected block is the CONDITIONAL_THREAT_SWITCH_DIM columns just before them.
+    end = cells.shape[2] - fe.pointer_switch_extra_dim
+    assert float(cells[..., end - CONDITIONAL_THREAT_SWITCH_DIM:end].abs().max()) == 0.0
     assert "conditional_threat.proj" in fe._identity_init_zeroed
 
 
-def test_it_stacks_with_the_phase_B_switch_cell_and_stays_the_LAST_block():
+def test_it_stacks_with_the_phase_B_switch_cell_and_stays_the_LAST_rider_before_the_hazard_tail():
     """Two modules now widen one cell. The order matters for reading a slice back (this test's own
-    `-DIM:` reads, and every future ablation), so it is pinned: Phase B's row first, OA1 last."""
+    slice reads, and every future ablation), so it is pinned: Phase B's row first, OA1 last of the
+    riders — and only the op's entry-hazard FACTS (`pointer_switch_extra_dim`, built with the op since
+    U1, read by the pointer head's own projection) trail it."""
     fe, layout = _build(**_BASE_KWARGS, pair_outcome_switch=True, conditional_threat_cell=True)
     fe(_obs(layout))
     cells = fe.last_pointer_inputs.switch_cells
     assert cells.shape[2] == fe.pointer_switch_cell_dim
+    assert fe.pointer_switch_extra_dim == SWITCH_HAZARD_DIM
     assert cells.shape[2] == (fe.damage_op.pointer_switch_cell_dim
-                             + fe.pair_outcome_switch.in_dim + CONDITIONAL_THREAT_SWITCH_DIM)
+                             + fe.pair_outcome_switch.in_dim + CONDITIONAL_THREAT_SWITCH_DIM
+                             + SWITCH_HAZARD_DIM)
 
 
 def test_on_is_independently_enableable_of_phase_B_and_of_the_intent_head():

@@ -1513,20 +1513,12 @@ def current_model_version(
     policy_readout: str = "tower",
     token_encoding: str = "legacy",
     move_resolution: str = "off",
-    speed_physics: str = "off",
     obs_facts: str = "off",
-    op_reduction: str = "max",
     mon_hazard_cost: str = "off",
     move_actor_state: str = "off",
     trunk_layers: int = 2,
-    switch_hazard_cost: str = "off",
-    eot_residual: str = "off",
     move_resolution_facts: str = "off",
-    status_facts: str = "off",
-    ko_ramp: str = "ramp",
     drop_progress_clock: str = "off",
-    g_ledger: str = "coarse",
-    effective_stats: str = "off",
     move_target_state: str = "off",
     move_set_closure: str = "off",
     vf_coef: float = 0.5,
@@ -1591,26 +1583,17 @@ def current_model_version(
     # gate must see it.
     ext_kwargs["token_encoding"] = str(token_encoding)
     ext_kwargs["move_resolution"] = str(move_resolution)
-    ext_kwargs["speed_physics"] = str(speed_physics)
     # gen3_obs_facts_v1 (v144, part 3): the OBS-FACTS consumer — structural (`v1` builds a module).
     ext_kwargs["obs_facts"] = str(obs_facts)
-    # gen3_op_reduction_principled_v1 (v146): the op's reductions over their believed moves — structural.
-    ext_kwargs["op_reduction"] = str(op_reduction)
     # gen3_static_port_v1 (v147): the static encoder's two narrow facts — structural.
     ext_kwargs["mon_hazard_cost"] = str(mon_hazard_cost)
     ext_kwargs["move_actor_state"] = str(move_actor_state)
-    # gen3_static_recovery_v1 (v150): the three static-recovery levers — structural.
+    # gen3_static_recovery_v1 (v150): the trunk depth — structural.
     ext_kwargs["trunk_layers"] = int(trunk_layers)
-    ext_kwargs["switch_hazard_cost"] = str(switch_hazard_cost)
-    ext_kwargs["eot_residual"] = str(eot_residual)
-    # gen3_endstate_facts_v1 (v152): the five fact-completion levers — structural.
+    # gen3_endstate_facts_v1 (v152): the surviving fact-completion levers — structural.
     ext_kwargs["move_resolution_facts"] = str(move_resolution_facts)
-    ext_kwargs["status_facts"] = str(status_facts)
-    ext_kwargs["ko_ramp"] = str(ko_ramp)
     ext_kwargs["drop_progress_clock"] = str(drop_progress_clock)
-    ext_kwargs["g_ledger"] = str(g_ledger)
-    # gen3_probe_facts_v1 (v153): the probe battery's two facts — structural.
-    ext_kwargs["effective_stats"] = str(effective_stats)
+    # gen3_probe_facts_v1 (v153): their active's state on our move seats — structural.
     ext_kwargs["move_target_state"] = str(move_target_state)
     # gen3_move_set_closure_v1 (v154): the four-move fact — structural.
     ext_kwargs["move_set_closure"] = str(move_set_closure)

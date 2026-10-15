@@ -12601,7 +12601,7 @@
     "arch_signature": "gen3_mon_tied_gain_v1",
     "base_seats": 15,
     "config": "production_config.json",
-    "config_version": 154,
+    "config_version": 156,
     "edge_bias_families": [
       "c1",
       "c2",

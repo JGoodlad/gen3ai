@@ -18,14 +18,17 @@ from __future__ import annotations
 import pytest
 import torch
 
-from agents.model.beatup_damage_test import _BEATUP, _PARTY, _incoming_ctx
+from agents.model.beatup_damage_test import _BEATUP, _PARTY, _believe_only, _incoming_ctx
 from agents.model.damage_op_layout import _DMG_IDX_PHYS_HIGH, _DMG_IDX_SPEC_HIGH, _DMG_PER_MON
-from agents.model.damage_op_test import _believe_op, _make_layout
+from agents.model.damage_op_test import _make_layout
 from agents.model.features_extractor import DamageOperator, TEAM_SIZE
 
 
 def _per_mon(op, ctx):
-    pm = op(ctx, _believe_op(op, "beatup"))[:, :TEAM_SIZE * _DMG_PER_MON]
+    # A belief in Beat Up ALONE (presence exactly 1 / 0): the adopted reduction is the alpha-weighted expectation
+    # over every believed move, so a +-12-logit belief leaves the other moves' ~6e-6 presence in BOTH channels and
+    # the moved-channel identity below would compare Beat Up against Beat Up + that residue.
+    pm = op(ctx, _believe_only(op, "beatup"))[:, :TEAM_SIZE * _DMG_PER_MON]
     return pm.reshape(1, TEAM_SIZE, _DMG_PER_MON)[0, 0]
 
 

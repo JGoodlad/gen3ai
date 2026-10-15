@@ -1,10 +1,11 @@
 """`gen3_probe_facts_v1` (config v153) — the representation probe battery's two candidates
 (`designs/endstate/design_hand_computed_features.md` §4 rows 12-13, `measurements/probe_battery_2026-10-09/`), each its
-own flag, OFF in the LEGACY base (ON in production since the END STATE's adoption, 2026-10-12 — so each "off vs on"
-here is built on `legacy_production_config`, the pre-adoption network):
+OFF in the LEGACY base (ON in production since the END STATE's adoption, 2026-10-12 — so each "off vs on" here is built
+on `legacy_production_config`, the pre-adoption network):
 
-* `--effective-stats on` (`static_facts.effective_stat_features`): each side's ACTIVE mon's stage-applied Atk / Def /
-  SpA / SpD / Spe (Spe after paralysis) / 500 and its accuracy / evasion multipliers, as token content;
+* the effective stats (`static_facts.effective_stat_features`; built with the op since the legacy deletion's U1
+  deleted `--effective-stats`): each side's ACTIVE mon's stage-applied Atk / Def / SpA / SpD / Spe (Spe after
+  paralysis) / 500 and its accuracy / evasion multipliers, as token content;
 * `--move-target-state on` (`static_facts.move_target_features`): their active's HP + status onto our 4 E3 seats.
 
 What a revert breaks is in each docstring.
@@ -160,8 +161,7 @@ def test_the_move_target_is_their_active_and_nothing_without_one(rows: torch.Ten
         assert float(move_target_features(dataclasses.replace(ctx, hp_and_active=hp)).abs().max()) == 0.0
 
 
-@pytest.mark.parametrize("flag,extra", [("effective_stats", "effective_stats_proj"),
-                                        ("move_target_state", "move_target_proj")])
+@pytest.mark.parametrize("flag,extra", [("move_target_state", "move_target_proj")])
 @pytest.mark.parametrize("encoding", ["legacy", "static"])
 def test_one_lever_init_and_the_fact_reaches_the_trunk(rows: torch.Tensor, flag: str, extra: str,
                                                        encoding: str) -> None:
@@ -184,7 +184,7 @@ def test_one_lever_init_and_the_fact_reaches_the_trunk(rows: torch.Tensor, flag:
 
 def test_the_effective_stats_permute_with_our_team_slots(rows: torch.Tensor) -> None:
     """One formula per mon: permuting our six slots permutes our rows (the active moves with its slot)."""
-    fe = _policy(effective_stats="on").features_extractor
+    fe = _policy().features_extractor
     sig = torch.tensor([3, 0, 5, 1, 4, 2])
     with torch.no_grad():
         ctx = fe.unpack({"observation": rows[:16]})
@@ -195,28 +195,27 @@ def test_the_effective_stats_permute_with_our_team_slots(rows: torch.Tensor) -> 
     assert float(base.abs().sum()) > 0.0
 
 
-def test_versioning_migrates_and_gates_both() -> None:
+def test_versioning_migrates_and_gates_the_move_target_state() -> None:
     from agents.model.model_version import MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError
     from agents.model.model_version.migrations import _migrate_config
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     assert MODEL_CONFIG_VERSION >= 153
     data = _migrate_config({"config_version": 152})
-    assert (data["effective_stats"], data["move_target_state"]) == ("off", "off")
+    assert data["move_target_state"] == "off" and "effective_stats" not in data
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     mv = ModelVersion.from_layout_and_policy_kwargs(layout, {"features_extractor_kwargs": {}})
-    for n in ("effective_stats", "move_target_state"):
+    for n in ("move_target_state",):
         with pytest.raises(ModelVersionError, match=n):
             mv.check_compatible(dataclasses.replace(mv, **{n: "on"}))
         rec = ModelVersion.from_layout_and_policy_kwargs(layout, {"features_extractor_kwargs": {n: "on"}})
         assert getattr(rec, n) == "on"
 
 
-def test_the_legacy_base_builds_neither_and_production_builds_both() -> None:
-    # (a) the OFF path's identity, re-pointed at the legacy base; (b) re-stated for production, which carries both
-    # levers ON since the END STATE's adoption (2026-10-12; this test read "production builds neither" before).
+def test_the_effective_stats_come_with_the_op_and_the_move_target_with_its_flag() -> None:
+    # the legacy base builds the op (so the effective stats, U1) but not the move target (its flag is still OFF
+    # there); production builds both
     fe = _policy().features_extractor
-    assert fe.effective_stats_proj is None and fe.move_target_proj is None
-    assert fe.effective_stats == "off" and fe.move_target_state == "off"
+    assert fe.effective_stats_proj is not None and fe.move_target_proj is None and fe.move_target_state == "off"
     prod = _policy(legacy=False).features_extractor
     assert prod.effective_stats_proj is not None and prod.move_target_proj is not None
-    assert prod.effective_stats == "on" and prod.move_target_state == "on"
+    assert prod.move_target_state == "on"

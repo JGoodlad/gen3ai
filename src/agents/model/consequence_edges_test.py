@@ -108,9 +108,38 @@ def test_swords_dance_raises_the_physical_line():
     assert float(cells[:, 1, :, 3].abs().sum()) == 0.0, "SD gives no outspeed delta"
 
 
+def _p_first_hand(their_mix, ours):
+    """P(our EXACT speed `ours` acts first) against their discrete Speed-stat mixture `their_mix` (index = the
+    stat, stage 0, no paralysis): Σ_v w_v · (1[v < ours] + ½ · 1[v = ours]) — Showdown's order with the
+    speed-tie coin flip (`sim/battle.ts` speedSort shuffles ties), Quick Claw banned in gen3ou. Written out
+    by hand, independently of `move_order.p_outspeed_mixture`'s prefix-gather."""
+    v = torch.arange(their_mix.shape[0], dtype=torch.float64)
+    return float((their_mix.double() * ((v < ours).double() + 0.5 * (v == ours).double())).sum())
+
+
+#: Our neutral Snorlax's Speed: IV 31, EV 0, neutral nature → floor(2·30 + 31 + 0 + 5) = 96.
+_LAX_SPE = 96
+
+
+def _force_snorlax_mirror(fe, ctx):
+    """The C1 speed scenario with EXACT speeds (the gen3_speed_physics_v1 rule): our active = neutral-spread
+    SNORLAX (Speed 96 by hand) at slot 0 vs a revealed, alive opp SNORLAX at slot 0, no stages on either side,
+    no paralysis. Their Speed is Snorlax's Smogon mixture, which STRADDLES 96 (Relaxed / Brave 86, neutral-0-EV
+    ties at 96, invested spreads above), so P(we act first) is strictly inside (0, 1) at stage 0, is EXACTLY 1
+    at +2 (192 > 174, the fastest possible gen-3 Snorlax: floor((60 + 31 + 63 + 5) · 1.1)) and is exactly
+    Σ_{v<64} w_v at −1 (floor(96 · 2/3) = 64). The random `_boost_ctx` fixture alone carries species 0 on
+    every slot (a 0-speed point mass), where exact physics reads P = 1 in BOTH worlds — the deleted logistic's
+    smooth Δ was the only reason it ever moved."""
+    _force_active_speed_scenario(fe, ctx)
+    ctx.species_ids[:, 0] = gen3_data.species.get("snorlax").num
+    ctx.opp_ctx_raw[:, 0:14] = 0.0                   # no opp stat stages (the opp active may sit elsewhere)
+    return fe.damage_op.SPEED_MIX[gen3_data.species.get("snorlax").num]
+
+
 def test_agility_moves_only_the_speed_channel():
     fe = _make(**_C1_TOGGLES).eval()
     ctx = _boost_ctx(fe, seed=73)
+    their_mix = _force_snorlax_mirror(fe, ctx)
     ctx.our_active_req_move_ids[:, 1] = _AGILITY
     with torch.no_grad():
         cells = fe.damage_op.pairwise_boost(ctx)
@@ -118,7 +147,11 @@ def test_agility_moves_only_the_speed_channel():
     assert float(cells[:, 1, :, 2].abs().sum()) == 0.0
     d_spd = cells[:, 1, :, 3]
     assert float(d_spd.min()) >= 0.0, "+2 spe can never lower P(outspeed)"
-    assert float(d_spd.max()) > 0.0, "some gated matchup must gain outspeed probability"
+    # +2 Speed: 96 → 192, faster than every possible Snorlax ⇒ P = 1; Δ = 1 − P(96 first) by hand.
+    p0 = _p_first_hand(their_mix, _LAX_SPE)
+    assert 0.0 < p0 < 0.9, "the mixture must straddle 96 (scenario precondition)"
+    assert d_spd[:, 0].tolist() == pytest.approx([1.0 - p0] * 2, abs=1e-6), \
+        "the Agility matchup must gain exactly 1 − P(first at 96)"
 
 
 def test_curse_non_ghost_prices_atk_up_spe_down():
@@ -145,9 +178,20 @@ def test_curse_non_ghost_prices_atk_up_spe_down():
     live = (best > 1e-6) & (best < _DMG_CHIP_CAP - 1e-6)
     assert bool(live.any()), "the scenario must leave some uncapped physical line to price"
     assert bool((cells[:, 1, :, 1][live] > 0).all()), "+1 atk must raise the best physical line"
-    d_spd = cells[:, 1, :, 3]
+    # The speed half on the EXACT-speed scenario (`_force_snorlax_mirror`; the random ctx's species-0 point
+    # masses read P = 1 at every stage): −1 Speed takes 96 → floor(96 · 2/3) = 64.
+    ctx_s = _boost_ctx(fe, seed=81)
+    their_mix = _force_snorlax_mirror(fe, ctx_s)
+    ctx_s.our_active_req_move_ids[:, 1] = curse
+    ctx_s.type1_ids[:, 0] = _T2I["NORMAL"]
+    ctx_s.type2_ids[:, 0] = _T2I["NORMAL"]
+    with torch.no_grad():
+        d_spd = fe.damage_op.pairwise_boost(ctx_s)[:, 1, :, 3]
     assert float(d_spd.max()) <= 0.0, "-1 spe can never RAISE P(outspeed)"
-    assert float(d_spd.min()) < 0.0, "some gated matchup must LOSE outspeed probability"
+    want = _p_first_hand(their_mix, 64) - _p_first_hand(their_mix, _LAX_SPE)
+    assert want < -0.1, "the Snorlax mixture must lose mass between 64 and 96 (scenario precondition)"
+    assert d_spd[:, 0].tolist() == pytest.approx([want] * 2, abs=1e-6), \
+        "the Curse matchup must lose exactly P(first at 96) − P(first at 64)"
     # The GHOST branch: same slot, Ghost-typed user → the whole row must be unpriced.
     ctx.type1_ids[torch.arange(2), ctx.our_active_idx] = ghost
     with torch.no_grad():
@@ -317,7 +361,7 @@ def test_recovery_flips_the_ko_threshold():
 
 def test_status_consequence_channels():
     """C2 semantics: T-Wave on a slow Snorlax vs a fast revealed opponent flips
-    d_their_outspeed strongly POSITIVE (their para makes us effectively faster) and reads a
+    d_their_outspeed POSITIVE (their para makes us effectively faster) and reads a
     ZERO burn/tick channel; Will-O-Wisp halves the worst believed PHYSICAL hit (negative
     d_in_phys) and adds the −1/8 tick; a non-status slot stays exactly zero; Leech Seed is
     deliberately NOT a C2 row."""
@@ -330,6 +374,7 @@ def test_status_consequence_channels():
     # blanket zero would wipe the alive flags the fixture just forced).
     ctx.pokemon_part[:, TEAM_SIZE:2 * TEAM_SIZE,
                      POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + 7] = 0.0
+    ctx.opp_ctx_raw[:, 0:14] = 0.0     # no opp stat stages (opp_active_local is 0 in one row at this seed)
     ctx.our_active_req_move_ids[:, :] = 0
     ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("thunderwave").num
     ctx.our_active_req_move_ids[:, 2] = gen3_data.moves.get("willowisp").num
@@ -341,8 +386,20 @@ def test_status_consequence_channels():
     assert cells.shape == (2, 4, TEAM_SIZE, 7)
     assert float(cells[:, 0].abs().sum()) == 0.0, "a non-status slot must be zero"
     assert float(cells[:, 3].abs().sum()) == 0.0, "Leech Seed is the G/S1 fact, not a C2 row"
-    # T-Wave: slow Snorlax vs Aerodactyl — para must flip P(outspeed) hard toward us.
-    assert float(cells[:, 1, 0, 2].min()) > 0.5, "para must flip the fast matchup toward us"
+    # T-Wave: slow Snorlax vs Aerodactyl — para flips P(outspeed) toward us. Under the EXACT speed rule
+    # (gen3_speed_physics_v1, the deleted sigmoid(ΔSpe/15) gave ~0.81): our neutral Snorlax is 96 (by hand,
+    # `_LAX_SPE`); every possible gen-3 Aerodactyl is faster (the slowest, IV 0 / EV 0 / −Spe, is
+    # floor(265 · 0.9) = 238), so P(now) = 0 exactly; paralysed, each of their Speeds v becomes Showdown's
+    # modify(v, 0.25) = floor((1024 v + 2047) / 4096), and only their slower spreads drop below 96 (a max-Speed
+    # Jolly 394 → 98 still outruns us) — so Δ = P(paralysed Aerodactyl is slower) + ½ P(tie), by hand.
+    aero_mix = fe.damage_op.SPEED_MIX[gen3_data.species.get("aerodactyl").num].double()
+    v = torch.arange(aero_mix.shape[0], dtype=torch.float64)
+    assert float(aero_mix[v <= _LAX_SPE].sum()) == 0.0, "precondition: every Aerodactyl outspeeds a 96 Snorlax"
+    par_v = torch.floor((1024.0 * v + 2047.0) / 4096.0)
+    want = float((aero_mix * ((par_v < _LAX_SPE).double() + 0.5 * (par_v == _LAX_SPE).double())).sum())
+    assert want > 0.05, "precondition: some paralysed Aerodactyl spread drops below 96"
+    assert cells[:, 1, 0, 2].tolist() == pytest.approx([want] * 2, abs=1e-6), \
+        "para must flip the fast matchup toward us by exactly the slowed spreads' mass"
     assert float(cells[:, 1, 0, 3].abs().max()) < 1e-6, "T-Wave has no burn channel"
     assert float(cells[:, 1, 0, 4].abs().max()) < 1e-6, "para has no residual tick"
     # WoW: the believed EQ (physical) hit must shrink; the tick reads −1/8.
@@ -464,7 +521,14 @@ def test_weather_heal_folds_live_weather():
     ctx.type1_ids[:, TEAM_SIZE] = _T2I["GROUND"]              # pin STAB EQ (deterministic ~53%)
     ctx.type2_ids[:, TEAM_SIZE] = _T2I["WATER"]
     ctx.screen_feature[:, :] = 0.0
-    ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 0.05       # deep enough that +1/4 can't escape
+    # The KO is EXACT (`ko_exact`: the 16 rolls + the crit), so the HP is placed by hand against the op's
+    # believed attacker — de-timid Swampert, Atk (2·110 + 31 + 63 + 5)·1.1 = 350.9 — into neutral Snorlax
+    # (Def 2·65 + 31 + 5 = 166, max HP 2·160 + 31 + 110 = 461): STAB EQ's top roll = (42·100·350.9/166/50 + 2)·1.5
+    # = 269.4 HP = 58.4 %, its bottom roll (×0.85) 49.7 %, a crit (×2) ≥ 99 %. At 10 %: every roll KOs now; Recover
+    # (→ 60 %) leaves ONLY the crit (1/16) ⇒ Δ = −15/16; sand Synthesis (→ 35 %) leaves every roll ⇒ Δ = 0; sun
+    # Synthesis (→ 76.7 %) only the crit ⇒ −15/16. (The old 5 % put Recover at 55 %, inside the roll window:
+    # a 42 % KO chance survives under exact rolls, which the deleted mean-roll ramp read as escaped.)
+    ctx.hp_and_active[ar, ctx.our_active_idx, 0] = 0.10
     ctx.our_active_req_move_ids[:, :] = 0
     ctx.our_active_req_move_ids[:, 1] = gen3_data.moves.get("recover").num
     ctx.our_active_req_move_ids[:, 2] = gen3_data.moves.get("synthesis").num
@@ -477,13 +541,18 @@ def test_weather_heal_folds_live_weather():
     ctx.weather_feature[:, 3] = 1.0                                  # sand
     with torch.no_grad():
         sand = fe.damage_op.pairwise_recovery(ctx, logits)
-    assert float(sand[:, 2, 0, 1].min()) > -0.1, "a 1/4 sand heal must NOT reach the KO flip"
-    assert float(sand[:, 1, 0, 1].max()) < -0.9, "Recover still flips regardless of weather"
+    assert clear[:, 1, 0, 1].tolist() == pytest.approx([-15.0 / 16.0] * 2, abs=1e-5), \
+        "clear Recover flips every non-crit KO"
+    assert sand[:, 2, 0, 1].tolist() == pytest.approx([0.0] * 2, abs=1e-6), \
+        "a 1/4 sand heal must NOT reach the KO flip"
+    assert sand[:, 1, 0, 1].tolist() == pytest.approx([-15.0 / 16.0] * 2, abs=1e-5), \
+        "Recover still flips regardless of weather"
     ctx.weather_feature[:, :] = 0.0
     ctx.weather_feature[:, 1] = 1.0                                  # sun
     with torch.no_grad():
         sun = fe.damage_op.pairwise_recovery(ctx, logits)
-    assert float(sun[:, 2, 0, 1].max()) < -0.9, "the 2/3 sun heal flips the KO"
+    assert sun[:, 2, 0, 1].tolist() == pytest.approx([-15.0 / 16.0] * 2, abs=1e-5), \
+        "the 2/3 sun heal flips the KO"
 
 
 def test_baton_pass_receiver_deltas():

@@ -133,7 +133,7 @@ def test_two_half_copies_of_a_seat_or_a_mon_equal_one_whole():
                    seat_flag=dup(o.seat_flag, 1, 0), seat_phys=dup(o.seat_phys, 1, 0),
                    seat_flinch=dup(o.seat_flinch, 1, 0), pair_in=dup(o.pair_in, 2, 0),
                    pair_type_mult=dup(o.pair_type_mult, 2, 0), d_burn_k=dup(o.d_burn_k, 1, 0),
-                   d_slp_k=dup(o.d_slp_k, 1, 0))
+                   d_slp_k=dup(o.d_slp_k, 1, 0), seat_crit=dup(o.seat_crit, 1, 0))
     m = s._replace(beta=dup(s.beta, 1, 6, half=True), imm_dmg=dup(s.imm_dmg, 1, 6), chart0=dup(s.chart0, 1, 6),
                    p_type=dup(s.p_type, 1, 6), abl_block=dup(s.abl_block, 1, 6),
                    opp_named_abl=dup(s.opp_named_abl, 1, 6), opp_cond=dup(s.opp_cond, 1, 6),

@@ -11,8 +11,9 @@
   its fixed-mass presence (1 revealed): I1 (π = 0 ≡ the candidate absent) holds exactly; I2 is
   DECLARED FALSE (two half-presence copies read as ONE half threat) and pinned; on revealed-only
   inputs the weights are exactly 1 on the revealed moves (today's formula at the pinned 1).
-* **OTHER_move** is the active's E5 seat: its mass Σ_beyond π_m (no clamp) and a presence-scaled worst
-  case over its members.
+* **OTHER_move** is the active's E5 seat: its mass Σ_beyond π_m (no clamp) and the tail's α-weighted
+  EXPECTATION over its members (gen3_op_reduction_principled_v1; the presence-scaled max it read before was
+  deleted by the legacy deletion's U1).
 """
 from __future__ import annotations
 
@@ -100,7 +101,12 @@ def test_seat_presence_and_structural_liveness(builder):
     assert not bool(fm.other_live[0])
 
 
-def test_other_move_seat_is_its_mass_and_a_presence_scaled_worst_case(builder):
+def test_other_move_seat_is_its_mass_and_the_tail_expectation(builder):
+    """REWRITTEN by the legacy deletion's U1 (its subject, the presence-scaled max ``max_m π_m · BP/150 · acc``,
+    was deleted): the two "worst" cells are now the tail's α-weighted EXPECTATION, ``Σ_m u_m · BP_m/150 · acc_m``
+    on each category channel, ``u`` = the tail's presence renormalised over the tail (``p_tail`` carries the
+    mass). Re-derived here in float64 from the move group's own tail weights, normalising FIRST (the rule sums,
+    then divides)."""
     mg, logits = _group(builder, [[]], seed=3)
     fm = fixed_mass_moves(mg, logits)
     from agents.model.damage_tables import build_damage_buffers
@@ -108,9 +114,17 @@ def test_other_move_seat_is_its_mass_and_a_presence_scaled_worst_case(builder):
     bp, acc, phys = bufs["MOVE_BP"], bufs["MOVE_ACCURACY"], bufs["MOVE_PHYS"]
     c = other_move_cells(fm, bp, acc, phys)
     assert torch.allclose(c[0, 0], fm.other_mass[0]) and float(c[0, 3]) == 1.0
-    score = torch.where(fm.beyond, fm.w_all, 0.0) * bp / 150.0 * acc
-    assert torch.allclose(c[0, 1], (score * phys).amax(-1)[0])
-    assert torch.allclose(c[0, 2], (score * (1 - phys)).amax(-1)[0])
+    tail_w = torch.where(fm.beyond, fm.w_all, 0.0)[0].double()
+    assert float(tail_w.sum()) > 0.0, "precondition: an all-unrevealed active has a live tail"
+    u = tail_w / tail_w.sum()                                                    # sums to 1 over the tail
+    v = bp.double() / 150.0 * acc.double()
+    want_phys = float((u * v * phys.double()).sum())
+    want_spec = float((u * v * (1.0 - phys.double())).sum())
+    assert want_phys > 0.0 and want_spec > 0.0, "precondition: the tail holds damaging moves of both channels"
+    assert float(c[0, 1]) == pytest.approx(want_phys, rel=1e-5)
+    assert float(c[0, 2]) == pytest.approx(want_spec, rel=1e-5)
+    # an expectation, not a max: it sits at or below the tail's best member on each channel
+    assert float(c[0, 1]) <= float((v * phys.double() * (tail_w > 0)).max()) + 1e-6
 
 
 # ----------------------------------------------------------------------------------- class M (moves)

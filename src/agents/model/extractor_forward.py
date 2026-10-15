@@ -269,11 +269,11 @@ class ExtractorForward(ExtractorApi):
                              if self.damage_op is not None else None)
         else:
             _item_cb_prob = None
-        # gen3_speed_physics_v1 (`--speed-physics on` only): the same publication's P(Quick Claw) per opp slot —
-        # the op's Quick Claw belief (its exactness gate stays op-side, like CB's). Off passes nothing, and so
-        # does a format that BANS Quick Claw (gen3ou, `move_order.quick_claw_live`): no holder exists.
+        # gen3_speed_physics_v1: the same publication's P(Quick Claw) per opp slot — the op's Quick Claw belief (its
+        # exactness gate stays op-side, like CB's). A format that BANS Quick Claw (gen3ou, `move_order.quick_claw_live`)
+        # passes nothing: no holder exists.
         _op_kw: Dict[str, Any] = {}
-        if (self.damage_op is not None and self.damage_op.speed_physics
+        if (self.damage_op is not None
                 and self.damage_op.quick_claw_live and self.item_belief_head is not None):
             _op_kw["item_qc_prob"] = (torch.softmax(self.stash.item_logits, dim=-1)  # type: ignore[arg-type]
                                       [:, :, self.damage_op.qc_item_num])
@@ -414,11 +414,11 @@ class ExtractorForward(ExtractorApi):
             out_cells=out_cells, out_pko=out_pko, opp_p_ghost=ghost)
 
     def _exact_ko_operands(self, opctx: ExtractorContext, n_seats: int) -> Optional[Any]:
-        """gen3_endstate_facts_v1 (`--ko-ramp exact`): `intent_threshold.ExactKo` for a threshold on OUR active —
-        its exact max HP (the op's own `_active_defender`) and each of the ``n_seats`` seats' crit chance (the op's
-        top-K move nums; a seat past them — X5's OTHER_move — reads the base 1/16). None under `ramp`."""
+        """gen3_endstate_facts_v1 (the exact P(KO)): `intent_threshold.ExactKo` for a threshold on OUR active — its
+        exact max HP (the op's own `_active_defender`) and each of the ``n_seats`` seats' crit chance (the op's top-K
+        move nums; a seat past them — X5's OTHER_move — reads the base 1/16). None without the op."""
         op = self.damage_op
-        if op is None or not op.ko_exact:
+        if op is None:
             return None
         from agents.model.intent_threshold import ExactKo
         from agents.model.ko_exact import CRIT_P_BASE
@@ -784,25 +784,26 @@ class ExtractorForward(ExtractorApi):
             _haz = mon_hazard_features(self.damage_op, _opctx,
                                        _x5r.concrete if _x5r is not None else None)              # [B,12,2]
             role_tokens = role_tokens + self.mon_hazard_proj(_haz.to(role_tokens.dtype))
-        # gen3_static_recovery_v1 (`--switch-hazard-cost on`, `static_facts.switch_hazard_features`): each switch
+        # gen3_static_recovery_v1 (built with the op, `static_facts.switch_hazard_features`): each switch
         # target's [our side's Spikes layers / 3, its switch-in HP fraction] (the op's ONE entry rule), appended LAST to
         # the switch pointer cell below (the head's zero-init `switch_extra_proj` reads it).
         _sw_haz: Optional[torch.Tensor] = (switch_hazard_features(self.damage_op, _opctx)
-                                           if self.switch_hazard_cost == "on" else None)          # [B,6,2]
-        # gen3_static_recovery_v1 (`--eot-residual on`, `eot_residual.py`): every mon's expected END-OF-TURN HP change
+                                           if self.switch_hazard_cost else None)                  # [B,6,2]
+        # gen3_static_recovery_v1 (built with the op, `eot_residual.py`): every mon's expected END-OF-TURN HP change
         # if it is the one on the field at the end of this turn, per component, as token content (zero-init).
         if self.eot_residual_proj is not None:
             assert self.eot_residual_rule is not None
             _eot = self.eot_residual_rule(_opctx, self.damage_op,
-                                          _x5r.concrete if _x5r is not None else None)           # [B,12,EOT_DIM]
+                                          _x5r.concrete if _x5r is not None else None,
+                                          _x5r.alive if _x5r is not None else None)              # [B,12,EOT_DIM]
             role_tokens = role_tokens + self.eot_residual_proj(_eot.to(role_tokens.dtype))
-        # gen3_endstate_facts_v1 (`--status-facts exact`, `status_facts.py`): every mon's cure-availability FACTS (a
+        # gen3_endstate_facts_v1 (built with the op, `status_facts.py`): every mon's cure-availability FACTS (a
         # live cleric on its side, Natural Cure, Rest, a Lum / Chesto Berry), both sides, as token content (zero-init).
         if self.status_cure_proj is not None:
             assert self.status_cure_rule is not None
             _cure = self.status_cure_rule(_opctx, self.damage_op, self.last_move_belief_logits)   # [B,12,CURE_DIM]
             role_tokens = role_tokens + self.status_cure_proj(_cure.to(role_tokens.dtype))
-        # gen3_probe_facts_v1 (`--effective-stats on`, `static_facts.effective_stat_features`): each side's ACTIVE mon's
+        # gen3_probe_facts_v1 (built with the op, `static_facts.effective_stat_features`): each side's ACTIVE mon's
         # stage-applied stats (ours exact, theirs the believed spread) as token content (zero-init).
         if self.effective_stats_proj is not None:
             _eff = effective_stat_features(self.damage_op, _opctx, self.last_spread_belief)      # [B,12,EFF_DIM]
@@ -935,7 +936,7 @@ class ExtractorForward(ExtractorApi):
             # gen3_x5_version_break_v1 part 5: every op value this cell treats as physics — our moves' high roll
             # (a damage fraction), P(we act first), the flinch chance (probabilities) — is read PRE-gain, in every
             # speed mode: the learned `out_gain` is the projection's adapter, not physics (ONE rule, the
-            # move-resolution family's; `--speed-physics on`'s special case is gone).
+            # move-resolution family's; the speed rule's special case is gone).
             _ot = self.damage_op.last_raw_tensors if self.damage_op is not None else None
             _opko = None if _x5i is None else _x5i.out_pko
             _ready = (_x5i is not None and _pc is not None
@@ -1076,7 +1077,7 @@ class ExtractorForward(ExtractorApi):
                 gather_move_resolution_ops(self, ctx, _al, _bl, _imc_ops, _x5i))
             _mcells = torch.cat([_mcells, _mr_m], dim=2)
             _scells = torch.cat([_scells, _mr_s], dim=2)
-        # gen3_static_recovery_v1 (`--switch-hazard-cost on`): the LAST switch-cell columns, read by the pointer head's
+        # gen3_static_recovery_v1 (built with the op): the LAST switch-cell columns, read by the pointer head's
         # zero-init `switch_extra_proj` (`pointer_switch_extra_dim`), so the existing scorer's init is untouched.
         if _sw_haz is not None:
             _scells = torch.cat([_scells, _sw_haz.to(_scells.dtype)], dim=2)
