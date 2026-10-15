@@ -185,6 +185,18 @@ def test_a_load_that_never_reached_the_slots_is_caught_and_writes_no_row(load_sk
     assert load_skipped["rows"] == []
 
 
+def _cell_seed(p, o, batch=0):
+    """One batch's seed for the cell ``p`` vs ``o`` from the players' STABLE ids, order-independent exactly as the
+    default schedule key is (a swapped cell replays the SAME games from the other seat). Not ``schedule_key_of``: that
+    digests the checkpoint zips' sha256, and SB3's ``save`` stamps the zip's ``data`` entry with the save time, so
+    those bytes (hence every seed derived from them) differ on every run -- and when the perturbed nets stall most games
+    to the turn cap, a run that drew ONLY stalls made the three cells look identical (18 of 18 DRAW at turn 250, seen in
+    the 54-minute package run): the 'three cells played different games' check was a coin flip. With a stable seed the
+    games are the same every run."""
+    lo, hi = sorted([p.id, o.id])
+    return PL.cycle_seed(SEED, f"h2h:test-swapped:{lo}:{hi}", batch)
+
+
 @pytest.fixture(scope="module")
 def swapped(built, checkpoints, foreign):
     """ONE engine, driven by hand: cells (a, b) → (b, a) → (a, a) one batch each at the single-cell seeds, then a
@@ -198,24 +210,24 @@ def swapped(built, checkpoints, foreign):
         for i, (p, o) in enumerate(cells):
             if i:
                 eng.set_cell(p, o)
-            games, _st = eng.play_batch(3, PL.cycle_seed(SEED, PL.schedule_key_of(p, o), 0))
+            games, _st = eng.play_batch(3, _cell_seed(p, o))
             out["games"].append(sorted(games, key=lambda g: g["game"]))
         try:
             eng.set_cell(pa, PL.resolve_player(foreign))
         except PL.CellArchMismatch as e:
             out["refused"] = str(e)
         out["cell_after_refusal"] = (eng.player.sha256, eng.opponent.sha256)
-        games, _st = eng.play_batch(3, PL.cycle_seed(SEED, PL.schedule_key_of(paa, paa2), 0))
+        games, _st = eng.play_batch(3, _cell_seed(paa, paa2))
         out["after_refusal"] = sorted(games, key=lambda g: g["game"])
         eng.set_cell(pa, pb)
         with pytest.MonkeyPatch.context() as mp:
             mp.setattr(SlotGroup, "copy_in", lambda self, slot, sd: None)
             try:
-                eng.play_batch(3, PL.cycle_seed(SEED, PL.schedule_key_of(pa, pb), 0))
+                eng.play_batch(3, _cell_seed(pa, pb))
             except ParityFailure as e:
                 out["stale"] = e
         try:
-            eng.play_batch(3, PL.cycle_seed(SEED, PL.schedule_key_of(pa, pb), 0))
+            eng.play_batch(3, _cell_seed(pa, pb))
         except Exception as e:                                                     # noqa: BLE001 - recorded
             out["after_poison"] = e
     finally:
@@ -225,7 +237,7 @@ def swapped(built, checkpoints, foreign):
     p, o = cells[-1]
     e2 = PL.H2HEngine(p, o, COMPUTE, **QUIET)
     try:
-        games, _st = e2.play_batch(3, PL.cycle_seed(SEED, PL.schedule_key_of(p, o), 0))
+        games, _st = e2.play_batch(3, _cell_seed(p, o))
         out["fresh"] = sorted(games, key=lambda g: g["game"])
     finally:
         e2.close()

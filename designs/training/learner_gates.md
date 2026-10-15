@@ -272,7 +272,11 @@ DECLARED, deterministic rules decide (the third, CONSUMPTION, below the measurem
   `tie_identity_integration_test` flips every cleared tie on real rollout rows and requires the full masked
   log-probs bit-identical (and that flipping a still-excluded tie moves them). A NaN payload never clears.
   The `topk` sites gather many per-candidate tables, so they declare none: a tie between two distinct
-  moves stays a tie.
+  moves stays a tie. 🚨 **Since the END STATE's adoption (2026-10-12) production's op reduction is `principled`,
+  which has no argmax and no max, so the forward reaches NO payload site** (`tie_margins_test` and
+  `test_the_production_reduction_reaches_no_payload_argmax` pin it); the integration test flips the cleared ties
+  on the `--op-reduction max` surface, the only one that reaches them, and the rule is deleted with that path
+  (`designs/ops/legacy_deletion_manifest_2026-10-12.md`, lane OP).
 - **SELECTION-FREE** (`consistency.selection_free`). While every action-head scorer WEIGHT is exactly zero
   (the zero-init cold start, i.e. a fresh run's first update; one optimizer step ends it) the logits are
   the scorers' biases times the observation's exact `move_valid`, so no MARGIN site reaches log pi and
@@ -308,8 +312,11 @@ Oracle-full's live run read 4.98–8.11 % over its updates 1–11 under the rule
   - the active's move group declares nothing, so every pair of the head counts (its seats are read in order).
 
   An unreadable declaration is a `TieMarginError`. The premise is held on real rows
-  (`tie_identity_integration_test`): a seeded random permutation of every per-mon set prefix leaves the full
-  masked log-probs bit-identical, and swapping the cut pair moves them. *Why:* `rb_x5ab_fm_s1006` (fatal, at
+  (`tie_identity_integration_test`): a seeded random permutation of every per-mon set prefix moves the full
+  masked log-probs by float-sum ROUNDING at most (under the `max` reduction: bit-identical; under production's
+  `principled` reduction its alpha-weighted sums re-associate, a few ulp, measured <= 9.5e-7, the test's bar
+  `K.BEHAVIOUR_BAR / 10` = 1e-5), and swapping the cut pair moves them past the judgement bar (measured 1.5e-3
+  against 1e-4). *Why:* `rb_x5ab_fm_s1006` (fatal, at
   708dcb0a, after the identity rule) STOPPED at its update 1 on the ceiling, 0.281 (its `warn` replicate read
   0.271, then 0.03–0.10 over 151 updates; the other five fixed_mass seeds read 0.04–0.09 there). One update
   in, the move posterior is near-flat, so candidates INSIDE each mon's top six tie, and the rule counted every

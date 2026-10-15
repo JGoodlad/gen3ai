@@ -14112,3 +14112,42 @@ Owner, 2026-10-12: "PyTorch update". torch 2.8.0+cu126 has no sm_120 (Blackwell)
   pin gains the row; `play_reveal_integration_test`'s `OFF_BITS` / `OFF_OUTCOME_ALL` `OFF_BITS` / `OFF_OUTCOME_ALL` `4534fcf4…` / `9559dac1…` -> `0c534e2a…` / `71402a06…`: the test PASSES on the old table (4 passed, 30 min at nice 19) and fails on the new one, because the checkpoints' forward reads the move prior's legality table and the X5 hypothesis candidate set, which now admit the pre-evolution moves; the observation and every weight are unchanged. Order on
   landing: `sync.py --datasets learnset` -> `gen_dex_golden.py` -> `learner_golden rebuild-buffer` -> `record` under BOTH
   `gen3ai_torch28` and `gen3ai_torch28_cu128` (a changed update clears the other build's entry).
+
+## 2026-10-14 — Seven red tests on main re-pointed to the adopted end state, and two more found beside them (TESTS + COMMENTS + DOCS only; no model / config / obs / signature / `data/` change)
+
+Seven tests went red with the end state's adoption (`ed58a3ad`, 2026-10-12) and stayed red on main: `tie_margins_test` ×2,
+`tie_identity_integration_test` ×3, `recorded_version_cross_test` ×2. Each was a STALE TEST (it encoded the pre-adoption
+world); none is a code regression. No K9(b) rule, sort site or cut changed (the principled reduction simply reaches FEWER
+discrete sites), and the real end-state runs' tie share equals the pre-adoption production's. The package runs found two
+more of the same family (`consistency_test` ×2, red since the adoption as well) and one FLAKE (`play_many_integration_test`).
+
+- **The principled op reduction (now production) has no argmax**, so the two `damage_op` dominant-move PAYLOAD sites are no
+  longer reached by any production forward. `tie_margins_test` now pins the sites production DOES reach (`hypothesis_set`,
+  `op_reduction`; no `damage_op` argmax), and its undeclared-op refusal test deletes the declaration of a reached site
+  (`op_reduction` `high > 0`). `tie_identity_integration_test`: the payload-clearance test runs on the one surface that
+  reaches those sites (`--op-reduction max`, a fixture), beside a new test that the production reduction reaches none.
+- **The set-read prefix premise now holds to ROUNDING, not bit-for-bit.** Permuting a mon's first K move seats moves a
+  fp32 log pi by <= 9.5e-7 under the principled reduction (its alpha-weighted sums re-associate; bit-identical under
+  `max`) and swapping the pair across the cut moves it by 1.4e-3 - 4.9e-3, against the judgement bar 1e-4. The test asserts
+  `< K.BEHAVIOUR_BAR / 10` for the permutation and `>= K.BEHAVIOUR_BAR` for the cut.
+- **The excluded-share ceiling failure was a fixed-draw artifact.** The perturbed `oracle_species` rollout at run seed 1001
+  read 16.6 % (> the 0.15 ceiling); over run seeds 1001-1005 the production surface reads 16.6 / 1.6 / 3.3 / 3.1 / 6.8 %
+  and the pre-adoption surface 5.7 / 5.1 / 8.0 / 2.7 / 7.8 % (the same distribution: a tie at a mon's move-order cut
+  persists for a game, so ~16 games decide a 512-row share). The test's seeds move to 1002 (the three arms read 2.1 / 1.6
+  / 0.2 %). The real end-state runs (`rb_es_end2_s2001..2008`, 153 updates each) printed a mean 2.7 % (max 6.8 %).
+- **`main.h2h`'s cross test**: `--arch endstate` is an alias of production, so "end state x production" declared ONE group.
+  The cross is now the end state x the LEGACY production network (`legacy_production_args`, the closing test's own pair and
+  the `foreign` fixture's network): two groups, `move_resolution` on / off. A built-module read of the recorded version
+  (the incident's revert) still fails all three of the file's tests. `recorded_version_gate_test` gains `write_snapshot`
+  (an explicit namespace) beside `write_arm_snapshot`.
+- **The flip-judge fixture** (`consistency_test`, `FLIP_EPS`): the principled reduction makes a near-tied cut pair's other
+  resolution matter far less (the `max` reduction's ~0.02), so the fixture's 1e-3 now holds ONE isolated pair whose flip
+  moves log pi by exactly 0. The value is re-derived by a scan over the fixture's 64 real rows (`1e-2`: 7 isolated pairs,
+  one moving log pi by 1.8e-3 > 10x the bar, beside 7 excluded rows); the tests' assertions are unchanged.
+- **`play_many_integration_test` `swapped`, a FLAKE (not the adoption's)**: its battle seeds came from
+  `schedule_key_of`, the checkpoint zips' sha256, and the zips are NOT byte-reproducible (SB3's `save` stamps the `data`
+  entry with the save time), so the games re-drew on every run; with draw-heavy perturbed nets one run played 18 of 18
+  stalls (DRAW at turn 250) and 'the three cells played different games' failed. The fixture's seeds now come from the
+  players' stable ids (order-independent like the default key), reproduced bit-for-bit over two runs.
+- Docs: `designs/training/learner_gates.md` (PAYLOAD IDENTITY and CONSUMPTION paragraphs), a comment in
+  `agents/model/selection_sites.py`, and the legacy-deletion manifest's D4 / A1 / G2 rows.

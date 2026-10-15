@@ -128,6 +128,8 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
     # --- the dominant-move ARGMAX (accuracy / provenance read at the max belief-weighted high roll)
     #     gen3_behaviour_tie_identity_v1: each gathers ONE payload at its index (the move's accuracy; the
     #     move's belief weight), so a tie between two moves with bit-identical payloads is not a hazard.
+    #     Reached under `--op-reduction max` ONLY: production's `principled` reduction (since the END STATE's adoption,
+    #     2026-10-12) has no argmax, so no forward of the production surface runs these two.
     ("damage_op", "wfc.argmax(dim=-1, keepdim=True)"): Rule(
         "argmax", gate=1e-6, why="per-channel dominant move; masked when chan_max <= eps", payload=("acc_exp",)),
     ("damage_op", "wh.argmax(dim=-1, keepdim=True)"): Rule(

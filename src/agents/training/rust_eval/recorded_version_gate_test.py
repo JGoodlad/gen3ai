@@ -58,13 +58,18 @@ def arm_args(arm: str) -> Any:
 def write_arm_snapshot(dst: Any, arm: str, seed: int) -> Tuple[Any, str]:
     """``(model, zip)``: a seeded PERTURBED-fresh ``--arch <arm>`` model saved as ``dst/snapshot_<seed>.zip`` beside
     a ``model_config.json`` built as the TRAINER builds the one it saves — never through the helper under test."""
+    return write_snapshot(dst, arm_args(arm), seed)
+
+
+def write_snapshot(dst: Any, args: Any, seed: int) -> Tuple[Any, str]:
+    """``write_arm_snapshot`` for an explicit resolved training namespace ``args`` (an architecture that is no
+    ``--arch`` arm: ``main.train.production_args.legacy_production_args``, the pre-adoption production network)."""
     from agents.model.model_version import ModelVersion
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
     from agents.training.rust_eval import offline as PAR
     from main.fresh_checkpoint import build_fresh_model
 
     dst.mkdir(parents=True, exist_ok=True)
-    args = arm_args(arm)
     with PAR.declared_torch_state(1):
         model, _, pk = build_fresh_model(seed, args=args)
         perturb_(model.policy, seed=3000 + seed, scale=PERTURB_SCALE)

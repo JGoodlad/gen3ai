@@ -427,9 +427,15 @@ def test_the_warn_scan_is_a_bounded_sample_and_the_fatal_scan_reads_every_row(tm
 
 
 # ---------------------------- the FLIP-JUDGE (gen3_behaviour_tie_flip_judge_v1, 2026-10-08)
-#: The tie the flip-judge tests plant: epsilon widened to 1e-3 puts two of the fixture's real rows at ONE
-#: isolated near pair of X5's sort (the op's per-mon cut), whose other resolution moves log pi by ~0.02.
-FLIP_EPS = 1e-3
+#: The tie the flip-judge tests plant: epsilon widened to 1e-2 puts seven of the fixture's real rows at ONE isolated near
+#: pair of X5's sort (the op's per-mon cut), one of whose other resolutions moves log pi by 1.8e-3 (> 10x the bar), beside
+#: seven excluded rows the flip cannot judge (more than one near call). The value is the FIXTURE's, re-derived at the END
+#: STATE's adoption (2026-10-12): the principled op reduction (production) makes a near-tied cut pair's other resolution
+#: matter far less than the `max` reduction's ~0.02, so the earlier 1e-3 now holds ONE isolated pair whose other
+#: resolution moves log pi by exactly 0. The scan over the fixture's 64 real rows (excluded / isolated / the flip's
+#: largest |d log pi|): 2e-4: 4 / 0 / -; 1e-3: 5 / 1 / 0; 3e-3: 9 / 4 / 1e-5; 1e-2: 14 / 7 / 1.8e-3; 3e-2: 29 / 9 /
+#: 1.7e-4; 1e-1: 57 / 9 / 1.6e-3 (57 of 64 excluded breaks the fixture's 0.5 ceiling). 1e-2 is the one that works.
+FLIP_EPS = 1e-2
 
 
 def _flip_fixture(monkeypatch):
