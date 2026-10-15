@@ -324,7 +324,8 @@ def _fill(m, rows, corrupt):
     masks = rb.action_masks.reshape(n, -1)
     acts = rb.actions.reshape(n).astype(np.int64)
     m.policy.set_training_mode(False)
-    with th.no_grad():
+    from agents.model.trunk_precision import fp32_scope   # T2 SERVES fp32 whatever the learner trains with (bf16 is
+    with th.no_grad(), fp32_scope(m.policy):               # production since 2026-10-14): μ is the fp32 function
         dist = m.policy.get_distribution({k: th.as_tensor(v, device=m.device) for k, v in obs.items()},
                                          action_masks=masks)
         lp = dist.log_prob(th.as_tensor(acts)).numpy()

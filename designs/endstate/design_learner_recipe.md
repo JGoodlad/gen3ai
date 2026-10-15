@@ -97,6 +97,7 @@ and `new_lineage_2026-09-26/`):
 | 22 | opponent pool | 20 snapshots, newest weighted 1.3×; stable share 0.2; bots ≥ 10 %; PFSP off | OpenAI Five 80/20 with quality scores; AlphaStar PFSP | Keep. PFSP only over a diverse, anchored pool (L01151); the arm-C read was never done (L15610) | KEEP; ARM later |
 | 23 | eval regime | greedy vs greedy sentinels | — | Keep (L13654, L21447) | KEEP |
 | 24 | recipe defaults vs the argv | mirrored: `recipe.fresh` (N0) + `recipe.fork` (E5) (§3.22) | — | **BUILT** (K10(a)): `--arch production` applies `recipe.fresh`, `checkargs` diffs and refuses untyped drift | SAFE (BUILT) |
+| 25 | learner trunk precision (`--trunk-precision`) | **bf16** (`recipe.fresh.trunk_precision`, **ADOPTED 2026-10-14**); `fp32` is the explicit opt-out | — (a speed lever whose strength we measured ourselves) | The trunk rounds run under bf16 autocast inside R1 ONLY; T2, eval, snapshots and the K9(b) probe stay fp32, and the heads, every loss, the optimizer state and the decisions stay fp32. The strength A/B PASSED (8 × 8 at 15M, Δ̂ +1.06 pp, 90 % CI [−1.19, +3.31]; `train_ms` 54.3 s → 42.1 s, −22.5 %). A FORK keeps its parent's recorded precision (§3.22 "Left out") | KEEP (ADOPTED) |
 
 **Headline.**
 - **Changes that land as safe defaults:** a divisible rollout shape and a correct step count (4, 10);
@@ -747,6 +748,12 @@ matches its control at the SAME dose is its secondary read.
     checkpoint's `model_config.json` (the first restart used to record `arch_source: null`). This follows
     the general restart rule (`68850f27`: the surface is inherited from `model_config.json`,
     `opp_intent_coef` a recorded field from config v125) and covers only what it cannot supply.
+  - **`trunk_precision` bf16 (ADOPTED 2026-10-14).** The one `recipe.fresh` row that is not N0's: `--arch production`
+    writes `--trunk-precision bf16` like any untyped row, `checkargs` / `--dry-run` / the launcher print a `trunk` line
+    with the RESOLVED precision, and a fresh argv that leaves it untyped (resolving to fp32) is refused like any other
+    untyped drift. `--trunk-precision fp32` is the explicit opt-out (a TYPED difference, INFO). A same-run restart
+    inherits the run's recorded value (a recorded tri-state field), so an fp32 run launched before the adoption stays
+    fp32 across restarts.
   - `src/recipe_doc_gate_test.py` holds the table below and §1's live-value column to the block.
   - **The production namespace carries the recipe (closed 2026-09-30):** `main.train.production_args.
     production_args()` (re-homed from the deleted cutover harness, deletion pass U3) is the resolved namespace of a real fresh `--arch production` launch — the
@@ -796,6 +803,7 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
 | `hp_type_belief_coef` | 0.05 | `recipe.fresh` | N0 `--hp-type-belief-coef 0.05`, `model_config.json` |
 | `item_belief_coef` | 0.05 | `recipe.fresh` | N0 `cli_args.item_belief_coef`, `model_config.json` |
 | `intent_label_bot_weight` | 0.25 | `recipe.fresh` | N0 `--intent-label-bot-weight 0.25`, `model_config.json` |
+| `trunk_precision` | bf16 | `recipe.fresh` | The bf16 STRENGTH A/B (`design_bf16_strength_ab.md`; ledger 2026-10-14 MEASUREMENT (MAJOR)): `--arch endstate --trunk-precision bf16` against fp32 at one pin (`f45d0c27`), stage 2 = the 8 × 8 mirrored cross at 15M under the closing test's coded rule: Δ̂ +1.06 pp, SE 1.28, 90 % CI [−1.19, +3.31], both clauses true ⇒ PASS. NOT in N0 (which predates the flag; N0 trained fp32). Config v155, `ModelVersion.trunk_precision` |
 | `n_epochs` | 5 | `recipe.fork` | E5 `--n-epochs 5`, `dose.n_epochs` (adopted L21451 for generalist forks) |
 | `fork_lr` | 5.6e-05 | `recipe.fork` | E5 `--fork-lr 5.6e-05`, `dose.lr_now` (2 × K2's 2.8e-05: the same dose at half the epochs) |
 | `fork_lr_freeze` | true | `recipe.fork` | E5 `--fork-lr-freeze`, `dose.lr_frozen` |
@@ -804,6 +812,16 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
   - `seed`: an arm's identity, not a recipe choice.
   - `matmul_precision`: fp32 (`highest`) is the only precision. TF32 was RETIRED by the owner on 2026-10-01 (Decision record) and `--matmul-precision` is DELETED (deletion pass K2, 2026-10-02); the realized value is still recorded in `metadata.json`.
   - `adaptive_batch`: off, which is the default, and arm A1's lever.
+  - **`trunk_precision` in `recipe.fork` — deliberately NOT a fork row (decided 2026-10-14).** `recipe.fork` lists what a
+    fork CHANGES (E5's `n_epochs` and `fork_lr`); a fork INHERITS its parent's recorded precision (the general
+    flagless-resume rule: `_resolve("trunk_precision")`). So a fork of an fp32 parent stays fp32 unless it types
+    `--trunk-precision bf16`, and a fork of a bf16 parent stays bf16. Why not default forks to bf16: (1) the strength A/B
+    measured fresh runs (and bf16 seeds resumed from their own bf16 5M final), never a precision SWITCH mid-lineage — the
+    knock-in forks that ran bf16 on an fp32 parent are a mechanical read (the bf16 parity gate passed), not a strength
+    one; (2) forks of one parent are compared with one another at a matched DOSE, and a silent default that flips the
+    numerics between forks launched before and after the adoption would confound exactly that comparison; (3) opting in
+    is one typed flag, recorded in `cli_args`. The fork report still shows the production value
+    (`trunk_precision 'fp32' (inherited)  production: 'bf16'`, INFO), so an fp32 fork is visible, never silent.
   - The eval regime, opponent-pool shares and temperatures, and `obs_source`:
     their resolved defaults already equal N0's (`value_true_team` was a recorded field here until deletion pass L2 removed it).
   - The critic readout the win-prob critic (the only critic) implies (`win_prob_mode`): implied. (`value_dist_*`, PopArt and
@@ -980,3 +998,4 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-10-03 | `--critic` is DELETED; `critic` leaves `recipe.fresh` **(deletion pass P11b, batch (b))** | The win-prob critic is a constant of the trainer namespace (`src/main/train/parser/objective.py`, `parser.set_defaults`); `recipe.fresh` holds no `critic` row; the typed `--critic` is refused with its reason (`designs/deleted_flags.md`); a recorded shaped checkpoint is refused on a resume or fork (D4) and an absent record still means shaped (`CRITIC_UNRECORDED`); no `MODEL_CONFIG_VERSION` change | A hidden tolerated `--critic winprob` spelling (a flag that stays is a flag the census counts) | `designs/ops/flag_census.md` (P11b (b)); `src/main/train/retired_flags_test.py`, `src/main/critic_mode_config_test.py` |
 | 2026-10-03 | `--gamma`, `--victory-value`, `--draw-penalty` and `--terminal-indicator` are DELETED; their rows leave `recipe.fresh` (deletion pass P11b batch (c)) | They are constants of the namespace (`parser/objective.py`), `recipe.fresh` holds none of them, a typed one is refused with its reason, `check_reward_config` refuses a recorded non-production reward with no flag to re-pass, SB3 still restores a checkpoint's own gamma, no `MODEL_CONFIG_VERSION` change | Keeping gamma as a research lever (no registered experiment varies it; `winprob_critic_needs_unit_gamma` refused every value but 1.0); a tolerated production-value spelling | `designs/ops/flag_census.md` (P11b (c)), `src/main/train/objective_constants_test.py`, `src/main/reward_defaults_test.py` |
 | 2026-10-07 | `--debug` overrides the untyped rollout shape **(orchestrator brief)** | A fresh `--debug` run whose untyped update is above 4,096 rows takes `--rollout-target-samples` 2,304 (rounded up to its parse-time quantum), `--batch-size` 384 and `--n-epochs` 1, announced; a typed knob wins; the recipe surface reports the override as source `debug`; a resume is untouched | Refusing `--arch production --debug` with the fix (the brief's fallback: a smoke must work out of the box); leaving the production shape (one CPU env never fills 98,304 rows: hours, no update) | §3.22; `src/main/train/debug_shape_test.py`, `debug_shape_smoke_integration_test.py` (`--arch production --debug --steps 10000`: 5 updates, exit 0, ~6 min CPU) |
+| 2026-10-14 | The bf16 trunk is ADOPTED into the production recipe **(orchestrator; the registration's §5 rule)** | `recipe.fresh.trunk_precision` = **bf16** (`--arch production` writes `--trunk-precision bf16`; `--trunk-precision fp32` is the explicit opt-out). `recipe.fork` gets NO row: a fork inherits its parent's recorded precision (an fp32 parent's fork stays fp32 unless it types bf16). Evidence: the bf16 strength A/B PASSED, stage 2 (8 × 8 mirrored cross of the 15M finals, 64 / 64 cells × 1,000 pairs, closing test's coded rule): Δ̂ +1.0625 pp, SE 1.277, df 14, two-sided 90 % interval [−1.186, +3.311], clause a (upper > 0) and clause b (lower > −2.0) both true, near_boundary none; stage 1 (the futility screen, 4 × 4 at 5M) read CONTINUE (Δ̂ −0.122, interval [−3.551, +3.307]). Speed (REPORTED, never decided): `train_ms` 54.3 s fp32 → 42.1 s bf16 (median of the eight seeds' medians, −22.5 %). A PASS is NOT-WORSE, not BETTER (the interval includes 0) | bf16 for fresh runs only with forks defaulting to bf16 (never measured as a switch; confounds matched-dose fork comparisons); keeping bf16 as an opt-in flag (the A/B was the adoption gate and it passed; the GPU is the bottleneck, −22 % per update) | `design_bf16_strength_ab.md` §5 + Results; ledger 2026-10-14 MEASUREMENT (MAJOR); `measurements/bf16_strength_ab_2026-10-12/stage2_cross/result/verdict.json`; `recipe_surface_test`, `recipe_doc_gate_test`, `learner_golden_test` (the production golden is now the bf16 update; the fp32 opt-out is pinned beside it) |

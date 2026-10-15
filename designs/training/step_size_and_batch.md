@@ -565,6 +565,12 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
   (`max_lr` unset, no cosine, and `kl_controller`'s `target_kl` / `kl_factor` / `lr_factor`, which
   are constructor constants pinned against the callbacks), clip, entropy, self-play, `vf_coef` and every supervision dose. A key that is also a
   recorded top-level mirror field must EQUAL it.
+- 🧮 **`recipe.fresh.trunk_precision` = `bf16`** (ADOPTED 2026-10-14; the bf16 strength A/B PASSED): the one fresh row that is
+  not N0's. A tri-state flag (`--trunk-precision`, default `None`), so an UNTYPED value resolves to `fp32` and a fresh argv
+  without `--arch production` must TYPE it (or be refused as untyped drift); `--trunk-precision fp32` is the explicit
+  opt-out. `recipe.fork` has NO row for it: a fork (and a same-run restart) INHERITS the parent's recorded precision, and
+  the fork report shows `trunk_precision 'fp32' (inherited)  production: 'bf16'` as INFO. The report prints the resolved
+  value on a `trunk` line on every surface.
 - **`recipe.fork`** is what a generalist fork changes: E5 (`n_epochs` 5 at a FROZEN `fork_lr`
   5.6e-5). Never applied by `--arch` (`--fork-lr` is refused on a fresh run); a fork's argv is
   compared with it as INFO. 🚨 5 epochs at a FRESH LR was never measured — never pair them.

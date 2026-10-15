@@ -52,7 +52,7 @@ def _train_all_but(model, keep) -> None:
 
 def _learner(tmp_path):
     from agents.training import learner_golden as LG
-    m = LG.build_learner()
+    m = LG.build_learner(trunk_precision="fp32")      # the fp32 gate's judgment (the production recipe's bf16 rule has its own tests)
     LG.load_buffer_into(m)
     m.behaviour_dump_dir = str(tmp_path)
     cr.record_param_init(m)                       # the run's fresh build

@@ -15,7 +15,9 @@ report, read by every surface that launches.
 `agents.training.baselines.production_config()`, so no arch consumer ever sees it):
 
   * ``recipe.fresh`` — N0's MEASURED fresh recipe (`models/ai_v14_01_base`, the lineage's fresh
-    launch), every knob it launched with, including its reward values, plus
+    launch), every knob it launched with, including its reward values, plus the one knob ADOPTED since:
+    ``trunk_precision`` ``"bf16"`` (the bf16 strength A/B PASSED, 2026-10-14; ``--trunk-precision fp32``
+    is the explicit opt-out), plus
     ``kl_controller``: the controller constants it ran with (not flags — pinned against the
     callbacks' own defaults by `recipe_surface_test`). A key that is ALSO a recorded top-level
     mirror field must EQUAL it (`production_recipe` refuses otherwise): one truth, two readers.
@@ -154,6 +156,11 @@ FRESH_ROWS: Tuple[RecipeRow, ...] = (
     RecipeRow("hp_type_belief_coef", "--hp-type-belief-coef", 0.05, "§1 row 16"),
     RecipeRow("item_belief_coef", "--item-belief-coef", 0.05, "§1 row 16"),
     RecipeRow("intent_label_bot_weight", "--intent-label-bot-weight", 1.0, "§1 row 16"),
+    # The learner's trunk-round compute precision (gen3_trunk_precision_flag_v1, config v155): ADOPTED into the
+    # fresh recipe 2026-10-14 (the bf16 strength A/B PASSED). A tri-state flag (`default=None`), so an UNTYPED
+    # value resolves to "fp32" (`config.resolve_config`) and a flagless FORK / restart inherits its parent's
+    # recorded value (`_resolve`) — recipe.fork deliberately carries no row for it (§3.22 "Left out").
+    RecipeRow("trunk_precision", "--trunk-precision", "fp32", "§1 row 25 — bf16 trunk rounds (A/B PASS 2026-10-14)"),
 )
 #: Every row the fresh recipe declares — ``recipe.sizing`` first, then ``recipe.fresh``.
 ROWS: Tuple[RecipeRow, ...] = SIZING_ROWS + FRESH_ROWS
@@ -437,6 +444,9 @@ class RecipeReport(NamedTuple):
     #: "fresh" or "fork" — which recipe the argv was compared with.
     kind: str = FRESH_KEY
     restart_inherited: Tuple[Tuple[str, Any, str], ...] = ()
+    #: The trunk-round precision this argv RESOLVES to (``"bf16"`` / ``"fp32"``): printed on every surface, so the
+    #: adopted bf16 default is visible in the report and not only as a refusal when it is missing.
+    trunk_precision: Optional[str] = None
 
     @property
     def silent(self) -> Tuple[RecipeDiff, ...]:
@@ -511,7 +521,8 @@ def report(ns: Any, *, fresh: bool, restart: bool = False, allowed: bool = False
     return RecipeReport(
         diffs=tuple(diff_against_production(ns, mirror, kind=kind, inherited=inherited)),
         fresh=bool(fresh), allowed=bool(allowed), umbrella=umbrella, source_tag=source_tag(),
-        advisory=bool(advisory), kind=kind, restart_inherited=restored)
+        advisory=bool(advisory), kind=kind, restart_inherited=restored,
+        trunk_precision=str(_resolved(_ROW["trunk_precision"], ns, _parser_defaults())))
 
 
 def report_for_child_argv(child_args: Sequence[str], *, advisory: bool = False) -> Optional[RecipeReport]:
@@ -537,6 +548,16 @@ def report_lines(rep: RecipeReport) -> List[str]:
                       "verdict PENDING (N* not set: the pre-sizing N = 48 shape)"))
     except Exception:                                # noqa: BLE001 — a report line never breaks a launch
         pass
+    if rep.trunk_precision is not None:
+        if rep.trunk_precision == "bf16":
+            why = ("the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay "
+                   "fp32); `--trunk-precision fp32` is the explicit opt-out")
+        elif rep.fresh:
+            why = "the learner's trunk rounds run in fp32 — NOT the production recipe (bf16); a TYPED fp32 is the opt-out"
+        else:
+            why = ("the learner's trunk rounds run in fp32 — a fork / restart KEEPS its parent's recorded "
+                   "precision; type `--trunk-precision bf16` to train it at the production precision")
+        out.append(f"  trunk       : {rep.trunk_precision} — {why}")
     if rep.restart_inherited:
         out.append("  ♻️  same-run RESTART of an --arch production run (--arch stripped): "
                    "resolved from the run's own record — "

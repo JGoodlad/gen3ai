@@ -53,12 +53,16 @@ def test_arch_debug_smoke_reaches_an_update_and_exits_0(tmp_path, run_archive, a
     updates = [int(m) for m in re.findall(r"\|\s+n_updates\s+\|\s+(\d+)", text)]
     assert updates and max(updates) >= 1, text[-3000:]
     assert "Training complete." in text
+    # the bf16 trunk is the production RECIPE (2026-10-14): `--arch <umbrella>` applied it, the trainer announced it
+    # and the run recorded it (the CPU path runs the bf16 autocast rounds: this box's CPU bf16 update is as fast as fp32)
+    assert "[TRUNK PRECISION] bf16" in text, text[-3000:]
+    import json
+    cfgs = sorted(run_archive.rglob("model_config.json"))
+    assert len(cfgs) == 1, cfgs
+    rec = json.loads(cfgs[0].read_text())
+    assert rec.get("trunk_precision") == "bf16", rec.get("trunk_precision")
     if arch != "production":
-        import json
         from main.train.arch_arms import arm_overlay
-        cfgs = sorted(run_archive.rglob("model_config.json"))
-        assert len(cfgs) == 1, cfgs
-        rec = json.loads(cfgs[0].read_text())
         for key, value in arm_overlay(arch).items():
             assert rec.get(key) == value, (key, rec.get(key), value)
         assert str(rec.get("arch_source", "")).startswith(f"{arch}@"), rec.get("arch_source")

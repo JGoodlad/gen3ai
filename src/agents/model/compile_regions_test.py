@@ -1,6 +1,7 @@
 """K8 — the DECLARED REGIONS, as the routine compile INVENTORY test (`gen3_declared_regions_v1`).
 
-The production-surface learner (the K9 golden's), CPU, torch 2.8, dynamo's `eager` backend (graphs,
+The production-surface learner (the K9 golden's) at ``trunk_precision="fp32"`` (the fp32 gate's bars and teeth; the
+production recipe's bf16 R1 is judged by the bf16 rule, `compile_regions_bf16_test`), CPU, torch 2.8, dynamo's `eager` backend (graphs,
 breaks, guards and recompiles are dynamo's — independent of the backend; the CUDA Inductor compile is
 the GPU tier's and the startup gate's): install R1 `fullgraph=True`, gate it against eager,
 prewarm the declared signature, LOCK, then run two REAL updates (every fold step, the eager tail, the
@@ -31,7 +32,7 @@ def learner():
     from agents.training import learner_golden as LG
     cc._reset_control_for_tests()
     torch._dynamo.reset()
-    model = LG.build_learner()
+    model = LG.build_learner(trunk_precision="fp32")    # these tests are the fp32 GATE's teeth; the bf16 rule is compile_regions_bf16_test's
     LG.load_buffer_into(model)
     try:
         yield model
@@ -193,7 +194,7 @@ def _fresh_learner(monkeypatch):
     import agents.model.parity_probe as pp
     from agents.training import learner_golden as LG
     monkeypatch.setattr(pp, "perturb_", lambda *a, **k: None)
-    model = LG.build_learner()
+    model = LG.build_learner(trunk_precision="fp32")
     monkeypatch.undo()
     LG.load_buffer_into(model)
     return model

@@ -120,7 +120,7 @@
 | `--ent-coef` | 0.02 | 264 / 34 | `--arch production`: `recipe.fresh.ent_coef` = `0.05` | **KEEP** |
 | `--policy-gae-lambda` | — | 7 / 7 | `--arch production`: `recipe.fresh.policy_gae_lambda` = `0.8` | **KEEP** |
 | `--diagnostics-every` | — | 0 / 0 | the documented telemetry cadence (`designs/training/`, `training_runbook.md`) | **KEEP** |
-| `--trunk-precision` | — | 0 / 0 | T25 perf lever A, BUILT and NOT ADOPTED: the learner's trunk rounds in bf16 inside R1 (`designs/training/compile_flags.md` "T25 perf levers on R1"; its strength A/B is `perf_phase_2026-10-10/PLAN.md` §2d) | **KEEP** |
+| `--trunk-precision` | — | — | `--arch production`: `recipe.fresh.trunk_precision` = `bf16` (ADOPTED 2026-10-14, the bf16 strength A/B PASSED; `designs/endstate/design_learner_recipe.md` §3.22); `--trunk-precision fp32` is the explicit opt-out; a fork inherits its parent's recorded value (`designs/training/compile_flags.md` "T25 perf levers on R1") | **KEEP** |
 | `--device-batch` | — | 0 / 0 | the GPU-memory design's batch-delivery mode (`resident` / `staged` / `host`; `designs/endstate/`) | **KEEP** |
 | `--vf-coef` | 0.5 | 262 / 34 | `--arch production`: `production_config.json` `vf_coef` = `0.5`; `--arch production`: `recipe.fresh.vf_coef` = `0.5` | **KEEP** |
 

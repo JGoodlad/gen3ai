@@ -298,7 +298,12 @@ def _behaviour_probe_setup(model: Any, buf: Any, dump_dir: str) -> None:
     masks = th.as_tensor(buf.action_masks.reshape(rows, -1)[:b]).to(model.device)
     was = pol.training
     pol.set_training_mode(True)
-    with th.no_grad():
+    # The rollout is served at fp32 whatever the learner TRAINS with (T2 / `trunk_precision`, design (b)), so the
+    # stored μ is the fp32 function: under a bf16 learner (the production recipe since 2026-10-14) the live policy's
+    # own forward would differ from the K9(b) probe's fp32 read by bf16's rounding (0.0279 on the A/B's first EB
+    # leg) and the dry update would print a spurious BEHAVIOUR-POLICY MISMATCH.
+    from agents.model.trunk_precision import fp32_scope
+    with th.no_grad(), fp32_scope(pol):
         _v, logp, _e = pol.evaluate_actions(flat_obs, acts, action_masks=masks)
     pol.set_training_mode(was)
     lp = logp.detach().float().cpu().numpy()

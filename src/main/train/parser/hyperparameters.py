@@ -167,9 +167,13 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "pointer head's log-softmax, the value, the losses and the optimizer state stay "
                              "fp32). T2, eval, snapshots and the K9(b) behaviour probe stay fp32. The compiled "
                              "learner is gated by the bf16 parity rule (designs/training/compile_flags.md). "
-                             "MEASURED on the end state: ~-20%% per 1-epoch update call; NOT ADOPTED, it "
-                             "needs its own strength A/B. UNSET resolves to fp32 on a fresh run; recorded in "
-                             "model_config.json and INHERITED on a flagless resume.")
+                             "MEASURED on the end state: ~-22%% per update (train_ms 54.3 s fp32 -> 42.1 s bf16). "
+                             "ADOPTED into the production recipe (recipe.fresh, 2026-10-14: the strength A/B "
+                             "PASSED, 8x8 at 15M, delta +1.06 pp, 90%% CI [-1.19, +3.31]): --arch production "
+                             "applies bf16, and a fresh argv that leaves it UNSET resolves to fp32, which the "
+                             "recipe surface REFUSES unless typed (--trunk-precision fp32 is the explicit "
+                             "opt-out). Recorded in model_config.json and INHERITED on a flagless fork or "
+                             "resume (a fork of an fp32 parent stays fp32 unless it types bf16).")
     parser.add_argument("--device-batch", "--device_batch", dest="device_batch",
                         choices=("resident", "staged", "host"), default=None,
                         help="How the update's micro-batches reach the learner's CUDA device "

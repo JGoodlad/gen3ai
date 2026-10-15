@@ -21,7 +21,10 @@ module-level class, so `copy.deepcopy`, pickling and `isinstance` behave exactly
 `state_dict` is unchanged, and at ``"fp32"`` (the default, and the restore) the module is again exactly its base
 class — the production graph is the same code object, byte for byte.
 
-THE RUN FLAG (`--trunk-precision {fp32,bf16}`, `gen3_trunk_precision_flag_v1`, config v155; default fp32). It sets
+THE RUN FLAG (`--trunk-precision {fp32,bf16}`, `gen3_trunk_precision_flag_v1`, config v155). The flag's own default is
+fp32 (an UNSET one resolves to fp32), but bf16 is the PRODUCTION RECIPE since 2026-10-14 (`designs/production_config.json`
+`recipe.fresh.trunk_precision`: `--arch production` writes it; `--trunk-precision fp32` is the explicit opt-out; a flagless
+fork or restart inherits its parent's recorded value). It sets
 the LEARNER's live policy only (`apply_run_precision`, from `apply_training_hparams`, before the compile installs R1),
 so the training micro-step R1 — its forward, the backward through it, every probe that differentiates R1's
 outputs — runs the bf16 rounds. Everything that must agree with the ROLLOUT stays fp32 (design (b),
@@ -36,7 +39,8 @@ outputs — runs the bf16 rounds. Everything that must agree with the ROLLOUT st
 
 What a bf16 run gives up is measured, not assumed: PPO's epoch-0 ratio reads the bf16 learner against the fp32
 behaviour (|Δ log π| p50 3e-5 to 5e-3 by state, clip fraction 0, CPU: `k9_bf16_2026-10-10/`), and the gradient carries bf16's
-rounding — which is why adopting it needs its own strength A/B (PLAN.md §2d).
+rounding — which is why adopting it needed its own strength A/B (PLAN.md §2d; PASSED 2026-10-14,
+`designs/endstate/design_bf16_strength_ab.md`: 8 × 8 at 15M, Δ̂ +1.06 pp, 90 % interval [-1.19, +3.31]).
 """
 from __future__ import annotations
 

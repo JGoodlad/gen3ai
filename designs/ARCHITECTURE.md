@@ -1962,9 +1962,20 @@ because a frozen forward never reads the reward.
 
 The Rust bridge and the Rust env core (the only transport and the only core since deletion pass U3 deleted the Python env core; their flags `--use-bridge` / `--env-core` were deleted, P11b, so there is nothing to re-pass; `designs/production_config.json` `recipe.sizing` holds the sizes, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch a python-era checkpoint (produced on `python`, or before the core was stamped) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned; deletion pass D4)) · `--compile-trainer` (ON by default for cuda) · `--grad-accum-steps` at whatever `--batch-size` the run
 uses · `--grad-checkpointing`. **Matmul precision is not a knob: fp32 `highest` (full
-FP32, no TF32 — PyTorch's default) is the only precision** (TF32 was retired and `--matmul-precision` deleted,
+FP32, no TF32 — PyTorch's default) is the only matmul precision** (TF32 was retired and `--matmul-precision` deleted,
 deletion pass K2); `metadata.json` records the realized value as provenance, every parity gate refuses any
-other, and a run that recorded `high` resumes pinned or not at all. **The CUDA learner
+other, and a run that recorded `high` resumes pinned or not at all. **The one reduced-precision region is the LEARNER's
+trunk rounds: `--trunk-precision bf16` is the production RECIPE** (`designs/production_config.json`
+`recipe.fresh.trunk_precision`, adopted 2026-10-14; `agents/model/trunk_precision.py`, `ModelVersion.trunk_precision`,
+config v155, recorded and inherited by a flagless fork / resume, never compared by `check_compatible`).
+It runs only the trunk rounds (the post-LN `BiasedEncoderLayer`s and the pre-LN `IdentityInitRound`s) under bf16 autocast
+inside the learner's compiled micro-step R1, returning fp32; the weights, the embeddings, the damage op and every head, the
+pointer head's masked log-softmax, the value, every loss and the optimizer state stay fp32, and the rollout (T2), the eval
+core, every snapshot and the K9(b) behaviour probe run the fp32 function. `--trunk-precision fp32` is the explicit
+opt-out, and a fork keeps its parent's recorded precision. Evidence: the strength A/B (8 seeds × 15M per arm, the 8 × 8
+mirrored cross, `measurements/bf16_strength_ab_2026-10-12/stage2_cross/result/verdict.json`) read Δ̂ +1.06 pp, 90 %
+interval [−1.19, +3.31] (not worse; not shown better), and the TensorBoard `train_ms` fell from 54.3 s to 42.1 s per update
+(median of the eight seeds' medians per arm). **The CUDA learner
 compile is ONE DECLARED REGION** — R1, the micro-step (`evaluate_actions` + the fold), `fullgraph=True`
 at its one declared signature, `batch_size` rows (`agents/model/compile_regions.py`,
 `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"; the rollout forward is NOT a

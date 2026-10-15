@@ -11,7 +11,13 @@ Code: `src/agents/training/learner_golden.py`, `src/agents/training/instrumented
 **What is pinned.** A production-surface learner REBUILT from a fixed seed (`testkit.fresh_model` —
 the production policy kwargs, seed 0, a seeded perturbation so the pointer head is not exactly uniform;
 then `main.train.model_build.apply_training_hparams` with `production_args()`, exactly what a launch
-applies) runs ONE eager fp32 `InstrumentedMaskablePPO.train()` on a committed buffer:
+applies) runs ONE eager `InstrumentedMaskablePPO.train()` on a committed buffer. 🚨 **At the PRODUCTION precision**
+(2026-10-14: `production_args()` carries `recipe.fresh.trunk_precision` bf16, so the golden's trunk rounds run under
+bf16 autocast on the CPU — the heads, the losses and the optimizer stay fp32); the `--trunk-precision fp32` update is
+pinned BESIDE it as each entry's `fp32_opt_out` block (`check_fp32`; its hashes are the ones the golden pinned while fp32
+was production, byte-identical across the adoption), and `build_learner(trunk_precision="fp32")` builds that learner.
+The fp64 reference and the §6.4 coverage read stay on the fp32 learner (they judge the fp32 ARITHMETIC; bf16's distance
+from fp32 is the bf16 parity rule's, `compile_flags.md`):
 
 | input | pinned as |
 |---|---|
@@ -28,7 +34,7 @@ scale, calibration) are NOT compared — a telemetry-only change must not move t
 that reaches the weights moves the parameter hash anyway. Rounded values were rejected: with 3M values
 some always sit on a rounding boundary, so rounding buys no portability and loses teeth.
 
-**Determinism and the torch key.** CPU, eager, fp32, `torch.set_num_threads(1)` for the BUILD and the
+**Determinism and the torch key.** CPU, eager, `torch.set_num_threads(1)` for the BUILD and the
 update (a CPU reduction order can depend on the thread count), numpy + torch seeded before `train()`.
 🚨 **The INIT depends on the thread count too, so `build_learner` pins one thread ITSELF** (F-X5-4, fixed
 2026-10-03): the policy's `_build` (SB3's ortho-init, kept in order) re-initialises every Linear with `orthogonal_`, a LAPACK QR whose blocked

@@ -100,7 +100,7 @@ def test_the_buffer_covers_every_x5_case_design_6_4():
 # ------------------------------------------------------------------------------------------- fp64
 def test_the_fp32_micro_step_agrees_with_fp64_within_the_declared_tolerances_and_reproduces():
     entry = L.entry()
-    ref = F64.reference(L.build_learner(), L.BUFFER_PATH)
+    ref = F64.reference(L.build_learner(trunk_precision="fp32"), L.BUFFER_PATH)
     assert F64.violations(ref) == [], F64.violations(ref)
     assert ref["grads_absent"] == [] and len(ref["grads"]) == len(F64.KEY_GRADS)
     rec = entry["fp64_reference"]
@@ -124,7 +124,7 @@ def test_the_fp64_reference_has_teeth_an_fp32_only_defect_fails_it(monkeypatch):
         return orig(logits, target, mask, margin)
 
     monkeypatch.setattr(MS, "win_prob_terms", fp32_only)
-    bad = F64.violations(F64.reference(L.build_learner(), L.BUFFER_PATH))
+    bad = F64.violations(F64.reference(L.build_learner(trunk_precision="fp32"), L.BUFFER_PATH))
     assert any(v.startswith("term win_prob") for v in bad), bad
 
 

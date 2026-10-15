@@ -80,11 +80,15 @@ def test_apply_training_hparams_sets_the_live_rounds_and_a_namespace_without_the
     assert 'apply_run_precision(model, getattr(args, "trunk_precision", None))' in src
 
 
-def test_the_learner_golden_builds_fp32():
+def test_the_learner_golden_builds_the_production_precision_and_the_override_builds_the_opt_out():
+    """The bf16 ADOPTION (2026-10-14): `production_args()` carries `recipe.fresh.trunk_precision`, so the golden's learner
+    is bf16 (it was fp32 while fp32 was production); `build_learner(trunk_precision="fp32")` builds the opt-out."""
     from agents.training import learner_golden as LG
     model = LG.build_learner()
-    assert getattr(model, "trunk_precision", "fp32") == "fp32"
-    assert TP.trunk_precision_of(model.policy) == "fp32"
+    assert getattr(model, "trunk_precision", "fp32") == "bf16"
+    assert TP.trunk_precision_of(model.policy) == "bf16"
+    opt_out = LG.build_learner(trunk_precision="fp32")
+    assert opt_out.trunk_precision == "fp32" and TP.trunk_precision_of(opt_out.policy) == "fp32"
 
 
 def test_fp32_scope_restores_EXACTLY_the_classes_it_found_also_on_an_exception():

@@ -143,7 +143,8 @@ def test_run_level_record_keys_are_not_a_key_set_delta_but_other_run_only_keys_a
     in the mirror, so they are not drift — but ONLY those: any other run-only key still fails without a declared
     migration, and a record key the mirror DOES carry is still value-compared."""
     b = _fake({}, mirror_version=None)
-    run = {"arch_source": "endstate@x", "policy_gae_lambda": 0.8, "fork_fraction": 0.0, "trunk_layers": 3}
+    run = {"arch_source": "endstate@x", "policy_gae_lambda": 0.8, "fork_fraction": 0.0, "trunk_layers": 3,
+           "trunk_precision": "bf16"}       # a v155+ run (the bf16 recipe, 2026-10-14) records it; the mirror cannot
     mirror = {"trunk_layers": 3}
     assert baselines.compare_production(run, mirror, b) == []
     msgs = baselines.compare_production({**run, "token_encoding": "static"}, mirror, b)

@@ -786,10 +786,10 @@
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[production]": {
    "status": "pass",
-   "commit": "f086988433aacd07b4b3cbec5b0451215a57ce6c",
-   "at": "2026-10-10T01:09:33Z",
-   "duration_s": 712.08,
-   "contention": 1.07,
+   "commit": "89d258af69a701821775947391e05e0b5c5e3ec7",
+   "at": "2026-10-15T02:58:55Z",
+   "duration_s": 1318.61,
+   "contention": 2.96,
    "detail": ""
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[static_recovery]": {
@@ -897,5 +897,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-13T01:13:11Z"
+ "last_written": "2026-10-15T02:58:55Z"
 }

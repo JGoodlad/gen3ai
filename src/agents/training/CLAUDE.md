@@ -36,7 +36,7 @@ poke-env are DELETED (T27 P6): every fold, label, reward and trace record is the
 | a SUPPLY GUARD (`--supply-starve-cycles`, `FATAL_SUPPLY`) | `designs/training/supply_guards.md` |
 | the FORK ARM (`--fork-fraction`, declared, OFF) | `designs/training/forks.md` |
 | the RUST COLLECTOR, the env core, the observation source, the keyed draw, cadences | `designs/training/rust_collector.md` |
-| `--compile-trainer`, the compile regions / sentinel / canary / cache, fp32 precision | `designs/training/compile_flags.md` |
+| `--compile-trainer`, the compile regions / sentinel / canary / cache, fp32 matmul precision, `--trunk-precision` | `designs/training/compile_flags.md` |
 | `stats.py`, `main.policy_drift` | `designs/training/offline_meters.md` |
 | the stall-tail harvest / head-repair pipeline (offline) | `designs/training/stall_tail_harvest.md` |
 | the counterfactual stack, the cf audit, the offline materializer — all DELETED (history only) | `designs/training/cf_grounding.md`; search-as-teacher's tombstone is `designs/training/search_teacher.md` |
@@ -226,12 +226,16 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   OVERWRITE a replay's outputs at the next one: **a new `autograd.grad` / `retain_graph` consumer of R1's graph joins
   `micro_retains_graph`, and nothing reads R1's outputs or stashes across micro-steps without a copy**
   (`r1_graphed_route_test.py`'s stand-in raises on the first). Detail: `designs/training/compile_flags.md` "Lever C".
-- 🚨 **`--trunk-precision bf16` (BUILT, NOT ADOPTED; config v155) puts bf16 in R1 ONLY.** T2, eval, snapshots and
-  the K9(b) probe stay fp32 (`trunk_precision.fp32_scope`; T2 slots via `slots.served_replica`): a new forward of the
-  LIVE learner policy that must agree with the rollout runs under that scope. The compiled bf16 R1 is judged by the
-  bf16 PARITY RULE (DRIFT vs the fp32 eager reference + the ENVELOPE), its bars DERIVED from committed GPU reads
-  (`compile_regions_bf16_test` re-derives them). bf16 moves the micro-batch gradient 1–18 % from fp32's: adoption
-  needs its strength A/B. Detail: `designs/training/compile_flags.md` "T25 perf levers on R1".
+- 🚨 **`--trunk-precision bf16` is the PRODUCTION recipe (ADOPTED 2026-10-14, the strength A/B PASSED; config v155) and
+  puts bf16 in R1 ONLY.** T2, eval, snapshots and the K9(b) probe stay fp32 (`trunk_precision.fp32_scope`; T2 slots via
+  `slots.served_replica`): a new forward of the LIVE learner policy that must agree with the rollout runs under that
+  scope — a test or tool that computes the *behaviour* log-probs from the learner's own policy (`update_fit`'s fixture,
+  `learner_gates_test._fill`) wraps it in `fp32_scope`, or a bf16 learner reads a spurious K9(b) mismatch. The compiled
+  bf16 R1 is judged by the bf16 PARITY RULE (DRIFT vs the fp32 eager reference + the ENVELOPE), its bars DERIVED from
+  committed GPU reads (`compile_regions_bf16_test` re-derives them). `--arch production` writes bf16;
+  `--trunk-precision fp32` is the explicit opt-out; a FORK or restart INHERITS its parent's recorded precision (an fp32
+  parent's fork stays fp32 unless it types bf16). The K9 learner golden is the bf16 update and pins the fp32 opt-out
+  beside it (`fp32_opt_out`). Detail: `designs/training/compile_flags.md` "T25 perf levers on R1".
 
 ## The critic, the value side and the auxiliaries
 
@@ -273,9 +277,9 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
 
 ## The recipe, step size and THE DOSE (detail: `designs/training/step_size_and_batch.md`)
 
-- **`--arch production`** writes every `recipe.fresh` knob (`designs/production_config.json`) the argv did not TYPE;
-  a fresh argv differing on an UNTYPED knob is refused (`--allow-nonproduction-recipe` consents). `recipe.fork` (E5) is
-  never applied by `--arch`. 🚨 **A same-run RESTART strips `--arch`** and resolves each untyped knob by exactly one
+- **`--arch production`** writes every `recipe.fresh` knob (`designs/production_config.json`) the argv did not TYPE
+  (incl. `trunk_precision` bf16); a fresh argv differing on an UNTYPED knob is refused (`--allow-nonproduction-recipe`
+  consents). `recipe.fork` (E5) is never applied by `--arch`. 🚨 **A same-run RESTART strips `--arch`** and resolves each untyped knob by exactly one
   route; a missing value REFUSES (`RecipeRestartError`), never a parser default. Values: `src/recipe_doc_gate_test.py`
   holds `designs/endstate/design_learner_recipe.md` §3.22 to the block.
 - 🚨 **`--lr`, `--batch-size`, `--n-steps` are INERT on a resume**; `--fork-lr` pins a genuine fork's LR. **A FORK

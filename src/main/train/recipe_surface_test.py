@@ -355,3 +355,57 @@ def test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recip
     # a recorded field is the resume's own inheritance (cutover-prep's v125 route), never ours:
     assert "opp_intent_coef=" not in out and "critic=" not in out
     assert restarted.opp_intent_coef == 0.05
+
+
+# ------------------------------------------------------------ the bf16 trunk (ADOPTED 2026-10-14)
+def test_arch_production_applies_the_bf16_trunk_and_a_typed_fp32_is_the_opt_out():
+    """The bf16 strength A/B PASSED, so `recipe.fresh.trunk_precision` is `bf16`: `--arch production` writes it,
+    a typed `--trunk-precision fp32` wins (and is recorded as TYPED), and with no umbrella the flag stays unset
+    (it resolves to fp32 — the recipe surface is what refuses that on a fresh run)."""
+    assert rs.production_recipe()["trunk_precision"] == "bf16"
+    ns = _desugared(["--arch", "production"])
+    assert ns.trunk_precision == "bf16" and "trunk_precision" not in rs.typed_dests(ns)
+    opt_out = _desugared(["--arch", "production", "--trunk-precision", "fp32"])
+    assert opt_out.trunk_precision == "fp32" and "trunk_precision" in rs.typed_dests(opt_out)
+    assert _desugared([]).trunk_precision is None
+
+
+def test_the_report_prints_the_resolved_trunk_precision_and_refuses_it_untyped():
+    clean = _check(["--arch", "production"])["recipe"]
+    assert clean.trunk_precision == "bf16" and not clean.diffs and not clean.refuses
+    assert any(line.strip().startswith("trunk       : bf16") for line in rs.report_lines(clean))
+    typed = _check(["--arch", "production", "--trunk-precision", "fp32"])["recipe"]
+    assert [(d.dest, d.source, d.resolved, d.production) for d in typed.diffs] \
+        == [("trunk_precision", "argv", "fp32", "bf16")] and not typed.refuses
+    assert typed.trunk_precision == "fp32"
+    bare = _check(["--allow-nonproduction-arch"])["recipe"]
+    assert "trunk_precision" in {d.dest for d in bare.silent} and bare.refuses
+    assert any("--trunk-precision" in line for line in rs.report_lines(bare))
+
+
+def test_a_fork_keeps_its_parents_precision_and_the_report_says_so():
+    """DECIDED 2026-10-14: `recipe.fork` carries no precision row — a fork INHERITS (the A/B measured fresh runs, not a
+    mid-lineage switch). An fp32 parent's fork therefore reads `fp32 (inherited)` against production's bf16: INFO only."""
+    assert "trunk_precision" not in rs.recipe_blocks()[1]
+    assert "trunk_precision" in {r.dest for r in rs.FRESH_ROWS} and "trunk_precision" not in rs.FORK_OVERRIDES
+    ns = build_parser().parse_args(["--steps", "1"])
+    ns.trunk_precision = "fp32"                      # what `_resolve` fills from an fp32 parent's model_config.json
+    inherited = frozenset({"trunk_precision"})
+    diffs = {d.dest: d for d in rs.diff_against_production(ns, kind="fork", inherited=inherited)}
+    assert diffs["trunk_precision"].source == "inherited" and diffs["trunk_precision"].production == "bf16"
+    rep = rs.report(ns, fresh=False, inherited=inherited)
+    assert rep.kind == "fork" and not rep.refuses and rep.trunk_precision == "fp32"
+    assert any("KEEPS its parent's recorded precision" in line for line in rs.report_lines(rep))
+    ns.trunk_precision = "bf16"                      # a bf16 parent's fork matches production: no diff at all
+    assert "trunk_precision" not in {d.dest for d in rs.diff_against_production(ns, kind="fork")}
+
+
+def test_a_same_run_restart_leaves_the_precision_to_the_resume_s_own_inheritance(tmp_path):
+    """`trunk_precision` is a recorded tri-state field (route `resume`), so a restart never re-applies the recipe's bf16
+    over a pre-adoption fp32 run: `_resolve` inherits the recorded value."""
+    p = build_parser()
+    assert rs.restart_route("trunk_precision", p.get_default("trunk_precision"), rs._model_version_fields()) == "resume"
+    run = _run(tmp_path, "launcher --steps 9 --arch production --run-name x", _LAUNCH_CLI)
+    ns = _restart_ns(run)
+    got = {d for d, _v, _s in rs.inherit_on_restart(ns, str(run), _SAVED)}
+    assert "trunk_precision" not in got and ns.trunk_precision is None

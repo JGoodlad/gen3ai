@@ -221,7 +221,9 @@ def production() -> Tuple[Any, Dict[str, th.Tensor], th.Tensor, th.Tensor]:
     from agents.training import learner_golden as LG
 
     th.manual_seed(0)
-    model = LG.build_learner()
+    # the SERVED function: the selection sites are K9(b)'s, and T2 / the probe run the fp32 forward whatever the
+    # learner trains with (the production recipe's bf16 trunk rounds would add `trunk_precision`'s casts to the ops)
+    model = LG.build_learner(trunk_precision="fp32")
     LG.load_buffer_into(model)
     rb = model.rollout_buffer
     obs = obs_as_tensor({k: v.reshape((-1,) + v.shape[2:]) for k, v in rb.observations.items()}, "cpu")

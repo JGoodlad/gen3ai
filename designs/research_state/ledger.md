@@ -24882,3 +24882,78 @@ reproduces window E's flag-path read (53.21 → 41.17 s, −22.6 %, ledger 2026-
    golden is byte-identical across the two builds under bf16 (re-recorded with the adoption), the GPU kernels are not compared.
 
 Tag: **MEASUREMENT (MAJOR) · bf16 STRENGTH A/B · stage 1 CONTINUE (Δ̂ −0.12, 90 % [−3.55, +3.31]) · stage 2 PASS (Δ̂ +1.06, 90 % [−1.19, +3.31]; upper > 0, lower > −2.0) · bf16 ADOPTED by the registered rule (§5; its own entry) · train_ms −22.5 % · 0 crashes** · design: [`design_bf16_strength_ab.md`](../endstate/design_bf16_strength_ab.md) · [`bf16_strength_ab_2026-10-12/`](measurements/bf16_strength_ab_2026-10-12/)
+
+### 2026-10-14 · BUILT (MAJOR) · **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `"bf16"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR)); `--arch production` writes `--trunk-precision bf16`, `--trunk-precision fp32` is the explicit opt-out, a FORK inherits its parent's recorded precision (`recipe.fork` has no precision row); the K9 learner golden is now the bf16 update, re-recorded under BOTH torch envs, with the fp32 update pinned beside it BYTE-IDENTICAL; no ARCH_SIGNATURE / config / observation change**
+
+The adoption the registration's §5 orders on a PASS ([`design_bf16_strength_ab.md`](../endstate/design_bf16_strength_ab.md) §7–§8;
+[`design_learner_recipe.md`](../endstate/design_learner_recipe.md) §1 row 25, §3.22, Decision record).
+
+**1. What changed.**
+- `designs/production_config.json`: `recipe.fresh` gains `"trunk_precision": "bf16"`; no mirror field changed, `recipe.fork`
+  unchanged. `main.train.recipe_surface.FRESH_ROWS` gains `RecipeRow("trunk_precision", "--trunk-precision", "fp32", …)` (a
+  tri-state flag: untyped resolves to fp32). The report prints a `trunk` line with the RESOLVED precision on every surface
+  (`checkargs`, `--dry-run`, the launcher). `--arch production` therefore trains the trunk rounds under bf16 autocast in R1
+  (T2 / eval / snapshots / the K9(b) probe stay fp32 by construction); a fresh argv that leaves it untyped is REFUSED like any
+  other untyped drift; a restart of a pre-adoption fp32 run inherits its recorded fp32 (route `resume`).
+- `baselines._RUN_RECORD_ONLY_KEYS` gains `trunk_precision` (a v155+ run records it, the mirror cannot, so the next baseline
+  reset to a bf16 run would otherwise fail `compare_production` with a key-set delta).
+- Docs: `ARCHITECTURE.md` §6.4, the recipe doc, `compile_flags.md`, `learner_gates.md`, `step_size_and_batch.md`,
+  `flag_census.md`, `file_layout.md`, `production_config.README.md`, the training leaf, the root `CLAUDE.md`, `CHANGELOG.md`.
+
+**2. The fork decision: forks INHERIT (no default change).** A flagless fork of an fp32 parent stays fp32 (the fork report
+reads `trunk_precision 'fp32' (inherited)  production: 'bf16'`, INFO), a fork of a bf16 parent stays bf16; opting an fp32
+parent's fork into bf16 is one typed flag, recorded in `cli_args`. Why: (1) the A/B measured FRESH runs (and bf16 seeds
+resumed from their own bf16 5M final); a precision SWITCH mid-lineage was never read, and the knock-in forks that ran bf16 on an
+fp32 parent are a mechanical read (the bf16 parity gate passed), not a strength one; (2) forks of one parent are compared with one
+another at a matched DOSE, and a default that flips their numerics between forks launched before and after the adoption would
+confound exactly that; (3) the existing inheritance rule (`_resolve`, "an argv is not a config") already carries the choice.
+
+**3. The goldens (each cause verified: passes before the change, fails after).**
+- **K9 learner golden** (`learner_golden.json`, both entries): `production_args()` carries bf16, so `build_learner()` runs bf16
+  rounds. Before: `learner_golden_test` + `recipe_doc_gate_test` 10 passed at `415eb7f5`. After the recipe row: the update moved
+  (`post_params_sha256` `b132b440…` → `2dba416a…`; 14 pinned losses moved by 6e-7 to 4.5e-3, `belief/set_aux_loss` the largest), init `d9c69eca…` and buffer `448715cc…`
+  UNCHANGED. Re-recorded under `gen3ai_torch28` (2.8.0+cu126) AND `gen3ai_torch28_cu128` (2.8.0+cu128): IDENTICAL bytes in both.
+  Each entry gains `fp32_opt_out` = the fp32 update recorded afresh = `b132b440…` byte-for-byte (the proof the fp32 path did not move),
+  checked by a new test (`check_fp32`); the fp64 reference and the §6.4 coverage are taken on the fp32 learner
+  (`build_learner(trunk_precision="fp32")`), unchanged values. K9(b) in `fatal` mode passes on the bf16 learner (4.8e-7).
+- **Tests that pin the fp32 GATE's teeth** (`compile_regions_test`, `compile_regions_unmoved_init_test`): their learner now
+  builds at `trunk_precision="fp32"` (they judged an fp32 R1 at the trained / fresh bars; under bf16 the gate is the bf16
+  parity rule, whose bars are far looser, so a planted 3× error "DID NOT RAISE"). The bf16 rule keeps `compile_regions_bf16_test`.
+
+**4. Two latent bf16 defects found by the adoption and FIXED (rule 7 FINDINGS).**
+- `update_fit._behaviour_probe_setup` stored the fixture's behaviour log-probs from the LIVE learner's own forward; under a bf16
+  learner that differs from the K9(b) probe's fp32 read by bf16's rounding, so the dry first update printed a spurious
+  `BEHAVIOUR-POLICY MISMATCH` (max 0.0279, warn-only, dump to a temp dir) — it did, on the A/B's first EB leg of seed 2001 at
+  `f45d0c27`. Now computed under `fp32_scope` (the rollout is served fp32). `update_fit_test`'s probe test fails on HEAD's code and
+  passes on the fix.
+- `learner_gates_test._fill` (the localized-fault test's behaviour policy) had the same defect, same fix.
+
+**5. Checks.** `checkargs --arch production …` → ✓ every RECIPE knob matches (29 knobs) and the `trunk : bf16` line; `--trunk-precision
+fp32` → one TYPED diff, not refused; a bare argv → REFUSED naming `--trunk-precision`; a fork of `rb_es_end2_s2005` (fp32) →
+`trunk_precision 'fp32' (inherited)`, INFO. `launcher --dry-run --arch production` → ✓ DRY RUN, FRESH, the `trunk : bf16` line. **The CPU smoke** (the sanctioned runpy route,
+`debug_shape_smoke_integration_test.py::…[production]`, i.e. `--arch production --debug --steps 10000`): PASSED in 1,319 s on a loaded box
+(contention 2.96): exit 0, `[DEBUG SHAPE]`, an update, `Training complete.`, and the two assertions this commit adds — the log carries
+`[TRUNK PRECISION] bf16` and the run's `model_config.json` records `trunk_precision` `bf16` (the verdict is recorded in
+`slow_tier_status.json`). bf16 on this CPU is not slower than fp32 (the golden update 3.0–3.5 s fp32 vs 3.2 s bf16, one thread; a Ryzen
+with `avx512_bf16`), so the debug path runs the real bf16 autocast rounds rather than a fallback. **Targeted tests** (the routine gate
+was NOT run: it does not finish at `-n 2` on six shared threads): ~75 files, listed in the commit body, plus the static tier (240 passed).
+
+**FINDINGS (standing rule 7).**
+1. **No GPU run of HEAD's production default was made here (no lease).** The A/B's EB arm ran the bf16 R1 gate, canary and the
+   K9(b) probe on the GPU at `f45d0c27`; a fresh `--arch production` launch at this commit is the first to resolve bf16 through the
+   recipe applier rather than a typed flag. The shared compile cache's key already includes `trunk_precision`.
+2. **The orchestrator's brief counted "32 runs"; the logs show 16 runs / 24 launcher-child legs** (seeds 2001–2004 trained in two
+   legs); 0 crashes either way (no `Traceback` in any `launcher_child.log`).
+3. **A static-recovery named arm (`--arch static_recovery`) applies the production recipe**, so it now trains bf16 too; it was not
+   part of the A/B (its network differs from the end state's only by the six recovery keys + the thirteen end-state ones at their
+   pre-adoption values). Type `--trunk-precision fp32` to compare against its historical numerics.
+4. **CPU bf16 is not slower** on this box (Ryzen with `avx512_bf16`): the golden update, 3.0–3.5 s fp32 vs 3.2 s bf16 at one thread.
+5. **Two tests of `diagnostics_cadence_test.py` are RED on pristine `415eb7f5`, independent of this change** (verified on a
+   `git archive` export of that commit): `test_checkargs_reports_the_inherited_cadence` feeds the production MIRROR to
+   `ModelVersion.from_json_file`, which refuses `config_version` 145 with `token_encoding` `static` (a pre-static-port record —
+   the same family as the seven tests `415eb7f5` re-pointed after the end state's adoption), and
+   `test_the_ON_arm_really_runs_every_gated_probe` finds no `cell/*` tag on its toy ON arm. Not touched here (out of scope).
+6. **Local `main` was not fast-forwarded by the shipper** (a worktree agent's `git -C <shared checkout>` is blocked): `origin/main`
+   carries both commits, and the next landing / `scripts/land.sh` pull brings the main checkout up.
+
+Tag: **BUILT (MAJOR) · bf16 TRUNK ADOPTED INTO THE PRODUCTION RECIPE · forks inherit · K9 golden re-recorded under both torch envs (fp32 opt-out pinned byte-identical) · two latent fp32_scope defects fixed** · evidence: `designs/CHANGELOG.md` (2026-10-14 "THE bf16 TRUNK IS PRODUCTION"), `src/main/train/recipe_surface_test.py`, `src/agents/training/learner_golden_test.py`

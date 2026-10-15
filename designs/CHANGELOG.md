@@ -14151,3 +14151,42 @@ more of the same family (`consistency_test` ×2, red since the adoption as well)
   players' stable ids (order-independent like the default key), reproduced bit-for-bit over two runs.
 - Docs: `designs/training/learner_gates.md` (PAYLOAD IDENTITY and CONSUMPTION paragraphs), a comment in
   `agents/model/selection_sites.py`, and the legacy-deletion manifest's D4 / A1 / G2 rows.
+
+## 2026-10-14 — THE bf16 TRUNK IS PRODUCTION (`recipe.fresh.trunk_precision` = `bf16`; the strength A/B PASSED; no ARCH_SIGNATURE / config bump)
+
+The bf16 strength A/B (`designs/endstate/design_bf16_strength_ab.md`; ledger 2026-10-14 MEASUREMENT (MAJOR)) PASSED: stage 1
+(4 × 4 at 5M) CONTINUE, stage 2 (8 × 8 mirrored cross of the 15M finals, the closing test's coded rule) Δ̂ +1.0625 pp, 90 %
+interval [−1.186, +3.311], both clauses true; `train_ms` 54.3 s → 42.1 s (−22.5 %). Registration §5: a PASS adopts.
+
+- **The recipe.** `designs/production_config.json` `recipe.fresh` gains `"trunk_precision": "bf16"` (the only `recipe.fresh` row
+  that is not N0's); `main.train.recipe_surface.FRESH_ROWS` gains the row (tri-state: an untyped value resolves to `fp32`).
+  `--arch production` therefore writes `--trunk-precision bf16`; a fresh argv without `--arch production` that leaves it
+  untyped is REFUSED like any other untyped recipe drift (`--trunk-precision fp32` is the explicit opt-out; a typed difference
+  is INFO). `checkargs` / `--dry-run` / the launcher print a `trunk` line with the RESOLVED precision. The flag's own parser
+  default stays unset (→ fp32), `ModelVersion.trunk_precision` stays config v155 (no bump), and a pre-adoption fp32 run
+  restarts at fp32 (a recorded tri-state field, inherited).
+- **Forks inherit (decided).** `recipe.fork` carries NO precision row: a flagless fork of an fp32 parent stays fp32 (INFO line
+  `trunk_precision 'fp32' (inherited)  production: 'bf16'`), a fork of a bf16 parent stays bf16. The A/B measured fresh runs
+  (and bf16 seeds resumed from their own bf16 5M final), never a mid-lineage precision switch, and a silent default would
+  confound matched-dose comparisons between forks of one parent launched before and after the adoption.
+- **The K9 learner golden is now the bf16 update.** `production_args()` carries bf16, so `build_learner()` runs the trunk
+  rounds under bf16 autocast on the CPU: the update moved (post `b132b440…` → `2dba416a…`, identical under
+  `gen3ai_torch28` (+cu126) and `gen3ai_torch28_cu128`; init `d9c69eca…` and the buffer `448715cc…` unchanged), and each entry
+  gains a `fp32_opt_out` block holding the fp32 update VERBATIM (`b132b440…`, the proof the fp32 path did not move).
+  `build_learner(trunk_precision=...)` builds either; the fp64 reference and the §6.4 coverage stay on the fp32 learner.
+  Cause verified: `learner_golden_test` passed at HEAD and failed after the recipe row (init unchanged, update moved).
+- **Two helpers that stored a learner's own bf16 forward as the rollout's behaviour policy are fixed** (the rollout is served
+  fp32, so μ must be the fp32 function): `update_fit._behaviour_probe_setup` (the dry first update printed a spurious K9(b)
+  `BEHAVIOUR-POLICY MISMATCH` max 0.0279 on the A/B's first EB leg, warn-only) and `learner_gates_test._fill`
+  (the localized-fault test's control raised). Both wrap the forward in `trunk_precision.fp32_scope`.
+- **Tests that judge the fp32 function are pinned to it** (`build_learner(trunk_precision="fp32")`): the fp32 R1 gate's teeth
+  (`compile_regions_test`, `compile_regions_unmoved_init_test`, `compile_regions_unmoved_test`, `compile_regions_independence_test`:
+  under bf16 the gate is the bf16 parity rule, whose bars are far looser, so a planted miscompile "DID NOT RAISE") and the
+  served-forward selection-site scan (`selection_sites_test`: the bf16 rounds add `trunk_precision`'s casts to the ops). The
+  production-learner assertions flip to bf16 (`trunk_precision_flag_test`), and `debug_shape_smoke_integration_test` now asserts the
+  run announced `[TRUNK PRECISION] bf16` and recorded `trunk_precision` bf16. `baselines._RUN_RECORD_ONLY_KEYS` gains
+  `trunk_precision` (a v155+ run records it, the mirror cannot; a test pins it).
+- Docs: `designs/ARCHITECTURE.md` §6.4, `design_learner_recipe.md` §1 row 25 / §3.22 / Decision record,
+  `design_bf16_strength_ab.md` §7–§8, `designs/training/{compile_flags,learner_gates,step_size_and_batch}.md`,
+  `designs/ops/{flag_census,TASK_BACKLOG,training_runbook}.md`, `designs/model/file_layout.md`, `designs/production_config.README.md`,
+  `src/agents/training/CLAUDE.md`, the root `CLAUDE.md`.

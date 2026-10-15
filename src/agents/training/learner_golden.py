@@ -1,4 +1,8 @@
-"""K9(a) THE LEARNER GOLDEN — one eager fp32 PPO update, pinned (M5 Lane K; ``program_rust_core.md`` K9).
+"""K9(a) THE LEARNER GOLDEN — one eager PPO update at the PRODUCTION precision, pinned (M5 Lane K;
+``program_rust_core.md`` K9). Since 2026-10-14 the production recipe's trunk precision is bf16
+(``recipe.fresh.trunk_precision``), so the golden's learner runs the trunk rounds under bf16 autocast (the
+heads, the losses and the optimizer stay fp32), and a second block of each entry, ``fp32_opt_out``, pins the
+``--trunk-precision fp32`` update (the very hashes this golden pinned while fp32 was the production precision).
 
 WHAT IT PINS. Beside ``reward_golden`` (the number the trainer optimizes) and the obs golden (what the
 network reads), this pins WHAT ONE UPDATE COMPUTES: a production-surface learner, built from a fixed
@@ -152,7 +156,8 @@ def _spaces() -> Tuple[Any, Any, Any]:
     return TK.production_spaces()
 
 
-def build_learner(env: Any = None, args: Any = None, perturb_keyed: bool = True) -> Any:
+def build_learner(env: Any = None, args: Any = None, perturb_keyed: bool = True,
+                  trunk_precision: Optional[str] = None) -> Any:
     """The seeded production-surface learner (on a dummy env over the production spaces), the
     production training hparams applied exactly as a launch applies them, then `golden_recipe()`.
 
@@ -160,17 +165,21 @@ def build_learner(env: Any = None, args: Any = None, perturb_keyed: bool = True)
     instead — its spaces (`trainee_spaces`), its policy kwargs and its training hparams — with the
     same seeds and recipe overrides (the lever tests' learner; the golden itself passes None, which is
     `production_args()`). ``perturb_keyed`` (default True, the golden's): NAME-KEYED perturbation noise;
-    False is the order-keyed draw (a few tests compare the two).
+    False is the order-keyed draw (a few tests compare the two). ``trunk_precision`` (default None = the
+    namespace's own, which is the production recipe's ``bf16`` since 2026-10-14): ``"fp32"`` builds the
+    ``--trunk-precision fp32`` OPT-OUT learner instead — what the fp32-vs-fp64 reference, the §6.4 coverage
+    read and the fp32 golden need, since those pin the fp32 arithmetic, not the bf16 production one.
 
     🚨 Built at ONE torch thread, whatever the caller's count (F-X5-4): SB3's `_build` re-initialises
     every Linear with `orthogonal_`, a LAPACK QR whose blocked reduction order follows the BLAS thread
     count — the same RNG draws give different init BYTES at 8 threads (15 of 41 parameter groups,
     measured 2026-10-03). The caller's thread count is restored on return."""
     with _one_thread():
-        return _build_learner(env, args, perturb_keyed)
+        return _build_learner(env, args, perturb_keyed, trunk_precision)
 
 
-def _build_learner(env: Any, args: Any, perturb_keyed: bool = False) -> Any:
+def _build_learner(env: Any, args: Any, perturb_keyed: bool = False,
+                   trunk_precision: Optional[str] = None) -> Any:
     import torch as th
 
     from agents.training.rust_rollout import testkit as TK
@@ -194,6 +203,9 @@ def _build_learner(env: Any, args: Any, perturb_keyed: bool = False) -> Any:
                            normalize_advantage=RECIPE["normalize_advantage"], target_kl=RECIPE["target_kl"],
                            policy_args=policy_args, perturb_keyed=perturb_keyed)
     apply_training_hparams(model, policy_args, mappings=None)
+    if trunk_precision is not None:
+        from agents.model.trunk_precision import apply_run_precision
+        apply_run_precision(model, trunk_precision)       # an explicit precision wins over the namespace's
     TK.unset_to_class_defaults(model)
     model.grad_accum_steps = int(RECIPE["grad_accum_steps"])
     # K9(b) is its own gate (`learner_gates_test`); the golden pins the update's arithmetic.
@@ -357,9 +369,31 @@ def entry() -> Dict[str, Any]:
 
 def check(model: Optional[Any] = None) -> Tuple[List[str], Dict[str, Any]]:
     """``(differences, fingerprint)`` against the committed golden for THIS torch build (``model``: a learner
-    already built — a caller planting a change or switching K9(b) on)."""
+    already built — a caller planting a change or switching K9(b) on). The golden is the PRODUCTION update:
+    the learner as ``production_args()`` builds it, i.e. at the recipe's trunk precision (bf16 since
+    2026-10-14)."""
     e = entry()
     now = compute(model)
+    return diff(e, now), now
+
+
+def entry_fp32() -> Dict[str, Any]:
+    """THIS torch build's recorded ``--trunk-precision fp32`` OPT-OUT update (``entry()['fp32_opt_out']``)."""
+    e = entry()
+    fp = e.get("fp32_opt_out")
+    if fp is None:
+        raise LearnerGoldenError(
+            f"the golden entry for torch {torch_key()} has no `fp32_opt_out` block — re-record it with "
+            "`python -m agents.training.learner_golden record --reason ...` under this interpreter.")
+    return dict(fp)
+
+
+def check_fp32(model: Optional[Any] = None) -> Tuple[List[str], Dict[str, Any]]:
+    """``(differences, fingerprint)`` of the fp32 OPT-OUT update (the learner rebuilt at
+    ``trunk_precision="fp32"``) against its recorded block. Its hashes are the ones the golden pinned while fp32
+    WAS the production precision, so a pass here is the proof that the bf16 adoption left the fp32 path alone."""
+    e = entry_fp32()
+    now = compute(model if model is not None else build_learner(trunk_precision="fp32"))
     return diff(e, now), now
 
 
@@ -369,7 +403,7 @@ def coverage() -> Dict[str, int]:
     import torch as th
 
     from agents.model.hypothesis_set import near_tie_rows
-    model = build_learner()
+    model = build_learner(trunk_precision="fp32")      # the buffer's behaviour policy is the fp32 learner's
     data = load_buffer_into(model, BUFFER_PATH)
     n = N_STEPS * N_ENVS
     obs = {k[4:]: th.as_tensor(v.reshape(n, *v.shape[2:])) for k, v in data.items() if k.startswith("obs:")}
@@ -426,8 +460,9 @@ def record(reason: str) -> Dict[str, Any]:
     from agents.training import learner_golden_fp64 as F64
 
     g["perturb"] = "name_keyed"
-    fp = compute()
-    ref = F64.reference(build_learner(), BUFFER_PATH)
+    fp = compute()                                                  # the PRODUCTION update (the recipe's precision)
+    fp32 = compute(build_learner(trunk_precision="fp32"))          # the --trunk-precision fp32 opt-out update
+    ref = F64.reference(build_learner(trunk_precision="fp32"), BUFFER_PATH)   # fp32 arithmetic vs fp64, not bf16's
     beh = behaviour_read()
     import torch as th
 
@@ -435,9 +470,10 @@ def record(reason: str) -> Dict[str, Any]:
             "reason": reason.strip(), "torch": str(th.__version__), "numpy": np.__version__,
             "python": sys.version.split()[0]}
     prev = g["entries"].get(torch_key())
-    g["entries"][torch_key()] = {**fp, "fp64_reference": ref, "behaviour": beh, "coverage": coverage(),
-                                 **meta}
+    g["entries"][torch_key()] = {**fp, "fp32_opt_out": fp32, "fp64_reference": ref, "behaviour": beh,
+                                 "coverage": coverage(), **meta}
     g.setdefault("history", []).append({**meta, "post_params_sha256": fp["post_params_sha256"],
+                                        "fp32_opt_out_post_params_sha256": fp32["post_params_sha256"],
                                         "changed": diff(prev, fp) if prev else ["(first entry)"]})
     GOLDEN_PATH.write_text(json.dumps(g, indent=1, sort_keys=False) + "\n")
     return fp

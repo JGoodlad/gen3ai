@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-24,885-line file. **The ledger itself is append-only and is never edited by this**;
+24,960-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**862 headings · 807 dated · 2026-08-01 → 2026-10-14 · ledger 24,885 lines.**
+**863 headings · 808 dated · 2026-08-01 → 2026-10-14 · ledger 24,960 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -882,3 +882,4 @@ rename.
   - `L24674` · `2026-10-12` · BUILT (MAJOR) · **THE END STATE IS PRODUCTION: `designs/production_config.json` takes the `--arch endstate` overlay (19 keys); HEAD's end state = the TESTED `62085750` build modulo ONE math-equal change (the closed-form exact KO, max ≈1e-6 relative, greedy 136 / 136), every other file behaviour-identical; `--arch production` resolves the closing test's argv to the tested 204-key surface exactly (provenance tags + three off-by-default runtime knobs aside); `--arch endstate` an ALIAS, `--arch static_recovery` redeclared; the `production` baseline = `rb_es_end2_s2005/final_model.zip` (the lower-median row), the old entry kept as `production_pre_endstate`; CPU smoke PASSED**
   - `L24764` · `2026-10-14` · GIGO FIX · **TRAINING-INPUT CHANGE: the legal-movepool table (`data/pokemon/gen3_learnset.json`) is now the union over the PRE-EVOLUTION chain + Smeargle's Sketch pool (`gen3_learnset_prevo_chain_v1`) and EQUALS Showdown's TeamValidator on every base species × gen-3 move (19,793 pairs, sha256 `c90202a1…`; the old table held 18,293). It was missing 1,500 legal (species, move) pairs over 183 species — 50 training-pool pairs (1,578 of the pools' 17,328 move uses) and 928 Smogon usage pairs read as ILLEGAL; Dragon Dance on Tyranitar is the named case. The move prior and X5's hypothesis candidates gain 754 legal cells (739 never-seen legal moves go from 1e-6 to the 0.02 floor, + 15 typed Hidden Power cells) and 1,238 prior cells move in all; the observation does not move (991 / 991)**
   - `L24821` · `2026-10-14` · MEASUREMENT (MAJOR) · **THE bf16 STRENGTH A/B: PASS — `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 × 4 at 5M, futility screen) CONTINUE (Δ̂ −0.12 pp, 90 % interval [−3.55, +3.31]); stage 2 (8 × 8 mirrored cross of the 15M finals, 64 / 64 cells × 1,000 pairs): Δ̂ +1.0625 pp, SE 1.277, df 14, two-sided 90 % interval [−1.186, +3.311]; clause a (upper > 0) TRUE, clause b (lower > −2.0) TRUE, near_boundary none ⇒ by the closing test's coded rule the bf16 trunk is NOT WORSE and §5 of the registration ADOPTS it; `train_ms` 54.3 s fp32 → 42.1 s bf16 (−22.5 %), 16 runs / 24 legs, 0 crashes**
+  - `L24886` · `2026-10-14` · BUILT (MAJOR) · **THE bf16 TRUNK IS PRODUCTION: `designs/production_config.json` `recipe.fresh.trunk_precision` = `"bf16"` (the strength A/B PASSED, ledger 2026-10-14 MEASUREMENT (MAJOR)); `--arch production` writes `--trunk-precision bf16`, `--trunk-precision fp32` is the explicit opt-out, a FORK inherits its parent's recorded precision (`recipe.fork` has no precision row); the K9 learner golden is now the bf16 update, re-recorded under BOTH torch envs, with the fp32 update pinned beside it BYTE-IDENTICAL; no ARCH_SIGNATURE / config / observation change**

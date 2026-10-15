@@ -989,6 +989,9 @@ _RUN_RECORD_ONLY_KEYS = frozenset({
     "oracle_reveal", "promote_threshold", "promotion_sprt",
     "fork_branches", "fork_contested_absv", "fork_contested_gap", "fork_crn", "fork_fraction", "fork_max_per_battle",
     "opp_intent_coef", "policy_gae_lambda",
+    # the learner's trunk precision (config v155): a TRAINING-numerics record that is a `recipe.fresh` row, not a
+    # mirror field, so every run from v155 on (the bf16 recipe's, from 2026-10-14) carries a key the mirror does not
+    "trunk_precision",
 })
 
 

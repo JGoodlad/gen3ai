@@ -39,6 +39,15 @@ One key of this file is NOT a `model_config.json` field: the nested `recipe` blo
 - It changes the file's blob hash, so a recipe edit changes the `production_config@<hash>` tag that
   `arch_source` / `recipe_source` record — the tag names the file's CONTENT, recipe included.
 
+## The bf16 trunk adoption (2026-10-14)
+
+**One `recipe.fresh` row was added: `trunk_precision` `"bf16"`** (the hand-edited block; no run config carries it, and no
+mirror field changed, so the `production_config@<hash>` tag moved only because the file's content did). The bf16 strength
+A/B PASSED (`designs/endstate/design_bf16_strength_ab.md` §7: 8 × 8 at 15M, Δ̂ +1.06 pp, 90 % interval [−1.19, +3.31]), so
+`--arch production` now trains the trunk rounds under bf16 autocast (`--trunk-precision fp32` is the explicit opt-out).
+`recipe.fork` has no row for it on purpose: a fork inherits its parent's recorded precision. The row is not N0's (N0
+predates the flag and trained fp32); its source is the A/B, cited in `design_learner_recipe.md` §3.22's table.
+
 ## The end-state adoption (2026-10-12)
 
 **CONSTRUCTED, then VERIFIED against the tested runs.** The mirror is the pre-adoption mirror with the 19 overlay keys

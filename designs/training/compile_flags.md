@@ -1776,7 +1776,15 @@ The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.
     config of this torch, and an unknown name refuses.
   - They are MEASUREMENT switches with no CLI flag.
 - **The trunk's compute precision: `--trunk-precision {fp32,bf16}`** (`gen3_trunk_precision_flag_v1`, config v155;
-  `agents/model/trunk_precision.py`; BUILT, NOT ADOPTED: its strength A/B is PLAN.md §2d).
+  `agents/model/trunk_precision.py`; **ADOPTED 2026-10-14**: the bf16 strength A/B PASSED, so `bf16` is
+  `recipe.fresh.trunk_precision`, the production recipe, and `fp32` is the explicit opt-out).
+  - **Adoption (2026-10-14).** The bf16 strength A/B (`designs/endstate/design_bf16_strength_ab.md`; 8 seeds × 15M per arm,
+    the 8 × 8 mirrored cross, the closing test's coded rule): Δ̂ +1.06 pp, 90 % interval [−1.19, +3.31], PASS; `train_ms`
+    54.3 s → 42.1 s (−22.5 %). The flag's default is still `fp32` — an UNSET `--trunk-precision` resolves to `fp32`
+    — but `--arch production` writes `bf16` (the recipe applier) and the recipe surface REFUSES a fresh argv that
+    leaves it untyped. A flagless fork or restart INHERITS its parent's recorded value (an fp32 parent's fork stays fp32
+    unless it types `--trunk-precision bf16`; the A/B did not measure a mid-lineage precision switch). The K9 learner
+    golden is the production (bf16) update and pins the fp32 opt-out beside it.
   - **The switch.** `bf16` class-swaps the LEARNER's live trunk rounds (`BiasedEncoderLayer`, `IdentityInitRound`)
     to subclasses whose forward runs under bf16 autocast and returns fp32. `apply_run_precision`, from
     `apply_training_hparams`, does it on both build paths, before grad checkpointing and the R1 install.
@@ -1813,8 +1821,8 @@ The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.
     pass, a planted compiled error, a planted drift, a mis-wired reference, an fp32 learner untouched).
 
 A preset gets its CLI flag, flag-registry row and recipe surface in its ADOPTION commit, after its paired GPU benchmark
-and the R1 gate and canary are green. `--trunk-precision` has its flag already, because its parity rule needs a run
-path to be gated on. It enters the recipe surface only on a PASS of PLAN.md §2d. The benchmark that sets the switches
+and the R1 gate and canary are green. `--trunk-precision` had its flag already, because its parity rule needs a run
+path to be gated on; it entered the recipe surface on the PASS of PLAN.md §2d (2026-10-14, above). The benchmark that sets the switches
 is the measurement's `scripts/update_bench.py`. ⚠️ The `cudagraphs` PRESET alone graphs R1's ONE compile and dies on
 the first (diagnostic) update (F-PB-2); lever C's route is `--learner-cudagraphs` (below), and `install` refuses the
 preset combined with it.

@@ -44,7 +44,7 @@ def oracle_like(tmp_path):
     from agents.training import learner_golden as LG
     cc._reset_control_for_tests()
     torch._dynamo.reset()
-    m = LG.build_learner()
+    m = LG.build_learner(trunk_precision="fp32")      # the fp32 gate / canary's judgment (the bf16 rule: compile_regions_bf16_test)
     LG.load_buffer_into(m)
     m.behaviour_dump_dir = str(tmp_path)
     head = m.policy.features_extractor.belief_head.species_head
@@ -100,7 +100,7 @@ def _judged(model) -> bool:
 def test_unmoved_parameters_is_EXACT_zero_only():
     """Categorical: every element == 0.0. A parameter moved by any amount (1e-30) is not unmoved."""
     from agents.training import learner_golden as LG
-    m = LG.build_learner()
+    m = LG.build_learner(trunk_precision="fp32")
     assert cr.unmoved_parameters(m) == []                     # the golden's perturbed weights
     head = m.policy.features_extractor.belief_head.species_head
     with torch.no_grad():

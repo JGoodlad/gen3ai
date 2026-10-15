@@ -39,7 +39,7 @@ def fixed_mass():
     from agents.training import learner_golden as LG
     cc._reset_control_for_tests()
     torch._dynamo.reset()
-    m = LG.build_learner()
+    m = LG.build_learner(trunk_precision="fp32")      # the fp32 gate's teeth (the bf16 rule: compile_regions_bf16_test)
     LG.load_buffer_into(m, LG.BUFFER_PATH)
     m.batch_size = BATCH
     assert m.policy.features_extractor.hypothesis_builder is not None      # PRECONDITION: the X5 arm
