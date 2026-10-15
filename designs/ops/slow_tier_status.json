@@ -365,6 +365,14 @@
    "contention": 1.52,
    "detail": ""
   },
+  "src/main/ops/diag_bf16_canary_test.py::test_EVERY_route_of_the_GPU_read_RUNS_through_a_smoke_backend_on_cpu": {
+   "status": "pass",
+   "commit": "ffe2961b9e72450f0c6c85f1ce41966f1b32c1a4",
+   "at": "2026-10-15T17:12:53Z",
+   "duration_s": 215.7,
+   "contention": 1.39,
+   "detail": ""
+  },
   "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_the_whole_committed_bank": {
    "status": "pass",
    "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
@@ -889,5 +897,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-15T16:43:09Z"
+ "last_written": "2026-10-15T17:12:53Z"
 }

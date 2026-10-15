@@ -172,3 +172,81 @@ def test_the_production_cadence_runs_FIRST_at_update_10_then_every_100(regions_l
     for _ in range(205):
         can.after_update()
     assert ran == [10, 100, 200]
+
+
+# ------------------------------------------------- the WATCH-LIST record (gen3_canary_watch_v1, 2026-10-15)
+def _records(tmp):
+    import json
+    from agents.model.compile_canary import VERDICTS_FILE
+    return [json.loads(x) for x in (tmp / VERDICTS_FILE).read_text().splitlines()]
+
+
+def test_a_PASS_record_carries_the_watch_lists_per_parameter_numbers(regions_learner, tmp_path):
+    """The `rb_toy_ent_s4001` FATAL named the pointer head at update 700, but a pass logged only each check's WORST
+    parameter, so the pointer head's ratio at the six passing canaries before it is unrecoverable. Every record now
+    carries the watch-list (`WATCH_PREFIXES`): under the bf16 rule (the golden learner's production recipe) the
+    ratio, the compiled distance, eager bf16's yardstick and the floor of every watched parameter. Fails if a pass
+    stops writing them."""
+    from agents.model.compile_canary import WATCH_PREFIXES
+    from agents.model.trunk_precision import trunk_precision_of
+    assert trunk_precision_of(regions_learner.policy) == "bf16"          # PRECONDITION: the bf16 rule judges
+    assert WATCH_PREFIXES == ("pointer_head.",)
+    CompileCanary(regions_learner, batch_size=16, every=1).after_update()
+    (rec,) = _records(tmp_path)
+    w = rec["watch"]["scheduled"]
+    assert rec["verdict"] == "pass" and w["rule"] == "bf16"
+    head = {n for n, _ in regions_learner.policy.named_parameters() if n.startswith("pointer_head.")}
+    assert set(w["params"]) == head
+    judged = {n: v for n, v in w["params"].items() if "ratio" in v}
+    assert judged, w["params"]
+    for v in judged.values():
+        assert set(v) == {"ratio", "compiled", "eager", "floor"} and v["ratio"] <= 12.0
+    assert w["worst"]["ratio"] >= max(v["ratio"] for v in judged.values())
+    assert {"drift_loss", "drift_grad", "envelope_loss", "envelope_grad"} <= set(w["global"])
+
+
+def test_a_FATAL_record_carries_the_watch_of_the_scheduled_check_and_of_BOTH_confirmations(regions_learner, tmp_path):
+    _plant_r1(regions_learner, {"on": True})
+    can = CompileCanary(regions_learner, batch_size=16, every=1, saver=lambda p: None)
+    with pytest.raises(CompileCanaryError, match="CONFIRMED"):
+        can.after_update()
+    (rec,) = _records(tmp_path)
+    assert rec["verdict"] == "fatal"
+    assert set(rec["watch"]) == {"scheduled", "confirm_slice0", "confirm_slice1"}
+    for w in rec["watch"].values():
+        # the planted x3 backward: compiled is ~2.0 from the reference on every judged pointer-head parameter
+        ratios = [v["ratio"] for v in w["params"].values() if "ratio" in v]
+        assert ratios and max(ratios) > 12.0, w
+
+
+def test_the_watch_is_filled_even_when_a_GLOBAL_check_refuses_first():
+    """The bf16 rule checks the global gradient before the per-parameter one; the watch is filled before either."""
+    from agents.model import compile_regions as cr
+    names = ["pointer_head.move_proj.weight", "trunk.w"]
+    sizes = torch.tensor([2, 2])
+    ref = {"loss": torch.tensor([1.0]), "grad": torch.tensor([1.0, 1.0, 1.0, 1.0]), "grad_sizes": sizes}
+    eager = dict(ref, grad=torch.tensor([1.02, 1.0, 1.0, 1.01]))
+    comp = dict(ref, grad=torch.tensor([1.5, 1.0, 1.0, 1.01]))
+    w = cr.GradWatch(("pointer_head.",))
+    with pytest.raises(CompileTrainerError, match="grad_rel_l2"):
+        cr._r1_verdict_bf16(eager, comp, ref, names, "trained", watch=w)
+    p = w.record()["params"]["pointer_head.move_proj.weight"]
+    assert p["compiled"] == pytest.approx(0.5 / 2 ** 0.5, rel=1e-3)
+    assert p["eager"] == pytest.approx(0.02 / 2 ** 0.5, rel=1e-3)
+    assert p["ratio"] == pytest.approx(25.0, rel=1e-3)
+    assert set(w.record()["params"]) == {"pointer_head.move_proj.weight"}
+
+
+def test_the_fp32_rule_fills_the_watch_with_its_own_numbers():
+    from agents.model import compile_regions as cr
+    names = ["pointer_head.move_score.weight", "trunk.w"]
+    sizes = torch.tensor([2, 2])
+    eager = {"loss": torch.tensor([1.0]), "grad": torch.tensor([1.0, 2.0, 3.0, 4.0]), "grad_sizes": sizes}
+    comp = dict(eager, grad=torch.tensor([1.0, 2.0 + 1e-6, 3.0, 4.0]))
+    w = cr.GradWatch(("pointer_head.",))
+    cr._r1_verdict(eager, comp, names, "trained", watch=w)
+    rec = w.record()
+    assert rec["rule"] == "fp32"
+    p = rec["params"]["pointer_head.move_score.weight"]
+    assert p["bar"] == pytest.approx(cr.R1_PARAM_BAR["trained"], rel=1e-3)
+    assert 0 < p["compiled_vs_eager"] < 1e-5

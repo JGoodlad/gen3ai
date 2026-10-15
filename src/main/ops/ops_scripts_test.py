@@ -39,7 +39,8 @@ _HOME_LITERAL_EXEMPT = {"_common.sh"}
 
 #: Entry points that act on no RUN, so they have no run to resolve (they still source `_common.sh`
 #: for the interpreter and the checkout root). `gpu_lock.sh`, `gate_lock.sh` and `mem_cap.sh` wrap an arbitrary command, `gpu_lease.sh` a lock.
-_RUN_AGNOSTIC = {"gpu_lock.sh", "gpu_lease.sh", "gate_lock.sh", "mem_cap.sh", "cuda_build_validate.sh"}
+_RUN_AGNOSTIC = {"gpu_lock.sh", "gpu_lease.sh", "gate_lock.sh", "mem_cap.sh", "cuda_build_validate.sh",
+                 "verify_compile_gate_cuda.sh"}
 
 
 def test_there_are_scripts_to_check() -> None:

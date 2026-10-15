@@ -36,7 +36,12 @@ property of one batch on one weight state. So a disagreement is CONFIRMED IN THE
      FATAL even when neither confirmed.
 
 Every verdict (update, step, pass / unconfirmed / fatal) is appended to
-`<run_dir>/canary_verdicts.jsonl`, and the FATAL names the SAFE ROLLBACK POINT: the newest checkpoint
+`<run_dir>/canary_verdicts.jsonl` WITH THE WATCH-LIST RECORD (`WATCH_PREFIXES`, `gen3_canary_watch_v1`): every
+watched parameter's per-check numbers — under the bf16 rule its ratio, the compiled distance and eager bf16's
+yardstick; under the fp32 rule its compiled-vs-eager error and bar — plus the check's worst parameter and global
+numbers, for the scheduled check and each confirmation, so a parameter family's growth curve is recoverable from the
+run (the 2026-10-15 `rb_toy_ent_s4001` FATAL had logged only each check's worst parameter). The FATAL names the SAFE
+ROLLBACK POINT: the newest checkpoint
 written at or before the last PASSING canary's step (`rollback_point`; restarts included — the file
 is the run's, not the process's).
 
@@ -53,7 +58,7 @@ import json
 import os
 import re
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 
@@ -70,6 +75,10 @@ CANARY_TAG = "[CompileCanary] FATAL"
 VERDICTS_FILE = "canary_verdicts.jsonl"
 DISAGREEMENTS_FILE = "canary_disagreements.jsonl"
 FATAL_CHECKPOINT = "final_model_canary_fatal"
+#: The DECLARED WATCH-LIST (`gen3_canary_watch_v1`, orchestrator 2026-10-15): parameter-name prefixes whose per-check
+#: numbers every canary record carries (`compile_regions.GradWatch`). The pointer head is the family the
+#: `rb_toy_ent_s4001` FATAL named; the record costs no extra compute (the rule computes these numbers anyway).
+WATCH_PREFIXES: Tuple[str, ...] = ("pointer_head.",)
 
 
 class CompileCanaryError(ct.CompileTrainerError):
@@ -155,28 +164,36 @@ class CompileCanary:
         return self.run()
 
     # ---------------------------------------------------------------------------- one verdict
-    def _check(self, slice_: int, out: Dict[str, float]) -> List[str]:
+    def _check(self, slice_: int, out: Dict[str, float], watch: Optional[Any] = None) -> List[str]:
         """One full comparison (compiled AND eager re-computed) on fixture slice ``slice_``. Raises
-        `CompileTrainerError` on a disagreement; restores training mode and `.grad` either way."""
+        `CompileTrainerError` on a disagreement; restores training mode and `.grad` either way. ``watch``: a
+        `compile_regions.GradWatch` the live rung fills (whatever the verdict)."""
         model = self.model
         policy = model.policy
         was_training = bool(policy.training)
         devices = [torch.cuda.current_device()] if torch.cuda.is_available() else []
         try:
             with torch.random.fork_rng(devices=devices):
-                return self._regions(model, out, slice_)
+                return self._regions(model, out, slice_, watch)
         finally:
             policy.set_training_mode(was_training)
             for p in policy.parameters():
                 p.grad = None
 
-    def _record(self, verdict: str, detail: str = "") -> Dict[str, Any]:
-        rec = {"verdict": verdict, "update": self.updates,
-               "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
-               "time": time.time(), "detail": detail[:4000]}
+    def _record(self, verdict: str, detail: str = "", watch: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        rec: Dict[str, Any] = {"verdict": verdict, "update": self.updates,
+                               "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
+                               "time": time.time(), "detail": detail[:4000]}
+        if watch:
+            rec["watch"] = watch
         _append(_run_dir(self.model), VERDICTS_FILE, {k: v for k, v in rec.items() if k != "detail"}
                 if verdict == "pass" else rec)
         return rec
+
+    @staticmethod
+    def _new_watch() -> Any:
+        from agents.model.compile_regions import GradWatch
+        return GradWatch(WATCH_PREFIXES)
 
     def _say(self, line: str) -> None:
         print(line, flush=True)
@@ -184,7 +201,8 @@ class CompileCanary:
             with contextlib.suppress(Exception):
                 self._emit(line[:500])
 
-    def _fatal(self, why: str, first: BaseException, *, compared: bool = True) -> None:
+    def _fatal(self, why: str, first: BaseException, *, compared: bool = True,
+               watch: Optional[Dict[str, Any]] = None) -> None:
         run_dir = _run_dir(self.model)
         saved = "not written (no run directory declared)"
         if run_dir:
@@ -194,7 +212,7 @@ class CompileCanary:
                 saved = path + ".zip (forensics only: these weights trained on the graph in question)"
             except Exception as exc:                          # the FATAL stands either way
                 saved = f"FAILED to write ({type(exc).__name__}: {exc})"
-        self._record("fatal", f"{why} — {first}")
+        self._record("fatal", f"{why} — {first}", watch)
         verdict = ("The COMPILED learner no longer equals eager on the committed real-obs fixture at the "
                    "startup gate's bars" if compared else
                    "NO comparison was made, so this says nothing about the compiled arithmetic — the "
@@ -208,8 +226,9 @@ class CompileCanary:
     def run(self) -> Dict[str, float]:
         out: Dict[str, float] = {}
         t0 = time.perf_counter()
+        w0 = self._new_watch()
         try:
-            rules = self._check(0, out)
+            rules = self._check(0, out, w0)
         except ct.GateArmsNotIndependentError as first:
             # Not a disagreement: the two arms were not independent (the compiled route ran eager, or
             # the eager reference ran the compiled graph), so there is no verdict to CONFIRM. A dispatch
@@ -226,22 +245,26 @@ class CompileCanary:
             self._say(f"⚠️  [CompileCanary] update {self.updates}: compiled DISAGREES with eager — "
                       f"confirming now (the same rows + an independent slice). {str(first)[:300]}")
             again = []
+            watches: Dict[str, Any] = {"scheduled": w0.record()}
             for sl in (0, 1):
+                wc = self._new_watch()
                 try:
-                    self._check(sl, {})
+                    self._check(sl, {}, wc)
                 except ct.CompileTrainerError as exc:
                     again.append((sl, exc))
+                watches[f"confirm_slice{sl}"] = wc.record()
             if len(again) == 2:                              # (2) confirmed on both
                 self._fatal("the disagreement is CONFIRMED (it reproduced on the same rows and on an "
-                            "independent fixture slice in the same update)", first)
+                            "independent fixture slice in the same update)", first, watch=watches)
             if self.prev_disagreed:                          # (4) two consecutive scheduled canaries
                 self._fatal("the previous scheduled canary disagreed too — two CONSECUTIVE "
-                            "disagreements, each unconfirmed", first)
+                            "disagreements, each unconfirmed", first, watch=watches)
             # (3) not confirmed: count it, keep training, the next scheduled canary decides
             self.unconfirmed += 1
             self.prev_disagreed = True
             self.runs += 1
-            self._record("unconfirmed", f"reproduced on slice(s) {[sl for sl, _ in again]} of [0, 1]; {first}")
+            self._record("unconfirmed", f"reproduced on slice(s) {[sl for sl, _ in again]} of [0, 1]; {first}",
+                         watches)
             self._say(f"⚠️  [CompileCanary] update {self.updates}: the disagreement did NOT confirm "
                       f"(reproduced on slice(s) {[sl for sl, _ in again]} of [0, 1]) — training "
                       f"continues; {self.unconfirmed} unconfirmed so far; a disagreement at the NEXT "
@@ -253,7 +276,7 @@ class CompileCanary:
             return out
         self.prev_disagreed = False
         self.runs += 1
-        self._record("pass")
+        self._record("pass", watch={"scheduled": w0.record()})
         out["compile/canary_ok"] = 1.0
         out["compile/canary_unconfirmed_disagreements"] = float(self.unconfirmed)
         out["compile/canary_seconds"] = time.perf_counter() - t0
@@ -264,9 +287,10 @@ class CompileCanary:
         return out
 
     # ------------------------------------------------------------------ the compiled region
-    def _regions(self, model: Any, out: Dict[str, float], slice_: int = 0) -> list:
+    def _regions(self, model: Any, out: Dict[str, float], slice_: int = 0, watch: Optional[Any] = None) -> list:
         """K8's declared region: R1 (compiled micro-step vs eager: loss + every policy gradient) on the
-        same real labelled batch the startup gate uses (``slice_`` 1 = the independent half)."""
+        same real labelled batch the startup gate uses (``slice_`` 1 = the independent half). ``watch`` is filled
+        by the FIRST route's live rung (`compile_regions.r1_rungs`)."""
         from agents.model import compile_regions as cr
         policy = model.policy
         policy.set_training_mode(True)
@@ -277,7 +301,7 @@ class CompileCanary:
         # TRAINED bar (`gen3_r1_unmoved_param_v1`)
         regime = cr.weights_regime(model)
         if not cr.learner_cudagraphs_on(model):
-            eager, comp, rules = cr.r1_rungs(model, args, names, regime)
+            eager, comp, rules = cr.r1_rungs(model, args, names, regime, watch=watch)
             out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
             out["compile/canary_unmoved_params"] = float(len(cr.unmoved_parameters(model)))
             return rules
@@ -287,7 +311,8 @@ class CompileCanary:
         # pair per canary (~0.35 s at B = 2048, every 100 updates).
         rules = []
         for i, (route, fn) in enumerate(cr.r1_routes(model)):
-            eager, comp, r = cr.r1_rungs(model, args, names, regime, fn=fn, route=route)
+            eager, comp, r = cr.r1_rungs(model, args, names, regime, fn=fn, route=route,
+                                         watch=watch if i == 0 else None)
             rules.extend(r)
             if i == 0:
                 out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])

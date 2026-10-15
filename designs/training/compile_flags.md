@@ -1837,6 +1837,10 @@ The perf phase (`designs/research_state/measurements/perf_phase_2026-10-10/PLAN.
     - The fp32 gate's teeth are unchanged and still pinned: a 10 % plant is FATAL on an fp32 learner
       (`compile_regions_independence_test.py` on CPU, `compile_regions_fixed_mass_cuda_test.py` on CUDA — both
       build `trunk_precision="fp32"` explicitly since the bf16 adoption).
+  - 🚨 **A FALSE-FATAL mode, found 2026-10-15** (`rb_toy_ent_s4001`): the rule's per-parameter statistic crosses the
+    PPO CLIP BOUNDARY of any fixture row whose ratio sits within rounding of it, so two healthy arms can read 30× apart
+    (CPU: 18 % of healthy pairs above K at that FATAL's weights). Diagnosis, the GPU read and the proposed fixture
+    fix (T36): "The bf16 canary FATAL on trained weights" below.
   - **Decision record — the bf16 gate's reference.**
 
     | Date | Decision | Why | Evidence |
@@ -1860,6 +1864,125 @@ path to be gated on; it entered the recipe surface on the PASS of PLAN.md §2d (
 is the measurement's `scripts/update_bench.py`. ⚠️ The `cudagraphs` PRESET alone graphs R1's ONE compile and dies on
 the first (diagnostic) update (F-PB-2); lever C's route is `--learner-cudagraphs` (below), and `install` refuses the
 preset combined with it.
+
+### 🚨 The bf16 canary FATAL on trained weights (`rb_toy_ent_s4001`, 2026-10-15) — an X26 BLOCKER: diagnosed on CPU, the GPU read PENDING
+
+**The event.** The toy control `rb_toy_ent_s4001` (`--arch production` + 44 ablations: entity tokens and attention, no
+damage op, no move resolution; bf16 trunk; `--compile-trainer`; pinned `3899277a`) ended FATAL at 72,658,984 steps
+(update 700 of its second process). Verbatim: the compiled TRAIN graph's gradient is farther from the fp32 reference
+than 12 × eager bf16's own error on 3 parameters — `pointer_head.move_proj.weight` compiled 4.03e-01 vs eager 2.82e-02,
+`move_proj.bias` 3.26e-01 vs 2.59e-02, `move_score.weight` 3.03e-01 vs 2.41e-02 — CONFIRMED on the same rows and on
+slice 1 in the same update. The six canaries before it passed (worst ratio 1.10 / 1.11 / 2.88 / 1.90 / 1.70 / 1.27 /
+1.92); training looked healthy (bots win rate 0.87–0.90 flat; K9(b) excluded share 0, max |Δ log π| 2.2e-5).
+
+**THE FINDING (CPU, the run's own checkpoints loaded STRICT at this checkout; `python -m main.ops.diag_bf16_canary cpu`):
+the canary's per-parameter statistic contains a DECISION BOUNDARY — the PPO clip.** The canary judges R1 on the K9
+golden's 64 committed rows (tiled to B = 2,048), whose old log-probs come from a near-uniform policy (−2.47 … 0). On
+trained weights those rows' PPO ratio ρ = exp(log π − old) spreads over 0.002 … 6.9. A row whose ρ sits within
+rounding of the clip boundary that SWITCHES ITS gradient (A > 0 at 1 + 0.15, A < 0 at 1 − 0.15; the other boundary
+never switches it) carries its whole policy gradient in one arm and none in the other.
+
+- **At the canary's own weights** (`final_model_canary_fatal.zip`): rows 4 (A < 0, ρ_fp32 0.8462 against 0.85: a
+  margin of 0.0045 in log-prob) and 35 (A > 0, ρ 1.1581 against 1.15: 0.0070) sit on their boundaries; eager bf16
+  moves a legal log-prob by up to 0.082 on these rows.
+- **The null** (32 seeded multiplicative weight dithers, σ = 2^-9 relative, each read against its OWN fp32
+  reference): eager bf16's error on `move_proj.weight` is BIMODAL. On the 17 seeds where no row's clip branch differs
+  from fp32's: median 0.020, max 0.030. On the 15 where one does: median 0.294 (0.057–0.42). With the branch HELD to
+  fp32's decisions (`implied_dz(..., active=)`), the error never exceeds 0.020 on any seed. Two HEALTHY eager arms
+  read a canary ratio above 12 in **18 %** of 992 seed pairs (max 31×).
+- **The run's CUDA numbers sit exactly on the two modes**: eager 2.82e-2 (the no-flip mode; CPU eager reads 2.83e-2
+  on the same weights), compiled 4.03e-1 (the flip mode; CPU dithers in it read 0.39–0.42).
+- **Eager bf16 flips on its own, undithered**: at 66M it reads 0.29 / 0.34 (slices 0 / 1) from fp32 on
+  `move_proj.weight`, and ONE row (43: A > 0, ρ 1.1557 against 1.15) carries 0.288 of it.
+- **Why the pointer head**: only the policy and entropy terms reach it, and its gradient is carried by a few rows
+  (κ = Σ_rows |g_row| / |Σ_rows g_row| 1.8–3.2 at every checkpoint read; at the FATAL's weights the top row holds 30 % of the absolute mass), so
+  one row switching moves it by tens of percent. The trunk's gradients also carry the value / win-prob losses, so the
+  same row is a small share there, and the global gradient check passed.
+- **Why the confirmation could not catch it**: slice 1 (rows 32–63) is a SUBSET of slice 0 (all 64), and the
+  same-rows re-run is the same deterministic arithmetic; row 35 is in both.
+- **Not "trained weights" as such — a per-STATE lottery**: at 15M a row sat 0.0014 from its boundary and 23 % of
+  healthy pairs read above 12. The CENSUS of every 1M checkpoint 1M–62M (all before the last passing canary, 62.83M;
+  B = 64 untiled, so the clip decisions are exact): a row sits within 0.01 of its switching boundary at 14 of 62, and
+  eager bf16 ITSELF flips one against fp32 at 4 (8M 0.36, 13M 0.19, 52M 0.44, 61M 0.13; three also on slice 1).
+  eager bf16's largest |Δ log π| per checkpoint has a median of 0.063 and a max of 0.161. A false FATAL needs a boundary
+  row, the COMPILED arm across it while eager is not, and the row in rows 32–63 (or two consecutive disagreements);
+  s4001 drew it at its eighth scheduled canary. A 15M run (the bf16 A/B's length) meets about two.
+- **The `production` baseline's CUDA PASS is consistent with it** (`verify_compile_gate_cuda.sh` @`f0cf6da5`:
+  `rb_es_end2_s2005` final, 15M, fp32-trained, read under the bf16 rule; same-precision ratio 1.55): on CPU that state's
+  nearest row is 0.074 (log-prob) from its switching boundary against eager bf16's largest |Δ log π| of 0.055, so no
+  dither flips a branch (0 of 8), eager's error is unimodal (0.0077–0.011) and no healthy pair reads above K (max
+  1.1). It is one draw on a state WITHOUT a boundary row, not evidence that production states lack them: the
+  production rows' ratios are as off-policy as the toy's (ρ 0.002–5.2), and the same clip sits in the same loss.
+  **The PRODUCTION-surface census** (the bf16 A/B's eight end-state seeds `rb_bf_eb_s2001`–`s2008` at 15M, and s2001 at 5M / 10M; CPU, B = 64 untiled): a row sits within 0.01 of its switching boundary at 2 of 10 states (s2001 5M 0.0061, s2005 15M 0.0095) and within 0.02 at 3. Eager bf16 flips one at 1 (s2005 15M). That row's |A| is 0.011, so the head moved < 1 %: a flip's SIZE scales with the row's |A|·ρ, and s4001's rows had |A| 0.6–0.85. So X26 (the production surface, thousands of updates, a startup gate at every restart) CAN reach the same event — it is a per-state lottery on any surface whose fixture rows are off-policy, not a regime of the toy's pointer head.
+- **The startup gate is SINGLE-SHOT**: `gate_regions` judges the same rows at every launch and every 6-hourly restart
+  with no confirmation step, and its refusal is FATAL_CONFIG. A boundary row at a restart ends the run there.
+- **The KEY TENSION, resolved**: Inductor's fp32 intermediates keep compiled bf16's log-probs as close to fp32's as
+  eager's in the CONTINUOUS part (the frozen-branch error); a 0/1 switch needs only one arm's rounding to fall across a
+  margin of 0.005.
+- **The growth curve** (eager bf16 vs fp32, `move_proj.weight`, slice 0, CPU): 5M 0.010 · 15M 0.012 · 30M 0.016 ·
+  45M 0.020 · 60M 0.019 · 62–63M 0.037–0.041 · **66M 0.29 (a flip)** · 67–72M 0.021–0.031 · FATAL 0.028. The
+  move_proj pre-tanh magnitude grows (p99 3.9 → 11; |x| > 3 on 5 % → 57 % of units) and the continuous error with it
+  (~3×), nowhere near the 12× bar on its own.
+
+**Hypotheses, ranked, each with the read that kills it** (the GPU script reads every one; `VERDICT.md` is the form):
+
+| rank | hypothesis | CPU evidence | killed / confirmed by (GPU, at the FATAL's weights) |
+|---|---|---|---|
+| 1 | **(iv) the FIXTURE**: the PPO clip on 64 off-policy rows is a decision boundary in the statistic (standing rule 8) | SUPPORTED: the bimodal null, the flip attribution, eager's own flip at 66M, the two boundary rows at the FATAL | KILLED if Cbf flips NO row's branch against E32 (`implied.Cbf.branch_flips`) or its FROZEN-branch error stays far above Ebf's (`frozen_branch_vs_ref`); CONFIRMED if the RELOCATED fixture (`relocated`) passes and its null reads P(ratio > K) ≈ 0 |
+| 2 | **(iii) the yardstick is unusually small** | NOT SUPPORTED in its stated form: 2.8 % is eager's typical no-flip value (dither median 2.0 %, max 3.0 %); it is one draw from a BIMODAL distribution — (iv)'s mechanism, not a calibration defect | the same reads; `null.errors.Ebf` on CUDA |
+| 3 | **(ii) bf16 numerics in the compiled graph** (a fused reduction or softmax in bf16, overflow) | UNLIKELY by construction: the pointer head, the masked log-softmax and the losses run OUTSIDE the bf16 region (design (b)); compiled and eager bf16 differ only in WHERE the trunk rounds | Cbf's frozen-branch error and `implied.Cbf.self` (its backward against its own forward) vs Ebf's; `Cbf_emul` (rounds where eager does), `Cbf_aot` (no Inductor codegen) and `Cbf_pheager` vs Ebf |
+| 4 | **(i) a real Inductor miscompile** with trained weights | the least likely: a miscompile is deterministic, would read in the no-flip mode too, and the six earlier canaries read 1.1–2.9 | `fp32_rule` (C32 vs E32 at the fp32 bar: `over_bar` empty kills it); `Cbf_pheager` |
+
+**THE GPU DIAGNOSTIC** — `scripts/ops/diag_bf16_canary.sh` (+ `src/main/ops/diag_bf16_canary.py`), run by the
+lease holder: `GEN3AI_GPU_LEASE_TOKEN=<token> scripts/ops/diag_bf16_canary.sh rb_toy_ent_s4001` (`--plan` prints the
+command). One process under `gpu_lock.sh` + `mem_cap.sh` (16 GB), a 20-minute wall, a 14-minute budget for STARTING
+checkpoints (estimate: four Inductor compiles ~6 min, then ~1 min per checkpoint plus ~1–2 min per 32-seed null;
+UNVERIFIED until the first window). Order: `fatal, 72M, 70M, 66M, 60M, 45M, 30M, 15M` (the null at 32 seeds on the
+first two, 8 after; the checkpoints past 62.83M trained after the last passing canary, so they are read as SUSPECT —
+the s4001 census below is all before it). Arms: E32, Ebf, Cbf (the production `compile_regions.install`), C32 (a
+second learner at fp32), Cbf_emul (`emulate_precision_casts`), Cbf_aot (`aot_eager`), Cbf_pheager (the pointer head
+eager behind a graph break); a LOCALISATION arm (C32, Cbf_emul, Cbf_aot, Cbf_pheager) that cannot compile or run is
+recorded (`failed_arms`) and dropped, never the window's end.
+Per checkpoint and slice: every pairwise per-parameter distance over the pointer head, the canary's statistic and
+verdict replayed through `_r1_verdict_bf16` itself, the canary's own `_check` (the reproduction, verbatim), the fp32
+rule on C32, the forward agreement, the implied-gradient read (self / vs reference / frozen branch / branch flips),
+the per-row decomposition (κ, the rows carrying each arm's error), the switching margins, activations and weight
+norms, the RELOCATED fixture's reads, and the dithered null with its flip attribution. Output
+`~/.cache/gen3ai/diag_bf16_canary/<sha>/`: `gpu_<label>.json` as each finishes, `VERDICT.md`, `diag.log`. The CPU
+reads that underlie this section: `python -m main.ops.diag_bf16_canary cpu --ckpts … --out D` (~10 s per checkpoint,
+~2–4 min per 32-seed null on three cores).
+
+**Decision options for X26** (cost → verdict):
+
+| option | what it costs | verdict |
+|---|---|---|
+| fp32 for the pointer head only | — | **MOOT**: the head already runs fp32 (design (b)); the flipping row's log-prob moves because of the bf16 TRUNK upstream |
+| Inductor `emulate_precision_casts` | a slower graph, its own benchmark | **does not fix it**: eager bf16 itself flips (66M) |
+| recalibrate the bar on trained states | — | **NO**: (iii) is not shown; a bimodal statistic has no bar with teeth (healthy flips read up to 31×) |
+| fp32 trunk for X26 | `train_ms` +29 % (42.1 → 54.3 s); leaves the adopted, A/B-passed recipe | a working STOPGAP: fp32 arms differ by ~1e-6 in log-prob, so flips are ~10^4× rarer — but the same latent boundary sits in the fp32 rule |
+| an eager learner | the whole compiled speedup (not measured for this surface; UNVERIFIED) | NO: it removes the canary's subject, not the defect |
+| **fix the canary's FIXTURE (standing rule 8)** | ~0.5–1 agent-day + this GPU window to validate + a `verify_compile_gate_cuda.sh` re-run | **RECOMMENDED** (below) |
+
+**The recommended fix** (task T36, `designs/ops/TASK_BACKLOG.md`; NOT built here): before judging, read the fp32
+reference's ratio on every row and RELOCATE each row within M of its switching boundary to 2M inside the ACTIVE side
+(its old log-prob only; `diag_bf16_canary.relocate_old_log_prob`; M = 0.5 in these reads. T36 sets M = R1_BAR_K ×
+the largest |Δ log π| ANY arm reads, the compiled ones on the GPU included: on CPU, eager bf16's maximum over the
+62-checkpoint census is 0.161, so M ≈ 0.65). It is deterministic (a function of the reference's own forward on the same rows),
+keeps every far row's golden label, and judges the moved rows' FULL gradient in every arm. It applies to the startup
+gate too: `gate_regions` judges the same rows at every 6-hourly restart, where a FATAL is equally final. Also make the
+confirmation slice DISJOINT (rows 0–31 vs 32–63). **Validated on CPU at the FATAL's weights**: relocation moves 20 of
+the 64 rows (640 of 2,048 batch rows; M = 0.5), no arm flips a branch, eager bf16's `move_proj.weight` error turns
+unimodal (32 dithers: median 0.026, max 0.042, against 0.029 / 0.42 unrelocated), and the share of HEALTHY pairs above K
+falls from 18 % to **0 of 992** on every pointer-head parameter (max ratio 2.5–3.6, the order of window D's healthy max
+2.94); 0 at 66M and 15M too, and over the 62-checkpoint census the relocated eager error's maximum is 0.036. The bars stay valid if window D's 20 reads were flip-free (their max per-parameter ratio 2.94 is in the no-flip
+mode); the GPU window's `relocated` reads (verdict PASS at the FATAL's weights, null P(ratio > K) ≈ 0 for Cbf too) and
+`verify_compile_gate_cuda.sh` (the planted-miscompile teeth on the relocated rows) validate it on CUDA. **Order: the GPU diagnostic → T36 → X26 on the production bf16 compiled learner.** If the GPU contradicts
+(1) — Cbf off the reference with no branch flip, or C32 off at the fp32 bar — X26 takes the fp32 trunk and the
+miscompile is hunted with the localisation arms.
+
+**The watch-list record** (`gen3_canary_watch_v1`, this change): every canary record now carries the pointer head's
+per-check ratio, compiled distance and eager yardstick (`designs/training/learner_lifecycle.md`), so the next run's
+growth curve is recoverable; s4001's six passing canaries logged only their worst parameter.
 
 ### Lever C: R1's GRAPHED route (`--learner-cudagraphs {off,on}`, `gen3_r1_graphed_route_v1`, 2026-10-10)
 

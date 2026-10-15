@@ -133,7 +133,10 @@ no pointer is not a measurement.
     bf16 autocast (decisions, heads, losses fp32) vs fp32, 8 seeds × 15M each, the registered 8 × 8 mirrored cross:
     Δ̂ **+1.06 pp**, 90 % **[−1.19, +3.31]** — the closing test's rule holds (upper > 0, lower > −2.0); NOT a
     superiority read (the interval includes 0). It buys **−22.5 % `train_ms`** (54.3 s → 42.1 s per update), the GPU being
-    the bottleneck. [PASS · §4.6c; ledger 2026-10-14 MEASUREMENT (MAJOR) *THE bf16 STRENGTH A/B: PASS*]
+    the bottleneck. [PASS · §4.6c; ledger 2026-10-14 MEASUREMENT (MAJOR) *THE bf16 STRENGTH A/B: PASS*] The 2026-10-15
+    canary FATAL of a bf16 toy at 72.66M is, on CPU evidence, the canary's own fixture (a PPO clip-boundary row, so two
+    healthy arms disagree 30×), not a defect of the bf16 compiled learner. [UNVERIFIED on CUDA until the GPU read ·
+    ledger 2026-10-15 FINDING *the bf16 canary FATAL*]
 21. **Telling the policy the opponent's hidden facts does not make it stronger; it makes it dependent.** The end state forked
     for 3M steps with the true moves / items / never-seen species in its observation is no stronger than its control (moves
     **−0.38 pp [−1.86, +1.10]**, all three NULL; spreads NOT DETECTED), and withheld at play the moves and species forks are

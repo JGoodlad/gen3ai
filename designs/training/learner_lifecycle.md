@@ -157,9 +157,13 @@ miscompile is deterministic and disagrees every time. A healthy graph's rare exc
 batch on one weight state. Waiting for the next scheduled canary would mean ~1 h of training on a bad
 graph, so a disagreement is confirmed IN THE SAME UPDATE:
 - **Warn and dump** to `<run_dir>/canary_disagreements.jsonl`.
-- **Re-run the whole comparison**, compiled AND eager recomputed, on the same rows and on an
-  INDEPENDENT slice of the golden rows (`compile_trainer.fixture_index` slice 1: the second half of the
-  rows, tiled, the same declared shape).
+- **Re-run the whole comparison**, compiled AND eager recomputed, on the same rows and on a SECOND slice of
+  the golden rows (`compile_trainer.fixture_index` slice 1: the second half of the rows, tiled, the same
+  declared shape). ⚠️ **The second slice is NOT independent of the first** (2026-10-15): slice 0 is all 64
+  rows, so slice 1's 32 rows are a SUBSET of it, and the same-rows re-run is the same deterministic arithmetic.
+  A disagreement carried by one row of rows 32–63 "confirms" on both — exactly what the
+  `rb_toy_ent_s4001` FATAL did (a PPO clip-boundary row, [`compile_flags.md`](compile_flags.md) "The bf16
+  canary FATAL on trained weights").
 - **Confirmed** (it disagrees again on both): checkpoint to `<run_dir>/final_model_canary_fatal.zip`
   (forensics only; `latest.txt` is not moved), then `CompileCanaryError` (FATAL_CONFIG, not restarted).
 - **Not confirmed:** `compile/canary_unconfirmed_disagreements` counts it and training continues.
@@ -167,6 +171,16 @@ graph, so a disagreement is confirmed IN THE SAME UPDATE:
 
 Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 `<run_dir>/canary_verdicts.jsonl`; the run dir is `model.behaviour_dump_dir`, which K9(b) also uses.
+**Every record carries the WATCH-LIST** (`compile_canary.WATCH_PREFIXES` = `pointer_head.*`,
+`compile_regions.GradWatch`, `gen3_canary_watch_v1`, 2026-10-15): `watch.scheduled` (and on a disagreement
+`confirm_slice0` / `confirm_slice1`) holds, per watched parameter, the bf16 rule's `ratio`, the `compiled`
+distance from the fp32 reference, eager bf16's `eager` yardstick and the `floor` (under the fp32 rule:
+`compiled_vs_eager` and its `bar`; an unjudged parameter `{"judged": false}`), the check's `worst` parameter
+and its `global` drift / envelope numbers — filled before any check can refuse. The `rb_toy_ent_s4001` FATAL
+logged only each check's worst parameter, so the pointer head's ratio at its six passing canaries is
+unrecoverable; the next run's growth curve is in its JSONL. No extra compute: the rule computes these numbers
+anyway. Pinned by `compile_canary_test` (a pass and a FATAL record carry it; a global refusal still fills it;
+the fp32 rule's form).
 The FATAL names the SAFE ROLLBACK POINT: the newest `checkpoints/*_<N>_steps.zip` at or before the last
 PASSING canary's step (`rollback_point`; the file is the run's, so it spans restarts).
 

@@ -878,7 +878,7 @@ def unmoved_parameters(model: Any) -> List[str]:
 
 def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *,
              source: Optional[str] = None, fn: Optional[Callable[..., Any]] = None,
-             route: Optional[str] = None
+             route: Optional[str] = None, watch: Optional["GradWatch"] = None
              ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], List[str]]:
     """Region R1's verdict rungs, shared by the startup gate and the in-run canary. Returns the live
     rung's EAGER and COMPILED arms (the judged-set rule and the canary's cosine read them) and one
@@ -895,7 +895,8 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
          well-conditioned. A real miscompile there is caught by this rung.
 
     ``fn`` / ``route``: the R1 route under judgement (`r1_routes`; None = the installed compiled route,
-    rule lines prefixed ``R1``; a named route prefixes ``R1[<route>]``).
+    rule lines prefixed ``R1``; a named route prefixes ``R1[<route>]``). ``watch``: a `GradWatch` the LIVE rung fills
+    with its watch-list's per-parameter numbers (the canary's growth-curve record), also when the rung refuses.
     """
     unmoved = unmoved_parameters(model) if regime != "fresh" else []
     pre = "R1 " if route is None else f"R1[{route}] "
@@ -904,7 +905,7 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
     tail = f" [{source}]" if source else ""
     if unmoved:
         tail += f" [unmoved rule: {unmoved_rule(model)}]"
-    eager, comp, line = _r1_judge(model, args, names, regime, fn, bar_by_index=excepted)
+    eager, comp, line = _r1_judge(model, args, names, regime, fn, bar_by_index=excepted, watch=watch)
     rules = [pre + line + tail]
     if regime == "fresh":
         rules.append(pre + _r1_perturbed(model, args, names, fn))
@@ -915,7 +916,8 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
 
 def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
               fn: Optional[Callable[..., Any]] = None, *,
-              label: Optional[str] = None, bar_by_index: Optional[Dict[int, float]] = None
+              label: Optional[str] = None, bar_by_index: Optional[Dict[int, float]] = None,
+              watch: Optional["GradWatch"] = None
               ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], str]:
     """ONE rung: the independent compiled / eager pair on the CURRENT weights, judged by the rule of the
     policy's trunk precision — fp32: `_r1_verdict` (compiled vs eager at the fp32 bars); bf16: THE bf16 PARITY
@@ -926,8 +928,9 @@ def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
     if trunk_precision_of(model.policy) == "bf16":
         ref = _r1_reference(model, args)
         return eager, comp, _r1_verdict_bf16(eager, comp, ref, names, regime, label=label,
-                                             bar_by_index=bar_by_index)
-    return eager, comp, _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index)
+                                             bar_by_index=bar_by_index, watch=watch)
+    return eager, comp, _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index,
+                                    watch=watch)
 
 
 def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
@@ -988,7 +991,9 @@ def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
 
 def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], names: List[str],
                 regime: str, label: Optional[str] = None,
-                bar_by_index: Optional[Dict[int, float]] = None) -> str:
+                bar_by_index: Optional[Dict[int, float]] = None, watch: Optional["GradWatch"] = None) -> str:
+    if watch is not None:
+        watch.fill_fp32(eager, comp, names, regime, bar_by_index)
     e_loss, c_loss = float(eager["loss"]), float(comp["loss"])
     if not (np.isfinite(e_loss) and np.isfinite(c_loss)):
         raise ct.CompileTrainerError(f"--compile-trainer region R1: non-finite loss (eager {e_loss}, "
@@ -1005,6 +1010,69 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], n
                                  param_names=names, param_bar=R1_PARAM_BAR[regime],
                                  param_bar_by_index=bar_by_index)
     return f"[{label or regime + ' weights'}] {loss_rule}; {grad_rule}"
+
+
+# ------------------------------------------------------------------ the canary's WATCH-LIST record
+class GradWatch:
+    """A DECLARED watch-list of parameters (name prefixes) whose per-check numbers R1's live rung records whatever
+    the verdict (`gen3_canary_watch_v1`, 2026-10-15): the bf16 rule's per-parameter ratio, the compiled distance and
+    eager bf16's yardstick (or the fp32 rule's compiled-vs-eager error and bar), the check's worst parameter and its
+    global numbers. The canary writes it to `canary_verdicts.jsonl`, so a parameter family's GROWTH CURVE is
+    recoverable from a run (the `rb_toy_ent_s4001` FATAL logged only each check's worst parameter, so the pointer
+    head's ratio at the earlier canaries is unrecoverable). Pure bookkeeping on numbers the rule computes anyway."""
+
+    def __init__(self, prefixes: Tuple[str, ...]) -> None:
+        self.prefixes = tuple(prefixes)
+        self.rule: Optional[str] = None
+        self.params: Dict[str, Dict[str, Any]] = {}
+        self.worst: Optional[Dict[str, Any]] = None
+        self.globals: Dict[str, float] = {}
+
+    def wants(self, name: str) -> bool:
+        return bool(self.prefixes) and name.startswith(self.prefixes)
+
+    def fill_bf16(self, err_c: Dict[int, float], err_e: Dict[int, float], names: List[str], regime: str,
+                  over: Dict[int, float], globals_: Dict[str, float]) -> None:
+        self.rule, self.globals = "bf16", {k: float(v) for k, v in globals_.items()}
+        best = (-1.0, -1)
+        for i, nm in enumerate(names):
+            if i in err_c:
+                floor = float(over.get(i, R1_PARAM_BAR[regime]))
+                ratio = err_c[i] / max(err_e[i], floor)
+                ratio = ratio if ratio == ratio else float("inf")
+                if ratio > best[0]:
+                    best = (ratio, i)
+                if self.wants(nm):
+                    self.params[nm] = {"ratio": ratio, "compiled": err_c[i], "eager": err_e[i], "floor": floor}
+            elif self.wants(nm):
+                self.params[nm] = {"judged": False}
+        if best[1] >= 0:
+            i = best[1]
+            self.worst = {"param": names[i], "ratio": best[0], "compiled": err_c[i], "eager": err_e[i]}
+
+    def fill_fp32(self, eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], names: List[str],
+                  regime: str, over: Optional[Dict[int, float]]) -> None:
+        sizes = [int(x) for x in eager["grad_sizes"].tolist()]
+        err = dict(per_param_grad_errors(comp["grad"], eager["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
+        ov = dict(over or {})
+        self.rule = "fp32"
+        for i, nm in enumerate(names):
+            if self.wants(nm):
+                self.params[nm] = ({"compiled_vs_eager": err[i], "bar": float(ov.get(i, R1_PARAM_BAR[regime]))}
+                                   if i in err else {"judged": False})
+        if err:
+            j = max(err, key=lambda x: err[x])
+            self.worst = {"param": names[j], "compiled_vs_eager": err[j]}
+
+    def record(self) -> Dict[str, Any]:
+        """The JSON-able record (4 significant digits; a non-finite value as its string)."""
+        def r(v: Any) -> Any:
+            if isinstance(v, float):
+                return float(f"{v:.4g}") if np.isfinite(v) else str(v)
+            if isinstance(v, dict):
+                return {k: r(x) for k, x in v.items()}
+            return v
+        return {"rule": self.rule, "params": r(self.params), "worst": r(self.worst), "global": r(self.globals)}
 
 
 # ------------------------------------------------------------------ THE bf16 PARITY RULE
@@ -1095,7 +1163,7 @@ def bf16_measured() -> Optional[str]:
 
 def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], ref: Dict[str, torch.Tensor],
                      names: List[str], regime: str, label: Optional[str] = None,
-                     bar_by_index: Optional[Dict[int, float]] = None) -> str:
+                     bar_by_index: Optional[Dict[int, float]] = None, watch: Optional["GradWatch"] = None) -> str:
     """THE bf16 PARITY RULE (the block comment above): DRIFT (eager bf16 vs the fp32 reference) and ENVELOPE
     (compiled bf16 vs the reference, within K x eager bf16's own error, floored at the fp32 bar). Raises
     `CompileTrainerError`; returns the rule line."""
@@ -1112,6 +1180,14 @@ def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tenso
                                      f"{l_ref}, eager {l_e}, compiled {l_c})")
     d_loss_e, d_loss_c = _rel(l_e, l_ref), _rel(l_c, l_ref)
     d_g_e, d_g_c = _rel_l2(eager["grad"], ref["grad"]), _rel_l2(comp["grad"], ref["grad"])
+    sizes = [int(x) for x in ref["grad_sizes"].tolist()]
+    err_c = dict(per_param_grad_errors(comp["grad"], ref["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
+    err_e = dict(per_param_grad_errors(eager["grad"], ref["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
+    over = dict(bar_by_index or {})
+    if watch is not None:                                   # the record is complete whichever check refuses
+        watch.fill_bf16(err_c, err_e, names, regime, over,
+                        {"drift_loss": d_loss_e, "drift_grad": d_g_e, "envelope_loss": d_loss_c,
+                         "envelope_grad": d_g_c})
     # ---- DRIFT: the bf16 function vs the fp32 one
     for what, v in (("loss", d_loss_e), ("grad_rel_l2", d_g_e)):
         if not v <= BF16_DRIFT_BARS[what]:
@@ -1129,13 +1205,9 @@ def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tenso
                 f"--compile-trainer region R1 (bf16 rule): the COMPILED bf16 micro-step is farther from the fp32 "
                 f"reference than eager bf16 allows — {what}: compiled {dc:.2e} > {BF16_ENVELOPE_K[what]:g} x "
                 f"max(eager {de:.2e}, floor {floor:g}) = {bar:.2e}. A faster wrong model is not a win.")
-    sizes = [int(x) for x in ref["grad_sizes"].tolist()]
-    err_c = dict(per_param_grad_errors(comp["grad"], ref["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
-    err_e = dict(per_param_grad_errors(eager["grad"], ref["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
     if not err_c:
         raise ct.VacuousCompileParityError("--compile-trainer region R1 (bf16 rule): no parameter's reference "
                                            "gradient is above the per-parameter floor")
-    over = dict(bar_by_index or {})
     k = BF16_ENVELOPE_K["param"]
     worst = (-1.0, -1, 0.0, 0.0)
     bad = []
