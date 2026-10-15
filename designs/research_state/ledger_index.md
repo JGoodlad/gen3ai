@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-25,484-line file. **The ledger itself is append-only and is never edited by this**;
+25,544-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**874 headings · 819 dated · 2026-08-01 → 2026-10-15 · ledger 25,484 lines.**
+**875 headings · 820 dated · 2026-08-01 → 2026-10-15 · ledger 25,544 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -894,3 +894,4 @@ rename.
   - `L25321` · `2026-10-15` · GIGO FIX · **A packed team's move token was compared RAW with ids from play (`wisp` ≠ `willowisp`): the one pool team that spells Will-O-Wisp as a Showdown name variant made 7 of POOLSETS' 9,112 Tier-1 worlds run the move twice; ONE packed-token reader (`gen3_data.moves.canonical_id` behind `packed.typed_moves`) and throwing guards now cover the whole search / lever stack — the TRUE team of no Tier-1 state spells a variant, so no registered verdict moves and the exact leave-one-out of the 7 worlds moves POOLSETS' arm-mean IMP by ≤ 3.3e-4**
   - `L25342` · `2026-10-15` · MEASUREMENT (MAJOR) · **THE KNOCK-IN FORKS (hidden-info study §8.4 / §8.5), INTERPRETED: told the opponent's true moves, items or never-seen species in its observation for +3M steps, the end state is NO stronger than a no-change control — K-MOVES NULL (Δ −0.38 pp [−1.86, +1.10]), K-ITEMS NULL (+0.13 [−1.61, +1.86]), species NULL (−0.59 [−1.77, +0.58]), K-SPREADS NOT DETECTED (+0.34 [−2.51, +3.18], half-width 2.84); no moves extension; MOVES-FIRST false; K-L-WORTH not declarable (no placebo). DESCRIPTIVE: withheld at play, the moves and species forks are ≈ 2.4–2.6 pp BELOW the control (told − withheld ≈ +1.9 pp on every seed): a DEPENDENCE cost, not a gain; the control gained +4.375 pp over its parent (CONFOUNDED). Information is a SEARCH lever, not a POLICY lever, at this maturity (PROVISIONAL)**
   - `L25454` · `2026-10-15` · BUILD · LEGACY DELETION U1 landed: eight op levers deleted (config v156) — what stopped loading at HEAD, and the pin to read it from
+  - `L25484` · `2026-10-15` · CRASH FIX · **Every PRODUCTION run at a commit ≥ `65b71f6a` died at its FIRST post-update dump (step ~202k on the GPU): sb3's stdout table cut `cell/move_resolution_restored_move_{weight,grad}_norm` (and the `restored_switch` / `status_switch` pairs) to one 33-character label and RAISED; the table is now collision-proof (48 columns, a digest label past them, never a raise) and a key set that collides in ANY output is refused at STARTUP (`MetricKeyCollisionError`, FATAL_CONFIG) — `gen3_metric_key_collision_v1`**
