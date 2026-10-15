@@ -25744,3 +25744,47 @@ disagreement.
 6. **Backlog T16 (an fp64-referenced gate) would NOT fix this**: the boundary flips against any reference.
 7. **CPU eager bf16 and CUDA eager bf16 read the same error to three digits** at the FATAL's weights (2.83e-2 vs
    2.82e-2). n = 1, not relied on.
+
+### 2026-10-15 · BUILD (MAJOR) · LEGACY DELETION U3 landed: the FRESH-INIT STREAM changed at `882a3f86` — every fresh seed after it draws a different initial network; the seven per-action blocks, `--move-resolution(-facts)` and the critic's threat injection deleted (config v157)
+
+**🚨 The init-stream break (D-LD7).** The seven per-action blocks (`intent_move_cell`, `intent_threshold`,
+`intent_conditional`, `pair_outcome_cell`, `pair_outcome_switch`, `switch_branch_cell`, `conditional_threat_cell`) and
+the critic's threat projection (`CLSPool.value_threat_proj`) were CONSTRUCTED and then RETIRED under the adopted surface;
+U3 deletes them, so their global-RNG draws are gone. **A fresh seed at or after `882a3f86` builds a different initial
+network than the same seed before it: replicates across this commit are NOT "same pin + seed"** (and the closing test's /
+the bf16 A/B's E-arm seeds cannot be re-drawn at HEAD; any later "same seed" comparison runs pinned on one side of the
+boundary). Measured per seed (`designs/research_state/measurements/legacy_deletion_u3_init_2026-10-15/`,
+`init_pre_u3_4801b956.json` vs `init_post_u3_882a3f86.json`, the production learner as a fresh run seeds it, CPU, one
+thread), identically for seeds **1001, 2001 and 4001**:
+- **vanished / new tensors: none** — the trained network's parameter set and every shape are unchanged (280 tensors,
+  2,609,183 elements); the deleted modules held no surviving key;
+- **changed: the same 64 tensors for every seed (1,924,128 elements)** — every Linear weight SB3's orthogonal re-init
+  draws (the re-init now starts from a different RNG state), the randomly initialised non-Linear parameters constructed
+  after the first deleted module (the hidden-opponent pool's queries and decoder attention `in_proj_weight`s, the entity
+  pool's queries / source embedding, the event seats' marker and embeddings), and the pointer head's `ctx_proj` /
+  `move_proj` / `switch_proj` (default-init, built after the re-init); **bit-identical: 216** (the embedding tables,
+  every zero-init / constant-init parameter, every bias the re-init zeroes);
+- **the init FORWARD on the 64 compile-parity rows:** the masked action log-probs and the entropy are **bit-identical**
+  (the pointer scorers are zero-init, so the fresh policy is uniform-over-legal either way); `pi_features`,
+  `vf_features` and the value (win-prob) output **changed** (sums: seed 1001 value 45.05 → 11.71, 2001 27.60 → 43.39,
+  4001 46.50 → 22.93).
+
+**The K9 learner golden** was re-recorded ONCE, after `learner_golden check` was shown to PASS on the pre-U3 tree
+(`879d091d`) and to FAIL at U3's (cause: `init_params_sha256` — the rebuilt-from-seed learner's init moved — and with
+it the post-update hashes / losses); init `d9c69eca…` → `c44c7e52…`, post `2dba416a…` → `25debac1…`, fp32 opt-out `b132b440…` → `3375befb…` (identical under +cu126 and +cu128; re-recorded on the tree carrying `af6bc0eb`, so the fp64 reference keeps `species_belief`); the buffer rebuilt (`448715cc…` → `a782af44…`) because K9(b) refused the parent-init behaviour log-probs, at `RECORD_RUN_SEED` 22 (19 / 20 missed design §6.4's OTHER_move-dead coverage under the new learner, 21 failed K9(b) on rule-8 exclusions) — commit `33a1c3b9`.
+
+**What stopped loading at HEAD** (refused on every load, typed, naming `pre-legacy-deletion` = `0a0d9e1d`): every
+config / zip that recorded `move_resolution off`, `move_resolution_facts off`, `value_threat_inject True` or a live block
+(True beside `move_resolution off`) in a network that built it — every pre-adoption config already refused by U1, and
+nothing new among the adopted runs. Still loading: the E arm (`rb_es_end2_*`, `rb_es_end_s2001`, v154: its seven True
+are INERT beside `move_resolution on`), the bf16 A/B runs (v155), every v156 / v157 run, every TOY (vacuous).
+
+**Not changed:** the TRAINED forward of the adopted surface (the deleted modules had no forward use, no state_dict key,
+no optimizer slot), the observation, `ARCH_SIGNATURE`, `MIGRATION_FLOOR`.
+
+Tag: **BUILD (MAJOR) · legacy deletion U3 · FRESH-INIT STREAM CHANGED at `882a3f86` (seed identity broken across it) ·
+no trained-forward / obs change** ·
+evidence: `designs/research_state/measurements/legacy_deletion_u3_init_2026-10-15/init_post_u3_882a3f86.json` (+
+`init_pre_u3_4801b956.json`, `init_probe.py`), `src/agents/model/model_version/adopted_levers.py`,
+`src/agents/training/learner_golden.json` (history row), `designs/ops/legacy_deletion_manifest_2026-10-12.md` §8,
+`designs/CHANGELOG.md` (2026-10-15 U3)

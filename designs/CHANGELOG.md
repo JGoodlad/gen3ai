@@ -14526,3 +14526,56 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   (sites restored with values), `debug_shape_test.py` (the smoke's env pin). Docs: `designs/training/telemetry_scalars.md`
   "ONE producer per key", `belief_losses.md`, `step_size_and_batch.md`, `forks.md`, `designs/ops/testing.md`,
   `src/agents/training/CLAUDE.md`, `designs/endstate/design_x26_readiness.md` I29; ledger 2026-10-15 GIGO FIX.
+
+## 2026-10-15 — LEGACY DELETION U3 (lanes MR + VTI): the seven per-action blocks, `--move-resolution` / `--move-resolution-facts` and the critic's threat injection deleted; move resolution DERIVED (config v157; no ARCH_SIGNATURE bump, no MIGRATION_FLOOR change, no obs change; 🚨 the FRESH-INIT STREAM changed)
+
+- **Deleted** (`designs/ops/legacy_deletion_manifest_2026-10-12.md` §1.2 B1 / B2, §1.3 C1), each with its flag (+ `_`
+  alias, + `--no-` form for the eight BoolFlags), `ModelVersion` field, `_resolve` line, registry row,
+  `check_compatible` clause and snapshot keyword: `--intent-move-cell`, `--intent-threshold`, `--intent-conditional`,
+  `--pair-outcome-cell`, `--pair-outcome-switch`, `--switch-branch-cell`, `--conditional-threat-cell` (modules
+  `intent_move_cell.py`, `intent_threshold.py`, `intent_conditional.py`, `switch_branch.py`, `conditional_threat.py`;
+  `pair_outcome.py` keeps the grid's coordinate contract, `GHOST_TYPE_IDX` and `pair_alpha_full`), `--move-resolution`
+  (the family is DERIVED: `MoveResolutionCell` is built whenever opp_intent + the op with its outgoing block, both
+  per-move matrices and the incoming matrix's seat axis are — D-LD2), `--move-resolution-facts` (the restored facts are
+  unconditional inside the family) and `--value-threat-inject` (`value_threat_inject.py`, `CLSPool.value_threat_proj`;
+  `pair_reduce.py` keeps only `alpha_belief_mean` / `reduce_with_alpha` — `PairReducer`, `build_pair_reducer`,
+  `pair_reduce_extra_dim`, `DamageOperator(reduce_how=…)` and `last_reduced_extra` went). Also gone:
+  `ExtractorApi.retire_superseded_action_cells` / `retire_value_threat_inject` and the policy's calls, the stash
+  `thresh_probs`, `DamageOperator.stash_opp_ghost` / `last_opp_p_ghost`, `FlatConsumerOps.topk_w / pair_cells / out_pko /
+  opp_p_ghost` (block-only; the surviving `_flat_consumer_ops` keeps α, β, seat_live, other_u, pair_in, type_mult,
+  out_cells — the fields `move_resolution.gather_ops` reads), the seven blocks' width constants, the
+  `critic_route_audit` `threat` arm and four `grad_balance.CELL_FAMILIES` rows (the deleted `proj` cells).
+- **The refusal** (`adopted_levers.LANDED_UNITS = {"U1", "U3"}`, `UNIT_VERSIONS["U3"] = 157`): a config / zip that
+  recorded `move_resolution off`, `move_resolution_facts off`, `value_threat_inject True` or a LIVE block (True beside
+  `move_resolution off`) in a network that built it is refused on every load naming `pre-legacy-deletion`; an adopted
+  config (the E arm v154, the bf16 runs v155, any v156) loads — its seven True are INERT beside `move_resolution on` —
+  and an ABSENT `move_resolution` reads by the unit-version rule (ON in a v157 config / a pickled kwarg set). The
+  move-resolution row requires `damage_topk_k` too (the family is built only with the seat axis). Toys stay vacuous.
+- 🚨 **THE FRESH-INIT STREAM CHANGED (D-LD7).** The seven blocks and the threat projection were constructed and then
+  retired, so their RNG draws (construction and SB3's orthogonal re-init) are gone: a fresh seed at or after this commit
+  builds a DIFFERENT initial network than the same seed before it. Measured by
+  `designs/research_state/measurements/legacy_deletion_u3_init_2026-10-15/init_probe.py` (seeds 1001 / 2001 / 4001):
+  the parameter set and every shape are unchanged (280 tensors, 2,609,183 elements; none vanished, none new); 64
+  tensors (1,924,128 elements, the same 64 for every seed) change value — every Linear weight SB3's orthogonal re-init
+  draws (it now starts from a different RNG state), the randomly initialised non-Linear parameters constructed after
+  the first deleted module (the hidden-opponent queries, the entity pool's queries / source embedding, the event
+  seats' embeddings, the attention `in_proj_weight`s), and the pointer head's three default-init projections built
+  after the re-init — and 216 are bit-identical (the embedding tables, every zero-init / constant-init parameter,
+  every bias the re-init zeroes); the init forward's masked action log-probs and entropy are
+  bit-identical (the pointer scorers are zero-init, so the policy is uniform-over-legal either way) while
+  `pi_features`, `vf_features` and the value output change. Replicates across this commit are not "same pin + seed". Record: `init_post_u3_882a3f86.json`; ledger 2026-10-15 BUILD (MAJOR) U3.
+- **The TRAINED forward is unchanged** for production: the deleted modules held no surviving state_dict key, no
+  optimizer slot and no forward use. **K9 re-recorded ONCE** (`learner_golden check` IDENTICAL at the pre-U3 tree,
+  DIFFERS at U3 on `init_params_sha256` `d9c69eca…` → `c44c7e52…`): post `2dba416a…` → `25debac1…`, fp32 opt-out
+  `b132b440…` → `3375befb…` (identical under +cu126 / +cu128); the buffer rebuilt (`448715cc…` → `a782af44…`, K9(b)
+  refused the parent-init behaviour log-probs) at `RECORD_RUN_SEED` 22 (19 / 20 missed the §6.4 OTHER_move-dead
+  coverage under the new learner, 21 failed K9(b) on rule-8 exclusions).
+- Pre-existing failures at main (since U0 / U1) fixed in passing: `retired_levers_test`'s OFF table vs the adopted
+  rows; `model_version_hub_contract_test` (the hub re-exports `adopted_levers`; `retired_levers` imports it by its own
+  path; `adopted_levers_test.py` moved out of the hub package to `src/agents/model/`).
+- Gates: `delivery_graph --check` structurally unchanged (meta `config_version` 156 → 157; snapshot, dot, viewer
+  regenerated); `arch_tables` / `flag_registry.md` regenerated; `checkargs --argv "--arch production …"` and
+  `--arch endstate …` resolve the same network (registry 57 → 47 toggles).
+- `designs/production_config.json` lost the ten keys and is stamped v157 (`baselines.json`'s production entry
+  `config_mirror_version: 157`); the `--arch endstate` overlay (8 keys) and `PRE_ADOPTION_PRODUCTION` lost the three
+  move-resolution / threat keys — the "legacy" network now builds move resolution too.

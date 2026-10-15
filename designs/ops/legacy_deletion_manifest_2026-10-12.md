@@ -1,6 +1,6 @@
 # The LEGACY + JUDGMENT DELETION after the end state's adoption — manifest
 
-**Status: IN PROGRESS (2026-10-15).** §0's decisions D-LD1–D-LD7 ADOPTED at their recommendations as the orchestrator's default (§7; the owner may override before U3 lands). **U0 SHIPPED** (the refusal machinery, the tag `pre-legacy-deletion`, `--arch static_recovery` deleted); **U1 SHIPPED** (lane OP, config v156); progress and the handoff are §8. Proposed 2026-10-12.
+**Status: IN PROGRESS (2026-10-15).** §0's decisions D-LD1–D-LD7 ADOPTED at their recommendations as the orchestrator's default (§7; the owner may override before U3 lands). **U0 SHIPPED** (the refusal machinery, the tag `pre-legacy-deletion`, `--arch static_recovery` deleted); **U1 SHIPPED** (lane OP, config v156); **U3 SHIPPED** (lanes MR + VTI, config v157 — 🚨 the fresh-init stream changed, D-LD7; the critical path to X26 is complete); progress and the handoff are §8. Proposed 2026-10-12.
 Scoped at `748f90e6` plus the ADOPTION working tree (`designs/production_config.json` carrying the `--arch endstate`
 overlay, `arch_arms.py` with `endstate` an alias and `static_recovery` redeclared with explicit OFF values). Line
 numbers are at that tree; `≈` is an estimate from a line range, and each unit re-measures at its own commit. Format
@@ -233,32 +233,27 @@ Runs already below the floor (`rb_st_*` v143, `rb_x5ab_*` v137) were pinned-only
 |---|---|---|---|
 | U0 | **SHIPPED 2026-10-15** | see `git log --grep "legacy-deletion U0"` | `adopted_levers.py` (+ `_test`, 15 tests, 9 fail when the vacuity / inert checks are reverted); `retired_levers._adopted_rows`; `snapshot.sanitize_dead_extractor_kwargs` → `judge_pickled_kwargs`; `--arch static_recovery` refused at parse time (`arch_arms.DELETED_ARMS`, `deleted_flags.md` §1b); tag `pre-legacy-deletion` pushed. F-LD-1 was already fixed at adoption (`delivery_graph.build_extractor` retires both). K9, the obs golden and the delivery graph untouched (no model change) |
 | U1 | **SHIPPED 2026-10-15** | see `git log --grep "legacy-deletion U1"` | the eight flags (+ `_` aliases) deleted with their fields, `_resolve` lines, registry rows, `check_compatible` clauses, snapshot keywords and OFF paths; `MODEL_CONFIG_VERSION` 156 (stamp-only); `LANDED_UNITS = {"U1"}`. K9 `learner_golden check` IDENTICAL (bf16 + fp32 opt-out); `delivery_graph --check` structurally unchanged (meta `config_version` only; regenerated with the viewer); `arch_tables`, `flag_registry`, `selection_sites`, mode / recipe / freshness / flag-census doc gates green; the static tier green; `checkargs --argv "--arch production …"` and `--arch endstate` resolve the same network (reports differ only in the mirror hash and the registry count 65 → 57). The toy rule re-proven on a pinned-toy-shaped record (`adopted_levers_test`). **U0's absent-field rule FIXED** (`absent_value`: an absent field in a config written at or after its unit's version reads ADOPTED; an absent pickled kwarg is left to the config judge) — without it the mirror itself was refused. The mirror stamped v156 with `baselines.json`'s production entry declaring `config_mirror_version: 156` (hand-added: `main.baselines set` has no option for it). |
-| U2, U3, U4, U5, U6 | NOT STARTED | — | — |
+| U3 | **SHIPPED 2026-10-15** | `882a3f86` (code) + `33a1c3b9` (K9) | the seven block flags, `--move-resolution`, `--move-resolution-facts` and `--value-threat-inject` (+ `_` aliases, `--no-` forms) deleted with their fields, `_resolve` lines, registry rows, `check_compatible` clauses, snapshot keywords, modules (`intent_move_cell`, `intent_threshold`, `intent_conditional`, `switch_branch`, `conditional_threat`, `value_threat_inject`; `pair_outcome` / `pair_reduce` partial) and the two retire hooks; move resolution DERIVED (built iff opp_intent + damage_op + damage_outgoing + both matrices + damage_topk_k > 0), its restored facts unconditional; `MODEL_CONFIG_VERSION` 157 (stamp-only); `LANDED_UNITS = {U1, U3}`. `FlatConsumerOps` KEPT (Finding 5) minus its four block-only fields (`topk_w`, `pair_cells`, `out_pko`, `opp_p_ghost`; `topk_w` was block-only too, not only the three the U1 agent named). 🚨 **D-LD7**: `init_post_u3_882a3f86.json` vs `init_pre_u3_4801b956.json` — same 280 tensors / 2,609,183 elements, 64 tensors change value for every seed (the same 64), 216 bit-identical; the init forward's masked log-probs and entropy bit-identical, `pi_features` / `vf_features` / the value changed. K9 golden RE-RECORDED once (shown passing at the pre-U3 tree and failing at U3's, `init_params_sha256` moved). The ledger's U3 entry is MAJOR. |
+| U2, U4, U5, U6 | NOT STARTED | — | — |
 
-**The exact next step (U3, lanes MR + VTI: B1, B2, C1).** On main after U1:
-1. **F-LD-6 is DONE (landed after U1):** `src/agents/model/op_pair_producers_test.py` (19 tests, surviving code only)
-   holds the op-side PRODUCER coverage the seven blocks' tests carried; the per-producer inventory (what was ported,
-   what surviving tests already cover, what goes with the blocks) is
-   `designs/research_state/measurements/legacy_deletion_u3_init_2026-10-15/F-LD-6_inventory.md`. Its findings for U3:
-   `ExtractorForward._flat_consumer_ops` / `FlatConsumerOps` (`extractor_forward.py`, `flat_intent.py`) is a SURVIVING
-   reader of the op's stashes under X5 (incl. `pair_in_other`, `pair_type_mult_other`, `pair_cells_other`) — keep it;
-   three of its fields (`pair_cells`, `out_pko`, `opp_p_ghost`) look block-only (UNVERIFIED). If U3 removes
-   `arch_constants._PAIR_OUTCOME_*` or `damage_op_test`'s shared fixtures, update that file's imports. Delete the seven
-   test files with their modules.
-2. Delete `--move-resolution` (DERIVED on iff opp_intent + damage_op + damage_outgoing + both matrices, D-LD2),
-   `--move-resolution-facts` (derived `full` with it), the seven block flags (+ `--no-` / `_` spellings) and
-   `--value-threat-inject`; their fields, `_resolve` lines, registry rows, `check_compatible` clauses, snapshot keywords;
-   the seven modules (`pair_outcome.py` PARTIAL: `pair_alpha_full`, `PAIR_OUTCOME_IDX`, `STATUS_FACT_COORDS`,
-   `GHOST_TYPE_IDX` stay), `value_threat_inject.py`, `pair_reduce.py` but `alpha_belief_mean` / `reduce_with_alpha`,
-   `ExtractorApi.retire_superseded_action_cells` / `retire_value_threat_inject` and their policy calls, the CLSPool
-   threat projection, `stash_opp_ghost`, `thresh_probs`, the `intent_threshold` exact-KO operands.
-3. `LANDED_UNITS |= {"U3"}`, `UNIT_VERSIONS["U3"] = <the bumped MODEL_CONFIG_VERSION>`; deleted_flags rows; the
-   `endstate` overlay and `PRE_ADOPTION_PRODUCTION` lose the keys; the mirror and `baselines.json`'s
-   `config_mirror_version` move to the new version.
-4. 🚨 **D-LD7 — the init stream.** The PRE-U3 record is committed: `init_pre_u3_4801b956.json` (seeds 1001 / 2001 /
-   4001 at U1's tip `4801b956`; 280 parameters, 2,609,183 elements, reproducible bit for bit). Run `init_probe.py dump`
-   at U3's commit, then `compare` against it: state which tensors change for the same seed and whether the init
-   forward changes. Re-record the K9 golden (`learner_golden record --reason …`) ONLY after showing it passes at U1's
-   commit and fails at U3's; the ledger entry is MAJOR ("fresh-init stream changed at `<U3 sha>`").
-5. Gates as U1's, plus `identity_init_test`, `extractor_compiles_test` (CPU), `tier_contract_test`, the `critic_route_audit`
-   tests and `move_resolution_bridge_integration_test` (sim; record its slow-tier verdict).
+**The exact next steps (after U3; none is on X26's critical path).** Land them ONE at a time, rebasing each on the last
+(they share `extractor_build.py`, `flag_registry.py`, `model_version/*`, `snapshot.py`, `main/train/config.py`):
+1. **U2 (lane OBS: E1 `--obs-facts`, E2 `--drop-progress-clock` (J), E3 `--move-target-state`, E4
+   `--move-set-closure`)** — opus-medium. The machinery is ready: add `"U2"` to `adopted_levers.LANDED_UNITS` and its
+   first config version (158) to `UNIT_VERSIONS`; delete each flag (+ `_` alias) / field / `_resolve` line / registry
+   row / `check_compatible` clause / snapshot keyword / construct read; `obs_facts`, `drop_progress_clock` and
+   `move_target_state` become UNCONDITIONAL (the BARE network changes: R3 — every default-built extractor test is re-read),
+   `move_set_closure` DERIVED with `opp_belief_slots` + `opp_intent`. `ObsUnpack`'s clock zeroing stays (D-LD5 (A)).
+   Gates as U3's; K9 should be byte-identical for production (each lever builds zero-init `IsolatedLinear`s LAST with no
+   RNG draw — prove it with `learner_golden check`, F-LD-10) and `init_probe.py` should read 0 changed tensors — run
+   both, and if either moves, STOP and report (a second init break was not planned).
+2. **U4 (lane LEG: A1 `--token-encoding legacy`, A2 `--mon-hazard-cost`, A3 `--move-actor-state`)** — opus-high; after
+   U2 or U3 (heavy `extractor_build` / `extractor_forward` overlap: never in parallel worktrees). `PokemonEncoder`,
+   `hypothesis_encode.py`, the single-global-board-token paths and `projection.board_bypass` go; `PRE_ADOPTION_PRODUCTION`
+   (`main.train.arch_arms`) then has no key left to set — delete it with `legacy_production_config`, re-pointing its
+   remaining callers (`endstate_facts_test._toggles`, `ko_exact_test`'s `legacy` surface, `arch_surface_test._legacy_mirror`,
+   `adopted_levers_test._legacy_raw`) at frozen literal records. F-LD-11 (`main/visualize_arch.py`) is decided there.
+3. **U5 (optional, lane CLK)** — only on the owner's word (D-LD5 (B)): an OBS change (the Rust clock tracker), needs the
+   obs golden re-bake and `OBS_SEMANTICS_VERSION`.
+4. **U6 (close-out)** — after U2 / U4: delete the `--arch endstate` alias (D-LD3, its §1b row), run the exit criterion's
+   greps (§5), T21 and `flag_census.md`, the closing test's Decision record "deleted at …".
