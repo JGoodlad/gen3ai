@@ -1,0 +1,109 @@
+{
+ "bank": {
+  "battles": 40,
+  "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+  "decisions": 1172
+ },
+ "bootstrap": {
+  "B": 1000,
+  "interval": "95 % (2.5th, 97.5th percentiles)",
+  "method": "percentile bootstrap resampling BATTLES (clusters)",
+  "seed": 20260930
+ },
+ "c_saturation": {
+  "skipped": "needs >= 2 checkpoints"
+ },
+ "checkpoints": [
+  {
+   "heads": "trained",
+   "keys": [
+    "rnd",
+    "rndv_fast",
+    "rndv_decay",
+    "rndv_small",
+    "rndv_feat"
+   ],
+   "label": "eb_s2001_9M",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2001/checkpoints/checkpoint_9000048_steps.zip",
+   "step": 9000048
+  }
+ ],
+ "cli_order": "every --checkpoint as given, then each --run-checkpoints run in step order; first = A",
+ "d_feat_drift": {
+  "skipped": "needs >= 2 checkpoints with feat"
+ },
+ "e_identification_series": {
+  "rnd": [
+   {
+    "R": 1.26913,
+    "S": 0.904755,
+    "f_i": 0.0710066,
+    "f_ii": 0.0913495,
+    "label": "eb_s2001_9M",
+    "m_i": 0.00283215,
+    "m_ii": 0.00359437,
+    "rho": 1.28649,
+    "step": 9000048,
+    "verdict": "IDENTIFIES"
+   }
+  ],
+  "rndv_decay": [
+   {
+    "R": 1.26889,
+    "S": 0.871379,
+    "f_i": 0.141263,
+    "f_ii": 0.181699,
+    "label": "eb_s2001_9M",
+    "m_i": 0.00563437,
+    "m_ii": 0.00714938,
+    "rho": 1.28625,
+    "step": 9000048,
+    "verdict": "IDENTIFIES"
+   }
+  ],
+  "rndv_fast": [
+   {
+    "R": 1.26221,
+    "S": 0.953336,
+    "f_i": 0.00508566,
+    "f_ii": 0.00650698,
+    "label": "eb_s2001_9M",
+    "m_i": 0.000202846,
+    "m_ii": 0.000256033,
+    "rho": 1.27948,
+    "step": 9000048,
+    "verdict": "IDENTIFIES"
+   }
+  ],
+  "rndv_feat": [
+   {
+    "R": 1.48092,
+    "S": 0.99885,
+    "f_i": 0.0267068,
+    "f_ii": 0.0268183,
+    "label": "eb_s2001_9M",
+    "m_i": 0.00206644,
+    "m_ii": 0.00306024,
+    "rho": 1.00418,
+    "step": 9000048,
+    "verdict": "IDENTIFIES"
+   }
+  ],
+  "rndv_small": [
+   {
+    "R": 1.09028,
+    "S": 0.970486,
+    "f_i": 0.163688,
+    "f_ii": 0.172669,
+    "label": "eb_s2001_9M",
+    "m_i": 0.0115331,
+    "m_ii": 0.0125744,
+    "rho": 1.05487,
+    "step": 9000048,
+    "verdict": "IDENTIFIES"
+   }
+  ]
+ },
+ "reader_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763+dirty",
+ "schema": "gen3_ridealong_rnd_variants_read_v1"
+}

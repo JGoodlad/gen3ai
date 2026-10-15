@@ -31,6 +31,15 @@ variant's — exists, with its Adam state allocated, BEFORE the first update (`_
 not acquired RAISES `RideAlongLifecycleViolation` and builds nothing, so reintroducing a lazy build
 fails `test_an_UNACQUIRED_step_RAISES_and_builds_nothing`. Pre-allocation is also pinned to step
 bit-identically to torch's lazy init.
+
+UNDER THE PRODUCTION TRUNK PRECISION (bf16; X26 readiness I12, unit T32): the guarantee above was proven at
+fp32 only, while production's learner runs its trunk rounds under bf16 autocast (`trunk_precision`,
+`--trunk-precision bf16` from `recipe.fresh`). `test_BF16_…` re-runs the OFF / ON pair with the LEARNER at bf16
+(the rollout stays fp32, as T2 serves it) and asserts the same bit-identity, plus that bf16 really ran: the
+rounds are the bf16 classes and the OFF arm's update differs from the fp32 OFF arm's on the same rollout. It
+fails on the reverts above, and on one only bf16 can see: a ride-along step that leaves the trunk at another
+precision (a `set_trunk_precision` / unrestored `fp32_scope` in the heads' path) is a no-op at fp32, but moves
+every later micro-step of the ON arm.
 """
 from __future__ import annotations
 
@@ -120,7 +129,10 @@ def _rng_state():
     return th.get_rng_state().clone(), np.random.get_state(), random.getstate()
 
 
-def _build(ridealong: dict):
+def _build(ridealong: dict, precision: str = "fp32"):
+    """One arm. ``precision`` is the LEARNER's trunk precision (`trunk_precision.apply_run_precision`), set
+    after the rollout and before the update — production's split: T2 serves fp32, R1 runs the run's precision."""
+    from agents.model.trunk_precision import apply_run_precision
     from agents.training.rust_rollout.testkit import ToyVecEnv
 
     from agents.model.compile_parity_fixture import load_parity_rows
@@ -154,6 +166,7 @@ def _build(ridealong: dict):
         model.learn(total_timesteps=8 * 2)
     finally:
         InstrumentedMaskablePPO.train = orig
+    rounds = apply_run_precision(model, precision)      # draws nothing: a class swap (`trunk_precision`)
     pre = {k: v.detach().clone() for k, v in model.policy.state_dict().items()}
     buf = {k: np.array(v, copy=True) for k, v in model.rollout_buffer.observations.items()}
     buf["__actions"] = np.array(model.rollout_buffer.actions, copy=True)
@@ -167,7 +180,7 @@ def _build(ridealong: dict):
     names = [n for n, _ in model.policy.named_parameters()]
     return dict(model=model, built_rng=built_rng, pre=pre, post=post, buf=buf, opt=opt_t,
                 logged=dict(model.logger.name_to_value), rng=_rng_state(), names=names,
-                acquired=acquired, after=_acquired(model))
+                acquired=acquired, after=_acquired(model), rounds=rounds)
 
 
 @pytest.fixture(scope="module")
@@ -287,7 +300,12 @@ def test_the_rollouts_are_identical(arms):
 
 
 def test_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off(arms):
-    off, on = arms
+    _assert_update_bit_identical(*arms)
+
+
+def _assert_update_bit_identical(off: dict, on: dict) -> None:
+    """THE guarantee (assertion 3): after one update the policy / trunk / V parameters, the PPO optimizer's
+    state, every per-update PPO scalar and the torch / numpy / python RNG are bit-identical, heads OFF vs ON."""
     core_on = _core(on["post"])
     for k in core_on:
         assert th.equal(core_on[k], off["post"][k]), f"the ride-along heads changed {k}"
@@ -303,6 +321,38 @@ def test_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off(arms):
     assert th.equal(off["rng"][0], on["rng"][0]), "the heads consumed the torch RNG"
     assert np.array_equal(off["rng"][1][1], on["rng"][1][1]), "the heads consumed the numpy RNG"
     assert off["rng"][2] == on["rng"][2], "the heads consumed python's random"
+
+
+@pytest.fixture(scope="module")
+def bf16_arms():
+    """I12 (X26 readiness, unit T32): the OFF / ON pair with the LEARNER's trunk at bf16 — production's recipe."""
+    return _build({}, precision="bf16"), _build(RIDEALONG_ON, precision="bf16")
+
+
+def test_BF16_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off(bf16_arms, arms):
+    """The guarantee under the production trunk precision (bf16 autocast over the trunk rounds, R1 only).
+    Not vacuous: both arms' rounds are the bf16 classes, the rollout is the fp32 arms' (T2 serves fp32), and
+    bf16 really changed the update — the bf16 OFF arm's parameters differ from the fp32 OFF arm's after the
+    same update on the same rows. Fails on revert of any stop-grad seam (as the fp32 test), and on a ride-along
+    path that leaves the trunk at another precision (a no-op the fp32 test cannot see)."""
+    from agents.model.trunk_precision import trunk_precision_of
+
+    off, on = bf16_arms
+    off32 = arms[0]
+    for arm in (off, on):
+        assert arm["rounds"] > 0 and trunk_precision_of(arm["model"].policy) == "bf16"
+    assert off32["rounds"] > 0 and trunk_precision_of(off32["model"].policy) == "fp32"
+    for k in off32["buf"]:
+        assert np.array_equal(off["buf"][k], off32["buf"][k]), f"rollout key {k}: the bf16 arm collected differently"
+    differ = [k for k in off["post"] if not th.equal(off["post"][k], off32["post"][k])]
+    assert len(differ) >= 0.5 * len(off["post"]), (
+        f"only {len(differ)}/{len(off['post'])} tensors differ between the bf16 and fp32 updates — bf16 did not run")
+    _assert_update_bit_identical(off, on)
+    # the ON arm trained every head under bf16 (assertion 4's head half)
+    for head in ("ensemble", "rnd", "adv", "opp", *(f"rnd_variants.{v}" for v in VARIANTS)):
+        keys = [n for n in on["names"] if n.startswith(f"ridealong.{head}.")]
+        assert keys and any(not th.equal(on["post"][k], on["pre"][k]) for k in keys), head
+    assert on["logged"]["ridealong/disabled"] == 0.0
 
 
 def test_the_ON_arm_is_not_vacuous(arms):

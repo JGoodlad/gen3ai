@@ -4,6 +4,14 @@
 > the RND VARIANT ENSEMBLE (`--ridealong-rnd-variants all`), its pre-registered comparisons (a)–(e)
 > with a Holm correction across variants, and the startup-acquisition lifecycle gate. Everything above
 > it stands as registered.
+>
+> **AMENDED AGAIN 2026-10-15, BEFORE LAUNCH** (X26 has not started; no X26 data exists): **Amendment 2**,
+> at the very end, re-bases this registration onto X26 as it will actually run — the END-STATE production
+> network with the bf16 trunk, a fresh seed `rb_x26_s2601`, a 500M cap and the plateau stop rule. It
+> REPLACES the argv, the overhead basis, the checkpoint cadence and the read points above, restates R1–R5
+> and Amendment 1's (a)–(e) against the end-state graph, declares the K9(b) tie-share handling and records
+> the orchestrator's defaults for the owner's open questions. **Where Amendment 2 and an earlier clause
+> disagree, Amendment 2 wins**; every earlier clause it does not touch stands.
 
 **Owner, 2026-09-30:** *"Once we are ready to train on the GPU, establish a baseline just with the
 ensemble of value heads to test uncertainty, the trick where you predict a random output to see how
@@ -237,3 +245,323 @@ the likeliest to identify. These are expectations, not rules: nothing above depe
 - (e)'s probes are bank rows from earlier runs of the same lineage, so they are "on-distribution" only
   as far as this run's states resemble them. Its floor is per checkpoint, so that drift cancels in ρ.
 - The in-run TB series are MONITORING. Every verdict above is the reader's, on fixed probes.
+
+
+---
+
+## Amendment 2 — X26 on the END STATE (2026-10-15, registered BEFORE the run launched; no X26 data exists)
+
+**Who and why.** Written by unit T32 (`designs/ops/TASK_BACKLOG.md` row X26-3) for the X26 exit check, item E9 of
+[`design_x26_readiness.md`](../../../endstate/design_x26_readiness.md) §4. Between 2026-09-30 and today the
+production network changed under this registration: the end state was ADOPTED (2026-10-12; static per-mon tokens,
+trunk depth 3, X5 hypothesis tokens, move resolution, the recovery and fact levers, no critic threat injection), the
+bf16 trunk joined the recipe (2026-10-14), the shaped-reward era's constants became namespace constants, the
+legacy deletion's U0 / U1 / U3 landed (2026-10-15; U3 changed the fresh-init random stream), and the restart
+interval became 6 h. The literal argv above no longer parses, and nine of its clauses describe a run that will not
+happen (readiness I11). This amendment states the run that WILL happen and re-bases every clause on it. It is
+written before X26 exists, so nothing in it is chosen with knowledge of X26's results.
+
+**What X26 is now.** A FRESH seed of the end-state production recipe at the exit-check commit P_X26, with the four
+ride-along heads and the four RND variants attached, run to its own plateau (cap 500M). It is still "the production
+recipe with meters attached": the heads observe and never steer, now proven at the bf16 trunk too (§A2.5). It remains
+the baseline every later arm compares against, on strength and on these meters.
+
+### A2.1 What changed and why — every stale clause
+
+| # | clause (where above) | was | now | why |
+|---|---|---|---|---|
+| 1 | the argv | `--restart-interval-hours 3 … --critic winprob --terminal-indicator --victory-value 1.0 --draw-penalty 0 --env-core rust …` | §A2.2's argv, validated at HEAD by `checkargs` (exit 0) and the launcher `--dry-run` ("would launch"), outputs in §A2.3 | the five reward / critic / core flags are DELETED (namespace constants since config v122 / v144; `designs/deleted_flags.md`), so `checkargs` exits 1 on them |
+| 2 | the restart interval | 3 h | the launcher default, **6 h** (not typed) | owner 2026-10-04 (`run.DEFAULT_RESTART_INTERVAL_HOURS`) |
+| 3 | "the K10(a) RECIPE block … once it lands", N0's recorded flags as the fallback | a block not yet on main | **`--arch production`** applies `designs/production_config.json`'s ARCH surface (39 keys), `recipe.fresh` (29 knobs, including `trunk_precision` **bf16** and `opp_intent_coef` 0.05) and `recipe.sizing` (N 256, n_steps max 384, 98,304 rows per update); `checkargs` reports both surfaces matching | the recipe block landed (K10(a)), and since 2026-10-14 it carries the bf16 trunk |
+| 4 | "The FIRST GPU training run on the M5 Rust core" | X26 was to be the first run carrying the heads | X26 is the first DEEP run carrying them; the heads have already ridden 32 runs of the closing test and the bf16 A/B (`rb_es_*`, `rb_bf_*`, 15M each; readiness I10) | history |
+| 5 | read points | 10M and 25M (trajectory), FINAL (verdict) | **10M** (the reference point of Amendment 1's (c) and (d); trajectory only), **every 25M** (25M, 50M, 75M, …; trajectory only), **the plateau candidate** (the checkpoint at X26's first `TIER1_PLATEAU`; trajectory only) and **FINAL** (the VERDICT: the checkpoint X26 stops at under §A2.6's rule, or 500M at the cap) | X26 runs to a plateau, not to a fixed 15M–75M length; a curve every 25M shows WHEN a meter becomes usable, and only one verdict is drawn |
+| 6 | the overhead basis | +0.974 s per update = 1.45 % of arm C's 67.05 s update (fp32 legacy network) | **declared, not re-measured.** The only measured basis for the end state is the throughput of the 32 runs above, every one of which carried the heads: production bf16 `train_ms` 42.1 s, ≈ 1,600–1,630 env steps/s (`rb_bf_eb`, readiness §2.3), so X26's cost estimate already contains them. If the heads' absolute cost were unchanged (the same 98,304-row buffer, one epoch-0 pass over it), it would be ≈ 2.3 % of the bf16 update and ≈ 1.6 % of the 61.8 s update cycle (**UNVERIFIED** on the end-state network). A heads-OFF production bf16 run does not exist to subtract | the 67.05 s update no longer exists; X26's budget (readiness §2.3) is measured with the heads on |
+| 7 | the checkpoint cadence | RECOMMENDED `--checkpoint-every-steps 2000000`; "the default is 50,000 vec-calls, 2.4M env steps at 48 envs" | **`--checkpoint-every-steps 1000000`** (typed) | Tier 1 of the plateau meter needs a checkpoint in [grid, grid + 500k) at its 10M grid (readiness I18), and the read points above fall on the 1M grid. Saving draws no RNG; every closing-test and bf16 A/B run saved at 1M |
+| 8 | B "on α's support … to be re-based onto X5's flat pointer" | B's columns were α's seats + SWITCH, conditional on the opponent choosing a listed option | B is **re-based** (`350fb83b`; `FlatOppEffectEnsemble`): its columns are the flat opponent pointer's K seats, OTHER_move, the six switch targets and OTHER_species; its labels are `flat_intent_targets`', so a belief miss is a ROW (an OTHER class), not a masked label. `ridealong_update_test::test_fixed_mass_B_on_the_FLAT_pointer_is_BIT_IDENTICAL_to_learning` pins it | X5 is the only belief representation; α's blob support is deleted (v144) |
+| 9 | Amendment 1's window-replay memory figure | "9.8k rows × 2761 × 2 B ≈ 54 MB" | 9.8k × **2845** × 2 B ≈ **56 MB**; window replay stays NOT BUILT, for the reason given there | the observation is 2845-dim; RND reads `obs_dim` at build (readiness I10) |
+| 10 | Amendment 1 (d): "MATCHES THE OFFLINE PREDICTION iff the interval overlaps [2.5, 8]" | a decision label tied to the offline fp32 measurement | **DESCRIPTIVE only** (reported, never a verdict); DRIFT_CONFIRMED's rule is unchanged | [2.5, 8] was measured on the pre-era fp32 legacy trunk's `value_pooled` (N0 / K2). The end state's `value_pooled` comes from a different trunk whose rounds run in bf16 in training, so the old interval is no prediction for it |
+| 11 | R1's USABLE threshold "lower bound > 0.56, i.e. above the untrained-prior floor of 0.54–0.56" | a floor measured on the three pre-era checkpoints | USABLE iff the within-quintile AUROC's lower bound > **max(0.56, the point estimate of the fresh-heads floor read by the same reader on the SAME checkpoint)**, and the decile-ratio clause unchanged | the registered floor was the untrained priors on pre-era checkpoints; the same-checkpoint floor is what NOT DETECTED already reads. Never looser than registered |
+| 12 | the launch gates | `ridealong_update_test`, `ridealong_heads_test`, `opponent_inference_load_test` green at the launch commit | **unchanged, plus** the new bf16 test in `ridealong_update_test` (§A2.5) and `diagnostics_cadence_test::test_the_K9b_excluded_share_reaches_TENSORBOARD_on_EVERY_update_not_on_the_diagnostics_cadence` (§A2.7) | they are what makes "the heads cannot steer" and "a K9(b) spike is visible" true at P_X26 |
+
+Clauses NOT changed: the four heads' spec (ensemble 5, RND, A 5, B 5) and `--ridealong-rnd-variants all`; the
+instrument (`python -m main.ridealong_read`), its bank (`m5_laneS/bank_v1`, re-encoded at the current layout) and
+truth set (`truth_v2`); the bootstrap (battle-clustered, B = 1000, seed 20260930); every decision rule except 10 and
+11; "Not claimed by this run"; Amendment 1's Holm families, (a)–(c) and (e); the declared limits, except as §A2.5
+extends them.
+
+### A2.2 The X26 argv: every non-default flag, and why
+
+**The training session builds, validates and launches the actual argv** (rule: a design-doc block is not a launch
+command). It launches from the MAIN checkout at P_X26, which records P_X26 as the run's pin. The argv validated for
+this amendment at HEAD `264a35e3` (§A2.3):
+
+```
+python -m main.launcher --arch production \
+  --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all \
+  --checkpoint-every-steps 1000000 --steps 500000000 --seed 2601 --device cuda --run-name rb_x26_s2601
+```
+
+| flag | value | why it is typed |
+|---|---|---|
+| `--arch production` | — | the production ARCH surface + `recipe.fresh` + `recipe.sizing` (bf16 trunk included); X26 IS production's recipe at depth |
+| `--ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5` | the registered spec | this registration's instruments; critic READOUTS, outside the ARCH surface by declaration, so `--allow-nonproduction-arch` is not needed |
+| `--ridealong-rnd-variants all` | fast, decay, small, feat | Amendment 1 |
+| `--checkpoint-every-steps 1000000` | 1M | clause 7 (Tier 1's grid and the read points) |
+| `--steps 500000000` | 500M | a CAP, not a target; the stop is §A2.6's rule |
+| `--seed 2601` | — | a fresh seed AT OR AFTER U3 (`882a3f86`): no pre-U3 seed is "the same seed" at HEAD |
+| `--device cuda` | — | the GPU run |
+| `--run-name rb_x26_s2601` | — | the Rustboro era's name; a second seed is `rb_x26_s2602` (§A2.8) |
+
+**Deliberately NOT typed (each at its default, each verified in §A2.3 or named here):**
+- `--restart-interval-hours`: the default 6 h.
+- `--snapshot-ladder-games`: the default 100, **not 0**. Every reference run typed 0 for its speed rule; X26 has
+  none, and the interim stop rule's Hodge read needs `snapshot_ladder/` (readiness F8).
+- `--behaviour-check`: the default `fatal` (§A2.7 declares the tie-share handling).
+- `--trunk-precision`: bf16, from `recipe.fresh` (the fp32 trunk is the declared FALLBACK only if I30's GPU read
+  contradicts the canary diagnosis — that would be an Amendment 3, never a silent change).
+- `--promotion-sprt`, `--eval-mirrored-pairs`: OFF (§A2.8, Q4).
+- `--diagnostics-every`: the fresh default 10 (the K9(b) share is NOT on that cadence: §A2.7).
+- `--compile-trainer`: automatic for cuda. KL early stop: OFF (decided 2026-10-03; `target_kl` in the recipe is the
+  KL→LR controller's target, not an early stop). `--exploiter`: none, so Amendment 1's (b1) precondition "no
+  exploiter in the pool" holds by construction — still verify it from `metadata.json` at the first read.
+- The interpreter: `gen3ai_torch28` (torch 2.8.0+cu126; readiness I4). The launcher refuses a cross-build resume.
+
+**The `data/` freeze** (standing rule 6) holds for X26's whole run and is announced at launch (readiness I24).
+
+### A2.3 Validation at HEAD (`264a35e3`, 2026-10-15; `GEN3AI_MODELS_DIR` a scratch dir, rule 5b cores)
+
+The log is committed as `smoke_endstate_2026-10-15/x26_argv_checkargs_dryrun_264a35e3.log`. Re-run both at P_X26
+from the MAIN checkout before the launch (exit-check E10); a difference from the output below is a finding.
+
+`python -m main.checkargs --argv "<the argv's flags>"` → **exit 0**:
+
+```
+checked 11 flags from --argv
+  parser                         : the CURRENT tree's (no --model and no --pin-commit — this argv would run on HEAD)
+  accepted by the trainer parser : 11
+  launcher-owned (not forwarded) : 0
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  oracle reveal                  : off (the production observation)
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@7edfd2bace08]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 5 (typed)  --ridealong-rnd True (typed)  --ridealong-adv 5 (typed)  --ridealong-opp 5 (typed)  --ridealong-rnd-variants 'fast,decay,small,feat' (typed)
+    ✓ every ARCH-surface key matches the production mirror (39 of 47 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@7edfd2bace08]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ✓ every RECIPE knob matches recipe.fresh (29 knobs)
+  ✓ this command still launches
+checkargs exit 0
+```
+
+`python -m main.launcher --dry-run <the argv flags>` → **exit 0, "would launch"**:
+
+```
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FRESH
+  run dir     : /tmp/t32_models/rb_x26_s2601   [would be created]
+  on restart  : RESUME role — drops FRESH-only --arch (inherited from model_config.json); --model → the run's latest checkpoint
+  pin         : 264a35e3a671d74e65b0b7ce354f01e309fce763  (source: head)
+                ↳ docs(legacy-deletion): U3 shipped -- the post-U3 fresh-init record (D-LD7), the MAJOR ledger entry, CHANGELOG, manifest section 8 and the next steps for U2 / U4 / U5 / U6
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  steps       : --steps 500,000,000 (fresh run, from 0)
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — FRESH launch; this torch is recorded at the run's first save
+  transport   : in-process bridge [rust] (no Showdown server)
+  restarts    : every 6.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  effective   : the argv IS the config (no --model, nothing to inherit)
+      --grad-accum-steps     32           (from the argv)
+      --fork-lr              None         (from the argv)
+      --fork-lr-freeze       False        (from the argv)
+  env core    : rust  [the only core]
+  (child-only: architecture compatibility (check_compatible against the checkpoint's model_config.json))
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  arch        : --arch production — 39 ARCH-surface key(s) applied from designs/production_config.json for every flag this argv leaves unset
+  ARCH SURFACE vs designs/production_config.json  [production_config@7edfd2bace08]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 5 (typed)  --ridealong-rnd True (typed)  --ridealong-adv 5 (typed)  --ridealong-opp 5 (typed)  --ridealong-rnd-variants 'fast,decay,small,feat' (typed)
+    ✓ every ARCH-surface key matches the production mirror (39 of 47 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@7edfd2bace08]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ✓ every RECIPE knob matches recipe.fresh (29 knobs)
+  desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
+  disk space  : ✓ 42.74 GiB free on /tmp/t32_models vs 32.65 GiB REQUIRED (checkpoint no checkpoint of this run, no fork source and no sized run in the archive)
+                ⚠️  checkpoint size UNKNOWN (no checkpoint, fork source or sized run to read) — the checkpoint terms are 0; the in-run watch uses the real size from the first save
+                shared compile cache: ✓ 331.89 GiB free on /home/goodlad/.cache/gen3ai/compile_shared (another filesystem) vs its growth 1.44 GiB (cap 20.00 GiB - 18.56 GiB in use) + reserve 4.00 GiB
+                the arithmetic:
+          periodic checkpoints       0.0 MiB   = 500 x 0.0 MiB  (steps 500,000,000 // 1,000,000 - resume 0 // 1,000,000)
+          final/best/aborted         0.0 MiB   = 3 x 0.0 MiB
+          eval traces              17.58 GiB   = 250 cycles x 72.0 MiB  (ceil(500,000,000 / 2,000,000))
+          pool snapshots             0.0 MiB   = 20 x 0.0 MiB  (cap 20)
+          compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
+          shared compile cache       0.0 MiB   = growth 1.44 GiB at /home/goodlad/.cache/gen3ai/compile_shared: ANOTHER filesystem, checked below
+          sidecar + tb + logs       2.93 GiB   = 500.0M steps x 6.0 MiB/M
+          fixed                     16.0 MiB   = metadata, ledgers, sidecar json
+          subtotal                 22.92 GiB
+          + margin 25%              5.73 GiB
+          + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
+          = REQUIRED               32.65 GiB
+  showdown deps : ✓ /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a512b7af5f71a4fe2/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
+dry-run exit 0
+```
+
+The `⚠️ NOT applied` line is informational: the ride-along flags are typed (they are this registration's
+instruments), and `--win-prob-mode` / `--belief-grad-mode` resolve to the win-prob critic's implied `shaping`.
+
+### A2.4 The instrument still runs on the end-state graph (plumbing smoke, no verdict)
+
+`python -m main.ridealong_read` read `rb_bf_eb_s2001`'s 9.0M checkpoint (config v155, bf16 trunk, TRAINED heads) at
+HEAD on 40 of the bank's 580 battles: the bank re-encoded at the 2845-dim layout (1,172 decisions), the heads read
+as `"trained"`, and meters (i)–(iii) and Amendment 1's (a), (b) and (e) produced output in 50 s (peak 1.23 GB).
+Evidence and caveats: `smoke_endstate_2026-10-15/README.md`. **Two registered reads have NO reader code** and must
+be built, offline, before the VERDICT read (FINDING A2-F2): R1×R2's paired AUROC difference (ensemble − RND, the same
+resamples) and R5's Brier(V) − Brier(Q_played). Neither blocks the launch: every read is offline over retained
+checkpoints, and the first one with a verdict is FINAL.
+
+### A2.5 R1–R5 and Amendment 1's (a)–(e), restated against the end-state graph
+
+**The guarantee under the bf16 trunk (readiness I12).** Production's learner runs its trunk rounds under bf16
+autocast in R1; T2, the eval core and the K9(b) probe stay fp32 (`trunk_precision`). The heads ON vs OFF guarantee
+was proven at fp32 only. `ridealong_update_test::test_BF16_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off`
+now proves it at bf16: one real update of the production network (rollout at fp32, learner at bf16), heads OFF and
+ON with every variant, leaves the policy / trunk / V parameters, the PPO optimizer state, every PPO scalar and the
+torch / numpy / python RNG BIT-IDENTICAL. It is not vacuous: both arms' rounds are the bf16 classes, and the bf16
+update differs from the fp32 update on the same rows. Mutation-checked 2026-10-15: dropping the `.detach()` in
+`RideAlongBatch.detached` fails it (the heads move `species_embedding`); a ride-along step that leaves the trunk at
+fp32 (a no-op at fp32) fails it too.
+
+**What each read means on the end state** (the rules are §"The read" and Amendment 1, with clauses 10–11 above):
+
+| read | what it reads on the end state | change |
+|---|---|---|
+| R1 ensemble vs V's error | the members over the DETACHED `value_pooled` of the end state's value side (the value CLS pool + the entity pool; no threat injection since U3) | USABLE threshold per clause 11 |
+| R2 RND novelty | base RND over the 2845-dim observation (running-normalised); coverage as registered | none |
+| R1×R2 | the paired AUROC difference | **reader code NOT BUILT** (A2-F2) |
+| R3 A vs ground truth | A's member mean vs `truth_v2`'s per-action values on the 1,600 turns. The truth's continuations are PRE-ERA greedy policies (K2, N0, C_fix), so ρ_A is consistency with THEIR action values; the policy-logit row is the like-for-like reference, and the pre-read's Q̂ (ρ 0.226–0.243) is DESCRIPTIVE | the Q̂ row is descriptive (its policies are pre-era) |
+| R4 A's spread on starved near-best moves | as registered (`adv_std`, own-legal-mean centring) | none |
+| R5 B carries outcome information | Q_played = V + A(a) + B(b), b = the opponent's FLAT-pointer class (a seat, OTHER_move, a switch target or OTHER_species); every bank row with an aligned one-ahead opponent label, not "in α's support" (clause 8); report B's label rate beside it | **reader code NOT BUILT** (A2-F2); also UNVERIFIED: that `bank_v1`'s rows carry the one-ahead opponent label in flat-pointer terms — the R5 build checks this first |
+| (a)–(c), (e) | as registered; (e)'s seven blocks are re-derived from the current encoder layout by `block_chimera`'s edges (`chimera_v1`, code frozen) | none |
+| (d) | as registered | its "MATCHES THE OFFLINE PREDICTION" is DESCRIPTIVE (clause 10) |
+
+**Declared limits, added.**
+- The bank (`bank_v1`) and the truth turns are states from PRE-ERA battles (`ai_v14_*`), re-encoded at the current
+  layout. X26 never visits them, so every bank AUROC is a read on a shifted distribution, and RND's novelty there is
+  "novel to X26" by construction. Amendment 1 already declared this for (e). Each read's own fresh-heads floor on the
+  same checkpoint is the control.
+- The heads are trained at bf16 trunk features but READ by an fp32 reader forward (the reader builds a fresh fp32
+  policy from the checkpoint, as T2 does). The difference is the trunk's bf16 rounding of `value_pooled` and the
+  pointer inputs (|Δ log π| p50 3e-5 to 5e-3 by state, `k9_bf16_2026-10-10/`). It is declared, not measured, for the
+  heads' outputs.
+- A 500M run takes ~5,100 updates and ~25 launcher restarts at 6 h (≈ 3–4 days, readiness §2.3). The heads' and the
+  variants' Adam state resets at every restart (registered); for `fast` the first steps after each restart are the
+  largest.
+
+### A2.6 Read points and the stop rule
+
+**Read points** (clause 5): 10M, every 25M, the plateau candidate, FINAL. Each read runs OFFLINE under rule 5b,
+over `checkpoints/checkpoint_<N>_steps.zip` (the nearest retained checkpoint at or after the point; `--run-checkpoints`
+reads the whole series for the trajectories), and for every read point ALSO with `--fresh-heads` (the floor). A read
+point's output dir is new per point; nothing is read from `models/` but the checkpoints.
+
+**The stop rule (readiness §2.4; the interim rule until the cycle monitor U5 and the two-tier decision U9 land).**
+X26 stops only when ALL of the following hold:
+- Tier 1 reads `TIER1_PLATEAU` (`python -m main.plateau tick` then `status`, registered Δ 10M / W 50M, so 70M at the
+  earliest);
+- the Hodge cyclic width (`python -m main.elo <run> --hodge-bootstrap 200`) is within its bootstrap noise floor;
+- the bot rates in the in-loop `eval_results.jsonl` and a Metamon SmallRL greedy anchor read are flat over the same
+  50M window.
+
+Any disagreement means CONTINUE. Once U5 and U9 land, the two-tier rule replaces the last two bullets for every later
+check. The cap is 500M. The rule can only stop LATE, never on a false plateau. The checkpoint the run stops at is
+FINAL; the read at it is the verdict.
+
+### A2.7 The K9(b) tie-share handling, declared up front (readiness I19)
+
+K9(b) excludes a row whose forward sits within a relative 2e-4 of a selection cutoff, and stops the run under the
+default `--behaviour-check fatal` if ONE update's excluded share exceeds `FP32_EXCLUDED_CEILING` 0.15
+(`agents/training/rust_rollout/consistency.py`). Production's mean share is ≈ 0.03 at 15M with a highest single
+read of 0.077, and the mean is unlikely to reach 0.15 before ≈ 200M (readiness §1.1); the risk at X26's length is a
+single-update SPIKE. X26 adopts the closing test's handling (`design_endstate_closing_test.md` §3.7), adapted to a
+single deep run:
+
+1. **A tie-only stop is a known false alarm.** A K9(b) stop whose ONLY violated condition is the excluded share,
+   with `max |d log π|` over the judged rows < 1e-4 (both in the printed message and in
+   `behaviour_violations.jsonl`), resumes from its own latest checkpoint: the launcher's crash restart, and once its
+   3-crash budget is spent, a `--model` resume of its own latest checkpoint at the same pin and argv. There is no limit
+   on the number of such resumes; each stop is banked in the run's notes. Resuming from the latest checkpoint in
+   place is safe for the plateau ledger: the stop falls after that checkpoint, so no decided Tier-1 node is
+   overwritten (unlike readiness F17's rollback).
+2. **Once the crash budget is spent on tie-only stops,** the resume runs with `--behaviour-check warn`, provided
+   EVERY probe after the switch keeps `behaviour/max_abs_dlogp_judged` < 1e-4. The training session verifies that
+   from the TensorBoard events at each read point and before each restart (`python -m main.ops.tb_read <run> --tag
+   behaviour/max_abs_dlogp_judged --tag behaviour/excluded_frac`), and verifies with the launcher's `--dry-run`
+   that a restart carries `warn`. Banked as a deviation.
+3. **Any K9(b) stop with `max |d log π|` ≥ 1e-4, or any other failure, is NOT a false alarm.** It is a GIGO stop:
+   the run stays stopped until its cause is diagnosed (the violation dump holds the rows and weights). X26 is one
+   deep run, not a seed of an A/B, so there is no "replace the seed": a real mismatch is a finding that may void the
+   checkpoints after the last clean update.
+4. **A move-reveal or moves-like belief change to production** would sit at the ceiling from step 1 (the knock-in
+   forks' moves arm read 0.16 medians, readiness §1.1). That is a re-measure-the-ceiling trigger for a FUTURE arm,
+   not an X26 risk (X26 has no reveal).
+
+**The share is in the record for EVERY update, so a spike is read, not inferred.** The probe records
+`behaviour/excluded_frac`, `rows_excluded`, `rows_judged` and `max_abs_dlogp_judged` on every update, independent of
+`--diagnostics-every` — verified on `rb_bf_eb_s2005`'s raw event file (153 values for its 153 updates; an update is
+98,304 rows, so a 15M run has ≈ 153 updates, not ≈ 1,490), and now pinned by
+`diagnostics_cadence_test::test_the_K9b_excluded_share_reaches_TENSORBOARD_on_EVERY_update_not_on_the_diagnostics_cadence`
+(three real updates at the production cadence, two of them non-diagnostic: three events per tag in a real
+TensorBoard file; mutation-checked by gating the probe on the diagnostics plan). **Read it with
+`python -m main.ops.tb_read`** (it loads every event). The TensorBoard WEB UI keeps at most 1,000 points per scalar tag
+(`samples_per_plugin` default), so on X26's ≈ 5,100 updates its plot shows ≈ 1 in 5: never read a per-update maximum
+off the UI.
+
+### A2.8 The owner's open questions: the orchestrator's defaults, recorded
+
+The owner's Q1, Q2 and Q4 (readiness §6.2) are unanswered at registration. Under the 15-minute standing rule the
+orchestrator adopts the recommendations; an owner answer before the launch supersedes them by an Amendment 3, and
+none after the launch changes this run's argv.
+- **Q1 (seeds): ONE seed, `rb_x26_s2601`, plus a SECOND, `rb_x26_s2602`, started at seed 1's FIRST Tier-1 FLAT
+  check** (not at its stop), so the replicate is running when the claims fall due. Seed 2 is the same argv with
+  `--seed 2602 --run-name rb_x26_s2602` and `--pin-commit P_X26` (HEAD will have moved; a replicate is the same pin
+  + a new seed). How the GPU is shared between the two is the orchestrator's scheduling call. This registration's
+  verdict reads seed 1; seed 2's reads are the replication, read by the same rules at its own FINAL.
+- **Q4 (promotion): `--promotion-sprt` and `--eval-mirrored-pairs` stay OFF**, so X26's plateau is production's
+  recipe at depth. SPRT promotion becomes a registered challenger that must beat that plateau.
+- **Q2 (the plateau meter): the stop rule plus a VALIDATED Tier 1** (T33, 2026-10-15), with the interim rule of §A2.6;
+  U5 and U9 land during X26's first ~100M. Tier 1 ticks at the registered Δ 10M / W 50M on the offline CPU lane.
+
+### A2.9 Findings of this amendment (standing rule 7)
+
+- **A2-F1. The readiness doc's F5 premise was wrong.** TensorBoard does NOT keep "~1 in 10" K9(b) shares: the
+  probe records the share on every update, and a 15M production run has ≈ 153 updates (98,304 rows each), all 153 in
+  the raw events. The "~1,490 updates" figure was off by 10×. What IS true: TensorBoard's web UI downsamples to 1,000
+  points per tag, which bites at X26's ≈ 5,100 updates. So T32(c)'s build is a regression TEST of the every-update
+  guarantee plus the declared reader (`main.ops.tb_read`), not a new jsonl writer (a second record of the same
+  quantity would only add a second producer to keep in sync).
+- **A2-F2. Two registered reads have no reader code:** R1×R2's paired AUROC difference and R5's Brier(V) −
+  Brier(Q_played) on the flat pointer (plus the UNVERIFIED bank-label precondition for R5). Both are offline builds
+  (~0.5 agent-day together, est.) that must land before the FINAL read; neither blocks the launch.
+- **A2-F3. The heads' overhead on the end-state network is UNVERIFIED** (clause 6): ≈ 2.3 % of the bf16 update if the
+  2026-09-30 absolute cost carried over, above the ~2 % instrument budget the 2026-09-30 note set. It is inside every
+  measured end-state throughput, so X26's GPU-h estimate holds either way. A GPU re-measure
+  (`ridealong_step_benchmark.py` on a production bf16 checkpoint) can ride any leased window; it is not a launch gate.
+- **A2-F4. The launcher dry-run's disk check under a scratch `GEN3AI_MODELS_DIR` cannot size checkpoints** (no sized
+  run there): it required 32.65 GiB with the checkpoint terms at 0. At X26's 1M cadence the checkpoints alone are
+  ≈ 500 × 55 MB ≈ 27 GB more (readiness §2.3: ≈ 36 GB at 500M in total). The real launch runs from the main checkout,
+  whose archive holds sized runs.

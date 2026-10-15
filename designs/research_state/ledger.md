@@ -25788,3 +25788,52 @@ evidence: `designs/research_state/measurements/legacy_deletion_u3_init_2026-10-1
 `init_pre_u3_4801b956.json`, `init_probe.py`), `src/agents/model/model_version/adopted_levers.py`,
 `src/agents/training/learner_golden.json` (history row), `designs/ops/legacy_deletion_manifest_2026-10-12.md` §8,
 `designs/CHANGELOG.md` (2026-10-15 U3)
+
+### 2026-10-15 · REGISTRATION AMENDMENT · **X26's ride-along registration re-based on the END STATE (Amendment 2, BEFORE any X26 data): the argv now passes `checkargs` and the launcher dry-run at HEAD, the heads are proven BIT-IDENTICAL-neutral under the bf16 trunk, the K9(b) tie-share handling is declared and its every-update record pinned — and the readiness doc's "TensorBoard keeps ~1 in 10 shares" was a 10× update-count error**
+
+**What.** Amendment 2 to `designs/research_state/measurements/ridealong_baseline/PREREGISTRATION.md` (unit T32; X26
+readiness I11 / I12 / I19, exit-check E9). It replaces the 2026-09-30 argv (five deleted constants; `checkargs`
+exit 1), the 3 h restart interval, the K10(a) recipe clause, the "first GPU run" framing, the 10M / 25M / FINAL read
+points, the 67.05 s overhead basis, the 2.4M checkpoint cadence, B on α's support, the 2761-dim memory figure and
+`feat`'s fp32-legacy drift prediction (§A2.1, twelve clauses, each with its reason). X26 =
+`--arch production` (bf16 trunk) + the four heads + every RND variant, `--checkpoint-every-steps 1000000 --steps
+500000000 --seed 2601 --run-name rb_x26_s2601`; at `264a35e3`: **`checkargs` exit 0** (11 flags, ARCH surface and
+29 recipe knobs match) and **`--dry-run` "would launch"** (FRESH, torch 2.8.0+cu126, restarts every 6 h).
+Read points: 10M, every 25M, the plateau candidate, FINAL (the only verdict). Stop: readiness §2.4's interim rule
+(Tier 1 `TIER1_PLATEAU` AND the Hodge width AND flat bot rates + a Metamon anchor; cap 500M). Decision rules changed:
+two, both never looser — R1's USABLE threshold is max(0.56, the same-checkpoint fresh-heads floor); Amendment 1
+(d)'s "matches the offline prediction" is descriptive. Owner Q1 / Q2 / Q4 recorded as the orchestrator's defaults:
+one seed plus `rb_x26_s2602` (pinned to P_X26) at seed 1's first Tier-1 FLAT; promotion SPRT and mirrored eval OFF;
+the stop rule + a validated Tier 1.
+
+**Builds (tests only; no model / config / obs / training-math change).**
+- **bf16 head-identity (I12):** `ridealong_update_test::test_BF16_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off`
+  — the production network, rollout fp32, learner trunk bf16, heads OFF vs ON (+ variants): params, PPO optimizer
+  state, scalars, RNG bit-identical after one update; non-vacuous (bf16 classes; the bf16 update differs from the
+  fp32 one on the same rows). Mutation-checked: removing `RideAlongBatch.detached`'s `.detach()` fails it, and so
+  does a ride-along step that leaves the trunk at fp32 (invisible to the fp32 test).
+- **The K9(b) share on EVERY update (I19):** `diagnostics_cadence_test::test_the_K9b_excluded_share_reaches_TENSORBOARD_on_EVERY_update_not_on_the_diagnostics_cadence`
+  — three real updates at the production `--diagnostics-every` 10 (two non-diagnostic): `behaviour/excluded_frac`,
+  `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged` in every dump and three events each in a real TensorBoard
+  file. Mutation-checked: gating the probe on the diagnostics plan fails it.
+
+**The correction (FINDING).** The readiness doc's F5 / §1.1 said TensorBoard keeps ~152 of ~1,490 K9(b) shares per
+15M run. Raw events of `rb_bf_eb_s2005`: 153 `behaviour/excluded_frac` values for 153 updates (an update is 98,304
+rows, so 15M ≈ 153 updates, not ≈ 1,490). Nothing was being dropped; no jsonl writer was built. What is real: the
+TensorBoard WEB UI keeps 1,000 points per tag (`samples_per_plugin`), ≈ 1 in 5 at X26's ≈ 5,100 updates — read
+the series with `python -m main.ops.tb_read`.
+
+**Also found.** (1) Two registered reads have NO reader code: R1×R2's paired AUROC difference and R5's Brier(V) −
+Brier(Q_played) on the flat pointer (R5 also needs a bank-label check) — offline, before X26's FINAL read, not a
+launch blocker. (2) The reader RUNS on the end state: a 40-battle plumbing smoke on `rb_bf_eb_s2001`'s 9M checkpoint
+(trained heads, bf16 recipe) re-encoded the bank at 2845 dims and produced meters (i)–(iii) and (a) / (b) / (e).
+(3) The heads' overhead on the end-state network is UNVERIFIED (≈ 2.3 % of the bf16 update if the 2026-09-30 0.974 s
+carried over; inside every measured end-state throughput).
+
+Tag: **REGISTRATION AMENDMENT · X26 ride-along Amendment 2 · bf16 head-identity PROVEN (test) · K9(b) every-update
+record PINNED · F5 CORRECTED (10× update-count error)** ·
+evidence: `designs/research_state/measurements/ridealong_baseline/PREREGISTRATION.md` (Amendment 2),
+`designs/research_state/measurements/ridealong_baseline/smoke_endstate_2026-10-15/` (the reader smoke + the argv's
+`checkargs` / dry-run log), `src/agents/training/ridealong_update_test.py`,
+`src/agents/training/diagnostics_cadence_test.py`, `designs/endstate/design_x26_readiness.md` (I11 / I12 / I19, E9,
+F5, F19–F22, Decision record)

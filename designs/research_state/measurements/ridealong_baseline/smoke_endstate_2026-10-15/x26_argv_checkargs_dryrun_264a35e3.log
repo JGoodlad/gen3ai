@@ -1,0 +1,80 @@
+=== checkargs
+checked 11 flags from --argv
+  parser                         : the CURRENT tree's (no --model and no --pin-commit — this argv would run on HEAD)
+  accepted by the trainer parser : 11
+  launcher-owned (not forwarded) : 0
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  oracle reveal                  : off (the production observation)
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@7edfd2bace08]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 5 (typed)  --ridealong-rnd True (typed)  --ridealong-adv 5 (typed)  --ridealong-opp 5 (typed)  --ridealong-rnd-variants 'fast,decay,small,feat' (typed)
+    ✓ every ARCH-surface key matches the production mirror (39 of 47 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@7edfd2bace08]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ✓ every RECIPE knob matches recipe.fresh (29 knobs)
+  ✓ this command still launches
+checkargs exit 0
+=== launcher --dry-run
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FRESH
+  run dir     : /tmp/t32_models/rb_x26_s2601   [would be created]
+  on restart  : RESUME role — drops FRESH-only --arch (inherited from model_config.json); --model → the run's latest checkpoint
+  pin         : 264a35e3a671d74e65b0b7ce354f01e309fce763  (source: head)
+                ↳ docs(legacy-deletion): U3 shipped -- the post-U3 fresh-init record (D-LD7), the MAJOR ledger entry, CHANGELOG, manifest section 8 and the next steps for U2 / U4 / U5 / U6
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  steps       : --steps 500,000,000 (fresh run, from 0)
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — FRESH launch; this torch is recorded at the run's first save
+  transport   : in-process bridge [rust] (no Showdown server)
+  restarts    : every 6.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  effective   : the argv IS the config (no --model, nothing to inherit)
+      --grad-accum-steps     32           (from the argv)
+      --fork-lr              None         (from the argv)
+      --fork-lr-freeze       False        (from the argv)
+  env core    : rust  [the only core]
+  (child-only: architecture compatibility (check_compatible against the checkpoint's model_config.json))
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  arch        : --arch production — 39 ARCH-surface key(s) applied from designs/production_config.json for every flag this argv leaves unset
+  ARCH SURFACE vs designs/production_config.json  [production_config@7edfd2bace08]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 5 (typed)  --ridealong-rnd True (typed)  --ridealong-adv 5 (typed)  --ridealong-opp 5 (typed)  --ridealong-rnd-variants 'fast,decay,small,feat' (typed)
+    ✓ every ARCH-surface key matches the production mirror (39 of 47 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration)
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@7edfd2bace08]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ✓ every RECIPE knob matches recipe.fresh (29 knobs)
+  desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
+  disk space  : ✓ 42.74 GiB free on /tmp/t32_models vs 32.65 GiB REQUIRED (checkpoint no checkpoint of this run, no fork source and no sized run in the archive)
+                ⚠️  checkpoint size UNKNOWN (no checkpoint, fork source or sized run to read) — the checkpoint terms are 0; the in-run watch uses the real size from the first save
+                shared compile cache: ✓ 331.89 GiB free on /home/goodlad/.cache/gen3ai/compile_shared (another filesystem) vs its growth 1.44 GiB (cap 20.00 GiB - 18.56 GiB in use) + reserve 4.00 GiB
+                the arithmetic:
+          periodic checkpoints       0.0 MiB   = 500 x 0.0 MiB  (steps 500,000,000 // 1,000,000 - resume 0 // 1,000,000)
+          final/best/aborted         0.0 MiB   = 3 x 0.0 MiB
+          eval traces              17.58 GiB   = 250 cycles x 72.0 MiB  (ceil(500,000,000 / 2,000,000))
+          pool snapshots             0.0 MiB   = 20 x 0.0 MiB  (cap 20)
+          compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
+          shared compile cache       0.0 MiB   = growth 1.44 GiB at /home/goodlad/.cache/gen3ai/compile_shared: ANOTHER filesystem, checked below
+          sidecar + tb + logs       2.93 GiB   = 500.0M steps x 6.0 MiB/M
+          fixed                     16.0 MiB   = metadata, ledgers, sidecar json
+          subtotal                 22.92 GiB
+          + margin 25%              5.73 GiB
+          + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
+          = REQUIRED               32.65 GiB
+  showdown deps : ✓ /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a512b7af5f71a4fe2/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
+dry-run exit 0

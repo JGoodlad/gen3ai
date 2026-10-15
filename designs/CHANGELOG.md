@@ -14579,3 +14579,17 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - `designs/production_config.json` lost the ten keys and is stamped v157 (`baselines.json`'s production entry
   `config_mirror_version: 157`); the `--arch endstate` overlay (8 keys) and `PRE_ADOPTION_PRODUCTION` lost the three
   move-resolution / threat keys — the "legacy" network now builds move resolution too.
+
+## 2026-10-15 — X26 READINESS T32: the ride-along registration's Amendment 2, the bf16 head-identity test, the K9(b) every-update pin (tests and docs only; no model / config / obs / signature / training-math change)
+
+- **Amendment 2** to `designs/research_state/measurements/ridealong_baseline/PREREGISTRATION.md`: X26's argv
+  (`--arch production` + the ride-along heads and variants, 1M checkpoints, 500M cap, `rb_x26_s2601`) validated at
+  `264a35e3` by `checkargs` (exit 0) and the launcher `--dry-run` ("would launch"); twelve stale clauses replaced; read
+  points 10M / every 25M / plateau / FINAL; the interim stop rule; the K9(b) tie-share handling; the owner-question
+  defaults.
+- **Tests:** `ridealong_update_test::test_BF16_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off` (the heads ON vs
+  OFF guarantee with the learner's trunk at bf16; `_build` takes the learner precision) and
+  `diagnostics_cadence_test::test_the_K9b_excluded_share_reaches_TENSORBOARD_on_EVERY_update_not_on_the_diagnostics_cadence`.
+- **Corrected:** the readiness doc's "TensorBoard keeps ~1 in 10 K9(b) shares" — every update is recorded (a 15M run
+  has ≈ 153 updates of 98,304 rows). Docs: `designs/endstate/design_x26_readiness.md`, `designs/training/ridealong_heads.md`,
+  `designs/training/learner_gates.md`, `designs/ops/TASK_BACKLOG.md`; ledger 2026-10-15 REGISTRATION AMENDMENT.

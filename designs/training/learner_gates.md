@@ -152,6 +152,12 @@ It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `r
 `max_abs_dlogp_excluded`, `tie_eps` and `selection_free` (and the Rust probe `probe_forward_ms`; on a
 violation `scan_ms` / `scan_rows`), plus the FLIP-JUDGE's `rows_judged_by_flip`, `rows_flip_forward`,
 `rows_flip_resolved`, `excluded_frac_before_flip` and `flip_forward_ms` (below).
+🚨 **These are EVERY-UPDATE tags, never on the `--diagnostics-every` cadence** — a single-update tie-share spike is
+what the X26 registration reads (Amendment 2 §A2.7), so it must be in the record for every update:
+`diagnostics_cadence_test::test_the_K9b_excluded_share_reaches_TENSORBOARD_on_EVERY_update_not_on_the_diagnostics_cadence`
+fails if the probe or its record moves onto the cadence. Read a per-update series with `python -m main.ops.tb_read
+<run> --tag behaviour/excluded_frac` (every event); the TensorBoard WEB UI keeps at most 1,000 points per tag, so on
+a run past ~1,000 updates (≈ 98M steps at 98,304 rows per update) its plot is a sample.
 
 **The gate is ONE table, at fp32 matmul precision `highest` — the only precision** (`consistency.BEHAVIOUR_GATE`,
 read by Lane G's probe through `judge_behaviour`; TF32 was retired, deletion pass

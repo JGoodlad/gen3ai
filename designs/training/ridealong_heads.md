@@ -12,10 +12,14 @@ RND novelty on the raw observation, and the Q = V + A + B main effects on PPO's 
 built: detached stashes → the heads' losses → their own backward, clip and Adam step → their grads
 back to None. So it sits OUTSIDE the fold order above, and nothing in the fold can see it.
 `ridealong_update_test` pins one real update ON vs OFF as bit-identical (params, PPO optimizer
-state, PPO scalars, RNG). Two things to know when reading `ridealong/*`. **The heads TRAIN and READ
+state, PPO scalars, RNG) — at fp32 AND with the learner's trunk at bf16, production's recipe
+(`test_BF16_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off`, T32: rollout fp32, learner bf16; it also
+fails if the heads' path leaves the trunk at another precision, which the fp32 test cannot see). Two things to know when reading `ridealong/*`. **The heads TRAIN and READ
 on epoch 0 only** (`RIDEALONG_EPOCHS` = 1: each rollout row seen once, scored before the heads train
 on it). All 10 epochs cost +13 % of a GPU update on the learner benchmark; one pass MEASURED +0.59 s = 0.88 % of a 67 s update (`ridealong_step_benchmark.py`; X26's
-`PREREGISTRATION.md` "Overhead").
+`PREREGISTRATION.md` "Overhead"; on the 2026-09-30 fp32 legacy network). On the end-state bf16 update (`train_ms` 42.1 s)
+the cost is **UNVERIFIED** — ≈ 2.3 % if the 0.974 s of heads + variants carried over; it is inside every measured
+end-state throughput (Amendment 2 clause 6).
 And **the heads' Adam state is not checkpointed** (a restart resumes their weights with a fresh Adam: `_setup_model` re-acquires it). 🚨 **Nor is it SAVED or UNPICKLED any more** (`gen3_cpu_load_no_cuda_v1`): older checkpoints pickled the optimizers (CUDA tensors) into sb3's `data`, and a CPU READ of one created a CUDA context. `strict_load.NEVER_UNPICKLED` is excluded from every save and substituted on every load (`StrictCheckpointLoad.load`), and a CPU load that initialises CUDA anyway raises `CudaContextOnCpuLoad` (`designs/training/learner_lifecycle.md`).
 **Every ride-along optimizer is ACQUIRED AT STARTUP** (`RideAlongTerms._setup_model` →
 `_ridealong_acquire`, Adam state pre-allocated, bit-identical to lazy init). There is NO lazy build:

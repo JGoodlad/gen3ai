@@ -420,3 +420,49 @@ def test_the_derived_key_list_covers_every_key_the_liveness_probes_write(three_a
     derived = set(network_metric_keys(real_model))
     written = {k for k in on[2] if k.startswith(("cell/", "edge/"))}
     assert written and written <= derived, sorted(written - derived)
+
+
+# ── X26 readiness I19 / T32(c): the K9(b) excluded share is an EVERY-UPDATE tag, not a diagnostic ─────────
+def test_the_K9b_excluded_share_reaches_TENSORBOARD_on_EVERY_update_not_on_the_diagnostics_cadence(tmp_path):
+    """The X26 registration reads a K9(b) tie-share SPIKE per update (Amendment 2 of the ride-along
+    registration, `design_x26_readiness.md` §1.1), so the share must be in the TensorBoard events for EVERY
+    update — never only on a `--diagnostics-every` update (production's default is 10). Three real updates of
+    the production network at the production cadence: the first is a diagnostic update (the process's first),
+    the next two are SKIPPED ones (no `grad/*`), and all three carry `behaviour/excluded_frac` (and its judged /
+    excluded counts) — in the dumps AND as three events in a real TensorBoard file read without a reservoir.
+    The check runs under `warn` (Amendment 2's mode after a spent crash budget): this toy's probe is 4 rows, so
+    its share is coarse (0.25 steps) and may cross the 0.15 ceiling — and an update that crosses it must be
+    logged too. Fails on revert: gate the K9(b) probe on the diagnostics plan (`ppo.train`), drop its
+    `logger.record` (`consistency.behaviour_probe`), or put `behaviour/` among the gated prefixes."""
+    from tensorboard.backend.event_processing.event_file_loader import EventFileLoader
+
+    from agents.training import train_logger as TL
+    from agents.training.rust_rollout.testkit import record_dumps
+
+    model = _real_gen3_ppo()
+    model.behaviour_check = "warn"
+    model.diagnostics_every = dc.DIAGNOSTICS_EVERY_DEFAULT
+    model.rank_probe_every_update = False
+    model.noise_terms_every_update = False
+    dumps = record_dumps(model)
+    tb_dir = tmp_path / "tb"
+    model.logger.output_formats.append(TL.TensorBoardOutputFormat(str(tb_dir)))
+    rows = model.n_steps * model.n_envs
+    model.learn(total_timesteps=3 * rows, reset_num_timesteps=False)
+    model.logger.close()
+    updates = [d for d in dumps if "train/n_updates" in d]          # `train/n_updates` counts EPOCHS
+    assert [d["train/n_updates"] for d in updates] == [k * model.n_epochs for k in (1, 2, 3)]
+    # the cadence really skipped: update 1 is the process's first (a diagnostic update), 2 and 3 are not
+    assert _gated(updates[0]) and not _gated(updates[1]) and not _gated(updates[2])
+    share_tags = ("behaviour/excluded_frac", "behaviour/rows_excluded", "behaviour/rows_judged",
+                  "behaviour/max_abs_dlogp_judged")
+    for d in updates:
+        for tag in share_tags:
+            assert tag in d, (d["_step"], tag)
+        n_ex, n_judged = d["behaviour/rows_excluded"], d["behaviour/rows_judged"]
+        assert n_ex + n_judged > 0 and d["behaviour/excluded_frac"] == n_ex / (n_ex + n_judged)
+        assert d["behaviour/max_abs_dlogp_judged"] < 1e-4         # the judged rows agree: only the share varies
+    events = [(ev.step, v.tag) for f in sorted(tb_dir.iterdir())
+              for ev in EventFileLoader(str(f)).Load() for v in ev.summary.value]
+    for tag in share_tags:
+        assert sorted(s for s, t in events if t == tag) == [d["_step"] for d in updates], tag

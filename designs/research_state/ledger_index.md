@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-25,791-line file. **The ledger itself is append-only and is never edited by this**;
+25,840-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**879 headings · 824 dated · 2026-08-01 → 2026-10-15 · ledger 25,791 lines.**
+**880 headings · 825 dated · 2026-08-01 → 2026-10-15 · ledger 25,840 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -899,3 +899,4 @@ rename.
   - `L25588` · `2026-10-15` · GIGO FIX · **One producer per metric key: three silent double producers fixed (`fork/*`, `train/effective_batch` with a stale `train/dose_rate`, `lifecycle/cuda_streams_after_freeze` and three siblings), `grad/species_belief_*` produced again after four weeks absent, and the class guarded in the logger's record path (`DuplicateProducerError` under pytest / `--debug`, counted + reported in production) — `gen3_metric_producer_guard_v1`**
   - `L25678` · `2026-10-15` · FINDING · **The bf16 CANARY FATAL of `rb_toy_ent_s4001` (72.66M, update 700; X26 BLOCKER I30) is, on CPU evidence, a DECISION BOUNDARY inside the canary's own statistic, not a miscompile. The PPO clip on the K9 golden's 64 off-policy rows switches a boundary row's whole gradient on or off by rounding, so two HEALTHY arms can disagree up to 31× (18 % of healthy pairs above the 12× bar at the FATAL's weights). Relocating the boundary rows by the fp32 reference's own ratio makes it 0 of 992. The GPU read is PENDING**
   - `L25748` · `2026-10-15` · BUILD (MAJOR) · LEGACY DELETION U3 landed: the FRESH-INIT STREAM changed at `882a3f86` — every fresh seed after it draws a different initial network; the seven per-action blocks, `--move-resolution(-facts)` and the critic's threat injection deleted (config v157)
+  - `L25792` · `2026-10-15` · REGISTRATION AMENDMENT · **X26's ride-along registration re-based on the END STATE (Amendment 2, BEFORE any X26 data): the argv now passes `checkargs` and the launcher dry-run at HEAD, the heads are proven BIT-IDENTICAL-neutral under the bf16 trunk, the K9(b) tie-share handling is declared and its every-update record pinned — and the readiness doc's "TensorBoard keeps ~1 in 10 shares" was a 10× update-count error**
