@@ -1,0 +1,12 @@
+# bank_hib.py rb_hib_ctrl_s3103 — re-run 2026-10-15T05:34:26-07:00 (read-only over models/rb_hib_ctrl_s3103; the same script the per-fork banks were sent with)
+pin_history [('64a695dc', 15047835, 18101860)]
+final_model.zip True
+crash files 0 []
+K9(b) messages: 1 (1 dry fixture, excluded) — live max |dlogp| = 0; live dlogp violations (>=1e-4): 0; tie-share > 0.15 messages: 0
+excluded_frac: n=31 first=0.0234 median=0.0283 max=0.0566
+max_abs_dlogp_judged: n=31 first=2.22e-05 median=1.38e-05 max=2.94e-05
+train_ms: n=31 first=4.81e+04 median=4.19e+04 max=4.93e+04
+STRICT-BY-READ: PASS
+step 16,000,050: Bots 89.8%  Pool 63.8%  Monotonicity 1.00
+step 18,000,069: Bots 90.3%  Pool 68.0%  Monotonicity 1.00
+checkpoints ['checkpoint_16000050_steps.zip', 'checkpoint_17000147_steps.zip', 'checkpoint_18000069_steps.zip']

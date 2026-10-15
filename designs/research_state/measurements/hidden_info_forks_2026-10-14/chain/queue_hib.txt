@@ -1,0 +1,15 @@
+rb_hib_moves_s3101 3101 ki_moves
+rb_hib_items_s3101 3101 ki_items
+rb_hib_spreads_s3101 3101 ki_spreads
+rb_hib_species_s3101 3101 species:unseen@0.95
+rb_hib_ctrl_s3101 3101 -
+rb_hib_moves_s3102 3102 ki_moves
+rb_hib_items_s3102 3102 ki_items
+rb_hib_spreads_s3102 3102 ki_spreads
+rb_hib_species_s3102 3102 species:unseen@0.95
+rb_hib_ctrl_s3102 3102 -
+rb_hib_moves_s3103 3103 ki_moves
+rb_hib_items_s3103 3103 ki_items
+rb_hib_spreads_s3103 3103 ki_spreads
+rb_hib_species_s3103 3103 species:unseen@0.95
+rb_hib_ctrl_s3103 3103 -

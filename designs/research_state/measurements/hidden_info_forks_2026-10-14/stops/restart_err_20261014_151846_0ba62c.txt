@@ -1,0 +1,574 @@
+# Gen3AI launcher crash log
+# time     : 2026-10-14 15:18:46
+# exit code: 1
+# pid      : 1183658
+# git      : 64a695dc
+# run_dir  : /home/goodlad/dev/gen3ai/models/rb_hib_moves_s3101
+# last step: 15,153,962
+# crash #  : 1
+# --------------------------------------------------------------
+[Belief] resume: inheriting saved --opp-belief-aux-coef 0.05 (pass it explicitly to override).
+[DesktopGpu] desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
+[Opponents] training pool = 8 bots (heuristic, heuristic2, staller, staller_v2, aggressive, aggressive_v2, setup_sweep, setup_sweep_v2)
+[DiskGuard] disk space  : ✓ 368.80 GiB free on /home/goodlad/dev/gen3ai/models/rb_hib_moves_s3101 vs 9.01 GiB REQUIRED (checkpoint the fork source final_model.zip)
+[DiskGuard]               the arithmetic:
+[DiskGuard]         periodic checkpoints     164.1 MiB   = 3 x 54.7 MiB  (steps 18,047,835 // 1,000,000 - resume 15,047,835 // 1,000,000)
+[DiskGuard]         final/best/aborted+fork   218.9 MiB   = 4 x 54.7 MiB
+[DiskGuard]         eval traces              144.0 MiB   = 2 cycles x 72.0 MiB  (ceil(3,000,000 / 2,000,000))
+[DiskGuard]         pool snapshots            1.07 GiB   = 20 x 54.7 MiB  (cap 20, fork re-seeds the pool)
+[DiskGuard]         compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
+[DiskGuard]         sidecar + tb + logs       18.0 MiB   = 3.0M steps x 6.0 MiB/M
+[DiskGuard]         fixed                     16.0 MiB   = metadata, ledgers, sidecar json
+[DiskGuard]         subtotal                  4.01 GiB
+[DiskGuard]         + margin 25%              1.00 GiB
+[DiskGuard]         + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
+[DiskGuard]         = REQUIRED                9.01 GiB
+📒 [EVAL LEDGER] the in-loop eval writes COUNT rows (protocol gen3_eval_protocol_v1_inloop) to /home/goodlad/dev/gen3ai/models/_ledger — beside eval_results.jsonl, which every existing reader still reads (dual write until eval U3c)
+Loading existing model from /home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip
+Continuing Training (Steps: 3,000,000 remaining of 18,047,835, LR: 3.60e-04 (PINNED by --fork-lr to 3.60e-04))
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpa3j6vnwd/cuda_utils.c:5:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpa3j6vnwd/cuda_utils.c:1:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/compile_fx.py:282: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning:
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp0xtwh8wl/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp0xtwh8wl/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpce2e9os6/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpce2e9os6/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmplw1toerm/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmplw1toerm/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpiw1hfwnb/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpiw1hfwnb/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmphufhnfoa/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmphufhnfoa/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpx2vlq991/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpx2vlq991/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpru893zoj/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpru893zoj/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmph1q42ib4/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmph1q42ib4/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpsx2tnw7u/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpsx2tnw7u/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp1_nftjrv/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp1_nftjrv/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpvwkc62s3/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpvwkc62s3/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpe06wbn5y/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpe06wbn5y/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning:
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp6oyubor7/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp6oyubor7/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning:
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning:
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp2mrwnd0_/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp2mrwnd0_/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+⚡ [CompileTrainer] ON — the learner compiles as its DECLARED REGION (R1, the micro-step) at the compile sentinel, gated there (gen3_one_gate_per_region_v1)
+[CompileControl] dynamo reset at startup: dropped 3 cache entries compiled before the region was installed [decide (engine.py:76) x3] (now 0)
+[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)
+/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/torch/_inductor/lowering.py:7095: UserWarning:
+Online softmax is disabled on the fly since Inductor decides to
+split the reduction. Cut an issue to PyTorch if this is an
+important use case and you want to speed it up with online
+softmax.
+
+  warnings.warn(
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmph7srr_kd/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmph7srr_kd/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpwq9lo5cy/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpwq9lo5cy/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpmpp4akhq/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpmpp4akhq/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpfko596bn/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpfko596bn/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpoy9ouepl/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpoy9ouepl/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpiyzz2_7s/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpiyzz2_7s/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp_jtov_u0/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp_jtov_u0/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpsg9lh6os/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpsg9lh6os/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp9lh8872a/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp9lh8872a/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpb3k9fjhm/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpb3k9fjhm/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmp_sqs1sw1/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmp_sqs1sw1/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpv0bun6n2/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpv0bun6n2/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+In file included from /home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/Python.h:12,
+                 from /tmp/tmpsht9byhs/__triton_launcher.c:4:
+/home/goodlad/miniconda3/envs/gen3ai_torch28/include/python3.11/pyconfig.h:1793:9: warning: ‘_POSIX_C_SOURCE’ redefined
+ 1793 | #define _POSIX_C_SOURCE 200809L
+      |         ^~~~~~~~~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdlib.h:26,
+                 from /home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/site-packages/triton/backends/nvidia/include/cuda.h:56,
+                 from /tmp/tmpsht9byhs/__triton_launcher.c:2:
+/usr/include/features.h:319:10: note: this is the location of the previous definition
+  319 | # define _POSIX_C_SOURCE        202405L
+      |          ^~~~~~~~~~~~~~~
+[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) — R1 [trained weights] bf16 rule: drift loss 8.42e-05 <= 0.014, grad 1.32e-02 <= 0.68; envelope loss 9.10e-05 (eager 8.42e-05), grad 2.05e-02 (eager 1.32e-02); per-param worst ratio 5.01 <= 12 (features_extractor.team_transformer.extra_rounds.0.norm2.bias: compiled 1.35e-01 vs eager 2.70e-02) over 242 params [the K9 learner golden's real labelled buffer]
+[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)
+[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 4 graphs in process, max 1 cache entries per code object (limit 8) — reset + prewarm took 271.6s
+🧊 [COMPILE LOCK] after the end of startup (the region gate, the reset and the prewarm of every declared signature): max 1 cache entries per code object (limit 8, headroom 7) at micro_step (micro_step.py:151); 1 code objects hold 1 entries; 4 graphs compiled in this process (incl. the gate's); mode stance. Any further dynamo compile or a cache-limit hit now stops the run with a typed exit.
+🐤 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs
+🧊 [LEARNER STARTUP] declared optimizer state: none needed
+🧮 [CudaLedger] the learner process's card, by startup step (MiB; allocated / reserved after the step, its delta, the peak allocated during it):
+    weights on the card (policy + ride-along heads)            alloc       77 (     +77)  reserved      116 (    +116)  peak      108  free    11460
+    rust env core (T2 slots, staging, arena)                   alloc      737 (    +659)  reserved     2554 (   +2438)  peak     1454  free     8292
+    compiled regions: gate + prewarm + lock                    alloc     1224 (    +488)  reserved     7444 (   +4890)  peak     5460  free     3362
+    optimizer state declared (Adam m, v) + lifecycle           alloc     1224 (      +0)  reserved     7444 (      +0)  peak     1224  free     3362
+🚨 [K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 0.0376 NOT < 0.0001, excluded_frac 0 < 0.15; judged 2048 of 2048 rows — 0 excluded within a relative margin 0.0002 of a selection / threshold cutoff; 64 of the judged rows sit at ONE tie and were judged under BOTH its resolutions (64 over the bar under both); largest |d log pi| over every current row 0.0376) before any optimizer step — stale rollout weights, an eval-vs-train-mode difference, a rollout/learner observation mismatch, or (a localized fault) misaligned rows, a wrong action index or a mask mismatch [max: violated (single-shot, FATAL at once)]
+    row    11  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row    62  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row   103  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row   189  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row   371  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row   409  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row   827  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row   832  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row   854  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    row   998  |d log pi| 0.03763  action 9  mask 00000011110  log mu -4.48805 -> log pi -4.52568  p 0.0108  env None ep None dec None slot None  margin 0.0213 (hypothesis_set.py:214 argsort)
+    full-buffer scan: 3949 of 4096 current rows over 0.0001 (3817 of them judged — not at a tie; max 0.03763, p99 0.0376, excluded 0.0322)
+    (full dump: /tmp/update_fit_dump_gxc61sah/behaviour_violations.jsonl)
+🎯 [CRITIC] winprob — --vf-coef 0.5 scale readout (first non-degenerate update): BCE 0.5664 (ln 2 ~ 0.693 = chance; lower = the head already calls lopsided games). SHARED-TRUNK GRADIENT: ||g_value|| 2.98 / ||g_policy|| 10.79 -> 0.276x. READING: >>1 the value gradient dominates the trunk, cut --vf-coef by that factor; <<1 raise it. ⚠️ this is a ratio of GRADIENTS, not of losses — on epoch 1 the clipped surrogate sits at its stationary point (ratio == 1), so |policy loss| ~ 0 and a loss ratio against it is an artifact. And --vf-coef now multiplies a BCE, not the shaped-return MSE 0.5 was tuned for, which on a +-30 return was O(100). Confirm with grad/value_policy_logratio (log10 of this ratio) — see designs/ai_v12/design_winprob_only_critic.md 5.4.
+🧮 [UpdateFit] dry first update (98,304 fixture rows, 1 epoch, device batch staged, 14.6s): demand (peak reserved) 8,506 MiB, peak allocated 6,585, floor 1,224; card for this process 10,768 (reserved 8,506 + free 2,262) -> headroom 2,262 MiB vs the declared 1,024; peak segment 'batch'
+[tb-inherit] 64,255 events / 64,255 scalar values / 599 tags from rb_es_end2_s2001 (steps 0..15,047,835 ≤ fork_step 15,047,835)
+Logging to /home/goodlad/dev/gen3ai/models/rb_hib_moves_s3101/tb
+🛡️  [SUPPLY] --self-play: must deliver self-play opponent (a seeded pool) within 3 consecutive live eval cycles, else FATAL_SUPPLY (5)
+[EVAL] resumed — re-published last eval (step 14000347, 92.7% mean, pool 65.0%) to the TUI
+----------------------------
+| hparams/      |          |
+|    ent_coef   | 0.05     |
+|    gae_lambda | 0.8      |
+|    gamma      | 1        |
+|    vf_coef    | 0.5      |
+----------------------------
+🧊 [LEARNER FREEZE] the first rollout of learn(): 426 modules, 428 parameters, 519 buffers, 6 optimizer(s) [model._ridealong_opt, model._ridealong_vopts['decay'], model._ridealong_vopts['fast'], model._ridealong_vopts['feat'], model._ridealong_vopts['small'], policy.optimizer] with 428 state entries. From here a new optimizer / parameter / module / buffer / optimizer-state entry in the learner stops the run with a typed exit, and so does a SEED of a process-global RNG.
+------------------------------------------------
+| lifecycle/                        |          |
+|    cuda_device_free_mib           | 2.26e+03 |
+|    cuda_reserved_after_freeze_mib | 0        |
+|    cuda_reserved_mib              | 8.51e+03 |
+|    cuda_rollout_end_alloc_mib     | 1.22e+03 |
+|    cuda_rollout_peak_alloc_mib    | 1.73e+03 |
+|    cuda_rollout_peak_reserved_mib | 8.51e+03 |
+|    cuda_streams_after_freeze      | 0        |
+| rank/                             |          |
+|    tripwire_no_reading            | 1        |
+| reward/                           |          |
+|    class_terminal_abs_mean        | 0.0145   |
+|    class_terminal_abs_share       | 1        |
+|    class_terminal_mean            | 0.0145   |
+|    n_decisions                    | 9.84e+04 |
+|    total_abs_mean                 | 0.0145   |
+|    total_mean                     | 0.0145   |
+|    untracked_abs_mean             | 0        |
+|    win_loss_abs_mean              | 0.0145   |
+|    win_loss_abs_share             | 1        |
+|    win_loss_mean                  | 0.0145   |
+| rollout/                          |          |
+|    collect_decisions              | 1.06e+05 |
+|    collect_ms                     | 1.89e+04 |
+|    ep_len_mean                    | 44.6     |
+|    ep_rew_mean                    | 0.66     |
+| rust_env/                         |          |
+|    arena_live_rows                | 7.82e+03 |
+|    core_ms_per_host_step          | 13.3     |
+|    draw_ms_per_host_step          | 0.15     |
+|    fill_ms                        | 2.09e+03 |
+|    flush_ms_per_host_step         | 1.44     |
+|    games_cut                      | 0        |
+|    games_ended                    | 2.32e+03 |
+|    gpu_wait_ms_per_host_step      | 19.4     |
+|    host_steps                     | 450      |
+|    near_boundary                  | 27       |
+|    opp_draw_ms_per_host_step      | 0.388    |
+|    p2_near_boundary_total         | 19       |
+|    p2_policy_decisions            | 9.88e+04 |
+|    post_ms_per_host_step          | 0.651    |
+|    quarantines                    | 0        |
+|    submit_ms_per_host_step        | 1.23     |
+|    trainee_decisions_per_s        | 5.61e+03 |
+|    trainee_rows_per_host_step     | 236      |
+|    version                        | 0        |
+|    write_ms_per_host_step         | 0.613    |
+| signal/                           |          |
+|    draw_rate                      | 0.00345  |
+|    n_terminals                    | 2.32e+03 |
+|    outcome_entropy                | 0.229    |
+|    outcome_entropy_bots           | 0.185    |
+|    outcome_entropy_pool           | 0.232    |
+|    outcome_n                      | 200      |
+|    outcome_n_bots                 | 200      |
+|    outcome_n_pool                 | 200      |
+|    outcome_win_rate               | 0.645    |
+|    outcome_win_rate_bots          | 0.755    |
+|    outcome_win_rate_pool          | 0.635    |
+| time/                             |          |
+|    fps                            | 5600     |
+|    iterations                     | 1        |
+|    time_elapsed                   | 18       |
+|    total_timesteps                | 15153962 |
+| train/                            |          |
+|    dose_rate                      | 7.32e-08 |
+|    effective_batch                | 65536    |
+------------------------------------------------
+🛑 [K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 1.1e-05 < 0.0001, excluded_frac 0.165 NOT < 0.15; judged 1710 of 2048 rows — 338 excluded within a relative margin 0.0002 of a selection / threshold cutoff; 9 of the judged rows sit at ONE tie and were judged under BOTH its resolutions (0 over the bar under both); largest |d log pi| over every current row 1.1e-05) before any optimizer step — stale rollout weights, an eval-vs-train-mode difference, a rollout/learner observation mismatch, or (a localized fault) misaligned rows, a wrong action index or a mask mismatch — and TOO MANY rows sit at a tie (excluded share 0.165, ceiling 0.15): a fault that moves rows onto ties hides from the judgement, and a policy whose healthy tie share grew past the ceiling must be re-measured (designs/research_state/measurements/k9_behaviour_exclusion/result.json) [excluded_frac: violated (single-shot, FATAL at once)]
+    row  1171  |d log pi| 1.097e-05  action 7  mask 00010111110  log mu -0.822588 -> log pi -0.822577  p 0.439  env 216 ep 0 dec 44 slot 24  margin 0.0874 (hypothesis_set.py:214 argsort)
+    row  1226  |d log pi| 7.629e-06  action 2  mask 01111111110  log mu -2.25561 -> log pi -2.25561  p 0.105  env 122 ep 6 dec 2 slot 24  margin 0.0621 (hypothesis_set.py:214 argsort)
+    row  1477  |d log pi| 7.153e-06  action 5  mask 01011111110  log mu -3.86947 -> log pi -3.86948  p 0.0209  env 193 ep 5 dec 12 slot 24  margin 0.0603 (hypothesis_set.py:214 argsort)
+    row   294  |d log pi| 6.676e-06  action 2  mask 10110111110  log mu -1.15858 -> log pi -1.15859  p 0.314  env 126 ep 3 dec 38 slot 24  margin 0.402 (damage_kinds.py:130 ge)
+    row  1936  |d log pi| 5.96e-06  action 5  mask 01011111110  log mu -0.659288 -> log pi -0.659282  p 0.517  env 183 ep 3 dec 29 slot 24  margin 0.0565 (hypothesis_set.py:214 argsort)
+    row   470  |d log pi| 5.722e-06  action 9  mask 11110111110  log mu -1.90351 -> log pi -1.90351  p 0.149  env 16 ep 7 dec 19 slot 24  margin 0.04 (damage_kinds.py:130 ge)
+    row  2016  |d log pi| 5.722e-06  action 4  mask 00011000000  log mu -0.585642 -> log pi -0.585647  p 0.557  env 78 ep 3 dec 25 slot 24  margin 0.421 (hypothesis_set.py:214 argsort)
+    row   462  |d log pi| 5.603e-06  action 9  mask 11101111110  log mu -1.14944 -> log pi -1.14944  p 0.317  env 32 ep 2 dec 26 slot 24  margin 0.0404 (hypothesis_set.py:214 argsort)
+    row   700  |d log pi| 5.484e-06  action 9  mask 11101111110  log mu -3.37042 -> log pi -3.37041  p 0.0344  env 134 ep 2 dec 4 slot 24  margin 0.0796 (hypothesis_set.py:214 argsort)
+    row  1390  |d log pi| 5.364e-06  action 5  mask 00000111110  log mu -0.662791 -> log pi -0.662797  p 0.515  env 104 ep 0 dec 61 slot 24  margin 0.19 (damage_kinds.py:130 ge)
+    full-buffer scan: 0 of 98304 current rows over 0.0001 (0 of them judged — not at a tie; max 2.241e-05, p99 5.01e-06, excluded 0.1563)
+    (full dump: /home/goodlad/dev/gen3ai/models/rb_hib_moves_s3101/behaviour_violations.jsonl)
+🧊 [COMPILE LOCK] released — learn() returned; 0 compile(s) after the lock during training (must be 0); 0 rejected (must be 0).
+🧊 [LEARNER FREEZE] released — learn() returned; 1 checks passed.
+Training interrupted by exception: [K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 1.1e-05 < 0.0001, excluded_frac 0.165 NOT < 0.15; judged 1710 of 2048 rows — 338 excluded within a relative margin 0.0002 of a selection / threshold cutoff; 9 of the judged rows sit at ONE tie and were judged under BOTH its resolutions (0 over the bar under both); largest |d log pi| over every current row 1.1e-05) before any optimizer step — stale rollout weights, an eval-vs-train-mode difference, a rollout/learner observation mismatch, or (a localized fault) misaligned rows, a wrong action index or a mask mismatch — and TOO MANY rows sit at a tie (excluded share 0.165, ceiling 0.15): a fault that moves rows onto ties hides from the judgement, and a policy whose healthy tie share grew past the ceiling must be re-measured (designs/research_state/measurements/k9_behaviour_exclusion/result.json) [excluded_frac: violated (single-shot, FATAL at once)]
+Traceback (most recent call last):
+  File "/tmp/launcher-64a695dc-673h0__f/src/main/train/model_build.py", line 503, in build_and_train
+    model.learn(total_timesteps=remaining_steps, callback=callbacks,
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/instrumented_ppo/loop.py", line 188, in learn
+    self.train()
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/instrumented_ppo/ppo.py", line 281, in train
+    self._behaviour_probe()
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/instrumented_ppo/train_setup.py", line 105, in _behaviour_probe
+    behaviour_probe(self)
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/rust_rollout/consistency.py", line 851, in behaviour_probe
+    out.update(enforce_behaviour(
+               ^^^^^^^^^^^^^^^^^^
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/rust_rollout/consistency.py", line 419, in enforce_behaviour
+    raise BehaviourMismatch(f"{msg} [{rule}]")
+agents.training.rust_rollout.consistency.BehaviourMismatch: [K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 1.1e-05 < 0.0001, excluded_frac 0.165 NOT < 0.15; judged 1710 of 2048 rows — 338 excluded within a relative margin 0.0002 of a selection / threshold cutoff; 9 of the judged rows sit at ONE tie and were judged under BOTH its resolutions (0 over the bar under both); largest |d log pi| over every current row 1.1e-05) before any optimizer step — stale rollout weights, an eval-vs-train-mode difference, a rollout/learner observation mismatch, or (a localized fault) misaligned rows, a wrong action index or a mask mismatch — and TOO MANY rows sit at a tie (excluded share 0.165, ceiling 0.15): a fault that moves rows onto ties hides from the judgement, and a policy whose healthy tie share grew past the ceiling must be re-measured (designs/research_state/measurements/k9_behaviour_exclusion/result.json) [excluded_frac: violated (single-shot, FATAL at once)]
+
+🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑
+🛑 FATAL ERROR DETECTED - FAILING FAST
+🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑
+Traceback (most recent call last):
+  File "/tmp/launcher-64a695dc-673h0__f/src/main/train_rl_agent.py", line 380, in <module>
+    asyncio.run(main())
+  File "/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_torch28/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/launcher-64a695dc-673h0__f/src/main/train_rl_agent.py", line 367, in main
+    await build_and_train(
+  File "/tmp/launcher-64a695dc-673h0__f/src/main/train/model_build.py", line 503, in build_and_train
+    model.learn(total_timesteps=remaining_steps, callback=callbacks,
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/instrumented_ppo/loop.py", line 188, in learn
+    self.train()
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/instrumented_ppo/ppo.py", line 281, in train
+    self._behaviour_probe()
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/instrumented_ppo/train_setup.py", line 105, in _behaviour_probe
+    behaviour_probe(self)
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/rust_rollout/consistency.py", line 851, in behaviour_probe
+    out.update(enforce_behaviour(
+               ^^^^^^^^^^^^^^^^^^
+  File "/tmp/launcher-64a695dc-673h0__f/src/agents/training/rust_rollout/consistency.py", line 419, in enforce_behaviour
+    raise BehaviourMismatch(f"{msg} [{rule}]")
+agents.training.rust_rollout.consistency.BehaviourMismatch: [K9(b)] BEHAVIOUR-POLICY MISMATCH: on 2048 rows played at the CURRENT policy version, the learner's log pi(a|s) differs from the stored behaviour log-prob (fp32: max 1.1e-05 < 0.0001, excluded_frac 0.165 NOT < 0.15; judged 1710 of 2048 rows — 338 excluded within a relative margin 0.0002 of a selection / threshold cutoff; 9 of the judged rows sit at ONE tie and were judged under BOTH its resolutions (0 over the bar under both); largest |d log pi| over every current row 1.1e-05) before any optimizer step — stale rollout weights, an eval-vs-train-mode difference, a rollout/learner observation mismatch, or (a localized fault) misaligned rows, a wrong action index or a mask mismatch — and TOO MANY rows sit at a tie (excluded share 0.165, ceiling 0.15): a fault that moves rows onto ties hides from the judgement, and a policy whose healthy tie share grew past the ceiling must be re-measured (designs/research_state/measurements/k9_behaviour_exclusion/result.json) [excluded_frac: violated (single-shot, FATAL at once)]

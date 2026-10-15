@@ -1,0 +1,59 @@
+[2026-10-14T14:57:35-07:00] HIB chain armed (pid 1183427, pin 64a695dc23c946eaaf4e81cae04c4e18dfff787d)
+[2026-10-14T14:57:35-07:00] START rb_hib_moves_s3101 seed=3101 lever='ki_moves' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=368
+[2026-10-14T15:18:56-07:00] SWAP armed (pid 1274999): waits for chain 1183427 to pause before rb_hib_items_s3101
+[2026-10-14T15:24:19-07:00] SWITCH (pid 1277665): Amendment 2 for the fork chain — stopping swap 1274999, old chain 1183427, then SIGTERM rb_hib_moves_s3101 launcher 1183435 (it saves)
+[2026-10-14T15:24:25-07:00] SWITCH: rb_hib_moves_s3101 stopped cleanly; resuming from final_model_exception.zip with --behaviour-check warn (typed recipe, reveal + bf16)
+[2026-10-14T16:15:48-07:00] END rb_hib_moves_s3101 (warn resume) launcher_rc=0
+[2026-10-14T16:15:48-07:00] HIB chain armed (pid 1277665, pin 64a695dc23c946eaaf4e81cae04c4e18dfff787d)
+[2026-10-14T16:15:48-07:00] START rb_hib_items_s3101 seed=3101 lever='ki_items' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=364
+[2026-10-14T17:09:55-07:00] END rb_hib_items_s3101 launcher_rc=0
+[2026-10-14T17:09:55-07:00] START rb_hib_spreads_s3101 seed=3101 lever='ki_spreads' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=360
+[2026-10-14T18:04:02-07:00] END rb_hib_spreads_s3101 launcher_rc=0
+[2026-10-14T18:04:02-07:00] START rb_hib_species_s3101 seed=3101 lever='species:unseen@0.95' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=356
+[2026-10-14T18:58:26-07:00] END rb_hib_species_s3101 launcher_rc=0
+[2026-10-14T18:58:26-07:00] START rb_hib_ctrl_s3101 seed=3101 lever='-' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=353
+[2026-10-14T19:52:44-07:00] END rb_hib_ctrl_s3101 launcher_rc=0
+[2026-10-14T19:52:44-07:00] START rb_hib_moves_s3102 seed=3102 lever='ki_moves' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=349
+[2026-10-14T20:31:11-07:00] END rb_hib_moves_s3102 launcher_rc=0
+[2026-10-14T20:31:11-07:00] START rb_hib_items_s3102 seed=3102 lever='ki_items' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=348
+[2026-10-14T21:08:59-07:00] END rb_hib_items_s3102 launcher_rc=0
+[2026-10-14T21:08:59-07:00] START rb_hib_spreads_s3102 seed=3102 lever='ki_spreads' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=348
+[2026-10-14T21:46:53-07:00] END rb_hib_spreads_s3102 launcher_rc=0
+[2026-10-14T21:46:53-07:00] START rb_hib_species_s3102 seed=3102 lever='species:unseen@0.95' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=348
+[2026-10-14T22:24:39-07:00] END rb_hib_species_s3102 launcher_rc=0
+[2026-10-14T22:24:39-07:00] START rb_hib_ctrl_s3102 seed=3102 lever='-' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=347
+[2026-10-14T23:02:22-07:00] END rb_hib_ctrl_s3102 launcher_rc=0
+[2026-10-14T23:02:22-07:00] START rb_hib_moves_s3103 seed=3103 lever='ki_moves' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=346
+[2026-10-14T23:40:34-07:00] END rb_hib_moves_s3103 launcher_rc=0
+[2026-10-14T23:40:34-07:00] START rb_hib_items_s3103 seed=3103 lever='ki_items' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=344
+[2026-10-15T00:18:47-07:00] END rb_hib_items_s3103 launcher_rc=0
+[2026-10-15T00:18:47-07:00] START rb_hib_spreads_s3103 seed=3103 lever='ki_spreads' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=343
+[2026-10-15T00:56:54-07:00] END rb_hib_spreads_s3103 launcher_rc=0
+[2026-10-15T00:56:54-07:00] START rb_hib_species_s3103 seed=3103 lever='species:unseen@0.95' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=342
+[2026-10-15T01:34:52-07:00] END rb_hib_species_s3103 launcher_rc=0
+[2026-10-15T01:34:52-07:00] START rb_hib_ctrl_s3103 seed=3103 lever='-' pin=64a695dc23c946eaaf4e81cae04c4e18dfff787d disk_free_gb=341
+[2026-10-15T01:35:06-07:00] CROSS armed (pid 1992141): waits for the fork chain's clean finish, then plays the §8.4 crosses at P_hib 64a695dc
+[2026-10-15T01:36:39-07:00] POST armed (pid 1993947, lease re-pointed here): waits for CROSS DONE, then the 2 CUDA tests + the bf16 production smoke at current main
+[2026-10-15T02:11:21-07:00] END rb_hib_ctrl_s3103 launcher_rc=0
+[2026-10-15T02:11:21-07:00] ARM DONE queue_hib_rest.txt
+[2026-10-15T02:11:21-07:00] CHAIN DONE
+[2026-10-15T02:11:37-07:00] CROSS K-VALID audit: invalid=[]
+[2026-10-15T02:11:38-07:00] CROSS plan: {"moves": 9, "items": 9, "spreads": 9, "species": 9, "honest_moves": 3, "honest_items": 3, "honest_spreads": 3, "honest_species": 3, "v8": 3}
+[2026-10-15T02:24:20-07:00] CROSS played moves (9 cells)
+[2026-10-15T02:37:32-07:00] CROSS played items (9 cells)
+[2026-10-15T02:50:52-07:00] CROSS played spreads (9 cells)
+[2026-10-15T03:04:33-07:00] CROSS played species (9 cells)
+[2026-10-15T03:14:33-07:00] CROSS played v8 (3 cells)
+[2026-10-15T03:24:45-07:00] CROSS played honest moves (3 cells)
+[2026-10-15T03:35:08-07:00] CROSS played honest items (3 cells)
+[2026-10-15T03:45:30-07:00] CROSS played honest spreads (3 cells)
+[2026-10-15T03:55:41-07:00] CROSS played honest species (3 cells)
+[2026-10-15T03:55:41-07:00] CROSS played honest (12 cells); reading with read_hib.decide (at the withheld checkout's main.h2h.cross)
+[2026-10-15T03:55:42-07:00] CROSS DONE: {"outcome": "READ", "levers": {"moves": "NULL", "items": "NULL", "spreads": "NOT_DETECTED", "species": "NULL"}, "MOVES_FIRST": false, "extend": false}
+[2026-10-15T03:56:17-07:00] POST (1): CUDA tests at 6f6b7f90
+[2026-10-15T03:56:35-07:00] CROSS re-read (read_cross_hib honest per-pair fix): honest block added; primary/v8/k_rank byte-identical to the 03:55 read; run-1 outputs kept as *_run1_honest_bug.json
+[2026-10-15T04:00:41-07:00] POST (1) CUDA tests rc=1: [mem_cap] done: gen3ai-capped-taskset-2433562.scope exit 1 · peak 7.51 GB of cap 32.00 GB (23%) · not OOM-killed
+[2026-10-15T04:00:41-07:00] POST (2): fresh --arch production smoke at 6f6b7f90 into /home/goodlad/.cache/gen3ai/post_checks/smoke_models_6f6b7f90 (rb_smoke_bf16prod_20261015)
+[2026-10-15T04:22:32-07:00] POST (2) smoke read: == surface / banners [04:00:44]   trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out [04:00:46] 🧮 [TRUNK PRECISION] bf16: the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32; the compile gate applies the bf16 parity rule) [04:00:46]   trun
+[2026-10-15T04:22:32-07:00] POST: scratch /home/goodlad/.cache/gen3ai/post_checks/smoke_models_6f6b7f90 left for the session to delete by its literal path (no rm on a variable path)
+[2026-10-15T04:22:32-07:00] POST DONE

@@ -38,6 +38,20 @@ Registration: [`designs/endstate/design_hidden_info_binding.md`](../../../endsta
   while `model_config.json` / the cli args hold the lever spec; `main.h2h` reads the level from `model_config.json`, so
   the crosses are unaffected — no bank or read script here reads the reveal from `metadata.json`.
 
+## The run records (copied unedited from the Training session's job directory, 2026-10-15)
+
+- [`DECISIONS.md`](DECISIONS.md): the fork chain's decisions (a)–(f) and its findings, as written during the run.
+- [`banks/`](banks/): the per-fork bank, one file per fork, from `bank_hib.py <run>` re-run read-only over each run dir on 2026-10-15. It is the same script that produced the banks sent to the orchestrator at each fork's end. Each file has:
+  - the fork's pin_history and crash files;
+  - the K9(b) live-probe audit (the UpdateFit dry fixture excluded) and the STRICT-BY-READ verdict (Amendment 2);
+  - excluded_frac, max_abs_dlogp_judged and train_ms stats;
+  - the evals and checkpoints.
+- [`stops/`](stops/): `rb_hib_moves_s3101`'s two tie-only stops (`rb_hib_moves_s3101_stops.md`), their crash files and the first stop's K9(b) violation dump.
+- [`chain/`](chain/): the chain scripts as run:
+  - `chain_hib.sh` (the original), `chain_hib2.sh` (+ the shared compile cache, `--behaviour-check warn`), `hib_switch.sh` (the warn-mode resume of `moves_s3101`, then the rest of the queue);
+  - the queues, `bank_hib.py`;
+  - the chain's own `chain_status.txt` log, which includes the crosses' and post checks' lines.
+
 ## Results (2026-10-15)
 
 The crosses were played on 2026-10-15, 02:11–03:55 (`crosses/run.log`).
