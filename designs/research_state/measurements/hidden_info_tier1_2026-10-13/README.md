@@ -74,6 +74,9 @@ knows the codes; the blinding protects the frozen scripts, rules and table, not 
   spread frequencies (`Gen3Teambuilder(TeamLoader().get_all_teams()).packed_teams`, 719 teams); its own screen.
 - **POOL** (`pool_worlds.py`): a world = a pool team containing every revealed species and every revealed move, placed
   on the true slots, gated by the builder's own strict gate; uniform among candidates; an exclusion when none passes.
+  Since 2026-10-15 `pool_sample` runs the world consistency guard (`world_guard.check_teams`) on the teams it returns (a
+  THROWING check, `pool_worlds_guard_test.py`); over the 9,600 archived POOL worlds (1,200 states, both checkpoints) it flags 0
+  (`pool_guard_archive.py` / `.json`).
 
 ## 5. Scripts
 
@@ -88,6 +91,8 @@ knows the codes; the blinding protects the frozen scripts, rules and table, not 
 | the hand evaluator | pin / pad pin | `../hidden_info_binding_2026-10-11/hand_eval_playouts.py` unchanged (`--world O`; `--world P --worlds-dir …/det2`; `--world F --worlds-dir <F's worlds>`), outputs under `<archive>/<cp>/hand_eval/<H-code>/` |
 | `identity_read.py`, `pin_regate.py`, `world_audit.py` | — / pad pin / HEAD | validity (§2) |
 | `t1_data.py`, `t1_stats.py`, `score_blind.py`, `unblind_t1.py` | pure | the read: arrays, bootstrap + rule 8, the blinded table, the rules |
+| `pool_guard_archive.py`, `pool_worlds_guard_test.py` | HEAD | the POOL guard: the archived-states false-positive check (0 of 9,600 worlds) and the planted-defect test |
+| `amend3_corrected.py` | pure (archive) | the 2026-10-15 CORRECTION of Amendment 3's descriptive block (§7): reproduces the published block, replaces only `hits[code][2]` by the set-based count, `--merge` adds the corrected block to `result_t1.json` |
 | `t1_analysis_test.py`, `rehearsal.py` | pure | unit tests on planted effects; a dress rehearsal on the pilot's ALREADY-READ P rows (every arm a copy of P) |
 
 ## 6. Readings fixed BEFORE any arm output existed (where the registration leaves a choice)
@@ -145,6 +150,28 @@ and COMPUTED, not replicated: R-REPLICATE (the blind replica) is a third party's
 both implementations built every shared arm, G and the moves' shares replicate. R3's never-seen half and every U / stage / recover /
 eval / dose read are NOT replicated. R-REPLICATE as registered is NOT MET. The verdicts below are unchanged.
 
+**CORRECTION (2026-10-15, world-builder record fix `8702a56f`, ledger GIGO FIX 2026-10-15; re-derived by `amend3_corrected.py`).**
+The builder paired each never-seen fact RECORD with the wrong slot after the gender placement (46 % of the never-seen records),
+so Amendment 3's descriptive block, the only part of Tier 1 that reads the records (`unblind_t1.hit_proxy`), was wrong. The
+WORLDS were right (whole packed entries moved together): no playout, IMP, G, share, R-STAGE, R-DOSE or R-RECOVER number moves, and
+**no registered verdict changes**. Recomputed on the frozen table (sha `fc3aced3…`) with `class_dose`, only `hits[code][2]`
+replaced by the set-based count (a world's never-seen species that are TRUE never-seen species, from the stored teams and the
+banks; the never-seen slot count audited equal in all 15,646 records, and the published block REPRODUCED deep-equal first):
+
+| quantity (Amendment 3, descriptive) | published, superseded by `8702a56f` (records mis-keyed) | corrected |
+|---|---|---|
+| U TODAY proxy | 0.122 [0.112, 0.132] | **0.282 [0.266, 0.297]** |
+| species hit, F | 0.058 [0.054, 0.061] | 0.180 [0.173, 0.186] |
+| species hit, FN | 0.172 [0.163, 0.182] | 0.411 [0.399, 0.422] |
+| U p0 (proxy rounded to the 0.05 grid) | 0.10 | 0.30 |
+| U Π from the proxy point | +0.0028 [+0.0007, +0.0051] | +0.0045 [+0.0012, +0.0082] |
+| CLASS-FIRST from the proxy point | NOT DETECTED in every bucket | **U-FIRST at k 1–2, k 3 and material 12** (other buckets NOT DETECTED; k = 5, one never-seen slot, unchanged as it must be) |
+
+Unchanged: P-STAR, SHAPE, p-half, Π from p = 0 and the from-p = 0 CLASS-FIRST verdicts, every curve, the whole M class. Both blocks
+are in `result_t1.json` (the published one under its original key, the corrected one under `CLASS-DOSE (Amendment 3) CORRECTED`)
+and `result_t1.md`; the full re-derivation in `amend3_corrected.json`. Every "U 0.12", "0.172 vs 0.058" and "CLASS-FIRST from
+the proxy: NOT DETECTED" below is the PUBLISHED, SUPERSEDED value, kept visible.
+
 **The RED TEAM has since attacked them (2026-10-15, post hoc): [`red_team.md`](red_team.md) / `red_team.json`, produced by
 `red_team.py`; the study's §16.10.**
 - "The moves are not THE binding constraint" survives.
@@ -189,7 +216,7 @@ MAP100 27.6 %, POOLSETS 5.1 %, O−M / POOL 0. Size rules (§12.10, §12.13.2): 
 | R-STAGE-CLASS | **U-LED** at k = 1–2, 3, 4 and turn ≤ 7, 8–14; SIDES-DISAGREE at k = 5 and every material bucket; NOT DETECTED at turn ≥ 15 | two-point Shapley φ (pooled all states): see the CLASS table in `result_t1.md`; on the registered 600: φ_M = ½(σ + ν) = 0.019, φ_U = 0.040 (of G 0.070) |
 | **R-STAGE-SEARCH** | **FRONTIER EMPTY**; k = 6 GATE-WEAK (pooled 95 % only) | k = 6: TRUNC-4-K8 − CRITIC +0.024 [+0.006, +0.044] pooled; per checkpoint n 145 / 131 (< 150 after exclusions) and bounds straddle 0 |
 | R-DOSE (§6.9, M8 on F) | CONCAVE; CONTENT-MATTERS; CRITIC-INFO-LIMITED; OVERCONFIDENCE-COSTS no; P-STAR 0.1 (all three comparators); TODAY(FN) 0.009 [≤ 0.032]; WITHIN-REACH; DETERMINIZATION-FIRST k = 4, turn 15–21 | **read with the post-hoc FINDING below: the step to p = 0.1 is TIE-BREAKING** |
-| Amendment 3 (§12.14) | M: P-STAR vs policy 0.75, vs critic search NONE, LINEAR; U: P-STAR 0.2 / 0.35, CONCAVE; TODAY proxies M 0.011, U 0.12; CLASS-FIRST from 0: U-FIRST at k 1–2, 3, 4 and alive 10–11, else NOT DETECTED | M curve +0.001 (p 0) … +0.013 (p 0.75–1); U +0.002 … +0.031 (0.75) |
+| Amendment 3 (§12.14) | M: P-STAR vs policy 0.75, vs critic search NONE, LINEAR; U: P-STAR 0.2 / 0.35, CONCAVE; TODAY proxies M 0.011, U 0.12 (published, superseded by `8702a56f` (records mis-keyed): corrected 0.282, CLASS-FIRST from the proxy point U-FIRST at k 1–2, 3 and material 12, see CORRECTION above); CLASS-FIRST from 0: U-FIRST at k 1–2, 3, 4 and alive 10–11, else NOT DETECTED | M curve +0.001 (p 0) … +0.013 (p 0.75–1); U +0.002 … +0.031 (0.75) |
 
 **POST-HOC FINDING (`posthoc_tiebreak.py`, `posthoc_tiebreak.json`; read after unblinding, descriptive).** An 8-world
 LEAF-K8 score is a mean of 8 win / loss / draw outcomes, so the honest argmax is TIED in **60 %** [58 %, 63 %] of states and
@@ -203,7 +230,7 @@ The pilot's descriptive curve (§16.7 of the registration) carries the same step
 
 **Other FINDINGS.** (1) FN, the network-belief worlds on the honest base, buy nothing at LEAF-K8 (+0.006 vs F +0.006; its
 4-turn leaf +0.013 vs +0.005): the network's move belief hits 0.513 of the hidden moves vs Smogon's 0.508; its species belief
-0.172 vs 0.058 of the never-seen species, and that buys no value either. (2) The fully honest gap equals the pilot's (P, the
+0.172 vs 0.058 of the never-seen species (published, superseded by `8702a56f` (records mis-keyed): corrected 0.411 vs 0.180), and that buys no value either. (2) The fully honest gap equals the pilot's (P, the
 v2 builder that told items / abilities / spreads true: IMP_P +0.009 vs IMP_F +0.006): items, abilities and spreads add
 ≈ 0.003, far less than registered prediction (+0.005 to +0.02). (3) POOL's 0.80 is team IDENTIFICATION within our 719-team
 pool, which a ladder opponent does not offer; POOLSETS (the pool's per-species sets) recovers nothing, so the Smogon prior's

@@ -127,14 +127,26 @@ def main():
                        f"{v['TODAY']['p_eq']} [{v['TODAY']['upper95']}] | {v['REACH']} | {v['SHAPE']['verdict']} | "
                        f"{f(v.get('PI'))} |")
         out.append(f"| {ax} | DETERMINIZATION-FIRST | {d['DETERMINIZATION-FIRST'] or 'none'} | | | | | |")
-    cd = r.get("CLASS-DOSE (Amendment 3)")
-    if cd:
-        out += ["", "## Amendment 3: per-class dose curves (F+X worlds at weight p, F worlds at 1 − p)", ""]
+    sup = "CLASS-DOSE (Amendment 3) CORRECTED" in r
+    for key, title in (
+            ("CLASS-DOSE (Amendment 3)", "## Amendment 3: per-class dose curves (F+X worlds at weight p, F worlds at 1 − p)"
+             + (" — PUBLISHED, SUPERSEDED by `8702a56f` (the never-seen fact records were mis-keyed: the U proxy, the "
+                "FN / F species hit and the CLASS-FIRST-from-proxy column are wrong; the corrected block follows)"
+                if sup else "")),
+            ("CLASS-DOSE (Amendment 3) CORRECTED", "## Amendment 3, CORRECTED (`8702a56f`; re-derived by "
+             "`amend3_corrected.py` on the frozen table and the stored world records, only `hits[code][2]` replaced)")):
+        cd = r.get(key)
+        if not cd:
+            continue
+        out += ["", title, ""]
         for X, v in cd["all"].items():
             if "P-STAR" in v:
                 out.append(f"- **{X}** pooled: P-STAR {v['P-STAR']}; SHAPE {v['SHAPE']['verdict']}; p-half {v['p_half']}; "
                            f"TODAY proxy {f(v['TODAY_proxy']['p_proxy'], 3)} (hit F {f(v['TODAY_proxy']['hit_F'])}, "
                            f"FN {f(v['TODAY_proxy']['hit_FN'])}); FN joint on this curve {v['FN_joint_p_eq_on_this_curve']['p_eq']}")
+        pi = cd["all"]["U"]["PI"]
+        out.append(f"- **U** Π (+0.10 of belief) from the proxy point p0 = {pi['p0']}: {f(pi['from_today_proxy'], 4)}; "
+                   f"from p = 0: {f(pi['from_zero'], 4)}")
         out += ["", "| axis | bucket | M P-STAR (pol / crit) | U P-STAR (pol / crit) | M p-proxy | U p-proxy | CLASS-FIRST (from proxy; from 0) |",
                 "|---|---|---|---|---|---|---|"]
         for ax, d in cd["axes"].items():

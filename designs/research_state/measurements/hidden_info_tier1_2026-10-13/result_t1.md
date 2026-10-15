@@ -130,10 +130,11 @@ Pooled: P-STAR {'vs_critic_same_p': 0.1, 'vs_critic_today': 0.1, 'vs_policy': 0.
 | turn | >=22 | 345 | 0.1 / 0.1 / 0.1 | 0.0 [0.2202] | WITHIN-REACH | CONCAVE | +0.006 [+0.001, +0.012] |
 | turn | DETERMINIZATION-FIRST | ['15-21'] | | | | | |
 
-## Amendment 3: per-class dose curves (F+X worlds at weight p, F worlds at 1 − p)
+## Amendment 3: per-class dose curves (F+X worlds at weight p, F worlds at 1 − p) — PUBLISHED, SUPERSEDED by `8702a56f` (the never-seen fact records were mis-keyed: the U proxy, the FN / F species hit and the CLASS-FIRST-from-proxy column are wrong; the corrected block follows)
 
 - **M** pooled: P-STAR {'vs_critic_same_p': None, 'vs_critic_today': 0.75, 'vs_policy': 0.75}; SHAPE LINEAR; p-half 0.65; TODAY proxy +0.011 [-0.000, +0.021] (hit F +0.508 [+0.501, +0.515], FN +0.513 [+0.507, +0.520]); FN joint on this curve 0.5279569892473118
 - **U** pooled: P-STAR {'vs_critic_same_p': 0.35, 'vs_critic_today': 0.2, 'vs_policy': 0.2}; SHAPE CONCAVE; p-half 0.25; TODAY proxy +0.122 [+0.112, +0.132] (hit F +0.058 [+0.054, +0.061], FN +0.172 [+0.163, +0.182]); FN joint on this curve 0.025155925155925175
+- **U** Π (+0.10 of belief) from the proxy point p0 = 0.1: +0.0028 [+0.0007, +0.0051]; from p = 0: +0.0073 [+0.0026, +0.0121]
 
 | axis | bucket | M P-STAR (pol / crit) | U P-STAR (pol / crit) | M p-proxy | U p-proxy | CLASS-FIRST (from proxy; from 0) |
 |---|---|---|---|---|---|---|
@@ -150,6 +151,28 @@ Pooled: P-STAR {'vs_critic_same_p': 0.1, 'vs_critic_today': 0.1, 'vs_policy': 0.
 | turn | 8-14 | None / None | 0.35 / 0.5 | +0.014 [-0.003, +0.031] | +0.142 [+0.127, +0.158] | NOT DETECTED; NOT DETECTED |
 | turn | 15-21 | 0.75 / 1.0 | 0.1 / None | +0.013 [-0.006, +0.033] | +0.199 [+0.170, +0.232] | NOT DETECTED; NOT DETECTED |
 | turn | >=22 | None / None | None / None | +0.004 [-0.014, +0.022] | +0.261 [+0.215, +0.311] | NOT DETECTED; NOT DETECTED |
+
+## Amendment 3, CORRECTED (`8702a56f`; re-derived by `amend3_corrected.py` on the frozen table and the stored world records, only `hits[code][2]` replaced)
+
+- **M** pooled: P-STAR {'vs_critic_same_p': None, 'vs_critic_today': 0.75, 'vs_policy': 0.75}; SHAPE LINEAR; p-half 0.65; TODAY proxy +0.011 [-0.000, +0.021] (hit F +0.508 [+0.501, +0.515], FN +0.513 [+0.507, +0.520]); FN joint on this curve 0.5279569892473118
+- **U** pooled: P-STAR {'vs_critic_same_p': 0.35, 'vs_critic_today': 0.2, 'vs_policy': 0.2}; SHAPE CONCAVE; p-half 0.25; TODAY proxy +0.282 [+0.266, +0.297] (hit F +0.180 [+0.173, +0.186], FN +0.411 [+0.399, +0.422]); FN joint on this curve 0.025155925155925175
+- **U** Π (+0.10 of belief) from the proxy point p0 = 0.3: +0.0045 [+0.0012, +0.0082]; from p = 0: +0.0073 [+0.0026, +0.0121]
+
+| axis | bucket | M P-STAR (pol / crit) | U P-STAR (pol / crit) | M p-proxy | U p-proxy | CLASS-FIRST (from proxy; from 0) |
+|---|---|---|---|---|---|---|
+| k | 1-2 | None / None | 0.35 / 0.35 | +0.048 [+0.016, +0.078] | +0.161 [+0.143, +0.178] | U-FIRST; U-FIRST |
+| k | 3 | None / None | 1.0 / None | +0.018 [-0.005, +0.040] | +0.305 [+0.280, +0.331] | U-FIRST; U-FIRST |
+| k | 4 | None / None | 0.1 / 0.1 | +0.005 [-0.019, +0.027] | +0.383 [+0.356, +0.409] | NOT DETECTED; U-FIRST |
+| k | 5 | None / None | None / None | +0.002 [-0.020, +0.023] | +0.537 [+0.492, +0.582] | NOT DETECTED; NOT DETECTED |
+| k | 6 | 0.0 / 0.0 | 0.0 / 0.0 | +0.004 [-0.013, +0.022] | — | —; — |
+| material | 12 | None / None | None / None | +0.007 [-0.022, +0.036] | +0.192 [+0.166, +0.218] | U-FIRST; NOT DETECTED |
+| material | 10-11 | 0.75 / None | 0.1 / None | -0.003 [-0.022, +0.016] | +0.266 [+0.245, +0.288] | NOT DETECTED; U-FIRST |
+| material | 8-9 | None / None | 0.35 / 0.1 | +0.019 [-0.002, +0.039] | +0.367 [+0.339, +0.395] | NOT DETECTED; NOT DETECTED |
+| material | <=7 | None / None | None / 0.75 | +0.017 [+0.001, +0.033] | +0.411 [+0.370, +0.456] | NOT DETECTED; NOT DETECTED |
+| turn | <=7 | None / None | 0.35 / None | +0.010 [-0.018, +0.036] | +0.188 [+0.169, +0.207] | NOT DETECTED; NOT DETECTED |
+| turn | 8-14 | None / None | 0.35 / 0.5 | +0.014 [-0.003, +0.031] | +0.316 [+0.293, +0.339] | NOT DETECTED; NOT DETECTED |
+| turn | 15-21 | 0.75 / 1.0 | 0.1 / None | +0.013 [-0.006, +0.033] | +0.352 [+0.317, +0.389] | NOT DETECTED; NOT DETECTED |
+| turn | >=22 | None / None | None / None | +0.004 [-0.014, +0.022] | +0.427 [+0.384, +0.474] | NOT DETECTED; NOT DETECTED |
 
 ## Validity, exclusions, size rules
 

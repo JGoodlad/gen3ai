@@ -1,0 +1,16 @@
+{
+ "flagged": [],
+ "flagged_states": 0,
+ "per_cp": {
+  "end2": {
+   "states": 600,
+   "worlds": 4800
+  },
+  "prod": {
+   "states": 600,
+   "worlds": 4800
+  }
+ },
+ "states": 1200,
+ "worlds": 9600
+}

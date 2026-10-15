@@ -26,7 +26,10 @@ THE DRAW (per decision, deterministic in ``key``):
    playout tool's open check (``WorldSampler.playout_refusal``);
 4. world j (j = 0..J−1) = a uniform draw (``sha256("hib_pool_v1:<key>:<j>")``) among the candidates that passed —
    with replacement (the posterior: uniform over consistent pool teams; a random prefix, when ``MAX_GATED`` cuts,
-   keeps it uniform).
+   keeps it uniform);
+5. the WORLD CONSISTENCY GUARD (``world_guard.check_teams``, 2026-10-15): the J drawn teams are checked slot ↔ species ↔
+   entry ↔ the ENGINE's view before they are returned; a mismatch RAISES ``WorldConsistencyError`` (a defect, never an
+   exclusion). Added after the Tier-1 read (the archived POOL states had 0 false positives: README §7).
 
 A decision with no passing candidate is an EXCLUSION: ``PoolExcluded`` with ``reason`` ``no_candidate`` (no pool team
 fits the reveals), ``build`` (every gated candidate failed construction), ``gate`` (none passed the gate / playout).
@@ -57,6 +60,7 @@ if str(HERE) not in sys.path:
 import pool_teams as PT  # noqa: E402
 
 from main.value_search import world_draws as WD  # noqa: E402
+from main.value_search import world_guard as WG  # noqa: E402
 from main.value_search import worlds as W  # noqa: E402
 
 SALT = "hib_pool_v1:"
@@ -252,6 +256,10 @@ def pool_sample(log: dict, at: int, side: str, J: int, key: str, pool: Optional[
     meta["drawn_pool_index"] = [c for c, _ in pick]
     meta["true_drawn"] = [PT.team_key(tw) == tkey for tw in teams]
     meta["revealed"] = {s: sorted(m) for s, m in kept.items()}
+    # THE CONSISTENCY GUARD (GIGO 2026-10-15, `8702a56f` / `631db7d8`): this builder bypasses ``WorldSampler.sample``, so the
+    # guard it runs there does not see POOL's teams. THROWING (``WorldConsistencyError``, never an exclusion): the drawn teams
+    # against the ENGINE's view (slot <-> species <-> entry, a seen mon in its true slot, item / ability / moves / exact stats).
+    WG.check_teams(root, teams, key)
     return PoolWorlds(teams=teams, cmds=[W.render(root.tmpl, t) for t in teams],
                       logs=[world_log(root, t) for t in teams], meta=meta)
 
