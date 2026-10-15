@@ -145,6 +145,17 @@ and COMPUTED, not replicated: R-REPLICATE (the blind replica) is a third party's
 both implementations built every shared arm, G and the moves' shares replicate. R3's never-seen half and every U / stage / recover /
 eval / dose read are NOT replicated. R-REPLICATE as registered is NOT MET. The verdicts below are unchanged.
 
+**The RED TEAM has since attacked them (2026-10-15, post hoc): [`red_team.md`](red_team.md) / `red_team.json`, produced by
+`red_team.py`; the study's §16.10.**
+- "The moves are not THE binding constraint" survives.
+- R3's never-seen dominance is WEAKENED: it is not detected on the states from games against the network's own snapshots,
+  nor on end2 alone.
+- Two statements below are BROKEN as stated:
+  - the "0.2–0.35" dose reading is the 8-rollout leaf's quantisation;
+  - the FN species numbers are the per-slot ones that the mis-keyed records understated (0.411 / 0.180 when counted from
+    the teams).
+- The verdicts below are left as computed.
+
 **In plain language.** Hidden information about the opponent's team costs honest search 7 points of win probability per
 decision, as the pilot said, and the fully honest builder (which also hides items, abilities and spreads) did not make
 the gap larger. Most of it is the opponent's NEVER-SEEN Pokémon, not the seen ones' hidden moves: telling the search the

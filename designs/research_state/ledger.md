@@ -25234,3 +25234,87 @@ exact stats are the entry's; every match flag recomputed from the entry against 
 Tag: **GIGO FIX · DESCRIPTIVE CORRECTION (Amendment 3's U proxy, FN species hit) · no registered verdict affected** ·
 evidence: `src/main/value_search/world_guard.py`, `world_guard_test.py`, `world_guard_integration_test.py`,
 `designs/endstate/design_information_levers.md` §7.6, `designs/endstate/search_ledger.md`, `designs/endstate/design_hidden_info_binding.md` (Decision record)
+
+### 2026-10-15 · MEASUREMENT · **HIDDEN-INFO STUDY: the RED TEAM (§13.2). "The opponent's moves are NOT the binding constraint" SURVIVES every attack; R3's "the never-seen Pokémon dominate the moves" is WEAKENED (it survives tie-free scoring, the exclusions, the mis-keyed records and a U-leak check, but is NOT detected on the states from games against the network's own snapshots, nor on the end-state checkpoint alone, and per hidden fact the classes are equal); "the dose needs 0.2–0.35" is the 8-rollout leaf's quantisation (BROKEN); the network's species belief is 2.3× Smogon's (BROKEN "FN ≈ Smogon" for species)**
+
+A fresh reviewer, briefed to break the Tier-1 conclusions (`design_hidden_info_binding.md` §16.8, §16.9). It re-read the frozen
+table (sha `fc3aced3…`) with its own script, `red_team.py` (`measurements/hidden_info_tier1_2026-10-13/`). The script re-derives
+every LEAF-K8 / TRUNC-4-K8 / CRITIC IMP from the per-world arrays with 0 mismatches, and uses the registered bootstrap draws. Every
+read is POST HOC, and no registered verdict changes. Pooled, registered 600, LEAF-K8 unless stated.
+
+**What survives.**
+- **The moves are not THE constraint.** B3 fails in every read: s_M ≤ 0.30 under any scorer, checkpoint or population.
+- **R3 under tie-free scoring.** R3 holds and is STRONGER with ties broken at random, by the critic, or by the 4-turn leaf:
+  s_U − s_M +0.20 / +0.25 / +0.25, s-side tails ≤ 0.1 % (LEAF-K8: 1.05 %). Also under TRUNC-4-K8.
+- **The exclusions.**
+  - R3's n-side needs no F. On all 1,198 states it is +0.027 [+0.018, +0.037]. On the 103 F-excluded states the original's
+    own ν_M is 0.022, lower than the included states', so the replica's 1.17 there is an implementation difference.
+  - The s-side survives MAR and the replica's own σ_M (+0.013 [+0.003, +0.023]). It fails only under the extreme worst case
+    (every missing state with F+M recovering the whole oracle).
+- **The U arms' construction.** F+U's never-seen slots are the true entries (20,392 / 20,392). O−U's seen slots are the true
+  entries (35,952 / 35,968; the rest are a Hidden Power spelling). Team size is 6 everywhere.
+- **The never-seen draw is not leaking.** It holds a true species 0.180 vs the honest expectation 0.178. This is a U-leak check
+  the R-GIGO audit never ran.
+- **G** stays positive under every scorer (tie-free LEAF-K8 +0.076, TRUNC-4-K8 +0.037, CRITIC +0.018) and in both populations.
+- **POOL is identification.** All 8 POOL worlds are the true team on 70 % of states (r 1.00). Where none is (11 %), r is
+  0.14 [−0.27, 0.41].
+
+**What is WEAKENED or BROKEN.**
+- **The STATE POPULATION** (the strongest attack). The registered states come from two kinds of games.
+  - Against SCRIPTED bots (697): U dominates (s_U − s_M +0.38 [+0.19, +0.58], n_U − n_M +0.57 [+0.39, +0.76]).
+  - Against the network's own SNAPSHOTS (503): it does not. s_U − s_M is −0.13 [−0.40, +0.13] and n_U − n_M +0.14
+    [−0.10, +0.39], with s_M 0.23 and n_M **0.58** [0.38, 0.80] (B4 holds there).
+  - The bot − snapshot difference: s-side +0.036 [+0.015, +0.058], n-side +0.032 [+0.011, +0.052]. It stays clear
+    k-adjusted (+0.028 / +0.025) and volume-adjusted (+0.029 / +0.022). It shows on every non-random bot family and on
+    both checkpoints.
+  - At the same k and move-slot count, a hidden move is worth 1.5–2.4× more per slot on snapshot states. The mechanism is
+    UNVERIFIED. The opponent class is a §10.4 axis registered for s_M only, so this is post hoc for R3.
+- **The architecture.** R3 is not met on end2 alone, the architecture now in production (s-side +0.13 [−0.16, +0.42]). It
+  is not met on truth seeds 16–27 either.
+- **Volume.** Per hidden fact (8 per never-seen mon) the classes are equal: U / M 1.21 [0.98, 1.58]. The never-seen
+  class is the bigger bundle (2.1 mons ≈ 17 facts vs 10.4 move slots). At k = 5 the s-side reverses (−0.016 [−0.039, +0.006]).
+- **Items / abilities / spreads.** "They add ≈ 0.003" holds only alone (+0.0015). Once the never-seen mons are known they
+  add +0.019 [+0.010, +0.028]. With R true, φ_U − φ_M is +0.029 [+0.018, +0.039] and the interaction +0.017.
+- **C5, the dose.** "The dose needs 0.2–0.35 of weight on the true world" is the K = 8 leaf's quantisation. The truth can
+  move an untied honest pick at p ≤ 0.1 on 3 of 1,477 states, and the moving weights are 1/2, 1/3, 2/3, 1/4, 1/5. On the
+  continuous TRUNC-4-K8 leaf the M8 curve has no step: +0.002 / +0.009 / +0.014 / +0.023 / +0.038 at p 0 / 0.05 / 0.1 /
+  0.2 / 1.
+- **C5, FN.** FN's never-seen species hit is 0.411 vs F's 0.180, counted from teams (agrees with `8702a56f`). FN − F at
+  TRUNC-4-K8 is +0.008 [+0.0001, +0.017], a BOUNDARY result.
+- **C3.** R-EVAL's "not evaluator-bound" is a near miss the other way: HE-TRUNC-4 − TRUNC-4 in F is +0.0075
+  [−0.0008, +0.0155].
+- **C4.** The k = 6 frontier cell misses GATE-OPEN by hairs: 99.6 % lower −0.002, per-checkpoint lowers −0.002 / −0.0003,
+  n 145 / 131 < 150.
+
+**If R3 falls,** the M-only fallback is MOVES-SHARED under every tie-free scorer: s_M's lower bound clears 0, which settles
+the knife edge. MOVES-BINDING is unreachable everywhere.
+
+**Settling experiments** (`red_team.md` §3, CPU only):
+- **E1, the blind U-arm build:** 16–40 CPU-h, written ready to dispatch with its anti-contamination list.
+- **E2, a competent-opponent bank** with R3 pre-registered: 40–65 CPU-h.
+- **E3, the second referee:** 3–5 CPU-h plus a driver.
+- **E4, F+Usp / F+M+U:** 15 CPU-h.
+- **E5, a 16-world leaf:** 37 CPU-h.
+- **E6, the plateau replication:** 60 CPU-h per checkpoint.
+- **E7, the never-seen slot order:** 7 CPU-h.
+
+**Red-team confidence** (the author's and the third party's figures stand as written):
+
+| statement | red team |
+|---|---|
+| hidden team information binds honest search | ≈ 90 % |
+| the moves are THE constraint | ≈ 5 % |
+| the moves are a material share | ≈ 85 % |
+| the never-seen class is the largest on the registered mix | ≈ 70 % |
+| … on competent-opponent states | ≈ 35 % |
+| "0.2–0.35" as a belief threshold | ≈ 10 % |
+
+**FINDINGS (standing rule 7)**, beyond the above:
+- The author's CONDITION read misclassifies `setup_sweep_v2` (72 states in neither class). It is descriptive.
+- Not verified: the samplers' corners §13.2 names (Transform, Baton Pass, a choice lock across a re-drawn slot), H-REFEREE,
+  the slot-order component of U, and anything at plateau.
+
+Operations: CPU only, no playout (rule 5b: nice 19, cores 5–7 / 13–15, `mem_cap`, one job at a time, peak 1.9 GB).
+
+Tag: **MEASUREMENT · POST HOC (red team) · C1 WEAKENED (moves-not-binding SURVIVES) · C2 SURVIVES · C3 WEAKENED · C4 WEAKENED · C5 BROKEN (its quantitative parts) · C6 SURVIVES · PROVISIONAL at 15M** ·
+evidence: `designs/research_state/measurements/hidden_info_tier1_2026-10-13/red_team.md`, `red_team.json`, `red_team.py`; `designs/endstate/design_hidden_info_binding.md` §16.10; `designs/endstate/search_ledger.md`

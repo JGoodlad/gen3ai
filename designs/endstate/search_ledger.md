@@ -9,7 +9,12 @@ descriptive stage reads stay in their owners. **Status (2026-10-15, later): the 
 party** (`design_hidden_info_binding.md` §16.9; `measurements/hidden_info_tier1_2026-10-13/replica_comparison.md`). On the 978
 states where both implementations built every shared arm, G and the moves' minority shares REPLICATE and so does the post-hoc
 tie-break step. R3's never-seen half, the stage, recover, eval and dose / placebo rules are NOT replicated: the replica ran no such
-arms. §1, §5.2, §6.1 and §7 Q2 carry this. **Status (2026-10-12): ESTABLISHED at the owner's request** ("try and build a ledger of what we know about search, what
+arms. §1, §5.2, §6.1 and §7 Q2 carry this. **Status (2026-10-15, latest): the RED TEAM has attacked Tier 1**
+(`design_hidden_info_binding.md` §16.10; `measurements/hidden_info_tier1_2026-10-13/red_team.md`; post hoc, no registered verdict
+changed): "the moves are not THE binding constraint" SURVIVES; the never-seen class's dominance is WEAKENED (not detected on the
+states from games against our own snapshots, nor on the end-state checkpoint alone; equal per hidden fact); "the dose needs
+0.2–0.35" is the 8-rollout leaf's quantisation and "FN ≈ Smogon" is false for species (both BROKEN). §1, W9, §5.1, §5.2 and §7
+carry it. **Status (2026-10-12): ESTABLISHED at the owner's request** ("try and build a ledger of what we know about search, what
 we know about where it's working, where it's not working, how much we need to improve for it to work … establish the
 ledger now"). This is an INDEX-AND-VERDICT doc: it holds no measurement of its own. Every row points at the ledger
 entry, design section or measurement folder that owns the number, and the owner wins any disagreement
@@ -48,7 +53,15 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
   binding constraint" is **REFUTED**; the moves are a real minority share (a confident WRONG move set costs −0.013; the
   move dose +0.011 at 0.9). Items, abilities and spreads together add ≈ 0.003. MEASURED. The replica reproduces the MOVES'
   shares (s_M 0.11 / 0.12, n_M 0.39 / 0.47 on the same states). It ran NO never-seen arm, so U's dominance (R3) is still a
-  SINGLE-IMPLEMENTATION claim.
+  SINGLE-IMPLEMENTATION claim. **RED TEAM (§16.10 of the study, post hoc): WEAKENED.**
+  - **What survives.** R3 survives tie-free scoring (stronger), the exclusions (its hide-only side needs no honest base),
+    the mis-keyed records and a never-seen leak check.
+  - **Where it is not detected.** On the 42 % of states from games against our OWN snapshots: reveal-only U − M −0.13
+    [−0.40, +0.13], hide-only +0.14 [−0.10, +0.39], n_M 0.58. The bot − snapshot difference is clear on both sides. It is
+    also not met on the end-state checkpoint alone.
+  - **Per hidden fact** the two classes are worth the same (1.21 [0.98, 1.58]).
+  - **Red-team confidence** that the never-seen class is the largest: ≈ 70 % on the registered mix, ≈ 35 % where play is
+    competent.
 - **It falls as the game goes on.** G by opponent mons seen 1–2 … 6: +0.087 / +0.093 / +0.076 / +0.061 / +0.025 (TREND-DOWN,
   replicated); the axis that carries it once the others are in is the TURN; the truth changes the decision 78 % → 42 % of
   the time (k ≤ 3 vs ≥ 5) at about the same stakes. MEASURED (the mechanism rule itself is NOT DETECTED: the stakes
@@ -58,16 +71,27 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
 - **How far: the honest belief does not reach the first step.** Give the true world weight p inside the search's average:
   the curve's first step (p 0 → any p > 0) is TIE-BREAKING among the 60 % of states whose 8-world honest leaf ties (POST
   HOC FINDING, §5.1); beyond it the search needs ≈ **0.2–0.35** of weight on the true world. The network's own belief worlds
-  (FN) buy nothing (+0.006 ≈ F) and sit below the step. The Bayes posterior of OUR closed 719-team pool recovers 0.80 of G
+  (FN) buy nothing (+0.006 ≈ F) and sit below the step. **RED TEAM (post hoc): the "0.2–0.35" is the 8-rollout leaf's
+  quantisation, NOT a belief threshold.**
+  - The truth can move an untied honest pick at p ≤ 0.1 on 3 of 1,477 states. The moving weights are 1/2, 1/3, 1/4, 1/5:
+    ratios of eighths.
+  - On the continuous 4-turn leaf the curve rises smoothly from p = 0.05 (+0.009) and has no step.
+  - The network's SPECIES belief is 2.3× Smogon's (0.41 vs 0.18 of never-seen slots hold a true species). Its value is
+    +0.003 at the 8-rollout leaf and +0.008 [+0.000, +0.017] at the 4-turn leaf (a boundary). The Bayes posterior of OUR closed 719-team pool recovers 0.80 of G
   (it identifies the team), which no ladder opponent offers.
 - **What does not help:** more rollouts as critic-training labels, a per-action head on noisy oracle labels (−0.004), the
   proof-first 2·SE acting rule, trusting the policy prior at Gumbel's default scale, shared-seed dice pairing beyond one
   turn, a privileged critic, telling the frozen network the true moves (+0.001), the network's belief as a world sampler,
   the honest sharpening (prior-mode moves), the pool's per-species sets, and Foul Play's hand evaluator as the leaf in
   honest worlds (no better than the critic).
-- **Open, in order of cost:** an independent F+U / O−U (the replica comparison left R3's never-seen half unreplicated) and the
-  red team, the knock-in forks' read, Tier 2
-  (items / abilities / spreads arms), the maturity battery at plateau (§7).
+- **Open, in order of cost.** The red team (§16.10) has run. Its settling list, in order:
+  - the second referee (≈ 3–5 CPU-h);
+  - the BLIND U-arm build (E1, 16–40 CPU-h, ready to dispatch);
+  - a competent-opponent state bank with R3 pre-registered on it (E2, 40–65 CPU-h);
+  - species-only never-seen worlds (F+Usp, ≈ 15 CPU-h);
+  - the knock-in forks' read;
+  - Tier 2 (items / abilities / spreads arms);
+  - the maturity battery at plateau (§7).
 
 ---
 
@@ -83,7 +107,7 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
 | W6 | **Late, honest search beats the policy (and, pooled, the critic search).** | PROVISIONAL, DESCRIPTIVE | all six seen: TRUNC-4 over the critic search **+0.026** [+0.004, +0.051], over the policy **+0.041** [+0.018, +0.066]; per checkpoint end-state +0.022 [−0.005, +0.052], production +0.031 [−0.001, +0.075]. ≤ 7 mons alive: leaf over the policy +0.022 [+0.007, +0.038] but not over the critic search | `hidden_info_by_reveal_count_2026-10-12/` README §1, `tables.md`; ledger 2026-10-12 L24663 |
 | W7 | **A zero-cost scorer exists:** the network's own ride-along A head, argmax, no rollout | PROVISIONAL, DESCRIPTIVE, end-state only | +0.010 [+0.001, +0.020]; one registered replication owed before anything is built on it | pilot README §12; ledger 2026-10-11 L24485 |
 | W8 | **The lever is real if the worlds knew the truth:** worlds with the seen mons' TRUE moves (CT′) | PROVISIONAL | LEAF-K8 +0.042 [+0.028, +0.058] / +0.018 [+0.004, +0.033]; beats its own critic on end-state by +0.025 [+0.009, +0.040] (DESCRIPTIVE); closes ½ / ⅕ of the oracle gap | pilot README §14 |
-| W9 | **Partial truth in the belief is worth a lot, once it is more than a tie-breaker.** Weight p on the true world among the honest ones | MEASURED (Tier 1, M8 on F; CONCAVE, CONTENT-MATTERS, CRITIC-INFO-LIMITED), with a POST-HOC qualifier | on F: +0.002 (p = 0) → +0.021 (0.1) → +0.032 (0.2) → +0.053 (0.35) → +0.062 (0.5) → +0.072 (1.0); the true world beats a random honest world at the same weight (M5 − M5W +0.028 [+0.024, +0.032] at 0.35). POST HOC: the whole step to p = 0.1 is reached at p = 0.001 (TIE-BREAKING, §5.1), so the dose proper runs from ≈ 0.1 to 0.75. The step and the curve REPLICATE on the blind replica's own F worlds (ties 0.60, a jump of +0.024 at p = 0.001; every point's difference from the original's contains 0; post hoc, §16.9) | `design_hidden_info_binding.md` §16.8, §16.9; `hidden_info_tier1_2026-10-13/` README §7; the pilot's curve: `hidden_info_by_reveal_count_2026-10-12/` README §4 |
+| W9 | **Partial truth in the belief is worth a lot, once it is more than a tie-breaker.** Weight p on the true world among the honest ones | MEASURED (Tier 1, M8 on F; CONCAVE, CONTENT-MATTERS, CRITIC-INFO-LIMITED), with a POST-HOC qualifier | on F: +0.002 (p = 0) → +0.021 (0.1) → +0.032 (0.2) → +0.053 (0.35) → +0.062 (0.5) → +0.072 (1.0); the true world beats a random honest world at the same weight (M5 − M5W +0.028 [+0.024, +0.032] at 0.35). POST HOC: the whole step to p = 0.1 is reached at p = 0.001 (TIE-BREAKING, §5.1), so the dose proper runs from ≈ 0.1 to 0.75. The step and the curve REPLICATE on the blind replica's own F worlds (ties 0.60, a jump of +0.024 at p = 0.001; every point's difference from the original's contains 0; post hoc, §16.9). **RED TEAM (§16.10): the "≈ 0.1–0.75 / 0.2–0.35" reading is the 8-rollout leaf's QUANTISATION** (the moving weights are 1/2, 1/3, 1/4, 1/5; at p ≤ 0.1 the truth can move an untied pick on 3 of 1,477 states). On the continuous 4-turn leaf the curve has no step: +0.002 (0) → +0.009 (0.05) → +0.014 (0.1) → +0.023 (0.2) → +0.038 (1) | `design_hidden_info_binding.md` §16.8, §16.9, §16.10; `hidden_info_tier1_2026-10-13/` README §7, `red_team.md`; the pilot's curve: `hidden_info_by_reveal_count_2026-10-12/` README §4 |
 | W10 | **An existence proof that determinised search wins here (PRE-ERA, a width meter).** Foul Play (decoupled UCT over a hand-written evaluator, Smogon-determinised sets) vs the 75M policy | MEASURED, PRE-ERA | our win rate **0.388** [0.288, 0.497], n = 80, ~1.4M visits per decision; width and opponent-set knowledge NOT SEPARABLE (width slope +0.027 per ln-visit, CI covers 0; knowledge delta +0.000 [−0.15, +0.15]). Later (PRE-ERA Kakuna, greedy vs Foul Play at 1000 ms): 0.490 [0.422, 0.559], NOT DETECTED | `UNDERSTANDING.md` §3.1; ledger 2026-09-14 L18248, 2026-09-17 L18964, 2026-09-29 L21447 |
 | W11 | **A rollout leaf out-ranks the learned critic head (PRE-ERA).** K = 1/2/4/8/16: 0.543 / 0.580 / 0.613 / 0.652 / 0.671 vs 0.574 | MEASURED, PRE-ERA | DETECTED at K ≥ 8 (+0.078 [+0.027, +0.128]); the single-rollout label itself mis-orders the top1\|top2 pair 39.7 % of the time (so any pairwise level is compressed toward 0.5) | ledger 2026-09-19 L19881, L19663 |
 | W12 | **Identifying the opponent's TEAM recovers most of the gap, on our closed pool.** Worlds drawn from the training-pool teams consistent with the observation (POOL), gated | MEASURED (Tier 1, R-RECOVER BELIEF-RECOVERABLE on this distribution) | r_POOL **0.80** [0.73, 0.87]: POOL IMP +0.063 vs oracle +0.076; the pool's per-species SETS alone (POOLSETS) recover −0.02: what pays is knowing WHICH TEAM, not the set priors. Not available on the ladder (an open population) | `design_hidden_info_binding.md` §16.8 |
@@ -106,9 +130,9 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
 | N10 | **"Focus the search on torn states"** | PROVISIONAL | LEAF-K8 flat across the policy's gap quintiles (q1 +0.078 / +0.090, q5 +0.075 / +0.072); banked: torn 40 % +0.049 vs most decided 20 % +0.082. No cheap policy-confidence feature separates the decisions search flips (PRE-ERA: flip rate 0.694 [0.681, 0.707]) | the stakes are larger where the policy is confident |
 | N11 | **Narrowing the state distribution to buy discrimination** (an exploiter's head) | MEASURED, PRE-ERA | sibling ranking 0.575 on its own slice and the generalist's alike | the 0.575 ceiling was four heads deep: coverage, width, loss form and data each varied |
 | N12 | **Hand evaluators as the leaf (PRE-ERA)** | MEASURED, PRE-ERA | nine tried; none beat the head; the PBRS potential matches a 75M critic pooled | Foul Play's edge is evaluator, search shape or knowledge: not separated (§7) |
-| N13 | **Foul Play's hand evaluator as the leaf, current era, honest worlds** (R-EVAL) | MEASURED (Tier 1) | in F: HE − critic +0.007 [−0.001, +0.016] (4-turn leaf), −0.002 [−0.011, +0.006] (one ply); in the pilot's P: +0.003 / −0.005: **not EVALUATOR-BOUND**; the hand eval also collapses oracle → honest (g_HE / g_CRIT 0.75 [0.52, 1.06]): INFORMATION-BOUND support | the leaf is not our binding constraint; information is |
+| N13 | **Foul Play's hand evaluator as the leaf, current era, honest worlds** (R-EVAL) | MEASURED (Tier 1) | in F: HE − critic +0.007 [−0.001, +0.016] (4-turn leaf), −0.002 [−0.011, +0.006] (one ply); in the pilot's P: +0.003 / −0.005: **not EVALUATOR-BOUND**; the hand eval also collapses oracle → honest (g_HE / g_CRIT 0.75 [0.52, 1.06]): INFORMATION-BOUND support. **RED TEAM (§16.10): WEAKENED**: the 4-turn contrast is a near miss TOWARD evaluator-bound (one-sided tail 5.5 % at the +0.0005 bar; positive on both checkpoints); not replicated | information binds; a hand leaf ≈ 0.7 points better than our critic in honest worlds is NOT excluded |
 | N14 | **The seen mons' hidden MOVES as THE binding constraint** (R-MOVES) | MEASURED (Tier 1): **REFUTED (R3)** | s_M 0.13 [−0.02, 0.25], n_M 0.42 [0.31, 0.54] vs s_U 0.31, n_U 0.82 (U dominates on both sides, paired: +0.19 [+0.03, +0.35], +0.41 [+0.26, +0.55]); the moves' dose helps a little (D90 − F +0.011), a wrong set hurts (W90 − F −0.013) | the never-seen Pokémon carry more; a move-inference programme is not the lever (`design_hidden_info_binding.md` §16.8) |
-| N15 | **The network's own belief as the world sampler on the honest base** (FN) | MEASURED (Tier 1) | FN LEAF-K8 +0.006 = F's +0.006 (4-turn +0.013 vs +0.005); its move hit 0.513 vs Smogon 0.508, species (a never-seen slot holding a TRUE never-seen species) **0.411 vs 0.180** (the published 0.172 vs 0.058 counted a species against the truth of the slot it was DRAWN for: the 2026-10-15 builder-record GIGO, `design_information_levers.md` §7.6) | barely sharper than Smogon on moves; a 2.3x better species hit buys no value (the whole world must hang together) |
+| N15 | **The network's own belief as the world sampler on the honest base** (FN) | MEASURED (Tier 1) | FN LEAF-K8 +0.006 = F's +0.006 (4-turn +0.013 vs +0.005); its move hit 0.513 vs Smogon 0.508, species (a never-seen slot holding a TRUE never-seen species) **0.411 vs 0.180** (the published 0.172 vs 0.058 counted a species against the truth of the slot it was DRAWN for: the 2026-10-15 builder-record GIGO, `design_information_levers.md` §7.6; the red team's count from the world teams agrees). FN − F (red team, §16.10 of the study): +0.003 [−0.006, +0.012] at LEAF-K8, +0.008 [+0.0001, +0.017] at TRUNC-4-K8 (a BOUNDARY result) | barely sharper than Smogon on MOVES; on SPECIES 2.3× sharper, and that buys at most ≈ +0.017 at any scorer (the whole world must hang together) |
 
 ---
 
@@ -183,6 +207,16 @@ holds**; "today's p" is the p-EQUIVALENT in value units. Registered read on the 
   curve (§16.7 of the study, +0.009 → +0.034 at 0.1) carries the same step.
 - **Beyond the step** the dose rises from p ≈ 0.1–0.2: half its further rise by p ≈ 0.30, so a search would need ≈ **0.2–0.35**
   of weight on the TRUE world. The network's own belief worlds (FN, +0.006 ≈ F's +0.006) do not even reach the step.
+  **RED TEAM (§16.10, post hoc): that threshold is the 8-rollout leaf's resolution, not a belief requirement.**
+  - The leaf moves in eighths, so the first weights at which the truth can overturn an UNTIED honest pick are 1/5, 1/4, 1/3
+    and 1/2 (only 3 of 1,477 states at p ≤ 0.1).
+  - On the continuous TRUNC-4-K8 leaf the same re-weighting rises with no step:
+
+    | p | 0 | 0.001 | 0.01 | 0.05 | 0.1 | 0.2 | 0.35 | 0.5 | 1 |
+    |---|---|---|---|---|---|---|---|---|---|
+    | IMP | +0.002 | +0.003 | +0.004 | **+0.009** [+0.000, +0.018] | +0.014 | +0.023 | +0.029 | +0.034 | +0.038 |
+
+  - It covers half its rise by p ≈ 0.15. How much belief search needs depends on the leaf's resolution.
 - **Registered shape reads:** CONCAVE (Δ² +0.025 [+0.020, +0.031]); CONTENT-MATTERS (the true world beats a random honest one at
   the same weight: +0.028 [+0.024, +0.032] at 0.35); OVERCONFIDENCE-COSTS not shown (−0.003 [−0.007, +0.000]);
   CRITIC-INFO-LIMITED (the critic search gains only +0.014 [+0.008, +0.021] from the whole truth: a rollout can use it, the
@@ -212,6 +246,26 @@ G = 0.070; Σ s = 0.45 [0.22, 0.65] (not NON-ADDITIVE), Σ n = 1.24 (the hide-on
 a multi-week programme until the replica agrees, the red team has attacked it and the plateau replication confirms it. The replica
 comparison (§16.9, 2026-10-15) agrees on the M row and on G. It is silent on the U row, because the replica built no U arm.
 The plateau replication is `design_hidden_info_binding.md` §10.5. The author's confidence that the seen mons' MOVES are THE binding constraint is now ≈ 5 %.
+
+**The red team's read of this table (§16.10 of the study; post hoc; the rows above stay the registered read).**
+- **The U row is population-dependent.** On the 503 registered states from games against our OWN snapshots:
+  - s_U 0.12 vs s_M 0.23, and n_U 0.72 vs n_M **0.58**;
+  - R3 is not met, and B4 holds for the moves.
+  - On the 697 bot-game states U dominates both sides (+0.38 / +0.57).
+- **Per hidden fact** the two classes are worth the same: ν per fact 0.0032 (never-seen, 8 facts per mon) vs 0.0027 (a
+  hidden move slot).
+- **The items / abilities / spreads row is context-dependent.** They add ≈ 0.0015 alone, but **+0.019 [+0.010, +0.028]**
+  once the never-seen mons are known (a complement of U).
+- **The R-true two-point Shapley values** are φ_U 0.048 and φ_M 0.020, difference +0.029 [+0.018, +0.039]. The
+  interaction is +0.017.
+- **Red-team confidence:**
+
+  | statement | red team |
+  |---|---|
+  | the moves are THE constraint | ≈ 5 % |
+  | the moves are a material share | ≈ 85 % |
+  | the never-seen class is the largest on the registered mix | ≈ 70 % |
+  | … on competent-opponent states | ≈ 35 % |
 
 ### 5.3 The honest builder's leaks, fixed 2026-10-12: earlier "fair" numbers were OPTIMISTIC
 
@@ -311,7 +365,7 @@ Rust side, not built); the training-time `--belief-oracle` of the study's §8.1 
 | # | question | the experiment | cost / status |
 |---|---|---|---|
 | Q1 | Does a FULLY honest search beat the critic anywhere, and which class of fact carries the gap? | **Tier 1 of the hidden-info study** — READ 2026-10-15 (§16.8): no (FRONTIER EMPTY; k = 6 GATE-WEAK); the never-seen Pokémon (R-MOVES REFUTED by R3). **Tier 2** (F+I/A/S, O−I/A/S, D25 / D75, W50 / W100, MAP90, P16 = R-WIDTH, the second referee) is the open remainder | Tier 1 cost ≈ 1.5 days on 3 agent cores (FN built; the honest screen ≈ 20–60 CPU-s per state). Tier 2 not queued |
-| Q2 | Is the pilot's oracle − honest gap an artifact of our instrument? | **The blind replica's third-party comparison** (R-REPLICATE, then the red team, `design_hidden_info_binding.md` §13) | **PARTLY ANSWERED 2026-10-15 (§16.9):** the gap is NOT an artifact of one builder (G replicates on the same states). R-REPLICATE as registered is NOT MET: the ν_M point rule fails, and TV < 0.02 is below the noise floor. R3's never-seen half is unreplicated. Next: an independent F+U / O−U, then the red team |
+| Q2 | Is the pilot's oracle − honest gap an artifact of our instrument? | **The blind replica's third-party comparison** (R-REPLICATE, then the red team, `design_hidden_info_binding.md` §13) | **PARTLY ANSWERED 2026-10-15 (§16.9):** the gap is NOT an artifact of one builder (G replicates on the same states). R-REPLICATE as registered is NOT MET: the ν_M point rule fails, and TV < 0.02 is below the noise floor. R3's never-seen half is unreplicated. **The RED TEAM has run (§16.10):** the instrument holds against every attack it could make offline (tie-free scoring, the exclusions, the mis-keyed records, a U-leak check, the U arms' team text). What it cannot settle offline is the never-seen half: the blind U-arm build E1 (16–40 CPU-h, ready to dispatch in `red_team.md` §3), the competent-opponent bank E2 (40–65 CPU-h) and the second referee E3 (3–5 CPU-h) |
 | Q3 | Can a network LEARN to use told information, and what is each class worth in strength? | **The knock-in forks**: `--oracle-reveal ki_moves` (etc.) with `--diagnostic-fork-consent`, 5 arms × 3 seeds × +3M from the adopted end state, a no-change control (the v8 guard) and a wrong-moves placebo; `main.dose` for the dose match | ≈ 14 GPU-h; QUEUED behind the bf16 A/B. The study's §8.3 argv is NOT launchable as written (`--arch endstate` is refused on a fork; `--belief-oracle` not built) |
 | Q4 | What do maturity and plateau change: does G shrink, does today's p rise toward p\*, does the frontier move earlier? | **The maturity battery** on the X26 deep run (`design_hidden_info_binding.md` §12.13.7): O, F, FN, F+M, F+U re-run at ≥ 25M then every 25M and at the plateau checkpoint, ONE frozen 800-state bank, rules R-MATURITY (GAP-SHRINKS / BELIEF-RISES / FRONTIER-MOVES-EARLIER / -STATIC / -RECEDES) | ≈ 150 CPU-h for six checkpoints (FULL ≈ 47 at the first and plateau anchors, LEAN ≈ 14 between), no GPU. Every claim in this ledger is PROVISIONAL until it runs |
 | Q5 | Does the honest ONE-PLY critic search pay in GAMES? | **S0b** (`design_value_discrimination.md` §13.4): the end-state checkpoint with an 8-world one-ply critic search vs the same checkpoint raw, mirrored head-to-head; pass = lower bound > the +4.57 pp replicate floor | ≈ 1 CPU-day. NOT run as far as the ledger records; OWNER approval requested (§13.0 ask 2) |
@@ -350,3 +404,4 @@ Rust side, not built); the training-time `--belief-oracle` of the study's §8.1 
 | 2026-10-15 | **TIER 1 READ (the hidden-info study's registered factorial on the FULLY honest base)** | §1, §2 (W9 qualified, W12 POOL), §3 (N13 hand evaluator current era, N14 R-MOVES REFUTED, N15 FN), §4 (the registered Tier-1S frontier map replaces the pilot's descriptive one: FRONTIER EMPTY, U-LED early), §5.1 (the dose on F with the POST-HOC tie-break FINDING: the step to p = 0.1 is reached at p = 0.001; Amendment 3's per-class curves), §5.2 (class shares), §5.3 (c), §7 Q1 / Q8 / Q9 updated | keeping the pilot's descriptive frontier as the map (it ran on the leakier builder; it stays in its owners); quoting the registered P-STAR = 0.1 / TODAY = 0.009 without the tie-break qualifier (a 10 % belief would look sufficient) | `design_hidden_info_binding.md` §16.8; `hidden_info_tier1_2026-10-13/` README §7, `result_t1.md`, `posthoc_tiebreak.json`; ledger 2026-10-15 |
 | 2026-10-15 | **REPLICA COMPARISON READ (a third party; the study's §16.9)** | Status line; §1 (G REPLICATED; the moves' shares replicated, U's dominance single-implementation; the open list now leads with an independent F+U / O−U); W9 (the tie-break step replicates on the replica's own worlds); §4 header (the stage table NOT replicated, and the replica's k-gradient sub-read differs); §5.2 note; §6.1 (what the comparison can and cannot check: common-mode parts, the replica's learnset handicap, §12.2's unmeetable TV threshold, the not-missing-at-random exclusions); §7 Q2 PARTLY ANSWERED | marking R3 / U as replicated because the M half agrees (the replica built no U arm); dropping the "computed" caveats wholesale (only G and the M shares gained a second implementation) | `design_hidden_info_binding.md` §16.9; `hidden_info_tier1_2026-10-13/replica_comparison.md` / `.json`; ledger 2026-10-15 |
 | 2026-10-15 | **GIGO FIX: the world builder's never-seen fact RECORDS were paired with the wrong slot; the consistency guard built** | §3 N15 (the FN species hit 0.411 vs 0.180, set-based), §5.1 (Amendment 3's U TODAY proxy 0.28, CLASS-FIRST from it), §6.1 (the records residual, fixed) | re-reading any playout (the worlds were right: whole entries moved; every IMP, G, s / n, R-STAGE, R-DOSE and R-RECOVER number stands) | `design_information_levers.md` §7.6; the impact table and the recomputation: ledger 2026-10-15 (GIGO FIX, world records) |
+| 2026-10-15 | **RED TEAM READ (the study's §16.10)** | Status line; §1 (the never-seen bullet WEAKENED: population-dependent, not met on end2 alone, equal per hidden fact; the "how far" bullet: "0.2–0.35" is the leaf's quantisation, FN's species belief 0.41 vs 0.18; the open list re-ordered by the red team's settling experiments); W9 (the quantisation qualifier); N13 (R-EVAL a near miss toward evaluator-bound); N15 (the species hit CORRECTED to 0.411 / 0.180, `8702a56f`; FN − F at TRUNC-4-K8 a boundary); §5.1 (the continuous-leaf curve); §5.2 (the red team's read and confidence); Q2 | rewriting the registered rows (they stay the registered read; the red team's numbers sit beside them, labelled); dropping "0.2–0.35" without the replacement curve (the continuous leaf's curve is the honest replacement) | `design_hidden_info_binding.md` §16.10; `hidden_info_tier1_2026-10-13/red_team.md` / `.json`, `red_team.py`; ledger 2026-10-15 |
