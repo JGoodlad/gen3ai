@@ -1,0 +1,56 @@
+[
+ {
+  "player": "rb_hib_spreads_s3101@18101892",
+  "opponent": "rb_hib_ctrl_s3101@18102624",
+  "n_pairs": 1000,
+  "w": 974,
+  "l": 1009,
+  "d": 17,
+  "aborted": 0,
+  "pairs": [
+   223,
+   7,
+   557,
+   8,
+   205
+  ],
+  "score_pp": 49.125,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_spreads_s3102@18102713",
+  "opponent": "rb_hib_ctrl_s3102@18102326",
+  "n_pairs": 1000,
+  "w": 967,
+  "l": 1016,
+  "d": 17,
+  "aborted": 0,
+  "pairs": [
+   235,
+   10,
+   536,
+   7,
+   212
+  ],
+  "score_pp": 48.775,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_spreads_s3103@18101602",
+  "opponent": "rb_hib_ctrl_s3103@18101860",
+  "n_pairs": 1000,
+  "w": 1011,
+  "l": 979,
+  "d": 10,
+  "aborted": 0,
+  "pairs": [
+   192,
+   8,
+   587,
+   2,
+   211
+  ],
+  "score_pp": 50.8,
+  "verdict": "OK"
+ }
+]

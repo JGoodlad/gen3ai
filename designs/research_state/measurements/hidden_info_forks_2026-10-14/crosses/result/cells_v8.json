@@ -1,0 +1,56 @@
+[
+ {
+  "player": "rb_hib_ctrl_s3101@18102624",
+  "opponent": "rb_es_end2_s2001@15047835",
+  "n_pairs": 1000,
+  "w": 1093,
+  "l": 887,
+  "d": 20,
+  "aborted": 0,
+  "pairs": [
+   159,
+   12,
+   557,
+   8,
+   264
+  ],
+  "score_pp": 55.15,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_ctrl_s3102@18102326",
+  "opponent": "rb_es_end2_s2001@15047835",
+  "n_pairs": 1000,
+  "w": 1040,
+  "l": 935,
+  "d": 25,
+  "aborted": 0,
+  "pairs": [
+   190,
+   8,
+   550,
+   11,
+   241
+  ],
+  "score_pp": 52.625,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_ctrl_s3103@18101860",
+  "opponent": "rb_es_end2_s2001@15047835",
+  "n_pairs": 1000,
+  "w": 1101,
+  "l": 887,
+  "d": 12,
+  "aborted": 0,
+  "pairs": [
+   162,
+   5,
+   558,
+   7,
+   268
+  ],
+  "score_pp": 55.35,
+  "verdict": "OK"
+ }
+]

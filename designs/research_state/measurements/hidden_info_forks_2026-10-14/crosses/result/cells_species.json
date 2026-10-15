@@ -1,0 +1,164 @@
+[
+ {
+  "player": "rb_hib_species_s3101@18102429",
+  "opponent": "rb_hib_ctrl_s3101@18102624",
+  "n_pairs": 1000,
+  "w": 965,
+  "l": 1017,
+  "d": 18,
+  "aborted": 0,
+  "pairs": [
+   235,
+   7,
+   541,
+   9,
+   208
+  ],
+  "score_pp": 48.699999999999996,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_species_s3101@18102429",
+  "opponent": "rb_hib_ctrl_s3102@18102326",
+  "n_pairs": 1000,
+  "w": 972,
+  "l": 1021,
+  "d": 7,
+  "aborted": 0,
+  "pairs": [
+   234,
+   5,
+   548,
+   2,
+   211
+  ],
+  "score_pp": 48.775,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_species_s3101@18102429",
+  "opponent": "rb_hib_ctrl_s3103@18101860",
+  "n_pairs": 1000,
+  "w": 987,
+  "l": 999,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   221,
+   8,
+   550,
+   4,
+   217
+  ],
+  "score_pp": 49.7,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_species_s3102@18102135",
+  "opponent": "rb_hib_ctrl_s3101@18102624",
+  "n_pairs": 1000,
+  "w": 974,
+  "l": 1006,
+  "d": 20,
+  "aborted": 0,
+  "pairs": [
+   218,
+   7,
+   564,
+   11,
+   200
+  ],
+  "score_pp": 49.2,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_species_s3102@18102135",
+  "opponent": "rb_hib_ctrl_s3102@18102326",
+  "n_pairs": 1000,
+  "w": 978,
+  "l": 1011,
+  "d": 11,
+  "aborted": 0,
+  "pairs": [
+   228,
+   4,
+   551,
+   7,
+   210
+  ],
+  "score_pp": 49.175000000000004,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_species_s3102@18102135",
+  "opponent": "rb_hib_ctrl_s3103@18101860",
+  "n_pairs": 1000,
+  "w": 989,
+  "l": 997,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   207,
+   6,
+   578,
+   6,
+   203
+  ],
+  "score_pp": 49.8,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_species_s3103@18102828",
+  "opponent": "rb_hib_ctrl_s3101@18102624",
+  "n_pairs": 1000,
+  "w": 955,
+  "l": 1031,
+  "d": 14,
+  "aborted": 0,
+  "pairs": [
+   241,
+   7,
+   542,
+   7,
+   203
+  ],
+  "score_pp": 48.1,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_species_s3103@18102828",
+  "opponent": "rb_hib_ctrl_s3102@18102326",
+  "n_pairs": 1000,
+  "w": 1023,
+  "l": 973,
+  "d": 4,
+  "aborted": 0,
+  "pairs": [
+   204,
+   1,
+   564,
+   3,
+   228
+  ],
+  "score_pp": 51.24999999999999,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_hib_species_s3103@18102828",
+  "opponent": "rb_hib_ctrl_s3103@18101860",
+  "n_pairs": 1000,
+  "w": 991,
+  "l": 993,
+  "d": 16,
+  "aborted": 0,
+  "pairs": [
+   219,
+   5,
+   550,
+   11,
+   215
+  ],
+  "score_pp": 49.95,
+  "verdict": "OK"
+ }
+]

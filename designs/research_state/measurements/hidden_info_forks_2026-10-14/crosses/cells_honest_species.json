@@ -1,0 +1,14 @@
+[
+ [
+  "/home/goodlad/dev/gen3ai/models/rb_hib_species_s3101/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_hib_ctrl_s3101/final_model.zip"
+ ],
+ [
+  "/home/goodlad/dev/gen3ai/models/rb_hib_species_s3102/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_hib_ctrl_s3102/final_model.zip"
+ ],
+ [
+  "/home/goodlad/dev/gen3ai/models/rb_hib_species_s3103/final_model.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_hib_ctrl_s3103/final_model.zip"
+ ]
+]

@@ -1,0 +1,38 @@
+{
+ "shas": {
+  "moves_s3101": "4f8aac16075b11788a06a23695f38dcc6056874c889a840b2db082a8fdc1d4aa",
+  "moves_s3102": "4b468b02f37e80bd17b1b7a048591200b4b056ebb920999c6fc478576e57e956",
+  "moves_s3103": "8a80ef91b951aa8e295677909565308159ba010ac25605a8bfd2ba8ea452fec9",
+  "items_s3101": "6789dde3280124bb58b0a93e2b1c073d61f86b1d8495436fdbaf6ab715e2c28e",
+  "items_s3102": "f368e19ef7d20670bf9fe1ae1ae38d9b75cc0b38ca818fb6b46ae8166df14e70",
+  "items_s3103": "65b9b07b44a35357c3f8374a934bd85f8dc91776ff293c81604f6a84ba479aca",
+  "spreads_s3101": "9055a1053a3620c0b348ff4cc0bb732070a233236666075e8ead8bfb4b4afb9e",
+  "spreads_s3102": "75950a21b2f1b85141a2e5465b410f10867e7313717f05869dc9b24fa80d456f",
+  "spreads_s3103": "a6753119e125239354d84679e37b4a94a9cc4403cdd94a3224eddf15b7f529be",
+  "species_s3101": "42e20589410d23e961483aba260f714da35a713e9f6583178411f7f8813b5649",
+  "species_s3102": "77941d94e371f21edbae48779f6da127e4cfb0bfff2b656830f32b027eba5187",
+  "species_s3103": "980094ee510b16630ed3810d81052394222c9bf9a2a813f839f0bf8f62b85c35",
+  "ctrl_s3101": "98364936d32ca0688cde7104222ca7800764e7e6e928ae657980a7d6f2fd930c",
+  "ctrl_s3102": "967da26efbbb5d02611bf863453892e21c7a02453c339a4d8135ea65c1beb9ee",
+  "ctrl_s3103": "b15b1ac9c8cc56bb80e0871fb2d6bbe449c7320d7d7cfa6523653adefd723428",
+  "parent": "3ddcfcf7e495bfed11eae55f0c315d35a20cfa591610a2550b7910a27f897849"
+ },
+ "runs": {
+  "moves_s3101": "/home/goodlad/dev/gen3ai/models/rb_hib_moves_s3101/final_model.zip",
+  "moves_s3102": "/home/goodlad/dev/gen3ai/models/rb_hib_moves_s3102/final_model.zip",
+  "moves_s3103": "/home/goodlad/dev/gen3ai/models/rb_hib_moves_s3103/final_model.zip",
+  "items_s3101": "/home/goodlad/dev/gen3ai/models/rb_hib_items_s3101/final_model.zip",
+  "items_s3102": "/home/goodlad/dev/gen3ai/models/rb_hib_items_s3102/final_model.zip",
+  "items_s3103": "/home/goodlad/dev/gen3ai/models/rb_hib_items_s3103/final_model.zip",
+  "spreads_s3101": "/home/goodlad/dev/gen3ai/models/rb_hib_spreads_s3101/final_model.zip",
+  "spreads_s3102": "/home/goodlad/dev/gen3ai/models/rb_hib_spreads_s3102/final_model.zip",
+  "spreads_s3103": "/home/goodlad/dev/gen3ai/models/rb_hib_spreads_s3103/final_model.zip",
+  "species_s3101": "/home/goodlad/dev/gen3ai/models/rb_hib_species_s3101/final_model.zip",
+  "species_s3102": "/home/goodlad/dev/gen3ai/models/rb_hib_species_s3102/final_model.zip",
+  "species_s3103": "/home/goodlad/dev/gen3ai/models/rb_hib_species_s3103/final_model.zip",
+  "ctrl_s3101": "/home/goodlad/dev/gen3ai/models/rb_hib_ctrl_s3101/final_model.zip",
+  "ctrl_s3102": "/home/goodlad/dev/gen3ai/models/rb_hib_ctrl_s3102/final_model.zip",
+  "ctrl_s3103": "/home/goodlad/dev/gen3ai/models/rb_hib_ctrl_s3103/final_model.zip"
+ },
+ "parent": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2001/final_model.zip"
+}

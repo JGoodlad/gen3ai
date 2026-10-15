@@ -1,0 +1,199 @@
+{
+ "k_valid": {
+  "invalid": [],
+  "placebo_clause": "UNREADABLE (decision (a)): no wrong-moves arm \u2014 the training observation refuses a placebo source; K-VALID's placebo clause and K-L-WORTH's \u0394_L \u2212 \u0394_WRONG cannot be read in this batch"
+ },
+ "rule8_pp": 0.05,
+ "interval": "two-sided 95 % Student-t (X5 \u00a77.4's reported interval)",
+ "levers": {
+  "moves": {
+   "outcome": "NULL",
+   "k_l_worth": "NOT DECLARABLE \u2014 UNREADABLE (decision (a)): no wrong-moves arm \u2014 the training observation refuses a placebo source; K-VALID's placebo clause and K-L-WORTH's \u0394_L \u2212 \u0394_WRONG cannot be read in this batch",
+   "near_boundary": [],
+   "delta_hat_pp": -0.38055555555556,
+   "se_pp": 0.5337165868339965,
+   "df": 4,
+   "t_0.975": 2.7764451051977934,
+   "ci95_pp": [
+    -1.8623903606336825,
+    1.1012792495225625
+   ],
+   "half_width_pp": 1.4818348050781225,
+   "row_means_pp": [
+    48.791666666666664,
+    49.508333333333326,
+    50.55833333333334
+   ],
+   "col_means_pp": [
+    49.324999999999996,
+    49.76666666666666,
+    49.76666666666667
+   ]
+  },
+  "items": {
+   "outcome": "NULL",
+   "k_l_worth": "NOT DECLARABLE \u2014 UNREADABLE (decision (a)): no wrong-moves arm \u2014 the training observation refuses a placebo source; K-VALID's placebo clause and K-L-WORTH's \u0394_L \u2212 \u0394_WRONG cannot be read in this batch",
+   "near_boundary": [],
+   "delta_hat_pp": 0.125,
+   "se_pp": 0.6247221604663781,
+   "df": 4,
+   "t_0.975": 2.7764451051977934,
+   "ci95_pp": [
+    -1.6095067845354658,
+    1.8595067845354658
+   ],
+   "half_width_pp": 1.7345067845354658,
+   "row_means_pp": [
+    50.775,
+    50.65,
+    48.949999999999996
+   ],
+   "col_means_pp": [
+    50.133333333333326,
+    49.758333333333326,
+    50.48333333333333
+   ]
+  },
+  "spreads": {
+   "outcome": "NOT_DETECTED",
+   "k_l_worth": "NOT DECLARABLE \u2014 UNREADABLE (decision (a)): no wrong-moves arm \u2014 the training observation refuses a placebo source; K-VALID's placebo clause and K-L-WORTH's \u0394_L \u2212 \u0394_WRONG cannot be read in this batch",
+   "near_boundary": [],
+   "delta_hat_pp": 0.3388888888888886,
+   "se_pp": 1.0245444636640693,
+   "df": 4,
+   "t_0.975": 2.7764451051977934,
+   "ci95_pp": [
+    -2.505702572308715,
+    3.183480350086492
+   ],
+   "half_width_pp": 2.8445914611976035,
+   "row_means_pp": [
+    51.425000000000004,
+    49.708333333333336,
+    49.88333333333333
+   ],
+   "col_means_pp": [
+    49.34166666666667,
+    49.60833333333333,
+    52.06666666666667
+   ]
+  },
+  "species": {
+   "outcome": "NULL",
+   "k_l_worth": "NOT DECLARABLE \u2014 UNREADABLE (decision (a)): no wrong-moves arm \u2014 the training observation refuses a placebo source; K-VALID's placebo clause and K-L-WORTH's \u0394_L \u2212 \u0394_WRONG cannot be read in this batch",
+   "near_boundary": [],
+   "delta_hat_pp": -0.5944444444444485,
+   "se_pp": 0.42299819046398074,
+   "df": 4,
+   "t_0.975": 2.7764451051977934,
+   "ci95_pp": [
+    -1.7688756998656918,
+    0.5799868109767947
+   ],
+   "half_width_pp": 1.1744312554212433,
+   "row_means_pp": [
+    49.05833333333334,
+    49.39166666666667,
+    49.76666666666667
+   ],
+   "col_means_pp": [
+    48.666666666666664,
+    49.73333333333333,
+    49.81666666666666
+   ]
+  }
+ },
+ "moves_extension": {
+  "extend": false,
+  "half_width_pp": 1.4818348050781225,
+  "near_boundary": []
+ },
+ "k_rank": {
+  "pairs": {
+   "items": {
+    "moves_first": false,
+    "near_boundary": [],
+    "contrast_hat_pp": -0.50555555555556,
+    "se_pp": 1.1148478831074342,
+    "df": 4,
+    "t_0.975": 2.7764451051977934,
+    "ci95_pp": [
+     -3.6008695036493172,
+     2.5897583925381973
+    ],
+    "half_width_pp": 3.0953139480937573,
+    "row_means_pp": [
+     48.01666666666667,
+     48.85833333333334,
+     51.60833333333333
+    ],
+    "col_means_pp": [
+     49.19166666666666,
+     50.00833333333333,
+     49.28333333333333
+    ],
+    "registered": true
+   },
+   "spreads": {
+    "moves_first": false,
+    "near_boundary": [],
+    "contrast_hat_pp": -0.7194444444444485,
+    "se_pp": 1.2675313812561524,
+    "df": 4,
+    "t_0.975": 2.7764451051977934,
+    "ci95_pp": [
+     -4.238675743617691,
+     2.799786854728794
+    ],
+    "half_width_pp": 3.5192312991732426,
+    "row_means_pp": [
+     47.36666666666667,
+     49.79999999999999,
+     50.67499999999999
+    ],
+    "col_means_pp": [
+     49.98333333333333,
+     50.15833333333333,
+     47.699999999999996
+    ],
+    "registered": true
+   },
+   "species": {
+    "moves_first": false,
+    "near_boundary": [],
+    "contrast_hat_pp": 0.21388888888888857,
+    "se_pp": 0.3816589842345052,
+    "df": 4,
+    "t_0.975": 2.7764451051977934,
+    "ci95_pp": [
+     -0.8457663297437652,
+     1.2735441075215423
+    ],
+    "half_width_pp": 1.0596552186326538,
+    "row_means_pp": [
+     49.73333333333333,
+     50.11666666666667,
+     50.791666666666664
+    ],
+    "col_means_pp": [
+     50.65833333333333,
+     50.03333333333333,
+     49.949999999999996
+    ],
+    "registered": false
+   }
+  },
+  "MOVES_FIRST": false
+ },
+ "v8": {
+  "descriptive": true,
+  "stamp": "CONFOUNDED (decision (c)): the control trained on the learnset-fixed data/ (64a695dc) and its parent did not, so control-vs-parent mixes +3M steps with the data change",
+  "cells_pp": [
+   55.15,
+   52.625,
+   55.35
+  ],
+  "mean_minus_50_pp": 4.375
+ },
+ "outcome": "READ"
+}
