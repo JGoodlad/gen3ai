@@ -1,8 +1,10 @@
 # The bf16 STRENGTH A/B: `--trunk-precision bf16` against fp32, on the end state (REGISTERED 2026-10-12, before any seed)
 
-**Status: REGISTERED 2026-10-12, before any seed** (lifted from
+**Status: REGISTERED 2026-10-12, before any seed; READ 2026-10-14 — stage 1 CONTINUE, stage 2 PASS, and bf16 is ADOPTED into
+the production recipe (§7 Results, §8 Decision record).** §§1–6 are the registration, unchanged: they were written before any
+cell was read. (Lifted from
 [`perf_phase_2026-10-10/PLAN.md`](../research_state/measurements/perf_phase_2026-10-10/PLAN.md) §2d; orchestrator's
-call 2026-10-12, option (i)). Run by the Training session. Nothing here has read a cell.
+call 2026-10-12, option (i). Run by the Training session.)
 
 ## 1. The question
 
@@ -98,10 +100,38 @@ Speed (the pooled quiet `train_ms` ratio) is REPORTED, never decides.
 | the 8 × 8 cross | ≈ 1 |
 | **total** | **≈ 54** (≈ 26 if E could have been reused, §2) |
 
-## 7. Decision record
+## 7. Results (2026-10-14)
+
+Both stages were read by the registered rules, unchanged; the cross artifacts, the coded rules' outputs verbatim and the
+64 + 16 cells are in
+[`measurements/bf16_strength_ab_2026-10-12/`](../research_state/measurements/bf16_strength_ab_2026-10-12/) (`stage1_cross/`,
+`stage2_cross/`; the README there carries both `verdict.json` outputs verbatim). Every cross was played at P_bf16
+`f45d0c27`, both sides greedy, 1,000 mirrored pairs per cell, schedule seed 0, `--oracle-reveal-mode off`.
+
+| stage | rule | outcome | Δ̂ (pp) | SE (pp) | df | interval (pp) |
+|---|---|---|---|---|---|---|
+| **1** (4 × 4 at 5M; futility screen) | STOP iff the 90 % upper end < −2.0 (`futility_rule.py`) | **CONTINUE** | −0.122 | 1.765 | 6 | 90 %: [−3.551, +3.307] |
+| **2** (8 × 8 at 15M; the READ) | the closing test's `decide`: PASS iff upper > 0 AND lower > −2.0, rule 8 against PASS | **PASS** | **+1.0625** | 1.277 | 14 | 90 %: [−1.186, +3.311] |
+
+- **Stage 2 in full.** `clause_a_includes_zero_or_above` true (upper +3.311 > 0), `clause_b_lower_above_minus_2` true (lower
+  −1.186 > −2.0), `near_boundary` none, `t_sup` 0.832, `s2_rows` 8.516, `s2_cols` 4.524, `n_cells_read` 64. Row means (EB
+  seeds 2001–2008, pp): 54.69 / 54.28 / 49.86 / 48.84 / 47.80 / 52.70 / 47.44 / 52.88; column means (E seeds): 53.28 / 51.23 /
+  52.79 / 48.97 / 47.35 / 50.03 / 53.05 / 51.80.
+- **A PASS is NOT-WORSE, not BETTER.** The 90 % interval includes 0 (t_SUP 0.832); the point estimate favours bf16 by 1.06 pp, and
+  no superiority claim is made. The bf16 arm's run-to-run spread is the larger (s²_rows 8.52 against 4.52).
+- **Speed (REPORTED, never decided).** `train_ms` (TensorBoard, 153 updates per seed, 15M steps): the median of the eight
+  seeds' medians is **54.26 s** for E (fp32; per-seed 54.17–54.45) and **42.07 s** for EB (bf16; 41.99–42.15), a ratio of 0.775
+  (**−22.5 %**); the pooled means are 55.4 s and 43.0 s (re-read from the runs' event files for the adoption:
+  [`speed/train_ms_read.py`](../research_state/measurements/bf16_strength_ab_2026-10-12/speed/train_ms_read.py)).
+- **Runs.** 16 runs (eight per arm; seeds 2001–2004 trained in two legs, 5M then a same-pin resume to 15M, so 24 launcher-child
+  legs); no `Traceback` in any `launcher_child.full.log` (`speed/train_ms.json` `health`).
+
+## 8. Decision record
 
 | date | decision | why |
 |---|---|---|
 | 2026-10-12 | REGISTERED before any seed, at P_bf16 `f45d0c27`; E re-run (not reused) | PLAN §2d's identity precondition fails at every candidate pin (§2); orchestrator's option (i): E at HEAD doubles as the adopted end state's reference seeds |
 | 2026-10-12 | §3's first-non-empty-pool-eval precondition read as unmet by construction in stage 1, checked at every stage-2 seed's 6M eval; the training tree pinned to 0-4,8-12 (§2 CPU split) from `rb_bf_eb_s2001` on | a 5M seed's only pool eval meets an empty pool; `rb_bf_e_s2001` showed contention p90 1.82 with the trainer free to run on the agents' cores (orchestrator's rulings) |
 | 2026-10-12 | CORRECTION to the row above: the precondition is not unmet by construction — a seed evaluates at 2M and 4M and is seeded at the first eval clearing `--self-play-start-wr` 0.55, so it is met at 4M when the 2M eval clears the gate (`rb_bf_e_s2002`) and deferred to 6M otherwise (`rb_bf_e_s2001`, `rb_bf_eb_s2001`) | the first bank's reading assumed one pool eval per 5M seed; `rb_bf_e_s2002`'s 4M eval (Pool 71.0 %) refuted it |
+| 2026-10-14 | STAGE 1 read: **CONTINUE** (Δ̂ −0.122 pp, 90 % interval [−3.551, +3.307]; the upper end is not below −2.0) | the coded futility rule (`futility_rule.py`, committed `7201f002` before any cell) on the 4 × 4 cross of the 5M finals | none (a screen only; no early PASS is read) | `stage1_cross/result/verdict.json` |
+| 2026-10-14 | STAGE 2 read: **PASS**, and **bf16 is ADOPTED into the production recipe** (`recipe.fresh.trunk_precision` = `bf16`; `--trunk-precision fp32` stays as the explicit opt-out; forks inherit their parent's recorded precision, so `recipe.fork` carries no row) | the closing test's coded rule, unchanged: Δ̂ +1.0625 pp, 90 % interval [−1.186, +3.311], both clauses true (§5: a PASS adopts); `--arch endstate` has been an alias of production since the end state's adoption (2026-10-12), so the recipe the A/B's `--arch endstate` arm ran is the production mirror's | keeping bf16 as an opt-in; defaulting forks of fp32 parents to bf16 (no strength read of a mid-lineage precision switch, and it would confound matched-dose fork comparisons) | `stage2_cross/result/verdict.json`; ledger 2026-10-14 MEASUREMENT (MAJOR); `design_learner_recipe.md` §3.22 row `trunk_precision` + Decision record; `designs/CHANGELOG.md` 2026-10-14 |

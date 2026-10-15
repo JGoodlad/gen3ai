@@ -24817,3 +24817,68 @@ Landing: the commit that adds this entry (`git log -S'gen3_learnset_prevo_chain_
 shipped as ONE unit (data + code + goldens). Gate scope: TARGETED (named in the commit body).
 
 Tag: **GIGO FIX · TRAINING-INPUT CHANGE (the move prior's legality; no ARCH_SIGNATURE / config bump; observation unchanged) · `data/` regenerated · three goldens re-recorded with causes**. Evidence: `designs/CHANGELOG.md` (2026-10-14), `designs/tools/pokemon_data_extractor.md`, `src/agents/gen3_data/CLAUDE.md`, `src/agents/gen3_data/learnset_test.py`, `src/rust_sim/harness/dump_gen3_learnset.js`.
+
+### 2026-10-14 · MEASUREMENT (MAJOR) · **THE bf16 STRENGTH A/B: PASS — `--arch endstate --trunk-precision bf16` (EB) vs fp32 (E), both at P_bf16 `f45d0c27`; stage 1 (4 × 4 at 5M, futility screen) CONTINUE (Δ̂ −0.12 pp, 90 % interval [−3.55, +3.31]); stage 2 (8 × 8 mirrored cross of the 15M finals, 64 / 64 cells × 1,000 pairs): Δ̂ +1.0625 pp, SE 1.277, df 14, two-sided 90 % interval [−1.186, +3.311]; clause a (upper > 0) TRUE, clause b (lower > −2.0) TRUE, near_boundary none ⇒ by the closing test's coded rule the bf16 trunk is NOT WORSE and §5 of the registration ADOPTS it; `train_ms` 54.3 s fp32 → 42.1 s bf16 (−22.5 %), 16 runs / 24 legs, 0 crashes**
+
+The ONE registered read of [`design_bf16_strength_ab.md`](../endstate/design_bf16_strength_ab.md) (registered 2026-10-12 before any seed, `981013f4`;
+stage 1's futility rule coded before any cell, `7201f002`; the lift from `perf_phase_2026-10-10/PLAN.md` §2d). Artifacts:
+[`measurements/bf16_strength_ab_2026-10-12/`](measurements/bf16_strength_ab_2026-10-12/) (`stage1_cross/` and `stage2_cross/`:
+`result/verdict.json` = the coded rule's output, verbatim; `h.json`, `cells.json`, `cells_plan.json`, `shas.json`, `run.log`, the drivers
+`drive_s1.sh` / `drive_s2.sh`, the planners and readers), committed `2d4d0d7d`. The numbers below are the `verdict.json` outputs, copied,
+not re-derived. Both arms trained at ONE pin (`f45d0c27`, `--pin-commit`), on `gen3ai_torch28` (torch 2.8.0+cu126), the shared compile
+cache off, the training tree on cores 0–4,8–12; both crosses were played at `f45d0c27` from a detached checkout, both sides greedy,
+schedule seed 0, `--oracle-reveal-mode off`, purpose `ab`, family `bf16_strength_steps`, 1,000 mirrored pairs per cell (batches of 500).
+Rows = EB (bf16) seeds `rb_bf_eb_s2001`–`s2008`, columns = E (fp32) seeds `rb_bf_e_s2001`–`s2008`.
+
+**Stage 1 — the futility screen (`stage1_cross/result/verdict.json`, verbatim).** outcome **CONTINUE**; `upper_below_minus_2` false;
+`interval90_pp` [−3.550693698316416, 3.3069436983164247]; `t_0.95` 1.9431802805153042; `delta_hat_pp` −0.12187499999999574; `se_pp`
+1.7645396738006962; `df` 6; `s2_rows` 2.7633463541666603; `s2_cols` 9.691054687500008; `near_boundary` []; `n_cells_read` 16. Rule:
+STOP for futility iff the 90 % interval's UPPER end < −2.0 pp (rule 8: within 1e-9 does not stop); +3.307 is far above it, so stage 2
+ran. No other stage-1 outcome is read (no early PASS).
+
+**Stage 2 — the READ (`stage2_cross/result/verdict.json`, verbatim).** outcome **PASS**; `clause_a_includes_zero_or_above` true;
+`clause_b_lower_above_minus_2` true; `interval90_pp` [−1.186187842539114, 3.311187842539114]; `t_0.95` 1.761310135774891;
+`delta_hat_pp` 1.0625; `se_pp` 1.2767131675818129; `df` 14; `s2_rows` 8.515711495535717; `s2_cols` 4.52426060267857; `t_sup`
+0.8322151184611434; `near_boundary` []; `n_cells_read` 64; `v_hat` 1.6299965122767859; `ci95_pp` [−1.6757774061188444,
+3.8007774061188444]. Rule (the closing test's `closing_rule.py decide`, byte-identical at `f45d0c27` and at this commit): PASS iff the
+90 % interval's upper end > 0 AND its lower end > −2.0 pp, rule 8 against PASS; upper +3.311 > 0, lower −1.186 > −2.0, neither within
+1e-9. **PASS.**
+
+**The matrix** h_ij (EB row vs E column, pp; a draw ½):
+- EB2001: 57.50 / 53.20 / 56.60 / 52.55 / 51.50 / 53.65 / 57.40 / 55.10
+- EB2002: 54.75 / 55.02 / 55.02 / 53.55 / 49.58 / 53.75 / 56.83 / 55.73
+- EB2003: 51.45 / 49.85 / 51.00 / 47.70 / 46.95 / 49.12 / 51.90 / 50.92
+- EB2004: 51.62 / 47.52 / 51.70 / 46.40 / 45.02 / 49.02 / 50.65 / 48.77
+- EB2005: 51.48 / 49.10 / 48.85 / 46.50 / 45.52 / 45.67 / 47.12 / 48.18
+- EB2006: 55.62 / 51.48 / 55.23 / 50.85 / 49.53 / 49.95 / 54.93 / 54.05
+- EB2007: 49.62 / 48.30 / 49.40 / 44.82 / 41.68 / 46.85 / 51.08 / 47.77
+- EB2008: 54.20 / 55.38 / 54.50 / 49.38 / 49.02 / 52.20 / 54.52 / 53.87
+
+**Row means** (EB seeds 2001–2008, `row_means_pp`): 54.6875 / 54.278125 / 49.8625 / 48.840625 / 47.803125 / 52.703125 / 47.440625 /
+52.884375. **Column means** (E seeds 2001–2008, `col_means_pp`): 53.28125 / 51.23125 / 52.7875 / 48.96875 / 47.35 / 50.028125 /
+53.053125 / 51.8.
+
+**Speed (REPORTED, never decided; re-read from the runs' own TensorBoard event files for this entry).** `train_ms`, 153 PPO updates
+per seed (15M steps at 98,304 rows): the median of the eight seeds' medians is **54.255 s** for E (fp32; per-seed medians 54.169–54.449 s)
+and **42.067 s** for EB (bf16; 41.994–42.152 s), a ratio of **0.7754 (−22.5 %)**; the pooled means are 55.44 s and 43.00 s. This
+reproduces window E's flag-path read (53.21 → 41.17 s, −22.6 %, ledger 2026-10-10) on 8 + 8 full runs. The read is a committed script and its output: [`speed/train_ms_read.py`](measurements/bf16_strength_ab_2026-10-12/speed/train_ms_read.py) → `speed/train_ms.json`.
+
+**Runs.** 16 runs (eight per arm); seeds 2001–2004 trained in two legs (a fresh 5M leg, then a same-pin `--model … final_model.zip
+--steps 15000000` resume of each run's own 5M final), seeds 2005–2008 in one fresh 15M leg: 24 launcher-child legs, each ending
+`Training complete`; **no `Traceback` in any `launcher_child.full.log`** (`speed/train_ms.json` `health`; the Training session's bank reports 0 crashes).
+
+**FINDINGS (standing rule 7).**
+1. **A PASS is NOT-WORSE, not BETTER.** The 90 % interval includes 0 (t_SUP 0.832); the point estimate favours bf16 by 1.06 pp. No
+   superiority claim is made, and the speed (−22.5 % per update, the GPU being the bottleneck) is what makes the not-worse worth
+   adopting.
+2. **The bf16 arm's run-to-run spread is the larger** (s²_rows 8.52 against s²_cols 4.52; EB row means span 47.44–54.69, E column
+   means 47.35–53.05). Stage 1's was the other way round (2.76 vs 9.69, n = 4), so the spread asymmetry is not a stable property.
+3. **What was TESTED is fresh runs (and bf16 seeds resumed from their own bf16 5M final); NOT a precision switch mid-lineage.** The
+   adoption therefore applies to FRESH launches; a fork inherits its parent's recorded precision (the registration's evidence does not
+   cover forking an fp32 parent into bf16; the knock-in forks that did so passed the bf16 parity gate, a mechanical read only).
+4. **Stage 1's preconditions on the pool eval** were handled by the registration's own corrections (§3, 2026-10-12): met at 4M when the
+   2M eval cleared `--self-play-start-wr` 0.55, deferred to 6M otherwise; not re-read here.
+5. **The A/B ran on `gen3ai_torch28` (cu126) only**; the CUDA 12.8 environment was not used by any seed or cross. The CPU update
+   golden is byte-identical across the two builds under bf16 (re-recorded with the adoption), the GPU kernels are not compared.
+
+Tag: **MEASUREMENT (MAJOR) · bf16 STRENGTH A/B · stage 1 CONTINUE (Δ̂ −0.12, 90 % [−3.55, +3.31]) · stage 2 PASS (Δ̂ +1.06, 90 % [−1.19, +3.31]; upper > 0, lower > −2.0) · bf16 ADOPTED by the registered rule (§5; its own entry) · train_ms −22.5 % · 0 crashes** · design: [`design_bf16_strength_ab.md`](../endstate/design_bf16_strength_ab.md) · [`bf16_strength_ab_2026-10-12/`](measurements/bf16_strength_ab_2026-10-12/)

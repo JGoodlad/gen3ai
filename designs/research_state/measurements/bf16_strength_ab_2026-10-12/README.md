@@ -278,3 +278,12 @@ The coded rule's output, verbatim ([`stage2_cross/result/verdict.json`](stage2_c
  "n_cells_read": 64
 }
 ```
+
+## Speed and run health (2026-10-14; REPORTED, never decided)
+
+[`speed/train_ms_read.py`](speed/train_ms_read.py) → [`speed/train_ms.json`](speed/train_ms.json), read from the 16 runs' own
+TensorBoard event files and `launcher_child.full.log`s (`python train_ms_read.py <models-dir> <out.json>`; read-only on the
+models directory). `train_ms`, 153 PPO updates per run: the median of the eight seeds' medians is **54.255 s** for E (fp32; per-seed
+medians 54.169–54.449 s) and **42.067 s** for EB (bf16; 41.994–42.152 s), a ratio of **0.7754 (−22.5 %)**; the pooled means are
+55.44 s and 43.00 s. Health: 16 runs, **24** launcher-child legs each ending `Training complete` (seeds 2001–2004 trained a 5M leg and
+then a same-pin resume to 15M), **0** `Traceback` lines.

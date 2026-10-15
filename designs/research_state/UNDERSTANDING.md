@@ -129,6 +129,11 @@ no pointer is not a measurement.
     fact lever (8 seeds × 15M) vs the legacy production encoder (8 seeds): Δ̂ **+0.60 pp**, 90 % **[−0.72, +1.92]**
     — not detectably worse AND precise to 2 pp (the owner's rule), not shown better. [PASS · §4.6b; ledger
     2026-10-12 MEASUREMENT (MAJOR) *THE END-STATE CLOSING TEST: PASS*]
+20. **The bf16 trunk is NOT detectably worse than fp32 and is adopted.** The end state trained with the trunk rounds under
+    bf16 autocast (decisions, heads, losses fp32) vs fp32, 8 seeds × 15M each, the registered 8 × 8 mirrored cross:
+    Δ̂ **+1.06 pp**, 90 % **[−1.19, +3.31]** — the closing test's rule holds (upper > 0, lower > −2.0); NOT a
+    superiority read (the interval includes 0). It buys **−22.5 % `train_ms`** (54.3 s → 42.1 s per update), the GPU being
+    the bottleneck. [PASS · §4.6c; ledger 2026-10-14 MEASUREMENT (MAJOR) *THE bf16 STRENGTH A/B: PASS*]
 
 ---
 
@@ -1403,6 +1408,26 @@ adopted end state differs by changes classified at adoption (ledger, the adoptio
 [PASS (registered non-detectably-worse rule; NOT superiority) · ledger 2026-10-12 MEASUREMENT (MAJOR) "THE END-STATE
 CLOSING TEST: PASS"; `measurements/endstate_closing_test_2026-10-09/cross/`; design
 [`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) §9]
+
+### 4.6c The bf16 trunk A/B: PASS (2026-10-14)
+
+**A bf16 trunk costs no detectable strength, and it is adopted into the production recipe.** `--trunk-precision bf16` puts
+the trunk rounds (the post-LN encoder layers and the identity-init extra rounds) under bf16 autocast inside the learner's
+compiled micro-step; the damage op, every head, the pointer head's log-softmax, the value, every loss and the optimizer
+state stay fp32, and the rollout, the eval core, every snapshot and the K9(b) probe stay fp32 by construction. Because it
+moves the micro-batch gradient 1–18 % from fp32's (window D), speed alone never adopted it: the registered A/B
+(`design_bf16_strength_ab.md`) trained the end state with it (EB) and without it (E), 8 seeds × 15M each, at ONE pin
+(`f45d0c27`). **Stage 1** (a futility screen, 4 × 4 at 5M) read CONTINUE (Δ̂ −0.12 pp, 90 % [−3.55, +3.31]). **Stage 2**
+(the 8 × 8 mirrored cross of the 15M finals, 64 cells × 1,000 pairs, the closing test's coded rule): Δ̂ **+1.06 pp**, SE
+1.28, df 14, two-sided 90 % interval **[−1.19, +3.31]**; upper > 0 and lower > −2.0, so **PASS**. It is NOT a superiority read
+(t_SUP 0.83; the interval includes 0), and the bf16 arm's seeds spread more (row-mean variance 8.5 vs 4.5). The speed is the
+reason to take it: `train_ms` 54.3 s (fp32) → 42.1 s (bf16), −22.5 %, from the 16 runs' own TensorBoard files. **Scope of the
+evidence:** fresh runs (and bf16 seeds resumed from their own bf16 5M final). It does NOT cover switching an fp32 lineage to
+bf16 mid-way, so a fork inherits its parent's recorded precision rather than defaulting to the new recipe.
+
+[PASS (registered non-detectably-worse rule; NOT superiority) · ledger 2026-10-14 MEASUREMENT (MAJOR) "THE bf16 STRENGTH A/B:
+PASS"; `measurements/bf16_strength_ab_2026-10-12/`; design [`design_bf16_strength_ab.md`](../endstate/design_bf16_strength_ab.md)
+§7–§8]
 
 ### 4.7 Value discrimination for search: DECISIONS, not resolved pairs (2026-10-11)
 
