@@ -11,8 +11,10 @@ THE DATA (§8.4, as played — decisions in the Training session's DECISIONS.md,
   ``main.h2h`` ``--oracle-reveal-mode one_sided`` (L told at its recorded level, ctrl as trained; protocol
   ``gen3_eval_protocol_v1_h2h_oracle_one_sided``): h[i][j] = L seed i's score (pp) against ctrl seed j.
 * v8 read: ctrl's 3 seeds × the parent (mode ``off``): what +3M of plain training buys.
-* HONEST cross (secondary): L with its reveal WITHHELD at eval vs ctrl — played when the ``withheld`` mode lands; read
-  with the same statistic, descriptively (§8.4 assigns it no rule).
+* HONEST cross (secondary, DESCRIPTIVE — §8.4 states no rule for it): L with its reveal WITHHELD at eval
+  (``main.h2h --oracle-reveal-mode withheld``, landed ``8272c6cb``; protocol
+  ``gen3_eval_protocol_v1_h2h_oracle_withheld``) vs ctrl, SEED-PAIRED: L seed i vs ctrl seed i (3 cells per lever,
+  12 in all — the diagonal of the primary matrix, so each honest cell has a told twin in the primary cross).
 
 THE STATISTIC: X5 §7.4's, unchanged (``main.h2h.cross.cross_stat``): Δ̂ = mean(h) − 50, V̂ = (s²_R + s²_C)/n, df =
 2(n − 1) = 4 at n = 3. §8.4 names "the X5 A/B's cross statistic and interval", so the interval every rule below reads
@@ -40,6 +42,9 @@ THE RULES (§8.5; rule 8: a bound within ±0.05 pp of a boundary is NOT clear �
   rule 8), else ``NOT_SHOWN``. Declared: "paired cells" = identical (seed, control seed) cells.
 * **v8** (DESCRIPTIVE; decision (c): CONFOUNDED by the learnset data change + 3M steps): the 3 cells' scores and
   their mean − 50; no rule.
+* **HONEST** (DESCRIPTIVE, no rule): per lever, the 3 seed-paired withheld scores and their mean − 50, and the
+  told − withheld difference on the SAME cells (the primary matrix's diagonal minus the honest score, per seed, and
+  its mean): how much of a told lever's score rides on being told. No interval is computed (3 cells, no rule).
 
     python read_hib.py rehearse                   # every verdict branch + rule 8 on constructed matrices (exit 0 = OK)
     python read_hib.py decide <matrices.json>     # {"moves": h, "items": h, ..., "invalid": [...]} → the verdict JSON
@@ -135,6 +140,18 @@ def v8(scores_pp: Sequence[float]) -> Dict[str, Any]:
     return {"descriptive": True, "stamp": CONFOUNDED_C, "cells_pp": list(scores_pp), "mean_minus_50_pp": m - 50.0}
 
 
+def honest(withheld_pp: Sequence[float], told_diag_pp: Optional[Sequence[float]]) -> Dict[str, Any]:
+    """One lever's honest-play read (descriptive): the withheld cells (seed i vs ctrl seed i) and, when the primary
+    matrix exists, the told − withheld difference on the same cells."""
+    w = list(withheld_pp)
+    out: Dict[str, Any] = {"descriptive": True, "withheld_cells_pp": w, "withheld_mean_minus_50_pp": sum(w) / len(w) - 50.0}
+    if told_diag_pp is not None:
+        d = [t - x for t, x in zip(told_diag_pp, w)]
+        out.update({"told_diag_cells_pp": list(told_diag_pp), "told_minus_withheld_pp": d,
+                    "told_minus_withheld_mean_pp": sum(d) / len(d)})
+    return out
+
+
 def decide(mats: Dict[str, Any]) -> Dict[str, Any]:
     """The batch's verdict. ``mats``: {lever: n × n matrix (pp) or None, ..., "invalid": [reasons], "v8": [pp, ...],
     "inconclusive": {lever: [reasons]}}. Any K-VALID reason ⇒ the batch is INCONCLUSIVE (never interpreted)."""
@@ -167,6 +184,9 @@ def decide(mats: Dict[str, Any]) -> Dict[str, Any]:
                                                     if all(x in rk for x in RANK_REGISTERED) else None)}
     if mats.get("v8"):
         out["v8"] = v8(mats["v8"])
+    if mats.get("honest"):
+        out["honest"] = {lv: honest(sc, [mats[lv][i][i] for i in range(len(sc))] if mats.get(lv) else None)
+                         for lv, sc in mats["honest"].items() if sc}
     out["outcome"] = "READ"
     return out
 
@@ -209,10 +229,12 @@ def rehearse() -> Dict[str, Any]:
     cases["rank_first"] = rank(moves_hi, other)
     cases["rank_not_shown"] = rank(base, other)
     full = decide({"moves": moves_hi, "items": other, "spreads": other, "species": _m(wide_r, wide_c, 0.0),
-                   "v8": [51.0, 49.5, 52.0]})
+                   "v8": [51.0, 49.5, 52.0], "honest": {"moves": [49.0, 50.5, 48.0], "items": [50.0, 50.0, 51.0]}})
     cases["batch"] = {k: full[k] for k in ("outcome", "moves_extension")} | {
         "levers": {k: v["outcome"] for k, v in full["levers"].items()}, "MOVES_FIRST": full["k_rank"]["MOVES_FIRST"],
-        "v8_mean_minus_50": full["v8"]["mean_minus_50_pp"]}
+        "v8_mean_minus_50": full["v8"]["mean_minus_50_pp"],
+        "honest_moves_told_minus_withheld": full["honest"]["moves"]["told_minus_withheld_mean_pp"],
+        "honest_moves_withheld_minus_50": full["honest"]["moves"]["withheld_mean_minus_50_pp"]}
     cases["rank_degenerate"] = rank(base, base)
     cases["batch_invalid"] = decide({"invalid": ["rb_hib_items_s3102: a live |d log pi| >= 1e-4"]})["outcome"]
     cases["batch_missing"] = decide({"moves": base, "items": None, "spreads": base, "species": base,
@@ -232,6 +254,9 @@ def rehearse() -> Dict[str, Any]:
                                        "species": "NOT_DETECTED"}
     ok &= cases["batch"]["MOVES_FIRST"] is True and cases["batch"]["moves_extension"]["extend"] is False
     ok &= abs(cases["batch"]["v8_mean_minus_50"] - 0.8333333333) < 1e-6
+    _dg = [moves_hi[i][i] for i in range(3)]
+    ok &= abs(cases["batch"]["honest_moves_told_minus_withheld"] - (sum(_dg) - (49.0 + 50.5 + 48.0)) / 3) < 1e-9
+    ok &= abs(cases["batch"]["honest_moves_withheld_minus_50"] - (-0.8333333333)) < 1e-6
     ok &= cases["batch_invalid"] == "INCONCLUSIVE" and cases["batch_missing"] == "INCONCLUSIVE"
     ok &= cases["rank_degenerate"]["moves_first"] is False and "degenerate" in cases["rank_degenerate"]
     return {"rehearsal": "OK" if ok else "MISMATCH", "cases": cases}

@@ -29,4 +29,13 @@ Registration: [`designs/endstate/design_hidden_info_binding.md`](../../../endsta
   extension), the v8 read descriptive and stamped. `python read_hib.py rehearse` (from a checkout's `src`) exercises
   every verdict branch and every rule-8 boundary on constructed matrices.
 
+- The HONEST cross (§8.4's secondary read, no rule): each lever's seed i with its reveal WITHHELD at eval
+  (`main.h2h --oracle-reveal-mode withheld`, landed `8272c6cb`) vs ctrl seed i — 12 seed-paired cells played at a
+  second detached checkout of `8272c6cb` (the primary and v8 crosses stay at `64a695dc`; the checkpoints are the
+  same, only the h2h code differs). `read_hib.py` reads it DESCRIPTIVELY: the withheld scores and the told − withheld
+  difference on the same seed-paired cells.
+- Provenance caution (the orchestrator's FINDING, 2026-10-15): the forks' `metadata.json` records `oracle_reveal: off`
+  while `model_config.json` / the cli args hold the lever spec; `main.h2h` reads the level from `model_config.json`, so
+  the crosses are unaffected — no bank or read script here reads the reveal from `metadata.json`.
+
 The cross artifacts (plans, shas, cells, matrices, the verdict) are added here when the crosses are read.
