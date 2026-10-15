@@ -45,7 +45,6 @@ _ALL_ON = dict(
     opp_belief_slots=True, opp_belief_cls_k=2,
     spread_belief=True, opp_intent=True, species_prior_fusion=True,
     win_prob_mode="read_only",
-    value_threat_inject=True,
 )
 
 

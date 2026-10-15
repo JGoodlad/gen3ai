@@ -50,7 +50,7 @@ combination families below still read this tree.
 Three ways a command fails, and it reports all three in one pass:
   * a flag the parser no longer knows (the motivating case above);
   * a combination the extractor constructor refuses — `agents.model.flag_registry`'s `requires`
-    graph, e.g. `--intent-conditional` without `--damage-outgoing`. That crash is later and more
+    graph, e.g. `--move-set-closure on` without `--opp-intent-coef > 0`. That crash is later and more
     expensive than an argparse error: the run dir exists, the child starts, and the traceback comes
     out of `Gen3FeaturesExtractor.__init__`.
   * a combination `resolve_config` refuses — `main.train.combination_checks`, the value-conditional

@@ -92,7 +92,10 @@ def _current_config() -> dict:
 
 def test_the_table_covers_exactly_the_recorded_off_set():
     """`_OFF` here and `RETIRED_FIELDS` must name the same fields, or a deleted field has no test."""
-    assert set(_OFF) == set(RETIRED_FIELDS)
+    # the legacy deletion's rows (`adopted_levers`, a unit per landing) are judged by their own predicate and pinned by
+    # `adopted_levers_test`; this table covers every OTHER retired field
+    from agents.model.model_version.adopted_levers import landed
+    assert set(_OFF) == set(RETIRED_FIELDS) - {r.field for r in landed()}
     assert set(RETIRED_FIELD_FLAGS) == {r.field for r in RETIRED}
     assert all(f.startswith("--") for f in RETIRED_FIELD_FLAGS.values())
 

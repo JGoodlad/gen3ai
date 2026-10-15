@@ -45,6 +45,11 @@ Speed (the pooled quiet `train_ms` ratio) is REPORTED, never decides.
   the end state's fp32 forward (`5eef9934`, `--ko-ramp exact` as the closed form). Re-running E at P_bf16 also yields
   **eight fresh reference seeds of the end state at HEAD**, the architecture being adopted as production, which the
   next experiments need anyway.
+  🚨 **Seed identity is BROKEN across legacy deletion U3** (config v157, 2026-10-15; manifest D-LD7): U3 deleted the
+  seven per-action blocks and the critic's threat projection, which were constructed then retired and so drew from the
+  global RNG, so the same seed at or after U3 builds a different initial network. These reference seeds (pin
+  `f45d0c27`) are reproduced only at their pin; a seed launched at HEAD is not "the same seed" (the ledger's U3 entry;
+  `research_state/measurements/legacy_deletion_u3_init_2026-10-15/`).
 
 ## 3. Preconditions (each recorded in the Training session's banks)
 
@@ -135,3 +140,4 @@ Both stages were read by the registered rules, unchanged; the cross artifacts, t
 | 2026-10-12 | CORRECTION to the row above: the precondition is not unmet by construction — a seed evaluates at 2M and 4M and is seeded at the first eval clearing `--self-play-start-wr` 0.55, so it is met at 4M when the 2M eval clears the gate (`rb_bf_e_s2002`) and deferred to 6M otherwise (`rb_bf_e_s2001`, `rb_bf_eb_s2001`) | the first bank's reading assumed one pool eval per 5M seed; `rb_bf_e_s2002`'s 4M eval (Pool 71.0 %) refuted it |
 | 2026-10-14 | STAGE 1 read: **CONTINUE** (Δ̂ −0.122 pp, 90 % interval [−3.551, +3.307]; the upper end is not below −2.0) | the coded futility rule (`futility_rule.py`, committed `7201f002` before any cell) on the 4 × 4 cross of the 5M finals | none (a screen only; no early PASS is read) | `stage1_cross/result/verdict.json` |
 | 2026-10-14 | STAGE 2 read: **PASS**, and **bf16 is ADOPTED into the production recipe** (`recipe.fresh.trunk_precision` = `bf16`; `--trunk-precision fp32` stays as the explicit opt-out; forks inherit their parent's recorded precision, so `recipe.fork` carries no row) | the closing test's coded rule, unchanged: Δ̂ +1.0625 pp, 90 % interval [−1.186, +3.311], both clauses true (§5: a PASS adopts); `--arch endstate` has been an alias of production since the end state's adoption (2026-10-12), so the recipe the A/B's `--arch endstate` arm ran is the production mirror's | keeping bf16 as an opt-in; defaulting forks of fp32 parents to bf16 (no strength read of a mid-lineage precision switch, and it would confound matched-dose fork comparisons) | `stage2_cross/result/verdict.json`; ledger 2026-10-14 MEASUREMENT (MAJOR); `design_learner_recipe.md` §3.22 row `trunk_precision` + Decision record; `designs/CHANGELOG.md` 2026-10-14 |
+| 2026-10-15 | **The E arm's reference seeds lose seed identity at HEAD** (legacy deletion U3, config v157): they stand as recorded at `f45d0c27`; a replicate runs PINNED there, or is a new seed, never "the same seed" at HEAD | U3 deleted constructed-then-retired modules, so the fresh-init stream moved (manifest D-LD7; an RNG burn replaying the draws was rejected); the ledger's U3 entry, `research_state/measurements/legacy_deletion_u3_init_2026-10-15/` |

@@ -9,10 +9,10 @@ Each test FAILS ON REVERT of its piece:
   a real raw block permutes the gained block identically (planted non-uniform gains, a real production op); after a
   backward every request slot's copy of a channel accumulates into ONE parameter; the compile gates' per-parameter
   rule still reads (and names) ``damage_op.out_gain`` at its tied size.
-* Part 5, the pre-gain read — with planted gains ≠ 1 on the outspeed, high-roll and flinch channels,
-  ``intent_conditional``'s inputs and its raw cell are unchanged (at the revert they move with the gain); in BOTH
-  ``--speed-physics`` modes its P(first) IS the op's live pre-gain view (``last_raw_tensors``), never the post-gain
-  one, and so is the move-resolution family's.
+* Part 5, the pre-gain read — with planted gains ≠ 1 on the outspeed, high-roll and flinch channels, the
+  move-resolution family's P(first) and its un-projected facts are unchanged (at the revert they move with the gain),
+  and its P(first) IS the op's live pre-gain view (``last_raw_tensors``), never the post-gain one. (The same pins on
+  ``intent_conditional`` went with that block, legacy deletion U3.)
 """
 from __future__ import annotations
 
@@ -29,7 +29,6 @@ from agents.model.damage_op_layout import (_DMG_CB_PER_MON, _DMG_IMX_CELL, _DMG_
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.constants import TEAM_SIZE
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-from main.train.arch_arms import PRE_ADOPTION_PRODUCTION
 from utils.paths import repo_path, src_path
 
 
@@ -207,82 +206,57 @@ def test_the_per_parameter_compile_rule_reads_and_names_the_tied_gain(
 
 
 # ------------------------------------------------------------------------------------------------ PART 5
-def _capture_intent_conditional(fe: Gen3FeaturesExtractor, x: torch.Tensor) -> Tuple[Tuple[Any, ...], torch.Tensor]:
-    ic = fe.intent_conditional
+def _capture_move_resolution(fe: Gen3FeaturesExtractor, x: torch.Tensor) -> Tuple[Any, Tuple[torch.Tensor, ...]]:
+    """The family's operands and its UN-projected facts (`MoveResolutionCell.raw` + `.extras`) on one forward."""
+    cell = fe.move_resolution_cell
     cap: Dict[str, Any] = {}
-    orig = ic.forward
+    orig = cell.forward
 
-    def hook(*a: Any, **k: Any) -> Any:
-        cap["args"] = tuple(t.detach().clone() if isinstance(t, torch.Tensor) else t for t in a)
-        return orig(*a, **k)
-    h = ic.proj.register_forward_pre_hook(lambda m, inp: cap.__setitem__("raw", inp[0].detach().clone()))
-    ic.forward = hook
+    def hook(ops: Any) -> Any:
+        cap["ops"] = ops
+        return orig(ops)
+    cell.forward = hook
     try:
         with torch.no_grad():
             fe({"observation": x})
+            m, s_ = cell.raw(cap["ops"])
+            ex = cell.extras(cap["ops"], m, s_)
     finally:
-        ic.forward = orig
-        h.remove()
-    return cap["args"], cap["raw"]
+        cell.forward = orig
+    return cap["ops"], (m, s_, *[ex[k] for k in sorted(ex)])
 
 
-def test_intent_conditional_reads_the_pre_gain_values(obs: torch.Tensor) -> None:
-    from agents.model.extractor_forward import _OUT_SEC_FLINCH_COL
-    # LEGACY-BASE re-point (the END STATE's adoption, 2026-10-12): the subject is intent_conditional's read, i.e. the
-    # pre-adoption network (production retires the block). (Its `--speed-physics off` half was deleted by U1: the speed
-    # rule is the op's only P(first).)
-    fe = _build(**dict(PRE_ADOPTION_PRODUCTION))
+def test_the_move_resolution_family_reads_the_pre_gain_values(obs: torch.Tensor) -> None:
+    """Part 5 on the family that replaced `intent_conditional` (deleted with the seven per-action blocks, legacy
+    deletion U3): planted gains != 1 on the outspeed, high-roll and flinch channels move the post-gain block but
+    neither the family's P(first) nor any of its un-projected facts."""
+    from agents.model.damage_op import _OUT_SEC_COLS
+    flinch_col = _OUT_SEC_COLS.index("flinch")
+    fe = _build()
     op = fe.damage_op
-    assert fe.intent_conditional is not None and op is not None, \
-        "PRECONDITION: the legacy base (intent_conditional on)"
-    args0, raw0 = _capture_intent_conditional(fe, obs)
+    assert fe.move_resolution_cell is not None and op is not None, "PRECONDITION: production builds the family"
+    ops0, facts0 = _capture_move_resolution(fe, obs)
     gained0 = fe.last_damage_block.detach().clone()
     t = _positions(op)
     plant = {int(t.out_p_outspeed): 3.0}
     plant.update({int(p): 2.5 for p in t.out_per_move[0, :, 1]})                # our moves' high roll
-    plant.update({int(p): 4.0 for p in t.out_secondary[0, :, _OUT_SEC_FLINCH_COL]})
+    plant.update({int(p): 4.0 for p in t.out_secondary[0, :, flinch_col]})
     with torch.no_grad():
         for pos, f in plant.items():
             op.out_gain[_gain_index(op, pos)] = f
-    args1, raw1 = _capture_intent_conditional(fe, obs)
+    ops1, facts1 = _capture_move_resolution(fe, obs)
     gained1 = fe.last_damage_block.detach()
-    # teeth: the plant moved the post-gain block on every planted channel that carries a value
+    # teeth: the plant moved the post-gain block on the planted channels
     sp = int(t.out_p_outspeed)
     assert bool((gained1[:, sp] != gained0[:, sp]).any()), "the plant did not reach the gained block"
-    assert bool((args0[6] != 0).any()) and bool((args0[5] != 0).any()) and bool((args0[7] != 0).any())
-    for i, name in ((5, "out_high"), (6, "p_outspeed"), (7, "sec_flinch")):
-        assert torch.equal(args0[i], args1[i]), f"intent_conditional's {name} moved with the learned gain"
-    assert torch.equal(raw0, raw1), "intent_conditional's raw cell moved with the learned gain"
-
-
-def test_intent_conditional_reads_p_first_from_the_live_pre_gain_view(obs: torch.Tensor) -> None:
-    """ONE read path: the tensor `intent_conditional` receives as P(first) IS the op's `last_raw_tensors` view (the
-    same storage — never the post-gain `last_tensors` one, never a detached copy). (Pinned in both speed modes until
-    the legacy deletion's U1 deleted the logistic one.)"""
-    fe = _build().train()
-    op = fe.damage_op
-    ic = fe.intent_conditional
-    cap: Dict[str, Any] = {}
-    orig = ic.forward
-
-    def hook(*a: Any, **k: Any) -> Any:
-        cap["args"] = a
-        return orig(*a, **k)
-    ic.forward = hook
-    try:
-        fe({"observation": obs[:16]})
-    finally:
-        ic.forward = orig
-    p_first, out_high, flinch = cap["args"][6], cap["args"][5], cap["args"][7]
-    rt, pt = op.last_raw_tensors, op.last_tensors
-    assert p_first.data_ptr() == rt.out_p_outspeed.data_ptr() != pt.out_p_outspeed.data_ptr()
-    assert out_high.untyped_storage().data_ptr() == rt.flat.untyped_storage().data_ptr()
-    assert flinch.untyped_storage().data_ptr() == rt.flat.untyped_storage().data_ptr()
-    assert p_first.requires_grad, "the pre-gain read is LIVE (the op's upstream gradient route is kept)"
+    assert bool((ops0.p_out != 0).any()), "PRECONDITION: a non-zero P(first) to move"
+    assert torch.equal(ops0.p_out, ops1.p_out), "the family's P(first) moved with the learned gain"
+    for i, (f0, f1) in enumerate(zip(facts0, facts1)):
+        assert torch.equal(f0, f1), f"the family's un-projected facts (block {i}) moved with the learned gain"
 
 
 def test_the_move_resolution_family_reads_the_same_live_pre_gain_view(obs: torch.Tensor) -> None:
-    fe = _build(move_resolution="on").train()
+    fe = _build().train()
     cell = fe.move_resolution_cell
     cap: Dict[str, Any] = {}
     orig = cell.forward

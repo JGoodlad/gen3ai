@@ -1,15 +1,16 @@
 """`gen3_endstate_facts_v1` (config v152) — the FACT-COMPLETION facts (`designs/endstate/design_hand_computed_features.md`
 §1's FACT / JUDGMENT test, §4 ranks 3-5, §5 rank 1, finding 7). Three are the damage operator's only physics since the
-legacy deletion's U1 deleted their flags and OFF paths (`designs/ops/legacy_deletion_manifest_2026-10-12.md` D1-D3);
-two are still flags, OFF in the LEGACY base (`legacy_production_config`, the pre-adoption network; ON in production):
+legacy deletion's U1 deleted their flags and OFF paths (`designs/ops/legacy_deletion_manifest_2026-10-12.md` D1-D3),
+and the restored move-resolution facts since U3 deleted `--move-resolution-facts` (B2); one is still a flag, OFF in the
+LEGACY base (`legacy_production_config`, the pre-adoption network; ON in production):
 
 * the exact P(KO) (`ko_exact.py`; was `--ko-ramp exact`): over the 16 gen-3 rolls + the move's crit chance, each
   roll's KO resolved over the observed HP interval — at every site (`DamageOperator._rolls`, the Choice-Band `ko_cb`,
-  intent_threshold's Substitute break, move resolution's Pursuit KO);
+  move resolution's Pursuit KO and Substitute break);
 * the exact status facts (was `--status-facts exact`): the expected burn damage lost and the expected outspeed lost to
   paralysis in the pair-outcome grid's columns 12-13, and every mon's cure-availability flags as token content;
-* `--move-resolution-facts full`: the facts move resolution dropped (Focus Punch / Substitute / Endure / Endeavor,
-  `spin_value_lost`, the spin-denial stake), restored;
+* the restored facts (was `--move-resolution-facts full`): the facts move resolution dropped (Focus Punch /
+  Substitute / Endure / Endeavor, `spin_value_lost`, the spin-denial stake), unconditional in the family;
 * `--drop-progress-clock on`: the model reads `turns_since_progress` as 0;
 * the ONE end-of-turn rule (was `--g-ledger eot`): the op's `g` cell reads `eot_residual.EotResidualRule`.
 
@@ -45,11 +46,9 @@ from agents.observation.constants import (POKEMON_CONDITION_OFFSET, POKEMON_ITEM
 from main.train.arch_arms import legacy_production_config
 from utils.paths import repo_path
 
-_LEVERS = ("move_resolution_facts", "drop_progress_clock")
-_ON = {"move_resolution_facts": "full", "drop_progress_clock": "on"}
-_OFF = {"move_resolution_facts": "off", "drop_progress_clock": "off"}
-#: the move-resolution bundle the restored facts live in (the legacy base + `--move-resolution on`)
-_MR = {"move_resolution": "on"}
+_LEVERS = ("drop_progress_clock",)
+_ON = {"drop_progress_clock": "on"}
+_OFF = {"drop_progress_clock": "off"}
 RMI = {n: i for i, n in enumerate(RMC)}
 CI = {n: i for i, n in enumerate(CURE_FACTS)}
 
@@ -201,45 +200,6 @@ def test_every_op_ko_site_reads_the_one_rule(rows: torch.Tensor) -> None:
         fe({"observation": rows})
         ko_ex = fe.damage_op.last_pair_cells[..., PAIR_OUTCOME_IDX["ko_ramp"]]
     assert float(ko_ex.min()) >= 0.0 and float(ko_ex.max()) <= 1.0 and float(ko_ex.max()) > 0.0
-
-
-def test_the_substitute_break_is_exact_at_the_subs_floor_hp() -> None:
-    """intent_threshold (P8) with the exact P(KO): P(their hit breaks our sub | hit) at the sub's exact HP
-    floor(maxhp / 4) over the rolls + crit. A 601-HP mon's sub holds 150 HP; a 171.5-HP top hit deals 149.2 on roll 87
-    and 150.9 on roll 88 (both > ½ HP from the threshold), so it breaks on rolls 88 … 100 and on every crit. Fails on
-    the ramp, on a sub at 25 % of max HP read as a fraction without the floor, and on a dropped crit."""
-    from agents.model.intent_threshold import ExactKo, sub_break_given_hit
-    maxhp = torch.tensor([601.0])
-    top = 171.5
-    assert _far_from_a_step(top, 150)
-    high = torch.tensor([[top * MEAN_ROLL / 601.0]])
-    crit = torch.tensor([[2.0 * top * MEAN_ROLL / 601.0]])
-    p = float(sub_break_given_hit(high, crit, ExactKo(maxhp=maxhp, crit_p=torch.tensor([[1.0 / 16.0]]))))
-    n = sum(math.floor(top * r / 100.0) >= 150 for r in ROLLS)
-    assert n == 13
-    assert p == pytest.approx(15.0 / 16.0 * n / 16.0 + 1.0 / 16.0, abs=1e-5)
-
-
-def test_intent_threshold_reads_the_exact_break_when_given_the_operands() -> None:
-    """`threshold_probs(..., exact=ExactKo(...))` (P8's site) prices the Substitute break by `sub_break_given_hit`,
-    not the ramp; `exact=None` keeps the ramp bit for bit. Fails if the site keeps its private ramp under the flag."""
-    from agents.model.intent_threshold import ExactKo, sub_break_given_hit, threshold_probs
-    cells = torch.zeros(1, 6, 2, 6)
-    cells[0, 0, 0, 1] = 171.5 * MEAN_ROLL / 601.0                     # high (mean roll)
-    cells[0, 0, 0, 2] = 2.0 * 171.5 * MEAN_ROLL / 601.0               # crit
-    cells[0, 0, 0, 4] = 0.9                                           # acc
-    logits = torch.tensor([[2.0, -30.0, -30.0]])                     # seat 0 (+ a dead seat), switch
-    gate = torch.ones(1, 6, 1)
-    act = torch.tensor([0])
-    ex = ExactKo(maxhp=torch.tensor([601.0]), crit_p=torch.full((1, 2), 1.0 / 16.0))
-    a0 = float(torch.softmax(logits, -1)[0, 0])
-    p_exact = float(threshold_probs(logits, cells, gate, act, exact=ex).p_sub_broken)
-    want = a0 * 0.9 * float(sub_break_given_hit(cells[0, 0, :, 1][None], cells[0, 0, :, 2][None], ex)[0, 0])
-    assert p_exact == pytest.approx(want, abs=1e-6)
-    p_ramp = float(threshold_probs(logits, cells, gate, act).p_sub_broken)
-    hk = float(cells[0, 0, 0, 1])
-    assert p_ramp == pytest.approx(a0 * 0.9 * min(1.0, max(0.0, (hk - 0.25) / (0.15 * hk + 1e-6))), abs=1e-6)
-    assert abs(p_exact - p_ramp) > 1e-3
 
 
 # ====================================================================================== THE STATUS FACTS
@@ -486,22 +446,15 @@ def test_the_status_facts_reach_the_move_resolution_cells() -> None:
     assert float(ss[0, 3, 0]) == pytest.approx(0.2)
 
 
-@pytest.mark.parametrize("lever", ["move_resolution_facts", "status_facts"])
+@pytest.mark.parametrize("lever", ["restored_facts", "status_facts"])
 def test_the_restored_and_status_facts_reach_the_pointer(rows: torch.Tensor, lever: str) -> None:
-    """The new blocks reach the policy ONLY through their zero-init projections: the restored facts at init equal the
-    lever-off build's pointer bit for bit; with either projection planted, the move cells (and logits) move. (The
-    status facts have no off build since U1: their projection is zero-init and the planted copy moves the cells.)
-    Fails if a block bypasses its projection or never reaches the pointer."""
-    if lever == "move_resolution_facts":
-        off = _policy(**_MR)
-        on = copy.deepcopy(_policy(**_MR, **{lever: _ON[lever]}))
-        for a, b in zip(_record(off, rows), _record(on, rows)):
-            assert torch.equal(a, b)
-    else:
-        off = _policy(**_MR)
-        on = copy.deepcopy(off)
+    """The blocks reach the policy ONLY through their zero-init projections: with either projection planted, the move
+    cells (and logits) move. (Neither has an off build since U1 / U3: each projection is zero-init and the planted copy
+    moves the cells.) Fails if a block bypasses its projection or never reaches the pointer."""
+    off = _policy()
+    on = copy.deepcopy(off)
     cell: MoveResolutionCell = on.features_extractor.move_resolution_cell
-    proj = cell.restored_move_proj if lever == "move_resolution_facts" else cell.status_move_proj
+    proj = cell.restored_move_proj if lever == "restored_facts" else cell.status_move_proj
     assert proj is not None and float(proj.weight.abs().max()) == 0.0
     _plant_live(proj)
     rec_on = _record(on, rows)
@@ -553,33 +506,17 @@ def test_dropping_the_progress_clock_is_reading_it_as_zero(rows: torch.Tensor) -
 
 # ====================================================================================== IDENTITY / INIT / VERSION
 def test_flags_off_builds_nothing_and_the_op_builds_its_facts() -> None:
-    """The legacy base builds neither remaining flag (no restored projection, the clock read live); the op always holds
-    the crit table, the one end-of-turn rule and the status / cure facts (U1)."""
+    """The legacy base builds the remaining flag OFF (the clock read live); the op always holds the crit table, the one
+    end-of-turn rule and the status / cure facts (U1), and move resolution always builds its restored and status
+    projections (U3)."""
     fe = _policy().features_extractor
     assert hasattr(fe.damage_op, "MOVE_CRIT_P") and fe.damage_op.eot_rule is not None
     assert fe.status_cure_rule is not None and fe.status_cure_proj is not None
     assert fe.unpack.drop_progress_clock is False
     for n in _LEVERS:
         assert getattr(fe, n) == _OFF[n]
-    mr = _policy(**_MR).features_extractor.move_resolution_cell
-    assert mr.restored_move_proj is None and mr.status_move_proj is not None
-
-
-@pytest.mark.parametrize("over,extra", [
-    ({**_MR, "move_resolution_facts": "full"}, ("restored_move_proj", "restored_switch_proj")),
-], ids=["facts"])
-def test_one_lever_init(rows: torch.Tensor, over: Dict[str, str], extra: tuple) -> None:
-    """ON = OFF + exactly the lever's zero-init keys; every other initial byte equal; the init forward bit-identical."""
-    base = {k: v for k, v in over.items() if k in _MR}
-    off, on = _policy(**base), _policy(**over)
-    so, sn = off.state_dict(), on.state_dict()
-    assert not set(so) - set(sn)
-    new = sorted(set(sn) - set(so))
-    assert new and all(any(e in k for e in extra) for k in new), new
-    assert all(float(sn[k].abs().max()) == 0.0 for k in new)
-    assert all(torch.equal(so[k], sn[k]) for k in so)
-    for a, b in zip(_record(off, rows), _record(on, rows)):
-        assert torch.equal(a, b)
+    mr = _policy().features_extractor.move_resolution_cell
+    assert mr is not None and mr.restored_move_proj is not None and mr.status_move_proj is not None
 
 
 def test_a_pre_v152_config_migrates_to_off_and_a_mismatch_is_refused() -> None:

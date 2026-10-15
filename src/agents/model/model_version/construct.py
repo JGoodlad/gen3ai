@@ -138,9 +138,6 @@ class ModelVersionConstruction(ModelVersionFields):
             win_prob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
             ),
-            value_threat_inject=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("value_threat_inject", False)
-            ),
             opp_intent=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("opp_intent", False)
             ),
@@ -150,10 +147,6 @@ class ModelVersionConstruction(ModelVersionFields):
             opp_intent_grad_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "opp_intent_grad_mode", "detached")
-            ),
-            intent_move_cell=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "intent_move_cell", False)
             ),
             value_entity_pool=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -170,30 +163,6 @@ class ModelVersionConstruction(ModelVersionFields):
             item_belief=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "item_belief", False)
-            ),
-            intent_threshold=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "intent_threshold", False)
-            ),
-            intent_conditional=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "intent_conditional", False)
-            ),
-            pair_outcome_cell=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "pair_outcome_cell", False)
-            ),
-            pair_outcome_switch=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "pair_outcome_switch", False)
-            ),
-            switch_branch_cell=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "switch_branch_cell", False)
-            ),
-            conditional_threat_cell=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "conditional_threat_cell", False)
             ),
             op_drop_renders=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -228,9 +197,6 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_static_tokens_v1 (v139): the per-Pokemon token encoding (structural).
             token_encoding=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("token_encoding", "legacy")),
-            # gen3_move_resolution_v1 (v141): F11's move-resolution family.
-            move_resolution=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution", "off")),
             # gen3_obs_facts_v1 (v144, part 3): the OBS-FACTS consumer (structural).
             obs_facts=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("obs_facts", "off")),
@@ -248,9 +214,7 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_move_set_closure_v1 (v154): the four-move fact in the bench / hidden reinjection.
             move_set_closure=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_set_closure", "off")),
-            # gen3_endstate_facts_v1 (v152): the surviving fact-completion levers.
-            move_resolution_facts=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("move_resolution_facts", "off")),
+            # gen3_endstate_facts_v1 (v152): the surviving fact-completion lever.
             drop_progress_clock=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("drop_progress_clock", "off")),
             damage_topk_k=int(

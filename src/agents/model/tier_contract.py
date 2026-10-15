@@ -100,35 +100,9 @@ TIER_OF: Dict[str, int] = {
     # gen3_x5_flat_pointer_v1 (X5 U4): the flat opponent pointer — the intent readout (the blob path's α / β
     # heads are DELETED, the X5 version break, config v144, part 2).
     "flat_intent_head": 2,
-    # gen3_intent_move_cell_v1: the POLICY-side alpha consumer — weights the op's T1 c2 operand
-    # stash by the T2 alpha publication (the flat pointer's α re-expression) into the pointer MOVE
-    # cell. T2 by the same logic as the pointer itself: it answers "what are my moves worth",
-    # post-attention.
-    "intent_move_cell": 2,
-    # gen3_intent_threshold_v1 (v84): the α-weighted threshold operator, at the pointer stash
-    # beside intent_move_cell (T2). Its p_KO CRITIC half (`intent_threshold_value`, T3) was
-    # deleted by the critic-route deletion wave; the move cell is the whole flag now.
-    "intent_threshold_move": 2,
-    # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — the same
-    # pointer-stash placement as intent_move_cell.
-    "intent_conditional": 2,
-    # gen3_pair_outcome_v1 (v93): the α-reduced unified outcome vector, delivered to the pointer
-    # MOVE cell. Same T1-producer (the op builds `pair_in`) / T2-consumer (α contracts it) split
-    # as every other α cell — T2 is where α first exists.
-    "pair_outcome_move": 2,
-    # gen3_pair_outcome_switch_v1 / gen3_switch_branch_v1 (v94, Phase B): the same
-    # T1-producer / T2-consumer split — the op builds `pair_in` and the outgoing grid,
-    # α and β first exist at T2, and both cells run at the pointer stash.
-    "pair_outcome_switch": 2,
-    "switch_branch": 2,
-    # gen3_conditional_threat_v1 (v95, Phase C — OA1): same split again. The op stashes `pair_in`
-    # AND the per-(defender, seat) type multiplier at T1; α first exists at T2, and the cell runs
-    # at the pointer stash. (PV, its Phase-C partner, is NOT listed: it lives under `cls_pool` as
-    # a child module rather than as a top-level extractor child, so `cls_pool`'s own tier covers
-    # it — which is also what makes its vf-only property structural.)
-    "conditional_threat": 2,
-    # gen3_move_resolution_v1 (v141, `--move-resolution on`): the move-resolution family REPLACES the seven
-    # cells above at the same pointer-stash placement — the op stashes its grids at T1, α / β first exist at T2.
+    # gen3_move_resolution_v1: the move-resolution family, at the pointer stash — the op stashes its grids at T1,
+    # α / β first exist at T2. (The seven per-action cells it replaced at the same placement were deleted, legacy
+    # deletion U3.)
     "move_resolution_cell": 2,
     # T3 DELIVER — the pooled contract and the readouts taken off it.
     "hidden_opp_belief": 3,
@@ -163,7 +137,6 @@ UNTIERED_CHILDREN = frozenset({
     "effective_stats_proj", # with the op: the active mons' stage-applied stats, the root's pre-trunk residual
     "move_target_proj",     # `--move-target-state on`: their active's HP + status onto the E3 seats, pre-trunk residual
     "pre_proj_norm", "projection", "activation",
-    "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths
 })
 
 #: Modules invoked through NAMED METHODS rather than `__call__`, and therefore invisible to the

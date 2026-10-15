@@ -4,7 +4,7 @@ poke-env.
 
 Replays banked real battles (the M5 Lane S turn bank: trained-policy games, inputs only) through the Rust core
 (`core_events --trackers --obs`, the same replay `move_resolution_bridge_integration_test` runs), runs a
-production-config extractor (move-resolution OFF, the production default) over every answered decision's
+production-config extractor (move resolution built, derived from production's prerequisites) over every answered decision's
 observation, captures the op's ``[B, 8]`` status channel (4 ``p_land`` in REQUEST order == action 6+k, then 4
 ``known`` bits) and resolves each played STATUS move (op ``MOVE_INFLICTS_STATUS`` = 1, Yawn and Leech Seed
 included) against the viewer's protocol for that turn:
@@ -71,7 +71,7 @@ class Decision:
 
 
 def _extractor() -> Any:
-    """The PRODUCTION-config extractor (`designs/production_config.json`; move-resolution at its production value)."""
+    """The PRODUCTION-config extractor (`designs/production_config.json`; move resolution derived from its prerequisites)."""
     import gymnasium as gym
 
     from agents.model.damage_tables import sanitize_historical_move_floor

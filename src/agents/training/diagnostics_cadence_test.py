@@ -296,11 +296,11 @@ def test_the_ON_arm_really_runs_every_gated_probe(three_arms):
         assert tag in logged, tag
 
 
-#: The parameters only the CRITIC reads (the value CLS pool, its token-content injection, the entity pool and the
-#: win-prob head): the toy trains no critic (see the vacuity count below).
+#: The parameters only the CRITIC reads (the value CLS pool, the entity pool and the win-prob head; the pool's
+#: token-content threat injection was deleted in legacy deletion U3): the toy trains no critic (see the vacuity count
+#: below).
 _CRITIC_ONLY = ("features_extractor.cls_pool.norm_pool_value", "features_extractor.cls_pool.value_cls",
-                "features_extractor.cls_pool.value_threat_proj", "features_extractor.value_entity_pool.",
-                "features_extractor.win_head.")
+                "features_extractor.value_entity_pool.", "features_extractor.win_head.")
 
 
 def test_learning_is_BIT_IDENTICAL_with_the_diagnostics_on_and_skipped(three_arms):

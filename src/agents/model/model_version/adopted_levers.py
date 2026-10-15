@@ -56,10 +56,15 @@ MANIFEST = "designs/ops/legacy_deletion_manifest_2026-10-12.md"
 
 
 def _block_inert_under_move_resolution(raw: Mapping[str, Any]) -> bool:
-    """The seven per-action blocks: `--move-resolution on` CONSTRUCTS them and then RETIRES them
-    (`ExtractorApi.retire_superseded_action_cells`), so their recorded True beside it built nothing the
-    surviving forward lacks."""
-    return str(raw.get("move_resolution", "off")) == "on"
+    """The seven per-action blocks: `--move-resolution on` CONSTRUCTED them and then RETIRED them (until U3 deleted
+    both), so their recorded True beside it built nothing the surviving forward lacks. An ABSENT `move_resolution`
+    reads by the same rule as any landed field (:func:`absent_value`): a config written at or after U3's version (or a
+    pickled kwarg set, which carries no version) cannot record it, and its network builds move resolution whenever
+    the prerequisites are there."""
+    if "move_resolution" in raw:
+        return str(raw["move_resolution"]) == "on"
+    lever = next(r for r in PLANNED if r.field == "move_resolution")
+    return str(absent_value(lever, raw, pickled="config_version" not in raw)) == "on"
 
 
 class AdoptedLever(NamedTuple):
@@ -78,6 +83,8 @@ class AdoptedLever(NamedTuple):
 
 _OP = ("damage_op",)
 _MR = ("opp_intent", "damage_op", "damage_outgoing", "damage_matrices_incoming", "damage_matrices_outgoing")
+# (move resolution's row adds `damage_topk_k`: the family is BUILT only with the incoming matrix's seat axis, U3 —
+# a config without it never built the family, whatever it recorded.)
 
 #: EVERY row of the manifest's §1 inventory, in its order. `adopted` equals `designs/production_config.json`
 #: (pinned by `adopted_levers_test` while the field is still in the mirror).
@@ -112,7 +119,7 @@ PLANNED: Tuple[AdoptedLever, ...] = (
                  "move_set_closure != 'on' (the opponent slots' MoveBelief reinjection read the raw sigmoid, "
                  "not the four-move closure)"),
     # ---- U3, lanes MR + VTI (the construct-then-retire unit) ------------------------------------------------
-    AdoptedLever("move_resolution", "move-resolution", "on", "off", _MR, "SUP", "U3",
+    AdoptedLever("move_resolution", "move-resolution", "on", "off", _MR + ("damage_topk_k",), "SUP", "U3",
                  "move_resolution != 'on' (the seven per-action blocks were the policy's move-side route)"),
     AdoptedLever("move_resolution_facts", "move-resolution-facts", "full", "off", ("move_resolution",), "NF", "U3",
                  "move_resolution_facts != 'full' (move resolution without the restored facts)"),
@@ -140,10 +147,10 @@ PLANNED: Tuple[AdoptedLever, ...] = (
 )
 
 #: The units that have LANDED (their fields are gone from `ModelVersion`). U0 lands the machinery only.
-LANDED_UNITS: FrozenSet[str] = frozenset({"U1"})
+LANDED_UNITS: FrozenSet[str] = frozenset({"U1", "U3"})
 
 #: unit -> the first `MODEL_CONFIG_VERSION` written without its fields (filled as each unit lands).
-UNIT_VERSIONS: Dict[str, int] = {"U1": 156}
+UNIT_VERSIONS: Dict[str, int] = {"U1": 156, "U3": 157}
 
 
 def _enabled(value: Any) -> bool:

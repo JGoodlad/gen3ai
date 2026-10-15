@@ -1,7 +1,6 @@
-"""gen3_move_resolution_x5_v1 — the move-resolution family under X5 (the legacy base + `--move-resolution on`, built
-through `move_resolution_extractor_test._prod_kwargs`, re-pointed at the pre-adoption network when the END STATE —
-which runs the family ON — became production, 2026-10-12; X5's hypothesis tokens are the only belief representation
-since the version break, config v144).
+"""gen3_move_resolution_x5_v1 — the move-resolution family under X5 (the production network, built through
+`move_resolution_extractor_test._prod_kwargs`; the family is DERIVED from its prerequisites since legacy deletion U3;
+X5's hypothesis tokens are the only belief representation since the version break, config v144).
 
 The family's RULES (`move_facts` / `switch_facts`) hold no belief-mode branch: under fixed_mass they read the flat
 opponent pointer's re-expression, with OTHER_move a PRICED seat set (one per priority level) and OTHER_species a PRICED 7th mon (the
@@ -16,9 +15,9 @@ What must hold, each failing on revert:
     `p_lands_switch`;
   * **a real fixed_mass forward** runs with the family on, gathers K + 1 seats and 7 mons, and reads each hidden
     slot as its hypothesis and OTHER_species as the renormalised tail;
-  * **the one-lever init property under fixed_mass** on a real `MaskablePPO` policy;
+  * **the family on a real `MaskablePPO` policy under fixed_mass**: zero-init, in the optimizer, no deleted block;
   * **composition** with `--token-encoding static` and `--policy-readout trunk`;
-  * a CPU `--debug` smoke under `--arch production --move-resolution on` (`slow`).
+  * a CPU `--debug` smoke under `--arch production` (`slow`).
 """
 from __future__ import annotations
 
@@ -213,7 +212,7 @@ def _capture(fe: Any, x: torch.Tensor):
 
 
 def test_fixed_mass_forward_runs_with_the_family_on(obs):
-    fe = _build(move_resolution="on")
+    fe = _build()
     assert fe.move_resolution_cell is not None and fe.flat_intent_head is not None
     o = _capture(fe, obs)
     pi = fe.last_pointer_inputs
@@ -238,7 +237,7 @@ def test_fixed_mass_forward_runs_with_the_family_on(obs):
 
 
 def test_fixed_mass_gathers_each_hypothesis_and_the_tail(obs):
-    fe = _build(move_resolution="on")
+    fe = _build()
     o = _capture(fe, obs)
     hs = fe.last_hypothesis
     cell = fe.move_resolution_cell
@@ -285,23 +284,17 @@ def _policy(**over: Any):
                        "features_extractor_kwargs": kw, "net_arch": dict(pi=[64], vf=[64])}).policy
 
 
-def test_the_one_lever_init_property_under_fixed_mass():
-    off = _policy()
-    on = _policy(move_resolution="on")
+def test_the_family_on_a_real_policy_under_fixed_mass():
+    """(The ONE-lever init property this test pinned — the family's OFF build equal to its ON build except for the
+    seven blocks it retired — ended with the OFF path, legacy deletion U3: a fresh init now draws no block at all.)"""
+    on = _policy()
     fe = on.features_extractor
-    assert all(getattr(fe, n) is None for n in SEVEN)
+    assert not any(hasattr(fe, n) for n in SEVEN)
     assert not hasattr(fe, "alpha_head") and not hasattr(fe, "beta_head")   # α / β DELETED; the family reads the pointer
     for p in fe.move_resolution_cell.parameters():
         assert float(p.detach().abs().max()) == 0.0
-    a, b = off.state_dict(), on.state_dict()
-    shared = [k for k in b if k in a and not k.startswith("pointer_head.")]
-    assert len(shared) > 100
-    moved = [k for k in shared if not torch.equal(a[k], b[k])]
-    assert not moved, f"the family moved other parameters' initial bytes under fixed_mass: {moved[:5]}"
-    only_off = {k.split(".")[1] for k in a if k not in b and k.startswith("features_extractor.")}
-    assert only_off == set(SEVEN)
-    only_on = {k.split(".")[1] for k in b if k not in a and k.startswith("features_extractor.")}
-    assert only_on == {"move_resolution_cell"}
+    keys = on.state_dict()
+    assert not any(k.split(".")[1] in SEVEN for k in keys if k.startswith("features_extractor."))
     opt = {id(p) for g in on.optimizer.param_groups for p in g["params"]}
     assert all(id(p) in opt for p in fe.move_resolution_cell.parameters())
 
@@ -310,9 +303,9 @@ def test_the_one_lever_init_property_under_fixed_mass():
                                   {"token_encoding": "static", "policy_readout": "trunk"}],
                          ids=["static", "trunk", "static+trunk"])
 def test_composes_with_static_tokens_and_the_trunk_readout(obs, over):
-    pol = _policy(move_resolution="on", **over)
+    pol = _policy(**over)
     fe = pol.features_extractor
-    assert fe.move_resolution_cell is not None and all(getattr(fe, n) is None for n in SEVEN)
+    assert fe.move_resolution_cell is not None and not any(hasattr(fe, n) for n in SEVEN)
     x = {"observation": obs[:16]}
     with torch.no_grad():
         dist = pol.get_distribution(x, action_masks=np.ones((16, 11), dtype=bool))
@@ -337,12 +330,12 @@ def test_debug_smoke_under_fixed_mass_with_the_family_on(tmp_path):
     ~6 min on one CPU core (measured 2026-10-07)."""
     from agents.training.tb_relevance_test import _run_smoke
     tags, series = _run_smoke(tmp_path, "mr_x5_smoke",
-                              ["--arch", "production", "--move-resolution", "on",
+                              ["--arch", "production",
                                "--allow-nonproduction-arch", "--n-epochs", "1", "--batch-size", "384",
                                "--rollout-target-samples", "2304",
                                "--steps", "4000"])          # argparse keeps the LAST --steps (the helper's is 10000)
     cfg = (tmp_path / "models" / "mr_x5_smoke" / "model_config.json").read_text()
-    assert '"move_resolution": "on"' in cfg and '"belief_tokens"' not in cfg
+    assert '"move_resolution"' not in cfg and '"belief_tokens"' not in cfg     # both fields deleted (U3, X5)
     assert any(t.startswith("behaviour/") for t in tags)
 
 

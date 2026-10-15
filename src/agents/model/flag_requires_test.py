@@ -52,15 +52,12 @@ _ON_OVERRIDE: Dict[str, object] = {
     "ridealong_rnd_variants": "all",
     # gen3_static_tokens_v1 (v139): a two-value mode string; 'legacy' is OFF.
     "token_encoding": "static",
-    # gen3_move_resolution_v1 (v141): a two-value mode string; 'off' is OFF.
-    "move_resolution": "on",
     # gen3_static_port_v1 (v147): two-value mode strings; 'off' is OFF.
     "mon_hazard_cost": "on",
     "move_actor_state": "on",
     # gen3_static_recovery_v1 (v150): an int depth (2 is the bare network).
     "trunk_layers": 3,
-    # gen3_endstate_facts_v1 (v152): two two-value mode strings; each default is OFF.
-    "move_resolution_facts": "full",
+    # gen3_endstate_facts_v1 (v152): a two-value mode string; the default is OFF.
     "drop_progress_clock": "on",
     # gen3_probe_facts_v1 (v153)
     "move_target_state": "on",
@@ -109,9 +106,6 @@ _VALUE_RELATIONS: Dict[str, Dict[str, object]] = {
     # requirements) here — the constructor refuses opp_intent without it.
     "opp_intent": {"opp_belief_slots": True, "t0_species_prior": True, "entity_tail_seats": True,
                    "move_prior_fusion": True, "entity_topk_seats": 4},
-    # move_resolution needs X5 (through opp_intent) AND the incoming matrix, and under X5 the matrix's K must
-    # EQUAL entity_topk_seats (a per-VALUE relation, BESPOKE_COUPLINGS) — so its closure takes K = 4 too.
-    "move_resolution": {"damage_topk_k": 4},
 }
 
 

@@ -49,8 +49,6 @@ from agents.observation.constants import (
     POKEMON_SLEEP_BELIEF_OFFSET,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
-from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
-                                              value_threat_inject_dim)
 from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
 # The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
 # unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
@@ -66,10 +64,6 @@ from utils.logging.levels import LogLevel
 # `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
 from agents.model.arch_constants import (
-    INTENT_THRESH_MOVE_DIM, INTENT_COND_MOVE_DIM,
-    INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
-    PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM, SWITCH_BRANCH_MOVE_DIM,
-    CONDITIONAL_THREAT_SWITCH_DIM,
     MOVE_RESOLUTION_MOVE_DIM,
     MOVE_RESOLUTION_SWITCH_DIM,
     UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
@@ -147,14 +141,6 @@ from agents.model.value_readouts import UnifiedValueReadout  # noqa: F401
 # historical import path still resolves (the prober, model_version, snapshot and the tests all do
 # `from agents.model.features_extractor import DamageOperator / decode_damage_block / _DMG_*`).
 from agents.model.t0_species import T0SpeciesPrior
-from agents.model.intent_move_cell import IntentMoveCell
-from agents.model.intent_threshold import (
-    IntentThresholdMoveCell, ThresholdProbs, threshold_probs)
-from agents.model.intent_conditional import IntentConditionalMoveCell
-from agents.model.pair_outcome import (
-    PairOutcomeMoveCell, PairOutcomeSwitchCell, pair_alpha, reduce_pair_in, reduce_pair_in_all)
-from agents.model.switch_branch import SwitchBranchMoveCell
-from agents.model.conditional_threat import ConditionalThreatCell
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     DamageOperator,
     OpTensors,
@@ -241,7 +227,7 @@ from agents.model.projection import (  # noqa: F401
 )
 from agents.model.extractor_build import ExtractorBuild  # noqa: F401
 from agents.model.extractor_api import ExtractorApi  # noqa: F401
-from agents.model.extractor_forward import ExtractorForward, _OUT_SEC_FLINCH_COL  # noqa: F401
+from agents.model.extractor_forward import ExtractorForward  # noqa: F401
 
 
 class Gen3FeaturesExtractor(ExtractorForward):
@@ -251,14 +237,14 @@ class Gen3FeaturesExtractor(ExtractorForward):
                     SpreadBelief, ItemBelief, X5's HypothesisBuilder]
         T1 REASON   [DamageOperator] → [prefuse_proj: the op's incoming rows added to our tokens]
                     → [EntityMoveSeats E3/E4/E5] → [EventSeats] → edge cells → TeamTransformer
-        T2 DECIDE   CLSPool (+ [value_threat_inject] on the value pool's copy) → [BeliefHead (a
-                    training-only side readout)] → [the flat opponent pointer and the pointer-cell blocks]
+        T2 DECIDE   CLSPool → [BeliefHead (a training-only side readout)] → [the flat opponent pointer and
+                    the move-resolution family's pointer-cell blocks]
         T3 DELIVER  [HiddenOppBeliefPool] / [value_entity_pool] → ProjectionAssembler → [WinProbHead]
     then the POLICY side's pre-projection LayerNorm + Linear + ReLU; the value side returns `value_pooled`
     as it is (no projection: architecture audit F1). The `DamageOperator` runs ONCE, before
     attention, on the pre-attention tokens and the move-belief posterior; its output reaches the policy
     through the pointer cells, the `prefuse_proj` token injection and the edge biases, and the critic
-    through `value_entity_pool` / `value_threat_inject` — it is in neither projection's concat. The
+    through `value_entity_pool` and the trunk — it is in neither projection's concat. The
     `WinProbHead` reads `value_pooled` and stashes a P(win) logit; under the win-prob critic that logit
     IS the critic (`policy._critic_value`). The embedding tables live in `self.embeddings` (shared) and
     are passed into the phases that need them. See `src/agents/model/CLAUDE.md` for the phase-module

@@ -6,7 +6,6 @@ re-exports every name here, so historical import paths still resolve.
 from agents.model.extractor_ctx import ExtractorContext
 import torch
 from typing import Dict, Any, Optional, Tuple
-from agents.model.value_threat_inject import (ValueThreatInject)
 from agents.model.hypothesis_tokens import OppPresence, float_key_mask
 from agents.model.team_transformer import _KEY_PAD_NEG
 from agents.model.dense_attn_bias import dense_attn_bias
@@ -30,8 +29,7 @@ class CLSPool(torch.nn.Module):
     transformer, so pooling over the 12 team tokens gives the value query a whole-board read.
     """
 
-    def __init__(self, layout: Dict[str, Any], value_threat_inject_dim: int = 0,
-                 value_threat_live: bool = True):
+    def __init__(self, layout: Dict[str, Any]):
         super().__init__()
         self.our_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
         self.their_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
@@ -46,28 +44,14 @@ class CLSPool(torch.nn.Module):
         self.value_cls_attn = torch.nn.MultiheadAttention(embed_dim=D_MODEL, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
         self.norm_pool_value = torch.nn.LayerNorm(D_MODEL)
 
-        # gen3_value_threat_inject_v1: the op's per-our-mon reduced threat row as TOKEN CONTENT on
-        # the value pool's copy of our tokens. Owned HERE rather than by the extractor so the
-        # augmented tensor is a LOCAL, and no policy-facing read can reach it by construction —
-        # that is what makes V1 ("pi bit-identical for arbitrary W_inj") a structural property
-        # instead of a discipline the next edit could break.
-        self.value_threat_proj = (
-            ValueThreatInject(value_threat_inject_dim, D_MODEL)
-            if value_threat_inject_dim else None)
-        # gen3_value_threat_inject_off_v1 (v142, audit F10): `--value-threat-inject off` with the op built still
-        # CONSTRUCTS the projection (so no later init draw moves) but never applies it; the policy's `_build`
-        # then retires it (`ExtractorApi.retire_value_threat_inject`). The forward reads this flag, never the
-        # module's presence, so a bare (not-yet-retired) OFF extractor is the OFF forward too.
-        self.value_threat_live = bool(value_threat_live) and self.value_threat_proj is not None
-
+        # (The critic's token-content threat projection `value_threat_proj`, `--value-threat-inject`, is DELETED:
+        # legacy deletion U3, lane VTI. The value pool reads the same team tokens the policy pools read.)
 
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
                 ctx: ExtractorContext,
-                threat_rows: Optional[torch.Tensor] = None,
                 presence: Optional[OppPresence] = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """our/their_team_out [B,6,D_MODEL]; `threat_rows` the op's reduced per-mon rows (required
-        only when value_threat_inject is built) → `(our_team_pooled, their_team_pooled,
-        our_active_refined, value_pooled)`, each [B, D_MODEL].
+        """our/their_team_out [B,6,D_MODEL] → `(our_team_pooled, their_team_pooled, our_active_refined,
+        value_pooled)`, each [B, D_MODEL].
 
         `presence` (gen3_x5_belief_tokens_v1, X5 only): `their_cls` and
         `value_cls` are class-E reductions over opponent tokens, so OTHER_species joins their keys and
@@ -92,20 +76,7 @@ class CLSPool(torch.nn.Module):
         our_active_refined = our_team_out[batch_idx, ctx.our_active_idx]            # [B, 128]
 
         # Value pool: one query over both teams' 12 tokens (fainted slots key-masked).
-        # gen3_value_threat_inject_v1: ONLY this pool's copy of our tokens carries the op's
-        # per-entity threat magnitude. `our_team_pooled` / `our_active_refined` above, and the
-        # pointer head downstream, all read the untouched `our_team_out` — so the policy is
-        # provably blind to `W_inj` (V1) and this arm moves the critic alone.
-        our_for_value = our_team_out
-        if self.value_threat_live and self.value_threat_proj is not None:
-            if threat_rows is None:
-                raise ValueError(
-                    "value_threat_inject is built but the op supplied no reduced rows — the "
-                    "DamageOperator must run with reduce_how=VALUE_THREAT_INJECT_REDUCE_HOW so "
-                    "`last_reduced_extra` is populated. A silent skip here would make the flag a "
-                    "no-op that still passes every shape test.")
-            our_for_value = self.value_threat_proj(our_team_out, threat_rows)
-        all_team_out = torch.cat([our_for_value, their_team_out], dim=1)            # [B, 12, 128]
+        all_team_out = torch.cat([our_team_out, their_team_out], dim=1)            # [B, 12, 128]
         value_cls_q  = self.value_cls.expand(batch_size, -1, -1)
         if presence is None:
             value_pool_out, _ = self.value_cls_attn(value_cls_q, all_team_out, all_team_out,

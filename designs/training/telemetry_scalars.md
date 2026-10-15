@@ -787,25 +787,22 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
     in its place.
 - **Per-CELL LIVENESS — `cell/<name>_weight_norm` + `cell/<name>_grad_norm`**
   (`cell_family_metrics`, same window, same backward, same parameters-only cost). The identical gap
-  one layer over: `SwitchBranchMoveCell`, `PairOutcomeMoveCell`, `PairOutcomeSwitchCell` and
-  `ConditionalThreatCell` each enter through a **ZERO-INIT `proj` Linear** — deliberately, so that
-  ON-at-init is byte-identical to OFF and any measured effect is something the run LEARNED — which
-  means an enabled cell that never learns contributes exactly zero to every action logit and looks
-  exactly like one that works. gen-16 turns four of them on at once, in the run meant to decide
-  whether the switch-branch channel kills the bait-loop pathology, where **"the behaviour did not
-  change" and "the cell never came off zero" must not be the same observation**
-  (`designs/research_state/bait_loop_hunt.md` §6 makes this the launch-window check).
-  Read the pair exactly as the edge families' — and under the same ⚠️: a parameter magnitude is not
-  an effect size. `CELL_FAMILIES` is DECLARED, not duck-typed, so a renamed cell breaks the test
-  rather than going quietly unmonitored. Nothing is emitted for a cell that is off — it is absent
-  from the extractor, and a zero would read as "enabled but dead", a different claim.
-  🚨 **On the END STATE (production since 2026-10-12) the four cells above are RETIRED** — `--move-resolution on`
-  drops them after the build — and the pointer's zero-init entry is `MoveResolutionCell`'s projections, reported as
-  `cell/move_resolution_{move,switch}_*` plus `cell/move_resolution_{restored,status}_{move,switch}_*` (the facts
-  levers' pairs, built under `--move-resolution-facts full` / always with the op for the exact status facts, flagless
-  since legacy deletion U1). `CELL_FAMILIES` declares
-  `(metric, extractor attribute, projection attribute)`. Before 2026-10-14 it named none of them, so **an
-  end-state run (every `rb_es_*` run and its forks) logged NO `cell/*` tag at all** — read that gap as "not
+  one layer over: the pointer's per-action α cells enter through **ZERO-INIT projections** — deliberately, so that
+  ON-at-init is byte-identical to OFF and any measured effect is something the run LEARNED — which means a cell that
+  never learns contributes exactly zero to every action logit and looks exactly like one that works ("the behaviour
+  did not change" and "the cell never came off zero" must not be the same observation; gen-16's bait-loop run,
+  `designs/research_state/bait_loop_hunt.md` §6, is where this became a launch-window check). The cells now are
+  `MoveResolutionCell`'s projections, reported as `cell/move_resolution_{move,switch}_*` plus
+  `cell/move_resolution_{restored,status}_{move,switch}_*` (the restored facts and the exact status facts, built
+  whenever move resolution is since legacy deletion U3 / U1). The four older rows — `switch_branch`,
+  `pair_outcome_move`, `pair_outcome_switch`, `conditional_threat` (`SwitchBranchMoveCell`, `PairOutcomeMoveCell`,
+  `PairOutcomeSwitchCell`, `ConditionalThreatCell`) — left `CELL_FAMILIES` with their modules in legacy deletion U3
+  (config v157); their tags appear only in pre-U3 runs. Read the pair exactly as the edge families' — and under the
+  same ⚠️: a parameter magnitude is not an effect size. `CELL_FAMILIES` declares `(metric, extractor attribute,
+  projection attribute)` — DECLARED, not duck-typed, so a renamed cell breaks the test rather than going quietly
+  unmonitored. Nothing is emitted for a cell that is not built — it is absent from the extractor, and a zero would
+  read as "enabled but dead", a different claim. Before 2026-10-14 `CELL_FAMILIES` named no move-resolution row, so
+  **an end-state run (every `rb_es_*` run and its forks) logged NO `cell/*` tag at all** — read that gap as "not
   monitored", never as "no cell".
 - **Value scale.** From the full rollout buffer: `train/return_mean` / `train/return_std`
   / `train/return_abs_max` (the return `(μ, σ)` + tail) and `train/value_pred_std` (the value head's actual output spread). Watch these to SEE

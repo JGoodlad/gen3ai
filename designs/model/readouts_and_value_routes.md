@@ -29,17 +29,19 @@ predictions require k different seed reads — and gen-7 drove `crossing_rate` t
 `out_effective_rank` reached only **1.157 of k=4**, matching gen-6's centered PR 0.846 from the
 opposite direction. **A SHARED readout can only constrain each seed's component along its own
 weight vector; every orthogonal direction stays free**, so multiplicity is not the missing axis and
-no coefficient reaches it — which is why both flags were deleted rather than retuned. The response is
-**`--value-threat-inject` (v64, `value_threat_inject.py`)** — magnitude as TOKEN CONTENT rather
-than as another readout seat: one shared zero-init `Linear(13, D_MODEL)` adds the op's α-weighted
-incoming row for our mon j (α = the R1 `belief_mean` rung, which the flag forces on since R0
-`hard_max` builds no reducer) to that mon's token on **the value pool's copy only**, inside
-`CLSPool`. Keeping the augmented tensor a local is what makes "vf-only" structural rather than a
-convention: `our_cls`, `our_active_refined` and the pointer head cannot reach it, so `pi` is
-bit-identical at ANY weight — gated against a large random projection, not just at init. Equivariant
-in both axes (α has no defender index by Contract W; the row rides mon j's token; attention pooling
-is permutation-invariant). `W_inj` sits in the `restore_identity_init()` capture set (M1) and that
-is gated on a REAL `MaskablePPO` build. Structural + version-checked; ON in production. **`off` is architecture audit F10's screen arm** (`gen3_value_threat_inject_off_v1`, v142): with the op built, OFF CONSTRUCTS the projection NOT LIVE (`CLSPool.value_threat_live`) and the policy's `_build` RETIRES it after its orthogonal re-init (SB3's order) (`ExtractorApi.retire_value_threat_inject`, through `extractor_api.drop_child`: a plain `None` is left, so a strict load reports a retired module's keys as unexpected), so a trained OFF model holds no key, slot or parameter for it while every other initial byte equals production's; the op stays on R0 `hard_max` (the reduced rows fed only this route). Pinned by `value_threat_inject_off_test.py`.
+no coefficient reaches it — which is why both flags were deleted rather than retuned. The response was
+**`--value-threat-inject` (v64, `value_threat_inject.py`) — DELETED in legacy deletion U3** (config v157;
+`designs/ops/legacy_deletion_manifest_2026-10-12.md` row C1, architecture audit F10): magnitude as TOKEN CONTENT
+rather than as another readout seat — one shared zero-init `Linear(13, D_MODEL)` (`CLSPool.value_threat_proj`) added
+the op's α-weighted incoming row for our mon j (α = the R1 `belief_mean` rung, which it alone forced onto the op) to
+that mon's token on the value pool's copy only, inside `CLSPool`, so `pi` stayed bit-identical at any weight. F10's
+screen arm (`gen3_value_threat_inject_off_v1`, v142) built it NOT LIVE, and from the end state's adoption (2026-10-12)
+production constructed it and the policy retired it; U3 deleted the projection, `ExtractorApi.retire_value_threat_inject`,
+the op's `reduce_how` / `PairReducer` path and the `critic_route_audit` `threat` arm. It is no longer constructed,
+so its global-RNG draws are gone and the FRESH-INIT STREAM moved (manifest D-LD7: a fresh seed at or after U3 is not the
+same initial network as the same seed before it). The critic reads the op's incoming rows through the trunk
+(`prefuse_proj`) and `value_entity_pool`'s op-row source only. The route's definition is read pinned at the tag
+`pre-legacy-deletion`.
 
 ## The PRIVILEGED route — DELETED (deletion pass L2)
 

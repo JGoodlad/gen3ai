@@ -11,9 +11,10 @@ over the K9 golden buffer (deterministic: fixed rows, fixed build seed):
   EVENT's probability and every other candidate's unchanged;
 * the consumers' re-expression is the flat distribution EXACTLY, finite in value AND gradient on a row
   with no switch candidate;
-* OTHER's columns in `out_cells` / `opp_p_ghost` and OTHER_move's seat-axis columns are PRICED (never a
-  zero row), checked against independent per-move / per-species oracles;
-* `seat_live` is applied by all four α consumers (F-X5-15);
+* OTHER's columns in `out_cells` and OTHER_move's seat-axis columns are PRICED (never a zero row), checked
+  against independent per-move / per-species oracles;
+* (`seat_live` on the α consumers, F-X5-15: the move-resolution family's split is `pair_alpha_full`, pinned in
+  `op_pair_producers_test`; the three per-action consumers this file also pinned were deleted in legacy deletion U3);
 * `opp_intent/other_label_rate` is computed (F-X5-8); the fold traces fullgraph;
 * the flat loss trains the head and never δ_θ (M10).
 
@@ -175,61 +176,6 @@ def test_the_reexpression_is_the_flat_distribution_and_finite_with_no_switch():
     assert bool(torch.isfinite(flat.grad).all())
 
 
-# --------------------------------------------------------------------------- F-X5-15: seat_live
-def test_seat_live_is_applied_by_every_alpha_consumer():
-    """A seat whose `seat_live` is 0 carries NO α mass in `threshold_probs`, `IntentMoveCell` and
-    `IntentConditionalMoveCell` — equal to the same call with that seat's operands zeroed (the
-    reference spends no mass there by construction; `pair_alpha` already masked). Revert (drop the
-    `seat_live` multiply in any one): its assert fails, and the no-`seat_live` control differs."""
-    from agents.model.intent_conditional import IntentConditionalMoveCell
-    from agents.model.intent_move_cell import IntentMoveCell
-    from agents.model.intent_threshold import threshold_probs
-    g = torch.Generator().manual_seed(3)
-    B, k = 4, K + 1                                   # the flat re-expression's K seats + OTHER_move
-    al = torch.randn(B, k + 1, generator=g)
-    live = torch.ones(B, k)
-    live[:, 3] = 0.0
-    cells = torch.rand(B, 6, k, 6, generator=g)
-    cells0 = cells.clone()
-    cells0[:, :, 3] = 0.0
-    gate = torch.ones(B, 6, 1)
-    idx = torch.zeros(B, dtype=torch.long)
-    # threshold_probs
-    t_live = threshold_probs(al, cells, gate, idx, seat_live=live)
-    t_zero = threshold_probs(al, cells0, gate, idx)
-    for a_, b_ in zip(t_live, t_zero):
-        assert torch.allclose(a_, b_, atol=1e-6)
-    assert not torch.allclose(threshold_probs(al, cells, gate, idx).p_ko, t_zero.p_ko, atol=1e-6)
-    # IntentMoveCell (is_status 0 everywhere, so the pure-mass channel alpha_stay is 0 in both)
-    imc = IntentMoveCell(8)
-    torch.nn.init.normal_(imc.proj.weight, generator=g)
-    base = torch.rand(B, 4, 4, generator=g)
-    base[..., 0] = 0.0
-    db, ds = torch.rand(B, k, generator=g), torch.rand(B, k, generator=g)
-    db0, ds0 = db.clone(), ds.clone()
-    db0[:, 3], ds0[:, 3] = 0.0, 0.0
-    isb, iss = torch.ones(B, 4), torch.ones(B, 4)
-    assert torch.allclose(imc(al, base, db, ds, isb, iss, seat_live=live),
-                          imc(al, base, db0, ds0, isb, iss), atol=1e-6)
-    assert not torch.allclose(imc(al, base, db, ds, isb, iss), imc(al, base, db0, ds0, isb, iss), atol=1e-6)
-    # IntentConditionalMoveCell (no boom move requested, so the pure-mass a_stay channel is unused)
-    icm = IntentConditionalMoveCell(8)
-    torch.nn.init.normal_(icm.proj.weight, generator=g)
-    nums = torch.tensor([[89, 57, 85, 182, 94, 1]]).expand(B, -1)    # seat 3 = Protect
-    nums0 = nums.clone()
-    nums0[:, 3] = 0
-    other_u = torch.zeros(B, M)
-    other_u[:, 85] = 1.0
-    rest = (torch.rand(B, 4, generator=g), torch.rand(B, 1, generator=g), torch.rand(B, 4, generator=g),
-            torch.tensor([[68, 243, 228, 182]]).expand(B, -1),         # Counter, Mirror Coat, Pursuit, Protect
-            torch.rand(B, 1, generator=g), torch.randn(B, 7, generator=g),
-            torch.rand(B, 4, 7, generator=g), torch.zeros(B, dtype=torch.long))
-    o_live = icm(al, cells, gate, idx, nums, *rest, seat_live=live, other_u=other_u)
-    o_zero = icm(al, cells0, gate, idx, nums0, *rest, other_u=other_u)
-    assert torch.allclose(o_live, o_zero, atol=1e-6)
-    assert not torch.allclose(icm(al, cells, gate, idx, nums, *rest, other_u=other_u), o_zero, atol=1e-6)
-
-
 # ------------------------------------------------------------------------- F-X5-8: other_label_rate
 def test_other_label_rate_is_computed_over_choices_only():
     from agents.training.instrumented_ppo.flat_intent_fold import flat_intent_fold_tensors
@@ -320,9 +266,9 @@ def test_the_candidate_set_and_its_structural_mask_on_a_real_forward(fm):
 @pytest.mark.integration
 def test_OTHERs_columns_are_priced_never_a_zero_row(fm):
     """OTHER_species' column in `out_cells` is the OTHER-mode D1 pass (the tail-averaged defender: never
-    IMMUNE, P(KO) nulled); in `opp_p_ghost` it is other_tail_probs @ SPECIES_IS_GHOST. OTHER_move's
-    seat-axis columns equal the tail contraction of per-move ORACLES (MOVE_ACCURACY, MOVE_PHYS, the type
-    chart). Revert (a zero OTHER column): every 'priced' assert fails."""
+    IMMUNE, P(KO) nulled). OTHER_move's seat-axis columns (the outcome grid's damage prefix, the type multiplier)
+    equal the tail contraction of per-move ORACLES (MOVE_ACCURACY, MOVE_PHYS, the type chart). Revert (a zero OTHER
+    column): every 'priced' assert fails. (The ghost marginal's OTHER column went with `opp_p_ghost`, U3.)"""
     fe, hs = fm["fe"], fm["hs"]
     op = fe.damage_op
     x = fe.stash.flat_consumer_ops
@@ -346,14 +292,12 @@ def test_OTHERs_columns_are_priced_never_a_zero_row(fm):
     finally:
         op.stash.x5 = ro
     assert torch.equal(oc[:, :, 6:7], d1[..., :oc.shape[-1]].to(oc.dtype))
-    ghost = x.opp_p_ghost
-    assert torch.allclose(ghost[:, 6], hs.other_tail_probs.to(op.SPECIES_IS_GHOST.dtype) @ op.SPECIES_IS_GHOST)
     # OTHER_move: the tail contraction of independent per-move oracles
     u = x.other_u.double()
     lm = fm["fe"].damage_op
     acc = (u * lm.MOVE_ACCURACY.double()[None, :u.shape[1]]).sum(-1)
     phys = (u * lm.MOVE_PHYS.double()[None, :u.shape[1]]).sum(-1)
-    pc = x.pair_cells                                                         # [B,6,K+1,6]
+    pc = x.pair_in[..., :6]                    # [B,6,K+1,6] the grid's damage prefix (= the op's pair cells)
     assert pc.shape[2] == k + 1
     mo = fm["fe"].last_flat_intent.live[:, other_move_col(k)]
     assert bool(mo.any())
@@ -368,10 +312,10 @@ def test_OTHERs_columns_are_priced_never_a_zero_row(fm):
     tm_oracle = (per_move * u[:, None, :]).sum(-1)
     assert torch.allclose(x.type_mult[:, :, k].double(), tm_oracle, atol=1e-6)
     assert bool((x.type_mult[mo][:, :, k] > 0).all())                         # never IMMUNE as a whole
-    assert x.pair_in.shape[2] == k + 1 and torch.equal(x.pair_in[:, :, k, :6], pc[:, :, k])
+    assert x.pair_in.shape[2] == k + 1
     assert torch.equal(x.seat_live[:, k], mo.to(x.seat_live.dtype))
     # masked OTHER_move: an exact-zero column (its α mass is −inf there anyway)
-    assert float(x.pair_cells[~mo][:, :, k].abs().max()) == 0.0
+    assert float(x.pair_in[~mo][:, :, k, :6].abs().max()) == 0.0
 
 
 def _hctx(fm):

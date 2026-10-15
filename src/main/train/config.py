@@ -569,7 +569,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("entity_tail_seats", False)       # v57 structural bool (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
     _resolve("policy_grad_coef", 1.0)               # v102 training-only (inherited like opp_belief_aux_coef; 1.0 = upstream)
-    _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("intent_label_bot_weight", 1.0)   # v97 training-only (inherited like opp_belief_aux_coef)
     # gen3_fork_v1 — the FORK ARM. TRAINING-only and inherited, for the sharpest version of that
@@ -592,12 +591,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("ridealong_opp", 0)
     _resolve("ridealong_rnd_variants", "off")      # v127 structural str (canonical comma list)
     _resolve("policy_readout", "tower")            # v138 structural str (audit F2; version-checked, fresh-only)
-    _resolve("move_resolution", "off")             # v141 structural str (F11's move-resolution family; fresh-only)
     _resolve("obs_facts", "off")                   # v144 structural str (gen3_obs_facts_v1, part 3; fresh-only)
     _resolve("mon_hazard_cost", "off")             # v147 structural str (static's per-mon Spikes fact; fresh-only)
     _resolve("move_actor_state", "off")            # v147 structural str (static's E3 actor HP + status; fresh-only)
     _resolve("trunk_layers", 2)                    # v150 structural int (the trunk's depth; identity-init extra rounds)
-    _resolve("move_resolution_facts", "off")       # v152 structural str (move resolution's restored facts)
     _resolve("drop_progress_clock", "off")         # v152 structural str (the model reads turns_since_progress as 0)
     _resolve("move_target_state", "off")           # v153 structural str (their active's HP + status on our E3 seats)
     _resolve("move_set_closure", "off")            # v154 structural str (the four-move fact in the belief reinjection)
@@ -605,17 +602,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("token_encoding", "legacy")           # v139 structural str (static tokens; version-checked, fresh-only)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —
     #  no argparse dest to inherit FROM, so a resolve line would be dead. Frozen "detached".)
-    _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
     _resolve("value_entity_pool", False)       # v80 structural, version-checked (Stage-3 T3)
     _resolve("history_events", False)          # v81 structural, version-checked (Tier H-B)
     _resolve("value_entity_pool_full", False)  # v82 structural, version-checked (full row set)
     _resolve("item_belief", False)             # v83 structural, version-checked (gen3_item_belief_v1)
-    _resolve("pair_outcome_cell", False)   # v93 structural, version-checked (gen3_pair_outcome_v1)
-    _resolve("pair_outcome_switch", False)  # v94 structural, version-checked (gen3_pair_outcome_switch_v1)
-    _resolve("switch_branch_cell", False)   # v94 structural, version-checked (gen3_switch_branch_v1)
-    _resolve("conditional_threat_cell", False)  # v95 structural, version-checked (gen3_conditional_threat_v1)
-    _resolve("intent_threshold", False)        # v84 structural, version-checked (gen3_intent_threshold_v1)
-    _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)
     _resolve("op_believed_lean", False)        # v86 structural, version-checked (gen3_op_lean_forward_v1)
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. The training-only provenance class:

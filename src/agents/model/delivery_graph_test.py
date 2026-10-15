@@ -222,19 +222,15 @@ def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
 
     The base row is 15 — the incoming per-defender row + the CB tail; the OAX attacker row was
     DELETED with its flag (`gen3_dead_flag_purge_v1`) and d2 carries the switch-in offense instead.
-    On top of it the gen-17 base adds `pair_outcome_switch` (+15) and `conditional_threat_cell`
-    (+4), each as its OWN edge — one cell per module, never a fused width, which is what keeps a
-    measured result attributable to the module that caused it.
+    On top of it production adds the move-resolution family's switch block, the switch cell's Spikes block and the
+    flat pointer's α re-expression, each as its OWN edge — one cell per module, never a fused width, which is what keeps
+    a measured result attributable to the module that caused it.
 
     Asserted against the LIVE config rather than a literal set: this test read `== {15}` while
     those two flags were off in production, so refreshing the mirror to the gen-17 run turned a
     correct architecture into a red test. The widths are constants; WHICH of them are present is
     a property of the config, and only that second half belongs to the mirror.
     """
-    from agents.model.arch_constants import (
-        CONDITIONAL_THREAT_SWITCH_DIM, PAIR_OUTCOME_SWITCH_DIM,
-    )
-
     cells = [e for e in graph["edges"]
              if e["type"] == "cell" and e["dst"].startswith("pointer.switch_logit")]
     assert cells
@@ -244,14 +240,12 @@ def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
     cfg = json.load(open(delivery_graph._DEFAULT_CONFIG))
     expected = {15}                                    # the op's own incoming row + CB tail
     # RE-STATED for production (the END STATE's adoption, 2026-10-12, which moved this set from {4, 8, 15} to
-    # {2, 8, 15, 18}): `--move-resolution on` RETIRES pair_outcome_switch and conditional_threat on the built policy
-    # (the graph draws the deployed network) and its own switch cell rides instead; `--switch-hazard-cost on` adds the
-    # switch cell's Spikes block (built with the op since the legacy deletion's U1 deleted that flag).
-    mr = cfg.get("move_resolution") == "on"
-    if cfg.get("pair_outcome_switch") and not mr:
-        expected.add(PAIR_OUTCOME_SWITCH_DIM)
-    if cfg.get("conditional_threat_cell") and not mr:
-        expected.add(CONDITIONAL_THREAT_SWITCH_DIM)
+    # {2, 8, 15, 18}): the move-resolution family's switch cell (DERIVED from opp_intent + the op's matrices since the
+    # legacy deletion's U3, which deleted the pair_outcome_switch / conditional_threat cells it replaced); the switch
+    # cell's Spikes block (built with the op since U1 deleted its flag).
+    mr = bool(cfg.get("opp_intent")) and bool(cfg.get("damage_op")) and bool(cfg.get("damage_outgoing")) and \
+        bool(cfg.get("damage_matrices_incoming")) and bool(cfg.get("damage_matrices_outgoing")) and \
+        int(cfg.get("damage_topk_k", 0)) > 0
     if mr:
         expected.add(MOVE_RESOLUTION_SWITCH_DIM)
     if cfg.get("damage_op"):                           # the switch cell's Spikes block: built with the op (U1)
@@ -430,13 +424,12 @@ def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
     assert len(live) > 25, live
     # BUILT by this config. A module the production run does not build is a property of the CONFIG,
     # not of the enumeration (see the buildable-declaration check below, where such a module's
-    # survival is asserted). RE-STATED for production (the END STATE's adoption, 2026-10-12):
-    # `--move-resolution on` retires `intent_conditional` (and six more) on the built policy, so the
-    # BUILT list names the family that replaced them; `intent_conditional` stays in the buildable list.
+    # survival is asserted). The move-resolution family replaced `intent_conditional` and six more per-action
+    # blocks, which legacy deletion U3 deleted outright (they are no longer buildable).
     for expect in ("damage_op", "team_transformer", "hypothesis_builder", "flat_intent_head",
                    "move_resolution_cell", "history_events"):
         assert expect in live, f"{expect} vanished from the extractor — update the declarations"
-    assert "intent_conditional" not in live, "a block --move-resolution on supersedes is drawn on the deployed network"
+    assert "intent_conditional" not in live, "a deleted per-action block is back on the extractor"
     # ...and the RETIRED ones are not: the graph describes the policy's model, in which the flat
     # pointer replaced α / β, and α / β / BeliefSlots are DELETED (the version break, part 2).
     for retired in ("alpha_head", "beta_head", "belief_slots"):
@@ -447,7 +440,7 @@ def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
     # keyed on the builder so it survives a generation that gates one off.
     buildable = buildable_child_names()
     for expect in ("damage_op", "team_transformer", "hypothesis_builder", "flat_intent_head",
-                   "intent_conditional", "history_events"):
+                   "move_resolution_cell", "history_events"):
         assert expect in buildable, f"{expect} vanished from extractor_build"
         assert expect in MODULE_GRAPH_TOKENS or expect in NON_DELIVERY_MODULES, (
             f"{expect} is buildable but undeclared in the graph — it would ship undrawn")

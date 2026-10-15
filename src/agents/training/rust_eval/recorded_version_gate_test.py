@@ -4,14 +4,15 @@ kwargs), never one rebuilt from toggles read off the built modules.
 
 The incident: the closing test's ``--arch endstate`` seed ``rb_es_end_s2001`` (pinned ``b132b099``) FATALed at its
 first self-play eval after the pool filled (~6M steps) with ``intent_move_cell mismatch: saved=True, current=False``.
-``--move-resolution on`` BUILDS the seven per-action blocks and then RETIRES them
-(``retire_superseded_action_cells``), so a built-module read says False where the run's ``model_config.json`` and
-every snapshot it wrote record True.
+``--move-resolution on`` BUILT the seven per-action blocks and then RETIRED them, so a built-module read said False
+where the run's ``model_config.json`` and every snapshot it wrote recorded True. (The blocks, their fields and the
+retirement were deleted in legacy deletion U3; the rule — read the RECORDED kwargs, never the built modules — is
+general and stays pinned here on every surviving gated field.)
 
 What a revert breaks:
 
-* ``arch_toggles_from_model`` reading the built modules again → the end-state toggles say ``intent_move_cell=False``
-  (and the six other retired blocks) and ``load_sentinels`` raises ``ModelVersionError`` under ``--arch endstate``;
+* ``arch_toggles_from_model`` reading the built modules again → a toggle the built extractor does not carry reads
+  its default, not the recorded value, and ``load_sentinels`` can raise ``ModelVersionError``;
 * ``load_sentinels`` rebuilding its version any other way than from the recorded kwargs → the same refusal.
 
 Each arm's model is built from the RESOLVED ``--arch <arm>`` namespace (the arm overlay applied as a launch applies
@@ -31,9 +32,10 @@ from typing import Any, Tuple
 
 import pytest
 
-#: The seven per-action blocks `--move-resolution on` builds and then retires (`retire_superseded_action_cells`).
-RETIRED_BY_MOVE_RESOLUTION = ("intent_move_cell", "intent_threshold", "intent_conditional", "pair_outcome_cell",
-                              "pair_outcome_switch", "switch_branch_cell", "conditional_threat_cell")
+#: The seven per-action blocks `--move-resolution on` built and then retired — deleted with their fields in legacy
+#: deletion U3, so no recorded version carries them any more.
+DELETED_BY_U3 = ("intent_move_cell", "intent_threshold", "intent_conditional", "pair_outcome_cell",
+                 "pair_outcome_switch", "switch_branch_cell", "conditional_threat_cell")
 
 
 @functools.lru_cache(maxsize=None)
@@ -97,15 +99,14 @@ def test_a_pool_eval_loads_the_runs_own_sentinel_under_every_named_arm(tmp_path,
     toggles = arch_toggles_from_model(model)
     rv = recorded_model_version(model)
     rv.check_opponent_snapshot_compatible(saved)
-    for k in RETIRED_BY_MOVE_RESOLUTION:
+    gated = [k for k in toggles if hasattr(saved, k)]
+    assert len(gated) > 30, gated
+    for k in gated:
         assert toggles[k] == getattr(saved, k) == getattr(rv, k), k
-    if arm == "endstate":
-        # the incident's shape: the run RECORDS the seven True while the built extractor holds none of them
-        fe = model.policy.features_extractor
-        assert fe.move_resolution_cell is not None
-        for k in RETIRED_BY_MOVE_RESOLUTION:
-            assert getattr(saved, k) is True, k
-        assert getattr(fe, "intent_move_cell", None) is None
+    fe = model.policy.features_extractor
+    assert fe.move_resolution_cell is not None                # production and its alias build the family (derived)
+    for k in DELETED_BY_U3:
+        assert k not in toggles and not hasattr(saved, k), k
 
 
 def test_a_model_without_recorded_policy_kwargs_is_refused():

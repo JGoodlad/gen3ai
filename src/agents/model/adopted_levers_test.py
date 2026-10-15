@@ -38,19 +38,19 @@ SEVEN = ("intent_move_cell", "intent_threshold", "intent_conditional", "pair_out
 
 #: The T-ENT toy's ablation set (`design_x26_readiness.md` §3.2, `rb_toy_ent_s4001`), on CPU for a test build — as it
 #: parses at HEAD: U1 deleted eight of its flags (`--speed-physics off --op-reduction max --switch-hazard-cost off
-#: --eot-residual off --status-facts off --ko-ramp ramp --g-ledger coarse --effective-stats off`), which the PINNED toy
-#: still types; `PRE_U1_TOY_OFF` re-adds their recorded values to simulate a checkpoint the pinned toy wrote.
+#: --eot-residual off --status-facts off --ko-ramp ramp --g-ledger coarse --effective-stats off`) and U3 ten more
+#: (`--move-resolution off --move-resolution-facts off` and the seven `--no-<block>` spellings), which the PINNED toy
+#: still types; `PRE_U1_TOY_OFF` / `PRE_U3_TOY_OFF` re-add their recorded values to simulate a checkpoint the pinned toy
+#: wrote.
 TOY_ARGV = (
     "--arch production --allow-nonproduction-arch --steps 1 --device cpu "
     "--unified-moves off --no-damage-op --no-damage-outgoing --damage-matrices off --damage-topk 0 "
     "--move-belief-mode off --no-move-prior-fusion --no-move-latent --opp-belief-aux-coef 0 --opp-belief-cls-k 0 "
     "--opp-intent-coef 0 --no-item-belief --no-spread-belief --no-spread-belief-nature --no-t0-species-prior "
     "--no-species-prior-fusion --entity-topk-seats 0 --no-entity-tail-seats --edge-bias-families off "
-    "--no-history-events --no-value-entity-pool --no-value-entity-pool-full --move-resolution off "
+    "--no-history-events --no-value-entity-pool --no-value-entity-pool-full "
     "--mon-hazard-cost off --trunk-layers 2 "
-    "--move-resolution-facts off "
-    "--move-set-closure off --no-intent-move-cell --no-intent-threshold --no-intent-conditional "
-    "--no-pair-outcome-cell --no-pair-outcome-switch --no-switch-branch-cell --no-conditional-threat-cell "
+    "--move-set-closure off "
     "--no-op-drop-renders --no-op-believed-lean --move-belief-coef 0 --move-belief-latent-coef 0 "
     "--spread-belief-coef 0 --item-belief-coef 0 --hp-type-belief-coef 0").split()
 
@@ -63,6 +63,25 @@ PRE_U1_TOY_OFF: Dict[str, Any] = {
     "status_facts": "off", "ko_ramp": "ramp", "g_ledger": "coarse", "effective_stats": "off"}
 
 
+#: The U3 fields as the PINNED toy recorded them (its argv typed every one OFF; `value_threat_inject` False was the
+#: mirror's value after the adoption). Frozen here because U3 deleted them.
+PRE_U3_TOY_OFF: Dict[str, Any] = {
+    "move_resolution": "off", "move_resolution_facts": "off", "value_threat_inject": False,
+    **{f: False for f in SEVEN}}
+
+#: The U3 fields as the PRE-ADOPTION production surface recorded them (the closing test's P arm, v153): no move
+#: resolution, the critic's threat injection ON, the seven per-action blocks ON and live.
+PRE_U3_LEGACY: Dict[str, Any] = {
+    "move_resolution": "off", "move_resolution_facts": "off", "value_threat_inject": True,
+    **{f: True for f in SEVEN}}
+
+#: The U3 fields as an ADOPTED pre-U3 config recorded them (the E arm, v154; the bf16 runs, v155; X26's parent, v156):
+#: move resolution on with its restored facts, no threat injection, the seven blocks recorded True and INERT.
+PRE_U3_ADOPTED: Dict[str, Any] = {
+    "move_resolution": "on", "move_resolution_facts": "full", "value_threat_inject": False,
+    **{f: True for f in SEVEN}}
+
+
 def _mirror() -> Dict[str, Any]:
     from main.train.arch_surface import load_production_config
     return dict(load_production_config())
@@ -70,9 +89,9 @@ def _mirror() -> Dict[str, Any]:
 
 def _legacy_raw() -> Dict[str, Any]:
     """The PRE-ADOPTION production surface (the closing test's P arm, config v153) as a recorded config: the mirror at
-    `PRE_ADOPTION_PRODUCTION` + the U1 fields at their OFF values, stamped v153."""
+    `PRE_ADOPTION_PRODUCTION` + the U1 and U3 fields at their pre-adoption values, stamped v153."""
     from main.train.arch_arms import legacy_production_config
-    return dict(legacy_production_config(_mirror()), **PRE_U1_TOY_OFF, config_version=153)
+    return dict(legacy_production_config(_mirror()), **PRE_U1_TOY_OFF, **PRE_U3_LEGACY, config_version=153)
 
 
 @functools.lru_cache(maxsize=None)
@@ -149,9 +168,11 @@ def test_the_adopted_surface_is_inactive_on_every_lever():
 
 def test_the_seven_blocks_recorded_true_are_inert_under_move_resolution_and_refused_without_it():
     raw = _mirror()
+    assert "move_resolution" not in raw, "U3 deleted the field from the mirror"
     for f in SEVEN:
         raw[f] = True                          # every adopted checkpoint records them True (F-LD-4)
-    assert AL.active_levers(raw, units=ALL_UNITS) == []
+    assert AL.active_levers(raw, units=ALL_UNITS) == [], "absent move_resolution in a post-U3 config reads ON"
+    assert AL.active_levers(dict(raw, move_resolution="on"), units=ALL_UNITS) == []
     off = dict(raw, move_resolution="off")
     got = {r.field for r in AL.active_levers(off, units=ALL_UNITS)}
     assert set(SEVEN) <= got and "move_resolution" in got
@@ -167,15 +188,17 @@ def test_the_pre_adoption_surface_is_refused_on_every_lever_its_network_built():
 
 
 def test_an_absent_field_reads_as_the_pre_version_off_value():
-    raw = dict(_mirror(), **PRE_U1_TOY_OFF, config_version=155)
+    raw = dict(_mirror(), **PRE_U1_TOY_OFF, **PRE_U3_ADOPTED, config_version=155)
     for f in PRE_U1_TOY_OFF:
         raw[f] = next(r.adopted for r in AL.PLANNED if r.field == f)   # a pre-U1 ADOPTED config (the E arm, v154)
     assert AL.active_levers(raw, units=ALL_UNITS) == []
     del raw["status_facts"]                    # a config older than the lever
     assert [r.field for r in AL.active_levers(raw, units=ALL_UNITS)] == ["status_facts"]
-    raw = _mirror()
+    raw = dict(raw, **PRE_U3_ADOPTED, status_facts="exact")         # the E arm again, every field recorded
     del raw["value_threat_inject"]             # absent = False = adopted: nothing to refuse
     assert AL.active_levers(raw, units=ALL_UNITS) == []
+    del raw["move_resolution"]                 # a pre-U3 config without the field read OFF: the seven are LIVE again
+    assert {r.field for r in AL.active_levers(raw, units=ALL_UNITS)} == {"move_resolution", *SEVEN}
 
 
 def test_an_absent_field_in_a_config_written_after_its_unit_reads_as_adopted():
@@ -187,7 +210,13 @@ def test_an_absent_field_in_a_config_written_after_its_unit_reads_as_adopted():
     assert not set(PRE_U1_TOY_OFF) & set(raw), "the mirror no longer records U1's fields"
     assert AL.active_levers(raw) == []
     old = dict(raw, config_version=AL.UNIT_VERSIONS["U1"] - 1)       # the same record claiming to be pre-U1
-    assert {r.field for r in AL.active_levers(old)} == set(PRE_U1_TOY_OFF)
+    # (its absent U3 fields read OFF too: move resolution is refused; its facts are vacuous without it, and the threat
+    # injection's / the seven blocks' OFF value is False, which is also adopted)
+    assert {r.field for r in AL.active_levers(old)} == set(PRE_U1_TOY_OFF) | {"move_resolution"}
+    # U3's landing, the same rule: a v157 config cannot record a U3 field; claiming to be pre-U3 refuses move resolution
+    assert raw["config_version"] >= AL.UNIT_VERSIONS["U3"] and not set(PRE_U3_TOY_OFF) & set(raw)
+    pre_u3 = dict(raw, config_version=AL.UNIT_VERSIONS["U3"] - 1)
+    assert {r.field for r in AL.active_levers(pre_u3)} == {"move_resolution"}
     # the ZIP side carries no version: an absent kwarg is left to the config judge (no refusal, nothing to pop)
     fek = {k: v for k, v in raw.items() if k != "config_version"}
     assert AL.judge_pickled_kwargs(fek) is False
@@ -220,11 +249,11 @@ def test_a_lever_without_its_prerequisites_is_vacuous_whatever_it_recorded():
 def test_the_toy_t_ent_resolved_config_is_inactive_on_every_lever():
     """The readiness doc's U0 requirement: a pre-deletion T-ENT checkpoint loads at post-deletion HEAD."""
     a = _toy_args()
-    assert a.damage_op is False and a.move_resolution == "off"                                # the toy as declared
+    assert a.damage_op is False and a.opp_intent_coef == 0.0                                  # the toy as declared
     raw = {k: v for k, v in vars(a).items() if not k.startswith("_")}
     assert AL.active_levers(raw, units=ALL_UNITS) == []
-    # the PINNED toy's own record (it still types the eight U1 flags at their OFF values): vacuous, never refused
-    assert AL.active_levers(dict(raw, **PRE_U1_TOY_OFF, config_version=155), units=ALL_UNITS) == []
+    # the PINNED toy's own record (it still types the U1 and U3 flags at their OFF values): vacuous, never refused
+    assert AL.active_levers(dict(raw, **PRE_U1_TOY_OFF, **PRE_U3_TOY_OFF, config_version=155), units=ALL_UNITS) == []
 
 
 @pytest.fixture(scope="module")
@@ -249,14 +278,15 @@ def test_a_toy_checkpoint_loads_with_every_unit_judged(toy_snapshot, monkeypatch
     assert raw["damage_op"] is False and "speed_physics" not in raw
     RL.refuse_structural(raw)                                    # no raise
     RL.check_no_retired_levers(str(cfg))                         # no raise: a resume / fork is not refused either
-    pinned = dict(raw, **PRE_U1_TOY_OFF, config_version=155)     # the pinned toy's record
+    pinned = dict(raw, **PRE_U1_TOY_OFF, **PRE_U3_TOY_OFF, config_version=155)     # the pinned toy's record
     RL.refuse_structural(pinned)                                 # no raise
     pinned_cfg = cfg.parent / "pinned_model_config.json"
     pinned_cfg.write_text(json.dumps(pinned))
     RL.check_no_retired_levers(str(pinned_cfg))                  # no raise
     _load(pinned)                                                # the full migration: the eight fields pop
-    fek = dict(model.policy_kwargs["features_extractor_kwargs"], **PRE_U1_TOY_OFF)
+    fek = dict(model.policy_kwargs["features_extractor_kwargs"], **PRE_U1_TOY_OFF, **PRE_U3_TOY_OFF)
     assert AL.judge_pickled_kwargs(fek) is True and "op_reduction" not in fek and "speed_physics" not in fek
+    assert not set(PRE_U3_TOY_OFF) & set(fek), "the U3 kwargs pop (vacuous: no damage op, no intent)"
     from agents.model.model_version import ModelVersionError
     with pytest.raises(ModelVersionError, match="pre-legacy-deletion"):
         RL.refuse_structural(_legacy_raw())

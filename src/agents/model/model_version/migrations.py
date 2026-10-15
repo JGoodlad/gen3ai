@@ -475,14 +475,14 @@ def _migrate_config(data: dict) -> dict:
                 "replaced that layout, so its state_dict has no home here. Run it PINNED to its own commit "
                 "(<= 0ea14560's line), or start a fresh run.")
         data["config_version"] = 140
-    # v141 (gen3_move_resolution_v1, F11) — `move_resolution`, defaulted rather than refused: "off" is the only
-    # possible past (the family did not exist).
+    # v141 (gen3_move_resolution_v1, F11) — its field `move_resolution` LEFT the config at v157 (legacy deletion U3):
+    # an absent field reads as its pre-version OFF value in `adopted_levers` (refused beside the family's
+    # prerequisites, popped otherwise), so only the stamp remains.
     if version < 141:
-        data.setdefault("move_resolution", "off")
         data["config_version"] = 141
-    # v142 (gen3_value_threat_inject_off_v1, F10) — no field: `value_threat_inject=False` now builds the projection
-    # and retires it after SB3's re-init (init-byte parity with ON). The state_dict is unchanged and a load re-draws
-    # no init, so every past config stamps through.
+    # v142 (gen3_value_threat_inject_off_v1, F10) — no field: `value_threat_inject=False` then built the projection
+    # and retired it after SB3's re-init (init-byte parity with ON; both the projection and the field went in U3,
+    # v157). The state_dict was unchanged and a load re-draws no init, so every past config stamps through.
     if version < 142:
         data["config_version"] = 142
     # v143 (gen3_speed_physics_v1, F7b) / v146 (gen3_op_reduction_principled_v1, audit F6b) — their fields
@@ -525,9 +525,9 @@ def _migrate_config(data: dict) -> dict:
     if version < 151:
         data["config_version"] = 151
     # v152 (gen3_endstate_facts_v1) — the fact levers, each absent before (the only possible past). `status_facts`,
-    # `ko_ramp` and `g_ledger` LEFT the config at v156 (legacy deletion U1; see v143 above).
+    # `ko_ramp` and `g_ledger` LEFT the config at v156 (legacy deletion U1; see v143 above), `move_resolution_facts` at
+    # v157 (U3; see v141 above).
     if version < 152:
-        data.setdefault("move_resolution_facts", "off")
         data.setdefault("drop_progress_clock", "off")
         data["config_version"] = 152
     # v153 (gen3_probe_facts_v1) — `move_target_state`, absent before (the only possible past). `effective_stats` LEFT
@@ -548,6 +548,10 @@ def _migrate_config(data: dict) -> dict:
     # judged by `adopted_levers` against each config's own prerequisites — the toy VACUITY rule).
     if version < 156:
         data["config_version"] = 156
+    # v157 (legacy deletion U3, lanes MR + VTI) — THE STAMP ONLY: ten fields LEFT the config (`move_resolution`,
+    # `move_resolution_facts`, `value_threat_inject` and the seven per-action blocks), judged exactly as U1's.
+    if version < 157:
+        data["config_version"] = 157
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

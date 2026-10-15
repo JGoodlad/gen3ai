@@ -199,8 +199,8 @@ not that it caused the choice. The page says so once, under the map.
 From the `DamageOperator`'s pre-gain stash after the same forward (`decode_damage_block`), for each
 of our legal moves against their active: the damage range (low–high, % of their max HP), P(KO),
 the crit roll's damage, P(we move first), and P(lands) for a status move. The move-resolution family
-(`--move-resolution on`, OFF in production) adds P(resolve) and P(KO first) per move; when it is not
-built those two columns render GREY with "not built in this run's model" — present-at-this-architecture
+(production; built whenever its prerequisites are since legacy deletion U3, `--move-resolution` deleted) adds
+P(resolve) and P(KO first) per move; when it is not built (a toy, or a pre-adoption run) those two columns render GREY with "not built in this run's model" — present-at-this-architecture
 features show, absent ones are greyed, nothing crashes.
 
 ### 5. Navigation

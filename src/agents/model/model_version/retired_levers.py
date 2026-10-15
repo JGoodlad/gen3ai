@@ -300,7 +300,7 @@ def _adopted_rows() -> tuple:
     `adopted_levers.lever_active` — the recorded value differs from the ADOPTED one in a network that built the lever
     (vacuous when the config lacks the lever's prerequisites, inert for the seven blocks under move resolution) — so
     an adopted-surface config (the E arm, the bf16 runs, X26) and a TOY that never built the lever keep loading."""
-    from agents.model.model_version import adopted_levers as AL
+    import agents.model.model_version.adopted_levers as AL
 
     import functools
 
@@ -412,7 +412,7 @@ def retired_lever_evidence(raw: Dict[str, Any], *, structural_only: bool = False
 def refuse_structural(raw: Dict[str, Any]) -> None:
     """`_migrate_config`'s half: refuse, on EVERY load, a config whose recorded ON lever named
     parameters or a critic route this code cannot rebuild."""
-    from agents.model.model_version import adopted_levers as AL
+    import agents.model.model_version.adopted_levers as AL
 
     evidence = retired_lever_evidence(raw, structural_only=True)
     adopted = [r for r in evidence if r.last_commit == AL.LAST_COMMIT_PRE_LEGACY_DELETION]

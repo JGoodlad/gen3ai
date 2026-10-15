@@ -238,8 +238,8 @@ one flag). The obs golden moved on 107 of 991 decisions, all on those two cells.
 ({off,on}) and `g_ledger` ({coarse,eot}). A pre-v152 config migrates to off / off / ramp / off / coarse (the only
 possible past); no `ARCH_SIGNATURE` or floor change (production builds byte-identically). Three of them built no
 parameter (`ko_ramp`, `drop_progress_clock`, `g_ledger`: the string compare was the only gate). (HISTORY: `status_facts`,
-`ko_ramp` and `g_ledger` LEFT the config at v156, legacy deletion U1, below; `move_resolution_facts` and
-`drop_progress_clock` remain, the NAMED ARM `--arch endstate` writing both.)
+`ko_ramp` and `g_ledger` LEFT the config at v156, legacy deletion U1, below; `move_resolution_facts` at v157, legacy
+deletion U3, below; `drop_progress_clock` remains, the NAMED ARM `--arch endstate` writing it.)
 
 **v153 (`gen3_probe_facts_v1`, 2026-10-09)** added two STRUCTURAL fields, each gated in `check_compatible`:
 `effective_stats` and `move_target_state` ({off,on}; each builds one zero-init projection). A pre-v153 config migrates
@@ -324,6 +324,27 @@ UNCONDITIONAL behind `damage_op` (D-LD2 "DERIVED"). `LANDED_UNITS = {"U1"}`, `UN
   version stamps remain). No `ARCH_SIGNATURE` bump (only dead branches went; the adopted forward is unchanged: the K9
   learner golden is byte-identical) and no `MIGRATION_FLOOR` change (D-LD1). The retired VALUE `exact_closed` of
   `--ko-ramp` is subsumed by the field's deletion (`RETIRED_VALUES` empty).
+
+**v157 (legacy deletion U3, lanes MR + VTI, 2026-10-15) — LANDED.** Ten fields LEFT `ModelVersion` with their flags
+(+ `_` aliases and the BoolFlags' `--no-` forms), `_resolve` lines, registry rows, `check_compatible` clauses, snapshot
+keywords and OFF paths: `move_resolution` (v141), `move_resolution_facts` (v152), `value_threat_inject` (v64) and the
+seven per-action blocks `intent_move_cell`, `intent_threshold`, `intent_conditional`, `pair_outcome_cell`,
+`pair_outcome_switch`, `switch_branch_cell`, `conditional_threat_cell` (v77–v95). Move resolution (with its restored
+facts) is DERIVED: built whenever `opp_intent`, `damage_op`, `damage_outgoing`, both per-move matrices and
+`damage_topk_k` > 0 are (D-LD2), vacuous otherwise; the critic's threat projection and the seven blocks' modules are
+gone. `LANDED_UNITS = {"U1", "U3"}`, `UNIT_VERSIONS["U3"] = 157`.
+* **What is refused:** a config (or zip) that recorded a NON-adopted value of one of the ten where its prerequisites
+  were built — `move_resolution off` / `move_resolution_facts off` / `value_threat_inject` True beside the op — naming
+  the tag `pre-legacy-deletion`. The seven blocks recorded True are INERT beside move resolution `on` (constructed then
+  retired; `adopted_levers._block_inert_under_move_resolution`), so every adopted checkpoint (the E arm, the bf16 A/B,
+  X26) keeps loading; recorded True beside `off` they built the legacy family and are refused.
+* **Migration:** stamp-only (`if version < 157`). No `ARCH_SIGNATURE` bump and no `MIGRATION_FLOOR` change (D-LD1):
+  the TRAINED production network is unchanged in shape (280 parameters, 2,609,183 elements).
+* 🚨 **The FRESH-INIT STREAM changed (D-LD7).** The seven blocks and the threat projection were CONSTRUCTED (their init
+  draws, then SB3's orthogonal re-init draws) and only then retired; deleting their construction removes those draws,
+  so a fresh seed at or after U3 builds a different initial network than the same seed before it, and a replicate
+  across U3 is NOT "same pin + seed". The K9 learner golden is re-recorded for it; the per-seed effect is the ledger's
+  U3 entry and `designs/research_state/measurements/legacy_deletion_u3_init_2026-10-15/`.
 
 ## Where the per-version entries went
 

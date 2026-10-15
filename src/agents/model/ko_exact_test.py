@@ -368,10 +368,10 @@ def test_the_closed_form_compiles_fullgraph_with_no_break() -> None:
 # =========================================================================================== THE MODEL
 _POLICIES: Dict[str, Any] = {}
 #: Where each exact-KO site runs: the END-STATE arm (the closing test's overlay — PRODUCTION since the 2026-10-12
-#: adoption) prices the op's KO and move resolution's Pursuit / Substitute; `--move-resolution on` retires
-#: intent_threshold, so its Substitute break is reached on the LEGACY base (`endstate_facts_test._toggles`, the
-#: pre-adoption network; this surface was named "production" before the adoption), whose op prices P(KO) exactly too.
-SURFACE_SITES = {"endstate": {"_ko_exact", "_exact_ko_ours"}, "legacy": {"_ko_exact", "sub_break_given_hit"}}
+#: adoption) prices the op's KO and move resolution's Pursuit / Substitute; the LEGACY base (`endstate_facts_test.
+#: _toggles`, the pre-adoption network) runs the same two since legacy deletion U3 made move resolution unconditional
+#: with its prerequisites (intent_threshold's `sub_break_given_hit`, its third site, was deleted there).
+SURFACE_SITES = {"endstate": {"_ko_exact", "_exact_ko_ours"}, "legacy": {"_ko_exact", "_exact_ko_ours"}}
 
 
 def _policy(surface: str) -> Any:
@@ -398,8 +398,8 @@ def test_every_ko_site_of_the_forward_meets_the_oracle_within_the_bound(
         surface: str, rows: torch.Tensor, monkeypatch: pytest.MonkeyPatch) -> None:
     """On the compile-parity fixture's real rows: every P(KO) call goes through `roll_ko_prob`
     (a spy on the module global `ko_given_hit` reads at call time), from every site the surface runs — the op's
-    `_ko_exact` (`_rolls` and the Choice-Band `ko_cb`), move resolution's `_exact_ko_ours` (Pursuit, Substitute;
-    END-STATE) and intent_threshold's `sub_break_given_hit` (the LEGACY base) — and on each call's REAL operands
+    `_ko_exact` (`_rolls` and the Choice-Band `ko_cb`) and move resolution's `_exact_ko_ours` (Pursuit, Substitute)
+    — and on each call's REAL operands
     the value is within 8 eps32 k1 of the 16-roll ORACLE. Fails if a site prices its KO by anything else."""
     real = KE.roll_ko_prob
     calls: List[Tuple[str, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]] = []

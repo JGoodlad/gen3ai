@@ -33,7 +33,7 @@ _ALL_ROUTES_ON = x5_kwargs(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
     move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
     damage_topk_k=6, entity_topk_seats=6,
-    value_entity_pool=True, value_entity_pool_full=True, intent_threshold=True,
+    value_entity_pool=True, value_entity_pool_full=True,
 )
 # Flags that gate a value route (must stay in sync with _value_pooled_routes — pinned below by
 # the registry-coverage test, so a drift here is a failing test, not silent shrinkage).
@@ -110,25 +110,6 @@ def test_every_route_receives_critic_gradient():
             "disconnected (the gen-12 dead-tail bug).")
 
 
-def test_the_TOKEN_CONTENT_injection_also_receives_critic_gradient():
-    """The seam is not the whole critic surface, and pretending it is would be the SAME bug one
-    level up. `value_threat_inject` (v64) enriches the value pool's copy of our tokens from INSIDE
-    `CLSPool`, so it never appears in `_value_pooled_routes` — and it is zero-init, so a
-    disconnected one would be silently indistinguishable from one that learned nothing, exactly as
-    the gen-12 dead-tail routes were."""
-    fe, layout = _build(**{"value_threat_inject": True})
-    fe.train()
-    torch.manual_seed(11)
-    pi, vf = fe(_obs(layout, 3))
-    fe.last_win_prob_logits.sum().backward()
-    for name in ("value_threat_proj",):
-        proj = getattr(fe.cls_pool, name).proj
-        assert float(proj.weight.abs().max()) == 0.0, f"{name} must start zero-init"
-        g = proj.weight.grad
-        assert g is not None and float(g.abs().max()) > 0.0, (
-            f"token-content injection {name!r} received NO gradient from the critic")
-
-
 def test_every_value_route_flag_flows_through_the_registry():
     """Every route flag must surface in `_value_pooled_routes` — a route delivered any other
     way (e.g. a new vf-tail concat) is exactly the wiring this guard exists to forbid."""
@@ -145,6 +126,8 @@ def test_every_value_route_flag_flows_through_the_registry():
         assert not hasattr(fe, gone), (
             f"{gone} is back on the extractor — it was deleted by the critic-route wave on a "
             "measured dV below the 0.39 bar. Re-enabling it owes a fresh audit, not a revert.")
+    # (the token-content threat injection `CLSPool.value_threat_proj` was deleted in legacy deletion U3)
+    assert getattr(fe.cls_pool, "value_threat_proj", None) is None
 
 
 def test_routes_are_vf_only_at_any_weight():

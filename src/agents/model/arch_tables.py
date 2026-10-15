@@ -47,7 +47,6 @@ _ABSENT_CANDIDATES: Tuple[Tuple[str, str], ...] = (
     ("win_head", "win_head"),
     ("flat_intent_head", "flat_intent_head"),
     ("value_entity_pool", "value_entity_pool"),
-    ("value_threat_inject", "cls_pool.value_threat_proj"),
 )
 
 # Architecture toggle -> the module/effect that proves it is doing work on the instance.
@@ -70,19 +69,9 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "spread_belief": "spread_belief",
     "spread_belief_nature": "spread_belief",
     "win_prob_mode": "win_head",
-    "value_threat_inject": "cls_pool.value_threat_proj",
     "value_entity_pool": "value_entity_pool",
     "value_entity_pool_full": "value_entity_pool",
     "token_encoding": "pokemon_encoder.dynamic_encoder",
-    # the seven per-action blocks `--move-resolution on` RETIRES after build (`retire_superseded_action_cells`):
-    # recorded ON, built, then dropped — INERT under move resolution, ACTIVE without it.
-    "intent_move_cell": "intent_move_cell",
-    "intent_threshold": "intent_threshold_move",
-    "intent_conditional": "intent_conditional",
-    "pair_outcome_cell": "pair_outcome_move",
-    "pair_outcome_switch": "pair_outcome_switch",
-    "switch_branch_cell": "switch_branch",
-    "conditional_threat_cell": "conditional_threat",
 }
 
 # Training-loss coefficient -> the module that consumes it. THE INERT LOGIC LIVES HERE, in one

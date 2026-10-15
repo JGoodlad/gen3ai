@@ -34,16 +34,15 @@ class ArmDecl(NamedTuple):
 #: also read it was deleted in legacy-deletion U0). Shrinks unit by unit with the legacy paths it names
 #: (`designs/ops/legacy_deletion_manifest_2026-10-12.md`): U1 removed its eight op keys (`switch_hazard_cost`,
 #: `eot_residual`, `speed_physics`, `op_reduction`, `status_facts`, `ko_ramp`, `g_ledger`, `effective_stats`), whose
-#: OFF values no longer build — the "legacy" network after U1 carries the adopted op physics.
+#: OFF values no longer build — the "legacy" network after U1 carries the adopted op physics; U3 removed
+#: `move_resolution`, `move_resolution_facts` and `value_threat_inject` (move resolution is DERIVED from its
+#: prerequisites and the threat projection is gone), so after U3 the legacy network carries move resolution too.
 PRE_ADOPTION_PRODUCTION: Tuple[Tuple[str, Any], ...] = (
     ("token_encoding", "legacy"),
     ("mon_hazard_cost", "off"),
     ("move_actor_state", "off"),
     ("trunk_layers", 2),
-    ("move_resolution", "off"),
-    ("value_threat_inject", True),
     ("obs_facts", "off"),
-    ("move_resolution_facts", "off"),
     ("drop_progress_clock", "off"),
     ("move_target_state", "off"),
     ("move_set_closure", "off"),
@@ -77,10 +76,7 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
             ("mon_hazard_cost", "on"),
             ("move_actor_state", "on"),
             ("trunk_layers", 3),
-            ("move_resolution", "on"),
-            ("value_threat_inject", False),
             ("obs_facts", "v1"),
-            ("move_resolution_facts", "full"),
             ("drop_progress_clock", "on"),
             ("move_target_state", "on"),
             # gen3_move_set_closure_v1 (config v154; owner 2026-10-10 "Do A", a PRE-DATA amendment of the closing
@@ -94,8 +90,8 @@ NAMED_ARMS: Dict[str, ArmDecl] = {
                 "active's state on our move seats, the four-move closure in the move belief's reinjection); the end "
                 "state, which PASSED its closing test and is production",
         design="designs/endstate/design_hand_computed_features.md §4 / §5 (and design_static_tokens.md §13)",
-        # (the overlay shrinks as the legacy deletion lands, D-LD3: U1 removed the eight op keys, which have no other
-        # value to overlay.)
+        # (the overlay shrinks as the legacy deletion lands, D-LD3: U1 removed the eight op keys and U3 the three
+        # move-resolution / threat-injection keys, which have no other value to overlay.)
     ),
 }
 
@@ -120,7 +116,7 @@ def arm_overlay(name: str) -> Dict[str, Any]:
 
 
 def legacy_production_config(mirror: Dict[str, Any]) -> Dict[str, Any]:
-    """``mirror`` (a production-config dict) with the nineteen end-state keys at their PRE-ADOPTION values — the
+    """``mirror`` (a production-config dict) with the end-state keys that still exist at their PRE-ADOPTION values — the
     LEGACY production network, for code and tests that build it on purpose (a lever's "production ⊕ lever" test
     written against the legacy base). Every other key is the mirror's."""
     out = dict(mirror)

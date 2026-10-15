@@ -205,14 +205,6 @@ class ModelVersionFields:
     # v25 TRAINING-ONLY coefficient (NOT version-locked): the speed-supervision weight (masked BCE of the
     # believed P(outspeed) toward observed move order). Recorded for provenance + flagless-resume read-back.
     spread_belief_coef: float = 0.0
-    # v64 STRUCTURAL (gen3_value_threat_inject_v1): the critic-side magnitude route — one shared
-    # zero-init Linear(reducer.extra_dim, D_MODEL) adding the op's alpha-weighted incoming row to
-    # each of OUR mons' tokens on the VALUE POOL's copy only. Adding/removing changes the
-    # state_dict, so it is gated in check_compatible with a bool compare. It also FORCES the op's
-    # reduce_how from R0 hard_max to R1 belief_mean, which builds the (parameter-free) reducer —
-    # another reason a flip cannot share weights. OFF (default) is byte-for-byte baseline; the
-    # policy path is untouched at ANY value of the projection (NO ARCH_SIGNATURE bump).
-    value_threat_inject: bool = False
     # v68 STRUCTURAL (gen3_opp_intent_v1): the ALPHA (their believed-move seats + SWITCH) and BETA
     # (which mon they bring) intent heads — two pointer scorers, so adding/removing them changes the
     # state_dict. Supervision-only (their input is detached), but STRUCTURAL all the same: a resume
@@ -243,13 +235,6 @@ class ModelVersionFields:
     # and a flip mid-run silently changes WHAT THE TRUNK IS BEING TRAINED TO DO.
     opp_intent_grad_mode: str = "detached"
 
-    # v77 STRUCTURAL (gen3_intent_move_cell_v1, G3): the POLICY-side alpha consumer — the c2
-    # status-consequence family re-delivered through the pointer MOVE cell, alpha-conditioned.
-    # WIDENS the pointer move scorer's in_features (a state_dict change on the POLICY, not the
-    # extractor), so a mismatch would be shape-caught — the check is here anyway so the failure
-    # names the cause instead of surfacing as an opaque size error deep in a load.
-    intent_move_cell: bool = False
-
     # v80 STRUCTURAL (gen3_unified_value_readout_v1, Stage-3 T3-DELIVER): the critic's unified
     # entity pool — K queries over the 12 team tokens + the op's incoming rows, zero-init output
     # riding vf only. WIDENS the value projection (a state_dict change), so a mismatch would be
@@ -266,32 +251,6 @@ class ModelVersionFields:
     # ItemBelief module — a state_dict change, so a mismatch would be shape-caught; the
     # check names the cause.
     item_belief: bool = False
-
-    # v84 STRUCTURAL (gen3_intent_threshold_v1): the α-weighted threshold operator's two
-    # zero-init projections (move cell + vf) — a state_dict change AND a pointer-cell/critic
-    # width change, so a mismatch would be shape-caught; the check names the cause.
-    intent_threshold: bool = False
-
-    # v85 STRUCTURAL (gen3_intent_conditional_v1): the mechanic-cell projection — a state_dict
-    # AND pointer-cell width change; shape-caught, the check names the cause.
-    intent_conditional: bool = False
-
-    # v93 STRUCTURAL (gen3_pair_outcome_v1): the unified outcome vector's zero-init move-cell
-    # projection — a state_dict AND pointer-move-cell width change, so a mismatch would be
-    # shape-caught; the check names the cause.
-    pair_outcome_cell: bool = False
-
-    # v94 STRUCTURAL (gen3_pair_outcome_switch_v1 / gen3_switch_branch_v1, substrate Phase B):
-    # `pair_outcome_switch` is the FIRST widener of the pointer SWITCH cell (state_dict AND
-    # switch-cell width); `switch_branch_cell` widens the MOVE cell with OA2 + the spinblock +
-    # Protect's attack mass. Both shape-caught; the checks below name the cause.
-    pair_outcome_switch: bool = False
-    switch_branch_cell: bool = False
-
-    # v95 STRUCTURAL (gen3_conditional_threat_v1, substrate Phase C): `conditional_threat_cell` is
-    # OA1 — the SECOND widener of the pointer SWITCH cell (state_dict AND switch-cell width).
-    # Shape-caught below.
-    conditional_threat_cell: bool = False
 
     # v86 STRUCTURAL (gen3_op_lean_forward_v1): drop_renders shrinks out_gain (state_dict
     # shape); believed_lean changes the d3 forward math (no shape — the version gate is the
@@ -415,10 +374,6 @@ class ModelVersionFields:
     # the same prefix. No ARCH_SIGNATURE bump while both encodings build at one commit: the string compare in
     # check_compatible is the gate.
     token_encoding: str = "legacy"
-    # gen3_move_resolution_v1 (config v141): `--move-resolution {off,on}` — F11's move-resolution family. STRUCTURAL:
-    # 'on' builds `MoveResolutionCell` (the state_dict delta) and retires the seven per-action blocks; 'off' builds
-    # nothing. Both arms build at one commit, so the string compare in check_compatible is the gate.
-    move_resolution: str = "off"
     # gen3_obs_facts_v1 (config v144, the X5 version break's part 3): `--obs-facts {off,v1}`. STRUCTURAL: `v1`
     # builds the zero-init T0 `ObsFactsInject` (the OBS-FACTS block as token content — the state_dict delta);
     # `off` (production) builds nothing. The observation carries the block either way (obs 2761 -> 2845, the
@@ -433,9 +388,8 @@ class ModelVersionFields:
     # rounds). STRUCTURAL: it builds parameters (a state_dict delta) and changes the trained forward.
     trunk_layers: int = 2
     # gen3_endstate_facts_v1 (config v152): the FACT-COMPLETION levers (`design_hand_computed_features.md` §4 ranks
-    # 3-5, §5 rank 1, finding 7). `--move-resolution-facts {off,full}` (the facts move resolution dropped, restored)
-    # and `--drop-progress-clock {off,on}` (the model reads turns_since_progress as 0). STRUCTURAL.
-    move_resolution_facts: str = "off"
+    # 3-5, §5 rank 1, finding 7). `--drop-progress-clock {off,on}` (the model reads turns_since_progress as 0).
+    # STRUCTURAL. (Its sibling `move_resolution_facts` left the config at v157, legacy deletion U3.)
     drop_progress_clock: str = "off"
     # gen3_probe_facts_v1 (config v153): `--move-target-state {off,on}` (their active's HP + status on our E3 seats).
     # STRUCTURAL (it builds a projection).
@@ -444,6 +398,12 @@ class ModelVersionFields:
     # `status_facts` / `ko_ramp` / `g_ledger` (v152) and `effective_stats` (v153). Their adopted value is the op's only
     # physics (built whenever `damage_op` is); a recorded other value in a network that built the op is REFUSED on
     # every load (`adopted_levers`, `retired_levers._adopted_rows`), and the field pops otherwise.
+    # LEGACY DELETION U3 (config v157, lanes MR + VTI): TEN more left the config — `move_resolution` (v141; the family
+    # is now DERIVED from its prerequisites), `move_resolution_facts` (v152; always `full`), `value_threat_inject`
+    # (v64; the critic's threat projection is gone) and the seven per-action blocks `intent_move_cell` (v77),
+    # `intent_threshold` (v84), `intent_conditional` (v85), `pair_outcome_cell` (v93), `pair_outcome_switch` /
+    # `switch_branch_cell` (v94) and `conditional_threat_cell` (v95), INERT beside `move_resolution on` and refused
+    # beside `off` in a network that built them (same machinery).
     move_target_state: str = "off"
     # gen3_move_set_closure_v1 (config v154): `--move-set-closure {off,on}` — every opponent slot's MoveBelief
     # reinjection reads its fixed-mass move presence (k = 4 − revealed). STRUCTURAL (it changes the forward).

@@ -32,7 +32,7 @@ fires on `getattr(args, name) is None`, so an argparse entry defaulting to anyth
 own `_resolve` line **dead code** — while `test_cli_flags_have_a_resolve_line` keeps passing, because
 the line is *present*. `test_cli_flags_argparse_default_is_none` closes the REACHABILITY half, and it
 found **five live flags** in exactly that state (2026-08-22): `value_threat_inject` (ON in the gen-17
-production config) and `opp_intent_coef` (which the structural `opp_intent` is DERIVED from) — either
+production config; deleted in legacy deletion U3) and `opp_intent_coef` (which the structural `opp_intent` is DERIVED from) — either
 of which would have made a flagless resume of PRODUCTION FATAL at `check_compatible` — plus
 `cf_evidential` / `cf_twin_heads` / `cf_shadow_critic` (all three since deleted, deletion pass L4). Use `default=None` with `action=BoolFlag` for
 a bool, so `--no-<flag>` can still turn one off explicitly on a resume, and let `_resolve` supply the
@@ -63,7 +63,7 @@ GATE live in `ModelVersion` and are reached whether or not argparse ever heard o
 |---|---|---|---|---|
 | `cli` | yes | yes | yes | via the flag |
 | `config_only` | **no** | **no** | yes | via the extractor **constructor kwarg** |
-| `constructor_only` | no | no | no | via the constructor only (`pair_reduce`'s `reduce_how`) |
+| `constructor_only` | no | no | no | via the constructor only (its example, the op's `reduce_how`, was deleted in legacy deletion U3) |
 
 **A `config_only` toggle is FROZEN at its registry `default` for every CLI-launched run** — that is
 the only value the CLI can now produce, so the default must be the value production actually wants.
@@ -95,7 +95,7 @@ runs on frozen eval/pool opponents too, whose forward is identical regardless).
 ### Dependencies — `requires=`, and why both directions are enforced
 
 A flag's DEPENDENCIES used to live only as ~30 hand-written `raise ValueError` lines inside
-`Gen3FeaturesExtractor.__init__` ("intent_threshold requires opp_intent", "value_entity_pool_full
+`Gen3FeaturesExtractor.__init__` ("value_entity_pool_full
 requires value_entity_pool", …). Nothing outside that function knew them, so `checkargs` could not
 warn about an unsatisfiable command, the generated table could not show the graph, and answering
 "what is the minimum config that turns X on?" meant reading the constructor.

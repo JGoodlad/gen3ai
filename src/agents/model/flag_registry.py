@@ -55,7 +55,7 @@ THE FOUR CLASSES say what a mismatch MEANS, which is what picks the gate:
 
 DEPENDENCIES (``requires``). A sixth surface used to exist and was not listed above, because it was
 not a surface at all — it was ~30 hand-written ``raise ValueError`` lines in
-``Gen3FeaturesExtractor.__init__`` saying things like *"intent_threshold requires opp_intent"*.
+``Gen3FeaturesExtractor.__init__`` saying things like *"move_set_closure requires opp_intent"*.
 Nothing outside that function knew them, so the launcher could not warn about an unsatisfiable
 combination, ``designs/flag_registry.md`` could not show the graph, and there was no way to ask
 "what is the minimum config that turns X on?" without reading the constructor.
@@ -272,15 +272,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               requires=("damage_op", "entity_topk_seats")),
     ModelFlag("consequence_topk", 6, Tier.CLI, Klass.STRUCTURAL, 59,
               "the consequence kernels' believed-candidate axis (C1b/C2/C3 k_cand + D4 k_bench)"),
-    ModelFlag("value_threat_inject", False, Tier.CLI, Klass.STRUCTURAL, 64,
-              "add the op's alpha-weighted incoming row to our tokens on the VALUE pool's copy",
-              requires=("damage_op",),
-              note="ON in production. Architecture audit F10 (owner 2026-10-06) screens 'off': since v142 "
-                   "(gen3_value_threat_inject_off_v1) an OFF build with the op on CONSTRUCTS the projection and the "
-                   "policy RETIRES it after SB3's orthogonal re-init (`ExtractorApi.retire_value_threat_inject`), so "
-                   "every other parameter's initial bytes equal production's and `--value-threat-inject off` is a "
-                   "one-lever arm. The critic then reads the op's incoming rows through the trunk (`prefuse_proj`) "
-                   "and `value_entity_pool`'s op-row source only."),
     ModelFlag("opp_intent", False, Tier.CLI, Klass.STRUCTURAL, 68,
               "the opponent-intent readout: X5's FLAT opponent pointer (their move seats + OTHER_move + "
               "each switch target + OTHER_species, one softmax), re-expressed as alpha / beta for the "
@@ -314,10 +305,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "NOT demoted: all three ARE typed in the live run's command, so removing "
                    "their argparse entries would make its launcher_command unlaunchable on "
                    "restart — the cleanup journey's own live-run exclusion."),
-    ModelFlag("intent_move_cell", False, Tier.CLI, Klass.STRUCTURAL, 77,
-              "G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through "
-              "the pointer MOVE cell",
-              requires=("opp_intent", "damage_op")),
     ModelFlag("value_entity_pool_full", False, Tier.CLI, Klass.STRUCTURAL, 82,
               "the entity pool's COMPLETE row set: + the refined global token and the "
               "hidden-opp belief queries",
@@ -348,87 +335,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "within ~0.6% of the static table (row-floor renorm), so enabling is "
                    "~behavior-preserving at init and the delta must EARN its movement.",
               coef_arg="item_belief_coef"),
-    ModelFlag("intent_threshold", False, Tier.CLI, Klass.STRUCTURAL, 84,
-              "the α-weighted threshold operator p_thresh(τ,⋛): Focus Punch / Substitute / "
-              "Endure / Destiny Bond / Endeavor through the pointer MOVE cell (+ p_KO as "
-              "per-slot context)",
-              note="design_conditional_execution.md §3.0 build-order step 3. Requires "
-                   "opp_intent + damage_op (+ the top-K pair-cell stash at runtime). The "
-                   "projection is zero-init ⇒ ON-at-init bit-identical. The flag used to "
-                   "build a SECOND consumer, the p_KO vf route (the ledger-H1 payoff); the "
-                   "critic-route deletion wave retired that half on dV 0.155/0.136 against a "
-                   "0.39 bar. This flag is now POLICY-ONLY, and that is deliberate.",
-              requires=("opp_intent", "damage_op")),
-    ModelFlag("intent_conditional", False, Tier.CLI, Klass.STRUCTURAL, 85,
-              "the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category "
-              "test, flinch's (1−α_SWITCH) term, Explosion's execute/into-switch facts + the "
-              "β-weighted trade KO (the FIRST forward-side β consumer), Protect's α-weighted "
-              "avoided quantities, Magic Coat's oracle-verified reflect set, Pursuit's ×2 "
-              "doubling trigger (port-verified departing-target rule)",
-              note="design_conditional_execution.md build steps 4+5+6+7. Requires opp_intent + "
-                   "damage_op + damage_outgoing + damage_matrices_outgoing (the arrival pko "
-                   "source). β is PUBLISHED like α (label_only cuts the PPO route at the same "
-                   "boundary). Zero-init ⇒ ON-at-init bit-identical; G3-gated like "
-                   "intent_threshold.",
-              requires=("opp_intent", "damage_op", "damage_outgoing", "damage_matrices_outgoing")),
-    ModelFlag("pair_outcome_cell", False, Tier.CLI, Klass.STRUCTURAL, 93,
-              "the UNIFIED per-pair OUTCOME VECTOR + its α-weighted delivery: one "
-              "pair_in[their move k, our mon j] carrying damage AND status-by-identity AND "
-              "neutralization AND tempo_cost in the same currency, reduced by ONE α over the "
-              "move axis (Contract W) and delivered to the pointer MOVE cell",
-              note="design_opponent_intent.md §5.1/§5.3 + design_pair_reduction.md §2.1/§9a. "
-                   "Phase A — the MOVE-cell half; the switch cell and the β cells are Phase B. "
-                   "Requires damage_op (the physics has one source) but NOT opp_intent: with no "
-                   "intent head α falls back to the shipped R1 belief_mean rung (α := w/Σw), so "
-                   "the DELIVERY claim is testable apart from the DISTRIBUTION claim. Zero-init "
-                   "⇒ ON-at-init bit-identical.",
-              requires=("damage_op",)),
-    ModelFlag("pair_outcome_switch", False, Tier.CLI, Klass.STRUCTURAL, 94,
-              "Phase B — the SAME α-reduced unified outcome row, per DEFENDER, delivered to the "
-              "pointer SWITCH cell (+ spin_denied: our Ghost candidate denying their believed "
-              "Rapid Spin, priced by the hazard stake it preserves)",
-              note="design_pair_reduction.md §2.1's CANONICAL defect, at its own sink: the switch "
-                   "logit's cell holds ten damage numbers, one speed number, two belief-mass "
-                   "numbers and NO status coordinate in any currency, so 'they will click "
-                   "Will-O-Wisp, bring the Natural Cure mon' is unrepresentable. The FIRST module "
-                   "to widen the switch cell. Requires damage_op but NOT pair_outcome_cell — the "
-                   "two deliver one tensor to two sinks and coupling them would make a result "
-                   "unattributable. Zero-init ⇒ ON-at-init bit-identical.",
-              requires=("damage_op",)),
-    ModelFlag("switch_branch_cell", False, Tier.CLI, Klass.STRUCTURAL, 94,
-              "Phase B — OA2, the SWITCH-BRANCH move cell: E[our move | they switch] contracted "
-              "over β (the arrival), kept DECORRELATED from the stay branch, plus the Rapid-Spin "
-              "spinblock (the Pursuit mirror: α_SWITCH × β × P(arrival is Ghost)) and Protect's "
-              "α-derived attack mass (the c4 successor — decay × will-they-attack)",
-              note="design_conditional_opponent_cells.md §2 + the owner's Rapid Spin / Protect "
-                   "specs. Requires opp_intent with NO fallback, and that is substantive: the R1 "
-                   "belief_mean rung is a presence belief over their MOVES and carries no switch "
-                   "class, so α_SWITCH would be identically 0 and every coordinate would assert "
-                   "'they never switch'. §4.1's hard prerequisite is CLOSED "
-                   "(gen3_unrevealed_outgoing_prior_v1 prices unrevealed arrivals against the "
-                   "expected-latent defender); the one residue is that pko stays NULLED there, so "
-                   "e_pko_switch is deflated in proportion to β's hidden mass while e_high_switch "
-                   "carries the magnitude. Zero-init ⇒ ON-at-init bit-identical.",
-              requires=("opp_intent", "damage_op", "damage_matrices_outgoing")),
-    ModelFlag("conditional_threat_cell", False, Tier.CLI, Klass.STRUCTURAL, 95,
-              "Phase C — OA1, the CONDITIONAL THREAT CELL (the defensive pivot): the four "
-              "α-contracted coordinates the reduced outcome row structurally cannot carry — "
-              "e_pko_acc (accuracy x P(KO), the product §0.2(2) says the OP must form), "
-              "e_type_mult (the one channel not divided by the defender's own bulk) and the two "
-              "§0.2(3) MARGINS against our own HP (max roll and crit roll), on the pointer SWITCH "
-              "cell",
-              note="design_conditional_opponent_cells.md §1 + §0.2. THREE of §1.2's clauses are "
-                   "SUPERSEDED and the substitutions are recorded in conditional_threat.py: the "
-                   "λ-weighted `w` is NOT built (pair_alpha is the shipped distribution; a second "
-                   "one would be a second α), `high`/`pko`/`status_lands` are already delivered by "
-                   "pair_outcome_switch, and §1.3's --damage-matrices-outgoing-all is VOID (deleted "
-                   "at v88). Requires damage_op + damage_matrices_incoming (the only producer of "
-                   "the per-(defender, seat) type multiplier AND of the top-K seat axis), NOT "
-                   "opp_intent — the R1 belief_mean fallback is MEANINGFUL here because every "
-                   "coordinate is a 'what lands on me if they attack' contraction. Independent of "
-                   "pair_outcome_switch on purpose: two quantities, one sink, attributable "
-                   "separately. Zero-init ⇒ ON-at-init bit-identical.",
-              requires=("damage_op", "damage_matrices_incoming")),
     ModelFlag("op_drop_renders", False, Tier.CLI, Klass.STRUCTURAL, 86,
               "design_op_tensors step 3: the op's flat forward block loses the three RENDER "
               "regions (omx/imx/OAX — serialization-only since the concat's deletion); "
@@ -524,24 +430,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "its hypothesis tokens are the dex table encoded once and gathered (exact). Builds on both "
                    "belief modes; no requirement. No ARCH_SIGNATURE bump while both encodings build at one "
                    "commit: the string compare in check_compatible is the gate."),
-    ModelFlag("move_resolution", "off", Tier.CLI, Klass.STRUCTURAL, 141,
-              "F11's MOVE-RESOLUTION family ('off' = the seven per-action blocks, production; 'on' = per legal "
-              "action, P(it resolves as stated) by the exact gen-3 rules, intent-weighted, plus the seven "
-              "blocks' FACTS consolidated and their JUDGMENTS dropped)",
-              note="Architecture audit F11 §9 (owner 2026-10-06: facts kept, judgments dropped; Destiny Bond's "
-                   "feature = P(the opponent KOs us), no threshold). 'off' builds nothing and sets no op seam: "
-                   "byte-identical. 'on' builds `agents.model.move_resolution.MoveResolutionCell` LAST from "
-                   "zero-init IsolatedLinears (no global RNG draw, skipped by SB3's orthogonal re-init) and the "
-                   "policy RETIRES the seven blocks it replaces after SB3's re-init and before the optimizer "
-                   "(`retire_superseded_action_cells`), so every other parameter's initial bytes equal "
-                   "production's: `--arch production --move-resolution on` is the ONE-lever screen arm. "
-                   "REQUIRES opp_intent (α / β weight every opponent-dependent fact), damage_op, damage_outgoing "
-                   "and both per-move matrices (the KO / hit / immunity physics). Builds on BOTH belief modes "
-                   "(gen3_move_resolution_x5_v1): under belief_tokens='fixed_mass' the same rules read the flat "
-                   "pointer, OTHER_move priced as one seat per priority level and OTHER_species as a 7th mon "
-                   "(the renormalised tail), never excluded.",
-              requires=("opp_intent", "damage_op", "damage_outgoing", "damage_matrices_incoming",
-                        "damage_matrices_outgoing")),
     ModelFlag("obs_facts", "off", Tier.CLI, Klass.STRUCTURAL, 144,
               "whether the model READS the observation's OBS-FACTS block ('off' = production, builds nothing; "
               "'v1' = the zero-init ObsFactsInject: what the opponent has seen of our team, the opponent "
@@ -589,14 +477,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     # §5 rank 1, finding 7): the FACT-COMPLETION levers. (`status_facts`, `ko_ramp` and `g_ledger` were DELETED by the
     # legacy deletion's U1 with `speed_physics`, `op_reduction`, `switch_hazard_cost`, `eot_residual` and
     # `effective_stats`: their adopted value is the op's only physics, built whenever `damage_op` is.)
-    ModelFlag("move_resolution_facts", "off", Tier.CLI, Klass.STRUCTURAL, 152,
-              "move resolution's RESTORED facts ('off' = the family as built on the 2026-10-06 list, production; "
-              "'full' = + Focus Punch survives, the Substitute survives, Endure x P(KO), Endeavor x P(not KO'd), "
-              "the hazard layers a failed Rapid Spin leaves, the layers our Ghost switch-in preserves)",
-              note="Owner 2026-10-09: these were dropped as judgments but are FACTS by §1's test. Two zero-init "
-                   "bias-free IsolatedLinears inside MoveResolutionCell (the zero-init input columns of its "
-                   "move_proj / switch_proj, built LAST, no RNG draw). Requires --move-resolution on.",
-              requires=("move_resolution",)),
     ModelFlag("drop_progress_clock", "off", Tier.CLI, Klass.STRUCTURAL, 152,
               "whether the model reads the observation's turns_since_progress ('off' = it does, production; 'on' = "
               "it reads 0 there)",
@@ -806,8 +686,8 @@ def registry_table_section() -> str:
         "",
         f"**Dependencies.** {len(dependents)} of {len(REGISTRY)} toggles name a `requires`. The "
         "column lists only DIRECT dependencies; the transitive closure is "
-        "`flag_registry.requirement_closure(name)` — e.g. enabling `intent_conditional` also "
-        f"pulls in {', '.join('`%s`' % d for d in requirement_closure('intent_conditional'))}. "
+        "`flag_registry.requirement_closure(name)` — e.g. enabling `move_set_closure` also "
+        f"pulls in {', '.join('`%s`' % d for d in requirement_closure('move_set_closure'))}. "
         "\"Enabled\" follows `flag_registry.is_enabled`: `False` / `0` / `'off'` / `'none'` are "
         "OFF, everything else is ON.",
         "",

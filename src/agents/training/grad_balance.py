@@ -269,17 +269,12 @@ def edge_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
 #: is working. Named here rather than discovered by duck-typing so that adding a cell is a deliberate
 #: one-line edit and a RENAMED cell breaks loudly instead of going quietly unmonitored.
 #:
-#: The END STATE (production since 2026-10-12) builds `--move-resolution on`, which RETIRES the first four
-#: cells after the build (`extractor_api.retire_superseded_action_cells`) and enters the pointer through the
-#: move-resolution family's own zero-init projections instead — the six `move_resolution_*` rows (the
-#: restored / status pairs exist only under `--move-resolution-facts full` / the exact status facts, both
-#: production). Without them every `cell/*` tag went dark on the production network (2026-10-14,
-#: `diagnostics_cadence_test`).
+#: The END STATE (production since 2026-10-12) enters the pointer through the move-resolution family's own zero-init
+#: projections — the six `move_resolution_*` rows (the main pair, the restored facts, the exact status facts). The
+#: four per-action cells that had rows here (`switch_branch`, `pair_outcome_move`, `pair_outcome_switch`,
+#: `conditional_threat`) were DELETED in legacy deletion U3. Without the move-resolution rows every `cell/*` tag went
+#: dark on the production network (2026-10-14, `diagnostics_cadence_test`).
 CELL_FAMILIES = (
-    ("switch_branch", "switch_branch", "proj"),
-    ("pair_outcome_move", "pair_outcome_move", "proj"),
-    ("pair_outcome_switch", "pair_outcome_switch", "proj"),
-    ("conditional_threat", "conditional_threat", "proj"),
     ("move_resolution_move", "move_resolution_cell", "move_proj"),
     ("move_resolution_switch", "move_resolution_cell", "switch_proj"),
     ("move_resolution_restored_move", "move_resolution_cell", "restored_move_proj"),
@@ -292,14 +287,13 @@ CELL_FAMILIES = (
 def cell_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
     """Per-cell observability for the zero-init pointer cells (``cell/<name>_*``).
 
-    The SAME gap `edge_family_metrics` closes, one layer over: `SwitchBranchMoveCell`,
-    `PairOutcomeMoveCell`, `PairOutcomeSwitchCell` and `ConditionalThreatCell` each enter through a
-    ZERO-INIT ``proj`` Linear (the end state's `MoveResolutionCell` through its zero-init ``move_proj`` /
-    ``switch_proj`` and the facts levers' restored / status pairs — `CELL_FAMILIES`), deliberately, so that ON-at-init is byte-identical to OFF and any
-    measured effect is something the run LEARNED. The cost of that design is that a cell which never
-    learns anything looks exactly like one that works — and gen-16 turns four of them on at once, in
-    the run that is supposed to decide whether the switch-branch channel kills the bait-loop
-    pathology. Without this, "the behaviour did not change" and "the cell never came off zero" are
+    The SAME gap `edge_family_metrics` closes, one layer over: the end state's `MoveResolutionCell` enters
+    through ZERO-INIT projections (``move_proj`` / ``switch_proj`` and the restored / status pairs —
+    `CELL_FAMILIES`; the four per-action cells this read first served were deleted in legacy deletion U3),
+    deliberately, so that ON-at-init is byte-identical to OFF and any measured effect is something the run
+    LEARNED. The cost of that design is that a cell which never learns anything looks exactly like one that
+    works (gen-16 turned four of the old cells on at once, in the run that was to decide whether the
+    switch-branch channel killed the bait-loop pathology). Without this, "the behaviour did not change" and "the cell never came off zero" are
     the same observation.
 
     Two numbers per cell, and the PAIR is what makes them readable (identically to the edge

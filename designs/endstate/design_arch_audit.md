@@ -1,6 +1,6 @@
 # Architecture audit: what is unprincipled, over-built or under-built (2026-10-05)
 
-**Status: AUDIT. As of 2026-10-06 the owner has ruled on its findings (Decision record) and F11 is BUILT behind `--move-resolution` (OFF in production, §9.4); everything else in it is as audited.** Every finding carries a bucket the owner
+**Status: AUDIT. As of 2026-10-06 the owner has ruled on its findings (Decision record) and F11 is BUILT as the move-resolution family (§9.4), adopted with the end state 2026-10-12 and, since legacy deletion U3 (2026-10-15), DERIVED (no flag) with the seven blocks it replaced DELETED; everything else in it is as audited (each finding's *Now* line gives its current state).** Every finding carries a bucket the owner
 reviews before any build: **KEEP** (principled after all, with the reason), **EXACT REFACTOR** (same function,
 bundled at the X5-adoption version break) or **BEHAVIOUR CHANGE** (needs its own test, one lever each). Audited at
 `43e0955d` against [`../ARCHITECTURE.md`](../ARCHITECTURE.md) (the statement of the model as it is now),
@@ -444,6 +444,12 @@ token injection), through `value_entity_pool`'s op-row source, and through `valu
   resolution pools states ACROSS battles, so it is not strictly WITHIN-game; the within-game sibling pairwise
   accuracy (the 0.517 meter, `paired_refit_discrimination_2026-09-14/`) is not a `critic_read` row; and with no
   `--floor-json` every label reads *vs ZERO — NO FLOOR*. Built, not trained; GPU checks DEFERRED (no lease).
+- *Now (2026-10-15):* OFF was adopted with the end state (2026-10-12; constructed, then retired) and legacy deletion U3
+  (config v157; `designs/ops/legacy_deletion_manifest_2026-10-12.md` row C1) DELETED `--value-threat-inject`, the
+  projection (`CLSPool.value_threat_proj`, `value_threat_inject.py`), `retire_value_threat_inject`, the op's
+  `reduce_how` / `PairReducer` path and the `critic_route_audit` `threat` arm: the critic reads the op's rows through
+  the trunk and `value_entity_pool`'s op-row source only. The critic-discrimination read was never run. 🚨 Deleting
+  the constructed-then-retired projection moved the fresh-init stream (D-LD7).
 
 **F11 · Seven hand-designed per-action blocks.** `intent_move_cell` (7), `intent_threshold` (6),
 `intent_conditional` (13), `pair_outcome_cell` (14), `switch_branch_cell` (9) on the move cell; `pair_outcome_switch`
@@ -715,8 +721,13 @@ the family under the flag.
 ARCHITECTURE §3.2 holds the statement of record). `off` builds nothing and sets no op seam. `on` builds ONE family —
 a 38-wide move-cell block and an 18-wide switch-cell block, each through a zero-init `IsolatedLinear` — and the
 policy retires the seven blocks after SB3's orthogonal re-init (every other parameter's initial bytes equal
-production's, pinned by test), so `--arch production --move-resolution on --allow-nonproduction-arch` is the
-one-lever screen arm (today's blocks vs the family).
+production's, pinned by test), so `--arch production --move-resolution on --allow-nonproduction-arch` was the
+one-lever screen arm (the blocks vs the family). *Now (2026-10-15):* the family was adopted with the end state
+(2026-10-12) and legacy deletion U3 (config v157, manifest rows B1 / B2) DELETED `--move-resolution`,
+`--move-resolution-facts` and the seven blocks: the family (with its restored facts) is built whenever its
+prerequisites are (`opp_intent`, the op with its outgoing block, both per-move matrices, `damage_topk_k` > 0), and the
+blocks' code is read pinned at the tag `pre-legacy-deletion`. 🚨 Their construct-then-retire draws are gone, so the
+fresh-init stream moved (D-LD7).
 
 * **The new fact**, per legal move: `p_resolve` = P(it resolves as stated: lands / not blocked / not immune / not a
   no-op) = `Σ_k α_k · A_k · L(m|k) + a_un · A_un · L_un + α_SWITCH · p_act · L_sw`, with `p_lands_stay`,
@@ -787,7 +798,7 @@ break (2026-10-07, parts 4 and 5 of `gen3_x5_version_break_v1`, Decision record)
 (block region, channel) shared across request slots and move seats (production 138 → 99 gain parameters; v145 then tied
 our team slots and their mons too, 99 → 29 — Decision record 2026-10-07), and every
 consumer that reads an op value as physics reads it PRE-gain — `intent_conditional` (our moves' high roll, P(first),
-the flinch chance) included, in both speed modes, through the op's live `last_raw_tensors` view (the family reads the
+the flinch chance; deleted in legacy deletion U3) included, in both speed modes, through the op's live `last_raw_tensors` view (the family reads the
 same view).
 
 ---
@@ -819,3 +830,4 @@ same view).
 | 2026-10-08 | **F6b built as the principled-reduction arm; screened in the bundle as NON-INFERIORITY, split on failure** | `--op-reduction principled` (config v146, OFF in production): every per-channel hard maximum over the opponent's believed moves becomes the α-weighted EXPECTATION (α = the attacker's presence / its total presence, ONE mixture per attacker for every channel and defender) plus the noisy-OR KO worst case per our mon (zero-init `op_worst_proj`, +256 parameters); `max` byte-identical (dynamo graph, state_dict, outputs; K9 learner golden unchanged). Screened with `--token-encoding static`, `--move-resolution on` and `--speed-physics on` as ONE bundle vs production (owner), NON-INFERIORITY, split on failure | The flat opponent pointer's α at the op (unbuildable: T2 → T1, the tier contract — and the doc's own "swap `_chan_max`'s `how=`" note); a learned pool over the active's moves (the trunk's attention over the E4 tokens IS that pool); the learned E5 bench pool sub-flag (skipped: not cheap for one token per mon); a crit-KO noisy-OR; noisy-OR columns at the edge kernels (width) | owner 2026-10-08 (dispatch); `op_reduction_test.py`, `op_reduction_extractor_test.py`; `measurements/op_reduction_f6b_2026-10-08/`; CHANGELOG v146; ledger 2026-10-08 |
 | 2026-10-09 | **The static PORT fixes static's two position-keyed weights** (`gen3_static_port_v1`, config v147; `design_static_tokens.md` §12) | Under `--token-encoding static` the v145 sweep's two static items are fixed: S reads the type pair as a SET (`emb(t1) + emb(t2)`; the obs lists types alphabetically), and the op content's outgoing route is a Deep Sets function of our moves (a shared bias-free per-move `Linear(6, 32)` + ReLU, summed, then a zero-init `Linear(32, 128)`) instead of a request-ordered `Linear(24, 128)`. A full-forward test permutes our team slots. Legacy (production) keeps F14's sorted-by-id concat and its alphabetical type pair (it leaves with legacy if `static` is adopted) | Fixing legacy's type pair too (a production retrain-class change with no screen; static is the adoption path) | `static_port_test.py`; `measurements/static_port_identity_2026-10-09/` |
 | 2026-10-15 | **F6b and F7b: the legacy sides DELETED** (legacy deletion U1, config v156; `designs/ops/legacy_deletion_manifest_2026-10-12.md` D4 / D5) | `--op-reduction` and `--speed-physics` are deleted with their OFF paths (the per-channel hard maxima and the two dominant-move `argmax` payload sites; the `sigmoid(Δspe / 15)` logistic and `_DMG_SPEED_SCALE`); the principled reduction and the speed physics are unconditional behind `damage_op` (D-LD2). A checkpoint that built the op with `max` / `off` is refused, read pinned at `pre-legacy-deletion` | keeping the OFF paths for a bisection (D-LD4) | K9 learner golden byte-identical; `op_reduction_extractor_test.py`, `speed_physics_extractor_test.py` |
+| 2026-10-15 | **F10 and F11: the legacy sides DELETED** (legacy deletion U3, config v157; `designs/ops/legacy_deletion_manifest_2026-10-12.md` B1 / B2 / C1) | `--value-threat-inject` and the critic's threat projection, `--move-resolution` / `--move-resolution-facts` and the seven per-action blocks are deleted with their OFF paths; move resolution and its restored facts are DERIVED from their prerequisites (D-LD2). 🚨 The fresh-init stream moved (D-LD7: the deleted modules were constructed then retired); the trained network's shape is unchanged | keeping the OFF paths for a bisection (D-LD4: an ablation runs pinned at `pre-legacy-deletion`) | the ledger's U3 entry; `research_state/measurements/legacy_deletion_u3_init_2026-10-15/` |

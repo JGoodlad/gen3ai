@@ -177,14 +177,6 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             self.mlp_extractor.policy_net = th.nn.Sequential()
             self.mlp_extractor.latent_dim_pi = fe.policy_ctx_dim
             pointer_hidden = TRUNK_POINTER_HIDDEN
-        # gen3_move_resolution_v1 (v141, `--move-resolution on`): retire the seven per-action blocks the
-        # move-resolution family replaces, at the same point and for the same reason (`off`: a no-op).
-        if hasattr(fe, "retire_superseded_action_cells"):
-            fe.retire_superseded_action_cells()
-        # gen3_value_threat_inject_off_v1 (v142, `--value-threat-inject off`, audit F10): retire the critic's
-        # token-content threat projection at the same point and for the same reason (ON: a no-op).
-        if hasattr(fe, "retire_value_threat_inject"):
-            fe.retire_value_threat_inject()
         self.pointer_head = PointerNativeActionHead(
             # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),
             # not the raw 32-dim PokemonEncoder tokens — the extractor owns the width.

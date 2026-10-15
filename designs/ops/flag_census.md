@@ -14,8 +14,8 @@
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
 | DELETED by P11 (the whole census: B1-B5, P11b, P11c, P11d) | 37 | 0 | 37 |
-| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`; +1, `--obs-facts`, the X5 version break's part 3 2026-10-07; +1, `--allow-low-disk`, the disk guard 2026-10-09; +1, `--t2-lead-trainee`, T25 perf lever 4 2026-10-10; −8, the op levers `--speed-physics` / `--op-reduction` / `--switch-hazard-cost` / `--eot-residual` / `--status-facts` / `--ko-ramp` / `--g-ledger` / `--effective-stats`, DELETED by the legacy deletion's U1 2026-10-15; RE-MEASURED from the parsers that day, which also counts the flags added since without a line here) | 182 | 9 | 191 |
-| verdicts NOW | KEEP 182 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
+| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`; +1, `--obs-facts`, the X5 version break's part 3 2026-10-07; +1, `--allow-low-disk`, the disk guard 2026-10-09; +1, `--t2-lead-trainee`, T25 perf lever 4 2026-10-10; −8, the op levers `--speed-physics` / `--op-reduction` / `--switch-hazard-cost` / `--eot-residual` / `--status-facts` / `--ko-ramp` / `--g-ledger` / `--effective-stats`, DELETED by the legacy deletion's U1 2026-10-15; RE-MEASURED from the parsers that day, which also counts the flags added since without a line here; −10, `--move-resolution` / `--move-resolution-facts` / `--value-threat-inject` and the seven per-action block flags, DELETED by the legacy deletion's U3 2026-10-15) | 172 | 9 | 181 |
+| verdicts NOW | KEEP 172 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -64,6 +64,7 @@
 **Deleted after the census closed, by the legacy + judgment deletion** ([`legacy_deletion_manifest_2026-10-12.md`](legacy_deletion_manifest_2026-10-12.md); each also has a row in [`deleted_flags.md`](../deleted_flags.md)):
 
 * U1 (lane OP, config v156, 2026-10-15): `--speed-physics`, `--op-reduction`, `--switch-hazard-cost`, `--eot-residual`, `--status-facts`, `--ko-ramp`, `--g-ledger`, `--effective-stats` — each an end-state lever whose OFF value was legacy or a judgment; the adopted behaviour is built whenever the damage op is (D-LD2), and a checkpoint that built the op with an OFF value runs PINNED at `pre-legacy-deletion`
+* U3 (lanes MR + VTI, config v157, 2026-10-15): `--move-resolution` (now DERIVED from its prerequisites), `--move-resolution-facts` (always `full` inside the family), `--value-threat-inject` (the critic's token-content threat projection, deleted), and the seven per-action blocks move resolution superseded — `--intent-move-cell`, `--intent-threshold`, `--intent-conditional`, `--pair-outcome-cell`, `--pair-outcome-switch`, `--switch-branch-cell`, `--conditional-threat-cell`; a checkpoint that recorded a non-adopted value beside move resolution's prerequisites runs PINNED at `pre-legacy-deletion`
 
 **Planned, not yet shipped:** (none — the census is CLOSED: the DELETE column, the ONE-VALUED sweep and every NEEDS-OWNER row are done; a flag that arrives later arrives with a row naming its live user, `flag_census_test.py`)
 
@@ -171,11 +172,9 @@
 | `--diagnostic-fork-consent` | — | 0 / 0 | THE DIAGNOSTIC-FORK CONSENT (`main.train.diagnostic_fork`; `designs/endstate/design_information_levers.md` §6): a fork may change `--oracle-reveal` from its parent's recorded spec, with a recorded reason — the hidden-information study's knock-in forks (`design_hidden_info_binding.md` §8) | **KEEP** |
 | `--oracle-reveal` | — | 0 / 0 | a DIAGNOSTIC observation mode (`oracle_reveal`, config v137; `off` = production; `species` / `full` = the X5 A/B's oracle-species / oracle-full arms, `designs/endstate/design_x5_belief_tokens.md` §7.6; any information-lever spec the observation honours, e.g. the hidden-info study's knock-in `ki_moves`, `designs/endstate/design_information_levers.md` §6) | **KEEP** |
 | `--policy-readout` | — | 0 / 0 | `--arch production`: `production_config.json` `policy_readout` = `"tower"`; the architecture audit F2 screen's `trunk` arm (`designs/endstate/design_arch_audit.md` F2, config v138) | **KEEP** |
-| `--move-resolution` | — | 0 / 0 | `--arch production`: `production_config.json` `move_resolution` = `"off"`; the architecture audit F11 screen's `on` arm (the move-resolution family, `designs/endstate/design_arch_audit.md` §9, config v141) | **KEEP** |
 | `--mon-hazard-cost` | — | 0 / 0 | `--arch production`: `production_config.json` `mon_hazard_cost` = `"off"`; a narrow fact for `--token-encoding static` (every mon's own side's Spikes layers + its switch-in HP cost, the op's one entry rule; the static diagnostic's H2 / H3, `designs/endstate/design_static_tokens.md` §12, config v147) | **KEEP** |
 | `--move-actor-state` | — | 0 / 0 | `--arch production`: `production_config.json` `move_actor_state` = `"off"`; a narrow fact for `--token-encoding static` (our active's HP + status onto its E3 move seats; `designs/endstate/design_static_tokens.md` §12, config v147) | **KEEP** |
 | `--trunk-layers` | — | 0 / 0 | `--arch production`: `production_config.json` `trunk_layers` = `2`; the static-recovery arm's `3` (identity-init pre-LN extra trunk rounds; `designs/endstate/design_static_tokens.md` §13, config v150) | **KEEP** |
-| `--move-resolution-facts` | — | 0 / 0 | `--arch production`: `production_config.json` `move_resolution_facts` = `"off"`; the end-state arm's `full` (the facts move resolution dropped, restored; `designs/endstate/design_hand_computed_features.md` §4 rank 5, config v152) | **KEEP** |
 | `--drop-progress-clock` | — | 0 / 0 | `--arch production`: `production_config.json` `drop_progress_clock` = `"off"`; the end-state arm's `on` (the model reads `turns_since_progress` as 0; §5 rank 1, config v152) | **KEEP** |
 | `--move-target-state` | — | 0 / 0 | `--arch production`: `production_config.json` `move_target_state` = `"off"`; the end-state arm's `on` (their active's HP + status on our E3 seats; §4 row 13, config v153) | **KEEP** |
 | `--move-set-closure` | — | 0 / 0 | `--arch production`: `production_config.json` `move_set_closure` = `"off"`; the end-state arm's `on` (owner 2026-10-10, a pre-data amendment of the closing test; the four-move fact in the bench / hidden reinjection; `design_hand_computed_features.md` §4 rank 15, config v154) | **KEEP** |
@@ -202,22 +201,14 @@
 |---|---|---|---|---|
 | `--rank-tripwire` | — | 36 / 5 | `--arch production`: `production_config.json` `rank_tripwire` = `"warn"`; the rank/policy_pr watchdog; default `warn` registers its callback in every run | **KEEP** |
 | `--rank-tripwire-drop` | — | 0 / 0 | `--arch production`: `production_config.json` `rank_tripwire_drop` = `0.2`; the tripwire's threshold (the callback reads it) | **KEEP** |
-| `--intent-move-cell` | — | 184 / 34 | `--arch production`: `production_config.json` `intent_move_cell` = `true` | **KEEP** |
 | `--value-entity-pool-full` | — | 180 / 34 | `--arch production`: `production_config.json` `value_entity_pool_full` = `true` | **KEEP** |
-| `--pair-outcome-cell` | — | 171 / 34 | `--arch production`: `production_config.json` `pair_outcome_cell` = `true` | **KEEP** |
-| `--pair-outcome-switch` | — | 171 / 34 | `--arch production`: `production_config.json` `pair_outcome_switch` = `true` | **KEEP** |
-| `--switch-branch-cell` | — | 171 / 34 | `--arch production`: `production_config.json` `switch_branch_cell` = `true` | **KEEP** |
-| `--conditional-threat-cell` | — | 171 / 34 | `--arch production`: `production_config.json` `conditional_threat_cell` = `true` | **KEEP** |
-| `--intent-threshold` | — | 180 / 34 | `--arch production`: `production_config.json` `intent_threshold` = `true` | **KEEP** |
 | `--op-drop-renders` | — | 180 / 34 | `--arch production`: `production_config.json` `op_drop_renders` = `true` | **KEEP** |
 | `--op-believed-lean` | — | 180 / 34 | `--arch production`: `production_config.json` `op_believed_lean` = `true` | **KEEP** |
-| `--intent-conditional` | — | 180 / 34 | `--arch production`: `production_config.json` `intent_conditional` = `true` | **KEEP** |
 | `--item-belief` | — | 180 / 34 | `--arch production`: `production_config.json` `item_belief` = `true` | **KEEP** |
 | `--history-events` | — | 180 / 34 | `--arch production`: `production_config.json` `history_events` = `true` | **KEEP** |
 | `--value-entity-pool` | — | 181 / 34 | `--arch production`: `production_config.json` `value_entity_pool` = `true` | **KEEP** |
 | `--intent-label-bot-weight` | — | 171 / 34 | `--arch production`: `production_config.json` `intent_label_bot_weight` = `0.25`; `--arch production`: `recipe.fresh.intent_label_bot_weight` = `0.25` | **KEEP** |
 | `--opp-intent-coef` | — | 185 / 34 | `--arch production`: `recipe.fresh.opp_intent_coef` = `0.05` | **KEEP** |
-| `--value-threat-inject` | — | 186 / 34 | `--arch production`: `production_config.json` `value_threat_inject` = `true` | **KEEP** |
 | `--policy-grad-coef` | — | 3 / 0 | `--arch production`: `production_config.json` `policy_grad_coef` = `1.0` | **KEEP** |
 | `--move-latent` | — | 184 / 34 | `--arch production`: `production_config.json` `move_latent` = `true` | **KEEP** |
 | `--move-belief-latent-coef` | — | 184 / 34 | `--arch production`: `production_config.json` `move_belief_latent_coef` = `0.05`; `--arch production`: `recipe.fresh.move_belief_latent_coef` = `0.05` | **KEEP** |

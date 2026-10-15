@@ -62,99 +62,21 @@ _UVR_N_SOURCES = 3
 # checkpoints keep loading.
 _UVR_N_SOURCES_FULL = 5
 
-# gen3_intent_move_cell_v1 (G3, design_conditional_execution.md): the alpha-conditioned c2
-# status-consequence channels appended to the pointer MOVE cell. `_INTENT_MOVE_CELL_RAW` is the
-# raw channel stack [is_status, d_their_outspeed, e_burn_alpha, d_sched, e_slp_alpha,
-# e_slp_free_turns, alpha_stay]; `INTENT_MOVE_CELL_DIM` is the zero-init projection's output width
-# (what the pointer move scorer's in_features grow by when the flag is on).
-INTENT_MOVE_CELL_DIM = 7
-_INTENT_MOVE_CELL_RAW = 7
-
-# gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 / build-order step 3): the
-# α-weighted THRESHOLD operator `p_thresh(τ, ⋛) = Σ_k α_k · 1[damage(k, me) ⋛ τ]` — one
-# contraction over the op's already-computed per-candidate cells that lands five mechanics at
-# once (Focus Punch / Substitute / Endure / Destiny Bond / Endeavor) plus `p_KO` as per-slot
-# context. `_INTENT_THRESH_RAW_MOVE` is the per-request-slot raw stack
-# [fp_execute, sub_survives, endure_pko, dbond_pko, endeavor_survive, p_ko_context] and
-# `INTENT_THRESH_MOVE_DIM` the zero-init projection's output width. (`_INTENT_THRESH_RAW_VF` —
-# the critic's [p_ko, p_sub_broken, p_fp_broken] stack — is deleted with `IntentThresholdValue`
-# in the critic-route deletion wave: dV 0.155 / 0.136 against a 0.39 bar. The POLICY cell STAYS.)
-INTENT_THRESH_MOVE_DIM = 6
-_INTENT_THRESH_RAW_MOVE = 6
-
-# gen3_intent_conditional_v1 (v85, design_conditional_execution.md build steps 4+7): the
-# remaining α-conditioned mechanic cells — Counter / Mirror Coat (the category test), flinch's
-# missing (1−α_SWITCH) term, Explosion's execute/into-switch facts, and Pursuit's doubling
-# trigger (the PORT-verified rule: the strike hits the DEPARTING mon at ×2 BP never-miss, so no
-# β is needed — the design doc's β-weighted-arrival formula was wrong on the target).
-# `_INTENT_COND_RAW` is the per-request-slot raw stack [counter_return, mc_return, cat_match,
-# flinch_useful, boom_executes, boom_into_switch, pursuit_trigger, pursuit_bonus,
-# protect_dmg_avoided, protect_p_success, protect_status_avoided, magiccoat_reflect] — the
-# protect trio is build step 5 (§3.3): c4 carried the mechanical p_success and OMITTED the
-# α-weighted quantity it multiplies; here both ride decorrelated, plus the α mass on status
-# seats. magiccoat_reflect is step 6 (§3.12), built AFTER its G0 oracle resolved the
-# reflectable set (measurements/gen3_magiccoat_reflectable_oracle.json: foe-targeting status
-# bounces; side-targeting Spikes does NOT). boom_trade_ko is §3.1's β half — the FIRST
-# forward-side β consumer: P(the detonation KOs its actual target), α_stay-weighted vs their
-# active plus α_SWITCH·β-weighted vs the arrival (needs the outgoing matrix's per-(move, their
-# mon) pko — hence intent_conditional requires damage_matrices_outgoing).
-INTENT_COND_MOVE_DIM = 13
-_INTENT_COND_RAW = 13
-
-# gen3_pair_outcome_v1 (v93, design_opponent_intent.md §5.1 + design_pair_reduction.md §2.1/§9a):
-# the UNIFIED PER-PAIR OUTCOME VECTOR — one `pair_in[k, j, :]` per (their believed move k, our mon
-# j) carrying damage AND status AND neutralization AND tempo in the SAME vector, reduced by ONE
-# shared α over the move axis and delivered to the pointer MOVE cell.
+# gen3_pair_outcome_v1 (design_opponent_intent.md §5.1 + design_pair_reduction.md §2.1/§9a): the UNIFIED PER-PAIR
+# OUTCOME GRID — one `pair_in[j, k, :]` per (our mon j, their believed move k) carrying damage AND status in the SAME
+# vector, which the move-resolution family reads (`move_resolution.gather_ops`).
 #
-# `_PAIR_OUTCOME_DMG` is the op's existing pair-cell width — the F axis of `last_pair_cells`:
-# [low, high, crit, ko_ramp, acc, is_phys]; `_PAIR_OUTCOME_NEW` is the eight
-# coordinates gen3_pair_outcome_v1 adds (6 per-identity status landing probabilities + neutralization
-# + tempo_cost — the full table with each coordinate's §9a admission answer lives in
-# `pair_outcome.py`). `_PAIR_OUTCOME_RAW` is their concatenation = the reduced row's width;
-# `PAIR_OUTCOME_MOVE_DIM` is the zero-init projection's output width (what the pointer move
-# scorer's in_features grow by when the flag is on).
+# `_PAIR_OUTCOME_DMG` is the op's pair-cell width — the F axis of `last_pair_cells`:
+# [low, high, crit, ko_ramp, acc, is_phys]; `_PAIR_OUTCOME_NEW` is the eight coordinates after it (6 per-identity
+# status landing probabilities + the two exact status facts; the table is `pair_outcome.PAIR_OUTCOME_COORDS`).
+# `_PAIR_OUTCOME_RAW` is their concatenation = the grid's width. (The seven per-action blocks that once delivered
+# this grid and its siblings to the pointer cells, with their width constants, were deleted in legacy deletion U3.)
 _PAIR_OUTCOME_DMG = 6
 _PAIR_OUTCOME_NEW = 8
 _PAIR_OUTCOME_RAW = _PAIR_OUTCOME_DMG + _PAIR_OUTCOME_NEW      # 14
-PAIR_OUTCOME_MOVE_DIM = _PAIR_OUTCOME_RAW
 
-# gen3_pair_outcome_switch_v1 (v94, Phase B — design_pair_reduction.md §2.1's CANONICAL defect):
-# the same α-reduced outcome row, per DEFENDER, at the pointer SWITCH cell. Phase A delivered our
-# ACTIVE's row to the move cells as CONTEXT; §2.1's decision ("they will click Will-O-Wisp, so
-# bring the Natural Cure mon") is made at the SWITCH logit, whose cell holds ten damage numbers,
-# one speed number, two belief-mass numbers and NO status coordinate in any currency.
-#
-# `_PAIR_OUTCOME_SWITCH_EXTRA` is the one coordinate that is per-DEFENDER and is not part of the
-# reduced row: `spin_denied` (the Pursuit mirror's defensive half — our Ghost candidate denies
-# their believed Rapid Spin, priced by the hazard stake it preserves). The full table with each
-# coordinate's §9a admission answer lives in `pair_outcome.py`.
-_PAIR_OUTCOME_SWITCH_EXTRA = 1
-_PAIR_OUTCOME_SWITCH_RAW = _PAIR_OUTCOME_RAW + _PAIR_OUTCOME_SWITCH_EXTRA   # 15
-PAIR_OUTCOME_SWITCH_DIM = _PAIR_OUTCOME_SWITCH_RAW
-
-# gen3_switch_branch_v1 (v94, Phase B — design_conditional_opponent_cells.md §2 "OA2, the
-# SWITCH-BRANCH MOVE CELL", plus the owner's Rapid-Spin spinblock and the Protect α-conditioning):
-# per-request-slot content for the branch in which the OPPONENT SWITCHES. Gen-3 is
-# simultaneous-move, so P(they switch) is ONE scalar for the turn (§2.1) — but the CONSEQUENCE is
-# per-move, because switches resolve first and our move lands on the ARRIVAL, which β names.
-# `_SWITCH_BRANCH_RAW` is the coordinate count; the table with the §9a answers is in
-# `switch_branch.py`.
-_SWITCH_BRANCH_RAW = 9
-SWITCH_BRANCH_MOVE_DIM = _SWITCH_BRANCH_RAW
-
-# gen3_conditional_threat_v1 (v95, Phase C — design_conditional_opponent_cells.md §1 "OA1, the
-# CONDITIONAL THREAT CELL"): the defensive-pivot coordinates the α-reduced outcome row structurally
-# cannot carry — the accuracy-folded P(this mon dies) (§0.2(2)'s "precompute every nonlinearity of
-# two numbers in the op"), the bulk-INDEPENDENT expected type multiplier, and the two §0.2(3)
-# MARGINS (max roll and crit roll) that say by how much a saturated probability saturates. Delivered
-# to the pointer SWITCH cell. §1.2's `λ`-weighted `w` is NOT built — `pair_alpha` is the shipped
-# distribution and a second one would be a second α; the full substitution table and each
-# coordinate's §9a admission answer are in `conditional_threat.py`.
-_CONDITIONAL_THREAT_RAW = 4
-CONDITIONAL_THREAT_SWITCH_DIM = _CONDITIONAL_THREAT_RAW
-
-# gen3_move_resolution_v1 (config v141, `--move-resolution on`; architecture audit F11 §9): the MOVE-RESOLUTION
-# family that REPLACES the seven blocks above — per legal action, P(it resolves as stated) and its factors, plus
+# gen3_move_resolution_v1 (config v141; architecture audit F11 §9): the MOVE-RESOLUTION family that REPLACED the seven
+# per-action blocks (deleted, legacy deletion U3) — per legal action, P(it resolves as stated) and its factors, plus
 # the seven blocks' 55 FACT coordinates consolidated (their judgments dropped). The coordinate tables are
 # `move_resolution_rules.MOVE_RESOLUTION_{MOVE,SWITCH}_COORDS`; each block rides through a zero-init projection
 # of the same width.

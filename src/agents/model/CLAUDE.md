@@ -213,7 +213,7 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
   every adopted checkpoint keep loading); a unit lands by adding itself to `LANDED_UNITS` AND its first config
   version to `UNIT_VERSIONS` — a config written at or after that version cannot record the unit's fields, so an
   ABSENT field there reads ADOPTED (`absent_value`; before it, the pre-version OFF value). U1 (the eight op levers)
-  has landed. A bare
+  and U3 (move resolution, its facts, the seven per-action blocks and the critic's threat injection) have landed. A bare
   `MaskablePPO.load` of an old zip TypeErrors; loaders go through `snapshot.historical_load_kwargs`.
 - **Parameter ORDER:** the optimizer state saves by position; `main/train/checkpoint_state._validate_or_reset_optimizer_state`
   remaps it BY NAME on every resume (`src/main/resume_optimizer_realign_test.py`). Appending new params
@@ -233,12 +233,14 @@ metric inventory: `opponent_intent.md`.
   classes whose proportions MOVE over a run, so a rising pooled metric can be the mix, not the head.
 - 🚨 **A `β` slot's name has two provenances** (revealed board vs the model's own posterior); traces flag it
   `"revealed"` and the read side attaches `BELIEF_NAME_CAVEAT` (`src/main/prober/CLAUDE.md`).
-- **An α CONSUMER** (`pair_outcome.py` is the template): T1 produces, T2 consumes; read
+- **An α CONSUMER** (`move_resolution.py`'s `gather_ops` is the template, and since legacy deletion U3 the only one;
+  `pair_outcome.py` holds the op grid's coordinate contract and `pair_alpha_full`): T1 produces, T2 consumes; read
   `FlatConsumerOps.alpha` / `.beta`, UNRENORMALIZED (OTHER_move a priced seat; the switch mass means "no
   outcome this turn"); align by construction and fail loud on a width mismatch
   (`intent_axis_alignment_test.py`); zero-init the projection; stop-grad α on a policy-side consumer.
-  ⚠️ **A fallback that silently states something false is worse than refusing** (`SwitchBranchMoveCell`
-  requires `opp_intent` rather than assert "they never switch"). A critic-facing α consumer extends
+  ⚠️ **A fallback that silently states something false is worse than refusing** (move resolution is built
+  only with `opp_intent` — a presence belief carries no switch class, so a fallback would assert "they never
+  switch"; without it the family is not built at all). A critic-facing α consumer extends
   `value_route_gradient_test.py` in the same pass.
 
 ## Static typing (mypy)

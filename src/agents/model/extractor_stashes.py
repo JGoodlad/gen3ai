@@ -11,7 +11,6 @@ import torch
 from agents.model.extractor_ctx import PointerInputs
 from agents.model.flat_intent import FlatConsumerOps, FlatIntentInputs
 from agents.model.hypothesis_set import HypothesisSet
-from agents.model.intent_threshold import ThresholdProbs
 
 @dataclass
 class ExtractorStashes:
@@ -38,7 +37,6 @@ class ExtractorStashes:
     flat_intent_logits: Optional[torch.Tensor] = None
     flat_intent: Optional["FlatIntentInputs"] = None
     flat_consumer_ops: Optional["FlatConsumerOps"] = None   # the consumers' operands (read-only; tests / readers)
-    thresh_probs: Optional[ThresholdProbs] = None    # T2-computed, read by the vf route at T3
     # --- belief bank (publications; the LIVE views live in `belief_supervision`) -------------
     belief_logits: Optional[Dict[str, torch.Tensor]] = None  # species/moves aux dict (refined opp)
     opp_believed_mask: Optional[torch.Tensor] = None  # [B,6] bool: un-revealed opp slots

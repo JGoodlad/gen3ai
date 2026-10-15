@@ -275,98 +275,76 @@ def test_it_reads_the_REAL_extractors_families():
 
 
 # ------------------------------------------------------------------ per-CELL liveness
-# The same gap one layer over: the four pointer cells enter through a ZERO-INIT `proj`, so an
+# The same gap one layer over: the pointer cells enter through ZERO-INIT projections, so an
 # enabled cell that never learns contributes exactly zero to every logit and is indistinguishable
-# from one that works. gen-16 turns them on in the run meant to decide whether the switch-branch
-# channel kills the bait-loop pathology, where "no behaviour change" and "the cell never moved"
-# must not be the same observation.
-
-class _FakeCell(th.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.proj = th.nn.Linear(4, 8)
-        th.nn.init.zeros_(self.proj.weight)
-        th.nn.init.zeros_(self.proj.bias)
-
+# from one that works — "no behaviour change" and "the cell never moved" must not be the same
+# observation.
 
 class _FakeCellExtractor(th.nn.Module):
-    def __init__(self, cells=("switch_branch", "pair_outcome_move")):
+    """An extractor carrying the END STATE's pointer-cell module with only the named projections built (each a plain
+    zero-init Linear; the rest None, i.e. unbuilt). Legacy deletion U3 deleted the four `proj` cells these stub tests
+    first used, so they now exercise the same rules on `move_resolution_cell`."""
+    def __init__(self, projs=("move_proj", "switch_proj")):
         super().__init__()
-        for c in cells:
-            setattr(self, c, _FakeCell())
+        cell = th.nn.Module()
+        for _n, _attr, proj in CELL_FAMILIES:
+            if proj in projs:
+                lin = th.nn.Linear(4, 8)
+                th.nn.init.zeros_(lin.weight)
+                th.nn.init.zeros_(lin.bias)
+                setattr(cell, proj, lin)
+            else:
+                setattr(cell, proj, None)
+        if projs:
+            self.move_resolution_cell = cell
 
 
 def test_cell_metrics_are_absent_when_no_cell_is_enabled():
     """A flag-gated cell is ABSENT from the extractor when off, and an absent cell must produce no
     metric — a zero would read as 'enabled but dead', which is a different claim."""
     assert cell_family_metrics(th.nn.Linear(2, 2)) == {}
-    assert cell_family_metrics(_FakeCellExtractor(cells=())) == {}
+    assert cell_family_metrics(_FakeCellExtractor(projs=())) == {}
 
 
 def test_only_the_ENABLED_cells_are_reported():
-    m = cell_family_metrics(_FakeCellExtractor(cells=("switch_branch",)))
-    assert set(m) == {"cell/switch_branch_weight_norm"}
+    m = cell_family_metrics(_FakeCellExtractor(projs=("move_proj",)))
+    assert set(m) == {"cell/move_resolution_move_weight_norm"}
 
 
 def test_a_zero_init_cell_reads_zero_weight_norm():
     m = cell_family_metrics(_FakeCellExtractor())
-    assert m["cell/switch_branch_weight_norm"] == pytest.approx(0.0)
-    assert m["cell/pair_outcome_move_weight_norm"] == pytest.approx(0.0)
+    assert m["cell/move_resolution_move_weight_norm"] == pytest.approx(0.0)
+    assert m["cell/move_resolution_switch_weight_norm"] == pytest.approx(0.0)
 
 
 def test_a_cell_that_has_learned_reads_nonzero():
     fe = _FakeCellExtractor()
     with th.no_grad():
-        fe.switch_branch.proj.weight.add_(0.5)
+        fe.move_resolution_cell.move_proj.weight.add_(0.5)
     m = cell_family_metrics(fe)
-    assert m["cell/switch_branch_weight_norm"] > 0.0
-    assert m["cell/pair_outcome_move_weight_norm"] == pytest.approx(0.0), "only the touched cell moves"
+    assert m["cell/move_resolution_move_weight_norm"] > 0.0
+    assert m["cell/move_resolution_switch_weight_norm"] == pytest.approx(0.0), "only the touched cell moves"
 
 
 def test_cell_grad_norm_appears_only_after_a_backward():
     """The PAIR is the point: weight~0 AND grad~0 = dead; weight~0 with grad>0 = still climbing."""
     fe = _FakeCellExtractor()
-    assert "cell/switch_branch_grad_norm" not in cell_family_metrics(fe)
-    fe.switch_branch.proj(th.ones(2, 4)).sum().backward()
+    assert "cell/move_resolution_move_grad_norm" not in cell_family_metrics(fe)
+    fe.move_resolution_cell.move_proj(th.ones(2, 4)).sum().backward()
     m = cell_family_metrics(fe)
-    assert m["cell/switch_branch_grad_norm"] > 0.0
-    assert "cell/pair_outcome_move_grad_norm" not in m, "an untouched cell still has no grad"
+    assert m["cell/move_resolution_move_grad_norm"] > 0.0
+    assert "cell/move_resolution_switch_grad_norm" not in m, "an untouched cell still has no grad"
 
 
 def test_cell_families_names_match_the_extractor_attributes():
     """The list is DECLARED, not duck-typed, so a renamed cell must break here rather than go
-    quietly unmonitored. These four attribute names are what `Gen3FeaturesExtractor` assigns."""
+    quietly unmonitored. `move_resolution_cell` is what `Gen3FeaturesExtractor` assigns (the four per-action
+    `proj` cells that also had rows were deleted in legacy deletion U3)."""
     assert [(attr, proj) for _n, attr, proj in CELL_FAMILIES] == [
-        ("switch_branch", "proj"), ("pair_outcome_move", "proj"), ("pair_outcome_switch", "proj"),
-        ("conditional_threat", "proj"),
         ("move_resolution_cell", "move_proj"), ("move_resolution_cell", "switch_proj"),
         ("move_resolution_cell", "restored_move_proj"), ("move_resolution_cell", "restored_switch_proj"),
         ("move_resolution_cell", "status_move_proj"), ("move_resolution_cell", "status_switch_proj")]
-    assert all(name == attr for name, attr, _p in CELL_FAMILIES[:4])
     assert len({name for name, _a, _p in CELL_FAMILIES}) == len(CELL_FAMILIES), "a metric name is reused"
-
-
-def test_the_REAL_cells_expose_the_zero_init_proj_this_metric_reads():
-    """Pins the contract against the actual classes, not a stub: each cell must carry a `proj`
-    Linear zeroed at construction. A cell that renamed it, or dropped the zero init, would keep
-    passing every stub test above while emitting nothing (or a meaningless non-zero) in flight."""
-    from torch import nn as _nn
-
-    from agents.model.conditional_threat import ConditionalThreatCell
-    from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
-    from agents.model.switch_branch import SwitchBranchMoveCell
-
-    class _RealCells(_nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.switch_branch = SwitchBranchMoveCell(8)
-            self.pair_outcome_move = PairOutcomeMoveCell(8)
-            self.pair_outcome_switch = PairOutcomeSwitchCell(8)
-            self.conditional_threat = ConditionalThreatCell(8)
-
-    m = cell_family_metrics(_RealCells())
-    assert set(m) == {f"cell/{n}_weight_norm" for n, a, _p in CELL_FAMILIES if a != "move_resolution_cell"}
-    assert all(v == pytest.approx(0.0) for v in m.values()), "every cell ships zero-init"
 
 
 class _FakeMoveResolution(th.nn.Module):
@@ -383,9 +361,9 @@ class _FakeMoveResolution(th.nn.Module):
 
 
 def test_the_END_STATE_move_resolution_cell_is_monitored_projection_by_projection():
-    """The production network since 2026-10-12 (`--move-resolution on`) RETIRES the four `proj` cells and enters
-    the pointer through `MoveResolutionCell`'s zero-init projections; before 2026-10-14 `CELL_FAMILIES` named none
-    of them, so the production run emitted NO `cell/*` tag at all. Each BUILT projection is reported; an unbuilt
+    """The production network since 2026-10-12 enters the pointer through `MoveResolutionCell`'s zero-init
+    projections; before 2026-10-14 `CELL_FAMILIES` named none of them, so the production run emitted NO `cell/*` tag
+    at all. Each BUILT projection is reported; an unbuilt
     facts pair (None) is absent, never a zero."""
     fe = th.nn.Module()
     fe.move_resolution_cell = _FakeMoveResolution(facts=True)

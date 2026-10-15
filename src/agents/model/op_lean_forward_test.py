@@ -6,7 +6,7 @@ What must hold:
     unchanged (renders always appended LAST), so pi/vf at init are BIT-IDENTICAL to renders-on —
     the step-3 "gone by construction" claim as an executable fact;
   * the render views are None, the consumer stashes (top-K index, pair cells, out_pko) survive,
-    and the full intent stack still runs on them;
+    and the move-resolution family still runs on them;
   * the boom cell's pko source (the PRE-gain stash) equals the old post-gain flat view at
     gain-init (gain starts at 1.0 on the pko channel);
   * `believed_lean` ON: requires spread_belief; a believed spread that differs from the de-timid
@@ -91,10 +91,10 @@ def test_drop_renders_nulls_the_views_and_keeps_the_stashes():
 
 
 def test_full_intent_stack_runs_lean():
-    """v77+v84+v85 all consume STASHES, so the lean block must feed them unchanged."""
-    fe, layout = _build(**_ON_KWARGS, op_drop_renders=True, intent_move_cell=True,
-                        intent_threshold=True, intent_conditional=True,
-                        value_entity_pool=True)
+    """The move-resolution family (built with this stack, legacy deletion U3: it replaced the v77 / v84 / v85
+    per-action cells) consumes STASHES, so the lean block must feed it unchanged."""
+    fe, layout = _build(**_ON_KWARGS, op_drop_renders=True, value_entity_pool=True)
+    assert fe.move_resolution_cell is not None, "PRECONDITION: the stack builds move resolution"
     pi, vf = fe(_obs(layout))
     assert pi.shape[0] == vf.shape[0] and vf.shape[-1] == D_MODEL
 

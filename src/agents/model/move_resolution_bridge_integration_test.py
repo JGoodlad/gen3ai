@@ -1,4 +1,4 @@
-"""REAL-BATTLE check of the MOVE-RESOLUTION family (`--move-resolution on`, gen3_move_resolution_v1) on the RUST core —
+"""REAL-BATTLE check of the MOVE-RESOLUTION family (gen3_move_resolution_v1; production's, derived since legacy deletion U3) on the RUST core —
 no poke-env.
 
 Replays banked real battles (the M5 Lane S turn bank: trained-policy games, inputs only) through the Rust core
@@ -64,7 +64,6 @@ def _extractor() -> Any:
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {k: v for k, v in cfg.items() if k in sig}
     sanitize_historical_move_floor(kw)
-    kw["move_resolution"] = "on"
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)

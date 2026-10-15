@@ -126,7 +126,11 @@ refused at parse time with its reason and runs only PINNED at the tag `pre-legac
 `--allow-nonproduction-arch`. (Since the legacy deletion's U1, 2026-10-15, eight of the end state's op levers have NO flag — `--speed-physics`,
 `--op-reduction`, `--switch-hazard-cost`, `--eot-residual`, `--status-facts`, `--ko-ramp`, `--g-ledger`,
 `--effective-stats`: their adopted behaviour is built whenever the damage op is, and a typed one is refused at parse
-time with its reason, `designs/deleted_flags.md` §1; an ablation of one runs PINNED at `pre-legacy-deletion`.)
+time with its reason, `designs/deleted_flags.md` §1; an ablation of one runs PINNED at `pre-legacy-deletion`. U3, the
+same day, deleted ten more: `--move-resolution` (move resolution is DERIVED from its prerequisites),
+`--move-resolution-facts`, `--value-threat-inject` and the seven per-action block flags. 🚨 U3 also moved the FRESH-INIT
+stream: a seed launched at or after U3 does not build the same initial network as the same seed before it, so a
+replicate of a pre-U3 seed is pinned before U3 or it is not "same pin + seed".)
 
 Three resolution rules the tool applies, each of which has burned a launch:
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`) —

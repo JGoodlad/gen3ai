@@ -11,17 +11,12 @@ from typing import Dict, Optional, Tuple
 
 import torch
 
-from agents.model.arch_constants import (
-    CONDITIONAL_THREAT_SWITCH_DIM, D_MODEL, INTENT_COND_MOVE_DIM, INTENT_MOVE_CELL_DIM,
-    INTENT_THRESH_MOVE_DIM, MOVE_RESOLUTION_MOVE_DIM, MOVE_RESOLUTION_SWITCH_DIM, PAIR_OUTCOME_MOVE_DIM,
-    PAIR_OUTCOME_SWITCH_DIM, SWITCH_BRANCH_MOVE_DIM,
-)
+from agents.model.arch_constants import D_MODEL, MOVE_RESOLUTION_MOVE_DIM, MOVE_RESOLUTION_SWITCH_DIM
 from agents.model.belief_heads import BELIEF_GRAD_MODES, _BELIEF_SUPERVISION_KEYS
 from agents.model.extractor_build import ExtractorBuild
 from agents.model.extractor_ctx import PointerInputs
 from agents.model.flat_intent import FlatIntentInputs
 from agents.model.hypothesis_set import HypothesisSet
-from agents.model.intent_threshold import ThresholdProbs
 
 
 def drop_child(owner: torch.nn.Module, name: str) -> None:
@@ -104,46 +99,6 @@ class ExtractorApi(ExtractorBuild):
         `tower`: `projection_dim` (the tower then maps it to `NET_ARCH[-1]`); `trunk`: `D_MODEL` (the
         state query's read, and the actor branch is the identity)."""
         return D_MODEL if self.policy_query is not None else int(self.projection_dim)
-    def retire_value_threat_inject(self) -> bool:
-        """gen3_value_threat_inject_off_v1 (v142, `--value-threat-inject off` with the op built, audit F10): drop
-        the critic's token-content threat projection. Returns True when it dropped it.
-
-        Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the pointer head
-        and the optimizer are built (the retire-after-re-init precedent): the projection was
-        constructed (its init draw) and re-initialised (its orthogonal draw) exactly as under ON, so every OTHER
-        module's initial bytes equal production's, while the retired projection holds no state_dict key, no
-        optimizer slot and no forward use (`CLSPool.value_threat_live` is False, so the forward never read it).
-        ON (production): a no-op."""
-        pool = self.cls_pool
-        if pool.value_threat_live or pool.value_threat_proj is None:
-            return False
-        drop_child(pool, "value_threat_proj")
-        # The identity-init guard's set was captured by observation while the projection existed; a retired
-        # module is not a module to re-zero, so it leaves the set with it.
-        self._identity_init_zeroed = tuple(
-            n for n in self._identity_init_zeroed if not n.startswith("cls_pool.value_threat_proj"))
-        return True
-
-    def retire_superseded_action_cells(self) -> bool:
-        """gen3_move_resolution_v1 (v141, `--move-resolution on`): the move-resolution family REPLACES the seven
-        per-action blocks — drop them. Returns True when it dropped any.
-
-        Called by `Gen3DualHeadMaskablePolicy._build` AFTER SB3's orthogonal re-init and BEFORE the pointer head
-        and the optimizer are built, exactly like `retire_policy_tower`: the seven were constructed
-        (their init draws) and re-initialised (their orthogonal draws) as in production, so the global RNG stream
-        and every OTHER module's initial bytes are unchanged, while the retired blocks hold no state_dict key, no
-        optimizer slot and no forward use. ``off``: a no-op."""
-        if self.move_resolution_cell is None:
-            return False
-        names = ("intent_move_cell", "intent_threshold_move", "intent_conditional", "pair_outcome_move",
-                 "switch_branch", "pair_outcome_switch", "conditional_threat")
-        dropped = False
-        for n in names:
-            if getattr(self, n, None) is not None:
-                drop_child(self, n)
-                dropped = True
-        return dropped
-
     def set_belief_grad_mode(self, mode: str) -> None:
         """Apply a belief-grad-mode at RUNTIME (the --allow-belief-grad-mode-change migration path).
 
@@ -279,8 +234,6 @@ class ExtractorApi(ExtractorBuild):
     # Private per-forward hand-offs with external test readers keep their names too (same
     # read-only discipline; the T0->T1/T2 contract is documented on the dataclass fields).
     @property
-    def _thresh_probs(self) -> Optional[ThresholdProbs]: return self.stash.thresh_probs
-    @property
     def _entity_latent_table(self) -> Optional[torch.Tensor]: return self.stash.entity_latent_table
     @property
     def _belief_supervision(self) -> Dict[str, Optional[torch.Tensor]]:
@@ -297,29 +250,14 @@ class ExtractorApi(ExtractorBuild):
 
     @property
     def pointer_move_cell_dim(self) -> int:
-        # gen3_intent_move_cell_v1: the alpha-conditioned c2 channels widen the move cell when on
-        # (the policy sizes the pointer move scorer's in_features from this at build time).
+        # The op's move cell, then the move-resolution family's move block (gen3_move_resolution_v1) when it is
+        # built (the policy sizes the pointer move scorer's in_features from this at build time).
         base = self.damage_op.pointer_move_cell_dim if self.damage_op is not None else 0
-        base += INTENT_MOVE_CELL_DIM if self.intent_move_cell is not None else 0
-        # gen3_intent_threshold_v1: the five-mechanic threshold channels widen the move cell too.
-        base += INTENT_THRESH_MOVE_DIM if self.intent_threshold_move is not None else 0
-        # gen3_intent_conditional_v1: the Counter/flinch/Explosion/Pursuit cells likewise.
-        base += INTENT_COND_MOVE_DIM if self.intent_conditional is not None else 0
-        # gen3_pair_outcome_v1: the α-reduced unified outcome vector at our ACTIVE defender.
-        base += PAIR_OUTCOME_MOVE_DIM if self.pair_outcome_move is not None else 0
-        # gen3_switch_branch_v1: OA2 + spinblock + Protect's α-conditioning.
-        base += SWITCH_BRANCH_MOVE_DIM if self.switch_branch is not None else 0
-        # gen3_move_resolution_v1 (v141): the move-resolution family's move block (the seven above retired).
         return base + (MOVE_RESOLUTION_MOVE_DIM if self.move_resolution_cell is not None else 0)
     @property
     def pointer_switch_cell_dim(self) -> int:
         base = self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
-        # gen3_pair_outcome_switch_v1: the FIRST widener of the switch cell — mon j's own α-reduced
-        # outcome row + the spin-denial coordinate.
-        base += PAIR_OUTCOME_SWITCH_DIM if self.pair_outcome_switch is not None else 0
-        # gen3_conditional_threat_v1 (OA1): the SECOND — the four coordinates that row cannot carry.
-        base += CONDITIONAL_THREAT_SWITCH_DIM if self.conditional_threat is not None else 0
-        # gen3_move_resolution_v1 (v141): the move-resolution family's switch block.
+        # gen3_move_resolution_v1: the move-resolution family's switch block.
         base += MOVE_RESOLUTION_SWITCH_DIM if self.move_resolution_cell is not None else 0
         # gen3_static_recovery_v1 (built with the op): the LAST block, the target's entry-hazard cost.
         return base + self.pointer_switch_extra_dim

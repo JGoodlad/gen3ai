@@ -47,6 +47,10 @@ from agents.model.model_version.shaped_reward import (
     DELETED_SHAPED_REWARD_FIELDS,
     ShapedRewardCheckpointError,
 )
+from agents.model.model_version.adopted_levers import (
+    LANDED_UNITS,
+    PRE_LEGACY_DELETION_TAG,
+)
 from agents.model.model_version.retired_levers import (
     RETIRED_FIELDS,
     RetiredLeverCheckpointError,
@@ -58,6 +62,8 @@ from agents.model.model_version.version_break import (
 )
 
 __all__ = [
+    "LANDED_UNITS",
+    "PRE_LEGACY_DELETION_TAG",
     "ARCH_SIGNATURE",
     "MIGRATION_FLOOR",
     "MODEL_CONFIG_VERSION",

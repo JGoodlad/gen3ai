@@ -3,7 +3,7 @@
 The audit exists to run ONCE per generation on a trained checkpoint, so its failure mode is
 silent staleness: a hook that stops matching its argument measures nothing while producing a
 plausible report. These tests pin (a) every arm FIRES on a live-route policy, (b) the zero-init
-routes read exactly zero at init (threat's W_inj, the pointer-side KL), (c) the fail-loud path
+routes read exactly zero at init (the entity pool's out projection, the pointer-side KL), (c) the fail-loud path
 raises when a hook never matches, and (d) the arms the critic-route deletion wave RETIRED stay
 retired — an arm whose subject is gone does not report a null, it re-points.
 """
@@ -19,7 +19,7 @@ from agents.model.identity_init_test import _build_real_policy
 @pytest.fixture(scope="module")
 def model_and_enc():
     return _build_real_policy(opp_belief_cls_k=6, attend_unrevealed_opponents=True,
-                              value_threat_inject=True, value_entity_pool=True,
+                              value_entity_pool=True,
                               opp_intent=True, entity_topk_seats=6, damage_topk_k=6,
                               damage_matrices_incoming=True)
 
@@ -47,21 +47,20 @@ def test_every_arm_fires_and_reports(model_and_enc):
     #     stronger reason still: the critic-route deletion wave deleted their subjects, and an
     #     arm that outlives its subject re-points at whatever is left rather than going quiet
     #     (see `edge_ablation_audit`'s deleted `concat` arm for the case where that happened).
-    assert set(rep) == {"threat", "hidden_opp", "entity_pool", "nmr", "all_off",
+    assert set(rep) == {"hidden_opp", "entity_pool", "nmr", "all_off",
                         "vr_value_entity_pool"}
+    assert "threat" not in rep, "the threat arm's subject was deleted (legacy deletion U3)"
     assert "frames" not in rep, "an unmeasurable arm must be ABSENT, never a fabricated row"
     for arm, row in rep.items():
         assert set(row) == {"kl_mean", "kl_p95", "flip_rate", "dv_mean"}
 
 
 def test_zero_init_routes_read_zero_at_init(model_and_enc):
-    """At init: threat's W_inj is zero (M1-guarded) so its arm is a strict no-op, and the
-    pointer scorers are zero-init so NO arm can move the policy distribution yet — any
+    """At init: the pointer scorers are zero-init so NO arm can move the policy distribution yet — any
     nonzero here means an identity-at-init contract broke upstream."""
     model, enc = model_and_enc
     obs, masks = _states(enc)
     rep = audit(model.policy, obs, masks, batch=8)
-    assert rep["threat"]["dv_mean"] == 0.0
     # the v80 entity pool's out projection is zero-init, so its arm reads a strict no-op cold
     assert rep["entity_pool"]["dv_mean"] == 0.0
     # nmr and hidden_opp ride straight into the POLICY projection (no zero-init between), and

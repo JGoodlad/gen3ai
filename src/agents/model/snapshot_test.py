@@ -1637,8 +1637,8 @@ def test_arch_toggles_from_model_extracts_flags():
     from agents.model.snapshot import arch_toggles_from_model, current_model_version
     import inspect
     import types
-    # The RECORDED extractor kwargs (the built extractor is not read: `--move-resolution on` retires modules its
-    # config records ON — the rb_es_end_s2001 incident, recorded_version_gate_test).
+    # The RECORDED extractor kwargs (the built extractor is not read: it once retired modules its config recorded
+    # ON — the rb_es_end_s2001 incident, recorded_version_gate_test).
     fek = dict(attend_unrevealed_opponents=True, opp_belief_cls_k=0,
                opp_belief_slots=True,
                move_belief_mode="revealed",
@@ -1672,7 +1672,9 @@ def test_arch_toggles_from_model_extracts_flags():
     assert set(t) <= set(inspect.signature(current_model_version).parameters)
     assert t["critic"] == "winprob"
     # a toggle the recorded kwargs predate reads its current_model_version default (the extractor builds the same)
-    assert t["intent_move_cell"] is False and t["move_resolution"] == "off"
+    assert t["trunk_layers"] == 2 and t["move_set_closure"] == "off"
+    # the legacy deletion's U3 fields are no toggle any more (judged by `adopted_levers`, never threaded)
+    assert not ({"intent_move_cell", "move_resolution", "move_resolution_facts", "value_threat_inject"} & set(t))
 
 
 def test_current_model_version_threads_move_belief_mode(mappings):

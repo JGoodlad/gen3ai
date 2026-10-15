@@ -43,12 +43,12 @@ from typing import Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 #: production surface (every file a torch op of `evaluate_actions` was called from;
 #: `selection_sites_test` re-measures it and fails on a module outside this list).
 FORWARD_MODULES: Tuple[str, ...] = (
-    "aux_value_heads", "belief_heads", "board_tokens", "conditional_threat", "damage_kinds", "dense_attn_bias", "damage_op", "damage_op_blocks", "damage_op_speed",
+    "aux_value_heads", "belief_heads", "board_tokens", "damage_kinds", "dense_attn_bias", "damage_op", "damage_op_blocks", "damage_op_speed",
     "damage_op_pairwise", "encoders", "extractor_ctx", "extractor_forward", "features_extractor",
     "flat_intent", "hypothesis_encode", "hypothesis_set", "hypothesis_tokens", "index_max",
-    "intent_conditional", "intent_move_cell", "intent_threshold", "masked_categorical", "obs_facts_inject", "opp_intent",
-    "move_order", "move_resolution", "move_resolution_rules", "op_reduction", "pair_outcome", "pair_reduce", "pointer_head", "policy", "pools", "projection", "static_facts", "static_tokens", "switch_branch",
-    "status_rules", "t0_species", "team_transformer", "value_readouts", "value_threat_inject",
+    "masked_categorical", "obs_facts_inject", "opp_intent",
+    "move_order", "move_resolution", "move_resolution_rules", "op_reduction", "pair_outcome", "pointer_head", "policy", "pools", "projection", "static_facts", "static_tokens",
+    "status_rules", "t0_species", "team_transformer", "value_readouts",
     "eot_residual", "trunk_depth", "ko_exact", "status_facts",
 )
 
@@ -127,24 +127,15 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
         "topk", why="the candidate-axis truncation (damage_candidate_k > 0 only)"),
     # --- (the op's two dominant-move ARGMAX payload sites, reached only under `--op-reduction max`, were deleted with
     #     that reduction by the legacy deletion's U1: the principled reduction has no argmax.)
-    ("pair_reduce", "(w * ref).argmax(dim=-1, keepdim=True)"): Rule(
-        "argmax", why="alpha_hard_max (Contract-W reducer; not the production path)"),
     # --- THRESHOLDS on scores
     ("damage_op_blocks", "high_topk > eps"): Rule(
         "threshold", zero_exact=True, why="a status secondary needs the damage to land"),
     ("belief_heads", "narrowed.sum(-1, keepdim=True) > 1e-06"): Rule(
         "threshold", zero_exact=True, why="the off-meta Hidden Power fallback"),
-    ("pair_reduce", "total > PAIR_REDUCE_EPS"): Rule("threshold", zero_exact=True, why="belief-mean reducer"),
-    ("pair_reduce", "w.sum(dim=-1, keepdim=True) > PAIR_REDUCE_EPS"): Rule(
-        "threshold", zero_exact=True, why="learned reducer"),
-    ("intent_conditional", "high_k > 0"): Rule(
-        "threshold", zero_exact=True, why="damaging seat (0 exactly for a status / immune move)"),
     # gen3_op_reduction_principled_v1 (the op's only reduction since U1): the incoming row's "this candidate
     # damages this mon" test, which its α-weighted accuracy / provenance read (0 exactly for a status / immune move)
     ("op_reduction", "high > 0"): Rule(
         "threshold", zero_exact=True, why="a damaging candidate on this mon (0 exactly for a status / immune move)"),
-    ("intent_threshold", "high_k > 0"): Rule(
-        "threshold", zero_exact=True, why="landing damage breaks Focus Punch (0 exactly for status / immune)"),
     # --- THRESHOLDS on weight-free float arithmetic (the current HP is a product of an observed fraction
     #     and a computed max HP; a fixed-damage KO at exactly the remaining HP is a genuine near-tie)
     #     gen3_nonformula_damage_v1: ONE site now — every kernel reaches it through damage_kinds.
@@ -207,8 +198,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("hp_frac > 0", "opp_burn > 0.5", "s >= 0"),
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
-        "INT": ("(phys_all > 0.5).long()", "ctx.type1_ids[:, _og] == _GHOST_TIDX",
-                "ctx.type2_ids[:, _og] == _GHOST_TIDX", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
+        "INT": ("(phys_all > 0.5).long()", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
                 "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
                 "opp_item == self.cb_item_num"),
     },
@@ -292,10 +282,6 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0",),
         "PYTHON": ("self.entity_topk_seats > 0", "self.opp_intent_grad_mode == 'shaping'"),
     },
-    "intent_conditional": {
-        "INT": ("req_move_ids[..., None] == self.gate_nums", "req_move_ids[..., None] == self.protect_only_nums",
-                "topk_nums[..., None] == self.protect_only_nums"),
-    },
     # gen3_op_status_rules_v1: the shared side / clause rule (obs flags) and the shared move-ORDER rule (priority
     # tables vs priority tables; the speed tie-break is a multiplier, never a threshold).
     "status_rules": {
@@ -318,20 +304,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "damage_op_speed": {
         "INT": ("ctx.item_ids[:, :TEAM_SIZE] == self.qc_item_num", "item == self.qc_item_num", "item == 0"),
     },
-    "intent_threshold": {
-        "INT": ("req_move_ids[..., None] == self.mech_nums",),
-        # the exact P(KO)'s Substitute HP floor(maxhp / 4): our active's max HP is table + observed-spread arithmetic
-        # (`_active_defender`; no weight reaches it) — the function spelling the 2026-10-10 scan fix exposed
-        "OBS": ("torch.floor(maxhp / 4.0)",),
-    },
     "masked_categorical": {
         "INT": ("actions.long()",),
         "NOT_LOGP": ("torch.argmax(probs(logp), dim=1)",),
-    },
-    "pair_outcome": {
-        "INT": ("our_type1 == GHOST_TYPE_IDX", "our_type2 == GHOST_TYPE_IDX", "topk_nums[..., None] == self.spin_num",
-                # X5 U4 (`seat_in_set`): move-num membership + its index cast
-                "nums[..., None] == set_nums", "set_nums.long()"),
     },
     # gen3_x5_flat_pointer_v1 (X5 U4, fixed_mass): the flat pointer's candidate set — integer ids, the
     # hypothesis set's structural counts / ranks, and the observation's active flag. No selection: the
@@ -346,17 +321,15 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "pointer_head": {
         "ID": ("match.float().argmax(-1)", "move_valid < 0.5"),
     },
-    "switch_branch": {
-        "INT": ("req_move_ids[..., None] == self.protect_nums", "req_move_ids[..., None] == self.spin_num"),
-    },
-    # gen3_move_resolution_v1 (v141, `--move-resolution on` only — it never runs on the production surface).
+    # gen3_move_resolution_v1 (v141; production since the 2026-10-12 adoption, unconditional with its prerequisites
+    # since legacy deletion U3).
     # Every discrete op reads the observation, a constant table or an integer: the family thresholds no score.
     # The HP / stage cutoffs are the gen-3 RULES (Substitute at 1/4, Belly Drum at 1/2, a heal at full HP,
     # +6 stages) read off the observed fraction / the obs-coded stage (k/6 · 6), so the same row always
     # resolves the same way; a stage is a multiple of 1 and the ±5.5 cut sits half a stage from either side.
     "move_resolution": {
         "OBS": ("ctx.hp_and_active[..., 0] > 0", "ctx.hp_and_active[ar, our_act, 0] > 0",
-                # the exact P(KO)'s Substitute HP floor(maxhp / 4) (as intent_threshold's; the 2026-10-10 scan fix)
+                # the exact P(KO)'s Substitute HP floor(maxhp / 4) (the 2026-10-10 scan fix)
                 "torch.floor(o.our_maxhp / 4.0)",
                 "o.beatup_n <= 0.5", "o.opp_alive_total > 1.5", "o.opp_cond[..., 1:].sum(-1) > 0.5",
                 "o.opp_hp > SUB_HP_FRACTION", "o.our_alive.sum(-1) - o.our_alive[ar, o.our_active] > 0.5",

@@ -127,8 +127,10 @@ def test_the_arm_trains_on_the_production_recipe_and_a_restart_restores_it(tmp_p
 # gen3_endstate_facts_v1: the END-STATE arm (owner 2026-10-09: "run all of them speculatively together, then bisect").
 #: (U1 deleted the arm's eight op keys — speed physics, the principled reductions, the exact status facts / P(KO), the
 #: one end-of-turn rule, the effective stats, the switch hazard, the end-of-turn residual: the op's only physics now.)
-ENDSTATE = {**STATIC_RECOVERY, "move_resolution": "on", "value_threat_inject": False,
-            "obs_facts": "v1", "move_resolution_facts": "full", "drop_progress_clock": "on",
+#: (U3 deleted its three move-resolution / threat-injection keys: move resolution is DERIVED, its restored facts
+#: unconditional, the critic's threat projection gone.)
+ENDSTATE = {**STATIC_RECOVERY,
+            "obs_facts": "v1", "drop_progress_clock": "on",
             # gen3_probe_facts_v1 (v153): the probe battery's surviving fact
             "move_target_state": "on",
             # gen3_move_set_closure_v1 (v154; owner 2026-10-10 "Do A", a pre-data amendment of the closing test)
@@ -156,9 +158,9 @@ def test_the_endstate_arm_is_an_alias_of_the_adopted_production(capsys):
     for key, value in ENDSTATE.items():
         assert getattr(ns_prod, BY_NAME[key].arg) == value, key
     assert rep.source_tag.startswith("endstate@production_config@")
-    _ns, drift = _report(ARGV + ["--arch", "endstate", "--move-resolution-facts", "off"])
+    _ns, drift = _report(ARGV + ["--arch", "endstate", "--drop-progress-clock", "off"])
     assert drift.refuses and [(d.name, d.resolved, d.production) for d in drift.diffs] == [
-        ("move_resolution_facts", "off", "full")]
+        ("drop_progress_clock", "off", "on")]
     from main.checkargs import main as checkargs_main
     rc = checkargs_main(["--argv", " ".join(ARGV + ["--arch", "endstate"])])
     out = capsys.readouterr().out

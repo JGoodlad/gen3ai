@@ -23,39 +23,28 @@ import torch
 from gymnasium import spaces
 
 from agents.model.arch_constants import (
-    CONDITIONAL_THREAT_SWITCH_DIM, D_MODEL, INTENT_COND_MOVE_DIM, INTENT_MOVE_CELL_DIM,
-    INTENT_THRESH_MOVE_DIM, PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM,
-    PROJECTION_DIM, ROLE_TOKEN_SIZE, SWITCH_BRANCH_MOVE_DIM, TRANSFORMER_N_LAYERS,
+    D_MODEL, PROJECTION_DIM, ROLE_TOKEN_SIZE, TRANSFORMER_N_LAYERS,
 )
 from agents.model.aux_value_heads import WinProbHead
 from agents.model.belief_heads import (
     BELIEF_GRAD_MODES, BeliefHead, HPTypeBelief, ItemBelief, MoveBelief, SpreadBelief)
-from agents.model.conditional_threat import ConditionalThreatCell
 from agents.model.damage_op import DamageOperator, _DMG_PER_MON
 from agents.model.damage_tables import _PRIOR_FLOOR
 from agents.model.encoders import PokemonEncoder
 from agents.model.extractor_ctx import DROP_PROGRESS_CLOCK_MODES, Embeddings, ObsUnpack
 from agents.model.extractor_stashes import ExtractorStashes
-from agents.model.intent_conditional import IntentConditionalMoveCell
-from agents.model.intent_move_cell import IntentMoveCell
-from agents.model.intent_threshold import IntentThresholdMoveCell
 from agents.model.flat_intent import FlatIntentHead
-from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
 from agents.model.pointer_head import EntityMoveSeats
 from agents.model.pools import (CLSPool, HiddenOppBeliefPool, POLICY_READOUT_MODES,
                                 PolicyStateQuery)
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
-from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.move_resolution import MoveResolutionCell
-from agents.model.move_resolution_rules import MOVE_RESOLUTION_MODES
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.hypothesis_set import HypothesisBuilder
 from agents.model.static_tokens import TOKEN_ENCODING_MODES, StaticTokenEncoder
 from agents.model.board_tokens import OpContent
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
 from agents.model.value_readouts import UnifiedValueReadout
-from agents.model.value_threat_inject import (
-    VALUE_THREAT_INJECT_REDUCE_HOW, value_threat_inject_dim)
 from utils.logging.levels import LogLevel
 
 if TYPE_CHECKING:
@@ -83,17 +72,9 @@ class ExtractorBuild(torch.nn.Module):
                  win_prob_mode: str = "none",
                  damage_outgoing: bool = False, move_candidate_floor: float = _PRIOR_FLOOR,
                  move_latent: bool = False, spread_belief: bool = False, spread_belief_nature: bool = False,
-                 value_threat_inject: bool = False,
                  opp_intent: bool = False, species_prior_fusion: bool = False,
                  t0_species_prior: bool = False,
                  opp_intent_grad_mode: str = "detached",
-                 intent_move_cell: bool = False,
-                 intent_threshold: bool = False,
-                 intent_conditional: bool = False,
-                 pair_outcome_cell: bool = False,
-                 pair_outcome_switch: bool = False,
-                 switch_branch_cell: bool = False,
-                 conditional_threat_cell: bool = False,
                  op_drop_renders: bool = False,
                  op_believed_lean: bool = False,
                  value_entity_pool: bool = False,
@@ -116,12 +97,10 @@ class ExtractorBuild(torch.nn.Module):
                  oracle_reveal: str = "off",
                  policy_readout: str = "tower",
                  token_encoding: str = "legacy",
-                 move_resolution: str = "off",
                  obs_facts: str = "off",
                  mon_hazard_cost: str = "off",
                  move_actor_state: str = "off",
                  trunk_layers: int = TRANSFORMER_N_LAYERS,
-                 move_resolution_facts: str = "off",
                  drop_progress_clock: str = "off",
                  move_target_state: str = "off",
                  move_set_closure: str = "off",
@@ -244,21 +223,9 @@ class ExtractorBuild(torch.nn.Module):
         self.trunk_layers = int(trunk_layers)
         self.team_transformer = TeamTransformer(layout, token_encoding=token_encoding,
                                                 trunk_layers=self.trunk_layers)
-        # The injection width IS the op reducer's `extra_dim`, computed by the SAME function the
-        # reducer uses. It has to come from the pure helper rather than `self.damage_op`, because
-        # the op is built ~250 lines BELOW this point and module construction order is load-bearing
-        # (SB3 restores optimizer state positionally — reordering to suit this feature would corrupt
-        # every resume). A post-construction assert below ties the two together.
-        #
-        # gen3_value_threat_inject_off_v1 (v142, architecture audit F10): with the op built, the projection is
-        # built in BOTH modes, so its init draw (and SB3's orthogonal re-draw over it) happens in the same place
-        # either way; OFF marks it not-live and `ExtractorApi.retire_value_threat_inject` drops it after SB3's
-        # re-init, before the optimizer (the retire-after-re-init precedent). Every OTHER parameter's
-        # initial bytes therefore equal the ON (production) build's — `--value-threat-inject off` is a ONE-lever
-        # arm. Before v142 an OFF build skipped the Linear and shifted ~185 later tensors' init draws.
-        _vti_dim = value_threat_inject_dim() if (bool(value_threat_inject) or bool(damage_op)) else 0
-        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim,
-                                value_threat_live=bool(value_threat_inject))
+        # (The critic's token-content threat projection `CLSPool.value_threat_proj` is DELETED, legacy deletion U3,
+        # lane VTI: it was constructed and retired under the adopted surface, so it no longer draws from the stream.)
+        self.cls_pool = CLSPool(layout)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
         # In-place hidden-opponent belief (the live design): distinct learned unknown-mon tokens fill
         # the un-revealed opp slots + a species/moves aux head supervises them. OFF reproduces the
@@ -296,43 +263,10 @@ class ExtractorBuild(torch.nn.Module):
         # is computed against a different distribution. Independent of `species_prior_fusion`: that
         # flag fuses the prior into the T2 aux READOUT, this one feeds the T1 physics, and either is
         # useful without the other.
-        # gen3_intent_move_cell_v1 (G3, design_conditional_execution.md): the POLICY-side alpha
-        # consumer — the c2 status-consequence family re-delivered through the pointer MOVE cell,
-        # alpha-conditioned. Fail-loud on both operands rather than silently degrading: no alpha =>
-        # nothing to weight with; no op => no c2 physics to deliver.
-        self.intent_move_cell = None
-        if intent_move_cell:
-            self.intent_move_cell = IntentMoveCell(INTENT_MOVE_CELL_DIM)
-            if not opp_intent:
-                raise ValueError(
-                    "intent_move_cell=True requires opp_intent=True — the c2 re-delivery is "
-                    "WEIGHTED BY alpha, and with no alpha head there is no distribution to "
-                    "weight with.")
-            if not damage_op:
-                raise ValueError(
-                    "intent_move_cell=True requires damage_op=True — it re-delivers the "
-                    "operator's c2 status-consequence physics, which nothing else produces.")
-        # gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 step 3): the
-        # α-weighted THRESHOLD operator — five mechanics (Focus Punch / Substitute / Endure /
-        # Destiny Bond / Endeavor) through the pointer MOVE cell. The flag used to build a SECOND
-        # consumer, the p_KO vf route; the critic-route deletion wave retired it (dV 0.155 / 0.136,
-        # below the 0.39 bar and registered no-appeal). **The POLICY-side context stays** — that is
-        # the half every audit found live, and `intent_threshold_test.py` pins it.
-        self.intent_threshold_move = None
-        if intent_threshold:
-            self.intent_threshold_move = IntentThresholdMoveCell(INTENT_THRESH_MOVE_DIM)
-            if not opp_intent:
-                raise ValueError(
-                    "intent_threshold=True requires opp_intent=True — every threshold form is "
-                    "WEIGHTED BY alpha, and with no alpha head there is no distribution to "
-                    "weight with.")
-            if not damage_op:
-                raise ValueError(
-                    "intent_threshold=True requires damage_op=True — the operator's per-candidate "
-                    "damage/KO cells are the thresholds' only physics source.")
-        # gen3_intent_conditional_v1 (v85, design steps 4+7): Counter / Mirror Coat, flinch's
-        # (1−α_SWITCH) term, Explosion's execute/into-switch facts, Pursuit's doubling trigger —
-        # per-request-slot cells over tensors the op already stashes, α-contracted at T2.
+        # (The seven per-action blocks — intent_move_cell, intent_threshold, intent_conditional, pair_outcome_cell,
+        # pair_outcome_switch, switch_branch_cell, conditional_threat_cell — are DELETED, legacy deletion U3, lane MR:
+        # the move-resolution family below replaced them, and they were constructed and retired under the adopted
+        # surface. Their facts live in `move_resolution.py`; the history in `designs/deleted_flags.md`.)
         # gen3_op_lean_forward_v1: believed_lean prices the lean d3 physics from the spread
         # belief — with no SpreadBelief head there is nothing believed to price with.
         if op_believed_lean and not spread_belief:
@@ -347,113 +281,6 @@ class ExtractorBuild(torch.nn.Module):
         # facts are unconditional INSIDE the op (`DamageOperator.__init__`), and the facts it hands the network (the
         # noisy-OR worst case, the end-of-turn residual, the switch cell's hazard cost, the cure flags, the active
         # mons' stage-applied stats) are built below whenever the op is (D-LD2: DERIVED from `damage_op`).
-        self.intent_conditional = None
-        if intent_conditional:
-            self.intent_conditional = IntentConditionalMoveCell(INTENT_COND_MOVE_DIM)
-            if not opp_intent:
-                raise ValueError(
-                    "intent_conditional=True requires opp_intent=True — every cell is "
-                    "WEIGHTED BY alpha, and with no alpha head there is no distribution to "
-                    "weight with.")
-            if not damage_op:
-                raise ValueError(
-                    "intent_conditional=True requires damage_op=True — the pair cells and the "
-                    "outgoing per-move rolls are the cells' only physics source.")
-            if not damage_outgoing:
-                raise ValueError(
-                    "intent_conditional=True requires damage_outgoing=True — the flinch and "
-                    "Pursuit cells read the outgoing per-move rolls, p_outspeed and the "
-                    "secondary columns, which only the outgoing block computes.")
-            if not damage_matrices_outgoing:
-                raise ValueError(
-                    "intent_conditional=True requires damage_matrices_outgoing=True — the boom "
-                    "trade-value cell reads the per-(our move, their mon) pko, which only the "
-                    "outgoing matrix computes (an arrival's KO probability has no other source).")
-        # gen3_pair_outcome_v1 (v93, design_opponent_intent.md §5.1/§5.3): the UNIFIED per-pair
-        # OUTCOME VECTOR — damage AND status AND neutralization AND tempo in one vector in one
-        # currency — reduced by ONE alpha over the opponent's believed-move axis and delivered to
-        # the pointer MOVE cell. Phase A: the move-cell half only; the switch cell and the
-        # beta-conditioned cells are Phase B and are deliberately not built.
-        #
-        # ⚠️ It requires `damage_op` and NOT `opp_intent`, and the asymmetry is the point. The
-        # physics has exactly one source, so no op is fail-loud; but alpha has a shipped fallback
-        # (the R1 `belief_mean` rung, alpha := w/Sum w), so the flag is INDEPENDENTLY ENABLEABLE and
-        # a run can test the DELIVERY claim (a per-action absolute in the currency the decision
-        # needs) separately from the DISTRIBUTION claim (usage belief beats presence belief) —
-        # §7a.2's own suggestion. Degrading silently is the thing to avoid, so the fallback is
-        # documented, tested, and NOT the same object as alpha.
-        self.pair_outcome_move = None
-        if pair_outcome_cell:
-            self.pair_outcome_move = PairOutcomeMoveCell(PAIR_OUTCOME_MOVE_DIM)
-            if not damage_op:
-                raise ValueError(
-                    "pair_outcome_cell=True requires damage_op=True — the per-(their move, our mon) "
-                    "damage cells and the per-pivot status-landing physics are the outcome vector's "
-                    "only source; nothing else computes either.")
-        # gen3_pair_outcome_switch_v1 (v94, Phase B): the SAME reduced row, per DEFENDER, at the
-        # pointer SWITCH cell — the delivery §2.1 says the decision actually needs ("they will
-        # click Will-O-Wisp, so bring the Natural Cure mon" is made at the switch logit, whose cell
-        # holds ten damage numbers and no status coordinate in any currency). It is the FIRST
-        # module to widen the switch cell.
-        #
-        # It requires `damage_op` and NOT `pair_outcome_cell`, deliberately: the two deliver the
-        # same tensor to two different sinks, and making the switch half depend on the move half
-        # would mean the phase could never attribute a result to one of them. α uses the same
-        # `pair_alpha` ladder (publication, or the R1 belief_mean fallback), so this flag is
-        # independently enableable too.
-        self.pair_outcome_switch = None
-        if pair_outcome_switch:
-            self.pair_outcome_switch = PairOutcomeSwitchCell(PAIR_OUTCOME_SWITCH_DIM)
-            if not damage_op:
-                raise ValueError(
-                    "pair_outcome_switch=True requires damage_op=True — the unified outcome "
-                    "vector's only producer is the op's pair grid; nothing else computes it.")
-        # gen3_switch_branch_v1 (v94, Phase B): OA2 + the Rapid-Spin spinblock + Protect's
-        # α-conditioning, all per-request-slot, all the same contraction over the branch in which
-        # they SWITCH (`design_conditional_opponent_cells.md` §2 + the owner's two mechanics).
-        #
-        # ⚠️ Unlike the pair_outcome pair this one REQUIRES `opp_intent`, and the asymmetry is
-        # substantive rather than conservative: every coordinate here is conditioned on α_SWITCH or
-        # on β, and NEITHER has a fallback. The R1 `belief_mean` rung is a presence belief over
-        # their MOVES; it has no switch class at all, so `α_SWITCH` would be identically 0 and the
-        # whole cell would read "they never switch" — a claim, not an absence. β has no
-        # prior-shaped substitute either. A flag whose fallback silently asserts something false is
-        # worse than a flag that says it needs the head.
-        self.switch_branch = None
-        if switch_branch_cell:
-            self.switch_branch = SwitchBranchMoveCell(SWITCH_BRANCH_MOVE_DIM)
-            if not (opp_intent and damage_op and damage_matrices_outgoing):
-                raise ValueError(
-                    "switch_branch_cell=True requires opp_intent=True (α_SWITCH and β have no "
-                    "fallback — the R1 belief_mean rung is a presence belief over their MOVES and "
-                    "carries no switch class, so every coordinate would read 'they never switch'), "
-                    "damage_op=True, and damage_matrices_outgoing=True (OA2's per-(our move, their "
-                    "mon) grid is what makes β actionable; there is no other source for 'what my "
-                    "move does to the arrival').")
-        # gen3_conditional_threat_v1 (v95, Phase C): OA1 — the defensive-pivot coordinates the
-        # α-reduced outcome row structurally cannot carry (the accuracy-folded P(this mon dies),
-        # the bulk-INDEPENDENT expected type multiplier, and the two §0.2(3) margins), on the
-        # pointer SWITCH cell.
-        #
-        # Requires `damage_op` and `damage_matrices_incoming`, and NOT `pair_outcome_switch`. The
-        # matrix requirement is real rather than defensive: it is the ONLY producer of the
-        # per-(defender, seat) type multiplier AND of the top-K selection α's seats align to. The
-        # independence from Phase B is deliberate for the same reason Phase B is independent of
-        # Phase A — the two widen one cell with different quantities, and coupling them would make
-        # a measured result unattributable to either. α uses the same `pair_alpha` ladder, so the
-        # R1 fallback keeps the flag independently enableable; that fallback is MEANINGFUL here
-        # (every coordinate is a "what lands on me if they attack" contraction, so the missing
-        # SWITCH mass correctly shrinks it toward zero) rather than the v94 case where it would
-        # have asserted something false.
-        self.conditional_threat = None
-        if conditional_threat_cell:
-            self.conditional_threat = ConditionalThreatCell(CONDITIONAL_THREAT_SWITCH_DIM)
-            if not (damage_op and damage_matrices_incoming):
-                raise ValueError(
-                    "conditional_threat_cell=True requires damage_op=True and "
-                    "damage_matrices_incoming=True — the incoming matrix is the only producer of "
-                    "the per-(our defender, their seat) type multiplier and of the top-K selection "
-                    "α's seats align to; nothing else computes either.")
         # ⚠️ C4 RE-ENTRY CONDITION: any α/β-critic route may be BUILT opt-in but its ENABLING owes
         # the C4-style offline gate first (ledger C6 — the delivery line is EXHAUSTED). (The PAIR-VALUE
         # route, the second token-content injection on the value pool's copy, was deleted with
@@ -633,18 +460,6 @@ class ExtractorBuild(torch.nn.Module):
         if self.damage_candidate_k and not damage_op:
             raise ValueError("damage_candidate_k>0 requires damage_op=True — it caps the DamageOperator's "
                              "incoming candidate sweep, which only exists when the op is built.")
-        # gen3_value_threat_inject_v1: the critic-side magnitude route needs the op's Contract-W
-        # reduced rows, and R0 `hard_max` (production) builds NO reducer and stashes nothing — so
-        # the flag FORCES the R1 rung on. It is derived, never a second user knob: this arm tests
-        # DELIVERY, and a variable rung would confound that with the DISTRIBUTION question.
-        self.value_threat_inject = bool(value_threat_inject)
-        if self.value_threat_inject and not damage_op:
-            raise ValueError(
-                "value_threat_inject=True requires damage_op=True — the injected row IS the op's "
-                "reduced incoming threat, so with no op there is nothing to inject and the flag "
-                "would be a silent no-op.")
-        _reduce_how = (VALUE_THREAT_INJECT_REDUCE_HOW if self.value_threat_inject
-                       else "hard_max")
         # The incoming matrix's K is damage_topk_k (the one "how many opp moves" knob).
         # `damage_op` is None when the flag is off, and EVERY read of it below sits under a guard
         # on a different, correlated flag (`edge_bias is not None`, `damage_block is not None`,
@@ -655,43 +470,9 @@ class ExtractorBuild(torch.nn.Module):
                                          matrices_outgoing=self.damage_matrices_outgoing,
                                          matrices_incoming=self.damage_matrices_incoming,
                                          candidate_k=self.damage_candidate_k,
-                                         reduce_how=_reduce_how,
                                          drop_renders=op_drop_renders,
                                          believed_lean=op_believed_lean)
                           if damage_op else None)
-        # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
-        # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the
-        # Ask the op to KEEP its un-reduced pair cells. Set here, after the op exists, because
-        # the flag lives on the op but is owned by consumers built before it. Without this a
-        # consumer sees `last_pair_cells is None` and — by design — raises rather than
-        # contributing zeros, since a silent no-op reads exactly like a null.
-        if (self.intent_threshold_move is not None
-                or self.intent_conditional is not None or self.pair_outcome_move is not None
-                or self.pair_outcome_switch is not None or self.conditional_threat is not None):
-            self.damage_op.stash_pair_cells = True  # type: ignore[union-attr]
-        # gen3_pair_outcome_v1: and the eight extra coordinates on top of them. Set together with
-        # `stash_pair_cells` above, never alone — the damage cells ARE the vector's first six
-        # coordinates, so a lone `stash_pair_outcome` would build a narrower vector than
-        # `PAIR_OUTCOME_COORDS` declares.
-        if (self.pair_outcome_move is not None or self.pair_outcome_switch is not None
-                or self.conditional_threat is not None):
-            self.damage_op.stash_pair_outcome = True  # type: ignore[union-attr]
-        # gen3_switch_branch_v1: the per-opp-slot GHOST marginal the spinblock contracts β against.
-        if self.switch_branch is not None:
-            self.damage_op.stash_opp_ghost = True  # type: ignore[union-attr]
-        # gen3_conditional_threat_v1: the per-(defender, seat) TYPE MULTIPLIER. Not a coordinate of
-        # `pair_in` (whose width is a contract three consumers read), so it gets its own seam —
-        # a pure `.detach()` of a tensor the incoming matrix already built, so zero extra math.
-        if self.conditional_threat is not None:
-            self.damage_op.stash_pair_type_mult = True  # type: ignore[union-attr]
-        # op existed. If those ever disagree the flag is silently mis-wired, so assert the identity.
-        if self.value_threat_inject:
-            _built = self.damage_op.pair_reducer.extra_dim  # type: ignore[union-attr]
-            if _built != self.cls_pool.value_threat_proj.extra_dim:  # type: ignore[union-attr]
-                raise AssertionError(
-                    f"value_threat_inject width mismatch: the op's reducer emits {_built} but the "  # type: ignore[union-attr]
-                    f"projection was built for {self.cls_pool.value_threat_proj.extra_dim} — "
-                    "`value_threat_inject_dim()` has drifted from `PairReducer.extra_dim`.")
         # gen3_tiered_pipeline_v1 (was gen3_damage_op_prefuse_v1, v50): ONE damage computation per
         # forward, PRE-attention, and now the ONLY placement. The spread/HP-type beliefs + the FULL op
         # run on the PRE-transformer role tokens (T0 RESOLVE → T1 REASON), the per-OUR-mon incoming rows
@@ -1018,36 +799,23 @@ class ExtractorBuild(torch.nn.Module):
         self.policy_readout = policy_readout
         self.policy_query: Optional[PolicyStateQuery] = (
             PolicyStateQuery() if policy_readout == "trunk" else None)
-        # gen3_move_resolution_v1 (v141, `--move-resolution`; architecture audit F11 §9): the MOVE-RESOLUTION
-        # family. `off` (the default and production) builds NOTHING and sets no op seam, so the extractor is
-        # byte-identical to the build without it. `on` builds `MoveResolutionCell` LAST (no existing parameter
-        # position moves) out of zero-init `IsolatedLinear`s (no global RNG draw; SB3's orthogonal re-init
-        # skips them), and the policy RETIRES the seven blocks it replaces after SB3's re-init and before the
-        # optimizer (`retire_superseded_action_cells`) — they were constructed and re-initialised exactly as in
-        # production, so every OTHER parameter's initial bytes equal production's. Requirements are enforced
-        # HERE, where `flag_requires_test` can see them.
-        if move_resolution not in MOVE_RESOLUTION_MODES:
-            raise ValueError(f"move_resolution must be one of {MOVE_RESOLUTION_MODES}, got {move_resolution!r}")
-        self.move_resolution = move_resolution
+        # gen3_move_resolution_v1 (architecture audit F11 §9): the MOVE-RESOLUTION family — per legal action, P(it
+        # resolves as stated) and the facts the seven deleted per-action blocks carried, plus the restored facts and
+        # the exact status facts (`gen3_endstate_facts_v1`). DERIVED, never a flag (legacy deletion U3, D-LD2): built
+        # whenever its prerequisites are — the published α / β (`opp_intent`), the operator with its outgoing block
+        # and both per-move matrices, and the incoming matrix's seat axis (`damage_topk_k > 0`) — and vacuous
+        # otherwise. Built LAST (no existing parameter position moves) out of zero-init `IsolatedLinear`s (no global
+        # RNG draw; SB3's orthogonal re-init skips them).
         self.move_resolution_cell: Optional[MoveResolutionCell] = None
-        if move_resolution == "on":
-            if not self.opp_intent:
-                raise ValueError(
-                    "move_resolution=on requires opp_intent=True (--opp-intent-coef > 0): every resolution "
-                    "fact that depends on the opponent's choice is weighted by the published α / β, and a "
-                    "presence belief has no switch class to fall back on.")
-            if self.damage_op is None or not (damage_outgoing and damage_matrices_incoming
-                                              and damage_matrices_outgoing):
-                raise ValueError(
-                    "move_resolution=on requires damage_op + damage_outgoing + damage_matrices_incoming + "
-                    "damage_matrices_outgoing: the KO / hit / immunity facts are the operator's physics.")
+        if (self.opp_intent and self.damage_op is not None and damage_outgoing and damage_matrices_incoming
+                and damage_matrices_outgoing and self.damage_topk_k > 0):
             # gen3_move_resolution_x5_v1: under X5 the SAME rules read the flat pointer's
             # re-expression (OTHER_move a priced (K+1)-th seat, OTHER_species a priced 7th mon) — no refusal.
             self.damage_op.stash_pair_cells = True
             self.damage_op.stash_pair_outcome = True
             self.damage_op.stash_pair_type_mult = True
             self.damage_op.stash_species_post = True
-            self.move_resolution_cell = MoveResolutionCell(self.damage_op, facts=move_resolution_facts)
+            self.move_resolution_cell = MoveResolutionCell(self.damage_op)
 
         # gen3_obs_facts_v1 (`--obs-facts`, the X5 version break's part 3, config v144): the OBS-FACTS block's
         # consumer. The observation ALWAYS carries the block (its last 84 dims); `off` (production) builds
@@ -1121,17 +889,10 @@ class ExtractorBuild(torch.nn.Module):
         # `MoveResolutionCell`, above) and the cure flags' projection (built with the op), each a zero-init bias-free
         # `IsolatedLinear` built LAST (no RNG draw; it adds exactly 0 at init).
         from agents.model.model_version.retired_levers import refuse_retired_value
-        from agents.model.move_resolution_rules import MOVE_RESOLUTION_FACTS_MODES
         from agents.model.status_facts import CURE_DIM, CureFlags
-        for _name, _val, _modes in (("move_resolution_facts", move_resolution_facts, MOVE_RESOLUTION_FACTS_MODES),
-                                    ("drop_progress_clock", drop_progress_clock, DROP_PROGRESS_CLOCK_MODES)):
-            refuse_retired_value(_name, _val, ValueError)
-            if _val not in _modes:
-                raise ValueError(f"{_name} must be one of {_modes}, got {_val!r}")
-        if move_resolution_facts == "full" and move_resolution != "on":
-            raise ValueError("move_resolution_facts='full' requires move_resolution='on': it restores facts INSIDE the "
-                             "move-resolution family's cells (production's seven blocks still carry them).")
-        self.move_resolution_facts = move_resolution_facts
+        refuse_retired_value("drop_progress_clock", drop_progress_clock, ValueError)
+        if drop_progress_clock not in DROP_PROGRESS_CLOCK_MODES:
+            raise ValueError(f"drop_progress_clock must be one of {DROP_PROGRESS_CLOCK_MODES}, got {drop_progress_clock!r}")
         self.drop_progress_clock = drop_progress_clock
         self.unpack.drop_progress_clock = drop_progress_clock == "on"
         self.status_cure_rule: Optional[CureFlags] = CureFlags(layout) if damage_op else None

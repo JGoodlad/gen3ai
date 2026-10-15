@@ -36,8 +36,9 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   `gen3_pool_arch_record_v1`: below)
   using the run's RECORDED version (`snapshot.recorded_model_version(model)`: the model's own policy kwargs,
   `gen3_recorded_version_gate_v1`) — a stale-arch snapshot fails with `ModelVersionError`, never loads silently.
-  🚨 **Never rebuild that version from the BUILT modules:** `--move-resolution on` builds and then RETIRES seven
-  per-action blocks its config records ON, so a module read FATALed the `--arch endstate` seed `rb_es_end_s2001`
+  🚨 **Never rebuild that version from the BUILT modules:** a checkpoint's config can record a lever ON that its
+  build never kept (until legacy deletion U3, move resolution built and then RETIRED seven per-action blocks its config
+  records ON, and every adopted checkpoint still records them), so a module read FATALed the `--arch endstate` seed `rb_es_end_s2001`
   on its own sentinels at its first pool eval (2026-10-11; `rust_eval/recorded_version_gate_test.py`). A failed cycle is logged-and-continued (and counts as a failed supply cycle),
   resume-republish behaves exactly as the bot path above, and there is no drain, no skip-while-running
   rule and no hung-cycle watchdog (all were the Python worker pool's, deleted in P10-F2). The

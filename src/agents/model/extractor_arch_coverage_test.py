@@ -68,9 +68,10 @@ def test_every_version_checked_toggle_reaches_the_extractor():
     )
 
 
-@pytest.mark.parametrize("flag", ["t0_species_prior", "species_prior_fusion", "value_threat_inject"])
+@pytest.mark.parametrize("flag", ["t0_species_prior", "species_prior_fusion"])
 def test_named_structural_flags_are_plumbed(flag):
-    """Explicit regression pins for the three no-state_dict-delta toggles.
+    """Explicit regression pins for the no-state_dict-delta toggles (`value_threat_inject`, the third, was deleted in
+    legacy deletion U3).
 
     These are the highest-risk ones: adding or removing the module changes no tensor shape, so a
     broken plumb is invisible everywhere except a saved config nobody reads.

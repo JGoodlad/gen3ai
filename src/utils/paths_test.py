@@ -130,14 +130,6 @@ def test_arch_tables_drift_gate_skips_on_an_empty_archive(monkeypatch, tmp_path)
     assert MODELS_DIR_ENV_VAR in str(ei2.value)
 
 
-def test_intent_move_cell_real_obs_skips_on_an_empty_archive(monkeypatch, tmp_path):
-    from agents.model import intent_move_cell_test as m
-    _empty_archive(monkeypatch, tmp_path)
-    with pytest.raises(Skipped) as ei:
-        m._real_obs(2)
-    assert m._TRACE_RUN in str(ei.value)
-
-
 def test_audit_states_real_trace_gate_skips_on_an_empty_archive(monkeypatch, tmp_path):
     from agents.model import audit_states_test as m
     _empty_archive(monkeypatch, tmp_path)

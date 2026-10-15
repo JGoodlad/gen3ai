@@ -612,14 +612,16 @@ def _recorded_config(run: str):
 
 #: The ARCH-surface keys the 2026-09-06 arm actually lost, read off its own recorded config on
 #: 2026-09-06. The literal is the point: a fixture that recomputed the answer would pass against a
-#: guard that had stopped looking.
+#: guard that had stopped looking. (It also lost `value_threat_inject` and the seven per-action blocks
+#: `intent_move_cell`, `intent_threshold`, `intent_conditional`, `pair_outcome_cell`, `pair_outcome_switch`,
+#: `switch_branch_cell`, `conditional_threat_cell`; legacy deletion U3 deleted those fields, so the guard no longer
+#: compares them — a config that recorded them is judged on load by `model_version.adopted_levers` instead.)
 INCIDENT_LOST_KEYS = frozenset({
     "opp_belief_cls_k", "opp_belief_slots", "move_belief_mode", "spread_belief",
     "damage_matrices_outgoing", "spread_belief_nature", "entity_topk_seats", "edge_bias_families",
-    "entity_tail_seats", "value_threat_inject", "opp_intent", "species_prior_fusion",
-    "t0_species_prior", "intent_move_cell", "value_entity_pool_full", "history_events",
-    "value_entity_pool", "item_belief", "intent_threshold", "intent_conditional",
-    "pair_outcome_cell", "pair_outcome_switch", "switch_branch_cell", "conditional_threat_cell",
+    "entity_tail_seats", "opp_intent", "species_prior_fusion",
+    "t0_species_prior", "value_entity_pool_full", "history_events",
+    "value_entity_pool", "item_belief",
     "op_drop_renders", "op_believed_lean",
 })
 
@@ -675,7 +677,9 @@ def test_every_key_the_incident_lost_is_either_REFUSED_or_NAMED():
     generation_stamp = {"arch_signature", "config_version", "total_dim", "active_context_dim"}
     assert generation_stamp <= differing, sorted(generation_stamp - differing)
     differing -= generation_stamp
-    assert len(differing) == 31, sorted(differing)      # the ledger's count, re-measured
+    # the ledger's count (31), re-measured, minus the eight fields legacy deletion U3 removed from the mirror
+    # (`value_threat_inject` + the seven per-action blocks: judged on load by `adopted_levers`, never compared)
+    assert len(differing) == 31 - 8, sorted(differing)
 
     refused = {d.name for d in arch_surface.diff_against_production(types.SimpleNamespace(**cfg), prod)}
     named = {f.lstrip("-").replace("-", "_")
@@ -688,7 +692,7 @@ def test_every_key_the_incident_lost_is_either_REFUSED_or_NAMED():
     assert not unmentioned, (
         f"{sorted(unmentioned)} differ from production on the arm that burned ~7 GPU-hours and "
         f"NOTHING would tell the operator — the guard must refuse it or name it")
-    assert len(refused) == 26, sorted(refused)
+    assert len(refused) == 26 - 8, sorted(refused)            # the same eight left the ARCH surface (U3)
 
 
 def test_a_derived_row_is_read_from_a_recorded_bool_as_well_as_a_coefficient():

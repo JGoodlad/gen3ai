@@ -105,14 +105,14 @@ def test_an_off_value_of_each_flag_x5_requires_is_refused_naming_it(production, 
 def test_the_belief_off_ablation_still_builds_and_builds_no_x5(production):
     """Both belief toggles OFF is not blob: no hidden-slot token and no intent at all — still constructible.
 
-    RE-STATED for production (the END STATE's adoption, 2026-10-12): production now runs move resolution (+ its
-    restored facts) and the four-move closure, which READ the belief family and are refused without it, so the
-    ablation turns those three off too (before the adoption it was the nine toggles alone)."""
+    RE-STATED for production (the END STATE's adoption, 2026-10-12): production runs the four-move closure, which
+    READS the belief family and is refused without it, so the ablation turns it off too. Move resolution is DERIVED
+    from opp_intent since legacy deletion U3, so it simply is not built (the seven per-action blocks this ablation
+    also turned off were deleted there)."""
     fe = _build(production, opp_belief_slots=False, opp_intent=False, t0_species_prior=False,
-                intent_move_cell=False, intent_threshold=False, intent_conditional=False,
-                switch_branch_cell=False, species_prior_fusion=False, ridealong_opp=0,
-                move_resolution="off", move_resolution_facts="off", move_set_closure="off")
+                species_prior_fusion=False, ridealong_opp=0, move_set_closure="off")
     assert fe.hypothesis_builder is None and fe.flat_intent_head is None and not hasattr(fe, "belief_slots")
+    assert fe.move_resolution_cell is None, "move resolution needs the published α / β: vacuous without opp_intent"
 
 
 # ----------------------------------------------------------------------------- the CLI

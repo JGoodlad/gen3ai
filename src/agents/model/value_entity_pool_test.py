@@ -113,8 +113,8 @@ def test_v80_config_is_refused_below_the_migration_floor():
 #
 # The intersection partner has CHANGED. `intent_value_reduce` — the other value part at the time —
 # was deleted by the critic-route wave (dV 0.3176 at 2x sample, below the 0.39 bar). The surviving
-# critic surface is the entity pool (the seam) plus the two `CLSPool` TOKEN-CONTENT injections, so
-# that is what these now intersect. The claim is unchanged and, if anything, stronger: no
+# critic surface is the entity pool (the seam) — the `CLSPool` threat injection was deleted in legacy deletion U3 —
+# so that is what these now intersect, beside the full move-resolution stack. The claim is unchanged and, if anything, stronger: no
 # combination of critic enrichments moves any projection width, because there is no vf concat left
 # for one to be appended to.
 
@@ -127,8 +127,7 @@ _CRITIC_STACK = dict(
 
 def _build_both(**over):
     """Every surviving critic route on at once — the production shape."""
-    kw = dict(_CRITIC_STACK, value_entity_pool=True, value_entity_pool_full=True,
-              value_threat_inject=True, intent_threshold=True)
+    kw = dict(_CRITIC_STACK, value_entity_pool=True, value_entity_pool_full=True)
     kw.update(over)
     return _build_real_policy(**kw)
 
@@ -138,15 +137,13 @@ def test_the_value_half_is_sized_for_BOTH_value_parts():
     (gen3_static_widths_v1 — the broad flag sweep lives in `projection_width_test.py`)."""
     model, enc = _build_both()
     fe = model.policy.features_extractor
-    # NOT a skip. `_build_both()` passes value_entity_pool=True, value_entity_pool_full=True AND
-    # value_threat_inject=True, so "this build resolved without both value parts" describes a
-    # resolution BUG — and skipping on it retires the only direct check that the static vf width
-    # matches a real forward.
-    assert fe.value_entity_pool is not None and fe.cls_pool.value_threat_proj is not None, (
-        f"_build_both() asked for both value parts but got "
-        f"value_entity_pool={'present' if fe.value_entity_pool is not None else 'MISSING'}, "
-        f"value_threat_proj={'present' if fe.cls_pool.value_threat_proj is not None else 'MISSING'}"
-        f" — flag resolution dropped one; fix that rather than skipping the width gate")
+    # NOT a skip. `_build_both()` passes value_entity_pool=True and value_entity_pool_full=True, so "this build
+    # resolved without the value part" describes a resolution BUG — and skipping on it retires the only direct check
+    # that the static vf width matches a real forward.
+    assert fe.value_entity_pool is not None, (
+        "_build_both() asked for the entity pool but got none — flag resolution dropped it; fix that rather than "
+        "skipping the width gate")
+    assert getattr(fe.cls_pool, "value_threat_proj", None) is None, "the threat projection was deleted (U3)"
     with torch.no_grad():
         _pi, vf = fe.forward_internal(_obs(enc, n=3))
     assert vf.shape[1] == fe.vf_features_dim, (

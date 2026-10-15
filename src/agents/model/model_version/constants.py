@@ -588,7 +588,18 @@ from typing import Any, Dict
 #   (`model_version.adopted_levers`; a config without the op — a toy — is VACUOUS and loads). Stamp-only migration. No
 #   ARCH_SIGNATURE bump (the adopted forward math is unchanged: only dead branches went), no MIGRATION_FLOOR change
 #   (D-LD1).
-MODEL_CONFIG_VERSION = 156
+# v157 (legacy deletion U3, `designs/ops/legacy_deletion_manifest_2026-10-12.md` lanes MR + VTI): TEN fields LEFT the
+#   config — `move_resolution` (the family is DERIVED: built whenever opp_intent + the op with its outgoing block, both
+#   per-move matrices and the incoming matrix's seat axis are), `move_resolution_facts` (always `full`),
+#   `value_threat_inject` (the critic's threat projection is deleted) and the seven per-action blocks
+#   (`intent_move_cell`, `intent_threshold`, `intent_conditional`, `pair_outcome_cell`, `pair_outcome_switch`,
+#   `switch_branch_cell`, `conditional_threat_cell`) the move-resolution family replaced — with their flags, modules
+#   and OFF paths. Judged on load by `model_version.adopted_levers` as U1's (the seven are INERT beside
+#   `move_resolution on`). Stamp-only migration. No ARCH_SIGNATURE bump (the adopted TRAINED forward is unchanged:
+#   the deleted modules were constructed and retired), no MIGRATION_FLOOR change (D-LD1). 🚨 THE FRESH-INIT STREAM
+#   CHANGED (D-LD7): the blocks and the threat projection no longer draw at construction or at SB3's orthogonal
+#   re-init, so a fresh seed at or after this version builds a DIFFERENT initial network than the same seed before.
+MODEL_CONFIG_VERSION = 157
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

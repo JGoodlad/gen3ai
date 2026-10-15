@@ -110,7 +110,6 @@ class OpStashes:
     # `pair_in`'s width is a shipped contract three consumers read, and the multiplier is the one
     # quantity in the cell that is NOT divided by the defender's own bulk (see conditional_threat.py).
     pair_type_mult: Optional[torch.Tensor] = None    # [B,J,K] UN-gated (the consumer applies alpha+gate)
-    reduced_extra: Optional[torch.Tensor] = None     # [B,6,extra] the pair-reduce rung output
     out_pko: Optional[torch.Tensor] = None           # [B,4,6] per-(our move, their mon) pko, PRE-gain
     # gen3_switch_branch_v1 (v94): the SAME outgoing grid un-collapsed — `[low, high, crit, pko,
     # type_mult]` per (our request move, their mon). `out_pko` is one channel of it and keeps its
@@ -118,14 +117,9 @@ class OpStashes:
     # re-slicing the flat render at a consumer would both break the one-slicer rule and read the
     # learned-GAIN-scaled render values instead of the honest physics.
     out_cells: Optional[torch.Tensor] = None         # [B,4,6,_DMG_OMX_CELL] PRE-gain
-    # gen3_switch_branch_v1 (v94): P(their slot j is Ghost) — the revealed types where the slot is
-    # revealed, the hidden-team species posterior marginalised through SPECIES_IS_GHOST where it is
-    # not. Leak-free (publications + the Smogon prior only), and computed HERE because the op owns
-    # BOTH the species posterior and the type table; a consumer deriving it would re-implement both.
-    opp_p_ghost: Optional[torch.Tensor] = None       # [B,6]
-    # gen3_move_resolution_v1 (v141, `--move-resolution on` only): the hidden-team species posterior
+    # gen3_move_resolution_v1 (v141; set whenever the family is built): the hidden-team species posterior
     # (`unrevealed_species_probs`) the move-resolution family marginalises its per-slot immunity / type /
-    # ability tables through — the SAME belief every other unrevealed read uses. None when off.
+    # ability tables through — the SAME belief every other unrevealed read uses. None without the family.
     opp_species_post: Optional[torch.Tensor] = None  # [B,S] | [B,6,S]
     # gen3_speed_physics_v1 (v143): the ITEM belief's P(Quick Claw) per opp slot (the extractor's publication; None →
     # the Smogon species prior) and the forward's (P(first), P(first | we are paralysed)) against their active per
@@ -151,7 +145,7 @@ from agents.model.damage_op_speed import DamageOperatorSpeed
 # `damage_op.max_by_index`, the name this module's own maxima resolve at call time).
 from agents.model.index_max import max_by_index
 from agents.model.op_reduction import incoming_principled
-from agents.model.pair_outcome import GHOST_TYPE_IDX as _GHOST_TIDX, PAIR_OUTCOME_IDX
+from agents.model.pair_outcome import PAIR_OUTCOME_IDX
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -212,7 +206,6 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False, topk_k: int = 0,
                  matrices_outgoing: bool = False, matrices_incoming: bool = False,
                  candidate_k: int = 0,
-                 reduce_how: str = "hard_max",
                  drop_renders: bool = False,
                  believed_lean: bool = False):
         super().__init__()
@@ -227,16 +220,6 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # the B-spread correctness fix applied to the last de-timid site the edges read.
         self.drop_renders = bool(drop_renders)
         self.believed_lean = bool(believed_lean)
-        # gen3_pair_reduce_v1 (design_pair_reduction.md §8.1 steps 3-4): the Contract-W/L reduction
-        # rungs, built BESIDE the legacy hard-max block (add-beside, §9 — never replacing it).
-        # 'hard_max' (production default) builds NOTHING — no params, no state_dict keys, no forward
-        # work: byte-identical. Any other rung populates `last_reduced_extra` [B,6,extra_dim] each
-        # forward; DELIVERY (switch cell / prefuse / seed rows) + config wiring is gen-6 work.
-        from agents.model.pair_reduce import build_pair_reducer, PAIR_REDUCE_HOWS
-        if reduce_how not in PAIR_REDUCE_HOWS:
-            raise ValueError(f"DamageOperator reduce_how={reduce_how!r} — one of {PAIR_REDUCE_HOWS}")
-        self.reduce_how = reduce_how
-        self.pair_reducer = build_pair_reducer(reduce_how, n_channels=_PAIR_REDUCE_N_CHANNELS)
         # Step 6's seam flag: the UN-reduced cells are stashed only when a downstream alpha
         # consumer asked for them. Off => None and zero extra work.
         self.stash_pair_cells: bool = False
@@ -245,10 +228,6 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # both together — but the implication is asserted in the forward rather than assumed, since
         # a consumer that set only this one would otherwise get a silently narrower vector.
         self.stash_pair_outcome: bool = False
-        # gen3_switch_branch_v1 (v94): the seam for the per-opp-slot GHOST marginal. Off => None
-        # and zero extra work; on, it costs one `[B|B,6, n_species] @ [n_species]` matvec beside
-        # the species reads `_outgoing_matrix` already does.
-        self.stash_opp_ghost: bool = False
         # gen3_conditional_threat_v1 (v95): the seam for the per-(defender, seat) type multiplier.
         # Off => None and zero extra work; on it is a pure `.detach()` of a tensor the incoming
         # matrix already built, so it adds no arithmetic at all.
@@ -481,13 +460,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
     @property
     def last_pair_type_mult(self) -> Optional[torch.Tensor]: return self.stash.pair_type_mult
     @property
-    def last_reduced_extra(self) -> Optional[torch.Tensor]: return self.stash.reduced_extra
-    @property
     def last_out_pko(self) -> Optional[torch.Tensor]: return self.stash.out_pko
     @property
     def last_out_cells(self) -> Optional[torch.Tensor]: return self.stash.out_cells
-    @property
-    def last_opp_p_ghost(self) -> Optional[torch.Tensor]: return self.stash.opp_p_ghost
     @property
     def last_raw_block(self) -> Optional[torch.Tensor]: return self.stash.raw_block
     @property
@@ -545,9 +520,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         if how != "hard_max":
             raise NotImplementedError(f"REDUCE how={how!r} — only 'hard_max' is implemented at "
                                       "this legacy site. The Contract-W/L rungs (belief_mean / "
-                                      "learned / deepsets / multi) live in pair_reduce.py, built "
-                                      "via DamageOperator(reduce_how=…) and stashed on "
-                                      "last_reduced_extra — design_pair_reduction.md §8.1")
+                                      "learned / deepsets / multi) were deleted with "
+                                      "`--value-threat-inject` (legacy deletion U3); the op's one "
+                                      "believed reduction is `op_reduction.believed_reduce`")
         return max_by_index(value * channel_mask)
 
     @staticmethod
@@ -1040,17 +1015,13 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                              p_outspeed, provenance], dim=-1)                                     # [B,6,12]
         feats = feats * defender_alive[:, :, None] * has_opp[:, None, None]                       # gates
 
-        # gen3_pair_reduce_v1: the Contract-W/L rungs read the SAME per-(defender, candidate) cell
-        # tensors the hard max just reduced — [low, high, crit, ko, acc, is_phys] per (j, c) — plus
-        # the belief w, and stash their per-defender rows. None (production 'hard_max') skips
-        # entirely; nothing below this block changes at any `reduce_how`.
-        # gen3_intent_value_reduce_v1 (step 6): the SAME un-reduced cells the pair-reducer consumes
-        # are stashed so a LATER tier can reduce them by alpha. This is the only shape step 6 can
+        # gen3_intent_value_reduce_v1 (step 6): the un-reduced per-(defender, candidate) cells —
+        # [low, high, crit, ko, acc, is_phys] per (j, c) — are stashed so a LATER tier can reduce them by alpha. This is the only shape step 6 can
         # take: alpha is scored from the E4 seats and the CLS pools, both computed DOWNSTREAM of
         # this operator, so it cannot weight a reduction that happens here — the design doc's
         # "swap `_chan_max`'s how=" is unbuildable for that reason, not for want of a knob.
         # Stashing is free (no math, no gradient path) and the op's own reduction is untouched.
-        if self.pair_reducer is not None or self.stash_pair_cells:
+        if self.stash_pair_cells:
             cells_pr = torch.stack([
                 low_frac, high_frac, crit_frac, ko_ramp,
                 acc_exp, phys_mask.expand(-1, TEAM_SIZE, -1)], dim=-1)                            # [B,6,C,6]
@@ -1060,9 +1031,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             # `_incoming_matrix` runs further down this same forward. Hold the raw cells and align
             # after it — pairing the two axes positionally would mis-weight every term while every
             # shape check still passed (`op move-order` bug class).
-            _pr_cells_raw, _pr_gate_raw = (cells_pr, _gate) if self.stash_pair_cells else (None, None)
-            self.stash.reduced_extra = ((self.pair_reducer(w_all, cells_pr) * _gate)
-                                       if self.pair_reducer is not None else None)
+            _pr_cells_raw, _pr_gate_raw = cells_pr, _gate
         # (no else-clear needed: gen3_op_stashes_v1's entry reset already left every field None)
 
         # gen3_op_block_trim_v1: the opp-active-level believed-EFFECT scalars (6) and per-STATUS SECONDARY
@@ -1103,22 +1072,6 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
                                self._status_landing(ctx)], dim=1)  # [B, out_dim]
         # gen3_per_move_matrices_v1: the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp active+revealed
         # bench). Appended LAST so the existing incoming/outgoing offsets are untouched.
-        # gen3_switch_branch_v1 (v94): P(their slot j is Ghost). Independent of the matrices (it
-        # reads only the species posterior and the revealed types), so it sits outside the block
-        # below — but it is the SAME `unrevealed_species_probs` those reads use, which is what
-        # makes "the arrival that blocks Rapid Spin" and "the arrival our move lands on" the same
-        # belief rather than two.
-        if self.stash_opp_ghost:
-            _sp = self.unrevealed_species_probs(ctx, species_probs)      # [B,S] | [B,6,S]
-            _pg = _sp @ self.SPECIES_IS_GHOST                            # [B]   | [B,6]
-            if _pg.dim() == 1:
-                _pg = _pg[:, None].expand(B, TEAM_SIZE)
-            _og = slice(TEAM_SIZE, 2 * TEAM_SIZE)
-            _rev_ghost = ((ctx.type1_ids[:, _og] == _GHOST_TIDX)
-                          | (ctx.type2_ids[:, _og] == _GHOST_TIDX)).float()          # [B,6]
-            # A REVEALED slot's typing is fact, so the belief is used only where there is nothing
-            # to know — the same revealed/unrevealed split `_outgoing_matrix` applies to bulk.
-            self.stash.opp_p_ghost = torch.where(ctx.opp_believed_mask, _pg, _rev_ghost)
         if self.stash_species_post:
             self.stash.opp_species_post = self.unrevealed_species_probs(ctx, species_probs)
         if self.matrices_outgoing:

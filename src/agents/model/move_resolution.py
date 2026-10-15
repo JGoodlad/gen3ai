@@ -1,10 +1,12 @@
-"""gen3_move_resolution_v1 — the MOVE-RESOLUTION family (`--move-resolution on`; architecture audit F11, §9).
+"""gen3_move_resolution_v1 — the MOVE-RESOLUTION family (architecture audit F11, §9). Built whenever its
+prerequisites are (opp_intent + the op with its outgoing block and both per-move matrices + the incoming matrix's
+seat axis); the `--move-resolution` flag and the seven blocks it replaced were deleted in legacy deletion U3.
 
 **The owner's ruling (2026-10-06).** FACTS — the hard-to-compute mechanics of what will actually happen if I
 press this — are kept and consolidated into ONE family; JUDGMENTS — opinions of the right play — are dropped. The
 seven hand-designed per-action blocks (`intent_move_cell`, `intent_threshold`, `intent_conditional`,
 `pair_outcome_cell`, `switch_branch_cell` on the move cell; `pair_outcome_switch`, `conditional_threat_cell` on
-the switch cell) are REPLACED by this one family when the flag is on: their 55 fact coordinates are kept (six of
+the switch cell) were REPLACED by this one family (and deleted, legacy deletion U3): their 55 fact coordinates are kept (six of
 them rebuilt where the shipped spelling disagreed with the simulator, one with its production bug fixed) and their
 10 judgments (`tempo_cost`, `wasted_ko`, `neutralization`, the Focus Punch / Substitute / Endure / Endeavor hand
 thresholds, the two hazard-stake products) are gone. The inventory is `design_arch_audit.md` §9.
@@ -561,7 +563,7 @@ def _exact_ko_ours(mean_dmg: torch.Tensor, crit_dmg: torch.Tensor, our_hp: torch
 
 def restored_move_facts(o: MoveResolutionOps, m: torch.Tensor, kind_t: torch.Tensor, flag_t: torch.Tensor,
                         endeavor_num: torch.Tensor) -> torch.Tensor:
-    """``[B,4,len(MOVE_RESOLUTION_RESTORED_MOVE_COORDS)]`` — `--move-resolution-facts full`
+    """``[B,4,len(MOVE_RESOLUTION_RESTORED_MOVE_COORDS)]`` — the restored facts
     (`gen3_endstate_facts_v1`): the FACTS the family dropped as judgments on 2026-10-06 and the owner re-classified
     on 2026-10-09 (`design_hand_computed_features.md` §1's test: each is the probability or magnitude of a game event
     in its own unit). ``m`` is `move_facts`' own output (its ``p_resolve`` / ``p_ko_us`` columns are read, never
@@ -609,7 +611,7 @@ def restored_move_facts(o: MoveResolutionOps, m: torch.Tensor, kind_t: torch.Ten
 
 
 def restored_switch_facts(o: MoveResolutionOps, s: torch.Tensor) -> torch.Tensor:
-    """``[B,6,1]`` — `--move-resolution-facts full`: ``spin_denied_stake`` = P(their Rapid Spin fails on our Ghost
+    """``[B,6,1]`` — the restored fact ``spin_denied_stake`` = P(their Rapid Spin fails on our Ghost
     mon j) × THEIR side's Spikes layers / 3 — the EXPECTED layers (the ones WE laid) our Ghost switch-in preserves.
     ``s`` is `switch_facts`' output (its ``p_spin_denied`` column, already gated)."""
     p_den = s[..., MOVE_RESOLUTION_SWITCH_IDX["p_spin_denied"]]                       # [B,6]
@@ -656,7 +658,7 @@ class MoveResolutionCell(torch.nn.Module):
     ENDEAVOR_NUM: torch.Tensor
 
     def __init__(self, damage_op: Any, out_move: int = MOVE_RESOLUTION_MOVE_DIM,
-                 out_switch: int = MOVE_RESOLUTION_SWITCH_DIM, facts: str = "off") -> None:
+                 out_switch: int = MOVE_RESOLUTION_SWITCH_DIM) -> None:
         super().__init__()
         from agents.model.hypothesis_set import IsolatedLinear
         n_moves = int(damage_op.MOVE_BP.shape[0])
@@ -670,28 +672,22 @@ class MoveResolutionCell(torch.nn.Module):
         self.register_buffer("PRIO_W", build_priority_table(damage_op.MOVE_PRIORITY), persistent=False)
         self.move_proj = IsolatedLinear(_MOVE_RESOLUTION_MOVE_RAW, int(out_move), zero=True)
         self.switch_proj = IsolatedLinear(_MOVE_RESOLUTION_SWITCH_RAW, int(out_switch), zero=True)
-        # gen3_endstate_facts_v1: the RESTORED facts (`--move-resolution-facts full`) and the STATUS facts (the pair
-        # outcome's exact status columns), each through its OWN zero-init bias-free IsolatedLinear onto the SAME output
-        # block — the zero-init input columns of `move_proj` / `switch_proj`, whose shapes and init are unchanged
-        # (no RNG draw: the `off` build is this build minus these matrices, and ON adds exactly 0 at init).
-        from agents.model.move_resolution_rules import (MOVE_RESOLUTION_FACTS_MODES,
-                                                        MOVE_RESOLUTION_RESTORED_MOVE_COORDS,
+        # gen3_endstate_facts_v1: the RESTORED facts (the facts the 2026-10-06 list dropped as judgments and the owner
+        # re-classed FACT on 2026-10-09; unconditional since `--move-resolution-facts` was deleted, legacy deletion
+        # U3) and the STATUS facts (the pair outcome's exact status columns), each through its OWN zero-init bias-free
+        # IsolatedLinear onto the SAME output block — the zero-init input columns of `move_proj` / `switch_proj`,
+        # whose shapes and init are unchanged (no RNG draw; each adds exactly 0 at init).
+        from agents.model.move_resolution_rules import (MOVE_RESOLUTION_RESTORED_MOVE_COORDS,
                                                         MOVE_RESOLUTION_RESTORED_SWITCH_COORDS)
-        if facts not in MOVE_RESOLUTION_FACTS_MODES:
-            raise ValueError(f"move_resolution facts must be one of {MOVE_RESOLUTION_FACTS_MODES}, got {facts!r}")
-        self.facts = facts
-        self.restored_move_proj: Optional[IsolatedLinear] = None
-        self.restored_switch_proj: Optional[IsolatedLinear] = None
-        if facts == "full":
-            from agents import gen3_data
-            _md = gen3_data.moves.get("endeavor")
-            if _md is None:
-                raise ValueError("move_resolution: 'endeavor' does not resolve in gen3_data.moves")
-            self.register_buffer("ENDEAVOR_NUM", torch.tensor([int(_md.num)], dtype=torch.long), persistent=False)
-            self.restored_move_proj = IsolatedLinear(len(MOVE_RESOLUTION_RESTORED_MOVE_COORDS), int(out_move),
-                                                     zero=True, bias=False)
-            self.restored_switch_proj = IsolatedLinear(len(MOVE_RESOLUTION_RESTORED_SWITCH_COORDS), int(out_switch),
-                                                       zero=True, bias=False)
+        from agents import gen3_data
+        _md = gen3_data.moves.get("endeavor")
+        if _md is None:
+            raise ValueError("move_resolution: 'endeavor' does not resolve in gen3_data.moves")
+        self.register_buffer("ENDEAVOR_NUM", torch.tensor([int(_md.num)], dtype=torch.long), persistent=False)
+        self.restored_move_proj = IsolatedLinear(len(MOVE_RESOLUTION_RESTORED_MOVE_COORDS), int(out_move),
+                                                 zero=True, bias=False)
+        self.restored_switch_proj = IsolatedLinear(len(MOVE_RESOLUTION_RESTORED_SWITCH_COORDS), int(out_switch),
+                                                   zero=True, bias=False)
         from agents.model.pair_outcome import STATUS_FACT_COORDS
         self.status_move_proj = IsolatedLinear(len(STATUS_FACT_COORDS), int(out_move), zero=True, bias=False)
         self.status_switch_proj = IsolatedLinear(len(STATUS_FACT_COORDS), int(out_switch), zero=True, bias=False)
@@ -702,13 +698,11 @@ class MoveResolutionCell(torch.nn.Module):
 
     def extras(self, ops: MoveResolutionOps, m: torch.Tensor, s: torch.Tensor
                ) -> Dict[str, torch.Tensor]:
-        """gen3_endstate_facts_v1: the un-projected EXTRA blocks the flags build (``restored_move`` /
-        ``restored_switch`` under `--move-resolution-facts full`; ``status_move`` / ``status_switch`` always, the exact
-        status facts). ``m`` / ``s`` are `raw`'s outputs."""
+        """gen3_endstate_facts_v1: the un-projected EXTRA blocks (``restored_move`` / ``restored_switch``, the restored
+        facts; ``status_move`` / ``status_switch``, the exact status facts). ``m`` / ``s`` are `raw`'s outputs."""
         out: Dict[str, torch.Tensor] = {}
-        if self.restored_move_proj is not None:
-            out["restored_move"] = restored_move_facts(ops, m, self.KIND, self.FLAG, self.ENDEAVOR_NUM)
-            out["restored_switch"] = restored_switch_facts(ops, s)
+        out["restored_move"] = restored_move_facts(ops, m, self.KIND, self.FLAG, self.ENDEAVOR_NUM)
+        out["restored_switch"] = restored_switch_facts(ops, s)
         out["status_move"] = status_move_facts(ops)
         out["status_switch"] = status_switch_facts(ops)
         return out
@@ -717,9 +711,8 @@ class MoveResolutionCell(torch.nn.Module):
         m, s = self.raw(ops)
         mo, so = self.move_proj(m), self.switch_proj(s)
         ex = self.extras(ops, m, s)
-        if self.restored_move_proj is not None and self.restored_switch_proj is not None:
-            mo = mo + self.restored_move_proj(ex["restored_move"])
-            so = so + self.restored_switch_proj(ex["restored_switch"])
+        mo = mo + self.restored_move_proj(ex["restored_move"])
+        so = so + self.restored_switch_proj(ex["restored_switch"])
         mo = mo + self.status_move_proj(ex["status_move"])
         so = so + self.status_switch_proj(ex["status_switch"])
         return mo, so

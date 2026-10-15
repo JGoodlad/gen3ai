@@ -78,8 +78,9 @@ class EngineArch:
         from agents.model.snapshot import arch_toggles_from_model, recorded_model_version
         from agents.training.rust_rollout.build import _arch_key
 
-        # the RECORDED architecture (gen3_recorded_version_gate_v1): a built-module read says False for the seven
-        # blocks `--move-resolution on` retires, where every end-state checkpoint's config records True
+        # the RECORDED architecture (gen3_recorded_version_gate_v1): a built-module read is never the recorded
+        # config (it said False for the seven construct-then-retire blocks, deleted in legacy deletion U3, where every
+        # end-state checkpoint's config records True)
         toggles = arch_toggles_from_model(model)
         sig, fp = _arch_key(model.policy)
         return cls(source=ref.id, toggles=toggles, version=recorded_model_version(model),

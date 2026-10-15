@@ -113,8 +113,8 @@ cannot be automated.
 Two live examples from this tree, deliberately resolved in opposite directions:
 
 - `value_entity_pool_test` builds a policy with `value_entity_pool=True,
-  value_entity_pool_full=True, value_threat_inject=True` and then skipped "if this build resolved
-  without both value parts". It **asked** for both parts. Resolving without them is a flag-resolution
+  value_entity_pool_full=True, value_threat_inject=True` (the last since deleted, legacy deletion U3) and then
+  skipped "if this build resolved without both value parts". It **asked** for both parts. Resolving without them is a flag-resolution
   bug. That is now an assertion.
 - `compile_trainer_test` skips without CUDA. The box either has a card or it does not; the test
   arranged nothing. That skip is correct — and it is falsifiable, because this box has a card and

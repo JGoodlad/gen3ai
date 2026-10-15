@@ -53,7 +53,7 @@ def test_build_parser_is_importable_without_running_main():
 def test_known_option_strings_covers_a_live_flag():
     known = known_option_strings()
     assert "--steps" in known and known["--steps"] == "steps"
-    assert "--conditional-threat-cell" in known, "a v95 flag should be present on a v96 tree"
+    assert "--move-set-closure" in known, "a v154 flag should be present on a later tree"
 
 
 # ------------------------------------------------------------------ the checker itself
@@ -114,21 +114,23 @@ def test_missing_run_dir_says_so(tmp_path):
 # ------------------------------------------------- the flag_registry dependency graph, threaded in
 
 def test_an_explicitly_negated_dependency_is_reported():
-    """The whole point: this argv passes argparse and dies inside the extractor constructor."""
+    """The whole point: this argv passes argparse and dies inside the extractor constructor. (Its example was
+    `--intent-conditional --damage-matrices off` until legacy deletion U3 deleted the block.) A `--no-<flag>`
+    spelling is not read as a negation here (the registry rows name the dash form only), so the example negates
+    through a mode value."""
     pairs = unsatisfiable_pairs(
-        ["--steps", "100", "--intent-conditional", "--damage-matrices", "off"])
-    assert ("intent_conditional", "damage_matrices_outgoing", "--damage-matrices off") in pairs
+        ["--steps", "100", "--damage-topk", "4", "--damage-matrices", "off"])
+    assert ("damage_topk_k", "damage_matrices_incoming", "--damage-matrices off") in pairs
 
 
 def test_a_merely_ABSENT_dependency_is_not_reported():
     """A resume inherits every unspecified flag from the checkpoint's config, so absence is not
     evidence. Reporting it would make the tool cry wolf on the commands people actually rerun."""
-    assert unsatisfiable_pairs(["--steps", "100", "--intent-conditional"]) == []
+    assert unsatisfiable_pairs(["--steps", "100", "--op-believed-lean"]) == []
 
 
 def test_a_satisfied_dependency_is_silent():
-    argv = ["--intent-conditional", "--damage-op", "--damage-outgoing",
-            "--damage-matrices", "both", "--opp-intent-coef", "0.5"]
+    argv = ["--op-believed-lean", "--damage-op", "--spread-belief"]
     assert unsatisfiable_pairs(argv) == []
 
 
@@ -136,15 +138,15 @@ def test_a_zero_COEFFICIENT_disables_a_derived_toggle():
     """`opp_intent` is set by `--opp-intent-coef`, where 0 is OFF — the one place a numeric value,
     not a mode string, decides whether a dependency is satisfied.
 
-    (This used `--value-intent` until the critic-route deletion wave deleted that flag;
-    `--intent-threshold` carries the same single `opp_intent` dependency plus `damage_op`, so the
-    assertion names both rather than assuming a one-element list.)"""
-    pairs = unsatisfiable_pairs(["--intent-threshold", "--damage-op", "--opp-intent-coef", "0"])
-    assert [(f, d) for f, d, _ in pairs] == [("intent_threshold", "opp_intent")]
+    (This used `--value-intent` until the critic-route deletion wave deleted that flag, then `--intent-threshold`
+    until legacy deletion U3 did; `--move-set-closure` carries `opp_intent` plus `opp_belief_slots`, which is not
+    typed here — an ABSENT dependency is not evidence — so the assertion names exactly the zero-coefficient one.)"""
+    pairs = unsatisfiable_pairs(["--move-set-closure", "on", "--opp-intent-coef", "0"])
+    assert [(f, d) for f, d, _ in pairs] == [("move_set_closure", "opp_intent")]
 
 
 def test_check_reports_both_failure_kinds_in_one_pass():
-    res = check(["--pubval-mode", "none", "--intent-conditional", "--damage-matrices", "off"])
+    res = check(["--pubval-mode", "none", "--damage-topk", "4", "--damage-matrices", "off"])
     assert [f for f, _ in res["unknown"]] == ["--pubval-mode"]
     assert res["unsatisfiable"], "the dependency half must not be masked by the unknown-flag half"
 
@@ -317,17 +319,17 @@ def test_no_model_still_builds_a_namespace_and_runs_the_combination_checks():
 
 def test_a_resolved_namespace_reports_an_ABSENT_dependency_the_argv_alone_cannot(tmp_path):
     """The conservative rule is a consequence of not knowing, not a preference. Once the parent is
-    read, an unnamed dependency has a KNOWN value, so `--intent-conditional` over a parent that
+    read, an unnamed dependency has a KNOWN value, so `--op-believed-lean` over a parent that
     recorded `damage_op` OFF is reported — where the same argv with no `--model` is not.
 
     (`damage_matrices_outgoing` is deliberately NOT among the pairs: it has no argparse dest of its
     own — `--damage-matrices` desugars into it inside `resolve_config` — so on this namespace its
     value is genuinely undetermined, and an undetermined value is skipped rather than guessed.)"""
     ckpt, _ = _parent_run(tmp_path, damage_op=False)
-    argv = ["--model", ckpt, "--run-name", "child_run", "--steps", "1000", "--intent-conditional"]
+    argv = ["--model", ckpt, "--run-name", "child_run", "--steps", "1000", "--op-believed-lean"]
     res = check(argv)
-    assert ("intent_conditional", "damage_op") in [(f, d) for f, d, _ in res["unsatisfiable"]]
-    assert unsatisfiable_pairs(["--steps", "1000", "--intent-conditional"]) == []
+    assert ("op_believed_lean", "damage_op") in [(f, d) for f, d, _ in res["unsatisfiable"]]
+    assert unsatisfiable_pairs(["--steps", "1000", "--op-believed-lean"]) == []
 
 
 # ------------------------------------------------------ the ONE declaration both surfaces read
@@ -411,7 +413,7 @@ def test_no_archive_still_WARNS_and_still_runs_the_argv_only_checks(tmp_path, mo
     monkeypatch.chdir(cwd)
     rel = "models/parent/checkpoints/checkpoint_10_steps.zip"
     assert resolve_models_path(rel) == rel
-    argv = _c1_argv(rel, "--intent-conditional", "--damage-matrices", "off")
+    argv = _c1_argv(rel, "--damage-topk", "4", "--damage-matrices", "off")
     rc = checkargs_main(["--argv", " ".join(argv)])
     out = capsys.readouterr().out
     assert "could not read the FORK PARENT's recorded config" in out and "ARGV-ONLY" in out

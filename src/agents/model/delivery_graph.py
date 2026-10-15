@@ -136,13 +136,6 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "obs_facts_inject": ("ObsFactsInject",),
     "assembler": ("ProjectionAssembler",),
     "value_entity_pool": ("UnifiedValueReadout",),
-    "intent_move_cell": ("IntentMoveCell",),
-    "intent_threshold_move": ("IntentThresholdMoveCell",),
-    "intent_conditional": ("IntentConditionalMoveCell",),
-    "pair_outcome_move": ("PairOutcomeMoveCell",),
-    "pair_outcome_switch": ("PairOutcomeSwitchCell",),
-    "switch_branch": ("SwitchBranchMoveCell",),
-    "conditional_threat": ("ConditionalThreatCell",),
     "move_resolution_cell": ("MoveResolutionCell",),
 }
 
@@ -264,12 +257,9 @@ def build_extractor(config_path: str = _DEFAULT_CONFIG) -> "tuple[Any, Dict[str,
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     # the ctor never reads the space (`observation_space: spaces.Space`, deliberately unread)
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
-    # The POLICY retires modules right after its build (`Gen3DualHeadMaskablePolicy._build`): the seven per-action
-    # blocks `--move-resolution on` supersedes (gen3_move_resolution_v1) and the critic's threat projection under
-    # `--value-threat-inject off` (gen3_value_threat_inject_off_v1). Do the same here, in the policy's order, so the
-    # graph, the tables and the viewer describe the DEPLOYED network, not modules no state_dict holds (no-ops when off).
-    fe.retire_superseded_action_cells()
-    fe.retire_value_threat_inject()
+    # (The policy's two construct-then-retire hooks — the seven per-action blocks and the critic's threat projection —
+    # were deleted with the modules in legacy deletion U3: the extractor no longer builds either, so the graph reads
+    # the DEPLOYED network directly.)
     return fe, cfg, layout
 
 
@@ -759,20 +749,6 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                        via="ProjectionAssembler concat", pooled=False,
                        note="the one head input with NO token route a pool reads — its "
                             "only other delivery is the global token"))
-    # gen3_value_threat_inject_v1: the op's per-our-mon reduced incoming row, ADDED to that mon's
-    # token on the value pool's OWN copy — so `value_cls` pools an augmented set while `our_cls`,
-    # `our_active_refined` and the pointer head read the untouched tokens (pi is bit-identical for
-    # an arbitrary W_inj, by construction rather than by discipline). Drawn as a damage_op->vf route
-    # because that is what it is; it lives under `cls_pool`, which is why it was never drawn.
-    if getattr(fe.cls_pool, "value_threat_proj", None) is not None:
-        from agents.model.value_threat_inject import value_threat_inject_dim
-        edges.append(_edge("damage_op", "value_pooled", "content",
-                           value_threat_inject_dim(), "value_threat_inject_dim()",
-                           via="CLSPool.value_threat_proj (one SHARED Linear over the six rows) — "
-                               "token CONTENT on the value pool's copy of our mons",
-                           pooled=True, zero_init=True,
-                           note="an attention VALUE carries a magnitude where an attention BIAS "
-                                "cannot — 'this mon is about to lose 62% of its HP', per entity"))
     # gen3_value_pooled_routes_v1 (v89): every value route is an ADDITIVE zero-init injection
     # into `value_pooled` — which, since the critic-route deletion wave, IS `vf_combined`. There
     # is no vf CONCAT left to draw: the seed window, the hidden-opp vf half and the nmr vf part
@@ -816,62 +792,6 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                op.pointer_move_cell_dim, "_PTR_MOVE_CELL",
                                note="[low, high, crit, pko, p_land, known, sec x"
                                     f"{dop._N_OUT_SECONDARY}] for THIS request slot"))
-    if getattr(fe, "intent_move_cell", None) is not None:
-        # gen3_intent_move_cell_v1 (G3): the alpha-conditioned c2 re-delivery — a per-action
-        # ABSOLUTE on the move logits, weighted by the T2 alpha publication.
-        for k in range(n_e3):
-            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
-                               fx.INTENT_MOVE_CELL_DIM, "INTENT_MOVE_CELL_DIM",
-                               via="IntentMoveCell (published alpha × c2 operands)",
-                               zero_init=True,
-                               note="alpha-expected burn/sleep consequence + raw c2 columns "
-                                    "+ alpha_stay, for THIS request slot"))
-    # The two pointer-cell blocks that shipped after `intent_move_cell` and were never drawn: both
-    # widen `PointerInputs.move_cells` exactly as it does, so their absence made the pointer head's
-    # own input look narrower than it is.
-    if getattr(fe, "intent_threshold_move", None) is not None:
-        for k in range(n_e3):
-            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
-                               fx.INTENT_THRESH_MOVE_DIM, "INTENT_THRESH_MOVE_DIM",
-                               via="IntentThresholdMoveCell (alpha-contracted p_KO / "
-                                   "P(sub survives) / P(the punch executes))",
-                               zero_init=True,
-                               note="gated to the mechanic that reads it — Focus Punch, "
-                                    "Substitute, Endure, Destiny Bond, Endeavor — plus p_KO as "
-                                    "decorrelated context on every slot"))
-    if getattr(fe, "pair_outcome_move", None) is not None:
-        for k in range(n_e3):
-            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
-                               fx.PAIR_OUTCOME_MOVE_DIM, "PAIR_OUTCOME_MOVE_DIM",
-                               via="PairOutcomeMoveCell (the alpha-reduced UNIFIED outcome "
-                                   "vector at our active defender)",
-                               zero_init=True,
-                               note="damage + status BY IDENTITY (par/brn/frz/slp/psn/tox) + "
-                                    "neutralization + tempo_cost, one vector one currency, "
-                                    "contracted by ONE alpha over their believed-move axis "
-                                    "(Contract W). Rides every move slot as decorrelated "
-                                    "context — the switch cell is Phase B"))
-    if getattr(fe, "intent_conditional", None) is not None:
-        for k in range(n_e3):
-            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
-                               fx.INTENT_COND_MOVE_DIM, "INTENT_COND_MOVE_DIM",
-                               via="IntentConditionalMoveCell (published alpha AND beta × the op "
-                                   "pair cells / outgoing block)",
-                               zero_init=True,
-                               note="Counter & Mirror Coat (alpha-weighted phys/spec incoming), "
-                                    "flinch, Protect, Explosion trade value (beta-weighted), "
-                                    "Pursuit — the SWITCH mass carries meaning in every cell"))
-    if getattr(fe, "switch_branch", None) is not None:
-        for k in range(n_e3):
-            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
-                               fx.SWITCH_BRANCH_MOVE_DIM, "SWITCH_BRANCH_MOVE_DIM",
-                               via="SwitchBranchMoveCell (published alpha AND beta x the op's "
-                                   "outgoing grid + the per-opp-slot GHOST marginal)",
-                               zero_init=True,
-                               note="OA2 — E[our move | they SWITCH] contracted over beta, kept "
-                                    "DECORRELATED from the stay branch (never the collapsed "
-                                    "mixture) — plus the Rapid Spin spinblock (the Pursuit "
-                                    "mirror, opposite valence) and Protect's attack mass"))
     if op.pointer_switch_cell_dim:
         for j in range(T):
             edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
@@ -879,34 +799,9 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                "_PTR_SWITCH_CELL_IN",
                                note="incoming row + CB tail (the OAX offense read was deleted "
                                     "with its flag — d2 carries the switch-in offense)"))
-    if getattr(fe, "pair_outcome_switch", None) is not None:
-        for j in range(T):
-            edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
-                               fx.PAIR_OUTCOME_SWITCH_DIM, "PAIR_OUTCOME_SWITCH_DIM",
-                               via="PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED "
-                                   "outcome row + spin_denied)",
-                               zero_init=True,
-                               note="design_pair_reduction SS2.1's canonical defect at its own "
-                                    "sink: the switch cell above carries TEN damage numbers and "
-                                    "no status coordinate in any currency. Per-DEFENDER content, "
-                                    "one shared alpha (no J axis => D3 is a shape error)"))
-    if getattr(fe, "conditional_threat", None) is not None:
-        for j in range(T):
-            edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
-                               fx.CONDITIONAL_THREAT_SWITCH_DIM, "CONDITIONAL_THREAT_SWITCH_DIM",
-                               via="ConditionalThreatCell (OA1 — alpha-contracted pko*acc, the "
-                                   "bulk-independent type multiplier, and the two SS0.2(3) "
-                                   "margins against our own HP)",
-                               zero_init=True,
-                               note="design_conditional_opponent_cells SS1: the defensive pivot. "
-                                    "The coordinates the reduced outcome row cannot carry — a "
-                                    "product of two decorrelated channels, the one channel not "
-                                    "divided by the defender's bulk, and what a saturated P(KO) "
-                                    "hides"))
-
     if getattr(fe, "move_resolution_cell", None) is not None:
-        # gen3_move_resolution_v1 (v141): the MOVE-RESOLUTION family — the seven blocks above are retired on a built
-        # policy and this is the one rider of both cells.
+        # gen3_move_resolution_v1 (v141): the MOVE-RESOLUTION family — the one rider of both cells (the seven
+        # per-action blocks it replaced were deleted, legacy deletion U3).
         for k in range(n_e3):
             edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
                                fx.MOVE_RESOLUTION_MOVE_DIM, "MOVE_RESOLUTION_MOVE_DIM",
@@ -989,12 +884,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         _a_w, _a_c = _K + 2, "entity_topk_seats + 2 (K seats, OTHER_move, the total SWITCH mass)"
         _b_w, _b_c = T + 1, "TEAM_SIZE + 1 (six slots, OTHER_species)"
         _move_cell_consumers = [
-            n for n, m in (("IntentMoveCell", getattr(fe, "intent_move_cell", None)),
-                           ("IntentThresholdMoveCell", getattr(fe, "intent_threshold_move", None)),
-                           ("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
-                           ("PairOutcomeMoveCell", getattr(fe, "pair_outcome_move", None)),
-                           ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)),
-                           ("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)))
+            n for n, m in (("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)),)
             if m is not None]
         if _move_cell_consumers:
             for k in range(n_e3):
@@ -1006,9 +896,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                         "never mass that reads as SWITCH. The CELL widths ride the "
                                         "parallel damage_op edges"))
         _beta_move_consumers = [
-            n for n, m in (("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
-                           ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)),
-                           ("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)))
+            n for n, m in (("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)),)
             if m is not None]
         if _beta_move_consumers:
             for k in range(n_e3):
@@ -1019,9 +907,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                         "the Explosion trade's target, and OA2's whole subject; "
                                         "beta_OTHER is a column, never renormalised away"))
         _switch_cell_consumers = [
-            n for n, m in (("PairOutcomeSwitchCell", getattr(fe, "pair_outcome_switch", None)),
-                           ("ConditionalThreatCell", getattr(fe, "conditional_threat", None)),
-                           ("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)))
+            n for n, m in (("MoveResolutionCell", getattr(fe, "move_resolution_cell", None)),)
             if m is not None]
         if _switch_cell_consumers:
             for j in range(T):

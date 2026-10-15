@@ -246,8 +246,10 @@ ratio within a softmax row (ARCHITECTURE §5.3). Three pairwise board consequenc
 mon:
 - *Spikes chip on entry* (layers × grounded): today `x` (a bias to G) plus the broadcast Spikes count the token can
   combine with its own types. After the rebuild: the bias only. The SWITCH pointer cell (incoming row 12 + Choice Band
-  3 + `pair_outcome_switch` 15 + `conditional_threat` 4) has **no entry-chip coordinate** (ARCHITECTURE §3.3), so the
-  switch logit would see Spikes only through attention ratios. Spikes is the central gen-3 hazard.
+  3 + `pair_outcome_switch` 15 + `conditional_threat` 4, as audited 2026-10-06) has **no entry-chip coordinate**
+  (ARCHITECTURE §3.3), so the switch logit would see Spikes only through attention ratios. (*Now:* the switch-hazard
+  block closes this — B3, built and adopted, flagless since legacy deletion U1 — and the two α blocks named here were
+  replaced by move resolution's switch block and DELETED in legacy deletion U3, 2026-10-15.) Spikes is the central gen-3 hazard.
 - *End-of-turn ledger* (Leftovers, weather chip, status tick, Leech Seed): `g`, a bias to G. Same problem.
 - *Damage to the opponent's mons*: `prefuse_proj` adds the op's incoming rows to OUR six tokens only
   (`extractor_forward.py:479-492`); what our active does to each of THEIR mons reaches their tokens only through the

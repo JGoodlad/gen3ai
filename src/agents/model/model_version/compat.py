@@ -318,18 +318,6 @@ class ModelVersionCompatibility(ModelVersionFields):
 
 
         # (gen3_seed_quantile_v1's `seed_quantile` gate is DELETED at v78 with the head itself.)
-        # gen3_value_threat_inject_v1 (v64): the injection projection is a state_dict-changing
-        # module, AND the flag switches the op's reducer on, so a flip is doubly incompatible.
-        if self.value_threat_inject != saved.value_threat_inject:
-            raise ModelVersionError(
-                f"value_threat_inject mismatch: saved={saved.value_threat_inject}, "
-                f"current={self.value_threat_inject}.\n"
-                "The critic's threat-injection projection is fixed for a run's lifetime: adding or "
-                "removing it changes the state_dict, and the flag also switches the DamageOperator's "
-                "pair reduction from hard_max to belief_mean — so a mid-run flip would change what "
-                "the critic reads AND which modules exist.\n"
-                "Resume with the matching --value-threat-inject setting, or start a fresh training run."
-            )
         # gen3_opp_intent_v1 (v68): the alpha/beta pointer heads are state_dict-changing modules.
         if self.opp_intent != saved.opp_intent:
             raise ModelVersionError(
@@ -345,16 +333,6 @@ class ModelVersionCompatibility(ModelVersionFields):
         # the policy and critic were trained against would silently change under them.
         # gen3_intent_grad_mode_v1 (v73): flipping this mid-run changes what the shared trunk is
         # being trained to do, with no shape anywhere to notice.
-        # gen3_intent_move_cell_v1 (v77): widens the pointer move scorer's in_features (a policy
-        # state_dict change), so a mismatch would be shape-caught — this names the cause instead.
-        if self.intent_move_cell != saved.intent_move_cell:
-            raise ModelVersionError(
-                f"intent_move_cell mismatch: saved={saved.intent_move_cell}, "
-                f"current={self.intent_move_cell}.\n"
-                "The G3 alpha-conditioned c2 move-cell channels widen the pointer move scorer, "
-                "so the flag is fixed for a run's lifetime.\n"
-                "Resume with the matching --intent-move-cell, or start a fresh run."
-            )
         # gen3_unified_value_readout_v1 (v80): widens the value projection (a state_dict change),
         # so a mismatch would be shape-caught — this names the cause instead.
         if self.value_entity_pool != saved.value_entity_pool:
@@ -382,64 +360,6 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "The item-belief head adds trunk modules, so the flag is fixed for a run's "
                 "lifetime.\n"
                 "Resume with the matching --item-belief, or start a fresh run."
-            )
-        # gen3_pair_outcome_v1 (v93): one zero-init projection + a pointer-move-cell width
-        # change (state_dict).
-        if self.pair_outcome_cell != saved.pair_outcome_cell:
-            raise ModelVersionError(
-                f"pair_outcome_cell mismatch: saved={saved.pair_outcome_cell}, "
-                f"current={self.pair_outcome_cell}.\n"
-                "The unified outcome vector widens the pointer move cell, so the flag is fixed "
-                "for a run's lifetime.\n"
-                "Resume with the matching --pair-outcome-cell, or start a fresh run."
-            )
-        # gen3_pair_outcome_switch_v1 (v94): one zero-init projection + a pointer-SWITCH-cell
-        # width change (state_dict).
-        if self.pair_outcome_switch != saved.pair_outcome_switch:
-            raise ModelVersionError(
-                f"pair_outcome_switch mismatch: saved={saved.pair_outcome_switch}, "
-                f"current={self.pair_outcome_switch}.\n"
-                "The per-defender outcome row widens the pointer SWITCH cell, so the flag is "
-                "fixed for a run's lifetime.\n"
-                "Resume with the matching --pair-outcome-switch, or start a fresh run."
-            )
-        # gen3_switch_branch_v1 (v94): one zero-init projection + a pointer-move-cell width
-        # change (state_dict).
-        if self.switch_branch_cell != saved.switch_branch_cell:
-            raise ModelVersionError(
-                f"switch_branch_cell mismatch: saved={saved.switch_branch_cell}, "
-                f"current={self.switch_branch_cell}.\n"
-                "The OA2 / spinblock / Protect-mass cell widens the pointer move cell, so the "
-                "flag is fixed for a run's lifetime.\n"
-                "Resume with the matching --switch-branch-cell, or start a fresh run."
-            )
-        # gen3_conditional_threat_v1 (v95): one zero-init projection + a pointer-SWITCH-cell
-        # width change (state_dict).
-        if self.conditional_threat_cell != saved.conditional_threat_cell:
-            raise ModelVersionError(
-                f"conditional_threat_cell mismatch: saved={saved.conditional_threat_cell}, "
-                f"current={self.conditional_threat_cell}.\n"
-                "OA1's conditional-threat coordinates widen the pointer SWITCH cell, so the flag "
-                "is fixed for a run's lifetime.\n"
-                "Resume with the matching --conditional-threat-cell, or start a fresh run."
-            )
-        # gen3_intent_threshold_v1 (v84): two zero-init projections + width changes (state_dict).
-        if self.intent_threshold != saved.intent_threshold:
-            raise ModelVersionError(
-                f"intent_threshold mismatch: saved={saved.intent_threshold}, "
-                f"current={self.intent_threshold}.\n"
-                "The threshold operator widens the pointer move cell and the critic, so the "
-                "flag is fixed for a run's lifetime.\n"
-                "Resume with the matching --intent-threshold, or start a fresh run."
-            )
-        # gen3_intent_conditional_v1 (v85): a zero-init projection + a pointer-cell width change.
-        if self.intent_conditional != saved.intent_conditional:
-            raise ModelVersionError(
-                f"intent_conditional mismatch: saved={saved.intent_conditional}, "
-                f"current={self.intent_conditional}.\n"
-                "The mechanic cells widen the pointer move cell, so the flag is fixed for a "
-                "run's lifetime.\n"
-                "Resume with the matching --intent-conditional, or start a fresh run."
             )
         # gen3_op_lean_forward_v1 (v86): out_gain shape / d3 forward math.
         if self.op_drop_renders != saved.op_drop_renders:
@@ -521,17 +441,6 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "builds PokemonEncoder.\n"
                 "Resume with the matching --token-encoding setting (a flagless resume inherits it), or "
                 "start a fresh training run.")
-        # gen3_move_resolution_v1 (v141): F11's move-resolution family. 'on' adds `MoveResolutionCell`'s
-        # parameters, retires the seven per-action blocks and widens both pointer cells; the pointer head's
-        # in_features would also catch it, but only as an opaque shape error — this compare names the cause.
-        if self.move_resolution != saved.move_resolution:
-            raise ModelVersionError(
-                f"move_resolution mismatch: saved={saved.move_resolution!r}, "
-                f"current={self.move_resolution!r}.\n"
-                "The per-action cell family is fixed for a run's lifetime: 'on' replaces the seven blocks with "
-                "the move-resolution family (different parameters, different cell widths).\n"
-                "Resume with the matching --move-resolution setting (a flagless resume inherits it), or "
-                "start a fresh training run.")
         # gen3_obs_facts_v1 (v144, the X5 version break's part 3): `v1` adds `ObsFactsInject`'s parameters
         # (zero-init, so a v1 run starts as the off network and nothing in the output SHAPE differs) — a strict
         # load would fail on the keys, but a frozen-opponent gate must name the cause; this compare is the gate.
@@ -581,15 +490,10 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "This four-move fact (gen3_move_set_closure_v1) is fixed for a run's lifetime: it changes the weights "
                 "every opponent slot's MoveBelief reinjection reads.\n"
                 "Resume with the matching --move-set-closure setting (a flagless resume inherits it), or start a fresh training run.")
-        # gen3_endstate_facts_v1 (v152): the surviving fact-completion levers — each changes the trained forward, so a
-        # frozen opponent's gate must name the cause rather than read a different input.
-        if self.move_resolution_facts != saved.move_resolution_facts:
-            raise ModelVersionError(
-                f"move_resolution_facts mismatch: saved={saved.move_resolution_facts!r}, current={self.move_resolution_facts!r}.\n"
-                "This fact-completion lever (gen3_endstate_facts_v1) is fixed for a run's lifetime: it changes what "
-                "the network reads.\n"
-                "Resume with the matching --move-resolution-facts setting (a flagless resume inherits it), or start a fresh training "
-                "run.")
+        # gen3_endstate_facts_v1 (v152): the surviving fact-completion lever — it changes the trained forward, so a
+        # frozen opponent's gate must name the cause rather than read a different input. (The legacy deletion's U3
+        # removed ten more fields at v157 — move resolution, its facts, the critic's threat injection and the seven
+        # per-action blocks: judged on load by `adopted_levers`, never compared here.)
         if self.drop_progress_clock != saved.drop_progress_clock:
             raise ModelVersionError(
                 f"drop_progress_clock mismatch: saved={saved.drop_progress_clock!r}, current={self.drop_progress_clock!r}.\n"

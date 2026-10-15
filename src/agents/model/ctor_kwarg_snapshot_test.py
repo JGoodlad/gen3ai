@@ -46,32 +46,29 @@ _NON_FLAG_PARAMS = frozenset({"observation_space", "layout", "mappings", "log_le
 # LEFT it at v132 (deletion pass L2): both are `_DEAD_FEK_JUDGED` (refused ON, popped OFF).
 # `cf_evidential`, `cf_twin_heads`, `cf_shadow_critic` and `q_winprob_mode` LEFT it at v134 (deletion pass
 # L4, the cf / Q heads): all four are `_DEAD_FEK_JUDGED` (refused ON, popped OFF / `"none"`).
-# Sorted, so a diff reads as one line added or one line removed.
+# The legacy deletion's U3 (v157) removed ten more — `move_resolution`, `move_resolution_facts`, `value_threat_inject`
+# and the seven per-action blocks — judged by `model_version.adopted_levers` (one predicate for config and zip),
+# never `_DEAD_FEK_*`. Sorted, so a diff reads as one line added or one line removed.
 CTOR_KWARGS_V96 = frozenset({
     "attend_unrevealed_opponents", "belief_grad_mode", "consequence_topk",
     "damage_candidate_k",
     "damage_matrices_incoming", "damage_matrices_outgoing", "damage_op", "damage_outgoing",
     "damage_topk_k", "edge_bias_families", "entity_tail_seats", "entity_topk_seats",
-    "history_events", "hp_belief_mode", "intent_conditional", "intent_move_cell",
-    "intent_threshold", "item_belief", "layout", "log_level", "mappings",
+    "history_events", "hp_belief_mode", "item_belief", "layout", "log_level", "mappings",
     "move_belief_mode", "move_candidate_floor", "move_latent", "move_prior_fusion",
     "observation_space", "op_believed_lean", "op_drop_renders", "opp_belief_cls_k",
-    "pair_outcome_cell", "pair_outcome_switch", "switch_branch_cell",
-    "conditional_threat_cell",
     "opp_belief_slots", "opp_intent", "opp_intent_grad_mode", "species_prior_fusion",
     "spread_belief", "spread_belief_nature", "t0_species_prior",
-    "value_entity_pool", "value_entity_pool_full", "value_threat_inject",
+    "value_entity_pool", "value_entity_pool_full",
     "win_prob_mode",
     "ridealong_ensemble", "ridealong_rnd", "ridealong_adv", "ridealong_opp",
     "ridealong_rnd_variants",
     "token_encoding",
     "oracle_reveal",
     "policy_readout",
-    "move_resolution",
     "mon_hazard_cost",
     "move_actor_state",
     "trunk_layers",
-    "move_resolution_facts",
     "drop_progress_clock",
     "move_target_state",
     "move_set_closure",

@@ -67,7 +67,7 @@ def test_stray_write_to_every_legacy_name_fails_loud(fe_and_layout):
     props = [n for n in dir(type(fe))
              if n.startswith("last_") and isinstance(getattr(type(fe), n), property)]
     assert len(props) >= 18, props            # the swept inventory, not a token few
-    for name in props + ["_thresh_probs", "_entity_latent_table", "_belief_supervision"]:
+    for name in props + ["_entity_latent_table", "_belief_supervision"]:
         assert isinstance(getattr(type(fe), name), property), name
         with pytest.raises(AttributeError):
             setattr(fe, name, None)

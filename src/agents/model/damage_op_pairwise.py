@@ -508,10 +508,10 @@ class DamageOperatorPairwise:
                                        species_probs: Optional[torch.Tensor] = None,
                                        other_u: Optional[torch.Tensor] = None,
                                        ) -> Tuple[torch.Tensor, ...]:
-        """gen3_intent_move_cell_v1 (G3): the RAW operands for the alpha-conditioned c2
-        re-delivery through the pointer MOVE cell (`agents.model.intent_move_cell` weights them
-        by the published alpha at T2 — alpha does not exist when this runs, the same
-        T2-object/T1-producer split as `last_pair_cells`).
+        """gen3_intent_move_cell_v1 (G3): the RAW c2 status operands the move-resolution family reads
+        (`move_resolution.gather_ops`; the per-action `IntentMoveCell` that first read them was deleted in legacy
+        deletion U3). They are weighted by the published alpha at T2 — alpha does not exist when this runs, the same
+        T2-object/T1-producer split as `last_pair_cells`.
 
         Returns ``(base [B,4,4], d_burn_k [B,K], d_slp_k [B,K], is_brn [B,4], is_slp [B,4])``:
 
@@ -549,7 +549,7 @@ class DamageOperatorPairwise:
             raise RuntimeError(
                 "pointer_intent_status_operands needs the op's top-K candidate stash "
                 "(last_topk_idx) to align with alpha's seats, and none was recorded. "
-                "intent_move_cell requires damage_topk_k>0 (and the incoming matrix that "
+                "move resolution requires damage_topk_k>0 (and the incoming matrix that "
                 "computes it).")
         has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()  # [B]
         our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()          # [B]

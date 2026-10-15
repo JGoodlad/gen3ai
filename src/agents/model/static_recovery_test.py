@@ -546,7 +546,7 @@ def test_the_residual_reaches_the_trunk_through_its_zero_init_projection(rows: t
     live = _forward_record(on, rows)
     assert not torch.equal(base[2], live[2]), "a live projection did not reach the team tokens"
     # (no op, no residual: `extractor_build` builds it `if damage_op`; the no-op build is the toy, whose load path
-    # `model_version/adopted_levers_test.py` exercises)
+    # `adopted_levers_test.py` exercises)
 
 
 # ============================================================================== THE COMBINED ARM'S LEVERS TOGETHER

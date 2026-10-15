@@ -1476,23 +1476,15 @@ def current_model_version(
     edge_bias_families: str = "off",
     entity_tail_seats: bool = False,
     win_prob_mode: str = "none",
-    value_threat_inject: bool = False,
     opp_intent: bool = False,
     species_prior_fusion: bool = False,
     t0_species_prior: bool = False,
     opp_intent_grad_mode: str = "detached",
     intent_value_reduce: bool = False,
-    intent_move_cell: bool = False,
     value_entity_pool: bool = False,
     value_entity_pool_full: bool = False,
     history_events: bool = False,
     item_belief: bool = False,
-    intent_threshold: bool = False,
-    intent_conditional: bool = False,
-    pair_outcome_cell: bool = False,
-    pair_outcome_switch: bool = False,
-    switch_branch_cell: bool = False,
-    conditional_threat_cell: bool = False,
     op_drop_renders: bool = False,
     op_believed_lean: bool = False,
     value_clock: bool = False,
@@ -1512,12 +1504,10 @@ def current_model_version(
     oracle_reveal: str = "off",
     policy_readout: str = "tower",
     token_encoding: str = "legacy",
-    move_resolution: str = "off",
     obs_facts: str = "off",
     mon_hazard_cost: str = "off",
     move_actor_state: str = "off",
     trunk_layers: int = 2,
-    move_resolution_facts: str = "off",
     drop_progress_clock: str = "off",
     move_target_state: str = "off",
     move_set_closure: str = "off",
@@ -1582,7 +1572,6 @@ def current_model_version(
     # gen3_static_tokens_v1 (v139): the per-Pokemon token encoding — structural, so a frozen opponent's
     # gate must see it.
     ext_kwargs["token_encoding"] = str(token_encoding)
-    ext_kwargs["move_resolution"] = str(move_resolution)
     # gen3_obs_facts_v1 (v144, part 3): the OBS-FACTS consumer — structural (`v1` builds a module).
     ext_kwargs["obs_facts"] = str(obs_facts)
     # gen3_static_port_v1 (v147): the static encoder's two narrow facts — structural.
@@ -1591,29 +1580,20 @@ def current_model_version(
     # gen3_static_recovery_v1 (v150): the trunk depth — structural.
     ext_kwargs["trunk_layers"] = int(trunk_layers)
     # gen3_endstate_facts_v1 (v152): the surviving fact-completion levers — structural.
-    ext_kwargs["move_resolution_facts"] = str(move_resolution_facts)
     ext_kwargs["drop_progress_clock"] = str(drop_progress_clock)
     # gen3_probe_facts_v1 (v153): their active's state on our move seats — structural.
     ext_kwargs["move_target_state"] = str(move_target_state)
     # gen3_move_set_closure_v1 (v154): the four-move fact — structural.
     ext_kwargs["move_set_closure"] = str(move_set_closure)
-    ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
     ext_kwargs["t0_species_prior"] = t0_species_prior
     ext_kwargs["opp_intent_grad_mode"] = opp_intent_grad_mode
     ext_kwargs["intent_value_reduce"] = intent_value_reduce
-    ext_kwargs["intent_move_cell"] = intent_move_cell
     ext_kwargs["value_entity_pool"] = value_entity_pool
     ext_kwargs["value_entity_pool_full"] = value_entity_pool_full
     ext_kwargs["history_events"] = history_events
     ext_kwargs["item_belief"] = item_belief
-    ext_kwargs["intent_threshold"] = intent_threshold
-    ext_kwargs["intent_conditional"] = intent_conditional
-    ext_kwargs["pair_outcome_cell"] = pair_outcome_cell
-    ext_kwargs["pair_outcome_switch"] = pair_outcome_switch
-    ext_kwargs["switch_branch_cell"] = switch_branch_cell
-    ext_kwargs["conditional_threat_cell"] = conditional_threat_cell
     ext_kwargs["op_drop_renders"] = op_drop_renders
     ext_kwargs["op_believed_lean"] = op_believed_lean
     ext_kwargs["value_clock"] = value_clock
@@ -1668,13 +1648,12 @@ def arch_toggles_from_model(model: Any) -> dict:
     ``current_model_version`` — read from the RECORDED policy kwargs (:func:`recorded_policy_kwargs`), NEVER off
     the built modules (gen3_recorded_version_gate_v1, 2026-10-11).
 
-    A built-module read is NOT the recorded configuration: under ``--move-resolution on`` the policy BUILDS the
-    seven per-action blocks (``intent_move_cell``, ``intent_threshold``, ``intent_conditional``,
-    ``pair_outcome_cell``, ``pair_outcome_switch``, ``switch_branch_cell``, ``conditional_threat_cell``) and then
-    RETIRES them (``retire_superseded_action_cells``), so a module read says False where the run's
-    ``model_config.json`` and every snapshot it wrote say True — the ``--arch endstate`` seed
+    A built-module read is NOT the recorded configuration: under the end state's adoption the policy BUILT the
+    seven per-action blocks and then RETIRED them (since deleted, legacy deletion U3), so a module read said False
+    where the run's ``model_config.json`` and every snapshot it wrote said True — the ``--arch endstate`` seed
     ``rb_es_end_s2001`` FATALed loading its own sentinels at its first pool eval (``intent_move_cell mismatch:
-    saved=True, current=False``), and ``main.h2h`` could not declare an engine for its checkpoints.
+    saved=True, current=False``), and ``main.h2h`` could not declare an engine for its checkpoints. The rule is
+    general (any construct-then-retire module, any retired policy tower), so it stays.
 
     The key set is DERIVED: every ``current_model_version`` keyword but :data:`_NON_TOGGLE_KWARGS`, each
     defaulting to that keyword's default when the recorded kwargs predate it (the extractor builds the same

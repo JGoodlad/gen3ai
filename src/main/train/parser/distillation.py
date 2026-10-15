@@ -35,119 +35,12 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "record: every KL-collapse arm fell 38-43%%, every control 0%% — 20%% "
                              "fires on all five known-bad arms and no known-good control; 20-38%% is "
                              "the honest margin.")
-    parser.add_argument("--intent-move-cell", "--intent_move_cell",
-                        dest="intent_move_cell", action=BoolFlag, default=None,
-                        help="G3 (gen3_intent_move_cell_v1, design_conditional_execution.md): the "
-                             "POLICY-side alpha consumer — the c2 status-consequence family "
-                             "re-delivered through the pointer MOVE cell as a per-action absolute, "
-                             "alpha-conditioned (burn/sleep channels become unrenormalized "
-                             "alpha-expectations over the op's top-K seat candidates; the seat "
-                             "mass rides as a decorrelated alpha_stay channel). Zero-init "
-                             "projection => identity at init. Requires --opp-intent-coef>0, "
-                             "--damage-op and --damage-topk-k>0. STRUCTURAL, version-checked.")
     parser.add_argument("--value-entity-pool-full", "--value_entity_pool_full",
                         dest="value_entity_pool_full", action=BoolFlag, default=None,
                         help="gen3_unified_value_readout_v2 (v82): the entity pool's COMPLETE "
                              "row set — + the refined GLOBAL token and the hidden-opp belief "
                              "queries. Requires --value-entity-pool. The Stage-3 successor for "
                              "every condemnable vf route. STRUCTURAL, version-checked.")
-    parser.add_argument("--pair-outcome-cell", "--pair_outcome_cell",
-                        dest="pair_outcome_cell", action=BoolFlag, default=None,
-                        help="gen3_pair_outcome_v1 (v93, design_opponent_intent.md §5.1/§5.3 + "
-                             "design_pair_reduction.md §2.1/§9a): the UNIFIED per-pair OUTCOME "
-                             "VECTOR — one pair_in[their believed move k, our mon j] carrying "
-                             "damage AND status BY IDENTITY (par/brn/frz/slp/psn/tox) AND "
-                             "neutralization (how much of the mon is destroyed without a KO) AND "
-                             "tempo_cost (turns spent undoing it), all in the same vector — "
-                             "reduced by ONE α over the move axis (Contract W: one distribution, "
-                             "every channel, so per-channel maxima are a shape error) and "
-                             "delivered to the pointer MOVE cell. Closes the CURRENCY failure "
-                             "§2.1 names: status reached the policy only as a softmax-normalised "
-                             "edge RATIO, so \"35%% of my HP\" and \"80%% chance of burn\" never "
-                             "met in one vector. Phase A = the MOVE-cell half (the switch cell "
-                             "and the β cells are Phase B). Requires --damage-op and "
-                             "--damage-topk-k>0; --opp-intent-coef>0 is OPTIONAL — without it α "
-                             "falls back to the R1 belief_mean rung (α := w/Σw), so the DELIVERY "
-                             "claim is testable apart from the DISTRIBUTION claim. Zero-init "
-                             "projection so ON-at-init is bit-identical. STRUCTURAL, "
-                             "version-checked.")
-    parser.add_argument("--pair-outcome-switch", "--pair_outcome_switch",
-                        dest="pair_outcome_switch", action=BoolFlag, default=None,
-                        help="gen3_pair_outcome_switch_v1 (v94, substrate Phase B, "
-                             "design_pair_reduction.md §2.1): deliver the SAME α-reduced unified "
-                             "outcome row, PER DEFENDER, to the pointer SWITCH cell — the sink "
-                             "§2.1 says the decision is actually made at. Today that cell holds "
-                             "ten damage numbers, one speed number, two belief-mass numbers and "
-                             "NO status coordinate in any currency, so \"they will click "
-                             "Will-O-Wisp, so bring the Natural Cure mon\" is unrepresentable "
-                             "there; status reaches the policy only as a softmax-normalised s3 "
-                             "edge RATIO. Adds one per-defender coordinate of its own, "
-                             "spin_denied = is_ghost(our mon j) · α(their Rapid Spin) · the "
-                             "hazard stake on THEIR side — the defensive half of the Pursuit "
-                             "mirror. The FIRST module ever to widen the switch cell. Requires "
-                             "--damage-op and --damage-topk-k>0; NOT --pair-outcome-cell (the two "
-                             "deliver one tensor to two sinks and coupling them would make a "
-                             "result unattributable), NOT --opp-intent-coef (same R1 belief_mean "
-                             "fallback as Phase A). Zero-init projection so ON-at-init is "
-                             "bit-identical. STRUCTURAL, version-checked.")
-    parser.add_argument("--switch-branch-cell", "--switch_branch_cell",
-                        dest="switch_branch_cell", action=BoolFlag, default=None,
-                        help="gen3_switch_branch_v1 (v94, substrate Phase B, "
-                             "design_conditional_opponent_cells.md §2 = OA2): per-request-slot "
-                             "content for the branch in which the OPPONENT SWITCHES. Gen-3 is "
-                             "simultaneous-move so P(they switch) is ONE scalar for the turn, but "
-                             "switches resolve FIRST — our move lands on the ARRIVAL, which β "
-                             "names. Delivers E[high]/E[pko]/E[type mult] contracted over β, the "
-                             "shared α_SWITCH scalar and wasted_ko = pko_stay·α_SWITCH "
-                             "(\"don't click the KO into the obvious switch\"), all kept "
-                             "DECORRELATED from the stay branch per §2.3 — never the collapsed "
-                             "(1−p)·stay + p·switch. Plus two mechanics of the same shape: the "
-                             "RAPID SPIN spinblock (p_spin_blocked = is_ghost(their active)·P(stay) "
-                             "+ α_SWITCH·Σβ·P(arrival is Ghost) — the REVERSE of Pursuit "
-                             "trapping, since gen3 Rapid Spin is Normal and a Ghost final defender "
-                             "means no damage AND no hazard removal) and PROTECT's α-derived "
-                             "attack mass (the c4 successor: its cell carries the consecutive-use "
-                             "decay and never asked whether they will attack at all). Requires "
-                             "--opp-intent-coef>0 with NO fallback — the R1 belief_mean rung is a "
-                             "presence belief over their MOVES and has no switch class, so "
-                             "α_SWITCH would be identically 0 and every coordinate would assert "
-                             "\"they never switch\" — plus --damage-op, --damage-matrices "
-                             "outgoing and --damage-topk-k>0. Zero-init projection so ON-at-init "
-                             "is bit-identical. STRUCTURAL, version-checked.")
-    parser.add_argument("--conditional-threat-cell", "--conditional_threat_cell",
-                        dest="conditional_threat_cell", action=BoolFlag, default=None,
-                        help="gen3_conditional_threat_v1 (v95, substrate Phase C, "
-                             "design_conditional_opponent_cells.md §1 = OA1): the CONDITIONAL "
-                             "THREAT CELL — \"they'll Ice Beam my Salamence; switch to the mon "
-                             "that eats Ice Beam\". Four α-contracted coordinates on the pointer "
-                             "SWITCH cell, each one a quantity Phase B's reduced outcome row "
-                             "structurally cannot carry: e_pko_acc = Σα·ko_ramp·acc (the product "
-                             "§0.2(2) says the OPERATOR must form — the two ride decorrelated and "
-                             "a thin tanh scorer does not multiply its own inputs), e_type_mult "
-                             "(the one cell channel NOT divided by the defender's own bulk, so a "
-                             "structural immunity reads apart from an incidental zero), and the "
-                             "two §0.2(3) MARGINS Σα·high − hp and Σα·crit − hp (>0 ⇒ dead) that "
-                             "say by how much a saturated P(KO) saturates. §1.2's λ-weighted `w` "
-                             "is deliberately NOT built: `pair_alpha` is the shipped distribution "
-                             "and a second one would be a second α. Requires --damage-op, "
-                             "--damage-matrices incoming and --damage-topk-k>0; NOT "
-                             "--opp-intent-coef (the R1 belief_mean fallback is meaningful here — "
-                             "every coordinate is a \"what lands on me if they attack\" "
-                             "contraction) and NOT --pair-outcome-switch (two quantities, one "
-                             "sink, attributable separately). Zero-init projection so ON-at-init "
-                             "is bit-identical. STRUCTURAL, version-checked.")
-    parser.add_argument("--intent-threshold", "--intent_threshold",
-                        dest="intent_threshold", action=BoolFlag, default=None,
-                        help="gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 "
-                             "step 3): the α-weighted THRESHOLD operator p_thresh(τ,⋛) — five "
-                             "mechanics through the pointer MOVE cell at once (Focus Punch "
-                             "executes / Substitute survives / Endure·p_KO / Destiny Bond·p_KO / "
-                             "Endeavor survives-to-act), plus p_KO — the calibrated am-I-about-"
-                             "to-die — appended to the CRITIC (the ledger-H1 payoff; the critic "
-                             "previously read a hard max). One contraction over the op's existing "
-                             "per-candidate cells; both projections zero-init so ON-at-init is "
-                             "bit-identical. Requires --opp-intent-coef>0, --damage-op and "
-                             "--damage-topk-k>0. STRUCTURAL, version-checked.")
     parser.add_argument("--op-drop-renders", "--op_drop_renders",
                         dest="op_drop_renders", action=BoolFlag, default=None,
                         help="gen3_op_lean_forward_v1 (v86, design_op_tensors step 3): drop the op "
@@ -163,21 +56,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "252-EV/boosting-nature fiction — the B-spread correctness fix at the "
                              "last de-timid site the edges read. Requires --spread-belief and "
                              "--damage-op. Forward-math only. STRUCTURAL, version-checked.")
-    parser.add_argument("--intent-conditional", "--intent_conditional",
-                        dest="intent_conditional", action=BoolFlag, default=None,
-                        help="gen3_intent_conditional_v1 (v85, design_conditional_execution.md "
-                             "steps 4+7): the remaining α-conditioned mechanic cells — Counter/"
-                             "Mirror Coat's category test (unplayable without an intent model), "
-                             "flinch's missing (1−α_SWITCH) term, Explosion's p_executes + "
-                             "into-switch facts (the H1 companions), Pursuit's ×2 never-miss "
-                             "doubling trigger (port-verified departing-target rule), Protect's "
-                             "α-weighted avoided damage/status beside c4's mechanical odds, Magic "
-                             "Coat's oracle-verified reflect set, and Explosion's β-weighted trade "
-                             "KO — the first forward-side β consumer (β published like α). One "
-                             "zero-init projection over tensors the op already stashes. Requires "
-                             "--opp-intent-coef>0, --damage-op, --damage-outgoing, "
-                             "--damage-matrices outgoing|both and --damage-topk-k>0. STRUCTURAL, "
-                             "version-checked.")
     parser.add_argument("--item-belief", "--item_belief",
                         dest="item_belief", action=BoolFlag, default=None,
                         help="gen3_item_belief_v1 (v83): a learned posterior over each opp slot's "
@@ -244,17 +122,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "of the time but ranks it first only 51.8%% — 34pp of mis-ranked mass. "
                              "Requires --entity-topk-seats>0. 0.0 = OFF (no heads, byte-identical). "
                              "STRUCTURAL + version-checked; the coef itself is training-only.")
-    parser.add_argument("--value-threat-inject", "--value_threat_inject",
-                        dest="value_threat_inject", action=BoolFlag, default=None,
-                        help="CRITIC THREAT INJECTION (gen3_value_threat_inject_v1, v64): add the "
-                             "DamageOperator's alpha-weighted incoming-threat row for each of OUR "
-                             "mons to that mon's token on the VALUE POOL's copy only, so value_cls "
-                             "pools per-entity threat MAGNITUDES instead of the softmax RATIOS the "
-                             "d3 edge family can carry. vf-ONLY: the policy reads the unaugmented "
-                             "tokens, so pi is bit-identical at any weight (gated). Forces the op's "
-                             "pair reduction to the R1 belief_mean rung (hard_max builds no reducer "
-                             "and would leave nothing to inject). Zero-init => ON starts identical "
-                             "to OFF. STRUCTURAL + version-checked: fixed for a run's lifetime.")
     parser.add_argument("--policy-grad-coef", "--policy_grad_coef", dest="policy_grad_coef",
                         type=float, default=None,
                         help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "

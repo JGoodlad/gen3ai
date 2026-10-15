@@ -207,14 +207,10 @@ MOVE_RESOLUTION_SWITCH_IDX: Dict[str, int] = {n: i for i, n in enumerate(MOVE_RE
 PAIR_FACT_COORDS: Tuple[str, ...] = (
     "low", "high", "crit", "ko_ramp", "acc", "is_phys", "p_par", "p_brn", "p_frz", "p_slp", "p_psn", "p_tox")
 
-#: The flag's legal values (`--move-resolution`); 'off' is production and builds nothing.
-MOVE_RESOLUTION_MODES: Tuple[str, ...] = ("off", "on")
-
 # ------------------------------------------------------------- gen3_endstate_facts_v1: the RESTORED facts
-#: `--move-resolution-facts`'s legal values: ``off`` (the family as built on the 2026-10-06 list, byte-identical);
-#: ``full`` = + the FACTS that list dropped as judgments and the owner's 2026-10-09 classification test re-classed
-#: (`design_hand_computed_features.md` §1; `move_resolution.restored_move_facts` / `restored_switch_facts`).
-MOVE_RESOLUTION_FACTS_MODES: Tuple[str, ...] = ("off", "full")
+#: The FACTS the 2026-10-06 list dropped as judgments and the owner's 2026-10-09 classification test re-classed
+#: (`design_hand_computed_features.md` §1; `move_resolution.restored_move_facts` / `restored_switch_facts`); always
+#: built since `--move-resolution-facts` was deleted (legacy deletion U3).
 #: The restored MOVE-cell coordinates, in order (P8's four dropped mechanics + P6's `spin_value_lost`).
 MOVE_RESOLUTION_RESTORED_MOVE_COORDS: Tuple[str, ...] = (
     "fp_survives", "sub_survives", "endure_p_ko", "endeavor_survives", "spin_value_lost")

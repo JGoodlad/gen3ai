@@ -24,11 +24,12 @@ Units and terms:
 
 ## 0. One screen
 
-- **X26 is BLOCKED by the legacy deletion's U3.** The manifest
+- **The legacy deletion's X26 critical path has LANDED.** The manifest
   ([`../ops/legacy_deletion_manifest_2026-10-12.md`](../ops/legacy_deletion_manifest_2026-10-12.md)) has D-LD1–D-LD7
-  ADOPTED (the orchestrator's default, 2026-10-15); **U0 and U1 have LANDED** (2026-10-15; U1 = config v156, the eight
-  op levers flagless). Lane **U3** changes the fresh-seed random stream, so it must land before any X26 seed. The
-  chain is U0 → U1 → U3, landed one unit at a time with green gates.
+  ADOPTED (the orchestrator's default, 2026-10-15); **U0, U1 and U3 have LANDED** (2026-10-15; U1 = config v156, the
+  eight op levers flagless; U3 = config v157, move resolution derived, the seven per-action blocks and the critic's
+  threat injection deleted). 🚨 U3 CHANGED the fresh-seed random stream (D-LD7), so every X26 seed starts at or after
+  it, and no pre-U3 seed is "the same seed" at HEAD.
 - **The plateau meter is partly built.** Tier 1 is BUILT and run offline (`main.plateau`, `131f3412`). It is
   VALIDATED on a real run (T33, 2026-10-15, on the T-ENT toy), and its cost is measured (§2.6). On the agent cores,
   an X26 near-plateau check costs 1.5–5 h today. The proposal (§2.6) is that X26 ticks at the registered Δ 10M,
@@ -63,7 +64,7 @@ that X26 reaches later (**later**).
 | I4 | **Torch build: cu126 vs cu128** | cu128 env BUILT, NOT the default; the local cu126-vs-cu128 baseline is PENDING | `designs/ops/cloud_gpu_benchmark.md` L9; the dry-run resolves torch 2.8.0+cu126 | L (as a DECISION) | **Decision (§2): X26 runs on cu126** (`gen3ai_torch28`). The launcher refuses a cross-build resume, and the default switches only at an experiment boundary |
 | I5 | **Legacy deletion U0** (the refusal machinery, `RetiredLever` rows, the `pre-legacy-deletion` tag, `--arch static_recovery` deleted) | **SHIPPED 2026-10-15** (D-LD1–D-LD7 adopted as the orchestrator's default; the vacuity rule built and tested with a real toy build) | the manifest's §7 / §8 | L (U3 depends on it) | the owner's D-LD1–D-LD7; the unit itself (~0.5 agent-day) |
 | I6 | **Legacy deletion U1** (the op judgments D1–D6) | **LANDED 2026-10-15** (config v156: `--status-facts`, `--ko-ramp`, `--g-ledger`, `--op-reduction`, `--speed-physics`, `--eot-residual`, `--switch-hazard-cost`, `--effective-stats` deleted; adopted behaviour unconditional behind `damage_op`; K9 golden byte-identical) | as I5 | L (U3 depends on it) | — |
-| I7 | **Legacy deletion U3** (`--move-resolution off` and the seven per-action blocks; `--value-threat-inject`). **It changes the fresh-init random stream (D-LD7)** | NOT STARTED | manifest §0 D-LD7, §3 | **L** | ~1.5 agent-days; the K9 golden re-recorded once; the ledger line "fresh-init stream changed at `<U3 sha>`" |
+| I7 | **Legacy deletion U3** (`--move-resolution off` and the seven per-action blocks; `--value-threat-inject`). **It changes the fresh-init random stream (D-LD7)** | **LANDED 2026-10-15** (config v157: `--move-resolution`, `--move-resolution-facts`, `--value-threat-inject` and the seven block flags deleted; move resolution DERIVED from its prerequisites; the trained network's shape unchanged; the fresh-init stream CHANGED) | manifest §0 D-LD7, §3, §8; the ledger's U3 entry; `research_state/measurements/legacy_deletion_u3_init_2026-10-15/` | **L** | the K9 golden re-recorded once |
 | I8 | Legacy deletion U2, U4 (observation levers; the legacy token encoding) | NOT STARTED | as I5 | no, **if** each proves production's fresh init is byte-identical before and after | either lands before the exit check with that proof, or lands after X26 |
 | I9 | Legacy deletion U5 (optional Rust progress clock), U6 (close-out) | NOT STARTED | manifest §3 | no (U6 waits for X26's argv, by its own text) | — |
 | I10 | **The ride-along heads attach to the end state** | DONE | `checkargs --argv "--arch production … --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all"` exit 0; the launcher dry-run from main "would launch"; B rebased onto the flat pointer (`350fb83b`, refused without it at `ridealong_heads.py:280-310`); RND reads `obs_dim` at build (2845); all 16 bf16 A/B runs and the 8 `rb_es_end2_*` typed these flags (`metadata.json`); `ridealong/disabled` max 0.0 in `rb_bf_eb_s2005`'s TB | L | — |
@@ -360,7 +361,7 @@ three controls ([`design_arch_audit.md`](design_arch_audit.md) §3.3):
 - **C-ENT**, entity tokens and the trunk only;
 - **C-MLP**, a flat MLP;
 - **C-NOCELL**, production minus the seven per-action blocks. C-NOCELL is **MOOT**: move resolution retired those
-  blocks in the end state.
+  blocks in the end state, and legacy deletion U3 deleted them.
 
 ### 3.2 The two toys
 
@@ -415,7 +416,8 @@ Notes on the set:
 - `--checkpoint-every-steps 1000000` (the Tier-1 nodes), `--snapshot-ladder-games 0`, default eval.
 - **Seeds:** T-ENT `s4001`–`s4003`, T-MLP `s4101`–`s4103`. Three per toy is the audit's replicate design.
 - **Where it runs:** T-ENT was launched at HEAD before the deletion. Its levers' OFF values existed only before U1 /
-  U3 (U1 has landed: the eight op flags are gone), and D-LD4 says any later ablation of an adopted lever runs PINNED at
+  U3 (both have landed: the eight op flags, `--move-resolution`, `--move-resolution-facts` and the seven block flags
+  are gone; the argv above parses only at its pin), and D-LD4 says any later ablation of an adopted lever runs PINNED at
   `pre-legacy-deletion`. T-MLP runs at HEAD
   after its build. As a new mode, it survives the deletion.
 - **Data:** T-ENT reads no prior, belief or X5 candidate, so the 10-14 learnset fix cannot reach it. The
@@ -701,3 +703,4 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-15 | **I28: the metric-key collision CLASS is closed in the logger, not by renaming keys** — the stdout table's column is 48 (every production row prints in full) and a longer row's label is `<head>~<digest>~<tail>` (collision-proof; a residual clash prints the full key, never raises) and a colliding key set is refused at STARTUP; TensorBoard tags stay verbatim | renaming the six `cell/move_resolution_*` keys (dashboards read TB tags by name, and the next long key would crash again); a wider column alone (still a mid-run raise past it) | ledger 2026-10-15 CRASH FIX; `designs/training/telemetry_scalars.md` "Metric keys stay DISTINCT" |
 | 2026-10-15 | **I29: the one-producer class is closed in the logger's record path, strict where a stop is free** — a second call site writing a pending key raises `DuplicateProducerError` under pytest and `--debug`, and is counted (`telemetry/duplicate_producer_keys`) + reported once per key in a production run, which never stops on it | raising in production (one wrong number is cheaper than a run); an exemption list (every entry is a hidden bug) | ledger 2026-10-15 GIGO FIX; `designs/training/telemetry_scalars.md` "ONE producer per key" |
 | 2026-10-15 | **I30: the canary FATAL is treated as a FIXTURE defect, not a compiler one, pending the GPU read; X26 keeps the production bf16 compiled learner, and the canary's fixture is fixed (T36) rather than its bar recalibrated.** The fixture fix relocates each row within M (log-prob; R1_BAR_K × the largest arm difference read, ≈ 0.65) of its switching clip boundary to 2M inside the active side, by the fp32 reference's own ratio, and makes the confirmation slice disjoint | recalibrating K on trained states (a bimodal statistic has no bar with teeth: healthy flips read up to 31×); fp32 for the pointer head (already fp32 by design); `emulate_precision_casts` (eager bf16 itself flips); an eager learner; the fp32 trunk (kept as the FALLBACK if the GPU shows a branch-free disagreement or a compiled-fp32 one) | CPU, the run's own checkpoints: the bimodal null (no-flip max 0.030, flip median 0.294), the frozen-branch error ≤ 0.020 on all 32 seeds, eager's own flip at 66M, the relocated null 0 of 992 above K; `compile_flags.md` "The bf16 canary FATAL on trained weights"; ledger 2026-10-15 FINDING |
+| 2026-10-15 | **T30-U3 landed (config v157): move resolution DERIVED, the seven per-action blocks and the critic's threat injection DELETED; the fresh-init stream CHANGED (D-LD7).** I7 is DONE; the T30 critical path (U0 → U1 → U3) is complete. Every X26 seed (and G6's exit-check seeds) starts at or after U3; a pre-U3 seed replicated at HEAD is not "same pin + seed". T-ENT checkpoints keep loading (vacuous: no op, no move resolution) | an RNG burn that replays the deleted modules' draws (rejected in D-LD7) | the ledger's U3 entry; `research_state/measurements/legacy_deletion_u3_init_2026-10-15/` |

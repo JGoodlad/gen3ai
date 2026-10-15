@@ -174,22 +174,19 @@ def flat_candidates(seat_out: torch.Tensor, k: int, their_team_out: torch.Tensor
 
 
 class FlatConsumerOps(NamedTuple):
-    """The α / β consumers' operands under the flat pointer (`ExtractorForward._flat_consumer_ops`):
+    """The move-resolution family's operands under the flat pointer (`ExtractorForward._flat_consumer_ops`):
     α [B,K+2] / β [B,7] re-expressed (`compat_intent_logits`), and every seat-axis or mon-axis op
-    stash with OTHER's column appended — OTHER_move's from the tail contraction (`other_u`),
-    OTHER_species' from the OTHER-mode D1 pass and the tail's P(Ghost). A stash whose consumer is
-    off is None."""
+    stash it reads with OTHER's column appended — OTHER_move's from the tail contraction (`other_u`),
+    OTHER_species' from the OTHER-mode D1 pass. A stash the op did not compute is None. (The seven deleted
+    per-action blocks' extra operands — `topk_w`, `pair_cells`, `out_pko`, `opp_p_ghost` — went with them,
+    legacy deletion U3.)"""
     alpha: torch.Tensor                  # [B,K+2]  K seats · OTHER_move · log α_SWITCH
     beta: torch.Tensor                   # [B,7]    six slots · OTHER_species
     seat_live: torch.Tensor              # [B,K+1]  the seats' meaningful-K gate · OTHER_move live
     other_u: torch.Tensor                # [B,M]    OTHER_move's pricing weights
-    topk_w: Optional[torch.Tensor]       # [B,K+1]  seat presence · OTHER_move's mass (shape oracle)
-    pair_cells: Optional[torch.Tensor]   # [B,6,K+1,6]
     pair_in: Optional[torch.Tensor]      # [B,6,K+1,RAW]
     type_mult: Optional[torch.Tensor]    # [B,6,K+1]
     out_cells: Optional[torch.Tensor]    # [B,4,7,5]
-    out_pko: Optional[torch.Tensor]      # [B,4,7]
-    opp_p_ghost: Optional[torch.Tensor]  # [B,7]
 
 
 def append_other(x: Optional[torch.Tensor], other: Optional[torch.Tensor], dim: int,

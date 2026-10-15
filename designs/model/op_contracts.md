@@ -31,8 +31,8 @@ roll, a secondary chance) reads a pre-gain stash (`pair_cells`, `pair_in`, `out_
 channels through **`last_raw_tensors`** — the `OpTensors` views over the PRE-gain block, LIVE (they carry the
 op's upstream gradient, like every other pre-gain stash). `last_raw_block` is the same block DETACHED, for the
 prober / forensic decode only; never feed it to a training-path consumer (it would cut that route's gradient).
-Readers today: `intent_conditional` (our moves' high roll, P(first), the flinch chance) and the move-resolution
-family (P(first)). Tests: `x5_version_break_part45_test.py`.
+Reader today: the move-resolution family (P(first), our moves' high roll, the flinch chance; its predecessor
+`intent_conditional` was deleted in legacy deletion U3). Tests: `x5_version_break_part45_test.py`.
 
 **The EXTRACTOR's side values follow the same contract (`gen3_extractor_stashes_v1`).** Every
 per-forward stash `Gen3FeaturesExtractor` exposes — `last_pointer_inputs`, the α/β intent trio,
@@ -40,7 +40,7 @@ every belief publication (`last_move_belief_logits`, `last_spread_*`, `last_item
 `last_hp_type_logits`, `last_belief_logits`, `last_opp_believed_mask`, `last_opp_active_local`,
 `last_move_latent_table`), `last_damage_block`, `last_value_pooled`, `last_win_prob_logits`,
 the internal T0→T1/T2 hand-offs (`t0_species_probs`,
-`entity_latent_table`, `thresh_probs`) and the LIVE `belief_supervision` dict — lives in ONE
+`entity_latent_table`; `thresh_probs` was deleted with `intent_threshold` in legacy deletion U3) and the LIVE `belief_supervision` dict — lives in ONE
 `ExtractorStashes` dataclass that `forward_internal` replaces at ENTRY. Same rules: **reads** on
 the `last_*` properties (every cross-module consumer — the policy's pointer head,
 `instrumented_ppo`, the prober, inference — uses the typed properties, never `getattr(..., None)`);
@@ -107,7 +107,7 @@ Two input contracts every op kernel follows (2026-10-07; ARCHITECTURE §4 states
   the side / clause mask itself being `status_rules.incoming_status_mask`, which the move-resolution family shares.
   A new status rule goes there, not into a consumer. Tests: `op_status_rules_test.py`.
 * **Move ORDER has ONE rule** (`gen3_speed_physics_v1`, v143, audit F7b): `move_order.py` — the priority bracket
-  (`p_seat_first`, read by the move-resolution family and `intent_conditional`) and the within-bracket rule (`p_first_same_priority`: their speed as the species' DISCRETE Smogon spreads mixture
+  (`p_seat_first`, read by the move-resolution family) and the within-bracket rule (`p_first_same_priority`: their speed as the species' DISCRETE Smogon spreads mixture
   over the Speed stat — `SPEED_MIX`, gen3_speed_mixture_v1 — each support point through the same exact stage /
   paralysis arithmetic as our exact speed, the coin-flip tie, Quick Claw format-gated by `quick_claw_live`). Every
   op site that prices who moves first builds its inputs in
@@ -190,7 +190,7 @@ and across our team slots / their mons, `gen3_mon_tied_gain_v1`; `damage_op_layo
 projection adapter, not physics. A consumer that uses an op value AS a probability or a
 damage fraction (P(first), a roll, a secondary chance) reads it PRE-gain: a typed pre-gain stash, or the block's
 channels through **`last_raw_tensors`** (live views; `last_raw_block` is the detached prober copy — never a
-training-path input). `intent_conditional` and the move-resolution family do (part 5;
+training-path input). The move-resolution family does (part 5;
 `x5_version_break_part45_test.py`). A new region of the block needs a key in `out_gain_channel_keys` (the op
 raises at build if the key walk and `out_dim` disagree), and its key names the channel only — a request slot, seat,
 team slot or listing position is arbitrary and is never part of it (`mon_tied_gain_test.py` permutes team slots).

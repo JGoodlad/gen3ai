@@ -61,7 +61,7 @@ Stick (+2) and the defender's Battle Armor / Shell Armor (no crit) — every sit
 crit's disregard of the attacker's negative / the defender's positive stat stages (the op keeps the stages for the
 crit column, as before); the per-hit floors of the formula and its 1-HP minimum (the op's damage is continuous).
 
-Torch-only leaf module (no extractor import): every op kernel, `intent_threshold` and `move_resolution` call it.
+Torch-only leaf module (no extractor import): every op kernel and `move_resolution` call it.
 """
 from __future__ import annotations
 

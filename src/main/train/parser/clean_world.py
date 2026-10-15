@@ -187,17 +187,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "counts, hazards and screens reach a token only by attention and the damage "
                              "operator. Builds with or without X5's hypothesis tokens. STRUCTURAL, version-checked, "
                              "fresh-only.")
-    from agents.model.move_resolution_rules import MOVE_RESOLUTION_MODES
-    parser.add_argument("--move-resolution", "--move_resolution", dest="move_resolution",
-                        choices=MOVE_RESOLUTION_MODES, default=None,
-                        help="F11's MOVE-RESOLUTION family (gen3_move_resolution_v1, v141; "
-                             "designs/endstate/design_arch_audit.md F11 §9). 'off' (default; production): the "
-                             "seven per-action blocks, byte-identical. 'on': per legal action, P(it resolves as "
-                             "stated) by the exact gen-3 rules (lands / not blocked / not immune / not a no-op), "
-                             "intent-weighted, plus the seven blocks' FACTS consolidated and their JUDGMENTS "
-                             "(tempo_cost, wasted_ko, the hand thresholds) dropped; the seven blocks are retired. "
-                             "STRUCTURAL, version-checked, fresh-only. Requires --opp-intent-coef > 0, "
-                             "--damage-op, --damage-outgoing and both per-move matrices.")
     from agents.model.obs_facts_inject import OBS_FACTS_MODES
     parser.add_argument("--obs-facts", "--obs_facts", dest="obs_facts",
                         choices=OBS_FACTS_MODES, default=None,
@@ -236,14 +225,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     # fact-completion levers; STRUCTURAL, version-checked, fresh-only. (`--status-facts`, `--ko-ramp` and `--g-ledger`
     # were DELETED by the legacy deletion's U1: their adopted value is the op's only physics.)
     from agents.model.extractor_ctx import DROP_PROGRESS_CLOCK_MODES
-    from agents.model.move_resolution_rules import MOVE_RESOLUTION_FACTS_MODES
-    parser.add_argument("--move-resolution-facts", "--move_resolution_facts", dest="move_resolution_facts",
-                        choices=MOVE_RESOLUTION_FACTS_MODES, default=None,
-                        help="The FACTS move resolution dropped as judgments (gen3_endstate_facts_v1, v152). 'off' "
-                             "(default; production): the family as built. 'full': + Focus Punch survives, the "
-                             "Substitute survives, Endure x P(KO), Endeavor x P(not KO'd), the Rapid Spin layers a "
-                             "failed spin leaves, and the Spikes layers our Ghost switch-in preserves, through "
-                             "zero-init projections. Requires --move-resolution on.")
     parser.add_argument("--drop-progress-clock", "--drop_progress_clock", dest="drop_progress_clock",
                         choices=DROP_PROGRESS_CLOCK_MODES, default=None,
                         help="The model reads the observation's turns_since_progress as 0 (gen3_endstate_facts_v1, "

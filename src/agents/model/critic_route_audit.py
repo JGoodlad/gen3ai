@@ -3,7 +3,6 @@
 Measures, on a TRAINED checkpoint over stratified eval-trace states, how much the policy and
 critic lean on each of the parallel critic magnitude routes carried since the concat's death:
 
-  arm `threat`      — zero `CLSPool`'s `threat_rows` (the --value-threat-inject token content)
   arm `hidden_opp`  — zero the HiddenOppBeliefPool concat (POLICY-side since the wave)
   arm `entity_pool` — zero the unified entity pool's output (gen3_unified_value_readout_v1,
                       the Stage-3 successor route; present only on a --value-entity-pool run)
@@ -17,8 +16,9 @@ critic lean on each of the parallel critic magnitude routes carried since the co
 **THE INSTRUMENT IS SMALLER THAN IT WAS, and the missing arms are the finding.** The
 critic-route deletion wave retired `seed` (dV 0.0000 bit-exact, twice), `intent_reduce` (0.3176 at
 2× sample), the `vr_*` arms for `intent_threshold_value` / `value_clock` / `value_intent`, and the
-`_vf` half of `hidden_opp`. An arm whose subject no longer exists is not a null reading, it is a
-DEAD INSTRUMENT — leaving it would either fabricate a 0.0 row or trip `_assert_fired` on every
+`_vf` half of `hidden_opp`; legacy deletion U3 retired `threat` with its subject (the
+`--value-threat-inject` projection, off in the adopted end state and then deleted). An arm whose
+subject no longer exists is not a null reading, it is a DEAD INSTRUMENT — leaving it would either fabricate a 0.0 row or trip `_assert_fired` on every
 run, and both read as measurements. The generic `value_route` arm STAYS (it now covers one route)
 because that is the mechanism by which the next route is auditable the day it is written.
 
@@ -77,24 +77,6 @@ class _Arms:
 
     def __init__(self, fe: Any) -> None:
         self.fe = fe
-
-    def threat(self) -> tuple[list[Any], Any]:
-        fe = self.fe
-        hooks = []
-
-        def _pre(_m: Any, args: tuple[Any, ...],
-                 kwargs: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
-            tr = kwargs.get("threat_rows")
-            if tr is not None:
-                # hand-set did-it-match flag on the hook function object; mypy models a
-                # function as attribute-less.
-                _pre.fired = True  # type: ignore[attr-defined]
-                kwargs = dict(kwargs)
-                kwargs["threat_rows"] = torch.zeros_like(tr)
-            return args, kwargs
-        _pre.fired = False  # type: ignore[attr-defined]
-        hooks.append(fe.cls_pool.register_forward_pre_hook(_pre, with_kwargs=True))
-        return hooks, _pre
 
     def event_seats(self) -> tuple[list[Any], dict[str, bool]]:
         """Key-mask ALL H-B event seats (force the pad mask True) — the design's "usage audit
@@ -329,8 +311,6 @@ def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int 
             "dv_mean": float((base_v - v).abs().mean()),
         }
 
-    if getattr(fe, "value_threat_inject", False):
-        _run("threat", [arms.threat()])
     if getattr(fe, "hidden_opp_belief", None) is not None:
         _run("hidden_opp", [arms.hidden_opp()])
     if getattr(fe, "value_entity_pool", None) is not None:
@@ -367,8 +347,6 @@ def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int 
     # carries the content through the trunk).
     _run("nmr", [arms.nmr()])
     all_sets = []
-    if getattr(fe, "value_threat_inject", False):
-        all_sets.append(arms.threat())
     if getattr(fe, "hidden_opp_belief", None) is not None:
         all_sets.append(arms.hidden_opp())
     if getattr(fe, "value_entity_pool", None) is not None:

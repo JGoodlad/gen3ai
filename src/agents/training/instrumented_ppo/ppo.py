@@ -599,8 +599,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # step. Parameters only — no forward touched, so the hot path pays nothing.
                 if diag.liveness and not edge_metrics:
                     edge_metrics = edge_family_metrics(self.policy.features_extractor)
-                # +INSTRUMENTATION: the same read for the zero-init POINTER CELLS (switch-branch,
-                # pair-outcome move/switch, conditional-threat). Same window, same reason: a cell
+                # +INSTRUMENTATION: the same read for the zero-init POINTER CELLS (the move-resolution
+                # family's projections, `grad_balance.CELL_FAMILIES`). Same window, same reason: a cell
                 # that never comes off its zero init is invisible without it.
                 if diag.liveness and not cell_metrics:
                     cell_metrics = cell_family_metrics(self.policy.features_extractor)

@@ -47,9 +47,10 @@ masks are structural; the input is detached under `--opp-intent-grad-mode detach
   switch target, and three consumers do not detach α), β over the six slots + OTHER_species. OTHER is
   PRICED, never a zero row: OTHER_move's seat-axis column is each per-candidate cell on the op's FULL
   move axis contracted with the renormalised tail (`FixedMassMoves.other_u`); OTHER_species' `out_cells`
-  column is the OTHER-mode D1 pass (the tail-averaged defender, P(KO) nulled), its `opp_p_ghost` the
-  tail's P(Ghost); num-table reads use `pair_outcome.seat_num_table` / `seat_in_set`. All four
-  per-seat consumers apply the meaningful-K gate (`seat_live`, F-X5-15) in that arm.
+  column is the OTHER-mode D1 pass (the tail-averaged defender, P(KO) nulled). The consumer (move
+  resolution, the only one since legacy deletion U3) applies the meaningful-K gate (`seat_live`, F-X5-15).
+  (`opp_p_ghost`, `pair_outcome.seat_num_table` / `seat_in_set` and the other per-seat consumers went with the
+  seven per-action blocks in U3.)
 * **Rendering / readers**: `render_flat` names the options. The two readers read the flat pointer
   (`last_flat_intent_logits` / `last_flat_intent`): the inference player's `_opp_intent` trace block
   (`agents/inference/player.py`; α = the named seats + `"OTHER move"` + `"SWITCH"`, β = P(slot | switch))
@@ -142,25 +143,28 @@ hidden-slot set — the pointer was fine; the label beside it was a different he
 species the slot holds — the flat pointer's candidate id for it, i.e. exactly what β points at
 (`"revealed": false`); OTHER_species (the hypothesis set's tail) is a row with `"slot": -1`.
 
-## The nine α consumers
+## The α consumer
 
-Eight modules contract α against the op's physics (in PRODUCTION only `IntentValueReduce` and `MoveResolutionCell` are built and kept; the seven pointer-cell consumers are the LEGACY family, INERT under move resolution, deleted by `../ops/legacy_deletion_manifest_2026-10-12.md`) — `IntentValueReduce`, `IntentMoveCell`,
-`IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, the v94 pair
-`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` — and, under `--move-resolution on` (v141, ON in production since the end state's adoption, 2026-10-12), `MoveResolutionCell`, which REPLACES the seven pointer-cell consumers (they are retired on a built policy) and contracts α / β the same way (the publication, stop-grad, seats masked never renormalised, the unmodeled mass `1 − Σα − α_SWITCH` named rather than reassigned; it reads X5's flat pointer re-expression with OTHER priced, OTHER_move split into one seat per priority level). They share four conventions, and each one exists because breaking it fails
-silently:
+**ONE module contracts α against the op's physics: `MoveResolutionCell`** (`move_resolution.py`, `gather_ops`;
+v141, built whenever its prerequisites are since legacy deletion U3). The others are gone: `IntentValueReduce` (the
+critic route wave, v96) and the seven pointer-cell consumers — `IntentMoveCell`, `IntentThresholdMoveCell`,
+`IntentConditionalMoveCell`, `PairOutcomeMoveCell`, the v94 pair `PairOutcomeSwitchCell` / `SwitchBranchMoveCell` and
+the v95 `ConditionalThreatCell` — which move resolution REPLACED at the end state's adoption (2026-10-12, retired on a
+built policy) and legacy deletion U3 deleted (config v157, `../ops/legacy_deletion_manifest_2026-10-12.md` row B1;
+their code is read pinned at the tag `pre-legacy-deletion`). It contracts α / β by the conventions below (the
+publication, stop-grad, seats masked never renormalised, the unmodeled mass `1 − Σα − α_SWITCH` named rather than
+reassigned) and reads X5's flat pointer re-expression with OTHER priced, OTHER_move split into one seat per priority
+level. Each convention exists because breaking it fails silently.
 
-## The two conventions `pair_outcome.py` added
+## Two conventions worth copying (from the deleted `pair_outcome` cells)
 
-`pair_outcome.py` adds two the others did not need, and both are worth copying:
-
-* **Stop-grad α unconditionally** on a POLICY-side consumer. `label_only` happens to cut the
-  PPO→`alpha_head` route today, but resting on it makes the route's EXISTENCE a function of a
+* **Stop-grad α unconditionally** on a POLICY-side consumer (`pair_outcome.pair_alpha_full` detaches). `label_only`
+  happens to cut the PPO→intent-head route today, but resting on it makes the route's EXISTENCE a function of a
   TRAINING flag — one `--belief-grad-mode` change away from silently reopening.
-* **Give α a documented FALLBACK if the flag can stand alone.** With no intent head it uses the
-  shipped R1 `belief_mean` rung (`α := w/Σw`), re-exported from `pair_reduce` rather than
-  re-spelled. That makes the flag independently enableable and separates the DELIVERY claim from
-  the DISTRIBUTION claim — but the two are NOT the same object (presence belief vs usage belief,
-  and one sums to 1 where the other sums to `1 − α_SWITCH`), so say so loudly wherever it appears.
+* **Give α a documented FALLBACK only if the consumer can stand alone, and only if the fallback is an ABSENCE, not a
+  CLAIM.** The deleted pair-outcome cells fell back to the R1 `belief_mean` rung (`α := w/Σw`, `pair_reduce
+  .alpha_belief_mean`) — a presence belief, a different object from the publication (one sums to 1 where the other
+  sums to `1 − α_SWITCH`). Move resolution takes NO fallback: it is built only with `opp_intent` (below).
 
 ## Where a consumer sits, and the critic-side gradient guard
 
@@ -169,7 +173,8 @@ runs at the pointer stash, i.e. after the α/β heads are scored, so "read the P
 available to them. A consumer inside `CLSPool` would pool at T2 **before** those heads exist and
 could only take the R1 `belief_mean` rung — unconditionally, even with `--opp-intent` ON; that is
 ORDERING, not a fallback, and "upgrading" it to the publication is unbuildable without moving the
-pool. (No such consumer exists today; the pair-value critic route that was one is deleted.) **The
+pool. (No such consumer exists today; the pair-value critic route and the token-content threat injection that
+were ones are deleted.) **The
 general rule: before choosing an α rung, locate the consumer in the tier chain — the answer may
 already be fixed.**
 
@@ -177,22 +182,19 @@ already be fixed.**
 `_value_pooled_routes` — since the deletion wave a ONE-member seam (`value_entity_pool`), kept
 generic precisely because its value is covering the NEXT route the day it is written, which is
 exactly what did not happen for the four it lost. A route added to that seam is covered by
-construction; the token-content injection (`value_threat_proj`) is NOT in the seam, by
-design: a post-pool additive route must collapse the team axis, and the only equivariant collapse is
+construction. A token-content injection (the deleted `value_threat_proj` was one, legacy deletion U3) would NOT be in
+the seam, by design: a post-pool additive route must collapse the team axis, and the only equivariant collapse is
 a sum, which cannot tell one mon losing 90% of its bar from six losing 15%. It is zero-init, so a
 disconnected one is indistinguishable from one that learned nothing — the exact gen-12 dead-tail
-failure, one level up. The guard therefore carries a dedicated cell for it, and its real claim is
-*every zero-init projection the critic depends on receives critic gradient*, not *every seam entry
-does*. **When you add a critic-side enrichment anywhere other than the seam, extend that test in the
+failure, one level up. The guard's real claim is *every zero-init projection the critic depends on receives critic
+gradient*, not *every seam entry does*. **When you add a critic-side enrichment anywhere other than the seam, extend that test in the
 same pass.**
 
-**A per-DEFENDER delivery is not a per-defender BELIEF.** `reduce_pair_in_all` produces six rows,
-one per our mon, from ONE α — the reduction may vary per defender, the DISTRIBUTION may not (that is
-the whole content of §2's "D2 and D3 fall to ONE restriction"). α still has no `J` axis, so defect D3
-stays a shape error even in the phase whose entire job is producing a column of rows. When you add
-another per-defender consumer, take α from the same `pair_alpha` / `pair_alpha_full` ladder rather
-than computing a defender-conditioned one; the planted-violation test in
-`pair_outcome_switch_test.py` is what proves the structure is real rather than merely intended.
+**A per-DEFENDER delivery is not a per-defender BELIEF.** Move resolution's switch cell reads one α-reduced row per
+our mon from ONE α — the reduction may vary per defender, the DISTRIBUTION may not (that is the whole content of §2's
+"D2 and D3 fall to ONE restriction"). α still has no `J` axis, so defect D3 stays a shape error. When you add another
+per-defender consumer, take α from `pair_outcome.pair_alpha_full` / `FlatConsumerOps` rather than computing a
+defender-conditioned one.
 
 ---
 
@@ -254,10 +256,10 @@ already on disk cannot be repaired** (they baked the posterior name and do not c
 read side attaches `engine.BELIEF_NAME_CAVEAT` to EVERY named recorded β candidate rather than inventing a
 replacement name. See `src/main/prober/CLAUDE.md`.
 
-#### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
+#### The rules an α CONSUMER follows (`move_resolution.py`'s `gather_ops` is the current template)
 
-Nine modules now contract α against the op's physics (ten with `MoveResolutionCell`, `--move-resolution on`, which retires seven of them) (listed in
-[`designs/model/opponent_intent.md`](opponent_intent.md)). They share four
+One module now contracts α against the op's physics, `MoveResolutionCell` (the seven per-action blocks it replaced
+were deleted in legacy deletion U3; see "The α consumer" above). It follows four
 conventions, and each exists because breaking it fails silently:
 
 1. **T1 produces, T2 consumes.** α is scored from the E4 seats and the CLS pools, both DOWNSTREAM
@@ -273,14 +275,15 @@ conventions, and each exists because breaking it fails silently:
    bug class.
 4. **Zero-init the projection**, and let `restore_identity_init` capture it by observation (M1).
 
-`pair_outcome.py` adds two worth copying — **stop-grad α unconditionally** on a policy-side consumer
+The deleted pair-outcome cells added two worth copying — **stop-grad α unconditionally** on a policy-side consumer
 (resting on `label_only` makes the route's EXISTENCE a function of a TRAINING flag), and **give α a
 documented FALLBACK only if the flag can stand alone**, saying loudly that the R1 `belief_mean` rung
 is a different object from the publication.
 
 **⚠️ "Give it a fallback" is not the same as "a fallback is meaningful", and v94 is where the two
-came apart.** `SwitchBranchMoveCell` REFUSES one and requires `opp_intent` instead: every coordinate
-it computes is conditioned on `α_SWITCH` or on β, and the R1 rung is a presence belief over their
+came apart.** The (since deleted, U3) `SwitchBranchMoveCell` REFUSED one and required `opp_intent` instead — and
+move resolution, which carries its facts, is likewise built only with `opp_intent`: every such coordinate
+is conditioned on `α_SWITCH` or on β, and the R1 rung is a presence belief over their
 MOVES with no switch class at all — so the fallback would set `α_SWITCH ≡ 0` and make every
 coordinate assert *"they never switch."* **A flag whose fallback silently states something false is
 worse than a flag that says it needs the head.** The test for whether to build one is not "can I
