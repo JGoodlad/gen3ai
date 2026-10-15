@@ -7,6 +7,8 @@ SEARCH (the world builder, ``main.value_search.worlds``):
   slot rendered one off is invisible to a replay when the choice never executed: the hidden-info study's A1 teeth);
 * ``oracle_identity`` — under the ``oracle`` preset every world IS the true team and the true prefix;
 * ``regate`` — every returned world replays to the searched side's byte-equal rows and protocol (A3);
+* ``consistency`` — each slot's fact record names the mon the ENGINE built at that slot, and every match flag is that
+  mon's (``main.value_search.world_guard``; the 2026-10-15 never-seen record mis-pairing);
 * ``legality`` — no world team breaks a gen3ou rule the true team does not (A4);
 * ``genders`` — the never-seen slots that draw a gender at construction are exactly the true team's (A6's leak);
 * ``provenance`` — every fact is revealed / told / drawn exactly as the spec says (a fact told without a lever, or a
@@ -86,6 +88,18 @@ def regate(root: "W.Root", worlds: "W.Worlds", label: str = "regate") -> dict:
             bad.append({"world": j, "core_ok": bool(r["ok"])})
     return _verdict("regate", not bad, worlds=len(out), failures=len(bad), seen_exact_hp_equal=hp[0],
                     seen_mons=hp[1], examples=bad[:10])
+
+
+def consistency(root: "W.Root", worlds: "W.Worlds") -> dict:
+    """SLOT ↔ SPECIES ↔ FACTS ↔ ENGINE (``main.value_search.world_guard``, the builder's own throwing guard, here as a
+    verdict so a world from ANY builder, or a tampered one, is read): each slot's fact record names the mon the engine
+    built there, and every match flag is that mon's (the 2026-10-15 GIGO: never-seen records stayed at the slot each
+    mon was drawn for)."""
+    from main.value_search import world_guard as WG
+
+    bad = WG.problems(root, worlds.teams, worlds.facts)
+    return _verdict("consistency", not bad, worlds=len(worlds.teams), inconsistent=len(bad),
+                    examples=[{"world": j, "problems": p[:5]} for j, p in list(bad.items())[:10]])
 
 
 def legality(root: "W.Root", worlds: "W.Worlds") -> dict:

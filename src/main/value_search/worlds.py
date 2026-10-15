@@ -55,6 +55,7 @@ from main.value_search.world_draws import (  # noqa: F401  (re-exported: the sam
     BANNED_ITEMS, BANNED_MOVES, HP_TYPES, STATS, Prior, Spread, WorldError, fires, hp_ivs, hp_type_of, is_hp,
     never_seen_species, new_set, parse_set, set_ivs, toid, typed_moves)
 from main.value_search import world_draws as WD
+from main.value_search import world_guard as WG
 from main.value_search import world_screen as WS
 
 MAX_TRIES = 30
@@ -205,13 +206,18 @@ def _gender_pad() -> Optional[str]:
 
 
 def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Set[int],
-                  pinned: Set[int] = frozenset(), pad: Optional[str] = None) -> Optional[List[str]]:
+                  pinned: Set[int] = frozenset(), pad: Optional[str] = None,
+                  src_of: Optional[Dict[int, int]] = None) -> Optional[List[str]]:
     """The world's DRAWN never-seen mons (an exchangeable sample: ``never_seen`` minus ``pinned``) permuted among their
     slots so the true team's draw slots hold mons that draw (a gender-ratio mon with no gender named: the value is the
     true slot's fair coin) and every other never-seen mon names a gender from the engine's prior (uniform M / F, or its
     fixed gender), so it draws nothing. A PINNED slot keeps its mon (a lever put it there). With the engine's ``pad``
     marker a mon that cannot draw sits on a draw slot by naming its gender and padding the draw; without it, None when
-    the world cannot match the true draws (fewer ratio'd mons than draws: the residual ``gender_count``)."""
+    the world cannot match the true draws (fewer ratio'd mons than draws: the residual ``gender_count``).
+
+    ``src_of`` (a dict the caller passes): filled with {never-seen slot: the slot whose mon now sits there}, the
+    PERMUTATION, so a caller that keeps per-slot records moves them with their mons (the 2026-10-15 GIGO fix: the
+    builder's ``facts`` stayed at the slot each mon was drawn for). It changes no draw and no output."""
     from agents.gen3_data import species
 
     ns = sorted(never_seen)
@@ -244,7 +250,9 @@ def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Se
     rest = [rest[k] for k in rng.permutation(len(rest))]
     srcs = pick + rest[: max(0, len(need) - len(pick))]
     rest = rest[max(0, len(need) - len(pick)):]
+    moved: Dict[int, int] = {slot: slot for slot in ns if slot in pinned}
     for slot, src in zip(need, srcs):
+        moved[slot] = src
         f = list(sets[src])
         if species_draws_gender(toid(f[1] or f[0])):
             f[7] = ""
@@ -255,6 +263,7 @@ def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Se
             f = g
         out[slot] = "|".join(f)
     for slot, src in zip([s for s in free if s not in need], rest):
+        moved[slot] = src
         out[slot] = "|".join(named(sets[src]))
     for slot in sorted(pinned & set(ns)):
         f = list(sets[slot])
@@ -270,6 +279,11 @@ def place_genders(rng, entries: List[str], never_seen: List[int], draw_slots: Se
             out[slot] = "|".join(g)
         elif slot not in draw_slots and draws:
             out[slot] = "|".join(named(f))
+    if sorted(moved) != ns or sorted(moved.values()) != ns:
+        raise RuntimeError(f"place_genders: not a permutation of the never-seen slots {ns}: {moved}")
+    if src_of is not None:
+        src_of.clear()
+        src_of.update(moved)
     return out
 
 
@@ -300,7 +314,9 @@ class Worlds:
     revealed: Dict[str, List[str]]
     stats: List[dict] = field(default_factory=list)
     fails: Dict[str, int] = field(default_factory=dict)   # rejections: gender_count, clause, sample, screen, joint
-    facts: List[List[dict]] = field(default_factory=list)  # per world, per opponent slot: each fact's provenance
+    #: per world, per opponent slot OF THE RETURNED TEAM: each fact's provenance (a never-seen mon's record moves with
+    #: it through the gender placement, ``drawn_slot`` naming where it was drawn; checked by ``world_guard``)
+    facts: List[List[dict]] = field(default_factory=list)
     spec: dict = field(default_factory=dict)              # the information-lever spec's record block
     screens: int = 0                                       # screening replays run
     #: per seen-mon sampler: its slot, species, draws needed / made, chain steps, failure, proposal honesty
@@ -665,9 +681,20 @@ class WorldSampler:
                 if sprov[i]["how"] == "told":
                     pinned.add(i)
             # the never-seen mons' genders and the team's legality are fixed BEFORE the (costly) seen-mon screen
-            placed = place_genders(rng, out, never, draw_slots, pinned, self.pad)
+            src_of: Dict[int, int] = {}
+            placed = place_genders(rng, out, never, draw_slots, pinned, self.pad, src_of)
             if placed is None:
                 return None, "gender_count"
+            # each never-seen mon's record MOVES WITH IT (the placement permutes them; GIGO 2026-10-15), and its
+            # species flags are read at the slot it now holds: ``match`` = a TRUE never-seen species (set-based: the
+            # drawn slots are exchangeable), ``slot_match`` = the truth's species at this slot
+            drawn = {i: facts[i] for i in never}
+            true_never_sp = {sids[i] for i in never}
+            for slot, src in src_of.items():
+                fa = dict(drawn[src], slot=slot, drawn_slot=src)
+                fa["species_fact"] = dict(fa["species_fact"], match=fa["species"] in true_never_sp,
+                                          slot_match=fa["species"] == sids[slot])
+                facts[slot] = fa
             if team_problems("]".join(placed)) - true_problems:
                 return None, "clause"
             return (rng, placed, facts, keys, need_hp, pinned), None
@@ -775,6 +802,8 @@ class WorldSampler:
                 fails["playout_refusal_example"] = refusals[0]          # type: ignore[assignment]
             raise WorldError(f"{key}: {sum(t is None for t in teams)} of {J} worlds not built in {self.max_tries} "
                              f"tries ({fails})")
+        # THE THROWING GUARD: slot <-> species <-> facts <-> the engine's view of every returned world
+        WG.check_worlds(root, [str(t) for t in teams], wfacts, key)
         logs = []
         for t in teams:
             tw = list(log["teams"])

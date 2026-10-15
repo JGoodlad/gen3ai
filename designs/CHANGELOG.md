@@ -14334,3 +14334,42 @@ never read the field. The one other copy of the stale value is the PARENT's `ora
 - Docs: `designs/endstate/design_information_levers.md` (§6 "THE PROVENANCE CONTRACT", Decision record), `designs/ARCHITECTURE.md`,
   `designs/model/{flag_registry_rules,file_layout}.md`, `designs/training/eval_and_rating.md`, `src/agents/model/CLAUDE.md`;
   ledger 2026-10-15 GIGO FIX.
+
+## 2026-10-15 — GIGO FIX: the search world builder's never-seen fact RECORDS were paired with the wrong slot; the THROWING world consistency guard (`main.value_search.world_guard`; offline search only; no model / config / obs / signature change)
+
+**The defect.** `WorldSampler.sample` drew each never-seen opponent mon FOR a slot, then `place_genders` permuted the
+drawn never-seen mons among the never-seen slots (the turn-0 gender dice). The packed entries moved whole, but
+`Worlds.facts` stayed indexed by the DRAW slot, and the never-seen species `match` compared a species with the truth of
+the slot it was drawn for. Reported (unverified) by the Tier-1 FN/POOL sub-agent; reproduced on a committed-bank decision
+(`ai_v14_01_base/step_36000000/sentinel_3/loss_s0_004#p1#5`: all 3 honest worlds mis-paired, e.g. team metagross /
+salamence / starmie / tyranitar at slots 2–5, records tyranitar / starmie / metagross / salamence).
+
+**Impact (measured before the fix).** The WORLDS were right (whole entries moved; every world re-gates and every playout
+ran on the team its text names), so no IMP, G, s / n, R-STAGE, R-DOSE, R-RECOVER or other registered verdict changes. The
+RECORDS were wrong for 128,822 of 278,520 never-seen records (46 %) of the 125,176 stored Tier-1 worlds; a per-slot
+reader that trusted them read the wrong mon. The one research quantity built on them: Tier 1's Amendment-3 U hit-rate
+PROXY and FN's species hit (`score_blind.fact_hits`): 0.12 → 0.28 [0.27, 0.30], hit F 0.058 → 0.180, FN 0.172 → 0.411,
+and CLASS-FIRST from the proxy point NOT DETECTED → U-FIRST at k 1–2, k 3 and material 12 (recomputed with the study's own
+`class_dose` on the frozen table; nothing else reads `hits`). The records did not exist before `182d7c57` (2026-10-12), so
+the 10-11 value-discrimination pilot, the hidden-info pilot + its blind replica and the per-stage VOI are untouched; the
+10-12 information-lever audits read them only for a descriptive table.
+
+**The fix.** `place_genders(..., src_of=…)` reports the permutation (no extra random number: worlds byte-identical before /
+after on 24 decision × spec cells, 8 specs); the builder moves each record with its mon (`drawn_slot`) and reads the
+species flags at the returned slot (`match` = a TRUE never-seen species, set-based; `slot_match` = the truth's species at
+this slot). **The guard:** before returning, ONE `core_events` replay of the J teams with no command gives the ENGINE's view
+(the opponent's first request); per slot the record's slot and species, the entry's species and the engine's agree, a seen
+mon is in its true slot, the engine's item / ability / moves (aliases resolved, none twice) / exact stats are the entry's,
+and every match flag recomputed from the entry against that mon's truth equals the record's; any disagreement raises
+`WorldConsistencyError` (not a `WorldError`). `main.info_audit` gains the same check as the `consistency` verdict.
+Validated on 9,656 archived Tier-1 worlds (120 states, every builder arm): 0 false positives once re-paired; it caught 7
+POOLSETS worlds holding Will-O-Wisp twice (a pool team packs the alias `wisp`; `packed.typed_moves` does not resolve
+aliases — reported, not fixed here).
+
+- Tests (each fails on revert, verified by restoring HEAD's `worlds.py`): `src/main/value_search/world_guard_test.py` (unit:
+  a consistent world, the mis-paired record, eight planted disagreements, the alias and the move twice, the exact stats),
+  `world_guard_integration_test.py` (the minimal real case + the raise), `worlds_test.py::test_place_genders_reports_the_permutation…`,
+  `info_audit_integration_test.py::test_teeth_consistency_catches_a_fact_record_at_another_mons_slot`.
+- Docs: `designs/endstate/design_information_levers.md` (§7.2, §7.6, §10.1, Decision record), `designs/endstate/search_ledger.md`
+  (N15, §5.1, §6.1, Decision record), `designs/endstate/design_hidden_info_binding.md` (§16.8 table and findings, Decision
+  record); ledger 2026-10-15 GIGO FIX (world records).

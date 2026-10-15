@@ -211,3 +211,24 @@ def test_the_directed_move_goes_the_way_the_hint_says():
     assert all(t[3][0] <= 100 and t[3][2] <= 100 and t[3][4] <= 100 for t in down)
     faster = [m.guided(s, ("speed", -1)) for _ in range(300)]
     assert all(t[3][5] >= 0 for t in faster) and any(t[3][5] > 0 for t in faster)
+
+
+def test_place_genders_reports_the_permutation_it_applied_and_reporting_it_changes_no_draw():
+    """GIGO 2026-10-15: the builder's never-seen fact records must MOVE WITH their mons through the gender placement,
+    so the placement reports where each mon went (``src_of``); asking for it spends no extra random number."""
+    from utils.team_packing import GENDER_DRAW_PAD as PAD
+
+    ents = [_NONE, _NONE, _NONE, _RATIO, _FIXED, _RATIO2]
+    moved = 0
+    for seed in range(40):
+        plain = W.place_genders(np.random.default_rng(seed), ents, [1, 2, 3, 4, 5], {3, 5}, pinned={1}, pad=PAD)
+        src_of: dict = {}
+        rng = np.random.default_rng(seed)
+        out = W.place_genders(rng, ents, [1, 2, 3, 4, 5], {3, 5}, pinned={1}, pad=PAD, src_of=src_of)
+        assert out == plain                                                     # no draw changed
+        assert sorted(src_of) == [1, 2, 3, 4, 5] and sorted(src_of.values()) == [1, 2, 3, 4, 5]
+        assert src_of[1] == 1                                                   # the pinned slot stays
+        for slot, src in src_of.items():                                        # each slot holds its source's mon
+            assert W.parse_set(out[slot])[0] == W.parse_set(ents[src])[0]
+        moved += any(s != d for s, d in src_of.items())
+    assert moved > 0, "the fixture must exercise a real permutation"

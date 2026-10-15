@@ -25182,3 +25182,55 @@ Operations: CPU only, no new playouts (rule 5b: nice 19, cores 5–7 / 13–15, 
 
 Tag: **MEASUREMENT · REPLICATED (G; the moves' minority shares; the tie-break step) · NOT REPLICATED (R3's never-seen half, U, stage, recover, eval, dose / placebo) · R-REPLICATE NOT MET as registered · PROVISIONAL at 15M** ·
 evidence: `designs/research_state/measurements/hidden_info_tier1_2026-10-13/replica_comparison.md`, `replica_comparison.json`, `replica_compare.py`; `designs/research_state/measurements/hidden_info_replica_2026-10-11/`; `designs/endstate/design_hidden_info_binding.md` §16.9; `designs/endstate/search_ledger.md`
+### 2026-10-15 · GIGO FIX · **The search world builder's never-seen fact RECORDS (`Worlds.facts`) named another slot's mon after the gender placement permuted the drawn never-seen mons (46 % of the stored Tier-1 never-seen records); the WORLDS were right, so NO playout and NO registered verdict moves; the one quantity built on the records — Tier 1's Amendment-3 U hit-rate proxy (0.12 → 0.28) and FN's species hit (0.172 vs 0.058 → 0.411 vs 0.180) — is corrected, and CLASS-FIRST from that proxy point turns U-FIRST at k 1–2, k 3 and 12 mons alive; a THROWING slot ↔ species ↔ facts ↔ engine guard now checks every returned world**
+
+**Reproduced.** HEAD `6a7ee72c`, the honest default on a committed-bank decision (`ai_v14_01_base/step_36000000/sentinel_3/loss_s0_004#p1#5`,
+4 never-seen slots): all 3 worlds mis-paired. Stored Tier-1 worlds (`~/gen3ai_archive/hidden_info_tier1/*/worlds/`): 125,176 worlds,
+278,520 never-seen records, **128,822 (46 %) at another mon's slot, in 44,916 worlds (36 %), 7,122 state × arm cells**; 0 seen-mon records;
+the records' species multiset equals the team's in every world (a pure permutation). Paths: every arm built by `WorldSampler.sample`
+whose never-seen species are DRAWN — F (honest default), F+M, O−U, D50, D90, W90, MAP100, FN, POOLSETS; NOT F+U / O−M (the
+`species:unseen` lever pins the species to its true slot) and NOT POOL (its own builder, no records). Not the observation or the
+injection consumers of the info-lever spec (no world builder; the injection maps a slot by species `num`, unique on a gen3ou team).
+
+**Root cause and class.** `place_genders` permutes whole never-seen packed entries so the turn-0 gender draws fall on the true
+draw slots; `build_base` kept `facts[i]` keyed by the DRAW slot `i`, and `never_seen_species` recorded `match = pick == true
+species of the draw slot`. Class: a per-slot record keyed by the slot BEFORE a permutation (the ORDER of the never-seen slots) —
+not species-vs-slot indexing, not formes sharing a `num`.
+
+**Impact, per past read (estimated before the fix).**
+
+| read | built worlds through the faulty path? | worlds / records affected | could a headline move? |
+|---|---|---|---|
+| 10-11 value-discrimination pilot | no: builder v1 / v2 (pre-`182d7c57`) had NO per-slot records; its own `place_genders` moved whole entries; its reads count species by team (`move_accuracy_read.species_hit`) | 0 | no |
+| hidden-info pilot + blind replica (`34ee1d6c`) | pilot: builder v2 (no records); replica: its own builder (team and slot order kept from the truth, seed-advanced genders) | 0 | no |
+| per-stage VOI (`hidden_info_by_reveal_count_2026-10-12`) | no: re-reads the pilot's playouts | 0 | no |
+| info levers (`info_levers_2026-10-12`: `audit_off_40`, `audit_8x4`, `seed_reuse_200`) | yes (HEAD builder) | the records; every VERDICT is slot-agnostic (provenance per fact, leak / dose on SEEN mons, proposals), only the descriptive `unseen:species:drawn` truth-match table is slot-based (0.031 / 0.0) | no (descriptive table only) |
+| Tier 1 (`6a7ee72c`) | yes: 9 of 12 arms | 46 % of never-seen records; 0 worlds wrong (whole entries moved: the re-gate of 16,800 worlds at the pins and every playout stand) | **R-MOVES REFUTED, G +0.070 and the per-class split (σ / ν / φ, s_U 0.31, n_U 0.82): NO** — none reads the records (`unblind_t1` reads `hits` only in `hit_proxy` → `class_dose`). **Amendment 3: YES, descriptive** — U TODAY proxy 0.122 [0.112, 0.132] → **0.282 [0.266, 0.297]** (hit F 0.058 → 0.180, FN 0.172 → 0.411; end2 0.120 → 0.273, prod 0.124 → 0.290), U p0 0.10 → 0.30, `PI.from_today_proxy` +0.0028 → +0.0045 [+0.0012, +0.0082]; CLASS-FIRST from the proxy point NOT DETECTED → **U-FIRST** at k 1–2, k 3 and material 12 (other buckets unchanged; k = 5, one never-seen slot, identical as it must be). P-STAR, SHAPE, p-half, `PI.from_zero`, the from-p = 0 verdicts, the curves and the M class unchanged |
+
+Recomputed with the study's own `unblind_t1.load()` → `frames` → `class_dose` on the frozen `blinded_table.pkl` (sha checks passed;
+the ORIGINAL hits reproduce the published Amendment-3 block exactly, deep-equal), only `hits[code][2]` replaced by the set-based count
+(a world's never-seen species that are TRUE never-seen species, from the stored teams and the banks); `sn` audited equal to the stored
+one in all 15,646 records. Scratch outputs (not committed): `/tmp/gigo_slot/amend3/`.
+
+**The fix** (`main.value_search.worlds`, `world_guard`): `place_genders(src_of=…)` reports the permutation without spending a random
+number (worlds byte-identical before / after on 24 decision × spec cells of 8 specs); each record moves with its mon (`drawn_slot`);
+`species_fact.match` = a TRUE never-seen species (set-based), `slot_match` = the truth's species at this slot. **The guard** (THROWING,
+`WorldConsistencyError`, never a `WorldError`): one `core_events` replay of the J teams with no command; per slot the record, the entry
+and the ENGINE agree on the species; a seen mon in its true slot; the engine's item, ability, moves (aliases resolved, none twice) and
+exact stats are the entry's; every match flag recomputed from the entry against that mon's truth equals the record's. Validated on
+9,656 archived Tier-1 worlds (120 states, every builder arm): 0 false positives once re-paired. `main.info_audit` gains `consistency`.
+
+**FINDINGS.**
+1. The guard caught a REAL world defect beyond the records: 7 POOLSETS worlds (7 of ~1,140 states) whose Gengar holds `wisp` AND
+   `willowisp` (Will-O-Wisp twice). One of the 719 pool teams packs the move as the Showdown alias `wisp`, and
+   `agents.info_levers.packed.typed_moves` does not resolve aliases (`agents.gen3_data.moves.move_aliases()` exists) — so a TRUE
+   `wisp` slot is also not recognised as revealed when Will-O-Wisp is used (it is redrawn; the gate conditions it back). Not fixed
+   here (it would change worlds); r_POOLSETS (−0.02) cannot be moved by 7 worlds.
+2. Tier-1's measurement folder (README §7, `result_t1.md` / `.json`) still carries the published U proxy, FN species hit and
+   CLASS-FIRST-from-proxy column: not edited (another agent's replica comparison is in flight there); the always-current docs carry
+   the corrected numbers. Its POOL builder (`pool_worlds.py`) builds teams outside `WorldSampler.sample`, so the guard does not see
+   them: it should call `world_guard.problems` on its teams.
+
+Tag: **GIGO FIX · DESCRIPTIVE CORRECTION (Amendment 3's U proxy, FN species hit) · no registered verdict affected** ·
+evidence: `src/main/value_search/world_guard.py`, `world_guard_test.py`, `world_guard_integration_test.py`,
+`designs/endstate/design_information_levers.md` §7.6, `designs/endstate/search_ledger.md`, `designs/endstate/design_hidden_info_binding.md` (Decision record)

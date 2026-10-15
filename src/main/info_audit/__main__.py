@@ -76,7 +76,8 @@ def run(decisions: Sequence[dict], specs: Sequence[str], n_worlds: int, z_max: f
             spec_stats[s]["built"] += 1
             spec_stats[s]["screens"] += w.screens
             spec = samplers[s].spec
-            for v in (C.provenance(spec, w), C.legality(root, w), C.genders(root, w), C.regate(root, w),
+            for v in (C.provenance(spec, w), C.consistency(root, w), C.legality(root, w), C.genders(root, w),
+                      C.regate(root, w),
                       C.gender_independence(w, samplers[s].pad), C.playout_open(root, w, samplers[s])):
                 add(dict(v, check=f"{v['check']}[{s}]"))
             if spec == PRESETS["oracle"]:

@@ -358,7 +358,14 @@ Under `pilot` the seen mons' item, ability and spread are TOLD (the truth, every
   0.8, the others sharing the rest), because pool sets use non-canonical ones (the blind replica's note) and a
   pattern moves the exact stats by a point, which the log pins. IVs below 30 are outside the support (§7.5).
 - **Genders** (§9): the never-seen mons are placed so the turn-0 gender draws fall on exactly the true team's draw
-  slots; with the engine's pad any of them may sit on a draw slot.
+  slots; with the engine's pad any of them may sit on a draw slot. The placement PERMUTES the drawn never-seen mons
+  (whole packed entries), so each never-seen mon's provenance record MOVES WITH IT (`place_genders(src_of=…)`;
+  `facts[i]["drawn_slot"]` names the slot it was drawn for). Until 2026-10-15 the records stayed at the draw slot: the
+  WORLDS were right, the records of ~46 % of the honest arms' never-seen slots named another slot's mon (§7.6).
+- **The never-seen SPECIES flags** are read at the slot the mon holds in the returned team: `match` = a TRUE
+  never-seen species (SET-based: the drawn never-seen slots are exchangeable, the gender placement decides which is
+  which), `slot_match` = the truth's species at this very slot. Before 2026-10-15 `match` compared a species with the
+  truth of the slot it was DRAWN for (neither its slot nor the set): a 2-3x undercount of the set-based hit rate.
 - **Legality**: a world breaking a gen3ou rule the true team does not break is rejected (`clause`); the never-seen
   draws and the genders are checked BEFORE the screen (cheap), each seen mon's set after its moves are drawn (a banned
   set — e.g. a Baton Passer drawn a Salac Berry — is redrawn up to `MOVE_REDRAWS` times), the whole team last.
@@ -368,6 +375,10 @@ Under `pilot` the seen mons' item, ability and spread are TOLD (the truth, every
   rejected (`fails["playout_refused"]`, the refusal named), never handed to a search that cannot play it. The audit's
   `playout_open` re-checks every returned world; the planted numeric choice is gated green by `core_events` and
   refused here (`info_audit_integration_test.py`).
+
+- **The CONSISTENCY GUARD** (`main.value_search.world_guard`, THROWING; §7.6): every returned world is checked slot ↔
+  species ↔ facts ↔ the ENGINE's own view of the team (one `core_events` replay with no command: the opponent's first
+  request, team order), and a disagreement raises `WorldConsistencyError` (a defect, never a `WorldError` exclusion).
 
 ### 7.3 The SCREEN: honest posterior draws of a seen mon's item, ability and spread (`world_screen`)
 
@@ -465,6 +476,39 @@ The honest screen is the cost: a seen mon the prior fits is a few replays; one w
   Attack is taken as full Attack ("0 attack adds so little value. It only matters when a pokemon is confused and
   hurts itself in confusion or in a struggle end game"); those decisions stay excluded, counted.
 
+### 7.6 The world CONSISTENCY GUARD (BUILT 2026-10-15, after a GIGO: `main.value_search.world_guard`)
+
+**The defect.** The builder draws each never-seen mon FOR a slot, then the gender placement (§9) permutes the drawn
+never-seen mons among the never-seen slots. The packed entries moved whole, so every WORLD was the team its text named
+and every playout ran on it; but `Worlds.facts` stayed indexed by the DRAW slot, so a never-seen slot's record could
+describe another mon, and the never-seen species `match` compared a species with the truth of the slot it was drawn
+for. Measured on every stored Tier-1 world (125,176 worlds, 278,520 never-seen records): **128,822 (46 %) records at
+another mon's slot, in 44,916 worlds (36 %) of 7,122 state × arm cells**; 0 in the arms that pin the never-seen
+species to its slot (`F+U`, `O−M`) and in POOL (no builder records); 0 SEEN-mon records (seen mons never move); the
+multiset of records equals the team's in every world (a pure permutation). The class: a per-slot record keyed by the
+slot before a permutation — not species-vs-slot indexing, not formes (a gen3ou team never holds two mons of one `num`).
+
+**The fix.** `place_genders(..., src_of=…)` reports the permutation (it spends no extra random number: the same worlds,
+byte for byte, before and after on 24 decision × spec cells); the builder moves each record with its mon
+(`drawn_slot` keeps where it was drawn) and reads the species flags at the returned slot (`match` set-based,
+`slot_match` at this slot; §7.2).
+
+**The guard (THROWING).** Before a `Worlds` is returned, ONE `core_events` replay of the J world teams with no command
+gives the ENGINE's view of each (the opponent's first request: team order). Per slot: the record's slot and species,
+the entry's species and the engine's are one; a seen mon sits in its true slot and is recorded seen; the engine's item,
+ability, moves (a packed alias such as `wisp` resolved through the engine's own table; no move twice once resolved)
+and EXACT stats (max HP included) are the entry's; every `match` flag (item, ability, spread, moves, the never-seen
+species, `true_mon`) recomputed from the entry against the truth OF THAT MON equals the record's. A disagreement raises
+`WorldConsistencyError` (never a `WorldError`: a defect is not an exclusion). Validated on 9,656 archived Tier-1
+worlds (120 states, every builder arm): with the records re-paired by species, 0 false positives on species, items,
+abilities, moves, stats and flags; the 1 world it flagged is a real defect (below). The audit suite reads the same
+check as a verdict (`consistency`, §10.1), so a world from another builder or a tampered one is read too.
+
+**What it found beyond the mis-pairing.** POOLSETS (the Tier-1 measurement's pool-set prior) built 7 worlds (7 of ~1,140
+states) whose Gengar holds `wisp` AND `willowisp` — Will-O-Wisp twice: one pool team packs the move as the alias
+`wisp`, and `agents.info_levers.packed.typed_moves` does not resolve aliases (the same gap makes a TRUE `wisp` slot
+unrecognised as revealed). Not fixed here (it would change worlds; 1 of 719 pool teams): `TECH_DEBT`-class, reported.
+
 ---
 
 ## 8. (c) THE MODEL-INPUT INJECTION (BUILT: `agents.info_levers.inject`)
@@ -531,6 +575,7 @@ fixed seeds; a statistical bound only where its planted defect sits far beyond i
 | search | `template_identity` | the choice template rendered against the TRUE team reproduces the true prefix (a rewritten slot one off is invisible to a replay when the choice never executed) | `checks.py` |
 | search | `oracle_identity` | the `oracle` preset builds exactly the true team and prefix | `checks.py` |
 | search | `regate` | every returned world replays STRICTLY to the searched side's byte-equal rows and protocol (+ the seen mons' exact-HP match, descriptive) | `checks.py` |
+| search | `consistency` | each slot's fact record names the mon the ENGINE built there and every match flag is that mon's (the builder's own throwing guard, §7.6, as a verdict) | `checks.py`, `value_search/world_guard.py` |
 | search | `legality` | no world breaks a gen3ou rule the true team does not | `checks.py` |
 | search | `genders` | the never-seen slots that draw (or pad) are exactly the true team's draw slots | `checks.py` |
 | search | `gender_independence` | no world was rejected on its turn-0 gender-draw count (seed reuse through the gender dice; the pad closes it) | `checks.py` |
@@ -548,7 +593,8 @@ fixed seeds; a statistical bound only where its planted defect sits far beyond i
 item swapped in a returned world (`regate`); a never-seen mon's gender flipped (`genders`); a world that copies a seen
 mon's true moves but reports a draw (`leak:moves`, z > 6 against an honest z < 2.5); a screen whose item proposals peek
 (`leak:item` proposals; the synthetic unit test, since a prior that already puts most mass on the true item gives the
-real-battle version little power); a source that claims a move play never named (`log_consistency`); an injection one
+real-battle version little power); two never-seen records swapped back to the pre-2026-10-15 pairing (`consistency`,
+and the builder's guard raises); a source that claims a move play never named (`log_consistency`); an injection one
 move channel off (the reach check); provenance violations of each kind (unit); the builder without the gender pad
 (`gender_independence`); a numeric choice token `core_events` gates green (`playout_open`'s refusal); a control gate
 that rejects everything (`seed_reuse`); an injection's Hidden Power type moved by the moves lever (§1.1; the
@@ -668,3 +714,4 @@ For a decision-level score IMP (the study's: win probability per decision over t
 | 2026-10-14 | **`main.h2h --oracle-reveal-mode withheld` BUILT: the honest-play read of a knock-in fork** (Training Oct's spec for the §8.4 secondary cross) | A fourth mode: the oracle-trained checkpoint of a cell plays at `off` BY DECLARATION against a plain one; its own protocol `gen3_eval_protocol_v1_h2h_oracle_withheld` (in `PROTOCOL_OF_MODE`, `eval_ledger.schema.PROTOCOLS`, the design's closed-list table that the reader gate reads), never pooled; `(off, off)` accepted for an oracle cell ONLY under it (`off` still refuses an oracle checkpoint); the stamp `{mode: withheld, player: off, opponent: off, withheld_level: <recorded spec>}`; every oracle row (all three modes) gains an `oracle` provenance block (recorded spec, canonical text, reveal hash, diagnostic-fork consent). Oracle-vs-oracle REFUSED under it | no mode for it (a plain `off` over an oracle checkpoint is the silent dependence read the refusal exists to stop); loosening `off`; permitting a both-withheld cell (two dependence costs, one `withheld_level`; a cross of two knock-in forks is not a registered cell; cheap to add later as a deliberate stamp change); reading the hash off `metadata.json` (a fork's says `off`) | `src/main/h2h/reveal_test.py`, `play_test.py`, `play_reveal_integration_test.py` (withheld = `off`'s games bit for bit in either seat); CPU smoke `rb_hib_moves_s3101` vs `rb_hib_ctrl_s3101` |
 | 2026-10-15 | **The REVEAL PROVENANCE contract BUILT (`gen3_reveal_provenance_v1`; GIGO FIX)**: the knock-in forks' `metadata.json` recorded `oracle_reveal: off` beside a `model_config.json` that said `moves:seen@0.95` | The resolved run config is the ONE source; `metadata.json` copies it from the env core's declaration (`env_core.oracle_reveal`); a post-load table re-applies every `resume_immutable` extractor attribute (`agents.model.resume_reapply`); `save_model_snapshot` / `record_checkpoint` raise `RevealProvenanceError` and the trainer exits `FATAL_CONFIG` on a record that disagrees; the readers (`oracle_reveal.run_provenance`, `main.lineage`, `main.sidecar_audit`) prefer `model_config.json` and flag the 11 existing knock-in forks KNOWN-BAD (files untouched). Impact verdict: PROVENANCE ONLY (the attribute is read by `run_io` alone; training and eval observations come from the resolved config) | rewriting the forks' `metadata.json` (`models/` is read-only; blocks are immutable); writing the true reveal into the policy's pickled `features_extractor_kwargs` (it is the forward-identity `forward_fingerprint` / `EngineArch` read: a fork would split from its plain control and the fork-vs-control h2h cell would be refused); reading the mode from the extractor and fixing only its re-apply (one witness, no cross-check) | `src/agents/model/reveal_provenance_test.py` (each assertion fails on revert), the CPU parent-then-fork smoke, `python -m main.lineage models/rb_hib_moves_s3101` |
 | 2026-10-12 | **IVs below 30: taken as full Attack** (owner's ruling on the builder's finding 4: "0 attack adds so little value. It only matters when a pokemon is confused and hurts itself in confusion or in a struggle end game. You can toss those in as full attack.") | No new IV prior: the screen keeps every IV at 30 / 31 (the Hidden Power's patterns, else 31), so a minimised-Attack set is built and believed at full Attack; a decision whose log pins the Attack stays an EXCLUSION, counted and reported | an IV prior below 30 (no Smogon source; little value) | §7.5, §12; `world_screen.ivs_of` |
+| 2026-10-15 | **The world CONSISTENCY GUARD BUILT, after a GIGO in `Worlds.facts` (§7.6)**: the gender placement permuted the drawn never-seen mons but their provenance records stayed at the slot each was DRAWN for (46 % of the never-seen records of the stored Tier-1 worlds named another slot's mon), and the never-seen species `match` compared a species with the truth of its draw slot | Each record moves with its mon (`place_genders(src_of=…)`, `drawn_slot`; the worlds byte-identical); the species flags read at the returned slot (`match` = a TRUE never-seen species, set-based; `slot_match` = the truth's species at this slot); every returned world checked slot ↔ species ↔ facts ↔ the ENGINE's view (item, ability, moves with aliases resolved and none twice, exact stats, every match flag recomputed) and a mismatch RAISES `WorldConsistencyError`; the audit's `consistency` verdict | keeping slot-based `match` (it measures neither the slot the mon holds nor whether the team holds a true species); matching records by species in each READER (the Tier-1 FN provenance does; every other reader would have to know); an exclusion instead of a raise (a record that is not its world is a defect) | `main/value_search/world_guard.py` (+ `_test.py`, `_integration_test.py`); impact: no world, playout or registered verdict changed; the Tier-1 Amendment-3 U hit-rate proxy and the FN species hit move (ledger 2026-10-15) |

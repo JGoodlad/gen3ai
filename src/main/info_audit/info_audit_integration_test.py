@@ -72,6 +72,29 @@ def test_teeth_a_world_that_copies_the_true_moves_is_caught(corpus, monkeypatch)
     assert not v["pass"] and v["z"] > 6.0, v
 
 
+def test_teeth_consistency_catches_a_fact_record_at_another_mons_slot(corpus):
+    """The 2026-10-15 GIGO, as a suite verdict: the honest builder's worlds are consistent, and the same worlds with
+    two never-seen records swapped (the pre-fix pairing) fail ``consistency`` naming the slot."""
+    from main.policy_spectrum.truth import cmd_index, to_log
+    from main.value_search import worlds as W
+
+    item = corpus[0]
+    d, bat = item["decision"], item["battle"]
+    log, at = to_log(bat), cmd_index(bat, d["side"], d["n"])
+    root = W.prepare_root(log, at, d["side"], item["id"])
+    w = W.WorldSampler(reveal="off").sample(log, at, d["side"], 2, item["id"])
+    assert C.consistency(root, w)["pass"]
+    never = [i for i, s in enumerate(root.sids) if s not in root.kept]
+    assert len(never) >= 2, "the fixture decision has two never-seen slots"
+    fl = [dict(f) for f in w.facts[0]]
+    a, b = never[0], never[1]
+    fl[a], fl[b] = dict(fl[b], slot=a), dict(fl[a], slot=b)
+    bad = type(w)(logs=w.logs, teams=w.teams, tries=w.tries, leak=w.leak, revealed=w.revealed,
+                  facts=[fl] + w.facts[1:])
+    v = C.consistency(root, bad)
+    assert not v["pass"] and v["inconsistent"] == 1 and "fact record" in " ".join(v["examples"][0]["problems"])
+
+
 def test_teeth_regate_legality_and_genders_catch_a_tampered_world(corpus):
     from main.policy_spectrum.truth import cmd_index, to_log
     from main.value_search import worlds as W
