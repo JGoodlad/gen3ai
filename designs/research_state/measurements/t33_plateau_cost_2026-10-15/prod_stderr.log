@@ -1,0 +1,13 @@
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33prod-2713363.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[plateau] rb_bf_eb_s2001: 1 due check(s): [15000000] (ledger /tmp/t33/ledger_prod)
+[plateau] check 15,000,000: rb_bf_eb_s2001@15000029 vs rb_bf_eb_s2001@5000152 (request plateau_t1:rb_bf_eb_s2001:15000000:w10000000)
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-aebf615fd44330548/src/rust_env/target/release)
+[h2h] engine up in 21.5s: rb_bf_eb_s2001@15000029 vs rb_bf_eb_s2001@5000152; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 40 pairs / 80 games in 118.7s (0.67 games/s); W/L/D 63/17/0; pair counts [1, 0, 15, 0, 24]; near-tie games 1; digest 45cdff7e820c
+[plateau] plateau_t1:rb_bf_eb_s2001:15000000:w10000000: batch 0 recorded; n_pairs 40 so far
+[h2h] batch 2/2: 40 pairs / 80 games in 127.1s (0.63 games/s); W/L/D 67/13/0; pair counts [1, 0, 11, 0, 28]; near-tie games 0; digest 937789335487
+[plateau] plateau_t1:rb_bf_eb_s2001:15000000:w10000000: batch 1 recorded; n_pairs 80 so far
+[h2h] batch 3/3: 40 pairs / 80 games in 139.5s (0.57 games/s); W/L/D 58/22/0; pair counts [1, 0, 20, 0, 19]; near-tie games 0; digest d2eaf063cdf6
+[plateau] plateau_t1:rb_bf_eb_s2001:15000000:w10000000: batch 2 recorded; n_pairs 120 so far
+[plateau] plateau_t1:rb_bf_eb_s2001:15000000:w10000000: GAIN (upper_bound) at 120 pairs, LLR +4.307; decision 20261015T140210Z.0-goodlad_desktop-2713374-h2h:d0
+[mem_cap] done: gen3ai-capped-t33prod-2713363.scope exit 0 · peak 0.97 GB of cap 12.00 GB (8%) · not OOM-killed

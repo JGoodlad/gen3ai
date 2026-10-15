@@ -25541,3 +25541,46 @@ run data affected** · evidence: `src/agents/training/train_logger.py`, `metric_
 `diagnostics_cadence_test.py`, `update_fit_test.py`, `src/main/train/debug_shape_smoke_integration_test.py`,
 `designs/training/telemetry_scalars.md` "Metric keys stay DISTINCT", `designs/endstate/design_x26_readiness.md` I28,
 `designs/CHANGELOG.md`
+### 2026-10-15 · MEASUREMENT · **T33: Tier 1 of the plateau meter VALIDATED on a real run, with 10 checks on the T-ENT toy (25M–70M, Δ 5M / W 20M), all GAIN and no CONFLICT; status CLIMBING. Its cost was MEASURED: the production net plays 0.62 games/s on the crowded agent cores (1.16 with one large batch), so an X26 near-plateau check takes 1.5–5 h against a 53-min Δ 5M cadence. The proposal is X26 at the registered Δ 10M with pipelined batches, and no in-process or SCHED_IDLE eval built for X26. The toy died at ≈ 72M on a CompileCanary FATAL, which voids its 65M / 70M checks**
+
+**What ran.** This is the first use of `python -m main.plateau tick` on a real run. It ran on `rb_toy_ent_s4001`
+under the toy rule (`design_x26_readiness.md` §3.4: Δ 5M, lag 4), on CPU on the agent cores under rule 5b, one check
+per invocation, timed by `/usr/bin/time`. It wrote 10 `plateau_t1` requests and decisions to `models/_ledger`, which
+is where the meter writes by design.
+- **Verdicts:** GAIN at 25 / 30 / 35 / 40 / 45 / 50 / 55 / 60 / 65 / 70M, each after 80–400 pairs. The newest node's
+  score against the node 20M back falls from 91.9 % to 56–61 %.
+- No CONFLICT, no INCONCLUSIVE and no refusal. The 20M check is `MISSING_NODE`, as expected (no step-0 node).
+- The 10 ticks cost 26 min of wall and 34 CPU-min in total.
+
+**Cost.**
+- On the production net, one real check (`rb_bf_eb_s2001` 15M vs 5M, GAIN at 120 pairs, scratch ledger) took 410 s
+  and 650 CPU-s for 240 games.
+- One 160-pair batch reached 1.16 games/s and 1.5 CPU-s per game. The meter's 40-pair batches on 64 envs are
+  tail-bound.
+- Extrapolated through §8.1's OC table, X26 needs 87 / 137 min per mean FLAT / p = 0.51 check today (47 / 73 min
+  pipelined), and 5.4 h at the cap.
+
+**The idle budget (records only).**
+- In production, the update phase is 68–80 % of the cycle (`rb_bf_eb_s2001`: 19.7 s collect + 42.1 s update), and the
+  env core's CPUs sit idle through it.
+- The GPU is idle for ≥ 20 % of the cycle during collection (from the inference waits).
+- In a 175 s read-only sample of the toy, the GPU ran at 29.5 % in collect and 81.5 % in the update. The trainer's 10
+  CPUs were 44 % and 16 % busy.
+
+**Recommendation** (the owner's question, answered in `design_x26_readiness.md` §2.6):
+- (a), the offline lane, is enough for X26 at Δ 10M once its batches are pipelined.
+- (c), an in-process blocking Tier-1 lane, pays only when G / r − Δt exceeds about 1 h per near-plateau check.
+- (b), a SCHED_IDLE filler, does not pay: it risks the trainer and has no GPU path.
+- (d), X14's overlap, is worth 5–20× more wall time than any eval placement.
+
+**FINDINGS** (readiness doc F13–F17):
+1. The design's 4.8 games/s does not hold for the production net on the agent cores.
+2. The meter is tail-bound; pipelining its batches is worth about 1.8×.
+3. The trainer's blocking eval cycle costs ≈ 3.5 % of production wall, not ≈ 1.5 % (`eval_and_rating.md` corrected).
+4. Production per-phase utilization is in no record; there is a ≤ 10-min read-only procedure for it.
+5. `rb_toy_ent_s4001` hit a CompileCanary FATAL after update 700, at ≈ 72M: the compiled bf16 gradient on
+   `pointer_head.move_proj` disagreed with eager. The safe rollback is 62.0M, so the 65M and 70M checks used
+   post-canary nodes and are void. A resume IN PLACE would put new nodes beside those that the decided requests froze.
+
+Tag: **MEASUREMENT · TIER 1 VALIDATED (toy; CLIMBING at 70M) · COST MEASURED · PROPOSAL (Δ 10M + pipelining for X26; no (b) / (c) for X26) · FINDING (toy CompileCanary FATAL)** ·
+evidence: `designs/research_state/measurements/t33_plateau_cost_2026-10-15/`, `designs/endstate/design_x26_readiness.md` §2.6 and F13–F17

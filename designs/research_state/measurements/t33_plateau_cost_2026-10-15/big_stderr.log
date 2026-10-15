@@ -1,0 +1,6 @@
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-t33big-2721133.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[h2h] rb_bf_eb_s2001@15000029 vs rb_bf_eb_s2001@10000194: 160 pairs in 1 batch(es) of 160; 0 already recorded, 1 to play; schedule h2h:885f2db368f11246 seed 0; request h2h:510a535fdb3dcd7f (adhoc, purpose audit) under /tmp/t33/ledger_big
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-aebf615fd44330548/src/rust_env/target/release)
+[h2h] engine up in 16.8s: rb_bf_eb_s2001@15000029 vs rb_bf_eb_s2001@10000194; 64 envs, T2 eager on cpu; 1 slot group(s) [('eval', 2)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] batch 1/1: 160 pairs / 320 games in 276.5s (1.16 games/s); W/L/D 188/132/0; pair counts [24, 0, 84, 0, 52]; near-tie games 0; digest 80bc56358255
+[mem_cap] done: gen3ai-capped-t33big-2721133.scope exit 0 · peak 0.87 GB of cap 12.00 GB (7%) · not OOM-killed

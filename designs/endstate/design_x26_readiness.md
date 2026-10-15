@@ -29,8 +29,10 @@ Units and terms:
   ADOPTED (the orchestrator's default, 2026-10-15); **U0 and U1 have LANDED** (2026-10-15; U1 = config v156, the eight
   op levers flagless). Lane **U3** changes the fresh-seed random stream, so it must land before any X26 seed. The
   chain is U0 → U1 → U3, landed one unit at a time with green gates.
-- **The plateau meter is partly built.** Tier 1 is BUILT and run offline (`main.plateau`, `131f3412`), but has
-  NEVER run on a real run. The cycle monitor (U5), the outside panel and the two-tier decision (U9) are NOT
+- **The plateau meter is partly built.** Tier 1 is BUILT and run offline (`main.plateau`, `131f3412`). It is
+  VALIDATED on a real run (T33, 2026-10-15, on the T-ENT toy), and its cost is measured (§2.6). On the agent cores,
+  an X26 near-plateau check costs 1.5–5 h today. The proposal (§2.6) is that X26 ticks at the registered Δ 10M,
+  the meter's batches get pipelined, and no in-process eval is built for X26. The cycle monitor (U5), the outside panel and the two-tier decision (U9) are NOT
   STARTED, and U9 waits on the owner's Q8. Every meter component runs OFFLINE over checkpoints, so the deep run
   needs only the stop RULE registered and Tier 1 validated at launch (§2.4, owner Q2).
 - **The ride-along heads still attach** to the end state. They have already ridden on 32 end-state runs. Their
@@ -63,7 +65,7 @@ that X26 reaches later (**later**).
 | I10 | **The ride-along heads attach to the end state** | DONE | `checkargs --argv "--arch production … --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all"` exit 0; the launcher dry-run from main "would launch"; B rebased onto the flat pointer (`350fb83b`, refused without it at `ridealong_heads.py:280-310`); RND reads `obs_dim` at build (2845); all 16 bf16 A/B runs and the 8 `rb_es_end2_*` typed these flags (`metadata.json`); `ridealong/disabled` max 0.0 in `rb_bf_eb_s2005`'s TB | L | — |
 | I11 | **The ride-along registration** ([`PREREGISTRATION.md`](../research_state/measurements/ridealong_baseline/PREREGISTRATION.md)) | STALE | its literal argv fails `checkargs` (exit 1: `--critic winprob`, `--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`, `--env-core rust` are deleted constants); restart interval 3 h (now 6 h); the K10(a) recipe clause; "FIRST GPU run on the M5 core"; read points 10M / 25M / FINAL; the overhead basis 67.05 s; the checkpoint cadence "50,000 vec-calls × 48 envs"; B on α's support; the 2761-dim memory estimate; `feat`'s drift prediction from fp32 legacy features | L | **Amendment 2** (unit T32), committed before the launch |
 | I12 | **Head bit-identity under bf16** (heads ON vs OFF learn bit-identically) | UNVERIFIED | `ridealong_update_test` proves it at fp32 only | L | one test under bf16 autocast (part of T32) |
-| I13 | **Plateau meter, Tier 1** (newest vs W-back GSPRT, H0 0.50 / H1 0.52, Δ 10M, W 50M, cap 6,000 pairs) | PARTIAL: BUILT offline (U9a), NEVER RUN on a real run | `src/agents/training/plateau_t1.py`, `src/main/plateau.py` (`131f3412`); no `plateau_t1` request in `models/_ledger`; no rb_ run past ~18M | L (validated) | validation on real checkpoints (T33); its CPU cost beside a live run is unmeasured (design: ~11 min mean, ~42 min at the cap, at 4.8 games/s) |
+| I13 | **Plateau meter, Tier 1** (newest vs W-back GSPRT, H0 0.50 / H1 0.52, Δ 10M, W 50M, cap 6,000 pairs) | **VALIDATED on a real run (T33, 2026-10-15)**: 10 checks (25M–70M) on `rb_toy_ent_s4001`, all GAIN, with no CONFLICT or INCONCLUSIVE; status CLIMBING (the run died at 72M on a CompileCanary FATAL, F17) | `src/agents/training/plateau_t1.py`, `src/main/plateau.py` (`131f3412`); the `plateau_t1:rb_toy_ent_s4001:*` requests and decisions in `models/_ledger`; §2.6 | L (validated) | its CPU cost is MEASURED (§2.6): production net 0.62 games/s on the agent cores today, so a near-plateau check takes 87–137 min against a 53-min Δ 5M cadence. **Use the registered Δ 10M for X26 and pipeline the 40-pair batches (T33-2)** |
 | I14 | **Plateau meter, the cycle monitor** (U5) | NOT STARTED | no `src/main/cycle_monitor*`; `monitor_row` exists only as a ledger kind | later (before the first Tier-1 FLAT can stop X26) | ~12–16 agent-hours, offline only (TASK_BACKLOG T20) |
 | I15 | **Plateau meter, the outside panel + the two-tier decision** (U9) | NOT STARTED; the owner's Q8 is unanswered | `design_league_decisions.md` L110 unchecked; `design_evaluation.md` Decision record 2026-10-03 "Q8 … provisional" | later | Q8 (owner Q2 below); ~8 agent-hours |
 | I16 | **U4 scheduler** (the in-window eval lane) | NOT STARTED / PAUSED | `design_evaluation.md` §7; `design_x5_belief_tokens.md` "eval U4 is paused" | **no — DROP? from X26's prerequisites.** X26 is pinned, so its checks run through the offline driver anyway (F-ED-19) | — |
@@ -208,6 +210,137 @@ run on a false plateau.
 - The maturity battery (`design_hidden_info_binding.md` §12.13.7) at ≥ 25M, every 25M, and at the plateau.
 - The X31 team-gradient re-check.
 - The toy controls' plateau read (§3.5).
+
+### 2.6 Evaluation cost and the idle budget (T33, measured 2026-10-15)
+
+**The owner's question:** "Do we need to invest in evals running on the main process and letting them use the spare
+cycles?" **Answer: not for X26.** The offline CPU lane keeps up with X26 if two cheap things are done:
+- tick at the REGISTERED Δ 10M, not 5M;
+- pipeline the meter's 40-pair batches. This is an offline fix, not a trainer change.
+
+An in-process eval (c) pays only past the threshold below. An out-of-process filler (b) does not pay. X14's overlap
+(d) is worth roughly 5–20× more wall time than any eval placement.
+
+Evidence: `../research_state/measurements/t33_plateau_cost_2026-10-15/` (README, scripts, raw tick and sampler logs).
+
+**The first real Tier-1 ticks** (`rb_toy_ent_s4001`, Δ 5M, lag 4, W 20M; ledger `models/_ledger`, `plateau_t1`
+requests; CPU on the agent cores under rule 5b, `--threads 4 --torch-threads 2 --n-envs 64`):
+
+| check | newest vs W-back node | verdict | pairs (games) | LLR | newest's score | wall | CPU-s | status after |
+|---|---|---|---|---|---|---|---|---|
+| 25M | 25.00M vs 5.00M | **GAIN** | 80 (160) | +3.044 | 91.9 % | 66 s | 100 | CLIMBING |
+| 30M | 30.00M vs 10.00M | **GAIN** | 120 (240) | +4.060 | 77.5 % | 92 s | 110 | CLIMBING |
+| 35M | 35.00M vs 15.00M | **GAIN** | 120 (240) | +3.424 | 69.2 % | 96 s | 121 | CLIMBING |
+| 40M | 40.00M vs 20.00M | **GAIN** | 120 (240) | +3.130 | 66.2 % | 79 s | 117 | CLIMBING |
+| 45M | 45.00M vs 25.00M | **GAIN** | 200 (400) | +3.070 | 59.5 % | 66 s | 118 | CLIMBING |
+| 50M | 50.00M vs 30.00M | **GAIN** | 320 (640) | +3.362 | 57.3 % | 123 s | 224 | CLIMBING |
+| 55M | 55.00M vs 35.00M | **GAIN** | 200 (400) | +2.977 | 59.0 % | 299 s | 324 | CLIMBING |
+| 60M | 60.00M vs 40.00M | **GAIN** | 320 (640) | +3.134 | 56.5 % | 397 s | 449 | CLIMBING |
+| 65M † | 65.00M vs 45.00M | **GAIN** | 400 (800) | +3.721 | 56.1 % | 146 s | 252 | CLIMBING |
+| 70M † | 70.00M vs 50.00M | **GAIN** | 200 (400) | +3.079 | 60.8 % | 195 s | 218 | CLIMBING |
+
+- **Tier-1 status: CLIMBING as of the 70M check. There is no FLAT yet, so there is no toy plateau.**
+- The newest node's score against the node 20M back falls from 92 % to 56–61 %. The pairs the GSPRT needs grow from 80
+  to 320–400, and a FLAT check would take about 1,600 pairs (§8.1's OC table).
+- The run did not reach its cap. **It died at 08:24 on a `CompileCanary` FATAL after update 700**: the compiled bf16
+  learner's gradients on `pointer_head.move_proj` disagreed with eager (FATAL_CONFIG, not restarted). The safe
+  rollback point is 62.0M, and the last passing canary was at 62.83M.
+- **† The 65M and 70M checks used nodes that trained after the last passing canary**, so they are on weights that
+  trained on the suspect graph. Treat those two verdicts as void until the training session rules on the rollback
+  (FINDING F17).
+- The meter loop was stopped by its operator at 08:39, because no further check was due. Re-run
+  `python -m main.plateau tick rb_toy_ent_s4001 --delta-steps 5000000 --lag 4` after any resume.
+
+- Every check decided, with no CONFLICT and no INCONCLUSIVE.
+- The 20M check reads `MISSING_NODE` (its W-back node is step 0, and no run saves one). This is expected, and the
+  first playable check is 25M, as §3.4 says.
+
+**The cost of one tick, measured beside the live toy.** The agent cores ran at load ≈ 11–15, shared with two other
+agents' jobs.
+
+| network | check | games | wall | CPU-s | rate (per 80-game batch) |
+|---|---|---|---|---|---|
+| toy (T-ENT) | 25M–70M, GAIN at 80–400 pairs | 160–800 | 66–397 s (all 10: 26 min) | 100–449 (all 10: 34 CPU-min) | 1.3–6.1 games/s per check; ≈ 0.35–1.1 CPU-s per game |
+| **production** (`rb_bf_eb_s2001` 15M vs 5M, scratch ledger) | GAIN at 120 pairs | 240 | **410 s** | **650** | **0.57–0.67 games/s**; ≈ 2.6 CPU-s per game |
+| production, ONE 160-pair batch (`main.h2h play`, 15M vs 10M) | — | 320 | 296 s | 510 | **1.16 games/s**; ≈ 1.5 CPU-s per game |
+
+Engine start-up costs 10–22 s per check.
+- **The meter is tail-bound.** A 40-pair batch is 80 games on 64 envs, so every batch waits for its slowest game.
+  On the production net that wastes about 45 % of the lane, as the 1.16 vs 0.62 games/s rows show (FINDING T33-2).
+- §8.1's design figure of 4.8 games/s does not hold for the production net on contended agent cores. The measured
+  rate is 0.62 today, or 1.16 when pipelined.
+
+**Extrapolated to X26** (production net, ≈ 1,570 steps/s ⇒ Δ 5M = 53 min, the registered Δ 10M = 106 min). The
+games per check come from §8.1's OC table (`design_evaluation.md`):
+
+| check | games | lane today (0.62/s): wall · CPU-h | lane pipelined (1.16/s): wall · CPU-h | in-process GPU (c) at 17–37 games/s |
+|---|---|---|---|---|
+| a GAIN check (climbing) | 240–640 | 6–17 min · 0.2–0.5 | 3–9 min · 0.1–0.3 | 7–38 s |
+| true p 0.50 (mean, FLAT) | 3,240 | **87 min** · 2.3 | 47 min · 1.35 | 1.5–3.2 min |
+| true p 0.51 (mean, hardest) | 5,100 | **137 min** · 3.7 | 73 min · 2.1 | 2.3–5 min |
+| the cap | 12,000 | **5.4 h** · 8.7 | 2.9 h · 5.0 | 5.4–12 min |
+
+The (c) column's rate is a range:
+- 33–42 games/s (37 used here) is the trainer's own blocking eval cycle on production nets (1,300–1,400 games in 31–43 s; `rb_bf_eb_s2001` and
+  `rb_es_end2_s2001` logs). Those are model-vs-bot games.
+- An h2h runs two networks, so 17 games/s is the pessimistic half of that.
+
+**Can 3 crowded agent cores keep up?** A check keeps up when its games ≤ rate × cadence.
+- Today's limit is 1,940 games per check at Δ 5M and 3,880 at Δ 10M. With pipelined batches it is 3,620 and 7,250.
+- So the lane keeps up at every cadence while X26 is CLIMBING (GAIN checks take 6–17 min).
+- Near the plateau, today's lane at Δ 5M FALLS BEHIND on every check. A FLAT check takes 87–137 min against a
+  53-min cadence, so the stop decision comes about 2–4 h late. That is 2–4 GPU-h of training past the plateau, per seed.
+- At the registered Δ 10M with pipelined batches, the lane keeps up through the hardest mean case (73 min against
+  106). It lags only at the 90th percentile or at the cap, by about 1 h.
+- Each near-plateau check also takes 1.4–3.7 CPU-h from the lane that every agent shares.
+
+**The trainer's idle budget, from records** (the per-update `rollout/collect_ms`, `train/train_ms` and
+`rust_env/*_ms_per_host_step` of each run's `launcher_child.log`, medians over the last ¾ of each log; script
+`phase_stats.py`). The toy's phases were also sampled read-only at 0.5 s for 175 s (`/proc/stat` plus
+`nvidia-smi` queries; no GPU work; script `sampler.py` / `phase_util.py`). The trainer is pinned to CPUs 0–4 and 8–12,
+which are 10 logical CPUs.
+
+| run | collect | update | env-core CPUs idle (the update share) | GPU idle in collect (≥) |
+|---|---|---|---|---|
+| `rb_bf_eb_s2001` (production, bf16) | 19.7 s | 42.1 s | **68 %** of the 61.8 s cycle | 12.1 s (inference waits are 7.6 s of 19.7) ⇒ **≥ 20 %** of the cycle |
+| `rb_es_end2_s2001` (production, fp32) | 13.9 s | 54.4 s | 80 % | ≥ 6 s ⇒ ≥ 9 % |
+| `rb_hib_ctrl_s3103` (production fork) | 16.5 s | 41.9 s | 72 % | ≥ 7.7 s ⇒ ≥ 13 % |
+| `rb_toy_ent_s4001` (toy), SAMPLED | 9.9 s | 9.2 s | 48 % | measured: GPU util 29.5 % in collect, 81.5 % in update |
+
+In the toy's sample, the trainer's 10 CPUs were 44 % busy in collect and 16 % busy in the update (the Python trainer
+used 1.1 cores; the env core was idle).
+- The production per-phase CPU and GPU utilization is NOT in any record. The GPU column above is a lower bound on idle
+  time derived from the inference waits.
+- The procedure that measures it needs no GPU window and no lease, because it only reads `/proc` and queries
+  `nvidia-smi`. While any production run is live, run `sampler.py <out> 300 <trainer pid> <rust_env_proc pid(s)>`
+  beside `nvidia-smi --query-gpu=timestamp,utilization.gpu --format=csv,noheader -lms 500`, both for 5 min under
+  `taskset -c 5-7,13-15 nice -n 19`. Then run `phase_util.py`. That is ≤ 10 min in total.
+
+**The four placements, compared** (X26, production net):
+
+| | where the games run | cost to training | can keep X26's cadence? | build | risk |
+|---|---|---|---|---|---|
+| **(a)** offline on the agent cores (today) | 6 crowded logical CPUs | none | climbing: yes. Near plateau: NO at Δ 5M today; YES at Δ 10M with pipelined batches | the pipelining fix (~0.5 agent-day, offline code, unpinned) | late stops: 2–4 GPU-h per seed at Δ 5M today |
+| **(b)** out-of-process filler at SCHED_IDLE | ≈ 8 idle logical CPUs during the update (68 % of the cycle), so about 5.5 core-equivalents, uncrowded | unknown. Rule 5b's record: sharing physical cores cost a live seed 25–30 % even at nice 19. It needs §4.5's harm A/B (≈ 8.6 h of a production run) | yes, roughly 2× the lane | a scheduler-aware worker plus the harm A/B (~2–3 agent-days) | a trainer slowdown. The GPU half is NOT feasible: CUDA does not preempt between processes, and the GPU's idle time falls in collect, when the CPUs are busy |
+| **(c)** in-process blocking filler (the U4 lane, Tier 1 only) | the trainer's GPU and its eval core, between two host steps (like today's eval cycle) | ≈ 0.1–1 % of wall while climbing; 3–6 % of wall per near-plateau check (1.5–5 min of every 53); about 0.5–1 GPU-h over a 500M run | yes, with large margin | U4 (~1.5–3 agent-days). It must be in P_X26 before launch, because a PINNED run cannot gain it later (F-ED-19), so it would land on X26's critical path | stalls training for each check |
+| **(d)** X14 rollout/update overlap | — (spends the same idle time on SPEED) | a GAIN: the ceiling is 61.8 → 42.1 s per cycle (1.47×); the survey estimate is 18–30 % (UNVERIFIED) | — | M, plus its own strength-per-GPU-h A/B | one-version-stale rows |
+
+(b) and (d) compete for the same idle update-phase CPUs. (c) composes with (d), because it is a short pause.
+
+**The threshold at which (b) or (c) pays.** Let G be a near-plateau check's games, r the lane's rate and Δt the
+cadence.
+- **(c) pays when G / r − Δt exceeds about 1 h per near-plateau check.** At that point the GPU-h saved by stopping on time beats
+  (c)'s ≈ 0.5–1 GPU-h per run plus its build.
+  - For X26 at the registered Δ 10M with pipelined batches, G / r − Δt is ≤ 0 at the mean and about 1 h only at the
+    90th percentile or the cap. So **(c) does not pay for X26**.
+  - It starts to pay for a net about 2× slower on CPU than today's production net, for a cadence ≤ 5M, or when
+    several seeds must each stop on their own plateau.
+  - It also needs an unpinned run, or a P_X26 that already carries it.
+- **(b) pays only if** its harm A/B shows ≤ 1 % on `train_ms` and on collection, AND (c) is unavailable (a pinned run),
+  AND X14 has not claimed the update-phase CPUs. None of these hold today.
+- **(d) dominates both on wall time.** Its 18–30 % is 5–20× the 1–6 % that any eval placement costs or saves.
+  Decide X14 on its own A/B (EXPERIMENT_BACKLOG #12), and treat eval as a short blocking pause (c) inside it if a
+  future run needs one.
 
 ## 3. The TOY CONTROLS
 
@@ -493,6 +626,8 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 - **F2. The ride-along registration's literal argv fails `checkargs`** (5 deleted constants), and nine of its
   clauses are stale (I11) → T32.
 - **F3. Tier 1 has never run on a real run**, and its CPU cost beside a live run is unmeasured → T33.
+  **RESOLVED 2026-10-15 (T33):** Tier 1 ran on `rb_toy_ent_s4001` with every check decided and no CONFLICT. Its cost
+  is in §2.6, and its FINDINGS are F13–F17.
 - **F4. The legacy deletion has not started**, and its owner decisions are open, though the closing test's
   adoption ordered it on 2026-10-12. It is now X26's critical path → T30, Q3.
 - **F5. The K9(b) excluded share is logged on ~1 update in 10**, so a per-update maximum cannot be read after the
@@ -512,6 +647,30 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 - **F11. A restart's inheritance of a toy's typed zero coefficients is UNVERIFIED** → §5.2 item 5.
 - **F12. The launcher dry-run refuses from an agent worktree without `deps/pokemon-showdown`** (an environment
   refusal, not an architecture one). Validate X26's argv from the main checkout.
+- **F13 (T33-1). The production net plays 0.57–0.67 games/s on the contended agent cores, not §8.1's 4.8.** So a
+  near-plateau Tier-1 check takes 1.5–5 h there, not the design's ~11–42 min (§2.6).
+- **F14 (T33-2). The meter is tail-bound.** `main.plateau` plays one 40-pair batch (80 games on 64 envs) per engine
+  call and waits for its slowest game. One 160-pair batch ran at 1.16 games/s against 0.62, and at 1.5 CPU-s per game
+  against 2.6. Fix: keep several batches in flight and judge them in batch order. The sequential rule is unchanged,
+  and an overshoot costs only games. This is offline code (~0.5 agent-day), not yet a backlog row.
+- **F15 (T33-3). The trainer's blocking eval cycle costs ≈ 3.5 % of production wall, not ≈ 1.5 %.**
+  `rb_bf_eb_s2001` shows a 43–47 s cycle every 2M steps (≈ 1,270 s). The toy shows 16 s every ≈ 380 s, which is 4.2 %.
+  `designs/training/eval_and_rating.md` quoted only O9's ~1.5 % at N = 256. It now gives both figures, corrected in T33's commit.
+- **F16 (T33-4). The per-phase CPU and GPU utilization of a PRODUCTION run is in no record.** §2.6 bounds the GPU's
+  idle time from the inference waits, and sampled only the toy. The procedure is read-only, needs no GPU window and
+  takes ≤ 10 min (§2.6).
+- **F17 (T33-5). `rb_toy_ent_s4001` died at 08:24 on a `CompileCanary` FATAL after update 700**, at about 72M. The
+  compiled bf16 TRAIN graph's gradient on `pointer_head.move_proj.{weight,bias}` was 0.40 from the fp32 reference,
+  against eager's 0.028, which is beyond the 12× bar. It was confirmed on an independent slice. This is FATAL_CONFIG,
+  and the run was not restarted.
+  - The safe rollback point is 62.0M (the last passing canary was at 62.83M).
+  - Tier-1's 65M and 70M checks used post-canary nodes, so their GAIN verdicts are VOID pending the training
+    session's ruling.
+  - A resume IN PLACE from 62M would write new 63M+ checkpoints into the same `checkpoints/` folder. The decided 65M
+    and 70M requests froze their nodes' sha256, so `main.plateau` would then refuse the check, or plan a different
+    node. **Resume into a new run directory**, or the toy's later checks need `--lineage-run`.
+  - The meter played on the agent cores (CPUs 5–7 and 13–15, nice 19), and the trainer is pinned to 0–4 and 8–12.
+    The canary is a numerical check, so contention cannot produce it.
 
 ## 8. Decision record
 
@@ -523,6 +682,7 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-15 | **Checkpoint cadence 1M, snapshot ladder ON (default 100), cap 500M** for X26 | the 2.4M default; ladder 0 | Tier-1 nodes need a checkpoint in [grid, grid + 500k); the Hodge stand-in needs `snapshot_ladder/` |
 | 2026-10-15 | **The toys: T-ENT (flags, no build) now; T-MLP built (T34); C-NOCELL dropped** | a one-line `--arch toy_ent` entry; trunk depth < 2 | the umbrella reverts 5 keys under a bare arm; `TRUNK_LAYERS_CHOICES` (2, 3, 4); move resolution retired the seven blocks |
 | 2026-10-15 | **T-ENT keeps the four observation-FACT levers at production** (differs in machinery only) | the full `toy_min` (facts off) | the fact-vs-judgment test: facts save capacity and stay; the deletion makes those four unconditional anyway |
+| 2026-10-15 | **X26's Tier 1 ticks at the REGISTERED Δ 10M / W 50M on the offline CPU lane, and no in-process or SCHED_IDLE eval is built for X26** (PROPOSAL, T33 → the orchestrator; owner question "evals on the main process, using the spare cycles?") | an in-process blocking Tier-1 lane (c) in P_X26; an out-of-process SCHED_IDLE filler (b); Δ 5M for X26 | §2.6: at Δ 10M with pipelined batches the lane keeps up through the hardest mean case (73 vs 106 min). (c) saves ≲ 1 GPU-h per seed and would sit on the critical path, since a pinned run cannot gain it later. (b) risks the trainer (rule 5b's −25–30 %), has no GPU path, and competes with X14 for the same idle CPUs |
 | 2026-10-15 | **The toy stop rule:** Tier 1 at Δ 5M / lag 4, two consecutive FLAT, min 30M, cap 100M | a fixed 15M budget (the audit's draft) | the owner wants each one's OWN plateau; the scaled Tier 1 doubles as T33's validation |
 | 2026-10-15 | **The comparison is pre-registered (§3.5–§3.6)** before any toy seed: G_m at matched 15M against the 8 EB seeds, G_p at plateau against X26, the CEILING / SPEED ONLY / NOTHING MEASURABLE classes at the ±2.0 pp bar | — | the closing test's estimator and bar |
 | 2026-10-15 | **The exit-check sanity screen (E7):** 2 seeds × 5M at P_X26 against the 8 EB 5M finals, PASS iff pooled Δ̂ ≥ −3.0 pp and neither seed < −6.0 pp | a single seed; a full 8 × 8 equivalence test | a breakage screen after an init-stream change, not an adoption; seed SD ~3 pp at 5M |

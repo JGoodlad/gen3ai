@@ -118,8 +118,11 @@ that once bound the same names to Python classes was deleted in P6 slice 6d-1), 
 because they play differently and the playstyle diversity is the point. 🚨 **The cycle is BLOCKING**:
 it plays in the trainer's own process between two host steps of the collector and is collected in the
 same step (`eval_callback._launch_eval` → `eval_launch.launch_rust_eval_cycle` → `_collect_pending`),
-so it costs training its wall time — **~1.5% of wall at N=256** (`designs/research_state/measurements/m5_sizing/PROGRESS.md`
-O9: 9.6-16.3 s per cycle at the production roster). The earlier "non-blocking subprocess workers that
+so it costs training its wall time. O9 measured **~1.5 % of wall at N=256**
+(`designs/research_state/measurements/m5_sizing/PROGRESS.md`: 9.6-16.3 s per cycle at the production roster). The
+end-state production net costs more: **≈ 3.5 %** (`rb_bf_eb_s2001`: a 43-47 s cycle, 1,300-1,400 games, every 2M steps
+≈ 1,270 s), and the T-ENT toy ≈ 4.2 % (16 s every ≈ 380 s). Source: T33, `designs/endstate/design_x26_readiness.md`
+§2.6 F15. The earlier "non-blocking subprocess workers that
 skip a cycle while the previous one runs" model died with the Python eval branch (deletion pass
 P10-F2); no cycle is ever "still running" when the next step begins, so nothing is skipped.
 

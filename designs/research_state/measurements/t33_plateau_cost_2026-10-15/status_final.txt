@@ -1,0 +1,16 @@
+[plateau] rb_toy_ent_s4001: TIER 1 = head-to-head GSPRT newest vs W-back, Δ 5,000,000, W 20,000,000 steps; rule plateau_t1_gsprt
+  ledger /home/goodlad/dev/gen3ai/models/_ledger
+          check  newest                             w-back                             state          pairs      LLR  note
+     20,000,000  rb_toy_ent_s4001@20000105          -                                  MISSING_NODE                   no node at 0
+     25,000,000  rb_toy_ent_s4001@25000209          rb_toy_ent_s4001@5000045           GAIN              80   +3.044  
+     30,000,000  rb_toy_ent_s4001@30000067          rb_toy_ent_s4001@10000148          GAIN             120   +4.060  
+     35,000,000  rb_toy_ent_s4001@35000032          rb_toy_ent_s4001@15000067          GAIN             120   +3.424  
+     40,000,000  rb_toy_ent_s4001@40000081          rb_toy_ent_s4001@20000105          GAIN             120   +3.130  
+     45,000,000  rb_toy_ent_s4001@45000072          rb_toy_ent_s4001@25000209          GAIN             200   +3.070  
+     50,000,000  rb_toy_ent_s4001@50000018          rb_toy_ent_s4001@30000067          GAIN             320   +3.362  
+     55,000,000  rb_toy_ent_s4001@55000168          rb_toy_ent_s4001@35000032          GAIN             200   +2.977  
+     60,000,000  rb_toy_ent_s4001@60000209          rb_toy_ent_s4001@40000081          GAIN             320   +3.134  
+     65,000,000  rb_toy_ent_s4001@65000123          rb_toy_ent_s4001@45000072          GAIN             400   +3.721  
+     70,000,000  rb_toy_ent_s4001@70000366          rb_toy_ent_s4001@50000018          GAIN             200   +3.079  
+TIER 1 STATUS: CLIMBING (as of the 70,000,000 check)
+⚠️  Tier 1 ONLY: a PLATEAU (design_evaluation.md §8.3) also needs the cycle monitor NONE and the panel FLAT at the same two checks — Tier 2 (U5) and the panel are NOT BUILT, so this is not a plateau declaration
