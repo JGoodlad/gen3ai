@@ -2117,6 +2117,84 @@ Refused (`FATAL_CONFIG`) on cpu, under `--debug`, with `--no-compile-trainer` (`
 `--compile-trainer` resolved off (`lifecycle._maybe_compile_trainer`). It stays a MEASUREMENT lever (default off) until
 its paired benchmark (PLAN.md lever C, window E) adopts it.
 
+### 🚨 The CPU Inductor tile2d codegen bug (`gen3_cpu_inductor_scalar_v1`, 2026-10-15) — torch 2.8.0; R1 on CPU carries `cpp.simdlen = 1`
+
+**Read this before you compile anything on CPU.** Production compiles on CUDA only (Triton); `--compile-trainer` REFUSES
+a CPU device (`compile_trainer`: "a CPU compiled learner has never been gated"). A CPU compile of R1 exists as a TEST
+SEAM (`compiled_first_update_test`'s CPU cell, the `compile_regions_*` CPU cells), and on 2026-10-15 the post-U3
+integration sweep found that seam RED since the end state became production (`ed58a3ad`), hidden behind a stale PASS in
+`slow_tier_status.json` (the 2026-10-09 row).
+
+- **Symptom.** `torch._inductor.exc.InductorError: CppCompileError`, g++: `error: 'tmp8' was not declared in this
+  scope` on a `transpose_mxn<float,16,16,false>(in_ptr29 + x1 + 18L*tmp8 + 108L*x0, 108L, tmp12, 16L)` line. The typed
+  wrapper (`compile_regions._fatal_compile_errors`) reported it as "a DECLARED REGION does not compile as one graph",
+  i.e. as a graph break; it now adds that the BACKEND's code generation failed and points here.
+- **Bisect (the sweep, `~/.cache/gen3ai/postu3_sweep/`).** `ed58a3ad~1` passes; `ed58a3ad` (production takes the
+  end-state overlay: derived move resolution on), `10b3a6b6~1`, `882a3f86~1` and HEAD fail with the same kernel.
+- **The kernel, read from the failing fusion (`TORCH_COMPILE_DEBUG`, 2026-10-15).** R1's forward graph fuses 25 nodes
+  into one 2-D tiled CPU kernel (`group ([16], reduction [18])`: a vector across the 16 batch rows, K = 18 their seats as
+  the outer loop). Op `op3858` is `buf3858[b, k] = buf3799[b, buf21[b], k] > 0` — `move_facts`'s
+  `tm_a = o.pair_type_mult[ar, o.our_active]` feeding `hits_k = seat_dmg * acc_k * (tm_a > 0)` (`move_resolution.py`),
+  a per-row gather at the active slot. Three `sum`s over K of strided-column products (`buf3759[6*k + 4]`, ...) sit in
+  the same kernel. Inductor's CPU backend picks the TILED kernel (`TilingSelect._select_tiling_indices`: exactly two
+  contiguous iteration vars, the last one also strided elsewhere) and `CppTile2DKernel.load` then emits a TRANSPOSED
+  tile load for any index whose outer stride is 1 (`need_vec_transpose`, `torch/_inductor/codegen/cpp.py`). That check
+  reads only the strides of the two tile variables: it does not exclude an index that contains an INDIRECT variable
+  (`tmp8`, the vector-valued gather index, defined later in the inner loop), so the transposed load, hoisted into the
+  kernel's preloads, names `tmp8` before it exists. The same load in the non-tiled path and in the tile kernel's tail
+  loop is emitted correctly (`tmpbuf[x0_inner] = in_ptr29[... + 18L*tmp9[x0_inner] + ...]`).
+- **The smallest repro** (`cpu_inductor_tile2d_test.py::_repro`; 4 lines, no model):
+
+  ```python
+  def repro(x, idx, q):               # x [B,6,K] · idx [B] long · q [B,K,6]; B = 16, K = 18
+      g = x[torch.arange(B), idx]     # a row gathered at each batch row's own slot   (arange INSIDE the graph)
+      return (g * q[..., 5]).sum(-1), g   # a [B] reduction over K of a strided column; the gather stored
+  torch.compile(repro, backend="inductor", fullgraph=True)(x, idx, q)   # CPU, torch 2.8.0 -> CppCompileError
+  ```
+
+  Each ingredient is needed (measured, `designs/research_state/measurements/cpu_inductor_tile2d_2026-10-15/` `ingredients.py`): replace `q[..., 5]` by a contiguous [B,K] operand, drop the
+  reduction (return `g * q[..., 5]` and `g`), or capture `arange` as a tensor instead of building it in the graph (then
+  the batch coordinate is indirect too and the load stays untransposed) and it compiles. **Shape threshold** (AVX-512 box, 16 fp32 lanes; `shapes.py` there): fails for B >= 16 and K >= 16 (B 16 / 17 /
+  32 / 64 / 256; K 16 / 17 / 18 / 32 / 64); compiles for B 8 / 15 or K 8. **UNVERIFIED:** the threshold on an AVX2 box
+  (expected 8). The K9 learner golden's micro-batch is 16, which is why the CPU cell hit it.
+- **A known CLASS upstream, not this trigger's report (GitHub API, 2026-10-15; the summaries were not independently
+  checked).** pytorch/pytorch#193581 (OPEN, 2026-08-14, torch 2.12.1+cu130: `tmp13` undeclared in `transpose_mxn`,
+  `index_select` beside a conv) and #181621 (closed 2026-07-16, torch 2.11.0+cu130: `tmp8` undeclared in a gather). Both are
+  newer than 2.8.0, so a torch bump is not a known fix; **UNVERIFIED** whether either's change covers this repro (the env
+  is pinned to 2.8.0; the cu128 twin is the same torch). The repro above is small enough to file.
+- **Why this graph and not the one before.** The end-state graph carries `move_facts` / `switch_facts` (derived move
+  resolution, U3); ~178 lines of `agents/model` use the `x[ar, ...]` advanced-indexing idiom (31 in `move_resolution.py`,
+  13 in `damage_op.py`). `move_facts` ALONE compiles on CPU at B = 16, K = 18 (forward and backward); the failing fusion needs
+  its neighbours.
+- **The decision: (a) a CPU-only compile option.** `compile_regions.CPU_INDUCTOR_OPTIONS = {"cpp.simdlen": 1}` turns the
+  CPP backend's vectorisation, and so the tiling, off: scalar C++ kernels of the same graph, only fp32 summation order
+  inside a kernel may move. It is added to R1's `torch.compile(options=)` for a CPU learner on the default Inductor
+  backend only (`cpu_inductor_options`); **a CUDA learner's compile kwargs are unchanged byte for byte** (Triton never
+  reaches the CPP codegen; `cpu_inductor_tile2d_test::test_install_hands_R1_the_cpu_option_and_a_cuda_learner_nothing`
+  and the two production-kwargs spy tests, now declared on the CUDA device). Why not the others:
+  (b) RESPELLING is not a local change: `x.gather(1, ...)` lowers to the same indirect load and fails identically (`respellings.py` there);
+  only a one-hot sum compiles (bit-identical to the index in eager), but that rewrites ~178 sites of the PRODUCTION CUDA
+  graph, changes the backward from a scatter into a multiply-reduce, and needs the K9 golden, the gate and the canary
+  re-judged on the GPU — a numerics-bearing change to fix a CPU test seam. (c) DECLARING CPU unsupported would drop the
+  only CPU coverage of the donated-buffer pin (device-agnostic AOTAutograd logic) that this test exists for.
+- **Evidence** (raw reads, scripts and verbatim outputs: `designs/research_state/measurements/cpu_inductor_tile2d_2026-10-15/`). `compiled_first_update_test` CPU cell: RED at `87e493c3` (337.9 s), PASS at the fix (277.6 s,
+  `slow_tier_status.json` row recorded at the fix commit); the 4-line repro: FAIL without the option, compiles with it, no
+  `transpose_mxn` / `Vectorized<float>` left in the C++ (pinned, plus a TRIPWIRE that fails when torch 2.8.0 stops
+  failing it, so the workaround is retired with the bug). Alternatives measured on the repro: `cpp.vec_isa_ok = False`
+  and `cpp.simdlen = 1` compile; `cpp.enable_tiling_heuristics = False` does not; `max_fusion_size = 1` compiles (and keeps
+  tiling) but unfuses the whole graph.
+- **Other CPU compile sites are exposed in principle and were NOT changed here (out of scope):** the T2 inference
+  service's `torch.compile(decide)` (`inference/service/engine.py`) and `compile_opponents.maybe_compile_extractor` (the
+  offline readers) compile the extractor on CPU; at B < 16 (the offline opponent compile runs B = 1) the tiled kernel is
+  not chosen. A CPU compile of the end-state extractor at B >= 16 outside R1 would hit this bug until it carries the same
+  option.
+- **The CUDA twin is UNREAD at the end-state graph.** The production CUDA smoke passed with compile on (2026-10-15) and the
+  CUDA row of `compiled_first_update_test` holds a PASS from 2026-10-04 (88 s) — a graph older than the end state, i.e. a
+  stale PASS (testing.md "the slow-tier honesty rule"). Its read, for the training session's next GPU window:
+  `GEN3AI_GPU_LEASE_TOKEN=<token> GEN3AI_TEST_ALLOW_GPU=1 scripts/ops/gpu_lock.sh timeout 1200 "$PY" -m pytest
+  src/agents/model/compiled_first_update_test.py -m slow -k on_cuda -q -p no:cacheprovider` (~2-3 min: the 2026-10-04 run
+  took 88 s; the end-state R1 compiles larger). It records its row in `slow_tier_status.json`.
+
 ## From the training leaf (moved 2026-10-10)
 
 > These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they

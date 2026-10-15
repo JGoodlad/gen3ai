@@ -209,11 +209,15 @@ def _spy_compile(monkeypatch: Any) -> List[Dict[str, Any]]:
 def test_install_compiles_the_production_R1_and_the_graphed_twin_only_when_on(bare, monkeypatch, graphed,
                                                                               preset, expect):
     """Flag OFF: ONE `torch.compile` with exactly the production kwargs (no options) — byte-identical. ON: the same
-    compile, then a second one with the same kwargs + `triton.cudagraphs` (+ the preset's options on both)."""
+    compile, then a second one with the same kwargs + `triton.cudagraphs` (+ the preset's options on both).
+    The learner is declared on the PRODUCTION device (CUDA; `install` reads only `model.device.type`, nothing here
+    touches the card): a CPU learner additionally carries `cr.CPU_INDUCTOR_OPTIONS` (`gen3_cpu_inductor_scalar_v1`,
+    `cpu_inductor_tile2d_test`)."""
     from agents.training import learner_golden as LG
     seen = _spy_compile(monkeypatch)
     model = LG.build_learner()
     bare.append(model)
+    model.device = torch.device("cuda")
     model._learner_cudagraphs = graphed
     model._r1_inductor_preset = preset
     cc.control().install()

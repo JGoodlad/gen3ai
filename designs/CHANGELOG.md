@@ -14629,3 +14629,29 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   disagreement no longer confirms itself). Docs: `designs/training/compile_flags.md` "THE FIX (T36)" (+ what the GPU
   window must show), `learner_lifecycle.md`, `design_x26_readiness.md` I30 / F18 / Decision record, `TASK_BACKLOG.md`
   T36, `UNDERSTANDING.md` item 20, `scripts/ops/README.md`; ledger 2026-10-15 GIGO FIX *T36*.
+
+## 2026-10-15 — FIX: R1's CPU Inductor compile steps around torch 2.8.0's tile2d codegen bug (`gen3_cpu_inductor_scalar_v1`; a CPU-only compile option and a test; no model / config / obs / signature change, no training-math change, CUDA's compile kwargs byte-identical)
+
+- **The red.** `compiled_first_update_test`'s CPU cell (a slow test the routine gate deselects) failed since the end state became
+  production (`ed58a3ad`): g++ `error: 'tmp8' was not declared in this scope` in a `transpose_mxn` of an Inductor CPU kernel,
+  reported by `compile_regions._fatal_compile_errors` as "does not compile as one graph". The recorded slow-tier row was
+  still the 2026-10-09 PASS.
+- **The cause.** torch 2.8.0's CPP backend tiles a kernel that reduces a `[B]` output over K of a strided column; the tiled
+  kernel's transposed load (`CppTile2DKernel.need_vec_transpose`) does not exclude an index with an INDIRECT variable, so
+  a per-row gather `x[arange(B), idx]` (derived move resolution's `pair_type_mult[ar, our_active]`) names its index before
+  it is declared. Smallest repro: 4 lines, B >= 16 and K >= 16. Same class as pytorch/pytorch#193581 (open) and #181621.
+- **The fix.** `compile_regions.CPU_INDUCTOR_OPTIONS = {"cpp.simdlen": 1}` (scalar C++ kernels, no tiling), added to R1's
+  `torch.compile(options=)` for a CPU learner on the default Inductor backend only (`cpu_inductor_options`); a CUDA learner
+  keeps exactly the production kwargs. `_fatal_compile_errors` now says when the failure is a BACKEND codegen error, not a
+  graph break. Rejected: respelling the gather (`gather` fails identically; a one-hot sum rewrites ~178 sites of the CUDA
+  graph) and declaring CPU unsupported (it is the only CPU coverage of the donated-buffer pin).
+- **Tests.** `cpu_inductor_tile2d_test.py` (new: the option is a real config; only CPU + default backend gets it; install
+  hands CPU the option and CUDA nothing; the smallest repro compiles with it and its C++ has no `transpose_mxn` /
+  `Vectorized<float>`; a TRIPWIRE that fails when torch 2.8.0 stops failing the repro, so the workaround is retired with
+  the bug; the typed refusal's wording). `compile_regions_presets_test` / `r1_graphed_route_test` now declare their learner
+  on the CUDA device so they still pin the production kwargs. `slow_tier_status.json`: the CPU cell recorded PASS at the fix
+  (277.6 s); the CUDA cell's row is still its 2026-10-04 PASS, over a graph older than the end state (its read is queued for
+  the next GPU window).
+- **Docs.** `designs/training/compile_flags.md` "The CPU Inductor tile2d codegen bug", `designs/ops/testing.md` (a red slow test
+  is fixed or declared, never hidden behind a stale PASS), the model leaf, `measurements/cpu_inductor_tile2d_2026-10-15/`;
+  ledger 2026-10-15 GIGO FIX.

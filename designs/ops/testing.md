@@ -667,6 +667,20 @@ report is what says how much a green is worth, and the full refresh is one comma
 export PYTHONPATH=$PYTHONPATH:src && "${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}" -m pytest src/ -m slow -q -n 2
 ```
 
+🚨 **A red slow test is FIXED or DECLARED — never left behind a stale PASS to keep the static tier green for others**
+(`gen3_cpu_inductor_scalar_v1`, 2026-10-15). The post-U3 integration sweep found `compiled_first_update_test`'s CPU cell red since `ed58a3ad` and
+did not record the red, because a recorded `fail` fails the static tier for every agent; the 2026-10-09 PASS then stayed
+in the file for six days over a graph that no longer compiled — the "gate reads GREEN while a test is red" failure this
+section exists to remove, chosen to spare other agents. The rule: (1) a verdict is recorded as MEASURED; the finder of a red
+either **fixes it and lets the fix commit's PASS replace the row** (a unit of its own, dispatched at once — the red is
+BLOCKING work, not a note), or **declares the configuration unsupported** — a typed refusal in the code path plus the test
+id leaving the file or being parametrised away. (2) **A skip never replaces a banked `pass`** (`merge_row`, above), so
+"declared not applicable" by a `skipif` alone does NOT clear a stale PASS; only a removed test id or a new measurement does.
+(3) A red that cannot be fixed in the finder's unit is reported to the orchestrator as an UNRECORDED RED with its
+bisect, never as "no findings". (4) A PASS whose last real measurement predates a change of the graph it exercises
+(the CUDA twin of that test: 2026-10-04, before the end state) is STALE-ON-A-CHANGED-GRAPH: say so in the report and queue
+its read for the next GPU window; do not describe it as verified.
+
 **WHY THE ARTIFACT IS COMMITTED and not gitignored.** The worktree workflow decides it: a gitignored
 file is per-worktree, and a fresh worktree — where essentially all work here happens — would have
 none, so the gate would be dead exactly where it is needed. That is the `models/` failure mode

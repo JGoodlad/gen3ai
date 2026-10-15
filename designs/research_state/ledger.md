@@ -26004,3 +26004,46 @@ seeds agree at 25M–60M (same verdicts, scores within 0.4–4.2 pp).
 4. **s4001 needs a ruling** (resume to 100M into a new run directory, or out of R-T2).
 
 Evidence: `research_state/measurements/t33_plateau_cost_2026-10-15/s4002/`; `design_x26_readiness.md` §3.8.
+### 2026-10-15 · GIGO FIX · **A real red slow test hid behind a stale PASS: `compiled_first_update_test`'s CPU cell had been red since the end state became production (`ed58a3ad`) — torch 2.8.0's Inductor CPU backend emits an undeclared `tmp` for a per-row gather beside a strided `[B]` reduction (B, K >= 16). R1's CPU compile now carries `cpp.simdlen = 1` (CPU only; CUDA's kwargs byte-identical) and the cell passes again; the CUDA twin is UNREAD at the end-state graph (`gen3_cpu_inductor_scalar_v1`)**
+
+The post-U3 integration sweep (`87e493c3`) found the red, bisected it (`ed58a3ad~1` passes; `ed58a3ad`, `10b3a6b6~1`,
+`882a3f86~1`, HEAD fail with one kernel hash) and did not record it, because a recorded `fail` fails the static tier for
+every agent. That left the 2026-10-09 PASS in `slow_tier_status.json` over a graph that no longer compiled on CPU: a gate
+reading GREEN while a test is RED. This entry closes it. No model, config, observation or signature change; training math
+untouched; production compiles on CUDA only and `--compile-trainer` already refuses a CPU device.
+
+**Cause (read from the failing kernel, `TORCH_COMPILE_DEBUG`).** R1's forward fuses 25 nodes into one 2-D tiled CPU kernel;
+`op3858` is `pair_type_mult[ar, our_active] > 0` (`move_facts`), a gather at a per-row index. `CppTile2DKernel` emits a
+TRANSPOSED tile load for it (`need_vec_transpose` reads only the two tile variables' strides) with the gather's index
+variable `tmp8`, which is defined later in the inner loop, so g++ stops. The smallest repro is 4 lines (`x[torch.arange(B),
+idx]`, stored, and a `[B]` sum over K of a strided column) and fails for B >= 16 and K >= 16 on an AVX-512 box; the K9
+learner golden's micro-batch is 16. The same class is open upstream (pytorch#193581, torch 2.12.1) so a torch bump is not a
+known fix. Evidence, scripts and verbatim outputs: `measurements/cpu_inductor_tile2d_2026-10-15/`.
+
+**Decision.** (a) a CPU-only Inductor option, `compile_regions.CPU_INDUCTOR_OPTIONS = {"cpp.simdlen": 1}` (scalar kernels, the
+same graph), on R1's `torch.compile(options=)` for a CPU learner on the default backend; a CUDA learner's compile kwargs are
+unchanged byte for byte (pinned). Rejected: (b) respelling — `gather` lowers identically and fails; only a one-hot sum
+compiles, at ~178 sites of the production CUDA graph with a changed backward and the gate / canary to re-judge on the GPU;
+(c) declaring CPU unsupported — it is the only CPU coverage of the donated-buffer pin. A tripwire test fails when torch 2.8.0
+stops failing the repro, so the option is retired with the bug.
+
+**Verdict recorded.** The CPU cell: RED at `87e493c3` (337.9 s), PASS at the fix (277.6 s; the code as first committed, before this entry and its docs), recorded in
+`slow_tier_status.json`.
+
+**FINDINGS (standing rule 7).**
+1. **The CUDA twin is UNREAD at the end-state graph.** Its row is a 2026-10-04 PASS (88 s) over a graph older than the end
+   state, i.e. stale on a changed graph. The production CUDA smoke passed with compile on (2026-10-15), which is evidence but
+   not this test. Read it in the next GPU window: `GEN3AI_GPU_LEASE_TOKEN=<token> GEN3AI_TEST_ALLOW_GPU=1
+   scripts/ops/gpu_lock.sh timeout 1200 "$PY" -m pytest src/agents/model/compiled_first_update_test.py -m slow -k on_cuda -q
+   -p no:cacheprovider` (~2-3 min).
+2. **Other CPU compile sites are exposed in principle** (the T2 inference service's `torch.compile(decide)`,
+   `compile_opponents.maybe_compile_extractor`) at B >= 16; they run B = 1 offline today. Not changed (out of scope).
+3. **A `skip` never replaces a banked PASS** (`merge_row`), so a `skipif` alone cannot declare a configuration
+   unsupported without leaving a stale PASS; the rule is now in `designs/ops/testing.md`.
+4. **The AVX2 threshold (expected 8 lanes) is UNVERIFIED**, and whether pytorch#181621's closing change covers this repro is
+   UNVERIFIED (the env is pinned to 2.8.0).
+5. **A repro process of this unit touched the GPU** (the orchestrator read a 252 MiB CUDA context from an exploratory
+   script, outside any lease, during another agent's leased window; the cause was not isolated — the script imported repo
+   modules that can initialise CUDA). Every later run of the unit used `CUDA_VISIBLE_DEVICES=""` and the scripts assert
+   `not torch.cuda.is_available()`. The earlier full repros (through `extractor_compiles_test._cuda_skip_reason`) may have
+   done the same.

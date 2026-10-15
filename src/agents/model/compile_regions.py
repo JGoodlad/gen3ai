@@ -131,6 +131,42 @@ R1_INDUCTOR_PRESETS: Dict[str, Dict[str, Any]] = {
 }
 
 
+#: The CPU-ONLY Inductor options of R1's compile (`cpu_inductor_options`; `gen3_cpu_inductor_scalar_v1`,
+#: 2026-10-15). torch 2.8.0's Inductor CPU backend emits INVALID C++ for a kernel that (a) gathers a row at a
+#: data-dependent index (`x[arange(B), idx]`, which the end-state graph's move-resolution family does at the
+#: active slot) and (b) is chosen as a 2-D TILED vector kernel (a [B] reduction over K of a strided column, with B
+#: and K both >= the 16 fp32 lanes of AVX-512): the transposed tile load of the gathered buffer names the
+#: gather's per-row index `tmp<N>` BEFORE it is declared (`CppTile2DKernel.need_vec_transpose` does not exclude an
+#: indirect index), so g++ stops with `error: 'tmp8' was not declared in this scope`. The smallest repro is
+#: pinned in `cpu_inductor_tile2d_test.py`; the kernel-level account and the upstream issues are in
+#: `designs/training/compile_flags.md` "The CPU Inductor tile2d codegen bug". `cpp.simdlen = 1` turns the CPP
+#: backend's vectorisation (and so the tiling) off: scalar C++ kernels, the same graph, fp32 summation order inside
+#: a kernel is the only thing that may move. It is applied to a CPU learner on the DEFAULT Inductor backend only —
+#: CUDA compiles to Triton and never reaches the CPP codegen, so a CUDA compile's kwargs are unchanged byte for
+#: byte (pinned by `cpu_inductor_tile2d_test`). The trainer's `--compile-trainer` refuses a CPU device (a CPU
+#: compiled learner has never been gated), so this serves the TEST SEAMS that compile R1 on CPU
+#: (`compiled_first_update_test`'s CPU cell).
+CPU_INDUCTOR_OPTIONS: Dict[str, Any] = {"cpp.simdlen": 1}
+
+
+def learner_device_type(model: Any) -> str:
+    """``"cpu"`` / ``"cuda"`` / ... — the device type ``model`` (an SB3 learner) trains on: its `device`, else
+    its policy's first parameter's."""
+    dev = getattr(model, "device", None)
+    if dev is None:
+        dev = next(iter(model.policy.parameters())).device
+    return torch.device(dev).type
+
+
+def cpu_inductor_options(model: Any, backend: Optional[str] = None) -> Dict[str, Any]:
+    """`CPU_INDUCTOR_OPTIONS` when R1 compiles on a CPU learner through Inductor (``backend`` None or
+    ``"inductor"``); ``{}`` for a CUDA learner and for any other backend (an `eager` / `aot_eager` stand-in takes
+    no Inductor options)."""
+    if backend not in (None, "inductor"):
+        return {}
+    return dict(CPU_INDUCTOR_OPTIONS) if learner_device_type(model) == "cpu" else {}
+
+
 def r1_inductor_options(preset: str) -> Dict[str, Any]:
     """The merged Inductor options of ``preset`` (names from `R1_INDUCTOR_PRESETS`, joined by ``+``); an
     unknown name raises naming the known ones."""
@@ -208,7 +244,7 @@ def install(model: Any, *, backend: Optional[str] = None,
     if backend is not None:
         kw["backend"] = backend
     preset = str(getattr(model, "_r1_inductor_preset", "default") or "default")
-    opts = r1_inductor_options(preset)
+    opts = {**cpu_inductor_options(model, backend), **r1_inductor_options(preset)}
     graphed = learner_cudagraphs_on(model)
     if graphed and "cudagraphs" in preset.split("+"):
         raise ct.CompileTrainerError(
@@ -216,7 +252,7 @@ def install(model: Any, *, backend: Optional[str] = None,
             f"compile, so the retain_graph probes would run through cudagraph trees again (F-PB-2). The "
             f"flag declares its own graphed route; drop `cudagraphs` from the preset "
             f"(gen3_r1_graphed_route_v1)")
-    if opts:                              # T25 levers B / C: a non-default preset only (`R1_INDUCTOR_PRESETS`)
+    if opts:                              # a non-default preset (T25 levers B / C) or a CPU learner (gen3_cpu_inductor_scalar_v1); never CUDA's default
         kw["options"] = opts
     r1c = ctl.wrap_compiled(torch.compile(micro_step, **kw))
     rows = int(getattr(model, "batch_size", 0) or 0)
@@ -602,11 +638,16 @@ def _fatal_compile_errors() -> Iterator[None]:
         except Exception:                                   # pragma: no cover
             TorchDynamoException = ()                       # type: ignore[assignment,misc]
         if isinstance(exc, TorchDynamoException) or "torch._dynamo" in type(exc).__module__:
+            codegen = ("\nNOT a graph break: the BACKEND's code generation failed (Inductor's C++ compile). On a CPU "
+                       "learner see `designs/training/compile_flags.md` \"The CPU Inductor tile2d codegen bug\" "
+                       "(gen3_cpu_inductor_scalar_v1) — R1 on CPU carries `compile_regions.CPU_INDUCTOR_OPTIONS`, and a CPU compiled "
+                       "learner is a test seam only (`--compile-trainer` refuses a CPU device)."
+                       if "CppCompileError" in str(exc) else "")
             raise ct.CompileTrainerError(
                 f"--compile-trainer: a DECLARED REGION does not compile as one graph "
                 f"(`fullgraph=True`) — {type(exc).__name__}: {str(exc)[:3000]}\nA graph break inside a "
                 f"region is an error by declaration (K8, gen3_declared_regions_v1): make the construct "
-                f"traceable, or split the region in `compile_regions.REGIONS` deliberately.") from exc
+                f"traceable, or split the region in `compile_regions.REGIONS` deliberately.{codegen}") from exc
         raise
 
 

@@ -167,6 +167,11 @@ cells need a GPU lease). Diagnoses: `op_contracts.md`, `designs/training/compile
 - 🚨 **Every FLOAT attention bias reaches SDPA through `dense_attn_bias`** (`dense_attn_bias_test.py`).
 - 🚨 **A forward reads PLAIN INTS precomputed in `__init__`, never a module attribute holding a sub-dict of
   `layout`** (an aliasing guard recompiled after the compile lock: `[CompileSentinel] FATAL`).
+- 🚨 **R1 on a CPU learner compiles with `compile_regions.CPU_INDUCTOR_OPTIONS` (`cpp.simdlen = 1`)**: torch 2.8.0's
+  Inductor CPU backend emits an undeclared `tmp` for a per-row gather (`x[ar, idx]`, the move-resolution idiom) beside a
+  strided `[B]` reduction once B and K are both ≥ 16 — a g++ error, not a graph break. CUDA (Triton) is untouched, and a CPU
+  compiled learner is a TEST SEAM only (`--compile-trainer` refuses a CPU device). `cpu_inductor_tile2d_test.py` pins the
+  4-line repro and a tripwire; the kernel-level account: `designs/training/compile_flags.md`.
 
 ## Identity-at-init is NOT free — SB3 clobbers it
 

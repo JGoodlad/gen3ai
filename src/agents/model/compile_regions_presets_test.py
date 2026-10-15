@@ -53,6 +53,8 @@ def test_install_passes_the_preset_to_R1s_compile_only(learner, monkeypatch, pre
         return real(fn, **kw)
 
     monkeypatch.setattr(torch, "compile", spy)
+    learner.device = torch.device("cuda")     # the PRODUCTION device (install reads only `.device.type`; the card is
+    #                                           never touched): a CPU learner also carries `cr.CPU_INDUCTOR_OPTIONS`
     if preset != "default":
         learner._r1_inductor_preset = preset
     cc.control().install()
