@@ -1,0 +1,2099 @@
+{
+ "F_excluded_over_10pct": false,
+ "arms": {
+  "D50": {
+   "build_cpu_s": 663.9,
+   "crash": 0,
+   "excluded": 103,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "dose:moves:seen:told",
+     "expected": 65244.7,
+     "pass": true,
+     "slots": 86272,
+     "true_hits": 65190,
+     "z": -0.47
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 46979.25,
+     "pass": true,
+     "proposals": 47880,
+     "true_hits": 47011,
+     "z": 1.07
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 11336.65,
+     "pass": true,
+     "proposals": 17208,
+     "true_hits": 11315,
+     "z": -0.35
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 26144,
+     "truth_match": 0.9845
+    },
+    "seen:ability:revealed": {
+     "n": 6144,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 10848,
+     "truth_match": 0.7956
+    },
+    "seen:item:revealed": {
+     "n": 21440,
+     "truth_match": 1.0
+    },
+    "seen:moves:revealed": {
+     "n": 272,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 32016,
+     "truth_match": 0.4353
+    },
+    "seen:spread:drawn": {
+     "n": 32288,
+     "truth_match": 0.0399
+    },
+    "unseen:ability:drawn": {
+     "n": 20368,
+     "truth_match": 0.1866
+    },
+    "unseen:item:drawn": {
+     "n": 20368,
+     "truth_match": 0.1451
+    },
+    "unseen:moves:drawn": {
+     "n": 20368,
+     "truth_match": 0.0134
+    },
+    "unseen:species:drawn": {
+     "n": 20368,
+     "truth_match": 0.0569
+    },
+    "unseen:spread:drawn": {
+     "n": 20368,
+     "truth_match": 0.0017
+    }
+   },
+   "ok": 1097,
+   "padded_worlds": 2173,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 102,
+    "worlds not built in tries": 1
+   },
+   "rows": 1200,
+   "share_excluded": 0.0858,
+   "tries_mean": 1.029,
+   "worlds": 8776
+  },
+  "D90": {
+   "build_cpu_s": 637.5,
+   "crash": 0,
+   "excluded": 103,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "dose:moves:seen:told",
+     "expected": 77579.66,
+     "pass": true,
+     "slots": 86272,
+     "true_hits": 77596,
+     "z": 0.22
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 47102.25,
+     "pass": true,
+     "proposals": 48003,
+     "true_hits": 47134,
+     "z": 1.07
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 11340.94,
+     "pass": true,
+     "proposals": 17327,
+     "true_hits": 11320,
+     "z": -0.33
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 26144,
+     "truth_match": 0.9845
+    },
+    "seen:ability:revealed": {
+     "n": 6144,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 10848,
+     "truth_match": 0.7954
+    },
+    "seen:item:revealed": {
+     "n": 21440,
+     "truth_match": 1.0
+    },
+    "seen:moves:revealed": {
+     "n": 272,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 32016,
+     "truth_match": 0.7313
+    },
+    "seen:spread:drawn": {
+     "n": 32288,
+     "truth_match": 0.0398
+    },
+    "unseen:ability:drawn": {
+     "n": 20368,
+     "truth_match": 0.1866
+    },
+    "unseen:item:drawn": {
+     "n": 20368,
+     "truth_match": 0.1451
+    },
+    "unseen:moves:drawn": {
+     "n": 20368,
+     "truth_match": 0.0135
+    },
+    "unseen:species:drawn": {
+     "n": 20368,
+     "truth_match": 0.0568
+    },
+    "unseen:spread:drawn": {
+     "n": 20368,
+     "truth_match": 0.0017
+    }
+   },
+   "ok": 1097,
+   "padded_worlds": 2171,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 102,
+    "worlds not built in tries": 1
+   },
+   "rows": 1200,
+   "share_excluded": 0.0858,
+   "tries_mean": 1.027,
+   "worlds": 8776
+  },
+  "F": {
+   "build_cpu_s": 22926.8,
+   "crash": 0,
+   "excluded": 143,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "leak:moves:seen:drawn",
+     "expected": 61482.54,
+     "pass": true,
+     "slots": 121216,
+     "true_hits": 61473,
+     "z": -0.06
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 65747.64,
+     "pass": true,
+     "proposals": 66980,
+     "true_hits": 65766,
+     "z": 0.53
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 15559.92,
+     "pass": true,
+     "proposals": 23890,
+     "true_hits": 15536,
+     "z": -0.32
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 36736,
+     "truth_match": 0.9843
+    },
+    "seen:ability:revealed": {
+     "n": 8480,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 15088,
+     "truth_match": 0.7957
+    },
+    "seen:item:revealed": {
+     "n": 30128,
+     "truth_match": 1.0
+    },
+    "seen:moves:drawn": {
+     "n": 44808,
+     "truth_match": 0.1263
+    },
+    "seen:moves:revealed": {
+     "n": 408,
+     "truth_match": 1.0
+    },
+    "seen:spread:drawn": {
+     "n": 45216,
+     "truth_match": 0.0396
+    },
+    "unseen:ability:drawn": {
+     "n": 25680,
+     "truth_match": 0.1779
+    },
+    "unseen:item:drawn": {
+     "n": 25680,
+     "truth_match": 0.1384
+    },
+    "unseen:moves:drawn": {
+     "n": 25680,
+     "truth_match": 0.0126
+    },
+    "unseen:species:drawn": {
+     "n": 25680,
+     "truth_match": 0.0575
+    },
+    "unseen:spread:drawn": {
+     "n": 25680,
+     "truth_match": 0.0016
+    }
+   },
+   "ok": 1477,
+   "padded_worlds": 2972,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 142,
+    "worlds not built in tries": 1
+   },
+   "rows": 1620,
+   "share_excluded": 0.0883,
+   "tries_mean": 1.041,
+   "worlds": 11816
+  },
+  "F+M": {
+   "build_cpu_s": 21448.3,
+   "crash": 0,
+   "excluded": 139,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "dose:moves:seen:told",
+     "expected": 121496.0,
+     "pass": true,
+     "slots": 121496,
+     "true_hits": 121496,
+     "z": 0.0
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 63588.16,
+     "pass": true,
+     "proposals": 64840,
+     "true_hits": 63600,
+     "z": 0.34
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 15139.56,
+     "pass": true,
+     "proposals": 23397,
+     "true_hits": 15166,
+     "z": 0.36
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 36808,
+     "truth_match": 0.9825
+    },
+    "seen:ability:revealed": {
+     "n": 8544,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 15184,
+     "truth_match": 0.7904
+    },
+    "seen:item:revealed": {
+     "n": 30168,
+     "truth_match": 1.0
+    },
+    "seen:moves:revealed": {
+     "n": 416,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 44936,
+     "truth_match": 1.0
+    },
+    "seen:spread:drawn": {
+     "n": 45352,
+     "truth_match": 0.0479
+    },
+    "unseen:ability:drawn": {
+     "n": 25736,
+     "truth_match": 0.1771
+    },
+    "unseen:item:drawn": {
+     "n": 25736,
+     "truth_match": 0.1374
+    },
+    "unseen:moves:drawn": {
+     "n": 25736,
+     "truth_match": 0.0125
+    },
+    "unseen:species:drawn": {
+     "n": 25736,
+     "truth_match": 0.057
+    },
+    "unseen:spread:drawn": {
+     "n": 25736,
+     "truth_match": 0.0016
+    }
+   },
+   "ok": 1481,
+   "padded_worlds": 2999,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 137,
+    "worlds not built in tries": 2
+   },
+   "rows": 1620,
+   "share_excluded": 0.0858,
+   "tries_mean": 1.016,
+   "worlds": 11848
+  },
+  "F+U": {
+   "build_cpu_s": 545.2,
+   "crash": 0,
+   "excluded": 142,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "leak:moves:seen:drawn",
+     "expected": 61525.69,
+     "pass": true,
+     "slots": 121280,
+     "true_hits": 61707,
+     "z": 1.15
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 538102.58,
+     "pass": true,
+     "proposals": 549246,
+     "true_hits": 538172,
+     "z": 0.66
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 112076.98,
+     "pass": true,
+     "proposals": 185561,
+     "true_hits": 111947,
+     "z": -0.62
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 36760,
+     "truth_match": 0.9843
+    },
+    "seen:ability:revealed": {
+     "n": 8480,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 15104,
+     "truth_match": 0.7963
+    },
+    "seen:item:revealed": {
+     "n": 30136,
+     "truth_match": 1.0
+    },
+    "seen:moves:drawn": {
+     "n": 44832,
+     "truth_match": 0.1268
+    },
+    "seen:moves:revealed": {
+     "n": 408,
+     "truth_match": 1.0
+    },
+    "seen:spread:drawn": {
+     "n": 45240,
+     "truth_match": 0.0397
+    },
+    "unseen:ability:told": {
+     "n": 25704,
+     "truth_match": 1.0
+    },
+    "unseen:item:told": {
+     "n": 25704,
+     "truth_match": 1.0
+    },
+    "unseen:moves:told": {
+     "n": 25704,
+     "truth_match": 1.0
+    },
+    "unseen:species:told": {
+     "n": 25704,
+     "truth_match": 1.0
+    },
+    "unseen:spread:told": {
+     "n": 25704,
+     "truth_match": 1.0
+    }
+   },
+   "ok": 1478,
+   "padded_worlds": 0,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 142
+   },
+   "rows": 1620,
+   "share_excluded": 0.0877,
+   "tries_mean": 1.025,
+   "worlds": 11824
+  },
+  "FN": {
+   "build_cpu_s": 1533.6,
+   "crash": 0,
+   "excluded": 143,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "leak:moves:seen:drawn",
+     "expected": 62041.8,
+     "pass": true,
+     "slots": 121216,
+     "true_hits": 62163,
+     "z": 0.76
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 516261.38,
+     "pass": true,
+     "proposals": 526982,
+     "true_hits": 516324,
+     "z": 0.61
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 106790.59,
+     "pass": true,
+     "proposals": 176963,
+     "true_hits": 106661,
+     "z": -0.63
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 36736,
+     "truth_match": 0.9845
+    },
+    "seen:ability:revealed": {
+     "n": 8480,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 15088,
+     "truth_match": 0.7968
+    },
+    "seen:item:revealed": {
+     "n": 30128,
+     "truth_match": 1.0
+    },
+    "seen:moves:drawn": {
+     "n": 44808,
+     "truth_match": 0.1336
+    },
+    "seen:moves:revealed": {
+     "n": 408,
+     "truth_match": 1.0
+    },
+    "seen:spread:drawn": {
+     "n": 45216,
+     "truth_match": 0.0398
+    },
+    "unseen:ability:drawn": {
+     "n": 25680,
+     "truth_match": 0.4065
+    },
+    "unseen:item:drawn": {
+     "n": 25680,
+     "truth_match": 0.3236
+    },
+    "unseen:moves:drawn": {
+     "n": 25680,
+     "truth_match": 0.0227
+    },
+    "unseen:species:drawn": {
+     "n": 25680,
+     "truth_match": 0.1724
+    },
+    "unseen:spread:drawn": {
+     "n": 25680,
+     "truth_match": 0.0033
+    }
+   },
+   "ok": 1477,
+   "padded_worlds": 2485,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 142,
+    "worlds not built in tries": 1
+   },
+   "rows": 1620,
+   "share_excluded": 0.0883,
+   "tries_mean": 1.027,
+   "worlds": 11816
+  },
+  "MAP100": {
+   "build_cpu_s": 28151.7,
+   "crash": 0,
+   "excluded": 331,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "dose:moves:seen:told",
+     "expected": 40202.0,
+     "pass": true,
+     "slots": 64968,
+     "true_hits": 40202,
+     "z": 0.0
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 175633.2,
+     "pass": true,
+     "proposals": 178333,
+     "true_hits": 175674,
+     "z": 0.79
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 38441.62,
+     "pass": true,
+     "proposals": 61812,
+     "true_hits": 38489,
+     "z": 0.39
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 19448,
+     "truth_match": 0.9846
+    },
+    "seen:ability:revealed": {
+     "n": 4576,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 8600,
+     "truth_match": 0.7852
+    },
+    "seen:item:revealed": {
+     "n": 15424,
+     "truth_match": 1.0
+    },
+    "seen:moves:revealed": {
+     "n": 216,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 23808,
+     "truth_match": 0.2465
+    },
+    "seen:spread:drawn": {
+     "n": 24024,
+     "truth_match": 0.0533
+    },
+    "unseen:ability:drawn": {
+     "n": 17688,
+     "truth_match": 0.1895
+    },
+    "unseen:item:drawn": {
+     "n": 17688,
+     "truth_match": 0.1482
+    },
+    "unseen:moves:drawn": {
+     "n": 17688,
+     "truth_match": 0.013
+    },
+    "unseen:species:drawn": {
+     "n": 17688,
+     "truth_match": 0.0568
+    },
+    "unseen:spread:drawn": {
+     "n": 17688,
+     "truth_match": 0.002
+    }
+   },
+   "ok": 869,
+   "padded_worlds": 1805,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 102,
+    "worlds not built in tries": 229
+   },
+   "rows": 1200,
+   "share_excluded": 0.2758,
+   "tries_mean": 7.317,
+   "worlds": 6952
+  },
+  "O-M": {
+   "build_cpu_s": 914.0,
+   "crash": 0,
+   "excluded": 0,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "leak:moves:seen:drawn",
+     "expected": 74078.83,
+     "pass": true,
+     "slots": 134336,
+     "true_hits": 74309,
+     "z": 1.38
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:revealed": {
+     "n": 9456,
+     "truth_match": 1.0
+    },
+    "seen:ability:told": {
+     "n": 40992,
+     "truth_match": 1.0
+    },
+    "seen:item:revealed": {
+     "n": 33984,
+     "truth_match": 1.0
+    },
+    "seen:item:told": {
+     "n": 16464,
+     "truth_match": 1.0
+    },
+    "seen:moves:drawn": {
+     "n": 49976,
+     "truth_match": 0.1606
+    },
+    "seen:moves:revealed": {
+     "n": 472,
+     "truth_match": 1.0
+    },
+    "seen:spread:told": {
+     "n": 50448,
+     "truth_match": 1.0
+    },
+    "unseen:ability:told": {
+     "n": 27312,
+     "truth_match": 1.0
+    },
+    "unseen:item:told": {
+     "n": 27312,
+     "truth_match": 1.0
+    },
+    "unseen:moves:told": {
+     "n": 27312,
+     "truth_match": 1.0
+    },
+    "unseen:species:told": {
+     "n": 27312,
+     "truth_match": 1.0
+    },
+    "unseen:spread:told": {
+     "n": 27312,
+     "truth_match": 1.0
+    }
+   },
+   "ok": 1620,
+   "padded_worlds": 0,
+   "provenance_violations": 0,
+   "reasons": {},
+   "rows": 1620,
+   "share_excluded": 0.0,
+   "tries_mean": 1.026,
+   "worlds": 12960
+  },
+  "O-U": {
+   "build_cpu_s": 737.5,
+   "crash": 0,
+   "excluded": 2,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "dose:moves:seen:told",
+     "expected": 134192.0,
+     "pass": true,
+     "slots": 134192,
+     "true_hits": 134192,
+     "z": 0.0
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:revealed": {
+     "n": 9456,
+     "truth_match": 1.0
+    },
+    "seen:ability:told": {
+     "n": 40936,
+     "truth_match": 1.0
+    },
+    "seen:item:revealed": {
+     "n": 33952,
+     "truth_match": 1.0
+    },
+    "seen:item:told": {
+     "n": 16440,
+     "truth_match": 1.0
+    },
+    "seen:moves:revealed": {
+     "n": 464,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 49928,
+     "truth_match": 1.0
+    },
+    "seen:spread:told": {
+     "n": 50392,
+     "truth_match": 1.0
+    },
+    "unseen:ability:drawn": {
+     "n": 27272,
+     "truth_match": 0.1755
+    },
+    "unseen:item:drawn": {
+     "n": 27272,
+     "truth_match": 0.1367
+    },
+    "unseen:moves:drawn": {
+     "n": 27272,
+     "truth_match": 0.0123
+    },
+    "unseen:species:drawn": {
+     "n": 27272,
+     "truth_match": 0.0573
+    },
+    "unseen:spread:drawn": {
+     "n": 27272,
+     "truth_match": 0.0016
+    }
+   },
+   "ok": 1618,
+   "padded_worlds": 3203,
+   "provenance_violations": 0,
+   "reasons": {
+    "worlds not built in tries": 2
+   },
+   "rows": 1620,
+   "share_excluded": 0.0012,
+   "tries_mean": 1.016,
+   "worlds": 12944
+  },
+  "POOL": {
+   "build_cpu_s": 373.0,
+   "crash": 0,
+   "excluded": 0,
+   "leakage": [],
+   "legality_violations": 0,
+   "match_table": {},
+   "ok": 1200,
+   "padded_worlds": 670,
+   "provenance_violations": 0,
+   "reasons": {},
+   "rows": 1200,
+   "share_excluded": 0.0,
+   "tries_mean": 26.773,
+   "worlds": 9600
+  },
+  "POOLSETS": {
+   "build_cpu_s": 9709.9,
+   "crash": 0,
+   "excluded": 61,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "leak:moves:seen:drawn",
+     "expected": 52530.77,
+     "pass": true,
+     "slots": 90160,
+     "true_hits": 52542,
+     "z": 0.09
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 46749.12,
+     "pass": true,
+     "proposals": 47275,
+     "true_hits": 46752,
+     "z": 0.13
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 12425.39,
+     "pass": true,
+     "proposals": 16849,
+     "true_hits": 12406,
+     "z": -0.34
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 27432,
+     "truth_match": 0.991
+    },
+    "seen:ability:revealed": {
+     "n": 6472,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 11080,
+     "truth_match": 0.8718
+    },
+    "seen:item:revealed": {
+     "n": 22824,
+     "truth_match": 1.0
+    },
+    "seen:moves:drawn": {
+     "n": 33600,
+     "truth_match": 0.2128
+    },
+    "seen:moves:revealed": {
+     "n": 304,
+     "truth_match": 1.0
+    },
+    "seen:spread:drawn": {
+     "n": 33904,
+     "truth_match": 0.1485
+    },
+    "unseen:ability:drawn": {
+     "n": 20768,
+     "truth_match": 0.1858
+    },
+    "unseen:item:drawn": {
+     "n": 20768,
+     "truth_match": 0.1585
+    },
+    "unseen:moves:drawn": {
+     "n": 20768,
+     "truth_match": 0.0208
+    },
+    "unseen:species:drawn": {
+     "n": 20768,
+     "truth_match": 0.0564
+    },
+    "unseen:spread:drawn": {
+     "n": 20768,
+     "truth_match": 0.0071
+    }
+   },
+   "ok": 1139,
+   "padded_worlds": 2264,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 60,
+    "worlds not built in tries": 1
+   },
+   "rows": 1200,
+   "share_excluded": 0.0508,
+   "tries_mean": 1.024,
+   "worlds": 9112
+  },
+  "W90": {
+   "build_cpu_s": 1498.5,
+   "crash": 0,
+   "excluded": 106,
+   "facts_without_moves": 0,
+   "leakage": [
+    {
+     "check": "dose:moves:seen:told",
+     "expected": 8428.98,
+     "pass": true,
+     "slots": 85960,
+     "true_hits": 8389,
+     "z": -0.53
+    },
+    {
+     "check": "leak:ability:seen:proposals",
+     "expected": 48100.1,
+     "pass": true,
+     "proposals": 49031,
+     "true_hits": 48127,
+     "z": 0.89
+    },
+    {
+     "check": "leak:item:seen:proposals",
+     "expected": 11619.48,
+     "pass": true,
+     "proposals": 17873,
+     "true_hits": 11593,
+     "z": -0.42
+    }
+   ],
+   "legality_violations": 0,
+   "match_table": {
+    "seen:ability:drawn": {
+     "n": 26016,
+     "truth_match": 0.9846
+    },
+    "seen:ability:revealed": {
+     "n": 6128,
+     "truth_match": 1.0
+    },
+    "seen:item:drawn": {
+     "n": 10840,
+     "truth_match": 0.7943
+    },
+    "seen:item:revealed": {
+     "n": 21304,
+     "truth_match": 1.0
+    },
+    "seen:moves:revealed": {
+     "n": 272,
+     "truth_match": 1.0
+    },
+    "seen:moves:told": {
+     "n": 31872,
+     "truth_match": 0.0056
+    },
+    "seen:spread:drawn": {
+     "n": 32144,
+     "truth_match": 0.0401
+    },
+    "unseen:ability:drawn": {
+     "n": 20368,
+     "truth_match": 0.1858
+    },
+    "unseen:item:drawn": {
+     "n": 20368,
+     "truth_match": 0.1446
+    },
+    "unseen:moves:drawn": {
+     "n": 20368,
+     "truth_match": 0.0135
+    },
+    "unseen:species:drawn": {
+     "n": 20368,
+     "truth_match": 0.0567
+    },
+    "unseen:spread:drawn": {
+     "n": 20368,
+     "truth_match": 0.0016
+    }
+   },
+   "ok": 1094,
+   "padded_worlds": 2162,
+   "provenance_violations": 0,
+   "reasons": {
+    "no honest draw fits": 102,
+    "worlds not built in tries": 4
+   },
+   "rows": 1200,
+   "share_excluded": 0.0883,
+   "tries_mean": 1.064,
+   "worlds": 8752
+  }
+ },
+ "checks": [
+  {
+   "arm": "F",
+   "check": "leak:moves:seen:drawn",
+   "expected": 61482.54,
+   "pass": true,
+   "slots": 121216,
+   "true_hits": 61473,
+   "z": -0.06
+  },
+  {
+   "arm": "F",
+   "check": "leak:ability:seen:proposals",
+   "expected": 65747.64,
+   "pass": true,
+   "proposals": 66980,
+   "true_hits": 65766,
+   "z": 0.53
+  },
+  {
+   "arm": "F",
+   "check": "leak:item:seen:proposals",
+   "expected": 15559.92,
+   "pass": true,
+   "proposals": 23890,
+   "true_hits": 15536,
+   "z": -0.32
+  },
+  {
+   "arm": "F+M",
+   "check": "dose:moves:seen:told",
+   "expected": 121496.0,
+   "pass": true,
+   "slots": 121496,
+   "true_hits": 121496,
+   "z": 0.0
+  },
+  {
+   "arm": "F+M",
+   "check": "leak:ability:seen:proposals",
+   "expected": 63588.16,
+   "pass": true,
+   "proposals": 64840,
+   "true_hits": 63600,
+   "z": 0.34
+  },
+  {
+   "arm": "F+M",
+   "check": "leak:item:seen:proposals",
+   "expected": 15139.56,
+   "pass": true,
+   "proposals": 23397,
+   "true_hits": 15166,
+   "z": 0.36
+  },
+  {
+   "arm": "O-M",
+   "check": "leak:moves:seen:drawn",
+   "expected": 74078.83,
+   "pass": true,
+   "slots": 134336,
+   "true_hits": 74309,
+   "z": 1.38
+  },
+  {
+   "arm": "F+U",
+   "check": "leak:moves:seen:drawn",
+   "expected": 61525.69,
+   "pass": true,
+   "slots": 121280,
+   "true_hits": 61707,
+   "z": 1.15
+  },
+  {
+   "arm": "F+U",
+   "check": "leak:ability:seen:proposals",
+   "expected": 538102.58,
+   "pass": true,
+   "proposals": 549246,
+   "true_hits": 538172,
+   "z": 0.66
+  },
+  {
+   "arm": "F+U",
+   "check": "leak:item:seen:proposals",
+   "expected": 112076.98,
+   "pass": true,
+   "proposals": 185561,
+   "true_hits": 111947,
+   "z": -0.62
+  },
+  {
+   "arm": "O-U",
+   "check": "dose:moves:seen:told",
+   "expected": 134192.0,
+   "pass": true,
+   "slots": 134192,
+   "true_hits": 134192,
+   "z": 0.0
+  },
+  {
+   "arm": "FN",
+   "check": "leak:moves:seen:drawn",
+   "expected": 62041.8,
+   "pass": true,
+   "slots": 121216,
+   "true_hits": 62163,
+   "z": 0.76
+  },
+  {
+   "arm": "FN",
+   "check": "leak:ability:seen:proposals",
+   "expected": 516261.38,
+   "pass": true,
+   "proposals": 526982,
+   "true_hits": 516324,
+   "z": 0.61
+  },
+  {
+   "arm": "FN",
+   "check": "leak:item:seen:proposals",
+   "expected": 106790.59,
+   "pass": true,
+   "proposals": 176963,
+   "true_hits": 106661,
+   "z": -0.63
+  },
+  {
+   "arm": "D50",
+   "check": "dose:moves:seen:told",
+   "expected": 65244.7,
+   "pass": true,
+   "slots": 86272,
+   "true_hits": 65190,
+   "z": -0.47
+  },
+  {
+   "arm": "D50",
+   "check": "leak:ability:seen:proposals",
+   "expected": 46979.25,
+   "pass": true,
+   "proposals": 47880,
+   "true_hits": 47011,
+   "z": 1.07
+  },
+  {
+   "arm": "D50",
+   "check": "leak:item:seen:proposals",
+   "expected": 11336.65,
+   "pass": true,
+   "proposals": 17208,
+   "true_hits": 11315,
+   "z": -0.35
+  },
+  {
+   "arm": "D90",
+   "check": "dose:moves:seen:told",
+   "expected": 77579.66,
+   "pass": true,
+   "slots": 86272,
+   "true_hits": 77596,
+   "z": 0.22
+  },
+  {
+   "arm": "D90",
+   "check": "leak:ability:seen:proposals",
+   "expected": 47102.25,
+   "pass": true,
+   "proposals": 48003,
+   "true_hits": 47134,
+   "z": 1.07
+  },
+  {
+   "arm": "D90",
+   "check": "leak:item:seen:proposals",
+   "expected": 11340.94,
+   "pass": true,
+   "proposals": 17327,
+   "true_hits": 11320,
+   "z": -0.33
+  },
+  {
+   "arm": "W90",
+   "check": "dose:moves:seen:told",
+   "expected": 8428.98,
+   "pass": true,
+   "slots": 85960,
+   "true_hits": 8389,
+   "z": -0.53
+  },
+  {
+   "arm": "W90",
+   "check": "leak:ability:seen:proposals",
+   "expected": 48100.1,
+   "pass": true,
+   "proposals": 49031,
+   "true_hits": 48127,
+   "z": 0.89
+  },
+  {
+   "arm": "W90",
+   "check": "leak:item:seen:proposals",
+   "expected": 11619.48,
+   "pass": true,
+   "proposals": 17873,
+   "true_hits": 11593,
+   "z": -0.42
+  },
+  {
+   "arm": "MAP100",
+   "check": "dose:moves:seen:told",
+   "expected": 40202.0,
+   "pass": true,
+   "slots": 64968,
+   "true_hits": 40202,
+   "z": 0.0
+  },
+  {
+   "arm": "MAP100",
+   "check": "leak:ability:seen:proposals",
+   "expected": 175633.2,
+   "pass": true,
+   "proposals": 178333,
+   "true_hits": 175674,
+   "z": 0.79
+  },
+  {
+   "arm": "MAP100",
+   "check": "leak:item:seen:proposals",
+   "expected": 38441.62,
+   "pass": true,
+   "proposals": 61812,
+   "true_hits": 38489,
+   "z": 0.39
+  },
+  {
+   "arm": "POOLSETS",
+   "check": "leak:moves:seen:drawn",
+   "expected": 52530.77,
+   "pass": true,
+   "slots": 90160,
+   "true_hits": 52542,
+   "z": 0.09
+  },
+  {
+   "arm": "POOLSETS",
+   "check": "leak:ability:seen:proposals",
+   "expected": 46749.12,
+   "pass": true,
+   "proposals": 47275,
+   "true_hits": 46752,
+   "z": 0.13
+  },
+  {
+   "arm": "POOLSETS",
+   "check": "leak:item:seen:proposals",
+   "expected": 12425.39,
+   "pass": true,
+   "proposals": 16849,
+   "true_hits": 12406,
+   "z": -0.34
+  }
+ ],
+ "identity": "PASS",
+ "pin_regate": {
+  "end2:D50": {
+   "code": "T09",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 110,
+   "plant_item": {
+    "caught": 39,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 110,
+    "tried": 110
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:D90": {
+   "code": "T11",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 110,
+   "plant_item": {
+    "caught": 39,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 110,
+    "tried": 110
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:F": {
+   "code": "T12",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 110,
+   "plant_item": {
+    "caught": 39,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 110,
+    "tried": 110
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:F+M": {
+   "code": "T04",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 113,
+   "plant_item": {
+    "caught": 41,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 105,
+    "tried": 113
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:F+M_supp": {
+   "code": "T04",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 74,
+   "plant_item": {
+    "caught": 23,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 74,
+    "tried": 74
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "end2:F+U": {
+   "code": "T07",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 0,
+   "plant_item": {
+    "caught": 38,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 58,
+    "tried": 58
+   },
+   "plant_strip": {
+    "caught": 0,
+    "tried": 0
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:F+U_supp": {
+   "code": "T07",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 0,
+   "plant_item": {
+    "caught": 18,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 0,
+    "tried": 0
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "end2:FN": {
+   "code": "T02",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 109,
+   "plant_item": {
+    "caught": 39,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 109,
+    "tried": 109
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:FN_supp": {
+   "code": "T02",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 73,
+   "plant_item": {
+    "caught": 18,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 73,
+    "tried": 73
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "end2:F_early": {
+   "code": "T12",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 14,
+   "plant_item": {
+    "caught": 18,
+    "tried": 19
+   },
+   "plant_move": {
+    "caught": 19,
+    "tried": 19
+   },
+   "plant_strip": {
+    "caught": 14,
+    "tried": 14
+   },
+   "states": 19,
+   "verdict": "PASS",
+   "worlds": 152
+  },
+  "end2:F_supp": {
+   "code": "T12",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 93,
+   "plant_item": {
+    "caught": 18,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 93,
+    "tried": 93
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "end2:MAP100": {
+   "code": "T05",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 128,
+   "plant_item": {
+    "caught": 44,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 128,
+    "tried": 128
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:O-M": {
+   "code": "T03",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 0,
+   "plant_item": {
+    "caught": 44,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 0,
+    "tried": 0
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:O-M_supp": {
+   "code": "T03",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 0,
+   "plant_item": {
+    "caught": 24,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 0,
+    "tried": 0
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "end2:O-U": {
+   "code": "T10",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 125,
+   "plant_item": {
+    "caught": 43,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 125,
+    "tried": 125
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:O-U_supp": {
+   "code": "T10",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 71,
+   "plant_item": {
+    "caught": 24,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 71,
+    "tried": 71
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "end2:POOL": {
+   "code": "T01",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 15,
+   "plant_item": {
+    "caught": 44,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 15,
+    "tried": 15
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:POOLSETS": {
+   "code": "T06",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 114,
+   "plant_item": {
+    "caught": 46,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 112,
+    "tried": 114
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "end2:W90": {
+   "code": "T08",
+   "cp": "end2",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 117,
+   "plant_item": {
+    "caught": 40,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 117,
+    "tried": 117
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:D50": {
+   "code": "T09",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 133,
+   "plant_item": {
+    "caught": 42,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 128,
+    "tried": 133
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:D90": {
+   "code": "T11",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 132,
+   "plant_item": {
+    "caught": 42,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 127,
+    "tried": 132
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:F": {
+   "code": "T12",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 134,
+   "plant_item": {
+    "caught": 42,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 129,
+    "tried": 134
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:F+M": {
+   "code": "T04",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 128,
+   "plant_item": {
+    "caught": 45,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 118,
+    "tried": 128
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:F+M_supp": {
+   "code": "T04",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 59,
+   "plant_item": {
+    "caught": 27,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 59,
+    "tried": 59
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "prod:F+U": {
+   "code": "T07",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 0,
+   "plant_item": {
+    "caught": 42,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 0,
+    "tried": 0
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:F+U_supp": {
+   "code": "T07",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 0,
+   "plant_item": {
+    "caught": 26,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 0,
+    "tried": 0
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "prod:FN": {
+   "code": "T02",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 103,
+   "plant_item": {
+    "caught": 42,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 97,
+    "tried": 103
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:FN_supp": {
+   "code": "T02",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 19,
+   "plant_item": {
+    "caught": 26,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 19,
+    "tried": 19
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "prod:F_supp": {
+   "code": "T12",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 43,
+   "plant_item": {
+    "caught": 26,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 43,
+    "tried": 43
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "prod:MAP100": {
+   "code": "T05",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 126,
+   "plant_item": {
+    "caught": 43,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 59,
+    "tried": 59
+   },
+   "plant_strip": {
+    "caught": 126,
+    "tried": 126
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:O-M": {
+   "code": "T03",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 0,
+   "plant_item": {
+    "caught": 45,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 0,
+    "tried": 0
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:O-M_supp": {
+   "code": "T03",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 0,
+   "plant_item": {
+    "caught": 26,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 0,
+    "tried": 0
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "prod:O-U": {
+   "code": "T10",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 114,
+   "plant_item": {
+    "caught": 46,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 108,
+    "tried": 114
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:O-U_supp": {
+   "code": "T10",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 82,
+   "plant_item": {
+    "caught": 26,
+    "tried": 30
+   },
+   "plant_move": {
+    "caught": 30,
+    "tried": 30
+   },
+   "plant_strip": {
+    "caught": 82,
+    "tried": 82
+   },
+   "states": 30,
+   "verdict": "PASS",
+   "worlds": 240
+  },
+  "prod:POOL": {
+   "code": "T01",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 22,
+   "plant_item": {
+    "caught": 45,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 20,
+    "tried": 22
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:POOLSETS": {
+   "code": "T06",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 109,
+   "plant_item": {
+    "caught": 43,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 58,
+    "tried": 58
+   },
+   "plant_strip": {
+    "caught": 105,
+    "tried": 109
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  },
+  "prod:W90": {
+   "code": "T08",
+   "cp": "prod",
+   "examples": [],
+   "fail": 0,
+   "padded_worlds": 128,
+   "plant_item": {
+    "caught": 41,
+    "tried": 60
+   },
+   "plant_move": {
+    "caught": 60,
+    "tried": 60
+   },
+   "plant_strip": {
+    "caught": 127,
+    "tried": 128
+   },
+   "states": 60,
+   "verdict": "PASS",
+   "worlds": 480
+  }
+ },
+ "verdict": "PASS"
+}

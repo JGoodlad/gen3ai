@@ -1,0 +1,22 @@
+{
+ "code": "T05",
+ "cp": "end2",
+ "examples": [],
+ "fail": 0,
+ "padded_worlds": 128,
+ "plant_item": {
+  "caught": 44,
+  "tried": 60
+ },
+ "plant_move": {
+  "caught": 60,
+  "tried": 60
+ },
+ "plant_strip": {
+  "caught": 128,
+  "tried": 128
+ },
+ "states": 60,
+ "verdict": "PASS",
+ "worlds": 480
+}

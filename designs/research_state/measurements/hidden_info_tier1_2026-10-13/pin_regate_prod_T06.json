@@ -1,0 +1,22 @@
+{
+ "code": "T06",
+ "cp": "prod",
+ "examples": [],
+ "fail": 0,
+ "padded_worlds": 109,
+ "plant_item": {
+  "caught": 43,
+  "tried": 60
+ },
+ "plant_move": {
+  "caught": 58,
+  "tried": 58
+ },
+ "plant_strip": {
+  "caught": 105,
+  "tried": 109
+ },
+ "states": 60,
+ "verdict": "PASS",
+ "worlds": 480
+}

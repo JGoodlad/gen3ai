@@ -72,15 +72,20 @@ def main():
                 if arm["kind"] == "spec":
                     pv = CK.provenance(spec, W)
                     st["provenance_violations"] += int(pv.get("violations", 0))
-                lk.add(W)
+                if arm["kind"] != "pool":              # POOL draws pool teams, not the prior: no leak / dose read
+                    keep = [[f for f in fl if not f.get("seen") or "moves" in f] for fl in r["facts"]]
+                    st["facts_without_moves"] = st.get("facts_without_moves", 0) + sum(
+                        len(fl) - len(k) for fl, k in zip(r["facts"], keep))
+                    lk.add(SimpleNamespace(facts=keep, samplers=r.get("samplers", [])))
                 tp = team_problems(true_team[did])
                 for tw in r["teams"]:
                     st["worlds"] += 1
                     st["padded_worlds"] += int("*" in tw)
                     if team_problems(tw) - tp:
                         st["legality_violations"] += 1
-            for code_file in T.HERE.glob(f"pin_regate_{cp}_{code}.json"):
-                res["pin_regate"][f"{cp}:{lab}"] = json.loads(code_file.read_text())
+            for code_file in sorted(T.HERE.glob(f"pin_regate_{cp}_{code}*.json")):    # registered, _supp, _early
+                tag = code_file.stem[len(f"pin_regate_{cp}_{code}"):]
+                res["pin_regate"][f"{cp}:{lab}{tag}"] = json.loads(code_file.read_text())
     ok = True
     for lab, st in res["arms"].items():
         lk = st.pop("_leak")

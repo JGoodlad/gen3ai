@@ -1,0 +1,22 @@
+{
+ "code": "T04",
+ "cp": "end2",
+ "examples": [],
+ "fail": 0,
+ "padded_worlds": 113,
+ "plant_item": {
+  "caught": 41,
+  "tried": 60
+ },
+ "plant_move": {
+  "caught": 60,
+  "tried": 60
+ },
+ "plant_strip": {
+  "caught": 105,
+  "tried": 113
+ },
+ "states": 60,
+ "verdict": "PASS",
+ "worlds": 480
+}

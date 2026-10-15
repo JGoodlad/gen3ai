@@ -1,0 +1,22 @@
+{
+ "code": "T07",
+ "cp": "end2",
+ "examples": [],
+ "fail": 0,
+ "padded_worlds": 0,
+ "plant_item": {
+  "caught": 18,
+  "tried": 30
+ },
+ "plant_move": {
+  "caught": 30,
+  "tried": 30
+ },
+ "plant_strip": {
+  "caught": 0,
+  "tried": 0
+ },
+ "states": 30,
+ "verdict": "PASS",
+ "worlds": 240
+}

@@ -51,8 +51,25 @@ def total_missing(cp: str, key) -> int:
     return n
 
 
-def run_unit(cp: str, which: str, label, key, threads: int, shards: int) -> None:
+LEASE = T.HEAD_WT / "scripts" / "ops" / "gpu_lease.sh"
+NARROW_CPUS, WIDE_CPUS = "5-7,13-15", "2-7,10-15"
+
+
+def gpu_free() -> bool:
+    """The brief's widening rule: wider ONLY while `gpu_lease.sh status` reads FREE (checked at every unit boundary)."""
+    try:
+        out = subprocess.run(["bash", str(LEASE), "status"], capture_output=True, text=True, timeout=60).stdout
+    except Exception:
+        return False
+    return out.strip().upper().startswith("FREE")
+
+
+def run_unit(cp: str, which: str, label, key, threads: int, shards: int, cpus: str = NARROW_CPUS,
+             limit: int = 150) -> None:
+    import os
+
     here = T.HERE
+    env = dict(os.environ, HIB_CPUS=cpus)
     procs = []
     for i in range(shards):
         if which == "truth":
@@ -62,10 +79,10 @@ def run_unit(cp: str, which: str, label, key, threads: int, shards: int) -> None
         else:
             states = "registered" if which == "reg" else "supp"
             args = ["bash", str(here / "run_pin.sh"), f"{cp}_pad", str(threads), "8", "12h", "play_worlds.py", "--code",
-                    key[label], "--states", states, "--shard", str(i), "--of", str(shards)]
+                    key[label], "--states", states, "--shard", str(i), "--of", str(shards), "--limit", str(limit)]
             tag = f"play_{cp}_{key[label]}_{states}"
         f = open(LOG / f"{tag}_{i}_of_{shards}.log", "a")
-        procs.append((subprocess.Popen(args, stdout=f, stderr=subprocess.STDOUT), f))
+        procs.append((subprocess.Popen(args, stdout=f, stderr=subprocess.STDOUT, env=env), f))
     for p, f in procs:
         p.wait()
         f.close()
@@ -75,6 +92,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--threads", type=int, default=2)
     ap.add_argument("--shards", type=int, default=1)
+    ap.add_argument("--wide-shards", type=int, default=0,
+                    help="shards while the GPU lease reads FREE (cores 2-7 / 10-15); 0 = never widen")
     ap.add_argument("--min-batch", type=int, default=20, help="run a unit only when this many states are pending "
                                                                 "(or the builders are done)")
     a = ap.parse_args()
@@ -88,8 +107,11 @@ def main():
                     continue
                 n = pending(cp, which, lab, key)
                 if n >= a.min_batch or (n > 0 and (T.ARCH / "BUILDS_DONE").exists()):
-                    print(time.strftime("%H:%M:%S"), f"unit {cp} {which} {lab}: {n} pending", flush=True)
-                    run_unit(cp, which, lab, key, a.threads, a.shards)
+                    wide = a.wide_shards > 0 and gpu_free()
+                    sh, cpus = (a.wide_shards, WIDE_CPUS) if wide else (a.shards, NARROW_CPUS)
+                    print(time.strftime("%H:%M:%S"), f"unit {cp} {which} {lab}: {n} pending "
+                          f"({'WIDE' if wide else 'narrow'}: {sh} shards on {cpus})", flush=True)
+                    run_unit(cp, which, lab, key, a.threads, sh, cpus)
                     did = True
                     break
             if did:

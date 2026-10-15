@@ -67,7 +67,15 @@ def main():
     out["class_dose_k"] = {b: v.get("CLASS-FIRST") for b, v in cd["axes"]["k"].items()}
     out["class_dose_all_M"] = {k: cd["all"]["M"][k] for k in ("P-STAR", "SHAPE", "p_half", "TODAY_proxy")}
     U.describe(fr_reg, name)
-    print(json.dumps(out, indent=1, sort_keys=True, default=str)[:6000])
+    res = U.assemble(tab, name, "rehearsal", {"verdict": "PASS"}, fr_reg, fr_all, out["size"])
+    scratch = T.ARCH / "scratch"
+    scratch.mkdir(parents=True, exist_ok=True)
+    (scratch / "result_rehearsal.json").write_text(json.dumps(res, indent=1, sort_keys=True, default=str) + "\n")
+    import render_t1
+
+    sys.argv = ["render_t1.py", str(scratch / "result_rehearsal.json"), str(scratch / "result_rehearsal.md")]
+    render_t1.main()
+    print(json.dumps(out, indent=1, sort_keys=True, default=str)[:3000])
     print("REHEARSAL OK (every arm is a copy of P: the numbers mean nothing)")
 
 

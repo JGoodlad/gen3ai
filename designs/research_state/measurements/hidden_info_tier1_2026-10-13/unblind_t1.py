@@ -891,7 +891,15 @@ def main():
         return
     gp = Path(a.gigo) if a.gigo else T.HERE / "world_audit.json"
     gigo = json.loads(gp.read_text()) if gp.exists() else {"verdict": "NOT READ"}
-    res = {"table_sha256": sha, "size_rules": size, "validity": validity(fr_all, name, tab),
+    res = assemble(tab, name, sha, gigo, fr_reg, fr_all, size)
+    (T.HERE / "result_t1.json").write_text(json.dumps(res, indent=1, sort_keys=True, default=str) + "\n")
+    print(json.dumps({"R-MOVES": res["R-MOVES"]["verdict"], "U": res["R-RIVALS"]["U"]["verdict"],
+                      "R-RECOVER": res["R-RECOVER"]["verdict"], "R-EVAL": res["R-EVAL"]["verdict_bound"],
+                      "FRONTIER": res["R-STAGE-SEARCH"]["FRONTIER"]}, indent=1))
+
+
+def assemble(tab, name, sha, gigo, fr_reg, fr_all, size) -> dict:
+    return {"table_sha256": sha, "size_rules": size, "validity": validity(fr_all, name, tab),
            "R-GIGO (Tier 1 worlds)": gigo.get("verdict"),
            "R-MOVES": r_moves(fr_reg, name, gigo.get("verdict") == "PASS"),
            "R-RIVALS": {"U": r_rival_u(fr_reg, name)},
@@ -909,10 +917,6 @@ def main():
            "natural_mix": natural_mix(fr_all, name),
            "root_choice_sensitivity": root_choice_sensitivity(fr_reg, name),
            "describe_registered": describe(fr_reg, name)}
-    (T.HERE / "result_t1.json").write_text(json.dumps(res, indent=1, sort_keys=True, default=str) + "\n")
-    print(json.dumps({"R-MOVES": res["R-MOVES"]["verdict"], "U": res["R-RIVALS"]["U"]["verdict"],
-                      "R-RECOVER": res["R-RECOVER"]["verdict"], "R-EVAL": res["R-EVAL"]["verdict_bound"],
-                      "FRONTIER": res["R-STAGE-SEARCH"]["FRONTIER"]}, indent=1))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,22 @@
+{
+ "code": "T10",
+ "cp": "prod",
+ "examples": [],
+ "fail": 0,
+ "padded_worlds": 82,
+ "plant_item": {
+  "caught": 26,
+  "tried": 30
+ },
+ "plant_move": {
+  "caught": 30,
+  "tried": 30
+ },
+ "plant_strip": {
+  "caught": 82,
+  "tried": 82
+ },
+ "states": 30,
+ "verdict": "PASS",
+ "worlds": 240
+}

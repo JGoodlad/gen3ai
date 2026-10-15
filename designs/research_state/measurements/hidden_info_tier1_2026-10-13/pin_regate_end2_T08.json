@@ -1,0 +1,22 @@
+{
+ "code": "T08",
+ "cp": "end2",
+ "examples": [],
+ "fail": 0,
+ "padded_worlds": 117,
+ "plant_item": {
+  "caught": 40,
+  "tried": 60
+ },
+ "plant_move": {
+  "caught": 59,
+  "tried": 59
+ },
+ "plant_strip": {
+  "caught": 117,
+  "tried": 117
+ },
+ "states": 60,
+ "verdict": "PASS",
+ "worlds": 480
+}
