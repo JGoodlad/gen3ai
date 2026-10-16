@@ -18,7 +18,12 @@ carry it. **Status (2026-10-15, last): the KNOCK-IN FORKS have been READ** (`des
 `measurements/hidden_info_forks_2026-10-14/`): told the true moves, items or never-seen species for 3M more steps, the network is
 no stronger than its control (NULL inside ±2 pp; spreads NOT DETECTED), and withheld at play the moves and species forks are
 ≈ 2.4–2.6 pp worse (descriptive). Information is a SEARCH lever, not a lever for the amortized policy at this maturity. §1, N8,
-§6.3 and §7 Q3 / Q8 carry it. **Status (2026-10-12): ESTABLISHED at the owner's request** ("try and build a ledger of what we know about search, what
+§6.3 and §7 Q3 / Q8 carry it. **Status (2026-10-16): the BLIND U-ARM BUILD (red team E1) has been COMPARED by a third party**
+(`design_hidden_info_binding.md` §16.11; `measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md`). Under its
+pre-registration it AGREES with the original on the 978 common states at LEAF-K8: s_U 0.32 / 0.31, n_U 0.83 / 0.92, and R3
+holds in both. So R3's never-seen half is REPLICATED, scoped to the 8-rollout leaf and the registered bot-heavy mix. In BOTH
+builds it fails on the snapshot-game states and on end2 alone, and it flips at LEAF-K4 / K1. §1, §5.2, §6.1 and §7 Q2 carry
+it. **Status (2026-10-12): ESTABLISHED at the owner's request** ("try and build a ledger of what we know about search, what
 we know about where it's working, where it's not working, how much we need to improve for it to work … establish the
 ledger now"). This is an INDEX-AND-VERDICT doc: it holds no measurement of its own. Every row points at the ledger
 entry, design section or measurement folder that owns the number, and the owner wins any disagreement
@@ -56,16 +61,22 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
   G, hiding only them opens 0.82; for the seen mons' moves 0.13 and 0.42. By the registered rule (R3) "the moves are THE
   binding constraint" is **REFUTED**; the moves are a real minority share (a confident WRONG move set costs −0.013; the
   move dose +0.011 at 0.9). Items, abilities and spreads together add ≈ 0.003. MEASURED. The replica reproduces the MOVES'
-  shares (s_M 0.11 / 0.12, n_M 0.39 / 0.47 on the same states). It ran NO never-seen arm, so U's dominance (R3) is still a
-  SINGLE-IMPLEMENTATION claim. **RED TEAM (§16.10 of the study, post hoc): WEAKENED.**
+  shares (s_M 0.11 / 0.12, n_M 0.39 / 0.47 on the same states). It ran NO never-seen arm. **The BLIND U-ARM BUILD (E1,
+  §16.11, 2026-10-16) now REPLICATES U's dominance**, at LEAF-K8 on the 978 common states, by the pre-registered criterion:
+  s_U 0.32 / 0.31, n_U 0.83 / 0.92, R3's numerators +0.013 / +0.021 and +0.031 / +0.024, and R3 holds in both. Its scope:
+  the 8-rollout leaf (at LEAF-K4 / K1 R3 flips, in opposite directions) and the registered bot-heavy mix. With the learnset
+  fixed, the moves' hide-only share reads 0.54 in the blind build against 0.38 (the M side still differs, §6.1).
+  **RED TEAM (§16.10 of the study, post hoc): WEAKENED.**
   - **What survives.** R3 survives tie-free scoring (stronger), the exclusions (its hide-only side needs no honest base),
     the mis-keyed records and a never-seen leak check.
   - **Where it is not detected.** On the 42 % of states from games against our OWN snapshots: reveal-only U − M −0.13
     [−0.40, +0.13], hide-only +0.14 [−0.10, +0.39], n_M 0.58. The bot − snapshot difference is clear on both sides. It is
-    also not met on the end-state checkpoint alone.
+    also not met on the end-state checkpoint alone. **Both REPLICATE in the blind U-arm build (§16.11):**
+    - R3 fails on the snapshot-game states (blind n_M 0.85 there) and on end2 in both builds.
+    - The bot − snapshot difference is clear on both sides in both builds.
   - **Per hidden fact** the two classes are worth the same (1.21 [0.98, 1.58]).
   - **Red-team confidence** that the never-seen class is the largest: ≈ 70 % on the registered mix, ≈ 35 % where play is
-    competent.
+    competent. **The third party, after E1:** ≈ 85 % on the registered mix at LEAF-K8; ≈ 30 % where play is competent.
 - **It falls as the game goes on.** G by opponent mons seen 1–2 … 6: +0.087 / +0.093 / +0.076 / +0.061 / +0.025 (TREND-DOWN,
   replicated); the axis that carries it once the others are in is the TURN; the truth changes the decision 78 % → 42 % of
   the time (k ≤ 3 vs ≥ 5) at about the same stakes. MEASURED (the mechanism rule itself is NOT DETECTED: the stakes
@@ -95,10 +106,11 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
   turn, a privileged critic, telling the frozen network the true moves (+0.001), training it 3M steps with them (−0.38 pp), the network's belief as a world sampler,
   the honest sharpening (prior-mode moves), the pool's per-species sets, and Foul Play's hand evaluator as the leaf in
   honest worlds (no better than the critic).
-- **Open, in order of cost.** The red team (§16.10) has run. Its settling list, in order:
+- **Open, in order of cost.** The red team (§16.10) has run, and so has its E1 (the blind U-arm build, compared in §16.11:
+  AGREE, scoped). Its settling list, in order:
   - the second referee (≈ 3–5 CPU-h);
-  - the BLIND U-arm build (E1, 16–40 CPU-h, ready to dispatch);
-  - a competent-opponent state bank with R3 pre-registered on it (E2, 40–65 CPU-h);
+  - a competent-opponent state bank with R3 pre-registered on it (E2, 40–65 CPU-h). **After E1 this is the decisive read:**
+    both builds agree that U's dominance is a bot-game property;
   - species-only never-seen worlds (F+Usp, ≈ 15 CPU-h);
   - Tier 2 (items / abilities / spreads arms);
   - the maturity battery at plateau (§7).
@@ -245,7 +257,7 @@ holds**; "today's p" is the p-EQUIVALENT in value units. Registered read on the 
 
 | class of hidden fact | registered read (Tier 1, pooled, `design_hidden_info_binding.md` §16.8) | value | tag |
 |---|---|---|---|
-| **never-seen Pokémon** (identity and sets) | reveal-only share s_U **0.31** [0.18, 0.43], hide-only share n_U **0.82** [0.70, 0.96]; U-LED at k ≤ 4 and turn ≤ 14; R-RIVALS U-SHARED (not a majority by sufficiency) | the LARGEST class; dominates the moves on both sides (R3) | MEASURED, PROVISIONAL |
+| **never-seen Pokémon** (identity and sets) | reveal-only share s_U **0.31** [0.18, 0.43], hide-only share n_U **0.82** [0.70, 0.96]; U-LED at k ≤ 4 and turn ≤ 14; R-RIVALS U-SHARED (not a majority by sufficiency) | the LARGEST class; dominates the moves on both sides (R3) | MEASURED, PROVISIONAL; **REPLICATED** at LEAF-K8 on the registered mix (§16.11: s_U 0.31, n_U 0.92 in the blind build on the common states); not on snapshot-game states or end2 alone, in either build |
 | **seen mons' unseen moves** | s_M **0.13** [−0.02, 0.25], n_M **0.42** [0.31, 0.54]; never LEADS at any stage; the dose helps a little (D90 − F +0.011 [+0.001, +0.021]), a confident wrong set HURTS (W90 − F −0.013 [−0.024, −0.003]), the honest sharpening buys nothing (MAP100 − F −0.002); R-MOVES **REFUTED** | a real minority share | MEASURED, PROVISIONAL |
 | **items, abilities, spreads, exact HP** | the fully honest gap ≈ the pilot's (which told them true): IMP_F +0.006 vs IMP_P +0.009, ≈ 0.003; the separate F+I/A/S and O−I/A/S arms are Tier 2 (not run) | small | DESCRIPTIVE (Tier 2 owed) |
 | **which TEAM, out of a closed pool** | POOL (the pool's teams consistent with the observation) recovers **0.80** [0.73, 0.87] of G; the pool's per-species set frequencies (POOLSETS) recover −0.02 | large on OUR pool; not available on an open ladder | MEASURED |
@@ -255,6 +267,9 @@ The two-point Shapley credit over the registered 600: φ_U = ½(0.022 + 0.058) =
 G = 0.070; Σ s = 0.45 [0.22, 0.65] (not NON-ADDITIVE), Σ n = 1.24 (the hide-only costs overlap). Nothing from the study may steer
 a multi-week programme until the replica agrees, the red team has attacked it and the plateau replication confirms it. The replica
 comparison (§16.9, 2026-10-15) agrees on the M row and on G. It is silent on the U row, because the replica built no U arm.
+**The blind U-arm build (§16.11, 2026-10-16) fills the U row:** AGREE by its pre-registered criterion on the 978 common
+states at LEAF-K8. It also re-reads the M row with the learnset fixed. The moves' hide-only share then differs between the
+builds (n_M 0.38 vs 0.54, paired −0.154 [−0.316, −0.005]; B4 holds in the blind build only). s_M stays ≤ 0.13 in both.
 The plateau replication is `design_hidden_info_binding.md` §10.5. The author's confidence that the seen mons' MOVES are THE binding constraint is now ≈ 5 %.
 
 **The red team's read of this table (§16.10 of the study; post hoc; the rows above stay the registered read).**
@@ -335,7 +350,15 @@ no in-Rust builder exists. The pilot's builder cost ≈ 0.08 CPU-s per world (ca
   - **Common-mode parts it CANNOT check:** the same Phase 1 rows, the reuse of the true dice seed (the dice-silent leak is in
     BOTH builders), and the same written spec.
   - **Its own handicap:** the replica's move prior used the learnset table before `64a695dc`. That inflates its move shares,
-    bounded at n_M ≤ +0.10.
+    bounded at n_M ≤ +0.10. **FIXED in the blind U-arm build (§16.11):** its missing-pair hit rate is 0.313 vs the
+    original's 0.321. Yet ν_M still differs by −0.0078 (−0.0067 with the handicap), so the handicap was NOT the cause.
+    The seen mons' move and nature draws still differ beyond a permutation null. Part of the move difference is Hidden
+    Power's presence in drawn sets (the spec's open "HP type: M or S" question; UNVERIFIED as the cause).
+  - **The never-seen arms now have two builds (§16.11).** The instrument is identical: IMP_O, Phase 1, one scorer, and the
+    view on 978 / 978 states. U's drawn content (species, item, ability, nature) is at the permutation null. U.move differs
+    slightly. The first never-seen slot's species differs by construction: uniform vs slot-ordered placement, the red team's
+    E7, and the U contrasts agree anyway. The blind guard's one false positive is an untyped Hidden Power in one true set; it
+    was ruled an exclusion, not an identity failure.
   - **§12.2's TV < 0.02 test is unmeetable at this sample size:** two halves of one builder fail it.
   - **The honest builders' exclusions are not missing at random.** On the states only the replica could fit, n_M is 1.17.
 - **The world records (FIXED 2026-10-15):** `Worlds.facts` kept a never-seen mon's record at the slot it was DRAWN for
@@ -380,7 +403,7 @@ feeds one shared trunk to both heads).
 | # | question | the experiment | cost / status |
 |---|---|---|---|
 | Q1 | Does a FULLY honest search beat the critic anywhere, and which class of fact carries the gap? | **Tier 1 of the hidden-info study** — READ 2026-10-15 (§16.8): no (FRONTIER EMPTY; k = 6 GATE-WEAK); the never-seen Pokémon (R-MOVES REFUTED by R3). **Tier 2** (F+I/A/S, O−I/A/S, D25 / D75, W50 / W100, MAP90, P16 = R-WIDTH, the second referee) is the open remainder | Tier 1 cost ≈ 1.5 days on 3 agent cores (FN built; the honest screen ≈ 20–60 CPU-s per state). Tier 2 not queued |
-| Q2 | Is the pilot's oracle − honest gap an artifact of our instrument? | **The blind replica's third-party comparison** (R-REPLICATE, then the red team, `design_hidden_info_binding.md` §13) | **PARTLY ANSWERED 2026-10-15 (§16.9):** the gap is NOT an artifact of one builder (G replicates on the same states). R-REPLICATE as registered is NOT MET: the ν_M point rule fails, and TV < 0.02 is below the noise floor. R3's never-seen half is unreplicated. **The RED TEAM has run (§16.10):** the instrument holds against every attack it could make offline (tie-free scoring, the exclusions, the mis-keyed records, a U-leak check, the U arms' team text). What it cannot settle offline is the never-seen half: the blind U-arm build E1 (16–40 CPU-h, ready to dispatch in `red_team.md` §3), the competent-opponent bank E2 (40–65 CPU-h) and the second referee E3 (3–5 CPU-h) |
+| Q2 | Is the pilot's oracle − honest gap an artifact of our instrument? | **The blind replica's third-party comparison** (R-REPLICATE, then the red team, `design_hidden_info_binding.md` §13) | **PARTLY ANSWERED 2026-10-15 (§16.9):** the gap is NOT an artifact of one builder (G replicates on the same states). R-REPLICATE as registered is NOT MET: the ν_M point rule fails, and TV < 0.02 is below the noise floor. R3's never-seen half is unreplicated. **The RED TEAM has run (§16.10):** the instrument holds against every attack it could make offline (tie-free scoring, the exclusions, the mis-keyed records, a U-leak check, the U arms' team text). What it cannot settle offline is the never-seen half: the blind U-arm build E1 (16–40 CPU-h, ready to dispatch in `red_team.md` §3), the competent-opponent bank E2 (40–65 CPU-h) and the second referee E3 (3–5 CPU-h). **E1 READ 2026-10-16 (§16.11):** AGREE by its pre-registered criterion at LEAF-K8 on the 978 common states, so R3's never-seen half is REPLICATED, scoped to the 8-rollout leaf and the bot-heavy registered mix (both builds fail it on snapshot-game states and on end2 alone). R-REPLICATE §12.2 as a whole is still NOT MET on the M side. Open: E2 (now decisive), E3 |
 | Q3 | Can a network LEARN to use told information, and what is each class worth in strength? | **The knock-in forks**: `--oracle-reveal ki_moves` / `ki_items` / `ki_spreads` / `species:unseen@0.95` with `--diagnostic-fork-consent`, 5 arms × 3 seeds × +3M from the adopted end state, a no-change control (the v8 guard); no placebo (the observation refuses one) | **ANSWERED at +3M, PROVISIONAL (2026-10-15, `design_hidden_info_binding.md` §8.7):** it learns to READ moves and species (withheld costs ≈ 1.9 pp) but GAINS nothing in strength (moves, items, species NULL; spreads NOT DETECTED). Open: whether longer exposure, a critic-only route or an annealed reveal leaves a durable honest gain; which mechanism carries the dependence (§8.7's experiments (a)–(e), none queued) |
 | Q4 | What do maturity and plateau change: does G shrink, does today's p rise toward p\*, does the frontier move earlier? | **The maturity battery** on the X26 deep run (`design_hidden_info_binding.md` §12.13.7): O, F, FN, F+M, F+U re-run at ≥ 25M then every 25M and at the plateau checkpoint, ONE frozen 800-state bank, rules R-MATURITY (GAP-SHRINKS / BELIEF-RISES / FRONTIER-MOVES-EARLIER / -STATIC / -RECEDES) | ≈ 150 CPU-h for six checkpoints (FULL ≈ 47 at the first and plateau anchors, LEAN ≈ 14 between), no GPU. Every claim in this ledger is PROVISIONAL until it runs |
 | Q5 | Does the honest ONE-PLY critic search pay in GAMES? | **S0b** (`design_value_discrimination.md` §13.4): the end-state checkpoint with an 8-world one-ply critic search vs the same checkpoint raw, mirrored head-to-head; pass = lower bound > the +4.57 pp replicate floor | ≈ 1 CPU-day. NOT run as far as the ledger records; OWNER approval requested (§13.0 ask 2) |
@@ -421,3 +444,4 @@ feeds one shared trunk to both heads).
 | 2026-10-15 | **GIGO FIX: the world builder's never-seen fact RECORDS were paired with the wrong slot; the consistency guard built** | §3 N15 (the FN species hit 0.411 vs 0.180, set-based), §5.1 (Amendment 3's U TODAY proxy 0.28, CLASS-FIRST from it), §6.1 (the records residual, fixed) | re-reading any playout (the worlds were right: whole entries moved; every IMP, G, s / n, R-STAGE, R-DOSE and R-RECOVER number stands) | `design_information_levers.md` §7.6; the impact table and the recomputation: ledger 2026-10-15 (GIGO FIX, world records) |
 | 2026-10-15 | **RED TEAM READ (the study's §16.10)** | Status line; §1 (the never-seen bullet WEAKENED: population-dependent, not met on end2 alone, equal per hidden fact; the "how far" bullet: "0.2–0.35" is the leaf's quantisation, FN's species belief 0.41 vs 0.18; the open list re-ordered by the red team's settling experiments); W9 (the quantisation qualifier); N13 (R-EVAL a near miss toward evaluator-bound); N15 (the species hit CORRECTED to 0.411 / 0.180, `8702a56f`; FN − F at TRUNC-4-K8 a boundary); §5.1 (the continuous-leaf curve); §5.2 (the red team's read and confidence); Q2 | rewriting the registered rows (they stay the registered read; the red team's numbers sit beside them, labelled); dropping "0.2–0.35" without the replacement curve (the continuous leaf's curve is the honest replacement) | `design_hidden_info_binding.md` §16.10; `hidden_info_tier1_2026-10-13/red_team.md` / `.json`, `red_team.py`; ledger 2026-10-15 |
 | 2026-10-15 | **THE KNOCK-IN FORKS READ (the study's §8.7)** | Status line; §1 (a new bullet: information is a SEARCH lever, not a POLICY lever, at this maturity; "what does not help" gains the trained reveal; the open list drops the forks' read); N8 (the forks' numbers and the reading: the network learns to READ the told moves, not to gain from them); §6.3 (the forks' route reached the actor; no critic-only route exists); Q3 ANSWERED at +3M; Q8 | moving N8 into §2 (no reveal bought strength); quoting the honest dependence cost as a verdict (descriptive, no rule); quoting the v8 +4.4 pp here (it is a training-maturity read, not a search one, and CONFOUNDED) | `design_hidden_info_binding.md` §8.7; `measurements/hidden_info_forks_2026-10-14/` (`crosses/result/verdict.json`); ledger 2026-10-15 MEASUREMENT (MAJOR) "THE KNOCK-IN FORKS" |
+| 2026-10-16 | **THE BLIND U-ARM BUILD (E1) COMPARED by a third party (the study's §16.11)** | Status line; §1 (the never-seen bullet: U's dominance REPLICATED at LEAF-K8 on the registered mix; the population split and the end2 failure replicate in both builds; the third party's confidence; the open list: E1 done, E2 decisive); §5.2 (the U row's tag and the M row's re-read with the learnset fixed); §6.1 (the handicap fixed but the M-side difference persists; the never-seen arms' two builds); §7 Q2 | marking R3 replicated without its scope (it is a LEAF-K8, registered-mix claim; it flips at LEAF-K4 / K1 and fails on snapshot-game states and end2 in both builds); dropping §16.9's handicap attribution silently (it is stated as not supported, with the numbers) | `design_hidden_info_binding.md` §16.11; `measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md` / `.json`, `third_party_compare.py`; ledger 2026-10-16 MEASUREMENT (MAJOR) "THE BLIND U-ARM BUILD, compared" |

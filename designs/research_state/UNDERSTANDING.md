@@ -1490,11 +1490,36 @@ PASS"; `measurements/bf16_strength_ab_2026-10-12/`; design [`design_bf16_strengt
 - **What holds.** No reading makes the moves THE binding constraint.
 - **What does not.** "The never-seen Pokémon dominate" holds on the registered mix and survives tie-free scoring, the exclusions (the hide-only side needs no honest base, and the original's own rows show those states are not where moves cost more), the world builder's mis-keyed records and a never-seen leak check. But it is not detected on the 42 % of states from games against the network's own snapshots. There the moves' hide-only share is 0.58 and their reveal-only share leads in point. It is also not met on the end-state checkpoint alone, and per hidden fact the two classes are worth the same.
 - **What breaks.** The "0.2–0.35 of weight on the true world" is the 8-rollout leaf's 1/8 resolution; a continuous 4-turn leaf rises from 0.05 with no step. The network's species belief holds the true never-seen species 2.3× more often than Smogon usage (0.41 vs 0.18), for at most ≈ +0.017 of value.
-- **What remains open.** An independent never-seen arm, a competent-opponent state bank and a second referee are the open checks.
+- **What remained open (the red team's list).** An independent never-seen arm (since built and compared, below), a
+  competent-opponent state bank and a second referee.
 
-The whole is PROVISIONAL at 15M: [`../endstate/design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) §16.8, §16.9, §16.10; [`../endstate/search_ledger.md`](../endstate/search_ledger.md) §1–§5.
+**The independent never-seen arm has now been built and compared (2026-10-16; the THIRD PARTY's read, §16.11).** A second
+agent built the never-seen arms blind to the original, with the learnset table fixed. A third party compared the two under
+a pre-registration written before any arm ran.
 
-[REFUTED (R-MOVES, rule R3) · SHARED (R-RIVALS U) · BELIEF-RECOVERABLE on this distribution (R-RECOVER, POOL) · not EVALUATOR-BOUND, INFORMATION-BOUND support (R-EVAL) · GATE-CLOSED / FRONTIER EMPTY (R-STAGE-SEARCH) · DESCRIPTIVE (the tie-break finding) · PROVISIONAL at 15M · R-GIGO PASS on the Tier-1 worlds · REPLICATED by the blind re-implementation: G and the moves' shares; NOT REPLICATED: R3's never-seen half, stage, recover, eval, dose / placebo; R-REPLICATE NOT MET as registered · RED TEAM (post hoc): moves-not-binding SURVIVES; U's dominance WEAKENED (population-dependent: not detected on snapshot-opponent states; not met on end2 alone); "0.2–0.35" and "FN ≈ Smogon" for species BROKEN; R-EVAL and the empty frontier WEAKENED; POOL = identification SURVIVES · ledger 2026-10-15 MEASUREMENT "HIDDEN-INFO STUDY TIER 1", MEASUREMENT "the THIRD-PARTY REPLICA COMPARISON" and MEASUREMENT "the RED TEAM"; `measurements/hidden_info_tier1_2026-10-13/` (`replica_comparison.md`, `red_team.md`)]
+**It AGREES on the 978 common states at the 8-rollout leaf.**
+- Revealing only the never-seen Pokémon closes 0.32 vs 0.31 of the gap. Hiding only them opens 0.83 vs 0.92.
+- R3's two contrasts are positive and clear in both builds.
+- The absolute reveal-only and hide-only values differ by 0.002 and 0.001.
+
+**So "the never-seen Pokémon carry more than the moves" is REPLICATED, as a scoped claim.** Its scope:
+- It holds at the 8-rollout leaf. At 4 or 1 rollouts the rule flips, in opposite directions in the two builds.
+- It holds on the registered, bot-heavy mix of states. In BOTH builds it fails on the states from games against our own
+  snapshots, and on the end-state checkpoint alone.
+
+**What the comparison settled on the side.**
+- The blind build's one formal identity failure was ruled a guard false positive that excluded two states: a single true
+  set spells Hidden Power untyped. No outcome differs anywhere, and the original reproduces the truth on those states.
+- With the learnset fixed, the moves' hide-only share differs between the builds (0.38 vs 0.54). So "the moves are a
+  minority by necessity" is implementation-dependent.
+- "The moves are not THE binding constraint" stands in both builds.
+
+The third party's confidence that the never-seen class is the largest is ≈ 85 % on the registered mix at that leaf and
+≈ 30 % where play is competent. That makes the competent-opponent bank the decisive open read.
+
+The whole is PROVISIONAL at 15M: [`../endstate/design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) §16.8, §16.9, §16.10, §16.11; [`../endstate/search_ledger.md`](../endstate/search_ledger.md) §1–§5.
+
+[REFUTED (R-MOVES, rule R3) · SHARED (R-RIVALS U) · BELIEF-RECOVERABLE on this distribution (R-RECOVER, POOL) · not EVALUATOR-BOUND, INFORMATION-BOUND support (R-EVAL) · GATE-CLOSED / FRONTIER EMPTY (R-STAGE-SEARCH) · DESCRIPTIVE (the tie-break finding) · PROVISIONAL at 15M · R-GIGO PASS on the Tier-1 worlds · REPLICATED by the blind re-implementation: G and the moves' shares; NOT REPLICATED by it: R3's never-seen half (since REPLICATED by the blind U-arm build, below), stage, recover, eval, dose / placebo; R-REPLICATE NOT MET as registered · RED TEAM (post hoc): moves-not-binding SURVIVES; U's dominance WEAKENED (population-dependent: not detected on snapshot-opponent states; not met on end2 alone); "0.2–0.35" and "FN ≈ Smogon" for species BROKEN; R-EVAL and the empty frontier WEAKENED; POOL = identification SURVIVES · BLIND U-ARM BUILD (third party, pre-registered, 2026-10-16): R3's never-seen half REPLICATED at LEAF-K8 on the registered mix (AGREE); the population split and the end2 failure REPLICATE; R3 flips at LEAF-K4 / K1; the M side (n_M, ν_M) still differs; R-REPLICATE §12.2 as a whole NOT MET · ledger 2026-10-15 MEASUREMENT "HIDDEN-INFO STUDY TIER 1", MEASUREMENT "the THIRD-PARTY REPLICA COMPARISON" and MEASUREMENT "the RED TEAM"; ledger 2026-10-16 MEASUREMENT (MAJOR) "THE BLIND U-ARM BUILD, compared"; `measurements/hidden_info_tier1_2026-10-13/` (`replica_comparison.md`, `red_team.md`); `measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md`]
 
 ---
 

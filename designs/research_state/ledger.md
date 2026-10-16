@@ -26306,3 +26306,111 @@ One owner question: run the toy deep run on a rented GPU in parallel with X26, o
 
 Evidence: `endstate/design_compute_efficiency.md`; `research_state/measurements/compute_efficiency_2026-10-16/`
 (`component_cost.py`, `read_cost.py`, `iteration_split.py`, `result/`).
+
+### 2026-10-16 · MEASUREMENT (MAJOR) · **HIDDEN-INFO STUDY: THE BLIND U-ARM BUILD, compared by a third party (red team E1, pre-registered `8dd25833`). On the 978 states where both builds hold all six arms the registered criterion AGREES at LEAF-K8: s_U 0.32 / 0.31, n_U 0.83 / 0.92, R3's numerators +0.013 / +0.021 and +0.031 / +0.024 with R3 holding in both, σ_U / ν_U \|Δ\| 0.0022 / 0.0014. R3's never-seen half is REPLICATED, scoped: the 8-rollout leaf (it flips at LEAF-K4 / K1) and the registered bot-heavy mix (BOTH builds fail it on the snapshot-game states and on end2 alone). The blind build's prod identity "failure" is ruled a guard-caused EXCLUSION. The M side still differs with the learnset fixed**
+
+A third party, which built neither implementation, compared the blind U-arm build
+(`measurements/hidden_info_u_replica_2026-10-15/`, `5fafe276`) with the original Tier 1 (the frozen table `fc3aced3…`). The
+blind build has F+U and O−U, and re-ran F, F+M and O−M with the CURRENT learnset table. The comparison applies the folder's
+pre-registration (`8dd25833`, committed before any arm output). The script is `third_party_compare.py`, which mirrors the
+earlier comparison: ONE battle-clustered bootstrap for both builds (seed 20261011) and paired differences.
+
+**Like with like.** C holds the registered states where BOTH builds hold O, F, F+M, F+U, O−M and O−U: 978 states (488 end2 /
+490 prod), 716 battles, 574 bot-game and 404 snapshot-game. The original alone holds 1,057, the blind build 1,089.
+
+**The instrument is identical.**
+- IMP_O is equal on 1,200 / 1,200 registered states.
+- The blind O rows equal Phase 1's seeds 0–7.
+- One scorer reproduces every IMP of both builds: 20,682 + 20,880 triples, 0 differences.
+- The view is equal on 978 / 978 states.
+
+**The identity ruling (the third party's): EXCLUSION, not failure; the blind build is VALID.**
+- `hiu.score` reads `HOLD = false` on prod: O−U has no row on 2 of 103 k = 6 states (`…/random/loss_s2_003#p1#22`,
+  `…/sentinel_1/loss_s1_005#p1#25`).
+- Both builds' k = 6 identities hold outcome for outcome wherever both rows exist (438 / 433 pairs, 0 differ).
+- The guard refused the rows before any playout. Its one trigger is a single true set in all 1,200 banks: a prod Charizard
+  with Hidden Power spelled untyped and blank IVs, which is Hidden Power Dark. The engine reports it typed.
+- The guard raised on exactly the 4 states that hold that set, F's check of the TRUE team included, and on no other.
+- The original's O−U on the same 2 states equals O outcome for outcome.
+- All 4 states lie outside C. Dropping them, or both whole battles, leaves C at 978 and the verdict at AGREE.
+
+**The registered read** (pooled on C, LEAF-K8; original / blind; paired difference):
+- **s_U:** 0.320 [0.169, 0.452] / 0.309 [0.156, 0.446]; +0.011 [−0.161, +0.189].
+- **n_U:** 0.832 [0.703, 0.985] / 0.920 [0.774, 1.091]; −0.087 [−0.294, +0.115].
+- **R3 reveal-only, IMP(F+U) − IMP(F+M):** +0.0132 [+0.0020, +0.0239] / +0.0211 [+0.0099, +0.0334]; −0.0079 [−0.0218,
+  +0.0057].
+- **R3 hide-only, IMP(O−M) − IMP(O−U):** +0.0305 [+0.0203, +0.0412] / +0.0240 [+0.0126, +0.0361]; +0.0064 [−0.0065,
+  +0.0193].
+- **σ_U:** +0.0217 / +0.0195 (|Δ| 0.0022). **ν_U:** +0.0566 / +0.0580 (|Δ| 0.0014).
+- R3 and its ratio forms hold in both builds. **AGREE.**
+
+**Beside the verdict (none changes it):**
+- **The rule-8 clause.** Read as a ±0.005 band on the numerators (the blind builder's reading), the verdict is DISAGREE. The
+  cause is the ORIGINAL's own s-side lower bound (+0.0020), and that band would reverse the original's registered R3. The
+  primary reading is the study's ±0.0005.
+- **The scorer.** At LEAF-K4 the original fails R3's s-side, and the hide-only numerators differ clearly (+0.0175 [+0.0034,
+  +0.0313]). At LEAF-K1 the blind build fails R3 on both sides.
+- **The population split REPLICATES.** R3 holds on the bot-game states and fails on the snapshot-game states, in both
+  builds. The bot − snapshot difference is clear on both sides in both:
+  - original +0.029 [+0.006, +0.051] / +0.036 [+0.014, +0.057];
+  - blind +0.031 [+0.007, +0.055] / +0.028 [+0.0045, +0.052].
+  - The blind build's n_M on the snapshot-game states is 0.85 [0.56, 1.23].
+- **The checkpoints.** R3 fails on end2 in both builds and holds on prod in both. The end2 n-side condition differs
+  (original +0.0049, blind −0.0021).
+- **R-RIVALS U** is U-SHARED in both. B8 differs (the original's end2 σ_U lower is −0.0012).
+- **TV against a permutation null** (per-state label swaps), replacing §12.2's TV < 0.02:
+  - U's content (species, item, ability, nature) is at the null.
+  - U.move differs slightly (0.058 vs a 95th percentile of 0.055).
+  - The first never-seen slot's species differs (0.098 vs 0.064): spec choice U2, uniform vs slot-ordered placement.
+  - M.move (0.078–0.097) and the seen mons' natures (0.13–0.14) differ.
+  - Every class an arm keeps true reads TV 0.
+- **The learnset handicap is FIXED** (missing-pair hit 0.313 vs 0.321; the earlier replica's was 0.000). **The M side still
+  differs:**
+  - ν_M +0.0261 / +0.0340, −0.0078, against −0.0067 with the handicap;
+  - n_M 0.384 / 0.539, −0.154 [−0.316, −0.005]; B4 holds in the blind build only;
+  - s_M 0.13 / −0.02.
+
+  The earlier comparison's attribution of ν_M to the handicap is therefore not supported. Hidden Power's presence in drawn
+  sets is part of the M.move difference: the spec's open "HP type in M or S" question, UNVERIFIED as the cause.
+- **Spec choice U1** (the pending root choice kept in O−M / O−U, dropped in the F family): dropping the 6 pending states in C
+  leaves the verdict at AGREE.
+
+**Rule 1 (the third party's).**
+- R-MOVES = MOVES-REFUTED (R3), its never-seen half: NOT replicated → **REPLICATED, scoped** (LEAF-K8, the registered mix).
+- The population split: **REPLICATED**.
+- R-RIVALS U: **PARTLY MET**.
+- The M half: PARTLY MET (n_M and B4 now differ).
+- R-REPLICATE §12.2 as a whole: **still NOT MET** (the M side's point rule; TV on M, S, U.move and the placement).
+- Not compared: Amendment 3, R-STAGE-CLASS, R-DOSE's U parts.
+
+**Confidence (the third party's).**
+
+| statement | confidence |
+|---|---|
+| team information binds | ≈ 95 % |
+| the moves are THE constraint | ≈ 5 % |
+| the moves are a material share | ≈ 90 % |
+| the never-seen class is the largest on the registered mix at LEAF-K8 | ≈ 85 % (was 80 / 70) |
+| … on competent-opponent states | ≈ 30 % (was 35) |
+| U's dominance is a bot-game property | ≈ 80 % |
+
+**FINDINGS.**
+1. The registered verdict is AGREE.
+2. The identity issue is a guard false positive on one true set's Hidden Power spelling. The blind README's prose swaps
+   the engine and packed spellings (cosmetic).
+3. The pre-registration's rule-8 clause is ambiguous, and its stricter reading turns the verdict on the original's own knife
+   edge.
+4. The agreement is LEAF-K8-specific.
+5. The population split and the end2 failure replicate.
+6. The M-side difference survives the learnset fix.
+7. U's placement and moves differ in distribution, while its content agrees.
+8. Not verified: no playout was run (the 2 guard-excluded rows were not re-played); the blind build's world construction was
+   checked through its outputs only.
+9. Rule 5b was followed: nice 19, cores 5–7 / 13–15, `mem_cap` 8 GB (peak 1.9 GB), no GPU.
+
+**Open:** E2, the competent-opponent bank, is now the decisive read. Then E3 (the second referee: what both builds share),
+the M side's residual, a tie-free or 16-world leaf (E5) and the plateau replication (E6).
+
+Tag: **MEASUREMENT (MAJOR) · THIRD-PARTY COMPARISON under a pre-registration · AGREE (LEAF-K8, C = 978) · R3's never-seen half REPLICATED (scoped: LEAF-K8, the registered mix) · the population split REPLICATED · R-REPLICATE §12.2 NOT MET (the M side) · the identity issue ruled an EXCLUSION · PROVISIONAL at 15M** ·
+evidence: `research_state/measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md` / `.json`,
+`third_party_compare.py`; `endstate/design_hidden_info_binding.md` §16.11; `endstate/search_ledger.md`; `research_state/UNDERSTANDING.md` §4.7

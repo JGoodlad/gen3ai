@@ -1862,6 +1862,93 @@ evidence" is unchanged.
 steer research beyond §10.5's cheap unlocks only when R-REPLICATE agrees AND the owner has read it. For anything resting
 on U, E1 and E2 are the remaining preconditions.
 
+### 16.11 The BLIND U-ARM BUILD (red team E1) against the original: the third-party comparison (2026-10-16; `measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md` / `.json`)
+
+**What was compared.** A second agent built F+U and O−U (and re-ran F, F+M and O−M) blind to Tier 1's code and results. It
+extended the replica's builder (`measurements/hidden_info_u_replica_2026-10-15/`, `5fafe276`), with the
+learnset table fixed.
+
+A third party, which built neither, compared it with the original under the folder's pre-registration (`8dd25833`,
+committed before any arm output). The comparison script is `third_party_compare.py`. It mirrors §16.9's method: one
+battle-clustered bootstrap for both builds and paired differences, on **C = the 978 registered states where both builds hold
+all six arms** (488 end2 / 490 prod, 716 battles).
+
+**The instrument agrees exactly.**
+- IMP_O is identical on 1,200 / 1,200 states.
+- The blind O rows equal Phase 1.
+- One scorer reproduces every IMP of both builds (0 differences over ≈ 41,600 state-arm-scorer triples).
+- The searched side's view is equal on 978 / 978 states.
+
+**The identity ruling (the third party's): EXCLUSION, not failure; the build is VALID.** The blind scorer reads `HOLD = false`
+on prod because O−U has no row on 2 of 103 k = 6 states. The reasons for the ruling:
+- No outcome differs on any k = 6 state where both rows exist, in either build.
+- The missing rows were refused by the build's own guard BEFORE any playout.
+- The guard's trigger is ONE true set in all 1,200 banks: a prod Charizard whose Hidden Power is spelled untyped, with
+  all-31 IVs, which is Hidden Power Dark. The engine reports it typed. The guard raised on exactly the 4 states holding that
+  set, including F's check of the TRUE team, and on no other.
+- The original's O−U on the same 2 states equals O outcome for outcome.
+- The states lie outside C anyway, and dropping them (or their whole battles) leaves every number unchanged.
+
+**The registered verdict: AGREE** (pooled, LEAF-K8; original / blind; paired difference):
+
+| quantity | original | blind | paired orig − blind | criterion |
+|---|---|---|---|---|
+| s_U | 0.320 [0.169, 0.452] | 0.309 [0.156, 0.446] | +0.011 [−0.161, +0.189] | overlap ✓ |
+| n_U | 0.832 [0.703, 0.985] | 0.920 [0.774, 1.091] | −0.087 [−0.294, +0.115] | overlap ✓ |
+| R3 reveal-only IMP(F+U) − IMP(F+M) | +0.0132 [+0.0020, +0.0239] | +0.0211 [+0.0099, +0.0334] | −0.0079 [−0.0218, +0.0057] | overlap ✓; s-side holds in both |
+| R3 hide-only IMP(O−M) − IMP(O−U) | +0.0305 [+0.0203, +0.0412] | +0.0240 [+0.0126, +0.0361] | +0.0064 [−0.0065, +0.0193] | overlap ✓; n-side holds in both |
+| σ_U = F+U − F | +0.0217 | +0.0195 | +0.0022 [−0.0109, +0.0159] | \|Δ\| < 0.005 ✓ |
+| ν_U = O − O−U | +0.0566 | +0.0580 | −0.0014 [−0.0109, +0.0083] | \|Δ\| < 0.005 ✓ |
+
+**Qualifiers (all reported in the comparison; none changes the registered verdict):**
+- **The rule-8 clause is ambiguous.** Read as a ±0.005 band on the R3 numerators (the blind builder's reading), the verdict
+  is DISAGREE. The cause is the ORIGINAL's own s-side lower bound (+0.0020), and the same band would reverse its registered
+  R3. The third party's primary reading is the study's ±0.0005.
+- **The agreement is scorer-specific.** At LEAF-K4 the original fails R3's s-side and the hide-only numerators differ
+  clearly (+0.0175 [+0.0034, +0.0313]). At LEAF-K1 the blind build fails R3 on both sides. The flips run in opposite
+  directions.
+- **The red team's strongest attack REPLICATES.** In BOTH builds R3 holds on the bot-game states (574) and fails on the
+  snapshot-game states (404). The bot − snapshot difference is clear on both sides in both:
+  - original +0.029 [+0.006, +0.051] / +0.036 [+0.014, +0.057];
+  - blind +0.031 [+0.007, +0.055] / +0.028 [+0.0045, +0.052].
+- **The checkpoint read.** R3 fails on end2 (the production architecture) in both builds and holds on prod in both. The end2
+  n-side condition differs: original lower +0.0049, blind −0.0021.
+- **R-RIVALS U is U-SHARED in both.** B8 differs: the original's end2 σ_U lower is −0.0012.
+- **The drawn worlds.** U's content (species, item, ability, nature) is at the permutation null; this replaces §12.2's TV
+  < 0.02 as registered. U.move differs slightly. The first never-seen slot's species differs, as spec choice U2 (uniform
+  vs slot-ordered placement) predicts, and the U contrasts agree anyway.
+- **The M side still differs with the learnset handicap FIXED** (missing-pair hit 0.313 vs 0.321; it was 0.000):
+  - ν_M −0.0078 (§16.9: −0.0067);
+  - n_M 0.38 vs **0.54**, paired −0.154 [−0.316, −0.005]; B4 holds in the blind build only;
+  - M.move and the seen mons' natures differ beyond noise. Part of M.move is Hidden Power's PRESENCE in drawn sets (the
+    spec's open "is HP's type M or S" question; UNVERIFIED as the cause).
+
+  §16.9's attribution of the ν_M difference to the handicap is therefore not supported.
+
+**Rule 1 / B1 / §13.2, what changes:**
+- **R-MOVES = MOVES-REFUTED (R3), its never-seen half: REPLICATED (MET), scoped.** The scope is LEAF-K8 and the registered
+  bot-heavy mix. It is not met on end2 alone or on the snapshot-game states in either build. §16.9 read "NOT replicated".
+- **The population split: REPLICATED.**
+- **R-RIVALS U: PARTLY MET.**
+- **The M half: PARTLY MET.** B3 fails in both; n_M and B4 now differ.
+- **R-REPLICATE (§12.2) as a whole: still NOT MET** (the M side's point rule; TV on M, S, U.move and the placement).
+- Amendment 3, R-STAGE-CLASS and R-DOSE's U parts are not compared.
+
+**Confidence (the third party's; §16.8, §16.9 and §16.10's figures stay as written):**
+
+| statement | confidence |
+|---|---|
+| hidden team information binds honest search | ≈ 95 % |
+| the moves are THE binding constraint | ≈ 5 % |
+| the moves are a material share | ≈ 90 % |
+| **the never-seen Pokémon are the largest class on the registered mix at LEAF-K8** | **≈ 85 %** |
+| … on competent-opponent states | ≈ 30 % |
+| U's dominance is a bot-game property | ≈ 80 % |
+
+**§13.2's gate** opens for that one scoped claim only. **E2** (the competent-opponent bank) is now the decisive open read.
+Next come E3 (the second referee: what both builds share), the M side's residual difference, a tie-free or 16-world leaf
+(E5, for the scorer dependence) and the plateau replication (E6).
+
 ---
 
 ## 17. Open questions for the owner
@@ -1897,3 +1984,4 @@ on U, E1 and E2 are the remaining preconditions.
 | 2026-10-15 | **RED TEAM READ (§16.10; §13.2's mandate: break the Tier-1 conclusions)**: C1 WEAKENED (moves-not-binding SURVIVES; U's dominance holds on the registered mix only: not detected on the snapshot-opponent states or on end2 alone, and equal per hidden fact), C2 SURVIVES (scoped to the 8-rollout leaf), C3 WEAKENED, C4 WEAKENED, C5 BROKEN in its two quantitative parts, C6 SURVIVES | A post-hoc re-read of the frozen table with its own code: tie-free LEAF-K8 (three tie rules) and the continuous scorers; R3 on its absolute numerators (the n-side needs no F) with the exclusions imputed; a U-class leak check and a team-text check of the U arms; the information-volume normalisation; the opponent-population split (§10.4's registered axis, read post hoc for R3); the R-true 2 × 2; the referee's seed halves; seven settling experiments sized, E1 (the blind U-arm build) written ready to dispatch. Confidence (red team): U the largest class on the registered mix ≈ 70 %, on competent-opponent states ≈ 35 %; the moves THE constraint ≈ 5 % | editing §16.8's verdicts or the author's / third party's confidences (they stand as written; the red team's numbers are its own); a re-play (every attack was answerable from the stored per-world arrays); fixing `worlds.py` (a separate unit, `8702a56f`; its records never touched a world) | `measurements/hidden_info_tier1_2026-10-13/red_team.md` / `.json`, `red_team.py`; ledger 2026-10-15 |
 | 2026-10-15 | **THE KNOCK-IN FORKS READ (§8.7): K-MOVES NULL, K-ITEMS NULL, species NULL, K-SPREADS NOT DETECTED; no extension; MOVES-FIRST false; K-L-WORTH not declarable; the honest dependence cost recorded DESCRIPTIVELY** | §8.5's coded rules (`read_hib.py`, `f68f686b`) applied to the 36 primary cells as banked (`ffd2280e`), quoted verbatim from `verdict.json`; the v8 read kept descriptive and its confound list extended (the stamp names the learnset data fix; the fp32 → bf16 trunk switch and the pin change are added here); the honest cross read as a dependence cost (told − withheld ≈ +1.9 pp for moves and species, ≈ 0 for items and spreads) with three candidate mechanisms (distribution shift, learned reliance, capacity reallocation) and five separating experiments, none queued; the dose match read with `main.dose` (ratio 1.00 on all 15 forks); the registered "reading with the frozen axes" stated as NOT FIRING as written (K-MOVES-NULL meets R-MOVES REFUTED, not MOVES-BINDING) and the generalised X5 reading labelled an interpretation; implications for the search ledger and the roadmap (no belief-for-the-policy programme; information is a SEARCH lever; privileged information critic-only if ever; the 15M policy still improving) | treating told − withheld as a registered verdict (§8.4 registered the honest cross as a secondary read with no rule); reading K-L-WORTH without the placebo (decision (a)); folding species into K-RANK's registered verdict (the arm postdates the registration); quoting the v8 +4.4 pp as a maturity measurement (three confounds) | `measurements/hidden_info_forks_2026-10-14/` (README Results, `crosses/result/verdict.json`, `h.json`); the forks' K9(b) banks (`bank_hib.py`); `main.dose`; ledger 2026-10-15 MEASUREMENT (MAJOR) "THE KNOCK-IN FORKS" |
 | 2026-10-15 | **§8.2's identity precondition is unreachable at HEAD after legacy deletion U3** (config v157; manifest D-LD7, F-LD-5) | later forks of this lane run from the recorded P_hib / `hib-forks-pin`, or re-register against a post-U3 parent; the banked forks are unaffected (they ran before U3) | an RNG burn replaying the deleted draws (rejected in D-LD7) | the manifest §0 D-LD7, §6 F-LD-5; the ledger's U3 entry |
+| 2026-10-16 | **THE BLIND U-ARM BUILD COMPARED by a third party (§16.11; red team E1, under its pre-registration `8dd25833`)**: the registered criterion AGREES on C (978 states, LEAF-K8): s_U 0.32 / 0.31, n_U 0.83 / 0.92, R3's two numerators and conditions the same (both hold), σ_U / ν_U \|Δ\| 0.0022 / 0.0014; R3's never-seen half REPLICATED, scoped (LEAF-K8, the registered bot-heavy mix; R3 fails on end2 alone and on snapshot-game states in BOTH builds); the population split REPLICATED; R-REPLICATE §12.2 as a whole still NOT MET (the M side) | The blind build's `HOLD = false` on prod ruled a guard-caused EXCLUSION, not an identity failure: no outcome differs where both rows exist; the guard's one trigger is a single true set's untyped Hidden Power (all-31 IVs = Dark) that the engine reports typed, it raised before any playout on exactly the 4 states holding that set, the original's O−U equals O there outcome for outcome, and the states lie outside C. Rule 8 read as the study's ±0.0005 (primary), the ±0.005-band reading reported (DISAGREE, on the original's own s-side lower bound +0.0020). Reported beside the verdict: the scorer dependence (R3 flips at LEAF-K4 / K1, in opposite directions), the M side's residual difference with the learnset handicap fixed (ν_M −0.0078; n_M 0.38 vs 0.54, B4 differs; §16.9's handicap attribution not supported), the permutation-null TV (U content at the null; U.move, the first-slot placement (U2), M.move and S.nature differ). Third-party confidence that the never-seen Pokémon are the largest class on the registered mix at LEAF-K8 ≈ 85 %, on competent-opponent states ≈ 30 % | reading the literal `HOLD = false` as voiding the build (the missing rows carry no outcome, their cause is construction-independent, and no compared number contains them); the ±0.005 band as primary (it would re-write the original's registered R3 rule inside a comparison); quoting R3 as replicated without its scorer and population scope; editing §16.8–§16.10's verdicts or confidences | `measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md` / `.json`, `third_party_compare.py`; the blind build's README, `result.json`, `imp_per_state.json`; ledger 2026-10-16 |

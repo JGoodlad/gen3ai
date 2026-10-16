@@ -25,6 +25,10 @@ before any arm output existed). **This folder does not compare.**
 
 DONE: the read ran on the complete 1,200 states (2026-10-16). **Results: filled below; one identity check reads FALSE on prod (2 states, a guard false positive on Hidden Power naming), see "Identities" in Results.**
 
+**COMPARED by a third party (2026-10-16):** [`third_party_comparison.md`](third_party_comparison.md) / `.json`
+(`third_party_compare.py`). The pre-registered criterion AGREES at LEAF-K8 on the 978 common states, and the identity issue is
+ruled a guard-caused exclusion. This folder's own Results below are unchanged.
+
 ## What was built (`hiu/`)
 
 | file | what it does |
