@@ -523,6 +523,17 @@ def arm_compile_sentinel(model: Any, *, batch_size: int,
     # naming its failing guard, never a warm-up iteration's silent absorption.
     ctl.lock("the end of startup (the region gate, the reset and the prewarm of every declared "
              "signature)")
+    # gen3_gate_releases_memory_v1: the gate and the prewarm are a STARTUP TRANSIENT — their peak (several GiB of
+    # arms run one after another at the micro size) must not stay held in the allocator's cache, where the update-fit
+    # check would read it as the update's demand and nothing else could use it. Drop the graph the last forward left
+    # stashed, then hand the cached blocks back. Neither changes a value: the stashes keep theirs, and the caching
+    # allocator only decides WHERE a tensor lives (every block is 512-byte aligned either way).
+    _cr.release_gate_memory(model)
+    if torch.cuda.is_available() and torch.cuda.is_initialized():
+        import gc
+        gc.collect()
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
     # K6's IN-RUN PARITY CANARY: the startup gate proves the graph at t=0, the canary at t=N.
     from agents.model.compile_canary import CANARY_EVERY, CANARY_FIRST, CompileCanary
     ctl.canary = CompileCanary(model, batch_size=int(batch_size), emit=emit)

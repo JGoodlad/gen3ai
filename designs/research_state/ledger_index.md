@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-26,050-line file. **The ledger itself is append-only and is never edited by this**;
+26,112-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**884 headings · 829 dated · 2026-08-01 → 2026-10-15 · ledger 26,050 lines.**
+**885 headings · 830 dated · 2026-08-01 → 2026-10-16 · ledger 26,112 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -904,3 +904,4 @@ rename.
   - `L25919` · `2026-10-15` · MEASUREMENT · **The X26 EXIT CHECK assembled at `87e493c3`: 7 of 12 rows PASS, E3 DEFERRED, E5 / E6 / E7 / E11's announcement OPEN; T36's canary fix CONFIRMED on CUDA (I30 CLOSED); the compiled bf16 arm's TAKEN-action log-prob shift on the toy grew 0.050 (15M) → 0.110 (72.66M), 61 % of `R1_LOGPROB_SHIFT_MAX` 0.18 and 6.5× below the refusal at 0.72, and is now WATCHED in-run; P_X26 = main after the CPU-Inductor fix; R-60 DROPPED; earliest X26 launch Fri 10-16 ≈ 00:00–01:00 PDT**
   - `L25971` · `2026-10-15` · MEASUREMENT · **T33 on seed 4002: the T-ENT toy does NOT plateau by its 100M cap. `rb_toy_ent_s4002`'s 16 Tier-1 checks (25M–100M, Δ 5M / W 20M) all read GAIN, with no CONFLICT; the newest node still scores 52.6–53.8 % against the node 20M back from 80M on. Under the §3.4 rule it is a CAP stop, so §3.5's "plateau against plateau" becomes production at plateau against a still-climbing toy**
   - `L26007` · `2026-10-15` · GIGO FIX · **A real red slow test hid behind a stale PASS: `compiled_first_update_test`'s CPU cell had been red since the end state became production (`ed58a3ad`) — torch 2.8.0's Inductor CPU backend emits an undeclared `tmp` for a per-row gather beside a strided `[B]` reduction (B, K >= 16). R1's CPU compile now carries `cpp.simdlen = 1` (CPU only; CUDA's kwargs byte-identical) and the cell passes again; the CUDA twin is UNREAD at the end-state graph (`gen3_cpu_inductor_scalar_v1`)**
+  - `L26051` · `2026-10-16` · CRASH FIX · **X26's launch (`rb_xs_s2701` at `71351ff5`) was refused by `UpdateWontFit` (headroom 978 < 1,024 MiB) because T36's gate relocation forward kept a 4,486 MiB fp32 autograd graph alive under the compiled arm and the allocator held the 8.2 GiB gate peak into the fit reading; the relocation now keeps nothing for a backward, the gate hands its cache back, and the update-fit demand is the peak reserved over the dry update AND the mid-run canary's check from an emptied cache — headroom 2,444 MiB on the X26 argv (`gen3_gate_releases_memory_v1`, `gen3_update_fit_v2`)**

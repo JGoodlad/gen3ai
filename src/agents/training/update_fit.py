@@ -21,9 +21,21 @@ logger. The run that follows is BIT-IDENTICAL to one without the check (`update_
 learner golden). One epoch suffices: every epoch runs the same micro-batches through the same code,
 and the first carries the once-per-update diagnostics (the cadence's "first update of the process").
 
-THE VERDICT (deterministic: a pass or a typed FATAL, no warn tier). The allocator's PEAK RESERVED
-during the dry update is the update's DEMAND. With the card this process can have = its reserved bytes
-now + the device's free bytes now (other processes and the CUDA context already excluded):
+THE DEMAND (`gen3_update_fit_v2`, 2026-10-15) is what TRAINING will need, not what startup left behind. v1 read the
+allocator's peak reserved during the dry update from whatever cache startup had left, so a startup TRANSIENT held
+in the cache (the region gate's arms: 9,790 MiB reserved on `rb_xs_s2701`, whose update peaked at 6,579 allocated)
+was read as the update's demand and refused a run that fit with ~3 GiB to spare. v2:
+
+  1. starts from the steady state's FLOOR: the allocator's cached blocks are handed back first (`empty_cache`;
+     the gate already releases its own, `compile_trainer.arm_compile_sentinel`) — so the reading is the update's;
+  2. runs the dry update (below), then the MID-RUN CANARY's check once (`CompileCanary.measure`: the gate's
+     arms on the same rows, every 100 updates in the run, with training state resident), in that order — the
+     run's own order at update 10, the canary's blocks requested from the cache the update left;
+  3. DEMAND = the PEAK RESERVED over both. Reserved, not allocated: the gap is the allocator's fragmentation
+     over the sequence, MEASURED rather than assumed (`fragmentation_mib` in the record).
+
+THE VERDICT (deterministic: a pass or a typed FATAL, no warn tier). With the card this process can have = its
+reserved bytes now + the device's free bytes now (other processes and the CUDA context already excluded):
 
     headroom = (reserved_now + device_free_now) - demand   must be >= FIT_HEADROOM_MIB (1,024 MiB)
 
@@ -56,7 +68,7 @@ import numpy as np
 import torch
 
 MiB = 1 << 20
-SCHEMA = "gen3_update_fit_v1"
+SCHEMA = "gen3_update_fit_v2"
 #: Device headroom the first update must leave: K6's ceiling margin (512) + D-6's rule (512).
 FIT_HEADROOM_MIB = 1024.0
 SNAPSHOT_ENV = "GEN3AI_UPDATE_FIT_SNAPSHOT"
@@ -69,7 +81,7 @@ class UpdateWontFit(RuntimeError):
 
 @dataclass
 class FitReading:
-    demand_mib: float            # peak reserved during the dry update
+    demand_mib: float            # peak reserved over the dry update + the dry canary (v2)
     peak_alloc_mib: float        # peak allocated during it
     reserved_mib: float          # reserved after it (the allocator keeps its cache)
     device_free_mib: float       # device free after it
@@ -85,9 +97,20 @@ class FitReading:
     #: every key the dry update put on the logger's bus — the startup metric-key check's input
     #: (`agents.training.metric_keys`, gen3_metric_key_collision_v1)
     metric_keys: Tuple[str, ...] = ()
+    #: v2: the update's own peak reserved, the dry canary's (None: no compiled learner, so no canary), and the
+    #: canary check's disagreement text when its comparison did not pass (reported, never a verdict here)
+    update_demand_mib: float = 0.0
+    canary_demand_mib: Optional[float] = None
+    canary_peak_alloc_mib: Optional[float] = None
+    canary_note: Optional[str] = None
+
+    @property
+    def fragmentation_mib(self) -> float:
+        """Peak reserved minus peak allocated over the measured sequence: the allocator's measured overhead."""
+        return self.demand_mib - self.peak_alloc_mib
 
     def as_dict(self) -> Dict[str, Any]:
-        return dict(self.__dict__)
+        return {**self.__dict__, "fragmentation_mib": self.fragmentation_mib}
 
 
 # ------------------------------------------------------------------------------ state preservation
@@ -320,9 +343,29 @@ def _behaviour_probe_setup(model: Any, buf: Any, dump_dir: str) -> None:
         model._rust_version = 0
 
 
-def dry_update(model: Any, *, epochs: int = 1) -> FitReading:
-    """ONE real `train()` (``epochs`` epochs) on `fixture_buffer`, inside `preserved_learner`; returns
-    the allocator's reading. An out-of-memory is CAUGHT and reported in ``oom`` (the caller refuses)."""
+def armed_canary(model: Any) -> Any:
+    """The in-run parity canary armed for THIS model (`compile_control`'s, set by `arm_compile_sentinel`), or None
+    (a learner that is not compiled has no canary)."""
+    from agents.model import compile_control as cc
+    ctl = getattr(cc, "_CONTROL", None)
+    canary = getattr(ctl, "canary", None)
+    return canary if canary is not None and getattr(canary, "model", None) is model else None
+
+
+def release_cached_blocks(device: Any) -> None:
+    """Hand the allocator's CACHED blocks back (gen3_update_fit_v2 step 1): the reading starts from what the steady
+    state HOLDS, not from a startup transient's cache. Values never change: the cache only decides where a tensor
+    lives."""
+    import gc
+    gc.collect()
+    torch.cuda.synchronize(device)
+    torch.cuda.empty_cache()
+
+
+def dry_update(model: Any, *, epochs: int = 1, canary: Any = None) -> FitReading:
+    """ONE real `train()` (``epochs`` epochs) on `fixture_buffer`, inside `preserved_learner`, then (``canary``, a
+    `CompileCanary`) the in-run canary's check once on the restored learner; returns the allocator's reading over
+    both. An out-of-memory is CAUGHT and reported in ``oom`` (the caller refuses)."""
     dev = next(model.policy.parameters()).device
     cuda = dev.type == "cuda"
     snap_path = os.environ.get(SNAPSHOT_ENV) if cuda else None
@@ -334,7 +377,7 @@ def dry_update(model: Any, *, epochs: int = 1) -> FitReading:
     recorded: Tuple[str, ...] = ()
     phases = _PhasePeaks(dev)
     if cuda:
-        torch.cuda.synchronize(dev)
+        release_cached_blocks(dev)
         floor = torch.cuda.memory_allocated(dev)
         torch.cuda.reset_peak_memory_stats(dev)
     else:
@@ -367,34 +410,78 @@ def dry_update(model: Any, *, epochs: int = 1) -> FitReading:
     del buf
     import shutil
     shutil.rmtree(dump_dir, ignore_errors=True)
+    note: Optional[str] = None
+    if cuda:
+        # the hook resets the peak counters at every mark: the update's tail (after its last mark) is closed here,
+        # so the canary's segment below is its own
+        phases.mark("update_tail")
+    update_names = list(phases.peaks)
+    if canary is not None and oom is None:
+        # THE MID-RUN CANARY (gen3_update_fit_v2 step 2): its arms run with training state resident, after an
+        # update, every 100 updates — so they must fit on the card the update leaves. Measured, not estimated.
+        try:
+            note = canary.measure()
+        except torch.cuda.OutOfMemoryError as exc:
+            oom = "the canary's check: " + str(exc).splitlines()[0]
+        if cuda:
+            phases.mark("canary")
     secs = time.perf_counter() - t0
     if not cuda:
         return FitReading(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, secs, int(live_buf.buffer_size * live_buf.n_envs),
-                          source, oom, metric_keys=recorded)
+                          source, oom, metric_keys=recorded, canary_note=note)
     torch.cuda.synchronize(dev)
-    # the hook resets the peak counters at every mark: the update's peak is the max over its segments
-    # and whatever ran after the last mark
-    demand = max([torch.cuda.max_memory_reserved(dev) / MiB] + [v[1] for v in phases.peaks.values()])
-    peak = max([torch.cuda.max_memory_allocated(dev) / MiB] + [v[0] for v in phases.peaks.values()])
+    d = fit_demand(phases.peaks, update_names, (torch.cuda.max_memory_allocated(dev) / MiB,
+                                                torch.cuda.max_memory_reserved(dev) / MiB))
     reserved = torch.cuda.memory_reserved(dev) / MiB
     free = torch.cuda.mem_get_info(dev)[0] / MiB
     card = reserved + free
-    return FitReading(demand, peak, reserved, free, card, card - demand, floor / MiB, secs,
-                      int(live_buf.buffer_size * live_buf.n_envs), source, oom, phases.table(), recorded)
+    return FitReading(d.demand_mib, d.peak_alloc_mib, reserved, free, card, card - d.demand_mib, floor / MiB, secs,
+                      int(live_buf.buffer_size * live_buf.n_envs), source, oom, phases.table(), recorded,
+                      update_demand_mib=d.update_demand_mib, canary_demand_mib=d.canary_demand_mib,
+                      canary_peak_alloc_mib=d.canary_peak_alloc_mib, canary_note=note)
+
+
+@dataclass
+class Demand:
+    demand_mib: float
+    peak_alloc_mib: float
+    update_demand_mib: float
+    canary_demand_mib: Optional[float]
+    canary_peak_alloc_mib: Optional[float]
+
+
+def fit_demand(peaks: Dict[str, List[float]], update_phases: List[str], tail: Tuple[float, float]) -> Demand:
+    """THE DEMAND DEFINITION (gen3_update_fit_v2), pure: ``peaks`` = each measured segment's [peak allocated, peak
+    reserved] (MiB; the update's `phase_hook` segments, its ``update_tail`` and the dry ``canary``), ``update_phases``
+    the update's own segment names, ``tail`` = (allocated, reserved) peaks after the last mark. The demand is the PEAK
+    RESERVED over EVERY segment — the update's AND the mid-run canary's, measured in the run's order from an emptied
+    cache — so a canary whose check outgrows the update sets the demand, and its gap to the peak allocated is the
+    measured fragmentation."""
+    demand = max([tail[1]] + [v[1] for v in peaks.values()])
+    peak = max([tail[0]] + [v[0] for v in peaks.values()])
+    upd = max([0.0] + [peaks[k][1] for k in update_phases if k in peaks])
+    can = peaks.get("canary")
+    return Demand(demand, peak, upd, None if can is None else can[1], None if can is None else can[0])
 
 
 def verdict(r: FitReading, mode: str = "?", run_dir: Optional[str] = None) -> str:
     """The deterministic verdict on one reading: the log line, or `UpdateWontFit` on an OOM or a
     headroom below `FIT_HEADROOM_MIB`. Writes `<run_dir>/update_fit.json` either way."""
+    can = ("no compiled learner, so no canary" if r.canary_demand_mib is None else
+           f"the canary's check {r.canary_demand_mib:,.0f} reserved / {r.canary_peak_alloc_mib or 0.0:,.0f} allocated")
     line = (f"🧮 [UpdateFit] dry first update ({r.rows:,} fixture rows, 1 epoch, device batch {mode}, "
-            f"{r.seconds:.1f}s): demand (peak reserved) {r.demand_mib:,.0f} MiB, peak allocated "
-            f"{r.peak_alloc_mib:,.0f}, floor {r.floor_alloc_mib:,.0f}; card for this process "
+            f"{r.seconds:.1f}s) + the mid-run canary's check, from an emptied cache: demand (peak reserved) "
+            f"{r.demand_mib:,.0f} MiB (the update {r.update_demand_mib:,.0f}; {can}), peak allocated "
+            f"{r.peak_alloc_mib:,.0f}, fragmentation {r.fragmentation_mib:,.0f}, floor {r.floor_alloc_mib:,.0f}; card for this process "
             f"{r.card_mib:,.0f} (reserved {r.reserved_mib:,.0f} + free {r.device_free_mib:,.0f}) -> "
             f"headroom {r.headroom_mib:,.0f} MiB vs the declared {FIT_HEADROOM_MIB:,.0f}"
             + (f"; peak segment '{max(r.phase_peaks, key=lambda k: r.phase_peaks[k]['peak_reserved_mib'])}'"
                if r.phase_peaks else ""))
     if r.oom:
         line = f"🧮 [UpdateFit] dry first update ran OUT OF MEMORY ({r.oom}); " + line.split(": ", 1)[1]
+    if r.canary_note:
+        line += (f". NOTE: the dry canary's comparison did not pass on the weights the startup gate just passed "
+                 f"({r.canary_note[:300]}) — memory only here; the in-run canary judges")
     if run_dir:
         import json
         with contextlib.suppress(OSError):
@@ -421,6 +508,6 @@ def check_update_fits(model: Any, run_dir: Optional[str] = None) -> Optional[str
     if next(model.policy.parameters()).device.type != "cuda":
         check_startup_metric_keys(model)
         return None
-    reading = dry_update(model)
+    reading = dry_update(model, canary=armed_canary(model))
     check_startup_metric_keys(model, reading.metric_keys)
     return verdict(reading, str(getattr(model, "device_batch_mode", "?")), run_dir)

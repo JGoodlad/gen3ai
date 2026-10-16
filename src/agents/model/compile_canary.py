@@ -91,6 +91,24 @@ FATAL_CHECKPOINT = "final_model_canary_fatal"
 #: numbers every canary record carries (`compile_regions.GradWatch`). The pointer head is the family the
 #: `rb_toy_ent_s4001` FATAL named; the record costs no extra compute (the rule computes these numbers anyway).
 WATCH_PREFIXES: Tuple[str, ...] = ("pointer_head.",)
+#: TEST HOOK (gen3_canary_memory_v1, 2026-10-15): run the FIRST scheduled canary at this update instead of
+#: `CANARY_FIRST` — a GPU smoke reads the canary's memory and verdict at update 2 instead of 10. The cadence after it
+#: is unchanged; a check never changes training (module docstring), so this moves only WHEN one runs. Unset in every
+#: production launch.
+FIRST_ENV = "GEN3AI_CANARY_FIRST"
+
+
+def _first_from_env() -> Optional[int]:
+    v = os.environ.get(FIRST_ENV, "").strip()
+    if not v:
+        return None
+    try:
+        n = int(v)
+    except ValueError as exc:
+        raise ct.CompileTrainerError(f"${FIRST_ENV}={v!r} is not a positive integer") from exc
+    if n < 1:
+        raise ct.CompileTrainerError(f"${FIRST_ENV}={v!r} is not a positive integer")
+    return n
 
 
 class CompileCanaryError(ct.CompileTrainerError):
@@ -156,7 +174,9 @@ class CompileCanary:
         self.batch_size = int(batch_size)
         self.every = max(1, int(every))
         # the first canary: `CANARY_FIRST` at the production cadence; a custom cadence (tests) starts
-        # at its own period unless told otherwise
+        # at its own period unless told otherwise; `$GEN3AI_CANARY_FIRST` (a smoke's test hook) wins
+        if first is None:
+            first = _first_from_env()
         self.first = int(first) if first is not None else (CANARY_FIRST if self.every == CANARY_EVERY
                                                             else self.every)
         self._emit = emit
@@ -164,6 +184,7 @@ class CompileCanary:
         self.updates = 0
         self.runs = 0
         self.unconfirmed = 0            # cumulative: disagreements that did not reproduce
+        self.memory: Dict[str, float] = {}   # the last check's card (gen3_canary_memory_v1; CUDA only)
         self.prev_disagreed = False     # the previous SCHEDULED canary disagreed (unconfirmed)
         self.last: Dict[str, float] = {}
 
@@ -180,23 +201,44 @@ class CompileCanary:
         """One full comparison (compiled AND eager re-computed) on fixture slice ``slice_``. Raises
         `CompileTrainerError` on a disagreement; restores training mode and `.grad` either way. ``watch``: a
         `compile_regions.GradWatch` the live rung fills (whatever the verdict)."""
+        from agents.model import compile_regions as cr
         model = self.model
         policy = model.policy
         was_training = bool(policy.training)
         devices = [torch.cuda.current_device()] if torch.cuda.is_available() else []
+        mem = cr.GateMemory(model)
         try:
-            with torch.random.fork_rng(devices=devices):
+            with torch.random.fork_rng(devices=devices), cr.gate_memory(mem):
                 return self._regions(model, out, slice_, watch)
         finally:
             policy.set_training_mode(was_training)
             for p in policy.parameters():
                 p.grad = None
+            cr.release_gate_memory(model)       # gen3_gate_releases_memory_v1: no stashed graph outlives the check
+            if mem.rows:                        # gen3_canary_memory_v1: the check's card, with training state resident
+                self.memory = {"start_alloc_mib": round(mem.start[0], 1),
+                               "transient_mib": round(mem.peak_above_start(), 1),
+                               "peak_alloc_mib": round(mem.start[0] + mem.peak_above_start(), 1),
+                               "reserved_mib": round(max(r[3] for r in mem.rows), 1)}
+
+    def measure(self) -> Optional[str]:
+        """The scheduled check's comparison ONCE, for its MEMORY only (`update_fit.dry_update`'s dry canary,
+        gen3_update_fit_v2): the same arms on the same rows as `run`, but no verdict is recorded, nothing is counted
+        and no state changes (`_check` restores training mode and `.grad`, under `fork_rng`). Returns None, or the
+        disagreement's text (a startup check on the weights the gate just passed — reported, never a verdict here)."""
+        try:
+            self._check(0, {})
+        except ct.CompileTrainerError as exc:
+            return str(exc)[:500]
+        return None
 
     def _record(self, verdict: str, detail: str = "", watch: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         rec: Dict[str, Any] = {"verdict": verdict, "update": self.updates,
                                "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
                                "time": time.time(), "detail": detail[:4000],
                                "canary_shift_max": self._shift_max_record()}
+        if self.memory:
+            rec["memory"] = dict(self.memory)
         if watch:
             rec["watch"] = watch
         _append(_run_dir(self.model), VERDICTS_FILE, {k: v for k, v in rec.items() if k != "detail"}
@@ -302,10 +344,17 @@ class CompileCanary:
         out["compile/canary_ok"] = 1.0
         out["compile/canary_unconfirmed_disagreements"] = float(self.unconfirmed)
         out["compile/canary_seconds"] = time.perf_counter() - t0
+        if self.memory:
+            out["compile/canary_peak_alloc_mib"] = float(self.memory["peak_alloc_mib"])
+            out["compile/canary_reserved_mib"] = float(self.memory["reserved_mib"])
         self.last = out
         from agents.model.trunk_precision import trunk_precision_of
+        memo = (f"; card: peak allocated {self.memory['peak_alloc_mib']:,.0f} MiB (training state "
+                f"{self.memory['start_alloc_mib']:,.0f} + the check's transient {self.memory['transient_mib']:,.0f}), "
+                f"reserved {self.memory['reserved_mib']:,.0f}" if self.memory else "")
         self._say(f"🐤 [CompileCanary] update {self.updates}: compiled == eager on the fixture "
-                  f"({trunk_precision_of(self.model.policy)}, {out['compile/canary_seconds']:.1f} s) — " + " | ".join(rules))
+                  f"({trunk_precision_of(self.model.policy)}, {out['compile/canary_seconds']:.1f} s{memo}) — "
+                  + " | ".join(rules))
         return out
 
     # ------------------------------------------------------------------ the compiled region

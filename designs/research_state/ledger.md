@@ -26047,3 +26047,65 @@ stops failing the repro, so the option is retired with the bug.
    modules that can initialise CUDA). Every later run of the unit used `CUDA_VISIBLE_DEVICES=""` and the scripts assert
    `not torch.cuda.is_available()`. The earlier full repros (through `extractor_compiles_test._cuda_skip_reason`) may have
    done the same.
+
+### 2026-10-16 · CRASH FIX · **X26's launch (`rb_xs_s2701` at `71351ff5`) was refused by `UpdateWontFit` (headroom 978 < 1,024 MiB) because T36's gate relocation forward kept a 4,486 MiB fp32 autograd graph alive under the compiled arm and the allocator held the 8.2 GiB gate peak into the fit reading; the relocation now keeps nothing for a backward, the gate hands its cache back, and the update-fit demand is the peak reserved over the dry update AND the mid-run canary's check from an emptied cache — headroom 2,444 MiB on the X26 argv (`gen3_gate_releases_memory_v1`, `gen3_update_fit_v2`)**
+
+**What happened.** The fresh `--arch production` launch with the X26 argv (the ride-along heads ON) at `71351ff5`
+passed the bf16 parity gate (2048 / 2048 boundary rows relocated, T36) and then exited FATAL_CONFIG: `UpdateWontFit`,
+demand (peak reserved) 9,790 MiB, peak allocated 6,579, card 10,768 → headroom 978 < the declared 1,024. The startup
+ledger's "compiled regions: gate + prewarm + lock" row read reserved +7,188 / peak 8,244 MiB, against +4,840 / 5,428
+on the `ffe2961b` production smoke (pre-T36, no ride-alongs). The dry update itself (6.5 GB allocated) was unchanged.
+
+**Attribution, MEASURED on the GPU** (RTX 3080 Ti, the X26 argv, a scratch models dir; the old behaviour reproduced
+exactly at `e092a02b` = `71351ff5` + a per-step memory record: reserved 9,790, peak 8,244). The record (MiB allocated
+after / high-water): `start 717/805; relocation forward 5,203/5,362, compiled arm 1,237/8,201, …`. The relocation
+forward (one fp32 grad-mode forward of R1's eager body at B = 2,048, never backpropagated) RETAINED 4,486 MiB: its
+outputs are stashed on the policy (the extractor's typed `stash` container, the masked distribution) and they hold its
+autograd graph. That graph lived under the compiled arm (~3.0 GiB of its own) until the arm's forward replaced the
+stashes, so the peak became 5,203 + ~3,000 = 8,201. That is the whole +2.8 GiB over `ffe2961b`. The ride-along heads are
+not in R1 (they update in the eager tail): +43 MiB of weights. The allocator kept the 8.2 GiB cached, and the
+update-fit check (v1) read that cache as the update's demand. The mid-run canary ran the same stack: at update 2 it
+peaked at 8,223 MiB allocated with training state resident (984 + 7,239), so a run that passed startup would have
+taken the card to its edge at every canary.
+
+**The fix (no number changes).**
+1. The relocation forward runs under `saved_tensors_hooks` that keep nothing (K9(b)'s probe recipe,
+   `consistency._drop_saved`; the hooks change what autograd keeps, never a kernel or a value), then the module-level
+   stashes are detached (`release_gate_memory`).
+2. `arm_compile_sentinel` releases the stashes and empties the allocator cache after the LOCK.
+3. `update_fit` v2: from an emptied cache, the dry update and then the canary's check once (`CompileCanary.measure`,
+   no verdict recorded), DEMAND = the peak reserved over both. The 1,024 MiB bar and the typed refusal stay.
+Rejected: `PYTORCH_CUDA_ALLOC_CONF=expandable_segments` (it changes the allocator against the bf16 A/B reference; not
+measured), lowering the bar, a smaller micro-batch (a recipe change).
+
+**Verified on the GPU at `20c07e0b` (the fix's code), the X26 argv, `GEN3AI_CANARY_FIRST=2`.**
+
+| | `71351ff5` (v1) | v2 demand, graph still retained (`e092a02b`) | THE FIX (`20c07e0b`) |
+|---|---|---|---|
+| gate peak allocated | 8,244 | 8,244 | **5,480** |
+| ledger gate row, reserved Δ | +7,188 | +534 | +492 |
+| dry update reserved | 9,790 (the gate's cache) | 8,426 | 8,324 |
+| dry canary reserved / allocated | — | 9,624 / 8,264 | 8,324 / 5,500 |
+| demand → headroom | 9,790 → **978 FATAL** | 9,624 → 1,170 | 8,324 → **2,444 PASS** |
+| canary at update 2, allocated | — | 8,223 (state 984 + 7,239) | **5,458** (984 + 4,474), PASS |
+| the run's reserved, updates 1–4 | — | 9,624 each (= the prediction) | **8,324 each (= the prediction)** |
+
+Four updates, no OOM. The K9 learner golden (`learner_golden check`, CPU): IDENTICAL.
+
+**Tags.** CRASH FIX · GIGO-adjacent (a startup transient read as demand) · reach: every compiled CUDA launch at a
+commit ≥ `5236eb22` (T36) refused or ran near the edge; X26's pin moves to the landed sha.
+
+**FINDINGS (standing rule 7).**
+1. **`consistency.release_autograd_stashes` does NOT reach the extractor's typed `stash` container** (nor the op's):
+   it detaches only tensor attributes held directly on a module. The K9(b) probe is safe because its hooks keep
+   nothing; any other never-backpropagated grad-mode forward that relies on the release alone keeps its graph. Not
+   changed here (the probe's function; out of scope).
+2. **v1 also under-measured the first update's fragmentation once the cache was empty**: from an emptied cache the update
+   alone reaches 8,324–8,426 MiB reserved against 6,579 allocated (1.7–1.8 GiB of fragmentation). v2 measures it; the
+   run's reserved matched the prediction exactly in both v2 launches.
+3. The dry update starts from an emptied cache, while the real first update follows a rollout whose T2 transients may
+   have shaped the cache; both v2 launches read the run's reserved EQUAL to the prediction over 4 updates, and K6's trend
+   watches longer runs. A cache shaped differently over thousands of updates is UNVERIFIED.
+4. `expandable_segments` was not measured (not needed; its A/B-reference caveat stands).
+5. Every verification launch was a cold compile (~19 min each, a new commit is a new shared-cache key); a memory-only
+   change still pays it.

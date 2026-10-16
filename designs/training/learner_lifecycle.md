@@ -313,7 +313,39 @@ allocated / 9.49 GiB reserved, 1.14 GiB of it the then-resident device batch; th
   exception was the python env core's worker pool, which inferred on the snapshot itself on the device
   `--self-play-use-cpu` chose (both deleted: the core in U3, the flag in P11).
 
-## The update fit check (`gen3_update_fit_v1`) and fitting N = 256
+## The update fit check (`gen3_update_fit_v2`) and fitting N = 256
+
+**v2 (2026-10-15): the DEMAND is what TRAINING will need, not what startup left in the cache.** v1 read the peak
+reserved during the dry update from whatever cache startup had left — on `rb_xs_s2701` (X26's argv at `71351ff5`) the
+region gate's 8.2 GiB peak was still cached (9,790 MiB reserved), so a run whose update peaked at 6,579 MiB allocated
+was refused (headroom 978 < 1,024). v2, in `update_fit.dry_update`:
+
+1. hands the allocator's cached blocks back first (`release_cached_blocks`: `gc.collect` + `empty_cache`; the gate
+   already releases its own, `compile_flags.md` "The gate releases its memory"), so the reading starts from the steady
+   state's floor;
+2. runs the dry update, then the MID-RUN CANARY's check once on the restored learner (`CompileCanary.measure`: the
+   gate's rungs on the golden rows, with training state resident — the run's own order at update 10 and every 100
+   updates after; its disagreement text, if any, is a NOTE on the line, never a verdict here);
+3. DEMAND = the PEAK RESERVED over both segments (`fit_demand`, pure, pinned by `update_fit_test`). Reserved, not
+   allocated: the gap is the allocator's fragmentation over the sequence, MEASURED (`fragmentation_mib` in
+   `update_fit.json`, beside `update_demand_mib`, `canary_demand_mib`, `canary_peak_alloc_mib`, `canary_note`).
+
+The bar is unchanged (1,024 MiB). The line names both parts: `demand (peak reserved) D MiB (the update U; the canary's
+check C reserved / A allocated), peak allocated …, fragmentation …`.
+
+**PREDICTIVE, read on the GPU** (RTX 3080 Ti, the X26 argv, `GEN3AI_CANARY_FIRST=2`):
+
+| code | gate + prewarm (ledger: reserved Δ / peak alloc) | dry update reserved | dry canary reserved / alloc | demand → headroom | the run: reserved at updates 1–4 / canary at update 2 |
+|---|---|---|---|---|---|
+| `71351ff5` (v1, the refusal) | +7,188 / 8,244 | 9,790 (from the gate's cache) | — | 9,790 → **978 FATAL** | — |
+| `e092a02b` (v2 demand, the relocation graph still retained) | +534 / 8,244 | 8,426 | 9,624 / 8,264 | 9,624 → 1,170 PASS | 9,624 at every update (= the prediction) / 8,223 allocated (state 984 + transient 7,239) |
+| `20c07e0b` (v2 + the relocation keeps nothing: THE FIX) | +492 / **5,480** | 8,324 | 8,324 / 5,500 | 8,324 → **2,444 PASS** | **8,324 at every update (= the prediction)** / **5,458** allocated (state 984 + transient 4,474), PASS; 4 updates, no OOM |
+
+The update now sets the demand (its `batch` segment); the fixed canary fits inside the cache the update leaves (its
+peak reserved adds nothing). Logs: `/tmp/x26memfix/models/rb_memfix_{old,new,v3}/launcher_child.log` (scratch; the
+numbers are copied here).
+
+v1's text below is kept for the parts v2 did not change (the dry update itself, the restore, the levers).
 
 **The check — MEASURED, not a lower bound** (`agents/training/update_fit.py`; it replaced
 `cuda_ledger.check_device_batch_fits`, whose sum of startup rows passed N = 256 with the X26 heads and
@@ -328,7 +360,8 @@ learner EXACTLY — modules and optimizer state in place, the python / numpy / t
 every instance attribute of the model and its modules, the logger. The run after it is bit-identical to
 one without it (`update_fit_test`, on the golden: weights and logged losses). Verdict, deterministic:
 
-    headroom = (reserved_now + device_free_now) - demand (the dry update's peak reserved) >= 1,024 MiB
+    headroom = (reserved_now + device_free_now) - demand (v2: the peak reserved over the dry update + the dry canary,
+                                                         from an emptied cache) >= 1,024 MiB
 
 1,024 = K6's 512 MiB ceiling margin + the sizing study's D-6 rule (ceiling − demand ≥ 512), so a pass is
 D-6 at the first update. Below it, or an OOM inside the dry update, is `UpdateWontFit` (FATAL_CONFIG),

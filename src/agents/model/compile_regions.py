@@ -607,8 +607,10 @@ def _r1_pair(model: Any, args: Tuple[Any, ...], fn: Optional[Callable[..., Any]]
             "COMPILED arm (gen3_gate_independent_arms_v1)")
     e0, c0 = _routes()
     comp = _r1_arm(model, fn, args)
+    _mem("compiled arm")
     e1, c1 = _routes()
     eager = _r1_arm(model, micro_step, args)
+    _mem("eager arm")
     e2, c2 = _routes()
     if (e1 - e0, c1 - c0) != (0, 1) or (e2 - e1, c2 - c1) != (1, 0):
         raise ct.GateArmsNotIndependentError(
@@ -664,8 +666,9 @@ def gate_regions(model: Any, *, batch_size: int, say: Callable[[str], None] = pr
     names = [n for n, _ in ct.grad_parameters(model, fe)]
     rules: List[str] = []
     was = policy.training
+    mem = GateMemory(model)
     try:
-        with _fatal_compile_errors(), torch.random.fork_rng(devices=devices):
+        with _fatal_compile_errors(), torch.random.fork_rng(devices=devices), gate_memory(mem):
             # ---- R1: train / grad / batch_size, on real labelled rows
             regime = weights_regime(model)
             b = r1_batch(model, int(batch_size))
@@ -689,12 +692,84 @@ def gate_regions(model: Any, *, batch_size: int, say: Callable[[str], None] = pr
         policy.set_training_mode(was)
         for p in policy.parameters():
             p.grad = None
+        release_gate_memory(model)                       # gen3_gate_releases_memory_v1, on a refusal too
     from agents.model.trunk_precision import trunk_precision_of
     prec = trunk_precision_of(policy)
     line = (f"[CompileRegions] parity PASS ({'fp32' if prec == 'fp32' else prec + ' trunk: the bf16 rule'}) — "
             + " | ".join(rules))
     say(line)
+    if mem.rows:
+        say(mem.line())
     return rules
+
+
+# --------------------------------------------------------------- the gate's MEMORY (gen3_gate_memory_v1)
+MiB = float(1 << 20)
+
+
+class GateMemory:
+    """WHERE R1's gate / canary puts the card (gen3_gate_memory_v1, 2026-10-15): after each step of a rung (the
+    relocation forward, the compiled arm, the eager arm, the fp32 reference arm) the allocated bytes and the allocated
+    HIGH-WATER mark so far — so a step that RETAINS memory (allocated stays up) and the step that set the peak (the
+    high-water rises during it) are both read off one line. It never resets the allocator's peak counters (the CUDA
+    ledger and the update-fit check read them across the gate). A no-op off CUDA."""
+
+    def __init__(self, model: Any) -> None:
+        dev = ct.resolve_device(model.policy.features_extractor)
+        self.device = dev if dev.type == "cuda" and torch.cuda.is_available() else None
+        self.rows: List[Tuple[str, float, float, float]] = []    # (step, allocated, high-water, reserved) MiB
+        self.start = (0.0, 0.0)
+        if self.device is not None:
+            torch.cuda.synchronize(self.device)
+            self.start = (torch.cuda.memory_allocated(self.device) / MiB,
+                          torch.cuda.max_memory_allocated(self.device) / MiB)
+
+    def mark(self, step: str) -> None:
+        if self.device is None:
+            return
+        torch.cuda.synchronize(self.device)
+        self.rows.append((step, torch.cuda.memory_allocated(self.device) / MiB,
+                          torch.cuda.max_memory_allocated(self.device) / MiB,
+                          torch.cuda.memory_reserved(self.device) / MiB))
+
+    def peak_above_start(self) -> float:
+        """The gate's transient: its allocated high-water above what was allocated when it started (MiB)."""
+        return max([self.start[1]] + [r[2] for r in self.rows]) - self.start[0]
+
+    def line(self) -> str:
+        a0, h0 = self.start
+        steps = ", ".join(f"{s} {a:,.0f}/{h:,.0f}" for s, a, h, _ in self.rows)
+        return (f"🧮 [CompileRegions] gate memory (MiB, allocated after / high-water): start {a0:,.0f}/{h0:,.0f}; "
+                f"{steps}; the gate's transient above its start {self.peak_above_start():,.0f} MiB "
+                f"(gen3_gate_memory_v1)")
+
+
+_GATE_MEMORY: Optional[GateMemory] = None
+
+
+def _mem(step: str) -> None:
+    if _GATE_MEMORY is not None:
+        _GATE_MEMORY.mark(step)
+
+
+@contextlib.contextmanager
+def gate_memory(mem: GateMemory) -> Iterator[GateMemory]:
+    """Record the R1 rungs run inside the block into ``mem`` (`GateMemory`)."""
+    global _GATE_MEMORY
+    prev, _GATE_MEMORY = _GATE_MEMORY, mem
+    try:
+        yield mem
+    finally:
+        _GATE_MEMORY = prev
+
+
+def release_gate_memory(model: Any) -> int:
+    """gen3_gate_releases_memory_v1: drop the autograd graph a gate / canary forward left STASHED on the policy
+    (`consistency.release_autograd_stashes`: every stash keeps its value, detached; the next forward overwrites it).
+    Returns how many stashes held a graph. The allocator's CACHED blocks are released by the caller that owns the
+    card's story (`compile_trainer.arm_compile_sentinel`, before the update-fit check measures)."""
+    from agents.training.rust_rollout.consistency import release_autograd_stashes
+    return release_autograd_stashes(model.policy)
 
 
 def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -> str:
@@ -1252,16 +1327,27 @@ def relocate_clip_boundary(model: Any, args: Tuple[Any, ...], margin: Optional[f
     """R1's arguments with the fixture moved off the clip boundary on ``model``'s CURRENT weights, and the record.
     ``margin`` None (every caller in the gate) is the model's own, `clip_margin_of` (`--canary-shift-max`, T37).
     The reference is R1's own eager body at the fp32 base classes (`trunk_precision.fp32_scope`; a no-op on an fp32
-    trunk) — one forward, gradient mode as the arms run it, no backward; it runs R1's eager body once, outside every
-    arm's independence window. ``args`` is `_r1_args`' tuple (old log-probs at index 4, the static last)."""
+    trunk) — one forward, gradient mode as the arms run it (nothing saved for a backward that never runs), no backward;
+    it runs R1's eager body once, outside every arm's independence window. ``args`` is `_r1_args`' tuple (old log-probs
+    at index 4, the static last)."""
     from agents.model.trunk_precision import fp32_scope
     from agents.training.instrumented_ppo.micro_step import micro_step
+    from agents.training.rust_rollout.consistency import _drop_saved, _never_unpacked
     st = args[-1]
-    with fp32_scope(model.policy):
+    # gen3_gate_releases_memory_v1: this forward is NEVER backpropagated, so autograd keeps NOTHING for it
+    # (`saved_tensors_hooks` that drop every saved tensor — K9(b)'s probe recipe, `gen3_probe_releases_graph_v1`: it
+    # changes what autograd keeps, never a kernel or a value). Before, its outputs were STASHED on the policy (the
+    # extractor's `stash` container, the masked distribution) and through them its fp32 graph — every saved activation
+    # of a grad-mode fp32 forward at the micro size, 4,486 MiB on the X26 surface — stayed alive under the compiled arm
+    # that followed, until that arm's forward replaced the stashes: the gate's and the canary's peak rose from 5.4 to
+    # 8.2 GiB (the 2026-10-15 `rb_xs_s2701` UpdateWontFit; `compile_regions_memory_test`).
+    with fp32_scope(model.policy), torch.autograd.graph.saved_tensors_hooks(_drop_saved, _never_unpacked):
         out = micro_step(*args)
     fix = clip_relocation(out.log_prob.detach(), args[4], out.advantages.detach(), float(st.clip_range),
                           clip_margin_of(model) if margin is None else margin, shift_max_source(model))
     del out
+    release_gate_memory(model)
+    _mem("relocation forward")
     return args[:4] + (fix.old_log_prob,) + args[5:], fix
 
 
@@ -1434,6 +1520,7 @@ def _r1_reference(model: Any, args: Tuple[Any, ...]) -> Dict[str, torch.Tensor]:
     e0, c0 = _routes()
     with fp32_scope(model.policy):
         ref = _r1_arm(model, micro_step, args)
+    _mem("fp32 reference arm")
     e1, c1 = _routes()
     if (e1 - e0, c1 - c0) != (1, 0):
         raise ct.GateArmsNotIndependentError(

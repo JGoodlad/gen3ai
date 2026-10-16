@@ -14689,3 +14689,36 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   value), the `combination_checks_test` table row. Docs: `designs/training/compile_flags.md` "The check-only margin
   override", `design_x26_readiness.md` §4.1 item 2 / §4.2 (AMBER stages a number; RED = resume the SAME run with the flag) /
   F28 / R7 / Decision record, `TASK_BACKLOG.md` X26-7, `flag_census.md`, the training leaf, `ARCHITECTURE.md` §6.4.
+
+## 2026-10-16 — CRASH FIX: the startup gate releases its memory, and the update-fit DEMAND is what training needs (`gen3_gate_releases_memory_v1`, `gen3_update_fit_v2`, `gen3_gate_memory_v1`, `gen3_canary_memory_v1`; no model / config / obs / signature change, no training-math change)
+
+- **The failure**: `rb_xs_s2701` (a fresh `--arch production` with the X26 argv at `71351ff5`) passed the bf16 gate, then
+  `UpdateWontFit`: demand 9,790 MiB reserved, headroom 978 < 1,024, while the dry update peaked at 6,579 allocated. The
+  startup ledger's gate row read +7,188 reserved / 8,244 peak (the `ffe2961b` smoke: +4,840 / 5,428).
+- **The attribution (GPU)**: T36's relocation forward (`compile_regions.relocate_clip_boundary`, one fp32 grad-mode forward
+  of R1's eager body, never backpropagated) left its whole autograd graph — **4,486 MiB** — alive through the policy's
+  stashes under the compiled arm (~3.0 GiB of its own), until that arm replaced the stashes: gate peak 5,428 → 8,244. The
+  allocator kept the peak cached, and the update-fit check read the cache as the update's demand. The mid-run canary ran
+  the same stack (8,223 MiB allocated at update 2). The ride-along heads are not in R1 (+43 MiB of weights).
+- **The fix**: (1) the relocation forward runs under `saved_tensors_hooks` that keep nothing (`consistency._drop_saved`,
+  K9(b)'s probe recipe; values bit-identical), then `release_gate_memory` detaches the module-level stashes; (2)
+  `arm_compile_sentinel` releases the stashes and `empty_cache()`s after the LOCK; (3) `update_fit` v2: from an emptied
+  cache, the dry update and then the canary's check once (`CompileCanary.measure`, no verdict recorded), demand = the
+  peak reserved over both (`fit_demand`), `update_fit.json` gains `update_demand_mib`, `canary_demand_mib`,
+  `canary_peak_alloc_mib`, `canary_note`, `fragmentation_mib`. The 1,024 MiB bar and the typed refusal are unchanged.
+- **The record**: every gate prints `🧮 [CompileRegions] gate memory` (allocated after / high-water per step,
+  `GateMemory`; it never resets the peak counters); every canary record carries `memory`, its PASS line the card, and TB
+  `compile/canary_peak_alloc_mib` / `compile/canary_reserved_mib`. `GEN3AI_CANARY_FIRST=<n>` moves the first canary (a
+  smoke's test hook).
+- **GPU verification (the X26 argv, scratch models dir)**: gate peak 5,480; demand 8,324 → headroom **2,444 MiB** (was 978);
+  the canary at update 2 PASSED at 5,458 MiB allocated, reserved 8,324 = the run's reserved at every update; 4 updates,
+  no OOM. The K9 learner golden: IDENTICAL.
+- **Tests** (each fails on revert): `src/agents/model/compile_regions_memory_test.py` (the relocation saves 0 bytes for a
+  backward where the plain forward saves 2,285 tensors; its record is bit-identical; the gate and the canary leave no
+  module-level stash graph; `measure` records nothing; the memory record never resets the peaks; the sentinel empties the
+  cache after the lock; the first-canary hook), `src/agents/training/update_fit_test.py` (the demand definition over
+  the update AND the canary; the canary runs after the update on the restored learner; the armed canary is this
+  model's; the reading starts from an emptied cache).
+- Docs: `designs/training/compile_flags.md` "The gate releases its memory", `learner_lifecycle.md` "The update fit check"
+  (v2 + the GPU table), `learner_gates.md` (the memory gates), the training leaf, `design_x26_readiness.md` I31 / §4.1 /
+  Decision record.

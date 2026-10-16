@@ -118,7 +118,7 @@ Detail: `designs/training/telemetry_scalars.md` "ONE producer per key".
   module, buffer or optimizer-state entry after it is `LazyAcquisitionError` (exit 3). Build in `_build` /
   `_setup_model` / `__init__` or a `@lifecycle_decl.startup_builder`. A CUDA stream / graph / pool is a startup
   acquisition too, and a bare `__init__` does NOT exempt it. Static twin: `src/learner_lifecycle_gate_test.py`. A
-  sustained CUDA leak is `FATAL_CUDA_LEAK` (exit 6). Startup runs one DRY update (`update_fit.py`).
+  sustained CUDA leak is `FATAL_CUDA_LEAK` (exit 6). Startup runs one DRY update and then the canary's check, from an EMPTIED cache: the demand is the peak reserved over both (`update_fit.py`, `gen3_update_fit_v2`; a startup transient held in the cache is never the demand).
 - Benchmark phase marks in `train()`: exactly `if _ph is not None: _ph("<phase>")`, name in `phase_hook.PHASES`.
 - `--policy-grad-coef` scales ONLY the clipped surrogate. ⚠️ `train/approx_kl` is the LAST epoch's mean,
   `train/clip_fraction` pools epochs. `--diagnostics-every N`: a skipped update writes NONE of the optional tags (a gap).
@@ -226,7 +226,7 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   is the ONLY runtime module that touches `torch._dynamo` — add nothing that does elsewhere.
   `compile/recompiles_after_lock` must stay 0. The startup REGION gate runs on REAL rows (the committed
   `src/agents/model/compile_parity_obs.npz`; regenerate with `python -m agents.model.compile_parity_fixture --write`
-  after an obs-layout change — a stale fixture refuses); the in-run canary re-checks R1 against eager.
+  after an obs-layout change — a stale fixture refuses); the in-run canary re-checks R1 against eager. 🚨 **A gate / canary forward that is never backpropagated keeps NOTHING for a backward** (`saved_tensors_hooks`, as the relocation does — `gen3_gate_releases_memory_v1`): a stashed graph stacked 4.5 GiB under the compiled arm (`designs/training/compile_flags.md` "The gate releases its memory").
 - 🚨 **The compile cache is SHARED BY KEY on a CLEAN checkout, else the RUN's OWN** (owner 2026-10-10: "Shared
   cache is fine as long as we check the git hash and the workspace is clean"; `src/agents/model/compile_cache_shared.py`
   — the key keeps K3's whole stamp + the platform, the torch env and the run's compile surface; a dirty tree falls

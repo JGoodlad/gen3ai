@@ -2097,6 +2097,55 @@ refuses the argv (`pinned_argv.pinned_parser_check`: `✗ NOT IN PINNED TREE`). 
 restarts through the recorded field. It does not replace the diag (`scripts/ops/diag_bf16_canary.sh <run>`), which says
 whether the shift is shared by eager bf16 and C32 is still ≈ 0; it replaces the FORK that a code-only raise would have forced.
 
+### The gate releases its memory (`gen3_gate_releases_memory_v1`, `gen3_gate_memory_v1`, `gen3_canary_memory_v1`, 2026-10-15)
+
+**The failure.** `rb_xs_s2701` (a fresh `--arch production` with the X26 argv at `71351ff5`) passed the bf16 gate and was
+refused by the update-fit check: demand 9,790 MiB reserved, headroom 978 < 1,024, while the dry update itself peaked at
+6,579 MiB allocated. The startup ledger's "compiled regions: gate + prewarm + lock" row read +7,188 MiB reserved, peak
+8,244 allocated — against +4,840 / 5,428 on the `ffe2961b` production smoke (pre-T36, no ride-alongs).
+
+**The attribution (GPU, `e092a02b` = `71351ff5` + the memory record, the X26 argv, the old behaviour reproduced exactly:
+reserved 9,790, peak 8,244).** The new per-step record (`GateMemory`, MiB allocated after / high-water):
+
+    start 717/805; relocation forward 5,203/5,362, compiled arm 1,237/8,201, eager arm 1,247/8,201,
+    fp32 reference arm 1,257/8,201, [the perturbed rung] relocation forward 5,252/8,201, compiled arm 1,278/8,244, …
+
+T36's relocation forward (`relocate_clip_boundary`: one fp32 grad-mode forward of R1's eager body at B = 2,048, no
+backward) left **4,486 MiB** allocated after it: its outputs are STASHED on the policy (the extractor's `stash` container,
+the masked distribution), and through them its whole autograd graph, every saved fp32 activation. That graph stayed alive
+under the COMPILED arm (~3.0 GiB of its own) until the arm's forward replaced the stashes: high-water 8,201 = 5,203 + the
+arm. So the +2.8 GiB over `ffe2961b` is T36's retained relocation graph stacked under the compiled arm; the ride-along
+heads are not in R1 (their update is the eager tail) and add 43 MiB of weights. The allocator then kept the 8.2 GiB peak
+CACHED, and the update-fit check read that cache as the update's demand. The same rungs run in the MID-RUN CANARY, with
+training state resident: at update 2 it peaked at **8,223 MiB allocated** (training state 984 + the check's transient
+7,239) — so even a passing startup would have taken the canary to the card's edge every 100 updates.
+
+**The fix — three parts, none changes a number:**
+- **The relocation keeps nothing for a backward**: its forward runs under `saved_tensors_hooks` that drop every saved
+  tensor (K9(b)'s probe recipe, `consistency._drop_saved`; hooks change what autograd keeps, never a kernel or a value —
+  `compile_regions_memory_test` pins the reference log-probs bit-identical and that the forward saves 0 bytes, where the
+  plain forward saves 2,285 tensors on the CPU golden). `release_gate_memory` then detaches the module-level stashes.
+  ⚠️ `release_autograd_stashes` reaches only tensor attributes held DIRECTLY on a module; the extractor's typed `stash`
+  container and the op's are NOT reached (the K9(b) probe relies on its hooks, as the relocation now does) — FINDING.
+- **The gate hands its cache back**: `arm_compile_sentinel` calls `release_gate_memory` + `empty_cache()` after the
+  LOCK, so the startup transient is not held where nothing else can use it.
+- **The update-fit check measures what training will need** (`gen3_update_fit_v2`, `designs/training/learner_lifecycle.md`
+  "The update fit check"): from an emptied cache, the dry update and then the canary's check once
+  (`CompileCanary.measure`), demand = the peak reserved over both.
+
+**The record.** Every gate prints a `🧮 [CompileRegions] gate memory` line; every canary record carries `memory`
+{start_alloc_mib, transient_mib, peak_alloc_mib, reserved_mib} and its PASS line prints the card; TB gets
+`compile/canary_peak_alloc_mib` and `compile/canary_reserved_mib` on a canary update. A smoke moves the FIRST canary
+with `GEN3AI_CANARY_FIRST=<n>` (a test hook; the cadence after it is unchanged; unset in production).
+
+**The verification (GPU, the X26 argv, `GEN3AI_CANARY_FIRST=2`, the fix's code at `20c07e0b`):** the gate's record reads
+`start 717/805; relocation forward 1,219/2,061, compiled arm 1,237/4,217, eager arm 1,247/4,725, fp32 reference arm
+1,257/5,438, …, fp32 reference arm 1,298/5,480` — peak **5,480** allocated (the `ffe2961b` smoke's 5,428 + 52), the
+ledger's gate row +492 reserved (was +7,188); the update-fit demand 8,324 MiB, headroom **2,444** (was 978, FATAL);
+the canary at update 2 PASSED at **5,458** allocated (training state 984 + transient 4,474), reserved 8,324; the run
+held 8,324 reserved at every update (= the prediction) through 4 updates, no OOM. Full table: `learner_lifecycle.md`
+"The update fit check"; `designs/endstate/design_x26_readiness.md` I31. The K9 learner golden is IDENTICAL.
+
 ### Lever C: R1's GRAPHED route (`--learner-cudagraphs {off,on}`, `gen3_r1_graphed_route_v1`, 2026-10-10)
 
 **Why a second route.** Window B (`perf_phase_2026-10-10/README.md`, F-PB-2): R1 under Inductor's cudagraph trees

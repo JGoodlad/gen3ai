@@ -127,7 +127,7 @@ def test_the_dry_update_hands_every_recorded_key_to_the_startup_metric_key_check
     assert "train/loss" in r.metric_keys and "train/approx_kl" in r.metric_keys
     planted = UF.FitReading(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 64, "stub",
                             metric_keys=("note/text", "note/text/text_summary"))
-    monkeypatch.setattr(UF, "dry_update", lambda m: planted)
+    monkeypatch.setattr(UF, "dry_update", lambda m, **_k: planted)
     cuda_model = types.SimpleNamespace(policy=types.SimpleNamespace(
         parameters=lambda: iter([types.SimpleNamespace(device=types.SimpleNamespace(type="cuda"))])))
     with pytest.raises(MetricKeyCollisionError, match="dry first update"):
@@ -197,3 +197,101 @@ def test_the_probe_s_forward_is_bit_identical_without_its_saved_tensors():
     assert torch.equal(l0, l1) and torch.equal(v0, v1) and torch.equal(e0, e1)
     with pytest.raises(RuntimeError, match="never backpropagated"):
         l1.sum().backward()
+
+
+# ------------------------------------------------------------- gen3_update_fit_v2: the demand is what TRAINING needs
+def test_the_demand_is_the_peak_reserved_over_the_update_AND_the_mid_run_canary():
+    """Fails on revert: the canary's segment is part of the demand (v1 measured the update alone), the update's own
+    demand is reported beside it, and the fragmentation is reserved minus allocated over the whole sequence."""
+    peaks = {"forward": [6_000.0, 7_000.0], "probes": [6_500.0, 7_200.0], "update_tail": [1_800.0, 7_200.0],
+             "canary": [7_900.0, 8_400.0]}
+    d = UF.fit_demand(peaks, ["forward", "probes", "update_tail"], (0.0, 0.0))
+    assert (d.demand_mib, d.peak_alloc_mib, d.update_demand_mib) == (8_400.0, 7_900.0, 7_200.0)
+    assert (d.canary_demand_mib, d.canary_peak_alloc_mib) == (8_400.0, 7_900.0)
+    r = UF.FitReading(d.demand_mib, d.peak_alloc_mib, 8_400.0, 2_000.0, 10_400.0, 2_000.0, 1_200.0, 1.0, 98_304,
+                      "fixture", update_demand_mib=d.update_demand_mib, canary_demand_mib=d.canary_demand_mib,
+                      canary_peak_alloc_mib=d.canary_peak_alloc_mib)
+    assert r.fragmentation_mib == 500.0 and r.as_dict()["fragmentation_mib"] == 500.0
+    line = UF.verdict(r, "staged")
+    assert "the update 7,200" in line and "the canary's check 8,400 reserved" in line and "emptied cache" in line
+    # no compiled learner: no canary segment, the update alone
+    d0 = UF.fit_demand({k: v for k, v in peaks.items() if k != "canary"}, ["forward", "probes", "update_tail"],
+                       (0.0, 0.0))
+    assert d0.demand_mib == 7_200.0 and d0.canary_demand_mib is None
+
+
+class _SpyCanary:
+    def __init__(self, model, seen, note=None):
+        self.model, self.seen, self.note = model, seen, note
+
+    def measure(self):
+        from agents.training import learner_golden as LG
+        self.seen.append(("canary", LG.params_sha256(self.model), self.model.rollout_buffer is self.seen[0][1]))
+        return self.note
+
+
+def test_the_dry_update_measures_the_canary_AFTER_the_update_on_the_RESTORED_learner():
+    """gen3_update_fit_v2 step 2: the canary's check runs once, after the dry update, on the learner put back
+    exactly (the weights the startup gate passed, the live rollout buffer) — the run's own order at update 10; its
+    disagreement text rides on the reading as a NOTE, never a verdict. Fails on revert (no canary call, or one inside
+    the dry update)."""
+    from agents.training import learner_golden as LG
+    m = _learner()
+    h0 = LG.params_sha256(m)
+    seen = [("buffer", m.rollout_buffer, None)]
+    real_train = type(m).train
+
+    def spy(self):
+        real_train(self)
+        seen.append(("train", LG.params_sha256(self), None))
+    m.train = spy.__get__(m)
+    r = UF.dry_update(m, canary=_SpyCanary(m, seen, note="a planted disagreement"))
+    assert [s[0] for s in seen] == ["buffer", "train", "canary"]
+    assert seen[1][1] != h0 and seen[2][1] == h0 and seen[2][2] is True
+    assert r.canary_note == "a planted disagreement" and LG.params_sha256(m) == h0
+    assert "the dry canary's comparison did not pass" in UF.verdict(
+        UF.FitReading(1.0, 1.0, 1.0, 5_000.0, 5_001.0, 5_000.0, 1.0, 1.0, 64, "f", canary_note=r.canary_note))
+
+
+def test_the_check_hands_the_dry_update_THIS_models_armed_canary(monkeypatch):
+    """`check_update_fits` measures with the canary `arm_compile_sentinel` armed for this model, and never with a
+    canary armed for another model (a stale control in the process)."""
+    import types
+
+    import agents.training.metric_keys as MK
+    from agents.model import compile_control as cc
+    got = {}
+    planted = UF.FitReading(1.0, 1.0, 1.0, 5_000.0, 5_001.0, 5_000.0, 1.0, 1.0, 64, "stub")
+
+    def fake(m, **k):
+        got.update(k)
+        return planted
+    monkeypatch.setattr(UF, "dry_update", fake)
+    monkeypatch.setattr(UF, "verdict", lambda *a, **k: "ok")
+    monkeypatch.setattr(MK, "check_startup_metric_keys", lambda *a, **k: None)
+    cuda_model = types.SimpleNamespace(policy=types.SimpleNamespace(
+        parameters=lambda: iter([types.SimpleNamespace(device=types.SimpleNamespace(type="cuda"))])))
+    saved = cc._CONTROL                                  # restored by hand: the torch-state guard reads it at teardown
+    try:
+        mine = types.SimpleNamespace(model=cuda_model)
+        cc._CONTROL = types.SimpleNamespace(canary=mine)  # type: ignore[assignment]
+        UF.check_update_fits(cuda_model)
+        assert got["canary"] is mine
+        cc._CONTROL = types.SimpleNamespace(canary=types.SimpleNamespace(model=object()))  # type: ignore[assignment]
+        UF.check_update_fits(cuda_model)
+        assert got["canary"] is None
+    finally:
+        cc._CONTROL = saved
+
+
+def test_the_reading_starts_from_an_EMPTIED_cache(monkeypatch):
+    """gen3_update_fit_v2 step 1: the cached blocks are handed back BEFORE the floor is read — a startup transient
+    held in the allocator's cache is never read as the update's demand (the `rb_xs_s2701` false refusal). Driven
+    with a stand-in `torch.cuda` (no card needed); fails on revert."""
+    calls = []
+    monkeypatch.setattr(torch.cuda, "synchronize", lambda *a: calls.append("sync"))
+    monkeypatch.setattr(torch.cuda, "empty_cache", lambda: calls.append("empty_cache"))
+    UF.release_cached_blocks(torch.device("cuda"))
+    assert calls == ["sync", "empty_cache"]
+    src = inspect.getsource(UF.dry_update)
+    assert src.index("release_cached_blocks(dev)") < src.index("floor = torch.cuda.memory_allocated(dev)")

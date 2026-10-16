@@ -546,6 +546,13 @@ WIRED** (`learner_lifecycle.CudaMemoryWatch`, attached with the freeze guard —
 every update, the projection logged + recorded at every window close, a STOP raising
 `CudaMemoryLeakError` — `final_model_exception.zip` saved, exit `FATAL_CUDA_LEAK` (6), restarted by the launcher from that checkpoint at most twice per session).
 
+**The memory GATES beside it (startup, deterministic).** The trend watches the run; two startup reads decide whether it
+may start. The update-fit check (`gen3_update_fit_v2`, `learner_lifecycle.md` "The update fit check") measures the
+first update AND the mid-run canary's check from an emptied cache and refuses a demand that leaves < 1,024 MiB. The
+compile gate releases what it held (`gen3_gate_releases_memory_v1`, `compile_flags.md` "The gate releases its memory":
+its relocation forward keeps nothing for a backward, its cache is handed back after the lock) and prints where its
+memory went (`🧮 [CompileRegions] gate memory`); every canary record carries its card (`memory`, `gen3_canary_memory_v1`).
+
 **What it reads.** Once per update `sample_cuda(device, update=, phase=)` takes
 `torch.cuda.memory_stats` (allocated, reserved, active, inactive-split, segments, `num_alloc_retries`,
 `num_ooms`, peaks since the last sample) and `mem_get_info` (device free/total; other processes share
