@@ -1,0 +1,5199 @@
+{
+ "infer_256_by_label": {
+  "(outside any module: losses, masking, glue)": {
+   "fwd_aten_calls": 63.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 203.30099999997765
+  },
+  "meth:damage_op.apply_out_gain": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 35328.0,
+   "fwd_self_us": 12.734000000054948
+  },
+  "meth:damage_op.discrete_incoming_status": {
+   "fwd_aten_calls": 583.0,
+   "fwd_flops": 244480.0,
+   "fwd_self_us": 1404.3160000002244
+  },
+  "meth:damage_op.discrete_outgoing_status": {
+   "fwd_aten_calls": 956.0,
+   "fwd_flops": 258560.0,
+   "fwd_self_us": 1949.8519999999553
+  },
+  "meth:damage_op.expanded_out_gain": {
+   "fwd_aten_calls": 6.0,
+   "fwd_flops": 29.0,
+   "fwd_self_us": 30.368000000016764
+  },
+  "meth:damage_op.opp_ability_damage_mult": {
+   "fwd_aten_calls": 342.0,
+   "fwd_flops": 580608.0,
+   "fwd_self_us": 2567.871999999741
+  },
+  "meth:damage_op.opp_ability_view": {
+   "fwd_aten_calls": 1190.0,
+   "fwd_flops": 104448.0,
+   "fwd_self_us": 1985.2999999997555
+  },
+  "meth:damage_op.opp_secondary_block": {
+   "fwd_aten_calls": 34.0,
+   "fwd_flops": 9216.0,
+   "fwd_self_us": 92.11499999993248
+  },
+  "meth:damage_op.opp_secondary_mult": {
+   "fwd_aten_calls": 68.0,
+   "fwd_flops": 18432.0,
+   "fwd_self_us": 182.01899999997113
+  },
+  "meth:damage_op.opp_status_block": {
+   "fwd_aten_calls": 76.0,
+   "fwd_flops": 55296.0,
+   "fwd_self_us": 432.7459999995772
+  },
+  "meth:damage_op.our_burn_loss": {
+   "fwd_aten_calls": 4343.0,
+   "fwd_flops": 7624192.0,
+   "fwd_self_us": 16804.09600000002
+  },
+  "meth:damage_op.pair_outcome_coords": {
+   "fwd_aten_calls": 2238.0,
+   "fwd_flops": 22224896.0,
+   "fwd_self_us": 51290.64499999961
+  },
+  "meth:damage_op.pairwise_baton": {
+   "fwd_aten_calls": 132.0,
+   "fwd_flops": 33280.0,
+   "fwd_self_us": 258.9659999994328
+  },
+  "meth:damage_op.pairwise_bench_incoming": {
+   "fwd_aten_calls": 2512.0,
+   "fwd_flops": 5879808.0,
+   "fwd_self_us": 10015.554000001168
+  },
+  "meth:damage_op.pairwise_bench_outgoing": {
+   "fwd_aten_calls": 6576.0,
+   "fwd_flops": 11433984.0,
+   "fwd_self_us": 26801.068999997806
+  },
+  "meth:damage_op.pairwise_boost": {
+   "fwd_aten_calls": 6015.0,
+   "fwd_flops": 3177832448.0,
+   "fwd_self_us": 95816.24800000165
+  },
+  "meth:damage_op.pairwise_boost_incoming": {
+   "fwd_aten_calls": 3012.0,
+   "fwd_flops": 3808768.0,
+   "fwd_self_us": 8395.719999998691
+  },
+  "meth:damage_op.pairwise_entry": {
+   "fwd_aten_calls": 220.0,
+   "fwd_flops": 22016.0,
+   "fwd_self_us": 447.9900000002235
+  },
+  "meth:damage_op.pairwise_incoming": {
+   "fwd_aten_calls": 1115.0,
+   "fwd_flops": 1941760.0,
+   "fwd_self_us": 3630.9180000018096
+  },
+  "meth:damage_op.pairwise_outgoing": {
+   "fwd_aten_calls": 19891.0,
+   "fwd_flops": 329258032.0,
+   "fwd_self_us": 54307.14099998982
+  },
+  "meth:damage_op.pairwise_protect": {
+   "fwd_aten_calls": 95.0,
+   "fwd_flops": 7168.0,
+   "fwd_self_us": 144.35400000028312
+  },
+  "meth:damage_op.pairwise_recovery": {
+   "fwd_aten_calls": 2874.0,
+   "fwd_flops": 2819072.0,
+   "fwd_self_us": 7527.923000001931
+  },
+  "meth:damage_op.pairwise_schedule": {
+   "fwd_aten_calls": 194.0,
+   "fwd_flops": 12288.0,
+   "fwd_self_us": 458.17800000018906
+  },
+  "meth:damage_op.pairwise_speed": {
+   "fwd_aten_calls": 1259.0,
+   "fwd_flops": 635732992.0,
+   "fwd_self_us": 36797.129999998026
+  },
+  "meth:damage_op.pairwise_status_consequence": {
+   "fwd_aten_calls": 3072.0,
+   "fwd_flops": 8050944.0,
+   "fwd_self_us": 14144.764999998151
+  },
+  "meth:damage_op.pairwise_trap": {
+   "fwd_aten_calls": 323.0,
+   "fwd_flops": 79872.0,
+   "fwd_self_us": 630.2310000007274
+  },
+  "meth:damage_op.pointer_cells": {
+   "fwd_aten_calls": 58.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 92.81700000003912
+  },
+  "meth:damage_op.pointer_intent_status_operands": {
+   "fwd_aten_calls": 4713.0,
+   "fwd_flops": 20626688.0,
+   "fwd_self_us": 20626.318999999785
+  },
+  "meth:damage_op.spikes_entry": {
+   "fwd_aten_calls": 342.0,
+   "fwd_flops": 12288.0,
+   "fwd_self_us": 767.0240000000922
+  },
+  "meth:damage_op.tensors_from_block": {
+   "fwd_aten_calls": 126.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 147.81099999969592
+  },
+  "meth:fe._apply_move_belief": {
+   "fwd_aten_calls": 1860.0,
+   "fwd_flops": 61595136.0,
+   "fwd_self_us": 71956.66200000001
+  },
+  "meth:fe._attach_move_group": {
+   "fwd_aten_calls": 1697.0,
+   "fwd_flops": 6689679.0,
+   "fwd_self_us": 16499.04200000022
+  },
+  "meth:fe._build_hypothesis_species": {
+   "fwd_aten_calls": 1759.0,
+   "fwd_flops": 95682975.0,
+   "fwd_self_us": 21915.737999999983
+  },
+  "meth:fe._flat_consumer_ops": {
+   "fwd_aten_calls": 88.0,
+   "fwd_flops": 1792.0,
+   "fwd_self_us": 315.832000000868
+  },
+  "meth:fe._other_edge_cells": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 202.7009999997681
+  },
+  "meth:fe._spread_hp_damage": {
+   "fwd_aten_calls": 24.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 647.4159999999683
+  },
+  "meth:fe._typed_hp_posterior": {
+   "fwd_aten_calls": 89.0,
+   "fwd_flops": 27648.0,
+   "fwd_self_us": 557.6290000000154
+  },
+  "mod:fe": {
+   "fwd_aten_calls": 8257.0,
+   "fwd_flops": 294324592.0,
+   "fwd_self_us": 122726.29699999819
+  },
+  "mod:fe.activation": {
+   "fwd_aten_calls": 2.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 22.371999999973923
+  },
+  "mod:fe.assembler": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 67.56700000003912
+  },
+  "mod:fe.belief_head": {
+   "fwd_aten_calls": 42.0,
+   "fwd_flops": 82534800.0,
+   "fwd_self_us": 1448.9289999996545
+  },
+  "mod:fe.belief_head.moves_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 157286400.0,
+   "fwd_self_us": 1696.8549999999814
+  },
+  "mod:fe.belief_head.norm": {
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 220.38300000003073
+  },
+  "mod:fe.belief_head.species_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 157286400.0,
+   "fwd_self_us": 1812.7719999999972
+  },
+  "mod:fe.cls_pool": {
+   "fwd_aten_calls": 86.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 441.6970000002766
+  },
+  "mod:fe.cls_pool.norm_pool_our": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 39.875
+  },
+  "mod:fe.cls_pool.norm_pool_their": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 29.635000000009313
+  },
+  "mod:fe.cls_pool.norm_pool_value": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 36.41900000022724
+  },
+  "mod:fe.cls_pool.our_cls_attn": {
+   "fwd_aten_calls": 123.0,
+   "fwd_flops": 118259712.0,
+   "fwd_self_us": 2441.866999999387
+  },
+  "mod:fe.cls_pool.their_cls_attn": {
+   "fwd_aten_calls": 118.0,
+   "fwd_flops": 135168000.0,
+   "fwd_self_us": 2554.82500000007
+  },
+  "mod:fe.cls_pool.value_cls_attn": {
+   "fwd_aten_calls": 118.0,
+   "fwd_flops": 236617728.0,
+   "fwd_self_us": 3528.6159999995725
+  },
+  "mod:fe.damage_op": {
+   "fwd_aten_calls": 8754.0,
+   "fwd_flops": 121091536.0,
+   "fwd_self_us": 78370.85999999946
+  },
+  "mod:fe.damage_op.eot_rule": {
+   "fwd_aten_calls": 1414.0,
+   "fwd_flops": 342016.0,
+   "fwd_self_us": 2769.0609999995213
+  },
+  "mod:fe.edge_bias": {
+   "fwd_aten_calls": 1227.0,
+   "fwd_flops": 1765376.0,
+   "fwd_self_us": 8495.20200000063
+  },
+  "mod:fe.edge_bias.c1_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 802816.0,
+   "fwd_self_us": 234.35900000005495
+  },
+  "mod:fe.edge_bias.c2_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 688128.0,
+   "fwd_self_us": 197.920999999973
+  },
+  "mod:fe.edge_bias.c3_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 344064.0,
+   "fwd_self_us": 169.78900000010617
+  },
+  "mod:fe.edge_bias.c4_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 65536.0,
+   "fwd_self_us": 44.523999999975786
+  },
+  "mod:fe.edge_bias.c5_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 393216.0,
+   "fwd_self_us": 144.41099999996368
+  },
+  "mod:fe.edge_bias.d1_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 688128.0,
+   "fwd_self_us": 264.3959999999497
+  },
+  "mod:fe.edge_bias.d2_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 98304.0,
+   "fwd_self_us": 54.853000000002794
+  },
+  "mod:fe.edge_bias.d3_map": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 737280.0,
+   "fwd_self_us": 332.73499999998603
+  },
+  "mod:fe.edge_bias.d4_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 688128.0,
+   "fwd_self_us": 265.24700000009034
+  },
+  "mod:fe.edge_bias.g_map": {
+   "fwd_aten_calls": 29.0,
+   "fwd_flops": 196608.0,
+   "fwd_self_us": 141.795999999973
+  },
+  "mod:fe.edge_bias.h_map": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 737280.0,
+   "fwd_self_us": 400.9420000000391
+  },
+  "mod:fe.edge_bias.r_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 4718592.0,
+   "fwd_self_us": 1933.3079999999609
+  },
+  "mod:fe.edge_bias.s1_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 196608.0,
+   "fwd_self_us": 135.7950000000419
+  },
+  "mod:fe.edge_bias.s3_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 442368.0,
+   "fwd_self_us": 202.0889999999199
+  },
+  "mod:fe.edge_bias.t_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 294912.0,
+   "fwd_self_us": 169.43799999996554
+  },
+  "mod:fe.edge_bias.v_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 516096.0,
+   "fwd_self_us": 236.1030000000028
+  },
+  "mod:fe.edge_bias.x_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 196608.0,
+   "fwd_self_us": 101.31000000005588
+  },
+  "mod:fe.effective_stats_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 5505024.0,
+   "fwd_self_us": 125.16500000003725
+  },
+  "mod:fe.embeddings.ability_embedding": {
+   "fwd_aten_calls": 40.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 89.00699999999415
+  },
+  "mod:fe.embeddings.item_embedding": {
+   "fwd_aten_calls": 20.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 56.84599999999409
+  },
+  "mod:fe.embeddings.move_embedding": {
+   "fwd_aten_calls": 74.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 286.93000000001484
+  },
+  "mod:fe.embeddings.species_embedding": {
+   "fwd_aten_calls": 50.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 220.41400000009162
+  },
+  "mod:fe.embeddings.type_embedding": {
+   "fwd_aten_calls": 88.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 222.48700000004646
+  },
+  "mod:fe.entity_seats": {
+   "fwd_aten_calls": 325.0,
+   "fwd_flops": 5822464.0,
+   "fwd_self_us": 3425.3350000001956
+  },
+  "mod:fe.entity_seats.move_seat_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 8388608.0,
+   "fwd_self_us": 149.14999999996508
+  },
+  "mod:fe.entity_seats.tail_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 68.51800000004005
+  },
+  "mod:fe.entity_seats.threat_seat_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 13762560.0,
+   "fwd_self_us": 258.3850000000093
+  },
+  "mod:fe.eot_residual_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 8650752.0,
+   "fwd_self_us": 164.55799999996088
+  },
+  "mod:fe.eot_residual_rule": {
+   "fwd_aten_calls": 707.0,
+   "fwd_flops": 171008.0,
+   "fwd_self_us": 1496.7759999994887
+  },
+  "mod:fe.flat_intent_head": {
+   "fwd_aten_calls": 72.0,
+   "fwd_flops": 3584.0,
+   "fwd_self_us": 681.2879999992438
+  },
+  "mod:fe.flat_intent_head.hidden": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 177078272.0,
+   "fwd_self_us": 2136.189000000013
+  },
+  "mod:fe.flat_intent_head.out": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 458752.0,
+   "fwd_self_us": 55.35400000005029
+  },
+  "mod:fe.hidden_opp_belief": {
+   "fwd_aten_calls": 36.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 215.15500000026077
+  },
+  "mod:fe.hidden_opp_belief.decoder": {
+   "fwd_aten_calls": 5.0,
+   "fwd_flops": 589824.0,
+   "fwd_self_us": 141.83600000012666
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.18000000016763806
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout1": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.7409999999217689
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout2": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.31000000005587935
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout3": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.15100000007078052
+  },
+  "mod:fe.hidden_opp_belief.decoder.linear1": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 100663296.0,
+   "fwd_self_us": 1048.9379999998491
+  },
+  "mod:fe.hidden_opp_belief.decoder.linear2": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 100663296.0,
+   "fwd_self_us": 1034.8819999999832
+  },
+  "mod:fe.hidden_opp_belief.decoder.multihead_attn": {
+   "fwd_aten_calls": 119.0,
+   "fwd_flops": 318767104.0,
+   "fwd_self_us": 6431.832999999868
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm1": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 135.1929999999702
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm2": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 131.0460000000894
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm3": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 129.76399999996647
+  },
+  "mod:fe.hidden_opp_belief.decoder.self_attn": {
+   "fwd_aten_calls": 64.0,
+   "fwd_flops": 206045184.0,
+   "fwd_self_us": 4743.051999999909
+  },
+  "mod:fe.hidden_opp_belief.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 131.51699999999255
+  },
+  "mod:fe.history_events": {
+   "fwd_aten_calls": 215.0,
+   "fwd_flops": 1048576.0,
+   "fwd_self_us": 1274.8940000001458
+  },
+  "mod:fe.history_events.cant_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 41.34799999999814
+  },
+  "mod:fe.history_events.denial_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 46.587999999988824
+  },
+  "mod:fe.history_events.entry_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 40.24600000004284
+  },
+  "mod:fe.history_events.faint_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 42.8300000000163
+  },
+  "mod:fe.history_events.itemtr_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 39.64500000001863
+  },
+  "mod:fe.history_events.kind_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 44.09299999999348
+  },
+  "mod:fe.history_events.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 736.5530000000144
+  },
+  "mod:fe.history_events.proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 406847488.0,
+   "fwd_self_us": 4524.983000000007
+  },
+  "mod:fe.history_events.stat_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 39.01400000002468
+  },
+  "mod:fe.history_events.status_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 39.32400000002235
+  },
+  "mod:fe.hp_type_belief_head": {
+   "fwd_aten_calls": 9.0,
+   "fwd_flops": 24576.0,
+   "fwd_self_us": 135.93400000000838
+  },
+  "mod:fe.hp_type_belief_head.norm": {
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 179.2369999999937
+  },
+  "mod:fe.hp_type_belief_head.reinject_norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 136.8070000000007
+  },
+  "mod:fe.hp_type_belief_head.reinject_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 6291456.0,
+   "fwd_self_us": 101.45999999999185
+  },
+  "mod:fe.hp_type_belief_head.type_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 6291456.0,
+   "fwd_self_us": 125.80599999999686
+  },
+  "mod:fe.hypothesis_builder.delta_global": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 9502720.0,
+   "fwd_self_us": 132.84999999999854
+  },
+  "mod:fe.hypothesis_builder.delta_hidden": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 12582912.0,
+   "fwd_self_us": 163.5769999999975
+  },
+  "mod:fe.hypothesis_builder.delta_norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 45.89600000000064
+  },
+  "mod:fe.hypothesis_builder.delta_out": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 19660800.0,
+   "fwd_self_us": 245.96100000000297
+  },
+  "mod:fe.hypothesis_builder.other_map": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 2097152.0,
+   "fwd_self_us": 50.78499999999622
+  },
+  "mod:fe.item_belief_head": {
+   "fwd_aten_calls": 9.0,
+   "fwd_flops": 921600.0,
+   "fwd_self_us": 2736.2239999999874
+  },
+  "mod:fe.item_belief_head.item_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 235929600.0,
+   "fwd_self_us": 2367.0320000000065
+  },
+  "mod:fe.item_belief_head.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 126.3069999999716
+  },
+  "mod:fe.mon_hazard_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 100.20799999998417
+  },
+  "mod:fe.move_actor_proj": {
+   "fwd_aten_calls": 8.0,
+   "fwd_flops": 524288.0,
+   "fwd_self_us": 25.697999999974854
+  },
+  "mod:fe.move_belief.move_head": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 157286400.0,
+   "fwd_self_us": 1842.4280000000072
+  },
+  "mod:fe.move_belief.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 149.9310000000114
+  },
+  "mod:fe.move_belief.reinject": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 6291456.0,
+   "fwd_self_us": 133.6810000000114
+  },
+  "mod:fe.move_resolution_cell": {
+   "fwd_aten_calls": 4656.0,
+   "fwd_flops": 3459328.0,
+   "fwd_self_us": 7922.590999992797
+  },
+  "mod:fe.move_resolution_cell.move_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 2957312.0,
+   "fwd_self_us": 81.82400000002235
+  },
+  "mod:fe.move_resolution_cell.restored_move_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 389120.0,
+   "fwd_self_us": 33.05199999990873
+  },
+  "mod:fe.move_resolution_cell.restored_switch_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 55296.0,
+   "fwd_self_us": 20.567999999970198
+  },
+  "mod:fe.move_resolution_cell.status_move_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 155648.0,
+   "fwd_self_us": 23.123000000137836
+  },
+  "mod:fe.move_resolution_cell.status_switch_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 110592.0,
+   "fwd_self_us": 17.804000000003725
+  },
+  "mod:fe.move_resolution_cell.switch_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 995328.0,
+   "fwd_self_us": 38.85299999988638
+  },
+  "mod:fe.move_target_proj": {
+   "fwd_aten_calls": 8.0,
+   "fwd_flops": 524288.0,
+   "fwd_self_us": 23.444000000017695
+  },
+  "mod:fe.obs_facts_inject": {
+   "fwd_aten_calls": 86.0,
+   "fwd_flops": 625664.0,
+   "fwd_self_us": 371.6970000000001
+  },
+  "mod:fe.obs_facts_inject.choice_proj": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 1245184.0,
+   "fwd_self_us": 32.51100000000224
+  },
+  "mod:fe.obs_facts_inject.screens_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 524288.0,
+   "fwd_self_us": 63.12899999999718
+  },
+  "mod:fe.obs_facts_inject.seen_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 2752512.0,
+   "fwd_self_us": 139.0010000000002
+  },
+  "mod:fe.obs_facts_inject.vol_proj": {
+   "fwd_aten_calls": 20.0,
+   "fwd_flops": 1966080.0,
+   "fwd_self_us": 70.0010000000002
+  },
+  "mod:fe.op_content": {
+   "fwd_aten_calls": 32.0,
+   "fwd_flops": 196608.0,
+   "fwd_self_us": 344.9659999998985
+  },
+  "mod:fe.op_content.amount_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 6291456.0,
+   "fwd_self_us": 200.53700000001118
+  },
+  "mod:fe.op_content.outgoing_cell": {
+   "fwd_aten_calls": 15.0,
+   "fwd_flops": 2359296.0,
+   "fwd_self_us": 174.00699999998324
+  },
+  "mod:fe.op_content.outgoing_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 12582912.0,
+   "fwd_self_us": 176.83199999993667
+  },
+  "mod:fe.op_worst_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 786432.0,
+   "fwd_self_us": 68.55799999996088
+  },
+  "mod:fe.pokemon_encoder": {
+   "fwd_aten_calls": 456.0,
+   "fwd_flops": 2946304.0,
+   "fwd_self_us": 3261.24400000001
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.0": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 119103488.0,
+   "fwd_self_us": 1342.8500000000022
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.1": {
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 88.8869999999988
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.2": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 113770496.0,
+   "fwd_self_us": 1297.4349999999977
+  },
+  "mod:fe.pokemon_encoder.move_dyn_pool": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 30220288.0,
+   "fwd_self_us": 461.9269999999997
+  },
+  "mod:fe.pokemon_encoder.move_dyn_proj": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 1777664.0,
+   "fwd_self_us": 169.77799999999843
+  },
+  "mod:fe.pokemon_encoder.move_latent_encoder": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 578.3359999999957
+  },
+  "mod:fe.pokemon_encoder.move_latent_encoder.mlp": {
+   "fwd_aten_calls": 78.0,
+   "fwd_flops": 164597760.0,
+   "fwd_self_us": 2406.6690000000644
+  },
+  "mod:fe.pokemon_encoder.move_network.0": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 234651648.0,
+   "fwd_self_us": 2721.7080000000005
+  },
+  "mod:fe.pokemon_encoder.move_network.1": {
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 201.3779999999988
+  },
+  "mod:fe.pokemon_encoder.move_network.2": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 85327872.0,
+   "fwd_self_us": 1116.6759999999958
+  },
+  "mod:fe.pokemon_encoder.move_self_attn": {
+   "fwd_aten_calls": 132.0,
+   "fwd_flops": 120881152.0,
+   "fwd_self_us": 8773.707999999999
+  },
+  "mod:fe.pokemon_encoder.move_self_norm": {
+   "fwd_aten_calls": 14.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 661.2810000000027
+  },
+  "mod:fe.pokemon_encoder.role_encoder.0": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 287981568.0,
+   "fwd_self_us": 3173.6969999999965
+  },
+  "mod:fe.pokemon_encoder.role_encoder.1": {
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 119.18400000000838
+  },
+  "mod:fe.pokemon_encoder.role_encoder.2": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 227540992.0,
+   "fwd_self_us": 2453.1440000000002
+  },
+  "mod:fe.pre_proj_norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 147.3859999999404
+  },
+  "mod:fe.prefuse_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 4718592.0,
+   "fwd_self_us": 195.91800000000512
+  },
+  "mod:fe.projection": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 301989888.0,
+   "fwd_self_us": 3072.7269999999553
+  },
+  "mod:fe.spread_belief": {
+   "fwd_aten_calls": 75.0,
+   "fwd_flops": 674304.0,
+   "fwd_self_us": 483.25800000003073
+  },
+  "mod:fe.spread_belief.ev_head": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 1966080.0,
+   "fwd_self_us": 135.5349999999744
+  },
+  "mod:fe.spread_belief.nature_head": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 9830400.0,
+   "fwd_self_us": 320.7820000000065
+  },
+  "mod:fe.spread_belief.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 134.98300000000745
+  },
+  "mod:fe.spread_belief.reinject": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1966080.0,
+   "fwd_self_us": 65.13299999997253
+  },
+  "mod:fe.status_cure_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 3932160.0,
+   "fwd_self_us": 110.01699999999255
+  },
+  "mod:fe.status_cure_rule": {
+   "fwd_aten_calls": 336.0,
+   "fwd_flops": 57600.0,
+   "fwd_self_us": 851.9950000002282
+  },
+  "mod:fe.t0_species_prior": {
+   "fwd_aten_calls": 40.0,
+   "fwd_flops": 81920400.0,
+   "fwd_self_us": 1383.497000000002
+  },
+  "mod:fe.team_transformer": {
+   "fwd_aten_calls": 416.0,
+   "fwd_flops": 6376448.0,
+   "fwd_self_us": 4617.3360000003595
+  },
+  "mod:fe.team_transformer.extra_rounds.0": {
+   "fwd_aten_calls": 122.0,
+   "fwd_flops": 4299161600.0,
+   "fwd_self_us": 69273.6669999999
+  },
+  "mod:fe.team_transformer.field_proj": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 720896.0,
+   "fwd_self_us": 28.06200000003446
+  },
+  "mod:fe.team_transformer.side_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1310720.0,
+   "fwd_self_us": 53.69099999999162
+  },
+  "mod:fe.team_transformer.token_type_emb": {
+   "fwd_aten_calls": 28.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 43.79200000013225
+  },
+  "mod:fe.team_transformer.transformer_layers.0": {
+   "fwd_aten_calls": 122.0,
+   "fwd_flops": 4299161600.0,
+   "fwd_self_us": 69316.63900000008
+  },
+  "mod:fe.team_transformer.transformer_layers.1": {
+   "fwd_aten_calls": 122.0,
+   "fwd_flops": 4299161600.0,
+   "fwd_self_us": 70253.98400000005
+  },
+  "mod:fe.unpack": {
+   "fwd_aten_calls": 428.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 993.825
+  },
+  "mod:fe.value_entity_pool": {
+   "fwd_aten_calls": 165.0,
+   "fwd_flops": 7856128.0,
+   "fwd_self_us": 753.5359999998473
+  },
+  "mod:fe.value_entity_pool.op_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 2359296.0,
+   "fwd_self_us": 96.55099999997765
+  },
+  "mod:fe.value_entity_pool.out_proj": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 16777216.0,
+   "fwd_self_us": 196.47899999981746
+  },
+  "mod:fe.value_entity_pool.token_proj": {
+   "fwd_aten_calls": 71.0,
+   "fwd_flops": 92274688.0,
+   "fwd_self_us": 1350.8350000001956
+  },
+  "mod:fe.win_head.net.0": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 31.53900000010617
+  },
+  "mod:fe.win_head.net.1": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 8388608.0,
+   "fwd_self_us": 104.1359999999404
+  },
+  "mod:fe.win_head.net.2": {
+   "fwd_aten_calls": 2.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 6.6429999999236315
+  },
+  "mod:fe.win_head.net.3": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 65536.0,
+   "fwd_self_us": 15.208000000100583
+  },
+  "mod:mlp_extractor.policy_net.0": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 134217728.0,
+   "fwd_self_us": 1417.25
+  },
+  "mod:mlp_extractor.policy_net.1": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 348.5339999999851
+  },
+  "mod:mlp_extractor.policy_net.2": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 134217728.0,
+   "fwd_self_us": 1420.28600000008
+  },
+  "mod:mlp_extractor.policy_net.3": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 346.3410000000149
+  },
+  "mod:pointer_head": {
+   "fwd_aten_calls": 42.0,
+   "fwd_flops": 263168.0,
+   "fwd_self_us": 809.6220000002068
+  },
+  "mod:pointer_head.ctx_proj": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 16777216.0,
+   "fwd_self_us": 205.65500000002794
+  },
+  "mod:pointer_head.move_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 23461888.0,
+   "fwd_self_us": 282.3289999999106
+  },
+  "mod:pointer_head.move_score": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 131072.0,
+   "fwd_self_us": 26.520000000018626
+  },
+  "mod:pointer_head.struggle_score": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 32768.0,
+   "fwd_self_us": 13.023999999975786
+  },
+  "mod:pointer_head.switch_extra_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 393216.0,
+   "fwd_self_us": 68.54900000011548
+  },
+  "mod:pointer_head.switch_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 31653888.0,
+   "fwd_self_us": 376.9680000001099
+  },
+  "mod:pointer_head.switch_score": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 196608.0,
+   "fwd_self_us": 25.94900000002235
+  }
+ },
+ "infer_256_profiled_wall_s": 1.112865609000437,
+ "infer_256_unprofiled": {
+  "max_s": 1.0397130770143121,
+  "median_s": 0.966355556040071,
+  "min_s": 0.9633393550757319,
+  "reps": 3
+ },
+ "infer_64_by_label": {
+  "(outside any module: losses, masking, glue)": {
+   "fwd_aten_calls": 63.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 155.271999999939
+  },
+  "meth:damage_op.apply_out_gain": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 8832.0,
+   "fwd_self_us": 3.8769999999931315
+  },
+  "meth:damage_op.discrete_incoming_status": {
+   "fwd_aten_calls": 583.0,
+   "fwd_flops": 61120.0,
+   "fwd_self_us": 676.2150000000256
+  },
+  "meth:damage_op.discrete_outgoing_status": {
+   "fwd_aten_calls": 956.0,
+   "fwd_flops": 64640.0,
+   "fwd_self_us": 1023.2079999998678
+  },
+  "meth:damage_op.expanded_out_gain": {
+   "fwd_aten_calls": 6.0,
+   "fwd_flops": 29.0,
+   "fwd_self_us": 16.922999999995227
+  },
+  "meth:damage_op.opp_ability_damage_mult": {
+   "fwd_aten_calls": 342.0,
+   "fwd_flops": 145152.0,
+   "fwd_self_us": 825.4430000000284
+  },
+  "meth:damage_op.opp_ability_view": {
+   "fwd_aten_calls": 1190.0,
+   "fwd_flops": 26112.0,
+   "fwd_self_us": 1183.931000000288
+  },
+  "meth:damage_op.opp_secondary_block": {
+   "fwd_aten_calls": 34.0,
+   "fwd_flops": 2304.0,
+   "fwd_self_us": 67.17700000002515
+  },
+  "meth:damage_op.opp_secondary_mult": {
+   "fwd_aten_calls": 68.0,
+   "fwd_flops": 4608.0,
+   "fwd_self_us": 104.53700000004028
+  },
+  "meth:damage_op.opp_status_block": {
+   "fwd_aten_calls": 76.0,
+   "fwd_flops": 13824.0,
+   "fwd_self_us": 176.34099999981117
+  },
+  "meth:damage_op.our_burn_loss": {
+   "fwd_aten_calls": 4343.0,
+   "fwd_flops": 1907584.0,
+   "fwd_self_us": 6455.604000000385
+  },
+  "meth:damage_op.pair_outcome_coords": {
+   "fwd_aten_calls": 2238.0,
+   "fwd_flops": 5556224.0,
+   "fwd_self_us": 11588.773000000205
+  },
+  "meth:damage_op.pairwise_baton": {
+   "fwd_aten_calls": 132.0,
+   "fwd_flops": 8320.0,
+   "fwd_self_us": 133.61300000007031
+  },
+  "meth:damage_op.pairwise_bench_incoming": {
+   "fwd_aten_calls": 2512.0,
+   "fwd_flops": 1469952.0,
+   "fwd_self_us": 3975.226999999839
+  },
+  "meth:damage_op.pairwise_bench_outgoing": {
+   "fwd_aten_calls": 6576.0,
+   "fwd_flops": 2860800.0,
+   "fwd_self_us": 9561.54100000058
+  },
+  "meth:damage_op.pairwise_boost": {
+   "fwd_aten_calls": 6015.0,
+   "fwd_flops": 794465792.0,
+   "fwd_self_us": 24912.74499999924
+  },
+  "meth:damage_op.pairwise_boost_incoming": {
+   "fwd_aten_calls": 3012.0,
+   "fwd_flops": 952192.0,
+   "fwd_self_us": 4110.762000000919
+  },
+  "meth:damage_op.pairwise_entry": {
+   "fwd_aten_calls": 220.0,
+   "fwd_flops": 5504.0,
+   "fwd_self_us": 240.08400000008987
+  },
+  "meth:damage_op.pairwise_incoming": {
+   "fwd_aten_calls": 1115.0,
+   "fwd_flops": 485440.0,
+   "fwd_self_us": 1440.590000000113
+  },
+  "meth:damage_op.pairwise_outgoing": {
+   "fwd_aten_calls": 19891.0,
+   "fwd_flops": 82317808.0,
+   "fwd_self_us": 24147.804000000557
+  },
+  "meth:damage_op.pairwise_protect": {
+   "fwd_aten_calls": 95.0,
+   "fwd_flops": 1792.0,
+   "fwd_self_us": 85.28100000001723
+  },
+  "meth:damage_op.pairwise_recovery": {
+   "fwd_aten_calls": 2874.0,
+   "fwd_flops": 704768.0,
+   "fwd_self_us": 3952.108000000211
+  },
+  "meth:damage_op.pairwise_schedule": {
+   "fwd_aten_calls": 194.0,
+   "fwd_flops": 3072.0,
+   "fwd_self_us": 213.47999999998137
+  },
+  "meth:damage_op.pairwise_speed": {
+   "fwd_aten_calls": 1259.0,
+   "fwd_flops": 158934784.0,
+   "fwd_self_us": 10128.664000000106
+  },
+  "meth:damage_op.pairwise_status_consequence": {
+   "fwd_aten_calls": 3072.0,
+   "fwd_flops": 2014272.0,
+   "fwd_self_us": 4821.12900000083
+  },
+  "meth:damage_op.pairwise_trap": {
+   "fwd_aten_calls": 323.0,
+   "fwd_flops": 19968.0,
+   "fwd_self_us": 344.0120000001625
+  },
+  "meth:damage_op.pointer_cells": {
+   "fwd_aten_calls": 58.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 76.39400000002934
+  },
+  "meth:damage_op.pointer_intent_status_operands": {
+   "fwd_aten_calls": 4713.0,
+   "fwd_flops": 5156672.0,
+   "fwd_self_us": 7532.056999999448
+  },
+  "meth:damage_op.spikes_entry": {
+   "fwd_aten_calls": 342.0,
+   "fwd_flops": 3072.0,
+   "fwd_self_us": 432.5629999997909
+  },
+  "meth:damage_op.tensors_from_block": {
+   "fwd_aten_calls": 126.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 122.55200000021432
+  },
+  "meth:fe._apply_move_belief": {
+   "fwd_aten_calls": 1857.0,
+   "fwd_flops": 15398784.0,
+   "fwd_self_us": 16112.649000000023
+  },
+  "meth:fe._attach_move_group": {
+   "fwd_aten_calls": 1696.0,
+   "fwd_flops": 1672719.0,
+   "fwd_self_us": 4437.284999999982
+  },
+  "meth:fe._build_hypothesis_species": {
+   "fwd_aten_calls": 1756.0,
+   "fwd_flops": 23921439.0,
+   "fwd_self_us": 5602.495000000003
+  },
+  "meth:fe._flat_consumer_ops": {
+   "fwd_aten_calls": 88.0,
+   "fwd_flops": 448.0,
+   "fwd_self_us": 230.872999999905
+  },
+  "meth:fe._other_edge_cells": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 77.90700000003562
+  },
+  "meth:fe._spread_hp_damage": {
+   "fwd_aten_calls": 24.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 174.766999999978
+  },
+  "meth:fe._typed_hp_posterior": {
+   "fwd_aten_calls": 89.0,
+   "fwd_flops": 6912.0,
+   "fwd_self_us": 204.27500000000873
+  },
+  "mod:fe": {
+   "fwd_aten_calls": 8259.0,
+   "fwd_flops": 73853504.0,
+   "fwd_self_us": 33771.70300000085
+  },
+  "mod:fe.activation": {
+   "fwd_aten_calls": 2.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 13.315000000002328
+  },
+  "mod:fe.assembler": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 20.69900000002235
+  },
+  "mod:fe.belief_head": {
+   "fwd_aten_calls": 41.0,
+   "fwd_flops": 20634000.0,
+   "fwd_self_us": 550.1800000000512
+  },
+  "mod:fe.belief_head.moves_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 39321600.0,
+   "fwd_self_us": 490.28000000002794
+  },
+  "mod:fe.belief_head.norm": {
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 80.6019999999553
+  },
+  "mod:fe.belief_head.species_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 39321600.0,
+   "fwd_self_us": 505.6699999999837
+  },
+  "mod:fe.cls_pool": {
+   "fwd_aten_calls": 86.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 233.64799999981187
+  },
+  "mod:fe.cls_pool.norm_pool_our": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 20.93899999995483
+  },
+  "mod:fe.cls_pool.norm_pool_their": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 16.030999999959022
+  },
+  "mod:fe.cls_pool.norm_pool_value": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 18.975999999966007
+  },
+  "mod:fe.cls_pool.our_cls_attn": {
+   "fwd_aten_calls": 123.0,
+   "fwd_flops": 29564928.0,
+   "fwd_self_us": 887.1899999998859
+  },
+  "mod:fe.cls_pool.their_cls_attn": {
+   "fwd_aten_calls": 118.0,
+   "fwd_flops": 33792000.0,
+   "fwd_self_us": 821.1920000000391
+  },
+  "mod:fe.cls_pool.value_cls_attn": {
+   "fwd_aten_calls": 118.0,
+   "fwd_flops": 59154432.0,
+   "fwd_self_us": 1144.6869999999763
+  },
+  "mod:fe.damage_op": {
+   "fwd_aten_calls": 8754.0,
+   "fwd_flops": 30276688.0,
+   "fwd_self_us": 23877.90000000033
+  },
+  "mod:fe.damage_op.eot_rule": {
+   "fwd_aten_calls": 1414.0,
+   "fwd_flops": 85504.0,
+   "fwd_self_us": 1457.3199999998906
+  },
+  "mod:fe.edge_bias": {
+   "fwd_aten_calls": 1227.0,
+   "fwd_flops": 441344.0,
+   "fwd_self_us": 2101.8420000000624
+  },
+  "mod:fe.edge_bias.c1_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 200704.0,
+   "fwd_self_us": 70.88300000003073
+  },
+  "mod:fe.edge_bias.c2_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 172032.0,
+   "fwd_self_us": 45.26500000001397
+  },
+  "mod:fe.edge_bias.c3_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 86016.0,
+   "fwd_self_us": 56.79700000002049
+  },
+  "mod:fe.edge_bias.c4_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 16384.0,
+   "fwd_self_us": 22.381999999983236
+  },
+  "mod:fe.edge_bias.c5_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 98304.0,
+   "fwd_self_us": 36.337999999988824
+  },
+  "mod:fe.edge_bias.d1_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 172032.0,
+   "fwd_self_us": 74.85100000002421
+  },
+  "mod:fe.edge_bias.d2_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 24576.0,
+   "fwd_self_us": 28.804000000003725
+  },
+  "mod:fe.edge_bias.d3_map": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 184320.0,
+   "fwd_self_us": 63.118000000016764
+  },
+  "mod:fe.edge_bias.d4_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 172032.0,
+   "fwd_self_us": 62.27700000000186
+  },
+  "mod:fe.edge_bias.g_map": {
+   "fwd_aten_calls": 29.0,
+   "fwd_flops": 49152.0,
+   "fwd_self_us": 75.70200000004843
+  },
+  "mod:fe.edge_bias.h_map": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 184320.0,
+   "fwd_self_us": 123.08100000000559
+  },
+  "mod:fe.edge_bias.r_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1179648.0,
+   "fwd_self_us": 421.1500000000233
+  },
+  "mod:fe.edge_bias.s1_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 49152.0,
+   "fwd_self_us": 33.17300000000978
+  },
+  "mod:fe.edge_bias.s3_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 110592.0,
+   "fwd_self_us": 33.382999999972526
+  },
+  "mod:fe.edge_bias.t_map": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 73728.0,
+   "fwd_self_us": 53.77999999996973
+  },
+  "mod:fe.edge_bias.v_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 129024.0,
+   "fwd_self_us": 81.6930000000284
+  },
+  "mod:fe.edge_bias.x_map": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 49152.0,
+   "fwd_self_us": 48.931999999971595
+  },
+  "mod:fe.effective_stats_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 1376256.0,
+   "fwd_self_us": 36.146999999997206
+  },
+  "mod:fe.embeddings.ability_embedding": {
+   "fwd_aten_calls": 40.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 48.03000000000429
+  },
+  "mod:fe.embeddings.item_embedding": {
+   "fwd_aten_calls": 20.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 27.962000000001353
+  },
+  "mod:fe.embeddings.move_embedding": {
+   "fwd_aten_calls": 74.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 136.28399999999192
+  },
+  "mod:fe.embeddings.species_embedding": {
+   "fwd_aten_calls": 50.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 91.59100000000944
+  },
+  "mod:fe.embeddings.type_embedding": {
+   "fwd_aten_calls": 88.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 118.01200000000017
+  },
+  "mod:fe.entity_seats": {
+   "fwd_aten_calls": 323.0,
+   "fwd_flops": 1455616.0,
+   "fwd_self_us": 1091.327000000063
+  },
+  "mod:fe.entity_seats.move_seat_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 2097152.0,
+   "fwd_self_us": 53.58100000000559
+  },
+  "mod:fe.entity_seats.tail_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 393216.0,
+   "fwd_self_us": 33.03199999999197
+  },
+  "mod:fe.entity_seats.threat_seat_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 3440640.0,
+   "fwd_self_us": 83.35700000000361
+  },
+  "mod:fe.eot_residual_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 2162688.0,
+   "fwd_self_us": 45.85600000002887
+  },
+  "mod:fe.eot_residual_rule": {
+   "fwd_aten_calls": 707.0,
+   "fwd_flops": 42752.0,
+   "fwd_self_us": 793.2209999997285
+  },
+  "mod:fe.flat_intent_head": {
+   "fwd_aten_calls": 72.0,
+   "fwd_flops": 896.0,
+   "fwd_self_us": 264.27599999995437
+  },
+  "mod:fe.flat_intent_head.hidden": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 44269568.0,
+   "fwd_self_us": 597.6720000000205
+  },
+  "mod:fe.flat_intent_head.out": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 114688.0,
+   "fwd_self_us": 37.521000000007916
+  },
+  "mod:fe.hidden_opp_belief": {
+   "fwd_aten_calls": 36.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 94.13500000006752
+  },
+  "mod:fe.hidden_opp_belief.decoder": {
+   "fwd_aten_calls": 5.0,
+   "fwd_flops": 147456.0,
+   "fwd_self_us": 68.94899999996414
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.30000000004656613
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout1": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.8619999999646097
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout2": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.510999999998603
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout3": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.17000000004190952
+  },
+  "mod:fe.hidden_opp_belief.decoder.linear1": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 25165824.0,
+   "fwd_self_us": 304.5010000000475
+  },
+  "mod:fe.hidden_opp_belief.decoder.linear2": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 25165824.0,
+   "fwd_self_us": 304.6219999999739
+  },
+  "mod:fe.hidden_opp_belief.decoder.multihead_attn": {
+   "fwd_aten_calls": 119.0,
+   "fwd_flops": 79691776.0,
+   "fwd_self_us": 1962.5679999998538
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm1": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 44.53299999999581
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm2": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 44.463999999978114
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm3": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 41.849000000045635
+  },
+  "mod:fe.hidden_opp_belief.decoder.self_attn": {
+   "fwd_aten_calls": 64.0,
+   "fwd_flops": 51511296.0,
+   "fwd_self_us": 1420.4859999999753
+  },
+  "mod:fe.hidden_opp_belief.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 39.12300000002142
+  },
+  "mod:fe.history_events": {
+   "fwd_aten_calls": 215.0,
+   "fwd_flops": 262144.0,
+   "fwd_self_us": 449.4190000000526
+  },
+  "mod:fe.history_events.cant_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 16.160000000003492
+  },
+  "mod:fe.history_events.denial_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 18.224999999976717
+  },
+  "mod:fe.history_events.entry_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 18.705000000016298
+  },
+  "mod:fe.history_events.faint_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 16.039999999979045
+  },
+  "mod:fe.history_events.itemtr_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 16.421000000002095
+  },
+  "mod:fe.history_events.kind_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 26.380000000004657
+  },
+  "mod:fe.history_events.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 174.77800000002026
+  },
+  "mod:fe.history_events.proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 101711872.0,
+   "fwd_self_us": 1184.463000000018
+  },
+  "mod:fe.history_events.stat_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 14.788000000000466
+  },
+  "mod:fe.history_events.status_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 15.908999999985099
+  },
+  "mod:fe.hp_type_belief_head": {
+   "fwd_aten_calls": 9.0,
+   "fwd_flops": 6144.0,
+   "fwd_self_us": 40.61699999999837
+  },
+  "mod:fe.hp_type_belief_head.norm": {
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 49.83300000000236
+  },
+  "mod:fe.hp_type_belief_head.reinject_norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 38.35199999999895
+  },
+  "mod:fe.hp_type_belief_head.reinject_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 34.48500000000058
+  },
+  "mod:fe.hp_type_belief_head.type_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 38.1919999999991
+  },
+  "mod:fe.hypothesis_builder.delta_global": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 2375680.0,
+   "fwd_self_us": 54.181000000000495
+  },
+  "mod:fe.hypothesis_builder.delta_hidden": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 3145728.0,
+   "fwd_self_us": 56.745999999999185
+  },
+  "mod:fe.hypothesis_builder.delta_norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 20.488999999999578
+  },
+  "mod:fe.hypothesis_builder.delta_out": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 4915200.0,
+   "fwd_self_us": 74.38900000000103
+  },
+  "mod:fe.hypothesis_builder.other_map": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 524288.0,
+   "fwd_self_us": 22.972999999998137
+  },
+  "mod:fe.item_belief_head": {
+   "fwd_aten_calls": 9.0,
+   "fwd_flops": 230400.0,
+   "fwd_self_us": 600.0570000000007
+  },
+  "mod:fe.item_belief_head.item_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 58982400.0,
+   "fwd_self_us": 650.8819999999978
+  },
+  "mod:fe.item_belief_head.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 35.57700000000477
+  },
+  "mod:fe.mon_hazard_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 393216.0,
+   "fwd_self_us": 45.16400000004796
+  },
+  "mod:fe.move_actor_proj": {
+   "fwd_aten_calls": 8.0,
+   "fwd_flops": 131072.0,
+   "fwd_self_us": 17.1820000000007
+  },
+  "mod:fe.move_belief.move_head": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 39321600.0,
+   "fwd_self_us": 455.17399999999907
+  },
+  "mod:fe.move_belief.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 40.72600000000239
+  },
+  "mod:fe.move_belief.reinject": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 48.84200000000419
+  },
+  "mod:fe.move_resolution_cell": {
+   "fwd_aten_calls": 4656.0,
+   "fwd_flops": 864832.0,
+   "fwd_self_us": 6321.364999999991
+  },
+  "mod:fe.move_resolution_cell.move_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 739328.0,
+   "fwd_self_us": 48.95200000004843
+  },
+  "mod:fe.move_resolution_cell.restored_move_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 97280.0,
+   "fwd_self_us": 30.446999999985565
+  },
+  "mod:fe.move_resolution_cell.restored_switch_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 13824.0,
+   "fwd_self_us": 17.793999999994412
+  },
+  "mod:fe.move_resolution_cell.status_move_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 38912.0,
+   "fwd_self_us": 16.230999999970663
+  },
+  "mod:fe.move_resolution_cell.status_switch_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 27648.0,
+   "fwd_self_us": 14.597999999998137
+  },
+  "mod:fe.move_resolution_cell.switch_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 248832.0,
+   "fwd_self_us": 27.331000000005588
+  },
+  "mod:fe.move_target_proj": {
+   "fwd_aten_calls": 8.0,
+   "fwd_flops": 131072.0,
+   "fwd_self_us": 12.523999999990338
+  },
+  "mod:fe.obs_facts_inject": {
+   "fwd_aten_calls": 86.0,
+   "fwd_flops": 156416.0,
+   "fwd_self_us": 153.29000000000087
+  },
+  "mod:fe.obs_facts_inject.choice_proj": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 311296.0,
+   "fwd_self_us": 14.336999999999534
+  },
+  "mod:fe.obs_facts_inject.screens_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 131072.0,
+   "fwd_self_us": 27.73199999999997
+  },
+  "mod:fe.obs_facts_inject.seen_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 688128.0,
+   "fwd_self_us": 42.248999999999796
+  },
+  "mod:fe.obs_facts_inject.vol_proj": {
+   "fwd_aten_calls": 20.0,
+   "fwd_flops": 491520.0,
+   "fwd_self_us": 33.43199999999888
+  },
+  "mod:fe.op_content": {
+   "fwd_aten_calls": 32.0,
+   "fwd_flops": 49152.0,
+   "fwd_self_us": 87.46400000015274
+  },
+  "mod:fe.op_content.amount_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 67.94699999998556
+  },
+  "mod:fe.op_content.outgoing_cell": {
+   "fwd_aten_calls": 15.0,
+   "fwd_flops": 589824.0,
+   "fwd_self_us": 53.351000000024214
+  },
+  "mod:fe.op_content.outgoing_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 3145728.0,
+   "fwd_self_us": 56.537000000011176
+  },
+  "mod:fe.op_worst_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 196608.0,
+   "fwd_self_us": 22.262000000002445
+  },
+  "mod:fe.pokemon_encoder": {
+   "fwd_aten_calls": 456.0,
+   "fwd_flops": 736576.0,
+   "fwd_self_us": 1053.6520000000035
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.0": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 39518208.0,
+   "fwd_self_us": 442.4500000000007
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.1": {
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 22.793000000001484
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.2": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 37748736.0,
+   "fwd_self_us": 400.1610000000019
+  },
+  "mod:fe.pokemon_encoder.move_dyn_pool": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 10027008.0,
+   "fwd_self_us": 148.34900000000198
+  },
+  "mod:fe.pokemon_encoder.move_dyn_proj": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 589824.0,
+   "fwd_self_us": 70.68299999999908
+  },
+  "mod:fe.pokemon_encoder.move_latent_encoder": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 180.94900000000553
+  },
+  "mod:fe.pokemon_encoder.move_latent_encoder.mlp": {
+   "fwd_aten_calls": 78.0,
+   "fwd_flops": 57692160.0,
+   "fwd_self_us": 812.0040000000054
+  },
+  "mod:fe.pokemon_encoder.move_network.0": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 77856768.0,
+   "fwd_self_us": 856.3379999999993
+  },
+  "mod:fe.pokemon_encoder.move_network.1": {
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 72.67599999999993
+  },
+  "mod:fe.pokemon_encoder.move_network.2": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 28311552.0,
+   "fwd_self_us": 396.36300000000074
+  },
+  "mod:fe.pokemon_encoder.move_self_attn": {
+   "fwd_aten_calls": 132.0,
+   "fwd_flops": 40108032.0,
+   "fwd_self_us": 2555.935999999998
+  },
+  "mod:fe.pokemon_encoder.move_self_norm": {
+   "fwd_aten_calls": 14.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 205.1150000000007
+  },
+  "mod:fe.pokemon_encoder.role_encoder.0": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 95551488.0,
+   "fwd_self_us": 1087.4610000000011
+  },
+  "mod:fe.pokemon_encoder.role_encoder.1": {
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 42.76999999999953
+  },
+  "mod:fe.pokemon_encoder.role_encoder.2": {
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 75497472.0,
+   "fwd_self_us": 787.0269999999991
+  },
+  "mod:fe.pre_proj_norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 59.02999999996973
+  },
+  "mod:fe.prefuse_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 1179648.0,
+   "fwd_self_us": 68.23799999999756
+  },
+  "mod:fe.projection": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 75497472.0,
+   "fwd_self_us": 997.5920000000042
+  },
+  "mod:fe.spread_belief": {
+   "fwd_aten_calls": 75.0,
+   "fwd_flops": 168576.0,
+   "fwd_self_us": 175.89900000001944
+  },
+  "mod:fe.spread_belief.ev_head": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 491520.0,
+   "fwd_self_us": 42.1189999999915
+  },
+  "mod:fe.spread_belief.nature_head": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 2457600.0,
+   "fwd_self_us": 92.06299999999464
+  },
+  "mod:fe.spread_belief.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 41.927999999999884
+  },
+  "mod:fe.spread_belief.reinject": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 491520.0,
+   "fwd_self_us": 27.360999999989872
+  },
+  "mod:fe.status_cure_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 983040.0,
+   "fwd_self_us": 33.71400000003632
+  },
+  "mod:fe.status_cure_rule": {
+   "fwd_aten_calls": 336.0,
+   "fwd_flops": 14400.0,
+   "fwd_self_us": 399.80700000037905
+  },
+  "mod:fe.t0_species_prior": {
+   "fwd_aten_calls": 39.0,
+   "fwd_flops": 20480400.0,
+   "fwd_self_us": 413.846
+  },
+  "mod:fe.team_transformer": {
+   "fwd_aten_calls": 416.0,
+   "fwd_flops": 1594112.0,
+   "fwd_self_us": 939.6459999997751
+  },
+  "mod:fe.team_transformer.extra_rounds.0": {
+   "fwd_aten_calls": 122.0,
+   "fwd_flops": 1074790400.0,
+   "fwd_self_us": 17275.173000000126
+  },
+  "mod:fe.team_transformer.field_proj": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 180224.0,
+   "fwd_self_us": 13.494999999995343
+  },
+  "mod:fe.team_transformer.side_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 327680.0,
+   "fwd_self_us": 25.93899999995483
+  },
+  "mod:fe.team_transformer.token_type_emb": {
+   "fwd_aten_calls": 28.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 42.300000000046566
+  },
+  "mod:fe.team_transformer.transformer_layers.0": {
+   "fwd_aten_calls": 122.0,
+   "fwd_flops": 1074790400.0,
+   "fwd_self_us": 17711.201000000176
+  },
+  "mod:fe.team_transformer.transformer_layers.1": {
+   "fwd_aten_calls": 122.0,
+   "fwd_flops": 1074790400.0,
+   "fwd_self_us": 18292.217000000004
+  },
+  "mod:fe.unpack": {
+   "fwd_aten_calls": 428.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 599.6520000000003
+  },
+  "mod:fe.value_entity_pool": {
+   "fwd_aten_calls": 165.0,
+   "fwd_flops": 1964032.0,
+   "fwd_self_us": 400.9810000002035
+  },
+  "mod:fe.value_entity_pool.op_proj": {
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 589824.0,
+   "fwd_self_us": 45.77600000001257
+  },
+  "mod:fe.value_entity_pool.out_proj": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 4194304.0,
+   "fwd_self_us": 78.38699999998789
+  },
+  "mod:fe.value_entity_pool.token_proj": {
+   "fwd_aten_calls": 71.0,
+   "fwd_flops": 23068672.0,
+   "fwd_self_us": 437.55200000008335
+  },
+  "mod:fe.win_head.net.0": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 20.528999999980442
+  },
+  "mod:fe.win_head.net.1": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 2097152.0,
+   "fwd_self_us": 49.48200000001816
+  },
+  "mod:fe.win_head.net.2": {
+   "fwd_aten_calls": 2.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 5.7110000000102445
+  },
+  "mod:fe.win_head.net.3": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 16384.0,
+   "fwd_self_us": 16.15999999997439
+  },
+  "mod:mlp_extractor.policy_net.0": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 33554432.0,
+   "fwd_self_us": 455.07400000002235
+  },
+  "mod:mlp_extractor.policy_net.1": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 93.84600000001956
+  },
+  "mod:mlp_extractor.policy_net.2": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 33554432.0,
+   "fwd_self_us": 456.01500000001397
+  },
+  "mod:mlp_extractor.policy_net.3": {
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 89.00700000004144
+  },
+  "mod:pointer_head": {
+   "fwd_aten_calls": 42.0,
+   "fwd_flops": 65792.0,
+   "fwd_self_us": 250.30899999995017
+  },
+  "mod:pointer_head.ctx_proj": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 4194304.0,
+   "fwd_self_us": 78.21700000000419
+  },
+  "mod:pointer_head.move_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 5865472.0,
+   "fwd_self_us": 97.5229999999865
+  },
+  "mod:pointer_head.move_score": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 32768.0,
+   "fwd_self_us": 28.00199999997858
+  },
+  "mod:pointer_head.struggle_score": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 8192.0,
+   "fwd_self_us": 13.294999999983702
+  },
+  "mod:pointer_head.switch_extra_proj": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 98304.0,
+   "fwd_self_us": 30.82799999997951
+  },
+  "mod:pointer_head.switch_proj": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 7913472.0,
+   "fwd_self_us": 118.16200000001118
+  },
+  "mod:pointer_head.switch_score": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 49152.0,
+   "fwd_self_us": 20.69900000002235
+  }
+ },
+ "infer_64_profiled_wall_s": 0.3748132790206,
+ "infer_64_unprofiled": {
+  "max_s": 0.31124058295972645,
+  "median_s": 0.3091433569788933,
+  "min_s": 0.3062729589873925,
+  "reps": 3
+ },
+ "micro_step_by_label": {
+  "(accumulate_grad)": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 280.0,
+   "bwd_us": 2388.927999990061
+  },
+  "(backward: unmatched sequence_nr)": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 49.0,
+   "bwd_us": 1917375.2280000001
+  },
+  "(outside any module: losses, masking, glue)": {
+   "bwd_flops": 635705390.0,
+   "bwd_nodes": 159.0,
+   "bwd_us": 45628.80400001444,
+   "fwd_aten_calls": 6752.0,
+   "fwd_flops": 375175315.0,
+   "fwd_self_us": 203829.75100000307
+  },
+  "meth:damage_op.apply_out_gain": {
+   "bwd_flops": 565248.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 207.53900000080466,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 282624.0,
+   "fwd_self_us": 82.9250000002794
+  },
+  "meth:damage_op.discrete_incoming_status": {
+   "fwd_aten_calls": 583.0,
+   "fwd_flops": 1955840.0,
+   "fwd_self_us": 5170.778999997303
+  },
+  "meth:damage_op.discrete_outgoing_status": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 54.93300000205636,
+   "fwd_aten_calls": 956.0,
+   "fwd_flops": 2068480.0,
+   "fwd_self_us": 7553.476999996696
+  },
+  "meth:damage_op.expanded_out_gain": {
+   "bwd_flops": 4002.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 49.49200000613928,
+   "fwd_aten_calls": 6.0,
+   "fwd_flops": 29.0,
+   "fwd_self_us": 47.79000000003725
+  },
+  "meth:damage_op.opp_ability_damage_mult": {
+   "fwd_aten_calls": 342.0,
+   "fwd_flops": 4644864.0,
+   "fwd_self_us": 13967.115999994334
+  },
+  "meth:damage_op.opp_ability_view": {
+   "fwd_aten_calls": 1190.0,
+   "fwd_flops": 835584.0,
+   "fwd_self_us": 7948.495000003837
+  },
+  "meth:damage_op.opp_secondary_block": {
+   "fwd_aten_calls": 34.0,
+   "fwd_flops": 73728.0,
+   "fwd_self_us": 276.4580000010319
+  },
+  "meth:damage_op.opp_secondary_mult": {
+   "fwd_aten_calls": 68.0,
+   "fwd_flops": 147456.0,
+   "fwd_self_us": 598.4490000014193
+  },
+  "meth:damage_op.opp_status_block": {
+   "fwd_aten_calls": 76.0,
+   "fwd_flops": 442368.0,
+   "fwd_self_us": 2247.397999999579
+  },
+  "meth:damage_op.our_burn_loss": {
+   "bwd_flops": 4198400.0,
+   "bwd_nodes": 183.0,
+   "bwd_us": 6570.090000007302,
+   "fwd_aten_calls": 4343.0,
+   "fwd_flops": 60979200.0,
+   "fwd_self_us": 121008.67399999592
+  },
+  "meth:damage_op.pair_outcome_coords": {
+   "bwd_flops": 5185536.0,
+   "bwd_nodes": 12.0,
+   "bwd_us": 24185.412999995053,
+   "fwd_aten_calls": 2238.0,
+   "fwd_flops": 177799168.0,
+   "fwd_self_us": 445916.30299999006
+  },
+  "meth:damage_op.pairwise_baton": {
+   "bwd_flops": 503808.0,
+   "bwd_nodes": 31.0,
+   "bwd_us": 1024.8760000020266,
+   "fwd_aten_calls": 132.0,
+   "fwd_flops": 266240.0,
+   "fwd_self_us": 860.8300000010058
+  },
+  "meth:damage_op.pairwise_bench_incoming": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 17.973999999463558,
+   "fwd_aten_calls": 2512.0,
+   "fwd_flops": 47038464.0,
+   "fwd_self_us": 68054.31700001471
+  },
+  "meth:damage_op.pairwise_bench_outgoing": {
+   "bwd_flops": 6279168.0,
+   "bwd_nodes": 295.0,
+   "bwd_us": 7662.626000009477,
+   "fwd_aten_calls": 6576.0,
+   "fwd_flops": 91450368.0,
+   "fwd_self_us": 251478.8030000073
+  },
+  "meth:damage_op.pairwise_boost": {
+   "bwd_flops": 491520.0,
+   "bwd_nodes": 97.0,
+   "bwd_us": 3178.507999997586,
+   "fwd_aten_calls": 6015.0,
+   "fwd_flops": 25422587904.0,
+   "fwd_self_us": 998224.0419999799
+  },
+  "meth:damage_op.pairwise_boost_incoming": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 26.059000000357628,
+   "fwd_aten_calls": 3012.0,
+   "fwd_flops": 30470144.0,
+   "fwd_self_us": 40521.48400001321
+  },
+  "meth:damage_op.pairwise_entry": {
+   "fwd_aten_calls": 220.0,
+   "fwd_flops": 176128.0,
+   "fwd_self_us": 2149.4820000026375
+  },
+  "meth:damage_op.pairwise_incoming": {
+   "bwd_flops": 8785920.0,
+   "bwd_nodes": 71.0,
+   "bwd_us": 6538.141999986023,
+   "fwd_aten_calls": 1115.0,
+   "fwd_flops": 15534080.0,
+   "fwd_self_us": 21623.047999992967
+  },
+  "meth:damage_op.pairwise_outgoing": {
+   "bwd_flops": 24735744.0,
+   "bwd_nodes": 1089.0,
+   "bwd_us": 40552.65299992263,
+   "fwd_aten_calls": 19891.0,
+   "fwd_flops": 2634033456.0,
+   "fwd_self_us": 286728.3140000324
+  },
+  "meth:damage_op.pairwise_protect": {
+   "fwd_aten_calls": 95.0,
+   "fwd_flops": 57344.0,
+   "fwd_self_us": 331.47600000165403
+  },
+  "meth:damage_op.pairwise_recovery": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 109.97599999979138,
+   "fwd_aten_calls": 2874.0,
+   "fwd_flops": 22552576.0,
+   "fwd_self_us": 39940.68100000359
+  },
+  "meth:damage_op.pairwise_schedule": {
+   "fwd_aten_calls": 194.0,
+   "fwd_flops": 98304.0,
+   "fwd_self_us": 2171.800999998115
+  },
+  "meth:damage_op.pairwise_speed": {
+   "fwd_aten_calls": 1259.0,
+   "fwd_flops": 5085849600.0,
+   "fwd_self_us": 665619.2249999922
+  },
+  "meth:damage_op.pairwise_status_consequence": {
+   "fwd_aten_calls": 3072.0,
+   "fwd_flops": 64393216.0,
+   "fwd_self_us": 132947.82600000594
+  },
+  "meth:damage_op.pairwise_trap": {
+   "fwd_aten_calls": 323.0,
+   "fwd_flops": 638976.0,
+   "fwd_self_us": 2911.9550000028685
+  },
+  "meth:damage_op.pointer_cells": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 18.0,
+   "bwd_us": 324.34699999541044,
+   "fwd_aten_calls": 58.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 410.53100000321865
+  },
+  "meth:damage_op.pointer_intent_status_operands": {
+   "bwd_flops": 13103104.0,
+   "bwd_nodes": 103.0,
+   "bwd_us": 12159.697999987751,
+   "fwd_aten_calls": 4713.0,
+   "fwd_flops": 165013504.0,
+   "fwd_self_us": 117711.39699999522
+  },
+  "meth:damage_op.spikes_entry": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 20.22700000181794,
+   "fwd_aten_calls": 342.0,
+   "fwd_flops": 98304.0,
+   "fwd_self_us": 2404.0439999997616
+  },
+  "meth:damage_op.tensors_from_block": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 24.0,
+   "bwd_us": 1329.0229999963194,
+   "fwd_aten_calls": 126.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 211.1060000001453
+  },
+  "meth:fe._apply_move_belief": {
+   "bwd_flops": 330891264.0,
+   "bwd_nodes": 36.0,
+   "bwd_us": 33852.585000000894,
+   "fwd_aten_calls": 1861.0,
+   "fwd_flops": 492761088.0,
+   "fwd_self_us": 527219.1200000015
+  },
+  "meth:fe._attach_move_group": {
+   "fwd_aten_calls": 1697.0,
+   "fwd_flops": 53514639.0,
+   "fwd_self_us": 117369.89699999837
+  },
+  "meth:fe._build_hypothesis_species": {
+   "bwd_flops": 54263808.0,
+   "bwd_nodes": 12.0,
+   "bwd_us": 3038.28200000152,
+   "fwd_aten_calls": 1759.0,
+   "fwd_flops": 765457311.0,
+   "fwd_self_us": 126550.4259999998
+  },
+  "meth:fe._flat_consumer_ops": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 5992.035000000149,
+   "fwd_aten_calls": 88.0,
+   "fwd_flops": 14336.0,
+   "fwd_self_us": 1452.0959999989718
+  },
+  "meth:fe._other_edge_cells": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 338.14500000327826,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1173.4529999988154
+  },
+  "meth:fe._spread_hp_damage": {
+   "bwd_flops": 8945664.0,
+   "bwd_nodes": 7.0,
+   "bwd_us": 12695.416999995708,
+   "fwd_aten_calls": 24.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 5434.979999999981
+  },
+  "meth:fe._typed_hp_posterior": {
+   "bwd_flops": 1007616.0,
+   "bwd_nodes": 16.0,
+   "bwd_us": 5926.533999998122,
+   "fwd_aten_calls": 89.0,
+   "fwd_flops": 221184.0,
+   "fwd_self_us": 5036.460000000137
+  },
+  "mod:fe": {
+   "bwd_flops": 22401024.0,
+   "bwd_nodes": 137.0,
+   "bwd_us": 75818.2180000022,
+   "fwd_aten_calls": 8260.0,
+   "fwd_flops": 2351911536.0,
+   "fwd_self_us": 915204.9930000182
+  },
+  "mod:fe.activation": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 264.92699999921024,
+   "fwd_aten_calls": 2.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 258.035000000149
+  },
+  "mod:fe.assembler": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 50.20399999991059,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 822.2829999998212
+  },
+  "mod:fe.belief_head": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 4.567999999970198,
+   "fwd_aten_calls": 42.0,
+   "fwd_flops": 660275600.0,
+   "fwd_self_us": 13143.97899999842
+  },
+  "mod:fe.belief_head.moves_head": {
+   "bwd_flops": 2516582400.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 30376.50200000219,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1258291200.0,
+   "fwd_self_us": 19581.360999999568
+  },
+  "mod:fe.belief_head.norm": {
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1953.7469999995083
+  },
+  "mod:fe.belief_head.species_head": {
+   "bwd_flops": 2518155264.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 31124.67699999921,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1258291200.0,
+   "fwd_self_us": 15279.91800000146
+  },
+  "mod:fe.cls_pool": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 14.0,
+   "bwd_us": 2488.70199999772,
+   "fwd_aten_calls": 86.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 4830.913000006229
+  },
+  "mod:fe.cls_pool.norm_pool_our": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 251.5219999998808,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 228.910000000149
+  },
+  "mod:fe.cls_pool.norm_pool_their": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 324.3090000003576,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 208.089999999851
+  },
+  "mod:fe.cls_pool.norm_pool_value": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 215.0029999986291,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 212.4879999998957
+  },
+  "mod:fe.cls_pool.our_cls_attn": {
+   "bwd_flops": 1891893248.0,
+   "bwd_nodes": 39.0,
+   "bwd_us": 44813.591000000015,
+   "fwd_aten_calls": 123.0,
+   "fwd_flops": 946077696.0,
+   "fwd_self_us": 19869.943000001833
+  },
+  "mod:fe.cls_pool.their_cls_attn": {
+   "bwd_flops": 2162425856.0,
+   "bwd_nodes": 38.0,
+   "bwd_us": 42992.71500001475,
+   "fwd_aten_calls": 118.0,
+   "fwd_flops": 1081344000.0,
+   "fwd_self_us": 22095.009999997914
+  },
+  "mod:fe.cls_pool.value_cls_attn": {
+   "bwd_flops": 3785621504.0,
+   "bwd_nodes": 38.0,
+   "bwd_us": 61486.668000005186,
+   "fwd_aten_calls": 118.0,
+   "fwd_flops": 1892941824.0,
+   "fwd_self_us": 33722.58300000429
+  },
+  "mod:fe.damage_op": {
+   "bwd_flops": 526862336.0,
+   "bwd_nodes": 380.0,
+   "bwd_us": 570307.1460000202,
+   "fwd_aten_calls": 8754.0,
+   "fwd_flops": 968696784.0,
+   "fwd_self_us": 771594.5379999906
+  },
+  "mod:fe.damage_op.eot_rule": {
+   "fwd_aten_calls": 1414.0,
+   "fwd_flops": 2736128.0,
+   "fwd_self_us": 13864.203000019304
+  },
+  "mod:fe.edge_bias": {
+   "bwd_flops": 983104.0,
+   "bwd_nodes": 397.0,
+   "bwd_us": 6286890.767000001,
+   "fwd_aten_calls": 1227.0,
+   "fwd_flops": 14123008.0,
+   "fwd_self_us": 74920.37800000142
+  },
+  "mod:fe.edge_bias.c1_map": {
+   "bwd_flops": 12845120.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 2688.1949999965727,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 6422528.0,
+   "fwd_self_us": 1647.0299999993294
+  },
+  "mod:fe.edge_bias.c2_map": {
+   "bwd_flops": 5505024.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1276.5469999983907,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 5505024.0,
+   "fwd_self_us": 1090.7469999995083
+  },
+  "mod:fe.edge_bias.c3_map": {
+   "bwd_flops": 2752544.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 1073.6460000053048,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 2752512.0,
+   "fwd_self_us": 941.6270000003278
+  },
+  "mod:fe.edge_bias.c4_map": {
+   "bwd_flops": 524288.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 301.7470000013709,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 524288.0,
+   "fwd_self_us": 232.17499999981374
+  },
+  "mod:fe.edge_bias.c5_map": {
+   "bwd_flops": 6291456.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1585.245000001043,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 3145728.0,
+   "fwd_self_us": 954.4120000004768
+  },
+  "mod:fe.edge_bias.d1_map": {
+   "bwd_flops": 11010104.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 2316.287000000477,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 5505024.0,
+   "fwd_self_us": 1376.3230000007898
+  },
+  "mod:fe.edge_bias.d2_map": {
+   "bwd_flops": 1572864.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 541.2760000005364,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 786432.0,
+   "fwd_self_us": 306.7960000000894
+  },
+  "mod:fe.edge_bias.d3_map": {
+   "bwd_flops": 11796480.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 2292.0109999999404,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 5898240.0,
+   "fwd_self_us": 2011.8859999999404
+  },
+  "mod:fe.edge_bias.d4_map": {
+   "bwd_flops": 5505064.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 1378.397000003606,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 5505024.0,
+   "fwd_self_us": 2050.478000000119
+  },
+  "mod:fe.edge_bias.g_map": {
+   "bwd_flops": 1572872.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 736.4930000007153,
+   "fwd_aten_calls": 29.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 689.7450000001118
+  },
+  "mod:fe.edge_bias.h_map": {
+   "bwd_flops": 5898240.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1381.4829999990761,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 5898240.0,
+   "fwd_self_us": 3181.7120000002906
+  },
+  "mod:fe.edge_bias.r_map": {
+   "bwd_flops": 37748736.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 14890.697999998927,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 37748736.0,
+   "fwd_self_us": 16291.907000000589
+  },
+  "mod:fe.edge_bias.s1_map": {
+   "bwd_flops": 1572864.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 717.5369999967515,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 671.8109999997541
+  },
+  "mod:fe.edge_bias.s3_map": {
+   "bwd_flops": 3538944.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1502.5109999999404,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 3538944.0,
+   "fwd_self_us": 1456.1829999992624
+  },
+  "mod:fe.edge_bias.t_map": {
+   "bwd_flops": 2359296.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1336.377999998629,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 2359296.0,
+   "fwd_self_us": 1268.8720000004396
+  },
+  "mod:fe.edge_bias.v_map": {
+   "bwd_flops": 4128800.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 1262.7990000024438,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 4128768.0,
+   "fwd_self_us": 1801.6210000002757
+  },
+  "mod:fe.edge_bias.x_map": {
+   "bwd_flops": 1572872.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 691.2369999997318,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 570.5399999991059
+  },
+  "mod:fe.effective_stats_proj": {
+   "bwd_flops": 88080384.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 12340.300999999046,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 44040192.0,
+   "fwd_self_us": 770.3249999992549
+  },
+  "mod:fe.embeddings.ability_embedding": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 3075.0509999990463,
+   "fwd_aten_calls": 40.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 175.53900000001886
+  },
+  "mod:fe.embeddings.item_embedding": {
+   "fwd_aten_calls": 20.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 153.16699999998673
+  },
+  "mod:fe.embeddings.move_embedding": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 7457.866999998689,
+   "fwd_aten_calls": 74.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1285.1130000001067
+  },
+  "mod:fe.embeddings.species_embedding": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 14214.759000003338,
+   "fwd_aten_calls": 50.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1289.7510000003967
+  },
+  "mod:fe.embeddings.type_embedding": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 6205.726000007242,
+   "fwd_aten_calls": 88.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 808.7380000000376
+  },
+  "mod:fe.entity_seats": {
+   "bwd_flops": 22069248.0,
+   "bwd_nodes": 21.0,
+   "bwd_us": 6872.868999995291,
+   "fwd_aten_calls": 325.0,
+   "fwd_flops": 46579712.0,
+   "fwd_self_us": 26669.199000000954
+  },
+  "mod:fe.entity_seats.move_seat_proj": {
+   "bwd_flops": 134217728.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 3138.9919999986887,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 67108864.0,
+   "fwd_self_us": 918.414000000339
+  },
+  "mod:fe.entity_seats.tail_proj": {
+   "bwd_flops": 12582912.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 2673.5280000008643,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 12582912.0,
+   "fwd_self_us": 532.058999999892
+  },
+  "mod:fe.entity_seats.threat_seat_proj": {
+   "bwd_flops": 220200960.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 4850.905000001192,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 110100480.0,
+   "fwd_self_us": 2089.180999999866
+  },
+  "mod:fe.eot_residual_proj": {
+   "bwd_flops": 69206016.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 7359.883000001311,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 69206016.0,
+   "fwd_self_us": 1377.1650000000373
+  },
+  "mod:fe.eot_residual_rule": {
+   "fwd_aten_calls": 707.0,
+   "fwd_flops": 1368064.0,
+   "fwd_self_us": 5918.487000008114
+  },
+  "mod:fe.flat_intent_head": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 569.0789999999106,
+   "fwd_aten_calls": 72.0,
+   "fwd_flops": 28672.0,
+   "fwd_self_us": 4469.09699999541
+  },
+  "mod:fe.flat_intent_head.hidden": {
+   "bwd_flops": 1416626176.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 18408.78200000152,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1416626176.0,
+   "fwd_self_us": 19668.354000000283
+  },
+  "mod:fe.flat_intent_head.out": {
+   "bwd_flops": 7340032.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 687.1490000020713,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 3670016.0,
+   "fwd_self_us": 443.9539999999106
+  },
+  "mod:fe.hidden_opp_belief": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 1120.9739999994636,
+   "fwd_aten_calls": 36.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1474.2890000026673
+  },
+  "mod:fe.hidden_opp_belief.decoder": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1515.3640000000596,
+   "fwd_aten_calls": 5.0,
+   "fwd_flops": 4718592.0,
+   "fwd_self_us": 2321.7479999978095
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 10.10899999924004,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1.6229999996721745
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 7.935000000521541,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1.2520000003278255
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout2": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 7.403999999165535,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1.5919999983161688
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout3": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 8.135999999940395,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1.4429999999701977
+  },
+  "mod:fe.hidden_opp_belief.decoder.linear1": {
+   "bwd_flops": 1610612736.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 21084.955000000075,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 805306368.0,
+   "fwd_self_us": 9136.468000000343
+  },
+  "mod:fe.hidden_opp_belief.decoder.linear2": {
+   "bwd_flops": 1610612736.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 20817.71199999936,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 805306368.0,
+   "fwd_self_us": 10040.554999999702
+  },
+  "mod:fe.hidden_opp_belief.decoder.multihead_attn": {
+   "bwd_flops": 5100273664.0,
+   "bwd_nodes": 39.0,
+   "bwd_us": 129195.48500000499,
+   "fwd_aten_calls": 119.0,
+   "fwd_flops": 2550136832.0,
+   "fwd_self_us": 69530.09699999355
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1647.1019999999553,
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1420.8870000001043
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm2": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1009.7050000000745,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1057.855000000447
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm3": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 947.1869999989867,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1081.359999999404
+  },
+  "mod:fe.hidden_opp_belief.decoder.self_attn": {
+   "bwd_flops": 3221225472.0,
+   "bwd_nodes": 30.0,
+   "bwd_us": 81975.13700000569,
+   "fwd_aten_calls": 84.0,
+   "fwd_flops": 1610612736.0,
+   "fwd_self_us": 35259.28600000031
+  },
+  "mod:fe.hidden_opp_belief.norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 986.3610000014305,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1144.2479999996722
+  },
+  "mod:fe.history_events": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 13758.173000000417,
+   "fwd_aten_calls": 215.0,
+   "fwd_flops": 8388608.0,
+   "fwd_self_us": 12347.387999999337
+  },
+  "mod:fe.history_events.cant_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 4109.71400000155,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 265.4079999998212
+  },
+  "mod:fe.history_events.denial_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3521.3090000003576,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 335.4590000002645
+  },
+  "mod:fe.history_events.entry_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3740.8810000009835,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 280.02499999990687
+  },
+  "mod:fe.history_events.faint_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3832.0730000026524,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 265.1980000003241
+  },
+  "mod:fe.history_events.itemtr_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3638.0180000029504,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 266.06999999983236
+  },
+  "mod:fe.history_events.kind_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 227.47599999979138
+  },
+  "mod:fe.history_events.norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 5618.805999998003,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 5908.989999999758
+  },
+  "mod:fe.history_events.proj": {
+   "bwd_flops": 6509559808.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 84758.76999999583,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 3254779904.0,
+   "fwd_self_us": 40373.50499999989
+  },
+  "mod:fe.history_events.stat_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3748.184999998659,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 279.13400000007823
+  },
+  "mod:fe.history_events.status_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3870.3940000012517,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 260.1879999996163
+  },
+  "mod:fe.hp_type_belief_head": {
+   "bwd_flops": 196608.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 140.062000002712,
+   "fwd_aten_calls": 9.0,
+   "fwd_flops": 196608.0,
+   "fwd_self_us": 950.2330000000075
+  },
+  "mod:fe.hp_type_belief_head.norm": {
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1835.1450000000186
+  },
+  "mod:fe.hp_type_belief_head.reinject_norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1288.4580000005662,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 950.9150000000373
+  },
+  "mod:fe.hp_type_belief_head.reinject_proj": {
+   "bwd_flops": 100663296.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1980.1769999973476,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 50331648.0,
+   "fwd_self_us": 798.068000000203
+  },
+  "mod:fe.hp_type_belief_head.type_head": {
+   "bwd_flops": 100663296.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1757.980000000447,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 50331648.0,
+   "fwd_self_us": 921.1379999999772
+  },
+  "mod:fe.hypothesis_builder.delta_global": {
+   "bwd_flops": 76021760.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 996.5210000015795,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 76021760.0,
+   "fwd_self_us": 824.6180000000168
+  },
+  "mod:fe.hypothesis_builder.delta_hidden": {
+   "bwd_flops": 201326592.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 2233.0910000018775,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 100663296.0,
+   "fwd_self_us": 1218.1059999999707
+  },
+  "mod:fe.hypothesis_builder.delta_norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 257.3830000013113,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 240.53100000001723
+  },
+  "mod:fe.hypothesis_builder.delta_out": {
+   "bwd_flops": 314572800.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 3392.057000003755,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 157286400.0,
+   "fwd_self_us": 1587.2090000000317
+  },
+  "mod:fe.hypothesis_builder.other_map": {
+   "bwd_flops": 33554432.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 466.46399999782443,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 16777216.0,
+   "fwd_self_us": 322.9859999999753
+  },
+  "mod:fe.item_belief_head": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 10.990000002086163,
+   "fwd_aten_calls": 9.0,
+   "fwd_flops": 7372800.0,
+   "fwd_self_us": 23456.97399999993
+  },
+  "mod:fe.item_belief_head.item_head": {
+   "bwd_flops": 3774873600.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 46470.61899999902,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1887436800.0,
+   "fwd_self_us": 24986.837000000058
+  },
+  "mod:fe.item_belief_head.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1040.933999999892
+  },
+  "mod:fe.mon_hazard_proj": {
+   "bwd_flops": 12582912.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 4881.79300000146,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 12582912.0,
+   "fwd_self_us": 821.831999999471
+  },
+  "mod:fe.move_actor_proj": {
+   "bwd_flops": 4194304.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 496.2719999998808,
+   "fwd_aten_calls": 8.0,
+   "fwd_flops": 4194304.0,
+   "fwd_self_us": 164.2689999998547
+  },
+  "mod:fe.move_belief.move_head": {
+   "bwd_flops": 2516582400.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 27171.05700000003,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 1258291200.0,
+   "fwd_self_us": 16501.0
+  },
+  "mod:fe.move_belief.norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 935.6970000006258,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 970.5419999998994
+  },
+  "mod:fe.move_belief.reinject": {
+   "bwd_flops": 100663296.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1995.4260000027716,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 50331648.0,
+   "fwd_self_us": 851.2680000001565
+  },
+  "mod:fe.move_resolution_cell": {
+   "bwd_flops": 23939072.0,
+   "bwd_nodes": 452.0,
+   "bwd_us": 36264.28200000338,
+   "fwd_aten_calls": 4656.0,
+   "fwd_flops": 27674624.0,
+   "fwd_self_us": 39652.69399998896
+  },
+  "mod:fe.move_resolution_cell.move_proj": {
+   "bwd_flops": 47316992.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1434.4419999998063,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 23658496.0,
+   "fwd_self_us": 552.2470000013709
+  },
+  "mod:fe.move_resolution_cell.restored_move_proj": {
+   "bwd_flops": 6225920.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1307.1440000012517,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 3112960.0,
+   "fwd_self_us": 158.85799999907613
+  },
+  "mod:fe.move_resolution_cell.restored_switch_proj": {
+   "bwd_flops": 884736.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 187.4929999988526,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 442368.0,
+   "fwd_self_us": 96.74200000055134
+  },
+  "mod:fe.move_resolution_cell.status_move_proj": {
+   "bwd_flops": 2490368.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 947.8400000017136,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 1245184.0,
+   "fwd_self_us": 169.11800000071526
+  },
+  "mod:fe.move_resolution_cell.status_switch_proj": {
+   "bwd_flops": 1769472.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 984.6879999991506,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 884736.0,
+   "fwd_self_us": 86.55299999937415
+  },
+  "mod:fe.move_resolution_cell.switch_proj": {
+   "bwd_flops": 15925248.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 756.4190000016242,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 7962624.0,
+   "fwd_self_us": 287.4699999988079
+  },
+  "mod:fe.move_target_proj": {
+   "bwd_flops": 4194304.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 507.3130000010133,
+   "fwd_aten_calls": 8.0,
+   "fwd_flops": 4194304.0,
+   "fwd_self_us": 142.1469999998808
+  },
+  "mod:fe.obs_facts_inject": {
+   "bwd_flops": 3147648.0,
+   "bwd_nodes": 13.0,
+   "bwd_us": 1612.4969999976456,
+   "fwd_aten_calls": 86.0,
+   "fwd_flops": 5005312.0,
+   "fwd_self_us": 2718.5319999999483
+  },
+  "mod:fe.obs_facts_inject.choice_proj": {
+   "bwd_flops": 19922944.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 555.6020000018179,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 9961472.0,
+   "fwd_self_us": 175.79000000000815
+  },
+  "mod:fe.obs_facts_inject.screens_proj": {
+   "bwd_flops": 4194304.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 5076.3189999982715,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 4194304.0,
+   "fwd_self_us": 316.99500000002445
+  },
+  "mod:fe.obs_facts_inject.seen_proj": {
+   "bwd_flops": 22020096.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 4908.772999998182,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 22020096.0,
+   "fwd_self_us": 796.554999999993
+  },
+  "mod:fe.obs_facts_inject.vol_proj": {
+   "bwd_flops": 15728768.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 729.3690000027418,
+   "fwd_aten_calls": 20.0,
+   "fwd_flops": 15728640.0,
+   "fwd_self_us": 292.50900000002
+  },
+  "mod:fe.op_content": {
+   "bwd_flops": 294912.0,
+   "bwd_nodes": 9.0,
+   "bwd_us": 4215.310000002384,
+   "fwd_aten_calls": 32.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 2554.7159999990836
+  },
+  "mod:fe.op_content.amount_proj": {
+   "bwd_flops": 50331648.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 5505.592000000179,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 50331648.0,
+   "fwd_self_us": 1171.7090000007302
+  },
+  "mod:fe.op_content.outgoing_cell": {
+   "bwd_flops": 37748736.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 5166.575999997556,
+   "fwd_aten_calls": 15.0,
+   "fwd_flops": 18874368.0,
+   "fwd_self_us": 1098.5020000003278
+  },
+  "mod:fe.op_content.outgoing_proj": {
+   "bwd_flops": 201326592.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 3301.175000000745,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 100663296.0,
+   "fwd_self_us": 1196.0849999999627
+  },
+  "mod:fe.op_worst_proj": {
+   "bwd_flops": 12582912.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 4485.980000000447,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 6291456.0,
+   "fwd_self_us": 355.18699999991804
+  },
+  "mod:fe.pokemon_encoder": {
+   "bwd_flops": 18874368.0,
+   "bwd_nodes": 24.0,
+   "bwd_us": 15523.063000008464,
+   "fwd_aten_calls": 456.0,
+   "fwd_flops": 23570432.0,
+   "fwd_self_us": 27838.658000000134
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.0": {
+   "bwd_flops": 1713570688.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 25211.81700000167,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 856776704.0,
+   "fwd_self_us": 10198.962999999989
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 929.4250000007451,
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1125.2019999999611
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.2": {
+   "bwd_flops": 1636843648.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 19438.523999996483,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 818413568.0,
+   "fwd_self_us": 9554.543000000005
+  },
+  "mod:fe.pokemon_encoder.move_dyn_pool": {
+   "bwd_flops": 434783328.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 7236.022000007331,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 217391104.0,
+   "fwd_self_us": 3636.9469999999856
+  },
+  "mod:fe.pokemon_encoder.move_dyn_proj": {
+   "bwd_flops": 12582912.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 3143.7999999970198,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 12787712.0,
+   "fwd_self_us": 1131.7139999999781
+  },
+  "mod:fe.pokemon_encoder.move_latent_encoder": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 4533.679000000026
+  },
+  "mod:fe.pokemon_encoder.move_latent_encoder.mlp": {
+   "bwd_flops": 2311010016.0,
+   "bwd_nodes": 23.0,
+   "bwd_us": 40118.00500001013,
+   "fwd_aten_calls": 78.0,
+   "fwd_flops": 1155502080.0,
+   "fwd_self_us": 20183.483999999982
+  },
+  "mod:fe.pokemon_encoder.move_network.0": {
+   "bwd_flops": 3375964512.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 45194.88399999961,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 1687977984.0,
+   "fwd_self_us": 22702.32899999994
+  },
+  "mod:fe.pokemon_encoder.move_network.1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 3255.970999997109,
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 2176.4440000000177
+  },
+  "mod:fe.pokemon_encoder.move_network.2": {
+   "bwd_flops": 1227623456.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 20657.5709999986,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 613810176.0,
+   "fwd_self_us": 11042.636000000013
+  },
+  "mod:fe.pokemon_encoder.move_self_attn": {
+   "bwd_flops": 1742329984.0,
+   "bwd_nodes": 66.0,
+   "bwd_us": 96025.50499999523,
+   "fwd_aten_calls": 184.0,
+   "fwd_flops": 872761344.0,
+   "fwd_self_us": 59226.48800000014
+  },
+  "mod:fe.pokemon_encoder.move_self_norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 2277.654999997467,
+   "fwd_aten_calls": 14.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 4198.99000000002
+  },
+  "mod:fe.pokemon_encoder.role_encoder.0": {
+   "bwd_flops": 4143260416.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 49114.860999997705,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 2071609344.0,
+   "fwd_self_us": 24051.862000000052
+  },
+  "mod:fe.pokemon_encoder.role_encoder.1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 2113.1860000006855,
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1651.2490000000107
+  },
+  "mod:fe.pokemon_encoder.role_encoder.2": {
+   "bwd_flops": 3273687168.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 37363.174000002444,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 1636827136.0,
+   "fwd_self_us": 24120.089999999997
+  },
+  "mod:fe.pre_proj_norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 2372.853000000119,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1204.3300000000745
+  },
+  "mod:fe.prefuse_proj": {
+   "bwd_flops": 75644928.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 5804.213000003248,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 37748736.0,
+   "fwd_self_us": 1110.9850000003353
+  },
+  "mod:fe.projection": {
+   "bwd_flops": 4831838208.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 60793.73100000061,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 2415919104.0,
+   "fwd_self_us": 28760.059000000358
+  },
+  "mod:fe.spread_belief": {
+   "bwd_flops": 5136384.0,
+   "bwd_nodes": 19.0,
+   "bwd_us": 1299.0090000033379,
+   "fwd_aten_calls": 75.0,
+   "fwd_flops": 5394432.0,
+   "fwd_self_us": 2709.7460000002757
+  },
+  "mod:fe.spread_belief.ev_head": {
+   "bwd_flops": 31457280.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 1301.592000003904,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 15728640.0,
+   "fwd_self_us": 1215.7620000001043
+  },
+  "mod:fe.spread_belief.nature_head": {
+   "bwd_flops": 157286400.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 2520.570000000298,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 78643200.0,
+   "fwd_self_us": 2412.5079999999143
+  },
+  "mod:fe.spread_belief.norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1133.5769999995828,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1010.0760000001173
+  },
+  "mod:fe.spread_belief.reinject": {
+   "bwd_flops": 31457280.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 5610.7710000015795,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 15728640.0,
+   "fwd_self_us": 476.31400000001304
+  },
+  "mod:fe.status_cure_proj": {
+   "bwd_flops": 31457280.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 5460.2089999988675,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 31457280.0,
+   "fwd_self_us": 767.2400000002235
+  },
+  "mod:fe.status_cure_rule": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 9.076999999582767,
+   "fwd_aten_calls": 336.0,
+   "fwd_flops": 460800.0,
+   "fwd_self_us": 3722.481999997981
+  },
+  "mod:fe.t0_species_prior": {
+   "fwd_aten_calls": 40.0,
+   "fwd_flops": 655360400.0,
+   "fwd_self_us": 12106.539999999997
+  },
+  "mod:fe.team_transformer": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 34.0,
+   "bwd_us": 140391.6680000052,
+   "fwd_aten_calls": 417.0,
+   "fwd_flops": 51011584.0,
+   "fwd_self_us": 94867.30699999072
+  },
+  "mod:fe.team_transformer.extra_rounds.0": {
+   "bwd_flops": 77342965760.0,
+   "bwd_nodes": 57.0,
+   "bwd_us": 2018550.7629999984,
+   "fwd_aten_calls": 167.0,
+   "fwd_flops": 38721814528.0,
+   "fwd_self_us": 1016806.8039999977
+  },
+  "mod:fe.team_transformer.field_proj": {
+   "bwd_flops": 5767168.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1566.8509999997914,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 5767168.0,
+   "fwd_self_us": 138.45999999996275
+  },
+  "mod:fe.team_transformer.side_proj": {
+   "bwd_flops": 10485760.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 1135.160000000149,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 10485760.0,
+   "fwd_self_us": 210.02500000037253
+  },
+  "mod:fe.team_transformer.token_type_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 109.43700000271201,
+   "fwd_aten_calls": 28.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 59.90199999976903
+  },
+  "mod:fe.team_transformer.transformer_layers.0": {
+   "bwd_flops": 77342965760.0,
+   "bwd_nodes": 57.0,
+   "bwd_us": 1945216.3440000005,
+   "fwd_aten_calls": 167.0,
+   "fwd_flops": 38721814528.0,
+   "fwd_self_us": 1069117.9680000003
+  },
+  "mod:fe.team_transformer.transformer_layers.1": {
+   "bwd_flops": 77342965760.0,
+   "bwd_nodes": 57.0,
+   "bwd_us": 2019029.4109999966,
+   "fwd_aten_calls": 167.0,
+   "fwd_flops": 38721814528.0,
+   "fwd_self_us": 1060604.4480000008
+  },
+  "mod:fe.unpack": {
+   "fwd_aten_calls": 428.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 4888.429000000005
+  },
+  "mod:fe.value_entity_pool": {
+   "bwd_flops": 121348096.0,
+   "bwd_nodes": 49.0,
+   "bwd_us": 28506.26199999824,
+   "fwd_aten_calls": 165.0,
+   "fwd_flops": 62849024.0,
+   "fwd_self_us": 6410.582999996841
+  },
+  "mod:fe.value_entity_pool.op_proj": {
+   "bwd_flops": 37748736.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 2935.8000000026077,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 18874368.0,
+   "fwd_self_us": 524.1129999998957
+  },
+  "mod:fe.value_entity_pool.out_proj": {
+   "bwd_flops": 268435456.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 3686.138000000268,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 134217728.0,
+   "fwd_self_us": 1522.2970000002533
+  },
+  "mod:fe.value_entity_pool.token_proj": {
+   "bwd_flops": 1477967936.0,
+   "bwd_nodes": 22.0,
+   "bwd_us": 24981.26600000076,
+   "fwd_aten_calls": 71.0,
+   "fwd_flops": 738197504.0,
+   "fwd_self_us": 12332.046000001952
+  },
+  "mod:fe.win_head.net.0": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 212.49799999967217,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 206.10700000077486
+  },
+  "mod:fe.win_head.net.1": {
+   "bwd_flops": 134217728.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 1627.0450000017881,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 67108864.0,
+   "fwd_self_us": 774.5839999988675
+  },
+  "mod:fe.win_head.net.2": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 78.7079999987036,
+   "fwd_aten_calls": 2.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 55.574000000953674
+  },
+  "mod:fe.win_head.net.3": {
+   "bwd_flops": 1048576.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 194.77499999850988,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 524288.0,
+   "fwd_self_us": 66.47499999962747
+  },
+  "mod:mlp_extractor.policy_net.0": {
+   "bwd_flops": 2147483648.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 24984.601999999955,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 1073741824.0,
+   "fwd_self_us": 18523.134999999776
+  },
+  "mod:mlp_extractor.policy_net.1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 189.79700000025332,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 3308.6899999994785
+  },
+  "mod:mlp_extractor.policy_net.2": {
+   "bwd_flops": 2147483648.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 23457.7770000007,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 1073741824.0,
+   "fwd_self_us": 12905.531999999657
+  },
+  "mod:mlp_extractor.policy_net.3": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 220.57400000095367,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 3007.143999999389
+  },
+  "mod:pointer_head": {
+   "bwd_flops": 8192.0,
+   "bwd_nodes": 20.0,
+   "bwd_us": 1436.0849999990314,
+   "fwd_aten_calls": 42.0,
+   "fwd_flops": 2105344.0,
+   "fwd_self_us": 5572.859999997541
+  },
+  "mod:pointer_head.ctx_proj": {
+   "bwd_flops": 268435456.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 3414.6680000014603,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 134217728.0,
+   "fwd_self_us": 1615.001000000164
+  },
+  "mod:pointer_head.move_proj": {
+   "bwd_flops": 375390208.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 5099.232000000775,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 187695104.0,
+   "fwd_self_us": 2252.85899999924
+  },
+  "mod:pointer_head.move_score": {
+   "bwd_flops": 2097152.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 504.69600000046194,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1048576.0,
+   "fwd_self_us": 104.77699999883771
+  },
+  "mod:pointer_head.struggle_score": {
+   "bwd_flops": 524288.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 142.34699999913573,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 262144.0,
+   "fwd_self_us": 36.097999999299645
+  },
+  "mod:pointer_head.switch_extra_proj": {
+   "bwd_flops": 6291456.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 2017.675000000745,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 3145728.0,
+   "fwd_self_us": 311.57499999925494
+  },
+  "mod:pointer_head.switch_proj": {
+   "bwd_flops": 506462208.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 6776.458000000566,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 253231104.0,
+   "fwd_self_us": 2877.591000000015
+  },
+  "mod:pointer_head.switch_score": {
+   "bwd_flops": 3145728.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 361.28700000047684,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 121.9089999999851
+  }
+ },
+ "micro_step_fwd_only_unprofiled": {
+  "max_s": 12.409160336013883,
+  "median_s": 11.835560734034516,
+  "min_s": 10.902643978013657,
+  "reps": 3
+ },
+ "micro_step_profiled_wall_s": 27.157739343936555,
+ "micro_step_unprofiled": {
+  "max_s": 26.198120672022924,
+  "median_s": 25.01455106807407,
+  "min_s": 24.7959322220413,
+  "reps": 3
+ },
+ "model": "production (learner_golden.build_learner, trunk fp32)",
+ "params": {
+  "(total, unique)": 2609183,
+  "mod:action_net": 0,
+  "mod:fe.activation": 0,
+  "mod:fe.assembler": 0,
+  "mod:fe.belief_head": 103456,
+  "mod:fe.cls_pool": 199296,
+  "mod:fe.damage_op": 29,
+  "mod:fe.edge_bias": 696,
+  "mod:fe.effective_stats_proj": 896,
+  "mod:fe.embeddings": 30720,
+  "mod:fe.entity_seats": 9600,
+  "mod:fe.eot_residual_proj": 1408,
+  "mod:fe.eot_residual_rule": 0,
+  "mod:fe.flat_intent_head": 24832,
+  "mod:fe.hidden_opp_belief": 199808,
+  "mod:fe.history_events": 25824,
+  "mod:fe.hp_type_belief_head": 4752,
+  "mod:fe.hypothesis_builder": 87152,
+  "mod:fe.item_belief_head": 77656,
+  "mod:fe.mon_hazard_proj": 256,
+  "mod:fe.move_actor_proj": 1024,
+  "mod:fe.move_belief": 54032,
+  "mod:fe.move_resolution_cell": 2144,
+  "mod:fe.move_target_proj": 1024,
+  "mod:fe.obs_facts_inject": 6272,
+  "mod:fe.op_content": 5440,
+  "mod:fe.op_worst_proj": 256,
+  "mod:fe.pokemon_encoder": 131424,
+  "mod:fe.pre_proj_norm": 2304,
+  "mod:fe.prefuse_proj": 1664,
+  "mod:fe.projection": 590336,
+  "mod:fe.spread_belief": 4894,
+  "mod:fe.status_cure_proj": 640,
+  "mod:fe.status_cure_rule": 0,
+  "mod:fe.t0_species_prior": 0,
+  "mod:fe.team_transformer": 401536,
+  "mod:fe.unpack": 0,
+  "mod:fe.value_entity_pool": 42560,
+  "mod:fe.win_head": 16897,
+  "mod:mlp_extractor": 525312,
+  "mod:pointer_head": 55043,
+  "mod:value_net": 0
+ },
+ "rows": 2048,
+ "surrogate_by_label": {
+  "(accumulate_grad)": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 263.0,
+   "bwd_us": 2250.2149999961257
+  },
+  "(backward: unmatched sequence_nr)": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 49.0,
+   "bwd_us": 1864952.5539999902
+  },
+  "(outside any module: losses, masking, glue)": {
+   "bwd_flops": 4096.0,
+   "bwd_nodes": 16.0,
+   "bwd_us": 644.981000000611,
+   "fwd_aten_calls": 94.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1217.4510000031441
+  },
+  "meth:damage_op.apply_out_gain": {
+   "bwd_flops": 565248.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 145.36299999803305,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 282624.0,
+   "fwd_self_us": 88.67599999997765
+  },
+  "meth:damage_op.discrete_incoming_status": {
+   "fwd_aten_calls": 583.0,
+   "fwd_flops": 1955840.0,
+   "fwd_self_us": 4443.916999997571
+  },
+  "meth:damage_op.discrete_outgoing_status": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 65.02199999988079,
+   "fwd_aten_calls": 956.0,
+   "fwd_flops": 2068480.0,
+   "fwd_self_us": 7689.728000009432
+  },
+  "meth:damage_op.expanded_out_gain": {
+   "bwd_flops": 4002.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 38.581999998539686,
+   "fwd_aten_calls": 6.0,
+   "fwd_flops": 29.0,
+   "fwd_self_us": 48.140999999362975
+  },
+  "meth:damage_op.opp_ability_damage_mult": {
+   "fwd_aten_calls": 342.0,
+   "fwd_flops": 4644864.0,
+   "fwd_self_us": 13055.975000001024
+  },
+  "meth:damage_op.opp_ability_view": {
+   "fwd_aten_calls": 1190.0,
+   "fwd_flops": 835584.0,
+   "fwd_self_us": 7749.530000006314
+  },
+  "meth:damage_op.opp_secondary_block": {
+   "fwd_aten_calls": 34.0,
+   "fwd_flops": 73728.0,
+   "fwd_self_us": 313.2279999987222
+  },
+  "meth:damage_op.opp_secondary_mult": {
+   "fwd_aten_calls": 68.0,
+   "fwd_flops": 147456.0,
+   "fwd_self_us": 630.5310000018217
+  },
+  "meth:damage_op.opp_status_block": {
+   "fwd_aten_calls": 76.0,
+   "fwd_flops": 442368.0,
+   "fwd_self_us": 2350.7999999984168
+  },
+  "meth:damage_op.our_burn_loss": {
+   "bwd_flops": 4198400.0,
+   "bwd_nodes": 183.0,
+   "bwd_us": 5339.4710000269115,
+   "fwd_aten_calls": 4343.0,
+   "fwd_flops": 60979200.0,
+   "fwd_self_us": 190925.7490000017
+  },
+  "meth:damage_op.pair_outcome_coords": {
+   "bwd_flops": 5185536.0,
+   "bwd_nodes": 12.0,
+   "bwd_us": 19597.691999997944,
+   "fwd_aten_calls": 2238.0,
+   "fwd_flops": 177799168.0,
+   "fwd_self_us": 539624.174000002
+  },
+  "meth:damage_op.pairwise_baton": {
+   "bwd_flops": 503808.0,
+   "bwd_nodes": 31.0,
+   "bwd_us": 1099.620000001043,
+   "fwd_aten_calls": 132.0,
+   "fwd_flops": 266240.0,
+   "fwd_self_us": 882.2779999980703
+  },
+  "meth:damage_op.pairwise_bench_incoming": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 15.128000002354383,
+   "fwd_aten_calls": 2512.0,
+   "fwd_flops": 47038464.0,
+   "fwd_self_us": 51931.78899999056
+  },
+  "meth:damage_op.pairwise_bench_outgoing": {
+   "bwd_flops": 6279168.0,
+   "bwd_nodes": 295.0,
+   "bwd_us": 8525.989999987185,
+   "fwd_aten_calls": 6576.0,
+   "fwd_flops": 91450368.0,
+   "fwd_self_us": 346876.0620000418
+  },
+  "meth:damage_op.pairwise_boost": {
+   "bwd_flops": 491520.0,
+   "bwd_nodes": 97.0,
+   "bwd_us": 4004.1020000316203,
+   "fwd_aten_calls": 6015.0,
+   "fwd_flops": 25422587904.0,
+   "fwd_self_us": 1317172.141000005
+  },
+  "meth:damage_op.pairwise_boost_incoming": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 30.40700000151992,
+   "fwd_aten_calls": 3012.0,
+   "fwd_flops": 30470144.0,
+   "fwd_self_us": 40179.96199999191
+  },
+  "meth:damage_op.pairwise_entry": {
+   "fwd_aten_calls": 220.0,
+   "fwd_flops": 176128.0,
+   "fwd_self_us": 1611.8319999920204
+  },
+  "meth:damage_op.pairwise_incoming": {
+   "bwd_flops": 8785920.0,
+   "bwd_nodes": 71.0,
+   "bwd_us": 7505.809000004083,
+   "fwd_aten_calls": 1115.0,
+   "fwd_flops": 15534080.0,
+   "fwd_self_us": 16961.285999992862
+  },
+  "meth:damage_op.pairwise_outgoing": {
+   "bwd_flops": 24735744.0,
+   "bwd_nodes": 1089.0,
+   "bwd_us": 48117.68399999291,
+   "fwd_aten_calls": 19891.0,
+   "fwd_flops": 2634033456.0,
+   "fwd_self_us": 248674.53899999615
+  },
+  "meth:damage_op.pairwise_protect": {
+   "fwd_aten_calls": 95.0,
+   "fwd_flops": 57344.0,
+   "fwd_self_us": 241.29500000085682
+  },
+  "meth:damage_op.pairwise_recovery": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 148.33799999952316,
+   "fwd_aten_calls": 2874.0,
+   "fwd_flops": 22552576.0,
+   "fwd_self_us": 39142.00299999025
+  },
+  "meth:damage_op.pairwise_schedule": {
+   "fwd_aten_calls": 194.0,
+   "fwd_flops": 98304.0,
+   "fwd_self_us": 1794.5620000017807
+  },
+  "meth:damage_op.pairwise_speed": {
+   "fwd_aten_calls": 1259.0,
+   "fwd_flops": 5085849600.0,
+   "fwd_self_us": 597259.4560000049
+  },
+  "meth:damage_op.pairwise_status_consequence": {
+   "fwd_aten_calls": 3072.0,
+   "fwd_flops": 64393216.0,
+   "fwd_self_us": 233283.43999998737
+  },
+  "meth:damage_op.pairwise_trap": {
+   "fwd_aten_calls": 323.0,
+   "fwd_flops": 638976.0,
+   "fwd_self_us": 2332.838999996893
+  },
+  "meth:damage_op.pointer_cells": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 18.0,
+   "bwd_us": 451.18099999800324,
+   "fwd_aten_calls": 58.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 384.75500000081956
+  },
+  "meth:damage_op.pointer_intent_status_operands": {
+   "bwd_flops": 13103104.0,
+   "bwd_nodes": 103.0,
+   "bwd_us": 14079.720999971032,
+   "fwd_aten_calls": 4713.0,
+   "fwd_flops": 165013504.0,
+   "fwd_self_us": 124147.91299999133
+  },
+  "meth:damage_op.spikes_entry": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 20.528000004589558,
+   "fwd_aten_calls": 342.0,
+   "fwd_flops": 98304.0,
+   "fwd_self_us": 2114.844999984838
+  },
+  "meth:damage_op.tensors_from_block": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 24.0,
+   "bwd_us": 1416.8689999971539,
+   "fwd_aten_calls": 126.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 194.30299999844283
+  },
+  "meth:fe._apply_move_belief": {
+   "bwd_flops": 330891264.0,
+   "bwd_nodes": 36.0,
+   "bwd_us": 30321.61299997568,
+   "fwd_aten_calls": 1861.0,
+   "fwd_flops": 492761088.0,
+   "fwd_self_us": 516485.8059999999
+  },
+  "meth:fe._attach_move_group": {
+   "fwd_aten_calls": 1697.0,
+   "fwd_flops": 53514639.0,
+   "fwd_self_us": 114643.91200000088
+  },
+  "meth:fe._build_hypothesis_species": {
+   "bwd_flops": 52690944.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 963.4779999963939,
+   "fwd_aten_calls": 1759.0,
+   "fwd_flops": 765457311.0,
+   "fwd_self_us": 138170.05800000043
+  },
+  "meth:fe._flat_consumer_ops": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 15778.253999998793,
+   "fwd_aten_calls": 88.0,
+   "fwd_flops": 14336.0,
+   "fwd_self_us": 1424.9159999955446
+  },
+  "meth:fe._other_edge_cells": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 432.1009999960661,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 924.4369999961928
+  },
+  "meth:fe._spread_hp_damage": {
+   "bwd_flops": 1572864.0,
+   "bwd_nodes": 7.0,
+   "bwd_us": 10444.101999998093,
+   "fwd_aten_calls": 24.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 6793.722999999998
+  },
+  "meth:fe._typed_hp_posterior": {
+   "bwd_flops": 1007616.0,
+   "bwd_nodes": 16.0,
+   "bwd_us": 4970.496999990195,
+   "fwd_aten_calls": 89.0,
+   "fwd_flops": 221184.0,
+   "fwd_self_us": 4997.401000000129
+  },
+  "mod:fe": {
+   "bwd_flops": 22401024.0,
+   "bwd_nodes": 135.0,
+   "bwd_us": 153663.85200000182,
+   "fwd_aten_calls": 8260.0,
+   "fwd_flops": 2351911536.0,
+   "fwd_self_us": 987123.7659999994
+  },
+  "mod:fe.activation": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 345.84999999962747,
+   "fwd_aten_calls": 2.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 220.60400000028312
+  },
+  "mod:fe.assembler": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 44.87399999983609,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 796.9460000004619
+  },
+  "mod:fe.belief_head": {
+   "fwd_aten_calls": 42.0,
+   "fwd_flops": 660275600.0,
+   "fwd_self_us": 10688.541000001132
+  },
+  "mod:fe.belief_head.moves_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1258291200.0,
+   "fwd_self_us": 14660.28599999845
+  },
+  "mod:fe.belief_head.norm": {
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1934.1500000003725
+  },
+  "mod:fe.belief_head.species_head": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1258291200.0,
+   "fwd_self_us": 14396.92100000009
+  },
+  "mod:fe.cls_pool": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 14.0,
+   "bwd_us": 3041.0270000007004,
+   "fwd_aten_calls": 86.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 4304.43000000529
+  },
+  "mod:fe.cls_pool.norm_pool_our": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 272.2510000001639,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 220.57400000095367
+  },
+  "mod:fe.cls_pool.norm_pool_their": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 267.23100000061095,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 196.26799999922514
+  },
+  "mod:fe.cls_pool.norm_pool_value": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 209.67300000041723,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 204.29299999959767
+  },
+  "mod:fe.cls_pool.our_cls_attn": {
+   "bwd_flops": 1891893248.0,
+   "bwd_nodes": 39.0,
+   "bwd_us": 41710.23800000548,
+   "fwd_aten_calls": 123.0,
+   "fwd_flops": 946077696.0,
+   "fwd_self_us": 18710.556999998167
+  },
+  "mod:fe.cls_pool.their_cls_attn": {
+   "bwd_flops": 2162425856.0,
+   "bwd_nodes": 38.0,
+   "bwd_us": 47029.14399999194,
+   "fwd_aten_calls": 118.0,
+   "fwd_flops": 1081344000.0,
+   "fwd_self_us": 20563.752999996766
+  },
+  "mod:fe.cls_pool.value_cls_attn": {
+   "bwd_flops": 3785621504.0,
+   "bwd_nodes": 38.0,
+   "bwd_us": 61631.574999991804,
+   "fwd_aten_calls": 118.0,
+   "fwd_flops": 1892941824.0,
+   "fwd_self_us": 31560.54300000146
+  },
+  "mod:fe.damage_op": {
+   "bwd_flops": 526862336.0,
+   "bwd_nodes": 380.0,
+   "bwd_us": 582174.896000009,
+   "fwd_aten_calls": 8754.0,
+   "fwd_flops": 968696784.0,
+   "fwd_self_us": 992415.2939999988
+  },
+  "mod:fe.damage_op.eot_rule": {
+   "fwd_aten_calls": 1414.0,
+   "fwd_flops": 2736128.0,
+   "fwd_self_us": 12103.943000000902
+  },
+  "mod:fe.edge_bias": {
+   "bwd_flops": 983104.0,
+   "bwd_nodes": 397.0,
+   "bwd_us": 6064222.915999945,
+   "fwd_aten_calls": 1227.0,
+   "fwd_flops": 14123008.0,
+   "fwd_self_us": 71534.49799999967
+  },
+  "mod:fe.edge_bias.c1_map": {
+   "bwd_flops": 12845120.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 2789.787000000477,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 6422528.0,
+   "fwd_self_us": 1443.4599999999627
+  },
+  "mod:fe.edge_bias.c2_map": {
+   "bwd_flops": 5505024.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1266.5290000028908,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 5505024.0,
+   "fwd_self_us": 1281.6450000004843
+  },
+  "mod:fe.edge_bias.c3_map": {
+   "bwd_flops": 2752544.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 1092.1510000042617,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 2752512.0,
+   "fwd_self_us": 1021.2669999999925
+  },
+  "mod:fe.edge_bias.c4_map": {
+   "bwd_flops": 524288.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 269.28400000184774,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 524288.0,
+   "fwd_self_us": 167.15399999916553
+  },
+  "mod:fe.edge_bias.c5_map": {
+   "bwd_flops": 6291456.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1304.309000004083,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 3145728.0,
+   "fwd_self_us": 1038.6790000004694
+  },
+  "mod:fe.edge_bias.d1_map": {
+   "bwd_flops": 11010104.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 2437.967000000179,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 5505024.0,
+   "fwd_self_us": 1354.9629999995232
+  },
+  "mod:fe.edge_bias.d2_map": {
+   "bwd_flops": 1572864.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 401.15300000086427,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 786432.0,
+   "fwd_self_us": 250.53000000026077
+  },
+  "mod:fe.edge_bias.d3_map": {
+   "bwd_flops": 11796480.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 2492.61799999699,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 5898240.0,
+   "fwd_self_us": 1912.207999999635
+  },
+  "mod:fe.edge_bias.d4_map": {
+   "bwd_flops": 5505064.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 1857.0050000026822,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 5505024.0,
+   "fwd_self_us": 1595.6339999996126
+  },
+  "mod:fe.edge_bias.g_map": {
+   "bwd_flops": 1572872.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 732.7349999956787,
+   "fwd_aten_calls": 29.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 656.1820000000298
+  },
+  "mod:fe.edge_bias.h_map": {
+   "bwd_flops": 5898240.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1807.2130000032485,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 5898240.0,
+   "fwd_self_us": 2619.8670000005513
+  },
+  "mod:fe.edge_bias.r_map": {
+   "bwd_flops": 37748736.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 15946.550000000745,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 37748736.0,
+   "fwd_self_us": 12279.476999999955
+  },
+  "mod:fe.edge_bias.s1_map": {
+   "bwd_flops": 1572864.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 741.2419999986887,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 703.1699999999255
+  },
+  "mod:fe.edge_bias.s3_map": {
+   "bwd_flops": 3538944.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1126.1239999942482,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 3538944.0,
+   "fwd_self_us": 1238.1240000007674
+  },
+  "mod:fe.edge_bias.t_map": {
+   "bwd_flops": 2359296.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1262.0290000028908,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 2359296.0,
+   "fwd_self_us": 1016.9879999998957
+  },
+  "mod:fe.edge_bias.v_map": {
+   "bwd_flops": 4128800.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 1578.3119999952614,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 4128768.0,
+   "fwd_self_us": 1404.285000000149
+  },
+  "mod:fe.edge_bias.x_map": {
+   "bwd_flops": 1572872.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 591.820000000298,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 471.24500000011176
+  },
+  "mod:fe.effective_stats_proj": {
+   "bwd_flops": 88080384.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 12840.218000002205,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 44040192.0,
+   "fwd_self_us": 947.9089999999851
+  },
+  "mod:fe.embeddings.ability_embedding": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 2871.4989999979734,
+   "fwd_aten_calls": 40.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 264.51599999994505
+  },
+  "mod:fe.embeddings.item_embedding": {
+   "fwd_aten_calls": 20.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 161.29300000000512
+  },
+  "mod:fe.embeddings.move_embedding": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 7904.114999998361,
+   "fwd_aten_calls": 74.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1321.3390000001273
+  },
+  "mod:fe.embeddings.species_embedding": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 14801.038000006229,
+   "fwd_aten_calls": 50.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1503.4119999992545
+  },
+  "mod:fe.embeddings.type_embedding": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 6344.576999992132,
+   "fwd_aten_calls": 88.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 797.6060000001235
+  },
+  "mod:fe.entity_seats": {
+   "bwd_flops": 22069248.0,
+   "bwd_nodes": 21.0,
+   "bwd_us": 4977.643999997526,
+   "fwd_aten_calls": 325.0,
+   "fwd_flops": 46579712.0,
+   "fwd_self_us": 27520.6259999983
+  },
+  "mod:fe.entity_seats.move_seat_proj": {
+   "bwd_flops": 134217728.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 2166.165000002831,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 67108864.0,
+   "fwd_self_us": 986.4710000003688
+  },
+  "mod:fe.entity_seats.tail_proj": {
+   "bwd_flops": 12582912.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 2112.474999997765,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 12582912.0,
+   "fwd_self_us": 532.2290000002831
+  },
+  "mod:fe.entity_seats.threat_seat_proj": {
+   "bwd_flops": 220200960.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 4149.276999991387,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 110100480.0,
+   "fwd_self_us": 2121.400999999605
+  },
+  "mod:fe.eot_residual_proj": {
+   "bwd_flops": 69206016.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 6883.328000001609,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 69206016.0,
+   "fwd_self_us": 1018.6019999999553
+  },
+  "mod:fe.eot_residual_rule": {
+   "fwd_aten_calls": 707.0,
+   "fwd_flops": 1368064.0,
+   "fwd_self_us": 5313.074999997392
+  },
+  "mod:fe.flat_intent_head": {
+   "fwd_aten_calls": 72.0,
+   "fwd_flops": 28672.0,
+   "fwd_self_us": 13567.79300000146
+  },
+  "mod:fe.flat_intent_head.hidden": {
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1416626176.0,
+   "fwd_self_us": 17671.83699999936
+  },
+  "mod:fe.flat_intent_head.out": {
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 3670016.0,
+   "fwd_self_us": 323.8569999989122
+  },
+  "mod:fe.hidden_opp_belief": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 773.0319999996573,
+   "fwd_aten_calls": 36.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1200.7859999928623
+  },
+  "mod:fe.hidden_opp_belief.decoder": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1243.4030000008643,
+   "fwd_aten_calls": 5.0,
+   "fwd_flops": 4718592.0,
+   "fwd_self_us": 2380.657999999821
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 13.666000001132488,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 0.9819999989122152
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 4.949000000953674,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1.1219999995082617
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout2": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 6.742000000551343,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1.092000000178814
+  },
+  "mod:fe.hidden_opp_belief.decoder.dropout3": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 7.293999999761581,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1.0620000008493662
+  },
+  "mod:fe.hidden_opp_belief.decoder.linear1": {
+   "bwd_flops": 1610612736.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 19768.933000002056,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 805306368.0,
+   "fwd_self_us": 9036.22000000067
+  },
+  "mod:fe.hidden_opp_belief.decoder.linear2": {
+   "bwd_flops": 1610612736.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 19695.35600000061,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 805306368.0,
+   "fwd_self_us": 9627.069000000134
+  },
+  "mod:fe.hidden_opp_belief.decoder.multihead_attn": {
+   "bwd_flops": 5100273664.0,
+   "bwd_nodes": 39.0,
+   "bwd_us": 110826.99200001173,
+   "fwd_aten_calls": 119.0,
+   "fwd_flops": 2550136832.0,
+   "fwd_self_us": 63554.40399999544
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1140.3309999983758,
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1297.4350000005215
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm2": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 931.4680000003427,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1058.7669999990612
+  },
+  "mod:fe.hidden_opp_belief.decoder.norm3": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 937.5190000012517,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1085.6669999994338
+  },
+  "mod:fe.hidden_opp_belief.decoder.self_attn": {
+   "bwd_flops": 3221225472.0,
+   "bwd_nodes": 30.0,
+   "bwd_us": 71398.4039999973,
+   "fwd_aten_calls": 84.0,
+   "fwd_flops": 1610612736.0,
+   "fwd_self_us": 33059.41700000316
+  },
+  "mod:fe.hidden_opp_belief.norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 967.6260000001639,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1071.7210000008345
+  },
+  "mod:fe.history_events": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 14668.721000000834,
+   "fwd_aten_calls": 215.0,
+   "fwd_flops": 8388608.0,
+   "fwd_self_us": 25888.149000000674
+  },
+  "mod:fe.history_events.cant_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 4300.652000002563,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 271.219000000041
+  },
+  "mod:fe.history_events.denial_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3820.7210000008345,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 287.99099999992177
+  },
+  "mod:fe.history_events.entry_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 4040.5830000005662,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 276.2390000000596
+  },
+  "mod:fe.history_events.faint_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 4205.963999997824,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 260.11799999978393
+  },
+  "mod:fe.history_events.itemtr_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3930.3859999999404,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 253.61599999992177
+  },
+  "mod:fe.history_events.kind_emb": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 229.95100000035018
+  },
+  "mod:fe.history_events.norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 6319.400999996811,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 6882.367999999784
+  },
+  "mod:fe.history_events.proj": {
+   "bwd_flops": 6509559808.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 103193.22900000215,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 3254779904.0,
+   "fwd_self_us": 44586.71299999999
+  },
+  "mod:fe.history_events.stat_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3779.0830000005662,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 277.04000000003725
+  },
+  "mod:fe.history_events.status_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 4205.382999997586,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 241.54299999959767
+  },
+  "mod:fe.hp_type_belief_head": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 77.8859999999404,
+   "fwd_aten_calls": 9.0,
+   "fwd_flops": 196608.0,
+   "fwd_self_us": 970.3429999999935
+  },
+  "mod:fe.hp_type_belief_head.norm": {
+   "fwd_aten_calls": 12.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1854.1900000000023
+  },
+  "mod:fe.hp_type_belief_head.reinject_norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1341.7480000033975,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 973.658000000054
+  },
+  "mod:fe.hp_type_belief_head.reinject_proj": {
+   "bwd_flops": 100663296.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1915.9759999997914,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 50331648.0,
+   "fwd_self_us": 827.8540000000503
+  },
+  "mod:fe.hp_type_belief_head.type_head": {
+   "bwd_flops": 100663296.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1794.3290000036359,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 50331648.0,
+   "fwd_self_us": 925.7469999999739
+  },
+  "mod:fe.hypothesis_builder.delta_global": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 76021760.0,
+   "fwd_self_us": 1042.0160000000033
+  },
+  "mod:fe.hypothesis_builder.delta_hidden": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 100663296.0,
+   "fwd_self_us": 1215.7719999999972
+  },
+  "mod:fe.hypothesis_builder.delta_norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 285.25599999999395
+  },
+  "mod:fe.hypothesis_builder.delta_out": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 157286400.0,
+   "fwd_self_us": 1787.7150000000256
+  },
+  "mod:fe.hypothesis_builder.other_map": {
+   "bwd_flops": 33554432.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 496.2010000012815,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 16777216.0,
+   "fwd_self_us": 278.7029999999795
+  },
+  "mod:fe.item_belief_head": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 7.91499999910593,
+   "fwd_aten_calls": 9.0,
+   "fwd_flops": 7372800.0,
+   "fwd_self_us": 26471.874999999767
+  },
+  "mod:fe.item_belief_head.item_head": {
+   "bwd_flops": 3774873600.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 47695.98699999601,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1887436800.0,
+   "fwd_self_us": 21812.689000000013
+  },
+  "mod:fe.item_belief_head.norm": {
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1104.091999999946
+  },
+  "mod:fe.mon_hazard_proj": {
+   "bwd_flops": 12582912.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 4655.788000002503,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 12582912.0,
+   "fwd_self_us": 601.3590000001714
+  },
+  "mod:fe.move_actor_proj": {
+   "bwd_flops": 4194304.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 404.8700000010431,
+   "fwd_aten_calls": 8.0,
+   "fwd_flops": 4194304.0,
+   "fwd_self_us": 153.03700000001118
+  },
+  "mod:fe.move_belief.move_head": {
+   "bwd_flops": 2516582400.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 30868.105000007898,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 1258291200.0,
+   "fwd_self_us": 15418.74900000001
+  },
+  "mod:fe.move_belief.norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 932.0590000003576,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 969.4299999999348
+  },
+  "mod:fe.move_belief.reinject": {
+   "bwd_flops": 100663296.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 1922.5800000019372,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 50331648.0,
+   "fwd_self_us": 939.3530000001192
+  },
+  "mod:fe.move_resolution_cell": {
+   "bwd_flops": 23939072.0,
+   "bwd_nodes": 452.0,
+   "bwd_us": 29229.40800001286,
+   "fwd_aten_calls": 4656.0,
+   "fwd_flops": 27674624.0,
+   "fwd_self_us": 38173.20800000802
+  },
+  "mod:fe.move_resolution_cell.move_proj": {
+   "bwd_flops": 47316992.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1028.7019999995828,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 23658496.0,
+   "fwd_self_us": 551.1040000002831
+  },
+  "mod:fe.move_resolution_cell.restored_move_proj": {
+   "bwd_flops": 6225920.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1030.8339999988675,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 3112960.0,
+   "fwd_self_us": 150.40300000086427
+  },
+  "mod:fe.move_resolution_cell.restored_switch_proj": {
+   "bwd_flops": 884736.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 145.4929999988526,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 442368.0,
+   "fwd_self_us": 97.77400000020862
+  },
+  "mod:fe.move_resolution_cell.status_move_proj": {
+   "bwd_flops": 2490368.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 1032.1189999990165,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 1245184.0,
+   "fwd_self_us": 153.64900000020862
+  },
+  "mod:fe.move_resolution_cell.status_switch_proj": {
+   "bwd_flops": 1769472.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 858.1099999975413,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 884736.0,
+   "fwd_self_us": 80.03099999949336
+  },
+  "mod:fe.move_resolution_cell.switch_proj": {
+   "bwd_flops": 15925248.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 561.4439999982715,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 7962624.0,
+   "fwd_self_us": 221.8969999998808
+  },
+  "mod:fe.move_target_proj": {
+   "bwd_flops": 4194304.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 467.76799999922514,
+   "fwd_aten_calls": 8.0,
+   "fwd_flops": 4194304.0,
+   "fwd_self_us": 152.01500000013039
+  },
+  "mod:fe.obs_facts_inject": {
+   "bwd_flops": 3147648.0,
+   "bwd_nodes": 13.0,
+   "bwd_us": 1946.9839999973774,
+   "fwd_aten_calls": 86.0,
+   "fwd_flops": 5005312.0,
+   "fwd_self_us": 3064.2789999999804
+  },
+  "mod:fe.obs_facts_inject.choice_proj": {
+   "bwd_flops": 19922944.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 564.9210000000894,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 9961472.0,
+   "fwd_self_us": 181.14999999996508
+  },
+  "mod:fe.obs_facts_inject.screens_proj": {
+   "bwd_flops": 4194304.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 6110.828999996185,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 4194304.0,
+   "fwd_self_us": 352.8719999999739
+  },
+  "mod:fe.obs_facts_inject.seen_proj": {
+   "bwd_flops": 22020096.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 5223.615000002086,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 22020096.0,
+   "fwd_self_us": 1016.3479999999981
+  },
+  "mod:fe.obs_facts_inject.vol_proj": {
+   "bwd_flops": 15728768.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 755.3379999995232,
+   "fwd_aten_calls": 20.0,
+   "fwd_flops": 15728640.0,
+   "fwd_self_us": 342.2030000000377
+  },
+  "mod:fe.op_content": {
+   "bwd_flops": 294912.0,
+   "bwd_nodes": 9.0,
+   "bwd_us": 4853.382000006735,
+   "fwd_aten_calls": 32.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 2225.82600000035
+  },
+  "mod:fe.op_content.amount_proj": {
+   "bwd_flops": 50331648.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 5430.8539999984205,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 50331648.0,
+   "fwd_self_us": 1039.091000000015
+  },
+  "mod:fe.op_content.outgoing_cell": {
+   "bwd_flops": 37748736.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 5273.296999998391,
+   "fwd_aten_calls": 15.0,
+   "fwd_flops": 18874368.0,
+   "fwd_self_us": 1035.963999999687
+  },
+  "mod:fe.op_content.outgoing_proj": {
+   "bwd_flops": 201326592.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 3258.0739999972284,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 100663296.0,
+   "fwd_self_us": 1093.2820000005886
+  },
+  "mod:fe.op_worst_proj": {
+   "bwd_flops": 12582912.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 4035.0340000018477,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 6291456.0,
+   "fwd_self_us": 372.6790000000037
+  },
+  "mod:fe.pokemon_encoder": {
+   "bwd_flops": 18874368.0,
+   "bwd_nodes": 24.0,
+   "bwd_us": 16626.057000011206,
+   "fwd_aten_calls": 456.0,
+   "fwd_flops": 23570432.0,
+   "fwd_self_us": 31401.77700000019
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.0": {
+   "bwd_flops": 1713570688.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 23850.474999997765,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 856776704.0,
+   "fwd_self_us": 9417.766000000032
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 794.0810000002384,
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 589.1059999999998
+  },
+  "mod:fe.pokemon_encoder.dynamic_encoder.2": {
+   "bwd_flops": 1636843648.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 18763.707000002265,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 818413568.0,
+   "fwd_self_us": 9605.417999999976
+  },
+  "mod:fe.pokemon_encoder.move_dyn_pool": {
+   "bwd_flops": 434783328.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 9050.915999997407,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 217391104.0,
+   "fwd_self_us": 3173.3859999999986
+  },
+  "mod:fe.pokemon_encoder.move_dyn_proj": {
+   "bwd_flops": 12582912.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 4268.942000001669,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 12787712.0,
+   "fwd_self_us": 1181.005999999994
+  },
+  "mod:fe.pokemon_encoder.move_latent_encoder": {
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 5016.113999999972
+  },
+  "mod:fe.pokemon_encoder.move_latent_encoder.mlp": {
+   "bwd_flops": 2311010016.0,
+   "bwd_nodes": 23.0,
+   "bwd_us": 43851.23299999535,
+   "fwd_aten_calls": 78.0,
+   "fwd_flops": 1155502080.0,
+   "fwd_self_us": 20530.672000000195
+  },
+  "mod:fe.pokemon_encoder.move_network.0": {
+   "bwd_flops": 3375964512.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 47893.69999999553,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 1687977984.0,
+   "fwd_self_us": 22581.171999999962
+  },
+  "mod:fe.pokemon_encoder.move_network.1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 4828.442000001669,
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 2313.2409999999654
+  },
+  "mod:fe.pokemon_encoder.move_network.2": {
+   "bwd_flops": 1227623456.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 17300.359999999404,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 613810176.0,
+   "fwd_self_us": 11402.070000000007
+  },
+  "mod:fe.pokemon_encoder.move_self_attn": {
+   "bwd_flops": 1742329984.0,
+   "bwd_nodes": 66.0,
+   "bwd_us": 101391.45699998736,
+   "fwd_aten_calls": 184.0,
+   "fwd_flops": 872761344.0,
+   "fwd_self_us": 74172.00599999985
+  },
+  "mod:fe.pokemon_encoder.move_self_norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 2247.0980000011623,
+   "fwd_aten_calls": 14.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 4542.195000000007
+  },
+  "mod:fe.pokemon_encoder.role_encoder.0": {
+   "bwd_flops": 4143260416.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 55524.41000000015,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 2071609344.0,
+   "fwd_self_us": 24671.84500000003
+  },
+  "mod:fe.pokemon_encoder.role_encoder.1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 1976.6289999969304,
+   "fwd_aten_calls": 4.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1681.335000000021
+  },
+  "mod:fe.pokemon_encoder.role_encoder.2": {
+   "bwd_flops": 3273687168.0,
+   "bwd_nodes": 8.0,
+   "bwd_us": 45636.843000009656,
+   "fwd_aten_calls": 26.0,
+   "fwd_flops": 1636827136.0,
+   "fwd_self_us": 22408.839000000007
+  },
+  "mod:fe.pre_proj_norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 2418.2390000000596,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1167.5309999994934
+  },
+  "mod:fe.prefuse_proj": {
+   "bwd_flops": 75644928.0,
+   "bwd_nodes": 6.0,
+   "bwd_us": 5193.607999999076,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 37748736.0,
+   "fwd_self_us": 1119.9020000002347
+  },
+  "mod:fe.projection": {
+   "bwd_flops": 4831838208.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 53917.03400000185,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 2415919104.0,
+   "fwd_self_us": 26759.242999998853
+  },
+  "mod:fe.spread_belief": {
+   "bwd_flops": 4829184.0,
+   "bwd_nodes": 19.0,
+   "bwd_us": 1210.27100000903,
+   "fwd_aten_calls": 75.0,
+   "fwd_flops": 5394432.0,
+   "fwd_self_us": 3248.9459999999963
+  },
+  "mod:fe.spread_belief.ev_head": {
+   "bwd_flops": 31457280.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 1740.6270000003278,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 15728640.0,
+   "fwd_self_us": 1339.7439999999478
+  },
+  "mod:fe.spread_belief.nature_head": {
+   "bwd_flops": 157286400.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 3288.460000000894,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 78643200.0,
+   "fwd_self_us": 2370.1190000001807
+  },
+  "mod:fe.spread_belief.norm": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1015.0049999989569,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 1029.9629999999888
+  },
+  "mod:fe.spread_belief.reinject": {
+   "bwd_flops": 31457280.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 7745.0560000017285,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 15728640.0,
+   "fwd_self_us": 540.7949999999255
+  },
+  "mod:fe.status_cure_proj": {
+   "bwd_flops": 31457280.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 6041.127999998629,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 31457280.0,
+   "fwd_self_us": 805.5520000001416
+  },
+  "mod:fe.status_cure_rule": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 10.429999999701977,
+   "fwd_aten_calls": 336.0,
+   "fwd_flops": 460800.0,
+   "fwd_self_us": 3481.4560000058264
+  },
+  "mod:fe.t0_species_prior": {
+   "fwd_aten_calls": 40.0,
+   "fwd_flops": 655360400.0,
+   "fwd_self_us": 10321.280999999992
+  },
+  "mod:fe.team_transformer": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 34.0,
+   "bwd_us": 222755.611999996,
+   "fwd_aten_calls": 417.0,
+   "fwd_flops": 51011584.0,
+   "fwd_self_us": 99047.85899999738
+  },
+  "mod:fe.team_transformer.extra_rounds.0": {
+   "bwd_flops": 77342965760.0,
+   "bwd_nodes": 57.0,
+   "bwd_us": 2017728.0990000013,
+   "fwd_aten_calls": 167.0,
+   "fwd_flops": 38721814528.0,
+   "fwd_self_us": 1052731.159
+  },
+  "mod:fe.team_transformer.field_proj": {
+   "bwd_flops": 5767168.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 1632.2829999998212,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 5767168.0,
+   "fwd_self_us": 128.4410000005737
+  },
+  "mod:fe.team_transformer.side_proj": {
+   "bwd_flops": 10485760.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 1374.609999999404,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 10485760.0,
+   "fwd_self_us": 211.60699999984354
+  },
+  "mod:fe.team_transformer.token_type_emb": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 3.0,
+   "bwd_us": 89.51700000092387,
+   "fwd_aten_calls": 28.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 62.627000000327826
+  },
+  "mod:fe.team_transformer.transformer_layers.0": {
+   "bwd_flops": 77342965760.0,
+   "bwd_nodes": 57.0,
+   "bwd_us": 2069867.2819999903,
+   "fwd_aten_calls": 167.0,
+   "fwd_flops": 38721814528.0,
+   "fwd_self_us": 1050541.8630000008
+  },
+  "mod:fe.team_transformer.transformer_layers.1": {
+   "bwd_flops": 77342965760.0,
+   "bwd_nodes": 57.0,
+   "bwd_us": 2140114.9289999995,
+   "fwd_aten_calls": 167.0,
+   "fwd_flops": 38721814528.0,
+   "fwd_self_us": 1114819.399000004
+  },
+  "mod:fe.unpack": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 4706.563999999315,
+   "fwd_aten_calls": 428.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 4769.091999999993
+  },
+  "mod:fe.value_entity_pool": {
+   "bwd_flops": 121348096.0,
+   "bwd_nodes": 49.0,
+   "bwd_us": 26510.978999996558,
+   "fwd_aten_calls": 165.0,
+   "fwd_flops": 62849024.0,
+   "fwd_self_us": 5317.6899999994785
+  },
+  "mod:fe.value_entity_pool.op_proj": {
+   "bwd_flops": 37748736.0,
+   "bwd_nodes": 5.0,
+   "bwd_us": 2617.001999998465,
+   "fwd_aten_calls": 16.0,
+   "fwd_flops": 18874368.0,
+   "fwd_self_us": 473.7390000000596
+  },
+  "mod:fe.value_entity_pool.out_proj": {
+   "bwd_flops": 268435456.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 3153.468999998644,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 134217728.0,
+   "fwd_self_us": 1487.8519999999553
+  },
+  "mod:fe.value_entity_pool.token_proj": {
+   "bwd_flops": 1477967936.0,
+   "bwd_nodes": 22.0,
+   "bwd_us": 23568.585999997333,
+   "fwd_aten_calls": 71.0,
+   "fwd_flops": 738197504.0,
+   "fwd_self_us": 11568.481999998912
+  },
+  "mod:fe.win_head.net.0": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 192.75200000032783,
+   "fwd_aten_calls": 7.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 205.31499999947846
+  },
+  "mod:fe.win_head.net.1": {
+   "bwd_flops": 134217728.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 1606.7259999997914,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 67108864.0,
+   "fwd_self_us": 769.6840000003576
+  },
+  "mod:fe.win_head.net.2": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 86.24200000055134,
+   "fwd_aten_calls": 2.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 55.014000000432134
+  },
+  "mod:fe.win_head.net.3": {
+   "bwd_flops": 1048576.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 220.22399999946356,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 524288.0,
+   "fwd_self_us": 54.59300000034273
+  },
+  "mod:mlp_extractor.policy_net.0": {
+   "bwd_flops": 2147483648.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 24637.672000000253,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 1073741824.0,
+   "fwd_self_us": 11949.047000000253
+  },
+  "mod:mlp_extractor.policy_net.1": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 210.42500000074506,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 3041.529000001028
+  },
+  "mod:mlp_extractor.policy_net.2": {
+   "bwd_flops": 2147483648.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 24330.125000001863,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 1073741824.0,
+   "fwd_self_us": 11867.734000001103
+  },
+  "mod:mlp_extractor.policy_net.3": {
+   "bwd_flops": 0.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 275.4769999999553,
+   "fwd_aten_calls": 1.0,
+   "fwd_flops": 0.0,
+   "fwd_self_us": 3105.809999998659
+  },
+  "mod:pointer_head": {
+   "bwd_flops": 8192.0,
+   "bwd_nodes": 20.0,
+   "bwd_us": 1506.1469999998808,
+   "fwd_aten_calls": 42.0,
+   "fwd_flops": 2105344.0,
+   "fwd_self_us": 6478.560999998823
+  },
+  "mod:pointer_head.ctx_proj": {
+   "bwd_flops": 268435456.0,
+   "bwd_nodes": 1.0,
+   "bwd_us": 3591.551000000909,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 134217728.0,
+   "fwd_self_us": 1625.390000000596
+  },
+  "mod:pointer_head.move_proj": {
+   "bwd_flops": 375390208.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 5476.307000001892,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 187695104.0,
+   "fwd_self_us": 2290.157999999821
+  },
+  "mod:pointer_head.move_score": {
+   "bwd_flops": 2097152.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 210.45499999821186,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1048576.0,
+   "fwd_self_us": 123.28199999965727
+  },
+  "mod:pointer_head.struggle_score": {
+   "bwd_flops": 524288.0,
+   "bwd_nodes": 2.0,
+   "bwd_us": 118.29199999943376,
+   "fwd_aten_calls": 10.0,
+   "fwd_flops": 262144.0,
+   "fwd_self_us": 40.84700000099838
+  },
+  "mod:pointer_head.switch_extra_proj": {
+   "bwd_flops": 6291456.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 2281.2309999987483,
+   "fwd_aten_calls": 11.0,
+   "fwd_flops": 3145728.0,
+   "fwd_self_us": 392.3760000001639
+  },
+  "mod:pointer_head.switch_proj": {
+   "bwd_flops": 506462208.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 7115.503000000492,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 253231104.0,
+   "fwd_self_us": 3035.396999999881
+  },
+  "mod:pointer_head.switch_score": {
+   "bwd_flops": 3145728.0,
+   "bwd_nodes": 4.0,
+   "bwd_us": 283.3719999976456,
+   "fwd_aten_calls": 13.0,
+   "fwd_flops": 1572864.0,
+   "fwd_self_us": 139.1820000000298
+  }
+ },
+ "surrogate_profiled_wall_s": 27.998946474981494,
+ "surrogate_unprofiled": {
+  "max_s": 24.801852634060197,
+  "median_s": 24.221444693976082,
+  "min_s": 22.771059364895336,
+  "reps": 3
+ },
+ "threads": 1,
+ "torch": "2.8.0+cu126"
+}

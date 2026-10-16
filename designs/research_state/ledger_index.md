@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-26,226-line file. **The ledger itself is append-only and is never edited by this**;
+26,309-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**887 headings · 832 dated · 2026-08-01 → 2026-10-16 · ledger 26,226 lines.**
+**888 headings · 833 dated · 2026-08-01 → 2026-10-16 · ledger 26,309 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -907,3 +907,4 @@ rename.
   - `L26051` · `2026-10-16` · CRASH FIX · **X26's launch (`rb_xs_s2701` at `71351ff5`) was refused by `UpdateWontFit` (headroom 978 < 1,024 MiB) because T36's gate relocation forward kept a 4,486 MiB fp32 autograd graph alive under the compiled arm and the allocator held the 8.2 GiB gate peak into the fit reading; the relocation now keeps nothing for a backward, the gate hands its cache back, and the update-fit demand is the peak reserved over the dry update AND the mid-run canary's check from an emptied cache — headroom 2,444 MiB on the X26 argv (`gen3_gate_releases_memory_v1`, `gen3_update_fit_v2`)**
   - `L26113` · `2026-10-16` · MEASUREMENT · **T24: a periodic restart buys NOTHING measurable on the Rust core. The update is flat for 6 h, the rollout slows with the self-play POOL (+1 ms GPU wait per snapshot) and the snapshot-ladder updater, never with process age. X26's first 6 h restart cost 22.5 min because the shared compile-cache key reads the inert-on-resume argv `batch_size` (a cold recompile, F8); a warm restart costs ~5.5 min (1.5 % at 6 h). Recommendation: a 24 h interval (MODERATE evidence)**
   - `L26180` · `2026-10-16` · MEASUREMENT · **The T-ENT toy at EQUAL COMPUTE BEATS production at 15M: +6.48 pp, 90 % [+4.54, +8.43] (R-T5; the toy at 46–48M steps, at the GPU wall clock EB spends to 15M), and at its 100M cap +10.20 pp, [+7.50, +12.91] (R-T6, vs EB 15M). Both are DESCRIPTIVE, and neither is a ceiling read**
+  - `L26227` · `2026-10-16` · DESIGN · **WHAT THE END STATE'S COMPUTE BUYS: the per-component cost ledger (the trunk is tokens × rounds, so the 32 EVENT seats are ≈ 37 % of the learner's FLOPs and the third round 23 %; the op and edges are ≈ 7 % of FLOPs but ≈ 35 % of a CPU update), the value ledger (only static tokens and X5 have isolated reads), the TOY DEEP RUN under X26's own Tier-1 rule (X34), and PLATEAU-BREAKERS on both architectures with a transfer calibration (X35)**

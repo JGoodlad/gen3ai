@@ -26223,3 +26223,86 @@ All 48 cells are above 50 %, with 0 aborted games and every cell at 250 pairs.
 
 Evidence: `research_state/measurements/toy_crosses_2026-10-16/` (PREREG.md, RESULTS.md, result/read.json);
 `design_x26_readiness.md` §3.5 (the descriptive record) and F36.
+
+### 2026-10-16 · DESIGN · **WHAT THE END STATE'S COMPUTE BUYS: the per-component cost ledger (the trunk is tokens × rounds, so the 32 EVENT seats are ≈ 37 % of the learner's FLOPs and the third round 23 %; the op and edges are ≈ 7 % of FLOPs but ≈ 35 % of a CPU update), the value ledger (only static tokens and X5 have isolated reads), the TOY DEEP RUN under X26's own Tier-1 rule (X34), and PLATEAU-BREAKERS on both architectures with a transfer calibration (X35)**
+
+**Frame (owner, 2026-10-16, via the orchestrator).** The toy's equal-time win (R-T5, the entry above) is a data point,
+not a concern about production, which wins per step. The plan:
+1. production to plateau (X26);
+2. the toy to ITS plateau;
+3. plateau-breakers on both;
+4. then read whether the architecture matters there.
+
+No slimming recommendation. Doc: `endstate/design_compute_efficiency.md`.
+
+**How the cost was measured (CPU).** Everything is in `measurements/compute_efficiency_2026-10-16/`.
+- `component_cost.py` attributes each forward op by its innermost module or method label, and each backward node by
+  its autograd `sequence_nr`.
+- Production is `learner_golden.build_learner()` stepped through the real micro-step: fp32, 1 thread, 2,048 golden
+  rows, at `38d76746`.
+- The toy is `rb_toy_ent_s4002/final_model.zip`.
+
+**Cost results:**
+- **Whole model.** Counted MFLOP per row, forward: 94.8 (production) vs 17.5 (toy). Forward + backward: 244.6
+  (240.7 surrogate) vs 52.4, a ratio of **4.6×**. The GPU update ratio is **42.1 / 9.23 s = 4.56×** (the runs' own
+  `update_wall_s` medians), so at the whole-model level the bf16 GPU update tracks counted FLOPs.
+- **The trunk is 69.5 % of FLOPs.** Split by token group (analytic: f(64) = 18.87 vs a measured 18.91 MFLOP per
+  round):
+  - the 32 event seats are 52.8 % of every round, which is **36.6 % of the learner**;
+  - the E4 / E5 / OTHER seats are ≈ 15 %;
+  - the third round is 23.2 %.
+- **Edges.**
+  - The cell kernels are 6.7 % of FLOPs, 11.4 % of the CPU update and 31 % of CPU inference.
+  - The bias maps cost ≈ 0 FLOPs but **24 % of the CPU update**: the backward of 17 slice writes into a
+    `[B, 4, 64, 64]` tensor.
+  - The GPU share is UNMEASURED (T44).
+- **Parameters are not the cost.** The policy tower is 43 % of production's parameters (51 % of the toy's) and 2.7 %
+  of FLOPs.
+- **CPU inference** is 0.966 s per 256 rows vs 0.073 s (13×). About 64 % of it is the op's cells, rules, glue and
+  beliefs, and every CPU meter pays that (T41).
+
+**Where an iteration goes** (medians over each run's log):
+
+| run | iteration | update | collect |
+|---|---|---|---|
+| production EB | 59.3 s | 71 % | 29 % |
+| toy | 19.4 s | 48 % | 52 % |
+
+The env floor is ≈ 7.8 s per 98,304 decisions on both (ESTIMATED from the GPU-wait rows). The toy is therefore half
+env-bound and more exposed to agent CPU load.
+
+**Value** (from the ledger). Every read is matched-step at 15M unless stated, so all of them are PROVISIONAL.
+- Static tokens alone: −2.32 pp (NEGATIVE).
+- X5: equal per step, −5.91 pp per wall time.
+- The end-state bundle: +0.60 [−0.72, +1.92] (PASS).
+- UNKNOWN in isolation: history, depth 3, edges, seats, the op, move resolution, the intent head and the policy tower.
+- ≈ 75 % of production's FLOPs have no isolated value read.
+
+**Plan, ranked by information per GPU-hour:**
+1. X33: the equal-time CURVE from existing toy and X26 checkpoints (0 GPU-h; X26 is past 45M).
+2. R-T2.
+3. X34: the toy deep run from 100M under X26's Tier-1 rule (Δ 10M, W 50M, cap 500M), one seed, after X26;
+   ≈ 6–24 GPU-h.
+4. X35: breakers on both architectures, each with a b-OFF control fork, and a 2-breaker transfer calibration before the
+   toy may drop anything.
+5. X36 (the toy + 1 component): DEFERRED.
+
+Equal compute means effective learn GPU-time (Σ collect + update). FLOPs are a descriptor, and the read needs ≥ 3
+budgets. The efficiency items are cost-reducers only: T41–T44.
+
+One owner question: run the toy deep run on a rented GPU in parallel with X26, or after it.
+
+**FINDINGS.**
+1. The 2.61M vs 1.42M contrast is mostly the policy tower, which both keep.
+2. An equal-time read against X26 must not use SB3's `time_elapsed`: it counts X26's 100 in-learn ladder games.
+3. The env / inference split of collect is ESTIMATED.
+4. X26's collect is 23.5 s vs EB's 17.2 s at the same update. The cause is UNVERIFIED.
+5. The readiness doc's 95.7 / 17.4 MFLOP are FORWARD counts. They are now measured: 94.8 / 17.5.
+6. `perf_phase_2026-10-10/results/module_flops_endstate.json`'s per-module shares are mis-attributed:
+   FlopCounterMode double-counts across the backward.
+7. The third round's +6.9 s (the largest measured GPU delta of the end state) had no ledger entry and no isolated
+   value read. UNDERSTANDING §4.6's stale "proposed next lever" sentence is corrected.
+8. The T-ENT pin predates T36's canary fix. That makes the fix a launch requirement for X34.
+
+Evidence: `endstate/design_compute_efficiency.md`; `research_state/measurements/compute_efficiency_2026-10-16/`
+(`component_cost.py`, `read_cost.py`, `iteration_split.py`, `result/`).

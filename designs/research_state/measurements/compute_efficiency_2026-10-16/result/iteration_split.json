@@ -1,0 +1,102 @@
+{
+ "rb_x26_s2601": {
+  "collect_ms": {
+   "n": 460,
+   "median": 23450.0
+  },
+  "update_wall_s": {
+   "n": 459,
+   "median": 42.1
+  },
+  "gpu_wait_ms_per_host_step": {
+   "n": 461,
+   "median": 29.5
+  },
+  "fps": {
+   "n": 461,
+   "median": 1600.0
+  },
+  "collect_decisions": {
+   "n": 460,
+   "median": 98300.0
+  },
+  "iteration_s": 65.55,
+  "update_share": 0.6422578184591915,
+  "collect_share": 0.35774218154080856
+ },
+ "rb_bf_eb_s2005": {
+  "collect_ms": {
+   "n": 153,
+   "median": 17200.0
+  },
+  "update_wall_s": {
+   "n": 153,
+   "median": 42.1
+  },
+  "gpu_wait_ms_per_host_step": {
+   "n": 153,
+   "median": 18.2
+  },
+  "fps": {
+   "n": 153,
+   "median": 1697.0
+  },
+  "collect_decisions": {
+   "n": 153,
+   "median": 98300.0
+  },
+  "iteration_s": 59.3,
+  "update_share": 0.7099494097807758,
+  "collect_share": 0.2900505902192243
+ },
+ "rb_toy_ent_s4002": {
+  "collect_ms": {
+   "n": 1018,
+   "median": 10200.0
+  },
+  "update_wall_s": {
+   "n": 1018,
+   "median": 9.23
+  },
+  "gpu_wait_ms_per_host_step": {
+   "n": 1018,
+   "median": 4.64
+  },
+  "fps": {
+   "n": 1018,
+   "median": 5075.0
+  },
+  "collect_decisions": {
+   "n": 1018,
+   "median": 98300.0
+  },
+  "iteration_s": 19.43,
+  "update_share": 0.47503860010293364,
+  "collect_share": 0.5249613998970664
+ },
+ "rb_toy_ent_s4003": {
+  "collect_ms": {
+   "n": 1018,
+   "median": 9620.0
+  },
+  "update_wall_s": {
+   "n": 1018,
+   "median": 9.22
+  },
+  "gpu_wait_ms_per_host_step": {
+   "n": 1018,
+   "median": 4.78
+  },
+  "fps": {
+   "n": 1018,
+   "median": 5138.0
+  },
+  "collect_decisions": {
+   "n": 1018,
+   "median": 98300.0
+  },
+  "iteration_s": 18.84,
+  "update_share": 0.48938428874734613,
+  "collect_share": 0.5106157112526539
+ }
+}
