@@ -131,37 +131,34 @@
   },
   "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda": {
    "status": "pass",
-   "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
-   "at": "2026-10-06T05:50:22Z",
-   "duration_s": 175.22,
-   "contention": 1.11,
-   "detail": "",
-   "last_skipped_at": "2026-10-15T22:45:28Z",
-   "last_skipped_commit": "53059377e50e61412ac28bca02ff74cdc220610d",
-   "last_skip_detail": ""
+   "commit": "71351ff5a3596a6dea6bda4f6ff57c17872b13b6",
+   "at": "2026-10-16T05:19:03Z",
+   "duration_s": 236.1,
+   "contention": 1.0,
+   "detail": ""
   },
   "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_under_the_bf16_rule_on_cuda_passes_names_a_NaN_and_has_its_measured_resolution": {
-   "status": "skip",
-   "commit": "53059377e50e61412ac28bca02ff74cdc220610d",
-   "at": "2026-10-15T22:45:28Z",
-   "duration_s": 0.0,
-   "contention": 2.05,
+   "status": "pass",
+   "commit": "71351ff5a3596a6dea6bda4f6ff57c17872b13b6",
+   "at": "2026-10-16T05:19:03Z",
+   "duration_s": 247.48,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_regions_trained_cuda_test.py::test_the_production_baselines_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": {
-   "status": "skip",
-   "commit": "53059377e50e61412ac28bca02ff74cdc220610d",
-   "at": "2026-10-15T22:45:28Z",
-   "duration_s": 0.0,
-   "contention": 2.05,
+   "status": "pass",
+   "commit": "71351ff5a3596a6dea6bda4f6ff57c17872b13b6",
+   "at": "2026-10-16T05:19:03Z",
+   "duration_s": 76.27,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_regions_trained_cuda_test.py::test_the_production_baselines_trained_weights_pass_the_R1_gate_under_the_bf16_rule_on_cuda": {
-   "status": "skip",
-   "commit": "53059377e50e61412ac28bca02ff74cdc220610d",
-   "at": "2026-10-15T22:45:28Z",
-   "duration_s": 0.0,
-   "contention": 2.05,
+   "status": "pass",
+   "commit": "71351ff5a3596a6dea6bda4f6ff57c17872b13b6",
+   "at": "2026-10-16T05:19:03Z",
+   "duration_s": 80.96,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cpu": {
@@ -174,14 +171,11 @@
   },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cuda": {
    "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 88.24,
-   "contention": 1.01,
-   "detail": "",
-   "last_skipped_at": "2026-10-15T22:18:24Z",
-   "last_skipped_commit": "53059377e50e61412ac28bca02ff74cdc220610d",
-   "last_skip_detail": ""
+   "commit": "71351ff5a3596a6dea6bda4f6ff57c17872b13b6",
+   "at": "2026-10-16T05:22:29Z",
+   "duration_s": 186.94,
+   "contention": 1.02,
+   "detail": ""
   },
   "src/agents/model/dense_attn_bias_test.py::test_cuda_inductor_n64_bias_reproduction": {
    "status": "skip",
