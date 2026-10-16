@@ -1,0 +1,993 @@
+{
+ "source": "models/_ledger (the archive ledger), plateau_t1 requests of the T-ENT toy (T33, 2026-10-15)",
+ "checks": [
+  {
+   "request_id": "plateau_t1:rb_toy_ent_s4001:25000000:w20000000",
+   "player": "rb_toy_ent_s4001@25000209",
+   "opponent": "rb_toy_ent_s4001@5000045",
+   "decision": {
+    "decision_id": "20261015T135507Z.0-goodlad_desktop-2704896-h2h:d0",
+    "verdict": "GAIN",
+    "rule": "plateau_t1_gsprt(p0=0.5,p1=0.52,alpha=0.05,beta=0.05,batch_pairs=40,min_pairs=40,max_pairs=6000,abort_limit=0.25,bounds=wald,band=1e-09)",
+    "consumed_count": 2
+   },
+   "recorded": {
+    "n_pairs": 80,
+    "llr": 3.044247947,
+    "stop_batch": 1,
+    "surplus_batches": []
+   },
+   "batches": [
+    {
+     "batch": 0,
+     "row_id": "20261015T135507Z.0-goodlad_desktop-2704896-h2h:0",
+     "pair_counts": [
+      1,
+      0,
+      9,
+      0,
+      30
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 11,
+      "w": 69
+     },
+     "cycle_seed": 354255916148980045,
+     "outcome_digest_all": "aacbaeeff074001324f44b0bb49105be83ce1c91c5b9d5e1a20e13d1161c933f"
+    },
+    {
+     "batch": 1,
+     "row_id": "20261015T135507Z.0-goodlad_desktop-2704896-h2h:1",
+     "pair_counts": [
+      0,
+      0,
+      2,
+      0,
+      38
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 2,
+      "w": 78
+     },
+     "cycle_seed": 4057891344870473147,
+     "outcome_digest_all": "203c211fdb0e0aba0577d8e88a864e1d0d655d2ea37dca919c9eeea2cca538f3"
+    }
+   ]
+  },
+  {
+   "request_id": "plateau_t1:rb_toy_ent_s4002:65000000:w20000000",
+   "player": "rb_toy_ent_s4002@65000038",
+   "opponent": "rb_toy_ent_s4002@45000211",
+   "decision": {
+    "decision_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:d0",
+    "verdict": "GAIN",
+    "rule": "plateau_t1_gsprt(p0=0.5,p1=0.52,alpha=0.05,beta=0.05,batch_pairs=40,min_pairs=40,max_pairs=6000,abort_limit=0.25,bounds=wald,band=1e-09)",
+    "consumed_count": 17
+   },
+   "recorded": {
+    "n_pairs": 680,
+    "llr": 3.071067199,
+    "stop_batch": 16,
+    "surplus_batches": []
+   },
+   "batches": [
+    {
+     "batch": 0,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:0",
+     "pair_counts": [
+      9,
+      0,
+      25,
+      0,
+      6
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 43,
+      "w": 37
+     },
+     "cycle_seed": 4110051066746059088,
+     "outcome_digest_all": "e0da8aa0b40e41055a018d85915dec195d695accce372536e285859233fa671c"
+    },
+    {
+     "batch": 1,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:1",
+     "pair_counts": [
+      9,
+      0,
+      17,
+      0,
+      14
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 35,
+      "w": 45
+     },
+     "cycle_seed": 2798461285146480410,
+     "outcome_digest_all": "284e7b80db3e5f4d67f91501e72a4c03acbb69415530ecd7ddb7e44a70fc066f"
+    },
+    {
+     "batch": 2,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:2",
+     "pair_counts": [
+      7,
+      0,
+      19,
+      0,
+      14
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 2,
+      "l": 32,
+      "w": 46
+     },
+     "cycle_seed": 3268235025800030269,
+     "outcome_digest_all": "5ed2d994bf2f4f28daa7af50b68561f9a206690afd6b475b97c988a14865476d"
+    },
+    {
+     "batch": 3,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:3",
+     "pair_counts": [
+      10,
+      0,
+      21,
+      0,
+      9
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 41,
+      "w": 39
+     },
+     "cycle_seed": 3007597287596092328,
+     "outcome_digest_all": "406bc75227b57a4e1f15f65a3a38f6289970e2d93eb30034a33c2c0f960f5263"
+    },
+    {
+     "batch": 4,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:4",
+     "pair_counts": [
+      10,
+      0,
+      18,
+      0,
+      12
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 38,
+      "w": 42
+     },
+     "cycle_seed": 2008241758308823252,
+     "outcome_digest_all": "e3fb38a3cec4bfc59cd5690bbb6f7deeb8dff39e0136d1793c76d4344cbcdbb0"
+    },
+    {
+     "batch": 5,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:5",
+     "pair_counts": [
+      9,
+      0,
+      21,
+      0,
+      10
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 39,
+      "w": 41
+     },
+     "cycle_seed": 1285379203480678617,
+     "outcome_digest_all": "b1d40ff3f19b6a51135ce3250bf81f7504ca48f045b957704ab76e77cce161a6"
+    },
+    {
+     "batch": 6,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:6",
+     "pair_counts": [
+      9,
+      0,
+      19,
+      1,
+      11
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 37,
+      "w": 42
+     },
+     "cycle_seed": 698162544168043950,
+     "outcome_digest_all": "5bf83beeb2863ea9ad844ef7a0cce936a5e2b6f55f280ff86777602149a73599"
+    },
+    {
+     "batch": 7,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:7",
+     "pair_counts": [
+      7,
+      1,
+      20,
+      1,
+      11
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 2,
+      "l": 35,
+      "w": 43
+     },
+     "cycle_seed": 509774259243104663,
+     "outcome_digest_all": "e72010770ad551d4490298059c9598320cd1a76bd37e8546ab3032852df4b726"
+    },
+    {
+     "batch": 8,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:8",
+     "pair_counts": [
+      7,
+      0,
+      25,
+      1,
+      7
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 39,
+      "w": 40
+     },
+     "cycle_seed": 4055128675333213672,
+     "outcome_digest_all": "f88dce9617d55fd60773ef03ad3a46d0c21547608b2a1ea3258149301caa58e9"
+    },
+    {
+     "batch": 9,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:9",
+     "pair_counts": [
+      5,
+      1,
+      22,
+      0,
+      12
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 33,
+      "w": 46
+     },
+     "cycle_seed": 2376642339251982644,
+     "outcome_digest_all": "ac822ea76dea6dcaf67464b87fe8b1df9e5322cf29d81c605501d83e329e94ab"
+    },
+    {
+     "batch": 10,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:10",
+     "pair_counts": [
+      3,
+      0,
+      29,
+      0,
+      8
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 35,
+      "w": 45
+     },
+     "cycle_seed": 1447394645611847815,
+     "outcome_digest_all": "d8e42d12ec5534e7d4e896274aef1af1739f93c52c41a233e34f1e3bf2421c02"
+    },
+    {
+     "batch": 11,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:11",
+     "pair_counts": [
+      9,
+      1,
+      21,
+      0,
+      9
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 40,
+      "w": 39
+     },
+     "cycle_seed": 3252962813956791664,
+     "outcome_digest_all": "454491d36a3c83c7f50f14421bf1d801398209802a738f7d3cac44819a4948eb"
+    },
+    {
+     "batch": 12,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:12",
+     "pair_counts": [
+      7,
+      0,
+      19,
+      0,
+      14
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 33,
+      "w": 47
+     },
+     "cycle_seed": 4409249725161461691,
+     "outcome_digest_all": "abdb1f4c11085e2f87f3ed5d795233941dc32bcf4eb8dabbe3bf560435b10ffa"
+    },
+    {
+     "batch": 13,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:13",
+     "pair_counts": [
+      8,
+      0,
+      21,
+      0,
+      11
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 37,
+      "w": 43
+     },
+     "cycle_seed": 4075143434179953888,
+     "outcome_digest_all": "5d2c7e63d7ca5e513ced2b3fbd24fa25f45c0c54f7e2a9b70e13ccc10c1552dc"
+    },
+    {
+     "batch": 14,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:14",
+     "pair_counts": [
+      8,
+      0,
+      24,
+      0,
+      8
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 40,
+      "w": 40
+     },
+     "cycle_seed": 1407681498819183441,
+     "outcome_digest_all": "a121c9f6ae5218d9e4657a286d28c155c1ebdcd736a9c8be33d7e8363299d22b"
+    },
+    {
+     "batch": 15,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:15",
+     "pair_counts": [
+      10,
+      0,
+      17,
+      0,
+      13
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 37,
+      "w": 43
+     },
+     "cycle_seed": 1076131184991270379,
+     "outcome_digest_all": "d67e92ef24be424e5c531caadd6fdcd9508b9ba033e2deebab598e80a1e5f92d"
+    },
+    {
+     "batch": 16,
+     "row_id": "20261015T215543Z.0-goodlad_desktop-3316799-h2h:16",
+     "pair_counts": [
+      5,
+      0,
+      23,
+      0,
+      12
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 33,
+      "w": 47
+     },
+     "cycle_seed": 1119484881130152194,
+     "outcome_digest_all": "8d8af1927fb9588eebfd0593fff92bcbe1dfa3bd955ba4d36807738b1d2dc565"
+    }
+   ]
+  },
+  {
+   "request_id": "plateau_t1:rb_toy_ent_s4002:90000000:w20000000",
+   "player": "rb_toy_ent_s4002@90000134",
+   "opponent": "rb_toy_ent_s4002@70000183",
+   "decision": {
+    "decision_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:d0",
+    "verdict": "GAIN",
+    "rule": "plateau_t1_gsprt(p0=0.5,p1=0.52,alpha=0.05,beta=0.05,batch_pairs=40,min_pairs=40,max_pairs=6000,abort_limit=0.25,bounds=wald,band=1e-09)",
+    "consumed_count": 30
+   },
+   "recorded": {
+    "n_pairs": 1200,
+    "llr": 3.419569172,
+    "stop_batch": 29,
+    "surplus_batches": []
+   },
+   "batches": [
+    {
+     "batch": 0,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:0",
+     "pair_counts": [
+      8,
+      0,
+      19,
+      0,
+      13
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 35,
+      "w": 45
+     },
+     "cycle_seed": 2989512501530578609,
+     "outcome_digest_all": "aea202e954aa88a209dbeff53443f46bd13f4b7f3411b92da832f020fc84e8dc"
+    },
+    {
+     "batch": 1,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:1",
+     "pair_counts": [
+      6,
+      0,
+      21,
+      0,
+      13
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 33,
+      "w": 47
+     },
+     "cycle_seed": 2786655137973843023,
+     "outcome_digest_all": "d5d90af5615f8be83d056230fd0cfb19837e25cbc4f536c907527e73bd6883ad"
+    },
+    {
+     "batch": 2,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:2",
+     "pair_counts": [
+      10,
+      0,
+      23,
+      0,
+      7
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 43,
+      "w": 37
+     },
+     "cycle_seed": 465837378517164439,
+     "outcome_digest_all": "022fdfc651eaf06c829c91ad4a8b3040072487d06d5de53b90947c5e14ba6190"
+    },
+    {
+     "batch": 3,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:3",
+     "pair_counts": [
+      11,
+      1,
+      22,
+      1,
+      5
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 2,
+      "l": 45,
+      "w": 33
+     },
+     "cycle_seed": 3661837414307337313,
+     "outcome_digest_all": "b0ca4fbb80a532a976030c616c888501387a55cc8e3edbf3fd9e45292795cfb3"
+    },
+    {
+     "batch": 4,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:4",
+     "pair_counts": [
+      9,
+      0,
+      21,
+      0,
+      10
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 39,
+      "w": 41
+     },
+     "cycle_seed": 2838428119537837200,
+     "outcome_digest_all": "82cb5170c00493983316353eda3beecd2e767d1ef451d995c2ee67adcfa549e2"
+    },
+    {
+     "batch": 5,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:5",
+     "pair_counts": [
+      6,
+      0,
+      29,
+      0,
+      5
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 41,
+      "w": 39
+     },
+     "cycle_seed": 3274237848494013099,
+     "outcome_digest_all": "80d473bd97725afc61046848d288539c55fbae78aea1ceaf685efe97525e706e"
+    },
+    {
+     "batch": 6,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:6",
+     "pair_counts": [
+      9,
+      0,
+      18,
+      1,
+      12
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 36,
+      "w": 43
+     },
+     "cycle_seed": 2593834980719680187,
+     "outcome_digest_all": "671fd558e93ed53c89bcd578164aa63c7dd840b30a0b81c62b73e74693827b3d"
+    },
+    {
+     "batch": 7,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:7",
+     "pair_counts": [
+      10,
+      0,
+      20,
+      0,
+      10
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 40,
+      "w": 40
+     },
+     "cycle_seed": 3479810987168815115,
+     "outcome_digest_all": "0909447583d0fcee3883e33c53d0aa17b762b52d60c0bf3919fd43c89a08c219"
+    },
+    {
+     "batch": 8,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:8",
+     "pair_counts": [
+      7,
+      0,
+      20,
+      0,
+      13
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 34,
+      "w": 46
+     },
+     "cycle_seed": 3274709904261849948,
+     "outcome_digest_all": "5ebd37c2f57d1194cbecf7394ce570e1b4d86348cad81c1c504c5befafe6cb0a"
+    },
+    {
+     "batch": 9,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:9",
+     "pair_counts": [
+      12,
+      0,
+      19,
+      0,
+      9
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 43,
+      "w": 37
+     },
+     "cycle_seed": 2916895081653598012,
+     "outcome_digest_all": "e6f7ca90a3b2c916d09e44b4e3aae81a8d67c27614d6b2e2eb2466a3584142c7"
+    },
+    {
+     "batch": 10,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:10",
+     "pair_counts": [
+      8,
+      0,
+      21,
+      1,
+      10
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 37,
+      "w": 42
+     },
+     "cycle_seed": 2458322194379836460,
+     "outcome_digest_all": "0910f6d8756ca3061b43ab1cf4861630583137f64af0a3a25ab8a23ef453719e"
+    },
+    {
+     "batch": 11,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:11",
+     "pair_counts": [
+      8,
+      2,
+      22,
+      1,
+      7
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 3,
+      "l": 40,
+      "w": 37
+     },
+     "cycle_seed": 304002802059281404,
+     "outcome_digest_all": "0fb52ef06c63bbe6319992ec503d75c2322a4ed2b8b5bab90562c77cebdf8832"
+    },
+    {
+     "batch": 12,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:12",
+     "pair_counts": [
+      6,
+      0,
+      21,
+      0,
+      13
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 2,
+      "l": 32,
+      "w": 46
+     },
+     "cycle_seed": 2184752244056607567,
+     "outcome_digest_all": "83bed6738a2fedf0e9ded013e7066e4d9f62a7a8208b2d88c7581f34d37c4098"
+    },
+    {
+     "batch": 13,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:13",
+     "pair_counts": [
+      3,
+      0,
+      24,
+      0,
+      13
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 30,
+      "w": 50
+     },
+     "cycle_seed": 3888295767182647103,
+     "outcome_digest_all": "00d754d6595c15f09a1ccf6f1f91520649dfd4a1c279cfaf3e07472d3a147696"
+    },
+    {
+     "batch": 14,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:14",
+     "pair_counts": [
+      10,
+      0,
+      21,
+      0,
+      9
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 41,
+      "w": 39
+     },
+     "cycle_seed": 1291492825951721856,
+     "outcome_digest_all": "8a4a8ce774053cda97785aadbdc413b2f55edf134d7559700563814a11845385"
+    },
+    {
+     "batch": 15,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:15",
+     "pair_counts": [
+      3,
+      0,
+      20,
+      0,
+      17
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 26,
+      "w": 54
+     },
+     "cycle_seed": 4607437554326895517,
+     "outcome_digest_all": "100fae7501a5c8b15a0c9cc048b9ed165ba8849a652302700624fa02d730f7df"
+    },
+    {
+     "batch": 16,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:16",
+     "pair_counts": [
+      6,
+      0,
+      28,
+      0,
+      6
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 40,
+      "w": 40
+     },
+     "cycle_seed": 1558626372362512577,
+     "outcome_digest_all": "79081236c018d4e8efecf8abc3c4caaa474db3eb43ee1e10c3bf73e642629d35"
+    },
+    {
+     "batch": 17,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:17",
+     "pair_counts": [
+      9,
+      0,
+      21,
+      0,
+      10
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 39,
+      "w": 41
+     },
+     "cycle_seed": 4474671937979926246,
+     "outcome_digest_all": "54b238485c7772c7cc7315cffa5060d26c4d26debf2f56450bac171b4079a9e2"
+    },
+    {
+     "batch": 18,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:18",
+     "pair_counts": [
+      10,
+      0,
+      23,
+      0,
+      7
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 43,
+      "w": 37
+     },
+     "cycle_seed": 2110753487442297788,
+     "outcome_digest_all": "d918bbfc3772dd36be43d578af92fa88ea90f4b99c301c73caa9f810ffa448ed"
+    },
+    {
+     "batch": 19,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:19",
+     "pair_counts": [
+      13,
+      0,
+      18,
+      0,
+      9
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 44,
+      "w": 36
+     },
+     "cycle_seed": 498310720936349617,
+     "outcome_digest_all": "5c22a5013796d869995b156178f7900a7b1ec22c1cc97e1a1a4583daf8556c1a"
+    },
+    {
+     "batch": 20,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:20",
+     "pair_counts": [
+      5,
+      0,
+      22,
+      1,
+      12
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 32,
+      "w": 47
+     },
+     "cycle_seed": 2830125192365881473,
+     "outcome_digest_all": "765eee44fa544d37a88667d7e786057e451b93c86dea38d5abc63cdbfda02ecb"
+    },
+    {
+     "batch": 21,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:21",
+     "pair_counts": [
+      12,
+      0,
+      19,
+      0,
+      9
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 43,
+      "w": 37
+     },
+     "cycle_seed": 903700044343912141,
+     "outcome_digest_all": "39d3282af8a2f759b027bee9bc808ec76b6bf2bf578c0081418fbf505d73611a"
+    },
+    {
+     "batch": 22,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:22",
+     "pair_counts": [
+      5,
+      0,
+      24,
+      0,
+      11
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 34,
+      "w": 46
+     },
+     "cycle_seed": 1916815988520210379,
+     "outcome_digest_all": "420ba4d597434755d72cab8f9eaabf0d16438316dd03e686d75a057a031b31d2"
+    },
+    {
+     "batch": 23,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:23",
+     "pair_counts": [
+      9,
+      0,
+      20,
+      0,
+      11
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 38,
+      "w": 42
+     },
+     "cycle_seed": 2346566784933384258,
+     "outcome_digest_all": "9afb9a577c0aff56f0ee315759876c4ff97db25619f1bb6cf868eb36ec3cef2f"
+    },
+    {
+     "batch": 24,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:24",
+     "pair_counts": [
+      9,
+      0,
+      21,
+      0,
+      10
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 39,
+      "w": 41
+     },
+     "cycle_seed": 590922680382762232,
+     "outcome_digest_all": "e9ce6b2554372d59ffb2080fc69b6bf0fb9bc65223278b263ad6bc333028d0fe"
+    },
+    {
+     "batch": 25,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:25",
+     "pair_counts": [
+      10,
+      0,
+      19,
+      0,
+      11
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 39,
+      "w": 41
+     },
+     "cycle_seed": 3791926680888767474,
+     "outcome_digest_all": "ada79d40d75e970c1c8738815a6ea59ded5e66c829e85021c902348dc4ee235e"
+    },
+    {
+     "batch": 26,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:26",
+     "pair_counts": [
+      9,
+      0,
+      16,
+      0,
+      15
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 34,
+      "w": 46
+     },
+     "cycle_seed": 2092036448931762900,
+     "outcome_digest_all": "32511afc8ceb40f517cf30b768dc06b7680194e968c609de778cef2f43c7f859"
+    },
+    {
+     "batch": 27,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:27",
+     "pair_counts": [
+      8,
+      0,
+      24,
+      0,
+      8
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 0,
+      "l": 40,
+      "w": 40
+     },
+     "cycle_seed": 1451966907469637704,
+     "outcome_digest_all": "dd336f673e6be904af1d8a987cdaed25e5dabe06f9e91f7ed7f16fb0647a3ec4"
+    },
+    {
+     "batch": 28,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:28",
+     "pair_counts": [
+      8,
+      1,
+      23,
+      0,
+      8
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 40,
+      "w": 39
+     },
+     "cycle_seed": 1237646558911322382,
+     "outcome_digest_all": "85857c0b6fafdb167a5ef8af950deba996a6b69e36954bd928e372991beb55a6"
+    },
+    {
+     "batch": 29,
+     "row_id": "20261015T220710Z.0-goodlad_desktop-3345796-h2h:29",
+     "pair_counts": [
+      3,
+      0,
+      25,
+      1,
+      11
+     ],
+     "counts": {
+      "aborted": 0,
+      "d": 1,
+      "l": 31,
+      "w": 48
+     },
+     "cycle_seed": 644423702231016180,
+     "outcome_digest_all": "88a9f4780e31264f095d5d8f4ac5aa6c8da3af6431dff827e18f59edce5f97af"
+    }
+   ]
+  }
+ ]
+}

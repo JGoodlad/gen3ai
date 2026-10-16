@@ -58,11 +58,22 @@ def ticked(built, checkpoints, tmp_path_factory):
     as_checkpoint(a, run, 2000)          # the newest node
     out = base / "ledger"
     logs: list = []
-    rep1 = P.tick(run, [], PLAN, str(out), COMPUTE, rule=RULE, emit=logs.append)
+    rep1 = P.tick(run, [], PLAN, str(out), COMPUTE, rule=RULE, emit=logs.append, inflight=1)
     rows1 = list(L.read(ALL_ROWS, root=out).rows)
-    rep2 = P.tick(run, [], PLAN, str(out), COMPUTE, rule=RULE, emit=logs.append)
+    rep2 = P.tick(run, [], PLAN, str(out), COMPUTE, rule=RULE, emit=logs.append, inflight=1)
     rows2 = list(L.read(ALL_ROWS, root=out).rows)
     return run, out, rep1, rows1, rep2, rows2, logs
+
+
+@pytest.fixture(scope="module")
+def ticked_parallel(ticked):
+    """The SAME check ticked into a fresh ledger with every batch of the rule's cap in flight at once (T38)."""
+    run, out, *_ = ticked
+    out_p = out.parent / "ledger_parallel"
+    logs: list = []
+    rep = P.tick(run, [], PLAN, str(out_p), COMPUTE, rule=RULE, emit=logs.append,
+                 inflight=RULE.max_pairs // RULE.batch_pairs)
+    return out_p, rep, list(L.read(ALL_ROWS, root=out_p).rows), logs
 
 
 def test_one_tick_decides_the_due_check(ticked):
@@ -95,3 +106,30 @@ def test_the_decision_verifies_and_the_ledger_audits_clean(ticked):
     v = A.verify(out, d["decision_id"])
     assert v.ok and v.verdict_rederived == d["state"]
     assert A.audit(out).ok
+
+
+def test_parallel_batches_play_the_same_games_and_reach_the_same_decision(ticked, ticked_parallel):
+    """T38: the whole cap in ONE wave. Every batch the one-at-a-time tick recorded is recorded again with the same
+    seed block and the same games (the outcome digest over every game, and the pentanomial), the decision is the
+    same verdict at the same stop batch, and every batch past the stop is a SURPLUS row the rule never folds."""
+    _run, _out, rep1, rows1, *_ = ticked
+    out_p, rep_p, rows_p, logs = ticked_parallel
+    seq = {int(r["request"]["batch"]): r for r in rows1}
+    par = {int(r["request"]["batch"]): r for r in rows_p}
+    res1, res_p = T.evaluate(rows1, RULE), T.evaluate(rows_p, RULE)
+    assert sorted(par) == list(range(RULE.max_pairs // RULE.batch_pairs)), "the wave plays the whole cap"
+    for b, r in seq.items():
+        q = par[b]
+        assert q["seed"] == r["seed"], f"batch {b}: another seed block"
+        assert q["compute"]["outcome_digest_all"] == r["compute"]["outcome_digest_all"], f"batch {b}: other games"
+        assert q["pairs"] == r["pairs"] and q["counts"] == r["counts"]
+        assert q["compute"]["inflight_batches"] == 3 and "inflight_batches" not in r["compute"]
+    assert (res_p.verdict, res_p.stop_batch, res_p.n_pairs, res_p.llr) == \
+        (res1.verdict, res1.stop_batch, res1.n_pairs, res1.llr)
+    assert res_p.surplus_batches == list(range(res1.stop_batch + 1, 3))
+    d1 = next(c for c in rep1["checks"] if c["grid"] == 2000)
+    dp = next(c for c in rep_p["checks"] if c["grid"] == 2000)
+    assert dp["state"] == d1["state"] and any("3 in flight" in m for m in logs)
+    v = A.verify(out_p, dp["decision_id"])
+    assert v.ok and v.verdict_rederived == d1["state"]
+    assert A.audit(out_p).ok

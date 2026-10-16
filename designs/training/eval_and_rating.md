@@ -1151,6 +1151,13 @@ python -m main.eval_ledger verify <decision_id>       # re-derives a check's ver
   decisions, or a decision its rows contradict).
 - **Resumable at any batch**: a re-run never replays a banked batch, fills a gap first, and records a decided test
   without playing.
+- **Parallel batches (T38, `--inflight-batches K`, default 4; 1 = one batch per cycle).** One WAVE of K batches is ONE
+  eval cycle on the one engine, in ONE process (no extra process or model copy, so rule 5b's ≤ 2 heavy jobs holds at
+  any K): every batch keeps its own seed block (the executor's opt-in `seed_blocks`), so its games are the ones it plays
+  alone, and it is its own row under its own claim. The envs pull single pairs across the wave instead of waiting on
+  each batch's slowest game. The decision is unchanged: the rule folds batches 0, 1, 2, … and stops at the first
+  crossing; a wave's batches past the stop are surplus rows (an overshoot of ≤ K − 1 batches costs games, never the
+  verdict). Proof and speed-up: `design_evaluation.md` §8.1 "Parallel batches", `design_x26_readiness.md` §2.6.
 - 🚨 **Where to run it.** Offline, by the operator after each 10M checkpoint (the deep run's training agent; its 55-min
   cron can call `tick`). CPU by default, under `scripts/ops/mem_cap.sh` and `nice`. **Never on CPU beside an X5 A/B
   arm** (the registered speed rule, `design_evaluation.md` §4.2). `--device cuda` takes the GPU lease through the
@@ -1222,7 +1229,10 @@ for byte — no in-loop, SPRT or head-to-head caller passes either): `trainee_te
 trainee SAMPLES by the keyed draw on `STREAM_TRAINEE` from the game's sample seed, the logged margin is the draw's CDF
 margin and the game log carries the argmax beside each action) and `trainee_builder` (this cycle's trainee team
 builder; its teams must be in the core's declared team table). Their one user is the offline untaught meter's
-training regime (`agents.training.untaught_rust`).
+training regime (`agents.training.untaught_rust`). A THIRD, `seed_blocks` `(seeds, B)` (`gen3_eval_seed_blocks_v1`,
+T38, 2026-10-16), keys plan game g as game g mod B of cycle seed `seeds[g // B]` (B even under a mirrored pool), so ONE
+cycle plays several head-to-head batches whose games are each batch's own; its one user is the plateau meter's
+parallel batches (`main.h2h.play.H2HEngine.play_batches`, `main.plateau tick --inflight-batches`).
 
 ### OFFLINE generation of an eval cycle (`main.ops.eval_trace_gen`) — and the PROVENANCE marker
 

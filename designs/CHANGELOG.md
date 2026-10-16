@@ -14722,3 +14722,30 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - Docs: `designs/training/compile_flags.md` "The gate releases its memory", `learner_lifecycle.md` "The update fit check"
   (v2 + the GPU table), `learner_gates.md` (the memory gates), the training leaf, `design_x26_readiness.md` I31 / §4.1 /
   Decision record.
+
+## 2026-10-16 — X26 READINESS T38: the plateau meter's PARALLEL BATCHES (`--inflight-batches`, `gen3_eval_seed_blocks_v1`; offline meter code only; no model / config / obs / signature change, no training-math change, the Tier-1 rule `gen3_plateau_t1_v1` unchanged)
+
+- **The problem (readiness F14 / T33-2)**: `main.plateau tick` played one 40-pair batch (80 games on 64 envs) per
+  eval cycle and waited for its slowest game; on the production net the lane ran at 0.62 games/s against 1.16 for one
+  160-pair batch.
+- **The change**: `python -m main.plateau tick … --inflight-batches K` (default 4; 1 = the one-batch loop) asks for K
+  batches past the recorded ones per round (never past the rule's cap); `main.h2h.play.play_waves` claims them, plays
+  them as ONE cycle (`H2HEngine.play_batches`; one engine, one process, 1-pair units the envs pull across the wave) and
+  appends each as its own row under its own claim, in batch order. The executor's third opt-in `run_cycle` override,
+  `seed_blocks=(seeds, B)`, keys plan game g as game g mod B of cycle seed `seeds[g // B]`, so every batch's games are
+  the ones it plays alone (default `None`: the cycle byte for byte). Rows gain `compute.inflight_batches` /
+  `wave_batches`; `compute.wall_s` / `games_per_s` are the wave's.
+- **The rule is unchanged**: `plateau_t1.evaluate` folds batches 0, 1, 2, … and stops at the first crossing; a wave's
+  batches past the stop are surplus rows it never reads. Replay proof (`src/main/plateau_parallel_test.py`): three
+  RECORDED T-ENT `plateau_t1` requests (`src/main/plateau_tent_replay.json`; GAIN at 80, 680, 1,200 pairs) replayed at
+  1, 2, 3, 4, 8 and 150 in flight, rows arriving in reverse batch order and every surplus batch adversarial, reach the
+  recorded verdict, stop batch, pairs and LLR; `verify` re-derives each. The real engine
+  (`src/main/h2h/plateau_integration_test.py`): the same games (every game's outcome digest) and decision at 1 and 3 in
+  flight.
+- **Measured** (`designs/research_state/measurements/t38_parallel_batches_2026-10-16/`, agent cores, rule 5b): the
+  production net 1.03 → 2.07 games/s at K = 4 (2.0×), 2.62 at K = 8, the same 640 games at every K, CPU per game
+  halved; the toy's recorded 65M check re-played all 17 recorded batches game for game at K = 1, 2, 4, 8 and decided as
+  on record, its tick 133 → 79 s at K = 4.
+- Docs: `design_evaluation.md` §8.1 "As built" (Parallel batches), `designs/training/eval_and_rating.md` (the plateau
+  meter; the executor's opt-ins), `eval_rules.md`, `design_x26_readiness.md` §2.6 / I13 / F14 / Decision record,
+  `TASK_BACKLOG.md` X26-8 → DONE.

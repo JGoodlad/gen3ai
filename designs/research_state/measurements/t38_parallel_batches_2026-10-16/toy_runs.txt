@@ -1,0 +1,20 @@
+=== K=1 start 2026-10-16T03:35:32-07:00 load 4.48 4.62 4.28
+=== K=1 exit 0 end 2026-10-16T03:37:59-07:00 load 6.58 5.38 4.61
+⚠️  Tier 1 ONLY: a PLATEAU (design_evaluation.md §8.3) also needs the cycle monitor NONE and the panel FLAT at the same two checks — Tier 2 (U5) and the panel are NOT BUILT, so this is not a plateau declaration
+[mem_cap] done: gen3ai-capped-t38toy-231742.scope exit 0 · peak 0.81 GB of cap 16.00 GB (5%) · not OOM-killed
+WALL 146.10 s USER 336.09 SYS 2.99 MAXRSS 833364 KB
+=== K=4 start 2026-10-16T03:37:59-07:00 load 6.58 5.38 4.61
+=== K=4 exit 0 end 2026-10-16T03:39:18-07:00 load 5.89 5.45 4.71
+⚠️  Tier 1 ONLY: a PLATEAU (design_evaluation.md §8.3) also needs the cycle monitor NONE and the panel FLAT at the same two checks — Tier 2 (U5) and the panel are NOT BUILT, so this is not a plateau declaration
+[mem_cap] done: gen3ai-capped-t38toy-233720.scope exit 0 · peak 0.65 GB of cap 16.00 GB (4%) · not OOM-killed
+WALL 79.41 s USER 170.56 SYS 1.72 MAXRSS 833484 KB
+=== K=2 start 2026-10-16T03:39:18-07:00 load 5.89 5.45 4.71
+=== K=2 exit 0 end 2026-10-16T03:40:54-07:00 load 6.14 5.57 4.82
+⚠️  Tier 1 ONLY: a PLATEAU (design_evaluation.md §8.3) also needs the cycle monitor NONE and the panel FLAT at the same two checks — Tier 2 (U5) and the panel are NOT BUILT, so this is not a plateau declaration
+[mem_cap] done: gen3ai-capped-t38toy-234545.scope exit 0 · peak 0.65 GB of cap 16.00 GB (4%) · not OOM-killed
+WALL 96.51 s USER 210.09 SYS 1.94 MAXRSS 834488 KB
+=== K=8 start 2026-10-16T03:40:54-07:00 load 6.14 5.57 4.82
+=== K=8 exit 0 end 2026-10-16T03:42:10-07:00 load 5.83 5.62 4.90
+⚠️  Tier 1 ONLY: a PLATEAU (design_evaluation.md §8.3) also needs the cycle monitor NONE and the panel FLAT at the same two checks — Tier 2 (U5) and the panel are NOT BUILT, so this is not a plateau declaration
+[mem_cap] done: gen3ai-capped-t38toy-235508.scope exit 0 · peak 0.65 GB of cap 16.00 GB (4%) · not OOM-killed
+WALL 75.99 s USER 161.26 SYS 1.87 MAXRSS 833644 KB

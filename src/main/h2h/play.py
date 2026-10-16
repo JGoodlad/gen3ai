@@ -100,6 +100,8 @@ PRODUCER = "h2h"
 DIGEST_MARGIN = 2e-3
 #: The first claim's expected batch wall, in games per second (CPU eager on the production model, P0: 4.77).
 EXPECTED_GAMES_PER_S = 4.0
+#: ... and a WAVE's first claim (:func:`play_waves`), at the slowest lane measured (T33's 0.62, rounded down).
+WAVE_FIRST_GAMES_PER_S = 0.5
 
 TEAM_SOURCE = "eval_builders default_biased(bias_prob=0.1): both sides draw from the player's eval team builder"
 
@@ -671,6 +673,46 @@ class H2HEngine:
         out["executor_pair_counts"] = list(pc) if pc is not None else None
         return list(sink), out
 
+    def play_batches(self, pairs: int, seeds: Sequence[int]) -> Tuple[List[List[Dict[str, Any]]], Dict[str, Any]]:
+        """PARALLEL BATCHES (T38): play ``len(seeds)`` batches of ``pairs`` mirrored pairs in ONE cycle, batch ``i``
+        at per-game seed base ``seeds[i]`` (the executor's ``seed_blocks``), so every batch's games are, game for
+        game, the ones :meth:`play_batch` plays at that seed — only the envs they share differ, which is not an
+        input of a game (``rust_eval.seeds``). Each env pulls ONE pair at a time from the whole wave, so a slow game
+        holds up its own env only, never the lane. Returns each batch's trimmed game log (its games renumbered
+        ``0 .. 2·pairs − 1``, the numbering a batch of its own has) and the cycle's stats, whose
+        ``executor_pair_counts`` is the WAVE's pentanomial (the sum over the batches)."""
+        from agents.training.eval_quota import ForensicQuota
+        from agents.training.eval_sharding import SENTINEL, EvalItem, ShardedEvalPool
+
+        k, per = len(seeds), 2 * int(pairs)
+        if k < 1 or pairs < 1:
+            raise H2HError(f"a wave needs at least one batch of at least one pair, got {k} x {pairs}")
+        item = EvalItem(ITEM_KEY, SENTINEL, k * per, path=self.opponent.zip_path, step=0)
+        pool = ShardedEvalPool([item], 2, step=0, mirrored=True)
+        run_dir = tempfile.mkdtemp(prefix="h2h_wave_")
+        sink = _GameSink()
+        try:
+            pool.write_plan(run_dir)
+            st = self.ev.run_cycle(pool, run_dir, step=0, trainee_policy=self.pm.policy,
+                                   sentinel_policies={ITEM_KEY: self.om.policy}, forensic_root=None,
+                                   quota=ForensicQuota(0, 0, 0), gamma=float(self.pm.gamma), sentinel_greedy=True,
+                                   self_play_temp=1.0, cycle_seed=int(seeds[0]), game_log=sink,
+                                   seed_blocks=(tuple(int(x) for x in seeds), per))
+            merged, missing = pool.collect(run_dir)
+        finally:
+            shutil.rmtree(run_dir, ignore_errors=True)
+        self.verify_slots(f"after a wave of {k} batches of {self.player.id} vs {self.opponent.id}")
+        if missing:
+            raise H2HError(f"the eval core published no result for {missing}")
+        out: List[List[Dict[str, Any]]] = [[] for _ in range(k)]
+        for g in sink:
+            gi = int(g["game"])
+            out[gi // per].append({**g, "game": gi % per})
+        pc = ((merged.get("pairs") or {}).get(ITEM_KEY))
+        stats = st.as_dict()
+        stats["executor_pair_counts"] = list(pc) if pc is not None else None
+        return out, stats
+
     def verify_slots(self, where: str) -> None:
         """BIT-EXACT: the player's eval slot (in the player's group) holds THIS cell's player and the sentinel slot (in
         the opponent's group) THIS cell's opponent (``SlotGroup.verify_copy``, ``gen3_slot_copy_verify_v1``).
@@ -846,14 +888,20 @@ def current_commit() -> str:
 
 
 def play_planned(eng: "H2HEngine", writer: L.LedgerWriter, ep: EdgePlan, *, schedule_seed: int, purpose: str,
-                 run_label: str, commit: str, emit: Callable[[str], None]) -> int:
+                 run_label: str, commit: str, emit: Callable[[str], None], inflight: int = 1) -> int:
     """Play ``ep``'s missing batches on ``eng`` (whose current cell must be ``ep``'s), one claimed row each.
-    Returns the number of rows appended."""
-    from utils.contention import cpu_contention_factor
-
+    Returns the number of rows appended. ``inflight`` > 1 plays the batches in WAVES of up to that many in one
+    cycle (:func:`play_waves`); 1 is the one-batch-per-cycle loop, unchanged."""
     if (eng.player.sha256, eng.opponent.sha256) != (ep.player.sha256, ep.opponent.sha256):
         raise H2HError(f"the engine's cell is {eng.player.id} vs {eng.opponent.id}, not {ep.player.id} vs "
                        f"{ep.opponent.id}")
+    if int(inflight) < 1:
+        raise H2HError(f"inflight must be >= 1, got {inflight}")
+    if int(inflight) > 1:
+        return play_waves(eng, writer, ep, schedule_seed=schedule_seed, purpose=purpose, run_label=run_label,
+                          commit=commit, emit=emit, inflight=int(inflight))
+    from utils.contention import cpu_contention_factor
+
     regime_id = eng.regime["regime_id"]
     last_wall: Optional[float] = None
     wrote = 0
@@ -891,6 +939,77 @@ def play_planned(eng: "H2HEngine", writer: L.LedgerWriter, ep: EdgePlan, *, sche
              f"({2 * n / wall:.2f} games/s); W/L/D {score.w}/{score.l}/{score.d}; pair counts "
              f"{score.pair_counts}; near-tie games {score.near_tie_games}; digest "
              f"{(score.outcome_digest or '')[:12]}")
+    return wrote
+
+
+def play_waves(eng: "H2HEngine", writer: L.LedgerWriter, ep: EdgePlan, *, schedule_seed: int, purpose: str,
+               run_label: str, commit: str, emit: Callable[[str], None], inflight: int) -> int:
+    """PARALLEL BATCHES (T38): ``ep``'s missing batches in WAVES of up to ``inflight`` consecutive batches of one
+    length, each wave ONE cycle (:meth:`H2HEngine.play_batches`). Every batch of a wave is CLAIMED before the wave
+    plays and appended as its own row, in BATCH ORDER, after it — the same row, seed block and games a batch of its
+    own records (``compute.wall_s`` is the wave's; ``compute.inflight_batches`` / ``wave_batches`` say so). A reader
+    that folds batches in order (``plateau_t1.evaluate``) is unaffected by how many were in flight: a batch played
+    past the decision is a SURPLUS row it never folds. Returns the number of rows appended."""
+    from utils.contention import cpu_contention_factor
+
+    regime_id = eng.regime["regime_id"]
+    last_rate: Optional[float] = None
+    wrote = 0
+    todo = list(ep.todo)
+    while todo:
+        n = ep.plan[todo[0]]
+        wave = [todo[0]]
+        for b_i in todo[1:]:
+            if len(wave) >= inflight or ep.plan[b_i] != n:
+                break
+            wave.append(b_i)
+        todo = todo[len(wave):]
+        claims: Dict[int, Any] = {}
+        for b_i in wave:
+            # a claim outlives the WHOLE wave: before any wave is timed, at a slow-lane rate (the production net on
+            # contended agent cores, T33: 0.62 games/s); a long claim delays only a resume after a death on ANOTHER
+            # host (a dead writer on this host is voided at once)
+            exp = 2 * n * len(wave) / (last_rate or WAVE_FIRST_GAMES_PER_S)
+            try:
+                claims[b_i] = writer.claim(ep.rid, batch=b_i, player=ep.player.sha256, opponent=ep.opponent.sha256,
+                                           regime_id=regime_id, expected_wall_s=exp)
+            except L.AlreadyRecordedError as e:
+                emit(f"[h2h] batch {b_i}: {e} — skipped")
+        wave = [b_i for b_i in wave if b_i in claims]
+        if not wave:
+            continue
+        seeds = [cycle_seed(schedule_seed, ep.key, b_i) for b_i in wave]
+        load0, t0 = _loadavg(), time.perf_counter()
+        t_start = L.utc_now()
+        logs, st = eng.play_batches(n, seeds)
+        wall = time.perf_counter() - t0
+        t_end = L.utc_now()
+        last_rate = 2 * n * len(wave) / wall if wall > 0 else None
+        scores = [score_games(g, eng.team_packed, n) for g in logs]
+        total = [sum(x) for x in zip(*(sc.pair_counts for sc in scores))]
+        if st.get("executor_pair_counts") is not None and list(st["executor_pair_counts"]) != total:
+            raise H2HError(f"wave {wave}: the executor's pentanomial {st['executor_pair_counts']} != the game "
+                           f"logs' {total}")
+        load = {"start": load0, "end": _loadavg(), "contention": cpu_contention_factor(refresh=True)}
+        for b_i, cseed, score in zip(wave, seeds, scores):
+            row = build_row(writer=writer, run_label=run_label, commit=commit, a=ep.player, b=ep.opponent,
+                            eng=eng, purpose=purpose, key=ep.key, sched_seed=schedule_seed, batch=b_i,
+                            cseed=cseed, score=score, t_start=t_start, t_end=t_end, wall_s=wall, load=load,
+                            executor=st, request=ep.req)
+            row["compute"]["games_per_s"] = round(2 * n * len(wave) / wall, 3) if wall > 0 else None
+            row["compute"]["inflight_batches"] = int(inflight)
+            row["compute"]["wave_batches"] = list(wave)
+            try:
+                writer.append_row(row, claims[b_i])
+            except L.ClaimVoidedError as e:
+                emit(f"[h2h] batch {b_i}: {e}")
+                continue
+            wrote += 1
+            emit(f"[h2h] batch {b_i + 1}/{len(ep.plan)}: {n} pairs; W/L/D {score.w}/{score.l}/{score.d}; pair counts "
+                 f"{score.pair_counts}; near-tie games {score.near_tie_games}; digest "
+                 f"{(score.outcome_digest or '')[:12]}")
+        emit(f"[h2h] wave of batches {wave[0]}..{wave[-1]} ({len(wave)} in flight): {2 * n * len(wave)} games in "
+             f"{wall:.1f}s ({(last_rate or 0.0):.2f} games/s)")
     return wrote
 
 

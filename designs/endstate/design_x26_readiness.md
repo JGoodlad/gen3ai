@@ -38,7 +38,8 @@ Units and terms:
 - **The plateau meter is partly built.** Tier 1 is BUILT and run offline (`main.plateau`, `131f3412`). It is
   VALIDATED on a real run (T33, 2026-10-15, on the T-ENT toy), and its cost is measured (§2.6). On the agent cores,
   an X26 near-plateau check costs 1.5–5 h today. The proposal (§2.6) is that X26 ticks at the registered Δ 10M,
-  the meter's batches get pipelined, and no in-process eval is built for X26. The cycle monitor (U5), the outside panel and the two-tier decision (U9) are NOT
+  the meter's batches get pipelined (DONE, T38 2026-10-16: `--inflight-batches`, default 4; 2.0× the production
+  net's game rate, the rule unchanged; §2.6), and no in-process eval is built for X26. The cycle monitor (U5), the outside panel and the two-tier decision (U9) are NOT
   STARTED, and U9 waits on the owner's Q8. Every meter component runs OFFLINE over checkpoints, so the deep run
   needs only the stop RULE registered and Tier 1 validated at launch (§2.4, owner Q2).
 - **The ride-along heads still attach** to the end state. They have already ridden on 32 end-state runs. Their
@@ -89,7 +90,7 @@ that X26 reaches later (**later**).
 | I10 | **The ride-along heads attach to the end state** | DONE | `checkargs --argv "--arch production … --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all"` exit 0; the launcher dry-run from main "would launch"; B rebased onto the flat pointer (`350fb83b`, refused without it at `ridealong_heads.py:280-310`); RND reads `obs_dim` at build (2845); all 16 bf16 A/B runs and the 8 `rb_es_end2_*` typed these flags (`metadata.json`); `ridealong/disabled` max 0.0 in `rb_bf_eb_s2005`'s TB | L | — |
 | I11 | **The ride-along registration** ([`PREREGISTRATION.md`](../research_state/measurements/ridealong_baseline/PREREGISTRATION.md)) | **DONE 2026-10-15 (T32, `ed2b9f82`): Amendment 2** — every stale clause below fixed (its §A2.1 table), X26's argv with every non-default flag and why, `checkargs` exit 0 + launcher `--dry-run` "would launch" at `264a35e3` pasted, R1–R5 + Amendment 1 restated on the end state, read points 10M / every 25M / plateau / FINAL, the §2.4 stop rule, the K9(b) handling, the Q1 / Q2 / Q4 defaults. Was: STALE | its literal argv fails `checkargs` (exit 1: `--critic winprob`, `--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`, `--env-core rust` are deleted constants); restart interval 3 h (now 6 h); the K10(a) recipe clause; "FIRST GPU run on the M5 core"; read points 10M / 25M / FINAL; the overhead basis 67.05 s; the checkpoint cadence "50,000 vec-calls × 48 envs"; B on α's support; the 2761-dim memory estimate; `feat`'s drift prediction from fp32 legacy features | L | **Amendment 2** (unit T32), committed before the launch |
 | I12 | **Head bit-identity under bf16** (heads ON vs OFF learn bit-identically) | **DONE 2026-10-15 (T32, `ed2b9f82`)** | `ridealong_update_test::test_BF16_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off`: the learner at bf16 (rollout fp32), heads OFF vs ON with every variant, bit-identical params / PPO optimizer / scalars / RNG; non-vacuous (bf16 classes; the bf16 update differs from the fp32 one). Mutation-checked: dropping `RideAlongBatch.detached`'s `.detach()` fails it, and so does a ride-along step that leaves the trunk at fp32 (invisible to the fp32 test) | L | — |
-| I13 | **Plateau meter, Tier 1** (newest vs W-back GSPRT, H0 0.50 / H1 0.52, Δ 10M, W 50M, cap 6,000 pairs) | **VALIDATED on a real run (T33, 2026-10-15)**: 10 checks (25M–70M) on `rb_toy_ent_s4001`, all GAIN, with no CONFLICT or INCONCLUSIVE; status CLIMBING (the run died at 72M on a CompileCanary FATAL, F17) | `src/agents/training/plateau_t1.py`, `src/main/plateau.py` (`131f3412`); the `plateau_t1:rb_toy_ent_s4001:*` requests and decisions in `models/_ledger`; §2.6 | L (validated) | its CPU cost is MEASURED (§2.6): production net 0.62 games/s on the agent cores today, so a near-plateau check takes 87–137 min against a 53-min Δ 5M cadence. **Use the registered Δ 10M for X26 and pipeline the 40-pair batches (T33-2)** |
+| I13 | **Plateau meter, Tier 1** (newest vs W-back GSPRT, H0 0.50 / H1 0.52, Δ 10M, W 50M, cap 6,000 pairs) | **VALIDATED on a real run (T33, 2026-10-15)**: 10 checks (25M–70M) on `rb_toy_ent_s4001`, all GAIN, with no CONFLICT or INCONCLUSIVE; status CLIMBING (the run died at 72M on a CompileCanary FATAL, F17) | `src/agents/training/plateau_t1.py`, `src/main/plateau.py` (`131f3412`); the `plateau_t1:rb_toy_ent_s4001:*` requests and decisions in `models/_ledger`; §2.6 | L (validated) | its CPU cost is MEASURED (§2.6): production net 0.62 games/s on the agent cores today, so a near-plateau check takes 87–137 min against a 53-min Δ 5M cadence. **Use the registered Δ 10M for X26 and pipeline the 40-pair batches (T33-2)** — pipelined: **T38 DONE 2026-10-16** (`main.plateau tick --inflight-batches`, default 4: production 1.03 → 2.07 games/s on the same 640 games, §2.6) |
 | I14 | **Plateau meter, the cycle monitor** (U5) | NOT STARTED | no `src/main/cycle_monitor*`; `monitor_row` exists only as a ledger kind | later (before the first Tier-1 FLAT can stop X26) | ~12–16 agent-hours, offline only (TASK_BACKLOG T20) |
 | I15 | **Plateau meter, the outside panel + the two-tier decision** (U9) | NOT STARTED; the owner's Q8 is unanswered | `design_league_decisions.md` L110 unchecked; `design_evaluation.md` Decision record 2026-10-03 "Q8 … provisional" | later | Q8 (owner Q2 below); ~8 agent-hours |
 | I16 | **U4 scheduler** (the in-window eval lane) | NOT STARTED / PAUSED | `design_evaluation.md` §7; `design_x5_belief_tokens.md` "eval U4 is paused" | **no — DROP? from X26's prerequisites.** X26 is pinned, so its checks run through the offline driver anyway (F-ED-19) | — |
@@ -301,6 +302,30 @@ Engine start-up costs 10–22 s per check.
   On the production net that wastes about 45 % of the lane, as the 1.16 vs 0.62 games/s rows show (FINDING T33-2).
 - §8.1's design figure of 4.8 games/s does not hold for the production net on contended agent cores. The measured
   rate is 0.62 today, or 1.16 when pipelined.
+
+**The pipelining, built and measured (T38, 2026-10-16;
+`../research_state/measurements/t38_parallel_batches_2026-10-16/`).** `main.plateau tick --inflight-batches K`
+(default 4) plays K 40-pair batches in ONE cycle; each batch keeps its own seed block and row, and the envs pull
+single pairs across the wave. Agent cores under rule 5b (`taskset -c 5-7,13-15`, `nice 19`, `mem_cap`), load ≈ 5–6,
+quieter than T33's 11–15, so the RATIO is the result, not the absolute rate:
+
+| network | the same games at each K | K = 1 | K = 2 | K = 4 | K = 8 |
+|---|---|---|---|---|---|
+| **production** (`rb_bf_eb_s2001` 15M vs 10M, 8 batches = 640 games, one engine) | games/s · CPU-s per game (the Python process) | 1.03 · 1.88 | — | **2.07 · 0.94 (2.0×)** | 2.62 · 0.75 (2.5×) |
+| toy (`rb_toy_ent_s4002` 65M vs 45M, the recorded check: GAIN at 17 batches) | games/s per wave · wall to the decision | 8.2–9.0 · 133 s ‡ | 12.3–15.2 · 97 s | **18.1–23.3 · 79 s (1.7×)** | 26.4–29.1 · 76 s |
+
+‡ K = 1's 146 s less its one-time 13 s env-core build. Every K re-played the SAME games: on production every batch's
+outcome digest and pentanomial were identical across K; on the toy every K re-played all 17 RECORDED batches with the
+recorded digests and decided GAIN at 680 pairs, LLR +3.071067199, as on record (K > 1 adds K − 1 or fewer surplus
+batches the rule never reads).
+- **Why 4 and not 8:** a wave overshoots the stop by up to K − 1 batches. On a 3-batch GAIN check (production, early
+  in a run) K = 4 plays 320 games at 2.07/s (155 s) against K = 1's 240 at 1.03/s (233 s); K = 8 plays 640 at 2.62/s
+  (244 s) — slower than K = 1. Near the plateau (≈ 80 batches) K = 8 saves a further ≈ 20 % of the wall. Pass
+  `--inflight-batches 8` for a check known to be long.
+- **Applied to the table below** (an inference, UNVERIFIED at T33's contention): 2.0× on T33's 0.62 games/s gives
+  ≈ 1.24 games/s, a little above the 1.16 column's assumption, so its conclusions hold.
+- The pipelining also halves the CPU per game (1.88 → 0.94 CPU-s): the one-batch loop spent half its CPU waiting on
+  each batch's tail, which rule 5b's shared cores pay for.
 
 **Extrapolated to X26** (production net, ≈ 1,570 steps/s ⇒ Δ 5M = 53 min, the registered Δ 10M = 106 min). The
 games per check come from §8.1's OC table (`design_evaluation.md`):
@@ -683,7 +708,8 @@ first seed launches. Anything that lands on `main` after that is outside X26 and
 **What may land DURING X26 (offline, or code the pin never runs):**
 - **The R1×R2 and R5 reader code** (A2-F2 / F20). These are offline readers of X26's checkpoints at HEAD. They must
   land before the FINAL read, not before the launch.
-- **The plateau meter's parallel batches (F14 / T33-2).** This is offline `main.plateau` code.
+- **The plateau meter's parallel batches (F14 / T33-2). LANDED 2026-10-16 (T38), at X26 ≈ 2M steps with no
+  `plateau_t1` request of X26's open** (its first check is 50M). This is offline `main.plateau` code.
   - It must keep the GSPRT rule unchanged (batches judged in batch order), with a test that replays a RECORDED
     check (a T-ENT ledger request) to the same decision.
   - Land it BETWEEN checks, never while a `plateau_t1` request is open. Land it before X26 nears 70M, its first
@@ -957,7 +983,9 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 - **F14 (T33-2). The meter is tail-bound.** `main.plateau` plays one 40-pair batch (80 games on 64 envs) per engine
   call and waits for its slowest game. One 160-pair batch ran at 1.16 games/s against 0.62, and at 1.5 CPU-s per game
   against 2.6. Fix: keep several batches in flight and judge them in batch order. The sequential rule is unchanged,
-  and an overshoot costs only games. This is offline code (~0.5 agent-day), not yet a backlog row.
+  and an overshoot costs only games. **RESOLVED 2026-10-16 (T38, TASK_BACKLOG X26-8)**: `--inflight-batches K`
+  (default 4) plays K batches per cycle, each on its own seed block and its own row; the rule is unchanged and judged
+  in batch order. Measured: 2.0× the production game rate at K = 4, 2.5× at K = 8 (§2.6).
 - **F15 (T33-3). The trainer's blocking eval cycle costs ≈ 3.5 % of production wall, not ≈ 1.5 %.**
   `rb_bf_eb_s2001` shows a 43–47 s cycle every 2M steps (≈ 1,270 s). The toy shows 16 s every ≈ 380 s, which is 4.2 %.
   `designs/training/eval_and_rating.md` quoted only O9's ~1.5 % at N = 256. It now gives both figures, corrected in T33's commit.
@@ -1079,3 +1107,4 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-16 | **I31 FIXED before P_X26: the startup gate releases its memory and the update-fit DEMAND is what training needs** (`gen3_gate_releases_memory_v1`, `gen3_update_fit_v2`): the relocation forward keeps nothing for a backward, the gate empties its cache after the lock, demand = peak reserved over the dry update + the canary's check from an emptied cache; headroom 978 (FATAL) → 2,444 MiB on the X26 argv; P_X26 moves to the landed sha | `PYTORCH_CUDA_ALLOC_CONF=expandable_segments` (changes the allocator against the bf16 A/B reference; not measured); lowering the 1,024 MiB bar; a smaller micro-batch (a recipe change) | GPU reads in `../training/learner_lifecycle.md` "The update fit check" and `../training/compile_flags.md` "The gate releases its memory"; K9 golden IDENTICAL |
 | 2026-10-16 | **G_p(cap) REGISTERED before any R-T2 read** (closes F32, F33): R-T2's toy node is each seed's 100M `CAP` checkpoint (`rb_toy_ent_s4001b` / `s4002` / `s4003` `final_model.zip`); G_p(cap) is biased toward production; CEILING is stated only as "production's plateau beats the toy at 100M steps", SPEED ONLY / NOTHING MEASURABLE unchanged; §3.6's sentence re-worded. W4's R-T1 ≈ −14.1 pp and R-T1b ≈ −25.5 pp recorded descriptively (no interval: `cross_stat` is square-only; T40) | the cap raised before R-T2; waiting for a plateau that the 100M cap says may not come | §3.5 amendment, §3.8, F32 / F33; `32589f9a` |
 | 2026-10-16 | **E6's reference is WINDOW-MATCHED** (42.07 s `train_ms`; fps of a reference run over the same update window); ruled PASS like for like (−0.2 % `train_ms`, fps +0.9 / +2.2 %). No research rule changed | the flat 1,631 fps (EB's late-window figure) | §4 E6 and its dated note; `road/status.txt` |
+| 2026-10-16 | **T38 BUILT (F14 / T33-2): the plateau meter's parallel batches, `main.plateau tick --inflight-batches K`, default 4** — K batches in ONE eval cycle on one engine in one process (the executor's opt-in `seed_blocks`, `gen3_eval_seed_blocks_v1`), each batch on its own seed block, row and claim; the GSPRT rule unchanged and folded in batch order (a batch past the stop is a surplus row). Landed at X26 ≈ 2M steps with no X26 `plateau_t1` request open | more processes (rule 5b's ≤ 2 heavy jobs, a second model copy); judging a wave as a whole (peeks at later batches); K = 8 as default (slower than K = 1 on a short GAIN check) | §2.6 "The pipelining, built and measured"; `main/plateau_parallel_test.py` (three RECORDED T-ENT checks replayed at 1–150 in flight with adversarial surplus: the recorded verdict, stop batch, pairs and LLR); `main/h2h/plateau_integration_test.py` (the real engine: the same games and decision at 1 and 3 in flight) |

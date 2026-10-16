@@ -11,9 +11,12 @@ plateau also needs the cycle monitor NONE and the panel FLAT (U5 / U9, NOT BUILT
 
 **``tick``** plays every DUE check (both nodes on disk, no decision yet), oldest first: ONE ``plateau_t1`` request per
 (run, check step, W), opened with its two nodes' sha256 FROZEN in the spec (a node file that changed is a refusal,
-never a re-plan); one 40-pair batch at a time on ``main.h2h``'s own engine and row builder (purpose ``plateau``,
+never a re-plan); 40-pair batches, each its own row, on ``main.h2h``'s own engine and row builder (purpose ``plateau``,
 the h2h protocol and regime, a schedule key on the plateau's OWN namespace so its games never collide with another
-consumer's); the rule re-read after EVERY batch, so the test stops at its first decision; ONE decision row per
+consumer's); ``--inflight-batches`` (default 4, T38) batches in flight per WAVE, one cycle, one process — the
+envs pull single pairs across the whole wave, so the lane no longer waits on each batch's slowest game; the rule
+re-read after EVERY wave and folded in BATCH ORDER, so the test stops at its first decision exactly where the
+one-batch loop would (a wave's batches past it are surplus rows the rule never reads); ONE decision row per
 request (``append_decision(unique=True)``: a second driver gets the first's decision back, never a second one).
 Resumable at any batch: a re-run reads the request's rows and continues. CPU by default; ``--device cuda`` needs
 the GPU LEASE (the engine takes ``utils.gpu_lock``) — never while a training run owns the GPU.
@@ -51,6 +54,12 @@ TIER1_ROWS = L.ReaderDecl(
 
 SCHEDULE_TAG = "gen3_plateau_t1_schedule_v1"
 SCHEDULE_SEED = 0
+#: PARALLEL BATCHES (T38, readiness F14 / T33-2): how many 40-pair batches ONE tick keeps in flight — one engine,
+#: one process, one cycle per wave (``main.h2h.play.play_waves``), so the knob costs no process and no model copy
+#: (rule 5b's ≤ 2 heavy jobs holds at any value). 4 is the measured knee (designs/endstate/design_x26_readiness.md
+#: §2.6); 1 is the one-batch-per-cycle loop of before. The decision is the rule's, folded in batch order, at any
+#: value: a wave's batches past the decision are SURPLUS rows the rule never reads.
+DEFAULT_INFLIGHT = 4
 _PERIODIC = re.compile(r"^checkpoint_(\d+)_steps\.zip$")
 
 # per-check states beside the rule's verdicts (status only)
@@ -123,9 +132,15 @@ def _batches(rows: Sequence[Mapping[str, Any]]) -> List[int]:
 
 
 def drive_check(writer: L.LedgerWriter, root: Path, rid: str, rule: T1.Tier1Rule, subject: str,
-                play_upto: Callable[[int], None], emit: Callable[[str], None]) -> Dict[str, Any]:
+                play_upto: Callable[[int], None], emit: Callable[[str], None], inflight: int = 1) -> Dict[str, Any]:
     """Play ``rid``'s test to its decision and write it ONCE. ``play_upto(n)`` makes batches ``0 .. n-1`` exist (it
-    plays the missing ones); the rule is re-read after every batch. Returns the decision on record."""
+    plays the missing ones); the rule is re-read after every call. ``inflight``: how many batches past the recorded
+    ones each call asks for (never past the rule's cap) — the rule FOLDS them in batch order and stops at the first
+    crossing whatever arrived with it, so the decision is the one-at-a-time loop's (``inflight`` 1), and a batch
+    past it is a surplus row. Returns the decision on record."""
+    if int(inflight) < 1:
+        raise PlateauError(f"inflight must be >= 1, got {inflight}")
+    cap_batches = rule.max_pairs // rule.batch_pairs
     while True:
         got = L.read(TIER1_ROWS, root=root, request_id=rid)
         have = _batches(got.rows)
@@ -134,15 +149,15 @@ def drive_check(writer: L.LedgerWriter, root: Path, rid: str, rule: T1.Tier1Rule
             res = T1.evaluate(got.rows, rule)
             if res.final:
                 break
-            want = len(have) + 1
+            want = max(len(have) + 1, min(len(have) + int(inflight), cap_batches))
         else:
             want = gap + 1                                   # fill the gap first (a voided claim, a dead driver)
         play_upto(want)
         if len(L.read(TIER1_ROWS, root=root, request_id=rid).rows) <= len(have):
             raise PlateauError(f"{rid}: batch {want - 1} was not recorded (another driver holds it, or its claim was "
                                "voided) — re-run tick later")
-        emit(f"[plateau] {rid}: batch {want - 1} recorded; " + (
-            "re-reading" if gap is not None else f"n_pairs {res.n_pairs + rule.batch_pairs} so far"))
+        emit(f"[plateau] {rid}: batches up to {want - 1} recorded; " + (
+            "re-reading" if gap is not None else f"LLR {res.llr:+.3f} at {res.n_pairs} pairs before them"))
     try:
         d = writer.append_decision(kind=T1.DECISION_KIND, subject=subject, consumed=got, verdict=res.verdict,
                                    rule=rule.rule_string(), rule_version=T1.RULE_VERSION, request_id=rid,
@@ -268,10 +283,13 @@ def cmd_status(a: argparse.Namespace) -> int:
 
 def tick(run_dir: Path, lineage: Sequence[Path], plan: T1.CheckPlan, out: Optional[str], compute: Any, *,
          rule: T1.Tier1Rule = T1.REGISTERED, max_checks: Optional[int] = None, dry_run: bool = False,
+         inflight: int = DEFAULT_INFLIGHT,
          emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
     """Play every DUE check of ``run_dir`` (oldest first, at most ``max_checks``) to its decision on ``main.h2h``'s
-    engine (``compute``: a ``main.h2h.play.Compute``), into the ledger root ``out`` (``None`` = the archive's), and
-    return the status report afterwards."""
+    engine (``compute``: a ``main.h2h.play.Compute``), ``inflight`` batches at a time (:data:`DEFAULT_INFLIGHT`),
+    into the ledger root ``out`` (``None`` = the archive's), and return the status report afterwards."""
+    if int(inflight) < 1:
+        raise PlateauError(f"inflight must be >= 1, got {inflight}")
     from main.h2h import play as PL
     from utils.rust_env import episode as EP
 
@@ -321,12 +339,13 @@ def tick(run_dir: Path, lineage: Sequence[Path], plan: T1.CheckPlan, out: Option
                         eng.append(e)
                     try:
                         PL.play_planned(eng[0], writer, ep, schedule_seed=SCHEDULE_SEED, purpose=T1.PURPOSE,
-                                        run_label=f"plateau_t1:{run}", commit=commit, emit=emit)
+                                        run_label=f"plateau_t1:{run}", commit=commit, emit=emit,
+                                        inflight=inflight)
                     except L.ClaimHeldError as err:
                         raise PlateauError(f"{s.rid}: {err} — another driver is playing this check") from None
 
                 emit(f"[plateau] check {c.grid:,}: {new.id} vs {old.id} (request {s.rid})")
-                drive_check(writer, root, s.rid, rule, new.sha256, play_upto, emit)
+                drive_check(writer, root, s.rid, rule, new.sha256, play_upto, emit, inflight=inflight)
     finally:
         writer.close()
     return status_report(run, check_states(run, nodes, root, plan, rule), plan, rule, root)
@@ -338,7 +357,8 @@ def cmd_tick(a: argparse.Namespace) -> int:
     run_dir, lineage, plan, _root = _run(a)
     compute = PL.Compute(device=a.device, backend=a.backend, n_envs=a.n_envs, threads=a.threads,
                          torch_threads=a.torch_threads, front=a.front, profile=a.profile)
-    rep = tick(run_dir, lineage, plan, a.out, compute, max_checks=a.max_checks, dry_run=a.dry_run)
+    rep = tick(run_dir, lineage, plan, a.out, compute, max_checks=a.max_checks, dry_run=a.dry_run,
+               inflight=a.inflight_batches)
     print(format_report(rep))
     return 2 if rep["conflicts"] else 0
 
@@ -365,6 +385,10 @@ def _parser() -> argparse.ArgumentParser:
         else:
             p.add_argument("--max-checks", type=int, default=None, help="play at most N due checks (oldest first)")
             p.add_argument("--dry-run", action="store_true", help="list the due checks; play nothing")
+            p.add_argument("--inflight-batches", type=int, default=DEFAULT_INFLIGHT,
+                           help=f"batches played in flight per wave, ONE process (default {DEFAULT_INFLIGHT}; 1 = one "
+                                "batch per cycle). The decision is unchanged at any value: the rule folds batches in "
+                                "order and ignores those past its stop")
             p.add_argument("--device", default="cpu", help="cpu (default); cuda needs the GPU LEASE")
             p.add_argument("--backend", default="", choices=("", "eager", "graph", "aot"))
             p.add_argument("--n-envs", type=int, default=64)

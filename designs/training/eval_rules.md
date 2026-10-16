@@ -130,8 +130,9 @@ absent key builds) does not split an architecture, any non-default value does (`
 look 3 FINDING 1). Run it from the repo root (the team
 pool is read cwd-relative; any other cwd is refused).
 🚨 **`python -m main.plateau` is the PLATEAU meter's TIER 1** (eval U9a; the rule is `plateau_t1.py`): `tick <run>` plays each
-due check (the newest 10M-grid node vs the node 50M back) as the registered GSPRT on `main.h2h`'s engine, one 40-pair batch
-at a time, and writes ONE `plateau` decision row per check (GAIN / FLAT / UNDECIDED / INCONCLUSIVE; `verify` re-derives it);
+due check (the newest 10M-grid node vs the node 50M back) as the registered GSPRT on `main.h2h`'s engine, 40-pair batches
+`--inflight-batches` (default 4, T38) at a time in one cycle, judged in BATCH ORDER (a batch past the stop is a surplus
+row the rule never reads), and writes ONE `plateau` decision row per check (GAIN / FLAT / UNDECIDED / INCONCLUSIVE; `verify` re-derives it);
 `status <run>` prints the run's Tier-1 status. 🚨 **Tier 1 only**: `TIER1_PLATEAU` is a candidate until Tier 2 (the cycle
 monitor) and the panel exist. Offline, never on CPU beside an X5 A/B arm (`designs/training/eval_and_rating.md`).
 🚨 **`python -m main.belief_roles` is the X5 PURPOSE-METRIC reader** (U7; `designs/endstate/design_x5_belief_tokens.md` §4 / §7.4) — it plays

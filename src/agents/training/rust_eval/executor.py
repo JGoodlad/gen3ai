@@ -221,11 +221,18 @@ class RustEvalCore:
 
     def _make_game(self, u: _Unit, g: int, cycle_seed: int, sentinel_greedy: bool,
                    sentinel_index: Mapping[str, int], mirrored: bool = False,
-                   trainee_builder: Optional[Any] = None) -> _Game:
+                   trainee_builder: Optional[Any] = None,
+                   seed_blocks: Optional[Tuple[Sequence[int], int]] = None) -> _Game:
         item = u.unit.item
+        # THE SEED BLOCKS (opt-in, `run_cycle`): plan game g is game g mod B of the block seeds[g // B] — the same
+        # key it gets in a cycle of its own at that seed, so one cycle can play several batches' games
+        cs, gk = cycle_seed, g
+        if seed_blocks is not None:
+            seeds, per = seed_blocks
+            cs, gk = int(seeds[g // per]), g % per
         # THE MIRRORED-PAIR RULE (`seeds.pair_game`): a pair's two games share the key of its first game
         # — the same two teams, battle seed, bot streams and sample seed — and the second is SWAPPED.
-        key, swapped = SD.pair_game(cycle_seed, item.key, g, mirrored)
+        key, swapped = SD.pair_game(cs, item.key, gk, mirrored)
         t = self.team_table
         tb = self.trainee_builder if trainee_builder is None else trainee_builder
         p1 = t.index(SD.draw_team(tb, key, SD.TRAINEE), f"eval {item.key} game {g} trainee")
@@ -251,7 +258,8 @@ class RustEvalCore:
                   game_log: Optional[List[Dict[str, Any]]] = None,
                   safe_point: Optional[Callable[[str], None]] = None,
                   trainee_temp: Optional[float] = None,
-                  trainee_builder: Optional[Any] = None) -> CycleStats:
+                  trainee_builder: Optional[Any] = None,
+                  seed_blocks: Optional[Tuple[Sequence[int], int]] = None) -> CycleStats:
         """Play every unit of ``pool`` (a ``ShardedEvalPool``) and publish one ``ShardResult`` per unit
         into ``result_dir``. ``sentinel_policies`` maps each SENTINEL item key to its loaded policy.
         ``forensic_root`` = ``<run>/eval_traces/step_<N>`` (None = capture nothing). ``safe_point`` (the
@@ -270,7 +278,22 @@ class RustEvalCore:
           meter's TRAINING regime (``agents.training.untaught_rust``).
         * ``trainee_builder``: the builder the trainee's team is drawn from THIS cycle instead of the
           declared one (its teams must be in the core's declared team table — ``TeamTableMiss``
-          otherwise). Only p1's draw moves; the opponent's builder is unchanged."""
+          otherwise). Only p1's draw moves; the opponent's builder is unchanged.
+        * ``seed_blocks`` ``(seeds, B)`` (``gen3_eval_seed_blocks_v1``, the plateau meter's parallel batches, T38):
+          plan game ``g`` of every item is keyed as game ``g mod B`` of cycle seed ``seeds[g // B]`` (``cycle_seed``
+          is then unused), so ONE cycle plays ``len(seeds)`` batches whose games are, game for game, the ones each
+          batch plays in a cycle of its own at its seed. ``B`` is even under a mirrored pool (a pair never straddles
+          two blocks); every item holds at most ``len(seeds) * B`` games. The game log keeps the PLAN index ``g``."""
+        if seed_blocks is not None:
+            seeds_, per_ = seed_blocks
+            if int(per_) < 1 or not len(seeds_):
+                raise EvalCoreError(f"seed_blocks needs B >= 1 and at least one seed, got {seed_blocks!r}")
+            if bool(getattr(pool, "mirrored", False)) and int(per_) % 2:
+                raise EvalCoreError(f"seed_blocks' B ({per_}) must be even under a mirrored pool")
+            over = [it.key for it in pool.items if int(it.n_games) > len(seeds_) * int(per_)]
+            if over:
+                raise EvalCoreError(f"items {over} hold more games than {len(seeds_)} seed blocks of {per_}")
+            seed_blocks = (tuple(int(x) for x in seeds_), int(per_))
         if trainee_temp is not None and not float(trainee_temp) > 0.0:
             raise EvalCoreError(f"trainee_temp must be > 0 (None = greedy), got {trainee_temp!r}")
         from agents.inference.service.spec import Priority
@@ -321,7 +344,7 @@ class RustEvalCore:
             if u is None:
                 return self._filler()
             return self._make_game(u, u.games.pop(0), cycle_seed, sentinel_greedy, sentinel_index, mirrored,
-                                   trainee_builder)
+                                   trainee_builder, seed_blocks)
 
         def promote(e: int) -> None:
             gm = staged[e]

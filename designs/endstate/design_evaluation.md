@@ -1051,8 +1051,21 @@ plateau is declared only when BOTH say so.
   schedule namespace (`plateau_t1:<digest(newest, W-back)>`, ordered), so no other consumer's seed block collides.
   It is NOT put in a family: U9 chooses the two-tier family's shape.
 - **The driver** `python -m main.plateau tick <run>` plays every DUE check (both nodes on disk, no decision), oldest
-  first, ONE batch at a time, re-reading the rule after every batch; resumable at any batch (a banked batch is never
-  replayed, a gap is filled first, a decided-but-unrecorded test is recorded without playing). CPU by default;
+  first, re-reading the rule after every WAVE of `--inflight-batches` batches (T38, 2026-10-16; default 4, 1 = one
+  batch per cycle); resumable at any batch (a banked batch is never replayed, a gap is filled first, a
+  decided-but-unrecorded test is recorded without playing).
+- **Parallel batches (T38).** A wave is ONE eval cycle on one engine in one process (`main.h2h.play.play_waves` →
+  `H2HEngine.play_batches` → the executor's opt-in `seed_blocks`): batch b's games keep their own seed block (cycle
+  seed `cycle_seed(0, key, b)`, games 0..79), so a batch played in a wave is, game for game, the batch played alone,
+  and is appended as its own row under its own claim. The envs pull single pairs across the whole wave, so the lane no
+  longer waits on each batch's slowest game (readiness F14). **The rule is unchanged**: `plateau_t1.evaluate` folds
+  batches 0, 1, 2, … and stops at the first crossing, so a wave's batches past the stop are SURPLUS rows it never
+  reads (an overshoot costs games, never the decision). Proved on RECORDED checks: `main/plateau_parallel_test.py`
+  replays three T-ENT requests (`main/plateau_tent_replay.json`; GAIN at 80, 680 and 1,200 pairs) at 1, 2, 3, 4, 8 and
+  150 in flight, with adversarial surplus batches, to the recorded verdict, stop batch, pairs and LLR; a live replay of
+  `rb_toy_ent_s4002`'s 65M check at 1, 2, 4 and 8 in flight re-played all 17 recorded batches with the recorded
+  outcome digests and decided GAIN at 680 pairs, LLR +3.071067199, as on record. The speed-up is in
+  `design_x26_readiness.md` §2.6. CPU by default;
   `--device cuda` takes the GPU lease through the engine. **The reader** `python -m main.plateau status <run>` prints
   every check's state and the run's TIER-1 status: `TIER1_PLATEAU` when the newest decided check and the one Δ before
   it are both FLAT, `FLAT_ONCE`, `CLIMBING` (the newest is GAIN), `CONTINUE` (UNDECIDED / INCONCLUSIVE), `NOT_YET`;
@@ -1064,8 +1077,9 @@ plateau is declared only when BOTH say so.
   on this box beside a live run).
 - **Tests:** the GSPRT's boundaries, the rounding band, the cap, the abort rule and the vocabulary on synthetic rows
   (`plateau_t1_test.py`); the driver's stop, uniqueness, resume and frozen inputs through a real ledger
-  (`main/plateau_test.py`); one tick on the real engine, CPU, two perturbed-fresh checkpoints
-  (`main/h2h/plateau_integration_test.py`).
+  (`main/plateau_test.py`); the parallel batches' replay of recorded checks (`main/plateau_parallel_test.py`); one
+  tick on the real engine, CPU, two perturbed-fresh checkpoints, one batch at a time and then the whole cap in one
+  wave, the same games and decision (`main/h2h/plateau_integration_test.py`).
 
 ### 8.2 Tier 2: transitivity (a READ of the cycle monitor, plus the panel)
 - **The cycle monitor's verdict at this check** (§2.5): NONE, SUSPECTED or CONFIRMED.
