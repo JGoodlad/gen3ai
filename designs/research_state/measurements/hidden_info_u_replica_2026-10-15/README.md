@@ -23,8 +23,7 @@ before any arm output existed). **This folder does not compare.**
 
 ## Status
 
-RUNNING (see "Runner and handoff" below). The read is not done. **Results: PENDING** (`hiu.score`, then this
-section).
+DONE: the read ran on the complete 1,200 states (2026-10-16). **Results: filled below; one identity check reads FALSE on prod (2 states, a guard false positive on Hidden Power naming), see "Identities" in Results.**
 
 ## What was built (`hiu/`)
 
@@ -125,3 +124,83 @@ not a world defect).
   `hidden_info_by_reveal_count_2026-10-12/`; the replica's own rows, `result.json`, `marginals.json` and
   `imp_per_state.json` were not opened. The replica's README holds its own final tables; it was read for the build
   description, and none of its numbers is used here.
+
+## Results (this implementation's own numbers; NO comparison with any other implementation)
+
+Read run 2026-10-16 with `python -m hiu.score --root ~/gen3ai_archive/hidden_info_u_replica --out .` on the complete row
+set: 600 states per checkpoint, 1,200 done-markers, every arm present for every state, no duplicate rows, no `hiu.run`
+alive. Files: `result.json` (identities, exclusions, every read), `imp_per_state.json`, `marginals.json`. Intervals are
+95 %. "Boundary" in the JSON marks a bound within +-0.005 of 0 (rule 8: not clear).
+
+### Identities (registered: at k = 6, F+U = F and O-U = O, outcome for outcome)
+
+| checkpoint | k = 6 states | F+U = F | F+U or F missing | O-U = O | O-U or O missing | `HOLD` |
+|---|---|---|---|---|---|---|
+| end2 | 129 | 114 | 15 | 129 | 0 | true |
+| prod | 103 | 94 | 9 | 101 | 0 | **false** |
+
+**IDENTITY FAILURE on prod, 2 states (`HOLD` = false; per the registration the build is invalid if an identity fails).**
+No outcome differs on any state where both arms exist (zero `FU_ne_F`; zero `OU_ne_O` on end2). The two prod
+O-U states (`.../random/loss_s2_003#p1#22` and `.../sentinel_1/loss_s1_005#p1#25`) have O-U `ok` = false while O is ok:
+the build's own consistency guard RAISED in O-U world 0, slot 4: the contract has `hiddenpowerdark`, the engine's view
+has `hiddenpower` (the same Hidden Power move; the guard's name normalisation covers Return / Frustration but not Hidden
+Power, a guard false positive of the kind already fixed once for Return). Both states have no never-seen slot (k = 6),
+so the O-U team is the true team and the guard fired on the TRUE team. The same guard message also excluded
+prod states from F (4 states), F+M (2) and O-M (2) too (see below). The failure is therefore a missing O-U row on 2 of 103 states, not
+a differing outcome, but the registered check as scored reads FALSE; whether that invalidates the build is the third
+party's call, and it is reported as a finding, not fixed here (the runner and its rows are frozen).
+
+### Exclusions (states dropped from an arm; the common set is the states with every arm)
+
+| checkpoint | F | F+M | F+U | O-M | O-U | common set |
+|---|---|---|---|---|---|---|
+| end2 | 43 (42 `no_consistent_context`, 1 HiddenPowerTracker exception) | 36 (35 `no_consistent_context`, 1 `only_7_worlds`) | 43 (`F_not_ok`) | 1 (`only_0_worlds`) | 2 (`only_0_worlds`) | 545 |
+| prod | 38 (34 `no_consistent_context`, 4 guard Hidden Power naming) | 34 (32 `no_consistent_context`, 2 guard) | 38 (`F_not_ok`) | 2 (guard) | 3 (2 guard, 1 HiddenPowerTracker exception) | 544 |
+
+### The headline read: LEAF-K8, IMP in win probability per decision
+
+| population | states (end2 / prod) | s_U | n_U | s_M | n_M | R3 reveal-only | R3 hide-only |
+|---|---|---|---|---|---|---|---|
+| pooled (end2+prod) | 545 / 544 | 0.31 [0.17, 0.44] | 0.92 [0.77, 1.07] | 0.00 [-0.17, 0.14] | 0.55 [0.43, 0.69] | +0.020 [+0.009, +0.031] | +0.023 [+0.012, +0.034] |
+| end2 | 545 / 0 | 0.23 [0.01, 0.43] | 0.86 [0.68, 1.09] | 0.06 [-0.18, 0.27] | 0.60 [0.41, 0.81] | +0.011 [-0.004, +0.027] | +0.016 [+0.001, +0.032] |
+| prod | 0 / 544 | 0.39 [0.20, 0.57] | 0.98 [0.77, 1.24] | -0.06 [-0.32, 0.13] | 0.50 [0.34, 0.69] | +0.029 [+0.014, +0.044] | +0.030 [+0.015, +0.044] |
+| scripted bots | 306 / 330 | 0.52 [0.38, 0.66] | 0.87 [0.71, 1.06] | 0.06 [-0.14, 0.22] | 0.39 [0.26, 0.53] | +0.032 [+0.020, +0.046] | +0.034 [+0.020, +0.048] |
+| own snapshots | 239 / 214 | -0.07 [-0.44, 0.20] | 1.01 [0.76, 1.38] | -0.11 [-0.51, 0.15] | 0.85 [0.59, 1.18] | +0.002 [-0.016, +0.020] | +0.008 [-0.008, +0.026] |
+| end2, bots | 306 / 0 | 0.46 [0.22, 0.69] | 0.84 [0.60, 1.15] | 0.15 [-0.19, 0.42] | 0.34 [0.12, 0.58] | +0.021 [+0.002, +0.041] | +0.032 [+0.011, +0.054] |
+| end2, snapshots | 239 / 0 | -0.09 [-0.59, 0.22] | 0.90 [0.63, 1.29] | -0.06 [-0.52, 0.26] | 0.96 [0.62, 1.44] | -0.002 [-0.026, +0.023] | -0.004 [-0.028, +0.020] |
+| prod, bots | 0 / 330 | 0.57 [0.39, 0.74] | 0.90 [0.69, 1.16] | -0.01 [-0.28, 0.20] | 0.43 [0.28, 0.60] | +0.043 [+0.026, +0.062] | +0.035 [+0.017, +0.055] |
+| prod, snapshots | 0 / 214 | -0.05 [-0.76, 0.38] | 1.17 [0.74, 2.07] | -0.19 [-1.06, 0.18] | 0.68 [0.28, 1.28] | +0.006 [-0.021, +0.034] | +0.022 [-0.003, +0.046] |
+
+Per-arm IMP (LEAF-K8, common set) and G (the oracle's gain over the policy's pick, as `hiu.score` defines it):
+
+| population | F | F+M | F+U | O | O-M | O-U | G |
+|---|---|---|---|---|---|---|---|
+| pooled (end2+prod) | +0.0110 | +0.0110 | +0.0308 | +0.0742 | +0.0393 | +0.0161 | +0.0631 |
+| end2 | +0.0153 | +0.0193 | +0.0300 | +0.0783 | +0.0404 | +0.0239 | +0.0630 |
+| prod | +0.0067 | +0.0027 | +0.0316 | +0.0700 | +0.0382 | +0.0083 | +0.0633 |
+| scripted bots | +0.0038 | +0.0079 | +0.0404 | +0.0739 | +0.0465 | +0.0128 | +0.0701 |
+| own snapshots | +0.0212 | +0.0154 | +0.0172 | +0.0745 | +0.0292 | +0.0207 | +0.0533 |
+| end2, bots | +0.0110 | +0.0208 | +0.0415 | +0.0767 | +0.0541 | +0.0217 | +0.0656 |
+| end2, snapshots | +0.0207 | +0.0174 | +0.0153 | +0.0804 | +0.0228 | +0.0268 | +0.0596 |
+| prod, bots | -0.0030 | -0.0040 | +0.0394 | +0.0713 | +0.0394 | +0.0046 | +0.0743 |
+| prod, snapshots | +0.0217 | +0.0130 | +0.0195 | +0.0680 | +0.0363 | +0.0140 | +0.0462 |
+
+Pooled paired differences (LEAF-K8): F+U - F = +0.0198 [+0.0095, +0.0303]; O - O-U = +0.0580 [+0.0479, +0.0683];
+F+M - F = +0.0000 [-0.0099, +0.0094]; O - O-M = +0.0349 [+0.0261, +0.0434].
+R3's two conditions on the pooled set: reveal-only +0.0198 [+0.0089, +0.0310] (excludes 0 clearly: True);
+hide-only +0.0232 [+0.0121, +0.0344] (excludes 0 clearly: True).
+
+### The other scorers (pooled)
+
+| scorer | s_U | n_U | s_M | n_M | R3 reveal-only | R3 hide-only |
+|---|---|---|---|---|---|---|
+| LEAF-K8 | 0.31 [0.17, 0.44] | 0.92 [0.77, 1.07] | 0.00 [-0.17, 0.14] | 0.55 [0.43, 0.69] | +0.020 [+0.009, +0.031] | +0.023 [+0.012, +0.034] |
+| LEAF-K4 | 0.38 [0.22, 0.52] | 0.88 [0.73, 1.06] | 0.10 [-0.07, 0.26] | 0.67 [0.53, 0.84] | +0.016 [+0.005, +0.026] | +0.012 [+0.002, +0.023] |
+| LEAF-K1 | 0.37 [0.11, 0.61] | 0.89 [0.65, 1.22] | 0.04 [-0.34, 0.28] | 0.80 [0.56, 1.14] | +0.009 [+0.001, +0.018] | +0.002 [-0.008, +0.011] |
+
+### Per-state IMPs and marginals
+
+`imp_per_state.json` (per-state IMP per arm and scorer) and `marginals.json` (per checkpoint: the drawn species / nature
+frequencies for class U and the seen mons' move / item / ability frequencies) are the inputs for a third party's
+comparison. `hiu.score.tv_permutation_test` (the permutation-null TV) is NOT run here: it needs the other
+implementation's marginals, and this folder does not compare.

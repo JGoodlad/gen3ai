@@ -1,0 +1,4233 @@
+{
+ "common_n": {
+  "end2": 545,
+  "prod": 544
+ },
+ "duplicate_rows": {},
+ "excluded": {
+  "end2": {
+   "F": {
+    "ids": {
+     "rb_es_end2_s2001/step_10000009/sentinel_0/win_s3_004#p1#36": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s0_003#p1#19": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/setup_sweep/loss_s1_005#p1#31": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/setup_sweep_v2/loss_s1_004#p1#33": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/staller/loss_s3_003#p1#7": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/aggressive_v2/loss_s3_004#p1#23": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/heuristic/loss_s3_003#p1#16": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/heuristic2/draw_s0_003#p1#10": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/heuristic2/draw_s2_004#p1#12": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/random/win_s3_002#p1#26": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/random/win_s3_002#p1#28": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/loss_s2_001#p1#16": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/loss_s2_001#p1#20": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/win_s0_005#p1#35": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/win_s0_005#p1#38": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_1/loss_s0_001#p1#25": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_2/loss_s2_003#p1#18": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_2/loss_s2_005#p1#31": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_3/loss_s1_003#p1#29": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/setup_sweep/loss_s3_003#p1#18": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/setup_sweep_v2/loss_s0_003#p1#28": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/aggressive_v2/win_s1_001#p1#18": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/heuristic2/loss_s2_001#p1#8": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/random/win_s0_002#p1#12": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_003#p1#12": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_003#p1#41": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/loss_s3_003#p1#11": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/loss_s3_003#p1#19": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/loss_s1_002#p1#33": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/loss_s1_002#p1#35": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/loss_s2_005#p1#9": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/win_s3_002#p1#14": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_3/loss_s0_001#p1#16": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_3/loss_s0_001#p1#24": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_4/win_s1_001#p1#26": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_4/win_s3_003#p1#10": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/staller/loss_s2_004#p1#14": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/staller/loss_s3_004#p1#8": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/staller/win_s2_001#p1#3": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/staller_v2/loss_s3_003#p1#6": "exception: SuccessorsError: branch 1: parse p2: HiddenPowerTracker: all candidates eliminated for \"jirachi\" after observing 2x (no Hidden Power type explains the observations, even under the flat prior)",
+     "rb_es_end2_s2001/step_14000347/staller_v2/win_s1_001#p1#17": "no_consistent_context"
+    },
+    "n": 43,
+    "reasons": {
+     "exception": 1,
+     "no_consistent_context": 42
+    }
+   },
+   "F+M": {
+    "ids": {
+     "rb_es_end2_s2001/step_10000009/heuristic2/loss_s1_003#p1#34": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/heuristic2/win_s3_002#p1#36": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/random/win_s2_001#p1#21": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/sentinel_0/loss_s3_005#p1#23": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/sentinel_1/win_s0_001#p1#23": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/setup_sweep/loss_s0_003#p1#25": "no_consistent_context",
+     "rb_es_end2_s2001/step_10000009/setup_sweep_v2/loss_s1_004#p1#33": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/aggressive_v2/loss_s3_004#p1#23": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/aggressive_v2/win_s3_002#p1#15": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/aggressive_v2/win_s3_002#p1#21": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/heuristic/loss_s3_003#p1#10": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/heuristic/loss_s3_003#p1#16": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/heuristic/win_s2_001#p1#23": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/random/win_s3_002#p1#26": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/random/win_s3_002#p1#28": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/loss_s2_001#p1#20": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/win_s0_005#p1#35": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/win_s0_005#p1#38": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_1/loss_s0_001#p1#25": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_2/loss_s2_003#p1#18": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_2/loss_s2_005#p1#31": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/sentinel_3/loss_s1_003#p1#29": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/setup_sweep/loss_s3_003#p1#18": "no_consistent_context",
+     "rb_es_end2_s2001/step_12000157/staller_v2/win_s0_002#p1#19": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/aggressive_v2/win_s1_001#p1#18": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_003#p1#12": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_003#p1#41": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/loss_s3_003#p1#11": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/loss_s3_003#p1#19": "only_7_worlds",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/loss_s1_002#p1#33": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/loss_s1_002#p1#35": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/sentinel_3/loss_s0_001#p1#16": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/setup_sweep/loss_s3_004#p1#12": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/staller/loss_s2_004#p1#14": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/staller/loss_s3_004#p1#8": "no_consistent_context",
+     "rb_es_end2_s2001/step_14000347/staller_v2/win_s1_001#p1#17": "no_consistent_context"
+    },
+    "n": 36,
+    "reasons": {
+     "no_consistent_context": 35,
+     "only_7_worlds": 1
+    }
+   },
+   "F+U": {
+    "ids": {
+     "rb_es_end2_s2001/step_10000009/sentinel_0/win_s3_004#p1#36": "F_not_ok",
+     "rb_es_end2_s2001/step_10000009/sentinel_1/loss_s0_003#p1#19": "F_not_ok",
+     "rb_es_end2_s2001/step_10000009/setup_sweep/loss_s1_005#p1#31": "F_not_ok",
+     "rb_es_end2_s2001/step_10000009/setup_sweep_v2/loss_s1_004#p1#33": "F_not_ok",
+     "rb_es_end2_s2001/step_10000009/staller/loss_s3_003#p1#7": "F_not_ok",
+     "rb_es_end2_s2001/step_10000009/staller_v2/draw_s3_004#p1#28": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/aggressive_v2/loss_s3_004#p1#23": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/heuristic/loss_s3_003#p1#16": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/heuristic2/draw_s0_003#p1#10": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/heuristic2/draw_s2_004#p1#12": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/random/win_s2_001#p1#7": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/random/win_s3_002#p1#26": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/random/win_s3_002#p1#28": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/loss_s2_001#p1#16": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/loss_s2_001#p1#20": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/win_s0_005#p1#35": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/sentinel_0/win_s0_005#p1#38": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/sentinel_1/loss_s0_001#p1#25": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/sentinel_2/loss_s2_003#p1#18": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/sentinel_2/loss_s2_005#p1#31": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/sentinel_3/loss_s1_003#p1#29": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/setup_sweep/loss_s3_003#p1#18": "F_not_ok",
+     "rb_es_end2_s2001/step_12000157/setup_sweep_v2/loss_s0_003#p1#28": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/aggressive_v2/win_s1_001#p1#18": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/heuristic2/loss_s2_001#p1#8": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/random/win_s0_002#p1#12": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_003#p1#12": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/draw_s0_003#p1#41": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/loss_s3_003#p1#11": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_0/loss_s3_003#p1#19": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/loss_s1_002#p1#33": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/loss_s1_002#p1#35": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/loss_s2_005#p1#9": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_1/win_s3_002#p1#14": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_3/loss_s0_001#p1#16": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_3/loss_s0_001#p1#24": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_4/win_s1_001#p1#26": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/sentinel_4/win_s3_003#p1#10": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/staller/loss_s2_004#p1#14": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/staller/loss_s3_004#p1#8": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/staller/win_s2_001#p1#3": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/staller_v2/loss_s3_003#p1#6": "F_not_ok",
+     "rb_es_end2_s2001/step_14000347/staller_v2/win_s1_001#p1#17": "F_not_ok"
+    },
+    "n": 43,
+    "reasons": {
+     "F_not_ok": 43
+    }
+   },
+   "O-M": {
+    "ids": {
+     "rb_es_end2_s2001/step_14000347/staller/loss_s3_004#p1#8": "only_0_worlds"
+    },
+    "n": 1,
+    "reasons": {
+     "only_0_worlds": 1
+    }
+   },
+   "O-U": {
+    "ids": {
+     "rb_es_end2_s2001/step_14000347/sentinel_0/loss_s3_003#p1#11": "only_0_worlds",
+     "rb_es_end2_s2001/step_14000347/staller/loss_s3_004#p1#8": "only_0_worlds"
+    },
+    "n": 2,
+    "reasons": {
+     "only_0_worlds": 2
+    }
+   }
+  },
+  "prod": {
+   "F": {
+    "ids": {
+     "rb_es_prod_s2001/step_10000002/aggressive/win_s1_001#p1#12": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/heuristic/win_s3_004#p1#1": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/sentinel_0/win_s1_002#p1#7": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/setup_sweep/loss_s3_001#p1#19": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_001#p1#10": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_001#p1#22": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_005#p1#12": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/staller_v2/loss_s1_003#p1#18": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/aggressive_v2/loss_s0_005#p1#18": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#22": "GUARD: rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#22 ID world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#7": "GUARD: rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#7 ID world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s1_002#p1#19": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_0/win_s2_003#p1#24": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#2": "GUARD: rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#2 ID world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#25": "GUARD: rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#25 ID world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s2_003#p1#32": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s3_004#p1#27": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s3_004#p1#41": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s1_004#p1#17": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s1_004#p1#7": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_3/win_s3_005#p1#14": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s0_004#p1#14": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s0_004#p1#17": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s1_003#p1#11": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s2_001#p1#27": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep_v2/loss_s3_004#p1#18": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep_v2/win_s2_002#p1#18": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/staller/draw_s3_001#p1#12": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/staller/loss_s1_004#p1#31": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/win_s1_004#p1#17": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/win_s2_005#p1#15": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/win_s3_001#p1#22": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_2/win_s2_002#p1#16": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s1_003#p1#31": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s1_003#p1#35": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_4/loss_s2_004#p1#25": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/setup_sweep/win_s3_002#p1#17": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/setup_sweep_v2/loss_s2_004#p1#14": "no_consistent_context"
+    },
+    "n": 38,
+    "reasons": {
+     "GUARD": 4,
+     "no_consistent_context": 34
+    }
+   },
+   "F+M": {
+    "ids": {
+     "rb_es_prod_s2001/step_10000002/aggressive/win_s1_002#p1#8": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/heuristic/win_s3_004#p1#1": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/sentinel_1/loss_s1_003#p1#17": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/sentinel_2/loss_s2_001#p1#12": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/sentinel_2/loss_s3_006#p1#14": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/sentinel_2/loss_s3_006#p1#26": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/setup_sweep/loss_s2_003#p1#19": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/setup_sweep/loss_s3_001#p1#19": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/setup_sweep/loss_s3_002#p1#13": "no_consistent_context",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_001#p1#22": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/heuristic/loss_s0_005#p1#23": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#22": "GUARD: rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#22 F+M world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_12000178/random/win_s1_002#p1#8": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s0_005#p1#26": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#25": "GUARD: rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#25 F+M world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s2_003#p1#32": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s1_004#p1#17": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s1_004#p1#7": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_3/win_s3_005#p1#14": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/sentinel_3/win_s3_005#p1#4": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s0_001#p1#19": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s2_001#p1#27": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep_v2/loss_s3_004#p1#18": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/setup_sweep_v2/win_s2_002#p1#18": "no_consistent_context",
+     "rb_es_prod_s2001/step_12000178/staller/draw_s3_001#p1#12": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/aggressive_v2/loss_s3_003#p1#9": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/heuristic/win_s1_001#p1#14": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/heuristic/win_s2_001#p1#11": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/win_s2_005#p1#15": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_2/draw_s3_006#p1#17": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_2/loss_s2_004#p1#33": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s1_003#p1#31": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s1_003#p1#35": "no_consistent_context",
+     "rb_es_prod_s2001/step_14000168/setup_sweep/win_s3_002#p1#17": "no_consistent_context"
+    },
+    "n": 34,
+    "reasons": {
+     "GUARD": 2,
+     "no_consistent_context": 32
+    }
+   },
+   "F+U": {
+    "ids": {
+     "rb_es_prod_s2001/step_10000002/aggressive/win_s1_001#p1#12": "F_not_ok",
+     "rb_es_prod_s2001/step_10000002/heuristic/win_s3_004#p1#1": "F_not_ok",
+     "rb_es_prod_s2001/step_10000002/sentinel_0/win_s1_002#p1#7": "F_not_ok",
+     "rb_es_prod_s2001/step_10000002/setup_sweep/loss_s3_001#p1#19": "F_not_ok",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_001#p1#10": "F_not_ok",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_001#p1#22": "F_not_ok",
+     "rb_es_prod_s2001/step_10000002/setup_sweep_v2/loss_s2_005#p1#12": "F_not_ok",
+     "rb_es_prod_s2001/step_10000002/staller_v2/loss_s1_003#p1#18": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/aggressive_v2/loss_s0_005#p1#18": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#22": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#7": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_0/loss_s1_002#p1#19": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_0/win_s2_003#p1#24": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#2": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#25": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s2_003#p1#32": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s3_004#p1#27": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s3_004#p1#41": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s1_004#p1#17": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_2/loss_s1_004#p1#7": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/sentinel_3/win_s3_005#p1#14": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s0_004#p1#14": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s0_004#p1#17": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s1_003#p1#11": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/setup_sweep/loss_s2_001#p1#27": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/setup_sweep_v2/loss_s3_004#p1#18": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/setup_sweep_v2/win_s2_002#p1#18": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/staller/draw_s3_001#p1#12": "F_not_ok",
+     "rb_es_prod_s2001/step_12000178/staller/loss_s1_004#p1#31": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/win_s1_004#p1#17": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/win_s2_005#p1#15": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/sentinel_1/win_s3_001#p1#22": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/sentinel_2/win_s2_002#p1#16": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s1_003#p1#31": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/sentinel_3/win_s1_003#p1#35": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/sentinel_4/loss_s2_004#p1#25": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/setup_sweep/win_s3_002#p1#17": "F_not_ok",
+     "rb_es_prod_s2001/step_14000168/setup_sweep_v2/loss_s2_004#p1#14": "F_not_ok"
+    },
+    "n": 38,
+    "reasons": {
+     "F_not_ok": 38
+    }
+   },
+   "O-M": {
+    "ids": {
+     "rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#7": "GUARD: rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#7 O-M world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#2": "GUARD: rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#2 O-M world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']"
+    },
+    "n": 2,
+    "reasons": {
+     "GUARD": 2
+    }
+   },
+   "O-U": {
+    "ids": {
+     "rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#22": "GUARD: rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#22 O-U world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#25": "GUARD: rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#25 O-U world 0 slot 4: moves ['substitute', 'flamethrower', 'hiddenpowerdark', 'focuspunch'] != ['substitute', 'flamethrower', 'hiddenpower', 'focuspunch']",
+     "rb_es_prod_s2001/step_14000168/heuristic2/loss_s2_005#p1#1": "exception: SuccessorsError: branch 6: parse p2: HiddenPowerTracker: all candidates eliminated for \"tyranitar\" after observing 2x (no Hidden Power type explains the observations, even under the flat prior)"
+    },
+    "n": 3,
+    "reasons": {
+     "GUARD": 2,
+     "exception": 1
+    }
+   }
+  }
+ },
+ "identities": {
+  "end2": {
+   "FU_eq_F": 114,
+   "FU_ne_F": [],
+   "FU_or_F_missing": 15,
+   "HOLD": true,
+   "OU_eq_O": 129,
+   "OU_ne_O": [],
+   "OU_or_O_missing": 0,
+   "k6_states": 129
+  },
+  "prod": {
+   "FU_eq_F": 94,
+   "FU_ne_F": [],
+   "FU_or_F_missing": 9,
+   "HOLD": false,
+   "OU_eq_O": 101,
+   "OU_ne_O": [
+    [
+     "rb_es_prod_s2001/step_12000178/random/loss_s2_003#p1#22",
+     "ok differs: O-U False O True"
+    ],
+    [
+     "rb_es_prod_s2001/step_12000178/sentinel_1/loss_s1_005#p1#25",
+     "ok differs: O-U False O True"
+    ]
+   ],
+   "OU_or_O_missing": 0,
+   "k6_states": 103
+  }
+ },
+ "reads": {
+  "end2": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.014356664796964156,
+      0.03998235113566603
+     ],
+     "point": 0.02744648318042814
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.0038567301181615856,
+       0.013268422918950903
+      ],
+      "point": 0.004625382262996941
+     },
+     "F+M": {
+      "ci": [
+       -0.0025303245581489485,
+       0.015456889442372338
+      ],
+      "point": 0.006230886850152904
+     },
+     "F+U": {
+      "ci": [
+       0.005333178726035868,
+       0.02424402137212163
+      ],
+      "point": 0.014640672782874615
+     },
+     "O": {
+      "ci": [
+       0.02131650644534957,
+       0.04298192095104504
+      ],
+      "point": 0.03207186544342508
+     },
+     "O-M": {
+      "ci": [
+       0.000977663010718872,
+       0.02012199157481042
+      ],
+      "point": 0.01055045871559633
+     },
+     "O-U": {
+      "ci": [
+       -0.005340830030299526,
+       0.014599354545606805
+      ],
+      "point": 0.004243119266055048
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.006496648276464425,
+      0.018661676407784066
+     ],
+     "excludes_0_clear": false,
+     "point": 0.006307339449541281
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      -0.0034505564249398637,
+      0.020683715558488688
+     ],
+     "excludes_0_clear": false,
+     "point": 0.00840978593272171
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.011179906542056074,
+      0.013503139707386947
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0016055045871559634
+    },
+    "dFU": {
+     "boundary": true,
+     "ci": [
+      -0.0009348972622012129,
+      0.02133036708553081
+     ],
+     "excludes_0_clear": false,
+     "point": 0.010015290519877674
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.010582016897668156,
+      0.03273949119985705
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02152140672782875
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.015346968312004872,
+      0.039396513700226614
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02782874617737003
+    },
+    "n_M": {
+     "ci": [
+      0.44206712433257067,
+      1.376468066232998
+     ],
+     "point": 0.7841225626740946
+    },
+    "n_U": {
+     "ci": [
+      0.6391000258938783,
+      1.6806984290239189
+     ],
+     "point": 1.013927576601671
+    },
+    "n_battles": {
+     "end2": 386
+    },
+    "n_states": {
+     "end2": 545
+    },
+    "s_M": {
+     "ci": [
+      -0.637607624896053,
+      0.4268191197094053
+     ],
+     "point": 0.0584958217270195
+    },
+    "s_U": {
+     "ci": [
+      -0.04022704921730503,
+      0.7639905616942904
+     ],
+     "point": 0.3649025069637882
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.03862756655338431,
+      0.06944444444444443
+     ],
+     "point": 0.05409021406727829
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       0.0004105970348237978,
+       0.025845721383024822
+      ],
+      "point": 0.012958715596330276
+     },
+     "F+M": {
+      "ci": [
+       -0.0006933879727512489,
+       0.026735492286975963
+      ],
+      "point": 0.013149847094801225
+     },
+     "F+U": {
+      "ci": [
+       0.01722146839541124,
+       0.047874955600782435
+      ],
+      "point": 0.03226299694189602
+     },
+     "O": {
+      "ci": [
+       0.05255235343738572,
+       0.0822842312522333
+      ],
+      "point": 0.06704892966360856
+     },
+     "O-M": {
+      "ci": [
+       0.011015984676698962,
+       0.03925786022587424
+      ],
+      "point": 0.025305810397553516
+     },
+     "O-U": {
+      "ci": [
+       0.010587802481237253,
+       0.03824482561414397
+      ],
+      "point": 0.02446483180428135
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.014855158048731144,
+      0.015846973569892682
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0008409785932721667
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      0.003697159060635126,
+      0.034952602039795
+     ],
+     "excludes_0_clear": false,
+     "point": 0.019113149847094797
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.01444335725851565,
+      0.015539799462353147
+     ],
+     "excludes_0_clear": false,
+     "point": 0.00019113149847094918
+    },
+    "dFU": {
+     "boundary": true,
+     "ci": [
+      0.004869809753290262,
+      0.03368858298004412
+     ],
+     "excludes_0_clear": false,
+     "point": 0.019304281345565746
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.02939760691446843,
+      0.05484117948661402
+     ],
+     "excludes_0_clear": true,
+     "point": 0.04174311926605505
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.028308922246463905,
+      0.05669088671185623
+     ],
+     "excludes_0_clear": true,
+     "point": 0.042584097859327215
+    },
+    "n_M": {
+     "ci": [
+      0.5659000136676334,
+      1.0663062062252695
+     ],
+     "point": 0.7717314487632508
+    },
+    "n_U": {
+     "ci": [
+      0.5660186197991443,
+      1.0628674622484062
+     ],
+     "point": 0.7872791519434628
+    },
+    "n_battles": {
+     "end2": 386
+    },
+    "n_states": {
+     "end2": 545
+    },
+    "s_M": {
+     "ci": [
+      -0.3175079209139766,
+      0.260451770390062
+     ],
+     "point": 0.0035335689045936608
+    },
+    "s_U": {
+     "ci": [
+      0.10881954345630604,
+      0.5759790543785132
+     ],
+     "point": 0.3568904593639575
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.048632424876552796,
+      0.07761409266989625
+     ],
+     "point": 0.06299694189602446
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       0.001684113479530653,
+       0.029206300257828794
+      ],
+      "point": 0.015290519877675842
+     },
+     "F+M": {
+      "ci": [
+       0.005263731060606062,
+       0.032788888806691514
+      ],
+      "point": 0.019342507645259938
+     },
+     "F+U": {
+      "ci": [
+       0.01607988921472244,
+       0.04463829960559279
+      ],
+      "point": 0.030007645259938834
+     },
+     "O": {
+      "ci": [
+       0.0636734512630879,
+       0.09272306461411896
+      ],
+      "point": 0.0782874617737003
+     },
+     "O-M": {
+      "ci": [
+       0.026259447111272136,
+       0.055024836892052176
+      ],
+      "point": 0.04040519877675841
+     },
+     "O-U": {
+      "ci": [
+       0.01005546108826321,
+       0.038613734879520197
+      ],
+      "point": 0.023929663608562694
+     }
+    },
+    "R3_hide_only": {
+     "boundary": true,
+     "ci": [
+      0.0012398633046615132,
+      0.03233194165006976
+     ],
+     "excludes_0_clear": false,
+     "point": 0.01647553516819572
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      -0.0044475048351017435,
+      0.026828773213220858
+     ],
+     "excludes_0_clear": false,
+     "point": 0.010665137614678896
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.009908976254472932,
+      0.018203266274864356
+     ],
+     "excludes_0_clear": false,
+     "point": 0.004051987767584095
+    },
+    "dFU": {
+     "boundary": true,
+     "ci": [
+      0.00034081950918563134,
+      0.02962720275306422
+     ],
+     "excludes_0_clear": false,
+     "point": 0.014717125382262991
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.025151705470485987,
+      0.050600872402397336
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03788226299694189
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.04061150159328738,
+      0.06880086314828959
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05435779816513761
+    },
+    "n_M": {
+     "ci": [
+      0.41354385035892977,
+      0.8108849367489012
+     ],
+     "point": 0.6013349514563106
+    },
+    "n_U": {
+     "ci": [
+      0.6786305400576731,
+      1.0876129829505723
+     ],
+     "point": 0.8628640776699029
+    },
+    "n_battles": {
+     "end2": 386
+    },
+    "n_states": {
+     "end2": 545
+    },
+    "s_M": {
+     "ci": [
+      -0.18436679236327205,
+      0.27204408699246724
+     ],
+     "point": 0.06432038834951452
+    },
+    "s_U": {
+     "ci": [
+      0.0071054531139475635,
+      0.4335526406056838
+     ],
+     "point": 0.23361650485436886
+    }
+   }
+  },
+  "end2|bots": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.013634707617900772,
+      0.04833634553931584
+     ],
+     "point": 0.030569172113289758
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.002968939017959615,
+       0.01901420087992046
+      ],
+      "point": 0.008033769063180827
+     },
+     "F+M": {
+      "ci": [
+       -0.003015350877192981,
+       0.014089462331649831
+      ],
+      "point": 0.00531045751633987
+     },
+     "F+U": {
+      "ci": [
+       0.004650870901639341,
+       0.030529663223797455
+      ],
+      "point": 0.0179057734204793
+     },
+     "O": {
+      "ci": [
+       0.02473882630813953,
+       0.05337289447163835
+      ],
+      "point": 0.03860294117647058
+     },
+     "O-M": {
+      "ci": [
+       0.003944856136278629,
+       0.030009273115129898
+      ],
+      "point": 0.01688453159041394
+     },
+     "O-U": {
+      "ci": [
+       -0.006525663185250567,
+       0.01713376032901611
+      ],
+      "point": 0.00462962962962963
+     }
+    },
+    "R3_hide_only": {
+     "boundary": true,
+     "ci": [
+      -0.004100811925647449,
+      0.02835735116806738
+     ],
+     "excludes_0_clear": false,
+     "point": 0.012254901960784312
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      -0.0009129283026341877,
+      0.026344636876432213
+     ],
+     "excludes_0_clear": false,
+     "point": 0.01259531590413943
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.017258025863265938,
+      0.010969552435639027
+     ],
+     "excludes_0_clear": false,
+     "point": -0.002723311546840956
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.006001684859879524,
+      0.025425269192215265
+     ],
+     "excludes_0_clear": false,
+     "point": 0.009872004357298474
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.006345708591103261,
+      0.03681593435518906
+     ],
+     "excludes_0_clear": true,
+     "point": 0.021718409586056642
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.01773807349997295,
+      0.05043913049669629
+     ],
+     "excludes_0_clear": true,
+     "point": 0.033973311546840954
+    },
+    "n_M": {
+     "ci": [
+      0.27127877771841585,
+      1.4188866490416387
+     ],
+     "point": 0.710467706013363
+    },
+    "n_U": {
+     "ci": [
+      0.668439501657136,
+      2.106151882258708
+     ],
+     "point": 1.111358574610245
+    },
+    "n_battles": {
+     "end2": 225
+    },
+    "n_states": {
+     "end2": 306
+    },
+    "s_M": {
+     "ci": [
+      -1.0788271456123433,
+      0.2789963019908278
+     ],
+     "point": -0.08908685968819592
+    },
+    "s_U": {
+     "ci": [
+      -0.3291454348736561,
+      0.6987212643678161
+     ],
+     "point": 0.32293986636971045
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.04119612163321775,
+      0.08272854324413097
+     ],
+     "point": 0.06256808278867101
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.00793424583238182,
+       0.024059513142174433
+      ],
+      "point": 0.007421023965141611
+     },
+     "F+M": {
+      "ci": [
+       -0.00020130625103118117,
+       0.031079190094935417
+      ],
+      "point": 0.01491013071895425
+     },
+     "F+U": {
+      "ci": [
+       0.02238283529630219,
+       0.06501688984596532
+      ],
+      "point": 0.04282407407407408
+     },
+     "O": {
+      "ci": [
+       0.04886738579269698,
+       0.09242724026194353
+      ],
+      "point": 0.06998910675381263
+     },
+     "O-M": {
+      "ci": [
+       0.01512702868041311,
+       0.05222135232072183
+      ],
+      "point": 0.03349673202614379
+     },
+     "O-U": {
+      "ci": [
+       0.005603375096522434,
+       0.043228010781412654
+      ],
+      "point": 0.024305555555555556
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.011018218132062146,
+      0.030184372438039984
+     ],
+     "excludes_0_clear": false,
+     "point": 0.009191176470588237
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      0.006873053113437275,
+      0.05030267726608187
+     ],
+     "excludes_0_clear": true,
+     "point": 0.027913943355119826
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.01239275264369313,
+      0.026115806034545618
+     ],
+     "excludes_0_clear": false,
+     "point": 0.007489106753812638
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.01557501263970913,
+      0.0551128011793859
+     ],
+     "excludes_0_clear": true,
+     "point": 0.035403050108932466
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.020336601241871873,
+      0.05318863879957127
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03649237472766884
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.02588991790015386,
+      0.06724529249041408
+     ],
+     "excludes_0_clear": true,
+     "point": 0.04568355119825708
+    },
+    "n_M": {
+     "ci": [
+      0.366163476097772,
+      0.8676882440699873
+     ],
+     "point": 0.5832426550598477
+    },
+    "n_U": {
+     "ci": [
+      0.4686867596046861,
+      1.0464114754487324
+     ],
+     "point": 0.7301414581066378
+    },
+    "n_battles": {
+     "end2": 225
+    },
+    "n_states": {
+     "end2": 306
+    },
+    "s_M": {
+     "ci": [
+      -0.23656052006335793,
+      0.3990368633914598
+     ],
+     "point": 0.11969532100108818
+    },
+    "s_U": {
+     "ci": [
+      0.3039964720126925,
+      0.8193131090097443
+     ],
+     "point": 0.5658324265505986
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.04446698431193972,
+      0.08722096375439216
+     ],
+     "point": 0.0656318082788671
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.006641478307038835,
+       0.028836450281439198
+      ],
+      "point": 0.011029411764705883
+     },
+     "F+M": {
+      "ci": [
+       0.005564152019261955,
+       0.03654641057372846
+      ],
+      "point": 0.020833333333333332
+     },
+     "F+U": {
+      "ci": [
+       0.0218411563004569,
+       0.060998016848676076
+      ],
+      "point": 0.041530501089324615
+     },
+     "O": {
+      "ci": [
+       0.05521961805555556,
+       0.09865906741108353
+      ],
+      "point": 0.07666122004357298
+     },
+     "O-M": {
+      "ci": [
+       0.03487950923999288,
+       0.07505502891152745
+      ],
+      "point": 0.054125816993464054
+     },
+     "O-U": {
+      "ci": [
+       0.0026275000838954336,
+       0.040104627872654425
+      ],
+      "point": 0.021718409586056645
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      0.011463880858186247,
+      0.05402788978494623
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03240740740740741
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      0.001771223491839464,
+      0.04074021669495471
+     ],
+     "excludes_0_clear": false,
+     "point": 0.02069716775599128
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.009984863484963512,
+      0.029366348283499436
+     ],
+     "excludes_0_clear": false,
+     "point": 0.009803921568627449
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.011713723455678896,
+      0.05023473689637665
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03050108932461873
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.006780703965053766,
+      0.03747362012987012
+     ],
+     "excludes_0_clear": true,
+     "point": 0.022535403050108926
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.03490152586687239,
+      0.07671412921073248
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05494281045751634
+    },
+    "n_M": {
+     "ci": [
+      0.11565920005054989,
+      0.5768944203246081
+     ],
+     "point": 0.34336099585062235
+    },
+    "n_U": {
+     "ci": [
+      0.6002155169480569,
+      1.151015904414709
+     ],
+     "point": 0.8371369294605809
+    },
+    "n_battles": {
+     "end2": 225
+    },
+    "n_states": {
+     "end2": 306
+    },
+    "s_M": {
+     "ci": [
+      -0.19199467060485428,
+      0.4151795678718549
+     ],
+     "point": 0.14937759336099585
+    },
+    "s_U": {
+     "ci": [
+      0.22135260260260245,
+      0.6919266596403977
+     ],
+     "point": 0.4647302904564315
+    }
+   }
+  },
+  "end2|snapshots": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.0039112932407005365,
+      0.04366995310055746
+     ],
+     "point": 0.02344839609483961
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.01370752353935297,
+       0.0128483606557377
+      ],
+      "point": 0.0002615062761506276
+     },
+     "F+M": {
+      "ci": [
+       -0.010201579335053522,
+       0.025467079265457902
+      ],
+      "point": 0.007409344490934448
+     },
+     "F+U": {
+      "ci": [
+       -0.004131212888109889,
+       0.024805988327362086
+      ],
+      "point": 0.010460251046025106
+     },
+     "O": {
+      "ci": [
+       0.007475490196078433,
+       0.04098381396429283
+      ],
+      "point": 0.02370990237099024
+     },
+     "O-M": {
+      "ci": [
+       -0.012231611979740148,
+       0.017747344163359786
+      ],
+      "point": 0.0024407252440725243
+     },
+     "O-U": {
+      "ci": [
+       -0.014105992672440844,
+       0.020658370930339353
+      ],
+      "point": 0.0037482566248256658
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.020753663427592415,
+      0.018152061715651646
+     ],
+     "excludes_0_clear": false,
+     "point": -0.0013075313807531415
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.019191209324431233,
+      0.024461700434715097
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0030509065550906574
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.01339125719393094,
+      0.0275735294117647
+     ],
+     "excludes_0_clear": false,
+     "point": 0.00714783821478382
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.007060052898423306,
+      0.026864054132291204
+     ],
+     "excludes_0_clear": false,
+     "point": 0.010198744769874478
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.005380239962887987,
+      0.038578579937056046
+     ],
+     "excludes_0_clear": true,
+     "point": 0.021269177126917716
+    },
+    "dOU": {
+     "boundary": true,
+     "ci": [
+      0.0034653786307053958,
+      0.037690813242237796
+     ],
+     "excludes_0_clear": false,
+     "point": 0.019961645746164575
+    },
+    "n_M": {
+     "ci": [
+      0.2259812420897073,
+      2.8463576158940374
+     ],
+     "point": 0.9070631970260223
+    },
+    "n_U": {
+     "ci": [
+      0.13453547671840338,
+      2.8642320261437813
+     ],
+     "point": 0.8513011152416357
+    },
+    "n_battles": {
+     "end2": 161
+    },
+    "n_states": {
+     "end2": 239
+    },
+    "s_M": {
+     "ci": [
+      -1.2021867167919795,
+      1.2669453918300906
+     ],
+     "point": 0.30483271375464677
+    },
+    "s_U": {
+     "ci": [
+      -0.540840108401084,
+      1.7263397129186602
+     ],
+     "point": 0.43494423791821557
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.021815522068511197,
+      0.0655369270484661
+     ],
+     "point": 0.043235704323570434
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.0005046729770366329,
+       0.04192235707803992
+      ],
+      "point": 0.02004881450488145
+     },
+     "F+M": {
+      "ci": [
+       -0.01329666050246568,
+       0.03603404708589911
+      ],
+      "point": 0.010896094839609485
+     },
+     "F+U": {
+      "ci": [
+       -0.0033085547305252818,
+       0.04100849528881715
+      ],
+      "point": 0.01874128312412831
+     },
+     "O": {
+      "ci": [
+       0.044500264806115866,
+       0.08342710427192551
+      ],
+      "point": 0.06328451882845189
+     },
+     "O-M": {
+      "ci": [
+       -0.006104409626398404,
+       0.03757058499279501
+      ],
+      "point": 0.014818688981868899
+     },
+     "O-U": {
+      "ci": [
+       0.003747635315588002,
+       0.04624073674365062
+      ],
+      "point": 0.02466875871687587
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.032440788445080804,
+      0.012534596461307636
+     ],
+     "excludes_0_clear": false,
+     "point": -0.009850069735006968
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.013212135696568829,
+      0.029804239932560046
+     ],
+     "excludes_0_clear": false,
+     "point": 0.007845188284518825
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.03103232155031047,
+      0.012112763419736694
+     ],
+     "excludes_0_clear": false,
+     "point": -0.009152719665271966
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.01958702718676123,
+      0.01589023343179314
+     ],
+     "excludes_0_clear": false,
+     "point": -0.0013075313807531415
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.02928990912208505,
+      0.0677822983139798
+     ],
+     "excludes_0_clear": true,
+     "point": 0.048465829846582986
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.020150202950369914,
+      0.05772824541348351
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03861576011157602
+    },
+    "n_M": {
+     "ci": [
+      0.678893106745282,
+      2.0109825748833954
+     ],
+     "point": 1.1209677419354838
+    },
+    "n_U": {
+     "ci": [
+      0.4926603346901854,
+      1.5720890675241153
+     ],
+     "point": 0.8931451612903227
+    },
+    "n_battles": {
+     "end2": 161
+    },
+    "n_states": {
+     "end2": 239
+    },
+    "s_M": {
+     "ci": [
+      -1.0483501312944083,
+      0.23921885423831038
+     ],
+     "point": -0.21169354838709675
+    },
+    "s_U": {
+     "ci": [
+      -0.6685061740304843,
+      0.33719355350905034
+     ],
+     "point": -0.030241935483871045
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.039209611646382696,
+      0.07955519153225804
+     ],
+     "point": 0.059623430962343085
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.0012713927034228342,
+       0.0441531141183919
+      ],
+      "point": 0.02074616457461646
+     },
+     "F+M": {
+      "ci": [
+       -0.006625115639200074,
+       0.041838602421350284
+      ],
+      "point": 0.017433751743375175
+     },
+     "F+U": {
+      "ci": [
+       -0.00575350728183317,
+       0.036873659391188474
+      ],
+      "point": 0.015254532775453276
+     },
+     "O": {
+      "ci": [
+       0.061452951609969074,
+       0.10136096227193805
+      ],
+      "point": 0.08036959553695955
+     },
+     "O-M": {
+      "ci": [
+       -8.966890698187846e-05,
+       0.04531920984096402
+      ],
+      "point": 0.022838214783821482
+     },
+     "O-U": {
+      "ci": [
+       0.0044329308842414265,
+       0.04905911605461392
+      ],
+      "point": 0.026760808926080893
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.02752255460588793,
+      0.020224936727504438
+     ],
+     "excludes_0_clear": false,
+     "point": -0.003922594142259407
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.025848798838059964,
+      0.02262711321721312
+     ],
+     "excludes_0_clear": false,
+     "point": -0.002179218967921899
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.024641665946288614,
+      0.01719229063318175
+     ],
+     "excludes_0_clear": false,
+     "point": -0.003312412831241285
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.027144039946262157,
+      0.015479065652855319
+     ],
+     "excludes_0_clear": false,
+     "point": -0.005491631799163184
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.035645714982254426,
+      0.08058338221389547
+     ],
+     "excludes_0_clear": true,
+     "point": 0.057531380753138066
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.036099689327485376,
+      0.07252976035463578
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05360878661087866
+    },
+    "n_M": {
+     "ci": [
+      0.6236386174126127,
+      1.4404065310334657
+     ],
+     "point": 0.9649122807017544
+    },
+    "n_U": {
+     "ci": [
+      0.6275347275814169,
+      1.2865214706245613
+     ],
+     "point": 0.899122807017544
+    },
+    "n_battles": {
+     "end2": 161
+    },
+    "n_states": {
+     "end2": 239
+    },
+    "s_M": {
+     "ci": [
+      -0.5161021388828672,
+      0.25738867268218746
+     ],
+     "point": -0.055555555555555594
+    },
+    "s_U": {
+     "ci": [
+      -0.5906211981840301,
+      0.2201677462623086
+     ],
+     "point": -0.09210526315789481
+    }
+   }
+  },
+  "pooled": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.018926291532546945,
+      0.03835807792036273
+     ],
+     "point": 0.02856213651668197
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.005132138356029855,
+       0.0057786410289831815
+      ],
+      "point": 0.0003252219161310069
+     },
+     "F+M": {
+      "ci": [
+       -0.005994781941303778,
+       0.009003395275469372
+      ],
+      "point": 0.0015304560759106208
+     },
+     "F+U": {
+      "ci": [
+       0.004073734814013265,
+       0.01799845490947075
+      ],
+      "point": 0.010808846036118761
+     },
+     "O": {
+      "ci": [
+       0.020463988240640555,
+       0.03765106523378583
+      ],
+      "point": 0.02888735843281298
+     },
+     "O-M": {
+      "ci": [
+       -0.0012210853119944045,
+       0.013273225688619513
+      ],
+      "point": 0.005911386593204775
+     },
+     "O-U": {
+      "ci": [
+       -0.003791868008225592,
+       0.01145460627005576
+      ],
+      "point": 0.0035200489745944303
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.0075066463077166365,
+      0.011456002049318422
+     ],
+     "excludes_0_clear": false,
+     "point": 0.002391337618610344
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      0.0008941347675969415,
+      0.017927327632278722
+     ],
+     "excludes_0_clear": false,
+     "point": 0.00927838996020814
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.00724365001442233,
+      0.009004191656712995
+     ],
+     "excludes_0_clear": false,
+     "point": 0.001205234159779614
+    },
+    "dFU": {
+     "boundary": true,
+     "ci": [
+      0.002710512341938975,
+      0.018903125567285267
+     ],
+     "excludes_0_clear": false,
+     "point": 0.010483624119987755
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.014862766549159846,
+      0.03163298331821218
+     ],
+     "excludes_0_clear": true,
+     "point": 0.022975971839608204
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.01691849355731831,
+      0.033542246982358394
+     ],
+     "excludes_0_clear": true,
+     "point": 0.025367309458218548
+    },
+    "n_M": {
+     "ci": [
+      0.5625221889291815,
+      1.1415358554488988
+     ],
+     "point": 0.8044206296048225
+    },
+    "n_U": {
+     "ci": [
+      0.6525846246426958,
+      1.2175901875901873
+     ],
+     "point": 0.8881446751507033
+    },
+    "n_battles": {
+     "end2": 386,
+     "prod": 386
+    },
+    "n_states": {
+     "end2": 545,
+     "prod": 544
+    },
+    "s_M": {
+     "ci": [
+      -0.33580895017636214,
+      0.28205789056304514
+     ],
+     "point": 0.0421969189551239
+    },
+    "s_U": {
+     "ci": [
+      0.1137724618457662,
+      0.6090480873006354
+     ],
+     "point": 0.3670462156731413
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.046921932763401106,
+      0.06766032446800384
+     ],
+     "point": 0.05731558004285276
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.004621765899960392,
+       0.014314117788792508
+      ],
+      "point": 0.004801805938169574
+     },
+     "F+M": {
+      "ci": [
+       0.0010291973779868282,
+       0.020412572036994207
+      ],
+      "point": 0.010732323232323232
+     },
+     "F+U": {
+      "ci": [
+       0.016195334556825033,
+       0.03738120538902597
+      ],
+      "point": 0.026591674318947045
+     },
+     "O": {
+      "ci": [
+       0.051099158091674465,
+       0.07333694934381638
+      ],
+      "point": 0.06211738598102234
+     },
+     "O-M": {
+      "ci": [
+       0.01349030122261847,
+       0.03342246405524736
+      ],
+      "point": 0.023511631466176918
+     },
+     "O-U": {
+      "ci": [
+       0.0020831429006703227,
+       0.021539880225459638
+      ],
+      "point": 0.01174625038261402
+     }
+    },
+    "R3_hide_only": {
+     "boundary": true,
+     "ci": [
+      0.001511794032495034,
+      0.02264422564369037
+     ],
+     "excludes_0_clear": false,
+     "point": 0.011765381083562898
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      0.0049960701135381294,
+      0.026469632833377027
+     ],
+     "excludes_0_clear": false,
+     "point": 0.015859351086623813
+    },
+    "dFM": {
+     "boundary": true,
+     "ci": [
+      -0.003612199063416498,
+      0.015874562438725228
+     ],
+     "excludes_0_clear": false,
+     "point": 0.005930517294153658
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.011818933763865615,
+      0.0313273144654741
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02178986838077747
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.029977691134216052,
+      0.04796036755539066
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03860575451484542
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.040323861493290813,
+      0.060223462663302224
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05037113559840832
+    },
+    "n_M": {
+     "ci": [
+      0.5341854618654907,
+      0.8385292779805069
+     ],
+     "point": 0.6735647530040054
+    },
+    "n_U": {
+     "ci": [
+      0.7287380737537545,
+      1.0591040414321524
+     ],
+     "point": 0.8788384512683579
+    },
+    "n_battles": {
+     "end2": 386,
+     "prod": 386
+    },
+    "n_states": {
+     "end2": 545,
+     "prod": 544
+    },
+    "s_M": {
+     "ci": [
+      -0.071380442194561,
+      0.2580052479014941
+     ],
+     "point": 0.10347129506008013
+    },
+    "s_U": {
+     "ci": [
+      0.2235297649948767,
+      0.5226719053002046
+     ],
+     "point": 0.380173564753004
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.05305272985308908,
+      0.07358074862979573
+     ],
+     "point": 0.06313131313131314
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       0.0010733123587505036,
+       0.021160194619428117
+      ],
+      "point": 0.011019283746556474
+     },
+     "F+M": {
+      "ci": [
+       0.0011572203326788038,
+       0.021125202007451275
+      ],
+      "point": 0.011019283746556474
+     },
+     "F+U": {
+      "ci": [
+       0.020507513168764785,
+       0.041802633813364715
+      ],
+      "point": 0.030781297826752367
+     },
+     "O": {
+      "ci": [
+       0.06287827877477614,
+       0.08544385657174457
+      ],
+      "point": 0.07415059687786961
+     },
+     "O-M": {
+      "ci": [
+       0.028064432235962566,
+       0.05037518848051157
+      ],
+      "point": 0.03929445974900521
+     },
+     "O-U": {
+      "ci": [
+       0.0057900850064585485,
+       0.026677188958717808
+      ],
+      "point": 0.016127180899908174
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      0.012146850344688067,
+      0.03439249513289318
+     ],
+     "excludes_0_clear": true,
+     "point": 0.023167278849097035
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      0.008921510133620534,
+      0.030983821183570282
+     ],
+     "excludes_0_clear": true,
+     "point": 0.019762014080195893
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.009914855579664492,
+      0.009399938612645795
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.00951948364772311,
+      0.030265760686803936
+     ],
+     "excludes_0_clear": true,
+     "point": 0.019762014080195893
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.026079583170105333,
+      0.04341545362876074
+     ],
+     "excludes_0_clear": true,
+     "point": 0.0348561371288644
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.04787139274213524,
+      0.06828503649253044
+     ],
+     "excludes_0_clear": true,
+     "point": 0.058023415977961436
+    },
+    "n_M": {
+     "ci": [
+      0.42644592818557864,
+      0.6889997882013426
+     ],
+     "point": 0.5521212121212121
+    },
+    "n_U": {
+     "ci": [
+      0.7746898782518116,
+      1.0723287242610249
+     ],
+     "point": 0.9190909090909091
+    },
+    "n_battles": {
+     "end2": 386,
+     "prod": 386
+    },
+    "n_states": {
+     "end2": 545,
+     "prod": 544
+    },
+    "s_M": {
+     "ci": [
+      -0.1721402966570611,
+      0.14290144547163133
+     ],
+     "point": 0.0
+    },
+    "s_U": {
+     "ci": [
+      0.1653577926306113,
+      0.4443173226672213
+     ],
+     "point": 0.31303030303030294
+    }
+   }
+  },
+  "pooled|bots": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.0163599531412001,
+      0.04231322379550315
+     ],
+     "point": 0.028629454926624734
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.007935030423693144,
+       0.006453315825636803
+      ],
+      "point": -0.0004585953878406713
+     },
+     "F+M": {
+      "ci": [
+       -0.009314154984423674,
+       0.006708662054129886
+      ],
+      "point": -0.0012775157232704385
+     },
+     "F+U": {
+      "ci": [
+       0.0037873484848484824,
+       0.02165660004287606
+      ],
+      "point": 0.012775157232704403
+     },
+     "O": {
+      "ci": [
+       0.017619831144062598,
+       0.03951014069442158
+      ],
+      "point": 0.028170859538784062
+     },
+     "O-M": {
+      "ci": [
+       0.0006571250748727147,
+       0.018592368694747785
+      ],
+      "point": 0.009597746331236896
+     },
+     "O-U": {
+      "ci": [
+       -0.007345185367454069,
+       0.008747511025539757
+      ],
+      "point": 0.0005568658280922426
+     }
+    },
+    "R3_hide_only": {
+     "boundary": true,
+     "ci": [
+      -0.002037147026880262,
+      0.020237999291308113
+     ],
+     "excludes_0_clear": false,
+     "point": 0.009040880503144652
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      0.0040923873654005434,
+      0.025002177116827427
+     ],
+     "excludes_0_clear": false,
+     "point": 0.014052672955974843
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.011038838487150877,
+      0.009608105888676543
+     ],
+     "excludes_0_clear": false,
+     "point": -0.0008189203354297672
+    },
+    "dFU": {
+     "boundary": true,
+     "ci": [
+      0.002772979536072139,
+      0.024200942891812245
+     ],
+     "excludes_0_clear": false,
+     "point": 0.013233752620545075
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.008774148119562857,
+      0.0287115875590193
+     ],
+     "excludes_0_clear": true,
+     "point": 0.018573113207547166
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.016009999945056988,
+      0.03882591442374049
+     ],
+     "excludes_0_clear": true,
+     "point": 0.027613993710691818
+    },
+    "n_M": {
+     "ci": [
+      0.3541158012379643,
+      1.0208078253926003
+     ],
+     "point": 0.648741418764302
+    },
+    "n_U": {
+     "ci": [
+      0.6739700377503819,
+      1.4229554569753655
+     ],
+     "point": 0.9645308924485125
+    },
+    "n_battles": {
+     "end2": 225,
+     "prod": 240
+    },
+    "n_states": {
+     "end2": 306,
+     "prod": 330
+    },
+    "s_M": {
+     "ci": [
+      -0.5588472562427707,
+      0.2804287962234456
+     ],
+     "point": -0.02860411899313494
+    },
+    "s_U": {
+     "ci": [
+      0.1258343136252046,
+      0.7680404537671233
+     ],
+     "point": 0.4622425629290619
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.048254029485930564,
+      0.07520054256868369
+     ],
+     "point": 0.06184486373165618
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.01092969285272639,
+       0.011523189014420397
+      ],
+      "point": 0.00039308176100628933
+     },
+     "F+M": {
+      "ci": [
+       -0.000972120127818817,
+       0.020867065598197954
+      ],
+      "point": 0.009368448637316562
+     },
+     "F+U": {
+      "ci": [
+       0.021835374810155454,
+       0.0486122151563328
+      ],
+      "point": 0.03488600628930818
+     },
+     "O": {
+      "ci": [
+       0.04947295875627358,
+       0.07664610085607276
+      ],
+      "point": 0.06223794549266247
+     },
+     "O-M": {
+      "ci": [
+       0.017751803107393247,
+       0.04230824825252949
+      ],
+      "point": 0.029284591194968554
+     },
+     "O-U": {
+      "ci": [
+       -0.0015898315680991587,
+       0.02303567506280085
+      ],
+      "point": 0.010482180293501047
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      0.005582593484538064,
+      0.03243999510014584
+     ],
+     "excludes_0_clear": true,
+     "point": 0.018802410901467503
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      0.012031388626758288,
+      0.03975288811007267
+     ],
+     "excludes_0_clear": true,
+     "point": 0.025517557651991617
+    },
+    "dFM": {
+     "boundary": true,
+     "ci": [
+      -0.0034311459683045963,
+      0.02141756010455944
+     ],
+     "excludes_0_clear": false,
+     "point": 0.008975366876310273
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.02193438215398613,
+      0.04773889182221512
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03449292452830189
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.021481942545106863,
+      0.04394302373903131
+     ],
+     "excludes_0_clear": true,
+     "point": 0.032953354297693915
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.03880449459876543,
+      0.06491932863113896
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05175576519916142
+    },
+    "n_M": {
+     "ci": [
+      0.3688105267761195,
+      0.7032253755845188
+     ],
+     "point": 0.5328389830508474
+    },
+    "n_U": {
+     "ci": [
+      0.6599803463706708,
+      1.0466156931670103
+     ],
+     "point": 0.836864406779661
+    },
+    "n_battles": {
+     "end2": 225,
+     "prod": 240
+    },
+    "n_states": {
+     "end2": 306,
+     "prod": 330
+    },
+    "s_M": {
+     "ci": [
+      -0.06296346732121953,
+      0.31548248478496355
+     ],
+     "point": 0.1451271186440678
+    },
+    "s_U": {
+     "ci": [
+      0.38826781366141233,
+      0.7207379824459427
+     ],
+     "point": 0.5577330508474577
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.05696137012867889,
+      0.08290878099316264
+     ],
+     "point": 0.07013233752620544
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.008209419201675294,
+       0.016486194956567394
+      ],
+      "point": 0.0037670335429769402
+     },
+     "F+M": {
+      "ci": [
+       -0.003323230887839168,
+       0.01942411505627183
+      ],
+      "point": 0.007927148846960169
+     },
+     "F+U": {
+      "ci": [
+       0.027207863204899468,
+       0.053461130500291804
+      ],
+      "point": 0.04042190775681342
+     },
+     "O": {
+      "ci": [
+       0.06034579392241124,
+       0.08804282212600825
+      ],
+      "point": 0.07389937106918239
+     },
+     "O-M": {
+      "ci": [
+       0.033058480112185235,
+       0.06065876706880691
+      ],
+      "point": 0.04648191823899371
+     },
+     "O-U": {
+      "ci": [
+       -6.405743300904575e-05,
+       0.025959511416603593
+      ],
+      "point": 0.012840670859538786
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      0.01960904685322578,
+      0.04799017496770058
+     ],
+     "excludes_0_clear": true,
+     "point": 0.033641247379454925
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      0.019563482649244554,
+      0.046220422434314935
+     ],
+     "excludes_0_clear": true,
+     "point": 0.032494758909853254
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.009042892337991902,
+      0.017178049696332326
+     ],
+     "excludes_0_clear": false,
+     "point": 0.004160115303983228
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.023655627443101766,
+      0.04949534670136854
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03665487421383648
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.017838070787473785,
+      0.03762938162875352
+     ],
+     "excludes_0_clear": true,
+     "point": 0.027417452830188677
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.047570916127366074,
+      0.0742477080377732
+     ],
+     "excludes_0_clear": true,
+     "point": 0.0610587002096436
+    },
+    "n_M": {
+     "ci": [
+      0.26273782115106115,
+      0.5342572889861037
+     ],
+     "point": 0.3909388136384867
+    },
+    "n_U": {
+     "ci": [
+      0.7085950218898656,
+      1.0645802038576369
+     ],
+     "point": 0.8706212050443718
+    },
+    "n_battles": {
+     "end2": 225,
+     "prod": 240
+    },
+    "n_states": {
+     "end2": 306,
+     "prod": 330
+    },
+    "s_M": {
+     "ci": [
+      -0.1424247293231125,
+      0.22128622123288433
+     ],
+     "point": 0.059318075665576835
+    },
+    "s_U": {
+     "ci": [
+      0.37738487758898626,
+      0.6598400272778804
+     ],
+     "point": 0.5226529659037834
+    }
+   }
+  },
+  "pooled|snapshots": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.014822648027637182,
+      0.04380558794825989
+     ],
+     "point": 0.028467623252391466
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.007971541572963519,
+       0.010170034631853595
+      ],
+      "point": 0.001425680647534952
+     },
+     "F+M": {
+      "ci": [
+       -0.007785146506724268,
+       0.02015916458471401
+      ],
+      "point": 0.005472774098601912
+     },
+     "F+U": {
+      "ci": [
+       -0.0019813849190505758,
+       0.018375266766495302
+      ],
+      "point": 0.008048197203826343
+     },
+     "O": {
+      "ci": [
+       0.01643766534391534,
+       0.04470846050387517
+      ],
+      "point": 0.029893303899926418
+     },
+     "O-M": {
+      "ci": [
+       -0.011304285297068369,
+       0.011912175352179345
+      ],
+      "point": 0.000735835172921265
+     },
+     "O-U": {
+      "ci": [
+       -0.005933486625676976,
+       0.022725616322995405
+      ],
+      "point": 0.0076802796173657106
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.02351665957744081,
+      0.009013344075899755
+     ],
+     "excludes_0_clear": false,
+     "point": -0.006944444444444444
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.012420121564947293,
+      0.017323968948255948
+     ],
+     "excludes_0_clear": false,
+     "point": 0.002575423105224431
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.009750355300943566,
+      0.018176244937990377
+     ],
+     "excludes_0_clear": false,
+     "point": 0.00404709345106696
+    },
+    "dFU": {
+     "boundary": true,
+     "ci": [
+      -0.004102120110312252,
+      0.017904133031919806
+     ],
+     "excludes_0_clear": false,
+     "point": 0.006622516556291391
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.01567572494852437,
+      0.04468235694010721
+     ],
+     "excludes_0_clear": true,
+     "point": 0.029157468727005153
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.009523307918673087,
+      0.034692196353781714
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02221302428256071
+    },
+    "n_M": {
+     "ci": [
+      0.5890239113778573,
+      1.7686717846016904
+     ],
+     "point": 1.024232633279483
+    },
+    "n_U": {
+     "ci": [
+      0.3719888706100184,
+      1.3699612722478574
+     ],
+     "point": 0.7802907915993538
+    },
+    "n_battles": {
+     "end2": 161,
+     "prod": 146
+    },
+    "n_states": {
+     "end2": 239,
+     "prod": 214
+    },
+    "s_M": {
+     "ci": [
+      -0.5145722580059873,
+      0.5554232200398956
+     ],
+     "point": 0.14216478190630044
+    },
+    "s_U": {
+     "ci": [
+      -0.1574388338541322,
+      0.6401968214731295
+     ],
+     "point": 0.23263327948303714
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.035541824924153476,
+      0.06736577643171804
+     ],
+     "point": 0.050956585724797644
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.004498171968853346,
+       0.027226254969329344
+      ],
+      "point": 0.010991537895511405
+     },
+     "F+M": {
+      "ci": [
+       -0.004887393477548345,
+       0.030888715183713562
+      ],
+      "point": 0.012647167034584251
+     },
+     "F+U": {
+      "ci": [
+       -0.001759954226235267,
+       0.03234891369980723
+      ],
+      "point": 0.014946651949963205
+     },
+     "O": {
+      "ci": [
+       0.04557447029337598,
+       0.0800630373383544
+      ],
+      "point": 0.06194812362030905
+     },
+     "O-M": {
+      "ci": [
+       9.094101673162024e-05,
+       0.033447649633242565
+      ],
+      "point": 0.015406548933039
+     },
+     "O-U": {
+      "ci": [
+       -0.0020509388432244937,
+       0.03101703810154392
+      ],
+      "point": 0.013520971302428254
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.01398288665844042,
+      0.01847350794530672
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0018855776306107436
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.013577033463605278,
+      0.018299098949433563
+     ],
+     "excludes_0_clear": false,
+     "point": 0.002299484915378954
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.01308876811594203,
+      0.01665328612633914
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0016556291390728457
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.009661530339282335,
+      0.01835117358821755
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0039551140544518
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.031787338399116856,
+      0.060440699674833634
+     ],
+     "excludes_0_clear": true,
+     "point": 0.04654157468727005
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.0339381052411661,
+      0.06349793866725945
+     ],
+     "excludes_0_clear": true,
+     "point": 0.04842715231788079
+    },
+    "n_M": {
+     "ci": [
+      0.6309229771956651,
+      1.3023003763604923
+     ],
+     "point": 0.9133574007220217
+    },
+    "n_U": {
+     "ci": [
+      0.6880984605460942,
+      1.314207670093406
+     ],
+     "point": 0.9503610108303249
+    },
+    "n_battles": {
+     "end2": 161,
+     "prod": 146
+    },
+    "n_states": {
+     "end2": 239,
+     "prod": 214
+    },
+    "s_M": {
+     "ci": [
+      -0.3202520916115892,
+      0.29674128702820757
+     ],
+     "point": 0.03249097472924184
+    },
+    "s_U": {
+     "ci": [
+      -0.22129552830869104,
+      0.3309706855737184
+     ],
+     "point": 0.07761732851985553
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.03784937273254783,
+      0.06961906117800194
+     ],
+     "point": 0.05330206033848418
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       0.004693699123891929,
+       0.03928609495177035
+      ],
+      "point": 0.021201250919793965
+     },
+     "F+M": {
+      "ci": [
+       -0.0022706823671497576,
+       0.03323177650689904
+      ],
+      "point": 0.01536055923473142
+     },
+     "F+U": {
+      "ci": [
+       0.00047627659736772357,
+       0.0361462973273942
+      ],
+      "point": 0.01724613686534216
+     },
+     "O": {
+      "ci": [
+       0.057253825262624625,
+       0.09287876845170721
+      ],
+      "point": 0.07450331125827815
+     },
+     "O-M": {
+      "ci": [
+       0.012202365854161514,
+       0.04773749889378899
+      ],
+      "point": 0.02920345842531273
+     },
+     "O-U": {
+      "ci": [
+       0.0033025187395417117,
+       0.03976246281397461
+      ],
+      "point": 0.020741353936718172
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.007887127965242206,
+      0.026367653554056538
+     ],
+     "excludes_0_clear": false,
+     "point": 0.008462104488594559
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.015510395213884238,
+      0.020099833099940675
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0018855776306107418
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.02153761320887607,
+      0.008380847861137696
+     ],
+     "excludes_0_clear": false,
+     "point": -0.005840691685062545
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.019150557160837578,
+      0.011608043020722925
+     ],
+     "excludes_0_clear": false,
+     "point": -0.003955114054451803
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.029364161659287364,
+      0.06076871141975307
+     ],
+     "excludes_0_clear": true,
+     "point": 0.04529985283296542
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.03987550318140501,
+      0.06901356917677849
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05376195732155998
+    },
+    "n_M": {
+     "ci": [
+      0.5886865919724205,
+      1.1831454378394337
+     ],
+     "point": 0.8498705780845557
+    },
+    "n_U": {
+     "ci": [
+      0.7600540071574415,
+      1.3824723659528395
+     ],
+     "point": 1.00862812769629
+    },
+    "n_battles": {
+     "end2": 161,
+     "prod": 146
+    },
+    "n_states": {
+     "end2": 239,
+     "prod": 214
+    },
+    "s_M": {
+     "ci": [
+      -0.5107842835130969,
+      0.14504710873238047
+     ],
+     "point": -0.10957722174288177
+    },
+    "s_U": {
+     "ci": [
+      -0.4437551603109179,
+      0.20117801533486035
+     ],
+     "point": -0.07420189818809318
+    }
+   }
+  },
+  "prod": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.016557316896046583,
+      0.04417059287274942
+     ],
+     "point": 0.029679840686274505
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.011159419277403422,
+       0.0030610113224510973
+      ],
+      "point": -0.003982843137254902
+     },
+     "F+M": {
+      "ci": [
+       -0.014578731047929632,
+       0.009192439805698477
+      ],
+      "point": -0.003178615196078432
+     },
+     "F+U": {
+      "ci": [
+       -0.002536889257746,
+       0.01708735245362828
+      ],
+      "point": 0.006969975490196076
+     },
+     "O": {
+      "ci": [
+       0.01310338601028937,
+       0.04044445132228245
+      ],
+      "point": 0.025696997549019603
+     },
+     "O-M": {
+      "ci": [
+       -0.00950265505522515,
+       0.012311492966935672
+      ],
+      "point": 0.0012637867647058824
+     },
+     "O-U": {
+      "ci": [
+       -0.007923558590223955,
+       0.015255015319207518
+      ],
+      "point": 0.002795649509803923
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.016949292622244275,
+      0.012768834604305758
+     ],
+     "excludes_0_clear": false,
+     "point": -0.0015318627450980407
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      -0.002566359136955143,
+      0.02195292375174212
+     ],
+     "excludes_0_clear": false,
+     "point": 0.010148590686274508
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.010532185764909267,
+      0.012042184660727732
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0008042279411764699
+    },
+    "dFU": {
+     "boundary": true,
+     "ci": [
+      0.00040217148023300483,
+      0.021407655481623364
+     ],
+     "excludes_0_clear": false,
+     "point": 0.010952818627450978
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.01238363192047265,
+      0.038007919939437196
+     ],
+     "excludes_0_clear": true,
+     "point": 0.024433210784313722
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.011573756105006104,
+      0.03466067331496019
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02290134803921568
+    },
+    "n_M": {
+     "ci": [
+      0.47907123653741507,
+      1.3186373723862699
+     ],
+     "point": 0.8232258064516129
+    },
+    "n_U": {
+     "ci": [
+      0.46915599394013346,
+      1.1605584496854828
+     ],
+     "point": 0.7716129032258064
+    },
+    "n_battles": {
+     "prod": 386
+    },
+    "n_states": {
+     "prod": 544
+    },
+    "s_M": {
+     "ci": [
+      -0.5289812599681021,
+      0.35106848404255314
+     ],
+     "point": 0.02709677419354837
+    },
+    "s_U": {
+     "ci": [
+      0.019398705501618076,
+      0.6611040795362826
+     ],
+     "point": 0.3690322580645161
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.0464825212337329,
+      0.0747714248975507
+     ],
+     "point": 0.060546875
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.015626390124555162,
+       0.009998823748249284
+      ],
+      "point": -0.0033700980392156864
+     },
+     "F+M": {
+      "ci": [
+       -0.005475470951360531,
+       0.022670165194659846
+      ],
+      "point": 0.008310355392156861
+     },
+     "F+U": {
+      "ci": [
+       0.006402727455716585,
+       0.036604568694473295
+      ],
+      "point": 0.020909926470588234
+     },
+     "O": {
+      "ci": [
+       0.042008853989693055,
+       0.07299322935611964
+      ],
+      "point": 0.05717677696078431
+     },
+     "O-M": {
+      "ci": [
+       0.008371887512512513,
+       0.036831444325640686
+      ],
+      "point": 0.021714154411764705
+     },
+     "O-U": {
+      "ci": [
+       -0.015013317142550452,
+       0.01333829097096219
+      ],
+      "point": -0.000995710784313726
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      0.008642060232977084,
+      0.0366126831122167
+     ],
+     "excludes_0_clear": true,
+     "point": 0.022709865196078434
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      -0.002298489719375799,
+      0.027239549768477075
+     ],
+     "excludes_0_clear": false,
+     "point": 0.012599571078431371
+    },
+    "dFM": {
+     "boundary": true,
+     "ci": [
+      -0.00022846713732217375,
+      0.02466147110720514
+     ],
+     "excludes_0_clear": false,
+     "point": 0.011680453431372547
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.010790538716354034,
+      0.03774379922102379
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02428002450980392
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.023567619606500587,
+      0.048027004787552355
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03546262254901961
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.04482776263233838,
+      0.07282375617027514
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05817248774509804
+    },
+    "n_M": {
+     "ci": [
+      0.402107691527658,
+      0.7881682160938025
+     ],
+     "point": 0.5857052498418722
+    },
+    "n_U": {
+     "ci": [
+      0.7609372733763988,
+      1.2062227230816513
+     ],
+     "point": 0.9607843137254902
+    },
+    "n_battles": {
+     "prod": 386
+    },
+    "n_states": {
+     "prod": 544
+    },
+    "s_M": {
+     "ci": [
+      -0.003889478426268948,
+      0.36684821533351575
+     ],
+     "point": 0.19291587602783047
+    },
+    "s_U": {
+     "ci": [
+      0.19654779058597502,
+      0.5941787159238061
+     ],
+     "point": 0.40101201771030986
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.0494030528114741,
+      0.07805738424750296
+     ],
+     "point": 0.06326593137254902
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.006472654757925899,
+       0.020639718061356744
+      ],
+      "point": 0.006740196078431371
+     },
+     "F+M": {
+      "ci": [
+       -0.011850281273998764,
+       0.017046324922014255
+      ],
+      "point": 0.002680759803921568
+     },
+     "F+U": {
+      "ci": [
+       0.016658319879119057,
+       0.04747912027891247
+      ],
+      "point": 0.03155637254901961
+     },
+     "O": {
+      "ci": [
+       0.05472966041325416,
+       0.08677997565854502
+      ],
+      "point": 0.0700061274509804
+     },
+     "O-M": {
+      "ci": [
+       0.023289246233684092,
+       0.05466776844726816
+      ],
+      "point": 0.03818167892156863
+     },
+     "O-U": {
+      "ci": [
+       -0.006557739653060884,
+       0.024142508860729373
+      ],
+      "point": 0.00831035539215686
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      0.015333016073375737,
+      0.04407881042196276
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02987132352941177
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      0.013608860042026098,
+      0.04426228702873731
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02887561274509804
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.018182044479723707,
+      0.008640969027572826
+     ],
+     "excludes_0_clear": false,
+     "point": -0.004059436274509803
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.011052993026183972,
+      0.03924714672509699
+     ],
+     "excludes_0_clear": true,
+     "point": 0.024816176470588237
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.020714365416929212,
+      0.04399529346329992
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03182444852941176
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.04771125087892588,
+      0.07652039303404093
+     ],
+     "excludes_0_clear": true,
+     "point": 0.06169577205882353
+    },
+    "n_M": {
+     "ci": [
+      0.34413343481062786,
+      0.6874638103050112
+     ],
+     "point": 0.5030266343825666
+    },
+    "n_U": {
+     "ci": [
+      0.7748079440065455,
+      1.2389632577201677
+     ],
+     "point": 0.9751815980629541
+    },
+    "n_battles": {
+     "prod": 386
+    },
+    "n_states": {
+     "prod": 544
+    },
+    "s_M": {
+     "ci": [
+      -0.3214838336749955,
+      0.12850000361890723
+     ],
+     "point": -0.06416464891041161
+    },
+    "s_U": {
+     "ci": [
+      0.19981624951295635,
+      0.5680469962493531
+     ],
+     "point": 0.3922518159806296
+    }
+   }
+  },
+  "prod|bots": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.009353378465671717,
+      0.04467107915690376
+     ],
+     "point": 0.02683080808080808
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.01781391231261023,
+       0.000318673560200191
+      ],
+      "point": -0.008333333333333333
+     },
+     "F+M": {
+      "ci": [
+       -0.020306765410830648,
+       0.00483488833382308
+      ],
+      "point": -0.007386363636363634
+     },
+     "F+U": {
+      "ci": [
+       -0.004417342000932837,
+       0.020528818649885584
+      ],
+      "point": 0.008017676767676767
+     },
+     "O": {
+      "ci": [
+       0.0028174573293172707,
+       0.034424065420560736
+      ],
+      "point": 0.018497474747474745
+     },
+     "O-M": {
+      "ci": [
+       -0.010105506509639331,
+       0.016632362097286968
+      ],
+      "point": 0.00284090909090909
+     },
+     "O-U": {
+      "ci": [
+       -0.014553024598393574,
+       0.008320947662601622
+      ],
+      "point": -0.003219696969696971
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.008893034825870644,
+      0.022029413626600075
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0060606060606060615
+    },
+    "R3_reveal_only": {
+     "boundary": true,
+     "ci": [
+      -0.0004488577362409151,
+      0.03192880459175261
+     ],
+     "excludes_0_clear": false,
+     "point": 0.015404040404040403
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.013112377509794512,
+      0.01502330137715894
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0009469696969696996
+    },
+    "dFU": {
+     "boundary": true,
+     "ci": [
+      0.0029037773569023555,
+      0.030971810089020772
+     ],
+     "excludes_0_clear": false,
+     "point": 0.016351010101010102
+    },
+    "dOM": {
+     "boundary": true,
+     "ci": [
+      0.002373462067056927,
+      0.028655864862746624
+     ],
+     "excludes_0_clear": false,
+     "point": 0.015656565656565653
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.0065973451896649835,
+      0.03809278754052461
+     ],
+     "excludes_0_clear": true,
+     "point": 0.021717171717171715
+    },
+    "n_M": {
+     "ci": [
+      0.11369802449965494,
+      1.2094166666666668
+     ],
+     "point": 0.5835294117647057
+    },
+    "n_U": {
+     "ci": [
+      0.40515238283307015,
+      1.518493356532742
+     ],
+     "point": 0.8094117647058823
+    },
+    "n_battles": {
+     "prod": 240
+    },
+    "n_states": {
+     "prod": 330
+    },
+    "s_M": {
+     "ci": [
+      -0.9442593949544645,
+      0.4893725575336517
+     ],
+     "point": 0.03529411764705892
+    },
+    "s_U": {
+     "ci": [
+      0.1585953898050975,
+      1.1868212197159562
+     ],
+     "point": 0.6094117647058824
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.04423134888619963,
+      0.07901415959126872
+     ],
+     "point": 0.061174242424242416
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.021160072433258483,
+       0.008629302379302378
+      ],
+      "point": -0.006123737373737373
+     },
+     "F+M": {
+      "ci": [
+       -0.011233024448540426,
+       0.020133780597618896
+      ],
+      "point": 0.00422979797979798
+     },
+     "F+U": {
+      "ci": [
+       0.009102107558139534,
+       0.0462040497283521
+      ],
+      "point": 0.027525252525252522
+     },
+     "O": {
+      "ci": [
+       0.03847376021855189,
+       0.07275945283162896
+      ],
+      "point": 0.055050505050505044
+     },
+     "O-M": {
+      "ci": [
+       0.01054291027747353,
+       0.041982047508214666
+      ],
+      "point": 0.02537878787878788
+     },
+     "O-U": {
+      "ci": [
+       -0.018640855397696696,
+       0.014271422354932397
+      ],
+      "point": -0.002335858585858587
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      0.009396398878326778,
+      0.046659957136237246
+     ],
+     "excludes_0_clear": true,
+     "point": 0.027714646464646466
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      0.005338836867875808,
+      0.041857755798728025
+     ],
+     "excludes_0_clear": true,
+     "point": 0.02329545454545454
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.00511838489432829,
+      0.026010961029105398
+     ],
+     "excludes_0_clear": false,
+     "point": 0.010353535353535354
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.01597874306613539,
+      0.05119823374692111
+     ],
+     "excludes_0_clear": true,
+     "point": 0.033648989898989894
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.014249044215691928,
+      0.043741606513345625
+     ],
+     "excludes_0_clear": true,
+     "point": 0.029671717171717165
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.040409777407502345,
+      0.07440546827908377
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05738636363636363
+    },
+    "n_M": {
+     "ci": [
+      0.2484209752655717,
+      0.707879065641632
+     ],
+     "point": 0.48503611971104227
+    },
+    "n_U": {
+     "ci": [
+      0.6967772733213904,
+      1.2663400335008377
+     ],
+     "point": 0.9380804953560372
+    },
+    "n_battles": {
+     "prod": 240
+    },
+    "n_states": {
+     "prod": 330
+    },
+    "s_M": {
+     "ci": [
+      -0.09860011312217186,
+      0.398225271652285
+     ],
+     "point": 0.16924664602683182
+    },
+    "s_U": {
+     "ci": [
+      0.3041050141586059,
+      0.7767807174778778
+     ],
+     "point": 0.5500515995872033
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.057595588235294114,
+      0.0905109939339161
+     ],
+     "point": 0.07430555555555554
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.018121254522840344,
+       0.013336295164448172
+      ],
+      "point": -0.002967171717171716
+     },
+     "F+M": {
+      "ci": [
+       -0.022070010572327155,
+       0.012550769828216365
+      ],
+      "point": -0.00404040404040404
+     },
+     "F+U": {
+      "ci": [
+       0.022225373724154753,
+       0.05830893393393394
+      ],
+      "point": 0.03939393939393939
+     },
+     "O": {
+      "ci": [
+       0.054241497830935285,
+       0.08913506770278347
+      ],
+      "point": 0.07133838383838383
+     },
+     "O-M": {
+      "ci": [
+       0.021188162977998953,
+       0.05884747942386831
+      ],
+      "point": 0.03939393939393939
+     },
+     "O-U": {
+      "ci": [
+       -0.011924202127659576,
+       0.02140279869477909
+      ],
+      "point": 0.004608585858585858
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      0.016839453600306895,
+      0.0546800767485752
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03478535353535354
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      0.025770079138771808,
+      0.062253501537298056
+     ],
+     "excludes_0_clear": true,
+     "point": 0.04343434343434343
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.018335348714678533,
+      0.016050784671695947
+     ],
+     "excludes_0_clear": false,
+     "point": -0.0010732323232323245
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      0.02526576131299818,
+      0.05937842346815096
+     ],
+     "excludes_0_clear": true,
+     "point": 0.042361111111111106
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.02009497549019607,
+      0.04448219397861716
+     ],
+     "excludes_0_clear": true,
+     "point": 0.031944444444444435
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.04948558842104588,
+      0.0851898006134969
+     ],
+     "excludes_0_clear": true,
+     "point": 0.06672979797979797
+    },
+    "n_M": {
+     "ci": [
+      0.27898066510118574,
+      0.5972243002605537
+     ],
+     "point": 0.4299065420560747
+    },
+    "n_U": {
+     "ci": [
+      0.6902093782533397,
+      1.1554413923254347
+     ],
+     "point": 0.8980458793542906
+    },
+    "n_battles": {
+     "prod": 240
+    },
+    "n_states": {
+     "prod": 330
+    },
+    "s_M": {
+     "ci": [
+      -0.28031284173142784,
+      0.19626654259718762
+     ],
+     "point": -0.014443500424808856
+    },
+    "s_U": {
+     "ci": [
+      0.389101876448217,
+      0.7372135894976946
+     ],
+     "point": 0.5700934579439253
+    }
+   }
+  },
+  "prod|snapshots": {
+   "LEAF-K1": {
+    "G": {
+     "ci": [
+      0.015198664639780623,
+      0.05482522353589286
+     ],
+     "point": 0.03407320872274143
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.007889553475111728,
+       0.014785326351384223
+      ],
+      "point": 0.0027258566978193145
+     },
+     "F+M": {
+      "ci": [
+       -0.016226232508731307,
+       0.027028005264034986
+      ],
+      "point": 0.003309968847352023
+     },
+     "F+U": {
+      "ci": [
+       -0.00917204232171338,
+       0.021431491343086737
+      ],
+      "point": 0.005354361370716509
+     },
+     "O": {
+      "ci": [
+       0.015983375047797826,
+       0.06113583633584449
+      ],
+      "point": 0.036799065420560745
+     },
+     "O-M": {
+      "ci": [
+       -0.020162697309179512,
+       0.016215164743703308
+      ],
+      "point": -0.0011682242990654216
+     },
+     "O-U": {
+      "ci": [
+       -0.009985704505649111,
+       0.03740454516504712
+      ],
+      "point": 0.012071651090342677
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.04341167934163635,
+      0.012721027159436833
+     ],
+     "excludes_0_clear": false,
+     "point": -0.013239875389408098
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.017888273995299197,
+      0.02141131830643438
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0020443925233644858
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.017244816586921854,
+      0.018851461038961025
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0005841121495327086
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.012031412646315305,
+      0.01723678243704651
+     ],
+     "excludes_0_clear": false,
+     "point": 0.0026285046728971944
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.01638276193365696,
+      0.06393365138671626
+     ],
+     "excludes_0_clear": true,
+     "point": 0.037967289719626166
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.006516134759482295,
+      0.042658146235103105
+     ],
+     "excludes_0_clear": true,
+     "point": 0.024727414330218068
+    },
+    "n_M": {
+     "ci": [
+      0.5463750266094943,
+      2.23336319218241
+     ],
+     "point": 1.1142857142857143
+    },
+    "n_U": {
+     "ci": [
+      0.24056883392359976,
+      1.4629789272030655
+     ],
+     "point": 0.7257142857142858
+    },
+    "n_battles": {
+     "prod": 146
+    },
+    "n_states": {
+     "prod": 214
+    },
+    "s_M": {
+     "ci": [
+      -0.8529851684263451,
+      0.47677613084589804
+     ],
+     "point": 0.017142857142857095
+    },
+    "s_U": {
+     "ci": [
+      -0.49384650125610424,
+      0.5283800539083554
+     ],
+     "point": 0.0771428571428571
+    }
+   },
+   "LEAF-K4": {
+    "G": {
+     "ci": [
+      0.03703332059123343,
+      0.08497540509259258
+     ],
+     "point": 0.059579439252336455
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.021695597025298864,
+       0.025928933284307638
+      ],
+      "point": 0.0008761682242990636
+     },
+     "F+M": {
+      "ci": [
+       -0.00932888909112972,
+       0.04097466582273046
+      ],
+      "point": 0.014602803738317753
+     },
+     "F+U": {
+      "ci": [
+       -0.013499682993796112,
+       0.038112274987779735
+      ],
+      "point": 0.010708722741433018
+     },
+     "O": {
+      "ci": [
+       0.034262814479337385,
+       0.08970734928276039
+      ],
+      "point": 0.06045560747663552
+     },
+     "O-M": {
+      "ci": [
+       -0.007777397753456221,
+       0.04293863877710708
+      ],
+      "point": 0.01606308411214953
+     },
+     "O-U": {
+      "ci": [
+       -0.02396767790035156,
+       0.028788227901131124
+      ],
+      "point": 0.0010708722741433003
+     }
+    },
+    "R3_hide_only": {
+     "boundary": false,
+     "ci": [
+      -0.009330774365821096,
+      0.04074038822596795
+     ],
+     "excludes_0_clear": false,
+     "point": 0.014992211838006232
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.026994063090493528,
+      0.021037809513057865
+     ],
+     "excludes_0_clear": false,
+     "point": -0.0038940809968847356
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.006251031353135311,
+      0.03519025875190256
+     ],
+     "excludes_0_clear": false,
+     "point": 0.01372663551401869
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.01066706307258633,
+      0.03066728980935153
+     ],
+     "excludes_0_clear": false,
+     "point": 0.009832554517133954
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.021522601829586215,
+      0.06770833333333334
+     ],
+     "excludes_0_clear": true,
+     "point": 0.044392523364485986
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.03714403004811176,
+      0.08313930582123291
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05938473520249222
+    },
+    "n_M": {
+     "ci": [
+      0.3979214220497602,
+      1.2235817118434367
+     ],
+     "point": 0.7450980392156863
+    },
+    "n_U": {
+     "ci": [
+      0.6754950223530962,
+      1.4499409689318412
+     ],
+     "point": 0.9967320261437909
+    },
+    "n_battles": {
+     "prod": 146
+    },
+    "n_states": {
+     "prod": 214
+    },
+    "s_M": {
+     "ci": [
+      -0.1399806266846363,
+      0.5180283077853445
+     ],
+     "point": 0.23039215686274503
+    },
+    "s_U": {
+     "ci": [
+      -0.22057928305370322,
+      0.4949481341635199
+     ],
+     "point": 0.16503267973856203
+    }
+   },
+   "LEAF-K8": {
+    "G": {
+     "ci": [
+      0.021914181301119082,
+      0.07049990925446621
+     ],
+     "point": 0.046242211838006225
+    },
+    "IMP": {
+     "F": {
+      "ci": [
+       -0.0018636961996337047,
+       0.049027277195281764
+      ],
+      "point": 0.021709501557632394
+     },
+     "F+M": {
+      "ci": [
+       -0.011158329048555845,
+       0.03921047966995827
+      ],
+      "point": 0.013045171339563861
+     },
+     "F+U": {
+      "ci": [
+       -0.007973736487359492,
+       0.05088561211395783
+      ],
+      "point": 0.019470404984423675
+     },
+     "O": {
+      "ci": [
+       0.0390356100474851,
+       0.09951866077379071
+      ],
+      "point": 0.06795171339563862
+     },
+     "O-M": {
+      "ci": [
+       0.010508164414414415,
+       0.06436545675924703
+      ],
+      "point": 0.036312305295950156
+     },
+     "O-U": {
+      "ci": [
+       -0.012250652723944877,
+       0.041576388888888864
+      ],
+      "point": 0.014018691588785047
+     }
+    },
+    "R3_hide_only": {
+     "boundary": true,
+     "ci": [
+      -0.0026831355010500956,
+      0.046193357037650734
+     ],
+     "excludes_0_clear": false,
+     "point": 0.022293613707165108
+    },
+    "R3_reveal_only": {
+     "boundary": false,
+     "ci": [
+      -0.02053841991341992,
+      0.03354958312670464
+     ],
+     "excludes_0_clear": false,
+     "point": 0.006425233644859814
+    },
+    "dFM": {
+     "boundary": false,
+     "ci": [
+      -0.02963235916685482,
+      0.010671456411945527
+     ],
+     "excludes_0_clear": false,
+     "point": -0.008664330218068533
+    },
+    "dFU": {
+     "boundary": false,
+     "ci": [
+      -0.02418439385924839,
+      0.02027228592485942
+     ],
+     "excludes_0_clear": false,
+     "point": -0.0022390965732087195
+    },
+    "dOM": {
+     "boundary": false,
+     "ci": [
+      0.009891932584389536,
+      0.05511682863704921
+     ],
+     "excludes_0_clear": true,
+     "point": 0.03163940809968846
+    },
+    "dOU": {
+     "boundary": false,
+     "ci": [
+      0.030012579634879154,
+      0.07848503236245949
+     ],
+     "excludes_0_clear": true,
+     "point": 0.05393302180685357
+    },
+    "n_M": {
+     "ci": [
+      0.2825261904761904,
+      1.2811820334321078
+     ],
+     "point": 0.6842105263157893
+    },
+    "n_U": {
+     "ci": [
+      0.7379058344151949,
+      2.072300440449929
+     ],
+     "point": 1.166315789473684
+    },
+    "n_battles": {
+     "prod": 146
+    },
+    "n_states": {
+     "prod": 214
+    },
+    "s_M": {
+     "ci": [
+      -1.0614085749348057,
+      0.1837297479747966
+     ],
+     "point": -0.18736842105263155
+    },
+    "s_U": {
+     "ci": [
+      -0.7559843996840441,
+      0.37813688576710663
+     ],
+     "point": -0.048421052631578886
+    }
+   }
+  }
+ },
+ "rows_present": {
+  "end2": {
+   "F": 600,
+   "F+M": 600,
+   "F+U": 600,
+   "O": 600,
+   "O-M": 600,
+   "O-U": 600
+  },
+  "prod": {
+   "F": 600,
+   "F+M": 600,
+   "F+U": 600,
+   "O": 600,
+   "O-M": 600,
+   "O-U": 600
+  }
+ },
+ "schema": "hiu_result_v1"
+}
