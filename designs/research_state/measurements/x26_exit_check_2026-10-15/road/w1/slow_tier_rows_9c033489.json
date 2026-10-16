@@ -1,0 +1,42 @@
+{
+ "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda": {
+  "status": "pass",
+  "commit": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+  "at": "2026-10-16T07:25:56Z",
+  "duration_s": 229.4,
+  "contention": 1.0,
+  "detail": ""
+ },
+ "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_under_the_bf16_rule_on_cuda_passes_names_a_NaN_and_has_its_measured_resolution": {
+  "status": "pass",
+  "commit": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+  "at": "2026-10-16T07:25:56Z",
+  "duration_s": 250.62,
+  "contention": 1.0,
+  "detail": ""
+ },
+ "src/agents/model/compile_regions_trained_cuda_test.py::test_the_production_baselines_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": {
+  "status": "pass",
+  "commit": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+  "at": "2026-10-16T07:25:56Z",
+  "duration_s": 75.32,
+  "contention": 1.0,
+  "detail": ""
+ },
+ "src/agents/model/compile_regions_trained_cuda_test.py::test_the_production_baselines_trained_weights_pass_the_R1_gate_under_the_bf16_rule_on_cuda": {
+  "status": "pass",
+  "commit": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+  "at": "2026-10-16T07:25:56Z",
+  "duration_s": 82.87,
+  "contention": 1.0,
+  "detail": ""
+ },
+ "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cuda": {
+  "status": "pass",
+  "commit": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+  "at": "2026-10-16T07:29:16Z",
+  "duration_s": 183.48,
+  "contention": 1.02,
+  "detail": ""
+ }
+}

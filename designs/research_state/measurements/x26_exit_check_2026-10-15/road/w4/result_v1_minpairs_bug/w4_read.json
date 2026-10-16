@@ -1,0 +1,157 @@
+{
+ "e7": {
+  "rows": [
+   "rb_xs_s2701@5M",
+   "rb_xs_s2702@5M"
+  ],
+  "cols": [
+   "rb_bf_eb_s2001@5M",
+   "rb_bf_eb_s2002@5M",
+   "rb_bf_eb_s2003@5M",
+   "rb_bf_eb_s2004@5M",
+   "rb_bf_eb_s2005@5M",
+   "rb_bf_eb_s2006@5M",
+   "rb_bf_eb_s2007@5M",
+   "rb_bf_eb_s2008@5M"
+  ],
+  "inconclusive": [
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2001@5020011: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2002@5018209: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2003@5020443: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2004@5020355: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2005@5000146: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2006@5000154: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2007@5000068: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2008@5000214: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2001@5020011: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2002@5018209: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2003@5020443: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2004@5020355: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2005@5000146: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2006@5000154: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2007@5000068: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2008@5000214: 500 completed pairs < 1000"
+  ]
+ },
+ "rt1": {
+  "rows": [
+   "rb_toy_ent_s4001@15M",
+   "rb_toy_ent_s4002@15M",
+   "rb_toy_ent_s4003@15M"
+  ],
+  "cols": [
+   "rb_bf_eb_s2001@15M",
+   "rb_bf_eb_s2002@15M",
+   "rb_bf_eb_s2003@15M",
+   "rb_bf_eb_s2004@15M",
+   "rb_bf_eb_s2005@15M",
+   "rb_bf_eb_s2006@15M",
+   "rb_bf_eb_s2007@15M",
+   "rb_bf_eb_s2008@15M"
+  ],
+  "inconclusive": [
+   "cell rb_toy_ent_s4001@15000067 vs rb_bf_eb_s2001@15055235: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@15000067 vs rb_bf_eb_s2002@15052428: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@15000067 vs rb_bf_eb_s2003@15053549: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@15000067 vs rb_bf_eb_s2004@15053221: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@15000067 vs rb_bf_eb_s2005@15046852: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@15000067 vs rb_bf_eb_s2006@15046768: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@15000067 vs rb_bf_eb_s2007@15047934: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@15000067 vs rb_bf_eb_s2008@15047320: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@15000120 vs rb_bf_eb_s2001@15055235: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@15000120 vs rb_bf_eb_s2002@15052428: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@15000120 vs rb_bf_eb_s2003@15053549: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@15000120 vs rb_bf_eb_s2004@15053221: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@15000120 vs rb_bf_eb_s2005@15046852: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@15000120 vs rb_bf_eb_s2006@15046768: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@15000120 vs rb_bf_eb_s2007@15047934: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@15000120 vs rb_bf_eb_s2008@15047320: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@15000103 vs rb_bf_eb_s2001@15055235: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@15000103 vs rb_bf_eb_s2002@15052428: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@15000103 vs rb_bf_eb_s2003@15053549: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@15000103 vs rb_bf_eb_s2004@15053221: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@15000103 vs rb_bf_eb_s2005@15046852: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@15000103 vs rb_bf_eb_s2006@15046768: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@15000103 vs rb_bf_eb_s2007@15047934: 500 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@15000103 vs rb_bf_eb_s2008@15047320: 500 completed pairs < 1000"
+  ]
+ },
+ "rt1b": {
+  "rows": [
+   "rb_toy_ent_s4001@5M",
+   "rb_toy_ent_s4002@5M",
+   "rb_toy_ent_s4003@5M"
+  ],
+  "cols": [
+   "rb_bf_eb_s2001@5M",
+   "rb_bf_eb_s2002@5M",
+   "rb_bf_eb_s2003@5M",
+   "rb_bf_eb_s2004@5M",
+   "rb_bf_eb_s2005@5M",
+   "rb_bf_eb_s2006@5M",
+   "rb_bf_eb_s2007@5M",
+   "rb_bf_eb_s2008@5M"
+  ],
+  "inconclusive": [
+   "cell rb_toy_ent_s4001@5000045 vs rb_bf_eb_s2001@5020011: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@5000045 vs rb_bf_eb_s2002@5018209: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@5000045 vs rb_bf_eb_s2003@5020443: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@5000045 vs rb_bf_eb_s2004@5020355: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@5000045 vs rb_bf_eb_s2005@5000146: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@5000045 vs rb_bf_eb_s2006@5000154: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@5000045 vs rb_bf_eb_s2007@5000068: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4001@5000045 vs rb_bf_eb_s2008@5000214: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@5000192 vs rb_bf_eb_s2001@5020011: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@5000192 vs rb_bf_eb_s2002@5018209: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@5000192 vs rb_bf_eb_s2003@5020443: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@5000192 vs rb_bf_eb_s2004@5020355: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@5000192 vs rb_bf_eb_s2005@5000146: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@5000192 vs rb_bf_eb_s2006@5000154: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@5000192 vs rb_bf_eb_s2007@5000068: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4002@5000192 vs rb_bf_eb_s2008@5000214: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@5000192 vs rb_bf_eb_s2001@5020011: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@5000192 vs rb_bf_eb_s2002@5018209: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@5000192 vs rb_bf_eb_s2003@5020443: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@5000192 vs rb_bf_eb_s2004@5020355: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@5000192 vs rb_bf_eb_s2005@5000146: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@5000192 vs rb_bf_eb_s2006@5000154: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@5000192 vs rb_bf_eb_s2007@5000068: 250 completed pairs < 1000",
+   "cell rb_toy_ent_s4003@5000192 vs rb_bf_eb_s2008@5000214: 250 completed pairs < 1000"
+  ]
+ },
+ "e7_verdict": {
+  "outcome": "INCONCLUSIVE",
+  "reasons": [
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2001@5020011: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2002@5018209: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2003@5020443: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2004@5020355: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2005@5000146: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2006@5000154: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2007@5000068: 500 completed pairs < 1000",
+   "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2008@5000214: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2001@5020011: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2002@5018209: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2003@5020443: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2004@5020355: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2005@5000146: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2006@5000154: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2007@5000068: 500 completed pairs < 1000",
+   "cell rb_xs_s2702@5019528 vs rb_bf_eb_s2008@5000214: 500 completed pairs < 1000"
+  ]
+ },
+ "run_gates": {
+  "rb_xs_s2701": {
+   "reached_5M": true,
+   "crash": false,
+   "nan": false,
+   "k9b_real_stop": false
+  },
+  "rb_xs_s2702": {
+   "reached_5M": true,
+   "crash": false,
+   "nan": false,
+   "k9b_real_stop": false
+  }
+ }
+}

@@ -1,0 +1,31 @@
+[2026-10-15T15:25:19-07:00] X26 CHAIN armed (pid 3366123): waits for pin.txt + w1_cmds.sh + s4003's END
+[2026-10-15T15:49:27-07:00] X26 CHAIN armed v2 (pid 3395142): s4003's END -> W0b rb_toy_ent_s4001b (s4001 continued to the 100M cap) -> waits for pin.txt + w1_cmds.sh -> W1 ...
+[2026-10-15T16:51:32-07:00] X26 CHAIN armed v3 (pid 3443695): s4003's END -> W0b rb_toy_ent_s4001b (s4001 continued to the 100M cap) -> waits for pin.txt + w1_cmds.sh -> W1 ...
+[2026-10-15T20:33:04-07:00] START rb_toy_ent_s4001b pin=3899277ad0d2e622d9768ba13dd51ec74cd28fc3 (fork of rb_toy_ent_s4001 @ checkpoint_72000094; + --supply-starve-cycles self_play_pool=0)
+[2026-10-15T22:08:21-07:00] END rb_toy_ent_s4001b launcher_rc=0
+[2026-10-15T22:08:21-07:00] waiting for pin.txt + w1_cmds.sh
+[2026-10-15T22:08:21-07:00] W1: CUDA checks at 71351ff5 (w1_cmds.sh)
+[2026-10-15T22:22:40-07:00] W1 rc=0 (w1.log)
+[2026-10-15T22:22:44-07:00] START rb_xs_s2701 pin=71351ff5a3596a6dea6bda4f6ff57c17872b13b6 (main HEAD 71351ff5)
+[2026-10-15T22:42:12-07:00] END rb_xs_s2701 launcher_rc=3
+[2026-10-15T22:42:12-07:00] HOLD: rb_xs_s2701 ended rc=3
+[2026-10-16T00:14:58-07:00] X26 CHAIN armed v4 (pid 4044363): P_X26 9c033489 (the memfix) -> checkout + selfcheck build -> W1 -> W2/W3 -> W4 -> E10 -> READY/GO -> W5
+[2026-10-16T00:15:09-07:00] building the selfcheck Rust binaries in /home/goodlad/.cache/gen3ai/x26/pin_9c033489 (no run is live: full machine)
+[2026-10-16T00:15:16-07:00] W1: CUDA checks at 9c033489 (w1_cmds.sh)
+[2026-10-16T00:29:26-07:00] W1 rc=0 (w1.log)
+[2026-10-16T00:29:30-07:00] START rb_xs_s2701 pin=9c0334890d05785bbfadcb2ecbe3fe2d548efe9b (main HEAD 9c033489)
+[2026-10-16T01:36:18-07:00] END rb_xs_s2701 launcher_rc=0
+[2026-10-16T01:36:18-07:00] E6: {"tables": 30, "used": 21, "train_s_median": 42.0, "fps_median": 1853.0, "train_rel": -0.0016638935108153063, "fps_rel": 0.13611281422440213, "verdict": "OUTSIDE"}
+[2026-10-16T01:36:22-07:00] T37(b) resume of rb_xs_s2701 with --canary-shift-max 0.25: checkargs rc=0, dry-run rc=0 (1 'would launch')
+[2026-10-16T01:36:27-07:00] START rb_xs_s2702 pin=9c0334890d05785bbfadcb2ecbe3fe2d548efe9b (main HEAD 9c033489)
+[2026-10-16T01:37:24-07:00] E6: {"verdict": "WITHIN", "basis": "like-for-like updates 10-50 (steps 1.09-5.02M, launcher_child.full.log) vs rb_bf_eb_s2001 / s2005", "rb_xs_s2701": {"train_s": 42.00, "fps": 1882}, "rb_bf_eb_s2001": {"train_s": 42.10, "fps": 1865}, "rb_bf_eb_s2005": {"train_s": 42.10, "fps": 1841}, "train_rel": -0.002, "fps_rel": [0.009, 0.022], "ruling": "orchestrator 10-16 ~01:40: PASS on the like-for-like read (E6 = a cost-regression check; the registered 1,631 fps is EB's late-window figure); the 01:36:18 line stays"}
+[2026-10-16T02:28:05-07:00] END rb_xs_s2702 launcher_rc=0
+[2026-10-16T02:29:03-07:00] W4 plan: {"e7": 16, "rt1": 24, "rt1b": 24} (every reference loaded at 9c033489)
+[2026-10-16T02:41:29-07:00] W4 played e7
+[2026-10-16T02:55:34-07:00] W4 played rt1
+[2026-10-16T03:07:29-07:00] W4 played rt1b
+[2026-10-16T03:07:29-07:00] W4 READ — E7: {"outcome": "INCONCLUSIVE", "reasons": ["cell rb_xs_s2701@5019432 vs rb_bf_eb_s2001@5020011: 500 completed pairs < 1000", "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2002@5018209: 500 completed pairs < 1000", "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2003@5020443: 500 completed pairs < 1000", "cell rb_xs_s2701@5019432 vs rb_bf_eb_s2004@5020355: 500 completed pairs < 1000", "cell rb_xs_s2701@5019432 vs rb_
+[2026-10-16T03:07:34-07:00] E10: checkargs rc=0, dry-run rc=0 (1 'would launch')
+[2026-10-16T03:07:34-07:00] HOLD: X26 NOT READY — E7=INCONCLUSIVE E6=WITHIN E10 checkargs=0 dry-run=0
+[2026-10-16T03:08:29-07:00] X26 READY (corrected W4 read: E7 PASS; E6 WITHIN; E10 OK) — w5_launch.sh (pid 209095) waits for /home/goodlad/.claude/jobs/x26/GO
+[2026-10-16T03:08:59-07:00] START rb_x26_s2601 pin=9c0334890d05785bbfadcb2ecbe3fe2d548efe9b (main HEAD 9c033489) — data/ FROZEN from now

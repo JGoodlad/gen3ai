@@ -1,0 +1,152 @@
+{
+ "refs": {
+  "rb_bf_eb_s2001@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2001/final_model_stage1_5M.zip",
+   "sha256": "b78f79b003e8a836bb249ef7d27405884c7a0c73cb4ff382b8e6188665850625"
+  },
+  "rb_bf_eb_s2001@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2001/final_model.zip",
+   "sha256": "172bd265e8812c4586659d581c604c4122c6e826469c7a0e9614caffda456694"
+  },
+  "rb_bf_eb_s2002@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2002/final_model_stage1_5M.zip",
+   "sha256": "812aa9de5c1e30cb16b87903785b41a4e80cb88c461a3753668cc844b979b30e"
+  },
+  "rb_bf_eb_s2002@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2002/final_model.zip",
+   "sha256": "b0bc8d21dc891e8ddc8f75f5e9af2da7332c04fcf9ad190d1e212a823947964d"
+  },
+  "rb_bf_eb_s2003@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2003/final_model_stage1_5M.zip",
+   "sha256": "873a6910641937052965a6e762c0eb2ebe1f6e3e828ffff6ca5d8b4cbbf2582e"
+  },
+  "rb_bf_eb_s2003@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2003/final_model.zip",
+   "sha256": "8c3c3830d5fe79d504a6a3a735ede0f8016eeb098906a92d6449c0a05a9a05c0"
+  },
+  "rb_bf_eb_s2004@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2004/final_model_stage1_5M.zip",
+   "sha256": "4ef9729e07180022b2fbf0c79be46a90abb8c7765ee7ed2adc55ec8df966d45b"
+  },
+  "rb_bf_eb_s2004@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2004/final_model.zip",
+   "sha256": "00f0f396e9ed8a508d04de2579a85a3fbbaed28c6981a3bbf46430c627bdf29b"
+  },
+  "rb_bf_eb_s2005@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2005/checkpoints/checkpoint_5000146_steps.zip",
+   "sha256": "3d8d3cbeba2581225d2fc5d14e8173014a8daa2dfc79823dce94a3aeebcf0cbe"
+  },
+  "rb_bf_eb_s2005@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2005/final_model.zip",
+   "sha256": "ad66a5a6d54dc0eeee703eaf28966b64d25e548755362cc8f4862d2c025ce690"
+  },
+  "rb_bf_eb_s2006@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2006/checkpoints/checkpoint_5000154_steps.zip",
+   "sha256": "9c426a4f45d7e1324d4830f6103aabb4073d73bb3eebaa2cda82424089ed41a0"
+  },
+  "rb_bf_eb_s2006@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2006/final_model.zip",
+   "sha256": "f405d5f1fac42eb7887d295dccbd7288b15db740a49900cb16450d6dd7ccdb99"
+  },
+  "rb_bf_eb_s2007@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2007/checkpoints/checkpoint_5000068_steps.zip",
+   "sha256": "364cf40db67327bd6ae3622a411195587b9a755b5b0b402acadbdce9f56e2107"
+  },
+  "rb_bf_eb_s2007@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2007/final_model.zip",
+   "sha256": "9baa31505ece0383de13b425420be7117371f830c18ce26f07d89d0ca909e4bd"
+  },
+  "rb_bf_eb_s2008@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2008/checkpoints/checkpoint_5000214_steps.zip",
+   "sha256": "c69e7c1a12346e26e692ced969e60d2994a8d23be37f345c70f3bcd52ed7cb26"
+  },
+  "rb_bf_eb_s2008@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2008/final_model.zip",
+   "sha256": "bbc78d510dc4bd657cbfed6160f3c0ef872771130082d7175959462ddbb6b480"
+  },
+  "rb_xs_s2701@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_xs_s2701/final_model.zip",
+   "sha256": "9b8453235714ec4936abb4ce920cb268bbb35ff257b4bd760aa5d66b2eb536d4"
+  },
+  "rb_xs_s2702@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_xs_s2702/final_model.zip",
+   "sha256": "370efbfe71e25ba98b7c6c86c4d1a433611c39c2ffb9a9ad5189d38e743efbf8"
+  },
+  "rb_toy_ent_s4001@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001/checkpoints/checkpoint_15000067_steps.zip",
+   "sha256": "1b802e6be59b3cdc3628f00c94ac93057e5bc4fe1fbb28b2ece202ee26716fcd"
+  },
+  "rb_toy_ent_s4001@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001/checkpoints/checkpoint_5000045_steps.zip",
+   "sha256": "047bb2cb2ab11ec1fa5abe3ae95eb969a9d973a2bb9b0d8bafc004c3bd269add"
+  },
+  "rb_toy_ent_s4002@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002/checkpoints/checkpoint_15000120_steps.zip",
+   "sha256": "729ee51673f5a997a44334d7f58a6fed42a16d0bf1a9b19d34bcf65d2981ced7"
+  },
+  "rb_toy_ent_s4002@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002/checkpoints/checkpoint_5000192_steps.zip",
+   "sha256": "b2574acf3a8d199f45d5467c27e01e69eced5480bfb5526c3278bed1440308e1"
+  },
+  "rb_toy_ent_s4003@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4003/checkpoints/checkpoint_15000103_steps.zip",
+   "sha256": "a359f93f458462c74bfded592b07bfa7e8ca8baf51f937d985a6f63fd354c4f2"
+  },
+  "rb_toy_ent_s4003@5M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4003/checkpoints/checkpoint_5000192_steps.zip",
+   "sha256": "c8a91a9335b59a759c227f0b8a8496fc38aa59f4ff4dc05c9531e2b55c267a58"
+  }
+ },
+ "crosses": {
+  "e7": {
+   "rows": [
+    "rb_xs_s2701@5M",
+    "rb_xs_s2702@5M"
+   ],
+   "cols": [
+    "rb_bf_eb_s2001@5M",
+    "rb_bf_eb_s2002@5M",
+    "rb_bf_eb_s2003@5M",
+    "rb_bf_eb_s2004@5M",
+    "rb_bf_eb_s2005@5M",
+    "rb_bf_eb_s2006@5M",
+    "rb_bf_eb_s2007@5M",
+    "rb_bf_eb_s2008@5M"
+   ]
+  },
+  "rt1": {
+   "rows": [
+    "rb_toy_ent_s4001@15M",
+    "rb_toy_ent_s4002@15M",
+    "rb_toy_ent_s4003@15M"
+   ],
+   "cols": [
+    "rb_bf_eb_s2001@15M",
+    "rb_bf_eb_s2002@15M",
+    "rb_bf_eb_s2003@15M",
+    "rb_bf_eb_s2004@15M",
+    "rb_bf_eb_s2005@15M",
+    "rb_bf_eb_s2006@15M",
+    "rb_bf_eb_s2007@15M",
+    "rb_bf_eb_s2008@15M"
+   ]
+  },
+  "rt1b": {
+   "rows": [
+    "rb_toy_ent_s4001@5M",
+    "rb_toy_ent_s4002@5M",
+    "rb_toy_ent_s4003@5M"
+   ],
+   "cols": [
+    "rb_bf_eb_s2001@5M",
+    "rb_bf_eb_s2002@5M",
+    "rb_bf_eb_s2003@5M",
+    "rb_bf_eb_s2004@5M",
+    "rb_bf_eb_s2005@5M",
+    "rb_bf_eb_s2006@5M",
+    "rb_bf_eb_s2007@5M",
+    "rb_bf_eb_s2008@5M"
+   ]
+  }
+ }
+}

@@ -1,0 +1,290 @@
+[
+ {
+  "player": "rb_xs_s2701@5019432",
+  "opponent": "rb_bf_eb_s2001@5020011",
+  "n_pairs": 500,
+  "w": 451,
+  "l": 546,
+  "d": 3,
+  "aborted": 0,
+  "pairs": [
+   138,
+   0,
+   270,
+   3,
+   89
+  ],
+  "score_pp": 45.25,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2701@5019432",
+  "opponent": "rb_bf_eb_s2002@5018209",
+  "n_pairs": 500,
+  "w": 471,
+  "l": 525,
+  "d": 4,
+  "aborted": 0,
+  "pairs": [
+   130,
+   1,
+   264,
+   3,
+   102
+  ],
+  "score_pp": 47.3,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2701@5019432",
+  "opponent": "rb_bf_eb_s2003@5020443",
+  "n_pairs": 500,
+  "w": 515,
+  "l": 485,
+  "d": 0,
+  "aborted": 0,
+  "pairs": [
+   98,
+   0,
+   289,
+   0,
+   113
+  ],
+  "score_pp": 51.5,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2701@5019432",
+  "opponent": "rb_bf_eb_s2004@5020355",
+  "n_pairs": 500,
+  "w": 465,
+  "l": 532,
+  "d": 3,
+  "aborted": 0,
+  "pairs": [
+   115,
+   2,
+   300,
+   1,
+   82
+  ],
+  "score_pp": 46.650000000000006,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2701@5019432",
+  "opponent": "rb_bf_eb_s2005@5000146",
+  "n_pairs": 500,
+  "w": 532,
+  "l": 464,
+  "d": 4,
+  "aborted": 0,
+  "pairs": [
+   93,
+   1,
+   277,
+   3,
+   126
+  ],
+  "score_pp": 53.400000000000006,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2701@5019432",
+  "opponent": "rb_bf_eb_s2006@5000154",
+  "n_pairs": 500,
+  "w": 520,
+  "l": 477,
+  "d": 3,
+  "aborted": 0,
+  "pairs": [
+   105,
+   1,
+   266,
+   2,
+   126
+  ],
+  "score_pp": 52.15,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2701@5019432",
+  "opponent": "rb_bf_eb_s2007@5000068",
+  "n_pairs": 500,
+  "w": 558,
+  "l": 439,
+  "d": 3,
+  "aborted": 0,
+  "pairs": [
+   83,
+   1,
+   272,
+   2,
+   142
+  ],
+  "score_pp": 55.95,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2701@5019432",
+  "opponent": "rb_bf_eb_s2008@5000214",
+  "n_pairs": 500,
+  "w": 449,
+  "l": 544,
+  "d": 7,
+  "aborted": 0,
+  "pairs": [
+   139,
+   3,
+   263,
+   4,
+   91
+  ],
+  "score_pp": 45.25,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2702@5019528",
+  "opponent": "rb_bf_eb_s2001@5020011",
+  "n_pairs": 500,
+  "w": 459,
+  "l": 540,
+  "d": 1,
+  "aborted": 0,
+  "pairs": [
+   137,
+   0,
+   266,
+   1,
+   96
+  ],
+  "score_pp": 45.95,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2702@5019528",
+  "opponent": "rb_bf_eb_s2002@5018209",
+  "n_pairs": 500,
+  "w": 502,
+  "l": 495,
+  "d": 3,
+  "aborted": 0,
+  "pairs": [
+   105,
+   2,
+   283,
+   1,
+   109
+  ],
+  "score_pp": 50.349999999999994,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2702@5019528",
+  "opponent": "rb_bf_eb_s2003@5020443",
+  "n_pairs": 500,
+  "w": 497,
+  "l": 500,
+  "d": 3,
+  "aborted": 0,
+  "pairs": [
+   116,
+   3,
+   265,
+   0,
+   116
+  ],
+  "score_pp": 49.85,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2702@5019528",
+  "opponent": "rb_bf_eb_s2004@5020355",
+  "n_pairs": 500,
+  "w": 449,
+  "l": 548,
+  "d": 3,
+  "aborted": 0,
+  "pairs": [
+   140,
+   1,
+   267,
+   2,
+   90
+  ],
+  "score_pp": 45.050000000000004,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2702@5019528",
+  "opponent": "rb_bf_eb_s2005@5000146",
+  "n_pairs": 500,
+  "w": 510,
+  "l": 485,
+  "d": 5,
+  "aborted": 0,
+  "pairs": [
+   93,
+   2,
+   297,
+   3,
+   105
+  ],
+  "score_pp": 51.24999999999999,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2702@5019528",
+  "opponent": "rb_bf_eb_s2006@5000154",
+  "n_pairs": 500,
+  "w": 517,
+  "l": 483,
+  "d": 0,
+  "aborted": 0,
+  "pairs": [
+   94,
+   0,
+   295,
+   0,
+   111
+  ],
+  "score_pp": 51.7,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2702@5019528",
+  "opponent": "rb_bf_eb_s2007@5000068",
+  "n_pairs": 500,
+  "w": 547,
+  "l": 451,
+  "d": 2,
+  "aborted": 0,
+  "pairs": [
+   93,
+   1,
+   264,
+   1,
+   141
+  ],
+  "score_pp": 54.800000000000004,
+  "verdict": "OK"
+ },
+ {
+  "player": "rb_xs_s2702@5019528",
+  "opponent": "rb_bf_eb_s2008@5000214",
+  "n_pairs": 500,
+  "w": 464,
+  "l": 532,
+  "d": 4,
+  "aborted": 0,
+  "pairs": [
+   129,
+   2,
+   272,
+   2,
+   95
+  ],
+  "score_pp": 46.6,
+  "verdict": "OK"
+ }
+]
