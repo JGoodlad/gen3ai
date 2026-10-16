@@ -145,6 +145,16 @@ no pointer is not a measurement.
     ≈ 2.4–2.6 pp worse (descriptive). Hidden information is a SEARCH lever (G +0.07 per decision), not a policy lever, at this
     maturity. [NULL · PROVISIONAL (+3M, one 15M parent, no placebo) · §4.5; ledger 2026-10-15 MEASUREMENT (MAJOR) *THE
     KNOCK-IN FORKS*]
+22. **At production's 15M budget, a toy with only entity tokens and attention, trained for the SAME GPU wall clock,
+    is STRONGER than production.**
+    - The toy is T-ENT: 1.42M parameters, ≈ 3.3× production's steps per second. At the wall clock production needs for
+      15M steps, it reaches ≈ 46–48M steps.
+    - Against the 8 EB 15M finals it scores **+6.5 pp, 90 % [+4.5, +8.4]**. At matched steps the same toy is
+      −14.1 pp (15M) and −25.5 pp (5M). At its 100M cap it scores +10.2 pp against EB 15M.
+    - This holds at ONE budget. Whether production's machinery wins at larger budgets, or raises the ceiling, is
+      R-T2's question (toy cap vs X26 plateau) and is UNREAD.
+    - [MEASURED · DESCRIPTIVE (seeds-as-units interval, not T40) · ledger 2026-10-16 MEASUREMENT *THE T-ENT TOY AT
+      EQUAL COMPUTE BEATS production at 15M*; `design_x26_readiness.md` §3.5]
 
 ---
 

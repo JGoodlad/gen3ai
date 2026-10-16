@@ -26177,3 +26177,49 @@ discontinuity.
 4. A resumed child's startup K9(b) gate reports a non-fatal mismatch on the dry update's fixture rows. Not investigated.
 5. `eval/duration_sec` is summed shard time, not wall (~20× the true eval pause, which is 1.9-3.5 %).
 6. The pre-era runs (3 h restarts, Python env core) were not re-read.
+### 2026-10-16 · MEASUREMENT · **The T-ENT toy at EQUAL COMPUTE BEATS production at 15M: +6.48 pp, 90 % [+4.54, +8.43] (R-T5; the toy at 46–48M steps, at the GPU wall clock EB spends to 15M), and at its 100M cap +10.20 pp, [+7.50, +12.91] (R-T6, vs EB 15M). Both are DESCRIPTIVE, and neither is a ceiling read**
+
+**What ran.** Pre-registered at `72350102` (`measurements/toy_crosses_2026-10-16/PREREG.md`) before any game.
+- The toy is T-ENT ("Toy: entity tokens + attention only", seeds s4001 (+ `s4001b`) / s4002 / s4003, pin `3899277a`).
+  The reference is the 8 bf16 A/B production seeds `rb_bf_eb_s2001`–`s2008`, 15M `final_model.zip`.
+- The design was 3 × 8 cells per cross with 250 mirrored pairs per cell. The cut from 500 pairs was decided before
+  playing, from a CPU pilot.
+- 24,000 games ran on CPU under rule 5b at main's `src/` (`66e66237`; every reference loads there), in 3 h 22 min.
+  Families `toyx_rt5_eqcompute` / `toyx_rt6_cap` are in `models/_ledger`.
+- **The EQUAL-COMPUTE step** is where the toy's own effective SB3 `learn()` wall clock (restart-aware, from
+  `launcher_child.full.log`) equals EB's mean time to 15M: 9,066.8 s (SD 170.2 s). That step is 47.7M / 46.3M / 46.8M,
+  so the checkpoints are 48M / 46M / 47M. The toy is 3.33–3.44× faster per step at 15M, and its ratio falls later.
+- **The interval** is a declared seeds-as-units rectangular statistic: V̂ = s²_R/m + s²_C/n, Welch df, 90 % two-sided
+  (`rect_stat.py`). It is NOT T40's registered estimator. Its self-check passes 8 / 8, with Monte-Carlo coverage 0.912
+  at 3 × 8.
+
+**Result** (the toy's score − 50 pp; a draw counts ½):
+
+| read | toy | pooled | 90 % | per seed |
+|---|---|---|---|---|
+| R-T1b (W4, retrospective interval) | 5M | −25.51 | [−28.04, −22.98] | −25.1 / −26.9 / −24.6 |
+| R-T1 (W4, retrospective interval) | 15M | −14.10 | [−17.16, −11.04] | −16.1 / −14.2 / −12.0 |
+| **R-T5, equal compute** | 48 / 46 / 47M | **+6.48** | [+4.54, +8.43] | +5.9 / +6.3 / +7.2 |
+| **R-T6, at 100M cap** | final | **+10.20** | [+7.50, +12.91] | +8.1 (`s4001b`) / +11.2 / +11.3 |
+
+All 48 cells are above 50 %, with 0 aborted games and every cell at 250 pairs.
+
+**Reading.**
+- **At production's 15M budget (≈ 2.5 GPU-h), a 1.42M-parameter toy trained for the same wall clock is stronger
+  than production.** Production's per-step lead (−14.1 pp at matched 15M) does not cover the toy's ≈ 3.3×
+  throughput.
+- **This is one budget.** Production keeps climbing past 15M, so the equal-compute comparison at larger budgets, and
+  the ceiling (R-T2: toy cap vs X26 plateau, G_p(cap)), are untouched.
+- **No §3.6 class is read.**
+
+**FINDINGS.**
+1. **The equal-compute step is ≈ 46–48M** (the brief expected ~50–55M).
+2. **`s4001b` carries ≈ 9.2M post-canary steps** (readiness F36). It is the lowest R-T6 row.
+3. **The CPU pilot under-read the throughput 3×** (20-pair batches 0.94 games/s; 50-pair batches 2.7–2.9). 500
+   pairs per cell would have fit.
+4. **Equal compute is GPU wall clock on a shared box.** Agent CPU load in each window was not recorded, and a
+   FLOP-matched step would be far larger.
+5. **The ids are R-T5 / R-T6**, because R-T3 / R-T4 are taken in readiness §3.5.
+
+Evidence: `research_state/measurements/toy_crosses_2026-10-16/` (PREREG.md, RESULTS.md, result/read.json);
+`design_x26_readiness.md` §3.5 (the descriptive record) and F36.

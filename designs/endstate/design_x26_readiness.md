@@ -545,6 +545,31 @@ two-sided 90 % interval and the rule-8 band of 1e-9.
 > pooled over its 3 × 8 cells): **R-T1, toy@15M vs EB 15M ≈ −14.1 pp** (the three toy seeds −16.1 / −14.2 / −12.0); **R-T1b, toy@5M vs EB 5M ≈ −25.5 pp** (−25.1 / −26.9 / −24.6).
 > **No interval was computed:** `cross_stat` refuses a non-square matrix (3 × 8; `CrossInputError: needs an n × n matrix with n ≥ 2`), so these are point means with no 90 % interval and no verdict.
 > Both are many times the ±2.0 pp bar, but a number without an interval is not a classification. A rectangular-cross statistic is TASK_BACKLOG T40; it is needed before R-T1 can be read as G_m.
+>
+> **Descriptive record, 2026-10-16: R-T5 (EQUAL COMPUTE) and R-T6 (TOY AT CAP vs EB 15M).** These were pre-registered at `72350102`
+> ([`../research_state/measurements/toy_crosses_2026-10-16/PREREG.md`](../research_state/measurements/toy_crosses_2026-10-16/PREREG.md)) before any game, and the results are in
+> [`RESULTS.md`](../research_state/measurements/toy_crosses_2026-10-16/RESULTS.md) there.
+> - **They are DESCRIPTIVE, not R-T reads of the registered kind.** No §3.6 class is read from them. They are not G_m, and R-T6 is NOT R-T2: its reference is production at
+>   15M, not at plateau.
+> - **The design:** 3 toy seeds × the 8 EB 15M finals, 250 mirrored pairs per cell, on CPU at main (`66e66237`'s `src/`), where all 14 references load.
+> - **The equal-compute checkpoint** is the toy's 1M checkpoint nearest the step at which its own effective `learn()` wall clock equals EB's mean to 15M. That mean is
+>   9,066.8 s (SD 170.2 s), and the checkpoints are s4001 48M, s4002 46M, s4003 47M. The toy is 3.33–3.44× faster per step at 15M, and slower later as its games lengthen.
+> - **The interval** is a declared seeds-as-units rectangular statistic (`rect_stat.py`, Welch df). It is **not T40**. The W4 rows below pass through the same
+>   statistic retrospectively.
+>
+> | read | toy checkpoint | toy − 50, pooled | 90 % interval | per seed (s4001 / s4002 / s4003) |
+> |---|---|---|---|---|
+> | R-T1b (W4) | 5M | −25.51 pp | [−28.04, −22.98] | −25.1 / −26.9 / −24.6 |
+> | R-T1 (W4) | 15M | −14.10 pp | [−17.16, −11.04] | −16.1 / −14.2 / −12.0 |
+> | **R-T5, equal compute** | 48M / 46M / 47M | **+6.48 pp** | **[+4.54, +8.43]** | +5.9 / +6.3 / +7.2 |
+> | **R-T6, toy at 100M cap** | `s4001b` / `s4002` / `s4003` final | **+10.20 pp** | **[+7.50, +12.91]** | +8.1 / +11.2 / +11.3 |
+>
+> **What it says.**
+> - **At the GPU wall clock production spends to reach 15M (≈ 2.5 h), the toy is STRONGER than production's 15M finals**, and all 48 cells are above 50 %. The machinery's
+>   per-step advantage (−14.1 pp for the toy at matched steps) is smaller than the toy's ≈ 3.3× step throughput, at this one budget.
+> - **What it does not say:** that the toy would still lead at a larger equal budget (production keeps climbing past 15M), or anything about the ceiling. The ceiling
+>   remains R-T2's.
+> - **Caveat:** `s4001b`'s R-T6 row inherits the post-canary steps (F36).
 
 **Loadability across the deletion (requirement on T30-U0).** R-T2 plays a pre-deletion T-ENT checkpoint against a
 post-deletion X26 checkpoint. Under D-LD1, a recorded OFF value of a deleted lever is refused at HEAD.
@@ -1069,6 +1094,13 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 - **F35 (T33 s4002). `rb_toy_ent_s4001` has neither a plateau nor a cap checkpoint.** It died at 72.66M (F17) while
   CLIMBING, so under §3.4 it has no R-T2 node. It needs the training session's ruling: resume it to 100M into a new run
   directory (F17's sha256 hazard), or declare it out of R-T2 and record why.
+- **F36 (toy crosses, 2026-10-16). `rb_toy_ent_s4001b`, s4001's continuation to its 100M cap, forked from
+  `checkpoint_72000094`.** That checkpoint is ≈ 9.2M steps past s4001's last passing compile canary (62.83M; F17), so
+  every read of its cap checkpoint inherits those steps.
+  - In R-T6 (§3.5's 2026-10-16 descriptive record) it is the lowest row: +8.1 pp against +11.2 / +11.3 for the other
+    two seeds. Without it, the pooled point is ≈ +11.3 pp.
+  - Whether the canary-era steps cost it anything is UNVERIFIED.
+  - R-T2 uses the same checkpoint, so report its row separately there too.
 
 ## 8. Decision record
 
