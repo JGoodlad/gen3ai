@@ -78,7 +78,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
 - **THE GPU IS LEASED, NOT QUEUED (owner, 2026-10-03: "I would prefer subagents not block at all on the gpu").**
   The orchestrator grants the GPU lease to ONE agent at a time and NAMES it in that agent's brief ("you hold
   the GPU lease: `scripts/ops/gpu_lease.sh acquire --owner <name>` first, `release` when done"). An agent
-  with no such line never touches the GPU and never sets `GEN3AI_TEST_ALLOW_GPU`. The lease is for the
+  with no such line never touches the GPU, never sets `GEN3AI_TEST_ALLOW_GPU`, and runs EVERY command with `CUDA_VISIBLE_DEVICES=""` (2026-10-15: a "CPU" repro created a CUDA context during a leased window, because an import or a default device opens one; the variable hides the card from the process). **Every brief without a lease says so in its boundaries line**: "No GPU: run with `CUDA_VISIBLE_DEVICES=\"\"`". The lease is for the
   agent's lifetime, so grant it to a unit that needs the card for most of its life, and brief CPU work to
   the rest. Everyone else's GPU call is refused AT ONCE (`gpu_lock.sh` exit 6, owner named) instead of
   queueing, so a refused agent reports BLOCKED, never polls. `scripts/ops/gpu_lease.sh status` shows the
@@ -141,7 +141,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   not a refactor.
 - Every agent gets `isolation: "worktree"` and a brief that carries: the worktree setup (submodule +
   the two GUARDED symlinks + the mandatory `PYTHONPATH` export), the interpreter path, the standing
-  constraints (no writes under `models/`, no training/launcher, no :8000/:8001, no git add/commit/push,
+  constraints (no GPU unless the brief names a lease, and `CUDA_VISIBLE_DEVICES=""` on every command otherwise; no writes under `models/`, no training/launcher, no :8000/:8001, no git add/commit/push,
   never import a `__main__` module), the exact tests to run with counts to report, and the docs the
   change must update in the same pass (every touched leaf `CLAUDE.md`, `ARCHITECTURE.md`, `CHANGELOG`).
 - **Never put conditional git-state instructions in a brief** (pull / rebase / checkout / clean /

@@ -221,7 +221,7 @@ training survives a dead session, the alerting does not.
 - the notification policy below.
 
 Retire the cron when the work lands (it auto-expires in seven days, but a wake on finished work is
-noise). Never use a self-matching `pgrep` pattern in any of these layers (`[w]atch.sh`, not
+noise). A log watcher matches only lines written AFTER it was armed, tracked as PER-FILE line offsets that persist across re-arms (a first use of a file starts at its current end; a line between one watch's exit and the next one's arming is never missed): [`alert_watch.sh`](../research_state/measurements/x26_exit_check_2026-10-15/road/alert_watch.sh) (`98cd814b`) is the pattern, since two watchers on 2026-10-15 matched stale lines already in the log. Never use a self-matching `pgrep` pattern in any of these layers (`[w]atch.sh`, not
 `watch.sh`) — it has killed this session's own shell repeatedly, and inside a `Monitor` it fails
 silently instead. Full trap list: `ORCHESTRATOR_SOP.md` §7.
 
