@@ -1,0 +1,86 @@
+{
+ "end2": {
+  "F+U = F at k = 6": {
+   "actions": 5,
+   "both_not_ok": 1,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 0.0,
+   "max_dv": 0.0,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 2,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  },
+  "O-U = O at k = 6": {
+   "actions": 11,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.0000000000287557e-06,
+   "max_dv": 0.0,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 2,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  },
+  "k6_states_in_bank": 113,
+  "oracle = Phase 1": {
+   "actions": 29,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.0000000000287557e-06,
+   "max_dv": 1.0000000000065512e-05,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 4,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  }
+ },
+ "prod": {
+  "F+U = F at k = 6": {
+   "actions": 12,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 0.0,
+   "max_dv": 0.0,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 2,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  },
+  "O-U = O at k = 6": {
+   "actions": 12,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 9.999999999975306e-07,
+   "max_dv": 0.0,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 2,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  },
+  "k6_states_in_bank": 91,
+  "oracle = Phase 1": {
+   "actions": 29,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.000000000001e-06,
+   "max_dv": 1.0000000000065512e-05,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 4,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  }
+ }
+}

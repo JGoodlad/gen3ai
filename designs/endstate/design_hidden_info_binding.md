@@ -1949,6 +1949,33 @@ on prod because O−U has no row on 2 of 103 k = 6 states. The reasons for the r
 Next come E3 (the second referee: what both builds share), the M side's residual difference, a tie-free or 16-world leaf
 (E5, for the scorer dependence) and the plateau replication (E6).
 
+### 16.12 E2, the COMPETENT-OPPONENT bank: PRE-REGISTERED and running (2026-10-16; `measurements/hidden_info_e2_competent_2026-10-16/`)
+
+**Status.** Registered before any E2 game was generated or any state drawn: `PREREGISTRATION.md`, shipped `5881ee83`.
+No result yet.
+
+**The bank.** 600 states per checkpoint, drawn from FRESH games.
+- **How the games are made:** the pin's own offline eval-cycle generator (`main.ops.eval_trace_gen`) replays the three
+  live cycles that fed the registered bank: the same trace players, the same sentinel sets and the same greedy regime,
+  with registered seeds.
+- **Capture:** a 2 : 1 : 1 loss : draw : win quota, mirroring the live one.
+- **The draw:** the registered bank's procedure (gap quintiles, ≤ 2 per battle), with a new salt.
+
+**The arms:** Phase 1 + F, F+M, F+U, O−M, O−U, on the original harness. The world guard is on.
+
+**PRIMARY:** R3's two paired numerators, pooled over end2 + prod at LEAF-K8. The verdicts are U-FIRST, M-FIRST, SHARED or
+NOT DETECTED.
+
+**SECONDARY:**
+- per checkpoint;
+- the tie-free LEAF-K8|RAND, flagged SCORER-DEPENDENT when its verdict differs;
+- the shares;
+- Tier 1's two populations, descriptive.
+
+**Rule 8 resolved:** ±0.0005, the registered R3's band. A separate descriptive MATERIAL flag sits at 0.005. The E1
+pre-registration's 0.005 was a cross-build point tolerance, not a band. The read is `read_e2.py`, committed before any arm
+output.
+
 ---
 
 ## 17. Open questions for the owner
@@ -1985,3 +2012,4 @@ Next come E3 (the second referee: what both builds share), the M side's residual
 | 2026-10-15 | **THE KNOCK-IN FORKS READ (§8.7): K-MOVES NULL, K-ITEMS NULL, species NULL, K-SPREADS NOT DETECTED; no extension; MOVES-FIRST false; K-L-WORTH not declarable; the honest dependence cost recorded DESCRIPTIVELY** | §8.5's coded rules (`read_hib.py`, `f68f686b`) applied to the 36 primary cells as banked (`ffd2280e`), quoted verbatim from `verdict.json`; the v8 read kept descriptive and its confound list extended (the stamp names the learnset data fix; the fp32 → bf16 trunk switch and the pin change are added here); the honest cross read as a dependence cost (told − withheld ≈ +1.9 pp for moves and species, ≈ 0 for items and spreads) with three candidate mechanisms (distribution shift, learned reliance, capacity reallocation) and five separating experiments, none queued; the dose match read with `main.dose` (ratio 1.00 on all 15 forks); the registered "reading with the frozen axes" stated as NOT FIRING as written (K-MOVES-NULL meets R-MOVES REFUTED, not MOVES-BINDING) and the generalised X5 reading labelled an interpretation; implications for the search ledger and the roadmap (no belief-for-the-policy programme; information is a SEARCH lever; privileged information critic-only if ever; the 15M policy still improving) | treating told − withheld as a registered verdict (§8.4 registered the honest cross as a secondary read with no rule); reading K-L-WORTH without the placebo (decision (a)); folding species into K-RANK's registered verdict (the arm postdates the registration); quoting the v8 +4.4 pp as a maturity measurement (three confounds) | `measurements/hidden_info_forks_2026-10-14/` (README Results, `crosses/result/verdict.json`, `h.json`); the forks' K9(b) banks (`bank_hib.py`); `main.dose`; ledger 2026-10-15 MEASUREMENT (MAJOR) "THE KNOCK-IN FORKS" |
 | 2026-10-15 | **§8.2's identity precondition is unreachable at HEAD after legacy deletion U3** (config v157; manifest D-LD7, F-LD-5) | later forks of this lane run from the recorded P_hib / `hib-forks-pin`, or re-register against a post-U3 parent; the banked forks are unaffected (they ran before U3) | an RNG burn replaying the deleted draws (rejected in D-LD7) | the manifest §0 D-LD7, §6 F-LD-5; the ledger's U3 entry |
 | 2026-10-16 | **THE BLIND U-ARM BUILD COMPARED by a third party (§16.11; red team E1, under its pre-registration `8dd25833`)**: the registered criterion AGREES on C (978 states, LEAF-K8): s_U 0.32 / 0.31, n_U 0.83 / 0.92, R3's two numerators and conditions the same (both hold), σ_U / ν_U \|Δ\| 0.0022 / 0.0014; R3's never-seen half REPLICATED, scoped (LEAF-K8, the registered bot-heavy mix; R3 fails on end2 alone and on snapshot-game states in BOTH builds); the population split REPLICATED; R-REPLICATE §12.2 as a whole still NOT MET (the M side) | The blind build's `HOLD = false` on prod ruled a guard-caused EXCLUSION, not an identity failure: no outcome differs where both rows exist; the guard's one trigger is a single true set's untyped Hidden Power (all-31 IVs = Dark) that the engine reports typed, it raised before any playout on exactly the 4 states holding that set, the original's O−U equals O there outcome for outcome, and the states lie outside C. Rule 8 read as the study's ±0.0005 (primary), the ±0.005-band reading reported (DISAGREE, on the original's own s-side lower bound +0.0020). Reported beside the verdict: the scorer dependence (R3 flips at LEAF-K4 / K1, in opposite directions), the M side's residual difference with the learnset handicap fixed (ν_M −0.0078; n_M 0.38 vs 0.54, B4 differs; §16.9's handicap attribution not supported), the permutation-null TV (U content at the null; U.move, the first-slot placement (U2), M.move and S.nature differ). Third-party confidence that the never-seen Pokémon are the largest class on the registered mix at LEAF-K8 ≈ 85 %, on competent-opponent states ≈ 30 % | reading the literal `HOLD = false` as voiding the build (the missing rows carry no outcome, their cause is construction-independent, and no compared number contains them); the ±0.005 band as primary (it would re-write the original's registered R3 rule inside a comparison); quoting R3 as replicated without its scorer and population scope; editing §16.8–§16.10's verdicts or confidences | `measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md` / `.json`, `third_party_compare.py`; the blind build's README, `result.json`, `imp_per_state.json`; ledger 2026-10-16 |
+| 2026-10-16 | **E2 (the competent-opponent bank) PRE-REGISTERED (`5881ee83`) before any game or state existed; harness and bank committed; the arms crawling (§16.12)** | fresh own-snapshot games from the pin's offline eval generator for the three live cycles that fed the registered bank (same trace players, sentinel sets, regime; registered seeds), a 2 : 1 : 1 capture mirroring the live quota, the registered draw (600 / checkpoint); Phase 1 + F, F+M, F+U, O−M, O−U on the original harness with the world guard on; PRIMARY = R3's two numerators pooled at LEAF-K8 (U-FIRST / M-FIRST / SHARED / NOT DETECTED), per checkpoint and LEAF-K8\|RAND secondary; rule 8 at ±0.0005 with a separate MATERIAL flag at 0.005 | the remaining sentinel states of the live cycles (only 248 / 238 sentinel battles exist, too few for 600 states at ≤ 2 per battle, and they share games with Tier 1's post-hoc 503); no capture quota (a different outcome mix from the registered bank's); the ±0.005 band as the significance band (it was E1's cross-build point tolerance); blinding (the read is code before any arm output; Tier 1 §3: blinding protected the scripts, not knowledge) | `measurements/hidden_info_e2_competent_2026-10-16/` (`PREREGISTRATION.md`, `README.md`, the scripts, `states_e2_<cp>.json`) |
