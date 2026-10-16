@@ -26109,3 +26109,71 @@ commit ≥ `5236eb22` (T36) refused or ran near the edge; X26's pin moves to the
 4. `expandable_segments` was not measured (not needed; its A/B-reference caveat stands).
 5. Every verification launch was a cold compile (~19 min each, a new commit is a new shared-cache key); a memory-only
    change still pays it.
+
+### 2026-10-16 · MEASUREMENT · **T24: a periodic restart buys NOTHING measurable on the Rust core. The update is flat for 6 h, the rollout slows with the self-play POOL (+1 ms GPU wait per snapshot) and the snapshot-ladder updater, never with process age. X26's first 6 h restart cost 22.5 min because the shared compile-cache key reads the inert-on-resume argv `batch_size` (a cold recompile, F8); a warm restart costs ~5.5 min (1.5 % at 6 h). Recommendation: a 24 h interval (MODERATE evidence)**
+
+Evidence and scripts: `measurements/fps_and_restarts_2026-10-16/` (README, `result.json`, `age.json`, `ladder_x26.json`,
+`summary.json`, `rss_x26.log`). The read was read-only, with no GPU: 97 `rb_*` runs (118 child processes) from their
+TensorBoard events and launcher logs, plus X26 (`rb_x26_s2601`) live through its first timed restart at 09:09.
+
+**1. The update does not drift.** `train_ms` is flat to within ±3 % from the first hour to the last in all 77
+processes that ran > 1 h (median 0.0 %). X26 held 41.9-42.2 s for 6 h. There were no recompiles after the compile lock
+and no growth in the card's reserved memory.
+
+**2. The rollout slows with the training step.** X26's collect time went from 9.9 to 27.4 s per 100k steps, and its fps
+from 1,888 to 1,417, over 0-33M. The causes:
+- the self-play switch-on at ~4M;
+- the pool's size: `gpu_wait` 20.4 → 39.0 ms per host step from 1 to 16-17 snapshots;
+- the detached snapshot-ladder updater.
+
+The toy runs, with no restart, are flat for 3.2 h once the pool reaches its cap of 20.
+
+**3. A matched-step comparison finds no age effect** (bf_e / bf_eb, four restarted seeds vs four unrestarted). At the
+same step, a process ~1 h older ran −1.5 % / −1.8 % (median over the bins), within the ±3 % bin noise, with equal
+GPU wait and update time. **NOT DETECTED.**
+
+**4. X26's restart, paired.**
+
+| | the hour before | ~45 min after |
+|---|---|---|
+| steady fps | 1,417 | 1,364 |
+| update | 42.13 s | 42.23 s |
+| env core | 20.5 ms | 20.4 ms |
+| GPU wait | 34.6 ms | 39.0 ms (the pool grew 14-15 → 16-17) |
+
+The trainer's RSS was flat at 9.49-9.71 GB from 4.1 to 6.1 h of age (+0.4 MB/h). The fresh child settled at 11.4 GB.
+The restart reclaimed nothing.
+
+**5. The restart's cost.**
+- The interval stop and save: ~70 s.
+- The new child's startup: 1,282 s, against 265 s for the same run's launch.
+- The cause is F8. `compile_cache_shared.run_fields(args)` hashes `args.batch_size`, which on a resume is the parser's
+  default 4096: the restart strips `--arch`, and the trainer inherits the saved 2048. The launch's and the restart's
+  entries differ in that one field.
+- The whole set (~6,600 Triton kernels, ~980 Inductor graphs) was recompiled cold.
+- A warm restart would cost ≈ 5.5 min, 1.5 % of 6 h.
+
+**6. Learning across seams.** 14 seams × 6 instruments: jump / pre-seam SD median 0.46, 1 of 83 above 2. No
+discontinuity.
+
+**7. Recommendation to the owner** (his call): **lengthen to 24 h**, or set 0 once T7's memory trigger exists.
+- The evidence is MODERATE: one paired production restart, the toys, the matched-step comparison.
+- No production child has run past 6.1 h.
+- Fix F8 regardless.
+
+**Tags.** MEASUREMENT · ops · NOT DETECTED (an age / fragmentation effect) · the reach is every long run's wall.
+
+**FINDINGS (standing rule 7).**
+1. **F1: the snapshot-ladder updater** plays every new snapshot against the WHOLE pool, as a detached, un-niced CPU
+   job.
+   - Its wall: 114 s at 1 pair, 1,109 s at 10, 1,756 s at 14.
+   - Since ~28M it outruns the 1,135-1,561 s gap between promotions, and the updaters overlap.
+   - Rollouts collect +16 % slower while one runs (like-for-like, ≤ 22M).
+   - ESTIMATE: ~1,300 fps at the pool's cap.
+2. **F8: the shared compile-cache key reads an argv value that is inert on a resume (`batch_size`).** Every
+   `--arch production` run's FIRST restart compiles cold (+17 min on X26) and writes a second 3.3 GB entry.
+   Unfixed (out of scope).
+3. No run records host RSS (only this `/proc` sample) or `nvidia-smi` (thermal / clock).
+4. A resumed child's startup K9(b) gate reports a non-fatal mismatch on the dry update's fixture rows. Not investigated.
+5. `eval/duration_sec` is summed shard time, not wall (~20× the true eval pause, which is 1.9-3.5 %).
+6. The pre-era runs (3 h restarts, Python env core) were not re-read.

@@ -1,0 +1,534 @@
+{
+ "matched_step": {
+  "rb_bf_e_": {
+   "bins": [
+    {
+     "step_bin_M": "5-6",
+     "legged": {
+      "n": 36,
+      "age_h": 0.11,
+      "collect_100k": 17.68,
+      "train_s": 54.22,
+      "fps": 1363,
+      "gpu_wait": 24.75,
+      "core": 13.01,
+      "ep_len": 38.9
+     },
+     "single": {
+      "n": 40,
+      "age_h": 1.05,
+      "collect_100k": 18.78,
+      "train_s": 54.34,
+      "fps": 1334,
+      "gpu_wait": 24.48,
+      "core": 13.82,
+      "ep_len": 36.2
+     },
+     "single_minus_legged_collect_pct": 6.2,
+     "single_minus_legged_fps_pct": -2.1
+    },
+    {
+     "step_bin_M": "6-7",
+     "legged": {
+      "n": 40,
+      "age_h": 0.31,
+      "collect_100k": 17.38,
+      "train_s": 54.22,
+      "fps": 1374,
+      "gpu_wait": 20.73,
+      "core": 12.92,
+      "ep_len": 38.6
+     },
+     "single": {
+      "n": 40,
+      "age_h": 1.28,
+      "collect_100k": 18.3,
+      "train_s": 54.37,
+      "fps": 1356,
+      "gpu_wait": 20.6,
+      "core": 14.02,
+      "ep_len": 37.7
+     },
+     "single_minus_legged_collect_pct": 5.3,
+     "single_minus_legged_fps_pct": -1.3
+    },
+    {
+     "step_bin_M": "7-8",
+     "legged": {
+      "n": 40,
+      "age_h": 0.5,
+      "collect_100k": 16.94,
+      "train_s": 54.14,
+      "fps": 1380,
+      "gpu_wait": 20.78,
+      "core": 11.12,
+      "ep_len": 38.1
+     },
+     "single": {
+      "n": 40,
+      "age_h": 1.48,
+      "collect_100k": 18.29,
+      "train_s": 54.37,
+      "fps": 1352,
+      "gpu_wait": 20.59,
+      "core": 13.96,
+      "ep_len": 37.8
+     },
+     "single_minus_legged_collect_pct": 8.0,
+     "single_minus_legged_fps_pct": -2.0
+    },
+    {
+     "step_bin_M": "8-9",
+     "legged": {
+      "n": 36,
+      "age_h": 0.72,
+      "collect_100k": 16.47,
+      "train_s": 54.16,
+      "fps": 1381,
+      "gpu_wait": 19.1,
+      "core": 12.96,
+      "ep_len": 38.9
+     },
+     "single": {
+      "n": 36,
+      "age_h": 1.7,
+      "collect_100k": 18.19,
+      "train_s": 54.25,
+      "fps": 1356,
+      "gpu_wait": 20.13,
+      "core": 13.91,
+      "ep_len": 38.5
+     },
+     "single_minus_legged_collect_pct": 10.4,
+     "single_minus_legged_fps_pct": -1.8
+    },
+    {
+     "step_bin_M": "9-10",
+     "legged": {
+      "n": 40,
+      "age_h": 0.91,
+      "collect_100k": 15.63,
+      "train_s": 54.15,
+      "fps": 1405,
+      "gpu_wait": 19.06,
+      "core": 10.85,
+      "ep_len": 40.0
+     },
+     "single": {
+      "n": 40,
+      "age_h": 1.9,
+      "collect_100k": 17.72,
+      "train_s": 54.29,
+      "fps": 1364,
+      "gpu_wait": 20.1,
+      "core": 13.94,
+      "ep_len": 38.8
+     },
+     "single_minus_legged_collect_pct": 13.4,
+     "single_minus_legged_fps_pct": -2.9
+    },
+    {
+     "step_bin_M": "10-11",
+     "legged": {
+      "n": 36,
+      "age_h": 1.13,
+      "collect_100k": 16.75,
+      "train_s": 54.15,
+      "fps": 1384,
+      "gpu_wait": 17.64,
+      "core": 14.85,
+      "ep_len": 40.9
+     },
+     "single": {
+      "n": 36,
+      "age_h": 2.12,
+      "collect_100k": 16.68,
+      "train_s": 54.28,
+      "fps": 1385,
+      "gpu_wait": 17.41,
+      "core": 13.81,
+      "ep_len": 39.1
+     },
+     "single_minus_legged_collect_pct": -0.4,
+     "single_minus_legged_fps_pct": 0.1
+    },
+    {
+     "step_bin_M": "11-12",
+     "legged": {
+      "n": 40,
+      "age_h": 1.31,
+      "collect_100k": 15.18,
+      "train_s": 54.12,
+      "fps": 1410,
+      "gpu_wait": 17.61,
+      "core": 11.34,
+      "ep_len": 40.6
+     },
+     "single": {
+      "n": 43,
+      "age_h": 2.31,
+      "collect_100k": 16.83,
+      "train_s": 54.28,
+      "fps": 1387,
+      "gpu_wait": 17.3,
+      "core": 13.95,
+      "ep_len": 40.1
+     },
+     "single_minus_legged_collect_pct": 10.9,
+     "single_minus_legged_fps_pct": -1.6
+    },
+    {
+     "step_bin_M": "12-13",
+     "legged": {
+      "n": 40,
+      "age_h": 1.54,
+      "collect_100k": 17.26,
+      "train_s": 54.21,
+      "fps": 1357,
+      "gpu_wait": 18.23,
+      "core": 15.15,
+      "ep_len": 40.7
+     },
+     "single": {
+      "n": 37,
+      "age_h": 2.54,
+      "collect_100k": 17.05,
+      "train_s": 54.25,
+      "fps": 1380,
+      "gpu_wait": 18.14,
+      "core": 14.13,
+      "ep_len": 41.3
+     },
+     "single_minus_legged_collect_pct": -1.2,
+     "single_minus_legged_fps_pct": 1.7
+    },
+    {
+     "step_bin_M": "13-14",
+     "legged": {
+      "n": 40,
+      "age_h": 1.74,
+      "collect_100k": 15.83,
+      "train_s": 54.18,
+      "fps": 1383,
+      "gpu_wait": 18.3,
+      "core": 11.91,
+      "ep_len": 41.0
+     },
+     "single": {
+      "n": 40,
+      "age_h": 2.74,
+      "collect_100k": 17.16,
+      "train_s": 54.23,
+      "fps": 1376,
+      "gpu_wait": 18.14,
+      "core": 14.11,
+      "ep_len": 41.1
+     },
+     "single_minus_legged_collect_pct": 8.4,
+     "single_minus_legged_fps_pct": -0.5
+    },
+    {
+     "step_bin_M": "14-15",
+     "legged": {
+      "n": 36,
+      "age_h": 1.96,
+      "collect_100k": 19.26,
+      "train_s": 54.28,
+      "fps": 1320,
+      "gpu_wait": 19.52,
+      "core": 17.67,
+      "ep_len": 40.5
+     },
+     "single": {
+      "n": 36,
+      "age_h": 2.96,
+      "collect_100k": 17.76,
+      "train_s": 54.24,
+      "fps": 1364,
+      "gpu_wait": 19.45,
+      "core": 14.19,
+      "ep_len": 42.2
+     },
+     "single_minus_legged_collect_pct": -7.8,
+     "single_minus_legged_fps_pct": 3.3
+    }
+   ],
+   "fps_pct_median_over_bins": -1.5
+  },
+  "rb_bf_eb_": {
+   "bins": [
+    {
+     "step_bin_M": "5-6",
+     "legged": {
+      "n": 36,
+      "age_h": 0.09,
+      "collect_100k": 18.76,
+      "train_s": 42.01,
+      "fps": 1621,
+      "gpu_wait": 24.72,
+      "core": 12.41,
+      "ep_len": 36.2
+     },
+     "single": {
+      "n": 40,
+      "age_h": 0.87,
+      "collect_100k": 19.33,
+      "train_s": 42.14,
+      "fps": 1592,
+      "gpu_wait": 23.68,
+      "core": 14.11,
+      "ep_len": 35.9
+     },
+     "single_minus_legged_collect_pct": 3.0,
+     "single_minus_legged_fps_pct": -1.8
+    },
+    {
+     "step_bin_M": "6-7",
+     "legged": {
+      "n": 40,
+      "age_h": 0.26,
+      "collect_100k": 17.02,
+      "train_s": 42.01,
+      "fps": 1663,
+      "gpu_wait": 20.82,
+      "core": 12.03,
+      "ep_len": 36.5
+     },
+     "single": {
+      "n": 40,
+      "age_h": 1.06,
+      "collect_100k": 18.29,
+      "train_s": 42.1,
+      "fps": 1633,
+      "gpu_wait": 21.03,
+      "core": 14.22,
+      "ep_len": 39.1
+     },
+     "single_minus_legged_collect_pct": 7.5,
+     "single_minus_legged_fps_pct": -1.8
+    },
+    {
+     "step_bin_M": "7-8",
+     "legged": {
+      "n": 40,
+      "age_h": 0.42,
+      "collect_100k": 16.32,
+      "train_s": 41.97,
+      "fps": 1679,
+      "gpu_wait": 20.76,
+      "core": 10.59,
+      "ep_len": 36.8
+     },
+     "single": {
+      "n": 40,
+      "age_h": 1.23,
+      "collect_100k": 18.41,
+      "train_s": 42.12,
+      "fps": 1628,
+      "gpu_wait": 20.68,
+      "core": 14.32,
+      "ep_len": 37.7
+     },
+     "single_minus_legged_collect_pct": 12.8,
+     "single_minus_legged_fps_pct": -3.0
+    },
+    {
+     "step_bin_M": "8-9",
+     "legged": {
+      "n": 36,
+      "age_h": 0.6,
+      "collect_100k": 17.09,
+      "train_s": 41.96,
+      "fps": 1651,
+      "gpu_wait": 19.92,
+      "core": 14.22,
+      "ep_len": 38.0
+     },
+     "single": {
+      "n": 36,
+      "age_h": 1.42,
+      "collect_100k": 17.51,
+      "train_s": 42.08,
+      "fps": 1652,
+      "gpu_wait": 19.0,
+      "core": 14.07,
+      "ep_len": 38.8
+     },
+     "single_minus_legged_collect_pct": 2.5,
+     "single_minus_legged_fps_pct": 0.1
+    },
+    {
+     "step_bin_M": "9-10",
+     "legged": {
+      "n": 40,
+      "age_h": 0.76,
+      "collect_100k": 15.77,
+      "train_s": 41.98,
+      "fps": 1702,
+      "gpu_wait": 19.98,
+      "core": 10.19,
+      "ep_len": 38.3
+     },
+     "single": {
+      "n": 40,
+      "age_h": 1.58,
+      "collect_100k": 17.67,
+      "train_s": 42.13,
+      "fps": 1642,
+      "gpu_wait": 19.04,
+      "core": 14.26,
+      "ep_len": 38.7
+     },
+     "single_minus_legged_collect_pct": 12.0,
+     "single_minus_legged_fps_pct": -3.5
+    },
+    {
+     "step_bin_M": "10-11",
+     "legged": {
+      "n": 36,
+      "age_h": 0.94,
+      "collect_100k": 17.18,
+      "train_s": 41.98,
+      "fps": 1662,
+      "gpu_wait": 16.97,
+      "core": 14.99,
+      "ep_len": 39.8
+     },
+     "single": {
+      "n": 36,
+      "age_h": 1.76,
+      "collect_100k": 16.96,
+      "train_s": 42.1,
+      "fps": 1670,
+      "gpu_wait": 17.74,
+      "core": 13.95,
+      "ep_len": 39.7
+     },
+     "single_minus_legged_collect_pct": -1.3,
+     "single_minus_legged_fps_pct": 0.5
+    },
+    {
+     "step_bin_M": "11-12",
+     "legged": {
+      "n": 40,
+      "age_h": 1.09,
+      "collect_100k": 14.59,
+      "train_s": 41.95,
+      "fps": 1731,
+      "gpu_wait": 17.01,
+      "core": 10.29,
+      "ep_len": 39.9
+     },
+     "single": {
+      "n": 43,
+      "age_h": 1.93,
+      "collect_100k": 17.1,
+      "train_s": 42.09,
+      "fps": 1665,
+      "gpu_wait": 17.78,
+      "core": 14.25,
+      "ep_len": 38.7
+     },
+     "single_minus_legged_collect_pct": 17.2,
+     "single_minus_legged_fps_pct": -3.8
+    },
+    {
+     "step_bin_M": "12-13",
+     "legged": {
+      "n": 40,
+      "age_h": 1.28,
+      "collect_100k": 17.23,
+      "train_s": 42.02,
+      "fps": 1650,
+      "gpu_wait": 18.22,
+      "core": 15.11,
+      "ep_len": 40.2
+     },
+     "single": {
+      "n": 37,
+      "age_h": 2.12,
+      "collect_100k": 17.52,
+      "train_s": 42.12,
+      "fps": 1646,
+      "gpu_wait": 18.18,
+      "core": 14.43,
+      "ep_len": 39.9
+     },
+     "single_minus_legged_collect_pct": 1.7,
+     "single_minus_legged_fps_pct": -0.2
+    },
+    {
+     "step_bin_M": "13-14",
+     "legged": {
+      "n": 40,
+      "age_h": 1.44,
+      "collect_100k": 14.62,
+      "train_s": 41.9,
+      "fps": 1732,
+      "gpu_wait": 18.3,
+      "core": 9.78,
+      "ep_len": 40.2
+     },
+     "single": {
+      "n": 40,
+      "age_h": 2.28,
+      "collect_100k": 17.71,
+      "train_s": 42.14,
+      "fps": 1640,
+      "gpu_wait": 18.18,
+      "core": 14.46,
+      "ep_len": 39.3
+     },
+     "single_minus_legged_collect_pct": 21.1,
+     "single_minus_legged_fps_pct": -5.3
+    },
+    {
+     "step_bin_M": "14-15",
+     "legged": {
+      "n": 36,
+      "age_h": 1.63,
+      "collect_100k": 17.93,
+      "train_s": 41.9,
+      "fps": 1638,
+      "gpu_wait": 19.5,
+      "core": 15.43,
+      "ep_len": 40.1
+     },
+     "single": {
+      "n": 36,
+      "age_h": 2.48,
+      "collect_100k": 18.24,
+      "train_s": 42.1,
+      "fps": 1629,
+      "gpu_wait": 19.47,
+      "core": 14.46,
+      "ep_len": 40.9
+     },
+     "single_minus_legged_collect_pct": 1.7,
+     "single_minus_legged_fps_pct": -0.5
+    }
+   ],
+   "fps_pct_median_over_bins": -1.8
+  }
+ },
+ "ols_selfplay_cycles": {
+  "n_cycles": 6918,
+  "n_runs": 71,
+  "mean_collect_100k": 14.59,
+  "coef": {
+   "ep_len": {
+    "b": -0.0667,
+    "se_iid": 0.0089
+   },
+   "pool": {
+    "b": 0.635,
+    "se_iid": 0.0258
+   },
+   "age_h": {
+    "b": -1.3379,
+    "se_iid": 0.0692
+   }
+  },
+  "caveat": "iid SEs over autocorrelated cycles: optimistic by a large factor"
+ }
+}
