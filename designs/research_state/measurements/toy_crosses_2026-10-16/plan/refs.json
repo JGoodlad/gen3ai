@@ -1,0 +1,96 @@
+{
+ "refs": {
+  "rb_bf_eb_s2001@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2001/final_model.zip",
+   "sha256": "172bd265e8812c4586659d581c604c4122c6e826469c7a0e9614caffda456694"
+  },
+  "rb_bf_eb_s2002@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2002/final_model.zip",
+   "sha256": "b0bc8d21dc891e8ddc8f75f5e9af2da7332c04fcf9ad190d1e212a823947964d"
+  },
+  "rb_bf_eb_s2003@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2003/final_model.zip",
+   "sha256": "8c3c3830d5fe79d504a6a3a735ede0f8016eeb098906a92d6449c0a05a9a05c0"
+  },
+  "rb_bf_eb_s2004@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2004/final_model.zip",
+   "sha256": "00f0f396e9ed8a508d04de2579a85a3fbbaed28c6981a3bbf46430c627bdf29b"
+  },
+  "rb_bf_eb_s2005@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2005/final_model.zip",
+   "sha256": "ad66a5a6d54dc0eeee703eaf28966b64d25e548755362cc8f4862d2c025ce690"
+  },
+  "rb_bf_eb_s2006@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2006/final_model.zip",
+   "sha256": "f405d5f1fac42eb7887d295dccbd7288b15db740a49900cb16450d6dd7ccdb99"
+  },
+  "rb_bf_eb_s2007@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2007/final_model.zip",
+   "sha256": "9baa31505ece0383de13b425420be7117371f830c18ce26f07d89d0ca909e4bd"
+  },
+  "rb_bf_eb_s2008@15M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_bf_eb_s2008/final_model.zip",
+   "sha256": "bbc78d510dc4bd657cbfed6160f3c0ef872771130082d7175959462ddbb6b480"
+  },
+  "rb_toy_ent_s4001@eq": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001/checkpoints/checkpoint_48000139_steps.zip",
+   "sha256": "d3e582a512851c0e9a34ad4946b1d221c332abd8efe3f2454d33ee55521619a5"
+  },
+  "rb_toy_ent_s4002@eq": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002/checkpoints/checkpoint_46000198_steps.zip",
+   "sha256": "e4a5efb8c21f60a3f10910459cbdb046f2a4b57300586c99feed8eddfde23573"
+  },
+  "rb_toy_ent_s4003@eq": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4003/checkpoints/checkpoint_47000187_steps.zip",
+   "sha256": "61d505159cdcea44ddbd27123333c7342e68c4d87212bdcb5d352f5373826112"
+  },
+  "rb_toy_ent_s4001@cap": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001b/final_model.zip",
+   "sha256": "114af47b1b201d2ac57291dfe66cbab24257ca1194042d0d76256a113ded142e"
+  },
+  "rb_toy_ent_s4002@cap": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002/final_model.zip",
+   "sha256": "60af6b8814f80f72853a5fe6c28655620cd8640884cedf17ba7eec8bd95648fb"
+  },
+  "rb_toy_ent_s4003@cap": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4003/final_model.zip",
+   "sha256": "a10fceb8d89a6b5b565ac42b4d873dd63e631335c9ab5187472d847599f5fb9e"
+  }
+ },
+ "crosses": {
+  "rt5": {
+   "rows": [
+    "rb_toy_ent_s4001@eq",
+    "rb_toy_ent_s4002@eq",
+    "rb_toy_ent_s4003@eq"
+   ],
+   "cols": [
+    "rb_bf_eb_s2001@15M",
+    "rb_bf_eb_s2002@15M",
+    "rb_bf_eb_s2003@15M",
+    "rb_bf_eb_s2004@15M",
+    "rb_bf_eb_s2005@15M",
+    "rb_bf_eb_s2006@15M",
+    "rb_bf_eb_s2007@15M",
+    "rb_bf_eb_s2008@15M"
+   ]
+  },
+  "rt6": {
+   "rows": [
+    "rb_toy_ent_s4001@cap",
+    "rb_toy_ent_s4002@cap",
+    "rb_toy_ent_s4003@cap"
+   ],
+   "cols": [
+    "rb_bf_eb_s2001@15M",
+    "rb_bf_eb_s2002@15M",
+    "rb_bf_eb_s2003@15M",
+    "rb_bf_eb_s2004@15M",
+    "rb_bf_eb_s2005@15M",
+    "rb_bf_eb_s2006@15M",
+    "rb_bf_eb_s2007@15M",
+    "rb_bf_eb_s2008@15M"
+   ]
+  }
+ }
+}

@@ -1,0 +1,52 @@
+{
+ "eb_t15M_s": {
+  "rb_bf_eb_s2001": 9189.9,
+  "rb_bf_eb_s2002": 8961.3,
+  "rb_bf_eb_s2003": 8845.7,
+  "rb_bf_eb_s2004": 8799.3,
+  "rb_bf_eb_s2005": 9192.7,
+  "rb_bf_eb_s2006": 9163.1,
+  "rb_bf_eb_s2007": 9186.1,
+  "rb_bf_eb_s2008": 9196.3
+ },
+ "T_ref_s": 9066.8,
+ "T_ref_sd_s": 170.23200974804118,
+ "toy": {
+  "rb_toy_ent_s4001": {
+   "s_star": 47709396,
+   "s_star_at_T_pm_1sd": [
+    46892094,
+    48428141
+   ],
+   "ckpt": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001/checkpoints/checkpoint_48000139_steps.zip",
+   "ckpt_step": 48000139,
+   "toy_t15M_s": 2635.9,
+   "toy_t100M_s": null,
+   "speed_ratio_at_15M": 3.44
+  },
+  "rb_toy_ent_s4002": {
+   "s_star": 46263244,
+   "s_star_at_T_pm_1sd": [
+    45502911,
+    47109878
+   ],
+   "ckpt": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002/checkpoints/checkpoint_46000198_steps.zip",
+   "ckpt_step": 46000198,
+   "toy_t15M_s": 2720.1,
+   "toy_t100M_s": 20345.0,
+   "speed_ratio_at_15M": 3.333
+  },
+  "rb_toy_ent_s4003": {
+   "s_star": 46783828,
+   "s_star_at_T_pm_1sd": [
+    45938355,
+    47649053
+   ],
+   "ckpt": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4003/checkpoints/checkpoint_47000187_steps.zip",
+   "ckpt_step": 47000187,
+   "toy_t15M_s": 2725.2,
+   "toy_t100M_s": 19822.2,
+   "speed_ratio_at_15M": 3.327
+  }
+ }
+}
