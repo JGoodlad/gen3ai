@@ -1,0 +1,115 @@
+{
+ "bank_seed": "m5-laneS-bank-v1",
+ "built_at_commit": "63f97a57575e6af1db8278b2ae60f6d37466954d",
+ "content_sha256": "46233db20b30b55bd50d463b7d334559248eae80d996d63638d19c99d217d9ce",
+ "counts": {
+  "battles": 210,
+  "category_legal": {
+   "attack": 6215,
+   "hazard": 541,
+   "recovery": 1886,
+   "setup": 1482,
+   "status": 3574,
+   "switch": 6668
+  },
+  "decisions": 7028,
+  "gate1_checkable": 7028,
+  "kind": {
+   "forced_switch": 693,
+   "free": 6335
+  },
+  "legal_bucket": {
+   "2-3": 461,
+   "4-6": 2137,
+   "7+": 4430
+  },
+  "opp_class": {
+   "bot": 3756,
+   "pool_snapshot": 3272
+  },
+  "opp_name": {
+   "aggressive": 377,
+   "aggressive_v2": 377,
+   "heuristic": 445,
+   "heuristic2": 487,
+   "random": 426,
+   "sentinel_0": 623,
+   "sentinel_1": 695,
+   "sentinel_2": 935,
+   "sentinel_3": 475,
+   "sentinel_4": 544,
+   "setup_sweep": 395,
+   "setup_sweep_v2": 415,
+   "staller": 423,
+   "staller_v2": 411
+  },
+  "outcome": {
+   "draw": 667,
+   "loss": 3797,
+   "win": 2564
+  },
+  "phase": {
+   "endgame": 1793,
+   "midgame": 4535,
+   "opening": 700
+  },
+  "source": {
+   "X26@150M": 2861,
+   "X26@30M": 2045,
+   "X26@90M": 2122
+  },
+  "teams": 178
+ },
+ "dropped_single_legal": 357,
+ "encoder_identity": {
+  "arch_signature": "gen3_mon_tied_gain_v1",
+  "obs_dim": 2845,
+  "obs_golden_sha256": "9a6f947b01498fe0b917fd7b7de7f05b833e361c8c011df51b3ac141daceccb1"
+ },
+ "gate1": {
+  "battles_checked": 210,
+  "decisions_checked": 7385,
+  "decisions_unrecorded": 0,
+  "encoder": {
+   "core_events": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2764e214d3339b0c/src/rust_sim/target/release/core_events",
+   "core_events_sha256": "7e3aa071821da40038edd8e4d8ee7c0db0bc9b2d76ebb178c4db6f1feb1e5c55"
+  },
+  "failures": [],
+  "result": "PASS",
+  "rule": "every recorded decision of every banked battle's traced side re-encodes byte-equal (float32 row), with an equal mask and the recorded action equal to the token the log played"
+ },
+ "op_semantics": "gen3_op_ability_status_gigo_v1",
+ "outcome_quota": {
+  "draw": 1,
+  "loss": 2,
+  "win": 2
+ },
+ "schema": "gen3_policy_spectrum_bank_v1",
+ "selection_rule": "per (eval cycle, roster opponent): the traces of each outcome in sha256(bank_seed:prefix) order, 2 wins + 2 losses + 1 draw, a short bucket filled loss -> win -> draw; the exploiter source takes every trace and banks the UNTRACED (target) side",
+ "sources": [
+  {
+   "label": "X26@30M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "rb_x26_s2601",
+   "step_dir": "step_30000045"
+  },
+  {
+   "label": "X26@90M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "rb_x26_s2601",
+   "step_dir": "step_90000067"
+  },
+  {
+   "label": "X26@150M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "rb_x26_s2601",
+   "step_dir": "step_150000100"
+  }
+ ]
+}

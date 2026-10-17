@@ -1,0 +1,4428 @@
+{
+ "audit": {
+  "duplicate_rows": 0,
+  "duplicates_disagree": 0,
+  "end2_registered_f_excluded": 54,
+  "end2_supp_f_excluded": 18,
+  "f_action_set_mismatch": 0,
+  "f_code": 12,
+  "pairs_excluded_rule8": 0,
+  "prod_registered_f_excluded": 49,
+  "prod_supp_f_excluded": 22,
+  "torn_lines": 0
+ },
+ "eps": 0.1,
+ "label": "POST HOC, DESCRIPTIVE (not registered)",
+ "scale": "+-1 outcome (win prob = half); imp_wp in win probability",
+ "sets": {
+  "all": {
+   "end2": {
+    "common": {
+     "estimators": {
+      "BASE_ALL": {
+       "flagged_pairs": 1250,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.6164,
+         0.6876
+        ],
+        "den": 728.0,
+        "mean": 0.6525
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.7153,
+         0.7946
+        ],
+        "den": 433.0,
+        "mean": 0.7552
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 728.0,
+        "mean": 0.0
+       },
+       "imp_wp": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 728.0,
+        "mean": 0.0
+       },
+       "mean_near_best_per_turn": 7.5041,
+       "precision_any_turn": {
+        "ci": [
+         0.2566,
+         0.3253
+        ],
+        "den": 1250.0,
+        "mean": 0.2896
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1566,
+         0.2136
+        ],
+        "den": 891.0,
+        "mean": 0.1829
+       },
+       "recall_any_turn": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 362.0,
+        "mean": 1.0
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 163.0,
+        "mean": 1.0
+       },
+       "spearman_within_turn": {
+        "ci": null,
+        "den": 0.0,
+        "mean": null
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2291,
+         0.3133
+        ],
+        "den": 475.0,
+        "mean": 0.2695
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 128.0,
+        "mean": 1.0
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.1504,
+         -0.0584
+        ],
+        "den": 475.0,
+        "mean": -0.105
+       }
+      },
+      "CRITIC_F": {
+       "flagged_pairs": 491,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3122,
+         0.385
+        ],
+        "den": 728.0,
+        "mean": 0.3489
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3404,
+         0.4361
+        ],
+        "den": 433.0,
+        "mean": 0.388
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0019,
+         0.0468
+        ],
+        "den": 728.0,
+        "mean": 0.0228
+       },
+       "imp_wp": {
+        "ci": [
+         -0.001,
+         0.0234
+        ],
+        "den": 728.0,
+        "mean": 0.0114
+       },
+       "mean_near_best_per_turn": 4.8297,
+       "precision_any_turn": {
+        "ci": [
+         0.3059,
+         0.407
+        ],
+        "den": 491.0,
+        "mean": 0.3564
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1912,
+         0.2902
+        ],
+        "den": 331.0,
+        "mean": 0.2387
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4123,
+         0.5531
+        ],
+        "den": 362.0,
+        "mean": 0.4834
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3973,
+         0.5683
+        ],
+        "den": 163.0,
+        "mean": 0.4847
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1011,
+         0.1779
+        ],
+        "den": 629.0,
+        "mean": 0.1402
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2638,
+         0.3818
+        ],
+        "den": 254.0,
+        "mean": 0.3189
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5556,
+         0.7119
+        ],
+        "den": 128.0,
+        "mean": 0.6328
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0806,
+         0.0252
+        ],
+        "den": 254.0,
+        "mean": -0.0266
+       }
+      },
+      "CRITIC_ORACLE": {
+       "flagged_pairs": 432,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.2973,
+         0.3668
+        ],
+        "den": 728.0,
+        "mean": 0.3324
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.2901,
+         0.3798
+        ],
+        "den": 433.0,
+        "mean": 0.3349
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0214,
+         0.0658
+        ],
+        "den": 728.0,
+        "mean": 0.044
+       },
+       "imp_wp": {
+        "ci": [
+         0.0107,
+         0.0329
+        ],
+        "den": 728.0,
+        "mean": 0.022
+       },
+       "mean_near_best_per_turn": 4.4643,
+       "precision_any_turn": {
+        "ci": [
+         0.3419,
+         0.4595
+        ],
+        "den": 432.0,
+        "mean": 0.4005
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1955,
+         0.3023
+        ],
+        "den": 267.0,
+        "mean": 0.2472
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4122,
+         0.5419
+        ],
+        "den": 362.0,
+        "mean": 0.4779
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.321,
+         0.4934
+        ],
+        "den": 163.0,
+        "mean": 0.4049
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1581,
+         0.2331
+        ],
+        "den": 629.0,
+        "mean": 0.1961
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2402,
+         0.3587
+        ],
+        "den": 242.0,
+        "mean": 0.2975
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.4746,
+         0.6462
+        ],
+        "den": 128.0,
+        "mean": 0.5625
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0278,
+         0.079
+        ],
+        "den": 242.0,
+        "mean": 0.0257
+       }
+      },
+      "HONEST_F_K8": {
+       "flagged_pairs": 315,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.2661,
+         0.3347
+        ],
+        "den": 728.0,
+        "mean": 0.2995
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.2867,
+         0.3781
+        ],
+        "den": 433.0,
+        "mean": 0.3303
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0018,
+         0.0554
+        ],
+        "den": 728.0,
+        "mean": 0.0275
+       },
+       "imp_wp": {
+        "ci": [
+         0.0009,
+         0.0277
+        ],
+        "den": 728.0,
+        "mean": 0.0138
+       },
+       "mean_near_best_per_turn": 2.7926,
+       "precision_any_turn": {
+        "ci": [
+         0.3131,
+         0.4411
+        ],
+        "den": 315.0,
+        "mean": 0.3778
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1898,
+         0.3143
+        ],
+        "den": 204.0,
+        "mean": 0.25
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.2733,
+         0.3858
+        ],
+        "den": 362.0,
+        "mean": 0.3287
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.2407,
+         0.3913
+        ],
+        "den": 163.0,
+        "mean": 0.3129
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.113,
+         0.1773
+        ],
+        "den": 602.0,
+        "mean": 0.1449
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2783,
+         0.4062
+        ],
+        "den": 218.0,
+        "mean": 0.3394
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.4959,
+         0.6614
+        ],
+        "den": 128.0,
+        "mean": 0.5781
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.121,
+         -0.0071
+        ],
+        "den": 218.0,
+        "mean": -0.0635
+       }
+      },
+      "ORACLE_K16": {
+       "flagged_pairs": 274,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.2406,
+         0.3036
+        ],
+        "den": 728.0,
+        "mean": 0.272
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.2346,
+         0.3164
+        ],
+        "den": 433.0,
+        "mean": 0.2748
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1504,
+         0.2072
+        ],
+        "den": 728.0,
+        "mean": 0.1782
+       },
+       "imp_wp": {
+        "ci": [
+         0.0752,
+         0.1036
+        ],
+        "den": 728.0,
+        "mean": 0.0891
+       },
+       "mean_near_best_per_turn": 2.5192,
+       "precision_any_turn": {
+        "ci": [
+         0.5917,
+         0.7227
+        ],
+        "den": 274.0,
+        "mean": 0.6606
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.4656,
+         0.6383
+        ],
+        "den": 147.0,
+        "mean": 0.551
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4357,
+         0.5614
+        ],
+        "den": 362.0,
+        "mean": 0.5
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4183,
+         0.57
+        ],
+        "den": 163.0,
+        "mean": 0.4969
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.5119,
+         0.5729
+        ],
+        "den": 611.0,
+        "mean": 0.5429
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3433,
+         0.4878
+        ],
+        "den": 198.0,
+        "mean": 0.4141
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.552,
+         0.7258
+        ],
+        "den": 128.0,
+        "mean": 0.6406
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.0989,
+         0.22
+        ],
+        "den": 198.0,
+        "mean": 0.157
+       }
+      },
+      "ORACLE_K8": {
+       "flagged_pairs": 348,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3084,
+         0.375
+        ],
+        "den": 728.0,
+        "mean": 0.3407
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3173,
+         0.4049
+        ],
+        "den": 433.0,
+        "mean": 0.3603
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1228,
+         0.1784
+        ],
+        "den": 728.0,
+        "mean": 0.1498
+       },
+       "imp_wp": {
+        "ci": [
+         0.0614,
+         0.0892
+        ],
+        "den": 728.0,
+        "mean": 0.0749
+       },
+       "mean_near_best_per_turn": 2.9162,
+       "precision_any_turn": {
+        "ci": [
+         0.5115,
+         0.6366
+        ],
+        "den": 348.0,
+        "mean": 0.5747
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.3558,
+         0.5166
+        ],
+        "den": 197.0,
+        "mean": 0.4365
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4932,
+         0.6148
+        ],
+        "den": 362.0,
+        "mean": 0.5525
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4459,
+         0.6101
+        ],
+        "den": 163.0,
+        "mean": 0.5276
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.4244,
+         0.4949
+        ],
+        "den": 601.0,
+        "mean": 0.4599
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3077,
+         0.4322
+        ],
+        "den": 248.0,
+        "mean": 0.3669
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.6377,
+         0.785
+        ],
+        "den": 128.0,
+        "mean": 0.7109
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.0608,
+         0.162
+        ],
+        "den": 248.0,
+        "mean": 0.1111
+       }
+      }
+     },
+     "n_battles": 444,
+     "n_states": 728,
+     "noise_floor": {
+      "mean_action_se_F_K8": 0.2369,
+      "mean_action_se_oracle_K16": 0.1515,
+      "mean_action_se_oracle_K8": 0.2011,
+      "mean_action_se_truth_K24": 0.126,
+      "near_best_granularity": {
+       "K16": 0.0625,
+       "K24": 0.0417,
+       "K8": 0.125,
+       "note": "outcome means step by 1/K on +-1 (a tie scores 0): at K = 8 the step 0.125 > EPS, so 'within 0.1 of the best' == 'tied with the best'"
+      },
+      "split_half_near_best_jaccard": {
+       "ci": [
+        0.4969,
+        0.5536
+       ],
+       "den": 728.0,
+       "mean": 0.5264
+      },
+      "split_half_starved_pair_agreement_a_given_b": {
+       "ci": [
+        0.5313,
+        0.6598
+       ],
+       "den": 307.0,
+       "mean": 0.5993
+      },
+      "split_half_starved_pair_agreement_b_given_a": {
+       "ci": [
+        0.5473,
+        0.6723
+       ],
+       "den": 300.0,
+       "mean": 0.6133
+      }
+     },
+     "truth": {
+      "decisive_share": {
+       "ci": [
+        0.5546,
+        0.634
+       ],
+       "den": 728.0,
+       "mean": 0.5948
+      },
+      "mean_legal": 7.5041,
+      "mean_near_best_per_turn": 3.022,
+      "near_starved_any_turn_share": {
+       "ci": [
+        0.2835,
+        0.3553
+       ],
+       "den": 728.0,
+       "mean": 0.3187
+      },
+      "oracle_upper_imp": {
+       "ci": [
+        0.2607,
+        0.3143
+       ],
+       "den": 728.0,
+       "mean": 0.287
+      },
+      "starved_pairs": 163,
+      "starved_pairs_any_turn": 362,
+      "starved_share_of_all": {
+       "ci": [
+        0.1482,
+        0.2062
+       ],
+       "den": 728.0,
+       "mean": 0.1758
+      },
+      "starved_share_of_decisive": {
+       "ci": [
+        0.2522,
+        0.342
+       ],
+       "den": 433.0,
+       "mean": 0.2956
+      }
+     }
+    },
+    "truth_all": {
+     "decisive_share": {
+      "ci": [
+       0.5546,
+       0.6267
+      ],
+      "den": 800.0,
+      "mean": 0.5913
+     },
+     "mean_legal": 7.48,
+     "mean_near_best_per_turn": 3.01,
+     "n_states": 800,
+     "near_starved_any_turn_share": {
+      "ci": [
+       0.2857,
+       0.357
+      ],
+      "den": 800.0,
+      "mean": 0.32
+     },
+     "oracle_upper_imp": {
+      "ci": [
+       0.2649,
+       0.3175
+      ],
+      "den": 800.0,
+      "mean": 0.2913
+     },
+     "starved_pairs": 179,
+     "starved_pairs_any_turn": 403,
+     "starved_share_of_all": {
+      "ci": [
+       0.1503,
+       0.2072
+      ],
+      "den": 800.0,
+      "mean": 0.1775
+     },
+     "starved_share_of_decisive": {
+      "ci": [
+       0.2576,
+       0.3445
+      ],
+      "den": 473.0,
+      "mean": 0.3002
+     }
+    }
+   },
+   "pooled": {
+    "common": {
+     "estimators": {
+      "BASE_ALL": {
+       "flagged_pairs": 3183,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.6827,
+         0.731
+        ],
+        "den": 1477.0,
+        "mean": 0.7068
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.7916,
+         0.8439
+        ],
+        "den": 844.0,
+        "mean": 0.8175
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 1477.0,
+        "mean": 0.0
+       },
+       "imp_wp": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 1477.0,
+        "mean": 0.0
+       },
+       "mean_near_best_per_turn": 7.4387,
+       "precision_any_turn": {
+        "ci": [
+         0.282,
+         0.3274
+        ],
+        "den": 3183.0,
+        "mean": 0.3041
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1804,
+         0.2157
+        ],
+        "den": 2207.0,
+        "mean": 0.1976
+       },
+       "recall_any_turn": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 968.0,
+        "mean": 1.0
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 436.0,
+        "mean": 1.0
+       },
+       "spearman_within_turn": {
+        "ci": null,
+        "den": 0.0,
+        "mean": null
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2943,
+         0.353
+        ],
+        "den": 1044.0,
+        "mean": 0.3238
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 338.0,
+        "mean": 1.0
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.128,
+         -0.0702
+        ],
+        "den": 1044.0,
+        "mean": -0.0992
+       }
+      },
+      "CRITIC_F": {
+       "flagged_pairs": 1234,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3801,
+         0.4279
+        ],
+        "den": 1477.0,
+        "mean": 0.4035
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.4062,
+         0.4749
+        ],
+        "den": 844.0,
+        "mean": 0.4396
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0146,
+         0.0184
+        ],
+        "den": 1477.0,
+        "mean": 0.002
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0073,
+         0.0092
+        ],
+        "den": 1477.0,
+        "mean": 0.001
+       },
+       "mean_near_best_per_turn": 4.6858,
+       "precision_any_turn": {
+        "ci": [
+         0.3331,
+         0.4012
+        ],
+        "den": 1234.0,
+        "mean": 0.3671
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.2045,
+         0.2663
+        ],
+        "den": 798.0,
+        "mean": 0.2343
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4275,
+         0.5096
+        ],
+        "den": 968.0,
+        "mean": 0.468
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3732,
+         0.4823
+        ],
+        "den": 436.0,
+        "mean": 0.4289
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1114,
+         0.1639
+        ],
+        "den": 1263.0,
+        "mean": 0.1365
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3187,
+         0.3964
+        ],
+        "den": 596.0,
+        "mean": 0.3574
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5786,
+         0.681
+        ],
+        "den": 338.0,
+        "mean": 0.6302
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0703,
+         0.0005
+        ],
+        "den": 596.0,
+        "mean": -0.0348
+       }
+      },
+      "CRITIC_ORACLE": {
+       "flagged_pairs": 1101,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3569,
+         0.4048
+        ],
+        "den": 1477.0,
+        "mean": 0.3805
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3726,
+         0.4414
+        ],
+        "den": 844.0,
+        "mean": 0.4064
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0143,
+         0.0469
+        ],
+        "den": 1477.0,
+        "mean": 0.0306
+       },
+       "imp_wp": {
+        "ci": [
+         0.0071,
+         0.0235
+        ],
+        "den": 1477.0,
+        "mean": 0.0153
+       },
+       "mean_near_best_per_turn": 4.2979,
+       "precision_any_turn": {
+        "ci": [
+         0.3784,
+         0.4545
+        ],
+        "den": 1101.0,
+        "mean": 0.4151
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.2237,
+         0.2939
+        ],
+        "den": 672.0,
+        "mean": 0.2574
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4296,
+         0.5126
+        ],
+        "den": 968.0,
+        "mean": 0.4721
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.345,
+         0.4489
+        ],
+        "den": 436.0,
+        "mean": 0.3968
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1707,
+         0.2231
+        ],
+        "den": 1263.0,
+        "mean": 0.1968
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3181,
+         0.402
+        ],
+        "den": 562.0,
+        "mean": 0.3594
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5425,
+         0.6506
+        ],
+        "den": 338.0,
+        "mean": 0.5976
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0202,
+         0.0514
+        ],
+        "den": 562.0,
+        "mean": 0.0153
+       }
+      },
+      "HONEST_F_K8": {
+       "flagged_pairs": 817,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3447,
+         0.3964
+        ],
+        "den": 1477.0,
+        "mean": 0.371
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3754,
+         0.4435
+        ],
+        "den": 844.0,
+        "mean": 0.4088
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0139,
+         0.0222
+        ],
+        "den": 1477.0,
+        "mean": 0.0042
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0069,
+         0.0111
+        ],
+        "den": 1477.0,
+        "mean": 0.0021
+       },
+       "mean_near_best_per_turn": 2.7508,
+       "precision_any_turn": {
+        "ci": [
+         0.364,
+         0.4436
+        ],
+        "den": 817.0,
+        "mean": 0.4039
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.2259,
+         0.2947
+        ],
+        "den": 504.0,
+        "mean": 0.2599
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.3051,
+         0.3755
+        ],
+        "den": 968.0,
+        "mean": 0.3409
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.2602,
+         0.3433
+        ],
+        "den": 436.0,
+        "mean": 0.3005
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1096,
+         0.1582
+        ],
+        "den": 1218.0,
+        "mean": 0.1341
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3339,
+         0.4148
+        ],
+        "den": 548.0,
+        "mean": 0.3741
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.553,
+         0.6566
+        ],
+        "den": 338.0,
+        "mean": 0.6065
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.1052,
+         -0.0314
+        ],
+        "den": 548.0,
+        "mean": -0.0676
+       }
+      },
+      "ORACLE_K16": {
+       "flagged_pairs": 746,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3244,
+         0.3746
+        ],
+        "den": 1477.0,
+        "mean": 0.3494
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3337,
+         0.3986
+        ],
+        "den": 844.0,
+        "mean": 0.3661
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1505,
+         0.1901
+        ],
+        "den": 1477.0,
+        "mean": 0.1709
+       },
+       "imp_wp": {
+        "ci": [
+         0.0752,
+         0.095
+        ],
+        "den": 1477.0,
+        "mean": 0.0855
+       },
+       "mean_near_best_per_turn": 2.5951,
+       "precision_any_turn": {
+        "ci": [
+         0.6644,
+         0.7424
+        ],
+        "den": 746.0,
+        "mean": 0.7038
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.5337,
+         0.6408
+        ],
+        "den": 385.0,
+        "mean": 0.587
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.5024,
+         0.5815
+        ],
+        "den": 968.0,
+        "mean": 0.5424
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.469,
+         0.5667
+        ],
+        "den": 436.0,
+        "mean": 0.5183
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.5174,
+         0.5613
+        ],
+        "den": 1218.0,
+        "mean": 0.5394
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.4127,
+         0.504
+        ],
+        "den": 516.0,
+        "mean": 0.4593
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.6497,
+         0.7486
+        ],
+        "den": 338.0,
+        "mean": 0.7012
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.1461,
+         0.2165
+        ],
+        "den": 516.0,
+        "mean": 0.1821
+       }
+      },
+      "ORACLE_K8": {
+       "flagged_pairs": 892,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3741,
+         0.4253
+        ],
+        "den": 1477.0,
+        "mean": 0.4001
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3871,
+         0.452
+        ],
+        "den": 844.0,
+        "mean": 0.4194
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1243,
+         0.1626
+        ],
+        "den": 1477.0,
+        "mean": 0.1431
+       },
+       "imp_wp": {
+        "ci": [
+         0.0621,
+         0.0813
+        ],
+        "den": 1477.0,
+        "mean": 0.0716
+       },
+       "mean_near_best_per_turn": 2.9573,
+       "precision_any_turn": {
+        "ci": [
+         0.5895,
+         0.6671
+        ],
+        "den": 892.0,
+        "mean": 0.63
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.4494,
+         0.5509
+        ],
+        "den": 459.0,
+        "mean": 0.5011
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.5414,
+         0.6192
+        ],
+        "den": 968.0,
+        "mean": 0.5806
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4747,
+         0.5778
+        ],
+        "den": 436.0,
+        "mean": 0.5275
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.4399,
+         0.4888
+        ],
+        "den": 1189.0,
+        "mean": 0.4638
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3754,
+         0.4573
+        ],
+        "den": 591.0,
+        "mean": 0.4179
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.6822,
+         0.7778
+        ],
+        "den": 338.0,
+        "mean": 0.7308
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.1036,
+         0.1692
+        ],
+        "den": 591.0,
+        "mean": 0.1371
+       }
+      }
+     },
+     "n_battles": 902,
+     "n_states": 1477,
+     "noise_floor": {
+      "mean_action_se_F_K8": 0.2408,
+      "mean_action_se_oracle_K16": 0.1488,
+      "mean_action_se_oracle_K8": 0.1987,
+      "mean_action_se_truth_K24": 0.1239,
+      "near_best_granularity": {
+       "K16": 0.0625,
+       "K24": 0.0417,
+       "K8": 0.125,
+       "note": "outcome means step by 1/K on +-1 (a tie scores 0): at K = 8 the step 0.125 > EPS, so 'within 0.1 of the best' == 'tied with the best'"
+      },
+      "split_half_near_best_jaccard": {
+       "ci": [
+        0.506,
+        0.5482
+       ],
+       "den": 1477.0,
+       "mean": 0.5277
+      },
+      "split_half_starved_pair_agreement_a_given_b": {
+       "ci": [
+        0.563,
+        0.6435
+       ],
+       "den": 838.0,
+       "mean": 0.605
+      },
+      "split_half_starved_pair_agreement_b_given_a": {
+       "ci": [
+        0.5982,
+        0.6738
+       ],
+       "den": 794.0,
+       "mean": 0.6385
+      }
+     },
+     "truth": {
+      "decisive_share": {
+       "ci": [
+        0.5447,
+        0.599
+       ],
+       "den": 1477.0,
+       "mean": 0.5714
+      },
+      "mean_legal": 7.4387,
+      "mean_near_best_per_turn": 3.1185,
+      "near_starved_any_turn_share": {
+       "ci": [
+        0.3833,
+        0.4359
+       ],
+       "den": 1477.0,
+       "mean": 0.4089
+      },
+      "oracle_upper_imp": {
+       "ci": [
+        0.2542,
+        0.2914
+       ],
+       "den": 1477.0,
+       "mean": 0.2727
+      },
+      "starved_pairs": 436,
+      "starved_pairs_any_turn": 968,
+      "starved_share_of_all": {
+       "ci": [
+        0.2068,
+        0.2515
+       ],
+       "den": 1477.0,
+       "mean": 0.2288
+      },
+      "starved_share_of_decisive": {
+       "ci": [
+        0.3675,
+        0.4347
+       ],
+       "den": 844.0,
+       "mean": 0.4005
+      }
+     }
+    },
+    "truth_all": {
+     "decisive_share": {
+      "ci": [
+       0.5364,
+       0.5887
+      ],
+      "den": 1620.0,
+      "mean": 0.5623
+     },
+     "mean_legal": 7.3895,
+     "mean_near_best_per_turn": 3.1426,
+     "n_states": 1620,
+     "near_starved_any_turn_share": {
+      "ci": [
+       0.3792,
+       0.4302
+      ],
+      "den": 1620.0,
+      "mean": 0.4043
+     },
+     "oracle_upper_imp": {
+      "ci": [
+       0.2541,
+       0.2903
+      ],
+      "den": 1620.0,
+      "mean": 0.2722
+     },
+     "starved_pairs": 463,
+     "starved_pairs_any_turn": 1054,
+     "starved_share_of_all": {
+      "ci": [
+       0.2014,
+       0.2447
+      ],
+      "den": 1620.0,
+      "mean": 0.2235
+     },
+     "starved_share_of_decisive": {
+      "ci": [
+       0.366,
+       0.4307
+      ],
+      "den": 911.0,
+      "mean": 0.3974
+     }
+    }
+   },
+   "prod": {
+    "common": {
+     "estimators": {
+      "BASE_ALL": {
+       "flagged_pairs": 1933,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.7257,
+         0.793
+        ],
+        "den": 749.0,
+        "mean": 0.7597
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.8527,
+         0.9144
+        ],
+        "den": 411.0,
+        "mean": 0.8832
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 749.0,
+        "mean": 0.0
+       },
+       "imp_wp": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 749.0,
+        "mean": 0.0
+       },
+       "mean_near_best_per_turn": 7.3752,
+       "precision_any_turn": {
+        "ci": [
+         0.2848,
+         0.3434
+        ],
+        "den": 1933.0,
+        "mean": 0.3135
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1848,
+         0.2316
+        ],
+        "den": 1316.0,
+        "mean": 0.2074
+       },
+       "recall_any_turn": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 606.0,
+        "mean": 1.0
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 273.0,
+        "mean": 1.0
+       },
+       "spearman_within_turn": {
+        "ci": null,
+        "den": 0.0,
+        "mean": null
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.328,
+         0.4124
+        ],
+        "den": 569.0,
+        "mean": 0.3691
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 210.0,
+        "mean": 1.0
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.1337,
+         -0.0564
+        ],
+        "den": 569.0,
+        "mean": -0.0944
+       }
+      },
+      "CRITIC_F": {
+       "flagged_pairs": 743,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.4215,
+         0.4888
+        ],
+        "den": 749.0,
+        "mean": 0.4566
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.446,
+         0.5423
+        ],
+        "den": 411.0,
+        "mean": 0.4939
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0397,
+         0.0033
+        ],
+        "den": 749.0,
+        "mean": -0.0183
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0199,
+         0.0017
+        ],
+        "den": 749.0,
+        "mean": -0.0092
+       },
+       "mean_near_best_per_turn": 4.5461,
+       "precision_any_turn": {
+        "ci": [
+         0.3273,
+         0.4243
+        ],
+        "den": 743.0,
+        "mean": 0.3742
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1893,
+         0.2754
+        ],
+        "den": 467.0,
+        "mean": 0.2313
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4072,
+         0.5094
+        ],
+        "den": 606.0,
+        "mean": 0.4587
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3265,
+         0.4642
+        ],
+        "den": 273.0,
+        "mean": 0.3956
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.0972,
+         0.1684
+        ],
+        "den": 634.0,
+        "mean": 0.1328
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3324,
+         0.439
+        ],
+        "den": 342.0,
+        "mean": 0.386
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5602,
+         0.6938
+        ],
+        "den": 210.0,
+        "mean": 0.6286
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0917,
+         0.0074
+        ],
+        "den": 342.0,
+        "mean": -0.0409
+       }
+      },
+      "CRITIC_ORACLE": {
+       "flagged_pairs": 669,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3925,
+         0.4613
+        ],
+        "den": 749.0,
+        "mean": 0.4272
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.4314,
+         0.5312
+        ],
+        "den": 411.0,
+        "mean": 0.4818
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0065,
+         0.0397
+        ],
+        "den": 749.0,
+        "mean": 0.0175
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0033,
+         0.0198
+        ],
+        "den": 749.0,
+        "mean": 0.0087
+       },
+       "mean_near_best_per_turn": 4.1362,
+       "precision_any_turn": {
+        "ci": [
+         0.3742,
+         0.4764
+        ],
+        "den": 669.0,
+        "mean": 0.4245
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.2202,
+         0.3106
+        ],
+        "den": 405.0,
+        "mean": 0.2642
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4195,
+         0.5203
+        ],
+        "den": 606.0,
+        "mean": 0.4686
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3297,
+         0.4594
+        ],
+        "den": 273.0,
+        "mean": 0.3919
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1628,
+         0.2312
+        ],
+        "den": 634.0,
+        "mean": 0.1974
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3492,
+         0.4615
+        ],
+        "den": 320.0,
+        "mean": 0.4062
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5498,
+         0.6878
+        ],
+        "den": 210.0,
+        "mean": 0.619
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0446,
+         0.0583
+        ],
+        "den": 320.0,
+        "mean": 0.0076
+       }
+      },
+      "HONEST_F_K8": {
+       "flagged_pairs": 502,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.4018,
+         0.4791
+        ],
+        "den": 749.0,
+        "mean": 0.4406
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.4419,
+         0.5427
+        ],
+        "den": 411.0,
+        "mean": 0.4915
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0437,
+         0.005
+        ],
+        "den": 749.0,
+        "mean": -0.0185
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0219,
+         0.0025
+        ],
+        "den": 749.0,
+        "mean": -0.0093
+       },
+       "mean_near_best_per_turn": 2.7103,
+       "precision_any_turn": {
+        "ci": [
+         0.3693,
+         0.4702
+        ],
+        "den": 502.0,
+        "mean": 0.4203
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.2246,
+         0.3123
+        ],
+        "den": 300.0,
+        "mean": 0.2667
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.3049,
+         0.3947
+        ],
+        "den": 606.0,
+        "mean": 0.3482
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.2453,
+         0.3491
+        ],
+        "den": 273.0,
+        "mean": 0.293
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.0906,
+         0.1586
+        ],
+        "den": 616.0,
+        "mean": 0.1235
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3424,
+         0.4537
+        ],
+        "den": 330.0,
+        "mean": 0.397
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.558,
+         0.6923
+        ],
+        "den": 210.0,
+        "mean": 0.6238
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.122,
+         -0.0234
+        ],
+        "den": 330.0,
+        "mean": -0.0703
+       }
+      },
+      "ORACLE_K16": {
+       "flagged_pairs": 472,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3887,
+         0.4624
+        ],
+        "den": 749.0,
+        "mean": 0.4246
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.4123,
+         0.5126
+        ],
+        "den": 411.0,
+        "mean": 0.4623
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1378,
+         0.1894
+        ],
+        "den": 749.0,
+        "mean": 0.1638
+       },
+       "imp_wp": {
+        "ci": [
+         0.0689,
+         0.0947
+        ],
+        "den": 749.0,
+        "mean": 0.0819
+       },
+       "mean_near_best_per_turn": 2.6689,
+       "precision_any_turn": {
+        "ci": [
+         0.677,
+         0.7773
+        ],
+        "den": 472.0,
+        "mean": 0.7288
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.5391,
+         0.6766
+        ],
+        "den": 238.0,
+        "mean": 0.6092
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.5168,
+         0.6183
+        ],
+        "den": 606.0,
+        "mean": 0.5677
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4667,
+         0.5906
+        ],
+        "den": 273.0,
+        "mean": 0.5311
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.5068,
+         0.5649
+        ],
+        "den": 607.0,
+        "mean": 0.5358
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.4312,
+         0.5467
+        ],
+        "den": 318.0,
+        "mean": 0.4874
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.6716,
+         0.799
+        ],
+        "den": 210.0,
+        "mean": 0.7381
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.1505,
+         0.2425
+        ],
+        "den": 318.0,
+        "mean": 0.1977
+       }
+      },
+      "ORACLE_K8": {
+       "flagged_pairs": 544,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.4208,
+         0.4947
+        ],
+        "den": 749.0,
+        "mean": 0.4579
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.4328,
+         0.5318
+        ],
+        "den": 411.0,
+        "mean": 0.4818
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1103,
+         0.1616
+        ],
+        "den": 749.0,
+        "mean": 0.1366
+       },
+       "imp_wp": {
+        "ci": [
+         0.0551,
+         0.0808
+        ],
+        "den": 749.0,
+        "mean": 0.0683
+       },
+       "mean_near_best_per_turn": 2.9973,
+       "precision_any_turn": {
+        "ci": [
+         0.6118,
+         0.7162
+        ],
+        "den": 544.0,
+        "mean": 0.6654
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.4846,
+         0.6151
+        ],
+        "den": 262.0,
+        "mean": 0.5496
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.5475,
+         0.6487
+        ],
+        "den": 606.0,
+        "mean": 0.5974
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4636,
+         0.5912
+        ],
+        "den": 273.0,
+        "mean": 0.5275
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.4351,
+         0.4998
+        ],
+        "den": 588.0,
+        "mean": 0.4678
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3982,
+         0.5129
+        ],
+        "den": 343.0,
+        "mean": 0.4548
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.677,
+         0.8037
+        ],
+        "den": 210.0,
+        "mean": 0.7429
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.1125,
+         0.2012
+        ],
+        "den": 343.0,
+        "mean": 0.156
+       }
+      }
+     },
+     "n_battles": 458,
+     "n_states": 749,
+     "noise_floor": {
+      "mean_action_se_F_K8": 0.2447,
+      "mean_action_se_oracle_K16": 0.1462,
+      "mean_action_se_oracle_K8": 0.1963,
+      "mean_action_se_truth_K24": 0.1219,
+      "near_best_granularity": {
+       "K16": 0.0625,
+       "K24": 0.0417,
+       "K8": 0.125,
+       "note": "outcome means step by 1/K on +-1 (a tie scores 0): at K = 8 the step 0.125 > EPS, so 'within 0.1 of the best' == 'tied with the best'"
+      },
+      "split_half_near_best_jaccard": {
+       "ci": [
+        0.4969,
+        0.5606
+       ],
+       "den": 749.0,
+       "mean": 0.529
+      },
+      "split_half_starved_pair_agreement_a_given_b": {
+       "ci": [
+        0.5575,
+        0.6606
+       ],
+       "den": 531.0,
+       "mean": 0.6083
+      },
+      "split_half_starved_pair_agreement_b_given_a": {
+       "ci": [
+        0.6023,
+        0.7014
+       ],
+       "den": 494.0,
+       "mean": 0.6538
+      }
+     },
+     "truth": {
+      "decisive_share": {
+       "ci": [
+        0.5103,
+        0.5878
+       ],
+       "den": 749.0,
+       "mean": 0.5487
+      },
+      "mean_legal": 7.3752,
+      "mean_near_best_per_turn": 3.2123,
+      "near_starved_any_turn_share": {
+       "ci": [
+        0.4611,
+        0.5332
+       ],
+       "den": 749.0,
+       "mean": 0.4967
+      },
+      "oracle_upper_imp": {
+       "ci": [
+        0.2334,
+        0.284
+       ],
+       "den": 749.0,
+       "mean": 0.2588
+      },
+      "starved_pairs": 273,
+      "starved_pairs_any_turn": 606,
+      "starved_share_of_all": {
+       "ci": [
+        0.2474,
+        0.3145
+       ],
+       "den": 749.0,
+       "mean": 0.2804
+      },
+      "starved_share_of_decisive": {
+       "ci": [
+        0.4617,
+        0.5601
+       ],
+       "den": 411.0,
+       "mean": 0.5109
+      }
+     }
+    },
+    "truth_all": {
+     "decisive_share": {
+      "ci": [
+       0.4982,
+       0.5711
+      ],
+      "den": 820.0,
+      "mean": 0.5341
+     },
+     "mean_legal": 7.3012,
+     "mean_near_best_per_turn": 3.272,
+     "n_states": 820,
+     "near_starved_any_turn_share": {
+      "ci": [
+       0.4517,
+       0.5213
+      ],
+      "den": 820.0,
+      "mean": 0.4866
+     },
+     "oracle_upper_imp": {
+      "ci": [
+       0.23,
+       0.2789
+      ],
+      "den": 820.0,
+      "mean": 0.2537
+     },
+     "starved_pairs": 284,
+     "starved_pairs_any_turn": 651,
+     "starved_share_of_all": {
+      "ci": [
+       0.2349,
+       0.3014
+      ],
+      "den": 820.0,
+      "mean": 0.2683
+     },
+     "starved_share_of_decisive": {
+      "ci": [
+       0.452,
+       0.5491
+      ],
+      "den": 438.0,
+      "mean": 0.5023
+     }
+    }
+   }
+  },
+  "registered": {
+   "end2": {
+    "common": {
+     "estimators": {
+      "BASE_ALL": {
+       "flagged_pairs": 974,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.61,
+         0.6905
+        ],
+        "den": 546.0,
+        "mean": 0.6502
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.7059,
+         0.8049
+        ],
+        "den": 332.0,
+        "mean": 0.756
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 546.0,
+        "mean": 0.0
+       },
+       "imp_wp": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 546.0,
+        "mean": 0.0
+       },
+       "mean_near_best_per_turn": 7.489,
+       "precision_any_turn": {
+        "ci": [
+         0.2347,
+         0.3152
+        ],
+        "den": 974.0,
+        "mean": 0.2741
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1466,
+         0.211
+        ],
+        "den": 722.0,
+        "mean": 0.1773
+       },
+       "recall_any_turn": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 267.0,
+        "mean": 1.0
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 128.0,
+        "mean": 1.0
+       },
+       "spearman_within_turn": {
+        "ci": null,
+        "den": 0.0,
+        "mean": null
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.235,
+         0.3296
+        ],
+        "den": 355.0,
+        "mean": 0.2817
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 100.0,
+        "mean": 1.0
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.1584,
+         -0.0487
+        ],
+        "den": 355.0,
+        "mean": -0.1046
+       }
+      },
+      "CRITIC_F": {
+       "flagged_pairs": 372,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3037,
+         0.3828
+        ],
+        "den": 546.0,
+        "mean": 0.3425
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3353,
+         0.4421
+        ],
+        "den": 332.0,
+        "mean": 0.3886
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0078,
+         0.0479
+        ],
+        "den": 546.0,
+        "mean": 0.0201
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0039,
+         0.0239
+        ],
+        "den": 546.0,
+        "mean": 0.01
+       },
+       "mean_near_best_per_turn": 4.7729,
+       "precision_any_turn": {
+        "ci": [
+         0.2765,
+         0.3924
+        ],
+        "den": 372.0,
+        "mean": 0.3333
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1682,
+         0.2817
+        ],
+        "den": 264.0,
+        "mean": 0.2235
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.389,
+         0.5466
+        ],
+        "den": 267.0,
+        "mean": 0.4644
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3582,
+         0.56
+        ],
+        "den": 128.0,
+        "mean": 0.4609
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1088,
+         0.1955
+        ],
+        "den": 469.0,
+        "mean": 0.1523
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2584,
+         0.3967
+        ],
+        "den": 187.0,
+        "mean": 0.3262
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5196,
+         0.6974
+        ],
+        "den": 100.0,
+        "mean": 0.61
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0957,
+         0.0426
+        ],
+        "den": 187.0,
+        "mean": -0.0247
+       }
+      },
+      "CRITIC_ORACLE": {
+       "flagged_pairs": 333,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.2872,
+         0.369
+        ],
+        "den": 546.0,
+        "mean": 0.3278
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.2778,
+         0.3815
+        ],
+        "den": 332.0,
+        "mean": 0.3313
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0206,
+         0.0731
+        ],
+        "den": 546.0,
+        "mean": 0.0468
+       },
+       "imp_wp": {
+        "ci": [
+         0.0103,
+         0.0366
+        ],
+        "den": 546.0,
+        "mean": 0.0234
+       },
+       "mean_near_best_per_turn": 4.4176,
+       "precision_any_turn": {
+        "ci": [
+         0.3251,
+         0.4585
+        ],
+        "den": 333.0,
+        "mean": 0.3904
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1836,
+         0.3085
+        ],
+        "den": 213.0,
+        "mean": 0.2441
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4107,
+         0.5608
+        ],
+        "den": 267.0,
+        "mean": 0.4869
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3043,
+         0.5082
+        ],
+        "den": 128.0,
+        "mean": 0.4062
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.16,
+         0.2464
+        ],
+        "den": 469.0,
+        "mean": 0.2034
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2363,
+         0.3801
+        ],
+        "den": 179.0,
+        "mean": 0.3073
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.4444,
+         0.6495
+        ],
+        "den": 100.0,
+        "mean": 0.55
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0294,
+         0.1008
+        ],
+        "den": 179.0,
+        "mean": 0.0351
+       }
+      },
+      "HONEST_F_K8": {
+       "flagged_pairs": 249,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.2812,
+         0.3643
+        ],
+        "den": 546.0,
+        "mean": 0.3223
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3012,
+         0.4085
+        ],
+        "den": 332.0,
+        "mean": 0.3554
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0005,
+         0.065
+        ],
+        "den": 546.0,
+        "mean": 0.0342
+       },
+       "imp_wp": {
+        "ci": [
+         0.0003,
+         0.0325
+        ],
+        "den": 546.0,
+        "mean": 0.0171
+       },
+       "mean_near_best_per_turn": 2.7766,
+       "precision_any_turn": {
+        "ci": [
+         0.307,
+         0.4467
+        ],
+        "den": 249.0,
+        "mean": 0.3775
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1784,
+         0.3237
+        ],
+        "den": 163.0,
+        "mean": 0.2515
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.2897,
+         0.4185
+        ],
+        "den": 267.0,
+        "mean": 0.3521
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.2331,
+         0.4091
+        ],
+        "den": 128.0,
+        "mean": 0.3203
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1124,
+         0.1889
+        ],
+        "den": 445.0,
+        "mean": 0.1522
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2778,
+         0.4177
+        ],
+        "den": 176.0,
+        "mean": 0.3466
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.514,
+         0.71
+        ],
+        "den": 100.0,
+        "mean": 0.61
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.1319,
+         0.0099
+        ],
+        "den": 176.0,
+        "mean": -0.0597
+       }
+      },
+      "ORACLE_K16": {
+       "flagged_pairs": 205,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.2262,
+         0.3013
+        ],
+        "den": 546.0,
+        "mean": 0.2637
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.2268,
+         0.3212
+        ],
+        "den": 332.0,
+        "mean": 0.2741
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1608,
+         0.2241
+        ],
+        "den": 546.0,
+        "mean": 0.1912
+       },
+       "imp_wp": {
+        "ci": [
+         0.0804,
+         0.1121
+        ],
+        "den": 546.0,
+        "mean": 0.0956
+       },
+       "mean_near_best_per_turn": 2.4945,
+       "precision_any_turn": {
+        "ci": [
+         0.572,
+         0.7227
+        ],
+        "den": 205.0,
+        "mean": 0.6488
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.4433,
+         0.6423
+        ],
+        "den": 115.0,
+        "mean": 0.5391
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4228,
+         0.5747
+        ],
+        "den": 267.0,
+        "mean": 0.4981
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3917,
+         0.5725
+        ],
+        "den": 128.0,
+        "mean": 0.4844
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.5117,
+         0.5806
+        ],
+        "den": 453.0,
+        "mean": 0.5467
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3521,
+         0.5248
+        ],
+        "den": 144.0,
+        "mean": 0.4375
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5263,
+         0.7294
+        ],
+        "den": 100.0,
+        "mean": 0.63
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.0974,
+         0.2239
+        ],
+        "den": 144.0,
+        "mean": 0.1589
+       }
+      },
+      "ORACLE_K8": {
+       "flagged_pairs": 255,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.29,
+         0.3655
+        ],
+        "den": 546.0,
+        "mean": 0.3278
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3059,
+         0.4068
+        ],
+        "den": 332.0,
+        "mean": 0.3554
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1296,
+         0.1902
+        ],
+        "den": 546.0,
+        "mean": 0.16
+       },
+       "imp_wp": {
+        "ci": [
+         0.0648,
+         0.0951
+        ],
+        "den": 546.0,
+        "mean": 0.08
+       },
+       "mean_near_best_per_turn": 2.8553,
+       "precision_any_turn": {
+        "ci": [
+         0.4921,
+         0.6364
+        ],
+        "den": 255.0,
+        "mean": 0.5686
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.351,
+         0.5282
+        ],
+        "den": 149.0,
+        "mean": 0.4362
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4634,
+         0.6204
+        ],
+        "den": 267.0,
+        "mean": 0.5431
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4196,
+         0.5926
+        ],
+        "den": 128.0,
+        "mean": 0.5078
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.4244,
+         0.4989
+        ],
+        "den": 446.0,
+        "mean": 0.4617
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3148,
+         0.4601
+        ],
+        "den": 179.0,
+        "mean": 0.3855
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5957,
+         0.7778
+        ],
+        "den": 100.0,
+        "mean": 0.69
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.0682,
+         0.1732
+        ],
+        "den": 179.0,
+        "mean": 0.1187
+       }
+      }
+     },
+     "n_battles": 386,
+     "n_states": 546,
+     "noise_floor": {
+      "mean_action_se_F_K8": 0.2407,
+      "mean_action_se_oracle_K16": 0.1523,
+      "mean_action_se_oracle_K8": 0.2023,
+      "mean_action_se_truth_K24": 0.1275,
+      "near_best_granularity": {
+       "K16": 0.0625,
+       "K24": 0.0417,
+       "K8": 0.125,
+       "note": "outcome means step by 1/K on +-1 (a tie scores 0): at K = 8 the step 0.125 > EPS, so 'within 0.1 of the best' == 'tied with the best'"
+      },
+      "split_half_near_best_jaccard": {
+       "ci": [
+        0.5022,
+        0.5669
+       ],
+       "den": 546.0,
+       "mean": 0.5349
+      },
+      "split_half_starved_pair_agreement_a_given_b": {
+       "ci": [
+        0.5074,
+        0.6602
+       ],
+       "den": 223.0,
+       "mean": 0.5874
+      },
+      "split_half_starved_pair_agreement_b_given_a": {
+       "ci": [
+        0.5138,
+        0.6653
+       ],
+       "den": 221.0,
+       "mean": 0.5928
+      }
+     },
+     "truth": {
+      "decisive_share": {
+       "ci": [
+        0.5667,
+        0.6515
+       ],
+       "den": 546.0,
+       "mean": 0.6081
+      },
+      "mean_legal": 7.489,
+      "mean_near_best_per_turn": 2.9139,
+      "near_starved_any_turn_share": {
+       "ci": [
+        0.2677,
+        0.3488
+       ],
+       "den": 546.0,
+       "mean": 0.3095
+      },
+      "oracle_upper_imp": {
+       "ci": [
+        0.2711,
+        0.3326
+       ],
+       "den": 546.0,
+       "mean": 0.3012
+      },
+      "starved_pairs": 128,
+      "starved_pairs_any_turn": 267,
+      "starved_share_of_all": {
+       "ci": [
+        0.1511,
+        0.2162
+       ],
+       "den": 546.0,
+       "mean": 0.1832
+      },
+      "starved_share_of_decisive": {
+       "ci": [
+        0.2522,
+        0.35
+       ],
+       "den": 332.0,
+       "mean": 0.3012
+      }
+     }
+    },
+    "truth_all": {
+     "decisive_share": {
+      "ci": [
+       0.5614,
+       0.6452
+      ],
+      "den": 600.0,
+      "mean": 0.605
+     },
+     "mean_legal": 7.4633,
+     "mean_near_best_per_turn": 2.9183,
+     "n_states": 600,
+     "near_starved_any_turn_share": {
+      "ci": [
+       0.2741,
+       0.351
+      ],
+      "den": 600.0,
+      "mean": 0.3117
+     },
+     "oracle_upper_imp": {
+      "ci": [
+       0.274,
+       0.3317
+      ],
+      "den": 600.0,
+      "mean": 0.3033
+     },
+     "starved_pairs": 140,
+     "starved_pairs_any_turn": 298,
+     "starved_share_of_all": {
+      "ci": [
+       0.1541,
+       0.2186
+      ],
+      "den": 600.0,
+      "mean": 0.185
+     },
+     "starved_share_of_decisive": {
+      "ci": [
+       0.2583,
+       0.356
+      ],
+      "den": 363.0,
+      "mean": 0.3058
+     }
+    }
+   },
+   "pooled": {
+    "common": {
+     "estimators": {
+      "BASE_ALL": {
+       "flagged_pairs": 2463,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.6932,
+         0.7479
+        ],
+        "den": 1097.0,
+        "mean": 0.7211
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.79,
+         0.8529
+        ],
+        "den": 645.0,
+        "mean": 0.8233
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 1097.0,
+        "mean": 0.0
+       },
+       "imp_wp": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 1097.0,
+        "mean": 0.0
+       },
+       "mean_near_best_per_turn": 7.484,
+       "precision_any_turn": {
+        "ci": [
+         0.2636,
+         0.312
+        ],
+        "den": 2463.0,
+        "mean": 0.287
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1733,
+         0.2147
+        ],
+        "den": 1742.0,
+        "mean": 0.1935
+       },
+       "recall_any_turn": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 707.0,
+        "mean": 1.0
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 337.0,
+        "mean": 1.0
+       },
+       "spearman_within_turn": {
+        "ci": null,
+        "den": 0.0,
+        "mean": null
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.2943,
+         0.3617
+        ],
+        "den": 791.0,
+        "mean": 0.3274
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 259.0,
+        "mean": 1.0
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.1329,
+         -0.0679
+        ],
+        "den": 791.0,
+        "mean": -0.1011
+       }
+      },
+      "CRITIC_F": {
+       "flagged_pairs": 965,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3827,
+         0.4415
+        ],
+        "den": 1097.0,
+        "mean": 0.412
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.407,
+         0.4853
+        ],
+        "den": 645.0,
+        "mean": 0.4465
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0187,
+         0.019
+        ],
+        "den": 1097.0,
+        "mean": 0.0001
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0094,
+         0.0095
+        ],
+        "den": 1097.0,
+        "mean": 0.0
+       },
+       "mean_near_best_per_turn": 4.6737,
+       "precision_any_turn": {
+        "ci": [
+         0.3047,
+         0.3782
+        ],
+        "den": 965.0,
+        "mean": 0.3399
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1817,
+         0.2545
+        ],
+        "den": 650.0,
+        "mean": 0.2169
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4183,
+         0.5124
+        ],
+        "den": 707.0,
+        "mean": 0.4639
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3538,
+         0.4806
+        ],
+        "den": 337.0,
+        "mean": 0.4184
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1135,
+         0.1712
+        ],
+        "den": 945.0,
+        "mean": 0.1435
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.314,
+         0.4059
+        ],
+        "den": 452.0,
+        "mean": 0.3606
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5714,
+         0.6844
+        ],
+        "den": 259.0,
+        "mean": 0.6293
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0783,
+         0.0031
+        ],
+        "den": 452.0,
+        "mean": -0.038
+       }
+      },
+      "CRITIC_ORACLE": {
+       "flagged_pairs": 834,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3537,
+         0.4124
+        ],
+        "den": 1097.0,
+        "mean": 0.3847
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.363,
+         0.4426
+        ],
+        "den": 645.0,
+        "mean": 0.4047
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0162,
+         0.054
+        ],
+        "den": 1097.0,
+        "mean": 0.0354
+       },
+       "imp_wp": {
+        "ci": [
+         0.0081,
+         0.027
+        ],
+        "den": 1097.0,
+        "mean": 0.0177
+       },
+       "mean_near_best_per_turn": 4.2434,
+       "precision_any_turn": {
+        "ci": [
+         0.3455,
+         0.4259
+        ],
+        "den": 834.0,
+        "mean": 0.3861
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.2037,
+         0.2822
+        ],
+        "den": 528.0,
+        "mean": 0.2424
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4094,
+         0.5015
+        ],
+        "den": 707.0,
+        "mean": 0.4554
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.3179,
+         0.4414
+        ],
+        "den": 337.0,
+        "mean": 0.3798
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1751,
+         0.2335
+        ],
+        "den": 945.0,
+        "mean": 0.2044
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3156,
+         0.4106
+        ],
+        "den": 422.0,
+        "mean": 0.3626
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5263,
+         0.6509
+        ],
+        "den": 259.0,
+        "mean": 0.5907
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0169,
+         0.0634
+        ],
+        "den": 422.0,
+        "mean": 0.0239
+       }
+      },
+      "HONEST_F_K8": {
+       "flagged_pairs": 631,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3566,
+         0.4176
+        ],
+        "den": 1097.0,
+        "mean": 0.3874
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3754,
+         0.4576
+        ],
+        "den": 645.0,
+        "mean": 0.4171
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0089,
+         0.034
+        ],
+        "den": 1097.0,
+        "mean": 0.0125
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0044,
+         0.017
+        ],
+        "den": 1097.0,
+        "mean": 0.0062
+       },
+       "mean_near_best_per_turn": 2.7274,
+       "precision_any_turn": {
+        "ci": [
+         0.3531,
+         0.4426
+        ],
+        "den": 631.0,
+        "mean": 0.3962
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.226,
+         0.3132
+        ],
+        "den": 392.0,
+        "mean": 0.2679
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.3129,
+         0.3951
+        ],
+        "den": 707.0,
+        "mean": 0.3536
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.2631,
+         0.3616
+        ],
+        "den": 337.0,
+        "mean": 0.3116
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1132,
+         0.1695
+        ],
+        "den": 903.0,
+        "mean": 0.1407
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3258,
+         0.4215
+        ],
+        "den": 425.0,
+        "mean": 0.3741
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5529,
+         0.6721
+        ],
+        "den": 259.0,
+        "mean": 0.6139
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.114,
+         -0.0286
+        ],
+        "den": 425.0,
+        "mean": -0.0697
+       }
+      },
+      "ORACLE_K16": {
+       "flagged_pairs": 546,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3195,
+         0.3769
+        ],
+        "den": 1097.0,
+        "mean": 0.3482
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3268,
+         0.4012
+        ],
+        "den": 645.0,
+        "mean": 0.3628
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1573,
+         0.2026
+        ],
+        "den": 1097.0,
+        "mean": 0.1794
+       },
+       "imp_wp": {
+        "ci": [
+         0.0787,
+         0.1013
+        ],
+        "den": 1097.0,
+        "mean": 0.0897
+       },
+       "mean_near_best_per_turn": 2.5023,
+       "precision_any_turn": {
+        "ci": [
+         0.6375,
+         0.7317
+        ],
+        "den": 546.0,
+        "mean": 0.685
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.5048,
+         0.6318
+        ],
+        "den": 297.0,
+        "mean": 0.569
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4855,
+         0.5737
+        ],
+        "den": 707.0,
+        "mean": 0.529
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4441,
+         0.5565
+        ],
+        "den": 337.0,
+        "mean": 0.5015
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.5179,
+         0.5657
+        ],
+        "den": 908.0,
+        "mean": 0.5408
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.4132,
+         0.5191
+        ],
+        "den": 382.0,
+        "mean": 0.466
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.6245,
+         0.7459
+        ],
+        "den": 259.0,
+        "mean": 0.6873
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.1396,
+         0.2204
+        ],
+        "den": 382.0,
+        "mean": 0.1803
+       }
+      },
+      "ORACLE_K8": {
+       "flagged_pairs": 659,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3705,
+         0.4278
+        ],
+        "den": 1097.0,
+        "mean": 0.3984
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3774,
+         0.4511
+        ],
+        "den": 645.0,
+        "mean": 0.414
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1317,
+         0.1755
+        ],
+        "den": 1097.0,
+        "mean": 0.1529
+       },
+       "imp_wp": {
+        "ci": [
+         0.0658,
+         0.0878
+        ],
+        "den": 1097.0,
+        "mean": 0.0764
+       },
+       "mean_near_best_per_turn": 2.835,
+       "precision_any_turn": {
+        "ci": [
+         0.5721,
+         0.6613
+        ],
+        "den": 659.0,
+        "mean": 0.6191
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.4474,
+         0.5584
+        ],
+        "den": 352.0,
+        "mean": 0.5028
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.5314,
+         0.6219
+        ],
+        "den": 707.0,
+        "mean": 0.5771
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.468,
+         0.582
+        ],
+        "den": 337.0,
+        "mean": 0.5252
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.4402,
+         0.4958
+        ],
+        "den": 890.0,
+        "mean": 0.4682
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3787,
+         0.4784
+        ],
+        "den": 437.0,
+        "mean": 0.4279
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.6653,
+         0.7782
+        ],
+        "den": 259.0,
+        "mean": 0.722
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.1083,
+         0.1815
+        ],
+        "den": 437.0,
+        "mean": 0.1442
+       }
+      }
+     },
+     "n_battles": 777,
+     "n_states": 1097,
+     "noise_floor": {
+      "mean_action_se_F_K8": 0.2472,
+      "mean_action_se_oracle_K16": 0.153,
+      "mean_action_se_oracle_K8": 0.2046,
+      "mean_action_se_truth_K24": 0.1276,
+      "near_best_granularity": {
+       "K16": 0.0625,
+       "K24": 0.0417,
+       "K8": 0.125,
+       "note": "outcome means step by 1/K on +-1 (a tie scores 0): at K = 8 the step 0.125 > EPS, so 'within 0.1 of the best' == 'tied with the best'"
+      },
+      "split_half_near_best_jaccard": {
+       "ci": [
+        0.497,
+        0.5459
+       ],
+       "den": 1097.0,
+       "mean": 0.5219
+      },
+      "split_half_starved_pair_agreement_a_given_b": {
+       "ci": [
+        0.5313,
+        0.6266
+       ],
+       "den": 609.0,
+       "mean": 0.5796
+      },
+      "split_half_starved_pair_agreement_b_given_a": {
+       "ci": [
+        0.5651,
+        0.6579
+       ],
+       "den": 577.0,
+       "mean": 0.6118
+      }
+     },
+     "truth": {
+      "decisive_share": {
+       "ci": [
+        0.558,
+        0.6206
+       ],
+       "den": 1097.0,
+       "mean": 0.588
+      },
+      "mean_legal": 7.484,
+      "mean_near_best_per_turn": 2.9945,
+      "near_starved_any_turn_share": {
+       "ci": [
+        0.3783,
+        0.4363
+       ],
+       "den": 1097.0,
+       "mean": 0.4075
+      },
+      "oracle_upper_imp": {
+       "ci": [
+        0.2647,
+        0.3084
+       ],
+       "den": 1097.0,
+       "mean": 0.2858
+      },
+      "starved_pairs": 337,
+      "starved_pairs_any_turn": 707,
+      "starved_share_of_all": {
+       "ci": [
+        0.2108,
+        0.2623
+       ],
+       "den": 1097.0,
+       "mean": 0.2361
+      },
+      "starved_share_of_decisive": {
+       "ci": [
+        0.3642,
+        0.4385
+       ],
+       "den": 645.0,
+       "mean": 0.4016
+      }
+     }
+    },
+    "truth_all": {
+     "decisive_share": {
+      "ci": [
+       0.5494,
+       0.6069
+      ],
+      "den": 1200.0,
+      "mean": 0.5783
+     },
+     "mean_legal": 7.4283,
+     "mean_near_best_per_turn": 3.0242,
+     "n_states": 1200,
+     "near_starved_any_turn_share": {
+      "ci": [
+       0.3745,
+       0.4299
+      ],
+      "den": 1200.0,
+      "mean": 0.4017
+     },
+     "oracle_upper_imp": {
+      "ci": [
+       0.263,
+       0.3044
+      ],
+      "den": 1200.0,
+      "mean": 0.2836
+     },
+     "starved_pairs": 355,
+     "starved_pairs_any_turn": 762,
+     "starved_share_of_all": {
+      "ci": [
+       0.207,
+       0.254
+      ],
+      "den": 1200.0,
+      "mean": 0.23
+     },
+     "starved_share_of_decisive": {
+      "ci": [
+       0.3622,
+       0.4345
+      ],
+      "den": 694.0,
+      "mean": 0.3977
+     }
+    }
+   },
+   "prod": {
+    "common": {
+     "estimators": {
+      "BASE_ALL": {
+       "flagged_pairs": 1489,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.7546,
+         0.825
+        ],
+        "den": 551.0,
+        "mean": 0.7913
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.8567,
+         0.9286
+        ],
+        "den": 313.0,
+        "mean": 0.8946
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 551.0,
+        "mean": 0.0
+       },
+       "imp_wp": {
+        "ci": [
+         0.0,
+         0.0
+        ],
+        "den": 551.0,
+        "mean": 0.0
+       },
+       "mean_near_best_per_turn": 7.4791,
+       "precision_any_turn": {
+        "ci": [
+         0.2668,
+         0.3281
+        ],
+        "den": 1489.0,
+        "mean": 0.2955
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1801,
+         0.231
+        ],
+        "den": 1020.0,
+        "mean": 0.2049
+       },
+       "recall_any_turn": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 440.0,
+        "mean": 1.0
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 209.0,
+        "mean": 1.0
+       },
+       "spearman_within_turn": {
+        "ci": null,
+        "den": 0.0,
+        "mean": null
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3192,
+         0.4122
+        ],
+        "den": 436.0,
+        "mean": 0.3647
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         1.0,
+         1.0
+        ],
+        "den": 159.0,
+        "mean": 1.0
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.1388,
+         -0.0574
+        ],
+        "den": 436.0,
+        "mean": -0.0982
+       }
+      },
+      "CRITIC_F": {
+       "flagged_pairs": 593,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.4379,
+         0.5217
+        ],
+        "den": 551.0,
+        "mean": 0.4809
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.4525,
+         0.561
+        ],
+        "den": 313.0,
+        "mean": 0.508
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0455,
+         0.0072
+        ],
+        "den": 551.0,
+        "mean": -0.0197
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0228,
+         0.0036
+        ],
+        "den": 551.0,
+        "mean": -0.0099
+       },
+       "mean_near_best_per_turn": 4.5753,
+       "precision_any_turn": {
+        "ci": [
+         0.2997,
+         0.3933
+        ],
+        "den": 593.0,
+        "mean": 0.344
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1675,
+         0.2602
+        ],
+        "den": 386.0,
+        "mean": 0.2124
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.4061,
+         0.5195
+        ],
+        "den": 440.0,
+        "mean": 0.4636
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.308,
+         0.4749
+        ],
+        "den": 209.0,
+        "mean": 0.3923
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.0959,
+         0.173
+        ],
+        "den": 476.0,
+        "mean": 0.1348
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3269,
+         0.4473
+        ],
+        "den": 265.0,
+        "mean": 0.3849
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5667,
+         0.7135
+        ],
+        "den": 159.0,
+        "mean": 0.6415
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0966,
+         0.0046
+        ],
+        "den": 265.0,
+        "mean": -0.0473
+       }
+      },
+      "CRITIC_ORACLE": {
+       "flagged_pairs": 501,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.4015,
+         0.4811
+        ],
+        "den": 551.0,
+        "mean": 0.441
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.4235,
+         0.538
+        ],
+        "den": 313.0,
+        "mean": 0.4824
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0004,
+         0.0488
+        ],
+        "den": 551.0,
+        "mean": 0.0242
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0002,
+         0.0244
+        ],
+        "den": 551.0,
+        "mean": 0.0121
+       },
+       "mean_near_best_per_turn": 4.0708,
+       "precision_any_turn": {
+        "ci": [
+         0.3321,
+         0.4339
+        ],
+        "den": 501.0,
+        "mean": 0.3832
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.1907,
+         0.2932
+        ],
+        "den": 315.0,
+        "mean": 0.2413
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.378,
+         0.4956
+        ],
+        "den": 440.0,
+        "mean": 0.4364
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.2903,
+         0.4419
+        ],
+        "den": 209.0,
+        "mean": 0.3636
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.1658,
+         0.2443
+        ],
+        "den": 476.0,
+        "mean": 0.2053
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3425,
+         0.4672
+        ],
+        "den": 243.0,
+        "mean": 0.4033
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5429,
+         0.6959
+        ],
+        "den": 159.0,
+        "mean": 0.6164
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.0327,
+         0.0672
+        ],
+        "den": 243.0,
+        "mean": 0.0156
+       }
+      },
+      "HONEST_F_K8": {
+       "flagged_pairs": 382,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.4064,
+         0.4938
+        ],
+        "den": 551.0,
+        "mean": 0.4519
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.4236,
+         0.5389
+        ],
+        "den": 313.0,
+        "mean": 0.4824
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         -0.0371,
+         0.0201
+        ],
+        "den": 551.0,
+        "mean": -0.009
+       },
+       "imp_wp": {
+        "ci": [
+         -0.0185,
+         0.0101
+        ],
+        "den": 551.0,
+        "mean": -0.0045
+       },
+       "mean_near_best_per_turn": 2.6788,
+       "precision_any_turn": {
+        "ci": [
+         0.3557,
+         0.4668
+        ],
+        "den": 382.0,
+        "mean": 0.4084
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.2269,
+         0.3317
+        ],
+        "den": 229.0,
+        "mean": 0.2795
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.3032,
+         0.4106
+        ],
+        "den": 440.0,
+        "mean": 0.3545
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.2457,
+         0.371
+        ],
+        "den": 209.0,
+        "mean": 0.3062
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.0884,
+         0.1703
+        ],
+        "den": 458.0,
+        "mean": 0.1294
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.3346,
+         0.4545
+        ],
+        "den": 249.0,
+        "mean": 0.3936
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.5369,
+         0.6901
+        ],
+        "den": 159.0,
+        "mean": 0.6164
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         -0.1302,
+         -0.0255
+        ],
+        "den": 249.0,
+        "mean": -0.0768
+       }
+      },
+      "ORACLE_K16": {
+       "flagged_pairs": 341,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.3879,
+         0.4746
+        ],
+        "den": 551.0,
+        "mean": 0.4319
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.3994,
+         0.5133
+        ],
+        "den": 313.0,
+        "mean": 0.4569
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1357,
+         0.2015
+        ],
+        "den": 551.0,
+        "mean": 0.1678
+       },
+       "imp_wp": {
+        "ci": [
+         0.0679,
+         0.1008
+        ],
+        "den": 551.0,
+        "mean": 0.0839
+       },
+       "mean_near_best_per_turn": 2.51,
+       "precision_any_turn": {
+        "ci": [
+         0.6453,
+         0.7635
+        ],
+        "den": 341.0,
+        "mean": 0.7067
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.5072,
+         0.6667
+        ],
+        "den": 182.0,
+        "mean": 0.5879
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.489,
+         0.6034
+        ],
+        "den": 440.0,
+        "mean": 0.5477
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4429,
+         0.5811
+        ],
+        "den": 209.0,
+        "mean": 0.512
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.502,
+         0.5656
+        ],
+        "den": 455.0,
+        "mean": 0.535
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.4208,
+         0.547
+        ],
+        "den": 238.0,
+        "mean": 0.4832
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.649,
+         0.7922
+        ],
+        "den": 159.0,
+        "mean": 0.7233
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.1406,
+         0.245
+        ],
+        "den": 238.0,
+        "mean": 0.1933
+       }
+      },
+      "ORACLE_K8": {
+       "flagged_pairs": 404,
+       "flagged_turn_share_all": {
+        "ci": [
+         0.4265,
+         0.5108
+        ],
+        "den": 551.0,
+        "mean": 0.4682
+       },
+       "flagged_turn_share_truth_decisive": {
+        "ci": [
+         0.424,
+         0.5286
+        ],
+        "den": 313.0,
+        "mean": 0.476
+       },
+       "imp_argmax_vs_top1": {
+        "ci": [
+         0.1146,
+         0.1771
+        ],
+        "den": 551.0,
+        "mean": 0.1459
+       },
+       "imp_wp": {
+        "ci": [
+         0.0573,
+         0.0886
+        ],
+        "den": 551.0,
+        "mean": 0.0729
+       },
+       "mean_near_best_per_turn": 2.8149,
+       "precision_any_turn": {
+        "ci": [
+         0.5906,
+         0.7088
+        ],
+        "den": 404.0,
+        "mean": 0.651
+       },
+       "precision_truth_decisive": {
+        "ci": [
+         0.478,
+         0.6269
+        ],
+        "den": 203.0,
+        "mean": 0.5517
+       },
+       "recall_any_turn": {
+        "ci": [
+         0.5428,
+         0.6538
+        ],
+        "den": 440.0,
+        "mean": 0.5977
+       },
+       "recall_truth_decisive": {
+        "ci": [
+         0.4605,
+         0.6096
+        ],
+        "den": 209.0,
+        "mean": 0.5359
+       },
+       "spearman_within_turn": {
+        "ci": [
+         0.4361,
+         0.5095
+        ],
+        "den": 444.0,
+        "mean": 0.4748
+       },
+       "turn_flag_precision_vs_starved_turns": {
+        "ci": [
+         0.396,
+         0.5192
+        ],
+        "den": 258.0,
+        "mean": 0.4574
+       },
+       "turn_flag_recall_starved_turns": {
+        "ci": [
+         0.6708,
+         0.8108
+        ],
+        "den": 159.0,
+        "mean": 0.7421
+       },
+       "value_flagged_move_vs_top1": {
+        "ci": [
+         0.1141,
+         0.2134
+        ],
+        "den": 258.0,
+        "mean": 0.1618
+       }
+      }
+     },
+     "n_battles": 391,
+     "n_states": 551,
+     "noise_floor": {
+      "mean_action_se_F_K8": 0.2537,
+      "mean_action_se_oracle_K16": 0.1537,
+      "mean_action_se_oracle_K8": 0.207,
+      "mean_action_se_truth_K24": 0.1276,
+      "near_best_granularity": {
+       "K16": 0.0625,
+       "K24": 0.0417,
+       "K8": 0.125,
+       "note": "outcome means step by 1/K on +-1 (a tie scores 0): at K = 8 the step 0.125 > EPS, so 'within 0.1 of the best' == 'tied with the best'"
+      },
+      "split_half_near_best_jaccard": {
+       "ci": [
+        0.4731,
+        0.5432
+       ],
+       "den": 551.0,
+       "mean": 0.5091
+      },
+      "split_half_starved_pair_agreement_a_given_b": {
+       "ci": [
+        0.5182,
+        0.6353
+       ],
+       "den": 386.0,
+       "mean": 0.5751
+      },
+      "split_half_starved_pair_agreement_b_given_a": {
+       "ci": [
+        0.564,
+        0.6835
+       ],
+       "den": 356.0,
+       "mean": 0.6236
+      }
+     },
+     "truth": {
+      "decisive_share": {
+       "ci": [
+        0.5256,
+        0.6107
+       ],
+       "den": 551.0,
+       "mean": 0.5681
+      },
+      "mean_legal": 7.4791,
+      "mean_near_best_per_turn": 3.0744,
+      "near_starved_any_turn_share": {
+       "ci": [
+        0.4618,
+        0.5474
+       ],
+       "den": 551.0,
+       "mean": 0.5045
+      },
+      "oracle_upper_imp": {
+       "ci": [
+        0.2414,
+        0.3004
+       ],
+       "den": 551.0,
+       "mean": 0.2706
+      },
+      "starved_pairs": 209,
+      "starved_pairs_any_turn": 440,
+      "starved_share_of_all": {
+       "ci": [
+        0.2513,
+        0.3291
+       ],
+       "den": 551.0,
+       "mean": 0.2886
+      },
+      "starved_share_of_decisive": {
+       "ci": [
+        0.4543,
+        0.5663
+       ],
+       "den": 313.0,
+       "mean": 0.508
+      }
+     }
+    },
+    "truth_all": {
+     "decisive_share": {
+      "ci": [
+       0.5099,
+       0.5941
+      ],
+      "den": 600.0,
+      "mean": 0.5517
+     },
+     "mean_legal": 7.3933,
+     "mean_near_best_per_turn": 3.13,
+     "n_states": 600,
+     "near_starved_any_turn_share": {
+      "ci": [
+       0.4497,
+       0.5328
+      ],
+      "den": 600.0,
+      "mean": 0.4917
+     },
+     "oracle_upper_imp": {
+      "ci": [
+       0.2365,
+       0.2932
+      ],
+      "den": 600.0,
+      "mean": 0.2639
+     },
+     "starved_pairs": 215,
+     "starved_pairs_any_turn": 464,
+     "starved_share_of_all": {
+      "ci": [
+       0.2383,
+       0.3124
+      ],
+      "den": 600.0,
+      "mean": 0.275
+     },
+     "starved_share_of_decisive": {
+      "ci": [
+       0.4427,
+       0.5519
+      ],
+      "den": 331.0,
+      "mean": 0.4985
+     }
+    }
+   }
+  }
+ },
+ "starve_mass": 0.01
+}

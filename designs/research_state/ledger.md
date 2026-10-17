@@ -26552,3 +26552,65 @@ with no GPU.
 Tag: **MEASUREMENT · PROVISIONAL (one checkpoint, one seed, a live run at 161M of a 500M cap; owner plateau rule)** ·
 evidence: `research_state/measurements/x26_metamon_anchor_2026-10-17/` (README, `cells.json`, `rows.jsonl`, `scripts/`);
 `designs/ops/EXTERNAL_ANCHORS_SOP.md` §1 goal row, §4 "X26".
+### 2026-10-17 · MEASUREMENT (PILOT, DESCRIPTIVE) · **COLLAPSE PILOT: X26 shows NO entropy collapse and NO growing starvation. About 0.3 of decisive turns starve a near-best move at every checkpoint from 10M to 160M (own truth −0.011 [−0.090, +0.061]; pre-era truth +0.013 to +0.023, not detected 3/3), while dominated mass and greedy regret FALL. About 3/4 of it is MISRANK, not tie-collapse. The starved moves are worth +0.35 to +0.39 per starved decisive turn, but only in the TRUE world: an honest one-ply read flags them at 1.35× chance and acting on its flag loses −0.068**
+
+**Question (owner, 2026-10-17).** *"understand what type of collapse are we seeing? For example, equally good plays. We
+need some way to give counterfactuals."* The design and taxonomy are in `endstate/design_collapse_and_counterfactuals.md`.
+CPU only, read-only on `models/`, not registered.
+
+**Reads.**
+- **A. X26's own truth.** A new bank from `rb_x26_s2601`'s eval traces at 30M / 90M / 150M: 7,028 decisions in 210
+  battles, with gate ① byte-equal on 7,385 recorded decisions. On a 306-turn subset, every legal action × 32 shared
+  seeds was played to the end in the TRUE world, with X26@150M greedy on both sides. Cost: 3.5 h wall ≈ 3.7 CPU-h,
+  0 refused. Of the 306 turns, 179 are decisive.
+- **B.** The same checkpoints on Lane S `truth_v2`.
+- **C.** A post-hoc honest-vs-oracle detectability read on the value-discrimination pilot's truth and Tier 1's arm F
+  (end2 / prod at 15M; 1,097 states).
+- **D.** Entropy on both banks.
+- **E.** Hodge, plateau Tier 1 and the sentinels.
+
+**Numbers** (decisive turns, battle-clustered 95 %, ±1 scale):
+- **Starved share, read A.** X26 at 10 / 30 / 50 / 90 / 130 / 150 / 160M: 0.296 / 0.307 / 0.251 / 0.279 / 0.296 /
+  0.324 / 0.285.
+  - 10M → 160M: −0.011 [−0.090, +0.061].
+  - 10M → 150M: +0.028 [−0.040, +0.098].
+  - At the nested 16 seeds, 10M → 150M: +0.081 [+0.006, +0.169].
+- **Starved share, read B.**
+  - X26 10M → 160M: +0.023 / +0.013 / +0.021 (K2 / N0 / C_fix continuations). Every interval spans 0.
+  - DETECTED 3/3 over the same span: dominated mass −0.029 / −0.030 / −0.027 and greedy regret −0.019 / −0.029 / −0.025.
+  - X26@160M − K3: −0.128 to −0.141 (3/3).
+  - The readout reproduces Lane S's N0@75M 0.31–0.35 and K3 0.48–0.49 exactly.
+- **Split.**
+  - TIE-COLLAPSE (the argmax is itself near-best): 0.05–0.09 (A), 0.09–0.12 (B).
+  - MISRANK (the argmax is not near-best): 0.20–0.25 (A), 0.21–0.25 (B).
+- **Value.**
+  - Held-out gain of the best starved move over the argmax (chosen on half the seeds, scored on the other half):
+    +0.35 to +0.39 per starved decisive turn (A).
+  - Oracle IMP: +0.14 to +0.18 on all turns.
+  - Greedy regret 10M → 160M: −0.046 [−0.091, −0.001] (A).
+- **Read C.**
+  - On decisive turns, the precision of a flagged starved move being truly near-best: oracle 8-rollout leaf 0.501,
+    HONEST F 8 worlds 0.260, critic on F worlds 0.234, chance 0.194.
+  - Playing the flagged move instead of the top choice: oracle +0.137 [+0.104, +0.169], honest −0.068 [−0.105, −0.031].
+- **Entropy (D).** X26's own bank holds flat at 1.05–1.16 nats from 10M on. From 30M to 160M it rises +0.062
+  [+0.037, +0.087].
+- **Strategic (E).**
+  - Hodge excess cyclic width: 32 ELO (p = 0.005; 3.1 % of the flow).
+  - Tier 1 reads CLIMBING at every check to 160M.
+  - The pairs needed per check grew from 120–360 to 520–1,120.
+
+**Reading.**
+- X26's sharpening is the healthy kind, unlike ai_v14's N0 → K3.
+- The owner's "equally good plays" case is the minority of the starvation.
+- The rest is misrank, and its value is hidden information. A deployable counterfactual target cannot fix it until the
+  search programme's honest worlds improve.
+- (iii) Q-head labels and (iv) completed-Q targets stay DEFERRED under `design_q_head.md` §5.0.
+
+**Hazard (F-CC-1).** `python -m main.elo` without `--out` rewrote `models/rb_x26_s2601/elo/elo_ratings.json` and
+`elo_curve.png` (derived meter output).
+
+Tag: **MEASUREMENT · DESCRIPTIVE · PRE-PLATEAU (PROVISIONAL) · a starvation rise NOT DETECTED (two referees) ·
+dominated mass / greedy regret fall DETECTED (pre-era 3/3) · honest one-ply cannot detect starvation (post hoc, 15M
+checkpoints)** · evidence: `research_state/measurements/collapse_pilot_2026-10-17/` (README, `starvation_readout.py`,
+`readout_x26truth.json`, `readout_oldtruth_bankv1.json`, `honest_vs_oracle_starvation.{py,json}`,
+`spectrum_x26bank.md`, `strategic_series.json`); `endstate/design_collapse_and_counterfactuals.md`

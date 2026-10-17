@@ -1385,6 +1385,29 @@ unplayed ACTION. [MEASURED · NOT DETECTED at the action level · one checkpoint
 [`../endstate/design_q_head.md`](../endstate/design_q_head.md) §5.0 (`006156b7`)]
 
 
+**X26 does NOT repeat the lineage's starvation (collapse pilot, 2026-10-17; DESCRIPTIVE, pre-plateau).** On X26's own
+eval-trace states, with every legal action × 32 seeds played to the end under X26@150M greedy (306 turns, 179
+decisive), and on the pre-era `truth_v2` above:
+- **Starvation is FLAT from 10M to 160M:** −0.011 [−0.090, +0.061] on its own truth, +0.013 to +0.023 (not detected,
+  3/3 continuations) on the pre-era one. Dominated mass and greedy regret FALL at the same time (pre-era: −0.027 to
+  −0.030 and −0.019 to −0.029, 3/3). That is healthy sharpening.
+- **Level:** ~0.3 of decisive turns, the level of N0@75M; X26@160M is 0.13–0.14 below K3 (3/3).
+- **Entropy is flat** at 1.05–1.16 nats on X26's own states.
+- **About 3/4 of the starvation is MISRANK** (the policy's top choice is not near-best). TIE-COLLAPSE between equally
+  good moves is 0.05–0.09 of decisive turns.
+- **What the starved moves are worth:** +0.35 to +0.39 (±1 scale, held out) per starved decisive turn, but only in the
+  TRUE world. An honest-world 8-world one-ply read flags them at 1.35× chance, and acting on its flag loses −0.068 (the
+  oracle leaf: 2.6×, +0.137).
+
+| claim | tag |
+|---|---|
+| X26's starvation is flat over 10M → 160M while its dominated mass and greedy regret fall; it is ~0.13 below K3's | MEASURED · DESCRIPTIVE · two referees (X26@150M continuation, 179 decisive turns, ±0.08; the pre-era truth, 3/3 continuations) · X26 still CLIMBING, so PROVISIONAL |
+| Most starvation is misrank, not tie-collapse; its value is hidden information that honest one-ply cannot see | MEASURED (X26 truth) · DESCRIPTIVE, POST HOC (honest vs oracle, on the 15M end-state / production checkpoints, transfer to X26 ASSUMED) |
+
+[design: [`../endstate/design_collapse_and_counterfactuals.md`](../endstate/design_collapse_and_counterfactuals.md) §0, §3;
+meas: [`measurements/collapse_pilot_2026-10-17/`](measurements/collapse_pilot_2026-10-17/README.md); ledger 2026-10-17 ·
+*COLLAPSE PILOT*]
+
 ### 4.5 The X5 belief A/B at look 3 (final), and the value of perfect information (2026-10-07)
 
 **Hypothesis tokens (concrete guesses of the opponent's hidden Pokémon, "fixed_mass") are NON-INFERIOR to the blob belief at matched steps, INFERIOR per GPU-hour, and BETTER at predicting the opponent's next action.** Eight seeds per arm (look 3, the last registered look), mirrored head-to-head cross, δ = 3.5 pp, played and read at the seeds' training pin `706fa536`:

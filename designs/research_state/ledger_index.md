@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-26,555-line file. **The ledger itself is append-only and is never edited by this**;
+26,617-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**892 headings · 837 dated · 2026-08-01 → 2026-10-17 · ledger 26,555 lines.**
+**893 headings · 838 dated · 2026-08-01 → 2026-10-17 · ledger 26,617 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -912,3 +912,4 @@ rename.
   - `L26418` · `2026-10-17` · FINDING / DESIGN · **X26's bf16 startup-gate LOSS drift (6.68e-3 = 48 % of the bar at the 121M restart) is ONE ROW made heavy by T36's relocation, not bf16 losing the model. It is a per-state lottery from ≈ 114M (≈ 1–2 % per restart over the bar on CPU; ≈ 4 % after a 0.28 T37 raise), not a trend. The bf16 rule now reads the LOSS on the golden's own rows, the statistic its bars were derived on (`gen3_r1_loss_on_golden_rows_v1`, future pins); X26 itself keeps its pin, with a rollback**
   - `L26465` · `2026-10-17` · FINDING (MAJOR for X26 ops) · **X26's K9(b) stop at update 13,900 (max |Δ log π| 1.0109e-4 on ONE row of 982 judged) is NUMERICAL, not a fault: the row is the most fp32-ill-conditioned of the scan's worst 32, EVERY fp32 evaluation of it misses the exact (float64) value by 0.6–1.65e-4, and the stored behaviour log-prob is the CLOSEST of them. No checkpoint is void. At today's scale a recurrence comes every ≈ 26M steps, rising to ≈ 1.5M by the 500M cap (≈ 110 stops in all), so the recommendation is a `warn` resume under monitored ceilings (judged max < 1e-3, p99 < 1e-4) by a new Amendment 3**
   - `L26499` · `2026-10-17` · MEASUREMENT · **X26 vs METAMON — the near-term goal is MET, PROVISIONALLY: X26 `rb_x26_s2601` @161,000,169 (greedy) beats `metamon:Kakuna` (ckpt 34, Metamon's best) on OUR teams (home72) at BOTH Kakuna settings, 0.600 [0.537, 0.660] greedy and 0.600 [0.537, 0.660] at T = 1.0 (n = 240 each), +0.140 [+0.046, +0.230] and +0.220 [+0.127, +0.308] over N0; on Metamon's own teams 0.570 [0.472, 0.663] (n = 100) NOT DETECTED; against `SmallRL` level with K2 (the v14 plateau)**
+  - `L26555` · `2026-10-17` · MEASUREMENT (PILOT, DESCRIPTIVE) · **COLLAPSE PILOT: X26 shows NO entropy collapse and NO growing starvation. About 0.3 of decisive turns starve a near-best move at every checkpoint from 10M to 160M (own truth −0.011 [−0.090, +0.061]; pre-era truth +0.013 to +0.023, not detected 3/3), while dominated mass and greedy regret FALL. About 3/4 of it is MISRANK, not tie-collapse. The starved moves are worth +0.35 to +0.39 per starved decisive turn, but only in the TRUE world: an honest one-ply read flags them at 1.35× chance and acting on its flag loses −0.068**
