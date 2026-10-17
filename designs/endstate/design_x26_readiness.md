@@ -875,6 +875,33 @@ today's compiled shift (0.218 at the 121M restart; the canary 10 updates later r
 (M = 0.72), and the 4× premise is a calibration margin, not a refusal. A loss-only refusal is recoverable at the same pin
 (R8's rollback).
 
+**STARTUP-GATE REFUSALS during X26: the operational procedure** (orchestrator, 2026-10-17; an OPS procedure, not a
+research rule; it changes no registered read).
+
+- **The LOSS line only** (not grad, per-param or margin) ⇒ resume the same run at the same pin from the newest periodic
+  checkpoint whose CPU pre-flight reads relocated-row drift ≤ 0.007, half the bar. The pre-flight is
+  `designs/research_state/measurements/x26_bf16_drift_2026-10-17/scripts/newrule.py <ckpts> 64`, ~10 s per checkpoint.
+  Cost ≤ 1–2M steps.
+- **The PER-PARAM line, confined to `move_resolution_cell.*`** ⇒ X26 is down anyway. Run the GPU `canary_replay` on the
+  newest ~4 checkpoints, then resume from the newest one that PASSES both slices (~5 min).
+  - The replay is `python -m main.ops.diag_bf16_canary gpu --arms E32,Ebf,Cbf --dither 0 --dither-rest 0` under
+    `gpu_lock.sh` + `mem_cap.sh 20`. The wrapper `diag_bf16_canary.sh` does not pass `--arms`, and all 7 arms compile
+    for ~19 min, past its 1,200 s wall.
+  - Read `canary_replay`, the gate's own relocated `_check`, not `canary_verdict`, which reads the RAW rows.
+- **ANY other parameter, or any other line** ⇒ HOLD and tell the orchestrator.
+- **Evidence** (2026-10-17, X26 resume from the u13900 K9(b) stop):
+  - The startup gate refused `final_model_exception.zip` (136.97M) on `move_resolution_cell.switch_proj.bias` at
+    19.3 × (cached kernels, SHARED-HIT `5d99a269`). A FRESH compile reproduced it at 21 × on slice 0, the gate's rows.
+  - Slice 1 of the same weights passed (3.53). The other 7 checkpoints from 110M to 136.0M passed both slices (worst
+    6.02). Every refusal and near-bar raw read sat in `move_resolution_cell` (switch_proj / move_proj).
+  - So the refusal is WEIGHTS-dependent, not a cached-kernel artifact. X26 resumed from `checkpoint_136000153`,
+    losing ≈ 975k steps.
+- **Why mid-run is safe:** the in-run canary confirms on BOTH disjoint halves, so this single-slice lottery cannot
+  FATAL it alone. The single-shot startup gate is the exposure, and X26's 24 h restart interval (Amendment 3 §A3.3)
+  minimises it.
+- **Queued for FUTURE runs:** the startup gate confirms on disjoint halves as the canary does, and an investigation of
+  `move_resolution_cell`'s gradient under Inductor bf16.
+
 ## 5. The GPU SCHEDULE from tonight to the X26 launch
 
 The GPU lease is held by the Training session ('Training Oct', expiring 2026-10-19 01:36). Every job below runs
@@ -1178,3 +1205,4 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-16 | **T38 BUILT (F14 / T33-2): the plateau meter's parallel batches, `main.plateau tick --inflight-batches K`, default 4** — K batches in ONE eval cycle on one engine in one process (the executor's opt-in `seed_blocks`, `gen3_eval_seed_blocks_v1`), each batch on its own seed block, row and claim; the GSPRT rule unchanged and folded in batch order (a batch past the stop is a surplus row). Landed at X26 ≈ 2M steps with no X26 `plateau_t1` request open | more processes (rule 5b's ≤ 2 heavy jobs, a second model copy); judging a wave as a whole (peeks at later batches); K = 8 as default (slower than K = 1 on a short GAIN check) | §2.6 "The pipelining, built and measured"; `main/plateau_parallel_test.py` (three RECORDED T-ENT checks replayed at 1–150 in flight with adversarial surplus: the recorded verdict, stop batch, pairs and LLR); `main/h2h/plateau_integration_test.py` (the real engine: the same games and decision at 1 and 3 in flight) |
 | 2026-10-17 | **The bf16 rule's LOSS comparisons read the golden's OWN rows** (`gen3_r1_loss_on_golden_rows_v1`, F37, R8): the loss is continuous in the ratio, the relocation only multiplied a moved row's weight in it, and the bars were derived on the golden's own rows. The gradient comparisons stay relocated. **X26 keeps its pin**: on a loss-only refusal, roll back to a pre-flighted checkpoint at the same pin. The staged RED raise is weighed against its measured cost (§4.2) | a check-only raise-only override of the loss / grad bars (T37-style: X26 cannot take new code either, and it loosens the teeth with no basis); a sensitivity-normalised policy drift against the shift bar (a new unmeasured bar, ~10× looser on logit faults); fp32 for one trunk round (no round dominates; a training change); the fp32 trunk (+29 % `train_ms`; the defect is the statistic) | `../training/compile_flags.md` "bf16 drift on a sharpening policy"; `src/agents/model/compile_regions_loss_rows_test.py`; `../research_state/measurements/x26_bf16_drift_2026-10-17/` |
 | 2026-10-17 | **X26 resumes after its K9(b) stop under `--behaviour-check warn` with fixed GIGO ceilings** (PREREGISTRATION Amendment 3, registered before the resume): stop on ANY update with judged max ≥ 1e-3, p99 ≥ 1e-4 or a non-finite |Δ|, read by hand via `main.ops.tb_read` at every tick, every restart and daily; resume from `final_model_exception.zip` (after update 13,899) at the same pin; restart interval 24 h (the owner may revert), with a VmRSS growth guard (> 2 GB ⇒ a manual restart) | (A) resume `fatal` (≈ 110 predicted rounding stops by 500M); `off` (no detector); an fp32 trunk (the rounding is in the fp32 forward on both sides); `checkpoint_136000153` (discards ≈ 975k clean steps) | the u13900 stop diagnosed NUMERICAL, no checkpoint void: `177f61c0`, `designs/research_state/measurements/x26_k9b_stop_2026-10-17/` |
+| 2026-10-17 | **X26's startup-gate refusals get an OPS procedure** (§4.2 "STARTUP-GATE REFUSALS during X26"): loss line only ⇒ resume from the newest checkpoint pre-flighting ≤ 0.007; per-param line confined to `move_resolution_cell.*` ⇒ GPU `canary_replay` (E32/Ebf/Cbf) on the newest ~4 checkpoints, resume from the newest passing both slices; anything else ⇒ HOLD. Applied once: X26 resumed from `checkpoint_136000153` (≈ 975k steps lost) after `final_model_exception.zip` refused at 19.3× (21× in a fresh compile) | a fresh-compile retry of the refused weights (reproduces); `--no-compile-trainer` (~1.75× slower, different numerics) | the GPU replay of 8 checkpoints, 2026-10-17 (§4.2) |
