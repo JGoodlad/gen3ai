@@ -54,12 +54,12 @@ def main():
         keep = {x.strip() for x in Path(a.ids).read_text().splitlines() if x.strip()}
         ids = [x for x in ids if x in keep]
     ids = E.shard(ids, a.shard, a.of)
-    if a.limit:
-        ids = ids[:a.limit]
     rdir = E.rows_dir(c, "O")
     path = rdir / f"shard_{a.shard}_of_{a.of}.jsonl"
     done = set(E.read_dir(rdir, "shard_*.jsonl"))
     todo = [x for x in ids if x not in done]
+    if a.limit:                                  # cap the NEW work; capping ids first re-picked the done ones forever
+        todo = todo[:a.limit]
     print(f"[phase1_e2] {c} shard {a.shard}/{a.of}: {len(done)} done, {len(todo)} to go", flush=True)
     off = C.clock_offset()
     lib = F.load(F.default_path("release"))
