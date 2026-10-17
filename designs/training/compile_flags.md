@@ -2097,6 +2097,106 @@ refuses the argv (`pinned_argv.pinned_parser_check`: `✗ NOT IN PINNED TREE`). 
 restarts through the recorded field. It does not replace the diag (`scripts/ops/diag_bf16_canary.sh <run>`), which says
 whether the shift is shared by eager bf16 and C32 is still ≈ 0; it replaces the FORK that a code-only raise would have forced.
 
+### bf16 drift on a sharpening policy: the loss is read on the golden's own rows (`gen3_r1_loss_on_golden_rows_v1`, 2026-10-17)
+
+**The event.** X26 (`rb_x26_s2601`, pinned `9c033489`) read the startup gate's bf16 DRIFT on the loss at about 1e-4 at
+every 6-hourly restart until 2026-10-17 03:35. The 121.14M restart then read **6.68e-3, 48 % of the 0.014 bar**, with
+eager bf16 at the same value, so it was bf16 rounding, not the compiler. The first canary after it (update 10, 122.13M) read
+4.86e-4. The two read the SAME rows (slice 0, all 64 golden rows tiled to B = 2,048, relocated the same way;
+`compile_trainer.fixture_index`), so only the weights differed.
+
+**THE FINDING (CPU, X26's own checkpoints loaded strict at this checkout, B = 64 untiled, eager bf16 vs the fp32
+reference on the relocated rows exactly as the gate builds them; `designs/research_state/measurements/
+x26_bf16_drift_2026-10-17/`).** CPU tracks CUDA on this statistic: on the 121.14M gate weights it reads 6.29e-3 at B = 64 and
+6.31e-3 at B = 2,048 against CUDA's 6.68e-3, and it relocates 608 / 2,048 rows, the same count as CUDA.
+- **It is not a smooth growth.** From 2M to 113M the drift and its 16-seed dithered null (relative 2^-9, half a bf16 ulp) sit
+  flat. The null median is 2–10e-4, and 0 of 476 draws exceed 0.007. From about **114M** the null steps up: 3 of 204 draws
+  pass 0.014 (1.5 %, max 2.05e-2), and 21 of 204 pass 0.007. The undithered 118M checkpoint reads **1.15e-2 (82 %)**. Adjacent
+  checkpoints differ by 10x (118M 1.15e-2, 120M 1.5e-3). It is a per-state LOTTERY, and the trend cannot be extrapolated to a
+  crossing date.
+- **ONE ROW carries it.** The policy term is 95 % of the loss difference. Inside it, golden **row 9** carries **88–100 %** of
+  the drift at 117M, 118M, 119M and 121.14M. Row 9 has A = −3.23, the fixture's largest |A|. Its raw ratio sits within the
+  margin of its switching bound 0.85, so the relocation moves it to **ρ = 0.85 e^(2M) = 3.59**. That gives it a weight of
+  ρ|A| = 11.6 in a 64-row mean, 18 % of the whole policy term.
+  - The row's bf16 log-prob shift went from 0.002–0.009 (110M) to 0.046–0.09 (116M on).
+- **The cause is the FUNCTION's conditioning, smooth, not a near-tie.** A half-ulp dither moves row 9's fp32 log-prob by a
+  median of 0.04–0.11 from 116M on, against about 0.004 for a well-conditioned heavy row (row 46). Its sensitivity scales
+  LINEARLY with the dither from 2^-20 to 2^-7 (×8 per 2^3), so there is no discrete op near a tie (`scale.py`). bf16's shift
+  on that row is the size of the fp32 function's own move under a half-ulp weight change, which every optimizer step
+  dwarfs.
+- **No layer outgrew bf16.** Each trunk round alone in bf16 contributes the same order of drift, with random signs; rounds 0
+  and 1 dominate and the extra round is smaller. The rounds' output |max| (≈ 6) and rms (≈ 1.0–1.2) are flat across the run.
+  `move_belief.move_head.weight` (the startup line's worst per-parameter ratio, 6.33 < 12) is the ENVELOPE's
+  per-parameter statistic, not the loss drift's. Its loss term contributes 0 to the drift.
+- **The relocation amplifies the loss statistic, and the bar was never derived on it.** The loss is CONTINUOUS in ρ (the
+  clip switches the GRADIENT, not the value), so it needs no relocation. But T36's move multiplies a relocated A < 0
+  row's loss weight by ≈ 4.2 (ρ 0.85 → 3.59), and by e^(2ΔM) more under a raised `--canary-shift-max`.
+  `BF16_DRIFT_BARS` / `BF16_ENVELOPE_K` were derived in window D (2026-10-10) on the golden's OWN rows, five days before the
+  relocation existed. On the golden's own rows, the same 170 dithered draws (114M–123M) read **max 7.7e-3 (55 %)**, 0
+  over 0.014 and 1 over 0.007. The relocated reading of the same draws: max 1.5e-2, 2 over 0.014 and 6 over 0.0105.
+- **A T37 raise makes the relocated reading worse.** At `--canary-shift-max 0.28` (the value §4.2's RED action stages
+  from the 0.218 read), the same 170 draws read **7 over 0.014 (4.1 %, max 3.4e-2)**, against 2 at 0.18. The undithered
+  118M checkpoint reads 0.01397, on the bar's edge. The golden-row reading does not depend on the margin.
+- **The grad drift** (bar 0.68) reads at most 0.226 over 680 draws (33 %). It is also elevated from 114M (0.09–0.12
+  undithered) and is not close.
+
+**Forecast** (CPU; the CUDA statistic tracks it within about 6 % on the one direct comparison, so every probability below is
+**UNVERIFIED on CUDA**):
+- No crossing date exists, because there is no trend: through 113M the statistic is flat and far from the bar.
+- Since about 114M each startup gate draws from a distribution with **≈ 1–2 % per restart above 0.014**: 5 of 374 pooled
+  draws over two nulls, 90 % interval about 0.6–2.8 %.
+- It is **≈ 4 % at a shift_max of 0.28**.
+- Over X26's remaining ≈ 13 six-hourly restarts to 500M, that is ≈ 15–20 % for at least one refusal if the regime holds,
+  and ≈ 40 % after the raise.
+- The canary is not exposed the same way. Its confirmation needs both disjoint halves, and row 9 sits in one half only.
+  The startup gate is single-shot.
+
+**The responses, ranked** (cost → verdict):
+
+| option | cost | verdict |
+|---|---|---|
+| **(b) read the loss on the golden's own rows** (`gen3_r1_loss_on_golden_rows_v1`, BUILT below) | none at runtime: host-side arithmetic on each arm's own log-probs, no extra forward | **THE FIX, for every pin at or after it.** It keeps the DERIVED bar and its derivation's statistic, so the teeth are unchanged by construction. It removes the relocation's ×4.2 (and the T37 raise's e^(2ΔM)) from the loss. |
+| (b′) normalise the policy part by its sensitivity (s = \|ΔL_pg\| / mean(ρ\|A\|), against the shift bar) | none at runtime | REJECTED. It is a new statistic with a new, unmeasured bar, and it is about 10x looser on a forward fault in the logits; (b) needs neither. |
+| (c) a check-only, raise-only override of the loss / grad drift bars, like T37 | ≈ 0.5 agent-day | NOT BUILT. X26's pin cannot take new code anyway. A raised loss bar loosens the teeth with no measured basis, and (b) makes it unnecessary. |
+| (a) fp32 for one trunk round | ≈ +10 % `train_ms` (one of three rounds of the +29 % fp32 trunk; ESTIMATE, UNVERIFIED) | NO. No round dominates (comparable shares, random signs), so it would only scale the lottery. For X26 it is a TRAINING change, so it needs an amendment. |
+| (d) the fp32 trunk | `train_ms` +29 % (42.1 → 54.3 s) | A working stopgap. It is a training change for X26 (Amendment 3, never silently), and it is not needed: the defect is the statistic, not bf16. |
+| fp32 for the move_belief head / the logits | — | MOOT. Both already run fp32 (design (b)), and the move_belief term contributes 0 to the drift. |
+
+**What X26 can use: none of the code.** X26's pin `9c033489` reads the relocated statistic, and the launcher refuses to move a
+live pin. What it can use with no code:
+1. **The rollback.** If a startup gate refuses ONLY on the bf16 loss (the `DRIFTED … loss` or `COMPILED … loss:` lines;
+   never a gradient, per-parameter or margin refusal), resume the SAME run at the SAME pin from the newest periodic
+   checkpoint whose CPU pre-flight reads at most half the bar. The pre-flight is `scripts/newrule.py <ckpts> 64` in the
+   measurement directory; its "relocated-row drift" column is what the pinned gate judges, and it takes about 10 s per
+   checkpoint on the agent cores. Adjacent checkpoints differ by up to 10x, so this costs ≤ 1–2M steps.
+2. **Weigh the staged T37 raise against its cost.** It moves the per-restart refusal odds from ≈ 1–2 % to ≈ 4 % on these
+   states. Today's compiled shift (0.218) is 3.3x below the refusal (M = 0.72). The canary 10 updates later read 0.1285.
+
+**THE FIX (`gen3_r1_loss_on_golden_rows_v1`).** `compile_regions.golden_row_loss` reads each arm's loss with its policy term
+re-evaluated on the golden's OWN old log-probs: L − pg(relocated old) + pg(raw old), from the arm's own log-probs and the
+normalised advantages. `micro_step`'s formula is computed in float64, with the fork mask and the accumulation rung's per-micro
+sum. `ClipRelocation.raw_old_log_prob` carries the rows.
+- `_r1_judge` and the graphed accumulation rung hand the bf16 rule those losses (`_r1_verdict_bf16(..., losses=)`).
+- Every LOSS comparison (the DRIFT and the ENVELOPE) reads them.
+- The GRADIENT comparisons stay on the relocated rows, where rule 8 needs them.
+- The R1 line prints `[loss on the golden's own rows; relocated rows: drift …, envelope …]`, and every canary record's
+  `global` gains `drift_loss_relocated` / `envelope_loss_relocated` beside the judged values.
+- The bars, `BF16_LOSS_FLOOR` and the fp32 rule are unchanged, and training is untouched (only the gate's judgement reads it).
+
+**Proof** (`compile_regions_loss_rows_test`, each test fails on revert; two revert mutations were applied, and each was
+caught):
+- The reconstruction EQUALS a forward on the golden's rows (K9 learner, bf16 and fp32 trunk, within 1e-5 relative), both for
+  one micro-batch and for the accumulation rung's two.
+- The gate hands the rule those losses, and the line names them.
+- A relocation-amplified healthy one-row shift (X26's row 9 on hand-built arms) passes on the golden's rows and is refused
+  on the relocated ones.
+- THE TEETH still refuse three planted faults: a broad 0.2 log-prob shift (DRIFT), a non-policy loss fault in the eager arm
+  (DRIFT) and a compiled-only loss fault (ENVELOPE).
+- On X26's states through production's own functions: 118M reads relocated 1.15e-2 → golden 7.0e-5, and the gate weights
+  6.29e-3 → 3.14e-3 (B = 2,048: 6.31e-3 → 3.16e-3).
+- **Not covered by a revert test:** the graphed accumulation rung's wiring. It runs only on CUDA with
+  `--learner-cudagraphs on`; its reconstruction function is the tested one.
+
 ### The gate releases its memory (`gen3_gate_releases_memory_v1`, `gen3_gate_memory_v1`, `gen3_canary_memory_v1`, 2026-10-15)
 
 **The failure.** `rb_xs_s2701` (a fresh `--arch production` with the X26 argv at `71351ff5`) passed the bf16 gate and was

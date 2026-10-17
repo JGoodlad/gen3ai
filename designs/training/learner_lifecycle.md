@@ -169,7 +169,10 @@ graph, so a disagreement is confirmed IN THE SAME UPDATE:
 - **Every check runs on the fixture moved off the PPO clip boundary** (`compile_regions.relocate_clip_boundary`,
   the startup gate's rows exactly; standing rule 8): a row within `R1_CLIP_MARGIN` of the clip bound that switches
   its gradient is moved 2 × the margin inside its active side, and an arm that moves a log-prob past the margin is
-  refused by name (`compile_flags.md` "The fix (T36)").
+  refused by name (`compile_flags.md` "The fix (T36)"). The bf16 rule's LOSS comparisons (drift and envelope) read each
+  arm's loss on the golden's OWN rows instead (`compile_regions.golden_row_loss`, `gen3_r1_loss_on_golden_rows_v1`): the
+  loss is continuous in the ratio, and the relocation multiplied a moved row's weight in it ≈ 4×, which the bars were
+  never derived on (`compile_flags.md` "bf16 drift on a sharpening policy").
 - **Confirmed** (it disagrees on BOTH halves): checkpoint to `<run_dir>/final_model_canary_fatal.zip`
   (forensics only; `latest.txt` is not moved), then `CompileCanaryError` (FATAL_CONFIG, not restarted).
 - **Not confirmed:** `compile/canary_unconfirmed_disagreements` counts it and training continues.
@@ -182,7 +185,8 @@ Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 `confirm_slice2` / `confirm_slice1`, the two halves) holds, per watched parameter, the bf16 rule's `ratio`, the `compiled`
 distance from the fp32 reference, eager bf16's `eager` yardstick and the `floor` (under the fp32 rule:
 `compiled_vs_eager` and its `bar`; an unjudged parameter `{"judged": false}`), the check's `worst` parameter
-and its `global` drift / envelope numbers, plus `clip_margin` (rows relocated, the margin, the nearest unmoved
+and its `global` drift / envelope numbers (the judged loss values on the golden's own rows, with
+`drift_loss_relocated` / `envelope_loss_relocated` reported beside them), plus `clip_margin` (rows relocated, the margin, the nearest unmoved
 row's distance, the `shift_max` / `shift_max_source` the margin was built from and every arm's largest |Δ log π| from
 the fp32 reference — the margin's provisional input, read at every canary) — filled before any check can refuse. Every
 record also carries the top-level `canary_shift_max` {value, source, margin} (`--canary-shift-max`, T37: the code's

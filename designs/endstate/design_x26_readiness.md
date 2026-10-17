@@ -866,6 +866,15 @@ pinned before it.
 **A second, descriptive trigger:** if `compiled` exceeds 2 × `eager` on two consecutive canaries, run the diag in the
 next restart window. The ratio on the toy's 64 rows stayed ≤ 1.4, so 2× would point at the compiler, not the weights.
 
+**The RED raise has a COST on the loss drift** (measured 2026-10-17 on X26's own checkpoints, CPU, UNVERIFIED on CUDA;
+`../training/compile_flags.md` "bf16 drift on a sharpening policy", F37, R8). X26's pinned gate reads the bf16 loss drift
+on the RELOCATED rows, and a raised margin moves a relocated A < 0 row to ρ = 0.85 e^(2M). At `--canary-shift-max 0.28`
+the per-restart odds of a loss-drift refusal on the 114M–123M states rise from ≈ 1–2 % to ≈ 4 % (CPU null: 7 of 170
+draws over 0.014 against 2 at 0.18). The 118M checkpoint reads 0.01397, at the bar. So weigh the raise before typing it:
+today's compiled shift (0.218 at the 121M restart; the canary 10 updates later read 0.1285) is 3.3× below the refusal
+(M = 0.72), and the 4× premise is a calibration margin, not a refusal. A loss-only refusal is recoverable at the same pin
+(R8's rollback).
+
 ## 5. The GPU SCHEDULE from tonight to the X26 launch
 
 The GPU lease is held by the Training session ('Training Oct', expiring 2026-10-19 01:36). Every job below runs
@@ -951,6 +960,17 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 - **R7. The compiled bf16 learner's log-prob shift grows with training until the canary refuses** (the toy: 0.050 → 0.110
   over 15M → 72.66M; the refusal is at 0.72). *Mitigation:* §4.2's watch, with its bands and actions, and T37's
   check-only override (`--canary-shift-max`, BUILT) so a RED read is fixed at a restart without a fork.
+- **R8. The startup gate's bf16 LOSS drift refuses a restart** (measured 2026-10-17, F37). It is a per-state lottery, not a
+  trend. From ≈ 114M one heavily weighted, ill-conditioned golden row (row 9, ρ|A| 11.6 after the relocation) carries
+  88–100 % of the drift. CPU puts it at ≈ 1–2 % per restart over 0.014 (≈ 4 % after a 0.28 T37 raise), and at ≈ 15–20 %
+  for at least one refusal over X26's remaining ≈ 13 restarts. All of this is UNVERIFIED on CUDA. The refusal is
+  FATAL_CONFIG, and the launcher does not restart it. *Mitigation (no code; X26's pin `9c033489` cannot take the fix):* on
+  a refusal that names ONLY the bf16 LOSS (the `DRIFTED … loss` or `COMPILED … loss:` lines; never a gradient,
+  per-parameter or margin refusal), resume the SAME run at the SAME pin from the newest periodic checkpoint whose CPU
+  pre-flight reads ≤ half the bar. The pre-flight is `research_state/measurements/x26_bf16_drift_2026-10-17/scripts/newrule.py
+  <ckpts> 64`; its "relocated-row drift" column is what the pinned gate judges. Adjacent checkpoints differ by up to 10×,
+  so this costs ≤ 1–2M steps. Future pins read the loss on the golden's own rows (`gen3_r1_loss_on_golden_rows_v1`), which
+  removes the amplification.
 
 ### 6.2 Questions for the owner (strategic only)
 
@@ -1106,6 +1126,17 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
     two seeds. Without it, the pooled point is ≈ +11.3 pp.
   - Whether the canary-era steps cost it anything is UNVERIFIED.
   - R-T2 uses the same checkpoint, so report its row separately there too.
+- **F37 (bf16 drift, 2026-10-17). X26's startup-gate loss drift of 6.68e-3 (48 % of 0.014) at the 121M restart is ONE
+  ROW, made heavy by the T36 relocation, not bf16 losing the model.** CPU, on X26's checkpoints
+  (`../research_state/measurements/x26_bf16_drift_2026-10-17/`):
+  - The statistic is flat and far below the bar through 113M.
+  - From ≈ 114M golden row 9 (A = −3.23, moved to ρ = 3.59) carries 88–100 % of it. Its log-prob is ill-conditioned in the
+    fp32 FUNCTION ITSELF: a half-ulp weight dither moves it 0.04–0.11, smoothly, with no near-tie.
+  - No trunk round dominates, and the activations are flat.
+  - The bars were derived on the golden's own rows before the relocation existed. Read there, the same draws stay
+    ≤ 55 % of the bar.
+  - The canary's 4.86e-4, 10 updates later, read the same rows on different weights.
+  - Fix for future pins: `gen3_r1_loss_on_golden_rows_v1`. X26 itself: R8's rollback; weigh the RED raise (§4.2).
 
 ## 8. Decision record
 
@@ -1145,3 +1176,4 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 | 2026-10-16 | **G_p(cap) REGISTERED before any R-T2 read** (closes F32, F33): R-T2's toy node is each seed's 100M `CAP` checkpoint (`rb_toy_ent_s4001b` / `s4002` / `s4003` `final_model.zip`); G_p(cap) is biased toward production; CEILING is stated only as "production's plateau beats the toy at 100M steps", SPEED ONLY / NOTHING MEASURABLE unchanged; §3.6's sentence re-worded. W4's R-T1 ≈ −14.1 pp and R-T1b ≈ −25.5 pp recorded descriptively (no interval: `cross_stat` is square-only; T40) | the cap raised before R-T2; waiting for a plateau that the 100M cap says may not come | §3.5 amendment, §3.8, F32 / F33; `32589f9a` |
 | 2026-10-16 | **E6's reference is WINDOW-MATCHED** (42.07 s `train_ms`; fps of a reference run over the same update window); ruled PASS like for like (−0.2 % `train_ms`, fps +0.9 / +2.2 %). No research rule changed | the flat 1,631 fps (EB's late-window figure) | §4 E6 and its dated note; `road/status.txt` |
 | 2026-10-16 | **T38 BUILT (F14 / T33-2): the plateau meter's parallel batches, `main.plateau tick --inflight-batches K`, default 4** — K batches in ONE eval cycle on one engine in one process (the executor's opt-in `seed_blocks`, `gen3_eval_seed_blocks_v1`), each batch on its own seed block, row and claim; the GSPRT rule unchanged and folded in batch order (a batch past the stop is a surplus row). Landed at X26 ≈ 2M steps with no X26 `plateau_t1` request open | more processes (rule 5b's ≤ 2 heavy jobs, a second model copy); judging a wave as a whole (peeks at later batches); K = 8 as default (slower than K = 1 on a short GAIN check) | §2.6 "The pipelining, built and measured"; `main/plateau_parallel_test.py` (three RECORDED T-ENT checks replayed at 1–150 in flight with adversarial surplus: the recorded verdict, stop batch, pairs and LLR); `main/h2h/plateau_integration_test.py` (the real engine: the same games and decision at 1 and 3 in flight) |
+| 2026-10-17 | **The bf16 rule's LOSS comparisons read the golden's OWN rows** (`gen3_r1_loss_on_golden_rows_v1`, F37, R8): the loss is continuous in the ratio, the relocation only multiplied a moved row's weight in it, and the bars were derived on the golden's own rows. The gradient comparisons stay relocated. **X26 keeps its pin**: on a loss-only refusal, roll back to a pre-flighted checkpoint at the same pin. The staged RED raise is weighed against its measured cost (§4.2) | a check-only raise-only override of the loss / grad bars (T37-style: X26 cannot take new code either, and it loosens the teeth with no basis); a sensitivity-normalised policy drift against the shift bar (a new unmeasured bar, ~10× looser on logit faults); fp32 for one trunk round (no round dominates; a training change); the fp32 trunk (+29 % `train_ms`; the defect is the statistic) | `../training/compile_flags.md` "bf16 drift on a sharpening policy"; `src/agents/model/compile_regions_loss_rows_test.py`; `../research_state/measurements/x26_bf16_drift_2026-10-17/` |

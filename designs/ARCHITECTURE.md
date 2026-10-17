@@ -1861,7 +1861,9 @@ may RAISE it (a value below the constant is refused, typed) because a live run's
 recorded in `model_config.json` and inherited by a launcher restart, a flagless resume and a fork, never compared by
 `check_compatible`, never read by a loss, an optimizer or a bar of the parity rule (one update is bit-identical at any
 value, `canary_shift_max_test`), and printed on every R1 rule line and every canary record
-(`designs/training/compile_flags.md` "The check-only margin override"). **The CUDA learner
+(`designs/training/compile_flags.md` "The check-only margin override"). The bf16 rule's LOSS comparisons read each arm's
+loss on the golden's own (unrelocated) rows and its gradient comparisons the relocated ones (`gen3_r1_loss_on_golden_rows_v1`,
+`compile_flags.md` "bf16 drift on a sharpening policy"). **The CUDA learner
 compile is ONE DECLARED REGION** — R1, the micro-step (`evaluate_actions` + the fold), `fullgraph=True`
 at its one declared signature, `batch_size` rows (`agents/model/compile_regions.py`,
 `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"; the rollout forward is NOT a

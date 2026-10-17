@@ -266,6 +266,11 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
   **nothing in a loss, an optimizer or a parity bar may read it** (`main/train/canary_shift_max_test.py` holds one update
   bit-identical at two values). Every R1 rule line and every `canary_verdicts.jsonl` record prints it. Detail:
   `designs/training/compile_flags.md` "The check-only margin override".
+- 🚨 **The bf16 rule judges the LOSS on the golden's OWN rows, the gradient on the RELOCATED ones**
+  (`gen3_r1_loss_on_golden_rows_v1`, 2026-10-17): `compile_regions.golden_row_loss` re-reads each arm's policy term on the
+  raw old log-probs (host-side, exact). The relocation exists for the gradient's clip switch; on the loss it only
+  multiplied a moved row's weight (X26's row 9 carried 88–100 % of a 6.68e-3 startup drift). A new loss comparison reads
+  the golden rows too. Detail: `designs/training/compile_flags.md` "bf16 drift on a sharpening policy".
 
 ## The critic, the value side and the auxiliaries
 

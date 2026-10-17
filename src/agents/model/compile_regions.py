@@ -792,7 +792,7 @@ def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -
     fix = ClipRelocation(torch.cat([x.old_log_prob for x in parts]), torch.cat([x.moved for x in parts]),
                          torch.cat([x.ref_log_prob for x in parts]), torch.cat([x.advantages for x in parts]),
                          parts[0].clip_range, parts[0].margin, min(x.nearest_unmoved for x in parts),
-                         parts[0].shift_source)
+                         parts[0].shift_source, torch.cat([_raw_old(x) for x in parts]))
     e0, g0 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
     graphed = _r1_accum_arm(model, g, args_list)
     e1, g1 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
@@ -819,8 +819,10 @@ def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -
                 f"--compile-trainer region R1[graphed] (bf16 rule): the accumulation rung's fp32 REFERENCE arm ran "
                 f"the eager body {e3 - e2}x / the graphed route {g3 - g2}x (want 2 / 0)")
         margin = _clip_margin_rule(fix, {"graphed": graphed, "eager": eager, "fp32 reference": ref})
+        gl = golden_row_losses({"ref": ref, "eager": eager, "comp": graphed}, fix, args_list)
         return "R1[graphed] " + _r1_verdict_bf16(eager, graphed, ref, names, regime, label=label,
-                                                 bar_by_index=excepted) + "; " + margin
+                                                 bar_by_index=excepted,
+                                                 losses=(gl["ref"], gl["eager"], gl["comp"])) + "; " + margin
     margin = _clip_margin_rule(fix, {"graphed": graphed, "eager": eager})
     return ("R1[graphed] " + _r1_verdict(eager, graphed, names, regime, bar_by_index=excepted, label=label)
             + "; " + margin)
@@ -1065,8 +1067,9 @@ def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
         if trunk_precision_of(model.policy) == "bf16":
             ref = _r1_reference(model, args)
             arms["fp32 reference"] = ref
+            gl = golden_row_losses({"ref": ref, "eager": eager, "comp": comp}, fix, [args])
             line = _r1_verdict_bf16(eager, comp, ref, names, regime, label=label, bar_by_index=bar_by_index,
-                                    watch=watch)
+                                    watch=watch, losses=(gl["ref"], gl["eager"], gl["comp"]))
         else:
             line = _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index, watch=watch)
     except (ct.NonFiniteGateArmError, ct.GateArmsNotIndependentError):
@@ -1267,6 +1270,9 @@ class ClipRelocation(NamedTuple):
     margin: float
     nearest_unmoved: float              # log-prob distance of the closest row left in place (inf when none)
     shift_source: str = "default"       # where the shift behind `margin` came from: "default" | "--canary-shift-max"
+    #: the golden's OWN old log-probs before the relocation (float64, CPU): the LOSS comparisons read the policy term
+    #: on these (`golden_row_loss`, gen3_r1_loss_on_golden_rows_v1); None = no raw rows recorded (a hand-built record)
+    raw_old_log_prob: Optional[torch.Tensor] = None
 
     @property
     def shift_max(self) -> float:
@@ -1299,6 +1305,71 @@ def clip_active(log_prob: torch.Tensor, old_log_prob: torch.Tensor, adv: torch.T
     return torch.where(a > 0, lr <= logb, torch.where(a < 0, lr >= logb, torch.zeros_like(lr, dtype=torch.bool)))
 
 
+#: THE LOSS IS READ ON THE GOLDEN'S OWN ROWS (`gen3_r1_loss_on_golden_rows_v1`, 2026-10-17; `designs/training/
+#: compile_flags.md` "bf16 drift on a sharpening policy"). The relocation above exists for the GRADIENT, whose policy
+#: part switches 0/1 at the clip bound. The LOSS does not switch: min(A rho, A clip(rho)) is CONTINUOUS in rho, so a
+#: loss comparison needs no relocation, and the relocation distorts it: it moves an A < 0 row to rho = 0.85 e^(2M)
+#: (3.59 at M = 0.72), so that row's loss carries rho |A| x its log-prob shift — 4.2x its weight at the bound, and
+#: e^(2 dM) more again under a raised `--canary-shift-max`. `BF16_DRIFT_BARS` / `BF16_ENVELOPE_K` were DERIVED on the
+#: golden's own rows (window D, 2026-10-10), before the relocation existed (T36, 2026-10-15). On X26 (`rb_x26_s2601`)
+#: one such row (|A| 3.23, the fixture's largest; rho |A| 11.6) carried 88-100 % of the startup gate's loss drift
+#: from 116M on (6.68e-3 = 48 % of the bar at the 121M restart; 2 % of the CPU null draws past the bar), while the same
+#: weights read on the golden's own rows stay at <= 55 % of it. So every LOSS comparison of the bf16 rule (the DRIFT
+#: and the ENVELOPE) reads each arm's loss with its policy term re-evaluated on the golden's OWN old log-probs: the
+#: statistic the bars were derived on. Host-side, exact (the policy term is a function of the arm's own log-probs, the
+#: normalised advantages and the old log-probs — `micro_step`'s formula, in float64), no extra forward. The GRADIENT
+#: comparisons stay on the relocated rows (rule 8).
+def _raw_old(fix: "ClipRelocation") -> torch.Tensor:
+    if fix.raw_old_log_prob is None:
+        raise ct.CompileTrainerError("--compile-trainer region R1: the clip relocation carries no raw old log-probs — "
+                                     "the loss comparison cannot be read on the golden's own rows (mis-wired)")
+    return fix.raw_old_log_prob.detach().double().cpu().reshape(-1)
+
+
+def _policy_term(log_prob: torch.Tensor, old: torch.Tensor, adv: torch.Tensor, clip_range: float, coef: float,
+                 weights: Optional[torch.Tensor], n_micro: int) -> float:
+    """`micro_step`'s policy term (`policy_grad_coef` x -mean(min(A rho, A clip(rho))), the fork mask's weighted mean
+    when ``weights``), in float64, summed over ``n_micro`` equal micro-batches (the accumulation rung's loss is the
+    SUM of its micro-batches' losses)."""
+    lp = log_prob.detach().double().cpu().reshape(-1)
+    rho = torch.exp(lp - old)
+    per = torch.min(adv * rho, adv * rho.clamp(1.0 - clip_range, 1.0 + clip_range))
+    w = torch.ones_like(per) if weights is None else weights.detach().double().cpu().reshape(-1)
+    total = 0.0
+    for p_, w_ in zip(per.chunk(int(n_micro)), w.chunk(int(n_micro))):
+        total += float(-(p_ * w_).sum() / (w_.sum().clamp(min=1.0) if weights is not None else float(p_.numel())))
+    return float(coef) * total
+
+
+def golden_row_loss(arm: Dict[str, torch.Tensor], fix: "ClipRelocation", st: Any,
+                    weights: Optional[torch.Tensor] = None, n_micro: int = 1) -> float:
+    """``arm``'s loss with its PPO policy term read on the golden's OWN old log-probs instead of the relocated ones
+    (the block comment above): L - pg(relocated old) + pg(raw old), each from the arm's own log-probs. Only the policy
+    term reads the old log-probs, so this is the loss the same forward would give on the golden's own rows."""
+    adv = fix.advantages.detach().double().cpu().reshape(-1)
+    raw, moved = _raw_old(fix), fix.old_log_prob.detach().double().cpu().reshape(-1)
+    coef = float(getattr(st, "policy_grad_coef", 1.0))
+    w = weights if bool(getattr(st, "fork_pg_mask", False)) else None
+    lp = arm["log_prob"]
+    return (float(arm["loss"].sum()) - _policy_term(lp, moved, adv, fix.clip_range, coef, w, n_micro)
+            + _policy_term(lp, raw, adv, fix.clip_range, coef, w, n_micro))
+
+
+def _pg_weights(args_list: List[Tuple[Any, ...]]) -> Optional[torch.Tensor]:
+    """The fork arm's per-row policy-term mask over ``args_list``'s micro-batches (None when the obs lacks it)."""
+    from agents.training.fork_arm import PG_MASK_KEY
+    ms = [a[1].get(PG_MASK_KEY) for a in args_list]
+    return None if any(m is None for m in ms) else torch.cat([m.reshape(-1) for m in ms])
+
+
+def golden_row_losses(arms: Dict[str, Dict[str, torch.Tensor]], fix: "ClipRelocation",
+                      args_list: List[Tuple[Any, ...]]) -> Dict[str, float]:
+    """`golden_row_loss` for every arm (one rung's micro-batches ``args_list``, the static last in each)."""
+    st = args_list[0][-1]
+    w = _pg_weights(args_list) if bool(getattr(st, "fork_pg_mask", False)) else None
+    return {k: golden_row_loss(v, fix, st, w, len(args_list)) for k, v in arms.items()}
+
+
 def clip_relocation(ref_log_prob: torch.Tensor, old_log_prob: torch.Tensor, adv: torch.Tensor, clip_range: float,
                     margin: float = R1_CLIP_MARGIN, shift_source: str = "default") -> ClipRelocation:
     """The pure relocation (module comment above): a row whose reference log-ratio is within ``margin`` of (or AT)
@@ -1319,7 +1390,7 @@ def clip_relocation(ref_log_prob: torch.Tensor, old_log_prob: torch.Tensor, adv:
     rest = dist[~near & a.ne(0)]
     return ClipRelocation(new.to(dtype=old_log_prob.dtype, device=old_log_prob.device).reshape(old_log_prob.shape),
                           near, lp, a, float(clip_range), float(margin),
-                          float(rest.min()) if rest.numel() else float("inf"), shift_source)
+                          float(rest.min()) if rest.numel() else float("inf"), shift_source, o)
 
 
 def relocate_clip_boundary(model: Any, args: Tuple[Any, ...], margin: Optional[float] = None
@@ -1551,10 +1622,13 @@ def bf16_measured() -> Optional[str]:
 
 def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], ref: Dict[str, torch.Tensor],
                      names: List[str], regime: str, label: Optional[str] = None,
-                     bar_by_index: Optional[Dict[int, float]] = None, watch: Optional["GradWatch"] = None) -> str:
+                     bar_by_index: Optional[Dict[int, float]] = None, watch: Optional["GradWatch"] = None,
+                     losses: Optional[Tuple[float, float, float]] = None) -> str:
     """THE bf16 PARITY RULE (the block comment above): DRIFT (eager bf16 vs the fp32 reference) and ENVELOPE
-    (compiled bf16 vs the reference, within K x eager bf16's own error, floored at the fp32 bar). Raises
-    `CompileTrainerError`; returns the rule line."""
+    (compiled bf16 vs the reference, within K x eager bf16's own error, floored at the fp32 bar). ``losses``: the
+    (reference, eager, compiled) losses every LOSS comparison reads — the gate passes each arm's loss on the golden's
+    OWN rows (`golden_row_loss`, gen3_r1_loss_on_golden_rows_v1), the arms' own (relocated-row) losses are then
+    reported beside them; None reads the arms' own. Raises `CompileTrainerError`; returns the rule line."""
     refusal = bf16_measured()
     if refusal is not None:
         raise ct.CompileTrainerError(refusal)
@@ -1562,11 +1636,16 @@ def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tenso
     ct.require_finite_arms(eager=eager, compiled=comp, param_names=names)
     ct.require_finite_arms(eager=ref, compiled=eager, param_names=names)
     head = f"[{label or regime + ' weights'}] bf16 rule:"
-    l_ref, l_e, l_c = float(ref["loss"]), float(eager["loss"]), float(comp["loss"])
-    if not all(np.isfinite(v) for v in (l_ref, l_e, l_c)):
+    own = (float(ref["loss"].sum()), float(eager["loss"].sum()), float(comp["loss"].sum()))
+    l_ref, l_e, l_c = own if losses is None else (float(losses[0]), float(losses[1]), float(losses[2]))
+    if not all(np.isfinite(v) for v in own + (l_ref, l_e, l_c)):
         raise ct.CompileTrainerError(f"--compile-trainer region R1 (bf16 rule): non-finite loss (reference "
-                                     f"{l_ref}, eager {l_e}, compiled {l_c})")
+                                     f"{l_ref}, eager {l_e}, compiled {l_c}; the arms' own {own})")
     d_loss_e, d_loss_c = _rel(l_e, l_ref), _rel(l_c, l_ref)
+    # the relocated rows' drift, REPORTED (the statistic before gen3_r1_loss_on_golden_rows_v1), never judged
+    reloc = (_rel(own[1], own[0]), _rel(own[2], own[0]))
+    rows = "" if losses is None else (f" [loss on the golden's own rows; relocated rows: drift {reloc[0]:.2e}, "
+                                      f"envelope {reloc[1]:.2e}]")
     d_g_e, d_g_c = _rel_l2(eager["grad"], ref["grad"]), _rel_l2(comp["grad"], ref["grad"])
     sizes = [int(x) for x in ref["grad_sizes"].tolist()]
     err_c = dict(per_param_grad_errors(comp["grad"], ref["grad"], sizes, floor_frac=ct._PARAM_GRAD_FLOOR))
@@ -1575,14 +1654,16 @@ def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tenso
     if watch is not None:                                   # the record is complete whichever check refuses
         watch.fill_bf16(err_c, err_e, names, regime, over,
                         {"drift_loss": d_loss_e, "drift_grad": d_g_e, "envelope_loss": d_loss_c,
-                         "envelope_grad": d_g_c})
+                         "envelope_grad": d_g_c, "drift_loss_relocated": reloc[0],
+                         "envelope_loss_relocated": reloc[1]})
     # ---- DRIFT: the bf16 function vs the fp32 one
     for what, v in (("loss", d_loss_e), ("grad_rel_l2", d_g_e)):
         if not v <= BF16_DRIFT_BARS[what]:
             raise ct.CompileTrainerError(
                 f"--compile-trainer region R1 (bf16 rule): the bf16 EAGER micro-step has DRIFTED from the fp32 "
                 f"function — {what} {v:.2e} > {BF16_DRIFT_BARS[what]:g} (eager bf16 vs the fp32 eager reference, "
-                f"same weights and rows). bf16 no longer represents this model: run --trunk-precision fp32.")
+                f"same weights and rows){rows if what == 'loss' else ''}). bf16 no longer represents this model: run "
+                f"--trunk-precision fp32.")
     # ---- ENVELOPE: compiled bf16 no farther from the reference than K x eager bf16 (floored at the fp32 bar)
     checks = (("loss", d_loss_c, d_loss_e, BF16_LOSS_FLOOR),
               ("grad_rel_l2", d_g_c, d_g_e, BF16_GRAD_FLOOR))
@@ -1592,7 +1673,8 @@ def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tenso
             raise ct.CompileTrainerError(
                 f"--compile-trainer region R1 (bf16 rule): the COMPILED bf16 micro-step is farther from the fp32 "
                 f"reference than eager bf16 allows — {what}: compiled {dc:.2e} > {BF16_ENVELOPE_K[what]:g} x "
-                f"max(eager {de:.2e}, floor {floor:g}) = {bar:.2e}. A faster wrong model is not a win.")
+                f"max(eager {de:.2e}, floor {floor:g}) = {bar:.2e}{rows if what == 'loss' else ''}. A faster wrong "
+                f"model is not a win.")
     if not err_c:
         raise ct.VacuousCompileParityError("--compile-trainer region R1 (bf16 rule): no parameter's reference "
                                            "gradient is above the per-parameter floor")
@@ -1616,7 +1698,7 @@ def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tenso
             + "). A backward miscompile under bf16's rounding — investigate before re-enabling.")
     wn = names[worst[1]] if 0 <= worst[1] < len(names) else f"#{worst[1]}"
     return (f"{head} drift loss {d_loss_e:.2e} <= {BF16_DRIFT_BARS['loss']:g}, grad {d_g_e:.2e} <= "
-            f"{BF16_DRIFT_BARS['grad_rel_l2']:g}; envelope loss {d_loss_c:.2e} (eager {d_loss_e:.2e}), grad "
+            f"{BF16_DRIFT_BARS['grad_rel_l2']:g}; envelope loss {d_loss_c:.2e} (eager {d_loss_e:.2e}){rows}, grad "
             f"{d_g_c:.2e} (eager {d_g_e:.2e}); per-param worst ratio {worst[0]:.2f} <= {k:g} ({wn}: compiled "
             f"{worst[2]:.2e} vs eager {worst[3]:.2e}) over {len(err_c)} params")
 

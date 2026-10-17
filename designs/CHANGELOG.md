@@ -14749,3 +14749,25 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - Docs: `design_evaluation.md` §8.1 "As built" (Parallel batches), `designs/training/eval_and_rating.md` (the plateau
   meter; the executor's opt-ins), `eval_rules.md`, `design_x26_readiness.md` §2.6 / I13 / F14 / Decision record,
   `TASK_BACKLOG.md` X26-8 → DONE.
+
+## 2026-10-17 — the bf16 parity rule reads the LOSS on the golden's own rows (`gen3_r1_loss_on_golden_rows_v1`; the compile gate's / canary's judgement only; no model / config / obs / signature change, no training-math change)
+
+- **Why**: X26's startup gate read a bf16 loss drift of 6.68e-3 (48 % of 0.014) at its 121M restart. On CPU, one golden row
+  carried 88–100 % of it: the fixture's largest-|A| row, moved by T36's relocation to ρ = 3.59, so its weight in the
+  loss was ≈ 4.2× its weight on the golden's own rows. The loss is continuous in ρ and needs no relocation, and
+  `BF16_DRIFT_BARS` / `BF16_ENVELOPE_K` were derived on the golden's own rows before T36 existed.
+- **The change**: `compile_regions.golden_row_loss` / `golden_row_losses` re-read each arm's policy term on the raw old
+  log-probs: L − pg(relocated) + pg(raw), in float64, with the fork mask and the accumulation rung's per-micro sum.
+  `ClipRelocation.raw_old_log_prob` carries them. `_r1_judge` and the graphed accumulation rung pass the results to
+  `_r1_verdict_bf16(..., losses=)`, and every LOSS comparison (drift, envelope) reads them. The gradient comparisons, the
+  bars, the floors and the fp32 rule are unchanged. The R1 line adds `[loss on the golden's own rows; relocated rows:
+  drift …, envelope …]`, and the canary record's `global` adds `drift_loss_relocated` / `envelope_loss_relocated`.
+- **Tests**: `src/agents/model/compile_regions_loss_rows_test.py`. Each test fails on revert, and two revert mutations
+  were each caught.
+  - The reconstruction equals a forward on the golden rows (bf16 and fp32; one micro-batch and the accumulation rung's two).
+  - The gate passes the losses on.
+  - An amplified one-row shift passes on the golden rows and is refused on the relocated ones.
+  - The teeth: a broad shift, an eager non-policy fault and a compiled-only fault are each still refused.
+- **X26 (pin `9c033489`) does not take it**. Its operational response is in `design_x26_readiness.md` R8 / F37 / §4.2.
+- Docs: `designs/training/compile_flags.md` "bf16 drift on a sharpening policy", `learner_lifecycle.md`, the training
+  leaf, `ARCHITECTURE.md`, `design_x26_readiness.md`, the ledger, `research_state/measurements/x26_bf16_drift_2026-10-17/`.

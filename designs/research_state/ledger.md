@@ -26414,3 +26414,50 @@ the M side's residual, a tie-free or 16-world leaf (E5) and the plateau replicat
 Tag: **MEASUREMENT (MAJOR) · THIRD-PARTY COMPARISON under a pre-registration · AGREE (LEAF-K8, C = 978) · R3's never-seen half REPLICATED (scoped: LEAF-K8, the registered mix) · the population split REPLICATED · R-REPLICATE §12.2 NOT MET (the M side) · the identity issue ruled an EXCLUSION · PROVISIONAL at 15M** ·
 evidence: `research_state/measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md` / `.json`,
 `third_party_compare.py`; `endstate/design_hidden_info_binding.md` §16.11; `endstate/search_ledger.md`; `research_state/UNDERSTANDING.md` §4.7
+
+### 2026-10-17 · FINDING / DESIGN · **X26's bf16 startup-gate LOSS drift (6.68e-3 = 48 % of the bar at the 121M restart) is ONE ROW made heavy by T36's relocation, not bf16 losing the model. It is a per-state lottery from ≈ 114M (≈ 1–2 % per restart over the bar on CPU; ≈ 4 % after a 0.28 T37 raise), not a trend. The bf16 rule now reads the LOSS on the golden's own rows, the statistic its bars were derived on (`gen3_r1_loss_on_golden_rows_v1`, future pins); X26 itself keeps its pin, with a rollback**
+
+**Question.** Why did X26's (`rb_x26_s2601`, pin `9c033489`) startup gate read a bf16 loss drift of 6.68e-3, with eager bf16
+identical, after about 1e-4 at every earlier restart? Will it cross 0.014? The canary 10 updates later read 4.86e-4.
+
+**Method.** CPU, on X26's checkpoints and the gate's own weights (`final_model_interrupted.zip` at 121.14M, copied before the
+next restart overwrote them), loaded strict. Eager fp32 against eager bf16 on the K9 golden rows, relocated exactly as the
+gate does. Per-term, per-row and per-trunk-round decompositions; 16-seed half-ulp dithered nulls; a dither-scale sweep of
+the fp32 function. CPU tracks CUDA here: 6.29e-3 at B = 64 and 6.31e-3 at B = 2,048 against CUDA's 6.68e-3, with the same
+608 / 2,048 rows relocated. The gate and the canary read the same rows (slice 0), so the 14× gap is the weights.
+
+**Findings.**
+1. **No trend.** From 2M to 113M the drift and its null are flat: 0 of 476 draws over 0.007, max 3.6e-3. From ≈ 114M the
+   null steps up: 3 of 204 draws over 0.014, max 2.05e-2. The 118M checkpoint reads 1.15e-2, and the 120M one 1.5e-3.
+   Nothing can be extrapolated to a crossing date. The forecast is a per-restart probability: ≈ 1–2 % (5 / 374 pooled),
+   and ≈ 15–20 % for at least one refusal over X26's remaining ≈ 13 restarts if the regime holds.
+2. **One row.** The policy term is 95 % of the difference. Golden row 9 carries 88–100 % of it at 117M, 118M, 119M and
+   121.14M. Its A is −3.23, the fixture's largest. Its raw ratio sits within the margin of 0.85, so the relocation moves it
+   to ρ = 3.59: weight ρ|A| = 11.6, 18 % of the policy term.
+3. **The function's conditioning, not a near-tie.** A half-ulp weight dither moves row 9's fp32 log-prob by 0.04–0.11 from
+   116M on (a well-conditioned heavy row: ≈ 0.004). The move is linear in the dither from 2^-20 to 2^-7. bf16's shift on
+   that row is the size of that move.
+4. **No layer outgrew bf16.** The trunk rounds contribute comparable drift with random signs, and the activations are
+   flat. The move_belief head's 6.33 ratio is the envelope's per-parameter statistic; its loss term contributes 0.
+5. **The relocation amplifies the loss statistic, and the bars were derived without it.** The loss is continuous in ρ and
+   needs no relocation. The bars were derived in window D, 2026-10-10, on the golden's own rows, before T36. Read there, the
+   same 170 draws give max 7.7e-3 (55 %) and 0 over the bar.
+6. **The staged T37 raise (0.28) triples the relocated reading's tail**: 7 of 170 draws over 0.014, max 3.4e-2. The 118M
+   checkpoint reads 0.01397.
+7. Grad drift: max 0.226 over 680 draws (33 % of 0.68).
+
+**Design (ranked).**
+- (b) BUILT: the bf16 rule's LOSS comparisons (drift and envelope) read each arm's loss with its policy term on the
+  golden's own old log-probs. This is exact, host-side, with no extra forward. The gradient comparisons stay relocated, and
+  the bars, the teeth and training are unchanged.
+- (c), a T37-style override of the loss / grad bars: not built. X26 cannot take new code, and it loosens the teeth with no
+  basis.
+- (a), fp32 for one round: ≈ +10 % `train_ms` (ESTIMATE). No round dominates, and it is a training change.
+- (d), the fp32 trunk: +29 %. It is a stopgap and needs Amendment 3.
+- **X26 (pin `9c033489`) can use none of the code.** On a loss-only refusal, resume the same run at the same pin from the
+  newest checkpoint whose CPU pre-flight reads ≤ half the bar. This costs ≤ 1–2M steps. Weigh the staged RED raise
+  against its measured cost: today's shift is 3.3× below the refusal.
+
+Tag: **FINDING (MAJOR for X26 ops) + DESIGN · CPU, UNVERIFIED on CUDA except the one gate-weights comparison (6.29e-3 vs 6.68e-3) · the fix BUILT for future pins** ·
+evidence: `research_state/measurements/x26_bf16_drift_2026-10-17/` (README, scripts, `results/`); `training/compile_flags.md`
+"bf16 drift on a sharpening policy"; `endstate/design_x26_readiness.md` §4.2, R8, F37; `src/agents/model/compile_regions_loss_rows_test.py`
