@@ -521,6 +521,17 @@ wake. Re-create it on the next GO, written to this contract.
 - **Composition guard:** `reward/untracked_abs_mean` must read 0; the launch banner must match the
   registered composition (e.g. "1 TERMINAL + 0 PBRS + 0 BIAS").
 
+
+### Process rules from three misfires and one script gap (X26's first days, orchestrator 2026-10-17)
+
+Each rule is a thing that went wrong once; follow the pointer when you build the matching watcher, window or script.
+
+1. **A time trigger uses an ABSOLUTE epoch with a sanity bound, never an `HH:MM` string comparison.** Compare `date +%s` against an epoch computed once at arming, and refuse a trigger whose epoch is in the past or more than the expected horizon ahead (a clock-string compare fires at the wrong day boundary, or never).
+2. **A log watcher matches only lines written AFTER it was armed** (per-file line offsets that persist across re-arms): already in §2 above (`98cd814b`, `alert_watch.sh`; two watchers on 2026-10-15 matched stale lines). VERIFIED present 2026-10-17; build every new watcher on that pattern.
+3. **A multi-step window script HOLDS on any mid-window failure or refusal**: it stops where it is, leaves the run paused with the state on disk, writes the reason to its status file and pages the orchestrator, instead of continuing to the next step (or auto-resuming) over a failed one. A window that cannot finish cleanly is a decision for the orchestrator, not for the script.
+4. **Read a tool's usage text and preconditions before arming it.** `--help`, the script header and the leaf `CLAUDE.md` come first (its default arguments, what it assumes about the run, which flags it cannot take: e.g. `diag_bf16_canary`'s default `--ckpts` assume a FATAL zip, TASK_BACKLOG T51); arm it on a throwaway input before a live window, never first inside one.
+5. **A `--canary-shift-max` raise of 0.5 or less needs the orchestrator's approval** (the flag has no code ceiling yet: a typo of 18 disables every canary refusal; TASK_BACKLOG T52). Type it in the dry-run first and read the value back on the R1 rule line.
+
 ---
 
 ## 4. Killing and relaunching
