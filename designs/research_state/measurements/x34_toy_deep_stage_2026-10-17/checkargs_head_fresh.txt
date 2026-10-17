@@ -1,0 +1,60 @@
+checked 41 flags from --argv
+  parser                         : the CURRENT tree's (no --model and no --pin-commit — this argv would run on HEAD)
+  accepted by the trainer parser : 41
+  launcher-owned (not forwarded) : 0
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  oracle reveal                  : off (the production observation)
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@7edfd2bace08]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 0  --ridealong-rnd False  --ridealong-adv 0  --ridealong-opp 0  --ridealong-rnd-variants 'off'
+    27 of 39 ARCH-surface key(s) differ from production (39 of 47 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration):
+        opp_belief_cls_k             0              (this argv, argv)   production: 6
+        opp_belief_slots             False          (this argv, argv)   production: True
+        move_belief_mode             'off'          (this argv, argv)   production: 'both'
+        damage_op                    False          (this argv, argv)   production: True
+        move_prior_fusion            False          (this argv, argv)   production: True
+        damage_outgoing              False          (this argv, argv)   production: True
+        move_latent                  False          (this argv, argv)   production: True
+        spread_belief                False          (this argv, argv)   production: True
+        damage_topk_k                0              (this argv, argv)   production: 6
+        damage_matrices_outgoing     False          (this argv, argv)   production: True
+        damage_matrices_incoming     False          (this argv, argv)   production: True
+        spread_belief_nature         False          (this argv, argv)   production: True
+        entity_topk_seats            0              (this argv, argv)   production: 6
+        edge_bias_families           'off'          (this argv, argv)   production: 'd1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r'
+        entity_tail_seats            False          (this argv, argv)   production: True
+        opp_intent                   False          (this argv, argv)   production: True
+        species_prior_fusion         False          (this argv, argv)   production: True
+        t0_species_prior             False          (this argv, argv)   production: True
+        value_entity_pool_full       False          (this argv, argv)   production: True
+        history_events               False          (this argv, argv)   production: True
+        value_entity_pool            False          (this argv, argv)   production: True
+        item_belief                  False          (this argv, argv)   production: True
+        op_drop_renders              False          (this argv, argv)   production: True
+        op_believed_lean             False          (this argv, argv)   production: True
+        mon_hazard_cost              'off'          (this argv, argv)   production: 'on'
+        trunk_layers                 2              (this argv, argv)   production: 3
+        move_set_closure             'off'          (this argv, argv)   production: 'on'
+    ℹ️  --allow-nonproduction-arch — the drift above is an EXPLICIT choice and is recorded in model_config.json's arch_source.
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@7edfd2bace08]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    7 of 29 RECIPE knob(s) differ from recipe.fresh:
+        opp_belief_aux_coef      0.0        (TYPED)   production: 0.05
+        opp_intent_coef          0.0        (TYPED)   production: 0.05
+        move_belief_coef         0.0        (TYPED)   production: 0.05
+        move_belief_latent_coef  0.0        (TYPED)   production: 0.05
+        spread_belief_coef       0.0        (TYPED)   production: 0.05
+        hp_type_belief_coef      0.0        (TYPED)   production: 0.05
+        item_belief_coef         0.0        (TYPED)   production: 0.05
+    ℹ️  every differing knob was TYPED — a deliberate deviation, recorded in metadata.json's cli_args.
+  ✓ this command still launches

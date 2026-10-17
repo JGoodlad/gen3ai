@@ -1,0 +1,17 @@
+{
+ "argv_file": "/tmp/x34/toy_argv_head_fresh.txt",
+ "n_keys_built": 316,
+ "n_keys_ckpt": 316,
+ "only_built": [],
+ "only_ckpt": [],
+ "shape_diff": [],
+ "numel_built": 3121590,
+ "numel_ckpt": 3121590,
+ "n_params_built": 1423748,
+ "strict_load": "OK",
+ "load_model_snapshot": "InstrumentedMaskablePPO",
+ "load_model_snapshot_bytes_equal_ckpt": true,
+ "argvbuilt_vs_loader_logits_maxabs": 0.0,
+ "argvbuilt_vs_loader_values_maxabs": 0.0,
+ "torch": "2.8.0+cu126"
+}

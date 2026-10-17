@@ -1,0 +1,1109 @@
+{
+ "n_keys": 316,
+ "numel": 3121590,
+ "recorded_at_pin": "3899277ad0d2e622d9768ba13dd51ec74cd28fc3",
+ "source": "models/rb_toy_ent_s4002/final_model.zip",
+ "source_sha256": "60af6b8814f80f72853a5fe6c28655620cd8640884cedf17ba7eec8bd95648fb",
+ "state_dict": {
+  "features_extractor.cls_pool.norm_pool_our.bias": [
+   128
+  ],
+  "features_extractor.cls_pool.norm_pool_our.weight": [
+   128
+  ],
+  "features_extractor.cls_pool.norm_pool_their.bias": [
+   128
+  ],
+  "features_extractor.cls_pool.norm_pool_their.weight": [
+   128
+  ],
+  "features_extractor.cls_pool.norm_pool_value.bias": [
+   128
+  ],
+  "features_extractor.cls_pool.norm_pool_value.weight": [
+   128
+  ],
+  "features_extractor.cls_pool.our_cls": [
+   1,
+   1,
+   128
+  ],
+  "features_extractor.cls_pool.our_cls_attn.in_proj_bias": [
+   384
+  ],
+  "features_extractor.cls_pool.our_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "features_extractor.cls_pool.our_cls_attn.out_proj.bias": [
+   128
+  ],
+  "features_extractor.cls_pool.our_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "features_extractor.cls_pool.their_cls": [
+   1,
+   1,
+   128
+  ],
+  "features_extractor.cls_pool.their_cls_attn.in_proj_bias": [
+   384
+  ],
+  "features_extractor.cls_pool.their_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "features_extractor.cls_pool.their_cls_attn.out_proj.bias": [
+   128
+  ],
+  "features_extractor.cls_pool.their_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "features_extractor.cls_pool.value_cls": [
+   1,
+   1,
+   128
+  ],
+  "features_extractor.cls_pool.value_cls_attn.in_proj_bias": [
+   384
+  ],
+  "features_extractor.cls_pool.value_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "features_extractor.cls_pool.value_cls_attn.out_proj.bias": [
+   128
+  ],
+  "features_extractor.cls_pool.value_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "features_extractor.embeddings.ability_embedding.weight": [
+   100,
+   16
+  ],
+  "features_extractor.embeddings.hp_type_idx_map": [
+   16
+  ],
+  "features_extractor.embeddings.item_embedding.weight": [
+   600,
+   16
+  ],
+  "features_extractor.embeddings.move_embedding.weight": [
+   400,
+   16
+  ],
+  "features_extractor.embeddings.species_embedding.weight": [
+   400,
+   32
+  ],
+  "features_extractor.embeddings.type_embedding.weight": [
+   20,
+   16
+  ],
+  "features_extractor.entity_seats.move_seat_proj.bias": [
+   128
+  ],
+  "features_extractor.entity_seats.move_seat_proj.weight": [
+   128,
+   32
+  ],
+  "features_extractor.move_actor_proj.weight": [
+   128,
+   8
+  ],
+  "features_extractor.move_target_proj.weight": [
+   128,
+   8
+  ],
+  "features_extractor.obs_facts_inject.choice_proj.bias": [
+   128
+  ],
+  "features_extractor.obs_facts_inject.choice_proj.weight": [
+   128,
+   19
+  ],
+  "features_extractor.obs_facts_inject.screens_proj.bias": [
+   128
+  ],
+  "features_extractor.obs_facts_inject.screens_proj.weight": [
+   128,
+   4
+  ],
+  "features_extractor.obs_facts_inject.seen_proj.bias": [
+   128
+  ],
+  "features_extractor.obs_facts_inject.seen_proj.weight": [
+   128,
+   7
+  ],
+  "features_extractor.obs_facts_inject.vol_proj.bias": [
+   128
+  ],
+  "features_extractor.obs_facts_inject.vol_proj.weight": [
+   128,
+   15
+  ],
+  "features_extractor.pokemon_encoder.dynamic_encoder.0.bias": [
+   128
+  ],
+  "features_extractor.pokemon_encoder.dynamic_encoder.0.weight": [
+   128,
+   134
+  ],
+  "features_extractor.pokemon_encoder.dynamic_encoder.2.bias": [
+   128
+  ],
+  "features_extractor.pokemon_encoder.dynamic_encoder.2.weight": [
+   128,
+   128
+  ],
+  "features_extractor.pokemon_encoder.move_dyn_pool.bias": [
+   32
+  ],
+  "features_extractor.pokemon_encoder.move_dyn_pool.weight": [
+   32,
+   34
+  ],
+  "features_extractor.pokemon_encoder.move_dyn_proj.bias": [
+   32
+  ],
+  "features_extractor.pokemon_encoder.move_dyn_proj.weight": [
+   32,
+   2
+  ],
+  "features_extractor.pokemon_encoder.move_network.0.bias": [
+   96
+  ],
+  "features_extractor.pokemon_encoder.move_network.0.weight": [
+   96,
+   56
+  ],
+  "features_extractor.pokemon_encoder.move_network.2.bias": [
+   32
+  ],
+  "features_extractor.pokemon_encoder.move_network.2.weight": [
+   32,
+   96
+  ],
+  "features_extractor.pokemon_encoder.move_self_attn.in_proj_bias": [
+   96
+  ],
+  "features_extractor.pokemon_encoder.move_self_attn.in_proj_weight": [
+   96,
+   32
+  ],
+  "features_extractor.pokemon_encoder.move_self_attn.out_proj.bias": [
+   32
+  ],
+  "features_extractor.pokemon_encoder.move_self_attn.out_proj.weight": [
+   32,
+   32
+  ],
+  "features_extractor.pokemon_encoder.move_self_norm.bias": [
+   32
+  ],
+  "features_extractor.pokemon_encoder.move_self_norm.weight": [
+   32
+  ],
+  "features_extractor.pokemon_encoder.role_encoder.0.bias": [
+   256
+  ],
+  "features_extractor.pokemon_encoder.role_encoder.0.weight": [
+   256,
+   162
+  ],
+  "features_extractor.pokemon_encoder.role_encoder.2.bias": [
+   128
+  ],
+  "features_extractor.pokemon_encoder.role_encoder.2.weight": [
+   128,
+   256
+  ],
+  "features_extractor.pre_proj_norm.bias": [
+   384
+  ],
+  "features_extractor.pre_proj_norm.weight": [
+   384
+  ],
+  "features_extractor.projection.bias": [
+   512
+  ],
+  "features_extractor.projection.weight": [
+   512,
+   384
+  ],
+  "features_extractor.team_transformer.field_proj.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.field_proj.weight": [
+   128,
+   11
+  ],
+  "features_extractor.team_transformer.side_proj.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.side_proj.weight": [
+   128,
+   10
+  ],
+  "features_extractor.team_transformer.token_type_emb.weight": [
+   9,
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.in_proj.bias": [
+   384
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.in_proj.weight": [
+   384,
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.linear1.bias": [
+   256
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.linear1.weight": [
+   256,
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.linear2.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.linear2.weight": [
+   128,
+   256
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.norm1.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.norm1.weight": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.norm2.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.norm2.weight": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.out_proj.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.0.out_proj.weight": [
+   128,
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.in_proj.bias": [
+   384
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.in_proj.weight": [
+   384,
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.linear1.bias": [
+   256
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.linear1.weight": [
+   256,
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.linear2.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.linear2.weight": [
+   128,
+   256
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.norm1.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.norm1.weight": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.norm2.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.norm2.weight": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.out_proj.bias": [
+   128
+  ],
+  "features_extractor.team_transformer.transformer_layers.1.out_proj.weight": [
+   128,
+   128
+  ],
+  "features_extractor.win_head.net.0.bias": [
+   128
+  ],
+  "features_extractor.win_head.net.0.weight": [
+   128
+  ],
+  "features_extractor.win_head.net.1.bias": [
+   128
+  ],
+  "features_extractor.win_head.net.1.weight": [
+   128,
+   128
+  ],
+  "features_extractor.win_head.net.3.bias": [
+   1
+  ],
+  "features_extractor.win_head.net.3.weight": [
+   1,
+   128
+  ],
+  "mlp_extractor.policy_net.0.bias": [
+   512
+  ],
+  "mlp_extractor.policy_net.0.weight": [
+   512,
+   512
+  ],
+  "mlp_extractor.policy_net.2.bias": [
+   512
+  ],
+  "mlp_extractor.policy_net.2.weight": [
+   512,
+   512
+  ],
+  "pi_features_extractor.cls_pool.norm_pool_our.bias": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.norm_pool_our.weight": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.norm_pool_their.bias": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.norm_pool_their.weight": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.norm_pool_value.bias": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.norm_pool_value.weight": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.our_cls": [
+   1,
+   1,
+   128
+  ],
+  "pi_features_extractor.cls_pool.our_cls_attn.in_proj_bias": [
+   384
+  ],
+  "pi_features_extractor.cls_pool.our_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "pi_features_extractor.cls_pool.our_cls_attn.out_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.our_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "pi_features_extractor.cls_pool.their_cls": [
+   1,
+   1,
+   128
+  ],
+  "pi_features_extractor.cls_pool.their_cls_attn.in_proj_bias": [
+   384
+  ],
+  "pi_features_extractor.cls_pool.their_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "pi_features_extractor.cls_pool.their_cls_attn.out_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.their_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "pi_features_extractor.cls_pool.value_cls": [
+   1,
+   1,
+   128
+  ],
+  "pi_features_extractor.cls_pool.value_cls_attn.in_proj_bias": [
+   384
+  ],
+  "pi_features_extractor.cls_pool.value_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "pi_features_extractor.cls_pool.value_cls_attn.out_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.cls_pool.value_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "pi_features_extractor.embeddings.ability_embedding.weight": [
+   100,
+   16
+  ],
+  "pi_features_extractor.embeddings.hp_type_idx_map": [
+   16
+  ],
+  "pi_features_extractor.embeddings.item_embedding.weight": [
+   600,
+   16
+  ],
+  "pi_features_extractor.embeddings.move_embedding.weight": [
+   400,
+   16
+  ],
+  "pi_features_extractor.embeddings.species_embedding.weight": [
+   400,
+   32
+  ],
+  "pi_features_extractor.embeddings.type_embedding.weight": [
+   20,
+   16
+  ],
+  "pi_features_extractor.entity_seats.move_seat_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.entity_seats.move_seat_proj.weight": [
+   128,
+   32
+  ],
+  "pi_features_extractor.move_actor_proj.weight": [
+   128,
+   8
+  ],
+  "pi_features_extractor.move_target_proj.weight": [
+   128,
+   8
+  ],
+  "pi_features_extractor.obs_facts_inject.choice_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.obs_facts_inject.choice_proj.weight": [
+   128,
+   19
+  ],
+  "pi_features_extractor.obs_facts_inject.screens_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.obs_facts_inject.screens_proj.weight": [
+   128,
+   4
+  ],
+  "pi_features_extractor.obs_facts_inject.seen_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.obs_facts_inject.seen_proj.weight": [
+   128,
+   7
+  ],
+  "pi_features_extractor.obs_facts_inject.vol_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.obs_facts_inject.vol_proj.weight": [
+   128,
+   15
+  ],
+  "pi_features_extractor.pokemon_encoder.dynamic_encoder.0.bias": [
+   128
+  ],
+  "pi_features_extractor.pokemon_encoder.dynamic_encoder.0.weight": [
+   128,
+   134
+  ],
+  "pi_features_extractor.pokemon_encoder.dynamic_encoder.2.bias": [
+   128
+  ],
+  "pi_features_extractor.pokemon_encoder.dynamic_encoder.2.weight": [
+   128,
+   128
+  ],
+  "pi_features_extractor.pokemon_encoder.move_dyn_pool.bias": [
+   32
+  ],
+  "pi_features_extractor.pokemon_encoder.move_dyn_pool.weight": [
+   32,
+   34
+  ],
+  "pi_features_extractor.pokemon_encoder.move_dyn_proj.bias": [
+   32
+  ],
+  "pi_features_extractor.pokemon_encoder.move_dyn_proj.weight": [
+   32,
+   2
+  ],
+  "pi_features_extractor.pokemon_encoder.move_network.0.bias": [
+   96
+  ],
+  "pi_features_extractor.pokemon_encoder.move_network.0.weight": [
+   96,
+   56
+  ],
+  "pi_features_extractor.pokemon_encoder.move_network.2.bias": [
+   32
+  ],
+  "pi_features_extractor.pokemon_encoder.move_network.2.weight": [
+   32,
+   96
+  ],
+  "pi_features_extractor.pokemon_encoder.move_self_attn.in_proj_bias": [
+   96
+  ],
+  "pi_features_extractor.pokemon_encoder.move_self_attn.in_proj_weight": [
+   96,
+   32
+  ],
+  "pi_features_extractor.pokemon_encoder.move_self_attn.out_proj.bias": [
+   32
+  ],
+  "pi_features_extractor.pokemon_encoder.move_self_attn.out_proj.weight": [
+   32,
+   32
+  ],
+  "pi_features_extractor.pokemon_encoder.move_self_norm.bias": [
+   32
+  ],
+  "pi_features_extractor.pokemon_encoder.move_self_norm.weight": [
+   32
+  ],
+  "pi_features_extractor.pokemon_encoder.role_encoder.0.bias": [
+   256
+  ],
+  "pi_features_extractor.pokemon_encoder.role_encoder.0.weight": [
+   256,
+   162
+  ],
+  "pi_features_extractor.pokemon_encoder.role_encoder.2.bias": [
+   128
+  ],
+  "pi_features_extractor.pokemon_encoder.role_encoder.2.weight": [
+   128,
+   256
+  ],
+  "pi_features_extractor.pre_proj_norm.bias": [
+   384
+  ],
+  "pi_features_extractor.pre_proj_norm.weight": [
+   384
+  ],
+  "pi_features_extractor.projection.bias": [
+   512
+  ],
+  "pi_features_extractor.projection.weight": [
+   512,
+   384
+  ],
+  "pi_features_extractor.team_transformer.field_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.field_proj.weight": [
+   128,
+   11
+  ],
+  "pi_features_extractor.team_transformer.side_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.side_proj.weight": [
+   128,
+   10
+  ],
+  "pi_features_extractor.team_transformer.token_type_emb.weight": [
+   9,
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.in_proj.bias": [
+   384
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.in_proj.weight": [
+   384,
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.linear1.bias": [
+   256
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.linear1.weight": [
+   256,
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.linear2.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.linear2.weight": [
+   128,
+   256
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.norm1.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.norm1.weight": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.norm2.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.norm2.weight": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.out_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.0.out_proj.weight": [
+   128,
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.in_proj.bias": [
+   384
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.in_proj.weight": [
+   384,
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.linear1.bias": [
+   256
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.linear1.weight": [
+   256,
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.linear2.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.linear2.weight": [
+   128,
+   256
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.norm1.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.norm1.weight": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.norm2.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.norm2.weight": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.out_proj.bias": [
+   128
+  ],
+  "pi_features_extractor.team_transformer.transformer_layers.1.out_proj.weight": [
+   128,
+   128
+  ],
+  "pi_features_extractor.win_head.net.0.bias": [
+   128
+  ],
+  "pi_features_extractor.win_head.net.0.weight": [
+   128
+  ],
+  "pi_features_extractor.win_head.net.1.bias": [
+   128
+  ],
+  "pi_features_extractor.win_head.net.1.weight": [
+   128,
+   128
+  ],
+  "pi_features_extractor.win_head.net.3.bias": [
+   1
+  ],
+  "pi_features_extractor.win_head.net.3.weight": [
+   1,
+   128
+  ],
+  "pointer_head.ctx_proj.bias": [
+   64
+  ],
+  "pointer_head.ctx_proj.weight": [
+   64,
+   512
+  ],
+  "pointer_head.move_proj.bias": [
+   64
+  ],
+  "pointer_head.move_proj.weight": [
+   64,
+   128
+  ],
+  "pointer_head.move_score.bias": [
+   1
+  ],
+  "pointer_head.move_score.weight": [
+   1,
+   64
+  ],
+  "pointer_head.struggle_score.bias": [
+   1
+  ],
+  "pointer_head.struggle_score.weight": [
+   1,
+   64
+  ],
+  "pointer_head.switch_proj.bias": [
+   64
+  ],
+  "pointer_head.switch_proj.weight": [
+   64,
+   128
+  ],
+  "pointer_head.switch_score.bias": [
+   1
+  ],
+  "pointer_head.switch_score.weight": [
+   1,
+   64
+  ],
+  "vf_features_extractor.cls_pool.norm_pool_our.bias": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.norm_pool_our.weight": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.norm_pool_their.bias": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.norm_pool_their.weight": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.norm_pool_value.bias": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.norm_pool_value.weight": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.our_cls": [
+   1,
+   1,
+   128
+  ],
+  "vf_features_extractor.cls_pool.our_cls_attn.in_proj_bias": [
+   384
+  ],
+  "vf_features_extractor.cls_pool.our_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "vf_features_extractor.cls_pool.our_cls_attn.out_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.our_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "vf_features_extractor.cls_pool.their_cls": [
+   1,
+   1,
+   128
+  ],
+  "vf_features_extractor.cls_pool.their_cls_attn.in_proj_bias": [
+   384
+  ],
+  "vf_features_extractor.cls_pool.their_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "vf_features_extractor.cls_pool.their_cls_attn.out_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.their_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "vf_features_extractor.cls_pool.value_cls": [
+   1,
+   1,
+   128
+  ],
+  "vf_features_extractor.cls_pool.value_cls_attn.in_proj_bias": [
+   384
+  ],
+  "vf_features_extractor.cls_pool.value_cls_attn.in_proj_weight": [
+   384,
+   128
+  ],
+  "vf_features_extractor.cls_pool.value_cls_attn.out_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.cls_pool.value_cls_attn.out_proj.weight": [
+   128,
+   128
+  ],
+  "vf_features_extractor.embeddings.ability_embedding.weight": [
+   100,
+   16
+  ],
+  "vf_features_extractor.embeddings.hp_type_idx_map": [
+   16
+  ],
+  "vf_features_extractor.embeddings.item_embedding.weight": [
+   600,
+   16
+  ],
+  "vf_features_extractor.embeddings.move_embedding.weight": [
+   400,
+   16
+  ],
+  "vf_features_extractor.embeddings.species_embedding.weight": [
+   400,
+   32
+  ],
+  "vf_features_extractor.embeddings.type_embedding.weight": [
+   20,
+   16
+  ],
+  "vf_features_extractor.entity_seats.move_seat_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.entity_seats.move_seat_proj.weight": [
+   128,
+   32
+  ],
+  "vf_features_extractor.move_actor_proj.weight": [
+   128,
+   8
+  ],
+  "vf_features_extractor.move_target_proj.weight": [
+   128,
+   8
+  ],
+  "vf_features_extractor.obs_facts_inject.choice_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.obs_facts_inject.choice_proj.weight": [
+   128,
+   19
+  ],
+  "vf_features_extractor.obs_facts_inject.screens_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.obs_facts_inject.screens_proj.weight": [
+   128,
+   4
+  ],
+  "vf_features_extractor.obs_facts_inject.seen_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.obs_facts_inject.seen_proj.weight": [
+   128,
+   7
+  ],
+  "vf_features_extractor.obs_facts_inject.vol_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.obs_facts_inject.vol_proj.weight": [
+   128,
+   15
+  ],
+  "vf_features_extractor.pokemon_encoder.dynamic_encoder.0.bias": [
+   128
+  ],
+  "vf_features_extractor.pokemon_encoder.dynamic_encoder.0.weight": [
+   128,
+   134
+  ],
+  "vf_features_extractor.pokemon_encoder.dynamic_encoder.2.bias": [
+   128
+  ],
+  "vf_features_extractor.pokemon_encoder.dynamic_encoder.2.weight": [
+   128,
+   128
+  ],
+  "vf_features_extractor.pokemon_encoder.move_dyn_pool.bias": [
+   32
+  ],
+  "vf_features_extractor.pokemon_encoder.move_dyn_pool.weight": [
+   32,
+   34
+  ],
+  "vf_features_extractor.pokemon_encoder.move_dyn_proj.bias": [
+   32
+  ],
+  "vf_features_extractor.pokemon_encoder.move_dyn_proj.weight": [
+   32,
+   2
+  ],
+  "vf_features_extractor.pokemon_encoder.move_network.0.bias": [
+   96
+  ],
+  "vf_features_extractor.pokemon_encoder.move_network.0.weight": [
+   96,
+   56
+  ],
+  "vf_features_extractor.pokemon_encoder.move_network.2.bias": [
+   32
+  ],
+  "vf_features_extractor.pokemon_encoder.move_network.2.weight": [
+   32,
+   96
+  ],
+  "vf_features_extractor.pokemon_encoder.move_self_attn.in_proj_bias": [
+   96
+  ],
+  "vf_features_extractor.pokemon_encoder.move_self_attn.in_proj_weight": [
+   96,
+   32
+  ],
+  "vf_features_extractor.pokemon_encoder.move_self_attn.out_proj.bias": [
+   32
+  ],
+  "vf_features_extractor.pokemon_encoder.move_self_attn.out_proj.weight": [
+   32,
+   32
+  ],
+  "vf_features_extractor.pokemon_encoder.move_self_norm.bias": [
+   32
+  ],
+  "vf_features_extractor.pokemon_encoder.move_self_norm.weight": [
+   32
+  ],
+  "vf_features_extractor.pokemon_encoder.role_encoder.0.bias": [
+   256
+  ],
+  "vf_features_extractor.pokemon_encoder.role_encoder.0.weight": [
+   256,
+   162
+  ],
+  "vf_features_extractor.pokemon_encoder.role_encoder.2.bias": [
+   128
+  ],
+  "vf_features_extractor.pokemon_encoder.role_encoder.2.weight": [
+   128,
+   256
+  ],
+  "vf_features_extractor.pre_proj_norm.bias": [
+   384
+  ],
+  "vf_features_extractor.pre_proj_norm.weight": [
+   384
+  ],
+  "vf_features_extractor.projection.bias": [
+   512
+  ],
+  "vf_features_extractor.projection.weight": [
+   512,
+   384
+  ],
+  "vf_features_extractor.team_transformer.field_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.field_proj.weight": [
+   128,
+   11
+  ],
+  "vf_features_extractor.team_transformer.side_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.side_proj.weight": [
+   128,
+   10
+  ],
+  "vf_features_extractor.team_transformer.token_type_emb.weight": [
+   9,
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.in_proj.bias": [
+   384
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.in_proj.weight": [
+   384,
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.linear1.bias": [
+   256
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.linear1.weight": [
+   256,
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.linear2.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.linear2.weight": [
+   128,
+   256
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.norm1.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.norm1.weight": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.norm2.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.norm2.weight": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.out_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.0.out_proj.weight": [
+   128,
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.in_proj.bias": [
+   384
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.in_proj.weight": [
+   384,
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.linear1.bias": [
+   256
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.linear1.weight": [
+   256,
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.linear2.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.linear2.weight": [
+   128,
+   256
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.norm1.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.norm1.weight": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.norm2.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.norm2.weight": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.out_proj.bias": [
+   128
+  ],
+  "vf_features_extractor.team_transformer.transformer_layers.1.out_proj.weight": [
+   128,
+   128
+  ],
+  "vf_features_extractor.win_head.net.0.bias": [
+   128
+  ],
+  "vf_features_extractor.win_head.net.0.weight": [
+   128
+  ],
+  "vf_features_extractor.win_head.net.1.bias": [
+   128
+  ],
+  "vf_features_extractor.win_head.net.1.weight": [
+   128,
+   128
+  ],
+  "vf_features_extractor.win_head.net.3.bias": [
+   1
+  ],
+  "vf_features_extractor.win_head.net.3.weight": [
+   1,
+   128
+  ]
+ }
+}

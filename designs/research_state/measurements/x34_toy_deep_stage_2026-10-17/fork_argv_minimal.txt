@@ -1,0 +1,1 @@
+--model models/rb_toy_ent_s4002/final_model.zip --steps 500000000 --seed 4002 --checkpoint-every-steps 1000000 --snapshot-ladder-games 0 --device cuda --run-name rb_toy_ent_s4002_deep --supply-starve-cycles self_play_pool=0

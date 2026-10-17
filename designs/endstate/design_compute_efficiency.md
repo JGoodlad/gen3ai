@@ -300,8 +300,13 @@ of the owner's plan needs the toy AT ITS PLATEAU, for two reasons:
   must carry T36's fixture, or the canary's boundary-sensitive false FATAL (I30's class) stays live for 100–400M more
   steps. How to do it is the Training session's call:
   - the toy's argv parses only at its pin (readiness §3.2);
-  - at HEAD, minus the deleted flags (vacuous without the op and without opponent intent), it may also parse;
-  - `checkargs` and `--dry-run` decide.
+  - **STAGED 2026-10-17 at HEAD** ([`x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`](../research_state/measurements/x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md)):
+    the 17 deleted flags are dropped (vacuous: no op, no opponent intent). The HEAD build matches the checkpoint's
+    316 keys and shapes, the checkpoint loads strictly, and its fp32 forward on 191 real rows is BIT-IDENTICAL at
+    HEAD (`6dcc769c`) and at the pin (`3899277a`). `toy_network_identity_test.py` pins this.
+  - The continuation is a FORK into `rb_toy_ent_s4002_deep` with `--pin-commit <main>`. The argv types no arch flag:
+    the arch is inherited and the recipe restored from the parent. `checkargs` and `--dry-run` both pass ("would
+    launch", +399,918,572 steps). `launch_x34.sh` re-runs every pre-check at launch.
 - **Data.** None of the 10-14 learnset fix reaches the toy (no priors). The observation did not move under it
   (991 / 991).
 
@@ -535,3 +540,4 @@ Everything else here is the orchestrator's tactical call (GPU order, seeds, the 
 | 2026-10-16 | Plateau-breakers | forks from BOTH plateau checkpoints with an OFF control fork each; a transfer CALIBRATION (2 breakers on both) before the toy may gate; architecture-bound breakers skip the toy | screening on the toy alone with no calibration; breakers judged without a control fork | §5 |
 | 2026-10-16 | Equal compute | effective learn GPU-time (Σ collect + update) as PRIMARY, FLOPs as a descriptor, ≥ 3 budgets, load recorded | FLOP-matching as primary (collect is not FLOP-bound); `time_elapsed` against X26 (F2) | §5.4 |
 | 2026-10-16 | The toy + 1 ladder | DEFERRED with two named triggers | running it now (the owner's plan does not need attribution yet) | §5.3 |
+| 2026-10-17 | How X34 carries T36's canary fix | **a FORK at main** (`--pin-commit` main; the minimal argv inherits the arch and has the recipe restored), after network identity was PROVEN: the same keys and shapes, a strict load, and a bit-identical fp32 forward at HEAD vs the pin | resuming at the pin `3899277a` (the pre-T36 canary lottery for 400M steps); typing the toy's arch flags on the fork (resolves to the same config; more surface); a fork without `--pin-commit` (it pins the PARENT's commit, F1) | `x34_toy_deep_stage_2026-10-17/`; `toy_network_identity_test.py` |
