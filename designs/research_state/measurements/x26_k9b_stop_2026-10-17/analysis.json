@@ -1,0 +1,188 @@
+{
+ "row0_violator": {
+  "error_vs_fp64_by_path": {
+   "stored_T2_gpu": 6.41332056874333e-05,
+   "learner_gpu": 0.0001652226832264958,
+   "learner32_cpu_b32": 0.00014757970837298018,
+   "learner32_cpu_b1": 0.00014471868542376143,
+   "decision32_cpu_b8": 0.0001518712427968083,
+   "decision32_cpu_b64": 0.0001518712427968083,
+   "decision32_cpu_b256": 0.0001518712427968083
+  },
+  "gate_abs_d": 0.0001010894775390625,
+  "fp32_error_scale_rms": 0.00014309312378631833,
+  "pert_std": 3.708309573216168e-05,
+  "pert_maxdev": 0.00017618993786516768,
+  "raw_logits_legal_fp64": [
+   -3.474358822554092,
+   -5.08322824720924
+  ],
+  "raw_legal_err32": [
+   -0.0001849873366550625,
+   -2.7250807992373893e-06
+  ],
+  "p_action": 0.1667456382653028,
+  "n_legal": 2,
+  "stale_d": 0.9626533971217031
+ },
+ "others_1_31": {
+  "median_abs_error_vs_fp64_by_path": {
+   "stored_T2_gpu": 1.7713431320842687e-05,
+   "learner_gpu": 1.6115138925520966e-05,
+   "learner32_cpu_b32": 1.6849250173311958e-05,
+   "learner32_cpu_b1": 1.3680734439081021e-05,
+   "decision32_cpu_b8": 1.670820944621454e-05,
+   "decision32_cpu_b64": 1.670820944621454e-05,
+   "decision32_cpu_b256": 1.670820944621454e-05
+  },
+  "max_abs_error_vs_fp64_by_path": {
+   "stored_T2_gpu": 4.8687727625118526e-05,
+   "learner_gpu": 6.0183808163305486e-05,
+   "learner32_cpu_b32": 4.8739716366430486e-05,
+   "learner32_cpu_b1": 4.850129778732892e-05,
+   "decision32_cpu_b8": 7.520417864670392e-05,
+   "decision32_cpu_b64": 7.520417864670392e-05,
+   "decision32_cpu_b256": 7.520417864670392e-05
+  },
+  "median_fp32_error_scale_rms": 1.8949125895366737e-05,
+  "median_pert_std": 1.0762187657620278e-05,
+  "median_gate_abs_d": 3.314018249511719e-05,
+  "min_abs_stale_d": 0.00938961999184773,
+  "median_abs_stale_d": 0.8397115565714421
+ },
+ "rank_of_row0": {
+  "fp32_error_scale": 1,
+  "pert_std": 1,
+  "abs_learner_gpu_error": 1
+ },
+ "spearman_gate_d_vs_fp32_scale": 0.2877565982404692,
+ "spearman_gate_d_vs_pert_std": 0.4105571847507331,
+ "gate_d_over_pert_std": {
+  "row0": 2.7260258493302905,
+  "others_median": 3.0825340784627495,
+  "others_max": 9.91735100208243
+ },
+ "checks": {
+  "weights_dump_equals_final_model_exception": true,
+  "dump_rows_align_with_json": true,
+  "dump_masks_match_json": true,
+  "stored_dist_legal_set_equals_mask": true
+ },
+ "fp64_two_paths_max_abs_diff": 5.773159728050814e-14,
+ "compiled_error": "InductorError('CppCompileError: C++ compile error\\n\\nCommand:\\ng++ /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a163f7e7d53aa9a97/scratch_k9b/inductor/m2/cm2qvmc63al6vmorcy33tqixxionmjpdozhhmvc6wfqxl2mgh4fk.main.cpp -D TORCH_INDUCTOR_CPP_WRAPPER -D STANDALONE_TORCH_HEADER -D C10_USING_CUSTOM_GENERATED_MACROS -D CPU_CAPABILITY_AVX512 -shared -fPIC -O3 -DNDEBUG -fno-trapping-math -funsafe-math-optimizations -ffinite-math-only -fno-signed-zeros -fno-math-errno -fexcess-precision=fast -fno-finit",
+ "k_perturb": 16,
+ "module_relerr_row0_over_others_top": [
+  {
+   "module": "features_extractor.op_worst_proj",
+   "ratio": 52.54344177165414,
+   "row0": 8.532653376576122e-06,
+   "others_median": 1.623923574260275e-07
+  },
+  {
+   "module": "pointer_head.switch_score",
+   "ratio": 17.348667564032212,
+   "row0": 2.9974892247994582e-05,
+   "others_median": 1.727792185616574e-06
+  },
+  {
+   "module": "features_extractor.value_entity_pool.op_proj",
+   "ratio": 14.034320212724227,
+   "row0": 1.3168015897193317e-06,
+   "others_median": 9.382724419565776e-08
+  },
+  {
+   "module": "features_extractor.value_entity_pool.out_proj",
+   "ratio": 13.994907830968529,
+   "row0": 5.735242273418082e-06,
+   "others_median": 4.098092208029333e-07
+  },
+  {
+   "module": "features_extractor.value_entity_pool",
+   "ratio": 13.994907830968529,
+   "row0": 5.735242273418082e-06,
+   "others_median": 4.098092208029333e-07
+  },
+  {
+   "module": "features_extractor.damage_op",
+   "ratio": 13.216018580467587,
+   "row0": 1.616269998411271e-06,
+   "others_median": 1.2229628678034795e-07
+  },
+  {
+   "module": "pointer_head.struggle_score",
+   "ratio": 12.218513766144874,
+   "row0": 1.1816754040590211e-05,
+   "others_median": 9.671187729339177e-07
+  },
+  {
+   "module": "features_extractor.prefuse_proj",
+   "ratio": 11.89109750340564,
+   "row0": 1.46579784498959e-06,
+   "others_median": 1.232685077697649e-07
+  },
+  {
+   "module": "mlp_extractor.policy_net.0",
+   "ratio": 9.955525022249791,
+   "row0": 1.0425893766569219e-05,
+   "others_median": 1.0472470053832613e-06
+  },
+  {
+   "module": "pointer_head",
+   "ratio": 9.112309716151906,
+   "row0": 2.995870733248319e-05,
+   "others_median": 3.287718291596287e-06
+  },
+  {
+   "module": "features_extractor.hidden_opp_belief.decoder",
+   "ratio": 8.508272800098228,
+   "row0": 1.9152092813315002e-05,
+   "others_median": 2.250996561028684e-06
+  },
+  {
+   "module": "features_extractor.hidden_opp_belief.norm",
+   "ratio": 8.343324632380051,
+   "row0": 1.9190593899504253e-05,
+   "others_median": 2.300113533282219e-06
+  },
+  {
+   "module": "features_extractor.hidden_opp_belief",
+   "ratio": 8.343324632380051,
+   "row0": 1.9190593899504253e-05,
+   "others_median": 2.300113533282219e-06
+  },
+  {
+   "module": "features_extractor.activation",
+   "ratio": 8.04897502450229,
+   "row0": 1.259738265980818e-05,
+   "others_median": 1.5650915329541776e-06
+  },
+  {
+   "module": "features_extractor",
+   "ratio": 8.04897502450229,
+   "row0": 1.259738265980818e-05,
+   "others_median": 1.5650915329541776e-06
+  }
+ ],
+ "module_relerr_selected": {
+  "pointer_head": {
+   "row0": 2.995870733248319e-05,
+   "others_median": 3.287718291596287e-06
+  },
+  "features_extractor": {
+   "row0": 1.259738265980818e-05,
+   "others_median": 1.5650915329541776e-06
+  },
+  "features_extractor.projection": {
+   "row0": 1.1770367043550781e-05,
+   "others_median": 1.5132625421206057e-06
+  },
+  "features_extractor.team_transformer": {
+   "row0": 3.333112878625501e-06,
+   "others_median": 1.1218686825725692e-06
+  },
+  "features_extractor.hypothesis_builder.delta_out": {
+   "row0": 2.0546380282436316e-07,
+   "others_median": 2.250199037003498e-07
+  }
+ }
+}

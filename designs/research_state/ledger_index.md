@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-26,464-line file. **The ledger itself is append-only and is never edited by this**;
+26,498-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**890 headings · 835 dated · 2026-08-01 → 2026-10-17 · ledger 26,464 lines.**
+**891 headings · 836 dated · 2026-08-01 → 2026-10-17 · ledger 26,498 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -910,3 +910,4 @@ rename.
   - `L26227` · `2026-10-16` · DESIGN · **WHAT THE END STATE'S COMPUTE BUYS: the per-component cost ledger (the trunk is tokens × rounds, so the 32 EVENT seats are ≈ 37 % of the learner's FLOPs and the third round 23 %; the op and edges are ≈ 7 % of FLOPs but ≈ 35 % of a CPU update), the value ledger (only static tokens and X5 have isolated reads), the TOY DEEP RUN under X26's own Tier-1 rule (X34), and PLATEAU-BREAKERS on both architectures with a transfer calibration (X35)**
   - `L26310` · `2026-10-16` · MEASUREMENT (MAJOR) · **HIDDEN-INFO STUDY: THE BLIND U-ARM BUILD, compared by a third party (red team E1, pre-registered `8dd25833`). On the 978 states where both builds hold all six arms the registered criterion AGREES at LEAF-K8: s_U 0.32 / 0.31, n_U 0.83 / 0.92, R3's numerators +0.013 / +0.021 and +0.031 / +0.024 with R3 holding in both, σ_U / ν_U \|Δ\| 0.0022 / 0.0014. R3's never-seen half is REPLICATED, scoped: the 8-rollout leaf (it flips at LEAF-K4 / K1) and the registered bot-heavy mix (BOTH builds fail it on the snapshot-game states and on end2 alone). The blind build's prod identity "failure" is ruled a guard-caused EXCLUSION. The M side still differs with the learnset fixed**
   - `L26418` · `2026-10-17` · FINDING / DESIGN · **X26's bf16 startup-gate LOSS drift (6.68e-3 = 48 % of the bar at the 121M restart) is ONE ROW made heavy by T36's relocation, not bf16 losing the model. It is a per-state lottery from ≈ 114M (≈ 1–2 % per restart over the bar on CPU; ≈ 4 % after a 0.28 T37 raise), not a trend. The bf16 rule now reads the LOSS on the golden's own rows, the statistic its bars were derived on (`gen3_r1_loss_on_golden_rows_v1`, future pins); X26 itself keeps its pin, with a rollback**
+  - `L26465` · `2026-10-17` · FINDING (MAJOR for X26 ops) · **X26's K9(b) stop at update 13,900 (max |Δ log π| 1.0109e-4 on ONE row of 982 judged) is NUMERICAL, not a fault: the row is the most fp32-ill-conditioned of the scan's worst 32, EVERY fp32 evaluation of it misses the exact (float64) value by 0.6–1.65e-4, and the stored behaviour log-prob is the CLOSEST of them. No checkpoint is void. At today's scale a recurrence comes every ≈ 26M steps, rising to ≈ 1.5M by the 500M cap (≈ 110 stops in all), so the recommendation is a `warn` resume under monitored ceilings (judged max < 1e-3, p99 < 1e-4) by a new Amendment 3**

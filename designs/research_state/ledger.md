@@ -26461,3 +26461,37 @@ the fp32 function. CPU tracks CUDA here: 6.29e-3 at B = 64 and 6.31e-3 at B = 2,
 Tag: **FINDING (MAJOR for X26 ops) + DESIGN · CPU, UNVERIFIED on CUDA except the one gate-weights comparison (6.29e-3 vs 6.68e-3) · the fix BUILT for future pins** ·
 evidence: `research_state/measurements/x26_bf16_drift_2026-10-17/` (README, scripts, `results/`); `training/compile_flags.md`
 "bf16 drift on a sharpening policy"; `endstate/design_x26_readiness.md` §4.2, R8, F37; `src/agents/model/compile_regions_loss_rows_test.py`
+
+### 2026-10-17 · FINDING (MAJOR for X26 ops) · **X26's K9(b) stop at update 13,900 (max |Δ log π| 1.0109e-4 on ONE row of 982 judged) is NUMERICAL, not a fault: the row is the most fp32-ill-conditioned of the scan's worst 32, EVERY fp32 evaluation of it misses the exact (float64) value by 0.6–1.65e-4, and the stored behaviour log-prob is the CLOSEST of them. No checkpoint is void. At today's scale a recurrence comes every ≈ 26M steps, rising to ≈ 1.5M by the 500M cap (≈ 110 stops in all), so the recommendation is a `warn` resume under monitored ceilings (judged max < 1e-3, p99 < 1e-4) by a new Amendment 3**
+
+The probe compared the fp32 behaviour log μ (from T2's inductor-compiled, CUDA-graph decision forward) with the learner's
+fp32 recomputation, before any optimizer step, at precision `highest`. A CPU replay at the run's pin `9c033489` used the
+dumped weights and rows: the weights are bit-identical to `final_model_exception.zip`, and the dump aligns with the record.
+It compared both values with a float64 forward (two float64 paths agree to 6e-14).
+
+1. **Two valid fp32 programs, one ill-conditioned row.** Row 903 (2 legal actions, p 0.167, logits −3.47 / −5.08) is off
+   the exact value by: stored μ +6.4e-5; GPU learner +1.65e-4; CPU learner +1.45e-4 / +1.48e-4 (batch 1 / 32); CPU decision
+   forward +1.52e-4 at buckets 8, 64 and 256. The other 31 rows: a median of 1.4–1.8e-5 on every path.
+2. **Its conditioning ranks first of 32 rows.** One-ulp random rounding of every weight moves its log π over 1.13e-4 (median
+   row: 4.0e-5), wider than the gate's gap. Normalised by that spread, its gap is ordinary: 2.7σ, against a median of 3.1σ
+   and a max of 9.9σ for the other rows. The error sits in one raw logit and peaks in `op_worst_proj` (53× the median
+   relative error) and `pointer_head.switch_score` (17×). The region is smooth and steep, not a cutoff: the draws are
+   continuous, and the nearest declared selection site is at a margin of 0.0785, nearly 400× the 2e-4 exclusion.
+3. **Structural classes excluded.** Weights ten updates older move these rows by ≥ 0.0094 (median 0.84), and a
+   stale-weight fault would move every row, but the full scan's other 90,614 current rows are < 5.7e-5 (p99 9.3e-6). The
+   version and slot are current. Both legal actions shift by one common logit gap, which rules out a wrong row or action.
+   The legal set equals the mask. An observation mismatch cannot be replayed directly; it would have to land, by a 1-in-32
+   chance, on the worst-conditioned row.
+4. **History** (`behaviour/max_abs_dlogp_judged`, 1,388 updates): the per-update judged max grows about linearly, from a
+   median of 6.9e-6 (0–10M) to 2.3e-5 (130–137M). The near misses were 9.52e-5 (116.5M) and 9.73e-5 (130.1M). The last
+   30M give P(≥ 1e-4) ≈ 0.37 % per update. The large all-current maxima (0.041, 0.039, …) were tie-excluded rows.
+5. **Resume source:** `final_model_exception.zip`. It is the state after update 13,899, it carries the optimizer, and
+   `latest.txt` already names it. Falling back to `checkpoint_136000153` gains nothing and costs ≈ 975k clean steps.
+6. **Design note for future pins:** the fixed 1e-4 bar should become per row, |Δ| ≥ max(1e-4, k·σ_row) with a fixed k
+   (≈ 20 from today's ratios), where σ_row is read by a dithered second forward on the violating rows only. Logit size and
+   entropy do NOT predict the conditioning.
+
+Tag: **FINDING (MAJOR for X26 ops) · CPU replay at the pin; T2's exact GPU program NOT re-run (no lease; the CPU inductor
+build failed); only the 32 dumped rows replayable** · evidence: `research_state/measurements/x26_k9b_stop_2026-10-17/`
+(README, `replay.py` / `replay.json`, `analyse.py` / `analysis.json`, `tb_history.py` / `tb_history.json`);
+`training/learner_gates.md` (b); `measurements/ridealong_baseline/PREREGISTRATION.md` §A2.7
