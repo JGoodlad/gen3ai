@@ -26495,3 +26495,60 @@ Tag: **FINDING (MAJOR for X26 ops) · CPU replay at the pin; T2's exact GPU prog
 build failed); only the 32 dumped rows replayable** · evidence: `research_state/measurements/x26_k9b_stop_2026-10-17/`
 (README, `replay.py` / `replay.json`, `analyse.py` / `analysis.json`, `tb_history.py` / `tb_history.json`);
 `training/learner_gates.md` (b); `measurements/ridealong_baseline/PREREGISTRATION.md` §A2.7
+
+### 2026-10-17 · MEASUREMENT · **X26 vs METAMON — the near-term goal is MET, PROVISIONALLY: X26 `rb_x26_s2601` @161,000,169 (greedy) beats `metamon:Kakuna` (ckpt 34, Metamon's best) on OUR teams (home72) at BOTH Kakuna settings, 0.600 [0.537, 0.660] greedy and 0.600 [0.537, 0.660] at T = 1.0 (n = 240 each), +0.140 [+0.046, +0.230] and +0.220 [+0.127, +0.308] over N0; on Metamon's own teams 0.570 [0.472, 0.663] (n = 100) NOT DETECTED; against `SmallRL` level with K2 (the v14 plateau)**
+
+Setup:
+
+- **Our side:** `models/rb_x26_s2601/checkpoints/checkpoint_161000169_steps.zip`, copied and sha256-checked
+  (`bc6050d1…`). It plays greedy on CPU through the in-process Rust core slot, with the trainer's 250-turn forfeit.
+- **Server:** `ws_frontend[in-process]@63f97a57`, Showdown pin `e0551883f`.
+- **Opponent:** Metamon `0a00a759`, on CPU with `CUDA_VISIBLE_DEVICES=""` and one thread per peer.
+- **Schedule:** role-balanced 20-game units in one lane, on rule 5b's three cores at nice 19 (load1 mean 7.2).
+- **Counting rule:** a unit counts iff `status OK`, n = 20, `regime_verified_decisions` is true and
+  `team_source_asymmetry` is false. Every counted unit also has `peer_clean` true.
+
+| cell | n | X26 [Wilson 95%] | history (Newcombe) |
+|---|---:|---|---|
+| Kakuna greedy · home72 | 240 | **0.600 [0.537, 0.660]** BETTER | N0 0.460 (n = 200): +0.140 [+0.046, +0.230] |
+| Kakuna T = 1.0 · home72 | 240 | **0.600 [0.537, 0.660]** BETTER | N0 0.380 (n = 200): +0.220 [+0.127, +0.308] |
+| Kakuna greedy · away | 100 | 0.570 [0.472, 0.663] NOT DETECTED | first read |
+| SmallRL greedy · away | 200 | 0.645 [0.577, 0.708] | K2 0.625 (n = 600): +0.020 [−0.058, +0.094] n.d.; C_fix 0.658: −0.013 n.d.; `ai_v12_02` 0.650: −0.005 n.d. |
+| SmallRL greedy · home (pool) | 200 | 0.785 [0.723, 0.836] | K2 0.755: +0.030 [−0.040, +0.093] n.d.; C_fix 0.717: +0.068 [−0.003, +0.132] n.d. |
+| SmallRL t1 · away | 100 | 0.730 [0.636, 0.807] | `ai_v12_02` 0.560: +0.170 [+0.037, +0.295] |
+
+**What it means.** On our own teams, our production baseline now beats Metamon's best public policy at both
+temperatures we measured. The bar is a Wilson lower bound above 0.50, and both cells clear it by 3.7 pp. Three facts
+limit the claim:
+
+- On Metamon's own teams (away), X26 is not yet detectably better.
+- Against `SmallRL`, the cheaper anchor, X26 is indistinguishable from K2 (`ai_v14_07_g0p_k2`, G0′). K2 was never
+  read against Kakuna, so how much of the gain over N0 K2's lineage had already banked is UNKNOWN.
+- Greedy and T = 1.0 Kakuna read identically here (Δ 0.000 [−0.087, +0.087]). The 2026-09-28 point-estimate ranking
+  ("T = 1.0 is strongest") is not reproduced.
+
+**Comparability.** The comparison with the N0 read is not like-for-like. N0 was read under torch 2.5.1 with the
+`dcddac0b` bridge; this read uses torch 2.8 and HEAD `63f97a57`. The team files, opponent checkpoint, regimes and
+protocol are the same.
+
+**Sample size.** The plan was 400 games per Kakuna cell. The read stopped at 240 (paired seeds 0–11) at the
+~3 h time box, between units, after the verdict was already resolved.
+
+**Cost.** Kakuna took 8.8 s/game and SmallRL 7.2–7.9 s/game, against 3.0 for SmallRL in the SOP. Our end-state side
+now dominates the game time, on one torch thread. The whole read took ≈ 2.5 h wall and ≈ 5 CPU-h for 1,080 games,
+with no GPU.
+
+**FINDING (tooling): the pool team source (`--teamset home`) depends on the working directory.**
+
+- **Cause:** `utils/team_loader/loader.py:9` and `:49` resolve `data/teams` against the CWD. Run from `src/`,
+  `TeamLoader()` returned 0 teams.
+- **Failure:** `Gen3Teambuilder([])` then died inside its own error message (`utils/teambuilder.py:95`, which reads
+  `validations[0]` on an empty list). All five `S_greedy_home` units failed in ~10 s as an unnamed
+  `our_side_error: IndexError`.
+- **Recovery:** the units were re-run from the checkout root. No counted unit is affected, because the Kakuna and
+  away cells use the absolute-path `dir` source.
+- **Gap:** the `dir` source refuses an empty set by name; the pool source did not. A fix is proposed, not landed.
+
+Tag: **MEASUREMENT · PROVISIONAL (one checkpoint, one seed, a live run at 161M of a 500M cap; owner plateau rule)** ·
+evidence: `research_state/measurements/x26_metamon_anchor_2026-10-17/` (README, `cells.json`, `rows.jsonl`, `scripts/`);
+`designs/ops/EXTERNAL_ANCHORS_SOP.md` §1 goal row, §4 "X26".

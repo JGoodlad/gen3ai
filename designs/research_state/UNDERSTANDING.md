@@ -686,6 +686,17 @@ erroring; Metamon's transformers need `VanillaAttention` on CPU; its client hard
 `production` registry name resolves to a v9 checkpoint that does not load at HEAD. [ledger 2026-09-14 ·
 *MEASUREMENT · METAMON DE-RISKED*]
 
+**The near-term goal — beat Metamon's BEST (`Kakuna`) on OUR teams — is MET, PROVISIONALLY (2026-10-17,
+`x26_metamon_anchor_2026-10-17/`):** [MEASURED · one checkpoint of a live run] X26 `rb_x26_s2601` @161,000,169,
+greedy, on the home72 teams: **0.600 [0.537, 0.660] vs Kakuna greedy and 0.600 [0.537, 0.660] vs Kakuna at T = 1.0**
+(n = 240 each), both lower bounds above 0.50; N0 read 0.460 / 0.380 on the same cells (X26 − N0 **+0.140
+[+0.046, +0.230]** / **+0.220 [+0.127, +0.308]**). It does NOT yet hold on Metamon's own teams (0.570 [0.472,
+0.663], n = 100, NOT DETECTED), and against `SmallRL` X26 is level with the previous lineage's plateau K2
+(away +0.020 [−0.058, +0.094], home +0.030 [−0.040, +0.093]) — K2 was never read against Kakuna, so WHEN the gap
+to Kakuna closed (K2's lineage or X26's end-state architecture) is UNKNOWN. Kakuna's strongest temperature stays
+unresolved (greedy and T = 1.0 identical here). PROVISIONAL per the plateau rule: one checkpoint, one seed,
+161M of a 500M cap. [ledger 2026-10-17 · *X26 vs METAMON*]
+
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
 usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s

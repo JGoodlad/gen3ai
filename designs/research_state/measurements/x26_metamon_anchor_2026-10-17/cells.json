@@ -1,0 +1,253 @@
+{
+ "cells": {
+  "K_greedy_h72": {
+   "units": 12,
+   "n": 240,
+   "wins": 144,
+   "losses": 94,
+   "ties": 2,
+   "win_rate": 0.6,
+   "wilson95": [
+    0.5369150750231609,
+    0.6599341409870717
+   ],
+   "vs_0.50": "BETTER",
+   "hit_forfeit_limit": 0,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "peer_dirty_units": [],
+   "median_turns": 30,
+   "max_turns": 204,
+   "distinct_our_teams": 59,
+   "history": [
+    {
+     "model": "N0 ai_v14_01_base @75,005,952",
+     "wins": 92,
+     "n": 200,
+     "rate": 0.46,
+     "source": "kakuna_goal_read_2026-09-28 (b)",
+     "x26_minus_it": [
+      0.13999999999999996,
+      0.046377459722091535,
+      0.2303950222751816
+     ],
+     "verdict": "X26 BETTER"
+    }
+   ]
+  },
+  "K_t10_h72": {
+   "units": 12,
+   "n": 240,
+   "wins": 144,
+   "losses": 96,
+   "ties": 0,
+   "win_rate": 0.6,
+   "wilson95": [
+    0.5369150750231609,
+    0.6599341409870717
+   ],
+   "vs_0.50": "BETTER",
+   "hit_forfeit_limit": 1,
+   "their_argmax_min": 0.8635514018691589,
+   "their_argmax_max": 0.9447674418604651,
+   "peer_dirty_units": [],
+   "median_turns": 30,
+   "max_turns": 250,
+   "distinct_our_teams": 59,
+   "history": [
+    {
+     "model": "N0 ai_v14_01_base @75,005,952",
+     "wins": 76,
+     "n": 200,
+     "rate": 0.38,
+     "source": "kakuna_goal_read_2026-09-28 (c)",
+     "x26_minus_it": [
+      0.21999999999999997,
+      0.1265578178057969,
+      0.3079814856856025
+     ],
+     "verdict": "X26 BETTER"
+    }
+   ]
+  },
+  "S_greedy_away": {
+   "units": 10,
+   "n": 200,
+   "wins": 129,
+   "losses": 71,
+   "ties": 0,
+   "win_rate": 0.645,
+   "wilson95": [
+    0.5765211307384819,
+    0.7080137246095941
+   ],
+   "vs_0.50": "BETTER",
+   "hit_forfeit_limit": 1,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "peer_dirty_units": [],
+   "median_turns": 33,
+   "max_turns": 250,
+   "distinct_our_teams": 19,
+   "history": [
+    {
+     "model": "K2 ai_v14_07_g0p_k2 @91,127,808 (G0', the v14 plateau)",
+     "wins": 375,
+     "n": 600,
+     "rate": 0.625,
+     "source": "learner_battery_2026-09-26 ga_levels",
+     "x26_minus_it": [
+      0.020000000000000018,
+      -0.058231825951943345,
+      0.09432659844757257
+     ],
+     "verdict": "NOT DETECTED"
+    },
+    {
+     "model": "C_fix ai_v14_06_lbat_ctrl_fix",
+     "wins": 395,
+     "n": 600,
+     "rate": 0.6583333333333333,
+     "source": "learner_battery_2026-09-26 ga_levels",
+     "x26_minus_it": [
+      -0.013333333333333308,
+      -0.09108996086825863,
+      0.060693230498936435
+     ],
+     "verdict": "NOT DETECTED"
+    },
+    {
+     "model": "ai_v12_02_winprob_critic @75,005,952",
+     "wins": 65,
+     "n": 100,
+     "rate": 0.65,
+     "source": "metamon_matched_regime_2026-09-14",
+     "x26_minus_it": [
+      -0.0050000000000000044,
+      -0.11521332214931038,
+      0.1110530785420311
+     ],
+     "verdict": "NOT DETECTED"
+    }
+   ]
+  },
+  "S_greedy_home": {
+   "units": 10,
+   "n": 200,
+   "wins": 157,
+   "losses": 43,
+   "ties": 0,
+   "win_rate": 0.785,
+   "wilson95": [
+    0.7229769264943994,
+    0.8362812374656122
+   ],
+   "vs_0.50": "BETTER",
+   "hit_forfeit_limit": 0,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "peer_dirty_units": [],
+   "median_turns": 29,
+   "max_turns": 157,
+   "distinct_our_teams": 97,
+   "history": [
+    {
+     "model": "K2 ai_v14_07_g0p_k2 @91,127,808 (G0', the v14 plateau)",
+     "wins": 453,
+     "n": 600,
+     "rate": 0.755,
+     "source": "learner_battery_2026-09-26 ga_levels",
+     "x26_minus_it": [
+      0.030000000000000027,
+      -0.04012459195768783,
+      0.09263550451978639
+     ],
+     "verdict": "NOT DETECTED"
+    },
+    {
+     "model": "C_fix ai_v14_06_lbat_ctrl_fix",
+     "wins": 430,
+     "n": 600,
+     "rate": 0.7166666666666667,
+     "source": "learner_battery_2026-09-26 ga_levels",
+     "x26_minus_it": [
+      0.06833333333333336,
+      -0.0026827674150722153,
+      0.13177226038519815
+     ],
+     "verdict": "NOT DETECTED"
+    },
+    {
+     "model": "ai_v12_02_winprob_critic @75,005,952",
+     "wins": 52,
+     "n": 100,
+     "rate": 0.52,
+     "source": "metamon_matched_regime_2026-09-14",
+     "x26_minus_it": [
+      0.265,
+      0.151248784759695,
+      0.37457477783673937
+     ],
+     "verdict": "X26 BETTER"
+    }
+   ]
+  },
+  "K_greedy_away": {
+   "units": 5,
+   "n": 100,
+   "wins": 57,
+   "losses": 43,
+   "ties": 0,
+   "win_rate": 0.57,
+   "wilson95": [
+    0.4721538954694098,
+    0.6626670147792713
+   ],
+   "vs_0.50": "NOT DETECTED",
+   "hit_forfeit_limit": 1,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "peer_dirty_units": [],
+   "median_turns": 40,
+   "max_turns": 250,
+   "distinct_our_teams": 18,
+   "history": []
+  },
+  "S_t1_away": {
+   "units": 5,
+   "n": 100,
+   "wins": 73,
+   "losses": 27,
+   "ties": 0,
+   "win_rate": 0.73,
+   "wilson95": [
+    0.635678832297121,
+    0.8073041585199743
+   ],
+   "vs_0.50": "BETTER",
+   "hit_forfeit_limit": 0,
+   "their_argmax_min": 0.5792682926829268,
+   "their_argmax_max": 0.6788321167883211,
+   "peer_dirty_units": [],
+   "median_turns": 37,
+   "max_turns": 200,
+   "distinct_our_teams": 18,
+   "history": [
+    {
+     "model": "ai_v12_02_winprob_critic @75,005,952",
+     "wins": 56,
+     "n": 100,
+     "rate": 0.56,
+     "source": "metamon_matched_regime_2026-09-14",
+     "x26_minus_it": [
+      0.16999999999999993,
+      0.0373440864510034,
+      0.2945990641969484
+     ],
+     "verdict": "X26 BETTER"
+    }
+   ]
+  }
+ },
+ "skipped_units": []
+}
