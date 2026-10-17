@@ -20,7 +20,7 @@ rec = {"rows": P["rows"], "cols": P["cols"], "inconclusive": list(m.inconclusive
 if m.h is None:
     (OUT / "read.json").write_text(json.dumps(rec, indent=1, default=str))
     print("INCOMPLETE:", len(m.inconclusive), m.inconclusive[:3]); sys.exit(1)
-v = [r[0] for r in m.h]  # production's score (pp) vs each toy seed
+v = list(m.h[0])  # (1 row x 3 toy columns) production's score (pp) vs each toy seed
 n = len(v); mean = math.fsum(v) / n; sd = math.sqrt(math.fsum((x - mean) ** 2 for x in v) / (n - 1)); se = sd / math.sqrt(n)
 rec["per_seed_score_pp"] = v; rec["pooled_minus_50_pp"] = mean - 50.0; rec["se_pp"] = se; rec["df"] = n - 1
 for lvl in (0.90, 0.95):

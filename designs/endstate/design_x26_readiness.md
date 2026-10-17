@@ -570,6 +570,11 @@ two-sided 90 % interval and the rule-8 band of 1e-9.
 > - **What it does not say:** that the toy would still lead at a larger equal budget (production keeps climbing past 15M), or anything about the ceiling. The ceiling
 >   remains R-T2's.
 > - **Caveat:** `s4001b`'s R-T6 row inherits the post-canary steps (F36).
+>
+> **Descriptive record, 2026-10-16: INTERIM X26 vs the toy (NOT R-T2).** X26's LIVE 70M checkpoint (`rb_x26_s2601`, `checkpoint_70000008_steps.zip`) against each toy's 100M cap, 500 mirrored
+> pairs per cell: production scores **55.3 / 52.4 / 55.5 %** (vs s4001b / s4002 / s4003), pooled **+4.40 pp**, seeds-as-units 90 % [+1.48, +7.32] (df 2; one production seed, so its seed variance is not in
+> the interval). It is registered descriptive and interim, before any game; R-T2 stays reserved for X26's plateau. No §3.6 class is read.
+> Record: [`../research_state/measurements/x26_vs_toy_interim_2026-10-16/RESULTS.md`](../research_state/measurements/x26_vs_toy_interim_2026-10-16/RESULTS.md).
 
 **Loadability across the deletion (requirement on T30-U0).** R-T2 plays a pre-deletion T-ENT checkpoint against a
 post-deletion X26 checkpoint. Under D-LD1, a recorded OFF value of a deleted lever is refused at HEAD.
