@@ -12,6 +12,11 @@
 > and Amendment 1's (a)–(e) against the end-state graph, declares the K9(b) tie-share handling and records
 > the orchestrator's defaults for the owner's open questions. **Where Amendment 2 and an earlier clause
 > disagree, Amendment 2 wins**; every earlier clause it does not touch stands.
+>
+> **AMENDED A THIRD TIME 2026-10-17, AFTER LAUNCH, BEFORE THE RESUME** (X26 is HELD at 136,974,910 steps
+> by a K9(b) stop under §A2.7 item 3, diagnosed NUMERICAL at `177f61c0`): **Amendment 3**, at the very end,
+> changes ONE thing — how X26 handles K9(b) from the resume on (`--behaviour-check warn` under fixed
+> ceilings). No read, comparison, arm, argv flag other than that one, or stop rule of the research changes.
 
 **Owner, 2026-09-30:** *"Once we are ready to train on the GPU, establish a baseline just with the
 ensemble of value heads to test uncertainty, the trick where you predict a random output to see how
@@ -582,3 +587,88 @@ none after the launch changes this run's argv.
   run there): it required 32.65 GiB with the checkpoint terms at 0. At X26's 1M cadence the checkpoints alone are
   ≈ 500 × 55 MB ≈ 27 GB more (readiness §2.3: ≈ 36 GB at 500M in total). The real launch runs from the main checkout,
   whose archive holds sized runs.
+
+---
+
+## Amendment 3 (2026-10-17, after launch, BEFORE the resume): K9(b) under `warn` with fixed ceilings
+
+**Registered before X26 resumes.** X26 stopped at update 13,900 (136,974,910 steps, 2026-10-17 06:49:40) on a
+K9(b) max-violation: one judged row at fp32 `max |d log π|` 1.01e-4 against the 1e-4 bar (p99 9.2e-6). Under §A2.7
+item 3 that was a GIGO stop, held until diagnosed. The diagnosis (`177f61c0`,
+[`x26_k9b_stop_2026-10-17/README.md`](../x26_k9b_stop_2026-10-17/README.md)) found it **NUMERICAL**. The violating
+row is the most fp32-ill-conditioned row in the scan. Every fp32 path misses the exact float64 value by 0.6–1.65e-4,
+and the stored behaviour value is the closest of them. Stale weights, row misalignment, a mask fault and a near-tie
+are each ruled out, and no checkpoint is void. The per-update judged max grows linearly with training. Under `fatal`
+the forecast is ≈ 110 more stops by 500M (one per ≈ 26M steps now, one per ≈ 1.5M by the cap), each one a
+predicted rounding event that rule 8 forbids treating as a fault.
+
+### A3.1 What changes (X26 only, from the resume on)
+
+1. **X26 resumes with `--behaviour-check warn`.** K9(b) still runs and records on EVERY update. A violation of the
+   1e-4 bar is logged and dumped (under `warn` its scan is a seeded 4,096-row sample) and no longer stops the run.
+2. **The run is STOPPED as a GIGO stop under §A2.7 item 3** if ANY ONE update shows:
+   1. `behaviour/max_abs_dlogp_judged` ≥ **1e-3**: 10× the bar, and ≈ 16× the forecast median judged max at the
+      500M cap (≈ 6e-5). The fitted rounding tail puts the chance at ≈ 5e-9 per update even there, so a fault that
+      moves one row by 1e-3 is caught;
+   2. `behaviour/p99_abs_dlogp_current` ≥ **1e-4**: 10× the 9.3e-6 at the stop, and ≈ 4× the cap forecast
+      (≈ 2.4e-5). Stale weights or a transport fault move EVERY row by ≥ 1e-2, so the p99 is the many-row detector;
+   3. any non-finite |Δ|.
+
+   The ceilings are fixed thresholds on the logged per-update statistic (rule 8), each ≥ 4× from its forecast at
+   the cap. There is no averaging and no tolerance.
+3. **The cost, declared:** a LOCALIZED fault between 1e-4 and 1e-3 on ONE row now passes. That is exactly the band
+   the diagnosis shows fp32 rounding reaches on this policy.
+4. **Item 2's `warn` clause of §A2.7 (judged max < 1e-4) is superseded for X26 by these ceilings.** Items 1, 3 and 4
+   of §A2.7 stand: a tie-only stop cannot occur under `warn`, but any stop for another cause is still a GIGO stop.
+
+### A3.2 How the ceilings are read (until a watcher enforces them)
+
+The Training session reads both statistics from the TensorBoard events (never the web UI, which downsamples):
+
+    python -m main.ops.tb_read models/rb_x26_s2601 --tag behaviour/max_abs_dlogp_judged --tag behaviour/p99_abs_dlogp_current
+
+It reads them at every read point (every 10M plateau tick), before and after every restart, and at least once a
+day. The read covers every update since the previous read, judged update by update.
+
+**The CLI prints four decimals**, too coarse to judge a 1e-4 ceiling deterministically (+0.0001 covers
+0.5e-4 … 1.5e-4). The verdict therefore comes from the SAME events at full precision, through the reader's own
+loader (`main.ops.tb_read.load`). The Training session's ceiling read does this, one point at a time, and prints
+each tag's window max, its step, and OK / CEILING / ABSENT.
+
+The read of X26's whole history (1,390 points, 201,984 → 136,974,910, every rollout) at registration:
+
+| tag | window max | at step |
+|---|---|---|
+| judged max | 9.73e-5 | 130,094,227 |
+| p99 | 1.35e-5 | 111,802,321 |
+
+There are 0 non-finite values and both are below their ceilings. The u13900 violation (1.01e-4) is not among the
+logged points, because the probe raised before it recorded that update. A ceiling crossing is a stop
+handled by the item-3 procedure. A watcher that applies the ceilings automatically is worth building (README §4
+(C)), but it is new ops code and not a precondition of this amendment.
+
+### A3.3 The resume
+
+- X26 resumes from **`final_model_exception.zip`**: the state after update 13,899, bit-identical to the weights that
+  played the fatal rollout, with its optimizer state.
+- It does NOT resume from `checkpoint_136000153`. With a NUMERICAL verdict nothing after 136.0M is void, so falling
+  back would discard ≈ 975k clean steps.
+- It resumes at the SAME pin `9c033489`, with the run's own argv plus `--behaviour-check warn`. checkargs and the
+  launcher's `--dry-run` run first; the `--dry-run` shows that `warn` is carried. Every later restart is verified the
+  same way.
+- **Restart interval, in the same relaunch (an operational change, not a research rule):**
+  `--restart-interval-hours 24`, up from 6. The orchestrator decided this on 2026-10-17 under the owner's standing
+  15-minute order, and the owner may revert it at any restart. The reasons:
+  - the restart research found no throughput benefit from restarts, and a real cost per restart;
+  - every restart re-draws the startup gate's per-restart lottery (`9ab23c93`).
+
+  The compensating guard: the Training session samples the trainer's VmRSS at every heartbeat. Growth > 2 GB over its
+  post-start level ⇒ a manual restart, on the orchestrator's call.
+
+### A3.4 Findings (standing rule 7)
+
+- **A3-F1.** The ceilings are read by hand until a watcher exists. An over-ceiling update is caught at the next read,
+  not at once. Up to one read interval (≤ 10M steps, ≤ 1 day) of training can follow it before the stop. That
+  training is then void back to the last update below the ceilings.
+- **A3-F2.** The linear-growth forecast is an extrapolation (README F5). If the judged max grows faster than linearly,
+  the p99 ceiling is reached sooner than forecast. That would be a stop and a re-diagnosis, not a silent pass.
