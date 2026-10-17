@@ -1,0 +1,28 @@
+{
+ "refs": {
+  "rb_x26_s2601@70M": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_70000008_steps.zip",
+   "sha256": "27299e4453d98d9f14ba8a8c3a4b674ba71e697b10577b5fbcf541b7fd63a0b9"
+  },
+  "rb_toy_ent_s4001b@cap": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001b/final_model.zip",
+   "sha256": "114af47b1b201d2ac57291dfe66cbab24257ca1194042d0d76256a113ded142e"
+  },
+  "rb_toy_ent_s4002@cap": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002/final_model.zip",
+   "sha256": "60af6b8814f80f72853a5fe6c28655620cd8640884cedf17ba7eec8bd95648fb"
+  },
+  "rb_toy_ent_s4003@cap": {
+   "zip": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4003/final_model.zip",
+   "sha256": "a10fceb8d89a6b5b565ac42b4d873dd63e631335c9ab5187472d847599f5fb9e"
+  }
+ },
+ "rows": [
+  "rb_x26_s2601@70M"
+ ],
+ "cols": [
+  "rb_toy_ent_s4001b@cap",
+  "rb_toy_ent_s4002@cap",
+  "rb_toy_ent_s4003@cap"
+ ]
+}

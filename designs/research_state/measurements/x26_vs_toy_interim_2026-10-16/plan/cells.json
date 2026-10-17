@@ -1,0 +1,14 @@
+[
+ [
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_70000008_steps.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4001b/final_model.zip"
+ ],
+ [
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_70000008_steps.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002/final_model.zip"
+ ],
+ [
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_70000008_steps.zip",
+  "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4003/final_model.zip"
+ ]
+]
