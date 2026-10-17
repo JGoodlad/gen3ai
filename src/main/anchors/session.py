@@ -83,6 +83,26 @@ def load_team_texts(directory: Path) -> "list[tuple[str, str]]":
     return sorted(seen.items())
 
 
+def pool_team_texts() -> List[str]:
+    """Every team of OUR pool (``{"kind": "pool"}``), stripped — resolved against THIS checkout.
+
+    🚨 ``TeamLoader()``'s default base dir is the CWD-relative ``"data/teams"``: from any other
+    working directory it PRINTS a warning and returns ZERO teams, and ``Gen3Teambuilder([])``
+    then died with an ``IndexError`` out of its own error message — every ``--teamset home``
+    unit of the 2026-10-17 X26 read run from ``src/`` failed at once as ``our_side_error``. The
+    path is now absolute (``utils.paths.repo_path``) and an empty pool is a NAMED refusal, the
+    same as the ``dir`` source's ``no_teams``.
+    """
+    from utils.paths import repo_path
+    from utils.team_loader import TeamLoader
+
+    base = repo_path("data", "teams")
+    teams = [t.strip() for t in TeamLoader(str(base)).get_all_teams()]
+    if not teams:
+        raise SeriesFailure("no_teams", f"our pool at {base} holds no teams")
+    return teams
+
+
 def build_team_source(spec: Dict[str, Any], seed: Optional[int], draw_log: List[Optional[str]]):
     """A ``Gen3Teambuilder`` over the configured source, plus a label for every pool index.
 
@@ -113,9 +133,7 @@ def build_team_source(spec: Dict[str, Any], seed: Optional[int], draw_log: List[
         tb.yield_team = yield_sequence
         return tb
     if kind == "pool":
-        from utils.team_loader import TeamLoader
-
-        tb = Gen3Teambuilder([t.strip() for t in TeamLoader().get_all_teams()], rng_seed=seed)
+        tb = Gen3Teambuilder(pool_team_texts(), rng_seed=seed)
         # Our pool's own fingerprints ARE the Metamon export's filenames (`<sha>.gen3ou_team`),
         # so the two sides' team identifiers join with no translation table.
         labels = list(tb.get_pool_team_keys())

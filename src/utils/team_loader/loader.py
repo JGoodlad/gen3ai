@@ -44,9 +44,13 @@ class TeamLoader:
                     if not rel_file_path:
                         continue
 
-                    # Resolve path: entry['file'] is relative to 'data/'
-                    # e.g., 'teams/sample/abc.txt' -> 'data/teams/sample/abc.txt'
-                    full_path = os.path.join("data", rel_file_path)
+                    # Resolve path: entry['file'] is relative to the DATA dir, the base dir's
+                    # parent ('teams/sample/abc.txt' -> '<base>/../teams/sample/abc.txt'). For the
+                    # default base "data/teams" that is the old "data/<file>" exactly; for an
+                    # ABSOLUTE base it no longer silently depends on the CWD (2026-10-17: a
+                    # caller passing an absolute base from src/ found every file missing).
+                    full_path = os.path.join(os.path.dirname(os.path.normpath(self.base_dir)),
+                                             rel_file_path)
 
                     if not os.path.exists(full_path):
                         # Fallback for other potential path structures

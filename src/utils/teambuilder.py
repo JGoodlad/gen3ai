@@ -79,6 +79,12 @@ class Gen3Teambuilder(Teambuilder):
         if isinstance(teams, str):
             teams = [teams]
 
+        if not teams:
+            # An EMPTY list used to reach the error message below, which indexes validations[0]
+            # and so raised an IndexError that named nothing (2026-10-17, the anchors' pool source
+            # resolved from the wrong CWD).
+            raise ValueError("Gen3Teambuilder got an EMPTY team list — check the team source")
+
         # STRICT VALIDATION: Ensure all teams are legal for Gen 3 OU in one batch
         from utils.bridge.team_validator import validate_teams_locally
 

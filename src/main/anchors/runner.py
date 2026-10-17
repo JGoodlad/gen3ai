@@ -639,9 +639,7 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
                                                           Optional[SeriesFailure]]:
     """Both halves, in order. A failure in the first half STOPS the read — a half-series against a
     dead peer is not a cheaper measurement, it is a different one."""
-    from utils.team_loader import TeamLoader
-
-    from main.anchors.session import load_team_texts
+    from main.anchors.session import load_team_texts, pool_team_texts
 
     # Counted through the SAME allowlist both sides use, so `team_source_asymmetry` in the summary
     # means a real difference in what the two sides draw from and not a stray bookkeeping file.
@@ -651,7 +649,7 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
         our_team_count = peers_mod.team_source_count(
             our_peer_plan(plan, cfg, "acceptor", 1, "ours_challenge"))
     else:
-        our_team_count = (len(TeamLoader().get_all_teams())
+        our_team_count = (len(pool_team_texts())
                           if plan.our_team_spec.get("kind") == "pool"
                           else len(load_team_texts(Path(plan.our_team_spec["path"]))))
 
@@ -721,9 +719,9 @@ def our_team_items(spec: Dict[str, Any]) -> List[Tuple[str, str]]:
     from main.anchors.session import load_team_texts
 
     if spec.get("kind") == "pool":
-        from utils.team_loader import TeamLoader
+        from main.anchors.session import pool_team_texts
 
-        return [(f"pool{i:03d}", t.strip()) for i, t in enumerate(TeamLoader().get_all_teams())]
+        return [(f"pool{i:03d}", t) for i, t in enumerate(pool_team_texts())]
     return load_team_texts(Path(spec["path"]))
 
 
