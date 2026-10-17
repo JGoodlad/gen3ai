@@ -1399,7 +1399,9 @@ fixed bots.
   `tb` **backfills an already-running run straight from TensorBoard, zero training change**), fits,
   and prints a ranked ladder + writes `elo_ratings.json` + an Elo-vs-step `elo_curve.png` (CI band
   + bot anchor lines). `--out` defaults to `<run>/elo/`; point elsewhere to analyze a LIVE run
-  without writing into it.
+  without writing into it. 🚨 With no `--out` and the run LIVE (`utils.procfs.live_training_runs`) it REFUSES
+  (`LiveRunDirError`, exit 3, naming `--out <dir>`); `--allow-live-run-dir` overrides (2026-10-17: a bare run
+  overwrote a live run's `elo/`; `src/main/elo_live_guard_test.py`).
 - **The two-regime caveat is CLOSED for new runs (2026-09-07, `gen3_eval_sentinel_greedy_default_v1`).**
   It used to bite by default: the trainee played greedy but the sentinels sampled at
   `--self-play-temp`, so a snapshot's rating blended greedy strength (as a cycle's trainee) with

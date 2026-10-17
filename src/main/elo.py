@@ -434,7 +434,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Offline ELO analyzer for a training run")
     ap.add_argument("run_dir", help="models/run_<ts> directory, or a NAME from "
                                     "designs/baselines.json (e.g. `v9_long_baseline`)")
-    ap.add_argument("--out", default=None, help="output dir (default <run_dir>/elo/)")
+    ap.add_argument("--out", default=None, help="output dir (default <run_dir>/elo/; REFUSED "
+                    "for a LIVE run — pass --out elsewhere)")
+    ap.add_argument("--allow-live-run-dir", action="store_true",
+                    help="write the default <run_dir>/elo/ even though the run is LIVE "
+                         "(standing rule 6: models/ is read-only — normally pass --out instead)")
     ap.add_argument("--source", default="auto", choices=["auto", "log", "tb", "meta"],
                     help="results source (default auto: log → tb → meta)")
     ap.add_argument("--anchors", default=elo_mod.BOT_ANCHORS_PATH,
@@ -461,12 +465,15 @@ def main() -> int:
         print(f"[baseline] run_dir: {baselines.describe(args.run_dir)}")
         args.run_dir = resolved
 
-    from utils.paths import RunArchiveError, checked_run_dir, resolve_archive_ref
+    from utils.paths import (RunArchiveError, checked_run_dir, refuse_live_run_dir,
+                             resolve_archive_ref)
     args.run_dir = resolve_archive_ref(args.run_dir)    # `models/<run>` typed in a worktree
     if not os.path.isdir(args.run_dir):
         print(f"error: {args.run_dir} is not a directory", file=sys.stderr)
         return 2
-    try:    # the DEFAULT output lands inside the run: never a worktree's own models/
+    try:    # the DEFAULT output lands inside the run: never a worktree's own models/, never a LIVE run
+        if not args.out:
+            refuse_live_run_dir(args.run_dir, meter="elo", allow=args.allow_live_run_dir)
         out_dir = args.out or checked_run_dir(os.path.join(args.run_dir, "elo"))
     except RunArchiveError as e:
         print(f"error: {e}", file=sys.stderr)

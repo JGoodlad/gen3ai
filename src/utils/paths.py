@@ -152,6 +152,36 @@ class RunArchiveError(ValueError):
     exit_code = 3
 
 
+class LiveRunDirError(RunArchiveError):
+    """A meter's DEFAULT output would land inside a run directory a trainer is writing right now
+    (standing rule 6: ``models/`` is read-only except your own runs). 2026-10-17: a bare
+    ``main.elo models/rb_x26_s2601`` overwrote the live run's ``elo/elo_ratings.json``."""
+
+
+def refuse_live_run_dir(run_dir: "str | os.PathLike[str]", *, meter: str,
+                        allow: bool = False, live: Optional[dict] = None) -> None:
+    """Raise :class:`LiveRunDirError` when ``run_dir`` is the ``--run-dir`` of a LIVE training
+    process, so a meter's default output (``<run>/…``) is never written into it.
+
+    The liveness signal is the repo's one live-run rule, ``utils.procfs.live_training_runs`` (a
+    ``train_rl_agent.py`` process naming ``--run-dir``; ``utils.gate_lock`` reads the same one).
+    Call it only when NO explicit ``--out`` was given; ``allow`` is the ``--allow-live-run-dir``
+    override. ``live`` is for tests (a planted ``{run_dir: pid}``)."""
+    if allow:
+        return
+    if live is None:
+        from utils import procfs
+        live = procfs.live_training_runs()
+    real = os.path.realpath(os.fspath(run_dir))
+    for rd, pid in live.items():
+        if os.path.realpath(rd) == real:
+            raise LiveRunDirError(
+                f"{meter}: {real} is a LIVE run (pid {pid}); its default output would be written "
+                f"into it (models/ is read-only while a run is live, standing rule 6). Pass "
+                f"--out <dir> (e.g. /tmp/{meter}_<ts>) to write elsewhere, or "
+                f"--allow-live-run-dir to write into the run anyway.")
+
+
 def is_linked_worktree(root: Optional[Path] = None) -> bool:
     """True when ``root`` (default: this checkout) is a LINKED git worktree.
 
