@@ -1,0 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 240 HP / 12 Atk / 176 SpA / 48 SpD / 32 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 184 Def / 24 SpA / 32 SpD / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 96 HP / 252 Atk / 20 SpD / 140 Spe
+Adamant Nature
+- Toxic
+- Fire Blast
+- Rock Slide
+- Earthquake
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 112 HP / 76 Atk / 176 Def / 64 SpA / 80 SpD
+Sassy Nature
+- Body Slam
+- Fire Blast
+- Earthquake
+- Self-Destruct
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Hidden Power [Bug]
+- Rock Slide
+- Earthquake

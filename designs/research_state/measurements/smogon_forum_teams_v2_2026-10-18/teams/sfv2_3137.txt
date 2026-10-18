@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 72 Atk / 188 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Hasty Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Wish
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Calm Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 216 SpA / 104 SpD / 188 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+- Beat Up
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 136 Def / 80 SpA / 44 SpD
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 220 HP / 148 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]

@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 188 Atk / 136 SpD
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Meteor Mash
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 68 SpD / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+- Thunder Wave
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 108 Def / 224 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Leech Seed
+- Giga Drain
+- Hidden Power [Ice]
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 168 HP / 96 Atk / 72 Def / 172 SpD
+Careful Nature
+- Curse
+- Rest
+- Body Slam
+- Shadow Ball
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar

@@ -1,0 +1,57 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 120 HP / 252 Atk / 136 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Double-Edge
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 212 SpD / 120 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Recover
+- Hidden Power [Fire]
+- Giga Drain
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 216 Atk / 32 SpA / 20 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 208 HP / 252 Def / 48 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Ice Beam
+- Hypnosis

@@ -1,0 +1,55 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 60 Atk / 252 SpA / 12 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 248 HP / 36 Atk / 108 SpA / 112 SpD / 4 Spe
+Quiet Nature
+- Earthquake
+- Flamethrower
+- Toxic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 192 Def / 68 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 56 Atk / 108 Def / 96 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 112 Atk / 52 Def / 96 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 112 HP / 68 Atk / 56 Def / 96 SpA / 176 SpD
+Brave Nature
+- Body Slam
+- Fire Blast
+- Earthquake
+- Self-Destruct

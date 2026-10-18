@@ -1,0 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 64 HP / 224 Atk / 20 SpD / 200 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Double-Edge
+- Explosion
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Leech Seed
+- Sleep Powder
+- Hidden Power [Fire]
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 48 Def / 176 SpA / 44 SpD
+Quiet Nature
+- Protect
+- Hydro Pump
+- Earthquake
+- Ice Beam
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 144 HP / 180 SpD / 184 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Hidden Power [Ghost]
+- Focus Punch
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 192 HP / 64 Atk / 252 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Dragon Dance

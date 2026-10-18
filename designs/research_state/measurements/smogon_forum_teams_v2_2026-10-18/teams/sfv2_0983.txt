@@ -1,0 +1,57 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 80 HP / 184 Atk / 72 Def / 172 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 48 HP / 136 Atk / 96 SpD / 228 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Focus Punch
+- Hidden Power [Ghost]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 212 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 Def / 176 SpD
+Sassy Nature
+- Wish
+- Protect
+- Body Slam
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Surf
+- Earthquake
+- Ice Beam
+- Protect

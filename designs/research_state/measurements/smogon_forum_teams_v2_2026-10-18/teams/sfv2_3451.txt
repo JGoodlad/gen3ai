@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+Happiness: 0
+EVs: 252 HP / 24 Def / 228 SpD / 4 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Roar
+- Toxic
+- Rest
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 160 Def / 96 SpA
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Heal Bell
+- Leech Seed
+- Recover
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Spe
+Naughty Nature
+- Psychic
+- Earthquake
+- Explosion
+- Rapid Spin
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 160 HP / 76 Atk / 96 Def / 176 SpD
+Brave Nature
+- Curse
+- Return
+- Shadow Ball
+- Self-Destruct
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Rest
+- Roar
+- Surf

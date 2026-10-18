@@ -1,0 +1,55 @@
+Glalie @ Leftovers
+Ability: Inner Focus
+EVs: 252 HP / 44 SpD / 212 Spe
+Timid Nature
+- Ice Beam
+- Taunt
+- Explosion
+- Spikes
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+- Calm Mind
+- Surf
+- Ice Beam
+- Rest
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Rest
+- Roar
+- Sleep Talk
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 160 Atk / 80 Def / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 204 HP / 16 Def / 12 SpA / 96 SpD / 180 Spe
+Timid Nature
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Ice Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Substitute
+- Focus Punch

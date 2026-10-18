@@ -1,0 +1,57 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 92 Atk / 168 Spe
+Adamant Nature
+- Toxic
+- Earthquake
+- Rock Slide
+- Taunt
+
+Milotic (F) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Recover
+- Refresh
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 236 SpD / 24 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Protect
+- Toxic
+- Roar
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Refresh

@@ -1,0 +1,59 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 44 Atk / 252 SpA / 28 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
+- Explosion
+- Meteor Mash
+- Hidden Power [Grass]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Toxic
+- Hidden Power [Grass]
+- Thunder Wave
+- Thunderbolt
+
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Psychic
+- Thunderbolt
+
+Aerodactyl (F) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide
+
+Tyranitar (F) @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 20 HP / 192 Atk / 44 SpA / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Ice Beam
+- Rock Slide
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 100 Def / 88 SpA / 64 SpD / 4 Spe
+Brave Nature
+- Body Slam
+- Earthquake
+- Fire Blast
+- Self-Destruct

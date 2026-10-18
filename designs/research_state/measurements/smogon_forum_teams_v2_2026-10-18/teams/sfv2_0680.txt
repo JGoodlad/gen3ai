@@ -1,0 +1,62 @@
+Medicham @ Leftovers
+Ability: Pure Power
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Bulk Up
+- Brick Break
+- Shadow Ball
+- Recover
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+Shiny: Yes
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Charizard (F) @ Leftovers
+Ability: Blaze
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Toxic
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Roar
+
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Wish
+- Baton Pass
+- Roar
+
+Registeel @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion

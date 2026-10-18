@@ -1,0 +1,57 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 188 HP / 252 Def / 68 SpA
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Recover
+- Ice Beam
+- Refresh
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 4 Atk / 172 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Aerial Ace
+- Hidden Power [Bug]
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Focus Punch
+- Hidden Power [Ghost]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

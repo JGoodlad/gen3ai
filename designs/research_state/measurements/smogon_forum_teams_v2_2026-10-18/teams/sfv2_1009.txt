@@ -1,0 +1,57 @@
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 176 Def / 32 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Beat Up
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+
+Regice @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 248 HP / 112 Atk / 148 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 104 HP / 216 Atk / 4 SpD / 184 Spe
+Adamant Nature
+- Megahorn
+- Rock Slide
+- Substitute
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 136 Atk / 212 SpD / 160 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance

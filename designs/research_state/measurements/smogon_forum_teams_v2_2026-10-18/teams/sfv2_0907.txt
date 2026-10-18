@@ -1,0 +1,61 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 196 SpD / 64 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Thunder Wave
+- Hidden Power [Grass]
+- Baton Pass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Calm Mind
+- Hidden Power [Grass]
+- Fire Punch
+
+Tyranitar @ Chesto Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 200 HP / 184 Atk / 124 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Rest
+
+Heracross
+Ability: Guts
+Shiny: Yes
+EVs: 116 HP / 16 Atk / 192 SpD / 184 Spe
+Adamant Nature
+- Thief
+- Megahorn
+- Focus Punch
+- Rock Slide
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 8 HP / 232 Atk / 40 SpD / 228 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Beat Up
+- Aerial Ace
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 72 HP / 252 SpA / 184 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Toxic
+- Ice Beam
+- Calm Mind

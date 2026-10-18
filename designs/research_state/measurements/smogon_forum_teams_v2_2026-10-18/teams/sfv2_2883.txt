@@ -1,0 +1,56 @@
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 116 SpA / 152 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Recover
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 220 HP / 176 SpD / 112 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 176 HP / 236 SpA / 96 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
+- Focus Punch
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 16 Def / 176 SpD / 64 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 220 Def / 40 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Toxic
+- Protect
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 60 SpA / 196 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Protect

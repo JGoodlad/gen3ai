@@ -1,0 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+Hidden Power: Grass
+EVs: 252 HP / 224 SpA / 32 Spe
+Rash Nature
+- Dragon Claw
+- Brick Break
+- Substitute
+- Flamethrower
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 208 Atk / 52 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Substitute
+- Self-Destruct
+- Focus Punch
+- Sunny Day
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Roar
+- Will-O-Wisp
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Substitute
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+Happiness: 0
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Frustration
+- Substitute
+- Hidden Power [Fighting]

@@ -1,0 +1,56 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 216 SpA / 4 SpD / 40 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Ice Beam
+- Earthquake
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Thunder Wave
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 64 SpD / 192 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Explosion
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 56 HP / 248 Atk / 28 Def / 176 Spe
+Adamant Nature
+- Swords Dance
+- Brick Break
+- Megahorn
+- Rock Slide

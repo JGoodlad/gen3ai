@@ -1,0 +1,60 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Baton Pass
+- Hidden Power [Grass]
+- Thunder Wave
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Sunny Day
+- Solar Beam
+- Hidden Power [Fire]
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Sunny Day
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 164 HP / 240 SpA / 104 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 120 SpA / 136 Spe
+Timid Nature
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam

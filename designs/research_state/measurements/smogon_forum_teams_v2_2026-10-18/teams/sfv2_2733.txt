@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 176 Atk / 88 Def / 68 SpD / 152 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 136 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 220 SpD / 36 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Superpower
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Metagross @ Charcoal
+Ability: Clear Body
+EVs: 168 HP / 140 Atk / 16 Def / 92 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Agility
+- Meteor Mash
+- Hidden Power [Fire]
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Recover
+- Toxic
+- Surf
+- Ice Beam

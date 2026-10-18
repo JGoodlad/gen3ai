@@ -1,0 +1,57 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 30 SpD / 30 Spe
+- Pursuit
+- Crunch
+- Fire Blast
+- Focus Punch
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 240 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Substitute
+- Baton Pass
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Fire Blast
+- Brick Break
+- Dragon Claw
+
+Snorlax @ Lum Berry
+Ability: Thick Fat
+EVs: 160 HP / 188 Atk / 120 Def / 40 SpD
+Adamant Nature
+- Counter
+- Shadow Ball
+- Curse
+- Self-Destruct
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch

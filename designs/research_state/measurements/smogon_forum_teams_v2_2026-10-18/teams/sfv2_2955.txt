@@ -1,0 +1,56 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 148 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Fire Punch
+- Protect
+- Toxic
+- Wish
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 232 SpD / 28 Spe
+Careful Nature
+- Drill Peck
+- Roar
+- Spikes
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 184 Def / 72 Spe
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Surf
+- Rest
+- Roar
+
+Misdreavus (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Mean Look
+- Psywave
+- Perish Song
+- Rest
+
+Aerodactyl @ Leftovers
+Ability: Pressure
+EVs: 76 HP / 252 Atk / 180 Spe
+Adamant Nature
+- Substitute
+- Protect
+- Rock Slide
+- Earthquake
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 144 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Rest

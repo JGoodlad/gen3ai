@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 124 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 80 HP / 184 Atk / 80 Def / 164 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Brick Break
+- Focus Punch
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 136 Atk / 160 Def / 52 SpA / 144 SpD
+Brave Nature
+- Body Slam
+- Brick Break
+- Fire Blast
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 224 SpA / 100 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Toxic
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 212 SpD / 120 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

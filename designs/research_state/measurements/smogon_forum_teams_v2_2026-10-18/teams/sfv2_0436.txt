@@ -1,0 +1,57 @@
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 224 Atk / 252 Def / 32 Spe
+Adamant Nature
+- Cross Chop
+- Focus Punch
+- Knock Off
+- Rock Slide
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 144 SpD / 112 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 72 Def / 148 SpD / 36 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Thunder
+- Ice Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 184 SpD / 76 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Toxic

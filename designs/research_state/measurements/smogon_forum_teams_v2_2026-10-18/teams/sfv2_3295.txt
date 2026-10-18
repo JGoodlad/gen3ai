@@ -1,0 +1,58 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Roar
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 28 Atk / 228 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Dance
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Ice]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 Def / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Hidden Power [Fire]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 120 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 164 SpA / 92 Spe
+Rash Nature
+- Surf
+- Ice Beam
+- Substitute
+- Focus Punch

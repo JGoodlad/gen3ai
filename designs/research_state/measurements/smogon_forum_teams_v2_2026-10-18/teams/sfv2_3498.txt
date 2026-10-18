@@ -1,0 +1,59 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 244 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Beam
+- Surf
+- Substitute
+- Baton Pass
+
+Blaziken @ Leftovers
+Ability: Blaze
+EVs: 244 Atk / 44 SpA / 220 Spe
+Lonely Nature
+- Focus Punch
+- Sky Uppercut
+- Rock Slide
+- Fire Blast
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Hidden Power [Ice]
+- Baton Pass
+- Giga Drain
+
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 28 HP / 236 Atk / 96 SpA / 148 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 20 HP / 252 Atk / 236 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Rock]
+- Earthquake
+- Double-Edge
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 140 SpA / 56 SpD / 60 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Seismic Toss
+- Thunder
+- Hidden Power [Grass]
+- Explosion

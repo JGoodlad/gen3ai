@@ -1,0 +1,56 @@
+Stantler @ Leftovers
+Ability: Intimidate
+EVs: 144 HP / 140 Atk / 4 Def / 220 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Fighting]
+- Double-Edge
+- Thunder Wave
+- Hypnosis
+
+Charizard @ Charcoal
+Ability: Blaze
+EVs: 164 Atk / 144 SpA / 200 Spe
+Rash Nature
+- Dragon Dance
+- Brick Break
+- Rock Slide
+- Fire Blast
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 76 SpA / 36 SpD / 20 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Leech Seed
+- Psychic
+- Recover
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Ice Beam

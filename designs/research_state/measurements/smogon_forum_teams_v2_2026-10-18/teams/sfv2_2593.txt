@@ -1,0 +1,56 @@
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 184 HP / 108 Atk / 216 Spe
+Brave Nature
+- Crunch
+- Rock Slide
+- Fire Blast
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 252 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Roar
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 140 HP / 60 Atk / 252 SpA / 56 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Beam
+- Hidden Power [Grass]
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 232 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Calm Mind
+- Fire Punch
+- Psychic

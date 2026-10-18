@@ -1,0 +1,59 @@
+Walrein @ Leftovers
+Ability: Thick Fat
+Shiny: Yes
+EVs: 176 HP / 108 SpA / 224 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Surf
+- Encore
+- Substitute
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Protect
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 52 HP / 252 SpA / 204 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Fire Punch
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 68 Atk / 188 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Focus Punch
+- Fire Blast
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 236 HP / 136 Def / 40 SpA / 96 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Roar
+- Protect
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 80 HP / 252 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Roar

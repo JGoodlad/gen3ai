@@ -1,0 +1,58 @@
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 40 Def / 32 SpA / 184 Spe
+Naive Nature
+- Substitute
+- Earthquake
+- Flamethrower
+- Toxic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 4 Def / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Knock Off
+- Recover
+- Fire Punch
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Swords Dance
+- Hidden Power [Bug]
+- Rock Slide
+- Rapid Spin
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Thunder Wave
+- Seismic Toss
+- Soft-Boiled
+- Aromatherapy
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Hidden Power [Bug]
+- Rapid Spin
+- Rest

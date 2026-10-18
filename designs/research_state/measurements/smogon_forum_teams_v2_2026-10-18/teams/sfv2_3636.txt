@@ -1,0 +1,53 @@
+Swampert (F) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpA
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Rest
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 Def / 4 Spe
+Impish Nature
+- Toxic
+- Spikes
+- Whirlwind
+- Rest
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 SpA / 252 SpD
+Modest Nature
+- Ice Beam
+- Thunderbolt
+- Toxic
+- Rest
+
+Venusaur (F) @ Leftovers
+Ability: Overgrow
+EVs: 252 HP / 84 Def / 148 SpD / 24 Spe
+Careful Nature
+- Sludge Bomb
+- Leech Seed
+- Sleep Powder
+- Synthesis
+
+Blastoise (M) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 252 Def
+Bold Nature
+- Surf
+- Ice Beam
+- Rapid Spin
+- Rest
+
+Zangoose (M) @ Leftovers
+Ability: Immunity
+EVs: 96 HP / 160 Atk / 252 Spe
+Jolly Nature
+- Return
+- Brick Break
+- Shadow Ball
+- Swords Dance

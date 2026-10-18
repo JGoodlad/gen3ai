@@ -1,0 +1,55 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 228 SpA / 40 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Ice Beam
+- Brick Break
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Fire]
+- Sunny Day
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 36 Atk / 64 Def / 100 SpD / 56 Spe
+Careful Nature
+- Toxic
+- Seismic Toss
+- Counter
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 20 Atk / 216 Def / 52 SpD / 16 Spe
+Impish Nature
+- Rest
+- Curse
+- Return
+- Earthquake
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 220 Atk / 48 Spe
+Brave Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Ice Beam
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 40 HP / 176 Atk / 100 SpD / 192 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Rest
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]

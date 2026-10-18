@@ -1,0 +1,55 @@
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 40 HP / 252 Atk / 216 Spe
+Adamant Nature
+- Baton Pass
+- Brick Break
+- Rock Slide
+- Shadow Ball
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 200 HP / 160 Def / 136 SpD / 12 Spe
+Careful Nature
+- Body Slam
+- Curse
+- Rest
+- Shadow Ball
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+- Rain Dance
+- Substitute
+- Thunderbolt
+- Toxic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Heal Bell
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 100 Atk / 156 SpD
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Flying]
+- Rest
+- Thunder Wave
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Roar
+- Surf

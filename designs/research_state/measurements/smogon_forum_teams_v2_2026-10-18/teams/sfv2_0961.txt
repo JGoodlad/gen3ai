@@ -1,0 +1,55 @@
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+Happiness: 0
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Brick Break
+- Crunch
+- Pursuit
+- Flamethrower
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 240 HP / 120 Def / 148 SpD
+Sassy Nature
+- Wish
+- Protect
+- Body Slam
+- Fire Punch
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 196 HP / 252 SpD / 60 Spe
+Calm Nature
+- Explosion
+- Spikes
+- Rapid Spin
+- Surf
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 40 HP / 252 SpA / 216 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Roar
+- Flamethrower
+- Will-O-Wisp
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 92 SpD
+Relaxed Nature
+- Curse
+- Rest
+- Earthquake
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 36 HP / 140 Atk / 136 Def / 4 SpA / 176 SpD / 16 Spe
+Adamant Nature
+- Focus Punch
+- Curse
+- Body Slam
+- Self-Destruct

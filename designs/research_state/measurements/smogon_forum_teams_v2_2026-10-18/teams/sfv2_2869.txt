@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 176 Atk / 64 SpA / 64 SpD / 180 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 216 Atk / 60 Def / 8 SpD / 20 Spe
+Adamant Nature
+- Double-Edge
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 36 Def / 176 SpA / 28 SpD / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Psychic
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 16 SpA / 100 SpD / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 140 Atk / 16 Def / 92 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Agility
+- Meteor Mash
+- Hidden Power [Fire]
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Atk / 44 SpA / 44 SpD / 44 Spe
+Brave Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Hydro Pump

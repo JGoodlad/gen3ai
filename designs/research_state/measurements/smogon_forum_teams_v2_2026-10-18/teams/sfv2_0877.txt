@@ -1,0 +1,56 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 88 SpA / 168 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Calm Mind
+- Substitute
+- Ice Beam
+
+Exeggutor @ Quick Claw
+Ability: Chlorophyll
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+- Psychic
+- Sleep Powder
+- Explosion
+- Wish
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunder
+- Baton Pass
+- Rain Dance
+- Hidden Power [Grass]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 204 Atk / 80 Def / 80 SpD
+Adamant Nature
+- Body Slam
+- Curse
+- Self-Destruct
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Reversal
+- Substitute
+- Swords Dance
+- Megahorn

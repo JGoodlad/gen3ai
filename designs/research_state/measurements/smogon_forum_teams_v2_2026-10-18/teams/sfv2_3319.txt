@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Toxic
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam
+- Wish
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 68 Def / 188 Spe
+Impish Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Rest
+- Sleep Talk
+- Hidden Power [Flying]
+- Roar
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 76 Def / 180 SpA
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Protect
+- Toxic
+
+Dusclops (M) @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 Def / 160 SpD
+Impish Nature
+- Shadow Ball
+- Will-O-Wisp
+- Rest
+- Curse
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 252 Def / 8 SpA
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Protect

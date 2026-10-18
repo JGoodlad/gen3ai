@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Hidden Power [Grass]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 64 HP / 176 Atk / 100 Def / 168 SpD
+Adamant Nature
+- Curse
+- Earthquake
+- Return
+- Self-Destruct
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 176 SpA / 140 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Pursuit
+- Will-O-Wisp
+- Crunch
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 48 Def / 40 SpA / 36 SpD / 136 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Rapid Spin
+- Thunder Wave
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 96 Atk / 164 SpA
+Brave Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Curse
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch

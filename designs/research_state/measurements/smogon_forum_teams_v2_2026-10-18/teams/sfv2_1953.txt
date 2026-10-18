@@ -1,0 +1,59 @@
+Jynx @ Never-Melt Ice
+Ability: Oblivious
+Shiny: Yes
+EVs: 252 SpA / 16 SpD / 240 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Lovely Kiss
+- Blizzard
+- Calm Mind
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 148 Atk / 180 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Megahorn
+- Swords Dance
+- Reversal
+- Endure
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 148 HP / 252 SpA / 108 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Leech Seed
+- Rain Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 200 Atk / 56 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 64 SpA / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Substitute

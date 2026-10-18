@@ -1,0 +1,56 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 252 Spe / 4 SpD
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Steelix @ Choice Band
+Ability: Rock Head
+EVs: 100 HP / 252 Atk / 156 Spe
+Jolly Nature
+- Explosion
+- Double-Edge
+- Rock Slide
+- Earthquake
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 204 HP / 252 Atk / 52 SpA
+Brave Nature
+- Earthquake
+- Rock Slide
+- Pursuit
+- Brick Break
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 44 Def / 24 SpA / 188 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Explosion
+- Hidden Power [Grass]
+- Will-O-Wisp
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 148 HP / 252 Def / 108 SpA
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunder
+- Calm Mind
+- Soft-Boiled
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 32 Atk / 208 Spe
+Careful Nature
+- Rapid Spin
+- Spikes
+- Toxic
+- Explosion

@@ -1,0 +1,56 @@
+Heracross @ Leftovers
+Ability: Swarm
+EVs: 252 Atk / 188 SpD / 68 Spe
+Careful Nature
+- Megahorn
+- Rock Slide
+- Focus Punch
+- Protect
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 208 Def / 48 Spe
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Beam
+- Hidden Power [Fighting]
+- Recover
+- Toxic
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 60 HP / 252 Atk / 196 Spe
+Adamant Nature
+- Brick Break
+- Focus Punch
+- Shadow Ball
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 120 Def / 100 SpD / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Baton Pass
+- Recover
+- Leech Seed
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 32 SpA / 224 Spe
+Lonely Nature
+- Dynamic Punch
+- Ice Punch
+- Thunderbolt
+- Explosion

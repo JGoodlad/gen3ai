@@ -1,0 +1,61 @@
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 8 HP / 232 SpA / 112 SpD / 156 Spe
+Mild Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Wish
+
+Skarmory
+Ability: Keen Eye
+Shiny: Yes
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Thief
+- Counter
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 24 HP / 176 Atk / 108 Def / 184 SpD / 16 Spe
+Adamant Nature
+- Protect
+- Return
+- Curse
+- Earthquake
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+Shiny: Yes
+EVs: 244 Def / 176 SpA / 88 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Leech Seed
+- Ice Beam
+- Rain Dance
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Rain Dance
+- Fire Blast
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 232 Atk / 16 Def / 12 SpA
+Relaxed Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin

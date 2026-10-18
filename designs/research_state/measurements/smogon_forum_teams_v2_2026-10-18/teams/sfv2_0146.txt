@@ -1,0 +1,59 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 16 Def / 40 SpD / 28 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Rock Slide
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 28 Def / 180 SpD / 52 Spe
+Impish Nature
+- Earthquake
+- Toxic
+- Rapid Spin
+- Protect
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 216 HP / 16 Atk / 84 SpD / 192 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+- Rest
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 144 HP / 112 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 36 Def / 88 SpA / 76 SpD / 68 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Perish Song
+- Leech Seed
+- Recover
+
+Umbreon @ Leftovers
+Ability: Synchronize
+Shiny: Yes
+EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Pursuit
+- Charm

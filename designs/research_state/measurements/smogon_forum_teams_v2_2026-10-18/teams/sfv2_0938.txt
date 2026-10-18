@@ -1,0 +1,60 @@
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Mild Nature
+- Wish
+- Dragon Claw
+- Fire Blast
+- Brick Break
+
+Jirachi @ Choice Band
+Ability: Serene Grace
+EVs: 252 Atk / 100 SpA / 156 Spe
+Naughty Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Doom Desire
+- Fire Punch
+- Hidden Power [Fighting]
+- Body Slam
+
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 24 HP / 176 Atk / 108 Def / 184 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Self-Destruct
+- Curse
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 232 Atk / 16 Def / 12 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 248 HP / 192 SpA / 68 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Sleep Talk
+- Rest
+- Calm Mind
+
+Metagross @ Lum Berry
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 52 Atk / 16 Def / 252 SpA / 20 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Explosion
+- Hidden Power [Fire]
+- Meteor Mash
+- Pursuit

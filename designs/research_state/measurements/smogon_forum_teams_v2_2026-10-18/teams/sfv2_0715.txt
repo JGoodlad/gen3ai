@@ -1,0 +1,60 @@
+Snorlax @ Choice Band
+Ability: Immunity
+Shiny: Yes
+EVs: 92 HP / 252 Atk / 144 Def / 8 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Focus Punch
+
+Grumpig @ Choice Band
+Ability: Thick Fat
+EVs: 64 HP / 252 SpA / 192 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Trick
+- Calm Mind
+- Hidden Power [Grass]
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 112 HP / 68 Atk / 152 SpA / 176 Spe
+Naive Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 200 HP / 172 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Thunder Wave
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Earthquake

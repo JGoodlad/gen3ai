@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 16 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Toxic
+- Crunch
+- Pursuit
+- Flamethrower
+
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+- Rapid Spin
+- Earthquake
+- Rock Slide
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 68 Atk / 96 Def / 88 SpD / 4 Spe
+Careful Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Curse
+- Hidden Power [Rock]
+- Superpower
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 128 Atk / 108 Def / 56 SpD / 12 Spe
+Adamant Nature
+- Rest
+- Curse
+- Double-Edge
+- Earthquake
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
+Adamant Nature
+- Spore
+- Stun Spore
+- Sky Uppercut
+- Mach Punch
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Rest
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]

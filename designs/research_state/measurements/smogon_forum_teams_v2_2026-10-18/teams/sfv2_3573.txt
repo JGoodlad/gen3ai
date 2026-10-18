@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Def / 4 SpA
+Modest Nature
+IVs: 0 Atk
+- Reflect
+- Rapid Spin
+- Psychic
+- Protect
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 244 Atk / 12 SpA
+Brave Nature
+- Rock Slide
+- Earthquake
+- Hydro Pump
+- Rest
+
+Dusclops @ Choice Band
+Ability: Pressure
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Shadow Ball
+- Pain Split
+- Will-O-Wisp
+- Hidden Power [Fighting]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 8 SpD / 128 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Ice Punch
+- Thunderbolt
+- Calm Mind

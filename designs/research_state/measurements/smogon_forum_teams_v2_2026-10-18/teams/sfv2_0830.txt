@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 208 HP / 216 Atk / 60 Def / 24 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 240 Def / 96 SpA / 172 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Wish
+- Roar
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Fire Blast
+- Brick Break
+- Dragon Claw
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 16 Def / 40 SpA / 176 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Heal Bell
+- Psychic
+- Recover
+- Hidden Power [Grass]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch

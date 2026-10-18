@@ -1,0 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 124 HP / 116 Atk / 128 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Dragon Dance
+- Rock Slide
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Protect
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 48 Atk / 160 Def / 48 Spe
+Relaxed Nature
+- Refresh
+- Earthquake
+- Ice Beam
+- Protect
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 220 HP / 252 Atk / 36 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Hidden Power [Fighting]
+- Shadow Ball
+- Wish
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 SpA / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Giga Drain
+- Swords Dance
+- Baton Pass
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 252 HP / 64 SpA / 192 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Pursuit
+- Beat Up
+- Hidden Power [Grass]

@@ -1,0 +1,54 @@
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 40 SpA / 216 SpD
+Sassy Nature
+- Earthquake
+- Ice Beam
+- Surf
+- Protect
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Taunt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 SpA / 152 Spe
+Timid Nature
+- Calm Mind
+- Baton Pass
+- Psychic
+- Recover
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Rock Slide
+- Earthquake
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 200 HP / 108 Def / 200 SpD
+Impish Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Rest
+- Spikes
+- Whirlwind
+
+Donphan (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 68 Atk / 188 Def
+Adamant Nature
+- Earthquake
+- Rest
+- Rock Slide
+- Rapid Spin

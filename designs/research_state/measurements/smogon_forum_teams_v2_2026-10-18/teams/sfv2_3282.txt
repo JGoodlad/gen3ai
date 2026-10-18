@@ -1,0 +1,58 @@
+Dewgong @ Choice Band
+Ability: Thick Fat
+EVs: 252 Atk / 44 SpD / 212 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Signal Beam
+- Hidden Power [Fighting]
+- Icy Wind
+- Ice Beam
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 192 SpD / 140 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
+- Hidden Power [Ghost]
+- Brick Break
+- Rock Slide
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 32 SpA / 52 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 72 HP / 252 SpA / 184 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Reflect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 176 Atk / 156 Def / 176 SpD
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Earthquake
+- Self-Destruct

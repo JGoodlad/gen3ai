@@ -1,0 +1,56 @@
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 52 HP / 36 Def / 208 SpA / 84 SpD / 128 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Thunderbolt
+- Substitute
+- Toxic
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 140 SpD / 116 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Taunt
+- Roar
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 120 HP / 188 Atk / 200 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Dragon Dance
+- Hidden Power [Bug]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 140 SpD / 200 Spe
+Timid Nature
+- Explosion
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 104 HP / 48 Atk / 180 SpA / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 96 Atk / 72 Def / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion

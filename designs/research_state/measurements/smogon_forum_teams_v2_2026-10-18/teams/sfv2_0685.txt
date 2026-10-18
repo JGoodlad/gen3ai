@@ -1,0 +1,58 @@
+Medicham (F) @ Leftovers
+Ability: Pure Power
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Focus Punch
+- Rock Slide
+- Brick Break
+- Shadow Ball
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 136 Def / 32 SpA / 44 SpD / 44 Spe
+Relaxed Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Thunderbolt
+- Ice Beam
+- Thunder Wave
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Metagross @ Lum Berry
+Ability: Clear Body
+Shiny: Yes
+EVs: 128 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Agility

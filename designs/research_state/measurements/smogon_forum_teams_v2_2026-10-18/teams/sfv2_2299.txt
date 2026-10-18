@@ -1,0 +1,57 @@
+Arcanine @ Leftovers
+Ability: Intimidate
+EVs: 188 Atk / 140 SpA / 180 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Fire Blast
+- Hidden Power [Fighting]
+- Extreme Speed
+- Howl
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 124 Def / 140 Spe
+Impish Nature
+IVs: 0 Atk
+- Swords Dance
+- Baton Pass
+- Leech Seed
+- Recover
+
+Aerodactyl @ Lum Berry
+Ability: Pressure
+EVs: 16 HP / 220 Atk / 20 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Taunt
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 16 Def / 112 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 148 Atk / 120 Def / 128 SpD / 20 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Focus Punch
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Rock]
+- Earthquake
+- Taunt

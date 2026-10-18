@@ -1,0 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 236 Atk / 20 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+
+Mantine @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 152 SpA / 104 Spe
+Calm Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Toxic
+- Confuse Ray
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 76 HP / 252 Atk / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Fighting]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 232 HP / 252 SpA / 20 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion

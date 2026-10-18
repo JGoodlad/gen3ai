@@ -1,0 +1,57 @@
+Hariyama (M) @ Leftovers
+Ability: Thick Fat
+EVs: 104 HP / 252 Def / 152 SpD
+Impish Nature
+- Brick Break
+- Knock Off
+- Rest
+- Sleep Talk
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 180 SpA / 76 SpD
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Roar
+- Crunch
+- Pursuit
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Def / 252 SpA / 252 Spe
+Rash Nature
+- Brick Break
+- Fire Blast
+- Wish
+- Dragon Claw
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 136 Def / 76 SpA / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Thunder
+- Ice Punch
+- Wish
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 64 Def / 36 SpA / 136 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Psychic
+- Leech Seed
+- Perish Song
+- Recover
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Hidden Power [Bug]
+- Rapid Spin
+- Counter

@@ -1,0 +1,58 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 16 Def / 56 SpD / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 228 Atk / 28 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+- Dragon Dance
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 8 HP / 252 Atk / 4 SpD / 244 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+- Dragon Dance
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Seismic Toss
+- Soft-Boiled
+- Sing
+- Ice Beam
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Rapid Spin
+- Recover
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 184 HP / 252 Atk / 72 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Cross Chop
+- Focus Punch
+- Hidden Power [Bug]
+- Rock Slide

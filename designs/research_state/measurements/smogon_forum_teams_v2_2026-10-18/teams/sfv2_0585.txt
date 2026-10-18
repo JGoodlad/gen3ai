@@ -1,0 +1,58 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 120 HP / 216 Atk / 60 Def / 112 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 228 HP / 240 Def / 40 Spe
+Bold Nature
+IVs: 0 Atk
+- Refresh
+- Surf
+- Toxic
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 120 Def / 84 SpD / 52 Spe
+Calm Nature
+IVs: 0 Atk
+- Swords Dance
+- Leech Seed
+- Baton Pass
+- Recover
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 24 HP / 220 SpA / 12 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 144 HP / 28 Atk / 184 SpD / 152 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Hidden Power [Ghost]
+- Brick Break
+
+Aerodactyl @ Liechi Berry
+Ability: Pressure
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Substitute

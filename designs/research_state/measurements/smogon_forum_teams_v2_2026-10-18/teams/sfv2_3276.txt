@@ -1,0 +1,58 @@
+Blaziken @ Petaya Berry
+Ability: Blaze
+EVs: 52 Atk / 252 SpA / 204 Spe
+Mild Nature
+IVs: 30 Atk / 30 Def
+- Substitute
+- Hidden Power [Ice]
+- Fire Blast
+- Focus Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 152 Def / 96 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Roar
+- Surf
+- Rest
+- Calm Mind
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 108 Atk / 204 Def / 52 SpA / 144 Spe
+Naughty Nature
+- Explosion
+- Psychic
+- Rapid Spin
+- Earthquake
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 232 HP / 140 Def / 96 SpA / 40 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Leech Seed
+- Hidden Power [Grass]
+- Recover
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 212 SpD / 44 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Rest

@@ -1,0 +1,56 @@
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 24 Def / 232 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Belly Drum
+- Brick Break
+- Hidden Power [Bug]
+- Rock Slide
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 108 HP / 252 SpA / 148 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Protect
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 248 Atk / 8 SpD / 252 Spe
+Jolly Nature
+- Rock Slide
+- Earthquake
+- Brick Break
+- Double-Edge
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 152 SpD / 108 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Taunt
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 240 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Ice Beam
+- Toxic
+- Soft-Boiled
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 216 HP / 208 Def / 40 SpD / 44 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Protect

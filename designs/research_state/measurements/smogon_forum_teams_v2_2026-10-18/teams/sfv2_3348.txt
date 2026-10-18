@@ -1,0 +1,58 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Bulk Up
+- Brick Break
+- Rock Slide
+- Hidden Power [Bug]
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Hidden Power [Bug]
+- Light Screen
+- Explosion
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 252 SpA / 36 SpD / 220 Spe
+Mild Nature
+- Ice Beam
+- Thunderbolt
+- Haze
+- Focus Punch
+
+Houndoom @ Black Glasses
+Ability: Early Bird
+EVs: 160 HP / 252 SpA / 96 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Toxic
+- Taunt
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 140 Atk / 120 Def / 248 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Curse
+- Return
+- Hidden Power [Bug]
+- Rest
+
+Misdreavus @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Taunt
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Ice]

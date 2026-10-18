@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 236 HP / 40 Def / 96 SpA / 136 Spe
+Modest Nature
+IVs: 30 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Baton Pass
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 148 Atk / 8 Def / 140 SpA / 212 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+IVs: 2 Atk / 30 SpA
+- Taunt
+- Will-O-Wisp
+- Hidden Power [Grass]
+- Ice Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 40 Atk / 136 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Protect
+- Surf
+- Focus Punch
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 216 HP / 36 Def / 140 SpA / 116 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic

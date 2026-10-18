@@ -1,0 +1,58 @@
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 208 HP / 80 Def / 20 SpA / 136 SpD / 64 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Razor Leaf
+- Hidden Power [Fire]
+- Roar
+- Sleep Powder
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Rapid Spin
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 80 HP / 176 SpA / 252 Spe
+Rash Nature
+- Wish
+- Fire Blast
+- Brick Break
+- Dragon Claw
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 68 Atk / 248 Def / 164 SpD / 28 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Brick Break
+- Knock Off
+- Focus Punch
+- Hidden Power [Ghost]

@@ -1,0 +1,56 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 8 Atk / 252 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Knock Off
+- Rock Blast
+- Hidden Power [Bug]
+- Swords Dance
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 252 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 248 HP / 8 Atk / 52 Def / 200 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Wish
+- Protect
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 56 Atk / 144 Def / 60 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

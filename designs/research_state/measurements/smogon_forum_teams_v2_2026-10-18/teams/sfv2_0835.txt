@@ -1,0 +1,59 @@
+Jynx (F) @ Leftovers
+Ability: Oblivious
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Lovely Kiss
+- Calm Mind
+- Substitute
+- Ice Beam
+
+Dugtrio @ Salac Berry
+Ability: Arena Trap
+EVs: 40 HP / 244 Atk / 200 SpD / 24 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Beat Up
+- Endure
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 252 Atk / 52 SpD / 180 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Ice Punch
+- Hidden Power [Grass]
+- Fire Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 16 Atk / 220 SpA / 88 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Ice Beam
+- Focus Punch
+- Fire Blast
+- Hidden Power [Grass]

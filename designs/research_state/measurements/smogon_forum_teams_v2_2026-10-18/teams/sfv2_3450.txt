@@ -1,0 +1,57 @@
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 224 HP / 72 SpA / 212 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Focus Punch
+- Hidden Power [Grass]
+- Fire Blast
+- Rock Slide
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 24 SpA / 168 SpD / 64 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Baton Pass
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 84 SpA / 176 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Taunt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 228 Def / 20 SpD / 8 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Toxic
+- Protect
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 228 Atk / 56 SpD / 224 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide

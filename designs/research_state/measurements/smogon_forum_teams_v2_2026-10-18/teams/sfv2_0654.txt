@@ -1,0 +1,56 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 100 Atk / 220 SpA / 188 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Sunny Day
+- Explosion
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 48 Atk / 208 SpD
+Careful Nature
+- Brick Break
+- Thunder Wave
+- Sunny Day
+- Explosion
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 44 Atk / 252 SpA / 212 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Solar Beam
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 36 Atk / 220 SpA / 252 Spe
+Naive Nature
+- Fire Blast
+- Solar Beam
+- Earthquake
+- Rock Slide
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 4 Atk / 252 Def / 252 SpA
+Quiet Nature
+- Fire Blast
+- Sunny Day
+- Body Slam
+- Self-Destruct
+
+Starmie @ Leftovers
+Ability: Illuminate
+EVs: 252 HP / 4 Def / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Beam
+- Recover
+- Rapid Spin
+- Thunder Wave

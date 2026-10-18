@@ -1,0 +1,56 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Roar
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Rock Slide
+- Hidden Power [Grass]
+- Fire Blast
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 196 SpD / 60 Spe
+Timid Nature
+- Spikes
+- Ice Beam
+- Rapid Spin
+- Explosion
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 244 HP / 228 SpA / 12 SpD / 24 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Earthquake
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up

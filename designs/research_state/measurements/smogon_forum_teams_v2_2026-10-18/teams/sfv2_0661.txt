@@ -1,0 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
+
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Focus Punch
+- Bulk Up
+- Hidden Power [Bug]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+IVs: 0 Atk
+- Spikes
+- Surf
+- Icy Wind
+- Rapid Spin
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 144 HP / 188 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Toxic
+- Wish
+- Protect
+- Hidden Power [Ice]
+
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Taunt
+- Fire Blast

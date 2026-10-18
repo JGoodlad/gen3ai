@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Rest
+- Toxic
+- Hidden Power [Grass]
+
+Misdreavus @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 192 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Mean Look
+- Perish Song
+- Thunderbolt
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Aromatherapy
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Protect
+- Earthquake
+- Hidden Power [Rock]
+- Toxic
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Toxic
+- Thief
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+- Will-O-Wisp
+- Haze
+- Pain Split
+- Sludge Bomb

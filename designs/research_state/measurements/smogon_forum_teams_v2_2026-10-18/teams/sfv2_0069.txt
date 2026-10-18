@@ -1,0 +1,55 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 8 SpD / 8 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 236 HP / 252 SpD / 20 Spe
+Impish Nature
+- Toxic
+- Protect
+- Spikes
+- Whirlwind
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 136 Atk / 120 SpD
+IVs: 30 Atk / 30 SpD
+Adamant Nature
+- Earthquake
+- Explosion
+- Hidden Power [Ghost]
+- Rapid Spin
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 64 Atk / 124 Def / 176 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Fire Blast
+- Self-Destruct
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 220 Atk / 36 SpD / 252 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
+Jolly Nature
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA
+Modest Nature
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled

@@ -1,0 +1,62 @@
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 124 HP / 252 Atk / 132 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 244 Atk / 12 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Grass]
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+IVs: 0 Atk
+- Roar
+- Calm Mind
+- Surf
+- Ice Beam
+
+Porygon2 @ Leftovers
+Ability: Trace
+Shiny: Yes
+EVs: 252 HP / 200 Def / 56 SpA
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Ice Beam
+- Thunder Wave
+- Thunderbolt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 76 SpA / 184 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Hidden Power [Fire]
+- Psychic
+- Baton Pass
+
+Charizard @ Leftovers
+Ability: Blaze
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Beat Up
+- Hidden Power [Grass]
+- Dragon Claw

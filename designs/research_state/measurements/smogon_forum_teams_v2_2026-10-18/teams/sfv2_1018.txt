@@ -1,0 +1,57 @@
+Jynx (F) @ Leftovers
+Ability: Oblivious
+EVs: 120 HP / 200 SpA / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Beam
+- Lovely Kiss
+- Perish Song
+- Mean Look
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 20 SpD / 232 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Substitute
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Atk / 16 Def / 28 SpD
+Relaxed Nature
+- Earthquake
+- Rapid Spin
+- Psychic
+- Explosion
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 SpD / 44 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Toxic
+- Rain Dance
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 164 Def / 84 SpA / 4 SpD / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rest
+- Calm Mind

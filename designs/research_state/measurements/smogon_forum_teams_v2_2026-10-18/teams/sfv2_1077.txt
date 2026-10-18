@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Protect
+- Dragon Dance
+- Earthquake
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 36 Def / 60 SpA / 136 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Heal Bell
+- Hidden Power [Grass]
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 16 HP / 96 Atk / 200 Def / 144 SpD / 52 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Brick Break
+- Hidden Power [Bug]
+- Rock Slide
+- Knock Off
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 72 Def / 8 Spe
+Adamant Nature
+- Protect
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Double-Edge

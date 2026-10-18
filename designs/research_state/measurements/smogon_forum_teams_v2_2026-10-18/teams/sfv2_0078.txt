@@ -1,0 +1,56 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 176 HP / 4 Def / 252 SpA / 76 SpD
+IVs: 30 Atk / 30 SpA
+Modest Nature
+- Crunch
+- Flamethrower
+- Pursuit
+- Toxic
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 16 HP / 240 Atk / 252 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
+Jolly Nature
+- Earthquake
+- Fire Blast
+- Hidden Power [Bug]
+- Rock Slide
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 188 SpA / 144 Spe
+IVs: 30 Atk / 30 SpA
+Naughty Nature
+- Brick Break
+- Fire Blast
+- Hidden Power [Grass]
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 48 HP / 244 Def / 216 Spe
+Timid Nature
+- Psychic
+- Rapid Spin
+- Recover
+- Surf
+
+Milotic (F) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Ice Beam
+- Recover
+- Surf
+- Toxic
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 108 Atk / 136 SpD / 12 Spe
+Careful Nature
+- Body Slam
+- Curse
+- Rest
+- Self-Destruct

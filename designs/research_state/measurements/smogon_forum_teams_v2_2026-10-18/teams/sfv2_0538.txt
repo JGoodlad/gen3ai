@@ -1,0 +1,55 @@
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 124 HP / 216 Atk / 168 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Swords Dance
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 244 Atk / 96 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 244 Atk / 108 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Self-Destruct
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 68 SpD / 188 Spe
+Hasty Nature
+- Hypnosis
+- Rain Dance
+- Ice Punch
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 136 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest

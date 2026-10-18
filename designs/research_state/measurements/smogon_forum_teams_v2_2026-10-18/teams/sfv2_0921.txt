@@ -1,0 +1,55 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 176 Atk / 144 SpA / 188 Spe
+Naive Nature
+- Focus Punch
+- Ice Punch
+- Thunderbolt
+- Hypnosis
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 224 HP / 252 Atk / 32 Spe
+Adamant Nature
+- Doom Desire
+- Body Slam
+- Fire Punch
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 244 SpA / 12 SpD
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Calm Mind
+- Soft-Boiled
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Whirlwind
+- Protect
+- Toxic

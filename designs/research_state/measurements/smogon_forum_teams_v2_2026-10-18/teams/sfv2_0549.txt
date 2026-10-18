@@ -1,0 +1,61 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 220 HP / 244 Atk / 44 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 32 HP / 224 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Thunder Wave
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 20 SpA / 236 SpD
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Giga Drain
+- Thunderbolt
+- Taunt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+- Double-Edge
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 248 HP / 204 Def / 56 Spe
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch

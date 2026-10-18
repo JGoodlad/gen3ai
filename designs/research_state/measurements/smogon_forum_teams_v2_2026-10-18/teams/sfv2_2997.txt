@@ -1,0 +1,59 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 248 HP / 72 Atk / 8 Def / 180 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 44 Atk / 152 Def / 64 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Toxic
+- Rapid Spin
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 196 SpA / 120 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Pursuit
+- Fire Blast
+- Beat Up
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 76 SpA / 36 SpD / 20 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Leech Seed
+- Psychic
+- Hidden Power [Grass]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Double-Edge

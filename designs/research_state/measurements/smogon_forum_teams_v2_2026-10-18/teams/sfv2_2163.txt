@@ -1,0 +1,55 @@
+Medicham @ Lum Berry
+Ability: Pure Power
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Bulk Up
+- Brick Break
+- Shadow Ball
+- Rock Slide
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Swords Dance
+- Brick Break
+- Megahorn
+- Rock Slide
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Rest
+- Sleep Talk
+- Brick Break
+- Bulk Up
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Sunny Day
+- Flamethrower
+- Pursuit
+- Hidden Power [Grass]
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Aerial Ace
+
+Steelix @ Choice Band
+Ability: Rock Head
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 SpD
+- Earthquake
+- Double-Edge
+- Hidden Power [Steel]
+- Explosion

@@ -1,0 +1,58 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 248 HP / 136 Atk / 76 SpD / 48 Spe
+Adamant Nature
+- Low Kick
+- Focus Punch
+- Rock Slide
+- Earthquake
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 80 Def / 148 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Protect
+- Wish
+- Fire Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Fire Blast
+- Counter
+- Pursuit
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Focus Punch
+- Brick Break
+- Hidden Power [Grass]
+- Spore
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Roar
+- Protect
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 136 Atk / 212 SpD / 160 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance

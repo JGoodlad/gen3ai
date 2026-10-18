@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 188 HP / 232 SpA / 88 Spe
+Modest Nature
+- Rock Slide
+- Pursuit
+- Fire Blast
+- Roar
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Sludge Bomb
+- Explosion
+- Will-O-Wisp
+- Pain Split
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Fire Punch
+- Calm Mind
+- Wish
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Recover
+- Refresh
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 232 Atk / 24 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Explosion
+- Rapid Spin
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 40 Def / 88 SpA / 76 SpD / 64 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Leech Seed
+- Perish Song
+- Recover

@@ -1,0 +1,57 @@
+Glalie @ Lum Berry
+Ability: Inner Focus
+EVs: 252 HP / 60 Def / 196 Spe
+Bold Nature
+- Spikes
+- Taunt
+- Icy Wind
+- Explosion
+
+Banette @ Leftovers
+Ability: Insomnia
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Shadow Ball
+- Hidden Power [Fighting]
+- Taunt
+- Will-O-Wisp
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 216 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Ice Beam
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Roar
+- Baton Pass
+- Thunderbolt
+- Hidden Power [Grass]

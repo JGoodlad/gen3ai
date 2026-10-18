@@ -1,0 +1,57 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 140 HP / 180 SpA / 188 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Ancient Power
+- Hidden Power [Grass]
+- Fire Blast
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 56 Def / 220 SpA / 20 SpD / 212 Spe
+Modest Nature
+- Explosion
+- Giga Drain
+- Thunderbolt
+- Ice Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Roar
+- Protect
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Substitute

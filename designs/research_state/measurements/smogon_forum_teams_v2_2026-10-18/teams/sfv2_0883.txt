@@ -1,0 +1,56 @@
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 212 SpD / 44 Spe
+Careful Nature
+- Drill Peck
+- Taunt
+- Roar
+- Spikes
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 16 Atk / 248 SpD / 176 Spe
+Hasty Nature
+- Fire Punch
+- Giga Drain
+- Focus Punch
+- Will-O-Wisp
+
+Jolteon (F) @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Swampert (F) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 Spe
+Relaxed Nature
+- Surf
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Ludicolo (F) @ Leftovers
+Ability: Swift Swim
+EVs: 76 HP / 92 Def / 252 SpA / 88 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Leech Seed
+- Rain Dance

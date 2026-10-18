@@ -1,0 +1,55 @@
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 8 SpD / 252 Spe
+Jolly Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Roar
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 228 SpD / 40 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Taunt
+- Dragon Dance
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 228 Def / 40 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Roar
+- Refresh
+
+Gengar (F) @ Lum Berry
+Ability: Levitate
+EVs: 40 HP / 216 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Destiny Bond
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 236 HP / 196 Atk / 72 SpD / 4 Spe
+Adamant Nature
+- Earthquake
+- Shadow Ball
+- Rapid Spin
+- Explosion

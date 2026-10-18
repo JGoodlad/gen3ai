@@ -1,0 +1,58 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Brick Break
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 112 HP / 252 Def / 144 SpA
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Seismic Toss
+- Soft-Boiled
+- Thunder Wave
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 184 Def / 72 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+IVs: 30 Def / 30 SpA / 30 Spe
+- Explosion
+- Hidden Power [Fire]
+- Meteor Mash
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 224 SpA / 32 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
+- Brick Break
+- Flamethrower
+- Hidden Power [Grass]
+- Wish
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 52 Spe
+Relaxed Nature
+- Earthquake
+- Focus Punch
+- Ice Beam
+- Protect

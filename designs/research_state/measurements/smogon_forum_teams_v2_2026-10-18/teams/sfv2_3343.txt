@@ -1,0 +1,57 @@
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 248 HP / 92 Def / 148 SpA / 20 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 252 SpA / 72 SpD / 184 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Substitute
+- Razor Leaf
+- Hidden Power [Fire]
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Spikes
+- Earthquake
+- Zap Cannon
+- Explosion
+
+Slowbro @ Leftovers
+Ability: Own Tempo
+EVs: 248 HP / 252 Def / 8 SpA
+Bold Nature
+IVs: 3 Atk / 30 SpA
+- Calm Mind
+- Surf
+- Hidden Power [Electric]
+- Thunder Wave
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 176 SpD
+Adamant Nature
+- Body Slam
+- Return
+- Earthquake
+- Self-Destruct
+
+Trapinch @ Choice Band
+Ability: Hyper Cutter
+EVs: 160 HP / 96 Atk / 252 SpD
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Quick Attack
+- Rock Slide
+- Hidden Power [Flying]

@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Flamethrower
+- Protect
+- Toxic
+- Wish
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 200 HP / 132 Def / 176 SpD
+Careful Nature
+- Curse
+- Earthquake
+- Rest
+- Return
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 84 Def / 60 SpA / 112 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Protect
+- Thunderbolt
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 152 Atk / 16 Def / 88 Spe
+Impish Nature
+- Earthquake
+- Explosion
+- Ice Beam
+- Rapid Spin
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 252 SpA / 80 SpD / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Flamethrower
+- Pursuit
+- Rest
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Recover
+- Refresh
+- Surf

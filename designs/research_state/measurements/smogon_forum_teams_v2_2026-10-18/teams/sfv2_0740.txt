@@ -1,0 +1,58 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 8 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Toxic
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 248 HP / 36 Atk / 208 SpD / 16 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Roar
+- Explosion
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 12 Atk / 248 SpD
+Sassy Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Zap Cannon
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 16 Atk / 96 Def / 140 SpD / 8 Spe
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Pursuit
+- Wish
+- Protect
+- Hidden Power [Fighting]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 64 HP / 44 Def / 16 SpA / 248 SpD / 136 Spe
+Timid Nature
+IVs: 0 Atk
+- Fire Punch
+- Giga Drain
+- Will-O-Wisp
+- Hypnosis
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 28 Atk / 232 SpD
+Gentle Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Fighting]
+- Rest

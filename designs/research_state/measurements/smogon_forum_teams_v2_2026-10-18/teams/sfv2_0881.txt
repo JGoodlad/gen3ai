@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 220 SpD / 36 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Toxic
+- Protect
+- Rest
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 80 HP / 252 Atk / 176 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Hidden Power [Ghost]
+- Substitute
+- Dragon Dance
+- Earthquake
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 156 Atk / 100 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 44 Atk / 68 Def / 148 SpD
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Fire Punch
+- Hidden Power [Fighting]
+- Wish
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 68 HP / 252 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 252 Def / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Brick Break
+- Knock Off
+- Hidden Power [Bug]

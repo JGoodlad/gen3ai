@@ -1,0 +1,57 @@
+Arcanine
+Ability: Intimidate
+EVs: 252 HP / 184 Def / 72 Spe
+Bold Nature
+- Fire Blast
+- Thief
+- Toxic
+- Rest
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Earthquake
+
+Rhydon @ Leftovers
+Ability: Rock Head
+EVs: 212 HP / 122 Atk / 176 Spe
+Adamant Nature
+- Earthquake
+- Swords Dance
+- Rock Slide
+- Substitute
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Taunt
+
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Toxic
+- Flamethrower
+- Protect

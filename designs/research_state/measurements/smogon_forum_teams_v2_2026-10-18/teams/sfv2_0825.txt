@@ -1,0 +1,56 @@
+Politoed
+Ability: Damp
+EVs: 64 HP / 4 Def / 252 SpA / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Hypnosis
+- Thief
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 152 HP / 16 Def / 252 SpA / 88 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Ice Beam
+- Hidden Power [Grass]
+- Heal Bell
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 28 HP / 188 Atk / 136 SpA / 156 SpD
+Brave Nature
+- Earthquake
+- Flamethrower
+- Toxic
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

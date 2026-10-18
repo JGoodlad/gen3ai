@@ -1,0 +1,57 @@
+Raikou @ Petaya Berry
+Ability: Pressure
+EVs: 12 HP / 164 Def / 252 SpA / 80 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 SpA / 4 SpD / 88 Spe
+Quiet Nature
+- Surf
+- Ice Beam
+- Earthquake
+- Refresh
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 200 HP / 112 Atk / 16 SpA / 180 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+- Dragon Dance
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 184 SpD / 76 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 140 Atk / 212 SpD / 156 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

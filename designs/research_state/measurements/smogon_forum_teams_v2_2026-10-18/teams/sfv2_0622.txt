@@ -1,0 +1,57 @@
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Return
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 176 HP / 156 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
+- Explosion
+- Thunderbolt
+- Ice Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Spe
+- Meteor Mash
+- Mimic
+- Earthquake
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 36 Def / 192 SpD / 28 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Rapid Spin
+- Recover
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt

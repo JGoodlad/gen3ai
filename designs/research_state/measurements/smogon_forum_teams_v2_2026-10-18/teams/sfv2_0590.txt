@@ -1,0 +1,58 @@
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 8 HP / 244 Atk / 72 SpD / 184 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Hidden Power [Ghost]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Baton Pass
+- Hidden Power [Grass]
+- Thunder Wave
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 212 SpA / 44 SpD
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+- Pursuit
+
+Snorlax @ Leftovers
+Ability: Immunity
+Happiness: 0
+EVs: 44 HP / 176 Atk / 120 Def / 160 SpD / 8 Spe
+Adamant Nature
+- Frustration
+- Counter
+- Focus Punch
+- Self-Destruct
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch

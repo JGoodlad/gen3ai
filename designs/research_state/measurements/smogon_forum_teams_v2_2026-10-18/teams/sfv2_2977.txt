@@ -1,0 +1,57 @@
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Thunder
+- Hidden Power [Grass]
+- Explosion
+- Seismic Toss
+
+Hitmonlee (M) @ Leftovers
+Ability: Limber
+EVs: 120 HP / 252 Atk / 136 Spe
+Adamant Nature
+- Brick Break
+- Focus Punch
+- Mach Punch
+- Rock Slide
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 196 SpA / 120 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Pursuit
+- Fire Blast
+- Beat Up
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 132 HP / 140 SpA / 16 SpD / 220 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
+Brave Nature
+- Earthquake
+- Ice Beam
+- Rapid Spin
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 60 HP / 252 Atk / 196 Spe
+Jolly Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Double-Edge

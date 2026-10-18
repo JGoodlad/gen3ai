@@ -1,0 +1,58 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 44 Atk / 212 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Ancient Power
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Hidden Power [Grass]
+- Substitute
+- Fire Blast
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 212 SpD / 44 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Protect
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 192 HP / 132 Atk / 184 Spe
+Jolly Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 76 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Fighting]
+- Double-Edge

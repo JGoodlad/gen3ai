@@ -1,0 +1,56 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Crunch
+- Hidden Power [Grass]
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Toxic
+- Hydro Pump
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 200 SpD / 60 Spe
+Careful Nature
+- Thunder Wave
+- Counter
+- Explosion
+- Seismic Toss
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 160 Atk / 212 SpD / 136 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Brick Break
+- Rock Slide

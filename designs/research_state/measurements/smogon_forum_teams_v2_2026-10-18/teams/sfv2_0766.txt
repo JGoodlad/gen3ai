@@ -1,0 +1,58 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Brick Break
+- Hidden Power [Ghost]
+- Rock Slide
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+- Spikes
+- Rapid Spin
+- Surf
+- Explosion
+
+Clefable @ Leftovers
+Ability: Cute Charm
+EVs: 252 HP / 192 Def / 64 SpD
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Surf
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Aerial Ace
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]

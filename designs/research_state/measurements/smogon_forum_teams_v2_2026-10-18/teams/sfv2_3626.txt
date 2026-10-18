@@ -1,0 +1,60 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 56 SpA / 200 Spe
+Serious Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Giga Drain
+- Taunt
+
+Skarmory @ Leftovers
+Ability: Sturdy
+Happiness: 0
+EVs: 252 HP / 6 Def / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Toxic
+- Taunt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
+
+Tauros @ Choice Band
+Ability: Intimidate
+EVs: 6 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Return
+- Earthquake
+- Iron Tail
+- Hidden Power [Ghost]
+
+Alakazam @ Lum Berry
+Ability: Synchronize
+EVs: 6 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Psychic
+- Fire Punch
+- Encore
+- Calm Mind
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 252 Def / 60 SpD
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave

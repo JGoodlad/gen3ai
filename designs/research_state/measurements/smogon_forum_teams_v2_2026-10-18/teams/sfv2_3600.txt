@@ -1,0 +1,57 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+Happiness: 190
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+- Fire Punch
+- Calm Mind
+- Wish
+- Psychic
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]
+
+Scizor @ Salac Berry
+Ability: Swarm
+Happiness: 120
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Swords Dance
+- Silver Wind
+- Agility
+- Hidden Power [Rock]

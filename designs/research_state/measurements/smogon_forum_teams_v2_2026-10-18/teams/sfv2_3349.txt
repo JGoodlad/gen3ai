@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 60 HP / 252 SpA / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Charizard @ Petaya Berry
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Sunny Day
+- Substitute
+- Fire Blast
+- Hidden Power [Ice]
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 76 HP / 252 Atk / 40 Def / 140 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Double-Edge
+- Explosion
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 40 Atk / 252 SpA / 216 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Sunny Day
+- Explosion
+- Hidden Power [Fire]
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 156 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 144 Atk / 140 SpD / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up

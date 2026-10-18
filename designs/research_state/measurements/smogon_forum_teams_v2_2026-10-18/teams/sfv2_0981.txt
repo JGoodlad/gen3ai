@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 32 Def / 252 SpA / 224 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Substitute
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 216 SpA / 52 Spe
+Modest Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Explosion
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 64 Def / 192 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Hidden Power [Ghost]
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Beat Up
+- Toxic
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 192 HP / 224 Atk / 92 Spe
+Adamant Nature
+- Meteor Mash
+- Rock Slide
+- Earthquake
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 212 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

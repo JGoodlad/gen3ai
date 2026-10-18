@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 244 HP / 252 SpD / 12 Spe
+Careful Nature
+IVs: 30 SpD
+- Hidden Power [Steel]
+- Protect
+- Roar
+- Spikes
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 224 Atk / 32 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Focus Punch
+- Rock Slide
+- Hidden Power [Bug]
+- Substitute
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Substitute
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 160 Atk / 96 Spe
+Jolly Nature
+- Substitute
+- Thunder
+- Body Slam
+- Water Pulse
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 SpD
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Ice Beam
+- Hidden Power [Grass]
+- Soft-Boiled
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 216 Atk / 8 SpA / 36 SpD / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion

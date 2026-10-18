@@ -1,0 +1,56 @@
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 4 HP / 252 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Substitute
+- Explosion
+- Spikes
+
+Camerupt @ Quick Claw
+Ability: Magma Armor
+EVs: 252 HP / 252 Atk / 4 SpA
+Brave Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Earthquake
+- Explosion
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 172 Atk / 144 SpA / 192 Spe
+Hasty Nature
+- Focus Punch
+- Explosion
+- Thunderbolt
+- Giga Drain
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 212 SpD / 120 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+- Dragon Dance
+
+Jirachi @ Salac Berry
+Ability: Serene Grace
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Punch
+- Thunderbolt
+- Calm Mind
+- Endure

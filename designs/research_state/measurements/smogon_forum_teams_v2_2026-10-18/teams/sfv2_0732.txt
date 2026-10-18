@@ -1,0 +1,57 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 196 HP / 252 Atk / 60 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
+
+Granbull
+Ability: Intimidate
+EVs: 164 HP / 252 Atk / 92 Spe
+Adamant Nature
+- Return
+- Earthquake
+- Thunder Wave
+- Thief
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 8 Def / 196 SpD / 52 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rapid Spin
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Thunder Wave
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Taunt
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam

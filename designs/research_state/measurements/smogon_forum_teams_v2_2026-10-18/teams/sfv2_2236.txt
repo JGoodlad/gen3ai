@@ -1,0 +1,58 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 156 Def / 76 SpA / 36 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Leech Seed
+- Calm Mind
+- Hidden Power [Electric]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 20 SpA / 104 SpD / 144 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 188 HP / 252 SpA / 68 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Pursuit
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

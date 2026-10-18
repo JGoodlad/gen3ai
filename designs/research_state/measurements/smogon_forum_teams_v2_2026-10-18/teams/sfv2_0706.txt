@@ -1,0 +1,57 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 112 Atk / 252 SpA / 144 Spe
+Naughty Nature
+- Sunny Day
+- Fire Blast
+- Cross Chop
+- Ice Punch
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Sunny Day
+- Fire Blast
+- Thunderbolt
+- Soft-Boiled
+
+Charizard @ Petaya Berry
+Ability: Blaze
+EVs: 12 HP / 244 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Sunny Day
+- Fire Blast
+- Hidden Power [Grass]
+
+Exeggutor @ Lum Berry
+Ability: Chlorophyll
+EVs: 52 HP / 244 SpA / 212 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Sunny Day
+- Solar Beam
+- Hidden Power [Fire]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 144 HP / 252 Atk / 112 SpD
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Beat Up
+- Aerial Ace
+- Hidden Power [Bug]

@@ -1,0 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 144 Atk / 180 SpA / 184 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Brick Break
+- Fire Blast
+- Hidden Power [Grass]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Snatch
+- Soft-Boiled
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 120 SpA / 140 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+- Taunt
+- Spikes
+- Protect
+- Drill Peck
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 236 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Protect
+- Refresh
+- Toxic
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 20 HP / 188 Def / 112 SpA / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Giga Drain
+- Fire Punch
+- Destiny Bond
+- Will-O-Wisp

@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 236 Def / 20 Spe
+Timid Nature
+IVs: 0 Atk
+- Protect
+- Flamethrower
+- Toxic
+- Wish
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 144 HP / 112 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Substitute
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 Def / 44 SpD
+Relaxed Nature
+- Protect
+- Curse
+- Earthquake
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 64 Def / 36 SpA / 136 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Psychic
+- Leech Seed
+- Recover
+- Heal Bell
+
+Shuckle @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Rollout
+- Defense Curl
+- Toxic
+- Rest
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

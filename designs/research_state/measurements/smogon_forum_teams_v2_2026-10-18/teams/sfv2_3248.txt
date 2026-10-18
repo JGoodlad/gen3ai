@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 244 SpA / 12 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Nidoqueen (F) @ Leftovers
+Ability: Poison Point
+EVs: 252 HP / 212 SpA / 44 Spe
+Quiet Nature
+- Ice Beam
+- Flamethrower
+- Earthquake
+- Superpower
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Light Screen
+- Rapid Spin
+- Earthquake
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Spore
+- Stun Spore
+- Sky Uppercut
+- Mach Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 248 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar

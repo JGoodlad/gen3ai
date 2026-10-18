@@ -1,0 +1,56 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 84 SpD
+Relaxed Nature
+- Curse
+- Protect
+- Earthquake
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 216 Atk / 8 SpA / 36 SpD / 8 Spe
+Adamant Nature
+- Earthquake
+- Explosion
+- Psychic
+- Rapid Spin
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 112 Def / 148 SpD
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Wish
+- Hidden Power [Grass]
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 248 HP / 176 Def / 16 SpD / 68 Spe
+Impish Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Thunder Wave
+- Heal Bell
+- Roar
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Knock Off
+- Rock Slide
+- Rest
+- Earthquake
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 84 Def / 176 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Mean Look
+- Toxic
+- Pursuit

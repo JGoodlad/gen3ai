@@ -1,0 +1,56 @@
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Brick Break
+- Focus Punch
+- Shadow Ball
+- Rock Slide
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Sky Uppercut
+- Spore
+- Mach Punch
+- Stun Spore
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 244 Def / 12 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 160 Def / 96 Spe
+Relaxed Nature
+IVs: 2 Atk / 30 SpA
+- Ice Beam
+- Hidden Power [Grass]
+- Thunder Wave
+- Recover
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Calm Mind
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 124 HP / 116 Atk / 128 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Dragon Dance
+- Rock Slide

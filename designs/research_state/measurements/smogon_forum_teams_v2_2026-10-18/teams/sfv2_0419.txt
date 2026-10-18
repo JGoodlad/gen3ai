@@ -1,0 +1,59 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 148 Def / 92 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Fire Punch
+- Calm Mind
+- Wish
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 232 Atk / 40 SpD / 228 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Substitute
+- Aerial Ace
+- Hidden Power [Bug]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 192 Def / 44 SpA / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Toxic
+- Protect
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 96 Def / 164 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Rapid Spin
+- Recover
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 140 SpD / 68 Spe
+Timid Nature
+IVs: 0 Atk
+- Mean Look
+- Perish Song
+- Hypnosis
+- Protect
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 224 SpA / 32 Spe
+Modest Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Beam
+- Calm Mind
+- Soft-Boiled

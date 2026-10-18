@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Roar
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Substitute
+- Baton Pass
+
+Breloom @ Leftovers
+Ability: Effect Spore
+Hidden Power: Ghost
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 120 SpD / 140 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Taunt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 228 SpA / 40 Spe
+Quiet Nature
+- Surf
+- Earthquake
+- Ice Beam
+- Roar

@@ -1,0 +1,57 @@
+Medicham @ Salac Berry
+Ability: Pure Power
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Brick Break
+- Focus Punch
+- Rock Slide
+- Shadow Ball
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Protect
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 4 Atk / 252 Def
+Relaxed Nature
+- Earthquake
+- Hydro Pump
+- Roar
+- Ice Beam
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Earthquake
+- Rock Slide
+- Aerial Ace
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 220 HP / 252 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Giga Drain
+- Calm Mind
+- Psychic
+- Leech Seed
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 124 Atk / 132 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Fire Blast
+- Dragon Claw
+- Focus Punch
+- Hidden Power [Flying]

@@ -1,0 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 252 SpA / 72 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Ice Beam
+- Fire Blast
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 176 Atk / 156 SpA / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Grass]
+- Thunder Wave
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Hidden Power [Bug]
+- Rapid Spin
+- Counter
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 176 SpA / 80 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Punch
+- Substitute
+- Thunderbolt
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 64 HP / 252 Atk / 192 Spe
+Adamant Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Rest
+- Roar
+- Surf

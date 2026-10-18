@@ -1,0 +1,59 @@
+Tyranitar @ Chesto Berry
+Ability: Sand Stream
+EVs: 252 HP / 232 SpA / 24 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Counter
+- Pursuit
+- Crunch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 24 Atk / 232 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Hidden Power [Grass]
+- Fire Blast
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 SpA / 248 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Substitute
+- Baton Pass
+- Roar
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def
+- Earthquake
+- Hidden Power [Ice]
+- Rock Slide
+- Toxic
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 180 Atk / 164 Def / 116 SpD / 48 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Brick Break
+- Rock Slide
+- Hidden Power [Bug]

@@ -1,0 +1,55 @@
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 160 HP / 156 Atk / 136 Def / 56 SpD
+Sassy Nature
+- Fire Blast
+- Earthquake
+- Selfdestruct
+- Return
+
+Exeggutor (M) @ Leftovers
+Ability: Chlorophyll
+EVs: 28 HP / 252 SpA / 8 SpD / 220 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Sunny Day
+- Solar Beam
+- Hidden Power [Fire]
+- Explosion
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 44 HP / 188 Def / 96 SpA / 180 Spe
+Modest Nature
+- Thunderbolt
+- Ice Punch
+- Destiny Bond
+- Counter
+
+Steelix (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 120 Atk / 136 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Body Slam
+- Earthquake
+- Hidden Power [Rock]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 12 Atk / 16 Def / 240 SpA
+Relaxed Nature
+- Earthquake
+- Psychic
+- Ice Beam
+- Explosion
+
+Charizard (M) @ Petaya Berry
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Sunny Day
+- Flamethrower
+- Overheat

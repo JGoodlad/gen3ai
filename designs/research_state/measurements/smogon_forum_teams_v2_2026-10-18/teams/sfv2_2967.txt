@@ -1,0 +1,57 @@
+Politoed
+Ability: Water Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thief
+- Hypnosis
+- Hydro Pump
+- Ice Beam
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 84 Def / 240 SpA / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Destiny Bond
+- Thunderbolt
+- Ice Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 156 SpD / 100 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Taunt
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 212 SpA / 48 Spe
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

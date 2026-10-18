@@ -1,0 +1,59 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 252 HP / 8 SpD / 248 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Razor Leaf
+- Sleep Powder
+- Leech Seed
+- Hidden Power [Fire]
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Slide
+- Knock Off
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Taunt
+- Spikes
+- Roar
+- Toxic
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Def / 136 Spe
+Bold Nature
+IVs: 0 Atk
+- Giga Drain
+- Fire Blast
+- Toxic
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

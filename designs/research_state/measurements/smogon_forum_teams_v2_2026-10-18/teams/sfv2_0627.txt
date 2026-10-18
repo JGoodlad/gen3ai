@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 140 HP / 220 Atk / 100 Def / 48 Spe
+Naughty Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power [Fighting]
+- Drill Peck
+- Thunder Wave
+
+Forretress @ Quick Claw
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Jirachi @ Salac Berry
+Ability: Serene Grace
+EVs: 188 HP / 120 Def / 60 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Fire Punch
+- Ice Punch
+- Hidden Power [Grass]
+- Calm Mind
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 56 HP / 252 Atk / 200 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Substitute
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 236 SpA / 8 SpD / 12 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Substitute
+- Focus Punch
+- Hidden Power [Grass]

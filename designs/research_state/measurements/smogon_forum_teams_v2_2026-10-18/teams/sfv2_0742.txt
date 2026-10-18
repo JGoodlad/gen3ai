@@ -1,0 +1,59 @@
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 148 Def / 56 SpD / 52 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Heal Bell
+- Hidden Power [Fire]
+- Ice Beam
+- Toxic
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 84 HP / 144 Def / 252 SpD / 28 Spe
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Hidden Power [Ghost]
+- Knock Off
+- Brick Break
+- Whirlwind
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Ice Beam
+- Seismic Toss
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
+- Earthquake
+- Explosion
+- Hidden Power [Grass]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Rapid Spin
+- Recover
+- Thunderbolt

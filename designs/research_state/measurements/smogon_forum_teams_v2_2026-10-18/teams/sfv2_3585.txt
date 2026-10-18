@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 124 HP / 232 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Breloom @ Black Belt
+Ability: Effect Spore
+EVs: 8 HP / 240 Atk / 76 SpD / 184 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Hidden Power [Ghost]
+- Focus Punch
+- Mach Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 204 HP / 244 Def / 24 SpA / 36 Spe
+Lax Nature
+IVs: 30 Spe
+- Earthquake
+- Rock Slide
+- Fire Blast
+- Hidden Power [Ice]
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 204 HP / 112 Atk / 192 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Rest
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 76 HP / 244 SpA / 188 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Charizard @ Petaya Berry
+Ability: Blaze
+EVs: 20 Atk / 236 SpA / 252 Spe
+Hasty Nature
+IVs: 30 HP / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch
+- Substitute

@@ -1,0 +1,61 @@
+Salamence (M) @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Dragon Claw
+- Fire Blast
+- Toxic
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Taunt
+- Rock Slide
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 80 HP / 252 Atk / 136 Def / 28 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+
+Swampert (M) @ Salac Berry
+Ability: Torrent
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Endeavor
+
+Aerodactyl (F) @ Choice Band
+Ability: Rock Head
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Double-Edge
+- Hidden Power [Bug]
+
+Metagross @ Lum Berry
+Ability: Clear Body
+Shiny: Yes
+EVs: 152 HP / 240 Atk / 16 Def / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion

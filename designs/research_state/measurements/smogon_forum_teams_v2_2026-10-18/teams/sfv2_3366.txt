@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 228 HP / 216 Def / 64 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Roar
+- Rest
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 64 Atk / 192 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rest
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 236 HP / 136 Def / 92 SpA / 44 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Leech Seed
+- Heal Bell
+- Recover
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunder Wave
+- Seismic Toss
+- Soft-Boiled
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Substitute
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 68 Atk / 176 Def / 12 SpA
+Impish Nature
+- Psychic
+- Earthquake
+- Explosion
+- Rapid Spin

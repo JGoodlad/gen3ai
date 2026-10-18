@@ -1,0 +1,58 @@
+Kangaskhan (F) @ Leftovers
+Ability: Early Bird
+EVs: 200 HP / 216 Atk / 76 SpD / 16 Spe
+Adamant Nature
+- Yawn
+- Focus Punch
+- Return
+- Shadow Ball
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
+- Spikes
+- Drill Peck
+- Taunt
+- Hidden Power [Ground]
+
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 8 HP / 252 Atk / 248 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Hidden Power [Bug]
+- Focus Punch
+- Rock Tomb
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 240 HP / 216 Def / 16 SpD / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Fire Punch
+- Protect
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 232 Def / 120 SpA / 156 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Counter
+- Soft-Boiled
+- Ice Beam
+
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 124 HP / 220 SpA / 164 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Ice Beam
+- Heal Bell
+- Hidden Power [Fire]
+- Roar

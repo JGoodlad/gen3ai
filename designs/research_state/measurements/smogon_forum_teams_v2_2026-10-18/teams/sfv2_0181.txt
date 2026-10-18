@@ -1,0 +1,56 @@
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 224 Atk / 252 Def / 32 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 240 HP / 216 Def / 28 SpD / 24 Spe
+Bold Nature
+- Surf
+- Wish
+- Protect
+- Toxic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 52 HP / 176 Atk / 144 Def / 136 SpD
+Adamant Nature
+- Curse
+- Shadow Ball
+- Earthquake
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 128 SpD / 16 Spe
+Sassy Nature
+- Refresh
+- Rapid Spin
+- Earthquake
+- Psychic
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 60 Atk / 252 SpA / 196 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion

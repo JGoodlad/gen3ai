@@ -1,0 +1,56 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 216 SpA / 40 Spe
+IVs: 30 Atk / 30 SpA
+Modest Nature
+- Flamethrower
+- Pursuit
+- Hidden Power [Grass]
+- Crunch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 212 Def / 44 Spe
+Bold Nature
+- Surf
+- Roar
+- Rest
+- Sleep Talk
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 188 HP / 112 Def / 32 SpA / 176 Spe
+Timid Nature
+- Destiny Bond
+- Ice Punch
+- Thunderbolt
+- Will-O-Wisp
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 120 SpA / 120 SpD / 16 Spe
+IVs: 30 Atk / 30 SpA / 30 Spe
+Calm Nature
+- Toxic
+- Hidden Power [Fire]
+- Rapid Spin
+- Spikes
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 216 SpA / 36 Spe
+Modest Nature
+- Ice Beam
+- Seismic Toss
+- Soft-Boiled
+- Toxic
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 128 HP / 220 Atk / 160 Spe
+IVs: 30 SpD / 30 Spe
+Adamant Nature
+- Earthquake
+- Fire Blast
+- Rock Slide
+- Hidden Power [Bug]

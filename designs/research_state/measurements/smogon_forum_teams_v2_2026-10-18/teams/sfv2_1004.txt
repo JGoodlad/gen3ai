@@ -1,0 +1,57 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 72 HP / 216 Atk / 28 SpD / 192 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 80 SpD / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Thunder
+- Hidden Power [Grass]
+- Roar
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 224 Atk / 32 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+- Dragon Dance
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Fire Blast
+- Hidden Power [Ice]
+- Substitute
+- Focus Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 108 Def / 96 SpA / 44 SpD / 12 Spe
+Quiet Nature
+- Focus Punch
+- Surf
+- Ice Beam
+- Earthquake
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 40 SpA / 216 Spe
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Sing
+- Seismic Toss
+- Soft-Boiled

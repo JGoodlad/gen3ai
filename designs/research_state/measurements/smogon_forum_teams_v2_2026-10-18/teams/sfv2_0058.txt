@@ -1,0 +1,54 @@
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Hidden Power [Grass]
+- Ice Beam
+- Softboiled
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 112 HP / 224 Atk / 172 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Taunt
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 108 HP / 216 SpA / 184 Spe
+Modest Nature
+- Destiny Bond
+- Hypnosis
+- Ice Punch
+- Thunderbolt
+
+Skarmory (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 136 Def / 116 SpD / 4 Spe
+Impish Nature
+- Drill Peck
+- Rest
+- Roar
+- Spikes
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 236 HP / 96 Atk / 176 Def
+Relaxed Nature
+- Earthquake
+- Explosion
+- Ice Beam
+- Rapid Spin
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 136 Def / 116 SpA / 4 Spe
+Bold Nature
+- Calm Mind
+- Rest
+- Sleep Talk
+- Surf

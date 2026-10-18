@@ -1,0 +1,58 @@
+Jynx (F) @ Never-Melt Ice
+Ability: Oblivious
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Perish Song
+- Ice Beam
+- Lovely Kiss
+- Substitute
+
+Dugtrio @ Liechi Berry
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP
+- Substitute
+- Earthquake
+- Rock Slide
+- Aerial Ace
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Ice Punch
+- Thunderbolt
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 252 Def / 16 SpD
+Careful Nature
+- Curse
+- Return
+- Shadow Ball
+- Earthquake
+
+Charizard @ Petaya Berry
+Ability: Blaze
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Substitute
+- Sunny Day
+- Hidden Power [Grass]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 176 Def / 80 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar

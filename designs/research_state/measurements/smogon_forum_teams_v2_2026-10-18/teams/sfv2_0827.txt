@@ -1,0 +1,56 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 136 SpD / 124 Spe
+Careful Nature
+- Spikes
+- Roar
+- Taunt
+- Drill Peck
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 48 HP / 252 SpA / 208 Spe
+Modest Nature
+- Crunch
+- Thunder
+- Focus Punch
+- Roar
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Substitute
+- Rock Slide
+- Hidden Power [Flying]
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Endeavor
+- Roar
+- Substitute
+- Hydro Pump
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 48 Atk / 40 Def / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Baton Pass
+- Swords Dance
+- Giga Drain
+- Hidden Power [Fighting]
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 136 HP / 248 Atk / 36 SpD / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide

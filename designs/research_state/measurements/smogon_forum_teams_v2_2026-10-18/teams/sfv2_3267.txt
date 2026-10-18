@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Ice Beam
+
+Altaria @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 96 SpA / 140 SpD / 20 Spe
+Calm Nature
+IVs: 0 Atk
+- Heal Bell
+- Rest
+- Toxic
+- Flamethrower
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 80 Atk / 252 SpA / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Drill Peck
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 44 HP / 196 Atk / 132 Def / 136 SpD
+Careful Nature
+- Body Slam
+- Curse
+- Rest
+- Earthquake
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Explosion
+- Rapid Spin
+- Zap Cannon
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 40 SpA / 92 SpD
+Relaxed Nature
+- Rest
+- Curse
+- Earthquake
+- Hydro Pump

@@ -1,0 +1,58 @@
+Tyranitar @ Hard Stone
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 200 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Water Pulse
+- Psychic
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 176 SpA / 12 SpD / 60 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Baton Pass
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Crunch
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 204 HP / 252 Atk / 52 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Double-Edge
+- Superpower
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Substitute
+- Fire Blast
+- Hidden Power [Ice]
+- Focus Punch

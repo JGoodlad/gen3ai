@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Substitute
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+IVs: 2 Atk / 30 SpA
+- Ice Beam
+- Flamethrower
+- Pursuit
+- Hidden Power [Grass]
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Destiny Bond
+
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 112 Atk / 144 SpD / 252 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Beat Up
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Whirlwind
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 Def / 252 SpD
+IVs: 0 Atk
+- Calm Mind
+- Roar
+- Rest
+- Sleep Talk

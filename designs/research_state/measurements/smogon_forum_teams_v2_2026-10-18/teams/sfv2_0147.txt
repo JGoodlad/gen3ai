@@ -1,0 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 248 HP / 16 Atk / 204 Def / 40 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Wish
+- Protect
+- Hidden Power [Flying]
+- Earthquake
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Fire Blast
+- Pursuit
+- Roar
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 28 Def / 160 SpD / 72 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rapid Spin
+- Protect
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 144 HP / 112 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Protect
+- Thunder Wave
+- Hidden Power [Fire]
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Return
+- Earthquake
+- Rest

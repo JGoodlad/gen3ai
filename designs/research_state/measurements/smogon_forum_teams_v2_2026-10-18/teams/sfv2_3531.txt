@@ -1,0 +1,58 @@
+Snorlax @ Choice Band
+Ability: Immunity
+EVs: 8 HP / 252 Atk / 48 Def / 116 SpD / 84 Spe
+Adamant Nature
+- Body Slam
+- Self-Destruct
+- Brick Break
+- Shadow Ball
+
+Regirock @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 192 Atk / 64 SpD
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Thunder Wave
+- Hidden Power [Rock]
+- Earthquake
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 144 Atk / 112 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Sleep Talk
+- Calm Mind
+- Rest

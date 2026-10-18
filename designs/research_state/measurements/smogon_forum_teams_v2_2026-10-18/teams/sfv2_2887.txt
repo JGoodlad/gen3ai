@@ -1,0 +1,55 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Substitute
+- Surf
+- Roar
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Rock Slide
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 124 HP / 216 Atk / 168 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Low Kick
+- Hidden Power [Ghost]
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 36 Def / 4 Spe
+Brave Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 208 HP / 136 Atk / 156 Def / 4 SpD / 4 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
+- Wish

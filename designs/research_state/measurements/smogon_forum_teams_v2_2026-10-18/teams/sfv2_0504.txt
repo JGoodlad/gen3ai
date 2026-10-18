@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 236 SpA / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Substitute
+- Calm Mind
+- Ice Beam
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 248 HP / 48 Def / 196 SpD / 16 Spe
+Calm Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 24 Def / 136 SpA / 96 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Recover
+- Psychic
+- Hidden Power [Grass]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+- Seismic Toss
+- Superpower
+- Thunder Wave
+- Explosion

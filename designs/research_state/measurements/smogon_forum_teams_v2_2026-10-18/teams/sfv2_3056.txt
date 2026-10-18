@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 252 SpA / 12 Spe
+Quiet Nature
+- Meteor Mash
+- Ice Punch
+- Thunder Punch
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 76 SpA / 140 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Substitute
+- Psychic
+- Fire Punch
+
+Porygon2 @ Starf Berry
+Ability: Trace
+EVs: 252 Atk / 252 SpD / 4 Spe
+Lonely Nature
+- Conversion 2
+- Recycle
+- Aerial Ace
+- Recover
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Thunder Wave
+
+Celebi
+Ability: Natural Cure
+EVs: 248 HP / 120 Def / 52 SpA / 40 SpD / 48 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Baton Pass
+- Giga Drain
+- Hidden Power [Fire]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

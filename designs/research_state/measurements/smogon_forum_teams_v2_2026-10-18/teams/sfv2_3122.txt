@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Arcanine @ Leftovers
+Ability: Intimidate
+EVs: 212 Atk / 188 SpA / 108 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Fire Blast
+- Hidden Power [Fighting]
+- Toxic
+- Extreme Speed
+
+Roselia @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 20 SpA / 176 SpD / 64 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Spikes
+- Leech Seed
+- Hidden Power [Grass]
+- Protect
+
+Lapras @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 176 Def / 252 SpA / 48 SpD / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunder
+- Hydro Pump
+- Perish Song
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 188 HP / 176 Atk / 144 Spe
+Adamant Nature
+- Earthquake
+- Shadow Ball
+- Explosion
+- Rapid Spin
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 48 SpA / 116 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
+- Explosion
+- Ice Punch
+- Thunderbolt

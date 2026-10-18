@@ -1,0 +1,57 @@
+Heracross @ Choice Band
+Ability: Guts
+Hidden Power: Ghost
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Focus Punch
+- Rock Slide
+- Sleep Talk
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 80 Atk / 252 SpA / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Thunder Wave
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 248 HP / 196 SpD / 64 Spe
+Calm Nature
+- Surf
+- Spikes
+- Rapid Spin
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 248 HP / 8 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Substitute
+- Wish
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 160 HP / 236 Atk / 112 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 80 SpA / 16 SpD / 160 Spe
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Substitute
+- Calm Mind
+- Roar

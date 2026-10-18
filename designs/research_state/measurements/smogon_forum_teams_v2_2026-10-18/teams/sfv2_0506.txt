@@ -1,0 +1,57 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Toxic
+- Refresh
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 228 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Psychic
+- Fire Punch
+- Calm Mind
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Thief
+- Spikes
+- Roar
+- Drill Peck
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 24 Def / 232 Spe
+Impish Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 60 Def / 168 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Heal Bell
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 116 Def / 140 SpA
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Rest

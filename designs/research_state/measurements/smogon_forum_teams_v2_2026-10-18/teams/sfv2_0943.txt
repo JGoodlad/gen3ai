@@ -1,0 +1,63 @@
+Jynx @ Leftovers
+Ability: Oblivious
+Shiny: Yes
+EVs: 120 HP / 200 SpA / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Lovely Kiss
+- Mean Look
+- Ice Beam
+- Perish Song
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Substitute
+
+Snorlax (M) @ Lum Berry
+Ability: Immunity
+Shiny: Yes
+Happiness: 0
+EVs: 80 HP / 176 Atk / 52 Def / 200 SpD
+Adamant Nature
+- Curse
+- Frustration
+- Shadow Ball
+- Self-Destruct
+
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 248 HP / 212 Atk / 48 Def
+Adamant Nature
+- Explosion
+- Meteor Mash
+- Earthquake
+- Double-Edge
+
+Zapdos @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 112 HP / 236 SpA / 160 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Rain Dance
+- Thunder
+- Hidden Power [Grass]
+- Thunder Wave
+
+Heracross (M) @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Swords Dance
+- Megahorn
+- Rock Slide

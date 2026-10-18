@@ -1,0 +1,57 @@
+Arcanine
+Ability: Intimidate
+EVs: 40 Atk / 228 SpA / 240 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Fire Blast
+- Hidden Power [Fighting]
+- Thief
+- Toxic
+
+Sceptile @ Petaya Berry
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Leaf Blade
+- Thunder Punch
+- Substitute
+- Endeavor
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 52 Atk / 4 Def / 140 SpA / 64 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Ice Beam
+- Explosion
+- Hidden Power [Fire]
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 212 HP / 196 Atk / 100 Spe
+Adamant Nature
+- Thunder Wave
+- Rock Slide
+- Earthquake
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 244 SpA / 16 SpD
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Sleep Talk
+- Calm Mind
+- Rest
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Agility
+- Earthquake
+- Meteor Mash
+- Explosion

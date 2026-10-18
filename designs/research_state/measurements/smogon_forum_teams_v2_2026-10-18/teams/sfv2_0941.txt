@@ -1,0 +1,61 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 SpD / 44 Spe
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Thunderbolt
+- Protect
+- Baton Pass
+
+Jirachi @ Lum Berry
+Ability: Serene Grace
+EVs: 80 HP / 244 SpA / 184 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Calm Mind
+- Hidden Power [Grass]
+- Fire Punch
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Smeargle @ Salac Berry
+Ability: Own Tempo
+Shiny: Yes
+EVs: 80 HP / 176 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spore
+- Spikes
+- Will-O-Wisp
+- Whirlwind
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 168 Atk / 140 SpA / 200 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Punch
+- Focus Punch
+- Hidden Power [Grass]
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 248 HP / 108 Def / 96 SpA / 44 SpD / 12 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch

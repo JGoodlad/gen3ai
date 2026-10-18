@@ -1,0 +1,57 @@
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Hydro Pump
+- Toxic
+- Rest
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 232 Def / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Toxic
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 84 HP / 252 Atk / 164 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Slide
+- Earthquake
+- Dragon Dance
+
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 156 HP / 100 Atk / 252 SpD
+Adamant Nature
+- Will-O-Wisp
+- Pain Split
+- Shadow Ball
+- Focus Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+- Rapid Spin
+- Psychic
+- Toxic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Heal Bell
+- Soft-Boiled

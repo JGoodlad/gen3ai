@@ -1,0 +1,56 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 152 Def / 96 SpA / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 76 Def / 180 SpA
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Protect
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 40 SpD
+Brave Nature
+- Rapid Spin
+- Earthquake
+- Ice Beam
+- Explosion
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 240 Def / 16 Spe
+Impish Nature
+- Will-O-Wisp
+- Haze
+- Sludge Bomb
+- Pain Split
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 160 SpA / 88 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Pursuit
+- Wish
+- Protect
+- Toxic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
+- Earthquake

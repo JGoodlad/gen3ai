@@ -1,0 +1,57 @@
+Salamence @ Choice Band
+Ability: Intimidate
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+- Pursuit
+- Crunch
+- Ice Beam
+- Brick Break
+
+Venusaur @ Leftovers
+Ability: Overgrow
+Shiny: Yes
+EVs: 252 HP / 84 Def / 160 SpD / 12 Spe
+Sassy Nature
+- Sleep Powder
+- Leech Seed
+- Sludge Bomb
+- Giga Drain
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+- Fire Blast
+- Dragon Claw
+- Substitute
+- Focus Punch
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Earthquake
+
+Quagsire @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+- Surf
+- Earthquake
+- Protect
+- Haze

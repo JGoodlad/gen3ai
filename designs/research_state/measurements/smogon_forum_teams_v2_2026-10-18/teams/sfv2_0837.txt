@@ -1,0 +1,57 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+- Brick Break
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Refresh
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 216 HP / 180 SpA / 112 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Sleep Powder
+- Explosion
+- Hidden Power [Grass]
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+- Recover
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 216 Atk / 44 SpD
+Adamant Nature
+- Rock Slide
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Recover
+- Rapid Spin

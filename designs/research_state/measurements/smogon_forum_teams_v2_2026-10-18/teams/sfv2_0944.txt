@@ -1,0 +1,57 @@
+Moltres @ Choice Band
+Ability: Pressure
+EVs: 248 Atk / 24 SpA / 236 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Overheat
+- Hidden Power [Fighting]
+- Aerial Ace
+- Sunny Day
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 64 HP / 176 Atk / 132 Def / 136 SpD
+Adamant Nature
+- Curse
+- Self-Destruct
+- Return
+- Earthquake
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Sunny Day
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Rock Slide
+
+Exeggutor @ Lum Berry
+Ability: Chlorophyll
+EVs: 48 HP / 252 SpA / 208 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Sleep Powder
+- Sunny Day
+- Solar Beam
+- Hidden Power [Ice]

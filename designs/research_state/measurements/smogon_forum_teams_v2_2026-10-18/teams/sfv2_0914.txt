@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 16 HP / 216 SpA / 24 SpD / 252 Spe
+Rash Nature
+- Dragon Claw
+- Wish
+- Rock Slide
+- Fire Blast
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 112 HP / 144 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Encore
+- Recover
+- Light Screen
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Zap Cannon
+
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 32 HP / 252 Def / 224 SpD
+Impish Nature
+- Whirlwind
+- Knock Off
+- Brick Break
+- Protect
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 8 HP / 248 Atk / 40 SpD / 212 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+- Focus Punch
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 88 HP / 240 Atk / 8 SpD / 172 Spe
+Jolly Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Taunt
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake

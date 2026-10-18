@@ -1,0 +1,55 @@
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Drill Peck
+- Spikes
+- Protect
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 84 HP / 252 Def / 160 SpA / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Blizzard
+- Toxic
+- Soft-Boiled
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 72 SpA / 184 Spe
+Quiet Nature
+- Crunch
+- Substitute
+- Focus Punch
+- Thunderbolt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 52 Def / 64 SpD / 140 Spe
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Recover
+- Perish Song
+- Heal Bell
+
+Dugtrio @ Leftovers
+Ability: Arena Trap
+EVs: 4 HP / 116 Atk / 136 SpD / 252 Spe
+Jolly Nature
+- Earthquake
+- Substitute
+- Toxic
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 192 Def / 64 Spe
+Relaxed Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion

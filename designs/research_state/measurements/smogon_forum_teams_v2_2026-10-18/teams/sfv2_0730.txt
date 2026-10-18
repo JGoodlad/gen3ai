@@ -1,0 +1,58 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 228 SpA / 12 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Baton Pass
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 180 HP / 80 Atk / 248 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 208 HP / 252 Atk / 48 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Superpower
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Toxic
+- Substitute
+- Surf
+- Endeavor
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 224 HP / 104 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Leech Seed
+- Sleep Powder
+- Giga Drain
+- Hidden Power [Ice]

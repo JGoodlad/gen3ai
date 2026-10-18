@@ -1,0 +1,58 @@
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 24 HP / 252 Atk / 228 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Brick Break
+- Hidden Power [Bug]
+- Focus Punch
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 48 Def / 40 SpA / 36 SpD / 136 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 84 Def / 40 SpA / 136 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Psychic
+- Recover
+- Hidden Power [Grass]
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 232 HP / 216 Atk / 60 Spe
+Adamant Nature
+- Protect
+- Rock Slide
+- Superpower
+- Explosion
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+IVs: 0 Atk
+- Toxic
+- Thunderbolt
+- Ice Beam
+- Recover

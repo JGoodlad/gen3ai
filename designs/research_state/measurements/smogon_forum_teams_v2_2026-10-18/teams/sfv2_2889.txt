@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 152 HP / 216 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 204 HP / 216 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 64 SpD / 192 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 SpD / 152 Spe
+Jolly Nature
+- Leech Seed
+- Shadow Ball
+- Swords Dance
+- Baton Pass
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Substitute
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 128 HP / 252 Def / 28 SpD / 100 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Wish
+- Roar
+- Baton Pass

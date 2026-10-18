@@ -1,0 +1,57 @@
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 244 Atk / 68 Def / 196 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Brick Break
+- Rock Slide
+- Hidden Power [Bug]
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 124 Def / 132 Spe
+Impish Nature
+- Sludge Bomb
+- Taunt
+- Haze
+- Will-O-Wisp
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 172 SpD / 84 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Light Screen
+- Rest
+- Toxic
+
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 128 Def / 120 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Counter
+- Roar
+- Toxic
+- Spikes
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 180 HP / 216 Atk / 112 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Calm Mind
+- Hidden Power [Grass]
+- Soft-Boiled

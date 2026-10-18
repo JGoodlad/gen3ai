@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Surf
+- Ice Beam
+- Hidden Power [Fire]
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Earthquake
+- Rock Slide
+- Toxic
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 0 Atk
+- Hypnosis
+- Explosion
+- Ice Punch
+- Thunderbolt
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 4 Atk / 252 Def
+Lax Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Baton Pass
+- Psychic
+- Recover

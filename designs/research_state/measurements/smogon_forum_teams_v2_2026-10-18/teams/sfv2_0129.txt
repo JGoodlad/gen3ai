@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 36 Def / 188 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Roar
+- Thunderbolt
+- Hidden Power [Grass]
+- Rest
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Def / 92 SpA / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Protect
+
+Umbreon @ Leftovers
+Ability: Synchronize
+Shiny: Yes
+EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Pursuit
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 52 Def / 112 SpD / 96 Spe
+Timid Nature
+IVs: 0 Atk
+- Fire Punch
+- Giga Drain
+- Taunt
+- Will-O-Wisp
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 136 HP / 252 Atk / 56 Def / 64 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]

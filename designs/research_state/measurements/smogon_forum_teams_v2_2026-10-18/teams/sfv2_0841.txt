@@ -1,0 +1,58 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 208 HP / 180 SpA / 120 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Explosion
+- Hidden Power [Grass]
+- Sleep Powder
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 Atk / 232 SpA / 252 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Fire Blast
+- Brick Break
+- Dragon Claw
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 252 SpA / 36 SpD / 220 Spe
+Timid Nature
+IVs: 0 Atk
+- Fire Blast
+- Crunch
+- Beat Up
+- Pursuit
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Rest
+- Toxic
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump

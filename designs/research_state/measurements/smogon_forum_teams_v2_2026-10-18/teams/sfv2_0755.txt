@@ -1,0 +1,58 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 240 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Substitute
+- Ice Beam
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Substitute
+- Ice Beam
+- Endeavor
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 Spe
+Impish Nature
+- Will-O-Wisp
+- Pain Split
+- Explosion
+- Taunt
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Rock]
+- Earthquake
+- Taunt
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 228 Def / 28 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Cross Chop
+- Hidden Power [Bug]
+- Rock Slide

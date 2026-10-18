@@ -1,0 +1,57 @@
+Blaziken @ Salac Berry
+Ability: Blaze
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+- Endure
+- Overheat
+- Rock Slide
+- Sky Uppercut
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 160 Def / 100 SpD / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Mirror Coat
+- Surf
+- Rest
+- Calm Mind
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 108 Atk / 204 Def / 52 SpA / 144 Spe
+Naughty Nature
+- Sunny Day
+- Solar Beam
+- Rapid Spin
+- Earthquake
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 232 HP / 140 Def / 96 SpA / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Baton Pass
+- Hidden Power [Ice]
+- Recover
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 144 Def / 112 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Agility
+- Roar

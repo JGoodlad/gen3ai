@@ -1,0 +1,59 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 80 HP / 160 Atk / 84 Def / 184 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Ghost]
+- Focus Punch
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Hidden Power [Ghost]
+- Sky Uppercut
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 96 Atk / 120 SpD / 40 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Refresh
+- Dragon Dance
+- Brick Break
+- Hidden Power [Flying]

@@ -1,0 +1,57 @@
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+- Rain Dance
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 56 SpD / 200 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 116 HP / 252 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 96 Atk / 160 SpA / 252 Spe
+Hasty Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 72 HP / 192 Atk / 60 Def / 4 SpA / 180 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 200 Def / 56 SpD
+Relaxed Nature
+- Body Slam
+- Fire Punch
+- Wish
+- Protect

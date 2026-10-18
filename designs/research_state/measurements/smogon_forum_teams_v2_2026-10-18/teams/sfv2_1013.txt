@@ -1,0 +1,56 @@
+Heracross @ Choice Band
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Megahorn
+- Rock Slide
+- Brick Break
+- Focus Punch
+
+Miltank (F) @ Leftovers
+Ability: Thick Fat
+EVs: 240 HP / 248 SpD / 20 Spe
+Careful Nature
+- Curse
+- Body Slam
+- Milk Drink
+- Heal Bell
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Brick Break
+- Ice Beam
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Protect
+- Toxic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 172 HP / 252 Atk / 12 Def / 20 SpA / 52 Spe
+Naughty Nature
+IVs: 30 HP / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 136 Atk / 212 SpD / 160 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance

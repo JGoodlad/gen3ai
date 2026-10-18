@@ -1,0 +1,55 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 204 HP / 252 Atk / 52 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Rock Slide
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Naive Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Sleep Talk
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 156 Atk / 100 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 68 Def / 8 SpA / 148 SpD / 36 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Wish
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 200 HP / 184 Atk / 124 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Thunder Wave
+- Dragon Dance
+- Earthquake
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 40 HP / 252 Atk / 216 Spe
+Jolly Nature
+- Focus Punch
+- Brick Break
+- Shadow Ball
+- Rock Slide

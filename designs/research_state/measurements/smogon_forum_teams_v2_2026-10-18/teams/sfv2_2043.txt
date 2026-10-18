@@ -1,0 +1,57 @@
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Surf
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 156 Def / 92 SpA / 20 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Leech Seed
+- Calm Mind
+- Hidden Power [Electric]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Agility
+- Metal Sound
+- Thunderbolt
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Roar

@@ -1,0 +1,57 @@
+Wailord (F) @ Leftovers
+Ability: Water Veil
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+- Water Spout
+- Hydro Pump
+- Ice Beam
+- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 108 SpA / 148 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Drill Peck
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 144 HP / 156 Atk / 112 SpD / 96 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace

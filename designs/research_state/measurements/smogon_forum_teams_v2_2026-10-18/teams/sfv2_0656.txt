@@ -1,0 +1,58 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Explosion
+- Earthquake
+- Meteor Mash
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 84 HP / 252 SpA / 172 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Surf
+- Ice Beam
+- Hidden Power [Grass]
+
+Smeargle @ Leftovers
+Ability: Own Tempo
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spore
+- Substitute
+- Baton Pass
+- Belly Drum
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Taunt
+- Earthquake
+- Substitute
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Curse
+- Rock Slide
+- Earthquake

@@ -1,0 +1,57 @@
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 220 SpA / 68 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Sleep Powder
+- Leech Seed
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 96 HP / 252 SpA / 160 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Substitute
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 252 SpA / 116 SpD / 140 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 68 Atk / 176 SpA / 16 Spe
+Rash Nature
+- Sludge Bomb
+- Will-O-Wisp
+- Fire Blast
+- Explosion

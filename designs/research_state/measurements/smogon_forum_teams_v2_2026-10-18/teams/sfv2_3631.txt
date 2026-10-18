@@ -1,0 +1,59 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Fire Blast
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 112 Def / 64 SpA / 60 SpD / 20 Spe
+Calm Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Rest
+- Psych Up
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 196 Def / 60 Spe
+Bold Nature
+IVs: 0 Atk
+- Roar
+- Calm Mind
+- Surf
+- Rest
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def
+Bold Nature
+IVs: 0 Atk
+- Hypnosis
+- Surf
+- Recover
+- Toxic
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Toxic
+- Fire Blast
+- Earthquake
+- Hidden Power [Flying]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 224 SpD / 32 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Whirlwind
+- Toxic

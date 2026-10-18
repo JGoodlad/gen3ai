@@ -1,0 +1,58 @@
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 140 Def / 104 SpD / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Flamethrower
+- Will-O-Wisp
+- Pain Split
+- Haze
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Fire Punch
+- Calm Mind
+- Wish
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Will-O-Wisp
+- Hidden Power [Grass]
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled
+- Wish
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 196 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Roar
+- Rest

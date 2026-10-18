@@ -1,0 +1,57 @@
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 160 SpA / 96 SpD
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Hidden Power [Ice]
+- Will-O-Wisp
+- Thunder
+- Memento
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+- Thunder Wave
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 180 Atk / 56 Def / 20 SpA / 252 Spe
+Naughty Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 196 HP / 200 Atk / 112 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Agility
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 84 HP / 84 Atk / 240 Def / 76 SpD / 24 Spe
+Adamant Nature
+- Return
+- Belly Drum
+- Shadow Ball
+- Earthquake
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 200 Def / 48 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Sleep Talk

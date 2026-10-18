@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 208 SpA / 124 SpD / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
+
+Smeargle @ Lum Berry
+Ability: Own Tempo
+EVs: 4 Atk / 252 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Spikes
+- Will-O-Wisp
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Dragon Dance
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 200 Def / 124 SpA / 176 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Fire Punch
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 196 HP / 128 Atk / 184 Spe
+Jolly Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge

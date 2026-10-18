@@ -1,0 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 136 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 160 Def / 96 SpD
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 116 Atk / 168 Def / 8 SpD / 12 Spe
+Adamant Nature
+IVs: 30 SpD
+- Rest
+- Curse
+- Body Slam
+- Hidden Power [Steel]
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 252 Def / 180 SpD / 60 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Haze
+- Surf
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Fire Blast

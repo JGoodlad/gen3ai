@@ -1,0 +1,56 @@
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 156 Atk / 120 Def / 48 SpA / 168 SpD
+Brave Nature
+- Body Slam
+- Brick Break
+- Fire Blast
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+- Earthquake
+- Thunder Punch
+- Ice Punch
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 224 HP / 4 Def / 140 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Spore
+- Stun Spore
+- Brick Break
+- Focus Punch
+
+Charizard @ Salac Berry
+Ability: Blaze
+EVs: 252 Atk / 76 SpD / 180 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Belly Drum
+- Hidden Power [Flying]
+- Rock Slide
+- Fire Blast
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Double-Edge

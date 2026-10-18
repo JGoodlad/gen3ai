@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 248 Atk / 8 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 212 SpA / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 40 Def / 32 SpD / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Punch
+- Taunt
+- Thunderbolt
+- Will-O-Wisp

@@ -1,0 +1,58 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Earthquake
+- Rock Slide
+- Focus Punch
+
+Dragonite @ Choice Band
+Ability: Inner Focus
+EVs: 56 HP / 252 Atk / 200 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Focus Punch
+- Earthquake
+- Double-Edge
+- Hidden Power [Flying]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Pursuit
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 72 HP / 144 Atk / 188 Def / 92 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Earthquake
+- Body Slam
+- Self-Destruct
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 200 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk

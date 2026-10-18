@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 248 HP / 136 Def / 100 SpD / 24 Spe
+Impish Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Wish
+- Protect
+- Hidden Power [Flying]
+- Toxic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 56 Atk / 188 SpA / 16 Spe
+Quiet Nature
+- Meteor Mash
+- Pursuit
+- Refresh
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 244 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Return
+- Rest
+- Self-Destruct
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 224 SpA / 32 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Sunny Day
+- Thunder Wave

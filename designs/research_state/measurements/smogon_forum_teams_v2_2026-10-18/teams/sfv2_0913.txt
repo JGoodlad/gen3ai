@@ -1,0 +1,58 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Aerial Ace
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Toxic
+- Endure
+- Hidden Power [Fire]
+
+Moltres @ Leftovers
+Ability: Pressure
+Hidden Power: Grass
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Recover
+- Thunderbolt
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Megahorn
+- Swords Dance
+- Rock Slide
+- Substitute
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 68 SpA / 148 Spe
+Timid Nature
+- Substitute
+- Calm Mind
+- Psychic
+- Thunderbolt

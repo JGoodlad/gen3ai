@@ -1,0 +1,56 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 68 SpA / 188 SpD
+Sassy Nature
+- Curse
+- Earthquake
+- Ice Beam
+- Rest
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Earthquake
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 16 HP / 192 Atk / 120 Def / 180 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 172 HP / 148 SpA / 188 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Giga Drain
+- Hypnosis
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+- Psychic
+- Leech Seed
+- Heal Bell
+- Recover

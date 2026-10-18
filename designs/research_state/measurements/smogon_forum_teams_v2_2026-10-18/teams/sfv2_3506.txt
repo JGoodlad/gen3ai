@@ -1,0 +1,57 @@
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 148 HP / 252 Atk / 108 Spe
+Adamant Nature
+- Focus Punch
+- Brick Break
+- Rock Slide
+- Shadow Ball
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Ice Beam
+- Thunder Wave
+- Hidden Power [Grass]
+- Recover
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Sludge Bomb
+- Will-O-Wisp
+- Pain Split
+- Explosion
+
+Blastoise @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 40 Def / 216 SpA
+Modest Nature
+IVs: 0 Atk
+- Refresh
+- Surf
+- Rapid Spin
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 120 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Calm Mind
+- Psychic
+- Hidden Power [Fire]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Aerial Ace

@@ -1,0 +1,56 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+- Brick Break
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 224 HP / 252 Def / 32 Spe
+Bold Nature
+- Seismic Toss
+- Wish
+- Counter
+- Soft-Boiled
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 172 Def / 96 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Refresh
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+- Protect
+- Drill Peck
+- Roar
+- Spikes
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Protect
+- Toxic
+- Hidden Power [Fire]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 220 SpA / 28 SpD / 20 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Pursuit
+- Crunch
+- Hidden Power [Grass]
+- Ice Beam

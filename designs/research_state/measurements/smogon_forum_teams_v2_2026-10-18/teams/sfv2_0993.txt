@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 36 Atk / 252 SpA / 220 Spe
+Naive Nature
+- Ice Punch
+- Thunder Punch
+- Earthquake
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 244 Atk / 12 SpA / 252 Spe
+Naive Nature
+IVs: 30 Def / 30 SpA
+- Dragon Dance
+- Hidden Power [Grass]
+- Rock Slide
+- Earthquake
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 40 HP / 252 Atk / 216 Spe
+Jolly Nature
+- Substitute
+- Focus Punch
+- Rock Slide
+- Megahorn
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 32 HP / 252 SpA / 224 Spe
+Timid Nature
+IVs: 3 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Hidden Power [Electric]
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 212 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide

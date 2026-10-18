@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Dragon Claw
+- Brick Break
+- Fire Blast
+- Wish
+
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Crunch
+- Rain Dance
+- Pursuit
+- Focus Punch
+
+Ludicolo @ Lum Berry
+Ability: Swift Swim
+EVs: 144 HP / 252 SpA / 112 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hydro Pump
+- Hidden Power [Grass]
+- Rain Dance
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 176 Atk / 20 Def / 36 SpD / 24 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 224 HP / 92 Def / 120 SpA / 72 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 112 Atk / 120 Def / 188 SpD / 8 Spe
+Adamant Nature
+- Return
+- Protect
+- Curse
+- Earthquake

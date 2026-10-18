@@ -1,0 +1,57 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Rock Slide
+- Brick Break
+- Double-Edge
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 36 Def / 72 SpA / 152 Spe
+Modest Nature
+IVs: 0 Atk
+- Giga Drain
+- Psychic
+- Calm Mind
+- Leech Seed
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 180 Def / 80 SpD
+Bold Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Beam
+- Thunder Wave
+- Recover
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 224 SpA / 32 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Substitute
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 136 Def / 68 SpA / 44 SpD / 12 Spe
+Relaxed Nature
+- Refresh
+- Protect
+- Earthquake
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 HP / 72 Atk / 200 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Brick Break
+- Dragon Dance
+- Refresh

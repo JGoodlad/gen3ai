@@ -1,0 +1,57 @@
+Arcanine @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 140 SpA / 116 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Extreme Speed
+- Iron Tail
+- Hidden Power [Fighting]
+- Overheat
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Aerodactyl @ Lum Berry
+Ability: Rock Head
+EVs: 24 HP / 220 Atk / 12 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+
+Smeargle @ Leftovers
+Ability: Own Tempo
+EVs: 248 HP / 8 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Belly Drum
+- Spore
+- Encore
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 76 HP / 112 Atk / 128 Def / 96 SpD / 96 Spe
+Adamant Nature
+- Self-Destruct
+- Return
+- Shadow Ball
+- Focus Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 60 Atk / 252 SpA / 196 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Baton Pass

@@ -1,0 +1,57 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Protect
+- Bulk Up
+- Brick Break
+- Hidden Power [Ghost]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Ice Punch
+- Thunderbolt
+- Giga Drain
+- Explosion
+
+Chansey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 16 Atk / 252 Def / 168 SpD / 40 Spe
+Impish Nature
+- Rest
+- Curse
+- Return
+- Shadow Ball
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Aerial Ace

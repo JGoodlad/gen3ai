@@ -1,0 +1,59 @@
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 20 Def / 240 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Blast
+- Knock Off
+- Rest
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 208 Atk / 40 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 76 Def / 164 SpD / 20 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 216 Def / 44 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rapid Spin
+- Recover
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Spikes
+- Whirlwind
+- Rest
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 8 Def / 252 SpD
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Toxic
+- Rest

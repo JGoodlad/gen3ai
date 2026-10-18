@@ -1,0 +1,60 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 248 HP / 52 Def / 192 SpA / 16 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Fire Blast
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 44 Def / 148 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Psychic
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 248 HP / 136 Def / 68 SpA / 44 SpD / 12 Spe
+Relaxed Nature
+- Surf
+- Focus Punch
+- Roar
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 248 HP / 216 SpD / 44 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Taunt
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 44 Def / 4 SpA / 112 SpD / 100 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
+- Explosion
+- Giga Drain
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 SpD / 44 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Rest
+- Sleep Talk
+- Roar

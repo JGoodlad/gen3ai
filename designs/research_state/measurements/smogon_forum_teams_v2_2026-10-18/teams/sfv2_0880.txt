@@ -1,0 +1,57 @@
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Earthquake
+- Dragon Dance
+- Hidden Power [Grass]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Sleep Talk
+
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 188 SpD / 68 Spe
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Protect
+- Spikes
+- Taunt
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Beam
+- Soft-Boiled
+- Toxic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 12 Atk / 36 Def / 200 SpD / 8 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 72 Def / 184 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Roar
+- Hidden Power [Fighting]

@@ -1,0 +1,58 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+- Brick Break
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 192 HP / 40 Atk / 148 Def / 128 SpD
+Careful Nature
+- Curse
+- Rest
+- Earthquake
+- Shadow Ball
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 240 HP / 228 Def / 40 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 136 Def / 96 SpD / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Leech Seed
+- Recover
+- Psychic
+- Baton Pass
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Magneton @ Charcoal
+Ability: Magnet Pull
+EVs: 24 HP / 252 SpA / 12 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Sunny Day
+- Toxic

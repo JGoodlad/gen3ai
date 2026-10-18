@@ -1,0 +1,56 @@
+Medicham @ Salac Berry
+Ability: Pure Power
+EVs: 4 HP / 224 Atk / 156 Def / 124 Spe
+Jolly Nature
+- Bulk Up
+- Brick Break
+- Rock Slide
+- Shadow Ball
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 160 SpA / 100 SpD
+Sassy Nature
+- Rock Slide
+- Pursuit
+- Crunch
+- Thunder
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Def / 80 SpD
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 48 HP / 16 Atk / 12 Def / 252 SpA / 180 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Hidden Power [Grass]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 80 HP / 252 Atk / 176 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Rock]
+- Earthquake
+- Double-Edge
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 112 Def / 144 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin

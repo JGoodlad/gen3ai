@@ -1,0 +1,56 @@
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Mach Punch
+- Sky Uppercut
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 224 Atk / 32 SpD
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 220 SpA / 164 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hydro Pump
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 208 HP / 96 SpA / 204 Spe
+Quiet Nature
+- Pursuit
+- Brick Break
+- Fire Blast
+- Crunch
+
+Scizor @ Salac Berry
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Swords Dance
+- Endure
+- Reversal
+- Hidden Power [Bug]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 148 HP / 208 SpA / 152 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Beam
+- Recover
+- Thunderbolt
+- Hydro Pump

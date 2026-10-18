@@ -1,0 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Ampharos @ Leftovers
+Ability: Static
+EVs: 252 HP / 224 SpA / 16 SpD / 16 Spe
+Mild Nature
+IVs: 30 Atk / 30 Def
+- Focus Punch
+- Thunderbolt
+- Substitute
+- Hidden Power [Ice]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 112 Atk / 144 Def / 140 SpD / 20 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Substitute
+- Focus Punch
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 28 HP / 12 Def / 252 SpA / 216 Spe
+Timid Nature
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 92 Def / 120 SpA / 44 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]

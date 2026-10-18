@@ -1,0 +1,56 @@
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunderbolt
+- Ice Beam
+- Calm Mind
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Recover
+- Refresh
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 60 SpD
+Relaxed Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Protect
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 16 Atk / 248 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
+- Focus Punch
+- Explosion
+- Thunderbolt
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Hasty Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Sleep Talk

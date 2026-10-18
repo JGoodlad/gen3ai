@@ -1,0 +1,64 @@
+Salamence @ Choice Band
+Ability: Intimidate
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Brick Break
+- Rock Slide
+
+Forretress @ Leftovers
+Ability: Sturdy
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Earthquake
+- Explosion
+- Spikes
+- Rapid Spin
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 208 HP / 80 Def / 216 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Counter
+- Crunch
+- Pursuit
+
+Breloom @ Leftovers
+Ability: Effect Spore
+Shiny: Yes
+EVs: 248 HP / 16 Atk / 56 SpD / 188 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 248 HP / 176 Def / 16 SpA / 68 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Thunderbolt
+- Soft-Boiled
+- Thunder Wave
+- Ice Beam

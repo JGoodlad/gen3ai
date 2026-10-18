@@ -1,0 +1,57 @@
+Clamperl @ Deep Sea Tooth
+Ability: Shell Armor
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Surf
+- Ice Beam
+- Rain Dance
+- Hidden Power [Electric]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 152 HP / 148 SpA / 208 Spe
+Naive Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hydro Pump
+- Hidden Power [Flying]
+- Taunt
+- Thunder Wave
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 124 Atk / 236 SpA / 148 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Psychic
+- Body Slam
+- Fire Punch
+- Hidden Power [Fighting]
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Def / 252 SpA / 252 Spe
+Rash Nature
+IVs: 2 Atk / 30 Def
+- Fire Blast
+- Hidden Power [Ice]
+- Beat Up
+- Toxic
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 104 Atk / 152 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

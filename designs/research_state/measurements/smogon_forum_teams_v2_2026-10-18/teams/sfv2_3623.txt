@@ -1,0 +1,53 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 32 Def / 224 SpD
+Calm Nature
+- Thunderbolt
+- Rest
+- Sleep Talk
+- Drill Peck
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 206 Def / 50 SpA
+Relaxed Nature
+- Ice Beam
+- Earthquake
+- Protect
+- Toxic
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 88 HP / 176 Atk / 132 Def / 112 SpD
+Adamant Nature
+- Rest
+- Sleep Talk
+- Body Slam
+- Shadow Ball
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 252 Spe / 4 SpA
+Naughty Nature
+- Earthquake
+- Rock Slide
+- Fire Blast
+- Crunch
+
+Aerodactyl @ Focus Band
+Ability: Rock Head
+EVs: 252 Atk / 252 Spe / 4 HP
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Double Edge
+- Aerial Ace
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 HP
+Calm Nature
+- Thunder Wave
+- Soft Boiled
+- Thunderbolt
+- Ice Beam

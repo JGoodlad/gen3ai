@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Fighting]
+- Double-Edge
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 52 Def / 152 SpD / 52 Spe
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Wish
+- Hidden Power [Grass]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 60 HP / 252 Atk / 196 Spe
+Adamant Nature
+- Brick Break
+- Focus Punch
+- Shadow Ball
+- Recover
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 32 SpA / 224 Spe
+Lonely Nature
+- Dynamic Punch
+- Ice Punch
+- Thunderbolt
+- Explosion

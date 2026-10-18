@@ -1,0 +1,58 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Surf
+- Calm Mind
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Seismic Toss
+- Toxic
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Impish Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Whirlwind
+- Rest
+
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 36 Atk / 220 SpD
+Careful Nature
+- Rest
+- Sleep Talk
+- Shadow Ball
+- Will-O-Wisp
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Psychic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Leech Seed
+- Heal Bell
+- Recover

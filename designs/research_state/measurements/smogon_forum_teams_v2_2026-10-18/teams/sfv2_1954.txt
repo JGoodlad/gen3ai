@@ -1,0 +1,57 @@
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 48 HP / 252 Atk / 208 Spe
+Adamant Nature
+- Brick Break
+- Substitute
+- Shadow Ball
+- Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 Def
+- Heat Wave
+- Hidden Power [Ice]
+- Beat Up
+- Brick Break
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 48 HP / 252 Atk / 52 Def / 136 SpD / 20 Spe
+Adamant Nature
+- Double-Edge
+- Focus Punch
+- Shadow Ball
+- Yawn
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Rain Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 12 Atk / 60 Def / 252 SpA / 16 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Meteor Mash
+- Pursuit
+- Explosion

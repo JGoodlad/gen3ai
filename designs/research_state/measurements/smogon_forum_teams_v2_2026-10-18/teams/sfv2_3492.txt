@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+- Substitute
+- Dragon Claw
+- Flamethrower
+- Brick Break
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 SpD
+- Spikes
+- Thief
+- Hidden Power [Steel]
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 80 Def / 28 SpA / 152 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 64 Atk / 176 Def / 16 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 228 SpA / 28 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Thunderbolt
+- Ice Beam
+- Soft-Boiled
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 Def / 44 SpA / 100 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Hidden Power [Grass]
+- Perish Song

@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Toxic
+- Protect
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 84 Def / 156 SpA / 16 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder
+- Hidden Power [Grass]
+- Rain Dance
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Heal Bell
+- Recover
+- Hidden Power [Grass]
+- Leech Seed
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 44 Atk / 188 Def / 24 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rest
+- Rapid Spin

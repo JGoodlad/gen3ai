@@ -1,0 +1,59 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 80 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Hypnosis
+- Mean Look
+- Perish Song
+- Protect
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 60 Atk / 196 Def
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Rapid Spin
+- Earthquake
+- Rest
+- Hidden Power [Rock]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Counter
+- Ice Beam
+- Soft-Boiled
+- Aromatherapy
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Hidden Power [Grass]
+- Thunderbolt
+- Roar
+
+Jirachi @ Choice Band
+Ability: Serene Grace
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 SpA / 30 SpD
+- Body Slam
+- Hidden Power [Ground]
+- Shadow Ball
+- Dynamic Punch
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Haze
+- Surf
+- Toxic
+- Wish

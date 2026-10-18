@@ -1,0 +1,59 @@
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 72 Def / 40 SpA / 80 SpD / 76 Spe
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 76 Def / 148 SpD / 36 Spe
+Careful Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Hidden Power [Fighting]
+- Wish
+- Protect
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 248 HP / 176 Def / 16 SpD / 68 Spe
+Impish Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Ice Beam
+- Heal Bell
+- Roar
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 0 Atk
+- Knock Off
+- Harden
+- Rest
+- Seismic Toss
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 84 Def / 176 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Mean Look
+- Toxic
+- Pursuit
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]

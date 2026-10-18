@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 208 Atk / 52 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Substitute
+- Self-Destruct
+- Focus Punch
+- Sunny Day
+
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Roar
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar
+
+Gyarados @ Leftovers
+Ability: Intimidate
+Happiness: 0
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Fighting]
+- Double-Edge
+- Earthquake

@@ -1,0 +1,59 @@
+Kingler @ Silk Scarf
+Ability: Hyper Cutter
+EVs: 4 HP / 252 Atk / 252 Spe
+Naughty Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Double-Edge
+- Surf
+- Swords Dance
+- Hidden Power [Rock]
+
+Shelgon @ Lum Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Double-Edge
+- Rock Slide
+- Brick Break
+
+Pupitar @ Leftovers
+Ability: Shed Skin
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance
+
+Mantine @ Leftovers
+Ability: Water Absorb
+Shiny: Yes
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Icy Wind
+- Protect
+
+Magnemite @ Magnet
+Ability: Magnet Pull
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic
+
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 108 HP / 148 Atk / 252 SpD
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct

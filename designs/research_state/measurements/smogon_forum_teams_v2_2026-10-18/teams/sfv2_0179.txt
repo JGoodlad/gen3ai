@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 96 HP / 8 Def / 152 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Baton Pass
+- Thunderbolt
+- Hidden Power [Grass]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 36 Def / 88 SpA / 76 SpD / 68 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Perish Song
+- Leech Seed
+- Recover
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 36 Def / 40 SpA / 32 SpD / 148 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rapid Spin
+- Recover
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 224 Atk / 252 Def / 32 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Brick Break
+- Focus Punch
+- Shadow Ball
+- Rock Slide
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+- Thunder
+- Ice Beam
+- Thunder Wave
+- Recover

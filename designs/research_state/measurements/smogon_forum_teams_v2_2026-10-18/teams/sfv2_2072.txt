@@ -1,0 +1,63 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+Shiny: Yes
+EVs: 184 HP / 108 Atk / 216 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Ghost]
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
+
+Claydol @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 212 HP / 252 Def / 44 Spe
+Impish Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Thunder Wave
+- Seismic Toss
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+Shiny: Yes
+EVs: 112 HP / 252 SpA / 144 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunder
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 248 Def / 8 Spe
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Recover
+- Thunder Wave
+- Ice Beam
+- Hidden Power [Fighting]

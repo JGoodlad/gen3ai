@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 232 SpA / 56 SpD / 196 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Fire Blast
+- Substitute
+- Dragon Claw
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Roar
+- Drill Peck
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Ice Beam
+- Soft-Boiled
+- Fire Blast
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Earthquake
+- Toxic
+- Protect
+- Rock Slide
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 HP / 252 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Thunder Wave

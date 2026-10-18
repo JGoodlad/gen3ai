@@ -1,0 +1,59 @@
+Smeargle (F) @ Salac Berry
+Ability: Own Tempo
+EVs: 248 HP / 84 SpD / 172 Spe
+Timid Nature
+IVs: 0 Atk
+- Spore
+- Spikes
+- Encore
+- Destiny Bond
+
+Aerodactyl (M) @ Liechi Berry
+Ability: Pressure
+Shiny: Yes
+EVs: 76 HP / 220 Atk / 32 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Substitute
+- Rock Slide
+- Earthquake
+- Hidden Power [Fighting]
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 136 HP / 240 Atk / 16 Def / 112 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Alakazam (M) @ Leftovers
+Ability: Inner Focus
+EVs: 212 HP / 44 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Encore
+- Psychic
+- Fire Punch
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Destiny Bond
+- Counter
+- Ice Punch
+- Thunderbolt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 56 SpD / 200 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

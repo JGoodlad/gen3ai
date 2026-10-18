@@ -1,0 +1,59 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpA
+Bold Nature
+IVs: 0 Atk
+- Hypnosis
+- Surf
+- Ice Beam
+- Recover
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 144 HP / 112 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Protect
+- Thunder Wave
+- Hidden Power [Fire]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 244 Atk / 156 SpD / 108 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 176 Def / 52 SpD / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Baton Pass
+- Leech Seed
+- Recover
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 72 SpD / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Ice Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 204 Def / 40 SpD / 16 Spe
+Relaxed Nature
+- Explosion
+- Rapid Spin
+- Earthquake
+- Psychic

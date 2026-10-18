@@ -1,0 +1,56 @@
+Trapinch @ Choice Band
+Ability: Arena Trap
+EVs: 252 HP / 220 Atk / 36 Def
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Quick Attack
+- Hyper Beam
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 52 HP / 236 SpA / 220 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Sunny Day
+- Explosion
+- Solar Beam
+- Hidden Power [Fire]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 108 HP / 252 SpA / 148 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Rain Dance
+- Roar
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Timid Nature
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 36 SpA / 180 Spe
+Modest Nature
+- Substitute
+- Calm Mind
+- Psychic
+- Fire Punch
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Endure
+- Reversal

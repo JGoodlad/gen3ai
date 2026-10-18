@@ -1,0 +1,57 @@
+Politoed (F)
+Ability: Water Absorb
+EVs: 136 HP / 188 SpA / 184 Spe
+Timid Nature
+IVs: 0 Atk
+- Hypnosis
+- Hydro Pump
+- Ice Beam
+- Thief
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 236 SpA / 20 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 120 SpA / 136 Spe
+Rash Nature
+- Substitute
+- Surf
+- Ice Beam
+- Focus Punch
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 4 SpA / 252 Spe
+Naive Nature
+- Substitute
+- Ice Punch
+- Thunder
+- Dynamic Punch
+
+Charizard @ Lum Berry
+Ability: Blaze
+EVs: 144 Atk / 212 SpA / 152 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass

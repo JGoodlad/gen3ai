@@ -1,0 +1,57 @@
+Glalie @ Salac Berry
+Ability: Inner Focus
+Shiny: Yes
+EVs: 144 HP / 132 Def / 16 SpD / 216 Spe
+Jolly Nature
+- Substitute
+- Explosion
+- Spikes
+- Ice Beam
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Thunder Wave
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Def / 224 SpA / 28 Spe
+Quiet Nature
+- Ice Beam
+- Substitute
+- Thunderbolt
+- Focus Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 104 Def / 252 SpA / 152 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Overheat
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion

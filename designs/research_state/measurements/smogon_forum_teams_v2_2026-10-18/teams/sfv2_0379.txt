@@ -1,0 +1,58 @@
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 84 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Baton Pass
+- Calm Mind
+- Recover
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 84 Atk / 176 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 240 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Toxic
+- Recover
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 56 HP / 252 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 112 Atk / 52 Def / 96 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 64 SpA / 152 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Thunderbolt
+- Calm Mind
+- Substitute

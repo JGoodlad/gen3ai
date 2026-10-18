@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 204 Atk / 16 Def / 40 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Sludge Bomb
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 80 HP / 248 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 240 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Toxic
+- Recover
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 44 HP / 252 Atk / 212 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Taunt
+- Dragon Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 104 HP / 176 Atk / 136 Def / 68 SpD / 24 Spe
+Careful Nature
+- Body Slam
+- Shadow Ball
+- Curse
+- Self-Destruct

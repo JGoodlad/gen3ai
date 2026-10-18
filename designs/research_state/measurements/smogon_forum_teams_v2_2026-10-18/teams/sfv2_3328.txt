@@ -1,0 +1,58 @@
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 148 Atk / 168 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Dragon Dance
+- Hidden Power [Bug]
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 16 Atk / 88 SpD / 152 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Explosion
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 136 SpA / 120 Spe
+Rash Nature
+- Surf
+- Substitute
+- Focus Punch
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 92 HP / 236 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Baton Pass
+- Calm Mind
+- Hidden Power [Fire]
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 160 SpA / 96 SpD
+Careful Nature
+IVs: 0 Atk
+- Wish
+- Pursuit
+- Tickle
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 224 HP / 220 SpA / 64 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Protect
+- Baton Pass
+- Hidden Power [Grass]
+- Thunderbolt

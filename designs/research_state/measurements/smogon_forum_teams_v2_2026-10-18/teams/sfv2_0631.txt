@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 HP / 252 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 80 HP / 176 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Encore
+- Psychic
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 160 SpA / 96 Spe
+Modest Nature
+- Surf
+- Ice Beam
+- Substitute
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Hidden Power [Fire]
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 100 Atk / 120 SpD / 36 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Refresh
+- Brick Break
+- Hidden Power [Flying]

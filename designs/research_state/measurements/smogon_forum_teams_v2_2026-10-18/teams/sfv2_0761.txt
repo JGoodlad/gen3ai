@@ -1,0 +1,56 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Roar
+- Rest
+- Surf
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 40 SpD
+Brave Nature
+- Earthquake
+- Ice Beam
+- Rapid Spin
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 244 HP / 240 SpD / 24 Spe
+Careful Nature
+- Protect
+- Spikes
+- Roar
+- Drill Peck
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 36 Def / 92 SpA / 100 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Leech Seed
+- Hidden Power [Grass]
+- Baton Pass
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin

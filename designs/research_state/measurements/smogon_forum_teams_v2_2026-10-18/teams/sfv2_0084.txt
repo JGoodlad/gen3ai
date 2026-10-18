@@ -1,0 +1,56 @@
+Venusaur (M) @ Leftovers
+Ability: Overgrow
+EVs: 180 HP / 28 Atk / 80 Def / 108 SpD / 112 Spe
+Calm Nature
+- Sleep Powder
+- Sludge Bomb
+- Leech Seed
+- Giga Drain
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 12 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Hidden Power [Grass]
+- Flamethrower
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Earthquake
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 224 Atk / 32 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 36 Def / 164 SpD / 60 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Toxic
+- Thunder Wave
+- Hidden Power [Grass]
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Rest
+- Protect

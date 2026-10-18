@@ -1,0 +1,60 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Explosion
+- Hidden Power [Grass]
+
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+Happiness: 0
+EVs: 52 HP / 176 Atk / 176 Def / 96 SpD / 8 Spe
+Adamant Nature
+- Frustration
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 96 SpA / 164 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rest
+- Calm Mind
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Toxic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 76 SpD / 180 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+- Dragon Dance

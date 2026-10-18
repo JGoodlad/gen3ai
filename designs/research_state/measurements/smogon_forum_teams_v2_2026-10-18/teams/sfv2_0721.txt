@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Brick Break
+- Fire Blast
+- Hydro Pump
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Heal Bell
+- Hidden Power [Grass]
+
+Clefable @ Leftovers
+Ability: Cute Charm
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Encore
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Earthquake
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 212 Def / 44 SpD / 4 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Roar
+- Hydro Pump
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 248 SpA / 8 Spe
+Modest Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Focus Punch

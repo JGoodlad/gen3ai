@@ -1,0 +1,57 @@
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Substitute
+- Hidden Power [Ice]
+- Baton Pass
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 40 HP / 184 Atk / 208 Def / 76 SpD
+Careful Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 196 HP / 252 SpA / 48 SpD / 12 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 76 HP / 252 SpA / 180 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Hidden Power [Grass]
+- Fire Blast
+- Brick Break
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 216 HP / 252 SpA / 40 Spe
+Quiet Nature
+- Focus Punch
+- Earthquake
+- Hydro Pump
+- Ice Beam

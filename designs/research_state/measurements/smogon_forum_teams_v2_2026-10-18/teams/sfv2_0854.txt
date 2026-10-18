@@ -1,0 +1,58 @@
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Protect
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 92 Def / 164 SpD
+Careful Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Protect
+- Counter
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 72 SpA / 184 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Substitute
+- Focus Punch
+- Hidden Power [Grass]
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 104 HP / 252 Atk / 152 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Fighting]
+- Earthquake
+- Double-Edge
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 96 Def / 160 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Wish
+- Protect
+- Roar

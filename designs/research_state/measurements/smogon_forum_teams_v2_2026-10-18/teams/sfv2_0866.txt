@@ -1,0 +1,58 @@
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
+- Wish
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Protect
+- Toxic
+- Whirlwind
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Roar
+- Hidden Power [Grass]
+- Will-O-Wisp
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 36 Atk / 204 Def / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 216 Def / 40 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Rapid Spin
+- Thunder Wave
+- Recover
+
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 192 Atk / 252 Def / 64 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Knock Off
+- Hidden Power [Bug]
+- Brick Break

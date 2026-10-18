@@ -1,0 +1,55 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 88 SpD / 168 Spe
+Adamant Nature
+IVs: 0 SpA
+- Earthquake
+- Rock Slide
+- Beat Up
+- Aerial Ace
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Toxic
+- Hidden Power [Ice]
+- Fire Blast
+- Sunny Day
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 32 HP / 20 Atk / 252 SpA / 204 Spe
+Modest Nature
+- Psychic
+- Sunny Day
+- Solar Beam
+- Explosion
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 92 Atk / 252 Def / 128 SpA / 36 Spe
+Lax Nature
+- Earthquake
+- Giga Drain
+- Fire Blast
+- Toxic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Brick Break
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Thunder Wave
+- Explosion

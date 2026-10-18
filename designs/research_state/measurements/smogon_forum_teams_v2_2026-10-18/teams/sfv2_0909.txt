@@ -1,0 +1,54 @@
+Venusaur (M) @ Leftovers
+Ability: Overgrow
+EVs: 248 HP / 8 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Leech Seed
+- Hidden Power [Fire]
+- Giga Drain
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Naughty Nature
+- Substitute
+- Focus Punch
+- Crunch
+- Thunder
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Bold Nature
+- Wish
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Whirlwind
+- Protect
+- Toxic

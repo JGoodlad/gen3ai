@@ -1,0 +1,59 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 212 Def / 28 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Flamethrower
+- Dragon Breath
+- Protect
+- Wish
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Earthquake
+- Superpower
+- Explosion
+
+Regice @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 20 HP / 212 Atk / 176 SpA / 100 Spe
+Gentle Nature
+- Ice Beam
+- Thunderbolt
+- Superpower
+- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Roar
+- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 64 Def / 40 SpA / 120 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Rapid Spin

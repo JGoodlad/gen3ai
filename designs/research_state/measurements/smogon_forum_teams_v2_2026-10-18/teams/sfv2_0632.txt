@@ -1,0 +1,56 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 32 HP / 144 Def / 108 SpA / 224 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Baton Pass
+- Substitute
+
+Breloom @ Black Belt
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 40 HP / 252 SpA / 24 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Pursuit
+- Will-O-Wisp
+- Beat Up
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 96 HP / 168 Atk / 132 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
+- Brick Break
+- Rock Slide
+- Earthquake

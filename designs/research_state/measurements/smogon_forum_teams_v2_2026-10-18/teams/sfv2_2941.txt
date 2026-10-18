@@ -1,0 +1,56 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 148 SpA / 112 Spe
+Modest Nature
+- Roar
+- Toxic
+- Flamethrower
+- Rest
+
+Roselia @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 20 SpA / 176 SpD / 64 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Spikes
+- Leech Seed
+- Hidden Power [Grass]
+- Aromatherapy
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 248 Atk / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Explosion
+- Shadow Ball
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Explosion
+- Ice Punch
+- Thunderbolt

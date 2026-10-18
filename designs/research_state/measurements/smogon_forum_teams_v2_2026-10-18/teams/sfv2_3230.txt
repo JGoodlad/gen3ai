@@ -1,0 +1,55 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 248 Atk / 8 SpD / 252 Spe
+Jolly Nature
+- Rock Slide
+- Earthquake
+- Brick Break
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 248 SpA / 8 SpD / 252 Spe
+Mild Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Wish
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 236 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Thunder Wave
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 168 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 208 SpA / 180 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Drill Peck
