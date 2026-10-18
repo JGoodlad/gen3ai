@@ -42,7 +42,26 @@ gen3_data.priors.teammates(species)     # {teammate_id: P(teammate|species)} (Sm
 gen3_data.learnset.is_legal(species, move_id)      # gen3 legal-movepool gate (hard legality)
 gen3_data.learnset.get_legal_moves(species)        # frozenset|None (None = unknown → no constraint)
 from agents.gen3_data import format_spec          # gen3ou's rules + bans, ONE story each (below)
+from agents.gen3_data import hp_repair            # replay-derived teams' Hidden Power artifact, repaired (below)
 ```
+
+## The HIDDEN POWER REPAIR (`hp_repair.py`, `gen3_hp_repair_v1`)
+
+Replay-derived teams (Metamon's `hl_05_26`, `utils.ladder_corpus`) write `Hidden Power` with no type and all-31 (or no)
+IVs, which is HP **Dark** under the gen-3 formula — an artifact, since a gen-3 replay never reveals the type.
+`hp_repair.repair_team(paste, seed)` re-samples ONLY such a set (a typed HP, or one with any IV below 31, stays byte
+for byte): the set's SIDE is the sign of three votes — EVs (Atk vs SpA), nature, the other attacking moves by the
+gen-3 TYPE rule (`SPECIAL_TYPES`, pinned to `deps/pokemon-showdown/data/mods/gen3/scripts.ts`) — with the real Atk vs SpA stat as the
+tie-break; the TYPE is drawn from Smogon's species HP usage (`priors.hidden_power`) restricted to that side (the
+format-wide Smogon usage if the species has none there); the IVs are the validator's `fillStats(HPivs, 31)`
+(`hp_repair.HP_IVS`, pinned to `deps/pokemon-showdown/data/typechart.ts`; power 70). One RNG per team (`team_seed(base, team_id)`), every
+draw returned as a record. Only the HP move line and the IVs line change. 🚨 **`utils.gen3_utils.GEN3_HP_IVS` is
+NOT the validator's table** — its Ghost row is 30 Atk / 30 SpD, Showdown's 30 Def / 30 SpD (both Ghost, power 70;
+`designs/ops/TECH_DEBT_BACKLOG.md`). Tests: `hp_repair_test.py` (unit) and
+`hp_repair_showdown_integration_test.py` (every type through the pinned validator and `getHiddenPower`, the
+variable-power attack list re-derived from Showdown, and the speed-tie pin: HP Fire's 30 Speed IV makes a Jolly 252
+Salamence 327, not 328). First use: `heldout72_hpfix`
+(`designs/research_state/measurements/heldout72_hpfix_kakuna_2026-10-18/`).
 
 ## The FORMAT SPEC (`format_spec.py`, `team_legality.py`) — gen3ou's rules, declared once
 

@@ -28,6 +28,7 @@ By bridging Python to Node.js, we can utilize the actual `pokemon-showdown` code
 
 ### Team validation (request/response)
 1.  **`validate_team.js`**: A Node.js script that imports the Showdown `TeamValidator` and `Teams` modules. It reads a team and format from `stdin` and outputs a validation result as JSON.
+    **`hp_set_check.js`** (+ `hp_set_check.py`, `check_teams`) is its Hidden Power sibling: per team the validator's verdict and, per set, the type and power `dex.getHiddenPower` gives the IVs (gen 3), the IVs after the validator ran, and the battle's stored stats — the oracle of `agents.gen3_data.hp_repair`'s integration tests.
 2.  **`team_validator.py`**: The Python wrapper that manages the subprocess communication with the Node bridge.
 
 ### Local battle (streaming) — run whole battles with no Showdown server
