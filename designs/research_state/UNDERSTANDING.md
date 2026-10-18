@@ -729,6 +729,18 @@ So the drop is not explained by unknown entities or by stall. The leading hypoth
 pool (policy, team identification, belief heads), the replay population, Kakuna's home turf and the Hidden Power
 artifact. Each has a kill test, and the cheapest discriminator, a THIRD-SOURCE set (X37a, CPU), is
 `endstate/design_diversity_teams_opponents.md` §3. [ledger 2026-10-18 · *DIVERSITY OF TEAMS AND OPPONENTS*]
+**How ladder-like heldout72 is (2026-10-18, zero games):** [MEASURED · descriptive]
+- The ladder is sample-CORE-heavy: 85 % of 22,862 `hl_05_26` teams share ≥ 4 species with one sample team and 18 %
+  share all six.
+- Only 0.2 % share ≥ 4 full sets, an understatement caused by usage fills.
+- heldout72's strata (22 / 61 / 17 % CORE / NEAR / FAR) match the ladder's (18 / 67 / 15 %). It is not off-meta by
+  species; it differs from the sample teams in its SETS and its Hidden Power artifact.
+- X26 piloting held-out teams scores 0.43 on sample-like cores and 0.25 on FAR cores (descriptive, confounded with
+  team strength).
+- No team set is neutral. THE external headline is now L, a ladder-weighted deployment estimate, read with a
+  familiarity matrix (`endstate/design_diversity_teams_opponents.md` §5).
+
+[ledger 2026-10-18 · *THE EVALUATION MATRIX*]
 
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon

@@ -532,10 +532,11 @@ window). The toy side costs about the same again for an arm in the calibration p
 Plus **R0**, at the plateau call and before any arm: a fresh best responder against P\* itself (≈ 1.1 GPU-h). It gives
 the plateau's exploitability baseline and A6's trigger.
 
-**PROPOSED 2026-10-18, NOT adopted (nothing in this section changes without the orchestrator's GO):** a diversity arm
-**D1** would rank 2nd, after A1 and ahead of A2. It widens the team pool on both sides with HP-repaired `hl_05_26`
-teams, minus every held-out panel. It is read against C0 with its OWN primary: the held-out panel vs Kakuna, with
-in-pool non-inferiority as a co-primary. The design is [`design_diversity_teams_opponents.md`](design_diversity_teams_opponents.md)
+**ADOPTED 2026-10-18 by the orchestrator (owner question Q5), CONDITIONAL on X37:** a diversity arm **D1** ranks 2nd,
+after A1 and ahead of A2. The table above is unchanged until X37 reads. D1 widens the team pool on both sides with
+HP-repaired `hl_05_26` teams, minus every frozen panel. It is read against C0 with its OWN primary: the pooled
+UNFAMILIAR cells vs Kakuna (heldout72_hpfix, smogon_forum, P72). Its co-primary is no loss worse than −2.0 pp on
+SAMPLE-TEAM ground, measured in-house. The design is [`design_diversity_teams_opponents.md`](design_diversity_teams_opponents.md)
 §4.2 and §6. Every arm above draws POOL teams, and R1 and G-K read pool teams only (that doc's F-DV-1).
 
 **The transfer calibration (§5.2) is A1 + A2.** Both are architecture-agnostic and both are built, so calibration
@@ -909,3 +910,4 @@ The T55 build (2026-10-17) adds:
 | 2026-10-17 | **The fork cost** | ≈ 4.4 GPU-h per 20M production seed (MEASURED from X26's late-run checkpoints) | 3.4 (assumed ≈ 1,600 fps) | F13 |
 | 2026-10-17 | **T55, the stage kit** (build worker) | `src/main/x35/`: the readout as pure functions with a constructed-case self-check committed BEFORE any real read; R frozen write-once with every sha256 and re-verified before each launch; every argv built from the frozen R (never typed) and equal to its validated stand-in; a launch script whose default is a dry run, HOLDs (exit 7) on the first failed pre-check and launches only on a literal `GO`; the home72 config committed byte-identical with a 72-team manifest | hand-substituted argvs at the call (the drift F18 / F14 came from); a decision function reading the ledger itself (the readout takes declared cells or numbers); regenerating home72 (a second team set to prove identical) | §5.6.4, §5.6.7; F25–F31; STAGED_PLAN §6 |
 | 2026-10-18 | **Cross-references to the diversity design (design worker; no change to X35)** | §5.6.2 and §5.6.6 point at `design_diversity_teams_opponents.md`. Its arm D1 is PROPOSED at rank 2, and adding a held-out panel to G-K is PROPOSED, both pending the orchestrator's GO. §5.6.6's "P\* against X26 @161M" reference values were updated from the n = 100 / 240 reads (0.600 / 0.570) to the n = 400 reads (0.575 home72 / 0.497 away; 0.395 heldout72) | editing the arm list or the readout here before adoption | `design_diversity_teams_opponents.md` §6, F-DV-1; ledger 2026-10-17 / 2026-10-18 |
+| 2026-10-18 | **D1 ADOPTED at rank 2, conditional on X37** (orchestrator, Q5 of `design_diversity_teams_opponents.md`); its readout follows that doc's evaluation matrix (§5.6) | the §5.6.2 pointer updated from PROPOSED to ADOPTED-CONDITIONAL; the arm table itself unchanged until X37 reads | adding D1 to the table before X37 (its rank depends on X37's verdict) | `design_diversity_teams_opponents.md` §5.6, §6.1, §9 |

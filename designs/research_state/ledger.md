@@ -26943,3 +26943,42 @@ Tag: **DESIGN · MEASUREMENT (descriptive, post hoc) · held-out gap hypotheses 
 panels · D1 proposed at X35 rank 2 · PROVISIONAL (161M)** · evidence: `endstate/design_diversity_teams_opponents.md`;
 `research_state/measurements/diversity_d0a_2026-10-18/` (README, `d0a.json`, `scripts/d0a_team_covariates.py`);
 `research_state/EXPERIMENT_BACKLOG.md` DV-1 … DV-10 (X37a–X43)
+
+### 2026-10-18 · DESIGN + MEASUREMENT (descriptive) · **THE EVALUATION MATRIX: no team set is neutral, so every Kakuna number travels with its bias; THE external headline becomes L, a LADDER-WEIGHTED deployment estimate (we bring sample teams; the opponent's team weighted CORE 0.176 / NEAR 0.675 / FAR 0.149 by `ladder_weights_v1`); the ladder is sample-CORE-heavy (85 % of 22,862 `hl_05_26` teams share ≥ 4 species with one sample team) and heldout72's strata MATCH it (22 / 61 / 17 % vs 18 / 67 / 15 %); X26 pilots off-meta (FAR) held-out teams at 0.250 vs 0.425–0.430 on sample-like cores (descriptive)**
+
+**Design** (`endstate/design_diversity_teams_opponents.md` §5, reworked on the owner's 2026-10-18 input: "I like sample
+teams the most, but it is biased in their favour … held-out teams are biased in their favour because they have more
+diversity"). §5 becomes:
+- (i) a FAMILIARITY MATRIX: per team set, our piloting / facing exposure, set and species overlap, Kakuna's likely
+  familiarity (UNVERIFIED everywhere), the bias direction;
+- (ii) PILOT vs FACE cells S(X, Y), with a Kakuna-vs-Kakuna strength calibration (assumption A-K) and the owner's
+  hypothesis as the named test H-PILOT (+ H-PILOT-OFFMETA by stratum);
+- (iii) L = Σ w_s · D_s over the deployment cell's strata, with L_c1 (CORE as literal sample teams) beside it;
+- (iv) GEN-M, mirrored pairs X26 @t vs X26 @t − 50M and `production` on frozen panels, with no external opponent;
+- (v) THE headline L with fixed side numbers;
+- (vi) freeze, then widen: widening arms gain on the UNFAMILIAR cells with no loss worse than −2.0 pp on sample-team
+  ground, the latter measured in-house (a Kakuna read cannot resolve −2.0 pp: ≈ 4,800 games per arm).
+
+Owner Q4: no owner or friends' teams; the third sources are P72 and smogon_forum (another agent, PENDING). The
+orchestrator decided Q1–Q3 and Q5 as recommended; Q1 is revised to L. X37a is revised into two CPU stages, 0 GPU:
+- stage 1, the deployment cell by stratum (600) + the reverse cell (400) + K(P, H) (400), ≈ 3.5 lane-hours;
+- stage 2, P72 and smogon_forum symmetric (800).
+
+**Measurement** (`measurements/ladder_weights_2026-10-18/`, zero games). Against the sample reference (home72 ∪ `away`,
+79 distinct cores), the best species overlap of the 22,862 `hl_05_26` teams is 6: 17.6 %, 5: 33.2 %, 4: 34.3 %,
+≤ 3: 14.9 %. Mon sets ≥ 4 is 0.2 %, understated by the archive's usage fills. The orchestrator's
+`~/.cache/gen3ai/hl_vs_samples.py`, re-run, agrees to 0.1 pp. heldout72 (and `heldout72_hpfix`) strata are 16 / 44
+/ 12 teams. X26's banked heldout72 score by the stratum OUR side piloted is CORE 0.425 (80 games), NEAR 0.430 (244),
+FAR 0.250 (76); K2 0.350 / 0.381 / 0.289. This is descriptive and confounded with team strength. `ladder_weights_v1` is
+a DRAFT until X37a's registration freezes it; any input change is a new version.
+
+**FINDINGS.** (1) K2 does not load at HEAD; an in-house X26-vs-K2 row needs a pinned-peer player (F-DV-13). (2) An
+anchor-vs-anchor cell gives both peers one team set, so K(P, H) needs a small build (F-DV-14). (3) The counting rule
+drops declared asymmetric units of unequal set size (F-DV-16). (4) The strata are partly fill-driven: unrevealed
+team members are usage-filled (F-DV-15).
+
+Tag: **DESIGN · MEASUREMENT (descriptive) · the evaluation matrix · THE headline L (ladder-weighted) · the ladder is
+sample-core-heavy, heldout72 matches it · H-PILOT named · Q1–Q5 decided · PROVISIONAL (161M)** · evidence:
+`endstate/design_diversity_teams_opponents.md` §5, §6.3, §8.7, §9; `research_state/measurements/ladder_weights_2026-10-18/`
+(README, `ladder_weights_v1.json`, `scripts/ladder_weights.py`); `ops/EXTERNAL_ANCHORS_SOP.md` § The evaluation MATRIX;
+`research_state/EXPERIMENT_BACKLOG.md` DV-1, DV-2, DV-5

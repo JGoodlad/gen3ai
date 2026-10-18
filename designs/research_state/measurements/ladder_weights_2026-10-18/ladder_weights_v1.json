@@ -1,0 +1,282 @@
+{
+ "schema": "gen3_ladder_weights_v1",
+ "status": "DRAFT \u2014 frozen only by X37a's registration commit; a change of any input is a NEW version",
+ "matcher": "gen3_team_overlap_v1",
+ "ladder_proxy": {
+  "path": "~/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou",
+  "files": 22862,
+  "parsed_six_mon_teams": 22862,
+  "digest": "c8160dfd35b78e25a537a4abc7fa3456624a89716310a8764d970e885794e276"
+ },
+ "sample_reference": {
+  "dirs": {
+   "home72": "designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72",
+   "away": "~/dev/metamon/cache/teams/competitive/gen3ou"
+  },
+  "files": 92,
+  "six_mon_teams": 92,
+  "distinct_species_cores": 79,
+  "digest": "503572fcb697f8c6f34309972667c1074b0f4cfeaa4d807efb507c15bd66fcb3"
+ },
+ "best_species_overlap_hist": {
+  "0": 6,
+  "1": 48,
+  "2": 470,
+  "3": 2889,
+  "4": 7841,
+  "5": 7583,
+  "6": 4025
+ },
+ "best_species_overlap_share": {
+  "0": 0.0003,
+  "1": 0.0021,
+  "2": 0.0206,
+  "3": 0.1264,
+  "4": 0.343,
+  "5": 0.3317,
+  "6": 0.1761
+ },
+ "best_mon_set_overlap_share": {
+  "0": 0.2153,
+  "1": 0.624,
+  "2": 0.1418,
+  "3": 0.0167,
+  "4": 0.002,
+  "5": 0.0001,
+  "6": 0.0
+ },
+ "strata": {
+  "CORE": "all 6 species of one sample team",
+  "NEAR": "4-5 species",
+  "FAR": "<= 3 species"
+ },
+ "weights": {
+  "CORE": 0.1761,
+  "NEAR": 0.6747,
+  "FAR": 0.1493
+ },
+ "panels": {
+  "heldout72": {
+   "path": "designs/research_state/measurements/heldout_teams_kakuna_2026-10-18/teams_heldout72",
+   "n": 72,
+   "digest": "8f6c00e0521dfa352e296a84fa3abed1f6ac76a436e4754e4605f0a285e781c7",
+   "best_species_overlap_hist": {
+    "3": 12,
+    "4": 26,
+    "5": 18,
+    "6": 16
+   },
+   "strata_counts": {
+    "CORE": 16,
+    "NEAR": 44,
+    "FAR": 12
+   },
+   "strata_members": {
+    "CORE": [
+     "team_000877",
+     "team_005093",
+     "team_005213",
+     "team_005234",
+     "team_005788",
+     "team_007108",
+     "team_008783",
+     "team_009065",
+     "team_009374",
+     "team_010056",
+     "team_011708",
+     "team_012630",
+     "team_014715",
+     "team_016671",
+     "team_020024",
+     "team_021267"
+    ],
+    "NEAR": [
+     "team_001427",
+     "team_001438",
+     "team_001563",
+     "team_002014",
+     "team_002163",
+     "team_003019",
+     "team_003060",
+     "team_003172",
+     "team_004203",
+     "team_004582",
+     "team_004796",
+     "team_004921",
+     "team_005081",
+     "team_006457",
+     "team_006707",
+     "team_007621",
+     "team_007656",
+     "team_008014",
+     "team_008663",
+     "team_008696",
+     "team_009243",
+     "team_009733",
+     "team_010314",
+     "team_011729",
+     "team_012837",
+     "team_013464",
+     "team_013522",
+     "team_014188",
+     "team_014353",
+     "team_014595",
+     "team_014665",
+     "team_015131",
+     "team_015684",
+     "team_017350",
+     "team_017962",
+     "team_019541",
+     "team_020017",
+     "team_020973",
+     "team_021256",
+     "team_021930",
+     "team_022531",
+     "team_022770",
+     "team_023627",
+     "team_023933"
+    ],
+    "FAR": [
+     "team_000389",
+     "team_002661",
+     "team_002884",
+     "team_003193",
+     "team_003500",
+     "team_011393",
+     "team_013515",
+     "team_016264",
+     "team_018679",
+     "team_019922",
+     "team_022854",
+     "team_023007"
+    ]
+   }
+  },
+  "heldout72_hpfix": {
+   "path": "~/dev/gen3ai-reads/heldout72hp_kakuna_2026-10-18/teams_heldout72_hpfix",
+   "n": 72,
+   "digest": "99d4461625819672d229bcb5d7073af9b3c678d5d6aea63579858c66d84aee6c",
+   "best_species_overlap_hist": {
+    "3": 12,
+    "4": 26,
+    "5": 18,
+    "6": 16
+   },
+   "strata_counts": {
+    "CORE": 16,
+    "NEAR": 44,
+    "FAR": 12
+   },
+   "strata_members": {
+    "CORE": [
+     "team_000877",
+     "team_005093",
+     "team_005213",
+     "team_005234",
+     "team_005788",
+     "team_007108",
+     "team_008783",
+     "team_009065",
+     "team_009374",
+     "team_010056",
+     "team_011708",
+     "team_012630",
+     "team_014715",
+     "team_016671",
+     "team_020024",
+     "team_021267"
+    ],
+    "NEAR": [
+     "team_001427",
+     "team_001438",
+     "team_001563",
+     "team_002014",
+     "team_002163",
+     "team_003019",
+     "team_003060",
+     "team_003172",
+     "team_004203",
+     "team_004582",
+     "team_004796",
+     "team_004921",
+     "team_005081",
+     "team_006457",
+     "team_006707",
+     "team_007621",
+     "team_007656",
+     "team_008014",
+     "team_008663",
+     "team_008696",
+     "team_009243",
+     "team_009733",
+     "team_010314",
+     "team_011729",
+     "team_012837",
+     "team_013464",
+     "team_013522",
+     "team_014188",
+     "team_014353",
+     "team_014595",
+     "team_014665",
+     "team_015131",
+     "team_015684",
+     "team_017350",
+     "team_017962",
+     "team_019541",
+     "team_020017",
+     "team_020973",
+     "team_021256",
+     "team_021930",
+     "team_022531",
+     "team_022770",
+     "team_023627",
+     "team_023933"
+    ],
+    "FAR": [
+     "team_000389",
+     "team_002661",
+     "team_002884",
+     "team_003193",
+     "team_003500",
+     "team_011393",
+     "team_013515",
+     "team_016264",
+     "team_018679",
+     "team_019922",
+     "team_022854",
+     "team_023007"
+    ]
+   }
+  }
+ },
+ "heldout72_score_by_piloted_stratum_descriptive": {
+  "X26": {
+   "NEAR": {
+    "games": 244,
+    "score": 0.4303
+   },
+   "FAR": {
+    "games": 76,
+    "score": 0.25
+   },
+   "CORE": {
+    "games": 80,
+    "score": 0.425
+   }
+  },
+  "K2": {
+   "NEAR": {
+    "games": 244,
+    "score": 0.3811
+   },
+   "FAR": {
+    "games": 76,
+    "score": 0.2895
+   },
+   "CORE": {
+    "games": 80,
+    "score": 0.35
+   }
+  }
+ }
+}

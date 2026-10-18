@@ -1,7 +1,8 @@
 # Diversity of training: our teams, the opponents' teams, the opponents, and the evaluation sets
 
-**Status: DESIGN 2026-10-18 (owner request; planning input; nothing built, nothing launched).** One zero-game,
-post-hoc, descriptive read was run for it (D0a, §2.4). ALWAYS-CURRENT (owner, 2026-09-27): a later decision,
+**Status: DESIGN 2026-10-18 (owner request; planning input; nothing built, nothing launched).** §5 was REWORKED the
+same day into an EVALUATION MATRIX on the owner's input. Two zero-game, post-hoc, descriptive reads were run for it:
+D0a (§2.4) and the ladder resemblance with its strata weights (§5.0). ALWAYS-CURRENT (owner, 2026-09-27): a later decision,
 build or measurement that differs updates this doc in the same commit, and the Decision record (§11) says what
 changed and why.
 
@@ -43,53 +44,60 @@ This doc answers them, after challenging the reading itself (§8).
 
 - **What we know.** On teams our models never trained on, X26 loses to Kakuna by about 10 points and is not
   detectably better than K2. On our own teams it wins. **That drop is not yet explained.** "Unseen by us" and
-  "a different team population, the kind Kakuna's replay data covers" are confounded in the one held-out read
-  we have. Its Hidden Powers are also an artifact: HP Dark on 164 of 432 mons. A parallel agent is repairing
-  that and re-reading the set (`heldout72_hpfix`, PENDING).
-- **D0a: what the held-out set is, read with zero games (§2.4, descriptive, post hoc).**
-  - heldout72 is **not** stall-heavy. Only 4 of its 72 teams are stall, against 90 of the pool's 719. It leans
-    to balance and semi-stall.
-  - Its games run longer: median 40–41 turns, against 30–37 on the pool sets, for both models.
-  - **Entity coverage is small.** Only 9 of 72 teams carry a species, move, item or ability that no pool team
-    carries (7 mons with an unseen species). 203 species-move pairs are absent from the pool, and **160 of
-    those are Hidden Power**.
-  - Inside heldout72 the scores fall as our team carries more HP Dark, in BOTH models. That is consistent with
-    the artifact making weaker sets, and this read cannot tell it from familiarity.
-- **The cheapest reads that split the hypotheses (§3) use the CPU only (rule 5b) and can run NOW, while X26
-  trains.** In order of value:
-  1. **The THIRD-SOURCE read: P72, procedural Smogon-only teams.** It separates "unseen by us" from "Kakuna's
-     distribution". It sits in the cell where neither model trained on the set.
-  2. **The in-house TRANSFER trajectory (no Kakuna).** X26's checkpoints pilot heldout72, P72 and home72 teams
-     against a fixed reference of ours, with paired games (common random numbers) across checkpoints. The
-     question: does X26's progress since 25M transfer to teams it never saw?
-  3. **The DEPLOYMENT cell.** We pilot our teams and Kakuna pilots held-out teams. That is the shape of a
-     ladder game.
-  4. **The toy (no belief machinery) on both sets.**
-  5. **A prior-only belief switch on X26.** It needs a small build.
+  "a different team population, the kind Kakuna's replay data covers" are confounded in the one held-out read we
+  have, and its Hidden Powers are an artifact (HP Dark on 164 of 432 mons; the repaired `heldout72_hpfix` re-read
+  is PENDING, a parallel agent).
+- **What the ladder looks like (§5.0, new 2026-10-18).** Against the sample teams (home72 ∪ `away`), 85 % of the
+  22,862 `hl_05_26` ladder-replay teams share ≥ 4 species with one sample team and 18 % share all six; only 0.2 %
+  share ≥ 4 full sets (understated by the archive's usage fills). **The ladder is sample-CORE-heavy.** heldout72's
+  strata (22 / 61 / 17 % CORE / NEAR / FAR) MATCH the ladder's (18 / 67 / 15 %). It is not off-meta by species;
+  it differs from the sample teams in its SETS and its Hidden Power artifact.
+- **D0a and the strata, read with zero games (descriptive, post hoc).**
+  - heldout72 is not stall-heavy.
+  - Only 9 of its 72 teams carry an entity the pool never had.
+  - X26 piloting held-out teams scores 0.43 on sample-like cores and **0.25 on off-meta (FAR) cores**, against
+    0.575 on home72.
+  - So unfamiliar SETS on familiar cores already cost most of the drop, and off-meta species cost more on top.
+- **The evaluation is a MATRIX, honest about bias (§5, reworked on the owner's input).**
+  - **(i)** Every team set gets its bias direction: home72 toward us, `away` toward Kakuna, heldout72 toward Kakuna,
+    smogon_forum near-neutral, P72 unclear.
+  - **(ii)** The PILOT vs FACE cells, with the owner's hypothesis "we don't pilot off-meta teams well" as the named
+    test **H-PILOT**.
+  - **(iii)** A LADDER-WEIGHTED estimate **L**: we bring our sample teams, and the opponent's teams are weighted
+    CORE 0.176 / NEAR 0.675 / FAR 0.149 (`ladder_weights_v1`).
+  - **(iv)** **GEN-M**, an in-house meter with no external opponent.
+  - **(v)** **THE headline is L**, always beside the sample ground, the unfamiliar panel, GEN-M and L's CORE
+    sensitivity.
+  - **(vi)** Freeze, then widen.
+- **The first experiment: X37a, now two CPU stages, 0 GPU.**
+  - **Stage 1** reads the matrix's core (≈ 3.5 lane-hours; the calibration cell needs B-D9):
+    - the DEPLOYMENT cell by stratum: we pilot home72, Kakuna pilots heldout72_hpfix's CORE / NEAR / FAR teams,
+      600 games;
+    - the REVERSE cell: we pilot heldout72_hpfix, Kakuna pilots home72, 400 games;
+    - the strength calibration K(P, H): Kakuna vs Kakuna, 400 games.
+  - **Stage 2** reads the third-source rows (≈ 2 lane-hours + the P72 build, ≈ 0.25 agent-day): P72 and
+    smogon_forum symmetric, 400 games each.
+  - The parallel `heldout72_hpfix` read supplies S(H, H).
 - **The levers (§4), ranked by expected information per GPU-hour:**
-  - **D1 WIDEN fork at the plateau.** The pool plus about 22k HP-repaired `hl_05_26` teams, minus every
-    held-out team and its near neighbours, at a 50 % draw share on both sides. It is read against X35's shared
-    control C0, so the arm costs **≈ 13 GPU-h**. Its primary is the HELD-OUT panel. In-pool non-regression is
-    a co-primary, because the owner asked "what it does to the teams we are currently training on".
-  - **D5 LEAVE-OUT.** A fresh production run at 30M with 72 random pool teams carved out, **≈ 5.6 GPU-h**. It
-    is the clean memorisation test inside one population.
-  - Conditional follow-ups: **D2** widens the opponent side only; **D3** resamples sets from Smogon usage;
-    **D4** trains exploiters on off-meta teams; **D7** anchors the beliefs to the prior.
-- **Train against unseen teams, or only play them?** Both, on DISJOINT sets (§4.3):
-  - train on a wide slice;
-  - evaluate on frozen panels carved out BEFORE any training use;
-  - never train on a panel's teams or their near neighbours.
-- **The first experiment: X37a.** Build P72 (≈ 0.25 agent-day, opus-medium), then read X26 vs Kakuna on P72
-  plus the two asymmetric cells (our home72 against their heldout72, and the reverse). That is 1,200 games
-  ≈ **3 lane-hours of CPU, 0 GPU-h**.
-- **Where this sits in X35 (§6).** D1 ranks **2nd**, after A1 and before A2, IF X37 does not point squarely at
-  Kakuna's home turf. It shares C0, adds ≈ 13 GPU-h and needs six builds (§6.2).
+  - **D1 WIDEN fork at the plateau.** The pool plus about 22.7k HP-repaired `hl_05_26` teams, minus every frozen
+    panel and its near neighbours, at a 50 % draw share on both sides, against X35's shared control C0
+    (**≈ 13 GPU-h**).
+    - **Primary:** gain on the UNFAMILIAR cells.
+    - **Co-primary:** no loss worse than −2.0 pp on sample-team ground, measured in-house.
+  - **D5 LEAVE-OUT** (**≈ 5.6 GPU-h**) is the clean memorisation test.
+  - D2 / D3 / D4 / D7 are conditional.
+- **Train against unseen teams, or only play them?** Both, on DISJOINT sets (§4.3): freeze the panels first, train
+  on a wide slice that excludes them and their near neighbours, and never train on a panel's teams.
+- **Where this sits in X35 (§6).** D1 ranks **2nd**, after A1 and before A2, unless X37 points squarely at
+  Kakuna's home turf.
 - **Where I disagree with the owner (§8).**
-  - "Tied with state of the art" reads one PROVISIONAL checkpoint against confounded sets.
-  - The deployment-relevant number is the held-out one, and there we are BEHIND.
-  - The "shrinking lead over K2" is itself not detected on home72.
-  - The near-term goal's "on OUR teams" was written when we thought `away` was unseen. It should be re-scoped
-    to a held-out panel.
+  - "Roughly tied with state of the art" is one PROVISIONAL checkpoint read against confounded sets.
+  - The held-out replay teams are NOT unfair because "the ladder is mostly sample teams": their species cores match
+    the ladder's.
+  - "We are matched on sample teams even though we don't bias toward them": we DO bias toward them, at ≈ 2.1×
+    piloting exposure on home72.
+  - "More diversity favours Kakuna": diversity penalises whoever memorised a closed set, which is us. It favours
+    Kakuna only if its data covers that population (UNVERIFIED).
 
 ---
 
@@ -104,6 +112,10 @@ This doc answers them, after challenging the reading itself (§8).
 | **population** | the process that made a team set: Smogon forum builders (sample), community archives (others), ladder replays with usage-filled gaps (`hl_05_26`), the Smogon-usage generator (procedural) |
 | **piloting / facing** | our side playing a team / our side playing against a team |
 | **pp** | percentage points |
+| **CORE / NEAR / FAR** | a team's best SPECIES overlap with any one sample team (home72 ∪ `away`): all 6 / 4–5 / ≤ 3 (§5.0) |
+| **S(X, Y)** | our win rate when WE pilot team set X and the opponent pilots set Y (§5.2) |
+| **L** | the ladder-weighted deployment estimate, THE headline (§5.3, §5.5) |
+| **GEN-M** | the in-house generalisation meter, no external opponent (§5.4) |
 
 ---
 
@@ -255,10 +267,10 @@ The drop to explain is X26 heldout72 − home72 = **−0.180 [−0.247, −0.111
 | H1 | **POLICY memorisation, piloting** | the trunk and policy learned team-specific plans for the 719 teams; on a new team its plans are generic | X26's TRAINING PROGRESS transfers less to piloting unseen teams than pool teams | **D0e-pilot** (§3.2): X26 @25M → latest piloting heldout72 / P72 / home72 against a fixed reference, paired games. KILLED iff the transfer deficit T's 95 % interval lies wholly below +2.0 pp | descriptive only: the exposure ordering 2.1× > 1.2× > 0 matches 0.575 > 0.497 > 0.395 |
 | H2 | **FACING memorisation: implicit TEAM IDENTIFICATION** | from 1–3 reveals the policy infers WHICH pool team it faces and plays to its unseen members (W12: worth 0.80 of the oracle gap in-pool) | X26's progress transfers less to FACING unseen teams; the deficit is largest early in the game (few reveals) | **D0e-face**: the reference pilots the set's teams against X26 @25M → latest. Then the same by reveal count, from the eval traces. KILLED iff the facing deficit's interval lies wholly below +2.0 pp | W12 (in-pool information exists); no off-pool read |
 | H3 | **BELIEF-HEAD memorisation** (learned deltas over the Smogon priors encode the pool) | species, move and item posteriors are miscalibrated off-pool; the policy acts on a wrong world | zeroing the learned deltas (prior-only) costs a lot on the pool and nothing, or HELPS, on held-out teams | **D0f**: the 2026-09-24 prior-only DiD (difference in differences), re-run on X26 (a build). KILLED as a major cause iff the DiD's 95 % upper bound < +3.0 pp AND prior-only − full on heldout72 is not detected above 0 | pre-era: DiD +4.8 pp [+1.9, +7.8]; harmful calibration off-pool. Its size caps H3 at about a quarter of the drop |
-| H4 | **POPULATION shift** (off-meta / out-of-distribution SETS and play styles: replay teams with usage-sampled fills; longer games) | X26 is bad at this KIND of team whether or not it saw the team | the drop is the same on unseen teams of this population (heldout72) and ABSENT on unseen teams of another population | **X37a P72** (§3.1) and, later, a human-built set (T2). KILLED iff X26(P72) − X26(heldout72) is NOT detected AND X26(P72) − X26(home72) is detected below 0 | D0a: not stall-heavy; games 25 % longer; 21 / 72 teams share all six SPECIES with a pool team but no set |
-| H5 | **KAKUNA's home turf** (it trained on parsed ladder replays of this population; UNVERIFIED) | Kakuna is relatively STRONGER on heldout72; our "drop" is partly its gain | the in-house transfer reads (no Kakuna) show NO deficit while the Kakuna drop stays | **D0e** (H1/H2's reads are Kakuna-free) + **X37a P72**. KILLED as the SOLE cause iff D0e's deficit (piloting or facing) has a 95 % lower bound ≥ 5.5 pp, half the Kakuna drop's smallest plausible size (11.1 pp) | partial: `away` is the set Kakuna overfit to, and X26 does 10 pp BETTER there than on heldout72. So the drop is not Kakuna-familiarity alone, ASSUMING its familiarity with `competitive` ≥ with `hl_05_26`-like teams (UNVERIFIED) |
+| H4 | **POPULATION shift** (off-meta / out-of-distribution SETS and play styles: replay teams with usage-sampled fills; longer games) | X26 is bad at this KIND of team whether or not it saw the team | the drop is the same on unseen teams of this population (heldout72) and ABSENT on unseen teams of another population | **X37a stage 2** (§3.1): P72 and smogon_forum. KILLED iff X26(P72) − X26(heldout72) is NOT detected AND X26(P72) − X26(home72) is detected below 0 | D0a: not stall-heavy; games 25 % longer; 21 / 72 teams share all six SPECIES with a pool team but no set |
+| H5 | **KAKUNA's home turf** (it trained on parsed ladder replays of this population; UNVERIFIED) | Kakuna is relatively STRONGER on heldout72; our "drop" is partly its gain | the in-house transfer reads (no Kakuna) show NO deficit while the Kakuna drop stays | **D0e** (H1/H2's reads are Kakuna-free) + **X37a stage 2** (P72, smogon_forum). KILLED as the SOLE cause iff D0e's deficit (piloting or facing) has a 95 % lower bound ≥ 5.5 pp, half the Kakuna drop's smallest plausible size (11.1 pp) | partial: `away` is the set Kakuna overfit to, and X26 does 10 pp BETTER there than on heldout72. So the drop is not Kakuna-familiarity alone, ASSUMING its familiarity with `competitive` ≥ with `hl_05_26`-like teams (UNVERIFIED) |
 | H6 | **the Hidden Power ARTIFACT** (HP Dark from blank IVs on 164 / 432 mons) | (a) our belief stack predicts Smogon's HP types and mis-reads their coverage; (b) the sets are incoherent (special HP Dark on physical attackers), which changes play; (c) Kakuna's own data carries the same artifact, so it is calibrated to it (UNVERIFIED) | the repaired set reads detectably higher for X26 | **`heldout72_hpfix` re-read** (parallel agent, PENDING; not duplicated here). this doc reads H6 as KILLED iff X26 hpfix − heldout72 is not detected and its 95 % upper bound < +5 pp (the parallel read's own registered rule governs its verdict) | D0a: scores fall with HP Dark on our team in BOTH models (confounded with strength) |
-| H7 | **team-building QUALITY / strength** (the held-out teams are weaker or stronger) | both sides draw the same set, so pure strength cancels in expectation; only an INTERACTION remains (noisier teams compress toward 0.50) | compression toward 0.50, never a sign flip | **already KILLED as a sole cause:** X26 fell PAST 0.50 (0.575 → 0.395). As a contributor: the asymmetric cells and the deployment cell (§3.1) | logic |
+| H7 | **team-building QUALITY / strength** (the held-out teams are weaker or stronger) | both sides draw the same set, so pure strength cancels in expectation; only an INTERACTION remains (noisier teams compress toward 0.50) | compression toward 0.50, never a sign flip | **already KILLED as a sole cause:** X26 fell PAST 0.50 (0.575 → 0.395). As a contributor: the PILOT / FACE cells and their strength calibration (§5.2) | logic |
 | H8 | **ENTITY coverage** (species / moves the pool never had; their embeddings are barely trained) | the static token reads an id embedding for species and items, and a move network over ids + properties | worse play on teams that carry unseen entities | **D0a** (done): only 9 / 72 teams carry any unseen entity. At most a small share of the drop. Also D5's split | KILLED as a major cause (D0a coverage); the 9 teams may still be locally bad (X26 0.25 on 32 games) |
 | H9 | **statistics / one checkpoint / pre-plateau** | a fluctuation of one checkpoint, one seed | the drop vanishes at other checkpoints | **D0d / D0e trajectory** (≥ 3 checkpoints). Already partly killed: K2, another lineage at ITS plateau, drops 13 pp too | K2 replicates the sign |
 | H10 | **GIGO off-pool** (a reading or encoding bug that only off-pool content reaches: the Heal Bell crash, the Transform + Hidden Power tracker crash, Imprison, ...) | a mis-encoded fact degrades decisions silently | divergence between the core frame and the live reader on held-out games; anomalies by entity | the existing differential gates at the ladder corpus's FULL tier (`--ladder-tier full` soak), and `ladder_drift_scan`-style per-entity scans on the heldout72 games. KILLED iff 0 divergences over the soak | 800 held-out games ran clean (0 protocol failures, every unit OK) |
@@ -272,46 +284,44 @@ the alternatives. **What decides between the two families is the 2 × 2 below, w
 | | **set is Kakuna-familiar** (its kind is in Kakuna's data or eval: UNVERIFIED either way) | **set is NOT Kakuna-familiar** |
 |---|---|---|
 | **seen by us** | away (0.497) | home72 (0.575): Smogon sample teams, 8 / 72 exact copies of `competitive`. Kakuna-familiar in kind? UNVERIFIED |
-| **unseen by us** | heldout72 (0.395) | **THE MISSING CELL: a third source** |
+| **unseen by us** | heldout72 (0.395); heldout72_hpfix PENDING | **THE MISSING CELL: the third sources** |
 
-**Candidates for the third source, ranked by cost:**
+**The third sources (owner decision Q4, 2026-10-18: no owner or friends' teams, whose quality is too low):**
 
-1. **P72, procedural** (`ou_random_teams.js --emit 72 --seed <registered>`). Smogon-only, validator-legal,
-   unseen by us by construction (checked by `team_overlap` against the pool, `competitive` and `hl_05_26`). It
-   costs ≈ 0.25 agent-day to build. **Caveats:**
-   - not human-built: the teams are less coherent, so team quality differs;
-   - Metamon's `paper_variety` set is also generated from usage statistics, and whether Kakuna trained on it is
-     UNVERIFIED. P72 is therefore "unseen as TEAMS by both", and its POPULATION may be closer to Kakuna's than
-     the pool is.
-2. **T2, human-built and unseen by both:**
-   - (a) teams from the owner and friends (1400–1600 ladder players), n ≈ 20–50, which needs the owner;
-   - (b) Smogon forum or tournament pastes not in the pool, `competitive` or `hl_05_26`, which needs a `tools/`
-     downloader (network) and the owner's OK on sources.
+1. **P72, procedural** (`ou_random_teams.js --emit 72 --seed <registered>`). Smogon-only and validator-legal.
+   Unseen by us by construction, checked by `team_overlap` against the pool, `competitive` and `hl_05_26`. It costs
+   ≈ 0.25 agent-day to build (B-D4). **Caveats:**
+   - not human-built: less coherent teams, so team quality differs;
+   - its sets ARE the Smogon usage our belief priors encode;
+   - Metamon's `paper_variety` set is also usage-generated, and whether Kakuna trained on it is UNVERIFIED.
+2. **smogon_forum**, a Smogon-forum ADV OU team collection, built by another agent into
+   `designs/research_state/measurements/smogon_forum_teams_2026-10-18/` (**PENDING**). It is human-built and unseen
+   by us. **The condition for using it:** its exact copies and near neighbours of `competitive` (the forum is
+   `competitive`'s own source) and of the pool must be excluded, or it reads `away` again. It is never used for
+   training (§5.6).
 
-   Either set is checked by `team_overlap` (exact = 0, near-neighbours = 0) and validated. **T2 is the
-   confirmation set, and it is never used for training** (§5).
+**The cells to read are X37a's (§6.3), in two stages:**
 
-**The cells to read (X37a, CPU, rule 5b, one lane):**
+- **Stage 1, the matrix's core (§5.2, §5.3):**
+  - the DEPLOYMENT cell by stratum (600 games);
+  - the REVERSE cell (400);
+  - the strength calibration K(P, H) (400).
+- **Stage 2, the third-source rows:** P72 and smogon_forum symmetric, 400 games each.
+- All of it on paired seeds, at ≈ 9 s per game, CPU only (rule 5b).
 
-- X26 vs Kakuna on P72: 400 games.
-- The DEPLOYMENT cell: our side home72, Kakuna heldout72 (asymmetric, unmirrored): 400 games. On a ladder we
-  bring OUR teams and the opponent brings theirs. This cell is that shape. It mixes skill with team choice, BY
-  DESIGN. Its config sets `our_team_sources.home` = home72 and Metamon's `team_sets.home` = `gen3ai_heldout72`.
-- The reverse: our side heldout72, Kakuna home72: 400 games.
-
-Paired seeds 0–19; ≈ 9 s per game; ≈ 3 lane-hours.
-
-**Decision rule (pre-registrable; deterministic; Newcombe 95 % on win rate, n = 400 each).** Let d1 = X26(P72) −
-X26(heldout72) and d2 = X26(P72) − X26(home72).
+**The third-source decision rule** (pre-registrable; deterministic; Newcombe 95 % on win rate; n = 400 each).
+Let H = heldout72_hpfix. For each third source T ∈ {P72, smogon_forum}: d1 = X26(T) − X26(H) and
+d2 = X26(T) − X26(home72).
 
 | class | condition | meaning |
 |---|---|---|
 | **UNSEEN-DRIVEN** | d1 NOT detected AND d2's upper bound < 0 | X26 loses on unseen teams of another population too: H1–H3 lead; widening (D1) is the lever |
-| **POPULATION / KAKUNA-DRIVEN** | d1's lower bound > 0 AND d2 NOT detected | unseen teams of another population are fine: H4–H6 lead; D1 still trains on the population, but the expected value is lower and T2 is needed before a claim |
+| **POPULATION / KAKUNA-DRIVEN** | d1's lower bound > 0 AND d2 NOT detected | unseen teams of another population are fine: H4–H6 lead; D1's expected value is lower |
 | **MIXED** | d1's lower bound > 0 AND d2's upper bound < 0 | both |
 | **UNDECIDED** | otherwise, or any bound within 1e-9 of 0 (rule 8) | — |
 
-The asymmetric cells are REPORTED, with no rule. They are the inputs to the headline proposal (§5.3).
+**When the two third sources disagree, smogon_forum governs** (human-built, near-neutral, §5.1). P72's verdict is
+reported beside it.
 
 ### 3.2 The in-house TRANSFER reads (no Kakuna): D0e
 
@@ -325,7 +335,8 @@ The asymmetric cells are REPORTED, with no rule. They are the inputs to the head
 **The design:**
 
 - **D0e-pilot:** refs = X26 @{25M, 100M, 161M, latest 10M-multiple}; the opponent = the registry baseline
-  `production` (`rb_es_end2_s2005`, 15M), greedy. Three manifests (home72, heldout72, P72), 10 games per team.
+  `production` (`rb_es_end2_s2005`, 15M), greedy. Four manifests (home72, heldout72_hpfix, smogon_forum, P72), 10
+  games per team; the heldout72_hpfix manifest also split by stratum (CORE / NEAR / FAR, §5.0).
 - **D0e-face:** the same refs as OPPONENT and the reference as PILOT. One meter run per checkpoint, because the
   meter has one opponent per run.
 - Both run at a commit where every ref loads (the anchors reads used a detached `63f97a57`; X26's own pin is
@@ -341,7 +352,7 @@ deficit is T_S = g_home72 − g_S.
 | **MEMORISATION-DOMINATED** | T_S's lower bound > 0 AND g_S's lower bound ≤ 0 |
 | **UNDECIDED** | otherwise; a bound within 1e-9 of a boundary is UNDECIDED |
 
-**Cost.** ≈ 4 refs × 3 sets × 720 games ≈ 8,600 games per axis, ≈ 2 lane-hours per axis at the h2h CPU rate of
+**Cost.** ≈ 4 refs × 4 sets × ≈ 720 games ≈ 11,500 games per axis, ≈ 2.7 lane-hours per axis at the h2h CPU rate of
 ≈ 1.2 games/s (`design_x26_readiness.md` §2.6; UNVERIFIED for the meter).
 
 **Why this read matters most.** It is the one read that can say whether X26's continued pool training, the plateau
@@ -390,7 +401,8 @@ CPU reads at ≈ 9 s per Kakuna game on one rule-5b lane.
    ladder and smogtours replays, with the gaps filled by usage sampling. It is the population a ladder brings.
 2. `gl_05_26` (the general ladder): not on the box, UNVERIFIED availability. A later dose step.
 3. Procedural teams: they belong to L5 (augmentation), not here. They are synthetic.
-4. **NOT human-built unseen sets (T2).** They are scarce, and they are the evaluation panel's last clean source.
+4. **NOT smogon_forum or P72.** They are evaluation panels (§5.6), and smogon_forum is the matrix's only
+   human-built, near-neutral source.
 
 **How many.** All of W_hl that survives the exclusions (≈ 22.7k, UNVERIFIED until built). It is mixed at a DRAW
 SHARE s = 0.5 per side: each draw comes from W_hl with probability 0.5, else from the pool with today's 10 %
@@ -419,7 +431,7 @@ manifest and sha256s, like `src/utils/ladder_corpus`.
 3. The pinned validator (`gen3ou`, Showdown pin `e0551883f`) on the REPAIRED text; engine-playable (the corpus
    filter).
 4. **EXCLUSIONS:**
-   - (a) every team of every registered held-out panel (§5.1), and every NEAR NEIGHBOUR of one (≥ 4 shared mon
+   - (a) every team of every registered held-out panel (§5.6), and every NEAR NEIGHBOUR of one (≥ 4 shared mon
      sets): `hl_05_26` holds repeat teams from the same players, so an exact-only exclusion leaks;
    - (b) teams that reach OPEN off-pool crash classes: Transform + Hidden Power (TECH_DEBT (a) P1: 20 corpus teams;
      a training crash, not a skipped battle) and Imprison (a possible livelock, UNVERIFIED). They are excluded
@@ -474,9 +486,9 @@ generalisation lever a small LOSS.
 
 | role | statistic | rule |
 |---|---|---|
-| **PRIMARY H** (held-out gain) | Δ_H = ON − OFF score vs Kakuna greedy on the HELD-OUT PANEL: `heldout72_hpfix` (W_hl's population, unseen teams) and the third source (P72 now, T2 when built), equal weights. Each seed final plays 7 role-balanced 20-game units per set (140 games), so 3 seeds give 420 per set and 840 per arm; unit seeds 0–6 are shared across arms. Newcombe 95 % on the pooled score | **GAIN** iff the lower bound > 0 AND ≥ 2 of 3 seeds have Δ > 0; **LOSS** iff the upper bound < 0; **NULL** iff the interval lies inside [−3.0, +3.0]; else **UNDECIDED** → X35's look 2 at 5 seeds iff Δ̂ > 0. A bound within 1e-9 of a boundary is UNDECIDED |
-| **CO-PRIMARY P** (the owner's "what it does to the teams we are currently training on") | Δ_P = ON − OFF of X35's population score R1 (pool teams, `main.h2h`, Welch over seed finals at 97.5 %) | **NON-INFERIOR** iff the lower bound > −2.0 pp (X35's bar) |
-| reported | Δ on each held-out set separately | gain on `heldout72_hpfix` alone = "learned the population"; gain on P72 / T2 too = "generalises beyond its population" |
+| **PRIMARY H** (gain on the UNFAMILIAR cells, §5.6) | Δ_H = ON − OFF score vs Kakuna greedy, pooled over the symmetric UNFAMILIAR cells: `heldout72_hpfix` (W_hl's population, unseen teams), smogon_forum and P72 (populations no arm trains on), equal weights per panel. Each seed final plays 7 role-balanced 20-game units per panel (140 games), so 3 seeds give 420 per panel and 1,260 per arm; unit seeds 0–6 are shared across arms. Newcombe 95 % on the pooled score | **GAIN** iff the lower bound > 0 AND ≥ 2 of 3 seeds have Δ > 0; **LOSS** iff the upper bound < 0; **NULL** iff the interval lies inside [−3.0, +3.0]; else **UNDECIDED** → X35's look 2 at 5 seeds iff Δ̂ > 0. A bound within 1e-9 of a boundary is UNDECIDED |
+| **CO-PRIMARY P** (the owner's "what it does to the teams we are currently training on": no loss worse than −2.0 pp on SAMPLE-TEAM ground) | Δ_P = ON − OFF of the population score on the home72 panel IN-HOUSE (each final against X35's frozen reference population, mirrored pairs on home72 via B-D7; Welch over seed finals at 97.5 %). X35's R1 on the full pool is reported beside it | **NON-INFERIOR** iff the lower bound > −2.0 pp. A Kakuna read cannot resolve this bar at an affordable n (F-DV-12) |
+| reported | Δ on each unfamiliar panel separately; **L** and **L_c1** ON − OFF (§5.3); GEN-M's class on each final (§5.4) | gain on `heldout72_hpfix` alone = "learned the population"; gain on smogon_forum / P72 too = "generalises beyond its population" |
 | reported | Kakuna on home72 and away, ON − OFF | in-pool external read; no rule |
 | reported | the D0e transfer read on each final | in-house held-out piloting and facing |
 | guards | X35's G-E (exploitability), G-C (the collapse battery), G-F (head-to-head frontier) | as registered there |
@@ -489,14 +501,14 @@ generalisation lever a small LOSS.
 - **NULL / LOSS / UNDECIDED** after look 2.
 - Nothing is adopted by this rule alone.
 
-**Power.** At p ≈ 0.40 and 840 games per arm, the Newcombe half-width is ≈ 4.7 pp. That is enough for a recovery
-of a third of the 18-pp drop. More games cost CPU only: doubling to 280 per seed per set narrows it to ≈ 3.3 pp at
-≈ 8.4 lane-hours for the two arms.
+**Power.** At p ≈ 0.40 and 1,260 games per arm (three panels), the Newcombe half-width is ≈ 3.9 pp. That is enough
+for a recovery of a quarter of the 18-pp drop. More games cost CPU only.
 
 **Cost.**
 
 - ≈ **13 GPU-h** (3 seeds × 4.4), with C0 shared with the X35 batch. Unshared: +13.
-- CPU: the Kakuna panel, ≈ 2 × 840 games ≈ 4.2 lane-h; R1 rides X35's read.
+- CPU: the Kakuna unfamiliar panel, ≈ 2 × 1,260 games ≈ 6.3 lane-h; L's three deployment sub-cells on each arm
+  (≈ 2 × 600 games ≈ 3 lane-h); the in-house sample ground and GEN-M ride B-D7 (≈ 1 lane-h per final).
 - Builds: §6.2.
 
 **Risks.**
@@ -516,7 +528,7 @@ of a third of the 18-pp drop. More games cost CPU only: doubling to 280 per seed
 
 **So:**
 
-1. Carve and FREEZE the held-out panels first (§5.1).
+1. Carve and FREEZE the held-out panels and the ladder weights first (§5.6).
 2. Then train on a wide slice that EXCLUDES the panels AND their near neighbours.
 3. Read gains on the panels.
 
@@ -524,7 +536,7 @@ of a third of the 18-pp drop. More games cost CPU only: doubling to 280 per seed
 nothing.
 
 **Which population to train on is a choice of target.** The ladder brings the open population (heldout72's kind),
-so training on it is training toward deployment. Keeping one panel from a source NO arm trains on (P72 / T2) is
+so training on it is training toward deployment. Keeping one panel from a source NO arm trains on (P72, smogon_forum) is
 what tells "learned this population" from "learned to generalise".
 
 ### 4.4 L4 — exploiters that play OFF-META teams, and how to read evaluations when the opponent distribution is the treatment
@@ -541,7 +553,7 @@ manifest that the gate accepts by content sha: a build, ≈ 0.25 agent-day.
 **How to read the evaluations (the owner's worry).** The rule is the train/test split applied to opponents.
 
 1. **The eval panels are disjoint from every team the treatment trains with or against**, exact and near
-   neighbour, enforced at startup by the registry guard (§5.1). The off-meta exploiter's teams are drawn from
+   neighbour, enforced at startup by the registry guard (§5.6). The off-meta exploiter's teams are drawn from
    W_hl's remainder or P-generated, never from a panel.
 2. **The exploiter's own teams are an ON-TARGET read**, reported but never the headline. "Better against the
    teams it was drilled on" is the expected, uninformative gain. This is the old taught / untaught split.
@@ -636,74 +648,255 @@ three checkpoints show how fast it grows.
 - the stratification leaves the sample bias untouched (sample teams can be held out too: declared).
 
 **It needs:** a `--team-exclude <manifest>` source filter, a small build, also useful to the registry guard
-(§5.1); a GPU window or the rented cloud GPU (`project_cloud_gpu_benchmark`); the orchestrator's GO.
+(§5.6); a GPU window or the rented cloud GPU (`project_cloud_gpu_benchmark`); the orchestrator's GO.
 
 ---
 
-## 5. An evaluation protocol that stays interpretable when the training distribution changes
+## 5. The evaluation MATRIX: honest about bias, not a hunt for one neutral set
 
-### 5.1 Frozen held-out PANELS, by source, with a registry and a refusing guard
+**Rewritten 2026-10-18 on the owner's input.** The first version proposed frozen panels and one held-out headline.
+The owner's point is that **every team set we can read is biased toward one side**:
 
-**The registry** is `designs/research_state/heldout_panels.json`, PROPOSED (build B-D3). It holds one entry per
-panel:
+- the sample teams favour Kakuna, because Metamon overfit to `competitive`;
+- the held-out replay teams favour Kakuna too, because they are more diverse and of the population its replay data
+  is built from (UNVERIFIED);
+- our own sample folder favours us, because we pilot it about 2.1× as often as any other pool team.
 
-- the name and source;
-- the draw rule, written before the draw;
-- the seed;
-- the manifest sha256;
-- the near-neighbour radius (≥ 4 shared mon sets);
-- FROZEN-since;
-- "held out from" (our lineages; Kakuna as far as known).
+So §5 no longer looks for a neutral set. It states each set's bias (5.1), splits piloting from facing (5.2),
+weights the cells by what the ladder actually brings (5.3), adds a meter with no external opponent at all (5.4),
+names ONE headline with fixed side numbers (5.5), and freezes everything before any pool is widened (5.6).
 
-**The panels:**
+### 5.0 What the ladder looks like: the resemblance data
 
-| panel | source | held out from us | Kakuna | status |
+The ladder proxy is Metamon's `hl_05_26/gen3ou`: 22,862 teams from 1400+ ladder and smogtours replays, unrevealed
+parts filled by usage sampling. Each team is compared with the SAMPLE reference: home72 ∪ `away` (92 files, 79
+distinct six-species cores).
+
+| best overlap with ONE sample team | 6 | 5 | 4 | ≤ 3 |
 |---|---|---|---|---|
-| home72 | our sample teams | NO (2.1× trainee exposure) | 8 / 72 exact `competitive` | in-pool reference |
-| away | Metamon `competitive` | NO (19 / 20) | its overfit eval set | in-pool, Kakuna's turf |
-| heldout72 / **heldout72_hpfix** | `hl_05_26`, replay population | YES | the set postdates Kakuna; the population may not | the replay-population panel |
-| **P72** | the Smogon-usage generator | YES | as teams; the population is UNVERIFIED | third source, now |
-| **T2** | human-built, unseen by both | YES | YES (as far as checkable) | third source, confirmation |
-| D5's leave-out 72 | pool split | YES for D5 only | — | D5's private panel |
+| **species** (share of the 22,862) | **17.6 %** | 33.2 % | 34.3 % | 14.9 % |
+| **mon sets** (species + moves), ≥ 4 | — | — | 0.2 % (all of ≥ 4) | — |
 
-**The guard.**
+- **The ladder is sample-CORE-heavy, not sample-COPY-heavy.** 85.1 % of ladder teams share ≥ 4 species with one
+  sample team and 50.8 % share ≥ 5. Only 0.2 % share ≥ 4 full mon sets. That last figure is UNDERSTATED, because
+  replays reveal partial movesets and the archive fills the rest from usage; the true share of literal sample copies
+  is UNKNOWN.
+- **Reproduced twice.** The orchestrator's quick script (`~/.cache/gen3ai/hl_vs_samples.py`, re-run 2026-10-18:
+  6 = 17.6 %, 5 = 33.2 %, 4 = 34.3 %, mon sets ≥ 4 = 0.2 %) and the versioned one,
+  [`measurements/ladder_weights_2026-10-18/scripts/ladder_weights.py`](../research_state/measurements/ladder_weights_2026-10-18/README.md)
+  (`gen3_team_overlap_v1`: formes and IV-typed Hidden Power), agree to 0.1 pp.
+- **heldout72 is ladder-like at the species level.** Its strata are 16 CORE / 44 NEAR / 12 FAR teams (22 / 61 /
+  17 %), against the proxy's 18 / 67 / 15 % (CORE = all six species of one sample team; NEAR = 4–5; FAR = ≤ 3).
+  What separates it from the sample teams is its SETS (104 / 432 mon sets seen in our pool) and the Hidden Power
+  artifact, not off-meta species.
+- **Descriptive, post hoc:** X26 piloting heldout72 teams scores 0.425 on CORE (80 games), 0.430 on NEAR (244) and
+  **0.250 on FAR** (76); K2 0.350 / 0.381 / 0.289. Kakuna's team is the same random heldout72 mix in every row, so
+  the rows differ in our piloted team only, and they are confounded with team strength. Even CORE held-out teams
+  read 15 pp below home72 (0.575): **unfamiliar SETS on familiar cores already cost most of the drop**, and
+  off-meta species cost more on top.
 
-- At training startup, every team source is checked by content against every FROZEN panel: exact and
-  near-neighbour.
-- A hit is a startup FATAL, like `gen3_untaught_teacher_guard_v1`.
-- A typed consent flag exists for a declared contamination, which is then stamped on every read.
+### 5.1 (i) The familiarity matrix
 
-**Why.** `away` was described as "never trained on" for a month (2026-09-14 → 10-18) while 19 of its 20 teams
-were pool copies. A registry plus a guard makes that impossible.
+One row per frozen team set. "Ours" is training exposure; "Kakuna's" is its likely exposure, **UNVERIFIED in every
+row**, because Metamon's README names no training team set for Kakuna.
 
-### 5.2 Every read carries its overlap and its cell
+| team set | our PILOTING exposure | our FACING exposure | mon sets in our pool | species strata (CORE / NEAR / FAR) | Kakuna's likely familiarity (UNVERIFIED) | BIAS of a symmetric cell |
+|---|---|---|---|---|---|---|
+| **home72** (our `data/teams/sample`) | exact teams, ≈ 2.1× a pool team (the 10 % sample bias) | exact teams, 1× | 432 / 432 | 72 / 0 / 0 (it IS the reference) | the cores are common on the ladder (85 % of ladder teams share ≥ 4 species with a sample team); 8 / 72 are exact `competitive` copies | **toward US**: we trained on the exact sets |
+| **away** (Metamon `competitive`) | 19 / 20 exact, ≈ 1.2× | ≈ 1.2× | 119 / 120 | 20 / 0 / 0 | its evaluation set; "Metamon has overfit to them" (`metamon/README.md:865`) | **both familiar**; the most balanced cell we have, leaning to Kakuna by its own README |
+| **heldout72_hpfix** (`hl_05_26`, HP repaired; PENDING, the parallel agent) | 0 (0 exact, 0 near neighbours) | 0 | 104 / 432 | 16 / 44 / 12 (ladder-like) | the SET postdates Kakuna (dates); its POPULATION is the kind its replay data is built from | **toward KAKUNA** (population), reduced by the repair (Kakuna's data may share the HP-Dark fill) |
+| **smogon_forum** (`measurements/smogon_forum_teams_2026-10-18/`, PENDING, another agent) | 0 by construction (overlap-checked) | 0 | measured at build | measured at build | forum teams are `competitive`'s own source ("human-made sample teams, usually from the Smogon forums", `metamon/env/wrappers.py:40`); popular ones get laddered | **near-neutral**: human-built and unseen by us. Its near neighbours of `competitive` must be excluded, or it is `away` again |
+| **P72** (procedural, Smogon-only; X37a's build) | 0 as teams | 0 | measured at build | measured at build | Metamon's `paper_variety` is also usage-generated; whether Kakuna trained on it is UNVERIFIED | **unclear, leaning to US**: its sets ARE the Smogon usage our belief PRIORS encode. Low team quality compresses toward 0.50 |
 
-- `summary.json["team_overlap"]` is already required (`fda1efda`).
-- Add the PANEL name and the registry sha.
-- An asymmetric cell (the deployment cell) declares its two sources. `team_source_asymmetry` today compares
-  file COUNTS only (72 vs 72 reads "false"), which is FINDING F-DV-5.
-- 🚨 `main.anchors` rows carry `our_team` but NOT the peer's team. The peer CSV's `Team File` column does not
-  align one-to-one with the peer's `team_draws` list: unit `X26_greedy_hl72_00` logs `team_draws[1..9]` with the
-  last one repeated, and never `team_draws[0]`. Per-game opponent-team analysis is therefore NOT possible on the
-  banked reads (FINDING F-DV-6). The fix stamps `their_team` per row from the peer's own record by battle id.
+**How to read it.** No row is neutral. Each number is quoted WITH its row's bias, the way RULE 1 makes a number
+travel with its regime. The rows bracket the truth from both sides: home72 overstates us, heldout72 understates
+us, and `away` and smogon_forum sit between.
 
-### 5.3 Which number is THE headline (proposal, owner decision Q1)
+### 5.2 (ii) PILOT vs FACE: the asymmetric cells, and the owner's hypothesis as a named test
 
-- **External headline:** X vs Kakuna greedy on the HELD-OUT PANEL. That is `heldout72_hpfix` + the third source,
-  equal weights, with the overlap block. It is the number a ladder would see.
-- **Beside it, always:**
-  - **in-distribution:** home72, which is the near-term goal as literally worded;
-  - **the deployment cell:** our home72 vs their held-out.
-- No single number is quoted without its panel.
-- **In-house:** the population score (pool) AND the D0e transfer read, never one without the other.
+Write S(X, Y) for our win rate when WE pilot set X and Kakuna pilots set Y, with P = home72 (sample) and
+H = heldout72_hpfix.
 
-### 5.4 An in-run held-out meter (build B-D5)
+| | Kakuna pilots P | Kakuna pilots H |
+|---|---|---|
+| **we pilot P** | S(P, P) = 0.575 [0.526, 0.623] (exists) | **S(P, H), the DEPLOYMENT cell**: we bring our familiar teams, the opponent brings ladder-like ones |
+| **we pilot H** | **S(H, P), the REVERSE cell** | S(H, H): the parallel `heldout72_hpfix` read, PENDING |
 
-For FUTURE runs only. X26 is pinned and its eval cannot change mid-run.
+S(P, H) is read from X37a's three stratum sub-cells (§5.3), reweighted to heldout72_hpfix's OWN strata shares
+(16 / 44 / 12 of 72), so that it estimates the plain asymmetric cell. S(H, P) and K(P, H) use the full
+heldout72_hpfix set.
 
-- An eval-cycle cell: greedy self vs a fixed sentinel, piloting held-out-panel teams.
-- 100 games per cycle.
-- It gives every run a held-out trajectory, which no run has today (F-DV-1).
+**What each difference contains** (an additive model; Δ = how much stronger P teams are than H teams for whoever
+pilots them):
+
+- **PILOT drop** = S(P, P) − S(H, P) = our piloting familiarity (P vs H) + Kakuna's facing familiarity + Δ.
+- **FACE drop** = S(P, P) − S(P, H) = our facing familiarity + Kakuna's piloting familiarity − Δ.
+- Under additivity the two add up to S(P, P) − S(H, H), the total drop. The interaction
+  I = S(P, H) + S(H, P) − S(P, P) − S(H, H) should read ≈ 0; it is reported, and a detected I makes the split
+  UNDECIDED.
+- **The team-strength term Δ does not cancel.** It is calibrated by the cell K(P, H): **Kakuna pilots P against
+  Kakuna piloting H** (an anchor-vs-anchor pair cell). K(P, H) − 0.5 = Δ + (Kakuna's piloting − facing familiarity
+  with P over H). Read as Δ under assumption **A-K: Kakuna's piloting and facing familiarity are equal in size**
+  (it learned from both sides of replays; UNVERIFIED).
+
+**The named test H-PILOT (the owner's hypothesis, 2026-10-18): "we do not PILOT off-meta teams well".** With
+Δ̂ = K(P, H) − 0.5, PILOT_c = PILOT drop − Δ̂ and FACE_c = FACE drop + Δ̂. Intervals are 95 % Wald over independent
+cells (n = 400 each).
+
+| class | condition | meaning |
+|---|---|---|
+| **SUPPORTED** | PILOT_c's lower bound > 0 AND (PILOT_c − FACE_c)'s lower bound > 0 | piloting unfamiliar teams carries more of the drop than facing them |
+| **KILLED** | PILOT_c's upper bound < +3.0 pp, OR (FACE_c − PILOT_c)'s lower bound > 0 | piloting costs under 3 pp, or facing carries more |
+| **UNDECIDED** | otherwise; I detected; or any bound within 1e-9 of a boundary (rule 8) | — |
+
+- **Power.** PILOT_c has a half-width ≈ 8 pp; PILOT_c − FACE_c ≈ 12 pp. That resolves a lopsided split of the
+  18-pp drop and not a balanced one. The Kakuna-free second line is D0e (§3.2), which splits piloting from facing
+  by the TRAJECTORY of X26's checkpoints, where strength cancels by construction.
+- **The OFF-META variant.** heldout72 is ladder-like at the species level (§5.0), so H-PILOT as defined reads
+  "unfamiliar teams", mostly unfamiliar SETS. The owner's "off-meta" reading is the stratum split of the REVERSE
+  cell by our piloted team (CORE / NEAR / FAR, recorded per row): **H-PILOT-OFFMETA is SUPPORTED iff our score
+  piloting FAR teams is below our score piloting CORE teams by a 95 % team-clustered bootstrap bound > 0**
+  (12 FAR and 16 CORE teams; descriptive until B-D6 stamps the opponent's team per game). The banked descriptive
+  version reads FAR 0.250 vs CORE 0.425 (§5.0).
+
+### 5.3 (iii) The LADDER-WEIGHTED headline L
+
+**The quantity.** Our expected win rate against Kakuna when WE bring our sample teams (home72) and the OPPONENT
+brings a team drawn from the ladder's distribution:
+
+L = w_CORE · D_CORE + w_NEAR · D_NEAR + w_FAR · D_FAR
+
+- **D_s** is the DEPLOYMENT cell restricted to stratum s: we pilot home72; Kakuna pilots only the heldout72_hpfix
+  teams of stratum s (16 CORE / 44 NEAR / 12 FAR teams, installed for Metamon as three sub-sets).
+- **w_s** is stratum s's share of the ladder proxy: **CORE 0.1761, NEAR 0.6747, FAR 0.1493**
+  (`ladder_weights_v1`).
+
+**How the weights are computed, frozen and versioned.**
+
+1. **Computed** by `ladder_weights.py`: for each of the 22,862 proxy teams, the best species overlap with any one
+   sample-reference team, binned into the three strata; the share is per FILE (a file is one replay team, so a
+   popular team weighs by how often it was played).
+2. **Frozen** by X37a's registration commit, BEFORE any deployment-cell game. The JSON records the proxy's
+   digest (every file's name and sha256), the reference's digest, the matcher (`gen3_team_overlap_v1`), the strata
+   boundaries and the counts. Until then it is a DRAFT (`ladder_weights_v1.json`, `status`).
+3. **Versioned.** A change of ANY input (a newer ladder proxy, a different sample reference, the matcher, the
+   boundaries) is a NEW version `ladder_weights_vN`. Every L is quoted with its version, and two versions are never
+   pooled or differenced.
+
+**The CORE stratum's sensitivity (one parameter, declared).** A ladder team with a sample team's six species may BE
+that sample team with its published sets (the owner's reading: "the ladder is mostly sample teams"), or the same
+core with other sets (what the replay files show). The fills hide which. So:
+
+- **L (the headline)** reads D_CORE on the replay CORE teams, the data as it is (c = 0);
+- **L_c1 (always beside it)** reads D_CORE on literal sample teams, i.e. S(P, P) (c = 1).
+
+The truth lies between. L_c1 − L = w_CORE × (S(P, P) − D_CORE): with w_CORE = 0.176, a 15-pp difference between
+the two CORE reads moves L by ≈ 2.6 pp.
+
+**Interval.** A stratified bootstrap that resamples TEAMS within each stratum, then games within team, with a
+fixed seed and draw count (deterministic, rule 8). The game-only Wald interval is reported beside it.
+Allocation (Neyman-like, toward NEAR): 100 CORE / 400 NEAR / 100 FAR games, game-only half-width ≈ 4 pp; the team
+clusters (12 FAR teams) widen it.
+
+**Weaknesses (stated with every L):**
+
+- **The proxy is not the ladder:** `hl_05_26` is 1400+ ladder and smogtours over a year, not the ladder at our
+  target rating today.
+- **The strata are partly fill-driven:** unrevealed team MEMBERS are usage-filled too, which favours common species
+  and likely inflates CORE / NEAR (size UNVERIFIED).
+- **Species resemblance ignores sets:** the c parameter covers this only at CORE.
+- **Few teams per stratum:** 16 / 44 / 12, so team-cluster variance dominates FAR.
+- **The opponent is Kakuna, not a human:** L is "ladder-weighted vs Kakuna", never a ladder win rate. Each
+  stratum keeps its row's bias (§5.1).
+- **Our side pilots home72 uniformly:** a deployed agent would choose its best teams.
+- **The reference set defines the strata:** another sample reference changes the weights, which makes it a new
+  version.
+
+### 5.4 (iv) GEN-M: an in-house generalisation meter with NO external opponent
+
+**Why.** Every Kakuna number carries Kakuna's training bias. A meter where both sides are OUR models, with the same
+pool exposure, has none. It measures one thing: does our training progress transfer to teams we never trained on?
+
+**The design.**
+
+- **Players:** X26 @t against X26 @(t − 50M), the Tier-1 plateau test's own pairing (its W-back node), and against
+  the registry `production` baseline.
+- **Teams:** mirrored pairs (each pair plays the same two teams twice with the pilots swapped, so team strength
+  cancels) on each frozen panel: home72 (the sample ground), heldout72_hpfix, smogon_forum and P72.
+- **When:** at every Tier-1 check (every 10M), from the plateau meter's own schedule; retroactively on X26's
+  existing nodes every 50M.
+- **K2**, the previous lineage's plateau with the same pool, is the other reference that matters: X26 − K2 on
+  unseen teams vs on sample ground says whether X26's lead is pool-specific, with no Kakuna. K2 does not load at
+  HEAD, so this needs a pinned-peer player over the websocket front end (B-D8, optional; F-DV-13).
+
+**The statistic.** g_P = the pair score on sample ground − 0.5, and g_U the same on an unseen panel.
+
+| class | condition |
+|---|---|
+| **TRANSFERS** | (g_P − g_U)'s 95 % interval (pentanomial over pairs) lies wholly below +2.0 pp AND g_U's lower bound > 0 |
+| **PARTIAL** | (g_P − g_U)'s lower bound > 0 AND g_U's lower bound > 0 |
+| **POOL-ONLY** | (g_P − g_U)'s lower bound > 0 AND g_U's lower bound ≤ 0 |
+| **UNDECIDED** | otherwise, or a bound within 1e-9 of a boundary |
+
+**Cost.** 500 mirrored pairs per panel × 4 panels ≈ 4,000 games ≈ 1 lane-hour per check on the CPU (≈ 1.16 games/s,
+`design_x26_readiness.md` §2.6). It needs B-D7: `main.h2h` gains a team-panel flag (mirrored pairs on a REGISTERED
+panel, the panel digest in the regime).
+
+**Relation to D0e (§3.2).** D0e is a one-time split of piloting from facing (the untaught meter). GEN-M is the
+standing total, read beside every plateau check, so a plateau on the pool can never again be read without its
+transfer.
+
+### 5.5 (v) THE headline, and the numbers that always sit beside it
+
+**THE headline: L.** It is the ladder-weighted deployment estimate vs Kakuna greedy (§5.3), quoted as
+"L (ladder_weights_vN) = p [lo, hi]". It is the one number that answers "how would we do on the ladder, bringing our
+own teams", and it carries its weights version and its bias statement.
+
+**Always beside it, in this order:**
+
+1. **The sample ground:** S(P, P) on home72 and the `away` symmetric cell. This is where we are matched or ahead,
+   with its bias (toward us on home72, toward Kakuna on `away`).
+2. **The unfamiliar panel:** the symmetric cells on heldout72_hpfix, smogon_forum and P72. This is where we lose,
+   with its bias (toward Kakuna on heldout72).
+3. **GEN-M at the latest check:** the transfer class, with no external bias.
+4. **L_c1:** the CORE-as-literal-sample sensitivity (§5.3).
+5. **When measured, the H-PILOT split:** PILOT_c and FACE_c (§5.2).
+
+No number leaves without its row of the matrix (§5.1), its regime (SOP RULE 1) and its `team_overlap` block.
+
+### 5.6 (vi) Freeze, then widen
+
+**Freeze FIRST.** Before any pool-widening build lands (B-D1), the panels AND the ladder weights are frozen.
+
+- **The registry** `designs/research_state/heldout_panels.json` (PROPOSED, B-D3) holds, per panel: the name and
+  source, the draw rule written before the draw, the seed, the manifest sha256, the near-neighbour radius (≥ 4
+  shared mon sets), FROZEN-since and "held out from". It also points at `ladder_weights_vN`.
+- **Panels:** home72 (in-pool reference), `away` (in-pool, Kakuna's turf), heldout72_hpfix, smogon_forum, P72;
+  D5's leave-out 72 is private to D5.
+- **The guard.** At training startup, every team source is checked by content against every FROZEN panel, exact
+  and near neighbour. A hit is a startup FATAL, like `gen3_untaught_teacher_guard_v1`. A typed consent flag exists
+  for a declared contamination, which is then stamped on every read.
+- **Why:** `away` was described as "never trained on" for a month while 19 of its 20 teams were pool copies.
+- **Every read carries** its `team_overlap` block, the panel name and the registry sha.
+- **Declared ASYMMETRIC cells** (the deployment, reverse and calibration cells) count under their DECLARATION. Today
+  `team_source_asymmetry` compares file counts only (F-DV-5), and the anchors counting rule DROPS an asymmetric
+  unit, so these cells need the per-side content digest instead (B-D6).
+- 🚨 Anchor rows carry `our_team` but NOT the peer's team. The peer CSV's `Team File` column does not align
+  one-to-one with `team_draws`, so per-game opponent-team splits on banked reads are unsafe (F-DV-6, B-D6).
+
+**Then WIDEN, and read every widening arm (D1, D2, D3, D4) on the matrix:**
+
+- **PRIMARY (gain):** ON − OFF on the UNFAMILIAR cells. That is the pooled symmetric reads on heldout72_hpfix,
+  smogon_forum and P72 vs Kakuna, equal weights per panel. The rule is §4.2's.
+- **CO-PRIMARY (no loss worse than −2.0 pp on sample-team ground):** measured IN-HOUSE, on GEN-M's sample-ground
+  cell (each final against the frozen reference population, mirrored pairs on home72). A Kakuna read cannot resolve
+  a −2.0 pp bar at an affordable n (F-DV-12).
+- **Reported:** L and L_c1, the Kakuna sample ground (home72, `away`), GEN-M's class, and the H-PILOT split.
+- **A widening corpus must exclude every panel's near neighbours.** W_hl and smogon_forum overlap by population:
+  forum teams get laddered.
+
+**An in-run held-out meter (B-D5)** is for FUTURE runs only, since X26 is pinned: an eval-cycle cell piloting
+held-out-panel teams, 100 games per cycle. It is subsumed by GEN-M once B-D7 exists, and stays optional.
 
 ---
 
@@ -742,41 +935,49 @@ target a different deficit:** the largest one measured against the external refe
 **Batch 1 order, if adopted:** A1 s3501, C0 s3501, C0 s3502, A1 s3502, A1 s3503, C0 s3503, then D1 s3501–3503.
 The first D1 read lands ≈ 13 GPU-h after A1's (≈ 39 GPU-h into batch 1).
 
-### 6.2 The builds D1 needs (proposed; to be filed in `TASK_BACKLOG` when the orchestrator adopts D1)
+### 6.2 The builds (proposed; to be filed in `TASK_BACKLOG` when the orchestrator adopts each)
 
 | build | what | size | must land before |
 |---|---|---|---|
-| B-D1 | the W_hl corpus: T8's HP repair (one function with `heldout72_hpfix`'s), validation, the exclusions (panels + near neighbours; the crash classes), the manifest, a full-tier soak | opus-high, ≈ 1–1.5 agent-days | `X35_PIN_k` |
+| B-D1 | the W_hl corpus: T8's HP repair (one function with `heldout72_hpfix`'s), validation, the exclusions (every frozen panel and its near neighbours, smogon_forum and P72 included; the crash classes), the manifest, a full-tier soak | opus-high, ≈ 1–1.5 agent-days | `X35_PIN_k` |
 | B-D2 | `--team-mix <corpus>:<share>`: a `MatchupSpec` source kind for both builders, recorded in `metadata.json` (spec hash), restored on resume; byte-identical when absent; a pin-safe corpus path | opus-medium, ≈ 0.5 agent-day | `X35_PIN_k` |
-| B-D3 | the held-out panel registry + the refusing startup guard (exact + near neighbour, by content) + `--team-exclude` | opus-medium, ≈ 0.5 agent-day | `X35_PIN_k` (and D5) |
-| B-D4 | P72 (and later T2): sanitise, validate, overlap-check, install for Metamon; the anchors configs | opus-medium, ≈ 0.25 agent-day | X37a |
-| B-D5 | an in-run held-out eval cell | opus-medium, ≈ 0.5 agent-day | optional; future runs only |
-| B-D6 | `their_team` per anchors row (F-DV-6); a content-digest asymmetry flag (F-DV-5) | opus-medium, ≈ 0.25 agent-day | before any per-team facing analysis |
+| B-D3 | the held-out panel registry (pointing at `ladder_weights_vN`) + the refusing startup guard (exact + near neighbour, by content) + `--team-exclude` | opus-medium, ≈ 0.5 agent-day | B-D1, `X35_PIN_k` (and D5) |
+| B-D4 | P72: generate, sanitise, validate, overlap-check (pool, `competitive`, `hl_05_26`, smogon_forum), assign strata, install for Metamon; the X37a configs (per-stratum Metamon sub-sets of heldout72_hpfix; the asymmetric cells' per-side sources) | opus-medium, ≈ 0.25 agent-day | X37a |
+| B-D5 | an in-run held-out eval cell (future runs; subsumed by GEN-M) | opus-medium, ≈ 0.5 agent-day | optional |
+| B-D6 | `their_team` per anchors row (F-DV-6); a per-side content-digest asymmetry check, so a DECLARED asymmetric cell counts (F-DV-5) | opus-medium, ≈ 0.25 agent-day | X37a's asymmetric cells count only with it, or with a registration that waives the count-based flag for declared cells |
+| B-D7 | `main.h2h --panel <registered panel>`: mirrored pairs on a frozen team panel, the panel digest in the regime, a refusal for an unregistered panel (GEN-M's engine) | opus-medium, ≈ 0.5 agent-day | GEN-M |
+| B-D8 | a pinned-peer player: a checkpoint that loads only at its own pin (K2) plays over the websocket front end against an in-process HEAD side, regime-stamped (F-DV-13) | opus-high, ≈ 1 agent-day | optional (GEN-M's K2 rows) |
+| B-D9 | an ASYMMETRIC Metamon pair cell: each peer of an anchor-vs-anchor cell takes its own team set (today one `team_sets[<teamset>]` serves both peers) | opus-medium, ≈ 0.25 agent-day | X37a stage 1's K(P, H) |
 
 ### 6.3 The ranked plan, the first experiment, and its cost
 
 | rank | id | what | GPU-h | CPU | when |
 |---|---|---|---|---|---|
-| **1** | **X37a** | **B-D4 (P72) + X26 vs Kakuna on P72 + the deployment cell + its reverse** (§3.1) | **0** | **≈ 3 lane-h**; build ≈ 0.25 agent-day | **NOW** (rule 5b, during X26) |
-| 2 | X37b | D0e transfer reads (pilot and face; home72, heldout72, P72; 4 checkpoints) | 0 | ≈ 4–6 lane-h | now |
-| 3 | X37c | D0g toy + D0d Kakuna trajectory | 0 | ≈ 4 lane-h | now |
-| 4 | X37d | D0f prior-only DiD (with its surgery build) | 0 | ≈ 2 lane-h + 0.5 agent-day | now |
-| 5 | **X38** | **D1 WIDEN fork** (X35 rank 2) | ≈ 13 (+13 if C0 is not shared) | ≈ 4 lane-h panel | the plateau call, batch 1 |
-| 6 | X39 | D5 LEAVE-OUT (production, 30M) | ≈ 5.6 | ≈ 3 lane-h | a GPU window or the cloud; conditional on X37 MIXED or UNDECIDED |
-| 7 | X40 | D2 opponent-only widen | ≈ 13 | ≈ 4 | conditional on X38 |
-| 8 | X41 | D3 augmentation | ≈ 13 + build | ≈ 4 | conditional on X38 |
-| 9 | X42 | D4 off-meta exploiters (re-scopes X10) | ≈ 18 | ≈ 4 | conditional on X38 |
-| 10 | X43 | D7 belief anchoring | ≈ 13 + build | ≈ 4 | conditional on X37d |
+| **1** | **X37a stage 1** | **the matrix's core** (§5.2, §5.3): the DEPLOYMENT cell by stratum (we pilot home72; Kakuna pilots heldout72_hpfix's CORE 100 / NEAR 400 / FAR 100 games); the REVERSE cell (we pilot heldout72_hpfix, Kakuna pilots home72, 400); the strength calibration K(P, H) (Kakuna vs Kakuna, 400). It yields **L**, **L_c1** and **H-PILOT** / **H-PILOT-OFFMETA** | **0** | **≈ 3.5 lane-h** (1,400 games); configs ≈ 0.1 agent-day; K(P, H) needs B-D9 | **NOW**, once `heldout72_hpfix` is frozen (the parallel read) |
+| 2 | **X37a stage 2** | the third-source rows: P72 symmetric (400) and smogon_forum symmetric (400); the §3.1 rule | 0 | ≈ 2 lane-h + B-D4 ≈ 0.25 agent-day | when smogon_forum lands (PENDING) |
+| 3 | X37b | GEN-M (§5.4) on X26's nodes every 50M (home72, heldout72_hpfix, smogon_forum, P72) + D0e's piloting / facing split (§3.2) | 0 | ≈ 5 lane-h + D0e ≈ 4–6 lane-h; B-D7 ≈ 0.5 agent-day | after B-D7 |
+| 4 | X37c | D0g toy + D0d Kakuna trajectory | 0 | ≈ 4 lane-h | now |
+| 5 | X37d | D0f prior-only DiD (with its surgery build) | 0 | ≈ 2 lane-h + 0.5 agent-day | now |
+| 6 | **X38** | **D1 WIDEN fork** (X35 rank 2), read on the matrix (§5.6) | ≈ 13 (+13 if C0 is not shared) | ≈ 4 lane-h panel + GEN-M | the plateau call, batch 1 |
+| 7 | X39 | D5 LEAVE-OUT (production, 30M) | ≈ 5.6 | ≈ 3 lane-h | a GPU window or the cloud; conditional on X37 MIXED or UNDECIDED |
+| 8 | X40 | D2 opponent-only widen | ≈ 13 | ≈ 4 | conditional on X38 |
+| 9 | X41 | D3 augmentation | ≈ 13 + build | ≈ 4 | conditional on X38 |
+| 10 | X42 | D4 off-meta exploiters (re-scopes X10) | ≈ 18 | ≈ 4 | conditional on X38 |
+| 11 | X43 | D7 belief anchoring | ≈ 13 + build | ≈ 4 | conditional on X37d |
 
-**The first experiment is X37a.** Build P72, then read three 400-game cells on one rule-5b lane:
+**The first experiment is X37a stage 1.**
 
-- ≈ 0.25 agent-day (opus-medium) + ≈ 3 lane-hours of CPU;
-- 0 GPU;
-- no `data/` change: P72 lives in its measurement directory and Metamon's cache, like heldout72.
-
-**Why it goes first.** It is the cheapest read that discriminates the two hypothesis FAMILIES (§3.1). It is also the
-input to the headline proposal (the deployment cell). And every GPU decision downstream (D1's rank, D5's need)
-depends on it.
+- **What:** 1,400 CPU games on one rule-5b lane (≈ 3.5 lane-hours, 0 GPU), plus ≈ 0.1 agent-day of configs: the
+  per-stratum Metamon sub-sets of heldout72_hpfix, and the asymmetric per-side sources (supported today by
+  `our_team_sources` vs Metamon's `team_sets`).
+- **K(P, H)** also needs B-D9 (≈ 0.25 agent-day). Without it, stage 1 still yields L and the raw PILOT / FACE drops,
+  and H-PILOT stays UNDECIDED until K lands.
+- **The counting rule** must accept DECLARED asymmetric units: B-D6, or a registration that waives the count-based
+  flag for the declared cells only.
+- **No `data/` change.** The sub-sets live in the measurement directory and Metamon's cache, like heldout72.
+- **Why it goes first.** It is the cheapest read that produces THE headline (L), tests the owner's hypothesis
+  (H-PILOT), and decides between the hypothesis families with the third source (stage 2). Every GPU decision
+  downstream (D1's rank, D5's need) reads it.
 
 ---
 
@@ -784,12 +985,17 @@ depends on it.
 
 - **`heldout72_hpfix` reads ≥ 0.50 for X26:** the artifact was most of the drop (H6). D1's case weakens to "train
   on the population for its own sake". The headline proposal still stands.
-- **X37a reads POPULATION / KAKUNA-DRIVEN and D0e reads TRANSFERS:** D1 drops below A2 and T2 is built before any
-  claim.
+- **X37a stage 2 reads POPULATION / KAKUNA-DRIVEN and D0e / GEN-M read TRANSFERS:** D1 drops below A2; the
+  smogon_forum read governs before any claim.
 - **D0e reads MEMORISATION-DOMINATED:** continued pool training buys little held-out strength. D1 (or D5, then an
   earlier diagnostic widening fork from a current X26 checkpoint, never inside X26) moves up, and the owner hears
   it as a strategic deviation (§8.4).
 - **D0f reads that the deltas hurt off-pool:** D7 joins the ranked list.
+- **H-PILOT reads SUPPORTED (§5.2):** piloting carries the drop. OUR-side breadth matters most: D1 keeps both sides,
+  D2 (opponent-only) is dropped, and D3's set augmentation on our side rises. **KILLED with FACE carrying the drop:**
+  D2 rises and the belief levers (D0f, D7) come first.
+- **L reads at or above 0.50:** the deployment question is answered in our favour despite the unfamiliar cells;
+  widening is then about the open population's tail, not the headline.
 
 ---
 
@@ -836,28 +1042,68 @@ Met on training teams only, it says little about strength.
 **Proposal (owner decision Q3):**
 
 - keep it as the in-distribution milestone, MET PROVISIONALLY;
-- add a held-out goal: the Wilson lower bound > 0.50 on the held-out panel (§5.3), at the plateau.
+- add a held-out goal: the Wilson lower bound > 0.50 on the held-out panel, at the plateau (DECIDED, Q3). With
+  the Q1 revision the proposal is that the goal reads on THE headline L (§5.5).
 
 ### 8.6 Where I agree
 
 Widening the pool is the right lever FAMILY, and a fork at the plateau against a matched control, measured on BOTH
 held-out gain and in-pool cost, is the right design. Three amendments:
 
-- **carve the panels first** (§5.1);
+- **carve the panels first** (§5.6);
 - **repair the HP fields first** (the 09-24 finding: heads trained on the artifact would memorise it);
 - **keep the corpus out of `data/teams/`** (F-DV-2).
 
+### 8.7 On the owner's 2026-10-18 inputs
+
+**1. "Held-out replay teams were a bit unfair, because the ladder is mostly sample teams."**
+
+- Half right. The ladder IS sample-CORE-heavy: 85 % of ladder teams share ≥ 4 species with one sample team.
+- But heldout72 has the SAME core mix: 22 / 61 / 17 % CORE / NEAR / FAR against the ladder's 18 / 67 / 15 %.
+- So as a ladder proxy it is fair at the species level. What it changes is the SETS (and the Hidden Power artifact,
+  which the hpfix re-read removes).
+- "Mostly sample TEAMS" in the sense of literal copies is not measurable from replays: ≥ 4 shared full sets is
+  0.2 %, understated by fills. L's c parameter (§5.3) carries exactly this uncertainty.
+
+**2. "We are matched on sample teams even though we don't bias toward them."**
+
+- We do bias toward them. home72 IS our `data/teams/sample`, which the trainee draws at ≈ 2.1× any other pool team
+  (`DEFAULT_TRAINEE_BIAS_PROB = 0.1`).
+- 19 of `away`'s 20 teams are in our pool.
+- "Matched on `away`" is level WITH an exposure advantage, against a set Metamon says it overfit to.
+
+**3. "Held-out teams are biased in Kakuna's favour because they have more diversity."**
+
+- Diversity by itself favours no one. It penalises whoever MEMORISED a closed set, which is us by construction (719
+  teams; W12's team identification).
+- It favours Kakuna only if Kakuna's data covers that population (UNVERIFIED).
+- The distinction matters, because the remedies differ: memorisation is fixed by widening (D1); a yardstick that
+  favours Kakuna is not a defect to fix, only a bias to state (§5.1).
+
+**4. "The key may be that we don't PILOT off-meta teams well."**
+
+- Plausible, and now a named test (H-PILOT, §5.2).
+- The descriptive data support a version of it: X26 pilots FAR (off-meta-core) held-out teams at 0.25.
+- But held-out teams on SAMPLE-LIKE cores already read 0.43 against home72's 0.575. So the larger part of the drop
+  is unfamiliar SETS, not off-meta species. H-PILOT-OFFMETA is the stratum split that separates the two.
+
+**5. "I like sample teams the most."**
+
+- Agreed as the sample GROUND beside the headline (§5.5). It is where a deployed agent would choose to play.
+- Not as the headline itself, because the opponent does not choose sample teams for us. L is the deployment
+  question with the opponent's side weighted by the ladder.
+
 ---
 
-## 9. Owner questions
+## 9. Owner questions: all DECIDED 2026-10-18
 
-| # | question | this doc's recommendation |
+| # | question | decision |
 |---|---|---|
-| Q1 | The external HEADLINE becomes the held-out panel (§5.3)? | **yes**, with home72 and the deployment cell always beside it |
-| Q2 | The W_hl corpus as a pin-safe `src/` corpus, or under `data/` after TECH_DEBT (f) P1's fix? | **`src/` corpus now** (no freeze conflict); `data/` once P1 is fixed |
-| Q3 | Add a held-out near-term goal (§8.5)? | **yes** |
-| Q4 | T2: the owner's and friends' teams, or a Smogon-forum downloader, or both? | **ask the owner for 20–50 teams first** (cheapest clean source); the downloader if fewer than 20 |
-| Q5 | D1 at rank 2 in X35 batch 1? | **yes, conditional on X37** (§6.1) |
+| Q1 | The external HEADLINE | **DECIDED (orchestrator, 2026-10-18)** as "the held-out panel, with the sample-team ground beside it"; **REVISED the same day at the orchestrator's request, in light of the matrix (§5):** THE headline is **L**, the ladder-weighted deployment estimate vs Kakuna (`ladder_weights_vN`). Beside it, always: the sample ground (home72, `away`), the unfamiliar panel (heldout72_hpfix, smogon_forum, P72), GEN-M's class and L_c1 (§5.5) |
+| Q2 | Where the widening corpus lives | **DECIDED (orchestrator):** a pin-safe `src/` corpus now; `data/` once TECH_DEBT (f) P1's fix (pinned children resolve `data/` through the pin tree) lands |
+| Q3 | A held-out near-term goal | **DECIDED (orchestrator):** added; the Wilson lower bound > 0.50 on the held-out panel, at the plateau. **Proposed consequence of the Q1 revision (not decided here):** the goal reads on L's 95 % lower bound > 0.50, so the goal and the headline are the same number |
+| Q4 | The third source | **DECIDED (owner):** NO owner or friends' teams (quality too low). The third sources are P72 (X37a stage 2) and smogon_forum (another agent; PENDING) |
+| Q5 | D1 at rank 2 in X35 batch 1 | **DECIDED (orchestrator):** yes, conditional on X37 (§6.1) |
 
 ---
 
@@ -895,6 +1141,21 @@ held-out gain and in-pool cost, is the right design. Three amendments:
   Each is marked where used.
 - **F-DV-11.** The literature in §4 (Cobbe 2019 / 2020, Tobin 2017, Dennis 2020, Parker-Holder 2022, the
   AlphaStar league) is cited from memory: **UNVERIFIED** in detail.
+- **F-DV-12.** A Kakuna read cannot resolve a −2.0 pp non-inferiority bar at an affordable n. At p ≈ 0.5 a ±2 pp
+  Newcombe half-width needs ≈ 4,800 games per arm (≈ 12 lane-hours per arm). So the widening arms' sample-ground
+  co-primary is measured IN-HOUSE (§5.6), and the Kakuna sample ground is reported only.
+- **F-DV-13.** K2 does not load at HEAD (`gen3_event_record_v2`; read only through its pin `a5b2fdba` on torch
+  2.5.1). An in-house X26-vs-K2 row needs a pinned-peer player (B-D8). Until then GEN-M uses X26's own past nodes and
+  the `production` baseline.
+- **F-DV-14.** The strength calibration K(P, H) assumes A-K: Kakuna's piloting and facing familiarity are equal
+  (UNVERIFIED). An anchor-vs-anchor cell also gives both peers ONE team set today (`cfg.team_set(teamset)` in
+  `main.anchors.peers`), so K(P, H) needs B-D9.
+- **F-DV-15.** The ladder strata are partly FILL-driven. `hl_05_26` fills unrevealed team MEMBERS from usage too,
+  which favours common species and likely inflates CORE / NEAR (size UNVERIFIED). The literal-sample-copy share is
+  unmeasurable from replays, which is why L carries the c sensitivity (§5.3).
+- **F-DV-16.** The banked anchors counting rule drops any unit with `team_source_asymmetry`, so a DECLARED
+  asymmetric cell with unequal set sizes (the stratum sub-cells: 72 vs 16 / 44 / 12) would never count. X37a needs
+  B-D6 or a registration that waives the flag for declared cells only.
 
 ---
 
@@ -910,3 +1171,10 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-18 | Reading evaluations when opponents are the treatment | panels disjoint from every treatment team; on-target reads reported, never the headline; a fresh best responder on a different archetype set; a fixed external panel; overlap + cell tags | scoring an arm by the exploiter it trained against | §4.4 |
 | 2026-10-18 | The first experiment | X37a: P72 + the deployment cell + its reverse, ≈ 3 CPU lane-hours, 0 GPU | D1 first (GPU before the cheap discriminator); D5 first (GPU, and not yet needed) | §6.3 |
 | 2026-10-18 | D1's rank in X35 (PROPOSED, the orchestrator's GO) | 2nd, after A1, ahead of A2, conditional on X37 | 1st (A1 is built and ordered); after A6 (it targets the larger measured deficit) | §6.1 |
+| 2026-10-18 | **§5 REWORKED into an EVALUATION MATRIX** (design worker, owner input, orchestrator's follow-up unit) | no neutral set exists, so the protocol states each set's bias: (i) a familiarity matrix (our piloting / facing exposure, set and species overlap, Kakuna's likely familiarity, UNVERIFIED; the bias direction); (ii) the PILOT / FACE cells with a Kakuna-vs-Kakuna strength calibration and the owner's hypothesis as the named test H-PILOT (and H-PILOT-OFFMETA); (iii) the ladder-weighted L; (iv) GEN-M, in-house; (v) ONE headline; (vi) freeze, then widen | the first version's "one held-out panel as the headline" (it hides the panel's bias toward Kakuna); hunting a single neutral set | owner 2026-10-18; §5 |
+| 2026-10-18 | The ladder resemblance and `ladder_weights_v1` (DRAFT; frozen by X37a's registration) | strata by best SPECIES overlap with the sample reference (home72 ∪ `away`): CORE 0.1761 / NEAR 0.6747 / FAR 0.1493 of 22,862 `hl_05_26` teams, per file; versioned by every input's digest; never pooled across versions | mon-set strata (fills make them meaningless: ≥ 4 shared sets 0.2 %); unweighted unique teams (popular teams are what the ladder brings) | `measurements/ladder_weights_2026-10-18/`; the orchestrator's `hl_vs_samples.py` agrees to 0.1 pp |
+| 2026-10-18 | **Q1 REVISED: THE headline is L** (ladder-weighted deployment estimate vs Kakuna; our side pilots home72) | beside it always: the sample ground, the unfamiliar panel, GEN-M, L_c1 and (when measured) the H-PILOT split | the held-out panel alone (biased toward Kakuna, and not the deployment shape); the sample ground alone (biased toward us) | §5.5 |
+| 2026-10-18 | Q4 (owner): the third sources | P72 + smogon_forum (another agent's collection, PENDING); smogon_forum governs when the two disagree. SUPERSEDES the 2026-10-18 "T2 = the owner's and friends' teams" row | owner and friends' teams (quality too low, owner) | §3.1 |
+| 2026-10-18 | X37a REVISED into two CPU stages | stage 1, the matrix's core: the deployment cell by stratum (600), the reverse cell (400), K(P, H) (400), ≈ 3.5 lane-h, 0 GPU; stage 2, the third-source rows (P72, smogon_forum; 800) | the first X37a (P72 + the unstratified deployment and reverse cells: it gave neither L nor the strength calibration) | §6.3 |
+| 2026-10-18 | Widening arms' readout (amends §4.2) | PRIMARY = the pooled UNFAMILIAR cells (heldout72_hpfix, smogon_forum, P72); CO-PRIMARY = no loss worse than −2.0 pp on SAMPLE-TEAM ground, measured in-house (home72 panel); L, L_c1 and GEN-M reported | X35's R1 on the full pool as the co-primary (it is not the sample ground); the Kakuna sample ground as the co-primary (it cannot resolve −2.0 pp, F-DV-12) | §4.2, §5.6 |
+| 2026-10-18 | Q2, Q3 and Q5 DECIDED (orchestrator) as this doc recommended | Q2: a pin-safe `src/` corpus now, `data/` after TECH_DEBT (f) P1; Q3: a held-out near-term goal (with the Q1 revision, the proposal that it reads on L); Q5: D1 at X35 rank 2, conditional on X37 | — | §9 |

@@ -371,6 +371,19 @@ because both models trained on the same pool. `home72` is 72 pool teams, so it i
 The held-out read is `heldout72` (`measurements/heldout_teams_kakuna_2026-10-18/`). Kakuna's own exposure to those
 teams is in that README's caveat.
 
+### The evaluation MATRIX and THE external headline (ADOPTED 2026-10-18, the orchestrator; Q1 revised)
+
+**No team set is neutral**, so no number is quoted as if one were. Every Kakuna read is quoted with its row of the
+FAMILIARITY MATRIX: home72 leans toward us, `away` toward Kakuna, heldout72 toward Kakuna, smogon_forum is
+near-neutral and P72 is unclear.
+
+- **THE external headline is L:** the LADDER-WEIGHTED deployment estimate. Our side pilots home72, and Kakuna's side
+  pilots heldout72_hpfix teams by species stratum, weighted by `ladder_weights_vN` (v1: CORE 0.176 / NEAR 0.675 /
+  FAR 0.149, from 22,862 `hl_05_26` teams).
+- **Beside it, always:** the sample ground (home72, `away`), the unfamiliar panel (heldout72_hpfix, smogon_forum,
+  P72), the in-house meter GEN-M, and L_c1.
+- The design is `endstate/design_diversity_teams_opponents.md` §5. L does not exist until X37a stage 1 reads.
+
 ### The team-set overlap — a REQUIRED field of every read (2026-10-18)
 
 `main.anchors` measures how much of the read's team set our training pool and the opponent's KNOWN team sets
