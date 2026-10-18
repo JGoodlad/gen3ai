@@ -672,3 +672,45 @@ handled by the item-3 procedure. A watcher that applies the ceilings automatical
   training is then void back to the last update below the ceilings.
 - **A3-F2.** The linear-growth forecast is an extrapolation (README F5). If the judged max grows faster than linearly,
   the p99 ceiling is reached sooner than forecast. That would be a stop and a re-diagnosis, not a silent pass.
+
+## Amendment 4 (2026-10-17, X26 at ≈ 212M) — a WATCH TRIGGER on the K9(b) rounding tail
+
+Registered after the tail refresh `d29f781c` (`measurements/x26_k9b_tail_refresh_2026-10-17/`) and before any trigger
+below has fired. The orchestrator registers it under the owner's full-discretion grant (2026-10-17). The Amendment-3
+ceilings are UNCHANGED: a stop still needs judged max ≥ 1e-3, p99 ≥ 1e-4 or a non-finite value.
+
+### A4.1 Why
+
+- Every new dump with its weights (u19300, u20490, u20630) is NUMERICAL in 177f61c0's class. Each violator ranks 1–2
+  of 33 on fp32 error and dither spread, with a gap 3.2–3.7 dither σ. There is no fault.
+- The SCALE grows faster than linearly. The best-AIC exponential form gives P(p99 ≥ 1e-4 before 500M) = 0.66, with
+  5 % / 50 % first crossings at 439M / 492M. The linear and power forms give ≤ 0.04. The data cannot tell the forms
+  apart yet (ΔAIC 3.0); it should by ≈ 300M.
+- Amendment 3's ≥ 4× margin at the cap no longer holds for p99: it is 1.4× (exponential) or 3.2× (linear). That is
+  A3-F2's case, so it gets an early warning rather than a surprise stop.
+
+### A4.2 The triggers (read with the A3 full-precision read, at every tick, every restart and daily)
+
+- **W1:** any CLOSED 10M window whose median per-update p99 is ≥ 3.0e-5.
+- **W2:** any single probe with p99 ≥ 5e-5 or judged max ≥ 5e-4.
+- **Rule 8:** a value within 1e-9 (relative) of a trigger is recorded and does not fire.
+
+**Either trigger ⇒ the A3-F2 RE-DIAGNOSIS.**
+- What runs: the tail refresh's `replay_dumps.py` and `forecast.py` on the newest dumps, with X26's pinned code, CPU
+  only.
+- The verdict:
+  - **NUMERICAL** ⇒ continue under the unchanged ceilings, and record the new forecast.
+  - **NOT NUMERICAL** ⇒ HOLD at the next checkpoint per §A2.7(3).
+- A trigger is NOT a stop and voids nothing.
+
+### A4.3 Standing items
+
+- **The forecast:** `forecast.py` re-runs at every 25M read point (≈ 1 CPU-min) and its table is logged with the tick.
+- **A4-F1 (from the refresh's F1):** only 3 violations per process dump their weights (`_DUMP_WEIGHTS_MAX = 3`).
+  - u21290 and u21440 cannot be replayed, and no later event can be until the next restart, which resets the count.
+  - A re-diagnosis after the cap is hit reads the newest restart's dumps. If none exists, it reads the JSON-record
+    checks: same legal set and argmax, per-action shift.
+  - Raising the cap is a code change at the pin, so it is NOT done mid-run.
+- **A4-F2 (correction to §A3.3):** the live child resumed from `checkpoint_136000153`, not `final_model_exception.zip`.
+  That is the startup-gate refusal recorded in readiness §4.2. TensorBoard therefore holds two lineages over
+  136.2–137.0M, and u13900 is on the abandoned one.
